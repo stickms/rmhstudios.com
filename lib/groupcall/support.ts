@@ -34,10 +34,24 @@ export type MicrophoneFailure =
  * "denied" and "missing" want completely different copy: one is a permission
  * the user can grant, the other is a device they do not have.
  */
-export function describeMicrophoneError(error: unknown): MicrophoneFailure {
+export function describeMicrophoneError(
+  error: unknown,
+): MicrophoneFailure {
   const name =
-    typeof error === 'object' && error !== null ? (error as { name?: unknown }).name : '';
-  switch (name) {
+    typeof error ===
+      'object' &&
+    error !==
+      null
+      ? (
+          error as {
+            name?: unknown;
+          }
+        )
+          .name
+      : '';
+  switch (
+    name
+  ) {
     case 'NotAllowedError':
     case 'SecurityError':
     case 'PermissionDeniedError':
@@ -59,8 +73,14 @@ export function describeMicrophoneError(error: unknown): MicrophoneFailure {
  */
 export function groupCallSupported(): boolean {
   return (
-    typeof window !== 'undefined' &&
-    typeof RTCPeerConnection !== 'undefined' &&
-    Boolean(navigator.mediaDevices?.getUserMedia)
+    typeof window !==
+      'undefined' &&
+    typeof RTCPeerConnection !==
+      'undefined' &&
+    Boolean(
+      navigator
+        .mediaDevices
+        ?.getUserMedia,
+    )
   );
 }

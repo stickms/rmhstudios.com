@@ -1,5 +1,13 @@
-import { test, expect } from 'vitest';
+import {
+  test,
+  expect,
+} from 'vitest';
 
 test('vitest runs in the epic workspace', () => {
-  expect(1 + 1).toBe(2);
+  expect(
+    1 +
+      1,
+  ).toBe(
+    2,
+  );
 });

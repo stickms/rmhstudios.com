@@ -23,21 +23,41 @@ export interface ClockEstimate {
   /** Round trip of the sample in use, ms. */
   rttMs: number;
   /** The fractional server tick at local time `at`. */
-  tickAt(at: number): number;
+  tickAt(
+    at: number,
+  ): number;
 }
 
 export class TickClock {
-  private readonly samples: ClockSample[] = [];
+  private readonly samples: ClockSample[] =
+    [];
 
   constructor(
     private readonly tickMs: number,
     private readonly window = 8,
   ) {}
 
-  add(sample: ClockSample): void {
-    if (!(sample.receivedAt >= sample.sentAt)) return;
-    this.samples.push(sample);
-    if (this.samples.length > this.window) this.samples.shift();
+  add(
+    sample: ClockSample,
+  ): void {
+    if (
+      !(
+        sample.receivedAt >=
+        sample.sentAt
+      )
+    )
+      return;
+    this.samples.push(
+      sample,
+    );
+    if (
+      this
+        .samples
+        .length >
+      this
+        .window
+    )
+      this.samples.shift();
   }
 
   reset(): void {
@@ -45,19 +65,52 @@ export class TickClock {
   }
 
   get sampleCount(): number {
-    return this.samples.length;
+    return this
+      .samples
+      .length;
   }
 
   estimate(): ClockEstimate | null {
-    let best: ClockSample | null = null;
-    for (const s of this.samples) {
-      if (!best || s.receivedAt - s.sentAt < best.receivedAt - best.sentAt) best = s;
+    let best: ClockSample | null =
+      null;
+    for (const s of this
+      .samples) {
+      if (
+        !best ||
+        s.receivedAt -
+          s.sentAt <
+          best.receivedAt -
+            best.sentAt
+      )
+        best =
+          s;
     }
-    if (!best) return null;
-    const rttMs = best.receivedAt - best.sentAt;
-    const stampedAt = best.receivedAt - rttMs / 2;
-    const tick = best.serverTick;
-    const tickMs = this.tickMs;
-    return { rttMs, tickAt: (at: number) => tick + (at - stampedAt) / tickMs };
+    if (
+      !best
+    )
+      return null;
+    const rttMs =
+      best.receivedAt -
+      best.sentAt;
+    const stampedAt =
+      best.receivedAt -
+      rttMs /
+        2;
+    const tick =
+      best.serverTick;
+    const tickMs =
+      this
+        .tickMs;
+    return {
+      rttMs,
+      tickAt:
+        (
+          at: number,
+        ) =>
+          tick +
+          (at -
+            stampedAt) /
+            tickMs,
+    };
   }
 }

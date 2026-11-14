@@ -1,544 +1,544 @@
 {
- "knight-walk": {
-  "checkpoints": [
-   [
-    100,
-    "8fbcee7733483bc2"
-   ],
-   [
-    200,
-    "94845ce10e8c28ba"
-   ],
-   [
-    300,
-    "cfc32c89a780651b"
-   ],
-   [
-    400,
-    "e1916b67c1fa824a"
-   ],
-   [
-    500,
-    "80af5ea3ef7766ad"
-   ],
-   [
-    600,
-    "80b889a99a88831e"
-   ],
-   [
-    700,
-    "5c0fb1658d960a4f"
-   ],
-   [
-    800,
-    "6822396e0d3587be"
-   ],
-   [
-    900,
-    "eb4f86a597d55c55"
-   ],
-   [
-    1000,
-    "7df9c316d9f8e876"
-   ],
-   [
-    1100,
-    "5e1ffc6fc73a6cdd"
-   ],
-   [
-    1200,
-    "e41cefca9a4fa00e"
-   ],
-   [
-    1300,
-    "c05cf4fec6fc9875"
-   ],
-   [
-    1400,
-    "2ed4d2be4a98e3cd"
-   ],
-   [
-    1500,
-    "6d59ce5ceda06b6a"
-   ]
-  ],
-  "events": [
-   "f1135:levelup:2:3"
-  ],
-  "final": {
-   "frames": 1501,
-   "time": 25.04999999999986,
-   "kills": 36,
-   "level": 2,
-   "xp": 15,
-   "coins": 0,
-   "enemies": 22,
-   "rngCalls": 1919,
-   "died": false
+  "knight-walk": {
+    "checkpoints": [
+      [
+        100,
+        "8fbcee7733483bc2"
+      ],
+      [
+        200,
+        "94845ce10e8c28ba"
+      ],
+      [
+        300,
+        "cfc32c89a780651b"
+      ],
+      [
+        400,
+        "e1916b67c1fa824a"
+      ],
+      [
+        500,
+        "80af5ea3ef7766ad"
+      ],
+      [
+        600,
+        "80b889a99a88831e"
+      ],
+      [
+        700,
+        "5c0fb1658d960a4f"
+      ],
+      [
+        800,
+        "6822396e0d3587be"
+      ],
+      [
+        900,
+        "eb4f86a597d55c55"
+      ],
+      [
+        1000,
+        "7df9c316d9f8e876"
+      ],
+      [
+        1100,
+        "5e1ffc6fc73a6cdd"
+      ],
+      [
+        1200,
+        "e41cefca9a4fa00e"
+      ],
+      [
+        1300,
+        "c05cf4fec6fc9875"
+      ],
+      [
+        1400,
+        "2ed4d2be4a98e3cd"
+      ],
+      [
+        1500,
+        "6d59ce5ceda06b6a"
+      ]
+    ],
+    "events": [
+      "f1135:levelup:2:3"
+    ],
+    "final": {
+      "frames": 1501,
+      "time": 25.04999999999986,
+      "kills": 36,
+      "level": 2,
+      "xp": 15,
+      "coins": 0,
+      "enemies": 22,
+      "rngCalls": 1919,
+      "died": false
+    }
+  },
+  "ranger-walk": {
+    "checkpoints": [
+      [
+        100,
+        "b0460e3aec728d12"
+      ],
+      [
+        200,
+        "cf3de3f8124b15a8"
+      ],
+      [
+        300,
+        "b968f63d3ed4ce30"
+      ],
+      [
+        400,
+        "1142dc1755d95a29"
+      ],
+      [
+        500,
+        "1a422ea26ba74111"
+      ],
+      [
+        600,
+        "2e3e4ee55f0b057b"
+      ],
+      [
+        700,
+        "77bfbed90003155d"
+      ],
+      [
+        800,
+        "2b442fa3b6a35547"
+      ],
+      [
+        900,
+        "11a9186780bd30bd"
+      ],
+      [
+        1000,
+        "f94c6d4d19a8de3c"
+      ],
+      [
+        1100,
+        "0e1de2d15bb7a7b1"
+      ],
+      [
+        1200,
+        "ffccb2e90da812f5"
+      ],
+      [
+        1300,
+        "685a2cfbfe858d81"
+      ],
+      [
+        1400,
+        "aa3e7cb7c0072bcb"
+      ],
+      [
+        1500,
+        "db6990d150d1820e"
+      ]
+    ],
+    "events": [
+      "f1221:levelup:2:3"
+    ],
+    "final": {
+      "frames": 1501,
+      "time": 25.04999999999986,
+      "kills": 13,
+      "level": 2,
+      "xp": 3,
+      "coins": 3,
+      "enemies": 45,
+      "rngCalls": 908,
+      "died": false
+    }
+  },
+  "necromancer-summons": {
+    "checkpoints": [
+      [
+        100,
+        "4907f10be130dba6"
+      ],
+      [
+        200,
+        "b0ec8d642e70bf34"
+      ],
+      [
+        300,
+        "56070d190bf15599"
+      ],
+      [
+        400,
+        "aa28367c48e34999"
+      ],
+      [
+        500,
+        "4041b23271b862eb"
+      ],
+      [
+        600,
+        "b6b14694844aae63"
+      ],
+      [
+        700,
+        "9108182d906051d5"
+      ],
+      [
+        800,
+        "422e5a9dd053d24f"
+      ],
+      [
+        900,
+        "e02ae7f63027e210"
+      ],
+      [
+        1000,
+        "32af795bd73947a1"
+      ],
+      [
+        1100,
+        "b3680d3b0be5a295"
+      ],
+      [
+        1200,
+        "dc8aa591d12bf957"
+      ],
+      [
+        1300,
+        "c98fd78afdddae6c"
+      ],
+      [
+        1400,
+        "051c1d1cc91f698e"
+      ],
+      [
+        1500,
+        "302da5efbd23976a"
+      ]
+    ],
+    "events": [
+      "f855:levelup:2:3"
+    ],
+    "final": {
+      "frames": 1501,
+      "time": 85.04999999999858,
+      "kills": 88,
+      "level": 2,
+      "xp": 11,
+      "coins": 0,
+      "enemies": 13,
+      "rngCalls": 4218,
+      "died": false
+    }
+  },
+  "hemomancer-hollow-king": {
+    "checkpoints": [
+      [
+        100,
+        "eb3d6648aeccf118"
+      ],
+      [
+        200,
+        "0c95f11e245b4f81"
+      ],
+      [
+        300,
+        "a9bc2bc8bdf19798"
+      ],
+      [
+        400,
+        "b0bd8f741ed390bc"
+      ],
+      [
+        500,
+        "4f64776ca0c6753c"
+      ],
+      [
+        600,
+        "6bcdd5a441332097"
+      ],
+      [
+        700,
+        "b7897523317234a4"
+      ],
+      [
+        800,
+        "3ffb8b0e42e32b6c"
+      ],
+      [
+        900,
+        "a7ddb369de6354f5"
+      ],
+      [
+        1000,
+        "a059a2b37b79a503"
+      ],
+      [
+        1100,
+        "c1f326bbee52ba16"
+      ],
+      [
+        1200,
+        "32b142139335b82a"
+      ],
+      [
+        1300,
+        "074a6c0e431da34d"
+      ],
+      [
+        1400,
+        "d0e9bcc70e67d632"
+      ]
+    ],
+    "events": [
+      "f61:bossSpawn:hollow_king",
+      "f330:levelup:2:3",
+      "f471:levelup:3:3",
+      "f689:levelup:4:3",
+      "f854:levelup:5:3",
+      "f1155:levelup:6:3"
+    ],
+    "final": {
+      "frames": 1401,
+      "time": 319.3666666666454,
+      "kills": 189,
+      "level": 6,
+      "xp": 17,
+      "coins": 4,
+      "enemies": 51,
+      "rngCalls": 10208,
+      "died": false
+    }
+  },
+  "plague-doctor-countess": {
+    "checkpoints": [
+      [
+        100,
+        "a82e65c80c6d2d2c"
+      ],
+      [
+        200,
+        "ca0388a6c07684df"
+      ],
+      [
+        300,
+        "9f79a4d345077908"
+      ],
+      [
+        319,
+        "cbd2bc88ed4648b4"
+      ]
+    ],
+    "events": [
+      "f61:bossSpawn:crimson_countess",
+      "f319:death"
+    ],
+    "final": {
+      "frames": 319,
+      "time": 601.3166666666618,
+      "kills": 16,
+      "level": 1,
+      "xp": 9,
+      "coins": 1,
+      "enemies": 209,
+      "rngCalls": 2104,
+      "died": true
+    }
+  },
+  "chronomancer-walk": {
+    "checkpoints": [
+      [
+        100,
+        "7f021d6b8c91c878"
+      ],
+      [
+        200,
+        "722b304baa8cf6d4"
+      ],
+      [
+        300,
+        "3ad6ab6bb3842da0"
+      ],
+      [
+        400,
+        "dbfa0fe98caaabe2"
+      ],
+      [
+        500,
+        "be936b65394f9cce"
+      ],
+      [
+        600,
+        "5f4e9e7fdb3e3d71"
+      ],
+      [
+        700,
+        "70df7a9f2f9e95cb"
+      ],
+      [
+        800,
+        "5654787fd94ce015"
+      ],
+      [
+        900,
+        "670b49afb291f453"
+      ],
+      [
+        1000,
+        "d5fb2541f7d42905"
+      ],
+      [
+        1100,
+        "9df3d3b5d9883ebc"
+      ],
+      [
+        1130,
+        "fe9bb454f1607692"
+      ]
+    ],
+    "events": [
+      "f1130:death"
+    ],
+    "final": {
+      "frames": 1130,
+      "time": 48.866666666665594,
+      "kills": 25,
+      "level": 1,
+      "xp": 6,
+      "coins": 0,
+      "enemies": 36,
+      "rngCalls": 1325,
+      "died": true
+    }
+  },
+  "arcanist-late-waves": {
+    "checkpoints": [
+      [
+        100,
+        "b066fd193529a2a6"
+      ],
+      [
+        200,
+        "7dea455ca0587fbd"
+      ],
+      [
+        300,
+        "04b83ec4a880854b"
+      ],
+      [
+        400,
+        "6470c81c741d9fe0"
+      ],
+      [
+        500,
+        "38459836be1839c8"
+      ],
+      [
+        600,
+        "0672189553f355b0"
+      ],
+      [
+        700,
+        "f1d82987a3bec379"
+      ],
+      [
+        800,
+        "9659d82e0424cb89"
+      ],
+      [
+        900,
+        "c29b0276d47ea04b"
+      ],
+      [
+        1000,
+        "5add1d0414b63041"
+      ],
+      [
+        1100,
+        "863fa0b5b38a701f"
+      ],
+      [
+        1192,
+        "450c1c5f59811c7d"
+      ]
+    ],
+    "events": [
+      "f307:levelup:2:3",
+      "f409:levelup:4:3",
+      "f477:levelup:5:3",
+      "f551:levelup:6:3",
+      "f788:levelup:7:3",
+      "f986:levelup:8:3",
+      "f1192:death"
+    ],
+    "final": {
+      "frames": 1192,
+      "time": 419.8999999999819,
+      "kills": 514,
+      "level": 8,
+      "xp": 55,
+      "coins": 23,
+      "enemies": 209,
+      "rngCalls": 18130,
+      "died": true
+    }
+  },
+  "berserker-death": {
+    "checkpoints": [
+      [
+        100,
+        "6725f3cea6a877f7"
+      ],
+      [
+        200,
+        "e5c31260d7b9d576"
+      ],
+      [
+        300,
+        "40e821c47dd79190"
+      ],
+      [
+        400,
+        "dc1095e2cacd8caa"
+      ],
+      [
+        500,
+        "ff515beabf9a85b6"
+      ],
+      [
+        600,
+        "d0a5056bb2b1a8c3"
+      ],
+      [
+        700,
+        "6879226a02806e5f"
+      ],
+      [
+        734,
+        "532f141eebed0dcf"
+      ]
+    ],
+    "events": [
+      "f312:levelup:2:3",
+      "f316:levelup:3:3",
+      "f409:levelup:4:3",
+      "f494:levelup:5:3",
+      "f501:levelup:6:3",
+      "f596:levelup:7:3",
+      "f734:death"
+    ],
+    "final": {
+      "frames": 734,
+      "time": 712.2499999999889,
+      "kills": 218,
+      "level": 7,
+      "xp": 55,
+      "coins": 39,
+      "enemies": 205,
+      "rngCalls": 10307,
+      "died": true
+    }
   }
- },
- "ranger-walk": {
-  "checkpoints": [
-   [
-    100,
-    "b0460e3aec728d12"
-   ],
-   [
-    200,
-    "cf3de3f8124b15a8"
-   ],
-   [
-    300,
-    "b968f63d3ed4ce30"
-   ],
-   [
-    400,
-    "1142dc1755d95a29"
-   ],
-   [
-    500,
-    "1a422ea26ba74111"
-   ],
-   [
-    600,
-    "2e3e4ee55f0b057b"
-   ],
-   [
-    700,
-    "77bfbed90003155d"
-   ],
-   [
-    800,
-    "2b442fa3b6a35547"
-   ],
-   [
-    900,
-    "11a9186780bd30bd"
-   ],
-   [
-    1000,
-    "f94c6d4d19a8de3c"
-   ],
-   [
-    1100,
-    "0e1de2d15bb7a7b1"
-   ],
-   [
-    1200,
-    "ffccb2e90da812f5"
-   ],
-   [
-    1300,
-    "685a2cfbfe858d81"
-   ],
-   [
-    1400,
-    "aa3e7cb7c0072bcb"
-   ],
-   [
-    1500,
-    "db6990d150d1820e"
-   ]
-  ],
-  "events": [
-   "f1221:levelup:2:3"
-  ],
-  "final": {
-   "frames": 1501,
-   "time": 25.04999999999986,
-   "kills": 13,
-   "level": 2,
-   "xp": 3,
-   "coins": 3,
-   "enemies": 45,
-   "rngCalls": 908,
-   "died": false
-  }
- },
- "necromancer-summons": {
-  "checkpoints": [
-   [
-    100,
-    "4907f10be130dba6"
-   ],
-   [
-    200,
-    "b0ec8d642e70bf34"
-   ],
-   [
-    300,
-    "56070d190bf15599"
-   ],
-   [
-    400,
-    "aa28367c48e34999"
-   ],
-   [
-    500,
-    "4041b23271b862eb"
-   ],
-   [
-    600,
-    "b6b14694844aae63"
-   ],
-   [
-    700,
-    "9108182d906051d5"
-   ],
-   [
-    800,
-    "422e5a9dd053d24f"
-   ],
-   [
-    900,
-    "e02ae7f63027e210"
-   ],
-   [
-    1000,
-    "32af795bd73947a1"
-   ],
-   [
-    1100,
-    "b3680d3b0be5a295"
-   ],
-   [
-    1200,
-    "dc8aa591d12bf957"
-   ],
-   [
-    1300,
-    "c98fd78afdddae6c"
-   ],
-   [
-    1400,
-    "051c1d1cc91f698e"
-   ],
-   [
-    1500,
-    "302da5efbd23976a"
-   ]
-  ],
-  "events": [
-   "f855:levelup:2:3"
-  ],
-  "final": {
-   "frames": 1501,
-   "time": 85.04999999999858,
-   "kills": 88,
-   "level": 2,
-   "xp": 11,
-   "coins": 0,
-   "enemies": 13,
-   "rngCalls": 4218,
-   "died": false
-  }
- },
- "hemomancer-hollow-king": {
-  "checkpoints": [
-   [
-    100,
-    "eb3d6648aeccf118"
-   ],
-   [
-    200,
-    "0c95f11e245b4f81"
-   ],
-   [
-    300,
-    "a9bc2bc8bdf19798"
-   ],
-   [
-    400,
-    "b0bd8f741ed390bc"
-   ],
-   [
-    500,
-    "4f64776ca0c6753c"
-   ],
-   [
-    600,
-    "6bcdd5a441332097"
-   ],
-   [
-    700,
-    "b7897523317234a4"
-   ],
-   [
-    800,
-    "3ffb8b0e42e32b6c"
-   ],
-   [
-    900,
-    "a7ddb369de6354f5"
-   ],
-   [
-    1000,
-    "a059a2b37b79a503"
-   ],
-   [
-    1100,
-    "c1f326bbee52ba16"
-   ],
-   [
-    1200,
-    "32b142139335b82a"
-   ],
-   [
-    1300,
-    "074a6c0e431da34d"
-   ],
-   [
-    1400,
-    "d0e9bcc70e67d632"
-   ]
-  ],
-  "events": [
-   "f61:bossSpawn:hollow_king",
-   "f330:levelup:2:3",
-   "f471:levelup:3:3",
-   "f689:levelup:4:3",
-   "f854:levelup:5:3",
-   "f1155:levelup:6:3"
-  ],
-  "final": {
-   "frames": 1401,
-   "time": 319.3666666666454,
-   "kills": 189,
-   "level": 6,
-   "xp": 17,
-   "coins": 4,
-   "enemies": 51,
-   "rngCalls": 10208,
-   "died": false
-  }
- },
- "plague-doctor-countess": {
-  "checkpoints": [
-   [
-    100,
-    "a82e65c80c6d2d2c"
-   ],
-   [
-    200,
-    "ca0388a6c07684df"
-   ],
-   [
-    300,
-    "9f79a4d345077908"
-   ],
-   [
-    319,
-    "cbd2bc88ed4648b4"
-   ]
-  ],
-  "events": [
-   "f61:bossSpawn:crimson_countess",
-   "f319:death"
-  ],
-  "final": {
-   "frames": 319,
-   "time": 601.3166666666618,
-   "kills": 16,
-   "level": 1,
-   "xp": 9,
-   "coins": 1,
-   "enemies": 209,
-   "rngCalls": 2104,
-   "died": true
-  }
- },
- "chronomancer-walk": {
-  "checkpoints": [
-   [
-    100,
-    "7f021d6b8c91c878"
-   ],
-   [
-    200,
-    "722b304baa8cf6d4"
-   ],
-   [
-    300,
-    "3ad6ab6bb3842da0"
-   ],
-   [
-    400,
-    "dbfa0fe98caaabe2"
-   ],
-   [
-    500,
-    "be936b65394f9cce"
-   ],
-   [
-    600,
-    "5f4e9e7fdb3e3d71"
-   ],
-   [
-    700,
-    "70df7a9f2f9e95cb"
-   ],
-   [
-    800,
-    "5654787fd94ce015"
-   ],
-   [
-    900,
-    "670b49afb291f453"
-   ],
-   [
-    1000,
-    "d5fb2541f7d42905"
-   ],
-   [
-    1100,
-    "9df3d3b5d9883ebc"
-   ],
-   [
-    1130,
-    "fe9bb454f1607692"
-   ]
-  ],
-  "events": [
-   "f1130:death"
-  ],
-  "final": {
-   "frames": 1130,
-   "time": 48.866666666665594,
-   "kills": 25,
-   "level": 1,
-   "xp": 6,
-   "coins": 0,
-   "enemies": 36,
-   "rngCalls": 1325,
-   "died": true
-  }
- },
- "arcanist-late-waves": {
-  "checkpoints": [
-   [
-    100,
-    "b066fd193529a2a6"
-   ],
-   [
-    200,
-    "7dea455ca0587fbd"
-   ],
-   [
-    300,
-    "04b83ec4a880854b"
-   ],
-   [
-    400,
-    "6470c81c741d9fe0"
-   ],
-   [
-    500,
-    "38459836be1839c8"
-   ],
-   [
-    600,
-    "0672189553f355b0"
-   ],
-   [
-    700,
-    "f1d82987a3bec379"
-   ],
-   [
-    800,
-    "9659d82e0424cb89"
-   ],
-   [
-    900,
-    "c29b0276d47ea04b"
-   ],
-   [
-    1000,
-    "5add1d0414b63041"
-   ],
-   [
-    1100,
-    "863fa0b5b38a701f"
-   ],
-   [
-    1192,
-    "450c1c5f59811c7d"
-   ]
-  ],
-  "events": [
-   "f307:levelup:2:3",
-   "f409:levelup:4:3",
-   "f477:levelup:5:3",
-   "f551:levelup:6:3",
-   "f788:levelup:7:3",
-   "f986:levelup:8:3",
-   "f1192:death"
-  ],
-  "final": {
-   "frames": 1192,
-   "time": 419.8999999999819,
-   "kills": 514,
-   "level": 8,
-   "xp": 55,
-   "coins": 23,
-   "enemies": 209,
-   "rngCalls": 18130,
-   "died": true
-  }
- },
- "berserker-death": {
-  "checkpoints": [
-   [
-    100,
-    "6725f3cea6a877f7"
-   ],
-   [
-    200,
-    "e5c31260d7b9d576"
-   ],
-   [
-    300,
-    "40e821c47dd79190"
-   ],
-   [
-    400,
-    "dc1095e2cacd8caa"
-   ],
-   [
-    500,
-    "ff515beabf9a85b6"
-   ],
-   [
-    600,
-    "d0a5056bb2b1a8c3"
-   ],
-   [
-    700,
-    "6879226a02806e5f"
-   ],
-   [
-    734,
-    "532f141eebed0dcf"
-   ]
-  ],
-  "events": [
-   "f312:levelup:2:3",
-   "f316:levelup:3:3",
-   "f409:levelup:4:3",
-   "f494:levelup:5:3",
-   "f501:levelup:6:3",
-   "f596:levelup:7:3",
-   "f734:death"
-  ],
-  "final": {
-   "frames": 734,
-   "time": 712.2499999999889,
-   "kills": 218,
-   "level": 7,
-   "xp": 55,
-   "coins": 39,
-   "enemies": 205,
-   "rngCalls": 10307,
-   "died": true
-  }
- }
 }

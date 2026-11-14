@@ -13,27 +13,58 @@ import type { FailReason } from './load-machine';
 import type { Zone } from './types';
 
 export const CONCURRENCY = 4;
-export const RETRY_DELAYS_MS: readonly number[] = [400, 1200];
+export const RETRY_DELAYS_MS: readonly number[] =
+  [
+    400,
+    1200,
+  ];
 
 export interface LoaderDeps {
-  fetch(url: string): Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }>;
-  decode(data: ArrayBuffer): Promise<AudioBuffer>;
-  sleep(ms: number): Promise<void>;
+  fetch(
+    url: string,
+  ): Promise<{
+    ok: boolean;
+    status: number;
+    arrayBuffer(): Promise<ArrayBuffer>;
+  }>;
+  decode(
+    data: ArrayBuffer,
+  ): Promise<AudioBuffer>;
+  sleep(
+    ms: number,
+  ): Promise<void>;
   /** Whether `url` is on another origin than the page. */
-  crossOrigin(url: string): boolean;
+  crossOrigin(
+    url: string,
+  ): boolean;
   online(): boolean;
 }
 
 export interface ZoneResult {
-  buffers: Map<string, AudioBuffer>;
-  failures: Map<string, FailReason>;
+  buffers: Map<
+    string,
+    AudioBuffer
+  >;
+  failures: Map<
+    string,
+    FailReason
+  >;
 }
 
 export function classifyFetchError(
   err: unknown,
-  ctx: { crossOrigin: boolean; online: boolean },
+  ctx: {
+    crossOrigin: boolean;
+    online: boolean;
+  },
 ): FailReason {
-  if (err instanceof TypeError && ctx.crossOrigin && ctx.online) return 'cors';
+  if (
+    err instanceof
+      TypeError &&
+    ctx.crossOrigin &&
+    ctx.online
+  )
+    return 'cors';
   return 'network';
 }
 
@@ -42,55 +73,184 @@ export async function loadZone(
   zone: Zone,
   url: string,
   deps: LoaderDeps,
-): Promise<{ ok: true; buffer: AudioBuffer } | { ok: false; reason: FailReason }> {
-  let bytes: ArrayBuffer | null = null;
-  let reason: FailReason = 'network';
-  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+): Promise<
+  | {
+      ok: true;
+      buffer: AudioBuffer;
+    }
+  | {
+      ok: false;
+      reason: FailReason;
+    }
+> {
+  let bytes: ArrayBuffer | null =
+    null;
+  let reason: FailReason =
+    'network';
+  for (
+    let attempt = 0;
+    attempt <=
+    RETRY_DELAYS_MS.length;
+    attempt++
+  ) {
     try {
-      const res = await deps.fetch(url);
-      if (!res.ok) {
-        reason = 'network';
-        if (res.status < 500) break;
+      const res =
+        await deps.fetch(
+          url,
+        );
+      if (
+        !res.ok
+      ) {
+        reason =
+          'network';
+        if (
+          res.status <
+          500
+        )
+          break;
       } else {
-        bytes = await res.arrayBuffer();
+        bytes =
+          await res.arrayBuffer();
         break;
       }
     } catch (err) {
-      reason = classifyFetchError(err, { crossOrigin: deps.crossOrigin(url), online: deps.online() });
-      if (reason === 'cors') break;
+      reason =
+        classifyFetchError(
+          err,
+          {
+            crossOrigin:
+              deps.crossOrigin(
+                url,
+              ),
+            online:
+              deps.online(),
+          },
+        );
+      if (
+        reason ===
+        'cors'
+      )
+        break;
     }
-    if (attempt < RETRY_DELAYS_MS.length) await deps.sleep(RETRY_DELAYS_MS[attempt]);
+    if (
+      attempt <
+      RETRY_DELAYS_MS.length
+    )
+      await deps.sleep(
+        RETRY_DELAYS_MS[
+          attempt
+        ],
+      );
   }
-  if (!bytes) return { ok: false, reason };
+  if (
+    !bytes
+  )
+    return {
+      ok: false,
+      reason,
+    };
   try {
-    return { ok: true, buffer: await deps.decode(bytes) };
+    return {
+      ok: true,
+      buffer:
+        await deps.decode(
+          bytes,
+        ),
+    };
   } catch {
-    return { ok: false, reason: 'decode' };
+    return {
+      ok: false,
+      reason:
+        'decode',
+    };
   }
 }
 
 /** Every zone, {@link CONCURRENCY} at a time; `onZone` hears each as it settles. */
 export async function loadZones(
   zones: readonly Zone[],
-  urlOf: (zone: Zone) => string,
+  urlOf: (
+    zone: Zone,
+  ) => string,
   deps: LoaderDeps,
-  onZone: (zone: Zone, result: { ok: true } | { ok: false; reason: FailReason }) => void = () => {},
+  onZone: (
+    zone: Zone,
+    result:
+      | {
+          ok: true;
+        }
+      | {
+          ok: false;
+          reason: FailReason;
+        },
+  ) => void = () => {},
 ): Promise<ZoneResult> {
-  const result: ZoneResult = { buffers: new Map(), failures: new Map() };
+  const result: ZoneResult =
+    {
+      buffers:
+        new Map(),
+      failures:
+        new Map(),
+    };
   let next = 0;
-  const worker = async () => {
-    while (next < zones.length) {
-      const zone = zones[next++];
-      const r = await loadZone(zone, urlOf(zone), deps);
-      if (r.ok) {
-        result.buffers.set(zone.file, r.buffer);
-        onZone(zone, { ok: true });
-      } else {
-        result.failures.set(zone.file, r.reason);
-        onZone(zone, { ok: false, reason: r.reason });
+  const worker =
+    async () => {
+      while (
+        next <
+        zones.length
+      ) {
+        const zone =
+          zones[
+            next++
+          ];
+        const r =
+          await loadZone(
+            zone,
+            urlOf(
+              zone,
+            ),
+            deps,
+          );
+        if (
+          r.ok
+        ) {
+          result.buffers.set(
+            zone.file,
+            r.buffer,
+          );
+          onZone(
+            zone,
+            {
+              ok: true,
+            },
+          );
+        } else {
+          result.failures.set(
+            zone.file,
+            r.reason,
+          );
+          onZone(
+            zone,
+            {
+              ok: false,
+              reason:
+                r.reason,
+            },
+          );
+        }
       }
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, zones.length) }, worker));
+    };
+  await Promise.all(
+    Array.from(
+      {
+        length:
+          Math.min(
+            CONCURRENCY,
+            zones.length,
+          ),
+      },
+      worker,
+    ),
+  );
   return result;
 }

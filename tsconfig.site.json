@@ -10,7 +10,12 @@
   "compilerOptions": {
     "tsBuildInfoFile": ".cache/tsc/site.tsbuildinfo"
   },
-  "include": ["**/*.ts", "**/*.tsx", "**/*.mts", "app/routeTree.gen.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mts",
+    "app/routeTree.gen.ts"
+  ],
   "exclude": [
     "node_modules",
     "bazel-*",
@@ -99,5 +104,12 @@
     "lib/tf2-loadout/particles.server.ts",
     "lib/tf2-loadout/stored-cache.server.ts"
   ],
-  "references": [{ "path": "./tsconfig.core.json" }, { "path": "./tsconfig.engine.json" }]
+  "references": [
+    {
+      "path": "./tsconfig.core.json"
+    },
+    {
+      "path": "./tsconfig.engine.json"
+    }
+  ]
 }

@@ -1,4 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
 import {
   DECELERATION,
   RIPPLE,
@@ -35,24 +39,80 @@ import {
 describe('projectDistance (UIScrollView deceleration)', () => {
   it('matches the published formula at the normal rate', () => {
     // (v / 1000) · r/(1−r), with r = 0.998 → multiplier 499.
-    expect(projectDistance(1000, DECELERATION.normal)).toBeCloseTo(499, 6);
-    expect(projectDistance(2000, DECELERATION.normal)).toBeCloseTo(998, 6);
+    expect(
+      projectDistance(
+        1000,
+        DECELERATION.normal,
+      ),
+    ).toBeCloseTo(
+      499,
+      6,
+    );
+    expect(
+      projectDistance(
+        2000,
+        DECELERATION.normal,
+      ),
+    ).toBeCloseTo(
+      998,
+      6,
+    );
   });
 
   it('coasts much further at the normal rate than the fast one', () => {
-    const normal = projectDistance(1000, DECELERATION.normal);
-    const fast = projectDistance(1000, DECELERATION.fast);
-    expect(normal).toBeGreaterThan(fast * 4);
+    const normal =
+      projectDistance(
+        1000,
+        DECELERATION.normal,
+      );
+    const fast =
+      projectDistance(
+        1000,
+        DECELERATION.fast,
+      );
+    expect(
+      normal,
+    ).toBeGreaterThan(
+      fast *
+        4,
+    );
   });
 
   it('preserves direction and is zero at rest', () => {
-    expect(projectDistance(-800)).toBeLessThan(0);
-    expect(projectDistance(0)).toBe(0);
-    expect(projectDistance(Number.NaN)).toBe(0);
+    expect(
+      projectDistance(
+        -800,
+      ),
+    ).toBeLessThan(
+      0,
+    );
+    expect(
+      projectDistance(
+        0,
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      projectDistance(
+        Number.NaN,
+      ),
+    ).toBe(
+      0,
+    );
   });
 
   it('projects from the current position', () => {
-    expect(projectPosition(100, 1000, DECELERATION.normal)).toBeCloseTo(599, 6);
+    expect(
+      projectPosition(
+        100,
+        1000,
+        DECELERATION.normal,
+      ),
+    ).toBeCloseTo(
+      599,
+      6,
+    );
   });
 });
 
@@ -61,60 +121,227 @@ describe('rubberBand', () => {
     // The ceiling is the DIMENSION itself: no amount of pulling drags a surface
     // more than its own size past the edge.
     const dimension = 400;
-    expect(rubberBand(1e6, dimension)).toBeLessThan(dimension);
-    expect(rubberBand(1e9, dimension)).toBeLessThan(dimension);
+    expect(
+      rubberBand(
+        1e6,
+        dimension,
+      ),
+    ).toBeLessThan(
+      dimension,
+    );
+    expect(
+      rubberBand(
+        1e9,
+        dimension,
+      ),
+    ).toBeLessThan(
+      dimension,
+    );
     // …and it does approach that ceiling rather than flattening out early.
-    expect(rubberBand(1e9, dimension)).toBeGreaterThan(dimension * 0.999);
+    expect(
+      rubberBand(
+        1e9,
+        dimension,
+      ),
+    ).toBeGreaterThan(
+      dimension *
+        0.999,
+    );
   });
 
   it('is monotonic and always resists (output < input)', () => {
     let previous = 0;
-    for (let x = 1; x <= 1000; x += 7) {
-      const y = rubberBand(x, 400);
-      expect(y).toBeGreaterThan(previous);
-      expect(y).toBeLessThan(x);
-      previous = y;
+    for (
+      let x = 1;
+      x <=
+      1000;
+      x += 7
+    ) {
+      const y =
+        rubberBand(
+          x,
+          400,
+        );
+      expect(
+        y,
+      ).toBeGreaterThan(
+        previous,
+      );
+      expect(
+        y,
+      ).toBeLessThan(
+        x,
+      );
+      previous =
+        y;
     }
   });
 
   it('starts out nearly frictionless, so entering resistance is imperceptible', () => {
     // Gradient at the origin is exactly c; over the first pixel it should still
     // be within a hair of it.
-    expect(rubberBand(1, 400) / 1).toBeCloseTo(RUBBER_BAND_C, 2);
+    expect(
+      rubberBand(
+        1,
+        400,
+      ) /
+        1,
+    ).toBeCloseTo(
+      RUBBER_BAND_C,
+      2,
+    );
   });
 
   it('scales resistance with the surface being dragged', () => {
-    expect(rubberBand(100, 800)).toBeGreaterThan(rubberBand(100, 200));
+    expect(
+      rubberBand(
+        100,
+        800,
+      ),
+    ).toBeGreaterThan(
+      rubberBand(
+        100,
+        200,
+      ),
+    );
   });
 
   it('preserves sign and is inert inside the bounds', () => {
-    expect(rubberBand(-100, 400)).toBeCloseTo(-rubberBand(100, 400), 10);
-    expect(rubberBandClamp(50, 0, 100, 400)).toBe(50);
-    expect(rubberBandClamp(-30, 0, 100, 400)).toBeGreaterThan(-30);
-    expect(rubberBandClamp(-30, 0, 100, 400)).toBeLessThan(0);
-    expect(rubberBandClamp(130, 0, 100, 400)).toBeLessThan(130);
-    expect(rubberBandClamp(130, 0, 100, 400)).toBeGreaterThan(100);
+    expect(
+      rubberBand(
+        -100,
+        400,
+      ),
+    ).toBeCloseTo(
+      -rubberBand(
+        100,
+        400,
+      ),
+      10,
+    );
+    expect(
+      rubberBandClamp(
+        50,
+        0,
+        100,
+        400,
+      ),
+    ).toBe(
+      50,
+    );
+    expect(
+      rubberBandClamp(
+        -30,
+        0,
+        100,
+        400,
+      ),
+    ).toBeGreaterThan(
+      -30,
+    );
+    expect(
+      rubberBandClamp(
+        -30,
+        0,
+        100,
+        400,
+      ),
+    ).toBeLessThan(
+      0,
+    );
+    expect(
+      rubberBandClamp(
+        130,
+        0,
+        100,
+        400,
+      ),
+    ).toBeLessThan(
+      130,
+    );
+    expect(
+      rubberBandClamp(
+        130,
+        0,
+        100,
+        400,
+      ),
+    ).toBeGreaterThan(
+      100,
+    );
   });
 });
 
 describe('spring (SwiftUI duration + bounce)', () => {
   it('bounce 0 is critically damped', () => {
-    const s = spring(0.4, 0);
-    const zeta = s.damping / (2 * Math.sqrt(s.stiffness * s.mass));
-    expect(zeta).toBeCloseTo(1, 10);
+    const s =
+      spring(
+        0.4,
+        0,
+      );
+    const zeta =
+      s.damping /
+      (2 *
+        Math.sqrt(
+          s.stiffness *
+            s.mass,
+        ));
+    expect(
+      zeta,
+    ).toBeCloseTo(
+      1,
+      10,
+    );
   });
 
   it('positive bounce under-damps, negative bounce over-damps', () => {
-    const zetaOf = (b: number) => {
-      const s = spring(0.4, b);
-      return s.damping / (2 * Math.sqrt(s.stiffness * s.mass));
-    };
-    expect(zetaOf(0.3)).toBeCloseTo(0.7, 10);
-    expect(zetaOf(-0.5)).toBeGreaterThan(1);
+    const zetaOf =
+      (
+        b: number,
+      ) => {
+        const s =
+          spring(
+            0.4,
+            b,
+          );
+        return (
+          s.damping /
+          (2 *
+            Math.sqrt(
+              s.stiffness *
+                s.mass,
+            ))
+        );
+      };
+    expect(
+      zetaOf(
+        0.3,
+      ),
+    ).toBeCloseTo(
+      0.7,
+      10,
+    );
+    expect(
+      zetaOf(
+        -0.5,
+      ),
+    ).toBeGreaterThan(
+      1,
+    );
   });
 
   it('shorter perceptual duration means a stiffer spring', () => {
-    expect(spring(0.2).stiffness).toBeGreaterThan(spring(0.6).stiffness);
+    expect(
+      spring(
+        0.2,
+      )
+        .stiffness,
+    ).toBeGreaterThan(
+      spring(
+        0.6,
+      )
+        .stiffness,
+    );
   });
 });
 
@@ -124,88 +351,324 @@ function simulate(
   to: number,
   s = SPRINGS.smooth,
   velocity = 0,
-  dt = 1 / 60,
+  dt = 1 /
+    60,
   maxFrames = 1200,
 ) {
-  let state: SpringState = { value: from, velocity };
+  let state: SpringState =
+    {
+      value:
+        from,
+      velocity,
+    };
   let frames = 0;
   let overshoot = 0;
-  const direction = Math.sign(to - from) || 1;
-  while (!springSettled(state, to) && frames < maxFrames) {
-    state = springStep(state, to, s, dt);
-    overshoot = Math.max(overshoot, (state.value - to) * direction);
+  const direction =
+    Math.sign(
+      to -
+        from,
+    ) ||
+    1;
+  while (
+    !springSettled(
+      state,
+      to,
+    ) &&
+    frames <
+      maxFrames
+  ) {
+    state =
+      springStep(
+        state,
+        to,
+        s,
+        dt,
+      );
+    overshoot =
+      Math.max(
+        overshoot,
+        (state.value -
+          to) *
+          direction,
+      );
     frames++;
   }
-  return { state, frames, seconds: frames * dt, overshoot };
+  return {
+    state,
+    frames,
+    seconds:
+      frames *
+      dt,
+    overshoot,
+  };
 }
 
 describe('springStep', () => {
   it('converges on the target', () => {
-    const { state, frames } = simulate(0, 100);
-    expect(frames).toBeLessThan(1200);
-    expect(state.value).toBeCloseTo(100, 1);
-    expect(Math.abs(state.velocity)).toBeLessThan(1);
+    const {
+      state,
+      frames,
+    } =
+      simulate(
+        0,
+        100,
+      );
+    expect(
+      frames,
+    ).toBeLessThan(
+      1200,
+    );
+    expect(
+      state.value,
+    ).toBeCloseTo(
+      100,
+      1,
+    );
+    expect(
+      Math.abs(
+        state.velocity,
+      ),
+    ).toBeLessThan(
+      1,
+    );
   });
 
   it('a bounce-0 spring never overshoots; a bouncy one does', () => {
-    expect(simulate(0, 100, SPRINGS.smooth).overshoot).toBeLessThan(0.01);
-    expect(simulate(0, 100, SPRINGS.bouncy).overshoot).toBeGreaterThan(1);
+    expect(
+      simulate(
+        0,
+        100,
+        SPRINGS.smooth,
+      )
+        .overshoot,
+    ).toBeLessThan(
+      0.01,
+    );
+    expect(
+      simulate(
+        0,
+        100,
+        SPRINGS.bouncy,
+      )
+        .overshoot,
+    ).toBeGreaterThan(
+      1,
+    );
   });
 
   it('settles in about its perceptual duration regardless of distance', () => {
     // The property the whole parameterisation exists for: same spring, 4px and
     // 400px, comparable settle time.
-    const near = simulate(0, 4, SPRINGS.smooth).seconds;
-    const far = simulate(0, 400, SPRINGS.smooth).seconds;
-    expect(Math.abs(far - near)).toBeLessThan(0.35);
+    const near =
+      simulate(
+        0,
+        4,
+        SPRINGS.smooth,
+      ).seconds;
+    const far =
+      simulate(
+        0,
+        400,
+        SPRINGS.smooth,
+      ).seconds;
+    expect(
+      Math.abs(
+        far -
+          near,
+      ),
+    ).toBeLessThan(
+      0.35,
+    );
   });
 
   it('press is quicker than release, as UIKit does it', () => {
-    expect(simulate(1, 0.96, SPRINGS.press).seconds).toBeLessThan(
-      simulate(0.96, 1, SPRINGS.release).seconds,
+    expect(
+      simulate(
+        1,
+        0.96,
+        SPRINGS.press,
+      )
+        .seconds,
+    ).toBeLessThan(
+      simulate(
+        0.96,
+        1,
+        SPRINGS.release,
+      )
+        .seconds,
     );
   });
 
   it('inherits entry velocity instead of discarding it', () => {
-    const thrown = springStep({ value: 0, velocity: 900 }, 0, SPRINGS.smooth, 1 / 60);
+    const thrown =
+      springStep(
+        {
+          value: 0,
+          velocity: 900,
+        },
+        0,
+        SPRINGS.smooth,
+        1 /
+          60,
+      );
     // Launched away from a target it is already sitting on: it must move.
-    expect(thrown.value).toBeGreaterThan(5);
+    expect(
+      thrown.value,
+    ).toBeGreaterThan(
+      5,
+    );
   });
 
   it('is redirectable mid-flight without a discontinuity', () => {
     // Half-way to 100, retarget to 0. Position must be continuous — the retarget
     // may only change where it is HEADING, never where it is.
-    let state: SpringState = { value: 0, velocity: 0 };
-    for (let i = 0; i < 12; i++) state = springStep(state, 100, SPRINGS.smooth, 1 / 60);
-    const before = state.value;
-    const after = springStep(state, 0, SPRINGS.smooth, 1 / 60);
-    expect(Math.abs(after.value - before)).toBeLessThan(6);
-    expect(simulate(after.value, 0, SPRINGS.smooth, after.velocity).state.value).toBeCloseTo(0, 1);
+    let state: SpringState =
+      {
+        value: 0,
+        velocity: 0,
+      };
+    for (
+      let i = 0;
+      i <
+      12;
+      i++
+    )
+      state =
+        springStep(
+          state,
+          100,
+          SPRINGS.smooth,
+          1 /
+            60,
+        );
+    const before =
+      state.value;
+    const after =
+      springStep(
+        state,
+        0,
+        SPRINGS.smooth,
+        1 /
+          60,
+      );
+    expect(
+      Math.abs(
+        after.value -
+          before,
+      ),
+    ).toBeLessThan(
+      6,
+    );
+    expect(
+      simulate(
+        after.value,
+        0,
+        SPRINGS.smooth,
+        after.velocity,
+      )
+        .state
+        .value,
+    ).toBeCloseTo(
+      0,
+      1,
+    );
   });
 
   it('survives a catastrophic frame instead of exploding', () => {
     // A 4-second stall (backgrounded tab, GC pause). Euler integration would
     // diverge to infinity here; the analytic solution must stay sane.
-    const state = springStep({ value: 0, velocity: 0 }, 100, SPRINGS.smooth, 4);
-    expect(Number.isFinite(state.value)).toBe(true);
-    expect(state.value).toBeGreaterThan(-1);
-    expect(state.value).toBeLessThan(201);
+    const state =
+      springStep(
+        {
+          value: 0,
+          velocity: 0,
+        },
+        100,
+        SPRINGS.smooth,
+        4,
+      );
+    expect(
+      Number.isFinite(
+        state.value,
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      state.value,
+    ).toBeGreaterThan(
+      -1,
+    );
+    expect(
+      state.value,
+    ).toBeLessThan(
+      201,
+    );
   });
 
   it('is stable across wildly different frame rates', () => {
     // 30fps and 240fps must land in the same place at the same wall-clock time,
     // or motion changes character on a high-refresh display.
-    const run = (dt: number, seconds: number) => {
-      let state: SpringState = { value: 0, velocity: 0 };
-      for (let t = 0; t < seconds; t += dt) state = springStep(state, 100, SPRINGS.smooth, dt);
-      return state.value;
-    };
-    expect(Math.abs(run(1 / 240, 0.25) - run(1 / 30, 0.25))).toBeLessThan(2);
+    const run =
+      (
+        dt: number,
+        seconds: number,
+      ) => {
+        let state: SpringState =
+          {
+            value: 0,
+            velocity: 0,
+          };
+        for (
+          let t = 0;
+          t <
+          seconds;
+          t +=
+            dt
+        )
+          state =
+            springStep(
+              state,
+              100,
+              SPRINGS.smooth,
+              dt,
+            );
+        return state.value;
+      };
+    expect(
+      Math.abs(
+        run(
+          1 /
+            240,
+          0.25,
+        ) -
+          run(
+            1 /
+              30,
+            0.25,
+          ),
+      ),
+    ).toBeLessThan(
+      2,
+    );
   });
 
   it('treats a non-positive dt as a no-op', () => {
-    const state = { value: 3, velocity: 7 };
-    expect(springStep(state, 0, SPRINGS.smooth, 0)).toBe(state);
+    const state =
+      {
+        value: 3,
+        velocity: 7,
+      };
+    expect(
+      springStep(
+        state,
+        0,
+        SPRINGS.smooth,
+        0,
+      ),
+    ).toBe(
+      state,
+    );
   });
 });
 
@@ -216,14 +679,36 @@ describe('the two spring vocabularies agree', () => {
     // spring feels different depending on which tier a surface happens to use.
     // framer-motion is parameterised by duration+bounce, so recover those from
     // the kernel's stiffness/damping and compare.
-    const { APPLE_SPRING } = await import('../app-motion');
-    const invert = (s: { stiffness: number; damping: number; mass: number }) => {
-      const omega = Math.sqrt(s.stiffness / s.mass);
-      return {
-        duration: (2 * Math.PI) / omega,
-        bounce: 1 - s.damping / (2 * Math.sqrt(s.stiffness * s.mass)),
+    const {
+      APPLE_SPRING,
+    } =
+      await import('../app-motion');
+    const invert =
+      (s: {
+        stiffness: number;
+        damping: number;
+        mass: number;
+      }) => {
+        const omega =
+          Math.sqrt(
+            s.stiffness /
+              s.mass,
+          );
+        return {
+          duration:
+            (2 *
+              Math.PI) /
+            omega,
+          bounce:
+            1 -
+            s.damping /
+              (2 *
+                Math.sqrt(
+                  s.stiffness *
+                    s.mass,
+                )),
+        };
       };
-    };
     for (const name of [
       'smooth',
       'snappy',
@@ -236,230 +721,920 @@ describe('the two spring vocabularies agree', () => {
       'jellyDrag',
       'jellyNudge',
     ] as const) {
-      const declarative = APPLE_SPRING[name] as { duration: number; bounce: number };
-      const imperative = invert(SPRINGS[name]);
-      expect(imperative.duration, `${name}.duration`).toBeCloseTo(declarative.duration, 6);
-      expect(imperative.bounce, `${name}.bounce`).toBeCloseTo(declarative.bounce ?? 0, 6);
+      const declarative =
+        APPLE_SPRING[
+          name
+        ] as {
+          duration: number;
+          bounce: number;
+        };
+      const imperative =
+        invert(
+          SPRINGS[
+            name
+          ],
+        );
+      expect(
+        imperative.duration,
+        `${name}.duration`,
+      ).toBeCloseTo(
+        declarative.duration,
+        6,
+      );
+      expect(
+        imperative.bounce,
+        `${name}.bounce`,
+      ).toBeCloseTo(
+        declarative.bounce ??
+          0,
+        6,
+      );
     }
   });
 });
 
 describe('the Plasmatic Jelly springs', () => {
-  const zeta = (s: { stiffness: number; damping: number; mass: number }) =>
-    s.damping / (2 * Math.sqrt(s.stiffness * s.mass));
+  const zeta =
+    (s: {
+      stiffness: number;
+      damping: number;
+      mass: number;
+    }) =>
+      s.damping /
+      (2 *
+        Math.sqrt(
+          s.stiffness *
+            s.mass,
+        ));
 
   it('match the tuning table in 02-soft-body §1.2 (k, c at unit mass)', () => {
-    const table = {
-      jellyHover: [341.6, 28.8],
-      jellyPress: [1218.5, 69.8],
-      jellyRelease: [203.9, 12.0],
-      jellyDrag: [503.5, 24.7],
-      jellyNudge: [246.7, 15.7],
-    } as const;
-    for (const [name, [k, c]] of Object.entries(table)) {
-      const s = SPRINGS[name as keyof typeof table];
-      expect(s.stiffness, `${name}.k`).toBeCloseTo(k, 0);
-      expect(s.damping, `${name}.c`).toBeCloseTo(c, 0);
+    const table =
+      {
+        jellyHover:
+          [
+            341.6,
+            28.8,
+          ],
+        jellyPress:
+          [
+            1218.5,
+            69.8,
+          ],
+        jellyRelease:
+          [
+            203.9,
+            12.0,
+          ],
+        jellyDrag:
+          [
+            503.5,
+            24.7,
+          ],
+        jellyNudge:
+          [
+            246.7,
+            15.7,
+          ],
+      } as const;
+    for (const [
+      name,
+      [
+        k,
+        c,
+      ],
+    ] of Object.entries(
+      table,
+    )) {
+      const s =
+        SPRINGS[
+          name as keyof typeof table
+        ];
+      expect(
+        s.stiffness,
+        `${name}.k`,
+      ).toBeCloseTo(
+        k,
+        0,
+      );
+      expect(
+        s.damping,
+        `${name}.c`,
+      ).toBeCloseTo(
+        c,
+        0,
+      );
     }
   });
 
   it('jellyPress is quicker than jellyRelease', () => {
-    expect(simulate(1, 0.975, SPRINGS.jellyPress).seconds).toBeLessThan(
-      simulate(0.975, 1, SPRINGS.jellyRelease).seconds,
+    expect(
+      simulate(
+        1,
+        0.975,
+        SPRINGS.jellyPress,
+      )
+        .seconds,
+    ).toBeLessThan(
+      simulate(
+        0.975,
+        1,
+        SPRINGS.jellyRelease,
+      )
+        .seconds,
     );
   });
 
   it('jellyRelease under-damps (it wobbles) and jellyPress does not', () => {
-    expect(zeta(SPRINGS.jellyRelease)).toBeLessThan(0.6);
+    expect(
+      zeta(
+        SPRINGS.jellyRelease,
+      ),
+    ).toBeLessThan(
+      0.6,
+    );
     // Unit travel so the overshoot is not hidden under springSettled's epsilon.
-    const { overshoot } = simulate(0, 1, SPRINGS.jellyRelease);
-    expect(overshoot).toBeGreaterThan(0.15);
-    expect(overshoot).toBeLessThan(0.3);
-    expect(zeta(SPRINGS.jellyPress)).toBeCloseTo(1, 10);
-    expect(simulate(1, 0, SPRINGS.jellyPress).overshoot).toBeLessThanOrEqual(1e-9);
+    const {
+      overshoot,
+    } =
+      simulate(
+        0,
+        1,
+        SPRINGS.jellyRelease,
+      );
+    expect(
+      overshoot,
+    ).toBeGreaterThan(
+      0.15,
+    );
+    expect(
+      overshoot,
+    ).toBeLessThan(
+      0.3,
+    );
+    expect(
+      zeta(
+        SPRINGS.jellyPress,
+      ),
+    ).toBeCloseTo(
+      1,
+      10,
+    );
+    expect(
+      simulate(
+        1,
+        0,
+        SPRINGS.jellyPress,
+      )
+        .overshoot,
+    ).toBeLessThanOrEqual(
+      1e-9,
+    );
   });
 });
 
 describe('springSettled', () => {
   it('is not fooled by a spring passing through its target at speed', () => {
-    expect(springSettled({ value: 100, velocity: 400 }, 100)).toBe(false);
-    expect(springSettled({ value: 100, velocity: 0 }, 100)).toBe(true);
+    expect(
+      springSettled(
+        {
+          value: 100,
+          velocity: 400,
+        },
+        100,
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      springSettled(
+        {
+          value: 100,
+          velocity: 0,
+        },
+        100,
+      ),
+    ).toBe(
+      true,
+    );
   });
 });
 
 describe('VelocityTracker', () => {
   it('averages over the window rather than trusting the last delta', () => {
-    const v = new VelocityTracker(100);
+    const v =
+      new VelocityTracker(
+        100,
+      );
     // Moving 10px every 10ms = 1000px/s, but the final sample repeats — a
     // last-delta reading would report 0.
-    for (let i = 0; i <= 10; i++) v.add(i * 10, i * 10);
-    v.add(100, 105);
-    expect(v.get()).toBeGreaterThan(800);
+    for (
+      let i = 0;
+      i <=
+      10;
+      i++
+    )
+      v.add(
+        i *
+          10,
+        i *
+          10,
+      );
+    v.add(
+      100,
+      105,
+    );
+    expect(
+      v.get(),
+    ).toBeGreaterThan(
+      800,
+    );
   });
 
   it('drops to near zero when the finger genuinely stops', () => {
-    const v = new VelocityTracker(100);
-    for (let i = 0; i <= 10; i++) v.add(i * 10, i * 10);
+    const v =
+      new VelocityTracker(
+        100,
+      );
+    for (
+      let i = 0;
+      i <=
+      10;
+      i++
+    )
+      v.add(
+        i *
+          10,
+        i *
+          10,
+      );
     // Held still for longer than the window.
-    for (let i = 1; i <= 12; i++) v.add(100, 100 + i * 20);
-    expect(Math.abs(v.get())).toBeLessThan(60);
+    for (
+      let i = 1;
+      i <=
+      12;
+      i++
+    )
+      v.add(
+        100,
+        100 +
+          i *
+            20,
+      );
+    expect(
+      Math.abs(
+        v.get(),
+      ),
+    ).toBeLessThan(
+      60,
+    );
   });
 
   it('reports direction, and nothing at all with too little data', () => {
-    const v = new VelocityTracker();
-    expect(v.get()).toBe(0);
-    v.add(0, 0);
-    expect(v.get()).toBe(0);
-    v.add(-50, 50);
-    expect(v.get()).toBeCloseTo(-1000, 6);
+    const v =
+      new VelocityTracker();
+    expect(
+      v.get(),
+    ).toBe(
+      0,
+    );
+    v.add(
+      0,
+      0,
+    );
+    expect(
+      v.get(),
+    ).toBe(
+      0,
+    );
+    v.add(
+      -50,
+      50,
+    );
+    expect(
+      v.get(),
+    ).toBeCloseTo(
+      -1000,
+      6,
+    );
     v.reset();
-    expect(v.get()).toBe(0);
+    expect(
+      v.get(),
+    ).toBe(
+      0,
+    );
   });
 
   it('does not divide by zero on duplicate timestamps', () => {
-    const v = new VelocityTracker();
-    v.add(0, 10);
-    v.add(50, 10);
-    expect(v.get()).toBe(0);
+    const v =
+      new VelocityTracker();
+    v.add(
+      0,
+      10,
+    );
+    v.add(
+      50,
+      10,
+    );
+    expect(
+      v.get(),
+    ).toBe(
+      0,
+    );
   });
 });
 
 describe('resolveDetent', () => {
   it('lands on the detent the flick is heading for, not the nearest one now', () => {
     // Sitting at 10 (nearest detent 0), but thrown hard toward 300.
-    expect(resolveDetent(10, 700, [0, 300])).toBe(300);
+    expect(
+      resolveDetent(
+        10,
+        700,
+        [
+          0,
+          300,
+        ],
+      ),
+    ).toBe(
+      300,
+    );
     // Same position, released at rest: it goes back.
-    expect(resolveDetent(10, 0, [0, 300])).toBe(0);
+    expect(
+      resolveDetent(
+        10,
+        0,
+        [
+          0,
+          300,
+        ],
+      ),
+    ).toBe(
+      0,
+    );
   });
 
   it('is more conservative at the fast rate, as a card carousel should be', () => {
     // The same 700px/s flick coasts ~349px at the normal rate but only ~69px at
     // the fast one, so it no longer reaches the far detent.
-    expect(resolveDetent(10, 700, [0, 300], DECELERATION.fast)).toBe(0);
+    expect(
+      resolveDetent(
+        10,
+        700,
+        [
+          0,
+          300,
+        ],
+        DECELERATION.fast,
+      ),
+    ).toBe(
+      0,
+    );
   });
 
   it('is order-independent and degenerate-safe', () => {
-    expect(resolveDetent(10, 700, [300, 0])).toBe(300);
-    expect(resolveDetent(42, 0, [])).toBe(42);
+    expect(
+      resolveDetent(
+        10,
+        700,
+        [
+          300,
+          0,
+        ],
+      ),
+    ).toBe(
+      300,
+    );
+    expect(
+      resolveDetent(
+        42,
+        0,
+        [],
+      ),
+    ).toBe(
+      42,
+    );
   });
 });
 
 describe('gestureConfidence', () => {
   it('reads a slow approach as browsing and a fast one as certainty', () => {
-    expect(gestureConfidence(80, 150, 620)).toBe(0);
-    expect(gestureConfidence(150, 150, 620)).toBe(0);
-    expect(gestureConfidence(620, 150, 620)).toBe(1);
-    expect(gestureConfidence(2000, 150, 620)).toBe(1);
+    expect(
+      gestureConfidence(
+        80,
+        150,
+        620,
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      gestureConfidence(
+        150,
+        150,
+        620,
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      gestureConfidence(
+        620,
+        150,
+        620,
+      ),
+    ).toBe(
+      1,
+    );
+    expect(
+      gestureConfidence(
+        2000,
+        150,
+        620,
+      ),
+    ).toBe(
+      1,
+    );
   });
 
   it('rises smoothly in between, with no step at either threshold', () => {
-    let previous = -1;
-    for (let s = 100; s <= 700; s += 10) {
-      const c = gestureConfidence(s, 150, 620);
-      expect(c).toBeGreaterThanOrEqual(previous);
-      previous = c;
+    let previous =
+      -1;
+    for (
+      let s = 100;
+      s <=
+      700;
+      s += 10
+    ) {
+      const c =
+        gestureConfidence(
+          s,
+          150,
+          620,
+        );
+      expect(
+        c,
+      ).toBeGreaterThanOrEqual(
+        previous,
+      );
+      previous =
+        c;
     }
-    expect(gestureConfidence(385, 150, 620)).toBeCloseTo(0.5, 1);
+    expect(
+      gestureConfidence(
+        385,
+        150,
+        620,
+      ),
+    ).toBeCloseTo(
+      0.5,
+      1,
+    );
   });
 
   it('ignores direction and rubbish input', () => {
-    expect(gestureConfidence(-700, 150, 620)).toBe(1);
-    expect(gestureConfidence(Number.NaN, 150, 620)).toBe(0);
+    expect(
+      gestureConfidence(
+        -700,
+        150,
+        620,
+      ),
+    ).toBe(
+      1,
+    );
+    expect(
+      gestureConfidence(
+        Number.NaN,
+        150,
+        620,
+      ),
+    ).toBe(
+      0,
+    );
   });
 
   it('shortens a dwell without ever removing it', () => {
     // The globe's mapping: a confident flick must still leave a hold long enough
     // to notice and abandon.
-    const dwell = (speed: number) => 620 + (260 - 620) * gestureConfidence(speed, 150, 620);
-    expect(dwell(0)).toBe(620);
-    expect(dwell(1e6)).toBe(260);
-    expect(dwell(400)).toBeLessThan(620);
-    expect(dwell(400)).toBeGreaterThan(260);
+    const dwell =
+      (
+        speed: number,
+      ) =>
+        620 +
+        (260 -
+          620) *
+          gestureConfidence(
+            speed,
+            150,
+            620,
+          );
+    expect(
+      dwell(
+        0,
+      ),
+    ).toBe(
+      620,
+    );
+    expect(
+      dwell(
+        1e6,
+      ),
+    ).toBe(
+      260,
+    );
+    expect(
+      dwell(
+        400,
+      ),
+    ).toBeLessThan(
+      620,
+    );
+    expect(
+      dwell(
+        400,
+      ),
+    ).toBeGreaterThan(
+      260,
+    );
   });
 });
 
 describe('smoothstep', () => {
   it('clamps outside the range and is symmetric about the midpoint', () => {
-    expect(smoothstep(0, 10, -5)).toBe(0);
-    expect(smoothstep(0, 10, 15)).toBe(1);
-    expect(smoothstep(0, 10, 5)).toBeCloseTo(0.5, 10);
-    expect(smoothstep(0, 10, 2) + smoothstep(0, 10, 8)).toBeCloseTo(1, 10);
+    expect(
+      smoothstep(
+        0,
+        10,
+        -5,
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      smoothstep(
+        0,
+        10,
+        15,
+      ),
+    ).toBe(
+      1,
+    );
+    expect(
+      smoothstep(
+        0,
+        10,
+        5,
+      ),
+    ).toBeCloseTo(
+      0.5,
+      10,
+    );
+    expect(
+      smoothstep(
+        0,
+        10,
+        2,
+      ) +
+        smoothstep(
+          0,
+          10,
+          8,
+        ),
+    ).toBeCloseTo(
+      1,
+      10,
+    );
   });
 
   it('does not divide by zero on a degenerate range', () => {
-    expect(smoothstep(5, 5, 4)).toBe(0);
-    expect(smoothstep(5, 5, 5)).toBe(1);
+    expect(
+      smoothstep(
+        5,
+        5,
+        4,
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      smoothstep(
+        5,
+        5,
+        5,
+      ),
+    ).toBe(
+      1,
+    );
   });
 });
 
 describe('shouldDismiss', () => {
   it('dismisses a fast flick that has barely moved', () => {
-    expect(shouldDismiss({ position: 20, velocity: 1200, threshold: 200 })).toBe(true);
+    expect(
+      shouldDismiss(
+        {
+          position: 20,
+          velocity: 1200,
+          threshold: 200,
+        },
+      ),
+    ).toBe(
+      true,
+    );
   });
 
   it('dismisses a slow drag that went the distance', () => {
-    expect(shouldDismiss({ position: 260, velocity: 0, threshold: 200 })).toBe(true);
+    expect(
+      shouldDismiss(
+        {
+          position: 260,
+          velocity: 0,
+          threshold: 200,
+        },
+      ),
+    ).toBe(
+      true,
+    );
   });
 
   it('keeps a hesitant drag that stopped short', () => {
-    expect(shouldDismiss({ position: 60, velocity: 0, threshold: 200 })).toBe(false);
+    expect(
+      shouldDismiss(
+        {
+          position: 60,
+          velocity: 0,
+          threshold: 200,
+        },
+      ),
+    ).toBe(
+      false,
+    );
   });
 
   it('keeps a surface thrown decisively back, however far it had travelled', () => {
-    expect(shouldDismiss({ position: 400, velocity: -900, threshold: 200 })).toBe(false);
+    expect(
+      shouldDismiss(
+        {
+          position: 400,
+          velocity:
+            -900,
+          threshold: 200,
+        },
+      ),
+    ).toBe(
+      false,
+    );
   });
 });
 
 describe('rippleWave', () => {
   /** Where the crest is at `age`, so a test can sample exactly on it. */
-  const crest = (age: number) => RIPPLE.speed * age;
+  const crest =
+    (
+      age: number,
+    ) =>
+      RIPPLE.speed *
+      age;
 
   it('peaks on the crest and travels outward over time', () => {
-    const early = rippleWave({ age: 0.15, distance: crest(0.15) });
-    const later = rippleWave({ age: 0.35, distance: crest(0.35) });
-    expect(early).toBeCloseTo(RIPPLE.amplitude * (1 - 0.15 / RIPPLE.life) ** 2, 6);
-    expect(later).toBeGreaterThan(0);
+    const early =
+      rippleWave(
+        {
+          age: 0.15,
+          distance:
+            crest(
+              0.15,
+            ),
+        },
+      );
+    const later =
+      rippleWave(
+        {
+          age: 0.35,
+          distance:
+            crest(
+              0.35,
+            ),
+        },
+      );
+    expect(
+      early,
+    ).toBeCloseTo(
+      RIPPLE.amplitude *
+        (1 -
+          0.15 /
+            RIPPLE.life) **
+          2,
+      6,
+    );
+    expect(
+      later,
+    ).toBeGreaterThan(
+      0,
+    );
     // Same point on the surface, two moments: the crest has moved past it.
-    const fixed = crest(0.15);
-    expect(rippleWave({ age: 0.15, distance: fixed })).toBeGreaterThan(
-      rippleWave({ age: 0.35, distance: fixed }),
+    const fixed =
+      crest(
+        0.15,
+      );
+    expect(
+      rippleWave(
+        {
+          age: 0.15,
+          distance:
+            fixed,
+        },
+      ),
+    ).toBeGreaterThan(
+      rippleWave(
+        {
+          age: 0.35,
+          distance:
+            fixed,
+        },
+      ),
     );
   });
 
   it('dips below rest on both flanks — a ripple, not a shockwave', () => {
     const age = 0.2;
-    const behind = rippleWave({ age, distance: crest(age) - RIPPLE.width * Math.SQRT2 });
-    const ahead = rippleWave({ age, distance: crest(age) + RIPPLE.width * Math.SQRT2 });
-    expect(behind).toBeLessThan(0);
-    expect(ahead).toBeLessThan(0);
+    const behind =
+      rippleWave(
+        {
+          age,
+          distance:
+            crest(
+              age,
+            ) -
+            RIPPLE.width *
+              Math.SQRT2,
+        },
+      );
+    const ahead =
+      rippleWave(
+        {
+          age,
+          distance:
+            crest(
+              age,
+            ) +
+            RIPPLE.width *
+              Math.SQRT2,
+        },
+      );
+    expect(
+      behind,
+    ).toBeLessThan(
+      0,
+    );
+    expect(
+      ahead,
+    ).toBeLessThan(
+      0,
+    );
     // The troughs are shallower than the crest, as the wavelet's shape requires.
-    expect(Math.abs(behind)).toBeLessThan(rippleWave({ age, distance: crest(age) }));
+    expect(
+      Math.abs(
+        behind,
+      ),
+    ).toBeLessThan(
+      rippleWave(
+        {
+          age,
+          distance:
+            crest(
+              age,
+            ),
+        },
+      ),
+    );
   });
 
   it('fades to nothing and stays there', () => {
-    const peakAt = (age: number) => rippleWave({ age, distance: crest(age) });
-    expect(peakAt(0.1)).toBeGreaterThan(peakAt(0.6));
-    expect(peakAt(0.6)).toBeGreaterThan(peakAt(1.0));
-    expect(peakAt(RIPPLE.life)).toBe(0);
-    expect(peakAt(RIPPLE.life + 5)).toBe(0);
-    expect(rippleWave({ age: -0.2, distance: 0 })).toBe(0);
+    const peakAt =
+      (
+        age: number,
+      ) =>
+        rippleWave(
+          {
+            age,
+            distance:
+              crest(
+                age,
+              ),
+          },
+        );
+    expect(
+      peakAt(
+        0.1,
+      ),
+    ).toBeGreaterThan(
+      peakAt(
+        0.6,
+      ),
+    );
+    expect(
+      peakAt(
+        0.6,
+      ),
+    ).toBeGreaterThan(
+      peakAt(
+        1.0,
+      ),
+    );
+    expect(
+      peakAt(
+        RIPPLE.life,
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      peakAt(
+        RIPPLE.life +
+          5,
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      rippleWave(
+        {
+          age: -0.2,
+          distance: 0,
+        },
+      ),
+    ).toBe(
+      0,
+    );
   });
 
   it('leaves the far side of the surface undisturbed until the wave arrives', () => {
     // The antipode is π away; at 0.05s the crest has gone ~0.17rad.
-    expect(rippleWave({ age: 0.05, distance: Math.PI })).toBe(0);
+    expect(
+      rippleWave(
+        {
+          age: 0.05,
+          distance:
+            Math.PI,
+        },
+      ),
+    ).toBe(
+      0,
+    );
     // …and by the time the crest is there, it is not.
-    expect(Math.abs(rippleWave({ age: Math.PI / RIPPLE.speed, distance: Math.PI }))).toBeGreaterThan(
+    expect(
+      Math.abs(
+        rippleWave(
+          {
+            age:
+              Math.PI /
+              RIPPLE.speed,
+            distance:
+              Math.PI,
+          },
+        ),
+      ),
+    ).toBeGreaterThan(
       0,
     );
   });
 
   it('honours an overridden shape', () => {
-    const twiceAsFast = { speed: RIPPLE.speed * 2 };
-    expect(rippleWave({ age: 0.1, distance: crest(0.2) }, twiceAsFast)).toBeCloseTo(
-      rippleWave({ age: 0.2, distance: crest(0.2) }) *
+    const twiceAsFast =
+      {
+        speed:
+          RIPPLE.speed *
+          2,
+      };
+    expect(
+      rippleWave(
+        {
+          age: 0.1,
+          distance:
+            crest(
+              0.2,
+            ),
+        },
+        twiceAsFast,
+      ),
+    ).toBeCloseTo(
+      rippleWave(
+        {
+          age: 0.2,
+          distance:
+            crest(
+              0.2,
+            ),
+        },
+      ) *
         // Same point on the packet, but the envelope is read at half the age.
-        ((1 - 0.1 / RIPPLE.life) / (1 - 0.2 / RIPPLE.life)) ** 2,
+        ((1 -
+          0.1 /
+            RIPPLE.life) /
+          (1 -
+            0.2 /
+              RIPPLE.life)) **
+          2,
       6,
     );
   });
@@ -467,9 +1642,29 @@ describe('rippleWave', () => {
 
 describe('rippleFront', () => {
   it('advances linearly and never runs backwards', () => {
-    expect(rippleFront(0)).toBe(0);
-    expect(rippleFront(0.5)).toBeCloseTo(RIPPLE.speed * 0.5, 10);
-    expect(rippleFront(-1)).toBe(0);
+    expect(
+      rippleFront(
+        0,
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      rippleFront(
+        0.5,
+      ),
+    ).toBeCloseTo(
+      RIPPLE.speed *
+        0.5,
+      10,
+    );
+    expect(
+      rippleFront(
+        -1,
+      ),
+    ).toBe(
+      0,
+    );
   });
 });
 
@@ -477,88 +1672,331 @@ describe('unprojectSphere', () => {
   const P = 3.1; // the globe's perspective
 
   it('puts the centre of the disc on the near pole', () => {
-    const hit = unprojectSphere(0, 0, P);
-    expect(hit).not.toBeNull();
-    expect(hit!.x).toBeCloseTo(0, 10);
-    expect(hit!.y).toBeCloseTo(0, 10);
-    expect(hit!.z).toBeCloseTo(1, 10);
+    const hit =
+      unprojectSphere(
+        0,
+        0,
+        P,
+      );
+    expect(
+      hit,
+    ).not.toBeNull();
+    expect(
+      hit!
+        .x,
+    ).toBeCloseTo(
+      0,
+      10,
+    );
+    expect(
+      hit!
+        .y,
+    ).toBeCloseTo(
+      0,
+      10,
+    );
+    expect(
+      hit!
+        .z,
+    ).toBeCloseTo(
+      1,
+      10,
+    );
   });
 
   it('always lands on the unit sphere', () => {
-    for (const [x, y] of [
-      [0.3, 0],
-      [0, -0.6],
-      [0.5, 0.5],
-      [-0.72, 0.12],
-      [0.99, 0],
+    for (const [
+      x,
+      y,
+    ] of [
+      [
+        0.3,
+        0,
+      ],
+      [
+        0,
+        -0.6,
+      ],
+      [
+        0.5,
+        0.5,
+      ],
+      [
+        -0.72,
+        0.12,
+      ],
+      [
+        0.99,
+        0,
+      ],
     ] as const) {
-      const hit = unprojectSphere(x, y, P);
-      expect(hit).not.toBeNull();
-      expect(Math.hypot(hit!.x, hit!.y, hit!.z)).toBeCloseTo(1, 6);
+      const hit =
+        unprojectSphere(
+          x,
+          y,
+          P,
+        );
+      expect(
+        hit,
+      ).not.toBeNull();
+      expect(
+        Math.hypot(
+          hit!
+            .x,
+          hit!
+            .y,
+          hit!
+            .z,
+        ),
+      ).toBeCloseTo(
+        1,
+        6,
+      );
     }
   });
 
   it('round-trips through the projection it inverts', () => {
     // Forward: a point at depth z is drawn at (x, y) · k(z).
-    for (const [sx, sy] of [
-      [0.25, -0.4],
-      [-0.6, 0.15],
-      [0.05, 0.9],
+    for (const [
+      sx,
+      sy,
+    ] of [
+      [
+        0.25,
+        -0.4,
+      ],
+      [
+        -0.6,
+        0.15,
+      ],
+      [
+        0.05,
+        0.9,
+      ],
     ] as const) {
-      const hit = unprojectSphere(sx, sy, P)!;
-      const k = P / (P - hit.z * 0.5);
-      expect(hit.x * k).toBeCloseTo(sx, 6);
-      expect(hit.y * k).toBeCloseTo(sy, 6);
+      const hit =
+        unprojectSphere(
+          sx,
+          sy,
+          P,
+        )!;
+      const k =
+        P /
+        (P -
+          hit.z *
+            0.5);
+      expect(
+        hit.x *
+          k,
+      ).toBeCloseTo(
+        sx,
+        6,
+      );
+      expect(
+        hit.y *
+          k,
+      ).toBeCloseTo(
+        sy,
+        6,
+      );
     }
   });
 
   it('chooses the NEAR face, so a poke never lands behind the sphere', () => {
-    expect(unprojectSphere(0.4, 0.4, P)!.z).toBeGreaterThan(0);
+    expect(
+      unprojectSphere(
+        0.4,
+        0.4,
+        P,
+      )!
+        .z,
+    ).toBeGreaterThan(
+      0,
+    );
   });
 
   it('reports a miss off the disc', () => {
-    expect(unprojectSphere(1.4, 0, P)).toBeNull();
-    expect(unprojectSphere(0.8, 0.8, P)).toBeNull();
+    expect(
+      unprojectSphere(
+        1.4,
+        0,
+        P,
+      ),
+    ).toBeNull();
+    expect(
+      unprojectSphere(
+        0.8,
+        0.8,
+        P,
+      ),
+    ).toBeNull();
   });
 });
 
 describe('unrotateSphere', () => {
   /** The forward rotation it inverts: yaw about Y, then pitch about X. */
-  const rotate = (v: { x: number; y: number; z: number }, yaw: number, pitch: number) => {
-    const d = Math.PI / 180;
-    const cy = Math.cos(yaw * d);
-    const sy = Math.sin(yaw * d);
-    const cp = Math.cos(pitch * d);
-    const sp = Math.sin(pitch * d);
-    const x1 = v.x * cy + v.z * sy;
-    const z1 = -v.x * sy + v.z * cy;
-    return { x: x1, y: v.y * cp - z1 * sp, z: v.y * sp + z1 * cp };
-  };
+  const rotate =
+    (
+      v: {
+        x: number;
+        y: number;
+        z: number;
+      },
+      yaw: number,
+      pitch: number,
+    ) => {
+      const d =
+        Math.PI /
+        180;
+      const cy =
+        Math.cos(
+          yaw *
+            d,
+        );
+      const sy =
+        Math.sin(
+          yaw *
+            d,
+        );
+      const cp =
+        Math.cos(
+          pitch *
+            d,
+        );
+      const sp =
+        Math.sin(
+          pitch *
+            d,
+        );
+      const x1 =
+        v.x *
+          cy +
+        v.z *
+          sy;
+      const z1 =
+        -v.x *
+          sy +
+        v.z *
+          cy;
+      return {
+        x: x1,
+        y:
+          v.y *
+            cp -
+          z1 *
+            sp,
+        z:
+          v.y *
+            sp +
+          z1 *
+            cp,
+      };
+    };
 
   it('is the exact inverse of the renderer rotation', () => {
-    const body = { x: 0.4, y: -0.5, z: Math.sqrt(1 - 0.16 - 0.25) };
-    for (const [yaw, pitch] of [
-      [0, 0],
-      [37, -12],
-      [-214, 48],
-      [999, -61],
+    const body =
+      {
+        x: 0.4,
+        y: -0.5,
+        z: Math.sqrt(
+          1 -
+            0.16 -
+            0.25,
+        ),
+      };
+    for (const [
+      yaw,
+      pitch,
+    ] of [
+      [
+        0,
+        0,
+      ],
+      [
+        37,
+        -12,
+      ],
+      [
+        -214,
+        48,
+      ],
+      [
+        999,
+        -61,
+      ],
     ] as const) {
-      const back = unrotateSphere(rotate(body, yaw, pitch), yaw, pitch);
-      expect(back.x).toBeCloseTo(body.x, 10);
-      expect(back.y).toBeCloseTo(body.y, 10);
-      expect(back.z).toBeCloseTo(body.z, 10);
+      const back =
+        unrotateSphere(
+          rotate(
+            body,
+            yaw,
+            pitch,
+          ),
+          yaw,
+          pitch,
+        );
+      expect(
+        back.x,
+      ).toBeCloseTo(
+        body.x,
+        10,
+      );
+      expect(
+        back.y,
+      ).toBeCloseTo(
+        body.y,
+        10,
+      );
+      expect(
+        back.z,
+      ).toBeCloseTo(
+        body.z,
+        10,
+      );
     }
   });
 
   it('leaves a point alone when nothing is rotated', () => {
-    const v = { x: 0.1, y: 0.2, z: 0.3 };
-    expect(unrotateSphere(v, 0, 0)).toEqual(v);
+    const v =
+      {
+        x: 0.1,
+        y: 0.2,
+        z: 0.3,
+      };
+    expect(
+      unrotateSphere(
+        v,
+        0,
+        0,
+      ),
+    ).toEqual(
+      v,
+    );
   });
 
   it('preserves length, so an impact stays on the surface', () => {
-    const hit = unprojectSphere(0.55, -0.3, 3.1)!;
-    const body = unrotateSphere(hit, 128, -33);
-    expect(Math.hypot(body.x, body.y, body.z)).toBeCloseTo(1, 12);
+    const hit =
+      unprojectSphere(
+        0.55,
+        -0.3,
+        3.1,
+      )!;
+    const body =
+      unrotateSphere(
+        hit,
+        128,
+        -33,
+      );
+    expect(
+      Math.hypot(
+        body.x,
+        body.y,
+        body.z,
+      ),
+    ).toBeCloseTo(
+      1,
+      12,
+    );
   });
 });
 
@@ -573,31 +2011,120 @@ describe('a poke lands where it was aimed, whatever the globe is doing', () => {
    * finger the moment the globe is turned away from its home orientation.
    */
   it('round-trips a screen point through body space and back', () => {
-    const d = Math.PI / 180;
-    for (const [sx, sy, yaw, pitch] of [
-      [0, 0, 0, 0],
-      [0.3, -0.45, 61, -18],
-      [-0.7, 0.2, -137, 42],
-      [0.12, 0.86, 305, 9],
+    const d =
+      Math.PI /
+      180;
+    for (const [
+      sx,
+      sy,
+      yaw,
+      pitch,
+    ] of [
+      [
+        0,
+        0,
+        0,
+        0,
+      ],
+      [
+        0.3,
+        -0.45,
+        61,
+        -18,
+      ],
+      [
+        -0.7,
+        0.2,
+        -137,
+        42,
+      ],
+      [
+        0.12,
+        0.86,
+        305,
+        9,
+      ],
     ] as const) {
-      const hit = unprojectSphere(sx, sy, P)!;
-      const body = unrotateSphere(hit, yaw, pitch);
+      const hit =
+        unprojectSphere(
+          sx,
+          sy,
+          P,
+        )!;
+      const body =
+        unrotateSphere(
+          hit,
+          yaw,
+          pitch,
+        );
 
       // Forward: rotate, then project — exactly what LiquidGlobe's frame loop
       // does to every point it draws.
-      const cy = Math.cos(yaw * d);
-      const sYaw = Math.sin(yaw * d);
-      const cp = Math.cos(pitch * d);
-      const sp = Math.sin(pitch * d);
-      const x1 = body.x * cy + body.z * sYaw;
-      const z1 = -body.x * sYaw + body.z * cy;
-      const y2 = body.y * cp - z1 * sp;
-      const z2 = body.y * sp + z1 * cp;
-      const k = P / (P - z2 * 0.5);
+      const cy =
+        Math.cos(
+          yaw *
+            d,
+        );
+      const sYaw =
+        Math.sin(
+          yaw *
+            d,
+        );
+      const cp =
+        Math.cos(
+          pitch *
+            d,
+        );
+      const sp =
+        Math.sin(
+          pitch *
+            d,
+        );
+      const x1 =
+        body.x *
+          cy +
+        body.z *
+          sYaw;
+      const z1 =
+        -body.x *
+          sYaw +
+        body.z *
+          cy;
+      const y2 =
+        body.y *
+          cp -
+        z1 *
+          sp;
+      const z2 =
+        body.y *
+          sp +
+        z1 *
+          cp;
+      const k =
+        P /
+        (P -
+          z2 *
+            0.5);
 
-      expect(x1 * k).toBeCloseTo(sx, 6);
-      expect(y2 * k).toBeCloseTo(sy, 6);
-      expect(z2).toBeGreaterThan(0); // still on the face you can see
+      expect(
+        x1 *
+          k,
+      ).toBeCloseTo(
+        sx,
+        6,
+      );
+      expect(
+        y2 *
+          k,
+      ).toBeCloseTo(
+        sy,
+        6,
+      );
+      expect(
+        z2,
+      ).toBeGreaterThan(
+        0,
+      ); // still on the face you can see
     }
   });
 });

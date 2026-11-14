@@ -26,86 +26,137 @@ import { useArrival } from '@/components/ui/arrive';
  * `emptyDescription`) to render the zero state when the block has no content.
  */
 export interface WidgetFrameProps {
- /** Block heading. */
- title: React.ReactNode;
- /** Optional heading icon (decorative). */
- icon?: LucideIcon;
- /** Right-aligned header slot (e.g. an "edit" / "see all" control). */
- action?: React.ReactNode;
- /** Show the loading skeleton instead of children. */
- loading?: boolean;
- /** Render the empty state instead of children. */
- empty?: boolean;
- emptyIcon?: LucideIcon;
- emptyTitle?: React.ReactNode;
- emptyDescription?: React.ReactNode;
- emptyAction?: React.ReactNode;
- className?: string;
- /** Body content (ignored when `loading` or `empty`). */
- children?: React.ReactNode;
+  /** Block heading. */
+  title: React.ReactNode;
+  /** Optional heading icon (decorative). */
+  icon?: LucideIcon;
+  /** Right-aligned header slot (e.g. an "edit" / "see all" control). */
+  action?: React.ReactNode;
+  /** Show the loading skeleton instead of children. */
+  loading?: boolean;
+  /** Render the empty state instead of children. */
+  empty?: boolean;
+  emptyIcon?: LucideIcon;
+  emptyTitle?: React.ReactNode;
+  emptyDescription?: React.ReactNode;
+  emptyAction?: React.ReactNode;
+  className?: string;
+  /** Body content (ignored when `loading` or `empty`). */
+  children?: React.ReactNode;
 }
 
 export function WidgetFrame({
- title,
- icon: Icon,
- action,
- loading = false,
- empty = false,
- emptyIcon,
- emptyTitle,
- emptyDescription,
- emptyAction,
- className,
- children,
+  title,
+  icon: Icon,
+  action,
+  loading = false,
+  empty = false,
+  emptyIcon,
+  emptyTitle,
+  emptyDescription,
+  emptyAction,
+  className,
+  children,
 }: WidgetFrameProps) {
- // Once a widget has real content, background refreshes keep that subtree
- // mounted. This protects charts/media/local state from restarting just because
- // the widget is fetching a fresher snapshot.
- const hasResolved = React.useRef(!loading);
- if (!loading) hasResolved.current = true;
- const initialLoading = loading && !hasResolved.current;
- // Steel M9: the body replaces the first skeleton with a fade, opacity only.
- const arrival = useArrival(!initialLoading);
+  // Once a widget has real content, background refreshes keep that subtree
+  // mounted. This protects charts/media/local state from restarting just because
+  // the widget is fetching a fresher snapshot.
+  const hasResolved =
+    React.useRef(
+      !loading,
+    );
+  if (
+    !loading
+  )
+    hasResolved.current = true;
+  const initialLoading =
+    loading &&
+    !hasResolved.current;
+  // Steel M9: the body replaces the first skeleton with a fade, opacity only.
+  const arrival =
+    useArrival(
+      !initialLoading,
+    );
 
- return (
- <Card data-slot="widget-frame" className={cn('gap-0 py-0 overflow-hidden', className)}>
- <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-site-border">
- <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
- {Icon ? <Icon className="h-4 w-4 text-site-text-muted" aria-hidden /> : null}
- <span className="truncate">{title}</span>
- </h3>
- {action ? <div className="shrink-0">{action}</div> : null}
- </div>
+  return (
+    <Card
+      data-slot="widget-frame"
+      className={cn(
+        'gap-0 py-0 overflow-hidden',
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-site-border">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
+          {Icon ? (
+            <Icon
+              className="h-4 w-4 text-site-text-muted"
+              aria-hidden
+            />
+          ) : null}
+          <span className="truncate">
+            {
+              title
+            }
+          </span>
+        </h3>
+        {action ? (
+          <div className="shrink-0">
+            {
+              action
+            }
+          </div>
+        ) : null}
+      </div>
 
- <div className="px-4 py-3" aria-busy={loading}>
- {initialLoading ? (
- <div className="space-y-2" aria-hidden>
- <Skeleton className="h-4 w-3/4" />
- <Skeleton className="h-4 w-1/2" />
- <Skeleton className="h-4 w-2/3" />
- </div>
- ) : (
- <div
- className={cn(
- 'transition-opacity duration-site-fast',
- loading && hasResolved.current && 'opacity-70',
- arrival,
- )}
- >
- {empty ? (
- <EmptyState
- icon={emptyIcon ?? Icon}
- title={emptyTitle}
- description={emptyDescription}
- action={emptyAction}
- className="py-8"
- />
- ) : (
- children
- )}
- </div>
- )}
- </div>
- </Card>
- );
+      <div
+        className="px-4 py-3"
+        aria-busy={
+          loading
+        }
+      >
+        {initialLoading ? (
+          <div
+            className="space-y-2"
+            aria-hidden
+          >
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        ) : (
+          <div
+            className={cn(
+              'transition-opacity duration-site-fast',
+              loading &&
+                hasResolved.current &&
+                'opacity-70',
+              arrival,
+            )}
+          >
+            {empty ? (
+              <EmptyState
+                icon={
+                  emptyIcon ??
+                  Icon
+                }
+                title={
+                  emptyTitle
+                }
+                description={
+                  emptyDescription
+                }
+                action={
+                  emptyAction
+                }
+                className="py-8"
+              />
+            ) : (
+              children
+            )}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
 }

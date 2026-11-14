@@ -24,7 +24,12 @@
  *     you.
  */
 
-import { useEffect, useId, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -60,7 +65,11 @@ import {
 } from '@/lib/groupcall/events';
 import { GroupCallRoster } from '@/components/groupcall/GroupCallRoster';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/toast';
@@ -69,7 +78,13 @@ import { toast } from '@/lib/toast';
 const ENDED_LINGER_MS = 4000;
 
 /** The narrow `t` shape the label helpers need, so they stay outside the component. */
-type Translate = (key: string, options: { defaultValue: string }) => string;
+type Translate =
+  (
+    key: string,
+    options: {
+      defaultValue: string;
+    },
+  ) => string;
 
 /**
  * Seconds since the ROOM opened.
@@ -77,15 +92,46 @@ type Translate = (key: string, options: { defaultValue: string }) => string;
  * `startedAt`, never `joinedAt`: the number in the chrome is a property of the
  * call and has to agree between everyone on it.
  */
-function useElapsed(startedAt: number | null): number {
-  const [now, setNow] = useState(() => Date.now());
+function useElapsed(
+  startedAt:
+    | number
+    | null,
+): number {
+  const [
+    now,
+    setNow,
+  ] =
+    useState(
+      () =>
+        Date.now(),
+    );
   useEffect(() => {
-    if (!startedAt) return;
-    setNow(Date.now());
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [startedAt]);
-  return durationSeconds(startedAt, now);
+    if (
+      !startedAt
+    )
+      return;
+    setNow(
+      Date.now(),
+    );
+    const id =
+      setInterval(
+        () =>
+          setNow(
+            Date.now(),
+          ),
+        1000,
+      );
+    return () =>
+      clearInterval(
+        id,
+      );
+  }, [
+    startedAt,
+  ]);
+  return durationSeconds(
+    startedAt,
+    now,
+  );
 }
 
 function endReasonLabel(
@@ -93,58 +139,175 @@ function endReasonLabel(
   origin: GroupCallOrigin | null,
   t: Translate,
 ): string {
-  switch (reason) {
+  switch (
+    reason
+  ) {
     case 'host-ended':
-      return t('ended-host-ended', { defaultValue: 'The host ended the call' });
+      return t(
+        'ended-host-ended',
+        {
+          defaultValue:
+            'The host ended the call',
+        },
+      );
     case 'left':
-      return t('ended-left', { defaultValue: 'You left the call' });
+      return t(
+        'ended-left',
+        {
+          defaultValue:
+            'You left the call',
+        },
+      );
     case 'empty':
-      return t('ended-empty', { defaultValue: 'Everyone left' });
+      return t(
+        'ended-empty',
+        {
+          defaultValue:
+            'Everyone left',
+        },
+      );
     case 'declined':
-      return t('ended-declined', { defaultValue: 'Everyone declined' });
+      return t(
+        'ended-declined',
+        {
+          defaultValue:
+            'Everyone declined',
+        },
+      );
     case 'unanswered':
-      return t('ended-unanswered', { defaultValue: 'No answer' });
+      return t(
+        'ended-unanswered',
+        {
+          defaultValue:
+            'No answer',
+        },
+      );
     case 'failed':
-      return t('ended-failed', { defaultValue: "Couldn't connect" });
+      return t(
+        'ended-failed',
+        {
+          defaultValue:
+            "Couldn't connect",
+        },
+      );
     case 'full':
-      return t('ended-full', { defaultValue: 'That call is full' });
+      return t(
+        'ended-full',
+        {
+          defaultValue:
+            'That call is full',
+        },
+      );
     case 'gone':
-      return t('ended-gone', { defaultValue: 'That call has ended' });
+      return t(
+        'ended-gone',
+        {
+          defaultValue:
+            'That call has ended',
+        },
+      );
     case 'busy':
       // An open room is refused as busy only for us (nobody is rung into it);
       // an ad-hoc room's busy is the person we rang, as in the 1:1 overlay.
-      if (origin === 'adhoc') {
-        return t('ended-busy-them', { defaultValue: "They're on another call" });
+      if (
+        origin ===
+        'adhoc'
+      ) {
+        return t(
+          'ended-busy-them',
+          {
+            defaultValue:
+              "They're on another call",
+          },
+        );
       }
-      return t('ended-busy', { defaultValue: "You're already on a call" });
+      return t(
+        'ended-busy',
+        {
+          defaultValue:
+            "You're already on a call",
+        },
+      );
     case 'not-member':
-      return t('ended-not-member', { defaultValue: "You're not a member of this space" });
+      return t(
+        'ended-not-member',
+        {
+          defaultValue:
+            "You're not a member of this space",
+        },
+      );
     case 'blocked':
     case 'privacy':
       // Walking into a space's room is not calling a person; it gets its own
       // equally uninformative line, so a refusal says nothing about who in the
       // room it came from.
-      if (origin === 'community' || origin === 'party') {
-        return t('ended-cannot-join', { defaultValue: "You can't join this voice room" });
+      if (
+        origin ===
+          'community' ||
+        origin ===
+          'party'
+      ) {
+        return t(
+          'ended-cannot-join',
+          {
+            defaultValue:
+              "You can't join this voice room",
+          },
+        );
       }
       // One key for two reasons, exactly as the 1:1 overlay does it: a caller
       // must not be able to tell a block from a privacy setting, and two keys
       // with identical English are two keys a translator can make differ.
-      return t('ended-blocked', { defaultValue: "Can't call this person" });
+      return t(
+        'ended-blocked',
+        {
+          defaultValue:
+            "Can't call this person",
+        },
+      );
     default:
-      return t('ended', { defaultValue: 'Call ended' });
+      return t(
+        'ended',
+        {
+          defaultValue:
+            'Call ended',
+        },
+      );
   }
 }
 
 /** What kind of room this is — an ad-hoc ring, or a space's open voice room. */
-function originLabel(origin: GroupCallOrigin | null, t: Translate): string {
-  switch (origin) {
+function originLabel(
+  origin: GroupCallOrigin | null,
+  t: Translate,
+): string {
+  switch (
+    origin
+  ) {
     case 'community':
-      return t('origin-community', { defaultValue: 'Community voice room' });
+      return t(
+        'origin-community',
+        {
+          defaultValue:
+            'Community voice room',
+        },
+      );
     case 'party':
-      return t('origin-party', { defaultValue: 'Party voice room' });
+      return t(
+        'origin-party',
+        {
+          defaultValue:
+            'Party voice room',
+        },
+      );
     default:
-      return t('title', { defaultValue: 'Group call' });
+      return t(
+        'title',
+        {
+          defaultValue:
+            'Group call',
+        },
+      );
   }
 }
 
@@ -161,60 +324,212 @@ export interface GroupCallOverlayProps {
   onInvite?: () => void;
 }
 
-export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
-  const { t } = useTranslation('c-groupcall');
+export function GroupCallOverlay({
+  onInvite,
+}: GroupCallOverlayProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-groupcall',
+    );
 
-  const phase = useGroupCallStore((s) => s.phase);
-  const callId = useGroupCallStore((s) => s.callId);
-  const origin = useGroupCallStore((s) => s.origin);
-  const muted = useGroupCallStore((s) => s.muted);
-  const startedAt = useGroupCallStore((s) => s.startedAt);
-  const endReason = useGroupCallStore((s) => s.endReason);
-  const ringingFrom = useGroupCallStore((s) => s.ringingFrom);
-  const lastInviteRejection = useGroupCallStore((s) => s.lastInviteRejection);
-  const setLastInviteRejection = useGroupCallStore((s) => s.setLastInviteRejection);
-  const micDenied = useGroupCallStore((s) => s.self.micDenied);
-  const isHost = useGroupCallStore(selectIsHost);
+  const phase =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.phase,
+    );
+  const callId =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.callId,
+    );
+  const origin =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.origin,
+    );
+  const muted =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.muted,
+    );
+  const startedAt =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.startedAt,
+    );
+  const endReason =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.endReason,
+    );
+  const ringingFrom =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.ringingFrom,
+    );
+  const lastInviteRejection =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.lastInviteRejection,
+    );
+  const setLastInviteRejection =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.setLastInviteRejection,
+    );
+  const micDenied =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s
+          .self
+          .micDenied,
+    );
+  const isHost =
+    useGroupCallStore(
+      selectIsHost,
+    );
   // Scalars derived from the roster. Both are plain numbers, so they need no
   // shallow subscription — the array the helper builds never leaves the
   // selector, and a level tick that changes neither re-renders nothing.
-  const joinedCount = useGroupCallStore(participantCount);
-  const ringingCount = useGroupCallStore((s) => pendingInvitees(s).length);
+  const joinedCount =
+    useGroupCallStore(
+      participantCount,
+    );
+  const ringingCount =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        pendingInvitees(
+          s,
+        )
+          .length,
+    );
 
-  const elapsed = useElapsed(startedAt);
-  const [rosterOpen, setRosterOpen] = useState(false);
-  const rosterPanelId = useId();
-  const incomingTitleId = useId();
-  const incomingCardRef = useRef<HTMLDivElement | null>(null);
-  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const elapsed =
+    useElapsed(
+      startedAt,
+    );
+  const [
+    rosterOpen,
+    setRosterOpen,
+  ] =
+    useState(
+      false,
+    );
+  const rosterPanelId =
+    useId();
+  const incomingTitleId =
+    useId();
+  const incomingCardRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+  const restoreFocusRef =
+    useRef<HTMLElement | null>(
+      null,
+    );
 
   // Clear the ended notice on its own so a stale "call ended" never sits there.
   useEffect(() => {
-    if (phase !== 'ended') return;
-    const id = setTimeout(() => dismissGroupCall(), ENDED_LINGER_MS);
-    return () => clearTimeout(id);
-  }, [phase]);
+    if (
+      phase !==
+      'ended'
+    )
+      return;
+    const id =
+      setTimeout(
+        () =>
+          dismissGroupCall(),
+        ENDED_LINGER_MS,
+      );
+    return () =>
+      clearTimeout(
+        id,
+      );
+  }, [
+    phase,
+  ]);
 
   useEffect(() => {
-    if (!lastInviteRejection || lastInviteRejection.callId !== callId) return;
+    if (
+      !lastInviteRejection ||
+      lastInviteRejection.callId !==
+        callId
+    )
+      return;
     toast.error(
-      lastInviteRejection.reason === 'full'
-        ? t('room-full', {
-            max: MAX_GROUP_CALL_PARTICIPANTS,
-            defaultValue: 'This call is full — it holds up to {{max}} people.',
-          })
-        : t('invite-failed', { defaultValue: "Couldn't invite anyone to this call." }),
+      lastInviteRejection.reason ===
+        'full'
+        ? t(
+            'room-full',
+            {
+              max: MAX_GROUP_CALL_PARTICIPANTS,
+              defaultValue:
+                'This call is full — it holds up to {{max}} people.',
+            },
+          )
+        : t(
+            'invite-failed',
+            {
+              defaultValue:
+                "Couldn't invite anyone to this call.",
+            },
+          ),
     );
-    setLastInviteRejection(null);
-  }, [callId, lastInviteRejection, setLastInviteRejection, t]);
+    setLastInviteRejection(
+      null,
+    );
+  }, [
+    callId,
+    lastInviteRejection,
+    setLastInviteRejection,
+    t,
+  ]);
 
   // A room that ends while the panel is open should not reopen it on the next
   // call, and the panel has nothing to show once the mesh is gone.
   useEffect(() => {
-    if (phase === 'idle' || phase === 'ended') setRosterOpen(false);
-  }, [phase]);
+    if (
+      phase ===
+        'idle' ||
+      phase ===
+        'ended'
+    )
+      setRosterOpen(
+        false,
+      );
+  }, [
+    phase,
+  ]);
 
-  if (phase === 'idle') return null;
+  if (
+    phase ===
+    'idle'
+  )
+    return null;
 
   // Both shapes portal to <body>. This mounts from `Providers`, outside
   // the page frame, so z-120 is already body-level today — the portal makes
@@ -223,67 +538,138 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
   // client: the surface is lazy-loaded and `phase` is idle during SSR.
 
   /* ── Incoming: a dialog, because it needs an answer now ─────────────────── */
-  if (phase === 'incoming') {
-    const callerName = ringingFrom?.name || ringingFrom?.handle || null;
+  if (
+    phase ===
+    'incoming'
+  ) {
+    const callerName =
+      ringingFrom?.name ||
+      ringingFrom?.handle ||
+      null;
 
     return (
       <Dialog
         open
-        onOpenChange={(open) => {
-          if (!open) declineGroupCall();
+        onOpenChange={(
+          open,
+        ) => {
+          if (
+            !open
+          )
+            declineGroupCall();
         }}
       >
         <DialogContent
-          ref={incomingCardRef}
-          tabIndex={-1}
+          ref={
+            incomingCardRef
+          }
+          tabIndex={
+            -1
+          }
           className="z-call-dialog max-w-sm p-6 outline-none"
           overlayClassName="z-call"
-          aria-labelledby={incomingTitleId}
-          onOpenAutoFocus={(event) => {
+          aria-labelledby={
+            incomingTitleId
+          }
+          onOpenAutoFocus={(
+            event,
+          ) => {
             event.preventDefault();
             restoreFocusRef.current =
-              document.activeElement instanceof HTMLElement ? document.activeElement : null;
+              document.activeElement instanceof
+              HTMLElement
+                ? document.activeElement
+                : null;
             incomingCardRef.current?.focus();
           }}
-          onCloseAutoFocus={(event) => {
+          onCloseAutoFocus={(
+            event,
+          ) => {
             event.preventDefault();
-            const target = restoreFocusRef.current;
-            restoreFocusRef.current = null;
-            if (target?.isConnected) target.focus();
+            const target =
+              restoreFocusRef.current;
+            restoreFocusRef.current =
+              null;
+            if (
+              target?.isConnected
+            )
+              target.focus();
           }}
         >
           <p className="flex items-center justify-center gap-2 text-sm text-site-text-muted">
-            <PhoneIncoming className="h-4 w-4" aria-hidden />
-            {t('incoming', { defaultValue: 'Incoming group call' })}
+            <PhoneIncoming
+              className="h-4 w-4"
+              aria-hidden
+            />
+            {t(
+              'incoming',
+              {
+                defaultValue:
+                  'Incoming group call',
+              },
+            )}
           </p>
 
           <div className="mt-5 flex flex-col items-center gap-3 text-center">
             {ringingFrom && (
               <UserAvatar
-                src={ringingFrom.image}
+                src={
+                  ringingFrom.image
+                }
                 alt=""
-                size={80}
-                fallbackName={callerName ?? undefined}
+                size={
+                  80
+                }
+                fallbackName={
+                  callerName ??
+                  undefined
+                }
               />
             )}
-            <DialogTitle id={incomingTitleId} className="text-lg font-semibold text-site-text">
+            <DialogTitle
+              id={
+                incomingTitleId
+              }
+              className="text-lg font-semibold text-site-text"
+            >
               {callerName
-                ? t('incoming-from', {
-                    name: callerName,
-                    defaultValue: '{{name}} is calling',
-                  })
-                : originLabel(origin, t)}
+                ? t(
+                    'incoming-from',
+                    {
+                      name: callerName,
+                      defaultValue:
+                        '{{name}} is calling',
+                    },
+                  )
+                : originLabel(
+                    origin,
+                    t,
+                  )}
             </DialogTitle>
-            <p className="text-xs text-site-text-muted">{originLabel(origin, t)}</p>
+            <p className="text-xs text-site-text-muted">
+              {originLabel(
+                origin,
+                t,
+              )}
+            </p>
           </div>
 
           <GroupCallRoster
             className="mt-5"
             layout="list"
-            excludeUserId={ringingFrom?.id ?? null}
+            excludeUserId={
+              ringingFrom?.id ??
+              null
+            }
             heading={
               <p className="text-xs font-medium text-site-text-muted">
-                {t('incoming-roster', { defaultValue: 'Already in this call' })}
+                {t(
+                  'incoming-roster',
+                  {
+                    defaultValue:
+                      'Already in this call',
+                  },
+                )}
               </p>
             }
           />
@@ -293,29 +679,63 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
               type="button"
               variant="danger"
               className="h-14 w-14 rounded-full p-0"
-              onClick={() => declineGroupCall()}
-              aria-label={t('decline', { defaultValue: 'Decline' })}
+              onClick={() =>
+                declineGroupCall()
+              }
+              aria-label={t(
+                'decline',
+                {
+                  defaultValue:
+                    'Decline',
+                },
+              )}
             >
-              <PhoneOff className="h-5 w-5" aria-hidden />
+              <PhoneOff
+                className="h-5 w-5"
+                aria-hidden
+              />
             </Button>
             <Button
               type="button"
               variant="default"
               className="h-14 w-14 rounded-full p-0"
-              onClick={() => callId && void joinGroupCall(callId)}
-              aria-label={t('accept', { defaultValue: 'Accept' })}
+              onClick={() =>
+                callId &&
+                void joinGroupCall(
+                  callId,
+                )
+              }
+              aria-label={t(
+                'accept',
+                {
+                  defaultValue:
+                    'Accept',
+                },
+              )}
             >
-              <Phone className="h-5 w-5" aria-hidden />
+              <Phone
+                className="h-5 w-5"
+                aria-hidden
+              />
             </Button>
           </div>
 
           <p className="mt-4 text-center text-xs text-site-text-muted">
             {micDenied
-              ? t('mic-denied', {
-                  defaultValue:
-                    'Microphone access was blocked. Allow it in your browser to join calls.',
-                })
-              : t('answer-hint', { defaultValue: 'Answering asks for microphone access.' })}
+              ? t(
+                  'mic-denied',
+                  {
+                    defaultValue:
+                      'Microphone access was blocked. Allow it in your browser to join calls.',
+                  },
+                )
+              : t(
+                  'answer-hint',
+                  {
+                    defaultValue:
+                      'Answering asks for microphone access.',
+                  },
+                )}
           </p>
         </DialogContent>
       </Dialog>
@@ -324,11 +744,25 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
 
   /* ── Otherwise: a bar, so the site stays usable while talking ───────────── */
   const status =
-    phase === 'joining'
-      ? t('joining', { defaultValue: 'Joining…' })
-      : phase === 'ended'
-        ? endReasonLabel(endReason, origin, t)
-        : formatDuration(elapsed);
+    phase ===
+    'joining'
+      ? t(
+          'joining',
+          {
+            defaultValue:
+              'Joining…',
+          },
+        )
+      : phase ===
+          'ended'
+        ? endReasonLabel(
+            endReason,
+            origin,
+            t,
+          )
+        : formatDuration(
+            elapsed,
+          );
 
   /*
    * The one thing that announces.
@@ -340,95 +774,209 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
    * unusable rather than more accessible.
    */
   const announcement =
-    phase === 'joining'
-      ? t('joining', { defaultValue: 'Joining…' })
-      : phase === 'ended'
-        ? endReasonLabel(endReason, origin, t)
-        : t('in-call', { defaultValue: "You're in the call" });
+    phase ===
+    'joining'
+      ? t(
+          'joining',
+          {
+            defaultValue:
+              'Joining…',
+          },
+        )
+      : phase ===
+          'ended'
+        ? endReasonLabel(
+            endReason,
+            origin,
+            t,
+          )
+        : t(
+            'in-call',
+            {
+              defaultValue:
+                "You're in the call",
+            },
+          );
 
   return createPortal(
     <div
       className="call-banner pointer-events-none fixed inset-x-0 top-3 z-call flex justify-center px-2"
-      style={{ paddingTop: 'max(0.5rem, var(--safe-top, 0px))' }}
+      style={{
+        paddingTop:
+          'max(0.5rem, var(--safe-top, 0px))',
+      }}
     >
       <div className="pointer-events-auto w-full max-w-lg">
-        <p className="sr-only" aria-live="polite">
-          {announcement}
+        <p
+          className="sr-only"
+          aria-live="polite"
+        >
+          {
+            announcement
+          }
         </p>
 
         <div className="surface-chrome flex items-center gap-2 rounded-site px-2.5 py-2">
-          <GroupCallRoster layout="strip" includeSelf max={4} className="shrink-0" />
+          <GroupCallRoster
+            layout="strip"
+            includeSelf
+            max={
+              4
+            }
+            className="shrink-0"
+          />
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-site-text">{originLabel(origin, t)}</p>
+            <p className="truncate text-sm font-medium text-site-text">
+              {originLabel(
+                origin,
+                t,
+              )}
+            </p>
             <p className="flex items-center gap-1.5 truncate text-xs text-site-text-muted">
               <span
-                className={cn(phase === 'active' && 'tabular-nums')}
-                role={phase === 'active' ? 'timer' : undefined}
+                className={cn(
+                  phase ===
+                    'active' &&
+                    'tabular-nums',
+                )}
+                role={
+                  phase ===
+                  'active'
+                    ? 'timer'
+                    : undefined
+                }
                 aria-label={
-                  phase === 'active'
-                    ? t('call-duration', { defaultValue: 'Call duration' })
+                  phase ===
+                  'active'
+                    ? t(
+                        'call-duration',
+                        {
+                          defaultValue:
+                            'Call duration',
+                        },
+                      )
                     : undefined
                 }
               >
-                {status}
+                {
+                  status
+                }
               </span>
-              {phase === 'active' && ringingCount > 0 && (
-                <span className="truncate">
-                  ·{' '}
-                  {t('ringing-count', {
-                    count: ringingCount,
-                    defaultValue_one: '{{count}} still ringing',
-                    defaultValue_other: '{{count}} still ringing',
-                    defaultValue: '{{count}} still ringing',
-                  })}
-                </span>
-              )}
+              {phase ===
+                'active' &&
+                ringingCount >
+                  0 && (
+                  <span className="truncate">
+                    ·{' '}
+                    {t(
+                      'ringing-count',
+                      {
+                        count:
+                          ringingCount,
+                        defaultValue_one:
+                          '{{count}} still ringing',
+                        defaultValue_other:
+                          '{{count}} still ringing',
+                        defaultValue:
+                          '{{count}} still ringing',
+                      },
+                    )}
+                  </span>
+                )}
             </p>
           </div>
 
-          {phase !== 'ended' && (
+          {phase !==
+            'ended' && (
             <>
               <Button
                 type="button"
                 variant="ghost"
                 className="h-9 w-9 rounded-full p-0"
-                onClick={() => toggleGroupMute()}
-                aria-pressed={muted}
+                onClick={() =>
+                  toggleGroupMute()
+                }
+                aria-pressed={
+                  muted
+                }
                 aria-label={
                   muted
-                    ? t('unmute', { defaultValue: 'Unmute' })
-                    : t('mute', { defaultValue: 'Mute' })
+                    ? t(
+                        'unmute',
+                        {
+                          defaultValue:
+                            'Unmute',
+                        },
+                      )
+                    : t(
+                        'mute',
+                        {
+                          defaultValue:
+                            'Mute',
+                        },
+                      )
                 }
               >
                 {muted ? (
-                  <MicOff className="h-4 w-4" aria-hidden />
+                  <MicOff
+                    className="h-4 w-4"
+                    aria-hidden
+                  />
                 ) : (
-                  <Mic className="h-4 w-4" aria-hidden />
+                  <Mic
+                    className="h-4 w-4"
+                    aria-hidden
+                  />
                 )}
               </Button>
 
-              {phase === 'active' && (
+              {phase ===
+                'active' && (
                 <Button
                   type="button"
                   variant="ghost"
                   className="h-9 gap-1 rounded-full px-2"
-                  onClick={() => setRosterOpen((open) => !open)}
-                  aria-expanded={rosterOpen}
-                  aria-controls={rosterPanelId}
+                  onClick={() =>
+                    setRosterOpen(
+                      (
+                        open,
+                      ) =>
+                        !open,
+                    )
+                  }
+                  aria-expanded={
+                    rosterOpen
+                  }
+                  aria-controls={
+                    rosterPanelId
+                  }
                 >
                   <span className="text-xs tabular-nums">
-                    {t('participants', {
-                      count: joinedCount,
-                      defaultValue_one: '{{count}} person',
-                      defaultValue_other: '{{count}} people',
-                      defaultValue: '{{count}} people',
-                    })}
+                    {t(
+                      'participants',
+                      {
+                        count:
+                          joinedCount,
+                        defaultValue_one:
+                          '{{count}} person',
+                        defaultValue_other:
+                          '{{count}} people',
+                        defaultValue:
+                          '{{count}} people',
+                      },
+                    )}
                   </span>
                   {rosterOpen ? (
-                    <ChevronUp className="h-4 w-4" aria-hidden />
+                    <ChevronUp
+                      className="h-4 w-4"
+                      aria-hidden
+                    />
                   ) : (
-                    <ChevronDown className="h-4 w-4" aria-hidden />
+                    <ChevronDown
+                      className="h-4 w-4"
+                      aria-hidden
+                    />
                   )}
                 </Button>
               )}
@@ -437,47 +985,96 @@ export function GroupCallOverlay({ onInvite }: GroupCallOverlayProps) {
                 type="button"
                 variant="danger"
                 className="h-9 w-9 rounded-full p-0"
-                onClick={() => leaveGroupCall()}
-                aria-label={t('leave', { defaultValue: 'Leave' })}
+                onClick={() =>
+                  leaveGroupCall()
+                }
+                aria-label={t(
+                  'leave',
+                  {
+                    defaultValue:
+                      'Leave',
+                  },
+                )}
               >
-                <PhoneOff className="h-4 w-4" aria-hidden />
+                <PhoneOff
+                  className="h-4 w-4"
+                  aria-hidden
+                />
               </Button>
             </>
           )}
         </div>
 
-        {phase === 'active' && rosterOpen && (
-          <div id={rosterPanelId} className="surface-overlay mt-2 rounded-site p-2">
-            <GroupCallRoster layout="list" includeSelf />
-            {(onInvite || isHost) && (
-              <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
-                {onInvite && (
-                  <Button type="button" variant="default" size="sm" onClick={onInvite}>
-                    <UserPlus className="h-4 w-4" aria-hidden />
-                    {t('invite', { defaultValue: 'Invite' })}
-                  </Button>
-                )}
-                {isHost && (
-                  <Button
-                    type="button"
-                    variant="danger"
-                    size="sm"
-                    onClick={() => endGroupCall()}
-                  >
-                    {t('end-for-everyone', { defaultValue: 'End for everyone' })}
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {phase ===
+          'active' &&
+          rosterOpen && (
+            <div
+              id={
+                rosterPanelId
+              }
+              className="surface-overlay mt-2 rounded-site p-2"
+            >
+              <GroupCallRoster
+                layout="list"
+                includeSelf
+              />
+              {(onInvite ||
+                isHost) && (
+                <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+                  {onInvite && (
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      onClick={
+                        onInvite
+                      }
+                    >
+                      <UserPlus
+                        className="h-4 w-4"
+                        aria-hidden
+                      />
+                      {t(
+                        'invite',
+                        {
+                          defaultValue:
+                            'Invite',
+                        },
+                      )}
+                    </Button>
+                  )}
+                  {isHost && (
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      onClick={() =>
+                        endGroupCall()
+                      }
+                    >
+                      {t(
+                        'end-for-everyone',
+                        {
+                          defaultValue:
+                            'End for everyone',
+                        },
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
         {micDenied && (
           <p className="surface-overlay mt-2 rounded-site px-3 py-2 text-xs text-site-text-muted">
-            {t('mic-denied', {
-              defaultValue:
-                'Microphone access was blocked. Allow it in your browser to join calls.',
-            })}
+            {t(
+              'mic-denied',
+              {
+                defaultValue:
+                  'Microphone access was blocked. Allow it in your browser to join calls.',
+              },
+            )}
           </p>
         )}
       </div>

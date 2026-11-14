@@ -1,23 +1,94 @@
-import { describe, expect, it } from 'vitest';
-import { decodeValveLzma, isValveLzma, lzmaDecodeRaw } from './lzma';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
+import {
+  decodeValveLzma,
+  isValveLzma,
+  lzmaDecodeRaw,
+} from './lzma';
 
 /** The data the vectors were made from (Python's lzma, FORMAT_ALONE): text, LCG bytes, text. */
 function sourceData(): Uint8Array {
-  const out: number[] = [];
-  const text = (s: string) => {
-    for (let i = 0; i < s.length; i++) out.push(s.charCodeAt(i));
-  };
-  for (let i = 0; i < 40; i++) text(`The quick brown fox ${i} jumps over the lazy dog. `);
+  const out: number[] =
+    [];
+  const text =
+    (
+      s: string,
+    ) => {
+      for (
+        let i = 0;
+        i <
+        s.length;
+        i++
+      )
+        out.push(
+          s.charCodeAt(
+            i,
+          ),
+        );
+    };
+  for (
+    let i = 0;
+    i <
+    40;
+    i++
+  )
+    text(
+      `The quick brown fox ${i} jumps over the lazy dog. `,
+    );
   let x = 12345;
-  for (let i = 0; i < 1500; i++) {
-    x = Number((BigInt(x) * 1103515245n + 12345n) & 0x7fffffffn);
-    out.push((x >> 16) & 0xff);
+  for (
+    let i = 0;
+    i <
+    1500;
+    i++
+  ) {
+    x =
+      Number(
+        (BigInt(
+          x,
+        ) *
+          1103515245n +
+          12345n) &
+          0x7fffffffn,
+      );
+    out.push(
+      (x >>
+        16) &
+        0xff,
+    );
   }
-  for (let i = 0; i < 50; i++) text('tail ');
-  return new Uint8Array(out);
+  for (
+    let i = 0;
+    i <
+    50;
+    i++
+  )
+    text(
+      'tail ',
+    );
+  return new Uint8Array(
+    out,
+  );
 }
 
-const fromBase64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+const fromBase64 =
+  (
+    s: string,
+  ) =>
+    Uint8Array.from(
+      atob(
+        s,
+      ),
+      (
+        c,
+      ) =>
+        c.charCodeAt(
+          0,
+        ),
+    );
 
 // lc=3 lp=0 pb=2, dict 64 KiB, end marker present.
 const VECTOR_A =
@@ -71,36 +142,144 @@ const VECTOR_B =
   'XBKaFrplrhbn11g6zYkv+cKRxA/R2OFL3GB//rYhwA==';
 
 describe('lzma', () => {
-  const expected = sourceData();
+  const expected =
+    sourceData();
 
   it('decodes .lzma (alone) streams with different lc/lp/pb', () => {
-    for (const v of [VECTOR_A, VECTOR_B]) {
-      const c = fromBase64(v);
+    for (const v of [
+      VECTOR_A,
+      VECTOR_B,
+    ]) {
+      const c =
+        fromBase64(
+          v,
+        );
       // .lzma header: props(1) dictSize(4) size(8), then the raw stream.
-      const out = lzmaDecodeRaw(c, 13, c.subarray(0, 5), expected.length);
-      expect(out).toEqual(expected);
+      const out =
+        lzmaDecodeRaw(
+          c,
+          13,
+          c.subarray(
+            0,
+            5,
+          ),
+          expected.length,
+        );
+      expect(
+        out,
+      ).toEqual(
+        expected,
+      );
     }
   });
 
   it("decodes Valve's LZMA container", () => {
-    const c = fromBase64(VECTOR_A);
-    const valve = new Uint8Array(17 + c.length - 13);
-    const view = new DataView(valve.buffer);
-    valve.set([0x4c, 0x5a, 0x4d, 0x41]); // 'LZMA'
-    view.setUint32(4, expected.length, true);
-    view.setUint32(8, c.length - 13, true);
-    valve.set(c.subarray(0, 5), 12);
-    valve.set(c.subarray(13), 17);
-    expect(isValveLzma(valve)).toBe(true);
-    expect(decodeValveLzma(valve)).toEqual(expected);
+    const c =
+      fromBase64(
+        VECTOR_A,
+      );
+    const valve =
+      new Uint8Array(
+        17 +
+          c.length -
+          13,
+      );
+    const view =
+      new DataView(
+        valve.buffer,
+      );
+    valve.set(
+      [
+        0x4c,
+        0x5a,
+        0x4d,
+        0x41,
+      ],
+    ); // 'LZMA'
+    view.setUint32(
+      4,
+      expected.length,
+      true,
+    );
+    view.setUint32(
+      8,
+      c.length -
+        13,
+      true,
+    );
+    valve.set(
+      c.subarray(
+        0,
+        5,
+      ),
+      12,
+    );
+    valve.set(
+      c.subarray(
+        13,
+      ),
+      17,
+    );
+    expect(
+      isValveLzma(
+        valve,
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      decodeValveLzma(
+        valve,
+      ),
+    ).toEqual(
+      expected,
+    );
   });
 
   it('rejects bad streams', () => {
-    expect(() =>
-      lzmaDecodeRaw(new Uint8Array([1, 0, 0, 0, 0]), 0, new Uint8Array([93, 0, 0, 1, 0]), 10),
+    expect(
+      () =>
+        lzmaDecodeRaw(
+          new Uint8Array(
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+            ],
+          ),
+          0,
+          new Uint8Array(
+            [
+              93,
+              0,
+              0,
+              1,
+              0,
+            ],
+          ),
+          10,
+        ),
     ).toThrow();
-    expect(() =>
-      lzmaDecodeRaw(new Uint8Array(8), 0, new Uint8Array([255, 0, 0, 1, 0]), 10),
+    expect(
+      () =>
+        lzmaDecodeRaw(
+          new Uint8Array(
+            8,
+          ),
+          0,
+          new Uint8Array(
+            [
+              255,
+              0,
+              0,
+              1,
+              0,
+            ],
+          ),
+          10,
+        ),
     ).toThrow();
   });
 });

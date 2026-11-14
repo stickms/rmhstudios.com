@@ -28,7 +28,9 @@ import type {
 export interface GlobeSetRaceStore {
   status: RealtimeStatus;
   /** Our own socket id, as the hub reported it on join. Identifies us in standings. */
-  selfId: string | null;
+  selfId:
+    | string
+    | null;
   lobby: LobbySnapshot | null;
   /** Public rooms from the last browse. */
   browse: PublicLobbyInfo[];
@@ -38,66 +40,234 @@ export interface GlobeSetRaceStore {
   /** Our authoritative board, as the server last confirmed it. */
   board: BoardPayload | null;
   standings: LiveStanding[];
-  results: FinalStanding[] | null;
+  results:
+    | FinalStanding[]
+    | null;
   /** Most recent rejected submission, for the board's shake + message. */
-  lastReject: { reason: RejectReason; at: number } | null;
-  error: string | null;
+  lastReject: {
+    reason: RejectReason;
+    at: number;
+  } | null;
+  error:
+    | string
+    | null;
 
-  setStatus: (status: RealtimeStatus) => void;
-  setSelfId: (id: string | null) => void;
-  setLobby: (lobby: LobbySnapshot | null) => void;
-  setBrowse: (lobbies: PublicLobbyInfo[]) => void;
-  setBrowsing: (browsing: boolean) => void;
-  setStart: (start: RaceStartPayload | null) => void;
-  setBoard: (board: BoardPayload | null) => void;
-  setStandings: (standings: LiveStanding[]) => void;
-  setResults: (results: FinalStanding[] | null) => void;
-  setReject: (reason: RejectReason) => void;
+  setStatus: (
+    status: RealtimeStatus,
+  ) => void;
+  setSelfId: (
+    id:
+      | string
+      | null,
+  ) => void;
+  setLobby: (
+    lobby: LobbySnapshot | null,
+  ) => void;
+  setBrowse: (
+    lobbies: PublicLobbyInfo[],
+  ) => void;
+  setBrowsing: (
+    browsing: boolean,
+  ) => void;
+  setStart: (
+    start: RaceStartPayload | null,
+  ) => void;
+  setBoard: (
+    board: BoardPayload | null,
+  ) => void;
+  setStandings: (
+    standings: LiveStanding[],
+  ) => void;
+  setResults: (
+    results:
+      | FinalStanding[]
+      | null,
+  ) => void;
+  setReject: (
+    reason: RejectReason,
+  ) => void;
   clearReject: () => void;
-  setError: (message: string | null) => void;
+  setError: (
+    message:
+      | string
+      | null,
+  ) => void;
   /** Back to the lobby between rounds — keeps the room, drops the round. */
   resetRound: () => void;
   /** Left the room entirely. */
   reset: () => void;
 }
 
-const EMPTY_ROUND = {
-  start: null,
-  board: null,
-  standings: [] as LiveStanding[],
-  results: null,
-  lastReject: null,
-} as const;
+const EMPTY_ROUND =
+  {
+    start:
+      null,
+    board:
+      null,
+    standings:
+      [] as LiveStanding[],
+    results:
+      null,
+    lastReject:
+      null,
+  } as const;
 
-export const useGlobeSetRaceStore = create<GlobeSetRaceStore>((set) => ({
-  status: 'disconnected',
-  selfId: null,
-  lobby: null,
-  browse: [],
-  browsing: false,
-  ...EMPTY_ROUND,
-  error: null,
-
-  setStatus: (status) => set({ status }),
-  setSelfId: (selfId) => set({ selfId }),
-  setLobby: (lobby) => set({ lobby }),
-  setBrowse: (browse) => set({ browse, browsing: false }),
-  setBrowsing: (browsing) => set({ browsing }),
-  setStart: (start) => set({ start, results: null, lastReject: null }),
-  setBoard: (board) => set({ board }),
-  setStandings: (standings) => set({ standings }),
-  setResults: (results) => set({ results }),
-  setReject: (reason) => set({ lastReject: { reason, at: Date.now() } }),
-  clearReject: () => set({ lastReject: null }),
-  setError: (error) => set({ error }),
-  resetRound: () => set({ ...EMPTY_ROUND }),
-  reset: () =>
-    set({
-      selfId: null,
-      lobby: null,
-      browse: [],
+export const useGlobeSetRaceStore =
+  create<GlobeSetRaceStore>(
+    (
+      set,
+    ) => ({
+      status:
+        'disconnected',
+      selfId:
+        null,
+      lobby:
+        null,
+      browse:
+        [],
       browsing: false,
-      error: null,
       ...EMPTY_ROUND,
+      error:
+        null,
+
+      setStatus:
+        (
+          status,
+        ) =>
+          set(
+            {
+              status,
+            },
+          ),
+      setSelfId:
+        (
+          selfId,
+        ) =>
+          set(
+            {
+              selfId,
+            },
+          ),
+      setLobby:
+        (
+          lobby,
+        ) =>
+          set(
+            {
+              lobby,
+            },
+          ),
+      setBrowse:
+        (
+          browse,
+        ) =>
+          set(
+            {
+              browse,
+              browsing: false,
+            },
+          ),
+      setBrowsing:
+        (
+          browsing,
+        ) =>
+          set(
+            {
+              browsing,
+            },
+          ),
+      setStart:
+        (
+          start,
+        ) =>
+          set(
+            {
+              start,
+              results:
+                null,
+              lastReject:
+                null,
+            },
+          ),
+      setBoard:
+        (
+          board,
+        ) =>
+          set(
+            {
+              board,
+            },
+          ),
+      setStandings:
+        (
+          standings,
+        ) =>
+          set(
+            {
+              standings,
+            },
+          ),
+      setResults:
+        (
+          results,
+        ) =>
+          set(
+            {
+              results,
+            },
+          ),
+      setReject:
+        (
+          reason,
+        ) =>
+          set(
+            {
+              lastReject:
+                {
+                  reason,
+                  at: Date.now(),
+                },
+            },
+          ),
+      clearReject:
+        () =>
+          set(
+            {
+              lastReject:
+                null,
+            },
+          ),
+      setError:
+        (
+          error,
+        ) =>
+          set(
+            {
+              error,
+            },
+          ),
+      resetRound:
+        () =>
+          set(
+            {
+              ...EMPTY_ROUND,
+            },
+          ),
+      reset:
+        () =>
+          set(
+            {
+              selfId:
+                null,
+              lobby:
+                null,
+              browse:
+                [],
+              browsing: false,
+              error:
+                null,
+              ...EMPTY_ROUND,
+            },
+          ),
     }),
-}));
+  );

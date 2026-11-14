@@ -6,31 +6,80 @@
  */
 import { z } from 'zod';
 
-export const SCHEDULE_MIN_LEAD_MS = 5 * 60_000;
-export const SCHEDULE_MAX_LEAD_MS = 366 * 86_400_000;
+export const SCHEDULE_MIN_LEAD_MS =
+  5 *
+  60_000;
+export const SCHEDULE_MAX_LEAD_MS =
+  366 *
+  86_400_000;
 export const SCHEDULED_GIFT_MAX_PENDING = 20;
 
-export const scheduleGiftSchema = z.object({
-  /** Recipient's @handle, with or without the leading @. */
-  recipient: z
-    .string()
-    .trim()
-    .min(1)
-    .max(40)
-    .transform((s) => s.replace(/^@/, '')),
-  itemId: z.string().min(1).max(64),
-  /** ISO datetime the gift should arrive. */
-  deliverAt: z.string().datetime(),
-  message: z.string().trim().max(200).optional(),
-});
-export type ScheduleGiftInput = z.infer<typeof scheduleGiftSchema>;
+export const scheduleGiftSchema =
+  z.object(
+    {
+      /** Recipient's @handle, with or without the leading @. */
+      recipient:
+        z
+          .string()
+          .trim()
+          .min(
+            1,
+          )
+          .max(
+            40,
+          )
+          .transform(
+            (
+              s,
+            ) =>
+              s.replace(
+                /^@/,
+                '',
+              ),
+          ),
+      itemId:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            64,
+          ),
+      /** ISO datetime the gift should arrive. */
+      deliverAt:
+        z
+          .string()
+          .datetime(),
+      message:
+        z
+          .string()
+          .trim()
+          .max(
+            200,
+          )
+          .optional(),
+    },
+  );
+export type ScheduleGiftInput =
+  z.infer<
+    typeof scheduleGiftSchema
+  >;
 
-export type ScheduledGiftStatus = 'SCHEDULED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED';
+export type ScheduledGiftStatus =
+  | 'SCHEDULED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'REFUNDED';
 
 export interface ScheduledGiftParty {
   id: string;
-  name: string | null;
-  handle: string | null;
+  name:
+    | string
+    | null;
+  handle:
+    | string
+    | null;
 }
 
 export interface SentGiftView {
@@ -52,7 +101,9 @@ export interface ReceivedGiftView {
   deliveredAt: string;
   unwrapped: boolean;
   /** Only present once the gift has been opened. */
-  message: string | null;
+  message:
+    | string
+    | null;
 }
 
 export interface ScheduledGiftsPayload {

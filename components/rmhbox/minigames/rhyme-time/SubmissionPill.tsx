@@ -18,38 +18,87 @@ import { m as motion } from 'framer-motion';
 
 export interface SubmissionPillProps {
   word: string;
-  status: 'pending' | 'valid' | 'invalid' | 'not_in_dict';
+  status:
+    | 'pending'
+    | 'valid'
+    | 'invalid'
+    | 'not_in_dict';
   invalidReason?: string;
 }
 
-const STATUS_STYLES: Record<SubmissionPillProps['status'], string> = {
-  pending:      'bg-app-text-muted/20 text-app-text-muted border-app-text-muted/40',
-  valid:        'bg-app-success/20 text-app-success border-app-success/40',
-  invalid:      'bg-app-danger/20 text-app-danger border-app-danger/40 line-through',
-  not_in_dict:  'bg-app-text-dim/10 text-app-text-dim border-app-text-dim/30',
-};
+const STATUS_STYLES: Record<
+  SubmissionPillProps['status'],
+  string
+> =
+  {
+    pending:
+      'bg-app-text-muted/20 text-app-text-muted border-app-text-muted/40',
+    valid:
+      'bg-app-success/20 text-app-success border-app-success/40',
+    invalid:
+      'bg-app-danger/20 text-app-danger border-app-danger/40 line-through',
+    not_in_dict:
+      'bg-app-text-dim/10 text-app-text-dim border-app-text-dim/30',
+  };
 
-export default function SubmissionPill({ word, status, invalidReason }: SubmissionPillProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
+export default function SubmissionPill({
+  word,
+  status,
+  invalidReason,
+}: SubmissionPillProps) {
+  const [
+    showTooltip,
+    setShowTooltip,
+  ] =
+    useState(
+      false,
+    );
 
   return (
     <motion.span
       layout
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+      initial={{
+        scale: 0.8,
+        opacity: 0,
+      }}
+      animate={{
+        scale: 1,
+        opacity: 1,
+      }}
+      transition={{
+        type: 'spring',
+        stiffness: 400,
+        damping: 20,
+      }}
       className={`relative inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium my-0.5 ${STATUS_STYLES[status]}`}
-      onMouseEnter={() => (status === 'invalid' || status === 'not_in_dict') && setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
+      onMouseEnter={() =>
+        (status ===
+          'invalid' ||
+          status ===
+            'not_in_dict') &&
+        setShowTooltip(
+          true,
+        )
+      }
+      onMouseLeave={() =>
+        setShowTooltip(
+          false,
+        )
+      }
     >
-      {word}
+      {
+        word
+      }
 
       {/* Tooltip for invalid words */}
-      {showTooltip && invalidReason && (
-        <span className="surface-overlay absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded px-2 py-1 text-[10px] text-app-text-muted">
-          {invalidReason}
-        </span>
-      )}
+      {showTooltip &&
+        invalidReason && (
+          <span className="surface-overlay absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded px-2 py-1 text-[10px] text-app-text-muted">
+            {
+              invalidReason
+            }
+          </span>
+        )}
     </motion.span>
   );
 }

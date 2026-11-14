@@ -23,70 +23,109 @@
  * else's as a count, plus whatever one Amber card bought you.
  */
 
-import type { Card, CardColor, CardEffect, Phase } from '../constants';
-import type { HouseRules, RuleChange } from '../house-rules';
+import type {
+  Card,
+  CardColor,
+  CardEffect,
+  Phase,
+} from '../constants';
+import type {
+  HouseRules,
+  RuleChange,
+} from '../house-rules';
 
 import type { TableReadRow } from '../table-read';
 
-export const ROOM_PREFIX = 'gh:';
+export const ROOM_PREFIX =
+  'gh:';
 
 /** Client → server. Every one of these has a rule in `socket-server/config.ts`. */
-export const C2S = {
-  CREATE: 'gh:create',
-  JOIN: 'gh:join',
-  QUICKPLAY: 'gh:quickplay',
-  BROWSE: 'gh:browse',
-  LEAVE: 'gh:leave',
-  READY: 'gh:ready',
-  SETTINGS: 'gh:settings',
-  START: 'gh:start',
-  KICK: 'gh:kick',
-  /** Spend a card from your hand. */
-  PLAY: 'gh:play',
-  /** Commit to the roll you cannot see. */
-  ROLL: 'gh:roll',
-  /** Tell the roller a total — true or otherwise. */
-  CLAIM: 'gh:claim',
-  /** Pick a claim and call it. */
-  CALL: 'gh:call',
-  /** Sound the horn: everyone gets one last turn, then hands are counted. */
-  SOUND_END: 'gh:end',
-  /** Decline to act on your final turn. */
-  PASS: 'gh:pass',
-  CHAT: 'gh:chat',
-  REMATCH: 'gh:rematch',
-  /** Host only: replace the table's tunable rules. Clamped server-side. */
-  HOUSE_RULES: 'gh:houseRules',
-  /** Redeem a party ticket to be seated in the party's room. */
-  TICKET: 'gh:ticket',
-} as const;
+export const C2S =
+  {
+    CREATE:
+      'gh:create',
+    JOIN: 'gh:join',
+    QUICKPLAY:
+      'gh:quickplay',
+    BROWSE:
+      'gh:browse',
+    LEAVE:
+      'gh:leave',
+    READY:
+      'gh:ready',
+    SETTINGS:
+      'gh:settings',
+    START:
+      'gh:start',
+    KICK: 'gh:kick',
+    /** Spend a card from your hand. */
+    PLAY: 'gh:play',
+    /** Commit to the roll you cannot see. */
+    ROLL: 'gh:roll',
+    /** Tell the roller a total — true or otherwise. */
+    CLAIM:
+      'gh:claim',
+    /** Pick a claim and call it. */
+    CALL: 'gh:call',
+    /** Sound the horn: everyone gets one last turn, then hands are counted. */
+    SOUND_END:
+      'gh:end',
+    /** Decline to act on your final turn. */
+    PASS: 'gh:pass',
+    CHAT: 'gh:chat',
+    REMATCH:
+      'gh:rematch',
+    /** Host only: replace the table's tunable rules. Clamped server-side. */
+    HOUSE_RULES:
+      'gh:houseRules',
+    /** Redeem a party ticket to be seated in the party's room. */
+    TICKET:
+      'gh:ticket',
+  } as const;
 
 /** Server → client. */
-export const S2C = {
-  LOBBY: 'gh:lobby',
-  BROWSE_RESULT: 'gh:browseResult',
-  JOINED: 'gh:joined',
-  ERROR: 'gh:error',
-  COUNTDOWN: 'gh:countdown',
-  /** **Per-socket**, never broadcast — see the note at the top of this file. */
-  STATE: 'gh:state',
-  RESULTS: 'gh:results',
-  CHAT: 'gh:chat',
-  KICKED: 'gh:kicked',
-  HOST_CHANGED: 'gh:hostChanged',
-  /** The table's rules changed. Carries the whole set, plus what moved. */
-  HOUSE_RULES: 'gh:houseRules',
-} as const;
+export const S2C =
+  {
+    LOBBY:
+      'gh:lobby',
+    BROWSE_RESULT:
+      'gh:browseResult',
+    JOINED:
+      'gh:joined',
+    ERROR:
+      'gh:error',
+    COUNTDOWN:
+      'gh:countdown',
+    /** **Per-socket**, never broadcast — see the note at the top of this file. */
+    STATE:
+      'gh:state',
+    RESULTS:
+      'gh:results',
+    CHAT: 'gh:chat',
+    KICKED:
+      'gh:kicked',
+    HOST_CHANGED:
+      'gh:hostChanged',
+    /** The table's rules changed. Carries the whole set, plus what moved. */
+    HOUSE_RULES:
+      'gh:houseRules',
+  } as const;
 
 // ─── Lobby ──────────────────────────────────────────────────────────────────
 
-export type LobbyState = 'waiting' | 'countdown' | 'playing' | 'results';
+export type LobbyState =
+  | 'waiting'
+  | 'countdown'
+  | 'playing'
+  | 'results';
 
 export interface LobbyPlayer {
   socketId: string;
   userId: string;
   name: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   ready: boolean;
   isHost: boolean;
 }
@@ -118,7 +157,9 @@ export interface TablePlayer {
   socketId: string;
   userId: string;
   name: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   /** Hand SIZE is public — it is the score, and hiding it would hide the race. */
   handCount: number;
   /** Verdant is up: nothing can make this player draw. */
@@ -138,8 +179,12 @@ export interface TablePlayer {
  * you — which for the roller is most of the round, and is the point.
  */
 export interface DiceView {
-  faces: number[] | null;
-  total: number | null;
+  faces:
+    | number[]
+    | null;
+  total:
+    | number
+    | null;
   /** True when you are seeing them because you paid an Azure card for it. */
   glimpsed: boolean;
 }
@@ -147,23 +192,31 @@ export interface DiceView {
 export interface ClaimView {
   socketId: string;
   /** `null` until that player has spoken. */
-  total: number | null;
+  total:
+    | number
+    | null;
   /**
    * Whether the claim was a lie. Withheld (`null`) until the reveal — knowing
    * it earlier would be knowing the dice.
    */
-  lie: boolean | null;
+  lie:
+    | boolean
+    | null;
 }
 
 /** What happened when the roller called it. Present during `reveal` only. */
 export interface CallOutcome {
   callerSocketId: string;
   targetSocketId: string;
-  verdict: 'truth' | 'lie';
+  verdict:
+    | 'truth'
+    | 'lie';
   /** Whether the caller read the table right. */
   correct: boolean;
   /** Who paid for it. `null` when a Verdant ward absorbed the draw. */
-  drewSocketId: string | null;
+  drewSocketId:
+    | string
+    | null;
   drawn: number;
   trueTotal: number;
 }
@@ -205,7 +258,9 @@ export interface LogEntry {
   total?: number;
   color?: CardColor;
   effect?: CardEffect;
-  verdict?: 'truth' | 'lie';
+  verdict?:
+    | 'truth'
+    | 'lie';
   correct?: boolean;
 }
 
@@ -226,12 +281,20 @@ export interface GameView {
   claims: ClaimView[];
   deckCount: number;
   /** Epoch ms the current phase runs out, or `null` when it is untimed. */
-  phaseEndsAt: number | null;
+  phaseEndsAt:
+    | number
+    | null;
   /** Who sounded the horn, once somebody has. */
-  endCalledBy: string | null;
+  endCalledBy:
+    | string
+    | null;
   outcome: CallOutcome | null;
   /** A hand an Amber card bought you a look at. Cleared when the turn moves on. */
-  scry: { socketId: string; name: string; cards: Card[] } | null;
+  scry: {
+    socketId: string;
+    name: string;
+    cards: Card[];
+  } | null;
   /** The rules in force. The table plays by these, not by the shipped defaults. */
   rules: HouseRules;
   log: LogEntry[];
@@ -243,7 +306,9 @@ export interface FinalStanding {
   socketId: string;
   userId: string;
   name: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   handCount: number;
   /** 1-based. Ties share a place. */
   place: number;
@@ -258,7 +323,9 @@ export interface FinalStanding {
 
 export interface GameResults {
   standings: FinalStanding[];
-  endCalledBy: string | null;
+  endCalledBy:
+    | string
+    | null;
   rounds: number;
   /** The table emptied out mid-game rather than reaching a called End. */
   abandoned: boolean;
@@ -272,7 +339,9 @@ export interface ChatMessage {
   id: string;
   socketId: string;
   name: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   text: string;
   at: number;
 }
@@ -291,5 +360,7 @@ export interface ClaimPayload {
 
 export interface CallPayload {
   targetSocketId: string;
-  verdict: 'truth' | 'lie';
+  verdict:
+    | 'truth'
+    | 'lie';
 }

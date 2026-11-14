@@ -1,19 +1,34 @@
 import { classifyUSLocation } from '../classifiers/us-location';
 import type { VerificationEvidence } from '../verification';
 import { politeFetch } from './http';
-import type { AdapterContext, DiscoverResult, NormalizedJob, SourceAdapter } from './types';
+import type {
+  AdapterContext,
+  DiscoverResult,
+  NormalizedJob,
+  SourceAdapter,
+} from './types';
 
-export const smartRecruitersPostingsUrl = (slug: string, offset = 0) =>
-  `https://api.smartrecruiters.com/v1/companies/${slug}/postings?limit=100&offset=${offset}`;
+export const smartRecruitersPostingsUrl =
+  (
+    slug: string,
+    offset = 0,
+  ) =>
+    `https://api.smartrecruiters.com/v1/companies/${slug}/postings?limit=100&offset=${offset}`;
 
-export const smartRecruitersJobUrl = (slug: string, id: string) =>
-  `https://jobs.smartrecruiters.com/${slug}/${id}`;
+export const smartRecruitersJobUrl =
+  (
+    slug: string,
+    id: string,
+  ) =>
+    `https://jobs.smartrecruiters.com/${slug}/${id}`;
 
 interface SrJob {
   id: string;
   uuid?: string;
   name: string;
-  refNumber?: string | null;
+  refNumber?:
+    | string
+    | null;
   releasedDate?: string;
   location?: {
     city?: string;
@@ -34,142 +49,390 @@ interface SrPostingsResponse {
 
 async function fetchBoard(
   ctx: AdapterContext,
-): Promise<{ jobs: SrJob[] | null; status: number; totalFound: number; ok: boolean }> {
-  const aggregated: SrJob[] = [];
+): Promise<{
+  jobs:
+    | SrJob[]
+    | null;
+  status: number;
+  totalFound: number;
+  ok: boolean;
+}> {
+  const aggregated: SrJob[] =
+    [];
   let totalFound = 0;
   let status = 200;
   let offset = 0;
   const hardCap = 500;
 
-  while (aggregated.length < hardCap) {
-    const res = await politeFetch(smartRecruitersPostingsUrl(ctx.slug, offset), {
-      fetchImpl: ctx.fetchImpl,
-    });
+  while (
+    aggregated.length <
+    hardCap
+  ) {
+    const res =
+      await politeFetch(
+        smartRecruitersPostingsUrl(
+          ctx.slug,
+          offset,
+        ),
+        {
+          fetchImpl:
+            ctx.fetchImpl,
+        },
+      );
 
-    if (!res.ok) {
+    if (
+      !res.ok
+    ) {
       // If the first page fails, return null; otherwise return what we have so far
-      if (offset === 0) {
-        return { jobs: null, status: res.status, totalFound: 0, ok: false };
+      if (
+        offset ===
+        0
+      ) {
+        return {
+          jobs: null,
+          status:
+            res.status,
+          totalFound: 0,
+          ok: false,
+        };
       }
       break;
     }
 
     let content: unknown;
     try {
-      const parsed: unknown = JSON.parse(res.body);
-      if (typeof parsed === 'object' && parsed !== null) {
-        const data = parsed as SrPostingsResponse;
+      const parsed: unknown =
+        JSON.parse(
+          res.body,
+        );
+      if (
+        typeof parsed ===
+          'object' &&
+        parsed !==
+          null
+      ) {
+        const data =
+          parsed as SrPostingsResponse;
         // Capture totalFound from the first page
-        if (offset === 0) {
-          totalFound = data.totalFound ?? 0;
-          status = res.status;
+        if (
+          offset ===
+          0
+        ) {
+          totalFound =
+            data.totalFound ??
+            0;
+          status =
+            res.status;
         }
-        content = data.content;
-        if (Array.isArray(content)) {
-          aggregated.push(...(content as SrJob[]));
+        content =
+          data.content;
+        if (
+          Array.isArray(
+            content,
+          )
+        ) {
+          aggregated.push(
+            ...(content as SrJob[]),
+          );
           // Empty page terminates loop even if totalFound lies
-          if (content.length === 0) {
+          if (
+            content.length ===
+            0
+          ) {
             break;
           }
         } else {
           // If content is not an array on first page, return null
-          if (offset === 0) {
-            return { jobs: null, status: res.status, totalFound: 0, ok: false };
+          if (
+            offset ===
+            0
+          ) {
+            return {
+              jobs: null,
+              status:
+                res.status,
+              totalFound: 0,
+              ok: false,
+            };
           }
           break;
         }
       } else {
-        if (offset === 0) {
-          return { jobs: null, status: res.status, totalFound: 0, ok: false };
+        if (
+          offset ===
+          0
+        ) {
+          return {
+            jobs: null,
+            status:
+              res.status,
+            totalFound: 0,
+            ok: false,
+          };
         }
         break;
       }
     } catch {
-      if (offset === 0) {
-        return { jobs: null, status: res.status, totalFound: 0, ok: false };
+      if (
+        offset ===
+        0
+      ) {
+        return {
+          jobs: null,
+          status:
+            res.status,
+          totalFound: 0,
+          ok: false,
+        };
       }
       break;
     }
 
     // Stop if we've reached totalFound or aggregated >= hardCap
-    if (aggregated.length >= totalFound || aggregated.length >= hardCap) {
+    if (
+      aggregated.length >=
+        totalFound ||
+      aggregated.length >=
+        hardCap
+    ) {
       break;
     }
 
     // Advance offset by actual item count, not fixed page size
-    offset += Array.isArray(content) ? content.length : 0;
+    offset +=
+      Array.isArray(
+        content,
+      )
+        ? content.length
+        : 0;
   }
 
   // Truncated: cap hit or later-page failure — incomplete evidence beats wrong evidence.
   // A board with more jobs than fetched cannot be used to assert absence.
   // discoverJobs consequently returns [] for >cap boards; detectExpired returns false.
-  if (aggregated.length > 0 && aggregated.length < totalFound) {
-    return { jobs: null, status, totalFound, ok: false };
+  if (
+    aggregated.length >
+      0 &&
+    aggregated.length <
+      totalFound
+  ) {
+    return {
+      jobs: null,
+      status,
+      totalFound,
+      ok: false,
+    };
   }
 
   // Return aggregated as-is (may be empty for a genuinely empty board) with ok: true.
-  return { jobs: aggregated, status, totalFound, ok: true };
-}
-
-function normalize(raw: SrJob, ctx: AdapterContext): NormalizedJob {
-  const city = raw.location?.city ?? '';
-  const region = raw.location?.region;
-  const locationRaw = region ? `${city}, ${region}` : city;
-  const countryRaw = raw.location?.country;
-  const country = countryRaw ? countryRaw.toUpperCase() : null;
-
   return {
-    externalId: raw.id,
-    title: raw.name,
-    locationRaw,
-    country,
-    remoteHint: raw.location?.remote === true,
-    postedAt: raw.releasedDate ? new Date(raw.releasedDate) : null,
-    absoluteUrl: smartRecruitersJobUrl(ctx.slug, raw.id),
-    applyUrl: null,
-    descriptionHtml: null,
-    requisitionId: raw.refNumber ?? null,
+    jobs: aggregated,
+    status,
+    totalFound,
+    ok: true,
   };
 }
 
-export const smartRecruitersAdapter: SourceAdapter = {
-  platform: 'smartrecruiters',
-
-  async discoverJobs(ctx): Promise<DiscoverResult> {
-    const { jobs, ok } = await fetchBoard(ctx);
-    return { jobs: (jobs ?? []).map((job) => normalize(job, ctx)), fetchSucceeded: ok };
-  },
-
-  async verifyJob(ctx, job): Promise<VerificationEvidence> {
-    const { jobs, status } = await fetchBoard(ctx);
-    const hit = jobs?.find((j) => j.id === job.externalId) ?? null;
-    const normalized = hit ? normalize(hit, ctx) : null;
-    const loc = normalized
-      ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country })
+function normalize(
+  raw: SrJob,
+  ctx: AdapterContext,
+): NormalizedJob {
+  const city =
+    raw
+      .location
+      ?.city ??
+    '';
+  const region =
+    raw
+      .location
+      ?.region;
+  const locationRaw =
+    region
+      ? `${city}, ${region}`
+      : city;
+  const countryRaw =
+    raw
+      .location
+      ?.country;
+  const country =
+    countryRaw
+      ? countryRaw.toUpperCase()
       : null;
-    return {
-      fetched: jobs !== null,
-      httpStatus: status,
-      apiSource: true,
-      companyMatch: jobs !== null,
-      titleMatch: hit !== null && hit.name === job.title,
-      usConfirmed: loc?.isUS === true,
-      applyPresent: hit !== null, // the hosted jobs.smartrecruiters.com page always carries the apply flow
-      reqIdPresent: Boolean(hit?.refNumber),
-      closedLanguage: false,
-      blocked: status === 403 || status === 429,
-      isSearchResultsPage: false,
-      companyName: ctx.companyName,
-      jobTitle: job.title,
-      locationLabel: normalized?.locationRaw,
-      platform: 'smartrecruiters',
-    };
-  },
 
-  async detectExpired(ctx, externalId) {
-    const { jobs, totalFound } = await fetchBoard(ctx);
-    if (totalFound === 0) return false; // empty board is not expiry evidence
-    if (jobs === null) return false; // fetch failure is NOT expiry evidence (3-strike rule is Plan 3)
-    return !jobs.some((j) => j.id === externalId);
-  },
-};
+  return {
+    externalId:
+      raw.id,
+    title:
+      raw.name,
+    locationRaw,
+    country,
+    remoteHint:
+      raw
+        .location
+        ?.remote ===
+      true,
+    postedAt:
+      raw.releasedDate
+        ? new Date(
+            raw.releasedDate,
+          )
+        : null,
+    absoluteUrl:
+      smartRecruitersJobUrl(
+        ctx.slug,
+        raw.id,
+      ),
+    applyUrl:
+      null,
+    descriptionHtml:
+      null,
+    requisitionId:
+      raw.refNumber ??
+      null,
+  };
+}
+
+export const smartRecruitersAdapter: SourceAdapter =
+  {
+    platform:
+      'smartrecruiters',
+
+    async discoverJobs(
+      ctx,
+    ): Promise<DiscoverResult> {
+      const {
+        jobs,
+        ok,
+      } =
+        await fetchBoard(
+          ctx,
+        );
+      return {
+        jobs: (
+          jobs ??
+          []
+        ).map(
+          (
+            job,
+          ) =>
+            normalize(
+              job,
+              ctx,
+            ),
+        ),
+        fetchSucceeded:
+          ok,
+      };
+    },
+
+    async verifyJob(
+      ctx,
+      job,
+    ): Promise<VerificationEvidence> {
+      const {
+        jobs,
+        status,
+      } =
+        await fetchBoard(
+          ctx,
+        );
+      const hit =
+        jobs?.find(
+          (
+            j,
+          ) =>
+            j.id ===
+            job.externalId,
+        ) ??
+        null;
+      const normalized =
+        hit
+          ? normalize(
+              hit,
+              ctx,
+            )
+          : null;
+      const loc =
+        normalized
+          ? classifyUSLocation(
+              {
+                locationRaw:
+                  normalized.locationRaw,
+                country:
+                  normalized.country,
+              },
+            )
+          : null;
+      return {
+        fetched:
+          jobs !==
+          null,
+        httpStatus:
+          status,
+        apiSource: true,
+        companyMatch:
+          jobs !==
+          null,
+        titleMatch:
+          hit !==
+            null &&
+          hit.name ===
+            job.title,
+        usConfirmed:
+          loc?.isUS ===
+          true,
+        applyPresent:
+          hit !==
+          null, // the hosted jobs.smartrecruiters.com page always carries the apply flow
+        reqIdPresent:
+          Boolean(
+            hit?.refNumber,
+          ),
+        closedLanguage: false,
+        blocked:
+          status ===
+            403 ||
+          status ===
+            429,
+        isSearchResultsPage: false,
+        companyName:
+          ctx.companyName,
+        jobTitle:
+          job.title,
+        locationLabel:
+          normalized?.locationRaw,
+        platform:
+          'smartrecruiters',
+      };
+    },
+
+    async detectExpired(
+      ctx,
+      externalId,
+    ) {
+      const {
+        jobs,
+        totalFound,
+      } =
+        await fetchBoard(
+          ctx,
+        );
+      if (
+        totalFound ===
+        0
+      )
+        return false; // empty board is not expiry evidence
+      if (
+        jobs ===
+        null
+      )
+        return false; // fetch failure is NOT expiry evidence (3-strike rule is Plan 3)
+      return !jobs.some(
+        (
+          j,
+        ) =>
+          j.id ===
+          externalId,
+      );
+    },
+  };

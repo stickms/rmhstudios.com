@@ -3,12 +3,35 @@
  * `AppHeader`; this only supplies the name and the live connection status.
  */
 
-import AppHeader, { type AppHeaderProps } from '@/components/shared/AppHeader';
+import AppHeader, {
+  type AppHeaderProps,
+} from '@/components/shared/AppHeader';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 
-type Props = Omit<AppHeaderProps, 'title' | 'status'>;
+type Props =
+  Omit<
+    AppHeaderProps,
+    | 'title'
+    | 'status'
+  >;
 
-export default function RmhTypeHeader(props: Props) {
-  const status = useRmhTypeStore((s) => s.connectionStatus);
-  return <AppHeader {...props} title="RMH Type" status={status} />;
+export default function RmhTypeHeader(
+  props: Props,
+) {
+  const status =
+    useRmhTypeStore(
+      (
+        s,
+      ) =>
+        s.connectionStatus,
+    );
+  return (
+    <AppHeader
+      {...props}
+      title="RMH Type"
+      status={
+        status
+      }
+    />
+  );
 }

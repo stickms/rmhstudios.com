@@ -5,326 +5,906 @@
    keyboard controls & drift physics
    ═══════════════════════════════════════════ */
 
-import { Vector3, Euler, Box3, Group, Mesh, MeshStandardMaterial, MeshBasicMaterial, BoxGeometry, CylinderGeometry, PlaneGeometry, DoubleSide, BufferGeometry, BufferAttribute, ShaderMaterial, Color, AdditiveBlending, Line } from 'three';
+import {
+  Vector3,
+  Euler,
+  Box3,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  MeshBasicMaterial,
+  BoxGeometry,
+  CylinderGeometry,
+  PlaneGeometry,
+  DoubleSide,
+  BufferGeometry,
+  BufferAttribute,
+  ShaderMaterial,
+  Color,
+  AdditiveBlending,
+  Line,
+} from 'three';
 
 /* ── AE86 Panda Trueno colors ── */
-const AE86_WHITE = 0xf0f0f0;   // High-vis panda white
-const AE86_BLACK = 0x1a1a1a;   // Lower body / bumper black
+const AE86_WHITE = 0xf0f0f0; // High-vis panda white
+const AE86_BLACK = 0x1a1a1a; // Lower body / bumper black
 const GLASS_TINT = 0x224466;
 const NEON_UNDERGLOW = 0x00ffff;
 const NEON_TRIM = 0x00ffcc;
 
 export class Vehicle {
-    constructor(scene) {
-        this.scene = scene;
+  constructor(
+    scene,
+  ) {
+    this.scene =
+      scene;
 
-        // Physics state
-        this.position = new Vector3(0, 0, 0);
-        this.rotation = new Euler(0, 0, 0);
-        this.velocity = 0;        // m/s forward
-        this.lateralVelocity = 0; // m/s sideways (drift)
-        this.steerAngle = 0;      // radians
-        this.throttle = 0;        // 0..1
-        this.brake = 0;           // 0..1
-        this.handbrake = false;
-        this.drifting = false;
-        this._driftAngle = 0;     // visual body rotation offset during drift
-        this.groundY = 0;         // current ground height (set externally)
+    // Physics state
+    this.position =
+      new Vector3(
+        0,
+        0,
+        0,
+      );
+    this.rotation =
+      new Euler(
+        0,
+        0,
+        0,
+      );
+    this.velocity = 0; // m/s forward
+    this.lateralVelocity = 0; // m/s sideways (drift)
+    this.steerAngle = 0; // radians
+    this.throttle = 0; // 0..1
+    this.brake = 0; // 0..1
+    this.handbrake = false;
+    this.drifting = false;
+    this._driftAngle = 0; // visual body rotation offset during drift
+    this.groundY = 0; // current ground height (set externally)
 
-        // Constants — tuned to feel like a light FR coupe
-        this.maxSpeed = 55;       // m/s (~198 km/h)
-        this.acceleration = 18;   // m/s²
-        this.brakeForce = 30;     // m/s²
-        this.friction = 5;        // m/s²
-        this.maxSteer = 0.65;     // radians
-        this.steerSpeed = 2.8;    // rad/s
-        this.steerReturn = 4.5;   // rad/s return to center
+    // Constants — tuned to feel like a light FR coupe
+    this.maxSpeed = 55; // m/s (~198 km/h)
+    this.acceleration = 18; // m/s²
+    this.brakeForce = 30; // m/s²
+    this.friction = 5; // m/s²
+    this.maxSteer = 0.65; // radians
+    this.steerSpeed = 2.8; // rad/s
+    this.steerReturn = 4.5; // rad/s return to center
 
-        // Drift constants
-        this.driftSteerMultiplier = 1.8;
-        this.driftMaxSteer = 1.0;
-        this.driftLateralFriction = 3.0;
-        this.driftLateralKick = 0.35;
-        this.driftGrip = 0.15;
+    // Drift constants
+    this.driftSteerMultiplier = 1.8;
+    this.driftMaxSteer = 1.0;
+    this.driftLateralFriction = 3.0;
+    this.driftLateralKick = 0.35;
+    this.driftGrip = 0.15;
 
-        // Collision state
-        this.boundingBox = new Box3();
-        this._collisionCooldowns = new Map();
-        this._collisionCooldownTime = 0.3;
+    // Collision state
+    this.boundingBox =
+      new Box3();
+    this._collisionCooldowns =
+      new Map();
+    this._collisionCooldownTime = 0.3;
 
-        // ── Oriented bounding box (OBB) collision scratch ──
-        // Tight half-extents of the AE86 body footprint (matches the lower body
-        // BoxGeometry 1.7 × 4.2 → half 0.85 × 2.1). Used by the SAT narrow phase.
-        this._halfWidth = 0.85;   // local X
-        this._halfLength = 2.1;   // local Z
-        this._halfHeight = 0.65;  // local Y (for broad-phase AABB)
-        // Two orthonormal world axes of the car's footprint (width, length) and
-        // two for the obstacle. Mutated in place each frame to avoid allocation.
-        this._vAxes = [
-            { x: 1, z: 0, h: this._halfWidth },   // width  (local X)
-            { x: 0, z: 1, h: this._halfLength },  // length (local Z)
-        ];
-        this._oAxes = [
-            { x: 1, z: 0, h: 0 },
-            { x: 0, z: 1, h: 0 },
-        ];
-        this._satScratch = [this._vAxes[0], this._vAxes[1], this._oAxes[0], this._oAxes[1]];
-        this._mtv = { x: 0, z: 0, depth: 0 };
+    // ── Oriented bounding box (OBB) collision scratch ──
+    // Tight half-extents of the AE86 body footprint (matches the lower body
+    // BoxGeometry 1.7 × 4.2 → half 0.85 × 2.1). Used by the SAT narrow phase.
+    this._halfWidth = 0.85; // local X
+    this._halfLength = 2.1; // local Z
+    this._halfHeight = 0.65; // local Y (for broad-phase AABB)
+    // Two orthonormal world axes of the car's footprint (width, length) and
+    // two for the obstacle. Mutated in place each frame to avoid allocation.
+    this._vAxes =
+      [
+        {
+          x: 1,
+          z: 0,
+          h: this
+            ._halfWidth,
+        }, // width  (local X)
+        {
+          x: 0,
+          z: 1,
+          h: this
+            ._halfLength,
+        }, // length (local Z)
+      ];
+    this._oAxes =
+      [
+        {
+          x: 1,
+          z: 0,
+          h: 0,
+        },
+        {
+          x: 0,
+          z: 1,
+          h: 0,
+        },
+      ];
+    this._satScratch =
+      [
+        this
+          ._vAxes[0],
+        this
+          ._vAxes[1],
+        this
+          ._oAxes[0],
+        this
+          ._oAxes[1],
+      ];
+    this._mtv =
+      {
+        x: 0,
+        z: 0,
+        depth: 0,
+      };
 
-        // Reusable vectors (avoid per-frame allocation)
-        this._forward = new Vector3();
-        this._right = new Vector3();
-        this._fwd = new Vector3();
+    // Reusable vectors (avoid per-frame allocation)
+    this._forward =
+      new Vector3();
+    this._right =
+      new Vector3();
+    this._fwd =
+      new Vector3();
 
-        // Input state
-        this.keys = {
-            forward: false,
-            backward: false,
-            left: false,
-            right: false,
-            handbrake: false,
-        };
+    // Input state
+    this.keys =
+      {
+        forward: false,
+        backward: false,
+        left: false,
+        right: false,
+        handbrake: false,
+      };
 
-        // Analog input (mobile joystick / touch). When `active` and a control is
-        // deflected it overrides the keyboard for that axis; otherwise keyboard wins.
-        // steer: -1..1 (positive = steer left, matching keys.left)
-        this.mobileInput = {
-            active: false,
-            steer: 0,
-            throttle: 0,
-            brake: 0,
-            handbrake: false,
-            fire: false,
-        };
+    // Analog input (mobile joystick / touch). When `active` and a control is
+    // deflected it overrides the keyboard for that axis; otherwise keyboard wins.
+    // steer: -1..1 (positive = steer left, matching keys.left)
+    this.mobileInput =
+      {
+        active: false,
+        steer: 0,
+        throttle: 0,
+        brake: 0,
+        handbrake: false,
+        fire: false,
+      };
 
-        this._buildMesh();
-        this._bindInput();
-    }
+    this._buildMesh();
+    this._bindInput();
+  }
 
-    /* ═══════════════════════════════════════
+  /* ═══════════════════════════════════════
        AE86 SPRINTER TRUENO — Low-Poly Build
        Panda (white/black) two-tone
        ═══════════════════════════════════════ */
 
-    _buildMesh() {
-        this.group = new Group();
+  _buildMesh() {
+    this.group =
+      new Group();
 
-        // ── Shared materials ──
-        const whiteMat = new MeshStandardMaterial({
-            color: AE86_WHITE, roughness: 0.35, metalness: 0.15,
-            emissive: AE86_WHITE, emissiveIntensity: 0.12, // subtle self-glow for visibility
-        });
-        this._bodyMat = whiteMat;
-        const blackMat = new MeshStandardMaterial({
-            color: AE86_BLACK, roughness: 0.5, metalness: 0.3,
-        });
-        const glassMat = new MeshStandardMaterial({
-            color: GLASS_TINT, roughness: 0.1, metalness: 0.4,
-            transparent: true, opacity: 0.55,
-        });
+    // ── Shared materials ──
+    const whiteMat =
+      new MeshStandardMaterial(
+        {
+          color:
+            AE86_WHITE,
+          roughness: 0.35,
+          metalness: 0.15,
+          emissive:
+            AE86_WHITE,
+          emissiveIntensity: 0.12, // subtle self-glow for visibility
+        },
+      );
+    this._bodyMat =
+      whiteMat;
+    const blackMat =
+      new MeshStandardMaterial(
+        {
+          color:
+            AE86_BLACK,
+          roughness: 0.5,
+          metalness: 0.3,
+        },
+      );
+    const glassMat =
+      new MeshStandardMaterial(
+        {
+          color:
+            GLASS_TINT,
+          roughness: 0.1,
+          metalness: 0.4,
+          transparent: true,
+          opacity: 0.55,
+        },
+      );
 
-        // ── Lower body (black) ─ AE86 proportions (4.18m × 1.63m × 1.33m) ──
-        const lowerGeo = new BoxGeometry(1.7, 0.35, 4.2);
-        const lower = new Mesh(lowerGeo, blackMat);
-        lower.position.y = 0.37;
-        this.group.add(lower);
+    // ── Lower body (black) ─ AE86 proportions (4.18m × 1.63m × 1.33m) ──
+    const lowerGeo =
+      new BoxGeometry(
+        1.7,
+        0.35,
+        4.2,
+      );
+    const lower =
+      new Mesh(
+        lowerGeo,
+        blackMat,
+      );
+    lower.position.y = 0.37;
+    this.group.add(
+      lower,
+    );
 
-        // ── Upper body (white) ─ the iconic boxy shape ──
-        const upperGeo = new BoxGeometry(1.65, 0.3, 4.1);
-        const upper = new Mesh(upperGeo, whiteMat);
-        upper.position.y = 0.7;
-        this.group.add(upper);
+    // ── Upper body (white) ─ the iconic boxy shape ──
+    const upperGeo =
+      new BoxGeometry(
+        1.65,
+        0.3,
+        4.1,
+      );
+    const upper =
+      new Mesh(
+        upperGeo,
+        whiteMat,
+      );
+    upper.position.y = 0.7;
+    this.group.add(
+      upper,
+    );
 
-        // ── Front bumper (black, slightly protruding) ──
-        const fBumperGeo = new BoxGeometry(1.72, 0.2, 0.25);
-        const fBumper = new Mesh(fBumperGeo, blackMat);
-        fBumper.position.set(0, 0.3, -2.2);
-        this.group.add(fBumper);
+    // ── Front bumper (black, slightly protruding) ──
+    const fBumperGeo =
+      new BoxGeometry(
+        1.72,
+        0.2,
+        0.25,
+      );
+    const fBumper =
+      new Mesh(
+        fBumperGeo,
+        blackMat,
+      );
+    fBumper.position.set(
+      0,
+      0.3,
+      -2.2,
+    );
+    this.group.add(
+      fBumper,
+    );
 
-        // ── Rear bumper ──
-        const rBumperGeo = new BoxGeometry(1.72, 0.2, 0.2);
-        const rBumper = new Mesh(rBumperGeo, blackMat);
-        rBumper.position.set(0, 0.3, 2.15);
-        this.group.add(rBumper);
+    // ── Rear bumper ──
+    const rBumperGeo =
+      new BoxGeometry(
+        1.72,
+        0.2,
+        0.2,
+      );
+    const rBumper =
+      new Mesh(
+        rBumperGeo,
+        blackMat,
+      );
+    rBumper.position.set(
+      0,
+      0.3,
+      2.15,
+    );
+    this.group.add(
+      rBumper,
+    );
 
-        // ── Cabin / greenhouse (glass) ──
-        const cabinGeo = new BoxGeometry(1.45, 0.45, 1.6);
-        const cabin = new Mesh(cabinGeo, glassMat);
-        cabin.position.set(0, 1.08, -0.1);
-        this.group.add(cabin);
+    // ── Cabin / greenhouse (glass) ──
+    const cabinGeo =
+      new BoxGeometry(
+        1.45,
+        0.45,
+        1.6,
+      );
+    const cabin =
+      new Mesh(
+        cabinGeo,
+        glassMat,
+      );
+    cabin.position.set(
+      0,
+      1.08,
+      -0.1,
+    );
+    this.group.add(
+      cabin,
+    );
 
-        // ── Roof panel (white) ──
-        const roofGeo = new BoxGeometry(1.35, 0.06, 1.5);
-        const roof = new Mesh(roofGeo, whiteMat);
-        roof.position.set(0, 1.33, -0.1);
-        this.group.add(roof);
+    // ── Roof panel (white) ──
+    const roofGeo =
+      new BoxGeometry(
+        1.35,
+        0.06,
+        1.5,
+      );
+    const roof =
+      new Mesh(
+        roofGeo,
+        whiteMat,
+      );
+    roof.position.set(
+      0,
+      1.33,
+      -0.1,
+    );
+    this.group.add(
+      roof,
+    );
 
-        // ── C-pillar / hatchback slope — distinctive AE86 rear ──
-        const hatchGeo = new BoxGeometry(1.45, 0.35, 0.8);
-        const hatch = new Mesh(hatchGeo, whiteMat);
-        hatch.position.set(0, 1.02, 1.1);
-        hatch.rotation.x = 0.25; // slight tilt for hatchback look
-        this.group.add(hatch);
+    // ── C-pillar / hatchback slope — distinctive AE86 rear ──
+    const hatchGeo =
+      new BoxGeometry(
+        1.45,
+        0.35,
+        0.8,
+      );
+    const hatch =
+      new Mesh(
+        hatchGeo,
+        whiteMat,
+      );
+    hatch.position.set(
+      0,
+      1.02,
+      1.1,
+    );
+    hatch.rotation.x = 0.25; // slight tilt for hatchback look
+    this.group.add(
+      hatch,
+    );
 
-        // ── Pop-up headlights (retracted — small bumps with bright lens) ──
-        const popupMat = new MeshStandardMaterial({
-            color: 0x333333, roughness: 0.3, metalness: 0.6,
-        });
-        for (const side of [-0.55, 0.55]) {
-            const housingGeo = new BoxGeometry(0.35, 0.18, 0.3);
-            const housing = new Mesh(housingGeo, popupMat);
-            housing.position.set(side, 0.95, -1.85);
-            this.group.add(housing);
+    // ── Pop-up headlights (retracted — small bumps with bright lens) ──
+    const popupMat =
+      new MeshStandardMaterial(
+        {
+          color: 0x333333,
+          roughness: 0.3,
+          metalness: 0.6,
+        },
+      );
+    for (const side of [
+      -0.55,
+      0.55,
+    ]) {
+      const housingGeo =
+        new BoxGeometry(
+          0.35,
+          0.18,
+          0.3,
+        );
+      const housing =
+        new Mesh(
+          housingGeo,
+          popupMat,
+        );
+      housing.position.set(
+        side,
+        0.95,
+        -1.85,
+      );
+      this.group.add(
+        housing,
+      );
 
-            // Exposed headlight lens (bright, always visible)
-            const lensGeo = new BoxGeometry(0.28, 0.12, 0.05);
-            const lensMat = new MeshBasicMaterial({ color: 0xffffee });
-            const lens = new Mesh(lensGeo, lensMat);
-            lens.position.set(side, 0.94, -2.01);
-            this.group.add(lens);
-        }
+      // Exposed headlight lens (bright, always visible)
+      const lensGeo =
+        new BoxGeometry(
+          0.28,
+          0.12,
+          0.05,
+        );
+      const lensMat =
+        new MeshBasicMaterial(
+          {
+            color: 0xffffee,
+          },
+        );
+      const lens =
+        new Mesh(
+          lensGeo,
+          lensMat,
+        );
+      lens.position.set(
+        side,
+        0.94,
+        -2.01,
+      );
+      this.group.add(
+        lens,
+      );
+    }
 
-        // ── Front turn signals (amber) ──
-        for (const side of [-0.72, 0.72]) {
-            const sigGeo = new BoxGeometry(0.15, 0.1, 0.08);
-            const sigMat = new MeshBasicMaterial({ color: 0xffaa00 });
-            const sig = new Mesh(sigGeo, sigMat);
-            sig.position.set(side, 0.35, -2.18);
-            this.group.add(sig);
-        }
+    // ── Front turn signals (amber) ──
+    for (const side of [
+      -0.72,
+      0.72,
+    ]) {
+      const sigGeo =
+        new BoxGeometry(
+          0.15,
+          0.1,
+          0.08,
+        );
+      const sigMat =
+        new MeshBasicMaterial(
+          {
+            color: 0xffaa00,
+          },
+        );
+      const sig =
+        new Mesh(
+          sigGeo,
+          sigMat,
+        );
+      sig.position.set(
+        side,
+        0.35,
+        -2.18,
+      );
+      this.group.add(
+        sig,
+      );
+    }
 
-        // ── Tail lights (wide red band — iconic AE86 hatch) ──
-        for (const side of [-0.6, 0.6]) {
-            const tlGeo = new BoxGeometry(0.35, 0.12, 0.06);
-            const tlMat = new MeshBasicMaterial({ color: 0xff1122 });
-            const tl = new Mesh(tlGeo, tlMat);
-            tl.position.set(side, 0.6, 2.13);
-            this.group.add(tl);
-        }
-        // Center garnish between tail lights
-        const garnishGeo = new BoxGeometry(0.6, 0.06, 0.06);
-        const garnishMat = new MeshBasicMaterial({ color: 0xcc0000 });
-        const garnish = new Mesh(garnishGeo, garnishMat);
-        garnish.position.set(0, 0.6, 2.13);
-        this.group.add(garnish);
+    // ── Tail lights (wide red band — iconic AE86 hatch) ──
+    for (const side of [
+      -0.6,
+      0.6,
+    ]) {
+      const tlGeo =
+        new BoxGeometry(
+          0.35,
+          0.12,
+          0.06,
+        );
+      const tlMat =
+        new MeshBasicMaterial(
+          {
+            color: 0xff1122,
+          },
+        );
+      const tl =
+        new Mesh(
+          tlGeo,
+          tlMat,
+        );
+      tl.position.set(
+        side,
+        0.6,
+        2.13,
+      );
+      this.group.add(
+        tl,
+      );
+    }
+    // Center garnish between tail lights
+    const garnishGeo =
+      new BoxGeometry(
+        0.6,
+        0.06,
+        0.06,
+      );
+    const garnishMat =
+      new MeshBasicMaterial(
+        {
+          color: 0xcc0000,
+        },
+      );
+    const garnish =
+      new Mesh(
+        garnishGeo,
+        garnishMat,
+      );
+    garnish.position.set(
+      0,
+      0.6,
+      2.13,
+    );
+    this.group.add(
+      garnish,
+    );
 
-        // ── Side mirrors ──
-        for (const side of [-0.82, 0.82]) {
-            const mirGeo = new BoxGeometry(0.12, 0.08, 0.15);
-            const mir = new Mesh(mirGeo, blackMat);
-            mir.position.set(side, 0.95, -0.7);
-            this.group.add(mir);
-        }
+    // ── Side mirrors ──
+    for (const side of [
+      -0.82,
+      0.82,
+    ]) {
+      const mirGeo =
+        new BoxGeometry(
+          0.12,
+          0.08,
+          0.15,
+        );
+      const mir =
+        new Mesh(
+          mirGeo,
+          blackMat,
+        );
+      mir.position.set(
+        side,
+        0.95,
+        -0.7,
+      );
+      this.group.add(
+        mir,
+      );
+    }
 
-        // ── Fender flares ──
-        const flareMat = new MeshStandardMaterial({
-            color: AE86_BLACK, roughness: 0.6, metalness: 0.2,
-        });
-        const flarePositions = [
-            { x: -0.88, z: -1.4 }, { x: 0.88, z: -1.4 },
-            { x: -0.88, z: 1.4 }, { x: 0.88, z: 1.4 },
-        ];
-        for (const fp of flarePositions) {
-            const flareGeo = new BoxGeometry(0.12, 0.22, 0.6);
-            const flare = new Mesh(flareGeo, flareMat);
-            flare.position.set(fp.x, 0.38, fp.z);
-            this.group.add(flare);
-        }
+    // ── Fender flares ──
+    const flareMat =
+      new MeshStandardMaterial(
+        {
+          color:
+            AE86_BLACK,
+          roughness: 0.6,
+          metalness: 0.2,
+        },
+      );
+    const flarePositions =
+      [
+        {
+          x: -0.88,
+          z: -1.4,
+        },
+        {
+          x: 0.88,
+          z: -1.4,
+        },
+        {
+          x: -0.88,
+          z: 1.4,
+        },
+        {
+          x: 0.88,
+          z: 1.4,
+        },
+      ];
+    for (const fp of flarePositions) {
+      const flareGeo =
+        new BoxGeometry(
+          0.12,
+          0.22,
+          0.6,
+        );
+      const flare =
+        new Mesh(
+          flareGeo,
+          flareMat,
+        );
+      flare.position.set(
+        fp.x,
+        0.38,
+        fp.z,
+      );
+      this.group.add(
+        flare,
+      );
+    }
 
-        // ── Neon trim lines (cyberpunk accent) ──
-        const trimMat = new MeshBasicMaterial({ color: NEON_TRIM });
-        for (const side of [-1, 1]) {
-            // Lower body accent line
-            const stripGeo = new BoxGeometry(0.03, 0.04, 3.8);
-            const strip = new Mesh(stripGeo, trimMat);
-            strip.position.set(side * 0.86, 0.55, 0);
-            this.group.add(strip);
+    // ── Neon trim lines (cyberpunk accent) ──
+    const trimMat =
+      new MeshBasicMaterial(
+        {
+          color:
+            NEON_TRIM,
+        },
+      );
+    for (const side of [
+      -1,
+      1,
+    ]) {
+      // Lower body accent line
+      const stripGeo =
+        new BoxGeometry(
+          0.03,
+          0.04,
+          3.8,
+        );
+      const strip =
+        new Mesh(
+          stripGeo,
+          trimMat,
+        );
+      strip.position.set(
+        side *
+          0.86,
+        0.55,
+        0,
+      );
+      this.group.add(
+        strip,
+      );
 
-            // Upper door line
-            const doorGeo = new BoxGeometry(0.03, 0.03, 1.4);
-            const doorLine = new Mesh(doorGeo, trimMat);
-            doorLine.position.set(side * 0.84, 0.85, -0.1);
-            this.group.add(doorLine);
-        }
+      // Upper door line
+      const doorGeo =
+        new BoxGeometry(
+          0.03,
+          0.03,
+          1.4,
+        );
+      const doorLine =
+        new Mesh(
+          doorGeo,
+          trimMat,
+        );
+      doorLine.position.set(
+        side *
+          0.84,
+        0.85,
+        -0.1,
+      );
+      this.group.add(
+        doorLine,
+      );
+    }
 
-        // ── Underglow (brighter, wider for visibility) ──
-        const glowGeo = new PlaneGeometry(2.2, 5.0);
-        const glowMat = new MeshBasicMaterial({
-            color: NEON_UNDERGLOW,
+    // ── Underglow (brighter, wider for visibility) ──
+    const glowGeo =
+      new PlaneGeometry(
+        2.2,
+        5.0,
+      );
+    const glowMat =
+      new MeshBasicMaterial(
+        {
+          color:
+            NEON_UNDERGLOW,
+          transparent: true,
+          opacity: 0.5,
+          side: DoubleSide,
+        },
+      );
+    const glow =
+      new Mesh(
+        glowGeo,
+        glowMat,
+      );
+    glow.rotation.x =
+      -Math.PI /
+      2;
+    glow.position.y = 0.06;
+    this.group.add(
+      glow,
+    );
+    this._underglow =
+      glow;
+
+    // ── Headlight glow cones (forward light volume) ──
+    for (const side of [
+      -0.55,
+      0.55,
+    ]) {
+      const coneGeo =
+        new PlaneGeometry(
+          0.6,
+          3.5,
+        );
+      const coneMat =
+        new MeshBasicMaterial(
+          {
+            color: 0xffffdd,
             transparent: true,
-            opacity: 0.5,
+            opacity: 0.08,
             side: DoubleSide,
-        });
-        const glow = new Mesh(glowGeo, glowMat);
-        glow.rotation.x = -Math.PI / 2;
-        glow.position.y = 0.06;
-        this.group.add(glow);
-        this._underglow = glow;
+            depthWrite: false,
+          },
+        );
+      const cone =
+        new Mesh(
+          coneGeo,
+          coneMat,
+        );
+      cone.rotation.x =
+        -Math.PI /
+        2;
+      cone.position.set(
+        side,
+        0.15,
+        -3.7,
+      );
+      this.group.add(
+        cone,
+      );
+    }
 
-        // ── Headlight glow cones (forward light volume) ──
-        for (const side of [-0.55, 0.55]) {
-            const coneGeo = new PlaneGeometry(0.6, 3.5);
-            const coneMat = new MeshBasicMaterial({
-                color: 0xffffdd, transparent: true, opacity: 0.08,
-                side: DoubleSide, depthWrite: false,
-            });
-            const cone = new Mesh(coneGeo, coneMat);
-            cone.rotation.x = -Math.PI / 2;
-            cone.position.set(side, 0.15, -3.7);
-            this.group.add(cone);
-        }
+    // ── Wheels (Watanabe-style, wider, lower profile) ──
+    const wheelGeo =
+      new CylinderGeometry(
+        0.28,
+        0.28,
+        0.18,
+        10,
+      );
+    const wheelMat =
+      new MeshStandardMaterial(
+        {
+          color: 0x1a1a1a,
+          roughness: 0.85,
+        },
+      );
+    const hubGeo =
+      new CylinderGeometry(
+        0.15,
+        0.15,
+        0.19,
+        6,
+      );
+    const hubMat =
+      new MeshStandardMaterial(
+        {
+          color: 0x888888,
+          metalness: 0.7,
+          roughness: 0.25,
+        },
+      );
 
-        // ── Wheels (Watanabe-style, wider, lower profile) ──
-        const wheelGeo = new CylinderGeometry(0.28, 0.28, 0.18, 10);
-        const wheelMat = new MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 });
-        const hubGeo = new CylinderGeometry(0.15, 0.15, 0.19, 6);
-        const hubMat = new MeshStandardMaterial({ color: 0x888888, metalness: 0.7, roughness: 0.25 });
+    this.wheels =
+      [];
+    const wheelPositions =
+      [
+        [
+          -0.82,
+          0.28,
+          -1.4,
+        ], // FL
+        [
+          0.82,
+          0.28,
+          -1.4,
+        ], // FR
+        [
+          -0.82,
+          0.28,
+          1.4,
+        ], // RL
+        [
+          0.82,
+          0.28,
+          1.4,
+        ], // RR
+      ];
+    for (const [
+      x,
+      y,
+      z,
+    ] of wheelPositions) {
+      const wheelGroup =
+        new Group();
+      const wheel =
+        new Mesh(
+          wheelGeo,
+          wheelMat,
+        );
+      wheel.rotation.z =
+        Math.PI /
+        2;
+      wheelGroup.add(
+        wheel,
+      );
 
-        this.wheels = [];
-        const wheelPositions = [
-            [-0.82, 0.28, -1.4],   // FL
-            [0.82, 0.28, -1.4],    // FR
-            [-0.82, 0.28, 1.4],    // RL
-            [0.82, 0.28, 1.4],     // RR
-        ];
-        for (const [x, y, z] of wheelPositions) {
-            const wheelGroup = new Group();
-            const wheel = new Mesh(wheelGeo, wheelMat);
-            wheel.rotation.z = Math.PI / 2;
-            wheelGroup.add(wheel);
+      const hub =
+        new Mesh(
+          hubGeo,
+          hubMat,
+        );
+      hub.rotation.z =
+        Math.PI /
+        2;
+      wheelGroup.add(
+        hub,
+      );
 
-            const hub = new Mesh(hubGeo, hubMat);
-            hub.rotation.z = Math.PI / 2;
-            wheelGroup.add(hub);
+      wheelGroup.position.set(
+        x,
+        y,
+        z,
+      );
+      this.group.add(
+        wheelGroup,
+      );
+      this.wheels.push(
+        wheelGroup,
+      );
+    }
 
-            wheelGroup.position.set(x, y, z);
-            this.group.add(wheelGroup);
-            this.wheels.push(wheelGroup);
-        }
+    this.group.position.copy(
+      this
+        .position,
+    );
+    this.scene.add(
+      this
+        .group,
+    );
 
-        this.group.position.copy(this.position);
-        this.scene.add(this.group);
+    // ── Tail light trails ──
+    this._trailSegments = 12;
+    this._trails =
+      [];
+    for (const side of [
+      -0.6,
+      0.6,
+    ]) {
+      const geo =
+        new BufferGeometry();
+      const positions =
+        new Float32Array(
+          this
+            ._trailSegments *
+            3,
+        );
+      const alphas =
+        new Float32Array(
+          this
+            ._trailSegments,
+        );
+      // Initialize all trail points at the taillight position
+      for (
+        let i = 0;
+        i <
+        this
+          ._trailSegments;
+        i++
+      ) {
+        positions[
+          i *
+            3
+        ] =
+          0;
+        positions[
+          i *
+            3 +
+            1
+        ] =
+          0;
+        positions[
+          i *
+            3 +
+            2
+        ] =
+          0;
+        alphas[
+          i
+        ] =
+          1.0 -
+          i /
+            this
+              ._trailSegments;
+      }
+      geo.setAttribute(
+        'position',
+        new BufferAttribute(
+          positions,
+          3,
+        ),
+      );
+      geo.setAttribute(
+        'alpha',
+        new BufferAttribute(
+          alphas,
+          1,
+        ),
+      );
 
-        // ── Tail light trails ──
-        this._trailSegments = 12;
-        this._trails = [];
-        for (const side of [-0.6, 0.6]) {
-            const geo = new BufferGeometry();
-            const positions = new Float32Array(this._trailSegments * 3);
-            const alphas = new Float32Array(this._trailSegments);
-            // Initialize all trail points at the taillight position
-            for (let i = 0; i < this._trailSegments; i++) {
-                positions[i * 3] = 0;
-                positions[i * 3 + 1] = 0;
-                positions[i * 3 + 2] = 0;
-                alphas[i] = 1.0 - i / this._trailSegments;
-            }
-            geo.setAttribute('position', new BufferAttribute(positions, 3));
-            geo.setAttribute('alpha', new BufferAttribute(alphas, 1));
-
-            const mat = new ShaderMaterial({
-                uniforms: { color: { value: new Color(0xff1122) } },
-                vertexShader: `
+      const mat =
+        new ShaderMaterial(
+          {
+            uniforms:
+              {
+                color:
+                  {
+                    value:
+                      new Color(
+                        0xff1122,
+                      ),
+                  },
+              },
+            vertexShader: `
                     attribute float alpha;
                     varying float vAlpha;
                     void main() {
@@ -332,420 +912,1377 @@ export class Vehicle {
                         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                     }
                 `,
-                fragmentShader: `
+            fragmentShader: `
                     uniform vec3 color;
                     varying float vAlpha;
                     void main() {
                         gl_FragColor = vec4(color, vAlpha * 0.4);
                     }
                 `,
-                transparent: true,
-                depthWrite: false,
-                blending: AdditiveBlending,
-            });
-
-            const line = new Line(geo, mat);
-            line.frustumCulled = false;
-            this.scene.add(line);
-            this._trails.push({ line, side, localY: 0.6, localZ: 2.13 });
-        }
-    }
-
-    _bindInput() {
-        this._onKeyDown = (e) => {
-            switch (e.code) {
-                case 'KeyW': case 'ArrowUp': this.keys.forward = true; break;
-                case 'KeyS': case 'ArrowDown': this.keys.backward = true; break;
-                case 'KeyA': case 'ArrowLeft': this.keys.left = true; break;
-                case 'KeyD': case 'ArrowRight': this.keys.right = true; break;
-                case 'Space': this.keys.handbrake = true; break;
-            }
-        };
-        this._onKeyUp = (e) => {
-            switch (e.code) {
-                case 'KeyW': case 'ArrowUp': this.keys.forward = false; break;
-                case 'KeyS': case 'ArrowDown': this.keys.backward = false; break;
-                case 'KeyA': case 'ArrowLeft': this.keys.left = false; break;
-                case 'KeyD': case 'ArrowRight': this.keys.right = false; break;
-                case 'Space': this.keys.handbrake = false; break;
-            }
-        };
-        window.addEventListener('keydown', this._onKeyDown);
-        window.addEventListener('keyup', this._onKeyUp);
-    }
-
-    unbindInput() {
-        window.removeEventListener('keydown', this._onKeyDown);
-        window.removeEventListener('keyup', this._onKeyUp);
-    }
-
-    update(dt) {
-        // Resolve input source — analog (mobile joystick) overrides keyboard per-axis
-        const m = this.mobileInput;
-        const useMobileSteer = m.active && Math.abs(m.steer) > 0.02;
-        const useMobileDrive = m.active && (m.throttle > 0.02 || m.brake > 0.02);
-
-        // Throttle / brake from whichever source is active this frame
-        this.throttle = useMobileDrive ? Math.min(1, m.throttle) : (this.keys.forward ? 1 : 0);
-        this.brake = useMobileDrive ? Math.min(1, m.brake) : (this.keys.backward ? 1 : 0);
-        this.handbrake = this.keys.handbrake || (m.active && m.handbrake);
-
-        const wasDrifting = this.drifting;
-        this.drifting = this.handbrake && Math.abs(this.velocity) > 3;
-
-        // Drift entry — kick lateral velocity from current steering
-        if (this.drifting && !wasDrifting) {
-            const steerDir = this.steerAngle !== 0 ? Math.sign(this.steerAngle) : (Math.random() < 0.5 ? 1 : -1);
-            this.lateralVelocity += steerDir * Math.abs(this.velocity) * this.driftLateralKick;
-        }
-
-        // Steering — more responsive when drifting
-        const currentMaxSteer = this.drifting ? this.driftMaxSteer : this.maxSteer;
-        const currentSteerSpeed = this.drifting ? this.steerSpeed * this.driftSteerMultiplier : this.steerSpeed;
-
-        if (useMobileSteer) {
-            // Analog: ease steerAngle toward joystick target
-            const target = Math.max(-1, Math.min(1, m.steer)) * currentMaxSteer;
-            if (this.steerAngle < target) {
-                this.steerAngle = Math.min(this.steerAngle + currentSteerSpeed * dt, target);
-            } else if (this.steerAngle > target) {
-                this.steerAngle = Math.max(this.steerAngle - currentSteerSpeed * dt, target);
-            }
-        } else if (this.keys.left) {
-            this.steerAngle = Math.min(this.steerAngle + currentSteerSpeed * dt, currentMaxSteer);
-        } else if (this.keys.right) {
-            this.steerAngle = Math.max(this.steerAngle - currentSteerSpeed * dt, -currentMaxSteer);
-        } else {
-            // Return to center
-            if (this.steerAngle > 0) {
-                this.steerAngle = Math.max(0, this.steerAngle - this.steerReturn * dt);
-            } else if (this.steerAngle < 0) {
-                this.steerAngle = Math.min(0, this.steerAngle + this.steerReturn * dt);
-            }
-        }
-
-        // Acceleration
-        if (this.throttle > 0) {
-            this.velocity += this.acceleration * this.throttle * dt;
-        }
-
-        // Braking
-        if (this.brake > 0) {
-            this.velocity -= this.brakeForce * this.brake * dt;
-        }
-
-        // Drift physics — forward drag + lateral slide from steering
-        if (this.drifting) {
-            this.velocity *= Math.pow(0.55, dt);
-            this.lateralVelocity += this.steerAngle * Math.abs(this.velocity) * dt * 1.2;
-        } else {
-            // Normal lateral friction
-            if (Math.abs(this.lateralVelocity) > 0.01) {
-                const lateralDecay = Math.pow(this.driftGrip, dt);
-                this.lateralVelocity *= lateralDecay;
-                if (Math.abs(this.lateralVelocity) < 0.5) {
-                    this.lateralVelocity *= Math.pow(0.01, dt);
-                }
-            }
-        }
-
-        // Lateral friction (always, weaker when drifting)
-        const latFriction = this.drifting ? this.driftLateralFriction * 0.3 : this.driftLateralFriction;
-        if (this.lateralVelocity > 0) {
-            this.lateralVelocity = Math.max(0, this.lateralVelocity - latFriction * dt);
-        } else if (this.lateralVelocity < 0) {
-            this.lateralVelocity = Math.min(0, this.lateralVelocity + latFriction * dt);
-        }
-
-        // Clamp lateral velocity
-        const maxLateral = Math.abs(this.velocity) * 0.5;
-        this.lateralVelocity = Math.max(-maxLateral, Math.min(this.lateralVelocity, maxLateral));
-
-        // Normal friction
-        if (this.throttle === 0 && this.brake === 0 && !this.drifting) {
-            if (this.velocity > 0) {
-                this.velocity = Math.max(0, this.velocity - this.friction * dt);
-            } else if (this.velocity < 0) {
-                this.velocity = Math.min(0, this.velocity + this.friction * dt);
-            }
-        }
-
-        // Clamp speed
-        this.velocity = Math.max(-this.maxSpeed * 0.3, Math.min(this.velocity, this.maxSpeed));
-
-        // Turning (only at speed)
-        const turnFactor = Math.min(1, Math.abs(this.velocity) / 5);
-        const turnSign = this.velocity >= 0 ? 1 : -1;
-        const turnRate = this.drifting ? 2.0 : 1.5;
-        this.rotation.y += this.steerAngle * turnSign * turnFactor * dt * turnRate;
-
-        // Position update — forward + lateral (reuse pre-allocated vectors)
-        this._forward.set(0, 0, -1).applyEuler(this.rotation);
-        this.position.addScaledVector(this._forward, this.velocity * dt);
-
-        this._right.set(1, 0, 0).applyEuler(this.rotation);
-        this.position.addScaledVector(this._right, this.lateralVelocity * dt);
-
-        // Smoothly track ground height (set externally by main loop)
-        const ySmooth = 1 - Math.exp(-12 * dt);
-        this.position.y += (this.groundY - this.position.y) * ySmooth;
-
-        // Update mesh position
-        this.group.position.copy(this.position);
-
-        // Visual drift angle — car body rotates into the slide
-        const targetDriftAngle = this.drifting
-            ? Math.atan2(this.lateralVelocity, Math.max(Math.abs(this.velocity), 1)) * 0.5
-            : 0;
-        this._driftAngle += (targetDriftAngle - this._driftAngle) * Math.min(1, 8 * dt);
-        this.group.rotation.set(
-            this.rotation.x,
-            this.rotation.y + this._driftAngle,
-            this.rotation.z
+            transparent: true,
+            depthWrite: false,
+            blending:
+              AdditiveBlending,
+          },
         );
 
-        // Spin wheels
-        const wheelSpin = this.velocity * dt * 3;
-        for (const w of this.wheels) {
-            w.children[0].rotation.x += wheelSpin; // tire
-            w.children[1].rotation.x += wheelSpin; // hub
-        }
-
-        // Underglow — brighter when drifting
-        if (this._underglow) {
-            const baseOpacity = this.drifting ? 0.6 : 0.35;
-            this._underglow.material.opacity = baseOpacity + 0.15 * Math.sin(Date.now() * 0.003);
-        }
-
-        // Tail light trails — shift positions backward, insert new head
-        for (const trail of this._trails) {
-            const pos = trail.line.geometry.attributes.position;
-            const arr = pos.array;
-            // Shift all points back by one slot
-            for (let i = this._trailSegments - 1; i > 0; i--) {
-                arr[i * 3] = arr[(i - 1) * 3];
-                arr[i * 3 + 1] = arr[(i - 1) * 3 + 1];
-                arr[i * 3 + 2] = arr[(i - 1) * 3 + 2];
-            }
-            // Compute world position of this taillight
-            this._fwd.set(trail.side, trail.localY, trail.localZ);
-            this.group.localToWorld(this._fwd);
-            arr[0] = this._fwd.x;
-            arr[1] = this._fwd.y;
-            arr[2] = this._fwd.z;
-            pos.needsUpdate = true;
-        }
-    }
-
-    /* ── Collision ── */
-
-    _updateBoundingBox() {
-        // Broad-phase AABB — the axis-aligned envelope of the rotated car body.
-        // Deliberately an over-approximation of the true OBB so it never misses a
-        // candidate; the SAT narrow phase below rejects the false positives.
-        const halfW = this._halfWidth;
-        const halfH = this._halfHeight;
-        const halfD = this._halfLength;
-        const cosY = Math.abs(Math.cos(this.rotation.y));
-        const sinY = Math.abs(Math.sin(this.rotation.y));
-
-        const extX = halfW * cosY + halfD * sinY;
-        const extZ = halfW * sinY + halfD * cosY;
-
-        this.boundingBox.min.set(
-            this.position.x - extX,
-            this.position.y,
-            this.position.z - extZ
+      const line =
+        new Line(
+          geo,
+          mat,
         );
-        this.boundingBox.max.set(
-            this.position.x + extX,
-            this.position.y + halfH * 2,
-            this.position.z + extZ
+      line.frustumCulled = false;
+      this.scene.add(
+        line,
+      );
+      this._trails.push(
+        {
+          line,
+          side,
+          localY: 0.6,
+          localZ: 2.13,
+        },
+      );
+    }
+  }
+
+  _bindInput() {
+    this._onKeyDown =
+      (
+        e,
+      ) => {
+        switch (
+          e.code
+        ) {
+          case 'KeyW':
+          case 'ArrowUp':
+            this.keys.forward = true;
+            break;
+          case 'KeyS':
+          case 'ArrowDown':
+            this.keys.backward = true;
+            break;
+          case 'KeyA':
+          case 'ArrowLeft':
+            this.keys.left = true;
+            break;
+          case 'KeyD':
+          case 'ArrowRight':
+            this.keys.right = true;
+            break;
+          case 'Space':
+            this.keys.handbrake = true;
+            break;
+        }
+      };
+    this._onKeyUp =
+      (
+        e,
+      ) => {
+        switch (
+          e.code
+        ) {
+          case 'KeyW':
+          case 'ArrowUp':
+            this.keys.forward = false;
+            break;
+          case 'KeyS':
+          case 'ArrowDown':
+            this.keys.backward = false;
+            break;
+          case 'KeyA':
+          case 'ArrowLeft':
+            this.keys.left = false;
+            break;
+          case 'KeyD':
+          case 'ArrowRight':
+            this.keys.right = false;
+            break;
+          case 'Space':
+            this.keys.handbrake = false;
+            break;
+        }
+      };
+    window.addEventListener(
+      'keydown',
+      this
+        ._onKeyDown,
+    );
+    window.addEventListener(
+      'keyup',
+      this
+        ._onKeyUp,
+    );
+  }
+
+  unbindInput() {
+    window.removeEventListener(
+      'keydown',
+      this
+        ._onKeyDown,
+    );
+    window.removeEventListener(
+      'keyup',
+      this
+        ._onKeyUp,
+    );
+  }
+
+  update(
+    dt,
+  ) {
+    // Resolve input source — analog (mobile joystick) overrides keyboard per-axis
+    const m =
+      this
+        .mobileInput;
+    const useMobileSteer =
+      m.active &&
+      Math.abs(
+        m.steer,
+      ) >
+        0.02;
+    const useMobileDrive =
+      m.active &&
+      (m.throttle >
+        0.02 ||
+        m.brake >
+          0.02);
+
+    // Throttle / brake from whichever source is active this frame
+    this.throttle =
+      useMobileDrive
+        ? Math.min(
+            1,
+            m.throttle,
+          )
+        : this
+              .keys
+              .forward
+          ? 1
+          : 0;
+    this.brake =
+      useMobileDrive
+        ? Math.min(
+            1,
+            m.brake,
+          )
+        : this
+              .keys
+              .backward
+          ? 1
+          : 0;
+    this.handbrake =
+      this
+        .keys
+        .handbrake ||
+      (m.active &&
+        m.handbrake);
+
+    const wasDrifting =
+      this
+        .drifting;
+    this.drifting =
+      this
+        .handbrake &&
+      Math.abs(
+        this
+          .velocity,
+      ) >
+        3;
+
+    // Drift entry — kick lateral velocity from current steering
+    if (
+      this
+        .drifting &&
+      !wasDrifting
+    ) {
+      const steerDir =
+        this
+          .steerAngle !==
+        0
+          ? Math.sign(
+              this
+                .steerAngle,
+            )
+          : Math.random() <
+              0.5
+            ? 1
+            : -1;
+      this.lateralVelocity +=
+        steerDir *
+        Math.abs(
+          this
+            .velocity,
+        ) *
+        this
+          .driftLateralKick;
+    }
+
+    // Steering — more responsive when drifting
+    const currentMaxSteer =
+      this
+        .drifting
+        ? this
+            .driftMaxSteer
+        : this
+            .maxSteer;
+    const currentSteerSpeed =
+      this
+        .drifting
+        ? this
+            .steerSpeed *
+          this
+            .driftSteerMultiplier
+        : this
+            .steerSpeed;
+
+    if (
+      useMobileSteer
+    ) {
+      // Analog: ease steerAngle toward joystick target
+      const target =
+        Math.max(
+          -1,
+          Math.min(
+            1,
+            m.steer,
+          ),
+        ) *
+        currentMaxSteer;
+      if (
+        this
+          .steerAngle <
+        target
+      ) {
+        this.steerAngle =
+          Math.min(
+            this
+              .steerAngle +
+              currentSteerSpeed *
+                dt,
+            target,
+          );
+      } else if (
+        this
+          .steerAngle >
+        target
+      ) {
+        this.steerAngle =
+          Math.max(
+            this
+              .steerAngle -
+              currentSteerSpeed *
+                dt,
+            target,
+          );
+      }
+    } else if (
+      this
+        .keys
+        .left
+    ) {
+      this.steerAngle =
+        Math.min(
+          this
+            .steerAngle +
+            currentSteerSpeed *
+              dt,
+          currentMaxSteer,
+        );
+    } else if (
+      this
+        .keys
+        .right
+    ) {
+      this.steerAngle =
+        Math.max(
+          this
+            .steerAngle -
+            currentSteerSpeed *
+              dt,
+          -currentMaxSteer,
+        );
+    } else {
+      // Return to center
+      if (
+        this
+          .steerAngle >
+        0
+      ) {
+        this.steerAngle =
+          Math.max(
+            0,
+            this
+              .steerAngle -
+              this
+                .steerReturn *
+                dt,
+          );
+      } else if (
+        this
+          .steerAngle <
+        0
+      ) {
+        this.steerAngle =
+          Math.min(
+            0,
+            this
+              .steerAngle +
+              this
+                .steerReturn *
+                dt,
+          );
+      }
+    }
+
+    // Acceleration
+    if (
+      this
+        .throttle >
+      0
+    ) {
+      this.velocity +=
+        this
+          .acceleration *
+        this
+          .throttle *
+        dt;
+    }
+
+    // Braking
+    if (
+      this
+        .brake >
+      0
+    ) {
+      this.velocity -=
+        this
+          .brakeForce *
+        this
+          .brake *
+        dt;
+    }
+
+    // Drift physics — forward drag + lateral slide from steering
+    if (
+      this
+        .drifting
+    ) {
+      this.velocity *=
+        Math.pow(
+          0.55,
+          dt,
+        );
+      this.lateralVelocity +=
+        this
+          .steerAngle *
+        Math.abs(
+          this
+            .velocity,
+        ) *
+        dt *
+        1.2;
+    } else {
+      // Normal lateral friction
+      if (
+        Math.abs(
+          this
+            .lateralVelocity,
+        ) >
+        0.01
+      ) {
+        const lateralDecay =
+          Math.pow(
+            this
+              .driftGrip,
+            dt,
+          );
+        this.lateralVelocity *=
+          lateralDecay;
+        if (
+          Math.abs(
+            this
+              .lateralVelocity,
+          ) <
+          0.5
+        ) {
+          this.lateralVelocity *=
+            Math.pow(
+              0.01,
+              dt,
+            );
+        }
+      }
+    }
+
+    // Lateral friction (always, weaker when drifting)
+    const latFriction =
+      this
+        .drifting
+        ? this
+            .driftLateralFriction *
+          0.3
+        : this
+            .driftLateralFriction;
+    if (
+      this
+        .lateralVelocity >
+      0
+    ) {
+      this.lateralVelocity =
+        Math.max(
+          0,
+          this
+            .lateralVelocity -
+            latFriction *
+              dt,
+        );
+    } else if (
+      this
+        .lateralVelocity <
+      0
+    ) {
+      this.lateralVelocity =
+        Math.min(
+          0,
+          this
+            .lateralVelocity +
+            latFriction *
+              dt,
         );
     }
 
-    /** Refresh the car's two world-space footprint axes from its heading. */
-    _updateVehicleAxes() {
-        const a = this.rotation.y;
-        const ca = Math.cos(a), sa = Math.sin(a);
-        // Local X (width) → (cos, -sin); local Z (length) → (sin, cos)
-        this._vAxes[0].x = ca;  this._vAxes[0].z = -sa; this._vAxes[0].h = this._halfWidth;
-        this._vAxes[1].x = sa;  this._vAxes[1].z = ca;  this._vAxes[1].h = this._halfLength;
+    // Clamp lateral velocity
+    const maxLateral =
+      Math.abs(
+        this
+          .velocity,
+      ) *
+      0.5;
+    this.lateralVelocity =
+      Math.max(
+        -maxLateral,
+        Math.min(
+          this
+            .lateralVelocity,
+          maxLateral,
+        ),
+      );
+
+    // Normal friction
+    if (
+      this
+        .throttle ===
+        0 &&
+      this
+        .brake ===
+        0 &&
+      !this
+        .drifting
+    ) {
+      if (
+        this
+          .velocity >
+        0
+      ) {
+        this.velocity =
+          Math.max(
+            0,
+            this
+              .velocity -
+              this
+                .friction *
+                dt,
+          );
+      } else if (
+        this
+          .velocity <
+        0
+      ) {
+        this.velocity =
+          Math.min(
+            0,
+            this
+              .velocity +
+              this
+                .friction *
+                dt,
+          );
+      }
     }
 
-    /**
-     * Separating Axis Theorem test between the car OBB and an obstacle OBB on the
-     * XZ plane. Axes/centres are read from this._vAxes / this._oAxes (pre-filled).
-     * On overlap, writes the minimum translation vector into this._mtv (normal
-     * points from the obstacle toward the car) and returns it; otherwise null.
-     */
-    _satResolve(aCx, aCz, bCx, bCz) {
-        const dx = aCx - bCx, dz = aCz - bCz;
-        const axes = this._satScratch;
-        const a0 = this._vAxes[0], a1 = this._vAxes[1];
-        const b0 = this._oAxes[0], b1 = this._oAxes[1];
-        let minDepth = Infinity, nx = 0, nz = 0;
+    // Clamp speed
+    this.velocity =
+      Math.max(
+        -this
+          .maxSpeed *
+          0.3,
+        Math.min(
+          this
+            .velocity,
+          this
+            .maxSpeed,
+        ),
+      );
 
-        for (let i = 0; i < 4; i++) {
-            const ax = axes[i];
-            const ra = Math.abs(a0.x * ax.x + a0.z * ax.z) * a0.h +
-                       Math.abs(a1.x * ax.x + a1.z * ax.z) * a1.h;
-            const rb = Math.abs(b0.x * ax.x + b0.z * ax.z) * b0.h +
-                       Math.abs(b1.x * ax.x + b1.z * ax.z) * b1.h;
-            const dist = dx * ax.x + dz * ax.z;
-            const overlap = ra + rb - Math.abs(dist);
-            if (overlap <= 0) return null; // separating axis → no collision
-            if (overlap < minDepth) {
-                minDepth = overlap;
-                const s = dist < 0 ? -1 : 1; // point normal from obstacle → car
-                nx = ax.x * s; nz = ax.z * s;
-            }
-        }
+    // Turning (only at speed)
+    const turnFactor =
+      Math.min(
+        1,
+        Math.abs(
+          this
+            .velocity,
+        ) /
+          5,
+      );
+    const turnSign =
+      this
+        .velocity >=
+      0
+        ? 1
+        : -1;
+    const turnRate =
+      this
+        .drifting
+        ? 2.0
+        : 1.5;
+    this.rotation.y +=
+      this
+        .steerAngle *
+      turnSign *
+      turnFactor *
+      dt *
+      turnRate;
 
-        this._mtv.x = nx; this._mtv.z = nz; this._mtv.depth = minDepth;
-        return this._mtv;
+    // Position update — forward + lateral (reuse pre-allocated vectors)
+    this._forward
+      .set(
+        0,
+        0,
+        -1,
+      )
+      .applyEuler(
+        this
+          .rotation,
+      );
+    this.position.addScaledVector(
+      this
+        ._forward,
+      this
+        .velocity *
+        dt,
+    );
+
+    this._right
+      .set(
+        1,
+        0,
+        0,
+      )
+      .applyEuler(
+        this
+          .rotation,
+      );
+    this.position.addScaledVector(
+      this
+        ._right,
+      this
+        .lateralVelocity *
+        dt,
+    );
+
+    // Smoothly track ground height (set externally by main loop)
+    const ySmooth =
+      1 -
+      Math.exp(
+        -12 *
+          dt,
+      );
+    this.position.y +=
+      (this
+        .groundY -
+        this
+          .position
+          .y) *
+      ySmooth;
+
+    // Update mesh position
+    this.group.position.copy(
+      this
+        .position,
+    );
+
+    // Visual drift angle — car body rotates into the slide
+    const targetDriftAngle =
+      this
+        .drifting
+        ? Math.atan2(
+            this
+              .lateralVelocity,
+            Math.max(
+              Math.abs(
+                this
+                  .velocity,
+              ),
+              1,
+            ),
+          ) *
+          0.5
+        : 0;
+    this._driftAngle +=
+      (targetDriftAngle -
+        this
+          ._driftAngle) *
+      Math.min(
+        1,
+        8 *
+          dt,
+      );
+    this.group.rotation.set(
+      this
+        .rotation
+        .x,
+      this
+        .rotation
+        .y +
+        this
+          ._driftAngle,
+      this
+        .rotation
+        .z,
+    );
+
+    // Spin wheels
+    const wheelSpin =
+      this
+        .velocity *
+      dt *
+      3;
+    for (const w of this
+      .wheels) {
+      w.children[0].rotation.x +=
+        wheelSpin; // tire
+      w.children[1].rotation.x +=
+        wheelSpin; // hub
     }
 
-    /** Fill this._oAxes / returns centre for a collidable's obstacle OBB. */
-    _setObstacleOBB(col) {
-        const o0 = this._oAxes[0], o1 = this._oAxes[1];
-        if (col.obb) {
-            // Oriented obstacle (moving car): heading + local half-extents.
-            const b = col.obb.angle;
-            const cb = Math.cos(b), sb = Math.sin(b);
-            o0.x = cb; o0.z = -sb; o0.h = col.obb.hw; // width  (local X)
-            o1.x = sb; o1.z = cb;  o1.h = col.obb.hd; // length (local Z)
-            // Centre = box centre (kept in sync with the mesh by the caller).
-            this._obCx = (col.box.min.x + col.box.max.x) * 0.5;
-            this._obCz = (col.box.min.z + col.box.max.z) * 0.5;
-        } else {
-            // Static obstacle (building/barrier/pole/cone): axis-aligned footprint.
-            o0.x = 1; o0.z = 0; o0.h = (col.box.max.x - col.box.min.x) * 0.5;
-            o1.x = 0; o1.z = 1; o1.h = (col.box.max.z - col.box.min.z) * 0.5;
-            this._obCx = (col.box.min.x + col.box.max.x) * 0.5;
-            this._obCz = (col.box.min.z + col.box.max.z) * 0.5;
-        }
+    // Underglow — brighter when drifting
+    if (
+      this
+        ._underglow
+    ) {
+      const baseOpacity =
+        this
+          .drifting
+          ? 0.6
+          : 0.35;
+      this._underglow.material.opacity =
+        baseOpacity +
+        0.15 *
+          Math.sin(
+            Date.now() *
+              0.003,
+          );
     }
 
-    checkCollisions(collidables, dt) {
+    // Tail light trails — shift positions backward, insert new head
+    for (const trail of this
+      ._trails) {
+      const pos =
+        trail
+          .line
+          .geometry
+          .attributes
+          .position;
+      const arr =
+        pos.array;
+      // Shift all points back by one slot
+      for (
+        let i =
+          this
+            ._trailSegments -
+          1;
+        i >
+        0;
+        i--
+      ) {
+        arr[
+          i *
+            3
+        ] =
+          arr[
+            (i -
+              1) *
+              3
+          ];
+        arr[
+          i *
+            3 +
+            1
+        ] =
+          arr[
+            (i -
+              1) *
+              3 +
+              1
+          ];
+        arr[
+          i *
+            3 +
+            2
+        ] =
+          arr[
+            (i -
+              1) *
+              3 +
+              2
+          ];
+      }
+      // Compute world position of this taillight
+      this._fwd.set(
+        trail.side,
+        trail.localY,
+        trail.localZ,
+      );
+      this.group.localToWorld(
+        this
+          ._fwd,
+      );
+      arr[0] =
+        this._fwd.x;
+      arr[1] =
+        this._fwd.y;
+      arr[2] =
+        this._fwd.z;
+      pos.needsUpdate = true;
+    }
+  }
+
+  /* ── Collision ── */
+
+  _updateBoundingBox() {
+    // Broad-phase AABB — the axis-aligned envelope of the rotated car body.
+    // Deliberately an over-approximation of the true OBB so it never misses a
+    // candidate; the SAT narrow phase below rejects the false positives.
+    const halfW =
+      this
+        ._halfWidth;
+    const halfH =
+      this
+        ._halfHeight;
+    const halfD =
+      this
+        ._halfLength;
+    const cosY =
+      Math.abs(
+        Math.cos(
+          this
+            .rotation
+            .y,
+        ),
+      );
+    const sinY =
+      Math.abs(
+        Math.sin(
+          this
+            .rotation
+            .y,
+        ),
+      );
+
+    const extX =
+      halfW *
+        cosY +
+      halfD *
+        sinY;
+    const extZ =
+      halfW *
+        sinY +
+      halfD *
+        cosY;
+
+    this.boundingBox.min.set(
+      this
+        .position
+        .x -
+        extX,
+      this
+        .position
+        .y,
+      this
+        .position
+        .z -
+        extZ,
+    );
+    this.boundingBox.max.set(
+      this
+        .position
+        .x +
+        extX,
+      this
+        .position
+        .y +
+        halfH *
+          2,
+      this
+        .position
+        .z +
+        extZ,
+    );
+  }
+
+  /** Refresh the car's two world-space footprint axes from its heading. */
+  _updateVehicleAxes() {
+    const a =
+      this
+        .rotation
+        .y;
+    const ca =
+        Math.cos(
+          a,
+        ),
+      sa =
+        Math.sin(
+          a,
+        );
+    // Local X (width) → (cos, -sin); local Z (length) → (sin, cos)
+    this._vAxes[0].x =
+      ca;
+    this._vAxes[0].z =
+      -sa;
+    this._vAxes[0].h =
+      this._halfWidth;
+    this._vAxes[1].x =
+      sa;
+    this._vAxes[1].z =
+      ca;
+    this._vAxes[1].h =
+      this._halfLength;
+  }
+
+  /**
+   * Separating Axis Theorem test between the car OBB and an obstacle OBB on the
+   * XZ plane. Axes/centres are read from this._vAxes / this._oAxes (pre-filled).
+   * On overlap, writes the minimum translation vector into this._mtv (normal
+   * points from the obstacle toward the car) and returns it; otherwise null.
+   */
+  _satResolve(
+    aCx,
+    aCz,
+    bCx,
+    bCz,
+  ) {
+    const dx =
+        aCx -
+        bCx,
+      dz =
+        aCz -
+        bCz;
+    const axes =
+      this
+        ._satScratch;
+    const a0 =
+        this
+          ._vAxes[0],
+      a1 =
+        this
+          ._vAxes[1];
+    const b0 =
+        this
+          ._oAxes[0],
+      b1 =
+        this
+          ._oAxes[1];
+    let minDepth =
+        Infinity,
+      nx = 0,
+      nz = 0;
+
+    for (
+      let i = 0;
+      i <
+      4;
+      i++
+    ) {
+      const ax =
+        axes[
+          i
+        ];
+      const ra =
+        Math.abs(
+          a0.x *
+            ax.x +
+            a0.z *
+              ax.z,
+        ) *
+          a0.h +
+        Math.abs(
+          a1.x *
+            ax.x +
+            a1.z *
+              ax.z,
+        ) *
+          a1.h;
+      const rb =
+        Math.abs(
+          b0.x *
+            ax.x +
+            b0.z *
+              ax.z,
+        ) *
+          b0.h +
+        Math.abs(
+          b1.x *
+            ax.x +
+            b1.z *
+              ax.z,
+        ) *
+          b1.h;
+      const dist =
+        dx *
+          ax.x +
+        dz *
+          ax.z;
+      const overlap =
+        ra +
+        rb -
+        Math.abs(
+          dist,
+        );
+      if (
+        overlap <=
+        0
+      )
+        return null; // separating axis → no collision
+      if (
+        overlap <
+        minDepth
+      ) {
+        minDepth =
+          overlap;
+        const s =
+          dist <
+          0
+            ? -1
+            : 1; // point normal from obstacle → car
+        nx =
+          ax.x *
+          s;
+        nz =
+          ax.z *
+          s;
+      }
+    }
+
+    this._mtv.x =
+      nx;
+    this._mtv.z =
+      nz;
+    this._mtv.depth =
+      minDepth;
+    return this
+      ._mtv;
+  }
+
+  /** Fill this._oAxes / returns centre for a collidable's obstacle OBB. */
+  _setObstacleOBB(
+    col,
+  ) {
+    const o0 =
+        this
+          ._oAxes[0],
+      o1 =
+        this
+          ._oAxes[1];
+    if (
+      col.obb
+    ) {
+      // Oriented obstacle (moving car): heading + local half-extents.
+      const b =
+        col
+          .obb
+          .angle;
+      const cb =
+          Math.cos(
+            b,
+          ),
+        sb =
+          Math.sin(
+            b,
+          );
+      o0.x =
+        cb;
+      o0.z =
+        -sb;
+      o0.h =
+        col.obb.hw; // width  (local X)
+      o1.x =
+        sb;
+      o1.z =
+        cb;
+      o1.h =
+        col.obb.hd; // length (local Z)
+      // Centre = box centre (kept in sync with the mesh by the caller).
+      this._obCx =
+        (col
+          .box
+          .min
+          .x +
+          col
+            .box
+            .max
+            .x) *
+        0.5;
+      this._obCz =
+        (col
+          .box
+          .min
+          .z +
+          col
+            .box
+            .max
+            .z) *
+        0.5;
+    } else {
+      // Static obstacle (building/barrier/pole/cone): axis-aligned footprint.
+      o0.x = 1;
+      o0.z = 0;
+      o0.h =
+        (col
+          .box
+          .max
+          .x -
+          col
+            .box
+            .min
+            .x) *
+        0.5;
+      o1.x = 0;
+      o1.z = 1;
+      o1.h =
+        (col
+          .box
+          .max
+          .z -
+          col
+            .box
+            .min
+            .z) *
+        0.5;
+      this._obCx =
+        (col
+          .box
+          .min
+          .x +
+          col
+            .box
+            .max
+            .x) *
+        0.5;
+      this._obCz =
+        (col
+          .box
+          .min
+          .z +
+          col
+            .box
+            .max
+            .z) *
+        0.5;
+    }
+  }
+
+  checkCollisions(
+    collidables,
+    dt,
+  ) {
+    this._updateBoundingBox();
+    this._updateVehicleAxes();
+
+    // Tick down cooldowns
+    for (const [
+      mesh,
+      t,
+    ] of this
+      ._collisionCooldowns) {
+      const remaining =
+        t -
+        dt;
+      if (
+        remaining <=
+        0
+      )
+        this._collisionCooldowns.delete(
+          mesh,
+        );
+      else
+        this._collisionCooldowns.set(
+          mesh,
+          remaining,
+        );
+    }
+
+    const collisions =
+      [];
+    let pushed = false;
+    const PUSH_MARGIN = 0.05;
+
+    for (const col of collidables) {
+      if (
+        pushed
+      ) {
         this._updateBoundingBox();
-        this._updateVehicleAxes();
+      }
+      // Broad phase — cheap AABB reject (includes the vertical axis so we
+      // don't collide with bridges/highways at a different elevation).
+      if (
+        !this.boundingBox.intersectsBox(
+          col.box,
+        )
+      )
+        continue;
 
-        // Tick down cooldowns
-        for (const [mesh, t] of this._collisionCooldowns) {
-            const remaining = t - dt;
-            if (remaining <= 0) this._collisionCooldowns.delete(mesh);
-            else this._collisionCooldowns.set(mesh, remaining);
-        }
+      // Narrow phase — true oriented-box overlap on the XZ plane.
+      this._setObstacleOBB(
+        col,
+      );
+      const mtv =
+        this._satResolve(
+          this
+            .position
+            .x,
+          this
+            .position
+            .z,
+          this
+            ._obCx,
+          this
+            ._obCz,
+        );
+      if (
+        !mtv
+      )
+        continue;
 
-        const collisions = [];
-        let pushed = false;
-        const PUSH_MARGIN = 0.05;
+      const nx =
+          mtv.x,
+        nz =
+          mtv.z;
+      const depth =
+        mtv.depth +
+        PUSH_MARGIN;
+      const pushX =
+          nx *
+          depth,
+        pushZ =
+          nz *
+          depth;
 
-        for (const col of collidables) {
-            if (pushed) { this._updateBoundingBox(); }
-            // Broad phase — cheap AABB reject (includes the vertical axis so we
-            // don't collide with bridges/highways at a different elevation).
-            if (!this.boundingBox.intersectsBox(col.box)) continue;
+      const isNewCollision =
+        !this._collisionCooldowns.has(
+          col.mesh,
+        );
 
-            // Narrow phase — true oriented-box overlap on the XZ plane.
-            this._setObstacleOBB(col);
-            const mtv = this._satResolve(this.position.x, this.position.z, this._obCx, this._obCz);
-            if (!mtv) continue;
+      switch (
+        col.type
+      ) {
+        case 'building':
+        case 'barrier':
+        case 'pole':
+          this.position.x +=
+            pushX;
+          this.position.z +=
+            pushZ;
+          pushed = true;
 
-            const nx = mtv.x, nz = mtv.z;
-            const depth = mtv.depth + PUSH_MARGIN;
-            const pushX = nx * depth, pushZ = nz * depth;
-
-            const isNewCollision = !this._collisionCooldowns.has(col.mesh);
-
-            switch (col.type) {
-                case 'building':
-                case 'barrier':
-                case 'pole':
-                    this.position.x += pushX;
-                    this.position.z += pushZ;
-                    pushed = true;
-
-                    if (Math.abs(this.velocity) > 0.1) {
-                        this._fwd.set(0, 0, -1).applyEuler(this.rotation);
-                        const dot = this._fwd.x * nx + this._fwd.z * nz;
-                        if (dot < 0) {
-                            this.velocity *= Math.max(0, 1 + dot);
-                        }
-                    }
-                    break;
-
-                case 'traffic':
-                    this.position.x += pushX * 1.5;
-                    this.position.z += pushZ * 1.5;
-                    pushed = true;
-                    if (isNewCollision) {
-                        this.velocity *= 0.2;
-                        col.mesh.position.x -= pushX * 0.5;
-                        col.mesh.position.z -= pushZ * 0.5;
-                    }
-                    break;
-
-                case 'police':
-                    // Solid cop car — shove the player out and bleed speed, and
-                    // nudge the cruiser so ramming/blocking feels physical.
-                    this.position.x += pushX;
-                    this.position.z += pushZ;
-                    pushed = true;
-                    if (isNewCollision) {
-                        this.velocity *= 0.45;
-                        col.mesh.position.x -= pushX * 0.7;
-                        col.mesh.position.z -= pushZ * 0.7;
-                    }
-                    break;
-
-                case 'cone':
-                    if (isNewCollision) {
-                        this.velocity *= 0.9;
-                        // Knock the cone away along the car's travel direction.
-                        col.mesh.position.x -= nx * (depth + 0.6) * 3;
-                        col.mesh.position.z -= nz * (depth + 0.6) * 3;
-                        col.mesh.position.y += 0.2;
-                    }
-                    break;
+          if (
+            Math.abs(
+              this
+                .velocity,
+            ) >
+            0.1
+          ) {
+            this._fwd
+              .set(
+                0,
+                0,
+                -1,
+              )
+              .applyEuler(
+                this
+                  .rotation,
+              );
+            const dot =
+              this
+                ._fwd
+                .x *
+                nx +
+              this
+                ._fwd
+                .z *
+                nz;
+            if (
+              dot <
+              0
+            ) {
+              this.velocity *=
+                Math.max(
+                  0,
+                  1 +
+                    dot,
+                );
             }
+          }
+          break;
 
-            if (isNewCollision) {
-                this._collisionCooldowns.set(col.mesh, this._collisionCooldownTime);
-                collisions.push({ type: col.type, pushX, pushZ });
-            }
-        }
+        case 'traffic':
+          this.position.x +=
+            pushX *
+            1.5;
+          this.position.z +=
+            pushZ *
+            1.5;
+          pushed = true;
+          if (
+            isNewCollision
+          ) {
+            this.velocity *= 0.2;
+            col.mesh.position.x -=
+              pushX *
+              0.5;
+            col.mesh.position.z -=
+              pushZ *
+              0.5;
+          }
+          break;
 
-        if (pushed) {
-            this.group.position.copy(this.position);
-        }
+        case 'police':
+          // Solid cop car — shove the player out and bleed speed, and
+          // nudge the cruiser so ramming/blocking feels physical.
+          this.position.x +=
+            pushX;
+          this.position.z +=
+            pushZ;
+          pushed = true;
+          if (
+            isNewCollision
+          ) {
+            this.velocity *= 0.45;
+            col.mesh.position.x -=
+              pushX *
+              0.7;
+            col.mesh.position.z -=
+              pushZ *
+              0.7;
+          }
+          break;
 
-        return collisions;
+        case 'cone':
+          if (
+            isNewCollision
+          ) {
+            this.velocity *= 0.9;
+            // Knock the cone away along the car's travel direction.
+            col.mesh.position.x -=
+              nx *
+              (depth +
+                0.6) *
+              3;
+            col.mesh.position.z -=
+              nz *
+              (depth +
+                0.6) *
+              3;
+            col.mesh.position.y += 0.2;
+          }
+          break;
+      }
+
+      if (
+        isNewCollision
+      ) {
+        this._collisionCooldowns.set(
+          col.mesh,
+          this
+            ._collisionCooldownTime,
+        );
+        collisions.push(
+          {
+            type: col.type,
+            pushX,
+            pushZ,
+          },
+        );
+      }
     }
 
-    /* Getters for data collection */
-    getSpeed() {
-        return Math.abs(this.velocity) * 3.6; // km/h
+    if (
+      pushed
+    ) {
+      this.group.position.copy(
+        this
+          .position,
+      );
     }
 
-    getSteeringNormalized() {
-        return this.steerAngle / this.maxSteer; // -1..1
-    }
+    return collisions;
+  }
 
-    getThrottle() {
-        return this.throttle;
-    }
+  /* Getters for data collection */
+  getSpeed() {
+    return (
+      Math.abs(
+        this
+          .velocity,
+      ) *
+      3.6
+    ); // km/h
+  }
 
-    getBrake() {
-        return this.brake;
-    }
+  getSteeringNormalized() {
+    return (
+      this
+        .steerAngle /
+      this
+        .maxSteer
+    ); // -1..1
+  }
 
-    getPosition() {
-        return { x: this.position.x, y: this.position.y, z: this.position.z };
-    }
+  getThrottle() {
+    return this
+      .throttle;
+  }
 
-    getRotation() {
-        return { x: this.rotation.x, y: this.rotation.y, z: this.rotation.z };
-    }
+  getBrake() {
+    return this
+      .brake;
+  }
+
+  getPosition() {
+    return {
+      x: this
+        .position
+        .x,
+      y: this
+        .position
+        .y,
+      z: this
+        .position
+        .z,
+    };
+  }
+
+  getRotation() {
+    return {
+      x: this
+        .rotation
+        .x,
+      y: this
+        .rotation
+        .y,
+      z: this
+        .rotation
+        .z,
+    };
+  }
 }

@@ -6,11 +6,23 @@
  */
 
 export type FileContent =
-  | { kind: 'text'; text: string; sha1: string }
-  | { kind: 'binary'; bytes: Uint8Array; sha1: string };
+  | {
+      kind: 'text';
+      text: string;
+      sha1: string;
+    }
+  | {
+      kind: 'binary';
+      bytes: Uint8Array;
+      sha1: string;
+    };
 
 /** `null` marks a base file the author deleted. */
-export type Overlay = ReadonlyMap<string, FileContent | null>;
+export type Overlay =
+  ReadonlyMap<
+    string,
+    FileContent | null
+  >;
 
 export interface HudMeta {
   name: string;
@@ -27,15 +39,29 @@ export interface BaseEntry {
 
 export interface BaseIndex {
   version: number;
-  source: { repo: string; commit: string; license: string };
-  files: ReadonlyMap<string, BaseEntry>;
+  source: {
+    repo: string;
+    commit: string;
+    license: string;
+  };
+  files: ReadonlyMap<
+    string,
+    BaseEntry
+  >;
 }
 
-export type FileStatus = 'unchanged' | 'modified' | 'added' | 'deleted';
+export type FileStatus =
+  | 'unchanged'
+  | 'modified'
+  | 'added'
+  | 'deleted';
 
-export const DEFAULT_META: HudMeta = {
-  name: 'My HUD',
-  description: '',
-  author: '',
-  tags: [],
-};
+export const DEFAULT_META: HudMeta =
+  {
+    name: 'My HUD',
+    description:
+      '',
+    author:
+      '',
+    tags: [],
+  };

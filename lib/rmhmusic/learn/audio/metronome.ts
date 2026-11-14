@@ -36,7 +36,12 @@
  * The click is a neutral synth click (`clicks.ts`), not a note of the instrument. Client-only: the
  * caller passes the context; nothing is touched at load.
  */
-import { clockOffsetMs, startClick, type ClickContext, type ClickVoice } from './clicks';
+import {
+  clockOffsetMs,
+  startClick,
+  type ClickContext,
+  type ClickVoice,
+} from './clicks';
 
 /** The slowest and fastest tempi, beats per minute. */
 export const BPM_MIN = 30;
@@ -53,23 +58,64 @@ export const CLICK_S = 0.05;
 export const LEAD_S = 0.1;
 
 /** `bpm` kept in 30–240; anything that is not a number is the default tempo. */
-export function clampBpm(bpm: number): number {
-  if (Number.isNaN(bpm)) return BPM_DEFAULT;
-  return Math.min(BPM_MAX, Math.max(BPM_MIN, bpm));
+export function clampBpm(
+  bpm: number,
+): number {
+  if (
+    Number.isNaN(
+      bpm,
+    )
+  )
+    return BPM_DEFAULT;
+  return Math.min(
+    BPM_MAX,
+    Math.max(
+      BPM_MIN,
+      bpm,
+    ),
+  );
 }
 
 /** Seconds from one beat to the next. */
-export function beatIntervalS(bpm: number): number {
-  return 60 / clampBpm(bpm);
+export function beatIntervalS(
+  bpm: number,
+): number {
+  return (
+    60 /
+    clampBpm(
+      bpm,
+    )
+  );
 }
 
 /** Where the `index`th click since the start falls: its beat in the bar and the bar (both from 0). */
 export function beatIndexToPosition(
   index: number,
   beatsPerBar: number,
-): { beat: number; bar: number } {
-  const per = Number.isFinite(beatsPerBar) ? Math.max(1, Math.floor(beatsPerBar)) : 1;
-  return { beat: index % per, bar: Math.floor(index / per) };
+): {
+  beat: number;
+  bar: number;
+} {
+  const per =
+    Number.isFinite(
+      beatsPerBar,
+    )
+      ? Math.max(
+          1,
+          Math.floor(
+            beatsPerBar,
+          ),
+        )
+      : 1;
+  return {
+    beat:
+      index %
+      per,
+    bar: Math.floor(
+      index /
+        per,
+    ),
+  };
 }
 
 /**
@@ -77,13 +123,33 @@ export function beatIndexToPosition(
  * most a quarter of a beat, so the late click and the next one on the grid are never closer than
  * three quarters of a beat, and never on the same instant.
  */
-export function graceS(intervalS: number): number {
-  return Math.min(0.05, intervalS / 4);
+export function graceS(
+  intervalS: number,
+): number {
+  return Math.min(
+    0.05,
+    intervalS /
+      4,
+  );
 }
 
 /** The downbeat (beat 0 of a bar) is higher and louder than the others. */
-export function accentOf(beat: number): { freq: number; peak: number } {
-  return beat === 0 ? { freq: 1500, peak: 0.4 } : { freq: 1000, peak: 0.25 };
+export function accentOf(
+  beat: number,
+): {
+  freq: number;
+  peak: number;
+} {
+  return beat ===
+    0
+    ? {
+        freq: 1500,
+        peak: 0.4,
+      }
+    : {
+        freq: 1000,
+        peak: 0.25,
+      };
 }
 
 export interface MetronomeOptions {
@@ -95,12 +161,18 @@ export interface MetronomeOptions {
    */
   count?: number;
   /** A click was scheduled: its beat in the bar, the bar, and its time (ms, performance clock). */
-  onBeat?(beat: number, bar: number, at: number): void;
+  onBeat?(
+    beat: number,
+    bar: number,
+    at: number,
+  ): void;
 }
 
 export interface Metronome {
   /** Begin after `leadS` seconds (default 0.1). The first click is scheduled during the call. */
-  start(leadS?: number): void;
+  start(
+    leadS?: number,
+  ): void;
   /** Silence the clicks still to come and stop the timer; safe to call twice. */
   stop(): void;
   readonly running: boolean;
@@ -113,74 +185,219 @@ export interface Metronome {
   skipped(): number;
 }
 
-export function createMetronome(ctx: ClickContext, opts: MetronomeOptions): Metronome {
-  const intervalS = beatIntervalS(opts.bpm);
-  const perBar = opts.beatsPerBar;
-  const grace = graceS(intervalS);
+export function createMetronome(
+  ctx: ClickContext,
+  opts: MetronomeOptions,
+): Metronome {
+  const intervalS =
+    beatIntervalS(
+      opts.bpm,
+    );
+  const perBar =
+    opts.beatsPerBar;
+  const grace =
+    graceS(
+      intervalS,
+    );
   const count =
-    opts.count === undefined || Number.isNaN(opts.count) ? Infinity : Math.max(0, opts.count);
+    opts.count ===
+      undefined ||
+    Number.isNaN(
+      opts.count,
+    )
+      ? Infinity
+      : Math.max(
+          0,
+          opts.count,
+        );
   let running = false;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let voices: ClickVoice[] = [];
-  let times: number[] = [];
+  let timer:
+    | ReturnType<
+        typeof setTimeout
+      >
+    | undefined;
+  let voices: ClickVoice[] =
+    [];
+  let times: number[] =
+    [];
   let offsetMs = 0;
   let startS = 0;
   let index = 0;
   let skipped = 0;
 
   /** Schedule click `index` on its grid time (or now, if it is only a little late). */
-  const scheduleNext = () => {
-    const at = Math.max(startS + index * intervalS, ctx.currentTime);
-    const { beat, bar } = beatIndexToPosition(index, perBar);
-    const voice = startClick(ctx, at, { ...accentOf(beat), clickS: CLICK_S });
-    voices.push(voice);
-    voice.osc.onended = () => {
-      voice.osc.disconnect();
-      voice.gain.disconnect();
-      const k = voices.indexOf(voice);
-      if (k >= 0) voices.splice(k, 1);
+  const scheduleNext =
+    () => {
+      const at =
+        Math.max(
+          startS +
+            index *
+              intervalS,
+          ctx.currentTime,
+        );
+      const {
+        beat,
+        bar,
+      } =
+        beatIndexToPosition(
+          index,
+          perBar,
+        );
+      const voice =
+        startClick(
+          ctx,
+          at,
+          {
+            ...accentOf(
+              beat,
+            ),
+            clickS:
+              CLICK_S,
+          },
+        );
+      voices.push(
+        voice,
+      );
+      voice.osc.onended =
+        () => {
+          voice.osc.disconnect();
+          voice.gain.disconnect();
+          const k =
+            voices.indexOf(
+              voice,
+            );
+          if (
+            k >=
+            0
+          )
+            voices.splice(
+              k,
+              1,
+            );
+        };
+      const atMs =
+        at *
+          1000 +
+        offsetMs;
+      times.push(
+        atMs,
+      );
+      index++;
+      opts.onBeat?.(
+        beat,
+        bar,
+        atMs,
+      );
     };
-    const atMs = at * 1000 + offsetMs;
-    times.push(atMs);
-    index++;
-    opts.onBeat?.(beat, bar, atMs);
-  };
 
-  const tick = () => {
-    if (!running) return;
-    const now = ctx.currentTime;
-    // Grid beats due before `now - grace` were missed: skip them (see the docblock).
-    const firstKept = Math.ceil((now - grace - startS) / intervalS - 1e-9);
-    if (firstKept > index) {
-      skipped += Math.min(firstKept, count) - index;
-      index = firstKept;
-    }
-    const horizon = now + LOOKAHEAD_S;
-    while (running && index < count && startS + index * intervalS < horizon) scheduleNext();
-    // Every click is scheduled: nothing left for the timer to do (stop() still clears the voices).
-    if (running && index < count) timer = setTimeout(tick, TIMER_MS);
-  };
+  const tick =
+    () => {
+      if (
+        !running
+      )
+        return;
+      const now =
+        ctx.currentTime;
+      // Grid beats due before `now - grace` were missed: skip them (see the docblock).
+      const firstKept =
+        Math.ceil(
+          (now -
+            grace -
+            startS) /
+            intervalS -
+            1e-9,
+        );
+      if (
+        firstKept >
+        index
+      ) {
+        skipped +=
+          Math.min(
+            firstKept,
+            count,
+          ) -
+          index;
+        index =
+          firstKept;
+      }
+      const horizon =
+        now +
+        LOOKAHEAD_S;
+      while (
+        running &&
+        index <
+          count &&
+        startS +
+          index *
+            intervalS <
+          horizon
+      )
+        scheduleNext();
+      // Every click is scheduled: nothing left for the timer to do (stop() still clears the voices).
+      if (
+        running &&
+        index <
+          count
+      )
+        timer =
+          setTimeout(
+            tick,
+            TIMER_MS,
+          );
+    };
 
   return {
-    start(leadS = LEAD_S) {
-      if (running) return;
+    start(
+      leadS = LEAD_S,
+    ) {
+      if (
+        running
+      )
+        return;
       running = true;
-      voices = [];
-      times = [];
+      voices =
+        [];
+      times =
+        [];
       index = 0;
       skipped = 0;
-      offsetMs = clockOffsetMs(ctx);
-      startS = ctx.currentTime + (Number.isFinite(leadS) ? Math.max(0, leadS) : LEAD_S);
+      offsetMs =
+        clockOffsetMs(
+          ctx,
+        );
+      startS =
+        ctx.currentTime +
+        (Number.isFinite(
+          leadS,
+        )
+          ? Math.max(
+              0,
+              leadS,
+            )
+          : LEAD_S);
       // The first click is always scheduled now, so its time is known to the caller at once.
-      if (count > 0) scheduleNext();
+      if (
+        count >
+        0
+      )
+        scheduleNext();
       tick();
     },
     stop() {
       running = false;
-      clearTimeout(timer);
-      timer = undefined;
-      for (const { osc, gain } of voices.splice(0)) {
-        osc.onended = null;
+      clearTimeout(
+        timer,
+      );
+      timer =
+        undefined;
+      for (const {
+        osc,
+        gain,
+      } of voices.splice(
+        0,
+      )) {
+        osc.onended =
+          null;
         try {
           osc.stop();
         } catch {
@@ -193,7 +410,12 @@ export function createMetronome(ctx: ClickContext, opts: MetronomeOptions): Metr
     get running() {
       return running;
     },
-    beatTimes: () => [...times],
-    skipped: () => skipped,
+    beatTimes:
+      () => [
+        ...times,
+      ],
+    skipped:
+      () =>
+        skipped,
   };
 }

@@ -15,25 +15,42 @@ import type { PlayingSequence } from './sequence';
 import type { SoundStatus } from './voice';
 
 /** What the sound row shows. */
-export type SoundRow = 'ready' | 'asleep' | 'waking' | 'failed' | 'loading' | 'none';
+export type SoundRow =
+  | 'ready'
+  | 'asleep'
+  | 'waking'
+  | 'failed'
+  | 'loading'
+  | 'none';
 
 /** A tap on the row that is waiting for the browser to wake sound. */
-export type Waking = 'idle' | 'waking' | 'failed';
+export type Waking =
+  | 'idle'
+  | 'waking'
+  | 'failed';
 
 /**
  * The row for the audio's status and the state of a tap that tried to wake it. `loading` (a
  * sampled instrument's samples are on the way) and `failed` come from the sound engine; the synth
  * is never either.
  */
-export function soundRowOf(status: SoundStatus, waking: Waking): SoundRow {
-  switch (status) {
+export function soundRowOf(
+  status: SoundStatus,
+  waking: Waking,
+): SoundRow {
+  switch (
+    status
+  ) {
     case 'ready':
     case 'none':
     case 'loading':
     case 'failed':
       return status;
     case 'asleep':
-      return waking === 'idle' ? 'asleep' : waking;
+      return waking ===
+        'idle'
+        ? 'asleep'
+        : waking;
   }
 }
 
@@ -58,9 +75,17 @@ export function hearAction({
   waiting: boolean;
   paused: boolean;
 }): HearAction {
-  if (paused) return 'stop';
-  if (waiting) return 'ignore';
-  switch (status) {
+  if (
+    paused
+  )
+    return 'stop';
+  if (
+    waiting
+  )
+    return 'ignore';
+  switch (
+    status
+  ) {
     case 'none':
       return 'none';
     case 'ready':
@@ -94,13 +119,42 @@ export function autoPlay({
   /** The audio's status right now. */
   live: SoundStatus;
   index: number;
-  sentFor: number | null;
-}): { play: boolean; sentFor: number | null } {
-  if (!askingUnheard || paused || shown !== 'ready' || live !== 'ready') {
-    return { play: false, sentFor: null };
+  sentFor:
+    | number
+    | null;
+}): {
+  play: boolean;
+  sentFor:
+    | number
+    | null;
+} {
+  if (
+    !askingUnheard ||
+    paused ||
+    shown !==
+      'ready' ||
+    live !==
+      'ready'
+  ) {
+    return {
+      play: false,
+      sentFor:
+        null,
+    };
   }
-  if (sentFor === index) return { play: false, sentFor };
-  return { play: true, sentFor: index };
+  if (
+    sentFor ===
+    index
+  )
+    return {
+      play: false,
+      sentFor,
+    };
+  return {
+    play: true,
+    sentFor:
+      index,
+  };
 }
 
 export interface EarPlayback {
@@ -109,7 +163,11 @@ export interface EarPlayback {
    * sound is not ready; nothing will be heard). `onHeard(index)` follows once every note has
    * started, unless this sound is cancelled or replaced first.
    */
-  start(index: number, kind: EarKind, notes: readonly number[]): boolean;
+  start(
+    index: number,
+    kind: EarKind,
+    notes: readonly number[],
+  ): boolean;
   /** Stop the current sound and make sure it never reports. Safe to call twice. */
   cancel(): void;
 }
@@ -122,31 +180,60 @@ export function createEarPlayback({
   play: (
     kind: EarKind,
     notes: readonly number[],
-    hooks: { onAllStarted: () => void },
+    hooks: {
+      onAllStarted: () => void;
+    },
   ) => PlayingSequence;
-  onHeard: (index: number) => void;
+  onHeard: (
+    index: number,
+  ) => void;
 }): EarPlayback {
-  let current: PlayingSequence | null = null;
+  let current: PlayingSequence | null =
+    null;
   /** Bumped by every start and cancel: a report from an older one is stale. */
   let token = 0;
   return {
-    start(index, kind, notes) {
+    start(
+      index,
+      kind,
+      notes,
+    ) {
       current?.cancel();
-      current = null;
-      const mine = ++token;
-      const seq = play(kind, notes, {
-        onAllStarted: () => {
-          if (mine === token) onHeard(index);
-        },
-      });
+      current =
+        null;
+      const mine =
+        ++token;
+      const seq =
+        play(
+          kind,
+          notes,
+          {
+            onAllStarted:
+              () => {
+                if (
+                  mine ===
+                  token
+                )
+                  onHeard(
+                    index,
+                  );
+              },
+          },
+        );
       // A chord reports during the call, before `seq` is back; that is still this sound.
-      if (mine === token) current = seq;
+      if (
+        mine ===
+        token
+      )
+        current =
+          seq;
       return seq.started;
     },
     cancel() {
       token++;
       current?.cancel();
-      current = null;
+      current =
+        null;
     },
   };
 }

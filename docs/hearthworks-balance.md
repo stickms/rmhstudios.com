@@ -1,9 +1,69 @@
 # Hearthworks crime and police: balance targets and tuning
 
-The crime route (hustling, guns, heat, the police) was built before it was balanced. This document is the
-statement of what it is supposed to feel like, the measurements that say whether it does, and the constants that were
-changed to get it there. The harness that produced every number below is in the repo and deterministic: the same
-seeds give the same tables.
+The
+crime
+route
+(hustling,
+guns,
+heat,
+the
+police)
+was
+built
+before
+it
+was
+balanced.
+This
+document
+is
+the
+statement
+of
+what
+it
+is
+supposed
+to
+feel
+like,
+the
+measurements
+that
+say
+whether
+it
+does,
+and
+the
+constants
+that
+were
+changed
+to
+get
+it
+there.
+The
+harness
+that
+produced
+every
+number
+below
+is
+in
+the
+repo
+and
+deterministic:
+the
+same
+seeds
+give
+the
+same
+tables.
 
 ```bash
 pnpm exec tsx scripts/hearthworks/balance.ts                    # everything, 24 seeds, the default 32-tile island
@@ -12,19 +72,159 @@ pnpm exec tsx scripts/hearthworks/balance.ts --only guns,fights,hustler,heat,gun
 pnpm exec vitest run features/hearthworks/engine/world/__tests__/balance.test.ts   # the targets that are pinned as tests
 ```
 
-The harness (`features/hearthworks/engine/world/__tests__/balance-sim.ts`) runs scripted players inside the real `stepWorld` against
-the real police: a **farmer** (never breaks the law), **hustlers** (deal in batches, optionally run when hunted), a
-**gunman** (buys or is given a gun, closes to its best range, fires at the nearest officer in sight, restocks), plus
-fixed scenes: parked-dummy **duels** (shots and time to kill) and pitched **fights** (a squad of N hunts an armed
-player). The player walks at the avatar's run speed (3 tiles/s) through the same nav module the police use (2 tiles/s).
-Everything that is a number lives in a constant (`world/crime.ts`, `world/police.ts`, `content/weapons.ts`,
-`content/items.ts`); nothing is inline.
+The
+harness
+(`features/hearthworks/engine/world/__tests__/balance-sim.ts`)
+runs
+scripted
+players
+inside
+the
+real
+`stepWorld`
+against
+the
+real
+police:
+a
+**farmer**
+(never
+breaks
+the
+law),
+**hustlers**
+(deal
+in
+batches,
+optionally
+run
+when
+hunted),
+a
+**gunman**
+(buys
+or
+is
+given
+a
+gun,
+closes
+to
+its
+best
+range,
+fires
+at
+the
+nearest
+officer
+in
+sight,
+restocks),
+plus
+fixed
+scenes:
+parked-dummy
+**duels**
+(shots
+and
+time
+to
+kill)
+and
+pitched
+**fights**
+(a
+squad
+of
+N
+hunts
+an
+armed
+player).
+The
+player
+walks
+at
+the
+avatar's
+run
+speed
+(3
+tiles/s)
+through
+the
+same
+nav
+module
+the
+police
+use
+(2
+tiles/s).
+Everything
+that
+is
+a
+number
+lives
+in
+a
+constant
+(`world/crime.ts`,
+`world/police.ts`,
+`content/weapons.ts`,
+`content/items.ts`);
+nothing
+is
+inline.
 
 ## The design targets
 
-Sources: the spec (`docs/superpowers/specs/2026-11-04-hearthworks-design.md` §3, §13: "choosing crime brings heat and
-run-ins with the police that the player must fight with guns sourced from the CS:GO and HL2 channels") and the owner's
-intent as given for this pass. IDs are used in the tests.
+Sources:
+the
+spec
+(`docs/superpowers/specs/2026-11-04-hearthworks-design.md`
+§3,
+§13:
+"choosing
+crime
+brings
+heat
+and
+run-ins
+with
+the
+police
+that
+the
+player
+must
+fight
+with
+guns
+sourced
+from
+the
+CS:GO
+and
+HL2
+channels")
+and
+the
+owner's
+intent
+as
+given
+for
+this
+pass.
+IDs
+are
+used
+in
+the
+tests.
 
 ### Money: crime is a tempting, risky route
 
@@ -59,13 +259,78 @@ intent as given for this pass. IDs are used in the tests.
 | rifle    | the all-rounder: best sustained damage, reach 14, expensive ammo | 1100  | 6-7 (9-10 at long range)          | 13-15                             |
 | marksman | the late-game sink: one tap on a Metrocop at any range, reach 22 | 1800  | **1**, anywhere to 22 tiles       | 2 (3 past 15 tiles)               |
 
-Plus: a first gun is affordable on day one (price at most half the starting money); the sniper costs more than four
-times the starting money; rounds cost money, per round: pistol < rifle < sniper.
+Plus:
+a
+first
+gun
+is
+affordable
+on
+day
+one
+(price
+at
+most
+half
+the
+starting
+money);
+the
+sniper
+costs
+more
+than
+four
+times
+the
+starting
+money;
+rounds
+cost
+money,
+per
+round:
+pistol
+<
+rifle
+<
+sniper.
 
 ### Fights: a small squad can be beaten, a large one cannot
 
-Squads of N, starting 14 tiles out, against an armed player who closes to his gun's best range and fires (the harness
-aims perfectly, so these are an upper bound for a human).
+Squads
+of
+N,
+starting
+14
+tiles
+out,
+against
+an
+armed
+player
+who
+closes
+to
+his
+gun's
+best
+range
+and
+fires
+(the
+harness
+aims
+perfectly,
+so
+these
+are
+an
+upper
+bound
+for
+a
+human).
 
 | ID  | Target                                                                                                                                                 |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -77,12 +342,50 @@ aims perfectly, so these are an upper bound for a human).
 
 ## Results
 
-All tables: the default 32x32 island, 24 seeds, p50 (p10-p90) unless stated. "Before" is the tree at `origin/main`
-measured by the same harness; "after" is this change. (`--size 48` is in the sensitivity section.)
+All
+tables:
+the
+default
+32x32
+island,
+24
+seeds,
+p50
+(p10-p90)
+unless
+stated.
+"Before"
+is
+the
+tree
+at
+`origin/main`
+measured
+by
+the
+same
+harness;
+"after"
+is
+this
+change.
+(`--size 48`
+is
+in
+the
+sensitivity
+section.)
 
 ### Money and heat
 
-How much a deal heats you (heat points):
+How
+much
+a
+deal
+heats
+you
+(heat
+points):
 
 | Deal            | Before (cap 8 extras) | After |
 | --------------- | --------------------- | ----- |
@@ -93,11 +396,86 @@ How much a deal heats you (heat points):
 | 1 bread (legal) | 8                     | 6     |
 | 9 breads        | 24                    | 38    |
 
-Money per unit (street price = base x markup): before, markup 2.5x on everything (bread 40 sold on the street for 100,
-2.5x the stall and 1.7x a customer; tonic 70 sold for 175). After, markup 1.6x (bread 64, below a customer's 60 + 10 %),
-tonic 100 sold for 160 = 3.5x the best legal dish at the stall (stew 46) and 6.2x its ingredients (26).
+Money
+per
+unit
+(street
+price
+=
+base
+x
+markup):
+before,
+markup
+2.5x
+on
+everything
+(bread
+40
+sold
+on
+the
+street
+for
+100,
+2.5x
+the
+stall
+and
+1.7x
+a
+customer;
+tonic
+70
+sold
+for
+175).
+After,
+markup
+1.6x
+(bread
+64,
+below
+a
+customer's
+60 +
+10
+%),
+tonic
+100
+sold
+for
+160
+=
+3.5x
+the
+best
+legal
+dish
+at
+the
+stall
+(stew 46)
+and
+6.2x
+its
+ingredients
+(26).
 
-Scenarios, 5 minutes (stock is tonics; "net" is cash change; confiscated stock is extra):
+Scenarios,
+5
+minutes
+(stock
+is
+tonics;
+"net"
+is
+cash
+change;
+confiscated
+stock
+is
+extra):
 
 | Scenario (policy)                                  | Version | Wanted? / police                   | Arrested or downed   | Net cash               | Stock lost |
 | -------------------------------------------------- | ------- | ---------------------------------- | -------------------- | ---------------------- | ---------- |
@@ -117,11 +495,71 @@ Scenarios, 5 minutes (stock is tonics; "net" is cash change; confiscated stock i
 |                                                    | after   | 0 officers                         | 0 %                  | 2880                   | 0          |
 | Farmer (7 tomato plots + stall, no crime)          | -       | 0 officers                         | -                    | 253/min (176-253)      | -          |
 
-The careful dealer's 2880 over five minutes is 576 a minute, 2.3x the farm and with no risk as long as the discipline
-holds, whereas the dumper nets 92 per tonic against the careful dealer's 160. Before, the dump was the best strategy
-and the police were unreachable by anything but a 4-tonic binge.
+The
+careful
+dealer's
+2880
+over
+five
+minutes
+is
+576
+a
+minute,
+2.3x
+the
+farm
+and
+with
+no
+risk
+as
+long
+as
+the
+discipline
+holds,
+whereas
+the
+dumper
+nets
+92
+per
+tonic
+against
+the
+careful
+dealer's 160.
+Before,
+the
+dump
+was
+the
+best
+strategy
+and
+the
+police
+were
+unreachable
+by
+anything
+but
+a
+4-tonic
+binge.
 
-Heat decay (nobody about; the same rule applies when someone is):
+Heat
+decay
+(nobody
+about;
+the
+same
+rule
+applies
+when
+someone
+is):
 
 | Start heat | To below wanted (before / after) | To calm, below 15 | To zero       |
 | ---------- | -------------------------------- | ----------------- | ------------- |
@@ -141,7 +579,13 @@ Heat decay (nobody about; the same rule applies when someone is):
 
 ### Time to kill
 
-Metrocop (60 hp), median seconds / shots:
+Metrocop
+(60
+hp),
+median
+seconds
+/
+shots:
 
 | gun (price after) | 2 tiles     | 4        | 6        | 8        | 11       | 15 / 20 |
 | ----------------- | ----------- | -------- | -------- | -------- | -------- | ------- |
@@ -152,12 +596,115 @@ Metrocop (60 hp), median seconds / shots:
 | rifle 1100        | 0.8 / 6     | 0.8 / 6  | 0.9 / 7  | 0.9 / 7  | 1.4 / 10 | out     |
 | marksman 1800     | **0.1 / 1** | 0.1 / 1  | 0.1 / 1  | 0.1 / 1  | 0.1 / 1  | 0.1 / 1 |
 
-Before: revolver 0.8 s everywhere to 8 tiles (as good as the rifle for half the price), SMG 5.8 s / 36 shots at 8 tiles,
-shotgun 0.9 s / 2 at 2 tiles and 2.8 s / 4 at 4, sniper 1.3 s / 2 shots.
+Before:
+revolver
+0.8
+s
+everywhere
+to
+8
+tiles
+(as
+good
+as
+the
+rifle
+for
+half
+the
+price),
+SMG
+5.8
+s
+/
+36
+shots
+at
+8
+tiles,
+shotgun
+0.9
+s
+/
+2
+at
+2
+tiles
+and
+2.8
+s
+/
+4
+at
+4,
+sniper
+1.3
+s
+/
+2
+shots.
 
-Combine soldier (130 hp; was 120), median seconds / shots at 4 tiles: pistol 3.0 / 11, revolver 2.9 / 5, smg 2.1 / 22,
-shotgun 2.8 / 4, rifle 1.9 / 13, marksman 1.9 / 2 (3.6 / 3 from 15 tiles). Before: 2.8 / 10, 2.1 / 4, 2.4 / 24,
-8.4 / 7, 1.6 / 11, 2.5 / 3.
+Combine
+soldier
+(130
+hp;
+was
+120),
+median
+seconds
+/
+shots
+at
+4
+tiles:
+pistol
+3.0
+/
+11,
+revolver
+2.9
+/
+5,
+smg
+2.1
+/
+22,
+shotgun
+2.8
+/
+4,
+rifle
+1.9
+/
+13,
+marksman
+1.9
+/
+2
+(3.6
+/
+3
+from
+15
+tiles).
+Before:
+2.8
+/
+10,
+2.1
+/
+4,
+2.4
+/
+24,
+8.4
+/
+7,
+1.6
+/
+11,
+2.5
+/ 3.
 
 ### Fights (win rate / median health left)
 
@@ -177,9 +724,61 @@ shotgun 2.8 / 4, rifle 1.9 / 13, marksman 1.9 / 2 (3.6 / 3 from 15 tiles). Befor
 | 2 Combine, **after**           | 0 %        | 0 %         | 0 %        | 0 %        | 58 % / 4    | 38 %        |
 | 3 or 4 Combine, before / after | 0 % / 0 %  | 0 % / 0 %   | 0 % / 0 %  | 0 % / 0 %  | 0 % / 0 %   | 0 % / 0 %   |
 
-Fighting on from a first deal (heat 45 start, heat does what it does, 3 minute cap): knock-out comes at
-16-22 s before for every gun and 36-41 s after (pistol 36, revolver 38, smg 38, shotgun 38, rifle 41); the sniper
-alone survives 3 minutes 58 % of the time, killing about 24 officers.
+Fighting
+on
+from
+a
+first
+deal
+(heat
+45
+start,
+heat
+does
+what
+it
+does,
+3
+minute
+cap):
+knock-out
+comes
+at
+16-22
+s
+before
+for
+every
+gun
+and
+36-41
+s
+after
+(pistol
+36,
+revolver
+38,
+smg
+38,
+shotgun
+38,
+rifle
+41);
+the
+sniper
+alone
+survives
+3
+minutes
+58
+%
+of
+the
+time,
+killing
+about
+24
+officers.
 
 ### Guns, before and after
 
@@ -201,18 +800,204 @@ alone survives 3 minutes 58 % of the time, killing about 24 officers.
 | 48x48 | 4        | 61 us     | 4.6 ms / 2.6 ms             |
 | 96x96 | 4        | 201 us    | 15.0 ms / 11.5 ms           |
 
-The worst tick is one route search (3500-tile cap); the search budget was 2 a tick, now 1 (four officers re-plan at
-most every 10 ticks, so one is enough). The cost per officer is about 15 us on 48x48 and 50 us on 96x96. The budget is
-50 ms.
+The
+worst
+tick
+is
+one
+route
+search
+(3500-tile
+cap);
+the
+search
+budget
+was
+2
+a
+tick,
+now
+1
+(four
+officers
+re-plan
+at
+most
+every
+10
+ticks,
+so
+one
+is
+enough).
+The
+cost
+per
+officer
+is
+about
+15
+us
+on
+48x48
+and
+50
+us
+on
+96x96.
+The
+budget
+is
+50
+ms.
 
 ### Island size
 
-The default island is 32 tiles; the city layer may grow it. At 48x48 (24 seeds), a standing player has 6.3 s (5.0-7.8)
-between the first officer landing and him being formed up within reach of his gun (2.5 s at 32); a runner is arrested
-21 % of the time after a deal of 6, 63 % after a dump, 33 % when binging until the law shows up (54 %, 88 % and 63 %
-at 32); a dump still nets about 58 % of its take; the careful dealer is never wanted. No stuck hunters at 32, 48 or 64
-(216 runs, 687 officers). A bigger island makes the police arrive later and escape easier; none of the targets above
-breaks, but if the city layer grows the island a lot the response may want a faster pace or a closer gate.
+The
+default
+island
+is
+32
+tiles;
+the
+city
+layer
+may
+grow
+it.
+At
+48x48
+(24
+seeds),
+a
+standing
+player
+has
+6.3
+s
+(5.0-7.8)
+between
+the
+first
+officer
+landing
+and
+him
+being
+formed
+up
+within
+reach
+of
+his
+gun
+(2.5
+s
+at
+32);
+a
+runner
+is
+arrested
+21
+%
+of
+the
+time
+after
+a
+deal
+of
+6,
+63
+%
+after
+a
+dump,
+33
+%
+when
+binging
+until
+the
+law
+shows
+up
+(54
+%,
+88
+%
+and
+63
+%
+at
+32);
+a
+dump
+still
+nets
+about
+58
+%
+of
+its
+take;
+the
+careful
+dealer
+is
+never
+wanted.
+No
+stuck
+hunters
+at
+32,
+48
+or
+64
+(216
+runs,
+687
+officers).
+A
+bigger
+island
+makes
+the
+police
+arrive
+later
+and
+escape
+easier;
+none
+of
+the
+targets
+above
+breaks,
+but
+if
+the
+city
+layer
+grows
+the
+island
+a
+lot
+the
+response
+may
+want
+a
+faster
+pace
+or
+a
+closer
+gate.
 
 ## What changed (constants and code)
 
@@ -226,43 +1011,645 @@ breaks, but if the city layer grows the island a lot the response may want a fas
 
 ## Bugs the harness found
 
-1. **Dumping was free (heat capped at 30).** Heat per deal capped its per-unit part at 8 extra units, so a 20-tonic
-   dump made 30 heat, below the wanted line of 40, for 3500 coins and no police. The best strategy by far was the
-   least risky. Fixed (E3, E4); pinned in `balance.test.ts`.
-2. **Laundering legal goods.** A 2.5x street markup on everything made hustling bread the best way to sell bread, for
-   8 heat. Fixed with the 1.6x markup and heat in proportion to the deal (E1).
-3. **Stuck leaving officers.** A leaving officer who had dropped down a ledge (one-way) could not walk back to his
-   gate and stood for the full minute-long timeout. Found as "1 stuck hunter" in the binge-and-run runs; fixed, pinned.
-4. **Bullets hit bystanders.** An officer's shot was resolved against every player standing in the line, wanted or not.
-   Fixed (only the target and other wanted players); pinned.
-5. **Shots squeezed through diagonal walls.** `sightLine` let a bullet pass between two buildings (or ledges) that touch
-   at a corner (48 leaking pairs on a line of 21 cottages; movement already forbade cutting that corner). Fixed; pinned.
-6. **Thresholds judged after the tick's cooling.** Heat sitting exactly on a step was decremented in the same tick the
-   gates were looked at, so a player pinned at 60 was treated as 59 and never got his second officer. The gates are now
-   looked at before cooling.
-7. **Police could be sent to gates they could not walk from.** With the farthest-gates change a random gate was often on a
-   cut-off shore, so a search that cannot succeed ran up to five times (3500 tiles each) and the squad never arrived.
-   Gates are now flood-filled from the player in the officers' direction of travel, which also made the "cut off by
-   water" case cheap.
-8. **Negative and fractional values.** Heat decay and fines are clamped (`Math.max(0, ...)`, fine at most the money held);
-   the fuzz test checks money, health, heat and ammo stay in range through 6,000 random commands.
-9. **Checked and found sound:** reloading cannot create ammo (rounds conserved, equip cancels a reload without refunding
-   it), a shot cannot go through a ledge, a friendly shot never hits another officer, unarmed players are never shot,
-   heat does decay, the same seed gives the same outcome (byte-identical world and log).
+1. **Dumping
+   was
+   free
+   (heat
+   capped
+   at
+   30).**
+   Heat
+   per
+   deal
+   capped
+   its
+   per-unit
+   part
+   at
+   8
+   extra
+   units,
+   so
+   a
+   20-tonic
+   dump
+   made
+   30
+   heat,
+   below
+   the
+   wanted
+   line
+   of
+   40,
+   for
+   3500
+   coins
+   and
+   no
+   police.
+   The
+   best
+   strategy
+   by
+   far
+   was
+   the
+   least
+   risky.
+   Fixed
+   (E3,
+   E4);
+   pinned
+   in
+   `balance.test.ts`.
+2. **Laundering
+   legal
+   goods.**
+   A
+   2.5x
+   street
+   markup
+   on
+   everything
+   made
+   hustling
+   bread
+   the
+   best
+   way
+   to
+   sell
+   bread,
+   for
+   8
+   heat.
+   Fixed
+   with
+   the
+   1.6x
+   markup
+   and
+   heat
+   in
+   proportion
+   to
+   the
+   deal
+   (E1).
+3. **Stuck
+   leaving
+   officers.**
+   A
+   leaving
+   officer
+   who
+   had
+   dropped
+   down
+   a
+   ledge
+   (one-way)
+   could
+   not
+   walk
+   back
+   to
+   his
+   gate
+   and
+   stood
+   for
+   the
+   full
+   minute-long
+   timeout.
+   Found
+   as
+   "1
+   stuck
+   hunter"
+   in
+   the
+   binge-and-run
+   runs;
+   fixed,
+   pinned.
+4. **Bullets
+   hit
+   bystanders.**
+   An
+   officer's
+   shot
+   was
+   resolved
+   against
+   every
+   player
+   standing
+   in
+   the
+   line,
+   wanted
+   or
+   not.
+   Fixed
+   (only
+   the
+   target
+   and
+   other
+   wanted
+   players);
+   pinned.
+5. **Shots
+   squeezed
+   through
+   diagonal
+   walls.**
+   `sightLine`
+   let
+   a
+   bullet
+   pass
+   between
+   two
+   buildings
+   (or
+   ledges)
+   that
+   touch
+   at
+   a
+   corner
+   (48
+   leaking
+   pairs
+   on
+   a
+   line
+   of
+   21
+   cottages;
+   movement
+   already
+   forbade
+   cutting
+   that
+   corner).
+   Fixed;
+   pinned.
+6. **Thresholds
+   judged
+   after
+   the
+   tick's
+   cooling.**
+   Heat
+   sitting
+   exactly
+   on
+   a
+   step
+   was
+   decremented
+   in
+   the
+   same
+   tick
+   the
+   gates
+   were
+   looked
+   at,
+   so
+   a
+   player
+   pinned
+   at
+   60
+   was
+   treated
+   as
+   59
+   and
+   never
+   got
+   his
+   second
+   officer.
+   The
+   gates
+   are
+   now
+   looked
+   at
+   before
+   cooling.
+7. **Police
+   could
+   be
+   sent
+   to
+   gates
+   they
+   could
+   not
+   walk
+   from.**
+   With
+   the
+   farthest-gates
+   change
+   a
+   random
+   gate
+   was
+   often
+   on
+   a
+   cut-off
+   shore,
+   so
+   a
+   search
+   that
+   cannot
+   succeed
+   ran
+   up
+   to
+   five
+   times
+   (3500
+   tiles
+   each)
+   and
+   the
+   squad
+   never
+   arrived.
+   Gates
+   are
+   now
+   flood-filled
+   from
+   the
+   player
+   in
+   the
+   officers'
+   direction
+   of
+   travel,
+   which
+   also
+   made
+   the
+   "cut
+   off
+   by
+   water"
+   case
+   cheap.
+8. **Negative
+   and
+   fractional
+   values.**
+   Heat
+   decay
+   and
+   fines
+   are
+   clamped
+   (`Math.max(0, ...)`,
+   fine
+   at
+   most
+   the
+   money
+   held);
+   the
+   fuzz
+   test
+   checks
+   money,
+   health,
+   heat
+   and
+   ammo
+   stay
+   in
+   range
+   through
+   6,000
+   random
+   commands.
+9. **Checked
+   and
+   found
+   sound:**
+   reloading
+   cannot
+   create
+   ammo
+   (rounds
+   conserved,
+   equip
+   cancels
+   a
+   reload
+   without
+   refunding
+   it),
+   a
+   shot
+   cannot
+   go
+   through
+   a
+   ledge,
+   a
+   friendly
+   shot
+   never
+   hits
+   another
+   officer,
+   unarmed
+   players
+   are
+   never
+   shot,
+   heat
+   does
+   decay,
+   the
+   same
+   seed
+   gives
+   the
+   same
+   outcome
+   (byte-identical
+   world
+   and
+   log).
 
 ## What this cannot tell us
 
-The harness aims perfectly (hitscan, no reaction time), never uses cover, never strafes, and a "melee" of one player is
-a scripted policy. A human playtest is needed for:
+The
+harness
+aims
+perfectly
+(hitscan,
+no
+reaction
+time),
+never
+uses
+cover,
+never
+strafes,
+and
+a
+"melee"
+of
+one
+player
+is
+a
+scripted
+policy.
+A
+human
+playtest
+is
+needed
+for:
 
-- how the shotgun and SMG feel with cover and corners (the harness is open ground, where they are weakest);
-- whether the sniper is still too strong against trickling reinforcements (it is the one gun that survives a long fight,
-  58 % for three minutes in open ground; ammo at 30 coins a round and the 1800 price are the only brakes);
-- whether 3 s on the clock before the first shot is enough on a 32-tile island, and whether 2 s forming up reads as
-  "they are coming" or "they appeared"; whether escape on foot feels fair (the scripted runner is caught 54 % of the time);
-- aim difficulty with a mouse or a thumb (hit radius 0.4 tile; spread is generous for the SMG);
-- whether 2.5 s per heat point is a pace players notice in the HUD, and whether the Armory's hustle button should show
-  the heat a sale will make (the HUD can call `hustleHeat(item, qty)`);
-- the pacing of the foraging half of the crime route (herbs and mushrooms at 30 s per tile, the kitchen): the harness
-  starts with stock, so 576 coins a minute is a ceiling for a player who has it, not a measurement of how fast they get it;
-- multiplayer: heat and police are per-player here, and the sim was only run with one player at a time.
+- how
+  the
+  shotgun
+  and
+  SMG
+  feel
+  with
+  cover
+  and
+  corners
+  (the
+  harness
+  is
+  open
+  ground,
+  where
+  they
+  are
+  weakest);
+- whether
+  the
+  sniper
+  is
+  still
+  too
+  strong
+  against
+  trickling
+  reinforcements
+  (it
+  is
+  the
+  one
+  gun
+  that
+  survives
+  a
+  long
+  fight,
+  58
+  %
+  for
+  three
+  minutes
+  in
+  open
+  ground;
+  ammo
+  at
+  30
+  coins
+  a
+  round
+  and
+  the
+  1800
+  price
+  are
+  the
+  only
+  brakes);
+- whether
+  3
+  s
+  on
+  the
+  clock
+  before
+  the
+  first
+  shot
+  is
+  enough
+  on
+  a
+  32-tile
+  island,
+  and
+  whether
+  2
+  s
+  forming
+  up
+  reads
+  as
+  "they
+  are
+  coming"
+  or
+  "they
+  appeared";
+  whether
+  escape
+  on
+  foot
+  feels
+  fair
+  (the
+  scripted
+  runner
+  is
+  caught
+  54
+  %
+  of
+  the
+  time);
+- aim
+  difficulty
+  with
+  a
+  mouse
+  or
+  a
+  thumb
+  (hit
+  radius
+  0.4
+  tile;
+  spread
+  is
+  generous
+  for
+  the
+  SMG);
+- whether
+  2.5
+  s
+  per
+  heat
+  point
+  is
+  a
+  pace
+  players
+  notice
+  in
+  the
+  HUD,
+  and
+  whether
+  the
+  Armory's
+  hustle
+  button
+  should
+  show
+  the
+  heat
+  a
+  sale
+  will
+  make
+  (the
+  HUD
+  can
+  call
+  `hustleHeat(item, qty)`);
+- the
+  pacing
+  of
+  the
+  foraging
+  half
+  of
+  the
+  crime
+  route
+  (herbs
+  and
+  mushrooms
+  at
+  30
+  s
+  per
+  tile,
+  the
+  kitchen):
+  the
+  harness
+  starts
+  with
+  stock,
+  so
+  576
+  coins
+  a
+  minute
+  is
+  a
+  ceiling
+  for
+  a
+  player
+  who
+  has
+  it,
+  not
+  a
+  measurement
+  of
+  how
+  fast
+  they
+  get
+  it;
+- multiplayer:
+  heat
+  and
+  police
+  are
+  per-player
+  here,
+  and
+  the
+  sim
+  was
+  only
+  run
+  with
+  one
+  player
+  at
+  a
+  time.

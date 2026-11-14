@@ -73,19 +73,28 @@
       ]
     },
     "ui_join_clipboard": {
-      "valid": [{}, []],
+      "valid": [
+        {},
+        []
+      ],
       "invalid": []
     },
     "ui_copy_code": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "ui_invite": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "ui_leave": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "ui_ready": {
@@ -119,7 +128,9 @@
         },
         {
           "key": "modifierLayers",
-          "value": ["glass_cannon"]
+          "value": [
+            "glass_cannon"
+          ]
         }
       ],
       "invalid": [
@@ -177,7 +188,9 @@
       ]
     },
     "ui_start": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "ui_kick": {
@@ -243,7 +256,9 @@
       ]
     },
     "ui_queue_counts": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "ui_vote": {
@@ -350,11 +365,15 @@
       ]
     },
     "ui_return_lobby": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "ui_continue_sp": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "ui_spectate": {
@@ -371,7 +390,9 @@
       ]
     },
     "ui_spectate_list": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "ui_replay": {
@@ -1040,7 +1061,10 @@
             "teamBased": false
           },
           "ruleset": "ruleset_mp_balanced",
-          "layers": ["standard", "pvp_timer"],
+          "layers": [
+            "standard",
+            "pvp_timer"
+          ],
           "options": {
             "$ref": "lobbyOptions"
           },
@@ -1424,7 +1448,9 @@
       ]
     },
     "timer_cue": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "presence": {
@@ -1518,7 +1544,9 @@
           "stats": {
             "reroll_count": 2,
             "reroll_cost_total": 10,
-            "vouchers": ["v_hone"]
+            "vouchers": [
+              "v_hone"
+            ]
           }
         }
       ],
@@ -1538,7 +1566,10 @@
               "at": 1761800000000,
               "queueMode": "pvp_nemesis",
               "ruleset": "ruleset_mp_balanced",
-              "players": ["Alice", "Bob"],
+              "players": [
+                "Alice",
+                "Bob"
+              ],
               "result": "win"
             }
           ]
@@ -1674,7 +1705,9 @@
         {
           "id": "c1",
           "cmd": "give",
-          "args": ["j_mp_pizza"]
+          "args": [
+            "j_mp_pizza"
+          ]
         },
         {
           "id": "c2",

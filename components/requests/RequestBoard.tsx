@@ -8,17 +8,34 @@
  * and what the team said back.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Inbox, Plus } from 'lucide-react';
-import { Tabs, type TabItem } from '@/components/ui/tabs';
+import {
+  Inbox,
+  Plus,
+} from 'lucide-react';
+import {
+  Tabs,
+  type TabItem,
+} from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
-import { REQUEST_STATUSES, type RequestSort, type RequestStatus } from '@/lib/requests/status';
-import type { FeatureRequestDTO, RequestBoardPage } from '@/lib/requests/schema';
+import {
+  REQUEST_STATUSES,
+  type RequestSort,
+  type RequestStatus,
+} from '@/lib/requests/status';
+import type {
+  FeatureRequestDTO,
+  RequestBoardPage,
+} from '@/lib/requests/schema';
 import { RequestCard } from './RequestCard';
 import { NewRequestDialog } from './NewRequestDialog';
 import { useRequestStatusLabels } from './RequestStatusBadge';
@@ -26,7 +43,8 @@ import { api } from '@/lib/contract/client';
 import { listRequestsApi } from '@/lib/requests/requests.contract';
 import { useArrival } from '@/components/ui/arrive';
 
-const ALL = 'ALL';
+const ALL =
+  'ALL';
 
 interface RequestBoardProps {
   initial: RequestBoardPage;
@@ -34,18 +52,76 @@ interface RequestBoardProps {
   isAdmin: boolean;
 }
 
-export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) {
-  const { t } = useTranslation('c-roadmap');
-  const labels = useRequestStatusLabels();
+export function RequestBoard({
+  initial,
+  signedIn,
+  isAdmin,
+}: RequestBoardProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-roadmap',
+    );
+  const labels =
+    useRequestStatusLabels();
 
-  const [filter, setFilter] = useState<RequestStatus | typeof ALL>(ALL);
-  const [sort, setSort] = useState<RequestSort>('top');
-  const [query, setQuery] = useState('');
-  const [page, setPage] = useState<RequestBoardPage>(initial);
-  const [loading, setLoading] = useState(false);
-  const [composing, setComposing] = useState(false);
+  const [
+    filter,
+    setFilter,
+  ] =
+    useState<
+      | RequestStatus
+      | typeof ALL
+    >(
+      ALL,
+    );
+  const [
+    sort,
+    setSort,
+  ] =
+    useState<RequestSort>(
+      'top',
+    );
+  const [
+    query,
+    setQuery,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    page,
+    setPage,
+  ] =
+    useState<RequestBoardPage>(
+      initial,
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    composing,
+    setComposing,
+  ] =
+    useState(
+      false,
+    );
   // Only an empty board shows a spinner while it refetches; what replaces it fades in.
-  const arrival = useArrival(!(loading && page.requests.length === 0));
+  const arrival =
+    useArrival(
+      !(
+        loading &&
+        page
+          .requests
+          .length ===
+          0
+      ),
+    );
 
   /**
    * The board refetches on filter/sort/search rather than filtering in memory:
@@ -53,150 +129,433 @@ export function RequestBoard({ initial, signedIn, isAdmin }: RequestBoardProps) 
    * filter would show "PLANNED (14)" above three cards.
    */
   useEffect(() => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => {
-      setLoading(true);
-      api(listRequestsApi, {
-        query: {
-          sort,
-          limit: 20,
-          ...(filter !== ALL ? { status: filter } : {}),
-          ...(query.trim() ? { q: query.trim() } : {}),
+    const controller =
+      new AbortController();
+    const timer =
+      setTimeout(
+        () => {
+          setLoading(
+            true,
+          );
+          api(
+            listRequestsApi,
+            {
+              query:
+                {
+                  sort,
+                  limit: 20,
+                  ...(filter !==
+                  ALL
+                    ? {
+                        status:
+                          filter,
+                      }
+                    : {}),
+                  ...(query.trim()
+                    ? {
+                        q: query.trim(),
+                      }
+                    : {}),
+                },
+              signal:
+                controller.signal,
+              retries: 0,
+            },
+          )
+            .then(
+              setPage,
+            )
+            .catch(
+              () => {
+                /* aborted or offline — keep showing the last good page */
+              },
+            )
+            .finally(
+              () =>
+                setLoading(
+                  false,
+                ),
+            );
+          // Debounced so typing in the search box is one request, not one per key.
         },
-        signal: controller.signal,
-        retries: 0,
-      })
-        .then(setPage)
-        .catch(() => {
-          /* aborted or offline — keep showing the last good page */
-        })
-        .finally(() => setLoading(false));
-      // Debounced so typing in the search box is one request, not one per key.
-    }, 250);
+        250,
+      );
     return () => {
       controller.abort();
-      clearTimeout(timer);
+      clearTimeout(
+        timer,
+      );
     };
-  }, [filter, sort, query]);
+  }, [
+    filter,
+    sort,
+    query,
+  ]);
 
-  const applyVote = useCallback((requestId: string, voteCount: number, hasVoted: boolean) => {
-    setPage((prev) => ({
-      ...prev,
-      requests: prev.requests.map((r) =>
-        r.id === requestId ? { ...r, voteCount, hasVoted } : r,
+  const applyVote =
+    useCallback(
+      (
+        requestId: string,
+        voteCount: number,
+        hasVoted: boolean,
+      ) => {
+        setPage(
+          (
+            prev,
+          ) => ({
+            ...prev,
+            requests:
+              prev.requests.map(
+                (
+                  r,
+                ) =>
+                  r.id ===
+                  requestId
+                    ? {
+                        ...r,
+                        voteCount,
+                        hasVoted,
+                      }
+                    : r,
+              ),
+          }),
+        );
+      },
+      [],
+    );
+
+  const applyChange =
+    useCallback(
+      (
+        next: FeatureRequestDTO,
+      ) => {
+        setPage(
+          (
+            prev,
+          ) => ({
+            ...prev,
+            requests:
+              prev.requests.map(
+                (
+                  r,
+                ) =>
+                  r.id ===
+                  next.id
+                    ? {
+                        ...r,
+                        ...next,
+                      }
+                    : r,
+              ),
+          }),
+        );
+      },
+      [],
+    );
+
+  const tabs: TabItem[] =
+    [
+      {
+        id: ALL,
+        label:
+          t(
+            'request-filter-all',
+            {
+              defaultValue:
+                'All',
+            },
+          ),
+        count:
+          REQUEST_STATUSES.reduce(
+            (
+              sum,
+              s,
+            ) =>
+              sum +
+              (page
+                .counts[
+                s
+              ] ??
+                0),
+            0,
+          ),
+      },
+      ...REQUEST_STATUSES.map(
+        (
+          status,
+        ) => ({
+          id: status,
+          label:
+            labels[
+              status
+            ],
+          count:
+            page
+              .counts[
+              status
+            ] ??
+            0,
+        }),
       ),
-    }));
-  }, []);
-
-  const applyChange = useCallback((next: FeatureRequestDTO) => {
-    setPage((prev) => ({
-      ...prev,
-      requests: prev.requests.map((r) => (r.id === next.id ? { ...r, ...next } : r)),
-    }));
-  }, []);
-
-  const tabs: TabItem[] = [
-    {
-      id: ALL,
-      label: t('request-filter-all', { defaultValue: 'All' }),
-      count: REQUEST_STATUSES.reduce((sum, s) => sum + (page.counts[s] ?? 0), 0),
-    },
-    ...REQUEST_STATUSES.map((status) => ({
-      id: status,
-      label: labels[status],
-      count: page.counts[status] ?? 0,
-    })),
-  ];
+    ];
 
   return (
-    <section className="rounded-site p-5 sm:p-6"aria-labelledby="request-board">
+    <section
+      className="rounded-site p-5 sm:p-6"
+      aria-labelledby="request-board"
+    >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 id="request-board" className="text-xl font-semibold text-site-text">
-            {t('request-board-title', { defaultValue: 'Request board' })}
+          <h2
+            id="request-board"
+            className="text-xl font-semibold text-site-text"
+          >
+            {t(
+              'request-board-title',
+              {
+                defaultValue:
+                  'Request board',
+              },
+            )}
           </h2>
           <p className="mt-1 text-sm text-site-text-muted">
-            {t('request-board-lede', {
-              defaultValue:
-                'Ask for something, vote on what others asked for, and see what we said back.',
-            })}
+            {t(
+              'request-board-lede',
+              {
+                defaultValue:
+                  'Ask for something, vote on what others asked for, and see what we said back.',
+              },
+            )}
           </p>
         </div>
-        <Button variant="default" size="sm" onClick={() => setComposing(true)} disabled={!signedIn}>
-          <Plus aria-hidden />
-          {t('request-new', { defaultValue: 'New request' })}
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() =>
+            setComposing(
+              true,
+            )
+          }
+          disabled={
+            !signedIn
+          }
+        >
+          <Plus
+            aria-hidden
+          />
+          {t(
+            'request-new',
+            {
+              defaultValue:
+                'New request',
+            },
+          )}
         </Button>
       </div>
 
       <Tabs
-        tabs={tabs}
-        value={filter}
-        onChange={(id) => setFilter(id as RequestStatus | typeof ALL)}
-        aria-label={t('request-filter-label', { defaultValue: 'Filter requests by status' })}
+        tabs={
+          tabs
+        }
+        value={
+          filter
+        }
+        onChange={(
+          id,
+        ) =>
+          setFilter(
+            id as
+              | RequestStatus
+              | typeof ALL,
+          )
+        }
+        aria-label={t(
+          'request-filter-label',
+          {
+            defaultValue:
+              'Filter requests by status',
+          },
+        )}
       />
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <SearchField
           containerClassName="min-w-48 flex-1"
-          value={query}
-          onValueChange={setQuery}
-          placeholder={t('request-search-placeholder', {
-            defaultValue: 'Search before you file…',
-          })}
-          aria-label={t('request-search-label', { defaultValue: 'Search requests' })}
+          value={
+            query
+          }
+          onValueChange={
+            setQuery
+          }
+          placeholder={t(
+            'request-search-placeholder',
+            {
+              defaultValue:
+                'Search before you file…',
+            },
+          )}
+          aria-label={t(
+            'request-search-label',
+            {
+              defaultValue:
+                'Search requests',
+            },
+          )}
         />
         <Select
-          value={sort}
-          onChange={(e) => setSort(e.target.value as RequestSort)}
+          value={
+            sort
+          }
+          onChange={(
+            e,
+          ) =>
+            setSort(
+              e
+                .target
+                .value as RequestSort,
+            )
+          }
           controlSize="sm"
-          aria-label={t('request-sort-label', { defaultValue: 'Sort requests' })}
+          aria-label={t(
+            'request-sort-label',
+            {
+              defaultValue:
+                'Sort requests',
+            },
+          )}
         >
-          <option value="top">{t('request-sort-top', { defaultValue: 'Most wanted' })}</option>
-          <option value="new">{t('request-sort-new', { defaultValue: 'Newest' })}</option>
-          <option value="status">{t('request-sort-status', { defaultValue: 'By status' })}</option>
+          <option value="top">
+            {t(
+              'request-sort-top',
+              {
+                defaultValue:
+                  'Most wanted',
+              },
+            )}
+          </option>
+          <option value="new">
+            {t(
+              'request-sort-new',
+              {
+                defaultValue:
+                  'Newest',
+              },
+            )}
+          </option>
+          <option value="status">
+            {t(
+              'request-sort-status',
+              {
+                defaultValue:
+                  'By status',
+              },
+            )}
+          </option>
         </Select>
       </div>
 
       <div className="mt-4 space-y-3">
-        {loading && page.requests.length === 0 ? (
+        {loading &&
+        page
+          .requests
+          .length ===
+          0 ? (
           <div className="flex justify-center py-10">
             <Spinner />
           </div>
-        ) : page.requests.length === 0 ? (
+        ) : page
+            .requests
+            .length ===
+          0 ? (
           <EmptyState
-            icon={Inbox}
-            className={arrival}
-            title={t('request-empty-title', { defaultValue: 'Nothing here yet' })}
-            description={t('request-empty-description', {
-              defaultValue: 'Be the first to ask for something in this category.',
-            })}
+            icon={
+              Inbox
+            }
+            className={
+              arrival
+            }
+            title={t(
+              'request-empty-title',
+              {
+                defaultValue:
+                  'Nothing here yet',
+              },
+            )}
+            description={t(
+              'request-empty-description',
+              {
+                defaultValue:
+                  'Be the first to ask for something in this category.',
+              },
+            )}
           />
         ) : (
-          page.requests.map((request) => (
-            <RequestCard
-              key={request.id}
-              className={arrival}
-              request={request}
-              signedIn={signedIn}
-              isAdmin={isAdmin}
-              onChanged={applyChange}
-              onVoted={applyVote}
-            />
-          ))
+          page.requests.map(
+            (
+              request,
+            ) => (
+              <RequestCard
+                key={
+                  request.id
+                }
+                className={
+                  arrival
+                }
+                request={
+                  request
+                }
+                signedIn={
+                  signedIn
+                }
+                isAdmin={
+                  isAdmin
+                }
+                onChanged={
+                  applyChange
+                }
+                onVoted={
+                  applyVote
+                }
+              />
+            ),
+          )
         )}
       </div>
 
       {!signedIn ? (
         <p className="mt-3 text-center text-xs text-site-text-muted">
-          {t('request-sign-in-hint', { defaultValue: 'Sign in to file a request or vote.' })}
+          {t(
+            'request-sign-in-hint',
+            {
+              defaultValue:
+                'Sign in to file a request or vote.',
+            },
+          )}
         </p>
       ) : null}
 
       <NewRequestDialog
-        open={composing}
-        onOpenChange={setComposing}
-        onCreated={(created) =>
-          setPage((prev) => ({ ...prev, requests: [created, ...prev.requests] }))
+        open={
+          composing
+        }
+        onOpenChange={
+          setComposing
+        }
+        onCreated={(
+          created,
+        ) =>
+          setPage(
+            (
+              prev,
+            ) => ({
+              ...prev,
+              requests:
+                [
+                  created,
+                  ...prev.requests,
+                ],
+            }),
+          )
         }
       />
     </section>

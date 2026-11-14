@@ -25,10 +25,23 @@ import {
   scoreFor,
   type Difficulty,
 } from './constants';
-import { buildArena, type ArenaLayout } from './arena';
+import {
+  buildArena,
+  type ArenaLayout,
+} from './arena';
 import { createRng } from './rng';
-import { GARMENT_KINDS, PATTERNS, type GarmentKind } from './patterns';
-import { ClothWorld, REST_SPEED, type Garment, type Ray, type SpawnDesc } from './solver';
+import {
+  GARMENT_KINDS,
+  PATTERNS,
+  type GarmentKind,
+} from './patterns';
+import {
+  ClothWorld,
+  REST_SPEED,
+  type Garment,
+  type Ray,
+  type SpawnDesc,
+} from './solver';
 import { lerp } from '@/lib/core/math';
 import { shuffle } from '@/lib/core/rng';
 
@@ -40,18 +53,31 @@ export interface Drop extends SpawnDesc {
 }
 
 /** Relative frequency of each cut. Shirts are the friendliest to grab. */
-const KIND_WEIGHTS: Record<GarmentKind, number> = {
-  shirt: 0.34,
-  pants: 0.26,
-  towel: 0.22,
-  sock: 0.18,
-};
+const KIND_WEIGHTS: Record<
+  GarmentKind,
+  number
+> =
+  {
+    shirt: 0.34,
+    pants: 0.26,
+    towel: 0.22,
+    sock: 0.18,
+  };
 
-function pickKind(roll: number): GarmentKind {
+function pickKind(
+  roll: number,
+): GarmentKind {
   let acc = 0;
   for (const kind of GARMENT_KINDS) {
-    acc += KIND_WEIGHTS[kind];
-    if (roll < acc) return kind;
+    acc +=
+      KIND_WEIGHTS[
+        kind
+      ];
+    if (
+      roll <
+      acc
+    )
+      return kind;
   }
   return 'shirt';
 }
@@ -65,56 +91,178 @@ export function buildDropSchedule(
   durationSec: number,
   difficulty: Difficulty,
 ): Drop[] {
-  const rng = createRng(seed);
-  const tuning = DIFFICULTY_TUNING[difficulty];
-  const drops: Drop[] = [];
+  const rng =
+    createRng(
+      seed,
+    );
+  const tuning =
+    DIFFICULTY_TUNING[
+      difficulty
+    ];
+  const drops: Drop[] =
+    [];
 
   // A beat of quiet at the start so the player can read the bins before the
   // first garment is in reach.
   let t = 0.8;
 
-  while (t < durationSec - 0.3) {
-    const progress = Math.min(t / durationSec, 1);
-    const batchFloat = lerp(tuning.startBatch, tuning.endBatch, progress);
+  while (
+    t <
+    durationSec -
+      0.3
+  ) {
+    const progress =
+      Math.min(
+        t /
+          durationSec,
+        1,
+      );
+    const batchFloat =
+      lerp(
+        tuning.startBatch,
+        tuning.endBatch,
+        progress,
+      );
     // Fractional batch sizes accumulate probabilistically, so difficulty ramps
     // smoothly instead of stepping from "one garment" to "two" at a threshold.
-    const batch = Math.max(1, Math.floor(batchFloat) + (rng.next() < batchFloat % 1 ? 1 : 0));
+    const batch =
+      Math.max(
+        1,
+        Math.floor(
+          batchFloat,
+        ) +
+          (rng.next() <
+          batchFloat %
+            1
+            ? 1
+            : 0),
+      );
 
     // One garment per lane keeps a batch from stacking into a single column,
     // which would be unreadable and unfair to grab.
-    const usable = ARENA.halfWidth * 2 - 1.2;
-    const laneWidth = usable / batch;
-    const lanes = shuffle(
-      Array.from({ length: batch }, (_, i) => i),
-      rng.next,
-    );
+    const usable =
+      ARENA.halfWidth *
+        2 -
+      1.2;
+    const laneWidth =
+      usable /
+      batch;
+    const lanes =
+      shuffle(
+        Array.from(
+          {
+            length:
+              batch,
+          },
+          (
+            _,
+            i,
+          ) =>
+            i,
+        ),
+        rng.next,
+      );
 
-    for (let b = 0; b < batch; b++) {
-      const lane = lanes[b];
-      const laneCenter = -usable / 2 + laneWidth * (lane + 0.5);
-      const kind = pickKind(rng.next());
-      const jitter = Math.min(laneWidth * 0.3, 0.5);
+    for (
+      let b = 0;
+      b <
+      batch;
+      b++
+    ) {
+      const lane =
+        lanes[
+          b
+        ];
+      const laneCenter =
+        -usable /
+          2 +
+        laneWidth *
+          (lane +
+            0.5);
+      const kind =
+        pickKind(
+          rng.next(),
+        );
+      const jitter =
+        Math.min(
+          laneWidth *
+            0.3,
+          0.5,
+        );
 
-      drops.push({
-        at: t + b * 0.08,
-        kind,
-        colorIndex: rng.int(WASH_COLORS.length),
-        x: laneCenter + rng.range(-jitter, jitter),
-        z: rng.range(-0.5, 0.5),
-        roll: rng.range(-Math.PI, Math.PI),
-        yaw: rng.range(-1, 1),
-        vx: rng.range(-0.6, 0.6),
-        vy: rng.range(-0.5, 0),
-        // Tumble out of the chute. The spin about the view axis is the one the
-        // player actually reads, so it gets the widest range.
-        spinX: rng.range(-2.2, 2.2),
-        spinY: rng.range(-2.6, 2.6),
-        spinZ: rng.range(-3.4, 3.4),
-        bow: rng.range(0.05, 0.16) * (rng.next() < 0.5 ? -1 : 1),
-      });
+      drops.push(
+        {
+          at:
+            t +
+            b *
+              0.08,
+          kind,
+          colorIndex:
+            rng.int(
+              WASH_COLORS.length,
+            ),
+          x:
+            laneCenter +
+            rng.range(
+              -jitter,
+              jitter,
+            ),
+          z: rng.range(
+            -0.5,
+            0.5,
+          ),
+          roll: rng.range(
+            -Math.PI,
+            Math.PI,
+          ),
+          yaw: rng.range(
+            -1,
+            1,
+          ),
+          vx: rng.range(
+            -0.6,
+            0.6,
+          ),
+          vy: rng.range(
+            -0.5,
+            0,
+          ),
+          // Tumble out of the chute. The spin about the view axis is the one the
+          // player actually reads, so it gets the widest range.
+          spinX:
+            rng.range(
+              -2.2,
+              2.2,
+            ),
+          spinY:
+            rng.range(
+              -2.6,
+              2.6,
+            ),
+          spinZ:
+            rng.range(
+              -3.4,
+              3.4,
+            ),
+          bow:
+            rng.range(
+              0.05,
+              0.16,
+            ) *
+            (rng.next() <
+            0.5
+              ? -1
+              : 1),
+        },
+      );
     }
 
-    t += lerp(tuning.startInterval, tuning.endInterval, progress);
+    t +=
+      lerp(
+        tuning.startInterval,
+        tuning.endInterval,
+        progress,
+      );
   }
 
   return drops;
@@ -131,12 +279,17 @@ const MISS_SETTLE = 1.1;
 /** Seconds a resolved garment stays visible, flopping into place, before culling. */
 const CULL_DELAY = 0.9;
 
-export type MatchEventType = 'sorted' | 'wrong' | 'missed';
+export type MatchEventType =
+  | 'sorted'
+  | 'wrong'
+  | 'missed';
 
 export interface MatchEvent {
   type: MatchEventType;
   garmentId: number;
-  binIndex: number | null;
+  binIndex:
+    | number
+    | null;
   points: number;
   /** Combo *after* the event — what the HUD should show. */
   combo: number;
@@ -155,14 +308,15 @@ export interface MatchStats {
   missed: number;
 }
 
-export const EMPTY_STATS: MatchStats = {
-  score: 0,
-  combo: 0,
-  bestCombo: 0,
-  sorted: 0,
-  wrong: 0,
-  missed: 0,
-};
+export const EMPTY_STATS: MatchStats =
+  {
+    score: 0,
+    combo: 0,
+    bestCombo: 0,
+    sorted: 0,
+    wrong: 0,
+    missed: 0,
+  };
 
 // ─── Match ──────────────────────────────────────────────────────────────────
 
@@ -183,11 +337,15 @@ export class LaundryMatch {
   readonly options: MatchOptions;
   readonly drops: Drop[];
 
-  stats: MatchStats = { ...EMPTY_STATS };
+  stats: MatchStats =
+    {
+      ...EMPTY_STATS,
+    };
   finished = false;
 
   /** Events produced by the last {@link advance}; the HUD drains them. */
-  readonly events: MatchEvent[] = [];
+  readonly events: MatchEvent[] =
+    [];
 
   private cursor = 0;
   private accumulator = 0;
@@ -201,17 +359,38 @@ export class LaundryMatch {
   private ticks = 0;
   private readonly totalTicks: number;
 
-  constructor(options: MatchOptions) {
-    this.options = options;
-    this.arena = buildArena();
-    this.world = new ClothWorld(this.arena);
-    this.drops = buildDropSchedule(options.seed, options.durationSec, options.difficulty);
-    this.totalTicks = Math.round(options.durationSec / FIXED_DT);
+  constructor(
+    options: MatchOptions,
+  ) {
+    this.options =
+      options;
+    this.arena =
+      buildArena();
+    this.world =
+      new ClothWorld(
+        this
+          .arena,
+      );
+    this.drops =
+      buildDropSchedule(
+        options.seed,
+        options.durationSec,
+        options.difficulty,
+      );
+    this.totalTicks =
+      Math.round(
+        options.durationSec /
+          FIXED_DT,
+      );
   }
 
   /** Simulated seconds elapsed. */
   get elapsed(): number {
-    return this.ticks * FIXED_DT;
+    return (
+      this
+        .ticks *
+      FIXED_DT
+    );
   }
 
   /**
@@ -221,12 +400,27 @@ export class LaundryMatch {
    * {@link advance}, so a reader always sees a matching pair.
    */
   get alpha(): number {
-    return Math.min(1, Math.max(0, this.accumulator / FIXED_DT));
+    return Math.min(
+      1,
+      Math.max(
+        0,
+        this
+          .accumulator /
+          FIXED_DT,
+      ),
+    );
   }
 
   /** Simulated seconds left, floored at zero. */
   get remaining(): number {
-    return Math.max(0, (this.totalTicks - this.ticks) * FIXED_DT);
+    return Math.max(
+      0,
+      (this
+        .totalTicks -
+        this
+          .ticks) *
+        FIXED_DT,
+    );
   }
 
   /**
@@ -234,103 +428,252 @@ export class LaundryMatch {
    * the excess beyond {@link MAX_TICKS_PER_FRAME}, so a backgrounded tab
    * resumes instead of trying to simulate the minute it was asleep.
    */
-  advance(deltaSeconds: number): void {
-    if (this.finished) return;
+  advance(
+    deltaSeconds: number,
+  ): void {
+    if (
+      this
+        .finished
+    )
+      return;
     this.events.length = 0;
 
-    this.accumulator += Math.min(deltaSeconds, MAX_TICKS_PER_FRAME * FIXED_DT);
+    this.accumulator +=
+      Math.min(
+        deltaSeconds,
+        MAX_TICKS_PER_FRAME *
+          FIXED_DT,
+      );
     let ticks = 0;
-    while (this.accumulator >= FIXED_DT && ticks < MAX_TICKS_PER_FRAME) {
-      this.accumulator -= FIXED_DT;
+    while (
+      this
+        .accumulator >=
+        FIXED_DT &&
+      ticks <
+        MAX_TICKS_PER_FRAME
+    ) {
+      this.accumulator -=
+        FIXED_DT;
       ticks++;
       this.tick();
-      if (this.finished) break;
+      if (
+        this
+          .finished
+      )
+        break;
     }
   }
 
   private tick(): void {
-    this.ticks++;
+    this
+      .ticks++;
     this.releaseDueDrops();
-    this.world.step(FIXED_DT, SUBSTEPS);
+    this.world.step(
+      FIXED_DT,
+      SUBSTEPS,
+    );
     this.resolveGarments();
     this.cull();
 
-    if (this.ticks >= this.totalTicks) {
+    if (
+      this
+        .ticks >=
+      this
+        .totalTicks
+    ) {
       this.finished = true;
       this.world.endGrab();
     }
   }
 
   private releaseDueDrops(): void {
-    const now = this.world.time;
-    while (this.cursor < this.drops.length && this.drops[this.cursor].at <= now) {
-      const drop = this.drops[this.cursor++];
+    const now =
+      this
+        .world
+        .time;
+    while (
+      this
+        .cursor <
+        this
+          .drops
+          .length &&
+      this
+        .drops[
+        this
+          .cursor
+      ]
+        .at <=
+        now
+    ) {
+      const drop =
+        this
+          .drops[
+          this
+            .cursor++
+        ];
       // The cap is a particle budget, so it is enforced by making room rather
       // than by skipping the drop — skipping would desync two players who hit
       // the cap at different moments.
-      if (this.world.garments.length >= MAX_LIVE_GARMENTS) this.evictOldest();
-      this.world.spawn(drop);
+      if (
+        this
+          .world
+          .garments
+          .length >=
+        MAX_LIVE_GARMENTS
+      )
+        this.evictOldest();
+      this.world.spawn(
+        drop,
+      );
     }
   }
 
   /** Drop the least interesting garment: resolved first, then longest at rest. */
   private evictOldest(): void {
-    const { garments } = this.world;
-    let victim: Garment | null = null;
+    const {
+      garments,
+    } =
+      this
+        .world;
+    let victim: Garment | null =
+      null;
     for (const g of garments) {
-      if (g.state !== 'falling') {
-        victim = g;
+      if (
+        g.state !==
+        'falling'
+      ) {
+        victim =
+          g;
         break;
       }
     }
-    if (!victim) {
+    if (
+      !victim
+    ) {
       for (const g of garments) {
-        if (!victim || g.restingFor > victim.restingFor) victim = g;
+        if (
+          !victim ||
+          g.restingFor >
+            victim.restingFor
+        )
+          victim =
+            g;
       }
     }
-    if (victim) this.world.remove(victim.id);
+    if (
+      victim
+    )
+      this.world.remove(
+        victim.id,
+      );
   }
 
   private resolveGarments(): void {
-    for (const g of this.world.garments) {
-      if (g.state !== 'falling') continue;
+    for (const g of this
+      .world
+      .garments) {
+      if (
+        g.state !==
+        'falling'
+      )
+        continue;
 
       // In a bin?
-      let landed = -1;
-      for (const bin of this.arena.bins) {
-        if (this.world.fractionInside(g, bin.interior) >= SORT_THRESHOLD) {
-          landed = bin.index;
+      let landed =
+        -1;
+      for (const bin of this
+        .arena
+        .bins) {
+        if (
+          this.world.fractionInside(
+            g,
+            bin.interior,
+          ) >=
+          SORT_THRESHOLD
+        ) {
+          landed =
+            bin.index;
           break;
         }
       }
 
-      if (landed >= 0) {
-        const correct = landed === g.colorIndex;
-        const points = scoreFor(correct, this.stats.combo);
-        if (correct) {
-          this.stats.combo++;
-          this.stats.bestCombo = Math.max(this.stats.bestCombo, this.stats.combo);
-          this.stats.sorted++;
+      if (
+        landed >=
+        0
+      ) {
+        const correct =
+          landed ===
+          g.colorIndex;
+        const points =
+          scoreFor(
+            correct,
+            this
+              .stats
+              .combo,
+          );
+        if (
+          correct
+        ) {
+          this
+            .stats
+            .combo++;
+          this.stats.bestCombo =
+            Math.max(
+              this
+                .stats
+                .bestCombo,
+              this
+                .stats
+                .combo,
+            );
+          this
+            .stats
+            .sorted++;
         } else {
           this.stats.combo = 0;
-          this.stats.wrong++;
+          this
+            .stats
+            .wrong++;
         }
-        this.stats.score = Math.max(0, this.stats.score + points);
+        this.stats.score =
+          Math.max(
+            0,
+            this
+              .stats
+              .score +
+              points,
+          );
 
-        g.state = 'sorted';
-        g.resolvedBin = landed;
-        g.expiresAt = this.world.time + CULL_DELAY;
-        this.events.push({
-          type: correct ? 'sorted' : 'wrong',
-          garmentId: g.id,
-          binIndex: landed,
-          points,
-          combo: this.stats.combo,
-          x: g.cx,
-          y: g.cy,
-          z: g.cz,
-          colorIndex: g.colorIndex,
-        });
+        g.state =
+          'sorted';
+        g.resolvedBin =
+          landed;
+        g.expiresAt =
+          this
+            .world
+            .time +
+          CULL_DELAY;
+        this.events.push(
+          {
+            type: correct
+              ? 'sorted'
+              : 'wrong',
+            garmentId:
+              g.id,
+            binIndex:
+              landed,
+            points,
+            combo:
+              this
+                .stats
+                .combo,
+            x: g.cx,
+            y: g.cy,
+            z: g.cz,
+            colorIndex:
+              g.colorIndex,
+          },
+        );
         continue;
       }
 
@@ -340,47 +683,105 @@ export class LaundryMatch {
       // wider than the gaps between them, so most laundry that misses comes to
       // rest *on* a bin rather than beside it, and an altitude check would let
       // that clutter sit there scoring nothing forever.
-      const fellOut = g.cy < ARENA.killY;
-      const settled = g.speed < REST_SPEED && g.restingFor >= MISS_SETTLE;
-      if (fellOut || settled) {
+      const fellOut =
+        g.cy <
+        ARENA.killY;
+      const settled =
+        g.speed <
+          REST_SPEED &&
+        g.restingFor >=
+          MISS_SETTLE;
+      if (
+        fellOut ||
+        settled
+      ) {
         this.stats.combo = 0;
-        this.stats.missed++;
-        g.state = 'missed';
-        g.expiresAt = this.world.time + CULL_DELAY;
-        this.events.push({
-          type: 'missed',
-          garmentId: g.id,
-          binIndex: null,
-          points: 0,
-          combo: 0,
-          x: g.cx,
-          y: g.cy,
-          z: g.cz,
-          colorIndex: g.colorIndex,
-        });
+        this
+          .stats
+          .missed++;
+        g.state =
+          'missed';
+        g.expiresAt =
+          this
+            .world
+            .time +
+          CULL_DELAY;
+        this.events.push(
+          {
+            type: 'missed',
+            garmentId:
+              g.id,
+            binIndex:
+              null,
+            points: 0,
+            combo: 0,
+            x: g.cx,
+            y: g.cy,
+            z: g.cz,
+            colorIndex:
+              g.colorIndex,
+          },
+        );
       }
     }
   }
 
   private cull(): void {
-    const now = this.world.time;
+    const now =
+      this
+        .world
+        .time;
     // Through `world.remove` rather than splicing the array, so the revision
     // counter the renderer watches actually moves.
-    for (let i = this.world.garments.length - 1; i >= 0; i--) {
-      const g = this.world.garments[i];
-      if (g.expiresAt !== null && now >= g.expiresAt) this.world.remove(g.id);
+    for (
+      let i =
+        this
+          .world
+          .garments
+          .length -
+        1;
+      i >=
+      0;
+      i--
+    ) {
+      const g =
+        this
+          .world
+          .garments[
+          i
+        ];
+      if (
+        g.expiresAt !==
+          null &&
+        now >=
+          g.expiresAt
+      )
+        this.world.remove(
+          g.id,
+        );
     }
   }
 
   // ── Pointer passthrough ─────────────────────────────────────────────────
 
   /** Grab everything under the ray. Called repeatedly as a pointer sweeps. */
-  beginGrab(ray: Ray): boolean {
-    return this.finished ? false : this.world.beginGrab(ray);
+  beginGrab(
+    ray: Ray,
+  ): boolean {
+    return this
+      .finished
+      ? false
+      : this.world.beginGrab(
+          ray,
+        );
   }
 
-  moveGrab(ray: Ray): void {
-    this.world.moveGrab(ray);
+  moveGrab(
+    ray: Ray,
+  ): void {
+    this.world.moveGrab(
+      ray,
+    );
   }
 
   /** Let go of the whole armful. */
@@ -391,6 +792,20 @@ export class LaundryMatch {
 
 /** Peak particle count this match could reach — used for buffer preallocation. */
 export function peakParticles(): number {
-  const largest = Math.max(...GARMENT_KINDS.map((k) => PATTERNS[k].count));
-  return largest * MAX_LIVE_GARMENTS;
+  const largest =
+    Math.max(
+      ...GARMENT_KINDS.map(
+        (
+          k,
+        ) =>
+          PATTERNS[
+            k
+          ]
+            .count,
+      ),
+    );
+  return (
+    largest *
+    MAX_LIVE_GARMENTS
+  );
 }

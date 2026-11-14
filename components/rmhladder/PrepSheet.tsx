@@ -17,14 +17,25 @@
  *    as a complete one.
  */
 
-import { useCallback, useState } from 'react';
+import {
+  useCallback,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarClock, Lightbulb, Loader2, Sparkles } from 'lucide-react';
+import {
+  CalendarClock,
+  Lightbulb,
+  Loader2,
+  Sparkles,
+} from 'lucide-react';
 import { toast } from '@/lib/toast';
 import type { PrepSheet as PrepSheetData } from '@/lib/rmhladder/prep.server';
 import type { UpgradeRequiredBody } from '@/lib/entitlements/features';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import {
+  HttpError,
+  serverError,
+} from '@/lib/http';
 import { buildPrepSheetApi } from '@/lib/rmhladder/prep.contract';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,204 +48,495 @@ export interface PrepSheetProps {
   initialSheet?: PrepSheetData | null;
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  behavioral: 'Behavioral',
-  technical: 'Technical',
-  role: 'Role',
-  company: 'Company',
-  logistics: 'Logistics',
-};
+const CATEGORY_LABELS: Record<
+  string,
+  string
+> =
+  {
+    behavioral:
+      'Behavioral',
+    technical:
+      'Technical',
+    role: 'Role',
+    company:
+      'Company',
+    logistics:
+      'Logistics',
+  };
 
-export function PrepSheet({ applicationId, initialSheet = null }: PrepSheetProps) {
-  const { t } = useTranslation('site');
-  const [sheet, setSheet] = useState<PrepSheetData | null>(initialSheet);
-  const [loading, setLoading] = useState(false);
-  const [upgrade, setUpgrade] = useState<UpgradeRequiredBody | null>(null);
+export function PrepSheet({
+  applicationId,
+  initialSheet = null,
+}: PrepSheetProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const [
+    sheet,
+    setSheet,
+  ] =
+    useState<PrepSheetData | null>(
+      initialSheet,
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    upgrade,
+    setUpgrade,
+  ] =
+    useState<UpgradeRequiredBody | null>(
+      null,
+    );
   // A built sheet replaces "Reading the posting…"; one handed in by the page does not fade.
-  const arrival = useArrival(sheet !== null);
+  const arrival =
+    useArrival(
+      sheet !==
+        null,
+    );
 
-  const generate = useCallback(async () => {
-    setLoading(true);
-    setUpgrade(null);
-    try {
-      let data: { sheet: PrepSheetData };
-      try {
-        data = await api(buildPrepSheetApi, { body: { applicationId } });
-      } catch (e) {
-        // `defineHandler`'s membership gate answers with a 402 carrying the
-        // upgrade envelope, precisely so this can name the plan and link to it
-        // instead of rendering "Forbidden".
-        if (e instanceof HttpError && e.status === 402) {
-          setUpgrade((e.body ?? {}) as UpgradeRequiredBody);
-          return;
-        }
-        throw new Error(serverError(e) ?? 'Could not build a prep sheet.', { cause: e });
-      }
-      setSheet(data.sheet);
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t('ladder.prepFailed', { defaultValue: 'Could not build a prep sheet.' }),
+  const generate =
+    useCallback(async () => {
+      setLoading(
+        true,
       );
-    } finally {
-      setLoading(false);
-    }
-  }, [applicationId, t]);
+      setUpgrade(
+        null,
+      );
+      try {
+        let data: {
+          sheet: PrepSheetData;
+        };
+        try {
+          data =
+            await api(
+              buildPrepSheetApi,
+              {
+                body: {
+                  applicationId,
+                },
+              },
+            );
+        } catch (e) {
+          // `defineHandler`'s membership gate answers with a 402 carrying the
+          // upgrade envelope, precisely so this can name the plan and link to it
+          // instead of rendering "Forbidden".
+          if (
+            e instanceof
+              HttpError &&
+            e.status ===
+              402
+          ) {
+            setUpgrade(
+              (e.body ??
+                {}) as UpgradeRequiredBody,
+            );
+            return;
+          }
+          throw new Error(
+            serverError(
+              e,
+            ) ??
+              'Could not build a prep sheet.',
+            {
+              cause:
+                e,
+            },
+          );
+        }
+        setSheet(
+          data.sheet,
+        );
+      } catch (error) {
+        toast.error(
+          error instanceof
+            Error
+            ? error.message
+            : t(
+                'ladder.prepFailed',
+                {
+                  defaultValue:
+                    'Could not build a prep sheet.',
+                },
+              ),
+        );
+      } finally {
+        setLoading(
+          false,
+        );
+      }
+    }, [
+      applicationId,
+      t,
+    ]);
 
   return (
-    <section className="surface-panel p-4 sm:p-5" aria-labelledby="ladder-prep-heading">
+    <section
+      className="surface-panel p-4 sm:p-5"
+      aria-labelledby="ladder-prep-heading"
+    >
       <div className="flex flex-wrap items-center gap-2">
-        <Sparkles className="size-4 text-site-accent" aria-hidden />
-        <h2 id="ladder-prep-heading" className="site-section-label">
-          {t('ladder.prepTitle', { defaultValue: 'Interview prep' })}
+        <Sparkles
+          className="size-4 text-site-accent"
+          aria-hidden
+        />
+        <h2
+          id="ladder-prep-heading"
+          className="site-section-label"
+        >
+          {t(
+            'ladder.prepTitle',
+            {
+              defaultValue:
+                'Interview prep',
+            },
+          )}
         </h2>
         <Button
           type="button"
           size="sm"
-          variant={sheet ? 'default' : 'default'}
-          onClick={generate}
-          loading={loading}
+          variant={
+            sheet
+              ? 'default'
+              : 'default'
+          }
+          onClick={
+            generate
+          }
+          loading={
+            loading
+          }
           className="ml-auto min-h-11"
         >
           {sheet
-            ? t('ladder.prepRegenerate', { defaultValue: 'Rebuild' })
-            : t('ladder.prepGenerate', { defaultValue: 'Build prep sheet' })}
+            ? t(
+                'ladder.prepRegenerate',
+                {
+                  defaultValue:
+                    'Rebuild',
+                },
+              )
+            : t(
+                'ladder.prepGenerate',
+                {
+                  defaultValue:
+                    'Build prep sheet',
+                },
+              )}
         </Button>
       </div>
 
       {upgrade && (
         <p className="mt-3 text-sm text-site-warning">
-          {t('ladder.prepUpgrade', {
-            defaultValue: 'Interview prep is included with {{tier}}.',
-            tier: upgrade.requiredTierLabel,
-          })}{' '}
-          <a href={upgrade.upgradeHref} className="font-medium text-site-accent hover:underline">
-            {t('ladder.prepSeePlans', { defaultValue: 'See plans' })}
+          {t(
+            'ladder.prepUpgrade',
+            {
+              defaultValue:
+                'Interview prep is included with {{tier}}.',
+              tier: upgrade.requiredTierLabel,
+            },
+          )}{' '}
+          <a
+            href={
+              upgrade.upgradeHref
+            }
+            className="font-medium text-site-accent hover:underline"
+          >
+            {t(
+              'ladder.prepSeePlans',
+              {
+                defaultValue:
+                  'See plans',
+              },
+            )}
           </a>
         </p>
       )}
 
-      {!sheet && !upgrade && !loading && (
-        <p className="mt-3 text-sm text-site-text-muted">
-          {t('ladder.prepEmpty', {
-            defaultValue:
-              'Build a prep sheet from this posting and your own STAR stories. Add stories to your answer bank first for the best match.',
-          })}
-        </p>
-      )}
+      {!sheet &&
+        !upgrade &&
+        !loading && (
+          <p className="mt-3 text-sm text-site-text-muted">
+            {t(
+              'ladder.prepEmpty',
+              {
+                defaultValue:
+                  'Build a prep sheet from this posting and your own STAR stories. Add stories to your answer bank first for the best match.',
+              },
+            )}
+          </p>
+        )}
 
-      {loading && !sheet && (
-        <p className="mt-3 flex items-center gap-2 text-sm text-site-text-muted">
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-          {t('ladder.prepWorking', { defaultValue: 'Reading the posting…' })}
-        </p>
-      )}
+      {loading &&
+        !sheet && (
+          <p className="mt-3 flex items-center gap-2 text-sm text-site-text-muted">
+            <Loader2
+              className="size-4 animate-spin"
+              aria-hidden
+            />
+            {t(
+              'ladder.prepWorking',
+              {
+                defaultValue:
+                  'Reading the posting…',
+              },
+            )}
+          </p>
+        )}
 
       {sheet && (
-        <div className={cn('mt-4 grid gap-5', arrival)}>
-          {sheet.daysUntilInterview != null && sheet.nextInterviewAt && (
-            <p className="flex flex-wrap items-center gap-2 text-sm text-site-text">
-              <CalendarClock className="size-4 text-site-accent" aria-hidden />
-              {t('ladder.prepCountdown', {
-                defaultValue: '{{count}} days until your interview',
-                count: sheet.daysUntilInterview,
-              })}
-              <span className="text-site-text-muted">
-                {new Date(sheet.nextInterviewAt).toLocaleDateString()}
-              </span>
-            </p>
+        <div
+          className={cn(
+            'mt-4 grid gap-5',
+            arrival,
           )}
+        >
+          {sheet.daysUntilInterview !=
+            null &&
+            sheet.nextInterviewAt && (
+              <p className="flex flex-wrap items-center gap-2 text-sm text-site-text">
+                <CalendarClock
+                  className="size-4 text-site-accent"
+                  aria-hidden
+                />
+                {t(
+                  'ladder.prepCountdown',
+                  {
+                    defaultValue:
+                      '{{count}} days until your interview',
+                    count:
+                      sheet.daysUntilInterview,
+                  },
+                )}
+                <span className="text-site-text-muted">
+                  {new Date(
+                    sheet.nextInterviewAt,
+                  ).toLocaleDateString()}
+                </span>
+              </p>
+            )}
 
           {sheet.fallback && (
             <p className="text-xs text-site-text-muted">
-              {t('ladder.prepFallback', {
-                defaultValue:
-                  'Generated without the AI model — this is your own stories ranked against the posting.',
-              })}
+              {t(
+                'ladder.prepFallback',
+                {
+                  defaultValue:
+                    'Generated without the AI model — this is your own stories ranked against the posting.',
+                },
+              )}
             </p>
           )}
 
           {sheet.roleSummary && (
             <div>
               <h3 className="site-section-label">
-                {t('ladder.prepRole', { defaultValue: 'The role' })}
+                {t(
+                  'ladder.prepRole',
+                  {
+                    defaultValue:
+                      'The role',
+                  },
+                )}
               </h3>
-              <p className="mt-2 text-sm leading-6 text-site-text-muted">{sheet.roleSummary}</p>
+              <p className="mt-2 text-sm leading-6 text-site-text-muted">
+                {
+                  sheet.roleSummary
+                }
+              </p>
             </div>
           )}
 
-          {sheet.companyFacts.length > 0 && (
+          {sheet
+            .companyFacts
+            .length >
+            0 && (
             <div>
               <h3 className="site-section-label">
-                {t('ladder.prepFacts', { defaultValue: 'Worth remembering' })}
+                {t(
+                  'ladder.prepFacts',
+                  {
+                    defaultValue:
+                      'Worth remembering',
+                  },
+                )}
               </h3>
               <ul className="mt-2 grid gap-2">
-                {sheet.companyFacts.map((fact, i) => (
-                  <li key={i} className="text-sm leading-6 text-site-text-muted">
-                    {fact}
-                  </li>
-                ))}
+                {sheet.companyFacts.map(
+                  (
+                    fact,
+                    i,
+                  ) => (
+                    <li
+                      key={
+                        i
+                      }
+                      className="text-sm leading-6 text-site-text-muted"
+                    >
+                      {
+                        fact
+                      }
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           )}
 
-          {sheet.questions.length > 0 && (
+          {sheet
+            .questions
+            .length >
+            0 && (
             <div>
               <h3 className="site-section-label">
-                {t('ladder.prepQuestions', { defaultValue: 'Likely questions' })}
+                {t(
+                  'ladder.prepQuestions',
+                  {
+                    defaultValue:
+                      'Likely questions',
+                  },
+                )}
               </h3>
               <ul className="mt-2 grid gap-2">
-                {sheet.questions.map((q, i) => (
-                  <li key={i} className="surface-card p-3">
-                    <div className="flex flex-wrap items-start gap-2">
-                      <p className="min-w-0 flex-1 text-sm font-medium text-site-text">
-                        {q.question}
+                {sheet.questions.map(
+                  (
+                    q,
+                    i,
+                  ) => (
+                    <li
+                      key={
+                        i
+                      }
+                      className="surface-card p-3"
+                    >
+                      <div className="flex flex-wrap items-start gap-2">
+                        <p className="min-w-0 flex-1 text-sm font-medium text-site-text">
+                          {
+                            q.question
+                          }
+                        </p>
+                        <Badge variant="default">
+                          {CATEGORY_LABELS[
+                            q
+                              .category
+                          ] ??
+                            q.category}
+                        </Badge>
+                      </div>
+                      {q.why && (
+                        <p className="mt-2 text-xs leading-5 text-site-text-muted">
+                          {
+                            q.why
+                          }
+                        </p>
+                      )}
+                    </li>
+                  ),
+                )}
+              </ul>
+            </div>
+          )}
+
+          {sheet
+            .storyMatches
+            .length >
+            0 && (
+            <div>
+              <h3 className="site-section-label">
+                {t(
+                  'ladder.prepStories',
+                  {
+                    defaultValue:
+                      'Your stories to use',
+                  },
+                )}
+              </h3>
+              <ul className="mt-2 grid gap-2">
+                {sheet.storyMatches.map(
+                  (
+                    m,
+                    i,
+                  ) => (
+                    <li
+                      key={
+                        i
+                      }
+                      className="surface-card p-3"
+                    >
+                      <p className="text-sm font-medium text-site-text">
+                        {
+                          m.storyTitle
+                        }
                       </p>
-                      <Badge variant="default">{CATEGORY_LABELS[q.category] ?? q.category}</Badge>
-                    </div>
-                    {q.why && (
-                      <p className="mt-2 text-xs leading-5 text-site-text-muted">{q.why}</p>
-                    )}
-                  </li>
-                ))}
+                      {m.question && (
+                        <p className="mt-1 text-xs text-site-text-muted">
+                          {t(
+                            'ladder.prepStoryFor',
+                            {
+                              defaultValue:
+                                'For: {{q}}',
+                              q: m.question,
+                            },
+                          )}
+                        </p>
+                      )}
+                      {m.why && (
+                        <p className="mt-1 text-xs text-site-text-muted">
+                          {
+                            m.why
+                          }
+                        </p>
+                      )}
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           )}
 
-          {sheet.storyMatches.length > 0 && (
-            <div>
-              <h3 className="site-section-label">
-                {t('ladder.prepStories', { defaultValue: 'Your stories to use' })}
-              </h3>
-              <ul className="mt-2 grid gap-2">
-                {sheet.storyMatches.map((m, i) => (
-                  <li key={i} className="surface-card p-3">
-                    <p className="text-sm font-medium text-site-text">{m.storyTitle}</p>
-                    {m.question && (
-                      <p className="mt-1 text-xs text-site-text-muted">
-                        {t('ladder.prepStoryFor', { defaultValue: 'For: {{q}}', q: m.question })}
-                      </p>
-                    )}
-                    {m.why && <p className="mt-1 text-xs text-site-text-muted">{m.why}</p>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {sheet.gaps.length > 0 && (
+          {sheet
+            .gaps
+            .length >
+            0 && (
             <div>
               <h3 className="site-section-label flex items-center gap-2">
-                <Lightbulb className="size-4 text-site-warning" aria-hidden />
-                {t('ladder.prepGaps', { defaultValue: 'Worth preparing' })}
+                <Lightbulb
+                  className="size-4 text-site-warning"
+                  aria-hidden
+                />
+                {t(
+                  'ladder.prepGaps',
+                  {
+                    defaultValue:
+                      'Worth preparing',
+                  },
+                )}
               </h3>
               <ul className="mt-2 grid gap-2">
-                {sheet.gaps.map((gap, i) => (
-                  <li key={i} className="text-sm leading-6 text-site-text-muted">
-                    {gap}
-                  </li>
-                ))}
+                {sheet.gaps.map(
+                  (
+                    gap,
+                    i,
+                  ) => (
+                    <li
+                      key={
+                        i
+                      }
+                      className="text-sm leading-6 text-site-text-muted"
+                    >
+                      {
+                        gap
+                      }
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           )}

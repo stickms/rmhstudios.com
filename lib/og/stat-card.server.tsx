@@ -31,23 +31,41 @@ export type StatCardKind =
   | 'wrapped_stat'
   | 'market';
 
-export type StatCardVariant = 'landscape' | 'story';
+export type StatCardVariant =
+  | 'landscape'
+  | 'story';
 
 /** What each kind is called. The kicker is the card's only kind indicator. */
-const KIND_LABEL: Record<StatCardKind, string> = {
-  achievement: 'Achievement unlocked',
-  rank: 'Rank up',
-  streak: 'Streak milestone',
-  pass_tier: 'Battle pass',
-  arcade: 'Arcade clear',
-  wrapped_stat: 'RMH Wrapped',
-  market: 'Marketplace',
-};
+const KIND_LABEL: Record<
+  StatCardKind,
+  string
+> =
+  {
+    achievement:
+      'Achievement unlocked',
+    rank: 'Rank up',
+    streak:
+      'Streak milestone',
+    pass_tier:
+      'Battle pass',
+    arcade:
+      'Arcade clear',
+    wrapped_stat:
+      'RMH Wrapped',
+    market:
+      'Marketplace',
+  };
 
 export interface StatCardUser {
-  name?: string | null;
-  handle?: string | null;
-  image?: string | null;
+  name?:
+    | string
+    | null;
+  handle?:
+    | string
+    | null;
+  image?:
+    | string
+    | null;
 }
 
 export interface StatCardData {
@@ -64,29 +82,77 @@ export interface StatCardData {
   path?: string;
 }
 
-export async function renderStatCard(data: StatCardData): Promise<Buffer> {
-  const label = KIND_LABEL[data.kind] ?? KIND_LABEL.achievement;
-  const name = data.user?.name || data.user?.handle || '';
+export async function renderStatCard(
+  data: StatCardData,
+): Promise<Buffer> {
+  const label =
+    KIND_LABEL[
+      data
+        .kind
+    ] ??
+    KIND_LABEL.achievement;
+  const name =
+    data
+      .user
+      ?.name ||
+    data
+      .user
+      ?.handle ||
+    '';
 
-  return renderPageCard({
-    // A moment's content is an immutable snapshot, so everything drawn is in the
-    // key and a hit is always correct.
-    cacheKey: [
-      'moment',
-      data.path ?? '',
-      data.kind,
-      data.title ?? '',
-      data.value,
-      data.subtitle ?? '',
-      name,
-      data.user?.handle ?? '',
-      data.user?.image ?? '',
-    ].join('|'),
-    eyebrow: data.title || label,
-    title: data.value || 'RMH Studios',
-    subtitle: data.subtitle,
-    byline: name ? { name, handle: data.user?.handle, image: data.user?.image } : null,
-    path: data.path,
-    variant: data.variant ?? 'landscape',
-  });
+  return renderPageCard(
+    {
+      // A moment's content is an immutable snapshot, so everything drawn is in the
+      // key and a hit is always correct.
+      cacheKey:
+        [
+          'moment',
+          data.path ??
+            '',
+          data.kind,
+          data.title ??
+            '',
+          data.value,
+          data.subtitle ??
+            '',
+          name,
+          data
+            .user
+            ?.handle ??
+            '',
+          data
+            .user
+            ?.image ??
+            '',
+        ].join(
+          '|',
+        ),
+      eyebrow:
+        data.title ||
+        label,
+      title:
+        data.value ||
+        'RMH Studios',
+      subtitle:
+        data.subtitle,
+      byline:
+        name
+          ? {
+              name,
+              handle:
+                data
+                  .user
+                  ?.handle,
+              image:
+                data
+                  .user
+                  ?.image,
+            }
+          : null,
+      path: data.path,
+      variant:
+        data.variant ??
+        'landscape',
+    },
+  );
 }

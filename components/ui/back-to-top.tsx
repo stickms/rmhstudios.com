@@ -1,20 +1,53 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { ArrowUp } from 'lucide-react';
-import { AnimatePresence, m as motion } from 'framer-motion';
+import {
+  AnimatePresence,
+  m as motion,
+} from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
-import { DURATION, EASE } from '@/lib/motion';
+import {
+  DURATION,
+  EASE,
+} from '@/lib/motion';
 
 /** Jump the page (or its opted-in scroller, `[data-scroll-root]`) to the top. */
 export function scrollPageToTop() {
-  const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
+  const behavior: ScrollBehavior =
+    prefersReducedMotion()
+      ? 'auto'
+      : 'smooth';
   // Resolved here rather than kept live: one query per click is free, and a
   // click is the only moment the answer is needed.
-  const scroller = document.querySelector<HTMLElement>('[data-scroll-root]');
-  if (scroller && scroller.offsetParent !== null) scroller.scrollTo({ top: 0, behavior });
-  else window.scrollTo({ top: 0, behavior });
+  const scroller =
+    document.querySelector<HTMLElement>(
+      '[data-scroll-root]',
+    );
+  if (
+    scroller &&
+    scroller.offsetParent !==
+      null
+  )
+    scroller.scrollTo(
+      {
+        top: 0,
+        behavior,
+      },
+    );
+  else
+    window.scrollTo(
+      {
+        top: 0,
+        behavior,
+      },
+    );
 }
 
 /**
@@ -59,57 +92,145 @@ export function scrollPageToTop() {
  * click target still needs to, and that is resolved once, on click.
  */
 
-export function BackToTop({ threshold = 600 }: { threshold?: number }) {
-  const { t } = useTranslation('c-ui');
-  const [visible, setVisible] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+export function BackToTop({
+  threshold = 600,
+}: {
+  threshold?: number;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-ui',
+    );
+  const [
+    visible,
+    setVisible,
+  ] =
+    useState(
+      false,
+    );
+  const sentinelRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+  const buttonRef =
+    useRef<HTMLButtonElement | null>(
+      null,
+    );
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver((entries) => {
-      const entry = entries[entries.length - 1];
-      // Gone off the TOP, not merely out of view: on a viewport shorter than the
-      // threshold the sentinel starts out below the fold, and "not intersecting"
-      // there would show the button on an unscrolled page.
-      const next = !entry.isIntersecting && entry.boundingClientRect.top < 0;
-      setVisible(next);
-    });
-    io.observe(sentinel);
+    const sentinel =
+      sentinelRef.current;
+    if (
+      !sentinel ||
+      typeof IntersectionObserver ===
+        'undefined'
+    )
+      return;
+    const io =
+      new IntersectionObserver(
+        (
+          entries,
+        ) => {
+          const entry =
+            entries[
+              entries.length -
+                1
+            ];
+          // Gone off the TOP, not merely out of view: on a viewport shorter than the
+          // threshold the sentinel starts out below the fold, and "not intersecting"
+          // there would show the button on an unscrolled page.
+          const next =
+            !entry.isIntersecting &&
+            entry
+              .boundingClientRect
+              .top <
+              0;
+          setVisible(
+            next,
+          );
+        },
+      );
+    io.observe(
+      sentinel,
+    );
     return () => {
       io.disconnect();
     };
-  }, [threshold]);
+  }, [
+    threshold,
+  ]);
 
-  const scrollToTop = useCallback(() => scrollPageToTop(), []);
+  const scrollToTop =
+    useCallback(
+      () =>
+        scrollPageToTop(),
+      [],
+    );
 
   return (
     <>
       <div
-        ref={sentinelRef}
+        ref={
+          sentinelRef
+        }
         className="back-to-top-sentinel"
-        style={{ top: `${threshold}px` }}
+        style={{
+          top: `${threshold}px`,
+        }}
         aria-hidden
       />
       <AnimatePresence>
         {visible && (
           <motion.button
-            ref={buttonRef}
+            ref={
+              buttonRef
+            }
             type="button"
-            onClick={scrollToTop}
+            onClick={
+              scrollToTop
+            }
             // §5.5x A.1: part of the floating-bottom stack. globals.css lifts this
             // clear of the mini-player / cookie bar when either is present, and
             // `.floating-fab-lane` seats it in the compose FAB's row.
             data-floating="backtotop"
             // A FAB-like disc (04 §1, tier C): `.surface-overlay` alone resolves to a
             // pane-mode body, which never moves; this one presses like a control.
-            aria-label={t('back-to-top', { defaultValue: 'Back to top' })}
-            title={t('back-to-top', { defaultValue: 'Back to top' })}
-            initial={{ opacity: 0, scale: 0.8, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 8 }}
-            transition={{ duration: DURATION.fast, ease: EASE.standard }}
+            aria-label={t(
+              'back-to-top',
+              {
+                defaultValue:
+                  'Back to top',
+              },
+            )}
+            title={t(
+              'back-to-top',
+              {
+                defaultValue:
+                  'Back to top',
+              },
+            )}
+            initial={{
+              opacity: 0,
+              scale: 0.8,
+              y: 8,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              scale: 0.8,
+              y: 8,
+            }}
+            transition={{
+              duration:
+                DURATION.fast,
+              ease: EASE.standard,
+            }}
             className={cn(
               // Shares the bottom-right lane with the compose FAB (globals.css
               // §5.5x A.1) instead of floating in the band above it, where it sat
@@ -122,7 +243,10 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
               'hover:border-site-accent',
             )}
           >
-            <ArrowUp className="h-5 w-5" aria-hidden />
+            <ArrowUp
+              className="h-5 w-5"
+              aria-hidden
+            />
           </motion.button>
         )}
       </AnimatePresence>

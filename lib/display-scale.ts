@@ -72,14 +72,29 @@ const EPSILON = 1e-6;
 export const MAX_GAME_DPR = 2;
 
 /** The parts of `window` a display scale is read from — narrowed so it can be faked. */
-export type DisplayScaleSource = {
-  devicePixelRatio?: number;
-  visualViewport?: { scale?: number } | null;
-};
+export type DisplayScaleSource =
+  {
+    devicePixelRatio?: number;
+    visualViewport?: {
+      scale?: number;
+    } | null;
+  };
 
 /** A positive, finite reading, or 1 when the browser doesn't supply one. */
-function positive(value: number | undefined): number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 1;
+function positive(
+  value:
+    | number
+    | undefined,
+): number {
+  return typeof value ===
+    'number' &&
+    Number.isFinite(
+      value,
+    ) &&
+    value >
+      0
+    ? value
+    : 1;
 }
 
 /**
@@ -88,9 +103,24 @@ function positive(value: number | undefined): number {
  * unzoomed retina display; 4 on that same display at 200% browser zoom; 6 on a 3× phone
  * pinched to double.
  */
-export function readDisplayScale(source: DisplayScaleSource): number {
-  const pinch = Math.min(positive(source.visualViewport?.scale), MAX_PINCH_SCALE);
-  return positive(source.devicePixelRatio) * pinch;
+export function readDisplayScale(
+  source: DisplayScaleSource,
+): number {
+  const pinch =
+    Math.min(
+      positive(
+        source
+          .visualViewport
+          ?.scale,
+      ),
+      MAX_PINCH_SCALE,
+    );
+  return (
+    positive(
+      source.devicePixelRatio,
+    ) *
+    pinch
+  );
 }
 
 /**
@@ -102,9 +132,25 @@ export function readDisplayScale(source: DisplayScaleSource): number {
  * the epsilon means the ratios that are already exact steps — 1, 1.25, 1.5, 2, 3 — stay
  * exactly themselves rather than tipping over on float error.
  */
-export function quantiseDisplayScale(scale: number): number {
-  if (!Number.isFinite(scale) || scale <= 0) return 1;
-  return Math.ceil(scale * DISPLAY_SCALE_STEPS - EPSILON) / DISPLAY_SCALE_STEPS;
+export function quantiseDisplayScale(
+  scale: number,
+): number {
+  if (
+    !Number.isFinite(
+      scale,
+    ) ||
+    scale <=
+      0
+  )
+    return 1;
+  return (
+    Math.ceil(
+      scale *
+        DISPLAY_SCALE_STEPS -
+        EPSILON,
+    ) /
+    DISPLAY_SCALE_STEPS
+  );
 }
 
 /**
@@ -119,8 +165,15 @@ export function quantiseDisplayScale(scale: number): number {
  * transform. Sizing the buffer from a clamped ratio while drawing at the raw one
  * silently scales the whole scene.
  */
-export function gameSurfaceDpr(source: DisplayScaleSource): number {
-  return Math.min(positive(source.devicePixelRatio), MAX_GAME_DPR);
+export function gameSurfaceDpr(
+  source: DisplayScaleSource,
+): number {
+  return Math.min(
+    positive(
+      source.devicePixelRatio,
+    ),
+    MAX_GAME_DPR,
+  );
 }
 
 /**
@@ -128,12 +181,61 @@ export function gameSurfaceDpr(source: DisplayScaleSource): number {
  * held to the pixel and edge ceilings, and never below 1. Sizes of 0 (nothing measured
  * yet) impose no ceiling, so the first frame renders at the display's real resolution.
  */
-export function surfaceDprFor(scale: number, cssWidth: number, cssHeight: number): number {
-  if (!Number.isFinite(scale) || scale <= 0) return 1;
-  const w = Number.isFinite(cssWidth) && cssWidth > 0 ? cssWidth : 0;
-  const h = Number.isFinite(cssHeight) && cssHeight > 0 ? cssHeight : 0;
-  if (!w || !h) return Math.max(1, scale);
-  const byArea = Math.sqrt(MAX_SURFACE_PIXELS / (w * h));
-  const byEdge = MAX_SURFACE_EDGE / Math.max(w, h);
-  return Math.max(1, Math.min(scale, byArea, byEdge));
+export function surfaceDprFor(
+  scale: number,
+  cssWidth: number,
+  cssHeight: number,
+): number {
+  if (
+    !Number.isFinite(
+      scale,
+    ) ||
+    scale <=
+      0
+  )
+    return 1;
+  const w =
+    Number.isFinite(
+      cssWidth,
+    ) &&
+    cssWidth >
+      0
+      ? cssWidth
+      : 0;
+  const h =
+    Number.isFinite(
+      cssHeight,
+    ) &&
+    cssHeight >
+      0
+      ? cssHeight
+      : 0;
+  if (
+    !w ||
+    !h
+  )
+    return Math.max(
+      1,
+      scale,
+    );
+  const byArea =
+    Math.sqrt(
+      MAX_SURFACE_PIXELS /
+        (w *
+          h),
+    );
+  const byEdge =
+    MAX_SURFACE_EDGE /
+    Math.max(
+      w,
+      h,
+    );
+  return Math.max(
+    1,
+    Math.min(
+      scale,
+      byArea,
+      byEdge,
+    ),
+  );
 }

@@ -8,7 +8,15 @@
  * dispatching the `rmh:command-palette` window event.
  */
 
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +24,10 @@ import { useSurpriseCommand } from '@/components/discovery/useSurprise';
 import { api } from '@/lib/contract/client';
 import { universalSearchApi } from '@/lib/feed/compose-assist.contract';
 import { normalizeQuery } from '@/lib/search/normalize';
-import { MATCH_FLOOR, scoreRecord } from '@/lib/search/score';
+import {
+  MATCH_FLOOR,
+  scoreRecord,
+} from '@/lib/search/score';
 import {
   Home,
   Compass,
@@ -65,26 +76,53 @@ import {
   AppWindow,
   type LucideIcon,
 } from 'lucide-react';
-import { games, apps } from '@/lib/catalog';
+import {
+  games,
+  apps,
+} from '@/lib/catalog';
 import { SITE_DESTINATIONS } from '@/lib/search/catalog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore';
+import {
+  SITE_STYLES,
+  useThemeStore,
+  type SiteStyle,
+} from '@/stores/themeStore';
 import { useSession } from '@/components/Providers';
 import { cn } from '@/lib/utils';
-import { CURRENT_RELEASE, isUnseen, WHATS_NEW_OPEN_EVENT } from '@/lib/whats-new';
+import {
+  CURRENT_RELEASE,
+  isUnseen,
+  WHATS_NEW_OPEN_EVENT,
+} from '@/lib/whats-new';
 
 // Loaded on demand so the palette (mounted on every route, including games)
 // doesn't pull the compose stack into the initial bundle.
-const ComposeModal = lazy(() =>
-  import('@/components/feed/ComposeModal').then((m) => ({ default: m.ComposeModal })),
-);
+const ComposeModal =
+  lazy(
+    () =>
+      import('@/components/feed/ComposeModal').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.ComposeModal,
+        }),
+      ),
+  );
 
 // The open event + opener live in a dependency-free module so callers can trigger
 // the palette without importing the games+apps registries and scorer this file
 // pulls in: import them from './command-palette-bus', never from here.
 import { COMMAND_PALETTE_EVENT } from './command-palette-bus';
 
-type Section = 'pages' | 'games' | 'apps' | 'actions' | 'themes' | 'people' | 'posts';
+type Section =
+  | 'pages'
+  | 'games'
+  | 'apps'
+  | 'actions'
+  | 'themes'
+  | 'people'
+  | 'posts';
 
 interface Command {
   id: string;
@@ -96,7 +134,9 @@ interface Command {
   unread?: boolean;
   emoji?: string;
   /** Avatar URL for server-search results (people). */
-  image?: string | null;
+  image?:
+    | string
+    | null;
   /** Secondary text after the label (e.g. @handle, post author). */
   sublabel?: string;
   /** Present for navigation commands. */
@@ -111,45 +151,49 @@ interface Command {
  * catalog. The catalog is imported by the server too (it backs `/api/search`),
  * so it can only name its icons — this is where names become components.
  */
-const DESTINATION_ICONS: Record<string, LucideIcon> = {
-  Home,
-  Compass,
-  Inbox,
-  Bell,
-  Bookmark,
-  Library,
-  Users,
-  ShoppingBag,
-  Gamepad2,
-  TrendingUp,
-  Wand2,
-  Trophy,
-  Wallet,
-  Puzzle,
-  Newspaper,
-  BookOpen,
-  Map: MapIcon,
-  Gem,
-  HelpCircle,
-  SlidersHorizontal,
-  KeyRound,
-  ShieldUser,
-  Palette,
-  Timer,
-  Coins,
-  Calendar,
-  Radio,
-  Store,
-  Car,
-  Shirt,
-  Rocket,
-  Terminal,
-  Smile,
-  History,
-  FileText,
-  Sparkles,
-  AppWindow,
-};
+const DESTINATION_ICONS: Record<
+  string,
+  LucideIcon
+> =
+  {
+    Home,
+    Compass,
+    Inbox,
+    Bell,
+    Bookmark,
+    Library,
+    Users,
+    ShoppingBag,
+    Gamepad2,
+    TrendingUp,
+    Wand2,
+    Trophy,
+    Wallet,
+    Puzzle,
+    Newspaper,
+    BookOpen,
+    Map: MapIcon,
+    Gem,
+    HelpCircle,
+    SlidersHorizontal,
+    KeyRound,
+    ShieldUser,
+    Palette,
+    Timer,
+    Coins,
+    Calendar,
+    Radio,
+    Store,
+    Car,
+    Shirt,
+    Rocket,
+    Terminal,
+    Smile,
+    History,
+    FileText,
+    Sparkles,
+    AppWindow,
+  };
 
 /**
  * The site's destination pages, from `lib/search/catalog.ts`.
@@ -158,279 +202,751 @@ const DESTINATION_ICONS: Record<string, LucideIcon> = {
  * to one surface never reached the other, so ⌘K and the Explore page disagreed
  * about what the site even contains. One catalog now feeds both.
  */
-const PAGES: Array<Omit<Command, 'section'>> = SITE_DESTINATIONS.map((d) => ({
-  id: `page-${d.id}`,
-  label: d.title,
-  href: d.href,
-  icon: DESTINATION_ICONS[d.iconName] ?? Compass,
-  keywords: d.keywords,
-  requiresAuth: d.requiresAuth,
-}));
+const PAGES: Array<
+  Omit<
+    Command,
+    'section'
+  >
+> =
+  SITE_DESTINATIONS.map(
+    (
+      d,
+    ) => ({
+      id: `page-${d.id}`,
+      label:
+        d.title,
+      href: d.href,
+      icon:
+        DESTINATION_ICONS[
+          d
+            .iconName
+        ] ??
+        Compass,
+      keywords:
+        d.keywords,
+      requiresAuth:
+        d.requiresAuth,
+    }),
+  );
 
-const SECTION_LABELS: Record<Section, { key: string; fallback: string }> = {
-  actions: { key: 'palette-section-actions', fallback: 'Actions' },
-  pages: { key: 'palette-section-pages', fallback: 'Pages' },
-  people: { key: 'palette-section-people', fallback: 'People' },
-  posts: { key: 'palette-section-posts', fallback: 'Posts' },
-  games: { key: 'palette-section-games', fallback: 'Games' },
-  apps: { key: 'palette-section-apps', fallback: 'Apps' },
-  themes: { key: 'palette-section-themes', fallback: 'Themes' },
-};
+const SECTION_LABELS: Record<
+  Section,
+  {
+    key: string;
+    fallback: string;
+  }
+> =
+  {
+    actions:
+      {
+        key: 'palette-section-actions',
+        fallback:
+          'Actions',
+      },
+    pages:
+      {
+        key: 'palette-section-pages',
+        fallback:
+          'Pages',
+      },
+    people:
+      {
+        key: 'palette-section-people',
+        fallback:
+          'People',
+      },
+    posts:
+      {
+        key: 'palette-section-posts',
+        fallback:
+          'Posts',
+      },
+    games:
+      {
+        key: 'palette-section-games',
+        fallback:
+          'Games',
+      },
+    apps: {
+      key: 'palette-section-apps',
+      fallback:
+        'Apps',
+    },
+    themes:
+      {
+        key: 'palette-section-themes',
+        fallback:
+          'Themes',
+      },
+  };
 
-const SECTION_ORDER: Section[] = ['actions', 'pages', 'people', 'posts', 'games', 'apps', 'themes'];
+const SECTION_ORDER: Section[] =
+  [
+    'actions',
+    'pages',
+    'people',
+    'posts',
+    'games',
+    'apps',
+    'themes',
+  ];
 
-const EMPTY_REMOTE: { people: Command[]; posts: Command[] } = { people: [], posts: [] };
+const EMPTY_REMOTE: {
+  people: Command[];
+  posts: Command[];
+} =
+  {
+    people:
+      [],
+    posts:
+      [],
+  };
 
-export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean } = {}) {
-  const { t } = useTranslation('feed');
-  const navigate = useNavigate();
-  const { data: session } = useSession();
-  const setStyle = useThemeStore((s) => s.setStyle);
+export function CommandPalette({
+  initialOpen = false,
+}: {
+  initialOpen?: boolean;
+} = {}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const navigate =
+    useNavigate();
+  const {
+    data: session,
+  } =
+    useSession();
+  const setStyle =
+    useThemeStore(
+      (
+        s,
+      ) =>
+        s.setStyle,
+    );
   // `initialOpen` lets a lazy mount that was triggered by ⌘K open immediately once
   // the chunk finishes loading (the triggering keypress can't reach a not-yet-
   // mounted listener). Only seeds the first render.
-  const [open, setOpen] = useState(initialOpen);
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      initialOpen,
+    );
   // The `.glass-scrim` backdrop below is a viewport-covering `backdrop-filter`;
   // nothing may animate above one (Chromium re-blurs the whole layer every
   // frame that anything does).
-  const [composeOpen, setComposeOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [remote, setRemote] = useState(EMPTY_REMOTE);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const [
+    composeOpen,
+    setComposeOpen,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    query,
+    setQuery,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    activeIndex,
+    setActiveIndex,
+  ] =
+    useState(
+      0,
+    );
+  const [
+    remote,
+    setRemote,
+  ] =
+    useState(
+      EMPTY_REMOTE,
+    );
+  const inputRef =
+    useRef<HTMLInputElement>(
+      null,
+    );
+  const listRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
 
-  const signedIn = !!session?.user;
-  const userHandle = (session?.user as { handle?: string | null } | undefined)?.handle;
+  const signedIn =
+    !!session?.user;
+  const userHandle =
+    (
+      session?.user as
+        | {
+            handle?:
+              | string
+              | null;
+          }
+        | undefined
+    )
+      ?.handle;
 
   // ⌘K / Ctrl+K global shortcut + programmatic open event.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setOpen((v) => !v);
-      }
-    };
-    const onOpen = () => setOpen(true);
-    window.addEventListener('keydown', onKey);
-    window.addEventListener(COMMAND_PALETTE_EVENT, onOpen);
+    const onKey =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          (e.metaKey ||
+            e.ctrlKey) &&
+          e.key.toLowerCase() ===
+            'k'
+        ) {
+          e.preventDefault();
+          setOpen(
+            (
+              v,
+            ) =>
+              !v,
+          );
+        }
+      };
+    const onOpen =
+      () =>
+        setOpen(
+          true,
+        );
+    window.addEventListener(
+      'keydown',
+      onKey,
+    );
+    window.addEventListener(
+      COMMAND_PALETTE_EVENT,
+      onOpen,
+    );
     return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener(COMMAND_PALETTE_EVENT, onOpen);
+      window.removeEventListener(
+        'keydown',
+        onKey,
+      );
+      window.removeEventListener(
+        COMMAND_PALETTE_EVENT,
+        onOpen,
+      );
     };
   }, []);
 
   // Reset state each time the palette opens.
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setActiveIndex(0);
-      setRemote(EMPTY_REMOTE);
+    if (
+      open
+    ) {
+      setQuery(
+        '',
+      );
+      setActiveIndex(
+        0,
+      );
+      setRemote(
+        EMPTY_REMOTE,
+      );
     }
-  }, [open]);
+  }, [
+    open,
+  ]);
 
   // Debounced server search: people + posts join the local fuzzy results so
   // ⌘K works as a real quick-switcher, not just a static page list.
   useEffect(() => {
-    if (!open) return;
-    const q = query.trim();
-    if (q.length < 2) {
-      setRemote(EMPTY_REMOTE);
+    if (
+      !open
+    )
+      return;
+    const q =
+      query.trim();
+    if (
+      q.length <
+      2
+    ) {
+      setRemote(
+        EMPTY_REMOTE,
+      );
       return;
     }
-    const ctrl = new AbortController();
-    const timer = setTimeout(async () => {
-      try {
-        const data = await api(universalSearchApi, {
-          query: { q },
-          signal: ctrl.signal,
-        });
-        setRemote({
-          people: (data.people ?? []).slice(0, 5).map((u) => ({
-            id: `person-${u.id}`,
-            label: u.name || u.handle || t('palette-user', { defaultValue: 'User' }),
-            section: 'people' as const,
-            keywords: '',
-            image: u.image,
-            sublabel: u.handle ? `@${u.handle}` : undefined,
-            href: `/u/${u.handle ?? u.id}`,
-          })),
-          posts: (data.posts ?? []).slice(0, 5).map((p) => ({
-            id: `post-${p.id}`,
-            label: p.content.length > 80 ? `${p.content.slice(0, 80)}…` : p.content,
-            section: 'posts' as const,
-            keywords: '',
-            sublabel: p.user?.name ?? undefined,
-            href: `/u/${p.user?.handle ?? '_'}/post/${p.id}`,
-          })),
-        });
-      } catch {
-        // Aborted or offline — local results still render.
-      }
-    }, 200);
+    const ctrl =
+      new AbortController();
+    const timer =
+      setTimeout(
+        async () => {
+          try {
+            const data =
+              await api(
+                universalSearchApi,
+                {
+                  query:
+                    {
+                      q,
+                    },
+                  signal:
+                    ctrl.signal,
+                },
+              );
+            setRemote(
+              {
+                people:
+                  (
+                    data.people ??
+                    []
+                  )
+                    .slice(
+                      0,
+                      5,
+                    )
+                    .map(
+                      (
+                        u,
+                      ) => ({
+                        id: `person-${u.id}`,
+                        label:
+                          u.name ||
+                          u.handle ||
+                          t(
+                            'palette-user',
+                            {
+                              defaultValue:
+                                'User',
+                            },
+                          ),
+                        section:
+                          'people' as const,
+                        keywords:
+                          '',
+                        image:
+                          u.image,
+                        sublabel:
+                          u.handle
+                            ? `@${u.handle}`
+                            : undefined,
+                        href: `/u/${u.handle ?? u.id}`,
+                      }),
+                    ),
+                posts:
+                  (
+                    data.posts ??
+                    []
+                  )
+                    .slice(
+                      0,
+                      5,
+                    )
+                    .map(
+                      (
+                        p,
+                      ) => ({
+                        id: `post-${p.id}`,
+                        label:
+                          p
+                            .content
+                            .length >
+                          80
+                            ? `${p.content.slice(0, 80)}…`
+                            : p.content,
+                        section:
+                          'posts' as const,
+                        keywords:
+                          '',
+                        sublabel:
+                          p
+                            .user
+                            ?.name ??
+                          undefined,
+                        href: `/u/${p.user?.handle ?? '_'}/post/${p.id}`,
+                      }),
+                    ),
+              },
+            );
+          } catch {
+            // Aborted or offline — local results still render.
+          }
+        },
+        200,
+      );
     return () => {
       ctrl.abort();
-      clearTimeout(timer);
+      clearTimeout(
+        timer,
+      );
     };
-  }, [query, open, t]);
+  }, [
+    query,
+    open,
+    t,
+  ]);
 
-  const go = useCallback(
-    (href: string, external?: boolean) => {
-      setOpen(false);
-      if (external || /^https?:\/\//.test(href)) {
-        window.open(href, '_blank', 'noopener,noreferrer');
-      } else {
-        navigate({ to: href });
-      }
-    },
-    [navigate],
-  );
+  const go =
+    useCallback(
+      (
+        href: string,
+        external?: boolean,
+      ) => {
+        setOpen(
+          false,
+        );
+        if (
+          external ||
+          /^https?:\/\//.test(
+            href,
+          )
+        ) {
+          window.open(
+            href,
+            '_blank',
+            'noopener,noreferrer',
+          );
+        } else {
+          navigate(
+            {
+              to: href,
+            },
+          );
+        }
+      },
+      [
+        navigate,
+      ],
+    );
 
-  const surprise = useSurpriseCommand(() => setOpen(false));
+  const surprise =
+    useSurpriseCommand(
+      () =>
+        setOpen(
+          false,
+        ),
+    );
 
   // Read only while open so the server render and hydration never see storage.
-  const whatsNewUnread = useMemo(() => {
-    if (!open) return false;
-    try {
-      return isUnseen(CURRENT_RELEASE, localStorage);
-    } catch {
-      return false;
-    }
-  }, [open]);
+  const whatsNewUnread =
+    useMemo(() => {
+      if (
+        !open
+      )
+        return false;
+      try {
+        return isUnseen(
+          CURRENT_RELEASE,
+          localStorage,
+        );
+      } catch {
+        return false;
+      }
+    }, [
+      open,
+    ]);
 
-  const commands = useMemo<Command[]>(() => {
-    const list: Command[] = [];
+  const commands =
+    useMemo<
+      Command[]
+    >(() => {
+      const list: Command[] =
+        [];
 
-    // Quick actions first — they win ties in the default (empty-query) view.
-    list.push({
-      id: 'action-compose',
-      label: t('palette-new-post', { defaultValue: 'New post' }),
-      section: 'actions',
-      keywords: 'compose write rmhark tweet share',
-      icon: PenSquare,
-      requiresAuth: true,
-      run: () => {
-        setOpen(false);
-        setComposeOpen(true);
-      },
-    });
-    list.push({
-      id: 'action-checkin',
-      label: t('palette-daily-checkin', { defaultValue: 'Daily check-in & streaks' }),
-      section: 'actions',
-      keywords: 'streak coins claim daily reward',
-      icon: Flame,
-      requiresAuth: true,
-      run: () => go('/achievements'),
-    });
-    list.push(surprise);
-    list.push({
-      id: 'action-whats-new',
-      label: t('palette-whats-new', { defaultValue: 'What’s new' }),
-      section: 'actions',
-      keywords: 'whats new release announcement changes updates',
-      icon: Sparkles,
-      unread: whatsNewUnread,
-      run: () => {
-        setOpen(false);
-        window.dispatchEvent(new Event(WHATS_NEW_OPEN_EVENT));
-      },
-    });
-    list.push({
-      id: 'action-shortcuts',
-      label: t('palette-shortcuts', { defaultValue: 'Keyboard shortcuts' }),
-      section: 'actions',
-      keywords: 'keyboard shortcuts hotkeys keys help',
-      icon: Keyboard,
-      run: () => {
-        setOpen(false);
-        // Literal event name (mirrors SHORTCUTS_HELP_EVENT in KeyboardShortcuts)
-        // to avoid a palette ⇄ shortcuts module cycle.
-        window.dispatchEvent(new Event('rmh:shortcuts-help'));
-      },
-    });
-    if (userHandle) {
-      list.push({
-        id: 'action-profile',
-        label: t('palette-my-profile', { defaultValue: 'My profile' }),
-        section: 'actions',
-        keywords: 'me account profile page',
-        icon: User,
-        run: () => go(`/u/${userHandle}`),
-      });
-    }
-    if (signedIn) {
-      list.push({
-        id: 'action-signout',
-        label: t('palette-sign-out', { defaultValue: 'Sign out' }),
-        section: 'actions',
-        keywords: 'logout log out leave',
-        icon: LogOut,
-        run: async () => {
-          setOpen(false);
-          // Loaded on the command, not with the palette (third-pass audit RT1).
-          const { authClient } = await import('@/lib/auth-client');
-          await authClient.signOut();
-          window.location.href = '/';
+      // Quick actions first — they win ties in the default (empty-query) view.
+      list.push(
+        {
+          id: 'action-compose',
+          label:
+            t(
+              'palette-new-post',
+              {
+                defaultValue:
+                  'New post',
+              },
+            ),
+          section:
+            'actions',
+          keywords:
+            'compose write rmhark tweet share',
+          icon: PenSquare,
+          requiresAuth: true,
+          run: () => {
+            setOpen(
+              false,
+            );
+            setComposeOpen(
+              true,
+            );
+          },
         },
-      });
-    } else {
-      list.push({
-        id: 'action-signin',
-        label: t('palette-sign-in', { defaultValue: 'Sign in' }),
-        section: 'actions',
-        keywords: 'login log in register sign up account',
-        icon: User,
-        run: () => go('/login'),
-      });
-    }
-
-    for (const p of PAGES) {
-      if (p.requiresAuth && !signedIn) continue;
-      list.push({ ...p, section: 'pages' });
-    }
-
-    for (const g of games) {
-      if (g.unlisted) continue;
-      list.push({
-        id: `game-${g.id}`,
-        label: g.title,
-        section: 'games',
-        keywords: `${g.tags.join(' ')} ${g.description}`,
-        icon: Gamepad2,
-        href: g.href,
-      });
-    }
-
-    for (const a of apps) {
-      if (a.hidden || a.unlisted) continue;
-      list.push({
-        id: `app-${a.id}`,
-        label: a.title,
-        section: 'apps',
-        keywords: `${a.tags.join(' ')} ${a.description}`,
-        icon: LayoutGrid,
-        href: a.href,
-        external: !a.href.startsWith('/'),
-      });
-    }
-
-    for (const s of SITE_STYLES) {
-      list.push({
-        id: `theme-${s.id}`,
-        label: t('palette-theme', { defaultValue: 'Theme: {{name}}', name: s.label }),
-        section: 'themes',
-        keywords: `theme style appearance ${s.group} ${s.label}`,
-        emoji: s.icon,
-        run: () => {
-          setStyle(s.id as SiteStyle);
-          setOpen(false);
+      );
+      list.push(
+        {
+          id: 'action-checkin',
+          label:
+            t(
+              'palette-daily-checkin',
+              {
+                defaultValue:
+                  'Daily check-in & streaks',
+              },
+            ),
+          section:
+            'actions',
+          keywords:
+            'streak coins claim daily reward',
+          icon: Flame,
+          requiresAuth: true,
+          run: () =>
+            go(
+              '/achievements',
+            ),
         },
-      });
-    }
+      );
+      list.push(
+        surprise,
+      );
+      list.push(
+        {
+          id: 'action-whats-new',
+          label:
+            t(
+              'palette-whats-new',
+              {
+                defaultValue:
+                  'What’s new',
+              },
+            ),
+          section:
+            'actions',
+          keywords:
+            'whats new release announcement changes updates',
+          icon: Sparkles,
+          unread:
+            whatsNewUnread,
+          run: () => {
+            setOpen(
+              false,
+            );
+            window.dispatchEvent(
+              new Event(
+                WHATS_NEW_OPEN_EVENT,
+              ),
+            );
+          },
+        },
+      );
+      list.push(
+        {
+          id: 'action-shortcuts',
+          label:
+            t(
+              'palette-shortcuts',
+              {
+                defaultValue:
+                  'Keyboard shortcuts',
+              },
+            ),
+          section:
+            'actions',
+          keywords:
+            'keyboard shortcuts hotkeys keys help',
+          icon: Keyboard,
+          run: () => {
+            setOpen(
+              false,
+            );
+            // Literal event name (mirrors SHORTCUTS_HELP_EVENT in KeyboardShortcuts)
+            // to avoid a palette ⇄ shortcuts module cycle.
+            window.dispatchEvent(
+              new Event(
+                'rmh:shortcuts-help',
+              ),
+            );
+          },
+        },
+      );
+      if (
+        userHandle
+      ) {
+        list.push(
+          {
+            id: 'action-profile',
+            label:
+              t(
+                'palette-my-profile',
+                {
+                  defaultValue:
+                    'My profile',
+                },
+              ),
+            section:
+              'actions',
+            keywords:
+              'me account profile page',
+            icon: User,
+            run: () =>
+              go(
+                `/u/${userHandle}`,
+              ),
+          },
+        );
+      }
+      if (
+        signedIn
+      ) {
+        list.push(
+          {
+            id: 'action-signout',
+            label:
+              t(
+                'palette-sign-out',
+                {
+                  defaultValue:
+                    'Sign out',
+                },
+              ),
+            section:
+              'actions',
+            keywords:
+              'logout log out leave',
+            icon: LogOut,
+            run: async () => {
+              setOpen(
+                false,
+              );
+              // Loaded on the command, not with the palette (third-pass audit RT1).
+              const {
+                authClient,
+              } =
+                await import('@/lib/auth-client');
+              await authClient.signOut();
+              window.location.href =
+                '/';
+            },
+          },
+        );
+      } else {
+        list.push(
+          {
+            id: 'action-signin',
+            label:
+              t(
+                'palette-sign-in',
+                {
+                  defaultValue:
+                    'Sign in',
+                },
+              ),
+            section:
+              'actions',
+            keywords:
+              'login log in register sign up account',
+            icon: User,
+            run: () =>
+              go(
+                '/login',
+              ),
+          },
+        );
+      }
 
-    return list;
-  }, [t, signedIn, userHandle, go, setStyle, surprise, whatsNewUnread]);
+      for (const p of PAGES) {
+        if (
+          p.requiresAuth &&
+          !signedIn
+        )
+          continue;
+        list.push(
+          {
+            ...p,
+            section:
+              'pages',
+          },
+        );
+      }
+
+      for (const g of games) {
+        if (
+          g.unlisted
+        )
+          continue;
+        list.push(
+          {
+            id: `game-${g.id}`,
+            label:
+              g.title,
+            section:
+              'games',
+            keywords: `${g.tags.join(' ')} ${g.description}`,
+            icon: Gamepad2,
+            href: g.href,
+          },
+        );
+      }
+
+      for (const a of apps) {
+        if (
+          a.hidden ||
+          a.unlisted
+        )
+          continue;
+        list.push(
+          {
+            id: `app-${a.id}`,
+            label:
+              a.title,
+            section:
+              'apps',
+            keywords: `${a.tags.join(' ')} ${a.description}`,
+            icon: LayoutGrid,
+            href: a.href,
+            external:
+              !a.href.startsWith(
+                '/',
+              ),
+          },
+        );
+      }
+
+      for (const s of SITE_STYLES) {
+        list.push(
+          {
+            id: `theme-${s.id}`,
+            label:
+              t(
+                'palette-theme',
+                {
+                  defaultValue:
+                    'Theme: {{name}}',
+                  name: s.label,
+                },
+              ),
+            section:
+              'themes',
+            keywords: `theme style appearance ${s.group} ${s.label}`,
+            emoji:
+              s.icon,
+            run: () => {
+              setStyle(
+                s.id as SiteStyle,
+              );
+              setOpen(
+                false,
+              );
+            },
+          },
+        );
+      }
+
+      return list;
+    }, [
+      t,
+      signedIn,
+      userHandle,
+      go,
+      setStyle,
+      surprise,
+      whatsNewUnread,
+    ]);
 
   // Ranked by the SAME scorer the Explore page and the top-bar panel use
   // (`lib/search/score.ts`), not a matcher of its own. This used Fuse.js, so ⌘K,
@@ -438,89 +954,297 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
   // "tournament" or "dark mode" should find. Normalise once per keystroke and
   // score every command; the label is weighted like a title, the keywords like
   // tags, and anything under the shared match floor is noise.
-  const results = useMemo(() => {
-    const raw = query.trim();
-    if (!raw) {
-      // Default view: actions + pages, in catalog order (themes/games only when searched).
-      return commands.filter((c) => c.section === 'actions' || c.section === 'pages');
-    }
-    const normalized = normalizeQuery(raw);
-    if (!normalized) return [];
-    return commands
-      .map((c) => ({
-        c,
-        score: scoreRecord(normalized, [
-          { value: c.label, weight: 1 },
-          { value: c.keywords, weight: 0.6 },
-        ]).score,
-      }))
-      .filter((r) => r.score >= MATCH_FLOOR)
-      .sort((a, b) => b.score - a.score)
-      .map((r) => r.c);
-  }, [query, commands]);
+  const results =
+    useMemo(() => {
+      const raw =
+        query.trim();
+      if (
+        !raw
+      ) {
+        // Default view: actions + pages, in catalog order (themes/games only when searched).
+        return commands.filter(
+          (
+            c,
+          ) =>
+            c.section ===
+              'actions' ||
+            c.section ===
+              'pages',
+        );
+      }
+      const normalized =
+        normalizeQuery(
+          raw,
+        );
+      if (
+        !normalized
+      )
+        return [];
+      return commands
+        .map(
+          (
+            c,
+          ) => ({
+            c,
+            score:
+              scoreRecord(
+                normalized,
+                [
+                  {
+                    value:
+                      c.label,
+                    weight: 1,
+                  },
+                  {
+                    value:
+                      c.keywords,
+                    weight: 0.6,
+                  },
+                ],
+              )
+                .score,
+          }),
+        )
+        .filter(
+          (
+            r,
+          ) =>
+            r.score >=
+            MATCH_FLOOR,
+        )
+        .sort(
+          (
+            a,
+            b,
+          ) =>
+            b.score -
+            a.score,
+        )
+        .map(
+          (
+            r,
+          ) =>
+            r.c,
+        );
+    }, [
+      query,
+      commands,
+    ]);
 
   // Local fuzzy results + server search results (people/posts sections).
-  const combined = useMemo(() => {
-    if (!query.trim()) return results;
-    return [...results, ...remote.people, ...remote.posts];
-  }, [results, remote, query]);
+  const combined =
+    useMemo(() => {
+      if (
+        !query.trim()
+      )
+        return results;
+      return [
+        ...results,
+        ...remote.people,
+        ...remote.posts,
+      ];
+    }, [
+      results,
+      remote,
+      query,
+    ]);
 
   // Group results by section, preserving fuzzy rank within each group.
-  const grouped = useMemo(() => {
-    const bySection = new Map<Section, Command[]>();
-    for (const c of combined) {
-      const arr = bySection.get(c.section) ?? [];
-      arr.push(c);
-      bySection.set(c.section, arr);
-    }
-    return SECTION_ORDER.filter((s) => bySection.has(s)).map((s) => ({
-      section: s,
-      items: bySection.get(s)!,
-    }));
-  }, [combined]);
+  const grouped =
+    useMemo(() => {
+      const bySection =
+        new Map<
+          Section,
+          Command[]
+        >();
+      for (const c of combined) {
+        const arr =
+          bySection.get(
+            c.section,
+          ) ??
+          [];
+        arr.push(
+          c,
+        );
+        bySection.set(
+          c.section,
+          arr,
+        );
+      }
+      return SECTION_ORDER.filter(
+        (
+          s,
+        ) =>
+          bySection.has(
+            s,
+          ),
+      ).map(
+        (
+          s,
+        ) => ({
+          section:
+            s,
+          items:
+            bySection.get(
+              s,
+            )!,
+        }),
+      );
+    }, [
+      combined,
+    ]);
 
-  const flat = useMemo(() => grouped.flatMap((g) => g.items), [grouped]);
+  const flat =
+    useMemo(
+      () =>
+        grouped.flatMap(
+          (
+            g,
+          ) =>
+            g.items,
+        ),
+      [
+        grouped,
+      ],
+    );
 
   // Keep the active row valid and visible as results change.
   useEffect(() => {
-    setActiveIndex((i) => Math.min(i, Math.max(0, flat.length - 1)));
-  }, [flat.length]);
+    setActiveIndex(
+      (
+        i,
+      ) =>
+        Math.min(
+          i,
+          Math.max(
+            0,
+            flat.length -
+              1,
+          ),
+        ),
+    );
+  }, [
+    flat.length,
+  ]);
 
   useEffect(() => {
-    const el = listRef.current?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`);
-    el?.scrollIntoView({ block: 'nearest' });
-  }, [activeIndex]);
+    const el =
+      listRef.current?.querySelector<HTMLElement>(
+        `[data-index="${activeIndex}"]`,
+      );
+    el?.scrollIntoView(
+      {
+        block:
+          'nearest',
+      },
+    );
+  }, [
+    activeIndex,
+  ]);
 
-  const runCommand = useCallback(
-    (cmd: Command) => {
-      if (cmd.run) void cmd.run();
-      else if (cmd.href) go(cmd.href, cmd.external);
-    },
-    [go],
-  );
+  const runCommand =
+    useCallback(
+      (
+        cmd: Command,
+      ) => {
+        if (
+          cmd.run
+        )
+          void cmd.run();
+        else if (
+          cmd.href
+        )
+          go(
+            cmd.href,
+            cmd.external,
+          );
+      },
+      [
+        go,
+      ],
+    );
 
-  const onInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, flat.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const cmd = flat[activeIndex];
-      if (cmd) runCommand(cmd);
-    }
-  };
+  const onInputKeyDown =
+    (
+      e: React.KeyboardEvent,
+    ) => {
+      if (
+        e.key ===
+        'ArrowDown'
+      ) {
+        e.preventDefault();
+        setActiveIndex(
+          (
+            i,
+          ) =>
+            Math.min(
+              i +
+                1,
+              flat.length -
+                1,
+            ),
+        );
+      } else if (
+        e.key ===
+        'ArrowUp'
+      ) {
+        e.preventDefault();
+        setActiveIndex(
+          (
+            i,
+          ) =>
+            Math.max(
+              i -
+                1,
+              0,
+            ),
+        );
+      } else if (
+        e.key ===
+        'Enter'
+      ) {
+        e.preventDefault();
+        const cmd =
+          flat[
+            activeIndex
+          ];
+        if (
+          cmd
+        )
+          runCommand(
+            cmd,
+          );
+      }
+    };
 
   return (
     <>
       {composeOpen && (
-        <Suspense fallback={null}>
-          <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
+        <Suspense
+          fallback={
+            null
+          }
+        >
+          <ComposeModal
+            open={
+              composeOpen
+            }
+            onClose={() =>
+              setComposeOpen(
+                false,
+              )
+            }
+          />
         </Suspense>
       )}
-      <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+      <DialogPrimitive.Root
+        open={
+          open
+        }
+        onOpenChange={
+          setOpen
+        }
+      >
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay
             data-motion="fade"
@@ -529,10 +1253,18 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
           <DialogPrimitive.Content
             data-motion="rise"
             className="surface-overlay fixed left-1/2 top-[12dvh] z-palette w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden"
-            aria-describedby={undefined}
+            aria-describedby={
+              undefined
+            }
           >
             <DialogPrimitive.Title className="sr-only">
-              {t('palette-title', { defaultValue: 'Command palette' })}
+              {t(
+                'palette-title',
+                {
+                  defaultValue:
+                    'Command palette',
+                },
+              )}
             </DialogPrimitive.Title>
             {/* The search row is the panel's HEADER, not a field floating on it.
                 It used to be a `.surface-field` well with its own margin, radius
@@ -541,26 +1273,56 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
                 rather than one. Flush to the edges with a single hairline under
                 it, the row and the results below it are one panel. */}
             <div className="flex items-center gap-3 border-b border-site-border px-4">
-              <Search className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
+              <Search
+                className="h-4 w-4 shrink-0 text-site-text-muted"
+                aria-hidden
+              />
               <input
-                ref={inputRef}
+                ref={
+                  inputRef
+                }
                 autoFocus
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setActiveIndex(0);
+                value={
+                  query
+                }
+                onChange={(
+                  e,
+                ) => {
+                  setQuery(
+                    e
+                      .target
+                      .value,
+                  );
+                  setActiveIndex(
+                    0,
+                  );
                 }}
-                onKeyDown={onInputKeyDown}
+                onKeyDown={
+                  onInputKeyDown
+                }
                 role="combobox"
                 aria-expanded="true"
                 aria-controls="command-palette-list"
-                aria-activedescendant={flat[activeIndex]?.id}
-                aria-label={t('palette-input-label', {
-                  defaultValue: 'Search pages, games, apps, and actions',
-                })}
-                placeholder={t('palette-placeholder', {
-                  defaultValue: 'Search pages, people, posts, games…',
-                })}
+                aria-activedescendant={
+                  flat[
+                    activeIndex
+                  ]
+                    ?.id
+                }
+                aria-label={t(
+                  'palette-input-label',
+                  {
+                    defaultValue:
+                      'Search pages, games, apps, and actions',
+                  },
+                )}
+                placeholder={t(
+                  'palette-placeholder',
+                  {
+                    defaultValue:
+                      'Search pages, people, posts, games…',
+                  },
+                )}
                 className="w-full bg-transparent py-4 text-body-rem text-site-text placeholder:text-site-text-muted focus:outline-none"
               />
               <kbd className="hidden shrink-0 rounded-[var(--site-radius-sm)] border border-site-border px-1.5 py-0.5 text-micro font-medium uppercase text-site-text-muted sm:block">
@@ -568,87 +1330,176 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
               </kbd>
             </div>
             <div
-              ref={listRef}
+              ref={
+                listRef
+              }
               id="command-palette-list"
               role="listbox"
-              aria-label={t('palette-title', { defaultValue: 'Command palette' })}
+              aria-label={t(
+                'palette-title',
+                {
+                  defaultValue:
+                    'Command palette',
+                },
+              )}
               className="max-h-[50dvh] overflow-y-auto p-2"
             >
-              {flat.length === 0 && (
+              {flat.length ===
+                0 && (
                 <p className="px-3 py-8 text-center text-sm text-site-text-muted">
-                  {t('palette-no-results', { defaultValue: 'No results. Try a different search.' })}
+                  {t(
+                    'palette-no-results',
+                    {
+                      defaultValue:
+                        'No results. Try a different search.',
+                    },
+                  )}
                 </p>
               )}
-              {grouped.map((group) => (
-                <div key={group.section} className="mb-1">
-                  <p className="px-3 pb-1 pt-2 text-xs font-semibold text-site-text-muted">
-                    {t(SECTION_LABELS[group.section].key, {
-                      defaultValue: SECTION_LABELS[group.section].fallback,
-                    })}
-                  </p>
-                  {group.items.map((cmd) => {
-                    const index = flat.indexOf(cmd);
-                    const active = index === activeIndex;
-                    const Icon = cmd.icon;
-                    return (
-                      <button
-                        key={cmd.id}
-                        id={cmd.id}
-                        data-index={index}
-                        role="option"
-                        aria-selected={active}
-                        onMouseMove={() => setActiveIndex(index)}
-                        onClick={() => runCommand(cmd)}
-                        className={cn(
-                          'surface-press flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left text-sm',
-                          active ? 'bg-site-bg-subtle text-site-accent' : 'text-site-text-muted',
-                        )}
-                      >
-                        {cmd.section === 'people' ? (
-                          <UserAvatar
-                            src={cmd.image}
-                            alt=""
-                            size={20}
-                            fallbackName={cmd.label}
-                            className="shrink-0"
-                          />
-                        ) : Icon ? (
-                          <Icon className="h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
-                        ) : cmd.emoji ? (
-                          <span
-                            className="w-4 shrink-0 text-center text-sm leading-none"
-                            aria-hidden
+              {grouped.map(
+                (
+                  group,
+                ) => (
+                  <div
+                    key={
+                      group.section
+                    }
+                    className="mb-1"
+                  >
+                    <p className="px-3 pb-1 pt-2 text-xs font-semibold text-site-text-muted">
+                      {t(
+                        SECTION_LABELS[
+                          group
+                            .section
+                        ]
+                          .key,
+                        {
+                          defaultValue:
+                            SECTION_LABELS[
+                              group
+                                .section
+                            ]
+                              .fallback,
+                        },
+                      )}
+                    </p>
+                    {group.items.map(
+                      (
+                        cmd,
+                      ) => {
+                        const index =
+                          flat.indexOf(
+                            cmd,
+                          );
+                        const active =
+                          index ===
+                          activeIndex;
+                        const Icon =
+                          cmd.icon;
+                        return (
+                          <button
+                            key={
+                              cmd.id
+                            }
+                            id={
+                              cmd.id
+                            }
+                            data-index={
+                              index
+                            }
+                            role="option"
+                            aria-selected={
+                              active
+                            }
+                            onMouseMove={() =>
+                              setActiveIndex(
+                                index,
+                              )
+                            }
+                            onClick={() =>
+                              runCommand(
+                                cmd,
+                              )
+                            }
+                            className={cn(
+                              'surface-press flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left text-sm',
+                              active
+                                ? 'bg-site-bg-subtle text-site-accent'
+                                : 'text-site-text-muted',
+                            )}
                           >
-                            {cmd.emoji}
-                          </span>
-                        ) : null}
-                        <span className="min-w-0 flex-1 truncate">
-                          {cmd.label}
-                          {cmd.sublabel && (
-                            <span className="ml-1.5 text-xs text-site-text-muted">
-                              {cmd.sublabel}
+                            {cmd.section ===
+                            'people' ? (
+                              <UserAvatar
+                                src={
+                                  cmd.image
+                                }
+                                alt=""
+                                size={
+                                  20
+                                }
+                                fallbackName={
+                                  cmd.label
+                                }
+                                className="shrink-0"
+                              />
+                            ) : Icon ? (
+                              <Icon
+                                className="h-4 w-4 shrink-0 text-site-text-muted"
+                                aria-hidden
+                              />
+                            ) : cmd.emoji ? (
+                              <span
+                                className="w-4 shrink-0 text-center text-sm leading-none"
+                                aria-hidden
+                              >
+                                {
+                                  cmd.emoji
+                                }
+                              </span>
+                            ) : null}
+                            <span className="min-w-0 flex-1 truncate">
+                              {
+                                cmd.label
+                              }
+                              {cmd.sublabel && (
+                                <span className="ml-1.5 text-xs text-site-text-muted">
+                                  {
+                                    cmd.sublabel
+                                  }
+                                </span>
+                              )}
                             </span>
-                          )}
-                        </span>
-                        {cmd.unread && (
-                          <>
-                            <span className="size-2 shrink-0 rounded-full bg-site-accent" aria-hidden />
-                            <span className="sr-only">
-                              {t('palette-unread', { defaultValue: 'Unread' })}
-                            </span>
-                          </>
-                        )}
-                        {active && (
-                          <CornerDownLeft
-                            className="h-3.5 w-3.5 shrink-0 text-site-text-muted"
-                            aria-hidden
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ))}
+                            {cmd.unread && (
+                              <>
+                                <span
+                                  className="size-2 shrink-0 rounded-full bg-site-accent"
+                                  aria-hidden
+                                />
+                                <span className="sr-only">
+                                  {t(
+                                    'palette-unread',
+                                    {
+                                      defaultValue:
+                                        'Unread',
+                                    },
+                                  )}
+                                </span>
+                              </>
+                            )}
+                            {active && (
+                              <CornerDownLeft
+                                className="h-3.5 w-3.5 shrink-0 text-site-text-muted"
+                                aria-hidden
+                              />
+                            )}
+                          </button>
+                        );
+                      },
+                    )}
+                  </div>
+                ),
+              )}
             </div>
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>

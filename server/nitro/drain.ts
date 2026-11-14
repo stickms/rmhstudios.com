@@ -30,56 +30,120 @@ export default function drainPlugin() {
 
   // Hand the signal on to Nitro's own shutdown (or the default action) once.
   // Both listeners come off, so neither signal is swallowed afterwards.
-  const reraise = (signal: string) => {
-    if (reraised) return;
-    reraised = true;
-    for (const [sig, handler] of Object.entries(handlers)) {
-      process.removeListener(sig as NodeJS.Signals, handler);
-    }
-    process.kill(process.pid, signal as NodeJS.Signals);
-  };
+  const reraise =
+    (
+      signal: string,
+    ) => {
+      if (
+        reraised
+      )
+        return;
+      reraised = true;
+      for (const [
+        sig,
+        handler,
+      ] of Object.entries(
+        handlers,
+      )) {
+        process.removeListener(
+          sig as NodeJS.Signals,
+          handler,
+        );
+      }
+      process.kill(
+        process.pid,
+        signal as NodeJS.Signals,
+      );
+    };
 
-  const drain = async (signal: string) => {
-    // Signals can arrive more than once (SIGTERM then SIGINT from an impatient
-    // operator). Draining twice would double-write the buffer, but swallowing
-    // the second signal left the operator unable to stop the process: a
-    // second signal stops waiting on the flush and shuts down now.
-    if (draining) {
-      reraise(signal);
-      return;
-    }
-    draining = true;
+  const drain =
+    async (
+      signal: string,
+    ) => {
+      // Signals can arrive more than once (SIGTERM then SIGINT from an impatient
+      // operator). Draining twice would double-write the buffer, but swallowing
+      // the second signal left the operator unable to stop the process: a
+      // second signal stops waiting on the flush and shuts down now.
+      if (
+        draining
+      ) {
+        reraise(
+          signal,
+        );
+        return;
+      }
+      draining = true;
 
-    try {
-      await Promise.race([
-        Promise.all([
-          (async () => {
-            const { flushActivity } = await import('../../lib/activity/emit.server');
-            await flushActivity();
-          })(),
-          (async () => {
-            // In-process post-view buffer (no-Redis fallback in hot-counters).
-            const { flushLocalViews } = await import('../../lib/hot-counters.server');
-            await flushLocalViews();
-          })(),
-        ]),
-        new Promise((resolve) => setTimeout(resolve, DRAIN_TIMEOUT_MS)),
-      ]);
-    } catch {
-      // Losing the buffer is the pre-existing behaviour; blocking the exit is
-      // worse than losing it.
-    }
+      try {
+        await Promise.race(
+          [
+            Promise.all(
+              [
+                (async () => {
+                  const {
+                    flushActivity,
+                  } =
+                    await import('../../lib/activity/emit.server');
+                  await flushActivity();
+                })(),
+                (async () => {
+                  // In-process post-view buffer (no-Redis fallback in hot-counters).
+                  const {
+                    flushLocalViews,
+                  } =
+                    await import('../../lib/hot-counters.server');
+                  await flushLocalViews();
+                })(),
+              ],
+            ),
+            new Promise(
+              (
+                resolve,
+              ) =>
+                setTimeout(
+                  resolve,
+                  DRAIN_TIMEOUT_MS,
+                ),
+            ),
+          ],
+        );
+      } catch {
+        // Losing the buffer is the pre-existing behaviour; blocking the exit is
+        // worse than losing it.
+      }
 
-    // Re-raise with the default handler so Nitro's own shutdown still runs.
-    reraise(signal);
-  };
+      // Re-raise with the default handler so Nitro's own shutdown still runs.
+      reraise(
+        signal,
+      );
+    };
 
-  const handlers: Record<string, () => void> = {
-    SIGTERM: () => void drain('SIGTERM'),
-    SIGINT: () => void drain('SIGINT'),
-  };
+  const handlers: Record<
+    string,
+    () => void
+  > =
+    {
+      SIGTERM:
+        () =>
+          void drain(
+            'SIGTERM',
+          ),
+      SIGINT:
+        () =>
+          void drain(
+            'SIGINT',
+          ),
+    };
 
-  for (const [signal, handler] of Object.entries(handlers)) {
-    process.on(signal as NodeJS.Signals, handler);
+  for (const [
+    signal,
+    handler,
+  ] of Object.entries(
+    handlers,
+  )) {
+    process.on(
+      signal as NodeJS.Signals,
+      handler,
+    );
   }
 }

@@ -35,39 +35,74 @@ import {
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
-const ICON_MAP: Record<string, ComponentType<LucideProps>> = {
-  'pencil-line': PencilLine,
+const ICON_MAP: Record<
+  string,
+  ComponentType<LucideProps>
+> = {
+  'pencil-line':
+    PencilLine,
   gem: Gem,
-  waves: Waves,
+  waves:
+    Waves,
   zap: Zap,
-  trophy: Trophy,
-  brain: Brain,
-  target: Target,
-  skull: Skull,
-  'book-open': BookOpen,
-  snowflake: Snowflake,
-  flame: Flame,
-  search: Search,
+  trophy:
+    Trophy,
+  brain:
+    Brain,
+  target:
+    Target,
+  skull:
+    Skull,
+  'book-open':
+    BookOpen,
+  snowflake:
+    Snowflake,
+  flame:
+    Flame,
+  search:
+    Search,
   home: Home,
-  'person-standing': PersonStanding,
+  'person-standing':
+    PersonStanding,
   star: Star,
   map: Map,
-  'alert-circle': AlertCircle,
-  'mic-vocal': MicVocal,
-  'shield-check': ShieldCheck,
-  'list-collapse': ListCollapse,
-  globe: Globe,
+  'alert-circle':
+    AlertCircle,
+  'mic-vocal':
+    MicVocal,
+  'shield-check':
+    ShieldCheck,
+  'list-collapse':
+    ListCollapse,
+  globe:
+    Globe,
 };
 
 interface LucideAwardIconProps extends LucideProps {
   name: string;
 }
 
-export default function LucideAwardIcon({ name, ...props }: LucideAwardIconProps) {
-  const IconComponent = ICON_MAP[name];
-  if (IconComponent) {
-    return <IconComponent {...props} />;
+export default function LucideAwardIcon({
+  name,
+  ...props
+}: LucideAwardIconProps) {
+  const IconComponent =
+    ICON_MAP[
+      name
+    ];
+  if (
+    IconComponent
+  ) {
+    return (
+      <IconComponent
+        {...props}
+      />
+    );
   }
   // Fallback: render as text (handles any unmapped strings gracefully)
-  return <Award {...props} />;
+  return (
+    <Award
+      {...props}
+    />
+  );
 }

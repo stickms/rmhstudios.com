@@ -6,18 +6,35 @@
  * these types extend them with ephemeral runtime state.
  */
 
-import type { MediaType, VideoState, RoomSettings } from '../../lib/rmhtube/types';
+import type {
+  MediaType,
+  VideoState,
+  RoomSettings,
+} from '../../lib/rmhtube/types';
 
-export type { MediaType, VideoState, RoomSettings };
+export type {
+  MediaType,
+  VideoState,
+  RoomSettings,
+};
 
-export type MemberRole = 'host' | 'member';
-export type UserPresenceStatus = 'watching' | 'afk' | 'brb';
+export type MemberRole =
+  | 'host'
+  | 'member';
+export type UserPresenceStatus =
+  | 'watching'
+  | 'afk'
+  | 'brb';
 
 export interface RmhTubeMember {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
-  socketId: string | null;
+  avatarUrl:
+    | string
+    | null;
+  socketId:
+    | string
+    | null;
   isConnected: boolean;
   joinedAt: number;
   lastSeenAt: number;
@@ -30,8 +47,12 @@ export interface QueueItem {
   url: string;
   mediaType: MediaType;
   title: string;
-  duration: number | null;
-  thumbnailUrl: string | null;
+  duration:
+    | number
+    | null;
+  thumbnailUrl:
+    | string
+    | null;
   addedBy: string;
   addedByName: string;
   addedAt: number;
@@ -45,7 +66,9 @@ export interface BannedUser {
   userName: string;
   bannedAt: number;
   bannedBy: string;
-  reason: string | null;
+  reason:
+    | string
+    | null;
 }
 
 export interface InviteLink {
@@ -59,7 +82,9 @@ export interface InviteLink {
 
 export interface RmhTubeRoom {
   id: string;
-  name: string | null;
+  name:
+    | string
+    | null;
   hostUserId: string;
   leaderUserId: string;
   /**
@@ -72,7 +97,10 @@ export interface RmhTubeRoom {
   /** Server-clock ms of the leader's last `sync:host_state` report. */
   leaderLastReportAt: number;
   settings: RoomSettings;
-  members: Map<string, RmhTubeMember>;
+  members: Map<
+    string,
+    RmhTubeMember
+  >;
   queue: QueueItem[];
   currentItem: QueueItem | null;
   currentIndex: number;
@@ -85,11 +113,25 @@ export interface RmhTubeRoom {
   // Phase 1: Pinned message
   pinnedMessage: ChatMessage | null;
   // Phase 1: Typing users (userId → timeout handle)
-  typingTimers: Map<string, ReturnType<typeof setTimeout>>;
+  typingTimers: Map<
+    string,
+    ReturnType<
+      typeof setTimeout
+    >
+  >;
   // Phase 1: Chat reactions (messageId → emoji → Set<userId>)
-  chatReactions: Map<string, Map<string, Set<string>>>;
+  chatReactions: Map<
+    string,
+    Map<
+      string,
+      Set<string>
+    >
+  >;
   // Phase 3: Queue votes (itemId → Set<userId>)
-  queueVotes: Map<string, Set<string>>;
+  queueVotes: Map<
+    string,
+    Set<string>
+  >;
   // Phase 3: Played items history
   playedItems: QueueItem[];
   // Phase 4: Ban list
@@ -103,9 +145,14 @@ export interface RmhTubeRoom {
 
 export interface PeerWaitRuntime {
   /** userId → server-clock ms the member reported it was starved of data. */
-  stalled: Map<string, number>;
+  stalled: Map<
+    string,
+    number
+  >;
   /** When the room auto-paused for a buffering member, else null. */
-  startedAt: number | null;
+  startedAt:
+    | number
+    | null;
   /** The room was playing when it paused, so resume once everyone is back. */
   resumeAfter: boolean;
   /**
@@ -118,7 +165,16 @@ export interface PeerWaitRuntime {
 }
 
 export function createPeerWaitRuntime(): PeerWaitRuntime {
-  return { stalled: new Map(), startedAt: null, resumeAfter: false, cooldownUntil: 0, signature: '' };
+  return {
+    stalled:
+      new Map(),
+    startedAt:
+      null,
+    resumeAfter: false,
+    cooldownUntil: 0,
+    signature:
+      '',
+  };
 }
 
 export interface ChatMessage {
@@ -127,9 +183,17 @@ export interface ChatMessage {
   userName: string;
   content: string;
   createdAt: number;
-  replyToId: string | null;
-  replyToContent: string | null;
-  replyToUserName: string | null;
+  replyToId:
+    | string
+    | null;
+  replyToContent:
+    | string
+    | null;
+  replyToUserName:
+    | string
+    | null;
   mentions: string[];
-  timestamp: number | null;
+  timestamp:
+    | number
+    | null;
 }

@@ -15,15 +15,34 @@ import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
 import { api } from '@/lib/contract/client';
 import { getDoctrineSahurStatusApi } from '@features/doctrine/engine/doctrine.contract';
 
-let interval: ReturnType<typeof setInterval> | null = null;
+let interval: ReturnType<
+  typeof setInterval
+> | null =
+  null;
 let refCount = 0;
 
 async function checkSahur() {
   try {
-    const data = await api(getDoctrineSahurStatusApi, { retries: 0 });
-    const store = useDoctrineStore.getState();
-    store.setSahurActive(data.status.active, data.config);
-    store.setSahurCountdown(data.status.minutesRemaining);
+    const data =
+      await api(
+        getDoctrineSahurStatusApi,
+        {
+          retries: 0,
+        },
+      );
+    const store =
+      useDoctrineStore.getState();
+    store.setSahurActive(
+      data
+        .status
+        .active,
+      data.config,
+    );
+    store.setSahurCountdown(
+      data
+        .status
+        .minutesRemaining,
+    );
   } catch {
     // Silent fail — non-critical
   }
@@ -31,31 +50,73 @@ async function checkSahur() {
 
 function start() {
   refCount += 1;
-  if (refCount === 1) {
+  if (
+    refCount ===
+    1
+  ) {
     checkSahur();
-    interval = setInterval(checkSahur, 30_000);
+    interval =
+      setInterval(
+        checkSahur,
+        30_000,
+      );
   }
 }
 
 function stop() {
-  refCount = Math.max(0, refCount - 1);
-  if (refCount === 0 && interval) {
-    clearInterval(interval);
-    interval = null;
+  refCount =
+    Math.max(
+      0,
+      refCount -
+        1,
+    );
+  if (
+    refCount ===
+      0 &&
+    interval
+  ) {
+    clearInterval(
+      interval,
+    );
+    interval =
+      null;
   }
 }
 
 export function useDoctrineSahur() {
   // Per-field selectors so an unrelated doctrine-store update (incident count,
   // theme) doesn't re-render every consumer of this hook.
-  const sahurActive = useDoctrineStore((s) => s.sahurActive);
-  const sahurConfig = useDoctrineStore((s) => s.sahurConfig);
-  const sahurCountdown = useDoctrineStore((s) => s.sahurCountdown);
+  const sahurActive =
+    useDoctrineStore(
+      (
+        s,
+      ) =>
+        s.sahurActive,
+    );
+  const sahurConfig =
+    useDoctrineStore(
+      (
+        s,
+      ) =>
+        s.sahurConfig,
+    );
+  const sahurCountdown =
+    useDoctrineStore(
+      (
+        s,
+      ) =>
+        s.sahurCountdown,
+    );
 
   useEffect(() => {
     start();
-    return () => stop();
+    return () =>
+      stop();
   }, []);
 
-  return { sahurActive, sahurConfig, sahurCountdown };
+  return {
+    sahurActive,
+    sahurConfig,
+    sahurCountdown,
+  };
 }

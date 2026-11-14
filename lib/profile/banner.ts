@@ -16,7 +16,9 @@ export const PROFILE_BANNER_ASPECT = 3;
 
 /** The stored rendition: more than twice the widest column the banner is drawn in. */
 export const PROFILE_BANNER_WIDTH = 1500;
-export const PROFILE_BANNER_HEIGHT = PROFILE_BANNER_WIDTH / PROFILE_BANNER_ASPECT;
+export const PROFILE_BANNER_HEIGHT =
+  PROFILE_BANNER_WIDTH /
+  PROFILE_BANNER_ASPECT;
 
 /** Per-image upload limit, for the crop and for the picture it was cut from. */
 export const PROFILE_BANNER_MAX_MB = 8;
@@ -45,27 +47,102 @@ export function bannerCoverRegion(
   height: number,
   aspect: number = PROFILE_BANNER_ASPECT,
 ): BannerRegion | null {
-  if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) return null;
-  const w = Math.floor(width);
-  const h = Math.floor(height);
-  let regionW = w;
-  let regionH = Math.round(w / aspect);
-  if (regionH > h) {
-    regionH = h;
-    regionW = Math.round(h * aspect);
+  if (
+    !Number.isFinite(
+      width,
+    ) ||
+    !Number.isFinite(
+      height,
+    ) ||
+    width <
+      1 ||
+    height <
+      1
+  )
+    return null;
+  const w =
+    Math.floor(
+      width,
+    );
+  const h =
+    Math.floor(
+      height,
+    );
+  let regionW =
+    w;
+  let regionH =
+    Math.round(
+      w /
+        aspect,
+    );
+  if (
+    regionH >
+    h
+  ) {
+    regionH =
+      h;
+    regionW =
+      Math.round(
+        h *
+          aspect,
+      );
   }
-  regionW = Math.min(regionW, w);
-  if (regionW < 1 || regionH < 1) return null;
+  regionW =
+    Math.min(
+      regionW,
+      w,
+    );
+  if (
+    regionW <
+      1 ||
+    regionH <
+      1
+  )
+    return null;
   return {
-    left: Math.floor((w - regionW) / 2),
-    top: Math.floor((h - regionH) / 2),
-    width: regionW,
-    height: regionH,
+    left: Math.floor(
+      (w -
+        regionW) /
+        2,
+    ),
+    top: Math.floor(
+      (h -
+        regionH) /
+        2,
+    ),
+    width:
+      regionW,
+    height:
+      regionH,
   };
 }
 
 /** The pixel size the rendition is encoded at for a region `regionWidth` wide: never enlarged. */
-export function bannerRenditionSize(regionWidth: number): { width: number; height: number } {
-  const width = Math.max(1, Math.min(PROFILE_BANNER_WIDTH, Math.floor(regionWidth)));
-  return { width, height: Math.max(1, Math.round(width / PROFILE_BANNER_ASPECT)) };
+export function bannerRenditionSize(
+  regionWidth: number,
+): {
+  width: number;
+  height: number;
+} {
+  const width =
+    Math.max(
+      1,
+      Math.min(
+        PROFILE_BANNER_WIDTH,
+        Math.floor(
+          regionWidth,
+        ),
+      ),
+    );
+  return {
+    width,
+    height:
+      Math.max(
+        1,
+        Math.round(
+          width /
+            PROFILE_BANNER_ASPECT,
+        ),
+      ),
+  };
 }

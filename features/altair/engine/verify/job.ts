@@ -8,7 +8,8 @@
 
 import type { ClaimedCoopResult } from './verify-coop';
 
-export const VERIFY_COOP_QUEUE = 'altair.verify-coop';
+export const VERIFY_COOP_QUEUE =
+  'altair.verify-coop';
 
 /** Most verification jobs allowed to wait; beyond this new runs are dropped (not recorded). */
 export const MAX_VERIFY_BACKLOG = 40;

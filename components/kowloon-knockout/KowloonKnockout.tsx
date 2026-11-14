@@ -1,4 +1,7 @@
-import { lazy, useEffect } from 'react';
+import {
+  lazy,
+  useEffect,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useMultiplayerSync } from '@/lib/kowloon-knockout/useMultiplayerSync';
@@ -7,117 +10,308 @@ import MainMenu from '@/components/kowloon-knockout/MainMenu';
 import CharacterSelect from '@/components/kowloon-knockout/CharacterSelect';
 import MultiplayerLobby from '@/components/kowloon-knockout/MultiplayerLobby';
 import ResultScreen from '@/components/kowloon-knockout/ResultScreen';
-import { AnimatePresence, m as motion } from 'framer-motion';
+import {
+  AnimatePresence,
+  m as motion,
+} from 'framer-motion';
 import './kowloon-knockout.css';
 import './kk-hud.css';
 import { useGameSession } from '@/hooks/useGameSession';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
-const GameView = lazy(() => import('@/components/kowloon-knockout/arena/GameView'));
+const GameView =
+  lazy(
+    () =>
+      import('@/components/kowloon-knockout/arena/GameView'),
+  );
 
 export default function KowloonKnockout() {
-  const { t } = useTranslation("c-kowloon-knockout");
-  const { phase, setPhase } = useGameStore();
-  const netReconnecting = useGameStore((st) => st.netReconnecting);
-  const offlineSeats = useGameStore((st) => st.offlineSeats);
-  const localSeat = useGameStore((st) => st.localSeat);
-  const inFight = phase === 'fight' || phase === 'countdown';
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-kowloon-knockout',
+    );
+  const {
+    phase,
+    setPhase,
+  } =
+    useGameStore();
+  const netReconnecting =
+    useGameStore(
+      (
+        st,
+      ) =>
+        st.netReconnecting,
+    );
+  const offlineSeats =
+    useGameStore(
+      (
+        st,
+      ) =>
+        st.offlineSeats,
+    );
+  const localSeat =
+    useGameStore(
+      (
+        st,
+      ) =>
+        st.localSeat,
+    );
+  const inFight =
+    phase ===
+      'fight' ||
+    phase ===
+      'countdown';
   // The fight is host-authoritative, so what a player can usefully be told depends on who dropped.
-  let netNotice: string | null = null;
-  if (inFight && netReconnecting) {
-    netNotice = t('net-reconnecting', { defaultValue: 'Connection lost. Reconnecting to the match...' });
-  } else if (inFight && offlineSeats.includes(0) && localSeat !== 0) {
-    netNotice = t('net-host-offline', { defaultValue: 'The host lost connection. Waiting for them to return...' });
-  } else if (inFight && offlineSeats.some((x) => x !== localSeat)) {
-    netNotice = t('net-peer-offline', { defaultValue: 'A player lost connection. A CPU takes their place if they do not return.' });
+  let netNotice:
+    | string
+    | null =
+    null;
+  if (
+    inFight &&
+    netReconnecting
+  ) {
+    netNotice =
+      t(
+        'net-reconnecting',
+        {
+          defaultValue:
+            'Connection lost. Reconnecting to the match...',
+        },
+      );
+  } else if (
+    inFight &&
+    offlineSeats.includes(
+      0,
+    ) &&
+    localSeat !==
+      0
+  ) {
+    netNotice =
+      t(
+        'net-host-offline',
+        {
+          defaultValue:
+            'The host lost connection. Waiting for them to return...',
+        },
+      );
+  } else if (
+    inFight &&
+    offlineSeats.some(
+      (
+        x,
+      ) =>
+        x !==
+        localSeat,
+    )
+  ) {
+    netNotice =
+      t(
+        'net-peer-offline',
+        {
+          defaultValue:
+            'A player lost connection. A CPU takes their place if they do not return.',
+        },
+      );
   }
   // Session contract: screen on through a fight. A fight has no pause (online
   // rounds can't stop), so there is no onPause.
-  useGameSession({ id: 'kowloon-knockout', active: phase === 'fight' || phase === 'countdown' });
+  useGameSession(
+    {
+      id: 'kowloon-knockout',
+      active:
+        phase ===
+          'fight' ||
+        phase ===
+          'countdown',
+    },
+  );
   useMultiplayerSync();
 
   // Someone opened an invite link. Put the lobby up; it does the joining once
   // its socket is connected.
-  const invite = useLobbyInvite();
+  const invite =
+    useLobbyInvite();
   useEffect(() => {
-    if (invite) setPhase('lobby');
-  }, [invite, setPhase]);
+    if (
+      invite
+    )
+      setPhase(
+        'lobby',
+      );
+  }, [
+    invite,
+    setPhase,
+  ]);
 
   return (
     <div className="kowloon-knockout">
       {netNotice && (
-        <div className="kk-net-notice" role="status" aria-live="polite">
-          {netNotice}
+        <div
+          className="kk-net-notice"
+          role="status"
+          aria-live="polite"
+        >
+          {
+            netNotice
+          }
         </div>
       )}
       <div className="app-container">
         <AnimatePresence mode="wait">
-          {phase === 'menu' && (
+          {phase ===
+            'menu' && (
             <motion.div
               key="menu"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
-              style={{ width: '100%', height: '100%' }}
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
+              transition={{
+                duration: 0.4,
+              }}
+              style={{
+                width:
+                  '100%',
+                height:
+                  '100%',
+              }}
             >
               <MainMenu />
             </motion.div>
           )}
 
-          {phase === 'select' && (
+          {phase ===
+            'select' && (
             <motion.div
               key="select"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.4 }}
-              style={{ width: '100%', height: '100%' }}
+              initial={{
+                opacity: 0,
+                x: 50,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
+              exit={{
+                opacity: 0,
+                x: -50,
+              }}
+              transition={{
+                duration: 0.4,
+              }}
+              style={{
+                width:
+                  '100%',
+                height:
+                  '100%',
+              }}
             >
               <CharacterSelect />
             </motion.div>
           )}
 
-          {phase === 'lobby' && (
+          {phase ===
+            'lobby' && (
             <motion.div
               key="lobby"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.4 }}
-              style={{ width: '100%', height: '100%' }}
+              initial={{
+                opacity: 0,
+                x: 50,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
+              exit={{
+                opacity: 0,
+                x: -50,
+              }}
+              transition={{
+                duration: 0.4,
+              }}
+              style={{
+                width:
+                  '100%',
+                height:
+                  '100%',
+              }}
             >
               <MultiplayerLobby />
             </motion.div>
           )}
 
-          {(phase === 'fight' || phase === 'countdown') && (
+          {(phase ===
+            'fight' ||
+            phase ===
+              'countdown') && (
             <motion.div
               key="fight"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              style={{ width: '100%', height: '100%' }}
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
+              transition={{
+                duration: 0.3,
+              }}
+              style={{
+                width:
+                  '100%',
+                height:
+                  '100%',
+              }}
             >
-              <ArrivalSuspense fallback={
-                <div className="kk-loading">
-                  {t("loading", { defaultValue: "LOADING..." })}
-                </div>
-              }>
+              <ArrivalSuspense
+                fallback={
+                  <div className="kk-loading">
+                    {t(
+                      'loading',
+                      {
+                        defaultValue:
+                          'LOADING...',
+                      },
+                    )}
+                  </div>
+                }
+              >
                 <GameView />
               </ArrivalSuspense>
             </motion.div>
           )}
 
-          {phase === 'result' && (
+          {phase ===
+            'result' && (
             <motion.div
               key="result"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              style={{ width: '100%', height: '100%' }}
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
+              transition={{
+                duration: 0.5,
+              }}
+              style={{
+                width:
+                  '100%',
+                height:
+                  '100%',
+              }}
             >
               <ResultScreen />
             </motion.div>

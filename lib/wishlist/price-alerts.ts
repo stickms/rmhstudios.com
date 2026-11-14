@@ -20,20 +20,31 @@
  * appearance (a new date) does.
  */
 
-export type AlertReason = 'price-drop' | 'target-met' | 'daily-shop';
+export type AlertReason =
+  | 'price-drop'
+  | 'target-met'
+  | 'daily-shop';
 
 export interface AlertFacts {
   /** Current price in coins, or null when there is none (no live market listing). */
-  currentPrice: number | null;
+  currentPrice:
+    | number
+    | null;
   /** The price this entry saw last time, or null on its first look. */
-  lastSeenPrice: number | null;
-  targetPrice: number | null;
+  lastSeenPrice:
+    | number
+    | null;
+  targetPrice:
+    | number
+    | null;
   inDailyShop: boolean;
   /** UTC `YYYY-MM-DD`. */
   dateKey: string;
   /** The member already owns the item — nothing to tell them. */
   owned: boolean;
-  lastAlertKey: string | null;
+  lastAlertKey:
+    | string
+    | null;
 }
 
 export interface AlertDecision {
@@ -41,26 +52,83 @@ export interface AlertDecision {
   key: string;
 }
 
-export function decideAlert(f: AlertFacts): AlertDecision | null {
-  if (f.owned) return null;
+export function decideAlert(
+  f: AlertFacts,
+): AlertDecision | null {
+  if (
+    f.owned
+  )
+    return null;
 
-  const candidates: AlertDecision[] = [];
-  if (f.currentPrice !== null) {
-    if (f.lastSeenPrice !== null && f.currentPrice < f.lastSeenPrice) {
-      candidates.push({ reason: 'price-drop', key: `drop:${f.currentPrice}` });
+  const candidates: AlertDecision[] =
+    [];
+  if (
+    f.currentPrice !==
+    null
+  ) {
+    if (
+      f.lastSeenPrice !==
+        null &&
+      f.currentPrice <
+        f.lastSeenPrice
+    ) {
+      candidates.push(
+        {
+          reason:
+            'price-drop',
+          key: `drop:${f.currentPrice}`,
+        },
+      );
     }
-    if (f.targetPrice !== null && f.currentPrice <= f.targetPrice) {
-      candidates.push({ reason: 'target-met', key: `target:${f.currentPrice}` });
+    if (
+      f.targetPrice !==
+        null &&
+      f.currentPrice <=
+        f.targetPrice
+    ) {
+      candidates.push(
+        {
+          reason:
+            'target-met',
+          key: `target:${f.currentPrice}`,
+        },
+      );
     }
   }
-  if (f.inDailyShop) candidates.push({ reason: 'daily-shop', key: `daily:${f.dateKey}` });
+  if (
+    f.inDailyShop
+  )
+    candidates.push(
+      {
+        reason:
+          'daily-shop',
+        key: `daily:${f.dateKey}`,
+      },
+    );
 
-  return candidates.find((c) => c.key !== f.lastAlertKey) ?? null;
+  return (
+    candidates.find(
+      (
+        c,
+      ) =>
+        c.key !==
+        f.lastAlertKey,
+    ) ??
+    null
+  );
 }
 
 /** The notification text for a decision. */
-export function alertPreview(reason: AlertReason, itemName: string, price: number | null): string {
-  switch (reason) {
+export function alertPreview(
+  reason: AlertReason,
+  itemName: string,
+  price:
+    | number
+    | null,
+): string {
+  switch (
+    reason
+  ) {
     case 'price-drop':
       return `${itemName} dropped to ${price} coins`;
     case 'target-met':

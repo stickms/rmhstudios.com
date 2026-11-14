@@ -14,7 +14,13 @@
 
 import type { ChannelPair } from './channel';
 import type { IceServerConfig } from './ice-core';
-import { DirectConnection, type IceCandidateLike, type P2pTestHooks, type SessionDescriptionLike, type SignalOut } from './webrtc';
+import {
+  DirectConnection,
+  type IceCandidateLike,
+  type P2pTestHooks,
+  type SessionDescriptionLike,
+  type SignalOut,
+} from './webrtc';
 
 /* ─── Time ───────────────────────────────────────────────────────────────── */
 
@@ -24,23 +30,61 @@ export interface Scheduler {
   /** Monotonic ms (performance.now): timers and link liveness; keeps counting in hidden tabs. */
   mono(): number;
   /** Run `fn` once after `ms`; returns a cancel function. */
-  after(ms: number, fn: () => void): () => void;
+  after(
+    ms: number,
+    fn: () => void,
+  ): () => void;
   /** Run `fn` every `ms`; returns a cancel function. */
-  every(ms: number, fn: () => void): () => void;
+  every(
+    ms: number,
+    fn: () => void,
+  ): () => void;
 }
 
 export function realScheduler(): Scheduler {
-  const perf = (globalThis as { performance?: { now(): number } }).performance;
+  const perf =
+    (
+      globalThis as {
+        performance?: {
+          now(): number;
+        };
+      }
+    )
+      .performance;
   return {
-    now: () => Date.now(),
-    mono: () => (perf ? perf.now() : Date.now()),
-    after(ms, fn) {
-      const id = setTimeout(fn, ms);
-      return () => clearTimeout(id);
+    now: () =>
+      Date.now(),
+    mono: () =>
+      perf
+        ? perf.now()
+        : Date.now(),
+    after(
+      ms,
+      fn,
+    ) {
+      const id =
+        setTimeout(
+          fn,
+          ms,
+        );
+      return () =>
+        clearTimeout(
+          id,
+        );
     },
-    every(ms, fn) {
-      const id = setInterval(fn, ms);
-      return () => clearInterval(id);
+    every(
+      ms,
+      fn,
+    ) {
+      const id =
+        setInterval(
+          fn,
+          ms,
+        );
+      return () =>
+        clearInterval(
+          id,
+        );
     },
   };
 }
@@ -53,38 +97,75 @@ export interface PeerSignalIn {
 }
 
 export interface PeerConnectOptions {
-  role: 'host' | 'member';
+  role:
+    | 'host'
+    | 'member';
   ice: IceServerConfig[];
-  signal(s: SignalOut): void;
-  onChannels(pair: ChannelPair, kind: 'direct' | 'turn'): void;
-  onFailed(why: 'timeout' | 'failed'): void;
+  signal(
+    s: SignalOut,
+  ): void;
+  onChannels(
+    pair: ChannelPair,
+    kind:
+      | 'direct'
+      | 'turn',
+  ): void;
+  onFailed(
+    why:
+      | 'timeout'
+      | 'failed',
+  ): void;
 }
 
 export interface PeerAttempt {
-  handle(signal: PeerSignalIn): void;
+  handle(
+    signal: PeerSignalIn,
+  ): void;
   close(): void;
 }
 
 export interface PeerConnector {
-  connect(opts: PeerConnectOptions): PeerAttempt;
+  connect(
+    opts: PeerConnectOptions,
+  ): PeerAttempt;
 }
 
 /** The browser's PeerConnector: one `DirectConnection` (./webrtc.ts) per host ↔ member pair. */
-export function webrtcConnector(hooks?: P2pTestHooks): PeerConnector {
+export function webrtcConnector(
+  hooks?: P2pTestHooks,
+): PeerConnector {
   return {
-    connect(opts: PeerConnectOptions): PeerAttempt {
-      const dc = new DirectConnection({
-        role: opts.role,
-        iceServers: hooks?.iceServers ?? opts.ice,
-        hooks,
-        endOfCandidates: false,
-        signal: opts.signal,
-        onChannels: opts.onChannels,
-        onFailed: opts.onFailed,
-      });
+    connect(
+      opts: PeerConnectOptions,
+    ): PeerAttempt {
+      const dc =
+        new DirectConnection(
+          {
+            role: opts.role,
+            iceServers:
+              hooks?.iceServers ??
+              opts.ice,
+            hooks,
+            endOfCandidates: false,
+            signal:
+              opts.signal,
+            onChannels:
+              opts.onChannels,
+            onFailed:
+              opts.onFailed,
+          },
+        );
       return {
-        handle: (s) => void dc.handle(s),
-        close: () => dc.close(),
+        handle:
+          (
+            s,
+          ) =>
+            void dc.handle(
+              s,
+            ),
+        close:
+          () =>
+            dc.close(),
       };
     },
   };

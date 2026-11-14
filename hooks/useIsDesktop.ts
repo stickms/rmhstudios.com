@@ -3,16 +3,32 @@ import { useSyncExternalStore } from 'react';
 // The `xl` breakpoint — where the context rail switches from `display:none` to
 // visible (`hidden xl:block`). Widgets in that rail gate their fetch/polling
 // on this so mobile clients don't pay for a sidebar they never see.
-const DESKTOP_QUERY = '(min-width: 1280px)';
+const DESKTOP_QUERY =
+  '(min-width: 1280px)';
 
-function subscribe(callback: () => void) {
-  const mql = window.matchMedia(DESKTOP_QUERY);
-  mql.addEventListener('change', callback);
-  return () => mql.removeEventListener('change', callback);
+function subscribe(
+  callback: () => void,
+) {
+  const mql =
+    window.matchMedia(
+      DESKTOP_QUERY,
+    );
+  mql.addEventListener(
+    'change',
+    callback,
+  );
+  return () =>
+    mql.removeEventListener(
+      'change',
+      callback,
+    );
 }
 
 function getSnapshot() {
-  return window.matchMedia(DESKTOP_QUERY).matches;
+  return window.matchMedia(
+    DESKTOP_QUERY,
+  )
+    .matches;
 }
 
 function getServerSnapshot() {
@@ -25,5 +41,9 @@ function getServerSnapshot() {
  * hydration). Mirrors {@link useIsMobile}.
  */
 export function useIsDesktop() {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 }

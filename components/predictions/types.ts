@@ -2,18 +2,47 @@
 export interface Market {
   id: string;
   title: string;
-  description: string | null;
-  status: 'PENDING' | 'OPEN' | 'RESOLVED_YES' | 'RESOLVED_NO' | 'DENIED';
+  description:
+    | string
+    | null;
+  status:
+    | 'PENDING'
+    | 'OPEN'
+    | 'RESOLVED_YES'
+    | 'RESOLVED_NO'
+    | 'DENIED';
   isAiGenerated: boolean;
   /** Self-referential market that settles from the platform's own data. */
   isAuto: boolean;
   /** In-app deep link to the subject of an auto market. */
-  subjectUrl: string | null;
+  subjectUrl:
+    | string
+    | null;
   yesPercent: number;
   volume: number;
-  closesAt: string | null;
-  resolvedAt: string | null;
+  closesAt:
+    | string
+    | null;
+  resolvedAt:
+    | string
+    | null;
   createdAt: string;
-  creator: { id: string; name: string | null; handle: string | null; image: string | null } | null;
-  position: { yesShares: number; noShares: number; spent: number; settled: boolean } | null;
+  creator: {
+    id: string;
+    name:
+      | string
+      | null;
+    handle:
+      | string
+      | null;
+    image:
+      | string
+      | null;
+  } | null;
+  position: {
+    yesShares: number;
+    noShares: number;
+    spent: number;
+    settled: boolean;
+  } | null;
 }

@@ -19,7 +19,11 @@
  *     at essentially no cost.
  */
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_MS =
+  24 *
+  60 *
+  60 *
+  1000;
 
 /**
  * One handle change per 30 days (J2).
@@ -30,13 +34,19 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * should call {@link canChangeHandleNow} and this constant should become the
  * only answer.
  */
-export const HANDLE_CHANGE_COOLDOWN_MS = 30 * DAY_MS;
+export const HANDLE_CHANGE_COOLDOWN_MS =
+  30 *
+  DAY_MS;
 
 /** A released handle is frozen for 30 days before anyone else may claim it. */
-export const HANDLE_RECLAIM_BLOCK_MS = 30 * DAY_MS;
+export const HANDLE_RECLAIM_BLOCK_MS =
+  30 *
+  DAY_MS;
 
 /** How long a former handle is shown under "previously known as". */
-export const PREVIOUS_HANDLE_WINDOW_MS = 30 * DAY_MS;
+export const PREVIOUS_HANDLE_WINDOW_MS =
+  30 *
+  DAY_MS;
 
 /** How many former handles the profile surfaces at most. */
 export const MAX_PREVIOUS_HANDLES = 3;
@@ -51,12 +61,24 @@ export interface HandleChangeRecord {
 
 /** Milliseconds until this user may change their handle again; 0 when free. */
 export function handleChangeCooldownRemaining(
-  lastChangeAt: Date | null | undefined,
+  lastChangeAt:
+    | Date
+    | null
+    | undefined,
   now: Date = new Date(),
 ): number {
-  if (!lastChangeAt) return 0;
-  const elapsed = now.getTime() - lastChangeAt.getTime();
-  return Math.max(0, HANDLE_CHANGE_COOLDOWN_MS - elapsed);
+  if (
+    !lastChangeAt
+  )
+    return 0;
+  const elapsed =
+    now.getTime() -
+    lastChangeAt.getTime();
+  return Math.max(
+    0,
+    HANDLE_CHANGE_COOLDOWN_MS -
+      elapsed,
+  );
 }
 
 /**
@@ -67,12 +89,24 @@ export function handleChangeCooldownRemaining(
  * on that is a 30-day-long impersonation.
  */
 export function canChangeHandleNow(
-  lastChangeAt: Date | null | undefined,
+  lastChangeAt:
+    | Date
+    | null
+    | undefined,
   isAdmin = false,
   now: Date = new Date(),
 ): boolean {
-  if (isAdmin) return true;
-  return handleChangeCooldownRemaining(lastChangeAt, now) === 0;
+  if (
+    isAdmin
+  )
+    return true;
+  return (
+    handleChangeCooldownRemaining(
+      lastChangeAt,
+      now,
+    ) ===
+    0
+  );
 }
 
 /**
@@ -85,35 +119,116 @@ export function canChangeHandleNow(
 export function isHandleReclaimBlocked(
   releases: readonly HandleChangeRecord[],
   handle: string,
-  options: { claimantId?: string | null; now?: Date } = {},
+  options: {
+    claimantId?:
+      | string
+      | null;
+    now?: Date;
+  } = {},
 ): boolean {
-  const { claimantId = null, now = new Date() } = options;
-  const wanted = handle.trim().toLowerCase();
-  if (!wanted) return false;
+  const {
+    claimantId = null,
+    now = new Date(),
+  } =
+    options;
+  const wanted =
+    handle
+      .trim()
+      .toLowerCase();
+  if (
+    !wanted
+  )
+    return false;
 
-  const relevant = releases
-    .filter((row) => row.oldHandle.toLowerCase() === wanted)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  const latest = relevant[0];
-  if (!latest) return false;
-  if (claimantId && latest.userId === claimantId) return false;
-  return now.getTime() - latest.createdAt.getTime() < HANDLE_RECLAIM_BLOCK_MS;
+  const relevant =
+    releases
+      .filter(
+        (
+          row,
+        ) =>
+          row.oldHandle.toLowerCase() ===
+          wanted,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          b.createdAt.getTime() -
+          a.createdAt.getTime(),
+      );
+  const latest =
+    relevant[0];
+  if (
+    !latest
+  )
+    return false;
+  if (
+    claimantId &&
+    latest.userId ===
+      claimantId
+  )
+    return false;
+  return (
+    now.getTime() -
+      latest.createdAt.getTime() <
+    HANDLE_RECLAIM_BLOCK_MS
+  );
 }
 
 /** Milliseconds until a frozen handle becomes claimable; 0 when it is free. */
 export function reclaimBlockRemaining(
   releases: readonly HandleChangeRecord[],
   handle: string,
-  options: { claimantId?: string | null; now?: Date } = {},
+  options: {
+    claimantId?:
+      | string
+      | null;
+    now?: Date;
+  } = {},
 ): number {
-  const { claimantId = null, now = new Date() } = options;
-  const wanted = handle.trim().toLowerCase();
-  const latest = releases
-    .filter((row) => row.oldHandle.toLowerCase() === wanted)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-  if (!latest) return 0;
-  if (claimantId && latest.userId === claimantId) return 0;
-  return Math.max(0, HANDLE_RECLAIM_BLOCK_MS - (now.getTime() - latest.createdAt.getTime()));
+  const {
+    claimantId = null,
+    now = new Date(),
+  } =
+    options;
+  const wanted =
+    handle
+      .trim()
+      .toLowerCase();
+  const latest =
+    releases
+      .filter(
+        (
+          row,
+        ) =>
+          row.oldHandle.toLowerCase() ===
+          wanted,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          b.createdAt.getTime() -
+          a.createdAt.getTime(),
+      )[0];
+  if (
+    !latest
+  )
+    return 0;
+  if (
+    claimantId &&
+    latest.userId ===
+      claimantId
+  )
+    return 0;
+  return Math.max(
+    0,
+    HANDLE_RECLAIM_BLOCK_MS -
+      (now.getTime() -
+        latest.createdAt.getTime()),
+  );
 }
 
 export interface PreviousHandle {
@@ -131,23 +246,74 @@ export interface PreviousHandle {
  */
 export function previousHandles(
   changes: readonly HandleChangeRecord[],
-  options: { currentHandle?: string | null; now?: Date } = {},
+  options: {
+    currentHandle?:
+      | string
+      | null;
+    now?: Date;
+  } = {},
 ): PreviousHandle[] {
-  const { currentHandle = null, now = new Date() } = options;
-  const cutoff = now.getTime() - PREVIOUS_HANDLE_WINDOW_MS;
-  const current = currentHandle?.toLowerCase() ?? null;
+  const {
+    currentHandle = null,
+    now = new Date(),
+  } =
+    options;
+  const cutoff =
+    now.getTime() -
+    PREVIOUS_HANDLE_WINDOW_MS;
+  const current =
+    currentHandle?.toLowerCase() ??
+    null;
 
-  const seen = new Set<string>();
-  const out: PreviousHandle[] = [];
-  const ordered = [...changes].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const seen =
+    new Set<string>();
+  const out: PreviousHandle[] =
+    [];
+  const ordered =
+    [
+      ...changes,
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        b.createdAt.getTime() -
+        a.createdAt.getTime(),
+    );
 
   for (const row of ordered) {
-    if (row.createdAt.getTime() < cutoff) continue;
-    const handle = row.oldHandle.toLowerCase();
-    if (!handle || handle === current || seen.has(handle)) continue;
-    seen.add(handle);
-    out.push({ handle: row.oldHandle, changedAt: row.createdAt });
-    if (out.length >= MAX_PREVIOUS_HANDLES) break;
+    if (
+      row.createdAt.getTime() <
+      cutoff
+    )
+      continue;
+    const handle =
+      row.oldHandle.toLowerCase();
+    if (
+      !handle ||
+      handle ===
+        current ||
+      seen.has(
+        handle,
+      )
+    )
+      continue;
+    seen.add(
+      handle,
+    );
+    out.push(
+      {
+        handle:
+          row.oldHandle,
+        changedAt:
+          row.createdAt,
+      },
+    );
+    if (
+      out.length >=
+      MAX_PREVIOUS_HANDLES
+    )
+      break;
   }
   return out;
 }

@@ -15,10 +15,17 @@
  * 3 BLU); classes are ETFClass (1 Scout … 9 Engineer).
  */
 
-export type HudGame = 'tf2' | 'hl2' | 'portal' | 'csgo';
+export type HudGame =
+  | 'tf2'
+  | 'hl2'
+  | 'portal'
+  | 'csgo';
 
 /** Which ammo display a weapon uses (CTFHudWeaponAmmo). */
-export type HudAmmoKind = 'clip' | 'reserve-only' | 'none';
+export type HudAmmoKind =
+  | 'clip'
+  | 'reserve-only'
+  | 'none';
 
 export interface HudWeaponSlot {
   /** Loadout slot (0 primary, 1 secondary, 2 melee, 3/4 PDAs, 5 building). */
@@ -43,20 +50,32 @@ export interface HudAmmo {
 /** Charge meters; null when the local player's loadout has no such meter. */
 export interface HudMeters {
   /** Medi Gun ÜberCharge 0…1. */
-  uber: number | null;
+  uber:
+    | number
+    | null;
   /** The über is being deployed (draining). */
   uberDeployed: boolean;
   /** Sniper Rifle charge 0…1 (charged damage / 150). */
-  sniperCharge: number | null;
+  sniperCharge:
+    | number
+    | null;
   /** Invisibility Watch cloak 0…1. */
-  cloak: number | null;
+  cloak:
+    | number
+    | null;
   /** Stickybomb launcher charge 0…1 while holding attack. */
-  stickyCharge: number | null;
+  stickyCharge:
+    | number
+    | null;
   /** Stickybombs out, and the cap (8). */
-  stickyCount: number | null;
+  stickyCount:
+    | number
+    | null;
   stickyMax: number;
   /** Minigun spin-up, 0 idle … 1 spinning. */
-  minigunSpin: number | null;
+  minigunSpin:
+    | number
+    | null;
   /**
    * Unlock item meters (CHudItemEffectMeter and kin), the loadout's in priority order: the jar /
    * drink / lunch box recharge, rage, hype, the shield charge, heads, revenge crits, the bow's draw …
@@ -97,7 +116,11 @@ export interface HudConditions {
   stunned: boolean;
 }
 
-export type HudBuildingKind = 'sentry' | 'dispenser' | 'entrance' | 'exit';
+export type HudBuildingKind =
+  | 'sentry'
+  | 'dispenser'
+  | 'entrance'
+  | 'exit';
 
 export interface HudBuilding {
   kind: HudBuildingKind;
@@ -166,7 +189,9 @@ export interface HudLocalPlayer {
   conditions: HudConditions;
   engineer: HudEngineer | null;
   /** Seconds until respawn while dead, null when alive or not scheduled. */
-  respawnIn: number | null;
+  respawnIn:
+    | number
+    | null;
   spectating: HudSpectatorTarget | null;
   /** What is equipped (sim/items/loadout.ts encodeItems; '' before the first spawn). */
   items?: string;
@@ -180,13 +205,23 @@ export interface HudLocalPlayer {
 export interface HudLoadoutAnswer {
   /** TF_CLASS_* it was for. */
   cls: number;
-  status: 'applied' | 'pending' | 'refused';
+  status:
+    | 'applied'
+    | 'pending'
+    | 'refused';
   reason?: string;
   /** Client clock time it arrived. */
   at: number;
 }
 
-export type HudMode = 'ctf' | 'cp' | 'cp_ad' | 'koth' | 'pl' | 'arena' | '';
+export type HudMode =
+  | 'ctf'
+  | 'cp'
+  | 'cp_ad'
+  | 'koth'
+  | 'pl'
+  | 'arena'
+  | '';
 
 export type HudRoundState =
   | 'pregame'
@@ -228,12 +263,19 @@ export interface HudControlPoint {
   locked: boolean;
   blocked: boolean;
   /** Seconds until it unlocks (null when not counting). */
-  unlocksIn: number | null;
+  unlocksIn:
+    | number
+    | null;
   /** Payload: place along the track, 0…1; null for ordinary points. */
-  trackPosition: number | null;
+  trackPosition:
+    | number
+    | null;
 }
 
-export type HudFlagStatus = 'home' | 'stolen' | 'dropped';
+export type HudFlagStatus =
+  | 'home'
+  | 'stolen'
+  | 'dropped';
 
 export interface HudFlag {
   /** The team that owns the flag (RED's intelligence is team 2). */
@@ -243,7 +285,9 @@ export interface HudFlag {
   /** The local player is carrying it. */
   carriedByLocal: boolean;
   /** Seconds until a dropped flag returns. */
-  returnsIn: number | null;
+  returnsIn:
+    | number
+    | null;
 }
 
 export interface HudPayload {
@@ -257,7 +301,10 @@ export interface HudPayload {
   /** Pushers present but an enemy is contesting. */
   blocked: boolean;
   /** Checkpoint positions along the track, 0…1, and whether passed. */
-  checkpoints: Array<{ at: number; captured: boolean }>;
+  checkpoints: Array<{
+    at: number;
+    captured: boolean;
+  }>;
 }
 
 export interface HudWinPanel {
@@ -268,9 +315,16 @@ export interface HudWinPanel {
   redScore: number;
   blueScore: number;
   /** The round's top players by score (up to 3). */
-  top: Array<{ name: string; team: number; cls: number; score: number }>;
+  top: Array<{
+    name: string;
+    team: number;
+    cls: number;
+    score: number;
+  }>;
   /** Seconds until the next round. */
-  nextRoundIn: number | null;
+  nextRoundIn:
+    | number
+    | null;
 }
 
 export interface HudMatch {
@@ -305,7 +359,11 @@ export interface HudScoreRow {
    * Peer-to-peer matches: how this human reaches the host (the host itself, directly, through a TURN
    * server, or through the hub's relay).
    */
-  link?: 'host' | 'direct' | 'turn' | 'relayed';
+  link?:
+    | 'host'
+    | 'direct'
+    | 'turn'
+    | 'relayed';
   /** Peer-to-peer matches: share of this human's packets lost on the way to the host (0…1). */
   loss?: number;
   dead: boolean;
@@ -333,7 +391,10 @@ export interface HudKillEntry {
   icon: string;
   /** English weapon name for the text fallback. */
   weaponName: string;
-  crit: 0 | 1 | 2;
+  crit:
+    | 0
+    | 1
+    | 2;
   /** TF_DMG_CUSTOM_* (headshot 1, backstab 2, burning 3…). */
   customKill: number;
   domination: boolean;
@@ -360,11 +421,21 @@ export interface HudDamageNumber {
   id: number;
   at: number;
   amount: number;
-  crit: 0 | 1 | 2;
+  crit:
+    | 0
+    | 1
+    | 2;
   /** Screen position 0…1 when the renderer projected the victim; null → beside the crosshair. */
-  screen: { x: number; y: number } | null;
+  screen: {
+    x: number;
+    y: number;
+  } | null;
   /** World position of the hit, for the renderer to project. */
-  world: { x: number; y: number; z: number } | null;
+  world: {
+    x: number;
+    y: number;
+    z: number;
+  } | null;
 }
 
 /** Monotonic counters the audio layer watches to play the hit / kill sounds. */
@@ -382,7 +453,11 @@ export interface HudFreezeCam {
   killerHealth: number;
   killerMaxHealth: number;
   /** Killed by a building (sentry), the world, or self. */
-  kind: 'player' | 'object' | 'world' | 'suicide';
+  kind:
+    | 'player'
+    | 'object'
+    | 'world'
+    | 'suicide';
   dominated: boolean;
   revenge: boolean;
   at: number;
@@ -395,7 +470,9 @@ export interface HudCaption {
   duration: number;
   text: string;
   /** `<clr:r,g,b>` from the caption file, as CSS `rgb(...)`. */
-  color: string | null;
+  color:
+    | string
+    | null;
   /** A sound effect caption (drawn bracketed and dimmer). */
   sfx: boolean;
   speaker?: string;
@@ -406,7 +483,12 @@ export interface HudCenterMessage {
   at: number;
   duration: number;
   text: string;
-  kind: 'center' | 'announce' | 'alert' | 'training' | 'text';
+  kind:
+    | 'center'
+    | 'announce'
+    | 'alert'
+    | 'training'
+    | 'text';
 }
 
 /** Half-Life 2's suit. */
@@ -427,9 +509,18 @@ export interface HudHl2 {
   /** Alt-fire ammo (SMG grenades, AR2 balls), −1 for none. */
   altAmmo: number;
   /** Recent pickups (top-right list). */
-  pickups: Array<{ id: number; at: number; label: string; amount: number }>;
+  pickups: Array<{
+    id: number;
+    at: number;
+    label: string;
+    amount: number;
+  }>;
   /** Damage direction indicators, degrees relative to the view (0 = ahead). */
-  damageDirections: Array<{ id: number; at: number; angle: number }>;
+  damageDirections: Array<{
+    id: number;
+    at: number;
+    angle: number;
+  }>;
 }
 
 export interface HudPortal {
@@ -439,7 +530,10 @@ export interface HudPortal {
   bluePlaced: boolean;
   orangePlaced: boolean;
   /** Last portal fired, for the crosshair's highlight. */
-  lastFired: 'blue' | 'orange' | null;
+  lastFired:
+    | 'blue'
+    | 'orange'
+    | null;
   health: number;
 }
 
@@ -493,7 +587,9 @@ export interface HudCsWeapon {
 
 /** CS:GO's HUD state (lib/csgo-game/client/hud.ts). Times are seconds left on the server clock. */
 export interface HudCs {
-  mode: 'de' | 'dm';
+  mode:
+    | 'de'
+    | 'dm';
   money: number;
   armor: number;
   helmet: boolean;
@@ -503,10 +599,23 @@ export interface HudCs {
   canBuy: boolean;
   buyTimeLeft: number;
   /** The round's phase and the clock the HUD shows for it. */
-  phase: 'freeze' | 'live' | 'planted' | 'over' | 'gameover';
-  timeLeft: number | null;
+  phase:
+    | 'freeze'
+    | 'live'
+    | 'planted'
+    | 'over'
+    | 'gameover';
+  timeLeft:
+    | number
+    | null;
   round: number;
-  bomb: { timeLeft: number; defusing: boolean; defuseLeft: number | null } | null;
+  bomb: {
+    timeLeft: number;
+    defusing: boolean;
+    defuseLeft:
+      | number
+      | null;
+  } | null;
   /** The round's end: who won and why (CS_WIN_*). */
   roundWinner: number;
   winReason: number;
@@ -515,7 +624,9 @@ export interface HudCs {
   planting: boolean;
   defusing: boolean;
   /** Deathmatch: seconds until respawn (null while alive), and spawn protection. */
-  respawnIn: number | null;
+  respawnIn:
+    | number
+    | null;
   protected: boolean;
   weapons: HudCsWeapon[];
 }
@@ -524,7 +635,12 @@ export interface HudCs {
 export interface HudNotice {
   id: number;
   at: number;
-  kind: 'host-migrated' | 'migrating' | 'hosting' | 'you-host' | 'transfer-failed';
+  kind:
+    | 'host-migrated'
+    | 'migrating'
+    | 'hosting'
+    | 'you-host'
+    | 'transfer-failed';
   name?: string;
 }
 
@@ -535,8 +651,14 @@ export interface HudAdminPlayer {
   name: string;
   self: boolean;
   /** Peer-to-peer: how they reach this host; a held seat (reconnecting) has none. */
-  connection?: 'direct' | 'turn' | 'relayed' | null;
-  pingMs?: number | null;
+  connection?:
+    | 'direct'
+    | 'turn'
+    | 'relayed'
+    | null;
+  pingMs?:
+    | number
+    | null;
   loss?: number;
   /** Peer-to-peer: may take the match over (Make host). */
   canHost?: boolean;
@@ -559,134 +681,213 @@ export interface HudAdmin {
 
 // ─── Factories ─────────────────────────────────────────────────────────────
 
-export const emptyMeters = (): HudMeters => ({
-  uber: null,
-  uberDeployed: false,
-  sniperCharge: null,
-  cloak: null,
-  stickyCharge: null,
-  stickyCount: null,
-  stickyMax: 8,
-  minigunSpin: null,
-  items: [],
-});
+export const emptyMeters =
+  (): HudMeters => ({
+    uber: null,
+    uberDeployed: false,
+    sniperCharge:
+      null,
+    cloak:
+      null,
+    stickyCharge:
+      null,
+    stickyCount:
+      null,
+    stickyMax: 8,
+    minigunSpin:
+      null,
+    items:
+      [],
+  });
 
-export const emptyConditions = (): HudConditions => ({
-  burning: false,
-  bleeding: false,
-  ubered: false,
-  critBoosted: false,
-  miniCritBoosted: false,
-  cloaked: false,
-  disguised: false,
-  disguising: false,
-  disguiseTeam: 0,
-  disguiseClass: 0,
-  zoomed: false,
-  taunting: false,
-  jarated: false,
-  milked: false,
-  markedForDeath: false,
-  overhealed: false,
-  stunned: false,
-});
+export const emptyConditions =
+  (): HudConditions => ({
+    burning: false,
+    bleeding: false,
+    ubered: false,
+    critBoosted: false,
+    miniCritBoosted: false,
+    cloaked: false,
+    disguised: false,
+    disguising: false,
+    disguiseTeam: 0,
+    disguiseClass: 0,
+    zoomed: false,
+    taunting: false,
+    jarated: false,
+    milked: false,
+    markedForDeath: false,
+    overhealed: false,
+    stunned: false,
+  });
 
-export const emptyAmmo = (): HudAmmo => ({
-  kind: 'none',
-  clip: -1,
-  maxClip: 0,
-  reserve: 0,
-  maxReserve: 0,
-  reloading: false,
-});
+export const emptyAmmo =
+  (): HudAmmo => ({
+    kind: 'none',
+    clip: -1,
+    maxClip: 0,
+    reserve: 0,
+    maxReserve: 0,
+    reloading: false,
+  });
 
-export const emptyBuilding = (kind: HudBuildingKind): HudBuilding => ({
-  kind,
-  exists: false,
-  level: 0,
-  health: 0,
-  maxHealth: 0,
-  buildProgress: 0,
-  building: false,
-  upgradeMetal: 0,
-  upgradeMetalRequired: 0,
-  sapped: false,
-  disabled: false,
-  carried: false,
-  shells: 0,
-  maxShells: 0,
-  rockets: 0,
-  maxRockets: 0,
-  kills: 0,
-  metal: 0,
-  charge: 0,
-  ready: false,
-  linked: false,
-});
+export const emptyBuilding =
+  (
+    kind: HudBuildingKind,
+  ): HudBuilding => ({
+    kind,
+    exists: false,
+    level: 0,
+    health: 0,
+    maxHealth: 0,
+    buildProgress: 0,
+    building: false,
+    upgradeMetal: 0,
+    upgradeMetalRequired: 0,
+    sapped: false,
+    disabled: false,
+    carried: false,
+    shells: 0,
+    maxShells: 0,
+    rockets: 0,
+    maxRockets: 0,
+    kills: 0,
+    metal: 0,
+    charge: 0,
+    ready: false,
+    linked: false,
+  });
 
-export const emptyEngineer = (): HudEngineer => ({
-  metal: 0,
-  maxMetal: 200,
-  sentry: emptyBuilding('sentry'),
-  dispenser: emptyBuilding('dispenser'),
-  entrance: emptyBuilding('entrance'),
-  exit: emptyBuilding('exit'),
-});
+export const emptyEngineer =
+  (): HudEngineer => ({
+    metal: 0,
+    maxMetal: 200,
+    sentry:
+      emptyBuilding(
+        'sentry',
+      ),
+    dispenser:
+      emptyBuilding(
+        'dispenser',
+      ),
+    entrance:
+      emptyBuilding(
+        'entrance',
+      ),
+    exit: emptyBuilding(
+      'exit',
+    ),
+  });
 
-export const emptyMatch = (): HudMatch => ({
-  mode: '',
-  roundState: 'pregame',
-  timer: null,
-  koth: null,
-  redScore: 0,
-  blueScore: 0,
-  redFlagCaps: 0,
-  blueFlagCaps: 0,
-  flagCapLimit: 3,
-  controlPoints: [],
-  flags: [],
-  payloads: [],
-  win: null,
-  map: '',
-});
+export const emptyMatch =
+  (): HudMatch => ({
+    mode: '',
+    roundState:
+      'pregame',
+    timer:
+      null,
+    koth: null,
+    redScore: 0,
+    blueScore: 0,
+    redFlagCaps: 0,
+    blueFlagCaps: 0,
+    flagCapLimit: 3,
+    controlPoints:
+      [],
+    flags:
+      [],
+    payloads:
+      [],
+    win: null,
+    map: '',
+  });
 
-export const emptyHudState = (game: HudGame = 'tf2'): HudState => ({
-  game,
-  now: 0,
-  connected: false,
-  local: null,
-  match: emptyMatch(),
-  scoreboard: [],
-  killfeed: [],
-  chat: [],
-  damageNumbers: [],
-  cues: { hitSeq: 0, killSeq: 0, lastHitCrit: false },
-  freezecam: null,
-  center: [],
-  captions: [],
-  hl2: null,
-  portal: null,
-  fade: null,
-  fps: 0,
-});
+export const emptyHudState =
+  (
+    game: HudGame = 'tf2',
+  ): HudState => ({
+    game,
+    now: 0,
+    connected: false,
+    local:
+      null,
+    match:
+      emptyMatch(),
+    scoreboard:
+      [],
+    killfeed:
+      [],
+    chat: [],
+    damageNumbers:
+      [],
+    cues: {
+      hitSeq: 0,
+      killSeq: 0,
+      lastHitCrit: false,
+    },
+    freezecam:
+      null,
+    center:
+      [],
+    captions:
+      [],
+    hl2: null,
+    portal:
+      null,
+    fade: null,
+    fps: 0,
+  });
 
 // ─── Small shared helpers ──────────────────────────────────────────────────
 
 /** "m:ss" for a timer (TF2's CTFHudTimeStatus format; hours roll into minutes). */
-export function formatClock(seconds: number): string {
-  const s = Math.max(0, Math.ceil(seconds));
-  const m = Math.floor(s / 60);
-  const r = s % 60;
+export function formatClock(
+  seconds: number,
+): string {
+  const s =
+    Math.max(
+      0,
+      Math.ceil(
+        seconds,
+      ),
+    );
+  const m =
+    Math.floor(
+      s /
+        60,
+    );
+  const r =
+    s %
+    60;
   return `${m}:${r < 10 ? '0' : ''}${r}`;
 }
 
 /** TF2's overheal cap: 1.5 × max health, rounded down to a multiple of 5 (CTFPlayerShared::GetMaxBuffedHealth). */
-export function maxBuffedHealth(maxHealth: number): number {
-  return Math.floor((maxHealth * 1.5) / 5) * 5;
+export function maxBuffedHealth(
+  maxHealth: number,
+): number {
+  return (
+    Math.floor(
+      (maxHealth *
+        1.5) /
+        5,
+    ) *
+    5
+  );
 }
 
 /** The health cross's low-health warning threshold (HudPlayerHealth "HealthDeathWarning" 0.49). */
 export const HEALTH_DEATH_WARNING = 0.49;
 
-export const isLowHealth = (health: number, maxHealth: number): boolean =>
-  maxHealth > 0 && health > 0 && health / maxHealth <= HEALTH_DEATH_WARNING;
+export const isLowHealth =
+  (
+    health: number,
+    maxHealth: number,
+  ): boolean =>
+    maxHealth >
+      0 &&
+    health >
+      0 &&
+    health /
+      maxHealth <=
+      HEALTH_DEATH_WARNING;

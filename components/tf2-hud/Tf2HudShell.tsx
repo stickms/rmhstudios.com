@@ -4,6 +4,16 @@
 
 import AppShell from '@/components/shared/AppShell';
 
-export default function Tf2HudShell({ children }: { children: React.ReactNode }) {
-  return <AppShell appClassName="tf2hud-theme">{children}</AppShell>;
+export default function Tf2HudShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <AppShell appClassName="tf2hud-theme">
+      {
+        children
+      }
+    </AppShell>
+  );
 }

@@ -9,19 +9,55 @@
 import type { Catalog } from '../../tf2-loadout/catalog-types';
 import { setItemCatalog } from '../sim/items/registry';
 
-const CATALOG_URL = '/api/tf2-loadout/catalog';
+const CATALOG_URL =
+  '/api/tf2-loadout/catalog';
 
-let pending: Promise<Catalog | null> | null = null;
+let pending: Promise<Catalog | null> | null =
+  null;
 
 export function loadItemCatalog(): Promise<Catalog | null> {
-  pending ??= fetch(CATALOG_URL)
-    .then((r) => (r.ok ? (r.json() as Promise<Catalog>) : null))
-    .then((c) => (c && Array.isArray(c.items) ? c : null))
-    .catch(() => null)
-    .then((c) => {
-      if (c) setItemCatalog(c);
-      else pending = null;
-      return c;
-    });
+  pending ??=
+    fetch(
+      CATALOG_URL,
+    )
+      .then(
+        (
+          r,
+        ) =>
+          r.ok
+            ? (r.json() as Promise<Catalog>)
+            : null,
+      )
+      .then(
+        (
+          c,
+        ) =>
+          c &&
+          Array.isArray(
+            c.items,
+          )
+            ? c
+            : null,
+      )
+      .catch(
+        () =>
+          null,
+      )
+      .then(
+        (
+          c,
+        ) => {
+          if (
+            c
+          )
+            setItemCatalog(
+              c,
+            );
+          else
+            pending =
+              null;
+          return c;
+        },
+      );
   return pending;
 }

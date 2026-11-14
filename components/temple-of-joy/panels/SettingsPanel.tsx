@@ -11,12 +11,18 @@
  * behind a sub-page.
  */
 
-import { useRef, useState } from 'react';
+import {
+  useRef,
+  useState,
+} from 'react';
 import { useClipboard } from '@/hooks/useClipboard';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
-import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
+import {
+  fmt,
+  formatDuration,
+} from '@/lib/temple-of-joy/numbers';
 import {
   AUTOSAVE_INTERVAL_MS,
   exportSave,
@@ -25,42 +31,142 @@ import {
 } from '@/lib/temple-of-joy/persistence';
 import { useSession } from '@/components/Providers';
 import { useMainMenu } from '../menu-context';
-import { useTempleSnapshot, useTempleValue } from '../hooks';
-import { TempleButton, TempleSection, TempleSlider, TempleSwitch } from '../ui';
+import {
+  useTempleSnapshot,
+  useTempleValue,
+} from '../hooks';
+import {
+  TempleButton,
+  TempleSection,
+  TempleSlider,
+  TempleSwitch,
+} from '../ui';
 
 export function SettingsPanel() {
-  const { t } = useTranslation('c-temple-of-joy');
-  const store = useTempleStore;
-  const signedIn = Boolean(useSession().data?.user);
-  const mainMenu = useMainMenu();
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-temple-of-joy',
+    );
+  const store =
+    useTempleStore;
+  const signedIn =
+    Boolean(
+      useSession()
+        .data
+        ?.user,
+    );
+  const mainMenu =
+    useMainMenu();
 
-  const sound = useTempleValue((s) => s.soundEnabled);
-  const music = useTempleValue((s) => s.musicVolume);
-  const sfx = useTempleValue((s) => s.sfxVolume);
-  const theme = useTempleValue((s) => s.theme);
-  const flourish = useTempleValue((s) => s.reducedFlourish);
-  const format = useTempleValue((s) => s.numberFormat);
-  const steward = useTempleValue((s) => s.stewardEnabled);
-  const confirmAscend = useTempleValue((s) => s.confirmAscend);
-  const hasSteward = useTempleValue((s) => s.blessings.has('steward'));
+  const sound =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.soundEnabled,
+    );
+  const music =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.musicVolume,
+    );
+  const sfx =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.sfxVolume,
+    );
+  const theme =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.theme,
+    );
+  const flourish =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.reducedFlourish,
+    );
+  const format =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.numberFormat,
+    );
+  const steward =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.stewardEnabled,
+    );
+  const confirmAscend =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.confirmAscend,
+    );
+  const hasSteward =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.blessings.has(
+          'steward',
+        ),
+    );
 
-  const stats = useTempleSnapshot(
-    (s) => ({
-      playtime: s.playtime,
-      lifetime: fmt(s.lifetimeJoy, s.numberFormat),
-      sinceSave: Math.max(0, (Date.now() - s.lastSaved) / 1000),
-    }),
-    2_000,
-  );
+  const stats =
+    useTempleSnapshot(
+      (
+        s,
+      ) => ({
+        playtime:
+          s.playtime,
+        lifetime:
+          fmt(
+            s.lifetimeJoy,
+            s.numberFormat,
+          ),
+        sinceSave:
+          Math.max(
+            0,
+            (Date.now() -
+              s.lastSaved) /
+              1000,
+          ),
+      }),
+      2_000,
+    );
 
   return (
     <>
       {mainMenu && (
         <Setting
-          name={t('setting-main-menu', { defaultValue: 'Main menu' })}
-          note={t('setting-main-menu-note', {
-            defaultValue: 'Saves, then returns to the title screen. Your temple is waiting when you come back.',
-          })}
+          name={t(
+            'setting-main-menu',
+            {
+              defaultValue:
+                'Main menu',
+            },
+          )}
+          note={t(
+            'setting-main-menu-note',
+            {
+              defaultValue:
+                'Saves, then returns to the title screen. Your temple is waiting when you come back.',
+            },
+          )}
         >
           <TempleButton
             size="sm"
@@ -68,168 +174,472 @@ export function SettingsPanel() {
               // Best-effort: leaving should not be blocked on the network. The
               // local half of this write is synchronous and always lands, so the
               // save is safe even if the request never completes.
-              saveNow().catch(() => {});
+              saveNow().catch(
+                () => {},
+              );
               mainMenu();
             }}
           >
-            {t('main-menu', { defaultValue: 'Main menu' })}
+            {t(
+              'main-menu',
+              {
+                defaultValue:
+                  'Main menu',
+              },
+            )}
           </TempleButton>
         </Setting>
       )}
 
-      <TempleSection>{t('section-sound', { defaultValue: 'Sound' })}</TempleSection>
+      <TempleSection>
+        {t(
+          'section-sound',
+          {
+            defaultValue:
+              'Sound',
+          },
+        )}
+      </TempleSection>
 
       <Setting
-        name={t('setting-sound', { defaultValue: 'Sound' })}
-        note={t('setting-sound-note', {
-          defaultValue: 'The soundtrack, the bells, and every chime below.',
-        })}
+        name={t(
+          'setting-sound',
+          {
+            defaultValue:
+              'Sound',
+          },
+        )}
+        note={t(
+          'setting-sound-note',
+          {
+            defaultValue:
+              'The soundtrack, the bells, and every chime below.',
+          },
+        )}
       >
         <TempleSwitch
-          checked={sound}
-          onChange={(next) => store.getState().setSoundEnabled(next)}
-          label={t('setting-sound', { defaultValue: 'Sound' })}
+          checked={
+            sound
+          }
+          onChange={(
+            next,
+          ) =>
+            store
+              .getState()
+              .setSoundEnabled(
+                next,
+              )
+          }
+          label={t(
+            'setting-sound',
+            {
+              defaultValue:
+                'Sound',
+            },
+          )}
         />
       </Setting>
 
       <Setting
-        name={t('setting-music', { defaultValue: 'Music' })}
-        note={t('setting-music-note', {
-          defaultValue: 'The temple soundtrack. Set to zero to stop it.',
-        })}
+        name={t(
+          'setting-music',
+          {
+            defaultValue:
+              'Music',
+          },
+        )}
+        note={t(
+          'setting-music-note',
+          {
+            defaultValue:
+              'The temple soundtrack. Set to zero to stop it.',
+          },
+        )}
       >
         <TempleSlider
-          value={music}
-          onChange={(next) => store.getState().setMusicVolume(next)}
-          label={t('setting-music', { defaultValue: 'Music' })}
+          value={
+            music
+          }
+          onChange={(
+            next,
+          ) =>
+            store
+              .getState()
+              .setMusicVolume(
+                next,
+              )
+          }
+          label={t(
+            'setting-music',
+            {
+              defaultValue:
+                'Music',
+            },
+          )}
         />
       </Setting>
 
       <Setting
-        name={t('setting-sfx', { defaultValue: 'Effects' })}
-        note={t('setting-sfx-note', {
-          defaultValue: 'Offerings, purchases, halos, harvests. Move the slider to hear it.',
-        })}
+        name={t(
+          'setting-sfx',
+          {
+            defaultValue:
+              'Effects',
+          },
+        )}
+        note={t(
+          'setting-sfx-note',
+          {
+            defaultValue:
+              'Offerings, purchases, halos, harvests. Move the slider to hear it.',
+          },
+        )}
       >
         <TempleSlider
-          value={sfx}
-          onChange={(next) => store.getState().setSfxVolume(next)}
-          label={t('setting-sfx', { defaultValue: 'Effects' })}
+          value={
+            sfx
+          }
+          onChange={(
+            next,
+          ) =>
+            store
+              .getState()
+              .setSfxVolume(
+                next,
+              )
+          }
+          label={t(
+            'setting-sfx',
+            {
+              defaultValue:
+                'Effects',
+            },
+          )}
           audible
         />
       </Setting>
 
-      <TempleSection>{t('section-look', { defaultValue: 'Look' })}</TempleSection>
+      <TempleSection>
+        {t(
+          'section-look',
+          {
+            defaultValue:
+              'Look',
+          },
+        )}
+      </TempleSection>
 
       <Setting
-        name={t('setting-theme', { defaultValue: 'Vespers' })}
-        note={t('setting-theme-note', { defaultValue: 'The same temple, after sunset.' })}
+        name={t(
+          'setting-theme',
+          {
+            defaultValue:
+              'Vespers',
+          },
+        )}
+        note={t(
+          'setting-theme-note',
+          {
+            defaultValue:
+              'The same temple, after sunset.',
+          },
+        )}
       >
         <TempleSwitch
-          checked={theme === 'vespers'}
-          onChange={(next) => store.getState().setTheme(next ? 'vespers' : 'dawn')}
-          label={t('setting-theme', { defaultValue: 'Vespers' })}
+          checked={
+            theme ===
+            'vespers'
+          }
+          onChange={(
+            next,
+          ) =>
+            store
+              .getState()
+              .setTheme(
+                next
+                  ? 'vespers'
+                  : 'dawn',
+              )
+          }
+          label={t(
+            'setting-theme',
+            {
+              defaultValue:
+                'Vespers',
+            },
+          )}
         />
       </Setting>
 
       <Setting
-        name={t('setting-flourish', { defaultValue: 'Reduced flourish' })}
-        note={t('setting-flourish-note', {
-          defaultValue:
-            'Stops the drifting motes, the breathing light and the looping pulses. Everything you need to see still moves.',
-        })}
+        name={t(
+          'setting-flourish',
+          {
+            defaultValue:
+              'Reduced flourish',
+          },
+        )}
+        note={t(
+          'setting-flourish-note',
+          {
+            defaultValue:
+              'Stops the drifting motes, the breathing light and the looping pulses. Everything you need to see still moves.',
+          },
+        )}
       >
         <TempleSwitch
-          checked={flourish}
-          onChange={(next) => store.getState().setReducedFlourish(next)}
-          label={t('setting-flourish', { defaultValue: 'Reduced flourish' })}
+          checked={
+            flourish
+          }
+          onChange={(
+            next,
+          ) =>
+            store
+              .getState()
+              .setReducedFlourish(
+                next,
+              )
+          }
+          label={t(
+            'setting-flourish',
+            {
+              defaultValue:
+                'Reduced flourish',
+            },
+          )}
         />
       </Setting>
 
       <Setting
-        name={t('setting-scientific', { defaultValue: 'Scientific notation' })}
-        note={t('setting-scientific-note', { defaultValue: 'Show 1.24e18 instead of 1.24 Qi.' })}
+        name={t(
+          'setting-scientific',
+          {
+            defaultValue:
+              'Scientific notation',
+          },
+        )}
+        note={t(
+          'setting-scientific-note',
+          {
+            defaultValue:
+              'Show 1.24e18 instead of 1.24 Qi.',
+          },
+        )}
       >
         <TempleSwitch
-          checked={format === 'scientific'}
-          onChange={(next) => store.getState().setNumberFormat(next ? 'scientific' : 'named')}
-          label={t('setting-scientific', { defaultValue: 'Scientific notation' })}
+          checked={
+            format ===
+            'scientific'
+          }
+          onChange={(
+            next,
+          ) =>
+            store
+              .getState()
+              .setNumberFormat(
+                next
+                  ? 'scientific'
+                  : 'named',
+              )
+          }
+          label={t(
+            'setting-scientific',
+            {
+              defaultValue:
+                'Scientific notation',
+            },
+          )}
         />
       </Setting>
 
-      <TempleSection>{t('section-play', { defaultValue: 'Play' })}</TempleSection>
+      <TempleSection>
+        {t(
+          'section-play',
+          {
+            defaultValue:
+              'Play',
+          },
+        )}
+      </TempleSection>
 
       {hasSteward && (
         <Setting
-          name={t('setting-steward', { defaultValue: 'The Steward' })}
-          note={t('setting-steward-note', {
-            defaultValue:
-              'Spends spare joy on whatever pays for itself soonest, keeping a minute of income in reserve.',
-          })}
+          name={t(
+            'setting-steward',
+            {
+              defaultValue:
+                'The Steward',
+            },
+          )}
+          note={t(
+            'setting-steward-note',
+            {
+              defaultValue:
+                'Spends spare joy on whatever pays for itself soonest, keeping a minute of income in reserve.',
+            },
+          )}
         >
           <TempleSwitch
-            checked={steward}
-            onChange={(next) => store.getState().setStewardEnabled(next)}
-            label={t('setting-steward', { defaultValue: 'The Steward' })}
+            checked={
+              steward
+            }
+            onChange={(
+              next,
+            ) =>
+              store
+                .getState()
+                .setStewardEnabled(
+                  next,
+                )
+            }
+            label={t(
+              'setting-steward',
+              {
+                defaultValue:
+                  'The Steward',
+              },
+            )}
           />
         </Setting>
       )}
 
       <Setting
-        name={t('setting-confirm', { defaultValue: 'Ask before ascending' })}
-        note={t('setting-confirm-note', {
-          defaultValue: 'An ascension gives the whole run back. Worth a second look.',
-        })}
+        name={t(
+          'setting-confirm',
+          {
+            defaultValue:
+              'Ask before ascending',
+          },
+        )}
+        note={t(
+          'setting-confirm-note',
+          {
+            defaultValue:
+              'An ascension gives the whole run back. Worth a second look.',
+          },
+        )}
       >
         <TempleSwitch
-          checked={confirmAscend}
-          onChange={(next) => store.getState().setConfirmAscend(next)}
-          label={t('setting-confirm', { defaultValue: 'Ask before ascending' })}
+          checked={
+            confirmAscend
+          }
+          onChange={(
+            next,
+          ) =>
+            store
+              .getState()
+              .setConfirmAscend(
+                next,
+              )
+          }
+          label={t(
+            'setting-confirm',
+            {
+              defaultValue:
+                'Ask before ascending',
+            },
+          )}
         />
       </Setting>
 
-      <TempleSection>{t('section-save', { defaultValue: 'The save' })}</TempleSection>
+      <TempleSection>
+        {t(
+          'section-save',
+          {
+            defaultValue:
+              'The save',
+          },
+        )}
+      </TempleSection>
 
       <p className="toj-panel-note">
-        {t('save-note', {
-          seconds: Math.round(AUTOSAVE_INTERVAL_MS / 1000),
-          defaultValue:
-            'The temple saves itself every {{seconds}} seconds, again shortly after you stop playing, and again the moment the tab is closed or backgrounded. You should never need the button below.',
-        })}
+        {t(
+          'save-note',
+          {
+            seconds:
+              Math.round(
+                AUTOSAVE_INTERVAL_MS /
+                  1000,
+              ),
+            defaultValue:
+              'The temple saves itself every {{seconds}} seconds, again shortly after you stop playing, and again the moment the tab is closed or backgrounded. You should never need the button below.',
+          },
+        )}
       </p>
 
       <SaveDestination />
 
       <Setting
-        name={t('save-last', { defaultValue: 'Last saved' })}
+        name={t(
+          'save-last',
+          {
+            defaultValue:
+              'Last saved',
+          },
+        )}
         note={
           signedIn
-            ? t('save-where', {
-                defaultValue: 'To your account, and to this browser as a fallback.',
-              })
-            : t('save-where-guest', {
-                defaultValue: 'To this browser only.',
-              })
+            ? t(
+                'save-where',
+                {
+                  defaultValue:
+                    'To your account, and to this browser as a fallback.',
+                },
+              )
+            : t(
+                'save-where-guest',
+                {
+                  defaultValue:
+                    'To this browser only.',
+                },
+              )
         }
       >
         <span className="toj-setting-value">
-          {stats.sinceSave < 5
-            ? t('save-just-now', { defaultValue: 'just now' })
-            : t('save-ago', {
-                time: formatDuration(stats.sinceSave),
-                defaultValue: '{{time}} ago',
-              })}
+          {stats.sinceSave <
+          5
+            ? t(
+                'save-just-now',
+                {
+                  defaultValue:
+                    'just now',
+                },
+              )
+            : t(
+                'save-ago',
+                {
+                  time: formatDuration(
+                    stats.sinceSave,
+                  ),
+                  defaultValue:
+                    '{{time}} ago',
+                },
+              )}
         </span>
       </Setting>
 
       <Setting
-        name={t('save-playtime', { defaultValue: 'Time in the temple' })}
-        note={t('save-lifetime', {
-          joy: stats.lifetime,
-          defaultValue: '{{joy}} joy, all time.',
-        })}
+        name={t(
+          'save-playtime',
+          {
+            defaultValue:
+              'Time in the temple',
+          },
+        )}
+        note={t(
+          'save-lifetime',
+          {
+            joy: stats.lifetime,
+            defaultValue:
+              '{{joy}} joy, all time.',
+          },
+        )}
       >
-        <span className="toj-setting-value">{formatDuration(stats.playtime)}</span>
+        <span className="toj-setting-value">
+          {formatDuration(
+            stats.playtime,
+          )}
+        </span>
       </Setting>
 
       <SaveTools />
@@ -249,18 +659,42 @@ export function SettingsPanel() {
  * save" is a reasonable question to be able to answer at any point.
  */
 function SaveDestination() {
-  const { t } = useTranslation('c-temple-of-joy');
-  const signedIn = Boolean(useSession().data?.user);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-temple-of-joy',
+    );
+  const signedIn =
+    Boolean(
+      useSession()
+        .data
+        ?.user,
+    );
 
-  if (signedIn) {
+  if (
+    signedIn
+  ) {
     return (
       <Setting
-        name={t('save-account', { defaultValue: 'Your account' })}
-        note={t('save-account-note', {
-          defaultValue: 'This temple follows you to every device you sign in on.',
-        })}
+        name={t(
+          'save-account',
+          {
+            defaultValue:
+              'Your account',
+          },
+        )}
+        note={t(
+          'save-account-note',
+          {
+            defaultValue:
+              'This temple follows you to every device you sign in on.',
+          },
+        )}
       >
-        <span className="toj-setting-value">✓</span>
+        <span className="toj-setting-value">
+          ✓
+        </span>
       </Setting>
     );
   }
@@ -268,11 +702,20 @@ function SaveDestination() {
   return (
     <>
       <Setting
-        name={t('save-guest', { defaultValue: 'Playing as a guest' })}
-        note={t('save-guest-note', {
-          defaultValue:
-            'This temple lives in this browser. Clearing your site data takes it with them, and it will not be here on another device.',
-        })}
+        name={t(
+          'save-guest',
+          {
+            defaultValue:
+              'Playing as a guest',
+          },
+        )}
+        note={t(
+          'save-guest-note',
+          {
+            defaultValue:
+              'This temple lives in this browser. Clearing your site data takes it with them, and it will not be here on another device.',
+          },
+        )}
       >
         <TempleButton
           size="sm"
@@ -281,18 +724,30 @@ function SaveDestination() {
             // Saved first, and locally, so the temple on this device is current
             // before the navigation — signing in is exactly the moment this save
             // gets claimed by an account, and it should be the newest one.
-            saveNow().catch(() => {});
-            window.location.href = '/login?callbackURL=/temple-of-joy';
+            saveNow().catch(
+              () => {},
+            );
+            window.location.href =
+              '/login?callbackURL=/temple-of-joy';
           }}
         >
-          {t('save-sign-in', { defaultValue: 'Sign in' })}
+          {t(
+            'save-sign-in',
+            {
+              defaultValue:
+                'Sign in',
+            },
+          )}
         </TempleButton>
       </Setting>
       <p className="toj-panel-note">
-        {t('save-guest-carry', {
-          defaultValue:
-            'Signing in carries this temple up to your account as it is — you do not start again.',
-        })}
+        {t(
+          'save-guest-carry',
+          {
+            defaultValue:
+              'Signing in carries this temple up to your account as it is — you do not start again.',
+          },
+        )}
       </p>
     </>
   );
@@ -306,26 +761,83 @@ function SaveDestination() {
  * feeling and a button that answers it costs one request.
  */
 function SaveTools() {
-  const { t } = useTranslation('c-temple-of-joy');
-  const [status, setStatus] = useState('');
-  const [pasting, setPasting] = useState(false);
-  const [pasted, setPasted] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
-  const { copy } = useClipboard();
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-temple-of-joy',
+    );
+  const [
+    status,
+    setStatus,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    pasting,
+    setPasting,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    pasted,
+    setPasted,
+  ] =
+    useState(
+      '',
+    );
+  const fileRef =
+    useRef<HTMLInputElement>(
+      null,
+    );
+  const {
+    copy,
+  } =
+    useClipboard();
 
   // One place both the paste box and the file picker land. `window.prompt` was
   // the old path: embedded browsers and installed web apps suppress it, and
   // there was no file route at all, so on those a save could never be loaded.
-  const applyImport = (code: string) => {
-    const parsed = importSave(code);
-    if (!parsed) {
-      setStatus(t('import-failed', { defaultValue: 'That is not a save.' }));
-      return false;
-    }
-    useTempleStore.getState().load(parsed);
-    setStatus(t('import-done', { defaultValue: 'Loaded.' }));
-    return true;
-  };
+  const applyImport =
+    (
+      code: string,
+    ) => {
+      const parsed =
+        importSave(
+          code,
+        );
+      if (
+        !parsed
+      ) {
+        setStatus(
+          t(
+            'import-failed',
+            {
+              defaultValue:
+                'That is not a save.',
+            },
+          ),
+        );
+        return false;
+      }
+      useTempleStore
+        .getState()
+        .load(
+          parsed,
+        );
+      setStatus(
+        t(
+          'import-done',
+          {
+            defaultValue:
+              'Loaded.',
+          },
+        ),
+      );
+      return true;
+    };
 
   return (
     <>
@@ -334,152 +846,395 @@ function SaveTools() {
           size="sm"
           onClick={() => {
             saveNow()
-              .then(() => setStatus(t('save-done', { defaultValue: 'Saved.' })))
-              .catch(() =>
-                setStatus(t('save-failed', { defaultValue: 'Could not reach the server.' })),
+              .then(
+                () =>
+                  setStatus(
+                    t(
+                      'save-done',
+                      {
+                        defaultValue:
+                          'Saved.',
+                      },
+                    ),
+                  ),
+              )
+              .catch(
+                () =>
+                  setStatus(
+                    t(
+                      'save-failed',
+                      {
+                        defaultValue:
+                          'Could not reach the server.',
+                      },
+                    ),
+                  ),
               );
           }}
         >
-          {t('save-now', { defaultValue: 'Save now' })}
+          {t(
+            'save-now',
+            {
+              defaultValue:
+                'Save now',
+            },
+          )}
         </TempleButton>
 
         <TempleButton
           size="sm"
           onClick={() => {
-            const code = exportSave(useTempleStore.getState());
-            void copy(code).then((ok) =>
-              setStatus(
-                ok
-                  ? t('export-done', { defaultValue: 'Copied to the clipboard.' })
-                  : t('export-failed', { defaultValue: 'Clipboard refused.' }),
-              ),
+            const code =
+              exportSave(
+                useTempleStore.getState(),
+              );
+            void copy(
+              code,
+            ).then(
+              (
+                ok,
+              ) =>
+                setStatus(
+                  ok
+                    ? t(
+                        'export-done',
+                        {
+                          defaultValue:
+                            'Copied to the clipboard.',
+                        },
+                      )
+                    : t(
+                        'export-failed',
+                        {
+                          defaultValue:
+                            'Clipboard refused.',
+                        },
+                      ),
+                ),
             );
           }}
         >
-          {t('export-save', { defaultValue: 'Copy save' })}
+          {t(
+            'export-save',
+            {
+              defaultValue:
+                'Copy save',
+            },
+          )}
         </TempleButton>
 
         <TempleButton
           size="sm"
           onClick={() => {
             try {
-              const code = exportSave(useTempleStore.getState());
-              const url = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = 'temple-of-joy-save.txt';
-              document.body.appendChild(a);
+              const code =
+                exportSave(
+                  useTempleStore.getState(),
+                );
+              const url =
+                URL.createObjectURL(
+                  new Blob(
+                    [
+                      code,
+                    ],
+                    {
+                      type: 'text/plain',
+                    },
+                  ),
+                );
+              const a =
+                document.createElement(
+                  'a',
+                );
+              a.href =
+                url;
+              a.download =
+                'temple-of-joy-save.txt';
+              document.body.appendChild(
+                a,
+              );
               a.click();
               a.remove();
-              window.setTimeout(() => URL.revokeObjectURL(url), 4000);
-              setStatus(t('download-done', { defaultValue: 'Save file downloaded.' }));
+              window.setTimeout(
+                () =>
+                  URL.revokeObjectURL(
+                    url,
+                  ),
+                4000,
+              );
+              setStatus(
+                t(
+                  'download-done',
+                  {
+                    defaultValue:
+                      'Save file downloaded.',
+                  },
+                ),
+              );
             } catch {
-              setStatus(t('download-failed', { defaultValue: 'Could not make a file.' }));
+              setStatus(
+                t(
+                  'download-failed',
+                  {
+                    defaultValue:
+                      'Could not make a file.',
+                  },
+                ),
+              );
             }
           }}
         >
-          {t('download-save', { defaultValue: 'Download save' })}
+          {t(
+            'download-save',
+            {
+              defaultValue:
+                'Download save',
+            },
+          )}
         </TempleButton>
 
-        <TempleButton size="sm" variant="danger" onClick={() => fileRef.current?.click()}>
-          {t('import-file', { defaultValue: 'Load from file' })}
+        <TempleButton
+          size="sm"
+          variant="danger"
+          onClick={() =>
+            fileRef.current?.click()
+          }
+        >
+          {t(
+            'import-file',
+            {
+              defaultValue:
+                'Load from file',
+            },
+          )}
         </TempleButton>
         <input
-          ref={fileRef}
+          ref={
+            fileRef
+          }
           type="file"
           // No strict accept list: iOS greys out .txt files it does not know,
           // and a wrong file simply fails to parse with a clear message.
           className="sr-only"
-          tabIndex={-1}
+          tabIndex={
+            -1
+          }
           aria-hidden="true"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = '';
-            if (!file) return;
-            if (file.size > 2_000_000) {
+          onChange={(
+            e,
+          ) => {
+            const file =
+              e
+                .target
+                .files?.[0];
+            e.target.value =
+              '';
+            if (
+              !file
+            )
+              return;
+            if (
+              file.size >
+              2_000_000
+            ) {
               setStatus(
-                t('import-too-big', { defaultValue: 'That file is too large to be a save.' }),
+                t(
+                  'import-too-big',
+                  {
+                    defaultValue:
+                      'That file is too large to be a save.',
+                  },
+                ),
               );
               return;
             }
             file
               .text()
-              .then((text) => applyImport(text))
-              .catch(() => setStatus(t('import-failed', { defaultValue: 'That is not a save.' })));
+              .then(
+                (
+                  text,
+                ) =>
+                  applyImport(
+                    text,
+                  ),
+              )
+              .catch(
+                () =>
+                  setStatus(
+                    t(
+                      'import-failed',
+                      {
+                        defaultValue:
+                          'That is not a save.',
+                      },
+                    ),
+                  ),
+              );
           }}
         />
 
-        <TempleButton size="sm" variant="danger" onClick={() => setPasting((v) => !v)}>
-          {t('import-save', { defaultValue: 'Load a save' })}
+        <TempleButton
+          size="sm"
+          variant="danger"
+          onClick={() =>
+            setPasting(
+              (
+                v,
+              ) =>
+                !v,
+            )
+          }
+        >
+          {t(
+            'import-save',
+            {
+              defaultValue:
+                'Load a save',
+            },
+          )}
         </TempleButton>
       </div>
 
       {pasting && (
         <div className="toj-desk">
           <textarea
-            value={pasted}
-            onChange={(e) => setPasted(e.target.value)}
-            rows={3}
-            spellCheck={false}
+            value={
+              pasted
+            }
+            onChange={(
+              e,
+            ) =>
+              setPasted(
+                e
+                  .target
+                  .value,
+              )
+            }
+            rows={
+              3
+            }
+            spellCheck={
+              false
+            }
             autoCapitalize="off"
             autoCorrect="off"
-            aria-label={t('import-prompt', {
-              defaultValue: 'Paste a save. This replaces the current one.',
-            })}
-            placeholder={t('import-prompt', {
-              defaultValue: 'Paste a save. This replaces the current one.',
-            })}
+            aria-label={t(
+              'import-prompt',
+              {
+                defaultValue:
+                  'Paste a save. This replaces the current one.',
+              },
+            )}
+            placeholder={t(
+              'import-prompt',
+              {
+                defaultValue:
+                  'Paste a save. This replaces the current one.',
+              },
+            )}
             // 16px: anything smaller makes iOS Safari zoom the page on focus.
             style={{
-              width: '100%',
-              fontSize: '16px',
-              padding: '0.5rem',
-              borderRadius: 'var(--toj-radius-sm)',
-              border: '1px solid var(--toj-rule-strong)',
-              background: 'var(--toj-surface-sunk)',
-              color: 'var(--toj-ink)',
+              width:
+                '100%',
+              fontSize:
+                '16px',
+              padding:
+                '0.5rem',
+              borderRadius:
+                'var(--toj-radius-sm)',
+              border:
+                '1px solid var(--toj-rule-strong)',
+              background:
+                'var(--toj-surface-sunk)',
+              color:
+                'var(--toj-ink)',
             }}
           />
           <TempleButton
             size="sm"
             variant="danger"
             onClick={() => {
-              if (!pasted.trim()) return;
-              if (applyImport(pasted)) {
-                setPasted('');
-                setPasting(false);
+              if (
+                !pasted.trim()
+              )
+                return;
+              if (
+                applyImport(
+                  pasted,
+                )
+              ) {
+                setPasted(
+                  '',
+                );
+                setPasting(
+                  false,
+                );
               }
             }}
           >
-            {t('import-confirm', { defaultValue: 'Replace my temple' })}
+            {t(
+              'import-confirm',
+              {
+                defaultValue:
+                  'Replace my temple',
+              },
+            )}
           </TempleButton>
         </div>
       )}
 
       {status && (
-        <p className="toj-panel-note" role="status">
-          {status}
+        <p
+          className="toj-panel-note"
+          role="status"
+        >
+          {
+            status
+          }
         </p>
       )}
 
       {/* Its own group, below the note, so it is never the button next to the
           one you meant. The confirmation is a dialog — see `ResetDialog`. */}
-      <TempleSection>{t('start-again', { defaultValue: 'Start again' })}</TempleSection>
+      <TempleSection>
+        {t(
+          'start-again',
+          {
+            defaultValue:
+              'Start again',
+          },
+        )}
+      </TempleSection>
 
       <p className="toj-panel-note">
-        {t('reset-note-anywhere', {
-          defaultValue:
-            'Deletes this temple everywhere it is kept — this device, and your account if you are signed in. Copy your save first if you want it back.',
-        })}
+        {t(
+          'reset-note-anywhere',
+          {
+            defaultValue:
+              'Deletes this temple everywhere it is kept — this device, and your account if you are signed in. Copy your save first if you want it back.',
+          },
+        )}
       </p>
 
       <div className="toj-desk">
         <TempleButton
           size="sm"
           variant="danger"
-          onClick={() => useTempleStore.getState().setShowResetDialog(true)}
+          onClick={() =>
+            useTempleStore
+              .getState()
+              .setShowResetDialog(
+                true,
+              )
+          }
         >
-          {t('reset-save', { defaultValue: 'Empty the temple' })}
+          {t(
+            'reset-save',
+            {
+              defaultValue:
+                'Empty the temple',
+            },
+          )}
         </TempleButton>
       </div>
     </>
@@ -498,10 +1253,24 @@ function Setting({
   return (
     <div className="toj-setting">
       <span className="toj-setting-label">
-        <span className="toj-setting-name">{name}</span>
-        {note && <span className="toj-setting-note">{note}</span>}
+        <span className="toj-setting-name">
+          {
+            name
+          }
+        </span>
+        {note && (
+          <span className="toj-setting-note">
+            {
+              note
+            }
+          </span>
+        )}
       </span>
-      <span className="toj-setting-control">{children}</span>
+      <span className="toj-setting-control">
+        {
+          children
+        }
+      </span>
     </div>
   );
 }

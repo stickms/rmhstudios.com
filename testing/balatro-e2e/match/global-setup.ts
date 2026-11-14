@@ -6,12 +6,22 @@
  * with BALATRO_E2E_REQUIRE_MATCH=1 (CI).
  */
 import type { TestProject } from 'vitest/node';
-import { stackConfig, startStack, type RunningStack } from '../lib/stack';
+import {
+  stackConfig,
+  startStack,
+  type RunningStack,
+} from '../lib/stack';
 
 export interface ProvidedStack {
-  baseUrl: string | null;
-  socketUrl: string | null;
-  reason: string | null;
+  baseUrl:
+    | string
+    | null;
+  socketUrl:
+    | string
+    | null;
+  reason:
+    | string
+    | null;
 }
 
 declare module 'vitest' {
@@ -20,19 +30,64 @@ declare module 'vitest' {
   }
 }
 
-export default async function setup(project: TestProject) {
-  const cfg = stackConfig();
-  if (cfg.mode === 'unavailable') {
-    project.provide('matchStack', { baseUrl: null, socketUrl: null, reason: cfg.reason });
+export default async function setup(
+  project: TestProject,
+) {
+  const cfg =
+    stackConfig();
+  if (
+    cfg.mode ===
+    'unavailable'
+  ) {
+    project.provide(
+      'matchStack',
+      {
+        baseUrl:
+          null,
+        socketUrl:
+          null,
+        reason:
+          cfg.reason,
+      },
+    );
     return;
   }
   let stack: RunningStack;
   try {
-    stack = await startStack(cfg);
+    stack =
+      await startStack(
+        cfg,
+      );
   } catch (e) {
-    project.provide('matchStack', { baseUrl: null, socketUrl: null, reason: e instanceof Error ? e.message : String(e) });
+    project.provide(
+      'matchStack',
+      {
+        baseUrl:
+          null,
+        socketUrl:
+          null,
+        reason:
+          e instanceof
+          Error
+            ? e.message
+            : String(
+                e,
+              ),
+      },
+    );
     return;
   }
-  project.provide('matchStack', { baseUrl: stack.baseUrl, socketUrl: stack.socketUrl, reason: null });
-  return () => stack.close();
+  project.provide(
+    'matchStack',
+    {
+      baseUrl:
+        stack.baseUrl,
+      socketUrl:
+        stack.socketUrl,
+      reason:
+        null,
+    },
+  );
+  return () =>
+    stack.close();
 }

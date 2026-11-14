@@ -15,31 +15,41 @@
  * impersonation hole, so the server does not look at one.
  */
 
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const ROOT = path.resolve(__dirname, '..', '..');
+const ROOT =
+  path.resolve(
+    __dirname,
+    '..',
+    '..',
+  );
 
 /** Every module that opens a socket through the shared factory. */
-const CLIENTS = [
-  'lib/call/store.ts',
-  'lib/groupcall/store.ts',
-  'lib/rmhtype/socket.ts',
-  'lib/rmhstudy/socket.ts',
-  'lib/rmhtube/socket.ts',
-  'lib/rmhbox/socket.ts',
-  'features/gabriels-horn/engine/net/client.ts',
-  'features/laundry-sort/engine/net/client.ts',
-  'lib/tf2-game/net/client.ts',
-  'features/balatro/engine/mp/hub-client.ts',
-  'features/hearthworks/engine/net/hub-client-core.ts',
-  'features/casino/engine/table-client.ts',
-  'features/altair/engine/multiplayer/socket.ts',
-  'features/synapse-storm/engine/multiplayerClient.ts',
-  'features/dream-rift/engine/net/connection.ts',
-  'components/spaces/SpaceRoom.tsx',
-];
+const CLIENTS =
+  [
+    'lib/call/store.ts',
+    'lib/groupcall/store.ts',
+    'lib/rmhtype/socket.ts',
+    'lib/rmhstudy/socket.ts',
+    'lib/rmhtube/socket.ts',
+    'lib/rmhbox/socket.ts',
+    'features/gabriels-horn/engine/net/client.ts',
+    'features/laundry-sort/engine/net/client.ts',
+    'lib/tf2-game/net/client.ts',
+    'features/balatro/engine/mp/hub-client.ts',
+    'features/hearthworks/engine/net/hub-client-core.ts',
+    'features/casino/engine/table-client.ts',
+    'features/altair/engine/multiplayer/socket.ts',
+    'features/synapse-storm/engine/multiplayerClient.ts',
+    'features/dream-rift/engine/net/connection.ts',
+    'components/spaces/SpaceRoom.tsx',
+  ];
 
 /**
  * The `auth:` property of a `createRealtimeClient({ … })` call, up to the next
@@ -47,28 +57,63 @@ const CLIENTS = [
  * are all written the same way and a regex that misses would fail loudly below
  * rather than pass quietly.
  */
-function authResolvers(source: string): string[] {
-  return [...source.matchAll(/\bauth:\s*(?:async\s*)?\(\)\s*=>\s*\{([\s\S]*?)\n[ \t]*\},/g)].map(
-    (m) => m[1],
+function authResolvers(
+  source: string,
+): string[] {
+  return [
+    ...source.matchAll(
+      /\bauth:\s*(?:async\s*)?\(\)\s*=>\s*\{([\s\S]*?)\n[ \t]*\},/g,
+    ),
+  ].map(
+    (
+      m,
+    ) =>
+      m[1],
   );
 }
 
 describe('realtime handshake credentials', () => {
   for (const file of CLIENTS) {
     it(`${file} sends a session token`, () => {
-      const source = readFileSync(path.join(ROOT, file), 'utf8');
-      expect(source).toContain('createRealtimeClient(');
+      const source =
+        readFileSync(
+          path.join(
+            ROOT,
+            file,
+          ),
+          'utf8',
+        );
+      expect(
+        source,
+      ).toContain(
+        'createRealtimeClient(',
+      );
 
-      const resolvers = authResolvers(source);
-      expect(resolvers.length).toBeGreaterThan(0);
+      const resolvers =
+        authResolvers(
+          source,
+        );
+      expect(
+        resolvers.length,
+      ).toBeGreaterThan(
+        0,
+      );
 
       for (const body of resolvers) {
         // The returned object must carry `token` (or, for the Discord Activity
         // path, `discordToken`) — those are the only keys any hub reads.
-        expect(body).toMatch(/\b(token|discordToken)\b\s*[:,}]/);
+        expect(
+          body,
+        ).toMatch(
+          /\b(token|discordToken)\b\s*[:,}]/,
+        );
         // A user id is never a credential. Guard the specific mistake, not the
         // presence of the word: some resolvers legitimately mention ids nearby.
-        expect(body).not.toMatch(/^\s*(return\s*\{[^}]*\buserId\s*:)/m);
+        expect(
+          body,
+        ).not.toMatch(
+          /^\s*(return\s*\{[^}]*\buserId\s*:)/m,
+        );
       }
     });
   }

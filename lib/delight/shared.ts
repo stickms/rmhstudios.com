@@ -4,20 +4,46 @@
  * re-exports everything here for the routes and server modules.
  */
 
-export function utcDay(d: Date = new Date()): string {
-  return d.toISOString().slice(0, 10);
+export function utcDay(
+  d: Date = new Date(),
+): string {
+  return d
+    .toISOString()
+    .slice(
+      0,
+      10,
+    );
 }
 
-export function addDays(dayKey: string, n: number): string {
-  return utcDay(new Date(Date.parse(`${dayKey}T00:00:00Z`) + n * 86_400_000));
+export function addDays(
+  dayKey: string,
+  n: number,
+): string {
+  return utcDay(
+    new Date(
+      Date.parse(
+        `${dayKey}T00:00:00Z`,
+      ) +
+        n *
+          86_400_000,
+    ),
+  );
 }
 
 /** Hunt answers match case-insensitively with punctuation and spacing ignored. */
-export function normalizeAnswer(s: string): string {
+export function normalizeAnswer(
+  s: string,
+): string {
   return s
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, '')
-    .replace(/\s+/g, ' ')
+    .replace(
+      /[^\p{L}\p{N}\s]/gu,
+      '',
+    )
+    .replace(
+      /\s+/g,
+      ' ',
+    )
     .trim();
 }
 
@@ -28,9 +54,30 @@ export interface DelightConfig {
   hunt: boolean;
 }
 
-export function formatDuration(ms: number): string {
-  const s = Math.round(ms / 1000);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
+export function formatDuration(
+  ms: number,
+): string {
+  const s =
+    Math.round(
+      ms /
+        1000,
+    );
+  const h =
+    Math.floor(
+      s /
+        3600,
+    );
+  const m =
+    Math.floor(
+      (s %
+        3600) /
+        60,
+    );
+  return h >
+    0
+    ? `${h}h ${m}m`
+    : m >
+        0
+      ? `${m}m ${s % 60}s`
+      : `${s}s`;
 }

@@ -36,7 +36,11 @@ export {
   ARREST_TICKS,
   ARREST_REACH,
 } from './police';
-export { sightLine, resolveShot, HIT_RADIUS } from './ballistics';
+export {
+  sightLine,
+  resolveShot,
+  HIT_RADIUS,
+} from './ballistics';
 export {
   REACH,
   SERVE_REACH,
@@ -51,6 +55,17 @@ export {
   WAGE,
   WAGE_INTERVAL_TICKS,
 } from './actions';
-export { CUSTOMER_EVERY_TICKS, CUSTOMER_PATIENCE_TICKS, MIN_GATE_DISTANCE } from './customers';
-export { WORK_TICKS, WORK_RADIUS, WORK_INTERVAL_TICKS } from './farmhands';
-export { SEARCHES_PER_TICK, agentOnTile } from './agents';
+export {
+  CUSTOMER_EVERY_TICKS,
+  CUSTOMER_PATIENCE_TICKS,
+  MIN_GATE_DISTANCE,
+} from './customers';
+export {
+  WORK_TICKS,
+  WORK_RADIUS,
+  WORK_INTERVAL_TICKS,
+} from './farmhands';
+export {
+  SEARCHES_PER_TICK,
+  agentOnTile,
+} from './agents';

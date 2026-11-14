@@ -13,16 +13,44 @@
 
 import { MP_REJOIN_HINT_KEY } from '../../runtime';
 import { BALATRO_LIMITS } from '../../net/limits';
-import { kvGet, kvSet, type KeyValue } from '../history';
+import {
+  kvGet,
+  kvSet,
+  type KeyValue,
+} from '../history';
 
-export const REJOIN_HINT_KEY = MP_REJOIN_HINT_KEY;
-export const CATCH_UP_LIMIT_MS = BALATRO_LIMITS.CATCH_UP_LIMIT_MS;
+export const REJOIN_HINT_KEY =
+  MP_REJOIN_HINT_KEY;
+export const CATCH_UP_LIMIT_MS =
+  BALATRO_LIMITS.CATCH_UP_LIMIT_MS;
 
-export function rejoinHint(kv: KeyValue | null): string | null {
-  const v = kvGet(kv, REJOIN_HINT_KEY);
-  return v && /^[A-Za-z0-9_-]{1,32}$/.test(v) ? v : null;
+export function rejoinHint(
+  kv: KeyValue | null,
+):
+  | string
+  | null {
+  const v =
+    kvGet(
+      kv,
+      REJOIN_HINT_KEY,
+    );
+  return v &&
+    /^[A-Za-z0-9_-]{1,32}$/.test(
+      v,
+    )
+    ? v
+    : null;
 }
 
-export function setRejoinHint(kv: KeyValue | null, runId: string | null): void {
-  kvSet(kv, REJOIN_HINT_KEY, runId);
+export function setRejoinHint(
+  kv: KeyValue | null,
+  runId:
+    | string
+    | null,
+): void {
+  kvSet(
+    kv,
+    REJOIN_HINT_KEY,
+    runId,
+  );
 }

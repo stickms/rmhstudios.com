@@ -67,10 +67,12 @@
  * the only direction it can move is up.
  */
 
-const LUCIDE = 'lucide-react';
+const LUCIDE =
+  'lucide-react';
 
 /** The barrel's own namespace-shaped export. */
-const NAMESPACE_EXPORT = 'icons';
+const NAMESPACE_EXPORT =
+  'icons';
 
 /** @type {import('eslint').Rule.RuleModule} */
 export default {
@@ -80,39 +82,89 @@ export default {
       description:
         "disallow `import * as X from 'lucide-react'` and its `icons` export — both retain all ~1,400 icons in one chunk",
     },
-    schema: [],
-    messages: {
-      namespace:
-        "Namespace import of '{{source}}' retains ALL ~1,400 icons in one shared chunk (431 KB / 116 KB gzip) for every page that reaches this module — a namespace indexed by a computed key cannot be tree-shaken. Import the icons you name, and for icon names that arrive as data use an explicit Record<string, LucideIcon> map (see components/home/layout-icons.ts or components/rmhbox/minigame-icons.ts).",
-      iconsExport:
-        "The `icons` export of '{{source}}' IS a namespace object (`import * as index from './icons/index.mjs'`), so importing it retains all ~1,400 icons in one shared chunk. Use an explicit Record<string, LucideIcon> map instead (see components/rmhbox/minigame-icons.ts).",
-    },
+    schema:
+      [],
+    messages:
+      {
+        namespace:
+          "Namespace import of '{{source}}' retains ALL ~1,400 icons in one shared chunk (431 KB / 116 KB gzip) for every page that reaches this module — a namespace indexed by a computed key cannot be tree-shaken. Import the icons you name, and for icon names that arrive as data use an explicit Record<string, LucideIcon> map (see components/home/layout-icons.ts or components/rmhbox/minigame-icons.ts).",
+        iconsExport:
+          "The `icons` export of '{{source}}' IS a namespace object (`import * as index from './icons/index.mjs'`), so importing it retains all ~1,400 icons in one shared chunk. Use an explicit Record<string, LucideIcon> map instead (see components/rmhbox/minigame-icons.ts).",
+      },
   },
 
-  create(context) {
+  create(
+    context,
+  ) {
     return {
-      ImportDeclaration(node) {
-        const source = node.source.value;
+      ImportDeclaration(
+        node,
+      ) {
+        const source =
+          node
+            .source
+            .value;
         // Match the package and any deep path into it, so a future
         // `lucide-react/dist/esm/icons/index.mjs` namespace import is caught too.
-        if (typeof source !== 'string') return;
-        if (source !== LUCIDE && !source.startsWith(`${LUCIDE}/`)) return;
+        if (
+          typeof source !==
+          'string'
+        )
+          return;
+        if (
+          source !==
+            LUCIDE &&
+          !source.startsWith(
+            `${LUCIDE}/`,
+          )
+        )
+          return;
 
         for (const spec of node.specifiers) {
-          if (spec.type === 'ImportNamespaceSpecifier') {
-            context.report({ node: spec, messageId: 'namespace', data: { source } });
+          if (
+            spec.type ===
+            'ImportNamespaceSpecifier'
+          ) {
+            context.report(
+              {
+                node: spec,
+                messageId:
+                  'namespace',
+                data: {
+                  source,
+                },
+              },
+            );
             continue;
           }
           // `import { icons }` / `import { icons as x }`. `importKind === 'type'`
           // is a type-only specifier and is erased, so it costs nothing.
           if (
-            spec.type === 'ImportSpecifier' &&
-            spec.imported.type === 'Identifier' &&
-            spec.imported.name === NAMESPACE_EXPORT &&
-            spec.importKind !== 'type' &&
-            node.importKind !== 'type'
+            spec.type ===
+              'ImportSpecifier' &&
+            spec
+              .imported
+              .type ===
+              'Identifier' &&
+            spec
+              .imported
+              .name ===
+              NAMESPACE_EXPORT &&
+            spec.importKind !==
+              'type' &&
+            node.importKind !==
+              'type'
           ) {
-            context.report({ node: spec, messageId: 'iconsExport', data: { source } });
+            context.report(
+              {
+                node: spec,
+                messageId:
+                  'iconsExport',
+                data: {
+                  source,
+                },
+              },
+            );
           }
         }
       },

@@ -27,7 +27,9 @@
 import { games } from '@/lib/catalog';
 
 /** How a game's primary score is interpreted. */
-export type ScoreDirection = 'higher-is-better' | 'lower-is-better';
+export type ScoreDirection =
+  | 'higher-is-better'
+  | 'lower-is-better';
 
 export interface GameScoreRules {
   /** Must match an `id` in the catalog (`lib/catalog`). */
@@ -76,62 +78,108 @@ export interface GameScoreRules {
  * than no limit, because it produces false accusations instead of caught
  * cheats.
  */
-const UNCATALOGED_SCORE_BOARDS: readonly GameScoreRules[] = [
-  {
-    // Boss Rush's own board (generic adapter, GameStat row keyed by this id) so
-    // a rush run can never touch the main Void Breaker board. Not a catalog game.
-    id: 'void-breaker-boss-rush',
-    label: 'Void Breaker Boss Rush',
-    unlisted: true,
-    maxScore: 10_000_000,
-    maxScorePerSecond: 5_000,
-    minDurationMs: 20_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Bosses',
-    maxProgress: 8,
-  },
-  {
-    // Temple of Joy's idle-efficiency board: floor(log10(joy per hour) * 100),
-    // derived server-side from the stored save (lib/temple-of-joy/api/temple-of-joy.efficiency.server.ts).
-    // A double tops out near 10^308, so 31,000 is the honest ceiling.
-    id: 'temple-of-joy-efficiency',
-    label: 'Temple of Joy efficiency',
-    unlisted: true,
-    maxScore: 31_000,
-    minDurationMs: 3_600_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Hours played',
-    maxProgress: 1_000_000,
-  },
-  {
-    id: 'signal-forge',
-    label: 'Signal Forge',
-    unlisted: true,
-    maxScore: 5_000_000,
-    maxScorePerSecond: 3_000,
-    minDurationMs: 3_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Floor',
-    maxProgress: 500,
-  },
-];
+const UNCATALOGED_SCORE_BOARDS: readonly GameScoreRules[] =
+  [
+    {
+      // Boss Rush's own board (generic adapter, GameStat row keyed by this id) so
+      // a rush run can never touch the main Void Breaker board. Not a catalog game.
+      id: 'void-breaker-boss-rush',
+      label:
+        'Void Breaker Boss Rush',
+      unlisted: true,
+      maxScore: 10_000_000,
+      maxScorePerSecond: 5_000,
+      minDurationMs: 20_000,
+      direction:
+        'higher-is-better',
+      progressLabel:
+        'Bosses',
+      maxProgress: 8,
+    },
+    {
+      // Temple of Joy's idle-efficiency board: floor(log10(joy per hour) * 100),
+      // derived server-side from the stored save (lib/temple-of-joy/api/temple-of-joy.efficiency.server.ts).
+      // A double tops out near 10^308, so 31,000 is the honest ceiling.
+      id: 'temple-of-joy-efficiency',
+      label:
+        'Temple of Joy efficiency',
+      unlisted: true,
+      maxScore: 31_000,
+      minDurationMs: 3_600_000,
+      direction:
+        'higher-is-better',
+      progressLabel:
+        'Hours played',
+      maxProgress: 1_000_000,
+    },
+    {
+      id: 'signal-forge',
+      label:
+        'Signal Forge',
+      unlisted: true,
+      maxScore: 5_000_000,
+      maxScorePerSecond: 3_000,
+      minDurationMs: 3_000,
+      direction:
+        'higher-is-better',
+      progressLabel:
+        'Floor',
+      maxProgress: 500,
+    },
+  ];
 
 /** Every game that accepts a score submission: catalog games with `scoring`, then the uncataloged boards. */
-export const GAME_SCORE_RULES: readonly GameScoreRules[] = [
-  ...games.flatMap((g) => (g.scoring ? [{ id: g.id, label: g.title, ...g.scoring }] : [])),
-  ...UNCATALOGED_SCORE_BOARDS,
-];
+export const GAME_SCORE_RULES: readonly GameScoreRules[] =
+  [
+    ...games.flatMap(
+      (
+        g,
+      ) =>
+        g.scoring
+          ? [
+              {
+                id: g.id,
+                label:
+                  g.title,
+                ...g.scoring,
+              },
+            ]
+          : [],
+    ),
+    ...UNCATALOGED_SCORE_BOARDS,
+  ];
 
-const BY_ID = new Map(GAME_SCORE_RULES.map((g) => [g.id, g]));
+const BY_ID =
+  new Map(
+    GAME_SCORE_RULES.map(
+      (
+        g,
+      ) => [
+        g.id,
+        g,
+      ],
+    ),
+  );
 
 /** Scoring rules for a game id, or undefined if it isn't a scored game. */
-export function getGameScoreRules(gameId: string): GameScoreRules | undefined {
-  return BY_ID.get(gameId);
+export function getGameScoreRules(
+  gameId: string,
+):
+  | GameScoreRules
+  | undefined {
+  return BY_ID.get(
+    gameId,
+  );
 }
 
 /** Every registered scored-game id. */
 export function scoredGameIds(): string[] {
-  return GAME_SCORE_RULES.map((g) => g.id);
+  return GAME_SCORE_RULES.map(
+    (
+      g,
+    ) =>
+      g.id,
+  );
 }
 
 /** Why a submitted score was rejected. */
@@ -163,44 +211,150 @@ export interface ScoreCandidate {
 export function validateScore(
   gameId: string,
   candidate: ScoreCandidate,
-): { ok: true; rules: GameScoreRules } | { ok: false; reason: ScoreRejection } {
-  const rules = BY_ID.get(gameId);
-  if (!rules) return { ok: false, reason: 'UNKNOWN_GAME' };
+):
+  | {
+      ok: true;
+      rules: GameScoreRules;
+    }
+  | {
+      ok: false;
+      reason: ScoreRejection;
+    } {
+  const rules =
+    BY_ID.get(
+      gameId,
+    );
+  if (
+    !rules
+  )
+    return {
+      ok: false,
+      reason:
+        'UNKNOWN_GAME',
+    };
 
-  const { score, durationMs, progress } = candidate;
+  const {
+    score,
+    durationMs,
+    progress,
+  } =
+    candidate;
 
-  if (!Number.isFinite(score) || !Number.isInteger(score) || score < 0) {
-    return { ok: false, reason: 'INVALID_SCORE' };
+  if (
+    !Number.isFinite(
+      score,
+    ) ||
+    !Number.isInteger(
+      score,
+    ) ||
+    score <
+      0
+  ) {
+    return {
+      ok: false,
+      reason:
+        'INVALID_SCORE',
+    };
   }
-  if (score > rules.maxScore) return { ok: false, reason: 'SCORE_TOO_HIGH' };
+  if (
+    score >
+    rules.maxScore
+  )
+    return {
+      ok: false,
+      reason:
+        'SCORE_TOO_HIGH',
+    };
 
-  if (progress !== undefined) {
-    if (!Number.isFinite(progress) || !Number.isInteger(progress) || progress < 0) {
-      return { ok: false, reason: 'INVALID_PROGRESS' };
+  if (
+    progress !==
+    undefined
+  ) {
+    if (
+      !Number.isFinite(
+        progress,
+      ) ||
+      !Number.isInteger(
+        progress,
+      ) ||
+      progress <
+        0
+    ) {
+      return {
+        ok: false,
+        reason:
+          'INVALID_PROGRESS',
+      };
     }
-    if (rules.maxProgress !== undefined && progress > rules.maxProgress) {
-      return { ok: false, reason: 'PROGRESS_TOO_HIGH' };
+    if (
+      rules.maxProgress !==
+        undefined &&
+      progress >
+        rules.maxProgress
+    ) {
+      return {
+        ok: false,
+        reason:
+          'PROGRESS_TOO_HIGH',
+      };
     }
   }
 
-  if (durationMs !== undefined && Number.isFinite(durationMs)) {
-    if (rules.minDurationMs !== undefined && durationMs < rules.minDurationMs) {
-      return { ok: false, reason: 'RUN_TOO_SHORT' };
+  if (
+    durationMs !==
+      undefined &&
+    Number.isFinite(
+      durationMs,
+    )
+  ) {
+    if (
+      rules.minDurationMs !==
+        undefined &&
+      durationMs <
+        rules.minDurationMs
+    ) {
+      return {
+        ok: false,
+        reason:
+          'RUN_TOO_SHORT',
+      };
     }
-    if (rules.maxScorePerSecond !== undefined && durationMs > 0) {
-      const perSecond = score / (durationMs / 1000);
-      if (perSecond > rules.maxScorePerSecond) {
-        return { ok: false, reason: 'SCORE_RATE_IMPLAUSIBLE' };
+    if (
+      rules.maxScorePerSecond !==
+        undefined &&
+      durationMs >
+        0
+    ) {
+      const perSecond =
+        score /
+        (durationMs /
+          1000);
+      if (
+        perSecond >
+        rules.maxScorePerSecond
+      ) {
+        return {
+          ok: false,
+          reason:
+            'SCORE_RATE_IMPLAUSIBLE',
+        };
       }
     }
   }
 
-  return { ok: true, rules };
+  return {
+    ok: true,
+    rules,
+  };
 }
 
 /** User-facing message for a rejection (English; callers translate). */
-export function rejectionMessage(reason: ScoreRejection): string {
-  switch (reason) {
+export function rejectionMessage(
+  reason: ScoreRejection,
+): string {
+  switch (
+    reason
+  ) {
     case 'UNKNOWN_GAME':
       return 'Unknown game.';
     case 'INVALID_SCORE':

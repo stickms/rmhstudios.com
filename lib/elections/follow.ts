@@ -12,8 +12,15 @@
  *     caller shows it when the hold ends (latest one wins).
  */
 
-import { matchesFollow, type ElectionEvent, type FollowMode } from './events';
-import type { Office, Race } from './types';
+import {
+  matchesFollow,
+  type ElectionEvent,
+  type FollowMode,
+} from './events';
+import type {
+  Office,
+  Race,
+} from './types';
 
 export const DWELL_MS = 20_000;
 export const MAJOR_DWELL_MS = 8_000;
@@ -21,16 +28,30 @@ export const MAJOR_DWELL_MS = 8_000;
 export interface FollowTarget {
   state: string;
   office: Office;
-  raceId: string | null;
+  raceId:
+    | string
+    | null;
   /** The event text that moved the pane — shown as "Following: …". */
   reason: string;
   /** When the pane switched (epoch ms). */
   at: number;
-  importance: 1 | 2 | 3;
+  importance:
+    | 1
+    | 2
+    | 3;
 }
 
 /** Which office to show first when an event names only a state. */
-const OFFICE_RANK: Record<Office, number> = { senate: 0, governor: 1, president: 2, house: 3 };
+const OFFICE_RANK: Record<
+  Office,
+  number
+> =
+  {
+    senate: 0,
+    governor: 1,
+    president: 2,
+    house: 3,
+  };
 
 /** The most interesting race in a state: the preferred office if it has one, else Senate > Governor > President > House. */
 export function pickRaceForState(
@@ -38,15 +59,55 @@ export function pickRaceForState(
   state: string,
   prefer: Office = 'senate',
 ): Race | null {
-  const inState = races.filter((r) => r.state === state);
-  if (!inState.length) return null;
-  const rank = (r: Race) => (r.office === prefer ? -1 : OFFICE_RANK[r.office]);
+  const inState =
+    races.filter(
+      (
+        r,
+      ) =>
+        r.state ===
+        state,
+    );
+  if (
+    !inState.length
+  )
+    return null;
+  const rank =
+    (
+      r: Race,
+    ) =>
+      r.office ===
+      prefer
+        ? -1
+        : OFFICE_RANK[
+            r
+              .office
+          ];
   // Uncalled before called (the live one is the story), then by rank, then closest.
-  return [...inState].sort(
-    (a, b) =>
-      Number(a.status === 'called') - Number(b.status === 'called') ||
-      rank(a) - rank(b) ||
-      (a.margin ?? 99) - (b.margin ?? 99),
+  return [
+    ...inState,
+  ].sort(
+    (
+      a,
+      b,
+    ) =>
+      Number(
+        a.status ===
+          'called',
+      ) -
+        Number(
+          b.status ===
+            'called',
+        ) ||
+      rank(
+        a,
+      ) -
+        rank(
+          b,
+        ) ||
+      (a.margin ??
+        99) -
+        (b.margin ??
+          99),
   )[0];
 }
 
@@ -56,17 +117,39 @@ export function raceForEvent(
   races: Race[],
   prefer: Office = 'senate',
 ): Race | null {
-  if (ev.raceId) {
-    const exact = races.find((r) => r.id === ev.raceId);
-    if (exact) return exact;
+  if (
+    ev.raceId
+  ) {
+    const exact =
+      races.find(
+        (
+          r,
+        ) =>
+          r.id ===
+          ev.raceId,
+      );
+    if (
+      exact
+    )
+      return exact;
   }
-  return ev.state ? pickRaceForState(races, ev.state, ev.office ?? prefer) : null;
+  return ev.state
+    ? pickRaceForState(
+        races,
+        ev.state,
+        ev.office ??
+          prefer,
+      )
+    : null;
 }
 
 export interface FollowStep {
   target: FollowTarget | null;
   /** The event was valid but arrived inside the hold: show it at `retryAt`. */
-  deferred: { event: ElectionEvent; retryAt: number } | null;
+  deferred: {
+    event: ElectionEvent;
+    retryAt: number;
+  } | null;
 }
 
 export function nextFollowTarget(
@@ -77,35 +160,99 @@ export function nextFollowTarget(
   now: number,
   prefer: Office = 'senate',
 ): FollowStep {
-  const keep: FollowStep = { target: prev, deferred: null };
-  if (!matchesFollow(ev, mode)) return keep;
-  const race = raceForEvent(ev, races, prefer);
-  if (!race) return keep;
-  if (prev && prev.raceId === race.id) {
+  const keep: FollowStep =
+    {
+      target:
+        prev,
+      deferred:
+        null,
+    };
+  if (
+    !matchesFollow(
+      ev,
+      mode,
+    )
+  )
+    return keep;
+  const race =
+    raceForEvent(
+      ev,
+      races,
+      prefer,
+    );
+  if (
+    !race
+  )
+    return keep;
+  if (
+    prev &&
+    prev.raceId ===
+      race.id
+  ) {
     // Already showing it: just refresh the reason (a call after a lead change on the same race).
     return {
-      target: {
-        ...prev,
-        reason: ev.text,
-        importance: Math.max(prev.importance, ev.importance) as 1 | 2 | 3,
-      },
-      deferred: null,
+      target:
+        {
+          ...prev,
+          reason:
+            ev.text,
+          importance:
+            Math.max(
+              prev.importance,
+              ev.importance,
+            ) as
+              | 1
+              | 2
+              | 3,
+        },
+      deferred:
+        null,
     };
   }
-  if (prev) {
-    const hold = ev.importance >= 3 ? MAJOR_DWELL_MS : DWELL_MS;
-    const since = now - prev.at;
-    if (since < hold) return { target: prev, deferred: { event: ev, retryAt: prev.at + hold } };
+  if (
+    prev
+  ) {
+    const hold =
+      ev.importance >=
+      3
+        ? MAJOR_DWELL_MS
+        : DWELL_MS;
+    const since =
+      now -
+      prev.at;
+    if (
+      since <
+      hold
+    )
+      return {
+        target:
+          prev,
+        deferred:
+          {
+            event:
+              ev,
+            retryAt:
+              prev.at +
+              hold,
+          },
+      };
   }
   return {
-    target: {
-      state: race.state,
-      office: race.office,
-      raceId: race.id,
-      reason: ev.text,
-      at: now,
-      importance: ev.importance,
-    },
-    deferred: null,
+    target:
+      {
+        state:
+          race.state,
+        office:
+          race.office,
+        raceId:
+          race.id,
+        reason:
+          ev.text,
+        at: now,
+        importance:
+          ev.importance,
+      },
+    deferred:
+      null,
   };
 }

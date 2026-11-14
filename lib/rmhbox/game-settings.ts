@@ -7,15 +7,25 @@
  * Reference: docs/rmhbox/design-spec/core.md §12A
  */
 
-import type { GameSettingDef, GameSettingsSchema, GameSettingValues } from './types';
+import type {
+  GameSettingDef,
+  GameSettingsSchema,
+  GameSettingValues,
+} from './types';
 
 /**
  * Build a GameSettingValues object with all defaults from the schema.
  */
-export function getDefaultSettings(schema: GameSettingsSchema): GameSettingValues {
-  const defaults: GameSettingValues = {};
+export function getDefaultSettings(
+  schema: GameSettingsSchema,
+): GameSettingValues {
+  const defaults: GameSettingValues =
+    {};
   for (const def of schema) {
-    defaults[def.key] = def.default;
+    defaults[
+      def.key
+    ] =
+      def.default;
   }
   return defaults;
 }
@@ -24,42 +34,145 @@ export function getDefaultSettings(schema: GameSettingsSchema): GameSettingValue
  * Validate a single setting value against its definition.
  * Returns the validated value if valid, or the default if invalid.
  */
-function validateSingleSetting(def: GameSettingDef, value: unknown): boolean | number | string {
-  switch (def.type) {
+function validateSingleSetting(
+  def: GameSettingDef,
+  value: unknown,
+):
+  | boolean
+  | number
+  | string {
+  switch (
+    def.type
+  ) {
     case 'boolean':
-      return typeof value === 'boolean' ? value : def.default;
+      return typeof value ===
+        'boolean'
+        ? value
+        : def.default;
 
     case 'integer': {
-      if (typeof value !== 'number' || !Number.isInteger(value)) return def.default;
-      const clamped = Math.max(def.min ?? -Infinity, Math.min(def.max ?? Infinity, value));
+      if (
+        typeof value !==
+          'number' ||
+        !Number.isInteger(
+          value,
+        )
+      )
+        return def.default;
+      const clamped =
+        Math.max(
+          def.min ??
+            -Infinity,
+          Math.min(
+            def.max ??
+              Infinity,
+            value,
+          ),
+        );
       // Snap to step
-      if (def.step && def.min !== undefined) {
-        const steps = Math.round((clamped - def.min) / def.step);
-        return def.min + steps * def.step;
+      if (
+        def.step &&
+        def.min !==
+          undefined
+      ) {
+        const steps =
+          Math.round(
+            (clamped -
+              def.min) /
+              def.step,
+          );
+        return (
+          def.min +
+          steps *
+            def.step
+        );
       }
       return clamped;
     }
 
     case 'float': {
-      if (typeof value !== 'number' || !Number.isFinite(value)) return def.default;
-      const clamped = Math.max(def.min ?? -Infinity, Math.min(def.max ?? Infinity, value));
-      if (def.step && def.min !== undefined) {
-        const steps = Math.round((clamped - def.min) / def.step);
-        return Math.round((def.min + steps * def.step) * 1000) / 1000;
+      if (
+        typeof value !==
+          'number' ||
+        !Number.isFinite(
+          value,
+        )
+      )
+        return def.default;
+      const clamped =
+        Math.max(
+          def.min ??
+            -Infinity,
+          Math.min(
+            def.max ??
+              Infinity,
+            value,
+          ),
+        );
+      if (
+        def.step &&
+        def.min !==
+          undefined
+      ) {
+        const steps =
+          Math.round(
+            (clamped -
+              def.min) /
+              def.step,
+          );
+        return (
+          Math.round(
+            (def.min +
+              steps *
+                def.step) *
+              1000,
+          ) /
+          1000
+        );
       }
-      return Math.round(clamped * 1000) / 1000;
+      return (
+        Math.round(
+          clamped *
+            1000,
+        ) /
+        1000
+      );
     }
 
     case 'select': {
-      if (typeof value !== 'string') return def.default;
-      if (def.options && !def.options.includes(value)) return def.default;
+      if (
+        typeof value !==
+        'string'
+      )
+        return def.default;
+      if (
+        def.options &&
+        !def.options.includes(
+          value,
+        )
+      )
+        return def.default;
       return value;
     }
 
     case 'text': {
-      if (typeof value !== 'string') return def.default;
+      if (
+        typeof value !==
+        'string'
+      )
+        return def.default;
       // Alphanumeric only (pack codes), trimmed to the cap.
-      return value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, def.maxLength ?? 16);
+      return value
+        .replace(
+          /[^A-Za-z0-9]/g,
+          '',
+        )
+        .toUpperCase()
+        .slice(
+          0,
+          def.maxLength ??
+            16,
+        );
     }
 
     default:
@@ -74,11 +187,24 @@ function validateSingleSetting(def: GameSettingDef, value: unknown): boolean | n
  */
 export function validateGameSettings(
   schema: GameSettingsSchema,
-  values: Record<string, unknown>,
+  values: Record<
+    string,
+    unknown
+  >,
 ): GameSettingValues {
-  const result: GameSettingValues = {};
+  const result: GameSettingValues =
+    {};
   for (const def of schema) {
-    result[def.key] = validateSingleSetting(def, values[def.key]);
+    result[
+      def.key
+    ] =
+      validateSingleSetting(
+        def,
+        values[
+          def
+            .key
+        ],
+      );
   }
   return result;
 }
@@ -90,12 +216,30 @@ export function validateGameSettings(
 export function mergeGameSettings(
   schema: GameSettingsSchema,
   current: GameSettingValues,
-  updates: Record<string, unknown>,
+  updates: Record<
+    string,
+    unknown
+  >,
 ): GameSettingValues {
-  const merged = { ...current };
+  const merged =
+    {
+      ...current,
+    };
   for (const def of schema) {
-    if (def.key in updates) {
-      merged[def.key] = validateSingleSetting(def, updates[def.key]);
+    if (
+      def.key in
+      updates
+    ) {
+      merged[
+        def.key
+      ] =
+        validateSingleSetting(
+          def,
+          updates[
+            def
+              .key
+          ],
+        );
     }
   }
   return merged;

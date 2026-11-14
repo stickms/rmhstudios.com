@@ -16,7 +16,11 @@
  * load-bearing and the refactor sits directly underneath it.
  */
 
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
 import {
   PHASES,
   mark,
@@ -37,254 +41,721 @@ import {
 
 /** A scope detached from any async context — what the Nitro plugin holds. */
 function scope() {
-  return newScope(startSpan());
+  return newScope(
+    startSpan(),
+  );
 }
 
 /** Everything after the leading `trace;desc="…"` entry. */
-function phasesOf(header: string): string[] {
-  return header.split(', ').slice(1);
+function phasesOf(
+  header: string,
+): string[] {
+  return header
+    .split(
+      ', ',
+    )
+    .slice(
+      1,
+    );
 }
 
 describe('markScope', () => {
   it('accumulates rather than replacing — db and cache are sums', () => {
-    const s = scope();
-    markScope(s, 'db', 1.5);
-    markScope(s, 'db', 2.5);
-    expect(s.timings.get('db')).toBe(4);
+    const s =
+      scope();
+    markScope(
+      s,
+      'db',
+      1.5,
+    );
+    markScope(
+      s,
+      'db',
+      2.5,
+    );
+    expect(
+      s.timings.get(
+        'db',
+      ),
+    ).toBe(
+      4,
+    );
   });
 
   it('clamps a negative duration to zero instead of dropping it', () => {
-    const s = scope();
-    markScope(s, 'db', -3);
-    expect(s.timings.get('db')).toBe(0);
+    const s =
+      scope();
+    markScope(
+      s,
+      'db',
+      -3,
+    );
+    expect(
+      s.timings.get(
+        'db',
+      ),
+    ).toBe(
+      0,
+    );
   });
 
   it('ignores NaN and Infinity', () => {
-    const s = scope();
-    markScope(s, 'db', Number.NaN);
-    markScope(s, 'cache', Number.POSITIVE_INFINITY);
-    expect(s.timings.size).toBe(0);
+    const s =
+      scope();
+    markScope(
+      s,
+      'db',
+      Number.NaN,
+    );
+    markScope(
+      s,
+      'cache',
+      Number.POSITIVE_INFINITY,
+    );
+    expect(
+      s
+        .timings
+        .size,
+    ).toBe(
+      0,
+    );
   });
 
   it('is a no-op without a scope', () => {
-    expect(() => markScope(undefined, 'db', 1)).not.toThrow();
+    expect(
+      () =>
+        markScope(
+          undefined,
+          'db',
+          1,
+        ),
+    ).not.toThrow();
   });
 
   it('caps the number of distinct phases so a per-key call site cannot grow the header', () => {
-    const s = scope();
-    for (let i = 0; i < 50; i++) markScope(s, `p${i}`, 1);
-    expect(s.timings.size).toBeLessThanOrEqual(12);
+    const s =
+      scope();
+    for (
+      let i = 0;
+      i <
+      50;
+      i++
+    )
+      markScope(
+        s,
+        `p${i}`,
+        1,
+      );
+    expect(
+      s
+        .timings
+        .size,
+    ).toBeLessThanOrEqual(
+      12,
+    );
     // Already-known phases still accumulate after the cap is reached.
-    const before = s.timings.get('p0');
-    markScope(s, 'p0', 5);
-    expect(s.timings.get('p0')).toBe((before ?? 0) + 5);
+    const before =
+      s.timings.get(
+        'p0',
+      );
+    markScope(
+      s,
+      'p0',
+      5,
+    );
+    expect(
+      s.timings.get(
+        'p0',
+      ),
+    ).toBe(
+      (before ??
+        0) +
+        5,
+    );
   });
 });
 
 describe('metric names are header syntax, not free text', () => {
   // Each of these would either break the header's grammar or smuggle content
   // into it. Dropped, never sanitised into something adjacent.
-  const rejected = [
-    'db;desc="leak"',
-    'db,evil;dur=1',
-    'db desc',
-    'user@id',
-    'Sess',
-    '',
-    '9db',
-    'a'.repeat(17),
-    'db\r\nX-Injected: 1',
-  ];
+  const rejected =
+    [
+      'db;desc="leak"',
+      'db,evil;dur=1',
+      'db desc',
+      'user@id',
+      'Sess',
+      '',
+      '9db',
+      'a'.repeat(
+        17,
+      ),
+      'db\r\nX-Injected: 1',
+    ];
 
-  it.each(rejected)('drops %j', (name) => {
-    const s = scope();
-    markScope(s, name, 1);
-    expect(s.timings.size).toBe(0);
-  });
+  it.each(
+    rejected,
+  )(
+    'drops %j',
+    (
+      name,
+    ) => {
+      const s =
+        scope();
+      markScope(
+        s,
+        name,
+        1,
+      );
+      expect(
+        s
+          .timings
+          .size,
+      ).toBe(
+        0,
+      );
+    },
+  );
 
-  it.each([...PHASES])('accepts the shipped phase %s', (name) => {
-    const s = scope();
-    markScope(s, name, 1);
-    expect(s.timings.get(name)).toBe(1);
-  });
+  it.each(
+    [
+      ...PHASES,
+    ],
+  )(
+    'accepts the shipped phase %s',
+    (
+      name,
+    ) => {
+      const s =
+        scope();
+      markScope(
+        s,
+        name,
+        1,
+      );
+      expect(
+        s.timings.get(
+          name,
+        ),
+      ).toBe(
+        1,
+      );
+    },
+  );
 
   it('drops a bad name smuggled straight into the map before it reaches the wire', () => {
-    const s = scope();
+    const s =
+      scope();
     // Not reachable through markScope — this is the belt to its braces, because
     // `timings` is a plain Map on an object several modules can see.
-    s.timings.set('x;desc="secret"', 1);
-    s.timings.set('db', 2);
-    expect(serverTimingPhases(s)).toEqual(['db;dur=2.0']);
+    s.timings.set(
+      'x;desc="secret"',
+      1,
+    );
+    s.timings.set(
+      'db',
+      2,
+    );
+    expect(
+      serverTimingPhases(
+        s,
+      ),
+    ).toEqual(
+      [
+        'db;dur=2.0',
+      ],
+    );
   });
 });
 
 describe('serverTimingHeader', () => {
   it('leads with the trace entry so lib/rum.ts finds it first', () => {
-    const s = scope();
-    markScope(s, 'db', 12.34);
-    expect(serverTimingHeader(s)).toBe(`trace;desc="${s.span.traceId}", db;dur=12.3`);
+    const s =
+      scope();
+    markScope(
+      s,
+      'db',
+      12.34,
+    );
+    expect(
+      serverTimingHeader(
+        s,
+      ),
+    ).toBe(
+      `trace;desc="${s.span.traceId}", db;dur=12.3`,
+    );
   });
 
   it('is just the trace entry when no phase was marked', () => {
-    const s = scope();
-    expect(serverTimingHeader(s)).toBe(`trace;desc="${s.span.traceId}"`);
+    const s =
+      scope();
+    expect(
+      serverTimingHeader(
+        s,
+      ),
+    ).toBe(
+      `trace;desc="${s.span.traceId}"`,
+    );
   });
 
   it('orders known phases canonically regardless of when they were marked', () => {
-    const s = scope();
-    markScope(s, 'total', 4);
-    markScope(s, 'db', 3);
-    markScope(s, 'sess', 1);
-    markScope(s, 'render', 2);
-    expect(phasesOf(serverTimingHeader(s))).toEqual([
-      'sess;dur=1.0',
-      'db;dur=3.0',
-      'render;dur=2.0',
-      'total;dur=4.0',
-    ]);
+    const s =
+      scope();
+    markScope(
+      s,
+      'total',
+      4,
+    );
+    markScope(
+      s,
+      'db',
+      3,
+    );
+    markScope(
+      s,
+      'sess',
+      1,
+    );
+    markScope(
+      s,
+      'render',
+      2,
+    );
+    expect(
+      phasesOf(
+        serverTimingHeader(
+          s,
+        ),
+      ),
+    ).toEqual(
+      [
+        'sess;dur=1.0',
+        'db;dur=3.0',
+        'render;dur=2.0',
+        'total;dur=4.0',
+      ],
+    );
   });
 
   it('carries dur only — no desc on a phase entry', () => {
-    const s = scope();
-    for (const name of PHASES) markScope(s, name, 1);
-    expect(phasesOf(serverTimingHeader(s)).join(', ')).not.toContain('desc');
+    const s =
+      scope();
+    for (const name of PHASES)
+      markScope(
+        s,
+        name,
+        1,
+      );
+    expect(
+      phasesOf(
+        serverTimingHeader(
+          s,
+        ),
+      ).join(
+        ', ',
+      ),
+    ).not.toContain(
+      'desc',
+    );
   });
 
   it('emits a well-formed Server-Timing list', () => {
-    const s = scope();
-    for (const name of PHASES) markScope(s, name, 1.25);
-    for (const entry of serverTimingHeader(s).split(', ')) {
-      expect(entry).toMatch(/^[a-z][a-z0-9_-]*;(dur=\d+\.\d|desc="[0-9a-f]{32}")$/);
+    const s =
+      scope();
+    for (const name of PHASES)
+      markScope(
+        s,
+        name,
+        1.25,
+      );
+    for (const entry of serverTimingHeader(
+      s,
+    ).split(
+      ', ',
+    )) {
+      expect(
+        entry,
+      ).toMatch(
+        /^[a-z][a-z0-9_-]*;(dur=\d+\.\d|desc="[0-9a-f]{32}")$/,
+      );
     }
   });
 
   it('is empty without a scope', () => {
-    expect(serverTimingHeader(undefined)).toBe('');
+    expect(
+      serverTimingHeader(
+        undefined,
+      ),
+    ).toBe(
+      '',
+    );
   });
 });
 
 describe('mark / measure against the ambient scope', () => {
   it('does nothing outside a traced scope — workers and scripts call this too', () => {
-    expect(() => mark('db', 5)).not.toThrow();
-    expect(currentScope()).toBeUndefined();
+    expect(
+      () =>
+        mark(
+          'db',
+          5,
+        ),
+    ).not.toThrow();
+    expect(
+      currentScope(),
+    ).toBeUndefined();
   });
 
   it('writes into the scope withTrace opened', () => {
-    withTrace(() => {
-      mark('cache', 7);
-      expect(currentScope()?.timings.get('cache')).toBe(7);
-    });
+    withTrace(
+      () => {
+        mark(
+          'cache',
+          7,
+        );
+        expect(
+          currentScope()?.timings.get(
+            'cache',
+          ),
+        ).toBe(
+          7,
+        );
+      },
+    );
   });
 
   it('measure records the elapsed time and returns the value', async () => {
-    await withTrace(async () => {
-      const value = await measure('db', async () => {
-        await new Promise((r) => setTimeout(r, 12));
-        return 'ok';
-      });
-      expect(value).toBe('ok');
-      const recorded = currentScope()?.timings.get('db') ?? 0;
-      expect(recorded).toBeGreaterThan(5);
-    });
+    await withTrace(
+      async () => {
+        const value =
+          await measure(
+            'db',
+            async () => {
+              await new Promise(
+                (
+                  r,
+                ) =>
+                  setTimeout(
+                    r,
+                    12,
+                  ),
+              );
+              return 'ok';
+            },
+          );
+        expect(
+          value,
+        ).toBe(
+          'ok',
+        );
+        const recorded =
+          currentScope()?.timings.get(
+            'db',
+          ) ??
+          0;
+        expect(
+          recorded,
+        ).toBeGreaterThan(
+          5,
+        );
+      },
+    );
   });
 
   it('measure still records when the phase throws — the slow failure is the interesting one', async () => {
-    await withTrace(async () => {
-      await expect(measure('db', () => Promise.reject(new Error('boom')))).rejects.toThrow('boom');
-      expect(currentScope()?.timings.has('db')).toBe(true);
-    });
+    await withTrace(
+      async () => {
+        await expect(
+          measure(
+            'db',
+            () =>
+              Promise.reject(
+                new Error(
+                  'boom',
+                ),
+              ),
+          ),
+        ).rejects.toThrow(
+          'boom',
+        );
+        expect(
+          currentScope()?.timings.has(
+            'db',
+          ),
+        ).toBe(
+          true,
+        );
+      },
+    );
   });
 
   it('measure outside a scope still runs the function', async () => {
-    await expect(measure('db', () => Promise.resolve(3))).resolves.toBe(3);
+    await expect(
+      measure(
+        'db',
+        () =>
+          Promise.resolve(
+            3,
+          ),
+      ),
+    ).resolves.toBe(
+      3,
+    );
   });
 });
 
 describe('the widened trace scope keeps the correlation id working', () => {
   it('exposes the span, the id and the log fields inside withTrace', () => {
-    const span = startSpan();
-    withTrace(span, () => {
-      expect(currentSpan()).toEqual(span);
-      expect(currentTraceId()).toBe(span.traceId);
-      expect(traceFields()).toEqual({ traceId: span.traceId, spanId: span.spanId });
-    });
+    const span =
+      startSpan();
+    withTrace(
+      span,
+      () => {
+        expect(
+          currentSpan(),
+        ).toEqual(
+          span,
+        );
+        expect(
+          currentTraceId(),
+        ).toBe(
+          span.traceId,
+        );
+        expect(
+          traceFields(),
+        ).toEqual(
+          {
+            traceId:
+              span.traceId,
+            spanId:
+              span.spanId,
+          },
+        );
+      },
+    );
   });
 
   it('reports nothing outside a traced scope', () => {
-    expect(currentSpan()).toBeUndefined();
-    expect(currentTraceId()).toBeUndefined();
-    expect(traceFields()).toEqual({});
+    expect(
+      currentSpan(),
+    ).toBeUndefined();
+    expect(
+      currentTraceId(),
+    ).toBeUndefined();
+    expect(
+      traceFields(),
+    ).toEqual(
+      {},
+    );
   });
 });
 
 describe('the call sites mark their phases', () => {
   it('cached() marks `cache` — an L1 hit as ~0 ms, a miss with the loader inside it', async () => {
-    const { cached } = await import('@/lib/cached.server');
-    await withTrace(async () => {
-      const key = `timing-test:${Math.random()}`;
-      await cached(key, 5_000, async () => {
-        await new Promise((r) => setTimeout(r, 15));
-        return 1;
-      });
-      const afterMiss = currentScope()?.timings.get('cache') ?? -1;
-      expect(afterMiss).toBeGreaterThan(8);
+    const {
+      cached,
+    } =
+      await import('@/lib/cached.server');
+    await withTrace(
+      async () => {
+        const key = `timing-test:${Math.random()}`;
+        await cached(
+          key,
+          5_000,
+          async () => {
+            await new Promise(
+              (
+                r,
+              ) =>
+                setTimeout(
+                  r,
+                  15,
+                ),
+            );
+            return 1;
+          },
+        );
+        const afterMiss =
+          currentScope()?.timings.get(
+            'cache',
+          ) ??
+          -1;
+        expect(
+          afterMiss,
+        ).toBeGreaterThan(
+          8,
+        );
 
-      await cached(key, 5_000, async () => 2); // L1 hit
-      const afterHit = currentScope()?.timings.get('cache') ?? -1;
-      expect(afterHit - afterMiss).toBeLessThan(5);
-    });
+        await cached(
+          key,
+          5_000,
+          async () =>
+            2,
+        ); // L1 hit
+        const afterHit =
+          currentScope()?.timings.get(
+            'cache',
+          ) ??
+          -1;
+        expect(
+          afterHit -
+            afterMiss,
+        ).toBeLessThan(
+          5,
+        );
+      },
+    );
   });
 
   it('cached() still returns the loader value outside a traced scope', async () => {
-    const { cached } = await import('@/lib/cached.server');
-    await expect(cached(`timing-test:${Math.random()}`, 1_000, async () => 'v')).resolves.toBe('v');
+    const {
+      cached,
+    } =
+      await import('@/lib/cached.server');
+    await expect(
+      cached(
+        `timing-test:${Math.random()}`,
+        1_000,
+        async () =>
+          'v',
+      ),
+    ).resolves.toBe(
+      'v',
+    );
   });
 
   it('the Prisma query hook marks `db`, including when the query fails', async () => {
-    process.env.DATABASE_URL ||= 'postgresql://timing:timing@127.0.0.1:1/timing';
-    const { prisma } = await import('@/lib/prisma.server');
-    await withTrace(async () => {
-      // Port 1 refuses immediately; the failed query is still a measured one.
-      await prisma.user.findFirst({ select: { id: true } }).catch(() => undefined);
-      expect(currentScope()?.timings.has('db')).toBe(true);
-    });
+    process.env.DATABASE_URL ||=
+      'postgresql://timing:timing@127.0.0.1:1/timing';
+    const {
+      prisma,
+    } =
+      await import('@/lib/prisma.server');
+    await withTrace(
+      async () => {
+        // Port 1 refuses immediately; the failed query is still a measured one.
+        await prisma.user
+          .findFirst(
+            {
+              select:
+                {
+                  id: true,
+                },
+            },
+          )
+          .catch(
+            () =>
+              undefined,
+          );
+        expect(
+          currentScope()?.timings.has(
+            'db',
+          ),
+        ).toBe(
+          true,
+        );
+      },
+    );
   });
 
   it('two bundled copies of the module share one scope (Nitro bundle vs the _ssr app bundle)', async () => {
     // The production build holds a copy of trace.ts in the Nitro bundle (the
     // plugin opens the scope) and another in the app bundle (call sites mark
     // into it). A per-copy AsyncLocalStorage made Server-Timing `total`-only.
-    const { vi } = await import('vitest');
+    const {
+      vi,
+    } =
+      await import('vitest');
     vi.resetModules();
-    const copyA = await import('@/lib/otel/trace');
+    const copyA =
+      await import('@/lib/otel/trace');
     vi.resetModules();
-    const copyB = await import('@/lib/otel/trace');
-    expect(copyA).not.toBe(copyB);
-    const timingB = await import('@/lib/otel/timing');
-    copyA.withTrace(() => {
-      timingB.mark('db', 4);
-      expect(copyB.currentScope()?.timings.get('db')).toBe(4);
-    });
+    const copyB =
+      await import('@/lib/otel/trace');
+    expect(
+      copyA,
+    ).not.toBe(
+      copyB,
+    );
+    const timingB =
+      await import('@/lib/otel/timing');
+    copyA.withTrace(
+      () => {
+        timingB.mark(
+          'db',
+          4,
+        );
+        expect(
+          copyB
+            .currentScope()
+            ?.timings.get(
+              'db',
+            ),
+        ).toBe(
+          4,
+        );
+      },
+    );
   });
 
   it('a second copy of prisma.server shares the query budget store', async () => {
-    const { vi } = await import('vitest');
-    process.env.DATABASE_URL ||= 'postgresql://timing:timing@127.0.0.1:1/timing';
+    const {
+      vi,
+    } =
+      await import('vitest');
+    process.env.DATABASE_URL ||=
+      'postgresql://timing:timing@127.0.0.1:1/timing';
     vi.resetModules();
-    const a = await import('@/lib/prisma.server');
+    const a =
+      await import('@/lib/prisma.server');
     vi.resetModules();
-    const b = await import('@/lib/prisma.server');
-    a.withQueryBudget('x', () => {
-      b.recordQuery('User', 'findFirst');
-      expect(a.currentQueryBudget()?.count).toBe(1);
-    });
+    const b =
+      await import('@/lib/prisma.server');
+    a.withQueryBudget(
+      'x',
+      () => {
+        b.recordQuery(
+          'User',
+          'findFirst',
+        );
+        expect(
+          a.currentQueryBudget()
+            ?.count,
+        ).toBe(
+          1,
+        );
+      },
+    );
   });
 
   it('loader and render stay unmarked: no single choke point exists (see timing.ts)', () => {
-    const s = scope();
-    markScope(s, 'db', 1);
-    const names = serverTimingPhases(s).map((e) => e.split(';')[0]);
-    expect(names).not.toContain('loader');
-    expect(names).not.toContain('render');
+    const s =
+      scope();
+    markScope(
+      s,
+      'db',
+      1,
+    );
+    const names =
+      serverTimingPhases(
+        s,
+      ).map(
+        (
+          e,
+        ) =>
+          e.split(
+            ';',
+          )[0],
+      );
+    expect(
+      names,
+    ).not.toContain(
+      'loader',
+    );
+    expect(
+      names,
+    ).not.toContain(
+      'render',
+    );
   });
 });

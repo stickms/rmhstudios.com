@@ -20,77 +20,143 @@
  */
 
 /** Every failure the site names. Add here before throwing anything new. */
-export const ERROR_CODES = {
-  // --- auth / access -------------------------------------------------------
-  UNAUTHORIZED: { http: 401, i18n: 'errors:unauthorized', text: 'Sign in to continue' },
-  FORBIDDEN: { http: 403, i18n: 'errors:forbidden', text: "You don't have access to this" },
-  UPGRADE_REQUIRED: {
-    http: 402,
-    i18n: 'errors:upgradeRequired',
-    text: 'This feature needs a membership',
-  },
+export const ERROR_CODES =
+  {
+    // --- auth / access -------------------------------------------------------
+    UNAUTHORIZED:
+      {
+        http: 401,
+        i18n: 'errors:unauthorized',
+        text: 'Sign in to continue',
+      },
+    FORBIDDEN:
+      {
+        http: 403,
+        i18n: 'errors:forbidden',
+        text: "You don't have access to this",
+      },
+    UPGRADE_REQUIRED:
+      {
+        http: 402,
+        i18n: 'errors:upgradeRequired',
+        text: 'This feature needs a membership',
+      },
 
-  // --- input ---------------------------------------------------------------
-  INVALID_INPUT: { http: 400, i18n: 'errors:invalidInput', text: 'Check the form and try again' },
-  NOT_FOUND: { http: 404, i18n: 'errors:notFound', text: "That doesn't exist (or was removed)" },
-  CONFLICT: { http: 409, i18n: 'errors:conflict', text: 'Someone else changed this first' },
-  GONE: { http: 410, i18n: 'errors:gone', text: 'That has expired' },
+    // --- input ---------------------------------------------------------------
+    INVALID_INPUT:
+      {
+        http: 400,
+        i18n: 'errors:invalidInput',
+        text: 'Check the form and try again',
+      },
+    NOT_FOUND:
+      {
+        http: 404,
+        i18n: 'errors:notFound',
+        text: "That doesn't exist (or was removed)",
+      },
+    CONFLICT:
+      {
+        http: 409,
+        i18n: 'errors:conflict',
+        text: 'Someone else changed this first',
+      },
+    GONE: {
+      http: 410,
+      i18n: 'errors:gone',
+      text: 'That has expired',
+    },
 
-  // --- limits --------------------------------------------------------------
-  RATE_LIMITED: { http: 429, i18n: 'errors:rateLimited', text: 'Slow down for a moment' },
-  QUOTA_EXCEEDED: { http: 413, i18n: 'errors:quotaExceeded', text: "You're out of storage" },
-  QUERY_BUDGET_EXCEEDED: {
-    http: 500,
-    i18n: 'errors:queryBudget',
-    text: 'That request was too expensive to serve',
-  },
+    // --- limits --------------------------------------------------------------
+    RATE_LIMITED:
+      {
+        http: 429,
+        i18n: 'errors:rateLimited',
+        text: 'Slow down for a moment',
+      },
+    QUOTA_EXCEEDED:
+      {
+        http: 413,
+        i18n: 'errors:quotaExceeded',
+        text: "You're out of storage",
+      },
+    QUERY_BUDGET_EXCEEDED:
+      {
+        http: 500,
+        i18n: 'errors:queryBudget',
+        text: 'That request was too expensive to serve',
+      },
 
-  // --- economy -------------------------------------------------------------
-  INSUFFICIENT_COINS: {
-    http: 402,
-    i18n: 'errors:insufficientCoins',
-    text: "You don't have enough coins",
-  },
-  STAKE_LIMIT_REACHED: {
-    http: 403,
-    i18n: 'errors:stakeLimit',
-    text: "You've reached the limit you set",
-  },
-  /// Responsible play (W8). Both are the member's own earlier decision being
-  /// honoured, not a moderation action, and the copy has to read that way.
-  SELF_EXCLUDED: {
-    http: 403,
-    i18n: 'errors:selfExcluded',
-    text: "You've excluded yourself from staking coins",
-  },
-  COOL_OFF_ACTIVE: {
-    http: 403,
-    i18n: 'errors:coolOff',
-    text: "You're taking a break from staking coins",
-  },
+    // --- economy -------------------------------------------------------------
+    INSUFFICIENT_COINS:
+      {
+        http: 402,
+        i18n: 'errors:insufficientCoins',
+        text: "You don't have enough coins",
+      },
+    STAKE_LIMIT_REACHED:
+      {
+        http: 403,
+        i18n: 'errors:stakeLimit',
+        text: "You've reached the limit you set",
+      },
+    /// Responsible play (W8). Both are the member's own earlier decision being
+    /// honoured, not a moderation action, and the copy has to read that way.
+    SELF_EXCLUDED:
+      {
+        http: 403,
+        i18n: 'errors:selfExcluded',
+        text: "You've excluded yourself from staking coins",
+      },
+    COOL_OFF_ACTIVE:
+      {
+        http: 403,
+        i18n: 'errors:coolOff',
+        text: "You're taking a break from staking coins",
+      },
 
-  // --- AI ------------------------------------------------------------------
-  AI_UNAVAILABLE: { http: 503, i18n: 'errors:aiUnavailable', text: 'AI features are offline' },
-  AI_BUDGET_EXCEEDED: {
-    http: 402,
-    i18n: 'errors:aiBudget',
-    text: "You've used this month's AI allowance",
-  },
+    // --- AI ------------------------------------------------------------------
+    AI_UNAVAILABLE:
+      {
+        http: 503,
+        i18n: 'errors:aiUnavailable',
+        text: 'AI features are offline',
+      },
+    AI_BUDGET_EXCEEDED:
+      {
+        http: 402,
+        i18n: 'errors:aiBudget',
+        text: "You've used this month's AI allowance",
+      },
 
-  // --- dependencies --------------------------------------------------------
-  STORAGE_UNAVAILABLE: {
-    http: 503,
-    i18n: 'errors:storageUnavailable',
-    text: 'Uploads are temporarily unavailable',
-  },
-  INTERNAL: { http: 500, i18n: 'errors:internal', text: 'Something went wrong on our side' },
-} as const;
+    // --- dependencies --------------------------------------------------------
+    STORAGE_UNAVAILABLE:
+      {
+        http: 503,
+        i18n: 'errors:storageUnavailable',
+        text: 'Uploads are temporarily unavailable',
+      },
+    INTERNAL:
+      {
+        http: 500,
+        i18n: 'errors:internal',
+        text: 'Something went wrong on our side',
+      },
+  } as const;
 
-export type ErrorCode = keyof typeof ERROR_CODES;
+export type ErrorCode =
+  keyof typeof ERROR_CODES;
 
 /** Narrow an arbitrary string to a known code (for parsing a server response). */
-export function isErrorCode(value: unknown): value is ErrorCode {
-  return typeof value === 'string' && value in ERROR_CODES;
+export function isErrorCode(
+  value: unknown,
+): value is ErrorCode {
+  return (
+    typeof value ===
+      'string' &&
+    value in
+      ERROR_CODES
+  );
 }
 
 /**
@@ -103,31 +169,82 @@ export function isErrorCode(value: unknown): value is ErrorCode {
  */
 export class AppError extends Error {
   readonly code: ErrorCode;
-  readonly detail: Record<string, string | number> | undefined;
+  readonly detail:
+    | Record<
+        string,
+        | string
+        | number
+      >
+    | undefined;
 
-  constructor(code: ErrorCode, detail?: Record<string, string | number>) {
-    super(ERROR_CODES[code].text);
-    this.name = 'AppError';
-    this.code = code;
-    this.detail = detail;
+  constructor(
+    code: ErrorCode,
+    detail?: Record<
+      string,
+      | string
+      | number
+    >,
+  ) {
+    super(
+      ERROR_CODES[
+        code
+      ]
+        .text,
+    );
+    this.name =
+      'AppError';
+    this.code =
+      code;
+    this.detail =
+      detail;
   }
 
   get status(): number {
-    return ERROR_CODES[this.code].http;
+    return ERROR_CODES[
+      this
+        .code
+    ]
+      .http;
   }
 
   /** The site envelope, extended with the code. Shape-compatible with `apiError`. */
-  toBody(): { error: string; code: ErrorCode; detail?: Record<string, string | number> } {
+  toBody(): {
+    error: string;
+    code: ErrorCode;
+    detail?: Record<
+      string,
+      | string
+      | number
+    >;
+  } {
     return {
-      error: ERROR_CODES[this.code].text,
-      code: this.code,
-      ...(this.detail ? { detail: this.detail } : {}),
+      error:
+        ERROR_CODES[
+          this
+            .code
+        ]
+          .text,
+      code: this
+        .code,
+      ...(this
+        .detail
+        ? {
+            detail:
+              this
+                .detail,
+          }
+        : {}),
     };
   }
 }
 
-export function isAppError(value: unknown): value is AppError {
-  return value instanceof AppError;
+export function isAppError(
+  value: unknown,
+): value is AppError {
+  return (
+    value instanceof
+    AppError
+  );
 }
 
 /**
@@ -140,14 +257,55 @@ export function isAppError(value: unknown): value is AppError {
  */
 export function errorMessage(
   body: unknown,
-  t?: (key: string, opts: { defaultValue: string } & Record<string, unknown>) => string,
+  t?: (
+    key: string,
+    opts: {
+      defaultValue: string;
+    } & Record<
+      string,
+      unknown
+    >,
+  ) => string,
 ): string {
-  const raw = body as { error?: unknown; code?: unknown; detail?: Record<string, unknown> } | null;
-  const code = raw?.code;
-  if (isErrorCode(code)) {
-    const def = ERROR_CODES[code];
-    return t ? t(def.i18n, { defaultValue: def.text, ...(raw?.detail ?? {}) }) : def.text;
+  const raw =
+    body as {
+      error?: unknown;
+      code?: unknown;
+      detail?: Record<
+        string,
+        unknown
+      >;
+    } | null;
+  const code =
+    raw?.code;
+  if (
+    isErrorCode(
+      code,
+    )
+  ) {
+    const def =
+      ERROR_CODES[
+        code
+      ];
+    return t
+      ? t(
+          def.i18n,
+          {
+            defaultValue:
+              def.text,
+            ...(raw?.detail ??
+              {}),
+          },
+        )
+      : def.text;
   }
-  if (typeof raw?.error === 'string' && raw.error) return raw.error;
-  return ERROR_CODES.INTERNAL.text;
+  if (
+    typeof raw?.error ===
+      'string' &&
+    raw.error
+  )
+    return raw.error;
+  return ERROR_CODES
+    .INTERNAL
+    .text;
 }

@@ -15,59 +15,175 @@
  * fallback covers the (test-only) environments where it does not.
  */
 
-function randomBytes(count: number): Uint8Array {
-  const out = new Uint8Array(count);
-  const webcrypto = (globalThis as { crypto?: Crypto }).crypto;
-  if (webcrypto?.getRandomValues) {
-    webcrypto.getRandomValues(out);
+function randomBytes(
+  count: number,
+): Uint8Array {
+  const out =
+    new Uint8Array(
+      count,
+    );
+  const webcrypto =
+    (
+      globalThis as {
+        crypto?: Crypto;
+      }
+    )
+      .crypto;
+  if (
+    webcrypto?.getRandomValues
+  ) {
+    webcrypto.getRandomValues(
+      out,
+    );
     return out;
   }
   // Only reachable in an environment with no Web Crypto at all. Ids here are
   // never a security boundary — they are row keys — so `Math.random` degrading
   // uniqueness slightly is better than throwing.
-  for (let i = 0; i < count; i++) out[i] = Math.floor(Math.random() * 256);
+  for (
+    let i = 0;
+    i <
+    count;
+    i++
+  )
+    out[
+      i
+    ] =
+      Math.floor(
+        Math.random() *
+          256,
+      );
   return out;
 }
 
-const HEX: string[] = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0'));
+const HEX: string[] =
+  Array.from(
+    {
+      length: 256,
+    },
+    (
+      _,
+      i,
+    ) =>
+      i
+        .toString(
+          16,
+        )
+        .padStart(
+          2,
+          '0',
+        ),
+  );
 
-export function uuidv7(now = Date.now()): string {
-  const bytes = randomBytes(16);
+export function uuidv7(
+  now = Date.now(),
+): string {
+  const bytes =
+    randomBytes(
+      16,
+    );
 
   // 48-bit big-endian millisecond timestamp.
-  const ms = Math.max(0, Math.floor(now));
-  bytes[0] = (ms / 2 ** 40) & 0xff;
-  bytes[1] = (ms / 2 ** 32) & 0xff;
-  bytes[2] = (ms / 2 ** 24) & 0xff;
-  bytes[3] = (ms / 2 ** 16) & 0xff;
-  bytes[4] = (ms / 2 ** 8) & 0xff;
-  bytes[5] = ms & 0xff;
+  const ms =
+    Math.max(
+      0,
+      Math.floor(
+        now,
+      ),
+    );
+  bytes[0] =
+    (ms /
+      2 **
+        40) &
+    0xff;
+  bytes[1] =
+    (ms /
+      2 **
+        32) &
+    0xff;
+  bytes[2] =
+    (ms /
+      2 **
+        24) &
+    0xff;
+  bytes[3] =
+    (ms /
+      2 **
+        16) &
+    0xff;
+  bytes[4] =
+    (ms /
+      2 **
+        8) &
+    0xff;
+  bytes[5] =
+    ms &
+    0xff;
 
-  bytes[6] = (bytes[6] & 0x0f) | 0x70; // version 7
-  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10
+  bytes[6] =
+    (bytes[6] &
+      0x0f) |
+    0x70; // version 7
+  bytes[8] =
+    (bytes[8] &
+      0x3f) |
+    0x80; // variant 10
 
-  const h = HEX;
+  const h =
+    HEX;
   return (
-    h[bytes[0]] +
-    h[bytes[1]] +
-    h[bytes[2]] +
-    h[bytes[3]] +
+    h[
+      bytes[0]
+    ] +
+    h[
+      bytes[1]
+    ] +
+    h[
+      bytes[2]
+    ] +
+    h[
+      bytes[3]
+    ] +
     '-' +
-    h[bytes[4]] +
-    h[bytes[5]] +
+    h[
+      bytes[4]
+    ] +
+    h[
+      bytes[5]
+    ] +
     '-' +
-    h[bytes[6]] +
-    h[bytes[7]] +
+    h[
+      bytes[6]
+    ] +
+    h[
+      bytes[7]
+    ] +
     '-' +
-    h[bytes[8]] +
-    h[bytes[9]] +
+    h[
+      bytes[8]
+    ] +
+    h[
+      bytes[9]
+    ] +
     '-' +
-    h[bytes[10]] +
-    h[bytes[11]] +
-    h[bytes[12]] +
-    h[bytes[13]] +
-    h[bytes[14]] +
-    h[bytes[15]]
+    h[
+      bytes[10]
+    ] +
+    h[
+      bytes[11]
+    ] +
+    h[
+      bytes[12]
+    ] +
+    h[
+      bytes[13]
+    ] +
+    h[
+      bytes[14]
+    ] +
+    h[
+      bytes[15]
+    ]
   );
 }
 
@@ -80,8 +196,16 @@ export function uuidv7(now = Date.now()): string {
  * development.
  */
 export function newNoteId(): string {
-  const bytes = randomBytes(8);
-  let out = 'n';
-  for (const byte of bytes) out += HEX[byte];
+  const bytes =
+    randomBytes(
+      8,
+    );
+  let out =
+    'n';
+  for (const byte of bytes)
+    out +=
+      HEX[
+        byte
+      ];
   return out;
 }

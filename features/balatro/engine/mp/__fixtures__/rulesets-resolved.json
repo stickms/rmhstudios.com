@@ -17,7 +17,10 @@
         "bl_wall",
         "bl_final_vessel"
       ],
-      "bannedSilent": ["p_mp_trap_normal", "p_mp_trap_jumbo"],
+      "bannedSilent": [
+        "p_mp_trap_normal",
+        "p_mp_trap_jumbo"
+      ],
       "included": [],
       "reworked": [],
       "spectralBannedEnhancements": [],
@@ -76,7 +79,11 @@
   "ruleset_mp_balanced": {
     "resolved": {
       "key": "ruleset_mp_balanced",
-      "layers": ["standard", "ranked", "pvp_timer"],
+      "layers": [
+        "standard",
+        "ranked",
+        "pvp_timer"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -116,7 +123,9 @@
         "m_glass"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
       "setupHooks": [],
@@ -171,7 +180,9 @@
   "ruleset_mp_expanded": {
     "resolved": {
       "key": "ruleset_mp_expanded",
-      "layers": ["standard"],
+      "layers": [
+        "standard"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -211,7 +222,9 @@
         "m_glass"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
       "setupHooks": [],
@@ -266,7 +279,10 @@
   "ruleset_mp_smallworld": {
     "resolved": {
       "key": "ruleset_mp_smallworld",
-      "layers": ["standard", "smallworld"],
+      "layers": [
+        "standard",
+        "smallworld"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -306,12 +322,16 @@
         "m_glass"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {
         "mp_smallworld_cull": 0.75
       },
       "startingParams": {},
-      "setupHooks": ["smallworld"],
+      "setupHooks": [
+        "smallworld"
+      ],
       "flags": {
         "theOrder": true,
         "enemyLocationDisabled": false,
@@ -363,7 +383,9 @@
   "ruleset_mp_majorleague": {
     "resolved": {
       "key": "ruleset_mp_majorleague",
-      "layers": ["majorleague"],
+      "layers": [
+        "majorleague"
+      ],
       "multiplayerContent": false,
       "banned": [
         "j_mr_bones",
@@ -378,11 +400,19 @@
         "bl_wall",
         "bl_final_vessel"
       ],
-      "bannedSilent": ["j_bloodstone", "p_mp_trap_normal", "p_mp_trap_jumbo"],
+      "bannedSilent": [
+        "j_bloodstone",
+        "p_mp_trap_normal",
+        "p_mp_trap_jumbo"
+      ],
       "included": [],
-      "reworked": ["j_mp_bloodstone"],
+      "reworked": [
+        "j_mp_bloodstone"
+      ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
       "setupHooks": [],
@@ -452,7 +482,10 @@
         "bl_wall",
         "bl_final_vessel"
       ],
-      "bannedSilent": ["p_mp_trap_normal", "p_mp_trap_jumbo"],
+      "bannedSilent": [
+        "p_mp_trap_normal",
+        "p_mp_trap_jumbo"
+      ],
       "included": [],
       "reworked": [],
       "spectralBannedEnhancements": [],
@@ -511,7 +544,9 @@
   "ruleset_mp_sandbox": {
     "resolved": {
       "key": "ruleset_mp_sandbox",
-      "layers": ["sandbox"],
+      "layers": [
+        "sandbox"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -596,10 +631,15 @@
         "tag_mp_investment_sandbox"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced", "mp_sticker_extra_credit"],
+      "stickers": [
+        "mp_sticker_balanced",
+        "mp_sticker_extra_credit"
+      ],
       "gameModifiers": {},
       "startingParams": {},
-      "setupHooks": ["sandbox"],
+      "setupHooks": [
+        "sandbox"
+      ],
       "flags": {
         "theOrder": true,
         "enemyLocationDisabled": false,
@@ -651,7 +691,9 @@
   "ruleset_mp_badlatro": {
     "resolved": {
       "key": "ruleset_mp_badlatro",
-      "layers": ["badlatro"],
+      "layers": [
+        "badlatro"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -714,10 +756,15 @@
         "tag_top_up",
         "tag_handy"
       ],
-      "bannedSilent": ["p_mp_trap_normal", "p_mp_trap_jumbo"],
+      "bannedSilent": [
+        "p_mp_trap_normal",
+        "p_mp_trap_jumbo"
+      ],
       "included": [],
       "reworked": [],
-      "spectralBannedEnhancements": ["m_glass"],
+      "spectralBannedEnhancements": [
+        "m_glass"
+      ],
       "stickers": [],
       "gameModifiers": {},
       "startingParams": {},
@@ -773,7 +820,12 @@
   "ruleset_mp_chaos": {
     "resolved": {
       "key": "ruleset_mp_chaos",
-      "layers": ["standard", "sandbox", "smallworld", "speedlatro_timer"],
+      "layers": [
+        "standard",
+        "sandbox",
+        "smallworld",
+        "speedlatro_timer"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -871,12 +923,18 @@
         "tag_mp_investment_sandbox"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced", "mp_sticker_extra_credit"],
+      "stickers": [
+        "mp_sticker_balanced",
+        "mp_sticker_extra_credit"
+      ],
       "gameModifiers": {
         "mp_smallworld_cull": 0.75
       },
       "startingParams": {},
-      "setupHooks": ["sandbox", "smallworld"],
+      "setupHooks": [
+        "sandbox",
+        "smallworld"
+      ],
       "flags": {
         "theOrder": true,
         "enemyLocationDisabled": false,
@@ -928,7 +986,10 @@
   "ruleset_mp_speedlatro": {
     "resolved": {
       "key": "ruleset_mp_speedlatro",
-      "layers": ["standard", "speedlatro_timer"],
+      "layers": [
+        "standard",
+        "speedlatro_timer"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -968,7 +1029,9 @@
         "m_glass"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
       "setupHooks": [],
@@ -1023,7 +1086,9 @@
   "ruleset_mp_traditional": {
     "resolved": {
       "key": "ruleset_mp_traditional",
-      "layers": ["standard"],
+      "layers": [
+        "standard"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -1063,7 +1128,9 @@
         "m_glass"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
       "setupHooks": [],
@@ -1118,7 +1185,10 @@
   "ruleset_mp_legacy_ranked": {
     "resolved": {
       "key": "ruleset_mp_legacy_ranked",
-      "layers": ["classic", "ranked"],
+      "layers": [
+        "classic",
+        "ranked"
+      ],
       "multiplayerContent": false,
       "banned": [
         "j_mr_bones",
@@ -1133,11 +1203,18 @@
         "bl_wall",
         "bl_final_vessel"
       ],
-      "bannedSilent": ["p_mp_trap_normal", "p_mp_trap_jumbo"],
+      "bannedSilent": [
+        "p_mp_trap_normal",
+        "p_mp_trap_jumbo"
+      ],
       "included": [],
-      "reworked": ["m_glass"],
+      "reworked": [
+        "m_glass"
+      ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
       "setupHooks": [],
@@ -1192,7 +1269,10 @@
   "ruleset_mp_wsob": {
     "resolved": {
       "key": "ruleset_mp_wsob",
-      "layers": ["ranked", "wsob"],
+      "layers": [
+        "ranked",
+        "wsob"
+      ],
       "multiplayerContent": false,
       "banned": [
         "j_mr_bones",
@@ -1208,11 +1288,22 @@
         "bl_final_vessel",
         "c_justice"
       ],
-      "bannedSilent": ["j_hanging_chad", "j_bloodstone", "p_mp_trap_normal", "p_mp_trap_jumbo"],
+      "bannedSilent": [
+        "j_hanging_chad",
+        "j_bloodstone",
+        "p_mp_trap_normal",
+        "p_mp_trap_jumbo"
+      ],
       "included": [],
-      "reworked": ["j_mp_hanging_chad", "j_mp_bloodstone", "m_glass"],
+      "reworked": [
+        "j_mp_hanging_chad",
+        "j_mp_bloodstone",
+        "m_glass"
+      ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
       "setupHooks": [],
@@ -1267,7 +1358,11 @@
   "ruleset_mp_experimental": {
     "resolved": {
       "key": "ruleset_mp_experimental",
-      "layers": ["experimental", "pvp_timer", "pressure_timer"],
+      "layers": [
+        "experimental",
+        "pvp_timer",
+        "pressure_timer"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -1320,7 +1415,9 @@
         "mp_sticker_chance": 0.3333333333333333
       },
       "startingParams": {},
-      "setupHooks": ["experimental"],
+      "setupHooks": [
+        "experimental"
+      ],
       "flags": {
         "theOrder": true,
         "enemyLocationDisabled": false,
@@ -1372,7 +1469,9 @@
   "ruleset_mp_experimental_legacy": {
     "resolved": {
       "key": "ruleset_mp_experimental_legacy",
-      "layers": ["classic"],
+      "layers": [
+        "classic"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -1403,9 +1502,15 @@
         "p_mp_trap_jumbo"
       ],
       "included": [],
-      "reworked": ["m_glass", "j_mp_hanging_chad", "j_mp_lets_go_gambling"],
+      "reworked": [
+        "m_glass",
+        "j_mp_hanging_chad",
+        "j_mp_lets_go_gambling"
+      ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
       "setupHooks": [],
@@ -1460,7 +1565,9 @@
   "ruleset_mp_release": {
     "resolved": {
       "key": "ruleset_mp_release",
-      "layers": ["release"],
+      "layers": [
+        "release"
+      ],
       "multiplayerContent": false,
       "banned": [
         "j_mr_bones",
@@ -1475,14 +1582,21 @@
         "bl_wall",
         "bl_final_vessel"
       ],
-      "bannedSilent": ["p_mp_trap_normal", "p_mp_trap_jumbo"],
+      "bannedSilent": [
+        "p_mp_trap_normal",
+        "p_mp_trap_jumbo"
+      ],
       "included": [],
       "reworked": [],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
-      "setupHooks": ["release"],
+      "setupHooks": [
+        "release"
+      ],
       "flags": {
         "theOrder": true,
         "enemyLocationDisabled": false,
@@ -1626,7 +1740,9 @@
         "c_mp_wraith"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {
         "mp_eeeee_chance": 0.4,
         "mp_shared_slots": 15,
@@ -1735,7 +1851,12 @@
   "experimental+bigger_shop": {
     "resolved": {
       "key": "ruleset_mp_experimental",
-      "layers": ["experimental", "pvp_timer", "pressure_timer", "bigger_shop"],
+      "layers": [
+        "experimental",
+        "pvp_timer",
+        "pressure_timer",
+        "bigger_shop"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -1788,7 +1909,10 @@
         "mp_sticker_chance": 0.3333333333333333
       },
       "startingParams": {},
-      "setupHooks": ["experimental", "bigger_shop"],
+      "setupHooks": [
+        "experimental",
+        "bigger_shop"
+      ],
       "flags": {
         "theOrder": true,
         "enemyLocationDisabled": false,
@@ -1832,7 +1956,9 @@
       "differentDecks": false,
       "randomLoadout": false,
       "multiplayerJokers": true,
-      "modifierLayers": ["bigger_shop"],
+      "modifierLayers": [
+        "bigger_shop"
+      ],
       "seatGraceMs": 120000
     },
     "mpContentPooled": true
@@ -1840,7 +1966,9 @@
   "sandbox-no-mp-jokers": {
     "resolved": {
       "key": "ruleset_mp_sandbox",
-      "layers": ["sandbox"],
+      "layers": [
+        "sandbox"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -1925,10 +2053,15 @@
         "tag_mp_investment_sandbox"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced", "mp_sticker_extra_credit"],
+      "stickers": [
+        "mp_sticker_balanced",
+        "mp_sticker_extra_credit"
+      ],
       "gameModifiers": {},
       "startingParams": {},
-      "setupHooks": ["sandbox"],
+      "setupHooks": [
+        "sandbox"
+      ],
       "flags": {
         "theOrder": true,
         "enemyLocationDisabled": false,
@@ -1980,7 +2113,11 @@
   "practice-balanced": {
     "resolved": {
       "key": "ruleset_mp_balanced",
-      "layers": ["standard", "ranked", "pvp_timer"],
+      "layers": [
+        "standard",
+        "ranked",
+        "pvp_timer"
+      ],
       "multiplayerContent": true,
       "banned": [
         "j_mr_bones",
@@ -2020,7 +2157,9 @@
         "m_glass"
       ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {},
       "startingParams": {},
       "setupHooks": [],

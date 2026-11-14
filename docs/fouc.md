@@ -1,21 +1,127 @@
 # FOUC — the audit, the contract, and what prevents a flash
 
-A flash of unstyled content is this site's hardest class of defect to reason
-about, because nothing about it is visible in a diff. Every mechanism that
-prevents one — the generated pre-paint script
-([`lib/prepaint/`](../lib/prepaint/), emitted by
-[`app/routes/__root.tsx`](../app/routes/__root.tsx)), the `--site-*`/`--app-*`
-token contracts, the route-CSS guards in [`app/globals.css`](../app/globals.css),
-Vite's CSS-before-chunk preload ordering — is correct in isolation, and only
-provably correct **together, in a real browser, in the order the browser actually
-does things**.
+A
+flash
+of
+unstyled
+content
+is
+this
+site's
+hardest
+class
+of
+defect
+to
+reason
+about,
+because
+nothing
+about
+it
+is
+visible
+in
+a
+diff.
+Every
+mechanism
+that
+prevents
+one
+—
+the
+generated
+pre-paint
+script
+([`lib/prepaint/`](../lib/prepaint/),
+emitted
+by
+[`app/routes/__root.tsx`](../app/routes/__root.tsx)),
+the
+`--site-*`/`--app-*`
+token
+contracts,
+the
+route-CSS
+guards
+in
+[`app/globals.css`](../app/globals.css),
+Vite's
+CSS-before-chunk
+preload
+ordering
+—
+is
+correct
+in
+isolation,
+and
+only
+provably
+correct
+**together,
+in
+a
+real
+browser,
+in
+the
+order
+the
+browser
+actually
+does
+things**.
 
-So FOUC is checked the way it has to be: by driving the built site with Chromium
-and measuring what the document looked like, frame by frame, on every page.
+So
+FOUC
+is
+checked
+the
+way
+it
+has
+to
+be:
+by
+driving
+the
+built
+site
+with
+Chromium
+and
+measuring
+what
+the
+document
+looked
+like,
+frame
+by
+frame,
+on
+every
+page.
 
-> Sources of truth: `testing/e2e/fouc.mjs`, `testing/e2e/fouc-instrument.mjs`,
-> `testing/e2e/fouc-routes.mjs` and `lib/__tests__/fouc-contract.test.ts`. When
-> this doc disagrees with those, the files win.
+> Sources
+> of
+> truth:
+> `testing/e2e/fouc.mjs`,
+> `testing/e2e/fouc-instrument.mjs`,
+> `testing/e2e/fouc-routes.mjs`
+> and
+> `lib/__tests__/fouc-contract.test.ts`.
+> When
+> this
+> doc
+> disagrees
+> with
+> those,
+> the
+> files
+> win.
 
 ## TL;DR
 
@@ -40,9 +146,43 @@ pnpm test lib/__tests__/fouc-contract.test.ts
 
 ## What counts as a FOUC here
 
-Not "the page was blank and then it wasn't" — that is loading. A FOUC is
-**content the reader could already see changing how it looks**. The audit is six
-detectors, each measuring one way that happens.
+Not
+"the
+page
+was
+blank
+and
+then
+it
+wasn't"
+—
+that
+is
+loading.
+A
+FOUC
+is
+**content
+the
+reader
+could
+already
+see
+changing
+how
+it
+looks**.
+The
+audit
+is
+six
+detectors,
+each
+measuring
+one
+way
+that
+happens.
 
 | #   | Detector    | What it measures                                                                                                                                                                                                                                                    | Gated                |
 | --- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
@@ -56,94 +196,777 @@ detectors, each measuring one way that happens.
 
 ### Why detector 4 listens for `error` events, not just the console
 
-A production React build does not log a hydration mismatch. Its default
-`onRecoverableError` is `reportError`, which dispatches an `error` event on
-`window` carrying `Minified React error #418`. Until 2026-10-07 the instrument
-only patched `console.error`, so against the builds it audits it could not fire —
-and it never did, while `/login` threw #418 on every signed-out redirect and a
-nested 404 threw it on every load. That matters more than one bad subtree: with no
-Suspense boundary between the mismatch and the document, React re-renders the
-WHOLE document, and React 19 resets `<html>`'s attributes to its props when it
-does — wiping every class, `data-*` attribute and inline style the pre-paint
-scripts set. The `hydration` sabotage in the self-test reports a #418 exactly the
-way production React does, so this cannot go deaf again unnoticed.
+A
+production
+React
+build
+does
+not
+log
+a
+hydration
+mismatch.
+Its
+default
+`onRecoverableError`
+is
+`reportError`,
+which
+dispatches
+an
+`error`
+event
+on
+`window`
+carrying
+`Minified React error #418`.
+Until
+2026-10-07
+the
+instrument
+only
+patched
+`console.error`,
+so
+against
+the
+builds
+it
+audits
+it
+could
+not
+fire
+—
+and
+it
+never
+did,
+while
+`/login`
+threw
+#418
+on
+every
+signed-out
+redirect
+and
+a
+nested
+404
+threw
+it
+on
+every
+load.
+That
+matters
+more
+than
+one
+bad
+subtree:
+with
+no
+Suspense
+boundary
+between
+the
+mismatch
+and
+the
+document,
+React
+re-renders
+the
+WHOLE
+document,
+and
+React
+19
+resets
+`<html>`'s
+attributes
+to
+its
+props
+when
+it
+does
+—
+wiping
+every
+class,
+`data-*`
+attribute
+and
+inline
+style
+the
+pre-paint
+scripts
+set.
+The
+`hydration`
+sabotage
+in
+the
+self-test
+reports
+a
+#418
+exactly
+the
+way
+production
+React
+does,
+so
+this
+cannot
+go
+deaf
+again
+unnoticed.
 
 ### Why the sample window is ten seconds
 
-Some writers are deliberately deferred: the account appearance sync in
-`Providers.tsx` waits for idle (`requestIdleCallback`, 2s timeout), and under the
-audit's 4× CPU throttle that measured **8.6s** after navigation. A flash there is
-as real as one at 500ms, and a 4s window could not see it. `--window <ms>` changes
-it; the run header says when a shorter window would hide idle-gated work.
+Some
+writers
+are
+deliberately
+deferred:
+the
+account
+appearance
+sync
+in
+`Providers.tsx`
+waits
+for
+idle
+(`requestIdleCallback`,
+2s
+timeout),
+and
+under
+the
+audit's
+4×
+CPU
+throttle
+that
+measured
+**8.6s**
+after
+navigation.
+A
+flash
+there
+is
+as
+real
+as
+one
+at
+500ms,
+and
+a
+4s
+window
+could
+not
+see
+it.
+`--window <ms>`
+changes
+it;
+the
+run
+header
+says
+when
+a
+shorter
+window
+would
+hide
+idle-gated
+work.
 
 ### Why detector 3 asks its question when it does
 
-This is the subtlety that makes the difference between a useful audit and a wall
-of noise, and it was learned by getting it wrong.
+This
+is
+the
+subtlety
+that
+makes
+the
+difference
+between
+a
+useful
+audit
+and
+a
+wall
+of
+noise,
+and
+it
+was
+learned
+by
+getting
+it
+wrong.
 
-A route's stylesheet routinely arrives hundreds of milliseconds after first paint,
-because TanStack Start compiles every route component to
-`lazyRouteComponent(() => import(…))` and Vite's `__vitePreload` helper fetches
-the chunk's CSS alongside the chunk. Asked **after the page settles**, every one
-of that sheet's selectors matches — the game has mounted by then — and the sheet
-looks exactly like a flash. Asked **at the frame the sheet joined the cascade**,
-none of them matched, because `__vitePreload` _awaits the CSS before executing the
-chunk_. Measured on `/hearthworks`: the game's stylesheet applied at **553ms** and
-the first `.isw` element existed at **1020ms**. Nothing ever painted unstyled.
+A
+route's
+stylesheet
+routinely
+arrives
+hundreds
+of
+milliseconds
+after
+first
+paint,
+because
+TanStack
+Start
+compiles
+every
+route
+component
+to
+`lazyRouteComponent(() => import(…))`
+and
+Vite's
+`__vitePreload`
+helper
+fetches
+the
+chunk's
+CSS
+alongside
+the
+chunk.
+Asked
+**after
+the
+page
+settles**,
+every
+one
+of
+that
+sheet's
+selectors
+matches
+—
+the
+game
+has
+mounted
+by
+then
+—
+and
+the
+sheet
+looks
+exactly
+like
+a
+flash.
+Asked
+**at
+the
+frame
+the
+sheet
+joined
+the
+cascade**,
+none
+of
+them
+matched,
+because
+`__vitePreload`
+_awaits
+the
+CSS
+before
+executing
+the
+chunk_.
+Measured
+on
+`/hearthworks`:
+the
+game's
+stylesheet
+applied
+at
+**553ms**
+and
+the
+first
+`.isw`
+element
+existed
+at
+**1020ms**.
+Nothing
+ever
+painted
+unstyled.
 
-So the probe lives in the instrument, runs on the frame the sheet appears, and
-universal selectors (`:root`, `html`, `body`, `*`) are excluded — they match by
-definition, and what a late `:root` block actually changes shows up in detectors
-2, 5 and 6, which measure the consequence instead of guessing at it.
+So
+the
+probe
+lives
+in
+the
+instrument,
+runs
+on
+the
+frame
+the
+sheet
+appears,
+and
+universal
+selectors
+(`:root`,
+`html`,
+`body`,
+`*`)
+are
+excluded
+—
+they
+match
+by
+definition,
+and
+what
+a
+late
+`:root`
+block
+actually
+changes
+shows
+up
+in
+detectors
+2,
+5
+and
+6,
+which
+measure
+the
+consequence
+instead
+of
+guessing
+at
+it.
 
 ### Why detector 6 has two halves, and why only one gates
 
-- **Divergence** (gated): a frame that looks _less_ like the settled picture than
-  its predecessor did. Only a transient flash does that; progressive loading only
-  ever converges. Near-zero false-positive rate.
-- **Late settle** (reported): how different the picture still was from its final
-  state 400ms+ after content appeared. This catches a _permanent_ late change,
-  which divergence cannot see — by the end state it has converged. It is not
-  gated because a page still fetching an image or a map tile is
-  indistinguishable from a flash at 24×48, and every _cause_ of a flash already
-  has its own gated detector above.
+- **Divergence**
+  (gated):
+  a
+  frame
+  that
+  looks
+  _less_
+  like
+  the
+  settled
+  picture
+  than
+  its
+  predecessor
+  did.
+  Only
+  a
+  transient
+  flash
+  does
+  that;
+  progressive
+  loading
+  only
+  ever
+  converges.
+  Near-zero
+  false-positive
+  rate.
+- **Late
+  settle**
+  (reported):
+  how
+  different
+  the
+  picture
+  still
+  was
+  from
+  its
+  final
+  state
+  400ms+
+  after
+  content
+  appeared.
+  This
+  catches
+  a
+  _permanent_
+  late
+  change,
+  which
+  divergence
+  cannot
+  see
+  —
+  by
+  the
+  end
+  state
+  it
+  has
+  converged.
+  It
+  is
+  not
+  gated
+  because
+  a
+  page
+  still
+  fetching
+  an
+  image
+  or
+  a
+  map
+  tile
+  is
+  indistinguishable
+  from
+  a
+  flash
+  at
+  24×48,
+  and
+  every
+  _cause_
+  of
+  a
+  flash
+  already
+  has
+  its
+  own
+  gated
+  detector
+  above.
 
 ## Seeing it, not just scoring it
 
-A FOUC verdict is a number, and a number is the wrong format for "does this look
-right". `--filmstrip` writes the audit's own evidence as a page you can open: the
-real compositor frames it measured, in order, each labelled with how long after the
-first captured frame it was on screen, next to the verdict drawn from them.
+A
+FOUC
+verdict
+is
+a
+number,
+and
+a
+number
+is
+the
+wrong
+format
+for
+"does
+this
+look
+right".
+`--filmstrip`
+writes
+the
+audit's
+own
+evidence
+as
+a
+page
+you
+can
+open:
+the
+real
+compositor
+frames
+it
+measured,
+in
+order,
+each
+labelled
+with
+how
+long
+after
+the
+first
+captured
+frame
+it
+was
+on
+screen,
+next
+to
+the
+verdict
+drawn
+from
+them.
 
 ```bash
 node testing/e2e/fouc.mjs --route / --route /hearthworks \
   --profiles fresh,signed-in --filmstrip /tmp/initial-loads.html
 ```
 
-Runs of the same route are laid out as adjacent rows in profile order, so
-**signed-out above signed-in** is the default reading — the comparison that matters
-most on a social site, where the shell a visitor gets and the shell an account gets
-are different pages with different first paints.
+Runs
+of
+the
+same
+route
+are
+laid
+out
+as
+adjacent
+rows
+in
+profile
+order,
+so
+**signed-out
+above
+signed-in**
+is
+the
+default
+reading
+—
+the
+comparison
+that
+matters
+most
+on
+a
+social
+site,
+where
+the
+shell
+a
+visitor
+gets
+and
+the
+shell
+an
+account
+gets
+are
+different
+pages
+with
+different
+first
+paints.
 
-Two properties are deliberate:
+Two
+properties
+are
+deliberate:
 
-- The frames are the **same ones the detectors measured**, collected during that
-  run, not a second load. A re-run can race differently, and then the picture and
-  the verdict disagree with no way to tell which is wrong.
-- Only `FILMSTRIP_FRAME_BUDGET` (16) of the analysed 48 are rendered. The analysis
-  wants resolution; a human wants the sequence. Every frame is inlined as a data
-  URI, so 48 per row across twenty routes is a document nobody scrolls twice.
+- The
+  frames
+  are
+  the
+  **same
+  ones
+  the
+  detectors
+  measured**,
+  collected
+  during
+  that
+  run,
+  not
+  a
+  second
+  load.
+  A
+  re-run
+  can
+  race
+  differently,
+  and
+  then
+  the
+  picture
+  and
+  the
+  verdict
+  disagree
+  with
+  no
+  way
+  to
+  tell
+  which
+  is
+  wrong.
+- Only
+  `FILMSTRIP_FRAME_BUDGET`
+  (16)
+  of
+  the
+  analysed
+  48
+  are
+  rendered.
+  The
+  analysis
+  wants
+  resolution;
+  a
+  human
+  wants
+  the
+  sequence.
+  Every
+  frame
+  is
+  inlined
+  as
+  a
+  data
+  URI,
+  so
+  48
+  per
+  row
+  across
+  twenty
+  routes
+  is
+  a
+  document
+  nobody
+  scrolls
+  twice.
 
-**A clean load looks identical from its first content-bearing frame to its last.**
-That is the whole test, and it is the one thing a reviewer can check without
-reading a threshold.
+**A
+clean
+load
+looks
+identical
+from
+its
+first
+content-bearing
+frame
+to
+its
+last.**
+That
+is
+the
+whole
+test,
+and
+it
+is
+the
+one
+thing
+a
+reviewer
+can
+check
+without
+reading
+a
+threshold.
 
 ## Appearance profiles
 
-A FOUC is preference-dependent — the pre-paint script's whole job is to read a
-stored preference and apply it, so a bug in it is invisible to a visitor who has
-none. Each profile is one stored-preference shape; `PROFILES` in `fouc.mjs` is
-the list, with the reason each exists.
+A
+FOUC
+is
+preference-dependent
+—
+the
+pre-paint
+script's
+whole
+job
+is
+to
+read
+a
+stored
+preference
+and
+apply
+it,
+so
+a
+bug
+in
+it
+is
+invisible
+to
+a
+visitor
+who
+has
+none.
+Each
+profile
+is
+one
+stored-preference
+shape;
+`PROFILES`
+in
+`fouc.mjs`
+is
+the
+list,
+with
+the
+reason
+each
+exists.
 
 | Profile         | What it is for                                                                                                                               |
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -157,60 +980,507 @@ the list, with the reason each exists.
 | `motion`        | Midnight with animations on; frame divergence reported, not gated.                                                                           |
 | `signed-in`     | A signed-in visitor (see below).                                                                                                             |
 
-Every profile but `motion` runs with `reducedMotion: 'reduce'`. That is not a
-hedge — it is what makes detector 6 meaningful. `globals.css` collapses every
-transition and enter animation to `0.01ms` under that preference, so the only
-thing left that can change the picture after first paint is a restyle.
+Every
+profile
+but
+`motion`
+runs
+with
+`reducedMotion: 'reduce'`.
+That
+is
+not
+a
+hedge
+—
+it
+is
+what
+makes
+detector
+6
+meaningful.
+`globals.css`
+collapses
+every
+transition
+and
+enter
+animation
+to
+`0.01ms`
+under
+that
+preference,
+so
+the
+only
+thing
+left
+that
+can
+change
+the
+picture
+after
+first
+paint
+is
+a
+restyle.
 
 ## Coverage, and how it is kept honest
 
-The route set is **parsed from `app/routeTree.gen.ts`**, never hand-listed. A page
-missing from a hand-list is a page nobody checked, and the list reads as coverage
-either way — the same lesson `vitest.config.ts` records about test discovery.
+The
+route
+set
+is
+**parsed
+from
+`app/routeTree.gen.ts`**,
+never
+hand-listed.
+A
+page
+missing
+from
+a
+hand-list
+is
+a
+page
+nobody
+checked,
+and
+the
+list
+reads
+as
+coverage
+either
+way
+—
+the
+same
+lesson
+`vitest.config.ts`
+records
+about
+test
+discovery.
 
-Every addressable path in that file must be one of:
+Every
+addressable
+path
+in
+that
+file
+must
+be
+one
+of:
 
-- **audited** — a static page, or a parameterised route with a concrete fixture in
+- **audited**
+  —
+  a
+  static
+  page,
+  or
+  a
+  parameterised
+  route
+  with
+  a
+  concrete
+  fixture
+  in
   `DYNAMIC_ROUTE_FIXTURES`;
-- **excluded** — in `EXCLUDED_STATIC_PATHS`, for the one acceptable reason: it is
-  not an HTML document a reader looks at (RSS, XML, JSON, `text/plain`, a
-  redirect, a prebuilt bundle outside the React tree).
+- **excluded**
+  —
+  in
+  `EXCLUDED_STATIC_PATHS`,
+  for
+  the
+  one
+  acceptable
+  reason:
+  it
+  is
+  not
+  an
+  HTML
+  document
+  a
+  reader
+  looks
+  at
+  (RSS,
+  XML,
+  JSON,
+  `text/plain`,
+  a
+  redirect,
+  a
+  prebuilt
+  bundle
+  outside
+  the
+  React
+  tree).
 
-Anything else is a hard failure, in both the runner and the commit-time gate. A
-new route is therefore in the audit the moment it exists.
+Anything
+else
+is
+a
+hard
+failure,
+in
+both
+the
+runner
+and
+the
+commit-time
+gate.
+A
+new
+route
+is
+therefore
+in
+the
+audit
+the
+moment
+it
+exists.
 
-**Fixture fidelity is declared.** A parameterised route's fixture is marked
-`'content'` when it resolves to a real record and `'shell'` when it deliberately
-does not — the route then renders its not-found branch, which is still a real page
-with a real first paint, and the root-level detectors are exactly as meaningful
-there. What `'shell'` does _not_ exercise is the content-level styling of a
-populated page. Saying so is the point: a seeded fixture that silently stopped
-resolving would quietly become `'shell'` while still claiming otherwise.
+**Fixture
+fidelity
+is
+declared.**
+A
+parameterised
+route's
+fixture
+is
+marked
+`'content'`
+when
+it
+resolves
+to
+a
+real
+record
+and
+`'shell'`
+when
+it
+deliberately
+does
+not
+—
+the
+route
+then
+renders
+its
+not-found
+branch,
+which
+is
+still
+a
+real
+page
+with
+a
+real
+first
+paint,
+and
+the
+root-level
+detectors
+are
+exactly
+as
+meaningful
+there.
+What
+`'shell'`
+does
+_not_
+exercise
+is
+the
+content-level
+styling
+of
+a
+populated
+page.
+Saying
+so
+is
+the
+point:
+a
+seeded
+fixture
+that
+silently
+stopped
+resolving
+would
+quietly
+become
+`'shell'`
+while
+still
+claiming
+otherwise.
 
-**Redirects are reported, never absorbed.** `page.goto` follows redirects, so a
-signed-out run sent away from `/admin/*` would otherwise have audited the home
-page forty times and called forty admin pages clean — the worst failure available
-to an audit, because it is indistinguishable from success. The report separates
-"visited as themselves" from "redirected away, audited as their destination".
+**Redirects
+are
+reported,
+never
+absorbed.**
+`page.goto`
+follows
+redirects,
+so
+a
+signed-out
+run
+sent
+away
+from
+`/admin/*`
+would
+otherwise
+have
+audited
+the
+home
+page
+forty
+times
+and
+called
+forty
+admin
+pages
+clean
+—
+the
+worst
+failure
+available
+to
+an
+audit,
+because
+it
+is
+indistinguishable
+from
+success.
+The
+report
+separates
+"visited
+as
+themselves"
+from
+"redirected
+away,
+audited
+as
+their
+destination".
 
-**The `signed-in` profile is what closes that gap.** It provisions a throwaway
-account through the site's own HTTP auth API (so the audit needs no Prisma client
-and no credentials it did not create) and audits `/settings/*`, `/messages`,
-`/saves` and the rest as themselves. **It writes to the server it audits** — fine
-for a local build or a CI container, wrong for anything shared, so `--no-auth`
-turns it off. `/admin/*` additionally needs a flag no HTTP endpoint grants; pass a
-ready-made cookie in `FOUC_SESSION_COOKIE` to reach those.
+**The
+`signed-in`
+profile
+is
+what
+closes
+that
+gap.**
+It
+provisions
+a
+throwaway
+account
+through
+the
+site's
+own
+HTTP
+auth
+API
+(so
+the
+audit
+needs
+no
+Prisma
+client
+and
+no
+credentials
+it
+did
+not
+create)
+and
+audits
+`/settings/*`,
+`/messages`,
+`/saves`
+and
+the
+rest
+as
+themselves.
+**It
+writes
+to
+the
+server
+it
+audits**
+—
+fine
+for
+a
+local
+build
+or
+a
+CI
+container,
+wrong
+for
+anything
+shared,
+so
+`--no-auth`
+turns
+it
+off.
+`/admin/*`
+additionally
+needs
+a
+flag
+no
+HTTP
+endpoint
+grants;
+pass
+a
+ready-made
+cookie
+in
+`FOUC_SESSION_COOKIE`
+to
+reach
+those.
 
 ## The one way the audit perturbs the page
 
-Chromium's `Page.startScreencast` emits a frame only when the captured surface
-updates, and a settled page never updates it. Measured on the home page: a
-screencast delivers ~26 frames spanning ~700ms and then goes silent, so a flash at
-1.1s was invisible to the pixel detector while being plainly visible to a human.
+Chromium's
+`Page.startScreencast`
+emits
+a
+frame
+only
+when
+the
+captured
+surface
+updates,
+and
+a
+settled
+page
+never
+updates
+it.
+Measured
+on
+the
+home
+page:
+a
+screencast
+delivers
+~26
+frames
+spanning
+~700ms
+and
+then
+goes
+silent,
+so
+a
+flash
+at
+1.1s
+was
+invisible
+to
+the
+pixel
+detector
+while
+being
+plainly
+visible
+to
+a
+human.
 
-The instrument therefore gives the surface a reason to update every frame: one
-pixel in the bottom-right corner whose opacity alternates between 0.002 and 0.004.
-Three variants were measured over a 4s window (frames / span):
+The
+instrument
+therefore
+gives
+the
+surface
+a
+reason
+to
+update
+every
+frame:
+one
+pixel
+in
+the
+bottom-right
+corner
+whose
+opacity
+alternates
+between
+0.002
+and
+0.004.
+Three
+variants
+were
+measured
+over
+a
+4s
+window
+(frames
+/
+span):
 
 | Heartbeat                   | Frames  | Span       |
 | --------------------------- | ------- | ---------- |
@@ -218,29 +1488,191 @@ Three variants were measured over a 4s window (frames / span):
 | in-viewport 1px transform   | 25      | 1623ms     |
 | **in-viewport 1px opacity** | **105** | **3521ms** |
 
-It is one pixel at 0.3% opacity, downscaled to a thousandth of one cell of the
-24×48 signature, and `position: fixed` so it cannot affect layout. This is the
-minimum that makes the measurement possible at all.
+It
+is
+one
+pixel
+at
+0.3%
+opacity,
+downscaled
+to
+a
+thousandth
+of
+one
+cell
+of
+the
+24×48
+signature,
+and
+`position: fixed`
+so
+it
+cannot
+affect
+layout.
+This
+is
+the
+minimum
+that
+makes
+the
+measurement
+possible
+at
+all.
 
 ## Calibration
 
-`FRAME_LATE_SETTLE_LIMIT` is set from measurement, not taste. Across a
-representative slice, most pages measure **exactly 0.0000** — they paint their
-settled look and never move again. The two that move are the ones still fetching
-content: the feed at `/` (0.0227, settled at +745ms) and `/hearthworks` (0.0093,
-+621ms). A deliberate flash measures **0.80**. The limit sits an order of
-magnitude above the content-arrival noise and an order of magnitude below a real
+`FRAME_LATE_SETTLE_LIMIT`
+is
+set
+from
+measurement,
+not
+taste.
+Across
+a
+representative
+slice,
+most
+pages
+measure
+**exactly
+0.0000**
+—
+they
+paint
+their
+settled
+look
+and
+never
+move
+again.
+The
+two
+that
+move
+are
+the
+ones
+still
+fetching
+content:
+the
+feed
+at
+`/`
+(0.0227,
+settled
+at
++745ms)
+and
+`/hearthworks`
+(0.0093,
++621ms).
+A
+deliberate
+flash
+measures
+**0.80**.
+The
+limit
+sits
+an
+order
+of
+magnitude
+above
+the
+content-arrival
+noise
+and
+an
+order
+of
+magnitude
+below
+a
+real
 flash.
 
-Re-derive it with `FOUC_DEBUG=1`, which prints the per-frame distance series.
+Re-derive
+it
+with
+`FOUC_DEBUG=1`,
+which
+prints
+the
+per-frame
+distance
+series.
 
 ## The self-test
 
-An audit that passes because its instrument broke is a claim of coverage with
-nothing behind it, and this harness has already failed that way once: a regex
-escape eaten by a template literal killed `INSTRUMENT_SOURCE`, and every page came
-back clean. `--self-test` sabotages a real page once per provable detector and
-asserts the matching detector catches each one:
+An
+audit
+that
+passes
+because
+its
+instrument
+broke
+is
+a
+claim
+of
+coverage
+with
+nothing
+behind
+it,
+and
+this
+harness
+has
+already
+failed
+that
+way
+once:
+a
+regex
+escape
+eaten
+by
+a
+template
+literal
+killed
+`INSTRUMENT_SOURCE`,
+and
+every
+page
+came
+back
+clean.
+`--self-test`
+sabotages
+a
+real
+page
+once
+per
+provable
+detector
+and
+asserts
+the
+matching
+detector
+catches
+each
+one:
 
 | Sabotage                                                                | Must be caught by |
 | ----------------------------------------------------------------------- | ----------------- |
@@ -251,78 +1683,621 @@ asserts the matching detector catches each one:
 | Report React #418 through `reportError`, as a production build does     | `hydration`       |
 | Cover the viewport with an opaque panel, then remove it                 | `frame`           |
 
-**Run it before trusting a green audit.** The missing-instrument case is itself a
-finding (`kind: 'instrument'`), so a dead instrument fails loudly rather than
-passing quietly — but the self-test is what proves the live ones still work.
+**Run
+it
+before
+trusting
+a
+green
+audit.**
+The
+missing-instrument
+case
+is
+itself
+a
+finding
+(`kind: 'instrument'`),
+so
+a
+dead
+instrument
+fails
+loudly
+rather
+than
+passing
+quietly
+—
+but
+the
+self-test
+is
+what
+proves
+the
+live
+ones
+still
+work.
 
 ## The pre-paint script is generated, not hand-written
 
-Everything that must be on `<html>` before the first frame lives in
-[`lib/prepaint/`](../lib/prepaint/) as ordinary TypeScript — one module per
-concern (`platform`, `media-reveal`, `account-seed`, `theme`, `access`,
-`delight`, `locale`, `cookie-consent`), each a `(ctx) => void` step.
-`lib/prepaint/index.ts` runs them in order, each in its own `try/catch`, so one
-failing step (blocked storage, a corrupt stored value) never blocks the rest or
-paint. **Order matters:** platform before theme (theme reads `ios-webkit`), the
-account seed before theme (it writes the `localStorage` the theme step reads).
+Everything
+that
+must
+be
+on
+`<html>`
+before
+the
+first
+frame
+lives
+in
+[`lib/prepaint/`](../lib/prepaint/)
+as
+ordinary
+TypeScript
+—
+one
+module
+per
+concern
+(`platform`,
+`media-reveal`,
+`account-seed`,
+`theme`,
+`access`,
+`delight`,
+`locale`,
+`cookie-consent`),
+each
+a
+`(ctx) => void`
+step.
+`lib/prepaint/index.ts`
+runs
+them
+in
+order,
+each
+in
+its
+own
+`try/catch`,
+so
+one
+failing
+step
+(blocked
+storage,
+a
+corrupt
+stored
+value)
+never
+blocks
+the
+rest
+or
+paint.
+**Order
+matters:**
+platform
+before
+theme
+(theme
+reads
+`ios-webkit`),
+the
+account
+seed
+before
+theme
+(it
+writes
+the
+`localStorage`
+the
+theme
+step
+reads).
 
-`pnpm prepaint:build` (`scripts/build-prepaint.ts`) bundles `lib/prepaint/entry.ts`
-with esbuild (IIFE, minified, ES2017) into the GENERATED `lib/prepaint/generated.ts`:
-`PREPAINT_CODE`, its base64 sha256 `PREPAINT_SHA256` (the CSP `'sha256-…'` source,
-redesign F5), and the tiny `<body>`-top companion `PREPAINT_BODY_CODE` (it needs
-`document.body`, so it cannot fold into the head script). Never edit the generated
-file; `pnpm prepaint:check` (commit gate + CI "Docs freshness") and
-`lib/prepaint/__tests__/generated.test.ts` fail when it is stale.
+`pnpm prepaint:build`
+(`scripts/build-prepaint.ts`)
+bundles
+`lib/prepaint/entry.ts`
+with
+esbuild
+(IIFE,
+minified,
+ES2017)
+into
+the
+GENERATED
+`lib/prepaint/generated.ts`:
+`PREPAINT_CODE`,
+its
+base64
+sha256
+`PREPAINT_SHA256`
+(the
+CSP
+`'sha256-…'`
+source,
+redesign
+F5),
+and
+the
+tiny
+`<body>`-top
+companion
+`PREPAINT_BODY_CODE`
+(it
+needs
+`document.body`,
+so
+it
+cannot
+fold
+into
+the
+head
+script).
+Never
+edit
+the
+generated
+file;
+`pnpm prepaint:check`
+(commit
+gate +
+CI
+"Docs
+freshness")
+and
+`lib/prepaint/__tests__/generated.test.ts`
+fail
+when
+it
+is
+stale.
 
-There is exactly ONE code string. What varies is **data**, in a
-`<script type="application/json" id="rmh-prepaint">` block the root emits just
-before it (`lib/prepaint/config.ts`): `nf` (a global 404 is a site page whatever
-the URL), `discord` (that head never ran media-reveal or cookie-consent), `seed`
-(a signed-in account's saved appearance), and the `theme` tables from
-`stores/themeStore.ts` and `lib/prepaint/theme-routes.ts` (`THEME_EXCLUDED_ROUTES`,
-`THEME_EXCLUDED_EXCEPTIONS`; too heavy to bundle — they pull in the game and app
-catalogs). The route predicate is `isAppRoute` in `lib/prepaint/route.ts`, imported
-by both the theme step and `isAppThemeRoute` in `Providers`: one implementation,
-no hand-kept ES5 twin. To add a pre-paint behaviour: write a step, register it in
-`PREPAINT_STEPS`, run `pnpm prepaint:build`, and add a case that runs the generated
-code (`lib/__tests__/prepaint-harness.ts`).
+There
+is
+exactly
+ONE
+code
+string.
+What
+varies
+is
+**data**,
+in
+a
+`<script type="application/json" id="rmh-prepaint">`
+block
+the
+root
+emits
+just
+before
+it
+(`lib/prepaint/config.ts`):
+`nf`
+(a
+global
+404
+is
+a
+site
+page
+whatever
+the
+URL),
+`discord`
+(that
+head
+never
+ran
+media-reveal
+or
+cookie-consent),
+`seed`
+(a
+signed-in
+account's
+saved
+appearance),
+and
+the
+`theme`
+tables
+from
+`stores/themeStore.ts`
+and
+`lib/prepaint/theme-routes.ts`
+(`THEME_EXCLUDED_ROUTES`,
+`THEME_EXCLUDED_EXCEPTIONS`;
+too
+heavy
+to
+bundle
+—
+they
+pull
+in
+the
+game
+and
+app
+catalogs).
+The
+route
+predicate
+is
+`isAppRoute`
+in
+`lib/prepaint/route.ts`,
+imported
+by
+both
+the
+theme
+step
+and
+`isAppThemeRoute`
+in
+`Providers`:
+one
+implementation,
+no
+hand-kept
+ES5
+twin.
+To
+add
+a
+pre-paint
+behaviour:
+write
+a
+step,
+register
+it
+in
+`PREPAINT_STEPS`,
+run
+`pnpm prepaint:build`,
+and
+add
+a
+case
+that
+runs
+the
+generated
+code
+(`lib/__tests__/prepaint-harness.ts`).
 
 ## The commit-time contract
 
-The runtime audit needs a build and a server, so it runs before a release. A FOUC
-regression lands in a commit. `lib/__tests__/fouc-contract.test.ts` is the part of
-the same audit that can be proved from source alone, so it runs in `pnpm test` and
-in the commit gate. It fails on the mistakes that produced every flash the audit
+The
+runtime
+audit
+needs
+a
+build
+and
+a
+server,
+so
+it
+runs
+before
+a
+release.
+A
+FOUC
+regression
+lands
+in
+a
+commit.
+`lib/__tests__/fouc-contract.test.ts`
+is
+the
+part
+of
+the
+same
+audit
+that
+can
+be
+proved
+from
+source
+alone,
+so
+it
+runs
+in
+`pnpm test`
+and
+in
+the
+commit
+gate.
+It
+fails
+on
+the
+mistakes
+that
+produced
+every
+flash
+the
+audit
 found:
 
-1. **A root-level visual decision applied only after hydration.** The gate scans
-   `Providers.tsx`, `themeStore.ts` and `lib/appearance/prefs.ts`
-   for every class, `data-*` attribute and custom property
-   written to `<html>` from client code, and requires each one to also be written
-   by the generated pre-paint script (`lib/prepaint/generated.ts`). Transient tokens (`vt-active`, `vt-liquid` — set for
-   the duration of a View Transition, with no persisted state behind them) are the
-   only exemption, and entries come out of that list rather than going in.
-2. **A page nobody audited** — the coverage dichotomy above.
-3. **A hydration mismatch waiting to happen.** Nothing but `Providers.tsx` may
-   render from `authClient.useSession()` (it disagrees with the server on the
-   first client render); `app/router.tsx` must keep the not-found head guard
-   installed; and a route module imports its page statically — an inner `lazy()`
-   can still be pending at hydration, and any update that reaches the boundary
-   then swaps the server-rendered page for its fallback. The `lazy()`s that cannot
-   do that (client-only scenes, on-demand panels, auth-only admin) are a reviewed,
-   one-directional allowlist.
-4. **English copy that changes after paint.** A not-yet-loaded namespace renders
-   from each call's `defaultValue` until its chunk loads (per-namespace, on demand), so every such
-   default must equal its `locales/en` entry, plural forms included
+1. **A
+   root-level
+   visual
+   decision
+   applied
+   only
+   after
+   hydration.**
+   The
+   gate
+   scans
+   `Providers.tsx`,
+   `themeStore.ts`
+   and
+   `lib/appearance/prefs.ts`
+   for
+   every
+   class,
+   `data-*`
+   attribute
+   and
+   custom
+   property
+   written
+   to
+   `<html>`
+   from
+   client
+   code,
+   and
+   requires
+   each
+   one
+   to
+   also
+   be
+   written
+   by
+   the
+   generated
+   pre-paint
+   script
+   (`lib/prepaint/generated.ts`).
+   Transient
+   tokens
+   (`vt-active`,
+   `vt-liquid`
+   —
+   set
+   for
+   the
+   duration
+   of
+   a
+   View
+   Transition,
+   with
+   no
+   persisted
+   state
+   behind
+   them)
+   are
+   the
+   only
+   exemption,
+   and
+   entries
+   come
+   out
+   of
+   that
+   list
+   rather
+   than
+   going
+   in.
+2. **A
+   page
+   nobody
+   audited**
+   —
+   the
+   coverage
+   dichotomy
+   above.
+3. **A
+   hydration
+   mismatch
+   waiting
+   to
+   happen.**
+   Nothing
+   but
+   `Providers.tsx`
+   may
+   render
+   from
+   `authClient.useSession()`
+   (it
+   disagrees
+   with
+   the
+   server
+   on
+   the
+   first
+   client
+   render);
+   `app/router.tsx`
+   must
+   keep
+   the
+   not-found
+   head
+   guard
+   installed;
+   and
+   a
+   route
+   module
+   imports
+   its
+   page
+   statically
+   —
+   an
+   inner
+   `lazy()`
+   can
+   still
+   be
+   pending
+   at
+   hydration,
+   and
+   any
+   update
+   that
+   reaches
+   the
+   boundary
+   then
+   swaps
+   the
+   server-rendered
+   page
+   for
+   its
+   fallback.
+   The
+   `lazy()`s
+   that
+   cannot
+   do
+   that
+   (client-only
+   scenes,
+   on-demand
+   panels,
+   auth-only
+   admin)
+   are
+   a
+   reviewed,
+   one-directional
+   allowlist.
+4. **English
+   copy
+   that
+   changes
+   after
+   paint.**
+   A
+   not-yet-loaded
+   namespace
+   renders
+   from
+   each
+   call's
+   `defaultValue`
+   until
+   its
+   chunk
+   loads
+   (per-namespace,
+   on
+   demand),
+   so
+   every
+   such
+   default
+   must
+   equal
+   its
+   `locales/en`
+   entry,
+   plural
+   forms
+   included
    (`lib/__tests__/i18n-default-drift.test.ts`).
-5. **A display face that can swap.** No page loads from Google Fonts, and every
-   generated `@font-face` in `app/fonts/` is `font-display: optional`
-   (`scripts/gen-self-hosted-fonts.ts`; `pnpm fonts:check` runs in the commit gate
-   when the fonts or their packages change).
+5. **A
+   display
+   face
+   that
+   can
+   swap.**
+   No
+   page
+   loads
+   from
+   Google
+   Fonts,
+   and
+   every
+   generated
+   `@font-face`
+   in
+   `app/fonts/`
+   is
+   `font-display: optional`
+   (`scripts/gen-self-hosted-fonts.ts`;
+   `pnpm fonts:check`
+   runs
+   in
+   the
+   commit
+   gate
+   when
+   the
+   fonts
+   or
+   their
+   packages
+   change).
 
-Neither check substitutes for running the audit. Both are what stop the audit's
-result from quietly expiring.
+Neither
+check
+substitutes
+for
+running
+the
+audit.
+Both
+are
+what
+stop
+the
+audit's
+result
+from
+quietly
+expiring.
 
 ## What the audit found
 
-See [`fouc-audit-2026-10-06.md`](./archive/2026/fouc-audit-2026-10-06.md).
+See
+[`fouc-audit-2026-10-06.md`](./archive/2026/fouc-audit-2026-10-06.md).

@@ -7,9 +7,16 @@
  * server understands. Used on the homepage and in the customize panel.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, ChevronDown } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+} from 'lucide-react';
 import {
   VIBE_MODEL_META,
   VIBE_MODELS,
@@ -28,99 +35,268 @@ export function ModelSelect({
   className = '',
 }: {
   value: VibeModel;
-  onChange: (model: VibeModel) => void;
+  onChange: (
+    model: VibeModel,
+  ) => void;
   disabled?: boolean;
   className?: string;
 }) {
-  const { t } = useTranslation("c-rmhvibe");
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhvibe',
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const rootRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const menuRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
 
   // The menu is a `min-width: 220px` box pinned to the trigger's left edge and
   // is taller than a phone once every provider group is listed — on a narrow or
   // short viewport it ran off the screen with no way to reach the models past
   // the edge. Clamp it (and re-clamp on every resize/rotation).
   // Held mounted for its close, and the clamp with it (globals.css §7.1).
-  const { present, state } = usePopPresence(open);
-  useMenuViewportFit(present, menuRef);
+  const {
+    present,
+    state,
+  } =
+    usePopPresence(
+      open,
+    );
+  useMenuViewportFit(
+    present,
+    menuRef,
+  );
 
   // Close on outside click or Escape.
   useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
+    if (
+      !open
+    )
+      return;
+    const onPointerDown =
+      (
+        e: MouseEvent,
+      ) => {
+        if (
+          rootRef.current &&
+          !rootRef.current.contains(
+            e.target as Node,
+          )
+        )
+          setOpen(
+            false,
+          );
+      };
+    const onKeyDown =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          e.key ===
+          'Escape'
+        )
+          setOpen(
+            false,
+          );
+      };
+    document.addEventListener(
+      'mousedown',
+      onPointerDown,
+    );
+    document.addEventListener(
+      'keydown',
+      onKeyDown,
+    );
     return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener(
+        'mousedown',
+        onPointerDown,
+      );
+      document.removeEventListener(
+        'keydown',
+        onKeyDown,
+      );
     };
-  }, [open]);
+  }, [
+    open,
+  ]);
 
-  const current = VIBE_MODEL_META[value];
+  const current =
+    VIBE_MODEL_META[
+      value
+    ];
 
-  function select(model: VibeModel) {
-    onChange(model);
-    setOpen(false);
+  function select(
+    model: VibeModel,
+  ) {
+    onChange(
+      model,
+    );
+    setOpen(
+      false,
+    );
   }
 
   return (
-    <div ref={rootRef} className={`vibe-model-select ${className}`}>
+    <div
+      ref={
+        rootRef
+      }
+      className={`vibe-model-select ${className}`}
+    >
       <button
         type="button"
         className="vibe-model-select__button"
         aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={t("generation-model", { defaultValue: "Generation model" })}
-        disabled={disabled}
-        onClick={() => setOpen((o) => !o)}
+        aria-expanded={
+          open
+        }
+        aria-label={t(
+          'generation-model',
+          {
+            defaultValue:
+              'Generation model',
+          },
+        )}
+        disabled={
+          disabled
+        }
+        onClick={() =>
+          setOpen(
+            (
+              o,
+            ) =>
+              !o,
+          )
+        }
       >
-        <span className="vibe-model-select__current">{current.label}</span>
+        <span className="vibe-model-select__current">
+          {
+            current.label
+          }
+        </span>
         <ChevronDown
           className={`vibe-model-select__chevron ${open ? 'is-open' : ''}`}
-          size={15}
+          size={
+            15
+          }
           aria-hidden="true"
         />
       </button>
 
       {present && (
         <div
-          ref={menuRef}
+          ref={
+            menuRef
+          }
           className="vibe-model-select__menu surface-overlay"
           data-slot="model-select-menu"
           data-motion="pop"
-          data-state={state}
+          data-state={
+            state
+          }
           role="listbox"
-          aria-label={t("generation-model", { defaultValue: "Generation model" })}
+          aria-label={t(
+            'generation-model',
+            {
+              defaultValue:
+                'Generation model',
+            },
+          )}
         >
-          {VIBE_PROVIDER_ORDER.map((provider) => (
-            <div key={provider} className="vibe-model-select__group">
-              <div className="vibe-model-select__group-label">{VIBE_PROVIDER_LABELS[provider]}</div>
-              {VIBE_MODELS.filter((m) => VIBE_MODEL_META[m].provider === provider).map((m) => {
-                const meta = VIBE_MODEL_META[m];
-                const active = m === value;
-                return (
-                  <button
-                    key={m}
-                    type="button"
-                    role="option"
-                    aria-selected={active}
-                    className={`vibe-model-select__option ${active ? 'is-active' : ''}`}
-                    onClick={() => select(m)}
-                  >
-                    <span className="vibe-model-select__option-label">{meta.label}</span>
-                    <span className="vibe-model-select__option-hint">{meta.hint}</span>
-                    {active && <Check className="vibe-model-select__check" size={14} aria-hidden="true" />}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+          {VIBE_PROVIDER_ORDER.map(
+            (
+              provider,
+            ) => (
+              <div
+                key={
+                  provider
+                }
+                className="vibe-model-select__group"
+              >
+                <div className="vibe-model-select__group-label">
+                  {
+                    VIBE_PROVIDER_LABELS[
+                      provider
+                    ]
+                  }
+                </div>
+                {VIBE_MODELS.filter(
+                  (
+                    m,
+                  ) =>
+                    VIBE_MODEL_META[
+                      m
+                    ]
+                      .provider ===
+                    provider,
+                ).map(
+                  (
+                    m,
+                  ) => {
+                    const meta =
+                      VIBE_MODEL_META[
+                        m
+                      ];
+                    const active =
+                      m ===
+                      value;
+                    return (
+                      <button
+                        key={
+                          m
+                        }
+                        type="button"
+                        role="option"
+                        aria-selected={
+                          active
+                        }
+                        className={`vibe-model-select__option ${active ? 'is-active' : ''}`}
+                        onClick={() =>
+                          select(
+                            m,
+                          )
+                        }
+                      >
+                        <span className="vibe-model-select__option-label">
+                          {
+                            meta.label
+                          }
+                        </span>
+                        <span className="vibe-model-select__option-hint">
+                          {
+                            meta.hint
+                          }
+                        </span>
+                        {active && (
+                          <Check
+                            className="vibe-model-select__check"
+                            size={
+                              14
+                            }
+                            aria-hidden="true"
+                          />
+                        )}
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+            ),
+          )}
         </div>
       )}
     </div>

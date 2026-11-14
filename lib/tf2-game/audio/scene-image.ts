@@ -41,21 +41,64 @@ export interface SceneSpeakEvent {
 export interface SceneDocument {
   v: 1;
   /** Lowercase `scenes/…/x.vcd` → its speak events. */
-  scenes: Record<string, { duration: number; speak: SceneSpeakEvent[] }>;
+  scenes: Record<
+    string,
+    {
+      duration: number;
+      speak: SceneSpeakEvent[];
+    }
+  >;
 }
 
 /** The directory key of a scene file: CRC32 of `scenes\…\x.vcd`, lowercase, backslashes. */
-export function sceneCrc(path: string): number {
-  let p = path.replace(/\//g, '\\').toLowerCase();
-  const i = p.indexOf('scenes\\');
-  p = i >= 0 ? p.slice(i) : 'scenes\\' + p;
-  if (!p.endsWith('.vcd')) p = p.replace(/\.[^.\\]*$/, '') + '.vcd';
-  return crc32(p);
+export function sceneCrc(
+  path: string,
+): number {
+  let p =
+    path
+      .replace(
+        /\//g,
+        '\\',
+      )
+      .toLowerCase();
+  const i =
+    p.indexOf(
+      'scenes\\',
+    );
+  p =
+    i >=
+    0
+      ? p.slice(
+          i,
+        )
+      : 'scenes\\' +
+        p;
+  if (
+    !p.endsWith(
+      '.vcd',
+    )
+  )
+    p =
+      p.replace(
+        /\.[^.\\]*$/,
+        '',
+      ) +
+      '.vcd';
+  return crc32(
+    p,
+  );
 }
 
 /** Lowercase forward-slash key of a scene file, as scenes.json uses. */
-export function sceneKey(path: string): string {
-  return path.replace(/\\/g, '/').toLowerCase();
+export function sceneKey(
+  path: string,
+): string {
+  return path
+    .replace(
+      /\\/g,
+      '/',
+    )
+    .toLowerCase();
 }
 
 export class SceneImage {
@@ -63,53 +106,231 @@ export class SceneImage {
   readonly sceneCount: number;
   private readonly view: DataView;
   private readonly stringOffsets: Uint32Array;
-  private readonly entries = new Map<number, { data: number; length: number; summary: number }>();
+  private readonly entries =
+    new Map<
+      number,
+      {
+        data: number;
+        length: number;
+        summary: number;
+      }
+    >();
 
-  constructor(private readonly bytes: Uint8Array) {
-    this.view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    if (this.view.getUint32(0, true) !== SCENE_IMAGE_ID) throw new Error('scenes.image: bad id');
-    this.version = this.view.getInt32(4, true);
-    this.sceneCount = this.view.getInt32(8, true);
-    const strings = this.view.getInt32(12, true);
-    const entryAt = this.view.getInt32(16, true);
-    this.stringOffsets = new Uint32Array(strings);
-    for (let i = 0; i < strings; i++) this.stringOffsets[i] = this.view.getUint32(20 + i * 4, true);
-    for (let i = 0; i < this.sceneCount; i++) {
-      const at = entryAt + i * 16;
-      this.entries.set(this.view.getUint32(at, true), {
-        data: this.view.getInt32(at + 4, true),
-        length: this.view.getInt32(at + 8, true),
-        summary: this.view.getUint32(at + 12, true),
-      });
+  constructor(
+    private readonly bytes: Uint8Array,
+  ) {
+    this.view =
+      new DataView(
+        bytes.buffer,
+        bytes.byteOffset,
+        bytes.byteLength,
+      );
+    if (
+      this.view.getUint32(
+        0,
+        true,
+      ) !==
+      SCENE_IMAGE_ID
+    )
+      throw new Error(
+        'scenes.image: bad id',
+      );
+    this.version =
+      this.view.getInt32(
+        4,
+        true,
+      );
+    this.sceneCount =
+      this.view.getInt32(
+        8,
+        true,
+      );
+    const strings =
+      this.view.getInt32(
+        12,
+        true,
+      );
+    const entryAt =
+      this.view.getInt32(
+        16,
+        true,
+      );
+    this.stringOffsets =
+      new Uint32Array(
+        strings,
+      );
+    for (
+      let i = 0;
+      i <
+      strings;
+      i++
+    )
+      this.stringOffsets[
+        i
+      ] =
+        this.view.getUint32(
+          20 +
+            i *
+              4,
+          true,
+        );
+    for (
+      let i = 0;
+      i <
+      this
+        .sceneCount;
+      i++
+    ) {
+      const at =
+        entryAt +
+        i *
+          16;
+      this.entries.set(
+        this.view.getUint32(
+          at,
+          true,
+        ),
+        {
+          data: this.view.getInt32(
+            at +
+              4,
+            true,
+          ),
+          length:
+            this.view.getInt32(
+              at +
+                8,
+              true,
+            ),
+          summary:
+            this.view.getUint32(
+              at +
+                12,
+              true,
+            ),
+        },
+      );
     }
   }
 
-  string(index: number): string {
-    if (index < 0 || index >= this.stringOffsets.length) return '';
-    const start = this.stringOffsets[index];
-    let end = start;
-    while (end < this.bytes.length && this.bytes[end] !== 0) end++;
-    return new TextDecoder('latin1').decode(this.bytes.subarray(start, end));
+  string(
+    index: number,
+  ): string {
+    if (
+      index <
+        0 ||
+      index >=
+        this
+          .stringOffsets
+          .length
+    )
+      return '';
+    const start =
+      this
+        .stringOffsets[
+        index
+      ];
+    let end =
+      start;
+    while (
+      end <
+        this
+          .bytes
+          .length &&
+      this
+        .bytes[
+        end
+      ] !==
+        0
+    )
+      end++;
+    return new TextDecoder(
+      'latin1',
+    ).decode(
+      this.bytes.subarray(
+        start,
+        end,
+      ),
+    );
   }
 
-  has(path: string): boolean {
-    return this.entries.has(sceneCrc(path));
+  has(
+    path: string,
+  ): boolean {
+    return this.entries.has(
+      sceneCrc(
+        path,
+      ),
+    );
   }
 
-  summary(path: string): SceneSummary | null {
-    const e = this.entries.get(sceneCrc(path));
-    if (!e) return null;
-    const msecs = this.view.getUint32(e.summary, true);
-    const count = this.view.getInt32(e.summary + 4, true);
-    const sounds: string[] = [];
-    for (let i = 0; i < count; i++)
-      sounds.push(this.string(this.view.getInt32(e.summary + 8 + i * 4, true)));
-    return { duration: msecs / 1000, sounds };
+  summary(
+    path: string,
+  ): SceneSummary | null {
+    const e =
+      this.entries.get(
+        sceneCrc(
+          path,
+        ),
+      );
+    if (
+      !e
+    )
+      return null;
+    const msecs =
+      this.view.getUint32(
+        e.summary,
+        true,
+      );
+    const count =
+      this.view.getInt32(
+        e.summary +
+          4,
+        true,
+      );
+    const sounds: string[] =
+      [];
+    for (
+      let i = 0;
+      i <
+      count;
+      i++
+    )
+      sounds.push(
+        this.string(
+          this.view.getInt32(
+            e.summary +
+              8 +
+              i *
+                4,
+            true,
+          ),
+        ),
+      );
+    return {
+      duration:
+        msecs /
+        1000,
+      sounds,
+    };
   }
 
   /** The compiled scene's bytes as stored (possibly Valve-LZMA compressed). */
-  data(path: string): Uint8Array | null {
-    const e = this.entries.get(sceneCrc(path));
-    return e ? this.bytes.subarray(e.data, e.data + e.length) : null;
+  data(
+    path: string,
+  ): Uint8Array | null {
+    const e =
+      this.entries.get(
+        sceneCrc(
+          path,
+        ),
+      );
+    return e
+      ? this.bytes.subarray(
+          e.data,
+          e.data +
+            e.length,
+        )
+      : null;
   }
 }

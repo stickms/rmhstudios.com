@@ -35,57 +35,182 @@
  * fine; `infinite` is not.
  */
 
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
 import { join } from 'node:path';
 import { readCss } from './css-source';
 
-const ROOT = join(__dirname, '..', '..');
-const read = (path: string) => readCss(join(ROOT, path)).replace(/\/\*[\s\S]*?\*\//g, '');
+const ROOT =
+  join(
+    __dirname,
+    '..',
+    '..',
+  );
+const read =
+  (
+    path: string,
+  ) =>
+    readCss(
+      join(
+        ROOT,
+        path,
+      ),
+    ).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    );
 
-const GLOBALS = read('app/globals.css');
+const GLOBALS =
+  read(
+    'app/globals.css',
+  );
 
 /** Innermost `selector { declarations }` pairs — nested @media/@layer bodies match at their leaves. */
-function rules(css: string): Array<{ selector: string; body: string }> {
-  const out: Array<{ selector: string; body: string }> = [];
-  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    out.push({ selector: m[1].trim(), body: m[2] });
+function rules(
+  css: string,
+): Array<{
+  selector: string;
+  body: string;
+}> {
+  const out: Array<{
+    selector: string;
+    body: string;
+  }> =
+    [];
+  for (const m of css.matchAll(
+    /([^{}]+)\{([^{}]*)\}/g,
+  )) {
+    out.push(
+      {
+        selector:
+          m[1].trim(),
+        body: m[2],
+      },
+    );
   }
   return out;
 }
 
 /** Every `animation` / `animation-name` value in a declaration block. */
-function animations(body: string): string[] {
-  return [...body.matchAll(/(?:^|;|\s)animation(?:-name)?\s*:\s*([^;]+)/g)].map((m) => m[1].trim());
+function animations(
+  body: string,
+): string[] {
+  return [
+    ...body.matchAll(
+      /(?:^|;|\s)animation(?:-name)?\s*:\s*([^;]+)/g,
+    ),
+  ].map(
+    (
+      m,
+    ) =>
+      m[1].trim(),
+  );
 }
 
-const BACKDROP_SELECTOR = /\.site-aurora|\.radial-backdrop/;
+const BACKDROP_SELECTOR =
+  /\.site-aurora|\.radial-backdrop/;
 
 describe('no backdrop layer animates', () => {
-  it.each([['app/globals.css', GLOBALS]])('%s declares no running animation on a backdrop selector', (_file, css) => {
-    const offenders: string[] = [];
-    for (const { selector, body } of rules(css)) {
-      if (!BACKDROP_SELECTOR.test(selector)) continue;
-      for (const value of animations(body)) {
-        if (/^none(\s*!important)?$/.test(value)) continue;
-        offenders.push(`${selector} { animation: ${value} }`);
+  it.each(
+    [
+      [
+        'app/globals.css',
+        GLOBALS,
+      ],
+    ],
+  )(
+    '%s declares no running animation on a backdrop selector',
+    (
+      _file,
+      css,
+    ) => {
+      const offenders: string[] =
+        [];
+      for (const {
+        selector,
+        body,
+      } of rules(
+        css,
+      )) {
+        if (
+          !BACKDROP_SELECTOR.test(
+            selector,
+          )
+        )
+          continue;
+        for (const value of animations(
+          body,
+        )) {
+          if (
+            /^none(\s*!important)?$/.test(
+              value,
+            )
+          )
+            continue;
+          offenders.push(
+            `${selector} { animation: ${value} }`,
+          );
+        }
       }
-    }
-    expect(offenders, 'a backdrop layer animates — the page will never go idle').toEqual([]);
-  });
+      expect(
+        offenders,
+        'a backdrop layer animates — the page will never go idle',
+      ).toEqual(
+        [],
+      );
+    },
+  );
 
   it('holds no permanent compositor hint on a backdrop layer', () => {
     // `will-change: transform` on a layer that no longer moves keeps a
     // viewport-sized (or larger — the aurora is oversized by 14–18%) texture
     // resident for nothing.
-    const offenders = rules(GLOBALS)
-      .filter(({ selector, body }) => BACKDROP_SELECTOR.test(selector) && /will-change\s*:(?!\s*auto)/.test(body))
-      .map(({ selector }) => selector);
-    expect(offenders).toEqual([]);
+    const offenders =
+      rules(
+        GLOBALS,
+      )
+        .filter(
+          ({
+            selector,
+            body,
+          }) =>
+            BACKDROP_SELECTOR.test(
+              selector,
+            ) &&
+            /will-change\s*:(?!\s*auto)/.test(
+              body,
+            ),
+        )
+        .map(
+          ({
+            selector,
+          }) =>
+            selector,
+        );
+    expect(
+      offenders,
+    ).toEqual(
+      [],
+    );
   });
 
   it('the retired keyframes are gone, not just unreferenced', () => {
-    for (const name of ['aurora-drift', 'aurora-drift-far', 'radial-breathe', 'radial-blob-drift']) {
-      expect(GLOBALS).not.toMatch(new RegExp(`@keyframes\\s+${name}\\b`));
+    for (const name of [
+      'aurora-drift',
+      'aurora-drift-far',
+      'radial-breathe',
+      'radial-blob-drift',
+    ]) {
+      expect(
+        GLOBALS,
+      ).not.toMatch(
+        new RegExp(
+          `@keyframes\\s+${name}\\b`,
+        ),
+      );
     }
   });
 });

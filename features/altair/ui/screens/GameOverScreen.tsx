@@ -3,14 +3,24 @@
  * Displays run summary and coin payout breakdown.
  */
 
-import { useMemo, useEffect } from 'react';
-import { useTranslation } from "react-i18next";
+import {
+  useMemo,
+  useEffect,
+} from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAltairGameStore } from '@features/altair/engine/stores/game-store';
 import { useAltairMetaStore } from '@features/altair/engine/stores/meta-store';
 import { altairSfx } from '@features/altair/engine/audio/sfx';
 import { finalCoinsFor } from '@features/altair/engine/solo/loadout';
 import { heatModifiers } from '@features/altair/engine/data/heat';
-import { Trophy, Skull, Coins, Clock, Crosshair, Layers } from 'lucide-react';
+import {
+  Trophy,
+  Skull,
+  Coins,
+  Clock,
+  Crosshair,
+  Layers,
+} from 'lucide-react';
 import { useKeyboardNav } from '@features/altair/engine/hooks/use-keyboard-nav';
 
 interface GameOverScreenProps {
@@ -19,48 +29,185 @@ interface GameOverScreenProps {
   onMenu: () => void;
 }
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
+function formatTime(
+  seconds: number,
+): string {
+  const m =
+    Math.floor(
+      seconds /
+        60,
+    );
+  const s =
+    Math.floor(
+      seconds %
+        60,
+    );
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: GameOverScreenProps) {
-  const actions = useMemo(() => [onPlayAgain, onMetaShop, onMenu], [onPlayAgain, onMetaShop, onMenu]);
-  const { focusedIndex } = useKeyboardNav({
-    itemCount: 3,
-    onSelect: (i) => actions[i](),
-    orientation: 'vertical',
-  });
+export default function GameOverScreen({
+  onPlayAgain,
+  onMetaShop,
+  onMenu,
+}: GameOverScreenProps) {
+  const actions =
+    useMemo(
+      () => [
+        onPlayAgain,
+        onMetaShop,
+        onMenu,
+      ],
+      [
+        onPlayAgain,
+        onMetaShop,
+        onMenu,
+      ],
+    );
+  const {
+    focusedIndex,
+  } =
+    useKeyboardNav(
+      {
+        itemCount: 3,
+        onSelect:
+          (
+            i,
+          ) =>
+            actions[
+              i
+            ](),
+        orientation:
+          'vertical',
+      },
+    );
 
-  const focusClass = (i: number) =>
-    focusedIndex === i ? 'ring-2 ring-(--altair-accent)/50 scale-[1.02]' : '';
+  const focusClass =
+    (
+      i: number,
+    ) =>
+      focusedIndex ===
+      i
+        ? 'ring-2 ring-(--altair-accent)/50 scale-[1.02]'
+        : '';
 
-  const phase = useAltairGameStore((s) => s.phase);
-  const kills = useAltairGameStore((s) => s.kills);
-  const level = useAltairGameStore((s) => s.level);
-  const timeSurvived = useAltairGameStore((s) => s.timeSurvived);
-  const coins = useAltairGameStore((s) => s.coins);
-  const coinBreakdown = useAltairGameStore((s) => s.coinBreakdown);
-  const weapons = useAltairGameStore((s) => s.weapons);
-  const selectedClassId = useAltairGameStore((s) => s.selectedClassId);
-  const doubleTime = useAltairGameStore((s) => s.doubleTime);
-  const heat = useAltairGameStore((s) => s.heat);
-  const greedLevel = useAltairMetaStore((s) => s.getUpgradeLevel('meta_greed'));
+  const phase =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.phase,
+    );
+  const kills =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.kills,
+    );
+  const level =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.level,
+    );
+  const timeSurvived =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.timeSurvived,
+    );
+  const coins =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.coins,
+    );
+  const coinBreakdown =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.coinBreakdown,
+    );
+  const weapons =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.weapons,
+    );
+  const selectedClassId =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.selectedClassId,
+    );
+  const doubleTime =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.doubleTime,
+    );
+  const heat =
+    useAltairGameStore(
+      (
+        s,
+      ) =>
+        s.heat,
+    );
+  const greedLevel =
+    useAltairMetaStore(
+      (
+        s,
+      ) =>
+        s.getUpgradeLevel(
+          'meta_greed',
+        ),
+    );
 
-  const { t } = useTranslation("c-altair");
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-altair',
+    );
 
-  const isVictory = phase === 'victory';
+  const isVictory =
+    phase ===
+    'victory';
 
   useEffect(() => {
-    altairSfx.play(isVictory ? 'victory' : 'defeat');
-  }, [isVictory]);
+    altairSfx.play(
+      isVictory
+        ? 'victory'
+        : 'defeat',
+    );
+  }, [
+    isVictory,
+  ]);
 
   // Calculate final coins with multipliers
-  const greedMultiplier = 1 + greedLevel * 0.1;
-  const heatMultiplier = heatModifiers(heat).payout;
+  const greedMultiplier =
+    1 +
+    greedLevel *
+      0.1;
+  const heatMultiplier =
+    heatModifiers(
+      heat,
+    ).payout;
   // The same function the server pays by, so the number shown is the number paid.
-  const finalCoins = finalCoinsFor(coins, greedLevel, doubleTime, heat);
+  const finalCoins =
+    finalCoinsFor(
+      coins,
+      greedLevel,
+      doubleTime,
+      heat,
+    );
 
   // Award coins to meta store on render (in a real implementation this would be an effect)
   // For now, just display
@@ -74,14 +221,49 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
           {isVictory ? (
             <>
               <Trophy className="w-12 h-12 text-(--altair-warning) mx-auto mb-2" />
-              <h2 className="text-3xl font-black text-(--altair-warning) tracking-wider">{t("victory", { defaultValue: "VICTORY" })}</h2>
-              <p className="text-(--altair-text-muted) text-sm">{t("victory-subtitle", { defaultValue: "You survived 20:00!" })}</p>
+              <h2 className="text-3xl font-black text-(--altair-warning) tracking-wider">
+                {t(
+                  'victory',
+                  {
+                    defaultValue:
+                      'VICTORY',
+                  },
+                )}
+              </h2>
+              <p className="text-(--altair-text-muted) text-sm">
+                {t(
+                  'victory-subtitle',
+                  {
+                    defaultValue:
+                      'You survived 20:00!',
+                  },
+                )}
+              </p>
             </>
           ) : (
             <>
               <Skull className="w-12 h-12 text-(--altair-danger) mx-auto mb-2" />
-              <h2 className="text-3xl font-black text-(--altair-danger) tracking-wider">{t("defeated", { defaultValue: "DEFEATED" })}</h2>
-              <p className="text-(--altair-text-muted) text-sm">{t("defeated-subtitle", { defaultValue: "You fell at {{time}}", time: formatTime(timeSurvived) })}</p>
+              <h2 className="text-3xl font-black text-(--altair-danger) tracking-wider">
+                {t(
+                  'defeated',
+                  {
+                    defaultValue:
+                      'DEFEATED',
+                  },
+                )}
+              </h2>
+              <p className="text-(--altair-text-muted) text-sm">
+                {t(
+                  'defeated-subtitle',
+                  {
+                    defaultValue:
+                      'You fell at {{time}}',
+                    time: formatTime(
+                      timeSurvived,
+                    ),
+                  },
+                )}
+              </p>
             </>
           )}
         </div>
@@ -89,98 +271,338 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
         {/* Run stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="text-center p-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
-            <Clock size={16} className="mx-auto mb-1 text-(--altair-text-muted)" />
-            <div className="text-lg font-bold text-(--altair-text)">{formatTime(timeSurvived)}</div>
-            <div className="text-xs text-(--altair-text-dim)">{t("stat-time", { defaultValue: "Time" })}</div>
+            <Clock
+              size={
+                16
+              }
+              className="mx-auto mb-1 text-(--altair-text-muted)"
+            />
+            <div className="text-lg font-bold text-(--altair-text)">
+              {formatTime(
+                timeSurvived,
+              )}
+            </div>
+            <div className="text-xs text-(--altair-text-dim)">
+              {t(
+                'stat-time',
+                {
+                  defaultValue:
+                    'Time',
+                },
+              )}
+            </div>
           </div>
           <div className="text-center p-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
-            <Crosshair size={16} className="mx-auto mb-1 text-(--altair-text-muted)" />
-            <div className="text-lg font-bold text-(--altair-text)">{kills}</div>
-            <div className="text-xs text-(--altair-text-dim)">{t("stat-kills", { defaultValue: "Kills" })}</div>
+            <Crosshair
+              size={
+                16
+              }
+              className="mx-auto mb-1 text-(--altair-text-muted)"
+            />
+            <div className="text-lg font-bold text-(--altair-text)">
+              {
+                kills
+              }
+            </div>
+            <div className="text-xs text-(--altair-text-dim)">
+              {t(
+                'stat-kills',
+                {
+                  defaultValue:
+                    'Kills',
+                },
+              )}
+            </div>
           </div>
           <div className="text-center p-2 rounded-(--altair-radius) bg-(--altair-bg-subtle)">
-            <Layers size={16} className="mx-auto mb-1 text-(--altair-text-muted)" />
-            <div className="text-lg font-bold text-(--altair-text)">Lv.{level}</div>
-            <div className="text-xs text-(--altair-text-dim)">{t("stat-level", { defaultValue: "Level" })}</div>
+            <Layers
+              size={
+                16
+              }
+              className="mx-auto mb-1 text-(--altair-text-muted)"
+            />
+            <div className="text-lg font-bold text-(--altair-text)">
+              Lv.
+              {
+                level
+              }
+            </div>
+            <div className="text-xs text-(--altair-text-dim)">
+              {t(
+                'stat-level',
+                {
+                  defaultValue:
+                    'Level',
+                },
+              )}
+            </div>
           </div>
         </div>
 
         {/* Coin breakdown */}
         <div className="mb-6 p-3 rounded-(--altair-radius) bg-(--altair-bg-subtle) border border-(--altair-border)">
           <div className="flex items-center gap-2 mb-2">
-            <Coins size={16} className="text-(--altair-warning)" />
-            <span className="text-sm font-bold text-(--altair-text)">{t("coin-payout", { defaultValue: "Coin Payout" })}</span>
+            <Coins
+              size={
+                16
+              }
+              className="text-(--altair-warning)"
+            />
+            <span className="text-sm font-bold text-(--altair-text)">
+              {t(
+                'coin-payout',
+                {
+                  defaultValue:
+                    'Coin Payout',
+                },
+              )}
+            </span>
           </div>
           <div className="flex flex-col gap-1 text-xs">
-            {coinBreakdown.enemyDrops > 0 && (
+            {coinBreakdown.enemyDrops >
+              0 && (
               <div className="flex justify-between text-(--altair-text-muted)">
-                <span>{t("enemy-drops", { defaultValue: "Enemy drops" })}</span>
-                <span className="text-(--altair-text)">+{coinBreakdown.enemyDrops}</span>
+                <span>
+                  {t(
+                    'enemy-drops',
+                    {
+                      defaultValue:
+                        'Enemy drops',
+                    },
+                  )}
+                </span>
+                <span className="text-(--altair-text)">
+                  +
+                  {
+                    coinBreakdown.enemyDrops
+                  }
+                </span>
               </div>
             )}
-            {coinBreakdown.bossKills > 0 && (
+            {coinBreakdown.bossKills >
+              0 && (
               <div className="flex justify-between text-(--altair-text-muted)">
-                <span>{t("boss-kills", { defaultValue: "Boss kills" })}</span>
-                <span className="text-(--altair-text)">+{coinBreakdown.bossKills}</span>
+                <span>
+                  {t(
+                    'boss-kills',
+                    {
+                      defaultValue:
+                        'Boss kills',
+                    },
+                  )}
+                </span>
+                <span className="text-(--altair-text)">
+                  +
+                  {
+                    coinBreakdown.bossKills
+                  }
+                </span>
               </div>
             )}
-            {coinBreakdown.chestDrops > 0 && (
+            {coinBreakdown.chestDrops >
+              0 && (
               <div className="flex justify-between text-(--altair-text-muted)">
-                <span>{t("treasure-chests", { defaultValue: "Treasure chests" })}</span>
-                <span className="text-(--altair-text)">+{coinBreakdown.chestDrops}</span>
+                <span>
+                  {t(
+                    'treasure-chests',
+                    {
+                      defaultValue:
+                        'Treasure chests',
+                    },
+                  )}
+                </span>
+                <span className="text-(--altair-text)">
+                  +
+                  {
+                    coinBreakdown.chestDrops
+                  }
+                </span>
               </div>
             )}
-            {coinBreakdown.survivalBonus > 0 && (
+            {coinBreakdown.survivalBonus >
+              0 && (
               <div className="flex justify-between text-(--altair-text-muted)">
-                <span>{t("survival-bonus", { defaultValue: "Survival bonus" })}</span>
-                <span className="text-(--altair-text)">+{coinBreakdown.survivalBonus}</span>
+                <span>
+                  {t(
+                    'survival-bonus',
+                    {
+                      defaultValue:
+                        'Survival bonus',
+                    },
+                  )}
+                </span>
+                <span className="text-(--altair-text)">
+                  +
+                  {
+                    coinBreakdown.survivalBonus
+                  }
+                </span>
               </div>
             )}
-            {coinBreakdown.killMilestones > 0 && (
+            {coinBreakdown.killMilestones >
+              0 && (
               <div className="flex justify-between text-(--altair-text-muted)">
-                <span>{t("kill-milestones", { defaultValue: "Kill milestones" })}</span>
-                <span className="text-(--altair-text)">+{coinBreakdown.killMilestones}</span>
+                <span>
+                  {t(
+                    'kill-milestones',
+                    {
+                      defaultValue:
+                        'Kill milestones',
+                    },
+                  )}
+                </span>
+                <span className="text-(--altair-text)">
+                  +
+                  {
+                    coinBreakdown.killMilestones
+                  }
+                </span>
               </div>
             )}
-            {coinBreakdown.completionBonus > 0 && (
+            {coinBreakdown.completionBonus >
+              0 && (
               <div className="flex justify-between text-(--altair-text-muted)">
-                <span>{t("completion-bonus", { defaultValue: "Completion bonus" })}</span>
-                <span className="text-(--altair-text)">+{coinBreakdown.completionBonus}</span>
+                <span>
+                  {t(
+                    'completion-bonus',
+                    {
+                      defaultValue:
+                        'Completion bonus',
+                    },
+                  )}
+                </span>
+                <span className="text-(--altair-text)">
+                  +
+                  {
+                    coinBreakdown.completionBonus
+                  }
+                </span>
               </div>
             )}
-            {coinBreakdown.firstClearBonus > 0 && (
+            {coinBreakdown.firstClearBonus >
+              0 && (
               <div className="flex justify-between text-(--altair-text-muted)">
-                <span>{t("first-clear-bonus", { defaultValue: "First clear bonus" })}</span>
-                <span className="text-(--altair-success)">+{coinBreakdown.firstClearBonus}</span>
+                <span>
+                  {t(
+                    'first-clear-bonus',
+                    {
+                      defaultValue:
+                        'First clear bonus',
+                    },
+                  )}
+                </span>
+                <span className="text-(--altair-success)">
+                  +
+                  {
+                    coinBreakdown.firstClearBonus
+                  }
+                </span>
               </div>
             )}
             <div className="border-t border-(--altair-border) pt-1 mt-1">
               <div className="flex justify-between text-(--altair-text-muted)">
-                <span>{t("subtotal", { defaultValue: "Subtotal" })}</span>
-                <span className="text-(--altair-text)">{coins}</span>
+                <span>
+                  {t(
+                    'subtotal',
+                    {
+                      defaultValue:
+                        'Subtotal',
+                    },
+                  )}
+                </span>
+                <span className="text-(--altair-text)">
+                  {
+                    coins
+                  }
+                </span>
               </div>
-              {greedLevel > 0 && (
+              {greedLevel >
+                0 && (
                 <div className="flex justify-between text-(--altair-text-muted)">
-                  <span>{t("greed-multiplier", { defaultValue: "Greed (×{{multiplier}})", multiplier: greedMultiplier.toFixed(1) })}</span>
-                  <span className="text-(--altair-success)">×{greedMultiplier.toFixed(1)}</span>
+                  <span>
+                    {t(
+                      'greed-multiplier',
+                      {
+                        defaultValue:
+                          'Greed (×{{multiplier}})',
+                        multiplier:
+                          greedMultiplier.toFixed(
+                            1,
+                          ),
+                      },
+                    )}
+                  </span>
+                  <span className="text-(--altair-success)">
+                    ×
+                    {greedMultiplier.toFixed(
+                      1,
+                    )}
+                  </span>
                 </div>
               )}
               {doubleTime && (
                 <div className="flex justify-between text-(--altair-text-muted)">
-                  <span>{t("double-time-game-over-screen", { defaultValue: "Double Time (×1.5)" })}</span>
-                  <span className="text-(--altair-warning)">×1.5</span>
+                  <span>
+                    {t(
+                      'double-time-game-over-screen',
+                      {
+                        defaultValue:
+                          'Double Time (×1.5)',
+                      },
+                    )}
+                  </span>
+                  <span className="text-(--altair-warning)">
+                    ×1.5
+                  </span>
                 </div>
               )}
-              {heat > 0 && (
+              {heat >
+                0 && (
                 <div className="flex justify-between text-(--altair-text-muted)">
-                  <span>{t("heat-multiplier", { defaultValue: "Heat {{tier}} (×{{multiplier}})", tier: heat, multiplier: heatMultiplier.toFixed(2) })}</span>
-                  <span className="text-(--altair-amber)">×{heatMultiplier.toFixed(2)}</span>
+                  <span>
+                    {t(
+                      'heat-multiplier',
+                      {
+                        defaultValue:
+                          'Heat {{tier}} (×{{multiplier}})',
+                        tier: heat,
+                        multiplier:
+                          heatMultiplier.toFixed(
+                            2,
+                          ),
+                      },
+                    )}
+                  </span>
+                  <span className="text-(--altair-amber)">
+                    ×
+                    {heatMultiplier.toFixed(
+                      2,
+                    )}
+                  </span>
                 </div>
               )}
             </div>
             <div className="flex justify-between font-bold text-sm pt-1">
-              <span className="text-(--altair-warning)">{t("total", { defaultValue: "Total" })}</span>
-              <span className="text-(--altair-warning)">{t("total-coins", { defaultValue: "{{count}} coins", count: finalCoins })}</span>
+              <span className="text-(--altair-warning)">
+                {t(
+                  'total',
+                  {
+                    defaultValue:
+                      'Total',
+                  },
+                )}
+              </span>
+              <span className="text-(--altair-warning)">
+                {t(
+                  'total-coins',
+                  {
+                    defaultValue:
+                      '{{count}} coins',
+                    count:
+                      finalCoins,
+                  },
+                )}
+              </span>
             </div>
           </div>
         </div>
@@ -188,25 +610,49 @@ export default function GameOverScreen({ onPlayAgain, onMetaShop, onMenu }: Game
         {/* Buttons */}
         <div className="flex flex-col gap-2">
           <button
-            onClick={onPlayAgain}
+            onClick={
+              onPlayAgain
+            }
             data-altair-sfx="ui_confirm"
             className={`py-3 rounded-(--altair-radius-lg) font-bold text-(--altair-accent-fg) bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-colors ${focusClass(0)}`}
           >
-            {t("play-again", { defaultValue: "Play Again" })}
+            {t(
+              'play-again',
+              {
+                defaultValue:
+                  'Play Again',
+              },
+            )}
           </button>
           <button
-            onClick={onMetaShop}
+            onClick={
+              onMetaShop
+            }
             data-altair-sfx="menu_open"
             className={`py-2.5 rounded-(--altair-radius-lg) font-semibold text-(--altair-text) bg-(--altair-surface-hover) border border-(--altair-border) hover:bg-(--altair-surface-active) transition-colors ${focusClass(1)}`}
           >
-            {t("meta-shop", { defaultValue: "Meta Shop" })}
+            {t(
+              'meta-shop',
+              {
+                defaultValue:
+                  'Meta Shop',
+              },
+            )}
           </button>
           <button
-            onClick={onMenu}
+            onClick={
+              onMenu
+            }
             data-altair-sfx="menu_back"
             className={`py-2 min-h-11 rounded-(--altair-radius-lg) font-medium text-(--altair-text-muted) hover:text-(--altair-text) transition-colors text-sm ${focusClass(2)}`}
           >
-            {t("main-menu", { defaultValue: "Main Menu" })}
+            {t(
+              'main-menu',
+              {
+                defaultValue:
+                  'Main Menu',
+              },
+            )}
           </button>
         </div>
       </div>

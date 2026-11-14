@@ -66,14 +66,24 @@ import {
   WELL,
 } from '@/lib/og/shared.server';
 
-const DEG = Math.PI / 180;
+const DEG =
+  Math.PI /
+  180;
 
 /* -------------------------------------------------------------------------- */
 /* Card sizes                                                                 */
 /* -------------------------------------------------------------------------- */
 
-export const LANDSCAPE = { width: 1200, height: 630 } as const;
-export const STORY = { width: 1080, height: 1920 } as const;
+export const LANDSCAPE =
+  {
+    width: 1200,
+    height: 630,
+  } as const;
+export const STORY =
+  {
+    width: 1080,
+    height: 1920,
+  } as const;
 
 /* -------------------------------------------------------------------------- */
 /* The globe mark                                                             */
@@ -84,8 +94,25 @@ export const STORY = { width: 1080, height: 1920 } as const;
  * latitude rings; changing one without the other makes the mark stop being the
  * navigator it stands for.
  */
-const MERIDIANS = [0, 30, 60, 90, 120, 150];
-const PARALLELS = [-60, -40, -20, 0, 20, 40, 60];
+const MERIDIANS =
+  [
+    0,
+    30,
+    60,
+    90,
+    120,
+    150,
+  ];
+const PARALLELS =
+  [
+    -60,
+    -40,
+    -20,
+    0,
+    20,
+    40,
+    60,
+  ];
 /** Per-ring ink, matching the live cage's `--cage-*` defaults. */
 const CAGE_MINOR = 0.2;
 const CAGE_PARALLEL = 0.13;
@@ -116,82 +143,191 @@ interface GlobeMarkOptions {
  * height, and a parallel at latitude φ is an ellipse of half-width `R·cos φ`
  * squashed by `sin(pitch)`, centred `R·sin φ·cos(pitch)` off the equator.
  */
-export function globeMark(size: number, opts: GlobeMarkOptions = {}): React.ReactElement {
-  const { ink = '0, 0, 0', weight = 1 } = opts;
-  const R = size / 2;
-  const sinTilt = Math.sin(MARK_PITCH * DEG);
-  const cosTilt = Math.cos(MARK_PITCH * DEG);
+export function globeMark(
+  size: number,
+  opts: GlobeMarkOptions = {},
+): React.ReactElement {
+  const {
+    ink = '0, 0, 0',
+    weight = 1,
+  } =
+    opts;
+  const R =
+    size /
+    2;
+  const sinTilt =
+    Math.sin(
+      MARK_PITCH *
+        DEG,
+    );
+  const cosTilt =
+    Math.cos(
+      MARK_PITCH *
+        DEG,
+    );
   // The cage's hairline, scaled off the mark so a 48px mark and a 220px one
   // read as the same object rather than the same line weight.
-  const line = Math.max(1, Math.round(size / 90));
-  const stroke = (alpha: number) => `${line}px solid rgba(${ink}, ${Math.min(1, alpha * weight)})`;
+  const line =
+    Math.max(
+      1,
+      Math.round(
+        size /
+          90,
+      ),
+    );
+  const stroke =
+    (
+      alpha: number,
+    ) =>
+      `${line}px solid rgba(${ink}, ${Math.min(1, alpha * weight)})`;
 
-  const rings: React.ReactElement[] = [];
+  const rings: React.ReactElement[] =
+    [];
 
   for (const lon of MERIDIANS) {
-    const w = Math.abs(Math.cos((lon + MARK_YAW) * DEG)) * size;
+    const w =
+      Math.abs(
+        Math.cos(
+          (lon +
+            MARK_YAW) *
+            DEG,
+        ),
+      ) *
+      size;
     rings.push(
       <div
         key={`m${lon}`}
         style={{
-          position: 'absolute',
-          left: (size - w) / 2,
+          position:
+            'absolute',
+          left:
+            (size -
+              w) /
+            2,
           top: 0,
-          width: Math.max(w, line),
-          height: size,
+          width:
+            Math.max(
+              w,
+              line,
+            ),
+          height:
+            size,
           borderRadius: `${size}px / ${size}px`,
-          border: stroke(lon === 0 ? CAGE_MAJOR : CAGE_MINOR),
+          border:
+            stroke(
+              lon ===
+                0
+                ? CAGE_MAJOR
+                : CAGE_MINOR,
+            ),
         }}
       />,
     );
   }
 
   for (const lat of PARALLELS) {
-    const c = Math.cos(lat * DEG);
-    const w = c * size;
-    const h = Math.max(c * size * sinTilt, line);
+    const c =
+      Math.cos(
+        lat *
+          DEG,
+      );
+    const w =
+      c *
+      size;
+    const h =
+      Math.max(
+        c *
+          size *
+          sinTilt,
+        line,
+      );
     rings.push(
       <div
         key={`p${lat}`}
         style={{
-          position: 'absolute',
-          left: (size - w) / 2,
-          top: R - R * Math.sin(lat * DEG) * cosTilt - h / 2,
-          width: w,
-          height: h,
+          position:
+            'absolute',
+          left:
+            (size -
+              w) /
+            2,
+          top:
+            R -
+            R *
+              Math.sin(
+                lat *
+                  DEG,
+              ) *
+              cosTilt -
+            h /
+              2,
+          width:
+            w,
+          height:
+            h,
           borderRadius: `${w}px / ${h}px`,
-          border: stroke(lat === 0 ? CAGE_MAJOR : CAGE_PARALLEL),
+          border:
+            stroke(
+              lat ===
+                0
+                ? CAGE_MAJOR
+                : CAGE_PARALLEL,
+            ),
         }}
       />,
     );
   }
 
   return (
-    <div style={{ position: 'relative', display: 'flex', width: size, height: size }}>
+    <div
+      style={{
+        position:
+          'relative',
+        display:
+          'flex',
+        width:
+          size,
+        height:
+          size,
+      }}
+    >
       {/* The ball: glass, lit by the same scene light the site's surfaces answer
           to (design.md §3) — a highlight up and to the left, shading to the rim. */}
       <div
         style={{
-          position: 'absolute',
+          position:
+            'absolute',
           left: 0,
           top: 0,
-          width: size,
-          height: size,
-          borderRadius: size,
+          width:
+            size,
+          height:
+            size,
+          borderRadius:
+            size,
           backgroundImage: `radial-gradient(circle at 34% 26%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.35) 42%, rgba(${ink},0.05) 100%)`,
         }}
       />
-      {rings}
+      {
+        rings
+      }
       {/* The limb, drawn last so the cage terminates against it. */}
       <div
         style={{
-          position: 'absolute',
+          position:
+            'absolute',
           left: 0,
           top: 0,
-          width: size,
-          height: size,
-          borderRadius: size,
-          border: stroke(CAGE_MAJOR),
+          width:
+            size,
+          height:
+            size,
+          borderRadius:
+            size,
+          border:
+            stroke(
+              CAGE_MAJOR,
+            ),
         }}
       />
     </div>
@@ -206,18 +342,28 @@ export function globeMark(size: number, opts: GlobeMarkOptions = {}): React.Reac
  * The kicker: what this card *is* ("POST", "GAME HUB", "DEVLOG"). Mirrors the
  * site's `--site-kicker-*` tokens — 11px/0.2em/700, doubled by `SCALE`.
  */
-export function kicker(text: string, color = MUTED, scale = 1): React.ReactElement {
+export function kicker(
+  text: string,
+  color = MUTED,
+  scale = 1,
+): React.ReactElement {
   return (
     <span
       style={{
-        fontSize: 11 * SCALE * scale,
+        fontSize:
+          11 *
+          SCALE *
+          scale,
         fontWeight: 700,
         letterSpacing: `${0.2}em`,
-        textTransform: 'uppercase',
+        textTransform:
+          'uppercase',
         color,
       }}
     >
-      {text}
+      {
+        text
+      }
     </span>
   );
 }
@@ -226,10 +372,24 @@ export function kicker(text: string, color = MUTED, scale = 1): React.ReactEleme
  * Display tracking, from `--site-display-*`: the bigger the type, the tighter
  * it is set. Returns the `letterSpacing` for a given rendered size.
  */
-export function displayTracking(fontSize: number): string {
-  if (fontSize >= 110) return '-0.065em';
-  if (fontSize >= 80) return '-0.055em';
-  if (fontSize >= 56) return '-0.05em';
+export function displayTracking(
+  fontSize: number,
+): string {
+  if (
+    fontSize >=
+    110
+  )
+    return '-0.065em';
+  if (
+    fontSize >=
+    80
+  )
+    return '-0.055em';
+  if (
+    fontSize >=
+    56
+  )
+    return '-0.05em';
   return '-0.042em';
 }
 
@@ -262,13 +422,45 @@ export interface FitOptions {
  * approximate by construction, so callers should also cap the input length: the
  * estimate protects the layout, the cap protects the estimate.
  */
-export function fitText(text: string, { width, height, steps, lineHeight = 1.28 }: FitOptions): number {
+export function fitText(
+  text: string,
+  {
+    width,
+    height,
+    steps,
+    lineHeight = 1.28,
+  }: FitOptions,
+): number {
   for (const size of steps) {
-    const perLine = Math.max(1, Math.floor(width / (size * AVG_ADVANCE)));
-    const lines = Math.max(1, Math.ceil(text.length / perLine));
-    if (lines * size * lineHeight <= height) return size;
+    const perLine =
+      Math.max(
+        1,
+        Math.floor(
+          width /
+            (size *
+              AVG_ADVANCE),
+        ),
+      );
+    const lines =
+      Math.max(
+        1,
+        Math.ceil(
+          text.length /
+            perLine,
+        ),
+      );
+    if (
+      lines *
+        size *
+        lineHeight <=
+      height
+    )
+      return size;
   }
-  return steps[steps.length - 1];
+  return steps[
+    steps.length -
+      1
+  ];
 }
 
 /* -------------------------------------------------------------------------- */
@@ -287,21 +479,33 @@ interface PaneOptions {
  * edge every tier carries. `flex: 1` is deliberately NOT set — callers decide
  * whether the pane fills the card or hugs its content.
  */
-export function pane({ style, children }: PaneOptions): React.ReactElement {
+export function pane({
+  style,
+  children,
+}: PaneOptions): React.ReactElement {
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: GLASS,
+        display:
+          'flex',
+        flexDirection:
+          'column',
+        backgroundColor:
+          GLASS,
         border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
-        borderTopColor: 'rgba(255, 255, 255, 0.9)',
-        borderRadius: RADIUS,
-        padding: 24 * SCALE,
+        borderTopColor:
+          'rgba(255, 255, 255, 0.9)',
+        borderRadius:
+          RADIUS,
+        padding:
+          24 *
+          SCALE,
         ...style,
       }}
     >
-      {children}
+      {
+        children
+      }
     </div>
   );
 }
@@ -310,20 +514,31 @@ export function pane({ style, children }: PaneOptions): React.ReactElement {
  * A recessed well (`.surface-field`) — the tier the site uses for fields and, on
  * a card, for a quoted or embedded fragment of the page's own content.
  */
-export function inset({ style, children }: PaneOptions): React.ReactElement {
+export function inset({
+  style,
+  children,
+}: PaneOptions): React.ReactElement {
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: WELL,
+        display:
+          'flex',
+        flexDirection:
+          'column',
+        backgroundColor:
+          WELL,
         border: `${HAIRLINE_W}px solid ${HAIRLINE_SOFT}`,
-        borderRadius: RADIUS_SM,
-        padding: 18 * SCALE,
+        borderRadius:
+          RADIUS_SM,
+        padding:
+          18 *
+          SCALE,
         ...style,
       }}
     >
-      {children}
+      {
+        children
+      }
     </div>
   );
 }
@@ -347,48 +562,110 @@ export interface Stat {
  * hairline-outlined for the rest, so one number survives being shrunk to an
  * iMessage thumbnail.
  */
-export function statChips(stats: Stat[], scale = 1): React.ReactElement | null {
-  const shown = stats.filter((s) => s.value);
-  if (!shown.length) return null;
+export function statChips(
+  stats: Stat[],
+  scale = 1,
+): React.ReactElement | null {
+  const shown =
+    stats.filter(
+      (
+        s,
+      ) =>
+        s.value,
+    );
+  if (
+    !shown.length
+  )
+    return null;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 * SCALE }}>
-      {shown.map((s) => (
-        <div
-          key={`${s.label}:${s.value}`}
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: 5 * SCALE,
-            paddingLeft: 11 * SCALE * scale,
-            paddingRight: 11 * SCALE * scale,
-            paddingTop: 5 * SCALE * scale,
-            paddingBottom: 6 * SCALE * scale,
-            borderRadius: 9999,
-            backgroundColor: s.lead ? INK : GLASS,
-            border: `${HAIRLINE_W}px solid ${s.lead ? INK : HAIRLINE}`,
-          }}
-        >
-          <span
+    <div
+      style={{
+        display:
+          'flex',
+        alignItems:
+          'center',
+        gap:
+          10 *
+          SCALE,
+      }}
+    >
+      {shown.map(
+        (
+          s,
+        ) => (
+          <div
+            key={`${s.label}:${s.value}`}
             style={{
-              fontSize: 15 * SCALE * scale,
-              fontWeight: 700,
-              letterSpacing: '-0.022em',
-              color: s.lead ? INK_FG : INK,
+              display:
+                'flex',
+              alignItems:
+                'baseline',
+              gap:
+                5 *
+                SCALE,
+              paddingLeft:
+                11 *
+                SCALE *
+                scale,
+              paddingRight:
+                11 *
+                SCALE *
+                scale,
+              paddingTop:
+                5 *
+                SCALE *
+                scale,
+              paddingBottom:
+                6 *
+                SCALE *
+                scale,
+              borderRadius: 9999,
+              backgroundColor:
+                s.lead
+                  ? INK
+                  : GLASS,
+              border: `${HAIRLINE_W}px solid ${s.lead ? INK : HAIRLINE}`,
             }}
           >
-            {s.value}
-          </span>
-          <span
-            style={{
-              fontSize: 11 * SCALE * scale,
-              fontWeight: 500,
-              color: s.lead ? 'rgba(255, 255, 255, 0.72)' : MUTED,
-            }}
-          >
-            {s.label}
-          </span>
-        </div>
-      ))}
+            <span
+              style={{
+                fontSize:
+                  15 *
+                  SCALE *
+                  scale,
+                fontWeight: 700,
+                letterSpacing:
+                  '-0.022em',
+                color:
+                  s.lead
+                    ? INK_FG
+                    : INK,
+              }}
+            >
+              {
+                s.value
+              }
+            </span>
+            <span
+              style={{
+                fontSize:
+                  11 *
+                  SCALE *
+                  scale,
+                fontWeight: 500,
+                color:
+                  s.lead
+                    ? 'rgba(255, 255, 255, 0.72)'
+                    : MUTED,
+              }}
+            >
+              {
+                s.label
+              }
+            </span>
+          </div>
+        ),
+      )}
     </div>
   );
 }
@@ -403,24 +680,58 @@ export function statChips(stats: Stat[], scale = 1): React.ReactElement | null {
  * into the white canvas.
  */
 export function avatarDisc(
-  dataUri: string | null,
+  dataUri:
+    | string
+    | null,
   initial: string,
   size: number,
 ): React.ReactElement {
-  if (dataUri) {
+  if (
+    dataUri
+  ) {
     return (
-      <div style={{ display: 'flex', position: 'relative', width: size, height: size }}>
+      <div
+        style={{
+          display:
+            'flex',
+          position:
+            'relative',
+          width:
+            size,
+          height:
+            size,
+        }}
+      >
         {/* This tree is handed to satori, not to the DOM — `alt` is inert here,
             and the card's text alternative is the route's `og:image:alt`. */}
-        <img src={dataUri} alt="" width={size} height={size} style={{ borderRadius: size }} />
+        <img
+          src={
+            dataUri
+          }
+          alt=""
+          width={
+            size
+          }
+          height={
+            size
+          }
+          style={{
+            borderRadius:
+              size,
+          }}
+        />
         <div
           style={{
-            position: 'absolute',
+            position:
+              'absolute',
             left: 0,
             top: 0,
-            width: size,
-            height: size,
-            borderRadius: size,
+            width:
+              size,
+            height:
+              size,
+            borderRadius:
+              size,
             border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
           }}
         />
@@ -430,20 +741,32 @@ export function avatarDisc(
   return (
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: size,
-        height: size,
-        borderRadius: size,
-        backgroundColor: WELL,
+        display:
+          'flex',
+        alignItems:
+          'center',
+        justifyContent:
+          'center',
+        width:
+          size,
+        height:
+          size,
+        borderRadius:
+          size,
+        backgroundColor:
+          WELL,
         border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
-        color: INK,
-        fontSize: size * 0.42,
+        color:
+          INK,
+        fontSize:
+          size *
+          0.42,
         fontWeight: 700,
       }}
     >
-      {initial}
+      {
+        initial
+      }
     </div>
   );
 }
@@ -467,40 +790,62 @@ export function avatarDisc(
  * `objectFit`, and nothing is scaled twice.
  */
 export function framedImage(
-  image: { src: string; width: number; height: number },
+  image: {
+    src: string;
+    width: number;
+    height: number;
+  },
   radius: number = RADIUS_SM,
   overlay?: React.ReactNode,
 ): React.ReactElement {
   return (
     <div
       style={{
-        display: 'flex',
-        position: 'relative',
-        width: image.width,
-        height: image.height,
+        display:
+          'flex',
+        position:
+          'relative',
+        width:
+          image.width,
+        height:
+          image.height,
       }}
     >
       {/* satori is handed this tree, not the DOM: `alt` is inert here, and the
           card's text alternative is the route's `og:image:alt`. */}
       <img
-        src={image.src}
+        src={
+          image.src
+        }
         alt=""
-        width={image.width}
-        height={image.height}
-        style={{ borderRadius: radius }}
+        width={
+          image.width
+        }
+        height={
+          image.height
+        }
+        style={{
+          borderRadius:
+            radius,
+        }}
       />
       <div
         style={{
-          position: 'absolute',
+          position:
+            'absolute',
           left: 0,
           top: 0,
-          width: image.width,
-          height: image.height,
-          borderRadius: radius,
+          width:
+            image.width,
+          height:
+            image.height,
+          borderRadius:
+            radius,
           border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
         }}
       />
-      {overlay ?? null}
+      {overlay ??
+        null}
     </div>
   );
 }
@@ -512,28 +857,50 @@ export function framedImage(
  * Positioned by the caller; it is absolute so it can sit inside a `framedImage`
  * without being measured as part of the tile.
  */
-export function mediaTag(text: string, inset: number): React.ReactElement {
+export function mediaTag(
+  text: string,
+  inset: number,
+): React.ReactElement {
   return (
     <div
       style={{
-        position: 'absolute',
+        position:
+          'absolute',
         left: inset,
-        bottom: inset,
-        display: 'flex',
-        alignItems: 'center',
-        paddingLeft: 8 * SCALE,
-        paddingRight: 8 * SCALE,
-        paddingTop: 3 * SCALE,
-        paddingBottom: 4 * SCALE,
+        bottom:
+          inset,
+        display:
+          'flex',
+        alignItems:
+          'center',
+        paddingLeft:
+          8 *
+          SCALE,
+        paddingRight:
+          8 *
+          SCALE,
+        paddingTop:
+          3 *
+          SCALE,
+        paddingBottom:
+          4 *
+          SCALE,
         borderRadius: 9999,
-        backgroundColor: 'rgba(0, 0, 0, 0.72)',
-        color: INK_FG,
-        fontSize: 11 * SCALE,
+        backgroundColor:
+          'rgba(0, 0, 0, 0.72)',
+        color:
+          INK_FG,
+        fontSize:
+          11 *
+          SCALE,
         fontWeight: 700,
-        letterSpacing: '0.06em',
+        letterSpacing:
+          '0.06em',
       }}
     >
-      {text}
+      {
+        text
+      }
     </div>
   );
 }
@@ -546,29 +913,55 @@ export function mediaTag(text: string, inset: number): React.ReactElement {
  * shape degrades honestly: if a renderer ever drops `transform`, what is left is
  * a mark inside a disc rather than a missing-glyph box.
  */
-export function verifiedBadge(size: number): React.ReactElement {
-  const arm = Math.round(size * 0.34);
-  const weight = Math.max(2, Math.round(size * 0.12));
+export function verifiedBadge(
+  size: number,
+): React.ReactElement {
+  const arm =
+    Math.round(
+      size *
+        0.34,
+    );
+  const weight =
+    Math.max(
+      2,
+      Math.round(
+        size *
+          0.12,
+      ),
+    );
   return (
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: size,
-        height: size,
-        borderRadius: size,
-        backgroundColor: INK,
+        display:
+          'flex',
+        alignItems:
+          'center',
+        justifyContent:
+          'center',
+        width:
+          size,
+        height:
+          size,
+        borderRadius:
+          size,
+        backgroundColor:
+          INK,
       }}
     >
       <div
         style={{
-          width: arm,
-          height: arm * 0.62,
-          marginBottom: arm * 0.24,
+          width:
+            arm,
+          height:
+            arm *
+            0.62,
+          marginBottom:
+            arm *
+            0.24,
           borderLeft: `${weight}px solid ${INK_FG}`,
           borderBottom: `${weight}px solid ${INK_FG}`,
-          transform: 'rotate(-45deg)',
+          transform:
+            'rotate(-45deg)',
         }}
       />
     </div>
@@ -590,32 +983,69 @@ export function verifiedBadge(size: number): React.ReactElement {
  * `--site-aurora-far-*` weight (2–3% ink), because this has to stay behind text
  * at thumbnail size.
  */
-function scene(width: number, height: number): string {
-  const cx = width * 0.86;
-  const cy = height * 0.2;
-  const ring = (r: number, alpha: number) =>
-    `radial-gradient(circle ${r}px at ${cx}px ${cy}px, rgba(0,0,0,0) ${r - 1.5}px, rgba(0,0,0,${alpha}) ${r - 1.5}px, rgba(0,0,0,${alpha}) ${r}px, rgba(0,0,0,0) ${r}px)`;
+function scene(
+  width: number,
+  height: number,
+): string {
+  const cx =
+    width *
+    0.86;
+  const cy =
+    height *
+    0.2;
+  const ring =
+    (
+      r: number,
+      alpha: number,
+    ) =>
+      `radial-gradient(circle ${r}px at ${cx}px ${cy}px, rgba(0,0,0,0) ${r - 1.5}px, rgba(0,0,0,${alpha}) ${r - 1.5}px, rgba(0,0,0,${alpha}) ${r}px, rgba(0,0,0,0) ${r}px)`;
   return [
-    ring(height * 0.42, 0.05),
-    ring(height * 0.72, 0.04),
-    ring(height * 1.05, 0.03),
+    ring(
+      height *
+        0.42,
+      0.05,
+    ),
+    ring(
+      height *
+        0.72,
+      0.04,
+    ),
+    ring(
+      height *
+        1.05,
+      0.03,
+    ),
     `radial-gradient(${width * 0.8}px ${height * 1.05}px at 88% -14%, rgba(0,0,0,0.05), rgba(0,0,0,0) 62%)`,
     `radial-gradient(${width * 0.6}px ${height * 0.8}px at 4% 112%, rgba(0,0,0,0.045), rgba(0,0,0,0) 64%)`,
-  ].join(', ');
+  ].join(
+    ', ',
+  );
 }
 
 /* -------------------------------------------------------------------------- */
 /* Frame metrics                                                              */
 /* -------------------------------------------------------------------------- */
 
-const PAD = 24 * SCALE;
-const PAD_STORY = 44 * SCALE;
-const MARK = 21 * SCALE;
-const MARK_STORY = 30 * SCALE;
+const PAD =
+  24 *
+  SCALE;
+const PAD_STORY =
+  44 *
+  SCALE;
+const MARK =
+  21 *
+  SCALE;
+const MARK_STORY =
+  30 *
+  SCALE;
 /** The chip row / URL line at the bottom. Tallest thing that goes there. */
-const FOOTER = 27 * SCALE;
+const FOOTER =
+  27 *
+  SCALE;
 /** Gap between the brand row, the body and the footer. */
-const GUTTER = 14 * SCALE;
+const GUTTER =
+  14 *
+  SCALE;
 
 export interface FrameMetrics {
   /** Width available to the body, inside the frame's padding. */
@@ -640,13 +1070,30 @@ export function frameMetrics(
   height: number,
   centred = false,
 ): FrameMetrics {
-  const pad = centred ? PAD_STORY : PAD;
-  const mark = centred ? MARK_STORY : MARK;
+  const pad =
+    centred
+      ? PAD_STORY
+      : PAD;
+  const mark =
+    centred
+      ? MARK_STORY
+      : MARK;
   return {
-    width: width - pad * 2,
-    height: height - pad * 2 - mark - FOOTER - GUTTER * 2,
+    width:
+      width -
+      pad *
+        2,
+    height:
+      height -
+      pad *
+        2 -
+      mark -
+      FOOTER -
+      GUTTER *
+        2,
     pad,
-    gutter: GUTTER,
+    gutter:
+      GUTTER,
   };
 }
 
@@ -681,81 +1128,170 @@ export function cardFrame({
   footerRight,
   centred = false,
 }: CardFrameOptions): React.ReactElement {
-  const pad = centred ? PAD_STORY : PAD;
-  const markSize = centred ? MARK_STORY : MARK;
+  const pad =
+    centred
+      ? PAD_STORY
+      : PAD;
+  const markSize =
+    centred
+      ? MARK_STORY
+      : MARK;
 
   return (
     <div
       style={{
         width,
         height,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: CANVAS,
-        backgroundImage: scene(width, height),
-        padding: pad,
-        fontFamily: OG_FONT_SANS,
+        display:
+          'flex',
+        flexDirection:
+          'column',
+        backgroundColor:
+          CANVAS,
+        backgroundImage:
+          scene(
+            width,
+            height,
+          ),
+        padding:
+          pad,
+        fontFamily:
+          OG_FONT_SANS,
       }}
     >
       {/* Brand row */}
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: centred ? 'center' : 'space-between',
-          gap: 12 * SCALE,
+          display:
+            'flex',
+          alignItems:
+            'center',
+          justifyContent:
+            centred
+              ? 'center'
+              : 'space-between',
+          gap:
+            12 *
+            SCALE,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 * SCALE }}>
-          {globeMark(markSize)}
+        <div
+          style={{
+            display:
+              'flex',
+            alignItems:
+              'center',
+            gap:
+              10 *
+              SCALE,
+          }}
+        >
+          {globeMark(
+            markSize,
+          )}
           <span
             style={{
-              fontSize: (centred ? 20 : 15) * SCALE,
+              fontSize:
+                (centred
+                  ? 20
+                  : 15) *
+                SCALE,
               fontWeight: 700,
-              letterSpacing: '-0.022em',
-              color: INK,
+              letterSpacing:
+                '-0.022em',
+              color:
+                INK,
             }}
           >
-            RMH Studios
+            RMH
+            Studios
           </span>
         </div>
-        {eyebrow && !centred ? kicker(eyebrow, MUTED) : null}
+        {eyebrow &&
+        !centred
+          ? kicker(
+              eyebrow,
+              MUTED,
+            )
+          : null}
       </div>
 
       {/* Body */}
       <div
         style={{
-          display: 'flex',
-          flexDirection: 'column',
+          display:
+            'flex',
+          flexDirection:
+            'column',
           flex: 1,
-          justifyContent: 'center',
+          justifyContent:
+            'center',
           minHeight: 0,
-          marginTop: GUTTER,
-          marginBottom: GUTTER,
+          marginTop:
+            GUTTER,
+          marginBottom:
+            GUTTER,
         }}
       >
-        {centred && eyebrow ? (
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 * SCALE }}>
-            {kicker(eyebrow, MUTED, 1.4)}
+        {centred &&
+        eyebrow ? (
+          <div
+            style={{
+              display:
+                'flex',
+              justifyContent:
+                'center',
+              marginBottom:
+                20 *
+                SCALE,
+            }}
+          >
+            {kicker(
+              eyebrow,
+              MUTED,
+              1.4,
+            )}
           </div>
         ) : null}
-        {children}
+        {
+          children
+        }
       </div>
 
       {/* Footer */}
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: centred ? 'center' : 'space-between',
-          gap: 12 * SCALE,
-          height: FOOTER,
+          display:
+            'flex',
+          alignItems:
+            'center',
+          justifyContent:
+            centred
+              ? 'center'
+              : 'space-between',
+          gap:
+            12 *
+            SCALE,
+          height:
+            FOOTER,
         }}
       >
         {footerLeft ?? (
-          <span style={{ fontSize: 13 * SCALE, fontWeight: 500, color: DIM }}>rmhstudios.com</span>
+          <span
+            style={{
+              fontSize:
+                13 *
+                SCALE,
+              fontWeight: 500,
+              color:
+                DIM,
+            }}
+          >
+            rmhstudios.com
+          </span>
         )}
-        {footerRight ?? null}
+        {footerRight ??
+          null}
       </div>
     </div>
   );

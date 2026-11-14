@@ -19,7 +19,10 @@ export interface MovieEntry {
   alternativeTitles: string[];
   year: number;
   genre: string[];
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty:
+    | 'easy'
+    | 'medium'
+    | 'hard';
   popularity: number;
 }
 
@@ -30,18 +33,35 @@ export interface ECRoundData {
 
 // ─── Singleton Caches ────────────────────────────────────────────
 
-let cachedMovies: MovieEntry[] | null = null;
+let cachedMovies:
+  | MovieEntry[]
+  | null =
+  null;
 
 /**
  * Load movies from the static JSON file.
  * Caches the result as a singleton for subsequent calls.
  */
 export function loadMovies(): MovieEntry[] {
-  if (cachedMovies) return cachedMovies;
+  if (
+    cachedMovies
+  )
+    return cachedMovies;
 
-  const filePath = path.join(process.cwd(), 'data/rmhbox/emoji-cinema/movies.json');
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  cachedMovies = JSON.parse(raw) as MovieEntry[];
+  const filePath =
+    path.join(
+      process.cwd(),
+      'data/rmhbox/emoji-cinema/movies.json',
+    );
+  const raw =
+    fs.readFileSync(
+      filePath,
+      'utf-8',
+    );
+  cachedMovies =
+    JSON.parse(
+      raw,
+    ) as MovieEntry[];
   return cachedMovies;
 }
 
@@ -55,22 +75,80 @@ export function selectMoviesForGame(
   usedTitles: Set<string>,
   producerOrder: string[],
 ): ECRoundData[] {
-  const totalRounds = Math.min(playerCount, EC_MAX_ROUNDS);
-  const available = pool.filter((m) => !usedTitles.has(m.title));
-  const selection = available.length >= totalRounds ? available : pool;
+  const totalRounds =
+    Math.min(
+      playerCount,
+      EC_MAX_ROUNDS,
+    );
+  const available =
+    pool.filter(
+      (
+        m,
+      ) =>
+        !usedTitles.has(
+          m.title,
+        ),
+    );
+  const selection =
+    available.length >=
+    totalRounds
+      ? available
+      : pool;
 
   // Fisher-Yates shuffle and pick
-  const shuffled = [...selection];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  const shuffled =
+    [
+      ...selection,
+    ];
+  for (
+    let i =
+      shuffled.length -
+      1;
+    i >
+    0;
+    i--
+  ) {
+    const j =
+      Math.floor(
+        Math.random() *
+          (i +
+            1),
+      );
+    [
+      shuffled[
+        i
+      ],
+      shuffled[
+        j
+      ],
+    ] =
+      [
+        shuffled[
+          j
+        ],
+        shuffled[
+          i
+        ],
+      ];
   }
-  const selected = shuffled.slice(0, totalRounds);
+  const selected =
+    shuffled.slice(
+      0,
+      totalRounds,
+    );
 
-  return selected.map((movie, i) => ({
-    movie,
-    producerUserId: producerOrder[i],
-  }));
+  return selected.map(
+    (
+      movie,
+      i,
+    ) => ({
+      movie,
+      producerUserId:
+        producerOrder[
+          i
+        ],
+    }),
+  );
 }
 
 /**
@@ -78,12 +156,26 @@ export function selectMoviesForGame(
  * We no longer restrict to a static palette — emoji-mart handles the UI selection.
  * Server-side validation ensures the input is actually an emoji, not arbitrary text.
  */
-export function validateEmoji(emoji: string): boolean {
-  if (!emoji || typeof emoji !== 'string') return false;
+export function validateEmoji(
+  emoji: string,
+): boolean {
+  if (
+    !emoji ||
+    typeof emoji !==
+      'string'
+  )
+    return false;
   // Accept any non-empty string that is <= 8 chars (emoji grapheme clusters can be multi-codepoint)
-  if (emoji.length > 8) return false;
+  if (
+    emoji.length >
+    8
+  )
+    return false;
   // Must contain at least one emoji codepoint (U+2000+ range covers most emoji)
   // This regex matches common emoji ranges: emoticons, dingbats, symbols, supplementary
-  const emojiPattern = /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27FF}]|[\u{2300}-\u{23FF}]|[\u{FE00}-\u{FEFF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]/u;
-  return emojiPattern.test(emoji);
+  const emojiPattern =
+    /[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27FF}]|[\u{2300}-\u{23FF}]|[\u{FE00}-\u{FEFF}]|[\u{200D}]|[\u{20E3}]|[\u{E0020}-\u{E007F}]/u;
+  return emojiPattern.test(
+    emoji,
+  );
 }

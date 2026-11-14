@@ -1,7 +1,12 @@
 /** Socket event names for host-set slow mode (S3). One trio per chat surface. */
-export type SlowModeScope = 'tube' | 'music' | 'space';
+export type SlowModeScope =
+  | 'tube'
+  | 'music'
+  | 'space';
 
-export function slowModeEvents(scope: SlowModeScope) {
+export function slowModeEvents(
+  scope: SlowModeScope,
+) {
   return {
     SET: `safety:slowmode:${scope}:set`,
     STATE: `safety:slowmode:${scope}:state`,
@@ -10,7 +15,15 @@ export function slowModeEvents(scope: SlowModeScope) {
 }
 
 /** Cooldown choices offered to hosts (seconds). 0 = off. */
-export const SLOW_MODE_CHOICES_S = [0, 5, 10, 30, 60, 300] as const;
+export const SLOW_MODE_CHOICES_S =
+  [
+    0,
+    5,
+    10,
+    30,
+    60,
+    300,
+  ] as const;
 
 export interface SlowModeStatePayload {
   roomId: string;
@@ -19,6 +32,8 @@ export interface SlowModeStatePayload {
 }
 export interface SlowModeRejectedPayload {
   roomId: string;
-  reason: 'cooldown' | 'new-account';
+  reason:
+    | 'cooldown'
+    | 'new-account';
   retryInMs: number;
 }

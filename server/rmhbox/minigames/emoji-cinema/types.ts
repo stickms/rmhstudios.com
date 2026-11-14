@@ -9,7 +9,12 @@ import type { MovieEntry } from '@/lib/rmhbox/emoji-cinema/data-loader';
 
 // ─── Phase ───────────────────────────────────────────────────────
 
-export type ECPhase = 'PRODUCER_ASSIGNMENT' | 'MOVIE_SELECTION' | 'EMOJI_CONSTRUCTION' | 'ROUND_RESULTS' | 'TRANSITION';
+export type ECPhase =
+  | 'PRODUCER_ASSIGNMENT'
+  | 'MOVIE_SELECTION'
+  | 'EMOJI_CONSTRUCTION'
+  | 'ROUND_RESULTS'
+  | 'TRANSITION';
 
 // ─── Round Data ──────────────────────────────────────────────────
 
@@ -22,7 +27,10 @@ export interface ECRoundData {
 
 export interface ECPlayerGuess {
   text: string;
-  result: 'correct' | 'close' | 'wrong';
+  result:
+    | 'correct'
+    | 'close'
+    | 'wrong';
   timestamp: number;
 }
 
@@ -66,15 +74,29 @@ export interface EmojiCinemaState {
   /** Three movie choices presented to the producer at MOVIE_SELECTION phase */
   movieChoices: MovieEntry[];
   emojiSequence: string[];
-  guesses: Map<string, ECPlayerGuesses>;
+  guesses: Map<
+    string,
+    ECPlayerGuesses
+  >;
   correctGuessers: CorrectGuesser[];
   closeGuessCount: number;
   /** Public guess log broadcast to all players during the guessing phase. */
   guessLog: GuessLogEntry[];
-  playerScores: Map<string, number>;
+  playerScores: Map<
+    string,
+    number
+  >;
   phaseStartedAt: number;
   phaseEndsAt: number;
-  actionLog: Array<{ seq: number; type: string; timestamp: number; payload: Record<string, unknown> }>;
+  actionLog: Array<{
+    seq: number;
+    type: string;
+    timestamp: number;
+    payload: Record<
+      string,
+      unknown
+    >;
+  }>;
   /** Timer handle for producer disconnect wait */
   producerDisconnectTimer: NodeJS.Timeout | null;
 }

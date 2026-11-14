@@ -30,30 +30,65 @@ export interface ScheduledClicks {
 }
 
 /** What a context may report about its output (all absent in some browsers). */
-export type OutputInfo = Partial<
-  Pick<AudioContext, 'getOutputTimestamp' | 'outputLatency' | 'baseLatency'>
->;
+export type OutputInfo =
+  Partial<
+    Pick<
+      AudioContext,
+      | 'getOutputTimestamp'
+      | 'outputLatency'
+      | 'baseLatency'
+    >
+  >;
 
 /** The part of an AudioContext a click needs (the metronome takes the same pick). */
-export type ClickContext = Pick<
-  BaseAudioContext,
-  'currentTime' | 'createOscillator' | 'createGain' | 'destination'
-> &
-  OutputInfo;
+export type ClickContext =
+  Pick<
+    BaseAudioContext,
+    | 'currentTime'
+    | 'createOscillator'
+    | 'createGain'
+    | 'destination'
+  > &
+    OutputInfo;
 
 /**
  * How long a sound takes from being rendered to leaving the speaker (ms): the context's
  * `outputLatency`, else its `baseLatency`, else 0 (unknown; Safari reports nothing useful). The
  * same pick as `lib/audio/output-clock.ts`.
  */
-export function contextLatencyMs(ctx: Pick<OutputInfo, 'outputLatency' | 'baseLatency'>): number {
-  const ok = (x: number | undefined): x is number => typeof x === 'number' && x > 0;
-  const seconds = ok(ctx.outputLatency)
-    ? ctx.outputLatency
-    : ok(ctx.baseLatency)
-      ? ctx.baseLatency
-      : 0;
-  return Number.isFinite(seconds) ? seconds * 1000 : 0;
+export function contextLatencyMs(
+  ctx: Pick<
+    OutputInfo,
+    | 'outputLatency'
+    | 'baseLatency'
+  >,
+): number {
+  const ok =
+    (
+      x:
+        | number
+        | undefined,
+    ): x is number =>
+      typeof x ===
+        'number' &&
+      x >
+        0;
+  const seconds =
+    ok(
+      ctx.outputLatency,
+    )
+      ? ctx.outputLatency
+      : ok(
+            ctx.baseLatency,
+          )
+        ? ctx.baseLatency
+        : 0;
+  return Number.isFinite(
+    seconds,
+  )
+    ? seconds *
+        1000
+    : 0;
 }
 
 /** A timestamp this old (ms) is from a suspended or restarted context, not the running one. */
@@ -72,29 +107,68 @@ const MAX_TIMESTAMP_AGE_MS = 1500;
  * Without either (older Safari, zeros before the first block, a stale or future timestamp, a
  * throw) it is the plain difference of the two clocks.
  */
-export function clockOffsetMs(ctx: Pick<ClickContext, 'currentTime'> & OutputInfo): number {
-  const now = performance.now();
-  const latencyMs = contextLatencyMs(ctx);
-  if (latencyMs > 0 && typeof ctx.getOutputTimestamp === 'function') {
+export function clockOffsetMs(
+  ctx: Pick<
+    ClickContext,
+    'currentTime'
+  > &
+    OutputInfo,
+): number {
+  const now =
+    performance.now();
+  const latencyMs =
+    contextLatencyMs(
+      ctx,
+    );
+  if (
+    latencyMs >
+      0 &&
+    typeof ctx.getOutputTimestamp ===
+      'function'
+  ) {
     try {
-      const stamp = ctx.getOutputTimestamp();
-      const contextTime = stamp.contextTime ?? Number.NaN;
-      const performanceTime = stamp.performanceTime ?? Number.NaN;
+      const stamp =
+        ctx.getOutputTimestamp();
+      const contextTime =
+        stamp.contextTime ??
+        Number.NaN;
+      const performanceTime =
+        stamp.performanceTime ??
+        Number.NaN;
       if (
-        Number.isFinite(contextTime) &&
-        Number.isFinite(performanceTime) &&
-        contextTime > 0 &&
-        performanceTime > 0 &&
-        performanceTime <= now + 5 &&
-        now - performanceTime < MAX_TIMESTAMP_AGE_MS
+        Number.isFinite(
+          contextTime,
+        ) &&
+        Number.isFinite(
+          performanceTime,
+        ) &&
+        contextTime >
+          0 &&
+        performanceTime >
+          0 &&
+        performanceTime <=
+          now +
+            5 &&
+        now -
+          performanceTime <
+          MAX_TIMESTAMP_AGE_MS
       ) {
-        return performanceTime - contextTime * 1000 - latencyMs;
+        return (
+          performanceTime -
+          contextTime *
+            1000 -
+          latencyMs
+        );
       }
     } catch {
       // Fall through to the plain difference.
     }
   }
-  return now - ctx.currentTime * 1000;
+  return (
+    now -
+    ctx.currentTime *
+      1000
+  );
 }
 
 export interface ClickVoice {
@@ -111,62 +185,185 @@ export interface ClickVoice {
 export function startClick(
   ctx: ClickContext,
   at: number,
-  { freq, peak, clickS }: { freq: number; peak: number; clickS: number },
+  {
+    freq,
+    peak,
+    clickS,
+  }: {
+    freq: number;
+    peak: number;
+    clickS: number;
+  },
 ): ClickVoice {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0, at);
-  gain.gain.linearRampToValueAtTime(peak, at + 0.002);
-  gain.gain.exponentialRampToValueAtTime(0.0001, at + clickS);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(at);
-  osc.stop(at + clickS);
-  return { osc, gain };
+  const osc =
+    ctx.createOscillator();
+  const gain =
+    ctx.createGain();
+  osc.frequency.value =
+    freq;
+  gain.gain.setValueAtTime(
+    0,
+    at,
+  );
+  gain.gain.linearRampToValueAtTime(
+    peak,
+    at +
+      0.002,
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    at +
+      clickS,
+  );
+  osc.connect(
+    gain,
+  );
+  gain.connect(
+    ctx.destination,
+  );
+  osc.start(
+    at,
+  );
+  osc.stop(
+    at +
+      clickS,
+  );
+  return {
+    osc,
+    gain,
+  };
 }
 
 export function scheduleClicks(
   ctx: ClickContext,
   plan: ClickPlan,
-  on: { beat(i: number): void; end(): void },
+  on: {
+    beat(
+      i: number,
+    ): void;
+    end(): void;
+  },
 ): ScheduledClicks {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  const voices: ClickVoice[] = [];
-  const clicks: number[] = [];
+  const timers: ReturnType<
+    typeof setTimeout
+  >[] =
+    [];
+  const voices: ClickVoice[] =
+    [];
+  const clicks: number[] =
+    [];
 
   // The one clock conversion (see the docblock).
-  const offsetMs = clockOffsetMs(ctx);
-  const t0 = ctx.currentTime + plan.leadS;
-  for (let i = 0; i < plan.count; i++) {
-    const at = t0 + i * plan.beatS;
-    const { osc, gain } = startClick(ctx, at, {
-      freq: i === 0 ? 1500 : 1000,
-      peak: 0.3,
-      clickS: plan.clickS,
-    });
-    const voice = { osc, gain };
-    voices.push(voice);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-      const k = voices.indexOf(voice);
-      if (k >= 0) voices.splice(k, 1);
-    };
-    const clickMs = at * 1000 + offsetMs;
-    clicks.push(clickMs);
-    timers.push(setTimeout(() => on.beat(i), clickMs - performance.now()));
+  const offsetMs =
+    clockOffsetMs(
+      ctx,
+    );
+  const t0 =
+    ctx.currentTime +
+    plan.leadS;
+  for (
+    let i = 0;
+    i <
+    plan.count;
+    i++
+  ) {
+    const at =
+      t0 +
+      i *
+        plan.beatS;
+    const {
+      osc,
+      gain,
+    } =
+      startClick(
+        ctx,
+        at,
+        {
+          freq:
+            i ===
+            0
+              ? 1500
+              : 1000,
+          peak: 0.3,
+          clickS:
+            plan.clickS,
+        },
+      );
+    const voice =
+      {
+        osc,
+        gain,
+      };
+    voices.push(
+      voice,
+    );
+    osc.onended =
+      () => {
+        osc.disconnect();
+        gain.disconnect();
+        const k =
+          voices.indexOf(
+            voice,
+          );
+        if (
+          k >=
+          0
+        )
+          voices.splice(
+            k,
+            1,
+          );
+      };
+    const clickMs =
+      at *
+        1000 +
+      offsetMs;
+    clicks.push(
+      clickMs,
+    );
+    timers.push(
+      setTimeout(
+        () =>
+          on.beat(
+            i,
+          ),
+        clickMs -
+          performance.now(),
+      ),
+    );
   }
-  const endMs = clicks[plan.count - 1] + plan.beatS * 1000;
-  timers.push(setTimeout(() => on.end(), endMs - performance.now()));
+  const endMs =
+    clicks[
+      plan.count -
+        1
+    ] +
+    plan.beatS *
+      1000;
+  timers.push(
+    setTimeout(
+      () =>
+        on.end(),
+      endMs -
+        performance.now(),
+    ),
+  );
 
   return {
     clicks,
     cancel() {
-      for (const id of timers) clearTimeout(id);
+      for (const id of timers)
+        clearTimeout(
+          id,
+        );
       timers.length = 0;
-      for (const { osc, gain } of voices.splice(0)) {
-        osc.onended = null;
+      for (const {
+        osc,
+        gain,
+      } of voices.splice(
+        0,
+      )) {
+        osc.onended =
+          null;
         try {
           osc.stop();
         } catch {

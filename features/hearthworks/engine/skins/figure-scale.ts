@@ -10,16 +10,44 @@ export const FIGURE_SCALE = 0.3;
 export const FIGURE_UNITS_HEIGHT = 1.26;
 
 /** How tall a person standing in the world is, in world units, for a skin whose look has this height multiplier. */
-export function figureWorldHeight(lookHeight: number): number {
-  const h = Number.isFinite(lookHeight) && lookHeight > 0 ? lookHeight : 1;
-  return FIGURE_UNITS_HEIGHT * FIGURE_SCALE * h;
+export function figureWorldHeight(
+  lookHeight: number,
+): number {
+  const h =
+    Number.isFinite(
+      lookHeight,
+    ) &&
+    lookHeight >
+      0
+      ? lookHeight
+      : 1;
+  return (
+    FIGURE_UNITS_HEIGHT *
+    FIGURE_SCALE *
+    h
+  );
 }
 
 /**
  * Uniform scale that makes a model `modelHeight` metres tall stand as tall as the procedural figure it replaces.
  * A bad height (0, NaN, negative) is treated as 1.8 m so a broken manifest entry still draws a person-sized person.
  */
-export function modelScale(modelHeight: number, lookHeight: number): number {
-  const m = Number.isFinite(modelHeight) && modelHeight > 0 ? modelHeight : 1.8;
-  return figureWorldHeight(lookHeight) / m;
+export function modelScale(
+  modelHeight: number,
+  lookHeight: number,
+): number {
+  const m =
+    Number.isFinite(
+      modelHeight,
+    ) &&
+    modelHeight >
+      0
+      ? modelHeight
+      : 1.8;
+  return (
+    figureWorldHeight(
+      lookHeight,
+    ) /
+    m
+  );
 }

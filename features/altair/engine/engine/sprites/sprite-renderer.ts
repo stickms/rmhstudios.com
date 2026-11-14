@@ -11,25 +11,56 @@
 
 import type { SpriteSheet } from './sprite-loader';
 import type { AnimationState } from './sprite-animator';
-import { getCurrentFrameIndex, frameRectInto } from './sprite-animator';
+import {
+  getCurrentFrameIndex,
+  frameRectInto,
+} from './sprite-animator';
 import type { SpriteBatch } from '../webgl/webgl-sprite-batch';
-import { getGLContext, getContextGeneration, createTextureFromImage } from '../webgl/webgl-textures';
+import {
+  getGLContext,
+  getContextGeneration,
+  createTextureFromImage,
+} from '../webgl/webgl-textures';
 
 /** Reused by every draw helper below (they never nest), so a sprite costs no allocation. */
-const FRAME_SCRATCH = { sx: 0, sy: 0, sw: 0, sh: 0 };
+const FRAME_SCRATCH =
+  {
+    sx: 0,
+    sy: 0,
+    sw: 0,
+    sh: 0,
+  };
 
 /**
  * Ensure a sprite sheet has a GL texture for the current context.
  * Recreates the texture if the GL context has changed since it was created.
  */
-function ensureTexture(sheet: SpriteSheet): WebGLTexture | null {
-  const gen = getContextGeneration();
-  if (sheet.glTexture && sheet.glTextureGeneration === gen) return sheet.glTexture;
+function ensureTexture(
+  sheet: SpriteSheet,
+): WebGLTexture | null {
+  const gen =
+    getContextGeneration();
+  if (
+    sheet.glTexture &&
+    sheet.glTextureGeneration ===
+      gen
+  )
+    return sheet.glTexture;
   // Texture is missing or from a stale context — (re)create it
-  const gl = getGLContext();
-  if (!gl || !sheet.loaded) return null;
-  sheet.glTexture = createTextureFromImage(gl, sheet.image);
-  sheet.glTextureGeneration = gen;
+  const gl =
+    getGLContext();
+  if (
+    !gl ||
+    !sheet.loaded
+  )
+    return null;
+  sheet.glTexture =
+    createTextureFromImage(
+      gl,
+      sheet.image,
+    );
+  sheet.glTextureGeneration =
+    gen;
   return sheet.glTexture;
 }
 
@@ -45,22 +76,69 @@ export function drawSprite(
   scale: number,
   flipX: boolean = false,
 ): void {
-  if (!sheet.loaded) return;
-  const tex = ensureTexture(sheet);
-  if (!tex) return;
+  if (
+    !sheet.loaded
+  )
+    return;
+  const tex =
+    ensureTexture(
+      sheet,
+    );
+  if (
+    !tex
+  )
+    return;
 
-  const { sx, sy, sw, sh } = frameRectInto(FRAME_SCRATCH, sheet, frameIndex);
-  const dw = sw * scale;
-  const dh = sh * scale;
-  const dx = Math.round(x - dw / 2);
-  const dy = Math.round(y - dh / 2);
+  const {
+    sx,
+    sy,
+    sw,
+    sh,
+  } =
+    frameRectInto(
+      FRAME_SCRATCH,
+      sheet,
+      frameIndex,
+    );
+  const dw =
+    sw *
+    scale;
+  const dh =
+    sh *
+    scale;
+  const dx =
+    Math.round(
+      x -
+        dw /
+          2,
+    );
+  const dy =
+    Math.round(
+      y -
+        dh /
+          2,
+    );
 
   batch.drawQuad(
     tex,
-    sx, sy, sw, sh,
-    sheet.image.naturalWidth, sheet.image.naturalHeight,
-    dx, dy, dw, dh,
-    1, 1, 1, 1,
+    sx,
+    sy,
+    sw,
+    sh,
+    sheet
+      .image
+      .naturalWidth,
+    sheet
+      .image
+      .naturalHeight,
+    dx,
+    dy,
+    dw,
+    dh,
+    1,
+    1,
+    1,
+    1,
     flipX,
   );
 }
@@ -76,8 +154,21 @@ export function drawAnimatedSprite(
   scale: number,
   flipX: boolean = false,
 ): void {
-  const frameIndex = getCurrentFrameIndex(state);
-  drawSprite(batch, state.animation.sheet, frameIndex, x, y, scale, flipX);
+  const frameIndex =
+    getCurrentFrameIndex(
+      state,
+    );
+  drawSprite(
+    batch,
+    state
+      .animation
+      .sheet,
+    frameIndex,
+    x,
+    y,
+    scale,
+    flipX,
+  );
 }
 
 /**
@@ -91,17 +182,54 @@ export function drawTileSprite(
   y: number,
   tileSize: number,
 ): void {
-  if (!sheet.loaded) return;
-  const tex = ensureTexture(sheet);
-  if (!tex) return;
+  if (
+    !sheet.loaded
+  )
+    return;
+  const tex =
+    ensureTexture(
+      sheet,
+    );
+  if (
+    !tex
+  )
+    return;
 
-  const { sx, sy, sw, sh } = frameRectInto(FRAME_SCRATCH, sheet, tileIndex);
+  const {
+    sx,
+    sy,
+    sw,
+    sh,
+  } =
+    frameRectInto(
+      FRAME_SCRATCH,
+      sheet,
+      tileIndex,
+    );
   batch.drawQuad(
     tex,
-    sx, sy, sw, sh,
-    sheet.image.naturalWidth, sheet.image.naturalHeight,
-    Math.round(x), Math.round(y), tileSize, tileSize,
-    1, 1, 1, 1,
+    sx,
+    sy,
+    sw,
+    sh,
+    sheet
+      .image
+      .naturalWidth,
+    sheet
+      .image
+      .naturalHeight,
+    Math.round(
+      x,
+    ),
+    Math.round(
+      y,
+    ),
+    tileSize,
+    tileSize,
+    1,
+    1,
+    1,
+    1,
     false,
   );
 }
@@ -119,23 +247,70 @@ export function drawSpriteCorpse(
   alpha: number,
   flipX: boolean = false,
 ): void {
-  if (!sheet.loaded) return;
-  const tex = ensureTexture(sheet);
-  if (!tex) return;
+  if (
+    !sheet.loaded
+  )
+    return;
+  const tex =
+    ensureTexture(
+      sheet,
+    );
+  if (
+    !tex
+  )
+    return;
 
-  const { sx, sy, sw, sh } = frameRectInto(FRAME_SCRATCH, sheet, frameIndex);
-  const dw = sw * scale;
-  const dh = sh * scale;
-  const dx = Math.round(x - dw / 2);
-  const dy = Math.round(y - dh / 2);
+  const {
+    sx,
+    sy,
+    sw,
+    sh,
+  } =
+    frameRectInto(
+      FRAME_SCRATCH,
+      sheet,
+      frameIndex,
+    );
+  const dw =
+    sw *
+    scale;
+  const dh =
+    sh *
+    scale;
+  const dx =
+    Math.round(
+      x -
+        dw /
+          2,
+    );
+  const dy =
+    Math.round(
+      y -
+        dh /
+          2,
+    );
 
   // Gray desaturation via tint (dark gray color tint)
   batch.drawQuad(
     tex,
-    sx, sy, sw, sh,
-    sheet.image.naturalWidth, sheet.image.naturalHeight,
-    dx, dy, dw, dh,
-    0.4, 0.4, 0.4, alpha,
+    sx,
+    sy,
+    sw,
+    sh,
+    sheet
+      .image
+      .naturalWidth,
+    sheet
+      .image
+      .naturalHeight,
+    dx,
+    dy,
+    dw,
+    dh,
+    0.4,
+    0.4,
+    0.4,
+    alpha,
     flipX,
   );
 }
@@ -153,33 +328,94 @@ export function drawSpriteFlash(
   scale: number,
   flipX: boolean = false,
 ): void {
-  if (!sheet.loaded) return;
-  const tex = ensureTexture(sheet);
-  if (!tex) return;
+  if (
+    !sheet.loaded
+  )
+    return;
+  const tex =
+    ensureTexture(
+      sheet,
+    );
+  if (
+    !tex
+  )
+    return;
 
-  const { sx, sy, sw, sh } = frameRectInto(FRAME_SCRATCH, sheet, frameIndex);
-  const dw = sw * scale;
-  const dh = sh * scale;
-  const dx = Math.round(x - dw / 2);
-  const dy = Math.round(y - dh / 2);
+  const {
+    sx,
+    sy,
+    sw,
+    sh,
+  } =
+    frameRectInto(
+      FRAME_SCRATCH,
+      sheet,
+      frameIndex,
+    );
+  const dw =
+    sw *
+    scale;
+  const dh =
+    sh *
+    scale;
+  const dx =
+    Math.round(
+      x -
+        dw /
+          2,
+    );
+  const dy =
+    Math.round(
+      y -
+        dh /
+          2,
+    );
 
   // Draw base sprite
   batch.drawQuad(
     tex,
-    sx, sy, sw, sh,
-    sheet.image.naturalWidth, sheet.image.naturalHeight,
-    dx, dy, dw, dh,
-    1, 1, 1, 1,
+    sx,
+    sy,
+    sw,
+    sh,
+    sheet
+      .image
+      .naturalWidth,
+    sheet
+      .image
+      .naturalHeight,
+    dx,
+    dy,
+    dw,
+    dh,
+    1,
+    1,
+    1,
+    1,
     flipX,
   );
 
   // Draw white overlay on top (additive-like effect via high tint with alpha)
   batch.drawQuad(
     tex,
-    sx, sy, sw, sh,
-    sheet.image.naturalWidth, sheet.image.naturalHeight,
-    dx, dy, dw, dh,
-    3.0, 3.0, 3.0, 0.7,
+    sx,
+    sy,
+    sw,
+    sh,
+    sheet
+      .image
+      .naturalWidth,
+    sheet
+      .image
+      .naturalHeight,
+    dx,
+    dy,
+    dw,
+    dh,
+    3.0,
+    3.0,
+    3.0,
+    0.7,
     flipX,
   );
 }

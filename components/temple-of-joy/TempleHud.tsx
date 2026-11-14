@@ -9,59 +9,156 @@
 
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
-import { fmt, fmtCount, formatDuration } from '@/lib/temple-of-joy/numbers';
+import {
+  fmt,
+  fmtCount,
+  formatDuration,
+} from '@/lib/temple-of-joy/numbers';
 import {
   computeDevotion,
   computeRateModifiers,
   computeSinnerDrain,
   computeTotalSources,
 } from '@/lib/temple-of-joy/engine';
-import { MANNA_KIND_MAP, ripenDuration } from '@/lib/temple-of-joy/minigames/manna';
-import { useShortViewport, useTempleSnapshot } from './hooks';
-import { LiveValue, Glyph } from './ui';
+import {
+  MANNA_KIND_MAP,
+  ripenDuration,
+} from '@/lib/temple-of-joy/minigames/manna';
+import {
+  useShortViewport,
+  useTempleSnapshot,
+} from './hooks';
+import {
+  LiveValue,
+  Glyph,
+} from './ui';
 
 export function TempleHud() {
-  const { t } = useTranslation('c-temple-of-joy');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-temple-of-joy',
+    );
   // Sideways the whole head is one row, and the rate is the part that has to
   // give. See `SHORT_QUERY`.
-  const short = useShortViewport();
+  const short =
+    useShortViewport();
 
   // Which chips exist at all is a slow-changing question; the values inside
   // them are `<LiveValue>`s anyway.
-  const shown = useTempleSnapshot(
-    (s) => ({
-      sources: computeTotalSources(s) > 0,
-      grace: s.grace > 0 || s.ascensions > 0,
-      manna: s.manna.revealed || s.manna.held > 0,
-      mannaReady: s.manna.held > 0,
-      devotion: s.trophies.size >= 5,
-      drained: computeSinnerDrain(s) > 0,
-    }),
-    600,
-  );
+  const shown =
+    useTempleSnapshot(
+      (
+        s,
+      ) => ({
+        sources:
+          computeTotalSources(
+            s,
+          ) >
+          0,
+        grace:
+          s.grace >
+            0 ||
+          s.ascensions >
+            0,
+        manna:
+          s
+            .manna
+            .revealed ||
+          s
+            .manna
+            .held >
+            0,
+        mannaReady:
+          s
+            .manna
+            .held >
+          0,
+        devotion:
+          s
+            .trophies
+            .size >=
+          5,
+        drained:
+          computeSinnerDrain(
+            s,
+          ) >
+          0,
+      }),
+      600,
+    );
 
   return (
     <header className="toj-hud">
       <div className="toj-hud-main">
-        <LiveValue className="toj-joy" read={(s) => fmt(s.joy, s.numberFormat)} />
+        <LiveValue
+          className="toj-joy"
+          read={(
+            s,
+          ) =>
+            fmt(
+              s.joy,
+              s.numberFormat,
+            )
+          }
+        />
         <LiveValue
           className="toj-rate"
-          style={undefined}
-          read={(s) => {
-            const drain = computeSinnerDrain(s);
-            const figure = fmt(s.getJps(), s.numberFormat);
-            const rate = short
-              ? t('per-second-tight', { rate: figure, defaultValue: '{{rate}}/s' })
-              : t('per-second', { rate: figure, defaultValue: '{{rate}} joy per second' });
-            if (drain <= 0) return rate;
+          style={
+            undefined
+          }
+          read={(
+            s,
+          ) => {
+            const drain =
+              computeSinnerDrain(
+                s,
+              );
+            const figure =
+              fmt(
+                s.getJps(),
+                s.numberFormat,
+              );
+            const rate =
+              short
+                ? t(
+                    'per-second-tight',
+                    {
+                      rate: figure,
+                      defaultValue:
+                        '{{rate}}/s',
+                    },
+                  )
+                : t(
+                    'per-second',
+                    {
+                      rate: figure,
+                      defaultValue:
+                        '{{rate}} joy per second',
+                    },
+                  );
+            if (
+              drain <=
+              0
+            )
+              return rate;
 
-            const percent = Math.round(drain * 100);
+            const percent =
+              Math.round(
+                drain *
+                  100,
+              );
             return short
               ? `${rate} · −${percent}%`
-              : `${rate} · ${t('drained', {
-                  percent,
-                  defaultValue: '{{percent}}% held by Sinners',
-                })}`;
+              : `${rate} · ${t(
+                  'drained',
+                  {
+                    percent,
+                    defaultValue:
+                      '{{percent}}% held by Sinners',
+                  },
+                )}`;
           }}
         />
       </div>
@@ -77,18 +174,69 @@ export function TempleHud() {
             type="button"
             className="toj-chip"
             data-kind="sources"
-            onClick={() => useTempleStore.getState().setTab('sources')}
-            title={t('sources-hint', { defaultValue: 'Everything you own. Opens the shop.' })}
+            onClick={() =>
+              useTempleStore
+                .getState()
+                .setTab(
+                  'sources',
+                )
+            }
+            title={t(
+              'sources-hint',
+              {
+                defaultValue:
+                  'Everything you own. Opens the shop.',
+              },
+            )}
           >
-            <Glyph label={t('tab-sources', { defaultValue: 'Sources' })}>🕯️</Glyph>
-            <LiveValue read={(s) => fmtCount(computeTotalSources(s))} />
+            <Glyph
+              label={t(
+                'tab-sources',
+                {
+                  defaultValue:
+                    'Sources',
+                },
+              )}
+            >
+              🕯️
+            </Glyph>
+            <LiveValue
+              read={(
+                s,
+              ) =>
+                fmtCount(
+                  computeTotalSources(
+                    s,
+                  ),
+                )
+              }
+            />
           </button>
         )}
 
         {shown.devotion && (
-          <span className="toj-chip" data-kind="devotion">
-            <Glyph label={t('devotion', { defaultValue: 'Devotion' })}>🏆</Glyph>
-            <LiveValue read={(s) => `+${Math.round(computeDevotion(s) * 100)}%`} />
+          <span
+            className="toj-chip"
+            data-kind="devotion"
+          >
+            <Glyph
+              label={t(
+                'devotion',
+                {
+                  defaultValue:
+                    'Devotion',
+                },
+              )}
+            >
+              🏆
+            </Glyph>
+            <LiveValue
+              read={(
+                s,
+              ) =>
+                `+${Math.round(computeDevotion(s) * 100)}%`
+              }
+            />
           </span>
         )}
 
@@ -97,10 +245,35 @@ export function TempleHud() {
             type="button"
             className="toj-chip"
             data-kind="grace"
-            onClick={() => useTempleStore.getState().setTab('legacy')}
+            onClick={() =>
+              useTempleStore
+                .getState()
+                .setTab(
+                  'legacy',
+                )
+            }
           >
-            <Glyph label={t('grace', { defaultValue: 'Grace' })}>☁️</Glyph>
-            <LiveValue read={(s) => fmt(s.grace, s.numberFormat)} />
+            <Glyph
+              label={t(
+                'grace',
+                {
+                  defaultValue:
+                    'Grace',
+                },
+              )}
+            >
+              ☁️
+            </Glyph>
+            <LiveValue
+              read={(
+                s,
+              ) =>
+                fmt(
+                  s.grace,
+                  s.numberFormat,
+                )
+              }
+            />
           </button>
         )}
 
@@ -109,19 +282,73 @@ export function TempleHud() {
             type="button"
             className="toj-chip"
             data-kind="manna"
-            data-ready={shown.mannaReady ? 'true' : undefined}
-            onClick={() => useTempleStore.getState().setShowMannaDialog(true)}
-            title={t('manna-hint', {
-              defaultValue: 'Manna ripens on its own. Spend it raising a source.',
-            })}
+            data-ready={
+              shown.mannaReady
+                ? 'true'
+                : undefined
+            }
+            onClick={() =>
+              useTempleStore
+                .getState()
+                .setShowMannaDialog(
+                  true,
+                )
+            }
+            title={t(
+              'manna-hint',
+              {
+                defaultValue:
+                  'Manna ripens on its own. Spend it raising a source.',
+              },
+            )}
           >
-            <Glyph label={t('manna', { defaultValue: 'Manna' })}>🍞</Glyph>
+            <Glyph
+              label={t(
+                'manna',
+                {
+                  defaultValue:
+                    'Manna',
+                },
+              )}
+            >
+              🍞
+            </Glyph>
             <LiveValue
-              read={(s) => {
-                if (s.manna.held > 0) return String(s.manna.held);
-                const speed = computeRateModifiers(s).mannaSpeed;
-                const total = ripenDuration(s.manna.kind, speed);
-                return formatDuration(Math.max(0, (total - s.manna.ripening) / 1000));
+              read={(
+                s,
+              ) => {
+                if (
+                  s
+                    .manna
+                    .held >
+                  0
+                )
+                  return String(
+                    s
+                      .manna
+                      .held,
+                  );
+                const speed =
+                  computeRateModifiers(
+                    s,
+                  ).mannaSpeed;
+                const total =
+                  ripenDuration(
+                    s
+                      .manna
+                      .kind,
+                    speed,
+                  );
+                return formatDuration(
+                  Math.max(
+                    0,
+                    (total -
+                      s
+                        .manna
+                        .ripening) /
+                      1000,
+                  ),
+                );
               }}
             />
           </button>

@@ -15,16 +15,21 @@
  */
 
 import type { BoardSettings } from './settings.server';
-import { getZonedParts, zonedTimeToUtc } from './zoned-time';
+import {
+  getZonedParts,
+  zonedTimeToUtc,
+} from './zoned-time';
 
-export const PF2E_REMINDER_QUEUE = 'pf2ecal.reminder';
+export const PF2E_REMINDER_QUEUE =
+  'pf2ecal.reminder';
 
 /**
  * Every 10 minutes. Fine enough that a reminder set for 09:00 lands by 09:10,
  * coarse enough that the sweep is invisible; the exact minute of a
  * "sometime this morning" ping is not worth a tighter loop.
  */
-export const PF2E_REMINDER_CRON = '*/10 * * * *';
+export const PF2E_REMINDER_CRON =
+  '*/10 * * * *';
 
 /**
  * How stale a due reminder may be and still fire.
@@ -46,16 +51,30 @@ export const REMINDER_GRACE_HOURS = 6;
  */
 export function reminderInstantFor(
   startsAt: Date,
-  settings: Pick<BoardSettings, 'reminderMinutes' | 'reminderTimeZone'>,
+  settings: Pick<
+    BoardSettings,
+    | 'reminderMinutes'
+    | 'reminderTimeZone'
+  >,
 ): Date {
-  const local = getZonedParts(startsAt, settings.reminderTimeZone);
+  const local =
+    getZonedParts(
+      startsAt,
+      settings.reminderTimeZone,
+    );
   return zonedTimeToUtc(
     {
       year: local.year,
-      month: local.month,
+      month:
+        local.month,
       day: local.day,
-      hour: Math.floor(settings.reminderMinutes / 60),
-      minute: settings.reminderMinutes % 60,
+      hour: Math.floor(
+        settings.reminderMinutes /
+          60,
+      ),
+      minute:
+        settings.reminderMinutes %
+        60,
     },
     settings.reminderTimeZone,
   );
@@ -69,18 +88,51 @@ export function reminderInstantFor(
  * conditions in a unit test than in a cron that runs six times an hour.
  */
 export function isReminderDue(
-  session: { startsAt: Date; endsAt: Date; canceledAt: Date | null; reminderSentAt: Date | null },
-  settings: Pick<BoardSettings, 'reminderMinutes' | 'reminderTimeZone'>,
+  session: {
+    startsAt: Date;
+    endsAt: Date;
+    canceledAt: Date | null;
+    reminderSentAt: Date | null;
+  },
+  settings: Pick<
+    BoardSettings,
+    | 'reminderMinutes'
+    | 'reminderTimeZone'
+  >,
   now: Date,
 ): boolean {
-  if (session.canceledAt) return false;
-  if (session.reminderSentAt) return false;
+  if (
+    session.canceledAt
+  )
+    return false;
+  if (
+    session.reminderSentAt
+  )
+    return false;
   // Nothing is "tonight" once it has started. A late worker should stay quiet
   // rather than announce a session the table is already sitting at.
-  if (session.startsAt.getTime() <= now.getTime()) return false;
+  if (
+    session.startsAt.getTime() <=
+    now.getTime()
+  )
+    return false;
 
-  const due = reminderInstantFor(session.startsAt, settings).getTime();
-  if (now.getTime() < due) return false;
-  if (now.getTime() - due > REMINDER_GRACE_HOURS * 3_600_000) return false;
+  const due =
+    reminderInstantFor(
+      session.startsAt,
+      settings,
+    ).getTime();
+  if (
+    now.getTime() <
+    due
+  )
+    return false;
+  if (
+    now.getTime() -
+      due >
+    REMINDER_GRACE_HOURS *
+      3_600_000
+  )
+    return false;
   return true;
 }

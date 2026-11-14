@@ -14,23 +14,65 @@ export interface VersecraftProgressView {
 }
 
 /** The caller's cloud save and progress (both null before the first save). */
-export const loadVersecraftSaveApi = endpoint<{
-  res: { saveData: GameState | null; progress: VersecraftProgressView | null };
-}>()({ method: 'GET', path: '/api/versecraft/save' });
+export const loadVersecraftSaveApi =
+  endpoint<{
+    res: {
+      saveData: GameState | null;
+      progress: VersecraftProgressView | null;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/versecraft/save',
+    },
+  );
 
 /** Save the run. 400 `Missing or invalid saveData`; 413 `Payload too large` over 500KB. */
-export const saveVersecraftApi = endpoint<{
-  body: z.infer<typeof versecraftSaveBody>;
-  res: { success: true; updatedAt: string };
-}>()({ method: 'POST', path: '/api/versecraft/save' });
+export const saveVersecraftApi =
+  endpoint<{
+    body: z.infer<
+      typeof versecraftSaveBody
+    >;
+    res: {
+      success: true;
+      updatedAt: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/versecraft/save',
+    },
+  );
 
 /** The caller's cloud progress (`progress: null` before the first save). */
-export const getVersecraftProgressApi = endpoint<{
-  res: { progress: VersecraftProgressView | null };
-}>()({ method: 'GET', path: '/api/versecraft/progress' });
+export const getVersecraftProgressApi =
+  endpoint<{
+    res: {
+      progress: VersecraftProgressView | null;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/versecraft/progress',
+    },
+  );
 
 /** Count a "continue this story" on a gallery seed and get the seed to start from. 404 `not-found`. */
-export const forkVersecraftSeedApi = endpoint<{
-  body: z.infer<typeof forkSeedSchema>;
-  res: { seed: string };
-}>()({ method: 'POST', path: '/api/versecraft/seeds/fork' });
+export const forkVersecraftSeedApi =
+  endpoint<{
+    body: z.infer<
+      typeof forkSeedSchema
+    >;
+    res: {
+      seed: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/versecraft/seeds/fork',
+    },
+  );

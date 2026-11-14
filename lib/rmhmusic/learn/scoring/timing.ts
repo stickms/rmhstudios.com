@@ -45,12 +45,42 @@ export interface TapScore {
   late: number;
 }
 
-const finiteSorted = (xs: readonly number[]) => xs.filter(Number.isFinite).sort((a, b) => a - b);
+const finiteSorted =
+  (
+    xs: readonly number[],
+  ) =>
+    xs
+      .filter(
+        Number.isFinite,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          a -
+          b,
+      );
 
 /** The latency to subtract for a profile's saved `latencyMs` (see the module docblock). */
-export function effectiveLatencyMs(profileLatencyMs: number): number {
-  if (!Number.isFinite(profileLatencyMs) || profileLatencyMs === 0) return OUTPUT_LATENCY_MS;
-  return Math.min(MAX_LATENCY_MS, Math.max(-MAX_LATENCY_MS, profileLatencyMs));
+export function effectiveLatencyMs(
+  profileLatencyMs: number,
+): number {
+  if (
+    !Number.isFinite(
+      profileLatencyMs,
+    ) ||
+    profileLatencyMs ===
+      0
+  )
+    return OUTPUT_LATENCY_MS;
+  return Math.min(
+    MAX_LATENCY_MS,
+    Math.max(
+      -MAX_LATENCY_MS,
+      profileLatencyMs,
+    ),
+  );
 }
 
 /**
@@ -68,50 +98,183 @@ export function tapScore(
   taps: readonly number[],
   latencyMs: number,
 ): TapScore {
-  const beats = finiteSorted(beatTimes);
-  const none: TapScore = { score: 0, hits: 0, early: 0, late: 0 };
-  if (beats.length === 0) return none;
-  const latency = Number.isFinite(latencyMs)
-    ? Math.min(MAX_LATENCY_MS, Math.max(-MAX_LATENCY_MS, latencyMs))
-    : 0;
+  const beats =
+    finiteSorted(
+      beatTimes,
+    );
+  const none: TapScore =
+    {
+      score: 0,
+      hits: 0,
+      early: 0,
+      late: 0,
+    };
+  if (
+    beats.length ===
+    0
+  )
+    return none;
+  const latency =
+    Number.isFinite(
+      latencyMs,
+    )
+      ? Math.min(
+          MAX_LATENCY_MS,
+          Math.max(
+            -MAX_LATENCY_MS,
+            latencyMs,
+          ),
+        )
+      : 0;
 
   // Key repeat and bounce: judged against the previous tap of any kind, so a held key's whole run
   // of repeats goes, not every other one.
-  const kept: number[] = [];
-  let previous = -Infinity;
-  for (const tap of finiteSorted(taps)) {
-    if (tap - previous >= DEBOUNCE_MS) kept.push(tap - latency);
-    previous = tap;
+  const kept: number[] =
+    [];
+  let previous =
+    -Infinity;
+  for (const tap of finiteSorted(
+    taps,
+  )) {
+    if (
+      tap -
+        previous >=
+      DEBOUNCE_MS
+    )
+      kept.push(
+        tap -
+          latency,
+      );
+    previous =
+      tap;
   }
 
-  const from = beats[0] - ZERO_MS;
-  const to = beats[beats.length - 1] + ZERO_MS;
-  const answered = new Array<boolean>(beats.length).fill(false);
+  const from =
+    beats[0] -
+    ZERO_MS;
+  const to =
+    beats[
+      beats.length -
+        1
+    ] +
+    ZERO_MS;
+  const answered =
+    new Array<boolean>(
+      beats.length,
+    ).fill(
+      false,
+    );
   let points = 0;
   let extras = 0;
   let hits = 0;
   let early = 0;
   let late = 0;
   for (const t of kept) {
-    if (t < from || t > to) continue;
-    let nearest = -1;
-    for (let i = 0; i < beats.length; i++) {
-      if (answered[i]) continue;
-      if (nearest < 0 || Math.abs(t - beats[i]) < Math.abs(t - beats[nearest])) nearest = i;
+    if (
+      t <
+        from ||
+      t >
+        to
+    )
+      continue;
+    let nearest =
+      -1;
+    for (
+      let i = 0;
+      i <
+      beats.length;
+      i++
+    ) {
+      if (
+        answered[
+          i
+        ]
+      )
+        continue;
+      if (
+        nearest <
+          0 ||
+        Math.abs(
+          t -
+            beats[
+              i
+            ],
+        ) <
+          Math.abs(
+            t -
+              beats[
+                nearest
+              ],
+          )
+      )
+        nearest =
+          i;
     }
-    const off = nearest < 0 ? Infinity : t - beats[nearest];
-    const distance = Math.abs(off);
-    if (distance > ZERO_MS) {
+    const off =
+      nearest <
+      0
+        ? Infinity
+        : t -
+          beats[
+            nearest
+          ];
+    const distance =
+      Math.abs(
+        off,
+      );
+    if (
+      distance >
+      ZERO_MS
+    ) {
       extras++;
       continue;
     }
-    answered[nearest] = true;
-    points += distance <= PERFECT_MS ? 100 : (100 * (ZERO_MS - distance)) / (ZERO_MS - PERFECT_MS);
-    if (distance <= PERFECT_MS) hits++;
-    else if (off < 0) early++;
-    else late++;
+    answered[
+      nearest
+    ] =
+      true;
+    points +=
+      distance <=
+      PERFECT_MS
+        ? 100
+        : (100 *
+            (ZERO_MS -
+              distance)) /
+          (ZERO_MS -
+            PERFECT_MS);
+    if (
+      distance <=
+      PERFECT_MS
+    )
+      hits++;
+    else if (
+      off <
+      0
+    )
+      early++;
+    else
+      late++;
   }
 
-  const score = (points - extras * EXTRA_TAP_COST * 100) / beats.length;
-  return { score: Math.min(100, Math.max(0, Math.round(score))), hits, early, late };
+  const score =
+    (points -
+      extras *
+        EXTRA_TAP_COST *
+        100) /
+    beats.length;
+  return {
+    score:
+      Math.min(
+        100,
+        Math.max(
+          0,
+          Math.round(
+            score,
+          ),
+        ),
+      ),
+    hits,
+    early,
+    late,
+  };
 }

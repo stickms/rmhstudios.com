@@ -9,21 +9,37 @@ import type { LoadState } from './load-machine';
  * zones and files. `'guitar'` means the steel-string acoustic; the zod enum for the learner's
  * `sound` is built from this list.
  */
-export const INSTRUMENT_IDS = ['piano', 'guitar', 'violin', 'flute'] as const;
-export type InstrumentId = (typeof INSTRUMENT_IDS)[number];
+export const INSTRUMENT_IDS =
+  [
+    'piano',
+    'guitar',
+    'violin',
+    'flute',
+  ] as const;
+export type InstrumentId =
+  (typeof INSTRUMENT_IDS)[number];
 
 /** How many notes an instrument can sound at once, which decides what it may be asked to play. */
-export type Polyphony = 'chord' | 'double-stop' | 'mono';
+export type Polyphony =
+  | 'chord'
+  | 'double-stop'
+  | 'mono';
 
 /** One credit paragraph per sample source (see `credits.ts`). */
-export type CreditId = 'salamander' | 'ella-gitauru' | 'vsco';
+export type CreditId =
+  | 'salamander'
+  | 'ella-gitauru'
+  | 'vsco';
 
 export interface InstrumentMeta {
   id: InstrumentId;
   /** i18n key in `c-rmhmusic` for the instrument's name. */
   labelKey: string;
   /** The SOUNDING MIDI range lessons may ask this instrument for. */
-  range: readonly [low: number, high: number];
+  range: readonly [
+    low: number,
+    high: number,
+  ];
   polyphony: Polyphony;
   /** Voices sounding at once before the oldest is stolen; 1 means monophonic (legato handover). */
   maxVoices: number;
@@ -58,7 +74,8 @@ export interface Zone {
   sha256?: string;
 }
 
-export type ZoneMap = readonly Zone[];
+export type ZoneMap =
+  readonly Zone[];
 
 export interface PlayOpts {
   /** 0..1. */
@@ -73,7 +90,9 @@ export interface PlayOpts {
 
 export interface NoteHandle {
   /** Release (idempotent). `when` is an AudioContext time (s). */
-  stop(when?: number): void;
+  stop(
+    when?: number,
+  ): void;
   /** Resolves when the note is silent and its nodes are disconnected. */
   readonly done: Promise<void>;
 }
@@ -81,14 +100,23 @@ export interface NoteHandle {
 export interface Instrument extends InstrumentMeta {
   readonly state: LoadState;
   /** Single-flight; resolves with the state it settles in. */
-  load(opts?: { user?: boolean }): Promise<LoadState>;
+  load(opts?: {
+    user?: boolean;
+  }): Promise<LoadState>;
   /** Inside the range and covered by a loaded zone. */
-  canPlay(midi: number): boolean;
+  canPlay(
+    midi: number,
+  ): boolean;
   /** A silent no-op handle when the instrument is not ready or cannot play `midi`. */
-  play(midi: number, opts?: PlayOpts): NoteHandle;
+  play(
+    midi: number,
+    opts?: PlayOpts,
+  ): NoteHandle;
   stopAll(): void;
   /** Free decoded buffers; state goes back to idle. */
   dispose(): void;
   /** Run `fn` whenever `state` changes; returns the unsubscribe. */
-  subscribe(fn: () => void): () => void;
+  subscribe(
+    fn: () => void,
+  ): () => void;
 }

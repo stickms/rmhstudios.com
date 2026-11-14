@@ -5,7 +5,10 @@
  * (import `./fake-channel.test-support` from tests only).
  */
 
-export type { ChannelLike, ChannelPair } from './channel';
+export type {
+  ChannelLike,
+  ChannelPair,
+} from './channel';
 export * from './wire';
 export * from './relay';
 export * from './ice';

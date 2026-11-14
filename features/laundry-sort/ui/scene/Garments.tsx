@@ -8,7 +8,10 @@
  * own `useFrame`.
  */
 
-import { useRef, useState } from 'react';
+import {
+  useRef,
+  useState,
+} from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { LaundryMatch } from '@features/laundry-sort/engine/match';
 import type { Garment } from '@features/laundry-sort/engine/solver';
@@ -20,48 +23,105 @@ interface Props {
   quality: QualityFlags;
 }
 
-export function Garments({ matchRef, quality }: Props) {
-  const [garments, setGarments] = useState<Garment[]>([]);
-  const revisionRef = useRef(-1);
+export function Garments({
+  matchRef,
+  quality,
+}: Props) {
+  const [
+    garments,
+    setGarments,
+  ] =
+    useState<
+      Garment[]
+    >(
+      [],
+    );
+  const revisionRef =
+    useRef(
+      -1,
+    );
   // Shared mutable channels so the cloth components can read per-frame values
   // without props changing (and therefore without re-rendering).
-  const timeRef = useRef(0);
+  const timeRef =
+    useRef(
+      0,
+    );
   // The world's live set, not a copy — reassigning the same instance every
   // frame costs nothing, whereas snapshotting it would allocate 60 times a
   // second for a value that is usually empty.
-  const heldRef = useRef<ReadonlySet<number> | null>(null);
+  const heldRef =
+    useRef<ReadonlySet<number> | null>(
+      null,
+    );
 
-  useFrame(() => {
-    const match = matchRef.current;
-    if (!match) {
-      if (revisionRef.current !== -1) {
-        revisionRef.current = -1;
-        setGarments([]);
+  useFrame(
+    () => {
+      const match =
+        matchRef.current;
+      if (
+        !match
+      ) {
+        if (
+          revisionRef.current !==
+          -1
+        ) {
+          revisionRef.current =
+            -1;
+          setGarments(
+            [],
+          );
+        }
+        return;
       }
-      return;
-    }
 
-    timeRef.current = match.world.time;
-    heldRef.current = match.world.heldIds;
+      timeRef.current =
+        match.world.time;
+      heldRef.current =
+        match.world.heldIds;
 
-    if (match.world.revision !== revisionRef.current) {
-      revisionRef.current = match.world.revision;
-      setGarments(match.world.garments.slice());
-    }
-  });
+      if (
+        match
+          .world
+          .revision !==
+        revisionRef.current
+      ) {
+        revisionRef.current =
+          match.world.revision;
+        setGarments(
+          match.world.garments.slice(),
+        );
+      }
+    },
+  );
 
   return (
     <>
-      {garments.map((garment) => (
-        <GarmentCloth
-          key={garment.id}
-          garment={garment}
-          quality={quality}
-          timeRef={timeRef}
-          heldRef={heldRef}
-          matchRef={matchRef}
-        />
-      ))}
+      {garments.map(
+        (
+          garment,
+        ) => (
+          <GarmentCloth
+            key={
+              garment.id
+            }
+            garment={
+              garment
+            }
+            quality={
+              quality
+            }
+            timeRef={
+              timeRef
+            }
+            heldRef={
+              heldRef
+            }
+            matchRef={
+              matchRef
+            }
+          />
+        ),
+      )}
     </>
   );
 }

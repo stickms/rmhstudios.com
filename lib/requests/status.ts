@@ -11,12 +11,26 @@
  */
 
 /** Mirrors `enum RequestStatus` in `prisma/schema/`. */
-export const REQUEST_STATUSES = ['OPEN', 'PLANNED', 'IN_PROGRESS', 'SHIPPED', 'DECLINED'] as const;
+export const REQUEST_STATUSES =
+  [
+    'OPEN',
+    'PLANNED',
+    'IN_PROGRESS',
+    'SHIPPED',
+    'DECLINED',
+  ] as const;
 
-export type RequestStatus = (typeof REQUEST_STATUSES)[number];
+export type RequestStatus =
+  (typeof REQUEST_STATUSES)[number];
 
-export function isRequestStatus(value: string): value is RequestStatus {
-  return (REQUEST_STATUSES as readonly string[]).includes(value);
+export function isRequestStatus(
+  value: string,
+): value is RequestStatus {
+  return (
+    REQUEST_STATUSES as readonly string[]
+  ).includes(
+    value,
+  );
 }
 
 /**
@@ -33,10 +47,18 @@ export function isRequestStatus(value: string): value is RequestStatus {
  * predicate, so it is testable without a database and so no second call site
  * can implement a looser version of it.
  */
-export const STATUSES_REQUIRING_NOTE: readonly RequestStatus[] = ['SHIPPED', 'DECLINED'];
+export const STATUSES_REQUIRING_NOTE: readonly RequestStatus[] =
+  [
+    'SHIPPED',
+    'DECLINED',
+  ];
 
-export function statusRequiresNote(status: RequestStatus): boolean {
-  return STATUSES_REQUIRING_NOTE.includes(status);
+export function statusRequiresNote(
+  status: RequestStatus,
+): boolean {
+  return STATUSES_REQUIRING_NOTE.includes(
+    status,
+  );
 }
 
 /** `officialNote` is `@db.Text`, but an essay in a status chip helps nobody. */
@@ -63,22 +85,51 @@ export type StatusValidationError =
  */
 export function validateStatusNote(
   status: RequestStatus,
-  note: string | null | undefined,
+  note:
+    | string
+    | null
+    | undefined,
 ): StatusValidationError | null {
-  const trimmed = (note ?? '').trim();
-  if (trimmed.length > OFFICIAL_NOTE_MAX) return 'NOTE_TOO_LONG';
-  if (!statusRequiresNote(status)) return null;
-  if (trimmed.length === 0) return 'NOTE_REQUIRED';
-  if (trimmed.length < OFFICIAL_NOTE_MIN) return 'NOTE_TOO_SHORT';
+  const trimmed =
+    (
+      note ??
+      ''
+    ).trim();
+  if (
+    trimmed.length >
+    OFFICIAL_NOTE_MAX
+  )
+    return 'NOTE_TOO_LONG';
+  if (
+    !statusRequiresNote(
+      status,
+    )
+  )
+    return null;
+  if (
+    trimmed.length ===
+    0
+  )
+    return 'NOTE_REQUIRED';
+  if (
+    trimmed.length <
+    OFFICIAL_NOTE_MIN
+  )
+    return 'NOTE_TOO_SHORT';
   return null;
 }
 
 /** Human-readable reason for a rejected status change (English source string). */
-export const STATUS_ERROR_MESSAGE: Record<StatusValidationError, string> = {
-  NOTE_REQUIRED: 'Shipped and declined requests need an official reply.',
-  NOTE_TOO_SHORT: `An official reply must be at least ${OFFICIAL_NOTE_MIN} characters.`,
-  NOTE_TOO_LONG: `An official reply must be at most ${OFFICIAL_NOTE_MAX} characters.`,
-};
+export const STATUS_ERROR_MESSAGE: Record<
+  StatusValidationError,
+  string
+> =
+  {
+    NOTE_REQUIRED:
+      'Shipped and declined requests need an official reply.',
+    NOTE_TOO_SHORT: `An official reply must be at least ${OFFICIAL_NOTE_MIN} characters.`,
+    NOTE_TOO_LONG: `An official reply must be at most ${OFFICIAL_NOTE_MAX} characters.`,
+  };
 
 /**
  * Whether a request is still accepting votes.
@@ -89,12 +140,28 @@ export const STATUS_ERROR_MESSAGE: Record<StatusValidationError, string> = {
  */
 export function isVotable(request: {
   status: RequestStatus;
-  mergedIntoId: string | null;
+  mergedIntoId:
+    | string
+    | null;
 }): boolean {
-  if (request.mergedIntoId) return false;
-  return request.status !== 'SHIPPED' && request.status !== 'DECLINED';
+  if (
+    request.mergedIntoId
+  )
+    return false;
+  return (
+    request.status !==
+      'SHIPPED' &&
+    request.status !==
+      'DECLINED'
+  );
 }
 
 /** Sort orders the board offers. `top` is the default — it is the point. */
-export const REQUEST_SORTS = ['top', 'new', 'status'] as const;
-export type RequestSort = (typeof REQUEST_SORTS)[number];
+export const REQUEST_SORTS =
+  [
+    'top',
+    'new',
+    'status',
+  ] as const;
+export type RequestSort =
+  (typeof REQUEST_SORTS)[number];

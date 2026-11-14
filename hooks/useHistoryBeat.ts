@@ -1,7 +1,10 @@
 import { useEffect } from 'react';
 import { api } from '@/lib/contract/client';
 import { recordHistoryBeatApi } from '@/lib/history/history.contract';
-import { HISTORY_BEAT_INTERVAL_MS, type HistoryEntityType } from '@/lib/history/constants';
+import {
+  HISTORY_BEAT_INTERVAL_MS,
+  type HistoryEntityType,
+} from '@/lib/history/constants';
 
 /**
  * useHistoryBeat (§5) — reports a throttled "still here" heartbeat for the
@@ -20,48 +23,117 @@ import { HISTORY_BEAT_INTERVAL_MS, type HistoryEntityType } from '@/lib/history/
  */
 export function useHistoryBeat(
   entityType: HistoryEntityType,
-  entityId: string | null | undefined,
+  entityId:
+    | string
+    | null
+    | undefined,
   opts: {
-    getPosition?: () => number | undefined;
-    getDuration?: () => number | undefined;
+    getPosition?: () =>
+      | number
+      | undefined;
+    getDuration?: () =>
+      | number
+      | undefined;
     active?: boolean;
   } = {},
 ) {
-  const { getPosition, getDuration, active = true } = opts;
+  const {
+    getPosition,
+    getDuration,
+    active = true,
+  } = opts;
 
   useEffect(() => {
-    if (!entityId || !active) return;
+    if (
+      !entityId ||
+      !active
+    )
+      return;
 
-    const send = (useBeacon = false) => {
-      const payload = {
-        entityType,
-        entityId,
-        position: getPosition?.(),
-        duration: getDuration?.(),
+    const send =
+      (
+        useBeacon = false,
+      ) => {
+        const payload =
+          {
+            entityType,
+            entityId,
+            position:
+              getPosition?.(),
+            duration:
+              getDuration?.(),
+          };
+        if (
+          useBeacon &&
+          typeof navigator !==
+            'undefined' &&
+          navigator.sendBeacon
+        ) {
+          navigator.sendBeacon(
+            '/api/history/beat',
+            new Blob(
+              [
+                JSON.stringify(
+                  payload,
+                ),
+              ],
+              {
+                type: 'application/json',
+              },
+            ),
+          );
+        } else {
+          void api(
+            recordHistoryBeatApi,
+            {
+              body: payload,
+              keepalive: true,
+            },
+          ).catch(
+            () => {},
+          );
+        }
       };
-      if (useBeacon && typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        navigator.sendBeacon(
-          '/api/history/beat',
-          new Blob([JSON.stringify(payload)], { type: 'application/json' }),
-        );
-      } else {
-        void api(recordHistoryBeatApi, { body: payload, keepalive: true }).catch(() => {});
-      }
-    };
 
     send();
-    const iv = setInterval(() => send(), HISTORY_BEAT_INTERVAL_MS);
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') send(true);
-    };
-    document.addEventListener('visibilitychange', onVisibility);
+    const iv =
+      setInterval(
+        () =>
+          send(),
+        HISTORY_BEAT_INTERVAL_MS,
+      );
+    const onVisibility =
+      () => {
+        if (
+          document.visibilityState ===
+          'hidden'
+        )
+          send(
+            true,
+          );
+      };
+    document.addEventListener(
+      'visibilitychange',
+      onVisibility,
+    );
 
     return () => {
-      clearInterval(iv);
-      document.removeEventListener('visibilitychange', onVisibility);
-      send(true);
+      clearInterval(
+        iv,
+      );
+      document.removeEventListener(
+        'visibilitychange',
+        onVisibility,
+      );
+      send(
+        true,
+      );
     };
     // getPosition/getDuration are read lazily; re-subscribe only on identity/active change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entityType, entityId, active]);
+  }, [
+    entityType,
+    entityId,
+    active,
+  ]);
 }

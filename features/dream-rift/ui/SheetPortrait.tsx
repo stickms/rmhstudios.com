@@ -5,35 +5,49 @@
  */
 
 export function SheetPortrait({
-    url,
-    frame = 1,
-    cols = 4,
-    frameSize = 64,
-    size,
-    className,
+  url,
+  frame = 1,
+  cols = 4,
+  frameSize = 64,
+  size,
+  className,
 }: {
-    url: string;
-    frame?: number;
-    cols?: number;
-    frameSize?: number;
-    size: number;
-    className?: string;
+  url: string;
+  frame?: number;
+  cols?: number;
+  frameSize?: number;
+  size: number;
+  className?: string;
 }) {
-    const scale = size / frameSize;
-    const col = frame % cols;
-    const row = Math.floor(frame / cols);
-    return (
-        <div
-            className={className}
-            style={{
-                width: size,
-                height: size,
-                backgroundImage: `url(${url})`,
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: `${cols * size}px auto`,
-                backgroundPosition: `${-col * size}px ${-row * size}px`,
-                imageRendering: 'pixelated',
-            }}
-        />
+  const scale =
+    size /
+    frameSize;
+  const col =
+    frame %
+    cols;
+  const row =
+    Math.floor(
+      frame /
+        cols,
     );
+  return (
+    <div
+      className={
+        className
+      }
+      style={{
+        width:
+          size,
+        height:
+          size,
+        backgroundImage: `url(${url})`,
+        backgroundRepeat:
+          'no-repeat',
+        backgroundSize: `${cols * size}px auto`,
+        backgroundPosition: `${-col * size}px ${-row * size}px`,
+        imageRendering:
+          'pixelated',
+      }}
+    />
+  );
 }

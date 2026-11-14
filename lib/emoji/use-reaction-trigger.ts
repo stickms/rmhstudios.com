@@ -7,10 +7,17 @@ const DEBOUNCE_MS = 300;
 // Elements where the user is composing/selecting text; the trigger must not
 // hijack right-click or long-press inside these (native menu / text
 // selection should win instead).
-const EDITABLE_SELECTOR = 'textarea, input, [contenteditable="true"], [contenteditable=""]';
+const EDITABLE_SELECTOR =
+  'textarea, input, [contenteditable="true"], [contenteditable=""]';
 
-function isEditableTarget(target: EventTarget | null): boolean {
-  return !!(target as HTMLElement | null)?.closest?.(EDITABLE_SELECTOR);
+function isEditableTarget(
+  target: EventTarget | null,
+): boolean {
+  return !!(
+    target as HTMLElement | null
+  )?.closest?.(
+    EDITABLE_SELECTOR,
+  );
 }
 
 /**
@@ -35,56 +42,133 @@ function isEditableTarget(target: EventTarget | null): boolean {
  * defense-in-depth even though a single-touch gesture rarely overlaps two
  * independent timers in practice.
  */
-function useSharedReactionTrigger(onOpen: (x: number, y: number) => void) {
-  const timer = useRef<number | null>(null);
-  const lastOpen = useRef(0);
+function useSharedReactionTrigger(
+  onOpen: (
+    x: number,
+    y: number,
+  ) => void,
+) {
+  const timer =
+    useRef<
+      | number
+      | null
+    >(
+      null,
+    );
+  const lastOpen =
+    useRef(
+      0,
+    );
 
-  const open = (x: number, y: number) => {
-    const now = performance.now();
-    if (now - lastOpen.current < DEBOUNCE_MS) return;
-    lastOpen.current = now;
-    onOpen(x, y);
-  };
+  const open =
+    (
+      x: number,
+      y: number,
+    ) => {
+      const now =
+        performance.now();
+      if (
+        now -
+          lastOpen.current <
+        DEBOUNCE_MS
+      )
+        return;
+      lastOpen.current =
+        now;
+      onOpen(
+        x,
+        y,
+      );
+    };
 
-  const clear = () => {
-    if (timer.current !== null) {
-      window.clearTimeout(timer.current);
-      timer.current = null;
-    }
-  };
+  const clear =
+    () => {
+      if (
+        timer.current !==
+        null
+      ) {
+        window.clearTimeout(
+          timer.current,
+        );
+        timer.current =
+          null;
+      }
+    };
 
-  const onContextMenu = (e: React.MouseEvent) => {
-    // Bail before touching preventDefault/stopPropagation/state so the
-    // browser's native context menu (paste, spellcheck, etc.) still works
-    // while composing in a textarea/input/contenteditable nested here.
-    if (isEditableTarget(e.target)) return;
-    e.preventDefault();
-    e.stopPropagation();
-    clear();
-    open(e.clientX, e.clientY);
-  };
+  const onContextMenu =
+    (
+      e: React.MouseEvent,
+    ) => {
+      // Bail before touching preventDefault/stopPropagation/state so the
+      // browser's native context menu (paste, spellcheck, etc.) still works
+      // while composing in a textarea/input/contenteditable nested here.
+      if (
+        isEditableTarget(
+          e.target,
+        )
+      )
+        return;
+      e.preventDefault();
+      e.stopPropagation();
+      clear();
+      open(
+        e.clientX,
+        e.clientY,
+      );
+    };
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    // Same bail: let a long-press on an editable element fall through to
-    // native text selection instead of opening the reaction menu.
-    if (isEditableTarget(e.target)) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    e.stopPropagation();
-    clear();
-    const { clientX, clientY } = touch;
-    timer.current = window.setTimeout(() => open(clientX, clientY), LONG_PRESS_MS);
-  };
+  const onTouchStart =
+    (
+      e: React.TouchEvent,
+    ) => {
+      // Same bail: let a long-press on an editable element fall through to
+      // native text selection instead of opening the reaction menu.
+      if (
+        isEditableTarget(
+          e.target,
+        )
+      )
+        return;
+      const touch =
+        e
+          .touches[0];
+      if (
+        !touch
+      )
+        return;
+      e.stopPropagation();
+      clear();
+      const {
+        clientX,
+        clientY,
+      } =
+        touch;
+      timer.current =
+        window.setTimeout(
+          () =>
+            open(
+              clientX,
+              clientY,
+            ),
+          LONG_PRESS_MS,
+        );
+    };
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    e.stopPropagation();
-    clear();
-  };
+  const onTouchMove =
+    (
+      e: React.TouchEvent,
+    ) => {
+      e.stopPropagation();
+      clear();
+    };
 
-  const onTouchEnd = (e: React.TouchEvent) => {
-    e.stopPropagation();
-    clear();
-  };
+  const onTouchEnd =
+    (
+      e: React.TouchEvent,
+    ) => {
+      e.stopPropagation();
+      clear();
+    };
 
   return {
     onContextMenu,
@@ -105,7 +189,8 @@ function useSharedReactionTrigger(onOpen: (x: number, y: number) => void) {
      * one on a phone. Change it to a bare `data-gesture` if the menu ever
      * grows a Copy item — that swap is the whole migration.
      */
-    'data-gesture': 'hold' as const,
+    'data-gesture':
+      'hold' as const,
   };
 }
 
@@ -114,8 +199,15 @@ function useSharedReactionTrigger(onOpen: (x: number, y: number) => void) {
  * Android fires contextmenu on long-press natively; the touch timer covers
  * iOS Safari. A short debounce prevents double-opens when both fire.
  */
-export function useReactionTrigger(onOpen: (x: number, y: number) => void) {
-  return useSharedReactionTrigger(onOpen);
+export function useReactionTrigger(
+  onOpen: (
+    x: number,
+    y: number,
+  ) => void,
+) {
+  return useSharedReactionTrigger(
+    onOpen,
+  );
 }
 
 /**
@@ -123,29 +215,74 @@ export function useReactionTrigger(onOpen: (x: number, y: number) => void) {
  * spread `handlersFor(id)` onto each row. All rows share one timer and one
  * debounce window, so contextmenu + long-press can't double-open.
  */
-export function useItemReactionTrigger(onOpen: (x: number, y: number, id: string) => void) {
-  const idRef = useRef<string | null>(null);
-  const { onContextMenu, onTouchStart, onTouchMove, onTouchEnd } = useSharedReactionTrigger(
-    (x, y) => {
-      if (idRef.current !== null) onOpen(x, y, idRef.current);
-    },
-  );
-
-  const handlersFor = (id: string) => ({
-    onContextMenu: (e: React.MouseEvent) => {
-      idRef.current = id;
-      onContextMenu(e);
-    },
-    onTouchStart: (e: React.TouchEvent) => {
-      idRef.current = id;
-      onTouchStart(e);
-    },
+export function useItemReactionTrigger(
+  onOpen: (
+    x: number,
+    y: number,
+    id: string,
+  ) => void,
+) {
+  const idRef =
+    useRef<
+      | string
+      | null
+    >(
+      null,
+    );
+  const {
+    onContextMenu,
+    onTouchStart,
     onTouchMove,
     onTouchEnd,
-    // Same reasoning as the single-item hook above — every row that can be
-    // held is a row the platform must not claim the hold on.
-    'data-gesture': 'hold' as const,
-  });
+  } =
+    useSharedReactionTrigger(
+      (
+        x,
+        y,
+      ) => {
+        if (
+          idRef.current !==
+          null
+        )
+          onOpen(
+            x,
+            y,
+            idRef.current,
+          );
+      },
+    );
+
+  const handlersFor =
+    (
+      id: string,
+    ) => ({
+      onContextMenu:
+        (
+          e: React.MouseEvent,
+        ) => {
+          idRef.current =
+            id;
+          onContextMenu(
+            e,
+          );
+        },
+      onTouchStart:
+        (
+          e: React.TouchEvent,
+        ) => {
+          idRef.current =
+            id;
+          onTouchStart(
+            e,
+          );
+        },
+      onTouchMove,
+      onTouchEnd,
+      // Same reasoning as the single-item hook above — every row that can be
+      // held is a row the platform must not claim the hold on.
+      'data-gesture':
+        'hold' as const,
+    });
 
   return handlersFor;
 }

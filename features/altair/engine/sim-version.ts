@@ -34,6 +34,11 @@
 export const SIM_VERSION: number = 4;
 
 /** The version a log was played on; logs that predate the stamp are version 1. */
-export function logSimVersion(log: { sim?: unknown }): number {
-  return typeof log.sim === 'number' ? log.sim : 1;
+export function logSimVersion(log: {
+  sim?: unknown;
+}): number {
+  return typeof log.sim ===
+    'number'
+    ? log.sim
+    : 1;
 }

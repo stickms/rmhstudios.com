@@ -16,11 +16,16 @@
 
 import { useMemo } from 'react';
 import type { CarBodySpec } from '@/lib/rideshare/cars';
-import { FLEET_VIEW_BOX, buildSilhouette } from '@/lib/rideshare/car-hull';
+import {
+  FLEET_VIEW_BOX,
+  buildSilhouette,
+} from '@/lib/rideshare/car-hull';
 
 interface CarSilhouetteProps {
   spec: CarBodySpec;
-  frame: 'body' | 'fleet';
+  frame:
+    | 'body'
+    | 'fleet';
   className?: string;
   /**
    * An accessible name. Omit for a purely decorative drawing — it is then
@@ -33,73 +38,161 @@ interface CarSilhouetteProps {
 /** Breathing room around a body-framed silhouette, as a fraction of its length. */
 const PAD = 0.06;
 
-export function CarSilhouette({ spec, frame, className, title }: CarSilhouetteProps) {
-  const { outline, wheels, rotor, viewBox } = useMemo(() => {
-    const s = buildSilhouette(spec);
-    const pad = spec.length * PAD;
-    return {
-      ...s,
-      viewBox:
-        frame === 'fleet'
-          ? FLEET_VIEW_BOX
-          : `${s.box.x - pad} ${s.box.y - pad} ${s.box.width + pad * 2} ${s.box.height + pad * 2}`,
-    };
-  }, [spec, frame]);
+export function CarSilhouette({
+  spec,
+  frame,
+  className,
+  title,
+}: CarSilhouetteProps) {
+  const {
+    outline,
+    wheels,
+    rotor,
+    viewBox,
+  } =
+    useMemo(() => {
+      const s =
+        buildSilhouette(
+          spec,
+        );
+      const pad =
+        spec.length *
+        PAD;
+      return {
+        ...s,
+        viewBox:
+          frame ===
+          'fleet'
+            ? FLEET_VIEW_BOX
+            : `${s.box.x - pad} ${s.box.y - pad} ${s.box.width + pad * 2} ${s.box.height + pad * 2}`,
+      };
+    }, [
+      spec,
+      frame,
+    ]);
 
   return (
     <svg
-      viewBox={viewBox}
-      className={className}
-      role={title ? 'img' : 'presentation'}
-      aria-hidden={title ? undefined : true}
+      viewBox={
+        viewBox
+      }
+      className={
+        className
+      }
+      role={
+        title
+          ? 'img'
+          : 'presentation'
+      }
+      aria-hidden={
+        title
+          ? undefined
+          : true
+      }
     >
-      {title && <title>{title}</title>}
+      {title && (
+        <title>
+          {
+            title
+          }
+        </title>
+      )}
       {/* `non-scaling-stroke` on every shape, and stroke widths in RENDERED
           pixels rather than metres. Without it the width is a length in model
           space and the viewBox fit scales it: a 1.9 m bike blown up to fill a
           card would be drawn with a stroke five times a 6.4 m helicopter's, and
           the picker would look like seven drawings by seven people. */}
       <path
-        d={outline}
+        d={
+          outline
+        }
         fill="currentColor"
-        fillOpacity={0.08}
+        fillOpacity={
+          0.08
+        }
         stroke="currentColor"
-        strokeOpacity={0.55}
-        strokeWidth={1.25}
+        strokeOpacity={
+          0.55
+        }
+        strokeWidth={
+          1.25
+        }
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
       />
       {rotor && (
-        <g stroke="currentColor" strokeOpacity={0.4} strokeWidth={1} strokeLinecap="round">
+        <g
+          stroke="currentColor"
+          strokeOpacity={
+            0.4
+          }
+          strokeWidth={
+            1
+          }
+          strokeLinecap="round"
+        >
           <line
-            x1={rotor.x1}
-            y1={rotor.y}
-            x2={rotor.x2}
-            y2={rotor.y}
+            x1={
+              rotor.x1
+            }
+            y1={
+              rotor.y
+            }
+            x2={
+              rotor.x2
+            }
+            y2={
+              rotor.y
+            }
             vectorEffect="non-scaling-stroke"
           />
           <line
-            x1={rotor.mastX}
-            y1={rotor.y}
-            x2={rotor.mastX}
-            y2={rotor.mastY}
+            x1={
+              rotor.mastX
+            }
+            y1={
+              rotor.y
+            }
+            x2={
+              rotor.mastX
+            }
+            y2={
+              rotor.mastY
+            }
             vectorEffect="non-scaling-stroke"
           />
         </g>
       )}
-      {wheels.map((w, i) => (
-        <circle
-          key={i}
-          cx={w.cx}
-          cy={w.cy}
-          r={w.r}
-          fill="none"
-          stroke="currentColor"
-          strokeOpacity={0.5}
-          strokeWidth={1.1}
-          vectorEffect="non-scaling-stroke"
-        />
-      ))}
+      {wheels.map(
+        (
+          w,
+          i,
+        ) => (
+          <circle
+            key={
+              i
+            }
+            cx={
+              w.cx
+            }
+            cy={
+              w.cy
+            }
+            r={
+              w.r
+            }
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity={
+              0.5
+            }
+            strokeWidth={
+              1.1
+            }
+            vectorEffect="non-scaling-stroke"
+          />
+        ),
+      )}
     </svg>
   );
 }

@@ -13,7 +13,12 @@
  * returned so the card can show "NEW BEST".
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { unrankedReason } from './modifiers';
 import type { GameEngine } from './engine';
 import { useSliceItStore } from './store';
@@ -23,14 +28,29 @@ import type { SliceItReplay } from '@/lib/game/replay';
 
 import { api } from '@/lib/contract/client';
 import type { ResOf } from '@/lib/contract/endpoint';
-import { errorField, HttpError } from '@/lib/http';
-import { submitScoreApi, uploadReplayApi } from '@features/slice-it/engine/play.contract';
+import {
+  errorField,
+  HttpError,
+} from '@/lib/http';
+import {
+  submitScoreApi,
+  uploadReplayApi,
+} from '@features/slice-it/engine/play.contract';
 export interface SubmitResult {
-  status: 'idle' | 'submitting' | 'ok' | 'unranked' | 'failed';
+  status:
+    | 'idle'
+    | 'submitting'
+    | 'ok'
+    | 'unranked'
+    | 'failed';
   isNewBest: boolean;
-  previousBest: number | null;
+  previousBest:
+    | number
+    | null;
   /** The stored replay's id, once one has been uploaded for this run (`R3`). */
-  replayId?: string | null;
+  replayId?:
+    | string
+    | null;
 }
 
 /**
@@ -42,10 +62,26 @@ export interface SubmitResult {
  * about a replay upload on a results screen is noise about a feature the player
  * did not ask for.
  */
-async function uploadReplay(replay: SliceItReplay): Promise<string | null> {
+async function uploadReplay(
+  replay: SliceItReplay,
+): Promise<
+  | string
+  | null
+> {
   try {
-    const body = await api(uploadReplayApi, { body: { replay } });
-    return body.id ?? null;
+    const body =
+      await api(
+        uploadReplayApi,
+        {
+          body: {
+            replay,
+          },
+        },
+      );
+    return (
+      body.id ??
+      null
+    );
   } catch {
     return null;
   }
@@ -102,106 +138,311 @@ export interface RunSummary {
 /**
  * @param run  The finished run, or null while one is not ready to submit.
  */
-export function useSubmitScore(run: RunSummary | null): SubmitResult {
-  const [result, setResult] = useState<SubmitResult>({
-    status: 'idle',
-    isNewBest: false,
-    previousBest: null,
-  });
+export function useSubmitScore(
+  run: RunSummary | null,
+): SubmitResult {
+  const [
+    result,
+    setResult,
+  ] =
+    useState<SubmitResult>(
+      {
+        status:
+          'idle',
+        isNewBest: false,
+        previousBest:
+          null,
+      },
+    );
 
   // Keyed by song + score so a rematch on the same track still submits, while a
   // re-render of the same result does not.
-  const submittedKey = useRef<string | null>(null);
+  const submittedKey =
+    useRef<
+      | string
+      | null
+    >(
+      null,
+    );
 
-  const submit = useCallback(async (summary: RunSummary) => {
-    setResult({ status: 'submitting', isNewBest: false, previousBest: null });
-    // The log never travels with the score. Splitting it out here rather than at
-    // the call site is what makes that true for every caller, present and future.
-    const { getReplay, practiceAids: _practiceAids, ...scoreBody } = summary;
-    void _practiceAids;
-    try {
-      let body: ResOf<typeof submitScoreApi>;
-      try {
-        body = await api(submitScoreApi, { body: scoreBody });
-      } catch (error) {
-        if (!(error instanceof HttpError)) throw error;
-        setResult({
-          status: errorField(error, 'ranked') === false ? 'unranked' : 'failed',
-          isNewBest: false,
-          previousBest: null,
-        });
-        return;
-      }
+  const submit =
+    useCallback(
+      async (
+        summary: RunSummary,
+      ) => {
+        setResult(
+          {
+            status:
+              'submitting',
+            isNewBest: false,
+            previousBest:
+              null,
+          },
+        );
+        // The log never travels with the score. Splitting it out here rather than at
+        // the call site is what makes that true for every caller, present and future.
+        const {
+          getReplay,
+          practiceAids:
+            _practiceAids,
+          ...scoreBody
+        } = summary;
+        void _practiceAids;
+        try {
+          let body: ResOf<
+            typeof submitScoreApi
+          >;
+          try {
+            body =
+              await api(
+                submitScoreApi,
+                {
+                  body: scoreBody,
+                },
+              );
+          } catch (error) {
+            if (
+              !(
+                error instanceof
+                HttpError
+              )
+            )
+              throw error;
+            setResult(
+              {
+                status:
+                  errorField(
+                    error,
+                    'ranked',
+                  ) ===
+                  false
+                    ? 'unranked'
+                    : 'failed',
+                isNewBest: false,
+                previousBest:
+                  null,
+              },
+            );
+            return;
+          }
 
-      const isNewBest = Boolean(body.isNewBest);
-      setResult({ status: 'ok', isNewBest, previousBest: body.previousBest ?? null });
+          const isNewBest =
+            Boolean(
+              body.isNewBest,
+            );
+          setResult(
+            {
+              status:
+                'ok',
+              isNewBest,
+              previousBest:
+                body.previousBest ??
+                null,
+            },
+          );
 
-      // Only a new best gets a replay (`R3`). Every other run is a run the
-      // player already knows how it went, and storing 40 KB of note-by-note log
-      // for each of them buys a board nobody reads and a table that grows with
-      // attempts rather than with records. `stored: false` is the guest path —
-      // nothing was persisted, so there is nothing to attach a replay to.
-      if (!isNewBest || !getReplay || body.stored === false) return;
-      const replay = getReplay();
-      if (!replay) return;
-      const replayId = await uploadReplay(replay);
-      if (replayId) {
-        setResult((current) => (current.status === 'ok' ? { ...current, replayId } : current));
-      }
-    } catch {
-      // Network failures are silent to the player: the run happened, and a
-      // toast about a leaderboard write is not what they want on a results
-      // screen. The status is available for a caller that wants to say so.
-      setResult({ status: 'failed', isNewBest: false, previousBest: null });
-    }
-  }, []);
+          // Only a new best gets a replay (`R3`). Every other run is a run the
+          // player already knows how it went, and storing 40 KB of note-by-note log
+          // for each of them buys a board nobody reads and a table that grows with
+          // attempts rather than with records. `stored: false` is the guest path —
+          // nothing was persisted, so there is nothing to attach a replay to.
+          if (
+            !isNewBest ||
+            !getReplay ||
+            body.stored ===
+              false
+          )
+            return;
+          const replay =
+            getReplay();
+          if (
+            !replay
+          )
+            return;
+          const replayId =
+            await uploadReplay(
+              replay,
+            );
+          if (
+            replayId
+          ) {
+            setResult(
+              (
+                current,
+              ) =>
+                current.status ===
+                'ok'
+                  ? {
+                      ...current,
+                      replayId,
+                    }
+                  : current,
+            );
+          }
+        } catch {
+          // Network failures are silent to the player: the run happened, and a
+          // toast about a leaderboard write is not what they want on a results
+          // screen. The status is available for a caller that wants to say so.
+          setResult(
+            {
+              status:
+                'failed',
+              isNewBest: false,
+              previousBest:
+                null,
+            },
+          );
+        }
+      },
+      [],
+    );
 
   useEffect(() => {
-    if (!run) return;
-    if (!run.songId || run.score <= 0) return;
+    if (
+      !run
+    )
+      return;
+    if (
+      !run.songId ||
+      run.score <=
+        0
+    )
+      return;
 
     const key = `${run.songId}:${run.score}:${run.multiplayer}`;
-    const isNewRun = submittedKey.current !== key;
+    const isNewRun =
+      submittedKey.current !==
+      key;
 
     // Unranked runs (slow, lenient, assists, practice aids) never upload. The
     // server refuses the first three as well — checked here too so an unranked
     // run does not spend a rate-limit slot to be told so — but it cannot see
     // the guide sounds, so for those this is the only gate.
-    if (unrankedReason(run.modifiers, Boolean(run.practiceAids)) !== null) {
-      submittedKey.current = key;
-      setResult({ status: 'unranked', isNewBest: false, previousBest: null });
+    if (
+      unrankedReason(
+        run.modifiers,
+        Boolean(
+          run.practiceAids,
+        ),
+      ) !==
+      null
+    ) {
+      submittedKey.current =
+        key;
+      setResult(
+        {
+          status:
+            'unranked',
+          isNewBest: false,
+          previousBest:
+            null,
+        },
+      );
       return;
     }
 
-    if (!isNewRun) return;
-    submittedKey.current = key;
-    void submit(run);
-  }, [run, submit]);
+    if (
+      !isNewRun
+    )
+      return;
+    submittedKey.current =
+      key;
+    void submit(
+      run,
+    );
+  }, [
+    run,
+    submit,
+  ]);
 
   return result;
 }
 
 /** Build a {@link RunSummary} from the store's current run state. */
-export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null): RunSummary | null {
-  const status = useSliceItStore((s) => s.status);
-  const songId = useSliceItStore((s) => s.songId);
-  const score = useSliceItStore((s) => s.score);
-  const maxCombo = useSliceItStore((s) => s.maxCombo);
-  const accuracy = useSliceItStore((s) => s.accuracy);
-  const modifiers = useSliceItStore((s) => s.modifiers);
-  const runToken = useSliceItStore((s) => s.runToken);
-  const practiceAids = useSliceItStore((s) => s.metronome || s.assistTick);
+export function useRunSummary(
+  multiplayer: boolean,
+  engine?: GameEngine | null,
+): RunSummary | null {
+  const status =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.status,
+    );
+  const songId =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.songId,
+    );
+  const score =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.score,
+    );
+  const maxCombo =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.maxCombo,
+    );
+  const accuracy =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.accuracy,
+    );
+  const modifiers =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.modifiers,
+    );
+  const runToken =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.runToken,
+    );
+  const practiceAids =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.metronome ||
+        s.assistTick,
+    );
 
-  if (status !== 'FINISHED' || !songId) return null;
+  if (
+    status !==
+      'FINISHED' ||
+    !songId
+  )
+    return null;
 
   // P1/P3/R4 — practice, autoplay and replay playback are unrankable BY
   // CONSTRUCTION. The guard is here, at the only place a submittable summary is
   // built, rather than on a hidden button: a hidden button is a convention, and
   // a convention is one refactor away from posting a demo run to a leaderboard.
-  if (engine?.isUnrankable()) return null;
+  if (
+    engine?.isUnrankable()
+  )
+    return null;
 
-  const map = engine?.getActiveMap() ?? null;
-  const slices = engine?.getSlices() ?? [];
+  const map =
+    engine?.getActiveMap() ??
+    null;
+  const slices =
+    engine?.getSlices() ??
+    [];
   return {
     songId,
     score,
@@ -209,18 +450,60 @@ export function useRunSummary(multiplayer: boolean, engine?: GameEngine | null):
     accuracy,
     modifiers,
     multiplayer,
-    ...(practiceAids ? { practiceAids } : {}),
-    ...(runToken ? { runToken } : {}),
+    ...(practiceAids
+      ? {
+          practiceAids,
+        }
+      : {}),
+    ...(runToken
+      ? {
+          runToken,
+        }
+      : {}),
     // The engine is the only thing that knows these; a caller without one
     // submits without them and the server simply has less to check.
-    ...(engine ? { notesResolved: engine.getState().notesResolved } : {}),
-    ...(engine?.getTimingSummary() ? { timing: engine.getTimingSummary()! } : {}),
-    ...(map ? { songTitle: map.name } : {}),
+    ...(engine
+      ? {
+          notesResolved:
+            engine.getState()
+              .notesResolved,
+        }
+      : {}),
+    ...(engine?.getTimingSummary()
+      ? {
+          timing:
+            engine.getTimingSummary()!,
+        }
+      : {}),
+    ...(map
+      ? {
+          songTitle:
+            map.name,
+        }
+      : {}),
     // The chart's own span. The `Song` row's duration is not on the client here,
     // and the last note is close enough for a line in a calibration log.
-    ...(slices.length > 0 ? { durationSec: Math.ceil(slices[slices.length - 1]!.time) } : {}),
+    ...(slices.length >
+    0
+      ? {
+          durationSec:
+            Math.ceil(
+              slices[
+                slices.length -
+                  1
+              ]!
+                .time,
+            ),
+        }
+      : {}),
     // Carried as a thunk, not sent: `submit` strips it out of the score body and
     // calls it only if the server says this was a new best.
-    ...(engine ? { getReplay: () => engine.getReplay() } : {}),
+    ...(engine
+      ? {
+          getReplay:
+            () =>
+              engine.getReplay(),
+        }
+      : {}),
   };
 }

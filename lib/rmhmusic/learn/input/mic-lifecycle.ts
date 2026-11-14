@@ -14,27 +14,59 @@
 import type { InputHub } from './hub';
 
 /** Start the hub's mic. Rejects as `hub.start` does. */
-export function startMic(hub: InputHub): Promise<void> {
-  return hub.start('mic');
+export function startMic(
+  hub: InputHub,
+): Promise<void> {
+  return hub.start(
+    'mic',
+  );
 }
 
 /** True while the mic is running or a start of it is pending. */
-export function micInUse(hub: InputHub): boolean {
-  const phase = hub.phase('mic');
-  return phase === 'starting' || phase === 'active';
+export function micInUse(
+  hub: InputHub,
+): boolean {
+  const phase =
+    hub.phase(
+      'mic',
+    );
+  return (
+    phase ===
+      'starting' ||
+    phase ===
+      'active'
+  );
 }
 
 /** Stop the mic if it is running or starting; returns whether it did. Never touches other sources. */
-export function releaseMic(hub: InputHub): boolean {
-  if (!micInUse(hub)) return false;
-  hub.stop('mic');
+export function releaseMic(
+  hub: InputHub,
+): boolean {
+  if (
+    !micInUse(
+      hub,
+    )
+  )
+    return false;
+  hub.stop(
+    'mic',
+  );
   return true;
 }
 
 export interface MicReleaseEnv {
   hub: InputHub;
-  doc: Pick<Document, 'visibilityState' | 'addEventListener' | 'removeEventListener'>;
-  win: Pick<Window, 'addEventListener' | 'removeEventListener'>;
+  doc: Pick<
+    Document,
+    | 'visibilityState'
+    | 'addEventListener'
+    | 'removeEventListener'
+  >;
+  win: Pick<
+    Window,
+    | 'addEventListener'
+    | 'removeEventListener'
+  >;
   /** Called after an automatic stop. */
   onRelease?: () => void;
 }
@@ -43,18 +75,48 @@ export interface MicReleaseEnv {
  * Stop the mic when the page is hidden or unloaded. Returns the unbind
  * function, which also stops the mic: call it when the screen unmounts.
  */
-export function bindMicRelease({ hub, doc, win, onRelease }: MicReleaseEnv): () => void {
-  const release = () => {
-    if (releaseMic(hub)) onRelease?.();
-  };
-  const onVisibility = () => {
-    if (doc.visibilityState === 'hidden') release();
-  };
-  doc.addEventListener('visibilitychange', onVisibility);
-  win.addEventListener('pagehide', release);
+export function bindMicRelease({
+  hub,
+  doc,
+  win,
+  onRelease,
+}: MicReleaseEnv): () => void {
+  const release =
+    () => {
+      if (
+        releaseMic(
+          hub,
+        )
+      )
+        onRelease?.();
+    };
+  const onVisibility =
+    () => {
+      if (
+        doc.visibilityState ===
+        'hidden'
+      )
+        release();
+    };
+  doc.addEventListener(
+    'visibilitychange',
+    onVisibility,
+  );
+  win.addEventListener(
+    'pagehide',
+    release,
+  );
   return () => {
-    doc.removeEventListener('visibilitychange', onVisibility);
-    win.removeEventListener('pagehide', release);
-    releaseMic(hub);
+    doc.removeEventListener(
+      'visibilitychange',
+      onVisibility,
+    );
+    win.removeEventListener(
+      'pagehide',
+      release,
+    );
+    releaseMic(
+      hub,
+    );
   };
 }

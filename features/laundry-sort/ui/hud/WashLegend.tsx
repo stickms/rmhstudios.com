@@ -11,15 +11,55 @@ import { useTranslation } from 'react-i18next';
 import { WASH_COLORS } from '@features/laundry-sort/engine/constants';
 import { WeaveMark } from './WeaveMark';
 
-export function WashLegend({ compact = false }: { compact?: boolean }) {
-  const { t } = useTranslation('c-laundry-sort');
+export function WashLegend({
+  compact = false,
+}: {
+  compact?: boolean;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-laundry-sort',
+    );
 
-  const labels: Record<string, string> = {
-    reds: t('wash-reds', { defaultValue: 'Reds' }),
-    blues: t('wash-blues', { defaultValue: 'Blues' }),
-    golds: t('wash-golds', { defaultValue: 'Golds' }),
-    greens: t('wash-greens', { defaultValue: 'Greens' }),
-  };
+  const labels: Record<
+    string,
+    string
+  > =
+    {
+      reds: t(
+        'wash-reds',
+        {
+          defaultValue:
+            'Reds',
+        },
+      ),
+      blues:
+        t(
+          'wash-blues',
+          {
+            defaultValue:
+              'Blues',
+          },
+        ),
+      golds:
+        t(
+          'wash-golds',
+          {
+            defaultValue:
+              'Golds',
+          },
+        ),
+      greens:
+        t(
+          'wash-greens',
+          {
+            defaultValue:
+              'Greens',
+          },
+        ),
+    };
 
   return (
     <ul
@@ -29,19 +69,48 @@ export function WashLegend({ compact = false }: { compact?: boolean }) {
           : 'grid grid-cols-2 gap-2 sm:grid-cols-4'
       }
     >
-      {WASH_COLORS.map((wash) => (
-        <li
-          key={wash.id}
-          className={
-            compact
-              ? 'flex items-center gap-1.5 text-[11px] font-semibold'
-              : 'ls-panel flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold'
-          }
-        >
-          <WeaveMark weave={wash.weave} color={wash.hex} size={compact ? 13 : 16} />
-          <span style={{ color: wash.hex }}>{labels[wash.id] ?? wash.id}</span>
-        </li>
-      ))}
+      {WASH_COLORS.map(
+        (
+          wash,
+        ) => (
+          <li
+            key={
+              wash.id
+            }
+            className={
+              compact
+                ? 'flex items-center gap-1.5 text-[11px] font-semibold'
+                : 'ls-panel flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold'
+            }
+          >
+            <WeaveMark
+              weave={
+                wash.weave
+              }
+              color={
+                wash.hex
+              }
+              size={
+                compact
+                  ? 13
+                  : 16
+              }
+            />
+            <span
+              style={{
+                color:
+                  wash.hex,
+              }}
+            >
+              {labels[
+                wash
+                  .id
+              ] ??
+                wash.id}
+            </span>
+          </li>
+        ),
+      )}
     </ul>
   );
 }

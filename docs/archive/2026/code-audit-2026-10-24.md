@@ -1,14 +1,153 @@
 # Code audit — 2026-10-24
 
-Branch: `codex/full-code-audit`. Base: `origin/main` at `0deed41d1da2cd2d19bacaa25d7f475cb0721ff0`.
+Branch:
+`codex/full-code-audit`.
+Base:
+`origin/main`
+at
+`0deed41d1da2cd2d19bacaa25d7f475cb0721ff0`.
 
 ## Scope and counting
 
-136 fixed findings, counted by affected endpoint or independently fixable defect. Repeated occurrences of the same root cause are listed separately; this is not a claim of 136 distinct vulnerability classes.
+136
+fixed
+findings,
+counted
+by
+affected
+endpoint
+or
+independently
+fixable
+defect.
+Repeated
+occurrences
+of
+the
+same
+root
+cause
+are
+listed
+separately;
+this
+is
+not
+a
+claim
+of
+136
+distinct
+vulnerability
+classes.
 
-The review combined a repository-wide ESLint baseline and TypeScript check, an AST inventory of 1,096 wrapped API handlers, targeted reads of handlers and their data-layer calls, runtime configuration/cache review, and the main test suite. It does not establish that every line or every production integration is defect-free. Go services and visual behavior were not changed. No dependency upgrade, database migration, deployment, or external notification was performed.
+The
+review
+combined
+a
+repository-wide
+ESLint
+baseline
+and
+TypeScript
+check,
+an
+AST
+inventory
+of
+1,096
+wrapped
+API
+handlers,
+targeted
+reads
+of
+handlers
+and
+their
+data-layer
+calls,
+runtime
+configuration/cache
+review,
+and
+the
+main
+test
+suite.
+It
+does
+not
+establish
+that
+every
+line
+or
+every
+production
+integration
+is
+defect-free.
+Go
+services
+and
+visual
+behavior
+were
+not
+changed.
+No
+dependency
+upgrade,
+database
+migration,
+deployment,
+or
+external
+notification
+was
+performed.
 
-All migrated admin handlers already checked admin status inside their bodies. Their issue was duplicated policy and inconsistent error behavior; handlers using wrapper body schemas also performed validation before that manual admin check. Shared admin authorization now runs before validation.
+All
+migrated
+admin
+handlers
+already
+checked
+admin
+status
+inside
+their
+bodies.
+Their
+issue
+was
+duplicated
+policy
+and
+inconsistent
+error
+behavior;
+handlers
+using
+wrapper
+body
+schemas
+also
+performed
+validation
+before
+that
+manual
+admin
+check.
+Shared
+admin
+authorization
+now
+runs
+before
+validation.
 
 ## Fixed occurrences
 
@@ -26,8 +165,8 @@ All migrated admin handlers already checked admin status inside their bodies. Th
 | portability    |     9 |
 | test-hygiene   |     1 |
 
-| ID  | Location / operation                                                                                                 | Finding and fix                                                                                                                                                                                                                            |
-| --- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ID  | Location / operation                                                                                                       | Finding and fix                                                                                                                                                                                                                            |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 001 | [app/routes/api/admin/analytics.ts](../../../app/routes/api/admin/analytics.ts) — GET                                      | Optional authentication and a duplicated admin guard bypassed the canonical admin preamble and produced inconsistent unauthorized responses. **Fix:** Use auth: admin; remove the manual guard so admin authorization precedes validation. |
 | 002 | [app/routes/api/admin/appeals.ts](../../../app/routes/api/admin/appeals.ts) — GET                                          | Optional authentication and a duplicated admin guard bypassed the canonical admin preamble and produced inconsistent unauthorized responses. **Fix:** Use auth: admin; remove the manual guard so admin authorization precedes validation. |
 | 003 | [app/routes/api/admin/audit-log.ts](../../../app/routes/api/admin/audit-log.ts) — GET                                      | Optional authentication and a duplicated admin guard bypassed the canonical admin preamble and produced inconsistent unauthorized responses. **Fix:** Use auth: admin; remove the manual guard so admin authorization precedes validation. |
@@ -139,7 +278,7 @@ All migrated admin handlers already checked admin status inside their bodies. Th
 | 109 | [app/routes/api/admin/blog.ts](../../../app/routes/api/admin/blog.ts) — POST logging                                       | Every save logged the full draft body and metadata. **Fix:** Remove the full-body log; retain the structured admin audit event.                                                                                                            |
 | 110 | [app/routes/api/admin/blog.ts](../../../app/routes/api/admin/blog.ts) — POST create                                        | A findUnique followed by upsert could overwrite another concurrent create of the same slug. **Fix:** Create atomically and map P2002 to 409.                                                                                               |
 | 111 | [app/routes/api/admin/blog.ts](../../../app/routes/api/admin/blog.ts) — POST edit                                          | Editing a post deleted by another writer silently recreated it through upsert. **Fix:** Update existing posts and map P2025 to 404.                                                                                                        |
-| 112 | [server/rmhmusic/config.ts](../server/rmhmusic/config.ts) — envInt                                                   | Permissive and duplicated integer parsing accepted partial or negative settings; RMHMusic also accepted NaN. **Fix:** Use one strict integer parser with bounded positive timers and valid port ranges.                                    |
+| 112 | [server/rmhmusic/config.ts](../server/rmhmusic/config.ts) — envInt                                                         | Permissive and duplicated integer parsing accepted partial or negative settings; RMHMusic also accepted NaN. **Fix:** Use one strict integer parser with bounded positive timers and valid port ranges.                                    |
 | 113 | [server/rmhbox/config.ts](../../../server/rmhbox/config.ts) — envInt                                                       | Permissive and duplicated integer parsing accepted partial or negative settings; RMHMusic also accepted NaN. **Fix:** Use one strict integer parser with bounded positive timers and valid port ranges.                                    |
 | 114 | [server/rmhtube/config.ts](../../../server/rmhtube/config.ts) — envInt                                                     | Permissive and duplicated integer parsing accepted partial or negative settings; RMHMusic also accepted NaN. **Fix:** Use one strict integer parser with bounded positive timers and valid port ranges.                                    |
 | 115 | [server/socket-server/config.ts](../../../server/socket-server/config.ts) — envInt                                         | Permissive and duplicated integer parsing accepted partial or negative settings; RMHMusic also accepted NaN. **Fix:** Use one strict integer parser with bounded positive timers and valid port ranges.                                    |
@@ -163,43 +302,436 @@ All migrated admin handlers already checked admin status inside their bodies. Th
 | 133 | [lib/\_\_tests\_\_/cached-no-import-connect.test.ts](../../../lib/__tests__/cached-no-import-connect.test.ts) — subprocess | Spawning the extensionless pnpm tsx shim failed on Windows. **Fix:** Spawn process.execPath with --import tsx.                                                                                                                             |
 | 134 | [scripts/generate-site-reference.ts](../../../scripts/generate-site-reference.ts) — freshness comparison                   | Fresh CRLF checkouts were reported stale despite identical generated content. **Fix:** Compare normalized line endings.                                                                                                                    |
 | 135 | [deploy/\_\_tests\_\_/host-check.test.ts](../../../deploy/__tests__/host-check.test.ts) — shell harness                    | External mkdir and native paths in a POSIX PATH prevented the host alarm tests running on Windows. **Fix:** Create directories with Node and pass explicit shell paths/environment through Git Bash.                                       |
-| 136 | [scripts/probe-bums-chain.ts](../scripts/probe-bums-chain.ts) — manual diagnostic                                    | A diagnostic without assertions ran as a unit test and wrote to a hard-coded /tmp path. **Fix:** Move it to a manual script and print its measurements to stdout.                                                                          |
+| 136 | [scripts/probe-bums-chain.ts](../scripts/probe-bums-chain.ts) — manual diagnostic                                          | A diagnostic without assertions ran as a unit test and wrote to a hard-coded /tmp path. **Fix:** Move it to a manual script and print its measurements to stdout.                                                                          |
 
 ## Behavior and validation
 
-Pagination preserves endpoint defaults and maxima. Complete safe integers are accepted; malformed, fractional and unsafe inputs use the default; valid integers are clamped to the supported range. Mutation limits use the existing shared policies, scoped by user and IP. The 22 newly limited member endpoints have stable endpoint buckets; admin mutations share the existing write policy.
+Pagination
+preserves
+endpoint
+defaults
+and
+maxima.
+Complete
+safe
+integers
+are
+accepted;
+malformed,
+fractional
+and
+unsafe
+inputs
+use
+the
+default;
+valid
+integers
+are
+clamped
+to
+the
+supported
+range.
+Mutation
+limits
+use
+the
+existing
+shared
+policies,
+scoped
+by
+user
+and
+IP.
+The
+22
+newly
+limited
+member
+endpoints
+have
+stable
+endpoint
+buckets;
+admin
+mutations
+share
+the
+existing
+write
+policy.
 
-Blog creation now returns 409 for a duplicate slug and editing a deleted post returns 404. Invalid blog/user bodies return 400. Admin access uses the canonical 401/403 responses. Service integer settings outside their supported ranges fall back to defaults.
+Blog
+creation
+now
+returns
+409
+for
+a
+duplicate
+slug
+and
+editing
+a
+deleted
+post
+returns 404.
+Invalid
+blog/user
+bodies
+return 400.
+Admin
+access
+uses
+the
+canonical
+401/403
+responses.
+Service
+integer
+settings
+outside
+their
+supported
+ranges
+fall
+back
+to
+defaults.
 
-Regression coverage exercises malformed pagination, exact Redis-fallback ceilings, cache memory/expiry bounds, admin authorization before parsing, blog concurrency failure modes, body validation, numeric entity handling, and service settings. The API adoption gate now prevents optional authentication from returning in wrapped admin routes.
+Regression
+coverage
+exercises
+malformed
+pagination,
+exact
+Redis-fallback
+ceilings,
+cache
+memory/expiry
+bounds,
+admin
+authorization
+before
+parsing,
+blog
+concurrency
+failure
+modes,
+body
+validation,
+numeric
+entity
+handling,
+and
+service
+settings.
+The
+API
+adoption
+gate
+now
+prevents
+optional
+authentication
+from
+returning
+in
+wrapped
+admin
+routes.
 
-Validation on the Windows development host:
+Validation
+on
+the
+Windows
+development
+host:
 
-- `pnpm exec tsc --noEmit`: passed.
-- Repository-wide `pnpm lint`: passed with no new errors or warnings relative to the recorded base. Existing warnings remain.
-- `scripts/check-consistency.sh --working`, run through Git Bash because the default Windows `bash` launcher cannot execute: passed, including 67 test files / 3,975 tests, lint, typecheck and generated-document freshness. New files were included with intent-to-add.
-- `pnpm test`: 556 files passed, one existing file skipped; 10,883 tests passed, seven skipped, two failed. Both failures are in the unchanged `server/__tests__/web-cluster.test.ts`, which drives the unchanged `server/web-cluster.mjs` using Unix SIGKILL/SIGTERM semantics. Windows terminates processes differently; Linux CI remains necessary for those two checks. Neither test was disabled or weakened.
-- `pnpm exec tsx scripts/probe-bums-chain.ts`: passed; the manual diagnostic prints all four chain-load measurements.
-- `git diff --check`: passed.
+- `pnpm exec tsc --noEmit`:
+  passed.
+- Repository-wide
+  `pnpm lint`:
+  passed
+  with
+  no
+  new
+  errors
+  or
+  warnings
+  relative
+  to
+  the
+  recorded
+  base.
+  Existing
+  warnings
+  remain.
+- `scripts/check-consistency.sh --working`,
+  run
+  through
+  Git
+  Bash
+  because
+  the
+  default
+  Windows
+  `bash`
+  launcher
+  cannot
+  execute:
+  passed,
+  including
+  67
+  test
+  files
+  /
+  3,975
+  tests,
+  lint,
+  typecheck
+  and
+  generated-document
+  freshness.
+  New
+  files
+  were
+  included
+  with
+  intent-to-add.
+- `pnpm test`:
+  556
+  files
+  passed,
+  one
+  existing
+  file
+  skipped;
+  10,883
+  tests
+  passed,
+  seven
+  skipped,
+  two
+  failed.
+  Both
+  failures
+  are
+  in
+  the
+  unchanged
+  `server/__tests__/web-cluster.test.ts`,
+  which
+  drives
+  the
+  unchanged
+  `server/web-cluster.mjs`
+  using
+  Unix
+  SIGKILL/SIGTERM
+  semantics.
+  Windows
+  terminates
+  processes
+  differently;
+  Linux
+  CI
+  remains
+  necessary
+  for
+  those
+  two
+  checks.
+  Neither
+  test
+  was
+  disabled
+  or
+  weakened.
+- `pnpm exec tsx scripts/probe-bums-chain.ts`:
+  passed;
+  the
+  manual
+  diagnostic
+  prints
+  all
+  four
+  chain-load
+  measurements.
+- `git diff --check`:
+  passed.
 
-The host runs Node 24.13.0; the repository requests >=24.18.0 <25. A production build, database-backed integration tests, Go/Bazel tests and browser checks were not run.
+The
+host
+runs
+Node
+24.13.0;
+the
+repository
+requests >=24.18.0
+<25.
+A
+production
+build,
+database-backed
+integration
+tests,
+Go/Bazel
+tests
+and
+browser
+checks
+were
+not
+run.
 
 ## PR CI follow-up
 
-The initial Linux CI run for PR #1016 confirmed both test shards, frontend build,
-integration tests, typecheck/lint/docs and jelly browser checks pass. The remaining
-failure matched the previous merged PR #1014: the production audit found
-GHSA-mrhx-c7xc-m3w5 through the Discord embedded SDK's Zod dependency.
+The
+initial
+Linux
+CI
+run
+for
+PR
+#1016
+confirmed
+both
+test
+shards,
+frontend
+build,
+integration
+tests,
+typecheck/lint/docs
+and
+jelly
+browser
+checks
+pass.
+The
+remaining
+failure
+matched
+the
+previous
+merged
+PR
+#1014:
+the
+production
+audit
+found
+GHSA-mrhx-c7xc-m3w5
+through
+the
+Discord
+embedded
+SDK's
+Zod
+dependency.
 
-The follow-up applies a reproducible pnpm patch to the SDK's bundled ESM and CJS
-validators, preserving its API while rejecting oversized constrained collections
-before visiting elements. Declarations use `zod/v3` from the patched Zod package
-through a scoped resolution. The SDK version is pinned while the backport is
-needed. [Patch details and removal procedure](../../../patches/README.md) document the
-runtime/declaration distinction. Docker copies the patch before installation and
-the dependency cache includes patch content. The production audit threshold and
-advisory handling are unchanged.
+The
+follow-up
+applies
+a
+reproducible
+pnpm
+patch
+to
+the
+SDK's
+bundled
+ESM
+and
+CJS
+validators,
+preserving
+its
+API
+while
+rejecting
+oversized
+constrained
+collections
+before
+visiting
+elements.
+Declarations
+use
+`zod/v3`
+from
+the
+patched
+Zod
+package
+through
+a
+scoped
+resolution.
+The
+SDK
+version
+is
+pinned
+while
+the
+backport
+is
+needed.
+[Patch details and removal procedure](../../../patches/README.md)
+document
+the
+runtime/declaration
+distinction.
+Docker
+copies
+the
+patch
+before
+installation
+and
+the
+dependency
+cache
+includes
+patch
+content.
+The
+production
+audit
+threshold
+and
+advisory
+handling
+are
+unchanged.
 
-The production audit now reports zero high/critical findings locally, and all ten
-installed-runtime security regression cases pass. Final GitHub CI results are
-recorded in the PR.
+The
+production
+audit
+now
+reports
+zero
+high/critical
+findings
+locally,
+and
+all
+ten
+installed-runtime
+security
+regression
+cases
+pass.
+Final
+GitHub
+CI
+results
+are
+recorded
+in
+the
+PR.

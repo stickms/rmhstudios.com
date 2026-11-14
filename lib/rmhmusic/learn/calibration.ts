@@ -16,27 +16,101 @@ const MIN_PAIRS = 4;
  * Responses matching no click within ±400 ms are ignored; null when fewer than
  * four responses match.
  */
-export function medianOffset(clickTimesMs: number[], responseTimesMs: number[]): number | null {
-  const clicks = clickTimesMs.filter(Number.isFinite);
-  if (clicks.length === 0) return null;
+export function medianOffset(
+  clickTimesMs: number[],
+  responseTimesMs: number[],
+):
+  | number
+  | null {
+  const clicks =
+    clickTimesMs.filter(
+      Number.isFinite,
+    );
+  if (
+    clicks.length ===
+    0
+  )
+    return null;
 
-  const offsets: number[] = [];
+  const offsets: number[] =
+    [];
   for (const response of responseTimesMs) {
-    if (!Number.isFinite(response)) continue;
-    let best: number | null = null;
+    if (
+      !Number.isFinite(
+        response,
+      )
+    )
+      continue;
+    let best:
+      | number
+      | null =
+      null;
     for (const click of clicks) {
-      const d = response - click;
-      if (Math.abs(d) <= MATCH_WINDOW_MS && (best === null || Math.abs(d) < Math.abs(best))) {
-        best = d;
+      const d =
+        response -
+        click;
+      if (
+        Math.abs(
+          d,
+        ) <=
+          MATCH_WINDOW_MS &&
+        (best ===
+          null ||
+          Math.abs(
+            d,
+          ) <
+            Math.abs(
+              best,
+            ))
+      ) {
+        best =
+          d;
       }
     }
-    if (best !== null) offsets.push(best);
+    if (
+      best !==
+      null
+    )
+      offsets.push(
+        best,
+      );
   }
-  if (offsets.length < MIN_PAIRS) return null;
+  if (
+    offsets.length <
+    MIN_PAIRS
+  )
+    return null;
 
-  offsets.sort((a, b) => a - b);
-  const mid = offsets.length >> 1;
-  const median = offsets.length % 2 ? offsets[mid] : (offsets[mid - 1] + offsets[mid]) / 2;
+  offsets.sort(
+    (
+      a,
+      b,
+    ) =>
+      a -
+      b,
+  );
+  const mid =
+    offsets.length >>
+    1;
+  const median =
+    offsets.length %
+    2
+      ? offsets[
+          mid
+        ]
+      : (offsets[
+          mid -
+            1
+        ] +
+          offsets[
+            mid
+          ]) /
+        2;
   // `+ 0` turns a -0 from rounding into 0.
-  return Math.round(median) + 0;
+  return (
+    Math.round(
+      median,
+    ) +
+    0
+  );
 }

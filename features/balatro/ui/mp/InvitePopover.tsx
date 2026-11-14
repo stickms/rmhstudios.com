@@ -9,11 +9,19 @@
  * on <body> would be invisible in fullscreen.
  */
 
-import { Check, Copy } from 'lucide-react';
+import {
+  Check,
+  Copy,
+} from 'lucide-react';
 import { type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useLobbyLink } from '@/hooks/useLobbyLink';
 
 export function InvitePopover({
@@ -25,34 +33,124 @@ export function InvitePopover({
 }: {
   code: string;
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (
+    open: boolean,
+  ) => void;
   container: HTMLElement | null;
   friends?: ReactNode;
 }) {
-  const { t } = useTranslation('c-balatro');
-  const { link, copied, copyLink } = useLobbyLink({ code, path: '/balatro' });
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-balatro',
+    );
+  const {
+    link,
+    copied,
+    copyLink,
+  } =
+    useLobbyLink(
+      {
+        code,
+        path: '/balatro',
+      },
+    );
 
-  const copy = async () => {
-    if (!(await copyLink())) toast.message(link);
-  };
+  const copy =
+    async () => {
+      if (
+        !(await copyLink())
+      )
+        toast.message(
+          link,
+        );
+    };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent container={container} className="max-w-sm">
-        <DialogTitle>{t('mp_invite_title', { defaultValue: 'Invite to lobby' })}</DialogTitle>
+    <Dialog
+      open={
+        open
+      }
+      onOpenChange={
+        onOpenChange
+      }
+    >
+      <DialogContent
+        container={
+          container
+        }
+        className="max-w-sm"
+      >
+        <DialogTitle>
+          {t(
+            'mp_invite_title',
+            {
+              defaultValue:
+                'Invite to lobby',
+            },
+          )}
+        </DialogTitle>
         <DialogDescription>
-          {t('mp_invite_body', { defaultValue: 'Share the code, or a link that opens this lobby.' })}
+          {t(
+            'mp_invite_body',
+            {
+              defaultValue:
+                'Share the code, or a link that opens this lobby.',
+            },
+          )}
         </DialogDescription>
-        <p className="font-mono text-2xl tracking-widest" aria-label={t('mp_invite_code', { defaultValue: 'Lobby code' })}>
-          {code}
+        <p
+          className="font-mono text-2xl tracking-widest"
+          aria-label={t(
+            'mp_invite_code',
+            {
+              defaultValue:
+                'Lobby code',
+            },
+          )}
+        >
+          {
+            code
+          }
         </p>
-        <button type="button" className="balatro-action" onClick={() => void copy()}>
-          {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+        <button
+          type="button"
+          className="balatro-action"
+          onClick={() =>
+            void copy()
+          }
+        >
+          {copied ? (
+            <Check
+              className="size-4"
+              aria-hidden
+            />
+          ) : (
+            <Copy
+              className="size-4"
+              aria-hidden
+            />
+          )}
           {copied
-            ? t('mp_invite_copied', { defaultValue: 'Link copied' })
-            : t('mp_invite_copy', { defaultValue: 'Copy invite link' })}
+            ? t(
+                'mp_invite_copied',
+                {
+                  defaultValue:
+                    'Link copied',
+                },
+              )
+            : t(
+                'mp_invite_copy',
+                {
+                  defaultValue:
+                    'Copy invite link',
+                },
+              )}
         </button>
-        {friends}
+        {
+          friends
+        }
       </DialogContent>
     </Dialog>
   );

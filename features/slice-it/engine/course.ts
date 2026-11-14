@@ -93,33 +93,63 @@ export interface CourseFailure {
 }
 
 export type CourseOutcome =
-  | { status: 'continue'; state: CourseState }
-  | { status: 'complete'; state: CourseState }
+  | {
+      status: 'continue';
+      state: CourseState;
+    }
+  | {
+      status: 'complete';
+      state: CourseState;
+    }
   | CourseFailure;
 
 /** Is this list a legal course? */
-export function isValidCourse(songIds: string[]): boolean {
-  return songIds.length >= MIN_COURSE_SONGS && songIds.length <= MAX_COURSE_SONGS;
+export function isValidCourse(
+  songIds: string[],
+): boolean {
+  return (
+    songIds.length >=
+      MIN_COURSE_SONGS &&
+    songIds.length <=
+      MAX_COURSE_SONGS
+  );
 }
 
 /**
  * The first `MAX_COURSE_SONGS` of a setlist, which is how a setlist becomes a
  * course. Returns null when there are not enough songs to make one.
  */
-export function courseFromSongs(songIds: string[]): CourseState | null {
-  const trimmed = songIds.slice(0, MAX_COURSE_SONGS);
-  if (!isValidCourse(trimmed)) return null;
-  return startCourse(trimmed);
+export function courseFromSongs(
+  songIds: string[],
+): CourseState | null {
+  const trimmed =
+    songIds.slice(
+      0,
+      MAX_COURSE_SONGS,
+    );
+  if (
+    !isValidCourse(
+      trimmed,
+    )
+  )
+    return null;
+  return startCourse(
+    trimmed,
+  );
 }
 
 /** A fresh course at full gauge. */
-export function startCourse(songIds: string[]): CourseState {
+export function startCourse(
+  songIds: string[],
+): CourseState {
   return {
     songIds,
     index: 0,
-    health: HEALTH_MAX,
+    health:
+      HEALTH_MAX,
     cumulativeScore: 0,
-    scores: [],
+    scores:
+      [],
     maxCombo: 0,
   };
 }
@@ -131,8 +161,14 @@ export function startCourse(songIds: string[]): CourseState {
  * rest of their settings are respected — a course is about the gauge, not about
  * taking away speed or difficulty choices.
  */
-export function courseModifiers(base: Partial<Modifiers> = {}): Modifiers {
-  return { ...DEFAULT_MODIFIERS, ...base, healthGauge: true };
+export function courseModifiers(
+  base: Partial<Modifiers> = {},
+): Modifiers {
+  return {
+    ...DEFAULT_MODIFIERS,
+    ...base,
+    healthGauge: true,
+  };
 }
 
 /**
@@ -142,35 +178,88 @@ export function courseModifiers(base: Partial<Modifiers> = {}): Modifiers {
  * zero fails the course — recovery is a reward for surviving a song, not a
  * reprieve from not surviving it.
  */
-export function advance(state: CourseState, run: CourseRunResult): CourseOutcome {
-  if (run.health <= 0) {
+export function advance(
+  state: CourseState,
+  run: CourseRunResult,
+): CourseOutcome {
+  if (
+    run.health <=
+    0
+  ) {
     return {
-      status: 'failed',
-      clearedSongs: state.index,
-      cumulativeScore: state.cumulativeScore,
+      status:
+        'failed',
+      clearedSongs:
+        state.index,
+      cumulativeScore:
+        state.cumulativeScore,
     };
   }
 
-  const next: CourseState = {
-    ...state,
-    index: state.index + 1,
-    health: Math.min(HEALTH_MAX, run.health + COURSE_RECOVERY),
-    cumulativeScore: state.cumulativeScore + run.score,
-    scores: [...state.scores, run.score],
-    maxCombo: Math.max(state.maxCombo, run.maxCombo),
-  };
+  const next: CourseState =
+    {
+      ...state,
+      index:
+        state.index +
+        1,
+      health:
+        Math.min(
+          HEALTH_MAX,
+          run.health +
+            COURSE_RECOVERY,
+        ),
+      cumulativeScore:
+        state.cumulativeScore +
+        run.score,
+      scores:
+        [
+          ...state.scores,
+          run.score,
+        ],
+      maxCombo:
+        Math.max(
+          state.maxCombo,
+          run.maxCombo,
+        ),
+    };
 
-  return next.index >= next.songIds.length
-    ? { status: 'complete', state: next }
-    : { status: 'continue', state: next };
+  return next.index >=
+    next
+      .songIds
+      .length
+    ? {
+        status:
+          'complete',
+        state:
+          next,
+      }
+    : {
+        status:
+          'continue',
+        state:
+          next,
+      };
 }
 
 /** The song id to load next, or null when the course is over. */
-export function currentSongId(state: CourseState): string | null {
-  return state.songIds[state.index] ?? null;
+export function currentSongId(
+  state: CourseState,
+):
+  | string
+  | null {
+  return (
+    state
+      .songIds[
+      state
+        .index
+    ] ??
+    null
+  );
 }
 
 /** Human-readable position, e.g. "3 / 5". */
-export function coursePosition(state: CourseState): string {
+export function coursePosition(
+  state: CourseState,
+): string {
   return `${Math.min(state.index + 1, state.songIds.length)} / ${state.songIds.length}`;
 }

@@ -6,79 +6,165 @@
  * out. The interface itself is the four components below it.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { applyVigil } from '@/lib/temple-of-joy/tick';
 import { doAudit } from '@/lib/temple-of-joy/actions';
 import { useAutoSave } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { GameState } from '@/lib/temple-of-joy/types';
-import { useBarNav, useDocumentTheme, useStackedLayout, useTempleValue } from './hooks';
+import {
+  useBarNav,
+  useDocumentTheme,
+  useStackedLayout,
+  useTempleValue,
+} from './hooks';
 import { TempleHud } from './TempleHud';
 import { TempleSanctum } from './TempleSanctum';
-import { TempleRooms, TempleTabs } from './TempleTabs';
+import {
+  TempleRooms,
+  TempleTabs,
+} from './TempleTabs';
 import { TemplePanel } from './panels/TemplePanel';
 import { TempleDialogs } from './TempleDialogs';
 import { BowlOverlay } from './bowl/BowlOverlay';
 
-export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameState> | null }) {
-  const theme = useTempleValue((s) => s.theme);
-  const flourish = useTempleValue((s) => s.reducedFlourish);
+export function TempleOfJoyGame({
+  initialSave,
+}: {
+  initialSave?: Partial<GameState> | null;
+}) {
+  const theme =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.theme,
+    );
+  const flourish =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.reducedFlourish,
+    );
   // Any modal open makes the game behind it inert. `aria-modal` alone does not:
   // it is a hint to assistive tech and nothing at all to the Tab key, so every
   // source row, tab and Sinner behind an open dialog stayed focusable and
   // clickable through the scrim.
-  const modal = useTempleValue(
-    (s) =>
-      s.showBowl ||
-      s.showVigilDialog ||
-      s.showAscendDialog ||
-      s.showMannaDialog ||
-      s.showResetDialog,
-  );
+  const modal =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.showBowl ||
+        s.showVigilDialog ||
+        s.showAscendDialog ||
+        s.showMannaDialog ||
+        s.showResetDialog,
+    );
   // Two questions, deliberately not one. `stacked` decides where the COUNTER
   // lives and what scrolls; `bar` decides where the NAVIGATION lives. A phone in
   // landscape answers them differently — two columns, and still a thumb bar —
   // and collapsing them into one flag is what put a ten-item horizontal
   // scroller inside a 24rem dock. See `BAR_QUERY`.
-  const stacked = useStackedLayout();
-  const bar = useBarNav();
+  const stacked =
+    useStackedLayout();
+  const bar =
+    useBarNav();
   // The bar's overflow sheet. Owned here rather than in the bar because the
   // thing it has to disable — the whole game — is this component's child, and
   // the sheet is that child's sibling.
-  const [rooms, setRooms] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [
+    rooms,
+    setRooms,
+  ] =
+    useState(
+      false,
+    );
+  const rootRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
 
   // The strips outside `.toj` — status bar, Safari's bottom bar, the overscroll
   // gutter — belong to the document, and the document does not know this game
   // has a theme. See the hook.
-  useDocumentTheme(rootRef);
+  useDocumentTheme(
+    rootRef,
+  );
 
   /* ── Load, then catch up on the absence ──────────────────────────────── */
 
   useEffect(() => {
-    const now = Date.now();
+    const now =
+      Date.now();
 
-    if (initialSave) {
-      useTempleStore.setState({ ...initialSave, lastTick: now, openedAt: now });
+    if (
+      initialSave
+    ) {
+      useTempleStore.setState(
+        {
+          ...initialSave,
+          lastTick:
+            now,
+          openedAt:
+            now,
+        },
+      );
 
       // The vigil runs against the *loaded* state, so everything it reads —
       // the rate, the Sinners' appetite, the garden's soil — is what the
       // player actually left behind.
-      const vigil = applyVigil(useTempleStore.getState(), now);
-      useTempleStore.setState({
-        ...vigil.state,
-        openedAt: now,
-        touchesAtOpen: vigil.state.totalTouches,
-        showVigilDialog: vigil.state.vigil.pending,
-      });
+      const vigil =
+        applyVigil(
+          useTempleStore.getState(),
+          now,
+        );
+      useTempleStore.setState(
+        {
+          ...vigil.state,
+          openedAt:
+            now,
+          touchesAtOpen:
+            vigil
+              .state
+              .totalTouches,
+          showVigilDialog:
+            vigil
+              .state
+              .vigil
+              .pending,
+        },
+      );
     } else {
-      useTempleStore.setState({ lastTick: now, lastSaved: now, openedAt: now });
+      useTempleStore.setState(
+        {
+          lastTick:
+            now,
+          lastSaved:
+            now,
+          openedAt:
+            now,
+        },
+      );
     }
 
     // Catch up any trophy this build added since the save was written.
-    useTempleStore.setState(doAudit(useTempleStore.getState()));
-    useTempleStore.setState({ initialized: true });
+    useTempleStore.setState(
+      doAudit(
+        useTempleStore.getState(),
+      ),
+    );
+    useTempleStore.setState(
+      {
+        initialized: true,
+      },
+    );
     // Load runs once, against the save this component was handed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -87,13 +173,25 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
 
   useEffect(() => {
     let frame = 0;
-    const step = () => {
-      useTempleStore.getState().tick();
-      frame = requestAnimationFrame(step);
-    };
-    frame = requestAnimationFrame(step);
+    const step =
+      () => {
+        useTempleStore
+          .getState()
+          .tick();
+        frame =
+          requestAnimationFrame(
+            step,
+          );
+      };
+    frame =
+      requestAnimationFrame(
+        step,
+      );
     // The loop is bounded by this component's lifetime: unmounting cancels it.
-    return () => cancelAnimationFrame(frame);
+    return () =>
+      cancelAnimationFrame(
+        frame,
+      );
   }, []);
 
   /* ── Waking from the background ──────────────────────────────────────── */
@@ -104,28 +202,61 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
   // same vigil the loader does, measured from the last tick rather than the
   // last save.
   useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState !== 'visible') return;
+    const onVisible =
+      () => {
+        if (
+          document.visibilityState !==
+          'visible'
+        )
+          return;
 
-      const state = useTempleStore.getState();
-      if (!state.initialized) return;
+        const state =
+          useTempleStore.getState();
+        if (
+          !state.initialized
+        )
+          return;
 
-      const now = Date.now();
-      const asleep = (now - state.lastTick) / 1000;
-      // Under a couple of minutes the tick's own clamp covers it, and a
-      // "welcome back" for a glance at another tab would be absurd.
-      if (asleep < 120) return;
+        const now =
+          Date.now();
+        const asleep =
+          (now -
+            state.lastTick) /
+          1000;
+        // Under a couple of minutes the tick's own clamp covers it, and a
+        // "welcome back" for a glance at another tab would be absurd.
+        if (
+          asleep <
+          120
+        )
+          return;
 
-      const vigil = applyVigil(state, now, state.lastTick);
-      useTempleStore.setState({
-        ...vigil.state,
-        // Only worth interrupting for a real absence.
-        showVigilDialog: asleep > 600,
-      });
-    };
+        const vigil =
+          applyVigil(
+            state,
+            now,
+            state.lastTick,
+          );
+        useTempleStore.setState(
+          {
+            ...vigil.state,
+            // Only worth interrupting for a real absence.
+            showVigilDialog:
+              asleep >
+              600,
+          },
+        );
+      };
 
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+    document.addEventListener(
+      'visibilitychange',
+      onVisible,
+    );
+    return () =>
+      document.removeEventListener(
+        'visibilitychange',
+        onVisible,
+      );
   }, []);
 
   useAutoSave();
@@ -134,38 +265,100 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
 
   useEffect(() => {
     templeAudio.init();
-    const { soundEnabled, musicVolume, sfxVolume } = useTempleStore.getState();
-    templeAudio.setMusicVolume(musicVolume);
-    templeAudio.setSfxVolume(sfxVolume);
-    templeAudio.setEnabled(soundEnabled);
+    const {
+      soundEnabled,
+      musicVolume,
+      sfxVolume,
+    } =
+      useTempleStore.getState();
+    templeAudio.setMusicVolume(
+      musicVolume,
+    );
+    templeAudio.setSfxVolume(
+      sfxVolume,
+    );
+    templeAudio.setEnabled(
+      soundEnabled,
+    );
 
-    const off = [
-      useTempleStore.subscribe(
-        (s) => s.soundEnabled,
-        (enabled) => templeAudio.setEnabled(enabled),
-      ),
-      useTempleStore.subscribe(
-        (s) => s.musicVolume,
-        (volume) => templeAudio.setMusicVolume(volume),
-      ),
-      useTempleStore.subscribe(
-        (s) => s.sfxVolume,
-        (volume) => templeAudio.setSfxVolume(volume),
-      ),
-    ];
+    const off =
+      [
+        useTempleStore.subscribe(
+          (
+            s,
+          ) =>
+            s.soundEnabled,
+          (
+            enabled,
+          ) =>
+            templeAudio.setEnabled(
+              enabled,
+            ),
+        ),
+        useTempleStore.subscribe(
+          (
+            s,
+          ) =>
+            s.musicVolume,
+          (
+            volume,
+          ) =>
+            templeAudio.setMusicVolume(
+              volume,
+            ),
+        ),
+        useTempleStore.subscribe(
+          (
+            s,
+          ) =>
+            s.sfxVolume,
+          (
+            volume,
+          ) =>
+            templeAudio.setSfxVolume(
+              volume,
+            ),
+        ),
+      ];
 
-    return () => off.forEach((unsubscribe) => unsubscribe());
+    return () =>
+      off.forEach(
+        (
+          unsubscribe,
+        ) =>
+          unsubscribe(),
+      );
   }, []);
 
   // Browsers refuse to start audio until the user has interacted with the
   // page. `pointerdown` covers mouse, touch and pen in one listener.
   useEffect(() => {
-    const unlock = () => templeAudio.markInteracted();
-    document.addEventListener('pointerdown', unlock, { once: true });
-    document.addEventListener('keydown', unlock, { once: true });
+    const unlock =
+      () =>
+        templeAudio.markInteracted();
+    document.addEventListener(
+      'pointerdown',
+      unlock,
+      {
+        once: true,
+      },
+    );
+    document.addEventListener(
+      'keydown',
+      unlock,
+      {
+        once: true,
+      },
+    );
     return () => {
-      document.removeEventListener('pointerdown', unlock);
-      document.removeEventListener('keydown', unlock);
+      document.removeEventListener(
+        'pointerdown',
+        unlock,
+      );
+      document.removeEventListener(
+        'keydown',
+        unlock,
+      );
     };
   }, []);
 
@@ -184,13 +377,27 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
     // `data-no-twemoji` keeps the site-wide observer out of a tree React
     // re-renders constantly; emoji here go through `<Glyph>` instead.
     <div
-      ref={rootRef}
+      ref={
+        rootRef
+      }
       className="toj"
-      data-theme={theme}
-      data-flourish={flourish ? 'off' : undefined}
+      data-theme={
+        theme
+      }
+      data-flourish={
+        flourish
+          ? 'off'
+          : undefined
+      }
       data-no-twemoji
     >
-      <div className="toj-frame" inert={modal || rooms}>
+      <div
+        className="toj-frame"
+        inert={
+          modal ||
+          rooms
+        }
+      >
         {/* Where the counter lives is a layout decision, not a style one.
             On a phone it goes INSIDE the room, floating over its light, the way
             every idle game on a phone puts it — as a card above the room it was
@@ -199,15 +406,21 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
             the top of BOTH columns, where the height is free and spanning the
             whole width is what makes it read as the game's header rather than
             as the room's. */}
-        {!stacked && <TempleHud />}
+        {!stacked && (
+          <TempleHud />
+        )}
 
         <div className="toj-body">
           <div className="toj-stage">
-            {stacked && <TempleHud />}
+            {stacked && (
+              <TempleHud />
+            )}
             <TempleSanctum />
           </div>
           <div className="toj-dock">
-            {!bar && <TempleTabs />}
+            {!bar && (
+              <TempleTabs />
+            )}
             <TemplePanel />
           </div>
         </div>
@@ -216,12 +429,31 @@ export function TempleOfJoyGame({ initialSave }: { initialSave?: Partial<GameSta
             One instance either way — two tablists in the DOM is two things for
             a screen reader to walk and two places for the selected room to
             disagree with itself. */}
-        {bar && <TempleTabs variant="bar" more={rooms} onMore={setRooms} />}
+        {bar && (
+          <TempleTabs
+            variant="bar"
+            more={
+              rooms
+            }
+            onMore={
+              setRooms
+            }
+          />
+        )}
       </div>
 
       {/* Outside the frame, so the frame going `inert` behind it does not take
           the sheet with it. */}
-      {bar && rooms && <TempleRooms onClose={() => setRooms(false)} />}
+      {bar &&
+        rooms && (
+          <TempleRooms
+            onClose={() =>
+              setRooms(
+                false,
+              )
+            }
+          />
+        )}
       <TempleDialogs />
       {/* The alley renders nothing until it is opened, and the three.js and
           Rapier chunks behind it are only fetched then — most sessions never

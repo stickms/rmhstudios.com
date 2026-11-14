@@ -19,13 +19,23 @@
 // lazily because it throws at import when DATABASE_URL is unset.
 
 import { startProcessMetrics } from '../../lib/perf/process-metrics';
-import { registerPrismaPoolGauges, startPerfPublisher } from '../../lib/perf/publish.server';
+import {
+  registerPrismaPoolGauges,
+  startPerfPublisher,
+} from '../../lib/perf/publish.server';
 
 export default function perfPlugin(): void {
   try {
-    startProcessMetrics({ service: 'web' });
+    startProcessMetrics(
+      {
+        service:
+          'web',
+      },
+    );
     registerPrismaPoolGauges();
-    startPerfPublisher('web');
+    startPerfPublisher(
+      'web',
+    );
   } catch {
     // Telemetry must never stop a worker from booting.
   }

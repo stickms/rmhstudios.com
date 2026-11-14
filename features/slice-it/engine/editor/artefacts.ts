@@ -15,13 +15,26 @@
  * operation and still goes server-side — see `O3` in the design doc.
  */
 
-import { quantizeOnsets, type QuantizedNote } from '@features/slice-it/engine/beatmap/charter';
-import type { AnalysisArtefacts, StoredOnset } from '@features/slice-it/engine/beatmap';
-import { decodeEnvelope, ENVELOPE_RATE } from '@features/slice-it/engine/beatmap/envelope';
+import {
+  quantizeOnsets,
+  type QuantizedNote,
+} from '@features/slice-it/engine/beatmap/charter';
+import type {
+  AnalysisArtefacts,
+  StoredOnset,
+} from '@features/slice-it/engine/beatmap';
+import {
+  decodeEnvelope,
+  ENVELOPE_RATE,
+} from '@features/slice-it/engine/beatmap/envelope';
 import type { Section } from '@features/slice-it/engine/beatmap/sections';
 import type { Onset } from '@features/slice-it/engine/beatmap/onsets';
 import { syntheticBeats } from '@features/slice-it/engine/beatmap/tempo';
-import type { BeatMap, Difficulty, Slice } from '@features/slice-it/engine/types';
+import type {
+  BeatMap,
+  Difficulty,
+  Slice,
+} from '@features/slice-it/engine/types';
 
 import { api } from '@/lib/contract/client';
 import { getSliceSongApi } from '@features/slice-it/engine/play.contract';
@@ -60,9 +73,27 @@ export interface GhostOnset {
 const LOW_LANE_BIAS = 0.42;
 const HIGH_LANE_BIAS = 0.3;
 
-export function suggestLane(onset: { l: number; h: number }, keys = 2): number {
-  if (onset.l >= LOW_LANE_BIAS) return 0;
-  if (onset.h >= HIGH_LANE_BIAS) return Math.min(1, keys - 1);
+export function suggestLane(
+  onset: {
+    l: number;
+    h: number;
+  },
+  keys = 2,
+): number {
+  if (
+    onset.l >=
+    LOW_LANE_BIAS
+  )
+    return 0;
+  if (
+    onset.h >=
+    HIGH_LANE_BIAS
+  )
+    return Math.min(
+      1,
+      keys -
+        1,
+    );
   // Mid-range: the charter alternates here. With no run to alternate against,
   // the deterministic answer is the lower lane — an author moves it in one drag
   // and, unlike a random choice, it does not move when they undo and redo.
@@ -77,7 +108,10 @@ export interface EditorArtefacts {
   /** The candidate pool the charter selects from, densest tier first. */
   pool: QuantizedNote[];
   /** Peak envelope bytes (0–255) and their rate — empty when not stored (§6). */
-  envelope: { bytes: Uint8Array; rate: number };
+  envelope: {
+    bytes: Uint8Array;
+    rate: number;
+  };
   /** Every detected onset, kept and rejected, in time order. */
   ghosts: GhostOnset[];
   /** Structure (C5). Empty when the song predates artefact persistence. */
@@ -90,7 +124,9 @@ export interface EditorArtefacts {
    * stands in for the onset list, which regenerates a plausible chart from what
    * the generator already chose but cannot recover onsets it rejected.
    */
-  source: 'analysis' | 'chart';
+  source:
+    | 'analysis'
+    | 'chart';
 }
 
 /** Stored analysis carries more than the `BeatMap` type admits — see `beatmap/index.ts`. */
@@ -114,20 +150,44 @@ interface SongResponse {
  * so the panel reads it once and every subsequent scope/density change re-charts
  * from memory. This is what makes Preview feel like a slider rather than a job.
  */
-const cache = new Map<string, EditorArtefacts>();
+const cache =
+  new Map<
+    string,
+    EditorArtefacts
+  >();
 
-export function cachedArtefacts(songId: string): EditorArtefacts | null {
-  return cache.get(songId) ?? null;
+export function cachedArtefacts(
+  songId: string,
+): EditorArtefacts | null {
+  return (
+    cache.get(
+      songId,
+    ) ??
+    null
+  );
 }
 
-export function primeArtefacts(artefacts: EditorArtefacts): void {
-  cache.set(artefacts.songId, artefacts);
+export function primeArtefacts(
+  artefacts: EditorArtefacts,
+): void {
+  cache.set(
+    artefacts.songId,
+    artefacts,
+  );
 }
 
 /** Test seam and reload path — drop a song's cached analysis. */
-export function clearArtefacts(songId?: string): void {
-  if (songId) cache.delete(songId);
-  else cache.clear();
+export function clearArtefacts(
+  songId?: string,
+): void {
+  if (
+    songId
+  )
+    cache.delete(
+      songId,
+    );
+  else
+    cache.clear();
 }
 
 export interface LoadArtefactsInput {
@@ -138,23 +198,50 @@ export interface LoadArtefactsInput {
   fallbackSlices: readonly Slice[];
 }
 
-export async function loadArtefacts(input: LoadArtefactsInput): Promise<EditorArtefacts> {
-  const hit = cache.get(input.songId);
-  if (hit) return hit;
+export async function loadArtefacts(
+  input: LoadArtefactsInput,
+): Promise<EditorArtefacts> {
+  const hit =
+    cache.get(
+      input.songId,
+    );
+  if (
+    hit
+  )
+    return hit;
 
   let analysis: StoredAnalysis | null;
   try {
-    const body = (await api(getSliceSongApi, { params: { id: input.songId } })) as SongResponse;
-    analysis = body.analysisData ?? null;
+    const body =
+      (await api(
+        getSliceSongApi,
+        {
+          params:
+            {
+              id: input.songId,
+            },
+        },
+      )) as SongResponse;
+    analysis =
+      body.analysisData ??
+      null;
   } catch {
     // Offline, or the song read failed: the chart fallback below still produces
     // a usable pool, and a regenerate the author can preview is worth more than
     // an error toast.
-    analysis = null;
+    analysis =
+      null;
   }
 
-  const artefacts = buildArtefacts(input, analysis);
-  cache.set(input.songId, artefacts);
+  const artefacts =
+    buildArtefacts(
+      input,
+      analysis,
+    );
+  cache.set(
+    input.songId,
+    artefacts,
+  );
   return artefacts;
 }
 
@@ -164,36 +251,121 @@ export function buildArtefacts(
   analysis: StoredAnalysis | null,
 ): EditorArtefacts {
   const beats =
-    analysis?.beats && analysis.beats.length >= 4
+    analysis?.beats &&
+    analysis
+      .beats
+      .length >=
+      4
       ? analysis.beats.slice()
-      : syntheticBeats(input.duration, input.bpm > 0 ? input.bpm : 120);
+      : syntheticBeats(
+          input.duration,
+          input.bpm >
+            0
+            ? input.bpm
+            : 120,
+        );
 
-  const stored = analysis ? densestSlices(analysis) : [];
-  const source: 'analysis' | 'chart' = stored.length > 0 ? 'analysis' : 'chart';
-  const slices = stored.length > 0 ? stored : input.fallbackSlices;
+  const stored =
+    analysis
+      ? densestSlices(
+          analysis,
+        )
+      : [];
+  const source:
+    | 'analysis'
+    | 'chart' =
+    stored.length >
+    0
+      ? 'analysis'
+      : 'chart';
+  const slices =
+    stored.length >
+    0
+      ? stored
+      : input.fallbackSlices;
 
-  const artefacts = analysis?.artefacts ?? null;
-  const rawOnsets: StoredOnset[] = Array.isArray(artefacts?.onsets) ? artefacts.onsets : [];
+  const artefacts =
+    analysis?.artefacts ??
+    null;
+  const rawOnsets: StoredOnset[] =
+    Array.isArray(
+      artefacts?.onsets,
+    )
+      ? artefacts.onsets
+      : [];
 
   return {
-    songId: input.songId,
-    duration: input.duration,
+    songId:
+      input.songId,
+    duration:
+      input.duration,
     beats,
-    pool: poolFromSlices(slices, beats),
-    envelope: {
-      bytes: decodeEnvelope(artefacts?.envelope),
-      rate: artefacts?.envelope?.rate ?? ENVELOPE_RATE,
-    },
-    ghosts: rawOnsets
-      .filter((onset) => Number.isFinite(onset?.t))
-      .map((onset) => ({
-        time: onset.t,
-        strength: Number.isFinite(onset.s) ? onset.s : 0.5,
-        lane: suggestLane({ l: onset.l ?? 0, h: onset.h ?? 0 }),
-        kept: Boolean(onset.k),
-      }))
-      .sort((a, b) => a.time - b.time),
-    sections: Array.isArray(artefacts?.sections) ? artefacts.sections : [],
+    pool: poolFromSlices(
+      slices,
+      beats,
+    ),
+    envelope:
+      {
+        bytes:
+          decodeEnvelope(
+            artefacts?.envelope,
+          ),
+        rate:
+          artefacts
+            ?.envelope
+            ?.rate ??
+          ENVELOPE_RATE,
+      },
+    ghosts:
+      rawOnsets
+        .filter(
+          (
+            onset,
+          ) =>
+            Number.isFinite(
+              onset?.t,
+            ),
+        )
+        .map(
+          (
+            onset,
+          ) => ({
+            time: onset.t,
+            strength:
+              Number.isFinite(
+                onset.s,
+              )
+                ? onset.s
+                : 0.5,
+            lane: suggestLane(
+              {
+                l:
+                  onset.l ??
+                  0,
+                h:
+                  onset.h ??
+                  0,
+              },
+            ),
+            kept: Boolean(
+              onset.k,
+            ),
+          }),
+        )
+        .sort(
+          (
+            a,
+            b,
+          ) =>
+            a.time -
+            b.time,
+        ),
+    sections:
+      Array.isArray(
+        artefacts?.sections,
+      )
+        ? artefacts.sections
+        : [],
     source,
   };
 }
@@ -206,12 +378,38 @@ export function buildArtefacts(
  * the closest thing to the original onset pool that survives to the database.
  * Legacy blobs store one flat list and it is already the answer.
  */
-function densestSlices(analysis: StoredAnalysis): Slice[] {
-  if (Array.isArray(analysis.slices)) return analysis.slices;
-  const record = analysis.slices as Record<Difficulty, Slice[]>;
-  for (const difficulty of ['expert', 'hard', 'normal', 'easy'] as const) {
-    const list = record?.[difficulty];
-    if (Array.isArray(list) && list.length > 0) return list;
+function densestSlices(
+  analysis: StoredAnalysis,
+): Slice[] {
+  if (
+    Array.isArray(
+      analysis.slices,
+    )
+  )
+    return analysis.slices;
+  const record =
+    analysis.slices as Record<
+      Difficulty,
+      Slice[]
+    >;
+  for (const difficulty of [
+    'expert',
+    'hard',
+    'normal',
+    'easy',
+  ] as const) {
+    const list =
+      record?.[
+        difficulty
+      ];
+    if (
+      Array.isArray(
+        list,
+      ) &&
+      list.length >
+        0
+    )
+      return list;
   }
   return [];
 }
@@ -226,15 +424,19 @@ function densestSlices(analysis: StoredAnalysis): Slice[] {
  * ordering the onset strengths produced in the first place. Deterministic, and
  * derived only from persisted fields, so two clients agree.
  */
-const STRENGTH_BY_QUANT: Record<number, number> = {
-  1: 1,
-  2: 0.86,
-  3: 0.78,
-  4: 0.72,
-  6: 0.64,
-  8: 0.58,
-  16: 0.5,
-};
+const STRENGTH_BY_QUANT: Record<
+  number,
+  number
+> =
+  {
+    1: 1,
+    2: 0.86,
+    3: 0.78,
+    4: 0.72,
+    6: 0.64,
+    8: 0.58,
+    16: 0.5,
+  };
 
 /**
  * Rebuild the charter's input from a note list.
@@ -249,15 +451,41 @@ export function poolFromSlices(
   slices: readonly Slice[],
   beats: readonly number[],
 ): QuantizedNote[] {
-  const onsets: Onset[] = slices.map((slice) => ({
-    time: slice.time,
-    strength: STRENGTH_BY_QUANT[slice.quant ?? 16] ?? 0.5,
-    frame: 0,
-    // The pool has no spectrum any more, so lane bias is read back off the lane
-    // the generator chose — which is what the bias produced the first time.
-    lowRatio: slice.lane === 0 ? 1 : 0,
-    highRatio: slice.lane === 0 ? 0 : 1,
-    sustain: slice.type === 'LONG' ? (slice.duration ?? 0) : 0,
-  }));
-  return quantizeOnsets(onsets, beats.slice());
+  const onsets: Onset[] =
+    slices.map(
+      (
+        slice,
+      ) => ({
+        time: slice.time,
+        strength:
+          STRENGTH_BY_QUANT[
+            slice.quant ??
+              16
+          ] ??
+          0.5,
+        frame: 0,
+        // The pool has no spectrum any more, so lane bias is read back off the lane
+        // the generator chose — which is what the bias produced the first time.
+        lowRatio:
+          slice.lane ===
+          0
+            ? 1
+            : 0,
+        highRatio:
+          slice.lane ===
+          0
+            ? 0
+            : 1,
+        sustain:
+          slice.type ===
+          'LONG'
+            ? (slice.duration ??
+              0)
+            : 0,
+      }),
+    );
+  return quantizeOnsets(
+    onsets,
+    beats.slice(),
+  );
 }

@@ -4,9 +4,24 @@
  * menu, listbox or dialog — the same guard the page-turn arrow keys use in
  * BookCanvas.
  */
-const BLOCKED_ANCESTORS = 'input, textarea, select, [role="menu"], [role="listbox"], [role="dialog"]';
+const BLOCKED_ANCESTORS =
+  'input, textarea, select, [role="menu"], [role="listbox"], [role="dialog"]';
 
-export function isReaderKeyBlocked(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  return target.isContentEditable || target.closest(BLOCKED_ANCESTORS) !== null;
+export function isReaderKeyBlocked(
+  target: EventTarget | null,
+): boolean {
+  if (
+    !(
+      target instanceof
+      HTMLElement
+    )
+  )
+    return false;
+  return (
+    target.isContentEditable ||
+    target.closest(
+      BLOCKED_ANCESTORS,
+    ) !==
+      null
+  );
 }

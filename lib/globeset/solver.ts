@@ -31,7 +31,11 @@
  * submission check all call into it.
  */
 
-import { COLOR_COUNT, isGlobeSet, type Card } from './cards';
+import {
+  COLOR_COUNT,
+  isGlobeSet,
+  type Card,
+} from './cards';
 
 /** One row of the reduced basis: a vector and the cards that produced it. */
 export interface BasisRow {
@@ -58,27 +62,58 @@ export interface Elimination {
 }
 
 /** Population count of a 32-bit word. */
-export function popcount(mask: number): number {
+export function popcount(
+  mask: number,
+): number {
   let n = 0;
-  let m = mask >>> 0;
-  while (m !== 0) {
-    m &= m - 1;
+  let m =
+    mask >>>
+    0;
+  while (
+    m !==
+    0
+  ) {
+    m &=
+      m -
+      1;
     n++;
   }
   return n;
 }
 
 /** The set bits of `mask`, ascending — a selection mask back to card indices. */
-export function indicesOf(mask: number): number[] {
-  const out: number[] = [];
-  for (let i = 0; mask >>> i !== 0; i++) if ((mask >>> i) & 1) out.push(i);
+export function indicesOf(
+  mask: number,
+): number[] {
+  const out: number[] =
+    [];
+  for (
+    let i = 0;
+    mask >>>
+      i !==
+    0;
+    i++
+  )
+    if (
+      (mask >>>
+        i) &
+      1
+    )
+      out.push(
+        i,
+      );
   return out;
 }
 
 /** Card indices back to a selection mask. */
-export function maskOf(indices: readonly number[]): number {
+export function maskOf(
+  indices: readonly number[],
+): number {
   let mask = 0;
-  for (const i of indices) mask |= 1 << i;
+  for (const i of indices)
+    mask |=
+      1 <<
+      i;
   return mask;
 }
 
@@ -101,49 +136,133 @@ export function maskOf(indices: readonly number[]): number {
  * seven. Longer input is a programming error rather than player input, so it
  * throws rather than silently truncating.
  */
-export function eliminate(cards: readonly Card[]): Elimination {
-  if (cards.length > 31) {
-    throw new RangeError(`eliminate: ${cards.length} cards exceeds the 31-card provenance mask`);
+export function eliminate(
+  cards: readonly Card[],
+): Elimination {
+  if (
+    cards.length >
+    31
+  ) {
+    throw new RangeError(
+      `eliminate: ${cards.length} cards exceeds the 31-card provenance mask`,
+    );
   }
 
   // pivots[bit] holds the row whose highest set bit is `bit`, or undefined.
-  const pivots: (BasisRow | undefined)[] = new Array(COLOR_COUNT).fill(undefined);
-  const nullSpace: number[] = [];
+  const pivots: (
+    | BasisRow
+    | undefined
+  )[] =
+    new Array(
+      COLOR_COUNT,
+    ).fill(
+      undefined,
+    );
+  const nullSpace: number[] =
+    [];
 
-  for (let i = 0; i < cards.length; i++) {
-    let vector = cards[i];
-    let provenance = 1 << i;
+  for (
+    let i = 0;
+    i <
+    cards.length;
+    i++
+  ) {
+    let vector =
+      cards[
+        i
+      ];
+    let provenance =
+      1 <<
+      i;
     let placed = false;
 
     // Scan high bit to low. Every bit above the current one has already been
     // cleared, so the first set bit found is this vector's pivot.
-    for (let bit = COLOR_COUNT - 1; bit >= 0; bit--) {
-      if (((vector >> bit) & 1) === 0) continue;
-      const row = pivots[bit];
-      if (row === undefined) {
-        pivots[bit] = { pivot: bit, vector, provenance };
+    for (
+      let bit =
+        COLOR_COUNT -
+        1;
+      bit >=
+      0;
+      bit--
+    ) {
+      if (
+        ((vector >>
+          bit) &
+          1) ===
+        0
+      )
+        continue;
+      const row =
+        pivots[
+          bit
+        ];
+      if (
+        row ===
+        undefined
+      ) {
+        pivots[
+          bit
+        ] =
+          {
+            pivot:
+              bit,
+            vector,
+            provenance,
+          };
         placed = true;
         break;
       }
-      vector ^= row.vector;
-      provenance ^= row.provenance;
+      vector ^=
+        row.vector;
+      provenance ^=
+        row.provenance;
     }
 
     // Not placed ⇒ the loop ran out of set bits ⇒ the vector reduced to zero.
     // `provenance` still carries bit `i` (no earlier row can clear it), so the
     // dependency is non-empty.
-    if (!placed) nullSpace.push(provenance);
+    if (
+      !placed
+    )
+      nullSpace.push(
+        provenance,
+      );
   }
 
-  const basis = pivots.filter((row): row is BasisRow => row !== undefined);
-  basis.sort((a, b) => b.pivot - a.pivot);
+  const basis =
+    pivots.filter(
+      (
+        row,
+      ): row is BasisRow =>
+        row !==
+        undefined,
+    );
+  basis.sort(
+    (
+      a,
+      b,
+    ) =>
+      b.pivot -
+      a.pivot,
+  );
 
-  return { basis, nullSpace, rank: basis.length, size: cards.length };
+  return {
+    basis,
+    nullSpace,
+    rank: basis.length,
+    size: cards.length,
+  };
 }
 
 /** Dimension of the span of the board — at most six. */
-export function rankOf(cards: readonly Card[]): number {
-  return eliminate(cards).rank;
+export function rankOf(
+  cards: readonly Card[],
+): number {
+  return eliminate(
+    cards,
+  )
+    .rank;
 }
 
 /**
@@ -153,9 +272,22 @@ export function rankOf(cards: readonly Card[]): number {
  * same set, so the count is the size of the null space minus its zero vector.
  * Cheap enough to call on every render — it is one elimination and a shift.
  */
-export function countGlobeSets(cards: readonly Card[]): number {
-  const { size, rank } = eliminate(cards);
-  return (1 << (size - rank)) - 1;
+export function countGlobeSets(
+  cards: readonly Card[],
+): number {
+  const {
+    size,
+    rank,
+  } =
+    eliminate(
+      cards,
+    );
+  return (
+    (1 <<
+      (size -
+        rank)) -
+    1
+  );
 }
 
 /**
@@ -165,10 +297,25 @@ export function countGlobeSets(cards: readonly Card[]): number {
  * answer — no enumeration at all. Deterministic for a given board order, so
  * two clients asking the same question get the same answer.
  */
-export function findGlobeSet(cards: readonly Card[]): number[] | null {
-  const { nullSpace } = eliminate(cards);
-  if (nullSpace.length === 0) return null;
-  return indicesOf(nullSpace[0]);
+export function findGlobeSet(
+  cards: readonly Card[],
+):
+  | number[]
+  | null {
+  const {
+    nullSpace,
+  } =
+    eliminate(
+      cards,
+    );
+  if (
+    nullSpace.length ===
+    0
+  )
+    return null;
+  return indicesOf(
+    nullSpace[0],
+  );
 }
 
 /**
@@ -179,29 +326,109 @@ export function findGlobeSet(cards: readonly Card[]): number[] | null {
  * seven-card board and rank ≥ 4 that is at most 7 sets; the guard below caps
  * the work anyway, since a caller could hand this a whole deck.
  */
-export function allGlobeSets(cards: readonly Card[], limit = 4096): number[][] {
-  const { nullSpace } = eliminate(cards);
-  const dimension = Math.min(nullSpace.length, 20); // 2^20 is already absurd here
-  const found: number[][] = [];
+export function allGlobeSets(
+  cards: readonly Card[],
+  limit = 4096,
+): number[][] {
+  const {
+    nullSpace,
+  } =
+    eliminate(
+      cards,
+    );
+  const dimension =
+    Math.min(
+      nullSpace.length,
+      20,
+    ); // 2^20 is already absurd here
+  const found: number[][] =
+    [];
 
-  for (let combo = 1; combo < 1 << dimension; combo++) {
+  for (
+    let combo = 1;
+    combo <
+    1 <<
+      dimension;
+    combo++
+  ) {
     let mask = 0;
-    for (let b = 0; b < dimension; b++) if ((combo >> b) & 1) mask ^= nullSpace[b];
-    found.push(indicesOf(mask));
-    if (found.length >= limit) break;
+    for (
+      let b = 0;
+      b <
+      dimension;
+      b++
+    )
+      if (
+        (combo >>
+          b) &
+        1
+      )
+        mask ^=
+          nullSpace[
+            b
+          ];
+    found.push(
+      indicesOf(
+        mask,
+      ),
+    );
+    if (
+      found.length >=
+      limit
+    )
+      break;
   }
 
   // Smallest first, then lexicographically — a stable, reviewable order that
   // puts the most human-findable GlobeSet at the front.
-  found.sort((a, b) => a.length - b.length || compareIndices(a, b));
+  found.sort(
+    (
+      a,
+      b,
+    ) =>
+      a.length -
+        b.length ||
+      compareIndices(
+        a,
+        b,
+      ),
+  );
   return found;
 }
 
-function compareIndices(a: readonly number[], b: readonly number[]): number {
-  for (let i = 0; i < a.length && i < b.length; i++) {
-    if (a[i] !== b[i]) return a[i] - b[i];
+function compareIndices(
+  a: readonly number[],
+  b: readonly number[],
+): number {
+  for (
+    let i = 0;
+    i <
+      a.length &&
+    i <
+      b.length;
+    i++
+  ) {
+    if (
+      a[
+        i
+      ] !==
+      b[
+        i
+      ]
+    )
+      return (
+        a[
+          i
+        ] -
+        b[
+          i
+        ]
+      );
   }
-  return a.length - b.length;
+  return (
+    a.length -
+    b.length
+  );
 }
 
 /**
@@ -213,9 +440,19 @@ function compareIndices(a: readonly number[], b: readonly number[]): number {
  * rescuing, and the solver's walkthrough reads as a sequence of moves rather
  * than a data dump.
  */
-export function findSmallestGlobeSet(cards: readonly Card[]): number[] | null {
-  const all = allGlobeSets(cards);
-  return all.length > 0 ? all[0] : null;
+export function findSmallestGlobeSet(
+  cards: readonly Card[],
+):
+  | number[]
+  | null {
+  const all =
+    allGlobeSets(
+      cards,
+    );
+  return all.length >
+    0
+    ? all[0]
+    : null;
 }
 
 /**
@@ -226,18 +463,58 @@ export function findSmallestGlobeSet(cards: readonly Card[]): number[] | null {
  * lies in the span of the cards not yet picked, which is one elimination on the
  * remainder plus one reduction of the target vector.
  */
-export function selectionIsViable(board: readonly Card[], selected: readonly number[]): boolean {
-  const picked = new Set(selected);
+export function selectionIsViable(
+  board: readonly Card[],
+  selected: readonly number[],
+): boolean {
+  const picked =
+    new Set(
+      selected,
+    );
   let target = 0;
-  for (const i of selected) target ^= board[i];
-  if (target === 0) return picked.size > 0;
+  for (const i of selected)
+    target ^=
+      board[
+        i
+      ];
+  if (
+    target ===
+    0
+  )
+    return (
+      picked.size >
+      0
+    );
 
-  const rest = board.filter((_, i) => !picked.has(i));
-  const { basis } = eliminate(rest);
+  const rest =
+    board.filter(
+      (
+        _,
+        i,
+      ) =>
+        !picked.has(
+          i,
+        ),
+    );
+  const {
+    basis,
+  } =
+    eliminate(
+      rest,
+    );
   for (const row of basis) {
-    if ((target >> row.pivot) & 1) target ^= row.vector;
+    if (
+      (target >>
+        row.pivot) &
+      1
+    )
+      target ^=
+        row.vector;
   }
-  return target === 0;
+  return (
+    target ===
+    0
+  );
 }
 
 /** One step of the auto-solver: which cards it takes, and what they leave behind. */
@@ -264,19 +541,73 @@ export function solveOut(
   deck: readonly Card[],
   boardSize: number,
 ): SolveStep[] {
-  const steps: SolveStep[] = [];
-  let live = [...board];
+  const steps: SolveStep[] =
+    [];
+  let live =
+    [
+      ...board,
+    ];
   let next = 0;
-  const maxSteps = board.length + deck.length + 1;
+  const maxSteps =
+    board.length +
+    deck.length +
+    1;
 
-  while (live.length > 0 && steps.length < maxSteps) {
-    const indices = findSmallestGlobeSet(live);
-    if (indices === null) break; // unreachable for a legal position; not a crash
-    steps.push({ indices, cards: indices.map((i) => live[i]) });
+  while (
+    live.length >
+      0 &&
+    steps.length <
+      maxSteps
+  ) {
+    const indices =
+      findSmallestGlobeSet(
+        live,
+      );
+    if (
+      indices ===
+      null
+    )
+      break; // unreachable for a legal position; not a crash
+    steps.push(
+      {
+        indices,
+        cards:
+          indices.map(
+            (
+              i,
+            ) =>
+              live[
+                i
+              ],
+          ),
+      },
+    );
 
-    const taken = new Set(indices);
-    live = live.filter((_, i) => !taken.has(i));
-    while (live.length < boardSize && next < deck.length) live.push(deck[next++]);
+    const taken =
+      new Set(
+        indices,
+      );
+    live =
+      live.filter(
+        (
+          _,
+          i,
+        ) =>
+          !taken.has(
+            i,
+          ),
+      );
+    while (
+      live.length <
+        boardSize &&
+      next <
+        deck.length
+    )
+      live.push(
+        deck[
+          next++
+        ],
+      );
   }
 
   return steps;

@@ -1,4 +1,10 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 /**
  * The DOM node in the shell's margin column that pages may portal content into (Steel L6).
@@ -12,24 +18,70 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
  */
 interface MarginSlot {
   node: HTMLElement | null;
-  setNode: (node: HTMLElement | null) => void;
+  setNode: (
+    node: HTMLElement | null,
+  ) => void;
 }
 
-const MarginSlotContext = createContext<MarginSlot>({ node: null, setNode: () => {} });
+const MarginSlotContext =
+  createContext<MarginSlot>(
+    {
+      node: null,
+      setNode:
+        () => {},
+    },
+  );
 
 /** Wraps the content column and the margin so the first can portal into the second. Renders no element. */
-export function MarginSlotProvider({ children }: { children: ReactNode }) {
-  const [node, setNode] = useState<HTMLElement | null>(null);
-  const value = useMemo(() => ({ node, setNode }), [node]);
-  return <MarginSlotContext.Provider value={value}>{children}</MarginSlotContext.Provider>;
+export function MarginSlotProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [
+    node,
+    setNode,
+  ] =
+    useState<HTMLElement | null>(
+      null,
+    );
+  const value =
+    useMemo(
+      () => ({
+        node,
+        setNode,
+      }),
+      [
+        node,
+      ],
+    );
+  return (
+    <MarginSlotContext.Provider
+      value={
+        value
+      }
+    >
+      {
+        children
+      }
+    </MarginSlotContext.Provider>
+  );
 }
 
 /** The margin's page slot, for `ContextRail`. */
 export function useMarginSlot(): HTMLElement | null {
-  return useContext(MarginSlotContext).node;
+  return useContext(
+    MarginSlotContext,
+  )
+    .node;
 }
 
 /** A callback ref for the element that IS the slot. Used once, by `MarginColumn`. */
-export function useMarginSlotRef(): (node: HTMLElement | null) => void {
-  return useContext(MarginSlotContext).setNode;
+export function useMarginSlotRef(): (
+  node: HTMLElement | null,
+) => void {
+  return useContext(
+    MarginSlotContext,
+  )
+    .setNode;
 }

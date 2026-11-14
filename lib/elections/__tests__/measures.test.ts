@@ -1,130 +1,782 @@
-import { describe, expect, it } from 'vitest';
-import { filterMeasures, measureStats, normalizeMeasure, parseMeasureIndex, type MeasureRef } from '../measures';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
+import {
+  filterMeasures,
+  measureStats,
+  normalizeMeasure,
+  parseMeasureIndex,
+  type MeasureRef,
+} from '../measures';
 
-const page = (o: { yes?: number; no?: number; won?: string[]; threshold?: number | null; coverage?: string; seat?: string; office?: string } = {}) => ({
-  races: [
-    {
-      nyt_id: 'AZ-I-144-AZ-2026-11-03',
-      office: o.office ?? 'Proposition',
-      seat: o.seat ?? '144 - Require voter ID',
-      coverage: o.coverage ?? 'state',
-      title: { default: 'Prop. 144 – Voter ID' },
-      long_description: 'Amends the State Constitution to require voter ID.',
-      win_threshold: o.threshold === undefined ? null : o.threshold,
-      outcome: { won: o.won ?? [], called_by: o.won?.length ? ['ap'] : [] },
-      url: 'https://www.nytimes.com/x',
-      updated_at: '2026-11-03T20:00:00Z',
-      top_reporting_unit: {
-        eevp: 40,
-        precincts_total: 100,
-        precincts_reporting: 40,
-        candidates: [
-          { nyt_id: 'yes', votes: { total: o.yes ?? 0 } },
-          { nyt_id: 'no', votes: { total: o.no ?? 0 } },
-        ],
-      },
-    },
-  ],
-});
-const ref: MeasureRef = { slug: 'results-arizona-proposition-144-voter-id', state: 'AZ', office: 'Proposition', seat: '144 - Require voter ID', headline: 'AZ Prop 144' };
+const page =
+  (
+    o: {
+      yes?: number;
+      no?: number;
+      won?: string[];
+      threshold?:
+        | number
+        | null;
+      coverage?: string;
+      seat?: string;
+      office?: string;
+    } = {},
+  ) => ({
+    races:
+      [
+        {
+          nyt_id:
+            'AZ-I-144-AZ-2026-11-03',
+          office:
+            o.office ??
+            'Proposition',
+          seat:
+            o.seat ??
+            '144 - Require voter ID',
+          coverage:
+            o.coverage ??
+            'state',
+          title:
+            {
+              default:
+                'Prop. 144 – Voter ID',
+            },
+          long_description:
+            'Amends the State Constitution to require voter ID.',
+          win_threshold:
+            o.threshold ===
+            undefined
+              ? null
+              : o.threshold,
+          outcome:
+            {
+              won:
+                o.won ??
+                [],
+              called_by:
+                o
+                  .won
+                  ?.length
+                  ? [
+                      'ap',
+                    ]
+                  : [],
+            },
+          url: 'https://www.nytimes.com/x',
+          updated_at:
+            '2026-11-03T20:00:00Z',
+          top_reporting_unit:
+            {
+              eevp: 40,
+              precincts_total: 100,
+              precincts_reporting: 40,
+              candidates:
+                [
+                  {
+                    nyt_id:
+                      'yes',
+                    votes:
+                      {
+                        total:
+                          o.yes ??
+                          0,
+                      },
+                  },
+                  {
+                    nyt_id:
+                      'no',
+                    votes:
+                      {
+                        total:
+                          o.no ??
+                          0,
+                      },
+                  },
+                ],
+            },
+        },
+      ],
+  });
+const ref: MeasureRef =
+  {
+    slug: 'results-arizona-proposition-144-voter-id',
+    state:
+      'AZ',
+    office:
+      'Proposition',
+    seat: '144 - Require voter ID',
+    headline:
+      'AZ Prop 144',
+  };
 
 describe('parseMeasureIndex', () => {
   it('keeps measure pages (statewide and local), drops offices, de-duplicates', () => {
-    const url = (s: string) => `https://www.nytimes.com/interactive/2026/11/03/us/elections/${s}.html`;
-    const feed = {
-      data: [
-        { office: 'U.S. House', statePostal: 'AZ', publishUrl: url('results-arizona-first-congressional-district'), headline: 'h' },
-        { office: 'Proposition', statePostal: 'AZ', publishUrl: url('results-arizona-proposition-144-voter-id'), headline: 'p', seat: '144' },
-        { office: 'Local Measure', statePostal: 'CA', publishUrl: url('results-fresno-measure-s-transportation-sales-tax'), headline: 'f' },
-        { office: 'Local Measure', statePostal: 'CA', publishUrl: url('results-fresno-measure-s-transportation-sales-tax'), headline: 'dup' },
-        { office: 'Question', statePostal: null, publishUrl: url('results-x'), headline: 'no state' },
+    const url =
+      (
+        s: string,
+      ) =>
+        `https://www.nytimes.com/interactive/2026/11/03/us/elections/${s}.html`;
+    const feed =
+      {
+        data: [
+          {
+            office:
+              'U.S. House',
+            statePostal:
+              'AZ',
+            publishUrl:
+              url(
+                'results-arizona-first-congressional-district',
+              ),
+            headline:
+              'h',
+          },
+          {
+            office:
+              'Proposition',
+            statePostal:
+              'AZ',
+            publishUrl:
+              url(
+                'results-arizona-proposition-144-voter-id',
+              ),
+            headline:
+              'p',
+            seat: '144',
+          },
+          {
+            office:
+              'Local Measure',
+            statePostal:
+              'CA',
+            publishUrl:
+              url(
+                'results-fresno-measure-s-transportation-sales-tax',
+              ),
+            headline:
+              'f',
+          },
+          {
+            office:
+              'Local Measure',
+            statePostal:
+              'CA',
+            publishUrl:
+              url(
+                'results-fresno-measure-s-transportation-sales-tax',
+              ),
+            headline:
+              'dup',
+          },
+          {
+            office:
+              'Question',
+            statePostal:
+              null,
+            publishUrl:
+              url(
+                'results-x',
+              ),
+            headline:
+              'no state',
+          },
+        ],
+      };
+    expect(
+      parseMeasureIndex(
+        feed,
+      ).map(
+        (
+          r,
+        ) =>
+          r.slug,
+      ),
+    ).toEqual(
+      [
+        'results-arizona-proposition-144-voter-id',
+        'results-fresno-measure-s-transportation-sales-tax',
       ],
-    };
-    expect(parseMeasureIndex(feed).map((r) => r.slug)).toEqual([
-      'results-arizona-proposition-144-voter-id',
-      'results-fresno-measure-s-transportation-sales-tax',
-    ]);
-    expect(parseMeasureIndex(null)).toEqual([]);
+    );
+    expect(
+      parseMeasureIndex(
+        null,
+      ),
+    ).toEqual(
+      [],
+    );
   });
 });
 
 describe('normalizeMeasure', () => {
   it('reads a measure that has not started', () => {
-    const m = normalizeMeasure(page(), ref)!;
-    expect(m).toMatchObject({ status: 'upcoming', passing: null, margin: null, threshold: 50, scope: 'statewide', place: 'Arizona', pctReporting: null });
+    const m =
+      normalizeMeasure(
+        page(),
+        ref,
+      )!;
+    expect(
+      m,
+    ).toMatchObject(
+      {
+        status:
+          'upcoming',
+        passing:
+          null,
+        margin:
+          null,
+        threshold: 50,
+        scope:
+          'statewide',
+        place:
+          'Arizona',
+        pctReporting:
+          null,
+      },
+    );
   });
   it('computes shares, margin and whether it is passing, honouring a supermajority threshold', () => {
-    const simple = normalizeMeasure(page({ yes: 550, no: 450 }), ref)!;
-    expect(simple).toMatchObject({ status: 'counting', passing: true, margin: 10 });
-    expect(simple.yes.pct).toBe(55);
-    const needs60 = normalizeMeasure(page({ yes: 550, no: 450, threshold: 60 }), ref)!;
-    expect(needs60.passing).toBe(false);
-    expect(needs60.threshold).toBe(60);
+    const simple =
+      normalizeMeasure(
+        page(
+          {
+            yes: 550,
+            no: 450,
+          },
+        ),
+        ref,
+      )!;
+    expect(
+      simple,
+    ).toMatchObject(
+      {
+        status:
+          'counting',
+        passing: true,
+        margin: 10,
+      },
+    );
+    expect(
+      simple
+        .yes
+        .pct,
+    ).toBe(
+      55,
+    );
+    const needs60 =
+      normalizeMeasure(
+        page(
+          {
+            yes: 550,
+            no: 450,
+            threshold: 60,
+          },
+        ),
+        ref,
+      )!;
+    expect(
+      needs60.passing,
+    ).toBe(
+      false,
+    );
+    expect(
+      needs60.threshold,
+    ).toBe(
+      60,
+    );
   });
   it('reports the call and marks a county-level measure local with its place', () => {
-    const called = normalizeMeasure(page({ yes: 400, no: 600, won: ['no'] }), ref)!;
-    expect(called).toMatchObject({ status: 'called', outcome: 'no' });
-    const local = normalizeMeasure(page({ coverage: 'county', seat: 'Fresno-S - Sales tax', office: 'Local Measure' }), { ...ref, state: 'CA' })!;
-    expect(local).toMatchObject({ scope: 'local', place: 'Fresno', state: 'CA' });
+    const called =
+      normalizeMeasure(
+        page(
+          {
+            yes: 400,
+            no: 600,
+            won: [
+              'no',
+            ],
+          },
+        ),
+        ref,
+      )!;
+    expect(
+      called,
+    ).toMatchObject(
+      {
+        status:
+          'called',
+        outcome:
+          'no',
+      },
+    );
+    const local =
+      normalizeMeasure(
+        page(
+          {
+            coverage:
+              'county',
+            seat: 'Fresno-S - Sales tax',
+            office:
+              'Local Measure',
+          },
+        ),
+        {
+          ...ref,
+          state:
+            'CA',
+        },
+      )!;
+    expect(
+      local,
+    ).toMatchObject(
+      {
+        scope:
+          'local',
+        place:
+          'Fresno',
+        state:
+          'CA',
+      },
+    );
   });
   it('returns null for junk', () => {
-    expect(normalizeMeasure({}, ref)).toBeNull();
-    expect(normalizeMeasure(null, ref)).toBeNull();
+    expect(
+      normalizeMeasure(
+        {},
+        ref,
+      ),
+    ).toBeNull();
+    expect(
+      normalizeMeasure(
+        null,
+        ref,
+      ),
+    ).toBeNull();
   });
 });
 
 describe('stats and filters', () => {
-  const a = normalizeMeasure(page({ yes: 550, no: 450 }), ref)!;
-  const b = { ...normalizeMeasure(page({ yes: 400, no: 600, won: ['no'] }), ref)!, id: 'b', state: 'CA', stateName: 'California', title: 'Fresno tax', scope: 'local' as const };
+  const a =
+    normalizeMeasure(
+      page(
+        {
+          yes: 550,
+          no: 450,
+        },
+      ),
+      ref,
+    )!;
+  const b =
+    {
+      ...normalizeMeasure(
+        page(
+          {
+            yes: 400,
+            no: 600,
+            won: [
+              'no',
+            ],
+          },
+        ),
+        ref,
+      )!,
+      id: 'b',
+      state:
+        'CA',
+      stateName:
+        'California',
+      title:
+        'Fresno tax',
+      scope:
+        'local' as const,
+    };
   it('counts the night', () => {
-    const s = measureStats([a, b]);
-    expect(s).toMatchObject({ total: 2, statewide: 1, local: 1, states: 2, called: 1, passed: 0, failed: 1, passing: 1, failing: 0 });
+    const s =
+      measureStats(
+        [
+          a,
+          b,
+        ],
+      );
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        total: 2,
+        statewide: 1,
+        local: 1,
+        states: 2,
+        called: 1,
+        passed: 0,
+        failed: 1,
+        passing: 1,
+        failing: 0,
+      },
+    );
   });
   it('filters by scope, state and text', () => {
-    expect(filterMeasures([a, b], { scope: 'local', state: 'all', q: '' })).toEqual([b]);
-    expect(filterMeasures([a, b], { scope: 'all', state: 'AZ', q: '' })).toEqual([a]);
-    expect(filterMeasures([a, b], { scope: 'all', state: 'all', q: 'fresno' })).toEqual([b]);
+    expect(
+      filterMeasures(
+        [
+          a,
+          b,
+        ],
+        {
+          scope:
+            'local',
+          state:
+            'all',
+          q: '',
+        },
+      ),
+    ).toEqual(
+      [
+        b,
+      ],
+    );
+    expect(
+      filterMeasures(
+        [
+          a,
+          b,
+        ],
+        {
+          scope:
+            'all',
+          state:
+            'AZ',
+          q: '',
+        },
+      ),
+    ).toEqual(
+      [
+        a,
+      ],
+    );
+    expect(
+      filterMeasures(
+        [
+          a,
+          b,
+        ],
+        {
+          scope:
+            'all',
+          state:
+            'all',
+          q: 'fresno',
+        },
+      ),
+    ).toEqual(
+      [
+        b,
+      ],
+    );
   });
 });
 
 describe('other offices', () => {
-  const url = (s: string) => `https://www.nytimes.com/interactive/2026/11/03/us/elections/${s}.html`;
+  const url =
+    (
+      s: string,
+    ) =>
+      `https://www.nytimes.com/interactive/2026/11/03/us/elections/${s}.html`;
   it('indexes statewide and local offices but not the headline races or measures', async () => {
-    const { parseOtherOfficeIndex } = await import('../measures');
-    const feed = {
-      data: [
-        { office: 'Governor', statePostal: 'GA', publishUrl: url('results-georgia-governor'), headline: 'g' },
-        { office: 'Proposition', statePostal: 'AZ', publishUrl: url('results-arizona-proposition-144'), headline: 'p' },
-        { office: 'Attorney General', statePostal: 'GA', publishUrl: url('results-georgia-attorney-general'), headline: 'ag' },
-        { office: 'Mayor', statePostal: 'KY', publishUrl: url('results-louisville-mayor'), headline: 'm' },
+    const {
+      parseOtherOfficeIndex,
+    } =
+      await import('../measures');
+    const feed =
+      {
+        data: [
+          {
+            office:
+              'Governor',
+            statePostal:
+              'GA',
+            publishUrl:
+              url(
+                'results-georgia-governor',
+              ),
+            headline:
+              'g',
+          },
+          {
+            office:
+              'Proposition',
+            statePostal:
+              'AZ',
+            publishUrl:
+              url(
+                'results-arizona-proposition-144',
+              ),
+            headline:
+              'p',
+          },
+          {
+            office:
+              'Attorney General',
+            statePostal:
+              'GA',
+            publishUrl:
+              url(
+                'results-georgia-attorney-general',
+              ),
+            headline:
+              'ag',
+          },
+          {
+            office:
+              'Mayor',
+            statePostal:
+              'KY',
+            publishUrl:
+              url(
+                'results-louisville-mayor',
+              ),
+            headline:
+              'm',
+          },
+        ],
+      };
+    expect(
+      parseOtherOfficeIndex(
+        feed,
+      ).map(
+        (
+          r,
+        ) =>
+          r.slug,
+      ),
+    ).toEqual(
+      [
+        'results-georgia-attorney-general',
+        'results-louisville-mayor',
       ],
-    };
-    expect(parseOtherOfficeIndex(feed).map((r) => r.slug)).toEqual(['results-georgia-attorney-general', 'results-louisville-mayor']);
+    );
   });
   it('reads candidates, parties, the leader and a call', async () => {
-    const { normalizeOtherRace, otherStats, filterOther } = await import('../downballot');
-    const raw = (won: string[]) => ({
-      races: [
+    const {
+      normalizeOtherRace,
+      otherStats,
+      filterOther,
+    } =
+      await import('../downballot');
+    const raw =
+      (
+        won: string[],
+      ) => ({
+        races:
+          [
+            {
+              nyt_id:
+                'GA-AG-2026',
+              office:
+                'Attorney General',
+              coverage:
+                'state',
+              title:
+                {
+                  default:
+                    'Georgia Attorney General',
+                },
+              outcome:
+                {
+                  won,
+                  gained:
+                    won.length
+                      ? true
+                      : null,
+                  called_by:
+                    won.length
+                      ? [
+                          'ap',
+                        ]
+                      : [],
+                },
+              candidate_metadata:
+                {
+                  a: {
+                    nyt_id:
+                      'a',
+                    first_name:
+                      'Ann',
+                    last_name:
+                      'Lee',
+                    party:
+                      {
+                        nyt_id:
+                          'DEM',
+                        name: 'Democrat',
+                      },
+                    incumbent: false,
+                    ballot_order: 1,
+                  },
+                  b: {
+                    nyt_id:
+                      'b',
+                    first_name:
+                      'Bob',
+                    last_name:
+                      'Ray',
+                    party:
+                      {
+                        nyt_id:
+                          'GOP',
+                        name: 'Republican',
+                      },
+                    incumbent: true,
+                    ballot_order: 2,
+                  },
+                },
+              top_reporting_unit:
+                {
+                  total_votes: 100,
+                  eevp: 60,
+                  candidates:
+                    [
+                      {
+                        nyt_id:
+                          'a',
+                        votes:
+                          {
+                            total: 54,
+                          },
+                        leader: true,
+                      },
+                      {
+                        nyt_id:
+                          'b',
+                        votes:
+                          {
+                            total: 46,
+                          },
+                      },
+                    ],
+                },
+            },
+          ],
+      });
+    const ref =
+      {
+        slug: 'results-georgia-attorney-general',
+        state:
+          'GA',
+        office:
+          'Attorney General',
+        seat: null,
+        headline:
+          'Georgia Attorney General Election Results',
+      };
+    const counting =
+      normalizeOtherRace(
+        raw(
+          [],
+        ),
+        ref,
+      )!;
+    expect(
+      counting,
+    ).toMatchObject(
+      {
+        status:
+          'counting',
+        margin: 8,
+        scope:
+          'statewide',
+        pctReporting: 60,
+      },
+    );
+    expect(
+      counting
+        .candidates[0],
+    ).toMatchObject(
+      {
+        name: 'Ann Lee',
+        party:
+          'DEM',
+        pct: 54,
+        leader: true,
+      },
+    );
+    const called =
+      normalizeOtherRace(
+        raw(
+          [
+            'a',
+          ],
+        ),
+        ref,
+      )!;
+    expect(
+      called,
+    ).toMatchObject(
+      {
+        status:
+          'called',
+        winnerParty:
+          'DEM',
+        flipped: true,
+      },
+    );
+    expect(
+      otherStats(
+        [
+          counting,
+          called,
+        ],
+      ),
+    ).toMatchObject(
+      {
+        total: 2,
+        called: 1,
+        flips: 1,
+      },
+    );
+    expect(
+      filterOther(
+        [
+          counting,
+          called,
+        ],
         {
-          nyt_id: 'GA-AG-2026', office: 'Attorney General', coverage: 'state', title: { default: 'Georgia Attorney General' },
-          outcome: { won, gained: won.length ? true : null, called_by: won.length ? ['ap'] : [] },
-          candidate_metadata: {
-            a: { nyt_id: 'a', first_name: 'Ann', last_name: 'Lee', party: { nyt_id: 'DEM', name: 'Democrat' }, incumbent: false, ballot_order: 1 },
-            b: { nyt_id: 'b', first_name: 'Bob', last_name: 'Ray', party: { nyt_id: 'GOP', name: 'Republican' }, incumbent: true, ballot_order: 2 },
-          },
-          top_reporting_unit: { total_votes: 100, eevp: 60, candidates: [{ nyt_id: 'a', votes: { total: 54 }, leader: true }, { nyt_id: 'b', votes: { total: 46 } }] },
+          office:
+            'all',
+          scope:
+            'all',
+          state:
+            'all',
+          q: 'ray',
         },
-      ],
-    });
-    const ref = { slug: 'results-georgia-attorney-general', state: 'GA', office: 'Attorney General', seat: null, headline: 'Georgia Attorney General Election Results' };
-    const counting = normalizeOtherRace(raw([]), ref)!;
-    expect(counting).toMatchObject({ status: 'counting', margin: 8, scope: 'statewide', pctReporting: 60 });
-    expect(counting.candidates[0]).toMatchObject({ name: 'Ann Lee', party: 'DEM', pct: 54, leader: true });
-    const called = normalizeOtherRace(raw(['a']), ref)!;
-    expect(called).toMatchObject({ status: 'called', winnerParty: 'DEM', flipped: true });
-    expect(otherStats([counting, called])).toMatchObject({ total: 2, called: 1, flips: 1 });
-    expect(filterOther([counting, called], { office: 'all', scope: 'all', state: 'all', q: 'ray' })).toHaveLength(2);
-    expect(filterOther([counting], { office: 'Mayor', scope: 'all', state: 'all', q: '' })).toEqual([]);
-    expect(normalizeOtherRace({}, ref)).toBeNull();
+      ),
+    ).toHaveLength(
+      2,
+    );
+    expect(
+      filterOther(
+        [
+          counting,
+        ],
+        {
+          office:
+            'Mayor',
+          scope:
+            'all',
+          state:
+            'all',
+          q: '',
+        },
+      ),
+    ).toEqual(
+      [],
+    );
+    expect(
+      normalizeOtherRace(
+        {},
+        ref,
+      ),
+    ).toBeNull();
   });
 });

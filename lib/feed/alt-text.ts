@@ -11,12 +11,32 @@
 
 /** Indexes of images whose description is missing or blank. */
 export function missingAltIndexes(
-  imageUrls: readonly string[] | undefined,
-  imageAlts: readonly string[] | undefined,
+  imageUrls:
+    | readonly string[]
+    | undefined,
+  imageAlts:
+    | readonly string[]
+    | undefined,
 ): number[] {
-  const missing: number[] = [];
-  (imageUrls ?? []).forEach((_, i) => {
-    if (!imageAlts?.[i]?.trim()) missing.push(i);
-  });
+  const missing: number[] =
+    [];
+  (
+    imageUrls ??
+    []
+  ).forEach(
+    (
+      _,
+      i,
+    ) => {
+      if (
+        !imageAlts?.[
+          i
+        ]?.trim()
+      )
+        missing.push(
+          i,
+        );
+    },
+  );
   return missing;
 }

@@ -1,13 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
-import { LayoutGroup, m as motion } from 'framer-motion';
+import {
+  LayoutGroup,
+  m as motion,
+} from 'framer-motion';
 import { BuildCard } from './BuildCard';
-import type { Build, BuildSortOption } from '@/lib/user-builds-types';
+import type {
+  Build,
+  BuildSortOption,
+} from '@/lib/user-builds-types';
 import { transition } from '@/lib/motion';
 import { api } from '@/lib/contract/client';
-import { likeUserBuildApi, listUserBuildsApi } from '@/lib/user-builds.contract';
-import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import {
+  likeUserBuildApi,
+  listUserBuildsApi,
+} from '@/lib/user-builds.contract';
+import {
+  ARRIVE,
+  useArrival,
+  useArrivingKeys,
+} from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 interface BuildGridProps {
@@ -29,137 +47,357 @@ export function BuildGrid({
   userId,
   curated,
 }: BuildGridProps) {
-  const { t } = useTranslation('c-user-builds');
-  const [builds, setBuilds] = useState<Build[]>(initialBuilds);
-  const [loading, setLoading] = useState(initialBuilds.length === 0);
-  const [resorting, setResorting] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const hasFetchedRef = useRef(false);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const arrival = useArrival(!loading);
-  const isNew = useArrivingKeys(builds.map((b) => b.id));
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-user-builds',
+    );
+  const [
+    builds,
+    setBuilds,
+  ] =
+    useState<
+      Build[]
+    >(
+      initialBuilds,
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      initialBuilds.length ===
+        0,
+    );
+  const [
+    resorting,
+    setResorting,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    loadingMore,
+    setLoadingMore,
+  ] =
+    useState(
+      false,
+    );
+  const hasFetchedRef =
+    useRef(
+      false,
+    );
+  const [
+    cursor,
+    setCursor,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const [
+    hasMore,
+    setHasMore,
+  ] =
+    useState(
+      true,
+    );
+  const observerRef =
+    useRef<IntersectionObserver | null>(
+      null,
+    );
+  const loadMoreRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const arrival =
+    useArrival(
+      !loading,
+    );
+  const isNew =
+    useArrivingKeys(
+      builds.map(
+        (
+          b,
+        ) =>
+          b.id,
+      ),
+    );
 
-  const fetchBuilds = useCallback(
-    async (cursorParam?: string) => {
-      const isLoadMore = !!cursorParam;
-      if (isLoadMore) {
-        setLoadingMore(true);
-      } else if (hasFetchedRef.current) {
-        setResorting(true);
-      } else {
-        setLoading(true);
-      }
-
-      try {
-        const data = await api(listUserBuildsApi, {
-          query: {
-            limit: 20,
-            sort,
-            cursor: cursorParam || undefined,
-            category: category || undefined,
-            technology: technology || undefined,
-            search: search || undefined,
-            userId: userId || undefined,
-            curated: curated ? true : undefined,
-          },
-        });
-
-        if (isLoadMore) {
-          setBuilds((prev) => [...prev, ...data.items]);
+  const fetchBuilds =
+    useCallback(
+      async (
+        cursorParam?: string,
+      ) => {
+        const isLoadMore =
+          !!cursorParam;
+        if (
+          isLoadMore
+        ) {
+          setLoadingMore(
+            true,
+          );
+        } else if (
+          hasFetchedRef.current
+        ) {
+          setResorting(
+            true,
+          );
         } else {
-          setBuilds(data.items);
+          setLoading(
+            true,
+          );
         }
-        setCursor(data.nextCursor);
-        setHasMore(data.hasMore);
-      } catch (error) {
-        console.error('Error fetching builds:', error);
-      } finally {
-        hasFetchedRef.current = true;
-        setLoading(false);
-        setResorting(false);
-        setLoadingMore(false);
-      }
-    },
-    [category, technology, search, sort, userId, curated],
-  );
+
+        try {
+          const data =
+            await api(
+              listUserBuildsApi,
+              {
+                query:
+                  {
+                    limit: 20,
+                    sort,
+                    cursor:
+                      cursorParam ||
+                      undefined,
+                    category:
+                      category ||
+                      undefined,
+                    technology:
+                      technology ||
+                      undefined,
+                    search:
+                      search ||
+                      undefined,
+                    userId:
+                      userId ||
+                      undefined,
+                    curated:
+                      curated
+                        ? true
+                        : undefined,
+                  },
+              },
+            );
+
+          if (
+            isLoadMore
+          ) {
+            setBuilds(
+              (
+                prev,
+              ) => [
+                ...prev,
+                ...data.items,
+              ],
+            );
+          } else {
+            setBuilds(
+              data.items,
+            );
+          }
+          setCursor(
+            data.nextCursor,
+          );
+          setHasMore(
+            data.hasMore,
+          );
+        } catch (error) {
+          console.error(
+            'Error fetching builds:',
+            error,
+          );
+        } finally {
+          hasFetchedRef.current = true;
+          setLoading(
+            false,
+          );
+          setResorting(
+            false,
+          );
+          setLoadingMore(
+            false,
+          );
+        }
+      },
+      [
+        category,
+        technology,
+        search,
+        sort,
+        userId,
+        curated,
+      ],
+    );
 
   // Initial fetch and refetch on filter changes
   useEffect(() => {
     fetchBuilds();
-  }, [fetchBuilds]);
+  }, [
+    fetchBuilds,
+  ]);
 
   // Infinite scroll
   useEffect(() => {
-    if (!hasMore || loadingMore) return;
+    if (
+      !hasMore ||
+      loadingMore
+    )
+      return;
 
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && cursor) {
-          fetchBuilds(cursor);
-        }
-      },
-      { threshold: 0.1 },
-    );
+    observerRef.current =
+      new IntersectionObserver(
+        (
+          entries,
+        ) => {
+          if (
+            entries[0]
+              .isIntersecting &&
+            cursor
+          ) {
+            fetchBuilds(
+              cursor,
+            );
+          }
+        },
+        {
+          threshold: 0.1,
+        },
+      );
 
-    if (loadMoreRef.current) {
-      observerRef.current.observe(loadMoreRef.current);
-    }
-
-    return () => observerRef.current?.disconnect();
-  }, [cursor, hasMore, loadingMore, fetchBuilds]);
-
-  const handleLike = async (id: string) => {
-    // Optimistic update
-    setBuilds((prev) =>
-      prev.map((b) =>
-        b.id === id
-          ? {
-              ...b,
-              liked: !b.liked,
-              likeCount: b.liked ? b.likeCount - 1 : b.likeCount + 1,
-            }
-          : b,
-      ),
-    );
-
-    try {
-      await api(likeUserBuildApi, { params: { id } });
-    } catch {
-      // Revert on error
-      setBuilds((prev) =>
-        prev.map((b) =>
-          b.id === id
-            ? {
-                ...b,
-                liked: !b.liked,
-                likeCount: b.liked ? b.likeCount + 1 : b.likeCount - 1,
-              }
-            : b,
-        ),
+    if (
+      loadMoreRef.current
+    ) {
+      observerRef.current.observe(
+        loadMoreRef.current,
       );
     }
-  };
 
-  if (loading) {
+    return () =>
+      observerRef.current?.disconnect();
+  }, [
+    cursor,
+    hasMore,
+    loadingMore,
+    fetchBuilds,
+  ]);
+
+  const handleLike =
+    async (
+      id: string,
+    ) => {
+      // Optimistic update
+      setBuilds(
+        (
+          prev,
+        ) =>
+          prev.map(
+            (
+              b,
+            ) =>
+              b.id ===
+              id
+                ? {
+                    ...b,
+                    liked:
+                      !b.liked,
+                    likeCount:
+                      b.liked
+                        ? b.likeCount -
+                          1
+                        : b.likeCount +
+                          1,
+                  }
+                : b,
+          ),
+      );
+
+      try {
+        await api(
+          likeUserBuildApi,
+          {
+            params:
+              {
+                id,
+              },
+          },
+        );
+      } catch {
+        // Revert on error
+        setBuilds(
+          (
+            prev,
+          ) =>
+            prev.map(
+              (
+                b,
+              ) =>
+                b.id ===
+                id
+                  ? {
+                      ...b,
+                      liked:
+                        !b.liked,
+                      likeCount:
+                        b.liked
+                          ? b.likeCount +
+                            1
+                          : b.likeCount -
+                            1,
+                    }
+                  : b,
+            ),
+        );
+      }
+    };
+
+  if (
+    loading
+  ) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Spinner size={32} />
+        <Spinner
+          size={
+            32
+          }
+        />
       </div>
     );
   }
 
-  if (builds.length === 0) {
+  if (
+    builds.length ===
+    0
+  ) {
     return (
-      <div className={cn('text-center py-20', arrival)}>
+      <div
+        className={cn(
+          'text-center py-20',
+          arrival,
+        )}
+      >
         <p className="text-site-text-muted">
-          {t('no-builds-found', { defaultValue: 'No builds found' })}
+          {t(
+            'no-builds-found',
+            {
+              defaultValue:
+                'No builds found',
+            },
+          )}
         </p>
         {search && (
           <p className="text-sm text-site-text-muted mt-2">
-            {t('try-different-search', { defaultValue: 'Try a different search term' })}
+            {t(
+              'try-different-search',
+              {
+                defaultValue:
+                  'Try a different search term',
+              },
+            )}
           </p>
         )}
       </div>
@@ -167,28 +405,65 @@ export function BuildGrid({
   }
 
   return (
-    <div className={arrival}>
+    <div
+      className={
+        arrival
+      }
+    >
       <LayoutGroup>
         <div
           className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity duration-site ${resorting ? 'opacity-50 pointer-events-none' : ''}`}
         >
-          {builds.map((build) => (
-            <motion.div
-              key={build.id}
-              className={isNew(build.id) ? ARRIVE : undefined}
-              layout
-              transition={{ layout: transition }}
-            >
-              <BuildCard build={build} onLike={handleLike} />
-            </motion.div>
-          ))}
+          {builds.map(
+            (
+              build,
+            ) => (
+              <motion.div
+                key={
+                  build.id
+                }
+                className={
+                  isNew(
+                    build.id,
+                  )
+                    ? ARRIVE
+                    : undefined
+                }
+                layout
+                transition={{
+                  layout:
+                    transition,
+                }}
+              >
+                <BuildCard
+                  build={
+                    build
+                  }
+                  onLike={
+                    handleLike
+                  }
+                />
+              </motion.div>
+            ),
+          )}
         </div>
       </LayoutGroup>
 
       {/* Load more trigger */}
-      <div ref={loadMoreRef} className="py-8 flex justify-center">
-        {loadingMore && <Spinner />}
-        {!hasMore && builds.length > 0 && <div className="h-px" />}
+      <div
+        ref={
+          loadMoreRef
+        }
+        className="py-8 flex justify-center"
+      >
+        {loadingMore && (
+          <Spinner />
+        )}
+        {!hasMore &&
+          builds.length >
+            0 && (
+            <div className="h-px" />
+          )}
       </div>
     </div>
   );

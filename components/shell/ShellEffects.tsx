@@ -8,8 +8,22 @@ import { useInboxCount } from './use-inbox-count';
  *  - The unread total is mirrored onto the tab title, the favicon and the installed-app badge (TabBadge).
  */
 export function ShellEffects() {
-  const { data: session } = useSession();
-  const inbox = useInboxCount(Boolean(session));
+  const {
+    data: session,
+  } =
+    useSession();
+  const inbox =
+    useInboxCount(
+      Boolean(
+        session,
+      ),
+    );
 
-  return <TabBadge count={inbox} />;
+  return (
+    <TabBadge
+      count={
+        inbox
+      }
+    />
+  );
 }

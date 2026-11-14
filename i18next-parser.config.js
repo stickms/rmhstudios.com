@@ -25,20 +25,64 @@
  * locales, which silently serve the English `defaultValue` instead. Running it
  * is safe now; that backlog is the insertions you will see on the first run.
  */
-const T_FUNCTIONS = ["t", "ts", "tFeed", "tl", "tr", "tSlice"];
+const T_FUNCTIONS =
+  [
+    't',
+    'ts',
+    'tFeed',
+    'tl',
+    'tr',
+    'tSlice',
+  ];
 
 export default {
-  locales: [
-    "en", "zh", "ar", "hi", "es", "fr", "pt", "ru",
-    "de", "ja", "ko", "it", "id", "vi", "tr", "ur",
-    "bn", "pa", "ta", "te", "mr", "fa", "th", "pl",
-    "uk", "nl", "fil", "ms", "ro", "el", "cs", "sv",
-  ],
-  defaultNamespace: "common",
-  namespaceSeparator: ":",
+  locales:
+    [
+      'en',
+      'zh',
+      'ar',
+      'hi',
+      'es',
+      'fr',
+      'pt',
+      'ru',
+      'de',
+      'ja',
+      'ko',
+      'it',
+      'id',
+      'vi',
+      'tr',
+      'ur',
+      'bn',
+      'pa',
+      'ta',
+      'te',
+      'mr',
+      'fa',
+      'th',
+      'pl',
+      'uk',
+      'nl',
+      'fil',
+      'ms',
+      'ro',
+      'el',
+      'cs',
+      'sv',
+    ],
+  defaultNamespace:
+    'common',
+  namespaceSeparator:
+    ':',
   keySeparator: false,
-  input: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
-  output: "locales/$LOCALE/$NAMESPACE.json",
+  input:
+    [
+      'app/**/*.{ts,tsx}',
+      'components/**/*.{ts,tsx}',
+    ],
+  output:
+    'locales/$LOCALE/$NAMESPACE.json',
   sort: true,
   // Additive only. Some keys are assembled at runtime and no static parser can
   // ever see them — Bum's Rush stores `bums.world.w1.name` in its level
@@ -55,15 +99,45 @@ export default {
   keepRemoved: true,
   createOldCatalogs: false,
   // Do not overwrite existing translated values with the key/default.
-  resetDefaultValueLocale: "en",
+  resetDefaultValueLocale:
+    'en',
   // The aliases real call sites use. A component holding two namespaces
   // destructures at least one of them under another name, and the lexer matches
   // `t` only — so each of these was a set of keys the extractor deleted on
   // sight. Add the alias here in the same commit that introduces one.
-  lexers: {
-    ts: [{ lexer: "JavascriptLexer", functions: T_FUNCTIONS }],
-    js: [{ lexer: "JavascriptLexer", functions: T_FUNCTIONS }],
-    tsx: [{ lexer: "JsxLexer", functions: T_FUNCTIONS }],
-    jsx: [{ lexer: "JsxLexer", functions: T_FUNCTIONS }],
-  },
+  lexers:
+    {
+      ts: [
+        {
+          lexer:
+            'JavascriptLexer',
+          functions:
+            T_FUNCTIONS,
+        },
+      ],
+      js: [
+        {
+          lexer:
+            'JavascriptLexer',
+          functions:
+            T_FUNCTIONS,
+        },
+      ],
+      tsx: [
+        {
+          lexer:
+            'JsxLexer',
+          functions:
+            T_FUNCTIONS,
+        },
+      ],
+      jsx: [
+        {
+          lexer:
+            'JsxLexer',
+          functions:
+            T_FUNCTIONS,
+        },
+      ],
+    },
 };

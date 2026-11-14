@@ -1,4 +1,4 @@
-import type { DialogueData } from "../types";
+import type { DialogueData } from '../types';
 
 // A top-level scene (intro ritual, or the explorable world). Room-to-room
 // movement is handled *inside* the world scene; scenes only switch at major
@@ -9,11 +9,24 @@ export interface SceneSwitch {
 
 export interface Scene {
   name: string;
-  enter(payload?: Record<string, unknown>): void;
-  update(dt: number): SceneSwitch | null;
-  render(ctx: CanvasRenderingContext2D): void;
+  enter(
+    payload?: Record<
+      string,
+      unknown
+    >,
+  ): void;
+  update(
+    dt: number,
+  ): SceneSwitch | null;
+  render(
+    ctx: CanvasRenderingContext2D,
+  ): void;
   getActiveDialogue(): DialogueData | null;
-  getPromptText(): string | null;
-  handleDialogueChoice(action: string): void;
+  getPromptText():
+    | string
+    | null;
+  handleDialogueChoice(
+    action: string,
+  ): void;
   getAreaLabel(): string;
 }

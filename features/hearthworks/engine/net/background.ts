@@ -17,11 +17,16 @@ export const PUMP_INTERVAL_MS = 500;
 
 export interface BackgroundPumpOptions {
   /** The store's `advance` (it steps the host session by this much time). */
-  advance(dtMs: number): unknown;
+  advance(
+    dtMs: number,
+  ): unknown;
   /** Monotonic ms. */
   now(): number;
   /** Run `fn` every `ms`; returns the stop function. */
-  every(ms: number, fn: () => void): () => void;
+  every(
+    ms: number,
+    fn: () => void,
+  ): () => void;
 }
 
 export interface BackgroundPump {
@@ -30,32 +35,68 @@ export interface BackgroundPump {
   stop(): void;
 }
 
-export function createBackgroundPump(opts: BackgroundPumpOptions): BackgroundPump {
-  let stopTimer: (() => void) | null = null;
+export function createBackgroundPump(
+  opts: BackgroundPumpOptions,
+): BackgroundPump {
+  let stopTimer:
+    | (() => void)
+    | null =
+    null;
   let last = 0;
-  const wake = () => {
-    const now = opts.now();
-    let owed = Math.min(Math.max(0, now - last), PUMP_MAX_TICKS * TICK_MS);
-    last = now;
-    while (owed >= TICK_MS) {
-      opts.advance(TICK_MS);
-      owed -= TICK_MS;
-    }
-    // The remainder (< one tick) is not lost: `last` only moves by whole ticks' worth of work next time.
-    last -= owed;
-  };
+  const wake =
+    () => {
+      const now =
+        opts.now();
+      let owed =
+        Math.min(
+          Math.max(
+            0,
+            now -
+              last,
+          ),
+          PUMP_MAX_TICKS *
+            TICK_MS,
+        );
+      last =
+        now;
+      while (
+        owed >=
+        TICK_MS
+      ) {
+        opts.advance(
+          TICK_MS,
+        );
+        owed -=
+          TICK_MS;
+      }
+      // The remainder (< one tick) is not lost: `last` only moves by whole ticks' worth of work next time.
+      last -=
+        owed;
+    };
   return {
     get running() {
-      return stopTimer !== null;
+      return (
+        stopTimer !==
+        null
+      );
     },
     start() {
-      if (stopTimer) return;
-      last = opts.now();
-      stopTimer = opts.every(PUMP_INTERVAL_MS, wake);
+      if (
+        stopTimer
+      )
+        return;
+      last =
+        opts.now();
+      stopTimer =
+        opts.every(
+          PUMP_INTERVAL_MS,
+          wake,
+        );
     },
     stop() {
       stopTimer?.();
-      stopTimer = null;
+      stopTimer =
+        null;
     },
   };
 }

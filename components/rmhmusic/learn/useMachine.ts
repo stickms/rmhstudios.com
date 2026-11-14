@@ -7,11 +7,50 @@
  * it, since a render-synced ref is a frame behind.
  */
 
-import { useState, useSyncExternalStore } from 'react';
-import { createRunner, type Machine } from '@/lib/rmhmusic/learn/machines/runner';
+import {
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import {
+  createRunner,
+  type Machine,
+} from '@/lib/rmhmusic/learn/machines/runner';
 
-export function useMachine<S, E, F>(machine: Machine<S, E, F>): [S, (event: E) => F[], () => S] {
-  const [runner] = useState(() => createRunner(machine));
-  const state = useSyncExternalStore(runner.subscribe, runner.get, runner.get);
-  return [state, runner.send, runner.get];
+export function useMachine<
+  S,
+  E,
+  F,
+>(
+  machine: Machine<
+    S,
+    E,
+    F
+  >,
+): [
+  S,
+  (
+    event: E,
+  ) => F[],
+  () => S,
+] {
+  const [
+    runner,
+  ] =
+    useState(
+      () =>
+        createRunner(
+          machine,
+        ),
+    );
+  const state =
+    useSyncExternalStore(
+      runner.subscribe,
+      runner.get,
+      runner.get,
+    );
+  return [
+    state,
+    runner.send,
+    runner.get,
+  ];
 }

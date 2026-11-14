@@ -23,7 +23,12 @@
  *   on reconnect, so an intent expressed during a blip survives it.
  */
 
-import { io, type Socket, type ManagerOptions, type SocketOptions } from 'socket.io-client';
+import {
+  io,
+  type Socket,
+  type ManagerOptions,
+  type SocketOptions,
+} from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import type { RealtimeStatus } from './types';
 import {
@@ -35,13 +40,26 @@ import {
 } from './protocol';
 
 /** Credentials handed to the server on every (re)connection attempt. */
-export type AuthResolver = () => Promise<Record<string, unknown>> | Record<string, unknown>;
+export type AuthResolver =
+  () =>
+    | Promise<
+        Record<
+          string,
+          unknown
+        >
+      >
+    | Record<
+        string,
+        unknown
+      >;
 
 export interface RealtimeClientOptions {
   /** Used in log lines. */
   name: string;
   /** Server origin. A missing/blank value fails loudly rather than dialling the page origin. */
-  url: string | undefined;
+  url:
+    | string
+    | undefined;
   /** socket.io mount path, e.g. `/socket/`. */
   path: string;
   /**
@@ -50,15 +68,28 @@ export interface RealtimeClientOptions {
    */
   auth: AuthResolver;
   /** Status transitions. Called on every change, never with the same value twice. */
-  onStatus?: (status: RealtimeStatus, meta: { attempt: number; reason?: string }) => void;
+  onStatus?: (
+    status: RealtimeStatus,
+    meta: {
+      attempt: number;
+      reason?: string;
+    },
+  ) => void;
   /**
    * Runs after every successful connect, including reconnects. This is where
    * an app re-joins its room — the server has a new socket id and has
    * forgotten the old mapping.
    */
-  onConnect?: (socket: Socket, info: { isReconnect: boolean }) => void;
+  onConnect?: (
+    socket: Socket,
+    info: {
+      isReconnect: boolean;
+    },
+  ) => void;
   /** Wire the app's own event listeners. Runs once, before the first connect. */
-  bind?: (socket: Socket) => void;
+  bind?: (
+    socket: Socket,
+  ) => void;
   /** Max queued emits; beyond this the oldest are dropped. */
   outboxLimit?: number;
   /**
@@ -68,7 +99,9 @@ export interface RealtimeClientOptions {
    * **Do not reload from here.** Dropping someone mid-round to fix a mismatch
    * they were surviving is the worse outcome — see `protocolOutdated`.
    */
-  onProtocolOutdated?: (info: ProtocolOutdated) => void;
+  onProtocolOutdated?: (
+    info: ProtocolOutdated,
+  ) => void;
 }
 
 export interface RealtimeClient {
@@ -93,7 +126,13 @@ export interface RealtimeClient {
    * a settings change, a ready toggle) — never for anything positional or
    * time-sensitive, which should be re-derived from fresh state instead.
    */
-  emit(event: string, data?: unknown, options?: { queue?: boolean }): boolean;
+  emit(
+    event: string,
+    data?: unknown,
+    options?: {
+      queue?: boolean;
+    },
+  ): boolean;
   /**
    * Force an immediate reconnection attempt, ignoring the backoff. This is the
    * manual retry: unlike the automatic wake signals it also dials after an
@@ -110,18 +149,25 @@ export interface RealtimeClient {
  * The randomization factor keeps a mass reconnect after a server restart from
  * arriving as one synchronised wave.
  */
-const RECONNECT_OPTIONS: Partial<ManagerOptions & SocketOptions> = {
-  reconnection: true,
-  reconnectionAttempts: Infinity,
-  reconnectionDelay: 300,
-  reconnectionDelayMax: 5_000,
-  randomizationFactor: 0.5,
-  timeout: 8_000,
-};
+const RECONNECT_OPTIONS: Partial<
+  ManagerOptions &
+    SocketOptions
+> =
+  {
+    reconnection: true,
+    reconnectionAttempts:
+      Infinity,
+    reconnectionDelay: 300,
+    reconnectionDelayMax: 5_000,
+    randomizationFactor: 0.5,
+    timeout: 8_000,
+  };
 
 const DEFAULT_OUTBOX_LIMIT = 32;
 
-export function createRealtimeClient(options: RealtimeClientOptions): RealtimeClient {
+export function createRealtimeClient(
+  options: RealtimeClientOptions,
+): RealtimeClient {
   const {
     name,
     url,
@@ -134,51 +180,114 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
     onProtocolOutdated,
   } = options;
 
-  if (!url) {
+  if (
+    !url
+  ) {
     // A blank VITE_*_SOCKET_URL silently becomes the page origin, where the
     // handshake 404s and the client retries forever against nothing.
-    throw new Error(`[${name}] Realtime URL is not configured`);
+    throw new Error(
+      `[${name}] Realtime URL is not configured`,
+    );
   }
 
-  let status: RealtimeStatus = 'idle';
+  let status: RealtimeStatus =
+    'idle';
   let attempt = 0;
   /** Distinguishes a cold start from a recovery. */
   let hasConnected = false;
   let destroyed = false;
-  let protocolOutdated: ProtocolOutdated | null = null;
-  const outbox: { event: string; data?: unknown }[] = [];
+  let protocolOutdated: ProtocolOutdated | null =
+    null;
+  const outbox: {
+    event: string;
+    data?: unknown;
+  }[] =
+    [];
 
-  const setStatus = (next: RealtimeStatus, reason?: string) => {
-    if (status === next || destroyed) return;
-    status = next;
-    onStatus?.(next, { attempt, reason });
-  };
+  const setStatus =
+    (
+      next: RealtimeStatus,
+      reason?: string,
+    ) => {
+      if (
+        status ===
+          next ||
+        destroyed
+      )
+        return;
+      status =
+        next;
+      onStatus?.(
+        next,
+        {
+          attempt,
+          reason,
+        },
+      );
+    };
 
-  setStatus('connecting');
+  setStatus(
+    'connecting',
+  );
 
-  const socket = io(ensureTrailingSlash(url), {
-    ...RECONNECT_OPTIONS,
-    path,
-    auth: (cb) => {
-      // Resolved per attempt so a reconnect after a token refresh carries the
-      // new token rather than the one that just expired.
-      //
-      // The protocol version (E2) is stamped on AFTER the app's credentials, so
-      // an app cannot shadow it with an `auth` key of its own — that handshake
-      // field is the hub's only way to know this tab is current.
-      Promise.resolve()
-        .then(auth)
-        .then((credentials) => cb({ ...credentials, [PROTOCOL_AUTH_KEY]: PROTOCOL_VERSION }))
-        .catch((error) => {
-          console.error(`[${name}] Could not resolve credentials`, error);
-          // Handing back only the version lets the server reject cleanly, which
-          // surfaces as `connect_error` below rather than hanging the attempt.
-          cb({ [PROTOCOL_AUTH_KEY]: PROTOCOL_VERSION });
-        });
-    },
-  });
+  const socket =
+    io(
+      ensureTrailingSlash(
+        url,
+      ),
+      {
+        ...RECONNECT_OPTIONS,
+        path,
+        auth: (
+          cb,
+        ) => {
+          // Resolved per attempt so a reconnect after a token refresh carries the
+          // new token rather than the one that just expired.
+          //
+          // The protocol version (E2) is stamped on AFTER the app's credentials, so
+          // an app cannot shadow it with an `auth` key of its own — that handshake
+          // field is the hub's only way to know this tab is current.
+          Promise.resolve()
+            .then(
+              auth,
+            )
+            .then(
+              (
+                credentials,
+              ) =>
+                cb(
+                  {
+                    ...credentials,
+                    [PROTOCOL_AUTH_KEY]:
+                      PROTOCOL_VERSION,
+                  },
+                ),
+            )
+            .catch(
+              (
+                error,
+              ) => {
+                console.error(
+                  `[${name}] Could not resolve credentials`,
+                  error,
+                );
+                // Handing back only the version lets the server reject cleanly, which
+                // surfaces as `connect_error` below rather than hanging the attempt.
+                cb(
+                  {
+                    [PROTOCOL_AUTH_KEY]:
+                      PROTOCOL_VERSION,
+                  },
+                );
+              },
+            );
+        },
+      },
+    );
 
-  bind?.(socket);
+  bind?.(
+    socket,
+  );
 
   // ─── Protocol version (E2) ──────────────────────────────────────────────
 
@@ -193,78 +302,197 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
    * ends that instantly to fix a mismatch the player was, at worst, about to
    * notice. The app renders the prompt; the player picks the moment.
    */
-  const markOutdated = (info: Partial<ProtocolOutdated> | undefined) => {
-    if (protocolOutdated || destroyed) return;
-    protocolOutdated = { expected: info?.expected ?? '', received: info?.received ?? '' };
-    socket.io.reconnection(false);
-    setStatus('error', PROTOCOL_OUTDATED_REASON);
-    onProtocolOutdated?.(protocolOutdated);
-  };
+  const markOutdated =
+    (
+      info:
+        | Partial<ProtocolOutdated>
+        | undefined,
+    ) => {
+      if (
+        protocolOutdated ||
+        destroyed
+      )
+        return;
+      protocolOutdated =
+        {
+          expected:
+            info?.expected ??
+            '',
+          received:
+            info?.received ??
+            '',
+        };
+      socket.io.reconnection(
+        false,
+      );
+      setStatus(
+        'error',
+        PROTOCOL_OUTDATED_REASON,
+      );
+      onProtocolOutdated?.(
+        protocolOutdated,
+      );
+    };
 
-  socket.on(PROTOCOL_OUTDATED_EVENT, (info: Partial<ProtocolOutdated> | undefined) => {
-    markOutdated(info);
-  });
+  socket.on(
+    PROTOCOL_OUTDATED_EVENT,
+    (
+      info:
+        | Partial<ProtocolOutdated>
+        | undefined,
+    ) => {
+      markOutdated(
+        info,
+      );
+    },
+  );
 
   // ─── Lifecycle ──────────────────────────────────────────────────────────
 
-  socket.on('connect', () => {
-    const isReconnect = hasConnected;
-    hasConnected = true;
-    attempt = 0;
-    // An auth failure turned retries off; a later successful connect (a manual
-    // retry after signing in again) must turn them back on, or the next blip
-    // would strand the client with no retry at all.
-    socket.io.reconnection(true);
-    setStatus('connected');
+  socket.on(
+    'connect',
+    () => {
+      const isReconnect =
+        hasConnected;
+      hasConnected = true;
+      attempt = 0;
+      // An auth failure turned retries off; a later successful connect (a manual
+      // retry after signing in again) must turn them back on, or the next blip
+      // would strand the client with no retry at all.
+      socket.io.reconnection(
+        true,
+      );
+      setStatus(
+        'connected',
+      );
 
-    onConnect?.(socket, { isReconnect });
+      onConnect?.(
+        socket,
+        {
+          isReconnect,
+        },
+      );
 
-    // Flush after the rejoin above, so queued events land in a room the server
-    // has already put us back into.
-    if (outbox.length) {
-      const pending = outbox.splice(0, outbox.length);
-      for (const message of pending) socket.emit(message.event, message.data);
-    }
-  });
+      // Flush after the rejoin above, so queued events land in a room the server
+      // has already put us back into.
+      if (
+        outbox.length
+      ) {
+        const pending =
+          outbox.splice(
+            0,
+            outbox.length,
+          );
+        for (const message of pending)
+          socket.emit(
+            message.event,
+            message.data,
+          );
+      }
+    },
+  );
 
-  socket.on('disconnect', (reason) => {
-    if (destroyed) return;
-    // `io client disconnect` is our own `destroy()`/`disconnect()`; `io server
-    // disconnect` is the server telling us not to come back (kicked, banned,
-    // duplicate session). Neither is retried by socket.io, so neither is
-    // "reconnecting".
-    if (reason === 'io client disconnect' || reason === 'io server disconnect') {
-      setStatus('disconnected', reason);
-    } else {
-      setStatus('reconnecting', reason);
-    }
-  });
+  socket.on(
+    'disconnect',
+    (
+      reason,
+    ) => {
+      if (
+        destroyed
+      )
+        return;
+      // `io client disconnect` is our own `destroy()`/`disconnect()`; `io server
+      // disconnect` is the server telling us not to come back (kicked, banned,
+      // duplicate session). Neither is retried by socket.io, so neither is
+      // "reconnecting".
+      if (
+        reason ===
+          'io client disconnect' ||
+        reason ===
+          'io server disconnect'
+      ) {
+        setStatus(
+          'disconnected',
+          reason,
+        );
+      } else {
+        setStatus(
+          'reconnecting',
+          reason,
+        );
+      }
+    },
+  );
 
-  socket.io.on('reconnect_attempt', (n) => {
-    attempt = n;
-    if (status !== 'connected') setStatus('reconnecting', `attempt ${n}`);
-  });
+  socket.io.on(
+    'reconnect_attempt',
+    (
+      n,
+    ) => {
+      attempt =
+        n;
+      if (
+        status !==
+        'connected'
+      )
+        setStatus(
+          'reconnecting',
+          `attempt ${n}`,
+        );
+    },
+  );
 
-  socket.on('connect_error', (error) => {
-    const message = error?.message ?? '';
-    // A protocol mismatch is checked FIRST, and by exact reason rather than by
-    // the fuzzy regex below: "protocol-outdated" would otherwise have to miss
-    // /auth|token|unauthor/ by luck, and the two need very different prompts —
-    // "sign in again" is exactly the wrong thing to tell someone whose only
-    // problem is a stale tab.
-    if (message === PROTOCOL_OUTDATED_REASON) {
-      markOutdated((error as { data?: Partial<ProtocolOutdated> })?.data);
-      return;
-    }
-    // An auth failure will fail identically forever, so retrying is just noise
-    // — surface it and let the app re-authenticate.
-    if (/auth|token|unauthor/i.test(message)) {
-      socket.io.reconnection(false);
-      setStatus('error', message);
-      return;
-    }
-    setStatus(hasConnected ? 'reconnecting' : 'connecting', message);
-  });
+  socket.on(
+    'connect_error',
+    (
+      error,
+    ) => {
+      const message =
+        error?.message ??
+        '';
+      // A protocol mismatch is checked FIRST, and by exact reason rather than by
+      // the fuzzy regex below: "protocol-outdated" would otherwise have to miss
+      // /auth|token|unauthor/ by luck, and the two need very different prompts —
+      // "sign in again" is exactly the wrong thing to tell someone whose only
+      // problem is a stale tab.
+      if (
+        message ===
+        PROTOCOL_OUTDATED_REASON
+      ) {
+        markOutdated(
+          (
+            error as {
+              data?: Partial<ProtocolOutdated>;
+            }
+          )
+            ?.data,
+        );
+        return;
+      }
+      // An auth failure will fail identically forever, so retrying is just noise
+      // — surface it and let the app re-authenticate.
+      if (
+        /auth|token|unauthor/i.test(
+          message,
+        )
+      ) {
+        socket.io.reconnection(
+          false,
+        );
+        setStatus(
+          'error',
+          message,
+        );
+        return;
+      }
+      setStatus(
+        hasConnected
+          ? 'reconnecting'
+          : 'connecting',
+        message,
+      );
+    },
+  );
 
   // ─── Wake signals ───────────────────────────────────────────────────────
 
@@ -273,18 +501,34 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
    * reset, socket.io keeps its existing timer, so a user who returns 30s into
    * an outage still waits out the current 5s window before anything happens.
    */
-  const reconnectNow = () => {
-    // An outdated bundle fails identically forever — only a reload fixes it.
-    if (destroyed || socket.connected || protocolOutdated) return;
-    // A manual retry is the "user action" a terminal `error` asks for: give
-    // socket.io its retries back (an auth failure turned them off).
-    socket.io.reconnection(true);
-    // `_backOff` is manager-internal; guard so a socket.io upgrade that renames
-    // it degrades to the ordinary (still correct, just slower) retry.
-    const backoff = (socket.io as unknown as { backoff?: { reset(): void } }).backoff;
-    backoff?.reset();
-    socket.connect();
-  };
+  const reconnectNow =
+    () => {
+      // An outdated bundle fails identically forever — only a reload fixes it.
+      if (
+        destroyed ||
+        socket.connected ||
+        protocolOutdated
+      )
+        return;
+      // A manual retry is the "user action" a terminal `error` asks for: give
+      // socket.io its retries back (an auth failure turned them off).
+      socket.io.reconnection(
+        true,
+      );
+      // `_backOff` is manager-internal; guard so a socket.io upgrade that renames
+      // it degrades to the ordinary (still correct, just slower) retry.
+      const backoff =
+        (
+          socket.io as unknown as {
+            backoff?: {
+              reset(): void;
+            };
+          }
+        )
+          .backoff;
+      backoff?.reset();
+      socket.connect();
+    };
 
   /**
    * Wake signals skip the backoff, but never undo a terminal verdict: `error`
@@ -292,26 +536,61 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
    * `reconnectNow()` (the banner's Retry) dials after it. A server kick is
    * still woken: `disconnected` shows no banner, so it has no Retry to wait on.
    */
-  const wake = () => {
-    if (status === 'error') return;
-    reconnectNow();
-  };
-  const onVisible = () => {
-    if (document.visibilityState === 'visible') wake();
-  };
-  const onOnline = () => wake();
-  const onFocus = () => wake();
-  const onPageShow = (event: PageTransitionEvent) => {
-    // A bfcache restore resumes a page whose socket the browser froze and
-    // closed; there is no `visibilitychange` for it on some engines.
-    if (event.persisted) wake();
-  };
+  const wake =
+    () => {
+      if (
+        status ===
+        'error'
+      )
+        return;
+      reconnectNow();
+    };
+  const onVisible =
+    () => {
+      if (
+        document.visibilityState ===
+        'visible'
+      )
+        wake();
+    };
+  const onOnline =
+    () =>
+      wake();
+  const onFocus =
+    () =>
+      wake();
+  const onPageShow =
+    (
+      event: PageTransitionEvent,
+    ) => {
+      // A bfcache restore resumes a page whose socket the browser froze and
+      // closed; there is no `visibilitychange` for it on some engines.
+      if (
+        event.persisted
+      )
+        wake();
+    };
 
-  if (typeof document !== 'undefined') {
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('focus', onFocus);
-    window.addEventListener('pageshow', onPageShow);
+  if (
+    typeof document !==
+    'undefined'
+  ) {
+    document.addEventListener(
+      'visibilitychange',
+      onVisible,
+    );
+    window.addEventListener(
+      'online',
+      onOnline,
+    );
+    window.addEventListener(
+      'focus',
+      onFocus,
+    );
+    window.addEventListener(
+      'pageshow',
+      onPageShow,
+    );
   }
 
   // ─── Public surface ─────────────────────────────────────────────────────
@@ -324,27 +603,65 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
     get protocolOutdated() {
       return protocolOutdated;
     },
-    emit(event, data, emitOptions) {
-      if (socket.connected) {
-        socket.emit(event, data);
+    emit(
+      event,
+      data,
+      emitOptions,
+    ) {
+      if (
+        socket.connected
+      ) {
+        socket.emit(
+          event,
+          data,
+        );
         return true;
       }
-      if (emitOptions?.queue) {
-        if (outbox.length >= outboxLimit) outbox.shift();
-        outbox.push({ event, data });
+      if (
+        emitOptions?.queue
+      ) {
+        if (
+          outbox.length >=
+          outboxLimit
+        )
+          outbox.shift();
+        outbox.push(
+          {
+            event,
+            data,
+          },
+        );
       }
       return false;
     },
     reconnectNow,
     destroy() {
-      if (destroyed) return;
+      if (
+        destroyed
+      )
+        return;
       destroyed = true;
       outbox.length = 0;
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', onVisible);
-        window.removeEventListener('online', onOnline);
-        window.removeEventListener('focus', onFocus);
-        window.removeEventListener('pageshow', onPageShow);
+      if (
+        typeof document !==
+        'undefined'
+      ) {
+        document.removeEventListener(
+          'visibilitychange',
+          onVisible,
+        );
+        window.removeEventListener(
+          'online',
+          onOnline,
+        );
+        window.removeEventListener(
+          'focus',
+          onFocus,
+        );
+        window.removeEventListener(
+          'pageshow',
+          onPageShow,
+        );
       }
       socket.removeAllListeners();
       socket.io.removeAllListeners();

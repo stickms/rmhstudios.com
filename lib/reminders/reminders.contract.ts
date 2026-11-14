@@ -7,18 +7,45 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { createReminderSchema } from '@/lib/reminders/schema';
 import type { ReminderView } from '@/lib/reminders/shared';
 
-export const listRemindersApi = endpoint<{ res: { reminders: ReminderView[] } }>()({
-  method: 'GET',
-  path: '/api/reminders',
-});
+export const listRemindersApi =
+  endpoint<{
+    res: {
+      reminders: ReminderView[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/reminders',
+    },
+  );
 
 /** 201. Sets, or moves, the reminder for one target. */
-export const setReminderApi = endpoint<{
-  body: z.infer<typeof createReminderSchema>;
-  res: { reminder: ReminderView };
-}>()({ method: 'POST', path: '/api/reminders' });
+export const setReminderApi =
+  endpoint<{
+    body: z.infer<
+      typeof createReminderSchema
+    >;
+    res: {
+      reminder: ReminderView;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/reminders',
+    },
+  );
 
-export const cancelReminderApi = endpoint<{ res: { ok: true } }>()({
-  method: 'DELETE',
-  path: '/api/reminders/$id',
-});
+export const cancelReminderApi =
+  endpoint<{
+    res: {
+      ok: true;
+    };
+  }>()(
+    {
+      method:
+        'DELETE',
+      path: '/api/reminders/$id',
+    },
+  );

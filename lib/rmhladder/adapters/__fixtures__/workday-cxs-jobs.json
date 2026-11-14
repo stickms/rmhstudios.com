@@ -7,7 +7,9 @@
       "locationsText": "USA, NY, Remote",
       "postedOn": "Posted Yesterday",
       "remoteType": "Remote",
-      "bulletFields": ["JR-0107750"]
+      "bulletFields": [
+        "JR-0107750"
+      ]
     },
     {
       "title": "Sr. Associate Software Development Engineer(P2)",
@@ -15,7 +17,9 @@
       "locationsText": "IND.Chennai",
       "postedOn": "Posted Yesterday",
       "remoteType": "Flex",
-      "bulletFields": ["JR-0108409"]
+      "bulletFields": [
+        "JR-0108409"
+      ]
     }
   ]
 }

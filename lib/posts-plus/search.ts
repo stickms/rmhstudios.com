@@ -6,11 +6,43 @@
  * dependency-free for the same reason (no zod, no constants module).
  */
 
-const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_KEY =
+  /^\d{4}-\d{2}-\d{2}$/;
 
-export function validateQotdSearch(search: Record<string, unknown>): { day?: string } {
-  const day = search.day;
-  if (typeof day !== 'string' || !DAY_KEY.test(day)) return {};
-  const d = new Date(`${day}T00:00:00Z`);
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === day ? { day } : {};
+export function validateQotdSearch(
+  search: Record<
+    string,
+    unknown
+  >,
+): {
+  day?: string;
+} {
+  const day =
+    search.day;
+  if (
+    typeof day !==
+      'string' ||
+    !DAY_KEY.test(
+      day,
+    )
+  )
+    return {};
+  const d =
+    new Date(
+      `${day}T00:00:00Z`,
+    );
+  return !Number.isNaN(
+    d.getTime(),
+  ) &&
+    d
+      .toISOString()
+      .slice(
+        0,
+        10,
+      ) ===
+      day
+    ? {
+        day,
+      }
+    : {};
 }

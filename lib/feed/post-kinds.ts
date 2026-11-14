@@ -13,7 +13,10 @@
  * only those — is the whole difference between "a thread" and "an AMA".
  */
 
-export type PostKind = 'standard' | 'megathread' | 'ama';
+export type PostKind =
+  | 'standard'
+  | 'megathread'
+  | 'ama';
 
 /** How a kind's comment tree is ordered. */
 export type CommentSort =
@@ -48,39 +51,59 @@ export interface PostKindRules {
   readonly labelKey: string;
 }
 
-const RULES: Record<PostKind, PostKindRules> = {
-  standard: {
-    kind: 'standard',
-    commentSort: 'chronological',
-    maxDepth: 6,
-    // Only genuinely buried comments collapse; a normal thread should read
-    // whole.
-    collapseBelow: -5,
-    hostBadge: false,
-    questionMode: false,
-    labelKey: 'post-kind-standard',
-  },
-  megathread: {
-    kind: 'megathread',
-    commentSort: 'hot',
-    maxDepth: 2,
-    collapseBelow: -2,
-    hostBadge: true,
-    questionMode: false,
-    labelKey: 'post-kind-megathread',
-  },
-  ama: {
-    kind: 'ama',
-    commentSort: 'answered-first',
-    maxDepth: 2,
-    collapseBelow: -2,
-    hostBadge: true,
-    questionMode: true,
-    labelKey: 'post-kind-ama',
-  },
-};
+const RULES: Record<
+  PostKind,
+  PostKindRules
+> =
+  {
+    standard:
+      {
+        kind: 'standard',
+        commentSort:
+          'chronological',
+        maxDepth: 6,
+        // Only genuinely buried comments collapse; a normal thread should read
+        // whole.
+        collapseBelow:
+          -5,
+        hostBadge: false,
+        questionMode: false,
+        labelKey:
+          'post-kind-standard',
+      },
+    megathread:
+      {
+        kind: 'megathread',
+        commentSort:
+          'hot',
+        maxDepth: 2,
+        collapseBelow:
+          -2,
+        hostBadge: true,
+        questionMode: false,
+        labelKey:
+          'post-kind-megathread',
+      },
+    ama: {
+      kind: 'ama',
+      commentSort:
+        'answered-first',
+      maxDepth: 2,
+      collapseBelow:
+        -2,
+      hostBadge: true,
+      questionMode: true,
+      labelKey:
+        'post-kind-ama',
+    },
+  };
 
-export const POST_KINDS: readonly PostKind[] = ['standard', 'megathread', 'ama'];
+export const POST_KINDS: readonly PostKind[] =
+  [
+    'standard',
+    'megathread',
+    'ama',
+  ];
 
 /**
  * Rules for a kind. Falls back to `standard` for an unknown value rather than
@@ -88,12 +111,30 @@ export const POST_KINDS: readonly PostKind[] = ['standard', 'megathread', 'ama']
  * deploy (or a future kind read by an older client) must render as an ordinary
  * post instead of blanking the thread.
  */
-export function rulesFor(kind: string | null | undefined): PostKindRules {
-  return RULES[(kind ?? 'standard') as PostKind] ?? RULES.standard;
+export function rulesFor(
+  kind:
+    | string
+    | null
+    | undefined,
+): PostKindRules {
+  return (
+    RULES[
+      (kind ??
+        'standard') as PostKind
+    ] ??
+    RULES.standard
+  );
 }
 
-export function isPostKind(value: unknown): value is PostKind {
-  return typeof value === 'string' && value in RULES;
+export function isPostKind(
+  value: unknown,
+): value is PostKind {
+  return (
+    typeof value ===
+      'string' &&
+    value in
+      RULES
+  );
 }
 
 /** The subset of comment data the ordering needs. Kept minimal so it is testable. */
@@ -102,17 +143,36 @@ export interface SortableComment {
   readonly createdAt: Date;
   readonly score: number;
   /** Null for a top-level comment. */
-  readonly parentId: string | null;
+  readonly parentId:
+    | string
+    | null;
   /** True when the post's author has replied anywhere beneath this comment. */
   readonly answeredByHost: boolean;
 }
 
 /** Engagement with a recency decay, so a good new comment can still surface. */
-function hotScore(comment: SortableComment, now: number): number {
-  const ageHours = Math.max(0, (now - comment.createdAt.getTime()) / 3_600_000);
+function hotScore(
+  comment: SortableComment,
+  now: number,
+): number {
+  const ageHours =
+    Math.max(
+      0,
+      (now -
+        comment.createdAt.getTime()) /
+        3_600_000,
+    );
   // A gentle decay: halves roughly every two days. Steeper and a megathread
   // becomes a treadmill where nothing survives a night.
-  return comment.score / Math.pow(1 + ageHours / 48, 1.2);
+  return (
+    comment.score /
+    Math.pow(
+      1 +
+        ageHours /
+          48,
+      1.2,
+    )
+  );
 }
 
 /**
@@ -121,39 +181,141 @@ function hotScore(comment: SortableComment, now: number): number {
  * Pure and total — the same input always gives the same output, and ties break
  * on `id` so a re-render never reshuffles the page under someone mid-read.
  */
-export function sortComments<T extends SortableComment>(
+export function sortComments<
+  T extends
+    SortableComment,
+>(
   comments: readonly T[],
-  kind: string | null | undefined,
+  kind:
+    | string
+    | null
+    | undefined,
   now: number = 0,
 ): T[] {
-  const { commentSort } = rulesFor(kind);
-  const stamp = now || Date.now();
+  const {
+    commentSort,
+  } =
+    rulesFor(
+      kind,
+    );
+  const stamp =
+    now ||
+    Date.now();
 
-  const byId = (a: T, b: T) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const byId =
+    (
+      a: T,
+      b: T,
+    ) =>
+      a.id <
+      b.id
+        ? -1
+        : a.id >
+            b.id
+          ? 1
+          : 0;
 
-  switch (commentSort) {
+  switch (
+    commentSort
+  ) {
     case 'chronological':
-      return [...comments].sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime() || byId(a, b),
+      return [
+        ...comments,
+      ].sort(
+        (
+          a,
+          b,
+        ) =>
+          a.createdAt.getTime() -
+            b.createdAt.getTime() ||
+          byId(
+            a,
+            b,
+          ),
       );
     case 'hot':
-      return [...comments].sort((a, b) => hotScore(b, stamp) - hotScore(a, stamp) || byId(a, b));
+      return [
+        ...comments,
+      ].sort(
+        (
+          a,
+          b,
+        ) =>
+          hotScore(
+            b,
+            stamp,
+          ) -
+            hotScore(
+              a,
+              stamp,
+            ) ||
+          byId(
+            a,
+            b,
+          ),
+      );
     case 'answered-first':
-      return [...comments].sort((a, b) => {
-        // The one rule that matters: an answered question outranks every
-        // unanswered one regardless of score, because the answer is the thing
-        // the reader came for.
-        if (a.answeredByHost !== b.answeredByHost) return a.answeredByHost ? -1 : 1;
-        return hotScore(b, stamp) - hotScore(a, stamp) || byId(a, b);
-      });
+      return [
+        ...comments,
+      ].sort(
+        (
+          a,
+          b,
+        ) => {
+          // The one rule that matters: an answered question outranks every
+          // unanswered one regardless of score, because the answer is the thing
+          // the reader came for.
+          if (
+            a.answeredByHost !==
+            b.answeredByHost
+          )
+            return a.answeredByHost
+              ? -1
+              : 1;
+          return (
+            hotScore(
+              b,
+              stamp,
+            ) -
+              hotScore(
+                a,
+                stamp,
+              ) ||
+            byId(
+              a,
+              b,
+            )
+          );
+        },
+      );
   }
 }
 
 /** Counts for the AMA header — "12 of 340 answered". */
-export function answeredSummary(comments: readonly SortableComment[]): {
+export function answeredSummary(
+  comments: readonly SortableComment[],
+): {
   total: number;
   answered: number;
 } {
-  const top = comments.filter((c) => c.parentId === null);
-  return { total: top.length, answered: top.filter((c) => c.answeredByHost).length };
+  const top =
+    comments.filter(
+      (
+        c,
+      ) =>
+        c.parentId ===
+        null,
+    );
+  return {
+    total:
+      top.length,
+    answered:
+      top.filter(
+        (
+          c,
+        ) =>
+          c.answeredByHost,
+      )
+        .length,
+  };
 }

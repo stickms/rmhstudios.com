@@ -10,23 +10,50 @@
 import type { LearnInput } from '../schemas';
 import type { InputHub } from './hub';
 
-const SWITCHED: readonly LearnInput[] = ['keys', 'mic', 'midi'];
+const SWITCHED: readonly LearnInput[] =
+  [
+    'keys',
+    'mic',
+    'midi',
+  ];
 
 /** Resolves true when `next` is running and the others are stopped; false (nothing stopped) otherwise. */
 export async function switchInput(
   hub: InputHub,
-  previous: LearnInput | undefined,
+  previous:
+    | LearnInput
+    | undefined,
   next: LearnInput,
 ): Promise<boolean> {
   try {
-    await hub.start(next);
+    await hub.start(
+      next,
+    );
   } catch {
     return false;
   }
   // A start can settle without running: a stop (the screen went away) cancelled it.
-  if (hub.phase(next) !== 'active') return false;
+  if (
+    hub.phase(
+      next,
+    ) !==
+    'active'
+  )
+    return false;
   for (const source of SWITCHED) {
-    if (source !== next && (source === previous || hub.phase(source) !== 'idle')) hub.stop(source);
+    if (
+      source !==
+        next &&
+      (source ===
+        previous ||
+        hub.phase(
+          source,
+        ) !==
+          'idle')
+    )
+      hub.stop(
+        source,
+      );
   }
   return true;
 }

@@ -17,14 +17,28 @@ const CSP =
   "media-src data: blob:; font-src data:; form-action 'none'; base-uri 'none'";
 
 /** Keep user text from closing our own `<style>`/`<script>` wrappers early. */
-const closeSafe = (s: string, tag: 'style' | 'script') =>
-  s.replace(new RegExp(`</${tag}`, 'gi'), `<\\/${tag}`);
+const closeSafe =
+  (
+    s: string,
+    tag:
+      | 'style'
+      | 'script',
+  ) =>
+    s.replace(
+      new RegExp(
+        `</${tag}`,
+        'gi',
+      ),
+      `<\\/${tag}`,
+    );
 
 /**
  * The document handed to `<iframe srcdoc sandbox="allow-scripts">`. The CSP meta
  * is the first element, so nothing the author writes can run before it applies.
  */
-export function buildSrcdoc(e: CodeEmbed): string {
+export function buildSrcdoc(
+  e: CodeEmbed,
+): string {
   return (
     `<!doctype html><html><head><meta charset="utf-8">` +
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">` +

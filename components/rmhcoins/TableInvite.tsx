@@ -14,24 +14,66 @@ import { useTranslation } from 'react-i18next';
 import { CopyButton } from '@/components/ui/copy-button';
 import { lobbyLink } from '@/lib/lobby-link';
 
-export type CasinoGame = 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
+export type CasinoGame =
+  | 'blackjack'
+  | 'holdem'
+  | 'baccarat'
+  | 'roulette';
 
 /** Where a link has to land for `game`'s table to be the thing on screen. */
-export function casinoTablePath(game: CasinoGame): string {
+export function casinoTablePath(
+  game: CasinoGame,
+): string {
   return `/predictions?tab=games&game=${game}`;
 }
 
-export function TableInvite({ game, joinCode }: { game: CasinoGame; joinCode: string }) {
-  const { t } = useTranslation('c-rmhcoins');
+export function TableInvite({
+  game,
+  joinCode,
+}: {
+  game: CasinoGame;
+  joinCode: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhcoins',
+    );
 
   return (
     <span className="flex items-center gap-1 text-micro text-site-text-muted sm:text-xs">
-      <span className="hidden sm:inline">{t('code-label', { defaultValue: 'Code:' })}</span>
-      <span className="font-mono font-bold text-site-accent">{joinCode}</span>
+      <span className="hidden sm:inline">
+        {t(
+          'code-label',
+          {
+            defaultValue:
+              'Code:',
+          },
+        )}
+      </span>
+      <span className="font-mono font-bold text-site-accent">
+        {
+          joinCode
+        }
+      </span>
       <CopyButton
-        value={lobbyLink(joinCode, casinoTablePath(game))}
-        icon={Link2}
-        label={t('copy-invite-link', { defaultValue: 'Copy invite link' })}
+        value={lobbyLink(
+          joinCode,
+          casinoTablePath(
+            game,
+          ),
+        )}
+        icon={
+          Link2
+        }
+        label={t(
+          'copy-invite-link',
+          {
+            defaultValue:
+              'Copy invite link',
+          },
+        )}
       />
     </span>
   );

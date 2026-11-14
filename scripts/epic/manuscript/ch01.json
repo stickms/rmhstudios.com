@@ -6,8 +6,14 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": ["桃花血色結三義", "玄圭寒光照九爐"],
-    "en": ["Peach blossoms, blood-red, bind three sworn souls", "The dark jade gleams cold across the Nine Furnaces"]
+    "zh": [
+      "桃花血色結三義",
+      "玄圭寒光照九爐"
+    ],
+    "en": [
+      "Peach blossoms, blood-red, bind three sworn souls",
+      "The dark jade gleams cold across the Nine Furnaces"
+    ]
   },
   "passages": [
     {

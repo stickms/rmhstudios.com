@@ -14,7 +14,9 @@ import type { sendMessageSchema } from '@/lib/messages/messages-schema';
 
 export interface ConversationListPage {
   conversations: ConversationListItem[];
-  nextCursor: string | null;
+  nextCursor:
+    | string
+    | null;
   hasMore: boolean;
 }
 
@@ -26,49 +28,121 @@ export interface SentDirectMessage {
   senderId: string;
   read: boolean;
   createdAt: string;
-  gifUrl: string | null;
+  gifUrl:
+    | string
+    | null;
   imageUrls: string[];
-  reactions: { emoji: string; userId: string }[];
-  expiresAt: string | null;
+  reactions: {
+    emoji: string;
+    userId: string;
+  }[];
+  expiresAt:
+    | string
+    | null;
 }
 
 /** One hit of GET /api/messages/search: a list item without `previewKind`, plus the content snippet. */
 export interface ConversationSearchHit {
   id: string;
   otherUser: ConversationListItem['otherUser'];
-  lastMessage: Omit<NonNullable<ConversationListItem['lastMessage']>, 'previewKind'> | null;
-  matchSnippet: string | null;
+  lastMessage: Omit<
+    NonNullable<
+      ConversationListItem['lastMessage']
+    >,
+    'previewKind'
+  > | null;
+  matchSnippet:
+    | string
+    | null;
   unreadCount: number;
   lastMessageAt: string;
 }
 
-export const searchConversationsApi = endpoint<{
-  query: { q: string };
-  res: { conversations: ConversationSearchHit[] };
-}>()({ method: 'GET', path: '/api/messages/search' });
+export const searchConversationsApi =
+  endpoint<{
+    query: {
+      q: string;
+    };
+    res: {
+      conversations: ConversationSearchHit[];
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/messages/search',
+    },
+  );
 
-export const markAllMessagesReadApi = endpoint<{ res: { success: true } }>()({
-  method: 'POST',
-  path: '/api/messages/read-all',
-});
+export const markAllMessagesReadApi =
+  endpoint<{
+    res: {
+      success: true;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/messages/read-all',
+    },
+  );
 
 /** Saved Messages (a note-to-self conversation). `saved` is null until first opened. */
-export const getSavedMessagesApi = endpoint<{ res: { saved: SavedSummary | null } }>()({
-  method: 'GET',
-  path: '/api/messages/saved',
-});
+export const getSavedMessagesApi =
+  endpoint<{
+    res: {
+      saved: SavedSummary | null;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/messages/saved',
+    },
+  );
 
-export const openSavedMessagesApi = endpoint<{ res: { conversationId: string } }>()({
-  method: 'POST',
-  path: '/api/messages/saved',
-});
+export const openSavedMessagesApi =
+  endpoint<{
+    res: {
+      conversationId: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/messages/saved',
+    },
+  );
 
-export const listConversationsApi = endpoint<{
-  query: { cursor?: string; folder?: string; filter?: 'unread' };
-  res: ConversationListPage;
-}>()({ method: 'GET', path: '/api/messages' });
+export const listConversationsApi =
+  endpoint<{
+    query: {
+      cursor?: string;
+      folder?: string;
+      filter?: 'unread';
+    };
+    res: ConversationListPage;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/messages',
+    },
+  );
 
-export const sendMessageApi = endpoint<{
-  body: z.infer<typeof sendMessageSchema>;
-  res: { conversationId: string; message?: SentDirectMessage };
-}>()({ method: 'POST', path: '/api/messages' });
+export const sendMessageApi =
+  endpoint<{
+    body: z.infer<
+      typeof sendMessageSchema
+    >;
+    res: {
+      conversationId: string;
+      message?: SentDirectMessage;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/messages',
+    },
+  );

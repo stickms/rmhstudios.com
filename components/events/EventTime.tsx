@@ -1,5 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarPlus, Download, ExternalLink } from 'lucide-react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  CalendarPlus,
+  Download,
+  ExternalLink,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
@@ -36,17 +45,25 @@ export interface EventTimeProps {
   /** Start instant, ISO 8601. */
   startsAt: string;
   /** End instant, if the organiser gave one. */
-  endsAt?: string | null;
+  endsAt?:
+    | string
+    | null;
   /**
    * The organiser's IANA zone, when known. `CommunityEvent` does not store one
    * today (see the report accompanying B24), so this is optional — the
    * parenthetical simply does not render without it.
    */
-  organizerTimeZone?: string | null;
+  organizerTimeZone?:
+    | string
+    | null;
   /** Event id — enables the add-to-calendar menu. */
   eventId?: string;
   /** Title/description/location for the calendar links. */
-  calendar?: Omit<CalendarEventInput, 'startsAt' | 'endsAt'>;
+  calendar?: Omit<
+    CalendarEventInput,
+    | 'startsAt'
+    | 'endsAt'
+  >;
   className?: string;
 }
 
@@ -58,100 +75,276 @@ export function EventTime({
   calendar,
   className,
 }: EventTimeProps) {
-  const { t } = useTranslation('common');
-  const [mounted, setMounted] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'common',
+    );
+  const [
+    mounted,
+    setMounted,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    menuOpen,
+    setMenuOpen,
+  ] =
+    useState(
+      false,
+    );
+  const triggerRef =
+    useRef<HTMLButtonElement>(
+      null,
+    );
 
-  useEffect(() => setMounted(true), []);
+  useEffect(
+    () =>
+      setMounted(
+        true,
+      ),
+    [],
+  );
 
-  const start = useMemo(() => new Date(startsAt), [startsAt]);
-  const viewerZone = mounted ? viewerTimeZone() : null;
+  const start =
+    useMemo(
+      () =>
+        new Date(
+          startsAt,
+        ),
+      [
+        startsAt,
+      ],
+    );
+  const viewerZone =
+    mounted
+      ? viewerTimeZone()
+      : null;
 
-  const local = viewerZone ? formatInZone(start, viewerZone) : null;
-  const localZone = viewerZone ? shortZoneLabel(start, viewerZone) : '';
-  const showOrganizer = zonesDiffer(start, viewerZone, organizerTimeZone ?? null);
+  const local =
+    viewerZone
+      ? formatInZone(
+          start,
+          viewerZone,
+        )
+      : null;
+  const localZone =
+    viewerZone
+      ? shortZoneLabel(
+          start,
+          viewerZone,
+        )
+      : '';
+  const showOrganizer =
+    zonesDiffer(
+      start,
+      viewerZone,
+      organizerTimeZone ??
+        null,
+    );
   const organizerText =
-    showOrganizer && organizerTimeZone
+    showOrganizer &&
+    organizerTimeZone
       ? `${formatInZone(start, organizerTimeZone)} ${shortZoneLabel(start, organizerTimeZone)}`.trim()
       : null;
 
-  const calendarEvent: CalendarEventInput | null = calendar
-    ? { ...calendar, startsAt, endsAt: endsAt ?? null }
-    : null;
+  const calendarEvent: CalendarEventInput | null =
+    calendar
+      ? {
+          ...calendar,
+          startsAt,
+          endsAt:
+            endsAt ??
+            null,
+        }
+      : null;
 
   return (
-    <span className={cn('inline-flex flex-wrap items-center gap-x-2 gap-y-1', className)}>
-      <time dateTime={startsAt} className="text-sm text-site-text-muted" suppressHydrationWarning>
+    <span
+      className={cn(
+        'inline-flex flex-wrap items-center gap-x-2 gap-y-1',
+        className,
+      )}
+    >
+      <time
+        dateTime={
+          startsAt
+        }
+        className="text-sm text-site-text-muted"
+        suppressHydrationWarning
+      >
         {/* Before mount the only honest thing to print is the raw date; the
             zone-correct string lands one frame later. */}
-        {local ?? new Date(startsAt).toISOString().slice(0, 10)}
-        {localZone ? <span className="ms-1 text-xs text-site-text-muted">{localZone}</span> : null}
+        {local ??
+          new Date(
+            startsAt,
+          )
+            .toISOString()
+            .slice(
+              0,
+              10,
+            )}
+        {localZone ? (
+          <span className="ms-1 text-xs text-site-text-muted">
+            {
+              localZone
+            }
+          </span>
+        ) : null}
       </time>
 
       {organizerText && (
-        <span className="text-xs text-site-text-muted" suppressHydrationWarning>
-          {t('event-organizer-time', {
-            time: organizerText,
-            defaultValue: '({{time}} for the organiser)',
-          })}
+        <span
+          className="text-xs text-site-text-muted"
+          suppressHydrationWarning
+        >
+          {t(
+            'event-organizer-time',
+            {
+              time: organizerText,
+              defaultValue:
+                '({{time}} for the organiser)',
+            },
+          )}
         </span>
       )}
 
-      {eventId && calendarEvent && (
-        <>
-          <button
-            ref={triggerRef}
-            type="button"
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            className="inline-flex items-center gap-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-accent"
-          >
-            <CalendarPlus className="size-4" aria-hidden />
-            {t('add-to-calendar', { defaultValue: 'Add to calendar' })}
-          </button>
+      {eventId &&
+        calendarEvent && (
+          <>
+            <button
+              ref={
+                triggerRef
+              }
+              type="button"
+              onClick={() =>
+                setMenuOpen(
+                  (
+                    open,
+                  ) =>
+                    !open,
+                )
+              }
+              aria-haspopup="menu"
+              aria-expanded={
+                menuOpen
+              }
+              className="inline-flex items-center gap-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-accent"
+            >
+              <CalendarPlus
+                className="size-4"
+                aria-hidden
+              />
+              {t(
+                'add-to-calendar',
+                {
+                  defaultValue:
+                    'Add to calendar',
+                },
+              )}
+            </button>
 
-          <AnchoredMenu
-            open={menuOpen}
-            onClose={() => setMenuOpen(false)}
-            anchorRef={triggerRef}
-            label={t('add-to-calendar', { defaultValue: 'Add to calendar' })}
-            side="bottom"
-            align="start"
-            className="w-48"
-          >
-            <a
-              href={googleCalendarUrl(calendarEvent)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMenuOpen(false)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text transition-colors hover:bg-site-surface-hover"
+            <AnchoredMenu
+              open={
+                menuOpen
+              }
+              onClose={() =>
+                setMenuOpen(
+                  false,
+                )
+              }
+              anchorRef={
+                triggerRef
+              }
+              label={t(
+                'add-to-calendar',
+                {
+                  defaultValue:
+                    'Add to calendar',
+                },
+              )}
+              side="bottom"
+              align="start"
+              className="w-48"
             >
-              <ExternalLink className="size-4 text-site-text-muted" aria-hidden />
-              {t('calendar-google', { defaultValue: 'Google Calendar' })}
-            </a>
-            <a
-              href={outlookCalendarUrl(calendarEvent)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMenuOpen(false)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text transition-colors hover:bg-site-surface-hover"
-            >
-              <ExternalLink className="size-4 text-site-text-muted" aria-hidden />
-              {t('calendar-outlook', { defaultValue: 'Outlook' })}
-            </a>
-            <a
-              href={icsDownloadPath(eventId)}
-              onClick={() => setMenuOpen(false)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text transition-colors hover:bg-site-surface-hover"
-            >
-              <Download className="size-4 text-site-text-muted" aria-hidden />
-              {t('calendar-ics', { defaultValue: 'Download .ics' })}
-            </a>
-          </AnchoredMenu>
-        </>
-      )}
+              <a
+                href={googleCalendarUrl(
+                  calendarEvent,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  setMenuOpen(
+                    false,
+                  )
+                }
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text transition-colors hover:bg-site-surface-hover"
+              >
+                <ExternalLink
+                  className="size-4 text-site-text-muted"
+                  aria-hidden
+                />
+                {t(
+                  'calendar-google',
+                  {
+                    defaultValue:
+                      'Google Calendar',
+                  },
+                )}
+              </a>
+              <a
+                href={outlookCalendarUrl(
+                  calendarEvent,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  setMenuOpen(
+                    false,
+                  )
+                }
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text transition-colors hover:bg-site-surface-hover"
+              >
+                <ExternalLink
+                  className="size-4 text-site-text-muted"
+                  aria-hidden
+                />
+                {t(
+                  'calendar-outlook',
+                  {
+                    defaultValue:
+                      'Outlook',
+                  },
+                )}
+              </a>
+              <a
+                href={icsDownloadPath(
+                  eventId,
+                )}
+                onClick={() =>
+                  setMenuOpen(
+                    false,
+                  )
+                }
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text transition-colors hover:bg-site-surface-hover"
+              >
+                <Download
+                  className="size-4 text-site-text-muted"
+                  aria-hidden
+                />
+                {t(
+                  'calendar-ics',
+                  {
+                    defaultValue:
+                      'Download .ics',
+                  },
+                )}
+              </a>
+            </AnchoredMenu>
+          </>
+        )}
     </span>
   );
 }

@@ -9,49 +9,130 @@
  * Environment-agnostic.
  */
 
-import { emptyHudState, type HudGame, type HudState } from './hud-state';
-import type { ClassChoice, RoomAdminPayload, TeamChoice } from '../net/events';
+import {
+  emptyHudState,
+  type HudGame,
+  type HudState,
+} from './hud-state';
+import type {
+  ClassChoice,
+  RoomAdminPayload,
+  TeamChoice,
+} from '../net/events';
 import type { ImpulseAction } from './input/actions';
-import type { LoadoutSlots, TfClass } from '../../tf2-loadout/catalog-types';
+import type {
+  LoadoutSlots,
+  TfClass,
+} from '../../tf2-loadout/catalog-types';
 
 /** What the HUD asks the game to do. The loop maps them to MatchCommands / hub events. */
 export type HudCommand =
-  | { kind: 'team'; team: TeamChoice }
-  | { kind: 'class'; cls: ClassChoice }
-  | { kind: 'chat'; text: string; teamOnly: boolean }
-  | { kind: 'voice'; menu: 0 | 1 | 2; item: number }
+  | {
+      kind: 'team';
+      team: TeamChoice;
+    }
+  | {
+      kind: 'class';
+      cls: ClassChoice;
+    }
+  | {
+      kind: 'chat';
+      text: string;
+      teamOnly: boolean;
+    }
+  | {
+      kind: 'voice';
+      menu:
+        | 0
+        | 1
+        | 2;
+      item: number;
+    }
   /** `build <type> <mode>` / `destroy <type> <mode>` (BuildCommand in sim/buildings/player-objects.ts). */
-  | { kind: 'build'; action: 'build' | 'destroy'; objectType: number; objectMode: number }
+  | {
+      kind: 'build';
+      action:
+        | 'build'
+        | 'destroy';
+      objectType: number;
+      objectMode: number;
+    }
   /** `disguise <class> <team>` (team −1 = the enemy, as the PDA's default). */
-  | { kind: 'disguise'; cls: number; team: number }
-  | { kind: 'lastdisguise' }
+  | {
+      kind: 'disguise';
+      cls: number;
+      team: number;
+    }
+  | {
+      kind: 'lastdisguise';
+    }
   /** Any other console verb (`taunt`, `dropitem`, `+inspect`…), MatchCommand { kind: 'extra' }. */
-  | { kind: 'extra'; command: string; args: ReadonlyArray<number | string | boolean> }
-  | { kind: 'disconnect' }
+  | {
+      kind: 'extra';
+      command: string;
+      args: ReadonlyArray<
+        | number
+        | string
+        | boolean
+      >;
+    }
+  | {
+      kind: 'disconnect';
+    }
   /** Pause menu opened/closed (single-player pauses the world). */
-  | { kind: 'pause'; paused: boolean }
+  | {
+      kind: 'pause';
+      paused: boolean;
+    }
   /** Equip a loadout for a class (the pause menu's Loadout view) — MatchCommand { kind: 'loadout' }. */
-  | { kind: 'loadout'; cls: TfClass; slots: LoadoutSlots }
+  | {
+      kind: 'loadout';
+      cls: TfClass;
+      slots: LoadoutSlots;
+    }
   /**
    * Room administration (the pause menu's Server view, the console): the peer-to-peer host.
    * `transfer` migrates the match to that player.
    */
-  | { kind: 'admin'; action: RoomAdminPayload };
+  | {
+      kind: 'admin';
+      action: RoomAdminPayload;
+    };
 
-export type HudCommandListener = (cmd: HudCommand) => void;
+export type HudCommandListener =
+  (
+    cmd: HudCommand,
+  ) => void;
 
 export interface HudStore {
   getSnapshot(): HudState;
-  subscribe(listener: () => void): () => void;
+  subscribe(
+    listener: () => void,
+  ): () => void;
   /** Replace the state (throttled to `maxHz` unless `force`). */
-  publish(state: HudState, force?: boolean): void;
+  publish(
+    state: HudState,
+    force?: boolean,
+  ): void;
   /** Patch the current state (immediate). */
-  update(patch: Partial<HudState>): void;
-  send(cmd: HudCommand): void;
-  onCommand(listener: HudCommandListener): () => void;
+  update(
+    patch: Partial<HudState>,
+  ): void;
+  send(
+    cmd: HudCommand,
+  ): void;
+  onCommand(
+    listener: HudCommandListener,
+  ): () => void;
   /** The loop forwards input impulses (drainImpulses) here; the HUD's menus consume them. */
-  dispatchImpulse(action: ImpulseAction): void;
-  onImpulse(listener: (action: ImpulseAction) => void): () => void;
+  dispatchImpulse(
+    action: ImpulseAction,
+  ): void;
+  onImpulse(
+    listener: (
+      action: ImpulseAction,
+    ) => void,
+  ): () => void;
 }
 
 export interface HudStoreOptions {
@@ -62,49 +143,130 @@ export interface HudStoreOptions {
   clock?: () => number;
 }
 
-export function createHudStore(opts: HudStoreOptions = {}): HudStore {
-  let state = emptyHudState(opts.game ?? 'tf2');
-  const listeners = new Set<() => void>();
-  const commandListeners = new Set<HudCommandListener>();
-  const impulseListeners = new Set<(action: ImpulseAction) => void>();
-  const minInterval = 1000 / Math.max(1, opts.maxHz ?? 30);
-  const clock = opts.clock ?? (() => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
-  let lastPublish = -Infinity;
+export function createHudStore(
+  opts: HudStoreOptions = {},
+): HudStore {
+  let state =
+    emptyHudState(
+      opts.game ??
+        'tf2',
+    );
+  const listeners =
+    new Set<
+      () => void
+    >();
+  const commandListeners =
+    new Set<HudCommandListener>();
+  const impulseListeners =
+    new Set<
+      (
+        action: ImpulseAction,
+      ) => void
+    >();
+  const minInterval =
+    1000 /
+    Math.max(
+      1,
+      opts.maxHz ??
+        30,
+    );
+  const clock =
+    opts.clock ??
+    (() =>
+      typeof performance !==
+      'undefined'
+        ? performance.now()
+        : Date.now());
+  let lastPublish =
+    -Infinity;
 
-  const emit = () => {
-    for (const l of listeners) l();
-  };
+  const emit =
+    () => {
+      for (const l of listeners)
+        l();
+    };
 
   return {
-    getSnapshot: () => state,
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+    getSnapshot:
+      () =>
+        state,
+    subscribe(
+      listener,
+    ) {
+      listeners.add(
+        listener,
+      );
+      return () =>
+        listeners.delete(
+          listener,
+        );
     },
-    publish(next, force = false) {
-      const t = clock();
-      if (!force && t - lastPublish < minInterval) return;
-      lastPublish = t;
-      state = next;
+    publish(
+      next,
+      force = false,
+    ) {
+      const t =
+        clock();
+      if (
+        !force &&
+        t -
+          lastPublish <
+          minInterval
+      )
+        return;
+      lastPublish =
+        t;
+      state =
+        next;
       emit();
     },
-    update(patch) {
-      state = { ...state, ...patch };
+    update(
+      patch,
+    ) {
+      state =
+        {
+          ...state,
+          ...patch,
+        };
       emit();
     },
-    send(cmd) {
-      for (const l of commandListeners) l(cmd);
+    send(
+      cmd,
+    ) {
+      for (const l of commandListeners)
+        l(
+          cmd,
+        );
     },
-    onCommand(listener) {
-      commandListeners.add(listener);
-      return () => commandListeners.delete(listener);
+    onCommand(
+      listener,
+    ) {
+      commandListeners.add(
+        listener,
+      );
+      return () =>
+        commandListeners.delete(
+          listener,
+        );
     },
-    dispatchImpulse(action) {
-      for (const l of impulseListeners) l(action);
+    dispatchImpulse(
+      action,
+    ) {
+      for (const l of impulseListeners)
+        l(
+          action,
+        );
     },
-    onImpulse(listener) {
-      impulseListeners.add(listener);
-      return () => impulseListeners.delete(listener);
+    onImpulse(
+      listener,
+    ) {
+      impulseListeners.add(
+        listener,
+      );
+      return () =>
+        impulseListeners.delete(
+          listener,
+        );
     },
   };
 }

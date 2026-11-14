@@ -18,7 +18,10 @@
 // reachable from a route's top level. Nine modules did this, together putting
 // ~36 KB of framer-motion on the critical path of every page.
 import { m as motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '@/lib/pf2ecal/types';
@@ -29,15 +32,45 @@ import { useAccessPrefs } from '@/lib/access/use-access-prefs';
 import { TRANSITION_FAST } from './motion';
 
 /** Weekday initials in the viewer's locale, starting Sunday. */
-function useWeekdayInitials(weekStart: number): string[] {
+function useWeekdayInitials(
+  weekStart: number,
+): string[] {
   return useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
+    const fmt =
+      new Intl.DateTimeFormat(
+        undefined,
+        {
+          weekday:
+            'short',
+          timeZone:
+            'UTC',
+        },
+      );
     // 2024-01-07 was a Sunday; seven consecutive days from it give the labels
     // in the order the grid lays them out (rotated by the week-start preference).
-    return Array.from({ length: 7 }, (_, i) =>
-      fmt.format(new Date(Date.UTC(2024, 0, 7 + weekStart + i))),
+    return Array.from(
+      {
+        length: 7,
+      },
+      (
+        _,
+        i,
+      ) =>
+        fmt.format(
+          new Date(
+            Date.UTC(
+              2024,
+              0,
+              7 +
+                weekStart +
+                i,
+            ),
+          ),
+        ),
     );
-  }, [weekStart]);
+  }, [
+    weekStart,
+  ]);
 }
 
 interface DayCell {
@@ -47,19 +80,59 @@ interface DayCell {
 }
 
 /** Six weeks starting on the week-start day on or before the 1st — a stable 42 cells. */
-function buildCells(year: number, month: number, weekStart: number): DayCell[] {
-  const first = new Date(Date.UTC(year, month - 1, 1));
-  const leading = (first.getUTCDay() - weekStart + 7) % 7;
-  const cells: DayCell[] = [];
-  for (let i = 0; i < 42; i++) {
-    const date = new Date(Date.UTC(year, month - 1, 1 - leading + i));
-    cells.push({
-      key: `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(
-        date.getUTCDate(),
-      ).padStart(2, '0')}`,
-      day: date.getUTCDate(),
-      outside: date.getUTCMonth() !== month - 1,
-    });
+function buildCells(
+  year: number,
+  month: number,
+  weekStart: number,
+): DayCell[] {
+  const first =
+    new Date(
+      Date.UTC(
+        year,
+        month -
+          1,
+        1,
+      ),
+    );
+  const leading =
+    (first.getUTCDay() -
+      weekStart +
+      7) %
+    7;
+  const cells: DayCell[] =
+    [];
+  for (
+    let i = 0;
+    i <
+    42;
+    i++
+  ) {
+    const date =
+      new Date(
+        Date.UTC(
+          year,
+          month -
+            1,
+          1 -
+            leading +
+            i,
+        ),
+      );
+    cells.push(
+      {
+        key: `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(
+          date.getUTCDate(),
+        ).padStart(
+          2,
+          '0',
+        )}`,
+        day: date.getUTCDate(),
+        outside:
+          date.getUTCMonth() !==
+          month -
+            1,
+      },
+    );
   }
   return cells;
 }
@@ -70,9 +143,15 @@ interface MonthGridProps {
   sessions: Session[];
   timeZone: string;
   now: Date;
-  selectedKey: string | null;
-  onSelect: (dateKey: string) => void;
-  onShift: (delta: number) => void;
+  selectedKey:
+    | string
+    | null;
+  onSelect: (
+    dateKey: string,
+  ) => void;
+  onShift: (
+    delta: number,
+  ) => void;
   onToday: () => void;
 }
 
@@ -87,28 +166,88 @@ export function MonthGrid({
   onShift,
   onToday,
 }: MonthGridProps) {
-  const { t } = useTranslation('r-pf2ecal');
-  const weekStart = weekStartDay(useAccessPrefs());
-  const weekdays = useWeekdayInitials(weekStart);
-  const cells = useMemo(() => buildCells(year, month, weekStart), [year, month, weekStart]);
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-pf2ecal',
+    );
+  const weekStart =
+    weekStartDay(
+      useAccessPrefs(),
+    );
+  const weekdays =
+    useWeekdayInitials(
+      weekStart,
+    );
+  const cells =
+    useMemo(
+      () =>
+        buildCells(
+          year,
+          month,
+          weekStart,
+        ),
+      [
+        year,
+        month,
+        weekStart,
+      ],
+    );
 
-  const byDay = useMemo(() => {
-    const map = new Map<string, Session[]>();
-    for (const session of sessions) {
-      const key = zonedDateKey(session.startsAt, timeZone);
-      const list = map.get(key);
-      if (list) list.push(session);
-      else map.set(key, [session]);
-    }
-    return map;
-  }, [sessions, timeZone]);
+  const byDay =
+    useMemo(() => {
+      const map =
+        new Map<
+          string,
+          Session[]
+        >();
+      for (const session of sessions) {
+        const key =
+          zonedDateKey(
+            session.startsAt,
+            timeZone,
+          );
+        const list =
+          map.get(
+            key,
+          );
+        if (
+          list
+        )
+          list.push(
+            session,
+          );
+        else
+          map.set(
+            key,
+            [
+              session,
+            ],
+          );
+      }
+      return map;
+    }, [
+      sessions,
+      timeZone,
+    ]);
 
-  const todayKey = zonedDateKey(now, timeZone);
+  const todayKey =
+    zonedDateKey(
+      now,
+      timeZone,
+    );
 
   return (
     <section
       className="pf2e-card pf2e-month-card"
-      aria-label={t('month-overview', { defaultValue: 'Month overview' })}
+      aria-label={t(
+        'month-overview',
+        {
+          defaultValue:
+            'Month overview',
+        },
+      )}
     >
       <header className="mb-3 flex items-center justify-between gap-2">
         {/* The TITLE gives up space, not the controls. "September 2026" is
@@ -118,36 +257,98 @@ export function MonthGrid({
             overflowed their own container at every width. The title truncates
             (`min-w-0` is what makes `truncate` work on a flex child) and the
             controls keep their intrinsic size. */}
-        <h2 className="pf2e-month-title">{formatMonthLabel(year, month)}</h2>
+        <h2 className="pf2e-month-title">
+          {formatMonthLabel(
+            year,
+            month,
+          )}
+        </h2>
         <div className="flex shrink-0 items-center gap-2">
-          <button type="button" className="pf2e-btn pf2e-btn-ghost pf2e-btn-sm" onClick={onToday}>
-            {t('today', { defaultValue: 'Today' })}
+          <button
+            type="button"
+            className="pf2e-btn pf2e-btn-ghost pf2e-btn-sm"
+            onClick={
+              onToday
+            }
+          >
+            {t(
+              'today',
+              {
+                defaultValue:
+                  'Today',
+              },
+            )}
           </button>
           <button
             type="button"
             className="pf2e-btn pf2e-btn-ghost pf2e-month-nav"
-            onClick={() => onShift(-1)}
-            aria-label={t('previous-month', { defaultValue: 'Previous month' })}
+            onClick={() =>
+              onShift(
+                -1,
+              )
+            }
+            aria-label={t(
+              'previous-month',
+              {
+                defaultValue:
+                  'Previous month',
+              },
+            )}
           >
-            <ChevronLeft size={18} aria-hidden />
+            <ChevronLeft
+              size={
+                18
+              }
+              aria-hidden
+            />
           </button>
           <button
             type="button"
             className="pf2e-btn pf2e-btn-ghost pf2e-month-nav"
-            onClick={() => onShift(1)}
-            aria-label={t('next-month', { defaultValue: 'Next month' })}
+            onClick={() =>
+              onShift(
+                1,
+              )
+            }
+            aria-label={t(
+              'next-month',
+              {
+                defaultValue:
+                  'Next month',
+              },
+            )}
           >
-            <ChevronRight size={18} aria-hidden />
+            <ChevronRight
+              size={
+                18
+              }
+              aria-hidden
+            />
           </button>
         </div>
       </header>
 
-      <div className="pf2e-month mb-1" aria-hidden>
-        {weekdays.map((label) => (
-          <div key={label} className="pf2e-mono-label py-1 text-center">
-            {label.slice(0, 2)}
-          </div>
-        ))}
+      <div
+        className="pf2e-month mb-1"
+        aria-hidden
+      >
+        {weekdays.map(
+          (
+            label,
+          ) => (
+            <div
+              key={
+                label
+              }
+              className="pf2e-mono-label py-1 text-center"
+            >
+              {label.slice(
+                0,
+                2,
+              )}
+            </div>
+          ),
+        )}
       </div>
 
       {/* Keyed on the month so the grid cross-fades when it changes; without
@@ -155,51 +356,125 @@ export function MonthGrid({
       <motion.div
         key={`${year}-${month}`}
         className="pf2e-month"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={TRANSITION_FAST}
+        initial={{
+          opacity: 0,
+        }}
+        animate={{
+          opacity: 1,
+        }}
+        transition={
+          TRANSITION_FAST
+        }
       >
-        {cells.map((cell) => {
-          const daySessions = byDay.get(cell.key) ?? [];
-          const live = daySessions.filter((s) => !s.canceledAt);
-          const label = daySessions.length
-            ? t('day-with-sessions', {
-                defaultValue: '{{date}}, {{count}} session',
-                defaultValue_other: '{{date}}, {{count}} sessions',
-                date: cell.key,
-                count: daySessions.length,
-              })
-            : cell.key;
-          return (
-            <button
-              key={cell.key}
-              type="button"
-              className="pf2e-daycell"
-              data-outside={cell.outside}
-              data-today={cell.key === todayKey}
-              data-selected={cell.key === selectedKey}
-              aria-label={label}
-              aria-current={cell.key === todayKey ? 'date' : undefined}
-              onClick={() => onSelect(cell.key)}
-            >
-              <span className="pf2e-daynum">{cell.day}</span>
-              <span className="pf2e-dots">
-                {/* Capped at three: a busy day must not change the cell's
+        {cells.map(
+          (
+            cell,
+          ) => {
+            const daySessions =
+              byDay.get(
+                cell.key,
+              ) ??
+              [];
+            const live =
+              daySessions.filter(
+                (
+                  s,
+                ) =>
+                  !s.canceledAt,
+              );
+            const label =
+              daySessions.length
+                ? t(
+                    'day-with-sessions',
+                    {
+                      defaultValue:
+                        '{{date}}, {{count}} session',
+                      defaultValue_other:
+                        '{{date}}, {{count}} sessions',
+                      date: cell.key,
+                      count:
+                        daySessions.length,
+                    },
+                  )
+                : cell.key;
+            return (
+              <button
+                key={
+                  cell.key
+                }
+                type="button"
+                className="pf2e-daycell"
+                data-outside={
+                  cell.outside
+                }
+                data-today={
+                  cell.key ===
+                  todayKey
+                }
+                data-selected={
+                  cell.key ===
+                  selectedKey
+                }
+                aria-label={
+                  label
+                }
+                aria-current={
+                  cell.key ===
+                  todayKey
+                    ? 'date'
+                    : undefined
+                }
+                onClick={() =>
+                  onSelect(
+                    cell.key,
+                  )
+                }
+              >
+                <span className="pf2e-daynum">
+                  {
+                    cell.day
+                  }
+                </span>
+                <span className="pf2e-dots">
+                  {/* Capped at three: a busy day must not change the cell's
                     height, which would reflow the whole grid. */}
-                {daySessions.slice(0, 3).map((session) => (
-                  <span
-                    key={session.id}
-                    className="pf2e-dot"
-                    data-canceled={Boolean(session.canceledAt)}
-                  />
-                ))}
-              </span>
-              {live.length > 3 && (
-                <span className="pf2e-sr-only">{t('and-more', { defaultValue: 'and more' })}</span>
-              )}
-            </button>
-          );
-        })}
+                  {daySessions
+                    .slice(
+                      0,
+                      3,
+                    )
+                    .map(
+                      (
+                        session,
+                      ) => (
+                        <span
+                          key={
+                            session.id
+                          }
+                          className="pf2e-dot"
+                          data-canceled={Boolean(
+                            session.canceledAt,
+                          )}
+                        />
+                      ),
+                    )}
+                </span>
+                {live.length >
+                  3 && (
+                  <span className="pf2e-sr-only">
+                    {t(
+                      'and-more',
+                      {
+                        defaultValue:
+                          'and more',
+                      },
+                    )}
+                  </span>
+                )}
+              </button>
+            );
+          },
+        )}
       </motion.div>
     </section>
   );

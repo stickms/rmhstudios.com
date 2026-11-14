@@ -17,46 +17,88 @@
  *
  * The full-screen games and apps keep their own motion in `lib/app-motion.ts` (L8).
  */
-import type { Transition, Variants } from 'framer-motion';
+import type {
+  Transition,
+  Variants,
+} from 'framer-motion';
 
-type Bezier = [number, number, number, number];
+type Bezier =
+  [
+    number,
+    number,
+    number,
+    number,
+  ];
 
 /** Durations in **seconds**. */
-export const DURATION = {
-  /** M1: hover and press fills. */
-  fast: 0.09,
-  /** M2: tab underline, toggle slide. */
-  slide: 0.14,
-  /** M3: chrome activation. */
-  chrome: 0.28,
-  /** M4: globe open and close. */
-  globe: 0.36,
-  /** M5: overlay in and out. */
-  overlay: 0.16,
-} as const;
+export const DURATION =
+  {
+    /** M1: hover and press fills. */
+    fast: 0.09,
+    /** M2: tab underline, toggle slide. */
+    slide: 0.14,
+    /** M3: chrome activation. */
+    chrome: 0.28,
+    /** M4: globe open and close. */
+    globe: 0.36,
+    /** M5: overlay in and out. */
+    overlay: 0.16,
+  } as const;
 
 /** CSS `ease` is `cubic-bezier(.25, .1, .25, 1)`. */
-const EASE_CSS: Bezier = [0.25, 0.1, 0.25, 1];
+const EASE_CSS: Bezier =
+  [
+    0.25,
+    0.1,
+    0.25,
+    1,
+  ];
 
-export const EASE = {
-  /** `ease`: every tween except the globe's. */
-  standard: EASE_CSS,
-  /** M4: the globe. */
-  globe: [0.2, 0, 0, 1] as Bezier,
-} as const;
+export const EASE =
+  {
+    /** `ease`: every tween except the globe's. */
+    standard:
+      EASE_CSS,
+    /** M4: the globe. */
+    globe:
+      [
+        0.2,
+        0,
+        0,
+        1,
+      ] as Bezier,
+  } as const;
 
 /** M5: an overlay enters and leaves by opacity alone, in 160 ms. */
-export const transition: Transition = { duration: DURATION.overlay, ease: EASE.standard };
+export const transition: Transition =
+  {
+    duration:
+      DURATION.overlay,
+    ease: EASE.standard,
+  };
 
 /** M5: the exit is the same 160 ms. */
-export const exitTransition: Transition = transition;
+export const exitTransition: Transition =
+  transition;
 
 /** M5: opacity cross-fade. For dialogs, menus, popovers, scrims and panels. No scale, no slide. */
-export const fade: Variants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1, transition },
-  exit: { opacity: 0, transition: exitTransition },
-};
+export const fade: Variants =
+  {
+    initial:
+      {
+        opacity: 0,
+      },
+    animate:
+      {
+        opacity: 1,
+        transition,
+      },
+    exit: {
+      opacity: 0,
+      transition:
+        exitTransition,
+    },
+  };
 
 /**
  * ── The pre-Steel runtime, deleted with it (plan 15.3, phase 6) ──────────────────────────────────────────────────
@@ -64,7 +106,8 @@ export const fade: Variants = {
  */
 
 /** `ease` as a CSS timing function, for the WAAPI `easing` of the old page-swap code. */
-export const SMOOTH_EASE_CSS = 'cubic-bezier(0.3, 0, 0.15, 1)';
+export const SMOOTH_EASE_CSS =
+  'cubic-bezier(0.3, 0, 0.15, 1)';
 
 /**
  * How long a `data-motion="pop"` surface stays mounted on close, in **milliseconds**: the M5 160 ms. The mirror of

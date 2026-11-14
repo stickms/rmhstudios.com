@@ -24,20 +24,28 @@
 import { BALATRO_LIMITS } from '../../engine/net/limits';
 import type { QueueMode } from '../../engine/net/events';
 
-export const QUEUE_TIMING = {
-  /** A short group (≥2, below the maximum) matches after its oldest ticket waited this long. */
-  GATHER_MS: 10_000,
-  /** The elected host must have hosted the casual room by then, or the match falls through. */
-  HOST_CLAIM_MS: 15_000,
-  /** How often the handler looks for the elected host's room while a match is pending. */
-  HOST_POLL_MS: 100,
-  /** One offline notification per (invitee, lobby) per this window. */
-  NOTIFY_DEDUPE_MS: 10 * 60_000,
-} as const;
+export const QUEUE_TIMING =
+  {
+    /** A short group (≥2, below the maximum) matches after its oldest ticket waited this long. */
+    GATHER_MS: 10_000,
+    /** The elected host must have hosted the casual room by then, or the match falls through. */
+    HOST_CLAIM_MS: 15_000,
+    /** How often the handler looks for the elected host's room while a match is pending. */
+    HOST_POLL_MS: 100,
+    /** One offline notification per (invitee, lobby) per this window. */
+    NOTIFY_DEDUPE_MS:
+      10 *
+      60_000,
+  } as const;
 
 /** Players per matched lobby — the same numbers as `maxPlayersFor(mode, 'casual')`. */
-export function queueModeMax(mode: QueueMode): number {
-  return mode === 'pvp_nemesis' ? 2 : BALATRO_LIMITS.MAX_PLAYERS;
+export function queueModeMax(
+  mode: QueueMode,
+): number {
+  return mode ===
+    'pvp_nemesis'
+    ? 2
+    : BALATRO_LIMITS.MAX_PLAYERS;
 }
 
 export interface QueuePlayer {
@@ -53,7 +61,9 @@ export interface QueueTicket {
   /** Ordered: the first is the ticket's leader (a party's host). */
   players: QueuePlayer[];
   /** The party room the ticket came from, or null for a solo player. */
-  partyCode: string | null;
+  partyCode:
+    | string
+    | null;
 }
 
 export interface QueueMatch {
@@ -65,136 +75,423 @@ export interface QueueMatch {
   players: QueuePlayer[];
 }
 
-function bucketKey(mode: QueueMode, hash: string): string {
+function bucketKey(
+  mode: QueueMode,
+  hash: string,
+): string {
   return `${mode}\n${hash}`;
 }
 
 export class QueueBook {
-  private readonly buckets = new Map<string, QueueTicket[]>();
-  private readonly byUser = new Map<string, QueueTicket>();
+  private readonly buckets =
+    new Map<
+      string,
+      QueueTicket[]
+    >();
+  private readonly byUser =
+    new Map<
+      string,
+      QueueTicket
+    >();
   private nextId = 1;
 
   /** The ticket holding this account, or null. */
-  ticketOf(userId: string): QueueTicket | null {
-    return this.byUser.get(userId) ?? null;
+  ticketOf(
+    userId: string,
+  ): QueueTicket | null {
+    return (
+      this.byUser.get(
+        userId,
+      ) ??
+      null
+    );
   }
 
   /** Every ticket that has a player on this socket. */
-  ticketsOnSocket(socketId: string): QueueTicket[] {
-    const out = new Set<QueueTicket>();
-    for (const t of this.byUser.values()) if (t.players.some((p) => p.socketId === socketId)) out.add(t);
-    return [...out];
+  ticketsOnSocket(
+    socketId: string,
+  ): QueueTicket[] {
+    const out =
+      new Set<QueueTicket>();
+    for (const t of this.byUser.values())
+      if (
+        t.players.some(
+          (
+            p,
+          ) =>
+            p.socketId ===
+            socketId,
+        )
+      )
+        out.add(
+          t,
+        );
+    return [
+      ...out,
+    ];
   }
 
   /**
    * Queue a ticket. Every player must be free (the caller removed older tickets first); a
    * re-queued ticket keeps its place (`enqueuedAt`) when given one.
    */
-  add(t: Omit<QueueTicket, 'id' | 'enqueuedAt'> & { enqueuedAt: number }): QueueTicket {
-    for (const p of t.players) if (this.byUser.has(p.userId)) throw new Error(`already queued: ${p.userId}`);
-    const ticket: QueueTicket = { ...t, id: this.nextId++, players: t.players.map((p) => ({ ...p })) };
-    const key = bucketKey(t.queueMode, t.contentHash);
-    const list = this.buckets.get(key) ?? [];
+  add(
+    t: Omit<
+      QueueTicket,
+      | 'id'
+      | 'enqueuedAt'
+    > & {
+      enqueuedAt: number;
+    },
+  ): QueueTicket {
+    for (const p of t.players)
+      if (
+        this.byUser.has(
+          p.userId,
+        )
+      )
+        throw new Error(
+          `already queued: ${p.userId}`,
+        );
+    const ticket: QueueTicket =
+      {
+        ...t,
+        id: this
+          .nextId++,
+        players:
+          t.players.map(
+            (
+              p,
+            ) => ({
+              ...p,
+            }),
+          ),
+      };
+    const key =
+      bucketKey(
+        t.queueMode,
+        t.contentHash,
+      );
+    const list =
+      this.buckets.get(
+        key,
+      ) ??
+      [];
     // Kept sorted by enqueuedAt (a re-queued ticket goes back where it was).
-    let i = list.length;
-    while (i > 0 && list[i - 1].enqueuedAt > ticket.enqueuedAt) i -= 1;
-    list.splice(i, 0, ticket);
-    this.buckets.set(key, list);
-    for (const p of ticket.players) this.byUser.set(p.userId, ticket);
+    let i =
+      list.length;
+    while (
+      i >
+        0 &&
+      list[
+        i -
+          1
+      ]
+        .enqueuedAt >
+        ticket.enqueuedAt
+    )
+      i -= 1;
+    list.splice(
+      i,
+      0,
+      ticket,
+    );
+    this.buckets.set(
+      key,
+      list,
+    );
+    for (const p of ticket.players)
+      this.byUser.set(
+        p.userId,
+        ticket,
+      );
     return ticket;
   }
 
-  remove(ticket: QueueTicket): boolean {
-    const key = bucketKey(ticket.queueMode, ticket.contentHash);
-    const list = this.buckets.get(key);
-    const i = list ? list.indexOf(ticket) : -1;
-    if (!list || i < 0) return false;
-    list.splice(i, 1);
-    if (list.length === 0) this.buckets.delete(key);
-    for (const p of ticket.players) if (this.byUser.get(p.userId) === ticket) this.byUser.delete(p.userId);
+  remove(
+    ticket: QueueTicket,
+  ): boolean {
+    const key =
+      bucketKey(
+        ticket.queueMode,
+        ticket.contentHash,
+      );
+    const list =
+      this.buckets.get(
+        key,
+      );
+    const i =
+      list
+        ? list.indexOf(
+            ticket,
+          )
+        : -1;
+    if (
+      !list ||
+      i <
+        0
+    )
+      return false;
+    list.splice(
+      i,
+      1,
+    );
+    if (
+      list.length ===
+      0
+    )
+      this.buckets.delete(
+        key,
+      );
+    for (const p of ticket.players)
+      if (
+        this.byUser.get(
+          p.userId,
+        ) ===
+        ticket
+      )
+        this.byUser.delete(
+          p.userId,
+        );
     return true;
   }
 
   /** The tickets sharing this ticket's bucket (itself included), oldest first. */
-  bucketOf(ticket: QueueTicket): readonly QueueTicket[] {
-    return this.buckets.get(bucketKey(ticket.queueMode, ticket.contentHash)) ?? [];
+  bucketOf(
+    ticket: QueueTicket,
+  ): readonly QueueTicket[] {
+    return (
+      this.buckets.get(
+        bucketKey(
+          ticket.queueMode,
+          ticket.contentHash,
+        ),
+      ) ??
+      []
+    );
   }
 
   /** Players waiting in a bucket. */
-  waiting(mode: QueueMode, hash: string): number {
+  waiting(
+    mode: QueueMode,
+    hash: string,
+  ): number {
     let n = 0;
-    for (const t of this.buckets.get(bucketKey(mode, hash)) ?? []) n += t.players.length;
+    for (const t of this.buckets.get(
+      bucketKey(
+        mode,
+        hash,
+      ),
+    ) ??
+      [])
+      n +=
+        t
+          .players
+          .length;
     return n;
   }
 
   size(): number {
-    return this.byUser.size;
+    return this
+      .byUser
+      .size;
   }
 
   /** Players waiting per mode, across content hashes (Find Game's In Queue, A12). */
-  waitingByMode(): Map<QueueMode, number> {
-    const out = new Map<QueueMode, number>();
+  waitingByMode(): Map<
+    QueueMode,
+    number
+  > {
+    const out =
+      new Map<
+        QueueMode,
+        number
+      >();
     for (const list of this.buckets.values()) {
-      for (const t of list) out.set(t.queueMode, (out.get(t.queueMode) ?? 0) + t.players.length);
+      for (const t of list)
+        out.set(
+          t.queueMode,
+          (out.get(
+            t.queueMode,
+          ) ??
+            0) +
+            t
+              .players
+              .length,
+        );
     }
     return out;
   }
 
   /** The oldest-first group the bucket would match now, or null. */
-  private group(list: readonly QueueTicket[], now: number): QueueTicket[] | null {
-    const oldest = list[0];
-    if (!oldest) return null;
-    const max = queueModeMax(oldest.queueMode);
-    const group: QueueTicket[] = [];
+  private group(
+    list: readonly QueueTicket[],
+    now: number,
+  ):
+    | QueueTicket[]
+    | null {
+    const oldest =
+      list[0];
+    if (
+      !oldest
+    )
+      return null;
+    const max =
+      queueModeMax(
+        oldest.queueMode,
+      );
+    const group: QueueTicket[] =
+      [];
     let size = 0;
     for (const t of list) {
-      if (size + t.players.length > max) continue;
-      group.push(t);
-      size += t.players.length;
-      if (size === max) break;
+      if (
+        size +
+          t
+            .players
+            .length >
+        max
+      )
+        continue;
+      group.push(
+        t,
+      );
+      size +=
+        t
+          .players
+          .length;
+      if (
+        size ===
+        max
+      )
+        break;
     }
-    if (group.length < 2 || size < 2) return null;
-    if (size === max) return group;
-    return now - oldest.enqueuedAt >= QUEUE_TIMING.GATHER_MS ? group : null;
+    if (
+      group.length <
+        2 ||
+      size <
+        2
+    )
+      return null;
+    if (
+      size ===
+      max
+    )
+      return group;
+    return now -
+      oldest.enqueuedAt >=
+      QUEUE_TIMING.GATHER_MS
+      ? group
+      : null;
   }
 
   /** Take every match that is due (the tickets leave the book). */
-  takeMatches(now: number): QueueMatch[] {
-    const out: QueueMatch[] = [];
-    for (const list of [...this.buckets.values()]) {
+  takeMatches(
+    now: number,
+  ): QueueMatch[] {
+    const out: QueueMatch[] =
+      [];
+    for (const list of [
+      ...this.buckets.values(),
+    ]) {
       for (;;) {
-        const group = this.group(list, now);
-        if (!group) break;
-        for (const t of group) this.remove(t);
-        const players = group.flatMap((t) => t.players.map((p) => ({ ...p })));
-        out.push({
-          queueMode: group[0].queueMode,
-          contentHash: group[0].contentHash,
-          tickets: group,
-          host: players[0],
-          players,
-        });
-        if (!this.buckets.has(bucketKey(group[0].queueMode, group[0].contentHash))) break;
+        const group =
+          this.group(
+            list,
+            now,
+          );
+        if (
+          !group
+        )
+          break;
+        for (const t of group)
+          this.remove(
+            t,
+          );
+        const players =
+          group.flatMap(
+            (
+              t,
+            ) =>
+              t.players.map(
+                (
+                  p,
+                ) => ({
+                  ...p,
+                }),
+              ),
+          );
+        out.push(
+          {
+            queueMode:
+              group[0]
+                .queueMode,
+            contentHash:
+              group[0]
+                .contentHash,
+            tickets:
+              group,
+            host: players[0],
+            players,
+          },
+        );
+        if (
+          !this.buckets.has(
+            bucketKey(
+              group[0]
+                .queueMode,
+              group[0]
+                .contentHash,
+            ),
+          )
+        )
+          break;
       }
     }
     return out;
   }
 
   /** When the next short group becomes due (its oldest ticket's window ends), or null. */
-  nextWake(now: number): number | null {
-    let best: number | null = null;
+  nextWake(
+    now: number,
+  ):
+    | number
+    | null {
+    let best:
+      | number
+      | null =
+      null;
     for (const list of this.buckets.values()) {
-      const oldest = list[0];
-      if (!oldest || list.length < 2) continue;
-      const at = Math.max(now, oldest.enqueuedAt + QUEUE_TIMING.GATHER_MS);
-      if (best === null || at < best) best = at;
+      const oldest =
+        list[0];
+      if (
+        !oldest ||
+        list.length <
+          2
+      )
+        continue;
+      const at =
+        Math.max(
+          now,
+          oldest.enqueuedAt +
+            QUEUE_TIMING.GATHER_MS,
+        );
+      if (
+        best ===
+          null ||
+        at <
+          best
+      )
+        best =
+          at;
     }
     return best;
   }
 
   /** Every ticket (tests and shutdown). */
   all(): QueueTicket[] {
-    return [...this.buckets.values()].flat();
+    return [
+      ...this.buckets.values(),
+    ].flat();
   }
 
   clear(): void {
@@ -205,18 +502,52 @@ export class QueueBook {
 
 /** A sliding one-minute window per account (`INVITES_PER_MIN`). */
 export class InviteBudget {
-  private readonly sent = new Map<string, number[]>();
+  private readonly sent =
+    new Map<
+      string,
+      number[]
+    >();
 
-  constructor(private readonly perMinute: number = BALATRO_LIMITS.INVITES_PER_MIN) {}
+  constructor(
+    private readonly perMinute: number = BALATRO_LIMITS.INVITES_PER_MIN,
+  ) {}
 
-  take(userId: string, now: number): boolean {
-    const recent = (this.sent.get(userId) ?? []).filter((t) => now - t < 60_000);
-    if (recent.length >= this.perMinute) {
-      this.sent.set(userId, recent);
+  take(
+    userId: string,
+    now: number,
+  ): boolean {
+    const recent =
+      (
+        this.sent.get(
+          userId,
+        ) ??
+        []
+      ).filter(
+        (
+          t,
+        ) =>
+          now -
+            t <
+          60_000,
+      );
+    if (
+      recent.length >=
+      this
+        .perMinute
+    ) {
+      this.sent.set(
+        userId,
+        recent,
+      );
       return false;
     }
-    recent.push(now);
-    this.sent.set(userId, recent);
+    recent.push(
+      now,
+    );
+    this.sent.set(
+      userId,
+      recent,
+    );
     return true;
   }
 
@@ -227,16 +558,54 @@ export class InviteBudget {
 
 /** Remembers which offline notifications went out recently, so a re-invite does not spam. */
 export class NotifyDedupe {
-  private readonly at = new Map<string, number>();
+  private readonly at =
+    new Map<
+      string,
+      number
+    >();
 
   /** True when a notification for (to, code) may go out now (and records it). */
-  take(to: string, code: string, now: number): boolean {
+  take(
+    to: string,
+    code: string,
+    now: number,
+  ): boolean {
     const key = `${to}\n${code}`;
-    const last = this.at.get(key);
-    if (last !== undefined && now - last < QUEUE_TIMING.NOTIFY_DEDUPE_MS) return false;
-    this.at.set(key, now);
-    if (this.at.size > 4_096) {
-      for (const [k, t] of this.at) if (now - t >= QUEUE_TIMING.NOTIFY_DEDUPE_MS) this.at.delete(k);
+    const last =
+      this.at.get(
+        key,
+      );
+    if (
+      last !==
+        undefined &&
+      now -
+        last <
+        QUEUE_TIMING.NOTIFY_DEDUPE_MS
+    )
+      return false;
+    this.at.set(
+      key,
+      now,
+    );
+    if (
+      this
+        .at
+        .size >
+      4_096
+    ) {
+      for (const [
+        k,
+        t,
+      ] of this
+        .at)
+        if (
+          now -
+            t >=
+          QUEUE_TIMING.NOTIFY_DEDUPE_MS
+        )
+          this.at.delete(
+            k,
+          );
     }
     return true;
   }

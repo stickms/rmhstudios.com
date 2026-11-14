@@ -19,7 +19,11 @@ import { classifyMedia } from '@/lib/blog-media';
  * `--neon-*` accents, so an article was legible on the dark default and washed
  * out on the light theme.
  */
-type El<T extends keyof React.JSX.IntrinsicElements> = ComponentPropsWithoutRef<T>;
+type El<
+  T extends
+    keyof React.JSX.IntrinsicElements,
+> =
+  ComponentPropsWithoutRef<T>;
 
 /*
  * Steel section 10, Article. The article is a spine of its table of contents: each section heading (`h2`) is a station
@@ -28,92 +32,212 @@ type El<T extends keyof React.JSX.IntrinsicElements> = ComponentPropsWithoutRef<
  * (`components/reading/ArticleBody.tsx`, the admin preview); nothing here animates (M6) and nothing is boxed (R3).
  */
 
-export const MdH1 = ({ className, children, ...props }: El<'h1'>) => (
-  <h1 className={cn('t-title mt-10 mb-4 first:mt-0', className)} {...props}>
-    {children}
-  </h1>
-);
+export const MdH1 =
+  ({
+    className,
+    children,
+    ...props
+  }: El<'h1'>) => (
+    <h1
+      className={cn(
+        't-title mt-10 mb-4 first:mt-0',
+        className,
+      )}
+      {...props}
+    >
+      {
+        children
+      }
+    </h1>
+  );
 
-export const MdH2 = ({ className, children, ...props }: El<'h2'>) => (
-  <h2 className={cn('spine-station t-label', className)} {...props}>
-    {children}
-  </h2>
-);
+export const MdH2 =
+  ({
+    className,
+    children,
+    ...props
+  }: El<'h2'>) => (
+    <h2
+      className={cn(
+        'spine-station t-label',
+        className,
+      )}
+      {...props}
+    >
+      {
+        children
+      }
+    </h2>
+  );
 
-export const MdH3 = ({ className, children, ...props }: El<'h3'>) => (
-  <h3 className={cn('t-heading mt-8 mb-2 first:mt-0', className)} {...props}>
-    {children}
-  </h3>
-);
+export const MdH3 =
+  ({
+    className,
+    children,
+    ...props
+  }: El<'h3'>) => (
+    <h3
+      className={cn(
+        't-heading mt-8 mb-2 first:mt-0',
+        className,
+      )}
+      {...props}
+    >
+      {
+        children
+      }
+    </h3>
+  );
 
-export const MdH4 = ({ className, children, ...props }: El<'h4'>) => (
-  <h4 className={cn('t-body mt-6 mb-2 font-semibold first:mt-0', className)} {...props}>
-    {children}
-  </h4>
-);
+export const MdH4 =
+  ({
+    className,
+    children,
+    ...props
+  }: El<'h4'>) => (
+    <h4
+      className={cn(
+        't-body mt-6 mb-2 font-semibold first:mt-0',
+        className,
+      )}
+      {...props}
+    >
+      {
+        children
+      }
+    </h4>
+  );
 
 /** The slice of react-markdown's hast `node` this file reads. */
-type HastNode = { children?: Array<{ type?: string; tagName?: string }> };
+type HastNode =
+  {
+    children?: Array<{
+      type?: string;
+      tagName?: string;
+    }>;
+  };
 
 /**
  * react-markdown wraps a lone `![alt](src)` in a `<p>`, and `MdImg` renders a `<figure>` (a video, an iframe), which is
  * invalid inside `<p>` and trips a hydration warning. A paragraph that holds an image therefore renders as a `<div>`
  * with the same prose styling.
  */
-export const MdP = ({
-  className,
-  node,
-  ...props
-}: El<'p'> & { node?: HastNode }) => {
-  const hasMedia = node?.children?.some((c) => c.type === 'element' && c.tagName === 'img');
-  const Tag = hasMedia ? 'div' : 'p';
-  return <Tag className={cn('t-prose mb-4 text-site-text', className)} {...props} />;
-};
+export const MdP =
+  ({
+    className,
+    node,
+    ...props
+  }: El<'p'> & {
+    node?: HastNode;
+  }) => {
+    const hasMedia =
+      node?.children?.some(
+        (
+          c,
+        ) =>
+          c.type ===
+            'element' &&
+          c.tagName ===
+            'img',
+      );
+    const Tag =
+      hasMedia
+        ? 'div'
+        : 'p';
+    return (
+      <Tag
+        className={cn(
+          't-prose mb-4 text-site-text',
+          className,
+        )}
+        {...props}
+      />
+    );
+  };
 
-export const MdUl = ({ className, ...props }: El<'ul'>) => (
-  <ul
-    className={cn('t-prose mb-4 ms-5 list-outside list-disc space-y-1.5 text-site-text', className)}
-    {...props}
-  />
-);
+export const MdUl =
+  ({
+    className,
+    ...props
+  }: El<'ul'>) => (
+    <ul
+      className={cn(
+        't-prose mb-4 ms-5 list-outside list-disc space-y-1.5 text-site-text',
+        className,
+      )}
+      {...props}
+    />
+  );
 
-export const MdOl = ({ className, ...props }: El<'ol'>) => (
-  <ol
-    className={cn(
-      't-prose mb-4 ms-5 list-outside list-decimal space-y-1.5 text-site-text',
-      className,
-    )}
-    {...props}
-  />
-);
+export const MdOl =
+  ({
+    className,
+    ...props
+  }: El<'ol'>) => (
+    <ol
+      className={cn(
+        't-prose mb-4 ms-5 list-outside list-decimal space-y-1.5 text-site-text',
+        className,
+      )}
+      {...props}
+    />
+  );
 
-export const MdLi = ({ className, ...props }: El<'li'>) => (
-  <li className={cn('ps-1', className)} {...props} />
-);
+export const MdLi =
+  ({
+    className,
+    ...props
+  }: El<'li'>) => (
+    <li
+      className={cn(
+        'ps-1',
+        className,
+      )}
+      {...props}
+    />
+  );
 
-export const MdBlockquote = ({ className, ...props }: El<'blockquote'>) => (
-  <blockquote
-    className={cn(
-      't-prose my-6 border-s border-site-border py-1 ps-4 text-site-text-muted',
-      className,
-    )}
-    {...props}
-  />
-);
+export const MdBlockquote =
+  ({
+    className,
+    ...props
+  }: El<'blockquote'>) => (
+    <blockquote
+      className={cn(
+        't-prose my-6 border-s border-site-border py-1 ps-4 text-site-text-muted',
+        className,
+      )}
+      {...props}
+    />
+  );
 
-export const MdHr = ({ className, ...props }: El<'hr'>) => (
-  <hr className={cn('my-8 border-site-border', className)} {...props} />
-);
+export const MdHr =
+  ({
+    className,
+    ...props
+  }: El<'hr'>) => (
+    <hr
+      className={cn(
+        'my-8 border-site-border',
+        className,
+      )}
+      {...props}
+    />
+  );
 
-export const MdPre = ({ className, ...props }: El<'pre'>) => (
-  <pre
-    className={cn(
-      'mb-4 overflow-x-auto rounded-site border border-site-border bg-site-bg-subtle p-4 text-sm text-site-text',
-      className,
-    )}
-    {...props}
-  />
-);
+export const MdPre =
+  ({
+    className,
+    ...props
+  }: El<'pre'>) => (
+    <pre
+      className={cn(
+        'mb-4 overflow-x-auto rounded-site border border-site-border bg-site-bg-subtle p-4 text-sm text-site-text',
+        className,
+      )}
+      {...props}
+    />
+  );
 
 /**
  * A figure: the picture, video or YouTube embed is a picture (S4) with its alt text as a visible caption. The kind comes
@@ -121,98 +245,224 @@ export const MdPre = ({ className, ...props }: El<'pre'>) => (
  * No raw HTML is ever parsed: the iframe is built here, only for a recognised YouTube id, on the privacy host the CSP
  * allows.
  */
-export const MdImg = ({ className, alt, src, node: _node, ...props }: El<'img'> & { node?: unknown }) => {
-  const source = typeof src === 'string' ? src : '';
-  const media = classifyMedia(source);
-  const frame = 'my-6 overflow-hidden rounded-site border border-site-border bg-site-bg-subtle';
-  const caption = alt ? (
-    <figcaption className="t-meta border-t border-site-border px-3 py-2">{alt}</figcaption>
-  ) : null;
+export const MdImg =
+  ({
+    className,
+    alt,
+    src,
+    node: _node,
+    ...props
+  }: El<'img'> & {
+    node?: unknown;
+  }) => {
+    const source =
+      typeof src ===
+      'string'
+        ? src
+        : '';
+    const media =
+      classifyMedia(
+        source,
+      );
+    const frame =
+      'my-6 overflow-hidden rounded-site border border-site-border bg-site-bg-subtle';
+    const caption =
+      alt ? (
+        <figcaption className="t-meta border-t border-site-border px-3 py-2">
+          {
+            alt
+          }
+        </figcaption>
+      ) : null;
 
-  if (media.kind === 'video') {
-    return (
-      <figure className={frame}>
-        <video
-          controls
-          playsInline
-          preload="metadata"
-          src={media.src}
-          aria-label={alt || undefined}
-          className="block h-auto w-full"
-        />
-        {caption}
-      </figure>
-    );
-  }
-
-  if (media.kind === 'youtube') {
-    return (
-      <figure className={frame}>
-        <div className="aspect-video w-full">
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${media.videoId}`}
-            title={alt || 'YouTube video'}
-            loading="lazy"
-            allowFullScreen
-            allow="encrypted-media; picture-in-picture; fullscreen"
-            referrerPolicy="strict-origin-when-cross-origin"
-            className="h-full w-full border-0"
+    if (
+      media.kind ===
+      'video'
+    ) {
+      return (
+        <figure
+          className={
+            frame
+          }
+        >
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            src={
+              media.src
+            }
+            aria-label={
+              alt ||
+              undefined
+            }
+            className="block h-auto w-full"
           />
-        </div>
-        {caption}
+          {
+            caption
+          }
+        </figure>
+      );
+    }
+
+    if (
+      media.kind ===
+      'youtube'
+    ) {
+      return (
+        <figure
+          className={
+            frame
+          }
+        >
+          <div className="aspect-video w-full">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${media.videoId}`}
+              title={
+                alt ||
+                'YouTube video'
+              }
+              loading="lazy"
+              allowFullScreen
+              allow="encrypted-media; picture-in-picture; fullscreen"
+              referrerPolicy="strict-origin-when-cross-origin"
+              className="h-full w-full border-0"
+            />
+          </div>
+          {
+            caption
+          }
+        </figure>
+      );
+    }
+
+    return (
+      <figure
+        className={
+          frame
+        }
+      >
+        <img
+          className={cn(
+            'h-auto w-full',
+            className,
+          )}
+          alt={
+            alt
+          }
+          src={
+            src
+          }
+          loading="lazy"
+          {...props}
+        />
+        {
+          caption
+        }
       </figure>
     );
-  }
-
-  return (
-    <figure className={frame}>
-      <img className={cn('h-auto w-full', className)} alt={alt} src={src} loading="lazy" {...props} />
-      {caption}
-    </figure>
-  );
-};
+  };
 
 /**
  * Inline code only. A fenced block arrives as `<pre><code class="language-x">`,
  * and `AnimatedPre` already paints that surface — a second chip inside it would
  * double the border and background, so the fenced case renders bare.
  */
-export const MarkdownCode = ({ className, ...props }: El<'code'>) => {
-  if (className?.includes('language-')) return <code className={className} {...props} />;
-  return (
-    <code
+export const MarkdownCode =
+  ({
+    className,
+    ...props
+  }: El<'code'>) => {
+    if (
+      className?.includes(
+        'language-',
+      )
+    )
+      return (
+        <code
+          className={
+            className
+          }
+          {...props}
+        />
+      );
+    return (
+      <code
+        className={cn(
+          // eslint-disable-next-line local/no-arbitrary-type-size -- relative em: inline code scales with the surrounding prose, which no absolute step can express
+          'rounded-site-sm bg-site-bg-subtle px-1.5 py-0.5 font-mono text-[0.9em] text-site-text',
+          className,
+        )}
+        {...props}
+      />
+    );
+  };
+
+export const MarkdownA =
+  ({
+    className,
+    href,
+    children,
+    ...props
+  }: El<'a'>) => {
+    // Anything that isn't same-document or site-relative leaves the site.
+    const external =
+      !!href &&
+      !/^(\/|#)/.test(
+        href,
+      );
+    return (
+      <a
+        href={
+          href
+        }
+        className={cn(
+          'font-medium text-site-text underline underline-offset-4',
+          className,
+        )}
+        {...(external
+          ? {
+              target:
+                '_blank',
+              rel: 'noopener noreferrer',
+            }
+          : {})}
+        {...props}
+      >
+        {
+          children
+        }
+      </a>
+    );
+  };
+
+export const MarkdownStrong =
+  ({
+    className,
+    ...props
+  }: El<'strong'>) => (
+    <strong
       className={cn(
-        // eslint-disable-next-line local/no-arbitrary-type-size -- relative em: inline code scales with the surrounding prose, which no absolute step can express
-        'rounded-site-sm bg-site-bg-subtle px-1.5 py-0.5 font-mono text-[0.9em] text-site-text',
+        'font-bold text-site-text',
         className,
       )}
       {...props}
     />
   );
-};
 
-export const MarkdownA = ({ className, href, children, ...props }: El<'a'>) => {
-  // Anything that isn't same-document or site-relative leaves the site.
-  const external = !!href && !/^(\/|#)/.test(href);
-  return (
-    <a
-      href={href}
-      className={cn('font-medium text-site-text underline underline-offset-4', className)}
-      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+export const MarkdownEm =
+  ({
+    className,
+    ...props
+  }: El<'em'>) => (
+    <em
+      className={cn(
+        'text-site-text italic',
+        className,
+      )}
       {...props}
-    >
-      {children}
-    </a>
+    />
   );
-};
-
-export const MarkdownStrong = ({ className, ...props }: El<'strong'>) => (
-  <strong className={cn('font-bold text-site-text', className)} {...props} />
-);
-
-export const MarkdownEm = ({ className, ...props }: El<'em'>) => (
-  <em className={cn('text-site-text italic', className)} {...props} />
-);
 
 /*
  * No `table`/`th`/`td` entries on purpose: `remark-gfm` is not installed, so
@@ -228,21 +478,24 @@ export const MarkdownEm = ({ className, ...props }: El<'em'>) => (
  * consumer imports this rather than re-assembling the object, so the published
  * article and the admin preview of it can never drift apart.
  */
-export const markdownComponents = {
-  h1: MdH1,
-  h2: MdH2,
-  h3: MdH3,
-  h4: MdH4,
-  p: MdP,
-  ul: MdUl,
-  ol: MdOl,
-  li: MdLi,
-  blockquote: MdBlockquote,
-  img: MdImg,
-  hr: MdHr,
-  pre: MdPre,
-  code: MarkdownCode,
-  a: MarkdownA,
-  strong: MarkdownStrong,
-  em: MarkdownEm,
-};
+export const markdownComponents =
+  {
+    h1: MdH1,
+    h2: MdH2,
+    h3: MdH3,
+    h4: MdH4,
+    p: MdP,
+    ul: MdUl,
+    ol: MdOl,
+    li: MdLi,
+    blockquote:
+      MdBlockquote,
+    img: MdImg,
+    hr: MdHr,
+    pre: MdPre,
+    code: MarkdownCode,
+    a: MarkdownA,
+    strong:
+      MarkdownStrong,
+    em: MarkdownEm,
+  };

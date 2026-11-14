@@ -11,7 +11,10 @@
  * nothing while signed out.
  */
 
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { Loader2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import {
@@ -23,33 +26,74 @@ import { SynapseStormGame } from './SynapseStormGame';
 import { useArrival } from '@/components/ui/arrive';
 
 export function SynapseStormGate() {
-  const session = useSession();
-  const [loading, setLoading] = useState(true);
-  const signedIn = Boolean(session.data?.user);
-  const arrival = useArrival(!session.isPending && !loading);
+  const session =
+    useSession();
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      true,
+    );
+  const signedIn =
+    Boolean(
+      session
+        .data
+        ?.user,
+    );
+  const arrival =
+    useArrival(
+      !session.isPending &&
+        !loading,
+    );
 
   useEffect(() => {
-    if (session.isPending) return;
+    if (
+      session.isPending
+    )
+      return;
     let cancelled = false;
 
     void (async () => {
       // Nothing to fetch for a guest, and a 401 on every page load is how you
       // teach somebody to ignore their console.
-      if (signedIn) await loadSynapseStormSave();
-      if (!cancelled) setLoading(false);
+      if (
+        signedIn
+      )
+        await loadSynapseStormSave();
+      if (
+        !cancelled
+      )
+        setLoading(
+          false,
+        );
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [signedIn, session.isPending]);
+  }, [
+    signedIn,
+    session.isPending,
+  ]);
 
-  const handleSaveScore = async (data: ScoreSaveData): Promise<unknown> => {
-    if (!signedIn) return null;
-    return saveSynapseStormScore(data);
-  };
+  const handleSaveScore =
+    async (
+      data: ScoreSaveData,
+    ): Promise<unknown> => {
+      if (
+        !signedIn
+      )
+        return null;
+      return saveSynapseStormScore(
+        data,
+      );
+    };
 
-  if (session.isPending || loading) {
+  if (
+    session.isPending ||
+    loading
+  ) {
     return (
       <div className="app-ground w-full flex items-center justify-center bg-[#0a0a1a]">
         <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
@@ -57,9 +101,28 @@ export function SynapseStormGate() {
     );
   }
 
-  const game = (
-    <SynapseStormGame onSaveScore={handleSaveScore} currentUserId={session.data?.user?.id} />
-  );
+  const game =
+    (
+      <SynapseStormGame
+        onSaveScore={
+          handleSaveScore
+        }
+        currentUserId={
+          session
+            .data
+            ?.user
+            ?.id
+        }
+      />
+    );
   // The game replaces the spinner: it fades in through a box-less wrapper (M9).
-  return arrival ? <div className="arrive-group">{game}</div> : game;
+  return arrival ? (
+    <div className="arrive-group">
+      {
+        game
+      }
+    </div>
+  ) : (
+    game
+  );
 }

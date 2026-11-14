@@ -10,7 +10,12 @@
  */
 
 import type { HudGame } from './hud-state';
-import { isAction, defaultKeybinds, type Action, type Keybinds } from './input/actions';
+import {
+  isAction,
+  defaultKeybinds,
+  type Action,
+  type Keybinds,
+} from './input/actions';
 
 /** m_yaw / m_pitch: degrees per mouse count at sensitivity 1 (Source defaults). */
 export const M_YAW = 0.022;
@@ -22,13 +27,40 @@ export const CL_FORWARDSPEED = 450;
 export const CL_SIDESPEED = 450;
 export const CL_UPSPEED = 320;
 
-export type QualityTier = 'auto' | 'low' | 'medium' | 'high';
+export type QualityTier =
+  | 'auto'
+  | 'low'
+  | 'medium'
+  | 'high';
 /** A per-knob detail level of the Video tab's Advanced section; `auto` follows the Quality tier. */
-export type DetailLevel = 'auto' | 'low' | 'medium' | 'high';
-export const DETAIL_LEVELS: readonly DetailLevel[] = ['auto', 'low', 'medium', 'high'];
+export type DetailLevel =
+  | 'auto'
+  | 'low'
+  | 'medium'
+  | 'high';
+export const DETAIL_LEVELS: readonly DetailLevel[] =
+  [
+    'auto',
+    'low',
+    'medium',
+    'high',
+  ];
 /** `mat_forceaniso` levels (0 = the Quality tier's). */
-export const ANISOTROPY_LEVELS: readonly number[] = [0, 1, 2, 4, 8, 16];
-export type CrosshairStyle = 'cross' | 'dot' | 'circle' | 'cross-dot' | 'none';
+export const ANISOTROPY_LEVELS: readonly number[] =
+  [
+    0,
+    1,
+    2,
+    4,
+    8,
+    16,
+  ];
+export type CrosshairStyle =
+  | 'cross'
+  | 'dot'
+  | 'circle'
+  | 'cross-dot'
+  | 'none';
 
 export interface GameSettings {
   version: 1;
@@ -63,7 +95,12 @@ export interface GameSettings {
   fov: number;
   /** `viewmodel_fov` (default 54). */
   viewmodelFov: number;
-  volume: { master: number; sfx: number; voice: number; music: number };
+  volume: {
+    master: number;
+    sfx: number;
+    voice: number;
+    music: number;
+  };
   keybinds: Keybinds;
   quality: QualityTier;
   /**
@@ -77,13 +114,20 @@ export interface GameSettings {
     textureDetail: DetailLevel;
     modelDetail: DetailLevel;
     effectsDetail: DetailLevel;
-    antialias: 'auto' | 'on' | 'off';
+    antialias:
+      | 'auto'
+      | 'on'
+      | 'off';
     anisotropy: number;
   };
   showFps: boolean;
   /** `closecaption` (HL2/Portal subtitles + sound captions). */
   captions: boolean;
-  crosshair: { style: CrosshairStyle; color: string; scale: number };
+  crosshair: {
+    style: CrosshairStyle;
+    color: string;
+    scale: number;
+  };
   /** `tf_dingalingaling` hit sound and the last-hit kill sound. */
   hitSound: boolean;
   /** `hud_combattext` damage numbers. */
@@ -94,7 +138,10 @@ export interface GameSettings {
    * "Enable developer console" (`con_enable`, TF2's advanced keyboard option): the backquote key
    * and the pause menu's Console. `auto` is on with a keyboard and mouse, off on touch-first devices.
    */
-  devConsole: 'auto' | 'on' | 'off';
+  devConsole:
+    | 'auto'
+    | 'on'
+    | 'off';
   /** `cl_autoreload`. */
   autoReload: boolean;
   gamepad: {
@@ -111,35 +158,91 @@ export interface GameSettings {
     /** Scale of the on-screen controls. */
     buttonScale: number;
     /** Show the overlay: 'auto' detects a touch-first device. */
-    mode: 'auto' | 'on' | 'off';
+    mode:
+      | 'auto'
+      | 'on'
+      | 'off';
     haptics: boolean;
   };
 }
 
-export const FOV_RANGE: Record<HudGame, { min: number; max: number; def: number }> = {
-  tf2: { min: 75, max: 90, def: 90 },
-  hl2: { min: 75, max: 90, def: 75 },
-  portal: { min: 75, max: 90, def: 75 },
-  // CS:GO's fov_cs_debug is locked at 90 for players; the slider keeps TF2's range.
-  csgo: { min: 75, max: 90, def: 90 },
-};
-export const VIEWMODEL_FOV_RANGE = { min: 54, max: 70, def: 54 };
-export const SENSITIVITY_RANGE = { min: 0.1, max: 20 };
+export const FOV_RANGE: Record<
+  HudGame,
+  {
+    min: number;
+    max: number;
+    def: number;
+  }
+> =
+  {
+    tf2: {
+      min: 75,
+      max: 90,
+      def: 90,
+    },
+    hl2: {
+      min: 75,
+      max: 90,
+      def: 75,
+    },
+    portal:
+      {
+        min: 75,
+        max: 90,
+        def: 75,
+      },
+    // CS:GO's fov_cs_debug is locked at 90 for players; the slider keeps TF2's range.
+    csgo: {
+      min: 75,
+      max: 90,
+      def: 90,
+    },
+  };
+export const VIEWMODEL_FOV_RANGE =
+  {
+    min: 54,
+    max: 70,
+    def: 54,
+  };
+export const SENSITIVITY_RANGE =
+  {
+    min: 0.1,
+    max: 20,
+  };
 /** m_yaw / m_pitch magnitudes the settings accept. */
-export const M_YAW_RANGE = { min: 0.001, max: 0.2 };
+export const M_YAW_RANGE =
+  {
+    min: 0.001,
+    max: 0.2,
+  };
 /** m_customaccel_exponent (GameUI's slider runs 1–1.4; the console takes more). */
-export const ACCEL_EXPONENT_RANGE = { min: 1, max: 4 };
+export const ACCEL_EXPONENT_RANGE =
+  {
+    min: 1,
+    max: 4,
+  };
 /** zoom_sensitivity_ratio (Source leaves it unbounded; 0 would freeze the zoomed view). */
-export const ZOOM_SENSITIVITY_RATIO_RANGE = { min: 0.01, max: 10 };
+export const ZOOM_SENSITIVITY_RATIO_RANGE =
+  {
+    min: 0.01,
+    max: 10,
+  };
 /** mat_viewportscale when set by hand (0 = automatic). */
-export const RESOLUTION_SCALE_RANGE = { min: 0.4, max: 1 };
+export const RESOLUTION_SCALE_RANGE =
+  {
+    min: 0.4,
+    max: 1,
+  };
 
-export function defaultSettings(game: HudGame): GameSettings {
+export function defaultSettings(
+  game: HudGame,
+): GameSettings {
   return {
     version: 1,
     sensitivity: 3,
     mYaw: M_YAW,
-    mPitch: M_PITCH,
+    mPitch:
+      M_PITCH,
     invertY: false,
     rawInput: true,
     mouseFilter: false,
@@ -148,117 +251,615 @@ export function defaultSettings(game: HudGame): GameSettings {
     mouseAccelScale: 0.04,
     mouseAccelMax: 0,
     zoomSensitivityRatio: 1,
-    fov: FOV_RANGE[game].def,
-    viewmodelFov: VIEWMODEL_FOV_RANGE.def,
-    volume: { master: 0.6, sfx: 1, voice: 1, music: 0.6 },
-    keybinds: defaultKeybinds(game),
-    quality: 'auto',
-    video: { resolutionScale: 0, textureDetail: 'auto', modelDetail: 'auto', effectsDetail: 'auto', antialias: 'auto', anisotropy: 0 },
+    fov: FOV_RANGE[
+      game
+    ]
+      .def,
+    viewmodelFov:
+      VIEWMODEL_FOV_RANGE.def,
+    volume:
+      {
+        master: 0.6,
+        sfx: 1,
+        voice: 1,
+        music: 0.6,
+      },
+    keybinds:
+      defaultKeybinds(
+        game,
+      ),
+    quality:
+      'auto',
+    video:
+      {
+        resolutionScale: 0,
+        textureDetail:
+          'auto',
+        modelDetail:
+          'auto',
+        effectsDetail:
+          'auto',
+        antialias:
+          'auto',
+        anisotropy: 0,
+      },
     showFps: false,
-    captions: game !== 'tf2',
-    crosshair: { style: 'cross', color: 'rgb(200 255 200)', scale: 1 },
-    hitSound: game === 'tf2',
-    damageNumbers: game === 'tf2',
+    captions:
+      game !==
+      'tf2',
+    crosshair:
+      {
+        style:
+          'cross',
+        color:
+          'rgb(200 255 200)',
+        scale: 1,
+      },
+    hitSound:
+      game ===
+      'tf2',
+    damageNumbers:
+      game ===
+      'tf2',
     reducedFlashing: false,
-    devConsole: 'auto',
+    devConsole:
+      'auto',
     autoReload: true,
-    gamepad: { lookSpeed: 220, deadzone: 0.15, curve: 2, invertY: false },
-    touch: { lookSensitivity: 0.25, buttonScale: 1, mode: 'auto', haptics: true },
+    gamepad:
+      {
+        lookSpeed: 220,
+        deadzone: 0.15,
+        curve: 2,
+        invertY: false,
+      },
+    touch:
+      {
+        lookSensitivity: 0.25,
+        buttonScale: 1,
+        mode: 'auto',
+        haptics: true,
+      },
   };
 }
 
 // ─── Validation ────────────────────────────────────────────────────────────
 
-const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
-const numIn = (v: unknown, min: number, max: number, def: number): number =>
-  typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : def;
-const boolOr = (v: unknown, def: boolean): boolean => (typeof v === 'boolean' ? v : def);
-const oneOf = <T extends string>(v: unknown, options: readonly T[], def: T): T =>
-  typeof v === 'string' && (options as readonly string[]).includes(v) ? (v as T) : def;
+const isObj =
+  (
+    v: unknown,
+  ): v is Record<
+    string,
+    unknown
+  > =>
+    !!v &&
+    typeof v ===
+      'object' &&
+    !Array.isArray(
+      v,
+    );
+const numIn =
+  (
+    v: unknown,
+    min: number,
+    max: number,
+    def: number,
+  ): number =>
+    typeof v ===
+      'number' &&
+    Number.isFinite(
+      v,
+    )
+      ? Math.min(
+          max,
+          Math.max(
+            min,
+            v,
+          ),
+        )
+      : def;
+const boolOr =
+  (
+    v: unknown,
+    def: boolean,
+  ): boolean =>
+    typeof v ===
+    'boolean'
+      ? v
+      : def;
+const oneOf =
+  <
+    T extends
+      string,
+  >(
+    v: unknown,
+    options: readonly T[],
+    def: T,
+  ): T =>
+    typeof v ===
+      'string' &&
+    (
+      options as readonly string[]
+    ).includes(
+      v,
+    )
+      ? (v as T)
+      : def;
 /** Crosshair colours are stored as `rgb(r g b)` only (no arbitrary CSS reaches a style attribute). */
-const RGB_RE = /^rgb\(\d{1,3} \d{1,3} \d{1,3}\)$/;
-const KEY_CODE_RE = /^[A-Za-z0-9]{1,24}$/;
+const RGB_RE =
+  /^rgb\(\d{1,3} \d{1,3} \d{1,3}\)$/;
+const KEY_CODE_RE =
+  /^[A-Za-z0-9]{1,24}$/;
 
-function sanitizeKeybinds(v: unknown, def: Keybinds): Keybinds {
-  if (!isObj(v)) return def;
-  const out: Keybinds = {};
-  for (const [action, keys] of Object.entries(v)) {
-    if (!isAction(action) || !Array.isArray(keys)) continue;
-    const valid = keys.filter((k): k is string => typeof k === 'string' && KEY_CODE_RE.test(k)).slice(0, 2);
-    if (valid.length) out[action as Action] = valid;
+function sanitizeKeybinds(
+  v: unknown,
+  def: Keybinds,
+): Keybinds {
+  if (
+    !isObj(
+      v,
+    )
+  )
+    return def;
+  const out: Keybinds =
+    {};
+  for (const [
+    action,
+    keys,
+  ] of Object.entries(
+    v,
+  )) {
+    if (
+      !isAction(
+        action,
+      ) ||
+      !Array.isArray(
+        keys,
+      )
+    )
+      continue;
+    const valid =
+      keys
+        .filter(
+          (
+            k,
+          ): k is string =>
+            typeof k ===
+              'string' &&
+            KEY_CODE_RE.test(
+              k,
+            ),
+        )
+        .slice(
+          0,
+          2,
+        );
+    if (
+      valid.length
+    )
+      out[
+        action as Action
+      ] =
+        valid;
   }
   // Fixed actions always keep their defaults.
-  out.menu = def.menu ?? ['Escape'];
+  out.menu =
+    def.menu ?? [
+      'Escape',
+    ];
   return out;
 }
 
 /** Defaults overlaid with whatever of `raw` is valid; unknown or out-of-range values fall back. */
-export function sanitizeSettings(raw: unknown, game: HudGame): GameSettings {
-  const d = defaultSettings(game);
-  if (!isObj(raw)) return d;
-  const vol = isObj(raw.volume) ? raw.volume : {};
-  const ch = isObj(raw.crosshair) ? raw.crosshair : {};
-  const gp = isObj(raw.gamepad) ? raw.gamepad : {};
-  const tc = isObj(raw.touch) ? raw.touch : {};
-  const vd = isObj(raw.video) ? raw.video : {};
-  const fov = FOV_RANGE[game];
-  const scale = numIn(vd.resolutionScale, 0, RESOLUTION_SCALE_RANGE.max, d.video.resolutionScale);
+export function sanitizeSettings(
+  raw: unknown,
+  game: HudGame,
+): GameSettings {
+  const d =
+    defaultSettings(
+      game,
+    );
+  if (
+    !isObj(
+      raw,
+    )
+  )
+    return d;
+  const vol =
+    isObj(
+      raw.volume,
+    )
+      ? raw.volume
+      : {};
+  const ch =
+    isObj(
+      raw.crosshair,
+    )
+      ? raw.crosshair
+      : {};
+  const gp =
+    isObj(
+      raw.gamepad,
+    )
+      ? raw.gamepad
+      : {};
+  const tc =
+    isObj(
+      raw.touch,
+    )
+      ? raw.touch
+      : {};
+  const vd =
+    isObj(
+      raw.video,
+    )
+      ? raw.video
+      : {};
+  const fov =
+    FOV_RANGE[
+      game
+    ];
+  const scale =
+    numIn(
+      vd.resolutionScale,
+      0,
+      RESOLUTION_SCALE_RANGE.max,
+      d
+        .video
+        .resolutionScale,
+    );
   return {
     version: 1,
-    sensitivity: numIn(raw.sensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max, d.sensitivity),
-    mYaw: numIn(raw.mYaw, M_YAW_RANGE.min, M_YAW_RANGE.max, d.mYaw),
-    mPitch: numIn(raw.mPitch, M_YAW_RANGE.min, M_YAW_RANGE.max, d.mPitch),
-    invertY: boolOr(raw.invertY, d.invertY),
-    rawInput: boolOr(raw.rawInput, d.rawInput),
-    mouseFilter: boolOr(raw.mouseFilter, d.mouseFilter),
-    mouseAccel: Math.trunc(numIn(raw.mouseAccel, 0, 3, d.mouseAccel)),
-    mouseAccelExponent: numIn(raw.mouseAccelExponent, ACCEL_EXPONENT_RANGE.min, ACCEL_EXPONENT_RANGE.max, d.mouseAccelExponent),
-    mouseAccelScale: numIn(raw.mouseAccelScale, 0, 1, d.mouseAccelScale),
-    mouseAccelMax: numIn(raw.mouseAccelMax, 0, 20, d.mouseAccelMax),
-    zoomSensitivityRatio: numIn(raw.zoomSensitivityRatio, ZOOM_SENSITIVITY_RATIO_RANGE.min, ZOOM_SENSITIVITY_RATIO_RANGE.max, d.zoomSensitivityRatio),
-    fov: Math.round(numIn(raw.fov, fov.min, fov.max, d.fov)),
-    viewmodelFov: Math.round(numIn(raw.viewmodelFov, VIEWMODEL_FOV_RANGE.min, VIEWMODEL_FOV_RANGE.max, d.viewmodelFov)),
-    volume: {
-      master: numIn(vol.master, 0, 1, d.volume.master),
-      sfx: numIn(vol.sfx, 0, 1, d.volume.sfx),
-      voice: numIn(vol.voice, 0, 1, d.volume.voice),
-      music: numIn(vol.music, 0, 1, d.volume.music),
-    },
-    keybinds: sanitizeKeybinds(raw.keybinds, d.keybinds),
-    quality: oneOf(raw.quality, ['auto', 'low', 'medium', 'high'] as const, d.quality),
-    video: {
-      // 0 is automatic; a hand-set scale is at least the governor's floor.
-      resolutionScale: scale > 0 ? Math.max(RESOLUTION_SCALE_RANGE.min, scale) : 0,
-      textureDetail: oneOf(vd.textureDetail, DETAIL_LEVELS, d.video.textureDetail),
-      modelDetail: oneOf(vd.modelDetail, DETAIL_LEVELS, d.video.modelDetail),
-      effectsDetail: oneOf(vd.effectsDetail, DETAIL_LEVELS, d.video.effectsDetail),
-      antialias: oneOf(vd.antialias, ['auto', 'on', 'off'] as const, d.video.antialias),
-      anisotropy: ANISOTROPY_LEVELS.includes(vd.anisotropy as number) ? (vd.anisotropy as number) : d.video.anisotropy,
-    },
-    showFps: boolOr(raw.showFps, d.showFps),
-    captions: boolOr(raw.captions, d.captions),
-    crosshair: {
-      style: oneOf(ch.style, ['cross', 'dot', 'circle', 'cross-dot', 'none'] as const, d.crosshair.style),
-      color: typeof ch.color === 'string' && RGB_RE.test(ch.color) ? ch.color : d.crosshair.color,
-      scale: numIn(ch.scale, 0.5, 3, d.crosshair.scale),
-    },
-    hitSound: boolOr(raw.hitSound, d.hitSound),
-    damageNumbers: boolOr(raw.damageNumbers, d.damageNumbers),
-    reducedFlashing: boolOr(raw.reducedFlashing, d.reducedFlashing),
-    devConsole: oneOf(raw.devConsole, ['auto', 'on', 'off'] as const, d.devConsole),
-    autoReload: boolOr(raw.autoReload, d.autoReload),
-    gamepad: {
-      lookSpeed: numIn(gp.lookSpeed, 30, 720, d.gamepad.lookSpeed),
-      deadzone: numIn(gp.deadzone, 0, 0.6, d.gamepad.deadzone),
-      curve: numIn(gp.curve, 1, 4, d.gamepad.curve),
-      invertY: boolOr(gp.invertY, d.gamepad.invertY),
-    },
-    touch: {
-      lookSensitivity: numIn(tc.lookSensitivity, 0.02, 2, d.touch.lookSensitivity),
-      buttonScale: numIn(tc.buttonScale, 0.6, 1.6, d.touch.buttonScale),
-      mode: oneOf(tc.mode, ['auto', 'on', 'off'] as const, d.touch.mode),
-      haptics: boolOr(tc.haptics, d.touch.haptics),
-    },
+    sensitivity:
+      numIn(
+        raw.sensitivity,
+        SENSITIVITY_RANGE.min,
+        SENSITIVITY_RANGE.max,
+        d.sensitivity,
+      ),
+    mYaw: numIn(
+      raw.mYaw,
+      M_YAW_RANGE.min,
+      M_YAW_RANGE.max,
+      d.mYaw,
+    ),
+    mPitch:
+      numIn(
+        raw.mPitch,
+        M_YAW_RANGE.min,
+        M_YAW_RANGE.max,
+        d.mPitch,
+      ),
+    invertY:
+      boolOr(
+        raw.invertY,
+        d.invertY,
+      ),
+    rawInput:
+      boolOr(
+        raw.rawInput,
+        d.rawInput,
+      ),
+    mouseFilter:
+      boolOr(
+        raw.mouseFilter,
+        d.mouseFilter,
+      ),
+    mouseAccel:
+      Math.trunc(
+        numIn(
+          raw.mouseAccel,
+          0,
+          3,
+          d.mouseAccel,
+        ),
+      ),
+    mouseAccelExponent:
+      numIn(
+        raw.mouseAccelExponent,
+        ACCEL_EXPONENT_RANGE.min,
+        ACCEL_EXPONENT_RANGE.max,
+        d.mouseAccelExponent,
+      ),
+    mouseAccelScale:
+      numIn(
+        raw.mouseAccelScale,
+        0,
+        1,
+        d.mouseAccelScale,
+      ),
+    mouseAccelMax:
+      numIn(
+        raw.mouseAccelMax,
+        0,
+        20,
+        d.mouseAccelMax,
+      ),
+    zoomSensitivityRatio:
+      numIn(
+        raw.zoomSensitivityRatio,
+        ZOOM_SENSITIVITY_RATIO_RANGE.min,
+        ZOOM_SENSITIVITY_RATIO_RANGE.max,
+        d.zoomSensitivityRatio,
+      ),
+    fov: Math.round(
+      numIn(
+        raw.fov,
+        fov.min,
+        fov.max,
+        d.fov,
+      ),
+    ),
+    viewmodelFov:
+      Math.round(
+        numIn(
+          raw.viewmodelFov,
+          VIEWMODEL_FOV_RANGE.min,
+          VIEWMODEL_FOV_RANGE.max,
+          d.viewmodelFov,
+        ),
+      ),
+    volume:
+      {
+        master:
+          numIn(
+            vol.master,
+            0,
+            1,
+            d
+              .volume
+              .master,
+          ),
+        sfx: numIn(
+          vol.sfx,
+          0,
+          1,
+          d
+            .volume
+            .sfx,
+        ),
+        voice:
+          numIn(
+            vol.voice,
+            0,
+            1,
+            d
+              .volume
+              .voice,
+          ),
+        music:
+          numIn(
+            vol.music,
+            0,
+            1,
+            d
+              .volume
+              .music,
+          ),
+      },
+    keybinds:
+      sanitizeKeybinds(
+        raw.keybinds,
+        d.keybinds,
+      ),
+    quality:
+      oneOf(
+        raw.quality,
+        [
+          'auto',
+          'low',
+          'medium',
+          'high',
+        ] as const,
+        d.quality,
+      ),
+    video:
+      {
+        // 0 is automatic; a hand-set scale is at least the governor's floor.
+        resolutionScale:
+          scale >
+          0
+            ? Math.max(
+                RESOLUTION_SCALE_RANGE.min,
+                scale,
+              )
+            : 0,
+        textureDetail:
+          oneOf(
+            vd.textureDetail,
+            DETAIL_LEVELS,
+            d
+              .video
+              .textureDetail,
+          ),
+        modelDetail:
+          oneOf(
+            vd.modelDetail,
+            DETAIL_LEVELS,
+            d
+              .video
+              .modelDetail,
+          ),
+        effectsDetail:
+          oneOf(
+            vd.effectsDetail,
+            DETAIL_LEVELS,
+            d
+              .video
+              .effectsDetail,
+          ),
+        antialias:
+          oneOf(
+            vd.antialias,
+            [
+              'auto',
+              'on',
+              'off',
+            ] as const,
+            d
+              .video
+              .antialias,
+          ),
+        anisotropy:
+          ANISOTROPY_LEVELS.includes(
+            vd.anisotropy as number,
+          )
+            ? (vd.anisotropy as number)
+            : d
+                .video
+                .anisotropy,
+      },
+    showFps:
+      boolOr(
+        raw.showFps,
+        d.showFps,
+      ),
+    captions:
+      boolOr(
+        raw.captions,
+        d.captions,
+      ),
+    crosshair:
+      {
+        style:
+          oneOf(
+            ch.style,
+            [
+              'cross',
+              'dot',
+              'circle',
+              'cross-dot',
+              'none',
+            ] as const,
+            d
+              .crosshair
+              .style,
+          ),
+        color:
+          typeof ch.color ===
+            'string' &&
+          RGB_RE.test(
+            ch.color,
+          )
+            ? ch.color
+            : d
+                .crosshair
+                .color,
+        scale:
+          numIn(
+            ch.scale,
+            0.5,
+            3,
+            d
+              .crosshair
+              .scale,
+          ),
+      },
+    hitSound:
+      boolOr(
+        raw.hitSound,
+        d.hitSound,
+      ),
+    damageNumbers:
+      boolOr(
+        raw.damageNumbers,
+        d.damageNumbers,
+      ),
+    reducedFlashing:
+      boolOr(
+        raw.reducedFlashing,
+        d.reducedFlashing,
+      ),
+    devConsole:
+      oneOf(
+        raw.devConsole,
+        [
+          'auto',
+          'on',
+          'off',
+        ] as const,
+        d.devConsole,
+      ),
+    autoReload:
+      boolOr(
+        raw.autoReload,
+        d.autoReload,
+      ),
+    gamepad:
+      {
+        lookSpeed:
+          numIn(
+            gp.lookSpeed,
+            30,
+            720,
+            d
+              .gamepad
+              .lookSpeed,
+          ),
+        deadzone:
+          numIn(
+            gp.deadzone,
+            0,
+            0.6,
+            d
+              .gamepad
+              .deadzone,
+          ),
+        curve:
+          numIn(
+            gp.curve,
+            1,
+            4,
+            d
+              .gamepad
+              .curve,
+          ),
+        invertY:
+          boolOr(
+            gp.invertY,
+            d
+              .gamepad
+              .invertY,
+          ),
+      },
+    touch:
+      {
+        lookSensitivity:
+          numIn(
+            tc.lookSensitivity,
+            0.02,
+            2,
+            d
+              .touch
+              .lookSensitivity,
+          ),
+        buttonScale:
+          numIn(
+            tc.buttonScale,
+            0.6,
+            1.6,
+            d
+              .touch
+              .buttonScale,
+          ),
+        mode: oneOf(
+          tc.mode,
+          [
+            'auto',
+            'on',
+            'off',
+          ] as const,
+          d
+            .touch
+            .mode,
+        ),
+        haptics:
+          boolOr(
+            tc.haptics,
+            d
+              .touch
+              .haptics,
+          ),
+      },
   };
 }
 
@@ -266,29 +867,71 @@ export function sanitizeSettings(raw: unknown, game: HudGame): GameSettings {
 
 /** The slice of the Storage API used here (injectable for tests). */
 export interface SettingsStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
+  getItem(
+    key: string,
+  ):
+    | string
+    | null;
+  setItem(
+    key: string,
+    value: string,
+  ): void;
 }
 
-export const settingsKey = (game: HudGame): string => `rmh:tf2-game:settings:${game}`;
+export const settingsKey =
+  (
+    game: HudGame,
+  ): string =>
+    `rmh:tf2-game:settings:${game}`;
 
 /** `window.localStorage`, or null where touching it throws or it does not exist. */
 export function browserStorage(): SettingsStorage | null {
   try {
-    if (typeof window === 'undefined') return null;
-    return window.localStorage ?? null;
+    if (
+      typeof window ===
+      'undefined'
+    )
+      return null;
+    return (
+      window.localStorage ??
+      null
+    );
   } catch {
     return null;
   }
 }
 
-export function loadSettings(game: HudGame, storage: SettingsStorage | null = browserStorage()): GameSettings {
-  if (!storage) return defaultSettings(game);
+export function loadSettings(
+  game: HudGame,
+  storage: SettingsStorage | null = browserStorage(),
+): GameSettings {
+  if (
+    !storage
+  )
+    return defaultSettings(
+      game,
+    );
   try {
-    const raw = storage.getItem(settingsKey(game));
-    return raw ? sanitizeSettings(JSON.parse(raw), game) : defaultSettings(game);
+    const raw =
+      storage.getItem(
+        settingsKey(
+          game,
+        ),
+      );
+    return raw
+      ? sanitizeSettings(
+          JSON.parse(
+            raw,
+          ),
+          game,
+        )
+      : defaultSettings(
+          game,
+        );
   } catch {
-    return defaultSettings(game);
+    return defaultSettings(
+      game,
+    );
   }
 }
 
@@ -298,9 +941,19 @@ export function saveSettings(
   settings: GameSettings,
   storage: SettingsStorage | null = browserStorage(),
 ): boolean {
-  if (!storage) return false;
+  if (
+    !storage
+  )
+    return false;
   try {
-    storage.setItem(settingsKey(game), JSON.stringify(settings));
+    storage.setItem(
+      settingsKey(
+        game,
+      ),
+      JSON.stringify(
+        settings,
+      ),
+    );
     return true;
   } catch {
     return false;
@@ -310,36 +963,135 @@ export function saveSettings(
 // ─── Derived values ────────────────────────────────────────────────────────
 
 /** The mouse settings `mouseToDegrees` reads (all but sensitivity / invert optional: Source's defaults). */
-export type MouseSettings = Pick<GameSettings, 'sensitivity' | 'invertY'> &
-  Partial<Pick<GameSettings, 'mYaw' | 'mPitch' | 'mouseAccel' | 'mouseAccelExponent' | 'mouseAccelScale' | 'mouseAccelMax'>>;
+export type MouseSettings =
+  Pick<
+    GameSettings,
+    | 'sensitivity'
+    | 'invertY'
+  > &
+    Partial<
+      Pick<
+        GameSettings,
+        | 'mYaw'
+        | 'mPitch'
+        | 'mouseAccel'
+        | 'mouseAccelExponent'
+        | 'mouseAccelScale'
+        | 'mouseAccelMax'
+      >
+    >;
 
 /**
  * The counts multiplied by the sensitivity, with `m_customaccel` (CInput::ScaleMouse): 0 plain; 1 and 2
  * `min(max, pow(|d|, exponent) × scale + sensitivity)` (2 also times m_yaw / m_pitch, which then apply
  * twice, as in the SDK); 3 `pow(|d|², (exponent − 1) / 2) × sensitivity`.
  */
-export function scaleMouse(dx: number, dy: number, s: MouseSettings, sens = s.sensitivity): { x: number; y: number } {
-  const mode = s.mouseAccel ?? 0;
-  const exponent = s.mouseAccelExponent ?? 1;
-  if (mode === 1 || mode === 2) {
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    let accel = Math.pow(dist, exponent) * (s.mouseAccelScale ?? 0.04) + sens;
-    const max = s.mouseAccelMax ?? 0;
-    if (max > 0.0001 && accel > max) accel = max;
-    let x = dx * accel;
-    let y = dy * accel;
-    if (mode === 2) {
-      x *= s.mYaw ?? M_YAW;
-      y *= s.mPitch ?? M_PITCH;
+export function scaleMouse(
+  dx: number,
+  dy: number,
+  s: MouseSettings,
+  sens = s.sensitivity,
+): {
+  x: number;
+  y: number;
+} {
+  const mode =
+    s.mouseAccel ??
+    0;
+  const exponent =
+    s.mouseAccelExponent ??
+    1;
+  if (
+    mode ===
+      1 ||
+    mode ===
+      2
+  ) {
+    const dist =
+      Math.sqrt(
+        dx *
+          dx +
+          dy *
+            dy,
+      );
+    let accel =
+      Math.pow(
+        dist,
+        exponent,
+      ) *
+        (s.mouseAccelScale ??
+          0.04) +
+      sens;
+    const max =
+      s.mouseAccelMax ??
+      0;
+    if (
+      max >
+        0.0001 &&
+      accel >
+        max
+    )
+      accel =
+        max;
+    let x =
+      dx *
+      accel;
+    let y =
+      dy *
+      accel;
+    if (
+      mode ===
+      2
+    ) {
+      x *=
+        s.mYaw ??
+        M_YAW;
+      y *=
+        s.mPitch ??
+        M_PITCH;
     }
-    return { x, y };
+    return {
+      x,
+      y,
+    };
   }
-  if (mode === 3) {
-    const exp = Math.max(0, (exponent - 1) / 2);
-    const accel = Math.pow(dx * dx + dy * dy, exp) * sens;
-    return { x: dx * accel, y: dy * accel };
+  if (
+    mode ===
+    3
+  ) {
+    const exp =
+      Math.max(
+        0,
+        (exponent -
+          1) /
+          2,
+      );
+    const accel =
+      Math.pow(
+        dx *
+          dx +
+          dy *
+            dy,
+        exp,
+      ) *
+      sens;
+    return {
+      x:
+        dx *
+        accel,
+      y:
+        dy *
+        accel,
+    };
   }
-  return { x: dx * sens, y: dy * sens };
+  return {
+    x:
+      dx *
+      sens,
+    y:
+      dy *
+      sens,
+  };
 }
 
 /**
@@ -347,12 +1099,35 @@ export function scaleMouse(dx: number, dy: number, s: MouseSettings, sens = s.se
  * `sens` is the sensitivity in effect — `s.sensitivity`, or the zoomed one (`× zoomSensitivityScale`),
  * which ScaleMouse reads from gHUD.GetSensitivity() in its place, accelerated modes included.
  */
-export function mouseToDegrees(dx: number, dy: number, s: MouseSettings, sens = s.sensitivity): { yaw: number; pitch: number } {
-  const m = scaleMouse(dx, dy, s, sens);
+export function mouseToDegrees(
+  dx: number,
+  dy: number,
+  s: MouseSettings,
+  sens = s.sensitivity,
+): {
+  yaw: number;
+  pitch: number;
+} {
+  const m =
+    scaleMouse(
+      dx,
+      dy,
+      s,
+      sens,
+    );
   return {
     // Moving right turns right: yaw decreases (Source yaw is counter-clockwise).
-    yaw: -m.x * (s.mYaw ?? M_YAW),
-    pitch: m.y * (s.mPitch ?? M_PITCH) * (s.invertY ? -1 : 1),
+    yaw:
+      -m.x *
+      (s.mYaw ??
+        M_YAW),
+    pitch:
+      m.y *
+      (s.mPitch ??
+        M_PITCH) *
+      (s.invertY
+        ? -1
+        : 1),
   };
 }
 
@@ -363,18 +1138,53 @@ export function mouseToDegrees(dx: number, dy: number, s: MouseSettings, sens = 
  * FOV (C_BasePlayer::GetFOV), so the scale follows a zoom in or out frame by frame. Applies to TF2's
  * sniper scope, CS:GO's scopes and HL2's suit / crossbow zoom alike — they all go through the view FOV.
  */
-export function zoomSensitivityScale(fov: number, defaultFov: number, ratio = 1): number {
-  if (!(fov > 0) || !(defaultFov > 0) || fov >= defaultFov) return 1;
-  return (fov / defaultFov) * ratio;
+export function zoomSensitivityScale(
+  fov: number,
+  defaultFov: number,
+  ratio = 1,
+): number {
+  if (
+    !(
+      fov >
+      0
+    ) ||
+    !(
+      defaultFov >
+      0
+    ) ||
+    fov >=
+      defaultFov
+  )
+    return 1;
+  return (
+    (fov /
+      defaultFov) *
+    ratio
+  );
 }
 
 /** Whether the developer console is on for this device (`devConsole` auto: keyboard yes, touch-first no). */
-export function devConsoleEnabled(s: Pick<GameSettings, 'devConsole'>, touchFirst: boolean): boolean {
-  return s.devConsole === 'on' || (s.devConsole === 'auto' && !touchFirst);
+export function devConsoleEnabled(
+  s: Pick<
+    GameSettings,
+    'devConsole'
+  >,
+  touchFirst: boolean,
+): boolean {
+  return (
+    s.devConsole ===
+      'on' ||
+    (s.devConsole ===
+      'auto' &&
+      !touchFirst)
+  );
 }
 
 export interface QualityProfile {
-  tier: Exclude<QualityTier, 'auto'>;
+  tier: Exclude<
+    QualityTier,
+    'auto'
+  >;
   /** Render resolution as a fraction of the canvas' CSS size × DPR (also capped by DPR 2). */
   resolutionScale: number;
   /** Largest texture edge to upload. */
@@ -385,19 +1195,64 @@ export interface QualityProfile {
   shadows: false;
 }
 
-const PROFILES: Record<Exclude<QualityTier, 'auto'>, QualityProfile> = {
-  low: { tier: 'low', resolutionScale: 0.6, textureCap: 256, particles: 0.35, shadows: false },
-  medium: { tier: 'medium', resolutionScale: 0.8, textureCap: 512, particles: 0.7, shadows: false },
-  high: { tier: 'high', resolutionScale: 1, textureCap: 1024, particles: 1, shadows: false },
+const PROFILES: Record<
+  Exclude<
+    QualityTier,
+    'auto'
+  >,
+  QualityProfile
+> = {
+  low: {
+    tier: 'low',
+    resolutionScale: 0.6,
+    textureCap: 256,
+    particles: 0.35,
+    shadows: false,
+  },
+  medium:
+    {
+      tier: 'medium',
+      resolutionScale: 0.8,
+      textureCap: 512,
+      particles: 0.7,
+      shadows: false,
+    },
+  high: {
+    tier: 'high',
+    resolutionScale: 1,
+    textureCap: 1024,
+    particles: 1,
+    shadows: false,
+  },
 };
 
 /** The concrete profile; `auto` picks from the device (touch-first or low-power → low/medium). */
 export function qualityProfile(
   tier: QualityTier,
-  device: { touchFirst?: boolean; lowPower?: boolean; memoryGb?: number } = {},
+  device: {
+    touchFirst?: boolean;
+    lowPower?: boolean;
+    memoryGb?: number;
+  } = {},
 ): QualityProfile {
-  if (tier !== 'auto') return PROFILES[tier];
-  if (device.lowPower || (device.memoryGb !== undefined && device.memoryGb <= 2)) return PROFILES.low;
-  if (device.touchFirst) return PROFILES.medium;
+  if (
+    tier !==
+    'auto'
+  )
+    return PROFILES[
+      tier
+    ];
+  if (
+    device.lowPower ||
+    (device.memoryGb !==
+      undefined &&
+      device.memoryGb <=
+        2)
+  )
+    return PROFILES.low;
+  if (
+    device.touchFirst
+  )
+    return PROFILES.medium;
   return PROFILES.high;
 }

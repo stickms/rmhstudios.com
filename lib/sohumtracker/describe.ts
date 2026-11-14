@@ -10,9 +10,20 @@
  * and the description stay the same sentence.
  */
 
-import { formatCount, formatDuration } from './config';
-import { formatDayLong, formatMonthLong, formatWeekRange } from './dates';
-import type { WatchDayDTO, WatchSummaryDTO, WatchTotalsDTO } from './types';
+import {
+  formatCount,
+  formatDuration,
+} from './config';
+import {
+  formatDayLong,
+  formatMonthLong,
+  formatWeekRange,
+} from './dates';
+import type {
+  WatchDayDTO,
+  WatchSummaryDTO,
+  WatchTotalsDTO,
+} from './types';
 
 /**
  * A day's headline figures, without the date.
@@ -21,9 +32,23 @@ import type { WatchDayDTO, WatchSummaryDTO, WatchTotalsDTO } from './types';
  * title: prefixing it again gave cards that read "Sunday, August 9 / Sunday,
  * August 9: 8h 4m in voice…".
  */
-export function dayFigures(day: WatchDayDTO): string {
-  const signedIn = day.onlineSec + day.idleSec + day.dndSec;
-  if (signedIn === 0 && day.voiceSec === 0 && day.messages === 0 && day.gamingSec === 0) {
+export function dayFigures(
+  day: WatchDayDTO,
+): string {
+  const signedIn =
+    day.onlineSec +
+    day.idleSec +
+    day.dndSec;
+  if (
+    signedIn ===
+      0 &&
+    day.voiceSec ===
+      0 &&
+    day.messages ===
+      0 &&
+    day.gamingSec ===
+      0
+  ) {
     return 'Nothing recorded. Not online, no voice, no messages, no games.';
   }
   // Time signed in leads: it is the figure the rest are a fraction of, and the
@@ -44,19 +69,37 @@ export function dayFigures(day: WatchDayDTO): string {
  * written to be read on its own, and falls back to the figures, which are
  * always there.
  */
-export function describeDay(day: WatchDayDTO): string {
-  const label = formatDayLong(day.dateKey);
-  const figures = dayFigures(day);
-  return day.summary?.headline
+export function describeDay(
+  day: WatchDayDTO,
+): string {
+  const label =
+    formatDayLong(
+      day.dateKey,
+    );
+  const figures =
+    dayFigures(
+      day,
+    );
+  return day
+    .summary
+    ?.headline
     ? `${label}: ${day.summary.headline} — ${figures}`
     : `${label}: ${figures}`;
 }
 
 /** `Week of Aug 10 – Aug 16` / `August 2026`, from a period and its key. */
-export function periodLabel(period: 'week' | 'month', periodKey: string): string {
-  return period === 'week'
+export function periodLabel(
+  period:
+    | 'week'
+    | 'month',
+  periodKey: string,
+): string {
+  return period ===
+    'week'
     ? `Week of ${formatWeekRange(periodKey)}`
-    : formatMonthLong(periodKey);
+    : formatMonthLong(
+        periodKey,
+      );
 }
 
 /**
@@ -67,8 +110,17 @@ export function periodLabel(period: 'week' | 'month', periodKey: string): string
  * days replaces the games figure: over a month, "he was on Discord at all on 27
  * of 31 days" says more than a games total.
  */
-export function periodFigures(totals: WatchTotalsDTO): string {
-  if (totals.presenceSec === 0 && totals.voiceSec === 0 && totals.messages === 0) {
+export function periodFigures(
+  totals: WatchTotalsDTO,
+): string {
+  if (
+    totals.presenceSec ===
+      0 &&
+    totals.voiceSec ===
+      0 &&
+    totals.messages ===
+      0
+  ) {
     return 'Nothing recorded across the whole period.';
   }
   return (
@@ -81,12 +133,23 @@ export function periodFigures(totals: WatchTotalsDTO): string {
 
 /** What a week or a month was, in a sentence — the meta description. */
 export function describePeriod(
-  period: 'week' | 'month',
+  period:
+    | 'week'
+    | 'month',
   periodKey: string,
   totals: WatchTotalsDTO,
   summary: WatchSummaryDTO | null,
 ): string {
-  const label = periodLabel(period, periodKey);
-  const figures = periodFigures(totals);
-  return summary?.headline ? `${label}: ${summary.headline} — ${figures}` : `${label}: ${figures}`;
+  const label =
+    periodLabel(
+      period,
+      periodKey,
+    );
+  const figures =
+    periodFigures(
+      totals,
+    );
+  return summary?.headline
+    ? `${label}: ${summary.headline} — ${figures}`
+    : `${label}: ${figures}`;
 }

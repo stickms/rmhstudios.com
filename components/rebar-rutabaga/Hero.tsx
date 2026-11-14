@@ -35,28 +35,69 @@ import { MENU_PRICE_SEK } from '@/lib/rebar-rutabaga/menu';
 
 /** The page's curve, matching `--rebar-ease`. See `Reveal.tsx`. */
 /** Rise-and-settle, sequenced by `delay`. */
-function rise(delay: number) {
+function rise(
+  delay: number,
+) {
   return {
-    initial: { opacity: 0, y: 26 },
-    animate: { opacity: 1, y: 0 },
-    transition: editorialTransition(0.78, delay),
+    initial:
+      {
+        opacity: 0,
+        y: 26,
+      },
+    animate:
+      {
+        opacity: 1,
+        y: 0,
+      },
+    transition:
+      editorialTransition(
+        0.78,
+        delay,
+      ),
   };
 }
 
 export function Hero() {
-  const { t, i18n } = useTranslation('c-rebar-rutabaga');
+  const {
+    t,
+    i18n,
+  } =
+    useTranslation(
+      'c-rebar-rutabaga',
+    );
 
-  const price = new Intl.NumberFormat(i18n.language, {
-    style: 'currency',
-    currency: 'SEK',
-    maximumFractionDigits: 0,
-  }).format(MENU_PRICE_SEK);
+  const price =
+    new Intl.NumberFormat(
+      i18n.language,
+      {
+        style:
+          'currency',
+        currency:
+          'SEK',
+        maximumFractionDigits: 0,
+      },
+    ).format(
+      MENU_PRICE_SEK,
+    );
 
-  const meta = [
-    t('hero.stars', { defaultValue: 'Two stars' }),
-    t('hero.nights', { defaultValue: 'Wed – Sat' }),
-    price,
-  ];
+  const meta =
+    [
+      t(
+        'hero.stars',
+        {
+          defaultValue:
+            'Two stars',
+        },
+      ),
+      t(
+        'hero.nights',
+        {
+          defaultValue:
+            'Wed – Sat',
+        },
+      ),
+      price,
+    ];
 
   return (
     <section className="relative overflow-hidden">
@@ -74,63 +115,117 @@ export function Hero() {
 
       <div className="relative mx-auto flex min-h-[86svh] max-w-[86rem] flex-col justify-center px-6 py-24 sm:px-10 sm:py-32">
         <motion.p
-          {...rise(0.05)}
+          {...rise(
+            0.05,
+          )}
           className="font-mono text-rem-70 uppercase tracking-[0.26em] text-rebar-ink-faint"
         >
-          {t('hero.eyebrow', {
-            defaultValue: 'Molecular gastronomy · Verkstadsgatan 4',
-          })}
+          {t(
+            'hero.eyebrow',
+            {
+              defaultValue:
+                'Molecular gastronomy · Verkstadsgatan 4',
+            },
+          )}
         </motion.p>
 
         <h1 className="mt-8 font-display font-light leading-[0.86] tracking-[-0.045em] text-rebar-ink">
           <motion.span
-            {...rise(0.14)}
+            {...rise(
+              0.14,
+            )}
             className="block text-[clamp(3.2rem,12vw,9.5rem)]"
           >
-            {t('hero.name1', { defaultValue: 'Rebar' })}
+            {t(
+              'hero.name1',
+              {
+                defaultValue:
+                  'Rebar',
+              },
+            )}
           </motion.span>
           <motion.span
-            {...rise(0.22)}
+            {...rise(
+              0.22,
+            )}
             className="mt-1 block text-[clamp(3.2rem,12vw,9.5rem)]"
           >
-            <span className="text-rebar-ink-faint">&amp;</span>{' '}
-            {t('hero.name2', { defaultValue: 'Rutabaga' })}
+            <span className="text-rebar-ink-faint">
+              &amp;
+            </span>{' '}
+            {t(
+              'hero.name2',
+              {
+                defaultValue:
+                  'Rutabaga',
+              },
+            )}
           </motion.span>
         </h1>
 
         <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={editorialTransition(1.1, 0.42)}
+          initial={{
+            scaleX: 0,
+          }}
+          animate={{
+            scaleX: 1,
+          }}
+          transition={editorialTransition(
+            1.1,
+            0.42,
+          )}
           aria-hidden
           className="mt-12 h-px w-full max-w-[40rem] origin-left bg-rebar-line-strong"
         />
 
         <motion.p
-          {...rise(0.5)}
+          {...rise(
+            0.5,
+          )}
           className="mt-8 max-w-[34rem] text-lg leading-relaxed text-rebar-ink-soft sm:text-xl"
         >
-          {t('hero.lede', {
-            defaultValue:
-              'Nine courses, every one of them a sphere, in a foundry hall that bent reinforcing steel for thirty-five years.',
-          })}
+          {t(
+            'hero.lede',
+            {
+              defaultValue:
+                'Nine courses, every one of them a sphere, in a foundry hall that bent reinforcing steel for thirty-five years.',
+            },
+          )}
         </motion.p>
 
         <motion.ul
-          {...rise(0.6)}
+          {...rise(
+            0.6,
+          )}
           className="mt-14 flex flex-wrap items-center gap-x-8 gap-y-3 font-mono text-rem-72 uppercase tracking-[0.18em] text-rebar-ink-soft"
         >
-          {meta.map((item, i) => (
-            <li key={item} className="flex items-center gap-8">
-              {/* Hidden at phone width: the row wraps there, and a separator
+          {meta.map(
+            (
+              item,
+              i,
+            ) => (
+              <li
+                key={
+                  item
+                }
+                className="flex items-center gap-8"
+              >
+                {/* Hidden at phone width: the row wraps there, and a separator
                   that starts a wrapped line reads as a stray tally mark. The
                   gap alone is enough to keep three short facts apart. */}
-              {i > 0 ? (
-                <span aria-hidden className="hidden h-3 w-px bg-rebar-line sm:block" />
-              ) : null}
-              {item}
-            </li>
-          ))}
+                {i >
+                0 ? (
+                  <span
+                    aria-hidden
+                    className="hidden h-3 w-px bg-rebar-line sm:block"
+                  />
+                ) : null}
+                {
+                  item
+                }
+              </li>
+            ),
+          )}
         </motion.ul>
       </div>
     </section>

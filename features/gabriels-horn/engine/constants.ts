@@ -18,10 +18,12 @@
  * with yours.
  */
 
-export const GAME_ID = 'gabriels-horn';
+export const GAME_ID =
+  'gabriels-horn';
 
 /** The mirrored name the game wears in-world. "Gabriel's Horn" read backwards. */
-export const MIRROR_NAME = 'Nrohsleirbal';
+export const MIRROR_NAME =
+  'Nrohsleirbal';
 
 // ─── Table ──────────────────────────────────────────────────────────────────
 
@@ -31,8 +33,11 @@ export const MAX_PLAYERS = 6;
 /** Dice rolled at the start of a turn, hidden from the roller alone. */
 export const DICE_COUNT = 3;
 export const DIE_FACES = 6;
-export const MIN_TOTAL = DICE_COUNT;
-export const MAX_TOTAL = DICE_COUNT * DIE_FACES;
+export const MIN_TOTAL =
+  DICE_COUNT;
+export const MAX_TOTAL =
+  DICE_COUNT *
+  DIE_FACES;
 
 // ─── Cards ──────────────────────────────────────────────────────────────────
 
@@ -59,11 +64,34 @@ export const PLAY_DRAW = 2;
 export const HAND_LIMIT = 40;
 
 /** Colours carry the effect. Rank carries nothing — except {@link SWAP_RANK}. */
-export const COLORS = ['azure', 'crimson', 'verdant', 'amber'] as const;
-export type CardColor = (typeof COLORS)[number];
+export const COLORS =
+  [
+    'azure',
+    'crimson',
+    'verdant',
+    'amber',
+  ] as const;
+export type CardColor =
+  (typeof COLORS)[number];
 
-export const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
-export type CardRank = (typeof RANKS)[number];
+export const RANKS =
+  [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+  ] as const;
+export type CardRank =
+  (typeof RANKS)[number];
 
 /**
  * The one rank that means anything: a seven swaps your whole hand with
@@ -79,28 +107,62 @@ export interface Card {
 }
 
 /** What a colour does when the card is played. */
-export type CardEffect = 'glimpse' | 'accuse' | 'ward' | 'scry' | 'swap';
+export type CardEffect =
+  | 'glimpse'
+  | 'accuse'
+  | 'ward'
+  | 'scry'
+  | 'swap';
 
-export const COLOR_EFFECT: Record<CardColor, Exclude<CardEffect, 'swap'>> = {
+export const COLOR_EFFECT: Record<
+  CardColor,
+  Exclude<
+    CardEffect,
+    'swap'
+  >
+> = {
   /** Azure — see your own dice this turn. The blindness, bought off for a card. */
-  azure: 'glimpse',
+  azure:
+    'glimpse',
   /** Crimson — a player of your choice draws. */
-  crimson: 'accuse',
+  crimson:
+    'accuse',
   /** Verdant — nothing can make you draw until your next turn. */
-  verdant: 'ward',
+  verdant:
+    'ward',
   /** Amber — look at a player's hand. Mostly: find out who is holding a seven. */
-  amber: 'scry',
+  amber:
+    'scry',
 };
 
 /** Effects that need somebody pointed at. */
-export const TARGETED_EFFECTS: readonly CardEffect[] = ['accuse', 'scry', 'swap'];
+export const TARGETED_EFFECTS: readonly CardEffect[] =
+  [
+    'accuse',
+    'scry',
+    'swap',
+  ];
 
-export function effectOf(card: Card): CardEffect {
-  return card.rank === SWAP_RANK ? 'swap' : COLOR_EFFECT[card.color];
+export function effectOf(
+  card: Card,
+): CardEffect {
+  return card.rank ===
+    SWAP_RANK
+    ? 'swap'
+    : COLOR_EFFECT[
+        card
+          .color
+      ];
 }
 
-export function needsTarget(card: Card): boolean {
-  return TARGETED_EFFECTS.includes(effectOf(card));
+export function needsTarget(
+  card: Card,
+): boolean {
+  return TARGETED_EFFECTS.includes(
+    effectOf(
+      card,
+    ),
+  );
 }
 
 // ─── Clock ──────────────────────────────────────────────────────────────────
@@ -111,20 +173,23 @@ export function needsTarget(card: Card): boolean {
  * (see the handler): claims default to the TRUTH, a call that never comes costs
  * the roller a draw, a final turn that never comes is a pass.
  */
-export const PHASE_MS = {
-  /** Play cards, then roll or sound the horn. */
-  action: 45_000,
-  /** Everyone but the roller says a number. */
-  claim: 40_000,
-  /** The roller picks somebody and calls it. */
-  call: 40_000,
-  /** Dice face up, claims scored, nothing to do but read it. */
-  reveal: 7_000,
-  /** One last turn, after the End is called. */
-  final: 30_000,
-} as const;
+export const PHASE_MS =
+  {
+    /** Play cards, then roll or sound the horn. */
+    action: 45_000,
+    /** Everyone but the roller says a number. */
+    claim: 40_000,
+    /** The roller picks somebody and calls it. */
+    call: 40_000,
+    /** Dice face up, claims scored, nothing to do but read it. */
+    reveal: 7_000,
+    /** One last turn, after the End is called. */
+    final: 30_000,
+  } as const;
 
-export type Phase = keyof typeof PHASE_MS | 'over';
+export type Phase =
+  | keyof typeof PHASE_MS
+  | 'over';
 
 export const COUNTDOWN_SECONDS = 3;
 
@@ -148,7 +213,8 @@ export const RECONNECT_GRACE_MS = 90_000;
  * shorter game (everybody holds four cards, so the caller is never strictly
  * lowest and always loses).
  */
-export const MIN_TURNS_BEFORE_END = MIN_PLAYERS;
+export const MIN_TURNS_BEFORE_END =
+  MIN_PLAYERS;
 
 // ─── Chat ───────────────────────────────────────────────────────────────────
 

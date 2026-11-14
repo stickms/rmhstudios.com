@@ -7,7 +7,18 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { pf2ecalAskSchema } from '@/lib/pf2ecal/ask-schema';
 
-export const askPf2ecalApi = endpoint<{
-  body: z.infer<typeof pf2ecalAskSchema>;
-  res: { answer: string };
-}>()({ method: 'POST', path: '/api/pf2ecal/ask' });
+export const askPf2ecalApi =
+  endpoint<{
+    body: z.infer<
+      typeof pf2ecalAskSchema
+    >;
+    res: {
+      answer: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/pf2ecal/ask',
+    },
+  );

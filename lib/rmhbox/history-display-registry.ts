@@ -15,36 +15,62 @@ import type { ComponentType } from 'react';
 export interface GameLog {
   minigameId: string;
   version: number;
-  players: Array<{ userId: string; userName: string }>;
-  initialState: Record<string, unknown>;
+  players: Array<{
+    userId: string;
+    userName: string;
+  }>;
+  initialState: Record<
+    string,
+    unknown
+  >;
   actions: Array<{
     seq: number;
     timestamp: number;
     type: string;
-    payload: Record<string, unknown>;
+    payload: Record<
+      string,
+      unknown
+    >;
   }>;
-  finalResults: Array<{ userId: string; userName: string; score: number; rank: number }>;
+  finalResults: Array<{
+    userId: string;
+    userName: string;
+    score: number;
+    rank: number;
+  }>;
 }
 
 export interface HistoryDetailProps {
   gameLog: GameLog;
   currentUserId: string;
-  players: Array<{ userId: string; userName: string; rank: number; score: number }>;
+  players: Array<{
+    userId: string;
+    userName: string;
+    rank: number;
+    score: number;
+  }>;
 }
 
 export interface HistorySearchField {
   key: string;
   label: string;
   /** Given a gameLog, return all searchable string values */
-  extract: (gameLog: GameLog) => string[];
+  extract: (
+    gameLog: GameLog,
+  ) => string[];
 }
 
 export interface HistoryFilterField {
   key: string;
   label: string;
-  type: 'select' | 'range' | 'boolean';
+  type:
+    | 'select'
+    | 'range'
+    | 'boolean';
   /** For 'select': extract available options from a gameLog */
-  options?: (gameLog: GameLog) => string[];
+  options?: (
+    gameLog: GameLog,
+  ) => string[];
   /** For 'range': field path to numeric value */
   valuePath?: string;
 }
@@ -63,21 +89,44 @@ export interface HistoryDisplayConfig {
   filterableFields: HistoryFilterField[];
 
   /** Function to extract a one-line summary from a game log */
-  getSummary: (gameLog: GameLog) => string;
+  getSummary: (
+    gameLog: GameLog,
+  ) => string;
 }
 
 // ─── Registry ────────────────────────────────────────────────────
 
-const HISTORY_DISPLAY_REGISTRY: Record<string, HistoryDisplayConfig> = {};
+const HISTORY_DISPLAY_REGISTRY: Record<
+  string,
+  HistoryDisplayConfig
+> =
+  {};
 
-export function registerHistoryDisplay(config: HistoryDisplayConfig): void {
-  HISTORY_DISPLAY_REGISTRY[config.minigameId] = config;
+export function registerHistoryDisplay(
+  config: HistoryDisplayConfig,
+): void {
+  HISTORY_DISPLAY_REGISTRY[
+    config.minigameId
+  ] =
+    config;
 }
 
-export function getHistoryDisplay(minigameId: string): HistoryDisplayConfig | null {
-  return HISTORY_DISPLAY_REGISTRY[minigameId] ?? null;
+export function getHistoryDisplay(
+  minigameId: string,
+): HistoryDisplayConfig | null {
+  return (
+    HISTORY_DISPLAY_REGISTRY[
+      minigameId
+    ] ??
+    null
+  );
 }
 
-export function getAllHistoryDisplays(): Record<string, HistoryDisplayConfig> {
-  return { ...HISTORY_DISPLAY_REGISTRY };
+export function getAllHistoryDisplays(): Record<
+  string,
+  HistoryDisplayConfig
+> {
+  return {
+    ...HISTORY_DISPLAY_REGISTRY,
+  };
 }

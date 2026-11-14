@@ -16,24 +16,60 @@ import { GameShell } from './GameShell';
 import { useArrival } from '@/components/ui/arrive';
 
 export function HouseAlwaysWinsGate() {
-  const { t } = useTranslation('c-house-always-wins');
-  const session = useSession();
-  const arrival = useArrival(!session.isPending);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-house-always-wins',
+    );
+  const session =
+    useSession();
+  const arrival =
+    useArrival(
+      !session.isPending,
+    );
 
   // The session is still worth waiting for: the name is chrome, and chrome that
   // pops in a moment after the table reads as a glitch. It resolves in one
   // round-trip, and the shell below is the heavy part anyway.
-  if (session.isPending) {
+  if (
+    session.isPending
+  ) {
     return (
       <div className="app-ground flex items-center justify-center bg-neutral-950">
         <div className="text-neutral-600 text-sm font-mono tracking-widest animate-pulse">
-          {t('loading', { defaultValue: 'LOADING...' })}
+          {t(
+            'loading',
+            {
+              defaultValue:
+                'LOADING...',
+            },
+          )}
         </div>
       </div>
     );
   }
 
-  const shell = <GameShell userName={session.data?.user?.name ?? null} />;
+  const shell =
+    (
+      <GameShell
+        userName={
+          session
+            .data
+            ?.user
+            ?.name ??
+          null
+        }
+      />
+    );
   // The table replaces the session wait: it fades in through a box-less wrapper (M9).
-  return arrival ? <div className="arrive-group">{shell}</div> : shell;
+  return arrival ? (
+    <div className="arrive-group">
+      {
+        shell
+      }
+    </div>
+  ) : (
+    shell
+  );
 }

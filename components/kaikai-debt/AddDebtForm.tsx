@@ -2,20 +2,35 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { LogIn, Receipt, Sparkles } from 'lucide-react';
+import {
+  LogIn,
+  Receipt,
+  Sparkles,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSession } from '@/components/Providers';
 import { MAX_CLAIM_CHARS } from '@/lib/kaikai-debt/debt';
-import { playDebtAdded, playRejected } from '@/lib/kaikai-debt/sound';
+import {
+  playDebtAdded,
+  playRejected,
+} from '@/lib/kaikai-debt/sound';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
-import { addDebtEntryApi, type AddDebtResult } from '@/lib/kaikai-debt/kaikai-debt.contract';
+import {
+  HttpError,
+  serverError,
+} from '@/lib/http';
+import {
+  addDebtEntryApi,
+  type AddDebtResult,
+} from '@/lib/kaikai-debt/kaikai-debt.contract';
 
 export type { AddDebtResult };
 
 interface AddDebtFormProps {
-  onAdded: (payload: AddDebtResult) => void;
+  onAdded: (
+    payload: AddDebtResult,
+  ) => void;
   disabled?: boolean;
 }
 
@@ -38,80 +53,201 @@ interface AddDebtFormProps {
  * here afterwards. The API enforces the same rule (401), so this is UX and not
  * the security boundary.
  */
-export function AddDebtForm({ onAdded, disabled }: AddDebtFormProps) {
-  const { t } = useTranslation('c-kaikai-debt');
-  const { data: session, isPending } = useSession();
-  const [claim, setClaim] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+export function AddDebtForm({
+  onAdded,
+  disabled,
+}: AddDebtFormProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-kaikai-debt',
+    );
+  const {
+    data: session,
+    isPending,
+  } =
+    useSession();
+  const [
+    claim,
+    setClaim,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    submitting,
+    setSubmitting,
+  ] =
+    useState(
+      false,
+    );
 
-  const signedIn = Boolean(session?.user);
+  const signedIn =
+    Boolean(
+      session?.user,
+    );
 
-  async function submit(event: React.FormEvent) {
+  async function submit(
+    event: React.FormEvent,
+  ) {
     event.preventDefault();
-    const text = claim.trim();
-    if (!text || submitting) return;
+    const text =
+      claim.trim();
+    if (
+      !text ||
+      submitting
+    )
+      return;
 
-    setSubmitting(true);
+    setSubmitting(
+      true,
+    );
     try {
       let payload: AddDebtResult;
       try {
-        payload = await api(addDebtEntryApi, {
-          body: { claim: text },
-          // The button can be double-fired and the service worker's outbox
-          // replays writes by design; without a key, one burrito becomes two.
-          headers: { 'Idempotency-Key': crypto.randomUUID() },
-        });
+        payload =
+          await api(
+            addDebtEntryApi,
+            {
+              body: {
+                claim:
+                  text,
+              },
+              // The button can be double-fired and the service worker's outbox
+              // replays writes by design; without a key, one burrito becomes two.
+              headers:
+                {
+                  'Idempotency-Key':
+                    crypto.randomUUID(),
+                },
+            },
+          );
       } catch (e) {
-        if (!(e instanceof HttpError)) throw e;
+        if (
+          !(
+            e instanceof
+            HttpError
+          )
+        )
+          throw e;
         playRejected();
-        if (e.status === 422) {
+        if (
+          e.status ===
+          422
+        ) {
           // The appraiser declined. Its sentence is the useful part, so it is
           // shown verbatim rather than replaced with a generic validation error.
           toast.error(
-            serverError(e) ??
-              t('add.declined', { defaultValue: 'The appraiser declined that one.' }),
+            serverError(
+              e,
+            ) ??
+              t(
+                'add.declined',
+                {
+                  defaultValue:
+                    'The appraiser declined that one.',
+                },
+              ),
           );
         } else {
           toast.error(
-            serverError(e) ??
-              t('add.failed', { defaultValue: 'Could not add that to his tab. Try again.' }),
+            serverError(
+              e,
+            ) ??
+              t(
+                'add.failed',
+                {
+                  defaultValue:
+                    'Could not add that to his tab. Try again.',
+                },
+              ),
           );
         }
         return;
       }
       playDebtAdded();
-      setClaim('');
-      onAdded(payload);
+      setClaim(
+        '',
+      );
+      onAdded(
+        payload,
+      );
       toast.success(
-        t('add.success', {
-          defaultValue: 'Added to his tab: {{item}}',
-          item: payload.entry.item,
-        }),
+        t(
+          'add.success',
+          {
+            defaultValue:
+              'Added to his tab: {{item}}',
+            item: payload
+              .entry
+              .item,
+          },
+        ),
       );
     } catch {
       playRejected();
-      toast.error(t('add.offline', { defaultValue: 'Network trouble. Try again.' }));
+      toast.error(
+        t(
+          'add.offline',
+          {
+            defaultValue:
+              'Network trouble. Try again.',
+          },
+        ),
+      );
     } finally {
-      setSubmitting(false);
+      setSubmitting(
+        false,
+      );
     }
   }
 
-  if (!isPending && !signedIn) {
+  if (
+    !isPending &&
+    !signedIn
+  ) {
     return (
       <div className="surface-panel flex flex-col items-start gap-3 rounded-site p-5">
         <h2 className="font-display text-lg font-semibold text-site-text">
-          {t('add.title', { defaultValue: 'Put something on his tab' })}
+          {t(
+            'add.title',
+            {
+              defaultValue:
+                'Put something on his tab',
+            },
+          )}
         </h2>
         <p className="text-sm text-site-text-muted">
-          {t('add.signInPrompt', {
-            defaultValue:
-              'Anyone can add to Kaikai’s debt — but every line says who added it, so you’ll need to sign in first.',
-          })}
+          {t(
+            'add.signInPrompt',
+            {
+              defaultValue:
+                'Anyone can add to Kaikai’s debt — but every line says who added it, so you’ll need to sign in first.',
+            },
+          )}
         </p>
-        <Button asChild size="sm">
-          <Link to="/login" search={{ callbackURL: '/kaikaidebtcounter' }}>
-            <LogIn aria-hidden />
-            {t('add.signIn', { defaultValue: 'Sign in to add debt' })}
+        <Button
+          asChild
+          size="sm"
+        >
+          <Link
+            to="/login"
+            search={{
+              callbackURL:
+                '/kaikaidebtcounter',
+            }}
+          >
+            <LogIn
+              aria-hidden
+            />
+            {t(
+              'add.signIn',
+              {
+                defaultValue:
+                  'Sign in to add debt',
+              },
+            )}
           </Link>
         </Button>
       </div>
@@ -119,40 +255,121 @@ export function AddDebtForm({ onAdded, disabled }: AddDebtFormProps) {
   }
 
   return (
-    <form onSubmit={submit} className="surface-panel flex flex-col gap-3 rounded-site p-5">
+    <form
+      onSubmit={
+        submit
+      }
+      className="surface-panel flex flex-col gap-3 rounded-site p-5"
+    >
       <div>
         <h2 className="font-display text-lg font-semibold text-site-text">
-          {t('add.title', { defaultValue: 'Put something on his tab' })}
+          {t(
+            'add.title',
+            {
+              defaultValue:
+                'Put something on his tab',
+            },
+          )}
         </h2>
         <p className="mt-1 text-sm text-site-text-muted">
-          {t('add.helpUncapped', {
-            defaultValue:
-              'Describe what he owes you. The appraiser sets the price — a coffee or a car, there’s no ceiling — and it starts earning interest immediately.',
-          })}
+          {t(
+            'add.helpUncapped',
+            {
+              defaultValue:
+                'Describe what he owes you. The appraiser sets the price — a coffee or a car, there’s no ceiling — and it starts earning interest immediately.',
+            },
+          )}
         </p>
       </div>
 
       <Textarea
-        value={claim}
-        onChange={(e) => setClaim(e.target.value.slice(0, MAX_CLAIM_CHARS))}
-        maxLength={MAX_CLAIM_CHARS}
-        rows={3}
-        disabled={submitting || disabled}
-        placeholder={t('add.placeholder', {
-          defaultValue: 'He said he’d Venmo me for the pizza in March. He did not.',
-        })}
-        aria-label={t('add.label', { defaultValue: 'What does Kaikai owe you?' })}
+        value={
+          claim
+        }
+        onChange={(
+          e,
+        ) =>
+          setClaim(
+            e.target.value.slice(
+              0,
+              MAX_CLAIM_CHARS,
+            ),
+          )
+        }
+        maxLength={
+          MAX_CLAIM_CHARS
+        }
+        rows={
+          3
+        }
+        disabled={
+          submitting ||
+          disabled
+        }
+        placeholder={t(
+          'add.placeholder',
+          {
+            defaultValue:
+              'He said he’d Venmo me for the pizza in March. He did not.',
+          },
+        )}
+        aria-label={t(
+          'add.label',
+          {
+            defaultValue:
+              'What does Kaikai owe you?',
+          },
+        )}
       />
 
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs text-site-text-muted" aria-hidden>
-          {claim.length}/{MAX_CLAIM_CHARS}
+        <span
+          className="text-xs text-site-text-muted"
+          aria-hidden
+        >
+          {
+            claim.length
+          }
+          /
+          {
+            MAX_CLAIM_CHARS
+          }
         </span>
-        <Button type="submit" size="sm" loading={submitting} disabled={!claim.trim() || disabled}>
-          {submitting ? <Sparkles aria-hidden /> : <Receipt aria-hidden />}
+        <Button
+          type="submit"
+          size="sm"
+          loading={
+            submitting
+          }
+          disabled={
+            !claim.trim() ||
+            disabled
+          }
+        >
+          {submitting ? (
+            <Sparkles
+              aria-hidden
+            />
+          ) : (
+            <Receipt
+              aria-hidden
+            />
+          )}
           {submitting
-            ? t('add.appraising', { defaultValue: 'Appraising…' })
-            : t('add.submit', { defaultValue: 'Add to the debt' })}
+            ? t(
+                'add.appraising',
+                {
+                  defaultValue:
+                    'Appraising…',
+                },
+              )
+            : t(
+                'add.submit',
+                {
+                  defaultValue:
+                    'Add to the debt',
+                },
+              )}
         </Button>
       </div>
     </form>

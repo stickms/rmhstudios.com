@@ -28,11 +28,17 @@
  * of the video, which is what "it constantly buffers for everyone else" was.
  */
 
-import type { Server, Socket } from 'socket.io';
+import type {
+  Server,
+  Socket,
+} from 'socket.io';
 import { config } from './config';
 import { logger } from './logger';
 import { validated } from './schemas';
-import { C2S, S2C } from '../../lib/rmhtube/events';
+import {
+  C2S,
+  S2C,
+} from '../../lib/rmhtube/events';
 import {
   HostStateSchema,
   SeekSchema,
@@ -41,15 +47,27 @@ import {
   PingSchema,
   StallSchema,
 } from '../../lib/rmhtube/schemas';
-import { extrapolate, reanchor, initialVideoState } from '../../lib/rmhtube/sync-math';
+import {
+  extrapolate,
+  reanchor,
+  initialVideoState,
+} from '../../lib/rmhtube/sync-math';
 import { startOffset } from '../../lib/rmhtube/media';
-import { PEER_WAIT_MAX_MS, PEER_WAIT_COOLDOWN_MS } from '../../lib/rmhtube/constants';
+import {
+  PEER_WAIT_MAX_MS,
+  PEER_WAIT_COOLDOWN_MS,
+} from '../../lib/rmhtube/constants';
 import type { VideoState } from '../../lib/rmhtube/types';
 import type { RoomManager } from './room-manager';
 import type { RmhTubeRoom } from './types';
 import { z } from 'zod';
 
-const EmptySchema = z.object({}).optional();
+const EmptySchema =
+  z
+    .object(
+      {},
+    )
+    .optional();
 
 /**
  * How far the leader's own timestamp may sit from ours before we distrust it.
@@ -60,7 +78,10 @@ const EmptySchema = z.object({}).optional();
 const ANCHOR_SKEW_TOLERANCE_MS = 5_000;
 
 export class SyncEngine {
-  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+  private heartbeatInterval: ReturnType<
+    typeof setInterval
+  > | null =
+    null;
 
   constructor(
     private io: Server,
@@ -71,10 +92,20 @@ export class SyncEngine {
    * Advances the room's queue — wired to `MediaQueue.advanceQueue` at boot
    * (the queue is constructed after this engine, and owns the queue).
    */
-  private advance: ((room: RmhTubeRoom) => void) | null = null;
+  private advance:
+    | ((
+        room: RmhTubeRoom,
+      ) => void)
+    | null =
+    null;
 
-  setAdvanceHandler(advance: (room: RmhTubeRoom) => void): void {
-    this.advance = advance;
+  setAdvanceHandler(
+    advance: (
+      room: RmhTubeRoom,
+    ) => void,
+  ): void {
+    this.advance =
+      advance;
   }
 
   /**
@@ -84,76 +115,256 @@ export class SyncEngine {
    * fires when there is no one left to do it — and then the queue moves on
    * instead of sitting on a finished video forever.
    */
-  private advanceIfOverrun(room: RmhTubeRoom, now: number): boolean {
-    const item = room.currentItem;
-    const vs = room.videoState;
-    if (!item || !this.advance) return false;
-    if (vs.mode !== 'vod' || !vs.playing || vs.stalled) return false;
-    if (!item.duration || item.duration <= 0) return false;
-    if (extrapolate(vs, now) < item.duration + config.END_OF_ITEM_GRACE_S) return false;
-    logger.info({ event: 'auto_advance_overrun', roomId: room.id, itemId: item.id });
-    this.advance(room);
+  private advanceIfOverrun(
+    room: RmhTubeRoom,
+    now: number,
+  ): boolean {
+    const item =
+      room.currentItem;
+    const vs =
+      room.videoState;
+    if (
+      !item ||
+      !this
+        .advance
+    )
+      return false;
+    if (
+      vs.mode !==
+        'vod' ||
+      !vs.playing ||
+      vs.stalled
+    )
+      return false;
+    if (
+      !item.duration ||
+      item.duration <=
+        0
+    )
+      return false;
+    if (
+      extrapolate(
+        vs,
+        now,
+      ) <
+      item.duration +
+        config.END_OF_ITEM_GRACE_S
+    )
+      return false;
+    logger.info(
+      {
+        event:
+          'auto_advance_overrun',
+        roomId:
+          room.id,
+        itemId:
+          item.id,
+      },
+    );
+    this.advance(
+      room,
+    );
     return true;
   }
 
   // ─── Wiring ──────────────────────────────────────────────────
 
-  handleConnection(socket: Socket): void {
+  handleConnection(
+    socket: Socket,
+  ): void {
     socket.on(
       C2S.SYNC_HOST_STATE,
-      validated(socket, C2S.SYNC_HOST_STATE, HostStateSchema, (s, p) => this.onHostState(s, p)),
+      validated(
+        socket,
+        C2S.SYNC_HOST_STATE,
+        HostStateSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onHostState(
+            s,
+            p,
+          ),
+      ),
     );
     socket.on(
       C2S.SYNC_PLAY,
-      validated(socket, C2S.SYNC_PLAY, PlaybackEdgeSchema, (s, p) => this.onPlay(s, p)),
+      validated(
+        socket,
+        C2S.SYNC_PLAY,
+        PlaybackEdgeSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onPlay(
+            s,
+            p,
+          ),
+      ),
     );
     socket.on(
       C2S.SYNC_PAUSE,
-      validated(socket, C2S.SYNC_PAUSE, PlaybackEdgeSchema, (s, p) => this.onPause(s, p)),
+      validated(
+        socket,
+        C2S.SYNC_PAUSE,
+        PlaybackEdgeSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onPause(
+            s,
+            p,
+          ),
+      ),
     );
     socket.on(
       C2S.SYNC_SEEK,
-      validated(socket, C2S.SYNC_SEEK, SeekSchema, (s, p) => this.onSeek(s, p)),
+      validated(
+        socket,
+        C2S.SYNC_SEEK,
+        SeekSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onSeek(
+            s,
+            p,
+          ),
+      ),
     );
     socket.on(
       C2S.SYNC_SET_SPEED,
-      validated(socket, C2S.SYNC_SET_SPEED, SetSpeedSchema, (s, p) => this.onSetSpeed(s, p)),
+      validated(
+        socket,
+        C2S.SYNC_SET_SPEED,
+        SetSpeedSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onSetSpeed(
+            s,
+            p,
+          ),
+      ),
     );
     socket.on(
       C2S.SYNC_PING,
-      validated(socket, C2S.SYNC_PING, PingSchema, (s, p) => this.onPing(s, p)),
+      validated(
+        socket,
+        C2S.SYNC_PING,
+        PingSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onPing(
+            s,
+            p,
+          ),
+      ),
     );
     socket.on(
       C2S.SYNC_REQUEST,
-      validated(socket, C2S.SYNC_REQUEST, EmptySchema, (s) => this.onSyncRequest(s)),
+      validated(
+        socket,
+        C2S.SYNC_REQUEST,
+        EmptySchema,
+        (
+          s,
+        ) =>
+          this.onSyncRequest(
+            s,
+          ),
+      ),
     );
     socket.on(
       C2S.SYNC_STALL,
-      validated(socket, C2S.SYNC_STALL, StallSchema, (s, p) => this.onStall(s, p)),
+      validated(
+        socket,
+        C2S.SYNC_STALL,
+        StallSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onStall(
+            s,
+            p,
+          ),
+      ),
     );
   }
 
   /** The leader for this socket's room, or null when it is not the leader. */
-  private leaderRoom(socket: Socket): RmhTubeRoom | null {
-    const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.leaderUserId !== userId) return null;
+  private leaderRoom(
+    socket: Socket,
+  ): RmhTubeRoom | null {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const room =
+      this.roomManager.getRoomForUser(
+        userId,
+      );
+    if (
+      !room ||
+      room.leaderUserId !==
+        userId
+    )
+      return null;
     return room;
   }
 
   // ─── Clock sync ──────────────────────────────────────────────
 
   /** Reply immediately so the client can measure RTT and its clock offset. */
-  private onPing(socket: Socket, payload: { clientTime: number }): void {
-    socket.emit(S2C.SYNC_PONG, { clientTime: payload.clientTime, serverTime: Date.now() });
+  private onPing(
+    socket: Socket,
+    payload: {
+      clientTime: number;
+    },
+  ): void {
+    socket.emit(
+      S2C.SYNC_PONG,
+      {
+        clientTime:
+          payload.clientTime,
+        serverTime:
+          Date.now(),
+      },
+    );
   }
 
   /** On-demand resync — the current anchor, to one socket only. */
-  private onSyncRequest(socket: Socket): void {
-    const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room || !room.currentItem) return;
-    socket.emit(S2C.SYNC_STATE, reanchor(room.videoState, Date.now()));
+  private onSyncRequest(
+    socket: Socket,
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const room =
+      this.roomManager.getRoomForUser(
+        userId,
+      );
+    if (
+      !room ||
+      !room.currentItem
+    )
+      return;
+    socket.emit(
+      S2C.SYNC_STATE,
+      reanchor(
+        room.videoState,
+        Date.now(),
+      ),
+    );
   }
 
   // ─── Leader state reports ────────────────────────────────────
@@ -173,23 +384,49 @@ export class SyncEngine {
       live: boolean;
     },
   ): void {
-    const room = this.leaderRoom(socket);
-    if (!room) return;
+    const room =
+      this.leaderRoom(
+        socket,
+      );
+    if (
+      !room
+    )
+      return;
 
-    const now = Date.now();
-    room.leaderLastReportAt = now;
+    const now =
+      Date.now();
+    room.leaderLastReportAt =
+      now;
     // Trust the leader's stamp inside a sane window, fall back to ours outside
     // it. A wrong anchor time moves every viewer, so a clock we cannot believe
     // is worse than the latency we are trying to remove.
-    const skew = Math.abs(now - payload.timestamp);
-    const anchoredAt = skew <= ANCHOR_SKEW_TOLERANCE_MS ? payload.timestamp : now;
+    const skew =
+      Math.abs(
+        now -
+          payload.timestamp,
+      );
+    const anchoredAt =
+      skew <=
+      ANCHOR_SKEW_TOLERANCE_MS
+        ? payload.timestamp
+        : now;
 
-    const previous = room.videoState;
-    const mode = payload.live ? 'live' : 'vod';
+    const previous =
+      room.videoState;
+    const mode =
+      payload.live
+        ? 'live'
+        : 'vod';
     // While the room is holding for slow peers it is paused; a routine
     // report from a leader whose player has not yet applied that pause must
     // not flip it back to playing (only an explicit play edge ends a wait).
-    const playing = room.peerWait.startedAt !== null ? false : payload.playing;
+    const playing =
+      room
+        .peerWait
+        .startedAt !==
+      null
+        ? false
+        : payload.playing;
 
     // `rev` marks a DELIBERATE change to the room, not merely a fresher
     // measurement of it — a routine report re-anchors the same intent, so it
@@ -198,94 +435,254 @@ export class SyncEngine {
     // the room, follow it", and bumping it twice a second would have had the
     // leader's own report echo back and undo whatever it had just done.
     const changed =
-      previous.playing !== playing ||
-      previous.mode !== mode ||
-      previous.stalled !== payload.stalled ||
-      Math.abs(previous.playbackRate - payload.playbackRate) > 0.01;
+      previous.playing !==
+        playing ||
+      previous.mode !==
+        mode ||
+      previous.stalled !==
+        payload.stalled ||
+      Math.abs(
+        previous.playbackRate -
+          payload.playbackRate,
+      ) >
+        0.01;
 
-    room.videoState = {
-      mode,
-      playing,
-      currentTime: payload.currentTime,
-      playbackRate: payload.playbackRate,
-      updatedAt: anchoredAt,
-      stalled: payload.stalled,
-      rev: changed ? previous.rev + 1 : previous.rev,
-    };
+    room.videoState =
+      {
+        mode,
+        playing,
+        currentTime:
+          payload.currentTime,
+        playbackRate:
+          payload.playbackRate,
+        updatedAt:
+          anchoredAt,
+        stalled:
+          payload.stalled,
+        rev: changed
+          ? previous.rev +
+            1
+          : previous.rev,
+      };
 
     // A stalled leader is a room-wide event: viewers must stop projecting past
     // it, and the heartbeat alone is up to two seconds away.
-    if (changed) this.broadcastState(room, now);
+    if (
+      changed
+    )
+      this.broadcastState(
+        room,
+        now,
+      );
   }
 
   // ─── Leader edges ────────────────────────────────────────────
 
-  private onPlay(socket: Socket, payload?: { time?: number }): void {
-    const room = this.leaderRoom(socket);
-    if (!room) return;
-    const now = Date.now();
+  private onPlay(
+    socket: Socket,
+    payload?: {
+      time?: number;
+    },
+  ): void {
+    const room =
+      this.leaderRoom(
+        socket,
+      );
+    if (
+      !room
+    )
+      return;
+    const now =
+      Date.now();
     // Resume from the leader's playhead when it says where that is (its own
     // player's play button), else from the effective position, so a pause of
     // any length does not move the playhead.
-    this.setState(room, {
-      currentTime: this.edgePosition(room, payload, now),
-      playing: true,
-      stalled: false,
-    }, now);
-    room.lastActivityAt = now;
+    this.setState(
+      room,
+      {
+        currentTime:
+          this.edgePosition(
+            room,
+            payload,
+            now,
+          ),
+        playing: true,
+        stalled: false,
+      },
+      now,
+    );
+    room.lastActivityAt =
+      now;
 
     // An explicit play outranks a wait. Whoever we were holding for has to
     // re-report before the room pauses for them again — otherwise a stale
     // stall would re-pause the room within a tick of the leader pressing play,
     // and the button would look broken.
-    if (room.peerWait.startedAt !== null) {
-      this.endPeerWait(room, 'leader_played', now);
-    } else if (room.peerWait.stalled.size > 0) {
+    if (
+      room
+        .peerWait
+        .startedAt !==
+      null
+    ) {
+      this.endPeerWait(
+        room,
+        'leader_played',
+        now,
+      );
+    } else if (
+      room
+        .peerWait
+        .stalled
+        .size >
+      0
+    ) {
       room.peerWait.stalled.clear();
-      this.broadcastPeersWaiting(room);
+      this.broadcastPeersWaiting(
+        room,
+      );
     }
   }
 
-  private onPause(socket: Socket, payload?: { time?: number }): void {
-    const room = this.leaderRoom(socket);
-    if (!room) return;
-    const now = Date.now();
-    this.setState(room, {
-      currentTime: this.edgePosition(room, payload, now),
-      playing: false,
-    }, now);
-    room.lastActivityAt = now;
+  private onPause(
+    socket: Socket,
+    payload?: {
+      time?: number;
+    },
+  ): void {
+    const room =
+      this.leaderRoom(
+        socket,
+      );
+    if (
+      !room
+    )
+      return;
+    const now =
+      Date.now();
+    this.setState(
+      room,
+      {
+        currentTime:
+          this.edgePosition(
+            room,
+            payload,
+            now,
+          ),
+        playing: false,
+      },
+      now,
+    );
+    room.lastActivityAt =
+      now;
     // A deliberate pause by the leader supersedes any wait the room was in.
-    if (room.peerWait.startedAt !== null) this.endPeerWait(room, 'leader_paused', now);
+    if (
+      room
+        .peerWait
+        .startedAt !==
+      null
+    )
+      this.endPeerWait(
+        room,
+        'leader_paused',
+        now,
+      );
   }
 
   /** Where a play/pause edge happened: the leader's frame if it sent one (VOD only). */
-  private edgePosition(room: RmhTubeRoom, payload: { time?: number } | undefined, now: number): number {
-    if (room.videoState.mode === 'vod' && payload?.time !== undefined) return payload.time;
-    return extrapolate(room.videoState, now);
+  private edgePosition(
+    room: RmhTubeRoom,
+    payload:
+      | {
+          time?: number;
+        }
+      | undefined,
+    now: number,
+  ): number {
+    if (
+      room
+        .videoState
+        .mode ===
+        'vod' &&
+      payload?.time !==
+        undefined
+    )
+      return payload.time;
+    return extrapolate(
+      room.videoState,
+      now,
+    );
   }
 
-  private onSeek(socket: Socket, payload: { time: number }): void {
-    const room = this.leaderRoom(socket);
-    if (!room) return;
+  private onSeek(
+    socket: Socket,
+    payload: {
+      time: number;
+    },
+  ): void {
+    const room =
+      this.leaderRoom(
+        socket,
+      );
+    if (
+      !room
+    )
+      return;
     // There is nothing to seek to on a live source, and broadcasting one would
     // scatter every viewer across their own DVR window.
-    if (room.videoState.mode === 'live') return;
-    const now = Date.now();
-    this.setState(room, { currentTime: payload.time, stalled: false }, now);
-    room.lastActivityAt = now;
+    if (
+      room
+        .videoState
+        .mode ===
+      'live'
+    )
+      return;
+    const now =
+      Date.now();
+    this.setState(
+      room,
+      {
+        currentTime:
+          payload.time,
+        stalled: false,
+      },
+      now,
+    );
+    room.lastActivityAt =
+      now;
   }
 
-  private onSetSpeed(socket: Socket, payload: { speed: number }): void {
-    const room = this.leaderRoom(socket);
-    if (!room) return;
-    const now = Date.now();
+  private onSetSpeed(
+    socket: Socket,
+    payload: {
+      speed: number;
+    },
+  ): void {
+    const room =
+      this.leaderRoom(
+        socket,
+      );
+    if (
+      !room
+    )
+      return;
+    const now =
+      Date.now();
     // Re-anchor first so the position stays continuous across the rate change.
-    this.setState(room, {
-      currentTime: extrapolate(room.videoState, now),
-      playbackRate: payload.speed,
-    }, now);
-    room.lastActivityAt = now;
+    this.setState(
+      room,
+      {
+        currentTime:
+          extrapolate(
+            room.videoState,
+            now,
+          ),
+        playbackRate:
+          payload.speed,
+      },
+      now,
+    );
+    room.lastActivityAt =
+      now;
   }
 
   // ─── Wait for slow peers ─────────────────────────────────────
@@ -299,19 +696,52 @@ export class SyncEngine {
    * room pausing for a few seconds is the only thing that actually lets them
    * catch up.
    */
-  private onStall(socket: Socket, payload: { stalled: boolean }): void {
-    const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room || !room.members.has(userId)) return;
+  private onStall(
+    socket: Socket,
+    payload: {
+      stalled: boolean;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const room =
+      this.roomManager.getRoomForUser(
+        userId,
+      );
+    if (
+      !room ||
+      !room.members.has(
+        userId,
+      )
+    )
+      return;
 
-    const wait = room.peerWait;
-    if (payload.stalled) {
-      if (!wait.stalled.has(userId)) wait.stalled.set(userId, Date.now());
+    const wait =
+      room.peerWait;
+    if (
+      payload.stalled
+    ) {
+      if (
+        !wait.stalled.has(
+          userId,
+        )
+      )
+        wait.stalled.set(
+          userId,
+          Date.now(),
+        );
     } else {
-      wait.stalled.delete(userId);
+      wait.stalled.delete(
+        userId,
+      );
     }
 
-    this.evaluatePeerWait(room, Date.now());
+    this.evaluatePeerWait(
+      room,
+      Date.now(),
+    );
   }
 
   /**
@@ -319,84 +749,262 @@ export class SyncEngine {
    * of the wait. Runs on every stall report, on resume, and on the heartbeat,
    * because the timeout that ends a wait has no inbound event of its own.
    */
-  private evaluatePeerWait(room: RmhTubeRoom, now: number): void {
-    const wait = room.peerWait;
+  private evaluatePeerWait(
+    room: RmhTubeRoom,
+    now: number,
+  ): void {
+    const wait =
+      room.peerWait;
 
-    if (!room.settings.waitForSlowPeers || !room.currentItem) {
-      if (wait.startedAt !== null) this.endPeerWait(room, 'disabled', now);
+    if (
+      !room
+        .settings
+        .waitForSlowPeers ||
+      !room.currentItem
+    ) {
+      if (
+        wait.startedAt !==
+        null
+      )
+        this.endPeerWait(
+          room,
+          'disabled',
+          now,
+        );
       return;
     }
 
     // Members who left or dropped cannot be waited for.
-    for (const userId of [...wait.stalled.keys()]) {
-      const member = room.members.get(userId);
-      if (!member || !member.isConnected) wait.stalled.delete(userId);
+    for (const userId of [
+      ...wait.stalled.keys(),
+    ]) {
+      const member =
+        room.members.get(
+          userId,
+        );
+      if (
+        !member ||
+        !member.isConnected
+      )
+        wait.stalled.delete(
+          userId,
+        );
     }
 
-    const anyStalled = wait.stalled.size > 0;
+    const anyStalled =
+      wait
+        .stalled
+        .size >
+      0;
 
-    if (wait.startedAt === null) {
+    if (
+      wait.startedAt ===
+      null
+    ) {
       // Not waiting. Start only if somebody is stalled, the room is actually
       // moving, and we are not inside the post-timeout cooldown.
-      if (anyStalled && room.videoState.playing && now >= wait.cooldownUntil) {
-        wait.startedAt = now;
+      if (
+        anyStalled &&
+        room
+          .videoState
+          .playing &&
+        now >=
+          wait.cooldownUntil
+      ) {
+        wait.startedAt =
+          now;
         wait.resumeAfter = true;
-        this.setState(room, { currentTime: extrapolate(room.videoState, now), playing: false }, now);
-        logger.info({ event: 'peer_wait_started', roomId: room.id, peers: wait.stalled.size });
+        this.setState(
+          room,
+          {
+            currentTime:
+              extrapolate(
+                room.videoState,
+                now,
+              ),
+            playing: false,
+          },
+          now,
+        );
+        logger.info(
+          {
+            event:
+              'peer_wait_started',
+            roomId:
+              room.id,
+            peers:
+              wait
+                .stalled
+                .size,
+          },
+        );
       }
-      this.broadcastPeersWaiting(room);
+      this.broadcastPeersWaiting(
+        room,
+      );
       return;
     }
 
-    if (!anyStalled) {
-      this.endPeerWait(room, 'recovered', now);
+    if (
+      !anyStalled
+    ) {
+      this.endPeerWait(
+        room,
+        'recovered',
+        now,
+      );
       return;
     }
 
-    if (now - wait.startedAt >= PEER_WAIT_MAX_MS) {
+    if (
+      now -
+        wait.startedAt >=
+      PEER_WAIT_MAX_MS
+    ) {
       // One connection that never recovers must not hold a watch party for the
       // rest of the evening.
-      wait.cooldownUntil = now + PEER_WAIT_COOLDOWN_MS;
-      this.endPeerWait(room, 'timeout', now);
+      wait.cooldownUntil =
+        now +
+        PEER_WAIT_COOLDOWN_MS;
+      this.endPeerWait(
+        room,
+        'timeout',
+        now,
+      );
       return;
     }
 
-    this.broadcastPeersWaiting(room);
+    this.broadcastPeersWaiting(
+      room,
+    );
   }
 
-  private endPeerWait(room: RmhTubeRoom, reason: string, now: number): void {
-    const wait = room.peerWait;
+  private endPeerWait(
+    room: RmhTubeRoom,
+    reason: string,
+    now: number,
+  ): void {
+    const wait =
+      room.peerWait;
     // A leader who pressed pause during a wait means it: do not resume behind
     // them when the wait clears.
-    const resume = wait.resumeAfter && reason !== 'leader_paused' && !room.videoState.playing;
+    const resume =
+      wait.resumeAfter &&
+      reason !==
+        'leader_paused' &&
+      !room
+        .videoState
+        .playing;
 
-    wait.startedAt = null;
+    wait.startedAt =
+      null;
     wait.resumeAfter = false;
     wait.stalled.clear();
 
-    if (resume) {
-      this.setState(room, { currentTime: extrapolate(room.videoState, now), playing: true }, now);
+    if (
+      resume
+    ) {
+      this.setState(
+        room,
+        {
+          currentTime:
+            extrapolate(
+              room.videoState,
+              now,
+            ),
+          playing: true,
+        },
+        now,
+      );
     }
-    this.broadcastPeersWaiting(room);
-    logger.info({ event: 'peer_wait_ended', roomId: room.id, reason, resumed: resume });
+    this.broadcastPeersWaiting(
+      room,
+    );
+    logger.info(
+      {
+        event:
+          'peer_wait_ended',
+        roomId:
+          room.id,
+        reason,
+        resumed:
+          resume,
+      },
+    );
   }
 
   /** Broadcast the waited-for peers, but only when the set actually changed. */
-  private broadcastPeersWaiting(room: RmhTubeRoom): void {
-    const wait = room.peerWait;
-    const peers = [...wait.stalled.keys()]
-      .map((userId) => room.members.get(userId))
-      .filter((m): m is NonNullable<typeof m> => !!m)
-      .map((m) => ({ userId: m.userId, userName: m.userName }));
+  private broadcastPeersWaiting(
+    room: RmhTubeRoom,
+  ): void {
+    const wait =
+      room.peerWait;
+    const peers =
+      [
+        ...wait.stalled.keys(),
+      ]
+        .map(
+          (
+            userId,
+          ) =>
+            room.members.get(
+              userId,
+            ),
+        )
+        .filter(
+          (
+            m,
+          ): m is NonNullable<
+            typeof m
+          > =>
+            !!m,
+        )
+        .map(
+          (
+            m,
+          ) => ({
+            userId:
+              m.userId,
+            userName:
+              m.userName,
+          }),
+        );
 
-    const signature = peers.map((p) => p.userId).sort().join(',');
-    if (signature === wait.signature) return;
-    wait.signature = signature;
+    const signature =
+      peers
+        .map(
+          (
+            p,
+          ) =>
+            p.userId,
+        )
+        .sort()
+        .join(
+          ',',
+        );
+    if (
+      signature ===
+      wait.signature
+    )
+      return;
+    wait.signature =
+      signature;
 
-    this.io.to(room.id).emit(
-      S2C.PEERS_WAITING,
-      peers.length ? { peers, since: wait.startedAt ?? Date.now() } : null,
-    );
+    this.io
+      .to(
+        room.id,
+      )
+      .emit(
+        S2C.PEERS_WAITING,
+        peers.length
+          ? {
+              peers,
+              since:
+                wait.startedAt ??
+                Date.now(),
+            }
+          : null,
+      );
   }
 
   // ─── State mutation + broadcast ──────────────────────────────
@@ -406,53 +1014,137 @@ export class SyncEngine {
    * here so `rev` advances exactly once per change and nothing can broadcast a
    * state it did not stamp.
    */
-  private setState(room: RmhTubeRoom, patch: Partial<VideoState>, now: number): VideoState {
-    room.videoState = {
-      ...room.videoState,
-      ...patch,
-      updatedAt: now,
-      rev: room.videoState.rev + 1,
-    };
-    this.broadcastState(room, now);
+  private setState(
+    room: RmhTubeRoom,
+    patch: Partial<VideoState>,
+    now: number,
+  ): VideoState {
+    room.videoState =
+      {
+        ...room.videoState,
+        ...patch,
+        updatedAt:
+          now,
+        rev:
+          room
+            .videoState
+            .rev +
+          1,
+      };
+    this.broadcastState(
+      room,
+      now,
+    );
     return room.videoState;
   }
 
-  private broadcastState(room: RmhTubeRoom, now: number): void {
-    this.io.to(room.id).emit(S2C.SYNC_STATE, reanchor(room.videoState, now));
+  private broadcastState(
+    room: RmhTubeRoom,
+    now: number,
+  ): void {
+    this.io
+      .to(
+        room.id,
+      )
+      .emit(
+        S2C.SYNC_STATE,
+        reanchor(
+          room.videoState,
+          now,
+        ),
+      );
   }
 
   // ─── Heartbeat ───────────────────────────────────────────────
 
   startHeartbeat(): void {
-    this.heartbeatInterval = setInterval(() => {
-      const now = Date.now();
-      for (const room of this.roomManager.rooms.values()) {
-        if (!room.currentItem) continue;
+    this.heartbeatInterval =
+      setInterval(
+        () => {
+          const now =
+            Date.now();
+          for (const room of this.roomManager.rooms.values()) {
+            if (
+              !room.currentItem
+            )
+              continue;
 
-        // A wait can end on a timeout, which has no inbound event to trigger it.
-        if (room.peerWait.startedAt !== null) this.evaluatePeerWait(room, now);
+            // A wait can end on a timeout, which has no inbound event to trigger it.
+            if (
+              room
+                .peerWait
+                .startedAt !==
+              null
+            )
+              this.evaluatePeerWait(
+                room,
+                now,
+              );
 
-        if (this.advanceIfOverrun(room, now)) continue;
+            if (
+              this.advanceIfOverrun(
+                room,
+                now,
+              )
+            )
+              continue;
 
-        if (room.members.size <= 1) continue;
+            if (
+              room
+                .members
+                .size <=
+              1
+            )
+              continue;
 
-        // The *effective* state: the timeline keeps advancing even when the
-        // leader's tab is throttled and its reports have stopped arriving.
-        // perf: volatile — this is a pure resend of current state (same rev); a dropped
-        // one is replaced 2s later, and recovery must not retain it. State changes
-        // go through broadcastState and stay reliable.
-        this.io.to(room.id).volatile.emit(S2C.SYNC_STATE, reanchor(room.videoState, now));
-      }
-    }, config.SYNC_HEARTBEAT_INTERVAL_MS);
+            // The *effective* state: the timeline keeps advancing even when the
+            // leader's tab is throttled and its reports have stopped arriving.
+            // perf: volatile — this is a pure resend of current state (same rev); a dropped
+            // one is replaced 2s later, and recovery must not retain it. State changes
+            // go through broadcastState and stay reliable.
+            this.io
+              .to(
+                room.id,
+              )
+              .volatile.emit(
+                S2C.SYNC_STATE,
+                reanchor(
+                  room.videoState,
+                  now,
+                ),
+              );
+          }
+        },
+        config.SYNC_HEARTBEAT_INTERVAL_MS,
+      );
 
-    logger.info({ event: 'sync_heartbeat_started', intervalMs: config.SYNC_HEARTBEAT_INTERVAL_MS });
+    logger.info(
+      {
+        event:
+          'sync_heartbeat_started',
+        intervalMs:
+          config.SYNC_HEARTBEAT_INTERVAL_MS,
+      },
+    );
   }
 
   stopHeartbeat(): void {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
-      logger.info({ event: 'sync_heartbeat_stopped' });
+    if (
+      this
+        .heartbeatInterval
+    ) {
+      clearInterval(
+        this
+          .heartbeatInterval,
+      );
+      this.heartbeatInterval =
+        null;
+      logger.info(
+        {
+          event:
+            'sync_heartbeat_stopped',
+        },
+      );
     }
   }
 
@@ -463,15 +1155,57 @@ export class SyncEngine {
    * not) a broadcast — which is the only place that can be known, since
    * `/watch?v=…` is equally how YouTube addresses a live stream.
    */
-  setMode(room: RmhTubeRoom, mode: VideoState['mode']): void {
-    if (room.videoState.mode === mode) return;
-    const now = Date.now();
-    this.setState(room, { mode, currentTime: mode === 'live' ? 0 : room.videoState.currentTime }, now);
+  setMode(
+    room: RmhTubeRoom,
+    mode: VideoState['mode'],
+  ): void {
+    if (
+      room
+        .videoState
+        .mode ===
+      mode
+    )
+      return;
+    const now =
+      Date.now();
+    this.setState(
+      room,
+      {
+        mode,
+        currentTime:
+          mode ===
+          'live'
+            ? 0
+            : room
+                .videoState
+                .currentTime,
+      },
+      now,
+    );
     // Nothing to wait for on a live source: it has no position to catch up to.
-    if (mode === 'live' && room.peerWait.startedAt !== null) {
-      this.endPeerWait(room, 'live', now);
+    if (
+      mode ===
+        'live' &&
+      room
+        .peerWait
+        .startedAt !==
+        null
+    ) {
+      this.endPeerWait(
+        room,
+        'live',
+        now,
+      );
     }
-    logger.info({ event: 'sync_mode_changed', roomId: room.id, mode });
+    logger.info(
+      {
+        event:
+          'sync_mode_changed',
+        roomId:
+          room.id,
+        mode,
+      },
+    );
   }
 
   // ─── Media change ────────────────────────────────────────────
@@ -481,23 +1215,51 @@ export class SyncEngine {
    * in the same `NOW_PLAYING` action that announces the item — one message, so
    * a client can never hold a new item against the old item's timeline.
    */
-  onMediaChanged(room: RmhTubeRoom): VideoState {
-    const now = Date.now();
-    const mode = room.currentItem?.live ? 'live' : 'vod';
-    room.videoState = {
-      ...initialVideoState(now, mode),
-      // A "start at 1:30" link is the item's first anchor, so every player —
-      // the leader's included — starts there (see `startOffset`).
-      currentTime: mode === 'vod' && room.currentItem ? startOffset(room.currentItem.url) : 0,
-      rev: room.videoState.rev + 1,
-    };
+  onMediaChanged(
+    room: RmhTubeRoom,
+  ): VideoState {
+    const now =
+      Date.now();
+    const mode =
+      room
+        .currentItem
+        ?.live
+        ? 'live'
+        : 'vod';
+    room.videoState =
+      {
+        ...initialVideoState(
+          now,
+          mode,
+        ),
+        // A "start at 1:30" link is the item's first anchor, so every player —
+        // the leader's included — starts there (see `startOffset`).
+        currentTime:
+          mode ===
+            'vod' &&
+          room.currentItem
+            ? startOffset(
+                room
+                  .currentItem
+                  .url,
+              )
+            : 0,
+        rev:
+          room
+            .videoState
+            .rev +
+          1,
+      };
     // A new item invalidates whoever was buffering the old one — including the
     // cooldown, since the next source may be perfectly playable for them.
     room.peerWait.stalled.clear();
-    room.peerWait.startedAt = null;
+    room.peerWait.startedAt =
+      null;
     room.peerWait.resumeAfter = false;
     room.peerWait.cooldownUntil = 0;
-    this.broadcastPeersWaiting(room);
+    this.broadcastPeersWaiting(
+      room,
+    );
     return room.videoState;
   }
 }

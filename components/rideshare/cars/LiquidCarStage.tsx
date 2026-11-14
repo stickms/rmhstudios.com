@@ -27,17 +27,36 @@
  * image plus three labelled buttons instead of an interactive black box.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { RotateCcw, RotateCw, Undo2 } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  RotateCcw,
+  RotateCw,
+  Undo2,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { VelocityTracker } from '@/lib/fluid';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { probeGpu } from '@/lib/render/probe';
-import { TIER_QUALITY, detectTier } from '@/lib/render/tier';
+import {
+  TIER_QUALITY,
+  detectTier,
+} from '@/lib/render/tier';
 import type { CarBodySpec } from '@/lib/rideshare/cars';
-import { readAlpha, readToken, resolveColor } from '@/lib/render/glass-cage';
-import { LiquidCarScene, type CarPaint } from './liquid-car-scene';
+import {
+  readAlpha,
+  readToken,
+  resolveColor,
+} from '@/lib/render/glass-cage';
+import {
+  LiquidCarScene,
+  type CarPaint,
+} from './liquid-car-scene';
 import { CarSilhouette } from './CarSilhouette';
 import './cars.css';
 
@@ -52,47 +71,124 @@ interface LiquidCarStageProps {
 /** How far a pointer may travel and still count as a poke rather than a drag. */
 const POKE_SLOP = 6;
 /** One press of a turn button, in radians. An eighth of a turn. */
-const NUDGE = Math.PI / 4;
+const NUDGE =
+  Math.PI /
+  4;
 
-export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps) {
-  const { t } = useTranslation('c-rideshare');
-  const reduced = useReducedMotion();
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const sceneRef = useRef<LiquidCarScene | null>(null);
-  const frameRef = useRef(0);
-  const visibleRef = useRef(true);
-  const [failed, setFailed] = useState(false);
+export function LiquidCarStage({
+  spec,
+  name,
+  description,
+}: LiquidCarStageProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rideshare',
+    );
+  const reduced =
+    useReducedMotion();
+  const hostRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+  const canvasRef =
+    useRef<HTMLCanvasElement | null>(
+      null,
+    );
+  const sceneRef =
+    useRef<LiquidCarScene | null>(
+      null,
+    );
+  const frameRef =
+    useRef(
+      0,
+    );
+  const visibleRef =
+    useRef(
+      true,
+    );
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(
+      false,
+    );
 
   // The scene is created once and lives across body swaps, so the two effects
   // below can run in either order: whichever gets there first puts the current
   // vehicle on the stage, and `applied` stops the other from rebuilding it.
-  const specRef = useRef(spec);
-  specRef.current = spec;
-  const appliedRef = useRef<CarBodySpec | null>(null);
+  const specRef =
+    useRef(
+      spec,
+    );
+  specRef.current =
+    spec;
+  const appliedRef =
+    useRef<CarBodySpec | null>(
+      null,
+    );
 
   /** Ask for a frame. A no-op while one is already pending or the stage is away. */
-  const kick = useCallback(() => {
-    if (frameRef.current || !visibleRef.current || !sceneRef.current) return;
-    const step = (now: number) => {
-      frameRef.current = 0;
-      const scene = sceneRef.current;
-      if (!scene || !visibleRef.current) return;
-      if (scene.frame(now)) frameRef.current = requestAnimationFrame(step);
-    };
-    frameRef.current = requestAnimationFrame(step);
-  }, []);
+  const kick =
+    useCallback(() => {
+      if (
+        frameRef.current ||
+        !visibleRef.current ||
+        !sceneRef.current
+      )
+        return;
+      const step =
+        (
+          now: number,
+        ) => {
+          frameRef.current = 0;
+          const scene =
+            sceneRef.current;
+          if (
+            !scene ||
+            !visibleRef.current
+          )
+            return;
+          if (
+            scene.frame(
+              now,
+            )
+          )
+            frameRef.current =
+              requestAnimationFrame(
+                step,
+              );
+        };
+      frameRef.current =
+        requestAnimationFrame(
+          step,
+        );
+    }, []);
 
   /* ── The scene ─────────────────────────────────────────────────────────── */
 
   useEffect(() => {
-    const host = hostRef.current;
-    const canvas = canvasRef.current;
-    if (!host || !canvas) return;
+    const host =
+      hostRef.current;
+    const canvas =
+      canvasRef.current;
+    if (
+      !host ||
+      !canvas
+    )
+      return;
 
-    const gpu = probeGpu();
-    if (gpu.backend === 'none') {
-      setFailed(true);
+    const gpu =
+      probeGpu();
+    if (
+      gpu.backend ===
+      'none'
+    ) {
+      setFailed(
+        true,
+      );
       return;
     }
 
@@ -102,228 +198,527 @@ export function LiquidCarStage({ spec, name, description }: LiquidCarStageProps)
     // buffer; but under reduced motion this canvas is a still picture, and a
     // still picture at 1x on a 3x phone is just a blurry picture. The motion is
     // cut where motion lives, inside the scene.
-    const tier = detectTier({
-      gpuTier: gpu.gpuTier,
-      isMobile: window.matchMedia('(pointer: coarse)').matches,
-      devicePixelRatio: window.devicePixelRatio || 1,
-    });
-    const quality = TIER_QUALITY[tier];
+    const tier =
+      detectTier(
+        {
+          gpuTier:
+            gpu.gpuTier,
+          isMobile:
+            window.matchMedia(
+              '(pointer: coarse)',
+            )
+              .matches,
+          devicePixelRatio:
+            window.devicePixelRatio ||
+            1,
+        },
+      );
+    const quality =
+      TIER_QUALITY[
+        tier
+      ];
 
     let scene: LiquidCarScene;
     try {
-      scene = new LiquidCarScene({
-        canvas,
-        maxDpr: quality.dpr[1],
-        antialias: quality.antialias,
-        reducedMotion: reduced,
-        onContextLost: () => setFailed(true),
-      });
+      scene =
+        new LiquidCarScene(
+          {
+            canvas,
+            maxDpr:
+              quality
+                .dpr[1],
+            antialias:
+              quality.antialias,
+            reducedMotion:
+              reduced,
+            onContextLost:
+              () =>
+                setFailed(
+                  true,
+                ),
+          },
+        );
     } catch {
       // A browser can advertise WebGL and still refuse a context (a blocklisted
       // driver, too many live contexts). The silhouette is a complete fallback,
       // so this is a downgrade rather than an error to report.
-      setFailed(true);
+      setFailed(
+        true,
+      );
       return;
     }
-    sceneRef.current = scene;
-    scene.setPaint(readPaint(host));
-    appliedRef.current = specRef.current;
-    scene.setBody(specRef.current);
+    sceneRef.current =
+      scene;
+    scene.setPaint(
+      readPaint(
+        host,
+      ),
+    );
+    appliedRef.current =
+      specRef.current;
+    scene.setBody(
+      specRef.current,
+    );
 
-    const resize = new ResizeObserver(([entry]) => {
-      const box = entry.contentRect;
-      scene.resize(box.width, box.height);
-      kick();
-    });
-    resize.observe(host);
+    const resize =
+      new ResizeObserver(
+        ([
+          entry,
+        ]) => {
+          const box =
+            entry.contentRect;
+          scene.resize(
+            box.width,
+            box.height,
+          );
+          kick();
+        },
+      );
+    resize.observe(
+      host,
+    );
 
     // Off-screen the loop stops entirely rather than rendering a canvas nobody
     // can see — the cheapest possible answer to "what does this cost while the
     // visitor is reading the rest of the page".
-    const seen = new IntersectionObserver(([entry]) => {
-      visibleRef.current = entry.isIntersecting;
-      if (entry.isIntersecting) kick();
-    });
-    seen.observe(host);
+    const seen =
+      new IntersectionObserver(
+        ([
+          entry,
+        ]) => {
+          visibleRef.current =
+            entry.isIntersecting;
+          if (
+            entry.isIntersecting
+          )
+            kick();
+        },
+      );
+    seen.observe(
+      host,
+    );
 
     // Themes land on <html> as a class (and user themes as inline custom
     // properties), so one observer catches every way the palette can change —
     // the built-in themes, an accent preset, a marketplace theme, high contrast
     // — without this component having to know that any of them exist.
-    const repaint = new MutationObserver(() => {
-      sceneRef.current?.setPaint(readPaint(host));
-      kick();
-    });
-    repaint.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class', 'style'],
-    });
+    const repaint =
+      new MutationObserver(
+        () => {
+          sceneRef.current?.setPaint(
+            readPaint(
+              host,
+            ),
+          );
+          kick();
+        },
+      );
+    repaint.observe(
+      document.documentElement,
+      {
+        attributes: true,
+        attributeFilter:
+          [
+            'class',
+            'style',
+          ],
+      },
+    );
 
     return () => {
       resize.disconnect();
       seen.disconnect();
       repaint.disconnect();
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      if (
+        frameRef.current
+      )
+        cancelAnimationFrame(
+          frameRef.current,
+        );
       frameRef.current = 0;
-      sceneRef.current = null;
-      appliedRef.current = null;
+      sceneRef.current =
+        null;
+      appliedRef.current =
+        null;
       scene.dispose();
     };
-  }, [kick, reduced]);
+  }, [
+    kick,
+    reduced,
+  ]);
 
   /* ── The body on the stage ─────────────────────────────────────────────── */
 
   useEffect(() => {
-    const scene = sceneRef.current;
-    if (!scene) return;
-    if (appliedRef.current !== spec) {
-      appliedRef.current = spec;
-      scene.setBody(spec);
+    const scene =
+      sceneRef.current;
+    if (
+      !scene
+    )
+      return;
+    if (
+      appliedRef.current !==
+      spec
+    ) {
+      appliedRef.current =
+        spec;
+      scene.setBody(
+        spec,
+      );
     }
     kick();
-  }, [spec, kick]);
+  }, [
+    spec,
+    kick,
+  ]);
 
   /* ── The gesture ───────────────────────────────────────────────────────── */
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || failed) return;
+    const canvas =
+      canvasRef.current;
+    if (
+      !canvas ||
+      failed
+    )
+      return;
 
-    const velocityX = new VelocityTracker();
-    const velocityY = new VelocityTracker();
-    let pointer: number | null = null;
+    const velocityX =
+      new VelocityTracker();
+    const velocityY =
+      new VelocityTracker();
+    let pointer:
+      | number
+      | null =
+      null;
     let lastX = 0;
     let lastY = 0;
     let travelled = 0;
 
-    const down = (event: PointerEvent) => {
-      const scene = sceneRef.current;
-      if (!scene || pointer !== null) return;
-      pointer = event.pointerId;
-      lastX = event.clientX;
-      lastY = event.clientY;
-      travelled = 0;
-      velocityX.reset();
-      velocityY.reset();
-      velocityX.add(event.clientX, event.timeStamp);
-      velocityY.add(event.clientY, event.timeStamp);
-      canvas.setPointerCapture(event.pointerId);
-      scene.grab();
-      kick();
-    };
-
-    const move = (event: PointerEvent) => {
-      const scene = sceneRef.current;
-      if (!scene || event.pointerId !== pointer) return;
-      const dx = event.clientX - lastX;
-      const dy = event.clientY - lastY;
-      lastX = event.clientX;
-      lastY = event.clientY;
-      travelled += Math.hypot(dx, dy);
-      velocityX.add(event.clientX, event.timeStamp);
-      velocityY.add(event.clientY, event.timeStamp);
-      scene.drag(dx, dy);
-      kick();
-    };
-
-    const up = (event: PointerEvent) => {
-      const scene = sceneRef.current;
-      if (!scene || event.pointerId !== pointer) return;
-      pointer = null;
-      if (canvas.hasPointerCapture(event.pointerId)) {
-        canvas.releasePointerCapture(event.pointerId);
-      }
-      // A press that never really moved is a POKE, not a throw of zero speed —
-      // otherwise every tap ends in a settle spring that has nothing to settle.
-      if (travelled <= POKE_SLOP) {
-        const rect = canvas.getBoundingClientRect();
-        scene.poke(
-          ((event.clientX - rect.left) / rect.width) * 2 - 1,
-          -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+    const down =
+      (
+        event: PointerEvent,
+      ) => {
+        const scene =
+          sceneRef.current;
+        if (
+          !scene ||
+          pointer !==
+            null
+        )
+          return;
+        pointer =
+          event.pointerId;
+        lastX =
+          event.clientX;
+        lastY =
+          event.clientY;
+        travelled = 0;
+        velocityX.reset();
+        velocityY.reset();
+        velocityX.add(
+          event.clientX,
+          event.timeStamp,
         );
-        scene.release(0, 0);
-      } else {
-        scene.release(velocityX.get(), velocityY.get());
-      }
-      kick();
-    };
+        velocityY.add(
+          event.clientY,
+          event.timeStamp,
+        );
+        canvas.setPointerCapture(
+          event.pointerId,
+        );
+        scene.grab();
+        kick();
+      };
 
-    canvas.addEventListener('pointerdown', down);
-    canvas.addEventListener('pointermove', move);
-    canvas.addEventListener('pointerup', up);
-    canvas.addEventListener('pointercancel', up);
+    const move =
+      (
+        event: PointerEvent,
+      ) => {
+        const scene =
+          sceneRef.current;
+        if (
+          !scene ||
+          event.pointerId !==
+            pointer
+        )
+          return;
+        const dx =
+          event.clientX -
+          lastX;
+        const dy =
+          event.clientY -
+          lastY;
+        lastX =
+          event.clientX;
+        lastY =
+          event.clientY;
+        travelled +=
+          Math.hypot(
+            dx,
+            dy,
+          );
+        velocityX.add(
+          event.clientX,
+          event.timeStamp,
+        );
+        velocityY.add(
+          event.clientY,
+          event.timeStamp,
+        );
+        scene.drag(
+          dx,
+          dy,
+        );
+        kick();
+      };
+
+    const up =
+      (
+        event: PointerEvent,
+      ) => {
+        const scene =
+          sceneRef.current;
+        if (
+          !scene ||
+          event.pointerId !==
+            pointer
+        )
+          return;
+        pointer =
+          null;
+        if (
+          canvas.hasPointerCapture(
+            event.pointerId,
+          )
+        ) {
+          canvas.releasePointerCapture(
+            event.pointerId,
+          );
+        }
+        // A press that never really moved is a POKE, not a throw of zero speed —
+        // otherwise every tap ends in a settle spring that has nothing to settle.
+        if (
+          travelled <=
+          POKE_SLOP
+        ) {
+          const rect =
+            canvas.getBoundingClientRect();
+          scene.poke(
+            ((event.clientX -
+              rect.left) /
+              rect.width) *
+              2 -
+              1,
+            -(
+              ((event.clientY -
+                rect.top) /
+                rect.height) *
+                2 -
+              1
+            ),
+          );
+          scene.release(
+            0,
+            0,
+          );
+        } else {
+          scene.release(
+            velocityX.get(),
+            velocityY.get(),
+          );
+        }
+        kick();
+      };
+
+    canvas.addEventListener(
+      'pointerdown',
+      down,
+    );
+    canvas.addEventListener(
+      'pointermove',
+      move,
+    );
+    canvas.addEventListener(
+      'pointerup',
+      up,
+    );
+    canvas.addEventListener(
+      'pointercancel',
+      up,
+    );
     return () => {
-      canvas.removeEventListener('pointerdown', down);
-      canvas.removeEventListener('pointermove', move);
-      canvas.removeEventListener('pointerup', up);
-      canvas.removeEventListener('pointercancel', up);
+      canvas.removeEventListener(
+        'pointerdown',
+        down,
+      );
+      canvas.removeEventListener(
+        'pointermove',
+        move,
+      );
+      canvas.removeEventListener(
+        'pointerup',
+        up,
+      );
+      canvas.removeEventListener(
+        'pointercancel',
+        up,
+      );
     };
-  }, [failed, kick]);
+  }, [
+    failed,
+    kick,
+  ]);
 
-  const turn = useCallback(
-    (radians: number) => {
-      sceneRef.current?.nudge(radians, 0);
+  const turn =
+    useCallback(
+      (
+        radians: number,
+      ) => {
+        sceneRef.current?.nudge(
+          radians,
+          0,
+        );
+        kick();
+      },
+      [
+        kick,
+      ],
+    );
+
+  const home =
+    useCallback(() => {
+      sceneRef.current?.home();
       kick();
-    },
-    [kick],
-  );
-
-  const home = useCallback(() => {
-    sceneRef.current?.home();
-    kick();
-  }, [kick]);
+    }, [
+      kick,
+    ]);
 
   // Three hints, because there are three things this stage can be: a live
   // turntable, a live turntable that has been asked not to animate, and a flat
   // drawing on a machine with no WebGL. Telling the third one to drag would be
   // an instruction it cannot follow.
-  const hint = failed
-    ? t('cars-hint-static', {
-        defaultValue: 'Your browser can’t show the 3D model, so here is the side elevation.',
-      })
-    : reduced
-      ? t('cars-hint-reduced', { defaultValue: 'Drag the stage to turn it.' })
-      : t('cars-hint', { defaultValue: 'Drag to turn it · tap it to make it ripple' });
+  const hint =
+    failed
+      ? t(
+          'cars-hint-static',
+          {
+            defaultValue:
+              'Your browser can’t show the 3D model, so here is the side elevation.',
+          },
+        )
+      : reduced
+        ? t(
+            'cars-hint-reduced',
+            {
+              defaultValue:
+                'Drag the stage to turn it.',
+            },
+          )
+        : t(
+            'cars-hint',
+            {
+              defaultValue:
+                'Drag to turn it · tap it to make it ripple',
+            },
+          );
 
   return (
     <div className="flex flex-col gap-3">
-      <div ref={hostRef} className="rmhcar-stage rounded-site">
+      <div
+        ref={
+          hostRef
+        }
+        className="rmhcar-stage rounded-site"
+      >
         {failed ? (
           // No GPU, or the context went away. The silhouette is the same body,
           // drawn from the same sections — a smaller thing to see, not a
           // different one, and never an empty box with an apology in it.
           <CarSilhouette
-            spec={spec}
+            spec={
+              spec
+            }
             frame="body"
-            title={description}
+            title={
+              description
+            }
             className="size-full p-6 text-site-text"
           />
         ) : (
-          <canvas ref={canvasRef} role="img" aria-label={description} />
+          <canvas
+            ref={
+              canvasRef
+            }
+            role="img"
+            aria-label={
+              description
+            }
+          />
         )}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1">
-        <p className="text-xs text-site-text-muted">{hint}</p>
+        <p className="text-xs text-site-text-muted">
+          {
+            hint
+          }
+        </p>
         {!failed && (
           <div className="flex items-center gap-1">
             {/* The near face of the body follows the button: a positive turn
                 about the turntable's axis sweeps what you are looking at toward
                 screen-right, so THAT is the right-hand button. */}
             <StageButton
-              onClick={() => turn(-NUDGE)}
-              label={t('cars-turn-left', { defaultValue: 'Turn {{name}} left', name })}
-              icon={RotateCcw}
+              onClick={() =>
+                turn(
+                  -NUDGE,
+                )
+              }
+              label={t(
+                'cars-turn-left',
+                {
+                  defaultValue:
+                    'Turn {{name}} left',
+                  name,
+                },
+              )}
+              icon={
+                RotateCcw
+              }
             />
             <StageButton
-              onClick={home}
-              label={t('cars-reset-view', { defaultValue: 'Reset the view' })}
-              icon={Undo2}
+              onClick={
+                home
+              }
+              label={t(
+                'cars-reset-view',
+                {
+                  defaultValue:
+                    'Reset the view',
+                },
+              )}
+              icon={
+                Undo2
+              }
             />
             <StageButton
-              onClick={() => turn(NUDGE)}
-              label={t('cars-turn-right', { defaultValue: 'Turn {{name}} right', name })}
-              icon={RotateCw}
+              onClick={() =>
+                turn(
+                  NUDGE,
+                )
+              }
+              label={t(
+                'cars-turn-right',
+                {
+                  defaultValue:
+                    'Turn {{name}} right',
+                  name,
+                },
+              )}
+              icon={
+                RotateCw
+              }
             />
           </div>
         )}
@@ -342,8 +737,23 @@ function StageButton({
   icon: typeof RotateCw;
 }) {
   return (
-    <Button variant="ghost" size="icon-sm" onClick={onClick} title={label} aria-label={label}>
-      <Icon className="size-4" aria-hidden />
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      onClick={
+        onClick
+      }
+      title={
+        label
+      }
+      aria-label={
+        label
+      }
+    >
+      <Icon
+        className="size-4"
+        aria-hidden
+      />
     </Button>
   );
 }
@@ -357,14 +767,47 @@ function StageButton({
    parser first. The cage alphas are numbers rather than colours (cars.css)
    precisely so they need no such round trip. */
 
-function readPaint(host: HTMLElement): CarPaint {
-  const cs = getComputedStyle(host);
-  const fallback = resolveColor(cs.color) ?? '#808080';
+function readPaint(
+  host: HTMLElement,
+): CarPaint {
+  const cs =
+    getComputedStyle(
+      host,
+    );
+  const fallback =
+    resolveColor(
+      cs.color,
+    ) ??
+    '#808080';
   return {
-    ink: readToken(cs, '--site-text', fallback),
-    accent: readToken(cs, '--site-accent', fallback),
-    minor: readAlpha(cs, '--rmhcar-cage-minor', 0.28),
-    parallel: readAlpha(cs, '--rmhcar-cage-parallel', 0.2),
-    major: readAlpha(cs, '--rmhcar-cage-major', 0.52),
+    ink: readToken(
+      cs,
+      '--site-text',
+      fallback,
+    ),
+    accent:
+      readToken(
+        cs,
+        '--site-accent',
+        fallback,
+      ),
+    minor:
+      readAlpha(
+        cs,
+        '--rmhcar-cage-minor',
+        0.28,
+      ),
+    parallel:
+      readAlpha(
+        cs,
+        '--rmhcar-cage-parallel',
+        0.2,
+      ),
+    major:
+      readAlpha(
+        cs,
+        '--rmhcar-cage-major',
+        0.52,
+      ),
   };
 }

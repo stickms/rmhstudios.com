@@ -33,6 +33,19 @@ export function nextId(): number {
  * So everything that comes back from a save is reserved on the way in, and the
  * counter resumes above the highest of them.
  */
-export function reserveId(id: number): void {
-  if (Number.isFinite(id) && id >= counter) counter = Math.floor(id) + 1;
+export function reserveId(
+  id: number,
+): void {
+  if (
+    Number.isFinite(
+      id,
+    ) &&
+    id >=
+      counter
+  )
+    counter =
+      Math.floor(
+        id,
+      ) +
+      1;
 }

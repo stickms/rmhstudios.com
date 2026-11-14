@@ -18,28 +18,57 @@ export type SpeedrunMetric =
   /** Highest score wins, with the run's time kept as the tie-break. */
   | 'score';
 
-export const SPEEDRUN_METRICS: readonly SpeedrunMetric[] = ['time', 'score'] as const;
+export const SPEEDRUN_METRICS: readonly SpeedrunMetric[] =
+  [
+    'time',
+    'score',
+  ] as const;
 
 /** Lifecycle of a submitted run. */
-export type SpeedrunStatus = 'pending' | 'verified' | 'rejected';
+export type SpeedrunStatus =
+  | 'pending'
+  | 'verified'
+  | 'rejected';
 
-export const SPEEDRUN_STATUSES: readonly SpeedrunStatus[] = [
-  'pending',
-  'verified',
-  'rejected',
-] as const;
+export const SPEEDRUN_STATUSES: readonly SpeedrunStatus[] =
+  [
+    'pending',
+    'verified',
+    'rejected',
+  ] as const;
 
-export function isSpeedrunStatus(value: unknown): value is SpeedrunStatus {
-  return typeof value === 'string' && (SPEEDRUN_STATUSES as readonly string[]).includes(value);
+export function isSpeedrunStatus(
+  value: unknown,
+): value is SpeedrunStatus {
+  return (
+    typeof value ===
+      'string' &&
+    (
+      SPEEDRUN_STATUSES as readonly string[]
+    ).includes(
+      value,
+    )
+  );
 }
 
 /** Narrow a raw DB string, defaulting to the safest value rather than throwing. */
-export function toSpeedrunStatus(value: string): SpeedrunStatus {
-  return isSpeedrunStatus(value) ? value : 'pending';
+export function toSpeedrunStatus(
+  value: string,
+): SpeedrunStatus {
+  return isSpeedrunStatus(
+    value,
+  )
+    ? value
+    : 'pending';
 }
 
-export function toSpeedrunMetric(value: string): SpeedrunMetric {
-  return value === 'score' ? 'score' : 'time';
+export function toSpeedrunMetric(
+  value: string,
+): SpeedrunMetric {
+  return value ===
+    'score'
+    ? 'score'
+    : 'time';
 }
 
 /**
@@ -90,8 +119,12 @@ export type SpeedrunRejection =
   | 'NEEDS_REVIEW';
 
 /** English reason strings; callers translate. Mirrors `rejectionMessage` in `lib/game/registry.ts`. */
-export function speedrunRejectionMessage(reason: SpeedrunRejection): string {
-  switch (reason) {
+export function speedrunRejectionMessage(
+  reason: SpeedrunRejection,
+): string {
+  switch (
+    reason
+  ) {
     case 'INVALID_REPLAY':
       return 'The replay payload is not a valid recording for this game.';
     case 'SIMULATION_FAILED':
@@ -136,18 +169,31 @@ export interface SpeedrunEntryView {
   version: string;
   replayId: string;
   timeMs: number;
-  score: number | null;
+  score:
+    | number
+    | null;
   status: SpeedrunStatus;
-  rejectReason: string | null;
-  verifiedAt: string | null;
+  rejectReason:
+    | string
+    | null;
+  verifiedAt:
+    | string
+    | null;
   createdAt: string;
   runner: {
     id: string;
-    name: string | null;
-    image: string | null;
-    handle: string | null;
+    name:
+      | string
+      | null;
+    image:
+      | string
+      | null;
+    handle:
+      | string
+      | null;
   };
 }
 
 /** The sentinel the "all versions" board uses in place of a version string. */
-export const ALL_VERSIONS = 'all';
+export const ALL_VERSIONS =
+  'all';

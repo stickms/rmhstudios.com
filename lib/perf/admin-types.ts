@@ -3,19 +3,37 @@
 // purpose: the page imports this file, and `admin.server.ts` must never reach the
 // client bundle.
 
-import type { ClusterSnapshot, ProcessSnapshot } from './process-metrics';
+import type {
+  ClusterSnapshot,
+  ProcessSnapshot,
+} from './process-metrics';
 
-export type HubResult = ProcessSnapshot | { service: string; error: 'unreachable' };
+export type HubResult =
+  | ProcessSnapshot
+  | {
+      service: string;
+      error: 'unreachable';
+    };
 
 export interface RedisPlaneReport {
-  ping: number | null;
-  info: Record<string, string | number> | null;
+  ping:
+    | number
+    | null;
+  info: Record<
+    string,
+    | string
+    | number
+  > | null;
 }
 
 export interface PerfOverview {
   generatedAt: number;
   /** Which process answered; its entry in `processes` is the live snapshot. */
-  self: { pid: number; hostname: string; service: string };
+  self: {
+    pid: number;
+    hostname: string;
+    service: string;
+  };
   processes: ProcessSnapshot[];
   cluster: ClusterSnapshot;
   hubs: HubResult[];
@@ -27,19 +45,46 @@ export interface PerfOverview {
   };
 }
 
-export type Row = Record<string, unknown>;
+export type Row =
+  Record<
+    string,
+    unknown
+  >;
 
 export interface DbDiagnostics {
   generatedAt: number;
-  activity: Row[] | null;
+  activity:
+    | Row[]
+    | null;
   connections: Row | null;
-  longestRunning: Row[] | null;
-  database: (Row & { cacheHitRatio?: number | null }) | null;
-  statements: { available: boolean; rows?: Row[] | null };
-  tables: Row[] | null;
-  seqScanHints: Row[] | null;
-  unusedIndexes: Row[] | null;
-  waitingLocks: number | null;
+  longestRunning:
+    | Row[]
+    | null;
+  database:
+    | (Row & {
+        cacheHitRatio?:
+          | number
+          | null;
+      })
+    | null;
+  statements: {
+    available: boolean;
+    rows?:
+      | Row[]
+      | null;
+  };
+  tables:
+    | Row[]
+    | null;
+  seqScanHints:
+    | Row[]
+    | null;
+  unusedIndexes:
+    | Row[]
+    | null;
+  waitingLocks:
+    | number
+    | null;
   server: Row | null;
   pool: unknown;
 }
@@ -71,7 +116,10 @@ export interface HeapReport {
   pid: number;
   hostname: string;
   generatedAt: number;
-  heap: Record<string, number>;
+  heap: Record<
+    string,
+    number
+  >;
   spaces: Array<{
     space_name: string;
     space_size: number;

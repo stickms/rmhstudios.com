@@ -10,34 +10,106 @@ import { Icon } from '../icons';
 import { useOs } from '../store';
 import { useEffect } from 'react';
 
-const ICONS = ['info', 'warning', 'error', 'question'] as const;
+const ICONS =
+  [
+    'info',
+    'warning',
+    'error',
+    'question',
+  ] as const;
 
-export default function DialogApp({ win }: AppProps) {
-  const { t } = useTranslation('c-dunesday');
-  const close = useOs((s) => s.close);
-  const icon = ICONS.find((i) => i === win.params?.icon) ?? 'info';
+export default function DialogApp({
+  win,
+}: AppProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-dunesday',
+    );
+  const close =
+    useOs(
+      (
+        s,
+      ) =>
+        s.close,
+    );
+  const icon =
+    ICONS.find(
+      (
+        i,
+      ) =>
+        i ===
+        win
+          .params
+          ?.icon,
+    ) ??
+    'info';
 
   useEffect(() => {
-    if (icon === 'error' || icon === 'warning') sfx.undo();
-    else sfx.bloop();
-  }, [icon]);
+    if (
+      icon ===
+        'error' ||
+      icon ===
+        'warning'
+    )
+      sfx.undo();
+    else
+      sfx.bloop();
+  }, [
+    icon,
+  ]);
 
   return (
-    <div className="ds-dialog" role="alert">
+    <div
+      className="ds-dialog"
+      role="alert"
+    >
       <div className="ds-dialog-body">
-        <Icon name={icon} size={32} />
-        <p>{win.params?.text}</p>
+        <Icon
+          name={
+            icon
+          }
+          size={
+            32
+          }
+        />
+        <p>
+          {
+            win
+              .params
+              ?.text
+          }
+        </p>
       </div>
       <div className="ds-dialog-foot">
         <button
           type="button"
           className="ds-btn7"
-           
+
           autoFocus
-          onClick={() => close(win.id)}
-          onKeyDown={(e) => e.key === 'Escape' && close(win.id)}
+          onClick={() =>
+            close(
+              win.id,
+            )
+          }
+          onKeyDown={(
+            e,
+          ) =>
+            e.key ===
+              'Escape' &&
+            close(
+              win.id,
+            )
+          }
         >
-          {t('ok', { defaultValue: 'OK' })}
+          {t(
+            'ok',
+            {
+              defaultValue:
+                'OK',
+            },
+          )}
         </button>
       </div>
     </div>

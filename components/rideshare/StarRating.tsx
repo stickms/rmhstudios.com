@@ -3,41 +3,98 @@ import { Star } from 'lucide-react';
 
 interface StarRatingProps {
   value: number;
-  onChange?: (value: number) => void;
+  onChange?: (
+    value: number,
+  ) => void;
   readOnly?: boolean;
   size?: number;
 }
 
-export function StarRating({ value, onChange, readOnly, size = 24 }: StarRatingProps) {
-  const [hover, setHover] = useState(0);
-  const active = hover || value;
+export function StarRating({
+  value,
+  onChange,
+  readOnly,
+  size = 24,
+}: StarRatingProps) {
+  const [
+    hover,
+    setHover,
+  ] =
+    useState(
+      0,
+    );
+  const active =
+    hover ||
+    value;
 
   return (
     <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((n) => {
-        const filled = n <= active;
-        const Tag = readOnly ? 'span' : 'button';
-        return (
-          <Tag
-            key={n}
-            {...(readOnly
-              ? {}
-              : {
-                  type: 'button' as const,
-                  onClick: () => onChange?.(n),
-                  onMouseEnter: () => setHover(n),
-                  onMouseLeave: () => setHover(0),
-                  'aria-label': `${n} star${n > 1 ? 's' : ''}`,
-                })}
-            className={readOnly ? 'inline-flex' : 'inline-flex cursor-pointer transition-transform'}
-          >
-            <Star
-              style={{ width: size, height: size }}
-              className={filled ? 'fill-site-warning text-site-warning' : 'text-site-text-muted'}
-            />
-          </Tag>
-        );
-      })}
+      {[
+        1,
+        2,
+        3,
+        4,
+        5,
+      ].map(
+        (
+          n,
+        ) => {
+          const filled =
+            n <=
+            active;
+          const Tag =
+            readOnly
+              ? 'span'
+              : 'button';
+          return (
+            <Tag
+              key={
+                n
+              }
+              {...(readOnly
+                ? {}
+                : {
+                    type: 'button' as const,
+                    onClick:
+                      () =>
+                        onChange?.(
+                          n,
+                        ),
+                    onMouseEnter:
+                      () =>
+                        setHover(
+                          n,
+                        ),
+                    onMouseLeave:
+                      () =>
+                        setHover(
+                          0,
+                        ),
+                    'aria-label': `${n} star${n > 1 ? 's' : ''}`,
+                  })}
+              className={
+                readOnly
+                  ? 'inline-flex'
+                  : 'inline-flex cursor-pointer transition-transform'
+              }
+            >
+              <Star
+                style={{
+                  width:
+                    size,
+                  height:
+                    size,
+                }}
+                className={
+                  filled
+                    ? 'fill-site-warning text-site-warning'
+                    : 'text-site-text-muted'
+                }
+              />
+            </Tag>
+          );
+        },
+      )}
     </div>
   );
 }

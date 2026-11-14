@@ -9,62 +9,258 @@
  * comment that sends a reader looking for a class that does not exist. It scans the source trees that shipped it
  * (`app`, `components`, `lib`, `hooks`, `stores`) and skips only itself.
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import {
+  readFileSync,
+  readdirSync,
+  statSync,
+} from 'node:fs';
+import {
+  join,
+  relative,
+  sep,
+} from 'node:path';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
 
-const ROOT = join(__dirname, '..', '..');
+const ROOT =
+  join(
+    __dirname,
+    '..',
+    '..',
+  );
 /** Spelled in two halves so this file does not trip its own scan. */
-const RETIRED = ['perf', 'lite'].join('-');
-const ROOTS = ['app', 'components', 'lib', 'hooks', 'stores', 'features'];
-const EXT = /\.(css|ts|tsx|mjs|cjs|js|json)$/;
-const SKIP_DIR = new Set(['node_modules', '.git', 'generated']);
+const RETIRED =
+  [
+    'perf',
+    'lite',
+  ].join(
+    '-',
+  );
+const ROOTS =
+  [
+    'app',
+    'components',
+    'lib',
+    'hooks',
+    'stores',
+    'features',
+  ];
+const EXT =
+  /\.(css|ts|tsx|mjs|cjs|js|json)$/;
+const SKIP_DIR =
+  new Set(
+    [
+      'node_modules',
+      '.git',
+      'generated',
+    ],
+  );
 
-function walk(dir: string, out: string[]): string[] {
-  for (const name of readdirSync(dir)) {
-    if (SKIP_DIR.has(name)) continue;
-    const full = join(dir, name);
-    const st = statSync(full);
-    if (st.isDirectory()) walk(full, out);
-    else if (EXT.test(name)) out.push(full);
+function walk(
+  dir: string,
+  out: string[],
+): string[] {
+  for (const name of readdirSync(
+    dir,
+  )) {
+    if (
+      SKIP_DIR.has(
+        name,
+      )
+    )
+      continue;
+    const full =
+      join(
+        dir,
+        name,
+      );
+    const st =
+      statSync(
+        full,
+      );
+    if (
+      st.isDirectory()
+    )
+      walk(
+        full,
+        out,
+      );
+    else if (
+      EXT.test(
+        name,
+      )
+    )
+      out.push(
+        full,
+      );
   }
   return out;
 }
 
-const SELF = relative(ROOT, __filename).split(sep).join('/');
-const FILES = ROOTS.flatMap((r) => walk(join(ROOT, r), [])).filter(
-  (f) => relative(ROOT, f).split(sep).join('/') !== SELF,
-);
-const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
+const SELF =
+  relative(
+    ROOT,
+    __filename,
+  )
+    .split(
+      sep,
+    )
+    .join(
+      '/',
+    );
+const FILES =
+  ROOTS.flatMap(
+    (
+      r,
+    ) =>
+      walk(
+        join(
+          ROOT,
+          r,
+        ),
+        [],
+      ),
+  ).filter(
+    (
+      f,
+    ) =>
+      relative(
+        ROOT,
+        f,
+      )
+        .split(
+          sep,
+        )
+        .join(
+          '/',
+        ) !==
+      SELF,
+  );
+const read =
+  (
+    p: string,
+  ) =>
+    readFileSync(
+      join(
+        ROOT,
+        p,
+      ),
+      'utf8',
+    );
 
 describe('perf-lite is gone', () => {
   it('scans a real tree', () => {
-    expect(FILES.length).toBeGreaterThan(500);
+    expect(
+      FILES.length,
+    ).toBeGreaterThan(
+      500,
+    );
   });
 
   it('the retired name appears nowhere in app, components, lib, hooks or stores', () => {
-    const hits = FILES.filter((f) => readFileSync(f, 'utf8').includes(RETIRED)).map((f) =>
-      relative(ROOT, f).split(sep).join('/'),
+    const hits =
+      FILES.filter(
+        (
+          f,
+        ) =>
+          readFileSync(
+            f,
+            'utf8',
+          ).includes(
+            RETIRED,
+          ),
+      ).map(
+        (
+          f,
+        ) =>
+          relative(
+            ROOT,
+            f,
+          )
+            .split(
+              sep,
+            )
+            .join(
+              '/',
+            ),
+      );
+    expect(
+      hits,
+      `Remove "${RETIRED}" (the material has no low-end tier) from:`,
+    ).toEqual(
+      [],
     );
-    expect(hits, `Remove "${RETIRED}" (the material has no low-end tier) from:`).toEqual([]);
   });
 
   it('the stamping script and its modules are deleted', () => {
-    for (const f of ['lib/perf-tier.ts', 'lib/performance-tier.ts']) {
-      expect(() => statSync(join(ROOT, f)), f).toThrow();
+    for (const f of [
+      'lib/perf-tier.ts',
+      'lib/performance-tier.ts',
+    ]) {
+      expect(
+        () =>
+          statSync(
+            join(
+              ROOT,
+              f,
+            ),
+          ),
+        f,
+      ).toThrow();
     }
-    expect(read('app/routes/__root.tsx')).not.toContain('PERF_TIER_SCRIPT');
-    expect(read('components/Providers.tsx')).not.toContain('applyPerfTier');
+    expect(
+      read(
+        'app/routes/__root.tsx',
+      ),
+    ).not.toContain(
+      'PERF_TIER_SCRIPT',
+    );
+    expect(
+      read(
+        'components/Providers.tsx',
+      ),
+    ).not.toContain(
+      'applyPerfTier',
+    );
   });
 
   it('the soft-render finding is settled by its own hook, mounted by Providers on every route', () => {
-    expect(read('hooks/useSoftRenderSettle.ts')).toContain('settleSoftRender()');
-    expect(read('components/Providers.tsx')).toContain('useSoftRenderSettle(pathname);');
+    expect(
+      read(
+        'hooks/useSoftRenderSettle.ts',
+      ),
+    ).toContain(
+      'settleSoftRender()',
+    );
+    expect(
+      read(
+        'components/Providers.tsx',
+      ),
+    ).toContain(
+      'useSoftRenderSettle(pathname);',
+    );
   });
 
   it('the low-end signal is not a document class: lib/low-end.ts writes nothing to <html>', () => {
-    const src = read('lib/low-end.ts').replace(/\/\*[\s\S]*?\*\//g, '');
-    expect(src).not.toMatch(/classList\.(add|toggle|remove)/);
-    expect(src).not.toMatch(/documentElement/);
+    const src =
+      read(
+        'lib/low-end.ts',
+      ).replace(
+        /\/\*[\s\S]*?\*\//g,
+        '',
+      );
+    expect(
+      src,
+    ).not.toMatch(
+      /classList\.(add|toggle|remove)/,
+    );
+    expect(
+      src,
+    ).not.toMatch(
+      /documentElement/,
+    );
   });
 });

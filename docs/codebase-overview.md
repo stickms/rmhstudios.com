@@ -1,21 +1,118 @@
 # Codebase Overview — rmhstudios.com
 
-A single, ambitious web platform: a social feed (RMHarks), ~20 browser games
-(several multiplayer/3D), full apps (RMHTube, RMHMusic, RMHType, RMHStudy,
-RMHCode, RMHLadder), a blog/news/library system, a coin economy with Stripe
-memberships, and a scoped developer API — served by a React SSR tier with Node
-realtime hubs (Socket.IO) and a Go worker fleet behind it.
+A
+single,
+ambitious
+web
+platform:
+a
+social
+feed
+(RMHarks),
+~20
+browser
+games
+(several
+multiplayer/3D),
+full
+apps
+(RMHTube,
+RMHMusic,
+RMHType,
+RMHStudy,
+RMHCode,
+RMHLadder),
+a
+blog/news/library
+system,
+a
+coin
+economy
+with
+Stripe
+memberships,
+and
+a
+scoped
+developer
+API
+—
+served
+by
+a
+React
+SSR
+tier
+with
+Node
+realtime
+hubs
+(Socket.IO)
+and
+a
+Go
+worker
+fleet
+behind
+it.
 
-> **Stack of record:** TanStack Start + Vite 8 + React 19 + Nitro SSR. (This
-> project is **not** Next.js — earlier revisions of this doc said so; that is
+> **Stack
+> of
+> record:**
+> TanStack
+> Start +
+> Vite
+> 8 +
+> React
+> 19 +
+> Nitro
+> SSR.
+> (This
+> project
+> is
+> **not**
+> Next.js
+> —
+> earlier
+> revisions
+> of
+> this
+> doc
+> said
+> so;
+> that
+> is
 > stale.)
 
-> **Companion docs:** agent guides live at [`/CLAUDE.md`](../CLAUDE.md) and in
-> each major directory (`app/`, `components/`, `lib/`, `server/`,
-> `go-services/`). Runtime topology & deploy pipeline:
-> [`architecture.md`](./architecture.md). Visual system:
+> **Companion
+> docs:**
+> agent
+> guides
+> live
+> at
+> [`/CLAUDE.md`](../CLAUDE.md)
+> and
+> in
+> each
+> major
+> directory
+> (`app/`,
+> `components/`,
+> `lib/`,
+> `server/`,
+> `go-services/`).
+> Runtime
+> topology
+> &
+> deploy
+> pipeline:
+> [`architecture.md`](./architecture.md).
+> Visual
+> system:
 > [`design-language.md`](./design-language.md) +
-> [`page-consistency.md`](./page-consistency.md). Docs index:
+> [`page-consistency.md`](./page-consistency.md).
+> Docs
+> index:
 > [`README.md`](./README.md).
 
 ---
@@ -75,7 +172,18 @@ locales/            32 locale dirs × 66 namespaces (en is the reference)
 
 ## 3. Runtime & ports (local `pnpm dev`)
 
-`pnpm dev` runs Vite (the SSR app) plus the Node WebSocket servers concurrently.
+`pnpm dev`
+runs
+Vite
+(the
+SSR
+app)
+plus
+the
+Node
+WebSocket
+servers
+concurrently.
 
 | Service          | Port | Role                                                                          |
 | ---------------- | ---- | ----------------------------------------------------------------------------- |
@@ -87,28 +195,129 @@ locales/            32 locale dirs × 66 namespaces (en is the reference)
 | homes-worker     | —    | RMHHomes listings-scraper cron (`lib/homes`)                                  |
 | jobs             | —    | Durable async backbone (pg-boss): progression, event reminders, weekly digest |
 
-In production these same Node services serve traffic directly behind Apache —
-there is no Go edge/gateway in front of them. See
-[`architecture.md`](./architecture.md) for the production picture.
+In
+production
+these
+same
+Node
+services
+serve
+traffic
+directly
+behind
+Apache
+—
+there
+is
+no
+Go
+edge/gateway
+in
+front
+of
+them.
+See
+[`architecture.md`](./architecture.md)
+for
+the
+production
+picture.
 
 ---
 
 ## 4. Go microservice fleet (`go-services/`)
 
-The backend service layer has a Go implementation (built with Bazel +
-gazelle). **Production today is a hybrid:** Go runs `status` and `assets`;
-Node runs the web SSR, every realtime hub and every background worker (the Go
-workers, the Discord bot last, were ported to the `jobs` worker and deleted
-with their `supervisor`, D3). The old full-Go realtime topology (a `gateway` fronting Go
-`gamehub`/`rmhbox`/`rmhtube` hubs with a Redis backplane, plus its
-Helm/k3s charts) was **removed in the rewrite** — it never served production.
-Details: [`architecture.md`](./architecture.md) and
+The
+backend
+service
+layer
+has
+a
+Go
+implementation
+(built
+with
+Bazel +
+gazelle).
+**Production
+today
+is
+a
+hybrid:**
+Go
+runs
+`status`
+and
+`assets`;
+Node
+runs
+the
+web
+SSR,
+every
+realtime
+hub
+and
+every
+background
+worker
+(the
+Go
+workers,
+the
+Discord
+bot
+last,
+were
+ported
+to
+the
+`jobs`
+worker
+and
+deleted
+with
+their
+`supervisor`,
+D3).
+The
+old
+full-Go
+realtime
+topology
+(a
+`gateway`
+fronting
+Go
+`gamehub`/`rmhbox`/`rmhtube`
+hubs
+with
+a
+Redis
+backplane,
+plus
+its
+Helm/k3s
+charts)
+was
+**removed
+in
+the
+rewrite**
+—
+it
+never
+served
+production.
+Details:
+[`architecture.md`](./architecture.md)
+and
 [`../go-services/CLAUDE.md`](../go-services/CLAUDE.md).
 
-| Service      | Port           | Role                                                                                                                  |
-| ------------ | -------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `status`     | 7008           | Standalone health dashboard (`/`, `/api/status`); survives outages                                                    |
-| `assets`     | 7007           | Range-aware S3/R2 asset streaming (`/library` `/music` `/models` `/sprites`)                                          |
+| Service  | Port | Role                                                                         |
+| -------- | ---- | ---------------------------------------------------------------------------- |
+| `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages           |
+| `assets` | 7007 | Range-aware S3/R2 asset streaming (`/library` `/music` `/models` `/sprites`) |
 
 ```bash
 make gazelle        # regenerate Bazel BUILD files after adding Go files
@@ -116,45 +325,292 @@ make test           # bazel test //go-services/... (+ vitest)
 make build          # bazel build //go-services/cmd/... + frontend bundle
 ```
 
-In production the Go binaries ship from the root `Dockerfile`'s `go-builder`
-stage (`go build ./cmd/...`), not Bazel; Bazel is the CI unit-test gate.
+In
+production
+the
+Go
+binaries
+ship
+from
+the
+root
+`Dockerfile`'s
+`go-builder`
+stage
+(`go build ./cmd/...`),
+not
+Bazel;
+Bazel
+is
+the
+CI
+unit-test
+gate.
 
 ---
 
 ## 5. Cross-cutting conventions
 
-- **Routing/data:** routes live in `app/routes`; `routeTree.gen.ts` is generated
-  by the TanStack plugin on dev/build — **add a route file, then let a `vite dev`
-  or build regenerate the tree** (there is no standalone CLI wired). An API
-  endpoint is one of two things: a route file,
-  `createFileRoute('/api/...')({ server: { handlers: { GET, POST } } })`, or, when
-  every handler goes through `implement()` or `defineHandler()` (most of them), a
-  registered module in its domain's `api/` folder
-  (`route = apiRoute('/api/...', { GET: implement(...) })`, listed in the
-  generated `lib/api/route-table.server.ts` and served by the one dispatcher route
-  `app/routes/api/$.ts`; see `app/CLAUDE.md`).
-- **Server-only code:** `*.server.ts(x)` files are stubbed out of the client
-  bundle by a Vite plugin (`vite.config.ts`). Heavy client-only deps (three,
-  monaco, pixi, tone, …) are externalized from the Nitro server bundle and
-  manually chunked.
-- **Head / SEO:** per-route `head()` returns `{ meta, links, scripts }`. Use
-  `lib/seo.ts` (`buildMeta`, `buildCanonical`) and `lib/schema.ts` (JSON-LD
-  builders). Site-wide Organization/WebSite JSON-LD is emitted from `__root`.
-- **Errors & telemetry:** route `errorComponent`/`notFoundComponent` render
-  `components/errors/*`; uncaught client errors and Core Web Vitals are beaconed
-  to `/api/client-error` and `/api/rum` (see `lib/client-errors.ts`, `lib/rum.ts`).
-- **Auth/validation:** `auth` from `lib/auth.ts`; validate API input with zod and
-  rate-limit writes/AI/uploads via `lib/rate-limit.ts` (`rateLimit`, `getClientIp`).
-- **i18n:** user-facing strings go through `t(...)`. Run `pnpm i18n:coverage` to
-  see per-locale key coverage vs. `en`.
-- **Theming/motion:** themes (`.style-*` classes: default, light,
-  high-contrast, ultra, graphite, sepia, nocturne) plus accent presets, over CSS
-  tokens in `globals.css`. The **default** is the strict-monochrome **Radial
-  Liquid Glass** baseline (the old `liquid-glass` id is retired — it became the
-  shell); a global `prefers-reduced-motion` gate is respected there and via the
-  `useReducedMotion()` hook.
-- **Accessibility:** `eslint-plugin-jsx-a11y` runs at "warn"; native/Radix
-  primitives preferred; the site shell exposes a `<main>` landmark + skip link.
+- **Routing/data:**
+  routes
+  live
+  in
+  `app/routes`;
+  `routeTree.gen.ts`
+  is
+  generated
+  by
+  the
+  TanStack
+  plugin
+  on
+  dev/build
+  —
+  **add
+  a
+  route
+  file,
+  then
+  let
+  a
+  `vite dev`
+  or
+  build
+  regenerate
+  the
+  tree**
+  (there
+  is
+  no
+  standalone
+  CLI
+  wired).
+  An
+  API
+  endpoint
+  is
+  one
+  of
+  two
+  things:
+  a
+  route
+  file,
+  `createFileRoute('/api/...')({ server: { handlers: { GET, POST } } })`,
+  or,
+  when
+  every
+  handler
+  goes
+  through
+  `implement()`
+  or
+  `defineHandler()`
+  (most
+  of
+  them),
+  a
+  registered
+  module
+  in
+  its
+  domain's
+  `api/`
+  folder
+  (`route = apiRoute('/api/...', { GET: implement(...) })`,
+  listed
+  in
+  the
+  generated
+  `lib/api/route-table.server.ts`
+  and
+  served
+  by
+  the
+  one
+  dispatcher
+  route
+  `app/routes/api/$.ts`;
+  see
+  `app/CLAUDE.md`).
+- **Server-only
+  code:**
+  `*.server.ts(x)`
+  files
+  are
+  stubbed
+  out
+  of
+  the
+  client
+  bundle
+  by
+  a
+  Vite
+  plugin
+  (`vite.config.ts`).
+  Heavy
+  client-only
+  deps
+  (three,
+  monaco,
+  pixi,
+  tone,
+  …)
+  are
+  externalized
+  from
+  the
+  Nitro
+  server
+  bundle
+  and
+  manually
+  chunked.
+- **Head
+  /
+  SEO:**
+  per-route
+  `head()`
+  returns
+  `{ meta, links, scripts }`.
+  Use
+  `lib/seo.ts`
+  (`buildMeta`,
+  `buildCanonical`)
+  and
+  `lib/schema.ts`
+  (JSON-LD
+  builders).
+  Site-wide
+  Organization/WebSite
+  JSON-LD
+  is
+  emitted
+  from
+  `__root`.
+- **Errors
+  &
+  telemetry:**
+  route
+  `errorComponent`/`notFoundComponent`
+  render
+  `components/errors/*`;
+  uncaught
+  client
+  errors
+  and
+  Core
+  Web
+  Vitals
+  are
+  beaconed
+  to
+  `/api/client-error`
+  and
+  `/api/rum`
+  (see
+  `lib/client-errors.ts`,
+  `lib/rum.ts`).
+- **Auth/validation:**
+  `auth`
+  from
+  `lib/auth.ts`;
+  validate
+  API
+  input
+  with
+  zod
+  and
+  rate-limit
+  writes/AI/uploads
+  via
+  `lib/rate-limit.ts`
+  (`rateLimit`,
+  `getClientIp`).
+- **i18n:**
+  user-facing
+  strings
+  go
+  through
+  `t(...)`.
+  Run
+  `pnpm i18n:coverage`
+  to
+  see
+  per-locale
+  key
+  coverage
+  vs.
+  `en`.
+- **Theming/motion:**
+  themes
+  (`.style-*`
+  classes:
+  default,
+  light,
+  high-contrast,
+  ultra,
+  graphite,
+  sepia,
+  nocturne)
+  plus
+  accent
+  presets,
+  over
+  CSS
+  tokens
+  in
+  `globals.css`.
+  The
+  **default**
+  is
+  the
+  strict-monochrome
+  **Radial
+  Liquid
+  Glass**
+  baseline
+  (the
+  old
+  `liquid-glass`
+  id
+  is
+  retired
+  —
+  it
+  became
+  the
+  shell);
+  a
+  global
+  `prefers-reduced-motion`
+  gate
+  is
+  respected
+  there
+  and
+  via
+  the
+  `useReducedMotion()`
+  hook.
+- **Accessibility:**
+  `eslint-plugin-jsx-a11y`
+  runs
+  at
+  "warn";
+  native/Radix
+  primitives
+  preferred;
+  the
+  site
+  shell
+  exposes
+  a
+  `<main>`
+  landmark +
+  skip
+  link.
 
 ---
 
@@ -168,22 +624,138 @@ pnpm typecheck          # typecheck    pnpm lint    pnpm format
 pnpm build              # Vite/Nitro build + esbuild bundles the WS servers
 ```
 
-- **Web tier:** production is **Docker Compose** on a VPS (not PM2 — that claim
-  is stale). Node runs web SSR + the realtime hubs + the ladder/homes/jobs
-  workers; a blue/green `deploy/hotswap-web.sh` swaps the web container with a
-  health-gated Apache port flip (7005 ⇄ 7015). Apache (behind Cloudflare TLS) is
-  the only front door and sets security headers; a Nitro `security-headers`
-  plugin adds defense-in-depth response headers. (The Helm/Traefik path was
-  removed in the rewrite.)
-- **Go tier:** Bazel unit-test gate in `.github/workflows/go-microservices.yml`
-  (`bazelisk test --build_tests_only //go-services/...`); the old e2e + `helm
-lint` jobs were removed. Production binaries build via the root `Dockerfile`.
-- **CI overall:** `web-ci.yml` gates the frontend (typecheck, lint, vitest,
-  `build:frontend`, prod dependency audit); `typecheck-server.yml` and
-  `vitest-coverage.yml` add server typecheck + coverage; `codeql.yml` runs SAST;
-  `senior-review.yml` is an LLM review gate; plus ~40 granular
-  lint/format/security/prisma/i18n workflows and Dependabot. See
-  [`architecture.md`](./architecture.md) §4.
+- **Web
+  tier:**
+  production
+  is
+  **Docker
+  Compose**
+  on
+  a
+  VPS
+  (not
+  PM2
+  —
+  that
+  claim
+  is
+  stale).
+  Node
+  runs
+  web
+  SSR +
+  the
+  realtime
+  hubs +
+  the
+  ladder/homes/jobs
+  workers;
+  a
+  blue/green
+  `deploy/hotswap-web.sh`
+  swaps
+  the
+  web
+  container
+  with
+  a
+  health-gated
+  Apache
+  port
+  flip
+  (7005
+  ⇄
+  7015).
+  Apache
+  (behind
+  Cloudflare
+  TLS)
+  is
+  the
+  only
+  front
+  door
+  and
+  sets
+  security
+  headers;
+  a
+  Nitro
+  `security-headers`
+  plugin
+  adds
+  defense-in-depth
+  response
+  headers.
+  (The
+  Helm/Traefik
+  path
+  was
+  removed
+  in
+  the
+  rewrite.)
+- **Go
+  tier:**
+  Bazel
+  unit-test
+  gate
+  in
+  `.github/workflows/go-microservices.yml`
+  (`bazelisk test --build_tests_only //go-services/...`);
+  the
+  old
+  e2e +
+  `helm lint`
+  jobs
+  were
+  removed.
+  Production
+  binaries
+  build
+  via
+  the
+  root
+  `Dockerfile`.
+- **CI
+  overall:**
+  `web-ci.yml`
+  gates
+  the
+  frontend
+  (typecheck,
+  lint,
+  vitest,
+  `build:frontend`,
+  prod
+  dependency
+  audit);
+  `typecheck-server.yml`
+  and
+  `vitest-coverage.yml`
+  add
+  server
+  typecheck +
+  coverage;
+  `codeql.yml`
+  runs
+  SAST;
+  `senior-review.yml`
+  is
+  an
+  LLM
+  review
+  gate;
+  plus
+  ~40
+  granular
+  lint/format/security/prisma/i18n
+  workflows
+  and
+  Dependabot.
+  See
+  [`architecture.md`](./architecture.md)
+  §4.
 
 ---
 
@@ -194,7 +766,7 @@ lint` jobs were removed. Production binaries build via the root `Dockerfile`.
 | Understand the shell / global setup | `app/routes/__root.tsx`, `app/routes/_site.tsx`, `components/Providers.tsx`                    |
 | Add a page                          | a new file under `app/routes/_site/`                                                           |
 | Add an API endpoint                 | a new file under `app/routes/api/` (then regenerate the route tree)                            |
-| Work on the feed                    | `components/feed/*`, `lib/feed/api/rmharks.server.ts`, `lib/feed/*`                                 |
+| Work on the feed                    | `components/feed/*`, `lib/feed/api/rmharks.server.ts`, `lib/feed/*`                            |
 | Work on a game                      | `app/routes/<game>.tsx` + `components/<game>/*` + `server/socket-server/*` (or `go-services/`) |
 | Change theming                      | `app/globals.css`, `stores/themeStore.ts`                                                      |
 | Understand priorities / open work   | `docs/website-improvement-plan.md`                                                             |

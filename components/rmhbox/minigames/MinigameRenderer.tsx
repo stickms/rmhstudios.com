@@ -14,10 +14,23 @@
  *   minigameId: string — The ID of the minigame to render
  */
 
-import { lazy, useCallback, useEffect, type ComponentType } from 'react';
+import {
+  lazy,
+  useCallback,
+  useEffect,
+  type ComponentType,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Gamepad2, HelpCircle } from 'lucide-react';
-import { useRMHboxStore, type TimerInfo, type MinigameRoundInfo } from '@/lib/rmhbox/store';
+import {
+  Loader2,
+  Gamepad2,
+  HelpCircle,
+} from 'lucide-react';
+import {
+  useRMHboxStore,
+  type TimerInfo,
+  type MinigameRoundInfo,
+} from '@/lib/rmhbox/store';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // ─── Minigame ↔ Shell Interface ──────────────────────────────────
@@ -33,37 +46,95 @@ import { ArrivalSuspense } from '@/components/ui/arrive';
  * The hook automatically clears the timer on unmount.
  */
 export function useHeaderTimer() {
-  const setTimerInfo = useRMHboxStore((s) => s.setTimerInfo);
+  const setTimerInfo =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s.setTimerInfo,
+    );
 
-  const startTimer = useCallback(
-    (total: number, remaining?: number) => {
-      setTimerInfo({ total, remaining: remaining ?? total, paused: false, infinite: false, showSkip: false });
-    },
-    [setTimerInfo],
-  );
+  const startTimer =
+    useCallback(
+      (
+        total: number,
+        remaining?: number,
+      ) => {
+        setTimerInfo(
+          {
+            total,
+            remaining:
+              remaining ??
+              total,
+            paused: false,
+            infinite: false,
+            showSkip: false,
+          },
+        );
+      },
+      [
+        setTimerInfo,
+      ],
+    );
 
-  const tickTimer = useCallback(
-    (remaining: number) => {
-      const prev = useRMHboxStore.getState().timerInfo;
-      setTimerInfo({
-        total: prev?.total ?? remaining,
-        remaining,
-        paused: prev?.paused ?? false,
-        infinite: prev?.infinite ?? false,
-        showSkip: prev?.showSkip ?? false,
-      });
-    },
-    [setTimerInfo],
-  );
+  const tickTimer =
+    useCallback(
+      (
+        remaining: number,
+      ) => {
+        const prev =
+          useRMHboxStore.getState()
+            .timerInfo;
+        setTimerInfo(
+          {
+            total:
+              prev?.total ??
+              remaining,
+            remaining,
+            paused:
+              prev?.paused ??
+              false,
+            infinite:
+              prev?.infinite ??
+              false,
+            showSkip:
+              prev?.showSkip ??
+              false,
+          },
+        );
+      },
+      [
+        setTimerInfo,
+      ],
+    );
 
-  const clearTimer = useCallback(() => {
-    setTimerInfo(null);
-  }, [setTimerInfo]);
+  const clearTimer =
+    useCallback(() => {
+      setTimerInfo(
+        null,
+      );
+    }, [
+      setTimerInfo,
+    ]);
 
   // Auto-clear on unmount
-  useEffect(() => () => { setTimerInfo(null); }, [setTimerInfo]);
+  useEffect(
+    () =>
+      () => {
+        setTimerInfo(
+          null,
+        );
+      },
+    [
+      setTimerInfo,
+    ],
+  );
 
-  return { startTimer, tickTimer, clearTimer };
+  return {
+    startTimer,
+    tickTimer,
+    clearTimer,
+  };
 }
 
 /**
@@ -75,27 +146,65 @@ export function useHeaderTimer() {
  * The hook automatically clears on unmount.
  */
 export function useMinigameRound() {
-  const setMinigameRound = useRMHboxStore((s) => s.setMinigameRound);
+  const setMinigameRound =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s.setMinigameRound,
+    );
 
-  const setRound = useCallback(
-    (current: number, total: number) => {
-      setMinigameRound({ current, total });
-    },
-    [setMinigameRound],
-  );
+  const setRound =
+    useCallback(
+      (
+        current: number,
+        total: number,
+      ) => {
+        setMinigameRound(
+          {
+            current,
+            total,
+          },
+        );
+      },
+      [
+        setMinigameRound,
+      ],
+    );
 
-  const clearRound = useCallback(() => {
-    setMinigameRound(null);
-  }, [setMinigameRound]);
+  const clearRound =
+    useCallback(() => {
+      setMinigameRound(
+        null,
+      );
+    }, [
+      setMinigameRound,
+    ]);
 
   // Auto-clear on unmount
-  useEffect(() => () => { setMinigameRound(null); }, [setMinigameRound]);
+  useEffect(
+    () =>
+      () => {
+        setMinigameRound(
+          null,
+        );
+      },
+    [
+      setMinigameRound,
+    ],
+  );
 
-  return { setRound, clearRound };
+  return {
+    setRound,
+    clearRound,
+  };
 }
 
 /** Re-export store types for convenience */
-export type { TimerInfo, MinigameRoundInfo };
+export type {
+  TimerInfo,
+  MinigameRoundInfo,
+};
 
 /** Common props passed to every minigame component */
 export interface MinigameProps {
@@ -108,18 +217,39 @@ interface MinigameRendererProps {
 }
 
 /** Stub component factory — creates a simple placeholder for each minigame. */
-function createStub(name: string): ComponentType<MinigameProps> {
-  const Stub = () => {
-    const { t } = useTranslation("c-rmhbox");
-    return (
-    <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-app-text">
-      <Gamepad2 className="h-10 w-10 text-app-text-muted" />
-      <h3 className="text-xl font-bold">{name}</h3>
-      <p className="text-sm text-app-text-muted">{t("minigame-coming-soon", { defaultValue: "Minigame coming soon…" })}</p>
-    </div>
-    );
-  };
-  Stub.displayName = name;
+function createStub(
+  name: string,
+): ComponentType<MinigameProps> {
+  const Stub =
+    () => {
+      const {
+        t,
+      } =
+        useTranslation(
+          'c-rmhbox',
+        );
+      return (
+        <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-app-text">
+          <Gamepad2 className="h-10 w-10 text-app-text-muted" />
+          <h3 className="text-xl font-bold">
+            {
+              name
+            }
+          </h3>
+          <p className="text-sm text-app-text-muted">
+            {t(
+              'minigame-coming-soon',
+              {
+                defaultValue:
+                  'Minigame coming soon…',
+              },
+            )}
+          </p>
+        </div>
+      );
+    };
+  Stub.displayName =
+    name;
   return Stub;
 }
 
@@ -127,65 +257,272 @@ function createStub(name: string): ComponentType<MinigameProps> {
  * Map of minigame IDs to lazy-loaded components.
  * Implemented minigames import the real component; others use stubs.
  */
-const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<ComponentType<MinigameProps>>> = {
-  'rhyme-time':             lazy(() => import('./rhyme-time/RhymeTimeGame')),
-  'undercover-agent':       lazy(() => import('./undercover-agent/UndercoverAgentGame')),
-  'category-crash':         lazy(() => import('./category-crash/CategoryCrashGame')),
-  'wiki-race':              lazy(() => import('./wiki-race/WikiRaceGame')),
-  'wit-war':                lazy(() => import('./wit-war/WitWarGame')),
-  'fact-or-friction':       lazy(() => import('./fact-or-friction/FactOrFrictionGame')),
-  'undercover-editor':      lazy(() => import('./undercover-editor/UndercoverEditorGame')),
-  'minimalist-masterpiece': lazy(() => import('./minimalist-masterpiece/MinimalistMasterpieceGame')),
-  'emoji-cinema':           lazy(() => import('./emoji-cinema/EmojiCinemaGame')),
-  'sequence-sam':           lazy(() => Promise.resolve({ default: createStub('Sequence Sam') })),
-  'human-keyboard':         lazy(() => Promise.resolve({ default: createStub('Human Keyboard') })),
-  'cursor-curling':         lazy(() => Promise.resolve({ default: createStub('Cursor Curling') })),
-  'human-tetris':           lazy(() => Promise.resolve({ default: createStub('Human Tetris') })),
-  'identity-crisis':        lazy(() => Promise.resolve({ default: createStub('Identity Crisis') })),
-  'ranking-file':           lazy(() => Promise.resolve({ default: createStub('Ranking File') })),
-  'pixel-pushers':          lazy(() => Promise.resolve({ default: createStub('Pixel Pushers') })),
-  'scroll-soul':            lazy(() => Promise.resolve({ default: createStub('Scroll & Soul') })),
+const MINIGAME_COMPONENTS: Record<
+  string,
+  React.LazyExoticComponent<
+    ComponentType<MinigameProps>
+  >
+> = {
+  'rhyme-time':
+    lazy(
+      () =>
+        import('./rhyme-time/RhymeTimeGame'),
+    ),
+  'undercover-agent':
+    lazy(
+      () =>
+        import('./undercover-agent/UndercoverAgentGame'),
+    ),
+  'category-crash':
+    lazy(
+      () =>
+        import('./category-crash/CategoryCrashGame'),
+    ),
+  'wiki-race':
+    lazy(
+      () =>
+        import('./wiki-race/WikiRaceGame'),
+    ),
+  'wit-war':
+    lazy(
+      () =>
+        import('./wit-war/WitWarGame'),
+    ),
+  'fact-or-friction':
+    lazy(
+      () =>
+        import('./fact-or-friction/FactOrFrictionGame'),
+    ),
+  'undercover-editor':
+    lazy(
+      () =>
+        import('./undercover-editor/UndercoverEditorGame'),
+    ),
+  'minimalist-masterpiece':
+    lazy(
+      () =>
+        import('./minimalist-masterpiece/MinimalistMasterpieceGame'),
+    ),
+  'emoji-cinema':
+    lazy(
+      () =>
+        import('./emoji-cinema/EmojiCinemaGame'),
+    ),
+  'sequence-sam':
+    lazy(
+      () =>
+        Promise.resolve(
+          {
+            default:
+              createStub(
+                'Sequence Sam',
+              ),
+          },
+        ),
+    ),
+  'human-keyboard':
+    lazy(
+      () =>
+        Promise.resolve(
+          {
+            default:
+              createStub(
+                'Human Keyboard',
+              ),
+          },
+        ),
+    ),
+  'cursor-curling':
+    lazy(
+      () =>
+        Promise.resolve(
+          {
+            default:
+              createStub(
+                'Cursor Curling',
+              ),
+          },
+        ),
+    ),
+  'human-tetris':
+    lazy(
+      () =>
+        Promise.resolve(
+          {
+            default:
+              createStub(
+                'Human Tetris',
+              ),
+          },
+        ),
+    ),
+  'identity-crisis':
+    lazy(
+      () =>
+        Promise.resolve(
+          {
+            default:
+              createStub(
+                'Identity Crisis',
+              ),
+          },
+        ),
+    ),
+  'ranking-file':
+    lazy(
+      () =>
+        Promise.resolve(
+          {
+            default:
+              createStub(
+                'Ranking File',
+              ),
+          },
+        ),
+    ),
+  'pixel-pushers':
+    lazy(
+      () =>
+        Promise.resolve(
+          {
+            default:
+              createStub(
+                'Pixel Pushers',
+              ),
+          },
+        ),
+    ),
+  'scroll-soul':
+    lazy(
+      () =>
+        Promise.resolve(
+          {
+            default:
+              createStub(
+                'Scroll & Soul',
+              ),
+          },
+        ),
+    ),
 };
 
 /** Loading fallback shown while the component loads. */
 function LoadingFallback() {
-  const { t } = useTranslation("c-rmhbox");
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
   return (
     <div className="flex items-center justify-center gap-2 p-8 text-app-text-muted">
       <Loader2 className="h-6 w-6 animate-spin" />
-      <span>{t("loading-minigame", { defaultValue: "Loading minigame…" })}</span>
+      <span>
+        {t(
+          'loading-minigame',
+          {
+            defaultValue:
+              'Loading minigame…',
+          },
+        )}
+      </span>
     </div>
   );
 }
 
 /** Error fallback for unknown minigame IDs. */
-function UnknownMinigame({ id }: { id: string }) {
-  const { t } = useTranslation("c-rmhbox");
+function UnknownMinigame({
+  id,
+}: {
+  id: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
   return (
     <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
       <HelpCircle className="h-10 w-10 text-app-danger" />
-      <h3 className="text-lg font-bold text-app-danger">{t("unknown-minigame", { defaultValue: "Unknown Minigame" })}</h3>
+      <h3 className="text-lg font-bold text-app-danger">
+        {t(
+          'unknown-minigame',
+          {
+            defaultValue:
+              'Unknown Minigame',
+          },
+        )}
+      </h3>
       <p className="text-sm text-app-text-muted">
-        {t("no-component-found", { defaultValue: "No component found for \"{{id}}\"", id })}
+        {t(
+          'no-component-found',
+          {
+            defaultValue:
+              'No component found for "{{id}}"',
+            id,
+          },
+        )}
       </p>
     </div>
   );
 }
 
-export default function MinigameRenderer({ minigameId }: MinigameRendererProps) {
-  const lobby = useRMHboxStore((s) => s.lobby);
-  const LazyComponent = MINIGAME_COMPONENTS[minigameId];
+export default function MinigameRenderer({
+  minigameId,
+}: MinigameRendererProps) {
+  const lobby =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s.lobby,
+    );
+  const LazyComponent =
+    MINIGAME_COMPONENTS[
+      minigameId
+    ];
 
-  if (!LazyComponent) {
-    return <UnknownMinigame id={minigameId} />;
+  if (
+    !LazyComponent
+  ) {
+    return (
+      <UnknownMinigame
+        id={
+          minigameId
+        }
+      />
+    );
   }
 
-  const playerId = lobby?.myUserId ?? '';
-  const playerName = lobby?.players.find((p) => p.userId === playerId)?.userName ?? '';
+  const playerId =
+    lobby?.myUserId ??
+    '';
+  const playerName =
+    lobby?.players.find(
+      (
+        p,
+      ) =>
+        p.userId ===
+        playerId,
+    )
+      ?.userName ??
+    '';
 
   return (
-    <ArrivalSuspense fallback={<LoadingFallback />}>
-      <LazyComponent playerId={playerId} playerName={playerName} />
+    <ArrivalSuspense
+      fallback={
+        <LoadingFallback />
+      }
+    >
+      <LazyComponent
+        playerId={
+          playerId
+        }
+        playerName={
+          playerName
+        }
+      />
     </ArrivalSuspense>
   );
 }

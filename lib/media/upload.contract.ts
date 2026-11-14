@@ -6,7 +6,16 @@
  */
 import { endpoint } from '@/lib/contract/endpoint';
 
-export const uploadImagesApi = endpoint<{ body: FormData; res: { urls: string[] } }>()({
-  method: 'POST',
-  path: '/api/rmharks/image',
-});
+export const uploadImagesApi =
+  endpoint<{
+    body: FormData;
+    res: {
+      urls: string[];
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/rmharks/image',
+    },
+  );

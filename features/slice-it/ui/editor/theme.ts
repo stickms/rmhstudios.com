@@ -28,19 +28,64 @@ export interface EditorTheme {
   holdTrail: string;
 }
 
-export function readEditorTheme(element: HTMLElement): EditorTheme {
-  const cs = getComputedStyle(element);
-  const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
+export function readEditorTheme(
+  element: HTMLElement,
+): EditorTheme {
+  const cs =
+    getComputedStyle(
+      element,
+    );
+  const v =
+    (
+      name: string,
+      fallback: string,
+    ) =>
+      cs
+        .getPropertyValue(
+          name,
+        )
+        .trim() ||
+      fallback;
   return {
     glow: canvasGlowEnabled(),
-    bg: v('--slice-bg', '#0b1241'),
-    shadowDark: v('--slice-shadow-dark', 'rgba(2, 4, 15, 0.78)'),
-    shadowLight: v('--slice-shadow-light', 'rgba(45, 179, 240, 0.07)'),
-    text: v('--slice-text', '#f0f1f6'),
-    textMuted: v('--slice-text-muted', '#8f9ac9'),
-    primary: v('--slice-primary', '#2db3f0'),
-    accent: v('--slice-accent', '#f4509f'),
-    holdTrail: v('--slice-hold-trail', 'rgba(234, 246, 255, 0.5)'),
+    bg: v(
+      '--slice-bg',
+      '#0b1241',
+    ),
+    shadowDark:
+      v(
+        '--slice-shadow-dark',
+        'rgba(2, 4, 15, 0.78)',
+      ),
+    shadowLight:
+      v(
+        '--slice-shadow-light',
+        'rgba(45, 179, 240, 0.07)',
+      ),
+    text: v(
+      '--slice-text',
+      '#f0f1f6',
+    ),
+    textMuted:
+      v(
+        '--slice-text-muted',
+        '#8f9ac9',
+      ),
+    primary:
+      v(
+        '--slice-primary',
+        '#2db3f0',
+      ),
+    accent:
+      v(
+        '--slice-accent',
+        '#f4509f',
+      ),
+    holdTrail:
+      v(
+        '--slice-hold-trail',
+        'rgba(234, 246, 255, 0.5)',
+      ),
   };
 }
 
@@ -55,23 +100,31 @@ export function readEditorTheme(element: HTMLElement): EditorTheme {
  * channel, so the timeline also varies note SHAPE by type and prints the
  * division in the inspector.
  */
-export const QUANT_COLORS: Record<number, string> = {
-  1: '#ef4444', // quarter    — red
-  2: '#3b82f6', // eighth     — blue
-  3: '#a855f7', // triplet    — purple
-  4: '#eab308', // sixteenth  — yellow
-  6: '#ec4899', // 1/24
-  8: '#f97316', // 1/32
-  16: '#94a3b8', // off-grid  — grey
-};
+export const QUANT_COLORS: Record<
+  number,
+  string
+> =
+  {
+    1: '#ef4444', // quarter    — red
+    2: '#3b82f6', // eighth     — blue
+    3: '#a855f7', // triplet    — purple
+    4: '#eab308', // sixteenth  — yellow
+    6: '#ec4899', // 1/24
+    8: '#f97316', // 1/32
+    16: '#94a3b8', // off-grid  — grey
+  };
 
 /** Human-readable name for a quantisation bucket, for the inspector and aria. */
-export const QUANT_LABELS: Record<number, string> = {
-  1: '1/4',
-  2: '1/8',
-  3: '1/12',
-  4: '1/16',
-  6: '1/24',
-  8: '1/32',
-  16: 'off-grid',
-};
+export const QUANT_LABELS: Record<
+  number,
+  string
+> =
+  {
+    1: '1/4',
+    2: '1/8',
+    3: '1/12',
+    4: '1/16',
+    6: '1/24',
+    8: '1/32',
+    16: 'off-grid',
+  };

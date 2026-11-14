@@ -2,7 +2,10 @@
  * RMH Type — Client-Side Zustand Store
  */
 
-import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types';
+import type {
+  RealtimeStatus,
+  PeerWaitState,
+} from '@/lib/shared/realtime/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
@@ -20,7 +23,9 @@ import type {
 // ─── User Settings ───────────────────────────────────────────────
 
 export interface RmhTypeUserSettings {
-  theme: 'dark' | 'light';
+  theme:
+    | 'dark'
+    | 'light';
   showChat: boolean;
   soundEffects: boolean;
   // Solo preferences
@@ -28,13 +33,17 @@ export interface RmhTypeUserSettings {
   soloPassageLength: PassageLength;
 }
 
-const DEFAULT_SETTINGS: RmhTypeUserSettings = {
-  theme: 'dark',
-  showChat: true,
-  soundEffects: true,
-  soloDifficulty: 'medium',
-  soloPassageLength: 'medium',
-};
+const DEFAULT_SETTINGS: RmhTypeUserSettings =
+  {
+    theme:
+      'dark',
+    showChat: true,
+    soundEffects: true,
+    soloDifficulty:
+      'medium',
+    soloPassageLength:
+      'medium',
+  };
 
 // ─── Store Interface ─────────────────────────────────────────────
 
@@ -46,10 +55,16 @@ export interface RmhTypeStore {
   settings: RmhTypeUserSettings;
 
   // Solo mode
-  soloPassage: string | null;
-  soloPassageId: string | null;
+  soloPassage:
+    | string
+    | null;
+  soloPassageId:
+    | string
+    | null;
   soloResult: SoloResult | null;
-  soloCountdown: number | null;
+  soloCountdown:
+    | number
+    | null;
   /**
    * The topic whose passage is being written right now, or null.
    *
@@ -57,17 +72,38 @@ export interface RmhTypeStore {
    * DeepSeek call in front of the countdown, and this is what the solo page
    * shows during it so the button press does not look ignored.
    */
-  soloGeneratingTopic: string | null;
+  soloGeneratingTopic:
+    | string
+    | null;
 
   // Actions
-  setConnectionStatus: (status: RmhTypeStore['connectionStatus']) => void;
-  setPeersWaiting: (waiting: PeerWaitState | null) => void;
-  setRoom: (room: ClientRoomState | null) => void;
-  updateRoomPlayers: (players: RoomPlayer[]) => void;
-  updateRoomStatus: (status: ClientRoomState['status']) => void;
-  addChatMessage: (msg: ChatMessage) => void;
-  setPassage: (passageId: string, text: string, round: number, totalRounds: number) => void;
-  updateProgress: (progress: PlayerProgress) => void;
+  setConnectionStatus: (
+    status: RmhTypeStore['connectionStatus'],
+  ) => void;
+  setPeersWaiting: (
+    waiting: PeerWaitState | null,
+  ) => void;
+  setRoom: (
+    room: ClientRoomState | null,
+  ) => void;
+  updateRoomPlayers: (
+    players: RoomPlayer[],
+  ) => void;
+  updateRoomStatus: (
+    status: ClientRoomState['status'],
+  ) => void;
+  addChatMessage: (
+    msg: ChatMessage,
+  ) => void;
+  setPassage: (
+    passageId: string,
+    text: string,
+    round: number,
+    totalRounds: number,
+  ) => void;
+  updateProgress: (
+    progress: PlayerProgress,
+  ) => void;
   markPlayerFinished: (result: {
     userId: string;
     userName: string;
@@ -76,188 +112,502 @@ export interface RmhTypeStore {
     timeMs: number;
     rank: number;
   }) => void;
-  setRoundResults: (results: RoundResults) => void;
-  setFinalResults: (results: FinalResults) => void;
-  setCountdown: (seconds: number | null) => void;
+  setRoundResults: (
+    results: RoundResults,
+  ) => void;
+  setFinalResults: (
+    results: FinalResults,
+  ) => void;
+  setCountdown: (
+    seconds:
+      | number
+      | null,
+  ) => void;
 
   // Solo
-  setSoloPassage: (passageId: string, text: string) => void;
-  setSoloResult: (result: SoloResult) => void;
-  setSoloCountdown: (seconds: number | null) => void;
-  setSoloGeneratingTopic: (topic: string | null) => void;
+  setSoloPassage: (
+    passageId: string,
+    text: string,
+  ) => void;
+  setSoloResult: (
+    result: SoloResult,
+  ) => void;
+  setSoloCountdown: (
+    seconds:
+      | number
+      | null,
+  ) => void;
+  setSoloGeneratingTopic: (
+    topic:
+      | string
+      | null,
+  ) => void;
   clearSolo: () => void;
 
-  updateSettings: (partial: Partial<RmhTypeUserSettings>) => void;
+  updateSettings: (
+    partial: Partial<RmhTypeUserSettings>,
+  ) => void;
   leaveRoom: () => void;
   reset: () => void;
 }
 
 // ─── Store Implementation ────────────────────────────────────────
 
-export const useRmhTypeStore = create<RmhTypeStore>()(
-  persist(
-    (set, get) => ({
-      connectionStatus: 'idle',
-      peersWaiting: null,
-      room: null,
-      settings: { ...DEFAULT_SETTINGS },
-      soloPassage: null,
-      soloPassageId: null,
-      soloResult: null,
-      soloCountdown: null,
-      soloGeneratingTopic: null,
-
-      setConnectionStatus: (status) => set({ connectionStatus: status }),
-      setPeersWaiting: (waiting) => set({ peersWaiting: waiting }),
-
-      setRoom: (room) => set({ room }),
-
-      updateRoomPlayers: (players) => {
-        const room = get().room;
-        if (room) set({ room: { ...room, players } });
-      },
-
-      updateRoomStatus: (status) => {
-        const room = get().room;
-        if (room) set({ room: { ...room, status } });
-      },
-
-      addChatMessage: (msg) => {
-        const room = get().room;
-        if (room) {
-          set({ room: { ...room, chat: [...room.chat.slice(-199), msg] } });
-        }
-      },
-
-      setPassage: (passageId, text, round, totalRounds) => {
-        const room = get().room;
-        if (room) {
-          set({
-            room: {
-              ...room,
-              passageId,
-              passage: text,
-              currentRound: round,
-              totalRounds,
-              status: 'TYPING',
-              progress: room.players.map((p) => ({
-                userId: p.userId,
-                userName: p.userName,
-                charsTyped: 0,
-                totalChars: text.length,
-                wpm: 0,
-                finished: false,
-              })),
-              roundResults: null,
-            },
-          });
-        }
-      },
-
-      updateProgress: (progress) => {
-        const room = get().room;
-        if (!room) return;
-        set({
-          room: {
-            ...room,
-            progress: room.progress.map((p) =>
-              p.userId === progress.userId ? { ...p, ...progress } : p,
-            ),
-          },
-        });
-      },
-
-      markPlayerFinished: (result) => {
-        const room = get().room;
-        if (!room) return;
-        set({
-          room: {
-            ...room,
-            progress: room.progress.map((p) =>
-              p.userId === result.userId ? { ...p, finished: true, wpm: result.wpm } : p,
-            ),
-          },
-        });
-      },
-
-      setRoundResults: (results) => {
-        const room = get().room;
-        if (room) {
-          set({ room: { ...room, roundResults: results, status: 'ROUND_RESULTS' } });
-        }
-      },
-
-      setFinalResults: (results) => {
-        const room = get().room;
-        if (room) {
-          set({ room: { ...room, finalResults: results, status: 'FINAL_RESULTS' } });
-        }
-      },
-
-      setCountdown: (seconds) => {
-        const room = get().room;
-        if (room) {
-          set({
-            room: {
-              ...room,
-              countdownSeconds: seconds,
-              status: seconds !== null ? 'COUNTDOWN' : room.status,
-            },
-          });
-        }
-      },
-
-      // Solo
-      setSoloPassage: (passageId, text) =>
-        set({ soloPassageId: passageId, soloPassage: text, soloResult: null }),
-      setSoloResult: (result) => set({ soloResult: result }),
-      setSoloCountdown: (seconds) => set({ soloCountdown: seconds }),
-      setSoloGeneratingTopic: (topic) => set({ soloGeneratingTopic: topic }),
-      clearSolo: () =>
-        set({
-          soloPassage: null,
-          soloPassageId: null,
-          soloResult: null,
-          soloCountdown: null,
-          soloGeneratingTopic: null,
-        }),
-
-      updateSettings: (partial) => {
-        set((state) => ({
-          settings: { ...state.settings, ...partial },
-        }));
-      },
-
-      leaveRoom: () =>
-        set({
-          room: null,
-        }),
-
-      reset: () =>
-        set({
-          connectionStatus: 'disconnected',
-          peersWaiting: null,
-          room: null,
-          soloPassage: null,
-          soloPassageId: null,
-          soloResult: null,
-          soloCountdown: null,
-          soloGeneratingTopic: null,
-        }),
-    }),
-    {
-      name: 'rmhtype-settings',
-      partialize: (state) => ({ settings: state.settings }),
-      merge: (persisted, current) => {
-        const p = persisted as { settings?: Partial<RmhTypeUserSettings> } | undefined;
-        return {
-          ...(current as RmhTypeStore),
-          settings: {
+export const useRmhTypeStore =
+  create<RmhTypeStore>()(
+    persist(
+      (
+        set,
+        get,
+      ) => ({
+        connectionStatus:
+          'idle',
+        peersWaiting:
+          null,
+        room: null,
+        settings:
+          {
             ...DEFAULT_SETTINGS,
-            ...(p?.settings ?? {}),
           },
-        };
+        soloPassage:
+          null,
+        soloPassageId:
+          null,
+        soloResult:
+          null,
+        soloCountdown:
+          null,
+        soloGeneratingTopic:
+          null,
+
+        setConnectionStatus:
+          (
+            status,
+          ) =>
+            set(
+              {
+                connectionStatus:
+                  status,
+              },
+            ),
+        setPeersWaiting:
+          (
+            waiting,
+          ) =>
+            set(
+              {
+                peersWaiting:
+                  waiting,
+              },
+            ),
+
+        setRoom:
+          (
+            room,
+          ) =>
+            set(
+              {
+                room,
+              },
+            ),
+
+        updateRoomPlayers:
+          (
+            players,
+          ) => {
+            const room =
+              get()
+                .room;
+            if (
+              room
+            )
+              set(
+                {
+                  room: {
+                    ...room,
+                    players,
+                  },
+                },
+              );
+          },
+
+        updateRoomStatus:
+          (
+            status,
+          ) => {
+            const room =
+              get()
+                .room;
+            if (
+              room
+            )
+              set(
+                {
+                  room: {
+                    ...room,
+                    status,
+                  },
+                },
+              );
+          },
+
+        addChatMessage:
+          (
+            msg,
+          ) => {
+            const room =
+              get()
+                .room;
+            if (
+              room
+            ) {
+              set(
+                {
+                  room: {
+                    ...room,
+                    chat: [
+                      ...room.chat.slice(
+                        -199,
+                      ),
+                      msg,
+                    ],
+                  },
+                },
+              );
+            }
+          },
+
+        setPassage:
+          (
+            passageId,
+            text,
+            round,
+            totalRounds,
+          ) => {
+            const room =
+              get()
+                .room;
+            if (
+              room
+            ) {
+              set(
+                {
+                  room: {
+                    ...room,
+                    passageId,
+                    passage:
+                      text,
+                    currentRound:
+                      round,
+                    totalRounds,
+                    status:
+                      'TYPING',
+                    progress:
+                      room.players.map(
+                        (
+                          p,
+                        ) => ({
+                          userId:
+                            p.userId,
+                          userName:
+                            p.userName,
+                          charsTyped: 0,
+                          totalChars:
+                            text.length,
+                          wpm: 0,
+                          finished: false,
+                        }),
+                      ),
+                    roundResults:
+                      null,
+                  },
+                },
+              );
+            }
+          },
+
+        updateProgress:
+          (
+            progress,
+          ) => {
+            const room =
+              get()
+                .room;
+            if (
+              !room
+            )
+              return;
+            set(
+              {
+                room: {
+                  ...room,
+                  progress:
+                    room.progress.map(
+                      (
+                        p,
+                      ) =>
+                        p.userId ===
+                        progress.userId
+                          ? {
+                              ...p,
+                              ...progress,
+                            }
+                          : p,
+                    ),
+                },
+              },
+            );
+          },
+
+        markPlayerFinished:
+          (
+            result,
+          ) => {
+            const room =
+              get()
+                .room;
+            if (
+              !room
+            )
+              return;
+            set(
+              {
+                room: {
+                  ...room,
+                  progress:
+                    room.progress.map(
+                      (
+                        p,
+                      ) =>
+                        p.userId ===
+                        result.userId
+                          ? {
+                              ...p,
+                              finished: true,
+                              wpm: result.wpm,
+                            }
+                          : p,
+                    ),
+                },
+              },
+            );
+          },
+
+        setRoundResults:
+          (
+            results,
+          ) => {
+            const room =
+              get()
+                .room;
+            if (
+              room
+            ) {
+              set(
+                {
+                  room: {
+                    ...room,
+                    roundResults:
+                      results,
+                    status:
+                      'ROUND_RESULTS',
+                  },
+                },
+              );
+            }
+          },
+
+        setFinalResults:
+          (
+            results,
+          ) => {
+            const room =
+              get()
+                .room;
+            if (
+              room
+            ) {
+              set(
+                {
+                  room: {
+                    ...room,
+                    finalResults:
+                      results,
+                    status:
+                      'FINAL_RESULTS',
+                  },
+                },
+              );
+            }
+          },
+
+        setCountdown:
+          (
+            seconds,
+          ) => {
+            const room =
+              get()
+                .room;
+            if (
+              room
+            ) {
+              set(
+                {
+                  room: {
+                    ...room,
+                    countdownSeconds:
+                      seconds,
+                    status:
+                      seconds !==
+                      null
+                        ? 'COUNTDOWN'
+                        : room.status,
+                  },
+                },
+              );
+            }
+          },
+
+        // Solo
+        setSoloPassage:
+          (
+            passageId,
+            text,
+          ) =>
+            set(
+              {
+                soloPassageId:
+                  passageId,
+                soloPassage:
+                  text,
+                soloResult:
+                  null,
+              },
+            ),
+        setSoloResult:
+          (
+            result,
+          ) =>
+            set(
+              {
+                soloResult:
+                  result,
+              },
+            ),
+        setSoloCountdown:
+          (
+            seconds,
+          ) =>
+            set(
+              {
+                soloCountdown:
+                  seconds,
+              },
+            ),
+        setSoloGeneratingTopic:
+          (
+            topic,
+          ) =>
+            set(
+              {
+                soloGeneratingTopic:
+                  topic,
+              },
+            ),
+        clearSolo:
+          () =>
+            set(
+              {
+                soloPassage:
+                  null,
+                soloPassageId:
+                  null,
+                soloResult:
+                  null,
+                soloCountdown:
+                  null,
+                soloGeneratingTopic:
+                  null,
+              },
+            ),
+
+        updateSettings:
+          (
+            partial,
+          ) => {
+            set(
+              (
+                state,
+              ) => ({
+                settings:
+                  {
+                    ...state.settings,
+                    ...partial,
+                  },
+              }),
+            );
+          },
+
+        leaveRoom:
+          () =>
+            set(
+              {
+                room: null,
+              },
+            ),
+
+        reset:
+          () =>
+            set(
+              {
+                connectionStatus:
+                  'disconnected',
+                peersWaiting:
+                  null,
+                room: null,
+                soloPassage:
+                  null,
+                soloPassageId:
+                  null,
+                soloResult:
+                  null,
+                soloCountdown:
+                  null,
+                soloGeneratingTopic:
+                  null,
+              },
+            ),
+      }),
+      {
+        name: 'rmhtype-settings',
+        partialize:
+          (
+            state,
+          ) => ({
+            settings:
+              state.settings,
+          }),
+        merge:
+          (
+            persisted,
+            current,
+          ) => {
+            const p =
+              persisted as
+                | {
+                    settings?: Partial<RmhTypeUserSettings>;
+                  }
+                | undefined;
+            return {
+              ...(current as RmhTypeStore),
+              settings:
+                {
+                  ...DEFAULT_SETTINGS,
+                  ...(p?.settings ??
+                    {}),
+                },
+            };
+          },
       },
-    },
-  ),
-);
+    ),
+  );

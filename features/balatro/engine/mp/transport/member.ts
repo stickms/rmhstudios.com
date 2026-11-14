@@ -11,11 +11,27 @@
 import { relaySlotOf } from '../../../../../lib/shared/p2p/relay';
 import type { IceServerConfig } from '../../../../../lib/shared/p2p/ice-core';
 import type { RelayPair } from '../../../../../lib/shared/p2p/webrtc';
-import type { Envelope, WireData, WireKind } from '../wire';
+import type {
+  Envelope,
+  WireData,
+  WireKind,
+} from '../wire';
 import { isHostOnly } from '../wire-codec';
-import { hubRelayPair, readRelay, signalPayload } from './peer-admission';
-import type { HubLike, PeerAttempt, PeerConnector, Scheduler } from './types';
-import { WireLink, type ConnKind } from './wire-link';
+import {
+  hubRelayPair,
+  readRelay,
+  signalPayload,
+} from './peer-admission';
+import type {
+  HubLike,
+  PeerAttempt,
+  PeerConnector,
+  Scheduler,
+} from './types';
+import {
+  WireLink,
+  type ConnKind,
+} from './wire-link';
 
 export interface MemberLinkOptions {
   hub: HubLike;
@@ -24,91 +40,249 @@ export interface MemberLinkOptions {
   ice: IceServerConfig[];
   myPeerId: string;
   /** `from` is the original sender: `f` when the host relayed it, else the host's own id. */
-  onEnvelope(env: Envelope, from: string | null): void;
+  onEnvelope(
+    env: Envelope,
+    from:
+      | string
+      | null,
+  ): void;
   onOpen(): void;
-  onClose(reason: string): void;
-  log?(msg: string): void;
+  onClose(
+    reason: string,
+  ): void;
+  log?(
+    msg: string,
+  ): void;
 }
 
 export class MemberLink {
   readonly link: WireLink;
-  private attempt: PeerAttempt | null = null;
-  private relay: RelayPair | null = null;
-  private readonly offs: (() => void)[] = [];
+  private attempt: PeerAttempt | null =
+    null;
+  private relay: RelayPair | null =
+    null;
+  private readonly offs: (() => void)[] =
+    [];
   dropped = 0;
 
-  constructor(private readonly o: MemberLinkOptions) {
-    this.link = new WireLink({
-      sched: o.sched,
-      onEnvelope: (env) => this.onEnvelope(env),
-      onOpen: () => o.onOpen(),
-      onClose: (reason) => {
-        o.log?.(`link to the host closed (${reason})`);
-        o.onClose(reason);
-      },
-      onDrop: (why, detail) => o.log?.(`drop from host: ${why} ${detail ?? ''}`),
-    });
+  constructor(
+    private readonly o: MemberLinkOptions,
+  ) {
+    this.link =
+      new WireLink(
+        {
+          sched:
+            o.sched,
+          onEnvelope:
+            (
+              env,
+            ) =>
+              this.onEnvelope(
+                env,
+              ),
+          onOpen:
+            () =>
+              o.onOpen(),
+          onClose:
+            (
+              reason,
+            ) => {
+              o.log?.(
+                `link to the host closed (${reason})`,
+              );
+              o.onClose(
+                reason,
+              );
+            },
+          onDrop:
+            (
+              why,
+              detail,
+            ) =>
+              o.log?.(
+                `drop from host: ${why} ${detail ?? ''}`,
+              ),
+        },
+      );
     this.offs.push(
-      o.hub.on('balatro:p2p:signal', (s) => {
-        if (!this.relay) this.attempt?.handle({ description: s.description, candidate: s.candidate });
-      }),
-      o.hub.on('balatro:p2p:relay', (bytes) => {
-        const f = readRelay(bytes);
-        if (!f) return;
-        if (!this.relay) this.toRelay();
-        this.relay?.deliver(f.reliable, f.payload);
-      }),
+      o.hub.on(
+        'balatro:p2p:signal',
+        (
+          s,
+        ) => {
+          if (
+            !this
+              .relay
+          )
+            this.attempt?.handle(
+              {
+                description:
+                  s.description,
+                candidate:
+                  s.candidate,
+              },
+            );
+        },
+      ),
+      o.hub.on(
+        'balatro:p2p:relay',
+        (
+          bytes,
+        ) => {
+          const f =
+            readRelay(
+              bytes,
+            );
+          if (
+            !f
+          )
+            return;
+          if (
+            !this
+              .relay
+          )
+            this.toRelay();
+          this.relay?.deliver(
+            f.reliable,
+            f.payload,
+          );
+        },
+      ),
     );
-    this.attempt = o.connector.connect({
-      role: 'member',
-      ice: o.ice,
-      signal: (s) => {
-        const p = signalPayload(s);
-        if (p) o.hub.emit('balatro:p2p:signal', p);
-      },
-      onChannels: (pair, kind) => {
-        if (!this.relay) this.link.attach(pair, kind);
-      },
-      onFailed: () => {
-        if (!this.relay) this.toRelay();
-      },
-    });
+    this.attempt =
+      o.connector.connect(
+        {
+          role: 'member',
+          ice: o.ice,
+          signal:
+            (
+              s,
+            ) => {
+              const p =
+                signalPayload(
+                  s,
+                );
+              if (
+                p
+              )
+                o.hub.emit(
+                  'balatro:p2p:signal',
+                  p,
+                );
+            },
+          onChannels:
+            (
+              pair,
+              kind,
+            ) => {
+              if (
+                !this
+                  .relay
+              )
+                this.link.attach(
+                  pair,
+                  kind,
+                );
+            },
+          onFailed:
+            () => {
+              if (
+                !this
+                  .relay
+              )
+                this.toRelay();
+            },
+        },
+      );
   }
 
   private toRelay(): void {
     this.attempt?.close();
-    this.attempt = null;
-    this.o.hub.emit('balatro:p2p:relay:start', {});
-    const pair = hubRelayPair(this.o.hub, relaySlotOf(this.o.myPeerId) ?? 1);
-    this.relay = pair;
-    this.link.attach(pair, 'relay');
+    this.attempt =
+      null;
+    this.o.hub.emit(
+      'balatro:p2p:relay:start',
+      {},
+    );
+    const pair =
+      hubRelayPair(
+        this
+          .o
+          .hub,
+        relaySlotOf(
+          this
+            .o
+            .myPeerId,
+        ) ??
+          1,
+      );
+    this.relay =
+      pair;
+    this.link.attach(
+      pair,
+      'relay',
+    );
     pair.unreliable.open();
     pair.reliable.open();
-    this.o.log?.('on the hub relay');
+    this.o.log?.(
+      'on the hub relay',
+    );
   }
 
-  private onEnvelope(env: Envelope): void {
-    if (isHostOnly(env.k) && env.f !== undefined) {
+  private onEnvelope(
+    env: Envelope,
+  ): void {
+    if (
+      isHostOnly(
+        env.k,
+      ) &&
+      env.f !==
+        undefined
+    ) {
       this.dropped += 1;
       return;
     }
-    this.o.onEnvelope(env, env.f ?? null);
+    this.o.onEnvelope(
+      env,
+      env.f ??
+        null,
+    );
   }
 
   get kind(): ConnKind | null {
-    return this.link.kind;
+    return this
+      .link
+      .kind;
   }
 
-  send<K extends WireKind>(k: K, d: WireData<K>, extra?: { to?: string }): boolean {
-    return this.link.send(k, d, extra);
+  send<
+    K extends
+      WireKind,
+  >(
+    k: K,
+    d: WireData<K>,
+    extra?: {
+      to?: string;
+    },
+  ): boolean {
+    return this.link.send(
+      k,
+      d,
+      extra,
+    );
   }
 
   close(): void {
-    for (const off of this.offs.splice(0)) off();
+    for (const off of this.offs.splice(
+      0,
+    ))
+      off();
     this.link.close(); // first: a closing relay channel must not report a link loss
     this.attempt?.close();
-    this.attempt = null;
+    this.attempt =
+      null;
     this.relay?.close();
-    this.relay = null;
+    this.relay =
+      null;
   }
 }

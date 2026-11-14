@@ -8,9 +8,19 @@
 // tab keeps stepping; see MultiplayerGameScreen) and supplies `send`.
 // =============================================================================
 
-import { HostSim, FIXED_DT, type HostPlayerInit, type HostPlayerStats, type HostStatus, type PendingLevelUp } from '../engine/multiplayer/host-sim';
+import {
+  HostSim,
+  FIXED_DT,
+  type HostPlayerInit,
+  type HostPlayerStats,
+  type HostStatus,
+  type PendingLevelUp,
+} from '../engine/multiplayer/host-sim';
 import type { RunLog } from '../verify/run-log';
-import type { GameEvent, GameStateSnapshot } from './types';
+import type {
+  GameEvent,
+  GameStateSnapshot,
+} from './types';
 
 /** One snapshot every this many steps = 20 Hz. */
 export const SNAPSHOT_EVERY = 3;
@@ -40,84 +50,205 @@ export interface HostDriverOptions {
   /** The hub-issued run seed (see AltairClientLobbyState.runSeed). */
   seed?: number;
   /** Called with the (reused) snapshot object; must serialise or decode it synchronously. */
-  send: (snapshot: GameStateSnapshot) => void;
-  onEvents?: (events: GameEvent[]) => void;
+  send: (
+    snapshot: GameStateSnapshot,
+  ) => void;
+  onEvents?: (
+    events: GameEvent[],
+  ) => void;
   /** A player's level-up overlay just opened: tell that player (once per level-up). */
-  onLevelUpOffer?: (playerId: string, offer: LevelUpOffer) => void;
-  onEnd?: (end: HostEnd) => void;
+  onLevelUpOffer?: (
+    playerId: string,
+    offer: LevelUpOffer,
+  ) => void;
+  onEnd?: (
+    end: HostEnd,
+  ) => void;
 }
 
 export class HostDriver {
   readonly sim: HostSim;
   private acc = 0;
-  private last: number | null = null;
+  private last:
+    | number
+    | null =
+    null;
   private stepsSinceSnapshot = 0;
   private ended = false;
-  private readonly offered = new Set<string>();
-  private readonly lastInputAt = new Map<string, number>();
+  private readonly offered =
+    new Set<string>();
+  private readonly lastInputAt =
+    new Map<
+      string,
+      number
+    >();
   private readonly opts: HostDriverOptions;
   /** Steps dropped because the page could not keep up (for diagnostics). */
   droppedSteps = 0;
 
-  constructor(opts: HostDriverOptions) {
-    this.opts = opts;
-    this.sim = new HostSim({ players: opts.players, doubleTime: opts.doubleTime, seed: opts.seed });
+  constructor(
+    opts: HostDriverOptions,
+  ) {
+    this.opts =
+      opts;
+    this.sim =
+      new HostSim(
+        {
+          players:
+            opts.players,
+          doubleTime:
+            opts.doubleTime,
+          seed: opts.seed,
+        },
+      );
   }
 
   /** Movement intent from a guest (already shape-checked by the hub; HostSim clamps again). */
-  input(playerId: string, dx: number, dy: number, nowMs: number): void {
-    this.lastInputAt.set(playerId, nowMs);
-    this.sim.setInput(playerId, dx, dy);
+  input(
+    playerId: string,
+    dx: number,
+    dy: number,
+    nowMs: number,
+  ): void {
+    this.lastInputAt.set(
+      playerId,
+      nowMs,
+    );
+    this.sim.setInput(
+      playerId,
+      dx,
+      dy,
+    );
   }
 
   /** The host's own keyboard/touch intent. */
-  localInput(playerId: string, dx: number, dy: number): void {
-    this.sim.setInput(playerId, dx, dy);
+  localInput(
+    playerId: string,
+    dx: number,
+    dy: number,
+  ): void {
+    this.sim.setInput(
+      playerId,
+      dx,
+      dy,
+    );
   }
 
   /** A player's pick from their level-up overlay (the hub passes guests' picks through as a bare index). */
-  chooseUpgrade(playerId: string, index: number): boolean {
-    return this.sim.chooseUpgrade(playerId, index);
+  chooseUpgrade(
+    playerId: string,
+    index: number,
+  ): boolean {
+    return this.sim.chooseUpgrade(
+      playerId,
+      index,
+    );
   }
 
   /** Advance to `nowMs`. Returns the number of steps run. */
-  advance(nowMs: number): number {
-    if (this.ended) return 0;
-    if (this.last === null) {
-      this.last = nowMs;
+  advance(
+    nowMs: number,
+  ): number {
+    if (
+      this
+        .ended
+    )
+      return 0;
+    if (
+      this
+        .last ===
+      null
+    ) {
+      this.last =
+        nowMs;
       return 0;
     }
-    const dt = (nowMs - this.last) / 1000;
-    this.last = nowMs;
-    if (!(dt > 0)) return 0;
-    this.acc += dt;
+    const dt =
+      (nowMs -
+        this
+          .last) /
+      1000;
+    this.last =
+      nowMs;
+    if (
+      !(
+        dt >
+        0
+      )
+    )
+      return 0;
+    this.acc +=
+      dt;
 
     // Guests that went quiet stand still instead of walking on their last intent.
-    for (const [id, at] of this.lastInputAt) {
-      if (nowMs - at > INPUT_STALE_MS) {
-        this.sim.setInput(id, 0, 0);
-        this.lastInputAt.delete(id);
+    for (const [
+      id,
+      at,
+    ] of this
+      .lastInputAt) {
+      if (
+        nowMs -
+          at >
+        INPUT_STALE_MS
+      ) {
+        this.sim.setInput(
+          id,
+          0,
+          0,
+        );
+        this.lastInputAt.delete(
+          id,
+        );
       }
     }
 
     let steps = 0;
-    while (this.acc >= FIXED_DT && steps < MAX_STEPS_PER_ADVANCE) {
+    while (
+      this
+        .acc >=
+        FIXED_DT &&
+      steps <
+        MAX_STEPS_PER_ADVANCE
+    ) {
       this.sim.step();
-      this.acc -= FIXED_DT;
+      this.acc -=
+        FIXED_DT;
       steps++;
-      if (++this.stepsSinceSnapshot >= SNAPSHOT_EVERY) {
+      if (
+        ++this
+          .stepsSinceSnapshot >=
+        SNAPSHOT_EVERY
+      ) {
         this.stepsSinceSnapshot = 0;
         this.emitSnapshot();
       }
-      if (this.sim.status !== 'playing') {
-        this.finish(this.sim.status);
+      if (
+        this
+          .sim
+          .status !==
+        'playing'
+      ) {
+        this.finish(
+          this
+            .sim
+            .status,
+        );
         return steps;
       }
     }
     this.announceLevelUps();
-    if (this.acc >= FIXED_DT) {
+    if (
+      this
+        .acc >=
+      FIXED_DT
+    ) {
       // Could not keep up: forget the backlog rather than spiral.
-      this.droppedSteps += Math.floor(this.acc / FIXED_DT);
+      this.droppedSteps +=
+        Math.floor(
+          this
+            .acc /
+            FIXED_DT,
+        );
       this.acc = 0;
     }
     return steps;
@@ -125,43 +256,114 @@ export class HostDriver {
 
   /** Offer each newly opened level-up to its owner exactly once; forget it once it is resolved. */
   private announceLevelUps(): void {
-    const pending = this.sim.pendingLevelUpPlayers();
-    for (const id of this.offered) if (!pending.includes(id)) this.offered.delete(id);
+    const pending =
+      this.sim.pendingLevelUpPlayers();
+    for (const id of this
+      .offered)
+      if (
+        !pending.includes(
+          id,
+        )
+      )
+        this.offered.delete(
+          id,
+        );
     for (const id of pending) {
-      if (this.offered.has(id)) continue;
-      const p = this.sim.getPendingLevelUp(id);
-      if (!p) continue;
-      this.offered.add(id);
-      this.opts.onLevelUpOffer?.(id, {
-        choices: p.choices,
-        remaining: p.remaining,
-        level: this.sim.getPlayerProgress(id)?.level ?? 1,
-      });
+      if (
+        this.offered.has(
+          id,
+        )
+      )
+        continue;
+      const p =
+        this.sim.getPendingLevelUp(
+          id,
+        );
+      if (
+        !p
+      )
+        continue;
+      this.offered.add(
+        id,
+      );
+      this.opts.onLevelUpOffer?.(
+        id,
+        {
+          choices:
+            p.choices,
+          remaining:
+            p.remaining,
+          level:
+            this.sim.getPlayerProgress(
+              id,
+            )
+              ?.level ??
+            1,
+        },
+      );
     }
   }
 
   private emitSnapshot(): void {
-    this.opts.send(this.sim.getSnapshot());
-    const ev = this.sim.drainEvents();
-    if (ev.length > 0) this.opts.onEvents?.(ev);
+    this.opts.send(
+      this.sim.getSnapshot(),
+    );
+    const ev =
+      this.sim.drainEvents();
+    if (
+      ev.length >
+      0
+    )
+      this.opts.onEvents?.(
+        ev,
+      );
   }
 
-  private finish(status: HostStatus): void {
-    if (this.ended) return;
+  private finish(
+    status: HostStatus,
+  ): void {
+    if (
+      this
+        .ended
+    )
+      return;
     this.ended = true;
     // One last snapshot so every screen shows the final state.
     this.emitSnapshot();
-    this.opts.onEnd?.({
-      victory: status === 'victory',
-      stats: this.sim.getPlayerStats(),
-      sharedKills: this.sim.world.sharedKills,
-      bossesDefeated: [...this.sim.bossesDefeated],
-      time: this.sim.world.time,
-      log: this.sim.recorder.overflow ? null : this.sim.getRunLog(),
-    });
+    this.opts.onEnd?.(
+      {
+        victory:
+          status ===
+          'victory',
+        stats:
+          this.sim.getPlayerStats(),
+        sharedKills:
+          this
+            .sim
+            .world
+            .sharedKills,
+        bossesDefeated:
+          [
+            ...this
+              .sim
+              .bossesDefeated,
+          ],
+        time: this
+          .sim
+          .world
+          .time,
+        log: this
+          .sim
+          .recorder
+          .overflow
+          ? null
+          : this.sim.getRunLog(),
+      },
+    );
   }
 
   get isEnded(): boolean {
-    return this.ended;
+    return this
+      .ended;
   }
 }

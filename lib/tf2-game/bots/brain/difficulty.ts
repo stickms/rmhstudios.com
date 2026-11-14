@@ -37,69 +37,87 @@ export interface BotSkill {
   level: number;
 }
 
-export const BOT_SKILLS: Readonly<Record<BotDifficulty, BotSkill>> = {
-  easy: {
-    reactionTime: 1.0,
-    aimTrackInterval: 1.0,
-    aimErrorDeg: 4.5,
-    turnRate: 300,
-    fov: 90,
-    aggression: 0.3,
-    retreatHealth: 0.55,
-    sniperCharge: 0.3,
-    spyNotice: 0.02,
-    rocketJumps: false,
-    airblastSkill: 0.1,
-    leadAccuracy: 0.3,
-    level: 0,
-  },
-  normal: {
-    reactionTime: 0.5,
-    aimTrackInterval: 0.25,
-    aimErrorDeg: 2.2,
-    turnRate: 540,
-    fov: 90,
-    aggression: 0.5,
-    retreatHealth: 0.45,
-    sniperCharge: 0.5,
-    spyNotice: 0.05,
-    rocketJumps: false,
-    airblastSkill: 0.35,
-    leadAccuracy: 0.65,
-    level: 1,
-  },
-  hard: {
-    reactionTime: 0.3,
-    aimTrackInterval: 0.1,
-    aimErrorDeg: 1.2,
-    turnRate: 800,
-    fov: 100,
-    aggression: 0.7,
-    retreatHealth: 0.35,
-    sniperCharge: 0.7,
-    spyNotice: 0.1,
-    rocketJumps: true,
-    airblastSkill: 0.6,
-    leadAccuracy: 0.85,
-    level: 2,
-  },
-  expert: {
-    reactionTime: 0.2,
-    aimTrackInterval: 0.05,
-    aimErrorDeg: 0.5,
-    turnRate: 1200,
-    fov: 110,
-    aggression: 0.85,
-    retreatHealth: 0.3,
-    sniperCharge: 0.85,
-    spyNotice: 0.2,
-    rocketJumps: true,
-    airblastSkill: 0.85,
-    leadAccuracy: 1,
-    level: 3,
-  },
-};
+export const BOT_SKILLS: Readonly<
+  Record<
+    BotDifficulty,
+    BotSkill
+  >
+> =
+  {
+    easy: {
+      reactionTime: 1.0,
+      aimTrackInterval: 1.0,
+      aimErrorDeg: 4.5,
+      turnRate: 300,
+      fov: 90,
+      aggression: 0.3,
+      retreatHealth: 0.55,
+      sniperCharge: 0.3,
+      spyNotice: 0.02,
+      rocketJumps: false,
+      airblastSkill: 0.1,
+      leadAccuracy: 0.3,
+      level: 0,
+    },
+    normal:
+      {
+        reactionTime: 0.5,
+        aimTrackInterval: 0.25,
+        aimErrorDeg: 2.2,
+        turnRate: 540,
+        fov: 90,
+        aggression: 0.5,
+        retreatHealth: 0.45,
+        sniperCharge: 0.5,
+        spyNotice: 0.05,
+        rocketJumps: false,
+        airblastSkill: 0.35,
+        leadAccuracy: 0.65,
+        level: 1,
+      },
+    hard: {
+      reactionTime: 0.3,
+      aimTrackInterval: 0.1,
+      aimErrorDeg: 1.2,
+      turnRate: 800,
+      fov: 100,
+      aggression: 0.7,
+      retreatHealth: 0.35,
+      sniperCharge: 0.7,
+      spyNotice: 0.1,
+      rocketJumps: true,
+      airblastSkill: 0.6,
+      leadAccuracy: 0.85,
+      level: 2,
+    },
+    expert:
+      {
+        reactionTime: 0.2,
+        aimTrackInterval: 0.05,
+        aimErrorDeg: 0.5,
+        turnRate: 1200,
+        fov: 110,
+        aggression: 0.85,
+        retreatHealth: 0.3,
+        sniperCharge: 0.85,
+        spyNotice: 0.2,
+        rocketJumps: true,
+        airblastSkill: 0.85,
+        leadAccuracy: 1,
+        level: 3,
+      },
+  };
 
-export function botSkill(d: BotDifficulty | undefined): BotSkill {
-  return BOT_SKILLS[d ?? 'normal'] ?? BOT_SKILLS.normal;
+export function botSkill(
+  d:
+    | BotDifficulty
+    | undefined,
+): BotSkill {
+  return (
+    BOT_SKILLS[
+      d ??
+        'normal'
+    ] ??
+    BOT_SKILLS.normal
+  );
 }

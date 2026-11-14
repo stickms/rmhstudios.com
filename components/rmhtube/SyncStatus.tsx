@@ -8,131 +8,472 @@
  * or while the panel is open.
  */
 
-import { useEffect, useId, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import { usePopPresence } from '@/hooks/usePopPresence';
-import { getBestRtt, getClockOffset } from '@/lib/rmhtube/clock';
-import { requestResync, syncHealth, syncStats, type SyncHealth } from '@/lib/rmhtube/sync-stats';
+import {
+  getBestRtt,
+  getClockOffset,
+} from '@/lib/rmhtube/clock';
+import {
+  requestResync,
+  syncHealth,
+  syncStats,
+  type SyncHealth,
+} from '@/lib/rmhtube/sync-stats';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 
 const POLL_MS = 500;
 
-const DOT: Record<SyncHealth, string> = {
-  idle: 'bg-app-text-dim',
-  leader: 'bg-app-info',
-  paused: 'bg-app-warning',
-  buffering: 'bg-app-warning',
-  synced: 'bg-app-success',
-  'catching-up': 'bg-app-warning',
-};
+const DOT: Record<
+  SyncHealth,
+  string
+> =
+  {
+    idle: 'bg-app-text-dim',
+    leader:
+      'bg-app-info',
+    paused:
+      'bg-app-warning',
+    buffering:
+      'bg-app-warning',
+    synced:
+      'bg-app-success',
+    'catching-up':
+      'bg-app-warning',
+  };
 
-function ms(seconds: number | null): string {
-  return seconds === null ? '—' : `${seconds >= 0 ? '+' : ''}${Math.round(seconds * 1000)} ms`;
+function ms(
+  seconds:
+    | number
+    | null,
+): string {
+  return seconds ===
+    null
+    ? '—'
+    : `${seconds >= 0 ? '+' : ''}${Math.round(seconds * 1000)} ms`;
 }
 
 export default function SyncStatus() {
-  const { t } = useTranslation('c-rmhtube');
-  const [health, setHealth] = useState<SyncHealth>('idle');
-  const [open, setOpen] = useState(false);
-  const panelId = useId();
-  const [, setTick] = useState(0);
-  const panel = usePopPresence(open);
-  const isLive = useRmhTubeStore((s) => s.room?.videoState.mode === 'live');
-  const rootRef = useRef<HTMLDivElement>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhtube',
+    );
+  const [
+    health,
+    setHealth,
+  ] =
+    useState<SyncHealth>(
+      'idle',
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const panelId =
+    useId();
+  const [
+    ,
+    setTick,
+  ] =
+    useState(
+      0,
+    );
+  const panel =
+    usePopPresence(
+      open,
+    );
+  const isLive =
+    useRmhTubeStore(
+      (
+        s,
+      ) =>
+        s
+          .room
+          ?.videoState
+          .mode ===
+        'live',
+    );
+  const rootRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setHealth(syncHealth(syncStats, Date.now()));
-      if (open) setTick((n) => n + 1);
-    }, POLL_MS);
-    return () => clearInterval(id);
-  }, [open]);
+    const id =
+      setInterval(
+        () => {
+          setHealth(
+            syncHealth(
+              syncStats,
+              Date.now(),
+            ),
+          );
+          if (
+            open
+          )
+            setTick(
+              (
+                n,
+              ) =>
+                n +
+                1,
+            );
+        },
+        POLL_MS,
+      );
+    return () =>
+      clearInterval(
+        id,
+      );
+  }, [
+    open,
+  ]);
 
   useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
+    if (
+      !open
+    )
+      return;
+    const onDown =
+      (
+        e: MouseEvent,
+      ) => {
+        if (
+          rootRef.current &&
+          !rootRef.current.contains(
+            e.target as Node,
+          )
+        )
+          setOpen(
+            false,
+          );
+      };
+    const onKey =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          e.key ===
+          'Escape'
+        )
+          setOpen(
+            false,
+          );
+      };
+    document.addEventListener(
+      'mousedown',
+      onDown,
+    );
+    document.addEventListener(
+      'keydown',
+      onKey,
+    );
     return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener(
+        'mousedown',
+        onDown,
+      );
+      document.removeEventListener(
+        'keydown',
+        onKey,
+      );
     };
-  }, [open]);
+  }, [
+    open,
+  ]);
 
-  if (health === 'idle' && !open) return null;
+  if (
+    health ===
+      'idle' &&
+    !open
+  )
+    return null;
 
-  const label: Record<SyncHealth, string> = {
-    idle: t('sync-idle', { defaultValue: 'Not playing' }),
-    leader: t('sync-leader', { defaultValue: 'You lead' }),
-    paused: t('sync-paused-local', { defaultValue: 'You paused' }),
-    buffering: t('sync-buffering', { defaultValue: 'Buffering' }),
-    synced: t('sync-synced', { defaultValue: 'In sync' }),
-    'catching-up': t('sync-catching-up', { defaultValue: 'Catching up' }),
-  };
-  const rtt = getBestRtt();
-  const rows: Array<[string, string]> = [
-    [t('sync-stat-offset', { defaultValue: 'Offset from room' }), ms(syncStats.driftS)],
-    [t('sync-stat-rate', { defaultValue: 'Playback rate' }), `${syncStats.rate.toFixed(2)}x`],
-    [t('sync-stat-seeks', { defaultValue: 'Correction seeks' }), String(syncStats.seeks)],
-    [t('sync-stat-seek-cost', { defaultValue: 'Seek cost' }), ms(syncStats.seekLeadS || null)],
-    [t('sync-stat-clock', { defaultValue: 'Clock offset' }), `${Math.round(getClockOffset())} ms`],
-    [t('sync-stat-rtt', { defaultValue: 'Round trip' }), rtt === null ? '—' : `${Math.round(rtt)} ms`],
-  ];
+  const label: Record<
+    SyncHealth,
+    string
+  > =
+    {
+      idle: t(
+        'sync-idle',
+        {
+          defaultValue:
+            'Not playing',
+        },
+      ),
+      leader:
+        t(
+          'sync-leader',
+          {
+            defaultValue:
+              'You lead',
+          },
+        ),
+      paused:
+        t(
+          'sync-paused-local',
+          {
+            defaultValue:
+              'You paused',
+          },
+        ),
+      buffering:
+        t(
+          'sync-buffering',
+          {
+            defaultValue:
+              'Buffering',
+          },
+        ),
+      synced:
+        t(
+          'sync-synced',
+          {
+            defaultValue:
+              'In sync',
+          },
+        ),
+      'catching-up':
+        t(
+          'sync-catching-up',
+          {
+            defaultValue:
+              'Catching up',
+          },
+        ),
+    };
+  const rtt =
+    getBestRtt();
+  const rows: Array<
+    [
+      string,
+      string,
+    ]
+  > =
+    [
+      [
+        t(
+          'sync-stat-offset',
+          {
+            defaultValue:
+              'Offset from room',
+          },
+        ),
+        ms(
+          syncStats.driftS,
+        ),
+      ],
+      [
+        t(
+          'sync-stat-rate',
+          {
+            defaultValue:
+              'Playback rate',
+          },
+        ),
+        `${syncStats.rate.toFixed(2)}x`,
+      ],
+      [
+        t(
+          'sync-stat-seeks',
+          {
+            defaultValue:
+              'Correction seeks',
+          },
+        ),
+        String(
+          syncStats.seeks,
+        ),
+      ],
+      [
+        t(
+          'sync-stat-seek-cost',
+          {
+            defaultValue:
+              'Seek cost',
+          },
+        ),
+        ms(
+          syncStats.seekLeadS ||
+            null,
+        ),
+      ],
+      [
+        t(
+          'sync-stat-clock',
+          {
+            defaultValue:
+              'Clock offset',
+          },
+        ),
+        `${Math.round(getClockOffset())} ms`,
+      ],
+      [
+        t(
+          'sync-stat-rtt',
+          {
+            defaultValue:
+              'Round trip',
+          },
+        ),
+        rtt ===
+        null
+          ? '—'
+          : `${Math.round(rtt)} ms`,
+      ],
+    ];
 
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    <div
+      ref={
+        rootRef
+      }
+      className="relative shrink-0"
+    >
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-controls={panel.present ? panelId : undefined}
+        onClick={() =>
+          setOpen(
+            (
+              o,
+            ) =>
+              !o,
+          )
+        }
+        aria-expanded={
+          open
+        }
+        aria-controls={
+          panel.present
+            ? panelId
+            : undefined
+        }
         className="flex items-center gap-1.5 rounded-app-sm px-2 py-1.5 text-xs font-medium transition-colors text-app-text-muted hover:text-app-text hover:bg-app-surface-hover"
-        title={t('sync-status-title', { defaultValue: 'Sync status' })}
+        title={t(
+          'sync-status-title',
+          {
+            defaultValue:
+              'Sync status',
+          },
+        )}
       >
-        <span className={`inline-block h-2 w-2 rounded-full ${DOT[health]}`} aria-hidden />
-        <span className="hidden md:inline">{label[health]}</span>
-        <span className="sr-only md:hidden">{label[health]}</span>
+        <span
+          className={`inline-block h-2 w-2 rounded-full ${DOT[health]}`}
+          aria-hidden
+        />
+        <span className="hidden md:inline">
+          {
+            label[
+              health
+            ]
+          }
+        </span>
+        <span className="sr-only md:hidden">
+          {
+            label[
+              health
+            ]
+          }
+        </span>
       </button>
 
       {panel.present && (
         <div
-          id={panelId}
+          id={
+            panelId
+          }
           role="group"
-          aria-label={t('sync-status-title', { defaultValue: 'Sync status' })}
+          aria-label={t(
+            'sync-status-title',
+            {
+              defaultValue:
+                'Sync status',
+            },
+          )}
           data-motion="pop"
-          data-state={panel.state}
+          data-state={
+            panel.state
+          }
           className="absolute bottom-full right-0 z-50 mb-1 w-60 origin-bottom-right rounded-app-sm app-glass p-3"
         >
           <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-app-text">
-            <span className={`inline-block h-2 w-2 rounded-full ${DOT[health]}`} aria-hidden />
-            {label[health]}
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${DOT[health]}`}
+              aria-hidden
+            />
+            {
+              label[
+                health
+              ]
+            }
           </p>
           <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-xs">
-            {rows.map(([k, v]) => (
-              <div key={k} className="contents">
-                <dt className="text-app-text-dim">{k}</dt>
-                <dd className="text-right tabular-nums text-app-text-muted">{v}</dd>
-              </div>
-            ))}
+            {rows.map(
+              ([
+                k,
+                v,
+              ]) => (
+                <div
+                  key={
+                    k
+                  }
+                  className="contents"
+                >
+                  <dt className="text-app-text-dim">
+                    {
+                      k
+                    }
+                  </dt>
+                  <dd className="text-right tabular-nums text-app-text-muted">
+                    {
+                      v
+                    }
+                  </dd>
+                </div>
+              ),
+            )}
           </dl>
           <button
             type="button"
             onClick={() => {
               requestResync();
-              setOpen(false);
+              setOpen(
+                false,
+              );
             }}
             className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-app-sm py-1.5 text-xs font-medium transition-colors bg-app-accent-dim text-app-accent hover:bg-app-surface-hover"
           >
-            <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+            <RefreshCw
+              className="h-3.5 w-3.5"
+              aria-hidden
+            />
             {isLive
-              ? t('sync-jump-live', { defaultValue: 'Jump to live' })
-              : t('sync-resync', { defaultValue: 'Resync now' })}
+              ? t(
+                  'sync-jump-live',
+                  {
+                    defaultValue:
+                      'Jump to live',
+                  },
+                )
+              : t(
+                  'sync-resync',
+                  {
+                    defaultValue:
+                      'Resync now',
+                  },
+                )}
           </button>
         </div>
       )}

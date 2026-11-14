@@ -17,7 +17,25 @@
 const REFERENCE_HZ = 60;
 const MAX_DT_SECONDS = 0.1;
 
-export function frameAlpha(perFrameAt60Hz: number, dtSeconds: number): number {
-  const dt = Math.min(Math.max(dtSeconds, 0), MAX_DT_SECONDS);
-  return 1 - Math.pow(1 - perFrameAt60Hz, dt * REFERENCE_HZ);
+export function frameAlpha(
+  perFrameAt60Hz: number,
+  dtSeconds: number,
+): number {
+  const dt =
+    Math.min(
+      Math.max(
+        dtSeconds,
+        0,
+      ),
+      MAX_DT_SECONDS,
+    );
+  return (
+    1 -
+    Math.pow(
+      1 -
+        perFrameAt60Hz,
+      dt *
+        REFERENCE_HZ,
+    )
+  );
 }

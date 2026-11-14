@@ -16,7 +16,10 @@
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip } from '@/components/ui/Tooltip';
-import type { SpeedrunStatus, VerificationTier } from '@/lib/speedrun/types';
+import type {
+  SpeedrunStatus,
+  VerificationTier,
+} from '@/lib/speedrun/types';
 
 export function VerificationBadge({
   status,
@@ -26,61 +29,146 @@ export function VerificationBadge({
   status: SpeedrunStatus;
   tier: VerificationTier;
   /** The stored `rejectReason`, shown as the tooltip when there is one. */
-  reason?: string | null;
+  reason?:
+    | string
+    | null;
 }) {
-  const { t } = useTranslation('c-tournaments');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tournaments',
+    );
 
   const tierHint =
-    tier === 'deterministic'
-      ? t('speedrun-tier-deterministic', {
-          defaultValue: 'Re-simulated from the run’s own inputs — the result cannot be forged.',
-        })
-      : tier === 'consistency'
-        ? t('speedrun-tier-consistency', {
+    tier ===
+    'deterministic'
+      ? t(
+          'speedrun-tier-deterministic',
+          {
             defaultValue:
-              'Checked for consistency and re-scored, but this game’s log cannot be proved — a human reviews it.',
-          })
-        : t('speedrun-tier-manual', {
-            defaultValue: 'This game has no automatic verifier, so runs are reviewed by hand.',
-          });
+              'Re-simulated from the run’s own inputs — the result cannot be forged.',
+          },
+        )
+      : tier ===
+          'consistency'
+        ? t(
+            'speedrun-tier-consistency',
+            {
+              defaultValue:
+                'Checked for consistency and re-scored, but this game’s log cannot be proved — a human reviews it.',
+            },
+          )
+        : t(
+            'speedrun-tier-manual',
+            {
+              defaultValue:
+                'This game has no automatic verifier, so runs are reviewed by hand.',
+            },
+          );
 
   const label =
-    status === 'verified'
-      ? t('speedrun-status-verified', { defaultValue: 'Verified' })
-      : status === 'rejected'
-        ? t('speedrun-status-rejected', { defaultValue: 'Rejected' })
-        : t('speedrun-status-pending', { defaultValue: 'In review' });
+    status ===
+    'verified'
+      ? t(
+          'speedrun-status-verified',
+          {
+            defaultValue:
+              'Verified',
+          },
+        )
+      : status ===
+          'rejected'
+        ? t(
+            'speedrun-status-rejected',
+            {
+              defaultValue:
+                'Rejected',
+            },
+          )
+        : t(
+            'speedrun-status-pending',
+            {
+              defaultValue:
+                'In review',
+            },
+          );
 
-  const variant = status === 'verified' ? 'success' : status === 'rejected' ? 'danger' : 'warning';
+  const variant =
+    status ===
+    'verified'
+      ? 'success'
+      : status ===
+          'rejected'
+        ? 'danger'
+        : 'warning';
 
   return (
-    <Tooltip content={reason ? `${label} — ${reason}` : tierHint}>
-      <Badge variant={variant}>
-        {label}
+    <Tooltip
+      content={
+        reason
+          ? `${label} — ${reason}`
+          : tierHint
+      }
+    >
+      <Badge
+        variant={
+          variant
+        }
+      >
+        {
+          label
+        }
       </Badge>
     </Tooltip>
   );
 }
 
 /** Standalone label for a board's verification tier (shown above the runs). */
-export function TierNote({ tier }: { tier: VerificationTier }) {
-  const { t } = useTranslation('c-tournaments');
+export function TierNote({
+  tier,
+}: {
+  tier: VerificationTier;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tournaments',
+    );
 
   const text =
-    tier === 'deterministic'
-      ? t('speedrun-board-deterministic', {
-          defaultValue:
-            'Runs on this board are re-simulated from their inputs. A run that does not reproduce is rejected automatically.',
-        })
-      : tier === 'consistency'
-        ? t('speedrun-board-consistency', {
+    tier ===
+    'deterministic'
+      ? t(
+          'speedrun-board-deterministic',
+          {
             defaultValue:
-              'Runs on this board are re-scored from their own log and checked for impossible claims, then reviewed before they rank.',
-          })
-        : t('speedrun-board-manual', {
-            defaultValue:
-              'This game cannot be verified automatically yet — every run is reviewed by hand.',
-          });
+              'Runs on this board are re-simulated from their inputs. A run that does not reproduce is rejected automatically.',
+          },
+        )
+      : tier ===
+          'consistency'
+        ? t(
+            'speedrun-board-consistency',
+            {
+              defaultValue:
+                'Runs on this board are re-scored from their own log and checked for impossible claims, then reviewed before they rank.',
+            },
+          )
+        : t(
+            'speedrun-board-manual',
+            {
+              defaultValue:
+                'This game cannot be verified automatically yet — every run is reviewed by hand.',
+            },
+          );
 
-  return <p className="text-sm text-site-text-muted">{text}</p>;
+  return (
+    <p className="text-sm text-site-text-muted">
+      {
+        text
+      }
+    </p>
+  );
 }

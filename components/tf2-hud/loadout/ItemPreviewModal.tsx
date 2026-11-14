@@ -4,8 +4,15 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Btn, Modal } from '@/components/tf2-hud/ui';
-import { modelItemId, type CatalogItem, type TfClass } from '@/lib/tf2-loadout/catalog-types';
+import {
+  Btn,
+  Modal,
+} from '@/components/tf2-hud/ui';
+import {
+  modelItemId,
+  type CatalogItem,
+  type TfClass,
+} from '@/lib/tf2-loadout/catalog-types';
 import { tierName } from '@/lib/tf2-loadout/rarity';
 import type { CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
 import { warPaintOf } from '@/lib/tf2-loadout/warpaint';
@@ -29,37 +36,102 @@ export default function ItemPreviewModal({
   onEquip: () => void;
   onClose: () => void;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
   return (
     <Modal
       open
-      onOpenChange={(open) => !open && onClose()}
-      sheet={sheet}
-      title={item.n}
-      description={[item.t, item.rt ? tierName(item) : ''].filter(Boolean).join(' · ')}
+      onOpenChange={(
+        open,
+      ) =>
+        !open &&
+        onClose()
+      }
+      sheet={
+        sheet
+      }
+      title={
+        item.n
+      }
+      description={[
+        item.t,
+        item.rt
+          ? tierName(
+              item,
+            )
+          : '',
+      ]
+        .filter(
+          Boolean,
+        )
+        .join(
+          ' · ',
+        )}
       footer={
         <>
-          <Btn onClick={onClose}>{t('close', { defaultValue: 'Close' })}</Btn>
+          <Btn
+            onClick={
+              onClose
+            }
+          >
+            {t(
+              'close',
+              {
+                defaultValue:
+                  'Close',
+              },
+            )}
+          </Btn>
           <Btn
             variant="primary"
-            disabled={equipped}
+            disabled={
+              equipped
+            }
             onClick={() => {
               onEquip();
               onClose();
             }}
           >
             {equipped
-              ? t('equipped', { defaultValue: 'Equipped' })
-              : t('equip', { defaultValue: 'Equip' })}
+              ? t(
+                  'equipped',
+                  {
+                    defaultValue:
+                      'Equipped',
+                  },
+                )
+              : t(
+                  'equip',
+                  {
+                    defaultValue:
+                      'Equip',
+                  },
+                )}
           </Btn>
         </>
       }
     >
       <ItemModelViewer
-        itemId={modelItemId(item)}
-        cls={cls}
-        taunt={item.s === 'taunt'}
-        paint={warPaintOf(idx, { item: item.id })}
+        itemId={modelItemId(
+          item,
+        )}
+        cls={
+          cls
+        }
+        taunt={
+          item.s ===
+          'taunt'
+        }
+        paint={warPaintOf(
+          idx,
+          {
+            item: item.id,
+          },
+        )}
         className="h-72"
       />
     </Modal>

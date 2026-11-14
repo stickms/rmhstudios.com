@@ -1,13 +1,23 @@
-import type { Card, BaccaratResult } from './logic';
+import type {
+  Card,
+  BaccaratResult,
+} from './logic';
 
 export type TablePhase =
   | 'idle'
   | 'betting'
-  | 'dealing'    // cards being revealed one by one
-  | 'drawing'    // third card draw phase
+  | 'dealing' // cards being revealed one by one
+  | 'drawing' // third card draw phase
   | 'results';
 
-export type BetType = 'player' | 'banker' | 'tie' | 'playerPair' | 'bankerPair' | 'playerDragon' | 'bankerDragon';
+export type BetType =
+  | 'player'
+  | 'banker'
+  | 'tie'
+  | 'playerPair'
+  | 'bankerPair'
+  | 'playerDragon'
+  | 'bankerDragon';
 
 export interface PlayerBets {
   player: number;
@@ -22,7 +32,9 @@ export interface PlayerBets {
 export interface PlayerSeatClient {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   seatIndex: number;
   bets: PlayerBets;
   totalBetThisRound: number;
@@ -43,13 +55,17 @@ export interface TableStateSnapshot {
   players: PlayerSeatClient[];
   playerHand: Card[];
   bankerHand: Card[];
-  bettingCountdown: number | null;
+  bettingCountdown:
+    | number
+    | null;
   // Streak/road tracking
   history: BaccaratResult[];
 }
 
 export interface CardRevealPayload {
-  target: 'player' | 'banker';
+  target:
+    | 'player'
+    | 'banker';
   card: Card;
   cardIndex: number; // 0=first, 1=second, 2=third
 }
@@ -86,6 +102,8 @@ export interface RoomInfo {
   ownerId: string;
   ownerName: string;
   maxPlayers: number;
-  privacy: 'public' | 'unlisted';
+  privacy:
+    | 'public'
+    | 'unlisted';
   joinCode: string;
 }

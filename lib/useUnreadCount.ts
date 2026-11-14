@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import { unreadCountApi } from '@/lib/messages/messages-sidebar.contract';
@@ -29,28 +32,47 @@ export type MessageStreamEventType =
   | 'message-edited'
   | 'message-deleted'
   | 'chat-update';
-export type MessageStreamHandler = (type: MessageStreamEventType, data: unknown) => void;
+export type MessageStreamHandler =
+  (
+    type: MessageStreamEventType,
+    data: unknown,
+  ) => void;
 
-const STREAM_URL = '/api/messages/stream';
-const STREAM_EVENTS: MessageStreamEventType[] = [
-  'unread',
-  'new-message',
-  'typing',
-  'message-reaction',
-  'message-edited',
-  'message-deleted',
-  'chat-update',
-];
+const STREAM_URL =
+  '/api/messages/stream';
+const STREAM_EVENTS: MessageStreamEventType[] =
+  [
+    'unread',
+    'new-message',
+    'typing',
+    'message-reaction',
+    'message-edited',
+    'message-deleted',
+    'chat-update',
+  ];
 const MAX_RECONNECT_DELAY = 15_000;
 
 // Full-stream subscribers (MessagesColumn, ConversationView).
-const streamSubscribers = new Set<MessageStreamHandler>();
+const streamSubscribers =
+  new Set<MessageStreamHandler>();
 // Unread-count subscribers (the badge) — a thin fan-out reading just the number.
-const countSubscribers = new Set<(n: number) => void>();
+const countSubscribers =
+  new Set<
+    (
+      n: number,
+    ) => void
+  >();
 
-let eventSource: EventSource | null = null;
-let fallbackInterval: ReturnType<typeof setInterval> | null = null;
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let eventSource: EventSource | null =
+  null;
+let fallbackInterval: ReturnType<
+  typeof setInterval
+> | null =
+  null;
+let reconnectTimer: ReturnType<
+  typeof setTimeout
+> | null =
+  null;
 let retryCount = 0;
 let pageLifecycleBound = false;
 let count = 0;
@@ -62,111 +84,264 @@ let count = 0;
 let signedOut = false;
 
 function hasSubscribers() {
-  return streamSubscribers.size > 0 || countSubscribers.size > 0;
+  return (
+    streamSubscribers.size >
+      0 ||
+    countSubscribers.size >
+      0
+  );
 }
 
-function broadcastCount(n: number) {
-  count = n;
-  for (const s of countSubscribers) s(n);
+function broadcastCount(
+  n: number,
+) {
+  count =
+    n;
+  for (const s of countSubscribers)
+    s(
+      n,
+    );
 }
 
 function stopPolling() {
-  if (fallbackInterval) {
-    clearInterval(fallbackInterval);
-    fallbackInterval = null;
+  if (
+    fallbackInterval
+  ) {
+    clearInterval(
+      fallbackInterval,
+    );
+    fallbackInterval =
+      null;
   }
 }
 
 function startPolling() {
-  if (fallbackInterval) return;
-  const fetchUnread = () => {
-    api(unreadCountApi)
-      .then((data) => broadcastCount(data.count ?? 0))
-      .catch((e: unknown) => {
-        if (e instanceof HttpError && (e.status === 401 || e.status === 403)) {
-          // Signed out (or session expired): stop the stream and the probe.
-          stop();
-          signedOut = true;
-          broadcastCount(0);
-        }
-      });
-  };
+  if (
+    fallbackInterval
+  )
+    return;
+  const fetchUnread =
+    () => {
+      api(
+        unreadCountApi,
+      )
+        .then(
+          (
+            data,
+          ) =>
+            broadcastCount(
+              data.count ??
+                0,
+            ),
+        )
+        .catch(
+          (
+            e: unknown,
+          ) => {
+            if (
+              e instanceof
+                HttpError &&
+              (e.status ===
+                401 ||
+                e.status ===
+                  403)
+            ) {
+              // Signed out (or session expired): stop the stream and the probe.
+              stop();
+              signedOut = true;
+              broadcastCount(
+                0,
+              );
+            }
+          },
+        );
+    };
   fetchUnread();
-  fallbackInterval = setInterval(fetchUnread, 15_000);
+  fallbackInterval =
+    setInterval(
+      fetchUnread,
+      15_000,
+    );
 }
 
-function dispatch(type: MessageStreamEventType, raw: string) {
+function dispatch(
+  type: MessageStreamEventType,
+  raw: string,
+) {
   // A live event means SSE is healthy again: reset backoff and drop any polling.
   retryCount = 0;
   stopPolling();
   let data: unknown;
   try {
-    data = JSON.parse(raw);
+    data =
+      JSON.parse(
+        raw,
+      );
   } catch {
     return;
   }
-  if (type === 'unread') {
-    const c = (data as { count?: number }).count;
-    if (typeof c === 'number') broadcastCount(c);
+  if (
+    type ===
+    'unread'
+  ) {
+    const c =
+      (
+        data as {
+          count?: number;
+        }
+      )
+        .count;
+    if (
+      typeof c ===
+      'number'
+    )
+      broadcastCount(
+        c,
+      );
   }
-  for (const fn of streamSubscribers) fn(type, data);
+  for (const fn of streamSubscribers)
+    fn(
+      type,
+      data,
+    );
 }
 
 function connectSSE() {
-  if (eventSource) return;
-  const es = new EventSource(STREAM_URL);
-  eventSource = es;
+  if (
+    eventSource
+  )
+    return;
+  const es =
+    new EventSource(
+      STREAM_URL,
+    );
+  eventSource =
+    es;
 
   for (const type of STREAM_EVENTS) {
-    es.addEventListener(type, (event) => dispatch(type, (event as MessageEvent).data));
+    es.addEventListener(
+      type,
+      (
+        event,
+      ) =>
+        dispatch(
+          type,
+          (
+            event as MessageEvent
+          )
+            .data,
+        ),
+    );
   }
   // The stream is back: the fallback poll is redundant from here (the backoff
   // still only resets on a live event, so an accept-then-drop keeps backing off).
-  es.onopen = () => {
-    if (eventSource === es) stopPolling();
-  };
+  es.onopen =
+    () => {
+      if (
+        eventSource ===
+        es
+      )
+        stopPolling();
+    };
 
-  es.onerror = () => {
-    es.close();
-    if (eventSource !== es) return; // a replaced or stopped stream schedules nothing
-    eventSource = null;
-    if (!hasSubscribers() || signedOut) return;
+  es.onerror =
+    () => {
+      es.close();
+      if (
+        eventSource !==
+        es
+      )
+        return; // a replaced or stopped stream schedules nothing
+      eventSource =
+        null;
+      if (
+        !hasSubscribers() ||
+        signedOut
+      )
+        return;
 
-    retryCount++;
-    // Keep the badge fresh via polling while SSE is down (after a few failures),
-    // but keep retrying SSE indefinitely so chat realtime recovers.
-    if (retryCount >= 3) startPolling();
-    const delay = Math.min(1000 * 2 ** retryCount, MAX_RECONNECT_DELAY);
-    if (reconnectTimer) clearTimeout(reconnectTimer);
-    reconnectTimer = setTimeout(() => {
-      reconnectTimer = null;
-      if (hasSubscribers() && !eventSource && !signedOut) connectSSE();
-    }, delay);
-  };
+      retryCount++;
+      // Keep the badge fresh via polling while SSE is down (after a few failures),
+      // but keep retrying SSE indefinitely so chat realtime recovers.
+      if (
+        retryCount >=
+        3
+      )
+        startPolling();
+      const delay =
+        Math.min(
+          1000 *
+            2 **
+              retryCount,
+          MAX_RECONNECT_DELAY,
+        );
+      if (
+        reconnectTimer
+      )
+        clearTimeout(
+          reconnectTimer,
+        );
+      reconnectTimer =
+        setTimeout(
+          () => {
+            reconnectTimer =
+              null;
+            if (
+              hasSubscribers() &&
+              !eventSource &&
+              !signedOut
+            )
+              connectSSE();
+          },
+          delay,
+        );
+    };
 }
 
 function ensureStarted() {
-  if (typeof window === 'undefined') return;
-  if (!pageLifecycleBound) {
+  if (
+    typeof window ===
+    'undefined'
+  )
+    return;
+  if (
+    !pageLifecycleBound
+  ) {
     // `pagehide`/`pageshow`, not `beforeunload`: that listener blocks the
     // back/forward cache in Firefox, and an open EventSource blocks it
     // everywhere. Close as the page is hidden, reopen if it is restored.
-    window.addEventListener('pagehide', suspend);
-    window.addEventListener('pageshow', resume);
+    window.addEventListener(
+      'pagehide',
+      suspend,
+    );
+    window.addEventListener(
+      'pageshow',
+      resume,
+    );
     pageLifecycleBound = true;
   }
   // A (re)starting subscriber is a fresh attempt: a sign-in after a sign-out.
   signedOut = false;
-  if (!eventSource && !fallbackInterval) connectSSE();
+  if (
+    !eventSource &&
+    !fallbackInterval
+  )
+    connectSSE();
 }
 
 function stop() {
   eventSource?.close();
-  eventSource = null;
+  eventSource =
+    null;
   stopPolling();
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
+  if (
+    reconnectTimer
+  ) {
+    clearTimeout(
+      reconnectTimer,
+    );
+    reconnectTimer =
+      null;
   }
   retryCount = 0;
   count = 0;
@@ -174,19 +349,32 @@ function stop() {
 
 /** Close the stream as the page is hidden, keeping the badge count for a restore. */
 function suspend() {
-  const kept = count;
+  const kept =
+    count;
   stop();
-  count = kept;
+  count =
+    kept;
 }
 
-function resume(e: PageTransitionEvent) {
-  if (e.persisted && hasSubscribers() && !signedOut && !eventSource && !fallbackInterval)
+function resume(
+  e: PageTransitionEvent,
+) {
+  if (
+    e.persisted &&
+    hasSubscribers() &&
+    !signedOut &&
+    !eventSource &&
+    !fallbackInterval
+  )
     connectSSE();
 }
 
 /** Tear the shared connection down only once nobody is listening. */
 function maybeStop() {
-  if (!hasSubscribers()) stop();
+  if (
+    !hasSubscribers()
+  )
+    stop();
 }
 
 /**
@@ -194,34 +382,65 @@ function maybeStop() {
  * (`unread` / `new-message` / `typing` / `message-reaction`) with its parsed
  * payload; filter by `type` in the handler. Returns an unsubscribe function.
  */
-export function subscribeMessageStream(handler: MessageStreamHandler): () => void {
-  streamSubscribers.add(handler);
+export function subscribeMessageStream(
+  handler: MessageStreamHandler,
+): () => void {
+  streamSubscribers.add(
+    handler,
+  );
   ensureStarted();
   return () => {
-    streamSubscribers.delete(handler);
+    streamSubscribers.delete(
+      handler,
+    );
     maybeStop();
   };
 }
 
-export function useUnreadCount(isLoggedIn: boolean) {
-  const [value, setValue] = useState(count);
+export function useUnreadCount(
+  isLoggedIn: boolean,
+) {
+  const [
+    value,
+    setValue,
+  ] =
+    useState(
+      count,
+    );
   // Defer opening the connection until the browser is idle so it doesn't compete
   // with the feed SSE + hydration for sockets and the main thread.
-  const idle = useIdleReady();
+  const idle =
+    useIdleReady();
 
   useEffect(() => {
-    if (!isLoggedIn || !idle) {
-      setValue(0);
+    if (
+      !isLoggedIn ||
+      !idle
+    ) {
+      setValue(
+        0,
+      );
       return;
     }
-    countSubscribers.add(setValue);
-    setValue(count);
+    countSubscribers.add(
+      setValue,
+    );
+    setValue(
+      count,
+    );
     ensureStarted();
     return () => {
-      countSubscribers.delete(setValue);
+      countSubscribers.delete(
+        setValue,
+      );
       maybeStop();
     };
-  }, [isLoggedIn, idle]);
+  }, [
+    isLoggedIn,
+    idle,
+  ]);
 
-  return isLoggedIn ? value : 0;
+  return isLoggedIn
+    ? value
+    : 0;
 }

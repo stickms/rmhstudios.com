@@ -1,8 +1,14 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { toast } from '@/lib/toast';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { api } from '@/lib/contract/client';
-import { checkInStreakApi, getStreakApi } from '@/lib/streak.contract';
+import {
+  checkInStreakApi,
+  getStreakApi,
+} from '@/lib/streak.contract';
 
 interface StreakState {
   current: number;
@@ -14,10 +20,16 @@ interface StreakState {
   freezeUsed?: number;
 }
 
-const LAST_CHECKIN_KEY = 'rmh-streak-last-checkin';
+const LAST_CHECKIN_KEY =
+  'rmh-streak-last-checkin';
 
 function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date()
+    .toISOString()
+    .slice(
+      0,
+      10,
+    );
 }
 
 /**
@@ -31,76 +43,153 @@ function todayKey() {
  * out to all of them.
  */
 
-let current: StreakState | null = null;
-const subscribers = new Set<(s: StreakState | null) => void>();
+let current: StreakState | null =
+  null;
+const subscribers =
+  new Set<
+    (
+      s: StreakState | null,
+    ) => void
+  >();
 let inFlight = false;
 
-function broadcast(s: StreakState | null) {
-  current = s;
-  for (const sub of subscribers) sub(s);
+function broadcast(
+  s: StreakState | null,
+) {
+  current =
+    s;
+  for (const sub of subscribers)
+    sub(
+      s,
+    );
 }
 
 async function runCheckIn() {
   // Guard so only the first mounted consumer performs the check-in — this is what
   // prevents the double POST / double toast when both sidebars mount together.
-  if (inFlight) return;
+  if (
+    inFlight
+  )
+    return;
   inFlight = true;
 
-  const already = (() => {
-    try {
-      return localStorage.getItem(LAST_CHECKIN_KEY) === todayKey();
-    } catch {
-      return false;
-    }
-  })();
+  const already =
+    (() => {
+      try {
+        return (
+          localStorage.getItem(
+            LAST_CHECKIN_KEY,
+          ) ===
+          todayKey()
+        );
+      } catch {
+        return false;
+      }
+    })();
 
   try {
-    if (already) {
-      broadcast(await api(getStreakApi));
+    if (
+      already
+    ) {
+      broadcast(
+        await api(
+          getStreakApi,
+        ),
+      );
       return;
     }
-    const data: StreakState = await api(checkInStreakApi);
-    broadcast(data);
+    const data: StreakState =
+      await api(
+        checkInStreakApi,
+      );
+    broadcast(
+      data,
+    );
     try {
-      localStorage.setItem(LAST_CHECKIN_KEY, todayKey());
+      localStorage.setItem(
+        LAST_CHECKIN_KEY,
+        todayKey(),
+      );
     } catch {
       // ignore
     }
-    if (data.freezeUsed && data.freezeUsed > 0) {
-      toast.success(`🧊 Streak freeze used — your ${data.current}-day streak survived!`);
+    if (
+      data.freezeUsed &&
+      data.freezeUsed >
+        0
+    ) {
+      toast.success(
+        `🧊 Streak freeze used — your ${data.current}-day streak survived!`,
+      );
     }
-    if (data.reward > 0) {
-      toast.success(`🔥 ${data.current}-day streak! +${data.reward} coins`);
+    if (
+      data.reward >
+      0
+    ) {
+      toast.success(
+        `🔥 ${data.current}-day streak! +${data.reward} coins`,
+      );
     }
   } catch {
     // ignore network errors
   }
 }
 
-export function useStreak(isLoggedIn: boolean) {
-  const [streak, setStreak] = useState<StreakState | null>(current);
-  const idleReady = useIdleReady();
+export function useStreak(
+  isLoggedIn: boolean,
+) {
+  const [
+    streak,
+    setStreak,
+  ] =
+    useState<StreakState | null>(
+      current,
+    );
+  const idleReady =
+    useIdleReady();
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      setStreak(null);
+    if (
+      !isLoggedIn
+    ) {
+      setStreak(
+        null,
+      );
       return;
     }
-    subscribers.add(setStreak);
-    setStreak(current);
+    subscribers.add(
+      setStreak,
+    );
+    setStreak(
+      current,
+    );
     // Defer the daily auto check-in until idle so its POST doesn't compete with
     // the feed/images during hydration.
-    if (idleReady) void runCheckIn();
+    if (
+      idleReady
+    )
+      void runCheckIn();
     return () => {
-      subscribers.delete(setStreak);
+      subscribers.delete(
+        setStreak,
+      );
       // Reset when the last consumer leaves (e.g. sign-out) so a later sign-in
       // re-checks in.
-      if (subscribers.size === 0) {
+      if (
+        subscribers.size ===
+        0
+      ) {
         inFlight = false;
-        current = null;
+        current =
+          null;
       }
     };
-  }, [isLoggedIn, idleReady]);
+  }, [
+    isLoggedIn,
+    idleReady,
+  ]);
 
-  return isLoggedIn ? streak : null;
+  return isLoggedIn
+    ? streak
+    : null;
 }

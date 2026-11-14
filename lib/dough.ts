@@ -44,8 +44,17 @@ export const HEIGHT_GAIN = 0.12;
 /** Elastic layer: period (s) and damping ratio. ζ < 1 so a release wobbles, but only just. */
 const ELASTIC_PERIOD = 0.42;
 const ELASTIC_ZETA = 0.42;
-const K_E = ((2 * Math.PI) / ELASTIC_PERIOD) ** 2;
-const C_E = 2 * ELASTIC_ZETA * ((2 * Math.PI) / ELASTIC_PERIOD);
+const K_E =
+  ((2 *
+    Math.PI) /
+    ELASTIC_PERIOD) **
+  2;
+const C_E =
+  2 *
+  ELASTIC_ZETA *
+  ((2 *
+    Math.PI) /
+    ELASTIC_PERIOD);
 /** 1/s at which held elastic strain becomes plastic. */
 const FLOW = 0.9;
 /** Seconds for plastic strain to ease out. */
@@ -69,12 +78,32 @@ const U_MAX = 0.36;
  */
 const LIMB_REACH = 0.14;
 const REACH_SHARP = 24;
-export function reachFor(r0: number): number {
-  const a = 1 + LIMB_REACH - r0;
-  const k = REACH_SHARP;
+export function reachFor(
+  r0: number,
+): number {
+  const a =
+    1 +
+    LIMB_REACH -
+    r0;
+  const k =
+    REACH_SHARP;
   // Soft-min of U_MAX and a; exactly 0 once nothing may move.
-  const m = -Math.log(Math.exp(-k * U_MAX) + Math.exp(-k * a)) / k;
-  return Math.max(0, m);
+  const m =
+    -Math.log(
+      Math.exp(
+        -k *
+          U_MAX,
+      ) +
+        Math.exp(
+          -k *
+            a,
+        ),
+    ) /
+    k;
+  return Math.max(
+    0,
+    m,
+  );
 }
 /**
  * Damped fixed-point passes that invert the field for the shader (see `derive`). Undamped, the limb — where the cap
@@ -95,32 +124,96 @@ const RELEASE_RATE = 9;
 const REST = 3e-4;
 /** Internal ceiling on each layer, so a violent flick cannot bank up state the display never showed. */
 const LAYER_MAX = 0.6;
-const MAX_STEP = 1 / 60;
+const MAX_STEP =
+  1 /
+  60;
 
-const smooth = (a: number, b: number, x: number) => {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
-  return t * t * (3 - 2 * t);
-};
+const smooth =
+  (
+    a: number,
+    b: number,
+    x: number,
+  ) => {
+    const t =
+      Math.min(
+        1,
+        Math.max(
+          0,
+          (x -
+            a) /
+            (b -
+              a),
+        ),
+      );
+    return (
+      t *
+      t *
+      (3 -
+        2 *
+          t)
+    );
+  };
 
 /** Press displacement at offset (dx, dy) from the contact: radial, 0 at the centre, peak at `CONTACT`. */
-export function pressTarget(dx: number, dy: number, out: { x: number; y: number }): void {
-  const r2 = dx * dx + dy * dy;
-  const r = Math.sqrt(r2);
-  if (r < 1e-6) {
-    out.x = out.y = 0;
+export function pressTarget(
+  dx: number,
+  dy: number,
+  out: {
+    x: number;
+    y: number;
+  },
+): void {
+  const r2 =
+    dx *
+      dx +
+    dy *
+      dy;
+  const r =
+    Math.sqrt(
+      r2,
+    );
+  if (
+    r <
+    1e-6
+  ) {
+    out.x =
+      out.y = 0;
     return;
   }
-  const s = r / CONTACT;
-  const f = s * Math.exp(0.5 * (1 - s * s));
-  out.x = (dx / r) * f * PRESS_PUSH;
-  out.y = (dy / r) * f * PRESS_PUSH;
+  const s =
+    r /
+    CONTACT;
+  const f =
+    s *
+    Math.exp(
+      0.5 *
+        (1 -
+          s *
+            s),
+    );
+  out.x =
+    (dx /
+      r) *
+    f *
+    PRESS_PUSH;
+  out.y =
+    (dy /
+      r) *
+    f *
+    PRESS_PUSH;
 }
 
 export class DoughBody {
-  readonly n = DOUGH_N;
-  readonly extent = DOUGH_EXTENT;
+  readonly n =
+    DOUGH_N;
+  readonly extent =
+    DOUGH_EXTENT;
   /** Grid spacing, radii. */
-  readonly h = (2 * DOUGH_EXTENT) / (DOUGH_N - 1);
+  readonly h =
+    (2 *
+      DOUGH_EXTENT) /
+    (DOUGH_N -
+      1);
   /** The grab point, clamped to the limb. */
   gx = 0;
   gy = 0;
@@ -131,106 +224,319 @@ export class DoughBody {
    * the material that lands there, B = its height, A = 0.
    * Row 0 is y = -EXTENT (top). Rewritten by every `step` that changes anything; `version` increments with it.
    */
-  private _field = new Float32Array(DOUGH_N * DOUGH_N * 4);
+  private _field =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N *
+        4,
+    );
   get field(): Float32Array {
-    return this._field;
+    return this
+      ._field;
   }
   version = 0;
 
-  private ex = new Float32Array(DOUGH_N * DOUGH_N);
-  private ey = new Float32Array(DOUGH_N * DOUGH_N);
-  private evx = new Float32Array(DOUGH_N * DOUGH_N);
-  private evy = new Float32Array(DOUGH_N * DOUGH_N);
-  private px = new Float32Array(DOUGH_N * DOUGH_N);
-  private py = new Float32Array(DOUGH_N * DOUGH_N);
-  private ux = new Float32Array(DOUGH_N * DOUGH_N);
-  private uy = new Float32Array(DOUGH_N * DOUGH_N);
-  private hh = new Float32Array(DOUGH_N * DOUGH_N);
-  private lapX = new Float32Array(DOUGH_N * DOUGH_N);
-  private lapY = new Float32Array(DOUGH_N * DOUGH_N);
-  private mask = new Float32Array(DOUGH_N * DOUGH_N);
+  private ex =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private ey =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private evx =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private evy =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private px =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private py =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private ux =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private uy =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private hh =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private lapX =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private lapY =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
+  private mask =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
   /** The most a cell's material may be carried (see `reachFor`), radii. */
-  private reach = new Float32Array(DOUGH_N * DOUGH_N);
+  private reach =
+    new Float32Array(
+      DOUGH_N *
+        DOUGH_N,
+    );
   private held = false;
   private vx = 0;
   private vy = 0;
   private awake = false;
-  private readonly tmp = { x: 0, y: 0 };
+  private readonly tmp =
+    {
+      x: 0,
+      y: 0,
+    };
 
   constructor() {
-    const e = DOUGH_EXTENT;
-    for (let j = 0; j < DOUGH_N; j++) {
-      for (let i = 0; i < DOUGH_N; i++) {
-        const x = -e + i * this.h;
-        const y = -e + j * this.h;
+    const e =
+      DOUGH_EXTENT;
+    for (
+      let j = 0;
+      j <
+      DOUGH_N;
+      j++
+    ) {
+      for (
+        let i = 0;
+        i <
+        DOUGH_N;
+        i++
+      ) {
+        const x =
+          -e +
+          i *
+            this
+              .h;
+        const y =
+          -e +
+          j *
+            this
+              .h;
         // Material exists on the disc; the field fades out past the limb so the border is exactly still.
-        this.mask[j * DOUGH_N + i] = 1 - smooth(1.02, 1.27, Math.hypot(x, y));
-        this.reach[j * DOUGH_N + i] = reachFor(Math.hypot(x, y));
+        this.mask[
+          j *
+            DOUGH_N +
+            i
+        ] =
+          1 -
+          smooth(
+            1.02,
+            1.27,
+            Math.hypot(
+              x,
+              y,
+            ),
+          );
+        this.reach[
+          j *
+            DOUGH_N +
+            i
+        ] =
+          reachFor(
+            Math.hypot(
+              x,
+              y,
+            ),
+          );
       }
     }
   }
 
   /** Take hold at (x, y). */
-  grab(x: number, y: number): void {
+  grab(
+    x: number,
+    y: number,
+  ): void {
     this.held = true;
-    this.at(x, y);
-    this.vx = this.vy = 0;
+    this.at(
+      x,
+      y,
+    );
+    this.vx =
+      this.vy = 0;
     this.awake = true;
   }
 
   /** The finger is at (x, y), moving at (vx, vy) radii per second. */
-  drag(x: number, y: number, vx: number, vy: number): void {
-    this.at(x, y);
-    this.vx = vx;
-    this.vy = vy;
+  drag(
+    x: number,
+    y: number,
+    vx: number,
+    vy: number,
+  ): void {
+    this.at(
+      x,
+      y,
+    );
+    this.vx =
+      vx;
+    this.vy =
+      vy;
     this.awake = true;
   }
 
   /** Let go: the elastic layer rebounds, the plastic layer eases out, carrying whatever it holds. */
   release(): void {
     this.held = false;
-    this.vx = this.vy = 0;
+    this.vx =
+      this.vy = 0;
   }
 
   /** A shove from display-side events (a strike, a hand-off): a broad impulse on the elastic layer. */
-  nudge(vx: number, vy: number, gain = 1): void {
-    const k = 0.2 * gain;
-    for (let j = 0; j < DOUGH_N; j++) {
-      for (let i = 0; i < DOUGH_N; i++) {
-        const c = j * DOUGH_N + i;
-        const x = -DOUGH_EXTENT + i * this.h;
-        const y = -DOUGH_EXTENT + j * this.h;
-        const w = Math.exp(-(x * x + y * y) / 1.1) * this.mask[c]!;
-        this.evx[c] = this.evx[c]! + vx * k * w;
-        this.evy[c] = this.evy[c]! + vy * k * w;
+  nudge(
+    vx: number,
+    vy: number,
+    gain = 1,
+  ): void {
+    const k =
+      0.2 *
+      gain;
+    for (
+      let j = 0;
+      j <
+      DOUGH_N;
+      j++
+    ) {
+      for (
+        let i = 0;
+        i <
+        DOUGH_N;
+        i++
+      ) {
+        const c =
+          j *
+            DOUGH_N +
+          i;
+        const x =
+          -DOUGH_EXTENT +
+          i *
+            this
+              .h;
+        const y =
+          -DOUGH_EXTENT +
+          j *
+            this
+              .h;
+        const w =
+          Math.exp(
+            -(
+              x *
+                x +
+              y *
+                y
+            ) /
+              1.1,
+          ) *
+          this
+            .mask[
+            c
+          ]!;
+        this.evx[
+          c
+        ] =
+          this
+            .evx[
+            c
+          ]! +
+          vx *
+            k *
+            w;
+        this.evy[
+          c
+        ] =
+          this
+            .evy[
+            c
+          ]! +
+          vy *
+            k *
+            w;
       }
     }
     this.awake = true;
   }
 
   /** Advance `dt` seconds. Returns whether anything is (still) deformed: the caller repaints while it is. */
-  step(dt: number): boolean {
-    if (!this.awake && !this.held) return false;
-    let remaining = Math.min(dt, 0.1);
-    while (remaining > 1e-6) {
-      const d = Math.min(MAX_STEP, remaining);
-      this.substep(d);
-      remaining -= d;
+  step(
+    dt: number,
+  ): boolean {
+    if (
+      !this
+        .awake &&
+      !this
+        .held
+    )
+      return false;
+    let remaining =
+      Math.min(
+        dt,
+        0.1,
+      );
+    while (
+      remaining >
+      1e-6
+    ) {
+      const d =
+        Math.min(
+          MAX_STEP,
+          remaining,
+        );
+      this.substep(
+        d,
+      );
+      remaining -=
+        d;
     }
     this.derive();
-    if (!this.held && this.settled()) {
+    if (
+      !this
+        .held &&
+      this.settled()
+    ) {
       this.clear();
       this.awake = false;
-      this.version++;
+      this
+        .version++;
       return true;
     }
-    this.version++;
+    this
+      .version++;
     return true;
   }
 
   /** Is the body deformed at all? */
   active(): boolean {
-    return this.held || this.awake;
+    return (
+      this
+        .held ||
+      this
+        .awake
+    );
   }
 
   /**
@@ -238,162 +544,812 @@ export class DoughBody {
    * every pin, every frame the body is deformed. `frontDepth` (0..1, 1 = facing the viewer) scales the perspective
    * lift of the local height, as the old body did.
    */
-  deform(x: number, y: number, out: Float64Array, frontDepth?: number): void {
-    if (!this.awake) {
-      out[0] = x;
-      out[1] = y;
+  deform(
+    x: number,
+    y: number,
+    out: Float64Array,
+    frontDepth?: number,
+  ): void {
+    if (
+      !this
+        .awake
+    ) {
+      out[0] =
+        x;
+      out[1] =
+        y;
       return;
     }
-    const fx = (x + DOUGH_EXTENT) / this.h;
-    const fy = (y + DOUGH_EXTENT) / this.h;
-    const i = Math.max(0, Math.min(DOUGH_N - 2, Math.floor(fx)));
-    const j = Math.max(0, Math.min(DOUGH_N - 2, Math.floor(fy)));
-    const tx = Math.min(1, Math.max(0, fx - i));
-    const ty = Math.min(1, Math.max(0, fy - j));
-    const c = j * DOUGH_N + i;
-    const a = (1 - tx) * (1 - ty);
-    const b = tx * (1 - ty);
-    const cc = (1 - tx) * ty;
-    const d = tx * ty;
-    const ux = this.ux;
-    const uy = this.uy;
-    const x2 = x + a * ux[c]! + b * ux[c + 1]! + cc * ux[c + DOUGH_N]! + d * ux[c + DOUGH_N + 1]!;
-    const y2 = y + a * uy[c]! + b * uy[c + 1]! + cc * uy[c + DOUGH_N]! + d * uy[c + DOUGH_N + 1]!;
+    const fx =
+      (x +
+        DOUGH_EXTENT) /
+      this
+        .h;
+    const fy =
+      (y +
+        DOUGH_EXTENT) /
+      this
+        .h;
+    const i =
+      Math.max(
+        0,
+        Math.min(
+          DOUGH_N -
+            2,
+          Math.floor(
+            fx,
+          ),
+        ),
+      );
+    const j =
+      Math.max(
+        0,
+        Math.min(
+          DOUGH_N -
+            2,
+          Math.floor(
+            fy,
+          ),
+        ),
+      );
+    const tx =
+      Math.min(
+        1,
+        Math.max(
+          0,
+          fx -
+            i,
+        ),
+      );
+    const ty =
+      Math.min(
+        1,
+        Math.max(
+          0,
+          fy -
+            j,
+        ),
+      );
+    const c =
+      j *
+        DOUGH_N +
+      i;
+    const a =
+      (1 -
+        tx) *
+      (1 -
+        ty);
+    const b =
+      tx *
+      (1 -
+        ty);
+    const cc =
+      (1 -
+        tx) *
+      ty;
+    const d =
+      tx *
+      ty;
+    const ux =
+      this
+        .ux;
+    const uy =
+      this
+        .uy;
+    const x2 =
+      x +
+      a *
+        ux[
+          c
+        ]! +
+      b *
+        ux[
+          c +
+            1
+        ]! +
+      cc *
+        ux[
+          c +
+            DOUGH_N
+        ]! +
+      d *
+        ux[
+          c +
+            DOUGH_N +
+            1
+        ]!;
+    const y2 =
+      y +
+      a *
+        uy[
+          c
+        ]! +
+      b *
+        uy[
+          c +
+            1
+        ]! +
+      cc *
+        uy[
+          c +
+            DOUGH_N
+        ]! +
+      d *
+        uy[
+          c +
+            DOUGH_N +
+            1
+        ]!;
     let k = 1;
-    if (frontDepth !== undefined && frontDepth > 0) {
-      const hh = this.hh;
-      const h = a * hh[c]! + b * hh[c + 1]! + cc * hh[c + DOUGH_N]! + d * hh[c + DOUGH_N + 1]!;
-      k = 1 / (1 - h * frontDepth * 0.22);
+    if (
+      frontDepth !==
+        undefined &&
+      frontDepth >
+        0
+    ) {
+      const hh =
+        this
+          .hh;
+      const h =
+        a *
+          hh[
+            c
+          ]! +
+        b *
+          hh[
+            c +
+              1
+          ]! +
+        cc *
+          hh[
+            c +
+              DOUGH_N
+          ]! +
+        d *
+          hh[
+            c +
+              DOUGH_N +
+              1
+          ]!;
+      k =
+        1 /
+        (1 -
+          h *
+            frontDepth *
+            0.22);
     }
-    out[0] = x2 * k;
-    out[1] = y2 * k;
+    out[0] =
+      x2 *
+      k;
+    out[1] =
+      y2 *
+      k;
   }
 
   /** Height (radii, + toward the viewer) at (x, y). Dents are negative. */
-  depth(x: number, y: number): number {
-    if (!this.awake) return 0;
-    const fx = (x + DOUGH_EXTENT) / this.h;
-    const fy = (y + DOUGH_EXTENT) / this.h;
-    const i = Math.max(0, Math.min(DOUGH_N - 2, Math.floor(fx)));
-    const j = Math.max(0, Math.min(DOUGH_N - 2, Math.floor(fy)));
-    const tx = Math.min(1, Math.max(0, fx - i));
-    const ty = Math.min(1, Math.max(0, fy - j));
-    const c = j * DOUGH_N + i;
-    const hh = this.hh;
+  depth(
+    x: number,
+    y: number,
+  ): number {
+    if (
+      !this
+        .awake
+    )
+      return 0;
+    const fx =
+      (x +
+        DOUGH_EXTENT) /
+      this
+        .h;
+    const fy =
+      (y +
+        DOUGH_EXTENT) /
+      this
+        .h;
+    const i =
+      Math.max(
+        0,
+        Math.min(
+          DOUGH_N -
+            2,
+          Math.floor(
+            fx,
+          ),
+        ),
+      );
+    const j =
+      Math.max(
+        0,
+        Math.min(
+          DOUGH_N -
+            2,
+          Math.floor(
+            fy,
+          ),
+        ),
+      );
+    const tx =
+      Math.min(
+        1,
+        Math.max(
+          0,
+          fx -
+            i,
+        ),
+      );
+    const ty =
+      Math.min(
+        1,
+        Math.max(
+          0,
+          fy -
+            j,
+        ),
+      );
+    const c =
+      j *
+        DOUGH_N +
+      i;
+    const hh =
+      this
+        .hh;
     return (
-      (1 - tx) * (1 - ty) * hh[c]! +
-      tx * (1 - ty) * hh[c + 1]! +
-      (1 - tx) * ty * hh[c + DOUGH_N]! +
-      tx * ty * hh[c + DOUGH_N + 1]!
+      (1 -
+        tx) *
+        (1 -
+          ty) *
+        hh[
+          c
+        ]! +
+      tx *
+        (1 -
+          ty) *
+        hh[
+          c +
+            1
+        ]! +
+      (1 -
+        tx) *
+        ty *
+        hh[
+          c +
+            DOUGH_N
+        ]! +
+      tx *
+        ty *
+        hh[
+          c +
+            DOUGH_N +
+            1
+        ]!
     );
   }
 
   /** Σh over the grid. ~0 by construction (volume conservation); exposed for the tests and the debug overlay. */
   volume(): number {
     let s = 0;
-    for (let c = 0; c < this.hh.length; c++) s += this.hh[c]!;
+    for (
+      let c = 0;
+      c <
+      this
+        .hh
+        .length;
+      c++
+    )
+      s +=
+        this
+          .hh[
+          c
+        ]!;
     return s;
   }
 
   /** Largest |u| anywhere, radii. */
   peak(): number {
     let m = 0;
-    for (let c = 0; c < this.ux.length; c++) {
-      m = Math.max(m, Math.hypot(this.ux[c]!, this.uy[c]!));
+    for (
+      let c = 0;
+      c <
+      this
+        .ux
+        .length;
+      c++
+    ) {
+      m =
+        Math.max(
+          m,
+          Math.hypot(
+            this
+              .ux[
+              c
+            ]!,
+            this
+              .uy[
+              c
+            ]!,
+          ),
+        );
     }
     return m;
   }
 
-  private substep(dt: number): void {
-    const N = DOUGH_N;
-    const { ex, ey, evx, evy, px, py, lapX, lapY, mask } = this;
-    const held = this.held;
+  private substep(
+    dt: number,
+  ): void {
+    const N =
+      DOUGH_N;
+    const {
+      ex,
+      ey,
+      evx,
+      evy,
+      px,
+      py,
+      lapX,
+      lapY,
+      mask,
+    } =
+      this;
+    const held =
+      this
+        .held;
     // Pressure rises quickly under a held finger and falls away after it.
     this.pinch +=
-      ((held ? 1 : 0) - this.pinch) * Math.min(1, (held ? PRESS_RATE : RELEASE_RATE) * dt);
-    const gripE = held ? GRIP_ELASTIC * dt : 0;
-    const gripP = held ? GRIP_PLASTIC * dt : 0;
-    const press = this.pinch;
-    const sigma2 = 2 * CONTACT * CONTACT;
+      ((held
+        ? 1
+        : 0) -
+        this
+          .pinch) *
+      Math.min(
+        1,
+        (held
+          ? PRESS_RATE
+          : RELEASE_RATE) *
+          dt,
+      );
+    const gripE =
+      held
+        ? GRIP_ELASTIC *
+          dt
+        : 0;
+    const gripP =
+      held
+        ? GRIP_PLASTIC *
+          dt
+        : 0;
+    const press =
+      this
+        .pinch;
+    const sigma2 =
+      2 *
+      CONTACT *
+      CONTACT;
     // The press target is ~4e-4 radii at 4.2 footprints, so cutting it off there leaves no visible edge.
-    const reach = (4.2 * CONTACT) ** 2;
-    const tmp = this.tmp;
-    const flow = Math.min(1, FLOW * dt);
-    const decay = Math.exp(-dt / PLASTIC_TAU);
+    const reach =
+      (4.2 *
+        CONTACT) **
+      2;
+    const tmp =
+      this
+        .tmp;
+    const flow =
+      Math.min(
+        1,
+        FLOW *
+          dt,
+      );
+    const decay =
+      Math.exp(
+        -dt /
+          PLASTIC_TAU,
+      );
     // ν∇²u as a rate: ν/h² times the unscaled 5-point stencil.
-    const diffE = (NU_E / (this.h * this.h)) * dt;
-    const diffP = (NU_P / (this.h * this.h)) * dt;
+    const diffE =
+      (NU_E /
+        (this
+          .h *
+          this
+            .h)) *
+      dt;
+    const diffP =
+      (NU_P /
+        (this
+          .h *
+          this
+            .h)) *
+      dt;
 
-    this.laplacian(ex, ey, lapX, lapY);
-    for (let j = 0; j < N; j++) {
-      const y = -DOUGH_EXTENT + j * this.h;
-      for (let i = 0; i < N; i++) {
-        const c = j * N + i;
-        const x = -DOUGH_EXTENT + i * this.h;
+    this.laplacian(
+      ex,
+      ey,
+      lapX,
+      lapY,
+    );
+    for (
+      let j = 0;
+      j <
+      N;
+      j++
+    ) {
+      const y =
+        -DOUGH_EXTENT +
+        j *
+          this
+            .h;
+      for (
+        let i = 0;
+        i <
+        N;
+        i++
+      ) {
+        const c =
+          j *
+            N +
+          i;
+        const x =
+          -DOUGH_EXTENT +
+          i *
+            this
+              .h;
         let tx = 0;
         let ty = 0;
         let near = 0;
-        if (press > 1e-3) {
-          const dx = x - this.gx;
-          const dy = y - this.gy;
-          const d2 = dx * dx + dy * dy;
-          if (d2 < reach) {
-            pressTarget(dx, dy, tmp);
-            tx = tmp.x * press;
-            ty = tmp.y * press;
-            near = Math.exp(-d2 / sigma2);
+        if (
+          press >
+          1e-3
+        ) {
+          const dx =
+            x -
+            this
+              .gx;
+          const dy =
+            y -
+            this
+              .gy;
+          const d2 =
+            dx *
+              dx +
+            dy *
+              dy;
+          if (
+            d2 <
+            reach
+          ) {
+            pressTarget(
+              dx,
+              dy,
+              tmp,
+            );
+            tx =
+              tmp.x *
+              press;
+            ty =
+              tmp.y *
+              press;
+            near =
+              Math.exp(
+                -d2 /
+                  sigma2,
+              );
           }
         }
         // Elastic spring: toward the press target while pressed, toward rest otherwise.
-        evx[c] = evx[c]! + (K_E * (tx - ex[c]!) - C_E * evx[c]!) * dt;
-        evy[c] = evy[c]! + (K_E * (ty - ey[c]!) - C_E * evy[c]!) * dt;
-        let nex = ex[c]! + evx[c]! * dt + diffE * lapX[c]!;
-        let ney = ey[c]! + evy[c]! * dt + diffE * lapY[c]!;
+        evx[
+          c
+        ] =
+          evx[
+            c
+          ]! +
+          (K_E *
+            (tx -
+              ex[
+                c
+              ]!) -
+            C_E *
+              evx[
+                c
+              ]!) *
+            dt;
+        evy[
+          c
+        ] =
+          evy[
+            c
+          ]! +
+          (K_E *
+            (ty -
+              ey[
+                c
+              ]!) -
+            C_E *
+              evy[
+                c
+              ]!) *
+            dt;
+        let nex =
+          ex[
+            c
+          ]! +
+          evx[
+            c
+          ]! *
+            dt +
+          diffE *
+            lapX[
+              c
+            ]!;
+        let ney =
+          ey[
+            c
+          ]! +
+          evy[
+            c
+          ]! *
+            dt +
+          diffE *
+            lapY[
+              c
+            ]!;
         // The finger carries the material under it.
-        nex += this.vx * gripE * near;
-        ney += this.vy * gripE * near;
+        nex +=
+          this
+            .vx *
+          gripE *
+          near;
+        ney +=
+          this
+            .vy *
+          gripE *
+          near;
         // Held strain flows into the plastic layer, which then eases out slowly.
-        const fx = nex * flow;
-        const fy = ney * flow;
-        nex -= fx;
-        ney -= fy;
-        px[c] = (px[c]! + fx + this.vx * gripP * near) * decay;
-        py[c] = (py[c]! + fy + this.vy * gripP * near) * decay;
-        ex[c] = nex;
-        ey[c] = ney;
+        const fx =
+          nex *
+          flow;
+        const fy =
+          ney *
+          flow;
+        nex -=
+          fx;
+        ney -=
+          fy;
+        px[
+          c
+        ] =
+          (px[
+            c
+          ]! +
+            fx +
+            this
+              .vx *
+              gripP *
+              near) *
+          decay;
+        py[
+          c
+        ] =
+          (py[
+            c
+          ]! +
+            fy +
+            this
+              .vy *
+              gripP *
+              near) *
+          decay;
+        ex[
+          c
+        ] =
+          nex;
+        ey[
+          c
+        ] =
+          ney;
       }
     }
     // The plastic layer has no spring to round it, so it is smoothed explicitly; then everything is held to the disc.
-    this.laplacian(px, py, lapX, lapY);
-    for (let c = 0; c < N * N; c++) {
-      const m = mask[c]!;
-      px[c] = (px[c]! + diffP * lapX[c]!) * m;
-      py[c] = (py[c]! + diffP * lapY[c]!) * m;
-      ex[c] = ex[c]! * m;
-      ey[c] = ey[c]! * m;
-      evx[c] = evx[c]! * m;
-      evy[c] = evy[c]! * m;
-      const pm = Math.hypot(px[c]!, py[c]!);
-      if (pm > LAYER_MAX) {
-        px[c] = (px[c]! * LAYER_MAX) / pm;
-        py[c] = (py[c]! * LAYER_MAX) / pm;
+    this.laplacian(
+      px,
+      py,
+      lapX,
+      lapY,
+    );
+    for (
+      let c = 0;
+      c <
+      N *
+        N;
+      c++
+    ) {
+      const m =
+        mask[
+          c
+        ]!;
+      px[
+        c
+      ] =
+        (px[
+          c
+        ]! +
+          diffP *
+            lapX[
+              c
+            ]!) *
+        m;
+      py[
+        c
+      ] =
+        (py[
+          c
+        ]! +
+          diffP *
+            lapY[
+              c
+            ]!) *
+        m;
+      ex[
+        c
+      ] =
+        ex[
+          c
+        ]! *
+        m;
+      ey[
+        c
+      ] =
+        ey[
+          c
+        ]! *
+        m;
+      evx[
+        c
+      ] =
+        evx[
+          c
+        ]! *
+        m;
+      evy[
+        c
+      ] =
+        evy[
+          c
+        ]! *
+        m;
+      const pm =
+        Math.hypot(
+          px[
+            c
+          ]!,
+          py[
+            c
+          ]!,
+        );
+      if (
+        pm >
+        LAYER_MAX
+      ) {
+        px[
+          c
+        ] =
+          (px[
+            c
+          ]! *
+            LAYER_MAX) /
+          pm;
+        py[
+          c
+        ] =
+          (py[
+            c
+          ]! *
+            LAYER_MAX) /
+          pm;
       }
-      const em = Math.hypot(ex[c]!, ey[c]!);
-      if (em > LAYER_MAX) {
-        ex[c] = (ex[c]! * LAYER_MAX) / em;
-        ey[c] = (ey[c]! * LAYER_MAX) / em;
+      const em =
+        Math.hypot(
+          ex[
+            c
+          ]!,
+          ey[
+            c
+          ]!,
+        );
+      if (
+        em >
+        LAYER_MAX
+      ) {
+        ex[
+          c
+        ] =
+          (ex[
+            c
+          ]! *
+            LAYER_MAX) /
+          em;
+        ey[
+          c
+        ] =
+          (ey[
+            c
+          ]! *
+            LAYER_MAX) /
+          em;
       }
     }
   }
 
   /** Unscaled 5-point stencil (Σ neighbours − 4·centre); the caller applies ν/h². Border cells give 0. */
-  private laplacian(sx: Float32Array, sy: Float32Array, ox: Float32Array, oy: Float32Array): void {
-    const N = DOUGH_N;
-    for (let j = 1; j < N - 1; j++) {
-      for (let i = 1; i < N - 1; i++) {
-        const c = j * N + i;
-        ox[c] = sx[c - 1]! + sx[c + 1]! + sx[c - N]! + sx[c + N]! - 4 * sx[c]!;
-        oy[c] = sy[c - 1]! + sy[c + 1]! + sy[c - N]! + sy[c + N]! - 4 * sy[c]!;
+  private laplacian(
+    sx: Float32Array,
+    sy: Float32Array,
+    ox: Float32Array,
+    oy: Float32Array,
+  ): void {
+    const N =
+      DOUGH_N;
+    for (
+      let j = 1;
+      j <
+      N -
+        1;
+      j++
+    ) {
+      for (
+        let i = 1;
+        i <
+        N -
+          1;
+        i++
+      ) {
+        const c =
+          j *
+            N +
+          i;
+        ox[
+          c
+        ] =
+          sx[
+            c -
+              1
+          ]! +
+          sx[
+            c +
+              1
+          ]! +
+          sx[
+            c -
+              N
+          ]! +
+          sx[
+            c +
+              N
+          ]! -
+          4 *
+            sx[
+              c
+            ]!;
+        oy[
+          c
+        ] =
+          sy[
+            c -
+              1
+          ]! +
+          sy[
+            c +
+              1
+          ]! +
+          sy[
+            c -
+              N
+          ]! +
+          sy[
+            c +
+              N
+          ]! -
+          4 *
+            sy[
+              c
+            ]!;
       }
     }
   }
@@ -409,125 +1365,540 @@ export class DoughBody {
    * the limb all the way out instead of stopping where the shader's own two-pass guess ran out of field.
    */
   private derive(): void {
-    const N = DOUGH_N;
-    const { ex, ey, px, py, ux, uy, hh, field, reach } = this;
-    const h = this.h;
-    for (let c = 0; c < N * N; c++) {
-      let x = ex[c]! + px[c]!;
-      let y = ey[c]! + py[c]!;
+    const N =
+      DOUGH_N;
+    const {
+      ex,
+      ey,
+      px,
+      py,
+      ux,
+      uy,
+      hh,
+      field,
+      reach,
+    } =
+      this;
+    const h =
+      this
+        .h;
+    for (
+      let c = 0;
+      c <
+      N *
+        N;
+      c++
+    ) {
+      let x =
+        ex[
+          c
+        ]! +
+        px[
+          c
+        ]!;
+      let y =
+        ey[
+          c
+        ]! +
+        py[
+          c
+        ]!;
       // Saturate smoothly: |u| → reach asymptotically.
-      const m = Math.hypot(x, y);
-      if (m > 1e-9) {
-        const d = reach[c]!;
-        const s = d > 1e-6 ? 1 / Math.pow(1 + Math.pow(m / d, 4), 0.25) : 0;
-        x *= s;
-        y *= s;
+      const m =
+        Math.hypot(
+          x,
+          y,
+        );
+      if (
+        m >
+        1e-9
+      ) {
+        const d =
+          reach[
+            c
+          ]!;
+        const s =
+          d >
+          1e-6
+            ? 1 /
+              Math.pow(
+                1 +
+                  Math.pow(
+                    m /
+                      d,
+                    4,
+                  ),
+                0.25,
+              )
+            : 0;
+        x *=
+          s;
+        y *=
+          s;
       }
-      ux[c] = x;
-      uy[c] = y;
+      ux[
+        c
+      ] =
+        x;
+      uy[
+        c
+      ] =
+        y;
     }
-    const inv2h = 1 / (2 * h);
-    hh.fill(0);
-    for (let j = 1; j < N - 1; j++) {
-      for (let i = 1; i < N - 1; i++) {
-        const c = j * N + i;
-        const div = (ux[c + 1]! - ux[c - 1]!) * inv2h + (uy[c + N]! - uy[c - N]!) * inv2h;
-        hh[c] = -HEIGHT_GAIN * div;
+    const inv2h =
+      1 /
+      (2 *
+        h);
+    hh.fill(
+      0,
+    );
+    for (
+      let j = 1;
+      j <
+      N -
+        1;
+      j++
+    ) {
+      for (
+        let i = 1;
+        i <
+        N -
+          1;
+        i++
+      ) {
+        const c =
+          j *
+            N +
+          i;
+        const div =
+          (ux[
+            c +
+              1
+          ]! -
+            ux[
+              c -
+                1
+            ]!) *
+            inv2h +
+          (uy[
+            c +
+              N
+          ]! -
+            uy[
+              c -
+                N
+            ]!) *
+            inv2h;
+        hh[
+          c
+        ] =
+          -HEIGHT_GAIN *
+          div;
       }
     }
-    const last = N - 2;
-    for (let j = 0; j < N; j++) {
-      const gy = -DOUGH_EXTENT + j * h;
-      for (let i = 0; i < N; i++) {
-        const gx = -DOUGH_EXTENT + i * h;
-        let X = gx;
-        let Y = gy;
+    const last =
+      N -
+      2;
+    for (
+      let j = 0;
+      j <
+      N;
+      j++
+    ) {
+      const gy =
+        -DOUGH_EXTENT +
+        j *
+          h;
+      for (
+        let i = 0;
+        i <
+        N;
+        i++
+      ) {
+        const gx =
+          -DOUGH_EXTENT +
+          i *
+            h;
+        let X =
+          gx;
+        let Y =
+          gy;
         let vx = 0;
         let vy = 0;
-        if (gx * gx + gy * gy <= INVERT_RADIUS * INVERT_RADIUS) {
-          for (let pass = 0; pass < INVERT_PASSES; pass++) {
-            const fx = (X + DOUGH_EXTENT) / h;
-            const fy = (Y + DOUGH_EXTENT) / h;
-            const i0 = Math.max(0, Math.min(last, Math.floor(fx)));
-            const j0 = Math.max(0, Math.min(last, Math.floor(fy)));
-            const tx = Math.min(1, Math.max(0, fx - i0));
-            const ty = Math.min(1, Math.max(0, fy - j0));
-            const c = j0 * N + i0;
-            const w00 = (1 - tx) * (1 - ty);
-            const w10 = tx * (1 - ty);
-            const w01 = (1 - tx) * ty;
-            const w11 = tx * ty;
-            vx = w00 * ux[c]! + w10 * ux[c + 1]! + w01 * ux[c + N]! + w11 * ux[c + N + 1]!;
-            vy = w00 * uy[c]! + w10 * uy[c + 1]! + w01 * uy[c + N]! + w11 * uy[c + N + 1]!;
-            const dx = INVERT_RELAX * (gx - vx - X);
-            const dy = INVERT_RELAX * (gy - vy - Y);
-            X += dx;
-            Y += dy;
-            if (Math.abs(dx) < INVERT_TOL && Math.abs(dy) < INVERT_TOL) break;
+        if (
+          gx *
+            gx +
+            gy *
+              gy <=
+          INVERT_RADIUS *
+            INVERT_RADIUS
+        ) {
+          for (
+            let pass = 0;
+            pass <
+            INVERT_PASSES;
+            pass++
+          ) {
+            const fx =
+              (X +
+                DOUGH_EXTENT) /
+              h;
+            const fy =
+              (Y +
+                DOUGH_EXTENT) /
+              h;
+            const i0 =
+              Math.max(
+                0,
+                Math.min(
+                  last,
+                  Math.floor(
+                    fx,
+                  ),
+                ),
+              );
+            const j0 =
+              Math.max(
+                0,
+                Math.min(
+                  last,
+                  Math.floor(
+                    fy,
+                  ),
+                ),
+              );
+            const tx =
+              Math.min(
+                1,
+                Math.max(
+                  0,
+                  fx -
+                    i0,
+                ),
+              );
+            const ty =
+              Math.min(
+                1,
+                Math.max(
+                  0,
+                  fy -
+                    j0,
+                ),
+              );
+            const c =
+              j0 *
+                N +
+              i0;
+            const w00 =
+              (1 -
+                tx) *
+              (1 -
+                ty);
+            const w10 =
+              tx *
+              (1 -
+                ty);
+            const w01 =
+              (1 -
+                tx) *
+              ty;
+            const w11 =
+              tx *
+              ty;
+            vx =
+              w00 *
+                ux[
+                  c
+                ]! +
+              w10 *
+                ux[
+                  c +
+                    1
+                ]! +
+              w01 *
+                ux[
+                  c +
+                    N
+                ]! +
+              w11 *
+                ux[
+                  c +
+                    N +
+                    1
+                ]!;
+            vy =
+              w00 *
+                uy[
+                  c
+                ]! +
+              w10 *
+                uy[
+                  c +
+                    1
+                ]! +
+              w01 *
+                uy[
+                  c +
+                    N
+                ]! +
+              w11 *
+                uy[
+                  c +
+                    N +
+                    1
+                ]!;
+            const dx =
+              INVERT_RELAX *
+              (gx -
+                vx -
+                X);
+            const dy =
+              INVERT_RELAX *
+              (gy -
+                vy -
+                Y);
+            X +=
+              dx;
+            Y +=
+              dy;
+            if (
+              Math.abs(
+                dx,
+              ) <
+                INVERT_TOL &&
+              Math.abs(
+                dy,
+              ) <
+                INVERT_TOL
+            )
+              break;
           }
         }
         // The height rides to the same place: sampled where the material for this pixel rests.
-        const hx = (X + DOUGH_EXTENT) / h;
-        const hy = (Y + DOUGH_EXTENT) / h;
-        const hi = Math.max(0, Math.min(last, Math.floor(hx)));
-        const hj = Math.max(0, Math.min(last, Math.floor(hy)));
-        const ht = Math.min(1, Math.max(0, hx - hi));
-        const hu = Math.min(1, Math.max(0, hy - hj));
-        const hc = hj * N + hi;
+        const hx =
+          (X +
+            DOUGH_EXTENT) /
+          h;
+        const hy =
+          (Y +
+            DOUGH_EXTENT) /
+          h;
+        const hi =
+          Math.max(
+            0,
+            Math.min(
+              last,
+              Math.floor(
+                hx,
+              ),
+            ),
+          );
+        const hj =
+          Math.max(
+            0,
+            Math.min(
+              last,
+              Math.floor(
+                hy,
+              ),
+            ),
+          );
+        const ht =
+          Math.min(
+            1,
+            Math.max(
+              0,
+              hx -
+                hi,
+            ),
+          );
+        const hu =
+          Math.min(
+            1,
+            Math.max(
+              0,
+              hy -
+                hj,
+            ),
+          );
+        const hc =
+          hj *
+            N +
+          hi;
         const hv =
-          (1 - ht) * (1 - hu) * hh[hc]! +
-          ht * (1 - hu) * hh[hc + 1]! +
-          (1 - ht) * hu * hh[hc + N]! +
-          ht * hu * hh[hc + N + 1]!;
-        const o = (j * N + i) * 4;
-        field[o] = vx;
-        field[o + 1] = vy;
-        field[o + 2] = hv;
-        field[o + 3] = 0;
+          (1 -
+            ht) *
+            (1 -
+              hu) *
+            hh[
+              hc
+            ]! +
+          ht *
+            (1 -
+              hu) *
+            hh[
+              hc +
+                1
+            ]! +
+          (1 -
+            ht) *
+            hu *
+            hh[
+              hc +
+                N
+            ]! +
+          ht *
+            hu *
+            hh[
+              hc +
+                N +
+                1
+            ]!;
+        const o =
+          (j *
+            N +
+            i) *
+          4;
+        field[
+          o
+        ] =
+          vx;
+        field[
+          o +
+            1
+        ] =
+          vy;
+        field[
+          o +
+            2
+        ] =
+          hv;
+        field[
+          o +
+            3
+        ] =
+          0;
       }
     }
   }
 
   private settled(): boolean {
-    const { ex, ey, evx, evy, px, py } = this;
-    for (let c = 0; c < ex.length; c++) {
+    const {
+      ex,
+      ey,
+      evx,
+      evy,
+      px,
+      py,
+    } =
+      this;
+    for (
+      let c = 0;
+      c <
+      ex.length;
+      c++
+    ) {
       if (
-        Math.abs(ex[c]!) > REST ||
-        Math.abs(ey[c]!) > REST ||
-        Math.abs(evx[c]!) > REST * 6 ||
-        Math.abs(evy[c]!) > REST * 6 ||
-        Math.abs(px[c]!) > REST ||
-        Math.abs(py[c]!) > REST
+        Math.abs(
+          ex[
+            c
+          ]!,
+        ) >
+          REST ||
+        Math.abs(
+          ey[
+            c
+          ]!,
+        ) >
+          REST ||
+        Math.abs(
+          evx[
+            c
+          ]!,
+        ) >
+          REST *
+            6 ||
+        Math.abs(
+          evy[
+            c
+          ]!,
+        ) >
+          REST *
+            6 ||
+        Math.abs(
+          px[
+            c
+          ]!,
+        ) >
+          REST ||
+        Math.abs(
+          py[
+            c
+          ]!,
+        ) >
+          REST
       ) {
         return false;
       }
     }
-    return this.pinch < 1e-3;
+    return (
+      this
+        .pinch <
+      1e-3
+    );
   }
 
   private clear(): void {
     for (const a of [
-      this.ex,
-      this.ey,
-      this.evx,
-      this.evy,
-      this.px,
-      this.py,
-      this.ux,
-      this.uy,
-      this.hh,
-      this.field,
+      this
+        .ex,
+      this
+        .ey,
+      this
+        .evx,
+      this
+        .evy,
+      this
+        .px,
+      this
+        .py,
+      this
+        .ux,
+      this
+        .uy,
+      this
+        .hh,
+      this
+        .field,
     ]) {
-      a.fill(0);
+      a.fill(
+        0,
+      );
     }
     this.pinch = 0;
   }
 
-  private at(x: number, y: number): void {
+  private at(
+    x: number,
+    y: number,
+  ): void {
     // On the disc: a grab from the overlay around the globe takes hold of the nearest point of its limb.
-    const r = Math.hypot(x, y);
-    const k = r > 0.98 ? 0.98 / r : 1;
-    this.gx = x * k;
-    this.gy = y * k;
+    const r =
+      Math.hypot(
+        x,
+        y,
+      );
+    const k =
+      r >
+      0.98
+        ? 0.98 /
+          r
+        : 1;
+    this.gx =
+      x *
+      k;
+    this.gy =
+      y *
+      k;
   }
 }

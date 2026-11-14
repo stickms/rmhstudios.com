@@ -22,47 +22,133 @@
  *    pooler; that is enforced by `prisma.config.ts` preferring
  *    `DATABASE_DIRECT_URL`, not by a grep.
  */
-import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
+import {
+  readFileSync,
+  readdirSync,
+  statSync,
+} from 'node:fs';
+import {
+  join,
+  relative,
+} from 'node:path';
 
-const ROOT = process.cwd();
-const SCANNED_DIRS = ['lib', 'server', 'app', 'hooks', 'stores', 'features'];
+const ROOT =
+  process.cwd();
+const SCANNED_DIRS =
+  [
+    'lib',
+    'server',
+    'app',
+    'hooks',
+    'stores',
+    'features',
+  ];
 
 /** Every .ts/.tsx file under the scanned dirs, excluding tests and generated code. */
 function sourceFiles(): string[] {
-  const out: string[] = [];
-  const walk = (dir: string) => {
-    let entries: string[];
-    try {
-      entries = readdirSync(dir);
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      const full = join(dir, entry);
-      if (statSync(full).isDirectory()) {
-        if (entry === 'node_modules' || entry === '__tests__') continue;
-        walk(full);
-        continue;
+  const out: string[] =
+    [];
+  const walk =
+    (
+      dir: string,
+    ) => {
+      let entries: string[];
+      try {
+        entries =
+          readdirSync(
+            dir,
+          );
+      } catch {
+        return;
       }
-      if (!/\.tsx?$/.test(entry)) continue;
-      if (entry.endsWith('.test.ts') || entry.endsWith('.test.tsx')) continue;
-      if (entry === 'routeTree.gen.ts') continue;
-      out.push(full);
-    }
-  };
-  for (const dir of SCANNED_DIRS) walk(join(ROOT, dir));
+      for (const entry of entries) {
+        const full =
+          join(
+            dir,
+            entry,
+          );
+        if (
+          statSync(
+            full,
+          ).isDirectory()
+        ) {
+          if (
+            entry ===
+              'node_modules' ||
+            entry ===
+              '__tests__'
+          )
+            continue;
+          walk(
+            full,
+          );
+          continue;
+        }
+        if (
+          !/\.tsx?$/.test(
+            entry,
+          )
+        )
+          continue;
+        if (
+          entry.endsWith(
+            '.test.ts',
+          ) ||
+          entry.endsWith(
+            '.test.tsx',
+          )
+        )
+          continue;
+        if (
+          entry ===
+          'routeTree.gen.ts'
+        )
+          continue;
+        out.push(
+          full,
+        );
+      }
+    };
+  for (const dir of SCANNED_DIRS)
+    walk(
+      join(
+        ROOT,
+        dir,
+      ),
+    );
   return out;
 }
 
-const FILES = sourceFiles().map((f) => ({ path: relative(ROOT, f), src: readFileSync(f, 'utf8') }));
+const FILES =
+  sourceFiles().map(
+    (
+      f,
+    ) => ({
+      path: relative(
+        ROOT,
+        f,
+      ),
+      src: readFileSync(
+        f,
+        'utf8',
+      ),
+    }),
+  );
 
 describe('PgBouncer transaction-mode safety', () => {
   it('scans a non-trivial number of files (guards against a broken walker)', () => {
     // Without this, a bug in sourceFiles() would make every test below pass
     // vacuously — the worst possible outcome for a regression guard.
-    expect(FILES.length).toBeGreaterThan(500);
+    expect(
+      FILES.length,
+    ).toBeGreaterThan(
+      500,
+    );
   });
 
   it('uses no SESSION-scoped advisory locks', () => {
@@ -73,13 +159,26 @@ describe('PgBouncer transaction-mode safety', () => {
     //
     // The `_xact_` variants are transaction-scoped and are the correct choice
     // here; the negative lookahead below is what distinguishes them.
-    const offenders = FILES.filter((f) => /pg_(try_)?advisory_(?!xact_)/.test(f.src)).map(
-      (f) => f.path,
-    );
+    const offenders =
+      FILES.filter(
+        (
+          f,
+        ) =>
+          /pg_(try_)?advisory_(?!xact_)/.test(
+            f.src,
+          ),
+      ).map(
+        (
+          f,
+        ) =>
+          f.path,
+      );
     expect(
       offenders,
       'Session-scoped advisory locks do not survive transaction pooling. Use pg_advisory_xact_lock(), which releases at COMMIT.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('issues no session-scoped SET statements', () => {
@@ -87,13 +186,26 @@ describe('PgBouncer transaction-mode safety', () => {
     // to the next client that gets the connection — and is lost for the one that
     // set it. Matches raw-SQL SETs only; `SET LOCAL` and SQL like
     // `UPDATE … SET x` are excluded.
-    const offenders = FILES.filter((f) =>
-      /\$(executeRaw|queryRaw)(Unsafe)?[(`]\s*SET\s+(?!LOCAL\b)/i.test(f.src),
-    ).map((f) => f.path);
+    const offenders =
+      FILES.filter(
+        (
+          f,
+        ) =>
+          /\$(executeRaw|queryRaw)(Unsafe)?[(`]\s*SET\s+(?!LOCAL\b)/i.test(
+            f.src,
+          ),
+      ).map(
+        (
+          f,
+        ) =>
+          f.path,
+      );
     expect(
       offenders,
       'A session-scoped SET leaks to the next client through a transaction pooler. Use SET LOCAL inside a transaction.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('opens no LISTEN channels on the pooled client', () => {
@@ -102,13 +214,26 @@ describe('PgBouncer transaction-mode safety', () => {
     // ends, so notifications are simply never delivered — no error, no data.
     // A future LISTEN/NOTIFY bridge must take its own direct connection
     // (DATABASE_DIRECT_URL), not one from the pool.
-    const offenders = FILES.filter((f) =>
-      /\$(executeRaw|queryRaw)(Unsafe)?[(`]\s*(LISTEN|UNLISTEN)\s/i.test(f.src),
-    ).map((f) => f.path);
+    const offenders =
+      FILES.filter(
+        (
+          f,
+        ) =>
+          /\$(executeRaw|queryRaw)(Unsafe)?[(`]\s*(LISTEN|UNLISTEN)\s/i.test(
+            f.src,
+          ),
+      ).map(
+        (
+          f,
+        ) =>
+          f.path,
+      );
     expect(
       offenders,
       'LISTEN does not survive transaction pooling. Use a dedicated direct connection (DATABASE_DIRECT_URL).',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('does not configure named prepared statements on the pg adapter', () => {
@@ -117,18 +242,42 @@ describe('PgBouncer transaction-mode safety', () => {
     // query, which is transaction-pooling safe. Setting it would reintroduce the
     // classic Prisma+PgBouncer failure ("prepared statement s0 already exists"),
     // and it would do so only under concurrency.
-    const offenders = FILES.filter((f) => /statementNameGenerator/.test(f.src)).map((f) => f.path);
+    const offenders =
+      FILES.filter(
+        (
+          f,
+        ) =>
+          /statementNameGenerator/.test(
+            f.src,
+          ),
+      ).map(
+        (
+          f,
+        ) =>
+          f.path,
+      );
     expect(
       offenders,
       'Named prepared statements break transaction pooling. Leave statementNameGenerator unset.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('keeps migrations on a direct connection', () => {
-    const config = readFileSync(join(ROOT, 'prisma.config.ts'), 'utf8');
+    const config =
+      readFileSync(
+        join(
+          ROOT,
+          'prisma.config.ts',
+        ),
+        'utf8',
+      );
     expect(
       config,
       "prisma.config.ts must prefer DATABASE_DIRECT_URL — prisma migrate's advisory lock is session-scoped and a pooler drops it.",
-    ).toMatch(/DATABASE_DIRECT_URL/);
+    ).toMatch(
+      /DATABASE_DIRECT_URL/,
+    );
   });
 });

@@ -23,16 +23,37 @@
  * An unknown or absent subdivision falls back to a quarter — see the default
  * branch for why that is the honest reading rather than the loud one.
  */
-export function flagsForQuant(quant: number | undefined): { flags: number; triplet: boolean } {
-  switch (quant) {
+export function flagsForQuant(
+  quant:
+    | number
+    | undefined,
+): {
+  flags: number;
+  triplet: boolean;
+} {
+  switch (
+    quant
+  ) {
     case 1:
-      return { flags: 0, triplet: false };
+      return {
+        flags: 0,
+        triplet: false,
+      };
     case 2:
-      return { flags: 1, triplet: false };
+      return {
+        flags: 1,
+        triplet: false,
+      };
     case 3:
-      return { flags: 1, triplet: true };
+      return {
+        flags: 1,
+        triplet: true,
+      };
     case 4:
-      return { flags: 2, triplet: false };
+      return {
+        flags: 2,
+        triplet: false,
+      };
     default:
       // A chart with no subdivision still gets a NOTE — head and stem, no flag.
       //
@@ -45,7 +66,10 @@ export function flagsForQuant(quant: number | undefined): { flags: number; tripl
       //
       // `Slice.quant`'s contract still holds where it was written to: the quant
       // COLOUR is still only applied when the chart actually carries one.
-      return { flags: 0, triplet: false };
+      return {
+        flags: 0,
+        triplet: false,
+      };
   }
 }
 
@@ -60,7 +84,13 @@ export const BEAM_SCAN_LIMIT = 12;
 
 /** The fields beaming reads off a note. Structural so the helpers stay pure and
  *  testable without dragging the whole `Slice` shape in. */
-export type BeamCandidate = { lane: number; time: number; type: string; quant?: number };
+export type BeamCandidate =
+  {
+    lane: number;
+    time: number;
+    type: string;
+    quant?: number;
+  };
 
 /**
  * The next or previous note this one should be BEAMED to, or null.
@@ -78,15 +108,34 @@ export type BeamCandidate = { lane: number; time: number; type: string; quant?: 
 export function beamNeighbour(
   slices: BeamCandidate[],
   index: number,
-  step: 1 | -1,
+  step:
+    | 1
+    | -1,
   beatSeconds: number,
 ): number {
-  const note = slices[index];
-  const quant = note.quant;
+  const note =
+    slices[
+      index
+    ];
+  const quant =
+    note.quant;
   // Quarter notes have no flag, so they have nothing to beam WITH.
-  if (!quant || quant < 2 || !(beatSeconds > 0)) return -1;
-  const subdivision = beatSeconds / quant;
-  const limit = subdivision * 1.35;
+  if (
+    !quant ||
+    quant <
+      2 ||
+    !(
+      beatSeconds >
+      0
+    )
+  )
+    return -1;
+  const subdivision =
+    beatSeconds /
+    quant;
+  const limit =
+    subdivision *
+    1.35;
   // What bounds a group, without walking the chart: its SUBDIVISION index.
   //
   // `quant` subdivisions make a beat, so grouping every `quant` of them gives
@@ -104,20 +153,67 @@ export function beamNeighbour(
   // Counting subdivisions is only sensitive to that phase at the START of a
   // run, where it can produce one short group — a cosmetic difference, not a
   // structural one.
-  const group = Math.floor(Math.round(note.time / subdivision) / quant);
+  const group =
+    Math.floor(
+      Math.round(
+        note.time /
+          subdivision,
+      ) /
+        quant,
+    );
 
   for (
-    let i = index + step, scanned = 0;
-    scanned < BEAM_SCAN_LIMIT && i >= 0 && i < slices.length;
-    i += step, scanned++
+    let i =
+        index +
+        step,
+      scanned = 0;
+    scanned <
+      BEAM_SCAN_LIMIT &&
+    i >=
+      0 &&
+    i <
+      slices.length;
+    i +=
+      step,
+      scanned++
   ) {
-    const other = slices[i];
+    const other =
+      slices[
+        i
+      ];
     // The other lane is a different voice; step over it rather than ending the
     // group, because the two lanes interleave in the time-sorted array.
-    if (other.lane !== note.lane) continue;
-    if (other.type !== 'STANDARD' || other.quant !== quant) return -1;
-    if (Math.abs(other.time - note.time) > limit) return -1;
-    if (Math.floor(Math.round(other.time / subdivision) / quant) !== group) return -1;
+    if (
+      other.lane !==
+      note.lane
+    )
+      continue;
+    if (
+      other.type !==
+        'STANDARD' ||
+      other.quant !==
+        quant
+    )
+      return -1;
+    if (
+      Math.abs(
+        other.time -
+          note.time,
+      ) >
+      limit
+    )
+      return -1;
+    if (
+      Math.floor(
+        Math.round(
+          other.time /
+            subdivision,
+        ) /
+          quant,
+      ) !==
+      group
+    )
+      return -1;
     return i;
   }
   return -1;

@@ -20,27 +20,64 @@
  * list of ids for rows that no longer exist.
  */
 
-import { readJson, writeJson } from '@/lib/core/persist';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  readJson,
+  writeJson,
+} from '@/lib/core/persist';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
-const KEY = 'pf2ecal-dismissed';
+const KEY =
+  'pf2ecal-dismissed';
 
 function read(): string[] {
   // Private mode, a quota error, or something else's key at this name reads as none.
-  return readJson<string[]>(KEY, [], {
-    validate: (v) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : undefined),
-  });
+  return readJson<
+    string[]
+  >(
+    KEY,
+    [],
+    {
+      validate:
+        (
+          v,
+        ) =>
+          Array.isArray(
+            v,
+          )
+            ? v.filter(
+                (
+                  x,
+                ): x is string =>
+                  typeof x ===
+                  'string',
+              )
+            : undefined,
+    },
+  );
 }
 
-function write(ids: string[]): void {
-  writeJson(KEY, ids); // A dismissal that cannot be saved still applies for this visit.
+function write(
+  ids: string[],
+): void {
+  writeJson(
+    KEY,
+    ids,
+  ); // A dismissal that cannot be saved still applies for this visit.
 }
 
 export interface DismissedState {
   /** Ids hidden on this device. Empty until after mount — see below. */
   dismissed: Set<string>;
-  dismiss: (id: string) => void;
-  restore: (id: string) => void;
+  dismiss: (
+    id: string,
+  ) => void;
+  restore: (
+    id: string,
+  ) => void;
   restoreAll: () => void;
 }
 
@@ -48,53 +85,160 @@ export interface DismissedState {
  * `liveIds` is what the board currently holds; anything stored that is not in
  * it has been deleted upstream and is dropped.
  */
-export function useDismissedAnnouncements(liveIds: string[]): DismissedState {
+export function useDismissedAnnouncements(
+  liveIds: string[],
+): DismissedState {
   // Empty on the server AND on the first client render. Reading storage in the
   // initialiser would hide a note during hydration that the server rendered
   // visible, which React reports as a mismatch and repairs by throwing the tree
   // away. One frame of showing a note you have already read is the cheaper bug.
-  const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
+  const [
+    dismissed,
+    setDismissed,
+  ] =
+    useState<
+      Set<string>
+    >(
+      () =>
+        new Set(),
+    );
 
   useEffect(() => {
-    setDismissed(new Set(read()));
+    setDismissed(
+      new Set(
+        read(),
+      ),
+    );
   }, []);
 
   // Prune against the live board. Depends on the JOINED ids rather than the
   // array so a re-render with an equal-but-new array does not re-run this.
-  const liveKey = liveIds.join(',');
+  const liveKey =
+    liveIds.join(
+      ',',
+    );
   useEffect(() => {
-    const live = new Set(liveKey ? liveKey.split(',') : []);
-    setDismissed((current) => {
-      const kept = [...current].filter((id) => live.has(id));
-      if (kept.length === current.size) return current;
-      write(kept);
-      return new Set(kept);
-    });
-  }, [liveKey]);
+    const live =
+      new Set(
+        liveKey
+          ? liveKey.split(
+              ',',
+            )
+          : [],
+      );
+    setDismissed(
+      (
+        current,
+      ) => {
+        const kept =
+          [
+            ...current,
+          ].filter(
+            (
+              id,
+            ) =>
+              live.has(
+                id,
+              ),
+          );
+        if (
+          kept.length ===
+          current.size
+        )
+          return current;
+        write(
+          kept,
+        );
+        return new Set(
+          kept,
+        );
+      },
+    );
+  }, [
+    liveKey,
+  ]);
 
-  const dismiss = useCallback((id: string) => {
-    setDismissed((current) => {
-      if (current.has(id)) return current;
-      const next = new Set(current).add(id);
-      write([...next]);
-      return next;
-    });
-  }, []);
+  const dismiss =
+    useCallback(
+      (
+        id: string,
+      ) => {
+        setDismissed(
+          (
+            current,
+          ) => {
+            if (
+              current.has(
+                id,
+              )
+            )
+              return current;
+            const next =
+              new Set(
+                current,
+              ).add(
+                id,
+              );
+            write(
+              [
+                ...next,
+              ],
+            );
+            return next;
+          },
+        );
+      },
+      [],
+    );
 
-  const restore = useCallback((id: string) => {
-    setDismissed((current) => {
-      if (!current.has(id)) return current;
-      const next = new Set(current);
-      next.delete(id);
-      write([...next]);
-      return next;
-    });
-  }, []);
+  const restore =
+    useCallback(
+      (
+        id: string,
+      ) => {
+        setDismissed(
+          (
+            current,
+          ) => {
+            if (
+              !current.has(
+                id,
+              )
+            )
+              return current;
+            const next =
+              new Set(
+                current,
+              );
+            next.delete(
+              id,
+            );
+            write(
+              [
+                ...next,
+              ],
+            );
+            return next;
+          },
+        );
+      },
+      [],
+    );
 
-  const restoreAll = useCallback(() => {
-    setDismissed(new Set());
-    write([]);
-  }, []);
+  const restoreAll =
+    useCallback(() => {
+      setDismissed(
+        new Set(),
+      );
+      write(
+        [],
+      );
+    }, []);
 
-  return { dismissed, dismiss, restore, restoreAll };
+  return {
+    dismissed,
+    dismiss,
+    restore,
+    restoreAll,
+  };
 }

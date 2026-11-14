@@ -47,13 +47,16 @@
  */
 
 /** Cache Storage bucket the SW stages shared payloads in. See the note above. */
-export const SHARE_TARGET_CACHE = 'share-target-v1';
+export const SHARE_TARGET_CACHE =
+  'share-target-v1';
 
 /** The manifest/file key namespace inside that cache. Never a real route. */
-export const SHARE_TARGET_KEY_PREFIX = '/__share-target/';
+export const SHARE_TARGET_KEY_PREFIX =
+  '/__share-target/';
 
 /** Search param the SW redirect carries the staged payload id in. */
-export const SHARE_PENDING_PARAM = 'pending';
+export const SHARE_PENDING_PARAM =
+  'pending';
 
 /**
  * How long a staged payload stays readable.
@@ -63,7 +66,10 @@ export const SHARE_PENDING_PARAM = 'pending';
  * tab was killed). Five minutes is generous for that and short enough that a
  * shared photo is not sitting in Cache Storage for the rest of the day.
  */
-export const SHARE_TARGET_TTL_MS = 5 * 60 * 1000;
+export const SHARE_TARGET_TTL_MS =
+  5 *
+  60 *
+  1000;
 
 /** Hard ceiling on staged files, mirroring the composer's own image cap. */
 export const SHARE_TARGET_MAX_FILES = 4;
@@ -95,12 +101,17 @@ export interface SharedPayload {
 }
 
 /** Cache key for a payload's manifest. */
-export function shareManifestKey(id: string): string {
+export function shareManifestKey(
+  id: string,
+): string {
   return `${SHARE_TARGET_KEY_PREFIX}${encodeURIComponent(id)}`;
 }
 
 /** Cache key for the `index`-th file of a payload. */
-export function shareFileKey(id: string, index: number): string {
+export function shareFileKey(
+  id: string,
+  index: number,
+): string {
   return `${SHARE_TARGET_KEY_PREFIX}${encodeURIComponent(id)}/f/${index}`;
 }
 
@@ -114,30 +125,92 @@ export function shareFileKey(id: string, index: number): string {
  * both `text` and `url`.
  */
 export function buildShareDraft(
-  { title, text, url }: { title?: string; text?: string; url?: string },
+  {
+    title,
+    text,
+    url,
+  }: {
+    title?: string;
+    text?: string;
+    url?: string;
+  },
   maxLength = 500,
 ): string {
-  const t = title?.trim() ?? '';
-  const x = text?.trim() ?? '';
-  const u = url?.trim() ?? '';
-  const parts: string[] = [];
-  if (t && t !== x) parts.push(t);
-  if (x) parts.push(x);
-  if (u && !x.includes(u)) parts.push(u);
-  return parts.join('\n\n').trim().slice(0, maxLength);
+  const t =
+    title?.trim() ??
+    '';
+  const x =
+    text?.trim() ??
+    '';
+  const u =
+    url?.trim() ??
+    '';
+  const parts: string[] =
+    [];
+  if (
+    t &&
+    t !==
+      x
+  )
+    parts.push(
+      t,
+    );
+  if (
+    x
+  )
+    parts.push(
+      x,
+    );
+  if (
+    u &&
+    !x.includes(
+      u,
+    )
+  )
+    parts.push(
+      u,
+    );
+  return parts
+    .join(
+      '\n\n',
+    )
+    .trim()
+    .slice(
+      0,
+      maxLength,
+    );
 }
 
 /** True when a manifest is still inside its TTL. */
-export function isFreshManifest(manifest: SharedPayloadManifest, now = Date.now()): boolean {
-  const age = now - manifest.stagedAt;
+export function isFreshManifest(
+  manifest: SharedPayloadManifest,
+  now = Date.now(),
+): boolean {
+  const age =
+    now -
+    manifest.stagedAt;
   // A negative age is a clock that moved backwards, not a fresh payload; treat
   // it as valid rather than silently dropping a share the user just made.
-  return age < SHARE_TARGET_TTL_MS && age > -SHARE_TARGET_TTL_MS;
+  return (
+    age <
+      SHARE_TARGET_TTL_MS &&
+    age >
+      -SHARE_TARGET_TTL_MS
+  );
 }
 
 /** Media types the share target accepts. Anything else is dropped on read. */
-export function isAcceptedShareType(type: string): boolean {
-  return type.startsWith('image/') || type.startsWith('video/');
+export function isAcceptedShareType(
+  type: string,
+): boolean {
+  return (
+    type.startsWith(
+      'image/',
+    ) ||
+    type.startsWith(
+      'video/',
+    )
+  );
 }
 
 /**
@@ -148,36 +221,122 @@ export function isAcceptedShareType(type: string): boolean {
  * throws: a share that cannot be recovered must degrade to an empty composer,
  * not to an error page.
  */
-export async function consumeSharedPayload(id: string): Promise<SharedPayload | null> {
-  if (!id || typeof caches === 'undefined') return null;
+export async function consumeSharedPayload(
+  id: string,
+): Promise<SharedPayload | null> {
+  if (
+    !id ||
+    typeof caches ===
+      'undefined'
+  )
+    return null;
   try {
-    const cache = await caches.open(SHARE_TARGET_CACHE);
-    const manifestResponse = await cache.match(shareManifestKey(id));
-    if (!manifestResponse) return null;
+    const cache =
+      await caches.open(
+        SHARE_TARGET_CACHE,
+      );
+    const manifestResponse =
+      await cache.match(
+        shareManifestKey(
+          id,
+        ),
+      );
+    if (
+      !manifestResponse
+    )
+      return null;
 
-    const manifest = (await manifestResponse.json()) as SharedPayloadManifest;
+    const manifest =
+      (await manifestResponse.json()) as SharedPayloadManifest;
     // Delete first, unconditionally. A payload that has been handed to a page is
     // spent whether or not the page manages to use it, and a read path that only
     // cleans up on success leaks every failed share into storage forever.
-    void purgeSharedPayload(id, manifest.files?.length ?? 0);
+    void purgeSharedPayload(
+      id,
+      manifest
+        .files
+        ?.length ??
+        0,
+    );
 
-    if (!isFreshManifest(manifest)) return null;
+    if (
+      !isFreshManifest(
+        manifest,
+      )
+    )
+      return null;
 
-    const files: File[] = [];
-    const metas = Array.isArray(manifest.files) ? manifest.files.slice(0, SHARE_TARGET_MAX_FILES) : [];
-    for (let i = 0; i < metas.length; i++) {
-      const meta = metas[i];
-      if (!isAcceptedShareType(meta?.type ?? '')) continue;
-      const fileResponse = await cache.match(shareFileKey(id, i));
-      if (!fileResponse) continue;
-      const blob = await fileResponse.blob();
-      files.push(new File([blob], meta.name || `shared-${i}`, { type: meta.type }));
+    const files: File[] =
+      [];
+    const metas =
+      Array.isArray(
+        manifest.files,
+      )
+        ? manifest.files.slice(
+            0,
+            SHARE_TARGET_MAX_FILES,
+          )
+        : [];
+    for (
+      let i = 0;
+      i <
+      metas.length;
+      i++
+    ) {
+      const meta =
+        metas[
+          i
+        ];
+      if (
+        !isAcceptedShareType(
+          meta?.type ??
+            '',
+        )
+      )
+        continue;
+      const fileResponse =
+        await cache.match(
+          shareFileKey(
+            id,
+            i,
+          ),
+        );
+      if (
+        !fileResponse
+      )
+        continue;
+      const blob =
+        await fileResponse.blob();
+      files.push(
+        new File(
+          [
+            blob,
+          ],
+          meta.name ||
+            `shared-${i}`,
+          {
+            type: meta.type,
+          },
+        ),
+      );
     }
 
     return {
-      title: typeof manifest.title === 'string' ? manifest.title : '',
-      text: typeof manifest.text === 'string' ? manifest.text : '',
-      url: typeof manifest.url === 'string' ? manifest.url : '',
+      title:
+        typeof manifest.title ===
+        'string'
+          ? manifest.title
+          : '',
+      text:
+        typeof manifest.text ===
+        'string'
+          ? manifest.text
+          : '',
+      url:
+        typeof manifest.url ===
+        'string'
+          ? manifest.url
+          : '',
       files,
     };
   } catch {
@@ -186,13 +345,45 @@ export async function consumeSharedPayload(id: string): Promise<SharedPayload | 
 }
 
 /** Delete a payload's manifest and file entries. Best-effort, never throws. */
-export async function purgeSharedPayload(id: string, fileCount: number): Promise<void> {
-  if (typeof caches === 'undefined') return;
+export async function purgeSharedPayload(
+  id: string,
+  fileCount: number,
+): Promise<void> {
+  if (
+    typeof caches ===
+    'undefined'
+  )
+    return;
   try {
-    const cache = await caches.open(SHARE_TARGET_CACHE);
-    await cache.delete(shareManifestKey(id));
-    const bound = Math.min(Math.max(fileCount, 0), SHARE_TARGET_MAX_FILES);
-    for (let i = 0; i < bound; i++) await cache.delete(shareFileKey(id, i));
+    const cache =
+      await caches.open(
+        SHARE_TARGET_CACHE,
+      );
+    await cache.delete(
+      shareManifestKey(
+        id,
+      ),
+    );
+    const bound =
+      Math.min(
+        Math.max(
+          fileCount,
+          0,
+        ),
+        SHARE_TARGET_MAX_FILES,
+      );
+    for (
+      let i = 0;
+      i <
+      bound;
+      i++
+    )
+      await cache.delete(
+        shareFileKey(
+          id,
+          i,
+        ),
+      );
   } catch {
     /* storage evicted or unavailable — nothing to clean up */
   }

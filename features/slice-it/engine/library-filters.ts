@@ -26,8 +26,14 @@ import {
   SONGS_PAGE_SIZE,
   SONGS_PAGE_SIZE_MAX,
 } from './constants';
-import { SONG_GENRES, normaliseTags } from './taxonomy';
-import type { SliceSong, SongPage } from './types';
+import {
+  SONG_GENRES,
+  normaliseTags,
+} from './taxonomy';
+import type {
+  SliceSong,
+  SongPage,
+} from './types';
 import {
   LIBRARY_SORTS,
   SORT_DIRECTIONS,
@@ -42,10 +48,22 @@ export * from './library-search';
 
 /* ─── API query params ──────────────────────────────────────────────────── */
 
-const BooleanFlagZ = z
-  .enum(['true', 'false'])
-  .optional()
-  .transform((v) => v === 'true');
+const BooleanFlagZ =
+  z
+    .enum(
+      [
+        'true',
+        'false',
+      ],
+    )
+    .optional()
+    .transform(
+      (
+        v,
+      ) =>
+        v ===
+        'true',
+    );
 
 /**
  * `?q=&sort=&dir=&cursor=&limit=&mine=` for the paged list branch, plus the
@@ -54,63 +72,246 @@ const BooleanFlagZ = z
  * this route (`features/slice-it/api/slice-it.songs.server.ts`) now serves three request
  * shapes. Fields only one branch reads are simply ignored by the others.
  */
-export const LibrarySongsQueryZ = z
-  .object({
-    q: z.string().trim().max(120).optional(),
-    sort: z.enum(LIBRARY_SORTS).default('recent'),
-    dir: z.enum(SORT_DIRECTIONS).optional(),
-    cursor: z.string().max(128).optional(),
-    limit: z.coerce.number().int().min(1).max(SONGS_PAGE_SIZE_MAX).default(SONGS_PAGE_SIZE),
-    /** Restrict to the caller's own uploads. Ignored when signed out. */
-    mine: BooleanFlagZ,
+export const LibrarySongsQueryZ =
+  z
+    .object(
+      {
+        q: z
+          .string()
+          .trim()
+          .max(
+            120,
+          )
+          .optional(),
+        sort: z
+          .enum(
+            LIBRARY_SORTS,
+          )
+          .default(
+            'recent',
+          ),
+        dir: z
+          .enum(
+            SORT_DIRECTIONS,
+          )
+          .optional(),
+        cursor:
+          z
+            .string()
+            .max(
+              128,
+            )
+            .optional(),
+        limit:
+          z.coerce
+            .number()
+            .int()
+            .min(
+              1,
+            )
+            .max(
+              SONGS_PAGE_SIZE_MAX,
+            )
+            .default(
+              SONGS_PAGE_SIZE,
+            ),
+        /** Restrict to the caller's own uploads. Ignored when signed out. */
+        mine: BooleanFlagZ,
 
-    /** L15 — normalised `artistKey` facet. See `librarySearchSchema.artist`. */
-    artist: z.string().trim().max(200).optional(),
-    /** L16 — restrict to the members of one pack, in the pack's own order. */
-    packId: z.string().uuid().optional(),
+        /** L15 — normalised `artistKey` facet. See `librarySearchSchema.artist`. */
+        artist:
+          z
+            .string()
+            .trim()
+            .max(
+              200,
+            )
+            .optional(),
+        /** L16 — restrict to the members of one pack, in the pack's own order. */
+        packId:
+          z
+            .string()
+            .uuid()
+            .optional(),
 
-    /** S9 — random/roulette selection. Presence of `random=1` picks that branch. */
-    random: z.enum(['1']).optional(),
-    durationMin: z.coerce.number().int().min(0).max(MAX_SONG_DURATION_SEC).optional(),
-    durationMax: z.coerce.number().int().min(0).max(MAX_SONG_DURATION_SEC).optional(),
-    unplayedOnly: BooleanFlagZ,
-    likedOnly: BooleanFlagZ,
+        /** S9 — random/roulette selection. Presence of `random=1` picks that branch. */
+        random:
+          z
+            .enum(
+              [
+                '1',
+              ],
+            )
+            .optional(),
+        durationMin:
+          z.coerce
+            .number()
+            .int()
+            .min(
+              0,
+            )
+            .max(
+              MAX_SONG_DURATION_SEC,
+            )
+            .optional(),
+        durationMax:
+          z.coerce
+            .number()
+            .int()
+            .min(
+              0,
+            )
+            .max(
+              MAX_SONG_DURATION_SEC,
+            )
+            .optional(),
+        unplayedOnly:
+          BooleanFlagZ,
+        likedOnly:
+          BooleanFlagZ,
 
-    /** L17 — recently played. Presence of `shelf=recent` picks that branch. */
-    shelf: z.enum(['recent']).optional(),
+        /** L17 — recently played. Presence of `shelf=recent` picks that branch. */
+        shelf:
+          z
+            .enum(
+              [
+                'recent',
+              ],
+            )
+            .optional(),
 
-    /** L1 — the curated genre facet. Exclusive: one genre at a time. */
-    genre: z.enum(SONG_GENRES).optional(),
-    /**
-     * L1 — the tag facet, additive. Comma-separated on the wire and matched
-     * with `hasEvery`, so adding a tag NARROWS the result. `hasSome` would
-     * widen it, which makes a second click feel like it did nothing.
-     */
-    tags: z
-      .string()
-      .max(200)
-      .optional()
-      .transform((value) => (value ? normaliseTags(value.split(',')) : undefined)),
-    /** L1 — BPM range. Both ends optional. */
-    bpmMin: z.coerce.number().min(20).max(400).optional(),
-    bpmMax: z.coerce.number().min(20).max(400).optional(),
-    /** L1 — C3 rating range, over the song's denormalised `chartRating`. */
-    ratingMin: z.coerce.number().min(0).max(20).optional(),
-    ratingMax: z.coerce.number().min(0).max(20).optional(),
-  })
-  .refine((v) => v.bpmMin === undefined || v.bpmMax === undefined || v.bpmMin <= v.bpmMax, {
-    message: 'bpmMin must be <= bpmMax',
-    path: ['bpmMin'],
-  })
-  .refine(
-    (v) => v.ratingMin === undefined || v.ratingMax === undefined || v.ratingMin <= v.ratingMax,
-    { message: 'ratingMin must be <= ratingMax', path: ['ratingMin'] },
-  )
-  .refine((v) => v.durationMin === undefined || v.durationMax === undefined || v.durationMin <= v.durationMax, {
-    message: 'durationMin must be <= durationMax',
-    path: ['durationMin'],
-  });
-export type LibrarySongsQuery = z.infer<typeof LibrarySongsQueryZ>;
+        /** L1 — the curated genre facet. Exclusive: one genre at a time. */
+        genre:
+          z
+            .enum(
+              SONG_GENRES,
+            )
+            .optional(),
+        /**
+         * L1 — the tag facet, additive. Comma-separated on the wire and matched
+         * with `hasEvery`, so adding a tag NARROWS the result. `hasSome` would
+         * widen it, which makes a second click feel like it did nothing.
+         */
+        tags: z
+          .string()
+          .max(
+            200,
+          )
+          .optional()
+          .transform(
+            (
+              value,
+            ) =>
+              value
+                ? normaliseTags(
+                    value.split(
+                      ',',
+                    ),
+                  )
+                : undefined,
+          ),
+        /** L1 — BPM range. Both ends optional. */
+        bpmMin:
+          z.coerce
+            .number()
+            .min(
+              20,
+            )
+            .max(
+              400,
+            )
+            .optional(),
+        bpmMax:
+          z.coerce
+            .number()
+            .min(
+              20,
+            )
+            .max(
+              400,
+            )
+            .optional(),
+        /** L1 — C3 rating range, over the song's denormalised `chartRating`. */
+        ratingMin:
+          z.coerce
+            .number()
+            .min(
+              0,
+            )
+            .max(
+              20,
+            )
+            .optional(),
+        ratingMax:
+          z.coerce
+            .number()
+            .min(
+              0,
+            )
+            .max(
+              20,
+            )
+            .optional(),
+      },
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        v.bpmMin ===
+          undefined ||
+        v.bpmMax ===
+          undefined ||
+        v.bpmMin <=
+          v.bpmMax,
+      {
+        message:
+          'bpmMin must be <= bpmMax',
+        path: [
+          'bpmMin',
+        ],
+      },
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        v.ratingMin ===
+          undefined ||
+        v.ratingMax ===
+          undefined ||
+        v.ratingMin <=
+          v.ratingMax,
+      {
+        message:
+          'ratingMin must be <= ratingMax',
+        path: [
+          'ratingMin',
+        ],
+      },
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        v.durationMin ===
+          undefined ||
+        v.durationMax ===
+          undefined ||
+        v.durationMin <=
+          v.durationMax,
+      {
+        message:
+          'durationMin must be <= durationMax',
+        path: [
+          'durationMin',
+        ],
+      },
+    );
+export type LibrarySongsQuery =
+  z.infer<
+    typeof LibrarySongsQueryZ
+  >;
 
 /** Just the constraint fields, for building the client's `?random=1` request. */
 export interface RandomConstraints {
@@ -120,12 +321,15 @@ export interface RandomConstraints {
   likedOnly?: boolean;
 }
 
-export const DEFAULT_RANDOM_CONSTRAINTS: RandomConstraints = {
-  durationMin: undefined,
-  durationMax: undefined,
-  unplayedOnly: false,
-  likedOnly: false,
-};
+export const DEFAULT_RANDOM_CONSTRAINTS: RandomConstraints =
+  {
+    durationMin:
+      undefined,
+    durationMax:
+      undefined,
+    unplayedOnly: false,
+    likedOnly: false,
+  };
 
 /** How many rows the recently-played shelf shows. */
 export const RECENTLY_PLAYED_LIMIT = 12;
@@ -143,7 +347,9 @@ export const RECENTLY_PLAYED_LIMIT = 12;
  */
 export interface LibrarySong extends SliceSong {
   /** The viewer's own score row, or null if signed out / never played. */
-  bestScore: number | null;
+  bestScore:
+    | number
+    | null;
   /** Present only in the recently-played shelf response. */
   lastPlayedAt?: string;
   /**
@@ -152,14 +358,18 @@ export interface LibrarySong extends SliceSong {
    * about what the key for a given spelling is). Null for a song whose artist
    * tag normalises to nothing.
    */
-  artistKey: string | null;
+  artistKey:
+    | string
+    | null;
   /**
    * C3 — the computed rating of this song's hardest public chart, 0–20. Null
    * when no chart of it has been rated, which is most of the library. Read
    * `features/slice-it/engine/rating.ts` before presenting it as more than a rough
    * ordering; the weights behind it are uncalibrated.
    */
-  chartRating: number | null;
+  chartRating:
+    | number
+    | null;
   /**
    * V8 — the 64-value note-density histogram, when the row has one stored.
    * `<DensityStrip>` in `SongLibrary.tsx` renders nothing without it, so an
@@ -175,7 +385,10 @@ export interface LibrarySong extends SliceSong {
   relevance?: number;
 }
 
-export interface LibrarySongPage extends Omit<SongPage, 'songs'> {
+export interface LibrarySongPage extends Omit<
+  SongPage,
+  'songs'
+> {
   songs: LibrarySong[];
 }
 
@@ -200,29 +413,78 @@ export interface LibraryTableColumn {
  * a column that always reads "—", which is worse than not having it.
  */
 /** `125` -> `"2:05"`. Shared by the grid and the table so the two never drift. */
-export function formatSongDuration(seconds: number): string {
-  const total = Math.max(0, Math.round(seconds));
+export function formatSongDuration(
+  seconds: number,
+): string {
+  const total =
+    Math.max(
+      0,
+      Math.round(
+        seconds,
+      ),
+    );
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-export const LIBRARY_TABLE_COLUMNS: readonly LibraryTableColumn[] = [
-  { key: 'title', labelKey: 'table-col-title', defaultLabel: 'Title', defaultDir: 'asc' },
-  { key: 'artist', labelKey: 'table-col-artist', defaultLabel: 'Artist', defaultDir: 'asc' },
-  { key: 'bpm', labelKey: 'table-col-bpm', defaultLabel: 'BPM', defaultDir: 'asc', numeric: true },
-  {
-    key: 'duration',
-    labelKey: 'table-col-duration',
-    defaultLabel: 'Duration',
-    defaultDir: 'asc',
-    numeric: true,
-  },
-  {
-    key: 'yourScore',
-    labelKey: 'table-col-your-score',
-    defaultLabel: 'Your Best',
-    defaultDir: 'desc',
-    numeric: true,
-    requiresAuth: true,
-  },
-  { key: 'plays', labelKey: 'table-col-plays', defaultLabel: 'Plays', defaultDir: 'desc', numeric: true },
-] as const;
+export const LIBRARY_TABLE_COLUMNS: readonly LibraryTableColumn[] =
+  [
+    {
+      key: 'title',
+      labelKey:
+        'table-col-title',
+      defaultLabel:
+        'Title',
+      defaultDir:
+        'asc',
+    },
+    {
+      key: 'artist',
+      labelKey:
+        'table-col-artist',
+      defaultLabel:
+        'Artist',
+      defaultDir:
+        'asc',
+    },
+    {
+      key: 'bpm',
+      labelKey:
+        'table-col-bpm',
+      defaultLabel:
+        'BPM',
+      defaultDir:
+        'asc',
+      numeric: true,
+    },
+    {
+      key: 'duration',
+      labelKey:
+        'table-col-duration',
+      defaultLabel:
+        'Duration',
+      defaultDir:
+        'asc',
+      numeric: true,
+    },
+    {
+      key: 'yourScore',
+      labelKey:
+        'table-col-your-score',
+      defaultLabel:
+        'Your Best',
+      defaultDir:
+        'desc',
+      numeric: true,
+      requiresAuth: true,
+    },
+    {
+      key: 'plays',
+      labelKey:
+        'table-col-plays',
+      defaultLabel:
+        'Plays',
+      defaultDir:
+        'desc',
+      numeric: true,
+    },
+  ] as const;

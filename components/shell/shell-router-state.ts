@@ -18,22 +18,70 @@ import { useRouterState } from '@tanstack/react-router';
 
 /** The slice of router state the shell's selectors read. */
 export interface ShellRouterState {
-  location: { pathname: string; href: string };
-  resolvedLocation?: { pathname: string; href: string } | undefined;
+  location: {
+    pathname: string;
+    href: string;
+  };
+  resolvedLocation?:
+    | {
+        pathname: string;
+        href: string;
+      }
+    | undefined;
 }
 
 /** The URL's pathname — moves the instant a navigation starts. */
-export const selectPathname = (s: ShellRouterState): string => s.location.pathname;
+export const selectPathname =
+  (
+    s: ShellRouterState,
+  ): string =>
+    s
+      .location
+      .pathname;
 
 /** The pathname of the page actually ON SCREEN (moves with the commit, not the URL). */
-export const selectRenderedPathname = (s: ShellRouterState): string =>
-  (s.resolvedLocation ?? s.location).pathname;
+export const selectRenderedPathname =
+  (
+    s: ShellRouterState,
+  ): string =>
+    (
+      s.resolvedLocation ??
+      s.location
+    )
+      .pathname;
 
 /** The href of the page actually ON SCREEN. */
-export const selectRenderedHref = (s: ShellRouterState): string =>
-  (s.resolvedLocation ?? s.location).href;
+export const selectRenderedHref =
+  (
+    s: ShellRouterState,
+  ): string =>
+    (
+      s.resolvedLocation ??
+      s.location
+    )
+      .href;
 
-export const usePathname = (): string => useRouterState({ select: selectPathname });
-export const useRenderedPathname = (): string =>
-  useRouterState({ select: selectRenderedPathname });
-export const useRenderedHref = (): string => useRouterState({ select: selectRenderedHref });
+export const usePathname =
+  (): string =>
+    useRouterState(
+      {
+        select:
+          selectPathname,
+      },
+    );
+export const useRenderedPathname =
+  (): string =>
+    useRouterState(
+      {
+        select:
+          selectRenderedPathname,
+      },
+    );
+export const useRenderedHref =
+  (): string =>
+    useRouterState(
+      {
+        select:
+          selectRenderedHref,
+      },
+    );

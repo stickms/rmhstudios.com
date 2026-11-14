@@ -15,26 +15,51 @@
 
 import type { ReactNode } from 'react';
 import AppToaster from './AppToaster';
-import { ConnectionBanner, PeerWaitOverlay } from './ConnectionStatus';
+import {
+  ConnectionBanner,
+  PeerWaitOverlay,
+} from './ConnectionStatus';
 import { useKeyboardInset } from '@/hooks/useKeyboardInset';
-import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types';
+import type {
+  RealtimeStatus,
+  PeerWaitState,
+} from '@/lib/shared/realtime/types';
 
-export type AppAppearance = 'dark' | 'light' | 'high-contrast';
+export type AppAppearance =
+  | 'dark'
+  | 'light'
+  | 'high-contrast';
 
 /** Density is RMHTube's for now, but it is a shared token so it lives here. */
-export type AppDensity = 'compact' | 'comfortable' | 'spacious';
+export type AppDensity =
+  | 'compact'
+  | 'comfortable'
+  | 'spacious';
 
-const APPEARANCE_CLASS: Record<AppAppearance, string> = {
-  dark: '',
-  light: 'app-light',
-  'high-contrast': 'app-high-contrast',
-};
+const APPEARANCE_CLASS: Record<
+  AppAppearance,
+  string
+> =
+  {
+    dark: '',
+    light:
+      'app-light',
+    'high-contrast':
+      'app-high-contrast',
+  };
 
-const DENSITY_CLASS: Record<AppDensity, string> = {
-  compact: 'app-compact',
-  comfortable: '',
-  spacious: 'app-spacious',
-};
+const DENSITY_CLASS: Record<
+  AppDensity,
+  string
+> =
+  {
+    compact:
+      'app-compact',
+    comfortable:
+      '',
+    spacious:
+      'app-spacious',
+  };
 
 export interface AppRealtimeProps {
   status: RealtimeStatus;
@@ -49,7 +74,9 @@ export interface AppShellProps {
   /** The app's palette class, e.g. `rmhbox-theme`. */
   appClassName: string;
   /** Appearance modifier. Unknown values fall back to dark. */
-  theme?: string | null;
+  theme?:
+    | string
+    | null;
   density?: AppDensity;
   /** Skip the toaster for apps that render their own notification surface. */
   toaster?: boolean;
@@ -82,20 +109,36 @@ export default function AppShell({
 
   // A persisted preference from an older build (or a hand-edited localStorage
   // value) shouldn't strand the app in an undefined palette.
-  const appearance: AppAppearance = theme === 'light' || theme === 'high-contrast' ? theme : 'dark';
+  const appearance: AppAppearance =
+    theme ===
+      'light' ||
+    theme ===
+      'high-contrast'
+      ? theme
+      : 'dark';
 
   return (
     <div
       className={[
         'app-theme',
         appClassName,
-        APPEARANCE_CLASS[appearance],
-        DENSITY_CLASS[density],
+        APPEARANCE_CLASS[
+          appearance
+        ],
+        DENSITY_CLASS[
+          density
+        ],
         className,
       ]
-        .filter(Boolean)
-        .join(' ')}
-      data-app-theme={appearance}
+        .filter(
+          Boolean,
+        )
+        .join(
+          ' ',
+        )}
+      data-app-theme={
+        appearance
+      }
       // The tier marker (redesign E1): on this root the `--app-*` tokens resolve
       // to the site's own tokens — Midnight scoped on for the dark appearance,
       // Daylight inherited for the light one (components/shared/app-theme.css,
@@ -105,10 +148,30 @@ export default function AppShell({
       // long press.
       data-fluid-press-scope
     >
-      {toaster && <AppToaster />}
-      {realtime && <ConnectionBanner status={realtime.status} onRetry={realtime.onRetry} />}
-      {children}
-      {realtime && <PeerWaitOverlay waiting={realtime.peersWaiting ?? null} />}
+      {toaster && (
+        <AppToaster />
+      )}
+      {realtime && (
+        <ConnectionBanner
+          status={
+            realtime.status
+          }
+          onRetry={
+            realtime.onRetry
+          }
+        />
+      )}
+      {
+        children
+      }
+      {realtime && (
+        <PeerWaitOverlay
+          waiting={
+            realtime.peersWaiting ??
+            null
+          }
+        />
+      )}
     </div>
   );
 }

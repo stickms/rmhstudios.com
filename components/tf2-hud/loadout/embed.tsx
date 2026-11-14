@@ -9,20 +9,41 @@
 
 import { useMemo } from 'react';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
-import { modelItemId, type CatalogItem, type TfClass } from '@/lib/tf2-loadout/catalog-types';
-import { sampleInventory, type SampleInventory } from '@/lib/tf2-loadout/sample';
+import {
+  modelItemId,
+  type CatalogItem,
+  type TfClass,
+} from '@/lib/tf2-loadout/catalog-types';
+import {
+  sampleInventory,
+  type SampleInventory,
+} from '@/lib/tf2-loadout/sample';
 import { animUrl } from '@/lib/tf2-loadout/use-anims';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
-import { modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
+import {
+  modelUrl,
+  pickModel,
+  useModelIds,
+} from '@/lib/tf2-loadout/use-models';
 import { supportsWebGL } from '@/lib/shared/platform';
 import { cn } from '@/lib/utils';
 import ItemModelViewer from './ItemModelViewer';
-import { PlayerScene, usePlayerParts, type WornItem } from './PlayerViewer';
+import {
+  PlayerScene,
+  usePlayerParts,
+  type WornItem,
+} from './PlayerViewer';
 import { ItemIcon } from './ItemTile';
 import { wornItems } from './worn';
-import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import {
+  ArrivalSuspense,
+  useArrival,
+} from '@/components/ui/arrive';
 
-export { ItemIcon, type WornItem };
+export {
+  ItemIcon,
+  type WornItem,
+};
 export { rarityBackground } from '@/lib/tf2-loadout/rarity';
 export { qualityAccent } from '@/lib/tf2-loadout/catalog-types';
 
@@ -36,20 +57,74 @@ export function PlayerStage({
   worn: readonly WornItem[];
   className?: string;
 }) {
-  const { ids, webgl, body, bodygroups, parts, clip } = usePlayerParts({ cls, worn });
+  const {
+    ids,
+    webgl,
+    body,
+    bodygroups,
+    parts,
+    clip,
+  } =
+    usePlayerParts(
+      {
+        cls,
+        worn,
+      },
+    );
   // The model ids are fetched after mount: the stage that appears once they land fades in (M9).
-  const arrival = useArrival(ids !== null);
-  if (!webgl || !ids || !body) return null;
+  const arrival =
+    useArrival(
+      ids !==
+        null,
+    );
+  if (
+    !webgl ||
+    !ids ||
+    !body
+  )
+    return null;
   return (
-    <div className={cn('size-full', arrival, className)} aria-hidden>
-      <SilentErrorBoundary key={cls} label="tf2-stage" fallback={null}>
-        <ArrivalSuspense fallback={null}>
+    <div
+      className={cn(
+        'size-full',
+        arrival,
+        className,
+      )}
+      aria-hidden
+    >
+      <SilentErrorBoundary
+        key={
+          cls
+        }
+        label="tf2-stage"
+        fallback={
+          null
+        }
+      >
+        <ArrivalSuspense
+          fallback={
+            null
+          }
+        >
           <PlayerScene
             bare
-            body={modelUrl(body)}
-            bodygroups={bodygroups}
-            parts={parts}
-            tauntUrl={clip ? animUrl(cls, clip) : undefined}
+            body={modelUrl(
+              body,
+            )}
+            bodygroups={
+              bodygroups
+            }
+            parts={
+              parts
+            }
+            tauntUrl={
+              clip
+                ? animUrl(
+                    cls,
+                    clip,
+                  )
+                : undefined
+            }
           />
         </ArrivalSuspense>
       </SilentErrorBoundary>
@@ -67,34 +142,109 @@ export function ItemStage({
   cls?: string;
   className?: string;
 }) {
-  const ids = useModelIds();
-  const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
-  const id = modelItemId(item);
-  const model = ids && webgl ? pickModel(ids, id, cls) : null;
-  if (!model) return <ItemIcon item={item} className={className} />;
+  const ids =
+    useModelIds();
+  const webgl =
+    useMemo(
+      () =>
+        typeof window ===
+        'undefined'
+          ? true
+          : supportsWebGL(),
+      [],
+    );
+  const id =
+    modelItemId(
+      item,
+    );
+  const model =
+    ids &&
+    webgl
+      ? pickModel(
+          ids,
+          id,
+          cls,
+        )
+      : null;
+  if (
+    !model
+  )
+    return (
+      <ItemIcon
+        item={
+          item
+        }
+        className={
+          className
+        }
+      />
+    );
   return (
     <ItemModelViewer
-      itemId={id}
-      cls={cls}
-      className={cn('h-full min-h-0 border-0 bg-transparent', className)}
+      itemId={
+        id
+      }
+      cls={
+        cls
+      }
+      className={cn(
+        'h-full min-h-0 border-0 bg-transparent',
+        className,
+      )}
     />
   );
 }
 
-export type SampleResult = SampleInventory & { worn: WornItem[] };
+export type SampleResult =
+  SampleInventory & {
+    worn: WornItem[];
+  };
 
 /** A plausible inventory for `cls` (null until the catalog has loaded). */
-export function useSampleInventory(cls: TfClass): SampleResult | null {
-  const state = useCatalog();
-  const index = state.status === 'ready' ? state.index : null;
-  const ids = useModelIds();
+export function useSampleInventory(
+  cls: TfClass,
+): SampleResult | null {
+  const state =
+    useCatalog();
+  const index =
+    state.status ===
+    'ready'
+      ? state.index
+      : null;
+  const ids =
+    useModelIds();
   return useMemo(() => {
-    if (!index) return null;
-    const inv = sampleInventory(
-      index.catalog,
-      cls,
-      (id) => !ids || pickModel(ids, id, cls) !== null,
-    );
-    return { ...inv, worn: wornItems(index, cls, inv.slots, inv.cosmeticKeys) };
-  }, [index, ids, cls]);
+    if (
+      !index
+    )
+      return null;
+    const inv =
+      sampleInventory(
+        index.catalog,
+        cls,
+        (
+          id,
+        ) =>
+          !ids ||
+          pickModel(
+            ids,
+            id,
+            cls,
+          ) !==
+            null,
+      );
+    return {
+      ...inv,
+      worn: wornItems(
+        index,
+        cls,
+        inv.slots,
+        inv.cosmeticKeys,
+      ),
+    };
+  }, [
+    index,
+    ids,
+    cls,
+  ]);
 }

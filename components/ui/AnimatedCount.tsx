@@ -1,11 +1,18 @@
-import { useEffect, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+} from 'react';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 
 interface AnimatedCountProps {
   /** The target number. `undefined` is treated as 0. */
-  value: number | undefined;
+  value:
+    | number
+    | undefined;
   /** Format the (rounded) number for display. Defaults to `String`. */
-  format?: (n: number) => string;
+  format?: (
+    n: number,
+  ) => string;
   /**
    * Render nothing when the value rounds to 0. Preserves the "hide the count at
    * zero" behavior of the feed/comment engagement bars.
@@ -68,59 +75,155 @@ export function AnimatedCount({
   className,
   durationMs = 280,
 }: AnimatedCountProps) {
-  const target = value ?? 0;
-  const ref = useRef<HTMLSpanElement>(null);
+  const target =
+    value ??
+    0;
+  const ref =
+    useRef<HTMLSpanElement>(
+      null,
+    );
   // The last painted (possibly fractional) value, so an interrupted tween
   // resumes from where the eye currently is rather than jumping.
-  const displayRef = useRef(target);
+  const displayRef =
+    useRef(
+      target,
+    );
   // `format` is held in a ref, and is deliberately NOT an effect dependency:
   // most call sites pass an inline arrow (`format={(n) => n.toLocaleString()}`),
   // which is a new identity on every parent render. As a dependency that would
   // tear down and restart the tween on every render — the exact thrash this
   // component was rewritten to remove — while the ref keeps the latest function
   // without re-running anything.
-  const formatRef = useRef(format);
-  formatRef.current = format;
+  const formatRef =
+    useRef(
+      format,
+    );
+  formatRef.current =
+    format;
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const el =
+      ref.current;
+    if (
+      !el
+    )
+      return;
 
-    if (prefersReducedMotion()) {
-      displayRef.current = target;
+    if (
+      prefersReducedMotion()
+    ) {
+      displayRef.current =
+        target;
       return;
     }
-    const from = displayRef.current;
-    if (from === target) return;
+    const from =
+      displayRef.current;
+    if (
+      from ===
+      target
+    )
+      return;
 
     let raf = 0;
-    let startTs: number | null = null;
-    const step = (ts: number) => {
-      if (startTs === null) startTs = ts;
-      const t = Math.min(1, (ts - startTs) / durationMs);
-      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-      const current = from + (target - from) * eased;
-      displayRef.current = current;
-      // The whole point: a text write, not a state update.
-      el.textContent = formatRef.current(Math.round(current));
-      if (t < 1) {
-        raf = requestAnimationFrame(step);
-      } else {
-        displayRef.current = target;
-        el.textContent = formatRef.current(Math.round(target));
-      }
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [target, durationMs]);
+    let startTs:
+      | number
+      | null =
+      null;
+    const step =
+      (
+        ts: number,
+      ) => {
+        if (
+          startTs ===
+          null
+        )
+          startTs =
+            ts;
+        const t =
+          Math.min(
+            1,
+            (ts -
+              startTs) /
+              durationMs,
+          );
+        const eased =
+          1 -
+          Math.pow(
+            1 -
+              t,
+            3,
+          ); // ease-out cubic
+        const current =
+          from +
+          (target -
+            from) *
+            eased;
+        displayRef.current =
+          current;
+        // The whole point: a text write, not a state update.
+        el.textContent =
+          formatRef.current(
+            Math.round(
+              current,
+            ),
+          );
+        if (
+          t <
+          1
+        ) {
+          raf =
+            requestAnimationFrame(
+              step,
+            );
+        } else {
+          displayRef.current =
+            target;
+          el.textContent =
+            formatRef.current(
+              Math.round(
+                target,
+              ),
+            );
+        }
+      };
+    raf =
+      requestAnimationFrame(
+        step,
+      );
+    return () =>
+      cancelAnimationFrame(
+        raf,
+      );
+  }, [
+    target,
+    durationMs,
+  ]);
 
-  if (hideZero && Math.round(target) === 0) return null;
+  if (
+    hideZero &&
+    Math.round(
+      target,
+    ) ===
+      0
+  )
+    return null;
   // React renders the settled value. Frames in between are painted by the effect
   // above; because this is what React believes the content to be, the tween can
   // only ever end in agreement with it.
   return (
-    <span ref={ref} className={className}>
-      {format(Math.round(target))}
+    <span
+      ref={
+        ref
+      }
+      className={
+        className
+      }
+    >
+      {format(
+        Math.round(
+          target,
+        ),
+      )}
     </span>
   );
 }

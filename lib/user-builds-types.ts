@@ -4,27 +4,45 @@
 
 export interface BuildUser {
   id: string;
-  name: string | null;
-  image: string | null;
-  username: string | null;
-  handle?: string | null;
+  name:
+    | string
+    | null;
+  image:
+    | string
+    | null;
+  username:
+    | string
+    | null;
+  handle?:
+    | string
+    | null;
 }
 
 export interface BuildCategory {
   id: string;
   name: string;
   slug: string;
-  description?: string | null;
-  iconName?: string | null;
-  color?: string | null;
+  description?:
+    | string
+    | null;
+  iconName?:
+    | string
+    | null;
+  color?:
+    | string
+    | null;
   buildCount?: number;
 }
 
 export interface BuildVersion {
   id: string;
   version: string;
-  changelog?: string | null;
-  commitHash?: string | null;
+  changelog?:
+    | string
+    | null;
+  commitHash?:
+    | string
+    | null;
   createdAt: string;
 }
 
@@ -33,21 +51,36 @@ export interface Build {
   slug: string;
   title: string;
   description: string;
-  readme?: string | null;
-  thumbnailUrl?: string | null;
-  repoUrl?: string | null;
-  demoUrl?: string | null;
-  visibility: 'PUBLIC' | 'UNLISTED' | 'PRIVATE';
+  readme?:
+    | string
+    | null;
+  thumbnailUrl?:
+    | string
+    | null;
+  repoUrl?:
+    | string
+    | null;
+  demoUrl?:
+    | string
+    | null;
+  visibility:
+    | 'PUBLIC'
+    | 'UNLISTED'
+    | 'PRIVATE';
   featured: boolean;
   technologies: string[];
   /** Catalog id of the title this build was made for, if any. */
-  gameId?: string | null;
+  gameId?:
+    | string
+    | null;
   likeCount: number;
   commentCount: number;
   viewCount: number;
   createdAt: string;
   updatedAt?: string;
-  publishedAt?: string | null;
+  publishedAt?:
+    | string
+    | null;
   user: BuildUser;
   category?: BuildCategory | null;
   tags: string[];
@@ -66,9 +99,14 @@ export interface BuildComment {
   createdAt: string;
   updatedAt?: string;
   user: BuildUser;
-  parentId?: string | null;
+  parentId?:
+    | string
+    | null;
   replyCount?: number;
   replies?: BuildComment[];
 }
 
-export type BuildSortOption = 'recent' | 'popular' | 'views';
+export type BuildSortOption =
+  | 'recent'
+  | 'popular'
+  | 'views';

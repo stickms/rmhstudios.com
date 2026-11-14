@@ -26,21 +26,68 @@
 
 import { recordCounter } from './process-metrics';
 
-const INSTALLED = Symbol.for('rmh.perf.processGuards');
+const INSTALLED =
+  Symbol.for(
+    'rmh.perf.processGuards',
+  );
 
-function describe(err: unknown): { error: string; stack?: string } {
-  if (err instanceof Error) return { error: err.message, stack: err.stack };
+function describe(
+  err: unknown,
+): {
+  error: string;
+  stack?: string;
+} {
+  if (
+    err instanceof
+    Error
+  )
+    return {
+      error:
+        err.message,
+      stack:
+        err.stack,
+    };
   try {
-    return { error: typeof err === 'string' ? err : JSON.stringify(err) };
+    return {
+      error:
+        typeof err ===
+        'string'
+          ? err
+          : JSON.stringify(
+              err,
+            ),
+    };
   } catch {
-    return { error: String(err) };
+    return {
+      error:
+        String(
+          err,
+        ),
+    };
   }
 }
 
-function logError(service: string, event: string, fields: Record<string, unknown>): void {
+function logError(
+  service: string,
+  event: string,
+  fields: Record<
+    string,
+    unknown
+  >,
+): void {
   try {
     console.error(
-      JSON.stringify({ level: 'error', service, timestamp: new Date().toISOString(), event, ...fields }),
+      JSON.stringify(
+        {
+          level:
+            'error',
+          service,
+          timestamp:
+            new Date().toISOString(),
+          event,
+          ...fields,
+        },
+      ),
     );
   } catch {
     // Logging must not become the error.
@@ -50,34 +97,95 @@ function logError(service: string, event: string, fields: Record<string, unknown
 export interface ProcessGuardOptions {
   service: string;
   /** Test seam: replaces `process.exit` on an uncaught exception. */
-  exit?: (code: number) => void;
+  exit?: (
+    code: number,
+  ) => void;
 }
 
 /** Idempotent. Call once at the top of a service's entrypoint. */
-export function installProcessGuards(opts: ProcessGuardOptions): void {
-  const g = globalThis as unknown as Record<symbol, boolean | undefined>;
-  if (g[INSTALLED]) return;
-  g[INSTALLED] = true;
+export function installProcessGuards(
+  opts: ProcessGuardOptions,
+): void {
+  const g =
+    globalThis as unknown as Record<
+      symbol,
+      | boolean
+      | undefined
+    >;
+  if (
+    g[
+      INSTALLED
+    ]
+  )
+    return;
+  g[
+    INSTALLED
+  ] =
+    true;
 
-  const exit = opts.exit ?? ((code: number) => process.exit(code));
+  const exit =
+    opts.exit ??
+    ((
+      code: number,
+    ) =>
+      process.exit(
+        code,
+      ));
 
-  process.on('unhandledRejection', (reason) => {
-    recordCounter('process.unhandled_rejection');
-    logError(opts.service, 'unhandled_rejection', describe(reason));
-  });
+  process.on(
+    'unhandledRejection',
+    (
+      reason,
+    ) => {
+      recordCounter(
+        'process.unhandled_rejection',
+      );
+      logError(
+        opts.service,
+        'unhandled_rejection',
+        describe(
+          reason,
+        ),
+      );
+    },
+  );
 
-  process.on('uncaughtException', (err, origin) => {
-    recordCounter('process.uncaught_exception');
-    logError(opts.service, 'uncaught_exception', { origin, ...describe(err) });
-    // stderr is a pipe under Docker, which Node writes synchronously on Linux,
-    // so the line above is flushed before the exit.
-    exit(1);
-  });
+  process.on(
+    'uncaughtException',
+    (
+      err,
+      origin,
+    ) => {
+      recordCounter(
+        'process.uncaught_exception',
+      );
+      logError(
+        opts.service,
+        'uncaught_exception',
+        {
+          origin,
+          ...describe(
+            err,
+          ),
+        },
+      );
+      // stderr is a pipe under Docker, which Node writes synchronously on Linux,
+      // so the line above is flushed before the exit.
+      exit(
+        1,
+      );
+    },
+  );
 }
 
 /** The slice of `pg.Pool` this needs — structural, so lib/perf stays free of a `pg` import. */
 interface ErrorEmitter {
-  on(event: 'error', listener: (err: Error) => void): unknown;
+  on(
+    event: 'error',
+    listener: (
+      err: Error,
+    ) => void,
+  ): unknown;
 }
 
 /**
@@ -92,10 +200,36 @@ interface ErrorEmitter {
  * listener (so it never crashed) but swallows the error silently — this adds the
  * count, which is what makes a flapping database visible.
  */
-export function guardPool<T extends ErrorEmitter>(pool: T, opts: { service?: string; pool: string }): T {
-  pool.on('error', (err) => {
-    recordCounter('db.pool_error');
-    logError(opts.service ?? 'node', 'db_pool_error', { pool: opts.pool, ...describe(err) });
-  });
+export function guardPool<
+  T extends
+    ErrorEmitter,
+>(
+  pool: T,
+  opts: {
+    service?: string;
+    pool: string;
+  },
+): T {
+  pool.on(
+    'error',
+    (
+      err,
+    ) => {
+      recordCounter(
+        'db.pool_error',
+      );
+      logError(
+        opts.service ??
+          'node',
+        'db_pool_error',
+        {
+          pool: opts.pool,
+          ...describe(
+            err,
+          ),
+        },
+      );
+    },
+  );
   return pool;
 }

@@ -16,47 +16,131 @@ import type { ReplayEvent } from '../types';
 import { chunkEvents } from './log';
 import type { ReplayListEntry } from './store';
 
-export const FEED_LIMITS = {
-  /** bridge-protocol `replay_feed.events` max. */
-  EVENTS: 1024,
-  /** Event bytes per message (the line limit is 64 KB). */
-  BYTES: 48 * 1024,
-} as const;
+export const FEED_LIMITS =
+  {
+    /** bridge-protocol `replay_feed.events` max. */
+    EVENTS: 1024,
+    /** Event bytes per message (the line limit is 64 KB). */
+    BYTES:
+      48 *
+      1024,
+  } as const;
 
 /** Prefix of a playback id that is a live (spectated) match. */
-export const LIVE_PREFIX = 'live:';
+export const LIVE_PREFIX =
+  'live:';
 
-export function feedChunks(events: readonly ReplayEvent[]): ReplayEvent[][] {
-  return chunkEvents(events, FEED_LIMITS.EVENTS, FEED_LIMITS.BYTES);
+export function feedChunks(
+  events: readonly ReplayEvent[],
+): ReplayEvent[][] {
+  return chunkEvents(
+    events,
+    FEED_LIMITS.EVENTS,
+    FEED_LIMITS.BYTES,
+  );
 }
 
 /** Send `events` of `pov` to Lua. Returns the number of messages. */
-export function sendFeed(bridge: BridgeLike, pov: string, events: readonly ReplayEvent[]): number {
+export function sendFeed(
+  bridge: BridgeLike,
+  pov: string,
+  events: readonly ReplayEvent[],
+): number {
   let n = 0;
-  for (const chunk of feedChunks(events)) {
-    bridge.send('replay_feed', { pov, events: chunk });
+  for (const chunk of feedChunks(
+    events,
+  )) {
+    bridge.send(
+      'replay_feed',
+      {
+        pov,
+        events:
+          chunk,
+      },
+    );
     n += 1;
   }
   return n;
 }
 
 /** Open a playback in Lua (`replay_view.playing`). */
-export function sendOpen(bridge: BridgeLike, id: string, pov: string, len: number, speed?: number): void {
-  const d: J2LData<'replay_view'> = { playing: { id: id.slice(0, 64), pov, pos: 0, len } };
-  if (speed !== undefined) d.speed = speed;
-  bridge.send('replay_view', d);
+export function sendOpen(
+  bridge: BridgeLike,
+  id: string,
+  pov: string,
+  len: number,
+  speed?: number,
+): void {
+  const d: J2LData<'replay_view'> =
+    {
+      playing:
+        {
+          id: id.slice(
+            0,
+            64,
+          ),
+          pov,
+          pos: 0,
+          len,
+        },
+    };
+  if (
+    speed !==
+    undefined
+  )
+    d.speed =
+      speed;
+  bridge.send(
+    'replay_view',
+    d,
+  );
 }
 
 /** The My Replays list for Lua (newest first, ≤ 30). */
-export function sendList(bridge: BridgeLike, list: readonly ReplayListEntry[]): void {
-  bridge.send('replay_view', {
-    list: list.slice(0, 30).map((e) => ({
-      id: e.id.slice(0, 64),
-      at: e.at,
-      queueMode: e.queueMode,
-      ruleset: e.ruleset,
-      players: e.players.map((p) => p.slice(0, 64)).slice(0, 16),
-      result: e.result,
-    })),
-  });
+export function sendList(
+  bridge: BridgeLike,
+  list: readonly ReplayListEntry[],
+): void {
+  bridge.send(
+    'replay_view',
+    {
+      list: list
+        .slice(
+          0,
+          30,
+        )
+        .map(
+          (
+            e,
+          ) => ({
+            id: e.id.slice(
+              0,
+              64,
+            ),
+            at: e.at,
+            queueMode:
+              e.queueMode,
+            ruleset:
+              e.ruleset,
+            players:
+              e.players
+                .map(
+                  (
+                    p,
+                  ) =>
+                    p.slice(
+                      0,
+                      64,
+                    ),
+                )
+                .slice(
+                  0,
+                  16,
+                ),
+            result:
+              e.result,
+          }),
+        ),
+    },
+  );
 }

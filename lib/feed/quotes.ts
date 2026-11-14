@@ -13,5 +13,7 @@ export interface QuoteNode {
 
 export interface QuotesPage {
   items: QuoteNode[];
-  nextCursor: string | null;
+  nextCursor:
+    | string
+    | null;
 }

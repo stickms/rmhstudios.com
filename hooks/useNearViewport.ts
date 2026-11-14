@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 
 /**
  * Fire only when an element approaches the viewport.
@@ -14,32 +19,83 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
  * IntersectionObserver also resolve to visible immediately so nothing is
  * silently dropped.
  */
-export function useNearViewport<T extends HTMLElement = HTMLDivElement>(
+export function useNearViewport<
+  T extends
+    HTMLElement =
+    HTMLDivElement,
+>(
   rootMargin = '400px 0px',
   skip = false,
-): { ref: RefObject<T | null>; visible: boolean } {
-  const ref = useRef<T | null>(null);
-  const [visible, setVisible] = useState(skip);
+): {
+  ref: RefObject<T | null>;
+  visible: boolean;
+} {
+  const ref =
+    useRef<T | null>(
+      null,
+    );
+  const [
+    visible,
+    setVisible,
+  ] =
+    useState(
+      skip,
+    );
 
   useEffect(() => {
-    if (skip || visible) return;
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') {
-      setVisible(true);
+    if (
+      skip ||
+      visible
+    )
+      return;
+    const el =
+      ref.current;
+    if (
+      !el ||
+      typeof IntersectionObserver ===
+        'undefined'
+    ) {
+      setVisible(
+        true,
+      );
       return;
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setVisible(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin },
+    const io =
+      new IntersectionObserver(
+        (
+          entries,
+        ) => {
+          if (
+            entries.some(
+              (
+                e,
+              ) =>
+                e.isIntersecting,
+            )
+          ) {
+            setVisible(
+              true,
+            );
+            io.disconnect();
+          }
+        },
+        {
+          rootMargin,
+        },
+      );
+    io.observe(
+      el,
     );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [rootMargin, skip, visible]);
+    return () =>
+      io.disconnect();
+  }, [
+    rootMargin,
+    skip,
+    visible,
+  ]);
 
-  return { ref, visible };
+  return {
+    ref,
+    visible,
+  };
 }

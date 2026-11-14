@@ -61,13 +61,16 @@ import type { Slice } from './types';
  * counted. Typed against `SliceType`, so a type that is renamed or removed is a
  * compile error here rather than a set entry that quietly matches nothing.
  */
-const RATED_TYPES: ReadonlySet<SliceType> = new Set<SliceType>([
-  'STANDARD',
-  'MOVING',
-  'LONG',
-  'SILENT',
-  'SWITCH',
-]);
+const RATED_TYPES: ReadonlySet<SliceType> =
+  new Set<SliceType>(
+    [
+      'STANDARD',
+      'MOVING',
+      'LONG',
+      'SILENT',
+      'SWITCH',
+    ],
+  );
 
 /**
  * Same-lane gap under which two consecutive notes read as a jack rather than as
@@ -105,18 +108,19 @@ const SUSTAINED_PERCENTILE = 0.9;
  * makes the compression exponent below interpretable. That is a convenience,
  * not a constraint — nothing enforces it.
  */
-export const RATING_WEIGHTS = {
-  /** The hardest single second. What a chart's spike costs you. */
-  peakNps: 0.35,
-  /** The hardest sustained stretch. What a chart's stamina costs you. */
-  sustainedNps: 0.25,
-  /** Same-lane repeats — the pattern most under-weighted by raw NPS. */
-  jacks: 0.2,
-  /** Longest unbroken run of dense notes. */
-  bursts: 0.1,
-  /** Share of notes that are holds. */
-  holds: 0.1,
-} as const;
+export const RATING_WEIGHTS =
+  {
+    /** The hardest single second. What a chart's spike costs you. */
+    peakNps: 0.35,
+    /** The hardest sustained stretch. What a chart's stamina costs you. */
+    sustainedNps: 0.25,
+    /** Same-lane repeats — the pattern most under-weighted by raw NPS. */
+    jacks: 0.2,
+    /** Longest unbroken run of dense notes. */
+    bursts: 0.1,
+    /** Share of notes that are holds. */
+    holds: 0.1,
+  } as const;
 
 /**
  * Scalars that put the three *ratio* features (0–1 each) onto the same axis as
@@ -126,7 +130,12 @@ export const RATING_WEIGHTS = {
  * is 100% holds is not. These three numbers are the crudest part of the model
  * and the first thing calibration should replace.
  */
-const RATIO_SCALE = { jacks: 20, bursts: 8, holds: 6 } as const;
+const RATIO_SCALE =
+  {
+    jacks: 20,
+    bursts: 8,
+    holds: 6,
+  } as const;
 
 /** Burst length, in notes, that counts as a "full" burst score of 1. */
 const BURST_FULL_LENGTH = 16;
@@ -190,48 +199,150 @@ export interface RatingBreakdown {
  * chart in the editor is a normal state, not an error, and the editor calls
  * this on every keystroke.
  */
-export function rateChart(notes: readonly Slice[], duration = 0): number {
-  return rateChartDetailed(notes, duration).rating;
+export function rateChart(
+  notes: readonly Slice[],
+  duration = 0,
+): number {
+  return rateChartDetailed(
+    notes,
+    duration,
+  )
+    .rating;
 }
 
 /** {@link rateChart} with the per-feature numbers kept. */
-export function rateChartDetailed(notes: readonly Slice[], duration = 0): RatingBreakdown {
-  const rated = notes
-    .filter((n) => RATED_TYPES.has(n.type) && Number.isFinite(n.time))
-    .sort((a, b) => a.time - b.time);
+export function rateChartDetailed(
+  notes: readonly Slice[],
+  duration = 0,
+): RatingBreakdown {
+  const rated =
+    notes
+      .filter(
+        (
+          n,
+        ) =>
+          RATED_TYPES.has(
+            n.type,
+          ) &&
+          Number.isFinite(
+            n.time,
+          ),
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          a.time -
+          b.time,
+      );
 
-  const empty: RatingBreakdown = {
-    peakNps: 0,
-    sustainedNps: 0,
-    jackDensity: 0,
-    burstScore: 0,
-    holdShare: 0,
-    ratedNotes: rated.length,
-    raw: 0,
-    rating: 0,
-  };
-  if (rated.length === 0) return empty;
+  const empty: RatingBreakdown =
+    {
+      peakNps: 0,
+      sustainedNps: 0,
+      jackDensity: 0,
+      burstScore: 0,
+      holdShare: 0,
+      ratedNotes:
+        rated.length,
+      raw: 0,
+      rating: 0,
+    };
+  if (
+    rated.length ===
+    0
+  )
+    return empty;
 
-  const times = rated.map((n) => n.time);
-  const span = Math.max(times[times.length - 1] - times[0], duration, 0);
+  const times =
+    rated.map(
+      (
+        n,
+      ) =>
+        n.time,
+    );
+  const span =
+    Math.max(
+      times[
+        times.length -
+          1
+      ] -
+        times[0],
+      duration,
+      0,
+    );
 
-  const peakNps = maxOverWindow(times, PEAK_WINDOW_SEC) / PEAK_WINDOW_SEC;
+  const peakNps =
+    maxOverWindow(
+      times,
+      PEAK_WINDOW_SEC,
+    ) /
+    PEAK_WINDOW_SEC;
   const sustainedNps =
-    percentileOverWindow(times, SUSTAINED_WINDOW_SEC, SUSTAINED_PERCENTILE, span) /
+    percentileOverWindow(
+      times,
+      SUSTAINED_WINDOW_SEC,
+      SUSTAINED_PERCENTILE,
+      span,
+    ) /
     SUSTAINED_WINDOW_SEC;
-  const jackDensity = countJacks(rated) / rated.length;
-  const burstScore = Math.min(1, longestRun(times, BURST_GAP_SEC) / BURST_FULL_LENGTH);
-  const holdShare = rated.filter((n) => n.type === 'LONG').length / rated.length;
+  const jackDensity =
+    countJacks(
+      rated,
+    ) /
+    rated.length;
+  const burstScore =
+    Math.min(
+      1,
+      longestRun(
+        times,
+        BURST_GAP_SEC,
+      ) /
+        BURST_FULL_LENGTH,
+    );
+  const holdShare =
+    rated.filter(
+      (
+        n,
+      ) =>
+        n.type ===
+        'LONG',
+    )
+      .length /
+    rated.length;
 
   const raw =
-    RATING_WEIGHTS.peakNps * peakNps +
-    RATING_WEIGHTS.sustainedNps * sustainedNps +
-    RATING_WEIGHTS.jacks * jackDensity * RATIO_SCALE.jacks +
-    RATING_WEIGHTS.bursts * burstScore * RATIO_SCALE.bursts +
-    RATING_WEIGHTS.holds * holdShare * RATIO_SCALE.holds;
+    RATING_WEIGHTS.peakNps *
+      peakNps +
+    RATING_WEIGHTS.sustainedNps *
+      sustainedNps +
+    RATING_WEIGHTS.jacks *
+      jackDensity *
+      RATIO_SCALE.jacks +
+    RATING_WEIGHTS.bursts *
+      burstScore *
+      RATIO_SCALE.bursts +
+    RATING_WEIGHTS.holds *
+      holdShare *
+      RATIO_SCALE.holds;
 
-  const compressed = COMPRESSION_SCALE * Math.pow(Math.max(0, raw), COMPRESSION_EXPONENT);
-  const rating = round1(Math.min(MAX_RATING, compressed));
+  const compressed =
+    COMPRESSION_SCALE *
+    Math.pow(
+      Math.max(
+        0,
+        raw,
+      ),
+      COMPRESSION_EXPONENT,
+    );
+  const rating =
+    round1(
+      Math.min(
+        MAX_RATING,
+        compressed,
+      ),
+    );
 
   return {
     peakNps,
@@ -239,7 +350,8 @@ export function rateChartDetailed(notes: readonly Slice[], duration = 0): Rating
     jackDensity,
     burstScore,
     holdShare,
-    ratedNotes: rated.length,
+    ratedNotes:
+      rated.length,
     raw,
     rating,
   };
@@ -255,12 +367,35 @@ export function rateChartDetailed(notes: readonly Slice[], duration = 0): Rating
  * The window is half-open `[t, t + window)` so a note exactly one second after
  * another does not count in the same one-second window twice.
  */
-function maxOverWindow(times: readonly number[], window: number): number {
+function maxOverWindow(
+  times: readonly number[],
+  window: number,
+): number {
   let best = 0;
   let start = 0;
-  for (let end = 0; end < times.length; end++) {
-    while (times[end] - times[start] >= window) start++;
-    best = Math.max(best, end - start + 1);
+  for (
+    let end = 0;
+    end <
+    times.length;
+    end++
+  ) {
+    while (
+      times[
+        end
+      ] -
+        times[
+          start
+        ] >=
+      window
+    )
+      start++;
+    best =
+      Math.max(
+        best,
+        end -
+          start +
+          1,
+      );
   }
   return best;
 }
@@ -282,23 +417,90 @@ function percentileOverWindow(
   p: number,
   span: number,
 ): number {
-  if (span <= window) return times.length * (window / Math.max(window, span || window));
+  if (
+    span <=
+    window
+  )
+    return (
+      times.length *
+      (window /
+        Math.max(
+          window,
+          span ||
+            window,
+        ))
+    );
 
-  const counts: number[] = [];
+  const counts: number[] =
+    [];
   let end = 0;
-  for (let start = 0; start < times.length; start++) {
+  for (
+    let start = 0;
+    start <
+    times.length;
+    start++
+  ) {
     // Only sample windows that fit inside the chart; a window hanging off the
     // end is a shorter window, and would drag the percentile down with silence
     // that is not in the chart.
-    if (times[start] + window > times[times.length - 1]) break;
-    while (end < times.length && times[end] < times[start] + window) end++;
-    counts.push(end - start);
+    if (
+      times[
+        start
+      ] +
+        window >
+      times[
+        times.length -
+          1
+      ]
+    )
+      break;
+    while (
+      end <
+        times.length &&
+      times[
+        end
+      ] <
+        times[
+          start
+        ] +
+          window
+    )
+      end++;
+    counts.push(
+      end -
+        start,
+    );
   }
-  if (counts.length === 0) return times.length;
+  if (
+    counts.length ===
+    0
+  )
+    return times.length;
 
-  counts.sort((a, b) => a - b);
-  const idx = Math.min(counts.length - 1, Math.max(0, Math.round(p * (counts.length - 1))));
-  return counts[idx];
+  counts.sort(
+    (
+      a,
+      b,
+    ) =>
+      a -
+      b,
+  );
+  const idx =
+    Math.min(
+      counts.length -
+        1,
+      Math.max(
+        0,
+        Math.round(
+          p *
+            (counts.length -
+              1),
+        ),
+      ),
+    );
+  return counts[
+    idx
+  ];
 }
 
 /**
@@ -308,12 +510,36 @@ function percentileOverWindow(
  * lane is a wrist-destroying jack that a large share of players simply cannot
  * do at all. NPS cannot see the difference, so it is counted separately.
  */
-function countJacks(notes: readonly Slice[]): number {
+function countJacks(
+  notes: readonly Slice[],
+): number {
   let n = 0;
-  for (let i = 1; i < notes.length; i++) {
+  for (
+    let i = 1;
+    i <
+    notes.length;
+    i++
+  ) {
     if (
-      notes[i].lane === notes[i - 1].lane &&
-      notes[i].time - notes[i - 1].time < JACK_WINDOW_SEC
+      notes[
+        i
+      ]
+        .lane ===
+        notes[
+          i -
+            1
+        ]
+          .lane &&
+      notes[
+        i
+      ]
+        .time -
+        notes[
+          i -
+            1
+        ]
+          .time <
+        JACK_WINDOW_SEC
     ) {
       n++;
     }
@@ -322,18 +548,54 @@ function countJacks(notes: readonly Slice[]): number {
 }
 
 /** The longest chain of notes each within `gap` seconds of the previous one. */
-function longestRun(times: readonly number[], gap: number): number {
-  let best = times.length > 0 ? 1 : 0;
-  let run = best;
-  for (let i = 1; i < times.length; i++) {
-    run = times[i] - times[i - 1] <= gap ? run + 1 : 1;
-    best = Math.max(best, run);
+function longestRun(
+  times: readonly number[],
+  gap: number,
+): number {
+  let best =
+    times.length >
+    0
+      ? 1
+      : 0;
+  let run =
+    best;
+  for (
+    let i = 1;
+    i <
+    times.length;
+    i++
+  ) {
+    run =
+      times[
+        i
+      ] -
+        times[
+          i -
+            1
+        ] <=
+      gap
+        ? run +
+          1
+        : 1;
+    best =
+      Math.max(
+        best,
+        run,
+      );
   }
   return best;
 }
 
-function round1(value: number): number {
-  return Math.round(value * 10) / 10;
+function round1(
+  value: number,
+): number {
+  return (
+    Math.round(
+      value *
+        10,
+    ) /
+    10
+  );
 }
 
 /* ══ R2 — the skill weighting ═════════════════════════════════════════════ */
@@ -403,10 +665,19 @@ export interface SkillContribution {
  * single malformed `Chart.rating` must not be able to erase one account from
  * the leaderboard.
  */
-export function contributionOf(c: SkillContribution): number {
+export function contributionOf(
+  c: SkillContribution,
+): number {
   return (
-    nonNegative(c.chartRating) *
-    Math.pow(clamp01(c.accuracy), SKILL_ACCURACY_EXPONENT) *
+    nonNegative(
+      c.chartRating,
+    ) *
+    Math.pow(
+      clamp01(
+        c.accuracy,
+      ),
+      SKILL_ACCURACY_EXPONENT,
+    ) *
     SKILL_SCALE
   );
 }
@@ -422,21 +693,69 @@ export function contributionOf(c: SkillContribution): number {
  * enforce it because it cannot see chart identity — `collectContributions()` in
  * `rating.server.ts` is what guarantees it.
  */
-export function skillRating(best: readonly SkillContribution[]): number {
+export function skillRating(
+  best: readonly SkillContribution[],
+): number {
   return best
-    .map(contributionOf)
-    .sort((a, b) => b - a)
-    .slice(0, SKILL_CONTRIBUTION_CAP)
-    .reduce((sum, value, i) => sum + value * Math.pow(SKILL_DECAY, i), 0);
+    .map(
+      contributionOf,
+    )
+    .sort(
+      (
+        a,
+        b,
+      ) =>
+        b -
+        a,
+    )
+    .slice(
+      0,
+      SKILL_CONTRIBUTION_CAP,
+    )
+    .reduce(
+      (
+        sum,
+        value,
+        i,
+      ) =>
+        sum +
+        value *
+          Math.pow(
+            SKILL_DECAY,
+            i,
+          ),
+      0,
+    );
 }
 
 // eslint-disable-next-line no-restricted-syntax -- clamp01 maps non-finite to 0
-function clamp01(value: number): number {
-  return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+function clamp01(
+  value: number,
+): number {
+  return Number.isFinite(
+    value,
+  )
+    ? Math.max(
+        0,
+        Math.min(
+          1,
+          value,
+        ),
+      )
+    : 0;
 }
 
-function nonNegative(value: number): number {
-  return Number.isFinite(value) ? Math.max(0, value) : 0;
+function nonNegative(
+  value: number,
+): number {
+  return Number.isFinite(
+    value,
+  )
+    ? Math.max(
+        0,
+        value,
+      )
+    : 0;
 }
 
 /**
@@ -445,19 +764,64 @@ function nonNegative(value: number): number {
  * Bands, not the raw number, are what a library filter should offer: "I want
  * something around 12" is a real request and "I want exactly 12.4" is not.
  */
-export const RATING_BANDS = [
-  { max: 4, key: 'beginner' },
-  { max: 8, key: 'easy' },
-  { max: 12, key: 'moderate' },
-  { max: 15, key: 'hard' },
-  { max: 17.5, key: 'expert' },
-  { max: Infinity, key: 'extreme' },
-] as const;
+export const RATING_BANDS =
+  [
+    {
+      max: 4,
+      key: 'beginner',
+    },
+    {
+      max: 8,
+      key: 'easy',
+    },
+    {
+      max: 12,
+      key: 'moderate',
+    },
+    {
+      max: 15,
+      key: 'hard',
+    },
+    {
+      max: 17.5,
+      key: 'expert',
+    },
+    {
+      max: Infinity,
+      key: 'extreme',
+    },
+  ] as const;
 
-export type RatingBand = (typeof RATING_BANDS)[number]['key'];
+export type RatingBand =
+  (typeof RATING_BANDS)[number]['key'];
 
 /** The band a rating falls in. */
-export function ratingBand(rating: number | null | undefined): RatingBand | null {
-  if (typeof rating !== 'number' || !Number.isFinite(rating)) return null;
-  return (RATING_BANDS.find((b) => rating < b.max) ?? RATING_BANDS[RATING_BANDS.length - 1]).key;
+export function ratingBand(
+  rating:
+    | number
+    | null
+    | undefined,
+): RatingBand | null {
+  if (
+    typeof rating !==
+      'number' ||
+    !Number.isFinite(
+      rating,
+    )
+  )
+    return null;
+  return (
+    RATING_BANDS.find(
+      (
+        b,
+      ) =>
+        rating <
+        b.max,
+    ) ??
+    RATING_BANDS[
+      RATING_BANDS.length -
+        1
+    ]
+  )
+    .key;
 }

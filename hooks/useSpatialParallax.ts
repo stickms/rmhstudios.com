@@ -12,7 +12,8 @@ import { useEffect } from 'react';
  * gate entry, because a selector that never matches is a slower `querySelector`
  * and a false suggestion that the surface exists.
  */
-const CONSUMERS = '.rmhp-root, .rmhc-root, .rmht, .spatial-design-hero';
+const CONSUMERS =
+  '.rmhp-root, .rmhc-root, .rmht, .spatial-design-hero';
 
 /**
  * Drives the restrained background parallax used by the spatial-minimal shell.
@@ -53,10 +54,17 @@ const CONSUMERS = '.rmhp-root, .rmhc-root, .rmht, .spatial-design-hero';
  * offset is read in the event rather than a frame later. `pathname` is what
  * re-runs the check when the visitor navigates.
  */
-export function useSpatialParallax(pathname?: string) {
+export function useSpatialParallax(
+  pathname?: string,
+) {
   useEffect(() => {
     // No consumer on this page → no listeners, no writes, nothing to stand down.
-    if (!document.querySelector(CONSUMERS)) return;
+    if (
+      !document.querySelector(
+        CONSUMERS,
+      )
+    )
+      return;
 
     // The CONSUMER, not `<html>`. A custom property on the root is inherited by
     // the whole document, so writing one per scroll frame invalidates the
@@ -66,36 +74,85 @@ export function useSpatialParallax(pathname?: string) {
     // descendant of the element `CONSUMERS` just matched, so it inherits from
     // here and nothing outside these pages is touched at all. `useLiquidBackground`
     // was rewritten to write to `.site-aurora` for the same reason.
-    const host = document.querySelector<HTMLElement>(CONSUMERS);
-    if (!host) return;
+    const host =
+      document.querySelector<HTMLElement>(
+        CONSUMERS,
+      );
+    if (
+      !host
+    )
+      return;
 
     let scrollFrame = 0;
 
-    const resetScroll = () => {
-      host.style.removeProperty('--spatial-scroll-y');
-    };
+    const resetScroll =
+      () => {
+        host.style.removeProperty(
+          '--spatial-scroll-y',
+        );
+      };
 
-    const onScroll = (event?: Event) => {
-      // Measured HERE, while the layout the browser has just scrolled is still
-      // clean. The frame below only writes.
-      const target = event?.target;
-      const scrollTop =
-        target instanceof HTMLElement && target.scrollTop > 0 ? target.scrollTop : window.scrollY;
-      const value = `${Math.min(scrollTop, 2400).toFixed(1)}px`;
-      if (scrollFrame) cancelAnimationFrame(scrollFrame);
-      scrollFrame = requestAnimationFrame(() => {
-        host.style.setProperty('--spatial-scroll-y', value);
-        scrollFrame = 0;
-      });
-    };
+    const onScroll =
+      (
+        event?: Event,
+      ) => {
+        // Measured HERE, while the layout the browser has just scrolled is still
+        // clean. The frame below only writes.
+        const target =
+          event?.target;
+        const scrollTop =
+          target instanceof
+            HTMLElement &&
+          target.scrollTop >
+            0
+            ? target.scrollTop
+            : window.scrollY;
+        const value = `${Math.min(scrollTop, 2400).toFixed(1)}px`;
+        if (
+          scrollFrame
+        )
+          cancelAnimationFrame(
+            scrollFrame,
+          );
+        scrollFrame =
+          requestAnimationFrame(
+            () => {
+              host.style.setProperty(
+                '--spatial-scroll-y',
+                value,
+              );
+              scrollFrame = 0;
+            },
+          );
+      };
 
-    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    window.addEventListener(
+      'scroll',
+      onScroll,
+      {
+        passive: true,
+        capture: true,
+      },
+    );
     onScroll();
 
     return () => {
-      if (scrollFrame) cancelAnimationFrame(scrollFrame);
-      window.removeEventListener('scroll', onScroll, { capture: true });
+      if (
+        scrollFrame
+      )
+        cancelAnimationFrame(
+          scrollFrame,
+        );
+      window.removeEventListener(
+        'scroll',
+        onScroll,
+        {
+          capture: true,
+        },
+      );
       resetScroll();
     };
-  }, [pathname]);
+  }, [
+    pathname,
+  ]);
 }

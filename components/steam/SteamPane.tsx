@@ -19,29 +19,78 @@ export function SteamPane({
   hero?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const { t } = useTranslation('games-hub');
-  if (hero) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'games-hub',
+    );
+  if (
+    hero
+  ) {
     return (
       <article className="stm-hub">
-        <Link to={backTo} className="stm-back">
-          <ArrowLeft aria-hidden />
-          {t('steam-back', { defaultValue: 'Back' })}
+        <Link
+          to={
+            backTo
+          }
+          className="stm-back"
+        >
+          <ArrowLeft
+            aria-hidden
+          />
+          {t(
+            'steam-back',
+            {
+              defaultValue:
+                'Back',
+            },
+          )}
         </Link>
-        {hero}
+        {
+          hero
+        }
         <div className="stm-pane-page">
-          <div className="stm-legacy">{children}</div>
+          <div className="stm-legacy">
+            {
+              children
+            }
+          </div>
         </div>
       </article>
     );
   }
   return (
     <section className="stm-pane-page">
-      <Link to={backTo} className="stm-back">
-        <ArrowLeft aria-hidden />
-        {t('steam-back', { defaultValue: 'Back' })}
+      <Link
+        to={
+          backTo
+        }
+        className="stm-back"
+      >
+        <ArrowLeft
+          aria-hidden
+        />
+        {t(
+          'steam-back',
+          {
+            defaultValue:
+              'Back',
+          },
+        )}
       </Link>
-      {title ? <h1 className="stm-pane-title">{title}</h1> : null}
-      <div className="stm-legacy">{children}</div>
+      {title ? (
+        <h1 className="stm-pane-title">
+          {
+            title
+          }
+        </h1>
+      ) : null}
+      <div className="stm-legacy">
+        {
+          children
+        }
+      </div>
     </section>
   );
 }

@@ -1,6 +1,13 @@
 import * as React from 'react';
-import { Reorder, useDragControls } from 'framer-motion';
-import { GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import {
+  Reorder,
+  useDragControls,
+} from 'framer-motion';
+import {
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
@@ -24,122 +31,258 @@ import { transition } from '@/lib/motion';
  * ```
  */
 export interface SortableItem {
- id: string;
+  id: string;
 }
 
-export interface SortableListProps<T extends SortableItem> {
- items: T[];
- onReorder: (next: T[]) => void;
- renderItem: (item: T, index: number) => React.ReactNode;
- /** Accessible label prefix for the move buttons, e.g. the item's name. */
- itemLabel?: (item: T) => string;
- className?: string;
+export interface SortableListProps<
+  T extends
+    SortableItem,
+> {
+  items: T[];
+  onReorder: (
+    next: T[],
+  ) => void;
+  renderItem: (
+    item: T,
+    index: number,
+  ) => React.ReactNode;
+  /** Accessible label prefix for the move buttons, e.g. the item's name. */
+  itemLabel?: (
+    item: T,
+  ) => string;
+  className?: string;
 }
 
-export function SortableList<T extends SortableItem>({
- items,
- onReorder,
- renderItem,
- itemLabel,
- className,
+export function SortableList<
+  T extends
+    SortableItem,
+>({
+  items,
+  onReorder,
+  renderItem,
+  itemLabel,
+  className,
 }: SortableListProps<T>) {
- const move = React.useCallback(
- (from: number, to: number) => {
- if (to < 0 || to >= items.length) return;
- const next = items.slice();
- const [moved] = next.splice(from, 1);
- next.splice(to, 0, moved);
- onReorder(next);
- },
- [items, onReorder]
- );
+  const move =
+    React.useCallback(
+      (
+        from: number,
+        to: number,
+      ) => {
+        if (
+          to <
+            0 ||
+          to >=
+            items.length
+        )
+          return;
+        const next =
+          items.slice();
+        const [
+          moved,
+        ] =
+          next.splice(
+            from,
+            1,
+          );
+        next.splice(
+          to,
+          0,
+          moved,
+        );
+        onReorder(
+          next,
+        );
+      },
+      [
+        items,
+        onReorder,
+      ],
+    );
 
- return (
- <Reorder.Group
- axis="y"
- values={items}
- onReorder={onReorder}
- className={cn('flex flex-col gap-2', className)}
- >
- {items.map((item, index) => (
- <SortableRow
- key={item.id}
- item={item}
- index={index}
- count={items.length}
- onMove={move}
- label={itemLabel?.(item)}
- >
- {renderItem(item, index)}
- </SortableRow>
- ))}
- </Reorder.Group>
- );
+  return (
+    <Reorder.Group
+      axis="y"
+      values={
+        items
+      }
+      onReorder={
+        onReorder
+      }
+      className={cn(
+        'flex flex-col gap-2',
+        className,
+      )}
+    >
+      {items.map(
+        (
+          item,
+          index,
+        ) => (
+          <SortableRow
+            key={
+              item.id
+            }
+            item={
+              item
+            }
+            index={
+              index
+            }
+            count={
+              items.length
+            }
+            onMove={
+              move
+            }
+            label={itemLabel?.(
+              item,
+            )}
+          >
+            {renderItem(
+              item,
+              index,
+            )}
+          </SortableRow>
+        ),
+      )}
+    </Reorder.Group>
+  );
 }
 
-function SortableRow<T extends SortableItem>({
- item,
- index,
- count,
- onMove,
- label,
- children,
+function SortableRow<
+  T extends
+    SortableItem,
+>({
+  item,
+  index,
+  count,
+  onMove,
+  label,
+  children,
 }: {
- item: T;
- index: number;
- count: number;
- onMove: (from: number, to: number) => void;
- label?: string;
- children: React.ReactNode;
+  item: T;
+  index: number;
+  count: number;
+  onMove: (
+    from: number,
+    to: number,
+  ) => void;
+  label?: string;
+  children: React.ReactNode;
 }) {
- const controls = useDragControls();
- const { t } = useTranslation('c-ui');
- const name = label ? ` ${label}` : '';
+  const controls =
+    useDragControls();
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-ui',
+    );
+  const name =
+    label
+      ? ` ${label}`
+      : '';
 
- return (
- <Reorder.Item
- value={item}
- dragListener={false}
- dragControls={controls}
- transition={transition}
- // L1 . row — cheap, unlimited, matches list surfaces.
- className="flex items-center gap-2 rounded-site px-3 py-2 text-site-text"
- >
- {/* Drag handle (pointer devices). Touch/keyboard users use the buttons. */}
- <span
- onPointerDown={(e) => controls.start(e)}
- // `data-gesture` (globals.css §user-select): the press that begins a
- // reorder lands HERE, so this is where a selection would anchor — and the
- // drag then sweeps it across the row's own label, which sits inches away
- // in the same flex line. Guarding the handle is enough to stop it: a
- // selection that never starts cannot be extended.
- data-gesture=""
- className="cursor-grab touch-none text-site-text-muted active:cursor-grabbing"
- aria-hidden
- >
- <GripVertical className="h-4 w-4" />
- </span>
+  return (
+    <Reorder.Item
+      value={
+        item
+      }
+      dragListener={
+        false
+      }
+      dragControls={
+        controls
+      }
+      transition={
+        transition
+      }
+      // L1 . row — cheap, unlimited, matches list surfaces.
+      className="flex items-center gap-2 rounded-site px-3 py-2 text-site-text"
+    >
+      {/* Drag handle (pointer devices). Touch/keyboard users use the buttons. */}
+      <span
+        onPointerDown={(
+          e,
+        ) =>
+          controls.start(
+            e,
+          )
+        }
+        // `data-gesture` (globals.css §user-select): the press that begins a
+        // reorder lands HERE, so this is where a selection would anchor — and the
+        // drag then sweeps it across the row's own label, which sits inches away
+        // in the same flex line. Guarding the handle is enough to stop it: a
+        // selection that never starts cannot be extended.
+        data-gesture=""
+        className="cursor-grab touch-none text-site-text-muted active:cursor-grabbing"
+        aria-hidden
+      >
+        <GripVertical className="h-4 w-4" />
+      </span>
 
- <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0 flex-1">
+        {
+          children
+        }
+      </div>
 
- <div className="flex shrink-0 items-center">
- <IconButton
- icon={ChevronUp}
- size="icon-sm"
- variant="ghost"
- disabled={index === 0}
- onClick={() => onMove(index, index - 1)}
- label={t('move-up', { defaultValue: 'Move up{{name}}', name })}
- />
- <IconButton
- icon={ChevronDown}
- size="icon-sm"
- variant="ghost"
- disabled={index === count - 1}
- onClick={() => onMove(index, index + 1)}
- label={t('move-down', { defaultValue: 'Move down{{name}}', name })}
- />
- </div>
- </Reorder.Item>
- );
+      <div className="flex shrink-0 items-center">
+        <IconButton
+          icon={
+            ChevronUp
+          }
+          size="icon-sm"
+          variant="ghost"
+          disabled={
+            index ===
+            0
+          }
+          onClick={() =>
+            onMove(
+              index,
+              index -
+                1,
+            )
+          }
+          label={t(
+            'move-up',
+            {
+              defaultValue:
+                'Move up{{name}}',
+              name,
+            },
+          )}
+        />
+        <IconButton
+          icon={
+            ChevronDown
+          }
+          size="icon-sm"
+          variant="ghost"
+          disabled={
+            index ===
+            count -
+              1
+          }
+          onClick={() =>
+            onMove(
+              index,
+              index +
+                1,
+            )
+          }
+          label={t(
+            'move-down',
+            {
+              defaultValue:
+                'Move down{{name}}',
+              name,
+            },
+          )}
+        />
+      </div>
+    </Reorder.Item>
+  );
 }

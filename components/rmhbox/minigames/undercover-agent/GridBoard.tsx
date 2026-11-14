@@ -21,38 +21,99 @@
  *   onHighlightChange: (position: number, highlighted: boolean) => void — Toggle highlight
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { m as motion, AnimatePresence } from 'framer-motion';
+import {
+  m as motion,
+  AnimatePresence,
+} from 'framer-motion';
 import { MousePointerClick } from 'lucide-react';
 import type { GridTileClient } from './UndercoverAgentGame';
 
 // ─── Color Mapping ───────────────────────────────────────────────
 
 /** Revealed tile background colors by tile type */
-const REVEALED_COLORS: Record<string, { bg: string; text: string }> = {
-  RED_AGENT: { bg: 'bg-app-danger/80', text: 'text-app-bg' },
-  BLUE_AGENT: { bg: 'bg-app-info/80', text: 'text-app-bg' },
-  BYSTANDER: { bg: 'bg-app-warning/40', text: 'text-app-text' },
-  ASSASSIN: { bg: 'bg-app-surface-hover border-2 border-app-border-bright', text: 'text-app-text' },
-};
+const REVEALED_COLORS: Record<
+  string,
+  {
+    bg: string;
+    text: string;
+  }
+> =
+  {
+    RED_AGENT:
+      {
+        bg: 'bg-app-danger/80',
+        text: 'text-app-bg',
+      },
+    BLUE_AGENT:
+      {
+        bg: 'bg-app-info/80',
+        text: 'text-app-bg',
+      },
+    BYSTANDER:
+      {
+        bg: 'bg-app-warning/40',
+        text: 'text-app-text',
+      },
+    ASSASSIN:
+      {
+        bg: 'bg-app-surface-hover border-2 border-app-border-bright',
+        text: 'text-app-text',
+      },
+  };
 
 /** Spymaster key-card border colors for hidden tiles */
-const SPYMASTER_HINTS: Record<string, string> = {
-  RED_AGENT: 'ring-2 ring-app-danger/50',
-  BLUE_AGENT: 'ring-2 ring-app-info/50',
-  BYSTANDER: 'ring-2 ring-app-warning/50',
-  ASSASSIN: 'ring-2 ring-app-border-bright bg-app-scrim',
-};
+const SPYMASTER_HINTS: Record<
+  string,
+  string
+> =
+  {
+    RED_AGENT:
+      'ring-2 ring-app-danger/50',
+    BLUE_AGENT:
+      'ring-2 ring-app-info/50',
+    BYSTANDER:
+      'ring-2 ring-app-warning/50',
+    ASSASSIN:
+      'ring-2 ring-app-border-bright bg-app-scrim',
+  };
 
 /** Get font size class based on word length so long words fit without truncating */
-function getWordSizeClass(word: string): string {
-  const len = word.length;
-  if (len <= 5) return 'text-xs sm:text-sm';
-  if (len <= 7) return 'text-xs sm:text-sm';
-  if (len <= 9) return 'text-[10px] sm:text-xs';
-  if (len <= 12) return 'text-[9px] sm:text-[11px]';
-  if (len <= 15) return 'text-[7px] sm:text-[9px]';
+function getWordSizeClass(
+  word: string,
+): string {
+  const len =
+    word.length;
+  if (
+    len <=
+    5
+  )
+    return 'text-xs sm:text-sm';
+  if (
+    len <=
+    7
+  )
+    return 'text-xs sm:text-sm';
+  if (
+    len <=
+    9
+  )
+    return 'text-[10px] sm:text-xs';
+  if (
+    len <=
+    12
+  )
+    return 'text-[9px] sm:text-[11px]';
+  if (
+    len <=
+    15
+  )
+    return 'text-[7px] sm:text-[9px]';
   return 'text-[6px] sm:text-[8px]';
 }
 
@@ -60,81 +121,243 @@ interface GridBoardProps {
   grid: GridTileClient[];
   canGuess: boolean;
   isSpymaster: boolean;
-  highlightCounts: Record<number, number>;
-  onTileClick: (position: number) => void;
-  onHighlightChange: (position: number, highlighted: boolean) => void;
+  highlightCounts: Record<
+    number,
+    number
+  >;
+  onTileClick: (
+    position: number,
+  ) => void;
+  onHighlightChange: (
+    position: number,
+    highlighted: boolean,
+  ) => void;
 }
 
-export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts, onTileClick, onHighlightChange }: GridBoardProps) {
-  const { t } = useTranslation("c-rmhbox");
+export default function GridBoard({
+  grid,
+  canGuess,
+  isSpymaster,
+  highlightCounts,
+  onTileClick,
+  onHighlightChange,
+}: GridBoardProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
   // Track which tiles the operative has locally highlighted (multi-select)
-  const [highlighted, setHighlighted] = useState<Set<number>>(new Set());
+  const [
+    highlighted,
+    setHighlighted,
+  ] =
+    useState<
+      Set<number>
+    >(
+      new Set(),
+    );
 
   // Clear local highlights when canGuess changes (e.g. turn ends)
   useEffect(() => {
-    if (!canGuess) setHighlighted(new Set());
-  }, [canGuess]);
+    if (
+      !canGuess
+    )
+      setHighlighted(
+        new Set(),
+      );
+  }, [
+    canGuess,
+  ]);
 
   // Clear local highlights for tiles that get revealed
   useEffect(() => {
-    setHighlighted((prev) => {
-      let changed = false;
-      const next = new Set(prev);
-      for (const pos of prev) {
-        const tile = grid.find((t) => t.position === pos);
-        if (tile?.state === 'REVEALED') {
-          next.delete(pos);
-          changed = true;
+    setHighlighted(
+      (
+        prev,
+      ) => {
+        let changed = false;
+        const next =
+          new Set(
+            prev,
+          );
+        for (const pos of prev) {
+          const tile =
+            grid.find(
+              (
+                t,
+              ) =>
+                t.position ===
+                pos,
+            );
+          if (
+            tile?.state ===
+            'REVEALED'
+          ) {
+            next.delete(
+              pos,
+            );
+            changed = true;
+          }
         }
-      }
-      return changed ? next : prev;
-    });
-  }, [grid]);
+        return changed
+          ? next
+          : prev;
+      },
+    );
+  }, [
+    grid,
+  ]);
 
-  const handleTileClick = useCallback((position: number) => {
-    if (!canGuess) return;
-    // Toggle highlight
-    setHighlighted((prev) => {
-      const next = new Set(prev);
-      if (next.has(position)) {
-        next.delete(position);
-        onHighlightChange(position, false);
-      } else {
-        next.add(position);
-        onHighlightChange(position, true);
-      }
-      return next;
-    });
-  }, [canGuess, onHighlightChange]);
+  const handleTileClick =
+    useCallback(
+      (
+        position: number,
+      ) => {
+        if (
+          !canGuess
+        )
+          return;
+        // Toggle highlight
+        setHighlighted(
+          (
+            prev,
+          ) => {
+            const next =
+              new Set(
+                prev,
+              );
+            if (
+              next.has(
+                position,
+              )
+            ) {
+              next.delete(
+                position,
+              );
+              onHighlightChange(
+                position,
+                false,
+              );
+            } else {
+              next.add(
+                position,
+              );
+              onHighlightChange(
+                position,
+                true,
+              );
+            }
+            return next;
+          },
+        );
+      },
+      [
+        canGuess,
+        onHighlightChange,
+      ],
+    );
 
-  const handleConfirmClick = useCallback((e: React.MouseEvent, position: number) => {
-    e.stopPropagation();
-    onTileClick(position);
-    setHighlighted((prev) => {
-      const next = new Set(prev);
-      next.delete(position);
-      return next;
-    });
-  }, [onTileClick]);
+  const handleConfirmClick =
+    useCallback(
+      (
+        e: React.MouseEvent,
+        position: number,
+      ) => {
+        e.stopPropagation();
+        onTileClick(
+          position,
+        );
+        setHighlighted(
+          (
+            prev,
+          ) => {
+            const next =
+              new Set(
+                prev,
+              );
+            next.delete(
+              position,
+            );
+            return next;
+          },
+        );
+      },
+      [
+        onTileClick,
+      ],
+    );
 
   return (
     <div className="grid w-full max-w-lg grid-cols-5 gap-1.5 sm:gap-2">
-      {grid.map((tile) => {
-        const isRevealed = tile.state === 'REVEALED';
-        const revealedStyle = isRevealed && tile.type ? REVEALED_COLORS[tile.type] : null;
-        const spymasterHint = isSpymaster && tile.type ? SPYMASTER_HINTS[tile.type] : '';
-        const clickable = canGuess && !isRevealed;
-        const isHighlighted = highlighted.has(tile.position) && !isRevealed;
-        const hlCount = highlightCounts[tile.position] ?? 0;
+      {grid.map(
+        (
+          tile,
+        ) => {
+          const isRevealed =
+            tile.state ===
+            'REVEALED';
+          const revealedStyle =
+            isRevealed &&
+            tile.type
+              ? REVEALED_COLORS[
+                  tile
+                    .type
+                ]
+              : null;
+          const spymasterHint =
+            isSpymaster &&
+            tile.type
+              ? SPYMASTER_HINTS[
+                  tile
+                    .type
+                ]
+              : '';
+          const clickable =
+            canGuess &&
+            !isRevealed;
+          const isHighlighted =
+            highlighted.has(
+              tile.position,
+            ) &&
+            !isRevealed;
+          const hlCount =
+            highlightCounts[
+              tile
+                .position
+            ] ??
+            0;
 
-        return (
-          <motion.button
-            key={tile.position}
-            onClick={() => clickable && handleTileClick(tile.position)}
-            disabled={!clickable}
-            whileHover={clickable ? { scale: 1.05 } : undefined}
-            whileTap={clickable ? { scale: 0.95 } : undefined}
-            className={`
+          return (
+            <motion.button
+              key={
+                tile.position
+              }
+              onClick={() =>
+                clickable &&
+                handleTileClick(
+                  tile.position,
+                )
+              }
+              disabled={
+                !clickable
+              }
+              whileHover={
+                clickable
+                  ? {
+                      scale: 1.05,
+                    }
+                  : undefined
+              }
+              whileTap={
+                clickable
+                  ? {
+                      scale: 0.95,
+                    }
+                  : undefined
+              }
+              className={`
               relative flex items-center justify-center rounded-app-sm border-2 box-border px-1 py-3 font-semibold
               transition duration-200 sm:py-4
               ${getWordSizeClass(tile.word)}
@@ -149,42 +372,94 @@ export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts
               ${clickable && isHighlighted ? 'cursor-pointer' : ''}
               ${!clickable && !isRevealed ? 'cursor-default' : ''}
             `}
-          >
-            <span className="text-center leading-tight truncate w-full px-0.5">{tile.word}</span>
+            >
+              <span className="text-center leading-tight truncate w-full px-0.5">
+                {
+                  tile.word
+                }
+              </span>
 
-            {/* Highlight count badge — upper left, visible to everyone when > 0 */}
-            <AnimatePresence>
-              {hlCount > 0 && !isRevealed && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                  className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-app-warning text-app-bg shadow-lg sm:h-6 sm:w-6"
-                  title={t("operatives-highlighting", { count: hlCount, defaultValue: "{{count}} operative highlighting", defaultValue_other: "{{count}} operatives highlighting" })}
-                >
-                  <span className="text-[9px] font-bold sm:text-[10px]">{hlCount}</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              {/* Highlight count badge — upper left, visible to everyone when > 0 */}
+              <AnimatePresence>
+                {hlCount >
+                  0 &&
+                  !isRevealed && (
+                    <motion.div
+                      initial={{
+                        opacity: 0,
+                        scale: 0.5,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        scale: 0.5,
+                      }}
+                      className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-app-warning text-app-bg shadow-lg sm:h-6 sm:w-6"
+                      title={t(
+                        'operatives-highlighting',
+                        {
+                          count:
+                            hlCount,
+                          defaultValue:
+                            '{{count}} operative highlighting',
+                          defaultValue_other:
+                            '{{count}} operatives highlighting',
+                        },
+                      )}
+                    >
+                      <span className="text-[9px] font-bold sm:text-[10px]">
+                        {
+                          hlCount
+                        }
+                      </span>
+                    </motion.div>
+                  )}
+              </AnimatePresence>
 
-            {/* Confirm guess icon — bottom right on highlighted tiles */}
-            <AnimatePresence>
-              {isHighlighted && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                  onClick={(e) => handleConfirmClick(e, tile.position)}
-                  className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-app-warning text-app-bg shadow-lg cursor-pointer hover:bg-app-warning transition-colors sm:h-6 sm:w-6"
-                  title={t("confirm-guess", { defaultValue: "Confirm guess" })}
-                >
-                  <MousePointerClick className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
-        );
-      })}
+              {/* Confirm guess icon — bottom right on highlighted tiles */}
+              <AnimatePresence>
+                {isHighlighted && (
+                  <motion.div
+                    initial={{
+                      opacity: 0,
+                      scale: 0.5,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      scale: 1,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.5,
+                    }}
+                    onClick={(
+                      e,
+                    ) =>
+                      handleConfirmClick(
+                        e,
+                        tile.position,
+                      )
+                    }
+                    className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-app-warning text-app-bg shadow-lg cursor-pointer hover:bg-app-warning transition-colors sm:h-6 sm:w-6"
+                    title={t(
+                      'confirm-guess',
+                      {
+                        defaultValue:
+                          'Confirm guess',
+                      },
+                    )}
+                  >
+                    <MousePointerClick className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          );
+        },
+      )}
     </div>
   );
 }

@@ -1,4 +1,8 @@
-import { readJson, removeKey, writeJson } from '@/lib/core/persist';
+import {
+  readJson,
+  removeKey,
+  writeJson,
+} from '@/lib/core/persist';
 import { create } from 'zustand';
 
 /**
@@ -17,36 +21,96 @@ import { create } from 'zustand';
  * user meant to silence for the next 45 minutes.
  */
 
-const STORAGE_KEY = 'rmh-focus';
+const STORAGE_KEY =
+  'rmh-focus';
 
 /** Notification categories that can be allowed through a focus window. */
-export const FOCUS_ALLOW_KINDS = ['dm', 'mention', 'security'] as const;
-export type FocusAllowKind = (typeof FOCUS_ALLOW_KINDS)[number];
+export const FOCUS_ALLOW_KINDS =
+  [
+    'dm',
+    'mention',
+    'security',
+  ] as const;
+export type FocusAllowKind =
+  (typeof FOCUS_ALLOW_KINDS)[number];
 
-export const DEFAULT_FOCUS_ALLOW: FocusAllowKind[] = ['security'];
+export const DEFAULT_FOCUS_ALLOW: FocusAllowKind[] =
+  [
+    'security',
+  ];
 
 interface PersistedFocus {
-  until: number | null;
+  until:
+    | number
+    | null;
   allow: FocusAllowKind[];
 }
 
-function isAllowKind(value: unknown): value is FocusAllowKind {
-  return typeof value === 'string' && (FOCUS_ALLOW_KINDS as readonly string[]).includes(value);
+function isAllowKind(
+  value: unknown,
+): value is FocusAllowKind {
+  return (
+    typeof value ===
+      'string' &&
+    (
+      FOCUS_ALLOW_KINDS as readonly string[]
+    ).includes(
+      value,
+    )
+  );
 }
 
 function read(): PersistedFocus {
-  const parsed = readJson<Partial<PersistedFocus> | null>(STORAGE_KEY, null);
-  if (!parsed) return { until: null, allow: DEFAULT_FOCUS_ALLOW };
-  const allow = Array.isArray(parsed.allow) ? parsed.allow.filter(isAllowKind) : [];
+  const parsed =
+    readJson<Partial<PersistedFocus> | null>(
+      STORAGE_KEY,
+      null,
+    );
+  if (
+    !parsed
+  )
+    return {
+      until:
+        null,
+      allow:
+        DEFAULT_FOCUS_ALLOW,
+    };
+  const allow =
+    Array.isArray(
+      parsed.allow,
+    )
+      ? parsed.allow.filter(
+          isAllowKind,
+        )
+      : [];
   return {
-    until: typeof parsed.until === 'number' ? parsed.until : null,
-    allow: allow.length ? allow : DEFAULT_FOCUS_ALLOW,
+    until:
+      typeof parsed.until ===
+      'number'
+        ? parsed.until
+        : null,
+    allow:
+      allow.length
+        ? allow
+        : DEFAULT_FOCUS_ALLOW,
   };
 }
 
-function write(state: PersistedFocus) {
-  if (state.until === null) removeKey(STORAGE_KEY);
-  else writeJson(STORAGE_KEY, state);
+function write(
+  state: PersistedFocus,
+) {
+  if (
+    state.until ===
+    null
+  )
+    removeKey(
+      STORAGE_KEY,
+    );
+  else
+    writeJson(
+      STORAGE_KEY,
+      state,
+    );
 }
 
 /**
@@ -55,23 +119,37 @@ function write(state: PersistedFocus) {
  * caused a re-render — a subscriber only re-renders when state *changes*, and a
  * timestamp quietly becoming historical is not a change.
  */
-let expiryTimer: ReturnType<typeof setTimeout> | null = null;
+let expiryTimer: ReturnType<
+  typeof setTimeout
+> | null =
+  null;
 
 function clearExpiry() {
-  if (expiryTimer) clearTimeout(expiryTimer);
-  expiryTimer = null;
+  if (
+    expiryTimer
+  )
+    clearTimeout(
+      expiryTimer,
+    );
+  expiryTimer =
+    null;
 }
 
 interface FocusStore {
   /** Epoch ms when the window ends, or null when focus mode is off. */
-  until: number | null;
+  until:
+    | number
+    | null;
   /** Categories that still notify while focus mode is on. */
   allow: FocusAllowKind[];
   /** True once localStorage has been read on the client. */
   hydrated: boolean;
   hydrate: () => void;
   /** Start (or extend) a focus window. */
-  start: (minutes: number, allow?: FocusAllowKind[]) => void;
+  start: (
+    minutes: number,
+    allow?: FocusAllowKind[],
+  ) => void;
   /** End it now. */
   end: () => void;
   /**
@@ -85,65 +163,193 @@ interface FocusStore {
 /** The longest delay `setTimeout` honours (2^31 − 1 ms). */
 const MAX_TIMEOUT_MS = 2_147_483_647;
 
-export const useFocusStore = create<FocusStore>((set, get) => {
-  const arm = (until: number) => {
-    clearExpiry();
-    const wait = until - Date.now();
-    // setTimeout holds a signed 32-bit delay: past ~24.8 days it fires at once and would end a long window
-    // immediately. Wait the longest it can, then re-arm for the remainder.
-    expiryTimer = setTimeout(
-      () => (wait > MAX_TIMEOUT_MS ? arm(until) : get().end()),
-      Math.max(0, Math.min(wait, MAX_TIMEOUT_MS)),
-    );
-  };
+export const useFocusStore =
+  create<FocusStore>(
+    (
+      set,
+      get,
+    ) => {
+      const arm =
+        (
+          until: number,
+        ) => {
+          clearExpiry();
+          const wait =
+            until -
+            Date.now();
+          // setTimeout holds a signed 32-bit delay: past ~24.8 days it fires at once and would end a long window
+          // immediately. Wait the longest it can, then re-arm for the remainder.
+          expiryTimer =
+            setTimeout(
+              () =>
+                wait >
+                MAX_TIMEOUT_MS
+                  ? arm(
+                      until,
+                    )
+                  : get().end(),
+              Math.max(
+                0,
+                Math.min(
+                  wait,
+                  MAX_TIMEOUT_MS,
+                ),
+              ),
+            );
+        };
 
-  return {
-    until: null,
-    allow: DEFAULT_FOCUS_ALLOW,
-    hydrated: false,
+      return {
+        until:
+          null,
+        allow:
+          DEFAULT_FOCUS_ALLOW,
+        hydrated: false,
 
-    hydrate: () => {
-      if (get().hydrated) return;
-      const stored = read();
-      // A window that expired while the tab was closed is simply over; don't
-      // resurrect it, and don't leave the dead record behind.
-      if (stored.until !== null && stored.until <= Date.now()) {
-        write({ until: null, allow: stored.allow });
-        set({ until: null, allow: stored.allow, hydrated: true });
-        return;
-      }
-      if (stored.until !== null) arm(stored.until);
-      set({ ...stored, hydrated: true });
+        hydrate:
+          () => {
+            if (
+              get()
+                .hydrated
+            )
+              return;
+            const stored =
+              read();
+            // A window that expired while the tab was closed is simply over; don't
+            // resurrect it, and don't leave the dead record behind.
+            if (
+              stored.until !==
+                null &&
+              stored.until <=
+                Date.now()
+            ) {
+              write(
+                {
+                  until:
+                    null,
+                  allow:
+                    stored.allow,
+                },
+              );
+              set(
+                {
+                  until:
+                    null,
+                  allow:
+                    stored.allow,
+                  hydrated: true,
+                },
+              );
+              return;
+            }
+            if (
+              stored.until !==
+              null
+            )
+              arm(
+                stored.until,
+              );
+            set(
+              {
+                ...stored,
+                hydrated: true,
+              },
+            );
+          },
+
+        start:
+          (
+            minutes,
+            allow,
+          ) => {
+            const safeMinutes =
+              Number.isFinite(
+                minutes,
+              )
+                ? Math.max(
+                    1,
+                    Math.round(
+                      minutes,
+                    ),
+                  )
+                : 30;
+            const until =
+              Date.now() +
+              safeMinutes *
+                60_000;
+            const nextAllow =
+              allow ??
+              get()
+                .allow;
+            write(
+              {
+                until,
+                allow:
+                  nextAllow,
+              },
+            );
+            arm(
+              until,
+            );
+            set(
+              {
+                until,
+                allow:
+                  nextAllow,
+                hydrated: true,
+              },
+            );
+          },
+
+        end: () => {
+          clearExpiry();
+          write(
+            {
+              until:
+                null,
+              allow:
+                get()
+                  .allow,
+            },
+          );
+          set(
+            {
+              until:
+                null,
+            },
+          );
+        },
+
+        isActive:
+          () => {
+            const {
+              until,
+            } =
+              get();
+            return (
+              until !==
+                null &&
+              until >
+                Date.now()
+            );
+          },
+      };
     },
-
-    start: (minutes, allow) => {
-      const safeMinutes = Number.isFinite(minutes) ? Math.max(1, Math.round(minutes)) : 30;
-      const until = Date.now() + safeMinutes * 60_000;
-      const nextAllow = allow ?? get().allow;
-      write({ until, allow: nextAllow });
-      arm(until);
-      set({ until, allow: nextAllow, hydrated: true });
-    },
-
-    end: () => {
-      clearExpiry();
-      write({ until: null, allow: get().allow });
-      set({ until: null });
-    },
-
-    isActive: () => {
-      const { until } = get();
-      return until !== null && until > Date.now();
-    },
-  };
-});
+  );
 
 /**
  * Should a notification of this kind be delivered? The single question every
  * call site actually has, so it does not have to remember that an inactive
  * window means "allow everything".
  */
-export function focusAllows(kind: FocusAllowKind): boolean {
-  const state = useFocusStore.getState();
-  return !state.isActive() || state.allow.includes(kind);
+export function focusAllows(
+  kind: FocusAllowKind,
+): boolean {
+  const state =
+    useFocusStore.getState();
+  return (
+    !state.isActive() ||
+    state.allow.includes(
+      kind,
+    )
+  );
 }

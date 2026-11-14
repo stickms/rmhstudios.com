@@ -1,4 +1,4 @@
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
 import EmojiSentence from './EmojiSentence';
 import EmojiKeyboard from './EmojiKeyboard';
 import GuessLog from './GuessLog';
@@ -8,8 +8,12 @@ interface ProducerViewProps {
   movieTitle: string;
   emojis: string[];
   maxEmojis: number;
-  onAddEmoji: (emoji: string) => void;
-  onRemoveEmoji: (index: number) => void;
+  onAddEmoji: (
+    emoji: string,
+  ) => void;
+  onRemoveEmoji: (
+    index: number,
+  ) => void;
   guessCount: number;
   correctCount: number;
   timeRemaining: number;
@@ -27,34 +31,90 @@ export default function ProducerView({
   timeRemaining,
   guessLog,
 }: ProducerViewProps) {
-  const { t } = useTranslation("c-rmhbox");
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
   return (
     <div className="flex flex-col items-center gap-3 p-4 w-full max-w-md mx-auto">
       <div className="flex items-center justify-between w-full">
-        <span className="text-xs text-app-text-muted uppercase tracking-wide">{t("your-movie", { defaultValue: "Your Movie" })}</span>
-        <span className="text-sm font-mono text-app-text-muted">{timeRemaining}s</span>
+        <span className="text-xs text-app-text-muted uppercase tracking-wide">
+          {t(
+            'your-movie',
+            {
+              defaultValue:
+                'Your Movie',
+            },
+          )}
+        </span>
+        <span className="text-sm font-mono text-app-text-muted">
+          {
+            timeRemaining
+          }
+          s
+        </span>
       </div>
 
-      <h2 className="text-xl font-bold text-app-accent text-center">{movieTitle}</h2>
+      <h2 className="text-xl font-bold text-app-accent text-center">
+        {
+          movieTitle
+        }
+      </h2>
 
       <div className="flex items-end gap-2 w-full">
         <div className="flex-1">
           <EmojiSentence
-            emojis={emojis}
-            maxEmojis={maxEmojis}
-            onRemove={onRemoveEmoji}
+            emojis={
+              emojis
+            }
+            maxEmojis={
+              maxEmojis
+            }
+            onRemove={
+              onRemoveEmoji
+            }
           />
         </div>
       </div>
 
-      <EmojiKeyboard onSelect={onAddEmoji} />
+      <EmojiKeyboard
+        onSelect={
+          onAddEmoji
+        }
+      />
 
       <div className="flex gap-4 text-xs text-app-text-muted">
-        <span>{t("guesses-count", { defaultValue: "Guesses: {{count}}", count: guessCount })}</span>
-        <span>{t("correct-count", { defaultValue: "Correct: {{count}}", count: correctCount })}</span>
+        <span>
+          {t(
+            'guesses-count',
+            {
+              defaultValue:
+                'Guesses: {{count}}',
+              count:
+                guessCount,
+            },
+          )}
+        </span>
+        <span>
+          {t(
+            'correct-count',
+            {
+              defaultValue:
+                'Correct: {{count}}',
+              count:
+                correctCount,
+            },
+          )}
+        </span>
       </div>
 
-      <GuessLog entries={guessLog} />
+      <GuessLog
+        entries={
+          guessLog
+        }
+      />
     </div>
   );
 }

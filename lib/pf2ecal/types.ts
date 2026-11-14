@@ -13,16 +13,26 @@
 
 import { z } from 'zod';
 
-export const AVAILABILITY = ['GOING', 'TENTATIVE', 'UNAVAILABLE'] as const;
-export type Availability = (typeof AVAILABILITY)[number];
+export const AVAILABILITY =
+  [
+    'GOING',
+    'TENTATIVE',
+    'UNAVAILABLE',
+  ] as const;
+export type Availability =
+  (typeof AVAILABILITY)[number];
 
 /** A player's answer, as rendered beside a session. */
 export interface SessionResponseDTO {
   userId: string;
   status: Availability;
-  note: string | null;
+  note:
+    | string
+    | null;
   name: string;
-  image: string | null;
+  image:
+    | string
+    | null;
   updatedAt: string;
 }
 
@@ -47,11 +57,17 @@ export interface SessionDTO {
   location: string;
   startsAt: string;
   endsAt: string;
-  canceledAt: string | null;
+  canceledAt:
+    | string
+    | null;
   /** True while the session still tracks the recurring rule. */
   fromRule: boolean;
-  createdByName: string | null;
-  updatedByName: string | null;
+  createdByName:
+    | string
+    | null;
+  updatedByName:
+    | string
+    | null;
   responses: SessionResponseDTO[];
   /** Cached AI description, or null until one has been generated. */
   blurb: SessionBlurbDTO | null;
@@ -63,14 +79,22 @@ export interface AnnouncementDTO {
   id: string;
   body: string;
   pinned: boolean;
-  authorName: string | null;
-  authorImage: string | null;
+  authorName:
+    | string
+    | null;
+  authorImage:
+    | string
+    | null;
   createdAt: string;
   updatedAt: string;
   /** The session this note is about, when it is about one. */
-  sessionId: string | null;
+  sessionId:
+    | string
+    | null;
   /** When it stops being shown; null means it stays until removed. */
-  expiresAt: string | null;
+  expiresAt:
+    | string
+    | null;
   /** True when the board wrote it after a change nobody explained. */
   automated: boolean;
 }
@@ -79,9 +103,15 @@ export interface AnnouncementDTO {
 export interface RecapDTO {
   id: string;
   body: string;
-  authorId: string | null;
-  authorName: string | null;
-  authorImage: string | null;
+  authorId:
+    | string
+    | null;
+  authorName:
+    | string
+    | null;
+  authorImage:
+    | string
+    | null;
   createdAt: string;
 }
 
@@ -93,14 +123,18 @@ export interface RecapDTO {
  * of them.
  */
 export interface RecapSummaryDTO {
-  summary: string | null;
+  summary:
+    | string
+    | null;
   count: number;
 }
 
 /** Board settings as the client sees them — the webhook is masked, never raw. */
 export interface SettingsDTO {
   /** `discord.com/…/123/…ab12`, or null when none is saved. Never the secret. */
-  webhookMasked: string | null;
+  webhookMasked:
+    | string
+    | null;
   remindersEnabled: boolean;
   /** Minutes past local midnight. 540 = 9:00am. */
   reminderMinutes: number;
@@ -111,8 +145,12 @@ export interface CalendarStateDTO {
   sessions: SessionDTO[];
   announcements: AnnouncementDTO[];
   /** Null when the viewer is signed out — the page is readable either way. */
-  viewerId: string | null;
-  viewerName: string | null;
+  viewerId:
+    | string
+    | null;
+  viewerName:
+    | string
+    | null;
   /** Human sentence describing the standing rule, e.g. for the header note. */
   scheduleNote: string;
   /** Absolute URL of the subscribe feed, so the client never rebuilds it. */
@@ -127,18 +165,36 @@ export interface CalendarStateDTO {
 /* Client-side shapes (dates parsed once)                                     */
 /* -------------------------------------------------------------------------- */
 
-export interface Session extends Omit<SessionDTO, 'startsAt' | 'endsAt' | 'canceledAt'> {
+export interface Session extends Omit<
+  SessionDTO,
+  | 'startsAt'
+  | 'endsAt'
+  | 'canceledAt'
+> {
   startsAt: Date;
   endsAt: Date;
   canceledAt: Date | null;
 }
 
-export function toSession(dto: SessionDTO): Session {
+export function toSession(
+  dto: SessionDTO,
+): Session {
   return {
     ...dto,
-    startsAt: new Date(dto.startsAt),
-    endsAt: new Date(dto.endsAt),
-    canceledAt: dto.canceledAt ? new Date(dto.canceledAt) : null,
+    startsAt:
+      new Date(
+        dto.startsAt,
+      ),
+    endsAt:
+      new Date(
+        dto.endsAt,
+      ),
+    canceledAt:
+      dto.canceledAt
+        ? new Date(
+            dto.canceledAt,
+          )
+        : null,
   };
 }
 
@@ -160,45 +216,123 @@ export const ANNOUNCEMENT_MAX = 2000;
 /** A session may not run longer than this — catches a mistyped end date. */
 export const MAX_SESSION_HOURS = 24;
 
-const isoInstant = z
-  .string()
-  .min(1)
-  .refine((value) => !Number.isNaN(Date.parse(value)), { message: 'Invalid date' });
+const isoInstant =
+  z
+    .string()
+    .min(
+      1,
+    )
+    .refine(
+      (
+        value,
+      ) =>
+        !Number.isNaN(
+          Date.parse(
+            value,
+          ),
+        ),
+      {
+        message:
+          'Invalid date',
+      },
+    );
 
 /**
  * Shared by create and edit. `superRefine` rather than two `.refine()`s so both
  * range problems can be reported against the field that is wrong — the form
  * shows the message under `endsAt`, which is the one the user can fix.
  */
-const sessionShape = z.object({
-  title: z.string().trim().min(1).max(TITLE_MAX),
-  notes: z.string().max(NOTES_MAX).default(''),
-  location: z.string().max(LOCATION_MAX).default(''),
-  startsAt: isoInstant,
-  endsAt: isoInstant,
-});
+const sessionShape =
+  z.object(
+    {
+      title:
+        z
+          .string()
+          .trim()
+          .min(
+            1,
+          )
+          .max(
+            TITLE_MAX,
+          ),
+      notes:
+        z
+          .string()
+          .max(
+            NOTES_MAX,
+          )
+          .default(
+            '',
+          ),
+      location:
+        z
+          .string()
+          .max(
+            LOCATION_MAX,
+          )
+          .default(
+            '',
+          ),
+      startsAt:
+        isoInstant,
+      endsAt:
+        isoInstant,
+    },
+  );
 
-function checkRange(value: { startsAt: string; endsAt: string }, ctx: z.RefinementCtx): void {
-  const start = Date.parse(value.startsAt);
-  const end = Date.parse(value.endsAt);
-  if (end <= start) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['endsAt'],
-      message: 'The end time must come after the start time.',
-    });
+function checkRange(
+  value: {
+    startsAt: string;
+    endsAt: string;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  const start =
+    Date.parse(
+      value.startsAt,
+    );
+  const end =
+    Date.parse(
+      value.endsAt,
+    );
+  if (
+    end <=
+    start
+  ) {
+    ctx.addIssue(
+      {
+        code: 'custom',
+        path: [
+          'endsAt',
+        ],
+        message:
+          'The end time must come after the start time.',
+      },
+    );
     return;
   }
-  if (end - start > MAX_SESSION_HOURS * 3_600_000) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['endsAt'],
-      message: `A session cannot run longer than ${MAX_SESSION_HOURS} hours.`,
-    });
+  if (
+    end -
+      start >
+    MAX_SESSION_HOURS *
+      3_600_000
+  ) {
+    ctx.addIssue(
+      {
+        code: 'custom',
+        path: [
+          'endsAt',
+        ],
+        message: `A session cannot run longer than ${MAX_SESSION_HOURS} hours.`,
+      },
+    );
   }
 }
 
-export const createSessionSchema = sessionShape.superRefine(checkRange);
+export const createSessionSchema =
+  sessionShape.superRefine(
+    checkRange,
+  );
 
 /**
  * Edit accepts a partial patch plus `canceled`, so the same endpoint handles
@@ -206,32 +340,94 @@ export const createSessionSchema = sessionShape.superRefine(checkRange);
  * The range check only runs when both ends are present; a patch that moves only
  * the start is range-checked on the server against the stored end.
  */
-export const updateSessionSchema = z
-  .object({
-    title: z.string().trim().min(1).max(TITLE_MAX).optional(),
-    notes: z.string().max(NOTES_MAX).optional(),
-    location: z.string().max(LOCATION_MAX).optional(),
-    startsAt: isoInstant.optional(),
-    endsAt: isoInstant.optional(),
-    canceled: z.boolean().optional(),
-    /**
-     * What to tell the table, when the editor wants to say it themselves.
-     *
-     * Tri-state, and the states are the point: an empty string means "post
-     * nothing", a non-empty string is posted as their own announcement, and
-     * ABSENT means "you write it" — the board posts the change itself. Absent
-     * is the default because the common case is someone dragging a session an
-     * hour later and closing the sheet, and a schedule change nobody hears
-     * about is the failure this whole feature exists to prevent.
-     */
-    announcement: z.string().trim().max(ANNOUNCEMENT_MAX).optional(),
-  })
-  .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to change.' });
+export const updateSessionSchema =
+  z
+    .object(
+      {
+        title:
+          z
+            .string()
+            .trim()
+            .min(
+              1,
+            )
+            .max(
+              TITLE_MAX,
+            )
+            .optional(),
+        notes:
+          z
+            .string()
+            .max(
+              NOTES_MAX,
+            )
+            .optional(),
+        location:
+          z
+            .string()
+            .max(
+              LOCATION_MAX,
+            )
+            .optional(),
+        startsAt:
+          isoInstant.optional(),
+        endsAt:
+          isoInstant.optional(),
+        canceled:
+          z
+            .boolean()
+            .optional(),
+        /**
+         * What to tell the table, when the editor wants to say it themselves.
+         *
+         * Tri-state, and the states are the point: an empty string means "post
+         * nothing", a non-empty string is posted as their own announcement, and
+         * ABSENT means "you write it" — the board posts the change itself. Absent
+         * is the default because the common case is someone dragging a session an
+         * hour later and closing the sheet, and a schedule change nobody hears
+         * about is the failure this whole feature exists to prevent.
+         */
+        announcement:
+          z
+            .string()
+            .trim()
+            .max(
+              ANNOUNCEMENT_MAX,
+            )
+            .optional(),
+      },
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        Object.keys(
+          v,
+        )
+          .length >
+        0,
+      {
+        message:
+          'Nothing to change.',
+      },
+    );
 
-export const respondSchema = z.object({
-  status: z.enum(AVAILABILITY),
-  note: z.string().trim().max(RESPONSE_NOTE_MAX).nullish(),
-});
+export const respondSchema =
+  z.object(
+    {
+      status:
+        z.enum(
+          AVAILABILITY,
+        ),
+      note: z
+        .string()
+        .trim()
+        .max(
+          RESPONSE_NOTE_MAX,
+        )
+        .nullish(),
+    },
+  );
 
 /**
  * Settings patch.
@@ -242,19 +438,74 @@ export const respondSchema = z.object({
  * and a string replaces it. A single nullable field could not express "don't
  * touch it", which is the common case.
  */
-export const settingsSchema = z
-  .object({
-    webhookUrl: z.string().max(500).nullish(),
-    remindersEnabled: z.boolean().optional(),
-    // 0..1439: minutes past midnight, so 1440 would be the next day's 00:00.
-    reminderMinutes: z.number().int().min(0).max(1439).optional(),
-    reminderTimeZone: z.string().min(1).max(64).optional(),
-  })
-  .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to change.' });
+export const settingsSchema =
+  z
+    .object(
+      {
+        webhookUrl:
+          z
+            .string()
+            .max(
+              500,
+            )
+            .nullish(),
+        remindersEnabled:
+          z
+            .boolean()
+            .optional(),
+        // 0..1439: minutes past midnight, so 1440 would be the next day's 00:00.
+        reminderMinutes:
+          z
+            .number()
+            .int()
+            .min(
+              0,
+            )
+            .max(
+              1439,
+            )
+            .optional(),
+        reminderTimeZone:
+          z
+            .string()
+            .min(
+              1,
+            )
+            .max(
+              64,
+            )
+            .optional(),
+      },
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        Object.keys(
+          v,
+        )
+          .length >
+        0,
+      {
+        message:
+          'Nothing to change.',
+      },
+    );
 
-export const testWebhookSchema = z.object({
-  webhookUrl: z.string().min(1).max(500),
-});
+export const testWebhookSchema =
+  z.object(
+    {
+      webhookUrl:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            500,
+          ),
+    },
+  );
 
 /**
  * The ids a client is asking for descriptions of.
@@ -263,16 +514,46 @@ export const testWebhookSchema = z.object({
  * ever asks about the cards it has actually put on screen. The cap is enforced
  * here so an unbounded array is a 400 rather than a bill.
  */
-export const blurbRequestSchema = z.object({
-  ids: z.array(z.string().min(1).max(64)).min(1).max(6),
-});
+export const blurbRequestSchema =
+  z.object(
+    {
+      ids: z
+        .array(
+          z
+            .string()
+            .min(
+              1,
+            )
+            .max(
+              64,
+            ),
+        )
+        .min(
+          1,
+        )
+        .max(
+          6,
+        ),
+    },
+  );
 
 /** One person's account of a session. Same ceiling as the session's own notes. */
 export const RECAP_MAX = 4000;
 
-export const recapSchema = z.object({
-  body: z.string().trim().min(1).max(RECAP_MAX),
-});
+export const recapSchema =
+  z.object(
+    {
+      body: z
+        .string()
+        .trim()
+        .min(
+          1,
+        )
+        .max(
+          RECAP_MAX,
+        ),
+    },
+  );
 
 /**
  * A page of sessions older than the board's own window.
@@ -281,27 +562,115 @@ export const recapSchema = z.object({
  * oldest session already on screen, so paging cannot skip or repeat a row when
  * someone adds a session mid-scroll.
  */
-export const archiveQuerySchema = z.object({
-  before: z
-    .string()
-    .refine((value) => !Number.isNaN(Date.parse(value)), { message: 'Invalid date' }),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
-});
+export const archiveQuerySchema =
+  z.object(
+    {
+      before:
+        z
+          .string()
+          .refine(
+            (
+              value,
+            ) =>
+              !Number.isNaN(
+                Date.parse(
+                  value,
+                ),
+              ),
+            {
+              message:
+                'Invalid date',
+            },
+          ),
+      limit:
+        z.coerce
+          .number()
+          .int()
+          .min(
+            1,
+          )
+          .max(
+            50,
+          )
+          .default(
+            20,
+          ),
+    },
+  );
 
-export const announcementSchema = z.object({
-  body: z.string().trim().min(1).max(ANNOUNCEMENT_MAX),
-  pinned: z.boolean().default(false),
-});
+export const announcementSchema =
+  z.object(
+    {
+      body: z
+        .string()
+        .trim()
+        .min(
+          1,
+        )
+        .max(
+          ANNOUNCEMENT_MAX,
+        ),
+      pinned:
+        z
+          .boolean()
+          .default(
+            false,
+          ),
+    },
+  );
 
-export const updateAnnouncementSchema = z
-  .object({
-    body: z.string().trim().min(1).max(ANNOUNCEMENT_MAX).optional(),
-    pinned: z.boolean().optional(),
-  })
-  .refine((v) => Object.keys(v).length > 0, { message: 'Nothing to change.' });
+export const updateAnnouncementSchema =
+  z
+    .object(
+      {
+        body: z
+          .string()
+          .trim()
+          .min(
+            1,
+          )
+          .max(
+            ANNOUNCEMENT_MAX,
+          )
+          .optional(),
+        pinned:
+          z
+            .boolean()
+            .optional(),
+      },
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        Object.keys(
+          v,
+        )
+          .length >
+        0,
+      {
+        message:
+          'Nothing to change.',
+      },
+    );
 
-export type CreateSessionInput = z.infer<typeof createSessionSchema>;
-export type UpdateSessionInput = z.infer<typeof updateSessionSchema>;
-export type RespondInput = z.infer<typeof respondSchema>;
-export type AnnouncementInput = z.infer<typeof announcementSchema>;
-export type SettingsInput = z.infer<typeof settingsSchema>;
+export type CreateSessionInput =
+  z.infer<
+    typeof createSessionSchema
+  >;
+export type UpdateSessionInput =
+  z.infer<
+    typeof updateSessionSchema
+  >;
+export type RespondInput =
+  z.infer<
+    typeof respondSchema
+  >;
+export type AnnouncementInput =
+  z.infer<
+    typeof announcementSchema
+  >;
+export type SettingsInput =
+  z.infer<
+    typeof settingsSchema
+  >;

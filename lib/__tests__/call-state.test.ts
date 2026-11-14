@@ -1,4 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
 import {
   IDLE,
   reduce,
@@ -21,243 +25,796 @@ import {
 } from '@/lib/call/ice';
 
 function dialing(): CallState {
-  return reduce(IDLE, { type: 'dial', peerId: 'them', conversationId: null });
+  return reduce(
+    IDLE,
+    {
+      type: 'dial',
+      peerId:
+        'them',
+      conversationId:
+        null,
+    },
+  );
 }
 function outgoing(): CallState {
-  return reduce(dialing(), { type: 'ringing', callId: 'c1' });
+  return reduce(
+    dialing(),
+    {
+      type: 'ringing',
+      callId:
+        'c1',
+    },
+  );
 }
 function incoming(): CallState {
-  return reduce(IDLE, { type: 'incoming', callId: 'c1', peerId: 'them', conversationId: 'conv1' });
+  return reduce(
+    IDLE,
+    {
+      type: 'incoming',
+      callId:
+        'c1',
+      peerId:
+        'them',
+      conversationId:
+        'conv1',
+    },
+  );
 }
 function connected(): CallState {
-  return reduce(reduce(outgoing(), { type: 'accepted' }), {
-    type: 'media-connected',
-    at: 1_000_000,
-  });
+  return reduce(
+    reduce(
+      outgoing(),
+      {
+        type: 'accepted',
+      },
+    ),
+    {
+      type: 'media-connected',
+      at: 1_000_000,
+    },
+  );
 }
 
 describe('call state machine', () => {
   it('starts idle', () => {
-    expect(IDLE.phase).toBe('idle');
-    expect(isBusy(IDLE)).toBe(false);
+    expect(
+      IDLE.phase,
+    ).toBe(
+      'idle',
+    );
+    expect(
+      isBusy(
+        IDLE,
+      ),
+    ).toBe(
+      false,
+    );
   });
 
   it('goes outgoing the moment we dial, before the server has answered', () => {
-    const s = dialing();
-    expect(s.phase).toBe('outgoing');
-    expect(s.callId).toBeNull();
-    expect(isBusy(s)).toBe(true);
+    const s =
+      dialing();
+    expect(
+      s.phase,
+    ).toBe(
+      'outgoing',
+    );
+    expect(
+      s.callId,
+    ).toBeNull();
+    expect(
+      isBusy(
+        s,
+      ),
+    ).toBe(
+      true,
+    );
   });
 
   it('takes the call id from the server on ringing', () => {
-    const s = outgoing();
-    expect(s.phase).toBe('outgoing');
-    expect(s.callId).toBe('c1');
+    const s =
+      outgoing();
+    expect(
+      s.phase,
+    ).toBe(
+      'outgoing',
+    );
+    expect(
+      s.callId,
+    ).toBe(
+      'c1',
+    );
   });
 
   it('ends a dialling call that was refused before it could ring', () => {
     // The whole reason `dial` exists. Offline/busy/privacy/blocked all arrive
     // before a call id does, and `end` is a no-op from `idle` — so without a
     // dialling state the caller was shown nothing at all.
-    for (const reason of ['offline', 'busy', 'privacy', 'blocked'] as const) {
-      const refused = reduce(dialing(), { type: 'end', reason });
-      expect(refused.phase).toBe('ended');
-      expect(refused.endReason).toBe(reason);
+    for (const reason of [
+      'offline',
+      'busy',
+      'privacy',
+      'blocked',
+    ] as const) {
+      const refused =
+        reduce(
+          dialing(),
+          {
+            type: 'end',
+            reason,
+          },
+        );
+      expect(
+        refused.phase,
+      ).toBe(
+        'ended',
+      );
+      expect(
+        refused.endReason,
+      ).toBe(
+        reason,
+      );
     }
   });
 
   it('ignores a ringing that does not belong to a call we are dialling', () => {
     // A late confirmation for an invite we already gave up on must not revive
     // it, and must not rename the call we have since started.
-    const ended = reduce(dialing(), { type: 'end', reason: 'cancelled' });
-    expect(reduce(ended, { type: 'ringing', callId: 'c9' })).toBe(ended);
-    const live = outgoing();
-    expect(reduce(live, { type: 'ringing', callId: 'c9' })).toBe(live);
-    expect(reduce(IDLE, { type: 'ringing', callId: 'c9' })).toBe(IDLE);
+    const ended =
+      reduce(
+        dialing(),
+        {
+          type: 'end',
+          reason:
+            'cancelled',
+        },
+      );
+    expect(
+      reduce(
+        ended,
+        {
+          type: 'ringing',
+          callId:
+            'c9',
+        },
+      ),
+    ).toBe(
+      ended,
+    );
+    const live =
+      outgoing();
+    expect(
+      reduce(
+        live,
+        {
+          type: 'ringing',
+          callId:
+            'c9',
+        },
+      ),
+    ).toBe(
+      live,
+    );
+    expect(
+      reduce(
+        IDLE,
+        {
+          type: 'ringing',
+          callId:
+            'c9',
+        },
+      ),
+    ).toBe(
+      IDLE,
+    );
   });
 
   it('rings in on incoming, carrying the conversation', () => {
-    const s = incoming();
-    expect(s.phase).toBe('incoming');
-    expect(s.conversationId).toBe('conv1');
+    const s =
+      incoming();
+    expect(
+      s.phase,
+    ).toBe(
+      'incoming',
+    );
+    expect(
+      s.conversationId,
+    ).toBe(
+      'conv1',
+    );
   });
 
   it('walks ringing → connecting → connected', () => {
-    const accepted = reduce(outgoing(), { type: 'accepted' });
-    expect(accepted.phase).toBe('connecting');
-    const live = reduce(accepted, { type: 'media-connected', at: 5 });
-    expect(live.phase).toBe('connected');
-    expect(live.connectedAt).toBe(5);
+    const accepted =
+      reduce(
+        outgoing(),
+        {
+          type: 'accepted',
+        },
+      );
+    expect(
+      accepted.phase,
+    ).toBe(
+      'connecting',
+    );
+    const live =
+      reduce(
+        accepted,
+        {
+          type: 'media-connected',
+          at: 5,
+        },
+      );
+    expect(
+      live.phase,
+    ).toBe(
+      'connected',
+    );
+    expect(
+      live.connectedAt,
+    ).toBe(
+      5,
+    );
   });
 
   // ── Races. Every one of these is a real thing that happens on a phone call. ──
 
   it('ignores a second dial while already busy', () => {
-    const s = outgoing();
-    const again = reduce(s, { type: 'dial', peerId: 'other', conversationId: null });
-    expect(again).toBe(s);
+    const s =
+      outgoing();
+    const again =
+      reduce(
+        s,
+        {
+          type: 'dial',
+          peerId:
+            'other',
+          conversationId:
+            null,
+        },
+      );
+    expect(
+      again,
+    ).toBe(
+      s,
+    );
   });
 
   it('ignores an incoming call while already in one', () => {
     // The server sends BUSY to the new caller; our own state must not be
     // clobbered mid-conversation.
-    const s = connected();
-    const interrupted = reduce(s, {
-      type: 'incoming',
-      callId: 'c9',
-      peerId: 'other',
-      conversationId: null,
-    });
-    expect(interrupted).toBe(s);
+    const s =
+      connected();
+    const interrupted =
+      reduce(
+        s,
+        {
+          type: 'incoming',
+          callId:
+            'c9',
+          peerId:
+            'other',
+          conversationId:
+            null,
+        },
+      );
+    expect(
+      interrupted,
+    ).toBe(
+      s,
+    );
   });
 
   it('ignores an accept that arrives after the call ended', () => {
     // Ring timeout fires on the server at the same moment they hit accept.
-    const missed = reduce(outgoing(), { type: 'end', reason: 'missed' });
-    const late = reduce(missed, { type: 'accepted' });
-    expect(late.phase).toBe('ended');
-    expect(late.endReason).toBe('missed');
+    const missed =
+      reduce(
+        outgoing(),
+        {
+          type: 'end',
+          reason:
+            'missed',
+        },
+      );
+    const late =
+      reduce(
+        missed,
+        {
+          type: 'accepted',
+        },
+      );
+    expect(
+      late.phase,
+    ).toBe(
+      'ended',
+    );
+    expect(
+      late.endReason,
+    ).toBe(
+      'missed',
+    );
   });
 
   it('ignores media-connected unless it was connecting', () => {
-    expect(reduce(outgoing(), { type: 'media-connected', at: 1 }).phase).toBe('outgoing');
-    expect(reduce(IDLE, { type: 'media-connected', at: 1 }).phase).toBe('idle');
+    expect(
+      reduce(
+        outgoing(),
+        {
+          type: 'media-connected',
+          at: 1,
+        },
+      )
+        .phase,
+    ).toBe(
+      'outgoing',
+    );
+    expect(
+      reduce(
+        IDLE,
+        {
+          type: 'media-connected',
+          at: 1,
+        },
+      )
+        .phase,
+    ).toBe(
+      'idle',
+    );
   });
 
   it('keeps the FIRST end reason when both sides end at once', () => {
     // We hung up; their decline lands a moment later. The user already saw
     // "call ended", and flipping it to "declined" would be a lie.
-    const ended = reduce(connected(), { type: 'end', reason: 'hangup' });
-    const alsoEnded = reduce(ended, { type: 'end', reason: 'declined' });
-    expect(alsoEnded.endReason).toBe('hangup');
+    const ended =
+      reduce(
+        connected(),
+        {
+          type: 'end',
+          reason:
+            'hangup',
+        },
+      );
+    const alsoEnded =
+      reduce(
+        ended,
+        {
+          type: 'end',
+          reason:
+            'declined',
+        },
+      );
+    expect(
+      alsoEnded.endReason,
+    ).toBe(
+      'hangup',
+    );
   });
 
   it('never ends an idle call', () => {
-    expect(reduce(IDLE, { type: 'end', reason: 'hangup' })).toBe(IDLE);
+    expect(
+      reduce(
+        IDLE,
+        {
+          type: 'end',
+          reason:
+            'hangup',
+        },
+      ),
+    ).toBe(
+      IDLE,
+    );
   });
 
   it('can end from any live phase', () => {
     for (const s of [
       outgoing(),
       incoming(),
-      reduce(outgoing(), { type: 'accepted' }),
+      reduce(
+        outgoing(),
+        {
+          type: 'accepted',
+        },
+      ),
       connected(),
     ]) {
-      expect(reduce(s, { type: 'end', reason: 'hangup' }).phase).toBe('ended');
+      expect(
+        reduce(
+          s,
+          {
+            type: 'end',
+            reason:
+              'hangup',
+          },
+        )
+          .phase,
+      ).toBe(
+        'ended',
+      );
     }
   });
 
   it('resets back to idle', () => {
-    const ended = reduce(connected(), { type: 'end', reason: 'hangup' });
-    expect(reduce(ended, { type: 'reset' })).toEqual(IDLE);
+    const ended =
+      reduce(
+        connected(),
+        {
+          type: 'end',
+          reason:
+            'hangup',
+        },
+      );
+    expect(
+      reduce(
+        ended,
+        {
+          type: 'reset',
+        },
+      ),
+    ).toEqual(
+      IDLE,
+    );
   });
 
   it('tracks mute for both sides, but only while in a call', () => {
-    const s = reduce(connected(), { type: 'set-muted', muted: true });
-    expect(s.muted).toBe(true);
-    expect(reduce(s, { type: 'peer-muted', muted: true }).peerMuted).toBe(true);
+    const s =
+      reduce(
+        connected(),
+        {
+          type: 'set-muted',
+          muted: true,
+        },
+      );
+    expect(
+      s.muted,
+    ).toBe(
+      true,
+    );
+    expect(
+      reduce(
+        s,
+        {
+          type: 'peer-muted',
+          muted: true,
+        },
+      )
+        .peerMuted,
+    ).toBe(
+      true,
+    );
     // Not while idle — a stray mute event must not resurrect state.
-    expect(reduce(IDLE, { type: 'set-muted', muted: true })).toBe(IDLE);
+    expect(
+      reduce(
+        IDLE,
+        {
+          type: 'set-muted',
+          muted: true,
+        },
+      ),
+    ).toBe(
+      IDLE,
+    );
   });
 
   it('knows when the microphone should be live', () => {
-    expect(wantsMicrophone('idle')).toBe(false);
+    expect(
+      wantsMicrophone(
+        'idle',
+      ),
+    ).toBe(
+      false,
+    );
     // Not while merely receiving a ring: the mic opens on accept, never before.
-    expect(wantsMicrophone('incoming')).toBe(false);
-    expect(wantsMicrophone('connecting')).toBe(true);
-    expect(wantsMicrophone('connected')).toBe(true);
-    expect(wantsMicrophone('ended')).toBe(false);
+    expect(
+      wantsMicrophone(
+        'incoming',
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      wantsMicrophone(
+        'connecting',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      wantsMicrophone(
+        'connected',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      wantsMicrophone(
+        'ended',
+      ),
+    ).toBe(
+      false,
+    );
   });
 
   it('treats ended as not-busy so a new call can start', () => {
-    expect(isBusy(reduce(connected(), { type: 'end', reason: 'hangup' }))).toBe(false);
+    expect(
+      isBusy(
+        reduce(
+          connected(),
+          {
+            type: 'end',
+            reason:
+              'hangup',
+          },
+        ),
+      ),
+    ).toBe(
+      false,
+    );
   });
 });
 
 describe('persisted status', () => {
   it('records a connected call as ENDED whatever the reason', () => {
-    for (const reason of ['hangup', 'failed', 'declined'] as const) {
-      expect(persistedStatus(reason, true)).toBe('ENDED');
+    for (const reason of [
+      'hangup',
+      'failed',
+      'declined',
+    ] as const) {
+      expect(
+        persistedStatus(
+          reason,
+          true,
+        ),
+      ).toBe(
+        'ENDED',
+      );
     }
   });
 
   it('maps unconnected outcomes to their own status', () => {
-    expect(persistedStatus('declined', false)).toBe('DECLINED');
-    expect(persistedStatus('cancelled', false)).toBe('CANCELLED');
-    expect(persistedStatus('missed', false)).toBe('MISSED');
-    expect(persistedStatus('busy', false)).toBe('BUSY');
-    expect(persistedStatus('failed', false)).toBe('FAILED');
+    expect(
+      persistedStatus(
+        'declined',
+        false,
+      ),
+    ).toBe(
+      'DECLINED',
+    );
+    expect(
+      persistedStatus(
+        'cancelled',
+        false,
+      ),
+    ).toBe(
+      'CANCELLED',
+    );
+    expect(
+      persistedStatus(
+        'missed',
+        false,
+      ),
+    ).toBe(
+      'MISSED',
+    );
+    expect(
+      persistedStatus(
+        'busy',
+        false,
+      ),
+    ).toBe(
+      'BUSY',
+    );
+    expect(
+      persistedStatus(
+        'failed',
+        false,
+      ),
+    ).toBe(
+      'FAILED',
+    );
   });
 
   it('does not leak a refusal reason into the callee history', () => {
     // If it never rang for them, their history says missed — not "you blocked
     // this person", which would tell the caller their block was noticed.
-    expect(persistedStatus('blocked', false)).toBe('MISSED');
-    expect(persistedStatus('privacy', false)).toBe('MISSED');
-    expect(persistedStatus('offline', false)).toBe('MISSED');
+    expect(
+      persistedStatus(
+        'blocked',
+        false,
+      ),
+    ).toBe(
+      'MISSED',
+    );
+    expect(
+      persistedStatus(
+        'privacy',
+        false,
+      ),
+    ).toBe(
+      'MISSED',
+    );
+    expect(
+      persistedStatus(
+        'offline',
+        false,
+      ),
+    ).toBe(
+      'MISSED',
+    );
   });
 });
 
 describe('duration', () => {
   it('is zero for a call that never connected', () => {
-    expect(durationSeconds(null, 10_000)).toBe(0);
+    expect(
+      durationSeconds(
+        null,
+        10_000,
+      ),
+    ).toBe(
+      0,
+    );
   });
 
   it('rounds to whole seconds', () => {
-    expect(durationSeconds(1_000_000, 1_090_400)).toBe(90);
+    expect(
+      durationSeconds(
+        1_000_000,
+        1_090_400,
+      ),
+    ).toBe(
+      90,
+    );
   });
 
   it('never goes negative on a clock skew', () => {
-    expect(durationSeconds(2_000, 1_000)).toBe(0);
+    expect(
+      durationSeconds(
+        2_000,
+        1_000,
+      ),
+    ).toBe(
+      0,
+    );
   });
 
   it('formats m:ss and h:mm:ss', () => {
-    expect(formatDuration(0)).toBe('0:00');
-    expect(formatDuration(9)).toBe('0:09');
-    expect(formatDuration(75)).toBe('1:15');
-    expect(formatDuration(600)).toBe('10:00');
-    expect(formatDuration(3661)).toBe('1:01:01');
-    expect(formatDuration(-5)).toBe('0:00');
+    expect(
+      formatDuration(
+        0,
+      ),
+    ).toBe(
+      '0:00',
+    );
+    expect(
+      formatDuration(
+        9,
+      ),
+    ).toBe(
+      '0:09',
+    );
+    expect(
+      formatDuration(
+        75,
+      ),
+    ).toBe(
+      '1:15',
+    );
+    expect(
+      formatDuration(
+        600,
+      ),
+    ).toBe(
+      '10:00',
+    );
+    expect(
+      formatDuration(
+        3661,
+      ),
+    ).toBe(
+      '1:01:01',
+    );
+    expect(
+      formatDuration(
+        -5,
+      ),
+    ).toBe(
+      '0:00',
+    );
   });
 });
 
 describe('who may call whom', () => {
-  const base = {
-    blocked: false,
-    muted: false,
-    calleeFollowsCaller: false,
-    callerFollowsCallee: false,
-  };
+  const base =
+    {
+      blocked: false,
+      muted: false,
+      calleeFollowsCaller: false,
+      callerFollowsCallee: false,
+    };
 
   it('lets anyone call when the setting is everyone', () => {
-    expect(canCall({ ...base, privacy: 'everyone' })).toEqual({ allowed: true });
+    expect(
+      canCall(
+        {
+          ...base,
+          privacy:
+            'everyone',
+        },
+      ),
+    ).toEqual(
+      {
+        allowed: true,
+      },
+    );
   });
 
   it('refuses everyone when the setting is nobody', () => {
     expect(
-      canCall({
-        ...base,
-        privacy: 'nobody',
-        calleeFollowsCaller: true,
-        callerFollowsCallee: true,
-      }),
-    ).toEqual({ allowed: false, reason: 'privacy' });
+      canCall(
+        {
+          ...base,
+          privacy:
+            'nobody',
+          calleeFollowsCaller: true,
+          callerFollowsCallee: true,
+        },
+      ),
+    ).toEqual(
+      {
+        allowed: false,
+        reason:
+          'privacy',
+      },
+    );
   });
 
   it('requires BOTH people to follow each other on mutuals', () => {
     expect(
-      canCall({ ...base, privacy: 'mutuals', calleeFollowsCaller: true, callerFollowsCallee: true }),
-    ).toEqual({ allowed: true });
+      canCall(
+        {
+          ...base,
+          privacy:
+            'mutuals',
+          calleeFollowsCaller: true,
+          callerFollowsCallee: true,
+        },
+      ),
+    ).toEqual(
+      {
+        allowed: true,
+      },
+    );
     // One direction is not a mutual, whichever direction it is.
     for (const half of [
-      { calleeFollowsCaller: true, callerFollowsCallee: false },
-      { calleeFollowsCaller: false, callerFollowsCallee: true },
-      { calleeFollowsCaller: false, callerFollowsCallee: false },
+      {
+        calleeFollowsCaller: true,
+        callerFollowsCallee: false,
+      },
+      {
+        calleeFollowsCaller: false,
+        callerFollowsCallee: true,
+      },
+      {
+        calleeFollowsCaller: false,
+        callerFollowsCallee: false,
+      },
     ]) {
-      expect(canCall({ ...base, privacy: 'mutuals', ...half })).toEqual({
-        allowed: false,
-        reason: 'privacy',
-      });
+      expect(
+        canCall(
+          {
+            ...base,
+            privacy:
+              'mutuals',
+            ...half,
+          },
+        ),
+      ).toEqual(
+        {
+          allowed: false,
+          reason:
+            'privacy',
+        },
+      );
     }
   });
 
@@ -265,114 +822,339 @@ describe('who may call whom', () => {
     // Even `everyone`, and even a mutual: "not you, not now" is the callee's word.
     for (const privacy of CALL_PRIVACY_VALUES) {
       expect(
-        canCall({
-          privacy,
-          blocked: false,
-          muted: true,
-          calleeFollowsCaller: true,
-          callerFollowsCallee: true,
-        }),
-      ).toEqual({ allowed: false, reason: 'privacy' });
+        canCall(
+          {
+            privacy,
+            blocked: false,
+            muted: true,
+            calleeFollowsCaller: true,
+            callerFollowsCallee: true,
+          },
+        ),
+      ).toEqual(
+        {
+          allowed: false,
+          reason:
+            'privacy',
+        },
+      );
     }
   });
 
   it('reports a block as a block even when the caller is also muted', () => {
-    expect(canCall({ ...base, privacy: 'everyone', blocked: true, muted: true })).toEqual({
-      allowed: false,
-      reason: 'blocked',
-    });
+    expect(
+      canCall(
+        {
+          ...base,
+          privacy:
+            'everyone',
+          blocked: true,
+          muted: true,
+        },
+      ),
+    ).toEqual(
+      {
+        allowed: false,
+        reason:
+          'blocked',
+      },
+    );
   });
 
   it('defaults to mutuals', () => {
-    expect(DEFAULT_CALL_PRIVACY).toBe('mutuals');
+    expect(
+      DEFAULT_CALL_PRIVACY,
+    ).toBe(
+      'mutuals',
+    );
   });
 
   it('lets a block beat every privacy setting', () => {
     for (const privacy of CALL_PRIVACY_VALUES) {
       expect(
-        canCall({
-          privacy,
-          blocked: true,
-          muted: false,
-          calleeFollowsCaller: true,
-          callerFollowsCallee: true,
-        }),
-      ).toEqual({ allowed: false, reason: 'blocked' });
+        canCall(
+          {
+            privacy,
+            blocked: true,
+            muted: false,
+            calleeFollowsCaller: true,
+            callerFollowsCallee: true,
+          },
+        ),
+      ).toEqual(
+        {
+          allowed: false,
+          reason:
+            'blocked',
+        },
+      );
     }
   });
 
   it('validates the privacy value', () => {
-    expect(isCallPrivacy('everyone')).toBe(true);
-    expect(isCallPrivacy('mutuals')).toBe(true);
+    expect(
+      isCallPrivacy(
+        'everyone',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      isCallPrivacy(
+        'mutuals',
+      ),
+    ).toBe(
+      true,
+    );
     // 'following' was retired; stale values must not be accepted as a setting.
-    for (const bad of ['EVERYONE', '', null, undefined, 1, 'friends', 'following']) {
-      expect(isCallPrivacy(bad)).toBe(false);
+    for (const bad of [
+      'EVERYONE',
+      '',
+      null,
+      undefined,
+      1,
+      'friends',
+      'following',
+    ]) {
+      expect(
+        isCallPrivacy(
+          bad,
+        ),
+      ).toBe(
+        false,
+      );
     }
   });
 });
 
 describe('ICE configuration', () => {
-  const hmac = (secret: string, message: string) => `hmac(${secret}:${message})`;
+  const hmac =
+    (
+      secret: string,
+      message: string,
+    ) =>
+      `hmac(${secret}:${message})`;
 
   it('falls back to public STUN with no configuration', () => {
-    const servers = buildIceServers({ userId: 'u1', now: 0, env: {} });
-    expect(servers).toHaveLength(1);
-    expect(Array.isArray(servers[0].urls)).toBe(true);
-    expect((servers[0].urls as string[])[0]).toMatch(/^stun:/);
-    expect(servers[0].credential).toBeUndefined();
+    const servers =
+      buildIceServers(
+        {
+          userId:
+            'u1',
+          now: 0,
+          env: {},
+        },
+      );
+    expect(
+      servers,
+    ).toHaveLength(
+      1,
+    );
+    expect(
+      Array.isArray(
+        servers[0]
+          .urls,
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      (
+        servers[0]
+          .urls as string[]
+      )[0],
+    ).toMatch(
+      /^stun:/,
+    );
+    expect(
+      servers[0]
+        .credential,
+    ).toBeUndefined();
   });
 
   it('reports whether a relay is configured', () => {
-    expect(hasTurn({})).toBe(false);
-    expect(hasTurn({ TURN_URL: 'turn:x:3478' })).toBe(false); // secret missing
-    expect(hasTurn({ TURN_URL: 'turn:x:3478', TURN_SECRET: 's' })).toBe(true);
+    expect(
+      hasTurn(
+        {},
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      hasTurn(
+        {
+          TURN_URL:
+            'turn:x:3478',
+        },
+      ),
+    ).toBe(
+      false,
+    ); // secret missing
+    expect(
+      hasTurn(
+        {
+          TURN_URL:
+            'turn:x:3478',
+          TURN_SECRET:
+            's',
+        },
+      ),
+    ).toBe(
+      true,
+    );
   });
 
   it('mints a short-lived, user-bound TURN credential', () => {
     const now = 1_700_000_000_000;
-    const servers = buildIceServers({
-      userId: 'u1',
-      now,
-      env: { TURN_URL: 'turn:relay.example:3478', TURN_SECRET: 'sekret' },
-      hmacSha1Base64: hmac,
-    });
-    const turn = servers[1];
-    const expiry = Math.floor(now / 1000) + TURN_CREDENTIAL_TTL_SEC;
-    expect(turn.username).toBe(`${expiry}:u1`);
-    expect(turn.credential).toBe(hmac('sekret', `${expiry}:u1`));
+    const servers =
+      buildIceServers(
+        {
+          userId:
+            'u1',
+          now,
+          env: {
+            TURN_URL:
+              'turn:relay.example:3478',
+            TURN_SECRET:
+              'sekret',
+          },
+          hmacSha1Base64:
+            hmac,
+        },
+      );
+    const turn =
+      servers[1];
+    const expiry =
+      Math.floor(
+        now /
+          1000,
+      ) +
+      TURN_CREDENTIAL_TTL_SEC;
+    expect(
+      turn.username,
+    ).toBe(
+      `${expiry}:u1`,
+    );
+    expect(
+      turn.credential,
+    ).toBe(
+      hmac(
+        'sekret',
+        `${expiry}:u1`,
+      ),
+    );
   });
 
   it('does not emit TURN without both url and secret', () => {
     expect(
-      buildIceServers({ userId: 'u1', now: 0, env: { TURN_URL: 'turn:x' }, hmacSha1Base64: hmac }),
-    ).toHaveLength(1);
+      buildIceServers(
+        {
+          userId:
+            'u1',
+          now: 0,
+          env: {
+            TURN_URL:
+              'turn:x',
+          },
+          hmacSha1Base64:
+            hmac,
+        },
+      ),
+    ).toHaveLength(
+      1,
+    );
     expect(
-      buildIceServers({ userId: 'u1', now: 0, env: { TURN_SECRET: 's' }, hmacSha1Base64: hmac }),
-    ).toHaveLength(1);
+      buildIceServers(
+        {
+          userId:
+            'u1',
+          now: 0,
+          env: {
+            TURN_SECRET:
+              's',
+          },
+          hmacSha1Base64:
+            hmac,
+        },
+      ),
+    ).toHaveLength(
+      1,
+    );
   });
 
   it('accepts several relay URLs so TLS/443 fallback can be listed', () => {
-    const servers = buildIceServers({
-      userId: 'u1',
-      now: 0,
-      env: { TURN_URL: 'turn:r:3478,turns:r:443', TURN_SECRET: 's' },
-      hmacSha1Base64: hmac,
-    });
-    expect(servers[1].urls).toEqual(['turn:r:3478', 'turns:r:443']);
+    const servers =
+      buildIceServers(
+        {
+          userId:
+            'u1',
+          now: 0,
+          env: {
+            TURN_URL:
+              'turn:r:3478,turns:r:443',
+            TURN_SECRET:
+              's',
+          },
+          hmacSha1Base64:
+            hmac,
+        },
+      );
+    expect(
+      servers[1]
+        .urls,
+    ).toEqual(
+      [
+        'turn:r:3478',
+        'turns:r:443',
+      ],
+    );
   });
 
   it('honours configured STUN servers', () => {
-    const servers = buildIceServers({
-      userId: 'u1',
-      now: 0,
-      env: { STUN_URLS: 'stun:a:1, stun:b:2' },
-    });
-    expect(servers[0].urls).toEqual(['stun:a:1', 'stun:b:2']);
+    const servers =
+      buildIceServers(
+        {
+          userId:
+            'u1',
+          now: 0,
+          env: {
+            STUN_URLS:
+              'stun:a:1, stun:b:2',
+          },
+        },
+      );
+    expect(
+      servers[0]
+        .urls,
+    ).toEqual(
+      [
+        'stun:a:1',
+        'stun:b:2',
+      ],
+    );
   });
 
   it('bundles onto one transport to keep firewall surface small', () => {
-    const cfg = rtcConfiguration(buildIceServers({ userId: 'u', now: 0, env: {} }));
-    expect(cfg.bundlePolicy).toBe('max-bundle');
-    expect(cfg.rtcpMuxPolicy).toBe('require');
+    const cfg =
+      rtcConfiguration(
+        buildIceServers(
+          {
+            userId:
+              'u',
+            now: 0,
+            env: {},
+          },
+        ),
+      );
+    expect(
+      cfg.bundlePolicy,
+    ).toBe(
+      'max-bundle',
+    );
+    expect(
+      cfg.rtcpMuxPolicy,
+    ).toBe(
+      'require',
+    );
   });
 });

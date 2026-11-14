@@ -3,40 +3,83 @@
  * every UI that renders results. Client-safe.
  */
 
-import type { Confidence, MatchReason } from './score';
+import type {
+  Confidence,
+  MatchReason,
+} from './score';
 
 /** Every corpus the site can search. Order here is the tie-break order in "Top". */
-export const SEARCH_KINDS = [
-  'person',
-  'post',
-  'build',
-  'blog',
-  'news',
-  'library',
-  'game',
-  'app',
-  'page',
-] as const;
+export const SEARCH_KINDS =
+  [
+    'person',
+    'post',
+    'build',
+    'blog',
+    'news',
+    'library',
+    'game',
+    'app',
+    'page',
+  ] as const;
 
-export type SearchKind = (typeof SEARCH_KINDS)[number];
+export type SearchKind =
+  (typeof SEARCH_KINDS)[number];
 
 /** The tab ids the search page exposes, mapped to the kinds each one includes. */
-export const SEARCH_TAB_KINDS = {
-  top: SEARCH_KINDS,
-  people: ['person'],
-  posts: ['post'],
-  builds: ['build'],
-  blog: ['blog', 'news'],
-  library: ['library'],
-  places: ['game', 'app', 'page'],
-} as const satisfies Record<string, readonly SearchKind[]>;
+export const SEARCH_TAB_KINDS =
+  {
+    top: SEARCH_KINDS,
+    people:
+      [
+        'person',
+      ],
+    posts:
+      [
+        'post',
+      ],
+    builds:
+      [
+        'build',
+      ],
+    blog: [
+      'blog',
+      'news',
+    ],
+    library:
+      [
+        'library',
+      ],
+    places:
+      [
+        'game',
+        'app',
+        'page',
+      ],
+  } as const satisfies Record<
+    string,
+    readonly SearchKind[]
+  >;
 
-export type SearchTab = keyof typeof SEARCH_TAB_KINDS;
+export type SearchTab =
+  keyof typeof SEARCH_TAB_KINDS;
 
-export const SEARCH_TABS = Object.keys(SEARCH_TAB_KINDS) as SearchTab[];
+export const SEARCH_TABS =
+  Object.keys(
+    SEARCH_TAB_KINDS,
+  ) as SearchTab[];
 
-export function isSearchTab(value: unknown): value is SearchTab {
-  return typeof value === 'string' && (SEARCH_TABS as string[]).includes(value);
+export function isSearchTab(
+  value: unknown,
+): value is SearchTab {
+  return (
+    typeof value ===
+      'string' &&
+    (
+      SEARCH_TABS as string[]
+    ).includes(
+      value,
+    )
+  );
 }
 
 /**
@@ -54,13 +97,18 @@ export interface SearchHit {
   /** Body preview. */
   snippet?: string;
   href: string;
-  image?: string | null;
+  image?:
+    | string
+    | null;
   /** 0..1 relevance on the shared scale. */
   score: number;
   confidence: Confidence;
   /** Which signal produced the score — surfaced in dev, useful in bug reports. */
   reason: MatchReason;
-  meta?: Record<string, unknown>;
+  meta?: Record<
+    string,
+    unknown
+  >;
 }
 
 export interface SearchMeta {
@@ -94,17 +142,30 @@ export interface SearchResponse {
   /** Ranked mix across every corpus — what the "Top" tab renders. */
   top: SearchHit[];
   /** All hits, grouped by kind, each already sorted by score. */
-  groups: Partial<Record<SearchKind, SearchHit[]>>;
+  groups: Partial<
+    Record<
+      SearchKind,
+      SearchHit[]
+    >
+  >;
   meta: SearchMeta;
 }
 
 /** Structurally a `ResolvedUser` (lib/user-display) plus the search score. */
 export interface LegacyPerson {
   id: string;
-  name: string | null;
-  image: string | null;
-  username?: string | null;
-  handle: string | null;
+  name:
+    | string
+    | null;
+  image:
+    | string
+    | null;
+  username?:
+    | string
+    | null;
+  handle:
+    | string
+    | null;
   isVerified?: boolean;
   isAdmin?: boolean;
   cosmetics?: unknown;

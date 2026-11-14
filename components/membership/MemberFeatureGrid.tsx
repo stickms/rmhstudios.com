@@ -64,23 +64,44 @@ interface Props {
  * lucide barrel plus the 431 KB `icons-*` chunk into this route's payload.
  * Keep in sync with `MEMBER_FEATURES` in `lib/entitlements/features.ts`.
  */
-const FEATURE_ICONS: Record<string, LucideIcon> = {
-  BadgeCheck,
-  BriefcaseBusiness,
-  Code,
-  EyeOff,
-  Keyboard,
-  ListChecks,
-  Mic,
-  Smile,
-  Sticker,
-  Timer,
-  Undo2,
-};
+const FEATURE_ICONS: Record<
+  string,
+  LucideIcon
+> =
+  {
+    BadgeCheck,
+    BriefcaseBusiness,
+    Code,
+    EyeOff,
+    Keyboard,
+    ListChecks,
+    Mic,
+    Smile,
+    Sticker,
+    Timer,
+    Undo2,
+  };
 
-function IconFor({ name, className }: { name: string; className?: string }) {
-  const Cmp = FEATURE_ICONS[name] ?? Sparkles;
-  return <Cmp className={className} aria-hidden />;
+function IconFor({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) {
+  const Cmp =
+    FEATURE_ICONS[
+      name
+    ] ??
+    Sparkles;
+  return (
+    <Cmp
+      className={
+        className
+      }
+      aria-hidden
+    />
+  );
 }
 
 /**
@@ -97,153 +118,408 @@ function IconFor({ name, className }: { name: string; className?: string }) {
  * Keep this in step with `MEMBER_FEATURES`; the test file asserts the two cover
  * exactly the same set, so a new feature cannot ship without its copy.
  */
-export function featureCopy(t: TFunction): Record<MemberFeature, { label: string; blurb: string }> {
+export function featureCopy(
+  t: TFunction,
+): Record<
+  MemberFeature,
+  {
+    label: string;
+    blurb: string;
+  }
+> {
   return {
-    'ad-free': {
-      label: t('feature-ad-free', { defaultValue: 'No ads' }),
-      blurb: t('feature-ad-free-blurb', {
-        defaultValue:
-          'Free accounts are paid for by ads. A membership removes them everywhere — and the ad script is never even fetched, so nothing is loaded to be blocked.',
-      }),
-    },
-    'custom-emoji': {
-      label: t('feature-custom-emoji', { defaultValue: 'Custom emoji' }),
-      blurb: t('feature-custom-emoji-blurb', {
-        defaultValue:
-          'Upload your own emoji and use them anywhere on the site — posts, comments, messages and reactions.',
-      }),
-    },
-    'sticker-packs': {
-      label: t('feature-sticker-packs', { defaultValue: 'Sticker & emoji packs' }),
-      blurb: t('feature-sticker-packs-blurb', {
-        defaultValue:
-          'Build packs of your own stickers and emoji and publish them. Anyone can subscribe to your packs and use them — free accounts included.',
-      }),
-    },
-    'voice-messages': {
-      label: t('feature-voice-messages', { defaultValue: 'Longer voice messages' }),
-      blurb: t('feature-voice-messages-blurb', {
-        defaultValue:
-          'Everyone gets voice messages. Members get longer ones at better quality — up to 10 minutes.',
-      }),
-    },
-    'bulk-content': {
-      label: t('feature-bulk-content', { defaultValue: 'Bulk content tools' }),
-      blurb: t('feature-bulk-content-blurb', {
-        defaultValue:
-          'Clean up thousands of posts, follows or bookmarks in one pass, with a preview before anything happens.',
-      }),
-    },
-    'trash-extended': {
-      label: t('feature-trash-extended', { defaultValue: 'Longer recovery window' }),
-      blurb: t('feature-trash-extended-blurb', {
-        defaultValue:
-          'Deleted posts are recoverable for 30 days on a free account, and 90 days with a membership.',
-      }),
-    },
-    'typing-analytics': {
-      label: t('feature-typing-analytics', { defaultValue: 'RMHType analytics' }),
-      blurb: t('feature-typing-analytics-blurb', {
-        defaultValue:
-          'A per-key heatmap of your speed and accuracy, and practice runs generated from your own worst keys.',
-      }),
-    },
-    'ladder-ai-prep': {
-      label: t('feature-ladder-ai-prep', { defaultValue: 'Interview prep' }),
-      blurb: t('feature-ladder-ai-prep-blurb', {
-        defaultValue:
-          'Turn any tracked application into a prep sheet: likely questions, your own stories matched to the posting.',
-      }),
-    },
-    'speedrun-submit': {
-      label: t('feature-speedrun-submit', { defaultValue: 'Speedrun leaderboards' }),
-      blurb: t('feature-speedrun-submit-blurb', {
-        defaultValue: 'Submit verified runs to per-category leaderboards. Free for everyone.',
-      }),
-    },
-    'api-access': {
-      label: t('feature-api-access', { defaultValue: 'Developer API' }),
-      blurb: t('feature-api-access-blurb', {
-        defaultValue: 'Programmatic access to the platform, with webhooks and image upload.',
-      }),
-    },
-    'profile-badge': {
-      label: t('feature-profile-badge', { defaultValue: 'Profile badge' }),
-      blurb: t('feature-profile-badge-blurb', {
-        defaultValue: 'A badge on your profile and beside your name.',
-      }),
-    },
+    'ad-free':
+      {
+        label:
+          t(
+            'feature-ad-free',
+            {
+              defaultValue:
+                'No ads',
+            },
+          ),
+        blurb:
+          t(
+            'feature-ad-free-blurb',
+            {
+              defaultValue:
+                'Free accounts are paid for by ads. A membership removes them everywhere — and the ad script is never even fetched, so nothing is loaded to be blocked.',
+            },
+          ),
+      },
+    'custom-emoji':
+      {
+        label:
+          t(
+            'feature-custom-emoji',
+            {
+              defaultValue:
+                'Custom emoji',
+            },
+          ),
+        blurb:
+          t(
+            'feature-custom-emoji-blurb',
+            {
+              defaultValue:
+                'Upload your own emoji and use them anywhere on the site — posts, comments, messages and reactions.',
+            },
+          ),
+      },
+    'sticker-packs':
+      {
+        label:
+          t(
+            'feature-sticker-packs',
+            {
+              defaultValue:
+                'Sticker & emoji packs',
+            },
+          ),
+        blurb:
+          t(
+            'feature-sticker-packs-blurb',
+            {
+              defaultValue:
+                'Build packs of your own stickers and emoji and publish them. Anyone can subscribe to your packs and use them — free accounts included.',
+            },
+          ),
+      },
+    'voice-messages':
+      {
+        label:
+          t(
+            'feature-voice-messages',
+            {
+              defaultValue:
+                'Longer voice messages',
+            },
+          ),
+        blurb:
+          t(
+            'feature-voice-messages-blurb',
+            {
+              defaultValue:
+                'Everyone gets voice messages. Members get longer ones at better quality — up to 10 minutes.',
+            },
+          ),
+      },
+    'bulk-content':
+      {
+        label:
+          t(
+            'feature-bulk-content',
+            {
+              defaultValue:
+                'Bulk content tools',
+            },
+          ),
+        blurb:
+          t(
+            'feature-bulk-content-blurb',
+            {
+              defaultValue:
+                'Clean up thousands of posts, follows or bookmarks in one pass, with a preview before anything happens.',
+            },
+          ),
+      },
+    'trash-extended':
+      {
+        label:
+          t(
+            'feature-trash-extended',
+            {
+              defaultValue:
+                'Longer recovery window',
+            },
+          ),
+        blurb:
+          t(
+            'feature-trash-extended-blurb',
+            {
+              defaultValue:
+                'Deleted posts are recoverable for 30 days on a free account, and 90 days with a membership.',
+            },
+          ),
+      },
+    'typing-analytics':
+      {
+        label:
+          t(
+            'feature-typing-analytics',
+            {
+              defaultValue:
+                'RMHType analytics',
+            },
+          ),
+        blurb:
+          t(
+            'feature-typing-analytics-blurb',
+            {
+              defaultValue:
+                'A per-key heatmap of your speed and accuracy, and practice runs generated from your own worst keys.',
+            },
+          ),
+      },
+    'ladder-ai-prep':
+      {
+        label:
+          t(
+            'feature-ladder-ai-prep',
+            {
+              defaultValue:
+                'Interview prep',
+            },
+          ),
+        blurb:
+          t(
+            'feature-ladder-ai-prep-blurb',
+            {
+              defaultValue:
+                'Turn any tracked application into a prep sheet: likely questions, your own stories matched to the posting.',
+            },
+          ),
+      },
+    'speedrun-submit':
+      {
+        label:
+          t(
+            'feature-speedrun-submit',
+            {
+              defaultValue:
+                'Speedrun leaderboards',
+            },
+          ),
+        blurb:
+          t(
+            'feature-speedrun-submit-blurb',
+            {
+              defaultValue:
+                'Submit verified runs to per-category leaderboards. Free for everyone.',
+            },
+          ),
+      },
+    'api-access':
+      {
+        label:
+          t(
+            'feature-api-access',
+            {
+              defaultValue:
+                'Developer API',
+            },
+          ),
+        blurb:
+          t(
+            'feature-api-access-blurb',
+            {
+              defaultValue:
+                'Programmatic access to the platform, with webhooks and image upload.',
+            },
+          ),
+      },
+    'profile-badge':
+      {
+        label:
+          t(
+            'feature-profile-badge',
+            {
+              defaultValue:
+                'Profile badge',
+            },
+          ),
+        blurb:
+          t(
+            'feature-profile-badge-blurb',
+            {
+              defaultValue:
+                'A badge on your profile and beside your name.',
+            },
+          ),
+      },
   };
 }
 
-export function MemberFeatureGrid({ tier, highlight, signedOut }: Props) {
-  const { t } = useTranslation('feed');
-  const effectiveTier: Tier = signedOut ? 'free' : tier;
-  const copy = featureCopy(t);
+export function MemberFeatureGrid({
+  tier,
+  highlight,
+  signedOut,
+}: Props) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const effectiveTier: Tier =
+    signedOut
+      ? 'free'
+      : tier;
+  const copy =
+    featureCopy(
+      t,
+    );
 
-  const features = useMemo(() => {
-    const list = [...MEMBER_FEATURES];
-    if (!highlight) return list;
-    const idx = list.findIndex((f) => f.id === highlight);
-    if (idx <= 0) return list;
-    // Pull the card the viewer came for to the front, keeping the rest in order.
-    return [list[idx], ...list.slice(0, idx), ...list.slice(idx + 1)];
-  }, [highlight]);
+  const features =
+    useMemo(() => {
+      const list =
+        [
+          ...MEMBER_FEATURES,
+        ];
+      if (
+        !highlight
+      )
+        return list;
+      const idx =
+        list.findIndex(
+          (
+            f,
+          ) =>
+            f.id ===
+            highlight,
+        );
+      if (
+        idx <=
+        0
+      )
+        return list;
+      // Pull the card the viewer came for to the front, keeping the rest in order.
+      return [
+        list[
+          idx
+        ],
+        ...list.slice(
+          0,
+          idx,
+        ),
+        ...list.slice(
+          idx +
+            1,
+        ),
+      ];
+    }, [
+      highlight,
+    ]);
 
   return (
     <div>
       <h2 className="t-heading">
-        {t('membership-features-title', { defaultValue: 'What a membership unlocks' })}
+        {t(
+          'membership-features-title',
+          {
+            defaultValue:
+              'What a membership unlocks',
+          },
+        )}
       </h2>
       <p className="t-body mt-1 max-w-2xl text-site-text-muted">
-        {t('membership-features-lead', {
-          defaultValue:
-            'Each feature is included from the plan named beside it. Packs made by members can be installed and used by anyone, free accounts included.',
-        })}
+        {t(
+          'membership-features-lead',
+          {
+            defaultValue:
+              'Each feature is included from the plan named beside it. Packs made by members can be installed and used by anyone, free accounts included.',
+          },
+        )}
       </p>
 
       <ul className="mt-4 border-t border-site-border">
-        {features.map((feature) => {
-          const unlocked = !signedOut && canUse(effectiveTier, feature.id);
-          const isHighlight = feature.id === highlight;
-          return (
-            <li
-              key={feature.id}
-              data-slot="member-feature"
-              aria-current={isHighlight ? 'true' : undefined}
-              // The feature the viewer came for is marked by an ink rule at its start, and by
-              // being first: a row on a rule, not a ringed card.
-              className={cn(
-                'flex items-start gap-3 border-b border-site-border py-3',
-                isHighlight && 'border-s-2 border-s-site-text ps-3',
-              )}
-            >
-              <IconFor
-                name={feature.icon}
+        {features.map(
+          (
+            feature,
+          ) => {
+            const unlocked =
+              !signedOut &&
+              canUse(
+                effectiveTier,
+                feature.id,
+              );
+            const isHighlight =
+              feature.id ===
+              highlight;
+            return (
+              <li
+                key={
+                  feature.id
+                }
+                data-slot="member-feature"
+                aria-current={
+                  isHighlight
+                    ? 'true'
+                    : undefined
+                }
+                // The feature the viewer came for is marked by an ink rule at its start, and by
+                // being first: a row on a rule, not a ringed card.
                 className={cn(
-                  'mt-0.5 size-4 shrink-0',
-                  unlocked ? 'text-site-text' : 'text-site-text-muted',
+                  'flex items-start gap-3 border-b border-site-border py-3',
+                  isHighlight &&
+                    'border-s-2 border-s-site-text ps-3',
                 )}
-              />
-              <div className="min-w-0 flex-1">
-                <h3 className="t-body font-medium text-site-text">{copy[feature.id].label}</h3>
-                <p className="t-body text-site-text-muted">{copy[feature.id].blurb}</p>
-              </div>
-              {unlocked ? (
-                <Badge variant="success">
-                  {t('feature-included', { defaultValue: 'Included' })}
-                </Badge>
-              ) : (
-                <Badge>
-                  <Lock aria-hidden />
-                  {feature.minTier === 'free'
-                    ? t('feature-free', { defaultValue: 'Free' })
-                    : TIER_LABELS[feature.minTier]}
-                </Badge>
-              )}
-            </li>
-          );
-        })}
+              >
+                <IconFor
+                  name={
+                    feature.icon
+                  }
+                  className={cn(
+                    'mt-0.5 size-4 shrink-0',
+                    unlocked
+                      ? 'text-site-text'
+                      : 'text-site-text-muted',
+                  )}
+                />
+                <div className="min-w-0 flex-1">
+                  <h3 className="t-body font-medium text-site-text">
+                    {
+                      copy[
+                        feature
+                          .id
+                      ]
+                        .label
+                    }
+                  </h3>
+                  <p className="t-body text-site-text-muted">
+                    {
+                      copy[
+                        feature
+                          .id
+                      ]
+                        .blurb
+                    }
+                  </p>
+                </div>
+                {unlocked ? (
+                  <Badge variant="success">
+                    {t(
+                      'feature-included',
+                      {
+                        defaultValue:
+                          'Included',
+                      },
+                    )}
+                  </Badge>
+                ) : (
+                  <Badge>
+                    <Lock
+                      aria-hidden
+                    />
+                    {feature.minTier ===
+                    'free'
+                      ? t(
+                          'feature-free',
+                          {
+                            defaultValue:
+                              'Free',
+                          },
+                        )
+                      : TIER_LABELS[
+                          feature
+                            .minTier
+                        ]}
+                  </Badge>
+                )}
+              </li>
+            );
+          },
+        )}
       </ul>
     </div>
   );

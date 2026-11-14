@@ -7,15 +7,46 @@ import { useTranslation } from 'react-i18next';
 import SpPlayPage from './SpPlayPage';
 
 export default function Hl2PlayPage() {
-  const { t } = useTranslation('c-tf2-game');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-game',
+    );
   return (
     <SpPlayPage
       game="hl2"
-      title={t('play_hl2_title', { defaultValue: 'Half-Life 2' })}
-      subtitle={t('play_hl2_point_insertion', { defaultValue: 'Point Insertion. Walk off the train into City 17.' })}
+      title={t(
+        'play_hl2_title',
+        {
+          defaultValue:
+            'Half-Life 2',
+        },
+      )}
+      subtitle={t(
+        'play_hl2_point_insertion',
+        {
+          defaultValue:
+            'Point Insertion. Walk off the train into City 17.',
+        },
+      )}
       chapters={{
-        d1_trainstation_01: t('play_hl2_ch1', { defaultValue: 'Point Insertion: Arrival' }),
-        d1_trainstation_02: t('play_hl2_ch2', { defaultValue: 'Point Insertion: City 17 Plaza' }),
+        d1_trainstation_01:
+          t(
+            'play_hl2_ch1',
+            {
+              defaultValue:
+                'Point Insertion: Arrival',
+            },
+          ),
+        d1_trainstation_02:
+          t(
+            'play_hl2_ch2',
+            {
+              defaultValue:
+                'Point Insertion: City 17 Plaza',
+            },
+          ),
       }}
     />
   );

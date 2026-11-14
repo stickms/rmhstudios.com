@@ -45,64 +45,256 @@ export interface Hitbox {
 }
 
 /** Torso width multiplier per class (heavy and soldier/demo are broader). */
-const WIDTH: readonly number[] = [1, 0.9, 0.95, 1.05, 1.05, 1, 1.35, 1, 0.95, 1];
+const WIDTH: readonly number[] =
+  [
+    1,
+    0.9,
+    0.95,
+    1.05,
+    1.05,
+    1,
+    1.35,
+    1,
+    0.95,
+    1,
+  ];
 
 /**
  * A hitbox set for a body with standing (or crouched) eye height `eye` and torso width `width`
  * (another game on the engine builds its own: lib/csgo-game uses CS:GO's eye heights).
  */
-export function buildHitboxSet(eye: number, width: number, crouched: boolean): Hitbox[] {
-  return buildSet(eye, width, crouched);
+export function buildHitboxSet(
+  eye: number,
+  width: number,
+  crouched: boolean,
+): Hitbox[] {
+  return buildSet(
+    eye,
+    width,
+    crouched,
+  );
 }
 
-function buildSet(eye: number, width: number, crouched: boolean): Hitbox[] {
-  const w = width;
-  const head = crouched ? eye + 2 : eye + 3;
-  const neck = head - 7;
-  const hip = crouched ? eye * 0.5 : eye * 0.47;
-  const waist = crouched ? eye * 0.68 : eye * 0.64;
-  const legHalf = hip * 0.5;
+function buildSet(
+  eye: number,
+  width: number,
+  crouched: boolean,
+): Hitbox[] {
+  const w =
+    width;
+  const head =
+    crouched
+      ? eye +
+        2
+      : eye +
+        3;
+  const neck =
+    head -
+    7;
+  const hip =
+    crouched
+      ? eye *
+        0.5
+      : eye *
+        0.47;
+  const waist =
+    crouched
+      ? eye *
+        0.68
+      : eye *
+        0.64;
+  const legHalf =
+    hip *
+    0.5;
   return [
-    { group: HITGROUP_HEAD, cx: 1, cy: 0, cz: head, hx: 6.5, hy: 6, hz: 7 },
-    { group: HITGROUP_CHEST, cx: 0, cy: 0, cz: (waist + neck) * 0.5, hx: 8 * w, hy: 11 * w, hz: (neck - waist) * 0.5 },
-    { group: HITGROUP_STOMACH, cx: 0, cy: 0, cz: (hip + waist) * 0.5, hx: 7 * w, hy: 10 * w, hz: (waist - hip) * 0.5 },
     {
-      group: HITGROUP_LEFTARM,
-      cx: 2,
-      cy: 15 * w,
-      cz: (hip + neck) * 0.5,
-      hx: 4,
-      hy: 4 * w,
-      hz: (neck - hip) * 0.5,
+      group:
+        HITGROUP_HEAD,
+      cx: 1,
+      cy: 0,
+      cz: head,
+      hx: 6.5,
+      hy: 6,
+      hz: 7,
     },
     {
-      group: HITGROUP_RIGHTARM,
-      cx: 2,
-      cy: -15 * w,
-      cz: (hip + neck) * 0.5,
-      hx: 4,
-      hy: 4 * w,
-      hz: (neck - hip) * 0.5,
+      group:
+        HITGROUP_CHEST,
+      cx: 0,
+      cy: 0,
+      cz:
+        (waist +
+          neck) *
+        0.5,
+      hx:
+        8 *
+        w,
+      hy:
+        11 *
+        w,
+      hz:
+        (neck -
+          waist) *
+        0.5,
     },
-    { group: HITGROUP_LEFTLEG, cx: crouched ? 4 : 0, cy: 6 * w, cz: legHalf, hx: 5, hy: 4.5 * w, hz: legHalf },
-    { group: HITGROUP_RIGHTLEG, cx: crouched ? 4 : 0, cy: -6 * w, cz: legHalf, hx: 5, hy: 4.5 * w, hz: legHalf },
+    {
+      group:
+        HITGROUP_STOMACH,
+      cx: 0,
+      cy: 0,
+      cz:
+        (hip +
+          waist) *
+        0.5,
+      hx:
+        7 *
+        w,
+      hy:
+        10 *
+        w,
+      hz:
+        (waist -
+          hip) *
+        0.5,
+    },
+    {
+      group:
+        HITGROUP_LEFTARM,
+      cx: 2,
+      cy:
+        15 *
+        w,
+      cz:
+        (hip +
+          neck) *
+        0.5,
+      hx: 4,
+      hy:
+        4 *
+        w,
+      hz:
+        (neck -
+          hip) *
+        0.5,
+    },
+    {
+      group:
+        HITGROUP_RIGHTARM,
+      cx: 2,
+      cy:
+        -15 *
+        w,
+      cz:
+        (hip +
+          neck) *
+        0.5,
+      hx: 4,
+      hy:
+        4 *
+        w,
+      hz:
+        (neck -
+          hip) *
+        0.5,
+    },
+    {
+      group:
+        HITGROUP_LEFTLEG,
+      cx: crouched
+        ? 4
+        : 0,
+      cy:
+        6 *
+        w,
+      cz: legHalf,
+      hx: 5,
+      hy:
+        4.5 *
+        w,
+      hz: legHalf,
+    },
+    {
+      group:
+        HITGROUP_RIGHTLEG,
+      cx: crouched
+        ? 4
+        : 0,
+      cy:
+        -6 *
+        w,
+      cz: legHalf,
+      hx: 5,
+      hy:
+        4.5 *
+        w,
+      hz: legHalf,
+    },
   ];
 }
 
-const STANDING: Hitbox[][] = [];
-const CROUCHED: Hitbox[][] = [];
-for (let c = 0; c < TF_CLASS_COUNT; c++) {
-  const w = WIDTH[c] ?? 1;
-  STANDING.push(buildSet(classEyeHeight(c), w, false));
+const STANDING: Hitbox[][] =
+  [];
+const CROUCHED: Hitbox[][] =
+  [];
+for (
+  let c = 0;
+  c <
+  TF_CLASS_COUNT;
+  c++
+) {
+  const w =
+    WIDTH[
+      c
+    ] ??
+    1;
+  STANDING.push(
+    buildSet(
+      classEyeHeight(
+        c,
+      ),
+      w,
+      false,
+    ),
+  );
   // Crouched eye height is VEC_DUCK_VIEW for everyone; taller classes fold a little lower.
-  const tall = c === TF_CLASS_HEAVYWEAPONS || c === TF_CLASS_SOLDIER || c === TF_CLASS_DEMOMAN ? 1 : 0;
-  CROUCHED.push(buildSet(VEC_DUCK_VIEW_Z + tall, w, true));
+  const tall =
+    c ===
+      TF_CLASS_HEAVYWEAPONS ||
+    c ===
+      TF_CLASS_SOLDIER ||
+    c ===
+      TF_CLASS_DEMOMAN
+      ? 1
+      : 0;
+  CROUCHED.push(
+    buildSet(
+      VEC_DUCK_VIEW_Z +
+        tall,
+      w,
+      true,
+    ),
+  );
 }
 
 /** The hitbox set for a class and stance. */
-export function hitboxSet(classIndex: number, ducked: boolean): readonly Hitbox[] {
-  const c = classIndex > 0 && classIndex < TF_CLASS_COUNT ? classIndex : 0;
-  return ducked ? CROUCHED[c] : STANDING[c];
+export function hitboxSet(
+  classIndex: number,
+  ducked: boolean,
+): readonly Hitbox[] {
+  const c =
+    classIndex >
+      0 &&
+    classIndex <
+      TF_CLASS_COUNT
+      ? classIndex
+      : 0;
+  return ducked
+    ? CROUCHED[
+        c
+      ]
+    : STANDING[
+        c
+      ];
 }
 
 export interface HitboxTraceResult {
@@ -112,11 +304,17 @@ export interface HitboxTraceResult {
   normal: Vec3;
 }
 
-export const createHitboxTraceResult = (): HitboxTraceResult => ({
-  fraction: 1,
-  group: 0,
-  normal: { x: 0, y: 0, z: 0 },
-});
+export const createHitboxTraceResult =
+  (): HitboxTraceResult => ({
+    fraction: 1,
+    group: 0,
+    normal:
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+  });
 
 /**
  * Traces the segment start→end against a player's hitboxes. The player
@@ -133,7 +331,17 @@ export function traceHitboxes(
   end: Vec3,
   out: HitboxTraceResult,
 ): boolean {
-  return traceHitboxSet(origin, yaw, hitboxSet(classIndex, ducked), start, end, out);
+  return traceHitboxSet(
+    origin,
+    yaw,
+    hitboxSet(
+      classIndex,
+      ducked,
+    ),
+    start,
+    end,
+    out,
+  );
 }
 
 /** `traceHitboxes` against an explicit set (Player.hitboxSet: a game with its own bodies). */
@@ -145,78 +353,238 @@ export function traceHitboxSet(
   end: Vec3,
   out: HitboxTraceResult,
 ): boolean {
-  const rad = (yaw * Math.PI) / 180;
-  const c = Math.cos(rad);
-  const s = Math.sin(rad);
+  const rad =
+    (yaw *
+      Math.PI) /
+    180;
+  const c =
+    Math.cos(
+      rad,
+    );
+  const s =
+    Math.sin(
+      rad,
+    );
   // Ray into the player's local frame: rotate by −yaw.
-  const sx = start.x - origin.x;
-  const sy = start.y - origin.y;
-  const ex = end.x - origin.x;
-  const ey = end.y - origin.y;
-  const lsx = sx * c + sy * s;
-  const lsy = -sx * s + sy * c;
-  const lsz = start.z - origin.z;
-  const ldx = ex * c + ey * s - lsx;
-  const ldy = -ex * s + ey * c - lsy;
-  const ldz = end.z - origin.z - lsz;
+  const sx =
+    start.x -
+    origin.x;
+  const sy =
+    start.y -
+    origin.y;
+  const ex =
+    end.x -
+    origin.x;
+  const ey =
+    end.y -
+    origin.y;
+  const lsx =
+    sx *
+      c +
+    sy *
+      s;
+  const lsy =
+    -sx *
+      s +
+    sy *
+      c;
+  const lsz =
+    start.z -
+    origin.z;
+  const ldx =
+    ex *
+      c +
+    ey *
+      s -
+    lsx;
+  const ldy =
+    -ex *
+      s +
+    ey *
+      c -
+    lsy;
+  const ldz =
+    end.z -
+    origin.z -
+    lsz;
 
   let best = 2;
   let bestGroup = 0;
   let bestAxis = 0;
   let bestSign = 0;
-  for (let i = 0; i < boxes.length; i++) {
-    const b = boxes[i];
+  for (
+    let i = 0;
+    i <
+    boxes.length;
+    i++
+  ) {
+    const b =
+      boxes[
+        i
+      ];
     let tmin = 0;
     let tmax = 1;
-    let axis = -1;
+    let axis =
+      -1;
     let sign = 0;
     let miss = false;
-    for (let a = 0; a < 3 && !miss; a++) {
-      const o = a === 0 ? lsx - b.cx : a === 1 ? lsy - b.cy : lsz - b.cz;
-      const d = a === 0 ? ldx : a === 1 ? ldy : ldz;
-      const h = a === 0 ? b.hx : a === 1 ? b.hy : b.hz;
-      if (Math.abs(d) < 1e-9) {
-        if (o < -h || o > h) miss = true;
+    for (
+      let a = 0;
+      a <
+        3 &&
+      !miss;
+      a++
+    ) {
+      const o =
+        a ===
+        0
+          ? lsx -
+            b.cx
+          : a ===
+              1
+            ? lsy -
+              b.cy
+            : lsz -
+              b.cz;
+      const d =
+        a ===
+        0
+          ? ldx
+          : a ===
+              1
+            ? ldy
+            : ldz;
+      const h =
+        a ===
+        0
+          ? b.hx
+          : a ===
+              1
+            ? b.hy
+            : b.hz;
+      if (
+        Math.abs(
+          d,
+        ) <
+        1e-9
+      ) {
+        if (
+          o <
+            -h ||
+          o >
+            h
+        )
+          miss = true;
         continue;
       }
-      const inv = 1 / d;
-      let t1 = (-h - o) * inv;
-      let t2 = (h - o) * inv;
-      let sgn = -1;
-      if (t1 > t2) {
-        const t = t1;
-        t1 = t2;
-        t2 = t;
+      const inv =
+        1 /
+        d;
+      let t1 =
+        (-h -
+          o) *
+        inv;
+      let t2 =
+        (h -
+          o) *
+        inv;
+      let sgn =
+        -1;
+      if (
+        t1 >
+        t2
+      ) {
+        const t =
+          t1;
+        t1 =
+          t2;
+        t2 =
+          t;
         sgn = 1;
       }
-      if (t1 > tmin) {
-        tmin = t1;
-        axis = a;
-        sign = sgn;
+      if (
+        t1 >
+        tmin
+      ) {
+        tmin =
+          t1;
+        axis =
+          a;
+        sign =
+          sgn;
       }
-      if (t2 < tmax) tmax = t2;
-      if (tmin > tmax) miss = true;
+      if (
+        t2 <
+        tmax
+      )
+        tmax =
+          t2;
+      if (
+        tmin >
+        tmax
+      )
+        miss = true;
     }
-    if (miss) continue;
-    if (tmin < best) {
-      best = tmin;
-      bestGroup = b.group;
-      bestAxis = axis;
-      bestSign = sign;
+    if (
+      miss
+    )
+      continue;
+    if (
+      tmin <
+      best
+    ) {
+      best =
+        tmin;
+      bestGroup =
+        b.group;
+      bestAxis =
+        axis;
+      bestSign =
+        sign;
     }
   }
-  if (best > 1) return false;
-  out.fraction = best;
-  out.group = bestGroup;
+  if (
+    best >
+    1
+  )
+    return false;
+  out.fraction =
+    best;
+  out.group =
+    bestGroup;
   // Local normal → world (rotate by +yaw).
   let nx = 0;
   let ny = 0;
   let nz = 0;
-  if (bestAxis === 0) nx = bestSign;
-  else if (bestAxis === 1) ny = bestSign;
-  else if (bestAxis === 2) nz = bestSign;
-  out.normal.x = nx * c - ny * s;
-  out.normal.y = nx * s + ny * c;
-  out.normal.z = nz;
+  if (
+    bestAxis ===
+    0
+  )
+    nx =
+      bestSign;
+  else if (
+    bestAxis ===
+    1
+  )
+    ny =
+      bestSign;
+  else if (
+    bestAxis ===
+    2
+  )
+    nz =
+      bestSign;
+  out.normal.x =
+    nx *
+      c -
+    ny *
+      s;
+  out.normal.y =
+    nx *
+      s +
+    ny *
+      c;
+  out.normal.z =
+    nz;
   return true;
 }

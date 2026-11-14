@@ -71,7 +71,14 @@ const REARM_DELAY_MS = 1200;
  *   - `/checkout` — money.
  *   - `/admin/*`  — expensive to render and never the "next post" a reader taps.
  */
-const NEVER_PREFETCH = [/^\/api(\/|$)/, /^\/login/, /^\/logout/, /^\/checkout/, /^\/admin(\/|$)/];
+const NEVER_PREFETCH =
+  [
+    /^\/api(\/|$)/,
+    /^\/login/,
+    /^\/logout/,
+    /^\/checkout/,
+    /^\/admin(\/|$)/,
+  ];
 
 /**
  * Resolve an anchor to a route path we are allowed to prefetch, or `null`.
@@ -87,26 +94,109 @@ const NEVER_PREFETCH = [/^\/api(\/|$)/, /^\/login/, /^\/logout/, /^\/checkout/, 
  *  - never a link the author opted out of, opened elsewhere, or marked
  *    `nofollow`/`download`.
  */
-export function prefetchTarget(el: Element, currentPathname: string): string | null {
-  if (el.hasAttribute('download')) return null;
-  if (el.hasAttribute('data-no-prefetch') || el.hasAttribute('data-no-speculate')) return null;
+export function prefetchTarget(
+  el: Element,
+  currentPathname: string,
+):
+  | string
+  | null {
+  if (
+    el.hasAttribute(
+      'download',
+    )
+  )
+    return null;
+  if (
+    el.hasAttribute(
+      'data-no-prefetch',
+    ) ||
+    el.hasAttribute(
+      'data-no-speculate',
+    )
+  )
+    return null;
 
-  const target = el.getAttribute('target');
-  if (target && target !== '_self') return null;
+  const target =
+    el.getAttribute(
+      'target',
+    );
+  if (
+    target &&
+    target !==
+      '_self'
+  )
+    return null;
 
-  const rel = el.getAttribute('rel');
-  if (rel && rel.split(/\s+/).includes('nofollow')) return null;
+  const rel =
+    el.getAttribute(
+      'rel',
+    );
+  if (
+    rel &&
+    rel
+      .split(
+        /\s+/,
+      )
+      .includes(
+        'nofollow',
+      )
+  )
+    return null;
 
-  const href = el.getAttribute('href');
-  if (!href || href[0] !== '/' || href[1] === '/') return null;
+  const href =
+    el.getAttribute(
+      'href',
+    );
+  if (
+    !href ||
+    href[0] !==
+      '/' ||
+    href[1] ===
+      '/'
+  )
+    return null;
 
-  const path = href.split('#')[0];
-  if (!path || path.includes('?')) return null;
-  if (path === currentPathname) return null;
-  if (NEVER_PREFETCH.some((pattern) => pattern.test(path))) return null;
+  const path =
+    href.split(
+      '#',
+    )[0];
+  if (
+    !path ||
+    path.includes(
+      '?',
+    )
+  )
+    return null;
+  if (
+    path ===
+    currentPathname
+  )
+    return null;
+  if (
+    NEVER_PREFETCH.some(
+      (
+        pattern,
+      ) =>
+        pattern.test(
+          path,
+        ),
+    )
+  )
+    return null;
 
-  const lastSegment = path.slice(path.lastIndexOf('/') + 1);
-  if (lastSegment.includes('.')) return null;
+  const lastSegment =
+    path.slice(
+      path.lastIndexOf(
+        '/',
+      ) +
+        1,
+    );
+  if (
+    lastSegment.includes(
+      '.',
+    )
+  )
+    return null;
 
   return path;
 }
@@ -121,7 +211,12 @@ export interface ViewportPrefetchOptions {
 }
 
 /** The slice of the router this needs — kept narrow so tests can stub it. */
-export type PrefetchRouter = Pick<AnyRouter, 'preloadRoute' | 'subscribe'>;
+export type PrefetchRouter =
+  Pick<
+    AnyRouter,
+    | 'preloadRoute'
+    | 'subscribe'
+  >;
 
 /**
  * Start observing on-screen links and warming their routes. Returns a `stop()`.
@@ -133,93 +228,235 @@ export function startViewportPrefetch(
   router: PrefetchRouter,
   options: ViewportPrefetchOptions = {},
 ): () => void {
-  const noop = () => {};
+  const noop =
+    () => {};
 
-  if (typeof document === 'undefined' || typeof window === 'undefined') return noop;
-  if (typeof IntersectionObserver === 'undefined') return noop;
-  if (!shouldSpeculate()) return noop;
+  if (
+    typeof document ===
+      'undefined' ||
+    typeof window ===
+      'undefined'
+  )
+    return noop;
+  if (
+    typeof IntersectionObserver ===
+    'undefined'
+  )
+    return noop;
+  if (
+    !shouldSpeculate()
+  )
+    return noop;
 
-  const max = options.max ?? MAX_PREFETCH;
-  const dwellMs = options.dwellMs ?? DWELL_MS;
-  const scanLimit = options.scanLimit ?? SCAN_LIMIT;
+  const max =
+    options.max ??
+    MAX_PREFETCH;
+  const dwellMs =
+    options.dwellMs ??
+    DWELL_MS;
+  const scanLimit =
+    options.scanLimit ??
+    SCAN_LIMIT;
 
   // Deduped for the page's lifetime, not per page view: a link that appears in
   // the nav on every page must not be re-warmed on every page.
-  const prefetched = new Set<string>();
-  const timers = new Map<Element, ReturnType<typeof setTimeout>>();
-  let observer: IntersectionObserver | null = null;
-  let budget = max;
+  const prefetched =
+    new Set<string>();
+  const timers =
+    new Map<
+      Element,
+      ReturnType<
+        typeof setTimeout
+      >
+    >();
+  let observer: IntersectionObserver | null =
+    null;
+  let budget =
+    max;
   let stopped = false;
 
   function disarm() {
     observer?.disconnect();
-    observer = null;
-    for (const timer of timers.values()) clearTimeout(timer);
+    observer =
+      null;
+    for (const timer of timers.values())
+      clearTimeout(
+        timer,
+      );
     timers.clear();
   }
 
-  function commit(el: Element) {
-    timers.delete(el);
-    if (stopped || budget <= 0) return;
+  function commit(
+    el: Element,
+  ) {
+    timers.delete(
+      el,
+    );
+    if (
+      stopped ||
+      budget <=
+        0
+    )
+      return;
 
-    const to = prefetchTarget(el, window.location.pathname);
-    observer?.unobserve(el);
-    if (to === null || prefetched.has(to)) return;
+    const to =
+      prefetchTarget(
+        el,
+        window
+          .location
+          .pathname,
+      );
+    observer?.unobserve(
+      el,
+    );
+    if (
+      to ===
+        null ||
+      prefetched.has(
+        to,
+      )
+    )
+      return;
 
-    prefetched.add(to);
+    prefetched.add(
+      to,
+    );
     budget -= 1;
     // `preloadRoute` warms both the loader data and — via the route's lazy
     // component `.preload()` — the route's JS chunk. Failures are expected
     // (a 404, an auth redirect) and must stay silent: this is speculative.
     try {
-      void Promise.resolve(router.preloadRoute({ to })).catch(() => {});
+      void Promise.resolve(
+        router.preloadRoute(
+          {
+            to,
+          },
+        ),
+      ).catch(
+        () => {},
+      );
     } catch {
       /* a synchronous throw from route matching is not the user's problem */
     }
 
-    if (budget <= 0) disarm();
+    if (
+      budget <=
+      0
+    )
+      disarm();
   }
 
-  function onIntersect(entries: IntersectionObserverEntry[]) {
+  function onIntersect(
+    entries: IntersectionObserverEntry[],
+  ) {
     for (const entry of entries) {
-      const el = entry.target;
-      if (!entry.isIntersecting) {
-        const timer = timers.get(el);
-        if (timer !== undefined) {
-          clearTimeout(timer);
-          timers.delete(el);
+      const el =
+        entry.target;
+      if (
+        !entry.isIntersecting
+      ) {
+        const timer =
+          timers.get(
+            el,
+          );
+        if (
+          timer !==
+          undefined
+        ) {
+          clearTimeout(
+            timer,
+          );
+          timers.delete(
+            el,
+          );
         }
         continue;
       }
-      if (timers.has(el)) continue;
+      if (
+        timers.has(
+          el,
+        )
+      )
+        continue;
       timers.set(
         el,
-        setTimeout(() => commit(el), dwellMs),
+        setTimeout(
+          () =>
+            commit(
+              el,
+            ),
+          dwellMs,
+        ),
       );
     }
   }
 
   function arm() {
-    if (stopped) return;
+    if (
+      stopped
+    )
+      return;
     disarm();
-    budget = max;
-    observer = new IntersectionObserver(onIntersect, { rootMargin: '0px' });
-    const anchors = document.querySelectorAll('a[href]');
-    const limit = Math.min(anchors.length, scanLimit);
-    for (let i = 0; i < limit; i += 1) observer.observe(anchors[i]);
+    budget =
+      max;
+    observer =
+      new IntersectionObserver(
+        onIntersect,
+        {
+          rootMargin:
+            '0px',
+        },
+      );
+    const anchors =
+      document.querySelectorAll(
+        'a[href]',
+      );
+    const limit =
+      Math.min(
+        anchors.length,
+        scanLimit,
+      );
+    for (
+      let i = 0;
+      i <
+      limit;
+      i += 1
+    )
+      observer.observe(
+        anchors[
+          i
+        ],
+      );
   }
 
   // Never before `load`. A speculative fetch started during the initial load
   // competes with the LCP image for the same connection — it would make the
   // page the user is looking at slower in order to speed up one they might
   // never visit.
-  let removeLoadListener = noop;
-  if (document.readyState === 'complete') {
+  let removeLoadListener =
+    noop;
+  if (
+    document.readyState ===
+    'complete'
+  ) {
     arm();
   } else {
-    const onLoad = () => arm();
-    window.addEventListener('load', onLoad, { once: true });
-    removeLoadListener = () => window.removeEventListener('load', onLoad);
+    const onLoad =
+      () =>
+        arm();
+    window.addEventListener(
+      'load',
+      onLoad,
+      {
+        once: true,
+      },
+    );
+    removeLoadListener =
+      () =>
+        window.removeEventListener(
+          'load',
+          onLoad,
+        );
   }
 
   // Re-arm after a client-side navigation, with a fresh budget: without this
@@ -231,17 +468,45 @@ export function startViewportPrefetch(
   // lets the new DOM land and — combined with the dwell — keeps the first
   // speculative byte at least `REARM_DELAY_MS + dwellMs` after the navigation,
   // well clear of the arriving page's own render work.
-  let unsubscribe = noop;
-  let rearmTimer: ReturnType<typeof setTimeout> | null = null;
-  if (typeof router.subscribe === 'function') {
-    unsubscribe = router.subscribe('onResolved', () => {
-      if (stopped) return;
-      if (rearmTimer !== null) clearTimeout(rearmTimer);
-      rearmTimer = setTimeout(() => {
-        rearmTimer = null;
-        if (!stopped) arm();
-      }, REARM_DELAY_MS);
-    });
+  let unsubscribe =
+    noop;
+  let rearmTimer: ReturnType<
+    typeof setTimeout
+  > | null =
+    null;
+  if (
+    typeof router.subscribe ===
+    'function'
+  ) {
+    unsubscribe =
+      router.subscribe(
+        'onResolved',
+        () => {
+          if (
+            stopped
+          )
+            return;
+          if (
+            rearmTimer !==
+            null
+          )
+            clearTimeout(
+              rearmTimer,
+            );
+          rearmTimer =
+            setTimeout(
+              () => {
+                rearmTimer =
+                  null;
+                if (
+                  !stopped
+                )
+                  arm();
+              },
+              REARM_DELAY_MS,
+            );
+        },
+      );
   }
 
   return () => {
@@ -249,6 +514,12 @@ export function startViewportPrefetch(
     disarm();
     removeLoadListener();
     unsubscribe();
-    if (rearmTimer !== null) clearTimeout(rearmTimer);
+    if (
+      rearmTimer !==
+      null
+    )
+      clearTimeout(
+        rearmTimer,
+      );
   };
 }

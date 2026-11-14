@@ -1,5 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { Forward, MessageSquareText, Pin } from 'lucide-react';
+import {
+  Forward,
+  MessageSquareText,
+  Pin,
+} from 'lucide-react';
 import { forwardLabel } from '@/lib/chat-plus/flags';
 import { useChatPlusUi } from '@/lib/chat-plus/ui-store';
 import { cn } from '@/lib/utils';
@@ -14,13 +18,28 @@ export function MessageBadges({
   pinned,
   className,
 }: {
-  forwardCount?: number | null;
+  forwardCount?:
+    | number
+    | null;
   pinned?: boolean;
   className?: string;
 }) {
-  const { t } = useTranslation('f-messaging');
-  const label = forwardLabel(forwardCount);
-  if (label === 'none' && !pinned) return null;
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-messaging',
+    );
+  const label =
+    forwardLabel(
+      forwardCount,
+    );
+  if (
+    label ===
+      'none' &&
+    !pinned
+  )
+    return null;
   return (
     <div
       className={cn(
@@ -28,18 +47,44 @@ export function MessageBadges({
         className,
       )}
     >
-      {label !== 'none' && (
+      {label !==
+        'none' && (
         <span className="inline-flex items-center gap-1">
-          <Forward className="size-3" aria-hidden />
-          {label === 'many'
-            ? t('forwarded-many', { defaultValue: 'Forwarded many times' })
-            : t('forwarded', { defaultValue: 'Forwarded' })}
+          <Forward
+            className="size-3"
+            aria-hidden
+          />
+          {label ===
+          'many'
+            ? t(
+                'forwarded-many',
+                {
+                  defaultValue:
+                    'Forwarded many times',
+                },
+              )
+            : t(
+                'forwarded',
+                {
+                  defaultValue:
+                    'Forwarded',
+                },
+              )}
         </span>
       )}
       {pinned && (
         <span className="inline-flex items-center gap-1">
-          <Pin className="size-3" aria-hidden />
-          {t('pinned', { defaultValue: 'Pinned' })}
+          <Pin
+            className="size-3"
+            aria-hidden
+          />
+          {t(
+            'pinned',
+            {
+              defaultValue:
+                'Pinned',
+            },
+          )}
         </span>
       )}
     </div>
@@ -58,36 +103,104 @@ export function ThreadChip({
   count: number;
   className?: string;
 }) {
-  const { t } = useTranslation('f-messaging');
-  const openThread = useChatPlusUi((s) => s.openThread);
-  if (count <= 0) return null;
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-messaging',
+    );
+  const openThread =
+    useChatPlusUi(
+      (
+        s,
+      ) =>
+        s.openThread,
+    );
+  if (
+    count <=
+    0
+  )
+    return null;
   return (
     <button
       type="button"
-      onClick={() => openThread({ groupId, parentId: messageId })}
+      onClick={() =>
+        openThread(
+          {
+            groupId,
+            parentId:
+              messageId,
+          },
+        )
+      }
       className={cn(
         'mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-site-accent hover:bg-site-bg-subtle focus-visible:ring-2 focus-visible:ring-site-accent',
         className,
       )}
     >
-      <MessageSquareText className="size-3.5" aria-hidden />
-      {t('thread-replies', { count, defaultValue: '{{count}} replies' })}
+      <MessageSquareText
+        className="size-3.5"
+        aria-hidden
+      />
+      {t(
+        'thread-replies',
+        {
+          count,
+          defaultValue:
+            '{{count}} replies',
+        },
+      )}
     </button>
   );
 }
 
 /** "Seen" under the viewer's latest message once the other side has read it (M8). */
-export function SeenIndicator({ className }: { className?: string }) {
-  const { t } = useTranslation('f-messaging');
+export function SeenIndicator({
+  className,
+}: {
+  className?: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-messaging',
+    );
   return (
-    <p className={cn('mt-0.5 px-1 text-right text-micro text-site-text-muted', className)}>
-      {t('seen', { defaultValue: 'Seen' })}
+    <p
+      className={cn(
+        'mt-0.5 px-1 text-right text-micro text-site-text-muted',
+        className,
+      )}
+    >
+      {t(
+        'seen',
+        {
+          defaultValue:
+            'Seen',
+        },
+      )}
     </p>
   );
 }
 
 /** The inbox label for the note-to-self conversation (M2). */
 export function SavedMessagesLabel() {
-  const { t } = useTranslation('f-messaging');
-  return <>{t('saved-messages', { defaultValue: 'Saved Messages' })}</>;
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-messaging',
+    );
+  return (
+    <>
+      {t(
+        'saved-messages',
+        {
+          defaultValue:
+            'Saved Messages',
+        },
+      )}
+    </>
+  );
 }

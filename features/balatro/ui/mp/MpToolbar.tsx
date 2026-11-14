@@ -6,7 +6,10 @@
  */
 
 import { UserPlus } from 'lucide-react';
-import { useCallback, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useSyncExternalStore,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@/components/ui/Tooltip';
 import type { MpController } from '@features/balatro/engine/mp/pack-loader';
@@ -23,32 +26,99 @@ export default function MpToolbar({
   /** The game frame (the fullscreen element): where the Invite dialog portals. */
   container: HTMLElement | null;
 }) {
-  const { t } = useTranslation('c-balatro');
-  const state = useSyncExternalStore(controller.subscribe, controller.getState, controller.getState);
-  const setOpen = useCallback((open: boolean) => controller.setInviteOpen(open), [controller]);
-  if (!state.active) return null;
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-balatro',
+    );
+  const state =
+    useSyncExternalStore(
+      controller.subscribe,
+      controller.getState,
+      controller.getState,
+    );
+  const setOpen =
+    useCallback(
+      (
+        open: boolean,
+      ) =>
+        controller.setInviteOpen(
+          open,
+        ),
+      [
+        controller,
+      ],
+    );
+  if (
+    !state.active
+  )
+    return null;
   return (
     <>
-      <ConnectionChip hub={state.hub} />
+      <ConnectionChip
+        hub={
+          state.hub
+        }
+      />
       {state.code && (
-        <Tooltip content={t('mp_invite_hint', { defaultValue: 'Invite players to this lobby' })}>
+        <Tooltip
+          content={t(
+            'mp_invite_hint',
+            {
+              defaultValue:
+                'Invite players to this lobby',
+            },
+          )}
+        >
           <button
             type="button"
-            onClick={() => controller.setInviteOpen(!state.inviteOpen)}
-            aria-expanded={state.inviteOpen}
-            aria-label={t('mp_invite', { defaultValue: 'Invite' })}
+            onClick={() =>
+              controller.setInviteOpen(
+                !state.inviteOpen,
+              )
+            }
+            aria-expanded={
+              state.inviteOpen
+            }
+            aria-label={t(
+              'mp_invite',
+              {
+                defaultValue:
+                  'Invite',
+              },
+            )}
           >
-            <UserPlus className="size-4" aria-hidden />
+            <UserPlus
+              className="size-4"
+              aria-hidden
+            />
           </button>
         </Tooltip>
       )}
       {state.code && (
         <InvitePopover
-          code={state.code}
-          open={state.inviteOpen}
-          onOpenChange={setOpen}
-          container={container}
-          friends={state.inviteOpen ? <InviteFriends code={state.code} /> : null}
+          code={
+            state.code
+          }
+          open={
+            state.inviteOpen
+          }
+          onOpenChange={
+            setOpen
+          }
+          container={
+            container
+          }
+          friends={
+            state.inviteOpen ? (
+              <InviteFriends
+                code={
+                  state.code
+                }
+              />
+            ) : null
+          }
         />
       )}
     </>

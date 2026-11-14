@@ -24,9 +24,16 @@ import { useSliceItStore } from '@features/slice-it/engine/store';
 import type { GameEngine } from '@features/slice-it/engine/engine';
 import type { RunStats } from '@features/slice-it/engine/types';
 
-type FinishHandler = (stats: RunStats) => void;
+type FinishHandler =
+  (
+    stats: RunStats,
+  ) => void;
 
-let armed: { engine: GameEngine; handler: FinishHandler } | null = null;
+let armed: {
+  engine: GameEngine;
+  handler: FinishHandler;
+} | null =
+  null;
 let installed = false;
 
 /**
@@ -36,35 +43,70 @@ let installed = false;
  * transition it exists to catch.
  */
 function install(): void {
-  if (installed) return;
+  if (
+    installed
+  )
+    return;
   installed = true;
-  useSliceItStore.subscribe((state, prev) => {
-    if (prev.status !== 'PLAYING' || state.status !== 'FINISHED') return;
-    const current = armed;
-    if (!current) return;
-    // Disarm BEFORE calling out, so a handler that throws cannot leave a live
-    // arm behind to fire again on the next run.
-    armed = null;
-    try {
-      current.handler(current.engine.getRunStats());
-    } catch (err) {
-      console.error('[slice-it] run-finish handler failed', err);
-    }
-  });
+  useSliceItStore.subscribe(
+    (
+      state,
+      prev,
+    ) => {
+      if (
+        prev.status !==
+          'PLAYING' ||
+        state.status !==
+          'FINISHED'
+      )
+        return;
+      const current =
+        armed;
+      if (
+        !current
+      )
+        return;
+      // Disarm BEFORE calling out, so a handler that throws cannot leave a live
+      // arm behind to fire again on the next run.
+      armed =
+        null;
+      try {
+        current.handler(
+          current.engine.getRunStats(),
+        );
+      } catch (err) {
+        console.error(
+          '[slice-it] run-finish handler failed',
+          err,
+        );
+      }
+    },
+  );
 }
 
 /** Call `handler` with the run tally the next time a run ends. */
-export function armRunFinish(engine: GameEngine, handler: FinishHandler): void {
+export function armRunFinish(
+  engine: GameEngine,
+  handler: FinishHandler,
+): void {
   install();
-  armed = { engine, handler };
+  armed =
+    {
+      engine,
+      handler,
+    };
 }
 
 /** Cancel a pending arm — e.g. the player backed out of a mode. */
 export function disarmRunFinish(): void {
-  armed = null;
+  armed =
+    null;
 }
 
 /** Is a mode currently waiting on a run to end? */
 export function isRunArmed(): boolean {
-  return armed !== null;
+  return (
+    armed !==
+    null
+  );
 }

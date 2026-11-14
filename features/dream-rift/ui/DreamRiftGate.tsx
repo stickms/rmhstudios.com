@@ -8,229 +8,740 @@
  * scores.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { useSession } from '@/components/Providers';
 import { useLobbyInvite } from '@/hooks/useLobbyLink';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import { useDreamRift } from '@features/dream-rift/engine/store';
-import { LocalTransport, SocketTransport } from '@features/dream-rift/engine/net/transport';
-import { disconnectDreamRift, leaveLobby, setStartHandler } from '@features/dream-rift/engine/net/connection';
+import {
+  LocalTransport,
+  SocketTransport,
+} from '@features/dream-rift/engine/net/transport';
+import {
+  disconnectDreamRift,
+  leaveLobby,
+  setStartHandler,
+} from '@features/dream-rift/engine/net/connection';
 import type { StartPayload } from '@features/dream-rift/engine/net/events';
-import type { Difficulty, PlayerId } from '@features/dream-rift/engine/types';
+import type {
+  Difficulty,
+  PlayerId,
+} from '@features/dream-rift/engine/types';
 import { DreamRiftRuntimeProvider } from './runtime';
-import { GameStage, type StartInfo } from './GameStage';
-import { TitleScreen, CharacterSelect, LobbyBrowser, LobbyRoom } from './Menus';
+import {
+  GameStage,
+  type StartInfo,
+} from './GameStage';
+import {
+  TitleScreen,
+  CharacterSelect,
+  LobbyBrowser,
+  LobbyRoom,
+} from './Menus';
 import { ResultScreen } from './Results';
 import { Leaderboard } from './Leaderboard';
-import { PracticeEntry, SpellPracticeMenu } from './SpellPractice';
-import { recordAttempt, type PracticeOutcome, type PracticeTarget } from '@features/dream-rift/engine/practice';
+import {
+  PracticeEntry,
+  SpellPracticeMenu,
+} from './SpellPractice';
+import {
+  recordAttempt,
+  type PracticeOutcome,
+  type PracticeTarget,
+} from '@features/dream-rift/engine/practice';
 import { SettingsScreen } from './SettingsScreen';
-import { planRun, useArcadeRun } from '@/lib/arcade/run-client';
+import {
+  planRun,
+  useArcadeRun,
+} from '@/lib/arcade/run-client';
 import { ChallengeNotice } from '@/components/arcade/ChallengeNotice';
 import { useArrival } from '@/components/ui/arrive';
 
 function randomSeed(): number {
-    return Math.floor(Math.random() * 0x7fffffff) || 1;
+  return (
+    Math.floor(
+      Math.random() *
+        0x7fffffff,
+    ) ||
+    1
+  );
 }
 
 export function DreamRiftGate() {
-    return (
-        <DreamRiftRuntimeProvider>
-            <ScreenRouter />
-        </DreamRiftRuntimeProvider>
-    );
+  return (
+    <DreamRiftRuntimeProvider>
+      <ScreenRouter />
+    </DreamRiftRuntimeProvider>
+  );
 }
 
 function ScreenRouter() {
-    const screen = useDreamRift((s) => s.screen);
-    const mode = useDreamRift((s) => s.mode);
-    const setScreen = useDreamRift((s) => s.setScreen);
-    const setMode = useDreamRift((s) => s.setMode);
-    const setResult = useDreamRift((s) => s.setResult);
-    const session = useSession();
-    const quitGame = useQuitGame();
+  const screen =
+    useDreamRift(
+      (
+        s,
+      ) =>
+        s.screen,
+    );
+  const mode =
+    useDreamRift(
+      (
+        s,
+      ) =>
+        s.mode,
+    );
+  const setScreen =
+    useDreamRift(
+      (
+        s,
+      ) =>
+        s.setScreen,
+    );
+  const setMode =
+    useDreamRift(
+      (
+        s,
+      ) =>
+        s.setMode,
+    );
+  const setResult =
+    useDreamRift(
+      (
+        s,
+      ) =>
+        s.setResult,
+    );
+  const session =
+    useSession();
+  const quitGame =
+    useQuitGame();
 
-    const [startInfo, setStartInfo] = useState<StartInfo | null>(null);
-    const [lastPractice, setLastPractice] = useState<PracticeOutcome | null>(null);
+  const [
+    startInfo,
+    setStartInfo,
+  ] =
+    useState<StartInfo | null>(
+      null,
+    );
+  const [
+    lastPractice,
+    setLastPractice,
+  ] =
+    useState<PracticeOutcome | null>(
+      null,
+    );
 
-    // multiplayer: server tells us when the run begins
-    useEffect(() => {
-        setStartHandler((p: StartPayload) => {
-            const isHost = p.roster.find((r) => r.slot === p.yourSlot)?.isHost ?? false;
-            useDreamRift.getState().setDifficulty(p.difficulty);
-            setStartInfo({
-                transport: new SocketTransport(isHost, p.yourSlot),
-                roster: p.roster.map((r) => ({ ...r, isLocal: r.slot === p.yourSlot })),
-                difficulty: p.difficulty as Difficulty,
-                seed: p.seed,
-            });
-            useDreamRift.getState().setResult(null);
-            useDreamRift.getState().setPaused(false);
-            useDreamRift.getState().setScreen('playing');
-        });
-        return () => setStartHandler(null);
-    }, []);
+  // multiplayer: server tells us when the run begins
+  useEffect(() => {
+    setStartHandler(
+      (
+        p: StartPayload,
+      ) => {
+        const isHost =
+          p.roster.find(
+            (
+              r,
+            ) =>
+              r.slot ===
+              p.yourSlot,
+          )
+            ?.isHost ??
+          false;
+        useDreamRift
+          .getState()
+          .setDifficulty(
+            p.difficulty,
+          );
+        setStartInfo(
+          {
+            transport:
+              new SocketTransport(
+                isHost,
+                p.yourSlot,
+              ),
+            roster:
+              p.roster.map(
+                (
+                  r,
+                ) => ({
+                  ...r,
+                  isLocal:
+                    r.slot ===
+                    p.yourSlot,
+                }),
+              ),
+            difficulty:
+              p.difficulty as Difficulty,
+            seed: p.seed,
+          },
+        );
+        useDreamRift
+          .getState()
+          .setResult(
+            null,
+          );
+        useDreamRift
+          .getState()
+          .setPaused(
+            false,
+          );
+        useDreamRift
+          .getState()
+          .setScreen(
+            'playing',
+          );
+      },
+    );
+    return () =>
+      setStartHandler(
+        null,
+      );
+  }, []);
 
-    // An invite link opens on the multiplayer side; the browser screen connects
-    // and joins the rift it names.
-    const invite = useLobbyInvite();
-    useEffect(() => {
-        if (!invite) return;
-        setMode('multi');
-        setScreen('lobby-browser');
-    }, [invite, setMode, setScreen]);
+  // An invite link opens on the multiplayer side; the browser screen connects
+  // and joins the rift it names.
+  const invite =
+    useLobbyInvite();
+  useEffect(() => {
+    if (
+      !invite
+    )
+      return;
+    setMode(
+      'multi',
+    );
+    setScreen(
+      'lobby-browser',
+    );
+  }, [
+    invite,
+    setMode,
+    setScreen,
+  ]);
 
-    const startSingle = useCallback(
-        async (pickedChar: PlayerId, pickedDifficulty: Difficulty) => {
-            const name = session.data?.user?.name || 'Dreamer';
-            // A seed link or the daily mutator fixes the seed and may force difficulty + character.
-            const plan = await planRun('dream-rift', `${pickedDifficulty}-${pickedChar}`);
-            const char = (plan.options?.character as PlayerId | undefined) ?? pickedChar;
-            const difficulty = (plan.options?.difficulty as Difficulty | undefined) ?? pickedDifficulty;
-            const seed = plan.kind === 'free' ? randomSeed() : plan.seed;
-            if (plan.kind === 'free') useArcadeRun.getState().set({ ...plan, seed });
-            setStartInfo({
-                transport: new LocalTransport(),
-                roster: [{ slot: 0, userId: session.data?.user?.id || 'local', name, charId: char, isHost: true, isLocal: true }],
-                difficulty,
+  const startSingle =
+    useCallback(
+      async (
+        pickedChar: PlayerId,
+        pickedDifficulty: Difficulty,
+      ) => {
+        const name =
+          session
+            .data
+            ?.user
+            ?.name ||
+          'Dreamer';
+        // A seed link or the daily mutator fixes the seed and may force difficulty + character.
+        const plan =
+          await planRun(
+            'dream-rift',
+            `${pickedDifficulty}-${pickedChar}`,
+          );
+        const char =
+          (plan
+            .options
+            ?.character as
+            | PlayerId
+            | undefined) ??
+          pickedChar;
+        const difficulty =
+          (plan
+            .options
+            ?.difficulty as
+            | Difficulty
+            | undefined) ??
+          pickedDifficulty;
+        const seed =
+          plan.kind ===
+          'free'
+            ? randomSeed()
+            : plan.seed;
+        if (
+          plan.kind ===
+          'free'
+        )
+          useArcadeRun
+            .getState()
+            .set(
+              {
+                ...plan,
                 seed,
-            });
-            setMode('single');
-            setResult(null);
-            useDreamRift.getState().setPaused(false);
-            setScreen('playing');
-        },
-        [session.data?.user, setMode, setResult, setScreen],
-    );
-
-    const startPractice = useCallback(
-        (target: PracticeTarget) => {
-            const { selectedChar, difficulty } = useDreamRift.getState();
-            setStartInfo({
-                transport: new LocalTransport(),
-                roster: [{ slot: 0, userId: session.data?.user?.id || 'local', name: session.data?.user?.name || 'Dreamer', charId: selectedChar, isHost: true, isLocal: true }],
-                difficulty,
-                seed: randomSeed(),
-                practice: {
-                    ...target,
-                    onEnd: (o) => {
-                        recordAttempt(o);
-                        setLastPractice(o);
-                        setStartInfo(null);
-                        setScreen('practice');
-                    },
+              },
+            );
+        setStartInfo(
+          {
+            transport:
+              new LocalTransport(),
+            roster:
+              [
+                {
+                  slot: 0,
+                  userId:
+                    session
+                      .data
+                      ?.user
+                      ?.id ||
+                    'local',
+                  name,
+                  charId:
+                    char,
+                  isHost: true,
+                  isLocal: true,
                 },
-            });
-            setMode('single');
-            setResult(null);
-            useDreamRift.getState().setPaused(false);
-            setScreen('playing');
-        },
-        [session.data?.user, setMode, setResult, setScreen],
+              ],
+            difficulty,
+            seed,
+          },
+        );
+        setMode(
+          'single',
+        );
+        setResult(
+          null,
+        );
+        useDreamRift
+          .getState()
+          .setPaused(
+            false,
+          );
+        setScreen(
+          'playing',
+        );
+      },
+      [
+        session
+          .data
+          ?.user,
+        setMode,
+        setResult,
+        setScreen,
+      ],
     );
 
-    const exitToMenu = useCallback(() => {
-        const wasPractice = !!startInfo?.practice;
-        setStartInfo(null);
-        setResult(null);
-        useDreamRift.getState().setPaused(false);
-        if (wasPractice) {
-            setScreen('practice');
-        } else if (mode === 'multi') {
-            leaveLobby();
-            setScreen('lobby-browser');
-        } else {
-            setScreen('title');
-        }
-    }, [mode, startInfo, setResult, setScreen]);
+  const startPractice =
+    useCallback(
+      (
+        target: PracticeTarget,
+      ) => {
+        const {
+          selectedChar,
+          difficulty,
+        } =
+          useDreamRift.getState();
+        setStartInfo(
+          {
+            transport:
+              new LocalTransport(),
+            roster:
+              [
+                {
+                  slot: 0,
+                  userId:
+                    session
+                      .data
+                      ?.user
+                      ?.id ||
+                    'local',
+                  name:
+                    session
+                      .data
+                      ?.user
+                      ?.name ||
+                    'Dreamer',
+                  charId:
+                    selectedChar,
+                  isHost: true,
+                  isLocal: true,
+                },
+              ],
+            difficulty,
+            seed: randomSeed(),
+            practice:
+              {
+                ...target,
+                onEnd:
+                  (
+                    o,
+                  ) => {
+                    recordAttempt(
+                      o,
+                    );
+                    setLastPractice(
+                      o,
+                    );
+                    setStartInfo(
+                      null,
+                    );
+                    setScreen(
+                      'practice',
+                    );
+                  },
+              },
+          },
+        );
+        setMode(
+          'single',
+        );
+        setResult(
+          null,
+        );
+        useDreamRift
+          .getState()
+          .setPaused(
+            false,
+          );
+        setScreen(
+          'playing',
+        );
+      },
+      [
+        session
+          .data
+          ?.user,
+        setMode,
+        setResult,
+        setScreen,
+      ],
+    );
 
-    const retry = useCallback(() => {
-        setResult(null);
-        if (mode === 'multi') {
-            setScreen('lobby-browser');
-            setStartInfo(null);
-        } else if (startInfo) {
-            // A seed/daily challenge replays its own seed; a free run gets a fresh one.
-            const run = useArcadeRun.getState().run;
-            const seed = run && run.kind !== 'free' ? run.seed : randomSeed();
-            if (run && run.kind === 'daily') useArcadeRun.getState().set({ ...run, counted: false });
-            else if (run) useArcadeRun.getState().set({ ...run, seed });
-            setStartInfo({ ...startInfo, transport: new LocalTransport(), seed });
-            useDreamRift.getState().setPaused(false);
-            setScreen('playing');
-        }
-    }, [mode, startInfo, setResult, setScreen]);
+  const exitToMenu =
+    useCallback(() => {
+      const wasPractice =
+        !!startInfo?.practice;
+      setStartInfo(
+        null,
+      );
+      setResult(
+        null,
+      );
+      useDreamRift
+        .getState()
+        .setPaused(
+          false,
+        );
+      if (
+        wasPractice
+      ) {
+        setScreen(
+          'practice',
+        );
+      } else if (
+        mode ===
+        'multi'
+      ) {
+        leaveLobby();
+        setScreen(
+          'lobby-browser',
+        );
+      } else {
+        setScreen(
+          'title',
+        );
+      }
+    }, [
+      mode,
+      startInfo,
+      setResult,
+      setScreen,
+    ]);
 
-    const stageArrival = useArrival(!(screen === 'playing' && !startInfo));
+  const retry =
+    useCallback(() => {
+      setResult(
+        null,
+      );
+      if (
+        mode ===
+        'multi'
+      ) {
+        setScreen(
+          'lobby-browser',
+        );
+        setStartInfo(
+          null,
+        );
+      } else if (
+        startInfo
+      ) {
+        // A seed/daily challenge replays its own seed; a free run gets a fresh one.
+        const run =
+          useArcadeRun.getState()
+            .run;
+        const seed =
+          run &&
+          run.kind !==
+            'free'
+            ? run.seed
+            : randomSeed();
+        if (
+          run &&
+          run.kind ===
+            'daily'
+        )
+          useArcadeRun
+            .getState()
+            .set(
+              {
+                ...run,
+                counted: false,
+              },
+            );
+        else if (
+          run
+        )
+          useArcadeRun
+            .getState()
+            .set(
+              {
+                ...run,
+                seed,
+              },
+            );
+        setStartInfo(
+          {
+            ...startInfo,
+            transport:
+              new LocalTransport(),
+            seed,
+          },
+        );
+        useDreamRift
+          .getState()
+          .setPaused(
+            false,
+          );
+        setScreen(
+          'playing',
+        );
+      }
+    }, [
+      mode,
+      startInfo,
+      setResult,
+      setScreen,
+    ]);
 
-    const fullExit = () => {
-        disconnectDreamRift();
-        quitGame();
+  const stageArrival =
+    useArrival(
+      !(
+        screen ===
+          'playing' &&
+        !startInfo
+      ),
+    );
+
+  const fullExit =
+    () => {
+      disconnectDreamRift();
+      quitGame();
     };
 
-    let body: React.ReactNode;
-    switch (screen) {
-        case 'playing':
-            // The stage replaces "Entering the rift" when the hub starts the match: it fades in (M9).
-            body = startInfo ? (
-                stageArrival ? (
-                    <div className="arrive-group">
-                        <GameStage start={startInfo} onExit={exitToMenu} />
-                    </div>
-                ) : (
-                    <GameStage start={startInfo} onExit={exitToMenu} />
-                )
-            ) : (
-                <Loading />
-            );
-            break;
-        case 'char-select':
-            body = <CharacterSelect onStart={startSingle} onBack={() => setScreen('title')} />;
-            break;
-        case 'lobby-browser':
-            body = <LobbyBrowser onBack={() => { setMode('single'); setScreen('title'); }} />;
-            break;
-        case 'lobby':
-            body = <LobbyRoom onLeave={() => setScreen('lobby-browser')} />;
-            break;
-        case 'game-over':
-        case 'victory':
-            body = <ResultScreen onRetry={retry} onMenu={exitToMenu} onLeaderboard={() => setScreen('leaderboard')} />;
-            break;
-        case 'leaderboard':
-            body = <Leaderboard onBack={() => setScreen(mode === 'multi' ? 'lobby-browser' : 'title')} />;
-            break;
-        case 'practice':
-            body = <SpellPracticeMenu onStart={startPractice} onBack={() => setScreen('title')} last={lastPractice} />;
-            break;
-        case 'settings':
-            body = <SettingsScreen onBack={() => setScreen('title')} />;
-            break;
-        default:
-            body = (
-                <TitleScreen
-                    onSingle={() => setScreen('char-select')}
-                    onMulti={() => { setMode('multi'); setScreen('lobby-browser'); }}
-                    onLeaderboard={() => setScreen('leaderboard')}
-                    onSettings={() => setScreen('settings')}
-                    onQuit={fullExit}
-                    extra={<PracticeEntry onOpen={() => setScreen('practice')} />}
-                />
-            );
-    }
+  let body: React.ReactNode;
+  switch (
+    screen
+  ) {
+    case 'playing':
+      // The stage replaces "Entering the rift" when the hub starts the match: it fades in (M9).
+      body =
+        startInfo ? (
+          stageArrival ? (
+            <div className="arrive-group">
+              <GameStage
+                start={
+                  startInfo
+                }
+                onExit={
+                  exitToMenu
+                }
+              />
+            </div>
+          ) : (
+            <GameStage
+              start={
+                startInfo
+              }
+              onExit={
+                exitToMenu
+              }
+            />
+          )
+        ) : (
+          <Loading />
+        );
+      break;
+    case 'char-select':
+      body =
+        (
+          <CharacterSelect
+            onStart={
+              startSingle
+            }
+            onBack={() =>
+              setScreen(
+                'title',
+              )
+            }
+          />
+        );
+      break;
+    case 'lobby-browser':
+      body =
+        (
+          <LobbyBrowser
+            onBack={() => {
+              setMode(
+                'single',
+              );
+              setScreen(
+                'title',
+              );
+            }}
+          />
+        );
+      break;
+    case 'lobby':
+      body =
+        (
+          <LobbyRoom
+            onLeave={() =>
+              setScreen(
+                'lobby-browser',
+              )
+            }
+          />
+        );
+      break;
+    case 'game-over':
+    case 'victory':
+      body =
+        (
+          <ResultScreen
+            onRetry={
+              retry
+            }
+            onMenu={
+              exitToMenu
+            }
+            onLeaderboard={() =>
+              setScreen(
+                'leaderboard',
+              )
+            }
+          />
+        );
+      break;
+    case 'leaderboard':
+      body =
+        (
+          <Leaderboard
+            onBack={() =>
+              setScreen(
+                mode ===
+                  'multi'
+                  ? 'lobby-browser'
+                  : 'title',
+              )
+            }
+          />
+        );
+      break;
+    case 'practice':
+      body =
+        (
+          <SpellPracticeMenu
+            onStart={
+              startPractice
+            }
+            onBack={() =>
+              setScreen(
+                'title',
+              )
+            }
+            last={
+              lastPractice
+            }
+          />
+        );
+      break;
+    case 'settings':
+      body =
+        (
+          <SettingsScreen
+            onBack={() =>
+              setScreen(
+                'title',
+              )
+            }
+          />
+        );
+      break;
+    default:
+      body =
+        (
+          <TitleScreen
+            onSingle={() =>
+              setScreen(
+                'char-select',
+              )
+            }
+            onMulti={() => {
+              setMode(
+                'multi',
+              );
+              setScreen(
+                'lobby-browser',
+              );
+            }}
+            onLeaderboard={() =>
+              setScreen(
+                'leaderboard',
+              )
+            }
+            onSettings={() =>
+              setScreen(
+                'settings',
+              )
+            }
+            onQuit={
+              fullExit
+            }
+            extra={
+              <PracticeEntry
+                onOpen={() =>
+                  setScreen(
+                    'practice',
+                  )
+                }
+              />
+            }
+          />
+        );
+  }
 
-    return (
-        <div className="fixed inset-0 overflow-hidden bg-black text-white">
-            <ChallengeNotice />
-            <div className="h-full w-full overflow-auto">{body}</div>
-        </div>
-    );
+  return (
+    <div className="fixed inset-0 overflow-hidden bg-black text-white">
+      <ChallengeNotice />
+      <div className="h-full w-full overflow-auto">
+        {
+          body
+        }
+      </div>
+    </div>
+  );
 }
 
 function Loading() {
-    return (
-        <div className="flex min-h-full items-center justify-center bg-black">
-            <div className="dr-serif animate-pulse text-sm tracking-[0.3em] text-[color:var(--dr-gold-soft)]">ENTERING THE RIFT…</div>
-        </div>
-    );
+  return (
+    <div className="flex min-h-full items-center justify-center bg-black">
+      <div className="dr-serif animate-pulse text-sm tracking-[0.3em] text-[color:var(--dr-gold-soft)]">
+        ENTERING
+        THE
+        RIFT…
+      </div>
+    </div>
+  );
 }

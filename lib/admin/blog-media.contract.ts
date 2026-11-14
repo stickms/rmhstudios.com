@@ -5,7 +5,19 @@
  */
 import { endpoint } from '@/lib/contract/endpoint';
 
-export const uploadBlogMediaApi = endpoint<{
-  body: FormData;
-  res: { url: string; kind: 'image' | 'video' };
-}>()({ method: 'POST', path: '/api/admin/blog/media' });
+export const uploadBlogMediaApi =
+  endpoint<{
+    body: FormData;
+    res: {
+      url: string;
+      kind:
+        | 'image'
+        | 'video';
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/admin/blog/media',
+    },
+  );

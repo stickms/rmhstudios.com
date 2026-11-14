@@ -1,13 +1,32 @@
 import type { UpgradeChoice } from './upgrades';
 
-export type GameState = 'menu' | 'countdown' | 'playing' | 'waveBreak' | 'paused' | 'gameOver' | 'upgrade';
+export type GameState =
+  | 'menu'
+  | 'countdown'
+  | 'playing'
+  | 'waveBreak'
+  | 'paused'
+  | 'gameOver'
+  | 'upgrade';
 
 /** Boss multi-phase: phase 1 = standard, 2 = arena shift (50% HP), 3 = tentacle rage (25% HP) */
-export type BossPhase = 1 | 2 | 3;
+export type BossPhase =
+  | 1
+  | 2
+  | 3;
 
 export type EnemyType =
-  | 'drifter' | 'dasher' | 'orbiter' | 'tank' | 'splitter' | 'mini_drifter'
-  | 'sniper' | 'healer' | 'shielded' | 'hive' | 'bomber';
+  | 'drifter'
+  | 'dasher'
+  | 'orbiter'
+  | 'tank'
+  | 'splitter'
+  | 'mini_drifter'
+  | 'sniper'
+  | 'healer'
+  | 'shielded'
+  | 'hive'
+  | 'bomber';
 
 export interface Player {
   x: number;
@@ -52,7 +71,11 @@ export interface Enemy {
   value: number;
   color: string;
   dashTimer: number;
-  dashState: 'idle' | 'charging' | 'dashing' | 'cooldown';
+  dashState:
+    | 'idle'
+    | 'charging'
+    | 'dashing'
+    | 'cooldown';
   dashTargetX: number;
   dashTargetY: number;
   orbitAngle: number;
@@ -78,7 +101,10 @@ export interface Enemy {
   /** Timestamp — draw hit flash until this time */
   hitFlashUntil: number;
   /** Animation lifecycle: warping in, alive (tangible), or dissolving on death. */
-  anim: 'spawning' | 'alive' | 'dying';
+  anim:
+    | 'spawning'
+    | 'alive'
+    | 'dying';
   /** Seconds remaining in the current spawning/dying phase (0 while alive). */
   animTimer: number;
 }
@@ -206,7 +232,12 @@ export interface RunStats {
   maxCombo: number;
   focusUsed: number;
   /** Upgrades acquired this run, for the game-over build summary. */
-  upgrades: { name: string; icon: string; color: string; count: number }[];
+  upgrades: {
+    name: string;
+    icon: string;
+    color: string;
+    count: number;
+  }[];
 }
 
 export interface HUDState {
@@ -265,7 +296,11 @@ export interface HUDState {
   reflectShieldCooldownFraction: number;
   allySynergyCooldownFraction: number;
   /** Unlock toast — null when no pending unlock */
-  pendingUnlock: { name: string; description: string; keybind: string } | null;
+  pendingUnlock: {
+    name: string;
+    description: string;
+    keybind: string;
+  } | null;
   /** Roguelite upgrade cards awaiting a pick (empty when none). */
   pendingUpgrades: UpgradeChoice[];
   /** Whether the current upgrade offer is a boss reward (richer styling). */

@@ -1,6 +1,9 @@
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X, AlertTriangle } from 'lucide-react';
+import {
+  X,
+  AlertTriangle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +16,9 @@ export interface NeumorphicModalProps {
   description: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: 'danger' | 'info';
+  variant?:
+    | 'danger'
+    | 'info';
 }
 
 export function NeumorphicModal({
@@ -26,11 +31,42 @@ export function NeumorphicModal({
   cancelText,
   variant = 'info',
 }: NeumorphicModalProps) {
-  const { t } = useTranslation('c-game');
-  const resolvedConfirmText = confirmText ?? t('confirm', { defaultValue: 'Confirm' });
-  const resolvedCancelText = cancelText ?? t('cancel-neumorphic-modal', { defaultValue: 'Cancel' });
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-game',
+    );
+  const resolvedConfirmText =
+    confirmText ??
+    t(
+      'confirm',
+      {
+        defaultValue:
+          'Confirm',
+      },
+    );
+  const resolvedCancelText =
+    cancelText ??
+    t(
+      'cancel-neumorphic-modal',
+      {
+        defaultValue:
+          'Cancel',
+      },
+    );
   return (
-    <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <DialogPrimitive.Root
+      open={
+        isOpen
+      }
+      onOpenChange={(
+        open,
+      ) =>
+        !open &&
+        onClose()
+      }
+    >
       <DialogPrimitive.Portal>
         {/* `slice-tokens` on BOTH portalled elements. Radix portals to
             `<body>`, which is outside every `.slice-theme` in the tree, so
@@ -52,7 +88,8 @@ export function NeumorphicModal({
           )}
         >
           <div className="flex flex-col items-center text-center space-y-5">
-            {variant === 'danger' && (
+            {variant ===
+              'danger' && (
               <div className="w-14 h-14 rounded-[10px] bg-slice-input-bg border border-slice-danger/60 flex items-center justify-center text-slice-danger">
                 <AlertTriangle className="w-7 h-7" />
               </div>
@@ -60,20 +97,28 @@ export function NeumorphicModal({
 
             <div className="space-y-2">
               <DialogPrimitive.Title className="slice-display text-xl text-slice-text-darker uppercase">
-                {title}
+                {
+                  title
+                }
               </DialogPrimitive.Title>
               <DialogPrimitive.Description className="text-slice-text-muted font-medium leading-relaxed">
-                {description}
+                {
+                  description
+                }
               </DialogPrimitive.Description>
             </div>
 
             <div className="flex gap-3 w-full pt-2">
               <Button
                 variant="ghost"
-                onClick={onClose}
+                onClick={
+                  onClose
+                }
                 className="flex-1 h-11 rounded-[10px] border border-slice-border text-slice-text-muted font-bold hover:text-slice-text hover:bg-slice-surface-hover transition-colors"
               >
-                {resolvedCancelText}
+                {
+                  resolvedCancelText
+                }
               </Button>
               <Button
                 onClick={() => {
@@ -82,20 +127,31 @@ export function NeumorphicModal({
                 }}
                 className={cn(
                   'flex-1 h-11 rounded-[10px] font-bold tracking-wider transition-colors text-[#050921]',
-                  variant === 'danger'
+                  variant ===
+                    'danger'
                     ? 'bg-slice-danger hover:brightness-110'
                     : 'bg-slice-primary hover:brightness-110',
                 )}
               >
-                {resolvedConfirmText}
+                {
+                  resolvedConfirmText
+                }
               </Button>
             </div>
           </div>
 
-          <DialogPrimitive.Close asChild>
+          <DialogPrimitive.Close
+            asChild
+          >
             <button
               className="absolute top-4 right-4 p-2 rounded-[8px] text-slice-text-muted hover:text-slice-text hover:bg-slice-surface-hover transition-colors"
-              aria-label={t('close-neumorphic-modal', { defaultValue: 'Close' })}
+              aria-label={t(
+                'close-neumorphic-modal',
+                {
+                  defaultValue:
+                    'Close',
+                },
+              )}
             >
               <X className="w-4 h-4" />
             </button>

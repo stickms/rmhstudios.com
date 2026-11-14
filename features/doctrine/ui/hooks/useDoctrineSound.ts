@@ -5,71 +5,158 @@
 
 import { useCallback } from 'react';
 import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
-import { getAudioContext, resumeAudioContext } from '@/lib/shared/platform';
+import {
+  getAudioContext,
+  resumeAudioContext,
+} from '@/lib/shared/platform';
 
 export function useDoctrineSound() {
-  const sahurActive = useDoctrineStore(s => s.sahurActive);
+  const sahurActive =
+    useDoctrineStore(
+      (
+        s,
+      ) =>
+        s.sahurActive,
+    );
 
   /**
    * The page's shared context, or null where Web Audio isn't available. Each
    * effect below is already wrapped in a try/catch that swallows the failure,
    * so a null here means silence, not a crash.
    */
-  const getContext = useCallback(() => {
-    const ctx = getAudioContext();
-    resumeAudioContext();
-    if (!ctx) throw new Error('Web Audio unavailable');
-    return ctx;
-  }, []);
+  const getContext =
+    useCallback(() => {
+      const ctx =
+        getAudioContext();
+      resumeAudioContext();
+      if (
+        !ctx
+      )
+        throw new Error(
+          'Web Audio unavailable',
+        );
+      return ctx;
+    }, []);
 
-  const playTung = useCallback(() => {
-    if (!sahurActive) return;
+  const playTung =
+    useCallback(() => {
+      if (
+        !sahurActive
+      )
+        return;
 
-    try {
-      const ctx = getContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      try {
+        const ctx =
+          getContext();
+        const osc =
+          ctx.createOscillator();
+        const gain =
+          ctx.createGain();
 
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(120, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.15);
+        osc.type =
+          'square';
+        osc.frequency.setValueAtTime(
+          120,
+          ctx.currentTime,
+        );
+        osc.frequency.exponentialRampToValueAtTime(
+          60,
+          ctx.currentTime +
+            0.15,
+        );
 
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(
+          0.3,
+          ctx.currentTime,
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.01,
+          ctx.currentTime +
+            0.2,
+        );
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+        osc.connect(
+          gain,
+        );
+        gain.connect(
+          ctx.destination,
+        );
 
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.2);
-    } catch {
-      // Audio not available — silent fail
-    }
-  }, [sahurActive, getContext]);
+        osc.start(
+          ctx.currentTime,
+        );
+        osc.stop(
+          ctx.currentTime +
+            0.2,
+        );
+      } catch {
+        // Audio not available — silent fail
+      }
+    }, [
+      sahurActive,
+      getContext,
+    ]);
 
-  const playSuccess = useCallback(() => {
-    try {
-      const ctx = getContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+  const playSuccess =
+    useCallback(() => {
+      try {
+        const ctx =
+          getContext();
+        const osc =
+          ctx.createOscillator();
+        const gain =
+          ctx.createGain();
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(523, ctx.currentTime); // C5
-      osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1); // E5
-      osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2); // G5
+        osc.type =
+          'sine';
+        osc.frequency.setValueAtTime(
+          523,
+          ctx.currentTime,
+        ); // C5
+        osc.frequency.setValueAtTime(
+          659,
+          ctx.currentTime +
+            0.1,
+        ); // E5
+        osc.frequency.setValueAtTime(
+          784,
+          ctx.currentTime +
+            0.2,
+        ); // G5
 
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(
+          0.2,
+          ctx.currentTime,
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.01,
+          ctx.currentTime +
+            0.4,
+        );
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+        osc.connect(
+          gain,
+        );
+        gain.connect(
+          ctx.destination,
+        );
 
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
-    } catch {
-      // Silent fail
-    }
-  }, [getContext]);
+        osc.start(
+          ctx.currentTime,
+        );
+        osc.stop(
+          ctx.currentTime +
+            0.4,
+        );
+      } catch {
+        // Silent fail
+      }
+    }, [
+      getContext,
+    ]);
 
-  return { playTung, playSuccess };
+  return {
+    playTung,
+    playSuccess,
+  };
 }

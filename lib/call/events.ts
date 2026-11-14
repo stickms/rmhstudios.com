@@ -27,44 +27,58 @@
  */
 
 /** Client → server. */
-export const CALL_C2S = {
-  /** Start ringing someone. */
-  INVITE: 'call:invite',
-  /** Callee picked up. */
-  ACCEPT: 'call:accept',
-  /** Callee actively refused. */
-  DECLINE: 'call:decline',
-  /** Caller gave up before it was answered. */
-  CANCEL: 'call:cancel',
-  /** Either side hung up after connecting. */
-  HANGUP: 'call:hangup',
-  /** SDP offer/answer relay. */
-  SIGNAL: 'call:signal',
-  /** ICE candidate relay (separate: these are chatty and need a higher limit). */
-  ICE: 'call:ice',
-  /** Mute state, so the other side can show it. */
-  MUTE: 'call:mute',
-} as const;
+export const CALL_C2S =
+  {
+    /** Start ringing someone. */
+    INVITE:
+      'call:invite',
+    /** Callee picked up. */
+    ACCEPT:
+      'call:accept',
+    /** Callee actively refused. */
+    DECLINE:
+      'call:decline',
+    /** Caller gave up before it was answered. */
+    CANCEL:
+      'call:cancel',
+    /** Either side hung up after connecting. */
+    HANGUP:
+      'call:hangup',
+    /** SDP offer/answer relay. */
+    SIGNAL:
+      'call:signal',
+    /** ICE candidate relay (separate: these are chatty and need a higher limit). */
+    ICE: 'call:ice',
+    /** Mute state, so the other side can show it. */
+    MUTE: 'call:mute',
+  } as const;
 
 /** Server → client. */
-export const CALL_S2C = {
-  /** You are being called. */
-  INCOMING: 'call:incoming',
-  /** Your invite reached a live device and is ringing. */
-  RINGING: 'call:ringing',
-  /** They picked up — start the WebRTC offer. */
-  ACCEPTED: 'call:accepted',
-  /** SDP relay from the other side. */
-  SIGNAL: 'call:signal',
-  /** ICE relay from the other side. */
-  ICE: 'call:ice',
-  /** The call is over, with a reason. */
-  ENDED: 'call:ended',
-  /** The other side muted or unmuted. */
-  MUTE: 'call:mute',
-  /** The invite could not be placed at all (privacy, block, busy, offline). */
-  REJECTED: 'call:rejected',
-} as const;
+export const CALL_S2C =
+  {
+    /** You are being called. */
+    INCOMING:
+      'call:incoming',
+    /** Your invite reached a live device and is ringing. */
+    RINGING:
+      'call:ringing',
+    /** They picked up — start the WebRTC offer. */
+    ACCEPTED:
+      'call:accepted',
+    /** SDP relay from the other side. */
+    SIGNAL:
+      'call:signal',
+    /** ICE relay from the other side. */
+    ICE: 'call:ice',
+    /** The call is over, with a reason. */
+    ENDED:
+      'call:ended',
+    /** The other side muted or unmuted. */
+    MUTE: 'call:mute',
+    /** The invite could not be placed at all (privacy, block, busy, offline). */
+    REJECTED:
+      'call:rejected',
+  } as const;
 
 /** Why a call ended. Drives the copy shown in the conversation afterwards. */
 export type CallEndReason =
@@ -79,13 +93,24 @@ export type CallEndReason =
   | 'offline';
 
 /** Why an invite never started ringing. */
-export type CallRejectReason = Extract<CallEndReason, 'blocked' | 'privacy' | 'busy' | 'offline'>;
+export type CallRejectReason =
+  Extract<
+    CallEndReason,
+    | 'blocked'
+    | 'privacy'
+    | 'busy'
+    | 'offline'
+  >;
 
 export interface CallPeer {
   id: string;
   name: string;
-  image: string | null;
-  handle: string | null;
+  image:
+    | string
+    | null;
+  handle:
+    | string
+    | null;
 }
 
 export interface CallInvitePayload {
@@ -98,13 +123,20 @@ export interface CallInvitePayload {
 export interface CallIncomingPayload {
   callId: string;
   from: CallPeer;
-  conversationId: string | null;
+  conversationId:
+    | string
+    | null;
 }
 
 export interface CallSignalPayload {
   callId: string;
   /** An `RTCSessionDescriptionInit`, passed through opaquely. */
-  description: { type: 'offer' | 'answer'; sdp: string };
+  description: {
+    type:
+      | 'offer'
+      | 'answer';
+    sdp: string;
+  };
 }
 
 export interface CallIcePayload {
@@ -112,9 +144,15 @@ export interface CallIcePayload {
   /** An `RTCIceCandidateInit`, passed through opaquely. */
   candidate: {
     candidate: string;
-    sdpMid?: string | null;
-    sdpMLineIndex?: number | null;
-    usernameFragment?: string | null;
+    sdpMid?:
+      | string
+      | null;
+    sdpMLineIndex?:
+      | number
+      | null;
+    usernameFragment?:
+      | string
+      | null;
   };
 }
 
@@ -135,5 +173,9 @@ export interface CallEndedPayload {
 export const RING_TIMEOUT_MS = 45_000;
 
 /** Ceiling on a single SDP blob, to keep the relay from becoming a pipe. */
-export const MAX_SDP_BYTES = 64 * 1024;
-export const MAX_ICE_BYTES = 4 * 1024;
+export const MAX_SDP_BYTES =
+  64 *
+  1024;
+export const MAX_ICE_BYTES =
+  4 *
+  1024;

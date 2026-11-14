@@ -7,10 +7,16 @@
  */
 
 /** Where a note came from. */
-export type InputSource = 'mic' | 'midi' | 'keys' | 'screen';
+export type InputSource =
+  | 'mic'
+  | 'midi'
+  | 'keys'
+  | 'screen';
 
 export interface NoteEvent {
-  type: 'on' | 'off';
+  type:
+    | 'on'
+    | 'off';
   /** MIDI note number (60 = middle C). */
   midi: number;
   /** Strike strength, 0..1 (MIDI velocity / 127). */
@@ -22,12 +28,17 @@ export interface NoteEvent {
   cents?: number;
 }
 
-export type NoteListener = (e: NoteEvent) => void;
+export type NoteListener =
+  (
+    e: NoteEvent,
+  ) => void;
 
 export interface InputAdapter {
   readonly source: InputSource;
   start(): Promise<void>;
   stop(): void;
   /** Register a listener; returns a function that removes it. */
-  subscribe(l: NoteListener): () => void;
+  subscribe(
+    l: NoteListener,
+  ): () => void;
 }

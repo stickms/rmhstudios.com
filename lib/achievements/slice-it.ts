@@ -33,21 +33,36 @@ export interface SliceItRunFacts {
  * active" — `speed` and `difficulty` are run configuration, not optional
  * mutators, so they are deliberately excluded.
  */
-const MODIFIER_TOGGLES = [
-  'invisible',
-  'suddenDeath',
-  'bombs',
-  'switching',
-  'spin',
-  'strictTiming',
-  'oneTrack',
-  'healthGauge',
-  'lenientTiming',
-  'perfectionist',
-] as const satisfies readonly (keyof Modifiers)[];
+const MODIFIER_TOGGLES =
+  [
+    'invisible',
+    'suddenDeath',
+    'bombs',
+    'switching',
+    'spin',
+    'strictTiming',
+    'oneTrack',
+    'healthGauge',
+    'lenientTiming',
+    'perfectionist',
+  ] as const satisfies readonly (keyof Modifiers)[];
 
-export function countActiveModifiers(modifiers: Modifiers): number {
-  return MODIFIER_TOGGLES.reduce((n, key) => n + (modifiers[key] ? 1 : 0), 0);
+export function countActiveModifiers(
+  modifiers: Modifiers,
+): number {
+  return MODIFIER_TOGGLES.reduce(
+    (
+      n,
+      key,
+    ) =>
+      n +
+      (modifiers[
+        key
+      ]
+        ? 1
+        : 0),
+    0,
+  );
 }
 
 /** `game.slice_it.stacked` — "Clear a song with four modifiers active." */
@@ -58,24 +73,66 @@ export const STACKED_MODIFIER_THRESHOLD = 4;
  * across many runs — `grantAchievement` is idempotent, so the caller does not
  * need to filter against what the player already has.
  */
-export function sliceItAchievementsForRun(run: SliceItRunFacts): string[] {
-  const ids: string[] = ['game.slice_it.first_play'];
+export function sliceItAchievementsForRun(
+  run: SliceItRunFacts,
+): string[] {
+  const ids: string[] =
+    [
+      'game.slice_it.first_play',
+    ];
 
   // Grade, full combo and the modifier count are all properties of a run that
   // actually finished — a failed run has no rank to speak of.
-  if (!run.cleared) return ids;
+  if (
+    !run.cleared
+  )
+    return ids;
 
-  const grade = gradeFor(run.accuracy);
-  if (grade === 'S' || grade === 'SS') ids.push('game.slice_it.s_rank');
-  if (grade === 'SS') ids.push('game.slice_it.ss_rank');
+  const grade =
+    gradeFor(
+      run.accuracy,
+    );
+  if (
+    grade ===
+      'S' ||
+    grade ===
+      'SS'
+  )
+    ids.push(
+      'game.slice_it.s_rank',
+    );
+  if (
+    grade ===
+    'SS'
+  )
+    ids.push(
+      'game.slice_it.ss_rank',
+    );
 
-  if (run.isFullCombo) {
-    ids.push('game.slice_it.full_combo');
-    if (run.difficulty === 'expert') ids.push('game.slice_it.expert_fc');
+  if (
+    run.isFullCombo
+  ) {
+    ids.push(
+      'game.slice_it.full_combo',
+    );
+    if (
+      run.difficulty ===
+      'expert'
+    )
+      ids.push(
+        'game.slice_it.expert_fc',
+      );
   }
 
-  if (countActiveModifiers(run.modifiers) >= STACKED_MODIFIER_THRESHOLD) {
-    ids.push('game.slice_it.stacked');
+  if (
+    countActiveModifiers(
+      run.modifiers,
+    ) >=
+    STACKED_MODIFIER_THRESHOLD
+  ) {
+    ids.push(
+      'game.slice_it.stacked',
+    );
   }
 
   return ids;

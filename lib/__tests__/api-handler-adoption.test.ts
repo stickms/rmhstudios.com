@@ -1,4 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { apiSources } from '@/lib/api/route-sources';
@@ -47,7 +51,8 @@ import { apiSources } from '@/lib/api/route-sources';
  * sources.
  */
 
-const ROOT = process.cwd();
+const ROOT =
+  process.cwd();
 
 interface RouteFile {
   /** Repo-relative, forward slashes. */
@@ -62,7 +67,8 @@ interface RouteFile {
  * that is not an endpoint: it hands the request to a registered module, and those are
  * scanned below like any route file.
  */
-const DISPATCHER = 'app/routes/api/$.ts';
+const DISPATCHER =
+  'app/routes/api/$.ts';
 
 /**
  * Every API handler source: the route files under `app/routes/api` and the registered
@@ -70,26 +76,80 @@ const DISPATCHER = 'app/routes/api/$.ts';
  * Only route files that actually declare a server handler are in scope: one that is pure
  * types, or a `createFileRoute` with only a loader, has nothing to wrap.
  */
-const ROUTES: RouteFile[] = apiSources(ROOT)
-  .filter((s) => s.file !== DISPATCHER)
-  .map((s) => ({
-    file: s.file,
-    template: s.template,
-    src: readFileSync(join(ROOT, s.file), 'utf8'),
-  }))
-  .filter(
-    (r) => r.src.includes('apiRoute(') || (r.src.includes('server:') && r.src.includes('handlers')),
+const ROUTES: RouteFile[] =
+  apiSources(
+    ROOT,
   )
-  .sort((x, y) => x.file.localeCompare(y.file));
+    .filter(
+      (
+        s,
+      ) =>
+        s.file !==
+        DISPATCHER,
+    )
+    .map(
+      (
+        s,
+      ) => ({
+        file: s.file,
+        template:
+          s.template,
+        src: readFileSync(
+          join(
+            ROOT,
+            s.file,
+          ),
+          'utf8',
+        ),
+      }),
+    )
+    .filter(
+      (
+        r,
+      ) =>
+        r.src.includes(
+          'apiRoute(',
+        ) ||
+        (r.src.includes(
+          'server:',
+        ) &&
+          r.src.includes(
+            'handlers',
+          )),
+    )
+    .sort(
+      (
+        x,
+        y,
+      ) =>
+        x.file.localeCompare(
+          y.file,
+        ),
+    );
 
 // `implement` (lib/api/implement.server.ts) is `defineHandler` bound to a typed
 // contract (redesign audit C1); it runs the same preamble.
-const hasWrapper = (src: string): boolean =>
-  src.includes('defineHandler') ||
-  src.includes('withDeveloperApi') ||
-  src.includes("from '@/lib/api/implement.server'");
+const hasWrapper =
+  (
+    src: string,
+  ): boolean =>
+    src.includes(
+      'defineHandler',
+    ) ||
+    src.includes(
+      'withDeveloperApi',
+    ) ||
+    src.includes(
+      "from '@/lib/api/implement.server'",
+    );
 
-const callsGetSession = (src: string): boolean => /auth\.api\.getSession/.test(src);
+const callsGetSession =
+  (
+    src: string,
+  ): boolean =>
+    /auth\.api\.getSession/.test(
+      src,
+    );
 
 /**
  * ───────────────────────── the migration backlog ─────────────────────────
@@ -124,88 +184,90 @@ const callsGetSession = (src: string): boolean => /auth\.api\.getSession/.test(s
  */
 
 /** Rule 1 backlog: route files that reference no wrapper at all. */
-const KNOWN_UNWRAPPED: readonly string[] = [
-  'app/routes/api/ai/message-suggest.ts',
-  'app/routes/api/albums/asset/$.ts',
-  // Permanent: the Better Auth catch-all. It forwards the raw Request to the
-  // library's own handler; there is no session/validation step to delegate.
-  'app/routes/api/auth/$.ts',
-  'app/routes/api/builds/cover/$file.ts',
-  'app/routes/api/client-error.ts',
-  'app/routes/api/discord/activity-image.ts',
-  'app/routes/api/email/unsubscribe.ts',
-  'app/routes/api/events/$id/ics.ts',
-  'app/routes/api/feed/image/$filename.ts',
-  'app/routes/api/feed/stream.ts',
-  'app/routes/api/gif/search.ts',
-  'app/routes/api/health.ts',
-  'app/routes/api/internal/match-result.ts',
-  'app/routes/api/internal/notify-message.ts',
-  'app/routes/api/internal/notify-typing.ts',
-  'app/routes/api/internal/predictions-tick.ts',
-  'app/routes/api/internal/streak-push.ts',
-  'app/routes/api/library/file/$id.ts',
-  'app/routes/api/news/approve.ts',
-  'app/routes/api/news/reject.ts',
-  'app/routes/api/personas/avatar/$filename.ts',
-  'app/routes/api/profile/avatar/$filename.ts',
-  'app/routes/api/profile/banner/$filename.ts',
-  'app/routes/api/pulse.ts',
-  'app/routes/api/ready.ts',
-  'app/routes/api/rmharks/$id/similar.ts',
-  'app/routes/api/rmharks/$id/unlock.ts',
-  'app/routes/api/rmharks/$id/view.ts',
-  'app/routes/api/rmhbox/history.ts',
-  'app/routes/api/rmhbox/leaderboard.ts',
-  'app/routes/api/rmhbox/stats.ts',
-  'app/routes/api/rmhladder/events.ts',
-  'app/routes/api/rmhladder/resume/$id.ts',
-  'app/routes/api/rmhladder/resume/$id/analyze.ts',
-  'app/routes/api/rmhladder/resume/$id/confirm.ts',
-  'app/routes/api/rmhtube/oembed.ts',
-  'app/routes/api/shop/purchase.ts',
-  'app/routes/api/spaces/$id/index.ts',
-  'app/routes/api/tournaments/$id/cancel.ts',
-  'app/routes/api/tournaments/$id/register.ts',
-  'app/routes/api/tournaments/$id/start.ts',
-  'app/routes/api/tournaments/$id/withdraw.ts',
-  'app/routes/api/user-builds/$id/unlock.ts',
-  'app/routes/api/user-builds/$id/view.ts',
-  'app/routes/api/v1/openapi[.]json.ts',
-  'app/routes/api/vibe/ai.ts',
-  'app/routes/api/vibe/pkg/$file.ts',
-  'app/routes/api/vibe/thumb/$slug.ts',
-  'app/routes/api/wager/$id/accept.ts',
-  'app/routes/api/wager/$id/cancel.ts',
-  'app/routes/api/wager/$id/report.ts',
-];
+const KNOWN_UNWRAPPED: readonly string[] =
+  [
+    'app/routes/api/ai/message-suggest.ts',
+    'app/routes/api/albums/asset/$.ts',
+    // Permanent: the Better Auth catch-all. It forwards the raw Request to the
+    // library's own handler; there is no session/validation step to delegate.
+    'app/routes/api/auth/$.ts',
+    'app/routes/api/builds/cover/$file.ts',
+    'app/routes/api/client-error.ts',
+    'app/routes/api/discord/activity-image.ts',
+    'app/routes/api/email/unsubscribe.ts',
+    'app/routes/api/events/$id/ics.ts',
+    'app/routes/api/feed/image/$filename.ts',
+    'app/routes/api/feed/stream.ts',
+    'app/routes/api/gif/search.ts',
+    'app/routes/api/health.ts',
+    'app/routes/api/internal/match-result.ts',
+    'app/routes/api/internal/notify-message.ts',
+    'app/routes/api/internal/notify-typing.ts',
+    'app/routes/api/internal/predictions-tick.ts',
+    'app/routes/api/internal/streak-push.ts',
+    'app/routes/api/library/file/$id.ts',
+    'app/routes/api/news/approve.ts',
+    'app/routes/api/news/reject.ts',
+    'app/routes/api/personas/avatar/$filename.ts',
+    'app/routes/api/profile/avatar/$filename.ts',
+    'app/routes/api/profile/banner/$filename.ts',
+    'app/routes/api/pulse.ts',
+    'app/routes/api/ready.ts',
+    'app/routes/api/rmharks/$id/similar.ts',
+    'app/routes/api/rmharks/$id/unlock.ts',
+    'app/routes/api/rmharks/$id/view.ts',
+    'app/routes/api/rmhbox/history.ts',
+    'app/routes/api/rmhbox/leaderboard.ts',
+    'app/routes/api/rmhbox/stats.ts',
+    'app/routes/api/rmhladder/events.ts',
+    'app/routes/api/rmhladder/resume/$id.ts',
+    'app/routes/api/rmhladder/resume/$id/analyze.ts',
+    'app/routes/api/rmhladder/resume/$id/confirm.ts',
+    'app/routes/api/rmhtube/oembed.ts',
+    'app/routes/api/shop/purchase.ts',
+    'app/routes/api/spaces/$id/index.ts',
+    'app/routes/api/tournaments/$id/cancel.ts',
+    'app/routes/api/tournaments/$id/register.ts',
+    'app/routes/api/tournaments/$id/start.ts',
+    'app/routes/api/tournaments/$id/withdraw.ts',
+    'app/routes/api/user-builds/$id/unlock.ts',
+    'app/routes/api/user-builds/$id/view.ts',
+    'app/routes/api/v1/openapi[.]json.ts',
+    'app/routes/api/vibe/ai.ts',
+    'app/routes/api/vibe/pkg/$file.ts',
+    'app/routes/api/vibe/thumb/$slug.ts',
+    'app/routes/api/wager/$id/accept.ts',
+    'app/routes/api/wager/$id/cancel.ts',
+    'app/routes/api/wager/$id/report.ts',
+  ];
 
 /**
  * Rule 2 backlog: route files that DO use a wrapper and still call
  * `auth.api.getSession` in the handler body.
  */
-const KNOWN_BYPASSES_WRAPPER: readonly string[] = [
-  'app/routes/api/ai/transform.ts',
-  'app/routes/api/events/$id/index.ts',
-  'app/routes/api/homes/listings.ts',
-  'app/routes/api/replays/$id.ts',
-  'app/routes/api/rmhcalculator/compute.ts',
-  'app/routes/api/rmhcalculator/graph.ts',
-  'app/routes/api/rmhladder/resume/index.ts',
-  'features/doctrine/api/doctrine.puzzles.replay.server.ts',
-  'features/doctrine/api/doctrine.sahur.status.server.ts',
-  'features/signal-forge/api/signal-forge.save.server.ts',
-  'lib/ai/api/rmharks.$id.translate.server.ts',
-  'lib/api/routes/user-builds.$id.comments.server.ts',
-  'lib/api/routes/user-builds.$id.like.server.ts',
-  'lib/api/routes/user-builds.$id.server.ts',
-  'lib/api/routes/user-builds.server.ts',
-  'lib/feed/api/rmharks.$id.summary.server.ts',
-  'lib/library/api/library.collection.$id.cover.server.ts',
-  'lib/library/api/library.collection.$id.items.server.ts',
-  'lib/library/api/library.collection.$id.server.ts',
-  'lib/library/api/library.collections.server.ts',
-];
+const KNOWN_BYPASSES_WRAPPER: readonly string[] =
+  [
+    'app/routes/api/ai/transform.ts',
+    'app/routes/api/events/$id/index.ts',
+    'app/routes/api/homes/listings.ts',
+    'app/routes/api/replays/$id.ts',
+    'app/routes/api/rmhcalculator/compute.ts',
+    'app/routes/api/rmhcalculator/graph.ts',
+    'app/routes/api/rmhladder/resume/index.ts',
+    'features/doctrine/api/doctrine.puzzles.replay.server.ts',
+    'features/doctrine/api/doctrine.sahur.status.server.ts',
+    'features/signal-forge/api/signal-forge.save.server.ts',
+    'lib/ai/api/rmharks.$id.translate.server.ts',
+    'lib/api/routes/user-builds.$id.comments.server.ts',
+    'lib/api/routes/user-builds.$id.like.server.ts',
+    'lib/api/routes/user-builds.$id.server.ts',
+    'lib/api/routes/user-builds.server.ts',
+    'lib/feed/api/rmharks.$id.summary.server.ts',
+    'lib/library/api/library.collection.$id.cover.server.ts',
+    'lib/library/api/library.collection.$id.items.server.ts',
+    'lib/library/api/library.collection.$id.server.ts',
+    'lib/library/api/library.collections.server.ts',
+  ];
 
 const POINTER =
   'Wrap the handler in `defineHandler` from @/lib/api/handler.server — it is ' +
@@ -216,18 +278,37 @@ const POINTER =
   'out. Routes under /api/v1/** use `withDeveloperApi` instead (different error ' +
   'envelope). Do NOT add the file to the allowlist — the allowlist only shrinks.';
 
-function report(label: string, files: string[], extra = ''): string {
+function report(
+  label: string,
+  files: string[],
+  extra = '',
+): string {
   return `\n${label} (${files.length}):\n${files.map((f) => `  ${f}`).join('\n')}\n\n${POINTER}${extra}\n`;
 }
 
 describe('every API route rides the shared handler wrapper (D2)', () => {
   it('declares admin authorization in the wrapper before body validation', () => {
-    const offenders = ROUTES.filter(
-      (r) =>
-        r.template.startsWith('/api/admin/') &&
-        /defineHandler\(\s*\{[^}]*\bauth:\s*['"]optional['"]/.test(r.src),
-    ).map((r) => r.file);
-    expect(offenders, 'Use auth: admin instead of authorizing inside an optional handler.').toEqual(
+    const offenders =
+      ROUTES.filter(
+        (
+          r,
+        ) =>
+          r.template.startsWith(
+            '/api/admin/',
+          ) &&
+          /defineHandler\(\s*\{[^}]*\bauth:\s*['"]optional['"]/.test(
+            r.src,
+          ),
+      ).map(
+        (
+          r,
+        ) =>
+          r.file,
+      );
+    expect(
+      offenders,
+      'Use auth: admin instead of authorizing inside an optional handler.',
+    ).toEqual(
       [],
     );
   });
@@ -236,26 +317,104 @@ describe('every API route rides the shared handler wrapper (D2)', () => {
     // rule below pass vacuously against an empty set, and the allowlist
     // staleness test would then flag all 179 entries — a loud failure either
     // way, but this assertion says *why* in one line.
-    expect(ROUTES.length).toBeGreaterThan(400);
-    expect(ROUTES.map((r) => r.file)).toContain('app/routes/api/health.ts');
+    expect(
+      ROUTES.length,
+    ).toBeGreaterThan(
+      400,
+    );
+    expect(
+      ROUTES.map(
+        (
+          r,
+        ) =>
+          r.file,
+      ),
+    ).toContain(
+      'app/routes/api/health.ts',
+    );
     // The registered modules are scanned too, and the dispatcher is not an endpoint.
-    expect(ROUTES.some((r) => r.src.includes('apiRoute('))).toBe(true);
-    expect(ROUTES.map((r) => r.file)).not.toContain(DISPATCHER);
+    expect(
+      ROUTES.some(
+        (
+          r,
+        ) =>
+          r.src.includes(
+            'apiRoute(',
+          ),
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      ROUTES.map(
+        (
+          r,
+        ) =>
+          r.file,
+      ),
+    ).not.toContain(
+      DISPATCHER,
+    );
   });
 
   it('references defineHandler or withDeveloperApi', () => {
-    const allow = new Set(KNOWN_UNWRAPPED);
-    const offenders = ROUTES.filter((r) => !hasWrapper(r.src) && !allow.has(r.file)).map(
-      (r) => r.file,
+    const allow =
+      new Set(
+        KNOWN_UNWRAPPED,
+      );
+    const offenders =
+      ROUTES.filter(
+        (
+          r,
+        ) =>
+          !hasWrapper(
+            r.src,
+          ) &&
+          !allow.has(
+            r.file,
+          ),
+      ).map(
+        (
+          r,
+        ) =>
+          r.file,
+      );
+    expect(
+      offenders,
+      report(
+        'API route with no handler wrapper',
+        offenders,
+      ),
+    ).toEqual(
+      [],
     );
-    expect(offenders, report('API route with no handler wrapper', offenders)).toEqual([]);
   });
 
   it('does not reach past the wrapper for the session', () => {
-    const allow = new Set(KNOWN_BYPASSES_WRAPPER);
-    const offenders = ROUTES.filter(
-      (r) => hasWrapper(r.src) && callsGetSession(r.src) && !allow.has(r.file),
-    ).map((r) => r.file);
+    const allow =
+      new Set(
+        KNOWN_BYPASSES_WRAPPER,
+      );
+    const offenders =
+      ROUTES.filter(
+        (
+          r,
+        ) =>
+          hasWrapper(
+            r.src,
+          ) &&
+          callsGetSession(
+            r.src,
+          ) &&
+          !allow.has(
+            r.file,
+          ),
+      ).map(
+        (
+          r,
+        ) =>
+          r.file,
+      );
     expect(
       offenders,
       report(
@@ -267,7 +426,9 @@ describe('every API route rides the shared handler wrapper (D2)', () => {
           'with the failure mode that the hand-written version forgets the catch ' +
           'and 500s the whole route when the session store hiccups.',
       ),
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 });
 
@@ -279,52 +440,151 @@ describe('the backlog only ever shrinks', () => {
    * permanent permission. Deleting the entry has to be part of fixing the file,
    * and the only way to make that happen is to fail the build when it isn't.
    */
-  const byFile = new Map(ROUTES.map((r) => [r.file, r.src]));
+  const byFile =
+    new Map(
+      ROUTES.map(
+        (
+          r,
+        ) => [
+          r.file,
+          r.src,
+        ],
+      ),
+    );
 
   it('lists no route that no longer exists', () => {
-    const gone = [...KNOWN_UNWRAPPED, ...KNOWN_BYPASSES_WRAPPER].filter((f) => !byFile.has(f));
+    const gone =
+      [
+        ...KNOWN_UNWRAPPED,
+        ...KNOWN_BYPASSES_WRAPPER,
+      ].filter(
+        (
+          f,
+        ) =>
+          !byFile.has(
+            f,
+          ),
+      );
     expect(
       gone,
       `\nAllowlisted routes that are no longer scanned (deleted, renamed, or no ` +
         `longer declaring a server handler):\n${gone.map((f) => `  ${f}`).join('\n')}\n\n` +
         `Remove them from KNOWN_UNWRAPPED / KNOWN_BYPASSES_WRAPPER.\n`,
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('lists no route that has since been fixed', () => {
-    const fixedUnwrapped = KNOWN_UNWRAPPED.filter((f) => {
-      const src = byFile.get(f);
-      return src !== undefined && hasWrapper(src);
-    });
-    const fixedBypass = KNOWN_BYPASSES_WRAPPER.filter((f) => {
-      const src = byFile.get(f);
-      return src !== undefined && !(hasWrapper(src) && callsGetSession(src));
-    });
-    const stale = [
-      ...fixedUnwrapped.map((f) => `${f} — now uses a wrapper; drop it from KNOWN_UNWRAPPED`),
-      ...fixedBypass.map(
-        (f) => `${f} — no longer calls getSession; drop it from KNOWN_BYPASSES_WRAPPER`,
-      ),
-    ];
+    const fixedUnwrapped =
+      KNOWN_UNWRAPPED.filter(
+        (
+          f,
+        ) => {
+          const src =
+            byFile.get(
+              f,
+            );
+          return (
+            src !==
+              undefined &&
+            hasWrapper(
+              src,
+            )
+          );
+        },
+      );
+    const fixedBypass =
+      KNOWN_BYPASSES_WRAPPER.filter(
+        (
+          f,
+        ) => {
+          const src =
+            byFile.get(
+              f,
+            );
+          return (
+            src !==
+              undefined &&
+            !(
+              hasWrapper(
+                src,
+              ) &&
+              callsGetSession(
+                src,
+              )
+            )
+          );
+        },
+      );
+    const stale =
+      [
+        ...fixedUnwrapped.map(
+          (
+            f,
+          ) =>
+            `${f} — now uses a wrapper; drop it from KNOWN_UNWRAPPED`,
+        ),
+        ...fixedBypass.map(
+          (
+            f,
+          ) =>
+            `${f} — no longer calls getSession; drop it from KNOWN_BYPASSES_WRAPPER`,
+        ),
+      ];
     expect(
       stale,
       `\nThe migration backlog is out of date:\n${stale.map((s) => `  ${s}`).join('\n')}\n\n` +
         `Deleting the entry is the last step of fixing the route. Leaving it ` +
         `behind is what turns a ratchet back into a rubber stamp.\n`,
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('is sorted and free of duplicates', () => {
     // Purely mechanical, but it is what keeps a 179-line list reviewable in a
     // diff: an out-of-order insert hides in the noise, an alphabetical one does
     // not.
-    for (const [name, list] of [
-      ['KNOWN_UNWRAPPED', KNOWN_UNWRAPPED],
-      ['KNOWN_BYPASSES_WRAPPER', KNOWN_BYPASSES_WRAPPER],
+    for (const [
+      name,
+      list,
+    ] of [
+      [
+        'KNOWN_UNWRAPPED',
+        KNOWN_UNWRAPPED,
+      ],
+      [
+        'KNOWN_BYPASSES_WRAPPER',
+        KNOWN_BYPASSES_WRAPPER,
+      ],
     ] as const) {
-      expect(new Set(list).size, `${name} has duplicate entries`).toBe(list.length);
-      expect([...list], `${name} is not alphabetically sorted`).toEqual(
-        [...list].sort((a, b) => a.localeCompare(b)),
+      expect(
+        new Set(
+          list,
+        )
+          .size,
+        `${name} has duplicate entries`,
+      ).toBe(
+        list.length,
+      );
+      expect(
+        [
+          ...list,
+        ],
+        `${name} is not alphabetically sorted`,
+      ).toEqual(
+        [
+          ...list,
+        ].sort(
+          (
+            a,
+            b,
+          ) =>
+            a.localeCompare(
+              b,
+            ),
+        ),
       );
     }
   });

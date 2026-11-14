@@ -13,7 +13,10 @@
  * onset detector since ~2005 does it.
  */
 
-import { RealFFT, hannWindow } from './fft';
+import {
+  RealFFT,
+  hannWindow,
+} from './fft';
 
 /** STFT frame length in samples at the analysis rate — ~46 ms at 22.05 kHz. */
 export const FRAME_SIZE = 1024;
@@ -34,7 +37,9 @@ export interface Spectrogram {
   /** Centre frequency of each band, Hz. */
   bandFreqs: Float64Array;
   /** Time in seconds of frame `i`, at the centre of its window. */
-  frameTime: (i: number) => number;
+  frameTime: (
+    i: number,
+  ) => number;
 }
 
 /**
@@ -45,46 +50,172 @@ export interface Spectrogram {
 function buildFilterbank(
   fftSize: number,
   sampleRate: number,
-): { spans: Int32Array; weights: Float64Array; freqs: Float64Array; count: number } {
-  const nyquist = sampleRate / 2;
-  const top = Math.min(MAX_FREQ, nyquist * 0.98);
-  const bandCount = Math.max(1, Math.floor(Math.log2(top / MIN_FREQ) * BANDS_PER_OCTAVE));
+): {
+  spans: Int32Array;
+  weights: Float64Array;
+  freqs: Float64Array;
+  count: number;
+} {
+  const nyquist =
+    sampleRate /
+    2;
+  const top =
+    Math.min(
+      MAX_FREQ,
+      nyquist *
+        0.98,
+    );
+  const bandCount =
+    Math.max(
+      1,
+      Math.floor(
+        Math.log2(
+          top /
+            MIN_FREQ,
+        ) *
+          BANDS_PER_OCTAVE,
+      ),
+    );
 
-  const centres: number[] = [];
-  for (let i = 0; i <= bandCount; i++) {
-    centres.push(MIN_FREQ * Math.pow(2, i / BANDS_PER_OCTAVE));
+  const centres: number[] =
+    [];
+  for (
+    let i = 0;
+    i <=
+    bandCount;
+    i++
+  ) {
+    centres.push(
+      MIN_FREQ *
+        Math.pow(
+          2,
+          i /
+            BANDS_PER_OCTAVE,
+        ),
+    );
   }
 
-  const binOf = (hz: number) => Math.round((hz * fftSize) / sampleRate);
-  const freqs: number[] = [];
+  const binOf =
+    (
+      hz: number,
+    ) =>
+      Math.round(
+        (hz *
+          fftSize) /
+          sampleRate,
+      );
+  const freqs: number[] =
+    [];
   // Flattened `[startBin, weightOffset, binCount]` per band, with every
   // triangle weight precomputed once. They are the same for every frame, and
   // recomputing them inside the frame loop was two divides per bin per band per
   // frame — about 40 million of them over a 15-minute track.
-  const spans: number[] = [];
-  const weights: number[] = [];
+  const spans: number[] =
+    [];
+  const weights: number[] =
+    [];
 
-  for (let i = 1; i < centres.length - 1; i++) {
-    const lo = binOf(centres[i - 1]);
-    const mid = binOf(centres[i]);
-    const hi = binOf(centres[i + 1]);
-    if (mid <= lo || hi <= mid) continue;
-    if (hi >= fftSize / 2) break;
+  for (
+    let i = 1;
+    i <
+    centres.length -
+      1;
+    i++
+  ) {
+    const lo =
+      binOf(
+        centres[
+          i -
+            1
+        ],
+      );
+    const mid =
+      binOf(
+        centres[
+          i
+        ],
+      );
+    const hi =
+      binOf(
+        centres[
+          i +
+            1
+        ],
+      );
+    if (
+      mid <=
+        lo ||
+      hi <=
+        mid
+    )
+      continue;
+    if (
+      hi >=
+      fftSize /
+        2
+    )
+      break;
 
-    spans.push(lo, weights.length, hi - lo + 1);
+    spans.push(
+      lo,
+      weights.length,
+      hi -
+        lo +
+        1,
+    );
     // Rising then falling triangle — the standard weighting, so a partial
     // sitting between two band centres contributes to both rather than jumping
     // discontinuously from one to the other.
-    for (let k = lo; k < mid; k++) weights.push((k - lo) / (mid - lo));
-    for (let k = mid; k <= hi; k++) weights.push(1 - (k - mid) / (hi - mid + 1));
-    freqs.push(centres[i]);
+    for (
+      let k =
+        lo;
+      k <
+      mid;
+      k++
+    )
+      weights.push(
+        (k -
+          lo) /
+          (mid -
+            lo),
+      );
+    for (
+      let k =
+        mid;
+      k <=
+      hi;
+      k++
+    )
+      weights.push(
+        1 -
+          (k -
+            mid) /
+            (hi -
+              mid +
+              1),
+      );
+    freqs.push(
+      centres[
+        i
+      ],
+    );
   }
 
   return {
-    spans: Int32Array.from(spans),
-    weights: Float64Array.from(weights),
-    freqs: Float64Array.from(freqs),
-    count: freqs.length,
+    spans:
+      Int32Array.from(
+        spans,
+      ),
+    weights:
+      Float64Array.from(
+        weights,
+      ),
+    freqs:
+      Float64Array.from(
+        freqs,
+      ),
+    count:
+      freqs.length,
   };
 }
 
@@ -100,13 +231,43 @@ function buildFilterbank(
 export function spectrogramShape(
   sampleCount: number,
   sampleRate: number,
-  options: { frameSize?: number; hopSize?: number } = {},
+  options: {
+    frameSize?: number;
+    hopSize?: number;
+  } = {},
 ) {
-  const frameSize = options.frameSize ?? FRAME_SIZE;
-  const hopSize = options.hopSize ?? HOP_SIZE;
-  const { freqs, count: bands } = buildFilterbank(frameSize, sampleRate);
-  const frames = Math.max(0, Math.floor((sampleCount - frameSize) / hopSize) + 1);
-  return { frameSize, hopSize, bands, frames, freqs };
+  const frameSize =
+    options.frameSize ??
+    FRAME_SIZE;
+  const hopSize =
+    options.hopSize ??
+    HOP_SIZE;
+  const {
+    freqs,
+    count:
+      bands,
+  } =
+    buildFilterbank(
+      frameSize,
+      sampleRate,
+    );
+  const frames =
+    Math.max(
+      0,
+      Math.floor(
+        (sampleCount -
+          frameSize) /
+          hopSize,
+      ) +
+        1,
+    );
+  return {
+    frameSize,
+    hopSize,
+    bands,
+    frames,
+    freqs,
+  };
 }
 
 /**
@@ -128,10 +289,17 @@ export function computeSpectrogramRange(
   out: Float32Array,
   from: number,
   to: number,
-  options: { frameSize?: number; hopSize?: number } = {},
+  options: {
+    frameSize?: number;
+    hopSize?: number;
+  } = {},
 ): void {
-  const frameSize = options.frameSize ?? FRAME_SIZE;
-  const hopSize = options.hopSize ?? HOP_SIZE;
+  const frameSize =
+    options.frameSize ??
+    FRAME_SIZE;
+  const hopSize =
+    options.hopSize ??
+    HOP_SIZE;
 
   // A real-input FFT: `im[]` was all zeros on every one of these transforms —
   // ~78 000 of them for a 15-minute track — and a complex FFT spends half its
@@ -141,26 +309,97 @@ export function computeSpectrogramRange(
   // Measured 2026-08-12: this transform is **95%** of the whole STFT; the
   // filterbank + log1p below is the other 5%. That is why the parallel path
   // exists and why nothing here is micro-tuned.
-  const fft = new RealFFT(frameSize);
-  const window = hannWindow(frameSize);
-  const { spans, weights, count: bands } = buildFilterbank(frameSize, sampleRate);
+  const fft =
+    new RealFFT(
+      frameSize,
+    );
+  const window =
+    hannWindow(
+      frameSize,
+    );
+  const {
+    spans,
+    weights,
+    count:
+      bands,
+  } = buildFilterbank(
+    frameSize,
+    sampleRate,
+  );
 
-  const magnitude = new Float64Array(frameSize / 2);
+  const magnitude =
+    new Float64Array(
+      frameSize /
+        2,
+    );
   const lambda = 20;
 
-  for (let f = from; f < to; f++) {
-    fft.magnitudes(samples, magnitude, f * hopSize, window);
+  for (
+    let f =
+      from;
+    f <
+    to;
+    f++
+  ) {
+    fft.magnitudes(
+      samples,
+      magnitude,
+      f *
+        hopSize,
+      window,
+    );
 
-    const rowStart = f * bands;
-    for (let b = 0; b < bands; b++) {
-      const start = spans[b * 3];
-      const w = spans[b * 3 + 1];
-      const span = spans[b * 3 + 2];
+    const rowStart =
+      f *
+      bands;
+    for (
+      let b = 0;
+      b <
+      bands;
+      b++
+    ) {
+      const start =
+        spans[
+          b *
+            3
+        ];
+      const w =
+        spans[
+          b *
+            3 +
+            1
+        ];
+      const span =
+        spans[
+          b *
+            3 +
+            2
+        ];
       let sum = 0;
-      for (let i = 0; i < span; i++) {
-        sum += magnitude[start + i] * weights[w + i];
+      for (
+        let i = 0;
+        i <
+        span;
+        i++
+      ) {
+        sum +=
+          magnitude[
+            start +
+              i
+          ] *
+          weights[
+            w +
+              i
+          ];
       }
-      out[rowStart + b] = Math.log1p(lambda * sum);
+      out[
+        rowStart +
+          b
+      ] =
+        Math.log1p(
+          lambda *
+            sum,
+        );
     }
   }
 }
@@ -168,30 +407,72 @@ export function computeSpectrogramRange(
 /** Assemble a {@link Spectrogram} around an already-filled data matrix. */
 export function spectrogramFromData(
   data: Float32Array,
-  shape: ReturnType<typeof spectrogramShape>,
+  shape: ReturnType<
+    typeof spectrogramShape
+  >,
   sampleRate: number,
 ): Spectrogram {
-  const frameDuration = shape.hopSize / sampleRate;
-  const centreOffset = shape.frameSize / 2 / sampleRate;
+  const frameDuration =
+    shape.hopSize /
+    sampleRate;
+  const centreOffset =
+    shape.frameSize /
+    2 /
+    sampleRate;
   return {
     data,
-    frames: shape.frames,
-    bands: shape.bands,
+    frames:
+      shape.frames,
+    bands:
+      shape.bands,
     frameDuration,
-    bandFreqs: shape.freqs,
-    frameTime: (i: number) => i * frameDuration + centreOffset,
+    bandFreqs:
+      shape.freqs,
+    frameTime:
+      (
+        i: number,
+      ) =>
+        i *
+          frameDuration +
+        centreOffset,
   };
 }
 
 export function computeSpectrogram(
   samples: Float32Array,
   sampleRate: number,
-  options: { frameSize?: number; hopSize?: number } = {},
+  options: {
+    frameSize?: number;
+    hopSize?: number;
+  } = {},
 ): Spectrogram {
-  const shape = spectrogramShape(samples.length, sampleRate, options);
-  const data = new Float32Array(Math.max(0, shape.frames * shape.bands));
-  computeSpectrogramRange(samples, sampleRate, data, 0, shape.frames, options);
-  return spectrogramFromData(data, shape, sampleRate);
+  const shape =
+    spectrogramShape(
+      samples.length,
+      sampleRate,
+      options,
+    );
+  const data =
+    new Float32Array(
+      Math.max(
+        0,
+        shape.frames *
+          shape.bands,
+      ),
+    );
+  computeSpectrogramRange(
+    samples,
+    sampleRate,
+    data,
+    0,
+    shape.frames,
+    options,
+  );
+  return spectrogramFromData(
+    data,
+    shape,
+    sampleRate,
+  );
 }
 
 /**
@@ -213,15 +494,51 @@ export function bandEnergyRatio(
   fromHz: number,
   toHz: number,
 ): number {
-  if (frame < 0 || frame >= spec.frames) return 0;
-  const row = frame * spec.bands;
+  if (
+    frame <
+      0 ||
+    frame >=
+      spec.frames
+  )
+    return 0;
+  const row =
+    frame *
+    spec.bands;
   let inRange = 0;
   let total = 0;
-  for (let b = 0; b < spec.bands; b++) {
-    const value = Math.expm1(spec.data[row + b]);
-    total += value;
-    const hz = spec.bandFreqs[b];
-    if (hz >= fromHz && hz < toHz) inRange += value;
+  for (
+    let b = 0;
+    b <
+    spec.bands;
+    b++
+  ) {
+    const value =
+      Math.expm1(
+        spec
+          .data[
+          row +
+            b
+        ],
+      );
+    total +=
+      value;
+    const hz =
+      spec
+        .bandFreqs[
+        b
+      ];
+    if (
+      hz >=
+        fromHz &&
+      hz <
+        toHz
+    )
+      inRange +=
+        value;
   }
-  return total > 0 ? inRange / total : 0;
+  return total >
+    0
+    ? inRange /
+        total
+    : 0;
 }

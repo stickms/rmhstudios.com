@@ -1,6 +1,9 @@
 import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Volume2, VolumeX } from 'lucide-react';
+import {
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   getMutedServerSnapshot,
@@ -24,25 +27,68 @@ import {
  * set, not just what pressing it does.
  */
 export function SoundToggle() {
-  const { t } = useTranslation('c-kaikai-debt');
-  const muted = useSyncExternalStore(subscribeMuted, isMuted, getMutedServerSnapshot);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-kaikai-debt',
+    );
+  const muted =
+    useSyncExternalStore(
+      subscribeMuted,
+      isMuted,
+      getMutedServerSnapshot,
+    );
 
-  const label = muted
-    ? t('sound.unmute', { defaultValue: 'Turn sound on' })
-    : t('sound.mute', { defaultValue: 'Mute sound' });
+  const label =
+    muted
+      ? t(
+          'sound.unmute',
+          {
+            defaultValue:
+              'Turn sound on',
+          },
+        )
+      : t(
+          'sound.mute',
+          {
+            defaultValue:
+              'Mute sound',
+          },
+        );
 
   return (
     <Button
       type="button"
       variant="default"
       size="sm"
-      onClick={() => toggleMuted()}
-      aria-label={label}
-      aria-pressed={!muted}
-      title={label}
+      onClick={() =>
+        toggleMuted()
+      }
+      aria-label={
+        label
+      }
+      aria-pressed={
+        !muted
+      }
+      title={
+        label
+      }
     >
-      {muted ? <VolumeX aria-hidden /> : <Volume2 aria-hidden />}
-      <span className="sr-only">{label}</span>
+      {muted ? (
+        <VolumeX
+          aria-hidden
+        />
+      ) : (
+        <Volume2
+          aria-hidden
+        />
+      )}
+      <span className="sr-only">
+        {
+          label
+        }
+      </span>
     </Button>
   );
 }

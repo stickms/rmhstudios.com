@@ -17,75 +17,192 @@
  * field.
  */
 
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { LogIn, Users } from 'lucide-react';
+import {
+  LogIn,
+  Users,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
-import { getCasinoRoomsApi, type CasinoLobbyRoom } from '@/lib/coins.contract';
-import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import {
+  getCasinoRoomsApi,
+  type CasinoLobbyRoom,
+} from '@/lib/coins.contract';
+import {
+  ARRIVE,
+  useArrival,
+  useArrivingKeys,
+} from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
-export type CasinoGame = 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
+export type CasinoGame =
+  | 'blackjack'
+  | 'holdem'
+  | 'baccarat'
+  | 'roulette';
 /** Plinko is single-player — it has no lobby, so it gets the prompt alone. */
-export type PreviewGame = CasinoGame | 'plinko';
+export type PreviewGame =
+  | CasinoGame
+  | 'plinko';
 
-export function SignedOutLobby({ game }: { game: PreviewGame }) {
-  const { t } = useTranslation('c-rmhcoins');
-  const [rooms, setRooms] = useState<CasinoLobbyRoom[] | null>(null);
-  const hasLobby = game !== 'plinko';
-  const arrival = useArrival(rooms !== null);
-  const isNew = useArrivingKeys(rooms?.map((room) => room.roomId) ?? []);
+export function SignedOutLobby({
+  game,
+}: {
+  game: PreviewGame;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhcoins',
+    );
+  const [
+    rooms,
+    setRooms,
+  ] =
+    useState<
+      | CasinoLobbyRoom[]
+      | null
+    >(
+      null,
+    );
+  const hasLobby =
+    game !==
+    'plinko';
+  const arrival =
+    useArrival(
+      rooms !==
+        null,
+    );
+  const isNew =
+    useArrivingKeys(
+      rooms?.map(
+        (
+          room,
+        ) =>
+          room.roomId,
+      ) ??
+        [],
+    );
 
   useEffect(() => {
-    if (!hasLobby) return;
+    if (
+      !hasLobby
+    )
+      return;
     let cancelled = false;
-    const load = async () => {
-      try {
-        const data = await api(getCasinoRoomsApi);
-        if (!cancelled) setRooms(data[game] ?? []);
-      } catch (e) {
-        // A refusal leaves the last list; a dropped connection empties it, as before.
-        if (!(e instanceof HttpError) && !cancelled) setRooms([]);
-      }
-    };
+    const load =
+      async () => {
+        try {
+          const data =
+            await api(
+              getCasinoRoomsApi,
+            );
+          if (
+            !cancelled
+          )
+            setRooms(
+              data[
+                game
+              ] ??
+                [],
+            );
+        } catch (e) {
+          // A refusal leaves the last list; a dropped connection empties it, as before.
+          if (
+            !(
+              e instanceof
+              HttpError
+            ) &&
+            !cancelled
+          )
+            setRooms(
+              [],
+            );
+        }
+      };
     void load();
     // The same 5s cadence the signed-in lobby polls at, so a visitor watching a
     // table fill up sees it fill at the same rate a member would.
-    const timer = setInterval(load, 5000);
+    const timer =
+      setInterval(
+        load,
+        5000,
+      );
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      clearInterval(
+        timer,
+      );
     };
-  }, [game, hasLobby]);
+  }, [
+    game,
+    hasLobby,
+  ]);
 
   return (
     <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
       <div className="rounded-site p-5">
         <div className="flex items-start gap-3">
-          <LogIn className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
+          <LogIn
+            className="mt-0.5 h-5 w-5 shrink-0 text-site-accent"
+            aria-hidden
+          />
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-site-text">
-              {t('signed-out-lobby-title', { defaultValue: 'Sign in to take a seat' })}
+              {t(
+                'signed-out-lobby-title',
+                {
+                  defaultValue:
+                    'Sign in to take a seat',
+                },
+              )}
             </h3>
             <p className="mt-1 text-sm text-site-text-muted">
               {hasLobby
-                ? t('signed-out-lobby-body', {
-                    defaultValue:
-                      'You can watch the lobby from here. Joining a table or opening one of your own needs an account — tables are played with RMH Coins, which are free to claim.',
-                  })
-                : t('signed-out-solo-body', {
-                    defaultValue:
-                      'This one is played with RMH Coins, which are free to claim once you have an account.',
-                  })}
+                ? t(
+                    'signed-out-lobby-body',
+                    {
+                      defaultValue:
+                        'You can watch the lobby from here. Joining a table or opening one of your own needs an account — tables are played with RMH Coins, which are free to claim.',
+                    },
+                  )
+                : t(
+                    'signed-out-solo-body',
+                    {
+                      defaultValue:
+                        'This one is played with RMH Coins, which are free to claim once you have an account.',
+                    },
+                  )}
             </p>
-            <Button asChild variant="default" size="sm" className="mt-3">
-              <Link to="/login" search={{ callbackURL: '/predictions?tab=games' }}>
-                {t('signed-out-lobby-cta', { defaultValue: 'Sign in' })}
+            <Button
+              asChild
+              variant="default"
+              size="sm"
+              className="mt-3"
+            >
+              <Link
+                to="/login"
+                search={{
+                  callbackURL:
+                    '/predictions?tab=games',
+                }}
+              >
+                {t(
+                  'signed-out-lobby-cta',
+                  {
+                    defaultValue:
+                      'Sign in',
+                  },
+                )}
               </Link>
             </Button>
           </div>
@@ -93,64 +210,127 @@ export function SignedOutLobby({ game }: { game: PreviewGame }) {
       </div>
 
       {hasLobby && (
-      <div className="max-w-125 mx-auto w-full">
-        <h4 className="mb-2 text-sm font-semibold text-site-text">
-          {t('open-tables', { defaultValue: 'Open tables' })}
-        </h4>
+        <div className="max-w-125 mx-auto w-full">
+          <h4 className="mb-2 text-sm font-semibold text-site-text">
+            {t(
+              'open-tables',
+              {
+                defaultValue:
+                  'Open tables',
+              },
+            )}
+          </h4>
 
-        {rooms === null ? (
-          <div className="flex items-center justify-center py-8">
-            <Spinner size={20} />
-          </div>
-        ) : rooms.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            className={arrival}
-            title={t('no-open-tables', { defaultValue: 'No open tables right now' })}
-            description={t('no-open-tables-body', {
-              defaultValue: 'Sign in to open one — everyone else browsing will see it here.',
-            })}
-          />
-        ) : (
-          <ul className={cn('flex flex-col gap-2', arrival)}>
-            {rooms.map((room) => (
-              // Rows, not buttons: nothing here is joinable without a session,
-              // and a control that only ever refuses is worse than no control.
-              <li
-                key={room.roomId}
-                className={cn(
-                  'flex items-center justify-between gap-3 rounded-site p-4',
-                  isNew(room.roomId) && ARRIVE,
-                )}
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-site-text">{room.name}</p>
-                  <p className="truncate text-xs text-site-text-muted">
-                    {room.ownerName}
-                    {room.bigBlind
-                      ? ` · ${t('table-blinds', {
-                          defaultValue: '{{small}}/{{big}} blinds',
-                          small: room.smallBlind,
-                          big: room.bigBlind,
-                        })}`
-                      : ''}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2 text-xs text-site-text-muted">
-                  {room.inProgress && (
-                    <span className="text-site-warning">
-                      {t('in-progress', { defaultValue: 'In progress' })}
-                    </span>
-                  )}
-                  <span className="tabular-nums">
-                    {room.playerCount}/{room.maxPlayers}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+          {rooms ===
+          null ? (
+            <div className="flex items-center justify-center py-8">
+              <Spinner
+                size={
+                  20
+                }
+              />
+            </div>
+          ) : rooms.length ===
+            0 ? (
+            <EmptyState
+              icon={
+                Users
+              }
+              className={
+                arrival
+              }
+              title={t(
+                'no-open-tables',
+                {
+                  defaultValue:
+                    'No open tables right now',
+                },
+              )}
+              description={t(
+                'no-open-tables-body',
+                {
+                  defaultValue:
+                    'Sign in to open one — everyone else browsing will see it here.',
+                },
+              )}
+            />
+          ) : (
+            <ul
+              className={cn(
+                'flex flex-col gap-2',
+                arrival,
+              )}
+            >
+              {rooms.map(
+                (
+                  room,
+                ) => (
+                  // Rows, not buttons: nothing here is joinable without a session,
+                  // and a control that only ever refuses is worse than no control.
+                  <li
+                    key={
+                      room.roomId
+                    }
+                    className={cn(
+                      'flex items-center justify-between gap-3 rounded-site p-4',
+                      isNew(
+                        room.roomId,
+                      ) &&
+                        ARRIVE,
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-site-text">
+                        {
+                          room.name
+                        }
+                      </p>
+                      <p className="truncate text-xs text-site-text-muted">
+                        {
+                          room.ownerName
+                        }
+                        {room.bigBlind
+                          ? ` · ${t(
+                              'table-blinds',
+                              {
+                                defaultValue:
+                                  '{{small}}/{{big}} blinds',
+                                small:
+                                  room.smallBlind,
+                                big: room.bigBlind,
+                              },
+                            )}`
+                          : ''}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2 text-xs text-site-text-muted">
+                      {room.inProgress && (
+                        <span className="text-site-warning">
+                          {t(
+                            'in-progress',
+                            {
+                              defaultValue:
+                                'In progress',
+                            },
+                          )}
+                        </span>
+                      )}
+                      <span className="tabular-nums">
+                        {
+                          room.playerCount
+                        }
+                        /
+                        {
+                          room.maxPlayers
+                        }
+                      </span>
+                    </div>
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   );

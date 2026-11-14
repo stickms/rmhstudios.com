@@ -22,17 +22,29 @@ export interface PlayerSubmission {
   timestamp: number;
   isValid: boolean;
   isMultiSyllable: boolean;
-  invalidReason?: 'does_not_rhyme' | 'not_in_dictionary';
+  invalidReason?:
+    | 'does_not_rhyme'
+    | 'not_in_dictionary';
 }
 
 /** Per-player submission list keyed by userId. */
-export type PlayerSubmissions = Record<string, PlayerSubmission[]>;
+export type PlayerSubmissions =
+  Record<
+    string,
+    PlayerSubmission[]
+  >;
 
 export interface WordBreakdown {
   word: string;
   isValid: boolean;
-  invalidReason?: 'does_not_rhyme' | 'not_in_dictionary';
-  rarity: 'common' | 'uncommon' | 'rare' | null;
+  invalidReason?:
+    | 'does_not_rhyme'
+    | 'not_in_dictionary';
+  rarity:
+    | 'common'
+    | 'uncommon'
+    | 'rare'
+    | null;
   basePoints: number;
   multiSyllableBonus: number;
   speedBonus: number;
@@ -53,14 +65,20 @@ export interface PlayerRoundResult {
 export interface RoundResult {
   roundNumber: number;
   rootWord: RootWord;
-  playerResults: Record<string, PlayerRoundResult>;
+  playerResults: Record<
+    string,
+    PlayerRoundResult
+  >;
 }
 
 export interface ActionLogEntry {
   seq: number;
   type: string;
   timestamp: number;
-  payload: Record<string, unknown>;
+  payload: Record<
+    string,
+    unknown
+  >;
 }
 
 export interface RhymeTimeState {
@@ -71,6 +89,9 @@ export interface RhymeTimeState {
   timeRemaining: number;
   submissions: PlayerSubmissions;
   roundResults: RoundResult[];
-  scores: Record<string, number>;
+  scores: Record<
+    string,
+    number
+  >;
   actionLog: ActionLogEntry[];
 }

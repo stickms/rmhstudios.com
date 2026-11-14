@@ -38,7 +38,9 @@
  */
 
 export interface IceServer {
-  urls: string | string[];
+  urls:
+    | string
+    | string[];
   username?: string;
   credential?: string;
 }
@@ -50,15 +52,21 @@ export interface IceServer {
  * would otherwise take call setup with it. These see only a binding request —
  * no audio, no identity, no call metadata.
  */
-const DEFAULT_STUN = [
-  'stun:stun.l.google.com:19302',
-  'stun:stun1.l.google.com:19302',
-  'stun:stun.cloudflare.com:3478',
-];
+const DEFAULT_STUN =
+  [
+    'stun:stun.l.google.com:19302',
+    'stun:stun1.l.google.com:19302',
+    'stun:stun.cloudflare.com:3478',
+  ];
 
 /** Is a relay configured? Drives the "calls may fail" hint in the UI. */
-export function hasTurn(env: NodeJS.ProcessEnv = process.env): boolean {
-  return Boolean(env.TURN_URL && env.TURN_SECRET);
+export function hasTurn(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return Boolean(
+    env.TURN_URL &&
+    env.TURN_SECRET,
+  );
 }
 
 /** How long a minted TURN credential stays valid. Long enough to place a call
@@ -75,31 +83,77 @@ export function buildIceServers(args: {
   userId: string;
   now: number;
   env?: NodeJS.ProcessEnv;
-  hmacSha1Base64?: (secret: string, message: string) => string;
+  hmacSha1Base64?: (
+    secret: string,
+    message: string,
+  ) => string;
 }): IceServer[] {
-  const env = args.env ?? process.env;
+  const env =
+    args.env ??
+    process.env;
   const stun =
-    env.STUN_URLS?.split(',')
-      .map((s) => s.trim())
-      .filter(Boolean) ?? DEFAULT_STUN;
-  const servers: IceServer[] = [{ urls: stun }];
+    env.STUN_URLS?.split(
+      ',',
+    )
+      .map(
+        (
+          s,
+        ) =>
+          s.trim(),
+      )
+      .filter(
+        Boolean,
+      ) ??
+    DEFAULT_STUN;
+  const servers: IceServer[] =
+    [
+      {
+        urls: stun,
+      },
+    ];
 
-  const turnUrl = env.TURN_URL;
-  const secret = env.TURN_SECRET;
-  if (turnUrl && secret && args.hmacSha1Base64) {
-    const expiry = Math.floor(args.now / 1000) + TURN_CREDENTIAL_TTL_SEC;
+  const turnUrl =
+    env.TURN_URL;
+  const secret =
+    env.TURN_SECRET;
+  if (
+    turnUrl &&
+    secret &&
+    args.hmacSha1Base64
+  ) {
+    const expiry =
+      Math.floor(
+        args.now /
+          1000,
+      ) +
+      TURN_CREDENTIAL_TTL_SEC;
     // coturn's `use-auth-secret` (REST API) username format.
     const username = `${expiry}:${args.userId}`;
-    servers.push({
-      // Both UDP and the TCP/TLS fallback: port 443 TLS is what gets through
-      // the corporate firewalls that are the reason TURN exists at all.
-      urls: turnUrl
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
-      username,
-      credential: args.hmacSha1Base64(secret, username),
-    });
+    servers.push(
+      {
+        // Both UDP and the TCP/TLS fallback: port 443 TLS is what gets through
+        // the corporate firewalls that are the reason TURN exists at all.
+        urls: turnUrl
+          .split(
+            ',',
+          )
+          .map(
+            (
+              s,
+            ) =>
+              s.trim(),
+          )
+          .filter(
+            Boolean,
+          ),
+        username,
+        credential:
+          args.hmacSha1Base64(
+            secret,
+            username,
+          ),
+      },
+    );
   }
 
   return servers;
@@ -112,11 +166,16 @@ export function buildIceServers(args: {
  * little off answer latency. `bundlePolicy: 'max-bundle'` keeps everything on
  * one transport, which is fewer ports to get through a firewall.
  */
-export function rtcConfiguration(iceServers: IceServer[]): RTCConfiguration {
+export function rtcConfiguration(
+  iceServers: IceServer[],
+): RTCConfiguration {
   return {
-    iceServers: iceServers as RTCIceServer[],
+    iceServers:
+      iceServers as RTCIceServer[],
     iceCandidatePoolSize: 1,
-    bundlePolicy: 'max-bundle',
-    rtcpMuxPolicy: 'require',
+    bundlePolicy:
+      'max-bundle',
+    rtcpMuxPolicy:
+      'require',
   };
 }

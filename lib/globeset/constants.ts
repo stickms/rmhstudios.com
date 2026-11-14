@@ -22,13 +22,24 @@ export type RaceGoal =
   /** First to a fixed number of GlobeSets — a two-minute version. */
   | 'sprint';
 
-export const RACE_GOALS: readonly RaceGoal[] = ['clear', 'sprint'];
+export const RACE_GOALS: readonly RaceGoal[] =
+  [
+    'clear',
+    'sprint',
+  ];
 
 /** GlobeSet counts a sprint can be run to. */
-export const SPRINT_TARGETS = [5, 10, 15] as const;
-export type SprintTarget = (typeof SPRINT_TARGETS)[number];
+export const SPRINT_TARGETS =
+  [
+    5,
+    10,
+    15,
+  ] as const;
+export type SprintTarget =
+  (typeof SPRINT_TARGETS)[number];
 
-export const DEFAULT_GOAL: RaceGoal = 'clear';
+export const DEFAULT_GOAL: RaceGoal =
+  'clear';
 export const DEFAULT_SPRINT_TARGET: SprintTarget = 10;
 
 /**
@@ -38,15 +49,25 @@ export const DEFAULT_SPRINT_TARGET: SprintTarget = 10;
  * Without it a single player who walks away holds the room — and everyone in
  * it — open until the idle sweep, which is half an hour away.
  */
-export const RACE_TIMEOUT_MS = 15 * 60_000;
+export const RACE_TIMEOUT_MS =
+  15 *
+  60_000;
 
 /** How often live standings are broadcast — one batched message, not one per player. */
 export const STANDINGS_TICK_MS = 600;
 
-export function isSprintTarget(value: unknown): value is SprintTarget {
-  return SPRINT_TARGETS.includes(value as SprintTarget);
+export function isSprintTarget(
+  value: unknown,
+): value is SprintTarget {
+  return SPRINT_TARGETS.includes(
+    value as SprintTarget,
+  );
 }
 
-export function isRaceGoal(value: unknown): value is RaceGoal {
-  return RACE_GOALS.includes(value as RaceGoal);
+export function isRaceGoal(
+  value: unknown,
+): value is RaceGoal {
+  return RACE_GOALS.includes(
+    value as RaceGoal,
+  );
 }

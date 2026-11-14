@@ -16,22 +16,74 @@
  */
 import type { AnyRouter } from '@tanstack/react-router';
 
-const trail = new Map<number, string>();
+const trail =
+  new Map<
+    number,
+    string
+  >();
 
-type Located = { pathname: string; search: string; state: { __TSR_index?: number } };
+type Located =
+  {
+    pathname: string;
+    search: string;
+    state: {
+      __TSR_index?: number;
+    };
+  };
 
-function record(location: Located): void {
-  trail.set(location.state.__TSR_index ?? 0, location.pathname + location.search);
+function record(
+  location: Located,
+): void {
+  trail.set(
+    location
+      .state
+      .__TSR_index ??
+      0,
+    location.pathname +
+      location.search,
+  );
 }
 
 /** Browser-only, once per page load (app/router.tsx latches it). */
-export function installHistoryTrail(router: AnyRouter): void {
-  record(router.history.location as Located);
-  router.history.subscribe(({ location }: { location: Located }) => record(location));
+export function installHistoryTrail(
+  router: AnyRouter,
+): void {
+  record(
+    router
+      .history
+      .location as Located,
+  );
+  router.history.subscribe(
+    ({
+      location,
+    }: {
+      location: Located;
+    }) =>
+      record(
+        location,
+      ),
+  );
 }
 
 /** The path + search of the entry before the current one, if this page load has seen it. */
-export function previousEntryHref(): string | undefined {
-  const index = (window.history.state as { __TSR_index?: number } | null)?.__TSR_index ?? 0;
-  return index > 0 ? trail.get(index - 1) : undefined;
+export function previousEntryHref():
+  | string
+  | undefined {
+  const index =
+    (
+      window
+        .history
+        .state as {
+        __TSR_index?: number;
+      } | null
+    )
+      ?.__TSR_index ??
+    0;
+  return index >
+    0
+    ? trail.get(
+        index -
+          1,
+      )
+    : undefined;
 }

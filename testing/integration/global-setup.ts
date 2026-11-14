@@ -6,7 +6,11 @@
  * own, and the budget stays well under the limit.
  */
 import type { TestProject } from 'vitest/node';
-import { BASE_URL, signUp, type TestUser } from './lib/client';
+import {
+  BASE_URL,
+  signUp,
+  type TestUser,
+} from './lib/client';
 
 declare module 'vitest' {
   export interface ProvidedContext {
@@ -19,21 +23,59 @@ declare module 'vitest' {
   }
 }
 
-export default async function setup(project: TestProject) {
-  const deadline = Date.now() + 60_000;
+export default async function setup(
+  project: TestProject,
+) {
+  const deadline =
+    Date.now() +
+    60_000;
   for (;;) {
     try {
-      const res = await fetch(`${BASE_URL}/api/ready`);
-      if (res.ok) break;
+      const res =
+        await fetch(
+          `${BASE_URL}/api/ready`,
+        );
+      if (
+        res.ok
+      )
+        break;
     } catch {
       /* not up yet */
     }
-    if (Date.now() > deadline) throw new Error(`app at ${BASE_URL} never became ready`);
-    await new Promise((r) => setTimeout(r, 1_000));
+    if (
+      Date.now() >
+      deadline
+    )
+      throw new Error(
+        `app at ${BASE_URL} never became ready`,
+      );
+    await new Promise(
+      (
+        r,
+      ) =>
+        setTimeout(
+          r,
+          1_000,
+        ),
+    );
   }
 
-  for (const label of ['alice', 'bob', 'carol'] as const) {
-    const { client: _client, ...user } = await signUp(label);
-    project.provide(label, user);
+  for (const label of [
+    'alice',
+    'bob',
+    'carol',
+  ] as const) {
+    const {
+      client:
+        _client,
+      ...user
+    } =
+      await signUp(
+        label,
+      );
+    project.provide(
+      label,
+      user,
+    );
   }
 }

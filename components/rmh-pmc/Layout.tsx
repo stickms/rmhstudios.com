@@ -7,7 +7,11 @@
  * drive. See docs/archive/2026/performance-audit-2026-08-12.md §1.4.
  */
 import { Outlet } from '@tanstack/react-router';
-import { CommandBar, Gutter, SiteFooter } from './shared';
+import {
+  CommandBar,
+  Gutter,
+  SiteFooter,
+} from './shared';
 
 export default function RmhPmcLayout() {
   return (

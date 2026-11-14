@@ -2,11 +2,23 @@
 import { contractQuery } from '@/lib/route/route-query';
 import { getScheduleApi } from '@/lib/schedule/schedule.contract';
 
-export const scheduleQuery = () =>
-  contractQuery(
-    ['schedule', 7],
-    getScheduleApi,
-    { query: { days: 7 } },
-    // The buckets are floored to midnight UTC server-side; a minute is plenty.
-    { staleTime: 60_000, retry: false },
-  );
+export const scheduleQuery =
+  () =>
+    contractQuery(
+      [
+        'schedule',
+        7,
+      ],
+      getScheduleApi,
+      {
+        query:
+          {
+            days: 7,
+          },
+      },
+      // The buckets are floored to midnight UTC server-side; a minute is plenty.
+      {
+        staleTime: 60_000,
+        retry: false,
+      },
+    );

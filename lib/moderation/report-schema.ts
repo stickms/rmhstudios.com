@@ -32,47 +32,77 @@ import { z } from 'zod';
  * site most likely to attract a copyright claim was the one with no report
  * button.
  */
-export const REPORT_ENTITY_TYPES = [
-  'rmhark',
-  'comment',
-  'user',
-  'build',
-  'dm',
-  'song',
-  // P05: profile stamps (P5) and member-run webrings (P6) — user-made names and
-  // images that appear on other people's pages, so they need a report path.
-  'stamp',
-  'webring',
-  // P22: RMHLadder community interview reports (F8).
-  'ladder-interview',
-] as const;
-export type ReportEntityType = (typeof REPORT_ENTITY_TYPES)[number];
+export const REPORT_ENTITY_TYPES =
+  [
+    'rmhark',
+    'comment',
+    'user',
+    'build',
+    'dm',
+    'song',
+    // P05: profile stamps (P5) and member-run webrings (P6) — user-made names and
+    // images that appear on other people's pages, so they need a report path.
+    'stamp',
+    'webring',
+    // P22: RMHLadder community interview reports (F8).
+    'ladder-interview',
+  ] as const;
+export type ReportEntityType =
+  (typeof REPORT_ENTITY_TYPES)[number];
 
 /**
  * The reason taxonomy. Ordered as the dialog presents it: the categories that
  * are reported most often first, `OTHER` last.
  */
-export const REPORT_REASONS = [
-  'SPAM',
-  'HARASSMENT',
-  'HATE',
-  'VIOLENCE',
-  'SEXUAL',
-  'SELF_HARM',
-  'MISINFORMATION',
-  'ILLEGAL',
-  'OTHER',
-] as const;
-export type ReportReason = (typeof REPORT_REASONS)[number];
+export const REPORT_REASONS =
+  [
+    'SPAM',
+    'HARASSMENT',
+    'HATE',
+    'VIOLENCE',
+    'SEXUAL',
+    'SELF_HARM',
+    'MISINFORMATION',
+    'ILLEGAL',
+    'OTHER',
+  ] as const;
+export type ReportReason =
+  (typeof REPORT_REASONS)[number];
 
 /** Free-text detail cap. The textarea's `maxLength` reads this, not a literal. */
 export const REPORT_DETAILS_MAX = 1000;
 
-export const reportSchema = z.object({
-  entityType: z.enum(REPORT_ENTITY_TYPES),
-  entityId: z.string().min(1).max(64),
-  reason: z.enum(REPORT_REASONS),
-  details: z.string().max(REPORT_DETAILS_MAX).optional(),
-});
+export const reportSchema =
+  z.object(
+    {
+      entityType:
+        z.enum(
+          REPORT_ENTITY_TYPES,
+        ),
+      entityId:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            64,
+          ),
+      reason:
+        z.enum(
+          REPORT_REASONS,
+        ),
+      details:
+        z
+          .string()
+          .max(
+            REPORT_DETAILS_MAX,
+          )
+          .optional(),
+    },
+  );
 
-export type ReportInput = z.infer<typeof reportSchema>;
+export type ReportInput =
+  z.infer<
+    typeof reportSchema
+  >;

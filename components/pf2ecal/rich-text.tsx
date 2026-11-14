@@ -51,32 +51,98 @@ const INLINE =
  * came back as one text chunk, passed the shape test, and rendered as an
  * italicised asterisk. Classifying by what matched removes the whole category.
  */
-function renderInline(text: string, keyPrefix: string): ReactNode[] {
-  const out: ReactNode[] = [];
+function renderInline(
+  text: string,
+  keyPrefix: string,
+): ReactNode[] {
+  const out: ReactNode[] =
+    [];
   let cursor = 0;
   let index = 0;
 
-  for (const match of text.matchAll(INLINE)) {
-    const token = match[0];
-    const at = match.index ?? 0;
-    if (at > cursor) out.push(text.slice(cursor, at));
-    cursor = at + token.length;
+  for (const match of text.matchAll(
+    INLINE,
+  )) {
+    const token =
+      match[0];
+    const at =
+      match.index ??
+      0;
+    if (
+      at >
+      cursor
+    )
+      out.push(
+        text.slice(
+          cursor,
+          at,
+        ),
+      );
+    cursor =
+      at +
+      token.length;
     const key = `${keyPrefix}-${index++}`;
 
-    if (token.startsWith('`')) {
+    if (
+      token.startsWith(
+        '`',
+      )
+    ) {
       out.push(
-        <code key={key} className="pf2e-code">
-          {token.slice(1, -1)}
+        <code
+          key={
+            key
+          }
+          className="pf2e-code"
+        >
+          {token.slice(
+            1,
+            -1,
+          )}
         </code>,
       );
-    } else if (token.startsWith('**')) {
-      out.push(<strong key={key}>{token.slice(2, -2)}</strong>);
+    } else if (
+      token.startsWith(
+        '**',
+      )
+    ) {
+      out.push(
+        <strong
+          key={
+            key
+          }
+        >
+          {token.slice(
+            2,
+            -2,
+          )}
+        </strong>,
+      );
     } else {
-      out.push(<em key={key}>{token.slice(1, -1)}</em>);
+      out.push(
+        <em
+          key={
+            key
+          }
+        >
+          {token.slice(
+            1,
+            -1,
+          )}
+        </em>,
+      );
     }
   }
 
-  if (cursor < text.length) out.push(text.slice(cursor));
+  if (
+    cursor <
+    text.length
+  )
+    out.push(
+      text.slice(
+        cursor,
+      ),
+    );
   return out;
 }
 
@@ -89,40 +155,112 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
  * for output that does not occur — and a bullet that renders as a bullet is the
  * whole of what a list needs here.
  */
-export function RichText({ text }: { text: string }) {
-  const blocks = text.trim().split(/\n{2,}/);
+export function RichText({
+  text,
+}: {
+  text: string;
+}) {
+  const blocks =
+    text
+      .trim()
+      .split(
+        /\n{2,}/,
+      );
 
   return (
     <>
-      {blocks.map((block, blockIndex) => {
-        const lines = block.split('\n');
-        const isList = lines.every((line) => /^\s*(?:[-*]|\d+\.)\s+/.test(line));
+      {blocks.map(
+        (
+          block,
+          blockIndex,
+        ) => {
+          const lines =
+            block.split(
+              '\n',
+            );
+          const isList =
+            lines.every(
+              (
+                line,
+              ) =>
+                /^\s*(?:[-*]|\d+\.)\s+/.test(
+                  line,
+                ),
+            );
 
-        if (isList) {
+          if (
+            isList
+          ) {
+            return (
+              <ul
+                key={
+                  blockIndex
+                }
+                className="pf2e-msg-list"
+              >
+                {lines.map(
+                  (
+                    line,
+                    i,
+                  ) => (
+                    <li
+                      key={
+                        i
+                      }
+                    >
+                      {renderInline(
+                        line.replace(
+                          /^\s*(?:[-*]|\d+\.)\s+/,
+                          '',
+                        ),
+                        `${blockIndex}-${i}`,
+                      )}
+                    </li>
+                  ),
+                )}
+              </ul>
+            );
+          }
+
           return (
-            <ul key={blockIndex} className="pf2e-msg-list">
-              {lines.map((line, i) => (
-                <li key={i}>
-                  {renderInline(line.replace(/^\s*(?:[-*]|\d+\.)\s+/, ''), `${blockIndex}-${i}`)}
-                </li>
-              ))}
-            </ul>
+            <p
+              key={
+                blockIndex
+              }
+              className={
+                blockIndex >
+                0
+                  ? 'pf2e-msg-p'
+                  : undefined
+              }
+            >
+              {lines.map(
+                (
+                  line,
+                  i,
+                ) => (
+                  // A single newline inside a block is a line break, not a new
+                  // paragraph — the model uses them for "here is the next one".
+                  <span
+                    key={
+                      i
+                    }
+                  >
+                    {i >
+                      0 && (
+                      <br />
+                    )}
+                    {renderInline(
+                      line,
+                      `${blockIndex}-${i}`,
+                    )}
+                  </span>
+                ),
+              )}
+            </p>
           );
-        }
-
-        return (
-          <p key={blockIndex} className={blockIndex > 0 ? 'pf2e-msg-p' : undefined}>
-            {lines.map((line, i) => (
-              // A single newline inside a block is a line break, not a new
-              // paragraph — the model uses them for "here is the next one".
-              <span key={i}>
-                {i > 0 && <br />}
-                {renderInline(line, `${blockIndex}-${i}`)}
-              </span>
-            ))}
-          </p>
-        );
-      })}
+        },
+      )}
     </>
   );
 }

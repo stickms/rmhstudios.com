@@ -14,17 +14,66 @@
 
 import { z } from 'zod';
 
-import { TIP_ENTITY_TYPES, TIP_MAX, TIP_MIN, TIP_NOTE_MAX } from './tip-limits';
+import {
+  TIP_ENTITY_TYPES,
+  TIP_MAX,
+  TIP_MIN,
+  TIP_NOTE_MAX,
+} from './tip-limits';
 
-export { TIP_ENTITY_TYPES, TIP_MAX, TIP_MIN, TIP_NOTE_MAX };
+export {
+  TIP_ENTITY_TYPES,
+  TIP_MAX,
+  TIP_MIN,
+  TIP_NOTE_MAX,
+};
 export type { TipEntityType } from './tip-limits';
 
-export const tipSchema = z.object({
-  recipientId: z.string().min(1).max(64),
-  amount: z.number().int().min(TIP_MIN).max(TIP_MAX),
-  note: z.string().max(TIP_NOTE_MAX).optional(),
-  entityType: z.enum(TIP_ENTITY_TYPES).optional(),
-  entityId: z.string().max(64).optional(),
-});
+export const tipSchema =
+  z.object(
+    {
+      recipientId:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            64,
+          ),
+      amount:
+        z
+          .number()
+          .int()
+          .min(
+            TIP_MIN,
+          )
+          .max(
+            TIP_MAX,
+          ),
+      note: z
+        .string()
+        .max(
+          TIP_NOTE_MAX,
+        )
+        .optional(),
+      entityType:
+        z
+          .enum(
+            TIP_ENTITY_TYPES,
+          )
+          .optional(),
+      entityId:
+        z
+          .string()
+          .max(
+            64,
+          )
+          .optional(),
+    },
+  );
 
-export type TipInput = z.infer<typeof tipSchema>;
+export type TipInput =
+  z.infer<
+    typeof tipSchema
+  >;

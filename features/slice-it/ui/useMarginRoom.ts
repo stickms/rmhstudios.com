@@ -1,4 +1,8 @@
-import { useEffect, useState, type RefObject } from 'react';
+import {
+  useEffect,
+  useState,
+  type RefObject,
+} from 'react';
 
 /** Room the playfield leaves around itself inside its container, in px. */
 export interface MarginRoom {
@@ -36,44 +40,117 @@ export function useMarginRoom(
    */
   layoutKey?: unknown,
 ): MarginRoom | null {
-  const [room, setRoom] = useState<MarginRoom | null>(null);
+  const [
+    room,
+    setRoom,
+  ] =
+    useState<MarginRoom | null>(
+      null,
+    );
 
   useEffect(() => {
-    const root = rootRef.current;
-    const stage = stageRef.current;
-    if (!enabled || !root || !stage) {
-      setRoom(null);
+    const root =
+      rootRef.current;
+    const stage =
+      stageRef.current;
+    if (
+      !enabled ||
+      !root ||
+      !stage
+    ) {
+      setRoom(
+        null,
+      );
       return;
     }
-    const measure = () => {
-      const box = root.getBoundingClientRect();
-      const field = stage.getBoundingClientRect();
-      const next: MarginRoom = {
-        top: Math.max(0, Math.round(field.top - box.top)),
-        bottom: Math.max(0, Math.round(box.bottom - field.bottom)),
-        left: Math.max(0, Math.round(field.left - box.left)),
-        right: Math.max(0, Math.round(box.right - field.right)),
-        stageLeft: Math.round(field.left - box.left),
-        stageWidth: Math.round(field.width),
+    const measure =
+      () => {
+        const box =
+          root.getBoundingClientRect();
+        const field =
+          stage.getBoundingClientRect();
+        const next: MarginRoom =
+          {
+            top: Math.max(
+              0,
+              Math.round(
+                field.top -
+                  box.top,
+              ),
+            ),
+            bottom:
+              Math.max(
+                0,
+                Math.round(
+                  box.bottom -
+                    field.bottom,
+                ),
+              ),
+            left: Math.max(
+              0,
+              Math.round(
+                field.left -
+                  box.left,
+              ),
+            ),
+            right:
+              Math.max(
+                0,
+                Math.round(
+                  box.right -
+                    field.right,
+                ),
+              ),
+            stageLeft:
+              Math.round(
+                field.left -
+                  box.left,
+              ),
+            stageWidth:
+              Math.round(
+                field.width,
+              ),
+          };
+        setRoom(
+          (
+            prev,
+          ) =>
+            prev &&
+            prev.top ===
+              next.top &&
+            prev.bottom ===
+              next.bottom &&
+            prev.left ===
+              next.left &&
+            prev.right ===
+              next.right &&
+            prev.stageLeft ===
+              next.stageLeft &&
+            prev.stageWidth ===
+              next.stageWidth
+              ? prev
+              : next,
+        );
       };
-      setRoom((prev) =>
-        prev &&
-        prev.top === next.top &&
-        prev.bottom === next.bottom &&
-        prev.left === next.left &&
-        prev.right === next.right &&
-        prev.stageLeft === next.stageLeft &&
-        prev.stageWidth === next.stageWidth
-          ? prev
-          : next,
-      );
-    };
     measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(root);
-    observer.observe(stage);
-    return () => observer.disconnect();
-  }, [rootRef, stageRef, enabled, layoutKey]);
+    const observer =
+      new ResizeObserver(
+        measure,
+      );
+    observer.observe(
+      root,
+    );
+    observer.observe(
+      stage,
+    );
+    return () =>
+      observer.disconnect();
+  }, [
+    rootRef,
+    stageRef,
+    enabled,
+    layoutKey,
+  ]);
 
   return room;
 }

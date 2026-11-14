@@ -30,7 +30,8 @@
  * The 2-char minimum matches the handle policy: a 1-char handle cannot be
  * registered, so a 1-char token is always a typo or a decoration ("@ ").
  */
-const MENTION_RE = /(?:^|[\s([{<"'|])@([a-z0-9_]{2,24})\b/gi;
+const MENTION_RE =
+  /(?:^|[\s([{<"'|])@([a-z0-9_]{2,24})\b/gi;
 
 /**
  * The hard cap on how many mentions one piece of text can resolve to.
@@ -49,29 +50,65 @@ export const MAX_MENTIONS = 10;
  * want to *highlight* mentions (the composer, a renderer) can see all of them
  * while callers that *notify* go through the cap.
  */
-export function extractMentions(text: string): string[] {
-  if (!text) return [];
-  const seen = new Set<string>();
-  const out: string[] = [];
+export function extractMentions(
+  text: string,
+): string[] {
+  if (
+    !text
+  )
+    return [];
+  const seen =
+    new Set<string>();
+  const out: string[] =
+    [];
   // `matchAll` on a /g regex is stateless per call — no lastIndex leakage
   // between callers, which a shared `exec` loop would have.
-  for (const match of text.matchAll(MENTION_RE)) {
-    const handle = match[1].toLowerCase();
-    if (seen.has(handle)) continue;
-    seen.add(handle);
-    out.push(handle);
+  for (const match of text.matchAll(
+    MENTION_RE,
+  )) {
+    const handle =
+      match[1].toLowerCase();
+    if (
+      seen.has(
+        handle,
+      )
+    )
+      continue;
+    seen.add(
+      handle,
+    );
+    out.push(
+      handle,
+    );
   }
   return out;
 }
 
 /** Apply the anti-mass-mention cap. Order is preserved: the first N win. */
-export function capMentions(handles: readonly string[], max: number = MAX_MENTIONS): string[] {
-  return handles.slice(0, Math.max(0, max));
+export function capMentions(
+  handles: readonly string[],
+  max: number = MAX_MENTIONS,
+): string[] {
+  return handles.slice(
+    0,
+    Math.max(
+      0,
+      max,
+    ),
+  );
 }
 
 /** `extractMentions` + `capMentions` — what every notifier should call. */
-export function mentionedHandles(text: string, max: number = MAX_MENTIONS): string[] {
-  return capMentions(extractMentions(text), max);
+export function mentionedHandles(
+  text: string,
+  max: number = MAX_MENTIONS,
+): string[] {
+  return capMentions(
+    extractMentions(
+      text,
+    ),
+    max,
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -96,18 +133,76 @@ export interface MentionQuery {
  * recognise. Two spellings of "what counts as a mention" is how a surface ends
  * up showing a suggestion that never notifies anyone.
  */
-export function activeMentionQuery(text: string, caret: number): MentionQuery | null {
-  const end = Math.max(0, Math.min(caret, text.length));
-  let i = end - 1;
+export function activeMentionQuery(
+  text: string,
+  caret: number,
+): MentionQuery | null {
+  const end =
+    Math.max(
+      0,
+      Math.min(
+        caret,
+        text.length,
+      ),
+    );
+  let i =
+    end -
+    1;
   // Walk back over handle characters.
-  while (i >= 0 && /[a-z0-9_]/i.test(text[i])) i--;
-  if (i < 0 || text[i] !== '@') return null;
-  const start = i;
-  const before = start > 0 ? text[start - 1] : '';
-  if (before && !/[\s([{<"'|]/.test(before)) return null;
-  const query = text.slice(start + 1, end).toLowerCase();
-  if (query.length > 24) return null;
-  return { query, start, end };
+  while (
+    i >=
+      0 &&
+    /[a-z0-9_]/i.test(
+      text[
+        i
+      ],
+    )
+  )
+    i--;
+  if (
+    i <
+      0 ||
+    text[
+      i
+    ] !==
+      '@'
+  )
+    return null;
+  const start =
+    i;
+  const before =
+    start >
+    0
+      ? text[
+          start -
+            1
+        ]
+      : '';
+  if (
+    before &&
+    !/[\s([{<"'|]/.test(
+      before,
+    )
+  )
+    return null;
+  const query =
+    text
+      .slice(
+        start +
+          1,
+        end,
+      )
+      .toLowerCase();
+  if (
+    query.length >
+    24
+  )
+    return null;
+  return {
+    query,
+    start,
+    end,
+  };
 }
 
 /**
@@ -120,10 +215,23 @@ export function applyMentionCompletion(
   text: string,
   active: MentionQuery,
   handle: string,
-): { text: string; caret: number } {
+): {
+  text: string;
+  caret: number;
+} {
   const inserted = `@${handle} `;
   return {
-    text: text.slice(0, active.start) + inserted + text.slice(active.end),
-    caret: active.start + inserted.length,
+    text:
+      text.slice(
+        0,
+        active.start,
+      ) +
+      inserted +
+      text.slice(
+        active.end,
+      ),
+    caret:
+      active.start +
+      inserted.length,
   };
 }

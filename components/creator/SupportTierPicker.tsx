@@ -4,7 +4,11 @@ import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { joinCreatorTierApi } from '@/lib/creator/join.contract';
-import { Coins, Heart, Check } from 'lucide-react';
+import {
+  Coins,
+  Heart,
+  Check,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,11 +24,16 @@ import type { SerializedTier } from '@/lib/creator/tiers.server';
 export interface SupportTierPickerProps {
   creatorId: string;
   tiers: SerializedTier[];
-  creatorName?: string | null;
+  creatorName?:
+    | string
+    | null;
   /** Custom trigger; defaults to a "Support" button. */
   trigger?: React.ReactNode;
   /** Fired after a successful join. */
-  onJoined?: (result: { tierId: string; expiresAt: string }) => void;
+  onJoined?: (result: {
+    tierId: string;
+    expiresAt: string;
+  }) => void;
 }
 
 /**
@@ -39,42 +48,135 @@ export function SupportTierPicker({
   trigger,
   onJoined,
 }: SupportTierPickerProps) {
-  const { t } = useTranslation('site');
-  const [open, setOpen] = useState(false);
-  const [joining, setJoining] = useState<string | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    joining,
+    setJoining,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
 
-  const perkMeta = perkOptions(t);
-  const perkLabel = (key: string) => perkMeta.find((p) => p.key === key)?.label ?? key;
+  const perkMeta =
+    perkOptions(
+      t,
+    );
+  const perkLabel =
+    (
+      key: string,
+    ) =>
+      perkMeta.find(
+        (
+          p,
+        ) =>
+          p.key ===
+          key,
+      )
+        ?.label ??
+      key;
 
-  const join = async (tierId: string) => {
-    setJoining(tierId);
-    try {
-      const data = await api(joinCreatorTierApi, {
-        params: { id: creatorId },
-        body: { tierId },
-      });
-      toast.success(
-        t('join-success', {
-          defaultValue: "You're now a {{tier}} supporter!",
-          tier: data.tierName ?? '',
-        }),
+  const join =
+    async (
+      tierId: string,
+    ) => {
+      setJoining(
+        tierId,
       );
-      onJoined?.({ tierId, expiresAt: data.expiresAt });
-      setOpen(false);
-    } catch (e) {
-      toast.error(serverError(e) ?? t('join-failed', { defaultValue: 'Could not join' }));
-    } finally {
-      setJoining(null);
-    }
-  };
+      try {
+        const data =
+          await api(
+            joinCreatorTierApi,
+            {
+              params:
+                {
+                  id: creatorId,
+                },
+              body: {
+                tierId,
+              },
+            },
+          );
+        toast.success(
+          t(
+            'join-success',
+            {
+              defaultValue:
+                "You're now a {{tier}} supporter!",
+              tier:
+                data.tierName ??
+                '',
+            },
+          ),
+        );
+        onJoined?.(
+          {
+            tierId,
+            expiresAt:
+              data.expiresAt,
+          },
+        );
+        setOpen(
+          false,
+        );
+      } catch (e) {
+        toast.error(
+          serverError(
+            e,
+          ) ??
+            t(
+              'join-failed',
+              {
+                defaultValue:
+                  'Could not join',
+              },
+            ),
+        );
+      } finally {
+        setJoining(
+          null,
+        );
+      }
+    };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Dialog
+      open={
+        open
+      }
+      onOpenChange={
+        setOpen
+      }
+    >
+      <DialogTrigger
+        asChild
+      >
         {trigger ?? (
           <Button variant="default">
-            <Heart aria-hidden />
-            {t('support', { defaultValue: 'Support' })}
+            <Heart
+              aria-hidden
+            />
+            {t(
+              'support',
+              {
+                defaultValue:
+                  'Support',
+              },
+            )}
           </Button>
         )}
       </DialogTrigger>
@@ -82,63 +184,137 @@ export function SupportTierPicker({
         <DialogHeader>
           <DialogTitle>
             {creatorName
-              ? t('support-creator', { defaultValue: 'Support {{name}}', name: creatorName })
-              : t('choose-a-tier', { defaultValue: 'Choose a tier' })}
+              ? t(
+                  'support-creator',
+                  {
+                    defaultValue:
+                      'Support {{name}}',
+                    name: creatorName,
+                  },
+                )
+              : t(
+                  'choose-a-tier',
+                  {
+                    defaultValue:
+                      'Choose a tier',
+                  },
+                )}
           </DialogTitle>
           <DialogDescription>
-            {t('support-picker-desc', {
-              defaultValue:
-                'Pick a tier to unlock its perks. Membership renews every 30 days with coins.',
-            })}
+            {t(
+              'support-picker-desc',
+              {
+                defaultValue:
+                  'Pick a tier to unlock its perks. Membership renews every 30 days with coins.',
+              },
+            )}
           </DialogDescription>
         </DialogHeader>
 
-        {tiers.length === 0 ? (
+        {tiers.length ===
+        0 ? (
           <p className="py-6 text-center text-sm text-site-text-muted">
-            {t('no-tiers-available', {
-              defaultValue: 'This creator is not offering memberships yet.',
-            })}
+            {t(
+              'no-tiers-available',
+              {
+                defaultValue:
+                  'This creator is not offering memberships yet.',
+              },
+            )}
           </p>
         ) : (
           <div className="space-y-3">
-            {tiers.map((tier) => (
-              <div key={tier.id} className="rounded-site surface-card p-5 space-y-3">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="font-semibold text-site-text">{tier.name}</h3>
-                  <span className="flex items-center gap-1 text-sm font-semibold text-site-text tabular-nums">
-                    <Coins className="size-4 text-site-warning" aria-hidden />
-                    {tier.priceCoins}
-                    <span className="text-site-text-muted font-normal">
-                      {t('per-30-days', { defaultValue: '/ 30d' })}
-                    </span>
-                  </span>
-                </div>
-                {tier.perks.length > 0 && (
-                  <ul className="space-y-1">
-                    {tier.perks.map((perk) => (
-                      <li
-                        key={perk}
-                        className="flex items-center gap-2 text-sm text-site-text-muted"
-                      >
-                        <Check className="size-4 shrink-0 text-site-success" aria-hidden />
-                        {perkLabel(perk)}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <Button
-                  className="w-full"
-                  onClick={() => join(tier.id)}
-                  loading={joining === tier.id}
-                  disabled={joining !== null}
+            {tiers.map(
+              (
+                tier,
+              ) => (
+                <div
+                  key={
+                    tier.id
+                  }
+                  className="rounded-site surface-card p-5 space-y-3"
                 >
-                  {t('join-tier', {
-                    defaultValue: 'Join for {{price}} coins',
-                    price: tier.priceCoins,
-                  })}
-                </Button>
-              </div>
-            ))}
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h3 className="font-semibold text-site-text">
+                      {
+                        tier.name
+                      }
+                    </h3>
+                    <span className="flex items-center gap-1 text-sm font-semibold text-site-text tabular-nums">
+                      <Coins
+                        className="size-4 text-site-warning"
+                        aria-hidden
+                      />
+                      {
+                        tier.priceCoins
+                      }
+                      <span className="text-site-text-muted font-normal">
+                        {t(
+                          'per-30-days',
+                          {
+                            defaultValue:
+                              '/ 30d',
+                          },
+                        )}
+                      </span>
+                    </span>
+                  </div>
+                  {tier
+                    .perks
+                    .length >
+                    0 && (
+                    <ul className="space-y-1">
+                      {tier.perks.map(
+                        (
+                          perk,
+                        ) => (
+                          <li
+                            key={
+                              perk
+                            }
+                            className="flex items-center gap-2 text-sm text-site-text-muted"
+                          >
+                            <Check
+                              className="size-4 shrink-0 text-site-success"
+                              aria-hidden
+                            />
+                            {perkLabel(
+                              perk,
+                            )}
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  )}
+                  <Button
+                    className="w-full"
+                    onClick={() =>
+                      join(
+                        tier.id,
+                      )
+                    }
+                    loading={
+                      joining ===
+                      tier.id
+                    }
+                    disabled={
+                      joining !==
+                      null
+                    }
+                  >
+                    {t(
+                      'join-tier',
+                      {
+                        defaultValue:
+                          'Join for {{price}} coins',
+                        price:
+                          tier.priceCoins,
+                      },
+                    )}
+                  </Button>
+                </div>
+              ),
+            )}
           </div>
         )}
       </DialogContent>

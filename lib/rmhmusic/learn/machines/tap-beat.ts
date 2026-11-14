@@ -25,8 +25,14 @@
  * that did not happen** (a click was skipped by a stalled timer): it is treated as `lost`, never
  * scored on the beats that happen to be there.
  */
-import { starsFor, type Stars } from '../scoring/stars';
-import { effectiveLatencyMs, tapScore } from '../scoring/timing';
+import {
+  starsFor,
+  type Stars,
+} from '../scoring/stars';
+import {
+  effectiveLatencyMs,
+  tapScore,
+} from '../scoring/timing';
 import type { CompleteOutcome } from './learn-data';
 import type { Machine } from './runner';
 
@@ -49,8 +55,19 @@ export const MAX_TAIL_MS = 600;
  * The wait after the last scored beat for a late tap: {@link TAIL_MS} and the learner's latency
  * (a tap arrives that much after the beat it answers), capped at {@link MAX_TAIL_MS}.
  */
-export function tailMs(profileLatencyMs: number): number {
-  return Math.min(MAX_TAIL_MS, TAIL_MS + Math.max(0, effectiveLatencyMs(profileLatencyMs)));
+export function tailMs(
+  profileLatencyMs: number,
+): number {
+  return Math.min(
+    MAX_TAIL_MS,
+    TAIL_MS +
+      Math.max(
+        0,
+        effectiveLatencyMs(
+          profileLatencyMs,
+        ),
+      ),
+  );
 }
 
 /**
@@ -67,28 +84,72 @@ export function runStillWanted({
   state: State;
   token: number;
 }): boolean {
-  return mounted && state.kind === 'preparing' && state.token === token;
+  return (
+    mounted &&
+    state.kind ===
+      'preparing' &&
+    state.token ===
+      token
+  );
 }
 
 /**
  * The event that ends a run whose last beat has passed: `finished` with the scored beat times, or
  * `lost` when they are not all there (`skipped` beats, or not {@link BEATS} of them).
  */
-export function finishEvent(token: number, beats: readonly number[], skipped: number): Event {
-  return skipped > 0 || !allBeats(beats)
-    ? { type: 'lost', token }
-    : { type: 'finished', token, beats: [...beats] };
+export function finishEvent(
+  token: number,
+  beats: readonly number[],
+  skipped: number,
+): Event {
+  return skipped >
+    0 ||
+    !allBeats(
+      beats,
+    )
+    ? {
+        type: 'lost',
+        token,
+      }
+    : {
+        type: 'finished',
+        token,
+        beats:
+          [
+            ...beats,
+          ],
+      };
 }
 
-const allBeats = (beats: readonly number[]): boolean =>
-  beats.length === BEATS && beats.every(Number.isFinite);
+const allBeats =
+  (
+    beats: readonly number[],
+  ): boolean =>
+    beats.length ===
+      BEATS &&
+    beats.every(
+      Number.isFinite,
+    );
 
 export type State =
-  | { kind: 'ready' }
-  | { kind: 'preparing'; token: number }
+  | {
+      kind: 'ready';
+    }
+  | {
+      kind: 'preparing';
+      token: number;
+    }
   /** Sound could not start, or stopped mid-run. Start tries again. */
-  | { kind: 'no-audio'; token: number; lost: boolean }
-  | { kind: 'counting-in'; token: number; beat: number }
+  | {
+      kind: 'no-audio';
+      token: number;
+      lost: boolean;
+    }
+  | {
+      kind: 'counting-in';
+      token: number;
+      beat: number;
+    }
   | {
       kind: 'tapping';
       token: number;
@@ -96,10 +157,29 @@ export type State =
       beat: number;
       taps: number[];
     }
-  | { kind: 'saving'; token: number; attempt: number; result: Result }
-  | { kind: 'saved'; token: number; result: Result; stars: Stars }
-  | { kind: 'failed'; token: number; attempt: number; result: Result }
-  | { kind: 'signed-out'; token: number; result: Result };
+  | {
+      kind: 'saving';
+      token: number;
+      attempt: number;
+      result: Result;
+    }
+  | {
+      kind: 'saved';
+      token: number;
+      result: Result;
+      stars: Stars;
+    }
+  | {
+      kind: 'failed';
+      token: number;
+      attempt: number;
+      result: Result;
+    }
+  | {
+      kind: 'signed-out';
+      token: number;
+      result: Result;
+    };
 
 export interface Result {
   score: number;
@@ -109,141 +189,462 @@ export interface Result {
 }
 
 export type Event =
-  | { type: 'start' }
-  | { type: 'prepared'; token: number; ok: boolean }
-  | { type: 'beat'; token: number; beat: number }
-  | { type: 'tap'; time: number }
-  | { type: 'finished'; token: number; beats: number[] }
-  | { type: 'lost'; token: number }
-  | { type: 'answered'; attempt: number; outcome: CompleteOutcome }
-  | { type: 'retry' };
+  | {
+      type: 'start';
+    }
+  | {
+      type: 'prepared';
+      token: number;
+      ok: boolean;
+    }
+  | {
+      type: 'beat';
+      token: number;
+      beat: number;
+    }
+  | {
+      type: 'tap';
+      time: number;
+    }
+  | {
+      type: 'finished';
+      token: number;
+      beats: number[];
+    }
+  | {
+      type: 'lost';
+      token: number;
+    }
+  | {
+      type: 'answered';
+      attempt: number;
+      outcome: CompleteOutcome;
+    }
+  | {
+      type: 'retry';
+    };
 
 export type Effect =
   /** Wake sound and start the metronome; answer with `prepared` carrying `token`. */
-  | { type: 'prepare'; token: number }
+  | {
+      type: 'prepare';
+      token: number;
+    }
   /** Stop the metronome and any timer of the run. */
-  | { type: 'stop-audio' }
-  | { type: 'complete'; attempt: number; score: number; stars: number };
+  | {
+      type: 'stop-audio';
+    }
+  | {
+      type: 'complete';
+      attempt: number;
+      score: number;
+      stars: number;
+    };
 
-const tokenOf = (s: State): number => ('token' in s ? s.token : 0);
+const tokenOf =
+  (
+    s: State,
+  ): number =>
+    'token' in
+    s
+      ? s.token
+      : 0;
 
-export function createTapBeatMachine(profileLatencyMs: number): Machine<State, Event, Effect> {
-  const latency = effectiveLatencyMs(profileLatencyMs);
-  const complete = (r: Result, attempt: number): Effect => ({
-    type: 'complete',
-    attempt,
-    score: r.score,
-    stars: starsFor(r.score),
-  });
+export function createTapBeatMachine(
+  profileLatencyMs: number,
+): Machine<
+  State,
+  Event,
+  Effect
+> {
+  const latency =
+    effectiveLatencyMs(
+      profileLatencyMs,
+    );
+  const complete =
+    (
+      r: Result,
+      attempt: number,
+    ): Effect => ({
+      type: 'complete',
+      attempt,
+      score:
+        r.score,
+      stars:
+        starsFor(
+          r.score,
+        ),
+    });
 
-  function step(s: State, e: Event): { state: State; effects: Effect[] } {
-    const same = { state: s, effects: [] as Effect[] };
-    switch (e.type) {
+  function step(
+    s: State,
+    e: Event,
+  ): {
+    state: State;
+    effects: Effect[];
+  } {
+    const same =
+      {
+        state:
+          s,
+        effects:
+          [] as Effect[],
+      };
+    switch (
+      e.type
+    ) {
       case 'start': {
-        if (s.kind !== 'ready' && s.kind !== 'no-audio') return same;
-        const token = tokenOf(s) + 1;
-        return { state: { kind: 'preparing', token }, effects: [{ type: 'prepare', token }] };
+        if (
+          s.kind !==
+            'ready' &&
+          s.kind !==
+            'no-audio'
+        )
+          return same;
+        const token =
+          tokenOf(
+            s,
+          ) +
+          1;
+        return {
+          state:
+            {
+              kind: 'preparing',
+              token,
+            },
+          effects:
+            [
+              {
+                type: 'prepare',
+                token,
+              },
+            ],
+        };
       }
       case 'prepared': {
-        if (s.kind !== 'preparing' || s.token !== e.token) return same;
+        if (
+          s.kind !==
+            'preparing' ||
+          s.token !==
+            e.token
+        )
+          return same;
         return e.ok
-          ? { state: { kind: 'counting-in', token: s.token, beat: -1 }, effects: [] }
+          ? {
+              state:
+                {
+                  kind: 'counting-in',
+                  token:
+                    s.token,
+                  beat: -1,
+                },
+              effects:
+                [],
+            }
           : {
-              state: { kind: 'no-audio', token: s.token, lost: false },
-              effects: [{ type: 'stop-audio' }],
+              state:
+                {
+                  kind: 'no-audio',
+                  token:
+                    s.token,
+                  lost: false,
+                },
+              effects:
+                [
+                  {
+                    type: 'stop-audio',
+                  },
+                ],
             };
       }
       case 'beat': {
-        if (!Number.isFinite(e.beat)) return same;
-        if (s.kind === 'counting-in' && s.token === e.token) {
-          if (e.beat >= COUNT_IN - 1) {
+        if (
+          !Number.isFinite(
+            e.beat,
+          )
+        )
+          return same;
+        if (
+          s.kind ===
+            'counting-in' &&
+          s.token ===
+            e.token
+        ) {
+          if (
+            e.beat >=
+            COUNT_IN -
+              1
+          ) {
             return {
-              state: {
-                kind: 'tapping',
-                token: s.token,
-                beat: Math.max(-1, e.beat - COUNT_IN),
-                taps: [],
-              },
-              effects: [],
+              state:
+                {
+                  kind: 'tapping',
+                  token:
+                    s.token,
+                  beat: Math.max(
+                    -1,
+                    e.beat -
+                      COUNT_IN,
+                  ),
+                  taps: [],
+                },
+              effects:
+                [],
             };
           }
-          return e.beat > s.beat ? { state: { ...s, beat: e.beat }, effects: [] } : same;
+          return e.beat >
+            s.beat
+            ? {
+                state:
+                  {
+                    ...s,
+                    beat: e.beat,
+                  },
+                effects:
+                  [],
+              }
+            : same;
         }
-        if (s.kind === 'tapping' && s.token === e.token) {
-          const beat = Math.min(BEATS - 1, e.beat - COUNT_IN);
-          return beat > s.beat ? { state: { ...s, beat }, effects: [] } : same;
+        if (
+          s.kind ===
+            'tapping' &&
+          s.token ===
+            e.token
+        ) {
+          const beat =
+            Math.min(
+              BEATS -
+                1,
+              e.beat -
+                COUNT_IN,
+            );
+          return beat >
+            s.beat
+            ? {
+                state:
+                  {
+                    ...s,
+                    beat,
+                  },
+                effects:
+                  [],
+              }
+            : same;
         }
         return same;
       }
       case 'tap': {
-        if (s.kind !== 'tapping' || !Number.isFinite(e.time)) return same;
-        return { state: { ...s, taps: [...s.taps, e.time] }, effects: [] };
+        if (
+          s.kind !==
+            'tapping' ||
+          !Number.isFinite(
+            e.time,
+          )
+        )
+          return same;
+        return {
+          state:
+            {
+              ...s,
+              taps: [
+                ...s.taps,
+                e.time,
+              ],
+            },
+          effects:
+            [],
+        };
       }
       case 'finished': {
-        if (s.kind !== 'tapping' || s.token !== e.token) return same;
-        if (!allBeats(e.beats)) return step(s, { type: 'lost', token: e.token });
-        const result = tapScore(e.beats, s.taps, latency);
+        if (
+          s.kind !==
+            'tapping' ||
+          s.token !==
+            e.token
+        )
+          return same;
+        if (
+          !allBeats(
+            e.beats,
+          )
+        )
+          return step(
+            s,
+            {
+              type: 'lost',
+              token:
+                e.token,
+            },
+          );
+        const result =
+          tapScore(
+            e.beats,
+            s.taps,
+            latency,
+          );
         return {
-          state: { kind: 'saving', token: s.token, attempt: 1, result },
-          effects: [{ type: 'stop-audio' }, complete(result, 1)],
+          state:
+            {
+              kind: 'saving',
+              token:
+                s.token,
+              attempt: 1,
+              result,
+            },
+          effects:
+            [
+              {
+                type: 'stop-audio',
+              },
+              complete(
+                result,
+                1,
+              ),
+            ],
         };
       }
       case 'lost': {
         if (
-          (s.kind !== 'preparing' && s.kind !== 'counting-in' && s.kind !== 'tapping') ||
-          s.token !== e.token
+          (s.kind !==
+            'preparing' &&
+            s.kind !==
+              'counting-in' &&
+            s.kind !==
+              'tapping') ||
+          s.token !==
+            e.token
         ) {
           return same;
         }
         return {
-          state: { kind: 'no-audio', token: s.token, lost: true },
-          effects: [{ type: 'stop-audio' }],
+          state:
+            {
+              kind: 'no-audio',
+              token:
+                s.token,
+              lost: true,
+            },
+          effects:
+            [
+              {
+                type: 'stop-audio',
+              },
+            ],
         };
       }
       case 'answered': {
-        if (s.kind !== 'saving' || s.attempt !== e.attempt) return same;
-        switch (e.outcome) {
+        if (
+          s.kind !==
+            'saving' ||
+          s.attempt !==
+            e.attempt
+        )
+          return same;
+        switch (
+          e.outcome
+        ) {
           case 'saved':
             return {
-              state: {
-                kind: 'saved',
-                token: s.token,
-                result: s.result,
-                stars: starsFor(s.result.score),
-              },
-              effects: [],
+              state:
+                {
+                  kind: 'saved',
+                  token:
+                    s.token,
+                  result:
+                    s.result,
+                  stars:
+                    starsFor(
+                      s
+                        .result
+                        .score,
+                    ),
+                },
+              effects:
+                [],
             };
           case 'unauthorized':
             return {
-              state: { kind: 'signed-out', token: s.token, result: s.result },
-              effects: [],
+              state:
+                {
+                  kind: 'signed-out',
+                  token:
+                    s.token,
+                  result:
+                    s.result,
+                },
+              effects:
+                [],
             };
           case 'failed':
           case 'invalid':
             return {
-              state: { kind: 'failed', token: s.token, attempt: s.attempt, result: s.result },
-              effects: [],
+              state:
+                {
+                  kind: 'failed',
+                  token:
+                    s.token,
+                  attempt:
+                    s.attempt,
+                  result:
+                    s.result,
+                },
+              effects:
+                [],
             };
           default:
-            return unreachable(e.outcome);
+            return unreachable(
+              e.outcome,
+            );
         }
       }
       case 'retry': {
-        if (s.kind !== 'failed') return same;
-        const attempt = s.attempt + 1;
+        if (
+          s.kind !==
+          'failed'
+        )
+          return same;
+        const attempt =
+          s.attempt +
+          1;
         return {
-          state: { kind: 'saving', token: s.token, attempt, result: s.result },
-          effects: [complete(s.result, attempt)],
+          state:
+            {
+              kind: 'saving',
+              token:
+                s.token,
+              attempt,
+              result:
+                s.result,
+            },
+          effects:
+            [
+              complete(
+                s.result,
+                attempt,
+              ),
+            ],
         };
       }
       default:
-        return unreachable(e);
+        return unreachable(
+          e,
+        );
     }
   }
 
-  return { initial: { kind: 'ready' }, step };
+  return {
+    initial:
+      {
+        kind: 'ready',
+      },
+    step,
+  };
 }
 
-function unreachable(x: never): never {
-  throw new Error(`tap-beat: unhandled ${JSON.stringify(x)}`);
+function unreachable(
+  x: never,
+): never {
+  throw new Error(
+    `tap-beat: unhandled ${JSON.stringify(x)}`,
+  );
 }

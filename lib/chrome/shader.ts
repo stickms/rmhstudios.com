@@ -88,7 +88,31 @@ gl_FragColor = vec4(min(col, vec3(1.0)) * alpha, alpha);
 `;
 
 /** Room colours (Steel 4.3). */
-export const ROOM = {
-  day: { lo: [0.83, 0.88, 0.92], hi: [0.95, 0.97, 0.99] },
-  night: { lo: [0.07, 0.08, 0.1], hi: [0.2, 0.23, 0.27] },
-} as const;
+export const ROOM =
+  {
+    day: {
+      lo: [
+        0.83,
+        0.88,
+        0.92,
+      ],
+      hi: [
+        0.95,
+        0.97,
+        0.99,
+      ],
+    },
+    night:
+      {
+        lo: [
+          0.07,
+          0.08,
+          0.1,
+        ],
+        hi: [
+          0.2,
+          0.23,
+          0.27,
+        ],
+      },
+  } as const;

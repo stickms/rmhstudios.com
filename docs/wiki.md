@@ -1,16 +1,122 @@
 # The wiki (wiki.rmhstudios.com)
 
-The public wiki is [MediaWiki](https://www.mediawiki.org), the software behind
-Wikipedia, running as its own container on its own subdomain. It is a separate
-site from rmhstudios.com on purpose: it shares no shell, stylesheet or design
-tokens with the main site, and it wears the classic Vector skin, which is
-Wikipedia's own look rather than an imitation of it.
+The
+public
+wiki
+is
+[MediaWiki](https://www.mediawiki.org),
+the
+software
+behind
+Wikipedia,
+running
+as
+its
+own
+container
+on
+its
+own
+subdomain.
+It
+is
+a
+separate
+site
+from
+rmhstudios.com
+on
+purpose:
+it
+shares
+no
+shell,
+stylesheet
+or
+design
+tokens
+with
+the
+main
+site,
+and
+it
+wears
+the
+classic
+Vector
+skin,
+which
+is
+Wikipedia's
+own
+look
+rather
+than
+an
+imitation
+of
+it.
 
-It works like Wikipedia. Everyone can read it. Anyone with an rmhstudios.com
-account presses **Log in**, comes back signed in under their handle, and edits
-any page in place. Site admins are the wiki's administrators: they can delete
-and restore pages, protect them and block accounts. There is no admin page on
-the main site and no second password.
+It
+works
+like
+Wikipedia.
+Everyone
+can
+read
+it.
+Anyone
+with
+an
+rmhstudios.com
+account
+presses
+**Log
+in**,
+comes
+back
+signed
+in
+under
+their
+handle,
+and
+edits
+any
+page
+in
+place.
+Site
+admins
+are
+the
+wiki's
+administrators:
+they
+can
+delete
+and
+restore
+pages,
+protect
+them
+and
+block
+accounts.
+There
+is
+no
+admin
+page
+on
+the
+main
+site
+and
+no
+second
+password.
 
 ```
 reader ── Cloudflare ── Apache (wiki.rmhstudios.com.conf) ── mediawiki :7010 ── Postgres: the site's database, schema `mediawiki`
@@ -20,61 +126,341 @@ reader ── Cloudflare ── Apache (wiki.rmhstudios.com.conf) ── mediawi
 
 ## Where things are
 
-| Piece | Path |
-| ----- | ---- |
-| Image (official `mediawiki:1.43` + the Postgres driver + short URLs + a small Apache) | `deploy/mediawiki/Dockerfile` |
-| The settings it reads from the environment (database, keys) | `deploy/mediawiki/env.php` |
-| Configuration (skin, permissions, sign-in) | `deploy/mediawiki/LocalSettings.php` |
-| Startup: install on the first start, `update.php` after an upgrade | `deploy/mediawiki/bootstrap.sh` (`wiki-bootstrap` in the image) |
-| Sign in with rmhstudios.com (MediaWiki extension) | `deploy/mediawiki/extensions/RMHStudiosLogin/` |
-| Starter pages and sidebar (imported on the first start only) | `deploy/mediawiki/pages/*.wiki`, `deploy/mediawiki/Sidebar.wiki` |
-| The site's half of sign-in | `lib/wiki/sso.server.ts`, `lib/wiki/api/wiki.sso.server.ts`, `lib/wiki/wiki.contract.ts` |
-| Compose service (`mediawiki`, profile `wiki`, loopback port 7010) | `docker-compose.yml` |
-| Apache vhost | `deploy/apache/wiki.rmhstudios.com.conf` |
-| DNS record | `deploy/terraform/dns.tf` (`cloudflare_record.wiki`) |
-| Tests | `lib/wiki/__tests__/`, `deploy/__tests__/wiki-deploy.test.ts` |
+| Piece                                                                                 | Path                                                                                     |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Image (official `mediawiki:1.43` + the Postgres driver + short URLs + a small Apache) | `deploy/mediawiki/Dockerfile`                                                            |
+| The settings it reads from the environment (database, keys)                           | `deploy/mediawiki/env.php`                                                               |
+| Configuration (skin, permissions, sign-in)                                            | `deploy/mediawiki/LocalSettings.php`                                                     |
+| Startup: install on the first start, `update.php` after an upgrade                    | `deploy/mediawiki/bootstrap.sh` (`wiki-bootstrap` in the image)                          |
+| Sign in with rmhstudios.com (MediaWiki extension)                                     | `deploy/mediawiki/extensions/RMHStudiosLogin/`                                           |
+| Starter pages and sidebar (imported on the first start only)                          | `deploy/mediawiki/pages/*.wiki`, `deploy/mediawiki/Sidebar.wiki`                         |
+| The site's half of sign-in                                                            | `lib/wiki/sso.server.ts`, `lib/wiki/api/wiki.sso.server.ts`, `lib/wiki/wiki.contract.ts` |
+| Compose service (`mediawiki`, profile `wiki`, loopback port 7010)                     | `docker-compose.yml`                                                                     |
+| Apache vhost                                                                          | `deploy/apache/wiki.rmhstudios.com.conf`                                                 |
+| DNS record                                                                            | `deploy/terraform/dns.tf` (`cloudflare_record.wiki`)                                     |
+| Tests                                                                                 | `lib/wiki/__tests__/`, `deploy/__tests__/wiki-deploy.test.ts`                            |
 
 ## Settings
 
-None of its own. The wiki reuses what the site already has in `.env.production`:
+None
+of
+its
+own.
+The
+wiki
+reuses
+what
+the
+site
+already
+has
+in
+`.env.production`:
 
-- `DATABASE_DIRECT_URL`, or `DATABASE_URL` when that is unset: the site's
-  database. The wiki's tables live in a separate schema, `mediawiki`, inside it.
-  The site's Prisma models are in `public` and never see them, and
-  `deploy/backup/pg-backup.sh` backs the wiki up with everything else. The direct
-  URL comes first because MediaWiki cannot run behind PgBouncer's transaction
-  pooling, for the same reason `prisma migrate` cannot. A `localhost` in the URL
-  means the host's Postgres, since inside the container localhost is the
+- `DATABASE_DIRECT_URL`,
+  or
+  `DATABASE_URL`
+  when
+  that
+  is
+  unset:
+  the
+  site's
+  database.
+  The
+  wiki's
+  tables
+  live
+  in
+  a
+  separate
+  schema,
+  `mediawiki`,
+  inside
+  it.
+  The
+  site's
+  Prisma
+  models
+  are
+  in
+  `public`
+  and
+  never
+  see
+  them,
+  and
+  `deploy/backup/pg-backup.sh`
+  backs
+  the
+  wiki
+  up
+  with
+  everything
+  else.
+  The
+  direct
+  URL
+  comes
+  first
+  because
+  MediaWiki
+  cannot
+  run
+  behind
+  PgBouncer's
+  transaction
+  pooling,
+  for
+  the
+  same
+  reason
+  `prisma migrate`
+  cannot.
+  A
+  `localhost`
+  in
+  the
+  URL
+  means
+  the
+  host's
+  Postgres,
+  since
+  inside
+  the
+  container
+  localhost
+  is
+  the
   container.
-- `BETTER_AUTH_SECRET`: the wiki's secret key and the sign-in key are derived
-  from it, each under its own label (`env.php`). Rotating it signs everyone out
-  of the wiki too, and nothing else.
-- `BETTER_AUTH_URL`: where **Log in** sends readers.
+- `BETTER_AUTH_SECRET`:
+  the
+  wiki's
+  secret
+  key
+  and
+  the
+  sign-in
+  key
+  are
+  derived
+  from
+  it,
+  each
+  under
+  its
+  own
+  label
+  (`env.php`).
+  Rotating
+  it
+  signs
+  everyone
+  out
+  of
+  the
+  wiki
+  too,
+  and
+  nothing
+  else.
+- `BETTER_AUTH_URL`:
+  where
+  **Log
+  in**
+  sends
+  readers.
 
-Two optional settings: `WIKI_PUBLIC_URL` (default `https://wiki.rmhstudios.com`)
-and `PORT_WIKI` (default 7010).
+Two
+optional
+settings:
+`WIKI_PUBLIC_URL`
+(default
+`https://wiki.rmhstudios.com`)
+and
+`PORT_WIKI`
+(default
+7010).
 
 ## First-time setup (production)
 
-The deploy runs the wiki. After the site is up and healthy, every production
-deploy (`deploy.sh`, Step 5b) builds the wiki's image from `deploy/mediawiki/` on
-the host and starts it:
+The
+deploy
+runs
+the
+wiki.
+After
+the
+site
+is
+up
+and
+healthy,
+every
+production
+deploy
+(`deploy.sh`,
+Step
+5b)
+builds
+the
+wiki's
+image
+from
+`deploy/mediawiki/`
+on
+the
+host
+and
+starts
+it:
 
-- On the first deploy, the container creates the `mediawiki` schema in the site's
-  database, installs the wiki, imports the starter pages and the sidebar, and
-  then serves.
-- On later deploys the rebuild comes from cache. The container is not even
-  restarted unless something in `deploy/mediawiki/` changed or MediaWiki
-  published a new 1.43 point release.
-- The step is best-effort. A wiki that fails to build or start logs the reason
-  and its last log lines in the deploy output. It never fails or rolls back the
-  site's deploy.
+- On
+  the
+  first
+  deploy,
+  the
+  container
+  creates
+  the
+  `mediawiki`
+  schema
+  in
+  the
+  site's
+  database,
+  installs
+  the
+  wiki,
+  imports
+  the
+  starter
+  pages
+  and
+  the
+  sidebar,
+  and
+  then
+  serves.
+- On
+  later
+  deploys
+  the
+  rebuild
+  comes
+  from
+  cache.
+  The
+  container
+  is
+  not
+  even
+  restarted
+  unless
+  something
+  in
+  `deploy/mediawiki/`
+  changed
+  or
+  MediaWiki
+  published
+  a
+  new
+  1.43
+  point
+  release.
+- The
+  step
+  is
+  best-effort.
+  A
+  wiki
+  that
+  fails
+  to
+  build
+  or
+  start
+  logs
+  the
+  reason
+  and
+  its
+  last
+  log
+  lines
+  in
+  the
+  deploy
+  output.
+  It
+  never
+  fails
+  or
+  rolls
+  back
+  the
+  site's
+  deploy.
 
-The one step a deploy cannot take is the Apache vhost: the deploy runs sandboxed
-and cannot write to `/etc` (the same reason the Postgres and Apache tuning is
-manual). Until the vhost is installed, every deploy log says so. Once, as root,
-with DNS for `wiki.rmhstudios.com` pointing at the same Cloudflare-proxied
-origin as the main site:
+The
+one
+step
+a
+deploy
+cannot
+take
+is
+the
+Apache
+vhost:
+the
+deploy
+runs
+sandboxed
+and
+cannot
+write
+to
+`/etc`
+(the
+same
+reason
+the
+Postgres
+and
+Apache
+tuning
+is
+manual).
+Until
+the
+vhost
+is
+installed,
+every
+deploy
+log
+says
+so.
+Once,
+as
+root,
+with
+DNS
+for
+`wiki.rmhstudios.com`
+pointing
+at
+the
+same
+Cloudflare-proxied
+origin
+as
+the
+main
+site:
 
 ```bash
 sudo cp deploy/apache/wiki.rmhstudios.com.conf /etc/apache2/sites-available/wiki.rmhstudios.com.conf
@@ -82,12 +468,54 @@ sudo a2ensite wiki.rmhstudios.com
 sudo apachectl configtest && sudo systemctl reload apache2
 ```
 
-Then `https://wiki.rmhstudios.com` shows the main page. **Log in** takes you
-through rmhstudios.com and back, signed in. As a site admin you also see
-**Delete** and **Protect** under the page's **More** menu.
+Then
+`https://wiki.rmhstudios.com`
+shows
+the
+main
+page.
+**Log
+in**
+takes
+you
+through
+rmhstudios.com
+and
+back,
+signed
+in.
+As
+a
+site
+admin
+you
+also
+see
+**Delete**
+and
+**Protect**
+under
+the
+page's
+**More**
+menu.
 
-To do by hand what the deploy does (for example after editing
-`deploy/mediawiki/` on the host):
+To
+do
+by
+hand
+what
+the
+deploy
+does
+(for
+example
+after
+editing
+`deploy/mediawiki/`
+on
+the
+host):
 
 ```bash
 docker compose -p rmhstudios-prod --env-file .env.production --profile wiki up -d --build mediawiki
@@ -96,112 +524,810 @@ docker logs -f rmhstudios-prod-mediawiki   # until "wiki: up to date"
 
 ### Moving from an earlier wiki setup
 
-- **The first MediaWiki setup** (its own `mediawiki` database and role, the
-  `MEDIAWIKI_*` variables and `/admin/wiki`): remove `MEDIAWIKI_*` from
-  `.env.production`, let the next deploy rebuild the container, and, once
-  nothing in it is wanted, `DROP DATABASE mediawiki; DROP ROLE mediawiki;`. Pages
-  written there do not move on their own; export them from that wiki's
-  `Special:Export` before dropping it and import them on the new one with
-  `Special:Import`, as an administrator.
-- **Wiki.js** (the `wikijs` service): `docker rm -f rmhstudios-prod-wikijs`,
-  remove `WIKIJS_*` from `.env.production`, and drop the `wikijs` database and
-  role once nothing in it is wanted.
+- **The
+  first
+  MediaWiki
+  setup**
+  (its
+  own
+  `mediawiki`
+  database
+  and
+  role,
+  the
+  `MEDIAWIKI_*`
+  variables
+  and
+  `/admin/wiki`):
+  remove
+  `MEDIAWIKI_*`
+  from
+  `.env.production`,
+  let
+  the
+  next
+  deploy
+  rebuild
+  the
+  container,
+  and,
+  once
+  nothing
+  in
+  it
+  is
+  wanted,
+  `DROP DATABASE mediawiki; DROP ROLE mediawiki;`.
+  Pages
+  written
+  there
+  do
+  not
+  move
+  on
+  their
+  own;
+  export
+  them
+  from
+  that
+  wiki's
+  `Special:Export`
+  before
+  dropping
+  it
+  and
+  import
+  them
+  on
+  the
+  new
+  one
+  with
+  `Special:Import`,
+  as
+  an
+  administrator.
+- **Wiki.js**
+  (the
+  `wikijs`
+  service):
+  `docker rm -f rmhstudios-prod-wikijs`,
+  remove
+  `WIKIJS_*`
+  from
+  `.env.production`,
+  and
+  drop
+  the
+  `wikijs`
+  database
+  and
+  role
+  once
+  nothing
+  in
+  it
+  is
+  wanted.
 
 ## Local development
 
-With `DATABASE_URL` and `BETTER_AUTH_SECRET` in `.env` (as for `pnpm dev`):
+With
+`DATABASE_URL`
+and
+`BETTER_AUTH_SECRET`
+in
+`.env`
+(as
+for
+`pnpm dev`):
 
 ```bash
 WIKI_PUBLIC_URL=http://localhost:7010 BETTER_AUTH_URL=http://localhost:7005 \
   docker compose --env-file .env --profile wiki up -d --build mediawiki
 ```
 
-Open `http://localhost:7010`, and run `pnpm dev` for **Log in** to work. Set
-`WIKI_PUBLIC_URL=http://localhost:7010` in `.env` as well, so the site sends you
-back to the local wiki.
+Open
+`http://localhost:7010`,
+and
+run
+`pnpm dev`
+for
+**Log
+in**
+to
+work.
+Set
+`WIKI_PUBLIC_URL=http://localhost:7010`
+in
+`.env`
+as
+well,
+so
+the
+site
+sends
+you
+back
+to
+the
+local
+wiki.
 
 ## How signing in works
 
-1. **Log in** and **Create account** both open `Special:RMHStudiosLogin`
-   (a hook redirects MediaWiki's own pages there). It stores a random `state`,
-   and the page you were on, in your wiki session, and sends you to
+1. **Log
+   in**
+   and
+   **Create
+   account**
+   both
+   open
+   `Special:RMHStudiosLogin`
+   (a
+   hook
+   redirects
+   MediaWiki's
+   own
+   pages
+   there).
+   It
+   stores
+   a
+   random
+   `state`,
+   and
+   the
+   page
+   you
+   were
+   on,
+   in
+   your
+   wiki
+   session,
+   and
+   sends
+   you
+   to
    `rmhstudios.com/api/wiki/sso?state=…`.
-2. The site sends you to its login page first if you are signed out, and
-   brings you back. Then it reads your account from the database and returns
-   you to the wiki with a pass. The pass holds your user id, your handle,
-   whether you are a site admin, and the state. It is signed with a key derived
-   from `BETTER_AUTH_SECRET` and good for two minutes. A suspended account gets
-   no pass, and the wiki says why.
-3. The wiki checks the signature, the expiry, and that the state is the one it
-   stored in your session. It drops the state, so the pass works once and only
-   in the browser that asked for it, and a link carrying someone else's pass
-   signs nobody in. Then it finds the wiki account linked to your site id, or
-   creates one named after your handle (with a number if the name is taken).
-   It signs you in, and adds or removes the `sysop` and `interface-admin` groups
-   to match your site admin status.
+2. The
+   site
+   sends
+   you
+   to
+   its
+   login
+   page
+   first
+   if
+   you
+   are
+   signed
+   out,
+   and
+   brings
+   you
+   back.
+   Then
+   it
+   reads
+   your
+   account
+   from
+   the
+   database
+   and
+   returns
+   you
+   to
+   the
+   wiki
+   with
+   a
+   pass.
+   The
+   pass
+   holds
+   your
+   user
+   id,
+   your
+   handle,
+   whether
+   you
+   are
+   a
+   site
+   admin,
+   and
+   the
+   state.
+   It
+   is
+   signed
+   with
+   a
+   key
+   derived
+   from
+   `BETTER_AUTH_SECRET`
+   and
+   good
+   for
+   two
+   minutes.
+   A
+   suspended
+   account
+   gets
+   no
+   pass,
+   and
+   the
+   wiki
+   says
+   why.
+3. The
+   wiki
+   checks
+   the
+   signature,
+   the
+   expiry,
+   and
+   that
+   the
+   state
+   is
+   the
+   one
+   it
+   stored
+   in
+   your
+   session.
+   It
+   drops
+   the
+   state,
+   so
+   the
+   pass
+   works
+   once
+   and
+   only
+   in
+   the
+   browser
+   that
+   asked
+   for
+   it,
+   and
+   a
+   link
+   carrying
+   someone
+   else's
+   pass
+   signs
+   nobody
+   in.
+   Then
+   it
+   finds
+   the
+   wiki
+   account
+   linked
+   to
+   your
+   site
+   id,
+   or
+   creates
+   one
+   named
+   after
+   your
+   handle
+   (with
+   a
+   number
+   if
+   the
+   name
+   is
+   taken).
+   It
+   signs
+   you
+   in,
+   and
+   adds
+   or
+   removes
+   the
+   `sysop`
+   and
+   `interface-admin`
+   groups
+   to
+   match
+   your
+   site
+   admin
+   status.
 
-Your wiki account stays linked to your site id, so changing your handle on the
-site keeps your wiki account and its history. Admin rights follow the site at
-each sign-in: removing someone's site admin status removes their wiki rights
-the next time they sign in. Until then, an administrator can block or demote
-them on the wiki (`Special:Block`, `Special:UserRights`).
+Your
+wiki
+account
+stays
+linked
+to
+your
+site
+id,
+so
+changing
+your
+handle
+on
+the
+site
+keeps
+your
+wiki
+account
+and
+its
+history.
+Admin
+rights
+follow
+the
+site
+at
+each
+sign-in:
+removing
+someone's
+site
+admin
+status
+removes
+their
+wiki
+rights
+the
+next
+time
+they
+sign
+in.
+Until
+then,
+an
+administrator
+can
+block
+or
+demote
+them
+on
+the
+wiki
+(`Special:Block`,
+`Special:UserRights`).
 
-The pass format is written twice, in `lib/wiki/sso.server.ts` and
+The
+pass
+format
+is
+written
+twice,
+in
+`lib/wiki/sso.server.ts`
+and
 `extensions/RMHStudiosLogin/includes/Pass.php`.
-`lib/wiki/__tests__/sso.server.test.ts` holds a pass the PHP side accepted, so
-a change to either side that breaks the other fails a test.
+`lib/wiki/__tests__/sso.server.test.ts`
+holds
+a
+pass
+the
+PHP
+side
+accepted,
+so
+a
+change
+to
+either
+side
+that
+breaks
+the
+other
+fails
+a
+test.
 
 ## Who can do what on the wiki
 
-`LocalSettings.php` sets it, and `deploy/__tests__/wiki-deploy.test.ts` holds it:
+`LocalSettings.php`
+sets
+it,
+and
+`deploy/__tests__/wiki-deploy.test.ts`
+holds
+it:
 
-- Everyone reads. Visitors who are not signed in cannot edit.
-- Accounts exist only through rmhstudios.com: nobody can sign up on the wiki,
-  and signing in creates the account.
-- Signed-in members edit and create pages and discussion pages.
-- After 4 days and 10 edits, an account is autoconfirmed (Wikipedia's bar) and
-  can also move pages.
-- Site admins delete, restore, protect, block, move, and edit the wiki's
-  interface pages (`MediaWiki:Sidebar`, `MediaWiki:Common.css`).
-- Uploads and e-mail are off, so the container keeps no files. Pictures are
-  linked, not uploaded.
+- Everyone
+  reads.
+  Visitors
+  who
+  are
+  not
+  signed
+  in
+  cannot
+  edit.
+- Accounts
+  exist
+  only
+  through
+  rmhstudios.com:
+  nobody
+  can
+  sign
+  up
+  on
+  the
+  wiki,
+  and
+  signing
+  in
+  creates
+  the
+  account.
+- Signed-in
+  members
+  edit
+  and
+  create
+  pages
+  and
+  discussion
+  pages.
+- After
+  4
+  days
+  and
+  10
+  edits,
+  an
+  account
+  is
+  autoconfirmed
+  (Wikipedia's
+  bar)
+  and
+  can
+  also
+  move
+  pages.
+- Site
+  admins
+  delete,
+  restore,
+  protect,
+  block,
+  move,
+  and
+  edit
+  the
+  wiki's
+  interface
+  pages
+  (`MediaWiki:Sidebar`,
+  `MediaWiki:Common.css`).
+- Uploads
+  and
+  e-mail
+  are
+  off,
+  so
+  the
+  container
+  keeps
+  no
+  files.
+  Pictures
+  are
+  linked,
+  not
+  uploaded.
 
-The wiki keeps a local administrator account, `RMH Studios`, which the installer
-needs and which made the starter pages. Nobody knows its password, and readers
-never use it. If you ever need it:
+The
+wiki
+keeps
+a
+local
+administrator
+account,
+`RMH Studios`,
+which
+the
+installer
+needs
+and
+which
+made
+the
+starter
+pages.
+Nobody
+knows
+its
+password,
+and
+readers
+never
+use
+it.
+If
+you
+ever
+need
+it:
 
 ```bash
 docker exec rmhstudios-prod-mediawiki php maintenance/run.php changePassword --user "RMH Studios" --password '<new>'
 ```
 
-It cannot sign in through the web while every login goes through rmhstudios.com.
-Use maintenance scripts instead, or sign in with a site admin account.
+It
+cannot
+sign
+in
+through
+the
+web
+while
+every
+login
+goes
+through
+rmhstudios.com.
+Use
+maintenance
+scripts
+instead,
+or
+sign
+in
+with
+a
+site
+admin
+account.
 
 ## The look
 
-The Vector skin, set in `LocalSettings.php`, is the whole look: nothing is
-overridden. The logo and favicon are the main site's `favicon.svg`. The sidebar
-is the wiki page `MediaWiki:Sidebar`, and the main page is `Main Page`. Both
-start from the files in `deploy/mediawiki/` and are edited on the wiki after
-that, like any other page.
+The
+Vector
+skin,
+set
+in
+`LocalSettings.php`,
+is
+the
+whole
+look:
+nothing
+is
+overridden.
+The
+logo
+and
+favicon
+are
+the
+main
+site's
+`favicon.svg`.
+The
+sidebar
+is
+the
+wiki
+page
+`MediaWiki:Sidebar`,
+and
+the
+main
+page
+is
+`Main Page`.
+Both
+start
+from
+the
+files
+in
+`deploy/mediawiki/`
+and
+are
+edited
+on
+the
+wiki
+after
+that,
+like
+any
+other
+page.
 
 ## Operations
 
-- **Upgrades.** The image is pinned to the 1.43 long-term-support line. Every
-  deploy rebuilds it with `--pull`, so MediaWiki's point releases (mostly
-  security fixes) arrive with the next deploy after they are published. Moving
-  to the next LTS is a change to the `FROM` line (and the compose image tag); the
-  next deploy builds it and the first start runs `update.php`. An upgrade signs
-  everyone out once, because `update.php` clears the sessions.
-- **Backups.** The wiki is in the site's database, so the nightly
-  `deploy/backup/pg-backup.sh` dump includes it. The container holds nothing
+- **Upgrades.**
+  The
+  image
+  is
+  pinned
+  to
+  the
+  1.43
+  long-term-support
+  line.
+  Every
+  deploy
+  rebuilds
+  it
+  with
+  `--pull`,
+  so
+  MediaWiki's
+  point
+  releases
+  (mostly
+  security
+  fixes)
+  arrive
+  with
+  the
+  next
+  deploy
+  after
+  they
+  are
+  published.
+  Moving
+  to
+  the
+  next
+  LTS
+  is
+  a
+  change
+  to
+  the
+  `FROM`
+  line
+  (and
+  the
+  compose
+  image
+  tag);
+  the
+  next
+  deploy
+  builds
+  it
+  and
+  the
+  first
+  start
+  runs
+  `update.php`.
+  An
+  upgrade
+  signs
+  everyone
+  out
+  once,
+  because
+  `update.php`
+  clears
+  the
+  sessions.
+- **Backups.**
+  The
+  wiki
+  is
+  in
+  the
+  site's
+  database,
+  so
+  the
+  nightly
+  `deploy/backup/pg-backup.sh`
+  dump
+  includes
+  it.
+  The
+  container
+  holds
+  nothing
   else.
-- **Database connections.** Apache runs at most 8 workers, so the wiki holds at
-  most 8 connections. `scripts/db-connection-budget.mjs` counts them in the
-  fleet's budget.
-- **Jobs.** MediaWiki updates link colours and caches through its job queue,
-  which runs one job after each page view and is drained at every start. To
-  drain it by hand:
+- **Database
+  connections.**
+  Apache
+  runs
+  at
+  most
+  8
+  workers,
+  so
+  the
+  wiki
+  holds
+  at
+  most
+  8
+  connections.
+  `scripts/db-connection-budget.mjs`
+  counts
+  them
+  in
+  the
+  fleet's
+  budget.
+- **Jobs.**
+  MediaWiki
+  updates
+  link
+  colours
+  and
+  caches
+  through
+  its
+  job
+  queue,
+  which
+  runs
+  one
+  job
+  after
+  each
+  page
+  view
+  and
+  is
+  drained
+  at
+  every
+  start.
+  To
+  drain
+  it
+  by
+  hand:
   `docker exec rmhstudios-prod-mediawiki php maintenance/run.php runJobs`.
-- **Health.** The container's healthcheck reads `api.php` on port 80; from the
-  host, `curl -s 'http://127.0.0.1:7010/api.php?action=query&meta=siteinfo&format=json'`.
+- **Health.**
+  The
+  container's
+  healthcheck
+  reads
+  `api.php`
+  on
+  port
+  80;
+  from
+  the
+  host,
+  `curl -s 'http://127.0.0.1:7010/api.php?action=query&meta=siteinfo&format=json'`.

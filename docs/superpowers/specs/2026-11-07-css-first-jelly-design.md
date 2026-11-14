@@ -1,185 +1,1971 @@
 # CSS-first Plasmatic Jelly — design
 
-Status: **approved** · 2026-11-07 · Owner decisions: approach A, engine kept for the globe only, rule rewrites approved, no look-check pause
+Status:
+**approved**
+·
+2026-11-07
+·
+Owner
+decisions:
+approach
+A,
+engine
+kept
+for
+the
+globe
+only,
+rule
+rewrites
+approved,
+no
+look-check
+pause
 
 ## Intent and why
 
-The main site is sluggish, including on strong hardware. The cause is the material itself, not a bug. A normal desktop
-page runs up to 24 WebGL rim canvases, 8 WebGL haze canvases, 24 animated CSS carriers, a 60 Hz ambient clock that never
-goes idle while the tab is visible, a soft-body physics service, electric arcs, and a DOM-to-bitmap snapshot loop
-(`lib/liquid/glass/scene.ts`, 100–300 ms of time-sliced main-thread work at most every 1.5 s). The only escape hatch is
-`html.perf-lite`, which strips most of the material and is only set when a software renderer is detected.
+The
+main
+site
+is
+sluggish,
+including
+on
+strong
+hardware.
+The
+cause
+is
+the
+material
+itself,
+not
+a
+bug.
+A
+normal
+desktop
+page
+runs
+up
+to
+24
+WebGL
+rim
+canvases,
+8
+WebGL
+haze
+canvases,
+24
+animated
+CSS
+carriers,
+a
+60
+Hz
+ambient
+clock
+that
+never
+goes
+idle
+while
+the
+tab
+is
+visible,
+a
+soft-body
+physics
+service,
+electric
+arcs,
+and
+a
+DOM-to-bitmap
+snapshot
+loop
+(`lib/liquid/glass/scene.ts`,
+100–300
+ms
+of
+time-sliced
+main-thread
+work
+at
+most
+every
+1.5
+s).
+The
+only
+escape
+hatch
+is
+`html.perf-lite`,
+which
+strips
+most
+of
+the
+material
+and
+is
+only
+set
+when
+a
+software
+renderer
+is
+detected.
 
-Move the material to **static, baked CSS plus event-woken effects**, so a page at rest does no work and the look survives
-for everyone, not just on a fast GPU. Keep what makes RMH Studios feel like itself: the hazy gel, the RGB-led molded rim,
-plasma that wakes under the hand, a body that is soft to press, and the arc when you click.
+Move
+the
+material
+to
+**static,
+baked
+CSS
+plus
+event-woken
+effects**,
+so
+a
+page
+at
+rest
+does
+no
+work
+and
+the
+look
+survives
+for
+everyone,
+not
+just
+on
+a
+fast
+GPU.
+Keep
+what
+makes
+RMH
+Studios
+feel
+like
+itself:
+the
+hazy
+gel,
+the
+RGB-led
+molded
+rim,
+plasma
+that
+wakes
+under
+the
+hand,
+a
+body
+that
+is
+soft
+to
+press,
+and
+the
+arc
+when
+you
+click.
 
 ## Goals
 
-1. A page at rest runs **zero** rAF loops, canvases, workers and snapshot captures for the site material.
-2. No WebGL for site surfaces (cards, panes, chrome, overlays, fields, buttons).
-3. Components do not change. They keep taking the material through the role classes (`.glass-fill/-pane/-chrome/
-   -overlay/-inset`) and `data-jelly*` attributes (about 190 uses today). The migration replaces services, not call sites.
-4. One look for everyone. What `perf-lite` shows today (static haze, CSS rim, press feedback) becomes the baseline and
-   gets richer; `perf-lite` stays only for genuinely weak devices and drops the remaining blur.
-5. The `jellyMotion` (Lively/Calm/Still) and `electricArcs` (Full/Clicks/Off) preferences keep working and keep their
-   accessibility meaning (WCAG 2.2.2 / 2.3.1).
-6. Text stays at 4.5:1 on gel, in every theme (`jelly-legibility` gate).
+1. A
+   page
+   at
+   rest
+   runs
+   **zero**
+   rAF
+   loops,
+   canvases,
+   workers
+   and
+   snapshot
+   captures
+   for
+   the
+   site
+   material.
+2. No
+   WebGL
+   for
+   site
+   surfaces
+   (cards,
+   panes,
+   chrome,
+   overlays,
+   fields,
+   buttons).
+3. Components
+   do
+   not
+   change.
+   They
+   keep
+   taking
+   the
+   material
+   through
+   the
+   role
+   classes
+   (`.glass-fill/-pane/-chrome/ -overlay/-inset`)
+   and
+   `data-jelly*`
+   attributes
+   (about
+   190
+   uses
+   today).
+   The
+   migration
+   replaces
+   services,
+   not
+   call
+   sites.
+4. One
+   look
+   for
+   everyone.
+   What
+   `perf-lite`
+   shows
+   today
+   (static
+   haze,
+   CSS
+   rim,
+   press
+   feedback)
+   becomes
+   the
+   baseline
+   and
+   gets
+   richer;
+   `perf-lite`
+   stays
+   only
+   for
+   genuinely
+   weak
+   devices
+   and
+   drops
+   the
+   remaining
+   blur.
+5. The
+   `jellyMotion`
+   (Lively/Calm/Still)
+   and
+   `electricArcs`
+   (Full/Clicks/Off)
+   preferences
+   keep
+   working
+   and
+   keep
+   their
+   accessibility
+   meaning
+   (WCAG
+   2.2.2
+   /
+   2.3.1).
+6. Text
+   stays
+   at
+   4.5:1
+   on
+   gel,
+   in
+   every
+   theme
+   (`jelly-legibility`
+   gate).
 
 ## Non-goals
 
-- The liquid globe (`components/radial/LiquidGlobe.tsx`, `jelly-glass.ts`, `GlobeCursor`). It is its own WebGL scene and
-  its own decision, later.
-- The eversion feature and its `lib/eversion/capture` (still used by `components/radial/eversion/*`).
+- The
+  liquid
+  globe
+  (`components/radial/LiquidGlobe.tsx`,
+  `jelly-glass.ts`,
+  `GlobeCursor`).
+  It
+  is
+  its
+  own
+  WebGL
+  scene
+  and
+  its
+  own
+  decision,
+  later.
+- The
+  eversion
+  feature
+  and
+  its
+  `lib/eversion/capture`
+  (still
+  used
+  by
+  `components/radial/eversion/*`).
 
-Games and the full-screen `--app-*` tier are **in** the change, not exempt: `useLiquidInteractions` is mounted for every
-route except native-material ones (`components/Providers.tsx:366`), and `.app-glass` already shares the same CSS
-contract. *My call.* Games keep their own scheme; ambient motion already stops while a game is playing.
+Games
+and
+the
+full-screen
+`--app-*`
+tier
+are
+**in**
+the
+change,
+not
+exempt:
+`useLiquidInteractions`
+is
+mounted
+for
+every
+route
+except
+native-material
+ones
+(`components/Providers.tsx:366`),
+and
+`.app-glass`
+already
+shares
+the
+same
+CSS
+contract.
+_My
+call._
+Games
+keep
+their
+own
+scheme;
+ambient
+motion
+already
+stops
+while
+a
+game
+is
+playing.
 
-**Modules the globe still imports, which therefore stay** (found by the builder check; PR 5 must not delete them):
-`lib/liquid/glass/scene-store.ts`, `color.ts`, `policy.ts` (`PLASMA_LOOK`), `jelly-glsl.ts` (`NOISE_GLSL`),
-`lib/liquid/optics.ts`, `globe-material.ts`, `lib/jelly/governor.ts` (`governedDprCap`), `ambient-tick.ts`, `tiers.ts`.
-Other live consumers also stay: `lib/jelly/frame.ts`, `pointer.ts`, `soft-policy.ts` (`useFluidDrag`, `fluid-drag-settle`,
-`useEvertPoint`), `tiers.ts` (`jellyMotionLevel` in four games), `arcs` (`strike`, `/jelly` lab), and
-`physics.reportJellyDrag` (needs a small shim when the physics service goes).
+**Modules
+the
+globe
+still
+imports,
+which
+therefore
+stay**
+(found
+by
+the
+builder
+check;
+PR
+5
+must
+not
+delete
+them):
+`lib/liquid/glass/scene-store.ts`,
+`color.ts`,
+`policy.ts`
+(`PLASMA_LOOK`),
+`jelly-glsl.ts`
+(`NOISE_GLSL`),
+`lib/liquid/optics.ts`,
+`globe-material.ts`,
+`lib/jelly/governor.ts`
+(`governedDprCap`),
+`ambient-tick.ts`,
+`tiers.ts`.
+Other
+live
+consumers
+also
+stay:
+`lib/jelly/frame.ts`,
+`pointer.ts`,
+`soft-policy.ts`
+(`useFluidDrag`,
+`fluid-drag-settle`,
+`useEvertPoint`),
+`tiers.ts`
+(`jellyMotionLevel`
+in
+four
+games),
+`arcs`
+(`strike`,
+`/jelly`
+lab),
+and
+`physics.reportJellyDrag`
+(needs
+a
+small
+shim
+when
+the
+physics
+service
+goes).
 
-**Consequence for the globe (decided).** The globe refracts the page behind it using the snapshot the glass engine
-publishes. The owner chose to keep that, so the snapshot path stays alive in a reduced "globe-feed" engine mode (see
-"Decisions"). If the snapshot is ever absent the globe still works: `attachScene` returns early and `setScene(null)`
-switches the input off.
+**Consequence
+for
+the
+globe
+(decided).**
+The
+globe
+refracts
+the
+page
+behind
+it
+using
+the
+snapshot
+the
+glass
+engine
+publishes.
+The
+owner
+chose
+to
+keep
+that,
+so
+the
+snapshot
+path
+stays
+alive
+in
+a
+reduced
+"globe-feed"
+engine
+mode
+(see
+"Decisions").
+If
+the
+snapshot
+is
+ever
+absent
+the
+globe
+still
+works:
+`attachScene`
+returns
+early
+and
+`setScene(null)`
+switches
+the
+input
+off.
 
 ## Anti-goals (a failure even if it technically works)
 
-- Swapping WebGL cost for `backdrop-filter` or SVG-filter cost. The repo measured a viewport-sized `backdrop-filter`
-  under one small moving element at 60 → ~10.7 fps (`components/radial/radial.css:1474`), and Firefox/Safari ignore
-  `url()` in `backdrop-filter`. The `filter-cost-budget` gate stays.
-- Ambient motion that keeps the compositor awake while idle.
-- Layout changes. Hosts still move at most 4 px / 3%; hit areas never move.
-- A look that quietly depends on a feature only Chromium has, without a working fallback.
+- Swapping
+  WebGL
+  cost
+  for
+  `backdrop-filter`
+  or
+  SVG-filter
+  cost.
+  The
+  repo
+  measured
+  a
+  viewport-sized
+  `backdrop-filter`
+  under
+  one
+  small
+  moving
+  element
+  at
+  60
+  →
+  ~10.7
+  fps
+  (`components/radial/radial.css:1474`),
+  and
+  Firefox/Safari
+  ignore
+  `url()`
+  in
+  `backdrop-filter`.
+  The
+  `filter-cost-budget`
+  gate
+  stays.
+- Ambient
+  motion
+  that
+  keeps
+  the
+  compositor
+  awake
+  while
+  idle.
+- Layout
+  changes.
+  Hosts
+  still
+  move
+  at
+  most
+  4
+  px
+  /
+  3%;
+  hit
+  areas
+  never
+  move.
+- A
+  look
+  that
+  quietly
+  depends
+  on
+  a
+  feature
+  only
+  Chromium
+  has,
+  without
+  a
+  working
+  fallback.
 
 ## What is lost (accepted by choosing A)
 
-Live refraction of page content at the rim; the outline bulging up to 16 px past the host (lattice); the lens-refracted
-press dent (a lit gradient dent replaces it); Coulomb attraction and neighbour nudges; ambient arcs between nearby
-surfaces. The click arc stays.
+Live
+refraction
+of
+page
+content
+at
+the
+rim;
+the
+outline
+bulging
+up
+to
+16
+px
+past
+the
+host
+(lattice);
+the
+lens-refracted
+press
+dent
+(a
+lit
+gradient
+dent
+replaces
+it);
+Coulomb
+attraction
+and
+neighbour
+nudges;
+ambient
+arcs
+between
+nearby
+surfaces.
+The
+click
+arc
+stays.
 
 ## Approaches considered
 
-- **A. Bake it (chosen).** Static CSS rim and haze floor, CSS springs, event-woken motion, about two tiny JS modules.
-  Cheapest at runtime and deletes the most code.
-- **B. A plus Chromium-only `backdrop-filter: url()` refraction** on a few small, still floating surfaces. Keeps some
-  wow on Chromium, but two looks across browsers and a standing risk of the invalidation problem. Not ruled out; a
-  possible later addition after measuring, behind `@supports` and a size cap.
-- **C. Keep WebGL as an opt-in "Ultra" tier.** Lowest risk, but keeps the whole engine and its detection failures, and
-  does not meet "move everything off".
+- **A.
+  Bake
+  it
+  (chosen).**
+  Static
+  CSS
+  rim
+  and
+  haze
+  floor,
+  CSS
+  springs,
+  event-woken
+  motion,
+  about
+  two
+  tiny
+  JS
+  modules.
+  Cheapest
+  at
+  runtime
+  and
+  deletes
+  the
+  most
+  code.
+- **B.
+  A
+  plus
+  Chromium-only
+  `backdrop-filter: url()`
+  refraction**
+  on
+  a
+  few
+  small,
+  still
+  floating
+  surfaces.
+  Keeps
+  some
+  wow
+  on
+  Chromium,
+  but
+  two
+  looks
+  across
+  browsers
+  and
+  a
+  standing
+  risk
+  of
+  the
+  invalidation
+  problem.
+  Not
+  ruled
+  out;
+  a
+  possible
+  later
+  addition
+  after
+  measuring,
+  behind
+  `@supports`
+  and
+  a
+  size
+  cap.
+- **C.
+  Keep
+  WebGL
+  as
+  an
+  opt-in
+  "Ultra"
+  tier.**
+  Lowest
+  risk,
+  but
+  keeps
+  the
+  whole
+  engine
+  and
+  its
+  detection
+  failures,
+  and
+  does
+  not
+  meet
+  "move
+  everything
+  off".
 
-References read: kube.io (SVG displacement refraction, Chromium-only for `backdrop-filter`, map rebuilt per size) and
-tonnitools (about 10 stacked `backdrop-filter` layers). Their maths (squircle bevel) matches what the rim shader already
-uses, so it can be baked; their runtime technique is the thing we are leaving.
+References
+read:
+kube.io
+(SVG
+displacement
+refraction,
+Chromium-only
+for
+`backdrop-filter`,
+map
+rebuilt
+per
+size)
+and
+tonnitools
+(about
+10
+stacked
+`backdrop-filter`
+layers).
+Their
+maths
+(squircle
+bevel)
+matches
+what
+the
+rim
+shader
+already
+uses,
+so
+it
+can
+be
+baked;
+their
+runtime
+technique
+is
+the
+thing
+we
+are
+leaving.
 
 ## Design
 
-**1. Material is static CSS.** The CSS tier in `app/jelly-material.css` / `app/liquid-glass.css` (gel gradient, haze
-floor + `public/jelly/haze-tile.webp`, static rim) becomes the primary material. The rim gets the RGB-led molded look in
-CSS: shoulder lit on the light side, soft shadow on the far side, red toward the top-left light and blue away, via
-stacked inset shadows / gradients, or a baked sprite generated by a script like `scripts/generate-jelly-haze-tile.mjs`
-if the stack cannot reach the look. *My call:* try the zero-asset stack first; add sprites only if it falls short.
+**1.
+Material
+is
+static
+CSS.**
+The
+CSS
+tier
+in
+`app/jelly-material.css`
+/
+`app/liquid-glass.css`
+(gel
+gradient,
+haze
+floor +
+`public/jelly/haze-tile.webp`,
+static
+rim)
+becomes
+the
+primary
+material.
+The
+rim
+gets
+the
+RGB-led
+molded
+look
+in
+CSS:
+shoulder
+lit
+on
+the
+light
+side,
+soft
+shadow
+on
+the
+far
+side,
+red
+toward
+the
+top-left
+light
+and
+blue
+away,
+via
+stacked
+inset
+shadows
+/
+gradients,
+or
+a
+baked
+sprite
+generated
+by
+a
+script
+like
+`scripts/generate-jelly-haze-tile.mjs`
+if
+the
+stack
+cannot
+reach
+the
+look.
+_My
+call:_
+try
+the
+zero-asset
+stack
+first;
+add
+sprites
+only
+if
+it
+falls
+short.
 
-**2. Motion is woken, not ambient.** Haze drifts only under `:hover` / `:focus-within` (`animation-play-state`), and
-where `animation-timeline: view()` is supported (`supportsViewTimeline` already exists) it can be tied to scroll
-instead of time. `Still` = no haze motion; `Calm` = slower and fainter. Nothing runs on an idle page.
+**2.
+Motion
+is
+woken,
+not
+ambient.**
+Haze
+drifts
+only
+under
+`:hover`
+/
+`:focus-within`
+(`animation-play-state`),
+and
+where
+`animation-timeline: view()`
+is
+supported
+(`supportsViewTimeline`
+already
+exists)
+it
+can
+be
+tied
+to
+scroll
+instead
+of
+time.
+`Still`
+=
+no
+haze
+motion;
+`Calm`
+=
+slower
+and
+fainter.
+Nothing
+runs
+on
+an
+idle
+page.
 
-**3. Soft body is CSS.** Hover plumps (scale ≤ 1.03), press squashes, release springs back, using `transition` with
-`linear(...)` spring curves authored once as tokens (`--spring-*`) and derived from the existing physics constants. A
-fine-pointer-only delegated `pointermove` writes `--px/--py` on the single hovered host, which positions the plasma wake
-and the dent's light dot (a radial gradient). No per-component listeners. `MOTION_BOUNDS` unchanged.
+**3.
+Soft
+body
+is
+CSS.**
+Hover
+plumps
+(scale
+≤
+1.03),
+press
+squashes,
+release
+springs
+back,
+using
+`transition`
+with
+`linear(...)`
+spring
+curves
+authored
+once
+as
+tokens
+(`--spring-*`)
+and
+derived
+from
+the
+existing
+physics
+constants.
+A
+fine-pointer-only
+delegated
+`pointermove`
+writes
+`--px/--py`
+on
+the
+single
+hovered
+host,
+which
+positions
+the
+plasma
+wake
+and
+the
+dent's
+light
+dot
+(a
+radial
+gradient).
+No
+per-component
+listeners.
+`MOTION_BOUNDS`
+unchanged.
 
-**4. Arcs are events.** On click, a lazily created canvas draws one burst (bolts per tier budget), then is removed after
-idle. `dischargeAt` / `strike` stay exported so `app/routes/jelly.tsx` and existing callers keep working. The 3-onsets/s
-flash ledger stays (WCAG 2.3.1).
+**4.
+Arcs
+are
+events.**
+On
+click,
+a
+lazily
+created
+canvas
+draws
+one
+burst
+(bolts
+per
+tier
+budget),
+then
+is
+removed
+after
+idle.
+`dischargeAt`
+/
+`strike`
+stay
+exported
+so
+`app/routes/jelly.tsx`
+and
+existing
+callers
+keep
+working.
+The
+3-onsets/s
+flash
+ledger
+stays
+(WCAG
+2.3.1).
 
-**5. Removal.** Once nothing installs them: the engine's slab, haze, cursor-light, dent and lattice code, the rim/haze
-worker path, registry, lattice/envelope/room, ambient arcs and field, ambient clock, the matching tests and the unwired
-`testing/e2e` scripts for them. **Kept for the globe:** the snapshot path (`scene.ts`, `scene-store.ts`, the engine's
-publishing code in a reduced globe-feed mode), the governor's DPR cap, and the GLSL/colour/policy modules the globe
-imports (listed under Non-goals).
+**5.
+Removal.**
+Once
+nothing
+installs
+them:
+the
+engine's
+slab,
+haze,
+cursor-light,
+dent
+and
+lattice
+code,
+the
+rim/haze
+worker
+path,
+registry,
+lattice/envelope/room,
+ambient
+arcs
+and
+field,
+ambient
+clock,
+the
+matching
+tests
+and
+the
+unwired
+`testing/e2e`
+scripts
+for
+them.
+**Kept
+for
+the
+globe:**
+the
+snapshot
+path
+(`scene.ts`,
+`scene-store.ts`,
+the
+engine's
+publishing
+code
+in
+a
+reduced
+globe-feed
+mode),
+the
+governor's
+DPR
+cap,
+and
+the
+GLSL/colour/policy
+modules
+the
+globe
+imports
+(listed
+under
+Non-goals).
 
 ## Acceptance bar (my call)
 
-"No longer sluggish" is judged by facts that can be checked, not by feel:
+"No
+longer
+sluggish"
+is
+judged
+by
+facts
+that
+can
+be
+checked,
+not
+by
+feel:
 
-- At rest, with the pointer still, DevTools shows no `requestAnimationFrame` callbacks and no `<canvas>`/worker/snapshot
-  activity from the site material (the globe's own canvases excepted). `raf-loop-allowlist` shrinks accordingly.
-- `testing/e2e/frame-budget.mjs` numbers before and after go in every PR description; none may regress, and idle CPU
-  must sit well under the existing ≤ 250 ms/s target on `/`.
-- `jelly-legibility` and the touched gates pass; entry-bundle budget (OPT-01) not exceeded.
+- At
+  rest,
+  with
+  the
+  pointer
+  still,
+  DevTools
+  shows
+  no
+  `requestAnimationFrame`
+  callbacks
+  and
+  no
+  `<canvas>`/worker/snapshot
+  activity
+  from
+  the
+  site
+  material
+  (the
+  globe's
+  own
+  canvases
+  excepted).
+  `raf-loop-allowlist`
+  shrinks
+  accordingly.
+- `testing/e2e/frame-budget.mjs`
+  numbers
+  before
+  and
+  after
+  go
+  in
+  every
+  PR
+  description;
+  none
+  may
+  regress,
+  and
+  idle
+  CPU
+  must
+  sit
+  well
+  under
+  the
+  existing
+  ≤
+  250
+  ms/s
+  target
+  on
+  `/`.
+- `jelly-legibility`
+  and
+  the
+  touched
+  gates
+  pass;
+  entry-bundle
+  budget
+  (OPT-01)
+  not
+  exceeded.
 
 ## Delivery: a series of small PRs, each merged by me
 
-The user explicitly authorised the executing agent to open and **merge** these PRs to `main` (2026-11-07), knowing that a
-merge deploys to production. There is no pause for owner review between PRs unless CI is red, a merge would leave the
-site visibly broken, or the look cannot be verified (then the PR says so and waits).
+The
+user
+explicitly
+authorised
+the
+executing
+agent
+to
+open
+and
+**merge**
+these
+PRs
+to
+`main`
+(2026-11-07),
+knowing
+that
+a
+merge
+deploys
+to
+production.
+There
+is
+no
+pause
+for
+owner
+review
+between
+PRs
+unless
+CI
+is
+red,
+a
+merge
+would
+leave
+the
+site
+visibly
+broken,
+or
+the
+look
+cannot
+be
+verified
+(then
+the
+PR
+says
+so
+and
+waits).
 
-Each PR is self-contained, passes `pnpm check:consistency` and the blocking `web-ci`, and is revertible on its own.
-*My call:* PRs 1–3 produce a short intermediate state (the live material is gone before woken haze and CSS springs land),
-so they are merged back-to-back in one working session, not spread over days.
+Each
+PR
+is
+self-contained,
+passes
+`pnpm check:consistency`
+and
+the
+blocking
+`web-ci`,
+and
+is
+revertible
+on
+its
+own.
+_My
+call:_
+PRs
+1–3
+produce
+a
+short
+intermediate
+state
+(the
+live
+material
+is
+gone
+before
+woken
+haze
+and
+CSS
+springs
+land),
+so
+they
+are
+merged
+back-to-back
+in
+one
+working
+session,
+not
+spread
+over
+days.
 
-Touch and no-hover devices (PR 2): haze stays at the static baked floor, press feedback is the `:active` spring. The
-scroll-tied variant is disabled under `jellyMotion = still`, uses no `infinite` animation, and degrades to static where
-`animation-timeline` is unsupported. *My call.*
+Touch
+and
+no-hover
+devices
+(PR
+2):
+haze
+stays
+at
+the
+static
+baked
+floor,
+press
+feedback
+is
+the
+`:active`
+spring.
+The
+scroll-tied
+variant
+is
+disabled
+under
+`jellyMotion = still`,
+uses
+no
+`infinite`
+animation,
+and
+degrades
+to
+static
+where
+`animation-timeline`
+is
+unsupported.
+_My
+call._
 
-Kept for measurement and demo: `testing/e2e/frame-budget.mjs` and the `/jelly` lab route. Deleted in PR 5: only the
-`testing/e2e` scripts that exercise removed services (`glass-*`, `liquid-glass*`, `jelly-soft-body`, …).
+Kept
+for
+measurement
+and
+demo:
+`testing/e2e/frame-budget.mjs`
+and
+the
+`/jelly`
+lab
+route.
+Deleted
+in
+PR
+5:
+only
+the
+`testing/e2e`
+scripts
+that
+exercise
+removed
+services
+(`glass-*`,
+`liquid-glass*`,
+`jelly-soft-body`,
+…).
 
-1. **Stop installing the heavy services + richer CSS rim.** `useLiquidInteractions` no longer installs the engine,
-   carriers, arcs, governor or snapshot; the CSS rim is upgraded to compensate. The code stays in the tree, so this is a
-   one-commit revert. Also commits this design doc. Largest perf win, smallest diff.
-2. **Woken haze** (hover/focus, scroll-tied where supported) and the preference wiring; amend gates N3/N12.
-3. **CSS springs + pointer variable** replace the physics service; dent light dot.
-4. **Event-driven click arc** replaces the arc runtime.
-5. **Delete dead code**, rewrite `docs/plasmatic-jelly-system.md` and the Plasmatic Jelly section of `CLAUDE.md`,
-   re-scope `perf-lite`, update `lib/CLAUDE.md`.
+1. **Stop
+   installing
+   the
+   heavy
+   services +
+   richer
+   CSS
+   rim.**
+   `useLiquidInteractions`
+   no
+   longer
+   installs
+   the
+   engine,
+   carriers,
+   arcs,
+   governor
+   or
+   snapshot;
+   the
+   CSS
+   rim
+   is
+   upgraded
+   to
+   compensate.
+   The
+   code
+   stays
+   in
+   the
+   tree,
+   so
+   this
+   is
+   a
+   one-commit
+   revert.
+   Also
+   commits
+   this
+   design
+   doc.
+   Largest
+   perf
+   win,
+   smallest
+   diff.
+2. **Woken
+   haze**
+   (hover/focus,
+   scroll-tied
+   where
+   supported)
+   and
+   the
+   preference
+   wiring;
+   amend
+   gates
+   N3/N12.
+3. **CSS
+   springs +
+   pointer
+   variable**
+   replace
+   the
+   physics
+   service;
+   dent
+   light
+   dot.
+4. **Event-driven
+   click
+   arc**
+   replaces
+   the
+   arc
+   runtime.
+5. **Delete
+   dead
+   code**,
+   rewrite
+   `docs/plasmatic-jelly-system.md`
+   and
+   the
+   Plasmatic
+   Jelly
+   section
+   of
+   `CLAUDE.md`,
+   re-scope
+   `perf-lite`,
+   update
+   `lib/CLAUDE.md`.
 
-Gates expected to change: `jelly-contract`, `jelly-ownership`, `jelly-coverage`, `raf-loop-allowlist`,
-`site-infinite-animation`, `stacking-consistency`, `design-consistency`, `jelly-tokens`, `jelly-legibility`,
-`appearance-jelly-motion`, plus the entry-bundle budget (OPT-01, `scripts/check-bundle-budget.ts`). Per the repo's own
-rule, changing a rule happens in the same commit and says so in the message.
+Gates
+expected
+to
+change:
+`jelly-contract`,
+`jelly-ownership`,
+`jelly-coverage`,
+`raf-loop-allowlist`,
+`site-infinite-animation`,
+`stacking-consistency`,
+`design-consistency`,
+`jelly-tokens`,
+`jelly-legibility`,
+`appearance-jelly-motion`,
+plus
+the
+entry-bundle
+budget
+(OPT-01,
+`scripts/check-bundle-budget.ts`).
+Per
+the
+repo's
+own
+rule,
+changing
+a
+rule
+happens
+in
+the
+same
+commit
+and
+says
+so
+in
+the
+message.
 
 ## Constraints and risks
 
-- **Merging to `main` deploys to production** (push to `main` → GitHub Actions → image → VPS blue/green). Every merge
-  is live. Hence small, revertible PRs, and none merges on red CI.
-- **Hydration:** carriers are DOM nodes injected after load (to avoid hydration error #418). The CSS version must not
-  inject nodes; it uses the host's own background layers or pseudo-elements. Role classes already use some pseudo-elements,
-  so collisions are the biggest technical risk (builder to survey).
-- **Rule amendments.** `CLAUDE.md` forbids `transition: transform` on a body, keyframe wobble and "faking a law". CSS
-  springs reverse that deliberately; the rule is rewritten to "one spring source (tokens), no per-component curves".
-  CSS transitions do not carry velocity across an interrupted state change like the current springs do; accepted.
-- **Verification environment.** This sandbox has Node 22 (repo needs ≥ 24.18) and no installed dependencies, so the
-  gates and a real browser cannot run until that is fixed. *My call:* step 0 is to get Node 24 + `pnpm install` working;
-  if that is impossible, I rely on CI and do not merge on anything but a green run, and I say so in each PR.
-- **Looks cannot be judged by CI.** Both themes (`light`, `graphite`) and `jellyMotion = still` get screenshots before
-  each merge where the app can run. iOS edge-pinning rules (`ios-edge-contract`) are unchanged.
-- Measurement: compare before/after with the frame-budget harness the docs name (`testing/e2e/frame-budget.mjs`) and
-  record the numbers in the PR.
+- **Merging
+  to
+  `main`
+  deploys
+  to
+  production**
+  (push
+  to
+  `main`
+  →
+  GitHub
+  Actions
+  →
+  image
+  →
+  VPS
+  blue/green).
+  Every
+  merge
+  is
+  live.
+  Hence
+  small,
+  revertible
+  PRs,
+  and
+  none
+  merges
+  on
+  red
+  CI.
+- **Hydration:**
+  carriers
+  are
+  DOM
+  nodes
+  injected
+  after
+  load
+  (to
+  avoid
+  hydration
+  error
+  #418).
+  The
+  CSS
+  version
+  must
+  not
+  inject
+  nodes;
+  it
+  uses
+  the
+  host's
+  own
+  background
+  layers
+  or
+  pseudo-elements.
+  Role
+  classes
+  already
+  use
+  some
+  pseudo-elements,
+  so
+  collisions
+  are
+  the
+  biggest
+  technical
+  risk
+  (builder
+  to
+  survey).
+- **Rule
+  amendments.**
+  `CLAUDE.md`
+  forbids
+  `transition: transform`
+  on
+  a
+  body,
+  keyframe
+  wobble
+  and
+  "faking
+  a
+  law".
+  CSS
+  springs
+  reverse
+  that
+  deliberately;
+  the
+  rule
+  is
+  rewritten
+  to
+  "one
+  spring
+  source
+  (tokens),
+  no
+  per-component
+  curves".
+  CSS
+  transitions
+  do
+  not
+  carry
+  velocity
+  across
+  an
+  interrupted
+  state
+  change
+  like
+  the
+  current
+  springs
+  do;
+  accepted.
+- **Verification
+  environment.**
+  This
+  sandbox
+  has
+  Node
+  22
+  (repo
+  needs
+  ≥
+  24.18)
+  and
+  no
+  installed
+  dependencies,
+  so
+  the
+  gates
+  and
+  a
+  real
+  browser
+  cannot
+  run
+  until
+  that
+  is
+  fixed.
+  _My
+  call:_
+  step
+  0
+  is
+  to
+  get
+  Node
+  24 +
+  `pnpm install`
+  working;
+  if
+  that
+  is
+  impossible,
+  I
+  rely
+  on
+  CI
+  and
+  do
+  not
+  merge
+  on
+  anything
+  but
+  a
+  green
+  run,
+  and
+  I
+  say
+  so
+  in
+  each
+  PR.
+- **Looks
+  cannot
+  be
+  judged
+  by
+  CI.**
+  Both
+  themes
+  (`light`,
+  `graphite`)
+  and
+  `jellyMotion = still`
+  get
+  screenshots
+  before
+  each
+  merge
+  where
+  the
+  app
+  can
+  run.
+  iOS
+  edge-pinning
+  rules
+  (`ios-edge-contract`)
+  are
+  unchanged.
+- Measurement:
+  compare
+  before/after
+  with
+  the
+  frame-budget
+  harness
+  the
+  docs
+  name
+  (`testing/e2e/frame-budget.mjs`)
+  and
+  record
+  the
+  numbers
+  in
+  the
+  PR.
 
 ## Decisions (owner, 2026-11-07) — design approved
 
-1. **The engine stays, for the globe only.** The globe keeps refracting the page behind it, so the glass engine's
-   snapshot capture (`scene.ts`, `scene-store.ts`) and the engine module that publishes it remain. What goes is
-   everything the engine does for site surfaces: rim slabs, haze canvases, the ambient clock, lattice stepping, cursor
-   light and dent drawing. The engine is reduced to a **globe-feed mode**: slab budget 0, haze 0, clock 0, snapshot on.
-   *My call within that:* the snapshot's triggers shrink to load, route change, theme change and resize (no scroll-rest or
-   content-mutation recapture), keeping the 1.5 s minimum interval, and it only runs while the globe is mounted. PR 5
-   deletes the engine's slab/haze/lattice code, not the snapshot path, and moves the surviving pieces behind a name that
-   says what they are for. The "zero canvases at rest" goal therefore excludes the globe's own canvases and the snapshot.
-2. **Rewriting the owner-written rules is approved.** PR 5 amends the Plasmatic Jelly sections of `CLAUDE.md`,
-   `lib/CLAUDE.md`, `components/CLAUDE.md` and `docs/plasmatic-jelly-system.md`.
-3. **Proceed without a look-check.** No pause after PR 1 for the owner to inspect production. The acceptance bar above is
-   the gate; where the app cannot be run, the PR says so.
+1. **The
+   engine
+   stays,
+   for
+   the
+   globe
+   only.**
+   The
+   globe
+   keeps
+   refracting
+   the
+   page
+   behind
+   it,
+   so
+   the
+   glass
+   engine's
+   snapshot
+   capture
+   (`scene.ts`,
+   `scene-store.ts`)
+   and
+   the
+   engine
+   module
+   that
+   publishes
+   it
+   remain.
+   What
+   goes
+   is
+   everything
+   the
+   engine
+   does
+   for
+   site
+   surfaces:
+   rim
+   slabs,
+   haze
+   canvases,
+   the
+   ambient
+   clock,
+   lattice
+   stepping,
+   cursor
+   light
+   and
+   dent
+   drawing.
+   The
+   engine
+   is
+   reduced
+   to
+   a
+   **globe-feed
+   mode**:
+   slab
+   budget
+   0,
+   haze
+   0,
+   clock
+   0,
+   snapshot
+   on.
+   _My
+   call
+   within
+   that:_
+   the
+   snapshot's
+   triggers
+   shrink
+   to
+   load,
+   route
+   change,
+   theme
+   change
+   and
+   resize
+   (no
+   scroll-rest
+   or
+   content-mutation
+   recapture),
+   keeping
+   the
+   1.5
+   s
+   minimum
+   interval,
+   and
+   it
+   only
+   runs
+   while
+   the
+   globe
+   is
+   mounted.
+   PR
+   5
+   deletes
+   the
+   engine's
+   slab/haze/lattice
+   code,
+   not
+   the
+   snapshot
+   path,
+   and
+   moves
+   the
+   surviving
+   pieces
+   behind
+   a
+   name
+   that
+   says
+   what
+   they
+   are
+   for.
+   The
+   "zero
+   canvases
+   at
+   rest"
+   goal
+   therefore
+   excludes
+   the
+   globe's
+   own
+   canvases
+   and
+   the
+   snapshot.
+2. **Rewriting
+   the
+   owner-written
+   rules
+   is
+   approved.**
+   PR
+   5
+   amends
+   the
+   Plasmatic
+   Jelly
+   sections
+   of
+   `CLAUDE.md`,
+   `lib/CLAUDE.md`,
+   `components/CLAUDE.md`
+   and
+   `docs/plasmatic-jelly-system.md`.
+3. **Proceed
+   without
+   a
+   look-check.**
+   No
+   pause
+   after
+   PR
+   1
+   for
+   the
+   owner
+   to
+   inspect
+   production.
+   The
+   acceptance
+   bar
+   above
+   is
+   the
+   gate;
+   where
+   the
+   app
+   cannot
+   be
+   run,
+   the
+   PR
+   says
+   so.
 
 ## Left to the builder
 
-Exact rim recipe (stack vs sprite), spring curve values, selector strategy for the carrier layers, how
-`useFluidDrag` / `useCelebration` / `useEvertPoint` keep working once the physics service is gone, and PR boundaries
-if one proves too large.
+Exact
+rim
+recipe
+(stack
+vs
+sprite),
+spring
+curve
+values,
+selector
+strategy
+for
+the
+carrier
+layers,
+how
+`useFluidDrag`
+/
+`useCelebration`
+/
+`useEvertPoint`
+keep
+working
+once
+the
+physics
+service
+is
+gone,
+and
+PR
+boundaries
+if
+one
+proves
+too
+large.

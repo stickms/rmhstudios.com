@@ -3,11 +3,37 @@
  * ROUTE only; the client reaches the type through `messages.contract.ts`.
  */
 import { z } from 'zod';
-import { feedImageUrlSchema, gifUrlSchema } from '@/lib/rmhark-schema';
+import {
+  feedImageUrlSchema,
+  gifUrlSchema,
+} from '@/lib/rmhark-schema';
 
-export const sendMessageSchema = z.object({
-  recipientId: z.string().min(1),
-  content: z.string().max(2000).optional(),
-  gifUrl: gifUrlSchema.optional(),
-  imageUrls: z.array(feedImageUrlSchema).max(4).optional(),
-});
+export const sendMessageSchema =
+  z.object(
+    {
+      recipientId:
+        z
+          .string()
+          .min(
+            1,
+          ),
+      content:
+        z
+          .string()
+          .max(
+            2000,
+          )
+          .optional(),
+      gifUrl:
+        gifUrlSchema.optional(),
+      imageUrls:
+        z
+          .array(
+            feedImageUrlSchema,
+          )
+          .max(
+            4,
+          )
+          .optional(),
+    },
+  );

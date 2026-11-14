@@ -20,15 +20,55 @@ export interface ThreadTarget {
 interface ChatPlusUi {
   forward: ForwardTarget | null;
   thread: ThreadTarget | null;
-  openForward: (t: ForwardTarget) => void;
-  openThread: (t: ThreadTarget) => void;
+  openForward: (
+    t: ForwardTarget,
+  ) => void;
+  openThread: (
+    t: ThreadTarget,
+  ) => void;
   close: () => void;
 }
 
-export const useChatPlusUi = create<ChatPlusUi>((set) => ({
-  forward: null,
-  thread: null,
-  openForward: (forward) => set({ forward, thread: null }),
-  openThread: (thread) => set({ thread, forward: null }),
-  close: () => set({ forward: null, thread: null }),
-}));
+export const useChatPlusUi =
+  create<ChatPlusUi>(
+    (
+      set,
+    ) => ({
+      forward:
+        null,
+      thread:
+        null,
+      openForward:
+        (
+          forward,
+        ) =>
+          set(
+            {
+              forward,
+              thread:
+                null,
+            },
+          ),
+      openThread:
+        (
+          thread,
+        ) =>
+          set(
+            {
+              thread,
+              forward:
+                null,
+            },
+          ),
+      close:
+        () =>
+          set(
+            {
+              forward:
+                null,
+              thread:
+                null,
+            },
+          ),
+    }),
+  );

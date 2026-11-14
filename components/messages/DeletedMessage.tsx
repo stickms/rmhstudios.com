@@ -20,19 +20,45 @@ export function DeletedMessage({
   deletedBy,
   className,
 }: {
-  deletedBy?: string | null;
+  deletedBy?:
+    | string
+    | null;
   className?: string;
 }) {
-  const { t } = useTranslation('feed');
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
 
   return (
-    <p className={cn('flex items-center gap-1.5 text-sm italic opacity-70', className)}>
-      <Ban className="size-3.5 shrink-0" aria-hidden="true" />
-      {deletedBy === DELETED_BY_MODERATOR
-        ? t('message-removed-by-moderator', {
-            defaultValue: 'This message was removed by a moderator',
-          })
-        : t('message-was-deleted', { defaultValue: 'This message was deleted' })}
+    <p
+      className={cn(
+        'flex items-center gap-1.5 text-sm italic opacity-70',
+        className,
+      )}
+    >
+      <Ban
+        className="size-3.5 shrink-0"
+        aria-hidden="true"
+      />
+      {deletedBy ===
+      DELETED_BY_MODERATOR
+        ? t(
+            'message-removed-by-moderator',
+            {
+              defaultValue:
+                'This message was removed by a moderator',
+            },
+          )
+        : t(
+            'message-was-deleted',
+            {
+              defaultValue:
+                'This message was deleted',
+            },
+          )}
     </p>
   );
 }

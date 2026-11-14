@@ -11,27 +11,66 @@
 
 import type { FeedItem } from '@/lib/feed-types';
 
-const KEY_PREFIX = 'rmh:feed:seen-through:v1:';
+const KEY_PREFIX =
+  'rmh:feed:seen-through:v1:';
 
-export function caughtUpKey(userId: string | null | undefined): string {
+export function caughtUpKey(
+  userId:
+    | string
+    | null
+    | undefined,
+): string {
   return `${KEY_PREFIX}${userId ?? 'anon'}`;
 }
 
 /** Items that count as a real, server-confirmed post (no optimistic or pinned-in rows). */
-function isSettled(item: FeedItem): boolean {
-  return item.type === 'rmhark' && !item.pending && !item.id.startsWith('temp-');
+function isSettled(
+  item: FeedItem,
+): boolean {
+  return (
+    item.type ===
+      'rmhark' &&
+    !item.pending &&
+    !item.id.startsWith(
+      'temp-',
+    )
+  );
 }
 
 /** Newest `createdAt` among settled posts, as an ISO string; null if none. */
-export function newestSeen(items: readonly FeedItem[]): string | null {
-  let best: string | null = null;
-  let bestMs = -Infinity;
+export function newestSeen(
+  items: readonly FeedItem[],
+):
+  | string
+  | null {
+  let best:
+    | string
+    | null =
+    null;
+  let bestMs =
+    -Infinity;
   for (const item of items) {
-    if (!isSettled(item)) continue;
-    const ms = Date.parse(item.createdAt);
-    if (Number.isFinite(ms) && ms > bestMs) {
-      bestMs = ms;
-      best = item.createdAt;
+    if (
+      !isSettled(
+        item,
+      )
+    )
+      continue;
+    const ms =
+      Date.parse(
+        item.createdAt,
+      );
+    if (
+      Number.isFinite(
+        ms,
+      ) &&
+      ms >
+        bestMs
+    ) {
+      bestMs =
+        ms;
+      best =
+        item.createdAt;
     }
   }
   return best;
@@ -45,18 +84,53 @@ export function newestSeen(items: readonly FeedItem[]): string | null {
  */
 export function caughtUpBoundary(
   items: readonly FeedItem[],
-  seenThrough: string | null,
-): string | null {
-  if (!seenThrough) return null;
-  const seenMs = Date.parse(seenThrough);
-  if (!Number.isFinite(seenMs)) return null;
+  seenThrough:
+    | string
+    | null,
+):
+  | string
+  | null {
+  if (
+    !seenThrough
+  )
+    return null;
+  const seenMs =
+    Date.parse(
+      seenThrough,
+    );
+  if (
+    !Number.isFinite(
+      seenMs,
+    )
+  )
+    return null;
   let sawNew = false;
   for (const item of items) {
-    if (!isSettled(item)) continue;
-    const ms = Date.parse(item.createdAt);
-    if (!Number.isFinite(ms)) continue;
-    if (ms > seenMs) sawNew = true;
-    else if (sawNew) return item.id;
+    if (
+      !isSettled(
+        item,
+      )
+    )
+      continue;
+    const ms =
+      Date.parse(
+        item.createdAt,
+      );
+    if (
+      !Number.isFinite(
+        ms,
+      )
+    )
+      continue;
+    if (
+      ms >
+      seenMs
+    )
+      sawNew = true;
+    else if (
+      sawNew
+    )
+      return item.id;
   }
   return null;
 }

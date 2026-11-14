@@ -13,7 +13,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Play, Users, Search, LogIn, LogOut, Swords, WashingMachine } from 'lucide-react';
+import {
+  Play,
+  Users,
+  Search,
+  LogIn,
+  LogOut,
+  Swords,
+  WashingMachine,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs } from '@/components/ui/tabs';
@@ -39,7 +47,9 @@ interface Props {
   onSolo: () => void;
   onQuickMatch: () => void;
   onCreateLobby: () => void;
-  onJoinCode: (code: string) => void;
+  onJoinCode: (
+    code: string,
+  ) => void;
   onBrowse: () => void;
 }
 
@@ -53,21 +63,83 @@ export function MainMenu({
   onJoinCode,
   onBrowse,
 }: Props) {
-  const { t } = useTranslation('c-laundry-sort');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-laundry-sort',
+    );
   // Signing in is a detour, not a change of plan: come back to the invite.
-  const invite = useLobbyInvite();
-  const quit = useQuitGame();
-  const durationSec = useLaundryStore((s) => s.durationSec);
-  const difficulty = useLaundryStore((s) => s.difficulty);
-  const setDuration = useLaundryStore((s) => s.setDuration);
-  const setDifficulty = useLaundryStore((s) => s.setDifficulty);
-  const [code, setCode] = useState('');
+  const invite =
+    useLobbyInvite();
+  const quit =
+    useQuitGame();
+  const durationSec =
+    useLaundryStore(
+      (
+        s,
+      ) =>
+        s.durationSec,
+    );
+  const difficulty =
+    useLaundryStore(
+      (
+        s,
+      ) =>
+        s.difficulty,
+    );
+  const setDuration =
+    useLaundryStore(
+      (
+        s,
+      ) =>
+        s.setDuration,
+    );
+  const setDifficulty =
+    useLaundryStore(
+      (
+        s,
+      ) =>
+        s.setDifficulty,
+    );
+  const [
+    code,
+    setCode,
+  ] =
+    useState(
+      '',
+    );
 
-  const difficultyLabel: Record<Difficulty, string> = {
-    relaxed: t('difficulty-relaxed', { defaultValue: 'Relaxed' }),
-    standard: t('difficulty-standard', { defaultValue: 'Standard' }),
-    frantic: t('difficulty-frantic', { defaultValue: 'Frantic' }),
-  };
+  const difficultyLabel: Record<
+    Difficulty,
+    string
+  > =
+    {
+      relaxed:
+        t(
+          'difficulty-relaxed',
+          {
+            defaultValue:
+              'Relaxed',
+          },
+        ),
+      standard:
+        t(
+          'difficulty-standard',
+          {
+            defaultValue:
+              'Standard',
+          },
+        ),
+      frantic:
+        t(
+          'difficulty-frantic',
+          {
+            defaultValue:
+              'Frantic',
+          },
+        ),
+    };
 
   return (
     <div className="ls-overlay z-40 bg-black/55 backdrop-blur-[2px]">
@@ -75,14 +147,26 @@ export function MainMenu({
         <div className="ls-menu-panel ls-panel-strong flex flex-col gap-4 p-4 sm:p-6">
           <header className="ls-menu-header space-y-1.5">
             <h2 className="flex items-center gap-2 text-xl font-black tracking-tight sm:text-2xl">
-              <WashingMachine className="size-5 text-[var(--ls-accent)]" aria-hidden="true" />
-              {t('sort-the-laundry', { defaultValue: 'Sort the laundry' })}
+              <WashingMachine
+                className="size-5 text-[var(--ls-accent)]"
+                aria-hidden="true"
+              />
+              {t(
+                'sort-the-laundry',
+                {
+                  defaultValue:
+                    'Sort the laundry',
+                },
+              )}
             </h2>
             <p className="ls-short-hide ls-muted text-sm">
-              {t('game-description', {
-                defaultValue:
-                  'Real cloth, real gravity. Grab garments out of the air and drop them in the bin that matches their wash — colour and weave both.',
-              })}
+              {t(
+                'game-description',
+                {
+                  defaultValue:
+                    'Real cloth, real gravity. Grab garments out of the air and drop them in the bin that matches their wash — colour and weave both.',
+                },
+              )}
             </p>
           </header>
 
@@ -92,28 +176,95 @@ export function MainMenu({
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <p className="ls-muted text-[11px] font-semibold uppercase tracking-widest">
-                  {t('round-length', { defaultValue: 'Round length' })}
+                  {t(
+                    'round-length',
+                    {
+                      defaultValue:
+                        'Round length',
+                    },
+                  )}
                 </p>
                 <Tabs
-                  tabs={MATCH_DURATIONS.map((d) => ({
-                    id: String(d),
-                    label: t('seconds-short', { defaultValue: '{{count}}s', count: d }),
-                  }))}
-                  value={String(durationSec)}
-                  onChange={(id) => setDuration(Number(id) as MatchDuration)}
-                  aria-label={t('round-length', { defaultValue: 'Round length' })}
+                  tabs={MATCH_DURATIONS.map(
+                    (
+                      d,
+                    ) => ({
+                      id: String(
+                        d,
+                      ),
+                      label:
+                        t(
+                          'seconds-short',
+                          {
+                            defaultValue:
+                              '{{count}}s',
+                            count:
+                              d,
+                          },
+                        ),
+                    }),
+                  )}
+                  value={String(
+                    durationSec,
+                  )}
+                  onChange={(
+                    id,
+                  ) =>
+                    setDuration(
+                      Number(
+                        id,
+                      ) as MatchDuration,
+                    )
+                  }
+                  aria-label={t(
+                    'round-length',
+                    {
+                      defaultValue:
+                        'Round length',
+                    },
+                  )}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <p className="ls-muted text-[11px] font-semibold uppercase tracking-widest">
-                  {t('difficulty', { defaultValue: 'Difficulty' })}
+                  {t(
+                    'difficulty',
+                    {
+                      defaultValue:
+                        'Difficulty',
+                    },
+                  )}
                 </p>
                 <Tabs
-                  tabs={DIFFICULTIES.map((d) => ({ id: d, label: difficultyLabel[d] }))}
-                  value={difficulty}
-                  onChange={(id) => setDifficulty(id as Difficulty)}
-                  aria-label={t('difficulty', { defaultValue: 'Difficulty' })}
+                  tabs={DIFFICULTIES.map(
+                    (
+                      d,
+                    ) => ({
+                      id: d,
+                      label:
+                        difficultyLabel[
+                          d
+                        ],
+                    }),
+                  )}
+                  value={
+                    difficulty
+                  }
+                  onChange={(
+                    id,
+                  ) =>
+                    setDifficulty(
+                      id as Difficulty,
+                    )
+                  }
+                  aria-label={t(
+                    'difficulty',
+                    {
+                      defaultValue:
+                        'Difficulty',
+                    },
+                  )}
                 />
               </div>
             </div>
@@ -124,45 +275,149 @@ export function MainMenu({
           <div className="flex flex-col gap-4">
             {signedIn ? (
               <div className="grid gap-2 sm:grid-cols-2">
-                <Button onClick={onSolo} className="w-full" size="lg">
-                  <Play className="size-4" aria-hidden="true" />
-                  {t('start-solo', { defaultValue: 'Start solo run' })}
+                <Button
+                  onClick={
+                    onSolo
+                  }
+                  className="w-full"
+                  size="lg"
+                >
+                  <Play
+                    className="size-4"
+                    aria-hidden="true"
+                  />
+                  {t(
+                    'start-solo',
+                    {
+                      defaultValue:
+                        'Start solo run',
+                    },
+                  )}
                 </Button>
                 <Button
-                  onClick={onQuickMatch}
+                  onClick={
+                    onQuickMatch
+                  }
                   variant="default"
                   className="w-full"
                   size="lg"
-                  disabled={connecting}
+                  disabled={
+                    connecting
+                  }
                 >
-                  <Swords className="size-4" aria-hidden="true" />
+                  <Swords
+                    className="size-4"
+                    aria-hidden="true"
+                  />
                   {connecting
-                    ? t('connecting', { defaultValue: 'Connecting…' })
-                    : t('quick-match', { defaultValue: 'Quick match' })}
+                    ? t(
+                        'connecting',
+                        {
+                          defaultValue:
+                            'Connecting…',
+                        },
+                      )
+                    : t(
+                        'quick-match',
+                        {
+                          defaultValue:
+                            'Quick match',
+                        },
+                      )}
                 </Button>
 
-                <Button onClick={onCreateLobby} variant="ghost" disabled={connecting}>
-                  <Users className="size-4" aria-hidden="true" />
-                  {t('create-lobby', { defaultValue: 'Create lobby' })}
+                <Button
+                  onClick={
+                    onCreateLobby
+                  }
+                  variant="ghost"
+                  disabled={
+                    connecting
+                  }
+                >
+                  <Users
+                    className="size-4"
+                    aria-hidden="true"
+                  />
+                  {t(
+                    'create-lobby',
+                    {
+                      defaultValue:
+                        'Create lobby',
+                    },
+                  )}
                 </Button>
-                <Button onClick={onBrowse} variant="ghost" disabled={connecting}>
-                  <Search className="size-4" aria-hidden="true" />
-                  {t('browse-lobbies', { defaultValue: 'Browse lobbies' })}
+                <Button
+                  onClick={
+                    onBrowse
+                  }
+                  variant="ghost"
+                  disabled={
+                    connecting
+                  }
+                >
+                  <Search
+                    className="size-4"
+                    aria-hidden="true"
+                  />
+                  {t(
+                    'browse-lobbies',
+                    {
+                      defaultValue:
+                        'Browse lobbies',
+                    },
+                  )}
                 </Button>
 
                 <form
                   className="flex gap-2 sm:col-span-2"
-                  onSubmit={(event) => {
+                  onSubmit={(
+                    event,
+                  ) => {
                     event.preventDefault();
-                    const clean = code.trim().toUpperCase();
-                    if (clean.length >= 4) onJoinCode(clean);
+                    const clean =
+                      code
+                        .trim()
+                        .toUpperCase();
+                    if (
+                      clean.length >=
+                      4
+                    )
+                      onJoinCode(
+                        clean,
+                      );
                   }}
                 >
                   <Input
-                    value={code}
-                    onChange={(event) => setCode(event.target.value.toUpperCase().slice(0, 8))}
-                    placeholder={t('room-code', { defaultValue: 'Room code' })}
-                    aria-label={t('room-code', { defaultValue: 'Room code' })}
+                    value={
+                      code
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      setCode(
+                        event.target.value
+                          .toUpperCase()
+                          .slice(
+                            0,
+                            8,
+                          ),
+                      )
+                    }
+                    placeholder={t(
+                      'room-code',
+                      {
+                        defaultValue:
+                          'Room code',
+                      },
+                    )}
+                    aria-label={t(
+                      'room-code',
+                      {
+                        defaultValue:
+                          'Room code',
+                      },
+                    )}
                     className="ls-numeric uppercase tracking-[0.3em]"
                     // Room codes are A–Z/0–9. Without these, iOS opens a
                     // lowercase keyboard, autocapitalises the first letter only,
@@ -170,35 +425,94 @@ export function MainMenu({
                     autoComplete="off"
                     autoCapitalize="characters"
                     autoCorrect="off"
-                    spellCheck={false}
+                    spellCheck={
+                      false
+                    }
                     inputMode="text"
                     enterKeyHint="go"
-                    maxLength={8}
+                    maxLength={
+                      8
+                    }
                   />
-                  <Button type="submit" variant="default" disabled={connecting || code.length < 4}>
-                    {t('join', { defaultValue: 'Join' })}
+                  <Button
+                    type="submit"
+                    variant="default"
+                    disabled={
+                      connecting ||
+                      code.length <
+                        4
+                    }
+                  >
+                    {t(
+                      'join',
+                      {
+                        defaultValue:
+                          'Join',
+                      },
+                    )}
                   </Button>
                 </form>
               </div>
             ) : (
               <div className="space-y-2">
                 <p className="ls-muted text-sm">
-                  {t('sign-in-to-play', {
-                    defaultValue: 'Sign in to play, save scores and race other people.',
-                  })}
+                  {t(
+                    'sign-in-to-play',
+                    {
+                      defaultValue:
+                        'Sign in to play, save scores and race other people.',
+                    },
+                  )}
                 </p>
-                <Button asChild size="lg" className="w-full sm:w-auto">
-                  <Link to="/login" search={{ callbackURL: lobbyReturnPath('/laundry-sort', invite) }}>
-                    <LogIn className="size-4" aria-hidden="true" />
-                    {t('sign-in', { defaultValue: 'Sign in' })}
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full sm:w-auto"
+                >
+                  <Link
+                    to="/login"
+                    search={{
+                      callbackURL:
+                        lobbyReturnPath(
+                          '/laundry-sort',
+                          invite,
+                        ),
+                    }}
+                  >
+                    <LogIn
+                      className="size-4"
+                      aria-hidden="true"
+                    />
+                    {t(
+                      'sign-in',
+                      {
+                        defaultValue:
+                          'Sign in',
+                      },
+                    )}
                   </Link>
                 </Button>
               </div>
             )}
 
-            <Button onClick={quit} variant="ghost" className="w-full sm:w-auto sm:self-start">
-              <LogOut className="size-4" aria-hidden="true" />
-              {t('quit', { defaultValue: 'Quit' })}
+            <Button
+              onClick={
+                quit
+              }
+              variant="ghost"
+              className="w-full sm:w-auto sm:self-start"
+            >
+              <LogOut
+                className="size-4"
+                aria-hidden="true"
+              />
+              {t(
+                'quit',
+                {
+                  defaultValue:
+                    'Quit',
+                },
+              )}
             </Button>
           </div>
 
@@ -208,44 +522,81 @@ export function MainMenu({
               four lines of rules they can read any time. */}
           <ul className="ls-short-hide ls-muted space-y-1 text-xs">
             <li>
-              {t('rule-correct', {
-                defaultValue: 'Right bin: +{{points}}, and every streak sort adds 10% up to +100%.',
-                points: SCORE.correct,
-              })}
+              {t(
+                'rule-correct',
+                {
+                  defaultValue:
+                    'Right bin: +{{points}}, and every streak sort adds 10% up to +100%.',
+                  points:
+                    SCORE.correct,
+                },
+              )}
             </li>
             <li>
-              {t('rule-wrong', {
-                defaultValue: 'Wrong bin: {{points}} and the streak breaks.',
-                points: SCORE.wrong,
-              })}
+              {t(
+                'rule-wrong',
+                {
+                  defaultValue:
+                    'Wrong bin: {{points}} and the streak breaks.',
+                  points:
+                    SCORE.wrong,
+                },
+              )}
             </li>
             <li>
-              {t('rule-missed', {
-                defaultValue: 'Dropped on the floor: no penalty, but the streak still breaks.',
-              })}
+              {t(
+                'rule-missed',
+                {
+                  defaultValue:
+                    'Dropped on the floor: no penalty, but the streak still breaks.',
+                },
+              )}
             </li>
             <li>
-              {t('rule-controls', {
-                defaultValue:
-                  'Drag with mouse, finger or pen. Or steer with the arrow keys and pinch with Space.',
-              })}
+              {t(
+                'rule-controls',
+                {
+                  defaultValue:
+                    'Drag with mouse, finger or pen. Or steer with the arrow keys and pinch with Space.',
+                },
+              )}
             </li>
             <li>
-              {t('rule-sweep', {
-                defaultValue:
-                  'Keep holding and drag through the laundry to gather an armful — but letting go drops all of it in the same place.',
-              })}
+              {t(
+                'rule-sweep',
+                {
+                  defaultValue:
+                    'Keep holding and drag through the laundry to gather an armful — but letting go drops all of it in the same place.',
+                },
+              )}
             </li>
           </ul>
         </div>
 
         <div className="flex min-h-0 flex-col gap-3">
-          <BasketCard signedIn={signedIn} onPlay={onSolo} />
+          <BasketCard
+            signedIn={
+              signedIn
+            }
+            onPlay={
+              onSolo
+            }
+          />
           <div className="ls-panel-strong flex min-h-0 flex-col p-4 sm:p-6">
             <h3 className="mb-3 text-sm font-bold uppercase tracking-widest">
-              {t('leaderboard', { defaultValue: 'Leaderboard' })}
+              {t(
+                'leaderboard',
+                {
+                  defaultValue:
+                    'Leaderboard',
+                },
+              )}
             </h3>
-            <LeaderboardPanel refreshKey={leaderboardKey} />
+            <LeaderboardPanel
+              refreshKey={
+                leaderboardKey
+              }
+            />
           </div>
         </div>
       </div>

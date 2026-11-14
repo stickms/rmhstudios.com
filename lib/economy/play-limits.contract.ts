@@ -7,13 +7,28 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { playLimitsChangeSchema } from '@/lib/economy/play-limits-schema';
 import type { PlayLimitsView } from '@/lib/economy/play-limits.server';
 
-export const getPlayLimitsApi = endpoint<{ res: PlayLimitsView }>()({
-  method: 'GET',
-  path: '/api/settings/play-limits',
-});
+export const getPlayLimitsApi =
+  endpoint<{
+    res: PlayLimitsView;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/settings/play-limits',
+    },
+  );
 
 /** Tightening applies now; loosening waits 24 hours (the policy is in `applyChange`). */
-export const setPlayLimitsApi = endpoint<{
-  body: z.infer<typeof playLimitsChangeSchema>;
-  res: PlayLimitsView;
-}>()({ method: 'POST', path: '/api/settings/play-limits' });
+export const setPlayLimitsApi =
+  endpoint<{
+    body: z.infer<
+      typeof playLimitsChangeSchema
+    >;
+    res: PlayLimitsView;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/settings/play-limits',
+    },
+  );

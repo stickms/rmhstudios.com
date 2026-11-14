@@ -3,141 +3,353 @@
  * v1.3: 20 upgrades organized by category (Offense, Defense, Utility, Special).
  */
 
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
 import { useAltairMetaStore } from '@features/altair/engine/stores/meta-store';
-import { META_UPGRADES, MetaUpgradeDef } from '@features/altair/engine/data/meta-upgrades';
+import {
+  META_UPGRADES,
+  MetaUpgradeDef,
+} from '@features/altair/engine/data/meta-upgrades';
 import { useAltairToastStore } from '@features/altair/engine/stores/toast-store';
-import { Coins, Check } from 'lucide-react';
+import {
+  Coins,
+  Check,
+} from 'lucide-react';
 
-const UPGRADE_CATEGORIES: Record<string, string> = {
-  meta_max_hp: 'Offense',
-  meta_hp_regen: 'Offense',
-  meta_might: 'Offense',
-  meta_haste: 'Offense',
-  meta_piercing: 'Offense',
-  meta_move_speed: 'Defense',
-  meta_armor: 'Defense',
-  meta_tenacity: 'Defense',
-  meta_endurance: 'Defense',
-  meta_pickup_range: 'Utility',
-  meta_growth: 'Utility',
-  meta_luck: 'Utility',
-  meta_greed: 'Utility',
-  meta_reroll: 'Utility',
-  meta_banish: 'Utility',
-  meta_scavenger: 'Utility',
-  meta_catalyst_affinity: 'Utility',
-  meta_revival: 'Special',
-  meta_extra_choice: 'Special',
-  meta_arsenal: 'Special',
-};
+const UPGRADE_CATEGORIES: Record<
+  string,
+  string
+> =
+  {
+    meta_max_hp:
+      'Offense',
+    meta_hp_regen:
+      'Offense',
+    meta_might:
+      'Offense',
+    meta_haste:
+      'Offense',
+    meta_piercing:
+      'Offense',
+    meta_move_speed:
+      'Defense',
+    meta_armor:
+      'Defense',
+    meta_tenacity:
+      'Defense',
+    meta_endurance:
+      'Defense',
+    meta_pickup_range:
+      'Utility',
+    meta_growth:
+      'Utility',
+    meta_luck:
+      'Utility',
+    meta_greed:
+      'Utility',
+    meta_reroll:
+      'Utility',
+    meta_banish:
+      'Utility',
+    meta_scavenger:
+      'Utility',
+    meta_catalyst_affinity:
+      'Utility',
+    meta_revival:
+      'Special',
+    meta_extra_choice:
+      'Special',
+    meta_arsenal:
+      'Special',
+  };
 
-const CATEGORY_ORDER = ['Offense', 'Defense', 'Utility', 'Special'];
+const CATEGORY_ORDER =
+  [
+    'Offense',
+    'Defense',
+    'Utility',
+    'Special',
+  ];
 
 interface MetaShopScreenProps {
   onBack: () => void;
 }
 
-export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
-  const { t } = useTranslation("c-altair");
-  const coins = useAltairMetaStore((s) => s.coins);
-  const upgrades = useAltairMetaStore((s) => s.upgrades);
-  const purchaseUpgrade = useAltairMetaStore((s) => s.purchaseUpgrade);
-  const addToast = useAltairToastStore((s) => s.addToast);
+export default function MetaShopScreen({
+  onBack,
+}: MetaShopScreenProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-altair',
+    );
+  const coins =
+    useAltairMetaStore(
+      (
+        s,
+      ) =>
+        s.coins,
+    );
+  const upgrades =
+    useAltairMetaStore(
+      (
+        s,
+      ) =>
+        s.upgrades,
+    );
+  const purchaseUpgrade =
+    useAltairMetaStore(
+      (
+        s,
+      ) =>
+        s.purchaseUpgrade,
+    );
+  const addToast =
+    useAltairToastStore(
+      (
+        s,
+      ) =>
+        s.addToast,
+    );
 
-  const handlePurchase = (id: string, name: string) => {
-    const success = purchaseUpgrade(id);
-    if (success) {
-      addToast(t("upgraded-name", { defaultValue: "Upgraded {{name}}!", name }), 'success');
-    } else {
-      addToast(t("not-enough-coins", { defaultValue: "Not enough coins!" }), 'error');
-    }
-  };
+  const handlePurchase =
+    (
+      id: string,
+      name: string,
+    ) => {
+      const success =
+        purchaseUpgrade(
+          id,
+        );
+      if (
+        success
+      ) {
+        addToast(
+          t(
+            'upgraded-name',
+            {
+              defaultValue:
+                'Upgraded {{name}}!',
+              name,
+            },
+          ),
+          'success',
+        );
+      } else {
+        addToast(
+          t(
+            'not-enough-coins',
+            {
+              defaultValue:
+                'Not enough coins!',
+            },
+          ),
+          'error',
+        );
+      }
+    };
 
   return (
     <div className="altair-scan flex flex-col flex-1 px-4 pt-4 pb-12 max-w-2xl w-full mx-auto">
       {/* Coin balance */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-(--altair-text)">{t("meta-shop-title", { defaultValue: "Meta Shop" })}</h2>
+        <h2 className="text-2xl font-bold text-(--altair-text)">
+          {t(
+            'meta-shop-title',
+            {
+              defaultValue:
+                'Meta Shop',
+            },
+          )}
+        </h2>
         <div className="flex items-center gap-2 px-4 py-2 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-warning)/30">
-          <Coins size={18} className="text-(--altair-warning)" />
-          <span className="text-lg font-bold text-(--altair-warning)">{coins}</span>
+          <Coins
+            size={
+              18
+            }
+            className="text-(--altair-warning)"
+          />
+          <span className="text-lg font-bold text-(--altair-warning)">
+            {
+              coins
+            }
+          </span>
         </div>
       </div>
 
       {/* Upgrade grid by category */}
-      {CATEGORY_ORDER.map((category) => {
-        const categoryUpgrades = META_UPGRADES.filter(
-          (def) => (UPGRADE_CATEGORIES[def.id] ?? 'Utility') === category,
-        );
-        if (categoryUpgrades.length === 0) return null;
-        return (
-          <div key={category} className="mb-6">
-            <h3 className="text-sm font-semibold text-(--altair-text) mb-3">{category}</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {categoryUpgrades.map((def) => {
-                const currentLevel = upgrades[def.id] || 0;
-                const isMaxed = currentLevel >= def.maxLevel;
-                const nextCost = isMaxed ? 0 : def.costs[currentLevel];
-                const canAfford = coins >= nextCost;
-
-                return (
-                  <div
-                    key={def.id}
-                    className={`p-4 rounded-(--altair-radius-lg) border transition-colors ${
+      {CATEGORY_ORDER.map(
+        (
+          category,
+        ) => {
+          const categoryUpgrades =
+            META_UPGRADES.filter(
+              (
+                def,
+              ) =>
+                (UPGRADE_CATEGORIES[
+                  def
+                    .id
+                ] ??
+                  'Utility') ===
+                category,
+            );
+          if (
+            categoryUpgrades.length ===
+            0
+          )
+            return null;
+          return (
+            <div
+              key={
+                category
+              }
+              className="mb-6"
+            >
+              <h3 className="text-sm font-semibold text-(--altair-text) mb-3">
+                {
+                  category
+                }
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {categoryUpgrades.map(
+                  (
+                    def,
+                  ) => {
+                    const currentLevel =
+                      upgrades[
+                        def
+                          .id
+                      ] ||
+                      0;
+                    const isMaxed =
+                      currentLevel >=
+                      def.maxLevel;
+                    const nextCost =
                       isMaxed
-                        ? 'border-(--altair-success)/30 bg-(--altair-success-dim)'
-                        : 'border-(--altair-border) bg-(--altair-surface) hover:bg-(--altair-surface-hover)'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-semibold text-sm text-(--altair-text)">{def.name}</h3>
-                        <p className="text-xs text-(--altair-text-muted) mt-0.5">{def.description}</p>
-                      </div>
-                      {isMaxed && <Check size={16} className="text-(--altair-success) shrink-0" />}
-                    </div>
+                        ? 0
+                        : def
+                            .costs[
+                            currentLevel
+                          ];
+                    const canAfford =
+                      coins >=
+                      nextCost;
 
-                    {/* Level dots */}
-                    <div className="flex gap-1 mb-3">
-                      {Array.from({ length: def.maxLevel }).map((_, i) => (
-                        <div
-                          key={i}
-                          className={`h-1.5 flex-1 rounded-full ${
-                            i < currentLevel ? 'bg-(--altair-accent)' : 'bg-(--altair-border)'
-                          }`}
-                        />
-                      ))}
-                    </div>
-
-                    {!isMaxed && (
-                      <button
-                        onClick={() => handlePurchase(def.id, def.name)}
-                        disabled={!canAfford}
-                        className={`w-full py-2 pointer-coarse:min-h-11 rounded-(--altair-radius) text-sm font-semibold transition-colors ${
-                          canAfford
-                            ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-(--altair-accent-fg)'
-                            : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
+                    return (
+                      <div
+                        key={
+                          def.id
+                        }
+                        className={`p-4 rounded-(--altair-radius-lg) border transition-colors ${
+                          isMaxed
+                            ? 'border-(--altair-success)/30 bg-(--altair-success-dim)'
+                            : 'border-(--altair-border) bg-(--altair-surface) hover:bg-(--altair-surface-hover)'
                         }`}
                       >
-                        {t("cost-coins", { defaultValue: "{{count}} coins", count: nextCost })}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-semibold text-sm text-(--altair-text)">
+                              {
+                                def.name
+                              }
+                            </h3>
+                            <p className="text-xs text-(--altair-text-muted) mt-0.5">
+                              {
+                                def.description
+                              }
+                            </p>
+                          </div>
+                          {isMaxed && (
+                            <Check
+                              size={
+                                16
+                              }
+                              className="text-(--altair-success) shrink-0"
+                            />
+                          )}
+                        </div>
+
+                        {/* Level dots */}
+                        <div className="flex gap-1 mb-3">
+                          {Array.from(
+                            {
+                              length:
+                                def.maxLevel,
+                            },
+                          ).map(
+                            (
+                              _,
+                              i,
+                            ) => (
+                              <div
+                                key={
+                                  i
+                                }
+                                className={`h-1.5 flex-1 rounded-full ${
+                                  i <
+                                  currentLevel
+                                    ? 'bg-(--altair-accent)'
+                                    : 'bg-(--altair-border)'
+                                }`}
+                              />
+                            ),
+                          )}
+                        </div>
+
+                        {!isMaxed && (
+                          <button
+                            onClick={() =>
+                              handlePurchase(
+                                def.id,
+                                def.name,
+                              )
+                            }
+                            disabled={
+                              !canAfford
+                            }
+                            className={`w-full py-2 pointer-coarse:min-h-11 rounded-(--altair-radius) text-sm font-semibold transition-colors ${
+                              canAfford
+                                ? 'bg-(--altair-accent) hover:bg-(--altair-accent-hover) text-(--altair-accent-fg)'
+                                : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
+                            }`}
+                          >
+                            {t(
+                              'cost-coins',
+                              {
+                                defaultValue:
+                                  '{{count}} coins',
+                                count:
+                                  nextCost,
+                              },
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  },
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        },
+      )}
 
       {/* Back button */}
       <button
-        onClick={onBack}
+        onClick={
+          onBack
+        }
         data-altair-sfx="menu_back"
         className="mt-auto py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
       >
-        {t("back", { defaultValue: "Back" })}
+        {t(
+          'back',
+          {
+            defaultValue:
+              'Back',
+          },
+        )}
       </button>
     </div>
   );

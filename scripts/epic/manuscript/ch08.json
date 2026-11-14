@@ -6,8 +6,14 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": ["西行人獨踏荒草", "忘川水深問無聲"],
-    "en": ["Westward the lone man treads the withered grass", "The River of Forgetting runs deep; his questions find no voice"]
+    "zh": [
+      "西行人獨踏荒草",
+      "忘川水深問無聲"
+    ],
+    "en": [
+      "Westward the lone man treads the withered grass",
+      "The River of Forgetting runs deep; his questions find no voice"
+    ]
   },
   "passages": [
     {

@@ -11,140 +11,346 @@
  *   onVote: (minigameId: string) => void — Callback when user votes
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { Timer, Gamepad2 } from 'lucide-react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
+import {
+  Timer,
+  Gamepad2,
+} from 'lucide-react';
 import { getSocket } from '@/lib/rmhbox/socket';
 import { S2C } from '@/lib/rmhbox/events';
 import type { VoteCandidate } from '@/lib/rmhbox/types';
 import { MINIGAME_ICONS } from './minigame-icons';
 
 /** Resolve a minigame icon string to a Lucide component, falling back to emoji or Gamepad2 */
-function GameIcon({ icon, className }: { icon: string; className?: string }) {
-  const LucideIcon = MINIGAME_ICONS[icon];
-  if (LucideIcon) return <LucideIcon className={className} />;
-  if (/^\p{Emoji}/u.test(icon)) return <span className={className}>{icon}</span>;
-  return <Gamepad2 className={className} />;
+function GameIcon({
+  icon,
+  className,
+}: {
+  icon: string;
+  className?: string;
+}) {
+  const LucideIcon =
+    MINIGAME_ICONS[
+      icon
+    ];
+  if (
+    LucideIcon
+  )
+    return (
+      <LucideIcon
+        className={
+          className
+        }
+      />
+    );
+  if (
+    /^\p{Emoji}/u.test(
+      icon,
+    )
+  )
+    return (
+      <span
+        className={
+          className
+        }
+      >
+        {
+          icon
+        }
+      </span>
+    );
+  return (
+    <Gamepad2
+      className={
+        className
+      }
+    />
+  );
 }
 
 interface GameVotingProps {
   candidates: VoteCandidate[];
   durationSeconds: number;
   endsAt: number;
-  onVote: (minigameId: string) => void;
+  onVote: (
+    minigameId: string,
+  ) => void;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  word: 'bg-app-info/20 text-app-info',
-  trivia: 'bg-app-success/20 text-app-success',
-  action: 'bg-app-danger/20 text-app-danger',
-  creative: 'bg-app-rare/20 text-app-rare',
-};
+const CATEGORY_COLORS: Record<
+  string,
+  string
+> =
+  {
+    word: 'bg-app-info/20 text-app-info',
+    trivia:
+      'bg-app-success/20 text-app-success',
+    action:
+      'bg-app-danger/20 text-app-danger',
+    creative:
+      'bg-app-rare/20 text-app-rare',
+  };
 
-export default function GameVoting({ candidates, durationSeconds, endsAt, onVote }: GameVotingProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [currentEndsAt, setCurrentEndsAt] = useState(endsAt);
-  const [remaining, setRemaining] = useState(durationSeconds);
-  const [tallies, setTallies] = useState<Record<string, number>>({});
+export default function GameVoting({
+  candidates,
+  durationSeconds,
+  endsAt,
+  onVote,
+}: GameVotingProps) {
+  const [
+    selectedId,
+    setSelectedId,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const [
+    currentEndsAt,
+    setCurrentEndsAt,
+  ] =
+    useState(
+      endsAt,
+    );
+  const [
+    remaining,
+    setRemaining,
+  ] =
+    useState(
+      durationSeconds,
+    );
+  const [
+    tallies,
+    setTallies,
+  ] =
+    useState<
+      Record<
+        string,
+        number
+      >
+    >(
+      {},
+    );
 
   // Sync endsAt prop changes
   useEffect(() => {
-    setCurrentEndsAt(endsAt);
-  }, [endsAt]);
+    setCurrentEndsAt(
+      endsAt,
+    );
+  }, [
+    endsAt,
+  ]);
 
   // Countdown timer
   useEffect(() => {
-    const tick = () => {
-      const left = Math.max(0, Math.ceil((currentEndsAt - Date.now()) / 1000));
-      setRemaining(left);
-    };
+    const tick =
+      () => {
+        const left =
+          Math.max(
+            0,
+            Math.ceil(
+              (currentEndsAt -
+                Date.now()) /
+                1000,
+            ),
+          );
+        setRemaining(
+          left,
+        );
+      };
     tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [currentEndsAt]);
+    const id =
+      setInterval(
+        tick,
+        1000,
+      );
+    return () =>
+      clearInterval(
+        id,
+      );
+  }, [
+    currentEndsAt,
+  ]);
 
   // Listen for vote updates
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+    const socket =
+      getSocket();
+    if (
+      !socket
+    )
+      return;
 
-    const handler = (data: { tallies: Record<string, number>; endsAt?: number }) => {
-      setTallies(data.tallies);
-      if (data.endsAt != null) {
-        setCurrentEndsAt(data.endsAt);
-      }
+    const handler =
+      (data: {
+        tallies: Record<
+          string,
+          number
+        >;
+        endsAt?: number;
+      }) => {
+        setTallies(
+          data.tallies,
+        );
+        if (
+          data.endsAt !=
+          null
+        ) {
+          setCurrentEndsAt(
+            data.endsAt,
+          );
+        }
+      };
+    socket.on(
+      S2C.GAME_VOTE_UPDATE,
+      handler,
+    );
+    return () => {
+      socket.off(
+        S2C.GAME_VOTE_UPDATE,
+        handler,
+      );
     };
-    socket.on(S2C.GAME_VOTE_UPDATE, handler);
-    return () => { socket.off(S2C.GAME_VOTE_UPDATE, handler); };
   }, []);
 
-  const handleVote = useCallback(
-    (id: string) => {
-      setSelectedId(id);
-      onVote(id);
-    },
-    [onVote],
-  );
+  const handleVote =
+    useCallback(
+      (
+        id: string,
+      ) => {
+        setSelectedId(
+          id,
+        );
+        onVote(
+          id,
+        );
+      },
+      [
+        onVote,
+      ],
+    );
 
-  const maxTally = Math.max(1, ...Object.values(tallies));
+  const maxTally =
+    Math.max(
+      1,
+      ...Object.values(
+        tallies,
+      ),
+    );
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-4">
       {/* Timer */}
       <div className="flex items-center justify-center gap-2 text-lg font-bold text-app-text">
         <Timer className="h-5 w-5 text-app-accent" />
-        <span className={remaining <= 10 ? 'text-app-danger' : ''}>
-          {remaining}s
+        <span
+          className={
+            remaining <=
+            10
+              ? 'text-app-danger'
+              : ''
+          }
+        >
+          {
+            remaining
+          }
+          s
         </span>
       </div>
 
       {/* Candidate cards */}
       <div className="grid gap-3">
-        {candidates.map((c) => {
-          const isSelected = selectedId === c.minigameId;
-          const tally = tallies[c.minigameId] ?? 0;
+        {candidates.map(
+          (
+            c,
+          ) => {
+            const isSelected =
+              selectedId ===
+              c.minigameId;
+            const tally =
+              tallies[
+                c
+                  .minigameId
+              ] ??
+              0;
 
-          return (
-            <button
-              key={c.minigameId}
-              onClick={() => handleVote(c.minigameId)}
-              className={`surface-card relative overflow-hidden rounded-app border p-4 text-left transition-colors ${
-                isSelected
-                  ? 'border-app-accent bg-app-accent/10 ring-2 ring-app-accent'
-                  : 'border-app-border hover:bg-app-surface-hover'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                {/* Icon */}
-                <GameIcon icon={c.icon} className="h-6 w-6 shrink-0 text-app-accent" />
+            return (
+              <button
+                key={
+                  c.minigameId
+                }
+                onClick={() =>
+                  handleVote(
+                    c.minigameId,
+                  )
+                }
+                className={`surface-card relative overflow-hidden rounded-app border p-4 text-left transition-colors ${
+                  isSelected
+                    ? 'border-app-accent bg-app-accent/10 ring-2 ring-app-accent'
+                    : 'border-app-border hover:bg-app-surface-hover'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Icon */}
+                  <GameIcon
+                    icon={
+                      c.icon
+                    }
+                    className="h-6 w-6 shrink-0 text-app-accent"
+                  />
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-app-text">{c.displayName}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${CATEGORY_COLORS[c.category] ?? 'bg-app-surface-hover/20 text-app-text-muted'}`}>
-                      {c.category}
-                    </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-app-text">
+                        {
+                          c.displayName
+                        }
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${CATEGORY_COLORS[c.category] ?? 'bg-app-surface-hover/20 text-app-text-muted'}`}
+                      >
+                        {
+                          c.category
+                        }
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-app-text-muted">
+                      {
+                        c.description
+                      }
+                    </p>
                   </div>
-                  <p className="mt-0.5 text-xs text-app-text-muted">{c.description}</p>
+
+                  {/* Vote count */}
+                  {tally >
+                    0 && (
+                    <span className="shrink-0 rounded-full bg-app-accent/20 px-2 py-0.5 text-xs font-bold text-app-accent">
+                      {
+                        tally
+                      }
+                    </span>
+                  )}
                 </div>
 
-                {/* Vote count */}
-                {tally > 0 && (
-                  <span className="shrink-0 rounded-full bg-app-accent/20 px-2 py-0.5 text-xs font-bold text-app-accent">
-                    {tally}
-                  </span>
-                )}
-              </div>
-
-              {/* Tally bar */}
-              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-app-border">
-                <div
-                  className="h-full bg-app-accent w-full origin-left transition-transform duration-300"
-                  style={{ transform: `scaleX(${((tally / maxTally) * 100) / 100})` }}
-                />
-              </div>
-            </button>
-          );
-        })}
+                {/* Tally bar */}
+                <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-app-border">
+                  <div
+                    className="h-full bg-app-accent w-full origin-left transition-transform duration-300"
+                    style={{
+                      transform: `scaleX(${((tally / maxTally) * 100) / 100})`,
+                    }}
+                  />
+                </div>
+              </button>
+            );
+          },
+        )}
       </div>
     </div>
   );

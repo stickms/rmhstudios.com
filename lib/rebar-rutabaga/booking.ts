@@ -27,11 +27,22 @@
  */
 
 /** The two seatings, as the page prints them. */
-export const SEATINGS = ['17:30', '20:45'] as const;
-export type Seating = (typeof SEATINGS)[number];
+export const SEATINGS =
+  [
+    '17:30',
+    '20:45',
+  ] as const;
+export type Seating =
+  (typeof SEATINGS)[number];
 
 /** Service runs Wednesday (3) through Saturday (6), by `Date#getUTCDay`. */
-export const SERVICE_DAYS = [3, 4, 5, 6] as const;
+export const SERVICE_DAYS =
+  [
+    3,
+    4,
+    5,
+    6,
+  ] as const;
 
 /**
  * Covers per seating.
@@ -47,36 +58,97 @@ export const COVERS_PER_SEATING = 22;
 export const MAX_PARTY_SIZE = 6;
 
 /** The restaurant's own timezone. */
-export const RESTAURANT_TZ = 'Europe/Stockholm';
+export const RESTAURANT_TZ =
+  'Europe/Stockholm';
 
 /** A calendar day, no time and no zone: `YYYY-MM-DD`. */
-export type ServiceDate = string;
+export type ServiceDate =
+  string;
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_RE =
+  /^\d{4}-\d{2}-\d{2}$/;
 
 /** Is this a well-formed `YYYY-MM-DD` that names a real day? */
-export function isServiceDateShape(value: string): value is ServiceDate {
-  if (!DATE_RE.test(value)) return false;
-  const d = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+export function isServiceDateShape(
+  value: string,
+): value is ServiceDate {
+  if (
+    !DATE_RE.test(
+      value,
+    )
+  )
+    return false;
+  const d =
+    new Date(
+      `${value}T00:00:00.000Z`,
+    );
+  return (
+    !Number.isNaN(
+      d.getTime(),
+    ) &&
+    d
+      .toISOString()
+      .slice(
+        0,
+        10,
+      ) ===
+      value
+  );
 }
 
 /** Does the restaurant serve on this date at all? */
-export function isServiceDay(date: ServiceDate): boolean {
-  if (!isServiceDateShape(date)) return false;
-  const day = new Date(`${date}T00:00:00.000Z`).getUTCDay();
-  return (SERVICE_DAYS as readonly number[]).includes(day);
+export function isServiceDay(
+  date: ServiceDate,
+): boolean {
+  if (
+    !isServiceDateShape(
+      date,
+    )
+  )
+    return false;
+  const day =
+    new Date(
+      `${date}T00:00:00.000Z`,
+    ).getUTCDay();
+  return (
+    SERVICE_DAYS as readonly number[]
+  ).includes(
+    day,
+  );
 }
 
 /** `YYYY-MM` for a service date. */
-function monthOf(date: ServiceDate): string {
-  return date.slice(0, 7);
+function monthOf(
+  date: ServiceDate,
+): string {
+  return date.slice(
+    0,
+    7,
+  );
 }
 
 /** Add `n` months to a `YYYY-MM`, carrying the year. */
-function addMonths(ym: string, n: number): string {
-  const [y, m] = ym.split('-').map(Number);
-  const zero = y * 12 + (m - 1) + n;
+function addMonths(
+  ym: string,
+  n: number,
+): string {
+  const [
+    y,
+    m,
+  ] =
+    ym
+      .split(
+        '-',
+      )
+      .map(
+        Number,
+      );
+  const zero =
+    y *
+      12 +
+    (m -
+      1) +
+    n;
   return `${String(Math.floor(zero / 12)).padStart(4, '0')}-${String((zero % 12) + 1).padStart(2, '0')}`;
 }
 
@@ -88,55 +160,154 @@ function addMonths(ym: string, n: number): string {
  * January is already 1 February in Gothenburg, and that is the moment the
  * window is supposed to turn over.
  */
-export function bookableMonth(now: Date = new Date()): string {
-  const local = new Intl.DateTimeFormat('en-CA', {
-    timeZone: RESTAURANT_TZ,
-    year: 'numeric',
-    month: '2-digit',
-  }).format(now);
-  return addMonths(local.slice(0, 7), 2);
+export function bookableMonth(
+  now: Date = new Date(),
+): string {
+  const local =
+    new Intl.DateTimeFormat(
+      'en-CA',
+      {
+        timeZone:
+          RESTAURANT_TZ,
+        year: 'numeric',
+        month:
+          '2-digit',
+      },
+    ).format(
+      now,
+    );
+  return addMonths(
+    local.slice(
+      0,
+      7,
+    ),
+    2,
+  );
 }
 
 /** Why a requested date cannot be booked, or null when it can. */
-export type BookingRefusal = 'malformed' | 'not-a-service-day' | 'outside-window';
+export type BookingRefusal =
+  | 'malformed'
+  | 'not-a-service-day'
+  | 'outside-window';
 
 /**
  * Check a date against every rule the page states. Order matters only for which
  * message the guest is shown first, and shape errors come first because the
  * other two questions are meaningless for a string that is not a date.
  */
-export function checkServiceDate(date: string, now: Date = new Date()): BookingRefusal | null {
-  if (!isServiceDateShape(date)) return 'malformed';
-  if (!isServiceDay(date)) return 'not-a-service-day';
-  if (monthOf(date) !== bookableMonth(now)) return 'outside-window';
+export function checkServiceDate(
+  date: string,
+  now: Date = new Date(),
+): BookingRefusal | null {
+  if (
+    !isServiceDateShape(
+      date,
+    )
+  )
+    return 'malformed';
+  if (
+    !isServiceDay(
+      date,
+    )
+  )
+    return 'not-a-service-day';
+  if (
+    monthOf(
+      date,
+    ) !==
+    bookableMonth(
+      now,
+    )
+  )
+    return 'outside-window';
   return null;
 }
 
 /** Every servable date in the currently open month, in order. */
-export function bookableDates(now: Date = new Date()): ServiceDate[] {
-  const ym = bookableMonth(now);
-  const [y, m] = ym.split('-').map(Number);
+export function bookableDates(
+  now: Date = new Date(),
+): ServiceDate[] {
+  const ym =
+    bookableMonth(
+      now,
+    );
+  const [
+    y,
+    m,
+  ] =
+    ym
+      .split(
+        '-',
+      )
+      .map(
+        Number,
+      );
   // Day 0 of the NEXT month is the last day of this one.
-  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  const out: ServiceDate[] = [];
-  for (let d = 1; d <= days; d++) {
+  const days =
+    new Date(
+      Date.UTC(
+        y,
+        m,
+        0,
+      ),
+    ).getUTCDate();
+  const out: ServiceDate[] =
+    [];
+  for (
+    let d = 1;
+    d <=
+    days;
+    d++
+  ) {
     const date = `${ym}-${String(d).padStart(2, '0')}`;
-    if (isServiceDay(date)) out.push(date);
+    if (
+      isServiceDay(
+        date,
+      )
+    )
+      out.push(
+        date,
+      );
   }
   return out;
 }
 
 /** Is this one of the two seatings? */
-export function isSeating(value: string): value is Seating {
-  return (SEATINGS as readonly string[]).includes(value);
+export function isSeating(
+  value: string,
+): value is Seating {
+  return (
+    SEATINGS as readonly string[]
+  ).includes(
+    value,
+  );
 }
 
 /** Remaining covers, floored at zero so a manual overbook cannot read negative. */
-export function seatsLeft(booked: number): number {
-  return Math.max(0, COVERS_PER_SEATING - booked);
+export function seatsLeft(
+  booked: number,
+): number {
+  return Math.max(
+    0,
+    COVERS_PER_SEATING -
+      booked,
+  );
 }
 
 /** Can a party of `size` still be seated against `booked` covers? */
-export function fits(booked: number, size: number): boolean {
-  return size >= 1 && size <= MAX_PARTY_SIZE && seatsLeft(booked) >= size;
+export function fits(
+  booked: number,
+  size: number,
+): boolean {
+  return (
+    size >=
+      1 &&
+    size <=
+      MAX_PARTY_SIZE &&
+    seatsLeft(
+      booked,
+    ) >=
+      size
+  );
 }

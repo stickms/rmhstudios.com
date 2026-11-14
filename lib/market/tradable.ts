@@ -13,7 +13,10 @@
  * are untradable until deliberately added to `TRADABLE_KINDS`.
  */
 
-import { getShopItem, type ShopItemKind } from '@/lib/shop/catalog';
+import {
+  getShopItem,
+  type ShopItemKind,
+} from '@/lib/shop/catalog';
 
 // ─── Constants (the fraud/economy knobs) ────────────────────────────────────
 
@@ -52,12 +55,15 @@ export const ANOMALY_MIN_SAMPLES = 3;
  * add a kind here only after confirming none of its items are membership- or
  * achievement-linked.
  */
-export const TRADABLE_KINDS: ReadonlySet<ShopItemKind> = new Set<ShopItemKind>([
-  'NAME_COLOR',
-  'AVATAR_FRAME',
-  'BADGE',
-  'POST_FLAIR',
-]);
+export const TRADABLE_KINDS: ReadonlySet<ShopItemKind> =
+  new Set<ShopItemKind>(
+    [
+      'NAME_COLOR',
+      'AVATAR_FRAME',
+      'BADGE',
+      'POST_FLAIR',
+    ],
+  );
 
 /**
  * True iff `itemId` is a real catalog item of a tradable kind that is *not*
@@ -66,16 +72,38 @@ export const TRADABLE_KINDS: ReadonlySet<ShopItemKind> = new Set<ShopItemKind>([
  *  - THEME / BANNER / PET → DENY
  *  - any item with `requiresTier` (membership-adjacent) → DENY
  */
-export function isTradable(itemId: string): boolean {
-  const item = getShopItem(itemId);
-  if (!item) return false; // not a shop item → never tradable
-  if (item.requiresTier) return false; // membership/tier-gated → never tradable
-  return TRADABLE_KINDS.has(item.kind);
+export function isTradable(
+  itemId: string,
+): boolean {
+  const item =
+    getShopItem(
+      itemId,
+    );
+  if (
+    !item
+  )
+    return false; // not a shop item → never tradable
+  if (
+    item.requiresTier
+  )
+    return false; // membership/tier-gated → never tradable
+  return TRADABLE_KINDS.has(
+    item.kind,
+  );
 }
 
 /** The set of every tradable catalog id (handy for building the "Sell" list). */
-export function tradableItemIds(ids: readonly string[]): string[] {
-  return ids.filter((id) => isTradable(id));
+export function tradableItemIds(
+  ids: readonly string[],
+): string[] {
+  return ids.filter(
+    (
+      id,
+    ) =>
+      isTradable(
+        id,
+      ),
+  );
 }
 
 // ─── Pure economy math ──────────────────────────────────────────────────────
@@ -95,30 +123,105 @@ export interface FeeSplit {
  * burn is never larger than the nominal 10%. With `price ≥ MIN_PRICE (10)` the
  * fee is always ≥ 1 and proceeds are always ≥ 1 (both strictly positive).
  */
-export function marketFee(price: number): FeeSplit {
-  const fee = Math.floor((price * MARKET_FEE_BPS) / 10_000);
-  return { price, fee, proceeds: price - fee };
+export function marketFee(
+  price: number,
+): FeeSplit {
+  const fee =
+    Math.floor(
+      (price *
+        MARKET_FEE_BPS) /
+        10_000,
+    );
+  return {
+    price,
+    fee,
+    proceeds:
+      price -
+      fee,
+  };
 }
 
 /** The minimum listing price for an item, honoring the primary-shop floor. */
-export function minPriceFor(itemId: string): number {
-  const item = getShopItem(itemId);
-  const floor = item ? Math.ceil(item.price * SHOP_PRICE_FLOOR_FRACTION) : 0;
-  return Math.max(MIN_PRICE, floor);
+export function minPriceFor(
+  itemId: string,
+): number {
+  const item =
+    getShopItem(
+      itemId,
+    );
+  const floor =
+    item
+      ? Math.ceil(
+          item.price *
+            SHOP_PRICE_FLOOR_FRACTION,
+        )
+      : 0;
+  return Math.max(
+    MIN_PRICE,
+    floor,
+  );
 }
 
 /** True if `price` is within `[minPriceFor(itemId), MAX_PRICE]` and an integer. */
-export function isPriceInBounds(itemId: string, price: number): boolean {
-  if (!Number.isInteger(price)) return false;
-  return price >= minPriceFor(itemId) && price <= MAX_PRICE;
+export function isPriceInBounds(
+  itemId: string,
+  price: number,
+): boolean {
+  if (
+    !Number.isInteger(
+      price,
+    )
+  )
+    return false;
+  return (
+    price >=
+      minPriceFor(
+        itemId,
+      ) &&
+    price <=
+      MAX_PRICE
+  );
 }
 
 /** Median of a numeric list (returns 0 for an empty list). */
-export function median(values: readonly number[]): number {
-  if (values.length === 0) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+export function median(
+  values: readonly number[],
+): number {
+  if (
+    values.length ===
+    0
+  )
+    return 0;
+  const sorted =
+    [
+      ...values,
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        a -
+        b,
+    );
+  const mid =
+    Math.floor(
+      sorted.length /
+        2,
+    );
+  return sorted.length %
+    2 ===
+    0
+    ? (sorted[
+        mid -
+          1
+      ] +
+        sorted[
+          mid
+        ]) /
+        2
+    : sorted[
+        mid
+      ];
 }
 
 /**
@@ -127,9 +230,27 @@ export function median(values: readonly number[]): number {
  * `ANOMALY_MULTIPLIER×` their median. Such a purchase is frozen (HELD) for admin
  * review instead of releasing funds. Too little history ⇒ never anomalous.
  */
-export function isAnomalousPrice(price: number, recentSoldPrices: readonly number[]): boolean {
-  if (recentSoldPrices.length < ANOMALY_MIN_SAMPLES) return false;
-  const m = median(recentSoldPrices);
-  if (m <= 0) return false;
-  return price >= ANOMALY_MULTIPLIER * m;
+export function isAnomalousPrice(
+  price: number,
+  recentSoldPrices: readonly number[],
+): boolean {
+  if (
+    recentSoldPrices.length <
+    ANOMALY_MIN_SAMPLES
+  )
+    return false;
+  const m =
+    median(
+      recentSoldPrices,
+    );
+  if (
+    m <=
+    0
+  )
+    return false;
+  return (
+    price >=
+    ANOMALY_MULTIPLIER *
+      m
+  );
 }

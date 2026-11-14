@@ -20,25 +20,69 @@
  * upgrade that changes the tag set flows through untouched. The only thing that
  * differs from `HeadContent` is {@link deprioritizeModulePreloads}.
  */
-import { Asset, type RouterManagedTag, useRouter, useTags } from '@tanstack/react-router';
+import {
+  Asset,
+  type RouterManagedTag,
+  useRouter,
+  useTags,
+} from '@tanstack/react-router';
 
 /** Adds `fetchPriority: 'low'` to modulepreload links; every other tag is returned as-is. */
-export function deprioritizeModulePreloads(tags: readonly RouterManagedTag[]): RouterManagedTag[] {
-  return tags.map((tag) =>
-    tag.tag === 'link' && tag.attrs?.rel === 'modulepreload' && tag.attrs.fetchPriority === undefined
-      ? { ...tag, attrs: { ...tag.attrs, fetchPriority: 'low' } }
-      : tag,
+export function deprioritizeModulePreloads(
+  tags: readonly RouterManagedTag[],
+): RouterManagedTag[] {
+  return tags.map(
+    (
+      tag,
+    ) =>
+      tag.tag ===
+        'link' &&
+      tag
+        .attrs
+        ?.rel ===
+        'modulepreload' &&
+      tag
+        .attrs
+        .fetchPriority ===
+        undefined
+        ? {
+            ...tag,
+            attrs:
+              {
+                ...tag.attrs,
+                fetchPriority:
+                  'low',
+              },
+          }
+        : tag,
   );
 }
 
 export function SiteHeadContent() {
-  const tags = deprioritizeModulePreloads(useTags());
-  const nonce = useRouter().options.ssr?.nonce;
+  const tags =
+    deprioritizeModulePreloads(
+      useTags(),
+    );
+  const nonce =
+    useRouter()
+      .options
+      .ssr
+      ?.nonce;
   return (
     <>
-      {tags.map((tag) => (
-        <Asset {...tag} key={`tsr-meta-${JSON.stringify(tag)}`} nonce={nonce} />
-      ))}
+      {tags.map(
+        (
+          tag,
+        ) => (
+          <Asset
+            {...tag}
+            key={`tsr-meta-${JSON.stringify(tag)}`}
+            nonce={
+              nonce
+            }
+          />
+        ),
+      )}
     </>
   );
 }

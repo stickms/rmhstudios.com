@@ -24,9 +24,21 @@
  * term, because the one thing this stack must never do is produce a number the
  * player cannot take apart.
  */
-import type { BlessingDef, GameState, SourceId } from './types';
-import { BLESSINGS, BLESSING_MAP } from './data/blessings';
-import { SOURCES, SOURCE_MAP, COST_GROWTH, REVEAL_SHARE } from './data/sources';
+import type {
+  BlessingDef,
+  GameState,
+  SourceId,
+} from './types';
+import {
+  BLESSINGS,
+  BLESSING_MAP,
+} from './data/blessings';
+import {
+  SOURCES,
+  SOURCE_MAP,
+  COST_GROWTH,
+  REVEAL_SHARE,
+} from './data/sources';
 import {
   GLOBE_JPS_FACTOR,
   GLOBE_REVEAL_SHARE,
@@ -35,9 +47,20 @@ import {
   globeCost,
   nextGlobe,
 } from './data/globes';
-import { bowlReady, bowlUnlocked } from './bowling';
-import { LEGACY, LEGACY_MAP, GRACE_DIVISOR, MIN_ASCEND_JOY } from './data/legacy';
-import { DEVOTION_PER_TROPHY, DEVOTION_TROPHIES } from './data/trophies';
+import {
+  bowlReady,
+  bowlUnlocked,
+} from './bowling';
+import {
+  LEGACY,
+  LEGACY_MAP,
+  GRACE_DIVISOR,
+  MIN_ASCEND_JOY,
+} from './data/legacy';
+import {
+  DEVOTION_PER_TROPHY,
+  DEVOTION_TROPHIES,
+} from './data/trophies';
 import { gardenEffects } from './minigames/garden';
 import { choirEffects } from './minigames/choir';
 import { levelMultiplier } from './minigames/manna';
@@ -48,35 +71,76 @@ import { sinnerDrain } from './minigames/sinners';
    ══════════════════════════════════════════════════════════════════════════ */
 
 /** The blessings the player owns, as definitions. */
-function owned(state: GameState): BlessingDef[] {
-  const out: BlessingDef[] = [];
+function owned(
+  state: GameState,
+): BlessingDef[] {
+  const out: BlessingDef[] =
+    [];
   for (const id of state.blessings) {
-    const def = BLESSING_MAP[id];
-    if (def) out.push(def);
+    const def =
+      BLESSING_MAP[
+        id
+      ];
+    if (
+      def
+    )
+      out.push(
+        def,
+      );
   }
   return out;
 }
 
 /** Devotion: 4% per qualifying trophy. The Cherubim turn this into income. */
-export function computeDevotion(state: GameState): number {
+export function computeDevotion(
+  state: GameState,
+): number {
   let count = 0;
-  for (const id of state.trophies) if (DEVOTION_TROPHIES.has(id)) count++;
-  return count * DEVOTION_PER_TROPHY;
+  for (const id of state.trophies)
+    if (
+      DEVOTION_TROPHIES.has(
+        id,
+      )
+    )
+      count++;
+  return (
+    count *
+    DEVOTION_PER_TROPHY
+  );
 }
 
 /** Total Manna levels bought, across every source. */
-export function computeTotalLevels(state: GameState): number {
+export function computeTotalLevels(
+  state: GameState,
+): number {
   let total = 0;
-  for (const id of Object.keys(state.sourceLevels) as SourceId[]) {
-    total += state.sourceLevels[id] ?? 0;
+  for (const id of Object.keys(
+    state.sourceLevels,
+  ) as SourceId[]) {
+    total +=
+      state
+        .sourceLevels[
+        id
+      ] ??
+      0;
   }
   return total;
 }
 
 /** Total copies of everything. */
-export function computeTotalSources(state: GameState): number {
+export function computeTotalSources(
+  state: GameState,
+): number {
   let total = 0;
-  for (const id of Object.keys(state.sources) as SourceId[]) total += state.sources[id] ?? 0;
+  for (const id of Object.keys(
+    state.sources,
+  ) as SourceId[])
+    total +=
+      state
+        .sources[
+        id
+      ] ??
+      0;
   return total;
 }
 
@@ -84,8 +148,20 @@ export function computeTotalSources(state: GameState): number {
    Prices
    ══════════════════════════════════════════════════════════════════════════ */
 
-export function computeSourceCost(id: SourceId, alreadyOwned: number): number {
-  return Math.ceil(SOURCE_MAP[id].baseCost * Math.pow(COST_GROWTH, alreadyOwned));
+export function computeSourceCost(
+  id: SourceId,
+  alreadyOwned: number,
+): number {
+  return Math.ceil(
+    SOURCE_MAP[
+      id
+    ]
+      .baseCost *
+      Math.pow(
+        COST_GROWTH,
+        alreadyOwned,
+      ),
+  );
 }
 
 /**
@@ -93,10 +169,35 @@ export function computeSourceCost(id: SourceId, alreadyOwned: number): number {
  * 400 copies would otherwise be four hundred `Math.pow` calls per frame, and
  * the geometric sum is exact.
  */
-export function computeSourceCostN(id: SourceId, alreadyOwned: number, n: number): number {
-  if (n <= 0) return 0;
-  const base = SOURCE_MAP[id].baseCost * Math.pow(COST_GROWTH, alreadyOwned);
-  return Math.ceil((base * (Math.pow(COST_GROWTH, n) - 1)) / (COST_GROWTH - 1));
+export function computeSourceCostN(
+  id: SourceId,
+  alreadyOwned: number,
+  n: number,
+): number {
+  if (
+    n <=
+    0
+  )
+    return 0;
+  const base =
+    SOURCE_MAP[
+      id
+    ]
+      .baseCost *
+    Math.pow(
+      COST_GROWTH,
+      alreadyOwned,
+    );
+  return Math.ceil(
+    (base *
+      (Math.pow(
+        COST_GROWTH,
+        n,
+      ) -
+        1)) /
+      (COST_GROWTH -
+        1),
+  );
 }
 
 /**
@@ -104,21 +205,92 @@ export function computeSourceCostN(id: SourceId, alreadyOwned: number, n: number
  * by one — floating point on a geometric series is close but not exact, and an
  * off-by-one that lets a purchase go negative is worse than a spare `while`.
  */
-export function computeMaxAffordable(id: SourceId, alreadyOwned: number, joy: number): number {
-  if (joy <= 0) return 0;
-  const base = SOURCE_MAP[id].baseCost * Math.pow(COST_GROWTH, alreadyOwned);
-  if (joy < base) return 0;
-  const exact = Math.log((joy * (COST_GROWTH - 1)) / base + 1) / Math.log(COST_GROWTH);
-  let n = Math.max(0, Math.floor(exact));
-  while (n > 0 && computeSourceCostN(id, alreadyOwned, n) > joy) n--;
-  while (computeSourceCostN(id, alreadyOwned, n + 1) <= joy) n++;
+export function computeMaxAffordable(
+  id: SourceId,
+  alreadyOwned: number,
+  joy: number,
+): number {
+  if (
+    joy <=
+    0
+  )
+    return 0;
+  const base =
+    SOURCE_MAP[
+      id
+    ]
+      .baseCost *
+    Math.pow(
+      COST_GROWTH,
+      alreadyOwned,
+    );
+  if (
+    joy <
+    base
+  )
+    return 0;
+  const exact =
+    Math.log(
+      (joy *
+        (COST_GROWTH -
+          1)) /
+        base +
+        1,
+    ) /
+    Math.log(
+      COST_GROWTH,
+    );
+  let n =
+    Math.max(
+      0,
+      Math.floor(
+        exact,
+      ),
+    );
+  while (
+    n >
+      0 &&
+    computeSourceCostN(
+      id,
+      alreadyOwned,
+      n,
+    ) >
+      joy
+  )
+    n--;
+  while (
+    computeSourceCostN(
+      id,
+      alreadyOwned,
+      n +
+        1,
+    ) <=
+    joy
+  )
+    n++;
   return n;
 }
 
 /** How many the current buy-quantity setting would purchase. */
-export function computeBuyCount(state: GameState, id: SourceId): number {
-  const have = state.sources[id] ?? 0;
-  if (state.buyQty === 'max') return computeMaxAffordable(id, have, state.joy);
+export function computeBuyCount(
+  state: GameState,
+  id: SourceId,
+): number {
+  const have =
+    state
+      .sources[
+      id
+    ] ??
+    0;
+  if (
+    state.buyQty ===
+    'max'
+  )
+    return computeMaxAffordable(
+      id,
+      have,
+      state.joy,
+    );
   return state.buyQty;
 }
 
@@ -127,30 +299,76 @@ export function computeBuyCount(state: GameState, id: SourceId): number {
    ══════════════════════════════════════════════════════════════════════════ */
 
 /** How many globes are turning. Clamped, because a save is user-editable. */
-export function computeGlobes(state: GameState): number {
-  const held = Math.floor(state.globes ?? 1);
-  if (!Number.isFinite(held)) return 1;
-  return Math.max(1, Math.min(MAX_GLOBES, held));
+export function computeGlobes(
+  state: GameState,
+): number {
+  const held =
+    Math.floor(
+      state.globes ??
+        1,
+    );
+  if (
+    !Number.isFinite(
+      held,
+    )
+  )
+    return 1;
+  return Math.max(
+    1,
+    Math.min(
+      MAX_GLOBES,
+      held,
+    ),
+  );
 }
 
 /** What the globes multiply the rate by. ×1 with the one you were given. */
-export function computeGlobeMultiplier(state: GameState): number {
-  return Math.pow(GLOBE_JPS_FACTOR, computeGlobes(state) - 1);
+export function computeGlobeMultiplier(
+  state: GameState,
+): number {
+  return Math.pow(
+    GLOBE_JPS_FACTOR,
+    computeGlobes(
+      state,
+    ) -
+      1,
+  );
 }
 
 /** What the globes multiply a hand-offering by. */
-export function computeGlobeTouchMultiplier(state: GameState): number {
-  return Math.pow(GLOBE_TOUCH_FACTOR, computeGlobes(state) - 1);
+export function computeGlobeTouchMultiplier(
+  state: GameState,
+): number {
+  return Math.pow(
+    GLOBE_TOUCH_FACTOR,
+    computeGlobes(
+      state,
+    ) -
+      1,
+  );
 }
 
 /** Price of the next globe, or `Infinity` once the set is complete. */
-export function computeGlobeCost(state: GameState): number {
-  return globeCost(computeGlobes(state));
+export function computeGlobeCost(
+  state: GameState,
+): number {
+  return globeCost(
+    computeGlobes(
+      state,
+    ),
+  );
 }
 
 /** Whether the next globe can be bought right now. */
-export function computeGlobeAffordable(state: GameState): boolean {
-  return state.joy >= computeGlobeCost(state);
+export function computeGlobeAffordable(
+  state: GameState,
+): boolean {
+  return (
+    state.joy >=
+    computeGlobeCost(
+      state,
+    )
+  );
 }
 
 /**
@@ -160,10 +378,24 @@ export function computeGlobeAffordable(state: GameState): boolean {
  * lower bar — there is only ever one globe on offer, so it cannot crowd a list,
  * and seeing the next one coming is most of what makes it a goal.
  */
-export function computeGlobeVisible(state: GameState): boolean {
-  const next = nextGlobe(computeGlobes(state));
-  if (!next) return false;
-  return state.peakJoy >= next.cost * GLOBE_REVEAL_SHARE;
+export function computeGlobeVisible(
+  state: GameState,
+): boolean {
+  const next =
+    nextGlobe(
+      computeGlobes(
+        state,
+      ),
+    );
+  if (
+    !next
+  )
+    return false;
+  return (
+    state.peakJoy >=
+    next.cost *
+      GLOBE_REVEAL_SHARE
+  );
 }
 
 /**
@@ -174,11 +406,31 @@ export function computeGlobeVisible(state: GameState): boolean {
  * of the new sphere sitting there empty. Deterministic from the ladder order,
  * so a source does not hop between globes as the list grows.
  */
-export function computeSourceGlobe(state: GameState, id: SourceId): number {
-  const globes = computeGlobes(state);
-  const index = SOURCES.findIndex((s) => s.id === id);
-  if (index < 0) return 0;
-  return index % globes;
+export function computeSourceGlobe(
+  state: GameState,
+  id: SourceId,
+): number {
+  const globes =
+    computeGlobes(
+      state,
+    );
+  const index =
+    SOURCES.findIndex(
+      (
+        s,
+      ) =>
+        s.id ===
+        id,
+    );
+  if (
+    index <
+    0
+  )
+    return 0;
+  return (
+    index %
+    globes
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -186,25 +438,55 @@ export function computeSourceGlobe(state: GameState, id: SourceId): number {
    ══════════════════════════════════════════════════════════════════════════ */
 
 /** What the current boost multiplies the rate by. ×1 when there is none. */
-export function computeBowlMultiplier(state: GameState): number {
-  const bowl = state.bowl;
-  if (!bowl || bowl.remaining <= 0) return 1;
-  return Math.max(1, bowl.multiplier);
+export function computeBowlMultiplier(
+  state: GameState,
+): number {
+  const bowl =
+    state.bowl;
+  if (
+    !bowl ||
+    bowl.remaining <=
+      0
+  )
+    return 1;
+  return Math.max(
+    1,
+    bowl.multiplier,
+  );
 }
 
 /** Whether a boost is running — and therefore whether the hands are still. */
-export function computeBowlActive(state: GameState): boolean {
-  return (state.bowl?.remaining ?? 0) > 0;
+export function computeBowlActive(
+  state: GameState,
+): boolean {
+  return (
+    (state
+      .bowl
+      ?.remaining ??
+      0) >
+    0
+  );
 }
 
 /** Whether the lane exists in this save yet. */
-export function computeBowlUnlocked(state: GameState): boolean {
-  return bowlUnlocked(state.lifetimeJoy);
+export function computeBowlUnlocked(
+  state: GameState,
+): boolean {
+  return bowlUnlocked(
+    state.lifetimeJoy,
+  );
 }
 
 /** Whether a frame may be started right now. */
-export function computeBowlReady(state: GameState): boolean {
-  return state.bowl ? bowlReady(state.bowl, state.lifetimeJoy) : false;
+export function computeBowlReady(
+  state: GameState,
+): boolean {
+  return state.bowl
+    ? bowlReady(
+        state.bowl,
+        state.lifetimeJoy,
+      )
+    : false;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -215,38 +497,106 @@ export function computeBowlReady(state: GameState): boolean {
  * One source's contribution to joy-per-second, with everything that applies to
  * it specifically but nothing that applies to the temple as a whole.
  */
-export function computeSourceJps(state: GameState, id: SourceId): number {
-  const count = state.sources[id] ?? 0;
-  if (count === 0) return 0;
+export function computeSourceJps(
+  state: GameState,
+  id: SourceId,
+): number {
+  const count =
+    state
+      .sources[
+      id
+    ] ??
+    0;
+  if (
+    count ===
+    0
+  )
+    return 0;
 
-  const def = SOURCE_MAP[id];
-  let per = def.baseJps;
+  const def =
+    SOURCE_MAP[
+      id
+    ];
+  let per =
+    def.baseJps;
 
   // Tier blessings and synergies.
-  for (const blessing of owned(state)) {
-    if (blessing.sourceMultiplier?.id === id) per *= blessing.sourceMultiplier.factor;
-    if (blessing.synergy?.boosted === id) {
-      const partners = state.sources[blessing.synergy.from] ?? 0;
-      per *= 1 + blessing.synergy.factor * partners;
+  for (const blessing of owned(
+    state,
+  )) {
+    if (
+      blessing
+        .sourceMultiplier
+        ?.id ===
+      id
+    )
+      per *=
+        blessing
+          .sourceMultiplier
+          .factor;
+    if (
+      blessing
+        .synergy
+        ?.boosted ===
+      id
+    ) {
+      const partners =
+        state
+          .sources[
+          blessing
+            .synergy
+            .from
+        ] ??
+        0;
+      per *=
+        1 +
+        blessing
+          .synergy
+          .factor *
+          partners;
     }
   }
 
   // The Acolyte line: every other source in the temple lends it a hand.
-  if (id === 'acolyte') {
+  if (
+    id ===
+    'acolyte'
+  ) {
     let fromCongregation = 0;
-    for (const blessing of owned(state)) {
-      if (blessing.acolyteFromCongregation) {
-        const others = computeTotalSources(state) - count;
-        fromCongregation += blessing.acolyteFromCongregation * others;
+    for (const blessing of owned(
+      state,
+    )) {
+      if (
+        blessing.acolyteFromCongregation
+      ) {
+        const others =
+          computeTotalSources(
+            state,
+          ) -
+          count;
+        fromCongregation +=
+          blessing.acolyteFromCongregation *
+          others;
       }
     }
-    per += fromCongregation;
+    per +=
+      fromCongregation;
   }
 
   // Manna levels: +1% each.
-  per *= levelMultiplier(state.sourceLevels[id] ?? 0);
+  per *=
+    levelMultiplier(
+      state
+        .sourceLevels[
+        id
+      ] ??
+        0,
+    );
 
-  return per * count;
+  return (
+    per *
+    count
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -274,46 +624,117 @@ export interface MultiplierBreakdown {
  * where a ×400 came from stops trusting the game, and because the panel that
  * shows this is one of the better things in the genre.
  */
-export function computeMultipliers(state: GameState): MultiplierBreakdown {
+export function computeMultipliers(
+  state: GameState,
+): MultiplierBreakdown {
   let blessings = 1;
   let devotionMult = 1;
 
-  const devotion = computeDevotion(state);
-  for (const blessing of owned(state)) {
-    if (blessing.globalMultiplier) blessings *= blessing.globalMultiplier;
-    if (blessing.devotionFactor) devotionMult *= 1 + devotion * blessing.devotionFactor;
+  const devotion =
+    computeDevotion(
+      state,
+    );
+  for (const blessing of owned(
+    state,
+  )) {
+    if (
+      blessing.globalMultiplier
+    )
+      blessings *=
+        blessing.globalMultiplier;
+    if (
+      blessing.devotionFactor
+    )
+      devotionMult *=
+        1 +
+        devotion *
+          blessing.devotionFactor;
   }
 
   // Grace only counts once the Communion rungs unlock it.
   let graceShare = 0;
   let legacyMult = 1;
   for (const id of state.legacy) {
-    const def = LEGACY_MAP[id];
-    if (!def) continue;
-    if (def.graceShare) graceShare += def.graceShare;
-    if (def.globalMultiplier) legacyMult *= def.globalMultiplier;
+    const def =
+      LEGACY_MAP[
+        id
+      ];
+    if (
+      !def
+    )
+      continue;
+    if (
+      def.graceShare
+    )
+      graceShare +=
+        def.graceShare;
+    if (
+      def.globalMultiplier
+    )
+      legacyMult *=
+        def.globalMultiplier;
   }
-  for (const blessing of owned(state)) {
-    if (blessing.graceShare) graceShare += blessing.graceShare;
+  for (const blessing of owned(
+    state,
+  )) {
+    if (
+      blessing.graceShare
+    )
+      graceShare +=
+        blessing.graceShare;
   }
-  const grace = 1 + computeGraceHeld(state) * 0.01 * Math.min(1, graceShare);
+  const grace =
+    1 +
+    computeGraceHeld(
+      state,
+    ) *
+      0.01 *
+      Math.min(
+        1,
+        graceShare,
+      );
 
-  const garden = gardenEffects(state.garden).jpsMultiplier;
-  const choir = choirEffects(state.choir, state.runPlaytime).jpsMultiplier;
+  const garden =
+    gardenEffects(
+      state.garden,
+    ).jpsMultiplier;
+  const choir =
+    choirEffects(
+      state.choir,
+      state.runPlaytime,
+    ).jpsMultiplier;
 
   let buffs = 1;
-  for (const buff of state.buffs) buffs *= buff.jpsMultiplier;
+  for (const buff of state.buffs)
+    buffs *=
+      buff.jpsMultiplier;
 
-  const globes = computeGlobeMultiplier(state);
-  const bowl = computeBowlMultiplier(state);
+  const globes =
+    computeGlobeMultiplier(
+      state,
+    );
+  const bowl =
+    computeBowlMultiplier(
+      state,
+    );
 
   const total =
-    blessings * devotionMult * grace * legacyMult * garden * choir * buffs * globes * bowl;
+    blessings *
+    devotionMult *
+    grace *
+    legacyMult *
+    garden *
+    choir *
+    buffs *
+    globes *
+    bowl;
   return {
     blessings,
-    devotion: devotionMult,
+    devotion:
+      devotionMult,
     grace,
-    legacy: legacyMult,
+    legacy:
+      legacyMult,
     garden,
     choir,
     buffs,
@@ -327,25 +748,65 @@ export function computeMultipliers(state: GameState): MultiplierBreakdown {
  * Joy per second, as the temple actually earns it — Sinners included, which is
  * why this can be much lower than the sum of its parts during the Rapture.
  */
-export function computeJps(state: GameState): number {
-  return computeGrossJps(state) * (1 - computeSinnerDrain(state));
+export function computeJps(
+  state: GameState,
+): number {
+  return (
+    computeGrossJps(
+      state,
+    ) *
+    (1 -
+      computeSinnerDrain(
+        state,
+      ))
+  );
 }
 
 /** Joy per second before the Sinners take their share. */
-export function computeGrossJps(state: GameState): number {
+export function computeGrossJps(
+  state: GameState,
+): number {
   let sum = 0;
-  for (const source of SOURCES) sum += computeSourceJps(state, source.id);
-  return sum * computeMultipliers(state).total;
+  for (const source of SOURCES)
+    sum +=
+      computeSourceJps(
+        state,
+        source.id,
+      );
+  return (
+    sum *
+    computeMultipliers(
+      state,
+    )
+      .total
+  );
 }
 
 /** The share of income currently being diverted into Sinners, 0..1. */
-export function computeSinnerDrain(state: GameState): number {
-  if (state.sinners.length === 0) return 0;
+export function computeSinnerDrain(
+  state: GameState,
+): number {
+  if (
+    state
+      .sinners
+      .length ===
+    0
+  )
+    return 0;
   let appetite = 1;
-  for (const blessing of owned(state)) {
-    if (blessing.sinnerAppetite) appetite *= blessing.sinnerAppetite;
+  for (const blessing of owned(
+    state,
+  )) {
+    if (
+      blessing.sinnerAppetite
+    )
+      appetite *=
+        blessing.sinnerAppetite;
   }
-  return sinnerDrain(state.sinners, appetite);
+  return sinnerDrain(
+    state.sinners,
+    appetite,
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -356,33 +817,76 @@ export function computeSinnerDrain(state: GameState): number {
  * Joy per hand-offering. The share-of-rate term is what keeps clicking
  * meaningful at 10^40 — without it the button is decoration after an hour.
  */
-export function computeTouch(state: GameState): number {
+export function computeTouch(
+  state: GameState,
+): number {
   let flat = 1;
   let multiplier = 1;
   let shareOfJps = 0;
 
-  for (const blessing of owned(state)) {
-    if (blessing.touchFlat) flat += blessing.touchFlat;
-    if (blessing.touchMultiplier) multiplier *= blessing.touchMultiplier;
-    if (blessing.touchShareOfJps) shareOfJps += blessing.touchShareOfJps;
+  for (const blessing of owned(
+    state,
+  )) {
+    if (
+      blessing.touchFlat
+    )
+      flat +=
+        blessing.touchFlat;
+    if (
+      blessing.touchMultiplier
+    )
+      multiplier *=
+        blessing.touchMultiplier;
+    if (
+      blessing.touchShareOfJps
+    )
+      shareOfJps +=
+        blessing.touchShareOfJps;
   }
 
   for (const id of state.legacy) {
-    const def = LEGACY_MAP[id];
-    if (def?.touchMultiplier) multiplier *= def.touchMultiplier;
+    const def =
+      LEGACY_MAP[
+        id
+      ];
+    if (
+      def?.touchMultiplier
+    )
+      multiplier *=
+        def.touchMultiplier;
   }
 
-  multiplier *= gardenEffects(state.garden).touchMultiplier;
-  multiplier *= choirEffects(state.choir, state.runPlaytime).touchMultiplier;
-  for (const buff of state.buffs) multiplier *= buff.touchMultiplier;
+  multiplier *=
+    gardenEffects(
+      state.garden,
+    ).touchMultiplier;
+  multiplier *=
+    choirEffects(
+      state.choir,
+      state.runPlaytime,
+    ).touchMultiplier;
+  for (const buff of state.buffs)
+    multiplier *=
+      buff.touchMultiplier;
   // More globes, more surface to strike. Deliberately gentler than their effect
   // on the rate (×1.25 against ×1.5) — the hand is meant to stay a way in, not
   // to become the way the late game is played.
-  multiplier *= computeGlobeTouchMultiplier(state);
+  multiplier *=
+    computeGlobeTouchMultiplier(
+      state,
+    );
 
   // The share term reads gross rate: a temple full of Sinners should still
   // reward the hand, and the Sinners will take their cut of the result anyway.
-  return flat * multiplier + computeGrossJps(state) * shareOfJps * multiplier;
+  return (
+    flat *
+      multiplier +
+    computeGrossJps(
+      state,
+    ) *
+      shareOfJps *
+      multiplier
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -399,46 +903,109 @@ export interface RateModifiers {
   graceGain: number;
 }
 
-export function computeRateModifiers(state: GameState): RateModifiers {
-  const out: RateModifiers = {
-    haloFrequency: 1,
-    haloPotency: 1,
-    haloPatience: 1,
-    mannaSpeed: 1,
-    sinnerYield: 1,
-    gardenSpeed: 1,
-    graceGain: 1,
-  };
+export function computeRateModifiers(
+  state: GameState,
+): RateModifiers {
+  const out: RateModifiers =
+    {
+      haloFrequency: 1,
+      haloPotency: 1,
+      haloPatience: 1,
+      mannaSpeed: 1,
+      sinnerYield: 1,
+      gardenSpeed: 1,
+      graceGain: 1,
+    };
 
-  for (const blessing of owned(state)) {
-    if (blessing.haloFrequency) out.haloFrequency *= blessing.haloFrequency;
-    if (blessing.haloPotency) out.haloPotency *= blessing.haloPotency;
-    if (blessing.haloPatience) out.haloPatience *= blessing.haloPatience;
-    if (blessing.mannaSpeed) out.mannaSpeed *= blessing.mannaSpeed;
-    if (blessing.sinnerYield) out.sinnerYield *= blessing.sinnerYield;
+  for (const blessing of owned(
+    state,
+  )) {
+    if (
+      blessing.haloFrequency
+    )
+      out.haloFrequency *=
+        blessing.haloFrequency;
+    if (
+      blessing.haloPotency
+    )
+      out.haloPotency *=
+        blessing.haloPotency;
+    if (
+      blessing.haloPatience
+    )
+      out.haloPatience *=
+        blessing.haloPatience;
+    if (
+      blessing.mannaSpeed
+    )
+      out.mannaSpeed *=
+        blessing.mannaSpeed;
+    if (
+      blessing.sinnerYield
+    )
+      out.sinnerYield *=
+        blessing.sinnerYield;
   }
 
   for (const id of state.legacy) {
-    const def = LEGACY_MAP[id];
-    if (!def) continue;
-    if (def.haloFrequency) out.haloFrequency *= def.haloFrequency;
-    if (def.haloPotency) out.haloPotency *= def.haloPotency;
-    if (def.mannaSpeed) out.mannaSpeed *= def.mannaSpeed;
-    if (def.graceGain) out.graceGain *= def.graceGain;
+    const def =
+      LEGACY_MAP[
+        id
+      ];
+    if (
+      !def
+    )
+      continue;
+    if (
+      def.haloFrequency
+    )
+      out.haloFrequency *=
+        def.haloFrequency;
+    if (
+      def.haloPotency
+    )
+      out.haloPotency *=
+        def.haloPotency;
+    if (
+      def.mannaSpeed
+    )
+      out.mannaSpeed *=
+        def.mannaSpeed;
+    if (
+      def.graceGain
+    )
+      out.graceGain *=
+        def.graceGain;
   }
 
-  const garden = gardenEffects(state.garden);
-  out.haloFrequency *= garden.haloFrequency;
-  out.mannaSpeed *= garden.mannaSpeed;
-  out.sinnerYield *= garden.sinnerYield;
+  const garden =
+    gardenEffects(
+      state.garden,
+    );
+  out.haloFrequency *=
+    garden.haloFrequency;
+  out.mannaSpeed *=
+    garden.mannaSpeed;
+  out.sinnerYield *=
+    garden.sinnerYield;
 
-  const choir = choirEffects(state.choir, state.runPlaytime);
-  out.haloFrequency *= choir.haloFrequency;
-  out.haloPotency *= choir.haloPotency;
-  out.mannaSpeed *= choir.mannaSpeed;
-  out.sinnerYield *= choir.sinnerYield;
-  out.gardenSpeed *= choir.gardenSpeed;
-  out.graceGain *= choir.graceGain;
+  const choir =
+    choirEffects(
+      state.choir,
+      state.runPlaytime,
+    );
+  out.haloFrequency *=
+    choir.haloFrequency;
+  out.haloPotency *=
+    choir.haloPotency;
+  out.mannaSpeed *=
+    choir.mannaSpeed;
+  out.sinnerYield *=
+    choir.sinnerYield;
+  out.gardenSpeed *=
+    choir.gardenSpeed;
+  out.graceGain *=
+    choir.graceGain;
 
   return out;
 }
@@ -455,22 +1022,55 @@ export interface VigilTerms {
  * a fifth of rate for two hours — so that the Legacy rungs and the vigil
  * blessings that raise it feel like the meaningful unlocks they are.
  */
-export function computeVigil(state: GameState): VigilTerms {
+export function computeVigil(
+  state: GameState,
+): VigilTerms {
   let efficiency = 0.2;
   let hours = 2;
 
-  for (const blessing of owned(state)) {
-    if (blessing.vigilEfficiency) efficiency += blessing.vigilEfficiency;
-    if (blessing.vigilHours) hours += blessing.vigilHours;
+  for (const blessing of owned(
+    state,
+  )) {
+    if (
+      blessing.vigilEfficiency
+    )
+      efficiency +=
+        blessing.vigilEfficiency;
+    if (
+      blessing.vigilHours
+    )
+      hours +=
+        blessing.vigilHours;
   }
   for (const id of state.legacy) {
-    const def = LEGACY_MAP[id];
-    if (!def) continue;
-    if (def.vigilEfficiency) efficiency += def.vigilEfficiency;
-    if (def.vigilHours) hours += def.vigilHours;
+    const def =
+      LEGACY_MAP[
+        id
+      ];
+    if (
+      !def
+    )
+      continue;
+    if (
+      def.vigilEfficiency
+    )
+      efficiency +=
+        def.vigilEfficiency;
+    if (
+      def.vigilHours
+    )
+      hours +=
+        def.vigilHours;
   }
 
-  return { efficiency: Math.min(1, efficiency), hours };
+  return {
+    efficiency:
+      Math.min(
+        1,
+        efficiency,
+      ),
+    hours,
+  };
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -478,32 +1078,78 @@ export function computeVigil(state: GameState): VigilTerms {
    ══════════════════════════════════════════════════════════════════════════ */
 
 /** Grace the save has earned in total, from lifetime joy. Cookie Clicker's cube root. */
-export function computeGraceEarned(lifetimeJoy: number): number {
-  return Math.floor(Math.cbrt(Math.max(0, lifetimeJoy) / GRACE_DIVISOR));
+export function computeGraceEarned(
+  lifetimeJoy: number,
+): number {
+  return Math.floor(
+    Math.cbrt(
+      Math.max(
+        0,
+        lifetimeJoy,
+      ) /
+        GRACE_DIVISOR,
+    ),
+  );
 }
 
 /** Grace currently spendable. */
-export function computeGraceHeld(state: GameState): number {
+export function computeGraceHeld(
+  state: GameState,
+): number {
   return state.grace;
 }
 
 /** Grace an ascension right now would hand over. */
-export function computeAscensionGrace(state: GameState): number {
-  const wouldHave = computeGraceEarned(state.lifetimeJoy);
-  const gain = Math.max(0, wouldHave - state.graceEarned);
-  return Math.floor(gain * computeRateModifiers(state).graceGain);
+export function computeAscensionGrace(
+  state: GameState,
+): number {
+  const wouldHave =
+    computeGraceEarned(
+      state.lifetimeJoy,
+    );
+  const gain =
+    Math.max(
+      0,
+      wouldHave -
+        state.graceEarned,
+    );
+  return Math.floor(
+    gain *
+      computeRateModifiers(
+        state,
+      )
+        .graceGain,
+  );
 }
 
-export function computeCanAscend(state: GameState): boolean {
-  return state.runJoy >= MIN_ASCEND_JOY && computeAscensionGrace(state) >= 1;
+export function computeCanAscend(
+  state: GameState,
+): boolean {
+  return (
+    state.runJoy >=
+      MIN_ASCEND_JOY &&
+    computeAscensionGrace(
+      state,
+    ) >=
+      1
+  );
 }
 
 /** How many blessings the player may carry through an ascension. */
-export function computeKeepsakeSlots(state: GameState): number {
+export function computeKeepsakeSlots(
+  state: GameState,
+): number {
   let slots = 0;
   for (const id of state.legacy) {
-    const def = LEGACY_MAP[id];
-    if (def?.keptBlessings) slots += def.keptBlessings;
+    const def =
+      LEGACY_MAP[
+        id
+      ];
+    if (
+      def?.keptBlessings
+    )
+      slots +=
+        def.keptBlessings;
   }
   return slots;
 }
@@ -515,48 +1161,151 @@ export function computeKeepsakeSlots(state: GameState): number {
  * globe every temple starts with. Clamped to the set so a save that has somehow
  * banked more rungs than there are globes cannot start a run above the ceiling.
  */
-export function computeKeptGlobes(state: GameState): number {
+export function computeKeptGlobes(
+  state: GameState,
+): number {
   let kept = 1;
   for (const id of state.legacy) {
-    const def = LEGACY_MAP[id];
-    if (def?.keptGlobes) kept += def.keptGlobes;
+    const def =
+      LEGACY_MAP[
+        id
+      ];
+    if (
+      def?.keptGlobes
+    )
+      kept +=
+        def.keptGlobes;
   }
-  return Math.min(MAX_GLOBES, Math.min(kept, computeGlobes(state)));
+  return Math.min(
+    MAX_GLOBES,
+    Math.min(
+      kept,
+      computeGlobes(
+        state,
+      ),
+    ),
+  );
 }
 
-export function computeKeepsMinigames(state: GameState): boolean {
+export function computeKeepsMinigames(
+  state: GameState,
+): boolean {
   for (const id of state.legacy) {
-    if (LEGACY_MAP[id]?.keepsMinigames) return true;
+    if (
+      LEGACY_MAP[
+        id
+      ]
+        ?.keepsMinigames
+    )
+      return true;
   }
   return false;
 }
 
-export function computeStartingGift(state: GameState): { joy: number; acolytes: number } {
+export function computeStartingGift(
+  state: GameState,
+): {
+  joy: number;
+  acolytes: number;
+} {
   let joy = 0;
   let acolytes = 0;
   for (const id of state.legacy) {
-    const def = LEGACY_MAP[id];
-    if (!def) continue;
-    if (def.startingJoy) joy = Math.max(joy, def.startingJoy);
-    if (def.startingAcolytes) acolytes = Math.max(acolytes, def.startingAcolytes);
+    const def =
+      LEGACY_MAP[
+        id
+      ];
+    if (
+      !def
+    )
+      continue;
+    if (
+      def.startingJoy
+    )
+      joy =
+        Math.max(
+          joy,
+          def.startingJoy,
+        );
+    if (
+      def.startingAcolytes
+    )
+      acolytes =
+        Math.max(
+          acolytes,
+          def.startingAcolytes,
+        );
   }
-  return { joy, acolytes };
+  return {
+    joy,
+    acolytes,
+  };
 }
 
-export function computeLegacyAffordable(state: GameState, id: string): boolean {
-  const def = LEGACY_MAP[id];
-  if (!def || state.legacy.has(id)) return false;
-  if (state.grace < def.cost) return false;
-  return (def.requires ?? []).every((r) => state.legacy.has(r));
+export function computeLegacyAffordable(
+  state: GameState,
+  id: string,
+): boolean {
+  const def =
+    LEGACY_MAP[
+      id
+    ];
+  if (
+    !def ||
+    state.legacy.has(
+      id,
+    )
+  )
+    return false;
+  if (
+    state.grace <
+    def.cost
+  )
+    return false;
+  return (
+    def.requires ??
+    []
+  ).every(
+    (
+      r,
+    ) =>
+      state.legacy.has(
+        r,
+      ),
+  );
 }
 
-export function computeLegacyVisible(state: GameState, id: string): boolean {
-  const def = LEGACY_MAP[id];
-  if (!def) return false;
-  if (state.legacy.has(id)) return true;
+export function computeLegacyVisible(
+  state: GameState,
+  id: string,
+): boolean {
+  const def =
+    LEGACY_MAP[
+      id
+    ];
+  if (
+    !def
+  )
+    return false;
+  if (
+    state.legacy.has(
+      id,
+    )
+  )
+    return true;
   // A rung is visible once everything below it is bought — the ladder should
   // read as a ladder, not as a wishlist.
-  return (def.requires ?? []).every((r) => state.legacy.has(r));
+  return (
+    def.requires ??
+    []
+  ).every(
+    (
+      r,
+    ) =>
+      state.legacy.has(
+        r,
+      ),
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -564,45 +1313,189 @@ export function computeLegacyVisible(state: GameState, id: string): boolean {
    ══════════════════════════════════════════════════════════════════════════ */
 
 /** Whether a source is on the shelf yet. */
-export function computeSourceVisible(state: GameState, id: SourceId): boolean {
-  if ((state.sources[id] ?? 0) > 0) return true;
-  const index = SOURCES.findIndex((s) => s.id === id);
+export function computeSourceVisible(
+  state: GameState,
+  id: SourceId,
+): boolean {
+  if (
+    (state
+      .sources[
+      id
+    ] ??
+      0) >
+    0
+  )
+    return true;
+  const index =
+    SOURCES.findIndex(
+      (
+        s,
+      ) =>
+        s.id ===
+        id,
+    );
   // The first two are always there; everything else appears once you could
   // plausibly reach it, and once the tier below it exists.
-  if (index <= 1) return true;
-  const previous = SOURCES[index - 1]!;
-  if ((state.sources[previous.id] ?? 0) === 0) return false;
-  return state.peakJoy >= SOURCE_MAP[id].baseCost * REVEAL_SHARE;
+  if (
+    index <=
+    1
+  )
+    return true;
+  const previous =
+    SOURCES[
+      index -
+        1
+    ]!;
+  if (
+    (state
+      .sources[
+      previous
+        .id
+    ] ??
+      0) ===
+    0
+  )
+    return false;
+  return (
+    state.peakJoy >=
+    SOURCE_MAP[
+      id
+    ]
+      .baseCost *
+      REVEAL_SHARE
+  );
 }
 
 /** Whether a blessing is on offer. */
-export function computeBlessingVisible(state: GameState, id: string): boolean {
-  const def = BLESSING_MAP[id];
-  if (!def || state.blessings.has(id)) return false;
-  const u = def.unlock;
+export function computeBlessingVisible(
+  state: GameState,
+  id: string,
+): boolean {
+  const def =
+    BLESSING_MAP[
+      id
+    ];
+  if (
+    !def ||
+    state.blessings.has(
+      id,
+    )
+  )
+    return false;
+  const u =
+    def.unlock;
 
-  if (u.requires && !state.blessings.has(u.requires)) return false;
-  if (u.source && (state.sources[u.source.id] ?? 0) < u.source.count) return false;
-  if (u.joy !== undefined && state.peakJoy < u.joy) return false;
-  if (u.lifetimeJoy !== undefined && state.lifetimeJoy < u.lifetimeJoy) return false;
-  if (u.trophies !== undefined && state.trophies.size < u.trophies) return false;
-  if (u.touches !== undefined && state.totalTouches < u.touches) return false;
-  if (u.rapture !== undefined && state.rapture < u.rapture) return false;
-  if (u.ascensions !== undefined && state.ascensions < u.ascensions) return false;
-  if (u.sourceLevels !== undefined && computeTotalLevels(state) < u.sourceLevels) return false;
+  if (
+    u.requires &&
+    !state.blessings.has(
+      u.requires,
+    )
+  )
+    return false;
+  if (
+    u.source &&
+    (state
+      .sources[
+      u
+        .source
+        .id
+    ] ??
+      0) <
+      u
+        .source
+        .count
+  )
+    return false;
+  if (
+    u.joy !==
+      undefined &&
+    state.peakJoy <
+      u.joy
+  )
+    return false;
+  if (
+    u.lifetimeJoy !==
+      undefined &&
+    state.lifetimeJoy <
+      u.lifetimeJoy
+  )
+    return false;
+  if (
+    u.trophies !==
+      undefined &&
+    state
+      .trophies
+      .size <
+      u.trophies
+  )
+    return false;
+  if (
+    u.touches !==
+      undefined &&
+    state.totalTouches <
+      u.touches
+  )
+    return false;
+  if (
+    u.rapture !==
+      undefined &&
+    state.rapture <
+      u.rapture
+  )
+    return false;
+  if (
+    u.ascensions !==
+      undefined &&
+    state.ascensions <
+      u.ascensions
+  )
+    return false;
+  if (
+    u.sourceLevels !==
+      undefined &&
+    computeTotalLevels(
+      state,
+    ) <
+      u.sourceLevels
+  )
+    return false;
 
   // The Rapture's exit only shows once you are in it.
-  if (id === 'rapture_calm' && state.rapture === 0) return false;
+  if (
+    id ===
+      'rapture_calm' &&
+    state.rapture ===
+      0
+  )
+    return false;
   return true;
 }
 
 /** Every blessing currently on offer, cheapest first. */
-export function computeAvailableBlessings(state: GameState): BlessingDef[] {
-  const out: BlessingDef[] = [];
+export function computeAvailableBlessings(
+  state: GameState,
+): BlessingDef[] {
+  const out: BlessingDef[] =
+    [];
   for (const blessing of BLESSINGS) {
-    if (computeBlessingVisible(state, blessing.id)) out.push(blessing);
+    if (
+      computeBlessingVisible(
+        state,
+        blessing.id,
+      )
+    )
+      out.push(
+        blessing,
+      );
   }
-  return out.sort((a, b) => a.cost - b.cost);
+  return out.sort(
+    (
+      a,
+      b,
+    ) =>
+      a.cost -
+      b.cost,
+  );
 }
 
 /**
@@ -615,49 +1508,168 @@ export function computeAvailableBlessings(state: GameState): BlessingDef[] {
 export function computeBestPurchase(
   state: GameState,
 ):
-  | { kind: 'source'; id: SourceId; cost: number }
-  | { kind: 'blessing'; id: string; cost: number }
+  | {
+      kind: 'source';
+      id: SourceId;
+      cost: number;
+    }
+  | {
+      kind: 'blessing';
+      id: string;
+      cost: number;
+    }
   | null {
-  let best: { kind: 'source' | 'blessing'; id: string; cost: number; payback: number } | null =
+  let best: {
+    kind:
+      | 'source'
+      | 'blessing';
+    id: string;
+    cost: number;
+    payback: number;
+  } | null =
     null;
-  const currentJps = computeGrossJps(state);
+  const currentJps =
+    computeGrossJps(
+      state,
+    );
 
   for (const source of SOURCES) {
-    if (!computeSourceVisible(state, source.id)) continue;
-    const have = state.sources[source.id] ?? 0;
-    const cost = computeSourceCost(source.id, have);
-    const after = { ...state, sources: { ...state.sources, [source.id]: have + 1 } };
-    const gain = computeGrossJps(after) - currentJps;
-    if (gain <= 0) continue;
-    const payback = cost / gain;
-    if (!best || payback < best.payback) {
-      best = { kind: 'source', id: source.id, cost, payback };
+    if (
+      !computeSourceVisible(
+        state,
+        source.id,
+      )
+    )
+      continue;
+    const have =
+      state
+        .sources[
+        source
+          .id
+      ] ??
+      0;
+    const cost =
+      computeSourceCost(
+        source.id,
+        have,
+      );
+    const after =
+      {
+        ...state,
+        sources:
+          {
+            ...state.sources,
+            [source.id]:
+              have +
+              1,
+          },
+      };
+    const gain =
+      computeGrossJps(
+        after,
+      ) -
+      currentJps;
+    if (
+      gain <=
+      0
+    )
+      continue;
+    const payback =
+      cost /
+      gain;
+    if (
+      !best ||
+      payback <
+        best.payback
+    ) {
+      best =
+        {
+          kind: 'source',
+          id: source.id,
+          cost,
+          payback,
+        };
     }
   }
 
   // Blessings are compared on the same footing, but a blessing that only
   // unlocks something (the Steward, a Rapture stage) has no rate to measure,
   // so it is left out rather than treated as infinitely bad.
-  for (const blessing of computeAvailableBlessings(state)) {
-    if (blessing.raptureStage !== undefined) continue;
-    const after = { ...state, blessings: new Set([...state.blessings, blessing.id]) };
-    const gain = computeGrossJps(after) - currentJps;
-    if (gain <= 0) continue;
-    const payback = blessing.cost / gain;
-    if (!best || payback < best.payback) {
-      best = { kind: 'blessing', id: blessing.id, cost: blessing.cost, payback };
+  for (const blessing of computeAvailableBlessings(
+    state,
+  )) {
+    if (
+      blessing.raptureStage !==
+      undefined
+    )
+      continue;
+    const after =
+      {
+        ...state,
+        blessings:
+          new Set(
+            [
+              ...state.blessings,
+              blessing.id,
+            ],
+          ),
+      };
+    const gain =
+      computeGrossJps(
+        after,
+      ) -
+      currentJps;
+    if (
+      gain <=
+      0
+    )
+      continue;
+    const payback =
+      blessing.cost /
+      gain;
+    if (
+      !best ||
+      payback <
+        best.payback
+    ) {
+      best =
+        {
+          kind: 'blessing',
+          id: blessing.id,
+          cost: blessing.cost,
+          payback,
+        };
     }
   }
 
-  if (!best) return null;
-  return best.kind === 'source'
-    ? { kind: 'source', id: best.id as SourceId, cost: best.cost }
-    : { kind: 'blessing', id: best.id, cost: best.cost };
+  if (
+    !best
+  )
+    return null;
+  return best.kind ===
+    'source'
+    ? {
+        kind: 'source',
+        id: best.id as SourceId,
+        cost: best.cost,
+      }
+    : {
+        kind: 'blessing',
+        id: best.id,
+        cost: best.cost,
+      };
 }
 
 /** Whether the Steward blessing has been bought and switched on. */
-export function computeStewardActive(state: GameState): boolean {
-  return state.stewardEnabled && state.blessings.has('steward');
+export function computeStewardActive(
+  state: GameState,
+): boolean {
+  return (
+    state.stewardEnabled &&
+    state.blessings.has(
+      'steward',
+    )
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -665,11 +1677,49 @@ export function computeStewardActive(state: GameState): boolean {
    ══════════════════════════════════════════════════════════════════════════ */
 
 /** Which sources open a minigame, and at which level. */
-export function computeMinigameUnlocked(state: GameState, minigame: string): boolean {
-  const source = SOURCES.find((s) => s.minigame === minigame);
-  if (!source) return false;
-  return (state.sourceLevels[source.id] ?? 0) >= 1;
+export function computeMinigameUnlocked(
+  state: GameState,
+  minigame: string,
+): boolean {
+  const source =
+    SOURCES.find(
+      (
+        s,
+      ) =>
+        s.minigame ===
+        minigame,
+    );
+  if (
+    !source
+  )
+    return false;
+  return (
+    (state
+      .sourceLevels[
+      source
+        .id
+    ] ??
+      0) >=
+    1
+  );
 }
 
 /** The Ladder, ordered for display. */
-export const LEGACY_TIERS: number[] = [...new Set(LEGACY.map((l) => l.tier))].sort((a, b) => a - b);
+export const LEGACY_TIERS: number[] =
+  [
+    ...new Set(
+      LEGACY.map(
+        (
+          l,
+        ) =>
+          l.tier,
+      ),
+    ),
+  ].sort(
+    (
+      a,
+      b,
+    ) =>
+      a -
+      b,
+  );

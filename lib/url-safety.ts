@@ -18,11 +18,29 @@
  * only when its protocol is exactly `http:` or `https:`; otherwise returns
  * `'#'`. Never throws on malformed input.
  */
-export function safeHref(url: string | null | undefined): string {
-  if (!url) return '#';
+export function safeHref(
+  url:
+    | string
+    | null
+    | undefined,
+): string {
+  if (
+    !url
+  )
+    return '#';
   try {
-    const { protocol } = new URL(url);
-    return protocol === 'http:' || protocol === 'https:' ? url : '#';
+    const {
+      protocol,
+    } =
+      new URL(
+        url,
+      );
+    return protocol ===
+      'http:' ||
+      protocol ===
+        'https:'
+      ? url
+      : '#';
   } catch {
     return '#';
   }

@@ -30,7 +30,9 @@
  * Timers, not animation frames: a build is not motion, and must not hold a frame driver awake (raf-loop-allowlist).
  */
 
-type GL = WebGLRenderingContext | WebGL2RenderingContext;
+type GL =
+  | WebGLRenderingContext
+  | WebGL2RenderingContext;
 
 /** `KHR_parallel_shader_compile`'s one constant (the extension object exposes it, but not in every engine's typings). */
 const COMPLETION_STATUS_KHR = 0x91b1;
@@ -51,7 +53,10 @@ export interface ProgramSource {
   vert: string;
   frag: string;
   /** Attribute locations bound before the link (`bindAttribLocation`). */
-  attribs?: Record<string, number>;
+  attribs?: Record<
+    string,
+    number
+  >;
   /** An already-compiled vertex shader to share between programs (the caller keeps ownership). */
   vertShader?: WebGLShader;
 }
@@ -68,25 +73,64 @@ export interface ProgramBuild {
   error(): string;
 }
 
-const parallelExt = new WeakMap<GL, boolean>();
+const parallelExt =
+  new WeakMap<
+    GL,
+    boolean
+  >();
 /** Whether this context can be asked "done yet?" without blocking. Cached per context. */
-export function hasParallelCompile(gl: GL): boolean {
-  let has = parallelExt.get(gl);
-  if (has === undefined) {
-    has = !!gl.getExtension('KHR_parallel_shader_compile');
-    parallelExt.set(gl, has);
+export function hasParallelCompile(
+  gl: GL,
+): boolean {
+  let has =
+    parallelExt.get(
+      gl,
+    );
+  if (
+    has ===
+    undefined
+  ) {
+    has =
+      !!gl.getExtension(
+        'KHR_parallel_shader_compile',
+      );
+    parallelExt.set(
+      gl,
+      has,
+    );
   }
   return has;
 }
 
-const isWebGL2 = (gl: GL): gl is WebGL2RenderingContext =>
-  typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext;
+const isWebGL2 =
+  (
+    gl: GL,
+  ): gl is WebGL2RenderingContext =>
+    typeof WebGL2RenderingContext !==
+      'undefined' &&
+    gl instanceof
+      WebGL2RenderingContext;
 
-function shader(gl: GL, type: number, src: string): WebGLShader | null {
-  const s = gl.createShader(type);
-  if (!s) return null;
-  gl.shaderSource(s, src);
-  gl.compileShader(s);
+function shader(
+  gl: GL,
+  type: number,
+  src: string,
+): WebGLShader | null {
+  const s =
+    gl.createShader(
+      type,
+    );
+  if (
+    !s
+  )
+    return null;
+  gl.shaderSource(
+    s,
+    src,
+  );
+  gl.compileShader(
+    s,
+  );
   return s;
 }
 
@@ -95,58 +139,187 @@ function shader(gl: GL, type: number, src: string): WebGLShader | null {
  * the objects (lost). The caller decides when to look — {@link whenLinked} for the non-blocking path, or
  * `build.linked()` straight away for a thread where a wait is harmless (a worker).
  */
-export function startProgram(gl: GL, src: ProgramSource): ProgramBuild | null {
-  const vs = src.vertShader ?? shader(gl, gl.VERTEX_SHADER, src.vert);
-  const fs = shader(gl, gl.FRAGMENT_SHADER, src.frag);
-  const program = gl.createProgram();
-  if (!vs || !fs || !program) return null;
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  if (src.attribs)
-    for (const [name, at] of Object.entries(src.attribs)) gl.bindAttribLocation(program, at, name);
-  gl.linkProgram(program);
-  const parallel = hasParallelCompile(gl);
-  const gl2 = isWebGL2(gl) ? gl : null;
-  let fence: WebGLSync | null = null;
-  if (!parallel && gl2) {
-    fence = gl2.fenceSync(gl2.SYNC_GPU_COMMANDS_COMPLETE, 0);
+export function startProgram(
+  gl: GL,
+  src: ProgramSource,
+): ProgramBuild | null {
+  const vs =
+    src.vertShader ??
+    shader(
+      gl,
+      gl.VERTEX_SHADER,
+      src.vert,
+    );
+  const fs =
+    shader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      src.frag,
+    );
+  const program =
+    gl.createProgram();
+  if (
+    !vs ||
+    !fs ||
+    !program
+  )
+    return null;
+  gl.attachShader(
+    program,
+    vs,
+  );
+  gl.attachShader(
+    program,
+    fs,
+  );
+  if (
+    src.attribs
+  )
+    for (const [
+      name,
+      at,
+    ] of Object.entries(
+      src.attribs,
+    ))
+      gl.bindAttribLocation(
+        program,
+        at,
+        name,
+      );
+  gl.linkProgram(
+    program,
+  );
+  const parallel =
+    hasParallelCompile(
+      gl,
+    );
+  const gl2 =
+    isWebGL2(
+      gl,
+    )
+      ? gl
+      : null;
+  let fence: WebGLSync | null =
+    null;
+  if (
+    !parallel &&
+    gl2
+  ) {
+    fence =
+      gl2.fenceSync(
+        gl2.SYNC_GPU_COMMANDS_COMPLETE,
+        0,
+      );
     // Without a flush the fence (and the link before it) may sit in this context's buffer until the next draw.
     gl2.flush();
   }
-  const dropFence = () => {
-    if (fence && gl2) gl2.deleteSync(fence);
-    fence = null;
-  };
-  const started = typeof performance !== 'undefined' ? performance.now() : 0;
-  let result: boolean | null = null;
-  let message = '';
+  const dropFence =
+    () => {
+      if (
+        fence &&
+        gl2
+      )
+        gl2.deleteSync(
+          fence,
+        );
+      fence =
+        null;
+    };
+  const started =
+    typeof performance !==
+    'undefined'
+      ? performance.now()
+      : 0;
+  let result:
+    | boolean
+    | null =
+    null;
+  let message =
+    '';
   return {
     program,
-    vertShader: src.vertShader ? null : vs,
+    vertShader:
+      src.vertShader
+        ? null
+        : vs,
     settled() {
-      if (result !== null) return true;
-      if (parallel) return gl.getProgramParameter(program, COMPLETION_STATUS_KHR) === true;
-      const waited = typeof performance === 'undefined' ? Infinity : performance.now() - started;
-      if (waited < DEFER_MS) return false;
-      if (fence && gl2) return gl2.getSyncParameter(fence, gl2.SYNC_STATUS) === gl2.SIGNALED;
+      if (
+        result !==
+        null
+      )
+        return true;
+      if (
+        parallel
+      )
+        return (
+          gl.getProgramParameter(
+            program,
+            COMPLETION_STATUS_KHR,
+          ) ===
+          true
+        );
+      const waited =
+        typeof performance ===
+        'undefined'
+          ? Infinity
+          : performance.now() -
+            started;
+      if (
+        waited <
+        DEFER_MS
+      )
+        return false;
+      if (
+        fence &&
+        gl2
+      )
+        return (
+          gl2.getSyncParameter(
+            fence,
+            gl2.SYNC_STATUS,
+          ) ===
+          gl2.SIGNALED
+        );
       return true;
     },
     linked() {
-      if (result === null) {
+      if (
+        result ===
+        null
+      ) {
         dropFence();
-        result = gl.getProgramParameter(program, gl.LINK_STATUS) === true;
+        result =
+          gl.getProgramParameter(
+            program,
+            gl.LINK_STATUS,
+          ) ===
+          true;
         // Logs are read only on failure: on success they are a round trip per shader for nothing.
-        if (!result) {
-          message = (
-            gl.getProgramInfoLog(program) ||
-            gl.getShaderInfoLog(fs) ||
-            gl.getShaderInfoLog(vs) ||
-            'program link failed'
-          ).trim();
+        if (
+          !result
+        ) {
+          message =
+            (
+              gl.getProgramInfoLog(
+                program,
+              ) ||
+              gl.getShaderInfoLog(
+                fs,
+              ) ||
+              gl.getShaderInfoLog(
+                vs,
+              ) ||
+              'program link failed'
+            ).trim();
         }
         // The fragment shader is the program's own; a shared vertex shader stays with its owner.
-        gl.detachShader(program, fs);
-        gl.deleteShader(fs);
+        gl.detachShader(
+          program,
+          fs,
+        );
+        gl.deleteShader(
+          fs,
+        );
       }
       return result;
     },
@@ -163,29 +336,74 @@ export function startProgram(gl: GL, src: ProgramSource): ProgramBuild | null {
 export function whenLinked(
   gl: GL,
   build: ProgramBuild,
-  signal?: { aborted: boolean },
+  signal?: {
+    aborted: boolean;
+  },
 ): Promise<WebGLProgram | null> {
-  const started = typeof performance !== 'undefined' ? performance.now() : 0;
-  return new Promise((resolve) => {
-    const check = () => {
-      if (signal?.aborted || gl.isContextLost()) {
-        gl.deleteProgram(build.program);
-        resolve(null);
-        return;
-      }
-      const waited = typeof performance !== 'undefined' ? performance.now() - started : MAX_WAIT_MS;
-      if (!build.settled() && waited < MAX_WAIT_MS) {
-        setTimeout(check, POLL_MS);
-        return;
-      }
-      if (build.linked()) {
-        resolve(build.program);
-      } else {
-        gl.deleteProgram(build.program);
-        resolve(null);
-      }
-    };
-    // Never answer in the same task: the point is to give the driver time.
-    setTimeout(check, hasParallelCompile(gl) ? POLL_MS : DEFER_MS);
-  });
+  const started =
+    typeof performance !==
+    'undefined'
+      ? performance.now()
+      : 0;
+  return new Promise(
+    (
+      resolve,
+    ) => {
+      const check =
+        () => {
+          if (
+            signal?.aborted ||
+            gl.isContextLost()
+          ) {
+            gl.deleteProgram(
+              build.program,
+            );
+            resolve(
+              null,
+            );
+            return;
+          }
+          const waited =
+            typeof performance !==
+            'undefined'
+              ? performance.now() -
+                started
+              : MAX_WAIT_MS;
+          if (
+            !build.settled() &&
+            waited <
+              MAX_WAIT_MS
+          ) {
+            setTimeout(
+              check,
+              POLL_MS,
+            );
+            return;
+          }
+          if (
+            build.linked()
+          ) {
+            resolve(
+              build.program,
+            );
+          } else {
+            gl.deleteProgram(
+              build.program,
+            );
+            resolve(
+              null,
+            );
+          }
+        };
+      // Never answer in the same task: the point is to give the driver time.
+      setTimeout(
+        check,
+        hasParallelCompile(
+          gl,
+        )
+          ? POLL_MS
+          : DEFER_MS,
+      );
+    },
+  );
 }

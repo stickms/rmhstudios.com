@@ -16,10 +16,19 @@
  * after mount, in space the layout already reserved.
  */
 
-import { useEffect, useState } from 'react';
-import { rootRouteId, useRouterState } from '@tanstack/react-router';
+import {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  rootRouteId,
+  useRouterState,
+} from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
-import { getCookieConsent, type CookieConsentChoice } from '@/components/site/CookieConsent';
+import {
+  getCookieConsent,
+  type CookieConsentChoice,
+} from '@/components/site/CookieConsent';
 import { isDiscordActivity } from '@/lib/discord-activity';
 import {
   ADSENSE_CLIENT_ID,
@@ -47,7 +56,9 @@ interface RootSessionPayload {
 
 /** `tier` is a Better Auth custom field, so it isn't on the base user type. */
 interface SessionUser {
-  tier?: string | null;
+  tier?:
+    | string
+    | null;
 }
 
 /**
@@ -63,10 +74,24 @@ interface SessionUser {
  *    by an older build can be missing the field entirely. A signed-in account
  *    whose entitlement we can't read is unknown, not free.
  */
-function liveTier(isPending: boolean, user: SessionUser | undefined): TierAnswer {
-  if (isPending) return undefined;
-  if (!user) return null;
-  return typeof user.tier === 'string' ? user.tier : undefined;
+function liveTier(
+  isPending: boolean,
+  user:
+    | SessionUser
+    | undefined,
+): TierAnswer {
+  if (
+    isPending
+  )
+    return undefined;
+  if (
+    !user
+  )
+    return null;
+  return typeof user.tier ===
+    'string'
+    ? user.tier
+    : undefined;
 }
 
 /**
@@ -88,63 +113,158 @@ function liveTier(isPending: boolean, user: SessionUser | undefined): TierAnswer
  * leaks".
  */
 function useServerTier(): TierAnswer {
-  return useRouterState({
-    // A primitive, so the selector's result is referentially stable and this
-    // never re-renders a page full of slots on unrelated router state changes.
-    select: (state) => {
-      const root = state.matches.find((m) => m.routeId === rootRouteId);
-      const data = root?.loaderData as RootSessionPayload | undefined;
-      if (!data || data.sessionResolved !== true) return undefined;
-      if (!data.user) return null;
-      return typeof data.user.tier === 'string' ? data.user.tier : undefined;
+  return useRouterState(
+    {
+      // A primitive, so the selector's result is referentially stable and this
+      // never re-renders a page full of slots on unrelated router state changes.
+      select:
+        (
+          state,
+        ) => {
+          const root =
+            state.matches.find(
+              (
+                m,
+              ) =>
+                m.routeId ===
+                rootRouteId,
+            );
+          const data =
+            root?.loaderData as
+              | RootSessionPayload
+              | undefined;
+          if (
+            !data ||
+            data.sessionResolved !==
+              true
+          )
+            return undefined;
+          if (
+            !data.user
+          )
+            return null;
+          return typeof data
+            .user
+            .tier ===
+            'string'
+            ? data
+                .user
+                .tier
+            : undefined;
+        },
     },
-  });
+  );
 }
 
 export function useAdsEnabled(): AdsGate {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { data: session, isPending } = useSession();
-  const serverTier = useServerTier();
-  const { tier, sessionResolved } = resolveTier(
-    liveTier(isPending, session?.user as SessionUser | undefined),
-    serverTier,
-  );
+  const pathname =
+    useRouterState(
+      {
+        select:
+          (
+            s,
+          ) =>
+            s
+              .location
+              .pathname,
+      },
+    );
+  const {
+    data: session,
+    isPending,
+  } =
+    useSession();
+  const serverTier =
+    useServerTier();
+  const {
+    tier,
+    sessionResolved,
+  } =
+    resolveTier(
+      liveTier(
+        isPending,
+        session?.user as
+          | SessionUser
+          | undefined,
+      ),
+      serverTier,
+    );
 
   // `undefined` = "not resolved on the client yet", which is distinct from
   // `null` = "resolved, and the visitor hasn't answered the banner". Both keep
   // ads off; only the first one is expected to change on its own.
-  const [consent, setConsent] = useState<CookieConsentChoice | null | undefined>(undefined);
+  const [
+    consent,
+    setConsent,
+  ] =
+    useState<
+      | CookieConsentChoice
+      | null
+      | undefined
+    >(
+      undefined,
+    );
 
   useEffect(() => {
-    const sync = () => setConsent(getCookieConsent());
+    const sync =
+      () =>
+        setConsent(
+          getCookieConsent(),
+        );
     sync();
     // Both events matter: `rmh:cookie-consent` fires when the banner is
     // answered (so the first ad of the session can appear without a reload),
     // and `rmh:cookie-consent-reset` when the choice is cleared from settings —
     // which must take ads back DOWN, not just re-show the banner.
-    window.addEventListener('rmh:cookie-consent', sync);
-    window.addEventListener('rmh:cookie-consent-reset', sync);
+    window.addEventListener(
+      'rmh:cookie-consent',
+      sync,
+    );
+    window.addEventListener(
+      'rmh:cookie-consent-reset',
+      sync,
+    );
     return () => {
-      window.removeEventListener('rmh:cookie-consent', sync);
-      window.removeEventListener('rmh:cookie-consent-reset', sync);
+      window.removeEventListener(
+        'rmh:cookie-consent',
+        sync,
+      );
+      window.removeEventListener(
+        'rmh:cookie-consent-reset',
+        sync,
+      );
     };
   }, []);
 
-  const resolvedConsent = consent === undefined ? null : consent;
+  const resolvedConsent =
+    consent ===
+    undefined
+      ? null
+      : consent;
   const enabled =
-    consent !== undefined &&
-    adsAllowed({
-      clientId: ADSENSE_CLIENT_ID,
-      pathname,
-      tier,
-      sessionResolved,
-      consent: resolvedConsent,
-      discordActivity: isDiscordActivity(),
-    });
+    consent !==
+      undefined &&
+    adsAllowed(
+      {
+        clientId:
+          ADSENSE_CLIENT_ID,
+        pathname,
+        tier,
+        sessionResolved,
+        consent:
+          resolvedConsent,
+        discordActivity:
+          isDiscordActivity(),
+      },
+    );
 
   return {
     enabled,
-    personalized: adsPersonalized(resolvedConsent),
-    clientId: ADSENSE_CLIENT_ID,
+    personalized:
+      adsPersonalized(
+        resolvedConsent,
+      ),
+    clientId:
+      ADSENSE_CLIENT_ID,
   };
 }

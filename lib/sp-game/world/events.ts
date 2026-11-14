@@ -28,17 +28,59 @@ export type SpEvent =
       /** Change the volume of a playing sound (0…10 as ambient_generic's Volume input). */
       setVolume?: number;
     }
-  | { type: 'caption'; token: string; text: string; duration: number; entity?: number }
-  | { type: 'fade'; color: [number, number, number, number]; duration: number; hold: number; fadeIn: boolean; modulate: boolean; stayOut: boolean }
-  | { type: 'shake'; pos: Vec3; amplitude: number; frequency: number; duration: number; radius: number; stop?: boolean; global: boolean }
-  | { type: 'message'; message: string; entity?: number }
+  | {
+      type: 'caption';
+      token: string;
+      text: string;
+      duration: number;
+      entity?: number;
+    }
+  | {
+      type: 'fade';
+      color: [
+        number,
+        number,
+        number,
+        number,
+      ];
+      duration: number;
+      hold: number;
+      fadeIn: boolean;
+      modulate: boolean;
+      stayOut: boolean;
+    }
+  | {
+      type: 'shake';
+      pos: Vec3;
+      amplitude: number;
+      frequency: number;
+      duration: number;
+      radius: number;
+      stop?: boolean;
+      global: boolean;
+    }
+  | {
+      type: 'message';
+      message: string;
+      entity?: number;
+    }
   | {
       type: 'gametext';
       text: string;
       x: number;
       y: number;
-      color: [number, number, number, number];
-      color2: [number, number, number, number];
+      color: [
+        number,
+        number,
+        number,
+        number,
+      ];
+      color2: [
+        number,
+        number,
+        number,
+        number,
+      ];
       effect: number;
       fadeIn: number;
       fadeOut: number;
@@ -46,16 +88,53 @@ export type SpEvent =
       fxTime: number;
       channel: number;
     }
-  | { type: 'hudhint'; message: string; show: boolean }
-  | { type: 'changelevel'; map: string; landmark: string; transition: TransitionData }
-  | { type: 'autosave'; dangerous: boolean }
-  | { type: 'death' }
-  | { type: 'reload'; fromCheckpoint: boolean }
-  | { type: 'zoom'; fov: number; rate: number }
-  | { type: 'credits'; mode: 'logo' | 'roll' | 'outro' }
-  | { type: 'clientcommand'; command: string }
-  | { type: 'teleport'; entity: number }
-  | { type: 'pickup'; entity: number; item: string }
+  | {
+      type: 'hudhint';
+      message: string;
+      show: boolean;
+    }
+  | {
+      type: 'changelevel';
+      map: string;
+      landmark: string;
+      transition: TransitionData;
+    }
+  | {
+      type: 'autosave';
+      dangerous: boolean;
+    }
+  | {
+      type: 'death';
+    }
+  | {
+      type: 'reload';
+      fromCheckpoint: boolean;
+    }
+  | {
+      type: 'zoom';
+      fov: number;
+      rate: number;
+    }
+  | {
+      type: 'credits';
+      mode:
+        | 'logo'
+        | 'roll'
+        | 'outro';
+    }
+  | {
+      type: 'clientcommand';
+      command: string;
+    }
+  | {
+      type: 'teleport';
+      entity: number;
+    }
+  | {
+      type: 'pickup';
+      entity: number;
+      item: string;
+    }
   | {
       type: 'effect';
       kind:

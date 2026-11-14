@@ -25,5 +25,8 @@
     "lib/network-quality.ts",
     "lib/display-scale.ts"
   ],
-  "exclude": ["**/*.test.ts", "**/__tests__/**"]
+  "exclude": [
+    "**/*.test.ts",
+    "**/__tests__/**"
+  ]
 }

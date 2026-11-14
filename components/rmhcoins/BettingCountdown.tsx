@@ -11,7 +11,10 @@
  * `betting-closes-in` key keeps resolving in all 16 locales.
  */
 
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 
 /** Seconds remaining at which the timer turns red and pulses. */
@@ -25,46 +28,118 @@ const LOW_TIME_SECONDS = 5;
  */
 export function useBettingCountdown(
   tablePhase: string,
-  bettingCountdown: number | null,
-): number | null {
-  const [countdown, setCountdown] = useState<number | null>(null);
+  bettingCountdown:
+    | number
+    | null,
+):
+  | number
+  | null {
+  const [
+    countdown,
+    setCountdown,
+  ] =
+    useState<
+      | number
+      | null
+    >(
+      null,
+    );
 
   useEffect(() => {
-    if (tablePhase !== 'betting' || bettingCountdown === null) {
-      setCountdown(null);
+    if (
+      tablePhase !==
+        'betting' ||
+      bettingCountdown ===
+        null
+    ) {
+      setCountdown(
+        null,
+      );
       return;
     }
-    setCountdown(bettingCountdown);
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev === null || prev <= 0) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [tablePhase, bettingCountdown]);
+    setCountdown(
+      bettingCountdown,
+    );
+    const interval =
+      setInterval(
+        () => {
+          setCountdown(
+            (
+              prev,
+            ) => {
+              if (
+                prev ===
+                  null ||
+                prev <=
+                  0
+              ) {
+                clearInterval(
+                  interval,
+                );
+                return 0;
+              }
+              return (
+                prev -
+                1
+              );
+            },
+          );
+        },
+        1000,
+      );
+    return () =>
+      clearInterval(
+        interval,
+      );
+  }, [
+    tablePhase,
+    bettingCountdown,
+  ]);
 
   return countdown;
 }
 
 /** Renders the countdown line; nothing at all when betting isn't open. */
-export function BettingCountdown({ countdown }: { countdown: number | null }) {
-  const { t } = useTranslation('c-rmhcoins');
-  if (countdown === null) return null;
-  const isLow = countdown <= LOW_TIME_SECONDS;
+export function BettingCountdown({
+  countdown,
+}: {
+  countdown:
+    | number
+    | null;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhcoins',
+    );
+  if (
+    countdown ===
+    null
+  )
+    return null;
+  const isLow =
+    countdown <=
+    LOW_TIME_SECONDS;
 
   return (
     <div className="text-center">
       <span className="text-sm text-site-text-muted">
-        {t('betting-closes-in', { defaultValue: 'Betting closes in ' })}
+        {t(
+          'betting-closes-in',
+          {
+            defaultValue:
+              'Betting closes in ',
+          },
+        )}
       </span>
       <span
         className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}
       >
-        {countdown}s
+        {
+          countdown
+        }
+        s
       </span>
     </div>
   );

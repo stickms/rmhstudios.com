@@ -16,13 +16,25 @@ export interface StreakStateView {
   freezeUsed: number;
 }
 
-export const getStreakApi = endpoint<{ res: StreakStateView }>()({
-  method: 'GET',
-  path: '/api/streak',
-});
+export const getStreakApi =
+  endpoint<{
+    res: StreakStateView;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/streak',
+    },
+  );
 
 /** Today's check-in (idempotent per day). */
-export const checkInStreakApi = endpoint<{ res: StreakStateView }>()({
-  method: 'POST',
-  path: '/api/streak',
-});
+export const checkInStreakApi =
+  endpoint<{
+    res: StreakStateView;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/streak',
+    },
+  );

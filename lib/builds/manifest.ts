@@ -35,23 +35,25 @@ import { z } from 'zod';
  * keep, and a capability that exists but is never granted is worse than one
  * that does not exist — it reads as available and behaves as broken.
  */
-export const CAPABILITIES = [
-  /** Per-build, per-member key/value with a quota. The `GameSave` shape. */
-  'storage',
-  /** Post and read scores for this build. */
-  'leaderboard',
-  /** Read-only "who else is in here". Never a member list of the site. */
-  'presence',
-  /** Display name, avatar, handle. NEVER email, NEVER the session. */
-  'identity',
-  /** Ask the platform to ask the member to spend coins. See the rule above. */
-  'coins:spend',
-  /** Send this member a notification about this build, subject to their prefs. */
-  'notifications',
-  /** Join whatever party the member is already in (P1). */
-  'party',
-] as const;
-export type Capability = (typeof CAPABILITIES)[number];
+export const CAPABILITIES =
+  [
+    /** Per-build, per-member key/value with a quota. The `GameSave` shape. */
+    'storage',
+    /** Post and read scores for this build. */
+    'leaderboard',
+    /** Read-only "who else is in here". Never a member list of the site. */
+    'presence',
+    /** Display name, avatar, handle. NEVER email, NEVER the session. */
+    'identity',
+    /** Ask the platform to ask the member to spend coins. See the rule above. */
+    'coins:spend',
+    /** Send this member a notification about this build, subject to their prefs. */
+    'notifications',
+    /** Join whatever party the member is already in (P1). */
+    'party',
+  ] as const;
+export type Capability =
+  (typeof CAPABILITIES)[number];
 
 /**
  * Capabilities a member must approve explicitly, every one of them individually.
@@ -61,14 +63,17 @@ export type Capability = (typeof CAPABILITIES)[number];
  * people to click through prompts — which is what makes the prompts that matter
  * stop working.
  */
-export const CONSENT_REQUIRED: ReadonlySet<Capability> = new Set([
-  'storage',
-  'leaderboard',
-  'presence',
-  'coins:spend',
-  'notifications',
-  'party',
-]);
+export const CONSENT_REQUIRED: ReadonlySet<Capability> =
+  new Set(
+    [
+      'storage',
+      'leaderboard',
+      'presence',
+      'coins:spend',
+      'notifications',
+      'party',
+    ],
+  );
 
 /**
  * Capabilities that need a human to look at the build before it is published.
@@ -76,32 +81,119 @@ export const CONSENT_REQUIRED: ReadonlySet<Capability> = new Set([
  * Exactly one today, and it should stay a short list: a review queue that
  * everything lands in is a review queue nobody reads.
  */
-export const HUMAN_REVIEW_REQUIRED: ReadonlySet<Capability> = new Set(['coins:spend']);
+export const HUMAN_REVIEW_REQUIRED: ReadonlySet<Capability> =
+  new Set(
+    [
+      'coins:spend',
+    ],
+  );
 
 /** A manifest, as a build author writes it. */
-export const manifestSchema = z.object({
-  /** Manifest format version, so this can change without breaking published builds. */
-  manifestVersion: z.literal(1),
-  /** Must match the build's own slug — checked at publish, not here. */
-  slug: z.string().min(1).max(64).regex(/^[a-z0-9][a-z0-9-]*$/),
-  name: z.string().trim().min(1).max(100),
-  /** Semver-ish. Not parsed: it is a label, and the platform never orders by it. */
-  version: z.string().min(1).max(20),
-  /** The file the shell loads. Relative, no scheme, no traversal. */
-  entry: z.string().min(1).max(200),
-  capabilities: z.array(z.enum(CAPABILITIES)).max(CAPABILITIES.length).default([]),
-  /**
-   * Hosts the build may talk to, beyond its own origin.
-   *
-   * An explicit list, never a wildcard: `*` is not a narrower policy than
-   * "anything", it is the same policy written in a way that looks considered.
-   */
-  connectHosts: z.array(z.string().min(1).max(200)).max(10).default([]),
-  /** Per-session cap the member sets; the author's number is only a suggestion. */
-  suggestedCoinCap: z.number().int().min(0).max(100_000).optional(),
-});
+export const manifestSchema =
+  z.object(
+    {
+      /** Manifest format version, so this can change without breaking published builds. */
+      manifestVersion:
+        z.literal(
+          1,
+        ),
+      /** Must match the build's own slug — checked at publish, not here. */
+      slug: z
+        .string()
+        .min(
+          1,
+        )
+        .max(
+          64,
+        )
+        .regex(
+          /^[a-z0-9][a-z0-9-]*$/,
+        ),
+      name: z
+        .string()
+        .trim()
+        .min(
+          1,
+        )
+        .max(
+          100,
+        ),
+      /** Semver-ish. Not parsed: it is a label, and the platform never orders by it. */
+      version:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            20,
+          ),
+      /** The file the shell loads. Relative, no scheme, no traversal. */
+      entry:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            200,
+          ),
+      capabilities:
+        z
+          .array(
+            z.enum(
+              CAPABILITIES,
+            ),
+          )
+          .max(
+            CAPABILITIES.length,
+          )
+          .default(
+            [],
+          ),
+      /**
+       * Hosts the build may talk to, beyond its own origin.
+       *
+       * An explicit list, never a wildcard: `*` is not a narrower policy than
+       * "anything", it is the same policy written in a way that looks considered.
+       */
+      connectHosts:
+        z
+          .array(
+            z
+              .string()
+              .min(
+                1,
+              )
+              .max(
+                200,
+              ),
+          )
+          .max(
+            10,
+          )
+          .default(
+            [],
+          ),
+      /** Per-session cap the member sets; the author's number is only a suggestion. */
+      suggestedCoinCap:
+        z
+          .number()
+          .int()
+          .min(
+            0,
+          )
+          .max(
+            100_000,
+          )
+          .optional(),
+    },
+  );
 
-export type BuildManifest = z.infer<typeof manifestSchema>;
+export type BuildManifest =
+  z.infer<
+    typeof manifestSchema
+  >;
 
 /** Why a manifest was rejected. */
 export type ManifestProblem =
@@ -120,43 +212,127 @@ export type ManifestProblem =
  * a manifest sees everything wrong with it in one go instead of playing
  * twenty questions with a publish endpoint.
  */
-export function validateManifest(raw: unknown, buildSlug: string): ManifestProblem[] {
-  const parsed = manifestSchema.safeParse(raw);
-  if (!parsed.success) return ['malformed'];
-  const m = parsed.data;
-  const problems: ManifestProblem[] = [];
+export function validateManifest(
+  raw: unknown,
+  buildSlug: string,
+): ManifestProblem[] {
+  const parsed =
+    manifestSchema.safeParse(
+      raw,
+    );
+  if (
+    !parsed.success
+  )
+    return [
+      'malformed',
+    ];
+  const m =
+    parsed.data;
+  const problems: ManifestProblem[] =
+    [];
 
-  if (m.slug !== buildSlug) problems.push('slug-mismatch');
+  if (
+    m.slug !==
+    buildSlug
+  )
+    problems.push(
+      'slug-mismatch',
+    );
 
   // The entry point is the one string in here that becomes a path. A leading
   // slash would escape the build's directory; `..` would climb out of it.
-  if (m.entry.startsWith('/') || /^[a-z]+:/i.test(m.entry)) problems.push('entry-absolute');
-  if (m.entry.split('/').includes('..')) problems.push('entry-escapes');
+  if (
+    m.entry.startsWith(
+      '/',
+    ) ||
+    /^[a-z]+:/i.test(
+      m.entry,
+    )
+  )
+    problems.push(
+      'entry-absolute',
+    );
+  if (
+    m.entry
+      .split(
+        '/',
+      )
+      .includes(
+        '..',
+      )
+  )
+    problems.push(
+      'entry-escapes',
+    );
 
   for (const host of m.connectHosts) {
-    if (host.includes('*')) {
-      problems.push('wildcard-host');
+    if (
+      host.includes(
+        '*',
+      )
+    ) {
+      problems.push(
+        'wildcard-host',
+      );
       continue;
     }
     // A host, not a URL: no scheme, no path, no credentials.
-    if (!/^[a-z0-9.-]+(:\d{1,5})?$/i.test(host)) problems.push('bad-host');
+    if (
+      !/^[a-z0-9.-]+(:\d{1,5})?$/i.test(
+        host,
+      )
+    )
+      problems.push(
+        'bad-host',
+      );
   }
 
-  if (new Set(m.capabilities).size !== m.capabilities.length) {
-    problems.push('duplicate-capability');
+  if (
+    new Set(
+      m.capabilities,
+    )
+      .size !==
+    m
+      .capabilities
+      .length
+  ) {
+    problems.push(
+      'duplicate-capability',
+    );
   }
 
   return problems;
 }
 
 /** Capabilities this manifest needs a member to approve, in a stable order. */
-export function consentList(m: BuildManifest): Capability[] {
-  return CAPABILITIES.filter((c) => m.capabilities.includes(c) && CONSENT_REQUIRED.has(c));
+export function consentList(
+  m: BuildManifest,
+): Capability[] {
+  return CAPABILITIES.filter(
+    (
+      c,
+    ) =>
+      m.capabilities.includes(
+        c,
+      ) &&
+      CONSENT_REQUIRED.has(
+        c,
+      ),
+  );
 }
 
 /** Does publishing this manifest need a human to look at it first? */
-export function needsHumanReview(m: BuildManifest): boolean {
-  return m.capabilities.some((c) => HUMAN_REVIEW_REQUIRED.has(c));
+export function needsHumanReview(
+  m: BuildManifest,
+): boolean {
+  return m.capabilities.some(
+    (
+      c,
+    ) =>
+      HUMAN_REVIEW_REQUIRED.has(
+        c,
+      ),
+  );
 }
 
 /**
@@ -175,8 +351,22 @@ export function needsHumanReview(m: BuildManifest): boolean {
  *   - no `form-action` beyond self, so a build cannot post a member's typing
  *     to a host it did not declare by rendering a plain form.
  */
-export function cspFor(m: BuildManifest, siteOrigin: string): string {
-  const connect = ["'self'", ...m.connectHosts.map((h) => `https://${h}`)].join(' ');
+export function cspFor(
+  m: BuildManifest,
+  siteOrigin: string,
+): string {
+  const connect =
+    [
+      "'self'",
+      ...m.connectHosts.map(
+        (
+          h,
+        ) =>
+          `https://${h}`,
+      ),
+    ].join(
+      ' ',
+    );
   return [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline'",
@@ -188,7 +378,9 @@ export function cspFor(m: BuildManifest, siteOrigin: string): string {
     `frame-ancestors ${siteOrigin}`,
     "base-uri 'none'",
     "object-src 'none'",
-  ].join('; ');
+  ].join(
+    '; ',
+  );
 }
 
 /**
@@ -200,10 +392,13 @@ export function cspFor(m: BuildManifest, siteOrigin: string): string {
  * deliberately no `allow-top-navigation`: a build that can navigate the top
  * frame can replace the site with a copy of the site.
  */
-export const BUILD_SANDBOX = [
-  'allow-scripts',
-  'allow-same-origin',
-  'allow-forms',
-  'allow-popups',
-  'allow-popups-to-escape-sandbox',
-].join(' ');
+export const BUILD_SANDBOX =
+  [
+    'allow-scripts',
+    'allow-same-origin',
+    'allow-forms',
+    'allow-popups',
+    'allow-popups-to-escape-sandbox',
+  ].join(
+    ' ',
+  );
