@@ -1,10 +1,25 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/prisma.server', () => ({ prisma: {} }));
+const db = vi.hoisted(() => ({
+  blogFind: vi.fn(),
+  blogMany: vi.fn(),
+  hark: vi.fn(),
+  harkCreate: vi.fn(),
+  tx: vi.fn(),
+}));
+vi.mock('@/lib/prisma.server', () => ({
+  prisma: {
+    blogPost: { findUnique: db.blogFind, updateMany: db.blogMany },
+    rMHark: { findFirst: db.hark, create: db.harkCreate },
+    user: { update: vi.fn() },
+    $transaction: db.tx,
+  },
+}));
+vi.mock('@/lib/feed-sse', () => ({ feedEventBus: { publishCreatedPost: vi.fn() } }));
 vi.mock('@/lib/cached.server', () => ({ cached: vi.fn(), invalidateCached: vi.fn() }));
 vi.mock('@prisma/client', () => ({ Prisma: { PrismaClientKnownRequestError: class extends Error {} } }));
 
-import { applyAnnouncementFields } from '../sitewide-announcement.server';
+import { applyAnnouncementFields, announcementPostContent, ensureAnnouncementPost } from '../sitewide-announcement.server';
 import {
   ANNOUNCEMENT_DEFAULT_LIFETIME_DAYS,
   announcementExpiry,
@@ -75,5 +90,77 @@ describe('shared helpers', () => {
     expect(isBusinessId('x')).toBe(false);
     expect(getBusiness('x').id).toBe('rmh-studios');
     expect(getBusiness(null).id).toBe('rmh-studios');
+  });
+});
+
+describe('announcementPostContent', () => {
+  const base = { title: 'We shipped a thing', description: 'It does a thing for you.', slug: 'a-thing', business: 'rmh' };
+  it('leads with the business, then the title, description and link', () => {
+    const text = announcementPostContent(base);
+    expect(text).toMatch(/announcement: We shipped a thing\. It does a thing for you\.\nhttps:\/\/rmhstudios\.com\/blog\/a-thing$/);
+  });
+  it('never exceeds the limit and never cuts the link', () => {
+    const long = { ...base, title: 'T'.repeat(400), description: 'D'.repeat(900), slug: 's'.repeat(60) };
+    const text = announcementPostContent(long);
+    expect(text.length).toBeLessThanOrEqual(280);
+    expect(text.endsWith(`/blog/${'s'.repeat(60)}`)).toBe(true);
+    const longDesc = announcementPostContent({ ...base, description: 'word '.repeat(200) });
+    expect(longDesc.length).toBeLessThanOrEqual(280);
+    expect(longDesc).toContain('/blog/a-thing');
+  });
+  it('has no exclamation marks, emoji or hashtags', () => {
+    const text = announcementPostContent({ ...base, title: 'Big news!', description: 'Wow! #launch' });
+    expect(text).not.toContain('!');
+    expect(text).not.toMatch(/\p{Extended_Pictographic}/u);
+  });
+});
+
+describe('ensureAnnouncementPost', () => {
+  const row = { id: 'b1', slug: 's', title: 'T', description: 'D', business: 'rmh', announcement: true };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    db.tx.mockImplementation(async (fn: (tx: unknown) => unknown) =>
+      fn({
+        blogPost: { updateMany: db.blogMany },
+        rMHark: { create: db.harkCreate },
+        user: { update: vi.fn() },
+      }),
+    );
+    db.harkCreate.mockImplementation(async ({ data }: { data: { id: string; content: string } }) => ({
+      id: data.id,
+      content: data.content,
+      createdAt: new Date(),
+      replyControl: 'EVERYONE',
+      user: { id: 'u', name: 'A' },
+    }));
+  });
+  it('returns null for a post that is not an announcement', async () => {
+    db.blogFind.mockResolvedValue({ ...row, announcement: false, announcementPostId: null });
+    expect(await ensureAnnouncementPost({ blogPostId: 'b1', authorId: 'u' })).toBeNull();
+    expect(db.harkCreate).not.toHaveBeenCalled();
+  });
+  it('creates one post and links it', async () => {
+    db.blogFind.mockResolvedValue({ ...row, announcementPostId: null });
+    db.blogMany.mockResolvedValue({ count: 1 });
+    const id = await ensureAnnouncementPost({ blogPostId: 'b1', authorId: 'u' });
+    expect(id).toBeTruthy();
+    expect(db.harkCreate).toHaveBeenCalledTimes(1);
+    expect(db.blogMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ announcementPostId: null }), data: { announcementPostId: id } }),
+    );
+  });
+  it('reuses a live discussion post', async () => {
+    db.blogFind.mockResolvedValue({ ...row, announcementPostId: 'p1' });
+    db.hark.mockResolvedValue({ id: 'p1' });
+    expect(await ensureAnnouncementPost({ blogPostId: 'b1', authorId: 'u' })).toBe('p1');
+    expect(db.harkCreate).not.toHaveBeenCalled();
+  });
+  it('creates a second post for nobody when the claim is lost', async () => {
+    db.blogFind
+      .mockResolvedValueOnce({ ...row, announcementPostId: null })
+      .mockResolvedValueOnce({ announcementPostId: 'winner' });
+    db.blogMany.mockResolvedValue({ count: 0 });
+    expect(await ensureAnnouncementPost({ blogPostId: 'b1', authorId: 'u' })).toBe('winner');
+    expect(db.harkCreate).not.toHaveBeenCalled();
   });
 });

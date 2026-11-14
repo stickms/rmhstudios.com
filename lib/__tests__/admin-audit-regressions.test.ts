@@ -8,12 +8,22 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   audit: vi.fn(),
+  ensure: vi.fn(),
+  find: vi.fn(),
+  tx: vi.fn(),
+}));
+vi.mock('@/lib/sitewide-announcement.server', async (orig) => ({
+  ...(await orig<typeof import('@/lib/sitewide-announcement.server')>()),
+  ensureAnnouncementPost: mocks.ensure,
+  invalidateCurrentAnnouncement: vi.fn(async () => {}),
 }));
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: mocks.session } } }));
 vi.mock('@/lib/prisma.server', () => ({
   prisma: {
     // `findUnique` is the edit path's read of the announcement state; a missing post reads as null.
-    blogPost: { create: mocks.create, update: mocks.update, findUnique: vi.fn(async () => null) },
+    blogPost: { create: mocks.create, update: mocks.update, findUnique: mocks.find },
+    blogAnnouncementSeen: { deleteMany: vi.fn() },
+    $transaction: mocks.tx,
     user: { findMany: mocks.users },
   },
 }));
@@ -51,6 +61,43 @@ beforeEach(() => {
   mocks.session.mockResolvedValue({ user: { id: 'admin', isAdmin: true } });
   mocks.create.mockResolvedValue({});
   mocks.update.mockResolvedValue({});
+  mocks.find.mockResolvedValue(null);
+  mocks.ensure.mockResolvedValue('rmhark-1');
+  mocks.tx.mockResolvedValue([]);
+});
+
+describe('announcement discussion post on blog save', () => {
+  it('creates the discussion post when a new post is announced', async () => {
+    mocks.create.mockResolvedValue({ id: 'bp1' });
+    const response = await post({ request: request('POST', { ...validPost, announcement: true }), params: {} });
+    expect(response.status).toBe(200);
+    expect(mocks.ensure).toHaveBeenCalledWith({ blogPostId: 'bp1', authorId: 'admin' });
+  });
+  it('creates a new one when an edit re-announces, clearing the old link in the same write', async () => {
+    mocks.find.mockResolvedValue({ id: 'bp2', announcement: false, announcedAt: new Date() });
+    const response = await post({
+      request: request('POST', { ...validPost, isEdit: true, announcement: true }),
+      params: {},
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ announcementPostId: null }) }),
+    );
+    expect(mocks.ensure).toHaveBeenCalledWith({ blogPostId: 'bp2', authorId: 'admin' });
+  });
+  it('does nothing extra on an ordinary save or when the announcement stays on', async () => {
+    await post({ request: request('POST', validPost), params: {} });
+    mocks.find.mockResolvedValue({ id: 'bp3', announcement: true, announcedAt: new Date() });
+    await post({ request: request('POST', { ...validPost, isEdit: true, announcement: true }), params: {} });
+    expect(mocks.ensure).not.toHaveBeenCalled();
+  });
+  it('still saves when the discussion post fails', async () => {
+    mocks.create.mockResolvedValue({ id: 'bp1' });
+    mocks.ensure.mockRejectedValue(new Error('boom'));
+    const response = await post({ request: request('POST', { ...validPost, announcement: true }), params: {} });
+    expect(response.status).toBe(200);
+    expect(mocks.audit).toHaveBeenCalled();
+  });
 });
 
 describe('admin mutation boundaries', () => {

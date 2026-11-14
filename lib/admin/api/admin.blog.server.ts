@@ -7,6 +7,7 @@ import { Prisma } from '@prisma/client';
 import { blogPostSchema } from '@/lib/admin/schemas';
 import {
   applyAnnouncementFields,
+  ensureAnnouncementPost,
   invalidateCurrentAnnouncement,
 } from '@/lib/sitewide-announcement.server';
 
@@ -39,10 +40,15 @@ export const route = apiRoute('/api/admin/blog', {
           new Date(),
         );
         const data = { ...baseData, ...announcementData };
+        let blogPostId: string | null = existing?.id ?? null;
 
         // A create must never update a concurrent writer's post with the same slug.
         if (isEdit) {
-          const update = prisma.blogPost.update({ where: { slug }, data });
+          const update = prisma.blogPost.update({
+          where: { slug },
+          // The old thread belongs to the old announcement: a re-announce starts a new one.
+          data: existing && reannounced ? { ...data, announcementPostId: null } : data,
+        });
           if (existing && reannounced) {
             // Re-announcing: everyone sees it again.
             await prisma.$transaction([
@@ -53,7 +59,17 @@ export const route = apiRoute('/api/admin/blog', {
             await update;
           }
         } else {
-          await prisma.blogPost.create({ data: { slug, ...data } });
+          const createdPost = await prisma.blogPost.create({ data: { slug, ...data } });
+          blogPostId = createdPost?.id ?? null;
+        }
+        if (reannounced) {
+          // Best-effort: the blog save has already committed and must not fail over the feed post.
+          try {
+            const id = blogPostId ?? (await prisma.blogPost.findUnique({ where: { slug }, select: { id: true } }))?.id;
+            if (id) await ensureAnnouncementPost({ blogPostId: id, authorId: user.id });
+          } catch (e) {
+            console.error('announcement discussion post failed:', e);
+          }
         }
         await invalidateCurrentAnnouncement();
       } catch (error) {

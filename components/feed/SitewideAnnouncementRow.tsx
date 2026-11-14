@@ -57,6 +57,15 @@ export function SitewideAnnouncementRow() {
         >
           {t('sitewide-read-full-post', { defaultValue: 'Read full post' })}
         </Link>
+        {announcement.discussionPostId && (
+          <Link
+            to="/u/$userid/post/$postid"
+            params={{ userid: 'me', postid: announcement.discussionPostId }}
+            className="t-body text-site-text-muted underline hover:text-site-text"
+          >
+            {t('sitewide-discuss', { defaultValue: 'Discuss' })}
+          </Link>
+        )}
       </div>
     </SpineItem>
   );

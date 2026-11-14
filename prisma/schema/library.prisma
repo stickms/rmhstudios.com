@@ -18,6 +18,9 @@ model BlogPost {
   business              String    @default("rmh-studios") @db.VarChar(40)
   announcedAt           DateTime?
   announcementExpiresAt DateTime?
+  // The RMHark that carries the announcement into the feed, where people (and the bots) discuss it.
+  // Created when the post is announced; a plain id, not a relation, so deleting the post never blocks.
+  announcementPostId    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
