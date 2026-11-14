@@ -1,338 +1,735 @@
-/* ════════════════════════════════════════════════════════════
-   RMH CAPITAL — shared design system
-   Dark-first · antique gold · ivory serif · institutional
-   Scoped under .rmhc-root so it never leaks into RMH Studios.
-   ════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════════
+   RMH CAPITAL — polished chrome on paper
+   Scoped under .rmhc-root so nothing leaks into RMH Studios.
 
-.rmhc-root{
-  --void:#06090F;
-  --ink:#0B111C;
-  --raise:#111A2A;
-  --raise-2:#16213340;
-  --gold:#C8A24A;
-  --gold-bright:#E3C277;
-  --ivory:#F4F1E9;
-  --gray:#97A0B0;
-  /* Was #5E6878 — 3.4-3.5:1 on the page's ground, at 12-12.5px, carrying the
-     securities disclaimer and the Disclosures link. #8A94A6 clears AA (6.3:1)
-     without changing the palette's character. */
-  --gray-dim:#8A94A6;
-  --line:rgba(200,162,74,0.18);
-  --line-soft:rgba(244,241,233,0.08);
-  --serif:'Spectral',Georgia,serif;
-  --sans:'Geist Variable','Geist',system-ui,sans-serif;
-  --mono:'Geist Mono',ui-monospace,monospace;
-  --maxw:1240px;
-  --pad:clamp(20px,5vw,64px);
-  --spatial-radius:12px;
+   The page is the site's own ground and ink (`--site-*`), so it follows the
+   Day and Night editions. The one material is polished chrome, drawn from the
+   site's six chrome stops (`--chrome-1`…`-6`), and it is spent on a few large
+   surfaces: the hero slab, the colonnade, the plates and the tombstone bezels.
+   Everything else is paper, ink and hairline rules.
 
-  font-family:var(--sans);
-  background:var(--void);
-  color:var(--gray);
-  font-size:17px;
-  line-height:1.7;
-  -webkit-font-smoothing:antialiased;
-  text-rendering:optimizeLegibility;
+   Structure (after an advisory bank's site): a slab inset from the left edge
+   carrying the headline, a plate stepped under it, headlines on the left with
+   body copy offset to the right-hand columns, lists on rules, corner-bracket
+   calls to action.
+
+   MOTION. Three families, all CSS:
+     load    `.words`, `.ld`               time-based, once per page
+     view    `.rv`, `.rv-rule`, `.rv-wipe` scroll-driven, fail-open (@supports)
+     chrome  `.chrome`                     reflections travel with scroll
+                                           (`--rc-sx`) and with the pointer
+                                           (`--rc-mx`, set by Layout.tsx)
+   One element carries ONE animation: never put `.rv*` or `.ld` on a `.chrome`
+   element — wrap it. Reduced motion and the site's "Globe motion: Still"
+   setting turn all of it off.
+   ════════════════════════════════════════════════════════════════════════ */
+
+@property --rc-sx { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --rc-mx { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --rc-n { syntax: '<integer>'; inherits: false; initial-value: 0; }
+
+.rmhc-root {
+  --paper: var(--site-bg, #fafafa);
+  --panel: var(--site-surface, #fff);
+  --wash: var(--site-bg-subtle, #f0f2f4);
+  --ink: var(--site-text, #0b0d10);
+  --mute: var(--site-text-muted, #606873);
+  --rule: var(--site-border, #e3e6e9);
+  --c1: var(--chrome-1, #fff);
+  --c2: var(--chrome-2, #dfe5ea);
+  --c3: var(--chrome-3, #8e99a6);
+  --c4: var(--chrome-4, #1a2029);
+  --c5: var(--chrome-5, #59636f);
+  --c6: var(--chrome-6, #bcc5ce);
+  /* Chrome lettering: sky, horizon, ground. Dark steel on the Day page. */
+  --st-1: var(--c5);
+  --st-2: var(--c3);
+  --st-3: var(--c4);
+  --st-4: var(--c5);
+
+  --sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+  --serif: 'Spectral', Georgia, serif;
+  --maxw: 1360px;
+  --pad: clamp(20px, 4.2vw, 60px);
+  --gap: clamp(16px, 2vw, 28px);
+  --gutter: clamp(0px, 22vw, 380px);
+  --nav-h: 72px;
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--mute);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Spelled without spaces: lib/__tests__/responsive-layout-contract.test.ts
+     looks for these two declarations literally. Clip, not hidden, so the page
+     never becomes a scroll root. */
   overflow-x:clip;
-  /* `svh` (smallest viewport) so the ground fills the page without
-     overshooting it while the mobile toolbars are showing; the `vh`
-     line is the fallback. */
-  min-height:100vh;min-height:100svh;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+/* Night: the lettering is lit from above instead. */
+.style-graphite .rmhc-root {
+  --st-1: var(--c1);
+  --st-2: var(--ink);
+  --st-3: var(--c6);
+  --st-4: var(--c1);
 }
 
-.rmhc-root *,.rmhc-root *::before,.rmhc-root *::after{box-sizing:border-box}
-.rmhc-root img{max-width:100%;display:block}
-.rmhc-root a{color:inherit;text-decoration:none}
-.rmhc-root ::selection{background:rgba(227,194,119,0.22);color:var(--ivory)}
-.rmhc-root :focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;border-radius:var(--spatial-radius)}
-.rmhc-root :is(.btn,.nav-cta,.nav-toggle,.feature-media,.card,.chip,.caps li,.featured,.featured-main,.fside-item,input,textarea,select){border-radius:var(--spatial-radius)}
-
-/* ── type primitives ── */
-.rmhc-root .serif{font-family:var(--serif);color:var(--ivory);font-weight:500;line-height:1.08;letter-spacing:-0.01em}
-.rmhc-root .eyebrow{
-  font-family:var(--sans);font-size:12px;font-weight:600;
-  letter-spacing:0.26em;text-transform:uppercase;color:var(--gold);
-  display:inline-flex;align-items:center;gap:12px;
+.rmhc-root *,
+.rmhc-root *::before,
+.rmhc-root *::after { box-sizing: border-box; }
+.rmhc-root :is(h1, h2, h3, h4, p, ul, ol, dl, dd, figure, blockquote) { margin: 0; padding: 0; }
+.rmhc-root :is(ul, ol) { list-style: none; }
+.rmhc-root img { max-width: 100%; display: block; }
+.rmhc-root a { color: inherit; text-decoration: none; }
+.rmhc-root ::selection { background: var(--ink); color: var(--paper); }
+.rmhc-root :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.rmhc-root [id] { scroll-margin-top: calc(var(--nav-h) + 24px); }
+.rmhc-root .sr {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
 }
-.rmhc-root .eyebrow::before{content:"";width:26px;height:1px;background:var(--gold);opacity:.7}
-.rmhc-root .eyebrow.center{justify-content:center}
-.rmhc-root .lede{font-size:clamp(18px,2vw,21px);line-height:1.6;color:#C2C9D4;font-weight:300}
-.rmhc-root .muted{color:var(--gray)}
-.rmhc-root .gold-text{color:var(--gold-bright)}
 
-.rmhc-root .container{max-width:var(--maxw);margin:0 auto;padding-left:var(--pad);padding-right:var(--pad)}
-.rmhc-root .section{padding:clamp(72px,11vw,148px) 0;position:relative}
-.rmhc-root .section.tight{padding:clamp(54px,8vw,96px) 0}
-.rmhc-root .rule{height:1px;background:var(--line);border:0;margin:0}
-.rmhc-root [id]{scroll-margin-top:96px}
+/* ════ TYPE ════ One family. Display sizes are set light and tight. */
+.rmhc-root .display {
+  font-size: clamp(36px, 5.4vw, 84px); font-weight: 300; line-height: 1.04;
+  letter-spacing: -0.035em; color: var(--ink); text-wrap: balance;
+}
+.rmhc-root .h2 {
+  font-size: clamp(29px, 3.5vw, 52px); font-weight: 300; line-height: 1.08;
+  letter-spacing: -0.03em; color: var(--ink); text-wrap: balance;
+}
+.rmhc-root .h3 {
+  font-size: clamp(21px, 1.9vw, 27px); font-weight: 400; line-height: 1.2;
+  letter-spacing: -0.015em; color: var(--ink);
+}
+.rmhc-root .lede { font-size: clamp(18px, 1.5vw, 21px); line-height: 1.5; color: var(--ink); max-width: 46ch; }
+.rmhc-root .body { max-width: 62ch; }
+.rmhc-root .body + .body { margin-top: 1.1em; }
+.rmhc-root .meta { font-family: var(--mono); font-size: 12.5px; line-height: 1.4; color: var(--mute); }
+.rmhc-root .ink { color: var(--ink); }
+/* Chrome lettering, for large numerals only. */
+.rmhc-root .steel {
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--st-1) 0%, var(--st-2) 50%, var(--st-3) 52%, var(--st-4) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ════ LAYOUT ════ */
+.rmhc-root .wrap { max-width: var(--maxw); margin-inline: auto; padding-inline: var(--pad); }
+.rmhc-root .sec { padding-block: clamp(56px, 7.4vw, 112px); position: relative; }
+.rmhc-root .sec--tight { padding-block: clamp(44px, 6vw, 88px); }
+.rmhc-root .sec--flush { padding-top: 0; }
+.rmhc-root .rule { display: block; height: 1px; background: var(--rule); border: 0; margin: 0; transform-origin: left center; }
+[dir='rtl'] .rmhc-root .rule { transform-origin: right center; }
+.rmhc-root .rule--ink { background: var(--ink); }
+
+/* The offset grid: headline on the left, copy in the right-hand columns. */
+.rmhc-root .offset { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gap); row-gap: clamp(28px, 4vw, 56px); }
+.rmhc-root .o-head { grid-column: 1 / span 7; }
+.rmhc-root .o-lead { grid-column: 1 / span 4; }
+.rmhc-root .o-body { grid-column: 5 / span 4; }
+.rmhc-root .o-body2 { grid-column: 9 / span 4; }
+.rmhc-root .o-wide { grid-column: 5 / span 8; }
+.rmhc-root .o-full { grid-column: 1 / -1; }
+@media (max-width: 900px) {
+  .rmhc-root :is(.o-head, .o-lead, .o-body, .o-body2, .o-wide) { grid-column: 1 / -1; }
+}
+.rmhc-root .stack > * + * { margin-top: var(--stack, 20px); }
+.rmhc-root .actions { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: center; }
+
+/* ════ CHROME ════
+   `--k` is where the reflection sits: scroll moves it most, the pointer a little. */
+.rmhc-root .chrome {
+  --k: calc(var(--rc-sx) * 0.14 + var(--rc-mx) * 0.08);
+  transition: --rc-mx 0.7s var(--ease);
+}
+/* Satin: the calm face text can sit on. Text on it is always --ink. */
+.rmhc-root .chrome-satin {
+  background: linear-gradient(112deg,
+    var(--c2) 0%,
+    var(--c6) calc(30% + var(--k) * 100%),
+    var(--c2) calc(54% + var(--k) * 100%),
+    var(--c3) 100%);
+  color: var(--ink);
+}
+/* Ingot: the site's own chrome gradient (a toggle thumb, at scale). */
+.rmhc-root .chrome-ingot {
+  background: linear-gradient(180deg,
+    var(--c1) 0%,
+    var(--c2) calc(30% + var(--k) * 60%),
+    var(--c3) calc(49% + var(--k) * 40%),
+    var(--c4) calc(50.5% + var(--k) * 40%),
+    var(--c5) 76%,
+    var(--c6) 100%);
+}
+
+/* ════ PLATES ════ Where a bank would hang a photograph, a piece of chrome. */
+.rmhc-root .plate { position: relative; overflow: hidden; background: var(--wash); aspect-ratio: 16 / 9; }
+.rmhc-root .plate--wide { aspect-ratio: 16 / 7; }
+.rmhc-root .plate--tall { aspect-ratio: 4 / 5; }
+.rmhc-root .plate--sq { aspect-ratio: 1; }
+.rmhc-root .plate--free { aspect-ratio: auto; }
+.rmhc-root .plates { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gap); align-items: stretch; }
+.rmhc-root .plates > * { min-width: 0; }
+.rmhc-root .plates .plate { aspect-ratio: auto; height: 100%; min-height: clamp(220px, 30vw, 440px); }
+@media (max-width: 700px) {
+  .rmhc-root .plates { grid-template-columns: 1fr; }
+  .rmhc-root .plates .plate { min-height: 200px; }
+}
+
+/* Colonnade: a row of polished columns. The bank's facade. */
+.rmhc-root .plate--colonnade {
+  --col: clamp(44px, 6.2vw, 92px);
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.34) 0%, rgba(0, 0, 0, 0) 16%, rgba(0, 0, 0, 0) 74%, rgba(0, 0, 0, 0.4) 100%),
+    repeating-linear-gradient(90deg,
+      var(--c5) 0,
+      var(--c3) calc(var(--col) * 0.05),
+      var(--c1) calc(var(--col) * (0.3 + var(--k))),
+      var(--c2) calc(var(--col) * (0.42 + var(--k))),
+      var(--c3) calc(var(--col) * (0.585 + var(--k) * 0.6)),
+      var(--c4) calc(var(--col) * (0.6 + var(--k) * 0.6)),
+      var(--c5) calc(var(--col) * 0.84),
+      var(--c6) calc(var(--col) * 0.95),
+      var(--c4) calc(var(--col) * 0.985),
+      var(--c4) var(--col));
+}
+/* Louvres: the same bar, lying down. */
+.rmhc-root .plate--louvres {
+  --slat: clamp(30px, 4vw, 58px);
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.3) 100%),
+    repeating-linear-gradient(180deg,
+      var(--c1) 0,
+      var(--c2) calc(var(--slat) * (0.3 + var(--k))),
+      var(--c3) calc(var(--slat) * (0.5 + var(--k) * 0.6)),
+      var(--c4) calc(var(--slat) * (0.515 + var(--k) * 0.6)),
+      var(--c5) calc(var(--slat) * 0.8),
+      var(--c6) calc(var(--slat) * 0.955),
+      var(--c4) calc(var(--slat) * 0.985),
+      var(--c4) var(--slat));
+}
+/* Ingot plate: one bar, edge to edge. */
+.rmhc-root .plate--ingot {
+  background: linear-gradient(180deg,
+    var(--c1) 0%,
+    var(--c2) calc(30% + var(--k) * 60%),
+    var(--c3) calc(49% + var(--k) * 40%),
+    var(--c4) calc(50.5% + var(--k) * 40%),
+    var(--c5) 76%,
+    var(--c6) 100%);
+}
+/* Disc: a turned, polished face. Orb: a ball bearing. Both sit on the wash. */
+.rmhc-root :is(.plate--disc, .plate--orb)::before {
+  content: ''; position: absolute; inset: 0; margin: auto;
+  height: 74%; aspect-ratio: 1; border-radius: 50%; corner-shape: round;
+}
+.rmhc-root .plate--disc::before {
+  background:
+    radial-gradient(circle, var(--c2) 0 5%, var(--c4) 5.4% 6.2%, rgba(0, 0, 0, 0) 6.6%),
+    conic-gradient(from calc(var(--k) * 360deg),
+      var(--c2), var(--c1) 8%, var(--c3) 20%, var(--c4) 26%, var(--c5) 38%, var(--c1) 50%,
+      var(--c6) 58%, var(--c4) 74%, var(--c3) 84%, var(--c1) 94%, var(--c2));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+.rmhc-root .plate--orb::before {
+  background:
+    radial-gradient(ellipse 13% 9% at calc(32% + var(--k) * 40%) 25%, #fff 0 45%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(circle at calc(38% + var(--k) * 40%) 30%,
+      var(--c1) 0, var(--c2) 16%, var(--c3) 40%, var(--c4) 63%, var(--c5) 80%, var(--c6) 100%);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+/* A caption may sit in a plate's corner, on a paper tab. */
+.rmhc-root .plate-tab {
+  position: absolute; inset-inline-start: 0; bottom: 0; background: var(--paper);
+  padding: 10px 16px 0 0; font-family: var(--mono); font-size: 12.5px; color: var(--mute);
+}
+[dir='rtl'] .rmhc-root .plate-tab { padding: 10px 0 0 16px; }
 
 /* ════ TOP NAV ════ */
-.rmhc-root .topnav{position:sticky;top:0;z-index:90;padding-top:env(safe-area-inset-top,0px);background:rgba(6,9,15,0.72);-webkit-backdrop-filter:blur(16px) saturate(130%);backdrop-filter:blur(16px) saturate(130%);border-bottom:1px solid var(--line-soft);transition:border-color .3s}
-.rmhc-root .topnav.scrolled{border-bottom-color:var(--line);background:rgba(6,9,15,0.9)}
-.rmhc-root .topnav-inner{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);height:74px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-.rmhc-root .topnav-left{display:flex;align-items:center;gap:20px;flex:0 0 auto}
-.rmhc-root .backlink{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--gray);padding-right:20px;border-right:1px solid var(--line-soft);transition:color .22s}
-.rmhc-root .backlink:hover{color:var(--gold)}
-.rmhc-root .brand{display:flex;align-items:center;gap:13px;flex:0 0 auto}
-.rmhc-root .brand svg{width:30px;height:30px}
-.rmhc-root .brand-text{font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:0.3em;text-transform:uppercase;color:var(--ivory)}
-.rmhc-root .navlinks{display:flex;align-items:center;gap:36px}
-.rmhc-root .navlinks a{font-size:13.5px;font-weight:500;letter-spacing:0.04em;color:var(--gray);transition:color .22s;position:relative;padding:6px 0;background:none;border:0;cursor:pointer;font-family:var(--sans)}
-.rmhc-root .navlinks a:hover{color:var(--ivory)}
-.rmhc-root .navlinks a[aria-current="page"]{color:var(--ivory)}
-.rmhc-root .navlinks a[aria-current="page"]::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:var(--gold)}
-.rmhc-root .nav-right{display:flex;align-items:center;gap:24px}
-.rmhc-root .nav-cta{font-size:13px;font-weight:600;letter-spacing:0.04em;color:var(--void);background:var(--gold);padding:10px 20px;transition:background .22s,transform .22s}
-.rmhc-root .nav-cta:hover{background:var(--gold-bright);transform:translateY(-1px)}
-.rmhc-root .nav-toggle{display:none;background:none;border:0;color:var(--ivory);cursor:pointer;width:44px;height:44px;align-items:center;justify-content:center}
-.rmhc-root .nav-toggle svg{width:24px;height:24px}
-.rmhc-root .mobile-menu{display:none;border-top:1px solid var(--line-soft);background:var(--void)}
-.rmhc-root .mobile-menu a{display:block;padding:16px var(--pad);font-size:16px;color:var(--gray);border-bottom:1px solid var(--line-soft)}
-.rmhc-root .mobile-menu a:hover,.rmhc-root .mobile-menu a[aria-current="page"]{color:var(--ivory)}
-.rmhc-root .mobile-menu.open{display:block}
-@media(max-width:900px){
-  .rmhc-root .navlinks,.rmhc-root .nav-right .nav-cta{display:none}
-  .rmhc-root .nav-toggle{display:flex}
+.rmhc-root .topnav {
+  position: sticky; top: 0; z-index: 90; padding-top:env(safe-area-inset-top,0px);
+  background: var(--paper); border-bottom: 1px solid transparent; transition: border-color 0.3s;
 }
-@media(max-width:560px){
-  /* The label stays. Hiding it left a bare 29×20 "←" as the only escape hatch
-     back to RMH Studios, indistinguishable from browser-back — and under the
-     44px floor besides. */
-  .rmhc-root .backlink{min-height:2.75rem;padding-right:16px;font-size:11px;letter-spacing:0.1em}
-  .rmhc-root .topnav-left{gap:16px}
+.rmhc-root .topnav.scrolled { border-bottom-color: var(--rule); }
+/* Scroll progress, as a chrome hairline under the bar. */
+.rmhc-root .topnav::after {
+  content: ''; position: absolute; inset-inline: 0; bottom: -1px; height: 2px;
+  background: linear-gradient(90deg, var(--c4), var(--c3) 30%, var(--c1) 50%, var(--c3) 70%, var(--c4));
+  transform: scaleX(0); transform-origin: left center; pointer-events: none;
 }
-
-/* ════ BUTTONS ════ */
-.rmhc-root .btn{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:600;letter-spacing:0.03em;padding:15px 26px;transition:background-color .25s,border-color .25s,color .25s;cursor:pointer;border:1px solid transparent;font-family:var(--sans)}
-.rmhc-root .btn .arw{transition:transform .25s}
-.rmhc-root .btn:hover .arw{transform:translateX(4px)}
-.rmhc-root .btn-gold{background:var(--gold);color:var(--void)}
-.rmhc-root .btn-gold:hover{background:var(--gold-bright)}
-.rmhc-root .btn-outline{border-color:var(--line);color:var(--ivory);background:transparent}
-.rmhc-root .btn-outline:hover{border-color:var(--gold);background:rgba(200,162,74,0.06)}
-.rmhc-root .btn-text{padding:0;color:var(--gold-bright);font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;background:none;border:0;cursor:pointer;font-family:var(--sans)}
-.rmhc-root .btn-text .arw{transition:transform .25s}
-.rmhc-root .btn-text:hover .arw{transform:translateX(4px)}
-
-/* ════ HERO (gold great-circle arc) ════ */
-.rmhc-root .hero{position:relative;min-height:clamp(620px,92vh,920px);display:flex;align-items:center;overflow:hidden;border-bottom:1px solid var(--line-soft)}
-.rmhc-root .hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none;transform:translate3d(0,calc(var(--spatial-scroll-y,0px) * .1),0);will-change:transform}
-.rmhc-root .hero-bg::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 90% at 78% 28%,rgba(200,162,74,0.10),transparent 58%),radial-gradient(80% 80% at 12% 100%,rgba(17,26,42,0.7),transparent 60%),linear-gradient(180deg,transparent 40%,var(--void) 99%)}
-.rmhc-root .hero-arc{position:absolute;top:50%;right:-8%;transform:translateY(-50%);width:min(78vh,860px);height:min(78vh,860px);opacity:.85}
-.rmhc-root .hero-content{position:relative;z-index:2;max-width:760px;padding-top:40px;padding-bottom:40px}
-.rmhc-root .hero h1{font-size:clamp(36px,6.2vw,76px);margin:24px 0 26px;max-width:14ch}
-.rmhc-root .hero .lede{max-width:50ch}
-.rmhc-root .hero-actions{margin-top:40px;display:flex;flex-wrap:wrap;gap:16px}
-@media(max-width:760px){
-  .rmhc-root .hero-arc{right:-46%;opacity:.32}
+[dir='rtl'] .rmhc-root .topnav::after { transform-origin: right center; }
+.rmhc-root .topnav-inner {
+  max-width: var(--maxw); margin: 0 auto; padding: 0 var(--pad); height: var(--nav-h);
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
 }
-
-/* markets ticker */
-.rmhc-root .ticker{position:relative;z-index:3;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);background:rgba(11,17,28,0.55);overflow:hidden}
-.rmhc-root .ticker-track{display:flex;gap:48px;white-space:nowrap;padding:13px 0;font-family:var(--mono);font-size:12.5px;letter-spacing:0.03em;color:var(--gray);width:max-content;animation:rmhc-ticker 46s linear infinite}
-.rmhc-root .ticker-track span b{color:var(--ivory);font-weight:500}
-.rmhc-root .ticker-track span i{font-style:normal;color:var(--gold-bright);margin-left:8px}
-.rmhc-root .ticker-track span i.dn{color:#C77B7B}
-@keyframes rmhc-ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-
-/* ════ STAT BAND ════ */
-.rmhc-root .statband{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-soft);border-block:1px solid var(--line)}
-.rmhc-root .stat{background:var(--void);padding:clamp(28px,4vw,48px) clamp(18px,2.5vw,32px)}
-.rmhc-root .stat .v{font-family:var(--serif);font-size:clamp(34px,4.4vw,52px);color:var(--ivory);font-weight:500;line-height:1}
-.rmhc-root .stat .k{font-size:13px;color:var(--gray);margin-top:14px;line-height:1.45}
-@media(max-width:820px){.rmhc-root .statband{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:460px){.rmhc-root .statband{grid-template-columns:1fr}}
-
-/* ════ SECTION HEAD ════ */
-.rmhc-root .shead{max-width:720px;margin-bottom:clamp(40px,5vw,64px)}
-.rmhc-root .shead.center{margin-inline:auto;text-align:center}
-.rmhc-root .shead h2{font-size:clamp(28px,4vw,46px);margin-top:20px}
-.rmhc-root .shead p{margin-top:20px}
-
-/* ════ FEATURE ROWS (alternating) ════ */
-.rmhc-root .feature{display:grid;grid-template-columns:1fr 1fr;gap:clamp(36px,6vw,88px);align-items:center;padding:clamp(48px,7vw,92px) 0;border-bottom:1px solid var(--line-soft)}
-.rmhc-root .feature:last-child{border-bottom:0}
-.rmhc-root .feature.flip .feature-media{order:2}
-.rmhc-root .feature h3{font-size:clamp(24px,3vw,34px);margin:18px 0 18px;font-family:var(--serif);color:var(--ivory);font-weight:500;line-height:1.12}
-.rmhc-root .feature p{margin-bottom:24px}
-.rmhc-root .feature-media{position:relative;aspect-ratio:4/3;border:1px solid var(--line);background:linear-gradient(135deg,var(--ink),var(--void));overflow:hidden;display:flex;align-items:center;justify-content:center}
-@media(max-width:820px){
-  .rmhc-root .feature{grid-template-columns:1fr;gap:28px}
-  .rmhc-root .feature.flip .feature-media{order:0}
+.rmhc-root .topnav-left { display: flex; align-items: center; gap: 18px; flex: 0 0 auto; }
+.rmhc-root .backlink {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  font-size: 13px; color: var(--mute); padding-inline-end: 18px;
+  border-inline-end: 1px solid var(--rule); transition: color 0.2s;
+}
+.rmhc-root .backlink:hover { color: var(--ink); }
+.rmhc-root .backlink svg { width: 14px; height: 14px; transition: transform 0.3s var(--ease); }
+.rmhc-root .backlink:hover svg { transform: translateX(-3px); }
+[dir='rtl'] .rmhc-root .backlink svg { scale: -1 1; }
+.rmhc-root .brand { display: flex; align-items: center; gap: 11px; flex: 0 0 auto; min-height: 44px; }
+.rmhc-root .brand svg { width: 28px; height: 28px; }
+.rmhc-root .brand-text { font-size: 17px; font-weight: 500; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; }
+.rmhc-root .navlinks { display: flex; align-items: center; gap: clamp(18px, 2.4vw, 36px); }
+.rmhc-root .navlinks a {
+  position: relative; font-size: 14.5px; color: var(--ink); padding: 10px 0;
+  background: linear-gradient(var(--ink) 0 0) left calc(100% - 4px) / 0 1px no-repeat;
+  transition: background-size 0.36s var(--ease);
+}
+[dir='rtl'] .rmhc-root .navlinks a { background-position: right calc(100% - 4px); }
+.rmhc-root .navlinks a:hover,
+.rmhc-root .navlinks a[aria-current='page'] { background-size: 100% 1px; }
+.rmhc-root .nav-toggle {
+  display: none; background: none; border: 0; color: var(--ink); cursor: pointer;
+  width: 44px; height: 44px; align-items: center; justify-content: center;
+}
+.rmhc-root .nav-toggle svg { width: 24px; height: 24px; overflow: visible; }
+.rmhc-root .nav-toggle line { transition: transform 0.36s var(--ease), opacity 0.2s; transform-origin: 12px 12px; }
+.rmhc-root .nav-toggle[aria-expanded='true'] line:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.rmhc-root .nav-toggle[aria-expanded='true'] line:nth-child(2) { opacity: 0; }
+.rmhc-root .nav-toggle[aria-expanded='true'] line:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+.rmhc-root .mobile-menu { display: none; border-top: 1px solid var(--rule); background: var(--paper); padding: 8px var(--pad) 28px; }
+.rmhc-root .mobile-menu a {
+  display: flex; align-items: center; min-height: 56px; font-size: 26px; font-weight: 300;
+  letter-spacing: -0.025em; color: var(--ink); border-bottom: 1px solid var(--rule);
+}
+.rmhc-root .mobile-menu a[aria-current='page'] { color: var(--mute); }
+.rmhc-root .mobile-menu.open { display: block; }
+@media (max-width: 980px) {
+  .rmhc-root .navlinks { display: none; }
+  .rmhc-root .nav-toggle { display: flex; }
+}
+@media (max-width: 560px) {
+  .rmhc-root .backlink-label { display: none; }
+  .rmhc-root .backlink { padding-inline-end: 12px; min-width: 44px; justify-content: center; }
+  .rmhc-root .topnav-left { gap: 12px; }
 }
 
-/* ════ CARD GRID ════ */
-.rmhc-root .cards{display:grid;gap:1px;background:var(--line-soft);border:1px solid var(--line)}
-.rmhc-root .cards.c2{grid-template-columns:repeat(2,1fr)}
-.rmhc-root .cards.c3{grid-template-columns:repeat(3,1fr)}
-.rmhc-root .card{background:var(--void);padding:clamp(28px,3.4vw,44px);display:flex;flex-direction:column;gap:14px;transition:background .3s;position:relative;min-height:230px}
-.rmhc-root .card:hover{background:var(--ink)}
-.rmhc-root .card .ix{display:none}
-.rmhc-root .card h3{font-family:var(--serif);font-size:clamp(20px,2.2vw,26px);color:var(--ivory);font-weight:500;line-height:1.15}
-.rmhc-root .card-brand{font-family:var(--serif);font-style:italic;font-weight:400;font-size:15px;color:var(--gold-bright);line-height:1.2;margin-top:-8px}
-.rmhc-root .card p{font-size:15px;line-height:1.6;flex:1}
-.rmhc-root .cards .card p{display:none}
-.rmhc-root .card .card-link{font-size:13px;font-weight:600;color:var(--gold-bright);display:inline-flex;align-items:center;gap:7px;margin-top:auto}
-.rmhc-root .card .card-link .arw{transition:transform .25s}
-.rmhc-root .card:hover .card-link .arw{transform:translateX(4px)}
-@media(max-width:900px){.rmhc-root .cards.c3{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:620px){.rmhc-root .cards.c2,.rmhc-root .cards.c3{grid-template-columns:1fr}}
+/* ════ CALLS TO ACTION ════
+   Four corner brackets that close into a frame when you reach for them. */
+.rmhc-root .cta {
+  --b: 11px;
+  display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 13px 22px;
+  font: 500 15px/1.2 var(--sans); color: var(--ink); cursor: pointer; border: 0;
+  background:
+    linear-gradient(currentColor 0 0) left top / var(--b) 1px,
+    linear-gradient(currentColor 0 0) left top / 1px var(--b),
+    linear-gradient(currentColor 0 0) right top / var(--b) 1px,
+    linear-gradient(currentColor 0 0) right top / 1px var(--b),
+    linear-gradient(currentColor 0 0) left bottom / var(--b) 1px,
+    linear-gradient(currentColor 0 0) left bottom / 1px var(--b),
+    linear-gradient(currentColor 0 0) right bottom / var(--b) 1px,
+    linear-gradient(currentColor 0 0) right bottom / 1px var(--b);
+  background-repeat: no-repeat;
+  transition: background-size 0.42s var(--ease);
+}
+.rmhc-root .cta:is(:hover, :focus-visible) { --b: 51%; }
+.rmhc-root .cta:active { --b: 51%; opacity: 0.7; }
+/* The one filled button on a view. */
+.rmhc-root .cta--solid { background: var(--ink); color: var(--paper); transition: opacity 0.2s; }
+.rmhc-root .cta--solid:is(:hover, :focus-visible) { opacity: 0.86; }
+.rmhc-root .cta svg { width: 15px; height: 15px; flex: none; transition: transform 0.36s var(--ease); }
+.rmhc-root .cta:is(:hover, :focus-visible) svg { transform: translateX(4px); }
+[dir='rtl'] .rmhc-root :is(.cta, .go) svg { scale: -1 1; }
 
-/* ════ PAGE HEADER (interior pages) ════ */
-.rmhc-root .pagehead{position:relative;padding:clamp(72px,11vw,150px) 0 clamp(48px,7vw,84px);border-bottom:1px solid var(--line-soft);overflow:hidden}
-.rmhc-root .pagehead::before{content:"";position:absolute;inset:-8%;background:radial-gradient(90% 120% at 85% 0%,rgba(200,162,74,0.09),transparent 55%);pointer-events:none;transform:translate3d(0,calc(var(--spatial-scroll-y,0px) * .045),0);will-change:transform}
-.rmhc-root .pagehead-inner{position:relative;z-index:1;max-width:840px}
-.rmhc-root .pagehead h1{font-size:clamp(34px,5.4vw,64px);margin:22px 0 24px}
-.rmhc-root .pagehead .lede{max-width:54ch}
+/* The corner arrow that ends a list item. */
+.rmhc-root .go { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 15px; font-weight: 500; color: var(--ink); }
+.rmhc-root .go svg { width: 22px; height: 22px; flex: none; transition: transform 0.36s var(--ease); }
+.rmhc-root :is(.go, a):is(:hover, :focus-visible) > .go-arrow,
+.rmhc-root .go:is(:hover, :focus-visible) svg { transform: translate(5px, 3px); }
+.rmhc-root .go-arrow { width: 22px; height: 22px; flex: none; color: var(--ink); transition: transform 0.36s var(--ease); }
 
-/* ════ PROSE / VALUE LISTS ════ */
-.rmhc-root .prose p{margin-bottom:20px;max-width:70ch}
-.rmhc-root .prose p:last-child{margin-bottom:0}
-.rmhc-root .valuegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(28px,3vw,44px)}
-.rmhc-root .value{border-top:1px solid var(--line);padding-top:24px}
-.rmhc-root .value h3{font-family:var(--serif);font-size:21px;color:var(--ivory);font-weight:500;margin-bottom:12px}
-.rmhc-root .value p{font-size:15px;line-height:1.6}
-.rmhc-root .valuegrid.two{grid-template-columns:repeat(2,1fr)}
-@media(max-width:820px){.rmhc-root .valuegrid,.rmhc-root .valuegrid.two{grid-template-columns:1fr}}
-
-/* pull quote */
-.rmhc-root .pullquote{font-family:var(--serif);font-weight:400;font-style:italic;font-size:clamp(24px,3.6vw,40px);line-height:1.3;color:var(--ivory);max-width:18ch}
-.rmhc-root .pullquote .lc{color:var(--gold-bright)}
-.rmhc-root .attrib{margin-top:24px;font-size:13px;letter-spacing:0.04em;color:var(--gray)}
-
-/* ════ INSIGHTS ════ */
-.rmhc-root .filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:48px}
-.rmhc-root .chip{font-size:13px;font-weight:500;letter-spacing:0.02em;color:var(--gray);background:transparent;border:1px solid var(--line-soft);padding:9px 16px;border-radius:100px; corner-shape: round;cursor:pointer;transition:background-color .2s,border-color .2s,color .2s;font-family:var(--sans)}
-.rmhc-root .chip:hover{color:var(--ivory);border-color:var(--line)}
-.rmhc-root .chip[aria-pressed="true"]{color:var(--void);background:var(--gold);border-color:var(--gold)}
-.rmhc-root .featured{display:grid;grid-template-columns:1.4fr 1fr;gap:1px;background:var(--line-soft);border:1px solid var(--line);margin-bottom:48px}
-.rmhc-root .featured-main{background:linear-gradient(160deg,var(--ink),var(--void));padding:clamp(32px,5vw,64px);display:flex;flex-direction:column;justify-content:flex-end;min-height:380px;position:relative;overflow:hidden}
-.rmhc-root .featured-main h3{font-family:var(--serif);font-size:clamp(26px,3.4vw,42px);color:var(--ivory);font-weight:500;line-height:1.12;margin:18px 0 16px;max-width:18ch}
-.rmhc-root .featured-side{background:var(--void);display:flex;flex-direction:column}
-.rmhc-root .fside-item{padding:clamp(22px,3vw,32px);border-bottom:1px solid var(--line-soft);flex:1;transition:background .25s}
-.rmhc-root .fside-item:last-child{border-bottom:0}
-.rmhc-root .fside-item:hover{background:var(--ink)}
-.rmhc-root .fside-item h4{font-family:var(--serif);font-size:18px;color:var(--ivory);font-weight:500;margin:10px 0 8px;line-height:1.25}
-.rmhc-root .fside-item p{font-size:13.5px;color:var(--gray)}
-@media(max-width:820px){.rmhc-root .featured{grid-template-columns:1fr}}
-.rmhc-root .metaline{font-family:var(--mono);font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);display:flex;gap:14px;align-items:center}
-.rmhc-root .metaline .dot{width:3px;height:3px;border-radius:50%; corner-shape: round;background:var(--gray-dim)}
-.rmhc-root .metaline .t{color:var(--gray)}
-.rmhc-root .articlegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line)}
-.rmhc-root .article{background:var(--void);padding:clamp(26px,3vw,36px);display:flex;flex-direction:column;gap:14px;transition:background .25s;min-height:280px}
-.rmhc-root .article:hover{background:var(--ink)}
-.rmhc-root .article h3{font-family:var(--serif);font-size:20px;color:var(--ivory);font-weight:500;line-height:1.2}
-.rmhc-root .article p{font-size:14px;flex:1}
-.rmhc-root .article .rd{font-size:12.5px;color:var(--gold-bright);font-weight:600}
-.rmhc-root .article.hide{display:none}
-@media(max-width:900px){.rmhc-root .articlegrid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:620px){.rmhc-root .articlegrid{grid-template-columns:1fr}}
-
-/* ════ BUSINESSES (interior) ════ */
-.rmhc-root .biz{display:grid;grid-template-columns:0.9fr 1.1fr;gap:clamp(36px,6vw,80px);align-items:start;padding:clamp(56px,8vw,104px) 0;border-bottom:1px solid var(--line-soft)}
-.rmhc-root .biz:last-of-type{border-bottom:0}
-.rmhc-root .biz.flip .biz-media{order:2}
-.rmhc-root .biz-stage{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--gold);text-transform:uppercase;margin-bottom:16px}
-.rmhc-root .biz h2{font-family:var(--serif);font-size:clamp(26px,3.4vw,40px);color:var(--ivory);font-weight:500;line-height:1.1;margin-bottom:6px}
-.rmhc-root .biz-brand{font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(16px,1.9vw,21px);color:var(--gold-bright);line-height:1.2}
-.rmhc-root .biz .biz-num{display:none}
-.rmhc-root .biz p{margin-bottom:24px;max-width:60ch}
-.rmhc-root .caps{list-style:none;display:flex;flex-wrap:wrap;gap:10px;padding:0;margin:0}
-.rmhc-root .caps li{font-size:13px;color:var(--gray);border:1px solid var(--line-soft);padding:8px 14px;border-radius:100px}
-.rmhc-root .biz-media{position:sticky;top:104px;border:1px solid var(--line);background:linear-gradient(150deg,var(--ink),var(--void));aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;overflow:hidden}
-@media(max-width:860px){
-  .rmhc-root .biz{grid-template-columns:1fr;gap:26px}
-  .rmhc-root .biz.flip .biz-media{order:0}
-  .rmhc-root .biz-media{position:static;aspect-ratio:16/9}
+/* ════ HERO ════
+   A satin slab inset from the left carries the headline; the colonnade is
+   stepped under it and rises beside it in the gutter. */
+.rmhc-root .hero { position: relative; }
+.rmhc-root .hero-slab {
+  margin-inline-start: var(--gutter); min-height: clamp(340px, 52vh, 560px);
+  display: flex; align-items: flex-end; position: relative; z-index: 1;
+  padding: clamp(40px, 6vw, 96px) var(--pad) clamp(36px, 4.4vw, 68px) clamp(24px, 4vw, 64px);
+}
+.rmhc-root .hero-copy { max-width: 900px; }
+.rmhc-root .hero-copy .lede { margin-top: clamp(18px, 2vw, 28px); max-width: 52ch; }
+.rmhc-root .hero-copy .actions { margin-top: clamp(24px, 3vw, 40px); }
+.rmhc-root .hero-step {
+  --rise: clamp(0px, 9vw, 132px);
+  margin-top: calc(var(--rise) * -1); height: calc(clamp(180px, 30vh, 360px) + var(--rise));
+  clip-path: polygon(0 0, var(--gutter) 0, var(--gutter) var(--rise), 100% var(--rise), 100% 100%, 0 100%);
+}
+[dir='rtl'] .rmhc-root .hero-step {
+  clip-path: polygon(100% 0, calc(100% - var(--gutter)) 0, calc(100% - var(--gutter)) var(--rise), 0 var(--rise), 0 100%, 100% 100%);
+}
+.rmhc-root .hero-step .plate { height: 100%; aspect-ratio: auto; }
+@media (max-width: 700px) {
+  .rmhc-root { --gutter: 0px; }
+  .rmhc-root .hero-step { --rise: 0px; }
 }
 
-/* ════ CAREERS ════ */
-.rmhc-root .pathgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line)}
-.rmhc-root .path{background:var(--void);padding:clamp(30px,3.6vw,46px);transition:background .3s}
-.rmhc-root .path:hover{background:var(--ink)}
-.rmhc-root .path .ix{display:none}
-.rmhc-root .path h3{font-family:var(--serif);font-size:24px;color:var(--ivory);font-weight:500;margin:14px 0 12px}
-.rmhc-root .path p{font-size:15px;line-height:1.6}
-@media(max-width:760px){.rmhc-root .pathgrid{grid-template-columns:1fr}}
-.rmhc-root .cta-band{background:linear-gradient(120deg,var(--ink),var(--void));border:1px solid var(--line);padding:clamp(40px,6vw,76px);text-align:center}
-.rmhc-root .cta-band h2{font-family:var(--serif);font-size:clamp(26px,3.6vw,42px);color:var(--ivory);font-weight:500;margin-bottom:18px}
-.rmhc-root .cta-band p{max-width:52ch;margin:0 auto 32px}
-
-/* ════ CONTACT ════ */
-.rmhc-root .contact-grid{display:grid;grid-template-columns:0.85fr 1.15fr;gap:clamp(40px,6vw,80px);align-items:start}
-@media(max-width:860px){.rmhc-root .contact-grid{grid-template-columns:1fr}}
-.rmhc-root .office{border-top:1px solid var(--line);padding:22px 0}
-.rmhc-root .office h3{font-family:var(--serif);font-size:18px;color:var(--ivory);font-weight:500;margin-bottom:6px}
-.rmhc-root .office p{font-size:14px;line-height:1.55}
-.rmhc-root .form-field{margin-bottom:22px}
-.rmhc-root .form-field label{display:block;font-size:12.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--gold);margin-bottom:9px}
-.rmhc-root .form-field input,.rmhc-root .form-field select,.rmhc-root .form-field textarea{
-  width:100%;background:var(--ink);border:1px solid var(--line-soft);color:var(--ivory);
-  font-family:var(--sans);font-size:max(15px,var(--site-field-font-floor,0px));padding:14px 16px;transition:border-color .2s;border-radius:var(--spatial-radius);
+/* Interior pages: the same slab, shorter, with nothing under it. */
+.rmhc-root .pagehead-slab {
+  margin-inline-start: var(--gutter); min-height: clamp(260px, 38vh, 420px);
+  display: flex; align-items: flex-end;
+  padding: clamp(40px, 6vw, 88px) var(--pad) clamp(32px, 4vw, 60px) clamp(24px, 4vw, 64px);
 }
-.rmhc-root .form-field input:focus,.rmhc-root .form-field select:focus,.rmhc-root .form-field textarea:focus{outline:none;border-color:var(--gold)}
-.rmhc-root .form-field textarea{resize:vertical;min-height:130px}
-.rmhc-root .form-field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C8A24A' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
-.rmhc-root .form-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-@media(max-width:560px){.rmhc-root .form-row{grid-template-columns:1fr}}
-.rmhc-root .form-note{font-size:12.5px;color:var(--gray-dim);margin-top:8px}
-.rmhc-root .form-success{display:none;border:1px solid var(--gold);background:rgba(200,162,74,0.06);padding:18px 20px;font-size:14.5px;color:var(--ivory);margin-bottom:24px}
-.rmhc-root .form-success.show{display:block}
+.rmhc-root .pagehead-copy { max-width: 860px; }
+.rmhc-root .pagehead-copy .lede { margin-top: clamp(16px, 1.8vw, 24px); max-width: 54ch; }
+
+/* ════ TRIO ════ Three columns on rules, each ending in the corner arrow. */
+.rmhc-root .trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 4vw, 56px) var(--gap); }
+.rmhc-root .trio-item {
+  position: relative; display: flex; flex-direction: column; gap: 14px;
+  padding-top: 22px; border-top: 1px solid var(--rule); min-height: 100%;
+}
+.rmhc-root .trio-item::before,
+.rmhc-root .row::before {
+  content: ''; position: absolute; inset-inline: 0; top: -1px; height: 1px; background: var(--ink);
+  transform: scaleX(0); transform-origin: left center; transition: transform 0.5s var(--ease);
+}
+[dir='rtl'] .rmhc-root :is(.trio-item, .row)::before { transform-origin: right center; }
+.rmhc-root :is(a.trio-item, a.row):is(:hover, :focus-visible)::before { transform: scaleX(1); }
+.rmhc-root .trio-item p { font-size: 15.5px; flex: 1; max-width: 40ch; }
+.rmhc-root .trio-alias { font-family: var(--mono); font-size: 12.5px; color: var(--mute); margin-top: -8px; }
+@media (max-width: 900px) { .rmhc-root .trio { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .rmhc-root .trio { grid-template-columns: 1fr; } }
+
+/* ════ ROWS ════ A list is rows on rules. */
+.rmhc-root .rows { border-bottom: 1px solid var(--rule); }
+.rmhc-root .row {
+  position: relative; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 6fr) auto;
+  column-gap: var(--gap); row-gap: 8px; align-items: baseline;
+  padding: clamp(20px, 2.4vw, 32px) 0; border-top: 1px solid var(--rule);
+  transition: padding 0.42s var(--ease);
+}
+.rmhc-root a.row:is(:hover, :focus-visible) { padding-inline-start: 14px; }
+.rmhc-root .row-title { font-size: clamp(20px, 1.9vw, 27px); font-weight: 400; line-height: 1.2; letter-spacing: -0.015em; color: var(--ink); }
+.rmhc-root .row-text { font-size: 15.5px; max-width: 58ch; }
+.rmhc-root .row-end { align-self: center; }
+/* A stacked row: title over text, for a narrow column. */
+.rmhc-root :is(.rows--stack, .contact-offices) .row { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 760px) {
+  .rmhc-root .row { grid-template-columns: minmax(0, 1fr) auto; }
+  .rmhc-root .row-text { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* ════ FIGURES ════ */
+.rmhc-root .figs { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); border-block: 1px solid var(--rule); }
+.rmhc-root .fig { padding: clamp(22px, 3vw, 40px) var(--gap); border-inline-start: 1px solid var(--rule); }
+.rmhc-root .fig:first-child { border-inline-start: 0; padding-inline-start: 0; }
+.rmhc-root .fig-n {
+  display: block; font-size: clamp(40px, 5.4vw, 84px); font-weight: 300; line-height: 1;
+  letter-spacing: -0.045em; font-variant-numeric: tabular-nums;
+}
+.rmhc-root .fig-k { display: block; margin-top: 12px; font-size: 14.5px; line-height: 1.45; max-width: 26ch; }
+@media (max-width: 820px) {
+  .rmhc-root .figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rmhc-root .fig:nth-child(odd) { border-inline-start: 0; padding-inline-start: 0; }
+  .rmhc-root .fig:nth-child(n + 3) { border-top: 1px solid var(--rule); }
+}
+/* A number that counts up as it scrolls in. `--to` is the integer it lands on. */
+.rmhc-root .count-n { counter-reset: rcn var(--to); }
+.rmhc-root .count-n::before { content: attr(data-pre) counter(rcn) attr(data-suf); }
+
+/* ════ QUOTE ════ */
+.rmhc-root .quote { font-size: clamp(26px, 3.4vw, 50px); font-weight: 300; line-height: 1.14; letter-spacing: -0.03em; color: var(--ink); max-width: 24ch; text-wrap: balance; }
+.rmhc-root .quote-by { margin-top: 22px; font-size: 14.5px; }
+
+/* ════ TOMBSTONES ════
+   A deal is announced the way deals are: a ruled notice, set in serif, as a
+   matter of record. The bezel is the chrome. */
+.rmhc-root .tombs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+@media (max-width: 760px) { .rmhc-root .tombs { grid-template-columns: 1fr; } }
+.rmhc-root .tomb {
+  display: block; padding: 8px; position: relative;
+  background: linear-gradient(135deg,
+    var(--c1) 0%,
+    var(--c2) calc(22% + var(--k) * 60%),
+    var(--c3) calc(46% + var(--k) * 60%),
+    var(--c4) calc(49% + var(--k) * 60%),
+    var(--c5) 74%,
+    var(--c6) 100%);
+}
+.rmhc-root .tomb-face {
+  background: var(--paper); height: 100%; text-align: center;
+  padding: clamp(28px, 3.6vw, 52px) clamp(20px, 3vw, 44px);
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  font-family: var(--serif); color: var(--ink);
+}
+.rmhc-root .tomb-record { font-size: 13.5px; font-style: italic; color: var(--mute); max-width: 34ch; }
+.rmhc-root .tomb-date { font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
+.rmhc-root .tomb-parties { font-size: clamp(22px, 2.4vw, 32px); font-weight: 500; line-height: 1.15; letter-spacing: -0.01em; }
+.rmhc-root .tomb-amount {
+  font-family: var(--sans); font-size: clamp(44px, 6vw, 88px); font-weight: 300; line-height: 1;
+  letter-spacing: -0.045em; margin-block: 6px; font-variant-numeric: tabular-nums;
+}
+.rmhc-root .tomb-what { font-size: 17px; line-height: 1.45; max-width: 30ch; }
+.rmhc-root .tomb-rule { width: 44px; height: 1px; background: var(--ink); margin-block: 6px; }
+.rmhc-root .tomb-role { font-size: 15px; line-height: 1.4; }
+.rmhc-root .tomb-role b { display: block; font-weight: 500; font-size: 19px; }
+.rmhc-root .tomb .go { margin-top: auto; font-family: var(--sans); }
+.rmhc-root a.tomb:is(:hover, :focus-visible) .go svg { transform: translate(5px, 3px); }
+
+/* ════ NOTICE ════ The satire notice. It stays on every page that names a deal. */
+.rmhc-root .notice {
+  border-block: 1px solid var(--rule); padding-block: 18px;
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.6; color: var(--mute); max-width: 90ch;
+}
+
+/* ════ CHIPS ════ */
+.rmhc-root .chips { display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.rmhc-root .chip {
+  font: 400 15px/1.2 var(--sans); color: var(--mute); background: none; border: 0; cursor: pointer;
+  min-height: 44px; padding: 0;
+  background: linear-gradient(var(--ink) 0 0) left calc(100% - 9px) / 0 1px no-repeat;
+  transition: background-size 0.36s var(--ease), color 0.2s;
+}
+.rmhc-root .chip:hover { color: var(--ink); }
+.rmhc-root .chip[aria-pressed='true'] { color: var(--ink); background-size: 100% 1px; }
+
+/* ════ FORMS ════ A field is a line to write on. */
+.rmhc-root .field { margin-bottom: 26px; }
+.rmhc-root .field label { display: block; font-size: 13.5px; font-weight: 500; color: var(--ink); margin-bottom: 6px; }
+.rmhc-root .field :is(input, textarea, select) {
+  width: 100%; background: transparent; border: 0; border-bottom: 1px solid var(--mute); border-radius: 0;
+  color: var(--ink); font-family: var(--sans); font-size: max(16px, var(--site-field-font-floor, 0px));
+  padding: 10px 0; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.rmhc-root .field :is(input, textarea, select):focus { outline: none; border-bottom-color: var(--ink); box-shadow: 0 1px 0 var(--ink); }
+.rmhc-root .field textarea { resize: vertical; min-height: 120px; }
+.rmhc-root .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+@media (max-width: 560px) { .rmhc-root .field-row { grid-template-columns: 1fr; } }
+.rmhc-root .form-note { font-size: 13px; margin-top: 14px; max-width: 62ch; }
+.rmhc-root .form-success { display: none; border-block: 1px solid var(--ink); padding: 18px 0; font-size: 16px; color: var(--ink); margin-bottom: 28px; }
+.rmhc-root .form-success.show { display: block; }
 
 /* ════ FOOTER ════ */
-.rmhc-root .footer{border-top:1px solid var(--line);background:var(--void);padding:clamp(56px,7vw,84px) 0 40px}
-.rmhc-root .footer-top{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px;margin-bottom:56px}
-.rmhc-root .footer-brand .brand{margin-bottom:18px}
-.rmhc-root .footer-brand p{font-size:14px;max-width:34ch;color:var(--gray)}
-.rmhc-root .footer-col h4{font-size:12px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--gray-dim);margin-bottom:18px}
-.rmhc-root .footer-col a{display:block;font-size:14px;color:var(--gray);padding:6px 0;transition:color .2s}
-.rmhc-root .footer-col a:hover{color:var(--ivory)}
-.rmhc-root .footer-bottom{border-top:1px solid var(--line-soft);padding-top:28px;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
-.rmhc-root .footer-legal{display:flex;gap:24px;flex-wrap:wrap}
-.rmhc-root .footer-legal a{font-size:12.5px;color:var(--gray-dim);transition:color .2s}
-.rmhc-root .footer-legal a:hover{color:var(--gray)}
-.rmhc-root .footer-social{display:flex;gap:12px}
-.rmhc-root .footer-social a{width:44px;height:44px;border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;color:var(--gray);transition:border-color .25s,color .25s}
-.rmhc-root .footer-social a:hover{border-color:var(--gold);color:var(--gold-bright)}
-.rmhc-root .footer-social svg{width:16px;height:16px}
-.rmhc-root .disclaimer{margin-top:28px;font-size:12px;line-height:1.7;color:var(--gray-dim);max-width:90ch}
-.rmhc-root .copy{font-size:12.5px;color:var(--gray-dim)}
-@media(max-width:860px){.rmhc-root .footer-top{grid-template-columns:1fr 1fr;gap:36px}}
-@media(max-width:480px){.rmhc-root .footer-top{grid-template-columns:1fr}}
-
-/* Touch targets: footer links and filter chips reach the 44px floor on coarse pointers. */
-@media(pointer:coarse){
-  .rmhc-root .footer-col a,.rmhc-root .footer-legal a{min-height:44px;display:flex;align-items:center}
-  .rmhc-root .chip,.rmhc-root .nav-cta{min-height:44px}
-  .rmhc-root .btn-text{min-height:44px}
+.rmhc-root .footer { border-top: 1px solid var(--rule); padding: clamp(48px, 6vw, 80px) 0 36px; }
+.rmhc-root .footer-word {
+  display: block; font-size: clamp(56px, 13.4vw, 216px); font-weight: 300; line-height: 0.92;
+  letter-spacing: -0.06em; white-space: nowrap; margin-bottom: clamp(36px, 5vw, 72px);
+}
+.rmhc-root .footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 36px var(--gap); margin-bottom: 48px; }
+.rmhc-root .footer-brand p { font-size: 15px; max-width: 34ch; }
+.rmhc-root .footer-brand .go { margin-top: 12px; }
+.rmhc-root .footer-col h4 { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 12px; }
+.rmhc-root .footer-col a { display: block; font-size: 14.5px; padding: 5px 0; transition: color 0.2s; }
+.rmhc-root .footer-col a:hover { color: var(--ink); }
+.rmhc-root .footer-bottom {
+  border-top: 1px solid var(--rule); padding-top: 22px;
+  display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; align-items: center;
+}
+.rmhc-root .footer-legal { display: flex; gap: 4px 22px; flex-wrap: wrap; }
+.rmhc-root .footer-legal a,
+.rmhc-root .copy { font-size: 13px; }
+.rmhc-root .footer-legal a:hover { color: var(--ink); }
+.rmhc-root .disclaimer { margin-top: 22px; font-size: 12.5px; line-height: 1.65; max-width: 96ch; }
+@media (max-width: 860px) { .rmhc-root .footer-top { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .rmhc-root .footer-top { grid-template-columns: 1fr; } }
+@media (pointer: coarse) {
+  .rmhc-root .footer-col a,
+  .rmhc-root .footer-legal a { min-height: 44px; display: flex; align-items: center; }
 }
 
-/* Spatial consistency pass: visible interactive surfaces share one geometry. */
-.rmhc-root :is(a,button,input,textarea,select,.card,.feature-media,.featured,.fside-item,.caps li,.chip){border-radius:var(--spatial-radius)}
+/* ════════════════════════════════════════════════════════════════════════
+   MOTION
+   ════════════════════════════════════════════════════════════════════════ */
+@keyframes rc-word { from { transform: translateY(108%); } to { transform: none; } }
+@keyframes rc-fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes rc-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rc-slab-in { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
+@keyframes rc-slab-in-rtl { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+@keyframes rc-plate-in { from { opacity: 0; transform: scale(1.1); } to { opacity: 1; transform: none; } }
+@keyframes rc-rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes rc-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes rc-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+@keyframes rc-wipe-rtl { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
+@keyframes rc-drift { from { --rc-sx: -1; } to { --rc-sx: 1; } }
+@keyframes rc-count { from { --rc-n: 0; } to { --rc-n: var(--to); } }
+@keyframes rc-sheen { from { transform: translateX(-130%) skewX(-18deg); } to { transform: translateX(330%) skewX(-18deg); } }
 
-/* ════ REVEAL ════
-   Scroll-driven, and fail-OPEN — same change, same reasons, as the twin block in
-   rmh-pmc.css. See docs/archive/2026/performance-audit-2026-08-12.md §1.4. The hidden start
-   state lives only where a scroll timeline can undo it, so a page that cannot
-   animate has never hidden anything. */
-@supports (animation-timeline: view()) {
-    html .rmhc-root .reveal {
-      animation: rmhc-reveal-in linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 46%;
+/* The words of a headline sit in masks whether or not they move. */
+.rmhc-root .words .w { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: 0.16em; margin-bottom: -0.16em; }
+.rmhc-root .words .w > span { display: inline-block; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ── load: once per page, in order — slab, words, the rest ── */
+  html:not([data-jelly-motion='still']) .rmhc-root .words .w > span {
+    animation: rc-word 0.95s var(--ease) both;
+    animation-delay: calc(var(--d, 0.28s) + var(--i, 0) * 0.045s);
+  }
+  html:not([data-jelly-motion='still']) .rmhc-root .ld {
+    animation: rc-fade-up 0.8s var(--ease) both;
+    animation-delay: calc(0.5s + var(--i, 0) * 0.12s);
+  }
+  html:not([data-jelly-motion='still']) .rmhc-root .topnav-inner { animation: rc-fade 0.7s ease both; }
+  html:not([data-jelly-motion='still']) .rmhc-root :is(.hero-slab, .pagehead-slab) { animation: rc-slab-in 1s var(--ease) both; }
+  html:not([data-jelly-motion='still'])[dir='rtl'] .rmhc-root :is(.hero-slab, .pagehead-slab) { animation-name: rc-slab-in-rtl; }
+  html:not([data-jelly-motion='still']) .rmhc-root .hero-step .plate { animation: rc-plate-in 1.3s var(--ease) 0.12s both; }
+  html:not([data-jelly-motion='still']) .rmhc-root .mobile-menu.open a {
+    animation: rc-fade-up 0.5s var(--ease) both; animation-delay: calc(var(--i, 0) * 0.045s);
+  }
+  /* A tombstone's bezel catches the light when you reach for it. */
+  .rmhc-root .tomb::after {
+    content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 30%; pointer-events: none;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+    transform: translateX(-130%) skewX(-18deg); mix-blend-mode: soft-light;
+  }
+  .rmhc-root .tomb { overflow: hidden; }
+  html:not([data-jelly-motion='still']) .rmhc-root a.tomb:is(:hover, :focus-visible)::after { animation: rc-sheen 0.9s var(--ease) both; }
+
+  /* ── view: scroll-driven. The hidden start states exist only where a scroll
+     timeline can undo them, so a browser that cannot animate hides nothing. ── */
+  @supports (animation-timeline: view()) {
+    html:not([data-jelly-motion='still']) .rmhc-root .rv {
+      animation: rc-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 42%;
     }
-    /* Range shift, not `animation-delay` — a scroll timeline has no clock. */
-    html .rmhc-root .reveal.d1 { animation-range: entry 7% entry 53%; }
-    html .rmhc-root .reveal.d2 { animation-range: entry 14% entry 60%; }
-    html .rmhc-root .reveal.d3 { animation-range: entry 21% entry 67%; }
-}
-@keyframes rmhc-reveal-in {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: none; }
+    /* A range shift, not a delay: a scroll timeline has no clock. */
+    html:not([data-jelly-motion='still']) .rmhc-root .rv.d1 { animation-range: entry 8% entry 50%; }
+    html:not([data-jelly-motion='still']) .rmhc-root .rv.d2 { animation-range: entry 16% entry 58%; }
+    html:not([data-jelly-motion='still']) .rmhc-root .rv.d3 { animation-range: entry 24% entry 66%; }
+    html:not([data-jelly-motion='still']) .rmhc-root .rv-rule {
+      animation: rc-draw linear both; animation-timeline: view(); animation-range: entry 0% entry 90%;
+    }
+    html:not([data-jelly-motion='still']) .rmhc-root .rv-wipe {
+      animation: rc-wipe linear both; animation-timeline: view(); animation-range: entry 0% entry 70%;
+    }
+    html:not([data-jelly-motion='still'])[dir='rtl'] .rmhc-root .rv-wipe { animation-name: rc-wipe-rtl; }
+
+    /* ── chrome: reflections travel as the surface crosses the viewport ── */
+    html:not([data-jelly-motion='still']) .rmhc-root .chrome {
+      animation: rc-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%;
+    }
+    /* The hero's two surfaces carry their load animation and the drift together. */
+    html:not([data-jelly-motion='still']) .rmhc-root :is(.hero-slab, .pagehead-slab).chrome {
+      animation: rc-slab-in 1s var(--ease) both, rc-drift linear both;
+      animation-timeline: auto, view(); animation-range: normal, cover 0% cover 100%;
+    }
+    html:not([data-jelly-motion='still'])[dir='rtl'] .rmhc-root :is(.hero-slab, .pagehead-slab).chrome {
+      animation-name: rc-slab-in-rtl, rc-drift;
+    }
+    html:not([data-jelly-motion='still']) .rmhc-root .hero-step .plate.chrome {
+      animation: rc-plate-in 1.3s var(--ease) 0.12s both, rc-drift linear both;
+      animation-timeline: auto, view(); animation-range: normal, cover 0% cover 100%;
+    }
+    html:not([data-jelly-motion='still']) .rmhc-root .count-n {
+      counter-reset: rcn var(--rc-n);
+      animation: rc-count linear both; animation-timeline: view();
+      /* Done by the time the figure is wholly on screen: a number that is at
+         rest in view is always the real number. */
+      animation-range: entry 0% entry 100%;
+    }
+    html:not([data-jelly-motion='still']) .rmhc-root .topnav::after {
+      animation: rc-draw linear both; animation-timeline: scroll(root block);
+    }
+  }
 }
 
-/* arc draw animation */
-.rmhc-root .arc-draw{stroke-dasharray:var(--len,2000);stroke-dashoffset:var(--len,2000);animation:rmhc-draw 2.6s cubic-bezier(.4,0,.2,1) forwards}
-@keyframes rmhc-draw{to{stroke-dashoffset:0}}
-.rmhc-root .spin-slow{transform-box:fill-box;transform-origin:center;animation:rmhc-spin 120s linear infinite}
-@keyframes rmhc-spin{to{transform:rotate(360deg)}}
+/* ════ PAGES ════ Rules one page needs and the system does not carry. */
+
+/* ── home ── */
+/* ════ HOME ════ Spacing the system leaves to the page, and one larger heading. */
+.rmhc-root .home-gap { margin-top: clamp(40px, 5vw, 72px); }
+.rmhc-root .home-after { margin-top: clamp(24px, 3vw, 40px); }
+.rmhc-root .home-big {
+  font-size: clamp(36px, 5.4vw, 84px); line-height: 1.04; letter-spacing: -0.035em; max-width: 18ch;
+}
+
+/* ── firm ── */
+/* Firm page: a two-column row (title, text) without the trailing arrow column. */
+.rmhc-root .firm-rows { margin-top: 0; }
+.rmhc-root .firm-rows .row { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); }
+@media (max-width: 760px) {
+  .rmhc-root .firm-rows .row { grid-template-columns: minmax(0, 1fr); }
+  .rmhc-root .firm-rows .row-text { grid-row: auto; }
+}
+
+/* ── businesses ── */
+/* Businesses page: capabilities are a plain list on rules, one title per row. */
+.rmhc-root .biz-caps { margin-top: clamp(24px, 3vw, 40px); }
+.rmhc-root .biz-caps .row { grid-template-columns: minmax(0, 1fr); padding-block: 16px; }
+.rmhc-root .biz-caps .row-title { font-size: clamp(17px, 1.5vw, 20px); }
+.rmhc-root .biz-lead > .h2 { margin-top: 10px; }
+.rmhc-root .biz-lead .trio-alias { margin-top: 10px; }
+
+/* ── deals ── */
+/* ════ DEALS ════ Page rules the system lacks: the ownership bar, terms on
+   rules, the timetable as a sequence, the desk list, the plate's measure. */
+
+/* Ownership: one bar, split where the shareholders are. */
+.rmhc-root .deal-own { display: flex; block-size: clamp(64px, 8vw, 112px); }
+.rmhc-root .deal-own-a { flex: 0 0 85%; }
+.rmhc-root .deal-own-b { flex: 1 1 auto; background: var(--ink); }
+.rmhc-root .deal-own-key { display: grid; grid-template-columns: minmax(0, 85fr) minmax(0, 15fr); margin-top: 18px; }
+.rmhc-root .deal-own-key > p { border-inline-start: 1px solid var(--ink); padding-inline: 14px 8px; }
+.rmhc-root .deal-own-pct {
+  display: block; font-size: clamp(28px, 3vw, 44px); font-weight: 300; line-height: 1;
+  letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.rmhc-root .deal-own-who { display: block; margin-top: 8px; font-size: 14.5px; line-height: 1.45; }
+@media (max-width: 600px) {
+  .rmhc-root .deal-own-key { grid-template-columns: 1fr; row-gap: 18px; }
+}
+
+/* Terms on rules: the term in ink on the left, the value beside it. */
+.rmhc-root .deal-dl { border-bottom: 1px solid var(--rule); }
+.rmhc-root .deal-dl > div {
+  display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 5fr); column-gap: var(--gap); row-gap: 6px;
+  padding-block: clamp(16px, 1.8vw, 24px); border-top: 1px solid var(--rule);
+}
+.rmhc-root .deal-dl dt { font-size: 15.5px; font-weight: 500; color: var(--ink); }
+.rmhc-root .deal-dl dd { font-size: 15.5px; max-width: 58ch; }
+@media (max-width: 560px) { .rmhc-root .deal-dl > div { grid-template-columns: 1fr; } }
+
+/* The timetable: what has happened is drawn in ink and filled; what is
+   expected is drawn in the rule and left open. */
+.rmhc-root .deal-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(28px, 3vw, 40px) var(--gap); counter-reset: deal-step; }
+.rmhc-root .deal-step {
+  position: relative; display: flex; flex-direction: column; gap: 10px;
+  padding-top: 26px; border-top: 1px solid var(--ink); counter-increment: deal-step;
+}
+.rmhc-root .deal-step::before {
+  content: ''; position: absolute; top: -6px; inset-inline-start: 0;
+  inline-size: 9px; block-size: 9px; background: var(--ink); border: 1px solid var(--ink);
+}
+.rmhc-root .deal-step--due { border-top-color: var(--rule); }
+.rmhc-root .deal-step--due::before { background: var(--paper); }
+.rmhc-root .deal-step-n::before { content: counter(deal-step, decimal-leading-zero); }
+.rmhc-root .deal-step-what { font-size: clamp(21px, 1.9vw, 27px); font-weight: 400; line-height: 1.2; letter-spacing: -0.015em; color: var(--ink); }
+.rmhc-root .deal-step-text { font-size: 15.5px; max-width: 36ch; }
+@media (max-width: 760px) { .rmhc-root .deal-steps { grid-template-columns: 1fr; } }
+
+/* A business's alias under its name, and the four desks on rules. */
+.rmhc-root .deal-alias { display: block; margin-top: 8px; }
+.rmhc-root .deal-desks { margin-top: 18px; border-bottom: 1px solid var(--rule); }
+.rmhc-root .deal-desks li { padding-block: 12px; border-top: 1px solid var(--rule); }
+.rmhc-root .deal-desks b { display: block; font-weight: 500; color: var(--ink); }
+
+/* The Enlightenment Facility: the plate's measure, words as figures, terms in a grid. */
+.rmhc-root .deal-plate { max-inline-size: 420px; }
+@media (max-width: 900px) { .rmhc-root .deal-plate { max-inline-size: 260px; } }
+.rmhc-root .fig-n.deal-fig-term { font-size: clamp(30px, 3.8vw, 60px); letter-spacing: -0.035em; line-height: 1.05; }
+.rmhc-root .deal-terms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(24px, 3vw, 40px) var(--gap); }
+.rmhc-root .deal-terms > div { padding-top: 16px; border-top: 1px solid var(--rule); }
+.rmhc-root .deal-terms dt { font-family: var(--mono); font-size: 12.5px; line-height: 1.4; color: var(--mute); }
+.rmhc-root .deal-terms dd {
+  margin-top: 10px; font-size: clamp(18px, 1.6vw, 22px); line-height: 1.35;
+  letter-spacing: -0.01em; color: var(--ink); max-width: 28ch;
+}
+@media (max-width: 900px) { .rmhc-root .deal-terms { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .rmhc-root .deal-terms { grid-template-columns: 1fr; } }
+
+/* ── insights ── */
+.rmhc-root .ins-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-bottom: 8px; }
+.rmhc-root .ins-rows { margin-top: clamp(28px, 4vw, 56px); }
+.rmhc-root .ins-empty { padding-block: clamp(20px, 2.4vw, 32px); color: var(--ink); }

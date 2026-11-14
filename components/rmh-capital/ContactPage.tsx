@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
+import { ArrowIcon, PageHead } from './shared';
 
 const INQUIRY_TYPES = [
   'Investment Banking',
@@ -35,63 +36,55 @@ export default function ContactPage({ initialType }: { initialType?: string }) {
 
   return (
     <>
-      <section className="pagehead">
-        <div className="container pagehead-inner">
-          <span className="eyebrow reveal">{t('contact', { defaultValue: 'Contact' })}</span>
-          <h1 className="serif reveal d1">
-            {t('reach-the-right-team', { defaultValue: 'Reach the right team.' })}
-          </h1>
-          <p className="lede reveal d2">
-            {t('lede', {
-              defaultValue:
-                "Tell us what you're working on and we'll route your message to the people who can help. For anything time-sensitive, choose the matching inquiry type below.",
-            })}
-          </p>
-        </div>
-      </section>
+      <PageHead
+        title={t('reach-the-right-team', { defaultValue: 'Reach the right team.' })}
+        lede={t('lede', {
+          defaultValue:
+            "Tell us what you're working on and we'll route your message to the people who can help. For anything time-sensitive, choose the matching inquiry type below.",
+        })}
+      />
 
-      <section className="section">
-        <div className="container">
-          <div className="contact-grid">
-            {/* left: offices + routing */}
-            <div className="reveal">
-              <span className="eyebrow">{t('offices', { defaultValue: 'Offices' })}</span>
-              <div style={{ marginTop: 24 }}>
-                <div className="office">
-                  <h3>New York</h3>
-                  <p>
+      <section className="sec">
+        <div className="wrap">
+          <div className="offset">
+            <div className="o-lead rv">
+              <h2 className="h3">{t('offices', { defaultValue: 'Offices' })}</h2>
+              <div className="rows contact-offices">
+                <div className="row">
+                  <h3 className="row-title">New York</h3>
+                  <p className="row-text">
                     {t('ny-desc', { defaultValue: 'Global headquarters' })}
                     <br />
                     One Platform Plaza, New York, NY
                   </p>
                 </div>
-                <div className="office">
-                  <h3>London</h3>
-                  <p>
+                <div className="row">
+                  <h3 className="row-title">London</h3>
+                  <p className="row-text">
                     {t('london-desc', { defaultValue: 'EMEA' })}
                     <br />
                     Threadneedle Court, London EC2
                   </p>
                 </div>
-                <div className="office">
-                  <h3>Singapore</h3>
-                  <p>
+                <div className="row">
+                  <h3 className="row-title">Singapore</h3>
+                  <p className="row-text">
                     {t('singapore-desc', { defaultValue: 'APAC' })}
                     <br />
                     Marina Financial Centre, Singapore
                   </p>
                 </div>
               </div>
-              <div style={{ marginTop: 32 }}>
-                <span className="eyebrow">{t('general', { defaultValue: 'General' })}</span>
-                <p style={{ marginTop: 16, fontSize: 15 }}>
+              <div className="stack">
+                <h2 className="h3">{t('general', { defaultValue: 'General' })}</h2>
+                <p style={{ fontSize: 15 }}>
                   {t('general-inquiries', { defaultValue: 'General inquiries' })}
                   <br />
                   <a className="gold-text" href="mailto:hello@rmhcapital.example">
                     hello@rmhcapital.example
                   </a>
                 </p>
-                <p style={{ marginTop: 12, fontSize: 15 }}>
+                <p style={{ fontSize: 15 }}>
                   {t('media', { defaultValue: 'Media' })}
                   <br />
                   <a className="gold-text" href="mailto:press@rmhcapital.example">
@@ -101,19 +94,16 @@ export default function ContactPage({ initialType }: { initialType?: string }) {
               </div>
             </div>
 
-            {/* right: form */}
-            <div className="reveal d1">
-              <span className="eyebrow">
-                {t('send-a-message', { defaultValue: 'Send a message' })}
-              </span>
+            <div className="o-wide rv d1">
+              <h2 className="h3">{t('send-a-message', { defaultValue: 'Send a message' })}</h2>
               <div className={`form-success${sent ? ' show' : ''}`} id="form-success" role="status">
                 {t('form-success', {
                   defaultValue:
                     'Thank you — your message is on its way. The right team will be in touch shortly.',
                 })}
               </div>
-              <form id="inquiry-form" style={{ marginTop: 24 }} noValidate onSubmit={onSubmit}>
-                <div className="form-field">
+              <form id="inquiry-form" noValidate onSubmit={onSubmit}>
+                <div className="field">
                   <label htmlFor="inquiry-type">
                     {t('inquiry-type', { defaultValue: 'Inquiry type' })}
                   </label>
@@ -131,24 +121,24 @@ export default function ContactPage({ initialType }: { initialType?: string }) {
                     ))}
                   </Select>
                 </div>
-                <div className="form-row">
-                  <div className="form-field">
+                <div className="field-row">
+                  <div className="field">
                     <label htmlFor="name">{t('full-name', { defaultValue: 'Full name' })}</label>
                     <input id="name" name="name" type="text" autoComplete="name" required />
                   </div>
-                  <div className="form-field">
+                  <div className="field">
                     <label htmlFor="org">
                       {t('company-org', { defaultValue: 'Company / organization' })}
                     </label>
                     <input id="org" name="org" type="text" autoComplete="organization" />
                   </div>
                 </div>
-                <div className="form-row">
-                  <div className="form-field">
+                <div className="field-row">
+                  <div className="field">
                     <label htmlFor="email">{t('email', { defaultValue: 'Email' })}</label>
                     <input id="email" name="email" type="email" autoComplete="email" required />
                   </div>
-                  <div className="form-field">
+                  <div className="field">
                     <label htmlFor="phone">
                       {t('phone', { defaultValue: 'Phone' })}{' '}
                       <span
@@ -164,7 +154,7 @@ export default function ContactPage({ initialType }: { initialType?: string }) {
                     <input id="phone" name="phone" type="tel" autoComplete="tel" />
                   </div>
                 </div>
-                <div className="form-field">
+                <div className="field">
                   <label htmlFor="message">
                     {t('how-can-we-help', { defaultValue: 'How can we help?' })}
                   </label>
@@ -177,9 +167,9 @@ export default function ContactPage({ initialType }: { initialType?: string }) {
                     })}
                   />
                 </div>
-                <button className="btn btn-gold" type="submit">
-                  {t('send-message', { defaultValue: 'Send message' })}{' '}
-                  <span className="arw">→</span>
+                <button className="cta cta--solid" type="submit">
+                  {t('send-message', { defaultValue: 'Send message' })}
+                  <ArrowIcon />
                 </button>
                 <p className="form-note">
                   {t('form-note', {

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 364 routes. 201 render inside the standard site shell (sidebar, nav, context rail); 163 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 365 routes. 201 render inside the standard site shell (sidebar, nav, context rail); 164 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -306,6 +306,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmh-capital/businesses` | — | public | `app/routes/rmh-capital/businesses.tsx` |
 | `/rmh-capital/careers` | — | public | `app/routes/rmh-capital/careers.tsx` |
 | `/rmh-capital/contact` | — | public | `app/routes/rmh-capital/contact.tsx` |
+| `/rmh-capital/deals` | — | public | `app/routes/rmh-capital/deals.tsx` |
 | `/rmh-capital/firm` | — | public | `app/routes/rmh-capital/firm.tsx` |
 | `/rmh-capital/insights` | — | public | `app/routes/rmh-capital/insights.tsx` |
 | `/rmh-internal-affairs` | — | public | `app/routes/rmh-internal-affairs.ts` |

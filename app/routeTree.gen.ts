@@ -163,6 +163,7 @@ import { Route as RmhCapitalIndexRouteImport } from './routes/rmh-capital/index'
 import { Route as RmhCapitalBusinessesRouteImport } from './routes/rmh-capital/businesses'
 import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/careers'
 import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/contact'
+import { Route as RmhCapitalDealsRouteImport } from './routes/rmh-capital/deals'
 import { Route as RmhCapitalFirmRouteImport } from './routes/rmh-capital/firm'
 import { Route as RmhCapitalInsightsRouteImport } from './routes/rmh-capital/insights'
 import { Route as RmhInternalAffairsPageRouteImport } from './routes/rmh-internal-affairs.$page'
@@ -1284,6 +1285,11 @@ const RmhCapitalCareersRoute = RmhCapitalCareersRouteImport.update({
 const RmhCapitalContactRoute = RmhCapitalContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => RmhCapitalRoute,
+} as any)
+const RmhCapitalDealsRoute = RmhCapitalDealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
   getParentRoute: () => RmhCapitalRoute,
 } as any)
 const RmhCapitalFirmRoute = RmhCapitalFirmRouteImport.update({
@@ -3231,6 +3237,7 @@ export interface FileRoutesByFullPath {
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
+  '/rmh-capital/deals': typeof RmhCapitalDealsRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
   '/rmh-internal-affairs/$page': typeof RmhInternalAffairsPageRoute
@@ -3712,6 +3719,7 @@ export interface FileRoutesByTo {
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
+  '/rmh-capital/deals': typeof RmhCapitalDealsRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
   '/rmh-internal-affairs/$page': typeof RmhInternalAffairsPageRoute
@@ -4219,6 +4227,7 @@ export interface FileRoutesById {
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
+  '/rmh-capital/deals': typeof RmhCapitalDealsRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
   '/rmh-internal-affairs/$page': typeof RmhInternalAffairsPageRoute
@@ -4728,6 +4737,7 @@ export interface FileRouteTypes {
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
+    | '/rmh-capital/deals'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
     | '/rmh-internal-affairs/$page'
@@ -5209,6 +5219,7 @@ export interface FileRouteTypes {
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
+    | '/rmh-capital/deals'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
     | '/rmh-internal-affairs/$page'
@@ -5715,6 +5726,7 @@ export interface FileRouteTypes {
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
+    | '/rmh-capital/deals'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
     | '/rmh-internal-affairs/$page'
@@ -7335,6 +7347,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/rmh-capital/contact'
       preLoaderRoute: typeof RmhCapitalContactRouteImport
+      parentRoute: typeof RmhCapitalRoute
+    }
+    '/rmh-capital/deals': {
+      id: '/rmh-capital/deals'
+      path: '/deals'
+      fullPath: '/rmh-capital/deals'
+      preLoaderRoute: typeof RmhCapitalDealsRouteImport
       parentRoute: typeof RmhCapitalRoute
     }
     '/rmh-capital/firm': {
@@ -10422,6 +10441,7 @@ interface RmhCapitalRouteChildren {
   RmhCapitalBusinessesRoute: typeof RmhCapitalBusinessesRoute
   RmhCapitalCareersRoute: typeof RmhCapitalCareersRoute
   RmhCapitalContactRoute: typeof RmhCapitalContactRoute
+  RmhCapitalDealsRoute: typeof RmhCapitalDealsRoute
   RmhCapitalFirmRoute: typeof RmhCapitalFirmRoute
   RmhCapitalInsightsRoute: typeof RmhCapitalInsightsRoute
   RmhCapitalIndexRoute: typeof RmhCapitalIndexRoute
@@ -10431,6 +10451,7 @@ const RmhCapitalRouteChildren: RmhCapitalRouteChildren = {
   RmhCapitalBusinessesRoute: RmhCapitalBusinessesRoute,
   RmhCapitalCareersRoute: RmhCapitalCareersRoute,
   RmhCapitalContactRoute: RmhCapitalContactRoute,
+  RmhCapitalDealsRoute: RmhCapitalDealsRoute,
   RmhCapitalFirmRoute: RmhCapitalFirmRoute,
   RmhCapitalInsightsRoute: RmhCapitalInsightsRoute,
   RmhCapitalIndexRoute: RmhCapitalIndexRoute,

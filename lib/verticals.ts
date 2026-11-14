@@ -95,6 +95,7 @@ export const VERTICALS: readonly Vertical[] = [
       { segment: 'businesses', cadence: 'monthly' },
       { segment: 'careers', cadence: 'weekly' },
       { segment: 'contact', cadence: 'yearly' },
+      { segment: 'deals', cadence: 'weekly' },
       { segment: 'firm', cadence: 'monthly' },
       { segment: 'insights', cadence: 'weekly' },
     ],
