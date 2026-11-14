@@ -2,12 +2,13 @@ import { lazy, Suspense, useEffect, useState, useCallback, useMemo, useRef } fro
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
-import { AlarmClock } from 'lucide-react';
+import { AlarmClock, Bell } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { Spine, SpineItem } from '@/components/ui/spine';
+import { InboxAvatar } from '@/components/feed/InboxAvatar';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { yieldToMain } from '@/lib/scheduler';
@@ -443,35 +444,39 @@ export function NotificationsColumn({
                       type="button"
                       onClick={() => handleClick(n)}
                       disabled={!clickable}
-                      className={`min-w-0 flex-1 text-start ${clickable ? 'cursor-pointer' : 'cursor-default'}`}
+                      className={`flex min-w-0 flex-1 items-start gap-3 text-start ${clickable ? 'cursor-pointer' : 'cursor-default'}`}
                     >
-                      {sys ? (
-                        <p className="t-body font-semibold text-site-text">
-                          {n.preview ||
-                            t(`system-label-${n.entityType ?? 'default'}`, {
-                              defaultValue: sys.label,
-                            })}
-                        </p>
-                      ) : (
-                        <>
-                          <p className={`t-body text-site-text ${g.read ? '' : 'font-semibold'}`}>
-                            <span className="font-semibold">{actorName}</span>{' '}
-                            <span className={g.read ? 'text-site-text-muted' : ''}>
-                              {t(`notification-verb-${n.type.toLowerCase()}`, {
-                                defaultValue: meta.verb,
+                      {/* Who did it; a system notification has no person and shows a bell. A grouped row shows its newest actor. */}
+                      {isSystem ? <InboxAvatar icon={Bell} /> : <InboxAvatar person={n.actor} />}
+                      <div className="min-w-0 flex-1">
+                        {sys ? (
+                          <p className="t-body font-semibold text-site-text">
+                            {n.preview ||
+                              t(`system-label-${n.entityType ?? 'default'}`, {
+                                defaultValue: sys.label,
                               })}
-                            </span>
                           </p>
-                          {n.preview && (
-                            <p className="t-body mt-0.5 line-clamp-2 text-site-text-muted">
-                              {n.preview}
+                        ) : (
+                          <>
+                            <p className={`t-body text-site-text ${g.read ? '' : 'font-semibold'}`}>
+                              <span className="font-semibold">{actorName}</span>{' '}
+                              <span className={g.read ? 'text-site-text-muted' : ''}>
+                                {t(`notification-verb-${n.type.toLowerCase()}`, {
+                                  defaultValue: meta.verb,
+                                })}
+                              </span>
                             </p>
-                          )}
-                        </>
-                      )}
-                      <p className="t-meta mt-1">
-                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
-                      </p>
+                            {n.preview && (
+                              <p className="t-body mt-0.5 line-clamp-2 text-site-text-muted">
+                                {n.preview}
+                              </p>
+                            )}
+                          </>
+                        )}
+                        <p className="t-meta mt-1">
+                          {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                        </p>
+                      </div>
                     </button>
                     <Button variant="ghost" size="xs" onClick={snooze}>
                       {t('snooze', { defaultValue: 'Later' })}

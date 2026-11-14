@@ -386,7 +386,7 @@ Each recipe says what the spine means on that page and what the one primary is.
 | **Game page** | The page's outline | Play | Picture · name as title with kind beside the Play button · stations "Playing now", "Leaderboard", "What changed", "Talk" |
 | **Article** | The table of contents | none | Title · byline · each section heading is a station; paragraphs are dotless items in `t-prose` |
 | **Conversation** | One dot per message from the other person; days are stations | Send | Their messages hang on the spine, left aligned; yours are right aligned with an ink fill and no dot · a message field fixed above the globe (the one exception to "only the globe is fixed" on a phone) |
-| **Inbox** | One dot per unread thread | none | Rows: name, last line, time. Unread rows have the dot and 600 weight; read rows have no dot. |
+| **Inbox** | One dot per unread thread | none | Rows: a 40px avatar, name, last line, time. Unread rows have the dot and 600 weight; read rows have no dot. The avatar is the person in a conversation and the actor in a notification (owner, 2026-11-14: "In private messages show user avatars in both notifications and in the dm list"); a row with no person (Saved Messages, a system notification) has a 40px picture placeholder with an icon in its place, so every row's text starts at the same place (`components/feed/InboxAvatar.tsx`). |
 | **Explore** | Stations per kind | none | Search field · "Open lobbies" · "People" (rows with a Follow button) · "Talked about" (posts) · "From the studio" |
 | **Settings** | Stations per group | Save (only in a group with a form) | Stations "Look", "Alerts", "Account" · each setting is a row: name, optional one-line explanation, control on the right |
 
