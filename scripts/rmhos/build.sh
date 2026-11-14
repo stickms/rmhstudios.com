@@ -70,6 +70,8 @@ case "$(cat "$tmp/kernelrelease")" in
 esac
 
 mkdir -p "$out"
+# A snapshot belongs to the exact files it was taken against: never keep an old one.
+rm -f "$out/state.zst" "$out/state.meta.json" "$out/manifest.json"
 for f in bzImage rootfs.ext4 seabios.bin vgabios.bin; do
   cp "$tmp/$f" "$out/$f"
 done

@@ -1,11 +1,17 @@
 // Line protocol between the host and the in-guest agent over a serial port.
-// Host -> guest: SESSION <user> | RESTORE | SAVE <nonce> | SHUTDOWN
+// Host -> guest: SESSION <user> <epochSeconds> <entropyHex> | RESTORE | SAVE <nonce> | SHUTDOWN
+// (a session restored from the shared boot snapshot starts with the snapshot's clock
+// and kernel RNG state, so the host sends the time and fresh entropy with it)
 // Guest -> host: lines prefixed "RMHOS "; anything else is kernel noise.
 
 export type HostCommand =
   | {
       type: 'session';
       user: string;
+      /** Unix seconds, the guest clock is set to it. */
+      epoch: number;
+      /** 64 random bytes as 128 lowercase hex characters, mixed into the guest RNG. */
+      entropy: string;
     }
   | {
       type: 'restore';
@@ -48,6 +54,9 @@ export const SHARE_ARCHIVE_PATH =
 const TOKEN =
   /^[a-z0-9_-]{1,31}$/i;
 
+const ENTROPY =
+  /^[0-9a-f]{128}$/;
+
 function token(
   value: string,
   what: string,
@@ -69,8 +78,27 @@ export function encodeCommand(
   switch (
     c.type
   ) {
-    case 'session':
-      return `SESSION ${token(c.user, 'user')}\n`;
+    case 'session': {
+      if (
+        !Number.isSafeInteger(
+          c.epoch,
+        ) ||
+        c.epoch <=
+          0
+      )
+        throw new Error(
+          'invalid epoch',
+        );
+      if (
+        !ENTROPY.test(
+          c.entropy,
+        )
+      )
+        throw new Error(
+          'invalid entropy',
+        );
+      return `SESSION ${token(c.user, 'user')} ${c.epoch} ${c.entropy}\n`;
+    }
     case 'restore':
       return 'RESTORE\n';
     case 'save':

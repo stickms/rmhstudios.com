@@ -16,6 +16,7 @@ import {
   statSync,
 } from 'node:fs';
 import path from 'node:path';
+import { requireMeta } from './image-meta.mjs';
 
 const clean =
   (
@@ -102,6 +103,10 @@ const dir =
       .argv[2] ??
       'public/rmhos-dev',
   );
+requireMeta(
+  dir,
+  'publish-r2',
+);
 const manifestPath =
   path.join(
     dir,

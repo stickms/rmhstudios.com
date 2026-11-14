@@ -13,9 +13,11 @@ import {
   zstdCompressSync,
   constants,
 } from 'node:zlib';
+import { startNodeVm } from './node-vm.mjs';
 import {
-  startNodeVm,
-} from './node-vm.mjs';
+  META_FILE,
+  computeMeta,
+} from './image-meta.mjs';
 
 const root =
   path.resolve(
@@ -136,6 +138,13 @@ async function main() {
         'state.zst',
       ),
       packed,
+    );
+    await writeFile(
+      path.join(
+        dir,
+        META_FILE,
+      ),
+      `${JSON.stringify(computeMeta(dir), null, 2)}\n`,
     );
     console.log(
       `wrote ${path.join(dir, 'state.zst')}`,

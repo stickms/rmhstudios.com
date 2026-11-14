@@ -22,6 +22,7 @@ feh
 font-dejavu
 ca-certificates
 curl
+socat
 nano
 htop
 git

@@ -16,6 +16,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { requireMeta } from './image-meta.mjs';
 
 const here =
   path.dirname(
@@ -36,6 +37,11 @@ const dir =
         'rmhos-dev',
       ),
   );
+
+requireMeta(
+  dir,
+  'write-manifest',
+);
 
 const versions =
   Object.fromEntries(

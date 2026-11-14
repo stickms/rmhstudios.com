@@ -9,6 +9,11 @@ import {
   encodeCommand,
 } from '../agent-protocol';
 
+const ENTROPY =
+  'ab'.repeat(
+    64,
+  );
+
 describe('encodeCommand', () => {
   it('encodes each command as one newline-terminated line', () => {
     expect(
@@ -16,10 +21,13 @@ describe('encodeCommand', () => {
         {
           type: 'session',
           user: 'alice',
+          epoch: 1794700000,
+          entropy:
+            ENTROPY,
         },
       ),
     ).toBe(
-      'SESSION alice\n',
+      `SESSION alice 1794700000 ${ENTROPY}\n`,
     );
     expect(
       encodeCommand(
@@ -52,6 +60,109 @@ describe('encodeCommand', () => {
     );
   });
 
+  it('rejects a session without a valid epoch and 64 bytes of hex entropy', () => {
+    const base =
+      {
+        type: 'session' as const,
+        user: 'alice',
+        epoch: 1794700000,
+        entropy:
+          ENTROPY,
+      };
+    expect(
+      () =>
+        encodeCommand(
+          {
+            ...base,
+            entropy:
+              '',
+          },
+        ),
+    ).toThrow();
+    expect(
+      () =>
+        encodeCommand(
+          {
+            ...base,
+            entropy:
+              'ab'.repeat(
+                63,
+              ),
+          },
+        ),
+    ).toThrow();
+    expect(
+      () =>
+        encodeCommand(
+          {
+            ...base,
+            entropy:
+              'AB'.repeat(
+                64,
+              ),
+          },
+        ),
+    ).toThrow();
+    expect(
+      () =>
+        encodeCommand(
+          {
+            ...base,
+            entropy: `${'ab'.repeat(63)}\nSHUTDOWN`,
+          },
+        ),
+    ).toThrow();
+    expect(
+      () =>
+        encodeCommand(
+          {
+            ...base,
+            epoch: 1.5,
+          },
+        ),
+    ).toThrow();
+    expect(
+      () =>
+        encodeCommand(
+          {
+            ...base,
+            epoch: 0,
+          },
+        ),
+    ).toThrow();
+    expect(
+      () =>
+        encodeCommand(
+          {
+            ...base,
+            epoch:
+              -5,
+          },
+        ),
+    ).toThrow();
+    expect(
+      () =>
+        encodeCommand(
+          {
+            ...base,
+            epoch:
+              Number.NaN,
+          },
+        ),
+    ).toThrow();
+    expect(
+      () =>
+        encodeCommand(
+          {
+            ...base,
+            epoch:
+              2 **
+              60,
+          },
+        ),
+    ).toThrow();
+  });
+
   it('rejects values that could inject a second command', () => {
     expect(
       () =>
@@ -59,6 +170,9 @@ describe('encodeCommand', () => {
           {
             type: 'session',
             user: 'a b\nSHUTDOWN',
+            epoch: 1794700000,
+            entropy:
+              ENTROPY,
           },
         ),
     ).toThrow();

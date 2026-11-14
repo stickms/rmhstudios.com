@@ -13,7 +13,10 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { randomBytes } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { startNodeVm } from './node-vm.mjs';
+import { metaProblems } from './image-meta.mjs';
 
 const root =
   path.resolve(
@@ -37,7 +40,23 @@ const dir =
         'rmhos-dev',
       ),
   );
-const RESTORE_BUDGET_S = 20;
+const RESTORE_BUDGET_S = 5;
+
+/** SESSION line in the three-field form: user, epoch seconds, 64 bytes of hex entropy. */
+function sessionLine({
+  user = 'smoke',
+  epoch = Math.floor(
+    Date.now() /
+      1000,
+  ),
+  entropy = randomBytes(
+    64,
+  ).toString(
+    'hex',
+  ),
+} = {}) {
+  return `SESSION ${user} ${epoch} ${entropy}`;
+}
 
 const step =
   (
@@ -78,7 +97,7 @@ async function drive(
   nonce,
 ) {
   vm.send(
-    'SESSION smoke',
+    sessionLine(),
   );
   await vm.waitLine(
     /^RMHOS SESSION_OK\r?$/m,
@@ -275,6 +294,16 @@ async function fromSnapshot() {
       'state.zst',
     ],
   );
+  const problems =
+    metaProblems(
+      dir,
+    );
+  if (
+    problems.length
+  )
+    throw new Error(
+      `state.zst does not belong to these files:\n  - ${problems.join('\n  - ')}`,
+    );
   const vm =
     await startNodeVm(
       {
@@ -290,7 +319,7 @@ async function fromSnapshot() {
     // No boot may happen: the agent is already waiting on serial1.
     await vm.whenReady;
     vm.send(
-      'SESSION smoke',
+      sessionLine(),
     );
     await vm.waitLine(
       /^RMHOS SESSION_OK\r?$/m,
@@ -614,7 +643,7 @@ async function withArchive(
     );
   await vm.whenReady;
   vm.send(
-    'SESSION smoke',
+    sessionLine(),
   );
   await vm.waitLine(
     /^RMHOS SESSION_OK\r?$/m,
@@ -820,6 +849,294 @@ async function validArchive() {
   }
 }
 
+/** Restores the snapshot with a debug flag in the share, opens a session, returns what the guest logged. */
+async function debugSession({
+  entropy,
+  epoch,
+}) {
+  need(
+    [
+      'state.zst',
+    ],
+  );
+  const vm =
+    await startNodeVm(
+      {
+        dir,
+        initialState: true,
+        timeoutMs:
+          5 *
+          60 *
+          1000,
+      },
+    );
+  await vm.whenReady;
+  await vm.emulator.create_file(
+    '/debug-rng',
+    new TextEncoder().encode(
+      '1\n',
+    ),
+  );
+  vm.send(
+    sessionLine(
+      {
+        entropy,
+        epoch,
+      },
+    ),
+  );
+  await vm.waitLine(
+    /^RMHOS SESSION_OK\r?$/m,
+  );
+  const rng =
+    (
+      await vm.waitFor(
+        'the rng debug line',
+        () =>
+          vm.serial0.match(
+            /rmhos-agent: rng ([0-9a-f]{64})/,
+          ),
+      )
+    )[1];
+  const clock =
+    Number(
+      (
+        await vm.waitFor(
+          'the clock line',
+          () =>
+            vm.serial0.match(
+              /rmhos-agent: clock (\d+)/,
+            ),
+        )
+      )[1],
+    );
+  return {
+    vm,
+    rng,
+    clock,
+  };
+}
+
+async function rngAndClock() {
+  console.log(
+    '--- case 5: a session reseeds the RNG and sets the clock',
+  );
+  const epoch =
+    Math.floor(
+      Date.now() /
+        1000,
+    );
+  const entropyA =
+    randomBytes(
+      64,
+    ).toString(
+      'hex',
+    );
+  const entropyB =
+    randomBytes(
+      64,
+    ).toString(
+      'hex',
+    );
+  const a =
+    await debugSession(
+      {
+        entropy:
+          entropyA,
+        epoch,
+      },
+    );
+  const b =
+    await debugSession(
+      {
+        entropy:
+          entropyB,
+        epoch,
+      },
+    );
+  const c =
+    await debugSession(
+      {
+        entropy:
+          entropyA,
+        epoch,
+      },
+    );
+  try {
+    step(
+      a.vm,
+      `urandom after SESSION: A ${a.rng.slice(0, 16)}... B ${b.rng.slice(0, 16)}... A again ${c.rng.slice(0, 16)}...`,
+    );
+    if (
+      a.rng ===
+      b.rng
+    )
+      throw new Error(
+        'two restores with different entropy produced the same /dev/urandom output',
+      );
+    console.log(
+      `same entropy and epoch twice: output ${a.rng === c.rng ? 'MATCHES (the reseed is deterministic)' : 'differs (timing jitter)'}`,
+    );
+    for (const {
+      clock,
+    } of [
+      a,
+      b,
+      c,
+    ]) {
+      if (
+        Math.abs(
+          clock -
+            epoch,
+        ) >
+        5
+      )
+        throw new Error(
+          `guest clock ${clock} is not within 5 s of the epoch sent (${epoch})`,
+        );
+    }
+    step(
+      a.vm,
+      `guest clock ${a.clock - epoch}s, ${b.clock - epoch}s, ${c.clock - epoch}s from the epoch sent`,
+    );
+    for (const x of [
+      'could not set the clock',
+    ]) {
+      if (
+        a.vm.serial0.includes(
+          x,
+        )
+      )
+        throw new Error(
+          x,
+        );
+    }
+  } finally {
+    await Promise.all(
+      [
+        a.vm.destroy(),
+        b.vm.destroy(),
+        c.vm.destroy(),
+      ],
+    );
+  }
+}
+
+async function badSessions() {
+  console.log(
+    '--- case 6: a SESSION without a valid epoch and entropy is refused',
+  );
+  need(
+    [
+      'state.zst',
+    ],
+  );
+  const vm =
+    await startNodeVm(
+      {
+        dir,
+        initialState: true,
+        timeoutMs:
+          5 *
+          60 *
+          1000,
+      },
+    );
+  try {
+    await vm.whenReady;
+    const good =
+      randomBytes(
+        64,
+      ).toString(
+        'hex',
+      );
+    for (const line of [
+      'SESSION smoke',
+      `SESSION smoke 1794700000`,
+      `SESSION smoke 1794700000 ${good.slice(2)}`,
+      `SESSION smoke abc ${good}`,
+      `SESSION smoke 0 ${good}`,
+      `SESSION smoke 1794700000 ${good.toUpperCase()}`,
+      `SESSION smoke 1794700000 ${good} extra`,
+    ]) {
+      const before =
+        vm
+          .serial1
+          .length;
+      vm.send(
+        line,
+      );
+      await vm.waitFor(
+        `ERR bad_session for ${line.slice(0, 30)}`,
+        () =>
+          /RMHOS ERR bad_session\r?\n/.test(
+            vm.serial1.slice(
+              before,
+            ),
+          ),
+      );
+    }
+    step(
+      vm,
+      'every malformed SESSION answered ERR bad_session',
+    );
+    vm.send(
+      sessionLine(),
+    );
+    await vm.waitLine(
+      /^RMHOS SESSION_OK\r?$/m,
+    );
+    step(
+      vm,
+      'a valid SESSION still works afterwards',
+    );
+  } finally {
+    await vm.destroy();
+  }
+}
+
+function metaRefusal() {
+  console.log(
+    '--- case 7: the snapshot/meta refusal self-test',
+  );
+  const r =
+    spawnSync(
+      'node',
+      [
+        path.join(
+          path.dirname(
+            fileURLToPath(
+              import.meta
+                .url,
+            ),
+          ),
+          'meta-selftest.mjs',
+        ),
+      ],
+      {
+        encoding:
+          'utf8',
+      },
+    );
+  if (
+    r.status !==
+    0
+  )
+    throw new Error(
+      `meta self-test failed:\n${r.stdout}\n${r.stderr}`,
+    );
+  console.log(
+    r.stdout
+      .trim()
+      .split(
+        '\n',
+      )
+      .slice(
+        -1,
+      )[0],
+  );
+}
+
 async function main() {
   need(
     [
@@ -830,18 +1147,77 @@ async function main() {
       'manifest.json',
     ],
   );
-  // RMHOS_SMOKE_CASES=3,4 runs a subset (debugging); default is all four.
-  const only = new Set((process.env.RMHOS_SMOKE_CASES ?? '1,2,3,4').split(','));
+  // RMHOS_SMOKE_CASES=3,4 runs a subset (debugging); default is all seven.
+  const only =
+    new Set(
+      (
+        process
+          .env
+          .RMHOS_SMOKE_CASES ??
+        '1,2,3,4,5,6,7'
+      ).split(
+        ',',
+      ),
+    );
   let cold;
   let warm;
-  if (only.has('1')) cold = await coldBoot();
-  if (only.has('2')) warm = await fromSnapshot();
-  if (only.has('3')) await refusedArchive();
-  if (only.has('4')) await validArchive();
-  if (cold !== undefined && warm !== undefined) {
-    console.log(`SESSION_OK after ${cold.toFixed(1)}s (cold boot) and ${warm.toFixed(1)}s (from the snapshot)`);
+  if (
+    only.has(
+      '1',
+    )
+  )
+    cold =
+      await coldBoot();
+  if (
+    only.has(
+      '2',
+    )
+  )
+    warm =
+      await fromSnapshot();
+  if (
+    only.has(
+      '3',
+    )
+  )
+    await refusedArchive();
+  if (
+    only.has(
+      '4',
+    )
+  )
+    await validArchive();
+  if (
+    only.has(
+      '5',
+    )
+  )
+    await rngAndClock();
+  if (
+    only.has(
+      '6',
+    )
+  )
+    await badSessions();
+  if (
+    only.has(
+      '7',
+    )
+  )
+    metaRefusal();
+  if (
+    cold !==
+      undefined &&
+    warm !==
+      undefined
+  ) {
+    console.log(
+      `SESSION_OK after ${cold.toFixed(1)}s (cold boot) and ${warm.toFixed(1)}s (from the snapshot)`,
+    );
   }
-  console.log('rmhos smoke: OK');
+  console.log(
+    'rmhos smoke: OK',
+  );
 }
 
 main().then(

@@ -99,7 +99,8 @@
     "rmhos:image": "bash scripts/rmhos/build.sh",
     "rmhos:smoke": "node scripts/rmhos/smoke.mjs",
     "rmhos:snapshot": "node scripts/rmhos/snapshot.mjs",
-    "rmhos:manifest": "node scripts/rmhos/write-manifest.mjs"
+    "rmhos:manifest": "node scripts/rmhos/write-manifest.mjs",
+    "rmhos:selftest": "node scripts/rmhos/meta-selftest.mjs"
   },
   "dependencies": {
     "7.css": "0.21.1",
