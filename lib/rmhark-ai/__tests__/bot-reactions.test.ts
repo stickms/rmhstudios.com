@@ -22,10 +22,14 @@ vi.mock('@/lib/rmhark-ai/image.server', () => ({
 // The default announcement source (Agent D's module) is only reached through `liveAnnouncement`.
 const { currentMock } = vi.hoisted(() => ({ currentMock: vi.fn() }));
 vi.mock('@/lib/sitewide-announcement.server', () => ({ getCurrentAnnouncement: currentMock }));
+// The default headline source is only reached through `freshHeadlines`.
+const { freshMock } = vi.hoisted(() => ({ freshMock: vi.fn() }));
+vi.mock('@/lib/rmhark-ai/headlines.server', () => ({ getFreshHeadlines: freshMock }));
 
 import { mulberry32 } from '@/lib/core/rng';
 import { loadBotConfig } from '@/lib/rmhark-ai/bot-worker-config';
 import {
+  freshHeadlines,
   liveAnnouncement,
   loadReactionContext,
   pickHeadline,
@@ -207,13 +211,50 @@ describe('postAsBot with a reaction context', () => {
 
   it('news: a headline, its own url as the link, recorded under its key', async () => {
     const r = postRecorder();
-    const d = deps({ random: seq([0.55, 0, 0.1]), repo: r.repo, ai: r.ai });
+    const d = deps({ random: seq([0.55, 0]), repo: r.repo, ai: r.ai });
     await postAsBot(d, bot('b1'), ctx({ headlines: [headline('a', 1)] }));
     expect(r.reactionPost).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'news', title: 'Headline a', source: 'Example News' }),
     );
     expect(r.inserted[0]?.content).toBe('take on Headline a\nhttps://news.example/a');
     expect(r.recorded).toEqual([{ botId: 'b1', kind: 'news', refKey: 'a', postId: 'p1' }]);
+  });
+
+  it('news is linked whatever the link draw would say, and takes no link draw', async () => {
+    const r = postRecorder();
+    // kind 0.55 -> news, pick 0, then a 0.99 that an announcement would read as "no link".
+    const random = vi.fn(seq([0.55, 0, 0.99]));
+    const d = deps({ random, repo: r.repo, ai: r.ai });
+    await postAsBot(d, bot('b1'), ctx({ headlines: [headline('a', 1)] }));
+    expect(r.inserted[0]?.content).toBe('take on Headline a\nhttps://news.example/a');
+    expect(random).toHaveBeenCalledTimes(2);
+    expect(silent.info).toHaveBeenCalledWith(
+      'bot_worker.reaction_posted',
+      expect.objectContaining({ kind: 'news', linked: true }),
+    );
+  });
+
+  it('news with a 500-character link keeps the whole text and the link', async () => {
+    const r = postRecorder();
+    const longUrl = `https://news.google.com/rss/articles/${'A'.repeat(463)}`;
+    expect(longUrl).toHaveLength(500);
+    const text = 'word '.repeat(55).trim(); // 274 characters, so the text plus the link is over 280
+    const ai = { ...r.ai, reactionPost: vi.fn<BotAi['reactionPost']>(async () => text) };
+    const d = deps({ random: seq([0.55, 0]), repo: r.repo, ai });
+    await postAsBot(d, bot('b1'), ctx({ headlines: [{ ...headline('a', 1), url: longUrl }] }));
+    expect(r.inserted[0]?.content).toBe(`${text}\n${longUrl}`);
+  });
+
+  it('news whose link is over the bound posts the text alone', async () => {
+    const r = postRecorder();
+    const d = deps({ random: seq([0.55, 0]), repo: r.repo, ai: r.ai });
+    const url = `https://news.example/${'a'.repeat(2100)}`;
+    await postAsBot(d, bot('b1'), ctx({ headlines: [{ ...headline('a', 1), url }] }));
+    expect(r.inserted[0]?.content).toBe('take on Headline a');
+    expect(silent.info).toHaveBeenCalledWith(
+      'bot_worker.reaction_posted',
+      expect.objectContaining({ kind: 'news', linked: false }),
+    );
   });
 
   it('usual: today\'s post, with the image draw still applying', async () => {
@@ -246,7 +287,7 @@ describe('postAsBot with a reaction context', () => {
     const r = postRecorder();
     const c = ctx({ headlines: [headline('a', 1)] });
     c.reacted.add(reactionKey('b1', 'announcement', ANN.id));
-    const d = deps({ random: seq([0.1, 0, 0.9]), repo: r.repo, ai: r.ai });
+    const d = deps({ random: seq([0.1, 0]), repo: r.repo, ai: r.ai });
     await postAsBot(d, bot('b1'), c);
     expect(r.recorded).toEqual([{ botId: 'b1', kind: 'news', refKey: 'a', postId: 'p1' }]);
   });
@@ -255,7 +296,7 @@ describe('postAsBot with a reaction context', () => {
     const r = postRecorder();
     // No announcement: news is [0, 0.3). Kind draws 0.1; pick draws 0.5; then link draws.
     const c = ctx({ announcement: null, headlines: [headline('fresh', 0), headline('older', 5)] });
-    const d = deps({ random: seq([0.1, 0.5, 0.1, 0.5, 0.9, 0.9]), repo: r.repo, ai: r.ai });
+    const d = deps({ random: seq([0.1, 0.5, 0.1, 0.5]), repo: r.repo, ai: r.ai });
     await Promise.all([postAsBot(d, bot('b1'), c), postAsBot(d, bot('b2'), c)]);
     expect(r.recorded.map((x) => x.refKey).sort()).toEqual(['fresh', 'older']);
     expect(c.headlineReactions.get('fresh')).toBe(1);
@@ -311,6 +352,33 @@ describe('withReactionLink', () => {
   it('drops a link that is not http(s) or would leave the text no room', () => {
     expect(withReactionLink('hi', 'javascript:alert(1)', true)).toBe('hi');
     expect(withReactionLink('hi', `https://x.example/${'a'.repeat(260)}`, true)).toBe('hi');
+  });
+
+  describe('linkOutsideLimit (news)', () => {
+    const outside = { linkOutsideLimit: true };
+    it('keeps the text whole and adds the link after it, past 280 characters', () => {
+      const link = `https://news.google.com/rss/articles/${'A'.repeat(462)}`;
+      const text = 'word '.repeat(55).trim();
+      const out = withReactionLink(text, link, true, outside);
+      expect(out).toBe(`${text}\n${link}`);
+      expect(out.length).toBeGreaterThan(280);
+    });
+    it('still holds the text itself to the limit', () => {
+      const out = withReactionLink('word '.repeat(80).trim(), 'https://x.example/a', true, outside);
+      const [body, link] = out.split('\n');
+      expect(body?.length).toBeLessThanOrEqual(280);
+      expect(link).toBe('https://x.example/a');
+    });
+    it('leaves a non-http(s) or over-long link off, and honours include=false', () => {
+      expect(withReactionLink('hi', 'javascript:alert(1)', true, outside)).toBe('hi');
+      expect(withReactionLink('hi', 'ftp://x.example/a', true, outside)).toBe('hi');
+      expect(withReactionLink('hi', 'https://x.example/a b', true, outside)).toBe('hi');
+      expect(withReactionLink('hi', `https://x.example/${'a'.repeat(2048)}`, true, outside)).toBe('hi');
+      expect(withReactionLink('hi', 'https://x.example/a', false, outside)).toBe('hi');
+      const atBound = `https://x.example/${'a'.repeat(2048 - 'https://x.example/'.length)}`;
+      expect(atBound).toHaveLength(2048);
+      expect(withReactionLink('hi', atBound, true, outside)).toBe(`hi\n${atBound}`);
+    });
   });
 });
 
@@ -685,5 +753,24 @@ describe('liveAnnouncement (default announcement source)', () => {
     expect(await liveAnnouncement()).toBeNull();
     currentMock.mockRejectedValueOnce(new Error('db down'));
     expect(await liveAnnouncement()).toBeNull();
+  });
+});
+
+describe('freshHeadlines (default headline source)', () => {
+  it('passes the worker logger to getFreshHeadlines and returns its list', async () => {
+    const list = [headline('a', 1)];
+    freshMock.mockResolvedValueOnce(list);
+    expect(await freshHeadlines(silent)).toEqual(list);
+    expect(freshMock).toHaveBeenLastCalledWith(expect.any(Number), silent);
+  });
+  it('is [] when getFreshHeadlines throws', async () => {
+    freshMock.mockRejectedValueOnce(new Error('boom'));
+    expect(await freshHeadlines(silent)).toEqual([]);
+  });
+  it('defaultDeps threads its log into the headlines dep', async () => {
+    const { defaultDeps } = await import('@/lib/rmhark-ai/bot-worker.server');
+    freshMock.mockResolvedValueOnce([]);
+    await defaultDeps({ log: silent }).headlines?.();
+    expect(freshMock).toHaveBeenLastCalledWith(expect.any(Number), silent);
   });
 });

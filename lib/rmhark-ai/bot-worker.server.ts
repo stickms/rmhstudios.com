@@ -8,7 +8,9 @@
  *                          (or an admin just saved settings), and once at boot.
  *   bot-worker.post       BOT_POST_TICK_MS (default 5 min): due bots post, capped per tick. A due
  *                          bot may react to the live sitewide announcement or an outside headline
- *                          instead of its usual post (`./reaction-model`, BOT_REACTIONS_ENABLED).
+ *                          instead of its usual post (`./reaction-model`, BOT_REACTIONS_ENABLED). A
+ *                          headline reaction always ends with the article link (outside the 280-char
+ *                          text limit); an announcement reaction links half the time, within it.
  *   bot-worker.reply      BOT_REPLY_TICK_MS (default = post tick): answer comments aimed at
  *                          bots, then proactive bot-to-bot comments, then comments under the
  *                          live announcement's discussion post.
@@ -79,6 +81,7 @@ import {
   ANNOUNCEMENT_REACTION_WINDOW_H,
   MAX_BOT_COMMENTS_PER_ANNOUNCEMENT,
   MAX_COMMENTS_PER_BOT_PER_THREAD,
+  MAX_REACTION_LINK_LENGTH,
   REACTION_LINK_PROB,
   THREAD_REPLY_PROB,
   ageHours,
@@ -845,11 +848,14 @@ export interface BotDeps {
   look?: BotLook;
 }
 
-/** Default for `BotDeps.headlines`: `getFreshHeadlines()`, [] on any error. Loaded lazily so the worker's import graph stays light. */
-async function freshHeadlines(): Promise<Headline[]> {
+/**
+ * Default for `BotDeps.headlines`: `getFreshHeadlines()`, [] on any error; `log` receives feed failures and
+ * empty refreshes. Loaded lazily so the worker's import graph stays light.
+ */
+export async function freshHeadlines(log?: BotLog): Promise<Headline[]> {
   try {
     const { getFreshHeadlines } = await import('./headlines.server');
-    return await getFreshHeadlines();
+    return await getFreshHeadlines(Date.now(), log);
   } catch {
     return [];
   }
@@ -889,7 +895,7 @@ export function defaultDeps(overrides: Partial<BotDeps> = {}): BotDeps {
     log,
     now: Date.now,
     random,
-    headlines: freshHeadlines,
+    headlines: () => freshHeadlines(log),
     announcement: liveAnnouncement,
     look: stockLook(random),
     ...overrides,
@@ -1333,13 +1339,30 @@ const MIN_TEXT_BESIDE_LINK = 40;
 
 /**
  * The post with the link on its own line, the way the announcement's own feed post carries its
- * link (a bare absolute http(s) URL is what the feed renders as a link). The whole stays within
- * the RMHark limit: the text is clipped on a word boundary, and a link too long to leave the
- * text room is left off.
+ * link (a bare absolute http(s) URL is what the feed renders as a link). A link that is not
+ * http(s), or longer than `MAX_REACTION_LINK_LENGTH`, is left off.
+ *
+ * The text is always kept within the RMHark limit (clipped on a word boundary if it is not).
+ * `linkOutsideLimit` decides whether the link counts against that limit:
+ *  - false (announcements): the whole post, link included, fits in the limit, so the text is
+ *    clipped to make room, and a link that would leave the text under `MIN_TEXT_BESIDE_LINK`
+ *    characters is dropped instead of squeezing the words.
+ *  - true (news): the text keeps the whole limit and the link is added after it, so the post's
+ *    content may exceed the limit by `\n` plus the link. Outside links are long (Google News
+ *    article links run 170-550 characters), and the post must carry one to show it is real news.
+ *    Nothing reads a post's length back: the column is `Text`, the limit is enforced on write
+ *    by the user-facing schemas only, and bots insert through the repo directly.
  */
-export function withReactionLink(text: string, link: string, include: boolean): string {
-  if (!include || !/^https?:\/\/\S+$/i.test(link)) return text;
-  const room = MAX_RMHARK_LENGTH - link.length - 1;
+export function withReactionLink(
+  text: string,
+  link: string,
+  include: boolean,
+  { linkOutsideLimit = false }: { linkOutsideLimit?: boolean } = {},
+): string {
+  if (!include || link.length > MAX_REACTION_LINK_LENGTH || !/^https?:\/\/\S+$/i.test(link)) {
+    return text;
+  }
+  const room = linkOutsideLimit ? MAX_RMHARK_LENGTH : MAX_RMHARK_LENGTH - link.length - 1;
   if (room < MIN_TEXT_BESIDE_LINK) return text;
   const body = text.length <= room ? text : cleanGeneratedText(text, room);
   return `${body}\n${link}`;
@@ -1391,8 +1414,14 @@ async function postReaction(
       source: item.source,
     });
     if (text.trim() === '') return true;
-    const linked = d.random() < REACTION_LINK_PROB;
-    const content = withReactionLink(text, item.link, linked);
+    // A headline reaction always carries its link (and the link is outside the text limit); an
+    // announcement's link is a coin flip and must fit within the limit. `||` skips the draw for news.
+    const content = withReactionLink(
+      text,
+      item.link,
+      kind === 'news' || d.random() < REACTION_LINK_PROB,
+      { linkOutsideLimit: kind === 'news' },
+    );
     const postId = await d.repo.insertPost(b.id, content, []);
     posted = true;
     const recorded = await d.repo
