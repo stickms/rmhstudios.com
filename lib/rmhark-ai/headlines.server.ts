@@ -226,11 +226,14 @@ async function readCapped(res: Response): Promise<string> {
   return text + decoder.decode();
 }
 
+/** The slice of the worker's logger this module uses. */
+export type HeadlineLog = { warn(event: string, fields?: Record<string, unknown>): void };
+
 export interface FetchHeadlinesOptions {
   feeds?: string[];
   now?: number;
   fetchImpl?: typeof fetch;
-  log?: { warn(event: string, fields?: Record<string, unknown>): void };
+  log?: HeadlineLog;
 }
 
 export async function fetchHeadlines(opts: FetchHeadlinesOptions = {}): Promise<Headline[]> {
@@ -301,14 +304,34 @@ function freshOnly(list: Headline[], now: number): Headline[] {
   );
 }
 
-export async function getFreshHeadlines(now: number = Date.now()): Promise<Headline[]> {
+/**
+ * Fresh headlines from the cache, refreshed when stale. `log` gets each failed feed
+ * (`bot_worker.headlines_feed_failed`) and, when feeds are configured but a refresh yields no fresh
+ * headline at all, `bot_worker.headlines_refresh_empty` (once per refresh, so every refresh interval
+ * at most). Never throws. A deliberately empty `BOT_NEWS_FEEDS` logs nothing.
+ */
+export async function getFreshHeadlines(
+  now: number = Date.now(),
+  log?: HeadlineLog,
+): Promise<Headline[]> {
   if (!hasFetched || now - cachedAt >= refreshMs() || now < cachedAt) {
     if (!inflight) {
       inflight = (async () => {
         try {
-          const list = await fetchHeadlines({ now });
+          const feeds = headlineFeeds();
+          const list = await fetchHeadlines({ now, feeds, ...(log ? { log } : {}) });
           // Keep the last good list when a refresh returns nothing.
           if (list.length > 0) cachedList = list;
+          else if (feeds.length > 0) {
+            try {
+              log?.warn('bot_worker.headlines_refresh_empty', {
+                feeds: feeds.length,
+                keptFromLastRefresh: freshOnly(cachedList, now).length,
+              });
+            } catch {
+              // a throwing logger must not break the refresh
+            }
+          }
         } finally {
           cachedAt = now;
           hasFetched = true;
