@@ -18,7 +18,7 @@ resource "cloudflare_record" "app" {
   ttl     = var.proxied ? 1 : 300
 }
 
-# wiki.rmhstudios.com (Wiki.js; docs/wiki.md). Always proxied, whatever `proxied`
+# wiki.rmhstudios.com (MediaWiki; docs/wiki.md). Always proxied, whatever `proxied`
 # says for the websocket hosts: its Apache vhost listens on :80 only and relies
 # on Cloudflare to terminate TLS, the same arrangement as the main site.
 resource "cloudflare_record" "wiki" {

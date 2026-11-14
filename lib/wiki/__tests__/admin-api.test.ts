@@ -1,8 +1,8 @@
 /**
  * The wiki admin API, end to end through the real `defineHandler`: only the
- * session, Wiki.js and DeepSeek are stubbed. The property that matters most is
- * the first block: the site holds a full-access Wiki.js key, and the admin
- * check on these routes is the only thing between a visitor and it.
+ * session, MediaWiki and DeepSeek are stubbed. The property that matters most is
+ * the first block: the site holds a MediaWiki bot password with sysop rights,
+ * and the admin check on these routes is the only thing between a visitor and it.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { handlersOf } from '@/lib/__tests__/api-handlers-of';
@@ -17,7 +17,7 @@ const h = vi.hoisted(() => ({
   remove: vi.fn(),
   configured: vi.fn(),
   seed: vi.fn(),
-  theme: vi.fn(),
+  sidebar: vi.fn(),
   aiConfigured: vi.fn(),
   streamTask: vi.fn(),
 }));
@@ -26,8 +26,8 @@ vi.mock('@/lib/auth', () => ({
   auth: { api: { getSession: (...a: unknown[]) => h.getSession(...a) } },
 }));
 vi.mock('@/lib/admin-audit.server', () => ({ logAdminAction: h.audit }));
-vi.mock('@/lib/wiki/wikijs.server', async (actual) => ({
-  ...(await actual<typeof import('@/lib/wiki/wikijs.server')>()),
+vi.mock('@/lib/wiki/mediawiki.server', async (actual) => ({
+  ...(await actual<typeof import('@/lib/wiki/mediawiki.server')>()),
   listWikiPages: h.list,
   getWikiPage: h.get,
   createWikiPage: h.create,
@@ -36,7 +36,7 @@ vi.mock('@/lib/wiki/wikijs.server', async (actual) => ({
   isWikiConfigured: h.configured,
 }));
 vi.mock('@/lib/wiki/seed.server', () => ({ seedStarterPages: h.seed }));
-vi.mock('@/lib/wiki/appearance.server', () => ({ applyWikiAppearance: h.theme }));
+vi.mock('@/lib/wiki/sidebar.server', () => ({ applyWikiSidebar: h.sidebar }));
 vi.mock('@/lib/ai/provider.server', () => ({
   isAiConfigured: h.aiConfigured,
   streamTask: h.streamTask,
@@ -49,37 +49,27 @@ import { WIKI_WRITE } from '@/lib/ai/prompts';
 import { route as pagesRoute } from '@/lib/wiki/api/admin.wiki.pages.server';
 import { route as pageRoute } from '@/lib/wiki/api/admin.wiki.pages.$id.server';
 import { route as seedRoute } from '@/lib/wiki/api/admin.wiki.seed.server';
-import { route as themeRoute } from '@/lib/wiki/api/admin.wiki.theme.server';
-import { WikiError } from '@/lib/wiki/wikijs.server';
+import { route as sidebarRoute } from '@/lib/wiki/api/admin.wiki.sidebar.server';
+import { WikiError } from '@/lib/wiki/mediawiki.server';
 import { Route as assistRoute } from '../../../app/routes/api/admin/wiki/assist';
 
 const pages = handlersOf(pagesRoute);
 const page = handlersOf(pageRoute);
 const seed = handlersOf(seedRoute);
-const theme = handlersOf(themeRoute);
+const sidebar = handlersOf(sidebarRoute);
 const assist = handlersOf(assistRoute);
 
 const MEMBER = { user: { id: 'u1', isAdmin: false } };
 const ADMIN = { user: { id: 'a1', isAdmin: true } };
 const PAGE = {
   id: 7,
-  path: 'games',
-  locale: 'en',
   title: 'Games',
-  description: '',
-  isPublished: true,
-  updatedAt: '2026-11-13T00:00:00.000Z',
+  updatedAt: '2026-11-13T00:00:00Z',
+  revisionId: 12,
   content: 'Body',
-  tags: ['games'],
 };
-const FIELDS = {
-  title: 'Games',
-  description: '',
-  content: 'Body',
-  tags: ['games'],
-  isPublished: true,
-};
-const NEW_PAGE = { path: 'games', ...FIELDS };
+const FIELDS = { content: 'Body', summary: 'Fix a typo', baseRevisionId: 12 };
+const NEW_PAGE = { title: 'Games', content: 'Body', summary: '' };
 const ASSIST = { instruction: 'Write it', title: 'Games', content: '' };
 
 function request(method: string, body?: unknown): Request {
@@ -110,7 +100,7 @@ const ENDPOINTS: [string, () => Promise<Response>][] = [
   ['PUT page', () => call(page.PUT, 'PUT', FIELDS, { id: '7' })],
   ['DELETE page', () => call(page.DELETE, 'DELETE', undefined, { id: '7' })],
   ['POST seed', () => call(seed.POST, 'POST')],
-  ['POST theme', () => call(theme.POST, 'POST')],
+  ['POST sidebar', () => call(sidebar.POST, 'POST')],
   ['POST assist', () => call(assist.POST, 'POST', ASSIST)],
 ];
 
@@ -121,7 +111,7 @@ const WIKI_CALLS = () => [
   h.update,
   h.remove,
   h.seed,
-  h.theme,
+  h.sidebar,
   h.streamTask,
 ];
 
@@ -136,22 +126,22 @@ beforeEach(() => {
   h.create.mockResolvedValue(PAGE);
   h.update.mockResolvedValue(PAGE);
   h.remove.mockResolvedValue(undefined);
-  h.seed.mockResolvedValue({ created: ['home'], skipped: ['games'] });
-  h.theme.mockResolvedValue(undefined);
+  h.seed.mockResolvedValue({ created: ['Main Page'], skipped: ['Games'] });
+  h.sidebar.mockResolvedValue(undefined);
   h.streamTask.mockImplementation(async function* () {
-    yield '## A';
+    yield '== A ==';
     yield '\n\ntext';
   });
 });
 
 describe('only admins reach the wiki', () => {
   it('covers every method the routes answer', () => {
-    const answered = [pages, page, seed, theme, assist].flatMap((r) => Object.keys(r)).length;
+    const answered = [pages, page, seed, sidebar, assist].flatMap((r) => Object.keys(r)).length;
     expect(answered).toBe(ENDPOINTS.length);
   });
 
   it.each(ENDPOINTS)(
-    '%s: 401 signed out, 403 for a member, and Wiki.js is never called',
+    '%s: 401 signed out, 403 for a member, and the wiki is never called',
     async (_n, run) => {
       h.getSession.mockResolvedValue(null);
       expect((await run()).status).toBe(401);
@@ -194,22 +184,23 @@ describe('pages', () => {
     expect(h.audit).toHaveBeenCalledWith('a1', 'wiki.page.create', {
       targetType: 'WikiPage',
       targetId: '7',
-      detail: 'games',
+      detail: 'Games',
     });
   });
 
   it.each([
-    ['a bad path', { ...NEW_PAGE, path: 'Bad Path' }],
-    ['a traversal path', { ...NEW_PAGE, path: '../admin' }],
+    ['a title with link syntax', { ...NEW_PAGE, title: '[[Games]]' }],
+    ['a title with a template', { ...NEW_PAGE, title: '{{x}}' }],
+    ['a title with a fragment', { ...NEW_PAGE, title: 'Games#Top' }],
     ['no title', { ...NEW_PAGE, title: '' }],
     ['no body', { ...NEW_PAGE, content: '' }],
-    ['a missing field', { path: 'games', title: 'Games' }],
+    ['a missing field', { title: 'Games' }],
   ])('rejects %s with 400 before touching the wiki', async (_n, body) => {
     expect((await call(pages.POST, 'POST', body)).status).toBe(400);
     expect(h.create).not.toHaveBeenCalled();
   });
 
-  it('answers 409 when the path is taken, and logs nothing', async () => {
+  it('answers 409 when the title is taken, and logs nothing', async () => {
     h.create.mockRejectedValue(new WikiError('conflict', 'taken'));
     const res = await call(pages.POST, 'POST', NEW_PAGE);
     expect(res.status).toBe(409);
@@ -262,30 +253,42 @@ describe('pages', () => {
     expect(h.audit).not.toHaveBeenCalled();
   });
 
-  it('an update cannot carry a path', async () => {
-    await call(page.PUT, 'PUT', { ...FIELDS, path: 'elsewhere' }, { id: '7' });
+  it('an update cannot rename the page', async () => {
+    await call(page.PUT, 'PUT', { ...FIELDS, title: 'Elsewhere' }, { id: '7' });
     expect(h.update).toHaveBeenCalledWith(7, FIELDS);
+  });
+
+  it('an update must name the revision it started from', async () => {
+    const { baseRevisionId: _base, ...rest } = FIELDS;
+    expect((await call(page.PUT, 'PUT', rest, { id: '7' })).status).toBe(400);
+    expect(h.update).not.toHaveBeenCalled();
+  });
+
+  it('answers 409 on an edit conflict, and logs nothing', async () => {
+    h.update.mockRejectedValue(new WikiError('conflict', 'Edit conflict.'));
+    expect((await call(page.PUT, 'PUT', FIELDS, { id: '7' })).status).toBe(409);
+    expect(h.audit).not.toHaveBeenCalled();
   });
 });
 
-describe('seed and theme', () => {
+describe('seed and sidebar', () => {
   it('seeds the starter pages and logs what was created', async () => {
     const res = await call(seed.POST, 'POST');
-    await expect(res.json()).resolves.toEqual({ created: ['home'], skipped: ['games'] });
-    expect(h.audit).toHaveBeenCalledWith('a1', 'wiki.seed', { detail: 'home' });
+    await expect(res.json()).resolves.toEqual({ created: ['Main Page'], skipped: ['Games'] });
+    expect(h.audit).toHaveBeenCalledWith('a1', 'wiki.seed', { detail: 'Main Page' });
   });
 
-  it('applies the theme and logs it', async () => {
-    await expect((await call(theme.POST, 'POST')).json()).resolves.toEqual({ success: true });
-    expect(h.theme).toHaveBeenCalledTimes(1);
-    expect(h.audit).toHaveBeenCalledWith('a1', 'wiki.theme');
+  it('writes the sidebar and logs it', async () => {
+    await expect((await call(sidebar.POST, 'POST')).json()).resolves.toEqual({ success: true });
+    expect(h.sidebar).toHaveBeenCalledTimes(1);
+    expect(h.audit).toHaveBeenCalledWith('a1', 'wiki.sidebar');
   });
 
   it('passes a wiki failure through with its status', async () => {
     h.seed.mockRejectedValue(new WikiError('unreachable', 'down'));
-    h.theme.mockRejectedValue(new WikiError('rejected', 'theme: Forbidden'));
+    h.sidebar.mockRejectedValue(new WikiError('rejected', 'permissiondenied'));
     expect((await call(seed.POST, 'POST')).status).toBe(502);
-    expect((await call(theme.POST, 'POST')).status).toBe(422);
+    expect((await call(sidebar.POST, 'POST')).status).toBe(422);
     expect(h.audit).not.toHaveBeenCalled();
   });
 });
@@ -301,7 +304,7 @@ describe('the writing assistant', () => {
     const res = await call(assist.POST, 'POST', ASSIST);
     expect(res.headers.get('content-type')).toBe('text/event-stream');
     expect(res.headers.get('cache-control')).toContain('no-transform');
-    expect(await frames(res)).toEqual(['{"delta":"## A"}', '{"delta":"\\n\\ntext"}', '[DONE]']);
+    expect(await frames(res)).toEqual(['{"delta":"== A =="}', '{"delta":"\\n\\ntext"}', '[DONE]']);
   });
 
   it('runs the registered wiki prompt as the document task, attributed to the admin', async () => {

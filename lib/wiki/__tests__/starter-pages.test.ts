@@ -1,73 +1,105 @@
 import { describe, expect, it } from 'vitest';
 import { apps, games } from '@/lib/catalog';
-import { STARTER_PAGES } from '@/lib/wiki/starter-pages';
+import { entryHeading, escapeWikitext, MAIN_PAGE, STARTER_PAGES } from '@/lib/wiki/starter-pages';
 import { createWikiPageBody } from '@/lib/wiki/wiki-schema';
 
-const byPath = new Map(STARTER_PAGES.map((p) => [p.path, p]));
+const byTitle = new Map(STARTER_PAGES.map((p) => [p.title, p]));
+
+/** Internal link targets: `[[Target]]` and `[[Target|label]]`, outside `<nowiki>`. */
+const internalLinks = (content: string) =>
+  [
+    ...content
+      .replace(/<nowiki>[\s\S]*?<\/nowiki>/g, '')
+      .matchAll(/\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g),
+  ].map((m) => m[1]!.trim());
 
 describe('starter pages', () => {
-  it('has the pages the wiki opens with, each at its own path', () => {
-    expect([...byPath.keys()]).toEqual(
-      expect.arrayContaining(['home', 'about', 'games', 'apps', 'rmharks', 'developer-api']),
+  it("has the pages the wiki opens with, each under its own title, starting with MediaWiki's main page", () => {
+    expect([...byTitle.keys()]).toEqual(
+      expect.arrayContaining([
+        MAIN_PAGE,
+        'About RMH Studios',
+        'Games',
+        'Apps',
+        'RMHarks',
+        'Developer API',
+      ]),
     );
-    expect(byPath.size).toBe(STARTER_PAGES.length);
+    expect(byTitle.size).toBe(STARTER_PAGES.length);
+    expect(STARTER_PAGES[0]!.title).toBe(MAIN_PAGE);
   });
 
-  it.each(STARTER_PAGES.map((p) => [p.path, p] as const))(
+  it.each(STARTER_PAGES.map((p) => [p.title, p] as const))(
     '%s passes the same validation as a page an admin writes',
-    (_path, page) => {
-      expect(createWikiPageBody.safeParse({ ...page, isPublished: true }).success).toBe(true);
+    (_title, page) => {
+      expect(createWikiPageBody.safeParse({ ...page, summary: '' }).success).toBe(true);
     },
   );
 
-  it.each(STARTER_PAGES.map((p) => [p.path, p] as const))(
-    '%s has no title heading and no unresolved template',
-    (_path, page) => {
-      // The wiki shows the title itself; a leading "# " would repeat it.
-      expect(page.content).not.toMatch(/^# /m);
-      expect(page.content).not.toMatch(/\$\{|undefined|\[object Object\]/);
+  it.each(STARTER_PAGES.map((p) => [p.title, p] as const))(
+    '%s is wikitext, with no Markdown, no title heading and no unresolved template',
+    (_title, page) => {
+      // The wiki shows the title itself; a level-one heading would repeat it.
+      expect(page.content).not.toMatch(/^=[^=]/m);
+      expect(page.content).not.toMatch(/^#{1,6} |^- |\]\(|```|\*\*/m);
+      expect(page.content).not.toMatch(/\$\{|undefined|\[object Object\]|\{\{/);
+      // Tildes would become a signature when MediaWiki saves the page.
+      expect(page.content).not.toContain('~~~');
     },
   );
 
   it('every link between wiki pages points at a starter page', () => {
     for (const page of STARTER_PAGES) {
-      for (const [, target] of page.content.matchAll(/\]\(\/en\/([a-z0-9/-]+)\)/g)) {
-        expect(byPath.has(target!), `${page.path} links to /en/${target}`).toBe(true);
+      for (const target of internalLinks(page.content)) {
+        expect(byTitle.has(target), `${page.title} links to [[${target}]]`).toBe(true);
       }
     }
   });
 
-  it('the home page links to every other starter page', () => {
-    const home = byPath.get('home')!.content;
-    for (const path of byPath.keys()) {
-      if (path !== 'home') expect(home).toContain(`(/en/${path})`);
+  it('the main page links to every other starter page', () => {
+    const home = internalLinks(byTitle.get(MAIN_PAGE)!.content);
+    for (const title of byTitle.keys()) {
+      if (title !== MAIN_PAGE) expect(home).toContain(title);
     }
   });
 
   it('lists every public game and app from the catalog, and no hidden one', () => {
     const cases = [
-      [byPath.get('games')!.content, games],
-      [byPath.get('apps')!.content, apps],
+      [byTitle.get('Games')!.content, games],
+      [byTitle.get('Apps')!.content, apps],
     ] as const;
     for (const [content, entries] of cases) {
       for (const entry of entries as readonly {
         title: string;
+        status?: string;
         unlisted?: boolean;
         hidden?: boolean;
       }[]) {
-        const shown = content.includes(`## ${entry.title}`);
+        const shown = content.includes(entryHeading(entry));
         expect(shown, entry.title).toBe(!entry.unlisted && !entry.hidden);
       }
     }
   });
 
-  it('keeps Markdown tables intact when a description contains a pipe', () => {
-    for (const path of ['games', 'apps']) {
-      const rows = byPath
-        .get(path)!
-        .content.split('\n')
-        .filter((line) => line.startsWith('| ') && !line.startsWith('| ---'));
-      for (const row of rows) expect(row.replaceAll('\\|', '').split('|')).toHaveLength(4);
+  it('keeps the catalog tables at two cells a row, whatever the descriptions contain', () => {
+    for (const title of ['Games', 'Apps']) {
+      const content = byTitle.get(title)!.content;
+      const table = content.slice(content.indexOf('{|'), content.indexOf('|}') + 2);
+      const rows = table.split('\n|-\n').slice(1);
+      expect(rows.length).toBeGreaterThan(0);
+      for (const row of rows) expect(row.replace(/\n\|\}$/, '').split('||')).toHaveLength(2);
     }
+  });
+});
+
+describe('escapeWikitext', () => {
+  it('turns every character that starts markup into a reference that renders as itself', () => {
+    const out = escapeWikitext("[[x]] {{y}} a|b <b> ''i'' ~~~~ __TOC__ &amp;");
+    expect(out).not.toMatch(/[[\]{}|<>~]|''|__/);
+    expect(out).toContain('&amp;amp;');
+  });
+
+  it('leaves ordinary text alone', () => {
+    expect(escapeWikitext("Bob's game: fast, 3D (beta).")).toBe("Bob's game: fast, 3D (beta).");
   });
 });

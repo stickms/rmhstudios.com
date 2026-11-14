@@ -1,6 +1,6 @@
 /**
  * Contracts for the wiki admin API. Client-safe: types only, no zod at runtime.
- * The wiki itself is Wiki.js on wiki.rmhstudios.com; these endpoints are how a
+ * The wiki itself is MediaWiki on wiki.rmhstudios.com; these endpoints are how a
  * signed-in site admin manages its pages (`docs/wiki.md`).
  */
 import type { z } from 'zod';
@@ -47,13 +47,10 @@ export const seedWikiPagesApi = endpoint<{ res: z.infer<typeof wikiSeedResult> }
   path: '/api/admin/wiki/seed',
 });
 
-/**
- * Applies the Wikipedia look (CSS override, site title, sidebar navigation) to
- * the wiki (`lib/wiki/appearance.server.ts`).
- */
-export const applyWikiThemeApi = endpoint<{ res: { success: true } }>()({
+/** Writes the wiki's sidebar, `MediaWiki:Sidebar` (`lib/wiki/sidebar.server.ts`). */
+export const applyWikiSidebarApi = endpoint<{ res: { success: true } }>()({
   method: 'POST',
-  path: '/api/admin/wiki/theme',
+  path: '/api/admin/wiki/sidebar',
 });
 
 /**

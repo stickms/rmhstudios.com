@@ -116,7 +116,7 @@ import { route as r107 } from '@/lib/wager/api/admin.wager.$id.resolve.server';
 import { route as r108 } from '@/lib/wiki/api/admin.wiki.pages.server';
 import { route as r109 } from '@/lib/wiki/api/admin.wiki.pages.$id.server';
 import { route as r110 } from '@/lib/wiki/api/admin.wiki.seed.server';
-import { route as r111 } from '@/lib/wiki/api/admin.wiki.theme.server';
+import { route as r111 } from '@/lib/wiki/api/admin.wiki.sidebar.server';
 import { route as r112 } from '@/lib/gifting/api/advent.server';
 import { route as r113 } from '@/lib/feed/api/ai.ask-feed.server';
 import { route as r114 } from '@/lib/ai/api/ai.bio.server';
@@ -1005,7 +1005,7 @@ export const API_ROUTES: readonly ApiRoute[] = [
   r108, // /api/admin/wiki/pages
   r109, // /api/admin/wiki/pages/$id
   r110, // /api/admin/wiki/seed
-  r111, // /api/admin/wiki/theme
+  r111, // /api/admin/wiki/sidebar
   r112, // /api/advent
   r113, // /api/ai/ask-feed
   r114, // /api/ai/bio

@@ -35,7 +35,7 @@ variable "rmhtube_host" {
 }
 
 variable "wiki_host" {
-  description = "Wiki hostname (Wiki.js behind Apache; see docs/wiki.md). Empty to manage no record."
+  description = "Wiki hostname (MediaWiki behind Apache; see docs/wiki.md). Empty to manage no record."
   type        = string
   default     = "wiki.rmhstudios.com"
 }

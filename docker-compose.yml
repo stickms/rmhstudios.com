@@ -236,9 +236,9 @@ services:
       - PORT=${PORT_WEB:-7005}
       - HOSTNAME=0.0.0.0
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      # Where /admin/wiki reaches the Wiki.js GraphQL API: the `wikijs` service by
-      # compose DNS. Unused until WIKIJS_API_KEY is set (docs/wiki.md).
-      - WIKIJS_URL=${WIKIJS_URL:-http://wikijs:3000}
+      # Where /admin/wiki reaches the MediaWiki Action API: the `mediawiki` service by
+      # compose DNS. Unused until MEDIAWIKI_BOT_USER/PASSWORD are set (docs/wiki.md).
+      - MEDIAWIKI_URL=${MEDIAWIKI_URL:-http://mediawiki}
       # Postgres connection budget (max_connections = 200, deploy/postgres/
       # postgresql.tuning.conf). Each Nitro worker owns a lib/prisma.server pool of
       # DATABASE_POOL_SIZE (default 20) plus a pg-boss producer pool (2), so one web
@@ -572,60 +572,75 @@ services:
       start_period: 10s
 
   # ─── Wiki (wiki.rmhstudios.com) ─────────────────────────────────────────────
-  # Wiki.js 2, the public wiki. Apache proxies wiki.rmhstudios.com to the loopback
-  # port published below (deploy/apache/wiki.rmhstudios.com.conf). Everything it
-  # stores (pages, history, uploads, settings) lives in its OWN Postgres database
-  # on the host, next to the site's; the container keeps no state and needs no
-  # volume. The site's /admin/wiki page manages its pages through the GraphQL API
-  # over compose DNS (WIKIJS_URL on `web`), so admins need no account here.
+  # MediaWiki, the public wiki, in the classic Vector skin (Wikipedia's own).
+  # Apache proxies wiki.rmhstudios.com to the loopback port published below
+  # (deploy/apache/wiki.rmhstudios.com.conf). Everything it stores (pages,
+  # history, users, settings) lives in its OWN Postgres database on the host, next
+  # to the site's; uploads are off, so the container keeps no state and needs no
+  # volume. Its configuration is deploy/mediawiki/LocalSettings.php, baked into
+  # the image built from deploy/mediawiki/. The site's /admin/wiki page manages
+  # pages through the Action API over compose DNS (MEDIAWIKI_URL on `web`) with a
+  # bot password, so admins need no account here.
   #
-  # OPT-IN, like pgbouncer: without the WIKIJS_DB_* credentials the container
-  # cannot start, and a profiled service is skipped by the deploy's plain
-  # `docker compose up`, so it cannot crash-loop a deploy for a stack that has
-  # not set the wiki up. Start it once, by hand (docs/wiki.md):
-  #   docker compose --profile wiki up -d wikijs
+  # OPT-IN, like pgbouncer: without MEDIAWIKI_DB_PASS and MEDIAWIKI_SECRET_KEY the
+  # wiki cannot answer, and a profiled service is skipped by the deploy's plain
+  # `docker compose up` (and by its image pulls), so it cannot crash-loop a deploy
+  # for a stack that has not set the wiki up. Build and start it once, by hand
+  # (docs/wiki.md):
+  #   docker compose --profile wiki up -d --build mediawiki
   # `restart: unless-stopped` keeps it up across reboots and deploys after that.
-  wikijs:
-    # Pinned to the 2.5 line: 3.x is a different product with a different API.
-    image: ghcr.io/requarks/wiki:2.5
-    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-wikijs
+  mediawiki:
+    build:
+      context: ./deploy/mediawiki
+    # Built on the host, never pulled. The tag names the LTS line the Dockerfile pins.
+    image: rmhstudios-mediawiki:1.43
+    pull_policy: build
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-mediawiki
     restart: unless-stopped
     profiles: ['wiki']
     init: true
+    # Apache starts as root to bind port 80, then drops to www-data: that takes
+    # these three capabilities and no others (tested: it serves, passes its
+    # healthcheck, runs wiki-bootstrap and stops gracefully with only these).
     cap_drop:
       - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
     security_opt:
       - no-new-privileges:true
     pids_limit: 256
     extra_hosts:
       - 'host.docker.internal:host-gateway'
-    # Resource limits (starting point): one Node process, low traffic.
+    # Resource limits (starting point): Apache + PHP, low traffic.
     mem_limit: 512m
     mem_reservation: 192m
     cpus: 0.5
     # Below the default weight, like the workers: the wiki yields to web.
     cpu_shares: 512
     ports:
-      - '127.0.0.1:${PORT_WIKI:-7010}:3000'
+      - '127.0.0.1:${PORT_WIKI:-7010}:80'
     environment:
-      DB_TYPE: postgres
-      DB_HOST: ${WIKIJS_DB_HOST:-host.docker.internal}
-      DB_PORT: ${WIKIJS_DB_PORT:-5432}
-      DB_USER: ${WIKIJS_DB_USER:-wikijs}
-      DB_PASS: ${WIKIJS_DB_PASS:-}
-      DB_NAME: ${WIKIJS_DB_NAME:-wikijs}
+      MEDIAWIKI_SERVER: ${MEDIAWIKI_SERVER:-https://wiki.rmhstudios.com}
+      MEDIAWIKI_DB_HOST: ${MEDIAWIKI_DB_HOST:-host.docker.internal}
+      MEDIAWIKI_DB_PORT: ${MEDIAWIKI_DB_PORT:-5432}
+      MEDIAWIKI_DB_USER: ${MEDIAWIKI_DB_USER:-mediawiki}
+      MEDIAWIKI_DB_PASS: ${MEDIAWIKI_DB_PASS:-}
+      MEDIAWIKI_DB_NAME: ${MEDIAWIKI_DB_NAME:-mediawiki}
+      MEDIAWIKI_SECRET_KEY: ${MEDIAWIKI_SECRET_KEY:-}
     healthcheck:
       test:
         [
           'CMD',
-          'node',
-          '-e',
-          "fetch('http://localhost:3000/healthz').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+          'php',
+          '-r',
+          "exit(@file_get_contents('http://localhost/api.php?action=query&meta=siteinfo&format=json') === false ? 1 : 0);",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 30s
     logging:
       driver: json-file
       options:

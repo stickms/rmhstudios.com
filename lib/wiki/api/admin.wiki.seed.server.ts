@@ -4,11 +4,11 @@ import { logAdminAction } from '@/lib/admin-audit.server';
 import { seedStarterPages } from '@/lib/wiki/seed.server';
 import { wikiSeedResult } from '@/lib/wiki/wiki-schema';
 import { seedWikiPagesApi } from '@/lib/wiki/wiki.contract';
-import { wikiErrorResponse } from '@/lib/wiki/wikijs.server';
+import { wikiErrorResponse } from '@/lib/wiki/mediawiki.server';
 
 /**
  * POST /api/admin/wiki/seed — create the starter pages that are missing. Admin only.
- * A page whose path already exists is left exactly as it is.
+ * A page whose title already exists is left exactly as it is.
  */
 export const route = apiRoute('/api/admin/wiki/seed', {
   POST: implement(
