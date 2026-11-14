@@ -24,7 +24,11 @@ function RmhosPage() {
   return (
     <RmhosShell>
       <GameErrorBoundary gameName="rmhOS">
-        <ClientOnly fallback={<GameLoadingFallback background="var(--app-bg)" foreground="var(--app-accent)" />}>
+        <ClientOnly
+          fallback={
+            <GameLoadingFallback background="var(--app-bg)" foreground="var(--app-accent)" />
+          }
+        >
           <RmhosApp />
         </ClientOnly>
       </GameErrorBoundary>

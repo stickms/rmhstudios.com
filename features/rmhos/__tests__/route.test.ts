@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createMemoryHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from '@tanstack/react-router';
 
 /**
  * The generated tree imports every route module (auth, prisma, ...), which takes tens of seconds
@@ -26,7 +31,10 @@ describe('/rmhos route', () => {
     const rmhos = createRoute({ getParentRoute: () => root, path: '/rmhos' });
     const routeTree = root.addChildren([rmhos]);
     const ids = (path: string) => {
-      const router = createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [path] }) });
+      const router = createRouter({
+        routeTree,
+        history: createMemoryHistory({ initialEntries: [path] }),
+      });
       return router.matchRoutes(path, {}).map((m) => m.routeId);
     };
     expect(ids('/rmhos')).toContain('/rmhos');

@@ -19,7 +19,8 @@ export function rmhosDevImage(root: string): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = req.url ?? '';
-        if (!url.startsWith(PREFIX) || (req.method !== 'GET' && req.method !== 'HEAD')) return next();
+        if (!url.startsWith(PREFIX) || (req.method !== 'GET' && req.method !== 'HEAD'))
+          return next();
         const name = decodeURIComponent(url.slice(PREFIX.length).split('?')[0] ?? '');
         const file = path.resolve(dir, name);
         if (!file.startsWith(dir + path.sep)) return next();

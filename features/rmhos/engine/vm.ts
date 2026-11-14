@@ -67,7 +67,6 @@ export function relayConfig(net: CreateVmOptions['net'], pageHost: string, pageI
   };
 }
 
-
 /**
  * v86 picks its scheduler when the module loads: `typeof process !== 'undefined'` selects the Node
  * path (`global.setImmediate`), which does not exist in a browser. Some bundles define a `process`
@@ -140,18 +139,27 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     };
     // One bar for the BIOS, kernel and snapshot together: v86 reports each file on its own scale.
     const loadedBy = new Map<string, number>();
-    const expected = [manifest.seabios, manifest.vgabios, manifest.bzImage, ...(usedState && manifest.state ? [manifest.state] : [])];
+    const expected = [
+      manifest.seabios,
+      manifest.vgabios,
+      manifest.bzImage,
+      ...(usedState && manifest.state ? [manifest.state] : []),
+    ];
     const total = expected.reduce((n, f) => n + f.size, 0);
     e.add_listener('download-progress', (ev) => {
       if (finished || destroyed) return;
-      loadedBy.set(ev.file_name, Math.min(ev.loaded, expected.find((f) => f.url === ev.file_name)?.size ?? ev.loaded));
+      loadedBy.set(
+        ev.file_name,
+        Math.min(ev.loaded, expected.find((f) => f.url === ev.file_name)?.size ?? ev.loaded),
+      );
       let loaded = 0;
       for (const v of loadedBy.values()) loaded += v;
       setPhase('downloading', { loaded, total });
     });
     e.add_listener('download-error', (ev) => {
       // The disk is ranged and the BIOS/kernel are required: only a missing state is recoverable.
-      if (usedState && ev.file_name === manifest.state?.url) fallBack(`could not download ${ev.file_name}`);
+      if (usedState && ev.file_name === manifest.state?.url)
+        fallBack(`could not download ${ev.file_name}`);
       else if (!finished) {
         finished = true;
         setPhase('failed', { error: `could not download ${ev.file_name}` });
@@ -181,7 +189,8 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     e.add_listener('serial1-output-byte', (b: number) => {
       const chunk = String.fromCharCode(b);
       serial1Seen = (serial1Seen + chunk).slice(-4096);
-      if (!usedState && phase !== 'running' && serial1Seen.includes('RMHOS READY')) setPhase('running');
+      if (!usedState && phase !== 'running' && serial1Seen.includes('RMHOS READY'))
+        setPhase('running');
       for (const cb of serialListeners) cb(chunk);
     });
     // A state that downloads but will not restore surfaces as an error out of the loader.
@@ -193,7 +202,9 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       }
     };
     window.addEventListener('unhandledrejection', onError);
-    e.add_listener('emulator-ready', () => window.removeEventListener('unhandledrejection', onError));
+    e.add_listener('emulator-ready', () =>
+      window.removeEventListener('unhandledrejection', onError),
+    );
   };
 
   setPhase('downloading');
@@ -248,4 +259,3 @@ interface FsLike {
   SearchPath(path: string): { id: number; parentid: number; name: string };
   Unlink(parentid: number, name: string): number;
 }
-

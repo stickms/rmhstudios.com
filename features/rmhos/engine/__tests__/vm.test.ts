@@ -3,7 +3,11 @@ import { relayConfig } from '../vm';
 
 describe('relayConfig', () => {
   it('turns the session URL into a Wisp URL with the ticket', () => {
-    const r = relayConfig({ url: 'wss://rmhstudios.com/rmhos-net/', ticket: 'abc.def' }, 'ignored', true);
+    const r = relayConfig(
+      { url: 'wss://rmhstudios.com/rmhos-net/', ticket: 'abc.def' },
+      'ignored',
+      true,
+    );
     expect(r.relayUrl).toBe('wisps://rmhstudios.com/rmhos-net/?ticket=abc.def');
   });
 

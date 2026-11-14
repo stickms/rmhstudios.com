@@ -11,15 +11,27 @@ interface Props {
   onRetry: () => void;
 }
 
-export default function BootScreen({ phase, detail, needsKeyboardNotice, onStart, onRetry }: Props) {
+export default function BootScreen({
+  phase,
+  detail,
+  needsKeyboardNotice,
+  onStart,
+  onRetry,
+}: Props) {
   const { t } = useTranslation('c-rmhos');
-  const progress = detail && 'total' in detail && detail.total > 0 ? Math.min(1, detail.loaded / detail.total) : null;
+  const progress =
+    detail && 'total' in detail && detail.total > 0
+      ? Math.min(1, detail.loaded / detail.total)
+      : null;
   const error = detail && 'error' in detail ? detail.error : null;
 
   let status: string;
-  if (phase === 'failed') status = t('boot-failed', { defaultValue: 'The machine could not start.' });
-  else if (phase === 'booting') status = t('boot-starting', { defaultValue: 'Starting the machine' });
-  else if (phase === 'downloading') status = t('boot-downloading', { defaultValue: 'Downloading the machine' });
+  if (phase === 'failed')
+    status = t('boot-failed', { defaultValue: 'The machine could not start.' });
+  else if (phase === 'booting')
+    status = t('boot-starting', { defaultValue: 'Starting the machine' });
+  else if (phase === 'downloading')
+    status = t('boot-downloading', { defaultValue: 'Downloading the machine' });
   else status = t('boot-preparing', { defaultValue: 'Preparing' });
 
   return (
@@ -46,7 +58,9 @@ export default function BootScreen({ phase, detail, needsKeyboardNotice, onStart
               </div>
             )}
             {phase === 'downloading' && progress !== null && (
-              <p className="text-xs font-mono text-(--app-text-muted)">{Math.round(progress * 100)}%</p>
+              <p className="text-xs font-mono text-(--app-text-muted)">
+                {Math.round(progress * 100)}%
+              </p>
             )}
             {phase === 'failed' && (
               <>

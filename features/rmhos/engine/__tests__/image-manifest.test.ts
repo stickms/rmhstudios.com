@@ -35,7 +35,9 @@ describe('resolveImageManifest', () => {
 describe('machine definition', () => {
   it('the page builds the machine the snapshot was taken with', async () => {
     const opts = await import(
-      /* @vite-ignore */ pathToFileURL(resolve(__dirname, '../../../../scripts/rmhos/vm-options.mjs')).href
+      /* @vite-ignore */ pathToFileURL(
+        resolve(__dirname, '../../../../scripts/rmhos/vm-options.mjs'),
+      ).href
     );
     expect(RMHOS.memoryBytes).toBe(opts.MEMORY_BYTES);
     expect(RMHOS.vgaMemoryBytes).toBe(opts.VGA_MEMORY_BYTES);

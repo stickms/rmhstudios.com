@@ -44,7 +44,9 @@ export default function RmhosApp() {
       try {
         // The session is only needed for the relay; a failure here means no network, not no desktop.
         const session = await api(rmhosSessionApi).catch(() => null);
-        const net = session?.net.enabled ? { url: session.net.url, ticket: session.net.ticket } : null;
+        const net = session?.net.enabled
+          ? { url: session.net.url, ticket: session.net.ticket }
+          : null;
         const vm = await createVm({
           screen: screenRef.current!,
           manifest: resolveImageManifest(CDN_BASE || undefined),
