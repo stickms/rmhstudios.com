@@ -20,11 +20,19 @@ import { PROFILE_BANNER_ASPECT } from '@/lib/profile/banner';
 export function ProfileBanner({
   src,
   backdrop,
+  strip,
   className,
   children,
 }: {
   src: string | null | undefined;
   backdrop?: string | null | undefined;
+  /**
+   * An equipped theme's gradient, drawn as a thin band along the bottom edge of an uploaded picture.
+   * The picture wins the box (an upload is a deliberate choice), so without this a themed profile
+   * with a banner would show no sign of its theme. Ignored when there is no picture: `backdrop`
+   * already fills the box then. Same rules as `backdrop`: inline from item data, inside this box only.
+   */
+  strip?: string | null | undefined;
   className?: string;
   /** Shown when there is no picture (the editor's placeholder). */
   children?: ReactNode;
@@ -42,7 +50,17 @@ export function ProfileBanner({
       }}
     >
       {src ? (
-        <img src={src} alt="" className="absolute inset-0 size-full object-cover" />
+        <>
+          <img src={src} alt="" className="absolute inset-0 size-full object-cover" />
+          {strip ? (
+            <span
+              data-slot="profile-banner-strip"
+              aria-hidden
+              className="absolute inset-x-0 bottom-0 top-[calc(100%-4px)] block"
+              style={{ background: strip }}
+            />
+          ) : null}
+        </>
       ) : (
         children
       )}

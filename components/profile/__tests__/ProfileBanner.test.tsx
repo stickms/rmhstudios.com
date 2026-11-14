@@ -27,6 +27,16 @@ describe('ProfileBanner', () => {
     expect(html).not.toContain('linear-gradient');
   });
 
+  it('an equipped theme still shows on a profile with an uploaded banner, as a strip on its bottom edge', () => {
+    const html = renderToStaticMarkup(<ProfileBanner src="/b.webp" backdrop={null} strip={DUSK} />);
+    expect(html).toContain('<img');
+    expect(html).toContain('data-slot="profile-banner-strip"');
+    expect(html).toContain('background:linear-gradient(135deg,#f97316,#db2777)');
+    // No picture: the backdrop already fills the box, so there is no second copy of the gradient.
+    const bare = renderToStaticMarkup(<ProfileBanner src={null} backdrop={DUSK} strip={DUSK} />);
+    expect(bare).not.toContain('profile-banner-strip');
+  });
+
   it('the shop catalog still resolves a banner and a theme to a backdrop', () => {
     expect(resolveEquippedCosmetics(['banner.dusk']).banner?.gradient).toBe(DUSK);
     const theme = resolveEquippedCosmetics(['theme.vapor']).theme;

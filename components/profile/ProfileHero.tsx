@@ -181,6 +181,7 @@ export function ProfileHero({
         <ProfileBanner
           src={profile.bannerUrl}
           backdrop={headerBackdrop}
+          strip={profile.cosmetics?.theme?.gradient}
           className="profile-head__banner"
         />
       ) : null}
