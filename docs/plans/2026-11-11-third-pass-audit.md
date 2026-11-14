@@ -440,6 +440,14 @@ export function toast(...args: Args) {
 `@radix-ui/react-dialog` in the entry closure (add them to its forbidden list
 as each leaves), and `entryRaw` is at or under 350,000.
 
+> **Note, 2026-11-14.** The 350,000 figure was written when the entry was one of 52
+> files on the critical path. Since the chunk shaping in `vite.config.ts` (#1620) the
+> whole static graph of the entry is folded into the entry file, so `entryRaw` now
+> measures nearly the entire critical path (685,698 B then) and cannot be compared
+> with this number. The package list above is unchanged as the test. For bytes, read
+> the critical-path lines of `scripts/check-bundle-budget.ts` instead; a new byte
+> target for RT1 is an owner decision and has not been set.
+
 ### RT2 — An edge cache that is measured
 
 ```yaml

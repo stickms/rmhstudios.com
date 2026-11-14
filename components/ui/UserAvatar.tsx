@@ -73,6 +73,10 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
  // the first frame instead of flashing in a frame later.
  loading="eager"
  decoding="sync"
+ // React's server renderer writes a `<link rel="preload" as="image">` into the head for every eager image, the
+ // first ten ahead of the stylesheets, so a feed's avatars queued in front of the render-blocking CSS. It skips
+ // an image marked low priority, and a 28px avatar is exactly that: it should not compete with the sheet or text.
+ fetchPriority="low"
  data-slot="avatar"
  className={`rounded-full shrink-0 object-cover bg-site-bg-subtle ${className}`}
  style={{ width: size, height: size }}

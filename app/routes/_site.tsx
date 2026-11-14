@@ -16,43 +16,18 @@ import { CookieConsent } from '@/components/site/CookieConsent';
 import '@/components/feed/feed.css';
 
 // Shell overlays that render nothing until a condition fires — first-run/locale/
-// what's-new/free-month modals, global keyboard
-// shortcuts, and the music mini-player (only when a track is active). Lazy-load
-// them so their code + deps leave the eager hydration path of every _site page
-// (perf F6 / rewrite R3-T7). Each renders null on the server and the Suspense
-// fallback is null, so nothing in the visible layout shifts.
+// what's-new/free-month modals, global keyboard shortcuts, the targeted notice
+// banner. They are lazy-loaded so their code + deps leave the eager hydration path
+// of every _site page (perf F6 / rewrite R3-T7), and as ONE module, because all of
+// them mount together: seven separate `lazy()` imports were seven requests for the
+// same moment (components/site/SiteOverlays.tsx). Each renders null on the server
+// and the Suspense fallback is null, so nothing in the visible layout shifts.
 //
 // The cookie notice is the exception and is imported statically: it must be in
 // the SERVER HTML. Mounted lazily it painted seconds after everything else and
 // became a first visit's Largest Contentful Paint (perf audit 2026-10-08,
 // lib/cookie-consent.ts). It is a few hundred bytes of markup and one Button.
-const WelcomeModal = lazy(() =>
-  import('@/components/feed/WelcomeModal').then((m) => ({ default: m.WelcomeModal })),
-);
-const LanguageFirstRunModal = lazy(() =>
-  import('@/components/site/LanguageFirstRunModal').then((m) => ({
-    default: m.LanguageFirstRunModal,
-  })),
-);
-const WhatsNewModal = lazy(() =>
-  import('@/components/feed/WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),
-);
-const SitewideAnnouncementModal = lazy(() =>
-  import('@/components/announcements/SitewideAnnouncementModal').then((m) => ({
-    default: m.SitewideAnnouncementModal,
-  })),
-);
-const FreeMonthModal = lazy(() =>
-  import('@/components/feed/FreeMonthModal').then((m) => ({ default: m.FreeMonthModal })),
-);
-const KeyboardShortcuts = lazy(() =>
-  import('@/components/site/KeyboardShortcuts').then((m) => ({ default: m.KeyboardShortcuts })),
-);
-const TargetedNoticeBanner = lazy(() =>
-  import('@/components/site/TargetedNoticeBanner').then((m) => ({
-    default: m.TargetedNoticeBanner,
-  })),
-);
+const SiteOverlays = lazy(() => import('@/components/site/SiteOverlays'));
 
 export const Route = createFileRoute('/_site')({
   component: SiteLayout,
@@ -90,13 +65,7 @@ function SiteLayout() {
         <SilentErrorBoundary label="shell-overlays">
           <CookieConsent />
           <Suspense fallback={null}>
-            <LanguageFirstRunModal />
-            <WelcomeModal />
-            <WhatsNewModal />
-            <SitewideAnnouncementModal />
-            <FreeMonthModal />
-            <KeyboardShortcuts />
-            <TargetedNoticeBanner />
+            <SiteOverlays />
           </Suspense>
         </SilentErrorBoundary>
       }
