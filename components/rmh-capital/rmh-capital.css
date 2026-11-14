@@ -228,7 +228,7 @@
 /* Disc: a turned, polished face. Orb: a ball bearing. Both sit on the wash. */
 .rmhc-root :is(.plate--disc, .plate--orb)::before {
   content: ''; position: absolute; inset: 0; margin: auto;
-  height: 74%; aspect-ratio: 1; border-radius: 50%;
+  height: 74%; aspect-ratio: 1; border-radius: 50%; corner-shape: round;
 }
 .rmhc-root .plate--disc::before {
   background:
