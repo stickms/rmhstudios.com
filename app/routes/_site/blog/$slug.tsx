@@ -11,7 +11,7 @@
  * The public URL is unchanged — only the layout nesting moved.
  */
 
-import { createFileRoute, notFound } from '@tanstack/react-router';
+import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { readingTimeMinutes } from '@/lib/reading-time';
@@ -24,6 +24,7 @@ import { ShareButton } from '@/components/blog/ShareButton';
 import { ArticleTakeaways } from '@/components/blog/ArticleTakeaways';
 import { ArticleBody } from '@/components/reading/ArticleBody';
 import { getPostBySlug } from '@/lib/blog';
+import { prisma } from '@/lib/prisma.server';
 import { getBusiness } from '@/lib/businesses';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
@@ -36,7 +37,7 @@ const fetchPost = createServerFn({ method: 'GET' })
     // 404 so the shell renders `components/errors/NotFound` instead of the
     // error boundary (page-consistency.md §3 "States").
     try {
-      return await getPostBySlug(slug, [
+      const post = await getPostBySlug(slug, [
         'title',
         'date',
         'description',
@@ -45,7 +46,16 @@ const fetchPost = createServerFn({ method: 'GET' })
         'tags',
         'announcement',
         'business',
+        'announcementPostId',
       ]);
+      // Only link a discussion post that still exists.
+      const linked = typeof post.announcementPostId === 'string' ? post.announcementPostId : null;
+      const live = post.announcement === true && linked
+        ? await prisma.rMHark.findFirst({ where: { id: linked, deletedAt: null }, select: { id: true } })
+        : null;
+      // Assign in place: spreading would drop the index signature the page reads its other fields through.
+      post.announcementPostId = live?.id ?? null;
+      return post;
     } catch {
       throw notFound();
     }
@@ -140,6 +150,15 @@ function BlogPost() {
             <span className="t-meta">
               {business.name} · {t('blog-announcement-label', { defaultValue: 'Announcement' })}
             </span>
+          ) : null}
+          {isAnnouncement && typeof post.announcementPostId === 'string' ? (
+            <Link
+              to="/u/$userid/post/$postid"
+              params={{ userid: 'me', postid: post.announcementPostId }}
+              className="t-meta underline underline-offset-4 hover:text-site-text"
+            >
+              {t('blog-join-discussion', { defaultValue: 'Join the discussion' })}
+            </Link>
           ) : null}
           <span className="t-meta">{post.date as string}</span>
           {minutes > 0 ? (

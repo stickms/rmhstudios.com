@@ -19,6 +19,8 @@ export function SitewideAnnouncementRow() {
   const announcement = data?.announcement ?? null;
   if (!announcement || !isAnnouncementLive(announcement)) return null;
   const business = getBusiness(announcement.business);
+  const discussionId = announcement.discussionPostId;
+  const quietLink = 't-body text-site-text-muted underline hover:text-site-text';
 
   return (
     <SpineItem
@@ -29,7 +31,15 @@ export function SitewideAnnouncementRow() {
       <p className="t-meta">
         {business.name} · {t('sitewide-announcement-kind', { defaultValue: 'Announcement' })}
       </p>
-      <h2 className="t-heading mt-1">{announcement.title}</h2>
+      <h2 className="t-heading mt-1">
+        {discussionId ? (
+          <Link to="/u/$userid/post/$postid" params={{ userid: 'me', postid: discussionId }}>
+            {announcement.title}
+          </Link>
+        ) : (
+          announcement.title
+        )}
+      </h2>
       {announcement.description && (
         <p className="t-body mt-1 line-clamp-3 text-site-text-muted">{announcement.description}</p>
       )}
@@ -43,29 +53,33 @@ export function SitewideAnnouncementRow() {
         />
       )}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => useSitewideAnnouncementStore.getState().setOpen(true)}
-        >
-          {t('sitewide-view-announcement', { defaultValue: 'View announcement' })}
-        </Button>
-        <Link
-          to="/blog/$slug"
-          params={{ slug: announcement.slug }}
-          className="t-body text-site-text-muted underline hover:text-site-text"
-        >
+        {discussionId ? (
+          <>
+            <Button asChild size="sm">
+              <Link to="/u/$userid/post/$postid" params={{ userid: 'me', postid: discussionId }}>
+                {t('sitewide-join-discussion', { defaultValue: 'Join the discussion' })}
+              </Link>
+            </Button>
+            <button
+              type="button"
+              className={quietLink}
+              onClick={() => useSitewideAnnouncementStore.getState().setOpen(true)}
+            >
+              {t('sitewide-view-announcement', { defaultValue: 'View announcement' })}
+            </button>
+          </>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => useSitewideAnnouncementStore.getState().setOpen(true)}
+          >
+            {t('sitewide-view-announcement', { defaultValue: 'View announcement' })}
+          </Button>
+        )}
+        <Link to="/blog/$slug" params={{ slug: announcement.slug }} className={quietLink}>
           {t('sitewide-read-full-post', { defaultValue: 'Read full post' })}
         </Link>
-        {announcement.discussionPostId && (
-          <Link
-            to="/u/$userid/post/$postid"
-            params={{ userid: 'me', postid: announcement.discussionPostId }}
-            className="t-body text-site-text-muted underline hover:text-site-text"
-          >
-            {t('sitewide-discuss', { defaultValue: 'Discuss' })}
-          </Link>
-        )}
       </div>
     </SpineItem>
   );

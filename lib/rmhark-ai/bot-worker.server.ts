@@ -32,7 +32,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { Prisma } from '@prisma/client';
 import { decideInitiation, canBotMessage, formatDmHistory, type DmPrivacy } from './dm-policy';
-import { buildAvatarUrl, composePersona, rollPersona } from './persona';
+import { buildAvatarUrl, composePersona, rollPersona, withPoliticalLean } from './persona';
 import {
   generateBotProfile,
   generateDirectMessageOpener,
@@ -642,6 +642,15 @@ const consoleLog: BotLog = {
     console.error(JSON.stringify({ level: 'error', service: 'jobs', event, ...fields })),
 };
 
+/**
+ * The persona text as the AI is handed it: a bot that predates the political axis gets its lean
+ * from a hash of its id (nothing stored). An empty persona stays empty: callers skip those bots.
+ * Every `d.ai.*` call that takes a persona goes through here.
+ */
+function aiPersona(botId: string, persona: string): string {
+  return persona === '' ? '' : withPoliticalLean(persona, botId);
+}
+
 /** The text generation + image calls, injectable so ticks can run without DeepSeek. */
 export interface BotAi {
   profile(
@@ -1045,7 +1054,7 @@ async function postReaction(
   let posted = false;
   try {
     const text = await d.ai.reactionPost({
-      persona: b.botPersona,
+      persona: aiPersona(b.id, b.botPersona),
       kind,
       title: item.title,
       summary: item.summary,
@@ -1094,7 +1103,7 @@ export async function postAsBot(
   try {
     const kind: PostKind = ctx ? sampleKind(reactionPmf(ctx, b.id), d.random()) : 'usual';
     if (kind !== 'usual' && ctx && (await postReaction(d, b, ctx, kind))) return;
-    const content = await d.ai.post(b.botPersona);
+    const content = await d.ai.post(aiPersona(b.id, b.botPersona));
     if (content.trim().length === 0) return;
     // Occasionally attach an AI image. A failed image never blocks the post: it goes out text-only.
     let imageUrls: string[] = [];
@@ -1149,7 +1158,7 @@ export async function replyToComment(
   if (rc.thread.length >= d.cfg.maxReplyDepth) return false;
   const persona = await d.repo.botPersona(botId).catch(() => '');
   const content = await d.ai.reply({
-    persona,
+    persona: aiPersona(botId, persona),
     postContent: rc.postContent,
     quotedPostContent: rc.quotedPostContent,
     thread: rc.thread,
@@ -1211,7 +1220,7 @@ export async function seedOnPost(d: BotDeps, post: BotPostRow): Promise<void> {
     if (eligible.length === 0) return;
     const bot = pickOne(eligible, d.random);
     const content = await d.ai.reply({
-      persona: bot.botPersona,
+      persona: aiPersona(bot.id, bot.botPersona),
       postContent: post.content,
       quotedPostContent: post.quotedContent,
       thread: [],
@@ -1263,7 +1272,7 @@ async function commentOnPost(
   post: { content: string; quotedContent: string },
 ): Promise<boolean> {
   const content = await d.ai.reply({
-    persona: bot.botPersona,
+    persona: aiPersona(bot.id, bot.botPersona),
     postContent: post.content,
     quotedPostContent: post.quotedContent,
     thread: [],
@@ -1374,7 +1383,7 @@ export async function answerDirectMessages(d: BotDeps): Promise<void> {
       await d.notify.typing(c.humanId, typing);
       let content: string;
       try {
-        content = await d.ai.dmReply(persona, turns);
+        content = await d.ai.dmReply(aiPersona(c.botId, persona), turns);
       } finally {
         await d.notify.typing(c.humanId, { ...typing, isTyping: false });
       }
@@ -1420,7 +1429,7 @@ export async function initiateDirectMessages(d: BotDeps): Promise<void> {
         messages,
       });
       if (decision === 'skip') return;
-      const content = await d.ai.dmOpener(bot.botPersona);
+      const content = await d.ai.dmOpener(aiPersona(bot.id, bot.botPersona));
       if (content.trim() === '') return;
       const conversationId = await d.repo.upsertConversation(pOne, pTwo);
       const msg = await d.repo.sendBotDm(conversationId, bot.id, content);

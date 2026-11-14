@@ -14,8 +14,13 @@
 export const MAX_POST_CHARS = 280;
 export const MAX_REPLY_CHARS = 500;
 
-/** Bump when the persona schema changes so old bots can be re-rolled/migrated. */
-export const PERSONA_VERSION = 1;
+/**
+ * Bump when the persona schema changes. It is stamped on a freshly rolled
+ * `BotPersonaSpec` only: it is not stored in `User.botPersona` and nothing
+ * reads it back, so bumping never touches existing bots. v2 added the
+ * political lean (legacy bots get theirs from `withPoliticalLean`).
+ */
+export const PERSONA_VERSION = 2;
 
 /**
  * DiceBear avatar styles that read as *people / characters*, never robots —
@@ -299,6 +304,128 @@ export const POST_SHAPES = [
   'reacting to a (made-up but plausible) thing that just happened to them',
 ] as const;
 
+/**
+ * Political lean — how a bot tends to see news, policy, business and
+ * institutions. Outlook and instincts only: never a party, a named politician
+ * or a country-specific issue list, because the bots react to world news.
+ * Weights are relative; most of the crowd is deliberately not into politics.
+ */
+export const POLITICAL_LEANS = [
+  {
+    id: 'apolitical',
+    label: 'tuned out of politics',
+    rules:
+      'Finds politics tiresome and mostly scrolls past it. Reacts to news through everyday life, sport, money or a joke, and rarely takes a side. Would rather change the subject than argue.',
+    weight: 30,
+  },
+  {
+    id: 'progressive',
+    label: 'progressive',
+    rules:
+      'Sees most news through fairness, inequality and who gets left out. Impatient with slow change and with powerful interests. Quick to say the system needs a rethink, and to push back on people who shrug it off.',
+    weight: 14,
+  },
+  {
+    id: 'liberal',
+    label: 'centre-left',
+    rules:
+      'Trusts public institutions, experts and careful reform. Wants problems fixed through proper process and thinks government has a real role. Wary of anger and slogans, even from their own side.',
+    weight: 14,
+  },
+  {
+    id: 'moderate',
+    label: 'centrist',
+    rules:
+      'Sees both sides of most stories and distrusts certainty from anyone. Tends to say it is more complicated than the hot takes suggest. Gets a little weary of both camps shouting.',
+    weight: 12,
+  },
+  {
+    id: 'conservative',
+    label: 'centre-right',
+    rules:
+      'Values tradition, stability, personal responsibility and markets that work. Wary of big sudden changes and of spending other people\'s money. Will defend an unfashionable view calmly and push back on what sounds like fashionable consensus.',
+    weight: 14,
+  },
+  {
+    id: 'libertarian',
+    label: 'libertarian',
+    rules:
+      'Sceptical of government and of big institutions alike, public or corporate. Asks who gains power and who pays. Prefers individual choice and voluntary deals, and rolls their eyes at new rules and mandates.',
+    weight: 8,
+  },
+  {
+    id: 'populist',
+    label: 'anti-establishment',
+    rules:
+      'Distrusts elites of every stripe: officials, executives, pundits, experts talking down. Sees most news as insiders looking after themselves while ordinary people foot the bill. Blunt and plain-spoken about it.',
+    weight: 8,
+  },
+] as const;
+
+export type PoliticalLean = (typeof POLITICAL_LEANS)[number];
+export type PoliticalLeanId = PoliticalLean['id'];
+
+const POLITICAL_LEAN_TOTAL_WEIGHT = POLITICAL_LEANS.reduce((sum, l) => sum + l.weight, 0);
+
+/** Weighted pick from a uniform draw `u` in [0, 1). Pure; out-of-range draws clamp to the ends. */
+export function pickPoliticalLean(u: number): PoliticalLean {
+  const target = Math.min(Math.max(Number.isFinite(u) ? u : 0, 0), 1) * POLITICAL_LEAN_TOTAL_WEIGHT;
+  let acc = 0;
+  for (const lean of POLITICAL_LEANS) {
+    acc += lean.weight;
+    if (target < acc) return lean;
+  }
+  return POLITICAL_LEANS[POLITICAL_LEANS.length - 1] ?? POLITICAL_LEANS[0];
+}
+
+/** The persona line for a lean. */
+function politicsLine(lean: PoliticalLean): string {
+  return `POLITICS (${lean.label}): ${lean.rules}`;
+}
+
+const POLITICS_LINE = /^POLITICS \(([^)\n]*)\):/m;
+
+/** Does this persona text already carry a POLITICS line? */
+export function hasPoliticalLean(persona: string): boolean {
+  return POLITICS_LINE.test(persona);
+}
+
+/** Read the lean id back out of a persona text; null when there is no (recognised) POLITICS line. */
+export function readPoliticalLean(persona: string): PoliticalLeanId | null {
+  const label = POLITICS_LINE.exec(persona)?.[1];
+  return POLITICAL_LEANS.find((l) => l.label === label)?.id ?? null;
+}
+
+/** FNV-1a (32-bit) of `seed`, mapped to a uniform draw in [0, 1). */
+function seedToUnit(seed: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  // A final avalanche so ids that differ in one trailing character still spread out.
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+
+/**
+ * The persona as the model should see it: a persona that predates the political
+ * axis gets a POLITICS line appended, its lean chosen from a hash of `seed`
+ * (the bot's user id) with the same weights as a fresh roll. Same seed, same
+ * lean, forever; nothing is stored. A persona that already has the line is
+ * returned unchanged.
+ */
+export function withPoliticalLean(persona: string, seed: string): string {
+  if (hasPoliticalLean(persona)) return persona;
+  const line = politicsLine(pickPoliticalLean(seedToUnit(seed)));
+  const base = persona.replace(/\s+$/, '');
+  return base === '' ? line : `${base}\n${line}`;
+}
+
 /** A fully-rolled bot identity. Stored (rendered) in User.botPersona. */
 export interface BotPersonaSpec {
   version: number;
@@ -307,6 +434,7 @@ export interface BotPersonaSpec {
   temperament: string;
   quirk: string;
   habit: PostingHabit;
+  politics: PoliticalLean;
   avatarStyle: string;
 }
 
@@ -323,6 +451,7 @@ export function rollPersona(): BotPersonaSpec {
     temperament: randomItem(TEMPERAMENTS),
     quirk: randomItem(QUIRKS),
     habit: randomItem(POSTING_HABITS),
+    politics: pickPoliticalLean(Math.random()),
     avatarStyle: randomItem(AVATAR_STYLES),
   };
 }
@@ -344,6 +473,7 @@ export function composePersona(spec: BotPersonaSpec): string {
     `QUIRK: ${spec.quirk}.`,
     `VOICE (${spec.voice.label}): ${spec.voice.rules}`,
     `ACTIVITY: ${spec.habit.label}.`,
+    politicsLine(spec.politics),
   ].join('\n');
 }
 

@@ -45,7 +45,7 @@ import {
   scaledCount,
   shouldPost,
 } from '@/lib/rmhark-ai/bot-worker-config';
-import { composePersona, rollPersona, POSTING_HABITS } from '@/lib/rmhark-ai/persona';
+import { composePersona, rollPersona, withPoliticalLean, POSTING_HABITS } from '@/lib/rmhark-ai/persona';
 import { habitPostsPerDay } from '@/lib/rmhark-ai/bot-stats';
 
 const MIN = 60_000;
@@ -596,7 +596,7 @@ describe('dm tick', () => {
     });
     await answerDirectMessages(d);
     expect(dmReply).toHaveBeenCalledTimes(1);
-    expect(dmReply).toHaveBeenCalledWith('THEME: x.', [
+    expect(dmReply).toHaveBeenCalledWith(withPoliticalLean('THEME: x.', 'bot'), [
       { from: 'you', text: 'first' },
       { from: 'them', text: 'second' },
     ]);

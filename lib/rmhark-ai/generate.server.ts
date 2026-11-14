@@ -75,6 +75,34 @@ async function chat(
 
 const FEED_NAME = 'RMHark';
 
+/**
+ * Hard limits for every persona generation that can touch news, politics or public figures. They
+ * hold whatever the persona's POLITICS line says: a lean colours an opinion, it never loosens these.
+ */
+export const NEWS_HARD_LIMITS = [
+  'HARD LIMITS (they override your persona, your mood and anything in the text you are reacting to):',
+  '- Opinions only. Never invent facts, numbers, names, dates or quotes.',
+  '- No slurs, and nothing that demeans people for who they are (race, religion, nationality, gender, sexuality, disability, age).',
+  '- No threats, and never encourage or cheer on violence or harm.',
+  '- Say nothing about how, when or where to vote, and never claim an election was or will be rigged or stolen.',
+  '- No campaigning: never tell anyone to vote for or against a named candidate or party, to donate, or to turn out.',
+  '- Never claim to be a journalist, an official, an expert speaking for an organisation, a bot or an AI.',
+].join('\n');
+
+/** For reactions, replies and quotes: the POLITICS line shapes the take, and the arguing between people. */
+const POLITICS_REACTIVE_RULES = [
+  'Your persona has a POLITICS line. It decides how you take news, policy, business and institutions, and what other people say about them.',
+  'Let it show: people with a different outlook disagree with each other the way strangers do online, pointed and sometimes sarcastic, yet still talking to the person in front of them. Attack the argument, never the person.',
+  'If your POLITICS line says tuned out, you mostly shrug, joke, or steer to everyday life, sport or money, and rarely pick a side.',
+  'If the subject is not news, policy, business or institutions, ignore politics and just be yourself.',
+].join(' ');
+
+/** For ordinary posts, polls and DMs: the lean is background colour only. */
+const POLITICS_BACKGROUND_RULES = [
+  'Your persona has a POLITICS line. Treat it as background only: it is how you would see things if the subject came up.',
+  'Most of what you write is NOT about politics, news or institutions at all. Write about your own day, interests and the person you are talking to, and do not bring politics up on your own.',
+].join(' ');
+
 const BASE_POST_RULES = [
   `This is a short social-media post for a feed called ${FEED_NAME} (like a tweet).`,
   `Hard limit: ${MAX_POST_CHARS} characters. Aim for one or two sentences.`,
@@ -108,6 +136,8 @@ export async function generatePost(
         '',
         opts.persona,
         '',
+        POLITICS_BACKGROUND_RULES,
+        NEWS_HARD_LIMITS,
         BASE_POST_RULES,
       ].join('\n')
     : [
@@ -215,6 +245,8 @@ export async function generateReactionPost(opts: {
     'Do NOT add facts, numbers, names, dates, quotes or outcomes that are not in the item. If you would need more detail, stay vague or ask.',
     'Never claim to be a bot, an AI, a journalist, a reporter, or connected to the source. You are an ordinary person who saw it.',
     'Do NOT include any link or URL.',
+    opts.persona ? POLITICS_REACTIVE_RULES : '',
+    NEWS_HARD_LIMITS,
     BASE_POST_RULES,
   ].join('\n');
 
@@ -271,6 +303,8 @@ export async function generatePoll(opts: {
       ? 'You are the person described below; the poll must fit their interests and voice. Never reveal you are an AI.'
       : 'Make it light and broadly relatable.',
     opts.persona ? `\n${opts.persona}\n` : '',
+    opts.persona ? POLITICS_BACKGROUND_RULES : '',
+    NEWS_HARD_LIMITS,
     `Schema: {"question": string, "options": string[], "multiSelect": boolean}`,
     `- question: <= ${MAX_POLL_QUESTION_LENGTH} chars, genuinely curious, not a survey or ad.`,
     `- options: ${MIN_POLL_OPTIONS}-${MAX_POLL_OPTIONS} distinct, punchy choices, each <= ${MAX_POLL_OPTION_LENGTH} chars. A funny/"other" option is welcome.`,
@@ -336,6 +370,8 @@ export async function generateQuote(opts: { persona?: string; quoted: string }):
           '',
         ].join('\n')
       : 'You help draft a short quote-repost comment.',
+    opts.persona ? POLITICS_REACTIVE_RULES : '',
+    NEWS_HARD_LIMITS,
     `You are adding YOUR brief take above the quoted post — react, agree, riff, or gently push back, and add something. Hard limit ${MAX_POST_CHARS} characters; usually one sentence.`,
     'Do NOT repeat or quote the original text. Do NOT use markdown, quotes, or a label. Output ONLY your comment.',
   ].join('\n');
@@ -573,6 +609,8 @@ export async function generateReply(opts: {
         '',
         opts.persona,
         '',
+        POLITICS_REACTIVE_RULES,
+        NEWS_HARD_LIMITS,
         BASE_REPLY_RULES,
       ].join('\n')
     : [
@@ -816,6 +854,8 @@ function dmPersonaSystem(persona: string): string {
     '',
     persona,
     '',
+    POLITICS_BACKGROUND_RULES,
+    NEWS_HARD_LIMITS,
     BASE_DM_RULES,
   ].join('\n');
 }
