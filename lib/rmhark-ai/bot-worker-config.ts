@@ -46,6 +46,15 @@ export const DM_FOLLOWUP_SILENCE_MS = 3 * DAY;
 export const DM_ACTIVE_HUMAN_LOOKBACK_MS = 7 * DAY;
 /** The model the bots use unless BOT_AI_MODEL says otherwise (not RMHARK_AI_MODEL / DEEPSEEK_MODEL). */
 export const DEFAULT_BOT_MODEL = 'deepseek-flash';
+export const AVATAR_CHANGE_DAYS = 60;
+export const BANNER_CHANGE_DAYS = 90;
+export const BIO_CHANGE_DAYS = 45;
+export const NAME_CHANGE_DAYS = 180;
+export const REFRESH_MAX_IMAGES_PER_TICK = 3;
+export const FIRST_UPDATES_PER_TICK = 4;
+export const FIRST_UPDATE_IMAGES_PER_TICK = 6;
+/** The refresh run's cron: hourly, off the top of the hour. */
+export const BOT_REFRESH_CRON = '23 * * * *';
 
 export interface BotConfig {
   /** The admin knobs' values until an admin saves the row. */
@@ -77,6 +86,22 @@ export interface BotConfig {
    * Off, bots post and reply exactly as before.
    */
   reactionsEnabled: boolean;
+  /**
+   * BOT_PROFILE_REFRESH (default on): the hourly `bot-worker.refresh` run that gives bots
+   * online-sourced avatars and banners and lets their avatar, banner, bio and display name drift
+   * (`./bot-look`). Off, the queue is still scheduled but every run is a no-op.
+   */
+  profileRefresh: boolean;
+  /** Mean days between changes of each profile field (BOT_*_CHANGE_DAYS). */
+  drift: { avatarDays: number; bannerDays: number; bioDays: number; nameDays: number };
+  /** BOT_REFRESH_MAX_IMAGES_PER_TICK: picture fetches per drift run (Openverse: 200/day anonymous). */
+  refreshMaxImagesPerTick: number;
+  /**
+   * The first pass: bots given their first update per run, and the picture fetches it may spend.
+   * Drift waits until the first pass has reached every bot.
+   */
+  firstUpdatesPerTick: number;
+  firstUpdateImagesPerTick: number;
 }
 
 export function clampInt(v: number, lo: number, hi: number): number {
@@ -187,6 +212,20 @@ export function loadBotConfig(env: Env = process.env): BotConfig {
     ),
     model: env.BOT_AI_MODEL || DEFAULT_BOT_MODEL,
     reactionsEnabled: envBool(env, 'BOT_REACTIONS_ENABLED', true),
+    profileRefresh: envBool(env, 'BOT_PROFILE_REFRESH', true),
+    drift: {
+      avatarDays: envFloat(env, 'BOT_AVATAR_CHANGE_DAYS', AVATAR_CHANGE_DAYS),
+      bannerDays: envFloat(env, 'BOT_BANNER_CHANGE_DAYS', BANNER_CHANGE_DAYS),
+      bioDays: envFloat(env, 'BOT_BIO_CHANGE_DAYS', BIO_CHANGE_DAYS),
+      nameDays: envFloat(env, 'BOT_NAME_CHANGE_DAYS', NAME_CHANGE_DAYS),
+    },
+    refreshMaxImagesPerTick: clampInt(
+      envInt(env, 'BOT_REFRESH_MAX_IMAGES_PER_TICK', REFRESH_MAX_IMAGES_PER_TICK),
+      0,
+      20,
+    ),
+    firstUpdatesPerTick: FIRST_UPDATES_PER_TICK,
+    firstUpdateImagesPerTick: FIRST_UPDATE_IMAGES_PER_TICK,
   };
 }
 

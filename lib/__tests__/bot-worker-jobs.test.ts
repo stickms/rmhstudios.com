@@ -26,6 +26,9 @@ import {
   resetBotWorkerState,
   runMaintainTick,
   runPostTick,
+  runRefreshTick,
+  type BotLook,
+  type BotProfileRow,
   seedBotConversation,
   uniqueHandle,
   type BotAi,
@@ -33,6 +36,7 @@ import {
   type BotRepo,
   type CommentRow,
 } from '@/lib/rmhark-ai/bot-worker.server';
+import { needsFirstUpdate } from '@/lib/rmhark-ai/bot-look';
 import * as generate from '@/lib/rmhark-ai/generate.server';
 import {
   clampSettings,
@@ -318,7 +322,10 @@ describe('pool maintenance', () => {
     const created: string[] = [];
     const base = {
       handleExists: async () => false,
-      createBotUser: async (b: { handle: string }) => void created.push(b.handle),
+      createBotUser: async (b: { handle: string }) => {
+        created.push(b.handle);
+        return `id-${b.handle}`;
+      },
     };
     const ai = { profile: async () => ({ name: 'Sam Lee', handle: 'samlee', bio: 'hi' }) };
 
@@ -631,7 +638,7 @@ describe('registerBotWorkerJobs', () => {
     vi.mocked(generate.isRmharkAIConfigured).mockReturnValue(true);
   });
 
-  it('with a key: four exclusive queues, crons from the tick env, a boot top-up', async () => {
+  it('with a key: five exclusive queues, crons from the tick env, a boot top-up', async () => {
     const boss = fakeBoss();
     await registerBotWorkerJobs(boss, {
       cfg: loadBotConfig({ BOT_POST_TICK_MS: '600000' }),
@@ -643,12 +650,173 @@ describe('registerBotWorkerJobs', () => {
       'bot-worker.post': '*/10 * * * *',
       'bot-worker.reply': '*/10 * * * *',
       'bot-worker.dm': '* * * * *',
+      'bot-worker.refresh': '23 * * * *',
     });
     expect(boss.createQueue).toHaveBeenCalledWith(
       'bot-worker.post',
       expect.objectContaining({ policy: 'exclusive', retryLimit: 0 }),
     );
-    expect(boss.work).toHaveBeenCalledTimes(4);
+    expect(boss.work).toHaveBeenCalledTimes(5);
     expect(boss.send).toHaveBeenCalledWith('bot-worker.maintain', {});
+    expect(boss.send).toHaveBeenCalledWith('bot-worker.refresh', {});
+  });
+});
+
+// ─── profile refresh ────────────────────────────────────────────────────────
+
+describe('profile refresh', () => {
+  const NOW = Date.UTC(2026, 10, 10, 12, 0, 0);
+  const DAY = 24 * 60 * MIN;
+  const PLACEHOLDER = 'https://api.dicebear.com/9.x/micah/svg?seed=x';
+  const STORED = '/api/profile/avatar/bot-old.webp';
+
+  function bot(id: string, over: Partial<BotProfileRow> = {}): BotProfileRow {
+    return {
+      id,
+      handle: id,
+      name: `Name ${id}`,
+      image: PLACEHOLDER,
+      bio: 'old bio',
+      bannerUrl: null,
+      botPersona: 'THEME: home barista.',
+      createdAt: new Date(NOW - 60 * DAY),
+      ...over,
+    };
+  }
+
+  function fakeLook(photo: string | null = 'https://cdn/user-avatars/bot-new.webp') {
+    return {
+      avatar: vi.fn(async (_id: string, _q: string) => photo),
+      banner: vi.fn(async (_id: string, _q: string) =>
+        ({ url: 'https://cdn/user-banners/bot-b.webp', sizeBytes: 9 }) as {
+          url: string;
+          sizeBytes: number;
+        } | null,
+      ),
+      removeAvatar: vi.fn(async (_url: string | null) => {}),
+      removeBanner: vi.fn(async (_url: string | null) => {}),
+    } satisfies BotLook;
+  }
+
+  const ai = {
+    imageQueries: async () => ({ avatar: ['espresso machine'], banner: ['foggy forest'] }),
+    bio: async () => 'new bio',
+    nameVariant: async (_p: string, n: string) => `${n} ☕`,
+  };
+
+  it('first pass: placeholder bots get a first update, and nothing drifts while any is left', async () => {
+    const update = vi.fn(async (_id: string, _p: object) => {});
+    const look = fakeLook();
+    const current = bot('done', { image: STORED });
+    const changed = await runRefreshTick(
+      deps({
+        now: () => NOW,
+        random: () => 0, // photo avatars, banners wanted, and every drift draw would land
+        repo: {
+          botProfiles: async () => [bot('a'), bot('b'), bot('c'), bot('d'), bot('e'), current],
+          updateBotProfile: update,
+        },
+        ai,
+        look,
+      }),
+    );
+    // Six pictures a run: three bots get an avatar and a banner; the fourth finds the budget spent.
+    expect(changed).toBe(3);
+    expect(look.avatar).toHaveBeenCalledTimes(3);
+    expect(look.banner).toHaveBeenCalledTimes(3);
+    for (const [, patch] of update.mock.calls) {
+      expect(patch).toEqual({
+        image: 'https://cdn/user-avatars/bot-new.webp',
+        banner: { url: 'https://cdn/user-banners/bot-b.webp', sizeBytes: 9 },
+      });
+    }
+    // The bot that already had its update does not drift yet, and no placeholder is "deleted".
+    expect(update.mock.calls.map((c) => c[0])).not.toContain('done');
+    expect(look.removeAvatar.mock.calls.every(([url]) => url === PLACEHOLDER)).toBe(true);
+  });
+
+  it('a failed photo search tries a generic subject once, then leaves the placeholder for next run', async () => {
+    const update = vi.fn(async () => {});
+    const look = fakeLook(null);
+    await runRefreshTick(
+      deps({
+        now: () => NOW,
+        random: () => 0,
+        repo: { botProfiles: async () => [bot('a')], updateBotProfile: update },
+        ai,
+        look,
+      }),
+    );
+    expect(look.avatar).toHaveBeenCalledTimes(2);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('once every bot has had its first update, an old bot drifts and its old picture is deleted', async () => {
+    const update = vi.fn(async () => {});
+    const look = fakeLook();
+    await runRefreshTick(
+      deps({
+        now: () => NOW,
+        random: () => 0,
+        repo: { botProfiles: async () => [bot('a', { image: STORED })], updateBotProfile: update },
+        ai,
+        look,
+      }),
+    );
+    expect(update).toHaveBeenCalledWith('a', {
+      image: 'https://cdn/user-avatars/bot-new.webp',
+      banner: { url: 'https://cdn/user-banners/bot-b.webp', sizeBytes: 9 },
+      bio: 'new bio',
+      name: 'Name a ☕',
+    });
+    expect(look.removeAvatar).toHaveBeenCalledWith(STORED);
+    expect(look.removeBanner).toHaveBeenCalledWith(null);
+  });
+
+  it('a drift run where no draw lands changes nothing', async () => {
+    const update = vi.fn(async () => {});
+    await runRefreshTick(
+      deps({
+        now: () => NOW,
+        random: () => 0.5,
+        repo: { botProfiles: async () => [bot('a', { image: STORED })], updateBotProfile: update },
+        ai,
+        look: fakeLook(),
+      }),
+    );
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('a new bot is never minted with the placeholder, so it cannot hold drift back', async () => {
+    const images: string[] = [];
+    await maintainBotPool(
+      deps({
+        repo: {
+          countBots: async () => 0,
+          handleExists: async () => false,
+          createBotUser: async (b: { image: string }) => {
+            images.push(b.image);
+            return 'id';
+          },
+        },
+        ai: { profile: async () => ({ name: 'Sam Lee', handle: 'samlee', bio: 'hi' }) },
+      }),
+      { ...SETTINGS, createBatch: 3 },
+    );
+    expect(images).toHaveLength(3);
+    for (const url of images) expect(needsFirstUpdate(url)).toBe(false);
+  });
+
+  it('BOT_PROFILE_REFRESH=false turns the run off', async () => {
+    const botProfiles = vi.fn(async () => [bot('a')]);
+    const n = await runRefreshTick(
+      deps({
+        cfg: loadBotConfig({ BOT_PROFILE_REFRESH: 'false' }),
+        repo: { botProfiles },
+        look: fakeLook(),
+      }),
+    );
+    expect(n).toBe(0);
+    expect(botProfiles).not.toHaveBeenCalled();
   });
 });

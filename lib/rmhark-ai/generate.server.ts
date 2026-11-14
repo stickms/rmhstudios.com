@@ -835,6 +835,117 @@ function stripJson(raw: string): string {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Bot profile looks and drift                                        */
+/* ------------------------------------------------------------------ */
+
+export interface BotImageQueries {
+  avatar: string[];
+  banner: string[];
+}
+
+function queryList(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((q): q is string => typeof q === 'string')
+    .map((q) => q.replace(/[^\p{L}\p{N} '-]/gu, ' ').replace(/\s+/g, ' ').trim().slice(0, 60))
+    .filter((q) => q.length >= 3)
+    .slice(0, 6);
+}
+
+/**
+ * Stock-photo searches for what this person would use as a profile picture and
+ * a banner. The pictures are found online (`./stock-image.server`), never
+ * generated, so the queries describe photographs that exist: things, places,
+ * animals and faceless people. Empty lists on any failure (the caller has a
+ * generic fallback).
+ */
+export async function generateBotImageQueries(
+  persona: string,
+  opts: { model?: string } = {},
+): Promise<BotImageQueries> {
+  const system = [
+    'You pick stock photos for a social-media account. Output STRICT JSON only — no prose, no markdown fences.',
+    'Schema: {"avatar": string[], "banner": string[]}',
+    '- avatar: 4 short photo-search queries (1-4 words each) for a picture this person would plausibly use as a profile picture: their pet, their hobby gear, a food or drink they love, a place, an object, or a faceless shot (silhouette, hands, back view). Vary the kind of picture.',
+    '- banner: 3 short photo-search queries for a wide landscape-style header photo that fits them (a view, a scene, a texture).',
+    'Never name a real person, celebrity, brand, logo or product. Never ask for a face or a portrait of a person.',
+    'Plain nouns that a photo library would index, e.g. "tabby cat", "espresso machine", "foggy pine forest".',
+  ].join('\n');
+  try {
+    const raw = await chat(
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: `Persona:\n"""${persona.slice(0, 800)}"""\n\nReturn only the JSON object.` },
+      ],
+      { maxTokens: 200, temperature: 1.0, model: opts.model },
+    );
+    const parsed = JSON.parse(stripJson(raw)) as { avatar?: unknown; banner?: unknown };
+    return { avatar: queryList(parsed.avatar), banner: queryList(parsed.banner) };
+  } catch {
+    return { avatar: [], banner: [] };
+  }
+}
+
+/** A rewritten bio in the persona's voice, at most 150 characters. Throws on failure. */
+export async function generateBotBio(
+  persona: string,
+  currentBio: string,
+  opts: { model?: string } = {},
+): Promise<string> {
+  const system = [
+    'You are this person, rewriting your own social-media bio the way people do every so often.',
+    'Keep the same person and interests; change the wording, the angle or what you are into right now.',
+    'At most 150 characters. No hashtags unless the voice calls for them, no quotes, no "bot", "AI" or "official".',
+    'Output ONLY the new bio text.',
+  ].join('\n');
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      {
+        role: 'user',
+        content: `Persona:\n"""${persona.slice(0, 800)}"""\n\nCurrent bio:\n"""${currentBio.slice(0, 200)}"""\n\nWrite the new bio.`,
+      },
+    ],
+    { maxTokens: 120, temperature: 1.0, model: opts.model },
+  );
+  const bio = cleanGeneratedText(raw, 150).replace(/\s*\n+\s*/g, ' ');
+  if (!bio) throw new RmharkAIError('Empty bio');
+  return bio;
+}
+
+/**
+ * A small change to the display name, as real people make: a nickname, a short
+ * form, a seasonal or mood emoji, a brief status after the name. Same person,
+ * recognisably. At most 40 characters. Throws on failure.
+ */
+export async function generateBotNameVariant(
+  persona: string,
+  currentName: string,
+  opts: { model?: string } = {},
+): Promise<string> {
+  const system = [
+    'You are this person, tweaking your social-media display name the way people do now and then.',
+    'Make ONE small change that keeps you recognisable: a nickname or short form, full name to first name (or back),',
+    'add or swap one emoji that fits your mood or the season, or a brief status after the name (e.g. "| on hiatus", "(busy week)").',
+    'At most 40 characters. Never "bot", "AI" or "official". Never another person\'s name.',
+    'Output ONLY the new display name.',
+  ].join('\n');
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      {
+        role: 'user',
+        content: `Persona:\n"""${persona.slice(0, 600)}"""\n\nCurrent display name: ${currentName.slice(0, 60)}\n\nWrite the new display name.`,
+      },
+    ],
+    { maxTokens: 30, temperature: 1.0, model: opts.model },
+  );
+  const name = cleanGeneratedText(raw.split('\n')[0] ?? '', 40);
+  if (!name || name === currentName) throw new RmharkAIError('No name change');
+  return name;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Direct messages                                                    */
 /* ------------------------------------------------------------------ */
 
