@@ -63,10 +63,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-deps
 
+      # Builds the kernel and root filesystem, boots them headless, saves the
+      # post-boot snapshot (state.zst) and writes manifest.json (its version
+      # covers the snapshot).
       - name:
           Build
           the
           image
+          and
+          snapshot
         run:
           pnpm
           rmhos:image
@@ -80,20 +85,6 @@ jobs:
           pnpm
           rmhos:smoke
 
-      # Task 6's snapshot of the booted machine; skipped until that script exists.
-      - name:
-          Snapshot
-          the
-          booted
-          machine
-        if:
-          hashFiles('scripts/rmhos/snapshot.mjs')
-          !=
-          ''
-        run:
-          pnpm
-          rmhos:snapshot
-
       - name:
           Size
           budgets
@@ -105,8 +96,11 @@ jobs:
           rootfs=$(stat -c %s "$dir/rootfs.ext4")
           echo "bzImage    $kernel bytes (budget 12 MiB)"
           echo "rootfs.ext4 $rootfs bytes (budget 400 MiB)"
+          state=$(stat -c %s "$dir/state.zst")
+          echo "state.zst  $state bytes (budget 80 MiB)"
           [ "$kernel" -le $((12 * 1024 * 1024)) ]
           [ "$rootfs" -le $((400 * 1024 * 1024)) ]
+          [ "$state" -le $((80 * 1024 * 1024)) ]
 
       - name:
           Publish

@@ -1,10 +1,13 @@
 /* eslint-disable no-console -- command-line tool output */
-// Writes manifest.json for an image directory:
+// The only writer of manifest.json for an image directory:
 //   { version, kernel: { version, url, sha256 }, files: { [name]: { size, sha256 } } }
 // version = first 12 hex of the sha256 over the boot inputs, in a fixed order:
-// bzImage, rootfs.ext4, seabios.bin, vgabios.bin.
+// bzImage, rootfs.ext4, seabios.bin, vgabios.bin, state.zst. The snapshot is
+// part of it: a new snapshot is a new published path.
 //
-//   node manifest.mjs <dir> <kernelVersion> <kernelUrl> <kernelSha256>
+//   node scripts/rmhos/write-manifest.mjs [dir]      (default public/rmhos-dev)
+//
+// The kernel entry comes from versions.env, the same file build.sh reads.
 import { createHash } from 'node:crypto';
 import {
   readFileSync,
@@ -12,29 +15,61 @@ import {
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const [
-  dir,
-  kernelVersion,
-  kernelUrl,
-  kernelSha256,
-] =
-  process.argv.slice(
-    2,
+const here =
+  path.dirname(
+    fileURLToPath(
+      import.meta
+        .url,
+    ),
   );
-if (
-  !dir ||
-  !kernelVersion ||
-  !kernelUrl ||
-  !kernelSha256
-) {
-  console.error(
-    'usage: manifest.mjs <dir> <kernelVersion> <kernelUrl> <kernelSha256>',
+const dir =
+  path.resolve(
+    process
+      .argv[2] ??
+      path.join(
+        here,
+        '..',
+        '..',
+        'public',
+        'rmhos-dev',
+      ),
   );
-  process.exit(
-    2,
+
+const versions =
+  Object.fromEntries(
+    readFileSync(
+      path.join(
+        here,
+        'versions.env',
+      ),
+      'utf8',
+    )
+      .split(
+        '\n',
+      )
+      .filter(
+        (
+          l,
+        ) =>
+          /^[A-Z_0-9]+=/.test(
+            l,
+          ),
+      )
+      .map(
+        (
+          l,
+        ) =>
+          l.split(
+            '=',
+            2,
+          ),
+      ),
   );
-}
+const kernelVersion =
+  versions.KERNEL_VERSION;
+const kernelUrl = `https://cdn.kernel.org/pub/linux/kernel/v${versions.KERNEL_SERIES.split('.')[0]}.x/linux-${kernelVersion}.tar.xz`;
 
 const BOOT =
   [
@@ -42,6 +77,7 @@ const BOOT =
     'rootfs.ext4',
     'seabios.bin',
     'vgabios.bin',
+    'state.zst',
   ];
 const ALL =
   [
@@ -74,10 +110,20 @@ for (const name of ALL) {
       dir,
       name,
     );
-  const bytes =
-    readFileSync(
-      p,
+  let bytes;
+  try {
+    bytes =
+      readFileSync(
+        p,
+      );
+  } catch {
+    console.error(
+      `write-manifest: ${p} is missing`,
     );
+    process.exit(
+      1,
+    );
+  }
   files[
     name
   ] =
@@ -117,7 +163,7 @@ const manifest =
           kernelVersion,
         url: kernelUrl,
         sha256:
-          kernelSha256,
+          versions.KERNEL_SHA256,
       },
     files,
   };

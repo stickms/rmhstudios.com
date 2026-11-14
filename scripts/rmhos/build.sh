@@ -81,5 +81,8 @@ done
   cat "$tmp/bios-packages.txt"
 } > "$out/packages.txt"
 
-node "$here/manifest.mjs" "$out" "$KERNEL_VERSION" "$kernel_url" "$KERNEL_SHA256"
+# The snapshot boots the image we just wrote; the manifest is written last and
+# covers it (version = hash over all boot inputs including state.zst).
+RMHOS_DIR="$out" node "$here/snapshot.mjs"
+node "$here/write-manifest.mjs" "$out"
 ls -l "$out"

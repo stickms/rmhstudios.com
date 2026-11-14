@@ -1,28 +1,28 @@
 /* eslint-disable no-console -- command-line tool output */
 // Boots the built rmhOS image headless in Node with the v86 emulator and
 // drives the guest agent over serial1 (the wire protocol of
-// features/rmhos/engine/agent-protocol.ts). Exits non-zero on any failure.
+// features/rmhos/engine/agent-protocol.ts). Two cases: a cold boot, then a
+// restore from state.zst that must reach SESSION_OK without a boot. Exits
+// non-zero on any failure.
 //
-//   pnpm rmhos:image && pnpm rmhos:smoke
+//   pnpm rmhos:image && pnpm rmhos:snapshot && pnpm rmhos:smoke
 //
 // RMHOS_DIR overrides the image directory (default public/rmhos-dev).
-// RMHOS_SMOKE_CMDLINE_EXTRA is appended to the kernel command line (debugging).
-import { readFile } from 'node:fs/promises';
+// RMHOS_SMOKE_CMDLINE_EXTRA is appended to the kernel command line of the cold boot.
+// RMHOS_SMOKE_VERBOSE=1 echoes serial0.
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
+import { startNodeVm } from './node-vm.mjs';
 
-const here =
-  path.dirname(
-    fileURLToPath(
-      import.meta
-        .url,
-    ),
-  );
 const root =
   path.resolve(
-    here,
+    path.dirname(
+      fileURLToPath(
+        import.meta
+          .url,
+      ),
+    ),
     '..',
     '..',
   );
@@ -37,35 +37,21 @@ const dir =
         'rmhos-dev',
       ),
   );
+const RESTORE_BUDGET_S = 20;
 
-// Same command line Task 6 and Task 7 boot with.
-export const CMDLINE =
-  'root=/dev/sda rw rootfstype=ext4 console=ttyS0 console=tty0 vga=0x318 quiet tsc=reliable mitigations=off';
+const step =
+  (
+    vm,
+    msg,
+  ) =>
+    console.log(
+      `[${vm.elapsed().toFixed(1)}s] ${msg}`,
+    );
 
-const TOTAL_TIMEOUT_MS =
-  15 *
-  60 *
-  1000;
-
-function fail(
-  message,
+function need(
+  names,
 ) {
-  console.error(
-    `rmhos smoke: FAIL: ${message}`,
-  );
-  process.exitCode = 1;
-}
-
-async function main() {
-  const need =
-    [
-      'bzImage',
-      'rootfs.ext4',
-      'seabios.bin',
-      'vgabios.bin',
-      'manifest.json',
-    ];
-  for (const name of need) {
+  for (const name of names) {
     if (
       !existsSync(
         path.join(
@@ -74,383 +60,193 @@ async function main() {
         ),
       )
     ) {
+      const hint =
+        name ===
+        'state.zst'
+          ? ' && pnpm rmhos:snapshot'
+          : '';
       throw new Error(
-        `${path.join(dir, name)} is missing; run pnpm rmhos:image first`,
+        `${path.join(dir, name)} is missing; run pnpm rmhos:image${hint} first`,
       );
     }
   }
+}
 
-  const {
-    V86,
-  } =
-    await import('v86');
-  const wasmPath =
-    path.join(
-      path.dirname(
-        createRequire(
-          import.meta
-            .url,
-        ).resolve(
-          'v86/package.json',
-        ),
-      ),
-      'build',
-      'v86.wasm',
+/** SESSION, RESTORE, SAVE against a running agent; throws on any deviation. */
+async function drive(
+  vm,
+  nonce,
+) {
+  vm.send(
+    'SESSION smoke',
+  );
+  await vm.waitLine(
+    /^RMHOS SESSION_OK\r?$/m,
+  );
+  const sessionOkAt =
+    vm.elapsed();
+  step(
+    vm,
+    'SESSION_OK',
+  );
+
+  vm.send(
+    'RESTORE',
+  );
+  await vm.waitLine(
+    /^RMHOS RESTORED\r?$/m,
+  );
+  step(
+    vm,
+    'RESTORED',
+  );
+  // The agent logs "desktop launched" once startx was started on tty1
+  // (headless: nothing paints; painting is checked in the browser).
+  if (
+    /rmhos-agent: startx failed/.test(
+      vm.serial0,
+    )
+  ) {
+    throw new Error(
+      `the agent could not launch startx\n${vm.serial0.slice(-1500)}`,
     );
+  }
+  await vm.waitFor(
+    '"desktop launched" on serial0',
+    () =>
+      /rmhos-agent: desktop launched/.test(
+        vm.serial0,
+      ),
+  );
+  step(
+    vm,
+    'desktop launched (startx started on tty1)',
+  );
 
-  const buf =
-    async (
-      name,
-    ) => {
-      const b =
-        await readFile(
-          path.join(
-            dir,
-            name,
-          ),
-        );
-      return b.buffer.slice(
-        b.byteOffset,
-        b.byteOffset +
-          b.byteLength,
-      );
-    };
+  vm.send(
+    `SAVE ${nonce}`,
+  );
+  const saved =
+    await vm.waitLine(
+      new RegExp(
+        `^RMHOS SAVED ${nonce} (\\d+)\\r?$`,
+        'm',
+      ),
+    );
+  const bytes =
+    Number(
+      saved[1],
+    );
+  if (
+    !(
+      bytes >
+      0
+    )
+  )
+    throw new Error(
+      `SAVED reported ${bytes} bytes`,
+    );
+  step(
+    vm,
+    `SAVED ${nonce} ${bytes}`,
+  );
 
-  const emulator =
-    new V86(
+  const tar =
+    await vm.emulator.read_file(
+      '/sync/home.tar',
+    );
+  if (
+    tar.length <
+    512
+  )
+    throw new Error(
+      `home.tar is only ${tar.length} bytes`,
+    );
+  const magic =
+    String.fromCharCode(
+      ...tar.slice(
+        257,
+        262,
+      ),
+    );
+  if (
+    magic !==
+    'ustar'
+  )
+    throw new Error(
+      `home.tar has no ustar magic (got ${JSON.stringify(magic)})`,
+    );
+  if (
+    tar.length <
+    bytes
+  )
+    throw new Error(
+      `home.tar (${tar.length}) is smaller than reported (${bytes})`,
+    );
+  step(
+    vm,
+    `home.tar is a tar (${tar.length} bytes)`,
+  );
+
+  if (
+    /\bKernel panic\b/.test(
+      vm.serial0,
+    )
+  )
+    throw new Error(
+      'kernel panic on serial0',
+    );
+  if (
+    /RMHOS ERR/.test(
+      vm.serial1,
+    )
+  )
+    throw new Error(
+      `guest reported an error:\n${vm.serial1.slice(-500)}`,
+    );
+  return sessionOkAt;
+}
+
+async function coldBoot() {
+  console.log(
+    '--- case 1: cold boot',
+  );
+  const vm =
+    await startNodeVm(
       {
-        wasm_path:
-          wasmPath,
-        memory_size:
-          512 *
-          1024 *
-          1024,
-        vga_memory_size:
-          8 *
-          1024 *
-          1024,
-        bios: {
-          buffer:
-            await buf(
-              'seabios.bin',
-            ),
-        },
-        vga_bios:
-          {
-            buffer:
-              await buf(
-                'vgabios.bin',
-              ),
-          },
-        bzimage:
-          {
-            buffer:
-              await buf(
-                'bzImage',
-              ),
-          },
-        hda: {
-          buffer:
-            await buf(
-              'rootfs.ext4',
-            ),
-        },
-        cmdline:
-          `${CMDLINE} ${process.env.RMHOS_SMOKE_CMDLINE_EXTRA ?? ''}`.trim(),
-        filesystem:
-          {},
-        uart1: true,
-        autostart: true,
-        disable_speaker: true,
-        log_level: 0,
+        dir,
+        extraCmdline:
+          process
+            .env
+            .RMHOS_SMOKE_CMDLINE_EXTRA,
       },
     );
-
-  let serial0 =
-    '';
-  let serial1 =
-    '';
-  const dec =
-    (
-      s,
-      b,
-    ) =>
-      s +
-      String.fromCharCode(
-        b,
-      );
-  emulator.add_listener(
-    'serial0-output-byte',
-    (
-      b,
-    ) => {
-      serial0 =
-        dec(
-          serial0,
-          b,
-        );
-      if (
-        process
-          .env
-          .RMHOS_SMOKE_VERBOSE
-      )
-        process.stderr.write(
-          String.fromCharCode(
-            b,
-          ),
-        );
-    },
-  );
-  emulator.add_listener(
-    'serial1-output-byte',
-    (
-      b,
-    ) => {
-      serial1 =
-        dec(
-          serial1,
-          b,
-        );
-    },
-  );
-
-  const started =
-    Date.now();
-  const deadline =
-    started +
-    TOTAL_TIMEOUT_MS;
-  const sleep =
-    (
-      ms,
-    ) =>
-      new Promise(
-        (
-          r,
-        ) =>
-          setTimeout(
-            r,
-            ms,
-          ),
-      );
-  const waitFor =
-    async (
-      what,
-      test,
-    ) => {
-      for (;;) {
-        const hit =
-          test();
-        if (
-          hit
-        )
-          return hit;
-        if (
-          Date.now() >
-          deadline
-        ) {
-          throw new Error(
-            `timed out waiting for ${what}\n--- serial0 tail ---\n${serial0.slice(-1500)}\n--- serial1 tail ---\n${serial1.slice(-500)}`,
-          );
-        }
-        await sleep(
-          100,
-        );
-      }
-    };
-  const send =
-    (
-      line,
-    ) =>
-      emulator.serial_send_bytes(
-        1,
-        new TextEncoder().encode(
-          `${line}\n`,
-        ),
-      );
-  const seen =
-    (
-      re,
-    ) =>
-      serial1.match(
-        re,
-      );
-  const step =
-    (
-      msg,
-    ) =>
-      console.log(
-        `[${((Date.now() - started) / 1000).toFixed(1)}s] ${msg}`,
-      );
-
   try {
-    await waitFor(
+    await vm.waitFor(
       'RMHOS READY',
       () =>
         /^RMHOS READY\r?$/m.test(
-          serial1,
+          vm.serial1,
         ),
     );
     step(
+      vm,
       'READY',
     );
-
-    send(
-      'SESSION smoke',
-    );
-    await waitFor(
-      'RMHOS SESSION_OK',
-      () =>
-        /^RMHOS SESSION_OK\r?$/m.test(
-          serial1,
-        ),
-    );
-    step(
-      'SESSION_OK',
-    );
-
-    send(
-      'RESTORE',
-    );
-    await waitFor(
-      'RMHOS RESTORED',
-      () =>
-        /^RMHOS RESTORED\r?$/m.test(
-          serial1,
-        ),
-    );
-    step(
-      'RESTORED',
-    );
-    // The agent logs "desktop launched" once startx was started on tty1, then,
-    // 45 seconds later, whether the X server is up (informational here:
-    // headless, nothing paints; painting is checked in the browser).
-    if (
-      /rmhos-agent: startx failed/.test(
-        serial0,
-      )
-    ) {
-      throw new Error(
-        `the agent could not launch startx\n${serial0.slice(-1500)}`,
+    const sessionOkAt =
+      await drive(
+        vm,
+        'n1',
       );
-    }
-    await waitFor(
-      '"desktop launched" on serial0',
-      () =>
-        /rmhos-agent: desktop launched/.test(
-          serial0,
-        ),
-    );
-    step(
-      'desktop launched (startx started on tty1)',
-    );
-    const xstatus =
-      await waitFor(
-        'the X server status line',
-        () =>
-          serial0.match(
-            /rmhos-agent: (X server is (?:not )?running)/,
-          ),
-      );
-    step(
-      xstatus[1],
-    );
-    if (
-      xstatus[1].includes(
-        'not',
-      )
-    ) {
-      console.log(
-        `X log tail from the guest:\n${serial0
-          .split(
-            '\n',
-          )
-          .filter(
-            (
-              l,
-            ) =>
-              l.includes(
-                'rmhos-agent: x:',
-              ),
-          )
-          .join(
-            '\n',
-          )}`,
-      );
-    }
-
-    send(
-      'SAVE n1',
-    );
-    const saved =
-      await waitFor(
-        'RMHOS SAVED n1',
-        () =>
-          seen(
-            /^RMHOS SAVED n1 (\d+)\r?$/m,
-          ),
-      );
-    const bytes =
-      Number(
-        saved[1],
-      );
-    if (
-      !(
-        bytes >
-        0
-      )
-    )
-      throw new Error(
-        `SAVED reported ${bytes} bytes`,
-      );
-    step(
-      `SAVED n1 ${bytes}`,
-    );
-
-    const tar =
-      await emulator.read_file(
-        '/sync/home.tar',
-      );
-    if (
-      tar.length <
-      512
-    )
-      throw new Error(
-        `home.tar is only ${tar.length} bytes`,
-      );
-    const magic =
-      String.fromCharCode(
-        ...tar.slice(
-          257,
-          262,
-        ),
-      );
-    if (
-      magic !==
-      'ustar'
-    )
-      throw new Error(
-        `home.tar has no ustar magic (got ${JSON.stringify(magic)})`,
-      );
-    if (
-      tar.length <
-      bytes
-    )
-      throw new Error(
-        `home.tar (${tar.length}) is smaller than reported (${bytes})`,
-      );
-    step(
-      `home.tar is a tar (${tar.length} bytes)`,
-    );
-
     const release =
-      serial0.match(
+      vm.serial0.match(
         /^rmhos-kernel (\S+)\r?$/m,
       );
     if (
       !release
     )
       throw new Error(
-        `no "rmhos-kernel <release>" line on serial0\n${serial0.slice(-1500)}`,
+        `no "rmhos-kernel <release>" line on serial0\n${vm.serial0.slice(-1500)}`,
       );
     if (
       !release[1].endsWith(
@@ -461,54 +257,135 @@ async function main() {
         `kernel release ${release[1]} does not end in -rmhos`,
       );
     step(
+      vm,
       `kernel release ${release[1]}`,
     );
-
-    if (
-      /\bKernel panic\b/.test(
-        serial0,
-      )
-    )
-      throw new Error(
-        'kernel panic on serial0',
-      );
-    if (
-      /RMHOS ERR/.test(
-        serial1,
-      )
-    )
-      throw new Error(
-        `guest reported an error:\n${serial1.slice(-500)}`,
-      );
-
-    console.log(
-      'rmhos smoke: OK',
-    );
+    return sessionOkAt;
   } finally {
-    try {
-      await emulator.destroy();
-    } catch {
-      /* the emulator is going away anyway */
-    }
+    await vm.destroy();
   }
+}
+
+async function fromSnapshot() {
+  console.log(
+    '--- case 2: restore from state.zst',
+  );
+  need(
+    [
+      'state.zst',
+    ],
+  );
+  const vm =
+    await startNodeVm(
+      {
+        dir,
+        initialState: true,
+        timeoutMs:
+          5 *
+          60 *
+          1000,
+      },
+    );
+  try {
+    // No boot may happen: the agent is already waiting on serial1.
+    await vm.whenReady;
+    vm.send(
+      'SESSION smoke',
+    );
+    await vm.waitLine(
+      /^RMHOS SESSION_OK\r?$/m,
+    );
+    const at =
+      vm.elapsed();
+    step(
+      vm,
+      `SESSION_OK from the snapshot (budget ${RESTORE_BUDGET_S}s)`,
+    );
+    if (
+      at >
+      RESTORE_BUDGET_S
+    )
+      throw new Error(
+        `SESSION_OK took ${at.toFixed(1)}s from start, budget ${RESTORE_BUDGET_S}s`,
+      );
+    if (
+      /rmhos-kernel|Linux version/.test(
+        vm.serial0,
+      )
+    )
+      throw new Error(
+        'the restored machine booted',
+      );
+    vm.send(
+      'RESTORE',
+    );
+    await vm.waitLine(
+      /^RMHOS RESTORED\r?$/m,
+    );
+    step(
+      vm,
+      'RESTORED',
+    );
+    vm.send(
+      'SAVE n2',
+    );
+    const saved =
+      await vm.waitLine(
+        /^RMHOS SAVED n2 (\d+)\r?$/m,
+      );
+    if (
+      !(
+        Number(
+          saved[1],
+        ) >
+        0
+      )
+    )
+      throw new Error(
+        'SAVED reported no bytes',
+      );
+    step(
+      vm,
+      `SAVED n2 ${saved[1]}`,
+    );
+    return at;
+  } finally {
+    await vm.destroy();
+  }
+}
+
+async function main() {
+  need(
+    [
+      'bzImage',
+      'rootfs.ext4',
+      'seabios.bin',
+      'vgabios.bin',
+      'manifest.json',
+    ],
+  );
+  const cold =
+    await coldBoot();
+  const warm =
+    await fromSnapshot();
+  console.log(
+    `SESSION_OK after ${cold.toFixed(1)}s (cold boot) and ${warm.toFixed(1)}s (from the snapshot)`,
+  );
+  console.log(
+    'rmhos smoke: OK',
+  );
 }
 
 main().then(
   () =>
     process.exit(
-      process.exitCode ??
-        0,
+      0,
     ),
   (
     error,
   ) => {
-    fail(
-      error instanceof
-        Error
-        ? error.message
-        : String(
-            error,
-          ),
+    console.error(
+      `rmhos smoke: FAIL: ${error instanceof Error ? error.message : String(error)}`,
     );
     process.exit(
       1,

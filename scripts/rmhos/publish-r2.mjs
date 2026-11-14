@@ -136,6 +136,8 @@ const TYPES =
       'application/json',
     '.txt':
       'text/plain; charset=utf-8',
+    '.zst':
+      'application/zstd',
   };
 
 const client =
