@@ -633,6 +633,13 @@ export class Tf2Client implements GameClient {
       code,
       {
         onAdmitted: (info) => {
+          // A room code is good on either game's page, but only its own game can load its map.
+          const roomGame = info.game ?? 'tf2';
+          if (roomGame !== (this.roomGame().game ?? 'tf2')) {
+            join.stop();
+            this.fail(new ClientFailure({ code: 'wrong-game', detail: `${code} is a ${roomGame} room`, retryable: false }));
+            return;
+          }
           this.roomMode = info.mode;
           this.netTrace('admitted');
           this.opts.callbacks.onRoom?.(code);

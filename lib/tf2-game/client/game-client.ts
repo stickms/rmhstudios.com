@@ -72,6 +72,8 @@ export type ClientErrorCode =
   | 'auth-required'
   /** Peer-to-peer: no path to the host, direct or through the hub's relay. */
   | 'p2p-connect'
+  /** Peer-to-peer: the room's match is another game's (a TF2 page given a CS:GO room's code, or the reverse). */
+  | 'wrong-game'
   | 'context-lost'
   | 'unknown';
 
