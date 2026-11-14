@@ -3737,3 +3737,4 @@ ballast/
 /.github/workflows/web-ci.yml
 /pnpm-workspace.yaml
 /components/shell/NoGlobe.tsx
+/scripts/gen-ballast-bulk.mjs
