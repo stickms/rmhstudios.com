@@ -13,6 +13,10 @@
  *                          bots, then proactive bot-to-bot comments, then comments under the
  *                          live announcement's discussion post.
  *   bot-worker.dm         BOT_DM_TICK_MS (default 1 min): answer humans' DMs, rarely open one.
+ *   bot-worker.refresh    hourly, and once at boot: first give every bot still on its old placeholder
+ *                          avatar a first update; once none is left, let a bot's avatar, banner, bio and
+ *                          display name drift now and then (`./bot-look`, BOT_PROFILE_REFRESH). The
+ *                          pictures are public-domain photos found online (`./stock-image.server`).
  *
  * Idles (registers nothing) without DEEPSEEK_API_KEY. Every tick is failure-isolated:
  * one bad generation or row is logged and skipped, a tick never throws, so pg-boss
@@ -32,8 +36,21 @@
 import { prisma } from '@/lib/prisma.server';
 import { Prisma } from '@prisma/client';
 import { decideInitiation, canBotMessage, formatDmHistory, type DmPrivacy } from './dm-policy';
-import { buildAvatarUrl, composePersona, rollPersona, withPoliticalLean } from './persona';
+import { composePersona, rollPersona, withPoliticalLean } from './persona';
 import {
+  cartoonAvatarUrl,
+  genericAvatarQuery,
+  genericBannerQuery,
+  initialsAvatarUrl,
+  needsFirstUpdate,
+  refreshPlan,
+  rollAvatarKind,
+  wantsBanner,
+} from './bot-look';
+import {
+  generateBotBio,
+  generateBotImageQueries,
+  generateBotNameVariant,
   generateBotProfile,
   generateDirectMessageOpener,
   generateDirectMessageReply,
@@ -53,6 +70,7 @@ import {
   sanitizeHandle,
   scaledCount,
   shouldPost,
+  BOT_REFRESH_CRON,
   type BotConfig,
 } from './bot-worker-config';
 import { DEFAULT_BOT_SETTINGS, type BotWorkerSettingsInput } from './bot-stats';
@@ -82,11 +100,13 @@ export const BOT_MAINTAIN_QUEUE = 'bot-worker.maintain';
 export const BOT_POST_QUEUE = 'bot-worker.post';
 export const BOT_REPLY_QUEUE = 'bot-worker.reply';
 export const BOT_DM_QUEUE = 'bot-worker.dm';
+export const BOT_REFRESH_QUEUE = 'bot-worker.refresh';
 export const BOT_QUEUES = [
   BOT_MAINTAIN_QUEUE,
   BOT_POST_QUEUE,
   BOT_REPLY_QUEUE,
   BOT_DM_QUEUE,
+  BOT_REFRESH_QUEUE,
 ] as const;
 
 /** Maintenance is checked every minute (the Go pool loop's settings poll). */
@@ -98,6 +118,26 @@ export interface BotUserRow {
   id: string;
   botPersona: string;
   botLastPostAt: Date | null;
+}
+
+/** What the refresh run reads about a bot's profile. */
+export interface BotProfileRow {
+  id: string;
+  handle: string;
+  name: string;
+  image: string | null;
+  bio: string;
+  bannerUrl: string | null;
+  botPersona: string;
+  createdAt: Date;
+}
+
+/** A change to a bot's profile; absent fields are left as they are. */
+export interface BotProfilePatch {
+  name?: string;
+  image?: string;
+  bio?: string;
+  banner?: { url: string; sizeBytes: number };
 }
 
 export interface SavedSettings extends BotWorkerSettingsInput {
@@ -185,8 +225,11 @@ export interface BotRepo {
     image: string;
     persona: string;
     bio: string;
-  }): Promise<void>;
+  }): Promise<string>;
   loadBots(): Promise<BotUserRow[]>;
+  /** Every bot's profile, for the refresh run. */
+  botProfiles(): Promise<BotProfileRow[]>;
+  updateBotProfile(userId: string, patch: BotProfilePatch): Promise<void>;
   insertPost(userId: string, content: string, imageUrls: string[]): Promise<string>;
   touchBot(userId: string): Promise<void>;
   botPersona(botId: string): Promise<string>;
@@ -261,7 +304,7 @@ export const prismaBotRepo: BotRepo = {
     return (await prisma.user.findUnique({ where: { handle }, select: { id: true } })) != null;
   },
   async createBotUser(b) {
-    await prisma.user.create({
+    const row = await prisma.user.create({
       data: {
         name: b.name,
         handle: b.handle,
@@ -270,7 +313,59 @@ export const prismaBotRepo: BotRepo = {
         botPersona: b.persona,
         profile: { create: { bio: b.bio } },
       },
+      select: { id: true },
     });
+    return row.id;
+  },
+  async botProfiles() {
+    const rows = await prisma.user.findMany({
+      where: { isBot: true },
+      select: {
+        id: true,
+        handle: true,
+        name: true,
+        image: true,
+        botPersona: true,
+        createdAt: true,
+        profile: { select: { bio: true, bannerUrl: true } },
+      },
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      handle: r.handle ?? r.id,
+      name: r.name ?? '',
+      image: r.image,
+      bio: r.profile?.bio ?? '',
+      bannerUrl: r.profile?.bannerUrl ?? null,
+      botPersona: r.botPersona ?? '',
+      createdAt: r.createdAt,
+    }));
+  },
+  async updateBotProfile(userId, patch) {
+    const user = {
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
+      ...(patch.image !== undefined ? { image: patch.image } : {}),
+    };
+    const profile = {
+      ...(patch.bio !== undefined ? { bio: patch.bio } : {}),
+      ...(patch.banner
+        ? { bannerUrl: patch.banner.url, bannerSizeBytes: patch.banner.sizeBytes }
+        : {}),
+    };
+    // updateMany / upsert: a bot deleted mid-run is a no-op, not a throw.
+    if (Object.keys(user).length > 0) {
+      await prisma.user.updateMany({ where: { id: userId, isBot: true }, data: user });
+    }
+    if (Object.keys(profile).length > 0) {
+      await prisma.userProfile.upsert({
+        where: { userId },
+        create: { userId, ...profile },
+        update: profile,
+      });
+    }
+    // The feed's cached author display carries the name and avatar.
+    const { invalidateUserDisplay } = await import('@/lib/user-display.server');
+    invalidateUserDisplay(userId);
   },
   async loadBots() {
     const rows = await prisma.user.findMany({
@@ -676,6 +771,36 @@ export interface BotAi {
   /** A hosted feed image URL for the post, or null on any failure. */
   image(text: string, userId: string): Promise<string | null>;
   imageConfigured(): boolean;
+  /** Stock-photo searches for the bot's avatar and banner; empty lists on failure. */
+  imageQueries(persona: string): Promise<{ avatar: string[]; banner: string[] }>;
+  /** A rewritten bio in the persona's voice. Throws on failure. */
+  bio(persona: string, currentBio: string): Promise<string>;
+  /** A small change to the display name. Throws on failure or no change. */
+  nameVariant(persona: string, currentName: string): Promise<string>;
+}
+
+/**
+ * Where a bot's pictures come from: public-domain photos found online and
+ * stored in our object storage (`./stock-image.server`). Injectable so ticks
+ * run without the network; every method returns null rather than throwing.
+ */
+export interface BotLook {
+  avatar(userId: string, query: string): Promise<string | null>;
+  banner(userId: string, query: string): Promise<{ url: string; sizeBytes: number } | null>;
+  /** Delete a replaced picture the bot owned (best effort). */
+  removeAvatar(url: string | null): Promise<void>;
+  removeBanner(url: string | null): Promise<void>;
+}
+
+/** The Openverse-backed `BotLook`. Loaded lazily so the worker's import graph stays light. */
+export function stockLook(random: () => number): BotLook {
+  const mod = () => import('./stock-image.server');
+  return {
+    avatar: async (userId, query) => (await mod()).storeBotAvatar(userId, query, random),
+    banner: async (userId, query) => (await mod()).storeBotBanner(userId, query, random),
+    removeAvatar: async (url) => (await mod()).removeBotAvatar(url),
+    removeBanner: async (url) => (await mod()).removeBotBanner(url),
+  };
 }
 
 export function deepseekAi(model: string): BotAi {
@@ -695,6 +820,9 @@ export function deepseekAi(model: string): BotAi {
     reactionPost: (o) => generateReactionPost({ ...o, model }),
     image: (text, userId) => generatePostImage({ text, userId, model }),
     imageConfigured: isImageGenConfigured,
+    imageQueries: (persona) => generateBotImageQueries(persona, { model }),
+    bio: (persona, currentBio) => generateBotBio(persona, currentBio, { model }),
+    nameVariant: (persona, currentName) => generateBotNameVariant(persona, currentName, { model }),
   };
 }
 
@@ -713,6 +841,8 @@ export interface BotDeps {
   headlines?: () => Promise<Headline[]>;
   /** The live sitewide announcement, or null (also on any error). Absent means none. */
   announcement?: () => Promise<LiveAnnouncement | null>;
+  /** Where pictures come from. Absent means bots keep the avatar they were minted with. */
+  look?: BotLook;
 }
 
 /** Default for `BotDeps.headlines`: `getFreshHeadlines()`, [] on any error. Loaded lazily so the worker's import graph stays light. */
@@ -750,6 +880,7 @@ export async function liveAnnouncement(): Promise<LiveAnnouncement | null> {
 export function defaultDeps(overrides: Partial<BotDeps> = {}): BotDeps {
   const cfg = overrides.cfg ?? loadBotConfig();
   const log = overrides.log ?? consoleLog;
+  const random = overrides.random ?? Math.random;
   return {
     repo: prismaBotRepo,
     ai: deepseekAi(cfg.model),
@@ -757,9 +888,10 @@ export function defaultDeps(overrides: Partial<BotDeps> = {}): BotDeps {
     cfg,
     log,
     now: Date.now,
-    random: Math.random,
+    random,
     headlines: freshHeadlines,
     announcement: liveAnnouncement,
+    look: stockLook(random),
     ...overrides,
   };
 }
@@ -854,14 +986,212 @@ export async function createBot(d: BotDeps): Promise<void> {
   const spec = rollPersona();
   const profile = await d.ai.profile(spec);
   const handle = await uniqueHandle(d, profile.handle);
-  await d.repo.createBotUser({
+  const persona = composePersona(spec);
+  // Minted with a cartoon, never the old placeholder: a new bot must not count as one still waiting
+  // for its first update, or a failed photo search would hold drift back for every bot.
+  // `dressNewBot` then rolls its real look.
+  const id = await d.repo.createBotUser({
     name: profile.name,
     handle,
-    image: buildAvatarUrl(handle, spec.avatarStyle),
-    persona: composePersona(spec),
+    image: cartoonAvatarUrl(handle, d.random(), d.random()),
+    persona,
     bio: [...profile.bio].slice(0, 160).join(''),
   });
   d.log.info('bot_worker.bot_created', { handle, name: profile.name });
+  if (id) {
+    await isolated(d, 'bot_worker.look_failed', () =>
+      dressNewBot(d, { id, handle, name: profile.name, persona }),
+    );
+  }
+}
+
+// ─── looks ──────────────────────────────────────────────────────────────────
+
+/** One picture-fetch allowance shared by a run (Openverse's anonymous quota is 200 a day). */
+interface ImageBudget {
+  left: number;
+}
+
+function takeImage(budget: ImageBudget): boolean {
+  if (budget.left <= 0) return false;
+  budget.left--;
+  return true;
+}
+
+/** Searches for this persona, with the generic list behind them. */
+async function imageQueries(
+  d: BotDeps,
+  persona: string,
+): Promise<{ avatar: string[]; banner: string[] }> {
+  try {
+    return await d.ai.imageQueries(persona);
+  } catch {
+    return { avatar: [], banner: [] };
+  }
+}
+
+function pickQuery(list: string[], generic: (r: number) => string, d: BotDeps): string {
+  // One time in five a generic subject even when the persona's own exist: people's pictures are
+  // not always about their hobby.
+  if (list.length === 0 || d.random() < 0.2) return generic(d.random());
+  return pickOne(list, d.random);
+}
+
+/**
+ * A new avatar of a freshly rolled kind: a photo (fetched; null when the fetch failed or the
+ * budget is spent), a cartoon or initials (URLs, always available).
+ */
+async function newAvatar(
+  d: BotDeps,
+  look: BotLook,
+  bot: { id: string; handle: string; name: string },
+  queries: () => Promise<{ avatar: string[]; banner: string[] }>,
+  budget: ImageBudget,
+  /** Try a generic subject once more when the persona's search finds nothing (the first update). */
+  retryGeneric = false,
+): Promise<string | null> {
+  const kind = rollAvatarKind(d.random());
+  if (kind === 'cartoon') return cartoonAvatarUrl(`${bot.handle}-${d.now()}`, d.random(), d.random());
+  if (kind === 'initials') return initialsAvatarUrl(bot.name || bot.handle, d.random());
+  if (!takeImage(budget)) return null;
+  const q = await queries();
+  const photo = await look.avatar(bot.id, pickQuery(q.avatar, genericAvatarQuery, d));
+  if (photo || !retryGeneric || !takeImage(budget)) return photo;
+  return look.avatar(bot.id, genericAvatarQuery(d.random()));
+}
+
+async function newBanner(
+  d: BotDeps,
+  look: BotLook,
+  botId: string,
+  queries: () => Promise<{ avatar: string[]; banner: string[] }>,
+  budget: ImageBudget,
+): Promise<{ url: string; sizeBytes: number } | null> {
+  if (!takeImage(budget)) return null;
+  const q = await queries();
+  return look.banner(botId, pickQuery(q.banner, genericBannerQuery, d));
+}
+
+/** Memoise the persona's searches so a run asks the model at most once per bot. */
+function lazyQueries(d: BotDeps, persona: string) {
+  let p: Promise<{ avatar: string[]; banner: string[] }> | null = null;
+  return () => (p ??= imageQueries(d, persona));
+}
+
+/** Give a just-minted bot its first look: an avatar of a rolled kind and, two times in three, a banner. */
+export async function dressNewBot(
+  d: BotDeps,
+  bot: { id: string; handle: string; name: string; persona: string },
+): Promise<void> {
+  const look = d.look;
+  if (!look || !d.cfg.profileRefresh) return;
+  const budget: ImageBudget = { left: 2 };
+  const queries = lazyQueries(d, bot.persona);
+  const patch: BotProfilePatch = {};
+  const image = await newAvatar(d, look, bot, queries, budget);
+  if (image) patch.image = image;
+  if (wantsBanner(d.random())) {
+    const banner = await newBanner(d, look, bot.id, queries, budget);
+    if (banner) patch.banner = banner;
+  }
+  if (Object.keys(patch).length > 0) await d.repo.updateBotProfile(bot.id, patch);
+}
+
+/** Apply a patch, then delete the pictures it replaced. */
+async function applyPatch(
+  d: BotDeps,
+  look: BotLook,
+  b: BotProfileRow,
+  patch: BotProfilePatch,
+  event: string,
+): Promise<boolean> {
+  const fields = Object.keys(patch);
+  if (fields.length === 0) return false;
+  await d.repo.updateBotProfile(b.id, patch);
+  if (patch.image) await look.removeAvatar(b.image);
+  if (patch.banner) await look.removeBanner(b.bannerUrl);
+  d.log.info(event, { botId: b.id, fields });
+  return true;
+}
+
+/**
+ * The first pass: bots still on the old placeholder avatar get a new avatar and, two times in
+ * three when they have none, a banner. Up to `firstUpdatesPerTick` bots a run. A photo search that
+ * finds nothing tries a generic subject once; when that fails too the bot keeps its placeholder and
+ * the next run tries again. Returns how many bots were updated.
+ */
+async function firstUpdates(d: BotDeps, look: BotLook, pending: BotProfileRow[]): Promise<number> {
+  const budget: ImageBudget = { left: d.cfg.firstUpdateImagesPerTick };
+  let changed = 0;
+  for (const b of pending.slice(0, d.cfg.firstUpdatesPerTick)) {
+    await isolated(d, 'bot_worker.first_update_failed', async () => {
+      const persona = b.botPersona === '' ? '' : aiPersona(b.id, b.botPersona);
+      const queries =
+        persona === ''
+          ? async () => ({ avatar: [], banner: [] })
+          : lazyQueries(d, persona);
+      const patch: BotProfilePatch = {};
+      const image = await newAvatar(d, look, b, queries, budget, true);
+      if (!image) return; // still a placeholder: retried next run, and drift keeps waiting
+      patch.image = image;
+      if (b.bannerUrl == null && wantsBanner(d.random())) {
+        const banner = await newBanner(d, look, b.id, queries, budget);
+        if (banner) patch.banner = banner;
+      }
+      if (await applyPatch(d, look, b, patch, 'bot_worker.first_update')) changed++;
+    });
+  }
+  d.log.info('bot_worker.first_pass', { updated: changed, remaining: pending.length - changed });
+  return changed;
+}
+
+/**
+ * The refresh run. While any bot still wears the old placeholder avatar, it only does the first
+ * pass (`firstUpdates`): no bot drifts until every bot has had its first update. After that, every
+ * bot gets a small chance of a new avatar, banner, bio or display name (`refreshPlan`), with at most
+ * `refreshMaxImagesPerTick` pictures fetched a run. Handles never change. Returns how many bots
+ * changed.
+ */
+export async function runRefreshTick(d: BotDeps): Promise<number> {
+  const look = d.look;
+  if (!look || !d.cfg.profileRefresh) return 0;
+  const bots = shuffled(await d.repo.botProfiles(), d.random);
+  const pending = bots.filter((b) => needsFirstUpdate(b.image));
+  if (pending.length > 0) return firstUpdates(d, look, pending);
+
+  const budget: ImageBudget = { left: d.cfg.refreshMaxImagesPerTick };
+  let changed = 0;
+  for (const b of bots) {
+    if (b.botPersona === '') continue;
+    const plan = refreshPlan(b, d.cfg.drift, d.now(), d.random);
+    // A bannerless bot drifting into a banner change gets one only as often as new bots do.
+    const bannerDue = plan.banner && (b.bannerUrl != null || wantsBanner(d.random()));
+    if (!plan.avatar && !bannerDue && !plan.bio && !plan.name) continue;
+
+    await isolated(d, 'bot_worker.refresh_failed', async () => {
+      const persona = aiPersona(b.id, b.botPersona);
+      const queries = lazyQueries(d, persona);
+      const patch: BotProfilePatch = {};
+      if (plan.avatar) {
+        const image = await newAvatar(d, look, b, queries, budget);
+        if (image && image !== b.image) patch.image = image;
+      }
+      if (bannerDue) {
+        const banner = await newBanner(d, look, b.id, queries, budget);
+        if (banner) patch.banner = banner;
+      }
+      if (plan.bio) {
+        const bio = await d.ai.bio(persona, b.bio).catch(() => '');
+        if (bio && bio !== b.bio) patch.bio = [...bio].slice(0, 160).join('');
+      }
+      if (plan.name && b.name) {
+        const name = await d.ai.nameVariant(persona, b.name).catch(() => '');
+        if (name && name !== b.name) patch.name = name;
+      }
+      if (await applyPatch(d, look, b, patch, 'bot_worker.profile_refreshed')) changed++;
+    });
+  }
+  return changed;
 }
 
 /** Top the pool up if below target, at most one batch per pass. Lowering the target never deletes bots. */
@@ -1456,7 +1786,7 @@ interface BossLike {
 }
 
 /**
- * Create the four queues, schedule their crons and attach the workers. With no
+ * Create the five queues, schedule their crons and attach the workers. With no
  * DEEPSEEK_API_KEY it idles like the Go worker did: nothing is registered, and
  * any schedule left from a run that had a key is removed.
  */
@@ -1483,6 +1813,7 @@ export async function registerBotWorkerJobs(
     { name: BOT_POST_QUEUE, cron: cronForInterval(d.cfg.postTickMs), run: () => runPostTick(d) },
     { name: BOT_REPLY_QUEUE, cron: cronForInterval(d.cfg.replyTickMs), run: () => runReplyTick(d) },
     { name: BOT_DM_QUEUE, cron: cronForInterval(d.cfg.dmTickMs), run: () => runDmTick(d) },
+    { name: BOT_REFRESH_QUEUE, cron: BOT_REFRESH_CRON, run: () => runRefreshTick(d) },
   ];
   for (const job of jobs) {
     await boss.createQueue(job.name, queue);
@@ -1493,6 +1824,8 @@ export async function registerBotWorkerJobs(
   }
   // The Go pool loop topped up immediately at start, before its first interval.
   await boss.send?.(BOT_MAINTAIN_QUEUE, {}).catch(() => undefined);
+  // And the refresh run, so the first pass starts at deploy rather than at the next :23.
+  await boss.send?.(BOT_REFRESH_QUEUE, {}).catch(() => undefined);
   d.log.info('bot_worker.scheduled', {
     post: cronForInterval(d.cfg.postTickMs),
     reply: cronForInterval(d.cfg.replyTickMs),
