@@ -264,7 +264,9 @@ export function MDXEditor({
         </div>
       </div>
 
-      <div className="flex-1 w-full relative">
+      {/* `min-h-0` bounds this row to the window. Without it a tall settings form grows the row past the viewport,
+          where the root's `overflow-hidden` clips it and nothing can scroll. */}
+      <div className="relative min-h-0 w-full flex-1">
         {/* Below `lg` only one pane shows. The library sizes the pane's OUTER element (50% each) and puts
             `className` on an inner one, so hiding the inner pane left its outer half of the row empty and the form at
             half width on a phone. The outer of the hidden pane is removed and the other takes the row. */}
@@ -461,7 +463,9 @@ export function MDXEditor({
                 </div>
               </form>
 
-              <div className="flex-1 flex flex-col min-h-0 h-full">
+              {/* Takes the room that is left, but never less than the editor's own minimum: when the settings are
+                  taller than the window the form scrolls, and the editor is not squeezed to nothing. */}
+              <div className="flex flex-1 flex-col">
                 <div className="flex items-center justify-between mb-2">
                   <Label>
                     {t('content-label', { defaultValue: 'Content' })}{' '}
@@ -506,7 +510,7 @@ export function MDXEditor({
                     </Button>
                   </div>
                 </div>
-                <div className="surface-field relative min-h-75 flex-1 overflow-hidden rounded-site-sm sm:min-h-0">
+                <div className="surface-field relative min-h-75 flex-1 overflow-hidden rounded-site-sm">
                   <MarkdownEditor
                     ref={editorRef}
                     value={content}
