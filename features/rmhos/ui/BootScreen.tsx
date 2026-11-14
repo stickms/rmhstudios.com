@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import type { VmPhase, VmPhaseDetail } from '../engine/vm';
+import type { VmPhaseDetail } from '../engine/vm-types';
+import type { RmhosPhase } from './useRmhosSession';
 
 interface Props {
-  phase: VmPhase;
+  phase: RmhosPhase;
   detail?: VmPhaseDetail;
   /** A phone with no keyboard: ask before downloading the machine. */
   needsKeyboardNotice: boolean;
@@ -28,6 +29,7 @@ export default function BootScreen({
   let status: string;
   if (phase === 'failed')
     status = t('boot-failed', { defaultValue: 'The machine could not start.' });
+  else if (phase === 'session') status = t('boot-session', { defaultValue: 'Signing in' });
   else if (phase === 'booting')
     status = t('boot-starting', { defaultValue: 'Starting the machine' });
   else if (phase === 'downloading')

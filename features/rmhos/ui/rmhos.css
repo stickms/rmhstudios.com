@@ -31,7 +31,23 @@
   width: 100%;
   height: 100dvh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: var(--app-bg);
+}
+
+/* The screen and the boot panel share this box; the status line sits under it. */
+.rmhos-app .rmhos-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.rmhos-app .rmhos-status {
+  flex: none;
+  padding: 4px 12px;
+  border-top: 1px solid var(--app-border);
+  background: var(--app-bg-subtle);
 }
 
 /* v86 owns the children of this box: one div for text mode, one canvas for graphics. */

@@ -28,19 +28,19 @@ export const PINNED_IMAGE: {
   version: string;
   files: Record<'bzImage' | 'rootfs' | 'state' | 'seabios' | 'vgabios', Pin>;
 } = {
-  version: '52920dbdf083',
+  version: '3cc16042c63b',
   files: {
     bzImage: {
       size: 1946112,
       sha256: '72ad548512bc9df8af6135cf5855ea66c4859eae926fe577aebbd3533db61367',
     },
     rootfs: {
-      size: 287309824,
-      sha256: '83d165b165fd16f5025221421d41cd80274deb83d0ecd1974a521ff5e62b370a',
+      size: 288358400,
+      sha256: 'e53c600759d6fc5bb78eb68e885ff0374bd372314328f710bb99ef422dc24734',
     },
     state: {
-      size: 7216348,
-      sha256: 'a2f9a3cdc45c34d7418333b3b8da0c221c017acbdc6f7db742fd54895eac6541',
+      size: 7249271,
+      sha256: '868bc056383e72809317ba4daed3f159203199a5b4ffc804de773d6fccbcb95f',
     },
     seabios: {
       size: 131072,
