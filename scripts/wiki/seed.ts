@@ -2,9 +2,9 @@
 /**
  * Seed wiki.rmhstudios.com with the starter pages (`lib/wiki/starter-pages.ts`).
  *
- *   WIKIJS_URL=http://localhost:7010 WIKIJS_API_KEY=… pnpm wiki:seed
+ *   MEDIAWIKI_URL=http://localhost:7010 MEDIAWIKI_BOT_USER=… MEDIAWIKI_BOT_PASSWORD=… pnpm wiki:seed
  *
- * Idempotent: a page whose path already exists is left untouched. The same
+ * Idempotent: a page whose title already exists is left untouched. The same
  * action is the "Add starter pages" button on /admin/wiki. Setup: docs/wiki.md.
  */
 import 'dotenv/config';
@@ -12,8 +12,8 @@ import { seedStarterPages } from '@/lib/wiki/seed.server';
 
 seedStarterPages()
   .then(({ created, skipped }) => {
-    for (const path of created) console.log(`created  ${path}`);
-    for (const path of skipped) console.log(`exists   ${path}`);
+    for (const title of created) console.log(`created  ${title}`);
+    for (const title of skipped) console.log(`exists   ${title}`);
     console.log(`${created.length} created, ${skipped.length} already there.`);
   })
   .catch((err) => {

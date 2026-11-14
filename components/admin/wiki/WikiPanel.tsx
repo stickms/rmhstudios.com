@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { api, apiQuery } from '@/lib/contract/client';
+import { wikiPageUrl } from '@/lib/wiki/editor-fields';
 import {
-  applyWikiThemeApi,
+  applyWikiSidebarApi,
   deleteWikiPageApi,
   listWikiPagesApi,
   seedWikiPagesApi,
@@ -32,7 +32,7 @@ export function WikiPanel() {
   const reload = () => q.refetch();
   const [view, setView] = useState<View>(null);
   const [seeding, setSeeding] = useState(false);
-  const [theming, setTheming] = useState(false);
+  const [sidebarSaving, setSidebarSaving] = useState(false);
 
   const seed = async () => {
     setSeeding(true);
@@ -55,15 +55,15 @@ export function WikiPanel() {
     }
   };
 
-  const applyTheme = async () => {
-    setTheming(true);
+  const applySidebar = async () => {
+    setSidebarSaving(true);
     try {
-      await api(applyWikiThemeApi);
-      toast.success(t('themed', { defaultValue: 'Wiki theme applied.' }));
+      await api(applyWikiSidebarApi);
+      toast.success(t('sidebar-applied', { defaultValue: 'Sidebar updated.' }));
     } catch {
-      toast.error(t('theme-failed', { defaultValue: 'Could not apply the wiki theme.' }));
+      toast.error(t('sidebar-failed', { defaultValue: 'Could not update the sidebar.' }));
     } finally {
-      setTheming(false);
+      setSidebarSaving(false);
     }
   };
 
@@ -93,9 +93,9 @@ export function WikiPanel() {
     return (
       <EmptyState
         title={t('unreachable-title', { defaultValue: 'The wiki did not answer' })}
-        description={t('unreachable-description', {
+        description={t('unreachable-mediawiki', {
           defaultValue:
-            'Check that the wikijs service is running and that WIKIJS_URL and WIKIJS_API_KEY are correct.',
+            'Check that the mediawiki service is running and that MEDIAWIKI_URL and the bot password are correct.',
         })}
         action={
           <Button onClick={() => void reload()}>{t('retry', { defaultValue: 'Try again' })}</Button>
@@ -108,9 +108,9 @@ export function WikiPanel() {
     return (
       <EmptyState
         title={t('setup-title', { defaultValue: 'The wiki is not connected' })}
-        description={t('setup-description', {
+        description={t('setup-mediawiki', {
           defaultValue:
-            'Create an API key in the Wiki.js admin area, set it as WIKIJS_API_KEY and restart the web service. The steps are in docs/wiki.md.',
+            'Run wiki-bootstrap in the mediawiki container, set the MEDIAWIKI_BOT_USER and MEDIAWIKI_BOT_PASSWORD it prints, and restart the web service. The steps are in docs/wiki.md.',
         })}
       />
     );
@@ -139,8 +139,8 @@ export function WikiPanel() {
           })}
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button loading={theming} onClick={() => void applyTheme()}>
-            {t('apply-theme', { defaultValue: 'Apply wiki theme' })}
+          <Button loading={sidebarSaving} onClick={() => void applySidebar()}>
+            {t('apply-sidebar', { defaultValue: 'Update sidebar' })}
           </Button>
           <Button loading={seeding} onClick={() => void seed()}>
             {t('seed', { defaultValue: 'Add starter pages' })}
@@ -166,18 +166,13 @@ export function WikiPanel() {
               className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-site-border py-3"
             >
               <div className="min-w-0 flex-1 basis-60">
-                <p className="t-body flex min-w-0 items-center gap-2 font-medium text-site-text">
-                  <span className="truncate">{page.title}</span>
-                  {page.isPublished ? null : <Badge>{t('draft', { defaultValue: 'Draft' })}</Badge>}
-                </p>
-                <p className="t-meta truncate">
-                  /{page.path} · {new Date(page.updatedAt).toLocaleDateString()}
-                </p>
+                <p className="t-body truncate font-medium text-site-text">{page.title}</p>
+                <p className="t-meta truncate">{new Date(page.updatedAt).toLocaleDateString()}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button asChild variant="ghost" size="sm">
                   <a
-                    href={`${data.publicUrl}/${page.locale}/${page.path}`}
+                    href={wikiPageUrl(data.publicUrl, page.title)}
                     target="_blank"
                     rel="noreferrer"
                   >

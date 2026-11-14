@@ -1,65 +1,65 @@
 import { describe, expect, it } from 'vitest';
-import { isWikiPath, parseWikiTags, slugifyWikiTitle } from '@/lib/wiki/editor-fields';
+import { isWikiTitle, wikiPageUrl } from '@/lib/wiki/editor-fields';
 import {
   createWikiPageBody,
   updateWikiPageBody,
   wikiAssistBody,
-  wikiPath,
+  wikiTitle,
 } from '@/lib/wiki/wiki-schema';
 
-const GOOD = ['home', 'coins-and-memberships', 'games/balatro', 'a/b/c', 'v2'];
-const BAD = ['', 'Home', 'a b', '/games', 'games/', 'a//b', '-a', 'a-', 'a--b', 'a_b', '../x', 'é'];
+const GOOD = [
+  'Games',
+  'Coins and memberships',
+  'Games/Balatro',
+  'RMHTube: uploading',
+  "Player's guide",
+  'Café',
+];
+const BAD = ['', '   ', '[[Games]]', 'Games#Top', 'a|b', '{{x}}', '<b>', 'tab\there'];
 
-describe('wiki page paths', () => {
-  it.each(GOOD)('accepts %s', (path) => {
-    expect(wikiPath.safeParse(path).success).toBe(true);
-    expect(isWikiPath(path)).toBe(true);
+describe('wiki page titles', () => {
+  it.each(GOOD)('accepts %j', (title) => {
+    expect(wikiTitle.safeParse(title).success).toBe(true);
+    expect(isWikiTitle(title)).toBe(true);
   });
 
-  it.each(BAD)('rejects %j', (path) => {
-    expect(wikiPath.safeParse(path).success).toBe(false);
-    expect(isWikiPath(path)).toBe(false);
+  it.each(BAD)('rejects %j', (title) => {
+    expect(wikiTitle.safeParse(title).success).toBe(false);
+    expect(isWikiTitle(title)).toBe(false);
   });
 
   it('caps the length in the schema and the editor alike', () => {
-    const long = 'a'.repeat(201);
-    expect(wikiPath.safeParse(long).success).toBe(false);
-    expect(isWikiPath(long)).toBe(false);
+    const long = 'a'.repeat(256);
+    expect(wikiTitle.safeParse(long).success).toBe(false);
+    expect(isWikiTitle(long)).toBe(false);
   });
 });
 
 describe('request bodies', () => {
-  const page = {
-    path: 'games',
-    title: 'Games',
-    description: '',
-    content: 'Body',
-    tags: ['games'],
-    isPublished: true,
-  };
+  const page = { title: 'Games', content: 'Body', summary: '' };
 
-  it('accepts a full page and trims the title', () => {
-    const parsed = createWikiPageBody.parse({ ...page, title: '  Games ' });
+  it('accepts a full page and trims the title and summary', () => {
+    const parsed = createWikiPageBody.parse({ ...page, title: '  Games ', summary: ' typo ' });
     expect(parsed.title).toBe('Games');
+    expect(parsed.summary).toBe('typo');
   });
 
-  it('rejects an empty title, an empty body and an oversized body', () => {
+  it('rejects an empty title, an empty body, an oversized body and a long summary', () => {
     expect(createWikiPageBody.safeParse({ ...page, title: ' ' }).success).toBe(false);
     expect(createWikiPageBody.safeParse({ ...page, content: '' }).success).toBe(false);
     expect(createWikiPageBody.safeParse({ ...page, content: 'x'.repeat(200_001) }).success).toBe(
       false,
     );
+    expect(createWikiPageBody.safeParse({ ...page, summary: 'x'.repeat(501) }).success).toBe(false);
   });
 
-  it('an update has no path: a page cannot be moved through the site', () => {
-    const { path: _path, ...fields } = page;
-    expect(updateWikiPageBody.safeParse(fields).success).toBe(true);
-    expect('path' in updateWikiPageBody.parse({ ...fields, path: 'elsewhere' })).toBe(false);
-  });
-
-  it('caps tags', () => {
-    const tags = Array.from({ length: 21 }, (_, i) => `t${i}`);
-    expect(createWikiPageBody.safeParse({ ...page, tags }).success).toBe(false);
+  it('an update has no title, so a page cannot be moved through the site, and names its base revision', () => {
+    const update = { content: 'Body', summary: '', baseRevisionId: 12 };
+    expect(updateWikiPageBody.safeParse(update).success).toBe(true);
+    expect('title' in updateWikiPageBody.parse({ ...update, title: 'Elsewhere' })).toBe(false);
+    for (const baseRevisionId of [undefined, 0, -1, 1.5, '12']) {
+      expect(updateWikiPageBody.safeParse({ ...update, baseRevisionId }).success).toBe(false);
+    }
   });
 
   it('the assistant needs an instruction and bounds what it is sent', () => {
@@ -74,16 +74,16 @@ describe('request bodies', () => {
 });
 
 describe('editor helpers', () => {
-  it('suggests a valid path from a title', () => {
-    expect(slugifyWikiTitle('Battle Pass Guide')).toBe('battle-pass-guide');
-    expect(slugifyWikiTitle('  RMHarks: the feed!  ')).toBe('rmharks-the-feed');
-    expect(slugifyWikiTitle('Café Déjà')).toBe('cafe-deja');
-    expect(isWikiPath(slugifyWikiTitle('Coins & memberships (2026)'))).toBe(true);
-    expect(slugifyWikiTitle('!!!')).toBe('');
+  const base = 'https://wiki.rmhstudios.com';
+
+  it('links a page the way MediaWiki does: underscores for spaces, slashes and colons kept', () => {
+    expect(wikiPageUrl(base, 'Main Page')).toBe(`${base}/wiki/Main_Page`);
+    expect(wikiPageUrl(base, 'Games/Balatro')).toBe(`${base}/wiki/Games/Balatro`);
+    expect(wikiPageUrl(base, 'RMHTube: uploading')).toBe(`${base}/wiki/RMHTube:_uploading`);
   });
 
-  it('parses a comma-separated tag field', () => {
-    expect(parseWikiTags(' games, apps ,, games ,')).toEqual(['games', 'apps']);
-    expect(parseWikiTags('')).toEqual([]);
+  it('percent-encodes everything else, so a title cannot change the URL it points at', () => {
+    expect(wikiPageUrl(base, 'Q&A?x=1')).toBe(`${base}/wiki/Q%26A%3Fx%3D1`);
+    expect(wikiPageUrl(base, 'Café')).toBe(`${base}/wiki/Caf%C3%A9`);
   });
 });

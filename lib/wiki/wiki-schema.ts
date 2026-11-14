@@ -3,44 +3,41 @@
  * contracts in `wiki.contract.ts` take their types from here by `import type`.
  */
 import { z } from 'zod';
+import { hasOnlyTitleCharacters } from '@/lib/wiki/editor-fields';
 
 /**
- * A Wiki.js page path: lowercase segments of letters, digits and hyphens joined by
- * slashes (`games/balatro`). Wiki.js itself is looser, but its reserved prefixes
- * and URL-escaping rules are easier to stay clear of than to mirror.
+ * A MediaWiki page title, which is also the page's address (`/wiki/Page_title`).
+ * This rejects the characters MediaWiki never allows in a title; MediaWiki
+ * itself has the last word (it also normalises the first letter and turns
+ * underscores into spaces), and the server reports its reason.
  */
-export const wikiPath = z
+export const wikiTitle = z
   .string()
   .trim()
   .min(1)
-  .max(200)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/);
+  .max(255)
+  .refine(hasOnlyTitleCharacters, 'That title has characters MediaWiki does not allow');
 
-const title = z.string().trim().min(1).max(200);
-const description = z.string().trim().max(500);
-/** Markdown body. Wiki.js stores it as text; the cap keeps one request bounded. */
+/** Wikitext. MediaWiki stores it as text; the cap keeps one request bounded. */
 const content = z.string().min(1).max(200_000);
-const tags = z.array(z.string().trim().min(1).max(40)).max(20);
+/** The edit summary shown in the page history. Empty lets MediaWiki write one. */
+const summary = z.string().trim().max(500);
 
 export const wikiPageSummary = z.object({
   id: z.number().int(),
-  path: z.string(),
-  locale: z.string(),
   title: z.string(),
-  description: z.string(),
-  isPublished: z.boolean(),
   updatedAt: z.string(),
 });
 
 export const wikiPage = wikiPageSummary.extend({
+  revisionId: z.number().int(),
   content: z.string(),
-  tags: z.array(z.string()),
 });
 
 export const wikiPageList = z.object({
-  /** False when `WIKIJS_API_KEY` is unset; the page then explains the setup. */
+  /** False when the bot password is unset; the page then explains the setup. */
   configured: z.boolean(),
-  /** Public origin of the wiki, for the "open on the wiki" links. */
+  /** Public origin of the wiki, for the "view on the wiki" links. */
   publicUrl: z.string(),
   /** Whether the DeepSeek assistant can run. */
   aiConfigured: z.boolean(),
@@ -48,26 +45,22 @@ export const wikiPageList = z.object({
 });
 
 export const createWikiPageBody = z.object({
-  path: wikiPath,
-  title,
-  description,
+  title: wikiTitle,
   content,
-  tags,
-  isPublished: z.boolean(),
+  summary,
 });
 
 export const updateWikiPageBody = z.object({
-  title,
-  description,
   content,
-  tags,
-  isPublished: z.boolean(),
+  summary,
+  /** The revision the editor opened; a save on top of someone else's is a conflict. */
+  baseRevisionId: z.number().int().positive(),
 });
 
 export const wikiAssistBody = z.object({
   /** What the admin asked for, in their own words. */
   instruction: z.string().trim().min(1).max(2_000),
-  title: z.string().trim().max(200),
+  title: z.string().trim().max(255),
   /** The page as it stands; empty to draft a new one. */
   content: z.string().max(60_000),
 });

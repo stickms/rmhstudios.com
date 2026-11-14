@@ -7,10 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { api, apiQuery, errorField } from '@/lib/contract/client';
-import { isWikiPath, parseWikiTags, slugifyWikiTitle } from '@/lib/wiki/editor-fields';
+import { isWikiTitle, wikiPageUrl } from '@/lib/wiki/editor-fields';
 import type { wikiPage } from '@/lib/wiki/wiki-schema';
 import { useWikiAssist, type WikiAssistFailure } from './useWikiAssist';
 import { createWikiPageApi, getWikiPageApi, updateWikiPageApi } from '@/lib/wiki/wiki.contract';
@@ -53,9 +52,11 @@ export function WikiEditor(props: EditorProps) {
 }
 
 /**
- * One wiki page: path (new pages only), title, description, tags, Markdown
- * body, and the DeepSeek assistant that writes into the body. Nothing the
- * assistant writes is saved until Save.
+ * One wiki page: title (new pages only; it is the page's address), an edit
+ * summary, the wikitext body, and the DeepSeek assistant that writes into the
+ * body. Nothing the assistant writes is saved until Save. Each save is a new
+ * revision on top of the one the editor holds; if someone else saved in
+ * between and MediaWiki cannot merge the two, the save is refused.
  */
 function WikiEditorForm({
   initial,
@@ -67,14 +68,10 @@ function WikiEditorForm({
   const { t } = useTranslation('f-wiki');
   const ids = useId();
   const [id, setId] = useState(initial?.id ?? null);
-  const [path, setPath] = useState(initial?.path ?? '');
-  const [locale, setLocale] = useState(initial?.locale ?? 'en');
-  const [pathTouched, setPathTouched] = useState(false);
+  const [revisionId, setRevisionId] = useState(initial?.revisionId ?? 0);
   const [title, setTitle] = useState(initial?.title ?? '');
-  const [description, setDescription] = useState(initial?.description ?? '');
-  const [tags, setTags] = useState(initial?.tags.join(', ') ?? '');
+  const [summary, setSummary] = useState('');
   const [content, setContent] = useState(initial?.content ?? '');
-  const [isPublished, setIsPublished] = useState(initial?.isPublished ?? true);
   const [saving, setSaving] = useState(false);
   const [instruction, setInstruction] = useState('');
 
@@ -97,33 +94,42 @@ function WikiEditorForm({
   const { writing } = assist;
 
   const isNew = id === null;
-  const pathValid = isWikiPath(path);
-  const canSave = Boolean(title.trim() && content.trim() && (!isNew || pathValid)) && !writing;
+  const titleValid = isWikiTitle(title);
+  const canSave = Boolean(content.trim() && (!isNew || titleValid)) && !writing;
 
   const save = async () => {
     setSaving(true);
-    const fields = {
-      title: title.trim(),
-      description: description.trim(),
-      content,
-      tags: parseWikiTags(tags),
-      isPublished,
-    };
     try {
-      if (id === null) {
-        const page = await api(createWikiPageApi, { body: { path, ...fields } });
-        setId(page.id);
-        setLocale(page.locale);
-        toast.success(t('created', { defaultValue: 'Page created.' }));
-      } else {
-        await api(updateWikiPageApi, { params: { id: String(id) }, body: fields });
-        toast.success(t('saved', { defaultValue: 'Page saved.' }));
-      }
+      const page =
+        id === null
+          ? await api(createWikiPageApi, {
+              body: { title: title.trim(), content, summary: summary.trim() },
+            })
+          : await api(updateWikiPageApi, {
+              params: { id: String(id) },
+              body: { content, summary: summary.trim(), baseRevisionId: revisionId },
+            });
+      setId(page.id);
+      setRevisionId(page.revisionId);
+      // MediaWiki normalises a new title (first letter upper-case, underscores to spaces).
+      setTitle(page.title);
+      setSummary('');
+      toast.success(
+        id === null
+          ? t('created', { defaultValue: 'Page created.' })
+          : t('saved', { defaultValue: 'Page saved.' }),
+      );
       onSaved();
     } catch (err) {
+      const code = errorField<string>(err, 'error');
       toast.error(
-        errorField<string>(err, 'error') === 'conflict'
-          ? t('path-taken', { defaultValue: 'A page already uses that path.' })
+        code === 'conflict'
+          ? id === null
+            ? t('title-taken', { defaultValue: 'A page with that title already exists.' })
+            : t('edit-conflict', {
+                defaultValue:
+                  'Someone else saved this page since you opened it. Copy your text, reopen the page and apply it again.',
+              })
           : t('save-failed', { defaultValue: 'Could not save the page.' }),
       );
     } finally {
@@ -142,7 +148,7 @@ function WikiEditorForm({
         <div className="flex flex-wrap gap-2">
           {isNew ? null : (
             <Button asChild variant="ghost">
-              <a href={`${publicUrl}/${locale}/${path}`} target="_blank" rel="noreferrer">
+              <a href={wikiPageUrl(publicUrl, title)} target="_blank" rel="noreferrer">
                 {t('view-on-wiki', { defaultValue: 'View on the wiki' })}
               </a>
             </Button>
@@ -167,66 +173,32 @@ function WikiEditorForm({
           <Input
             id={`${ids}-title`}
             value={title}
-            maxLength={200}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              if (isNew && !pathTouched) setPath(slugifyWikiTitle(e.target.value));
-            }}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`${ids}-path`}>{t('field-path', { defaultValue: 'Path' })}</Label>
-          <Input
-            id={`${ids}-path`}
-            value={path}
-            maxLength={200}
+            maxLength={255}
             disabled={!isNew}
-            aria-invalid={isNew && path !== '' && !pathValid}
-            aria-describedby={`${ids}-path-hint`}
-            onChange={(e) => {
-              setPathTouched(true);
-              setPath(e.target.value);
-            }}
+            aria-invalid={isNew && title !== '' && !titleValid}
+            aria-describedby={`${ids}-title-hint`}
+            onChange={(e) => setTitle(e.target.value)}
           />
-          <p id={`${ids}-path-hint`} className="t-meta">
+          <p id={`${ids}-title-hint`} className="t-meta">
             {isNew
-              ? t('path-hint', {
-                  defaultValue: 'Lowercase words joined by hyphens; slashes make sub-pages.',
+              ? t('title-hint', {
+                  defaultValue: 'The title is also the address. A slash makes a sub-page.',
                 })
-              : t('path-fixed', { defaultValue: 'Move a page from the wiki itself.' })}
+              : t('title-fixed', { defaultValue: 'Rename a page on the wiki itself.' })}
           </p>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={`${ids}-description`}>
-            {t('field-description', { defaultValue: 'Description' })}
+          <Label htmlFor={`${ids}-summary`}>
+            {t('field-summary', { defaultValue: 'Edit summary' })}
           </Label>
           <Input
-            id={`${ids}-description`}
-            value={description}
+            id={`${ids}-summary`}
+            value={summary}
             maxLength={500}
-            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t('summary-placeholder', { defaultValue: 'What you changed' })}
+            onChange={(e) => setSummary(e.target.value)}
           />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`${ids}-tags`}>{t('field-tags', { defaultValue: 'Tags' })}</Label>
-          <Input
-            id={`${ids}-tags`}
-            value={tags}
-            placeholder={t('tags-placeholder', { defaultValue: 'Separated by commas' })}
-            onChange={(e) => setTags(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <Switch
-          checked={isPublished}
-          onCheckedChange={setIsPublished}
-          aria-labelledby={`${ids}-published`}
-        />
-        <span id={`${ids}-published`} className="t-body text-site-text">
-          {t('field-published', { defaultValue: 'Published' })}
-        </span>
       </div>
 
       <div className="space-y-2 border-t border-site-border pt-4">
@@ -291,7 +263,7 @@ function WikiEditorForm({
 
       <div className="space-y-1.5">
         <Label htmlFor={`${ids}-content`}>
-          {t('field-content', { defaultValue: 'Body (Markdown)' })}
+          {t('field-wikitext', { defaultValue: 'Body (wikitext)' })}
         </Label>
         <Textarea
           id={`${ids}-content`}
