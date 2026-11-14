@@ -30,10 +30,15 @@
  */
 
 /** Which hub a vertical is listed under. */
-export type VerticalHub = 'services' | 'ventures';
+export type VerticalHub =
+  | 'services'
+  | 'ventures';
 
 /** How often a page of this kind actually changes. */
-export type VerticalCadence = 'weekly' | 'monthly' | 'yearly';
+export type VerticalCadence =
+  | 'weekly'
+  | 'monthly'
+  | 'yearly';
 
 export interface VerticalPage {
   /** Path segment under the vertical's base, or '' for its index. */
@@ -71,83 +76,215 @@ export interface Vertical {
   serverRendered?: true;
 }
 
-export const VERTICALS: readonly Vertical[] = [
-  // ── Services: the operating businesses ──
-  {
-    id: 'rebar-rutabaga',
-    hub: 'services',
-    base: '/services/rebar-rutabaga',
-    name: 'Rebar & Rutabaga',
-    // A child of the Services hub with its own canonical and Restaurant
-    // JSON-LD, so it is its own indexable URL rather than a tab on /services.
-    // `monthly` because a tasting menu changes with the season, not the week.
-    pages: [{ segment: '', cadence: 'monthly' }],
-  },
+export const VERTICALS: readonly Vertical[] =
+  [
+    // ── Services: the operating businesses ──
+    {
+      id: 'rebar-rutabaga',
+      hub: 'services',
+      base: '/services/rebar-rutabaga',
+      name: 'Rebar & Rutabaga',
+      // A child of the Services hub with its own canonical and Restaurant
+      // JSON-LD, so it is its own indexable URL rather than a tab on /services.
+      // `monthly` because a tasting menu changes with the season, not the week.
+      pages:
+        [
+          {
+            segment:
+              '',
+            cadence:
+              'monthly',
+          },
+        ],
+    },
 
-  // ── Ventures: separately-branded arms, each a small marketing site ──
-  {
-    id: 'rmh-capital',
-    hub: 'ventures',
-    base: '/rmh-capital',
-    name: 'RMH Capital',
-    pages: [
-      { segment: '', cadence: 'monthly' },
-      { segment: 'businesses', cadence: 'monthly' },
-      { segment: 'careers', cadence: 'weekly' },
-      { segment: 'contact', cadence: 'yearly' },
-      { segment: 'deals', cadence: 'weekly' },
-      { segment: 'firm', cadence: 'monthly' },
-      { segment: 'insights', cadence: 'weekly' },
-    ],
-  },
-  {
-    id: 'rmh-datacenter',
-    hub: 'ventures',
-    base: '/rmh-datacenter',
-    name: 'RMH Datacenter',
-    pages: [
-      { segment: '', cadence: 'monthly' },
-      { segment: 'contact', cadence: 'yearly' },
-      { segment: 'facilities', cadence: 'monthly' },
-      { segment: 'network', cadence: 'monthly' },
-      { segment: 'platform', cadence: 'monthly' },
-      { segment: 'power', cadence: 'monthly' },
-    ],
-  },
-  {
-    id: 'rmh-pmc',
-    hub: 'ventures',
-    base: '/rmh-pmc',
-    name: 'RMH PMC',
-    pages: [
-      { segment: '', cadence: 'monthly' },
-      { segment: 'capabilities', cadence: 'monthly' },
-      { segment: 'command', cadence: 'monthly' },
-      { segment: 'contact', cadence: 'yearly' },
-      { segment: 'intelligence', cadence: 'monthly' },
-      { segment: 'operators', cadence: 'monthly' },
-    ],
-  },
-  {
-    id: 'adaptive-intelligence',
-    hub: 'ventures',
-    base: '/adaptive-intelligence',
-    name: 'Adaptive Intelligence',
-    pages: [{ segment: '', cadence: 'monthly' }],
-  },
-  {
-    id: 'deeplink',
-    hub: 'ventures',
-    base: '/deeplink',
-    name: 'Deeplink',
-    pages: [{ segment: '', cadence: 'monthly' }],
-    serverRendered: true,
-  },
-] as const;
+    // ── Ventures: separately-branded arms, each a small marketing site ──
+    {
+      id: 'rmh-capital',
+      hub: 'ventures',
+      base: '/rmh-capital',
+      name: 'RMH Capital',
+      pages:
+        [
+          {
+            segment:
+              '',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'businesses',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'careers',
+            cadence:
+              'weekly',
+          },
+          {
+            segment:
+              'contact',
+            cadence:
+              'yearly',
+          },
+          {
+            segment:
+              'deals',
+            cadence:
+              'weekly',
+          },
+          {
+            segment:
+              'firm',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'insights',
+            cadence:
+              'weekly',
+          },
+        ],
+    },
+    {
+      id: 'rmh-datacenter',
+      hub: 'ventures',
+      base: '/rmh-datacenter',
+      name: 'RMH Datacenter',
+      pages:
+        [
+          {
+            segment:
+              '',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'contact',
+            cadence:
+              'yearly',
+          },
+          {
+            segment:
+              'facilities',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'network',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'platform',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'power',
+            cadence:
+              'monthly',
+          },
+        ],
+    },
+    {
+      id: 'rmh-pmc',
+      hub: 'ventures',
+      base: '/rmh-pmc',
+      name: 'RMH PMC',
+      pages:
+        [
+          {
+            segment:
+              '',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'capabilities',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'command',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'contact',
+            cadence:
+              'yearly',
+          },
+          {
+            segment:
+              'intelligence',
+            cadence:
+              'monthly',
+          },
+          {
+            segment:
+              'operators',
+            cadence:
+              'monthly',
+          },
+        ],
+    },
+    {
+      id: 'adaptive-intelligence',
+      hub: 'ventures',
+      base: '/adaptive-intelligence',
+      name: 'Adaptive Intelligence',
+      pages:
+        [
+          {
+            segment:
+              '',
+            cadence:
+              'monthly',
+          },
+        ],
+    },
+    {
+      id: 'deeplink',
+      hub: 'ventures',
+      base: '/deeplink',
+      name: 'Deeplink',
+      pages:
+        [
+          {
+            segment:
+              '',
+            cadence:
+              'monthly',
+          },
+        ],
+      serverRendered: true,
+    },
+  ] as const;
 
 /** Every crawlable path a vertical owns, index first. */
-export function verticalPaths(v: Vertical): string[] {
-  return v.pages.map((p) => (p.segment ? `${v.base}/${p.segment}` : v.base));
+export function verticalPaths(
+  v: Vertical,
+): string[] {
+  return v.pages.map(
+    (
+      p,
+    ) =>
+      p.segment
+        ? `${v.base}/${p.segment}`
+        : v.base,
+  );
 }
 
 /**
@@ -157,12 +294,28 @@ export function verticalPaths(v: Vertical): string[] {
  * same shape the hand-written entries had, now derived rather than retyped
  * eleven times with the opportunity to typo each one.
  */
-export function verticalPriority(page: VerticalPage): number {
-  if (!page.segment) return 0.5;
-  return page.cadence === 'yearly' ? 0.3 : 0.4;
+export function verticalPriority(
+  page: VerticalPage,
+): number {
+  if (
+    !page.segment
+  )
+    return 0.5;
+  return page.cadence ===
+    'yearly'
+    ? 0.3
+    : 0.4;
 }
 
 /** The verticals listed under one hub, in declaration order. */
-export function verticalsForHub(hub: VerticalHub): readonly Vertical[] {
-  return VERTICALS.filter((v) => v.hub === hub);
+export function verticalsForHub(
+  hub: VerticalHub,
+): readonly Vertical[] {
+  return VERTICALS.filter(
+    (
+      v,
+    ) =>
+      v.hub ===
+      hub,
+  );
 }

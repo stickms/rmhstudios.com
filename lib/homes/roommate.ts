@@ -13,17 +13,69 @@ import type { RoommateProfile } from './roommate-schema';
 
 export type { RoommateProfile };
 
-export const SCALE_KEYS = ['sleep', 'guests', 'cleanliness', 'noise'] as const;
-export type ScaleKey = (typeof SCALE_KEYS)[number];
-export const PET_CHOICES = ['has', 'fine', 'no'] as const;
-export type PetChoice = (typeof PET_CHOICES)[number];
+export const SCALE_KEYS =
+  [
+    'sleep',
+    'guests',
+    'cleanliness',
+    'noise',
+  ] as const;
+export type ScaleKey =
+  (typeof SCALE_KEYS)[number];
+export const PET_CHOICES =
+  [
+    'has',
+    'fine',
+    'no',
+  ] as const;
+export type PetChoice =
+  (typeof PET_CHOICES)[number];
 
-const WEIGHTS = { sleep: 0.2, guests: 0.2, cleanliness: 0.25, noise: 0.2, pets: 0.15 } as const;
+const WEIGHTS =
+  {
+    sleep: 0.2,
+    guests: 0.2,
+    cleanliness: 0.25,
+    noise: 0.2,
+    pets: 0.15,
+  } as const;
 
-export function compatibility(a: RoommateProfile, b: RoommateProfile): number {
+export function compatibility(
+  a: RoommateProfile,
+  b: RoommateProfile,
+): number {
   let score = 0;
-  for (const k of SCALE_KEYS) score += WEIGHTS[k] * (1 - Math.abs(a[k] - b[k]) / 4);
-  const petClash = (a.pets === 'has' && b.pets === 'no') || (a.pets === 'no' && b.pets === 'has');
-  score += WEIGHTS.pets * (petClash ? 0 : 1);
-  return Math.round(score * 100);
+  for (const k of SCALE_KEYS)
+    score +=
+      WEIGHTS[
+        k
+      ] *
+      (1 -
+        Math.abs(
+          a[
+            k
+          ] -
+            b[
+              k
+            ],
+        ) /
+          4);
+  const petClash =
+    (a.pets ===
+      'has' &&
+      b.pets ===
+        'no') ||
+    (a.pets ===
+      'no' &&
+      b.pets ===
+        'has');
+  score +=
+    WEIGHTS.pets *
+    (petClash
+      ? 0
+      : 1);
+  return Math.round(
+    score *
+      100,
+  );
 }

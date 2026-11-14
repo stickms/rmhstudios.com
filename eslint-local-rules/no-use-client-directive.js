@@ -18,36 +18,66 @@
  */
 
 /** @type {import('eslint').Rule.RuleModule} */
-const rule = {
-  meta: {
-    type: 'suggestion',
-    docs: {
-      description:
-        "Disallow 'use client' / 'use server' directives: they are Next.js/RSC markers with no effect in TanStack Start",
-    },
-    fixable: 'code',
-    schema: [],
-    messages: {
-      noDirective:
-        "'{{value}}' does nothing in TanStack Start. Server-only code is marked by a `.server.ts` filename instead.",
-    },
-  },
-  create(context) {
-    return {
-      Program(program) {
-        for (const stmt of program.body) {
-          if (stmt.type !== 'ExpressionStatement' || !stmt.directive) break;
-          if (stmt.directive !== 'use client' && stmt.directive !== 'use server') continue;
-          context.report({
-            node: stmt,
-            messageId: 'noDirective',
-            data: { value: stmt.directive },
-            fix: (fixer) => fixer.remove(stmt),
-          });
-        }
+const rule =
+  {
+    meta: {
+      type: 'suggestion',
+      docs: {
+        description:
+          "Disallow 'use client' / 'use server' directives: they are Next.js/RSC markers with no effect in TanStack Start",
       },
-    };
-  },
-};
+      fixable:
+        'code',
+      schema:
+        [],
+      messages:
+        {
+          noDirective:
+            "'{{value}}' does nothing in TanStack Start. Server-only code is marked by a `.server.ts` filename instead.",
+        },
+    },
+    create(
+      context,
+    ) {
+      return {
+        Program(
+          program,
+        ) {
+          for (const stmt of program.body) {
+            if (
+              stmt.type !==
+                'ExpressionStatement' ||
+              !stmt.directive
+            )
+              break;
+            if (
+              stmt.directive !==
+                'use client' &&
+              stmt.directive !==
+                'use server'
+            )
+              continue;
+            context.report(
+              {
+                node: stmt,
+                messageId:
+                  'noDirective',
+                data: {
+                  value:
+                    stmt.directive,
+                },
+                fix: (
+                  fixer,
+                ) =>
+                  fixer.remove(
+                    stmt,
+                  ),
+              },
+            );
+          }
+        },
+      };
+    },
+  };
 
 export default rule;

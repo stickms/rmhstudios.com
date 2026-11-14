@@ -16,15 +16,36 @@
  * file simply has no use for the rest of the worker lib.
  */
 
-import { runLint, type LintRequest, type LintResult } from './lint';
+import {
+  runLint,
+  type LintRequest,
+  type LintResult,
+} from './lint';
 
 interface WorkerScope {
-  postMessage: (message: LintResult) => void;
-  addEventListener: (type: 'message', listener: (event: { data: LintRequest }) => void) => void;
+  postMessage: (
+    message: LintResult,
+  ) => void;
+  addEventListener: (
+    type: 'message',
+    listener: (event: {
+      data: LintRequest;
+    }) => void,
+  ) => void;
 }
 
-const scope = globalThis as unknown as WorkerScope;
+const scope =
+  globalThis as unknown as WorkerScope;
 
-scope.addEventListener('message', (event) => {
-  scope.postMessage(runLint(event.data));
-});
+scope.addEventListener(
+  'message',
+  (
+    event,
+  ) => {
+    scope.postMessage(
+      runLint(
+        event.data,
+      ),
+    );
+  },
+);

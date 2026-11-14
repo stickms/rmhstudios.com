@@ -145,7 +145,9 @@
       ]
     },
     "balatro:p2p:relay:start": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": [
         {
           "why": "not an object",
@@ -159,7 +161,10 @@
           "open": true,
           "started": false,
           "runId": null,
-          "members": ["u_alice", "u_bob"],
+          "members": [
+            "u_alice",
+            "u_bob"
+          ],
           "successor": "pZ9y8X7w6V5u",
           "spectatable": true,
           "summary": {
@@ -243,15 +248,21 @@
       ]
     },
     "balatro:p2p:leave": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "balatro:p2p:close": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "balatro:seat:query": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "balatro:queue:join": {
@@ -277,7 +288,9 @@
       ]
     },
     "balatro:queue:leave": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "balatro:party:queue": {
@@ -313,11 +326,15 @@
       ]
     },
     "balatro:spectate:list": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "balatro:queue:counts": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     },
     "balatro:match:result": {
@@ -325,7 +342,9 @@
         {
           "runId": "run1",
           "draw": false,
-          "winners": ["u_alice"],
+          "winners": [
+            "u_alice"
+          ],
           "places": {}
         },
         {
@@ -340,7 +359,10 @@
         {
           "runId": "run3",
           "draw": false,
-          "winners": ["u_alice", "u_carol"],
+          "winners": [
+            "u_alice",
+            "u_carol"
+          ],
           "places": {
             "u_alice": 1,
             "u_bob": 2,
@@ -446,7 +468,9 @@
       ]
     },
     "balatro:match:pending": {
-      "valid": [{}],
+      "valid": [
+        {}
+      ],
       "invalid": []
     }
   },
@@ -459,7 +483,9 @@
           "peerId": "pA1b2C3d4E5f",
           "ice": [
             {
-              "urls": ["stun:stun.l.google.com:19302"]
+              "urls": [
+                "stun:stun.l.google.com:19302"
+              ]
             },
             {
               "urls": "turn:turn.example.org:3478",
@@ -643,7 +669,9 @@
           "token": "TTTTTTTTTTTTTTTTTTTTTTTT",
           "ice": [
             {
-              "urls": ["stun:stun.l.google.com:19302"]
+              "urls": [
+                "stun:stun.l.google.com:19302"
+              ]
             },
             {
               "urls": "turn:turn.example.org:3478",

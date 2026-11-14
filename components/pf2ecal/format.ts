@@ -29,33 +29,62 @@ import {
 } from '@/lib/pf2ecal/zoned-time';
 
 /** `7:00 PM` — no zone, no date. */
-export function formatClock(instant: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    timeZone,
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(instant);
+export function formatClock(
+  instant: Date,
+  timeZone: string,
+): string {
+  return new Intl.DateTimeFormat(
+    undefined,
+    {
+      timeZone,
+      hour: 'numeric',
+      minute:
+        '2-digit',
+    },
+  ).format(
+    instant,
+  );
 }
 
 /** `Wed, Aug 12` — weekday and date, no year. */
-export function formatDayLabel(instant: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    timeZone,
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  }).format(instant);
+export function formatDayLabel(
+  instant: Date,
+  timeZone: string,
+): string {
+  return new Intl.DateTimeFormat(
+    undefined,
+    {
+      timeZone,
+      weekday:
+        'short',
+      month:
+        'short',
+      day: 'numeric',
+    },
+  ).format(
+    instant,
+  );
 }
 
 /** `Wednesday, August 12, 2026` — the long form for a session header. */
-export function formatFullDate(instant: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    timeZone,
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(instant);
+export function formatFullDate(
+  instant: Date,
+  timeZone: string,
+): string {
+  return new Intl.DateTimeFormat(
+    undefined,
+    {
+      timeZone,
+      weekday:
+        'long',
+      month:
+        'long',
+      day: 'numeric',
+      year: 'numeric',
+    },
+  ).format(
+    instant,
+  );
 }
 
 export interface TimeDisplay {
@@ -84,21 +113,51 @@ export function describeSessionTime(
   endsAt: Date,
   localTimeZone: string,
 ): TimeDisplay {
-  const localStart = formatClock(startsAt, localTimeZone);
-  const localEnd = formatClock(endsAt, localTimeZone);
-  const refStart = formatClock(startsAt, REFERENCE_TIME_ZONE);
-  const abbreviation = zoneAbbreviation(startsAt, REFERENCE_TIME_ZONE);
+  const localStart =
+    formatClock(
+      startsAt,
+      localTimeZone,
+    );
+  const localEnd =
+    formatClock(
+      endsAt,
+      localTimeZone,
+    );
+  const refStart =
+    formatClock(
+      startsAt,
+      REFERENCE_TIME_ZONE,
+    );
+  const abbreviation =
+    zoneAbbreviation(
+      startsAt,
+      REFERENCE_TIME_ZONE,
+    );
 
   // An end time on the following day gets its own marker, so an 8pm-to-midnight
   // session does not read as ending in the past.
-  const crossesMidnight = !isSameZonedDay(startsAt, endsAt, localTimeZone);
+  const crossesMidnight =
+    !isSameZonedDay(
+      startsAt,
+      endsAt,
+      localTimeZone,
+    );
   const local = `${localStart} – ${localEnd}${crossesMidnight ? ' +1' : ''}`;
 
-  const isLocalReference = localStart === refStart;
+  const isLocalReference =
+    localStart ===
+    refStart;
   return {
-    local: isLocalReference ? `${local} ${abbreviation}` : local,
-    reference: isLocalReference ? '' : `(${refStart} ${abbreviation})`,
-    referenceAbbreviation: abbreviation,
+    local:
+      isLocalReference
+        ? `${local} ${abbreviation}`
+        : local,
+    reference:
+      isLocalReference
+        ? ''
+        : `(${refStart} ${abbreviation})`,
+    referenceAbbreviation:
+      abbreviation,
     isLocalReference,
   };
 }
@@ -125,18 +184,52 @@ export function describeSessionTime(
  * coming week rendered "Wed, Aug 12 · Wednesday" — the same word twice with a
  * separator between it.
  */
-export function formatRelativeDay(instant: Date, now: Date, timeZone: string): string {
-  const startOfDay = (value: Date): number => {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(value);
-    return Date.parse(`${parts}T00:00:00Z`);
-  };
-  const days = Math.round((startOfDay(instant) - startOfDay(now)) / 86_400_000);
-  return new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(days, 'day');
+export function formatRelativeDay(
+  instant: Date,
+  now: Date,
+  timeZone: string,
+): string {
+  const startOfDay =
+    (
+      value: Date,
+    ): number => {
+      const parts =
+        new Intl.DateTimeFormat(
+          'en-CA',
+          {
+            timeZone,
+            year: 'numeric',
+            month:
+              '2-digit',
+            day: '2-digit',
+          },
+        ).format(
+          value,
+        );
+      return Date.parse(
+        `${parts}T00:00:00Z`,
+      );
+    };
+  const days =
+    Math.round(
+      (startOfDay(
+        instant,
+      ) -
+        startOfDay(
+          now,
+        )) /
+        86_400_000,
+    );
+  return new Intl.RelativeTimeFormat(
+    undefined,
+    {
+      numeric:
+        'auto',
+    },
+  ).format(
+    days,
+    'day',
+  );
 }
 
 /**
@@ -151,12 +244,29 @@ export function formatRelativeDay(instant: Date, now: Date, timeZone: string): s
  * client disagreed about the text, which is a hydration mismatch on top of the
  * wrong label.
  */
-export function formatMonthLabel(year: number, month: number): string {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(Date.UTC(year, month - 1, 1)));
+export function formatMonthLabel(
+  year: number,
+  month: number,
+): string {
+  return new Intl.DateTimeFormat(
+    undefined,
+    {
+      month:
+        'long',
+      year: 'numeric',
+      timeZone:
+        'UTC',
+    },
+  ).format(
+    new Date(
+      Date.UTC(
+        year,
+        month -
+          1,
+        1,
+      ),
+    ),
+  );
 }
 
 /**
@@ -170,31 +280,83 @@ export function formatMonthLabel(year: number, month: number): string {
 export { resolveLocalTimeZone };
 
 /** A `datetime-local` input value (`2026-08-12T20:00`) for an instant in `timeZone`. */
-export function toDateTimeLocalValue(instant: Date, timeZone: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).formatToParts(instant);
-  const get = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((p) => p.type === type)?.value ?? '00';
+export function toDateTimeLocalValue(
+  instant: Date,
+  timeZone: string,
+): string {
+  const parts =
+    new Intl.DateTimeFormat(
+      'en-CA',
+      {
+        timeZone,
+        hour12: false,
+        year: 'numeric',
+        month:
+          '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute:
+          '2-digit',
+      },
+    ).formatToParts(
+      instant,
+    );
+  const get =
+    (
+      type: Intl.DateTimeFormatPartTypes,
+    ) =>
+      parts.find(
+        (
+          p,
+        ) =>
+          p.type ===
+          type,
+      )
+        ?.value ??
+      '00';
   // `hour12: false` can render midnight as 24 in some ICU builds; the input
   // rejects `T24:00` outright, so normalise before assembling.
-  const hour = String(Number.parseInt(get('hour'), 10) % 24).padStart(2, '0');
+  const hour =
+    String(
+      Number.parseInt(
+        get(
+          'hour',
+        ),
+        10,
+      ) %
+        24,
+    ).padStart(
+      2,
+      '0',
+    );
   return `${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}`;
 }
 
 /** Whether a free-text location is something we should render as a link. */
-export function asExternalUrl(location: string): string | null {
-  const trimmed = location.trim();
-  if (!/^https?:\/\//i.test(trimmed)) return null;
+export function asExternalUrl(
+  location: string,
+):
+  | string
+  | null {
+  const trimmed =
+    location.trim();
+  if (
+    !/^https?:\/\//i.test(
+      trimmed,
+    )
+  )
+    return null;
   try {
-    const url = new URL(trimmed);
-    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null;
+    const url =
+      new URL(
+        trimmed,
+      );
+    return url.protocol ===
+      'http:' ||
+      url.protocol ===
+        'https:'
+      ? url.toString()
+      : null;
   } catch {
     return null;
   }

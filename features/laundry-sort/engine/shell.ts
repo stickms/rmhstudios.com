@@ -125,69 +125,244 @@ export interface ShellTopology {
  * Build the shell for one cut pattern. Called once per garment kind at module
  * load; every instance of that kind shares the result.
  */
-export function buildShell(src: ShellSource): ShellTopology {
-  const { count, indices, uvs, thickness } = src;
+export function buildShell(
+  src: ShellSource,
+): ShellTopology {
+  const {
+    count,
+    indices,
+    uvs,
+    thickness,
+  } =
+    src;
 
-  const seam = boundaryEdges(indices, count);
-  const loft = buildLoftProfile(src, seam);
+  const seam =
+    boundaryEdges(
+      indices,
+      count,
+    );
+  const loft =
+    buildLoftProfile(
+      src,
+      seam,
+    );
 
   // ── Vertices ────────────────────────────────────────────────────────────
   // Front sheet occupies [0, count), back sheet [count, 2 * count), so the back
   // copy of particle `p` is always `p + count`. Keeping the mapping arithmetic
   // rather than tabulated is what makes the index arrays below readable.
-  const vertexCount = count * 2;
-  const particle = new Int32Array(vertexCount);
-  const offset = new Float32Array(vertexCount);
-  const shellUvs = new Float32Array(vertexCount * 2);
+  const vertexCount =
+    count *
+    2;
+  const particle =
+    new Int32Array(
+      vertexCount,
+    );
+  const offset =
+    new Float32Array(
+      vertexCount,
+    );
+  const shellUvs =
+    new Float32Array(
+      vertexCount *
+        2,
+    );
 
-  for (let p = 0; p < count; p++) {
-    const lift = thickness * loft[p];
-    particle[p] = p;
-    particle[p + count] = p;
-    offset[p] = lift;
-    offset[p + count] = -lift;
-    shellUvs[p * 2] = uvs[p * 2];
-    shellUvs[p * 2 + 1] = uvs[p * 2 + 1];
-    shellUvs[(p + count) * 2] = uvs[p * 2];
-    shellUvs[(p + count) * 2 + 1] = uvs[p * 2 + 1];
+  for (
+    let p = 0;
+    p <
+    count;
+    p++
+  ) {
+    const lift =
+      thickness *
+      loft[
+        p
+      ];
+    particle[
+      p
+    ] =
+      p;
+    particle[
+      p +
+        count
+    ] =
+      p;
+    offset[
+      p
+    ] =
+      lift;
+    offset[
+      p +
+        count
+    ] =
+      -lift;
+    shellUvs[
+      p *
+        2
+    ] =
+      uvs[
+        p *
+          2
+      ];
+    shellUvs[
+      p *
+        2 +
+        1
+    ] =
+      uvs[
+        p *
+          2 +
+          1
+      ];
+    shellUvs[
+      (p +
+        count) *
+        2
+    ] =
+      uvs[
+        p *
+          2
+      ];
+    shellUvs[
+      (p +
+        count) *
+        2 +
+        1
+    ] =
+      uvs[
+        p *
+          2 +
+          1
+      ];
   }
 
   // ── Triangles ───────────────────────────────────────────────────────────
-  const shellIndices: number[] = [];
-  const triangles = indices.length / 3;
+  const shellIndices: number[] =
+    [];
+  const triangles =
+    indices.length /
+    3;
 
-  for (let t = 0; t < triangles; t++) {
-    const a = indices[t * 3];
-    const b = indices[t * 3 + 1];
-    const c = indices[t * 3 + 2];
+  for (
+    let t = 0;
+    t <
+    triangles;
+    t++
+  ) {
+    const a =
+      indices[
+        t *
+          3
+      ];
+    const b =
+      indices[
+        t *
+          3 +
+          1
+      ];
+    const c =
+      indices[
+        t *
+          3 +
+          2
+      ];
     // Front keeps the mid-surface winding; back reverses it, so both sheets
     // face outward and the shell is a closed, consistently oriented solid.
-    shellIndices.push(a, b, c);
-    shellIndices.push(a + count, c + count, b + count);
+    shellIndices.push(
+      a,
+      b,
+      c,
+    );
+    shellIndices.push(
+      a +
+        count,
+      c +
+        count,
+      b +
+        count,
+    );
   }
 
   // The rim. For a directed boundary edge a→b — the direction it appears in
   // the one triangle that owns it — these two triangles wind outward; see the
   // derivation in the test file.
-  for (const [a, b] of seam) {
-    shellIndices.push(a, a + count, b + count);
-    shellIndices.push(a, b + count, b);
+  for (const [
+    a,
+    b,
+  ] of seam) {
+    shellIndices.push(
+      a,
+      a +
+        count,
+      b +
+        count,
+    );
+    shellIndices.push(
+      a,
+      b +
+        count,
+      b,
+    );
   }
 
   // ── Collision radii ─────────────────────────────────────────────────────
-  const contactPad = new Float32Array(count);
-  const selfRadius = new Float32Array(count);
+  const contactPad =
+    new Float32Array(
+      count,
+    );
+  const selfRadius =
+    new Float32Array(
+      count,
+    );
   let maxContactPad = 0;
   let maxSelfRadius = 0;
-  for (let p = 0; p < count; p++) {
-    const half = thickness * loft[p];
-    contactPad[p] = SEAM_CONTACT_RADIUS + half;
+  for (
+    let p = 0;
+    p <
+    count;
+    p++
+  ) {
+    const half =
+      thickness *
+      loft[
+        p
+      ];
+    contactPad[
+      p
+    ] =
+      SEAM_CONTACT_RADIUS +
+      half;
     // Not additive: two garments meeting seam-to-seam should behave exactly as
     // they did before the cloth had volume, and away from the seam the real
     // half-thickness is already the right answer.
-    selfRadius[p] = Math.max(SEAM_SELF_RADIUS, half);
-    if (contactPad[p] > maxContactPad) maxContactPad = contactPad[p];
-    if (selfRadius[p] > maxSelfRadius) maxSelfRadius = selfRadius[p];
+    selfRadius[
+      p
+    ] =
+      Math.max(
+        SEAM_SELF_RADIUS,
+        half,
+      );
+    if (
+      contactPad[
+        p
+      ] >
+      maxContactPad
+    )
+      maxContactPad =
+        contactPad[
+          p
+        ];
+    if (
+      selfRadius[
+        p
+      ] >
+      maxSelfRadius
+    )
+      maxSelfRadius =
+        selfRadius[
+          p
+        ];
   }
 
   return {
@@ -196,7 +371,10 @@ export function buildShell(src: ShellSource): ShellTopology {
     vertexCount,
     particle,
     offset,
-    indices: Uint16Array.from(shellIndices),
+    indices:
+      Uint16Array.from(
+        shellIndices,
+      ),
     uvs: shellUvs,
     contactPad,
     selfRadius,
@@ -215,60 +393,237 @@ export function buildShell(src: ShellSource): ShellTopology {
  * than the torso beside it. That per-piece variation is most of what makes the
  * result read as a garment instead of a pillow.
  */
-function buildLoftProfile(src: ShellSource, seam: ReadonlyArray<[number, number]>): Float32Array {
-  const { count, cols, rows, slotToParticle, particleCol, particleRow, indices } = src;
+function buildLoftProfile(
+  src: ShellSource,
+  seam: ReadonlyArray<
+    [
+      number,
+      number,
+    ]
+  >,
+): Float32Array {
+  const {
+    count,
+    cols,
+    rows,
+    slotToParticle,
+    particleCol,
+    particleRow,
+    indices,
+  } =
+    src;
 
-  const depth = new Int32Array(count).fill(-1);
+  const depth =
+    new Int32Array(
+      count,
+    ).fill(
+      -1,
+    );
   // A queue of particle indices, used as a ring-free FIFO via a read cursor —
   // BFS over at most a few dozen nodes, built once at module load.
-  const queue = new Int32Array(count);
+  const queue =
+    new Int32Array(
+      count,
+    );
   let tail = 0;
 
-  const onSeam = new Uint8Array(count);
-  for (const [a, b] of seam) {
-    onSeam[a] = 1;
-    onSeam[b] = 1;
+  const onSeam =
+    new Uint8Array(
+      count,
+    );
+  for (const [
+    a,
+    b,
+  ] of seam) {
+    onSeam[
+      a
+    ] =
+      1;
+    onSeam[
+      b
+    ] =
+      1;
   }
   // A particle no triangle uses renders nothing, but it still needs a finite
   // depth so the loop below terminates with a defined value everywhere.
-  const used = new Uint8Array(count);
-  for (const index of indices) used[index] = 1;
-  for (let p = 0; p < count; p++) if (!used[p]) onSeam[p] = 1;
+  const used =
+    new Uint8Array(
+      count,
+    );
+  for (const index of indices)
+    used[
+      index
+    ] =
+      1;
+  for (
+    let p = 0;
+    p <
+    count;
+    p++
+  )
+    if (
+      !used[
+        p
+      ]
+    )
+      onSeam[
+        p
+      ] =
+        1;
 
-  for (let p = 0; p < count; p++) {
-    if (!onSeam[p]) continue;
-    depth[p] = 0;
-    queue[tail++] = p;
+  for (
+    let p = 0;
+    p <
+    count;
+    p++
+  ) {
+    if (
+      !onSeam[
+        p
+      ]
+    )
+      continue;
+    depth[
+      p
+    ] =
+      0;
+    queue[
+      tail++
+    ] =
+      p;
   }
 
   let head = 0;
   let deepest = 0;
-  while (head < tail) {
-    const p = queue[head++];
-    const c = particleCol[p];
-    const r = particleRow[p];
-    const next = depth[p] + 1;
+  while (
+    head <
+    tail
+  ) {
+    const p =
+      queue[
+        head++
+      ];
+    const c =
+      particleCol[
+        p
+      ];
+    const r =
+      particleRow[
+        p
+      ];
+    const next =
+      depth[
+        p
+      ] +
+      1;
     // Four-connected: the diagonal neighbours are a shear relationship, not a
     // step through the weave, and counting them makes corners read as deep.
-    for (let side = 0; side < 4; side++) {
-      const nc = c + (side === 0 ? -1 : side === 1 ? 1 : 0);
-      const nr = r + (side === 2 ? -1 : side === 3 ? 1 : 0);
-      if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) continue;
-      const q = slotToParticle[nr * cols + nc];
-      if (q < 0 || depth[q] >= 0) continue;
-      depth[q] = next;
-      if (next > deepest) deepest = next;
-      queue[tail++] = q;
+    for (
+      let side = 0;
+      side <
+      4;
+      side++
+    ) {
+      const nc =
+        c +
+        (side ===
+        0
+          ? -1
+          : side ===
+              1
+            ? 1
+            : 0);
+      const nr =
+        r +
+        (side ===
+        2
+          ? -1
+          : side ===
+              3
+            ? 1
+            : 0);
+      if (
+        nc <
+          0 ||
+        nc >=
+          cols ||
+        nr <
+          0 ||
+        nr >=
+          rows
+      )
+        continue;
+      const q =
+        slotToParticle[
+          nr *
+            cols +
+            nc
+        ];
+      if (
+        q <
+          0 ||
+        depth[
+          q
+        ] >=
+          0
+      )
+        continue;
+      depth[
+        q
+      ] =
+        next;
+      if (
+        next >
+        deepest
+      )
+        deepest =
+          next;
+      queue[
+        tail++
+      ] =
+        q;
     }
   }
 
-  const span = Math.max(1, deepest);
-  const loft = new Float32Array(count);
-  for (let p = 0; p < count; p++) {
-    const t = Math.min(Math.max(depth[p], 0) / span, 1);
+  const span =
+    Math.max(
+      1,
+      deepest,
+    );
+  const loft =
+    new Float32Array(
+      count,
+    );
+  for (
+    let p = 0;
+    p <
+    count;
+    p++
+  ) {
+    const t =
+      Math.min(
+        Math.max(
+          depth[
+            p
+          ],
+          0,
+        ) /
+          span,
+        1,
+      );
     // A sine ramp rather than a linear one: it leaves the seam quickly (so the
     // hem is a rolled edge, not a wedge) and flattens out across the body.
-    loft[p] = HEM_LOFT + (1 - HEM_LOFT) * Math.sin(t * (Math.PI / 2));
+    loft[
+      p
+    ] =
+      HEM_LOFT +
+      (1 -
+        HEM_LOFT) *
+        Math.sin(
+          t *
+            (Math.PI /
+              2),
+        );
   }
   return loft;
 }
@@ -277,25 +632,102 @@ function buildLoftProfile(src: ShellSource, seam: ReadonlyArray<[number, number]
  * Directed edges used by exactly one triangle — the open boundary of the
  * mid-surface, in the winding the surface gives it.
  */
-function boundaryEdges(indices: Uint16Array, count: number): Array<[number, number]> {
+function boundaryEdges(
+  indices: Uint16Array,
+  count: number,
+): Array<
+  [
+    number,
+    number,
+  ]
+> {
   // Keyed on the unordered pair; the value keeps the direction of the first
   // sighting and a flag for having seen the pair twice.
-  const seen = new Map<number, { a: number; b: number; twice: boolean }>();
-  const triangles = indices.length / 3;
+  const seen =
+    new Map<
+      number,
+      {
+        a: number;
+        b: number;
+        twice: boolean;
+      }
+    >();
+  const triangles =
+    indices.length /
+    3;
 
-  for (let t = 0; t < triangles; t++) {
-    for (let e = 0; e < 3; e++) {
-      const a = indices[t * 3 + e];
-      const b = indices[t * 3 + ((e + 1) % 3)];
-      const key = a < b ? a * count + b : b * count + a;
-      const hit = seen.get(key);
-      if (hit) hit.twice = true;
-      else seen.set(key, { a, b, twice: false });
+  for (
+    let t = 0;
+    t <
+    triangles;
+    t++
+  ) {
+    for (
+      let e = 0;
+      e <
+      3;
+      e++
+    ) {
+      const a =
+        indices[
+          t *
+            3 +
+            e
+        ];
+      const b =
+        indices[
+          t *
+            3 +
+            ((e +
+              1) %
+              3)
+        ];
+      const key =
+        a <
+        b
+          ? a *
+              count +
+            b
+          : b *
+              count +
+            a;
+      const hit =
+        seen.get(
+          key,
+        );
+      if (
+        hit
+      )
+        hit.twice = true;
+      else
+        seen.set(
+          key,
+          {
+            a,
+            b,
+            twice: false,
+          },
+        );
     }
   }
 
-  const out: Array<[number, number]> = [];
-  for (const edge of seen.values()) if (!edge.twice) out.push([edge.a, edge.b]);
+  const out: Array<
+    [
+      number,
+      number,
+    ]
+  > =
+    [];
+  for (const edge of seen.values())
+    if (
+      !edge.twice
+    )
+      out.push(
+        [
+          edge.a,
+          edge.b,
+        ],
+      );
   return out;
 }
 
@@ -310,7 +742,10 @@ function boundaryEdges(indices: Uint16Array, count: number): Array<[number, numb
  * per-frame allocation at 60 Hz across a dozen garments is a per-frame GC
  * pause, which is the one thing a physics game cannot afford.
  */
-let normalScratch = new Float32Array(0);
+let normalScratch =
+  new Float32Array(
+    0,
+  );
 
 /**
  * Inflate a simulated mid-surface into its shell, positions and normals both.
@@ -334,23 +769,97 @@ export function writeShell(
   outPositions: Float32Array,
   outNormals: Float32Array,
 ): void {
-  const count = pos.length / 3;
-  if (normalScratch.length < count * 3) normalScratch = new Float32Array(count * 3);
-  const mid = normalScratch;
+  const count =
+    pos.length /
+    3;
+  if (
+    normalScratch.length <
+    count *
+      3
+  )
+    normalScratch =
+      new Float32Array(
+        count *
+          3,
+      );
+  const mid =
+    normalScratch;
 
-  accumulateNormals(midIndices, pos, mid, count);
+  accumulateNormals(
+    midIndices,
+    pos,
+    mid,
+    count,
+  );
 
-  const { vertexCount, particle, offset } = shell;
-  for (let v = 0; v < vertexCount; v++) {
-    const p = particle[v] * 3;
-    const lift = offset[v];
-    const o = v * 3;
-    outPositions[o] = pos[p] + mid[p] * lift;
-    outPositions[o + 1] = pos[p + 1] + mid[p + 1] * lift;
-    outPositions[o + 2] = pos[p + 2] + mid[p + 2] * lift;
+  const {
+    vertexCount,
+    particle,
+    offset,
+  } =
+    shell;
+  for (
+    let v = 0;
+    v <
+    vertexCount;
+    v++
+  ) {
+    const p =
+      particle[
+        v
+      ] *
+      3;
+    const lift =
+      offset[
+        v
+      ];
+    const o =
+      v *
+      3;
+    outPositions[
+      o
+    ] =
+      pos[
+        p
+      ] +
+      mid[
+        p
+      ] *
+        lift;
+    outPositions[
+      o +
+        1
+    ] =
+      pos[
+        p +
+          1
+      ] +
+      mid[
+        p +
+          1
+      ] *
+        lift;
+    outPositions[
+      o +
+        2
+    ] =
+      pos[
+        p +
+          2
+      ] +
+      mid[
+        p +
+          2
+      ] *
+        lift;
   }
 
-  accumulateNormals(shell.indices, outPositions, outNormals, vertexCount);
+  accumulateNormals(
+    shell.indices,
+    outPositions,
+    outNormals,
+    vertexCount,
+  );
 }
 
 /** Area-weighted vertex normals: sum the face cross products, then normalise. */
@@ -360,56 +869,229 @@ function accumulateNormals(
   out: Float32Array,
   vertexCount: number,
 ): void {
-  const n = vertexCount * 3;
-  out.fill(0, 0, n);
+  const n =
+    vertexCount *
+    3;
+  out.fill(
+    0,
+    0,
+    n,
+  );
 
-  const triangles = indices.length / 3;
-  for (let t = 0; t < triangles; t++) {
-    const a = indices[t * 3] * 3;
-    const b = indices[t * 3 + 1] * 3;
-    const c = indices[t * 3 + 2] * 3;
+  const triangles =
+    indices.length /
+    3;
+  for (
+    let t = 0;
+    t <
+    triangles;
+    t++
+  ) {
+    const a =
+      indices[
+        t *
+          3
+      ] *
+      3;
+    const b =
+      indices[
+        t *
+          3 +
+          1
+      ] *
+      3;
+    const c =
+      indices[
+        t *
+          3 +
+          2
+      ] *
+      3;
 
-    const ux = positions[b] - positions[a];
-    const uy = positions[b + 1] - positions[a + 1];
-    const uz = positions[b + 2] - positions[a + 2];
-    const vx = positions[c] - positions[a];
-    const vy = positions[c + 1] - positions[a + 1];
-    const vz = positions[c + 2] - positions[a + 2];
+    const ux =
+      positions[
+        b
+      ] -
+      positions[
+        a
+      ];
+    const uy =
+      positions[
+        b +
+          1
+      ] -
+      positions[
+        a +
+          1
+      ];
+    const uz =
+      positions[
+        b +
+          2
+      ] -
+      positions[
+        a +
+          2
+      ];
+    const vx =
+      positions[
+        c
+      ] -
+      positions[
+        a
+      ];
+    const vy =
+      positions[
+        c +
+          1
+      ] -
+      positions[
+        a +
+          1
+      ];
+    const vz =
+      positions[
+        c +
+          2
+      ] -
+      positions[
+        a +
+          2
+      ];
 
     // Left unnormalised on purpose — the magnitude is twice the triangle area,
     // which weights big faces over slivers and is what keeps a crumpled
     // garment's shading smooth.
-    const fx = uy * vz - uz * vy;
-    const fy = uz * vx - ux * vz;
-    const fz = ux * vy - uy * vx;
+    const fx =
+      uy *
+        vz -
+      uz *
+        vy;
+    const fy =
+      uz *
+        vx -
+      ux *
+        vz;
+    const fz =
+      ux *
+        vy -
+      uy *
+        vx;
 
-    out[a] += fx;
-    out[a + 1] += fy;
-    out[a + 2] += fz;
-    out[b] += fx;
-    out[b + 1] += fy;
-    out[b + 2] += fz;
-    out[c] += fx;
-    out[c + 1] += fy;
-    out[c + 2] += fz;
+    out[
+      a
+    ] +=
+      fx;
+    out[
+      a +
+        1
+    ] +=
+      fy;
+    out[
+      a +
+        2
+    ] +=
+      fz;
+    out[
+      b
+    ] +=
+      fx;
+    out[
+      b +
+        1
+    ] +=
+      fy;
+    out[
+      b +
+        2
+    ] +=
+      fz;
+    out[
+      c
+    ] +=
+      fx;
+    out[
+      c +
+        1
+    ] +=
+      fy;
+    out[
+      c +
+        2
+    ] +=
+      fz;
   }
 
-  for (let i = 0; i < n; i += 3) {
-    const x = out[i];
-    const y = out[i + 1];
-    const z = out[i + 2];
-    const length = Math.sqrt(x * x + y * y + z * z);
-    if (length < 1e-12) {
+  for (
+    let i = 0;
+    i <
+    n;
+    i += 3
+  ) {
+    const x =
+      out[
+        i
+      ];
+    const y =
+      out[
+        i +
+          1
+      ];
+    const z =
+      out[
+        i +
+          2
+      ];
+    const length =
+      Math.sqrt(
+        x *
+          x +
+          y *
+            y +
+          z *
+            z,
+      );
+    if (
+      length <
+      1e-12
+    ) {
       // Degenerate fan — no orientation to recover. Any unit vector will do;
       // picking one keeps the shader from dividing by zero.
-      out[i] = 0;
-      out[i + 1] = 0;
-      out[i + 2] = 1;
+      out[
+        i
+      ] =
+        0;
+      out[
+        i +
+          1
+      ] =
+        0;
+      out[
+        i +
+          2
+      ] =
+        1;
       continue;
     }
-    const inv = 1 / length;
-    out[i] = x * inv;
-    out[i + 1] = y * inv;
-    out[i + 2] = z * inv;
+    const inv =
+      1 /
+      length;
+    out[
+      i
+    ] =
+      x *
+      inv;
+    out[
+      i +
+        1
+    ] =
+      y *
+      inv;
+    out[
+      i +
+        2
+    ] =
+      z *
+      inv;
   }
 }

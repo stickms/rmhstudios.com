@@ -16,19 +16,34 @@
 
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Star, User } from 'lucide-react';
+import {
+  Star,
+  User,
+} from 'lucide-react';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 export interface ChartOption {
-  id: string | null;
+  id:
+    | string
+    | null;
   difficulty: string;
   name: string;
-  rating: number | null;
+  rating:
+    | number
+    | null;
   status: string;
   rankStatus: string;
   isGenerated: boolean;
-  author: { id: string; name: string | null; username: string | null } | null;
+  author: {
+    id: string;
+    name:
+      | string
+      | null;
+    username:
+      | string
+      | null;
+  } | null;
 }
 
 export function ChartPicker({
@@ -38,70 +53,146 @@ export function ChartPicker({
 }: {
   charts: ChartOption[];
   /** `null` selects the generated fallback, which is also its id. */
-  selectedId: string | null;
-  onSelect: (chartId: string | null) => void;
+  selectedId:
+    | string
+    | null;
+  onSelect: (
+    chartId:
+      | string
+      | null,
+  ) => void;
 }) {
-  const { t } = useTranslation('r-slice-it');
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-slice-it',
+    );
   // The chart list is fetched after the song opens: the picker fades in when it lands (M9).
-  const arrival = useArrival(charts.length > 1);
-  if (charts.length <= 1) return null;
+  const arrival =
+    useArrival(
+      charts.length >
+        1,
+    );
+  if (
+    charts.length <=
+    1
+  )
+    return null;
 
   return (
-    <div className={cn('p-4 border-b border-slice-shadow-dark/30', arrival)}>
+    <div
+      className={cn(
+        'p-4 border-b border-slice-shadow-dark/30',
+        arrival,
+      )}
+    >
       <h3 className="text-sm font-bold text-slice-text uppercase mb-3">
-        {t('chart-picker', { defaultValue: 'Chart' })}
+        {t(
+          'chart-picker',
+          {
+            defaultValue:
+              'Chart',
+          },
+        )}
       </h3>
       <div
         role="radiogroup"
-        aria-label={t('chart-picker', { defaultValue: 'Chart' })}
+        aria-label={t(
+          'chart-picker',
+          {
+            defaultValue:
+              'Chart',
+          },
+        )}
         className="space-y-1.5"
       >
-        {charts.map((chart) => {
-          const active = chart.id === selectedId;
-          return (
-            <button
-              key={chart.id ?? 'generated'}
-              role="radio"
-              aria-checked={active}
-              onClick={() => onSelect(chart.id)}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors border ${
-                active
-                  ? 'bg-slice-accent/15 border-slice-accent text-slice-text'
-                  : 'bg-slice-shadow-dark/20 border-slice-shadow-dark/30 text-slice-text-light hover:bg-slice-shadow-dark/40'
-              }`}
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-xs font-bold uppercase tracking-wide">
-                  {chart.name}
+        {charts.map(
+          (
+            chart,
+          ) => {
+            const active =
+              chart.id ===
+              selectedId;
+            return (
+              <button
+                key={
+                  chart.id ??
+                  'generated'
+                }
+                role="radio"
+                aria-checked={
+                  active
+                }
+                onClick={() =>
+                  onSelect(
+                    chart.id,
+                  )
+                }
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors border ${
+                  active
+                    ? 'bg-slice-accent/15 border-slice-accent text-slice-text'
+                    : 'bg-slice-shadow-dark/20 border-slice-shadow-dark/30 text-slice-text-light hover:bg-slice-shadow-dark/40'
+                }`}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-bold uppercase tracking-wide">
+                    {
+                      chart.name
+                    }
+                  </span>
+                  <span className="block truncate text-[10px] text-slice-text-muted">
+                    {
+                      chart.difficulty
+                    }
+                    {chart.isGenerated &&
+                    chart.id ===
+                      null
+                      ? ` · ${t('chart-auto', { defaultValue: 'Auto' })}`
+                      : ''}
+                    {chart.author
+                      ? ` · ${chart.author.name ?? chart.author.username ?? ''}`
+                      : ''}
+                    {chart.status ===
+                    'draft'
+                      ? ` · ${t('chart-draft', { defaultValue: 'Draft' })}`
+                      : ''}
+                  </span>
                 </span>
-                <span className="block truncate text-[10px] text-slice-text-muted">
-                  {chart.difficulty}
-                  {chart.isGenerated && chart.id === null
-                    ? ` · ${t('chart-auto', { defaultValue: 'Auto' })}`
-                    : ''}
-                  {chart.author ? ` · ${chart.author.name ?? chart.author.username ?? ''}` : ''}
-                  {chart.status === 'draft'
-                    ? ` · ${t('chart-draft', { defaultValue: 'Draft' })}`
-                    : ''}
-                </span>
-              </span>
-              {chart.rankStatus === 'ranked' && (
-                <Star
-                  className="w-3.5 h-3.5 shrink-0 fill-current"
-                  aria-label={t('chart-ranked', { defaultValue: 'Ranked' })}
-                />
-              )}
-              {chart.rating !== null && (
-                <span className="shrink-0 text-[10px] tabular-nums text-slice-text-muted">
-                  {chart.rating.toFixed(1)}
-                </span>
-              )}
-              {chart.author === null && chart.id !== null && (
-                <User className="w-3.5 h-3.5 shrink-0 opacity-40" aria-hidden />
-              )}
-            </button>
-          );
-        })}
+                {chart.rankStatus ===
+                  'ranked' && (
+                  <Star
+                    className="w-3.5 h-3.5 shrink-0 fill-current"
+                    aria-label={t(
+                      'chart-ranked',
+                      {
+                        defaultValue:
+                          'Ranked',
+                      },
+                    )}
+                  />
+                )}
+                {chart.rating !==
+                  null && (
+                  <span className="shrink-0 text-[10px] tabular-nums text-slice-text-muted">
+                    {chart.rating.toFixed(
+                      1,
+                    )}
+                  </span>
+                )}
+                {chart.author ===
+                  null &&
+                  chart.id !==
+                    null && (
+                    <User
+                      className="w-3.5 h-3.5 shrink-0 opacity-40"
+                      aria-hidden
+                    />
+                  )}
+              </button>
+            );
+          },
+        )}
       </div>
     </div>
   );

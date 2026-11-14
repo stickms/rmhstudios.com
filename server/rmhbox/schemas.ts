@@ -34,55 +34,126 @@ export * from '../../lib/rmhbox/schemas';
  * @param handler - The handler function to call with the validated payload
  * @returns A function suitable for use as a Socket.io event listener
  */
-export function validated<T>(
+export function validated<
+  T,
+>(
   socket: Socket,
   eventName: string,
   schema: ZodType<T>,
-  handler: (socket: Socket, payload: T) => void,
-): (rawPayload: unknown) => void {
-  return (rawPayload: unknown) => {
+  handler: (
+    socket: Socket,
+    payload: T,
+  ) => void,
+): (
+  rawPayload: unknown,
+) => void {
+  return (
+    rawPayload: unknown,
+  ) => {
     // Rate limiting check
-    if (!checkRateLimit(socket.id, eventName)) {
-      logger.warn({ event: 'rate_limited', socketId: socket.id, eventName, userId: socket.data?.userId });
-      socket.emit(S2C.ERROR, {
-        code: 'RATE_LIMITED',
-        message: `Too many ${eventName} requests. Please slow down.`,
-      });
+    if (
+      !checkRateLimit(
+        socket.id,
+        eventName,
+      )
+    ) {
+      logger.warn(
+        {
+          event:
+            'rate_limited',
+          socketId:
+            socket.id,
+          eventName,
+          userId:
+            socket
+              .data
+              ?.userId,
+        },
+      );
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'RATE_LIMITED',
+          message: `Too many ${eventName} requests. Please slow down.`,
+        },
+      );
       return;
     }
 
     // Schema validation
-    const result = schema.safeParse(rawPayload);
-    if (!result.success) {
-      logger.warn({
-        event: 'invalid_payload',
-        socketId: socket.id,
-        eventName,
-        userId: socket.data?.userId,
-        errors: result.error.issues,
-      });
-      socket.emit(S2C.ERROR, {
-        code: 'INVALID_PAYLOAD',
-        message: 'Invalid payload.',
-        details: { issues: result.error.issues },
-      });
+    const result =
+      schema.safeParse(
+        rawPayload,
+      );
+    if (
+      !result.success
+    ) {
+      logger.warn(
+        {
+          event:
+            'invalid_payload',
+          socketId:
+            socket.id,
+          eventName,
+          userId:
+            socket
+              .data
+              ?.userId,
+          errors:
+            result
+              .error
+              .issues,
+        },
+      );
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'INVALID_PAYLOAD',
+          message:
+            'Invalid payload.',
+          details:
+            {
+              issues:
+                result
+                  .error
+                  .issues,
+            },
+        },
+      );
       return;
     }
 
     try {
-      handler(socket, result.data);
+      handler(
+        socket,
+        result.data,
+      );
     } catch (err) {
-      logger.error({
-        event: 'handler_uncaught_error',
-        socketId: socket.id,
-        eventName,
-        userId: socket.data?.userId,
-        error: String(err),
-      });
-      socket.emit(S2C.ERROR, {
-        code: 'INTERNAL_ERROR',
-        message: 'An internal error occurred.',
-      });
+      logger.error(
+        {
+          event:
+            'handler_uncaught_error',
+          socketId:
+            socket.id,
+          eventName,
+          userId:
+            socket
+              .data
+              ?.userId,
+          error:
+            String(
+              err,
+            ),
+        },
+      );
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'INTERNAL_ERROR',
+          message:
+            'An internal error occurred.',
+        },
+      );
     }
   };
 }

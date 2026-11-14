@@ -43,19 +43,50 @@ import type { Logger } from './logger';
 
 /* ─── Handler shapes ─────────────────────────────────────────────────────── */
 
-type Parsed<E extends EventMap, K extends keyof E> = Payload<E[K]['c2s']>;
+type Parsed<
+  E extends
+    EventMap,
+  K extends
+    keyof E,
+> = Payload<
+  E[K]['c2s']
+>;
 
-type Ack<E extends EventMap, K extends keyof E> = Payload<E[K]['ack']>;
+type Ack<
+  E extends
+    EventMap,
+  K extends
+    keyof E,
+> = Payload<
+  E[K]['ack']
+>;
 
 /**
  * A handler for one event. Receives the *parsed* payload — by this point the
  * `unknown` from the wire has been through the contract's schema — and the
  * socket it arrived on.
  */
-export type EventHandler<E extends EventMap, K extends keyof E> = (
-  payload: Parsed<E, K>,
+export type EventHandler<
+  E extends
+    EventMap,
+  K extends
+    keyof E,
+> = (
+  payload: Parsed<
+    E,
+    K
+  >,
   socket: Socket,
-) => Ack<E, K> | void | Promise<Ack<E, K> | void>;
+) =>
+  | Ack<
+      E,
+      K
+    >
+  | void
+  | Promise<Ack<
+      E,
+      K
+    > | void>;
 
 /**
  * The handler table: exactly the contract's inbound events, no more and no less.
@@ -65,9 +96,18 @@ export type EventHandler<E extends EventMap, K extends keyof E> = (
  * is a compile error until the dead handler goes. That is the property the
  * name-map convention could never have.
  */
-export type Handlers<E extends EventMap> = {
-  [K in C2SKeys<E>]: EventHandler<E, K>;
-};
+export type Handlers<
+  E extends
+    EventMap,
+> =
+  {
+    [
+      K in C2SKeys<E>
+    ]: EventHandler<
+      E,
+      K
+    >;
+  };
 
 export interface BindOptions {
   /** For log lines — which app's contract this is. */
@@ -79,15 +119,23 @@ export interface BindOptions {
    * hub that omits it has no per-socket budget, which per `server/CLAUDE.md`
    * §Gotchas 5 also means the event is missing from the hub's allowlist.
    */
-  rateLimit?: (socketId: string, eventName: string) => boolean;
+  rateLimit?: (
+    socketId: string,
+    eventName: string,
+  ) => boolean;
   /** Told when an event is dropped for exceeding its budget, so the app can say so. */
-  onRateLimited?: (socket: Socket, eventName: string) => void;
+  onRateLimited?: (
+    socket: Socket,
+    eventName: string,
+  ) => void;
   /**
    * What to do about a payload that does not parse. `disconnect` (the default)
    * emits `protocol:error` and hangs up; `warn` emits it and drops just that
    * event, for a contract still being tightened against live clients.
    */
-  onInvalid?: 'disconnect' | 'warn';
+  onInvalid?:
+    | 'disconnect'
+    | 'warn';
 }
 
 /* ─── The binder ─────────────────────────────────────────────────────────── */
@@ -98,78 +146,212 @@ export interface BindOptions {
  * Only events with a `c2s` schema are bound; `s2c`-only entries describe what
  * the server emits and have nothing to listen for.
  */
-export function bindEvents<E extends EventMap>(
+export function bindEvents<
+  E extends
+    EventMap,
+>(
   socket: Socket,
   events: E,
   handlers: Handlers<E>,
   options: BindOptions,
 ): void {
-  const { app, logger, rateLimit, onRateLimited, onInvalid = 'disconnect' } = options;
+  const {
+    app,
+    logger,
+    rateLimit,
+    onRateLimited,
+    onInvalid = 'disconnect',
+  } = options;
 
-  for (const name of Object.keys(events)) {
-    const schema = events[name].c2s;
-    if (!schema) continue;
+  for (const name of Object.keys(
+    events,
+  )) {
+    const schema =
+      events[
+        name
+      ]
+        .c2s;
+    if (
+      !schema
+    )
+      continue;
 
-    const handler = (handlers as Record<string, EventHandler<E, keyof E> | undefined>)[name];
-    if (!handler) {
+    const handler =
+      (
+        handlers as Record<
+          string,
+          | EventHandler<
+              E,
+              keyof E
+            >
+          | undefined
+        >
+      )[
+        name
+      ];
+    if (
+      !handler
+    ) {
       // A contract entry with no handler is a hole in the server, not in the
       // client — surface it at boot rather than as a silently ignored event.
-      logger.warn({ event: 'contract_handler_missing', app, eventName: name });
+      logger.warn(
+        {
+          event:
+            'contract_handler_missing',
+          app,
+          eventName:
+            name,
+        },
+      );
       continue;
     }
 
-    socket.on(name, async (raw: unknown, ack?: (result: unknown) => void) => {
-      if (rateLimit && !rateLimit(socket.id, name)) {
-        logger.warn({
-          event: 'rate_limited',
-          app,
-          eventName: name,
-          socketId: socket.id,
-          userId: socket.data?.userId,
-        });
-        onRateLimited?.(socket, name);
-        return;
-      }
+    socket.on(
+      name,
+      async (
+        raw: unknown,
+        ack?: (
+          result: unknown,
+        ) => void,
+      ) => {
+        if (
+          rateLimit &&
+          !rateLimit(
+            socket.id,
+            name,
+          )
+        ) {
+          logger.warn(
+            {
+              event:
+                'rate_limited',
+              app,
+              eventName:
+                name,
+              socketId:
+                socket.id,
+              userId:
+                socket
+                  .data
+                  ?.userId,
+            },
+          );
+          onRateLimited?.(
+            socket,
+            name,
+          );
+          return;
+        }
 
-      const parsed = schema.safeParse(raw);
-      if (!parsed.success) {
-        // Log the issue paths, never the payload: it is attacker-controlled and
-        // may be large, and the shape is what tells us which field drifted.
-        logger.warn({
-          event: 'protocol_invalid_payload',
-          app,
-          eventName: name,
-          socketId: socket.id,
-          userId: socket.data?.userId,
-          issues: parsed.error.issues.slice(0, 8).map((i) => ({
-            path: i.path.join('.'),
-            code: i.code,
-          })),
-          action: onInvalid,
-        });
-        const payload: ProtocolErrorPayload = { event: name, reason: 'invalid_payload' };
-        socket.emit(PROTOCOL_ERROR_EVENT, payload);
-        if (onInvalid === 'disconnect') socket.disconnect(true);
-        return;
-      }
+        const parsed =
+          schema.safeParse(
+            raw,
+          );
+        if (
+          !parsed.success
+        ) {
+          // Log the issue paths, never the payload: it is attacker-controlled and
+          // may be large, and the shape is what tells us which field drifted.
+          logger.warn(
+            {
+              event:
+                'protocol_invalid_payload',
+              app,
+              eventName:
+                name,
+              socketId:
+                socket.id,
+              userId:
+                socket
+                  .data
+                  ?.userId,
+              issues:
+                parsed.error.issues
+                  .slice(
+                    0,
+                    8,
+                  )
+                  .map(
+                    (
+                      i,
+                    ) => ({
+                      path: i.path.join(
+                        '.',
+                      ),
+                      code: i.code,
+                    }),
+                  ),
+              action:
+                onInvalid,
+            },
+          );
+          const payload: ProtocolErrorPayload =
+            {
+              event:
+                name,
+              reason:
+                'invalid_payload',
+            };
+          socket.emit(
+            PROTOCOL_ERROR_EVENT,
+            payload,
+          );
+          if (
+            onInvalid ===
+            'disconnect'
+          )
+            socket.disconnect(
+              true,
+            );
+          return;
+        }
 
-      try {
-        const result = await handler(parsed.data as Parsed<E, keyof E>, socket);
-        // socket.io only supplies `ack` when the client passed a callback, so
-        // an unacked emit of an acked event is normal, not an error.
-        if (ack && result !== undefined) ack(result);
-      } catch (error) {
-        // Our bug, not theirs: never disconnect, never rethrow. An unhandled
-        // rejection here would take down a process hosting every other game.
-        logger.error({
-          event: 'handler_uncaught_error',
-          app,
-          eventName: name,
-          socketId: socket.id,
-          userId: socket.data?.userId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    });
+        try {
+          const result =
+            await handler(
+              parsed.data as Parsed<
+                E,
+                keyof E
+              >,
+              socket,
+            );
+          // socket.io only supplies `ack` when the client passed a callback, so
+          // an unacked emit of an acked event is normal, not an error.
+          if (
+            ack &&
+            result !==
+              undefined
+          )
+            ack(
+              result,
+            );
+        } catch (error) {
+          // Our bug, not theirs: never disconnect, never rethrow. An unhandled
+          // rejection here would take down a process hosting every other game.
+          logger.error(
+            {
+              event:
+                'handler_uncaught_error',
+              app,
+              eventName:
+                name,
+              socketId:
+                socket.id,
+              userId:
+                socket
+                  .data
+                  ?.userId,
+              error:
+                error instanceof
+                Error
+                  ? error.message
+                  : String(
+                      error,
+                    ),
+            },
+          );
+        }
+      },
+    );
   }
 }

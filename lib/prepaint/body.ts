@@ -7,7 +7,16 @@
  * into the head script because `document.body` does not exist yet there.
  */
 export function bodyStep(): void {
-  const w = window as unknown as { __themeBg?: string };
-  if (w.__themeBg && document.documentElement.classList.contains('app-route'))
-    document.body.style.backgroundColor = w.__themeBg;
+  const w =
+    window as unknown as {
+      __themeBg?: string;
+    };
+  if (
+    w.__themeBg &&
+    document.documentElement.classList.contains(
+      'app-route',
+    )
+  )
+    document.body.style.backgroundColor =
+      w.__themeBg;
 }

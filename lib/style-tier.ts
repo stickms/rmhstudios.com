@@ -20,19 +20,24 @@
 
 import { prefersLessData } from '@/lib/network-quality';
 
-export type StyleTier = 'site' | 'app';
+export type StyleTier =
+  | 'site'
+  | 'app';
 
 /** Top-level (non-`_site`) route ids whose whole import graph is site-tier code. */
-export const SITE_SHEET_ROUTES: ReadonlySet<string> = new Set([
-  '/login',
-  '/offline',
-  '/library/$slug',
-  '/library/albums/$albumId',
-  '/embed/post/$id',
-  '/v/$slug',
-  '/v/new',
-  '/ref/$code',
-]);
+export const SITE_SHEET_ROUTES: ReadonlySet<string> =
+  new Set(
+    [
+      '/login',
+      '/offline',
+      '/library/$slug',
+      '/library/albums/$albumId',
+      '/embed/post/$id',
+      '/v/$slug',
+      '/v/new',
+      '/ref/$code',
+    ],
+  );
 
 /**
  * The API dispatcher (`app/routes/api/$.ts`), the matched route for every `/api` path no
@@ -44,7 +49,8 @@ export const SITE_SHEET_ROUTES: ReadonlySet<string> = new Set([
  *    POST-only endpoint): the empty render of a top-level route, which is what the
  *    endpoint's own route file produced, on the app sheet.
  */
-const API_SPLAT_ROUTE = '/api/$';
+const API_SPLAT_ROUTE =
+  '/api/$';
 
 /**
  * The tier for a match list (root first). `appSheetLoaded` is whether the
@@ -58,19 +64,53 @@ export function styleTierFor(
   appSheetLoaded: boolean,
   rootNotFound = true,
 ): StyleTier {
-  if (appSheetLoaded) return 'app';
-  const top = routeIds[1];
+  if (
+    appSheetLoaded
+  )
+    return 'app';
+  const top =
+    routeIds[1];
   // Root-only: the global 404, rendered by the root's own components.
-  if (top === undefined || top === '/_site') return 'site';
-  if (top === API_SPLAT_ROUTE) return rootNotFound ? 'site' : 'app';
-  return SITE_SHEET_ROUTES.has(top) ? 'site' : 'app';
+  if (
+    top ===
+      undefined ||
+    top ===
+      '/_site'
+  )
+    return 'site';
+  if (
+    top ===
+    API_SPLAT_ROUTE
+  )
+    return rootNotFound
+      ? 'site'
+      : 'app';
+  return SITE_SHEET_ROUTES.has(
+    top,
+  )
+    ? 'site'
+    : 'app';
 }
 
 /** Whether this document already has the given stylesheet (always false on the server). */
-export function hasStylesheet(href: string): boolean {
-  if (typeof document === 'undefined') return false;
-  for (const link of document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')) {
-    if (link.getAttribute('href') === href) return true;
+export function hasStylesheet(
+  href: string,
+): boolean {
+  if (
+    typeof document ===
+    'undefined'
+  )
+    return false;
+  for (const link of document.querySelectorAll<HTMLLinkElement>(
+    'link[rel="stylesheet"]',
+  )) {
+    if (
+      link.getAttribute(
+        'href',
+      ) ===
+      href
+    )
+      return true;
   }
   return false;
 }
@@ -78,11 +118,28 @@ export function hasStylesheet(href: string): boolean {
 interface TierRouter {
   subscribe(
     event: 'onBeforeLoad',
-    fn: (e: { toLocation: { pathname: string } }) => void,
+    fn: (e: {
+      toLocation: {
+        pathname: string;
+      };
+    }) => void,
   ): () => void;
-  getMatchedRoutes(pathname: string): readonly [ReadonlyArray<{ id: string }>, ...unknown[]];
-  buildLocation(opts: never): { pathname: string };
-  preloadRoute(opts: never): unknown;
+  getMatchedRoutes(
+    pathname: string,
+  ): readonly [
+    ReadonlyArray<{
+      id: string;
+    }>,
+    ...unknown[],
+  ];
+  buildLocation(
+    opts: never,
+  ): {
+    pathname: string;
+  };
+  preloadRoute(
+    opts: never,
+  ): unknown;
 }
 
 /**
@@ -104,48 +161,157 @@ interface TierRouter {
  *    pointer tracking; skipped under Data Saver.
  * Browser-only, once per document; a no-op once the sheet is in the document.
  */
-export function installStyleTierPreload(router: TierRouter, appSheetHref: string): void {
+export function installStyleTierPreload(
+  router: TierRouter,
+  appSheetHref: string,
+): void {
   // A game or app page already has the superset — nothing to warm, ever.
-  if (typeof document === 'undefined' || hasStylesheet(appSheetHref)) return;
+  if (
+    typeof document ===
+      'undefined' ||
+    hasStylesheet(
+      appSheetHref,
+    )
+  )
+    return;
   let requested = false;
-  const warm = (pathname: string) => {
-    if (requested || hasStylesheet(appSheetHref)) return;
-    const ids = router.getMatchedRoutes(pathname)[0].map((r) => r.id);
-    if (styleTierFor(ids, false) !== 'app') return;
-    requested = true;
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'style';
-    link.href = appSheetHref;
-    document.head.appendChild(link);
-  };
-
-  router.subscribe('onBeforeLoad', ({ toLocation }) => warm(toLocation.pathname));
-
-  if (!prefersLessData()) {
-    const intents = ['pointerover', 'focusin', 'touchstart'] as const;
-    const onIntent = (e: Event) => {
-      if (requested) {
-        for (const type of intents) document.removeEventListener(type, onIntent, true);
+  const warm =
+    (
+      pathname: string,
+    ) => {
+      if (
+        requested ||
+        hasStylesheet(
+          appSheetHref,
+        )
+      )
         return;
-      }
-      const href = (e.target as Element | null)?.closest?.('a[href]')?.getAttribute('href');
-      // Same-origin paths only; `//host` is protocol-relative.
-      if (!href || href[0] !== '/' || href[1] === '/') return;
-      warm(href.split(/[?#]/)[0]);
+      const ids =
+        router
+          .getMatchedRoutes(
+            pathname,
+          )[0]
+          .map(
+            (
+              r,
+            ) =>
+              r.id,
+          );
+      if (
+        styleTierFor(
+          ids,
+          false,
+        ) !==
+        'app'
+      )
+        return;
+      requested = true;
+      const link =
+        document.createElement(
+          'link',
+        );
+      link.rel =
+        'preload';
+      link.as =
+        'style';
+      link.href =
+        appSheetHref;
+      document.head.appendChild(
+        link,
+      );
     };
+
+  router.subscribe(
+    'onBeforeLoad',
+    ({
+      toLocation,
+    }) =>
+      warm(
+        toLocation.pathname,
+      ),
+  );
+
+  if (
+    !prefersLessData()
+  ) {
+    const intents =
+      [
+        'pointerover',
+        'focusin',
+        'touchstart',
+      ] as const;
+    const onIntent =
+      (
+        e: Event,
+      ) => {
+        if (
+          requested
+        ) {
+          for (const type of intents)
+            document.removeEventListener(
+              type,
+              onIntent,
+              true,
+            );
+          return;
+        }
+        const href =
+          (
+            e.target as Element | null
+          )
+            ?.closest?.(
+              'a[href]',
+            )
+            ?.getAttribute(
+              'href',
+            );
+        // Same-origin paths only; `//host` is protocol-relative.
+        if (
+          !href ||
+          href[0] !==
+            '/' ||
+          href[1] ===
+            '/'
+        )
+          return;
+        warm(
+          href.split(
+            /[?#]/,
+          )[0],
+        );
+      };
     for (const type of intents) {
-      document.addEventListener(type, onIntent, { capture: true, passive: true });
+      document.addEventListener(
+        type,
+        onIntent,
+        {
+          capture: true,
+          passive: true,
+        },
+      );
     }
   }
 
-  const preload = router.preloadRoute.bind(router);
-  router.preloadRoute = ((opts: never) => {
-    try {
-      warm(router.buildLocation(opts).pathname);
-    } catch {
-      // A location the router cannot build is one it will not preload either.
-    }
-    return preload(opts);
-  }) as TierRouter['preloadRoute'];
+  const preload =
+    router.preloadRoute.bind(
+      router,
+    );
+  router.preloadRoute =
+    ((
+      opts: never,
+    ) => {
+      try {
+        warm(
+          router.buildLocation(
+            opts,
+          )
+            .pathname,
+        );
+      } catch {
+        // A location the router cannot build is one it will not preload either.
+      }
+      return preload(
+        opts,
+      );
+    }) as TierRouter['preloadRoute'];
 }

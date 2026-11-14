@@ -5,11 +5,33 @@
 import { endpoint } from '@/lib/contract/endpoint';
 
 /** Multipart: `audio` (the clip) and `durationMs`. */
-export const uploadPronunciationApi = endpoint<{
-  body: FormData;
-  res: { pronunciationUrl: string | null; pronunciationMs: number };
-}>()({ method: 'POST', path: '/api/profile/pronunciation' });
+export const uploadPronunciationApi =
+  endpoint<{
+    body: FormData;
+    res: {
+      pronunciationUrl:
+        | string
+        | null;
+      pronunciationMs: number;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/profile/pronunciation',
+    },
+  );
 
-export const removePronunciationApi = endpoint<{
-  res: { pronunciationUrl: null; pronunciationMs: null };
-}>()({ method: 'DELETE', path: '/api/profile/pronunciation' });
+export const removePronunciationApi =
+  endpoint<{
+    res: {
+      pronunciationUrl: null;
+      pronunciationMs: null;
+    };
+  }>()(
+    {
+      method:
+        'DELETE',
+      path: '/api/profile/pronunciation',
+    },
+  );

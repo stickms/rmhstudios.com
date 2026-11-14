@@ -1,7 +1,18 @@
-import { useCallback, useRef, useState } from 'react';
-import type { ClipboardEvent, DragEvent, RefObject } from 'react';
+import {
+  useCallback,
+  useRef,
+  useState,
+} from 'react';
+import type {
+  ClipboardEvent,
+  DragEvent,
+  RefObject,
+} from 'react';
 
-import { MAX_MEDIA_PER_POST, MEDIA_MAX_BYTES } from '@/lib/media/policy';
+import {
+  MAX_MEDIA_PER_POST,
+  MEDIA_MAX_BYTES,
+} from '@/lib/media/policy';
 
 /**
  * Paste and drop that does the obvious thing (B16).
@@ -26,7 +37,10 @@ import { MAX_MEDIA_PER_POST, MEDIA_MAX_BYTES } from '@/lib/media/policy';
  */
 
 /** Why a file was refused. Mapped to copy by the calling component. */
-export type MediaRejectionReason = 'too-large' | 'unsupported-type' | 'over-limit';
+export type MediaRejectionReason =
+  | 'too-large'
+  | 'unsupported-type'
+  | 'over-limit';
 
 export interface MediaRejection {
   file: File;
@@ -47,11 +61,33 @@ export interface MediaScreenOptions {
   acceptedTypes?: readonly string[];
 }
 
-const DEFAULT_ACCEPTED = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'] as const;
+const DEFAULT_ACCEPTED =
+  [
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/webp',
+  ] as const;
 
-function typeAccepted(file: File, accepted: readonly string[]): boolean {
-  return accepted.some((entry) =>
-    entry.endsWith('/*') ? file.type.startsWith(entry.slice(0, -1)) : file.type === entry,
+function typeAccepted(
+  file: File,
+  accepted: readonly string[],
+): boolean {
+  return accepted.some(
+    (
+      entry,
+    ) =>
+      entry.endsWith(
+        '/*',
+      )
+        ? file.type.startsWith(
+            entry.slice(
+              0,
+              -1,
+            ),
+          )
+        : file.type ===
+          entry,
   );
 }
 
@@ -66,38 +102,100 @@ export function screenMediaFiles(
   files: readonly File[],
   options: MediaScreenOptions = {},
 ): MediaScreenResult {
-  const maxBytes = options.maxBytes ?? MEDIA_MAX_BYTES;
-  const accepted = options.acceptedTypes ?? DEFAULT_ACCEPTED;
-  const slots = options.remainingSlots ?? MAX_MEDIA_PER_POST;
+  const maxBytes =
+    options.maxBytes ??
+    MEDIA_MAX_BYTES;
+  const accepted =
+    options.acceptedTypes ??
+    DEFAULT_ACCEPTED;
+  const slots =
+    options.remainingSlots ??
+    MAX_MEDIA_PER_POST;
 
-  const out: MediaScreenResult = { accepted: [], rejected: [] };
+  const out: MediaScreenResult =
+    {
+      accepted:
+        [],
+      rejected:
+        [],
+    };
   for (const file of files) {
-    if (!typeAccepted(file, accepted)) {
-      out.rejected.push({ file, reason: 'unsupported-type' });
+    if (
+      !typeAccepted(
+        file,
+        accepted,
+      )
+    ) {
+      out.rejected.push(
+        {
+          file,
+          reason:
+            'unsupported-type',
+        },
+      );
       continue;
     }
-    if (file.size > maxBytes) {
-      out.rejected.push({ file, reason: 'too-large' });
+    if (
+      file.size >
+      maxBytes
+    ) {
+      out.rejected.push(
+        {
+          file,
+          reason:
+            'too-large',
+        },
+      );
       continue;
     }
-    if (out.accepted.length >= slots) {
-      out.rejected.push({ file, reason: 'over-limit' });
+    if (
+      out
+        .accepted
+        .length >=
+      slots
+    ) {
+      out.rejected.push(
+        {
+          file,
+          reason:
+            'over-limit',
+        },
+      );
       continue;
     }
-    out.accepted.push(file);
+    out.accepted.push(
+      file,
+    );
   }
   return out;
 }
 
-const URL_RE = /^https?:\/\/[^\s]+$/i;
+const URL_RE =
+  /^https?:\/\/[^\s]+$/i;
 
 /** True for a single absolute http(s) URL with no surrounding text. */
-export function isUrl(text: string): boolean {
-  const trimmed = text.trim();
-  if (!URL_RE.test(trimmed)) return false;
+export function isUrl(
+  text: string,
+): boolean {
+  const trimmed =
+    text.trim();
+  if (
+    !URL_RE.test(
+      trimmed,
+    )
+  )
+    return false;
   try {
-    const parsed = new URL(trimmed);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    const parsed =
+      new URL(
+        trimmed,
+      );
+    return (
+      parsed.protocol ===
+        'http:' ||
+      parsed.protocol ===
+        'https:'
+    );
   } catch {
     return false;
   }
@@ -105,133 +203,363 @@ export function isUrl(text: string): boolean {
 
 /** The currently selected text in a textarea/input, or `''`. */
 export function selectedTextOf(
-  element: HTMLTextAreaElement | HTMLInputElement | null | undefined,
+  element:
+    | HTMLTextAreaElement
+    | HTMLInputElement
+    | null
+    | undefined,
 ): string {
-  if (!element) return '';
-  const { selectionStart, selectionEnd, value } = element;
-  if (selectionStart === null || selectionEnd === null || selectionStart === selectionEnd)
+  if (
+    !element
+  )
     return '';
-  return value.slice(selectionStart, selectionEnd);
+  const {
+    selectionStart,
+    selectionEnd,
+    value,
+  } =
+    element;
+  if (
+    selectionStart ===
+      null ||
+    selectionEnd ===
+      null ||
+    selectionStart ===
+      selectionEnd
+  )
+    return '';
+  return value.slice(
+    selectionStart,
+    selectionEnd,
+  );
 }
 
 export interface SmartPasteOptions {
   /** Called with the files that passed the local quota screen. */
-  onFiles: (files: File[]) => void;
+  onFiles: (
+    files: File[],
+  ) => void;
   /** Called when a URL is pasted over a non-empty selection. */
-  onLink?: (url: string, selection: string) => void;
+  onLink?: (
+    url: string,
+    selection: string,
+  ) => void;
   /** The field whose selection `onLink` applies to. */
-  selectionRef?: RefObject<HTMLTextAreaElement | HTMLInputElement | null>;
+  selectionRef?: RefObject<
+    | HTMLTextAreaElement
+    | HTMLInputElement
+    | null
+  >;
   /** Called for every refused file, so the surface can explain itself. */
-  onRejected?: (rejections: MediaRejection[]) => void;
+  onRejected?: (
+    rejections: MediaRejection[],
+  ) => void;
   /** Quota inputs — evaluated at gesture time, not at mount. */
-  screen?: MediaScreenOptions | (() => MediaScreenOptions);
+  screen?:
+    | MediaScreenOptions
+    | (() => MediaScreenOptions);
   /** Turn the whole thing off (e.g. no slots left, or a read-only composer). */
   disabled?: boolean;
 }
 
 export interface SmartPasteHandlers {
-  onPaste: (event: ClipboardEvent<HTMLElement>) => void;
-  onDragOver: (event: DragEvent<HTMLElement>) => void;
-  onDragEnter: (event: DragEvent<HTMLElement>) => void;
-  onDragLeave: (event: DragEvent<HTMLElement>) => void;
-  onDrop: (event: DragEvent<HTMLElement>) => void;
+  onPaste: (
+    event: ClipboardEvent<HTMLElement>,
+  ) => void;
+  onDragOver: (
+    event: DragEvent<HTMLElement>,
+  ) => void;
+  onDragEnter: (
+    event: DragEvent<HTMLElement>,
+  ) => void;
+  onDragLeave: (
+    event: DragEvent<HTMLElement>,
+  ) => void;
+  onDrop: (
+    event: DragEvent<HTMLElement>,
+  ) => void;
   /** True while a drag is over the target — render the `.surface-overlay` hint. */
   dragActive: boolean;
 }
 
-export function useSmartPaste(options: SmartPasteOptions): SmartPasteHandlers {
-  const { onFiles, onLink, selectionRef, onRejected, screen, disabled } = options;
-  const [dragActive, setDragActive] = useState(false);
+export function useSmartPaste(
+  options: SmartPasteOptions,
+): SmartPasteHandlers {
+  const {
+    onFiles,
+    onLink,
+    selectionRef,
+    onRejected,
+    screen,
+    disabled,
+  } =
+    options;
+  const [
+    dragActive,
+    setDragActive,
+  ] =
+    useState(
+      false,
+    );
   // dragenter/dragleave fire for every child element the pointer crosses, so a
   // plain boolean flickers the overlay off the moment the cursor moves over the
   // textarea inside the drop zone. Counting entries is the standard fix.
-  const dragDepth = useRef(0);
+  const dragDepth =
+    useRef(
+      0,
+    );
 
-  const resolveScreen = useCallback(
-    (): MediaScreenOptions => (typeof screen === 'function' ? screen() : (screen ?? {})),
-    [screen],
-  );
+  const resolveScreen =
+    useCallback(
+      (): MediaScreenOptions =>
+        typeof screen ===
+        'function'
+          ? screen()
+          : (screen ??
+            {}),
+      [
+        screen,
+      ],
+    );
 
-  const handleFiles = useCallback(
-    (files: File[]) => {
-      const result = screenMediaFiles(files, resolveScreen());
-      if (result.rejected.length > 0) onRejected?.(result.rejected);
-      if (result.accepted.length > 0) onFiles(result.accepted);
-    },
-    [onFiles, onRejected, resolveScreen],
-  );
+  const handleFiles =
+    useCallback(
+      (
+        files: File[],
+      ) => {
+        const result =
+          screenMediaFiles(
+            files,
+            resolveScreen(),
+          );
+        if (
+          result
+            .rejected
+            .length >
+          0
+        )
+          onRejected?.(
+            result.rejected,
+          );
+        if (
+          result
+            .accepted
+            .length >
+          0
+        )
+          onFiles(
+            result.accepted,
+          );
+      },
+      [
+        onFiles,
+        onRejected,
+        resolveScreen,
+      ],
+    );
 
-  const onPaste = useCallback(
-    (event: ClipboardEvent<HTMLElement>) => {
-      if (disabled) return;
-      const data = event.clipboardData;
-      if (!data) return;
+  const onPaste =
+    useCallback(
+      (
+        event: ClipboardEvent<HTMLElement>,
+      ) => {
+        if (
+          disabled
+        )
+          return;
+        const data =
+          event.clipboardData;
+        if (
+          !data
+        )
+          return;
 
-      const files = Array.from(data.files);
-      if (files.length > 0) {
-        event.preventDefault();
-        handleFiles(files);
-        return;
-      }
-
-      if (onLink) {
-        const text = data.getData('text/plain');
-        const selection = selectedTextOf(selectionRef?.current);
-        if (selection.length > 0 && isUrl(text)) {
+        const files =
+          Array.from(
+            data.files,
+          );
+        if (
+          files.length >
+          0
+        ) {
           event.preventDefault();
-          onLink(text.trim(), selection);
+          handleFiles(
+            files,
+          );
           return;
         }
-      }
-      // Fall through: the browser pastes normally.
-    },
-    [disabled, handleFiles, onLink, selectionRef],
-  );
 
-  const onDragEnter = useCallback(
-    (event: DragEvent<HTMLElement>) => {
-      if (disabled) return;
-      if (!Array.from(event.dataTransfer?.types ?? []).includes('Files')) return;
-      event.preventDefault();
-      dragDepth.current += 1;
-      setDragActive(true);
-    },
-    [disabled],
-  );
+        if (
+          onLink
+        ) {
+          const text =
+            data.getData(
+              'text/plain',
+            );
+          const selection =
+            selectedTextOf(
+              selectionRef?.current,
+            );
+          if (
+            selection.length >
+              0 &&
+            isUrl(
+              text,
+            )
+          ) {
+            event.preventDefault();
+            onLink(
+              text.trim(),
+              selection,
+            );
+            return;
+          }
+        }
+        // Fall through: the browser pastes normally.
+      },
+      [
+        disabled,
+        handleFiles,
+        onLink,
+        selectionRef,
+      ],
+    );
 
-  const onDragOver = useCallback(
-    (event: DragEvent<HTMLElement>) => {
-      if (disabled) return;
-      if (!Array.from(event.dataTransfer?.types ?? []).includes('Files')) return;
-      // Without preventDefault the browser navigates to the dropped file.
-      event.preventDefault();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
-    },
-    [disabled],
-  );
+  const onDragEnter =
+    useCallback(
+      (
+        event: DragEvent<HTMLElement>,
+      ) => {
+        if (
+          disabled
+        )
+          return;
+        if (
+          !Array.from(
+            event
+              .dataTransfer
+              ?.types ??
+              [],
+          ).includes(
+            'Files',
+          )
+        )
+          return;
+        event.preventDefault();
+        dragDepth.current += 1;
+        setDragActive(
+          true,
+        );
+      },
+      [
+        disabled,
+      ],
+    );
 
-  const onDragLeave = useCallback(
-    (event: DragEvent<HTMLElement>) => {
-      if (disabled) return;
-      event.preventDefault();
-      dragDepth.current = Math.max(0, dragDepth.current - 1);
-      if (dragDepth.current === 0) setDragActive(false);
-    },
-    [disabled],
-  );
+  const onDragOver =
+    useCallback(
+      (
+        event: DragEvent<HTMLElement>,
+      ) => {
+        if (
+          disabled
+        )
+          return;
+        if (
+          !Array.from(
+            event
+              .dataTransfer
+              ?.types ??
+              [],
+          ).includes(
+            'Files',
+          )
+        )
+          return;
+        // Without preventDefault the browser navigates to the dropped file.
+        event.preventDefault();
+        if (
+          event.dataTransfer
+        )
+          event.dataTransfer.dropEffect =
+            'copy';
+      },
+      [
+        disabled,
+      ],
+    );
 
-  const onDrop = useCallback(
-    (event: DragEvent<HTMLElement>) => {
-      dragDepth.current = 0;
-      setDragActive(false);
-      if (disabled) return;
-      const files = Array.from(event.dataTransfer?.files ?? []);
-      if (files.length === 0) return;
-      event.preventDefault();
-      handleFiles(files);
-    },
-    [disabled, handleFiles],
-  );
+  const onDragLeave =
+    useCallback(
+      (
+        event: DragEvent<HTMLElement>,
+      ) => {
+        if (
+          disabled
+        )
+          return;
+        event.preventDefault();
+        dragDepth.current =
+          Math.max(
+            0,
+            dragDepth.current -
+              1,
+          );
+        if (
+          dragDepth.current ===
+          0
+        )
+          setDragActive(
+            false,
+          );
+      },
+      [
+        disabled,
+      ],
+    );
 
-  return { onPaste, onDragOver, onDragEnter, onDragLeave, onDrop, dragActive };
+  const onDrop =
+    useCallback(
+      (
+        event: DragEvent<HTMLElement>,
+      ) => {
+        dragDepth.current = 0;
+        setDragActive(
+          false,
+        );
+        if (
+          disabled
+        )
+          return;
+        const files =
+          Array.from(
+            event
+              .dataTransfer
+              ?.files ??
+              [],
+          );
+        if (
+          files.length ===
+          0
+        )
+          return;
+        event.preventDefault();
+        handleFiles(
+          files,
+        );
+      },
+      [
+        disabled,
+        handleFiles,
+      ],
+    );
+
+  return {
+    onPaste,
+    onDragOver,
+    onDragEnter,
+    onDragLeave,
+    onDrop,
+    dragActive,
+  };
 }

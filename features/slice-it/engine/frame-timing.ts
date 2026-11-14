@@ -48,7 +48,10 @@ export interface FrameReport {
 }
 
 export class FrameSampler {
-  private readonly ring = new Float32Array(FRAME_CAPACITY);
+  private readonly ring =
+    new Float32Array(
+      FRAME_CAPACITY,
+    );
   private cursor = 0;
   private filled = 0;
   private total = 0;
@@ -56,36 +59,103 @@ export class FrameSampler {
   private worst = 0;
 
   /** Record one frame's duration, in milliseconds. */
-  push(deltaMs: number): void {
+  push(
+    deltaMs: number,
+  ): void {
     // Guard the pathological first frame and a tab that was backgrounded: a
     // 40-second delta from a hidden tab is not a stall the player experienced,
     // and it would dominate every percentile in the ring.
-    if (!Number.isFinite(deltaMs) || deltaMs <= 0 || deltaMs > 1000) return;
-    this.ring[this.cursor] = deltaMs;
-    this.cursor = (this.cursor + 1) % FRAME_CAPACITY;
-    if (this.filled < FRAME_CAPACITY) this.filled++;
-    this.total++;
-    if (deltaMs > this.worst) this.worst = deltaMs;
+    if (
+      !Number.isFinite(
+        deltaMs,
+      ) ||
+      deltaMs <=
+        0 ||
+      deltaMs >
+        1000
+    )
+      return;
+    this.ring[
+      this.cursor
+    ] =
+      deltaMs;
+    this.cursor =
+      (this
+        .cursor +
+        1) %
+      FRAME_CAPACITY;
+    if (
+      this
+        .filled <
+      FRAME_CAPACITY
+    )
+      this
+        .filled++;
+    this
+      .total++;
+    if (
+      deltaMs >
+      this
+        .worst
+    )
+      this.worst =
+        deltaMs;
     // Counted outside the ring, so a run that stalled early and then recovered
     // still reports the stall rather than having it age out.
-    if (deltaMs >= STALL_MS) this.stallCount++;
+    if (
+      deltaMs >=
+      STALL_MS
+    )
+      this
+        .stallCount++;
   }
 
   get sampleCount(): number {
-    return this.filled;
+    return this
+      .filled;
   }
 
   report(): FrameReport | null {
     // Under a second of frames is a run that was abandoned in the countdown.
-    if (this.filled < 60) return null;
-    const sorted = Float32Array.prototype.slice.call(this.ring, 0, this.filled).sort();
+    if (
+      this
+        .filled <
+      60
+    )
+      return null;
+    const sorted =
+      Float32Array.prototype.slice
+        .call(
+          this
+            .ring,
+          0,
+          this
+            .filled,
+        )
+        .sort();
     return {
-      p50: percentile(sorted, 0.5),
-      p95: percentile(sorted, 0.95),
-      p99: percentile(sorted, 0.99),
-      max: round2(this.worst),
-      stalls: this.stallCount,
-      frames: this.total,
+      p50: percentile(
+        sorted,
+        0.5,
+      ),
+      p95: percentile(
+        sorted,
+        0.95,
+      ),
+      p99: percentile(
+        sorted,
+        0.99,
+      ),
+      max: round2(
+        this
+          .worst,
+      ),
+      stalls:
+        this
+          .stallCount,
+      frames:
+        this
+          .total,
     };
   }
 
@@ -99,14 +169,45 @@ export class FrameSampler {
 }
 
 /** Nearest-rank percentile over an ALREADY SORTED array. */
-export function percentile(sorted: ArrayLike<number>, q: number): number {
-  if (sorted.length === 0) return 0;
-  const rank = Math.min(sorted.length - 1, Math.max(0, Math.ceil(q * sorted.length) - 1));
-  return round2(sorted[rank]);
+export function percentile(
+  sorted: ArrayLike<number>,
+  q: number,
+): number {
+  if (
+    sorted.length ===
+    0
+  )
+    return 0;
+  const rank =
+    Math.min(
+      sorted.length -
+        1,
+      Math.max(
+        0,
+        Math.ceil(
+          q *
+            sorted.length,
+        ) -
+          1,
+      ),
+    );
+  return round2(
+    sorted[
+      rank
+    ],
+  );
 }
 
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
+function round2(
+  value: number,
+): number {
+  return (
+    Math.round(
+      value *
+        100,
+    ) /
+    100
+  );
 }
 
 /**
@@ -126,7 +227,21 @@ export interface FrameBeacon extends FrameReport {
 
 export function frameBeacon(
   report: FrameReport,
-  context: { glow: boolean; dpr: number; notes: number; difficulty: string },
+  context: {
+    glow: boolean;
+    dpr: number;
+    notes: number;
+    difficulty: string;
+  },
 ): FrameBeacon {
-  return { ...report, ...context, dpr: Math.round(context.dpr * 100) / 100 };
+  return {
+    ...report,
+    ...context,
+    dpr:
+      Math.round(
+        context.dpr *
+          100,
+      ) /
+      100,
+  };
 }

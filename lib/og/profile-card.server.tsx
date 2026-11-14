@@ -12,7 +12,10 @@
 
 import React from 'react';
 import satori from 'satori';
-import { dedupeOgRender, svgToPng } from './render.server';
+import {
+  dedupeOgRender,
+  svgToPng,
+} from './render.server';
 import {
   DIM,
   INK,
@@ -35,145 +38,399 @@ import {
 } from '@/lib/og/chrome.server';
 import { qrSvgDataUri } from '@/lib/profile/qr';
 
-const truncate = (s: string, n: number) => sharedTruncate(stripEmoji(s), n);
+const truncate =
+  (
+    s: string,
+    n: number,
+  ) =>
+    sharedTruncate(
+      stripEmoji(
+        s,
+      ),
+      n,
+    );
 
-const cache = new Map<string, { png: Buffer; ts: number }>();
-const TTL = 10 * 60 * 1000;
+const cache =
+  new Map<
+    string,
+    {
+      png: Buffer;
+      ts: number;
+    }
+  >();
+const TTL =
+  10 *
+  60 *
+  1000;
 const MAX = 60;
 
-const PANE_PAD = 26 * SCALE;
-const AVATAR = 64 * SCALE;
-const QR_PLATE = 190 * SCALE;
-const QR_MODULES_PX = 150 * SCALE;
+const PANE_PAD =
+  26 *
+  SCALE;
+const AVATAR =
+  64 *
+  SCALE;
+const QR_PLATE =
+  190 *
+  SCALE;
+const QR_MODULES_PX =
+  150 *
+  SCALE;
 
 export interface ProfileCardData {
   id: string;
   name: string;
-  handle: string | null;
-  image: string | null;
-  bio: string | null;
+  handle:
+    | string
+    | null;
+  image:
+    | string
+    | null;
+  bio:
+    | string
+    | null;
   /** What the QR encodes — the absolute profile URL. */
   url: string;
 }
 
-async function renderProfileCardUncached(data: ProfileCardData): Promise<Buffer> {
+async function renderProfileCardUncached(
+  data: ProfileCardData,
+): Promise<Buffer> {
   const key = `${data.id}|${data.url}|${data.name}|${data.bio ?? ''}|${data.image ?? ''}`;
-  const hit = cache.get(key);
-  if (hit && Date.now() - hit.ts < TTL) return hit.png;
+  const hit =
+    cache.get(
+      key,
+    );
+  if (
+    hit &&
+    Date.now() -
+      hit.ts <
+      TTL
+  )
+    return hit.png;
 
   await loadFonts();
-  const avatar = await fetchAvatarDataUri(data.image);
-  const name = truncate(data.name || data.handle || 'RMH Studios', 28);
-  const initial = (name || 'R')[0]?.toUpperCase() ?? 'R';
-  const bio = truncate(data.bio || '', 120);
+  const avatar =
+    await fetchAvatarDataUri(
+      data.image,
+    );
+  const name =
+    truncate(
+      data.name ||
+        data.handle ||
+        'RMH Studios',
+      28,
+    );
+  const initial =
+    (name ||
+      'R')[0]?.toUpperCase() ??
+    'R';
+  const bio =
+    truncate(
+      data.bio ||
+        '',
+      120,
+    );
 
-  const frame = frameMetrics(LANDSCAPE.width, LANDSCAPE.height);
-  const textWidth = frame.width - PANE_PAD * 2 - QR_PLATE - 28 * SCALE;
-  const nameSize = fitText(name, {
-    width: textWidth,
-    height: 90 * SCALE,
-    steps: [56, 46, 38, 32],
-    lineHeight: 1.1,
-  });
-  const bioSize = fitText(bio, { width: textWidth, height: 80 * SCALE, steps: [28, 24, 21] });
+  const frame =
+    frameMetrics(
+      LANDSCAPE.width,
+      LANDSCAPE.height,
+    );
+  const textWidth =
+    frame.width -
+    PANE_PAD *
+      2 -
+    QR_PLATE -
+    28 *
+      SCALE;
+  const nameSize =
+    fitText(
+      name,
+      {
+        width:
+          textWidth,
+        height:
+          90 *
+          SCALE,
+        steps:
+          [
+            56,
+            46,
+            38,
+            32,
+          ],
+        lineHeight: 1.1,
+      },
+    );
+  const bioSize =
+    fitText(
+      bio,
+      {
+        width:
+          textWidth,
+        height:
+          80 *
+          SCALE,
+        steps:
+          [
+            28,
+            24,
+            21,
+          ],
+      },
+    );
 
-  const element = cardFrame({
-    ...LANDSCAPE,
-    eyebrow: 'Profile card',
-    children: pane({
-      style: { flex: 1, padding: PANE_PAD, flexDirection: 'row', alignItems: 'center' },
-      children: [
-        <div
-          key="who"
-          style={{ display: 'flex', flexDirection: 'column', flex: 1, paddingRight: 28 * SCALE }}
-        >
-          <div style={{ display: 'flex', marginBottom: 16 * SCALE }}>
-            {avatarDisc(avatar, initial, AVATAR)}
-          </div>
-          <span
-            style={{
-              fontSize: nameSize,
-              fontWeight: 700,
-              letterSpacing: displayTracking(nameSize),
-              color: INK,
-            }}
-          >
-            {name}
-          </span>
-          {data.handle ? (
-            <span style={{ fontSize: 20 * SCALE, color: MUTED, marginTop: 4 * SCALE }}>
-              @{truncate(data.handle, 30)}
-            </span>
-          ) : null}
-          {bio ? (
+  const element =
+    cardFrame(
+      {
+        ...LANDSCAPE,
+        eyebrow:
+          'Profile card',
+        children:
+          pane(
+            {
+              style:
+                {
+                  flex: 1,
+                  padding:
+                    PANE_PAD,
+                  flexDirection:
+                    'row',
+                  alignItems:
+                    'center',
+                },
+              children:
+                [
+                  <div
+                    key="who"
+                    style={{
+                      display:
+                        'flex',
+                      flexDirection:
+                        'column',
+                      flex: 1,
+                      paddingRight:
+                        28 *
+                        SCALE,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display:
+                          'flex',
+                        marginBottom:
+                          16 *
+                          SCALE,
+                      }}
+                    >
+                      {avatarDisc(
+                        avatar,
+                        initial,
+                        AVATAR,
+                      )}
+                    </div>
+                    <span
+                      style={{
+                        fontSize:
+                          nameSize,
+                        fontWeight: 700,
+                        letterSpacing:
+                          displayTracking(
+                            nameSize,
+                          ),
+                        color:
+                          INK,
+                      }}
+                    >
+                      {
+                        name
+                      }
+                    </span>
+                    {data.handle ? (
+                      <span
+                        style={{
+                          fontSize:
+                            20 *
+                            SCALE,
+                          color:
+                            MUTED,
+                          marginTop:
+                            4 *
+                            SCALE,
+                        }}
+                      >
+                        @
+                        {truncate(
+                          data.handle,
+                          30,
+                        )}
+                      </span>
+                    ) : null}
+                    {bio ? (
+                      <span
+                        style={{
+                          fontSize:
+                            bioSize,
+                          lineHeight: 1.3,
+                          color:
+                            INK,
+                          fontWeight: 500,
+                          marginTop:
+                            14 *
+                            SCALE,
+                        }}
+                      >
+                        {
+                          bio
+                        }
+                      </span>
+                    ) : null}
+                  </div>,
+                  <div
+                    key="qr"
+                    style={{
+                      display:
+                        'flex',
+                      flexDirection:
+                        'column',
+                      alignItems:
+                        'center',
+                      justifyContent:
+                        'center',
+                      width:
+                        QR_PLATE,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display:
+                          'flex',
+                        alignItems:
+                          'center',
+                        justifyContent:
+                          'center',
+                        width:
+                          QR_PLATE,
+                        height:
+                          QR_PLATE,
+                        backgroundColor:
+                          '#ffffff',
+                        borderRadius:
+                          14 *
+                          SCALE,
+                        border: `${SCALE}px solid rgba(0, 0, 0, 0.16)`,
+                      }}
+                    >
+                      {/* Handed to satori, not the DOM: `alt` is inert here. */}
+                      <img
+                        src={qrSvgDataUri(
+                          data.url,
+                          4,
+                        )}
+                        alt=""
+                        width={
+                          QR_MODULES_PX
+                        }
+                        height={
+                          QR_MODULES_PX
+                        }
+                      />
+                    </div>
+                    <span
+                      style={{
+                        fontSize:
+                          12 *
+                          SCALE,
+                        color:
+                          DIM,
+                        marginTop:
+                          10 *
+                          SCALE,
+                      }}
+                    >
+                      Scan
+                      to
+                      open
+                    </span>
+                  </div>,
+                ],
+            },
+          ),
+        footerLeft:
+          (
             <span
               style={{
-                fontSize: bioSize,
-                lineHeight: 1.3,
-                color: INK,
+                fontSize:
+                  13 *
+                  SCALE,
                 fontWeight: 500,
-                marginTop: 14 * SCALE,
+                color:
+                  MUTED,
               }}
             >
-              {bio}
+              {truncate(
+                data.url.replace(
+                  /^https?:\/\//,
+                  '',
+                ),
+                48,
+              )}
             </span>
-          ) : null}
-        </div>,
-        <div
-          key="qr"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: QR_PLATE,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: QR_PLATE,
-              height: QR_PLATE,
-              backgroundColor: '#ffffff',
-              borderRadius: 14 * SCALE,
-              border: `${SCALE}px solid rgba(0, 0, 0, 0.16)`,
-            }}
-          >
-            {/* Handed to satori, not the DOM: `alt` is inert here. */}
-            <img
-              src={qrSvgDataUri(data.url, 4)}
-              alt=""
-              width={QR_MODULES_PX}
-              height={QR_MODULES_PX}
-            />
-          </div>
-          <span style={{ fontSize: 12 * SCALE, color: DIM, marginTop: 10 * SCALE }}>
-            Scan to open
-          </span>
-        </div>,
-      ],
-    }),
-    footerLeft: (
-      <span style={{ fontSize: 13 * SCALE, fontWeight: 500, color: MUTED }}>
-        {truncate(data.url.replace(/^https?:\/\//, ''), 48)}
-      </span>
-    ),
-  });
+          ),
+      },
+    );
 
-  const svg = await satori(element, { ...LANDSCAPE, fonts: satoriFonts() });
-  const png = await svgToPng(svg, LANDSCAPE.width);
+  const svg =
+    await satori(
+      element,
+      {
+        ...LANDSCAPE,
+        fonts:
+          satoriFonts(),
+      },
+    );
+  const png =
+    await svgToPng(
+      svg,
+      LANDSCAPE.width,
+    );
 
-  if (cache.size >= MAX) {
-    const oldest = cache.keys().next().value;
-    if (oldest !== undefined) cache.delete(oldest);
+  if (
+    cache.size >=
+    MAX
+  ) {
+    const oldest =
+      cache
+        .keys()
+        .next().value;
+    if (
+      oldest !==
+      undefined
+    )
+      cache.delete(
+        oldest,
+      );
   }
-  cache.set(key, { png, ts: Date.now() });
+  cache.set(
+    key,
+    {
+      png,
+      ts: Date.now(),
+    },
+  );
   return png;
 }
 
 // perf: in-flight dedupe - concurrent requests for one card share a single render.
-export function renderProfileCard(data: ProfileCardData): Promise<Buffer> {
-  return dedupeOgRender(`${data.id}|${data.url}|${data.name}|${data.bio ?? ''}|${data.image ?? ''}`, () => renderProfileCardUncached(data));
+export function renderProfileCard(
+  data: ProfileCardData,
+): Promise<Buffer> {
+  return dedupeOgRender(
+    `${data.id}|${data.url}|${data.name}|${data.bio ?? ''}|${data.image ?? ''}`,
+    () =>
+      renderProfileCardUncached(
+        data,
+      ),
+  );
 }

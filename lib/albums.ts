@@ -8,35 +8,39 @@
  * below before handing an Album to a route loader.
  */
 
-export type AlbumImageSlide = {
-  type: 'image';
-  /** Web-optimized image shown in the viewer (and the "optimized" download). */
-  src: string;
-  /** Full-resolution original (the "full file" download/share option). */
-  full: string;
-  /** Lightweight thumbnail used in the nav strip + card cover. */
-  thumb: string;
-  /** Accessible description. */
-  alt: string;
-  /** Suggested base filename when downloaded. */
-  download: string;
-};
+export type AlbumImageSlide =
+  {
+    type: 'image';
+    /** Web-optimized image shown in the viewer (and the "optimized" download). */
+    src: string;
+    /** Full-resolution original (the "full file" download/share option). */
+    full: string;
+    /** Lightweight thumbnail used in the nav strip + card cover. */
+    thumb: string;
+    /** Accessible description. */
+    alt: string;
+    /** Suggested base filename when downloaded. */
+    download: string;
+  };
 
-export type AlbumVideoSlide = {
-  type: 'video';
-  /** Video file played in the viewer. */
-  src: string;
-  /** Poster frame used as the <video> poster + nav-strip thumbnail. */
-  thumb: string;
-  /** MIME type for the <video> source. */
-  mime: string;
-  /** Accessible description. */
-  alt: string;
-  /** Suggested filename when downloaded. */
-  download: string;
-};
+export type AlbumVideoSlide =
+  {
+    type: 'video';
+    /** Video file played in the viewer. */
+    src: string;
+    /** Poster frame used as the <video> poster + nav-strip thumbnail. */
+    thumb: string;
+    /** MIME type for the <video> source. */
+    mime: string;
+    /** Accessible description. */
+    alt: string;
+    /** Suggested filename when downloaded. */
+    download: string;
+  };
 
-export type AlbumSlide = AlbumImageSlide | AlbumVideoSlide;
+export type AlbumSlide =
+  | AlbumImageSlide
+  | AlbumVideoSlide;
 
 export interface Album {
   /** URL slug, e.g. "alex-wu". */
@@ -52,8 +56,32 @@ export interface Album {
 }
 
 /** Count helper for cards ("85 items"). */
-export function albumCount(album: Album): { images: number; videos: number; total: number } {
-  const images = album.slides.filter((s) => s.type === 'image').length;
-  const videos = album.slides.length - images;
-  return { images, videos, total: album.slides.length };
+export function albumCount(
+  album: Album,
+): {
+  images: number;
+  videos: number;
+  total: number;
+} {
+  const images =
+    album.slides.filter(
+      (
+        s,
+      ) =>
+        s.type ===
+        'image',
+    ).length;
+  const videos =
+    album
+      .slides
+      .length -
+    images;
+  return {
+    images,
+    videos,
+    total:
+      album
+        .slides
+        .length,
+  };
 }

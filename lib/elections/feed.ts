@@ -5,14 +5,30 @@
  */
 
 import type { FeedItem } from '@/lib/feed-types';
-import { countdownTo, etDayStart, phaseOf, type Cycle } from './calendar';
+import {
+  countdownTo,
+  etDayStart,
+  phaseOf,
+  type Cycle,
+} from './calendar';
 import { headline } from './summary';
-import { OFFICE_NAME, type ChamberControl, type ElectionSnapshot, type Office } from './types';
+import {
+  OFFICE_NAME,
+  type ChamberControl,
+  type ElectionSnapshot,
+  type Office,
+} from './types';
 
 /** How long before Election Day the card starts appearing. */
 export const FEED_LEAD_DAYS = 45;
 
-const ORDER: Office[] = ['president', 'senate', 'house', 'governor'];
+const ORDER: Office[] =
+  [
+    'president',
+    'senate',
+    'house',
+    'governor',
+  ];
 
 /**
  * How long after Election Day the site keeps promoting the results: the card at the top of
@@ -24,30 +40,92 @@ export const FEED_TAIL_DAYS = 2;
 
 const DAY_MS = 86_400_000;
 
-export function isFeedWindow(cycle: Cycle, now: Date): boolean {
-  const phase = phaseOf(cycle.date, now);
-  if (phase === 'archive') return false;
-  if (phase === 'upcoming') {
-    return countdownTo(cycle.date, now, etDayStart(cycle.date)).days <= FEED_LEAD_DAYS;
+export function isFeedWindow(
+  cycle: Cycle,
+  now: Date,
+): boolean {
+  const phase =
+    phaseOf(
+      cycle.date,
+      now,
+    );
+  if (
+    phase ===
+    'archive'
+  )
+    return false;
+  if (
+    phase ===
+    'upcoming'
+  ) {
+    return (
+      countdownTo(
+        cycle.date,
+        now,
+        etDayStart(
+          cycle.date,
+        ),
+      )
+        .days <=
+      FEED_LEAD_DAYS
+    );
   }
   // Election Day itself, then the tail.
-  return now.getTime() < etDayStart(cycle.date).getTime() + (1 + FEED_TAIL_DAYS) * DAY_MS;
+  return (
+    now.getTime() <
+    etDayStart(
+      cycle.date,
+    ).getTime() +
+      (1 +
+        FEED_TAIL_DAYS) *
+        DAY_MS
+  );
 }
 
-function chamberRow(c: ChamberControl, live: boolean) {
-  const before = c.before.DEM + c.before.GOP;
+function chamberRow(
+  c: ChamberControl,
+  live: boolean,
+) {
+  const before =
+    c
+      .before
+      .DEM +
+    c
+      .before
+      .GOP;
   // Before votes: today's control (or nothing). After: the running score. A tally derived from
   // called races only is a partial score, so it is shown too — the card says "called".
-  if (!live && before === 0) return null;
-  const src = live ? c.seats : c.before;
+  if (
+    !live &&
+    before ===
+      0
+  )
+    return null;
+  const src =
+    live
+      ? c.seats
+      : c.before;
   return {
-    office: c.office,
-    name: OFFICE_NAME[c.office],
+    office:
+      c.office,
+    name: OFFICE_NAME[
+      c
+        .office
+    ],
     dem: src.DEM,
     gop: src.GOP,
-    toWin: c.toWin,
-    basis: (live ? 'results' : 'current') as 'results' | 'current',
-    controlledBy: live ? c.controlledBy : null,
+    toWin:
+      c.toWin,
+    basis:
+      (live
+        ? 'results'
+        : 'current') as
+        | 'results'
+        | 'current',
+    controlledBy:
+      live
+        ? c.controlledBy
+        : null,
   };
 }
 
@@ -57,46 +135,129 @@ export function buildElectionFeedItem(
   snapshot: ElectionSnapshot | null,
   now: Date = new Date(),
 ): FeedItem | null {
-  if (!isFeedWindow(cycle, now)) return null;
-  const phase = phaseOf(cycle.date, now);
-  const live = snapshot?.live ?? false;
-  const racesCalled = snapshot ? snapshot.races.filter((r) => r.status === 'called').length : 0;
-  const hasRaces = !!snapshot && snapshot.races.length > 0;
+  if (
+    !isFeedWindow(
+      cycle,
+      now,
+    )
+  )
+    return null;
+  const phase =
+    phaseOf(
+      cycle.date,
+      now,
+    );
+  const live =
+    snapshot?.live ??
+    false;
+  const racesCalled =
+    snapshot
+      ? snapshot.races.filter(
+          (
+            r,
+          ) =>
+            r.status ===
+            'called',
+        )
+          .length
+      : 0;
+  const hasRaces =
+    !!snapshot &&
+    snapshot
+      .races
+      .length >
+      0;
 
   // Prose rounds UP to calendar days (41 hours out is "2 days away"); the hero's ticking countdown shows the exact split.
-  const days = Math.max(1, Math.ceil(countdownTo(cycle.date, now, etDayStart(cycle.date)).totalMs / 86_400_000));
-  const description = hasRaces
-    ? headline(snapshot as ElectionSnapshot)
-    : phase === 'upcoming'
-      ? `Election Day is ${cycle.date} — ${days} ${days === 1 ? 'day' : 'days'} away.`
-      : 'Live results the moment polls report.';
+  const days =
+    Math.max(
+      1,
+      Math.ceil(
+        countdownTo(
+          cycle.date,
+          now,
+          etDayStart(
+            cycle.date,
+          ),
+        )
+          .totalMs /
+          86_400_000,
+      ),
+    );
+  const description =
+    hasRaces
+      ? headline(
+          snapshot as ElectionSnapshot,
+        )
+      : phase ===
+          'upcoming'
+        ? `Election Day is ${cycle.date} — ${days} ${days === 1 ? 'day' : 'days'} away.`
+        : 'Live results the moment polls report.';
 
-  const chambers = hasRaces
-    ? ORDER.flatMap((o) => {
-        const c = snapshot?.chambers[o];
-        const row = c ? chamberRow(c, live) : null;
-        return row ? [row] : [];
-      })
-    : [];
+  const chambers =
+    hasRaces
+      ? ORDER.flatMap(
+          (
+            o,
+          ) => {
+            const c =
+              snapshot
+                ?.chambers[
+                o
+              ];
+            const row =
+              c
+                ? chamberRow(
+                    c,
+                    live,
+                  )
+                : null;
+            return row
+              ? [
+                  row,
+                ]
+              : [];
+          },
+        )
+      : [];
 
   return {
     id: `election:${cycle.date}`,
     type: 'election_announcement',
     // Newest announcement wins the interleave: this card is about right now.
-    createdAt: now.toISOString(),
-    title: live ? `LIVE · ${cycle.title}` : cycle.title,
+    createdAt:
+      now.toISOString(),
+    title:
+      live
+        ? `LIVE · ${cycle.title}`
+        : cycle.title,
     description,
     href: '/elections',
-    tags: live ? ['Elections', 'Live results'] : ['Elections'],
-    category: 'Elections',
-    iconName: 'Vote',
-    election: {
-      date: cycle.date,
-      phase,
-      live,
-      called: racesCalled,
-      total: snapshot?.races.length ?? 0,
-      chambers,
-    },
+    tags: live
+      ? [
+          'Elections',
+          'Live results',
+        ]
+      : [
+          'Elections',
+        ],
+    category:
+      'Elections',
+    iconName:
+      'Vote',
+    election:
+      {
+        date: cycle.date,
+        phase,
+        live,
+        called:
+          racesCalled,
+        total:
+          snapshot
+            ?.races
+            .length ??
+          0,
+        chambers,
+      },
   };
 }

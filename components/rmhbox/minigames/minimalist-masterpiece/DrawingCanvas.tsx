@@ -9,14 +9,22 @@
  * Players can select a background color for the canvas.
  */
 
-import { useRef, useState, useCallback } from 'react';
+import {
+  useRef,
+  useState,
+  useCallback,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Undo2 } from 'lucide-react';
 import type { MMStroke } from './DrawingCard';
 
 interface DrawingCanvasProps {
   strokes: MMStroke[];
-  setStrokes: React.Dispatch<React.SetStateAction<MMStroke[]>>;
+  setStrokes: React.Dispatch<
+    React.SetStateAction<
+      MMStroke[]
+    >
+  >;
   selectedColor: string;
   selectedWidth: number;
   backgroundColor: string;
@@ -41,139 +49,397 @@ export default function DrawingCanvas({
   onUndo,
   disabled,
 }: DrawingCanvasProps) {
-  const { t } = useTranslation("c-rmhbox");
-  const svgRef = useRef<SVGSVGElement>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  const svgRef =
+    useRef<SVGSVGElement>(
+      null,
+    );
   // Pending first endpoint for click-click mode
-  const [pendingStart, setPendingStart] = useState<Point | null>(null);
+  const [
+    pendingStart,
+    setPendingStart,
+  ] =
+    useState<Point | null>(
+      null,
+    );
   // Preview endpoint (current mouse position while placing a line)
-  const [previewEnd, setPreviewEnd] = useState<Point | null>(null);
+  const [
+    previewEnd,
+    setPreviewEnd,
+  ] =
+    useState<Point | null>(
+      null,
+    );
   // Hover position for cursor preview circle (shown when idle on canvas)
-  const [hoverPoint, setHoverPoint] = useState<Point | null>(null);
+  const [
+    hoverPoint,
+    setHoverPoint,
+  ] =
+    useState<Point | null>(
+      null,
+    );
   // Whether the user is currently dragging
-  const isDragging = useRef(false);
-  const dragStart = useRef<Point | null>(null);
+  const isDragging =
+    useRef(
+      false,
+    );
+  const dragStart =
+    useRef<Point | null>(
+      null,
+    );
 
-  const canDraw = !disabled && strokes.length < maxStrokes;
+  const canDraw =
+    !disabled &&
+    strokes.length <
+      maxStrokes;
 
-  const getSvgPoint = useCallback((e: React.PointerEvent<SVGSVGElement> | React.MouseEvent<SVGSVGElement>): Point => {
-    const svg = svgRef.current;
-    if (!svg) return { x: 0, y: 0 };
-    const rect = svg.getBoundingClientRect();
-    return {
-      x: Math.max(0, Math.min(300, ((e.clientX - rect.left) / rect.width) * 300)),
-      y: Math.max(0, Math.min(300, ((e.clientY - rect.top) / rect.height) * 300)),
-    };
-  }, []);
+  const getSvgPoint =
+    useCallback(
+      (
+        e:
+          | React.PointerEvent<SVGSVGElement>
+          | React.MouseEvent<SVGSVGElement>,
+      ): Point => {
+        const svg =
+          svgRef.current;
+        if (
+          !svg
+        )
+          return {
+            x: 0,
+            y: 0,
+          };
+        const rect =
+          svg.getBoundingClientRect();
+        return {
+          x: Math.max(
+            0,
+            Math.min(
+              300,
+              ((e.clientX -
+                rect.left) /
+                rect.width) *
+                300,
+            ),
+          ),
+          y: Math.max(
+            0,
+            Math.min(
+              300,
+              ((e.clientY -
+                rect.top) /
+                rect.height) *
+                300,
+            ),
+          ),
+        };
+      },
+      [],
+    );
 
   /** Create a finalized line stroke from two points. Returns null if either point is missing. */
-  const createStroke = useCallback((start: Point | null, end: Point | null): MMStroke | null => {
-    if (!start || !end) return null;
-    return {
-      id: `stroke-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      points: [
-        { x: start.x, y: start.y, pressure: 0.5 },
-        { x: end.x, y: end.y, pressure: 0.5 },
+  const createStroke =
+    useCallback(
+      (
+        start: Point | null,
+        end: Point | null,
+      ): MMStroke | null => {
+        if (
+          !start ||
+          !end
+        )
+          return null;
+        return {
+          id: `stroke-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          points:
+            [
+              {
+                x: start.x,
+                y: start.y,
+                pressure: 0.5,
+              },
+              {
+                x: end.x,
+                y: end.y,
+                pressure: 0.5,
+              },
+            ],
+          color:
+            selectedColor,
+          width:
+            selectedWidth,
+          timestamp:
+            Date.now(),
+        };
+      },
+      [
+        selectedColor,
+        selectedWidth,
       ],
-      color: selectedColor,
-      width: selectedWidth,
-      timestamp: Date.now(),
-    };
-  }, [selectedColor, selectedWidth]);
+    );
 
-  const handlePointerDown = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
-    if (!canDraw) return;
-    e.preventDefault();
-    (e.target as Element).setPointerCapture(e.pointerId);
-    setHoverPoint(null);
+  const handlePointerDown =
+    useCallback(
+      (
+        e: React.PointerEvent<SVGSVGElement>,
+      ) => {
+        if (
+          !canDraw
+        )
+          return;
+        e.preventDefault();
+        (
+          e.target as Element
+        ).setPointerCapture(
+          e.pointerId,
+        );
+        setHoverPoint(
+          null,
+        );
 
-    const pt = getSvgPoint(e);
+        const pt =
+          getSvgPoint(
+            e,
+          );
 
-    if (pendingStart) {
-      // Click-click mode: second click places endpoint
-      const stroke = createStroke(pendingStart, pt);
-      if (stroke) setStrokes((prev) => [...prev, stroke]);
-      setPendingStart(null);
-      setPreviewEnd(null);
-      return;
-    }
+        if (
+          pendingStart
+        ) {
+          // Click-click mode: second click places endpoint
+          const stroke =
+            createStroke(
+              pendingStart,
+              pt,
+            );
+          if (
+            stroke
+          )
+            setStrokes(
+              (
+                prev,
+              ) => [
+                ...prev,
+                stroke,
+              ],
+            );
+          setPendingStart(
+            null,
+          );
+          setPreviewEnd(
+            null,
+          );
+          return;
+        }
 
-    // Start a potential drag
-    isDragging.current = false;
-    dragStart.current = pt;
-    setPreviewEnd(pt);
-  }, [canDraw, getSvgPoint, pendingStart, createStroke, setStrokes]);
+        // Start a potential drag
+        isDragging.current = false;
+        dragStart.current =
+          pt;
+        setPreviewEnd(
+          pt,
+        );
+      },
+      [
+        canDraw,
+        getSvgPoint,
+        pendingStart,
+        createStroke,
+        setStrokes,
+      ],
+    );
 
-  const handlePointerMove = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
-    const pt = getSvgPoint(e);
+  const handlePointerMove =
+    useCallback(
+      (
+        e: React.PointerEvent<SVGSVGElement>,
+      ) => {
+        const pt =
+          getSvgPoint(
+            e,
+          );
 
-    if (pendingStart) {
-      // Click-click mode: show preview from pending start to current mouse
-      setPreviewEnd(pt);
-      setHoverPoint(null);
-      return;
-    }
+        if (
+          pendingStart
+        ) {
+          // Click-click mode: show preview from pending start to current mouse
+          setPreviewEnd(
+            pt,
+          );
+          setHoverPoint(
+            null,
+          );
+          return;
+        }
 
-    if (dragStart.current) {
-      // Drag mode: track as dragging once the mouse moves
-      isDragging.current = true;
-      setPreviewEnd(pt);
-      setHoverPoint(null);
-      return;
-    }
+        if (
+          dragStart.current
+        ) {
+          // Drag mode: track as dragging once the mouse moves
+          isDragging.current = true;
+          setPreviewEnd(
+            pt,
+          );
+          setHoverPoint(
+            null,
+          );
+          return;
+        }
 
-    // Idle hover: show cursor preview circle
-    if (canDraw) {
-      setHoverPoint(pt);
-    }
-  }, [getSvgPoint, pendingStart, canDraw]);
+        // Idle hover: show cursor preview circle
+        if (
+          canDraw
+        ) {
+          setHoverPoint(
+            pt,
+          );
+        }
+      },
+      [
+        getSvgPoint,
+        pendingStart,
+        canDraw,
+      ],
+    );
 
-  const handlePointerUp = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
-    if (pendingStart) return; // Click-click mode is handled in pointerDown
+  const handlePointerUp =
+    useCallback(
+      (
+        e: React.PointerEvent<SVGSVGElement>,
+      ) => {
+        if (
+          pendingStart
+        )
+          return; // Click-click mode is handled in pointerDown
 
-    const pt = getSvgPoint(e);
+        const pt =
+          getSvgPoint(
+            e,
+          );
 
-    if (dragStart.current) {
-      if (isDragging.current) {
-        // Drag mode: finalize line from dragStart to current position
-        const stroke = createStroke(dragStart.current, pt);
-        if (stroke) setStrokes((prev) => [...prev, stroke]);
-        setPreviewEnd(null);
-      } else {
-        // Click without drag: enter click-click mode (first click sets start)
-        setPendingStart(dragStart.current);
-        setPreviewEnd(pt);
+        if (
+          dragStart.current
+        ) {
+          if (
+            isDragging.current
+          ) {
+            // Drag mode: finalize line from dragStart to current position
+            const stroke =
+              createStroke(
+                dragStart.current,
+                pt,
+              );
+            if (
+              stroke
+            )
+              setStrokes(
+                (
+                  prev,
+                ) => [
+                  ...prev,
+                  stroke,
+                ],
+              );
+            setPreviewEnd(
+              null,
+            );
+          } else {
+            // Click without drag: enter click-click mode (first click sets start)
+            setPendingStart(
+              dragStart.current,
+            );
+            setPreviewEnd(
+              pt,
+            );
+          }
+          dragStart.current =
+            null;
+          isDragging.current = false;
+        }
+      },
+      [
+        getSvgPoint,
+        pendingStart,
+        createStroke,
+        setStrokes,
+      ],
+    );
+
+  const handlePointerLeave =
+    useCallback(() => {
+      setHoverPoint(
+        null,
+      );
+      // Cancel drag if mouse leaves canvas
+      if (
+        dragStart.current &&
+        isDragging.current
+      ) {
+        dragStart.current =
+          null;
+        isDragging.current = false;
+        setPreviewEnd(
+          null,
+        );
       }
-      dragStart.current = null;
-      isDragging.current = false;
-    }
-  }, [getSvgPoint, pendingStart, createStroke, setStrokes]);
-
-  const handlePointerLeave = useCallback(() => {
-    setHoverPoint(null);
-    // Cancel drag if mouse leaves canvas
-    if (dragStart.current && isDragging.current) {
-      dragStart.current = null;
-      isDragging.current = false;
-      setPreviewEnd(null);
-    }
-    // Don't cancel click-click mode: the user may re-enter the canvas
-  }, []);
+      // Don't cancel click-click mode: the user may re-enter the canvas
+    }, []);
 
   /** Cancel click-click mode on Escape key */
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && pendingStart) {
-      setPendingStart(null);
-      setPreviewEnd(null);
-    }
-  }, [pendingStart]);
+  const handleKeyDown =
+    useCallback(
+      (
+        e: React.KeyboardEvent,
+      ) => {
+        if (
+          e.key ===
+            'Escape' &&
+          pendingStart
+        ) {
+          setPendingStart(
+            null,
+          );
+          setPreviewEnd(
+            null,
+          );
+        }
+      },
+      [
+        pendingStart,
+      ],
+    );
 
   // Compute preview line start
-  const previewStart = pendingStart ?? dragStart.current;
+  const previewStart =
+    pendingStart ??
+    dragStart.current;
 
   return (
-    <div className="relative" tabIndex={0} onKeyDown={handleKeyDown} role="application" aria-label={t("drawing-canvas-label", { defaultValue: "Drawing canvas — place straight lines" })}>
+    <div
+      className="relative"
+      tabIndex={
+        0
+      }
+      onKeyDown={
+        handleKeyDown
+      }
+      role="application"
+      aria-label={t(
+        'drawing-canvas-label',
+        {
+          defaultValue:
+            'Drawing canvas — place straight lines',
+        },
+      )}
+    >
       <svg
-        ref={svgRef}
+        ref={
+          svgRef
+        }
         data-jelly-zone="playfield"
         viewBox="0 0 300 300"
         className={`w-72 h-72 rounded-app-sm border-2 touch-none outline-none ${
@@ -181,70 +447,171 @@ export default function DrawingCanvas({
             ? 'border-app-accent cursor-crosshair'
             : 'border-app-border cursor-not-allowed'
         }`}
-        style={{ backgroundColor }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerLeave}
+        style={{
+          backgroundColor,
+        }}
+        onPointerDown={
+          handlePointerDown
+        }
+        onPointerMove={
+          handlePointerMove
+        }
+        onPointerUp={
+          handlePointerUp
+        }
+        onPointerLeave={
+          handlePointerLeave
+        }
       >
         {/* Committed strokes */}
-        {strokes.map((stroke) => (
-          <line
-            key={stroke.id}
-            x1={stroke.points[0]?.x ?? 0}
-            y1={stroke.points[0]?.y ?? 0}
-            x2={stroke.points[1]?.x ?? stroke.points[0]?.x ?? 0}
-            y2={stroke.points[1]?.y ?? stroke.points[0]?.y ?? 0}
-            stroke={stroke.color}
-            strokeWidth={stroke.width}
-            strokeLinecap="round"
-          />
-        ))}
+        {strokes.map(
+          (
+            stroke,
+          ) => (
+            <line
+              key={
+                stroke.id
+              }
+              x1={
+                stroke
+                  .points[0]
+                  ?.x ??
+                0
+              }
+              y1={
+                stroke
+                  .points[0]
+                  ?.y ??
+                0
+              }
+              x2={
+                stroke
+                  .points[1]
+                  ?.x ??
+                stroke
+                  .points[0]
+                  ?.x ??
+                0
+              }
+              y2={
+                stroke
+                  .points[1]
+                  ?.y ??
+                stroke
+                  .points[0]
+                  ?.y ??
+                0
+              }
+              stroke={
+                stroke.color
+              }
+              strokeWidth={
+                stroke.width
+              }
+              strokeLinecap="round"
+            />
+          ),
+        )}
 
         {/* Preview line while placing */}
-        {canDraw && previewStart && previewEnd && (
-          <line
-            x1={previewStart.x}
-            y1={previewStart.y}
-            x2={previewEnd.x}
-            y2={previewEnd.y}
-            stroke={selectedColor}
-            strokeWidth={selectedWidth}
-            strokeLinecap="round"
-            opacity={0.5}
-            strokeDasharray="6 4"
-          />
-        )}
+        {canDraw &&
+          previewStart &&
+          previewEnd && (
+            <line
+              x1={
+                previewStart.x
+              }
+              y1={
+                previewStart.y
+              }
+              x2={
+                previewEnd.x
+              }
+              y2={
+                previewEnd.y
+              }
+              stroke={
+                selectedColor
+              }
+              strokeWidth={
+                selectedWidth
+              }
+              strokeLinecap="round"
+              opacity={
+                0.5
+              }
+              strokeDasharray="6 4"
+            />
+          )}
 
         {/* Hover cursor preview circle — shows current color/width when idle on canvas */}
-        {canDraw && hoverPoint && !previewStart && (
-          <circle
-            cx={hoverPoint.x}
-            cy={hoverPoint.y}
-            r={selectedWidth / 2}
-            fill={selectedColor}
-            opacity={0.4}
-            pointerEvents="none"
-          />
-        )}
+        {canDraw &&
+          hoverPoint &&
+          !previewStart && (
+            <circle
+              cx={
+                hoverPoint.x
+              }
+              cy={
+                hoverPoint.y
+              }
+              r={
+                selectedWidth /
+                2
+              }
+              fill={
+                selectedColor
+              }
+              opacity={
+                0.4
+              }
+              pointerEvents="none"
+            />
+          )}
       </svg>
 
       {/* Undo button */}
-      {strokes.length > 0 && !disabled && (
-        <button
-          onClick={onUndo}
-          className="surface-card absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full text-app-text hover:bg-app-border transition-colors"
-          title={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
-          aria-label={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
-        >
-          <Undo2 size={16} />
-        </button>
-      )}
+      {strokes.length >
+        0 &&
+        !disabled && (
+          <button
+            onClick={
+              onUndo
+            }
+            className="surface-card absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full text-app-text hover:bg-app-border transition-colors"
+            title={t(
+              'undo-last-stroke',
+              {
+                defaultValue:
+                  'Undo last stroke',
+              },
+            )}
+            aria-label={t(
+              'undo-last-stroke',
+              {
+                defaultValue:
+                  'Undo last stroke',
+              },
+            )}
+          >
+            <Undo2
+              size={
+                16
+              }
+            />
+          </button>
+        )}
 
       {/* Pending indicator — pointer-events-none so it doesn't block endpoint placement */}
       {pendingStart && (
         <span className="absolute bottom-2 left-2 text-xs text-app-text-muted bg-app-surface/80 px-2 py-0.5 rounded pointer-events-none select-none">
-          {t("click-to-place-endpoint", { defaultValue: "Click to place endpoint (Esc to cancel)" })}
+          {t(
+            'click-to-place-endpoint',
+            {
+              defaultValue:
+                'Click to place endpoint (Esc to cancel)',
+            },
+          )}
         </span>
       )}
     </div>

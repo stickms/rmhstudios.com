@@ -38,38 +38,149 @@ export const MAX_COLLAGE_TILES = 4;
  * the clamp is here rather than assumed so a caller that grows the limit gets a
  * shorter grid instead of a broken one.
  */
-export function collageTiles(count: number, box: CollageBox, gap: number): TileBox[] {
-  const n = Math.min(Math.max(Math.floor(count), 0), MAX_COLLAGE_TILES);
-  if (n === 0) return [];
+export function collageTiles(
+  count: number,
+  box: CollageBox,
+  gap: number,
+): TileBox[] {
+  const n =
+    Math.min(
+      Math.max(
+        Math.floor(
+          count,
+        ),
+        0,
+      ),
+      MAX_COLLAGE_TILES,
+    );
+  if (
+    n ===
+    0
+  )
+    return [];
 
-  const { width: W, height: H } = box;
-  const halfW = Math.floor((W - gap) / 2);
-  const halfH = Math.floor((H - gap) / 2);
-  const rightX = W - halfW;
-  const lowerY = H - halfH;
+  const {
+    width:
+      W,
+    height:
+      H,
+  } =
+    box;
+  const halfW =
+    Math.floor(
+      (W -
+        gap) /
+        2,
+    );
+  const halfH =
+    Math.floor(
+      (H -
+        gap) /
+        2,
+    );
+  const rightX =
+    W -
+    halfW;
+  const lowerY =
+    H -
+    halfH;
 
-  switch (n) {
+  switch (
+    n
+  ) {
     case 1:
-      return [{ left: 0, top: 0, width: W, height: H }];
+      return [
+        {
+          left: 0,
+          top: 0,
+          width:
+            W,
+          height:
+            H,
+        },
+      ];
     case 2:
       return [
-        { left: 0, top: 0, width: halfW, height: H },
-        { left: rightX, top: 0, width: halfW, height: H },
+        {
+          left: 0,
+          top: 0,
+          width:
+            halfW,
+          height:
+            H,
+        },
+        {
+          left: rightX,
+          top: 0,
+          width:
+            halfW,
+          height:
+            H,
+        },
       ];
     case 3:
       // The tall tile leads, as it does on every consumer of this shape: the
       // first attachment is the one the author chose first.
       return [
-        { left: 0, top: 0, width: halfW, height: H },
-        { left: rightX, top: 0, width: halfW, height: halfH },
-        { left: rightX, top: lowerY, width: halfW, height: halfH },
+        {
+          left: 0,
+          top: 0,
+          width:
+            halfW,
+          height:
+            H,
+        },
+        {
+          left: rightX,
+          top: 0,
+          width:
+            halfW,
+          height:
+            halfH,
+        },
+        {
+          left: rightX,
+          top: lowerY,
+          width:
+            halfW,
+          height:
+            halfH,
+        },
       ];
     default:
       return [
-        { left: 0, top: 0, width: halfW, height: halfH },
-        { left: rightX, top: 0, width: halfW, height: halfH },
-        { left: 0, top: lowerY, width: halfW, height: halfH },
-        { left: rightX, top: lowerY, width: halfW, height: halfH },
+        {
+          left: 0,
+          top: 0,
+          width:
+            halfW,
+          height:
+            halfH,
+        },
+        {
+          left: rightX,
+          top: 0,
+          width:
+            halfW,
+          height:
+            halfH,
+        },
+        {
+          left: 0,
+          top: lowerY,
+          width:
+            halfW,
+          height:
+            halfH,
+        },
+        {
+          left: rightX,
+          top: lowerY,
+          width:
+            halfW,
+          height:
+            halfH,
+        },
       ];
   }
 }

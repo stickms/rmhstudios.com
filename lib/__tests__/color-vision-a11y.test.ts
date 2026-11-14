@@ -1,4 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
@@ -29,94 +33,257 @@ import { readCss } from './css-source';
  * Nothing about a missing piece is visible in review, so it is asserted here.
  */
 
-const ROOT = process.cwd();
-const css = readCss(join(ROOT, 'app', 'globals.css'));
+const ROOT =
+  process.cwd();
+const css =
+  readCss(
+    join(
+      ROOT,
+      'app',
+      'globals.css',
+    ),
+  );
 
 /** The modes that actually retint something ('none' is the untouched default). */
-const ACTIVE_MODES = COLOR_VISION_MODES.filter((m) => m !== 'none');
+const ACTIVE_MODES =
+  COLOR_VISION_MODES.filter(
+    (
+      m,
+    ) =>
+      m !==
+      'none',
+  );
 
 describe('colour-vision modes', () => {
   it('defaults to the untouched palette', () => {
-    expect(DEFAULT_COLOR_VISION).toBe('none');
+    expect(
+      DEFAULT_COLOR_VISION,
+    ).toBe(
+      'none',
+    );
   });
 
   it('validates its own members and rejects anything else', () => {
-    for (const mode of COLOR_VISION_MODES) expect(isColorVisionMode(mode)).toBe(true);
-    for (const bad of ['', 'DEUTERANOPIA', 'colour-blind', null, 7, {}]) {
-      expect(isColorVisionMode(bad)).toBe(false);
+    for (const mode of COLOR_VISION_MODES)
+      expect(
+        isColorVisionMode(
+          mode,
+        ),
+      ).toBe(
+        true,
+      );
+    for (const bad of [
+      '',
+      'DEUTERANOPIA',
+      'colour-blind',
+      null,
+      7,
+      {},
+    ]) {
+      expect(
+        isColorVisionMode(
+          bad,
+        ),
+      ).toBe(
+        false,
+      );
     }
   });
 
   it('is accepted by the appearance sync schema', () => {
     for (const mode of COLOR_VISION_MODES) {
-      expect(appearanceComfortSchema.safeParse({ colorVision: mode }).success).toBe(true);
+      expect(
+        appearanceComfortSchema.safeParse(
+          {
+            colorVision:
+              mode,
+          },
+        )
+          .success,
+      ).toBe(
+        true,
+      );
     }
-    expect(appearanceComfortSchema.safeParse({ colorVision: 'nope' }).success).toBe(false);
+    expect(
+      appearanceComfortSchema.safeParse(
+        {
+          colorVision:
+            'nope',
+        },
+      )
+        .success,
+    ).toBe(
+      false,
+    );
   });
 
   it('gives every mode a label and a hint for the settings UI', () => {
     for (const mode of COLOR_VISION_MODES) {
-      expect(COLOR_VISION_LABELS[mode]?.length, `${mode} needs a label`).toBeGreaterThan(0);
-      expect(COLOR_VISION_HINTS[mode]?.length, `${mode} needs a hint`).toBeGreaterThan(0);
+      expect(
+        COLOR_VISION_LABELS[
+          mode
+        ]
+          ?.length,
+        `${mode} needs a label`,
+      ).toBeGreaterThan(
+        0,
+      );
+      expect(
+        COLOR_VISION_HINTS[
+          mode
+        ]
+          ?.length,
+        `${mode} needs a hint`,
+      ).toBeGreaterThan(
+        0,
+      );
     }
   });
 
-  it.each(ACTIVE_MODES)('%s has a palette in globals.css', (mode) => {
-    expect(
-      css.includes(`data-color-vision='${mode}'`),
-      `No CSS block for '${mode}'. Without one the setting is selectable and does nothing.`,
-    ).toBe(true);
-  });
+  it.each(
+    ACTIVE_MODES,
+  )(
+    '%s has a palette in globals.css',
+    (
+      mode,
+    ) => {
+      expect(
+        css.includes(
+          `data-color-vision='${mode}'`,
+        ),
+        `No CSS block for '${mode}'. Without one the setting is selectable and does nothing.`,
+      ).toBe(
+        true,
+      );
+    },
+  );
 
-  it.each(ACTIVE_MODES)('%s retints all three semantic tokens', (mode) => {
-    // Grab the first rule for this mode and check it overrides every token that
-    // carries status meaning. Retinting two of three leaves one colour stranded
-    // in the old palette, which is worse than not retinting at all.
-    const start = css.indexOf(`html[data-color-vision='${mode}']`);
-    const block = css.slice(start, css.indexOf('}', start));
-    for (const token of ['--site-success', '--site-danger', '--site-warning']) {
-      expect(block, `'${mode}' does not set ${token}`).toContain(token);
-    }
-  });
+  it.each(
+    ACTIVE_MODES,
+  )(
+    '%s retints all three semantic tokens',
+    (
+      mode,
+    ) => {
+      // Grab the first rule for this mode and check it overrides every token that
+      // carries status meaning. Retinting two of three leaves one colour stranded
+      // in the old palette, which is worse than not retinting at all.
+      const start =
+        css.indexOf(
+          `html[data-color-vision='${mode}']`,
+        );
+      const block =
+        css.slice(
+          start,
+          css.indexOf(
+            '}',
+            start,
+          ),
+        );
+      for (const token of [
+        '--site-success',
+        '--site-danger',
+        '--site-warning',
+      ]) {
+        expect(
+          block,
+          `'${mode}' does not set ${token}`,
+        ).toContain(
+          token,
+        );
+      }
+    },
+  );
 
   it('has a dark-theme variant for every mode', () => {
     // A hue picked to read on white is usually below the contrast floor on the
     // near-black themes, so each mode needs a second block scoped to them.
     for (const mode of ACTIVE_MODES) {
       const scoped = `html[data-color-vision='${mode}']:is(`;
-      expect(css.includes(scoped), `'${mode}' has no dark-theme override`).toBe(true);
+      expect(
+        css.includes(
+          scoped,
+        ),
+        `'${mode}' has no dark-theme override`,
+      ).toBe(
+        true,
+      );
     }
   });
 
   it('is applied by the pre-paint script, not just at runtime', () => {
     // Runs the GENERATED pre-paint code against each cached mode.
     for (const mode of ACTIVE_MODES) {
-      const run = runPrepaint({ storage: { 'rmh-color-vision': mode } });
+      const run =
+        runPrepaint(
+          {
+            storage:
+              {
+                'rmh-color-vision':
+                  mode,
+              },
+          },
+        );
       expect(
-        run.attrs.get('data-color-vision'),
+        run.attrs.get(
+          'data-color-vision',
+        ),
         `Pre-paint script does not handle '${mode}' — the default palette flashes on every load.`,
-      ).toBe(mode);
+      ).toBe(
+        mode,
+      );
     }
-    expect(runPrepaint().attrs.has('data-color-vision')).toBe(false);
+    expect(
+      runPrepaint().attrs.has(
+        'data-color-vision',
+      ),
+    ).toBe(
+      false,
+    );
   });
 });
 
 describe('status colour is never the only signal', () => {
-  const badge = readFileSync(join(ROOT, 'components', 'ui', 'badge.tsx'), 'utf8');
+  const badge =
+    readFileSync(
+      join(
+        ROOT,
+        'components',
+        'ui',
+        'badge.tsx',
+      ),
+      'utf8',
+    );
 
   it('pairs each semantic badge variant with a glyph', () => {
     // WCAG 1.4.1: colour alone must not convey meaning. The retint helps a
     // viewer who has configured it; the glyph helps everyone, unconditionally.
-    for (const variant of ['success', 'warning', 'danger']) {
+    for (const variant of [
+      'success',
+      'warning',
+      'danger',
+    ]) {
       expect(
-        badge.includes(`${variant}:`),
+        badge.includes(
+          `${variant}:`,
+        ),
         `Badge variant '${variant}' has no entry in STATUS_ICONS`,
-      ).toBe(true);
+      ).toBe(
+        true,
+      );
     }
-    expect(badge).toContain('STATUS_ICONS');
+    expect(
+      badge,
+    ).toContain(
+      'STATUS_ICONS',
+    );
   });
 
   it('marks the glyph decorative so screen readers read the label once', () => {
-    expect(badge).toContain('aria-hidden');
+    expect(
+      badge,
+    ).toContain(
+      'aria-hidden',
+    );
   });
 });

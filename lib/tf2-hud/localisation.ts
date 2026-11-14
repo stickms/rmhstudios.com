@@ -11,7 +11,10 @@
  */
 
 import { parseKv } from './kv/parse';
-import { evalCond, PC_ENV } from './scheme/cond';
+import {
+  evalCond,
+  PC_ENV,
+} from './scheme/cond';
 
 export interface TfLanguage {
   /** The `<language>` in `tf_<language>.txt`. */
@@ -19,40 +22,158 @@ export interface TfLanguage {
   label: string;
 }
 
-export const DEFAULT_LANGUAGE = 'english';
+export const DEFAULT_LANGUAGE =
+  'english';
 
-export const TF_LANGUAGES: readonly TfLanguage[] = [
-  { id: 'english', label: 'English' },
-  { id: 'spanish', label: 'Español' },
-  { id: 'latam', label: 'Español (Latinoamérica)' },
-  { id: 'french', label: 'Français' },
-  { id: 'german', label: 'Deutsch' },
-  { id: 'italian', label: 'Italiano' },
-  { id: 'portuguese', label: 'Português' },
-  { id: 'brazilian', label: 'Português (Brasil)' },
-  { id: 'dutch', label: 'Nederlands' },
-  { id: 'polish', label: 'Polski' },
-  { id: 'czech', label: 'Čeština' },
-  { id: 'hungarian', label: 'Magyar' },
-  { id: 'romanian', label: 'Română' },
-  { id: 'bulgarian', label: 'Български' },
-  { id: 'russian', label: 'Русский' },
-  { id: 'ukrainian', label: 'Українська' },
-  { id: 'greek', label: 'Ελληνικά' },
-  { id: 'turkish', label: 'Türkçe' },
-  { id: 'danish', label: 'Dansk' },
-  { id: 'finnish', label: 'Suomi' },
-  { id: 'norwegian', label: 'Norsk' },
-  { id: 'swedish', label: 'Svenska' },
-  { id: 'schinese', label: '简体中文' },
-  { id: 'tchinese', label: '繁體中文' },
-  { id: 'japanese', label: '日本語' },
-  { id: 'koreana', label: '한국어' },
-  { id: 'thai', label: 'ไทย' },
-  { id: 'vietnamese', label: 'Tiếng Việt' },
-];
+export const TF_LANGUAGES: readonly TfLanguage[] =
+  [
+    {
+      id: 'english',
+      label:
+        'English',
+    },
+    {
+      id: 'spanish',
+      label:
+        'Español',
+    },
+    {
+      id: 'latam',
+      label:
+        'Español (Latinoamérica)',
+    },
+    {
+      id: 'french',
+      label:
+        'Français',
+    },
+    {
+      id: 'german',
+      label:
+        'Deutsch',
+    },
+    {
+      id: 'italian',
+      label:
+        'Italiano',
+    },
+    {
+      id: 'portuguese',
+      label:
+        'Português',
+    },
+    {
+      id: 'brazilian',
+      label:
+        'Português (Brasil)',
+    },
+    {
+      id: 'dutch',
+      label:
+        'Nederlands',
+    },
+    {
+      id: 'polish',
+      label:
+        'Polski',
+    },
+    {
+      id: 'czech',
+      label:
+        'Čeština',
+    },
+    {
+      id: 'hungarian',
+      label:
+        'Magyar',
+    },
+    {
+      id: 'romanian',
+      label:
+        'Română',
+    },
+    {
+      id: 'bulgarian',
+      label:
+        'Български',
+    },
+    {
+      id: 'russian',
+      label:
+        'Русский',
+    },
+    {
+      id: 'ukrainian',
+      label:
+        'Українська',
+    },
+    {
+      id: 'greek',
+      label:
+        'Ελληνικά',
+    },
+    {
+      id: 'turkish',
+      label:
+        'Türkçe',
+    },
+    {
+      id: 'danish',
+      label:
+        'Dansk',
+    },
+    {
+      id: 'finnish',
+      label:
+        'Suomi',
+    },
+    {
+      id: 'norwegian',
+      label:
+        'Norsk',
+    },
+    {
+      id: 'swedish',
+      label:
+        'Svenska',
+    },
+    {
+      id: 'schinese',
+      label:
+        '简体中文',
+    },
+    {
+      id: 'tchinese',
+      label:
+        '繁體中文',
+    },
+    {
+      id: 'japanese',
+      label:
+        '日本語',
+    },
+    {
+      id: 'koreana',
+      label:
+        '한국어',
+    },
+    {
+      id: 'thai',
+      label:
+        'ไทย',
+    },
+    {
+      id: 'vietnamese',
+      label:
+        'Tiếng Việt',
+    },
+  ];
 
-export const languageFilePath = (id: string): string => `resource/tf_${id}.txt`;
+export const languageFilePath =
+  (
+    id: string,
+  ): string =>
+    `resource/tf_${id}.txt`;
 
 /**
  * The game's language files besides `tf_<language>.txt`, published with the HUD base for the menus:
@@ -60,65 +181,226 @@ export const languageFilePath = (id: string): string => `resource/tf_${id}.txt`;
  * `gameui_<language>.txt` (`#GameUI_*`: the options dialog, the game menu). Read before `tf_`, which
  * wins where both define a token (the engine adds TF's file last).
  */
-export const ENGINE_LANGUAGE_PREFIXES = ['valve', 'gameui'] as const;
+export const ENGINE_LANGUAGE_PREFIXES =
+  [
+    'valve',
+    'gameui',
+  ] as const;
 
 /** Every game language file of `id`, in the order they are layered (later wins). */
-export function gameLanguageFiles(id: string): string[] {
-  return [...ENGINE_LANGUAGE_PREFIXES.map((p) => `resource/${p}_${id}.txt`), languageFilePath(id)];
+export function gameLanguageFiles(
+  id: string,
+): string[] {
+  return [
+    ...ENGINE_LANGUAGE_PREFIXES.map(
+      (
+        p,
+      ) =>
+        `resource/${p}_${id}.txt`,
+    ),
+    languageFilePath(
+      id,
+    ),
+  ];
 }
 
 /** Valve ships these as UTF-16LE with a BOM; accept UTF-8 (with or without BOM) too. */
-export function decodeLocalisation(bytes: Uint8Array): string {
-  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
-    return new TextDecoder('utf-16le').decode(bytes.subarray(2));
+export function decodeLocalisation(
+  bytes: Uint8Array,
+): string {
+  if (
+    bytes.length >=
+      2 &&
+    bytes[0] ===
+      0xff &&
+    bytes[1] ===
+      0xfe
+  ) {
+    return new TextDecoder(
+      'utf-16le',
+    ).decode(
+      bytes.subarray(
+        2,
+      ),
+    );
   }
-  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
-    return new TextDecoder('utf-16be').decode(bytes.subarray(2));
+  if (
+    bytes.length >=
+      2 &&
+    bytes[0] ===
+      0xfe &&
+    bytes[1] ===
+      0xff
+  ) {
+    return new TextDecoder(
+      'utf-16be',
+    ).decode(
+      bytes.subarray(
+        2,
+      ),
+    );
   }
-  const start = bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf ? 3 : 0;
-  return new TextDecoder('utf-8').decode(bytes.subarray(start));
+  const start =
+    bytes[0] ===
+      0xef &&
+    bytes[1] ===
+      0xbb &&
+    bytes[2] ===
+      0xbf
+      ? 3
+      : 0;
+  return new TextDecoder(
+    'utf-8',
+  ).decode(
+    bytes.subarray(
+      start,
+    ),
+  );
 }
 
-const unescape = (s: string): string =>
-  s.replace(/\\(n|t|"|\\)/g, (_m, c: string) => (c === 'n' ? '\n' : c === 't' ? '\t' : c));
+const unescape =
+  (
+    s: string,
+  ): string =>
+    s.replace(
+      /\\(n|t|"|\\)/g,
+      (
+        _m,
+        c: string,
+      ) =>
+        c ===
+        'n'
+          ? '\n'
+          : c ===
+              't'
+            ? '\t'
+            : c,
+    );
 
 export interface ParsedLanguage {
   /** The `"Language"` value, lower-cased (`english`, `schinese`…), if present. */
-  language: string | undefined;
+  language:
+    | string
+    | undefined;
   /** Lower-case token (no `#`) → text. */
-  tokens: Map<string, string>;
+  tokens: Map<
+    string,
+    string
+  >;
 }
 
-export function parseLocalisation(text: string): ParsedLanguage {
-  const doc = parseKv(text);
-  const root = doc.roots.find((n) => n.children);
-  const tokens = new Map<string, string>();
-  let language: string | undefined;
-  for (const c of root?.children ?? []) {
-    const k = c.key.text.toLowerCase();
-    if (k === 'language' && c.value) language = c.value.text.toLowerCase();
-    if (k === 'tokens' && c.children) {
+export function parseLocalisation(
+  text: string,
+): ParsedLanguage {
+  const doc =
+    parseKv(
+      text,
+    );
+  const root =
+    doc.roots.find(
+      (
+        n,
+      ) =>
+        n.children,
+    );
+  const tokens =
+    new Map<
+      string,
+      string
+    >();
+  let language:
+    | string
+    | undefined;
+  for (const c of root?.children ??
+    []) {
+    const k =
+      c.key.text.toLowerCase();
+    if (
+      k ===
+        'language' &&
+      c.value
+    )
+      language =
+        c.value.text.toLowerCase();
+    if (
+      k ===
+        'tokens' &&
+      c.children
+    ) {
       for (const t of c.children) {
         // A token's `[$X360]` variant is not the PC's.
-        if (!t.value || !evalCond(t.cond?.text, PC_ENV)) continue;
-        tokens.set(t.key.text.toLowerCase().replace(/^#/, ''), unescape(t.value.text));
+        if (
+          !t.value ||
+          !evalCond(
+            t
+              .cond
+              ?.text,
+            PC_ENV,
+          )
+        )
+          continue;
+        tokens.set(
+          t.key.text
+            .toLowerCase()
+            .replace(
+              /^#/,
+              '',
+            ),
+          unescape(
+            t
+              .value
+              .text,
+          ),
+        );
       }
     }
   }
-  return { language, tokens };
+  return {
+    language,
+    tokens,
+  };
 }
 
 /** Which language a file is for, from its own `"Language"` line. */
-export function languageOf(bytes: Uint8Array): string | undefined {
-  return parseLocalisation(decodeLocalisation(bytes)).language;
+export function languageOf(
+  bytes: Uint8Array,
+):
+  | string
+  | undefined {
+  return parseLocalisation(
+    decodeLocalisation(
+      bytes,
+    ),
+  )
+    .language;
 }
 
-const parsed = new WeakMap<Uint8Array, ParsedLanguage>();
+const parsed =
+  new WeakMap<
+    Uint8Array,
+    ParsedLanguage
+  >();
 
 /** Parse a language file once per byte array (they are megabytes; the scene rebuilds often). */
-export function parseLanguageBytes(bytes: Uint8Array): ParsedLanguage {
-  let hit = parsed.get(bytes);
-  if (!hit) parsed.set(bytes, (hit = parseLocalisation(decodeLocalisation(bytes))));
+export function parseLanguageBytes(
+  bytes: Uint8Array,
+): ParsedLanguage {
+  let hit =
+    parsed.get(
+      bytes,
+    );
+  if (
+    !hit
+  )
+    parsed.set(
+      bytes,
+      (hit =
+        parseLocalisation(
+          decodeLocalisation(
+            bytes,
+          ),
+        )),
+    );
   return hit;
 }
 
@@ -128,20 +410,68 @@ export function parseLanguageBytes(bytes: Uint8Array): ParsedLanguage {
  */
 export function buildTokens(
   language: string,
-  readBytes: (path: string) => Uint8Array | undefined,
-): Map<string, string> {
-  const out = new Map<string, string>();
-  const langs = language === DEFAULT_LANGUAGE ? [DEFAULT_LANGUAGE] : [DEFAULT_LANGUAGE, language];
+  readBytes: (
+    path: string,
+  ) =>
+    | Uint8Array
+    | undefined,
+): Map<
+  string,
+  string
+> {
+  const out =
+    new Map<
+      string,
+      string
+    >();
+  const langs =
+    language ===
+    DEFAULT_LANGUAGE
+      ? [
+          DEFAULT_LANGUAGE,
+        ]
+      : [
+          DEFAULT_LANGUAGE,
+          language,
+        ];
   for (const lang of langs) {
-    const bytes = readBytes(languageFilePath(lang));
-    if (bytes) for (const [k, v] of parseLanguageBytes(bytes).tokens) out.set(k, v);
+    const bytes =
+      readBytes(
+        languageFilePath(
+          lang,
+        ),
+      );
+    if (
+      bytes
+    )
+      for (const [
+        k,
+        v,
+      ] of parseLanguageBytes(
+        bytes,
+      )
+        .tokens)
+        out.set(
+          k,
+          v,
+        );
   }
   return out;
 }
 
 /** Whether a language's file is available from `readBytes`. */
-export const hasLanguage = (id: string, has: (path: string) => boolean): boolean =>
-  has(languageFilePath(id));
+export const hasLanguage =
+  (
+    id: string,
+    has: (
+      path: string,
+    ) => boolean,
+  ): boolean =>
+    has(
+      languageFilePath(
+        id,
+      ),
+    );
 
 /* ───────────────────────── the site's language, and the layered lookup ───────────────────────── */
 
@@ -150,43 +480,95 @@ export const hasLanguage = (id: string, has: (path: string) => boolean): boolean
  * files (`pt-BR` → `brazilian`, `zh-TW` → `tchinese`, `es-419` → `latam`); a language TF2 does not
  * ship (Arabic, Hindi, Urdu, Indonesian…) has no entry and reads English.
  */
-const SITE_LANGUAGE: Readonly<Record<string, string>> = {
-  en: 'english',
-  zh: 'schinese',
-  es: 'spanish',
-  fr: 'french',
-  pt: 'brazilian',
-  ru: 'russian',
-  de: 'german',
-  ja: 'japanese',
-  ko: 'koreana',
-  it: 'italian',
-  vi: 'vietnamese',
-  tr: 'turkish',
-  pl: 'polish',
-  nl: 'dutch',
-  cs: 'czech',
-  el: 'greek',
-  ro: 'romanian',
-  sv: 'swedish',
-  th: 'thai',
-  uk: 'ukrainian',
-  hu: 'hungarian',
-  da: 'danish',
-  fi: 'finnish',
-  nb: 'norwegian',
-  no: 'norwegian',
-  bg: 'bulgarian',
-};
+const SITE_LANGUAGE: Readonly<
+  Record<
+    string,
+    string
+  >
+> =
+  {
+    en: 'english',
+    zh: 'schinese',
+    es: 'spanish',
+    fr: 'french',
+    pt: 'brazilian',
+    ru: 'russian',
+    de: 'german',
+    ja: 'japanese',
+    ko: 'koreana',
+    it: 'italian',
+    vi: 'vietnamese',
+    tr: 'turkish',
+    pl: 'polish',
+    nl: 'dutch',
+    cs: 'czech',
+    el: 'greek',
+    ro: 'romanian',
+    sv: 'swedish',
+    th: 'thai',
+    uk: 'ukrainian',
+    hu: 'hungarian',
+    da: 'danish',
+    fi: 'finnish',
+    nb: 'norwegian',
+    no: 'norwegian',
+    bg: 'bulgarian',
+  };
 
 /** TF2's language id for a site locale, or undefined when TF2 has none (the caller reads English). */
-export function tfLanguageOf(locale: string | undefined): string | undefined {
-  const tag = (locale ?? '').toLowerCase().replace('_', '-');
-  const [lang = '', region = ''] = tag.split('-');
-  if (lang === 'zh' && (region === 'tw' || region === 'hk' || region === 'hant')) return 'tchinese';
-  if (lang === 'pt' && region === 'pt') return 'portuguese';
-  if (lang === 'es' && region && region !== 'es') return 'latam';
-  return SITE_LANGUAGE[lang];
+export function tfLanguageOf(
+  locale:
+    | string
+    | undefined,
+):
+  | string
+  | undefined {
+  const tag =
+    (
+      locale ??
+      ''
+    )
+      .toLowerCase()
+      .replace(
+        '_',
+        '-',
+      );
+  const [
+    lang = '',
+    region = '',
+  ] =
+    tag.split(
+      '-',
+    );
+  if (
+    lang ===
+      'zh' &&
+    (region ===
+      'tw' ||
+      region ===
+        'hk' ||
+      region ===
+        'hant')
+  )
+    return 'tchinese';
+  if (
+    lang ===
+      'pt' &&
+    region ===
+      'pt'
+  )
+    return 'portuguese';
+  if (
+    lang ===
+      'es' &&
+    region &&
+    region !==
+      'es'
+  )
+    return 'latam';
+  return SITE_LANGUAGE[
+    lang
+  ];
 }
 
 /**
@@ -194,36 +576,93 @@ export function tfLanguageOf(locale: string | undefined): string | undefined {
  * (`has`), otherwise English.
  */
 export function languageForSite(
-  locale: string | undefined,
-  has: (path: string) => boolean,
+  locale:
+    | string
+    | undefined,
+  has: (
+    path: string,
+  ) => boolean,
 ): string {
-  const id = tfLanguageOf(locale);
-  return id && id !== DEFAULT_LANGUAGE && has(languageFilePath(id)) ? id : DEFAULT_LANGUAGE;
+  const id =
+    tfLanguageOf(
+      locale,
+    );
+  return id &&
+    id !==
+      DEFAULT_LANGUAGE &&
+    has(
+      languageFilePath(
+        id,
+      ),
+    )
+    ? id
+    : DEFAULT_LANGUAGE;
 }
 
 /** A HUD's own language files: `resource/<anything>_<language>.txt` (the engine adds every one it finds). */
-export function hudLanguageFiles(paths: Iterable<string>, language: string): string[] {
-  const english: string[] = [];
-  const chosen: string[] = [];
+export function hudLanguageFiles(
+  paths: Iterable<string>,
+  language: string,
+): string[] {
+  const english: string[] =
+    [];
+  const chosen: string[] =
+    [];
   for (const p of paths) {
-    const m = /^resource\/[^/]+_([a-z]+)\.txt$/i.exec(p);
-    if (!m) continue;
-    const lang = m[1].toLowerCase();
-    if (lang === DEFAULT_LANGUAGE) english.push(p);
-    else if (lang === language) chosen.push(p);
+    const m =
+      /^resource\/[^/]+_([a-z]+)\.txt$/i.exec(
+        p,
+      );
+    if (
+      !m
+    )
+      continue;
+    const lang =
+      m[1].toLowerCase();
+    if (
+      lang ===
+      DEFAULT_LANGUAGE
+    )
+      english.push(
+        p,
+      );
+    else if (
+      lang ===
+      language
+    )
+      chosen.push(
+        p,
+      );
   }
-  return [...english.sort(), ...(language === DEFAULT_LANGUAGE ? [] : chosen.sort())];
+  return [
+    ...english.sort(),
+    ...(language ===
+    DEFAULT_LANGUAGE
+      ? []
+      : chosen.sort()),
+  ];
 }
 
 export interface TokenLayers {
   language: string;
   /** The game's files (the published HUD base, or a file loaded into the editor). */
-  readGame: (path: string) => Uint8Array | undefined;
+  readGame: (
+    path: string,
+  ) =>
+    | Uint8Array
+    | undefined;
   /** The HUD's own files, and which of its paths exist. */
-  readHud?: (path: string) => Uint8Array | undefined;
+  readHud?: (
+    path: string,
+  ) =>
+    | Uint8Array
+    | undefined;
   hudPaths?: Iterable<string>;
   /** Last resort for tokens nobody defines (the game's few built-in strings, already translated). */
-  fallback?: ReadonlyMap<string, string>;
+  fallback?: ReadonlyMap<
+    string,
+    string
+  >;
 }
 
 /**
@@ -233,15 +672,74 @@ export interface TokenLayers {
  * engine does the same: every file is added to one table, later files winning, the chosen language
  * over English.
  */
-export function layeredTokens(src: TokenLayers): Map<string, string> {
-  const out = new Map<string, string>(src.fallback ?? []);
-  const add = (bytes: Uint8Array | undefined) => {
-    if (bytes) for (const [k, v] of parseLanguageBytes(bytes).tokens) out.set(k, v);
-  };
-  for (const p of gameLanguageFiles(DEFAULT_LANGUAGE)) add(src.readGame(p));
-  if (src.language !== DEFAULT_LANGUAGE) for (const p of gameLanguageFiles(src.language)) add(src.readGame(p));
-  if (src.readHud && src.hudPaths) {
-    for (const p of hudLanguageFiles(src.hudPaths, src.language)) add(src.readHud(p));
+export function layeredTokens(
+  src: TokenLayers,
+): Map<
+  string,
+  string
+> {
+  const out =
+    new Map<
+      string,
+      string
+    >(
+      src.fallback ??
+        [],
+    );
+  const add =
+    (
+      bytes:
+        | Uint8Array
+        | undefined,
+    ) => {
+      if (
+        bytes
+      )
+        for (const [
+          k,
+          v,
+        ] of parseLanguageBytes(
+          bytes,
+        )
+          .tokens)
+          out.set(
+            k,
+            v,
+          );
+    };
+  for (const p of gameLanguageFiles(
+    DEFAULT_LANGUAGE,
+  ))
+    add(
+      src.readGame(
+        p,
+      ),
+    );
+  if (
+    src.language !==
+    DEFAULT_LANGUAGE
+  )
+    for (const p of gameLanguageFiles(
+      src.language,
+    ))
+      add(
+        src.readGame(
+          p,
+        ),
+      );
+  if (
+    src.readHud &&
+    src.hudPaths
+  ) {
+    for (const p of hudLanguageFiles(
+      src.hudPaths,
+      src.language,
+    ))
+      add(
+        src.readHud(
+          p,
+        ),
+      );
   }
   return out;
 }

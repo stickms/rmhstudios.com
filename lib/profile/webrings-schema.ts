@@ -5,17 +5,48 @@
  */
 import { z } from 'zod';
 
-import { RING_DESCRIPTION_MAX, RING_NAME_MAX } from './webrings';
+import {
+  RING_DESCRIPTION_MAX,
+  RING_NAME_MAX,
+} from './webrings';
 
-export const createRingSchema = z.object({
-  name: z.string().trim().min(3).max(RING_NAME_MAX),
-  description: z.string().trim().max(RING_DESCRIPTION_MAX).optional(),
-});
+export const createRingSchema =
+  z.object(
+    {
+      name: z
+        .string()
+        .trim()
+        .min(
+          3,
+        )
+        .max(
+          RING_NAME_MAX,
+        ),
+      description:
+        z
+          .string()
+          .trim()
+          .max(
+            RING_DESCRIPTION_MAX,
+          )
+          .optional(),
+    },
+  );
 
-export type CreateRingInput = z.infer<typeof createRingSchema>;
+export type CreateRingInput =
+  z.infer<
+    typeof createRingSchema
+  >;
 
-export const ringSlugSchema = z
-  .string()
-  .min(1)
-  .max(64)
-  .regex(/^[a-z0-9-]+$/);
+export const ringSlugSchema =
+  z
+    .string()
+    .min(
+      1,
+    )
+    .max(
+      64,
+    )
+    .regex(
+      /^[a-z0-9-]+$/,
+    );

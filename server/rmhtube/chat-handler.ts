@@ -8,15 +8,25 @@
  * typing indicators, chat reactions, and pinned messages.
  */
 
-import type { Server, Socket } from 'socket.io';
+import type {
+  Server,
+  Socket,
+} from 'socket.io';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { config } from './config';
 import { logger } from './logger';
 import { getPrismaClient } from './prisma-client';
 import { validated } from './schemas';
-import { C2S, S2C } from '../../lib/rmhtube/events';
-import { ChatSchema, ChatReactSchema, ChatPinSchema } from '../../lib/rmhtube/schemas';
+import {
+  C2S,
+  S2C,
+} from '../../lib/rmhtube/events';
+import {
+  ChatSchema,
+  ChatReactSchema,
+  ChatPinSchema,
+} from '../../lib/rmhtube/schemas';
 import { sanitizeString } from '../../lib/rmhtube/utils';
 import type { RoomManager } from './room-manager';
 import { RoomSlowMode } from '../shared/room-slow-mode';
@@ -24,9 +34,31 @@ import { createBatchWriter } from '../shared/batch-writer';
 import { slowModeEvents } from '../../lib/safety/slow-mode-events';
 import type { ChatMessage } from './types';
 
-const EmptySchema = z.object({}).optional();
-const SLOW = slowModeEvents('tube');
-const SlowSetSchema = z.object({ seconds: z.number().int().min(0).max(300) });
+const EmptySchema =
+  z
+    .object(
+      {},
+    )
+    .optional();
+const SLOW =
+  slowModeEvents(
+    'tube',
+  );
+const SlowSetSchema =
+  z.object(
+    {
+      seconds:
+        z
+          .number()
+          .int()
+          .min(
+            0,
+          )
+          .max(
+            300,
+          ),
+    },
+  );
 
 interface ChatRow {
   id: string;
@@ -43,24 +75,71 @@ export class ChatHandler {
   // second instead of one INSERT per message. If a batch is rejected (e.g. one
   // row's room insert has not landed yet) it is retried row by row, so a single
   // bad row costs one message, exactly as before.
-  private chatWriter = createBatchWriter<ChatRow>({
-    flushMs: 1_000,
-    maxBatch: 200,
-    write: async (rows) => {
-      const prisma = getPrismaClient();
-      try {
-        await prisma.rmhTubeChatMessage.createMany({ data: rows, skipDuplicates: true });
-      } catch {
-        for (const data of rows) {
-          await prisma.rmhTubeChatMessage.create({ data }).catch((err: unknown) => {
-            logger.error({ event: 'db_chat_persist_failed', roomId: data.roomId, error: String(err) });
-          });
-        }
-      }
-    },
-    onError: (err, dropped) =>
-      logger.error({ event: 'db_chat_persist_failed', dropped, error: String(err) }),
-  });
+  private chatWriter =
+    createBatchWriter<ChatRow>(
+      {
+        flushMs: 1_000,
+        maxBatch: 200,
+        write:
+          async (
+            rows,
+          ) => {
+            const prisma =
+              getPrismaClient();
+            try {
+              await prisma.rmhTubeChatMessage.createMany(
+                {
+                  data: rows,
+                  skipDuplicates: true,
+                },
+              );
+            } catch {
+              for (const data of rows) {
+                await prisma.rmhTubeChatMessage
+                  .create(
+                    {
+                      data,
+                    },
+                  )
+                  .catch(
+                    (
+                      err: unknown,
+                    ) => {
+                      logger.error(
+                        {
+                          event:
+                            'db_chat_persist_failed',
+                          roomId:
+                            data.roomId,
+                          error:
+                            String(
+                              err,
+                            ),
+                        },
+                      );
+                    },
+                  );
+              }
+            }
+          },
+        onError:
+          (
+            err,
+            dropped,
+          ) =>
+            logger.error(
+              {
+                event:
+                  'db_chat_persist_failed',
+                dropped,
+                error:
+                  String(
+                    err,
+                  ),
+              },
+            ),
+      },
+    );
 
   /** Write any buffered chat rows now (graceful shutdown). */
   flushPersistence(): Promise<void> {
@@ -68,43 +147,119 @@ export class ChatHandler {
   }
 
   // S3: host-set slow mode + raid protection, enforced before a message exists.
-  private slowMode = new RoomSlowMode(async (userId) => {
-    const row = await getPrismaClient().user.findUnique({
-      where: { id: userId },
-      select: { createdAt: true },
-    });
-    return row ? row.createdAt.getTime() : null;
-  });
+  private slowMode =
+    new RoomSlowMode(
+      async (
+        userId,
+      ) => {
+        const row =
+          await getPrismaClient().user.findUnique(
+            {
+              where:
+                {
+                  id: userId,
+                },
+              select:
+                {
+                  createdAt: true,
+                },
+            },
+          );
+        return row
+          ? row.createdAt.getTime()
+          : null;
+      },
+    );
 
   constructor(
     private io: Server,
     private roomManager: RoomManager,
   ) {}
 
-  handleConnection(socket: Socket): void {
+  handleConnection(
+    socket: Socket,
+  ): void {
     socket.on(
       C2S.ROOM_CHAT,
-      validated(socket, C2S.ROOM_CHAT, ChatSchema, (s, p) => this.onChat(s, p)),
+      validated(
+        socket,
+        C2S.ROOM_CHAT,
+        ChatSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onChat(
+            s,
+            p,
+          ),
+      ),
     );
 
     socket.on(
       SLOW.SET,
-      validated(socket, SLOW.SET, SlowSetSchema, (s, p) => this.onSlowModeSet(s, p.seconds)),
+      validated(
+        socket,
+        SLOW.SET,
+        SlowSetSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onSlowModeSet(
+            s,
+            p.seconds,
+          ),
+      ),
     );
 
     socket.on(
       C2S.CHAT_TYPING,
-      validated(socket, C2S.CHAT_TYPING, EmptySchema, (s) => this.onTyping(s)),
+      validated(
+        socket,
+        C2S.CHAT_TYPING,
+        EmptySchema,
+        (
+          s,
+        ) =>
+          this.onTyping(
+            s,
+          ),
+      ),
     );
 
     socket.on(
       C2S.CHAT_REACT,
-      validated(socket, C2S.CHAT_REACT, ChatReactSchema, (s, p) => this.onChatReact(s, p)),
+      validated(
+        socket,
+        C2S.CHAT_REACT,
+        ChatReactSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onChatReact(
+            s,
+            p,
+          ),
+      ),
     );
 
     socket.on(
       C2S.CHAT_PIN,
-      validated(socket, C2S.CHAT_PIN, ChatPinSchema, (s, p) => this.onChatPin(s, p)),
+      validated(
+        socket,
+        C2S.CHAT_PIN,
+        ChatPinSchema,
+        (
+          s,
+          p,
+        ) =>
+          this.onChatPin(
+            s,
+            p,
+          ),
+      ),
     );
   }
 
@@ -112,196 +267,539 @@ export class ChatHandler {
 
   private async onChat(
     socket: Socket,
-    payload: { content: string; replyToId?: string; mentions?: string[]; timestamp?: number | null },
+    payload: {
+      content: string;
+      replyToId?: string;
+      mentions?: string[];
+      timestamp?:
+        | number
+        | null;
+    },
   ): Promise<void> {
-    const userId = socket.data.userId as string;
-    const userName = socket.data.userName as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room) return;
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const userName =
+      socket
+        .data
+        .userName as string;
+    const room =
+      this.roomManager.getRoomForUser(
+        userId,
+      );
+    if (
+      !room
+    )
+      return;
 
-    const content = sanitizeString(payload.content, config.CHAT_MAX_LENGTH);
-    if (!content) return;
+    const content =
+      sanitizeString(
+        payload.content,
+        config.CHAT_MAX_LENGTH,
+      );
+    if (
+      !content
+    )
+      return;
 
-    const verdict = await this.slowMode.check(room.id, userId, room.hostUserId === userId);
-    if (!verdict.ok) {
-      socket.emit(SLOW.REJECTED, {
-        roomId: room.id,
-        reason: verdict.reason,
-        retryInMs: verdict.reason === 'cooldown' ? verdict.retryInMs : 0,
-      });
-      socket.emit(SLOW.STATE, this.slowMode.state(room.id));
+    const verdict =
+      await this.slowMode.check(
+        room.id,
+        userId,
+        room.hostUserId ===
+          userId,
+      );
+    if (
+      !verdict.ok
+    ) {
+      socket.emit(
+        SLOW.REJECTED,
+        {
+          roomId:
+            room.id,
+          reason:
+            verdict.reason,
+          retryInMs:
+            verdict.reason ===
+            'cooldown'
+              ? verdict.retryInMs
+              : 0,
+        },
+      );
+      socket.emit(
+        SLOW.STATE,
+        this.slowMode.state(
+          room.id,
+        ),
+      );
       return;
     }
 
     // ── Reply resolution ──
-    let replyToId: string | null = null;
-    let replyToContent: string | null = null;
-    let replyToUserName: string | null = null;
+    let replyToId:
+      | string
+      | null =
+      null;
+    let replyToContent:
+      | string
+      | null =
+      null;
+    let replyToUserName:
+      | string
+      | null =
+      null;
 
-    if (payload.replyToId) {
-      const referencedMessage = room.chat.find((m) => m.id === payload.replyToId);
-      if (referencedMessage) {
-        replyToId = referencedMessage.id;
-        replyToContent = referencedMessage.content.slice(0, 80);
-        replyToUserName = referencedMessage.userName;
+    if (
+      payload.replyToId
+    ) {
+      const referencedMessage =
+        room.chat.find(
+          (
+            m,
+          ) =>
+            m.id ===
+            payload.replyToId,
+        );
+      if (
+        referencedMessage
+      ) {
+        replyToId =
+          referencedMessage.id;
+        replyToContent =
+          referencedMessage.content.slice(
+            0,
+            80,
+          );
+        replyToUserName =
+          referencedMessage.userName;
       }
     }
 
     // ── Mentions validation ──
-    let mentions: string[] = [];
-    if (payload.mentions && payload.mentions.length > 0) {
-      mentions = payload.mentions.filter((mentionedUserId) => room.members.has(mentionedUserId));
+    let mentions: string[] =
+      [];
+    if (
+      payload.mentions &&
+      payload
+        .mentions
+        .length >
+        0
+    ) {
+      mentions =
+        payload.mentions.filter(
+          (
+            mentionedUserId,
+          ) =>
+            room.members.has(
+              mentionedUserId,
+            ),
+        );
     }
 
     // ── Timestamp pass-through ──
-    const timestamp: number | null = payload.timestamp ?? null;
+    const timestamp:
+      | number
+      | null =
+      payload.timestamp ??
+      null;
 
-    const now = Date.now();
-    const message: ChatMessage = {
-      id: nanoid(12),
-      userId,
-      userName,
-      content,
-      createdAt: now,
-      replyToId,
-      replyToContent,
-      replyToUserName,
-      mentions,
-      timestamp,
-    };
+    const now =
+      Date.now();
+    const message: ChatMessage =
+      {
+        id: nanoid(
+          12,
+        ),
+        userId,
+        userName,
+        content,
+        createdAt:
+          now,
+        replyToId,
+        replyToContent,
+        replyToUserName,
+        mentions,
+        timestamp,
+      };
 
     // Ring buffer: trim to max history
-    room.chat.push(message);
-    if (room.chat.length > config.CHAT_HISTORY_LENGTH) {
-      room.chat.splice(0, room.chat.length - config.CHAT_HISTORY_LENGTH);
+    room.chat.push(
+      message,
+    );
+    if (
+      room
+        .chat
+        .length >
+      config.CHAT_HISTORY_LENGTH
+    ) {
+      room.chat.splice(
+        0,
+        room
+          .chat
+          .length -
+          config.CHAT_HISTORY_LENGTH,
+      );
     }
 
-    room.lastActivityAt = now;
+    room.lastActivityAt =
+      now;
 
-    this.roomManager.broadcastAction(room, 'CHAT_MESSAGE', message);
+    this.roomManager.broadcastAction(
+      room,
+      'CHAT_MESSAGE',
+      message,
+    );
 
     // Persist to DB (fire-and-forget)
-    this.chatWriter.add({
-      id: message.id,
-      roomId: room.id,
-      userId: message.userId,
-      userName: message.userName,
-      content: message.content,
-      createdAt: new Date(message.createdAt),
-    });
+    this.chatWriter.add(
+      {
+        id: message.id,
+        roomId:
+          room.id,
+        userId:
+          message.userId,
+        userName:
+          message.userName,
+        content:
+          message.content,
+        createdAt:
+          new Date(
+            message.createdAt,
+          ),
+      },
+    );
   }
 
-  private onSlowModeSet(socket: Socket, seconds: number): void {
-    const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.hostUserId !== userId) return;
-    if (this.slowMode.setCooldown(room.id, seconds) === null) return;
-    this.io.to(room.id).emit(SLOW.STATE, this.slowMode.state(room.id));
+  private onSlowModeSet(
+    socket: Socket,
+    seconds: number,
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const room =
+      this.roomManager.getRoomForUser(
+        userId,
+      );
+    if (
+      !room ||
+      room.hostUserId !==
+        userId
+    )
+      return;
+    if (
+      this.slowMode.setCooldown(
+        room.id,
+        seconds,
+      ) ===
+      null
+    )
+      return;
+    this.io
+      .to(
+        room.id,
+      )
+      .emit(
+        SLOW.STATE,
+        this.slowMode.state(
+          room.id,
+        ),
+      );
   }
 
   // ─── Typing Indicators ─────────────────────────────────────
 
-  private onTyping(socket: Socket): void {
-    const userId = socket.data.userId as string;
-    const userName = socket.data.userName as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room) return;
+  private onTyping(
+    socket: Socket,
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const userName =
+      socket
+        .data
+        .userName as string;
+    const room =
+      this.roomManager.getRoomForUser(
+        userId,
+      );
+    if (
+      !room
+    )
+      return;
 
     // Clear any existing typing timer for this user
-    const existingTimer = room.typingTimers.get(userId);
-    if (existingTimer) {
-      clearTimeout(existingTimer);
+    const existingTimer =
+      room.typingTimers.get(
+        userId,
+      );
+    if (
+      existingTimer
+    ) {
+      clearTimeout(
+        existingTimer,
+      );
     }
 
     // Broadcast typing indicator to other room members (not the sender)
-    socket.to(room.id).emit(S2C.CHAT_TYPING_INDICATOR, { userId, userName });
+    socket
+      .to(
+        room.id,
+      )
+      .emit(
+        S2C.CHAT_TYPING_INDICATOR,
+        {
+          userId,
+          userName,
+        },
+      );
 
     // Auto-clear after 3 seconds
-    const timer = setTimeout(() => {
-      room.typingTimers.delete(userId);
-    }, 3_000);
-    room.typingTimers.set(userId, timer);
+    const timer =
+      setTimeout(
+        () => {
+          room.typingTimers.delete(
+            userId,
+          );
+        },
+        3_000,
+      );
+    room.typingTimers.set(
+      userId,
+      timer,
+    );
   }
 
   // ─── Chat Reactions ─────────────────────────────────────────
 
-  private onChatReact(socket: Socket, payload: { messageId: string; emoji: string }): void {
-    const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room) return;
+  private onChatReact(
+    socket: Socket,
+    payload: {
+      messageId: string;
+      emoji: string;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const room =
+      this.roomManager.getRoomForUser(
+        userId,
+      );
+    if (
+      !room
+    )
+      return;
 
-    const { messageId, emoji } = payload;
+    const {
+      messageId,
+      emoji,
+    } =
+      payload;
 
     // Verify the message exists in the chat history
-    const messageExists = room.chat.some((m) => m.id === messageId);
-    if (!messageExists) return;
+    const messageExists =
+      room.chat.some(
+        (
+          m,
+        ) =>
+          m.id ===
+          messageId,
+      );
+    if (
+      !messageExists
+    )
+      return;
 
     // Get or create the reactions map for this message
-    if (!room.chatReactions.has(messageId)) {
-      room.chatReactions.set(messageId, new Map());
+    if (
+      !room.chatReactions.has(
+        messageId,
+      )
+    ) {
+      room.chatReactions.set(
+        messageId,
+        new Map(),
+      );
     }
-    const messageReactions = room.chatReactions.get(messageId)!;
+    const messageReactions =
+      room.chatReactions.get(
+        messageId,
+      )!;
 
     // Get or create the set of users for this emoji
-    if (!messageReactions.has(emoji)) {
-      messageReactions.set(emoji, new Set());
+    if (
+      !messageReactions.has(
+        emoji,
+      )
+    ) {
+      messageReactions.set(
+        emoji,
+        new Set(),
+      );
     }
-    const emojiUsers = messageReactions.get(emoji)!;
+    const emojiUsers =
+      messageReactions.get(
+        emoji,
+      )!;
 
     // Toggle: if user already reacted with this emoji, remove; otherwise add
-    if (emojiUsers.has(userId)) {
-      emojiUsers.delete(userId);
+    if (
+      emojiUsers.has(
+        userId,
+      )
+    ) {
+      emojiUsers.delete(
+        userId,
+      );
       // Clean up empty sets
-      if (emojiUsers.size === 0) {
-        messageReactions.delete(emoji);
+      if (
+        emojiUsers.size ===
+        0
+      ) {
+        messageReactions.delete(
+          emoji,
+        );
       }
       // Clean up empty maps
-      if (messageReactions.size === 0) {
-        room.chatReactions.delete(messageId);
+      if (
+        messageReactions.size ===
+        0
+      ) {
+        room.chatReactions.delete(
+          messageId,
+        );
       }
     } else {
-      emojiUsers.add(userId);
+      emojiUsers.add(
+        userId,
+      );
     }
 
     // Build the serialized reactions: Record<string, string[]>
-    const reactions: Record<string, string[]> = {};
-    const currentReactions = room.chatReactions.get(messageId);
-    if (currentReactions) {
-      for (const [emojiKey, userSet] of currentReactions) {
-        reactions[emojiKey] = Array.from(userSet);
+    const reactions: Record<
+      string,
+      string[]
+    > =
+      {};
+    const currentReactions =
+      room.chatReactions.get(
+        messageId,
+      );
+    if (
+      currentReactions
+    ) {
+      for (const [
+        emojiKey,
+        userSet,
+      ] of currentReactions) {
+        reactions[
+          emojiKey
+        ] =
+          Array.from(
+            userSet,
+          );
       }
     }
 
-    this.roomManager.broadcastAction(room, 'CHAT_REACTION', { messageId, reactions });
+    this.roomManager.broadcastAction(
+      room,
+      'CHAT_REACTION',
+      {
+        messageId,
+        reactions,
+      },
+    );
   }
 
   // ─── Pinned Messages ───────────────────────────────────────
 
-  private onChatPin(socket: Socket, payload: { messageId: string | null }): void {
-    const userId = socket.data.userId as string;
-    const room = this.roomManager.getRoomForUser(userId);
-    if (!room) return;
+  private onChatPin(
+    socket: Socket,
+    payload: {
+      messageId:
+        | string
+        | null;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const room =
+      this.roomManager.getRoomForUser(
+        userId,
+      );
+    if (
+      !room
+    )
+      return;
 
     // Host-only
-    if (room.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can pin messages.' });
+    if (
+      room.hostUserId !==
+      userId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_HOST',
+          message:
+            'Only the host can pin messages.',
+        },
+      );
       return;
     }
 
-    if (payload.messageId === null) {
+    if (
+      payload.messageId ===
+      null
+    ) {
       // Unpin
-      room.pinnedMessage = null;
-      this.roomManager.broadcastAction(room, 'MESSAGE_UNPINNED', {});
+      room.pinnedMessage =
+        null;
+      this.roomManager.broadcastAction(
+        room,
+        'MESSAGE_UNPINNED',
+        {},
+      );
     } else {
       // Find the message to pin
-      const message = room.chat.find((m) => m.id === payload.messageId);
-      if (!message) {
-        socket.emit(S2C.ERROR, { code: 'MESSAGE_NOT_FOUND', message: 'Message not found.' });
+      const message =
+        room.chat.find(
+          (
+            m,
+          ) =>
+            m.id ===
+            payload.messageId,
+        );
+      if (
+        !message
+      ) {
+        socket.emit(
+          S2C.ERROR,
+          {
+            code: 'MESSAGE_NOT_FOUND',
+            message:
+              'Message not found.',
+          },
+        );
         return;
       }
 
-      room.pinnedMessage = message;
-      this.roomManager.broadcastAction(room, 'MESSAGE_PINNED', { message });
+      room.pinnedMessage =
+        message;
+      this.roomManager.broadcastAction(
+        room,
+        'MESSAGE_PINNED',
+        {
+          message,
+        },
+      );
     }
   }
 }

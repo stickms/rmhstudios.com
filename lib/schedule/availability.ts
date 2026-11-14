@@ -22,7 +22,9 @@
  * one option rather than four.
  */
 
-export type Answer = 'yes' | 'maybe';
+export type Answer =
+  | 'yes'
+  | 'maybe';
 
 export interface PollWindow {
   /** UTC epoch minutes of the first slot. */
@@ -37,7 +39,10 @@ export interface AvailabilityResponse {
   userId: string;
   required?: boolean;
   /** Slot start (UTC epoch minutes) → answer. Unlisted slots mean "no". */
-  slots: Record<number, Answer>;
+  slots: Record<
+    number,
+    Answer
+  >;
 }
 
 export interface SlotScore {
@@ -57,27 +62,80 @@ export interface Run {
   maybe: number;
 }
 
-export function slotStarts(w: PollWindow): number[] {
-  if (w.slotMin <= 0 || w.endMin <= w.startMin) return [];
-  const out: number[] = [];
-  for (let t = w.startMin; t + w.slotMin <= w.endMin; t += w.slotMin) out.push(t);
+export function slotStarts(
+  w: PollWindow,
+): number[] {
+  if (
+    w.slotMin <=
+      0 ||
+    w.endMin <=
+      w.startMin
+  )
+    return [];
+  const out: number[] =
+    [];
+  for (
+    let t =
+      w.startMin;
+    t +
+      w.slotMin <=
+    w.endMin;
+    t +=
+      w.slotMin
+  )
+    out.push(
+      t,
+    );
   return out;
 }
 
 /** Per-slot tallies for the heat map. */
-export function scoreSlots(w: PollWindow, responses: readonly AvailabilityResponse[]): SlotScore[] {
-  return slotStarts(w).map((startMin) => {
-    let yes = 0;
-    let maybe = 0;
-    let allRequired = true;
-    for (const r of responses) {
-      const a = r.slots[startMin];
-      if (a === 'yes') yes++;
-      else if (a === 'maybe') maybe++;
-      else if (r.required) allRequired = false;
-    }
-    return { startMin, yes, maybe, score: yes + maybe / 2, allRequired };
-  });
+export function scoreSlots(
+  w: PollWindow,
+  responses: readonly AvailabilityResponse[],
+): SlotScore[] {
+  return slotStarts(
+    w,
+  ).map(
+    (
+      startMin,
+    ) => {
+      let yes = 0;
+      let maybe = 0;
+      let allRequired = true;
+      for (const r of responses) {
+        const a =
+          r
+            .slots[
+            startMin
+          ];
+        if (
+          a ===
+          'yes'
+        )
+          yes++;
+        else if (
+          a ===
+          'maybe'
+        )
+          maybe++;
+        else if (
+          r.required
+        )
+          allRequired = false;
+      }
+      return {
+        startMin,
+        yes,
+        maybe,
+        score:
+          yes +
+          maybe /
+            2,
+        allRequired,
+      };
+    },
+  );
 }
 
 /**
@@ -87,45 +145,109 @@ export function scoreSlots(w: PollWindow, responses: readonly AvailabilityRespon
 export function bestRuns(
   w: PollWindow,
   responses: readonly AvailabilityResponse[],
-  opts: { minSlots?: number; minScore?: number; limit?: number } = {},
+  opts: {
+    minSlots?: number;
+    minScore?: number;
+    limit?: number;
+  } = {},
 ): Run[] {
-  const minSlots = Math.max(1, opts.minSlots ?? 1);
-  const minScore = opts.minScore ?? 1;
-  const limit = opts.limit ?? 5;
-  const scored = scoreSlots(w, responses);
+  const minSlots =
+    Math.max(
+      1,
+      opts.minSlots ??
+        1,
+    );
+  const minScore =
+    opts.minScore ??
+    1;
+  const limit =
+    opts.limit ??
+    5;
+  const scored =
+    scoreSlots(
+      w,
+      responses,
+    );
 
-  const runs: Run[] = [];
-  let open: Run | null = null;
+  const runs: Run[] =
+    [];
+  let open: Run | null =
+    null;
   let len = 0;
-  const close = () => {
-    if (open && len >= minSlots) runs.push(open);
-    open = null;
-    len = 0;
-  };
+  const close =
+    () => {
+      if (
+        open &&
+        len >=
+          minSlots
+      )
+        runs.push(
+          open,
+        );
+      open =
+        null;
+      len = 0;
+    };
 
   for (const s of scored) {
-    if (!s.allRequired || s.score < minScore) {
+    if (
+      !s.allRequired ||
+      s.score <
+        minScore
+    ) {
       close();
       continue;
     }
-    if (open) {
-      open.endMin = s.startMin + w.slotMin;
-      open.score = Math.min(open.score, s.score);
-      open.maybe = Math.max(open.maybe, s.maybe);
+    if (
+      open
+    ) {
+      open.endMin =
+        s.startMin +
+        w.slotMin;
+      open.score =
+        Math.min(
+          open.score,
+          s.score,
+        );
+      open.maybe =
+        Math.max(
+          open.maybe,
+          s.maybe,
+        );
       len++;
     } else {
-      open = {
-        startMin: s.startMin,
-        endMin: s.startMin + w.slotMin,
-        score: s.score,
-        maybe: s.maybe,
-      };
+      open =
+        {
+          startMin:
+            s.startMin,
+          endMin:
+            s.startMin +
+            w.slotMin,
+          score:
+            s.score,
+          maybe:
+            s.maybe,
+        };
       len = 1;
     }
   }
   close();
 
   return runs
-    .sort((a, b) => b.score - a.score || a.maybe - b.maybe || a.startMin - b.startMin)
-    .slice(0, limit);
+    .sort(
+      (
+        a,
+        b,
+      ) =>
+        b.score -
+          a.score ||
+        a.maybe -
+          b.maybe ||
+        a.startMin -
+          b.startMin,
+    )
+    .slice(
+      0,
+      limit,
+    );
 }

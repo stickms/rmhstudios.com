@@ -8,43 +8,60 @@
  */
 
 /** Where blocks are stored in a project. The game ignores unknown text files in `resource/`. */
-export const BLOCKS_FILE = 'resource/_rmh_blocks.txt';
+export const BLOCKS_FILE =
+  'resource/_rmh_blocks.txt';
 
 /**
  * Properties a block may hold. Looks and sizes only: position is relative to a
  * panel's own parent and frame, so it is moved and arranged (`arrange.ts`), never
  * copied from one panel to another.
  */
-export const SHARABLE_KEYS = [
-  'wide',
-  'tall',
-  'zpos',
-  'visible',
-  'font',
-  'textAlignment',
-  'textinsetx',
-  'textinsety',
-  'fgcolor',
-  'fgcolor_override',
-  'bgcolor_override',
-  'defaultfgcolor_override',
-  'defaultbgcolor_override',
-  'armedfgcolor_override',
-  'armedbgcolor_override',
-  'border',
-  'PaintBackgroundType',
-  'drawcolor',
-  'fillcolor',
-  'image',
-  'scaleImage',
-  'fg_image',
-  'bg_image',
-] as const;
+export const SHARABLE_KEYS =
+  [
+    'wide',
+    'tall',
+    'zpos',
+    'visible',
+    'font',
+    'textAlignment',
+    'textinsetx',
+    'textinsety',
+    'fgcolor',
+    'fgcolor_override',
+    'bgcolor_override',
+    'defaultfgcolor_override',
+    'defaultbgcolor_override',
+    'armedfgcolor_override',
+    'armedbgcolor_override',
+    'border',
+    'PaintBackgroundType',
+    'drawcolor',
+    'fillcolor',
+    'image',
+    'scaleImage',
+    'fg_image',
+    'bg_image',
+  ] as const;
 
-export type SharableKey = (typeof SHARABLE_KEYS)[number];
+export type SharableKey =
+  (typeof SHARABLE_KEYS)[number];
 
-const SHARABLE = new Set<string>(SHARABLE_KEYS.map((k) => k.toLowerCase()));
-export const isSharable = (key: string): boolean => SHARABLE.has(key.toLowerCase());
+const SHARABLE =
+  new Set<string>(
+    SHARABLE_KEYS.map(
+      (
+        k,
+      ) =>
+        k.toLowerCase(),
+    ),
+  );
+export const isSharable =
+  (
+    key: string,
+  ): boolean =>
+    SHARABLE.has(
+      key.toLowerCase(),
+    );
 
 /** One panel in a block: its file and the key path of its entry. */
 export interface BlockMember {
@@ -69,7 +86,10 @@ export interface Block {
   id: string;
   name: string;
   members: BlockMember[];
-  shared: Record<string, string>;
+  shared: Record<
+    string,
+    string
+  >;
   rule?: BlockRule;
   /** Set when the block was made from a built-in preset. */
   preset?: string;
@@ -80,8 +100,28 @@ export interface BlocksDoc {
   blocks: Block[];
 }
 
-export const memberKey = (m: Pick<BlockMember, 'file' | 'path'>): string =>
-  `${m.file}#${m.path.join('/')}`;
+export const memberKey =
+  (
+    m: Pick<
+      BlockMember,
+      | 'file'
+      | 'path'
+    >,
+  ): string =>
+    `${m.file}#${m.path.join('/')}`;
 
-export const sameMember = (a: BlockMember, b: Pick<BlockMember, 'file' | 'path'>): boolean =>
-  memberKey(a).toLowerCase() === memberKey(b).toLowerCase();
+export const sameMember =
+  (
+    a: BlockMember,
+    b: Pick<
+      BlockMember,
+      | 'file'
+      | 'path'
+    >,
+  ): boolean =>
+    memberKey(
+      a,
+    ).toLowerCase() ===
+    memberKey(
+      b,
+    ).toLowerCase();

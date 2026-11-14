@@ -1,4 +1,8 @@
-import type { CityEventId, UtilityId, ZoneId } from '../content/city';
+import type {
+  CityEventId,
+  UtilityId,
+  ZoneId,
+} from '../content/city';
 
 /**
  * The city layer's state: plain, JSON-serialisable data that lives inside `World` and travels with every save and
@@ -80,29 +84,149 @@ export interface CityState {
 }
 
 export type CityCommand =
-  | { type: 'placeRoad'; playerId: string; x: number; z: number; x2?: number; z2?: number }
-  | { type: 'removeRoad'; playerId: string; x: number; z: number; x2?: number; z2?: number }
-  | { type: 'zone'; playerId: string; zone: ZoneId; x: number; z: number; x2?: number; z2?: number }
-  | { type: 'unzone'; playerId: string; x: number; z: number; x2?: number; z2?: number }
-  | { type: 'placeUtility'; playerId: string; kind: UtilityId; x: number; z: number }
-  | { type: 'removeUtility'; playerId: string; x: number; z: number }
-  | { type: 'claimMilestone'; playerId: string; id: string }
-  | { type: 'setTaxRate'; playerId: string; rate: number };
+  | {
+      type: 'placeRoad';
+      playerId: string;
+      x: number;
+      z: number;
+      x2?: number;
+      z2?: number;
+    }
+  | {
+      type: 'removeRoad';
+      playerId: string;
+      x: number;
+      z: number;
+      x2?: number;
+      z2?: number;
+    }
+  | {
+      type: 'zone';
+      playerId: string;
+      zone: ZoneId;
+      x: number;
+      z: number;
+      x2?: number;
+      z2?: number;
+    }
+  | {
+      type: 'unzone';
+      playerId: string;
+      x: number;
+      z: number;
+      x2?: number;
+      z2?: number;
+    }
+  | {
+      type: 'placeUtility';
+      playerId: string;
+      kind: UtilityId;
+      x: number;
+      z: number;
+    }
+  | {
+      type: 'removeUtility';
+      playerId: string;
+      x: number;
+      z: number;
+    }
+  | {
+      type: 'claimMilestone';
+      playerId: string;
+      id: string;
+    }
+  | {
+      type: 'setTaxRate';
+      playerId: string;
+      rate: number;
+    };
 
 export type CityEvent =
-  | { type: 'roadsLaid'; playerId: string; count: number; cost: number }
-  | { type: 'roadsRemoved'; playerId: string; count: number; refund: number }
-  | { type: 'zoned'; playerId: string; zone: ZoneId; count: number; cost: number }
-  | { type: 'unzoned'; playerId: string; count: number }
-  | { type: 'utilityPlaced'; playerId: string; kind: UtilityId; x: number; z: number }
-  | { type: 'utilityRemoved'; playerId: string; x: number; z: number }
-  | { type: 'lotGrew'; x: number; z: number; zone: ZoneId; level: number }
-  | { type: 'milestoneReached'; id: string }
-  | { type: 'milestoneClaimed'; playerId: string; id: string; reward: number; skin: string | null }
-  | { type: 'cityDay'; day: number; net: number; population: number }
-  | { type: 'taxRateSet'; playerId: string; rate: number; from: number }
-  | { type: 'cityEventStarted'; id: CityEventId; day: number; days: number }
-  | { type: 'cityEventEnded'; id: CityEventId; day: number };
+  | {
+      type: 'roadsLaid';
+      playerId: string;
+      count: number;
+      cost: number;
+    }
+  | {
+      type: 'roadsRemoved';
+      playerId: string;
+      count: number;
+      refund: number;
+    }
+  | {
+      type: 'zoned';
+      playerId: string;
+      zone: ZoneId;
+      count: number;
+      cost: number;
+    }
+  | {
+      type: 'unzoned';
+      playerId: string;
+      count: number;
+    }
+  | {
+      type: 'utilityPlaced';
+      playerId: string;
+      kind: UtilityId;
+      x: number;
+      z: number;
+    }
+  | {
+      type: 'utilityRemoved';
+      playerId: string;
+      x: number;
+      z: number;
+    }
+  | {
+      type: 'lotGrew';
+      x: number;
+      z: number;
+      zone: ZoneId;
+      level: number;
+    }
+  | {
+      type: 'milestoneReached';
+      id: string;
+    }
+  | {
+      type: 'milestoneClaimed';
+      playerId: string;
+      id: string;
+      reward: number;
+      skin:
+        | string
+        | null;
+    }
+  | {
+      type: 'cityDay';
+      day: number;
+      net: number;
+      population: number;
+    }
+  | {
+      type: 'taxRateSet';
+      playerId: string;
+      rate: number;
+      from: number;
+    }
+  | {
+      type: 'cityEventStarted';
+      id: CityEventId;
+      day: number;
+      days: number;
+    }
+  | {
+      type: 'cityEventEnded';
+      id: CityEventId;
+      day: number;
+    };
 
 export type CityReject =
-  'bad-shape' | 'locked' | 'no-shore' | 'unknown-milestone' | 'not-reached' | 'already-claimed';
+  | 'bad-shape'
+  | 'locked'
+  | 'no-shore'
+  | 'unknown-milestone'
+  | 'not-reached'
+  | 'already-claimed';

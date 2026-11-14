@@ -16,24 +16,71 @@ export const RESUME_TIMEOUT_MS = 3000;
 /** The part of an AudioContext this needs. Older Safari's `resume()` returns undefined. */
 export interface Resumable {
   readonly state: string;
-  resume(): Promise<void> | undefined;
+  resume():
+    | Promise<void>
+    | undefined;
 }
 
 /** True once `ctx` is running; false if it is closed, refuses, or does not resume in time. */
-export async function resumeAudio(ctx: Resumable, ms = RESUME_TIMEOUT_MS): Promise<boolean> {
-  if (ctx.state === 'running') return true;
-  if (ctx.state === 'closed') return false;
-  let timer: ReturnType<typeof setTimeout> | undefined;
+export async function resumeAudio(
+  ctx: Resumable,
+  ms = RESUME_TIMEOUT_MS,
+): Promise<boolean> {
+  if (
+    ctx.state ===
+    'running'
+  )
+    return true;
+  if (
+    ctx.state ===
+    'closed'
+  )
+    return false;
+  let timer:
+    | ReturnType<
+        typeof setTimeout
+      >
+    | undefined;
   try {
-    const asked = Promise.resolve(ctx.resume()).then(() => true);
-    const late = new Promise<false>((resolve) => {
-      timer = setTimeout(() => resolve(false), ms);
-    });
-    const answered = await Promise.race([asked, late]);
-    return answered && ctx.state === 'running';
+    const asked =
+      Promise.resolve(
+        ctx.resume(),
+      ).then(
+        () =>
+          true,
+      );
+    const late =
+      new Promise<false>(
+        (
+          resolve,
+        ) => {
+          timer =
+            setTimeout(
+              () =>
+                resolve(
+                  false,
+                ),
+              ms,
+            );
+        },
+      );
+    const answered =
+      await Promise.race(
+        [
+          asked,
+          late,
+        ],
+      );
+    return (
+      answered &&
+      ctx.state ===
+        'running'
+    );
   } catch {
     return false;
   } finally {
-    clearTimeout(timer);
+    clearTimeout(
+      timer,
+    );
   }
 }

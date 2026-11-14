@@ -9,7 +9,7 @@ export const CRAFT_SYSTEM =
   '- Convey feeling through SUBTEXT, action, and specific sensory detail — never on-the-nose exposition.\n' +
   '- Keep each character in their established VOICE from the bible; let their secret/fear quietly drive them.\n' +
   '- PLANT and PAY OFF: honor the setups and payoffs the outline assigns this chapter; call back to earlier moments.\n' +
-  '- The player\'s recent CHOICES must visibly echo — characters remember and react to what the player did.\n' +
+  "- The player's recent CHOICES must visibly echo — characters remember and react to what the player did.\n" +
   '- Earn every emotional beat; avoid melodrama, clichés, and tidy resolutions that the story has not paid for.';
 
 export const VN_FORMAT =
@@ -35,7 +35,7 @@ export const SETTING_CRAFT =
   '- Give the world an internal logic and honor it consistently.\n' +
   '- Ground emotion in sensory specificity tied to THIS place, not a generic backdrop.\n' +
   '- Choose motifs that belong to this world and let them recur meaningfully.\n' +
-  '- Keep tone and genre consistent, flexing to the player\'s prompt without breaking the emotional, character-driven romance/drama frame.';
+  "- Keep tone and genre consistent, flexing to the player's prompt without breaking the emotional, character-driven romance/drama frame.";
 
 export const CHOICE_CRAFT =
   'CHOICES:\n' +
@@ -51,7 +51,7 @@ export const ANTI_REPETITION =
 
 export function craftDirectives(): string {
   return (
-    'Honor this chapter\'s outline beat: plant its setups, deliver its payoffs, and answer/raise its dramatic question. ' +
-    'Make the player\'s recent choices echo in how characters treat the MC.'
+    "Honor this chapter's outline beat: plant its setups, deliver its payoffs, and answer/raise its dramatic question. " +
+    "Make the player's recent choices echo in how characters treat the MC."
   );
 }

@@ -23,77 +23,243 @@ import { z } from 'zod';
 
 export const MAP_PACKAGE_VERSION = 1;
 
-const vec3 = z.tuple([z.number(), z.number(), z.number()]);
-const texId = z.string().min(1);
+const vec3 =
+  z.tuple(
+    [
+      z.number(),
+      z.number(),
+      z.number(),
+    ],
+  );
+const texId =
+  z
+    .string()
+    .min(
+      1,
+    );
 
-export const mapMaterialSchema = z.object({
-  /** Lowercased shader name ("lightmappedgeneric", "worldvertextransition", "water", …; "missing" when no VMT was found). */
-  shader: z.string(),
-  /** `$basetexture` (texture id into `textures`). */
-  base: texId.optional(),
-  /** `$basetexture2` (WorldVertexTransition) or `$texture2` (UnlitTwoTexture). */
-  base2: texId.optional(),
-  /** `$blendmodulatetexture` (WorldVertexTransition). */
-  blendModulate: texId.optional(),
-  /** Reflectivity (gamma-encoded 0..1): the colour to draw when there is no texture. */
-  color: vec3,
-  /** `$alphatest`: the cutoff (`$alphatestreference`, default 0.5). */
-  alphatest: z.number().optional(),
-  translucent: z.literal(true).optional(),
-  additive: z.literal(true).optional(),
-  nocull: z.literal(true).optional(),
-  selfillum: z.literal(true).optional(),
-  /** UnlitGeneric / UnlitTwoTexture, and tools/toolsblack. */
-  unlit: z.literal(true).optional(),
-  /** Tool textures and `%compilenodraw`-style materials: never drawn. */
-  nodraw: z.literal(true).optional(),
-  /** tools/toolsskybox(2d) and `%compilesky`: draw the sky here. */
-  sky: z.literal(true).optional(),
-  /** Portal: `%noportal` — the portal gun cannot place a portal on this surface (lib/sp-game). */
-  noportal: z.literal(true).optional(),
-  /** Water shader: fog under the surface. */
-  water: z.object({ fogColor: vec3, fogStart: z.number(), fogEnd: z.number() }).optional(),
-  /** TextureScroll proxy: texture-space offset per second. */
-  scroll: z.tuple([z.number(), z.number()]).optional(),
-  /** AnimatedTexture proxy: the VTF's frame count (only frame 0 is stored). */
-  frames: z.number().int().optional(),
-  /** `$alpha` when below 1. */
-  alpha: z.number().optional(),
-  vertexAlpha: z.literal(true).optional(),
-  decal: z.literal(true).optional(),
-  detail: z.never().optional(),
-});
-export type MapMaterial = z.infer<typeof mapMaterialSchema>;
+export const mapMaterialSchema =
+  z.object(
+    {
+      /** Lowercased shader name ("lightmappedgeneric", "worldvertextransition", "water", …; "missing" when no VMT was found). */
+      shader:
+        z.string(),
+      /** `$basetexture` (texture id into `textures`). */
+      base: texId.optional(),
+      /** `$basetexture2` (WorldVertexTransition) or `$texture2` (UnlitTwoTexture). */
+      base2:
+        texId.optional(),
+      /** `$blendmodulatetexture` (WorldVertexTransition). */
+      blendModulate:
+        texId.optional(),
+      /** Reflectivity (gamma-encoded 0..1): the colour to draw when there is no texture. */
+      color:
+        vec3,
+      /** `$alphatest`: the cutoff (`$alphatestreference`, default 0.5). */
+      alphatest:
+        z
+          .number()
+          .optional(),
+      translucent:
+        z
+          .literal(
+            true,
+          )
+          .optional(),
+      additive:
+        z
+          .literal(
+            true,
+          )
+          .optional(),
+      nocull:
+        z
+          .literal(
+            true,
+          )
+          .optional(),
+      selfillum:
+        z
+          .literal(
+            true,
+          )
+          .optional(),
+      /** UnlitGeneric / UnlitTwoTexture, and tools/toolsblack. */
+      unlit:
+        z
+          .literal(
+            true,
+          )
+          .optional(),
+      /** Tool textures and `%compilenodraw`-style materials: never drawn. */
+      nodraw:
+        z
+          .literal(
+            true,
+          )
+          .optional(),
+      /** tools/toolsskybox(2d) and `%compilesky`: draw the sky here. */
+      sky: z
+        .literal(
+          true,
+        )
+        .optional(),
+      /** Portal: `%noportal` — the portal gun cannot place a portal on this surface (lib/sp-game). */
+      noportal:
+        z
+          .literal(
+            true,
+          )
+          .optional(),
+      /** Water shader: fog under the surface. */
+      water:
+        z
+          .object(
+            {
+              fogColor:
+                vec3,
+              fogStart:
+                z.number(),
+              fogEnd:
+                z.number(),
+            },
+          )
+          .optional(),
+      /** TextureScroll proxy: texture-space offset per second. */
+      scroll:
+        z
+          .tuple(
+            [
+              z.number(),
+              z.number(),
+            ],
+          )
+          .optional(),
+      /** AnimatedTexture proxy: the VTF's frame count (only frame 0 is stored). */
+      frames:
+        z
+          .number()
+          .int()
+          .optional(),
+      /** `$alpha` when below 1. */
+      alpha:
+        z
+          .number()
+          .optional(),
+      vertexAlpha:
+        z
+          .literal(
+            true,
+          )
+          .optional(),
+      decal:
+        z
+          .literal(
+            true,
+          )
+          .optional(),
+      detail:
+        z
+          .never()
+          .optional(),
+    },
+  );
+export type MapMaterial =
+  z.infer<
+    typeof mapMaterialSchema
+  >;
 
-export const mapTextureSchema = z.object({
-  /** `tex/<sha>.webp` (relative to the game's asset root). */
-  file: z.string().regex(/^tex\/[a-f0-9]{40}\.webp$/),
-  w: z.number().int().positive(),
-  h: z.number().int().positive(),
-  /** The material uses the texture's alpha and its format carries one. */
-  alpha: z.boolean(),
-});
-export type MapTexture = z.infer<typeof mapTextureSchema>;
+export const mapTextureSchema =
+  z.object(
+    {
+      /** `tex/<sha>.webp` (relative to the game's asset root). */
+      file: z
+        .string()
+        .regex(
+          /^tex\/[a-f0-9]{40}\.webp$/,
+        ),
+      w: z
+        .number()
+        .int()
+        .positive(),
+      h: z
+        .number()
+        .int()
+        .positive(),
+      /** The material uses the texture's alpha and its format carries one. */
+      alpha:
+        z.boolean(),
+    },
+  );
+export type MapTexture =
+  z.infer<
+    typeof mapTextureSchema
+  >;
 
-const skyFace = texId.optional();
-export const mapSkySchema = z.object({
-  /** worldspawn `skyname`. */
-  name: z.string(),
-  faces: z.object({ rt: skyFace, lf: skyFace, bk: skyFace, ft: skyFace, up: skyFace, dn: skyFace }),
-  /** The 3D skybox's sky_camera, when the map has one. */
-  camera: z.object({ origin: vec3, scale: z.number() }).optional(),
-});
-export type MapSky = z.infer<typeof mapSkySchema>;
+const skyFace =
+  texId.optional();
+export const mapSkySchema =
+  z.object(
+    {
+      /** worldspawn `skyname`. */
+      name: z.string(),
+      faces:
+        z.object(
+          {
+            rt: skyFace,
+            lf: skyFace,
+            bk: skyFace,
+            ft: skyFace,
+            up: skyFace,
+            dn: skyFace,
+          },
+        ),
+      /** The 3D skybox's sky_camera, when the map has one. */
+      camera:
+        z
+          .object(
+            {
+              origin:
+                vec3,
+              scale:
+                z.number(),
+            },
+          )
+          .optional(),
+    },
+  );
+export type MapSky =
+  z.infer<
+    typeof mapSkySchema
+  >;
 
-export const mapPropSchema = z.object({
-  /** Index into the hulls.bin table; absent when the model has no collision model. */
-  hull: z.number().int().nonnegative().optional(),
-  /** SOLID_NONE 0, SOLID_BBOX 2, SOLID_VPHYSICS 6 (the largest any instance asks for). */
-  solid: z.number().int(),
-});
-export type MapProp = z.infer<typeof mapPropSchema>;
+export const mapPropSchema =
+  z.object(
+    {
+      /** Index into the hulls.bin table; absent when the model has no collision model. */
+      hull: z
+        .number()
+        .int()
+        .nonnegative()
+        .optional(),
+      /** SOLID_NONE 0, SOLID_BBOX 2, SOLID_VPHYSICS 6 (the largest any instance asks for). */
+      solid:
+        z
+          .number()
+          .int(),
+    },
+  );
+export type MapProp =
+  z.infer<
+    typeof mapPropSchema
+  >;
 
-const texFile = z.string().regex(/^tex\/[a-f0-9]{40}\.webp$/);
+const texFile =
+  z
+    .string()
+    .regex(
+      /^tex\/[a-f0-9]{40}\.webp$/,
+    );
 
 /**
  * A map overview (CS:GO's radar): `resource/overviews/<map>.txt` gives the world position of the
@@ -101,31 +267,59 @@ const texFile = z.string().regex(/^tex\/[a-f0-9]{40}\.webp$/);
  * (`scale`); `materials/overviews/<map>_radar.vtf` is the image. A map with vertical sections
  * (`verticalsections`) has one image per section (`<map>_<section>_radar.vtf`), chosen by altitude.
  */
-export const mapRadarSchema = z.object({
-  file: texFile,
-  w: z.number().int().positive(),
-  h: z.number().int().positive(),
-  posX: z.number(),
-  posY: z.number(),
-  scale: z.number().positive(),
-  /** The pixel size `scale` refers to (the overview's source width, 1024). */
-  size: z.number().int().positive(),
-  /** Overview keys the HUD may use: `rotate` (the image is turned), `zoom`. */
-  rotate: z.boolean().optional(),
-  zoom: z.number().optional(),
-  sections: z
-    .array(
-      z.object({
-        name: z.string(),
-        altitudeMin: z.number(),
-        altitudeMax: z.number(),
-        /** Absent for the default section (it uses `file`) or when its image is missing. */
-        file: texFile.optional(),
-      }),
-    )
-    .optional(),
-});
-export type MapRadar = z.infer<typeof mapRadarSchema>;
+export const mapRadarSchema =
+  z.object(
+    {
+      file: texFile,
+      w: z
+        .number()
+        .int()
+        .positive(),
+      h: z
+        .number()
+        .int()
+        .positive(),
+      posX: z.number(),
+      posY: z.number(),
+      scale:
+        z
+          .number()
+          .positive(),
+      /** The pixel size `scale` refers to (the overview's source width, 1024). */
+      size: z
+        .number()
+        .int()
+        .positive(),
+      /** Overview keys the HUD may use: `rotate` (the image is turned), `zoom`. */
+      rotate:
+        z
+          .boolean()
+          .optional(),
+      zoom: z
+        .number()
+        .optional(),
+      sections:
+        z
+          .array(
+            z.object(
+              {
+                name: z.string(),
+                altitudeMin:
+                  z.number(),
+                altitudeMax:
+                  z.number(),
+                /** Absent for the default section (it uses `file`) or when its image is missing. */
+                file: texFile.optional(),
+              },
+            ),
+          )
+          .optional(),
+    },
+  );
+export type MapRadar =
+  z.infer<
+    typeof mapRadarSchema
+  >;
 
 /**
  * A world position on the radar, in 0..1 of the image (u right, v down) — the overview's own
@@ -133,120 +327,361 @@ export type MapRadar = z.infer<typeof mapRadarSchema>;
  * any stored size. Outside 0..1 the point is off the image.
  */
 export function worldToRadar(
-  radar: Pick<MapRadar, 'posX' | 'posY' | 'scale' | 'size'>,
+  radar: Pick<
+    MapRadar,
+    | 'posX'
+    | 'posY'
+    | 'scale'
+    | 'size'
+  >,
   x: number,
   y: number,
-): { u: number; v: number } {
-  const span = radar.scale * radar.size;
-  return { u: (x - radar.posX) / span, v: (radar.posY - y) / span };
+): {
+  u: number;
+  v: number;
+} {
+  const span =
+    radar.scale *
+    radar.size;
+  return {
+    u:
+      (x -
+        radar.posX) /
+      span,
+    v:
+      (radar.posY -
+        y) /
+      span,
+  };
 }
 
 /** The inverse of `worldToRadar` (z is not on the radar). */
 export function radarToWorld(
-  radar: Pick<MapRadar, 'posX' | 'posY' | 'scale' | 'size'>,
+  radar: Pick<
+    MapRadar,
+    | 'posX'
+    | 'posY'
+    | 'scale'
+    | 'size'
+  >,
   u: number,
   v: number,
-): { x: number; y: number } {
-  const span = radar.scale * radar.size;
-  return { x: radar.posX + u * span, y: radar.posY - v * span };
+): {
+  x: number;
+  y: number;
+} {
+  const span =
+    radar.scale *
+    radar.size;
+  return {
+    x:
+      radar.posX +
+      u *
+        span,
+    y:
+      radar.posY -
+      v *
+        span,
+  };
 }
 
-const mapFile = (ext: string) => z.string().regex(new RegExp(`^maps/[a-f0-9]{64}\\.${ext}$`));
+const mapFile =
+  (
+    ext: string,
+  ) =>
+    z
+      .string()
+      .regex(
+        new RegExp(
+          `^maps/[a-f0-9]{64}\\.${ext}$`,
+        ),
+      );
 
-export const mapManifestSchema = z.object({
-  v: z.literal(1),
-  game: z.enum(['tf2', 'hl2', 'portal', 'csgo']),
-  map: z.string(),
-  bsp: mapFile('bsp'),
-  bspBytes: z.number().int().positive(),
-  lighting: z.enum(['hdr', 'ldr']),
-  /** Lowercased material path without `materials/` and `.vmt`. */
-  materials: z.record(z.string(), mapMaterialSchema),
-  /** Texture id (the VTF path without `materials/` and `.vtf`; `@alpha` when kept with alpha). */
-  textures: z.record(z.string(), mapTextureSchema),
-  sky: mapSkySchema.nullable(),
-  /** Every static prop model and every prop/item entity model, by `models/….mdl` path. */
-  props: z.record(z.string(), mapPropSchema),
-  hulls: mapFile('hulls\\.bin').nullable(),
-  nav: mapFile('nav\\.bin').nullable(),
-  water: z.array(z.unknown()).optional(),
-  /** CS:GO: the map overview (radar image and its world transform). Absent for the other games. */
-  radar: mapRadarSchema.optional(),
-});
-export type MapManifest = z.infer<typeof mapManifestSchema>;
+export const mapManifestSchema =
+  z.object(
+    {
+      v: z.literal(
+        1,
+      ),
+      game: z.enum(
+        [
+          'tf2',
+          'hl2',
+          'portal',
+          'csgo',
+        ],
+      ),
+      map: z.string(),
+      bsp: mapFile(
+        'bsp',
+      ),
+      bspBytes:
+        z
+          .number()
+          .int()
+          .positive(),
+      lighting:
+        z.enum(
+          [
+            'hdr',
+            'ldr',
+          ],
+        ),
+      /** Lowercased material path without `materials/` and `.vmt`. */
+      materials:
+        z.record(
+          z.string(),
+          mapMaterialSchema,
+        ),
+      /** Texture id (the VTF path without `materials/` and `.vtf`; `@alpha` when kept with alpha). */
+      textures:
+        z.record(
+          z.string(),
+          mapTextureSchema,
+        ),
+      sky: mapSkySchema.nullable(),
+      /** Every static prop model and every prop/item entity model, by `models/….mdl` path. */
+      props:
+        z.record(
+          z.string(),
+          mapPropSchema,
+        ),
+      hulls:
+        mapFile(
+          'hulls\\.bin',
+        ).nullable(),
+      nav: mapFile(
+        'nav\\.bin',
+      ).nullable(),
+      water:
+        z
+          .array(
+            z.unknown(),
+          )
+          .optional(),
+      /** CS:GO: the map overview (radar image and its world transform). Absent for the other games. */
+      radar:
+        mapRadarSchema.optional(),
+    },
+  );
+export type MapManifest =
+  z.infer<
+    typeof mapManifestSchema
+  >;
 
-export const mapIndexSchema = z.object({
-  v: z.literal(1),
-  maps: z.record(
-    z.string(),
-    z.object({
-      manifest: mapFile('json'),
-      title: z.string(),
-      /** TF2: the game mode (lib/tf2-game/data/maps.ts); HL2 / Portal: 'sp'; CS:GO: 'de'. */
-      mode: z.string(),
-      /** Raw bytes of the package: BSP + hulls + manifest + its textures. */
-      bytes: z.number().int().nonnegative(),
-    }),
-  ),
-});
-export type MapIndex = z.infer<typeof mapIndexSchema>;
+export const mapIndexSchema =
+  z.object(
+    {
+      v: z.literal(
+        1,
+      ),
+      maps: z.record(
+        z.string(),
+        z.object(
+          {
+            manifest:
+              mapFile(
+                'json',
+              ),
+            title:
+              z.string(),
+            /** TF2: the game mode (lib/tf2-game/data/maps.ts); HL2 / Portal: 'sp'; CS:GO: 'de'. */
+            mode: z.string(),
+            /** Raw bytes of the package: BSP + hulls + manifest + its textures. */
+            bytes:
+              z
+                .number()
+                .int()
+                .nonnegative(),
+          },
+        ),
+      ),
+    },
+  );
+export type MapIndex =
+  z.infer<
+    typeof mapIndexSchema
+  >;
 
 // --- hulls.bin ----------------------------------------------------------------
 // Little-endian: u32 count; per entry: u32 nConvex; per convex: u32 nVerts, f32 xyz × nVerts
 // (model space, Source units — the model's first .phy solid).
 
 /** One entry per model: its convex vertex sets (xyz, flat). */
-export type HullTable = Float32Array[][];
+export type HullTable =
+  Float32Array[][];
 
-export function writeHullsBin(table: HullTable): Uint8Array {
+export function writeHullsBin(
+  table: HullTable,
+): Uint8Array {
   let size = 4;
   for (const e of table) {
     size += 4;
-    for (const c of e) size += 4 + Math.floor(c.length / 3) * 12;
+    for (const c of e)
+      size +=
+        4 +
+        Math.floor(
+          c.length /
+            3,
+        ) *
+          12;
   }
-  const out = new Uint8Array(size);
-  const view = new DataView(out.buffer);
+  const out =
+    new Uint8Array(
+      size,
+    );
+  const view =
+    new DataView(
+      out.buffer,
+    );
   let o = 0;
-  view.setUint32(o, table.length, true);
+  view.setUint32(
+    o,
+    table.length,
+    true,
+  );
   o += 4;
   for (const e of table) {
-    view.setUint32(o, e.length, true);
+    view.setUint32(
+      o,
+      e.length,
+      true,
+    );
     o += 4;
     for (const c of e) {
-      const n = Math.floor(c.length / 3);
-      view.setUint32(o, n, true);
+      const n =
+        Math.floor(
+          c.length /
+            3,
+        );
+      view.setUint32(
+        o,
+        n,
+        true,
+      );
       o += 4;
-      for (let i = 0; i < n * 3; i++, o += 4) view.setFloat32(o, c[i], true);
+      for (
+        let i = 0;
+        i <
+        n *
+          3;
+        i++,
+          o += 4
+      )
+        view.setFloat32(
+          o,
+          c[
+            i
+          ],
+          true,
+        );
     }
   }
   return out;
 }
 
-export function parseHullsBin(bytes: Uint8Array): HullTable {
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const need = (o: number, n: number) => {
-    if (o + n > bytes.length) throw new Error('hulls.bin: truncated');
-  };
-  need(0, 4);
+export function parseHullsBin(
+  bytes: Uint8Array,
+): HullTable {
+  const view =
+    new DataView(
+      bytes.buffer,
+      bytes.byteOffset,
+      bytes.byteLength,
+    );
+  const need =
+    (
+      o: number,
+      n: number,
+    ) => {
+      if (
+        o +
+          n >
+        bytes.length
+      )
+        throw new Error(
+          'hulls.bin: truncated',
+        );
+    };
+  need(
+    0,
+    4,
+  );
   let o = 0;
-  const count = view.getUint32(o, true);
+  const count =
+    view.getUint32(
+      o,
+      true,
+    );
   o += 4;
-  const table: HullTable = [];
-  for (let e = 0; e < count; e++) {
-    need(o, 4);
-    const nConvex = view.getUint32(o, true);
+  const table: HullTable =
+    [];
+  for (
+    let e = 0;
+    e <
+    count;
+    e++
+  ) {
+    need(
+      o,
+      4,
+    );
+    const nConvex =
+      view.getUint32(
+        o,
+        true,
+      );
     o += 4;
-    const convexes: Float32Array[] = [];
-    for (let c = 0; c < nConvex; c++) {
-      need(o, 4);
-      const n = view.getUint32(o, true);
+    const convexes: Float32Array[] =
+      [];
+    for (
+      let c = 0;
+      c <
+      nConvex;
+      c++
+    ) {
+      need(
+        o,
+        4,
+      );
+      const n =
+        view.getUint32(
+          o,
+          true,
+        );
       o += 4;
-      need(o, n * 12);
-      const v = new Float32Array(n * 3);
-      for (let i = 0; i < n * 3; i++, o += 4) v[i] = view.getFloat32(o, true);
-      convexes.push(v);
+      need(
+        o,
+        n *
+          12,
+      );
+      const v =
+        new Float32Array(
+          n *
+            3,
+        );
+      for (
+        let i = 0;
+        i <
+        n *
+          3;
+        i++,
+          o += 4
+      )
+        v[
+          i
+        ] =
+          view.getFloat32(
+            o,
+            true,
+          );
+      convexes.push(
+        v,
+      );
     }
-    table.push(convexes);
+    table.push(
+      convexes,
+    );
   }
   return table;
 }

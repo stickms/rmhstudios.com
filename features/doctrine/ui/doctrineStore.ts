@@ -7,7 +7,11 @@
 import { create } from 'zustand';
 import type { SahurModeConfig } from '@features/doctrine/engine/types';
 
-type DoctrineTheme = 'default' | 'safehouse' | 'coalition' | 'sahur';
+type DoctrineTheme =
+  | 'default'
+  | 'safehouse'
+  | 'coalition'
+  | 'sahur';
 
 interface DoctrineState {
   // Sahur Mode
@@ -22,21 +26,76 @@ interface DoctrineState {
   activeIncidentCount: number;
 
   // Actions
-  setSahurActive: (active: boolean, config?: SahurModeConfig | null) => void;
-  setSahurCountdown: (minutes: number) => void;
-  setDoctrineTheme: (theme: DoctrineTheme) => void;
-  setActiveIncidentCount: (count: number) => void;
+  setSahurActive: (
+    active: boolean,
+    config?: SahurModeConfig | null,
+  ) => void;
+  setSahurCountdown: (
+    minutes: number,
+  ) => void;
+  setDoctrineTheme: (
+    theme: DoctrineTheme,
+  ) => void;
+  setActiveIncidentCount: (
+    count: number,
+  ) => void;
 }
 
-export const useDoctrineStore = create<DoctrineState>((set) => ({
-  sahurActive: false,
-  sahurConfig: null,
-  sahurCountdown: 0,
-  doctrineTheme: 'default',
-  activeIncidentCount: 0,
+export const useDoctrineStore =
+  create<DoctrineState>(
+    (
+      set,
+    ) => ({
+      sahurActive: false,
+      sahurConfig:
+        null,
+      sahurCountdown: 0,
+      doctrineTheme:
+        'default',
+      activeIncidentCount: 0,
 
-  setSahurActive: (active, config = null) => set({ sahurActive: active, sahurConfig: config }),
-  setSahurCountdown: (minutes) => set({ sahurCountdown: minutes }),
-  setDoctrineTheme: (theme) => set({ doctrineTheme: theme }),
-  setActiveIncidentCount: (count) => set({ activeIncidentCount: count }),
-}));
+      setSahurActive:
+        (
+          active,
+          config = null,
+        ) =>
+          set(
+            {
+              sahurActive:
+                active,
+              sahurConfig:
+                config,
+            },
+          ),
+      setSahurCountdown:
+        (
+          minutes,
+        ) =>
+          set(
+            {
+              sahurCountdown:
+                minutes,
+            },
+          ),
+      setDoctrineTheme:
+        (
+          theme,
+        ) =>
+          set(
+            {
+              doctrineTheme:
+                theme,
+            },
+          ),
+      setActiveIncidentCount:
+        (
+          count,
+        ) =>
+          set(
+            {
+              activeIncidentCount:
+                count,
+            },
+          ),
+    }),
+  );

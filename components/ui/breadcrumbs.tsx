@@ -25,44 +25,88 @@ interface BreadcrumbsProps {
  * <Breadcrumbs items={[{ label: 'Settings', to: '/settings' }, { label: 'Security' }]} />
  * ```
  */
-export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
-  const { t } = useTranslation('c-ui');
-  if (items.length === 0) return null;
+export function Breadcrumbs({
+  items,
+  className,
+}: BreadcrumbsProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-ui',
+    );
+  if (
+    items.length ===
+    0
+  )
+    return null;
 
   return (
     <nav
-      aria-label={t('breadcrumb', { defaultValue: 'Breadcrumb' })}
-      className={cn('min-w-0', className)}
+      aria-label={t(
+        'breadcrumb',
+        {
+          defaultValue:
+            'Breadcrumb',
+        },
+      )}
+      className={cn(
+        'min-w-0',
+        className,
+      )}
     >
       <ol className="flex flex-wrap items-center gap-1 text-sm text-site-text-muted">
-        {items.map((item, i) => {
-          const isLast = i === items.length - 1;
-          return (
-            <li key={`${item.label}-${i}`} className="flex min-w-0 items-center gap-1">
-              {i > 0 && (
-                <ChevronRight
-                  className="h-3 w-3 shrink-0 text-site-text-muted rtl-flip"
-                  aria-hidden
-                />
-              )}
-              {isLast || !item.to ? (
-                <span
-                  className="break-words font-medium text-site-text"
-                  aria-current={isLast ? 'page' : undefined}
-                >
-                  {item.label}
-                </span>
-              ) : (
-                <Link
-                  to={item.to}
-                  className="truncate rounded-site transition-colors hover:text-site-text hover:underline"
-                >
-                  {item.label}
-                </Link>
-              )}
-            </li>
-          );
-        })}
+        {items.map(
+          (
+            item,
+            i,
+          ) => {
+            const isLast =
+              i ===
+              items.length -
+                1;
+            return (
+              <li
+                key={`${item.label}-${i}`}
+                className="flex min-w-0 items-center gap-1"
+              >
+                {i >
+                  0 && (
+                  <ChevronRight
+                    className="h-3 w-3 shrink-0 text-site-text-muted rtl-flip"
+                    aria-hidden
+                  />
+                )}
+                {isLast ||
+                !item.to ? (
+                  <span
+                    className="break-words font-medium text-site-text"
+                    aria-current={
+                      isLast
+                        ? 'page'
+                        : undefined
+                    }
+                  >
+                    {
+                      item.label
+                    }
+                  </span>
+                ) : (
+                  <Link
+                    to={
+                      item.to
+                    }
+                    className="truncate rounded-site transition-colors hover:text-site-text hover:underline"
+                  >
+                    {
+                      item.label
+                    }
+                  </Link>
+                )}
+              </li>
+            );
+          },
+        )}
       </ol>
     </nav>
   );

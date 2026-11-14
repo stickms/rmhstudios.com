@@ -6,7 +6,18 @@ import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
 import type { howToPlaySchema } from '@/lib/devplatform/how-to-play-schema';
 
-export const howToPlayApi = endpoint<{
-  body: z.infer<typeof howToPlaySchema>;
-  res: { answer: string };
-}>()({ method: 'POST', path: '/api/games/how-to-play' });
+export const howToPlayApi =
+  endpoint<{
+    body: z.infer<
+      typeof howToPlaySchema
+    >;
+    res: {
+      answer: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/games/how-to-play',
+    },
+  );

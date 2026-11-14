@@ -11,19 +11,50 @@
  */
 
 /** How long after upload a `pending` song still counts as being charted. */
-export const CHARTING_LIVE_MS = 10 * 60 * 1000;
+export const CHARTING_LIVE_MS =
+  10 *
+  60 *
+  1000;
 
-export type RowChartState = 'charting' | 'failed' | null;
+export type RowChartState =
+  | 'charting'
+  | 'failed'
+  | null;
 
 export function rowChartState(
-  song: { analysisState?: string | null; createdAt: string },
+  song: {
+    analysisState?:
+      | string
+      | null;
+    createdAt: string;
+  },
   now: number = Date.now(),
 ): RowChartState {
-  if (song.analysisState === 'failed') return 'failed';
-  if (song.analysisState !== 'pending') return null;
-  const created = Date.parse(song.createdAt);
+  if (
+    song.analysisState ===
+    'failed'
+  )
+    return 'failed';
+  if (
+    song.analysisState !==
+    'pending'
+  )
+    return null;
+  const created =
+    Date.parse(
+      song.createdAt,
+    );
   // An unreadable date is treated as old: better to say nothing than to say
   // "Charting…" forever.
-  if (!Number.isFinite(created)) return null;
-  return now - created < CHARTING_LIVE_MS ? 'charting' : null;
+  if (
+    !Number.isFinite(
+      created,
+    )
+  )
+    return null;
+  return now -
+    created <
+    CHARTING_LIVE_MS
+    ? 'charting'
+    : null;
 }

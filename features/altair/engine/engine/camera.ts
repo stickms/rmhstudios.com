@@ -4,7 +4,10 @@
 // Smooth-follow camera with screen shake support.
 // =============================================================================
 
-import { Camera, PlayerEntity } from './types';
+import {
+  Camera,
+  PlayerEntity,
+} from './types';
 import { rand } from './rng';
 
 const CAMERA_LERP_SPEED = 5.0; // higher = snappier follow
@@ -13,7 +16,10 @@ const SHAKE_DECAY = 8.0; // how fast shake fades
 /**
  * Create a new camera centered at the origin.
  */
-export function createCamera(width: number, height: number): Camera {
+export function createCamera(
+  width: number,
+  height: number,
+): Camera {
   return {
     x: 0,
     y: 0,
@@ -36,25 +42,58 @@ export function updateCamera(
   delta: number,
 ): void {
   // Lerp toward the player position
-  const t = 1 - Math.exp(-CAMERA_LERP_SPEED * delta);
-  camera.x += (player.x - camera.x) * t;
-  camera.y += (player.y - camera.y) * t;
+  const t =
+    1 -
+    Math.exp(
+      -CAMERA_LERP_SPEED *
+        delta,
+    );
+  camera.x +=
+    (player.x -
+      camera.x) *
+    t;
+  camera.y +=
+    (player.y -
+      camera.y) *
+    t;
 
   // Update screen shake
-  if (camera.shakeDuration > 0) {
-    camera.shakeDuration -= delta;
-    if (camera.shakeDuration <= 0) {
+  if (
+    camera.shakeDuration >
+    0
+  ) {
+    camera.shakeDuration -=
+      delta;
+    if (
+      camera.shakeDuration <=
+      0
+    ) {
       camera.shakeDuration = 0;
       camera.shakeIntensity = 0;
       camera.shakeX = 0;
       camera.shakeY = 0;
     } else {
       // Decay intensity over time
-      camera.shakeIntensity *= Math.exp(-SHAKE_DECAY * delta);
+      camera.shakeIntensity *=
+        Math.exp(
+          -SHAKE_DECAY *
+            delta,
+        );
       // Random offset each frame
-      const angle = rand() * Math.PI * 2;
-      camera.shakeX = Math.cos(angle) * camera.shakeIntensity;
-      camera.shakeY = Math.sin(angle) * camera.shakeIntensity;
+      const angle =
+        rand() *
+        Math.PI *
+        2;
+      camera.shakeX =
+        Math.cos(
+          angle,
+        ) *
+        camera.shakeIntensity;
+      camera.shakeY =
+        Math.sin(
+          angle,
+        ) *
+        camera.shakeIntensity;
     }
   }
 }
@@ -68,11 +107,19 @@ export function shakeCamera(
   intensity: number,
   duration: number,
 ): void {
-  if (intensity > camera.shakeIntensity) {
-    camera.shakeIntensity = intensity;
+  if (
+    intensity >
+    camera.shakeIntensity
+  ) {
+    camera.shakeIntensity =
+      intensity;
   }
-  if (duration > camera.shakeDuration) {
-    camera.shakeDuration = duration;
+  if (
+    duration >
+    camera.shakeDuration
+  ) {
+    camera.shakeDuration =
+      duration;
   }
 }
 
@@ -83,10 +130,23 @@ export function worldToScreen(
   camera: Camera,
   wx: number,
   wy: number,
-): { x: number; y: number } {
+): {
+  x: number;
+  y: number;
+} {
   return {
-    x: wx - camera.x + camera.width / 2 + camera.shakeX,
-    y: wy - camera.y + camera.height / 2 + camera.shakeY,
+    x:
+      wx -
+      camera.x +
+      camera.width /
+        2 +
+      camera.shakeX,
+    y:
+      wy -
+      camera.y +
+      camera.height /
+        2 +
+      camera.shakeY,
   };
 }
 
@@ -100,9 +160,28 @@ export function isVisible(
   wy: number,
   margin: number,
 ): boolean {
-  const halfW = camera.width / 2 + margin;
-  const halfH = camera.height / 2 + margin;
-  const dx = wx - camera.x;
-  const dy = wy - camera.y;
-  return dx >= -halfW && dx <= halfW && dy >= -halfH && dy <= halfH;
+  const halfW =
+    camera.width /
+      2 +
+    margin;
+  const halfH =
+    camera.height /
+      2 +
+    margin;
+  const dx =
+    wx -
+    camera.x;
+  const dy =
+    wy -
+    camera.y;
+  return (
+    dx >=
+      -halfW &&
+    dx <=
+      halfW &&
+    dy >=
+      -halfH &&
+    dy <=
+      halfH
+  );
 }

@@ -11,15 +11,20 @@ export type TablePhase =
   | 'results';
 
 export type PlayerStatus =
-  | 'waiting'    // seated but not in current round
-  | 'betting'    // placed a bet for this round
-  | 'playing'    // it's their turn
-  | 'standing'   // stood
-  | 'busted'     // went over 21
-  | 'blackjack'  // natural 21
-  | 'done';      // round resolved
+  | 'waiting' // seated but not in current round
+  | 'betting' // placed a bet for this round
+  | 'playing' // it's their turn
+  | 'standing' // stood
+  | 'busted' // went over 21
+  | 'blackjack' // natural 21
+  | 'done'; // round resolved
 
-export type HandResult = 'win' | 'lose' | 'push' | 'blackjack' | null;
+export type HandResult =
+  | 'win'
+  | 'lose'
+  | 'push'
+  | 'blackjack'
+  | null;
 
 export interface SessionStats {
   totalBet: number;
@@ -33,7 +38,9 @@ export interface SplitHandClient {
   hand: Card[];
   bet: number;
   status: PlayerStatus;
-  handValue: number | null;
+  handValue:
+    | number
+    | null;
   result: HandResult;
   payout: number;
 }
@@ -41,16 +48,23 @@ export interface SplitHandClient {
 export interface PlayerSeatClient {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   seatIndex: number;
   hand: Card[];
   bet: number;
   status: PlayerStatus;
-  handValue: number | null;
+  handValue:
+    | number
+    | null;
   result: HandResult;
   payout: number;
   insuranceBet: number;
-  insuranceResult: 'won' | 'lost' | null;
+  insuranceResult:
+    | 'won'
+    | 'lost'
+    | null;
   sessionStats: SessionStats;
   hasSplit: boolean;
   activeSplitIndex: number;
@@ -63,10 +77,18 @@ export interface TableStateSnapshot {
   roundNumber: number;
   players: PlayerSeatClient[];
   dealerHand: Card[];
-  dealerValue: number | null;
-  currentTurnUserId: string | null;
-  bettingCountdown: number | null;
-  turnTimeout: number | null;
+  dealerValue:
+    | number
+    | null;
+  currentTurnUserId:
+    | string
+    | null;
+  bettingCountdown:
+    | number
+    | null;
+  turnTimeout:
+    | number
+    | null;
 }
 
 export interface RoundResultEntry {
@@ -94,6 +116,8 @@ export interface RoomInfo {
   ownerId: string;
   ownerName: string;
   maxPlayers: number;
-  privacy: 'public' | 'unlisted';
+  privacy:
+    | 'public'
+    | 'unlisted';
   joinCode: string;
 }

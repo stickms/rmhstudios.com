@@ -5,4 +5,5 @@ export const btn =
   'rounded-app-sm border border-app-border bg-app-surface-hover px-3 py-1.5 text-sm font-medium text-app-text transition-colors hover:bg-app-surface-active disabled:opacity-50';
 export const btnPrimary =
   'rounded-app-sm bg-app-accent px-3 py-1.5 text-sm font-medium text-app-accent-fg transition-colors hover:bg-app-accent-hover disabled:opacity-50';
-export const muted = 'text-xs text-app-text-muted';
+export const muted =
+  'text-xs text-app-text-muted';

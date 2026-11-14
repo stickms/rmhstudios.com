@@ -29,20 +29,34 @@
     },
     "resolved": {
       "key": "ruleset_mp_balanced",
-      "layers": ["standard", "pvp_timer"],
+      "layers": [
+        "standard",
+        "pvp_timer"
+      ],
       "multiplayerContent": true,
-      "banned": ["j_mr_bones", "v_hieroglyph"],
+      "banned": [
+        "j_mr_bones",
+        "v_hieroglyph"
+      ],
       "bannedSilent": [],
-      "included": ["j_mp_pacifist"],
-      "reworked": ["j_hanging_chad"],
+      "included": [
+        "j_mp_pacifist"
+      ],
+      "reworked": [
+        "j_hanging_chad"
+      ],
       "spectralBannedEnhancements": [],
-      "stickers": ["mp_sticker_balanced"],
+      "stickers": [
+        "mp_sticker_balanced"
+      ],
       "gameModifiers": {
         "no_interest": false,
         "discard_cost": 1
       },
       "startingParams": {},
-      "setupHooks": ["standard"],
+      "setupHooks": [
+        "standard"
+      ],
       "flags": {
         "theOrder": true,
         "enemyLocationDisabled": false,
@@ -76,7 +90,10 @@
         "teamBased": false
       },
       "ruleset": "ruleset_mp_balanced",
-      "layers": ["standard", "pvp_timer"],
+      "layers": [
+        "standard",
+        "pvp_timer"
+      ],
       "options": {
         "$ref": "lobbyOptions"
       },
@@ -252,7 +269,9 @@
       "setup": {
         "$ref": "setupView"
       },
-      "kicked": ["u_eve"],
+      "kicked": [
+        "u_eve"
+      ],
       "forfeited": {
         "u_carl": "r7f3a91c2"
       }
@@ -298,7 +317,9 @@
         "u_bob": "u_alice"
       },
       "pairingAnte": 2,
-      "usedPairs": ["u_alice|u_bob"],
+      "usedPairs": [
+        "u_alice|u_bob"
+      ],
       "lastBye": null,
       "teamLives": {},
       "teamCardTargets": {},
@@ -323,7 +344,9 @@
       },
       "votes": {
         "seed": [],
-        "draw": ["u_alice"]
+        "draw": [
+          "u_alice"
+        ]
       },
       "lastOutcome": {
         "t": "player_lives",
@@ -389,7 +412,9 @@
           "catchingUp": false,
           "role": "player",
           "conn": "direct",
-          "packs": ["release"]
+          "packs": [
+            "release"
+          ]
         },
         {
           "id": "u_bob",
@@ -725,7 +750,9 @@
         "checkpoint": {
           "$ref": "checkpoint"
         },
-        "present": ["u_alice"]
+        "present": [
+          "u_alice"
+        ]
       }
     ],
     "invalid": [
@@ -837,7 +864,9 @@
               "catchingUp": false,
               "role": "player",
               "conn": "direct",
-              "packs": ["nope"]
+              "packs": [
+                "nope"
+              ]
             },
             {
               "id": "u_bob",
@@ -951,7 +980,10 @@
         "differentDecks": false,
         "randomLoadout": false,
         "multiplayerJokers": true,
-        "modifierLayers": ["glass_cannon", "no_red_seals"],
+        "modifierLayers": [
+          "glass_cannon",
+          "no_red_seals"
+        ],
         "seatGraceMs": 120000
       }
     ],
@@ -1060,20 +1092,34 @@
         "why": "timer mode",
         "d": {
           "key": "ruleset_mp_balanced",
-          "layers": ["standard", "pvp_timer"],
+          "layers": [
+            "standard",
+            "pvp_timer"
+          ],
           "multiplayerContent": true,
-          "banned": ["j_mr_bones", "v_hieroglyph"],
+          "banned": [
+            "j_mr_bones",
+            "v_hieroglyph"
+          ],
           "bannedSilent": [],
-          "included": ["j_mp_pacifist"],
-          "reworked": ["j_hanging_chad"],
+          "included": [
+            "j_mp_pacifist"
+          ],
+          "reworked": [
+            "j_hanging_chad"
+          ],
           "spectralBannedEnhancements": [],
-          "stickers": ["mp_sticker_balanced"],
+          "stickers": [
+            "mp_sticker_balanced"
+          ],
           "gameModifiers": {
             "no_interest": false,
             "discard_cost": 1
           },
           "startingParams": {},
-          "setupHooks": ["standard"],
+          "setupHooks": [
+            "standard"
+          ],
           "flags": {
             "theOrder": true,
             "enemyLocationDisabled": false,
@@ -1146,7 +1192,9 @@
             "u_bob": "u_alice"
           },
           "pairingAnte": 2,
-          "usedPairs": ["u_alice|u_bob"],
+          "usedPairs": [
+            "u_alice|u_bob"
+          ],
           "lastBye": null,
           "teamLives": {},
           "teamCardTargets": {},
@@ -1171,7 +1219,9 @@
           },
           "votes": {
             "seed": [],
-            "draw": ["u_alice"]
+            "draw": [
+              "u_alice"
+            ]
           },
           "lastOutcome": {
             "t": "player_lives",
@@ -1212,7 +1262,9 @@
             "u_bob": "u_alice"
           },
           "pairingAnte": 2,
-          "usedPairs": ["u_alice|u_bob"],
+          "usedPairs": [
+            "u_alice|u_bob"
+          ],
           "lastBye": null,
           "teamLives": {},
           "teamCardTargets": {},
@@ -1237,7 +1289,9 @@
           },
           "votes": {
             "seed": [],
-            "draw": ["u_alice"]
+            "draw": [
+              "u_alice"
+            ]
           },
           "lastOutcome": {
             "t": "player_lives",

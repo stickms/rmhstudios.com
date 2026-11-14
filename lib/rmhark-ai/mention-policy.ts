@@ -12,10 +12,15 @@
  *   [false, ...]              -> 0
  *   []                        -> 0
  */
-export function consecutiveBotDepth(tipToRootIsBot: boolean[]): number {
+export function consecutiveBotDepth(
+  tipToRootIsBot: boolean[],
+): number {
   let depth = 0;
   for (const isBot of tipToRootIsBot) {
-    if (!isBot) break;
+    if (
+      !isBot
+    )
+      break;
     depth++;
   }
   return depth;
@@ -31,6 +36,12 @@ export function shouldReplyToMention(opts: {
   botChainDepth: number;
   maxBotMentionDepth: number;
 }): boolean {
-  if (!opts.actorIsBot) return true;
-  return opts.botChainDepth < opts.maxBotMentionDepth;
+  if (
+    !opts.actorIsBot
+  )
+    return true;
+  return (
+    opts.botChainDepth <
+    opts.maxBotMentionDepth
+  );
 }

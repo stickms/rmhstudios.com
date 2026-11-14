@@ -9,7 +9,10 @@
  * measurement: low-pass the waveform and take its RMS per spectrogram frame.
  */
 
-import { FRAME_SIZE, HOP_SIZE } from './spectrum';
+import {
+  FRAME_SIZE,
+  HOP_SIZE,
+} from './spectrum';
 
 /** Everything below this is "low". */
 export const LOW_BAND_CUTOFF_HZ = 150;
@@ -25,29 +28,114 @@ export function lowBandEnvelope(
   frameSize = FRAME_SIZE,
   hopSize = HOP_SIZE,
 ): Float32Array {
-  const out = new Float32Array(frames);
-  if (frames === 0 || samples.length === 0) return out;
+  const out =
+    new Float32Array(
+      frames,
+    );
+  if (
+    frames ===
+      0 ||
+    samples.length ===
+      0
+  )
+    return out;
 
   // Two cascaded one-pole low-passes (-12 dB/oct): plenty to separate a kick or
   // bass from a snare, and exact enough for an energy envelope.
-  const alpha = 1 - Math.exp((-2 * Math.PI * LOW_BAND_CUTOFF_HZ) / sampleRate);
-  const filtered = new Float32Array(samples.length);
+  const alpha =
+    1 -
+    Math.exp(
+      (-2 *
+        Math.PI *
+        LOW_BAND_CUTOFF_HZ) /
+        sampleRate,
+    );
+  const filtered =
+    new Float32Array(
+      samples.length,
+    );
   let y1 = 0;
   let y2 = 0;
-  for (let i = 0; i < samples.length; i++) {
-    y1 += alpha * (samples[i] - y1);
-    y2 += alpha * (y1 - y2);
-    filtered[i] = y2;
+  for (
+    let i = 0;
+    i <
+    samples.length;
+    i++
+  ) {
+    y1 +=
+      alpha *
+      (samples[
+        i
+      ] -
+        y1);
+    y2 +=
+      alpha *
+      (y1 -
+        y2);
+    filtered[
+      i
+    ] =
+      y2;
   }
 
   // Running sum of squares, so each frame is O(1) however long the window is.
-  const prefix = new Float64Array(filtered.length + 1);
-  for (let i = 0; i < filtered.length; i++) prefix[i + 1] = prefix[i] + filtered[i] * filtered[i];
-  for (let f = 0; f < frames; f++) {
-    const start = f * hopSize;
-    const end = Math.min(filtered.length, start + frameSize);
-    if (end <= start) break;
-    out[f] = Math.sqrt((prefix[end] - prefix[start]) / (end - start));
+  const prefix =
+    new Float64Array(
+      filtered.length +
+        1,
+    );
+  for (
+    let i = 0;
+    i <
+    filtered.length;
+    i++
+  )
+    prefix[
+      i +
+        1
+    ] =
+      prefix[
+        i
+      ] +
+      filtered[
+        i
+      ] *
+        filtered[
+          i
+        ];
+  for (
+    let f = 0;
+    f <
+    frames;
+    f++
+  ) {
+    const start =
+      f *
+      hopSize;
+    const end =
+      Math.min(
+        filtered.length,
+        start +
+          frameSize,
+      );
+    if (
+      end <=
+      start
+    )
+      break;
+    out[
+      f
+    ] =
+      Math.sqrt(
+        (prefix[
+          end
+        ] -
+          prefix[
+            start
+          ]) /
+          (end -
+            start),
+      );
   }
   return out;
 }

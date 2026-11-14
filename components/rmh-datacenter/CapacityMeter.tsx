@@ -21,7 +21,10 @@
  * picture is not a number.
  */
 
-import { meterUnits, METER_UNITS } from '@/lib/datacenter/campuses';
+import {
+  meterUnits,
+  METER_UNITS,
+} from '@/lib/datacenter/campuses';
 
 interface CapacityMeterProps {
   label: string;
@@ -32,7 +35,9 @@ interface CapacityMeterProps {
   /** Fraction past which a lit unit is drawn in the warning token. */
   pressure?: number;
   /** Paint the whole lit run: the reading itself is the warning. */
-  tone?: 'accent' | 'warning';
+  tone?:
+    | 'accent'
+    | 'warning';
   units?: number;
 }
 
@@ -44,31 +49,66 @@ export function CapacityMeter({
   tone = 'accent',
   units = METER_UNITS,
 }: CapacityMeterProps) {
-  const lit = meterUnits(ratio, units);
+  const lit =
+    meterUnits(
+      ratio,
+      units,
+    );
   const hotFrom =
-    tone === 'warning' ? 0 : pressure === undefined ? units : meterUnits(pressure, units);
+    tone ===
+    'warning'
+      ? 0
+      : pressure ===
+          undefined
+        ? units
+        : meterUnits(
+            pressure,
+            units,
+          );
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-xs font-medium text-site-text-muted">
-          {label}
+          {
+            label
+          }
         </span>
-        <span className="text-sm font-semibold text-site-text">{value}</span>
+        <span className="text-sm font-semibold text-site-text">
+          {
+            value
+          }
+        </span>
       </div>
-      <div className="flex h-3 gap-[3px] overflow-hidden rounded-site-sm" aria-hidden>
-        {Array.from({ length: units }, (_, i) => (
-          <span
-            key={i}
-            className={
-              i >= lit
-                ? 'flex-1 rounded-none bg-site-border'
-                : i >= hotFrom
-                  ? 'flex-1 rounded-none bg-site-warning'
-                  : 'flex-1 rounded-none bg-site-accent'
-            }
-          />
-        ))}
+      <div
+        className="flex h-3 gap-[3px] overflow-hidden rounded-site-sm"
+        aria-hidden
+      >
+        {Array.from(
+          {
+            length:
+              units,
+          },
+          (
+            _,
+            i,
+          ) => (
+            <span
+              key={
+                i
+              }
+              className={
+                i >=
+                lit
+                  ? 'flex-1 rounded-none bg-site-border'
+                  : i >=
+                      hotFrom
+                    ? 'flex-1 rounded-none bg-site-warning'
+                    : 'flex-1 rounded-none bg-site-accent'
+              }
+            />
+          ),
+        )}
       </div>
     </div>
   );

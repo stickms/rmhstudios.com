@@ -9,21 +9,65 @@
  */
 
 export interface IceServerConfig {
-  urls: string | string[];
+  urls:
+    | string
+    | string[];
   username?: string;
   credential?: string;
 }
 
 /** Google's and Cloudflare's public STUN servers. */
-export const DEFAULT_ICE_SERVERS: readonly IceServerConfig[] = [
-  { urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] },
-];
+export const DEFAULT_ICE_SERVERS: readonly IceServerConfig[] =
+  [
+    {
+      urls: [
+        'stun:stun.l.google.com:19302',
+        'stun:stun.cloudflare.com:3478',
+      ],
+    },
+  ];
 
-export function copyIceServers(list: readonly IceServerConfig[]): IceServerConfig[] {
-  return list.map((s) => ({ ...s, urls: Array.isArray(s.urls) ? [...s.urls] : s.urls }));
+export function copyIceServers(
+  list: readonly IceServerConfig[],
+): IceServerConfig[] {
+  return list.map(
+    (
+      s,
+    ) => ({
+      ...s,
+      urls: Array.isArray(
+        s.urls,
+      )
+        ? [
+            ...s.urls,
+          ]
+        : s.urls,
+    }),
+  );
 }
 
 /** Whether a list has a TURN server (the wait before the hub relay is longer then). */
-export function hasTurn(servers: readonly IceServerConfig[]): boolean {
-  return servers.some((s) => (Array.isArray(s.urls) ? s.urls : [s.urls]).some((u) => /^turns?:/.test(u)));
+export function hasTurn(
+  servers: readonly IceServerConfig[],
+): boolean {
+  return servers.some(
+    (
+      s,
+    ) =>
+      (Array.isArray(
+        s.urls,
+      )
+        ? s.urls
+        : [
+            s.urls,
+          ]
+      ).some(
+        (
+          u,
+        ) =>
+          /^turns?:/.test(
+            u,
+          ),
+      ),
+  );
 }

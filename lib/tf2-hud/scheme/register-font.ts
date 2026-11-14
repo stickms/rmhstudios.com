@@ -4,7 +4,10 @@
  */
 
 import { parseKv } from '../kv/parse';
-import { kvAt, kvChildren } from '../kv/query';
+import {
+  kvAt,
+  kvChildren,
+} from '../kv/query';
 import { kvSet } from '../kv/edit';
 
 export interface FontRegistration {
@@ -18,31 +21,143 @@ export interface FontRegistration {
   weight: number;
 }
 
-export function registerFontInScheme(schemeText: string, reg: FontRegistration): string {
-  const doc = parseKv(schemeText);
-  const root = doc.roots.find((n) => n.key.text.toLowerCase() === 'scheme');
-  if (!root) return schemeText;
-  const rootKey = root.key.text;
+export function registerFontInScheme(
+  schemeText: string,
+  reg: FontRegistration,
+): string {
+  const doc =
+    parseKv(
+      schemeText,
+    );
+  const root =
+    doc.roots.find(
+      (
+        n,
+      ) =>
+        n.key.text.toLowerCase() ===
+        'scheme',
+    );
+  if (
+    !root
+  )
+    return schemeText;
+  const rootKey =
+    root
+      .key
+      .text;
 
-  let text = schemeText;
-  const files = kvAt(doc, [rootKey, 'CustomFontFiles']);
-  const used = files
-    ? kvChildren(files)
-        .map((c) => Number.parseInt(c.key.text, 10))
-        .filter(Number.isFinite)
-    : [];
-  const already = files
-    ? kvChildren(files).some((c) => c.value?.text.toLowerCase() === reg.file.toLowerCase())
-    : false;
-  if (!already) {
-    const next = (used.length ? Math.max(...used) : 0) + 1;
-    text = kvSet(text, [rootKey, 'CustomFontFiles', String(next)], reg.file);
+  let text =
+    schemeText;
+  const files =
+    kvAt(
+      doc,
+      [
+        rootKey,
+        'CustomFontFiles',
+      ],
+    );
+  const used =
+    files
+      ? kvChildren(
+          files,
+        )
+          .map(
+            (
+              c,
+            ) =>
+              Number.parseInt(
+                c
+                  .key
+                  .text,
+                10,
+              ),
+          )
+          .filter(
+            Number.isFinite,
+          )
+      : [];
+  const already =
+    files
+      ? kvChildren(
+          files,
+        ).some(
+          (
+            c,
+          ) =>
+            c.value?.text.toLowerCase() ===
+            reg.file.toLowerCase(),
+        )
+      : false;
+  if (
+    !already
+  ) {
+    const next =
+      (used.length
+        ? Math.max(
+            ...used,
+          )
+        : 0) +
+      1;
+    text =
+      kvSet(
+        text,
+        [
+          rootKey,
+          'CustomFontFiles',
+          String(
+            next,
+          ),
+        ],
+        reg.file,
+      );
   }
 
-  const base = [rootKey, 'Fonts', reg.schemeName, '1'];
-  text = kvSet(text, [...base, 'name'], reg.face);
-  text = kvSet(text, [...base, 'tall'], String(reg.tall));
-  text = kvSet(text, [...base, 'weight'], String(reg.weight));
-  text = kvSet(text, [...base, 'antialias'], '1');
+  const base =
+    [
+      rootKey,
+      'Fonts',
+      reg.schemeName,
+      '1',
+    ];
+  text =
+    kvSet(
+      text,
+      [
+        ...base,
+        'name',
+      ],
+      reg.face,
+    );
+  text =
+    kvSet(
+      text,
+      [
+        ...base,
+        'tall',
+      ],
+      String(
+        reg.tall,
+      ),
+    );
+  text =
+    kvSet(
+      text,
+      [
+        ...base,
+        'weight',
+      ],
+      String(
+        reg.weight,
+      ),
+    );
+  text =
+    kvSet(
+      text,
+      [
+        ...base,
+        'antialias',
+      ],
+      '1',
+    );
   return text;
 }

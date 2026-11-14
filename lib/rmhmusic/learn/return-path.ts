@@ -8,12 +8,37 @@
  * from ever naming anything but RMH Music.
  */
 
-const HOME = '/rmhmusic';
-const LESSON = /^\/rmhmusic\/lesson\/[a-z0-9-]{1,64}$/;
-const PRACTICE = '/rmhmusic/practice';
+const HOME =
+  '/rmhmusic';
+const LESSON =
+  /^\/rmhmusic\/lesson\/[a-z0-9-]{1,64}$/;
+const PRACTICE =
+  '/rmhmusic/practice';
 
-export function rmhmusicReturnPath(input: unknown): string {
-  if (typeof input !== 'string') return HOME;
-  const path = input.length > 1 && input.endsWith('/') ? input.slice(0, -1) : input;
-  return LESSON.test(path) || path === PRACTICE ? path : HOME;
+export function rmhmusicReturnPath(
+  input: unknown,
+): string {
+  if (
+    typeof input !==
+    'string'
+  )
+    return HOME;
+  const path =
+    input.length >
+      1 &&
+    input.endsWith(
+      '/',
+    )
+      ? input.slice(
+          0,
+          -1,
+        )
+      : input;
+  return LESSON.test(
+    path,
+  ) ||
+    path ===
+      PRACTICE
+    ? path
+    : HOME;
 }

@@ -5,10 +5,19 @@ import { Connect } from '../../Connect';
 import { useDunesday } from '../../DunesdayProvider';
 
 export default function SyncApp() {
-  const { sync } = useDunesday();
+  const {
+    sync,
+  } =
+    useDunesday();
   return (
-    <BareChrome.Provider value>
-      <Connect sync={sync} />
+    <BareChrome.Provider
+      value
+    >
+      <Connect
+        sync={
+          sync
+        }
+      />
     </BareChrome.Provider>
   );
 }

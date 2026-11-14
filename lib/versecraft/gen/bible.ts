@@ -5,12 +5,22 @@
 
 import type { GeneratedWorld } from './world-types';
 
-export function renderBible(world: GeneratedWorld): string {
-  const cast = world.characters.map((c) =>
-    `- id=${c.id} | NAME=${c.name} (${c.fullName}) | ${c.pronouns} | age ${c.age} | ` +
-    `${c.archetype}, ${c.role}. Voice: ${c.speechStyle} Personality: ${c.personality} ` +
-    `Secret: ${c.secret} Fear: ${c.fear} Dream: ${c.dream}`,
-  ).join('\n');
+export function renderBible(
+  world: GeneratedWorld,
+): string {
+  const cast =
+    world.characters
+      .map(
+        (
+          c,
+        ) =>
+          `- id=${c.id} | NAME=${c.name} (${c.fullName}) | ${c.pronouns} | age ${c.age} | ` +
+          `${c.archetype}, ${c.role}. Voice: ${c.speechStyle} Personality: ${c.personality} ` +
+          `Secret: ${c.secret} Fear: ${c.fear} Dream: ${c.dream}`,
+      )
+      .join(
+        '\n',
+      );
   return (
     `STORY BIBLE (authoritative — these facts are FIXED):\n` +
     `TITLE: "${world.title}". PREMISE: ${world.premise}\n` +

@@ -7,17 +7,51 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { CandidateProfile } from '@/lib/rmhladder/resume/schemas';
 
-export const analyzeLadderResumeApi = endpoint<{
-  body: { versionId: string };
-  res: Record<string, unknown>;
-}>()({ method: 'POST', path: '/api/rmhladder/resume/$id/analyze' });
+export const analyzeLadderResumeApi =
+  endpoint<{
+    body: {
+      versionId: string;
+    };
+    res: Record<
+      string,
+      unknown
+    >;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/rmhladder/resume/$id/analyze',
+    },
+  );
 
-export const confirmLadderResumeApi = endpoint<{
-  body: { versionId: string; profile: CandidateProfile };
-  res: Record<string, unknown>;
-}>()({ method: 'POST', path: '/api/rmhladder/resume/$id/confirm' });
+export const confirmLadderResumeApi =
+  endpoint<{
+    body: {
+      versionId: string;
+      profile: CandidateProfile;
+    };
+    res: Record<
+      string,
+      unknown
+    >;
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/rmhladder/resume/$id/confirm',
+    },
+  );
 
-export const deleteLadderResumeApi = endpoint<{ res: Record<string, unknown> }>()({
-  method: 'DELETE',
-  path: '/api/rmhladder/resume/$id',
-});
+export const deleteLadderResumeApi =
+  endpoint<{
+    res: Record<
+      string,
+      unknown
+    >;
+  }>()(
+    {
+      method:
+        'DELETE',
+      path: '/api/rmhladder/resume/$id',
+    },
+  );

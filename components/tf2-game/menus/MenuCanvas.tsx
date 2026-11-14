@@ -4,7 +4,13 @@
  * real buttons over it.
  */
 
-import { useEffect, useLayoutEffect, useReducer, useRef, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useReducer,
+  useRef,
+  type CSSProperties,
+} from 'react';
 import { gameSurfaceDpr } from '@/lib/display-scale';
 import type { ImageStore } from '@/lib/tf2-hud/assets/images';
 import { paintScene } from '@/lib/tf2-hud/scene/paint';
@@ -21,35 +27,144 @@ export default function MenuCanvas({
 }: {
   scene: Scene;
   images: ImageStore;
-  listeners: Set<() => void>;
+  listeners: Set<
+    () => void
+  >;
   width: number;
   height: number;
   className?: string;
   style?: CSSProperties;
 }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const [arrived, bump] = useReducer((n: number) => n + 1, 0);
+  const ref =
+    useRef<HTMLCanvasElement>(
+      null,
+    );
+  const [
+    arrived,
+    bump,
+  ] =
+    useReducer(
+      (
+        n: number,
+      ) =>
+        n +
+        1,
+      0,
+    );
   useEffect(() => {
-    listeners.add(bump);
+    listeners.add(
+      bump,
+    );
     return () => {
-      listeners.delete(bump);
+      listeners.delete(
+        bump,
+      );
     };
-  }, [listeners]);
+  }, [
+    listeners,
+  ]);
   useLayoutEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const dpr = gameSurfaceDpr(window);
-    const w = Math.max(1, Math.round(width * dpr));
-    const h = Math.max(1, Math.round(height * dpr));
-    if (canvas.width !== w) canvas.width = w;
-    if (canvas.height !== h) canvas.height = h;
-    const g = canvas.getContext('2d');
-    if (!g) return;
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.clearRect(0, 0, w, h);
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const canvas =
+      ref.current;
+    if (
+      !canvas
+    )
+      return;
+    const dpr =
+      gameSurfaceDpr(
+        window,
+      );
+    const w =
+      Math.max(
+        1,
+        Math.round(
+          width *
+            dpr,
+        ),
+      );
+    const h =
+      Math.max(
+        1,
+        Math.round(
+          height *
+            dpr,
+        ),
+      );
+    if (
+      canvas.width !==
+      w
+    )
+      canvas.width =
+        w;
+    if (
+      canvas.height !==
+      h
+    )
+      canvas.height =
+        h;
+    const g =
+      canvas.getContext(
+        '2d',
+      );
+    if (
+      !g
+    )
+      return;
+    g.setTransform(
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+    );
+    g.clearRect(
+      0,
+      0,
+      w,
+      h,
+    );
+    g.setTransform(
+      dpr,
+      0,
+      0,
+      dpr,
+      0,
+      0,
+    );
     // Run-time content (3D models, avatars) is drawn by the page, and missing textures draw nothing.
-    paintScene(g, scene, { images, skipDynamic: () => true, hideMissing: true });
-  }, [scene, images, width, height, arrived]);
-  return <canvas ref={ref} className={className} style={{ width, height, ...style }} aria-hidden="true" />;
+    paintScene(
+      g,
+      scene,
+      {
+        images,
+        skipDynamic:
+          () =>
+            true,
+        hideMissing: true,
+      },
+    );
+  }, [
+    scene,
+    images,
+    width,
+    height,
+    arrived,
+  ]);
+  return (
+    <canvas
+      ref={
+        ref
+      }
+      className={
+        className
+      }
+      style={{
+        width,
+        height,
+        ...style,
+      }}
+      aria-hidden="true"
+    />
+  );
 }

@@ -7,9 +7,14 @@
  * that whole module into their chunk. The palette itself is lazy-mounted
  * (see CommandPaletteMount.tsx) and listens for this event.
  */
-export const COMMAND_PALETTE_EVENT = 'rmh:command-palette';
+export const COMMAND_PALETTE_EVENT =
+  'rmh:command-palette';
 
 /** Open the palette from anywhere (e.g. a toolbar search button). */
 export function openCommandPalette() {
-  window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_EVENT));
+  window.dispatchEvent(
+    new CustomEvent(
+      COMMAND_PALETTE_EVENT,
+    ),
+  );
 }

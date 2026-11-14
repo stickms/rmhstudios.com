@@ -62,61 +62,192 @@ export const MAX_SV = 8;
  * the same order-swapping bug this module exists to prevent, arriving by a
  * different door.
  */
-export function buildSvTable(points: readonly SvPoint[]): SvTable {
-  const sorted = [...points]
-    .filter((point) => Number.isFinite(point.time) && Number.isFinite(point.multiplier))
-    .map((point) => ({
-      time: Math.max(0, point.time),
-      multiplier: Math.min(MAX_SV, Math.max(MIN_SV, point.multiplier)),
-    }))
-    .sort((a, b) => a.time - b.time);
+export function buildSvTable(
+  points: readonly SvPoint[],
+): SvTable {
+  const sorted =
+    [
+      ...points,
+    ]
+      .filter(
+        (
+          point,
+        ) =>
+          Number.isFinite(
+            point.time,
+          ) &&
+          Number.isFinite(
+            point.multiplier,
+          ),
+      )
+      .map(
+        (
+          point,
+        ) => ({
+          time: Math.max(
+            0,
+            point.time,
+          ),
+          multiplier:
+            Math.min(
+              MAX_SV,
+              Math.max(
+                MIN_SV,
+                point.multiplier,
+              ),
+            ),
+        }),
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          a.time -
+          b.time,
+      );
 
   // Scroll runs at 1× until the first marker says otherwise, so the table always
   // opens with a segment at t=0 — including when the chart has no markers at
   // all, which is every chart today.
-  const times: number[] = [0];
-  const rates: number[] = [1];
+  const times: number[] =
+    [
+      0,
+    ];
+  const rates: number[] =
+    [
+      1,
+    ];
   for (const point of sorted) {
-    if (point.time <= 0) {
-      rates[0] = point.multiplier;
+    if (
+      point.time <=
+      0
+    ) {
+      rates[0] =
+        point.multiplier;
       continue;
     }
-    if (point.time === times[times.length - 1]) {
+    if (
+      point.time ===
+      times[
+        times.length -
+          1
+      ]
+    ) {
       // Two markers at the same instant: the last one wins, which is what an
       // author dragging one onto another means.
-      rates[rates.length - 1] = point.multiplier;
+      rates[
+        rates.length -
+          1
+      ] =
+        point.multiplier;
       continue;
     }
-    times.push(point.time);
-    rates.push(point.multiplier);
+    times.push(
+      point.time,
+    );
+    rates.push(
+      point.multiplier,
+    );
   }
 
-  const cumulative: number[] = [0];
-  for (let i = 1; i < times.length; i++) {
-    cumulative.push(cumulative[i - 1] + rates[i - 1] * (times[i] - times[i - 1]));
+  const cumulative: number[] =
+    [
+      0,
+    ];
+  for (
+    let i = 1;
+    i <
+    times.length;
+    i++
+  ) {
+    cumulative.push(
+      cumulative[
+        i -
+          1
+      ] +
+        rates[
+          i -
+            1
+        ] *
+          (times[
+            i
+          ] -
+            times[
+              i -
+                1
+            ]),
+    );
   }
 
-  return { times, rates, cumulative };
+  return {
+    times,
+    rates,
+    cumulative,
+  };
 }
 
 /** Index of the segment containing `time`. */
-function segmentAt(table: SvTable, time: number): number {
-  const { times } = table;
-  if (time <= times[0]) return 0;
+function segmentAt(
+  table: SvTable,
+  time: number,
+): number {
+  const {
+    times,
+  } =
+    table;
+  if (
+    time <=
+    times[0]
+  )
+    return 0;
   let lo = 0;
-  let hi = times.length - 1;
-  if (time >= times[hi]) return hi;
-  while (hi - lo > 1) {
-    const mid = (lo + hi) >> 1;
-    if (times[mid] <= time) lo = mid;
-    else hi = mid;
+  let hi =
+    times.length -
+    1;
+  if (
+    time >=
+    times[
+      hi
+    ]
+  )
+    return hi;
+  while (
+    hi -
+      lo >
+    1
+  ) {
+    const mid =
+      (lo +
+        hi) >>
+      1;
+    if (
+      times[
+        mid
+      ] <=
+      time
+    )
+      lo =
+        mid;
+    else
+      hi =
+        mid;
   }
   return lo;
 }
 
 /** The multiplier in effect at `time`. */
-export function svAt(table: SvTable, time: number): number {
-  return table.rates[segmentAt(table, time)];
+export function svAt(
+  table: SvTable,
+  time: number,
+): number {
+  return table
+    .rates[
+    segmentAt(
+      table,
+      time,
+    )
+  ];
 }
 
 /**
@@ -124,9 +255,30 @@ export function svAt(table: SvTable, time: number): number {
  * units: with no SV markers this is exactly `time`, so every existing chart is
  * unaffected and the renderer needs no special case for "no SV".
  */
-export function scrollDistance(table: SvTable, time: number): number {
-  const index = segmentAt(table, time);
-  return table.cumulative[index] + table.rates[index] * (time - table.times[index]);
+export function scrollDistance(
+  table: SvTable,
+  time: number,
+): number {
+  const index =
+    segmentAt(
+      table,
+      time,
+    );
+  return (
+    table
+      .cumulative[
+      index
+    ] +
+    table
+      .rates[
+      index
+    ] *
+      (time -
+        table
+          .times[
+          index
+        ])
+  );
 }
 
 /**
@@ -135,8 +287,21 @@ export function scrollDistance(table: SvTable, time: number): number {
  * The renderer multiplies this by its pixels-per-second. Strictly increasing in
  * `time`, so two notes never swap — the property the whole module is for.
  */
-export function scrollOffset(table: SvTable, time: number, playhead: number): number {
-  return scrollDistance(table, time) - scrollDistance(table, playhead);
+export function scrollOffset(
+  table: SvTable,
+  time: number,
+  playhead: number,
+): number {
+  return (
+    scrollDistance(
+      table,
+      time,
+    ) -
+    scrollDistance(
+      table,
+      playhead,
+    )
+  );
 }
 
 /**
@@ -148,20 +313,82 @@ export function scrollOffset(table: SvTable, time: number, playhead: number): nu
  * piecewise linear, so inverting it is a binary search for the segment plus one
  * divide.
  */
-export function timeAtScroll(table: SvTable, distance: number): number {
-  const { cumulative, times, rates } = table;
-  if (distance <= cumulative[0]) return times[0] + (distance - cumulative[0]) / rates[0];
+export function timeAtScroll(
+  table: SvTable,
+  distance: number,
+): number {
+  const {
+    cumulative,
+    times,
+    rates,
+  } =
+    table;
+  if (
+    distance <=
+    cumulative[0]
+  )
+    return (
+      times[0] +
+      (distance -
+        cumulative[0]) /
+        rates[0]
+    );
   let lo = 0;
-  let hi = cumulative.length - 1;
-  if (distance >= cumulative[hi]) {
-    return times[hi] + (distance - cumulative[hi]) / rates[hi];
+  let hi =
+    cumulative.length -
+    1;
+  if (
+    distance >=
+    cumulative[
+      hi
+    ]
+  ) {
+    return (
+      times[
+        hi
+      ] +
+      (distance -
+        cumulative[
+          hi
+        ]) /
+        rates[
+          hi
+        ]
+    );
   }
-  while (hi - lo > 1) {
-    const mid = (lo + hi) >> 1;
-    if (cumulative[mid] <= distance) lo = mid;
-    else hi = mid;
+  while (
+    hi -
+      lo >
+    1
+  ) {
+    const mid =
+      (lo +
+        hi) >>
+      1;
+    if (
+      cumulative[
+        mid
+      ] <=
+      distance
+    )
+      lo =
+        mid;
+    else
+      hi =
+        mid;
   }
-  return times[lo] + (distance - cumulative[lo]) / rates[lo];
+  return (
+    times[
+      lo
+    ] +
+    (distance -
+      cumulative[
+        lo
+      ]) /
+      rates[
+        lo
+      ]
+  );
 }
 
 /**
@@ -171,14 +398,62 @@ export function timeAtScroll(table: SvTable, distance: number): number {
  * update can be skipped by reference and a no-op drag does not mark the
  * document dirty.
  */
-export function withSvPoint(points: readonly SvPoint[], point: SvPoint): SvPoint[] {
-  const multiplier = Math.min(MAX_SV, Math.max(MIN_SV, point.multiplier));
-  const time = Math.max(0, point.time);
-  const next = points.filter((existing) => Math.abs(existing.time - time) > 1e-4);
-  next.push({ time, multiplier });
-  return next.sort((a, b) => a.time - b.time);
+export function withSvPoint(
+  points: readonly SvPoint[],
+  point: SvPoint,
+): SvPoint[] {
+  const multiplier =
+    Math.min(
+      MAX_SV,
+      Math.max(
+        MIN_SV,
+        point.multiplier,
+      ),
+    );
+  const time =
+    Math.max(
+      0,
+      point.time,
+    );
+  const next =
+    points.filter(
+      (
+        existing,
+      ) =>
+        Math.abs(
+          existing.time -
+            time,
+        ) >
+        1e-4,
+    );
+  next.push(
+    {
+      time,
+      multiplier,
+    },
+  );
+  return next.sort(
+    (
+      a,
+      b,
+    ) =>
+      a.time -
+      b.time,
+  );
 }
 
-export function withoutSvPoint(points: readonly SvPoint[], time: number): SvPoint[] {
-  return points.filter((point) => Math.abs(point.time - time) > 1e-4);
+export function withoutSvPoint(
+  points: readonly SvPoint[],
+  time: number,
+): SvPoint[] {
+  return points.filter(
+    (
+      point,
+    ) =>
+      Math.abs(
+        point.time -
+          time,
+      ) >
+      1e-4,
+  );
 }

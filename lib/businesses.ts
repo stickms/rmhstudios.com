@@ -17,26 +17,93 @@ export interface Business {
   href?: string;
 }
 
-export const BUSINESSES = [
-  { id: 'rmh-studios', name: 'RMH Studios', mark: 'RMH', href: '/' },
-  { id: 'rmh-capital', name: 'RMH Capital', mark: 'RC', href: '/rmh-capital' },
-  { id: 'adaptive-intelligence', name: 'Adaptive Intelligence', mark: 'AI', href: '/adaptive-intelligence' },
-  { id: 'rmh-research', name: 'RMH Research', mark: 'RR' },
-  { id: 'rmh-designs', name: 'RMH Designs', mark: 'RD', href: '/rmh-designs/' },
-  { id: 'rmh-pmc', name: 'RMH PMC', mark: 'PMC', href: '/rmh-pmc' },
-] as const satisfies readonly Business[];
+export const BUSINESSES =
+  [
+    {
+      id: 'rmh-studios',
+      name: 'RMH Studios',
+      mark: 'RMH',
+      href: '/',
+    },
+    {
+      id: 'rmh-capital',
+      name: 'RMH Capital',
+      mark: 'RC',
+      href: '/rmh-capital',
+    },
+    {
+      id: 'adaptive-intelligence',
+      name: 'Adaptive Intelligence',
+      mark: 'AI',
+      href: '/adaptive-intelligence',
+    },
+    {
+      id: 'rmh-research',
+      name: 'RMH Research',
+      mark: 'RR',
+    },
+    {
+      id: 'rmh-designs',
+      name: 'RMH Designs',
+      mark: 'RD',
+      href: '/rmh-designs/',
+    },
+    {
+      id: 'rmh-pmc',
+      name: 'RMH PMC',
+      mark: 'PMC',
+      href: '/rmh-pmc',
+    },
+  ] as const satisfies readonly Business[];
 
-export type BusinessId = (typeof BUSINESSES)[number]['id'];
+export type BusinessId =
+  (typeof BUSINESSES)[number]['id'];
 
-export const DEFAULT_BUSINESS_ID: BusinessId = 'rmh-studios';
+export const DEFAULT_BUSINESS_ID: BusinessId =
+  'rmh-studios';
 
-export const BUSINESS_IDS = BUSINESSES.map((b) => b.id) as [BusinessId, ...BusinessId[]];
+export const BUSINESS_IDS =
+  BUSINESSES.map(
+    (
+      b,
+    ) =>
+      b.id,
+  ) as [
+    BusinessId,
+    ...BusinessId[],
+  ];
 
-export function isBusinessId(value: unknown): value is BusinessId {
-  return typeof value === 'string' && BUSINESSES.some((b) => b.id === value);
+export function isBusinessId(
+  value: unknown,
+): value is BusinessId {
+  return (
+    typeof value ===
+      'string' &&
+    BUSINESSES.some(
+      (
+        b,
+      ) =>
+        b.id ===
+        value,
+    )
+  );
 }
 
 /** Look up a business; unknown/legacy ids fall back to RMH Studios. */
-export function getBusiness(id: string | null | undefined): Business {
-  return BUSINESSES.find((b) => b.id === id) ?? BUSINESSES[0];
+export function getBusiness(
+  id:
+    | string
+    | null
+    | undefined,
+): Business {
+  return (
+    BUSINESSES.find(
+      (
+        b,
+      ) =>
+        b.id ===
+        id,
+    ) ??
+    BUSINESSES[0]
+  );
 }

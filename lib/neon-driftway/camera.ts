@@ -20,18 +20,45 @@
 import * as THREE from 'three';
 import type { GyroSample } from './gyro';
 
-const DEG = Math.PI / 180;
+const DEG =
+  Math.PI /
+  180;
 
 /** Rotates the device frame so +Z out of the screen becomes "look forward". */
-const SCREEN_TRANSFORM = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
+const SCREEN_TRANSFORM =
+  new THREE.Quaternion(
+    -Math.SQRT1_2,
+    0,
+    0,
+    Math.SQRT1_2,
+  );
 
-const scratchEuler = new THREE.Euler();
-const scratchQuat = new THREE.Quaternion();
-const scratchQuat2 = new THREE.Quaternion();
-const UP = new THREE.Vector3(0, 1, 0);
-const ROLL_AXIS = new THREE.Vector3(0, 0, 1);
-const FORWARD = new THREE.Vector3(0, 0, -1);
-const scratchVec = new THREE.Vector3();
+const scratchEuler =
+  new THREE.Euler();
+const scratchQuat =
+  new THREE.Quaternion();
+const scratchQuat2 =
+  new THREE.Quaternion();
+const UP =
+  new THREE.Vector3(
+    0,
+    1,
+    0,
+  );
+const ROLL_AXIS =
+  new THREE.Vector3(
+    0,
+    0,
+    1,
+  );
+const FORWARD =
+  new THREE.Vector3(
+    0,
+    0,
+    -1,
+  );
+const scratchVec =
+  new THREE.Vector3();
 
 /**
  * Device orientation → world rotation, written into `out`.
@@ -48,12 +75,30 @@ export function deviceQuaternion(
   gamma: number,
   screenAngle: number,
 ): THREE.Quaternion {
-  scratchEuler.set(beta * DEG, alpha * DEG, -gamma * DEG, 'YXZ');
-  out.setFromEuler(scratchEuler);
+  scratchEuler.set(
+    beta *
+      DEG,
+    alpha *
+      DEG,
+    -gamma *
+      DEG,
+    'YXZ',
+  );
+  out.setFromEuler(
+    scratchEuler,
+  );
   // Camera looks along -Z; the device frame looks along +Z out of the screen.
-  out.multiply(SCREEN_TRANSFORM);
+  out.multiply(
+    SCREEN_TRANSFORM,
+  );
   // Undo the screen rotation so landscape and portrait agree on "forward".
-  out.multiply(scratchQuat.setFromAxisAngle(ROLL_AXIS, -screenAngle * DEG));
+  out.multiply(
+    scratchQuat.setFromAxisAngle(
+      ROLL_AXIS,
+      -screenAngle *
+        DEG,
+    ),
+  );
   return out;
 }
 
@@ -64,11 +109,32 @@ export function deviceQuaternion(
  * decomposition, so it stays stable when the player looks steeply up or down —
  * exactly the case where a naive YXZ extraction flips by 180°.
  */
-export function yawOf(q: THREE.Quaternion): number {
-  scratchVec.copy(FORWARD).applyQuaternion(q);
+export function yawOf(
+  q: THREE.Quaternion,
+): number {
+  scratchVec
+    .copy(
+      FORWARD,
+    )
+    .applyQuaternion(
+      q,
+    );
   // Looking straight up/down leaves no horizontal component to read a yaw from.
-  if (Math.abs(scratchVec.x) < 1e-6 && Math.abs(scratchVec.z) < 1e-6) return 0;
-  return Math.atan2(-scratchVec.x, -scratchVec.z);
+  if (
+    Math.abs(
+      scratchVec.x,
+    ) <
+      1e-6 &&
+    Math.abs(
+      scratchVec.z,
+    ) <
+      1e-6
+  )
+    return 0;
+  return Math.atan2(
+    -scratchVec.x,
+    -scratchVec.z,
+  );
 }
 
 /** Vertical look limits — you can glance at the roof, not roll your neck off. */
@@ -81,7 +147,11 @@ export interface LookOptions {
   steerLean: number;
 }
 
-const DEFAULT_OPTIONS: LookOptions = { smoothing: 0.055, steerLean: 0.09 };
+const DEFAULT_OPTIONS: LookOptions =
+  {
+    smoothing: 0.055,
+    steerLean: 0.09,
+  };
 
 /**
  * Owns the camera rotation for a run: gyro when it is live, a locked forward
@@ -89,23 +159,33 @@ const DEFAULT_OPTIONS: LookOptions = { smoothing: 0.055, steerLean: 0.09 };
  */
 export class LookController {
   /** The rotation to hand the camera. Read after {@link update}. */
-  readonly quaternion = new THREE.Quaternion();
+  readonly quaternion =
+    new THREE.Quaternion();
 
-  private readonly target = new THREE.Quaternion();
-  private readonly yawCorrection = new THREE.Quaternion();
+  private readonly target =
+    new THREE.Quaternion();
+  private readonly yawCorrection =
+    new THREE.Quaternion();
   private yawOffset = 0;
   private calibrated = false;
   private options: LookOptions;
   /** True on the frame gyro data was applied — the renderer mirrors this. */
   private live = false;
 
-  constructor(options: Partial<LookOptions> = {}) {
-    this.options = { ...DEFAULT_OPTIONS, ...options };
+  constructor(
+    options: Partial<LookOptions> = {},
+  ) {
+    this.options =
+      {
+        ...DEFAULT_OPTIONS,
+        ...options,
+      };
   }
 
   /** Whether the last update was driven by real sensor data. */
   get isLive(): boolean {
-    return this.live;
+    return this
+      .live;
   }
 
   /** Re-point "forward" at wherever the device is aimed on the next sample. */
@@ -128,47 +208,156 @@ export class LookController {
    * @param sample latest gyro reading, or null for the static camera
    * @param steerNorm car's lateral velocity as -1…1, used for the fallback lean
    */
-  update(dt: number, sample: GyroSample | null, steerNorm: number): void {
-    if (sample) {
-      deviceQuaternion(this.target, sample.alpha, sample.beta, sample.gamma, sample.screenAngle);
+  update(
+    dt: number,
+    sample: GyroSample | null,
+    steerNorm: number,
+  ): void {
+    if (
+      sample
+    ) {
+      deviceQuaternion(
+        this
+          .target,
+        sample.alpha,
+        sample.beta,
+        sample.gamma,
+        sample.screenAngle,
+      );
 
-      if (!this.calibrated) {
-        this.yawOffset = yawOf(this.target);
-        this.yawCorrection.setFromAxisAngle(UP, -this.yawOffset);
+      if (
+        !this
+          .calibrated
+      ) {
+        this.yawOffset =
+          yawOf(
+            this
+              .target,
+          );
+        this.yawCorrection.setFromAxisAngle(
+          UP,
+          -this
+            .yawOffset,
+        );
         this.calibrated = true;
         // Land on the recentred pose immediately — no swing on the first frame.
-        this.target.premultiply(this.yawCorrection);
-        this.quaternion.copy(this.clampPitch(this.target));
+        this.target.premultiply(
+          this
+            .yawCorrection,
+        );
+        this.quaternion.copy(
+          this.clampPitch(
+            this
+              .target,
+          ),
+        );
         this.live = true;
         return;
       }
 
-      this.target.premultiply(this.yawCorrection);
-      this.clampPitch(this.target);
+      this.target.premultiply(
+        this
+          .yawCorrection,
+      );
+      this.clampPitch(
+        this
+          .target,
+      );
       this.live = true;
     } else {
       // No sensor: a locked forward view that leans a little into the steering.
-      this.target.setFromAxisAngle(UP, -steerNorm * this.options.steerLean);
-      scratchQuat2.setFromAxisAngle(ROLL_AXIS, steerNorm * this.options.steerLean * 0.35);
-      this.target.multiply(scratchQuat2);
+      this.target.setFromAxisAngle(
+        UP,
+        -steerNorm *
+          this
+            .options
+            .steerLean,
+      );
+      scratchQuat2.setFromAxisAngle(
+        ROLL_AXIS,
+        steerNorm *
+          this
+            .options
+            .steerLean *
+          0.35,
+      );
+      this.target.multiply(
+        scratchQuat2,
+      );
       this.live = false;
     }
 
     // Exponential smoothing that behaves the same at 30 and 120 fps.
-    const alpha = 1 - Math.exp(-dt / Math.max(this.options.smoothing, 1e-4));
-    this.quaternion.slerp(this.target, Math.min(alpha, 1));
+    const alpha =
+      1 -
+      Math.exp(
+        -dt /
+          Math.max(
+            this
+              .options
+              .smoothing,
+            1e-4,
+          ),
+      );
+    this.quaternion.slerp(
+      this
+        .target,
+      Math.min(
+        alpha,
+        1,
+      ),
+    );
   }
 
   /** Keep the pitch inside a comfortable band, in place. */
-  private clampPitch(q: THREE.Quaternion): THREE.Quaternion {
-    scratchVec.copy(FORWARD).applyQuaternion(q);
-    const pitch = Math.asin(THREE.MathUtils.clamp(scratchVec.y, -1, 1));
-    if (Math.abs(pitch) <= PITCH_LIMIT) return q;
+  private clampPitch(
+    q: THREE.Quaternion,
+  ): THREE.Quaternion {
+    scratchVec
+      .copy(
+        FORWARD,
+      )
+      .applyQuaternion(
+        q,
+      );
+    const pitch =
+      Math.asin(
+        THREE.MathUtils.clamp(
+          scratchVec.y,
+          -1,
+          1,
+        ),
+      );
+    if (
+      Math.abs(
+        pitch,
+      ) <=
+      PITCH_LIMIT
+    )
+      return q;
 
-    const excess = pitch - Math.sign(pitch) * PITCH_LIMIT;
+    const excess =
+      pitch -
+      Math.sign(
+        pitch,
+      ) *
+        PITCH_LIMIT;
     // Rotate back about the camera's own right axis so yaw/roll are untouched.
-    scratchVec.set(1, 0, 0).applyQuaternion(q);
-    q.premultiply(scratchQuat.setFromAxisAngle(scratchVec, -excess));
+    scratchVec
+      .set(
+        1,
+        0,
+        0,
+      )
+      .applyQuaternion(
+        q,
+      );
+    q.premultiply(
+      scratchQuat.setFromAxisAngle(
+        scratchVec,
+        -excess,
+      ),
+    );
     return q;
   }
 }

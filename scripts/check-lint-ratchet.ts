@@ -22,9 +22,22 @@ import { ESLint } from 'eslint';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const ROOT = process.cwd();
-const BASELINE = path.join(ROOT, 'eslint-baseline', 'boundaries.json');
-const TARGETS = ['components', 'lib', 'hooks', 'stores', 'features'];
+const ROOT =
+  process.cwd();
+const BASELINE =
+  path.join(
+    ROOT,
+    'eslint-baseline',
+    'boundaries.json',
+  );
+const TARGETS =
+  [
+    'components',
+    'lib',
+    'hooks',
+    'stores',
+    'features',
+  ];
 
 interface Entry {
   file: string;
@@ -32,114 +45,310 @@ interface Entry {
   count: number;
 }
 
-function ruleKey(ruleId: string, message: string): string {
-  if (ruleId !== 'no-restricted-imports') return ruleId;
-  if (message.includes('lib/ must not import')) return 'boundaries/lib-imports-components';
-  if (message.includes('Shared code')) return 'boundaries/shared-imports-feature';
-  if (message.includes('*.server')) return 'boundaries/server-value-import';
+function ruleKey(
+  ruleId: string,
+  message: string,
+): string {
+  if (
+    ruleId !==
+    'no-restricted-imports'
+  )
+    return ruleId;
+  if (
+    message.includes(
+      'lib/ must not import',
+    )
+  )
+    return 'boundaries/lib-imports-components';
+  if (
+    message.includes(
+      'Shared code',
+    )
+  )
+    return 'boundaries/shared-imports-feature';
+  if (
+    message.includes(
+      '*.server',
+    )
+  )
+    return 'boundaries/server-value-import';
   return 'boundaries/restricted-import';
 }
 
-async function collect(): Promise<Entry[]> {
-  const eslint = new ESLint({
-    overrideConfigFile: path.join(ROOT, 'eslint.boundaries.config.mjs'),
-    cache: false,
-    errorOnUnmatchedPattern: false,
-  });
-  const results = await eslint.lintFiles(TARGETS);
-  const counts = new Map<string, Entry>();
+async function collect(): Promise<
+  Entry[]
+> {
+  const eslint =
+    new ESLint(
+      {
+        overrideConfigFile:
+          path.join(
+            ROOT,
+            'eslint.boundaries.config.mjs',
+          ),
+        cache: false,
+        errorOnUnmatchedPattern: false,
+      },
+    );
+  const results =
+    await eslint.lintFiles(
+      TARGETS,
+    );
+  const counts =
+    new Map<
+      string,
+      Entry
+    >();
   for (const r of results) {
-    const file = path.relative(ROOT, r.filePath).split(path.sep).join('/');
+    const file =
+      path
+        .relative(
+          ROOT,
+          r.filePath,
+        )
+        .split(
+          path.sep,
+        )
+        .join(
+          '/',
+        );
     for (const m of r.messages) {
-      if (!m.ruleId) {
+      if (
+        !m.ruleId
+      ) {
         // Parse errors must not hide violations; ignore the noInlineConfig notices only.
-        if (m.fatal) throw new Error(`${file}: ${m.message}`);
+        if (
+          m.fatal
+        )
+          throw new Error(
+            `${file}: ${m.message}`,
+          );
         continue;
       }
-      const rule = ruleKey(m.ruleId, m.message);
+      const rule =
+        ruleKey(
+          m.ruleId,
+          m.message,
+        );
       const key = `${file}\0${rule}`;
-      const e = counts.get(key) ?? { file, rule, count: 0 };
+      const e =
+        counts.get(
+          key,
+        ) ?? {
+          file,
+          rule,
+          count: 0,
+        };
       e.count += 1;
-      counts.set(key, e);
+      counts.set(
+        key,
+        e,
+      );
     }
   }
-  return [...counts.values()].sort((a, b) =>
-    a.file === b.file ? a.rule.localeCompare(b.rule) : a.file.localeCompare(b.file),
+  return [
+    ...counts.values(),
+  ].sort(
+    (
+      a,
+      b,
+    ) =>
+      a.file ===
+      b.file
+        ? a.rule.localeCompare(
+            b.rule,
+          )
+        : a.file.localeCompare(
+            b.file,
+          ),
   );
 }
 
 function readBaseline(): Entry[] {
   try {
-    return JSON.parse(fs.readFileSync(BASELINE, 'utf8')).violations as Entry[];
+    return JSON.parse(
+      fs.readFileSync(
+        BASELINE,
+        'utf8',
+      ),
+    )
+      .violations as Entry[];
   } catch {
     return [];
   }
 }
 
 async function main() {
-  const update = process.argv.includes('--update');
-  const t0 = Date.now();
-  const current = await collect();
-  const secs = ((Date.now() - t0) / 1000).toFixed(1);
+  const update =
+    process.argv.includes(
+      '--update',
+    );
+  const t0 =
+    Date.now();
+  const current =
+    await collect();
+  const secs =
+    (
+      (Date.now() -
+        t0) /
+      1000
+    ).toFixed(
+      1,
+    );
 
-  if (update) {
-    const totals: Record<string, number> = {};
-    for (const e of current) totals[e.rule] = (totals[e.rule] ?? 0) + e.count;
-    fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
+  if (
+    update
+  ) {
+    const totals: Record<
+      string,
+      number
+    > =
+      {};
+    for (const e of current)
+      totals[
+        e.rule
+      ] =
+        (totals[
+          e
+            .rule
+        ] ??
+          0) +
+        e.count;
+    fs.mkdirSync(
+      path.dirname(
+        BASELINE,
+      ),
+      {
+        recursive: true,
+      },
+    );
     fs.writeFileSync(
       BASELINE,
       JSON.stringify(
         {
           note: 'Generated by `pnpm lint:ratchet:update`. Counts may only go down. See scripts/check-lint-ratchet.ts.',
           totals,
-          violations: current,
+          violations:
+            current,
         },
         null,
         2,
-      ) + '\n',
+      ) +
+        '\n',
     );
-    console.log(`lint:ratchet baseline written (${current.length} file/rule entries, ${secs}s)`);
-    console.log(totals);
+    console.log(
+      `lint:ratchet baseline written (${current.length} file/rule entries, ${secs}s)`,
+    );
+    console.log(
+      totals,
+    );
     return;
   }
 
-  const base = new Map(readBaseline().map((e) => [`${e.file}\0${e.rule}`, e.count]));
-  const seen = new Set<string>();
-  const worse: string[] = [];
-  const better: string[] = [];
+  const base =
+    new Map(
+      readBaseline().map(
+        (
+          e,
+        ) => [
+          `${e.file}\0${e.rule}`,
+          e.count,
+        ],
+      ),
+    );
+  const seen =
+    new Set<string>();
+  const worse: string[] =
+    [];
+  const better: string[] =
+    [];
   for (const e of current) {
     const key = `${e.file}\0${e.rule}`;
-    seen.add(key);
-    const was = base.get(key);
-    if (was === undefined) worse.push(`  NEW   ${e.file}  ${e.rule}  (0 -> ${e.count})`);
-    else if (e.count > was) worse.push(`  UP    ${e.file}  ${e.rule}  (${was} -> ${e.count})`);
-    else if (e.count < was) better.push(`  ${e.file}  ${e.rule}  (${was} -> ${e.count})`);
+    seen.add(
+      key,
+    );
+    const was =
+      base.get(
+        key,
+      );
+    if (
+      was ===
+      undefined
+    )
+      worse.push(
+        `  NEW   ${e.file}  ${e.rule}  (0 -> ${e.count})`,
+      );
+    else if (
+      e.count >
+      was
+    )
+      worse.push(
+        `  UP    ${e.file}  ${e.rule}  (${was} -> ${e.count})`,
+      );
+    else if (
+      e.count <
+      was
+    )
+      better.push(
+        `  ${e.file}  ${e.rule}  (${was} -> ${e.count})`,
+      );
   }
-  for (const [key, was] of base) {
-    if (!seen.has(key)) {
-      const [file, rule] = key.split('\0');
-      better.push(`  ${file}  ${rule}  (${was} -> 0)`);
+  for (const [
+    key,
+    was,
+  ] of base) {
+    if (
+      !seen.has(
+        key,
+      )
+    ) {
+      const [
+        file,
+        rule,
+      ] =
+        key.split(
+          '\0',
+        );
+      better.push(
+        `  ${file}  ${rule}  (${was} -> 0)`,
+      );
     }
   }
 
-  if (worse.length) {
+  if (
+    worse.length
+  ) {
     console.error(
       `lint:ratchet FAILED: architectural violations increased (${secs}s)\n${worse.join('\n')}`,
     );
     console.error(
       '\nFix the new import (see eslint.boundaries.config.mjs for each rule). Do not raise the baseline.',
     );
-    process.exit(1);
+    process.exit(
+      1,
+    );
   }
-  if (better.length) {
+  if (
+    better.length
+  ) {
     console.log(
       `lint:ratchet: ${better.length} entries improved; shrink the baseline with \`pnpm lint:ratchet:update\` and commit it:\n${better.join('\n')}`,
     );
   }
-  console.log(`lint:ratchet OK (${current.length} baselined file/rule entries, ${secs}s)`);
+  console.log(
+    `lint:ratchet OK (${current.length} baselined file/rule entries, ${secs}s)`,
+  );
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(2);
-});
+main().catch(
+  (
+    err,
+  ) => {
+    console.error(
+      err,
+    );
+    process.exit(
+      2,
+    );
+  },
+);

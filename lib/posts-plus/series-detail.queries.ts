@@ -2,5 +2,24 @@
 import { getSeriesApi } from '@/lib/posts-plus/series.contract';
 import { contractQuery } from '@/lib/route/route-query';
 
-export const seriesDetailQuery = (id: string) =>
-  contractQuery(['series', 'detail', id], getSeriesApi, { params: { id } }, { staleTime: 5_000 });
+export const seriesDetailQuery =
+  (
+    id: string,
+  ) =>
+    contractQuery(
+      [
+        'series',
+        'detail',
+        id,
+      ],
+      getSeriesApi,
+      {
+        params:
+          {
+            id,
+          },
+      },
+      {
+        staleTime: 5_000,
+      },
+    );

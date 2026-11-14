@@ -5,10 +5,31 @@
  * names; here each of its bones is swapped for the player's bone of the same name.
  */
 
-import { Skeleton, type Bone, type Object3D, type SkinnedMesh } from 'three';
+import {
+  Skeleton,
+  type Bone,
+  type Object3D,
+  type SkinnedMesh,
+} from 'three';
 
-const isBone = (o: Object3D): o is Bone => (o as Bone).isBone === true;
-const isSkinned = (o: Object3D): o is SkinnedMesh => (o as SkinnedMesh).isSkinnedMesh === true;
+const isBone =
+  (
+    o: Object3D,
+  ): o is Bone =>
+    (
+      o as Bone
+    )
+      .isBone ===
+    true;
+const isSkinned =
+  (
+    o: Object3D,
+  ): o is SkinnedMesh =>
+    (
+      o as SkinnedMesh
+    )
+      .isSkinnedMesh ===
+    true;
 
 export interface Merged {
   /**
@@ -26,46 +47,190 @@ export interface Merged {
  * cosmetic's own copy of the shared skeleton is dropped from `root`. Returns null, changing nothing, when
  * there is nothing to bind.
  */
-export function boneMerge(root: Object3D, body: Object3D): Merged | null {
-  const player = new Map<string, Bone>();
-  body.traverse((o) => {
-    if (isBone(o)) player.set(o.name, o);
-  });
-  const meshes: SkinnedMesh[] = [];
-  const own = new Set<Bone>();
-  root.traverse((o) => {
-    if (isSkinned(o)) {
-      meshes.push(o);
-      o.skeleton.bones.forEach((b) => own.add(b));
-    }
-    if (isBone(o)) own.add(o);
-  });
-  if (!meshes.length || !player.size) return null;
+export function boneMerge(
+  root: Object3D,
+  body: Object3D,
+): Merged | null {
+  const player =
+    new Map<
+      string,
+      Bone
+    >();
+  body.traverse(
+    (
+      o,
+    ) => {
+      if (
+        isBone(
+          o,
+        )
+      )
+        player.set(
+          o.name,
+          o,
+        );
+    },
+  );
+  const meshes: SkinnedMesh[] =
+    [];
+  const own =
+    new Set<Bone>();
+  root.traverse(
+    (
+      o,
+    ) => {
+      if (
+        isSkinned(
+          o,
+        )
+      ) {
+        meshes.push(
+          o,
+        );
+        o.skeleton.bones.forEach(
+          (
+            b,
+          ) =>
+            own.add(
+              b,
+            ),
+        );
+      }
+      if (
+        isBone(
+          o,
+        )
+      )
+        own.add(
+          o,
+        );
+    },
+  );
+  if (
+    !meshes.length ||
+    !player.size
+  )
+    return null;
 
-  const nameOf = (b: Object3D): string => (b.userData.boneName as string | undefined) ?? b.name;
+  const nameOf =
+    (
+      b: Object3D,
+    ): string =>
+      (b
+        .userData
+        .boneName as
+        | string
+        | undefined) ??
+      b.name;
   const fallback =
-    [...player.values()].find((b) => !(b.parent && isBone(b.parent))) ?? [...player.values()][0];
-  const shared = new Map<Bone, Bone>();
+    [
+      ...player.values(),
+    ].find(
+      (
+        b,
+      ) =>
+        !(
+          b.parent &&
+          isBone(
+            b.parent,
+          )
+        ),
+    ) ??
+    [
+      ...player.values(),
+    ][0];
+  const shared =
+    new Map<
+      Bone,
+      Bone
+    >();
   for (const b of own) {
-    const match = player.get(nameOf(b));
-    if (match) shared.set(b, match);
+    const match =
+      player.get(
+        nameOf(
+          b,
+        ),
+      );
+    if (
+      match
+    )
+      shared.set(
+        b,
+        match,
+      );
   }
 
   // A private bone whose parent is shared (or that has none) goes under the player's bone for that parent;
   // one under another private bone travels with it.
-  const moved: Bone[] = [];
+  const moved: Bone[] =
+    [];
   for (const b of own) {
-    if (shared.has(b)) continue;
-    const parent = b.parent && isBone(b.parent) ? b.parent : null;
-    if (parent && !shared.has(parent)) continue;
-    (parent ? shared.get(parent)! : fallback).add(b);
-    moved.push(b);
+    if (
+      shared.has(
+        b,
+      )
+    )
+      continue;
+    const parent =
+      b.parent &&
+      isBone(
+        b.parent,
+      )
+        ? b.parent
+        : null;
+    if (
+      parent &&
+      !shared.has(
+        parent,
+      )
+    )
+      continue;
+    (parent
+      ? shared.get(
+          parent,
+        )!
+      : fallback
+    ).add(
+      b,
+    );
+    moved.push(
+      b,
+    );
   }
   for (const mesh of meshes) {
-    const bones = mesh.skeleton.bones.map((b) => shared.get(b) ?? b);
-    mesh.bind(new Skeleton(bones, mesh.skeleton.boneInverses), mesh.bindMatrix);
+    const bones =
+      mesh.skeleton.bones.map(
+        (
+          b,
+        ) =>
+          shared.get(
+            b,
+          ) ??
+          b,
+      );
+    mesh.bind(
+      new Skeleton(
+        bones,
+        mesh
+          .skeleton
+          .boneInverses,
+      ),
+      mesh.bindMatrix,
+    );
   }
   // The copy of the shared skeleton the file carried is no longer used by anything.
-  for (const child of [...root.children]) if (isBone(child)) root.remove(child);
-  return { moved };
+  for (const child of [
+    ...root.children,
+  ])
+    if (
+      isBone(
+        child,
+      )
+    )
+      root.remove(
+        child,
+      );
+  return {
+    moved,
+  };
 }

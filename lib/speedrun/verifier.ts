@@ -41,10 +41,23 @@
  */
 
 import { z } from 'zod';
-import { getReplayable, LIGHTS_OUT_VERSION, SLICE_IT_VERSION } from '@/lib/game/replay';
+import {
+  getReplayable,
+  LIGHTS_OUT_VERSION,
+  SLICE_IT_VERSION,
+} from '@/lib/game/replay';
 import { buildDropSchedule } from '@features/laundry-sort/engine/match';
-import { DIFFICULTIES, MATCH_DURATIONS, SCORE, scoreFor } from '@features/laundry-sort/engine/constants';
-import type { SpeedrunMetric, SpeedrunRejection, VerificationTier } from './types';
+import {
+  DIFFICULTIES,
+  MATCH_DURATIONS,
+  SCORE,
+  scoreFor,
+} from '@features/laundry-sort/engine/constants';
+import type {
+  SpeedrunMetric,
+  SpeedrunRejection,
+  VerificationTier,
+} from './types';
 
 /* -------------------------------------------------------------------------- */
 /* Contract                                                                   */
@@ -63,8 +76,17 @@ export interface SimulationOutcome {
 }
 
 export type SimulationResult =
-  | ({ ok: true } & SimulationOutcome)
-  | { ok: false; reason: Extract<SpeedrunRejection, 'INVALID_REPLAY' | 'SIMULATION_FAILED'> };
+  | ({
+      ok: true;
+    } & SimulationOutcome)
+  | {
+      ok: false;
+      reason: Extract<
+        SpeedrunRejection,
+        | 'INVALID_REPLAY'
+        | 'SIMULATION_FAILED'
+      >;
+    };
 
 export interface SpeedrunVerifier {
   /** Matches `GameReplay.game` and `SpeedrunCategory.game`. */
@@ -85,7 +107,9 @@ export interface SpeedrunVerifier {
    */
   minMsPerInput?: number;
   /** Re-simulate the log. Required for every non-`manual` tier. */
-  simulate?: (data: unknown) => SimulationResult;
+  simulate?: (
+    data: unknown,
+  ) => SimulationResult;
   /** For `manual` entries: what is missing, in one sentence. */
   note?: string;
 }
@@ -101,22 +125,66 @@ export interface SpeedrunVerifier {
  * — a second copy of the simulation is a second thing to drift, and the copy
  * that wrote the replay is the one that should read it back.
  */
-function simulateLightsOut(data: unknown): SimulationResult {
-  const def = getReplayable('lights-out');
-  if (!def?.verify) return { ok: false, reason: 'INVALID_REPLAY' };
+function simulateLightsOut(
+  data: unknown,
+): SimulationResult {
+  const def =
+    getReplayable(
+      'lights-out',
+    );
+  if (
+    !def?.verify
+  )
+    return {
+      ok: false,
+      reason:
+        'INVALID_REPLAY',
+    };
 
-  const inputs = (data as { inputs?: unknown })?.inputs;
-  if (!Array.isArray(inputs) || inputs.length === 0) {
-    return { ok: false, reason: 'INVALID_REPLAY' };
+  const inputs =
+    (
+      data as {
+        inputs?: unknown;
+      }
+    )
+      ?.inputs;
+  if (
+    !Array.isArray(
+      inputs,
+    ) ||
+    inputs.length ===
+      0
+  ) {
+    return {
+      ok: false,
+      reason:
+        'INVALID_REPLAY',
+    };
   }
 
-  const result = def.verify(data);
+  const result =
+    def.verify(
+      data,
+    );
   // `verify()` returns null for both a malformed payload and a run that does not
   // end solved. The array check above separates them, so the player is told
   // which of the two happened.
-  if (!result) return { ok: false, reason: 'SIMULATION_FAILED' };
+  if (
+    !result
+  )
+    return {
+      ok: false,
+      reason:
+        'SIMULATION_FAILED',
+    };
 
-  return { ok: true, score: result.score, inputCount: inputs.length };
+  return {
+    ok: true,
+    score:
+      result.score,
+    inputCount:
+      inputs.length,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -131,19 +199,63 @@ function simulateLightsOut(data: unknown): SimulationResult {
  * misses a wholly fabricated one, which is precisely what the `consistency`
  * tier means.
  */
-function simulateSliceIt(data: unknown): SimulationResult {
-  const def = getReplayable('slice-it');
-  if (!def?.verify) return { ok: false, reason: 'INVALID_REPLAY' };
+function simulateSliceIt(
+  data: unknown,
+): SimulationResult {
+  const def =
+    getReplayable(
+      'slice-it',
+    );
+  if (
+    !def?.verify
+  )
+    return {
+      ok: false,
+      reason:
+        'INVALID_REPLAY',
+    };
 
-  const inputs = (data as { inputs?: unknown })?.inputs;
-  if (!Array.isArray(inputs) || inputs.length === 0) {
-    return { ok: false, reason: 'INVALID_REPLAY' };
+  const inputs =
+    (
+      data as {
+        inputs?: unknown;
+      }
+    )
+      ?.inputs;
+  if (
+    !Array.isArray(
+      inputs,
+    ) ||
+    inputs.length ===
+      0
+  ) {
+    return {
+      ok: false,
+      reason:
+        'INVALID_REPLAY',
+    };
   }
 
-  const result = def.verify(data);
-  if (!result) return { ok: false, reason: 'SIMULATION_FAILED' };
+  const result =
+    def.verify(
+      data,
+    );
+  if (
+    !result
+  )
+    return {
+      ok: false,
+      reason:
+        'SIMULATION_FAILED',
+    };
 
-  return { ok: true, score: result.score, inputCount: inputs.length };
+  return {
+    ok: true,
+    score:
+      result.score,
+    inputCount:
+      inputs.length,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -171,62 +283,191 @@ function simulateSliceIt(data: unknown): SimulationResult {
  * whose payload matches {@link laundrySortReplaySchema}, not a verification
  * project.
  */
-export const laundrySortReplaySchema = z.object({
-  seed: z.number().int().min(0).max(0xffffffff),
-  durationSec: z
-    .number()
-    .int()
-    .refine((v) => (MATCH_DURATIONS as readonly number[]).includes(v), {
-      message: 'not a match duration',
-    }),
-  difficulty: z.enum(DIFFICULTIES),
-  inputs: z
-    .array(
-      z.object({
-        /** Index into the re-derived drop schedule. */
-        drop: z.number().int().min(0).max(8_191),
-        outcome: z.enum(['sorted', 'wrong', 'missed']),
-        /** Simulated seconds from the start of the match. */
-        at: z.number().min(0).max(600),
-      }),
-    )
-    .min(1)
-    .max(8_192),
-});
+export const laundrySortReplaySchema =
+  z.object(
+    {
+      seed: z
+        .number()
+        .int()
+        .min(
+          0,
+        )
+        .max(
+          0xffffffff,
+        ),
+      durationSec:
+        z
+          .number()
+          .int()
+          .refine(
+            (
+              v,
+            ) =>
+              (
+                MATCH_DURATIONS as readonly number[]
+              ).includes(
+                v,
+              ),
+            {
+              message:
+                'not a match duration',
+            },
+          ),
+      difficulty:
+        z.enum(
+          DIFFICULTIES,
+        ),
+      inputs:
+        z
+          .array(
+            z.object(
+              {
+                /** Index into the re-derived drop schedule. */
+                drop: z
+                  .number()
+                  .int()
+                  .min(
+                    0,
+                  )
+                  .max(
+                    8_191,
+                  ),
+                outcome:
+                  z.enum(
+                    [
+                      'sorted',
+                      'wrong',
+                      'missed',
+                    ],
+                  ),
+                /** Simulated seconds from the start of the match. */
+                at: z
+                  .number()
+                  .min(
+                    0,
+                  )
+                  .max(
+                    600,
+                  ),
+              },
+            ),
+          )
+          .min(
+            1,
+          )
+          .max(
+            8_192,
+          ),
+    },
+  );
 
-export type LaundrySortReplay = z.infer<typeof laundrySortReplaySchema>;
+export type LaundrySortReplay =
+  z.infer<
+    typeof laundrySortReplaySchema
+  >;
 
-function simulateLaundrySort(data: unknown): SimulationResult {
-  const parsed = laundrySortReplaySchema.safeParse(data);
-  if (!parsed.success) return { ok: false, reason: 'INVALID_REPLAY' };
+function simulateLaundrySort(
+  data: unknown,
+): SimulationResult {
+  const parsed =
+    laundrySortReplaySchema.safeParse(
+      data,
+    );
+  if (
+    !parsed.success
+  )
+    return {
+      ok: false,
+      reason:
+        'INVALID_REPLAY',
+    };
 
-  const { seed, durationSec, difficulty, inputs } = parsed.data;
-  const schedule = buildDropSchedule(seed, durationSec, difficulty);
+  const {
+    seed,
+    durationSec,
+    difficulty,
+    inputs,
+  } =
+    parsed.data;
+  const schedule =
+    buildDropSchedule(
+      seed,
+      durationSec,
+      difficulty,
+    );
 
-  const seen = new Set<number>();
+  const seen =
+    new Set<number>();
   let previousAt = 0;
   let score = 0;
   let combo = 0;
 
   for (const event of inputs) {
-    const drop = schedule[event.drop];
+    const drop =
+      schedule[
+        event
+          .drop
+      ];
     // A garment that this seed never produced, or one resolved twice, means the
     // log does not describe a run of this match.
-    if (!drop || seen.has(event.drop)) return { ok: false, reason: 'SIMULATION_FAILED' };
-    seen.add(event.drop);
+    if (
+      !drop ||
+      seen.has(
+        event.drop,
+      )
+    )
+      return {
+        ok: false,
+        reason:
+          'SIMULATION_FAILED',
+      };
+    seen.add(
+      event.drop,
+    );
 
     // The log is a timeline: it cannot go backwards, resolve a garment before
     // the chute released it, or continue past the final tick.
-    if (event.at < previousAt || event.at < drop.at || event.at > durationSec) {
-      return { ok: false, reason: 'SIMULATION_FAILED' };
+    if (
+      event.at <
+        previousAt ||
+      event.at <
+        drop.at ||
+      event.at >
+        durationSec
+    ) {
+      return {
+        ok: false,
+        reason:
+          'SIMULATION_FAILED',
+      };
     }
-    previousAt = event.at;
+    previousAt =
+      event.at;
 
-    if (event.outcome === 'sorted') {
-      score = Math.max(0, score + scoreFor(true, combo));
+    if (
+      event.outcome ===
+      'sorted'
+    ) {
+      score =
+        Math.max(
+          0,
+          score +
+            scoreFor(
+              true,
+              combo,
+            ),
+        );
       combo++;
-    } else if (event.outcome === 'wrong') {
-      score = Math.max(0, score + SCORE.wrong);
+    } else if (
+      event.outcome ===
+      'wrong'
+    ) {
+      score =
+        Math.max(
+          0,
+          score +
+            SCORE.wrong,
+        );
       combo = 0;
     } else {
       // A miss breaks the streak and costs nothing else — the lost multiplier
@@ -235,7 +476,12 @@ function simulateLaundrySort(data: unknown): SimulationResult {
     }
   }
 
-  return { ok: true, score, inputCount: inputs.length };
+  return {
+    ok: true,
+    score,
+    inputCount:
+      inputs.length,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -251,68 +497,110 @@ function simulateLaundrySort(data: unknown): SimulationResult {
  * today, so a verifier for them would be code that runs on nothing. Saying so here is better than a board that quietly trusts whatever
  * number the client sent.
  */
-export const SPEEDRUN_VERIFIERS: readonly SpeedrunVerifier[] = [
-  {
-    game: 'lights-out',
-    tier: 'deterministic',
-    versions: [LIGHTS_OUT_VERSION],
-    // A cell toggle is a click. Below ~40ms apart a run is a script, not a
-    // person — generous next to the ~150ms a fast human actually manages.
-    minMsPerInput: 40,
-    simulate: simulateLightsOut,
-  },
-  {
-    game: 'slice-it',
-    tier: 'consistency',
-    versions: [SLICE_IT_VERSION],
-    // Notes come as fast as the chart does; 15ms is a lower bound on a beat.
-    minMsPerInput: 15,
-    simulate: simulateSliceIt,
-  },
-  {
-    game: 'laundry-sort',
-    tier: 'consistency',
-    // No capture contract yet, so no recorded version exists to match. Stated
-    // as the empty set rather than a guessed string: an invented version would
-    // silently pass the version gate the day capture lands on a different one.
-    versions: [],
-    minMsPerInput: 120,
-    simulate: simulateLaundrySort,
-  },
-  {
-    game: 'dream-rift',
-    tier: 'manual',
-    versions: [],
-    note:
-      'The world simulation is deterministic and fixed-step, but `sim/world.ts` ' +
-      'imports `render/sprites`, which allocates canvas surfaces at module load ' +
-      '— headless re-simulation needs that dependency broken first.',
-  },
-  {
-    game: 'kowloon-knockout',
-    tier: 'manual',
-    versions: [],
-    note:
-      'The fight simulation is pure and testable, but nothing records an input ' +
-      'log: a verifier needs a per-frame input capture contract in ' +
-      'lib/game/replay.ts before there is anything to re-simulate.',
-  },
-] as const;
+export const SPEEDRUN_VERIFIERS: readonly SpeedrunVerifier[] =
+  [
+    {
+      game: 'lights-out',
+      tier: 'deterministic',
+      versions:
+        [
+          LIGHTS_OUT_VERSION,
+        ],
+      // A cell toggle is a click. Below ~40ms apart a run is a script, not a
+      // person — generous next to the ~150ms a fast human actually manages.
+      minMsPerInput: 40,
+      simulate:
+        simulateLightsOut,
+    },
+    {
+      game: 'slice-it',
+      tier: 'consistency',
+      versions:
+        [
+          SLICE_IT_VERSION,
+        ],
+      // Notes come as fast as the chart does; 15ms is a lower bound on a beat.
+      minMsPerInput: 15,
+      simulate:
+        simulateSliceIt,
+    },
+    {
+      game: 'laundry-sort',
+      tier: 'consistency',
+      // No capture contract yet, so no recorded version exists to match. Stated
+      // as the empty set rather than a guessed string: an invented version would
+      // silently pass the version gate the day capture lands on a different one.
+      versions:
+        [],
+      minMsPerInput: 120,
+      simulate:
+        simulateLaundrySort,
+    },
+    {
+      game: 'dream-rift',
+      tier: 'manual',
+      versions:
+        [],
+      note:
+        'The world simulation is deterministic and fixed-step, but `sim/world.ts` ' +
+        'imports `render/sprites`, which allocates canvas surfaces at module load ' +
+        '— headless re-simulation needs that dependency broken first.',
+    },
+    {
+      game: 'kowloon-knockout',
+      tier: 'manual',
+      versions:
+        [],
+      note:
+        'The fight simulation is pure and testable, but nothing records an input ' +
+        'log: a verifier needs a per-frame input capture contract in ' +
+        'lib/game/replay.ts before there is anything to re-simulate.',
+    },
+  ] as const;
 
-const BY_GAME = new Map(SPEEDRUN_VERIFIERS.map((v) => [v.game, v]));
+const BY_GAME =
+  new Map(
+    SPEEDRUN_VERIFIERS.map(
+      (
+        v,
+      ) => [
+        v.game,
+        v,
+      ],
+    ),
+  );
 
-export function getSpeedrunVerifier(game: string): SpeedrunVerifier | undefined {
-  return BY_GAME.get(game);
+export function getSpeedrunVerifier(
+  game: string,
+):
+  | SpeedrunVerifier
+  | undefined {
+  return BY_GAME.get(
+    game,
+  );
 }
 
 /** Games a category may be opened for, for admin UI and validation. */
 export function speedrunGameIds(): string[] {
-  return SPEEDRUN_VERIFIERS.map((v) => v.game);
+  return SPEEDRUN_VERIFIERS.map(
+    (
+      v,
+    ) =>
+      v.game,
+  );
 }
 
 /** The tier a game's runs are checked at — `'manual'` for anything unregistered. */
-export function verificationTierFor(game: string): VerificationTier {
-  return BY_GAME.get(game)?.tier ?? 'manual';
+export function verificationTierFor(
+  game: string,
+): VerificationTier {
+  return (
+    BY_GAME.get(
+      game,
+    )
+      ?.tier ??
+    'manual'
+  );
 }
 
 /**
@@ -320,8 +608,15 @@ export function verificationTierFor(game: string): VerificationTier {
  * references a `GameReplay`, so a game with no capture contract in
  * `lib/game/replay.ts` has nothing to reference.
  */
-export function canCaptureRuns(game: string): boolean {
-  return getReplayable(game) !== undefined;
+export function canCaptureRuns(
+  game: string,
+): boolean {
+  return (
+    getReplayable(
+      game,
+    ) !==
+    undefined
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -332,7 +627,9 @@ export interface SpeedrunClaim {
   /** Run length in ms, taken from the replay row (never from the submitter). */
   timeMs: number;
   /** The score stored with the replay, when the game scores at all. */
-  score: number | null;
+  score:
+    | number
+    | null;
   /** The category's ranking metric — decides whether the score must match. */
   metric: SpeedrunMetric;
 }
@@ -347,10 +644,15 @@ export interface SpeedrunVerifyInput {
 }
 
 export interface SpeedrunVerdict {
-  status: 'verified' | 'rejected' | 'pending';
+  status:
+    | 'verified'
+    | 'rejected'
+    | 'pending';
   tier: VerificationTier;
   /** The re-simulated score, when a simulation ran. */
-  derivedScore: number | null;
+  derivedScore:
+    | number
+    | null;
   /** Present for everything except a clean `verified`. */
   reason?: SpeedrunRejection;
 }
@@ -362,71 +664,161 @@ const DEFAULT_MIN_MS_PER_INPUT = 20;
  * Judge one run. Pure: same replay, same verdict, on the worker, in the route
  * and in the test suite.
  */
-export function verifySpeedrun(input: SpeedrunVerifyInput): SpeedrunVerdict {
-  const verifier = BY_GAME.get(input.game);
+export function verifySpeedrun(
+  input: SpeedrunVerifyInput,
+): SpeedrunVerdict {
+  const verifier =
+    BY_GAME.get(
+      input.game,
+    );
 
-  if (!verifier || verifier.tier === 'manual' || !verifier.simulate) {
-    return { status: 'pending', tier: 'manual', derivedScore: null, reason: 'NO_VERIFIER' };
+  if (
+    !verifier ||
+    verifier.tier ===
+      'manual' ||
+    !verifier.simulate
+  ) {
+    return {
+      status:
+        'pending',
+      tier: 'manual',
+      derivedScore:
+        null,
+      reason:
+        'NO_VERIFIER',
+    };
   }
 
   // Version drift: a game update invalidates old logs. The run is not wrong —
   // it is unjudgeable by today's logic — so it queues rather than being thrown
   // away, and the board it queues for is that version's board.
-  if (!verifier.versions.includes(input.version)) {
+  if (
+    !verifier.versions.includes(
+      input.version,
+    )
+  ) {
     return {
-      status: 'pending',
+      status:
+        'pending',
       tier: verifier.tier,
-      derivedScore: null,
-      reason: 'VERSION_UNSUPPORTED',
+      derivedScore:
+        null,
+      reason:
+        'VERSION_UNSUPPORTED',
     };
   }
 
-  const sim = verifier.simulate(input.data);
-  if (!sim.ok) {
-    return { status: 'rejected', tier: verifier.tier, derivedScore: null, reason: sim.reason };
+  const sim =
+    verifier.simulate(
+      input.data,
+    );
+  if (
+    !sim.ok
+  ) {
+    return {
+      status:
+        'rejected',
+      tier: verifier.tier,
+      derivedScore:
+        null,
+      reason:
+        sim.reason,
+    };
   }
 
   // The replay's stored score is itself derived at save time for verified games,
   // so a mismatch means the row was tampered with or the logic moved under it.
-  if (input.claim.score !== null && input.claim.score !== sim.score) {
-    return {
-      status: 'rejected',
-      tier: verifier.tier,
-      derivedScore: sim.score,
-      reason: 'SCORE_MISMATCH',
-    };
-  }
-  if (input.claim.metric === 'score' && input.claim.score === null) {
-    return {
-      status: 'rejected',
-      tier: verifier.tier,
-      derivedScore: sim.score,
-      reason: 'SCORE_MISMATCH',
-    };
-  }
-
-  const floor = (verifier.minMsPerInput ?? DEFAULT_MIN_MS_PER_INPUT) * sim.inputCount;
   if (
-    !Number.isFinite(input.claim.timeMs) ||
-    input.claim.timeMs <= 0 ||
-    input.claim.timeMs < floor
+    input
+      .claim
+      .score !==
+      null &&
+    input
+      .claim
+      .score !==
+      sim.score
   ) {
     return {
-      status: 'rejected',
+      status:
+        'rejected',
       tier: verifier.tier,
-      derivedScore: sim.score,
-      reason: 'TIME_IMPLAUSIBLE',
+      derivedScore:
+        sim.score,
+      reason:
+        'SCORE_MISMATCH',
     };
   }
-
-  if (verifier.tier === 'consistency') {
+  if (
+    input
+      .claim
+      .metric ===
+      'score' &&
+    input
+      .claim
+      .score ===
+      null
+  ) {
     return {
-      status: 'pending',
+      status:
+        'rejected',
       tier: verifier.tier,
-      derivedScore: sim.score,
-      reason: 'NEEDS_REVIEW',
+      derivedScore:
+        sim.score,
+      reason:
+        'SCORE_MISMATCH',
     };
   }
 
-  return { status: 'verified', tier: verifier.tier, derivedScore: sim.score };
+  const floor =
+    (verifier.minMsPerInput ??
+      DEFAULT_MIN_MS_PER_INPUT) *
+    sim.inputCount;
+  if (
+    !Number.isFinite(
+      input
+        .claim
+        .timeMs,
+    ) ||
+    input
+      .claim
+      .timeMs <=
+      0 ||
+    input
+      .claim
+      .timeMs <
+      floor
+  ) {
+    return {
+      status:
+        'rejected',
+      tier: verifier.tier,
+      derivedScore:
+        sim.score,
+      reason:
+        'TIME_IMPLAUSIBLE',
+    };
+  }
+
+  if (
+    verifier.tier ===
+    'consistency'
+  ) {
+    return {
+      status:
+        'pending',
+      tier: verifier.tier,
+      derivedScore:
+        sim.score,
+      reason:
+        'NEEDS_REVIEW',
+    };
+  }
+
+  return {
+    status:
+      'verified',
+    tier: verifier.tier,
+    derivedScore:
+      sim.score,
+  };
 }

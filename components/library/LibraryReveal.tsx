@@ -33,12 +33,20 @@ import {
 const STEP_MS = 45;
 const MAX_STEPS = 16;
 
-type RevealApi = {
-  observe: (el: HTMLElement) => void;
-  unobserve: (el: HTMLElement) => void;
-};
+type RevealApi =
+  {
+    observe: (
+      el: HTMLElement,
+    ) => void;
+    unobserve: (
+      el: HTMLElement,
+    ) => void;
+  };
 
-const RevealCtx = createContext<RevealApi | null>(null);
+const RevealCtx =
+  createContext<RevealApi | null>(
+    null,
+  );
 
 export function LibraryRevealProvider({
   children,
@@ -48,102 +56,248 @@ export function LibraryRevealProvider({
   /** Reveal newly mounted items immediately after an in-page filter change. */
   instant?: boolean;
 }) {
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const instantRef = useRef(instant);
-  instantRef.current = instant;
+  const observerRef =
+    useRef<IntersectionObserver | null>(
+      null,
+    );
+  const instantRef =
+    useRef(
+      instant,
+    );
+  instantRef.current =
+    instant;
   // Elements registered (possibly before the observer exists, since children's
   // ref callbacks run before this provider's effect).
-  const registered = useRef<Set<HTMLElement>>(new Set());
+  const registered =
+    useRef<
+      Set<HTMLElement>
+    >(
+      new Set(),
+    );
   // Items that became visible this frame, flushed together so a batch cascades.
-  const pending = useRef<HTMLElement[]>([]);
-  const frame = useRef<number | null>(null);
+  const pending =
+    useRef<
+      HTMLElement[]
+    >(
+      [],
+    );
+  const frame =
+    useRef<
+      | number
+      | null
+    >(
+      null,
+    );
 
-  const flush = useCallback(() => {
-    frame.current = null;
-    const batch = pending.current;
-    pending.current = [];
-    if (batch.length === 0) return;
-    // Reveal in visual reading order so the cascade always flows down the page.
-    batch.sort((a, b) => {
-      const ra = a.getBoundingClientRect();
-      const rb = b.getBoundingClientRect();
-      return ra.top - rb.top || ra.left - rb.left;
-    });
-    batch.forEach((el, i) => {
-      el.style.animationDelay = `${Math.min(i, MAX_STEPS) * STEP_MS}ms`;
-      el.dataset.revealed = 'true';
-    });
-  }, []);
+  const flush =
+    useCallback(() => {
+      frame.current =
+        null;
+      const batch =
+        pending.current;
+      pending.current =
+        [];
+      if (
+        batch.length ===
+        0
+      )
+        return;
+      // Reveal in visual reading order so the cascade always flows down the page.
+      batch.sort(
+        (
+          a,
+          b,
+        ) => {
+          const ra =
+            a.getBoundingClientRect();
+          const rb =
+            b.getBoundingClientRect();
+          return (
+            ra.top -
+              rb.top ||
+            ra.left -
+              rb.left
+          );
+        },
+      );
+      batch.forEach(
+        (
+          el,
+          i,
+        ) => {
+          el.style.animationDelay = `${Math.min(i, MAX_STEPS) * STEP_MS}ms`;
+          el.dataset.revealed =
+            'true';
+        },
+      );
+    }, []);
 
   useEffect(() => {
-    if (instant) {
+    if (
+      instant
+    ) {
       // Filtering unmounts and remounts result families. Replaying their entrance
       // cascade makes the page feel as if it reset, so reveal both registered and
       // already-queued nodes synchronously for every post-filter render.
-      new Set([...registered.current, ...pending.current]).forEach((el) => {
-        el.style.animationDelay = '0ms';
-        el.dataset.revealed = 'true';
-      });
+      new Set(
+        [
+          ...registered.current,
+          ...pending.current,
+        ],
+      ).forEach(
+        (
+          el,
+        ) => {
+          el.style.animationDelay =
+            '0ms';
+          el.dataset.revealed =
+            'true';
+        },
+      );
       registered.current.clear();
-      pending.current = [];
+      pending.current =
+        [];
       return;
     }
 
-    if (typeof IntersectionObserver === 'undefined') {
+    if (
+      typeof IntersectionObserver ===
+      'undefined'
+    ) {
       // No observer support: just show everything.
-      registered.current.forEach((el) => {
-        el.dataset.revealed = 'true';
-      });
+      registered.current.forEach(
+        (
+          el,
+        ) => {
+          el.dataset.revealed =
+            'true';
+        },
+      );
       return;
     }
 
-    const obs = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const el = entry.target as HTMLElement;
-          obs.unobserve(el);
-          registered.current.delete(el);
-          pending.current.push(el);
-        }
-        if (pending.current.length > 0 && frame.current == null) {
-          frame.current = requestAnimationFrame(flush);
-        }
-      },
-      { threshold: 0.05, rootMargin: '0px 0px -8% 0px' },
-    );
-    observerRef.current = obs;
+    const obs =
+      new IntersectionObserver(
+        (
+          entries,
+        ) => {
+          for (const entry of entries) {
+            if (
+              !entry.isIntersecting
+            )
+              continue;
+            const el =
+              entry.target as HTMLElement;
+            obs.unobserve(
+              el,
+            );
+            registered.current.delete(
+              el,
+            );
+            pending.current.push(
+              el,
+            );
+          }
+          if (
+            pending
+              .current
+              .length >
+              0 &&
+            frame.current ==
+              null
+          ) {
+            frame.current =
+              requestAnimationFrame(
+                flush,
+              );
+          }
+        },
+        {
+          threshold: 0.05,
+          rootMargin:
+            '0px 0px -8% 0px',
+        },
+      );
+    observerRef.current =
+      obs;
     // Observe anything that registered before this effect ran.
-    registered.current.forEach((el) => obs.observe(el));
+    registered.current.forEach(
+      (
+        el,
+      ) =>
+        obs.observe(
+          el,
+        ),
+    );
 
     return () => {
       obs.disconnect();
-      observerRef.current = null;
-      if (frame.current != null) cancelAnimationFrame(frame.current);
-      frame.current = null;
+      observerRef.current =
+        null;
+      if (
+        frame.current !=
+        null
+      )
+        cancelAnimationFrame(
+          frame.current,
+        );
+      frame.current =
+        null;
     };
-  }, [flush, instant]);
+  }, [
+    flush,
+    instant,
+  ]);
 
-  const api = useMemo<RevealApi>(
-    () => ({
-      observe: (el) => {
-        if (instantRef.current) {
-          el.style.animationDelay = '0ms';
-          el.dataset.revealed = 'true';
-          return;
-        }
-        registered.current.add(el);
-        observerRef.current?.observe(el);
-      },
-      unobserve: (el) => {
-        registered.current.delete(el);
-        observerRef.current?.unobserve(el);
-      },
-    }),
-    [],
+  const api =
+    useMemo<RevealApi>(
+      () => ({
+        observe:
+          (
+            el,
+          ) => {
+            if (
+              instantRef.current
+            ) {
+              el.style.animationDelay =
+                '0ms';
+              el.dataset.revealed =
+                'true';
+              return;
+            }
+            registered.current.add(
+              el,
+            );
+            observerRef.current?.observe(
+              el,
+            );
+          },
+        unobserve:
+          (
+            el,
+          ) => {
+            registered.current.delete(
+              el,
+            );
+            observerRef.current?.unobserve(
+              el,
+            );
+          },
+      }),
+      [],
+    );
+
+  return (
+    <RevealCtx.Provider
+      value={
+        api
+      }
+    >
+      {
+        children
+      }
+    </RevealCtx.Provider>
   );
-
-  return <RevealCtx.Provider value={api}>{children}</RevealCtx.Provider>;
 }
 
 /**
@@ -152,18 +306,39 @@ export function LibraryRevealProvider({
  * reveals it. Outside a provider it's a no-op (elements just stay visible).
  */
 export function useReveal() {
-  const api = useContext(RevealCtx);
-  const elRef = useRef<HTMLElement | null>(null);
+  const api =
+    useContext(
+      RevealCtx,
+    );
+  const elRef =
+    useRef<HTMLElement | null>(
+      null,
+    );
   return useCallback(
-    (el: HTMLElement | null) => {
-      if (el) {
-        elRef.current = el;
-        api?.observe(el);
+    (
+      el: HTMLElement | null,
+    ) => {
+      if (
+        el
+      ) {
+        elRef.current =
+          el;
+        api?.observe(
+          el,
+        );
       } else {
-        if (elRef.current) api?.unobserve(elRef.current);
-        elRef.current = null;
+        if (
+          elRef.current
+        )
+          api?.unobserve(
+            elRef.current,
+          );
+        elRef.current =
+          null;
       }
     },
-    [api],
+    [
+      api,
+    ],
   );
 }

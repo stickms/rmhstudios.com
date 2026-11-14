@@ -14,7 +14,11 @@
   // source file belongs to exactly one project.
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -27,14 +31,24 @@
     "jsx": "react-jsx",
     "incremental": true,
     "paths": {
-      "@/*": ["./*"],
-      "@features/*": ["./features/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@features/*": [
+        "./features/*"
+      ]
     }
   },
   "files": [],
   "references": [
-    { "path": "./tsconfig.core.json" },
-    { "path": "./tsconfig.engine.json" },
-    { "path": "./tsconfig.site.json" }
+    {
+      "path": "./tsconfig.core.json"
+    },
+    {
+      "path": "./tsconfig.engine.json"
+    },
+    {
+      "path": "./tsconfig.site.json"
+    }
   ]
 }

@@ -22,7 +22,10 @@
 
 /** Stable ids, one per announced item. Copy lives in the component. */
 export type WhatsNewItemId =
-  'voice-calls' | 'upload-privacy' | 'translations' | 'membership-features';
+  | 'voice-calls'
+  | 'upload-privacy'
+  | 'translations'
+  | 'membership-features';
 
 export interface Release {
   /**
@@ -36,46 +39,88 @@ export interface Release {
   items: readonly WhatsNewItemId[];
 }
 
-export const CURRENT_RELEASE: Release = {
-  id: 'calls-and-packs',
-  version: '26 / 02',
-  // Three, deliberately: the layout is proven at three and every one of these
-  // is something a user can go and do today. Emoji/sticker packs and voice
-  // messages are built server-side but have no interface yet, so they are not
-  // announced — see the note at the top of this file.
-  items: ['voice-calls', 'upload-privacy', 'translations'],
-};
+export const CURRENT_RELEASE: Release =
+  {
+    id: 'calls-and-packs',
+    version:
+      '26 / 02',
+    // Three, deliberately: the layout is proven at three and every one of these
+    // is something a user can go and do today. Emoji/sticker packs and voice
+    // messages are built server-side but have no interface yet, so they are not
+    // announced — see the note at the top of this file.
+    items:
+      [
+        'voice-calls',
+        'upload-privacy',
+        'translations',
+      ],
+  };
 
 /** Where "seen" is recorded. Derived, so it can't drift from the release. */
-export function storageKeyFor(release: Release): string {
+export function storageKeyFor(
+  release: Release,
+): string {
   return `rmh-whatsnew-seen-${release.id}-v1`;
 }
 
 /** The slice of `Storage` the seen-state helpers need (lets tests pass a fake). */
-export type SeenStorage = Pick<Storage, 'getItem' | 'setItem'>;
+export type SeenStorage =
+  Pick<
+    Storage,
+    | 'getItem'
+    | 'setItem'
+  >;
 
 /** Window event that asks the mounted What's new dialog to open. */
-export const WHATS_NEW_OPEN_EVENT = 'rmh:whats-new';
+export const WHATS_NEW_OPEN_EVENT =
+  'rmh:whats-new';
 
 /**
  * True while the release has not been shown to this browser. Storage can throw
  * (private windows, blocked site data) or be absent; then we report "seen" so a
  * dot that can never be cleared is never shown.
  */
-export function isUnseen(release: Release, storage: SeenStorage | null | undefined): boolean {
-  if (!storage) return false;
+export function isUnseen(
+  release: Release,
+  storage:
+    | SeenStorage
+    | null
+    | undefined,
+): boolean {
+  if (
+    !storage
+  )
+    return false;
   try {
-    return !storage.getItem(storageKeyFor(release));
+    return !storage.getItem(
+      storageKeyFor(
+        release,
+      ),
+    );
   } catch {
     return false;
   }
 }
 
 /** Record the release as seen. Returns false if storage refused. */
-export function markSeen(release: Release, storage: SeenStorage | null | undefined): boolean {
-  if (!storage) return false;
+export function markSeen(
+  release: Release,
+  storage:
+    | SeenStorage
+    | null
+    | undefined,
+): boolean {
+  if (
+    !storage
+  )
+    return false;
   try {
-    storage.setItem(storageKeyFor(release), '1');
+    storage.setItem(
+      storageKeyFor(
+        release,
+      ),
+      '1',
+    );
     return true;
   } catch {
     return false;

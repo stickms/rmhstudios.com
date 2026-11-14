@@ -30,23 +30,69 @@ export interface CompiledAlert {
 }
 
 /** Lower-case and strip combining accents. */
-export function fold(s: string): string {
+export function fold(
+  s: string,
+): string {
   return s
-    .normalize('NFD')
-    .replace(/\p{M}+/gu, '')
+    .normalize(
+      'NFD',
+    )
+    .replace(
+      /\p{M}+/gu,
+      '',
+    )
     .toLowerCase();
 }
 
-const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escape =
+  (
+    s: string,
+  ) =>
+    s.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      '\\$&',
+    );
 
-function wordPattern(term: string): RegExp | null {
-  const isTag = term.startsWith('#');
-  const words = fold(isTag ? term.slice(1) : term).match(/[\p{L}\p{N}]+/gu);
-  if (!words || words.length === 0) return null;
-  const body = words.map(escape).join('[^\\p{L}\\p{N}]+');
+function wordPattern(
+  term: string,
+): RegExp | null {
+  const isTag =
+    term.startsWith(
+      '#',
+    );
+  const words =
+    fold(
+      isTag
+        ? term.slice(
+            1,
+          )
+        : term,
+    ).match(
+      /[\p{L}\p{N}]+/gu,
+    );
+  if (
+    !words ||
+    words.length ===
+      0
+  )
+    return null;
+  const body =
+    words
+      .map(
+        escape,
+      )
+      .join(
+        '[^\\p{L}\\p{N}]+',
+      );
   return isTag
-    ? new RegExp(`(?<![\\p{L}\\p{N}_])#${body}(?![\\p{L}\\p{N}_])`, 'u')
-    : new RegExp(`(?<![\\p{L}\\p{N}])${body}(?![\\p{L}\\p{N}])`, 'u');
+    ? new RegExp(
+        `(?<![\\p{L}\\p{N}_])#${body}(?![\\p{L}\\p{N}_])`,
+        'u',
+      )
+    : new RegExp(
+        `(?<![\\p{L}\\p{N}])${body}(?![\\p{L}\\p{N}])`,
+        'u',
+      );
 }
 
 /**
@@ -54,26 +100,99 @@ function wordPattern(term: string): RegExp | null {
  * required (AND); `-word` / `-"phrase"` exclude. Returns null if nothing
  * positive remains.
  */
-export function compileAlert(source: string): CompiledAlert | null {
-  const trimmed = source.trim().slice(0, MAX_ALERT_LENGTH);
-  const include: RegExp[] = [];
-  const exclude: RegExp[] = [];
-  for (const m of trimmed.matchAll(/(-?)(?:"([^"]+)"|(\S+))/g)) {
-    const re = wordPattern(m[2] ?? m[3] ?? '');
-    if (!re) continue;
-    (m[1] ? exclude : include).push(re);
+export function compileAlert(
+  source: string,
+): CompiledAlert | null {
+  const trimmed =
+    source
+      .trim()
+      .slice(
+        0,
+        MAX_ALERT_LENGTH,
+      );
+  const include: RegExp[] =
+    [];
+  const exclude: RegExp[] =
+    [];
+  for (const m of trimmed.matchAll(
+    /(-?)(?:"([^"]+)"|(\S+))/g,
+  )) {
+    const re =
+      wordPattern(
+        m[2] ??
+          m[3] ??
+          '',
+      );
+    if (
+      !re
+    )
+      continue;
+    (m[1]
+      ? exclude
+      : include
+    ).push(
+      re,
+    );
   }
-  return include.length ? { source: trimmed, include, exclude } : null;
+  return include.length
+    ? {
+        source:
+          trimmed,
+        include,
+        exclude,
+      }
+    : null;
 }
 
-export function matches(alert: CompiledAlert, text: string): boolean {
-  const t = fold(text);
-  return alert.include.every((re) => re.test(t)) && !alert.exclude.some((re) => re.test(t));
+export function matches(
+  alert: CompiledAlert,
+  text: string,
+): boolean {
+  const t =
+    fold(
+      text,
+    );
+  return (
+    alert.include.every(
+      (
+        re,
+      ) =>
+        re.test(
+          t,
+        ),
+    ) &&
+    !alert.exclude.some(
+      (
+        re,
+      ) =>
+        re.test(
+          t,
+        ),
+    )
+  );
 }
 
 /** Which of a member's alerts a post trips (for the notification copy). */
-export function trippedAlerts(alerts: readonly CompiledAlert[], text: string): string[] {
-  return alerts.filter((a) => matches(a, text)).map((a) => a.source);
+export function trippedAlerts(
+  alerts: readonly CompiledAlert[],
+  text: string,
+): string[] {
+  return alerts
+    .filter(
+      (
+        a,
+      ) =>
+        matches(
+          a,
+          text,
+        ),
+    )
+    .map(
+      (
+        a,
+      ) =>
+        a.source,
+    );
 }
 
 /**
@@ -81,13 +200,46 @@ export function trippedAlerts(alerts: readonly CompiledAlert[], text: string): s
  * alerts by it so a post is checked only against alerts whose anchor appears in
  * that post — never against every alert. Null when the alert has no positive term.
  */
-export function alertAnchor(source: string): string | null {
-  let best = '';
-  for (const m of source.trim().slice(0, MAX_ALERT_LENGTH).matchAll(/(-?)(?:"([^"]+)"|(\S+))/g)) {
-    if (m[1]) continue;
-    for (const w of fold(m[2] ?? m[3] ?? '').match(/[\p{L}\p{N}]+/gu) ?? []) {
-      if (w.length > best.length && w.length <= 64) best = w;
+export function alertAnchor(
+  source: string,
+):
+  | string
+  | null {
+  let best =
+    '';
+  for (const m of source
+    .trim()
+    .slice(
+      0,
+      MAX_ALERT_LENGTH,
+    )
+    .matchAll(
+      /(-?)(?:"([^"]+)"|(\S+))/g,
+    )) {
+    if (
+      m[1]
+    )
+      continue;
+    for (const w of fold(
+      m[2] ??
+        m[3] ??
+        '',
+    ).match(
+      /[\p{L}\p{N}]+/gu,
+    ) ??
+      []) {
+      if (
+        w.length >
+          best.length &&
+        w.length <=
+          64
+      )
+        best =
+          w;
     }
   }
-  return best || null;
+  return (
+    best ||
+    null
+  );
 }

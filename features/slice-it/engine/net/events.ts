@@ -42,116 +42,161 @@ import {
   type ClientToServer,
   type ServerToClient,
 } from '../../../../lib/shared/realtime/contract';
-import { CHAT_MAX_LENGTH, LOBBY_CODE_LENGTH, MAX_LOBBY_PLAYERS } from '../constants';
+import {
+  CHAT_MAX_LENGTH,
+  LOBBY_CODE_LENGTH,
+  MAX_LOBBY_PLAYERS,
+} from '../constants';
 import { ModifiersZ } from '../modifiers';
 import type { Modifiers } from '../types';
 
-export const ROOM_PREFIX = 'slice:';
+export const ROOM_PREFIX =
+  'slice:';
 
 /** Client → server. Every one of these is rate-limited in `config.ts`. */
-export const C2S = {
-  CREATE: 'slice:create',
-  JOIN: 'slice:join',
-  QUICKPLAY: 'slice:quickplay',
-  BROWSE: 'slice:browse',
-  /**
-   * Watch a lobby without taking one of its eight seats (`N1`). A spectator
-   * joins a parallel `:spec` room and receives the same broadcasts; they never
-   * appear in the roster and never affect whether a match can start.
-   */
-  SPECTATE: 'slice:spectate',
-  LEAVE: 'slice:leave',
-  READY: 'slice:ready',
-  /** Host picks a track. Payload is an id; the server resolves the row. */
-  SONG: 'slice:song',
-  /**
-   * Pick a side in team mode (`N2`). `null` leaves the seat unassigned, which is
-   * a real state: the host can start a team match with a straggler on neither
-   * side and the server simply scores them into no total.
-   */
-  TEAM: 'slice:team',
-  /** Host spreads the seats evenly across the two sides (`N2`). */
-  BALANCE: 'slice:balance',
-  /**
-   * Put a track up for the lobby's vote (`N7`). One nomination per seat — a
-   * second replaces the first, rather than letting one player flood the ballot.
-   */
-  NOMINATE: 'slice:nominate',
-  /** Back one of the nominated tracks (`N7`). One vote per seat, changeable. */
-  VOTE: 'slice:vote',
-  /** Host toggles lobby-level settings (public listing, teams, song voting). */
-  SETTINGS: 'slice:settings',
-  /** A player's own modifiers — per-seat, not lobby-wide. */
-  MODS: 'slice:mods',
-  START: 'slice:start',
-  /** This client has decoded the audio and built its chart. */
-  LOADED: 'slice:loaded',
-  /** Running score during a match, published on a timer. */
-  SCORE: 'slice:score',
-  /** This client reached the end of the song. */
-  FINISH: 'slice:finish',
-  /** Host sends everyone back to the lobby after results. */
-  REMATCH: 'slice:rematch',
-  /**
-   * Spend a charge on an opponent (`N4`). Strictly cosmetic and time-boxed —
-   * an attack that changed the target's chart would make their score
-   * incomparable, which defeats the leaderboard the match writes to.
-   */
-  ATTACK: 'slice:attack',
-  /**
-   * Add a track to the lobby's session queue (`N8`). Anyone may queue; only the
-   * seat holding the pick decides what plays next.
-   */
-  QUEUE: 'slice:queue',
-  /** Remove a track from the queue (`N8`). Its nominator or the host. */
-  UNQUEUE: 'slice:unqueue',
-  /**
-   * Take a seat back after a drop (`N12`). Inside the first 20% of the song the
-   * player rejoins the match; after that they land in the spectator room.
-   */
-  REJOIN: 'slice:rejoin',
-  CHAT: 'slice:chat',
-  KICK: 'slice:kick',
-} as const;
+export const C2S =
+  {
+    CREATE:
+      'slice:create',
+    JOIN: 'slice:join',
+    QUICKPLAY:
+      'slice:quickplay',
+    BROWSE:
+      'slice:browse',
+    /**
+     * Watch a lobby without taking one of its eight seats (`N1`). A spectator
+     * joins a parallel `:spec` room and receives the same broadcasts; they never
+     * appear in the roster and never affect whether a match can start.
+     */
+    SPECTATE:
+      'slice:spectate',
+    LEAVE:
+      'slice:leave',
+    READY:
+      'slice:ready',
+    /** Host picks a track. Payload is an id; the server resolves the row. */
+    SONG: 'slice:song',
+    /**
+     * Pick a side in team mode (`N2`). `null` leaves the seat unassigned, which is
+     * a real state: the host can start a team match with a straggler on neither
+     * side and the server simply scores them into no total.
+     */
+    TEAM: 'slice:team',
+    /** Host spreads the seats evenly across the two sides (`N2`). */
+    BALANCE:
+      'slice:balance',
+    /**
+     * Put a track up for the lobby's vote (`N7`). One nomination per seat — a
+     * second replaces the first, rather than letting one player flood the ballot.
+     */
+    NOMINATE:
+      'slice:nominate',
+    /** Back one of the nominated tracks (`N7`). One vote per seat, changeable. */
+    VOTE: 'slice:vote',
+    /** Host toggles lobby-level settings (public listing, teams, song voting). */
+    SETTINGS:
+      'slice:settings',
+    /** A player's own modifiers — per-seat, not lobby-wide. */
+    MODS: 'slice:mods',
+    START:
+      'slice:start',
+    /** This client has decoded the audio and built its chart. */
+    LOADED:
+      'slice:loaded',
+    /** Running score during a match, published on a timer. */
+    SCORE:
+      'slice:score',
+    /** This client reached the end of the song. */
+    FINISH:
+      'slice:finish',
+    /** Host sends everyone back to the lobby after results. */
+    REMATCH:
+      'slice:rematch',
+    /**
+     * Spend a charge on an opponent (`N4`). Strictly cosmetic and time-boxed —
+     * an attack that changed the target's chart would make their score
+     * incomparable, which defeats the leaderboard the match writes to.
+     */
+    ATTACK:
+      'slice:attack',
+    /**
+     * Add a track to the lobby's session queue (`N8`). Anyone may queue; only the
+     * seat holding the pick decides what plays next.
+     */
+    QUEUE:
+      'slice:queue',
+    /** Remove a track from the queue (`N8`). Its nominator or the host. */
+    UNQUEUE:
+      'slice:unqueue',
+    /**
+     * Take a seat back after a drop (`N12`). Inside the first 20% of the song the
+     * player rejoins the match; after that they land in the spectator room.
+     */
+    REJOIN:
+      'slice:rejoin',
+    CHAT: 'slice:chat',
+    KICK: 'slice:kick',
+  } as const;
 
 /** Server → client. */
-export const S2C = {
-  LOBBY: 'slice:lobby',
-  JOINED: 'slice:joined',
-  ERROR: 'slice:error',
-  BROWSE_RESULT: 'slice:browseResult',
-  /** Per-player chart-load progress during the pre-match wait. */
-  LOADING: 'slice:loading',
-  COUNTDOWN: 'slice:countdown',
-  /** The match is live. Carries the resolved song and the roster. */
-  START: 'slice:start',
-  /** One batched array per tick — never one message per player per tick. */
-  SCORES: 'slice:scores',
-  RESULTS: 'slice:results',
-  KICKED: 'slice:kicked',
-  CHAT: 'slice:chat',
-  /**
-   * Someone dropped mid-match; everyone else's audio stops until they are back
-   * or their window expires. See {@link PausePayload}.
-   */
-  PAUSE: 'slice:pause',
-  /** The hold is over. Carries the moment play actually restarts. */
-  RESUME: 'slice:resume',
-  /**
-   * An attack landed on you (`N4`). The `kind` is what the server DELIVERED,
-   * which may differ from what was thrown: a blackout aimed at a player with
-   * reduced flash on arrives as a lane cover.
-   */
-  ATTACKED: 'slice:attacked',
-  /** Your charge count changed (`N4`). Server-authoritative, never inferred. */
-  CHARGES: 'slice:charges',
-  /** Somebody was knocked out at a checkpoint (`N5`). */
-  ELIMINATED: 'slice:eliminated',
-} as const;
+export const S2C =
+  {
+    LOBBY:
+      'slice:lobby',
+    JOINED:
+      'slice:joined',
+    ERROR:
+      'slice:error',
+    BROWSE_RESULT:
+      'slice:browseResult',
+    /** Per-player chart-load progress during the pre-match wait. */
+    LOADING:
+      'slice:loading',
+    COUNTDOWN:
+      'slice:countdown',
+    /** The match is live. Carries the resolved song and the roster. */
+    START:
+      'slice:start',
+    /** One batched array per tick — never one message per player per tick. */
+    SCORES:
+      'slice:scores',
+    RESULTS:
+      'slice:results',
+    KICKED:
+      'slice:kicked',
+    CHAT: 'slice:chat',
+    /**
+     * Someone dropped mid-match; everyone else's audio stops until they are back
+     * or their window expires. See {@link PausePayload}.
+     */
+    PAUSE:
+      'slice:pause',
+    /** The hold is over. Carries the moment play actually restarts. */
+    RESUME:
+      'slice:resume',
+    /**
+     * An attack landed on you (`N4`). The `kind` is what the server DELIVERED,
+     * which may differ from what was thrown: a blackout aimed at a player with
+     * reduced flash on arrives as a lane cover.
+     */
+    ATTACKED:
+      'slice:attacked',
+    /** Your charge count changed (`N4`). Server-authoritative, never inferred. */
+    CHARGES:
+      'slice:charges',
+    /** Somebody was knocked out at a checkpoint (`N5`). */
+    ELIMINATED:
+      'slice:eliminated',
+  } as const;
 
 /* ─── Shapes ─────────────────────────────────────────────────────────────── */
 
-export type LobbyState = 'waiting' | 'loading' | 'countdown' | 'playing' | 'results';
+export type LobbyState =
+  | 'waiting'
+  | 'loading'
+  | 'countdown'
+  | 'playing'
+  | 'results';
 
 /**
  * A side in team mode (`N2`).
@@ -160,7 +205,9 @@ export type LobbyState = 'waiting' | 'loading' | 'countdown' | 'playing' | 'resu
  * of the UI that shows a total — the lobby roster, the live board, the results
  * card — has room for exactly two of them. A third side is a different feature.
  */
-export type TeamId = 'a' | 'b';
+export type TeamId =
+  | 'a'
+  | 'b';
 
 /**
  * What kind of match this lobby runs.
@@ -170,9 +217,19 @@ export type TeamId = 'a' | 'b';
  * one shared score, elimination removes seats mid-song, and attack lets players
  * interfere with each other — no two of those compose into something coherent.
  */
-export type LobbyMode = 'standard' | 'coop' | 'elimination' | 'attack';
+export type LobbyMode =
+  | 'standard'
+  | 'coop'
+  | 'elimination'
+  | 'attack';
 
-export const LOBBY_MODES = ['standard', 'coop', 'elimination', 'attack'] as const;
+export const LOBBY_MODES =
+  [
+    'standard',
+    'coop',
+    'elimination',
+    'attack',
+  ] as const;
 
 /**
  * A guest identity, as it exists for exactly one session.
@@ -187,7 +244,9 @@ export interface GuestIdentity {
   /** Discord display name, shown as-is. Never written to any table. */
   name: string;
   /** Discord CDN avatar URL. Referenced, never copied into our storage. */
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
 }
 
 export interface LobbyPlayer {
@@ -196,11 +255,15 @@ export interface LobbyPlayer {
    * Null for a guest seat — see {@link LobbyPlayer.guest}. A guest has no site
    * account, so there is no id to give them and nothing to attribute a score to.
    */
-  userId: string | null;
+  userId:
+    | string
+    | null;
   /** Present exactly when `userId` is null. */
   guest?: GuestIdentity;
   name: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   ready: boolean;
   isHost: boolean;
   /** True while their seat is held open by the disconnect grace window. */
@@ -233,7 +296,9 @@ export interface LobbySong {
   id: string;
   title: string;
   artist: string;
-  coverUrl: string | null;
+  coverUrl:
+    | string
+    | null;
   duration: number;
   bpm: number;
 }
@@ -300,11 +365,17 @@ export interface PublicLobbyInfo {
   hostName: string;
   playerCount: number;
   maxPlayers: number;
-  songTitle: string | null;
+  songTitle:
+    | string
+    | null;
 }
 
 export interface LoadingStatus {
-  players: { socketId: string; name: string; loaded: boolean }[];
+  players: {
+    socketId: string;
+    name: string;
+    loaded: boolean;
+  }[];
   /** Epoch-ms after which the match starts without the stragglers. */
   deadline: number;
 }
@@ -319,7 +390,16 @@ export interface MatchStartPayload {
   song: LobbySong;
   /** Server epoch-ms the match began. Display only, never used for scoring. */
   startedAt: number;
-  roster: { socketId: string; userId: string | null; name: string; avatarUrl: string | null }[];
+  roster: {
+    socketId: string;
+    userId:
+      | string
+      | null;
+    name: string;
+    avatarUrl:
+      | string
+      | null;
+  }[];
 }
 
 /** A player's own claim about their run, published on a timer. */
@@ -346,9 +426,13 @@ export interface FinalStanding {
    * the row simply has nowhere to be written down, and `persistResults` skips
    * it for exactly that reason.
    */
-  userId: string | null;
+  userId:
+    | string
+    | null;
   name: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   score: number;
   maxCombo: number;
   accuracy: number;
@@ -402,7 +486,12 @@ export interface MatchResults {
  * flapping player is about to stop being waited for.
  */
 export interface PausePayload {
-  peers: { userId: string | null; userName: string }[];
+  peers: {
+    userId:
+      | string
+      | null;
+    userName: string;
+  }[];
   /** Server epoch-ms at which the room stops waiting and plays on. */
   kickAt: number;
   pausesLeft: number;
@@ -482,36 +571,109 @@ export interface LobbyError {
  * These numbers are claims, not records. Nothing here reaches a leaderboard;
  * the score endpoint re-derives its own bounds from the song's real duration.
  */
-const clampedNumber = (max: number, min = 0) =>
-  // `.optional()` matters: in zod v4 a bare `z.unknown()` inside `z.object()`
-  // makes the key REQUIRED, so a client that omits one field — an older bundle,
-  // a field added since — fails the whole parse, which `bindEvents` answers
-  // with `protocol:error` and a disconnect. Mid-song. Clamping a missing field
-  // to its floor is the behaviour this schema is supposed to have.
+const clampedNumber =
+  (
+    max: number,
+    min = 0,
+  ) =>
+    // `.optional()` matters: in zod v4 a bare `z.unknown()` inside `z.object()`
+    // makes the key REQUIRED, so a client that omits one field — an older bundle,
+    // a field added since — fails the whole parse, which `bindEvents` answers
+    // with `protocol:error` and a disconnect. Mid-song. Clamping a missing field
+    // to its floor is the behaviour this schema is supposed to have.
+    z
+      .unknown()
+      .optional()
+      .transform(
+        (
+          raw,
+        ) => {
+          const n =
+            typeof raw ===
+              'number' &&
+            Number.isFinite(
+              raw,
+            )
+              ? raw
+              : min;
+          return Math.max(
+            min,
+            Math.min(
+              n,
+              max,
+            ),
+          );
+        },
+      );
+
+export const ScoreReportZ =
+  z.object(
+    {
+      score:
+        clampedNumber(
+          Number.MAX_SAFE_INTEGER,
+        ).transform(
+          (
+            n,
+          ) =>
+            Math.floor(
+              n,
+            ),
+        ),
+      combo:
+        clampedNumber(
+          1_000_000,
+        ).transform(
+          (
+            n,
+          ) =>
+            Math.floor(
+              n,
+            ),
+        ),
+      maxCombo:
+        clampedNumber(
+          1_000_000,
+        ).transform(
+          (
+            n,
+          ) =>
+            Math.floor(
+              n,
+            ),
+        ),
+      accuracy:
+        clampedNumber(
+          1,
+        ),
+      health:
+        clampedNumber(
+          100,
+        ),
+    },
+  );
+
+const CodeZ =
   z
     .unknown()
-    .optional()
-    .transform((raw) => {
-      const n = typeof raw === 'number' && Number.isFinite(raw) ? raw : min;
-      return Math.max(min, Math.min(n, max));
-    });
-
-export const ScoreReportZ = z.object({
-  score: clampedNumber(Number.MAX_SAFE_INTEGER).transform((n) => Math.floor(n)),
-  combo: clampedNumber(1_000_000).transform((n) => Math.floor(n)),
-  maxCombo: clampedNumber(1_000_000).transform((n) => Math.floor(n)),
-  accuracy: clampedNumber(1),
-  health: clampedNumber(100),
-});
-
-const CodeZ = z.unknown().transform((raw) =>
-  typeof raw === 'string'
-    ? raw
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '')
-        .slice(0, LOBBY_CODE_LENGTH)
-    : '',
-);
+    .transform(
+      (
+        raw,
+      ) =>
+        typeof raw ===
+        'string'
+          ? raw
+              .toUpperCase()
+              .replace(
+                /[^A-Z0-9]/g,
+                '',
+              )
+              .slice(
+                0,
+                LOBBY_CODE_LENGTH,
+              )
+          : '',
+    );
 
 /**
  * For the events whose payload the server ignores entirely.
@@ -520,23 +682,63 @@ const CodeZ = z.unknown().transform((raw) =>
  * schema that can fail on an ignored payload is a disconnect waiting to happen
  * the first time a client emits with no argument at all.
  */
-const IgnoredZ = z.unknown();
+const IgnoredZ =
+  z.unknown();
 
-const LobbySettingsShape = z.object({
-  isPublic: z.boolean().optional().catch(undefined),
-  /** Team mode (`N2`). Absent means "leave it as it is", not "turn it off". */
-  teams: z.boolean().optional().catch(undefined),
-  /** Song voting (`N7`). True opens a ballot; false cancels the open one. */
-  voting: z.boolean().optional().catch(undefined),
-  /**
-   * The competitive mode (`N3`/`N4`/`N5`). `.catch(undefined)` for the same
-   * reason every other field here has it: an older bundle sending a mode this
-   * build does not know must leave the lobby alone, not disconnect the host.
-   */
-  mode: z.enum(LOBBY_MODES).optional().catch(undefined),
-  /** N3 — how a co-op chart is split. Ignored outside `coop`. */
-  coopSplit: z.enum(['lane', 'section']).optional().catch(undefined),
-});
+const LobbySettingsShape =
+  z.object(
+    {
+      isPublic:
+        z
+          .boolean()
+          .optional()
+          .catch(
+            undefined,
+          ),
+      /** Team mode (`N2`). Absent means "leave it as it is", not "turn it off". */
+      teams:
+        z
+          .boolean()
+          .optional()
+          .catch(
+            undefined,
+          ),
+      /** Song voting (`N7`). True opens a ballot; false cancels the open one. */
+      voting:
+        z
+          .boolean()
+          .optional()
+          .catch(
+            undefined,
+          ),
+      /**
+       * The competitive mode (`N3`/`N4`/`N5`). `.catch(undefined)` for the same
+       * reason every other field here has it: an older bundle sending a mode this
+       * build does not know must leave the lobby alone, not disconnect the host.
+       */
+      mode: z
+        .enum(
+          LOBBY_MODES,
+        )
+        .optional()
+        .catch(
+          undefined,
+        ),
+      /** N3 — how a co-op chart is split. Ignored outside `coop`. */
+      coopSplit:
+        z
+          .enum(
+            [
+              'lane',
+              'section',
+            ],
+          )
+          .optional()
+          .catch(
+            undefined,
+          ),
+    },
+  );
 
 /**
  * A side, as a client asks for one.
@@ -545,12 +747,26 @@ const LobbySettingsShape = z.object({
  * bundle sends — means "no side", which is a legal seat state. Rejecting would
  * disconnect the caller over a field whose worst outcome is a badge not drawn.
  */
-const TeamZ = z
-  .unknown()
-  .optional()
-  .transform((raw) => (raw === 'a' || raw === 'b' ? raw : null));
+const TeamZ =
+  z
+    .unknown()
+    .optional()
+    .transform(
+      (
+        raw,
+      ) =>
+        raw ===
+          'a' ||
+        raw ===
+          'b'
+          ? raw
+          : null,
+    );
 
-const LobbySettingsPatchZ = LobbySettingsShape.catch({});
+const LobbySettingsPatchZ =
+  LobbySettingsShape.catch(
+    {},
+  );
 
 /**
  * `slice:create`, with an optional *preferred* code (`X9`).
@@ -566,162 +782,399 @@ const LobbySettingsPatchZ = LobbySettingsShape.catch({});
  * is routinely emitted with `{}` or with nothing at all, and a schema that can
  * fail on a payload the server barely reads is a disconnect waiting to happen.
  */
-const LobbyCreateZ = LobbySettingsShape.extend({ code: CodeZ.optional() }).catch({});
+const LobbyCreateZ =
+  LobbySettingsShape.extend(
+    {
+      code: CodeZ.optional(),
+    },
+  ).catch(
+    {},
+  );
 
-const LobbySongZ = z.object({
-  id: z.string(),
-  title: z.string(),
-  artist: z.string(),
-  coverUrl: z.string().nullable(),
-  duration: z.number(),
-  bpm: z.number(),
-});
+const LobbySongZ =
+  z.object(
+    {
+      id: z.string(),
+      title:
+        z.string(),
+      artist:
+        z.string(),
+      coverUrl:
+        z
+          .string()
+          .nullable(),
+      duration:
+        z.number(),
+      bpm: z.number(),
+    },
+  );
 
-const GuestIdentityZ = z.object({ name: z.string(), avatarUrl: z.string().nullable() });
-
-const LobbyPlayerZ = z.object({
-  socketId: z.string(),
-  // Nullable, not removed: a guest seat is a real seat with no account behind
-  // it. Every other field keeps the strictness it had — this relaxation is
-  // exactly one field wide.
-  userId: z.string().nullable(),
-  guest: GuestIdentityZ.optional(),
-  name: z.string(),
-  avatarUrl: z.string().nullable(),
-  ready: z.boolean(),
-  isHost: z.boolean(),
-  disconnected: z.boolean(),
-  spectating: z.boolean(),
-  team: z.enum(['a', 'b']).nullable(),
-  modifiers: ModifiersZ,
-  scoreMultiplier: z.number(),
-});
-
-const VoteStateZ = z.object({
-  closesAt: z.number(),
-  nominations: z.array(
-    z.object({
-      song: LobbySongZ,
-      nominatedBy: z.string(),
-      voters: z.array(z.string()),
-    }),
-  ),
-});
-
-const LobbySnapshotZ = z.object({
-  code: z.string(),
-  hostSocketId: z.string(),
-  isPublic: z.boolean(),
-  state: z.enum(['waiting', 'loading', 'countdown', 'playing', 'results']),
-  players: z.array(LobbyPlayerZ),
-  maxPlayers: z.number().int(),
-  song: LobbySongZ.nullable(),
-  teamsEnabled: z.boolean(),
-  votingEnabled: z.boolean(),
-  vote: VoteStateZ.nullable(),
-  queue: z.array(LobbySongZ),
-  pickerSeat: z.number().int(),
-  mode: z.enum(LOBBY_MODES),
-});
-
-const PublicLobbyInfoZ = z.object({
-  code: z.string(),
-  hostName: z.string(),
-  playerCount: z.number().int(),
-  maxPlayers: z.number().int(),
-  songTitle: z.string().nullable(),
-});
-
-const LoadingStatusZ = z.object({
-  players: z.array(z.object({ socketId: z.string(), name: z.string(), loaded: z.boolean() })),
-  deadline: z.number(),
-});
-
-const CountdownZ = z.object({ seconds: z.number(), startsAt: z.number() });
-
-const MatchStartZ = z.object({
-  song: LobbySongZ,
-  startedAt: z.number(),
-  roster: z.array(
-    z.object({
-      socketId: z.string(),
-      userId: z.string().nullable(),
+const GuestIdentityZ =
+  z.object(
+    {
       name: z.string(),
-      avatarUrl: z.string().nullable(),
-    }),
-  ),
-});
+      avatarUrl:
+        z
+          .string()
+          .nullable(),
+    },
+  );
 
-const LiveScoreZ = ScoreReportZ.extend({ socketId: z.string(), done: z.boolean() });
+const LobbyPlayerZ =
+  z.object(
+    {
+      socketId:
+        z.string(),
+      // Nullable, not removed: a guest seat is a real seat with no account behind
+      // it. Every other field keeps the strictness it had — this relaxation is
+      // exactly one field wide.
+      userId:
+        z
+          .string()
+          .nullable(),
+      guest:
+        GuestIdentityZ.optional(),
+      name: z.string(),
+      avatarUrl:
+        z
+          .string()
+          .nullable(),
+      ready:
+        z.boolean(),
+      isHost:
+        z.boolean(),
+      disconnected:
+        z.boolean(),
+      spectating:
+        z.boolean(),
+      team: z
+        .enum(
+          [
+            'a',
+            'b',
+          ],
+        )
+        .nullable(),
+      modifiers:
+        ModifiersZ,
+      scoreMultiplier:
+        z.number(),
+    },
+  );
 
-const FinalStandingZ = z.object({
-  socketId: z.string(),
-  userId: z.string().nullable(),
-  name: z.string(),
-  avatarUrl: z.string().nullable(),
-  score: z.number(),
-  maxCombo: z.number(),
-  accuracy: z.number(),
-  modifiers: ModifiersZ,
-  scoreMultiplier: z.number(),
-  place: z.number().int(),
-  finished: z.boolean(),
-  team: z.enum(['a', 'b']).nullable(),
-});
+const VoteStateZ =
+  z.object(
+    {
+      closesAt:
+        z.number(),
+      nominations:
+        z.array(
+          z.object(
+            {
+              song: LobbySongZ,
+              nominatedBy:
+                z.string(),
+              voters:
+                z.array(
+                  z.string(),
+                ),
+            },
+          ),
+        ),
+    },
+  );
 
-const TeamTotalZ = z.object({
-  team: z.enum(['a', 'b']),
-  score: z.number(),
-  accuracy: z.number(),
-  players: z.number().int(),
-  place: z.number().int(),
-});
+const LobbySnapshotZ =
+  z.object(
+    {
+      code: z.string(),
+      hostSocketId:
+        z.string(),
+      isPublic:
+        z.boolean(),
+      state:
+        z.enum(
+          [
+            'waiting',
+            'loading',
+            'countdown',
+            'playing',
+            'results',
+          ],
+        ),
+      players:
+        z.array(
+          LobbyPlayerZ,
+        ),
+      maxPlayers:
+        z
+          .number()
+          .int(),
+      song: LobbySongZ.nullable(),
+      teamsEnabled:
+        z.boolean(),
+      votingEnabled:
+        z.boolean(),
+      vote: VoteStateZ.nullable(),
+      queue:
+        z.array(
+          LobbySongZ,
+        ),
+      pickerSeat:
+        z
+          .number()
+          .int(),
+      mode: z.enum(
+        LOBBY_MODES,
+      ),
+    },
+  );
 
-const MatchResultsZ = z.object({
-  standings: z.array(FinalStandingZ),
-  song: LobbySongZ.nullable(),
-  teams: z.array(TeamTotalZ).optional(),
-});
+const PublicLobbyInfoZ =
+  z.object(
+    {
+      code: z.string(),
+      hostName:
+        z.string(),
+      playerCount:
+        z
+          .number()
+          .int(),
+      maxPlayers:
+        z
+          .number()
+          .int(),
+      songTitle:
+        z
+          .string()
+          .nullable(),
+    },
+  );
 
-const ChatMessageZ = z.object({
-  id: z.string(),
-  socketId: z.string(),
-  name: z.string(),
-  text: z.string(),
-  at: z.number(),
-});
+const LoadingStatusZ =
+  z.object(
+    {
+      players:
+        z.array(
+          z.object(
+            {
+              socketId:
+                z.string(),
+              name: z.string(),
+              loaded:
+                z.boolean(),
+            },
+          ),
+        ),
+      deadline:
+        z.number(),
+    },
+  );
 
-const LobbyErrorZ = z.object({
-  code: z.enum([
-    'not_found',
-    'full',
-    'in_progress',
-    'not_host',
-    'no_song',
-    'too_few_players',
-    'auth_required',
-    'rate_limited',
-    'lobby_limit',
-    'song_unavailable',
-    'code_taken',
-    'invalid_code',
-    'vote_closed',
-    'teams_disabled',
-  ]),
-  message: z.string(),
-});
+const CountdownZ =
+  z.object(
+    {
+      seconds:
+        z.number(),
+      startsAt:
+        z.number(),
+    },
+  );
 
-const PauseZ = z.object({
-  peers: z.array(z.object({ userId: z.string().nullable(), userName: z.string() })),
-  kickAt: z.number(),
-  pausesLeft: z.number().int(),
-});
+const MatchStartZ =
+  z.object(
+    {
+      song: LobbySongZ,
+      startedAt:
+        z.number(),
+      roster:
+        z.array(
+          z.object(
+            {
+              socketId:
+                z.string(),
+              userId:
+                z
+                  .string()
+                  .nullable(),
+              name: z.string(),
+              avatarUrl:
+                z
+                  .string()
+                  .nullable(),
+            },
+          ),
+        ),
+    },
+  );
 
-const ResumeZ = z.object({
-  resumeAt: z.number(),
-  countdownSeconds: z.number(),
-  droppedNames: z.array(z.string()),
-});
+const LiveScoreZ =
+  ScoreReportZ.extend(
+    {
+      socketId:
+        z.string(),
+      done: z.boolean(),
+    },
+  );
+
+const FinalStandingZ =
+  z.object(
+    {
+      socketId:
+        z.string(),
+      userId:
+        z
+          .string()
+          .nullable(),
+      name: z.string(),
+      avatarUrl:
+        z
+          .string()
+          .nullable(),
+      score:
+        z.number(),
+      maxCombo:
+        z.number(),
+      accuracy:
+        z.number(),
+      modifiers:
+        ModifiersZ,
+      scoreMultiplier:
+        z.number(),
+      place:
+        z
+          .number()
+          .int(),
+      finished:
+        z.boolean(),
+      team: z
+        .enum(
+          [
+            'a',
+            'b',
+          ],
+        )
+        .nullable(),
+    },
+  );
+
+const TeamTotalZ =
+  z.object(
+    {
+      team: z.enum(
+        [
+          'a',
+          'b',
+        ],
+      ),
+      score:
+        z.number(),
+      accuracy:
+        z.number(),
+      players:
+        z
+          .number()
+          .int(),
+      place:
+        z
+          .number()
+          .int(),
+    },
+  );
+
+const MatchResultsZ =
+  z.object(
+    {
+      standings:
+        z.array(
+          FinalStandingZ,
+        ),
+      song: LobbySongZ.nullable(),
+      teams:
+        z
+          .array(
+            TeamTotalZ,
+          )
+          .optional(),
+    },
+  );
+
+const ChatMessageZ =
+  z.object(
+    {
+      id: z.string(),
+      socketId:
+        z.string(),
+      name: z.string(),
+      text: z.string(),
+      at: z.number(),
+    },
+  );
+
+const LobbyErrorZ =
+  z.object(
+    {
+      code: z.enum(
+        [
+          'not_found',
+          'full',
+          'in_progress',
+          'not_host',
+          'no_song',
+          'too_few_players',
+          'auth_required',
+          'rate_limited',
+          'lobby_limit',
+          'song_unavailable',
+          'code_taken',
+          'invalid_code',
+          'vote_closed',
+          'teams_disabled',
+        ],
+      ),
+      message:
+        z.string(),
+    },
+  );
+
+const PauseZ =
+  z.object(
+    {
+      peers:
+        z.array(
+          z.object(
+            {
+              userId:
+                z
+                  .string()
+                  .nullable(),
+              userName:
+                z.string(),
+            },
+          ),
+        ),
+      kickAt:
+        z.number(),
+      pausesLeft:
+        z
+          .number()
+          .int(),
+    },
+  );
+
+const ResumeZ =
+  z.object(
+    {
+      resumeAt:
+        z.number(),
+      countdownSeconds:
+        z.number(),
+      droppedNames:
+        z.array(
+          z.string(),
+        ),
+    },
+  );
 
 /**
  * Every Slice It event, with the payload each direction carries.
@@ -734,81 +1187,354 @@ const ResumeZ = z.object({
  * `s2c` schemas are declarative only — the server is trusted, so nothing
  * re-parses them at runtime. They exist to type the client's `on()`.
  */
-export const EVENTS = defineEvents({
-  // ─── Client → server ──────────────────────────────────────────────────
-  'slice:create': { c2s: LobbyCreateZ },
-  'slice:join': { c2s: z.object({ code: CodeZ }) },
-  'slice:quickplay': { c2s: IgnoredZ },
-  'slice:browse': { c2s: IgnoredZ },
-  'slice:spectate': { c2s: z.object({ code: CodeZ }) },
-  'slice:leave': { c2s: IgnoredZ },
-  'slice:ready': { c2s: z.object({ ready: z.boolean().optional() }).catch({}) },
-  'slice:song': { c2s: z.object({ songId: z.string().max(64) }) },
-  'slice:team': { c2s: z.object({ team: TeamZ }).catch({ team: null }) },
-  'slice:balance': { c2s: IgnoredZ },
-  'slice:nominate': { c2s: z.object({ songId: z.string().max(64) }) },
-  'slice:vote': { c2s: z.object({ songId: z.string().max(64) }) },
-  'slice:settings': { c2s: LobbySettingsPatchZ },
-  'slice:mods': { c2s: z.object({ modifiers: ModifiersZ }) },
-  'slice:loaded': { c2s: IgnoredZ },
-  'slice:score': { c2s: ScoreReportZ },
-  'slice:finish': { c2s: ScoreReportZ },
-  'slice:rematch': { c2s: IgnoredZ },
-  'slice:chat': {
-    c2s: z.object({ text: z.string().max(CHAT_MAX_LENGTH * 4) }),
-    s2c: ChatMessageZ,
-  },
-  'slice:kick': { c2s: z.object({ socketId: z.string().max(64) }) },
+export const EVENTS =
+  defineEvents(
+    {
+      // ─── Client → server ──────────────────────────────────────────────────
+      'slice:create':
+        {
+          c2s: LobbyCreateZ,
+        },
+      'slice:join':
+        {
+          c2s: z.object(
+            {
+              code: CodeZ,
+            },
+          ),
+        },
+      'slice:quickplay':
+        {
+          c2s: IgnoredZ,
+        },
+      'slice:browse':
+        {
+          c2s: IgnoredZ,
+        },
+      'slice:spectate':
+        {
+          c2s: z.object(
+            {
+              code: CodeZ,
+            },
+          ),
+        },
+      'slice:leave':
+        {
+          c2s: IgnoredZ,
+        },
+      'slice:ready':
+        {
+          c2s: z
+            .object(
+              {
+                ready:
+                  z
+                    .boolean()
+                    .optional(),
+              },
+            )
+            .catch(
+              {},
+            ),
+        },
+      'slice:song':
+        {
+          c2s: z.object(
+            {
+              songId:
+                z
+                  .string()
+                  .max(
+                    64,
+                  ),
+            },
+          ),
+        },
+      'slice:team':
+        {
+          c2s: z
+            .object(
+              {
+                team: TeamZ,
+              },
+            )
+            .catch(
+              {
+                team: null,
+              },
+            ),
+        },
+      'slice:balance':
+        {
+          c2s: IgnoredZ,
+        },
+      'slice:nominate':
+        {
+          c2s: z.object(
+            {
+              songId:
+                z
+                  .string()
+                  .max(
+                    64,
+                  ),
+            },
+          ),
+        },
+      'slice:vote':
+        {
+          c2s: z.object(
+            {
+              songId:
+                z
+                  .string()
+                  .max(
+                    64,
+                  ),
+            },
+          ),
+        },
+      'slice:settings':
+        {
+          c2s: LobbySettingsPatchZ,
+        },
+      'slice:mods':
+        {
+          c2s: z.object(
+            {
+              modifiers:
+                ModifiersZ,
+            },
+          ),
+        },
+      'slice:loaded':
+        {
+          c2s: IgnoredZ,
+        },
+      'slice:score':
+        {
+          c2s: ScoreReportZ,
+        },
+      'slice:finish':
+        {
+          c2s: ScoreReportZ,
+        },
+      'slice:rematch':
+        {
+          c2s: IgnoredZ,
+        },
+      'slice:chat':
+        {
+          c2s: z.object(
+            {
+              text: z
+                .string()
+                .max(
+                  CHAT_MAX_LENGTH *
+                    4,
+                ),
+            },
+          ),
+          s2c: ChatMessageZ,
+        },
+      'slice:kick':
+        {
+          c2s: z.object(
+            {
+              socketId:
+                z
+                  .string()
+                  .max(
+                    64,
+                  ),
+            },
+          ),
+        },
 
-  // ─── N4 / N8 / N12 ─────────────────────────────────────────────────────
-  'slice:attack': {
-    c2s: z.object({
-      target: z.string().max(64),
-      kind: z.enum(['laneCover', 'blackout', 'shake']),
-    }),
-  },
-  'slice:queue': { c2s: z.object({ songId: z.string().max(64) }) },
-  'slice:unqueue': { c2s: z.object({ songId: z.string().max(64) }) },
-  'slice:rejoin': { c2s: z.object({ code: CodeZ }) },
+      // ─── N4 / N8 / N12 ─────────────────────────────────────────────────────
+      'slice:attack':
+        {
+          c2s: z.object(
+            {
+              target:
+                z
+                  .string()
+                  .max(
+                    64,
+                  ),
+              kind: z.enum(
+                [
+                  'laneCover',
+                  'blackout',
+                  'shake',
+                ],
+              ),
+            },
+          ),
+        },
+      'slice:queue':
+        {
+          c2s: z.object(
+            {
+              songId:
+                z
+                  .string()
+                  .max(
+                    64,
+                  ),
+            },
+          ),
+        },
+      'slice:unqueue':
+        {
+          c2s: z.object(
+            {
+              songId:
+                z
+                  .string()
+                  .max(
+                    64,
+                  ),
+            },
+          ),
+        },
+      'slice:rejoin':
+        {
+          c2s: z.object(
+            {
+              code: CodeZ,
+            },
+          ),
+        },
 
-  /**
-   * Bidirectional. The host pressing Start and the server announcing the match
-   * share one name — declared as one event carrying both directions so
-   * `bindEvents` listens for the command and the client's `on()` is typed to
-   * {@link MatchStartPayload}.
-   */
-  'slice:start': { c2s: IgnoredZ, s2c: MatchStartZ },
+      /**
+       * Bidirectional. The host pressing Start and the server announcing the match
+       * share one name — declared as one event carrying both directions so
+       * `bindEvents` listens for the command and the client's `on()` is typed to
+       * {@link MatchStartPayload}.
+       */
+      'slice:start':
+        {
+          c2s: IgnoredZ,
+          s2c: MatchStartZ,
+        },
 
-  // ─── Server → client ──────────────────────────────────────────────────
-  'slice:lobby': { s2c: LobbySnapshotZ },
-  'slice:joined': { s2c: z.object({ code: z.string(), socketId: z.string() }) },
-  'slice:error': { s2c: LobbyErrorZ },
-  'slice:browseResult': { s2c: z.array(PublicLobbyInfoZ) },
-  'slice:loading': { s2c: LoadingStatusZ },
-  'slice:countdown': { s2c: CountdownZ },
-  'slice:scores': { s2c: z.array(LiveScoreZ) },
-  'slice:results': { s2c: MatchResultsZ },
-  'slice:kicked': { s2c: z.object({ reason: z.string() }) },
-  'slice:pause': { s2c: PauseZ },
-  'slice:resume': { s2c: ResumeZ },
-  'slice:attacked': {
-    s2c: z.object({
-      /** What was DELIVERED, which may differ from what was thrown (`N4`). */
-      kind: z.enum(['laneCover', 'blackout', 'shake']),
-      from: z.string(),
-      untilMs: z.number(),
-    }),
-  },
-  'slice:charges': { s2c: z.object({ charges: z.number().int() }) },
-  'slice:eliminated': {
-    s2c: z.object({ socketId: z.string(), name: z.string(), rank: z.number().int() }),
-  },
-});
+      // ─── Server → client ──────────────────────────────────────────────────
+      'slice:lobby':
+        {
+          s2c: LobbySnapshotZ,
+        },
+      'slice:joined':
+        {
+          s2c: z.object(
+            {
+              code: z.string(),
+              socketId:
+                z.string(),
+            },
+          ),
+        },
+      'slice:error':
+        {
+          s2c: LobbyErrorZ,
+        },
+      'slice:browseResult':
+        {
+          s2c: z.array(
+            PublicLobbyInfoZ,
+          ),
+        },
+      'slice:loading':
+        {
+          s2c: LoadingStatusZ,
+        },
+      'slice:countdown':
+        {
+          s2c: CountdownZ,
+        },
+      'slice:scores':
+        {
+          s2c: z.array(
+            LiveScoreZ,
+          ),
+        },
+      'slice:results':
+        {
+          s2c: MatchResultsZ,
+        },
+      'slice:kicked':
+        {
+          s2c: z.object(
+            {
+              reason:
+                z.string(),
+            },
+          ),
+        },
+      'slice:pause':
+        {
+          s2c: PauseZ,
+        },
+      'slice:resume':
+        {
+          s2c: ResumeZ,
+        },
+      'slice:attacked':
+        {
+          s2c: z.object(
+            {
+              /** What was DELIVERED, which may differ from what was thrown (`N4`). */
+              kind: z.enum(
+                [
+                  'laneCover',
+                  'blackout',
+                  'shake',
+                ],
+              ),
+              from: z.string(),
+              untilMs:
+                z.number(),
+            },
+          ),
+        },
+      'slice:charges':
+        {
+          s2c: z.object(
+            {
+              charges:
+                z
+                  .number()
+                  .int(),
+            },
+          ),
+        },
+      'slice:eliminated':
+        {
+          s2c: z.object(
+            {
+              socketId:
+                z.string(),
+              name: z.string(),
+              rank: z
+                .number()
+                .int(),
+            },
+          ),
+        },
+    },
+  );
 
 /** Typed `emit` for the browser client. */
-export type SliceC2S = ClientToServer<typeof EVENTS>;
+export type SliceC2S =
+  ClientToServer<
+    typeof EVENTS
+  >;
 /** Typed `on` for the browser client. */
-export type SliceS2C = ServerToClient<typeof EVENTS>;
+export type SliceS2C =
+  ServerToClient<
+    typeof EVENTS
+  >;
 
 /**
  * Is this the shape of a lobby code the server mints? (`N9`)
@@ -824,12 +1550,24 @@ export type SliceS2C = ServerToClient<typeof EVENTS>;
  * Shape only. Whether a well-formed code names a *live* lobby is a question only
  * the server can answer, and it answers it with `not_found`.
  */
-export function isLobbyCode(code: unknown): code is string {
-  return typeof code === 'string' && code.length === LOBBY_CODE_LENGTH && /^[A-Z0-9]+$/.test(code);
+export function isLobbyCode(
+  code: unknown,
+): code is string {
+  return (
+    typeof code ===
+      'string' &&
+    code.length ===
+      LOBBY_CODE_LENGTH &&
+    /^[A-Z0-9]+$/.test(
+      code,
+    )
+  );
 }
 
 /** Every player in a lobby shares a socket.io room named for its code. */
-export function lobbyRoom(code: string): string {
+export function lobbyRoom(
+  code: string,
+): string {
   return `${ROOM_PREFIX}${code}`;
 }
 
@@ -842,7 +1580,9 @@ export function lobbyRoom(code: string): string {
  * out of `MAX_LOBBY_PLAYERS`, out of the ready check, and out of the set of
  * people a match waits for — which is the whole point of the role.
  */
-export function specRoom(code: string): string {
+export function specRoom(
+  code: string,
+): string {
   return `${ROOM_PREFIX}${code}:spec`;
 }
 

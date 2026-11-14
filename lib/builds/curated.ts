@@ -9,89 +9,180 @@
  * Pure/static — safe to import on both server and client.
  */
 
-import { games, apps } from '@/lib/catalog';
+import {
+  games,
+  apps,
+} from '@/lib/catalog';
 
-export type CuratedKind = 'game' | 'app';
+export type CuratedKind =
+  | 'game'
+  | 'app';
 
-export type CuratedBuild = {
-  /** Stable id, also used as the detail-page slug (/builds/$slug). */
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  longDescription: string;
-  /** Thumbnail image path, or null. */
-  thumbnailUrl: string | null;
-  /** Wide hero image for the library detail pane, or null. */
-  bannerUrl: string | null;
-  /** The title as a stylized wordmark for the detail pane's hero, or null (the title is then plain text). */
-  logoUrl?: string | null;
-  /** Where the build actually lives (the playable/usable page). */
-  href: string;
-  cta: string;
-  tags: string[];
-  kind: CuratedKind;
-  status?: string;
-  /** Deterministic accent hue for the cover fallback / spine tint. */
-  hue: number;
-};
+export type CuratedBuild =
+  {
+    /** Stable id, also used as the detail-page slug (/builds/$slug). */
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    longDescription: string;
+    /** Thumbnail image path, or null. */
+    thumbnailUrl:
+      | string
+      | null;
+    /** Wide hero image for the library detail pane, or null. */
+    bannerUrl:
+      | string
+      | null;
+    /** The title as a stylized wordmark for the detail pane's hero, or null (the title is then plain text). */
+    logoUrl?:
+      | string
+      | null;
+    /** Where the build actually lives (the playable/usable page). */
+    href: string;
+    cta: string;
+    tags: string[];
+    kind: CuratedKind;
+    status?: string;
+    /** Deterministic accent hue for the cover fallback / spine tint. */
+    hue: number;
+  };
 
 /** A stable 0-359 hue for an id, for art fallbacks. */
-export function hueFromString(s: string): number {
+export function hueFromString(
+  s: string,
+): number {
   let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  for (
+    let i = 0;
+    i <
+    s.length;
+    i++
+  )
+    h =
+      (h *
+        31 +
+        s.charCodeAt(
+          i,
+        )) %
+      360;
   return h;
 }
 
-let CACHE: CuratedBuild[] | null = null;
+let CACHE:
+  | CuratedBuild[]
+  | null =
+  null;
 
 /** All visible curated builds (games first, then apps), in source order. */
 export function listCuratedBuilds(): CuratedBuild[] {
-  if (CACHE) return CACHE;
+  if (
+    CACHE
+  )
+    return CACHE;
 
-  const fromGames: CuratedBuild[] = games
-    .filter((g) => !g.unlisted)
-    .map((g) => ({
-      id: g.id,
-      slug: g.id,
-      title: g.title,
-      description: g.description,
-      longDescription: g.longDescription,
-      thumbnailUrl: g.imagePath ?? null,
-      bannerUrl: g.bannerPath ?? null,
-      logoUrl: g.logoPath ?? null,
-      href: g.href,
-      cta: g.cta,
-      tags: g.tags,
-      kind: 'game' as const,
-      status: g.status,
-      hue: hueFromString(g.id),
-    }));
+  const fromGames: CuratedBuild[] =
+    games
+      .filter(
+        (
+          g,
+        ) =>
+          !g.unlisted,
+      )
+      .map(
+        (
+          g,
+        ) => ({
+          id: g.id,
+          slug: g.id,
+          title:
+            g.title,
+          description:
+            g.description,
+          longDescription:
+            g.longDescription,
+          thumbnailUrl:
+            g.imagePath ??
+            null,
+          bannerUrl:
+            g.bannerPath ??
+            null,
+          logoUrl:
+            g.logoPath ??
+            null,
+          href: g.href,
+          cta: g.cta,
+          tags: g.tags,
+          kind: 'game' as const,
+          status:
+            g.status,
+          hue: hueFromString(
+            g.id,
+          ),
+        }),
+      );
 
-  const fromApps: CuratedBuild[] = apps
-    .filter((a) => !a.hidden && !a.unlisted)
-    .map((a) => ({
-      id: a.id,
-      slug: a.id,
-      title: a.title,
-      description: a.description,
-      longDescription: a.longDescription,
-      thumbnailUrl: a.imagePath ?? null,
-      bannerUrl: a.bannerPath ?? null,
-      logoUrl: a.logoPath ?? null,
-      href: a.href,
-      cta: a.cta,
-      tags: a.tags,
-      kind: 'app' as const,
-      status: a.status,
-      hue: hueFromString(a.id),
-    }));
+  const fromApps: CuratedBuild[] =
+    apps
+      .filter(
+        (
+          a,
+        ) =>
+          !a.hidden &&
+          !a.unlisted,
+      )
+      .map(
+        (
+          a,
+        ) => ({
+          id: a.id,
+          slug: a.id,
+          title:
+            a.title,
+          description:
+            a.description,
+          longDescription:
+            a.longDescription,
+          thumbnailUrl:
+            a.imagePath ??
+            null,
+          bannerUrl:
+            a.bannerPath ??
+            null,
+          logoUrl:
+            a.logoPath ??
+            null,
+          href: a.href,
+          cta: a.cta,
+          tags: a.tags,
+          kind: 'app' as const,
+          status:
+            a.status,
+          hue: hueFromString(
+            a.id,
+          ),
+        }),
+      );
 
-  CACHE = [...fromGames, ...fromApps];
+  CACHE =
+    [
+      ...fromGames,
+      ...fromApps,
+    ];
   return CACHE;
 }
 
 /** A single curated build by id/slug, or undefined. */
-export function getCuratedBuild(slug: string): CuratedBuild | undefined {
-  return listCuratedBuilds().find((b) => b.slug === slug);
+export function getCuratedBuild(
+  slug: string,
+):
+  | CuratedBuild
+  | undefined {
+  return listCuratedBuilds().find(
+    (
+      b,
+    ) =>
+      b.slug ===
+      slug,
+  );
 }

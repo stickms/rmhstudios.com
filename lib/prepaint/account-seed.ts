@@ -7,12 +7,31 @@ import type { PrepaintCtx } from './types';
  * first frame instead of this device's. Absent for signed-out visitors and for
  * an account with nothing saved.
  */
-export function accountSeedStep({ cfg }: PrepaintCtx): void {
-  const s = cfg.seed;
-  if (!s) return;
+export function accountSeedStep({
+  cfg,
+}: PrepaintCtx): void {
+  const s =
+    cfg.seed;
+  if (
+    !s
+  )
+    return;
   for (const k in s) {
-    const v = s[k];
-    if (v === null) localStorage.removeItem(k);
-    else localStorage.setItem(k, v);
+    const v =
+      s[
+        k
+      ];
+    if (
+      v ===
+      null
+    )
+      localStorage.removeItem(
+        k,
+      );
+    else
+      localStorage.setItem(
+        k,
+        v,
+      );
   }
 }

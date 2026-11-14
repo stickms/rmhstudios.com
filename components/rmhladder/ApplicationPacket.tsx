@@ -15,9 +15,19 @@
  * a list that can run to twenty rows.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { ClipboardList, ExternalLink, Eye, EyeOff } from 'lucide-react';
+import {
+  ClipboardList,
+  ExternalLink,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { toast } from '@/lib/toast';
 import { api } from '@/lib/contract/client';
 import { getLadderAnswersApi } from '@/lib/rmhladder/answers.contract';
@@ -30,7 +40,10 @@ import {
   type PacketApplication,
   type PacketField,
 } from '@/lib/rmhladder/ats-fields';
-import { EMPTY_ANSWER_BANK, type AnswerBank } from '@/lib/rmhladder/answer-bank';
+import {
+  EMPTY_ANSWER_BANK,
+  type AnswerBank,
+} from '@/lib/rmhladder/answer-bank';
 import { safeHref } from '@/lib/url-safety';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -45,7 +58,9 @@ export interface ApplicationPacketProps {
   /** Provide it if the page already has it; otherwise the panel fetches its own. */
   bank?: AnswerBank;
   /** The employer's application page, opened in a new tab. */
-  applyUrl?: string | null;
+  applyUrl?:
+    | string
+    | null;
 }
 
 export function ApplicationPacket({
@@ -55,93 +70,266 @@ export function ApplicationPacket({
   bank: providedBank,
   applyUrl,
 }: ApplicationPacketProps) {
-  const { t } = useTranslation('site');
-  const [bank, setBank] = useState<AnswerBank | null>(providedBank ?? null);
-  const [loading, setLoading] = useState(!providedBank);
-  const arrival = useArrival(!loading);
-  const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const [
+    bank,
+    setBank,
+  ] =
+    useState<AnswerBank | null>(
+      providedBank ??
+        null,
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      !providedBank,
+    );
+  const arrival =
+    useArrival(
+      !loading,
+    );
+  const [
+    revealed,
+    setRevealed,
+  ] =
+    useState<
+      Set<string>
+    >(
+      () =>
+        new Set(),
+    );
 
   useEffect(() => {
-    if (providedBank) {
-      setBank(providedBank);
-      setLoading(false);
+    if (
+      providedBank
+    ) {
+      setBank(
+        providedBank,
+      );
+      setLoading(
+        false,
+      );
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const data = await api(getLadderAnswersApi, { retries: 0 });
-        if (!cancelled) setBank(data?.answers ?? EMPTY_ANSWER_BANK);
+        const data =
+          await api(
+            getLadderAnswersApi,
+            {
+              retries: 0,
+            },
+          );
+        if (
+          !cancelled
+        )
+          setBank(
+            data?.answers ??
+              EMPTY_ANSWER_BANK,
+          );
       } catch {
-        if (!cancelled) {
-          setBank(EMPTY_ANSWER_BANK);
+        if (
+          !cancelled
+        ) {
+          setBank(
+            EMPTY_ANSWER_BANK,
+          );
           toast.error(
-            t('ladder.packetLoadFailed', { defaultValue: 'Could not load your answer bank.' }),
+            t(
+              'ladder.packetLoadFailed',
+              {
+                defaultValue:
+                  'Could not load your answer bank.',
+              },
+            ),
           );
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (
+          !cancelled
+        )
+          setLoading(
+            false,
+          );
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [providedBank, t]);
+  }, [
+    providedBank,
+    t,
+  ]);
 
-  const fields = useMemo<PacketField[]>(
-    () => (bank ? buildApplicationPacket({ bank, applicant, application, platform }) : []),
-    [bank, applicant, application, platform],
-  );
+  const fields =
+    useMemo<
+      PacketField[]
+    >(
+      () =>
+        bank
+          ? buildApplicationPacket(
+              {
+                bank,
+                applicant,
+                application,
+                platform,
+              },
+            )
+          : [],
+      [
+        bank,
+        applicant,
+        application,
+        platform,
+      ],
+    );
 
-  const missing = fields.filter((f) => !f.filled).length;
+  const missing =
+    fields.filter(
+      (
+        f,
+      ) =>
+        !f.filled,
+    ).length;
 
-  const toggleReveal = useCallback((id: string) => {
-    setRevealed((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
+  const toggleReveal =
+    useCallback(
+      (
+        id: string,
+      ) => {
+        setRevealed(
+          (
+            prev,
+          ) => {
+            const next =
+              new Set(
+                prev,
+              );
+            if (
+              next.has(
+                id,
+              )
+            )
+              next.delete(
+                id,
+              );
+            else
+              next.add(
+                id,
+              );
+            return next;
+          },
+        );
+      },
+      [],
+    );
 
-  const href = safeHref(applyUrl);
+  const href =
+    safeHref(
+      applyUrl,
+    );
 
-  if (loading) {
+  if (
+    loading
+  ) {
     return (
       <section className="surface-panel flex min-h-32 items-center justify-center p-5">
-        <Spinner size={20} className="text-site-text-muted" label={t('ladder.packetLoading', { defaultValue: 'Loading…' })} />
+        <Spinner
+          size={
+            20
+          }
+          className="text-site-text-muted"
+          label={t(
+            'ladder.packetLoading',
+            {
+              defaultValue:
+                'Loading…',
+            },
+          )}
+        />
       </section>
     );
   }
 
   return (
     <section
-      className={cn('surface-panel p-4 sm:p-5', arrival)}
+      className={cn(
+        'surface-panel p-4 sm:p-5',
+        arrival,
+      )}
       aria-labelledby="ladder-packet-heading"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <ClipboardList className="size-4 text-site-accent" aria-hidden />
-        <h2 id="ladder-packet-heading" className="site-section-label">
-          {t('ladder.packetTitle', {
-            defaultValue: 'Application packet — {{ats}} order',
-            ats: atsPlatformLabel(platform),
-          })}
+        <ClipboardList
+          className="size-4 text-site-accent"
+          aria-hidden
+        />
+        <h2
+          id="ladder-packet-heading"
+          className="site-section-label"
+        >
+          {t(
+            'ladder.packetTitle',
+            {
+              defaultValue:
+                'Application packet — {{ats}} order',
+              ats: atsPlatformLabel(
+                platform,
+              ),
+            },
+          )}
         </h2>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <CopyButton
-            value={packetAsText(fields)}
+            value={packetAsText(
+              fields,
+            )}
             variant="default"
             size="sm"
             className="min-h-11"
             toastOnCopy
           >
-            {t('ladder.packetCopyAll', { defaultValue: 'Copy all' })}
+            {t(
+              'ladder.packetCopyAll',
+              {
+                defaultValue:
+                  'Copy all',
+              },
+            )}
           </CopyButton>
-          {href !== '#' && (
-            <Button asChild size="sm" className="min-h-11">
-              <a href={href} target="_blank" rel="noopener noreferrer">
-                {t('ladder.packetOpenForm', { defaultValue: 'Open the form' })}
-                <ExternalLink className="size-4" aria-hidden />
+          {href !==
+            '#' && (
+            <Button
+              asChild
+              size="sm"
+              className="min-h-11"
+            >
+              <a
+                href={
+                  href
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t(
+                  'ladder.packetOpenForm',
+                  {
+                    defaultValue:
+                      'Open the form',
+                  },
+                )}
+                <ExternalLink
+                  className="size-4"
+                  aria-hidden
+                />
               </a>
             </Button>
           )}
@@ -149,91 +337,169 @@ export function ApplicationPacket({
       </div>
 
       <p className="mt-2 text-xs text-site-text-muted">
-        {t('ladder.packetIntro', {
-          defaultValue:
-            'Ordered to match this employer’s form, top to bottom. Copy each field as you reach it.',
-        })}
-        {missing > 0 &&
-          ` ${t('ladder.packetMissing', {
-            defaultValue: '{{count}} still empty in your answer bank.',
-            count: missing,
-          })}`}
+        {t(
+          'ladder.packetIntro',
+          {
+            defaultValue:
+              'Ordered to match this employer’s form, top to bottom. Copy each field as you reach it.',
+          },
+        )}
+        {missing >
+          0 &&
+          ` ${t(
+            'ladder.packetMissing',
+            {
+              defaultValue:
+                '{{count}} still empty in your answer bank.',
+              count:
+                missing,
+            },
+          )}`}
       </p>
 
       <ol className="mt-4 grid gap-2">
-        {fields.map((field, index) => {
-          const isHidden = field.sensitive && field.filled && !revealed.has(field.id);
-          return (
-            <li key={field.id} className="surface-card flex flex-wrap items-start gap-2 p-3">
-              <span
-                aria-hidden
-                className="mt-0.5 w-6 shrink-0 font-mono text-xs text-site-text-muted"
+        {fields.map(
+          (
+            field,
+            index,
+          ) => {
+            const isHidden =
+              field.sensitive &&
+              field.filled &&
+              !revealed.has(
+                field.id,
+              );
+            return (
+              <li
+                key={
+                  field.id
+                }
+                className="surface-card flex flex-wrap items-start gap-2 p-3"
               >
-                {index + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-site-text-muted">{field.label}</p>
-                {field.filled ? (
-                  <p
-                    className={`mt-1 text-sm break-words text-site-text ${
-                      field.kind === 'longtext' ? 'whitespace-pre-line' : ''
-                    }`}
-                  >
-                    {isHidden ? '••••••••' : field.value}
-                  </p>
-                ) : (
-                  <p className="mt-1 text-sm text-site-text-muted">
-                    {field.kind === 'file'
-                      ? t('ladder.packetUpload', {
-                          defaultValue: 'Upload your resume file on the employer’s form.',
-                        })
-                      : t('ladder.packetNotSet', {
-                          defaultValue: 'Not set — add it to your answer bank.',
-                        })}
-                  </p>
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                {field.sensitive && field.filled && (
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => toggleReveal(field.id)}
-                    aria-label={
-                      isHidden
-                        ? t('ladder.packetReveal', { defaultValue: 'Show value' })
-                        : t('ladder.packetHide', { defaultValue: 'Hide value' })
+                <span
+                  aria-hidden
+                  className="mt-0.5 w-6 shrink-0 font-mono text-xs text-site-text-muted"
+                >
+                  {index +
+                    1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-site-text-muted">
+                    {
+                      field.label
                     }
-                  >
-                    {isHidden ? (
-                      <Eye className="size-4" aria-hidden />
-                    ) : (
-                      <EyeOff className="size-4" aria-hidden />
+                  </p>
+                  {field.filled ? (
+                    <p
+                      className={`mt-1 text-sm break-words text-site-text ${
+                        field.kind ===
+                        'longtext'
+                          ? 'whitespace-pre-line'
+                          : ''
+                      }`}
+                    >
+                      {isHidden
+                        ? '••••••••'
+                        : field.value}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-site-text-muted">
+                      {field.kind ===
+                      'file'
+                        ? t(
+                            'ladder.packetUpload',
+                            {
+                              defaultValue:
+                                'Upload your resume file on the employer’s form.',
+                            },
+                          )
+                        : t(
+                            'ladder.packetNotSet',
+                            {
+                              defaultValue:
+                                'Not set — add it to your answer bank.',
+                            },
+                          )}
+                    </p>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {field.sensitive &&
+                    field.filled && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() =>
+                          toggleReveal(
+                            field.id,
+                          )
+                        }
+                        aria-label={
+                          isHidden
+                            ? t(
+                                'ladder.packetReveal',
+                                {
+                                  defaultValue:
+                                    'Show value',
+                                },
+                              )
+                            : t(
+                                'ladder.packetHide',
+                                {
+                                  defaultValue:
+                                    'Hide value',
+                                },
+                              )
+                        }
+                      >
+                        {isHidden ? (
+                          <Eye
+                            className="size-4"
+                            aria-hidden
+                          />
+                        ) : (
+                          <EyeOff
+                            className="size-4"
+                            aria-hidden
+                          />
+                        )}
+                      </Button>
                     )}
-                  </Button>
-                )}
-                {field.filled && field.kind !== 'file' && (
-                  <CopyButton
-                    value={field.value}
-                    size="icon"
-                    label={t('ladder.packetCopyField', {
-                      defaultValue: 'Copy {{label}}',
-                      label: field.label,
-                    })}
-                  />
-                )}
-              </div>
-            </li>
-          );
-        })}
+                  {field.filled &&
+                    field.kind !==
+                      'file' && (
+                      <CopyButton
+                        value={
+                          field.value
+                        }
+                        size="icon"
+                        label={t(
+                          'ladder.packetCopyField',
+                          {
+                            defaultValue:
+                              'Copy {{label}}',
+                            label:
+                              field.label,
+                          },
+                        )}
+                      />
+                    )}
+                </div>
+              </li>
+            );
+          },
+        )}
       </ol>
 
       <p className="mt-4 text-xs text-site-text-muted">
-        {t('ladder.packetNeverSubmits', {
-          defaultValue:
-            'RMHLadder never submits an application for you. Nothing is sent to the employer from here — you paste these answers and press submit yourself.',
-        })}
+        {t(
+          'ladder.packetNeverSubmits',
+          {
+            defaultValue:
+              'RMHLadder never submits an application for you. Nothing is sent to the employer from here — you paste these answers and press submit yourself.',
+          },
+        )}
       </p>
     </section>
   );

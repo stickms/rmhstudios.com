@@ -15,45 +15,113 @@ const ARRIVE_SLACK = 20;
 const WORLD_LIMIT = 60_000;
 const MAX_LEG = 900;
 
-const chunkCoord = z
-  .number()
-  .int()
-  .min(-WORLD_LIMIT)
-  .max(WORLD_LIMIT)
-  .refine((v) => v % CHUNK_SIZE === 0);
+const chunkCoord =
+  z
+    .number()
+    .int()
+    .min(
+      -WORLD_LIMIT,
+    )
+    .max(
+      WORLD_LIMIT,
+    )
+    .refine(
+      (
+        v,
+      ) =>
+        v %
+          CHUNK_SIZE ===
+        0,
+    );
 
-export const routeSchema = z.object({
-  pickupX: chunkCoord,
-  pickupZ: chunkCoord,
-  dropX: chunkCoord,
-  dropZ: chunkCoord,
-});
+export const routeSchema =
+  z.object(
+    {
+      pickupX:
+        chunkCoord,
+      pickupZ:
+        chunkCoord,
+      dropX:
+        chunkCoord,
+      dropZ:
+        chunkCoord,
+    },
+  );
 
-export const submitContractSchema = routeSchema.extend({
-  seconds: z.number().min(5).max(900),
-});
+export const submitContractSchema =
+  routeSchema.extend(
+    {
+      seconds:
+        z
+          .number()
+          .min(
+            5,
+          )
+          .max(
+            900,
+          ),
+    },
+  );
 
-export type ContractRoute = z.infer<typeof routeSchema>;
+export type ContractRoute =
+  z.infer<
+    typeof routeSchema
+  >;
 
-export function legLength(r: ContractRoute): number {
-  return Math.hypot(r.dropX - r.pickupX, r.dropZ - r.pickupZ);
+export function legLength(
+  r: ContractRoute,
+): number {
+  return Math.hypot(
+    r.dropX -
+      r.pickupX,
+    r.dropZ -
+      r.pickupZ,
+  );
 }
 
 /** Fastest the leg could physically be driven, in seconds. */
-export function minSeconds(r: ContractRoute): number {
-  return Math.max(0, legLength(r) - ARRIVE_SLACK) / MAX_SPEED;
+export function minSeconds(
+  r: ContractRoute,
+): number {
+  return (
+    Math.max(
+      0,
+      legLength(
+        r,
+      ) -
+        ARRIVE_SLACK,
+    ) /
+    MAX_SPEED
+  );
 }
 
-export function routeIsPlayable(r: ContractRoute): boolean {
-  const len = legLength(r);
-  return len >= CHUNK_SIZE && len <= MAX_LEG;
+export function routeIsPlayable(
+  r: ContractRoute,
+): boolean {
+  const len =
+    legLength(
+      r,
+    );
+  return (
+    len >=
+      CHUNK_SIZE &&
+    len <=
+      MAX_LEG
+  );
 }
 
 export interface ContractView extends ContractRoute {
   id: string;
   bestSeconds: number;
   runs: number;
-  holder: { name: string | null; username: string | null } | null;
+  holder: {
+    name:
+      | string
+      | null;
+    username:
+      | string
+      | null;
+  } | null;
   mine: boolean;
   recordSetAt: string;
 }

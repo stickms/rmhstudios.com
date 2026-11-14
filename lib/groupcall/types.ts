@@ -29,7 +29,9 @@ import type {
  */
 export interface GroupCallOriginRef {
   origin: GroupCallOrigin;
-  originId: string | null;
+  originId:
+    | string
+    | null;
 }
 
 /** The same, narrowed to the two origins that produce an open room. */
@@ -62,12 +64,18 @@ export type GroupCallPeerStatus =
   | 'closed';
 
 /** True while this leg is worth keeping on screen rather than removing. */
-export function isPeerLive(status: GroupCallPeerStatus): boolean {
+export function isPeerLive(
+  status: GroupCallPeerStatus,
+): boolean {
   return (
-    status === 'new' ||
-    status === 'connecting' ||
-    status === 'connected' ||
-    status === 'reconnecting'
+    status ===
+      'new' ||
+    status ===
+      'connecting' ||
+    status ===
+      'connected' ||
+    status ===
+      'reconnecting'
   );
 }
 

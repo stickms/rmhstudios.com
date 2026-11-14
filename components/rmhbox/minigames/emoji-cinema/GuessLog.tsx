@@ -6,7 +6,7 @@
  *   - Correct guesses: "Player guessed the movie!" (answer not revealed)
  */
 
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
 import { useStickToBottom } from '@/hooks/useStickToBottom';
 
 export interface GuessLogEntry {
@@ -21,49 +21,117 @@ interface GuessLogProps {
   entries: GuessLogEntry[];
 }
 
-export default function GuessLog({ entries }: GuessLogProps) {
-  const { t } = useTranslation("c-rmhbox");
+export default function GuessLog({
+  entries,
+}: GuessLogProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
   // `useStickToBottom`, not `scrollTop = scrollHeight` in an effect. Reading
   // `scrollHeight` FORCES a synchronous layout on every new guess, and the old
   // form re-pinned unconditionally. See docs/archive/2026/performance-audit-2026-08-12.md §1.5.
-  const { containerRef, contentRef } = useStickToBottom<HTMLDivElement, HTMLDivElement>();
+  const {
+    containerRef,
+    contentRef,
+  } =
+    useStickToBottom<
+      HTMLDivElement,
+      HTMLDivElement
+    >();
 
-  if (entries.length === 0) return null;
+  if (
+    entries.length ===
+    0
+  )
+    return null;
 
   return (
     <div className="w-full flex flex-col gap-1">
       <span className="text-xs font-semibold text-app-text-muted uppercase tracking-wide">
-        {t("guess-log", { defaultValue: "Guess Log" })}
+        {t(
+          'guess-log',
+          {
+            defaultValue:
+              'Guess Log',
+          },
+        )}
       </span>
       <div
-        ref={containerRef}
+        ref={
+          containerRef
+        }
         className="flex flex-col gap-1 max-h-40 overflow-y-auto"
       >
-        <div ref={contentRef} className="flex flex-col gap-1">
-        {entries.map((entry, i) => (
-          <div
-            key={i}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-app-sm bg-app-surface text-sm ${
-              entry.isCorrect ? 'text-app-success' : 'text-app-text-muted'
-            }`}
-          >
-            <span>{entry.isCorrect ? '🎉' : '💬'}</span>
-            <span className="flex-1">
-              {entry.isCorrect ? (
-                <>
-                  <span className="font-semibold text-app-text">{entry.userName}</span>
-                  {t("guessed-the-movie", { defaultValue: " guessed the movie!" })}
-                </>
-              ) : (
-                <>
-                  <span className="font-semibold text-app-text">{entry.userName}</span>
-                  {t("guessed", { defaultValue: " guessed " })}
-                  <span className="italic">{entry.guessText}</span>
-                </>
-              )}
-            </span>
-          </div>
-        ))}
+        <div
+          ref={
+            contentRef
+          }
+          className="flex flex-col gap-1"
+        >
+          {entries.map(
+            (
+              entry,
+              i,
+            ) => (
+              <div
+                key={
+                  i
+                }
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-app-sm bg-app-surface text-sm ${
+                  entry.isCorrect
+                    ? 'text-app-success'
+                    : 'text-app-text-muted'
+                }`}
+              >
+                <span>
+                  {entry.isCorrect
+                    ? '🎉'
+                    : '💬'}
+                </span>
+                <span className="flex-1">
+                  {entry.isCorrect ? (
+                    <>
+                      <span className="font-semibold text-app-text">
+                        {
+                          entry.userName
+                        }
+                      </span>
+                      {t(
+                        'guessed-the-movie',
+                        {
+                          defaultValue:
+                            ' guessed the movie!',
+                        },
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-app-text">
+                        {
+                          entry.userName
+                        }
+                      </span>
+                      {t(
+                        'guessed',
+                        {
+                          defaultValue:
+                            ' guessed ',
+                        },
+                      )}
+                      <span className="italic">
+                        {
+                          entry.guessText
+                        }
+                      </span>
+                    </>
+                  )}
+                </span>
+              </div>
+            ),
+          )}
         </div>
       </div>
     </div>

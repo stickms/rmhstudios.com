@@ -5,18 +5,38 @@
 
 import type { TfClass } from '@/lib/tf2-loadout/catalog-types';
 
-export const CLASS_DEFAULT: Record<TfClass, string> = {
-  scout: 'Scout',
-  soldier: 'Soldier',
-  pyro: 'Pyro',
-  demoman: 'Demoman',
-  heavy: 'Heavy',
-  engineer: 'Engineer',
-  medic: 'Medic',
-  sniper: 'Sniper',
-  spy: 'Spy',
-};
+export const CLASS_DEFAULT: Record<
+  TfClass,
+  string
+> =
+  {
+    scout:
+      'Scout',
+    soldier:
+      'Soldier',
+    pyro: 'Pyro',
+    demoman:
+      'Demoman',
+    heavy:
+      'Heavy',
+    engineer:
+      'Engineer',
+    medic:
+      'Medic',
+    sniper:
+      'Sniper',
+    spy: 'Spy',
+  };
 
-export function parseClass(v: unknown): TfClass | undefined {
-  return typeof v === 'string' && v in CLASS_DEFAULT ? (v as TfClass) : undefined;
+export function parseClass(
+  v: unknown,
+):
+  | TfClass
+  | undefined {
+  return typeof v ===
+    'string' &&
+    v in
+      CLASS_DEFAULT
+    ? (v as TfClass)
+    : undefined;
 }

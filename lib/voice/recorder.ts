@@ -19,9 +19,16 @@
  */
 
 import { getAudioContext } from '@/lib/shared/platform';
-import { recorderOptionsFor, VOICE_CONTENT_TYPES } from '@/lib/media/voice-policy';
+import {
+  recorderOptionsFor,
+  VOICE_CONTENT_TYPES,
+} from '@/lib/media/voice-policy';
 import type { Tier } from '@/lib/entitlements/tiers';
-import { VOICE_PEAK_BUCKETS, downsamplePeaks, frameLevel } from '@/lib/voice/peaks';
+import {
+  VOICE_PEAK_BUCKETS,
+  downsamplePeaks,
+  frameLevel,
+} from '@/lib/voice/peaks';
 
 /** How often the analyser is sampled while recording. */
 const SAMPLE_INTERVAL_MS = 50;
@@ -37,9 +44,14 @@ export type RecorderFailure =
   | 'failed';
 
 export class VoiceRecorderError extends Error {
-  constructor(readonly reason: RecorderFailure) {
-    super(reason);
-    this.name = 'VoiceRecorderError';
+  constructor(
+    readonly reason: RecorderFailure,
+  ) {
+    super(
+      reason,
+    );
+    this.name =
+      'VoiceRecorderError';
   }
 }
 
@@ -54,18 +66,27 @@ export interface RecordedClip {
 
 export interface VoiceRecorderCallbacks {
   /** Live level in `[0, 1]` plus elapsed ms — for the recording UI. */
-  onTick?: (level: number, elapsedMs: number) => void;
+  onTick?: (
+    level: number,
+    elapsedMs: number,
+  ) => void;
   /** Fired when the tier's duration cap stops the recording by itself. */
   onAutoStop?: () => void;
-  onError?: (error: VoiceRecorderError) => void;
+  onError?: (
+    error: VoiceRecorderError,
+  ) => void;
 }
 
 /** True when this browser can record at all. Cheap enough to call in render. */
 export function canRecordVoice(): boolean {
   return (
-    typeof window !== 'undefined' &&
-    typeof MediaRecorder !== 'undefined' &&
-    !!navigator.mediaDevices?.getUserMedia
+    typeof window !==
+      'undefined' &&
+    typeof MediaRecorder !==
+      'undefined' &&
+    !!navigator
+      .mediaDevices
+      ?.getUserMedia
   );
 }
 
@@ -78,21 +99,39 @@ export function canRecordVoice(): boolean {
  * to pick its own default rather than throwing.
  */
 export function pickRecorderMimeType(): string {
-  if (typeof MediaRecorder === 'undefined') return '';
+  if (
+    typeof MediaRecorder ===
+    'undefined'
+  )
+    return '';
   for (const type of VOICE_CONTENT_TYPES) {
-    if (MediaRecorder.isTypeSupported(type)) return type;
+    if (
+      MediaRecorder.isTypeSupported(
+        type,
+      )
+    )
+      return type;
   }
   return '';
 }
 
 export class VoiceRecorder {
-  private stream: MediaStream | null = null;
-  private recorder: MediaRecorder | null = null;
-  private analyser: AnalyserNode | null = null;
-  private source: MediaStreamAudioSourceNode | null = null;
-  private timer: ReturnType<typeof setInterval> | null = null;
-  private frames: number[] = [];
-  private chunks: Blob[] = [];
+  private stream: MediaStream | null =
+    null;
+  private recorder: MediaRecorder | null =
+    null;
+  private analyser: AnalyserNode | null =
+    null;
+  private source: MediaStreamAudioSourceNode | null =
+    null;
+  private timer: ReturnType<
+    typeof setInterval
+  > | null =
+    null;
+  private frames: number[] =
+    [];
+  private chunks: Blob[] =
+    [];
   private startedAt = 0;
   private stoppedAt = 0;
   private cancelled = false;
@@ -101,9 +140,11 @@ export class VoiceRecorder {
    * `stop()` called after the duration cap already stopped the encoder awaits a
    * promise that has settled instead of an `onstop` that will never fire again.
    */
-  private stopped: Promise<void> = Promise.resolve();
+  private stopped: Promise<void> =
+    Promise.resolve();
   /** The one in-flight `stop()`, so a second tap gets the same clip. */
-  private stopping: Promise<RecordedClip | null> | null = null;
+  private stopping: Promise<RecordedClip | null> | null =
+    null;
 
   constructor(
     private readonly tier: Tier,
@@ -111,97 +152,236 @@ export class VoiceRecorder {
   ) {}
 
   get maxDurationMs(): number {
-    return recorderOptionsFor(this.tier).maxDurationMs;
+    return recorderOptionsFor(
+      this
+        .tier,
+    )
+      .maxDurationMs;
   }
 
   /** Ask for the microphone and begin. Throws {@link VoiceRecorderError}. */
   async start(): Promise<void> {
-    if (!canRecordVoice()) throw new VoiceRecorderError('unsupported');
+    if (
+      !canRecordVoice()
+    )
+      throw new VoiceRecorderError(
+        'unsupported',
+      );
 
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        // Speech, not music: the browser's own processing is far better than
-        // anything we could do after the fact, and it shrinks the encode too.
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
+      stream =
+        await navigator.mediaDevices.getUserMedia(
+          {
+            // Speech, not music: the browser's own processing is far better than
+            // anything we could do after the fact, and it shrinks the encode too.
+            audio:
+              {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+              },
+          },
+        );
     } catch {
-      throw new VoiceRecorderError('denied');
+      throw new VoiceRecorderError(
+        'denied',
+      );
     }
 
-    this.stream = stream;
+    this.stream =
+      stream;
     this.cancelled = false;
-    this.frames = [];
-    this.chunks = [];
+    this.frames =
+      [];
+    this.chunks =
+      [];
 
-    const { audioBitsPerSecond, maxDurationMs } = recorderOptionsFor(this.tier);
-    const mimeType = pickRecorderMimeType();
+    const {
+      audioBitsPerSecond,
+      maxDurationMs,
+    } =
+      recorderOptionsFor(
+        this
+          .tier,
+      );
+    const mimeType =
+      pickRecorderMimeType();
 
     try {
-      this.recorder = new MediaRecorder(stream, {
-        audioBitsPerSecond,
-        ...(mimeType ? { mimeType } : {}),
-      });
+      this.recorder =
+        new MediaRecorder(
+          stream,
+          {
+            audioBitsPerSecond,
+            ...(mimeType
+              ? {
+                  mimeType,
+                }
+              : {}),
+          },
+        );
     } catch {
       this.releaseStream();
-      throw new VoiceRecorderError('failed');
+      throw new VoiceRecorderError(
+        'failed',
+      );
     }
 
-    let resolveStopped: () => void = () => {};
-    this.stopped = new Promise<void>((resolve) => {
-      resolveStopped = resolve;
-    });
-    this.stopping = null;
-    this.recorder.onstop = () => resolveStopped();
+    let resolveStopped: () => void =
+      () => {};
+    this.stopped =
+      new Promise<void>(
+        (
+          resolve,
+        ) => {
+          resolveStopped =
+            resolve;
+        },
+      );
+    this.stopping =
+      null;
+    this.recorder.onstop =
+      () =>
+        resolveStopped();
 
-    this.recorder.ondataavailable = (event) => {
-      if (event.data && event.data.size > 0) this.chunks.push(event.data);
-    };
-    this.recorder.onerror = () => {
-      this.callbacks.onError?.(new VoiceRecorderError('failed'));
-      this.cancel();
-    };
+    this.recorder.ondataavailable =
+      (
+        event,
+      ) => {
+        if (
+          event.data &&
+          event
+            .data
+            .size >
+            0
+        )
+          this.chunks.push(
+            event.data,
+          );
+      };
+    this.recorder.onerror =
+      () => {
+        this.callbacks.onError?.(
+          new VoiceRecorderError(
+            'failed',
+          ),
+        );
+        this.cancel();
+      };
 
-    this.attachAnalyser(stream);
-    this.startedAt = Date.now();
+    this.attachAnalyser(
+      stream,
+    );
+    this.startedAt =
+      Date.now();
     this.stoppedAt = 0;
     // One blob per second rather than one at the end: an interrupted tab still
     // leaves usable audio, and memory stays flat on a ten-minute recording.
-    this.recorder.start(1000);
+    this.recorder.start(
+      1000,
+    );
 
-    this.timer = setInterval(() => {
-      const elapsed = Date.now() - this.startedAt;
-      const level = this.readLevel();
-      if (this.frames.length < MAX_FRAMES) this.frames.push(level);
-      this.callbacks.onTick?.(level, elapsed);
-      if (elapsed >= maxDurationMs) {
-        this.callbacks.onAutoStop?.();
-        this.requestStop();
-      }
-    }, SAMPLE_INTERVAL_MS);
+    this.timer =
+      setInterval(
+        () => {
+          const elapsed =
+            Date.now() -
+            this
+              .startedAt;
+          const level =
+            this.readLevel();
+          if (
+            this
+              .frames
+              .length <
+            MAX_FRAMES
+          )
+            this.frames.push(
+              level,
+            );
+          this.callbacks.onTick?.(
+            level,
+            elapsed,
+          );
+          if (
+            elapsed >=
+            maxDurationMs
+          ) {
+            this.callbacks.onAutoStop?.();
+            this.requestStop();
+          }
+        },
+        SAMPLE_INTERVAL_MS,
+      );
   }
 
   /** Stop and resolve the finished clip. Resolves `null` if it was cancelled. */
   stop(): Promise<RecordedClip | null> {
-    if (!this.stopping) this.stopping = this.finish();
-    return this.stopping;
+    if (
+      !this
+        .stopping
+    )
+      this.stopping =
+        this.finish();
+    return this
+      .stopping;
   }
 
   private async finish(): Promise<RecordedClip | null> {
-    const recorder = this.recorder;
-    if (!recorder) return null;
+    const recorder =
+      this
+        .recorder;
+    if (
+      !recorder
+    )
+      return null;
 
     this.requestStop();
-    await this.stopped;
+    await this
+      .stopped;
 
-    const durationMs = Math.max(0, (this.stoppedAt || Date.now()) - this.startedAt);
-    const contentType = recorder.mimeType || 'audio/webm';
-    const blob = new Blob(this.chunks, { type: contentType });
-    const peaks = downsamplePeaks(this.frames, VOICE_PEAK_BUCKETS);
+    const durationMs =
+      Math.max(
+        0,
+        (this
+          .stoppedAt ||
+          Date.now()) -
+          this
+            .startedAt,
+      );
+    const contentType =
+      recorder.mimeType ||
+      'audio/webm';
+    const blob =
+      new Blob(
+        this
+          .chunks,
+        {
+          type: contentType,
+        },
+      );
+    const peaks =
+      downsamplePeaks(
+        this
+          .frames,
+        VOICE_PEAK_BUCKETS,
+      );
     this.teardown();
 
-    if (this.cancelled || blob.size === 0) return null;
-    return { blob, contentType, durationMs, peaks };
+    if (
+      this
+        .cancelled ||
+      blob.size ===
+        0
+    )
+      return null;
+    return {
+      blob,
+      contentType,
+      durationMs,
+      peaks,
+    };
   }
 
   /** Abandon the recording and release the microphone immediately. */
@@ -213,58 +393,131 @@ export class VoiceRecorder {
 
   /** Elapsed recording time, for a component that re-reads it on demand. */
   elapsedMs(): number {
-    if (!this.startedAt) return 0;
-    return (this.stoppedAt || Date.now()) - this.startedAt;
+    if (
+      !this
+        .startedAt
+    )
+      return 0;
+    return (
+      (this
+        .stoppedAt ||
+        Date.now()) -
+      this
+        .startedAt
+    );
   }
 
   private requestStop(): void {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
+    if (
+      this
+        .timer
+    ) {
+      clearInterval(
+        this
+          .timer,
+      );
+      this.timer =
+        null;
     }
-    if (!this.stoppedAt) this.stoppedAt = Date.now();
+    if (
+      !this
+        .stoppedAt
+    )
+      this.stoppedAt =
+        Date.now();
     try {
-      if (this.recorder && this.recorder.state !== 'inactive') this.recorder.stop();
+      if (
+        this
+          .recorder &&
+        this
+          .recorder
+          .state !==
+          'inactive'
+      )
+        this.recorder.stop();
     } catch {
       /* already stopped */
     }
   }
 
-  private attachAnalyser(stream: MediaStream): void {
+  private attachAnalyser(
+    stream: MediaStream,
+  ): void {
     // Always the shared context (lib/shared/platform) — a page that constructs
     // its own AudioContext per recording exhausts the browser's budget after a
     // handful and every later one silently fails to start.
-    const ctx = getAudioContext();
-    if (!ctx) return;
+    const ctx =
+      getAudioContext();
+    if (
+      !ctx
+    )
+      return;
     try {
-      this.source = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
+      this.source =
+        ctx.createMediaStreamSource(
+          stream,
+        );
+      this.analyser =
+        ctx.createAnalyser();
       this.analyser.fftSize = 1024;
-      this.source.connect(this.analyser);
+      this.source.connect(
+        this
+          .analyser,
+      );
       // Deliberately NOT connected to `ctx.destination`: routing the microphone
       // to the speakers is a feedback loop.
     } catch {
-      this.analyser = null;
-      this.source = null;
+      this.analyser =
+        null;
+      this.source =
+        null;
     }
   }
 
   private readLevel(): number {
-    if (!this.analyser) return 0;
-    const buffer = new Uint8Array(this.analyser.fftSize);
-    this.analyser.getByteTimeDomainData(buffer);
-    return frameLevel(buffer);
+    if (
+      !this
+        .analyser
+    )
+      return 0;
+    const buffer =
+      new Uint8Array(
+        this
+          .analyser
+          .fftSize,
+      );
+    this.analyser.getByteTimeDomainData(
+      buffer,
+    );
+    return frameLevel(
+      buffer,
+    );
   }
 
   private releaseStream(): void {
-    this.stream?.getTracks().forEach((track) => track.stop());
-    this.stream = null;
+    this.stream
+      ?.getTracks()
+      .forEach(
+        (
+          track,
+        ) =>
+          track.stop(),
+      );
+    this.stream =
+      null;
   }
 
   private teardown(): void {
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
+    if (
+      this
+        .timer
+    ) {
+      clearInterval(
+        this
+          .timer,
+      );
+      this.timer =
+        null;
     }
     try {
       this.source?.disconnect();
@@ -272,9 +525,12 @@ export class VoiceRecorder {
     } catch {
       /* nodes already detached */
     }
-    this.source = null;
-    this.analyser = null;
+    this.source =
+      null;
+    this.analyser =
+      null;
     this.releaseStream();
-    this.recorder = null;
+    this.recorder =
+      null;
   }
 }

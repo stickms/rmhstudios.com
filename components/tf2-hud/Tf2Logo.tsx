@@ -9,21 +9,39 @@
  */
 import { cn } from '@/lib/utils';
 
-const LOGO_SRC = '/tf2-hud/tf2-logo.webp';
+const LOGO_SRC =
+  '/tf2-hud/tf2-logo.webp';
 const LOGO_WIDTH = 500;
 const LOGO_HEIGHT = 109;
 
-export default function Tf2Logo({ className, label }: { className?: string; label: string }) {
+export default function Tf2Logo({
+  className,
+  label,
+}: {
+  className?: string;
+  label: string;
+}) {
   return (
     <img
-      src={LOGO_SRC}
-      width={LOGO_WIDTH}
-      height={LOGO_HEIGHT}
-      alt={label}
+      src={
+        LOGO_SRC
+      }
+      width={
+        LOGO_WIDTH
+      }
+      height={
+        LOGO_HEIGHT
+      }
+      alt={
+        label
+      }
       decoding="async"
       fetchPriority="high"
       // Preflight makes an <img> a block, so it is centred with margins, not `text-center`.
-      className={cn('mx-auto w-auto max-w-full object-contain', className)}
+      className={cn(
+        'mx-auto w-auto max-w-full object-contain',
+        className,
+      )}
     />
   );
 }

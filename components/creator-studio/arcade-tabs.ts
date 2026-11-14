@@ -9,5 +9,10 @@
  * render-blocking entry (perf audit 2026-10-08). Data the route config reads
  * belongs in a module with no UI in it.
  */
-export const ARCADE_SUB_TABS = ['challenges', 'leaderboard'] as const;
-export type ArcadeSubTab = (typeof ARCADE_SUB_TABS)[number];
+export const ARCADE_SUB_TABS =
+  [
+    'challenges',
+    'leaderboard',
+  ] as const;
+export type ArcadeSubTab =
+  (typeof ARCADE_SUB_TABS)[number];

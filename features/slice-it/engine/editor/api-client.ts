@@ -8,7 +8,10 @@
 
 import { DIFFICULTIES } from '@features/slice-it/engine/constants';
 import type { SliceSong } from '@features/slice-it/engine/types';
-import type { ChartDto, ChartRevisionDto } from './api-schemas';
+import type {
+  ChartDto,
+  ChartRevisionDto,
+} from './api-schemas';
 import { emptyChart } from './store';
 import type { EditorLoadPayload } from './store';
 import {
@@ -22,7 +25,10 @@ import {
 import { sortNotes } from './commands';
 
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import {
+  HttpError,
+  serverError,
+} from '@/lib/http';
 import { getSliceSongApi } from '@features/slice-it/engine/play.contract';
 import {
   listChartRevisionsApi,
@@ -35,19 +41,32 @@ export class ChartApiError extends Error {
     message: string,
     readonly status: number,
   ) {
-    super(message);
-    this.name = 'ChartApiError';
+    super(
+      message,
+    );
+    this.name =
+      'ChartApiError';
   }
 }
 
 /** Run a contract call, surfacing a failure as the editor's own {@link ChartApiError}. */
-async function asChartApiError<T>(call: () => Promise<T>): Promise<T> {
+async function asChartApiError<
+  T,
+>(
+  call: () => Promise<T>,
+): Promise<T> {
   try {
     return await call();
   } catch (error) {
-    if (error instanceof HttpError) {
+    if (
+      error instanceof
+      HttpError
+    ) {
       throw new ChartApiError(
-        serverError(error) ?? `Request failed (${error.status})`,
+        serverError(
+          error,
+        ) ??
+          `Request failed (${error.status})`,
         error.status,
       );
     }
@@ -63,59 +82,149 @@ async function asChartApiError<T>(call: () => Promise<T>): Promise<T> {
  * them together would make opening the editor a POST, which breaks reload and
  * prefetch for a surface that is otherwise a page.
  */
-export async function loadEditorDocument(songId: string): Promise<EditorLoadPayload> {
-  const song = await asChartApiError(() => api(getSliceSongApi, { params: { id: songId } }));
+export async function loadEditorDocument(
+  songId: string,
+): Promise<EditorLoadPayload> {
+  const song =
+    await asChartApiError(
+      () =>
+        api(
+          getSliceSongApi,
+          {
+            params:
+              {
+                id: songId,
+              },
+          },
+        ),
+    );
 
-  const seeded = await asChartApiError(() => api(seedChartsApi, { body: { songId, keys: 2 } }));
+  const seeded =
+    await asChartApiError(
+      () =>
+        api(
+          seedChartsApi,
+          {
+            body: {
+              songId,
+              keys: 2,
+            },
+          },
+        ),
+    );
 
-  return toLoadPayload(song, seeded.charts);
+  return toLoadPayload(
+    song,
+    seeded.charts,
+  );
 }
 
-export function toLoadPayload(song: SliceSong, dtos: readonly ChartDto[]): EditorLoadPayload {
-  const keys = dtos[0]?.keys ?? 2;
-  const charts = {} as Charts;
-  const chartIds = {} as Record<Difficulty, string | null>;
-  const chartStatus = {} as Record<Difficulty, string>;
+export function toLoadPayload(
+  song: SliceSong,
+  dtos: readonly ChartDto[],
+): EditorLoadPayload {
+  const keys =
+    dtos[0]
+      ?.keys ??
+    2;
+  const charts =
+    {} as Charts;
+  const chartIds =
+    {} as Record<
+      Difficulty,
+      | string
+      | null
+    >;
+  const chartStatus =
+    {} as Record<
+      Difficulty,
+      string
+    >;
 
   for (const difficulty of DIFFICULTIES) {
-    const dto = dtos.find((chart) => chart.difficulty === difficulty);
-    chartIds[difficulty] = dto?.id ?? null;
+    const dto =
+      dtos.find(
+        (
+          chart,
+        ) =>
+          chart.difficulty ===
+          difficulty,
+      );
+    chartIds[
+      difficulty
+    ] =
+      dto?.id ??
+      null;
     // 'draft' for a difficulty with no row yet: nothing exists, so nothing is
     // published, and the publish button must not offer to un-publish it.
-    chartStatus[difficulty] = dto?.status ?? 'draft';
-    if (!dto) {
-      charts[difficulty] = emptyChart(difficulty, keys);
+    chartStatus[
+      difficulty
+    ] =
+      dto?.status ??
+      'draft';
+    if (
+      !dto
+    ) {
+      charts[
+        difficulty
+      ] =
+        emptyChart(
+          difficulty,
+          keys,
+        );
       continue;
     }
-    charts[difficulty] = {
-      difficulty,
-      keys: dto.keys,
-      name: dto.name,
-      // `auto` is re-derived from the row's `isGenerated` flag rather than stored
-      // per note: §7.3 is a session affordance ("what have I reviewed"), and a
-      // chart nobody has touched is entirely the machine's.
-      notes: sortNotes(toEditorNotes((dto.notes ?? []) as Slice[], dto.isGenerated)),
-      dirty: false,
-      rating: dto.rating,
-    };
+    charts[
+      difficulty
+    ] =
+      {
+        difficulty,
+        keys: dto.keys,
+        name: dto.name,
+        // `auto` is re-derived from the row's `isGenerated` flag rather than stored
+        // per note: §7.3 is a session affordance ("what have I reviewed"), and a
+        // chart nobody has touched is entirely the machine's.
+        notes:
+          sortNotes(
+            toEditorNotes(
+              (dto.notes ??
+                []) as Slice[],
+              dto.isGenerated,
+            ),
+          ),
+        dirty: false,
+        rating:
+          dto.rating,
+      };
   }
 
-  const first = dtos[0];
+  const first =
+    dtos[0];
   return {
     song: {
       id: song.id,
-      title: song.title,
-      artist: song.artist,
-      duration: song.duration,
-      bpm: song.bpm || 120,
-      audioUrl: song.audioUrl,
+      title:
+        song.title,
+      artist:
+        song.artist,
+      duration:
+        song.duration,
+      bpm:
+        song.bpm ||
+        120,
+      audioUrl:
+        song.audioUrl,
     },
     keys,
     charts,
     chartIds,
     chartStatus,
-    timingPoints: first?.timingPoints ?? [],
-    svPoints: first?.svPoints ?? [],
+    timingPoints:
+      first?.timingPoints ??
+      [],
+    svPoints:
+      first?.svPoints ??
+      [],
   };
 }
 
@@ -127,8 +236,27 @@ export function toLoadPayload(song: SliceSong, dtos: readonly ChartDto[]): Edito
  * panel is what the author sees, this endpoint is what is true, and the panel
  * runs on a debounce that a fast click can outrun.
  */
-export async function publishChart(chartId: string, status: 'public' | 'draft'): Promise<ChartDto> {
-  return asChartApiError(() => api(publishChartApi, { params: { id: chartId }, body: { status } }));
+export async function publishChart(
+  chartId: string,
+  status:
+    | 'public'
+    | 'draft',
+): Promise<ChartDto> {
+  return asChartApiError(
+    () =>
+      api(
+        publishChartApi,
+        {
+          params:
+            {
+              id: chartId,
+            },
+          body: {
+            status,
+          },
+        },
+      ),
+  );
 }
 
 export interface SaveChartInput {
@@ -143,7 +271,10 @@ export interface SaveChartInput {
    */
   timingPoints?: TimingPoint[];
   svPoints?: SvPoint[];
-  kind?: 'autosave' | 'manual' | 'publish';
+  kind?:
+    | 'autosave'
+    | 'manual'
+    | 'publish';
   /**
    * `keepalive` on the unload path. A normal fetch is cancelled when the
    * document goes away; this one survives it, which is what makes the
@@ -153,23 +284,72 @@ export interface SaveChartInput {
   signal?: AbortSignal;
 }
 
-export async function saveChart(input: SaveChartInput): Promise<ChartDto> {
-  return asChartApiError(() =>
-    api(saveChartApi, {
-      params: { id: input.chartId },
-      body: {
-        notes: input.notes,
-        kind: input.kind ?? 'autosave',
-        ...(input.timingPoints ? { timingPoints: input.timingPoints } : {}),
-        ...(input.svPoints ? { svPoints: input.svPoints } : {}),
-      },
-      ...(input.keepalive !== undefined ? { keepalive: input.keepalive } : {}),
-      ...(input.signal ? { signal: input.signal } : {}),
-    }),
+export async function saveChart(
+  input: SaveChartInput,
+): Promise<ChartDto> {
+  return asChartApiError(
+    () =>
+      api(
+        saveChartApi,
+        {
+          params:
+            {
+              id: input.chartId,
+            },
+          body: {
+            notes:
+              input.notes,
+            kind:
+              input.kind ??
+              'autosave',
+            ...(input.timingPoints
+              ? {
+                  timingPoints:
+                    input.timingPoints,
+                }
+              : {}),
+            ...(input.svPoints
+              ? {
+                  svPoints:
+                    input.svPoints,
+                }
+              : {}),
+          },
+          ...(input.keepalive !==
+          undefined
+            ? {
+                keepalive:
+                  input.keepalive,
+              }
+            : {}),
+          ...(input.signal
+            ? {
+                signal:
+                  input.signal,
+              }
+            : {}),
+        },
+      ),
   );
 }
 
-export async function listRevisions(chartId: string): Promise<ChartRevisionDto[]> {
-  const body = await asChartApiError(() => api(listChartRevisionsApi, { params: { id: chartId } }));
+export async function listRevisions(
+  chartId: string,
+): Promise<
+  ChartRevisionDto[]
+> {
+  const body =
+    await asChartApiError(
+      () =>
+        api(
+          listChartRevisionsApi,
+          {
+            params:
+              {
+                id: chartId,
+              },
+          },
+        ),
+    );
   return body.revisions;
 }

@@ -1,7 +1,13 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { isHeicCover, normalizeCover } from '@features/slice-it/engine/cover-image';
+import {
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router';
+import {
+  isHeicCover,
+  normalizeCover,
+} from '@features/slice-it/engine/cover-image';
 import { toast } from '@/lib/toast';
 import {
   ChevronRight,
@@ -24,9 +30,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, type TabItem } from '@/components/ui/tabs';
+import {
+  Tabs,
+  type TabItem,
+} from '@/components/ui/tabs';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
-import { MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/menu';
+import {
+  MenuItem,
+  MenuLabel,
+  MenuSeparator,
+} from '@/components/ui/menu';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { api } from '@/lib/contract/client';
 import {
@@ -42,8 +55,14 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
-import { musicGain, useSliceItStore } from '@features/slice-it/engine/store';
-import { PREVIEW_SECONDS, previewFragment } from '@features/slice-it/engine/preview';
+import {
+  musicGain,
+  useSliceItStore,
+} from '@features/slice-it/engine/store';
+import {
+  PREVIEW_SECONDS,
+  previewFragment,
+} from '@features/slice-it/engine/preview';
 import { rowChartState } from '@features/slice-it/engine/song-status';
 import {
   AUDIO_MAX_BYTES,
@@ -69,8 +88,15 @@ import { NeumorphicModal } from './NeumorphicModal';
 import { SongTable } from './SongTable';
 import { PackPanel } from './packs/PackPanel';
 
-import { listLibrarySongsApi, randomSongApi } from '@features/slice-it/engine/play.contract';
-import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import {
+  listLibrarySongsApi,
+  randomSongApi,
+} from '@features/slice-it/engine/play.contract';
+import {
+  useArrival,
+  useArrivingKeys,
+  ARRIVE,
+} from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 /**
  * One entry of the artist facet (L15), as `/api/slice-it/songs/artists`
@@ -90,22 +116,60 @@ interface ArtistChip {
  * children and a `currentColor` fill: it sits in a row repeated dozens of times,
  * so it is markup, not a canvas.
  */
-function DensityStrip({ density }: { density?: number[] }) {
-  if (!density || density.length === 0) return <span className="slice-trow__dens" aria-hidden />;
+function DensityStrip({
+  density,
+}: {
+  density?: number[];
+}) {
+  if (
+    !density ||
+    density.length ===
+      0
+  )
+    return (
+      <span
+        className="slice-trow__dens"
+        aria-hidden
+      />
+    );
   return (
-    <span className="slice-trow__dens" aria-hidden>
-      {density.map((value, i) => (
-        <span key={i} style={{ height: `${Math.max(14, (value / 255) * 100)}%` }} />
-      ))}
+    <span
+      className="slice-trow__dens"
+      aria-hidden
+    >
+      {density.map(
+        (
+          value,
+          i,
+        ) => (
+          <span
+            key={
+              i
+            }
+            style={{
+              height: `${Math.max(14, (value / 255) * 100)}%`,
+            }}
+          />
+        ),
+      )}
     </span>
   );
 }
 
 interface SongLibraryProps {
-  onSelect: (song: SliceSong) => void;
-  onHighlight: (song: SliceSong) => void;
-  selectedSongId: string | null;
-  onStopPreviewRef?: React.MutableRefObject<(() => void) | null>;
+  onSelect: (
+    song: SliceSong,
+  ) => void;
+  onHighlight: (
+    song: SliceSong,
+  ) => void;
+  selectedSongId:
+    | string
+    | null;
+  onStopPreviewRef?: React.MutableRefObject<
+    | (() => void)
+    | null
+  >;
   readOnly?: boolean;
   /**
    * What the row's primary action DOES, for its label and its glyph.
@@ -117,7 +181,9 @@ interface SongLibraryProps {
    * host reasonably read it as "start the match now" and a player watched a
    * button labelled PLAY not play anything.
    */
-  selectAction?: 'play' | 'add';
+  selectAction?:
+    | 'play'
+    | 'add';
 }
 
 /**
@@ -161,129 +227,389 @@ export function SongLibrary({
   readOnly = false,
   selectAction = 'play',
 }: SongLibraryProps) {
-  const { t } = useTranslation('c-game');
-  const { t: ts } = useTranslation('r-slice-it');
-  const { data: session } = useSession();
-  const volume = useSliceItStore((s) => s.volume);
-  const musicVolume = useSliceItStore((s) => s.musicVolume);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-game',
+    );
+  const {
+    t: ts,
+  } =
+    useTranslation(
+      'r-slice-it',
+    );
+  const {
+    data: session,
+  } =
+    useSession();
+  const volume =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.volume,
+    );
+  const musicVolume =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s.musicVolume,
+    );
   // A phone gets one compact row — a search field and an options menu — in place of
   // the heading, the sort, the view toggle, the tool buttons and the artist chips.
-  const isPhone = useMediaQuery('(max-width: 639px)');
-  const [optionsOpen, setOptionsOpen] = React.useState(false);
-  const optionsRef = React.useRef<HTMLButtonElement>(null);
+  const isPhone =
+    useMediaQuery(
+      '(max-width: 639px)',
+    );
+  const [
+    optionsOpen,
+    setOptionsOpen,
+  ] =
+    React.useState(
+      false,
+    );
+  const optionsRef =
+    React.useRef<HTMLButtonElement>(
+      null,
+    );
 
   // The row's primary action, named for what it actually does here. In the solo
   // menu it opens the record (the sidebar, or the strip above the list on a
   // phone) and the run starts from there, so it says OPEN and is not a play glyph.
   const selectLabel =
-    selectAction === 'add'
-      ? ts('library-add', { defaultValue: 'ADD' })
-      : ts('library-open', { defaultValue: 'OPEN' });
-  const SelectIcon = selectAction === 'add' ? Plus : ChevronRight;
+    selectAction ===
+    'add'
+      ? ts(
+          'library-add',
+          {
+            defaultValue:
+              'ADD',
+          },
+        )
+      : ts(
+          'library-open',
+          {
+            defaultValue:
+              'OPEN',
+          },
+        );
+  const SelectIcon =
+    selectAction ===
+    'add'
+      ? Plus
+      : ChevronRight;
 
   /* ── Filters (L18): URL search params, not component state ─────────────── */
 
-  const navigate = useNavigate();
-  const rawSearch = useSearch({ strict: false });
-  const filters = React.useMemo(() => normalizeLibrarySearch(rawSearch), [rawSearch]);
+  const navigate =
+    useNavigate();
+  const rawSearch =
+    useSearch(
+      {
+        strict: false,
+      },
+    );
+  const filters =
+    React.useMemo(
+      () =>
+        normalizeLibrarySearch(
+          rawSearch,
+        ),
+      [
+        rawSearch,
+      ],
+    );
 
-  const setFilters = React.useCallback(
-    (patch: Partial<LibrarySearch>) => {
-      void navigate({
-        to: '/slice-it',
-        // A filter change is a refinement of the same view, not a new page —
-        // `replace` keeps the back button one press per *navigation*, not one
-        // press per sort click.
-        replace: true,
-        search: (prev: Record<string, unknown>) => ({ ...prev, ...patch }),
-      });
-    },
-    [navigate],
-  );
+  const setFilters =
+    React.useCallback(
+      (
+        patch: Partial<LibrarySearch>,
+      ) => {
+        void navigate(
+          {
+            to: '/slice-it',
+            // A filter change is a refinement of the same view, not a new page —
+            // `replace` keeps the back button one press per *navigation*, not one
+            // press per sort click.
+            replace: true,
+            search:
+              (
+                prev: Record<
+                  string,
+                  unknown
+                >,
+              ) => ({
+                ...prev,
+                ...patch,
+              }),
+          },
+        );
+      },
+      [
+        navigate,
+      ],
+    );
 
-  const [songs, setSongs] = React.useState<LibrarySong[]>([]);
-  const [nextCursor, setNextCursor] = React.useState<string | null>(null);
-  const [total, setTotal] = React.useState(0);
-  const [loading, setLoading] = React.useState(true);
+  const [
+    songs,
+    setSongs,
+  ] =
+    React.useState<
+      LibrarySong[]
+    >(
+      [],
+    );
+  const [
+    nextCursor,
+    setNextCursor,
+  ] =
+    React.useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const [
+    total,
+    setTotal,
+  ] =
+    React.useState(
+      0,
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    React.useState(
+      true,
+    );
 
-  const [uploadOpen, setUploadOpen] = React.useState(false);
-  const [packsOpen, setPacksOpen] = React.useState(false);
-  const [likingId, setLikingId] = React.useState<string | null>(null);
-  const [deleteId, setDeleteId] = React.useState<string | null>(null);
+  const [
+    uploadOpen,
+    setUploadOpen,
+  ] =
+    React.useState(
+      false,
+    );
+  const [
+    packsOpen,
+    setPacksOpen,
+  ] =
+    React.useState(
+      false,
+    );
+  const [
+    likingId,
+    setLikingId,
+  ] =
+    React.useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const [
+    deleteId,
+    setDeleteId,
+  ] =
+    React.useState<
+      | string
+      | null
+    >(
+      null,
+    );
 
   /* ── Search box: local keystrokes, debounced into the URL ──────────────── */
 
-  const [searchInput, setSearchInput] = React.useState(filters.q);
-  const lastPushedQ = React.useRef(filters.q);
+  const [
+    searchInput,
+    setSearchInput,
+  ] =
+    React.useState(
+      filters.q,
+    );
+  const lastPushedQ =
+    React.useRef(
+      filters.q,
+    );
 
   // Back/forward or a pasted link changes `filters.q` without going through
   // this component's own debounce below — keep the box in sync with those.
   React.useEffect(() => {
-    if (filters.q !== lastPushedQ.current) {
-      setSearchInput(filters.q);
-      lastPushedQ.current = filters.q;
+    if (
+      filters.q !==
+      lastPushedQ.current
+    ) {
+      setSearchInput(
+        filters.q,
+      );
+      lastPushedQ.current =
+        filters.q;
     }
-  }, [filters.q]);
+  }, [
+    filters.q,
+  ]);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      const trimmed = searchInput.trim();
-      if (trimmed === filters.q) return;
-      lastPushedQ.current = trimmed;
-      setFilters({ q: trimmed });
-    }, 250);
-    return () => clearTimeout(timer);
+    const timer =
+      setTimeout(
+        () => {
+          const trimmed =
+            searchInput.trim();
+          if (
+            trimmed ===
+            filters.q
+          )
+            return;
+          lastPushedQ.current =
+            trimmed;
+          setFilters(
+            {
+              q: trimmed,
+            },
+          );
+        },
+        250,
+      );
+    return () =>
+      clearTimeout(
+        timer,
+      );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `filters.q`/`setFilters` intentionally excluded: this timer reacts to typing, not to the URL it itself writes.
-  }, [searchInput]);
+  }, [
+    searchInput,
+  ]);
 
   /* ── Fetching ────────────────────────────────────────────────────────── */
 
-  const load = React.useCallback(
-    async (cursor: string | null, append: boolean) => {
-      setLoading(true);
-      try {
-        const page = await api(listLibrarySongsApi, {
-          query: {
-            sort: filters.sort,
-            ...(filters.dir ? { dir: filters.dir } : {}),
-            ...(filters.q ? { q: filters.q } : {}),
-            // L15 — the artist facet. A normalised key, never the display string:
-            // the whole point of the key is that this is an indexed equality
-            // filter rather than the substring search it replaces.
-            ...(filters.artist ? { artist: filters.artist } : {}),
-            ...(cursor ? { cursor } : {}),
-            // The table is scanned, not paged — a bigger page means fewer
-            // round-trips while scrolling instead of a "Load more" click.
-            ...(filters.view === 'table' ? { limit: SONGS_PAGE_SIZE_MAX } : {}),
-          },
-        });
+  const load =
+    React.useCallback(
+      async (
+        cursor:
+          | string
+          | null,
+        append: boolean,
+      ) => {
+        setLoading(
+          true,
+        );
+        try {
+          const page =
+            await api(
+              listLibrarySongsApi,
+              {
+                query:
+                  {
+                    sort: filters.sort,
+                    ...(filters.dir
+                      ? {
+                          dir: filters.dir,
+                        }
+                      : {}),
+                    ...(filters.q
+                      ? {
+                          q: filters.q,
+                        }
+                      : {}),
+                    // L15 — the artist facet. A normalised key, never the display string:
+                    // the whole point of the key is that this is an indexed equality
+                    // filter rather than the substring search it replaces.
+                    ...(filters.artist
+                      ? {
+                          artist:
+                            filters.artist,
+                        }
+                      : {}),
+                    ...(cursor
+                      ? {
+                          cursor,
+                        }
+                      : {}),
+                    // The table is scanned, not paged — a bigger page means fewer
+                    // round-trips while scrolling instead of a "Load more" click.
+                    ...(filters.view ===
+                    'table'
+                      ? {
+                          limit:
+                            SONGS_PAGE_SIZE_MAX,
+                        }
+                      : {}),
+                  },
+              },
+            );
 
-        setSongs((previous) => (append ? [...previous, ...page.songs] : page.songs));
-        setNextCursor(page.nextCursor);
-        // Only the first page carries a total; later pages of the same query
-        // would only recount the same rows, so the client keeps the number.
-        if (page.total !== undefined) setTotal(page.total);
-      } catch {
-        if (!append) setSongs([]);
-        toast.error(t('library-load-failed', { defaultValue: 'Could not load the song library.' }));
-      } finally {
-        setLoading(false);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` intentionally
-    // excluded. i18next hands back a NEW `t` identity every time a namespace
-    // finishes loading, and this callback is the dependency of the fetch effect
-    // below — so including it made the library fetch itself four times on a
-    // single page load, three of them for nothing. `t` is read only in the
-    // catch, where a one-render-stale translator is not a defect.
-    [filters.sort, filters.dir, filters.q, filters.artist, filters.view],
-  );
+          setSongs(
+            (
+              previous,
+            ) =>
+              append
+                ? [
+                    ...previous,
+                    ...page.songs,
+                  ]
+                : page.songs,
+          );
+          setNextCursor(
+            page.nextCursor,
+          );
+          // Only the first page carries a total; later pages of the same query
+          // would only recount the same rows, so the client keeps the number.
+          if (
+            page.total !==
+            undefined
+          )
+            setTotal(
+              page.total,
+            );
+        } catch {
+          if (
+            !append
+          )
+            setSongs(
+              [],
+            );
+          toast.error(
+            t(
+              'library-load-failed',
+              {
+                defaultValue:
+                  'Could not load the song library.',
+              },
+            ),
+          );
+        } finally {
+          setLoading(
+            false,
+          );
+        }
+      },
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` intentionally
+      // excluded. i18next hands back a NEW `t` identity every time a namespace
+      // finishes loading, and this callback is the dependency of the fetch effect
+      // below — so including it made the library fetch itself four times on a
+      // single page load, three of them for nothing. `t` is read only in the
+      // catch, where a one-render-stale translator is not a defect.
+      [
+        filters.sort,
+        filters.dir,
+        filters.q,
+        filters.artist,
+        filters.view,
+      ],
+    );
 
   React.useEffect(() => {
-    void load(null, false);
+    void load(
+      null,
+      false,
+    );
     // Re-fetches whenever the *server-relevant* filters change — `view` is
     // included because table view asks for a bigger page.
-  }, [load]);
+  }, [
+    load,
+  ]);
 
   /* ── O3: let a "Charting…" row resolve itself ───────────────────────────── */
 
@@ -302,20 +628,61 @@ export function SongLibrary({
   // So: back off, and give up. Ten attempts over about three minutes, then
   // stop and leave the badge — a reload picks it up, and a chart that has not
   // landed in three minutes is a worker problem that polling cannot fix.
-  const hasPending = songs.some((song) => rowChartState(song) === 'charting');
+  const hasPending =
+    songs.some(
+      (
+        song,
+      ) =>
+        rowChartState(
+          song,
+        ) ===
+        'charting',
+    );
   React.useEffect(() => {
-    if (!hasPending) return;
+    if (
+      !hasPending
+    )
+      return;
     let attempts = 0;
-    let timer: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      if (attempts >= 10) return;
-      attempts++;
-      void load(null, false);
-      timer = setTimeout(tick, Math.min(30_000, 5_000 * 1.5 ** attempts));
-    };
-    timer = setTimeout(tick, 5_000);
-    return () => clearTimeout(timer);
-  }, [hasPending, load]);
+    let timer: ReturnType<
+      typeof setTimeout
+    >;
+    const tick =
+      () => {
+        if (
+          attempts >=
+          10
+        )
+          return;
+        attempts++;
+        void load(
+          null,
+          false,
+        );
+        timer =
+          setTimeout(
+            tick,
+            Math.min(
+              30_000,
+              5_000 *
+                1.5 **
+                  attempts,
+            ),
+          );
+      };
+    timer =
+      setTimeout(
+        tick,
+        5_000,
+      );
+    return () =>
+      clearTimeout(
+        timer,
+      );
+  }, [
+    hasPending,
+    load,
+  ]);
 
   /* ── Artist facet (L15) ─────────────────────────────────────────────────── */
 
@@ -328,7 +695,15 @@ export function SongLibrary({
    * Fetched once per mount: the facet is viewer-independent and changes only on
    * upload, and the response is cacheable for exactly that reason.
    */
-  const [artistFacet, setArtistFacet] = React.useState<ArtistChip[]>([]);
+  const [
+    artistFacet,
+    setArtistFacet,
+  ] =
+    React.useState<
+      ArtistChip[]
+    >(
+      [],
+    );
   /**
    * Whether the facet request is still out.
    *
@@ -338,30 +713,74 @@ export function SongLibrary({
    * and the visible half of "the layout changes again and nothing lines up".
    * Reserving the row up front turns that into a fill-in.
    */
-  const [artistFacetLoading, setArtistFacetLoading] = React.useState(true);
+  const [
+    artistFacetLoading,
+    setArtistFacetLoading,
+  ] =
+    React.useState(
+      true,
+    );
 
   React.useEffect(() => {
     let cancelled = false;
-    api(listSliceArtistsApi, { query: { limit: 12 } })
-      .then((data) => {
-        if (!cancelled) setArtistFacet(data.artists);
-      })
-      .catch(() => {
-        // A missing facet is a missing row of chips, not a broken library.
-      })
-      .finally(() => {
-        if (!cancelled) setArtistFacetLoading(false);
-      });
+    api(
+      listSliceArtistsApi,
+      {
+        query:
+          {
+            limit: 12,
+          },
+      },
+    )
+      .then(
+        (
+          data,
+        ) => {
+          if (
+            !cancelled
+          )
+            setArtistFacet(
+              data.artists,
+            );
+        },
+      )
+      .catch(
+        () => {
+          // A missing facet is a missing row of chips, not a broken library.
+        },
+      )
+      .finally(
+        () => {
+          if (
+            !cancelled
+          )
+            setArtistFacetLoading(
+              false,
+            );
+        },
+      );
     return () => {
       cancelled = true;
     };
   }, []);
 
   /** The chip for the artist currently filtered on, when it is in the facet. */
-  const activeArtist = React.useMemo(
-    () => artistFacet.find((a) => a.key === filters.artist) ?? null,
-    [artistFacet, filters.artist],
-  );
+  const activeArtist =
+    React.useMemo(
+      () =>
+        artistFacet.find(
+          (
+            a,
+          ) =>
+            a.key ===
+            filters.artist,
+        ) ??
+        null,
+      [
+        artistFacet,
+        filters.artist,
+      ],
+    );
 
   /* ── Recently played shelf (L17) — removed ───────────────────────────────
    *
@@ -375,149 +794,408 @@ export function SongLibrary({
 
   /* ── Random / roulette (S9) ─────────────────────────────────────────────── */
 
-  const [randomOpen, setRandomOpen] = React.useState(false);
-  const [randomLoading, setRandomLoading] = React.useState(false);
-  const [randomConstraints, setRandomConstraints] = React.useState<RandomConstraints>(
-    DEFAULT_RANDOM_CONSTRAINTS,
-  );
+  const [
+    randomOpen,
+    setRandomOpen,
+  ] =
+    React.useState(
+      false,
+    );
+  const [
+    randomLoading,
+    setRandomLoading,
+  ] =
+    React.useState(
+      false,
+    );
+  const [
+    randomConstraints,
+    setRandomConstraints,
+  ] =
+    React.useState<RandomConstraints>(
+      DEFAULT_RANDOM_CONSTRAINTS,
+    );
 
-  const rollRandom = async () => {
-    setRandomLoading(true);
-    try {
-      const body = await api(randomSongApi, {
-        query: {
-          random: '1',
-          ...(randomConstraints.durationMin !== undefined
-            ? { durationMin: randomConstraints.durationMin }
-            : {}),
-          ...(randomConstraints.durationMax !== undefined
-            ? { durationMax: randomConstraints.durationMax }
-            : {}),
-          ...(randomConstraints.unplayedOnly ? { unplayedOnly: 'true' as const } : {}),
-          ...(randomConstraints.likedOnly ? { likedOnly: 'true' as const } : {}),
-        },
-      });
-      if (!body.song) {
-        toast.error(ts('random-no-match', { defaultValue: 'No song matches those constraints.' }));
-        return;
+  const rollRandom =
+    async () => {
+      setRandomLoading(
+        true,
+      );
+      try {
+        const body =
+          await api(
+            randomSongApi,
+            {
+              query:
+                {
+                  random:
+                    '1',
+                  ...(randomConstraints.durationMin !==
+                  undefined
+                    ? {
+                        durationMin:
+                          randomConstraints.durationMin,
+                      }
+                    : {}),
+                  ...(randomConstraints.durationMax !==
+                  undefined
+                    ? {
+                        durationMax:
+                          randomConstraints.durationMax,
+                      }
+                    : {}),
+                  ...(randomConstraints.unplayedOnly
+                    ? {
+                        unplayedOnly:
+                          'true' as const,
+                      }
+                    : {}),
+                  ...(randomConstraints.likedOnly
+                    ? {
+                        likedOnly:
+                          'true' as const,
+                      }
+                    : {}),
+                },
+            },
+          );
+        if (
+          !body.song
+        ) {
+          toast.error(
+            ts(
+              'random-no-match',
+              {
+                defaultValue:
+                  'No song matches those constraints.',
+              },
+            ),
+          );
+          return;
+        }
+        setRandomOpen(
+          false,
+        );
+        onHighlight(
+          body.song,
+        );
+      } catch {
+        toast.error(
+          ts(
+            'random-failed',
+            {
+              defaultValue:
+                'Could not pick a random song.',
+            },
+          ),
+        );
+      } finally {
+        setRandomLoading(
+          false,
+        );
       }
-      setRandomOpen(false);
-      onHighlight(body.song);
-    } catch {
-      toast.error(ts('random-failed', { defaultValue: 'Could not pick a random song.' }));
-    } finally {
-      setRandomLoading(false);
-    }
-  };
+    };
 
   /* ── Preview playback ────────────────────────────────────────────────── */
 
-  const previewRef = React.useRef<HTMLAudioElement | null>(null);
-  const [previewId, setPreviewId] = React.useState<string | null>(null);
+  const previewRef =
+    React.useRef<HTMLAudioElement | null>(
+      null,
+    );
+  const [
+    previewId,
+    setPreviewId,
+  ] =
+    React.useState<
+      | string
+      | null
+    >(
+      null,
+    );
 
-  const stopPreview = React.useCallback(() => {
-    previewRef.current?.pause();
-    previewRef.current = null;
-    setPreviewId(null);
-  }, []);
+  const stopPreview =
+    React.useCallback(() => {
+      previewRef.current?.pause();
+      previewRef.current =
+        null;
+      setPreviewId(
+        null,
+      );
+    }, []);
 
   React.useEffect(() => {
-    if (!onStopPreviewRef) return;
-    onStopPreviewRef.current = stopPreview;
+    if (
+      !onStopPreviewRef
+    )
+      return;
+    onStopPreviewRef.current =
+      stopPreview;
     return () => {
-      onStopPreviewRef.current = null;
+      onStopPreviewRef.current =
+        null;
     };
-  }, [stopPreview, onStopPreviewRef]);
+  }, [
+    stopPreview,
+    onStopPreviewRef,
+  ]);
 
   React.useEffect(() => {
-    const onHidden = () => {
-      if (document.hidden) stopPreview();
-    };
-    document.addEventListener('visibilitychange', onHidden);
+    const onHidden =
+      () => {
+        if (
+          document.hidden
+        )
+          stopPreview();
+      };
+    document.addEventListener(
+      'visibilitychange',
+      onHidden,
+    );
     // Unmount must stop the audio too — a preview left playing over the
     // gameplay music was the single most reported bug in this screen.
     return () => {
-      document.removeEventListener('visibilitychange', onHidden);
+      document.removeEventListener(
+        'visibilitychange',
+        onHidden,
+      );
       previewRef.current?.pause();
-      previewRef.current = null;
+      previewRef.current =
+        null;
     };
-  }, [stopPreview]);
+  }, [
+    stopPreview,
+  ]);
 
   React.useEffect(() => {
-    if (previewRef.current) previewRef.current.volume = musicGain(volume, musicVolume);
-  }, [volume, musicVolume]);
+    if (
+      previewRef.current
+    )
+      previewRef.current.volume =
+        musicGain(
+          volume,
+          musicVolume,
+        );
+  }, [
+    volume,
+    musicVolume,
+  ]);
 
-  const togglePreview = (song: SliceSong) => {
-    if (previewId === song.id && previewRef.current) {
-      if (previewRef.current.paused) void previewRef.current.play();
-      else previewRef.current.pause();
-      // Re-render so the icon flips.
-      setPreviewId((id) => id);
-      return;
-    }
-    previewRef.current?.pause();
-
-    // C7 — start at the song's preview point rather than at 0. Previewing the
-    // first 20 seconds of a track is previewing its intro, which is the part
-    // least likely to tell anyone whether they want to play it.
-    //
-    // The `#t=` media fragment rather than a `currentTime` seek: the fragment
-    // is part of the URL, so the browser issues ONE range request for the bytes
-    // it needs instead of fetching the head of the file and seeking into it.
-    // That is what makes previewing a 6 MB track affordable at all.
-    const start = song.previewStart ?? 0;
-    const audio = new Audio(previewFragment(song.audioUrl, start));
-    audio.volume = musicGain(volume, musicVolume);
-    audio.onended = () => setPreviewId(null);
-    // The fragment's END bound is honoured inconsistently across browsers, so
-    // the stop is enforced here too. Without it a preview on an engine that
-    // ignores it plays the rest of the song.
-    audio.ontimeupdate = () => {
-      if (audio.currentTime >= start + PREVIEW_SECONDS) {
-        audio.pause();
-        setPreviewId(null);
+  const togglePreview =
+    (
+      song: SliceSong,
+    ) => {
+      if (
+        previewId ===
+          song.id &&
+        previewRef.current
+      ) {
+        if (
+          previewRef
+            .current
+            .paused
+        )
+          void previewRef.current.play();
+        else
+          previewRef.current.pause();
+        // Re-render so the icon flips.
+        setPreviewId(
+          (
+            id,
+          ) =>
+            id,
+        );
+        return;
       }
+      previewRef.current?.pause();
+
+      // C7 — start at the song's preview point rather than at 0. Previewing the
+      // first 20 seconds of a track is previewing its intro, which is the part
+      // least likely to tell anyone whether they want to play it.
+      //
+      // The `#t=` media fragment rather than a `currentTime` seek: the fragment
+      // is part of the URL, so the browser issues ONE range request for the bytes
+      // it needs instead of fetching the head of the file and seeking into it.
+      // That is what makes previewing a 6 MB track affordable at all.
+      const start =
+        song.previewStart ??
+        0;
+      const audio =
+        new Audio(
+          previewFragment(
+            song.audioUrl,
+            start,
+          ),
+        );
+      audio.volume =
+        musicGain(
+          volume,
+          musicVolume,
+        );
+      audio.onended =
+        () =>
+          setPreviewId(
+            null,
+          );
+      // The fragment's END bound is honoured inconsistently across browsers, so
+      // the stop is enforced here too. Without it a preview on an engine that
+      // ignores it plays the rest of the song.
+      audio.ontimeupdate =
+        () => {
+          if (
+            audio.currentTime >=
+            start +
+              PREVIEW_SECONDS
+          ) {
+            audio.pause();
+            setPreviewId(
+              null,
+            );
+          }
+        };
+      void audio
+        .play()
+        .catch(
+          () =>
+            setPreviewId(
+              null,
+            ),
+        );
+      previewRef.current =
+        audio;
+      setPreviewId(
+        song.id,
+      );
     };
-    void audio.play().catch(() => setPreviewId(null));
-    previewRef.current = audio;
-    setPreviewId(song.id);
-  };
 
   /* ── Mutations ───────────────────────────────────────────────────────── */
 
-  const handleLike = async (event: React.MouseEvent, song: SliceSong) => {
-    event.stopPropagation();
-    if (!session || likingId) return;
-    setLikingId(song.id);
-    try {
-      const body = await api(toggleSongLikeApi, { params: { id: song.id } });
-      // The server returns the resulting count; the old client incremented its
-      // own copy and drifted from the truth on every concurrent like.
-      setSongs((previous) =>
-        previous.map((s) =>
-          s.id === song.id ? { ...s, isLiked: body.liked, likeCount: body.likeCount } : s,
-        ),
+  const handleLike =
+    async (
+      event: React.MouseEvent,
+      song: SliceSong,
+    ) => {
+      event.stopPropagation();
+      if (
+        !session ||
+        likingId
+      )
+        return;
+      setLikingId(
+        song.id,
       );
-    } catch {
-      toast.error(t('like-failed', { defaultValue: 'Could not update that like.' }));
-    } finally {
-      setLikingId(null);
-    }
-  };
+      try {
+        const body =
+          await api(
+            toggleSongLikeApi,
+            {
+              params:
+                {
+                  id: song.id,
+                },
+            },
+          );
+        // The server returns the resulting count; the old client incremented its
+        // own copy and drifted from the truth on every concurrent like.
+        setSongs(
+          (
+            previous,
+          ) =>
+            previous.map(
+              (
+                s,
+              ) =>
+                s.id ===
+                song.id
+                  ? {
+                      ...s,
+                      isLiked:
+                        body.liked,
+                      likeCount:
+                        body.likeCount,
+                    }
+                  : s,
+            ),
+        );
+      } catch {
+        toast.error(
+          t(
+            'like-failed',
+            {
+              defaultValue:
+                'Could not update that like.',
+            },
+          ),
+        );
+      } finally {
+        setLikingId(
+          null,
+        );
+      }
+    };
 
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    try {
-      await api(deleteSongApi, { params: { id: deleteId } });
-      setSongs((previous) => previous.filter((s) => s.id !== deleteId));
-      setTotal((n) => Math.max(0, n - 1));
-      toast.success(t('delete-success', { defaultValue: 'Track purged from system library' }));
-    } catch {
-      toast.error(t('delete-failed', { defaultValue: 'Failure: Could not delete track.' }));
-    } finally {
-      setDeleteId(null);
-    }
-  };
+  const confirmDelete =
+    async () => {
+      if (
+        !deleteId
+      )
+        return;
+      try {
+        await api(
+          deleteSongApi,
+          {
+            params:
+              {
+                id: deleteId,
+              },
+          },
+        );
+        setSongs(
+          (
+            previous,
+          ) =>
+            previous.filter(
+              (
+                s,
+              ) =>
+                s.id !==
+                deleteId,
+            ),
+        );
+        setTotal(
+          (
+            n,
+          ) =>
+            Math.max(
+              0,
+              n -
+                1,
+            ),
+        );
+        toast.success(
+          t(
+            'delete-success',
+            {
+              defaultValue:
+                'Track purged from system library',
+            },
+          ),
+        );
+      } catch {
+        toast.error(
+          t(
+            'delete-failed',
+            {
+              defaultValue:
+                'Failure: Could not delete track.',
+            },
+          ),
+        );
+      } finally {
+        setDeleteId(
+          null,
+        );
+      }
+    };
 
   /* ── View toggle + sort handling ────────────────────────────────────────── */
 
@@ -525,39 +1203,139 @@ export function SongLibrary({
   // views. "Load more" is disabled alongside it: that button pages the filter
   // query's cursor, and pressing it here would append page two of a different
   // search onto these results.
-  const visibleSongs = songs;
+  const visibleSongs =
+    songs;
   // M9: the first page replaces the skeleton rows and fades in; a later page fades in row by row.
   // A load-more keeps the rows on screen, so only an empty list waiting for a page counts as loading.
-  const listArrival = useArrival(visibleSongs.length > 0 || !loading);
-  const isNewSong = useArrivingKeys(visibleSongs.map((s) => s.id));
-  const facetArrival = useArrival(!(artistFacetLoading && artistFacet.length === 0));
+  const listArrival =
+    useArrival(
+      visibleSongs.length >
+        0 ||
+        !loading,
+    );
+  const isNewSong =
+    useArrivingKeys(
+      visibleSongs.map(
+        (
+          s,
+        ) =>
+          s.id,
+      ),
+    );
+  const facetArrival =
+    useArrival(
+      !(
+        artistFacetLoading &&
+        artistFacet.length ===
+          0
+      ),
+    );
 
-  const viewTabs: TabItem[] = [
-    { id: 'grid', label: ts('view-grid', { defaultValue: 'Grid' }), icon: LayoutGrid },
-    { id: 'table', label: ts('view-table', { defaultValue: 'Table' }), icon: Table2 },
-  ];
+  const viewTabs: TabItem[] =
+    [
+      {
+        id: 'grid',
+        label:
+          ts(
+            'view-grid',
+            {
+              defaultValue:
+                'Grid',
+            },
+          ),
+        icon: LayoutGrid,
+      },
+      {
+        id: 'table',
+        label:
+          ts(
+            'view-table',
+            {
+              defaultValue:
+                'Table',
+            },
+          ),
+        icon: Table2,
+      },
+    ];
 
-  const handleViewChange = (next: string) => {
-    if (next !== 'grid' && next !== 'table') return;
-    // The grid's dropdown only ever offered the five base sorts — switching
-    // back to it while a table-only column (e.g. `bpm`) is active would leave
-    // the `<select>` with nothing matching, so land it back on `recent`.
-    const gridCompatible = (SONG_SORTS as readonly string[]).includes(filters.sort);
-    if (next === 'grid' && !gridCompatible) {
-      setFilters({ view: next, sort: 'recent', dir: undefined });
-    } else {
-      setFilters({ view: next });
-    }
-  };
+  const handleViewChange =
+    (
+      next: string,
+    ) => {
+      if (
+        next !==
+          'grid' &&
+        next !==
+          'table'
+      )
+        return;
+      // The grid's dropdown only ever offered the five base sorts — switching
+      // back to it while a table-only column (e.g. `bpm`) is active would leave
+      // the `<select>` with nothing matching, so land it back on `recent`.
+      const gridCompatible =
+        (
+          SONG_SORTS as readonly string[]
+        ).includes(
+          filters.sort,
+        );
+      if (
+        next ===
+          'grid' &&
+        !gridCompatible
+      ) {
+        setFilters(
+          {
+            view: next,
+            sort: 'recent',
+            dir: undefined,
+          },
+        );
+      } else {
+        setFilters(
+          {
+            view: next,
+          },
+        );
+      }
+    };
 
-  const handleTableSort = (column: LibrarySort) => {
-    if (filters.sort === column) {
-      setFilters({ dir: filters.dir === 'asc' ? 'desc' : 'asc' });
-      return;
-    }
-    const col = LIBRARY_TABLE_COLUMNS.find((c) => c.key === column);
-    setFilters({ sort: column, dir: col?.defaultDir ?? 'asc' });
-  };
+  const handleTableSort =
+    (
+      column: LibrarySort,
+    ) => {
+      if (
+        filters.sort ===
+        column
+      ) {
+        setFilters(
+          {
+            dir:
+              filters.dir ===
+              'asc'
+                ? 'desc'
+                : 'asc',
+          },
+        );
+        return;
+      }
+      const col =
+        LIBRARY_TABLE_COLUMNS.find(
+          (
+            c,
+          ) =>
+            c.key ===
+            column,
+        );
+      setFilters(
+        {
+          sort: column,
+          dir:
+            col?.defaultDir ??
+            'asc',
+        },
+      );
+    };
 
   /* ── Render ──────────────────────────────────────────────────────────── */
 
@@ -576,197 +1354,503 @@ export function SongLibrary({
    * nesting that inside a second scroller gives two scrollbars and a header
    * that sticks to the wrong box.
    */
-  const scrollsAsOneColumn = filters.view !== 'table';
+  const scrollsAsOneColumn =
+    filters.view !==
+    'table';
 
   /* The three dialogs the toolbar opens. Controlled, with the trigger optional: the
      wide toolbar passes its icon button, the phone's options menu passes none and
      opens them from state — one body of content for both. */
-  const randomDialog = (trigger?: React.ReactNode) => (
-    <Dialog open={randomOpen} onOpenChange={setRandomOpen}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="text-slice-text font-black">
-            {ts('random-title', { defaultValue: 'Surprise Me' })}
-          </DialogTitle>
-        </DialogHeader>
-        <RandomForm
-          constraints={randomConstraints}
-          onChange={setRandomConstraints}
-          onSubmit={() => void rollRandom()}
-          loading={randomLoading}
-          authed={Boolean(session)}
-        />
-      </DialogContent>
-    </Dialog>
-  );
+  const randomDialog =
+    (
+      trigger?: React.ReactNode,
+    ) => (
+      <Dialog
+        open={
+          randomOpen
+        }
+        onOpenChange={
+          setRandomOpen
+        }
+      >
+        {trigger && (
+          <DialogTrigger
+            asChild
+          >
+            {
+              trigger
+            }
+          </DialogTrigger>
+        )}
+        <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-slice-text font-black">
+              {ts(
+                'random-title',
+                {
+                  defaultValue:
+                    'Surprise Me',
+                },
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <RandomForm
+            constraints={
+              randomConstraints
+            }
+            onChange={
+              setRandomConstraints
+            }
+            onSubmit={() =>
+              void rollRandom()
+            }
+            loading={
+              randomLoading
+            }
+            authed={Boolean(
+              session,
+            )}
+          />
+        </DialogContent>
+      </Dialog>
+    );
 
-  const packsDialog = (trigger?: React.ReactNode) => (
-    <Dialog open={packsOpen} onOpenChange={setPacksOpen}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="text-slice-text font-black">
-            {ts('packs-title', { defaultValue: 'Packs' })}
-          </DialogTitle>
-        </DialogHeader>
-        <PackPanel />
-      </DialogContent>
-    </Dialog>
-  );
+  const packsDialog =
+    (
+      trigger?: React.ReactNode,
+    ) => (
+      <Dialog
+        open={
+          packsOpen
+        }
+        onOpenChange={
+          setPacksOpen
+        }
+      >
+        {trigger && (
+          <DialogTrigger
+            asChild
+          >
+            {
+              trigger
+            }
+          </DialogTrigger>
+        )}
+        <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-slice-text font-black">
+              {ts(
+                'packs-title',
+                {
+                  defaultValue:
+                    'Packs',
+                },
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <PackPanel />
+        </DialogContent>
+      </Dialog>
+    );
 
-  const uploadDialog = (trigger?: React.ReactNode) => (
-    <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="text-slice-text font-black">
-            {t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
-          </DialogTitle>
-        </DialogHeader>
-        <UploadForm
-          onDone={() => {
-            setUploadOpen(false);
-            void load(null, false);
-          }}
-        />
-      </DialogContent>
-    </Dialog>
-  );
+  const uploadDialog =
+    (
+      trigger?: React.ReactNode,
+    ) => (
+      <Dialog
+        open={
+          uploadOpen
+        }
+        onOpenChange={
+          setUploadOpen
+        }
+      >
+        {trigger && (
+          <DialogTrigger
+            asChild
+          >
+            {
+              trigger
+            }
+          </DialogTrigger>
+        )}
+        <DialogContent className="slice-tokens bg-slice-bg text-slice-text border-none rounded-2xl max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-slice-text font-black">
+              {t(
+                'upload-track-title',
+                {
+                  defaultValue:
+                    'UPLOAD TRACK',
+                },
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <UploadForm
+            onDone={() => {
+              setUploadOpen(
+                false,
+              );
+              void load(
+                null,
+                false,
+              );
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    );
 
   /**
    * Open a dialog from a menu row. Not in the same tick: the menu hands focus back
    * to its button as it closes, and a dialog that has just opened treats focus
    * leaving it as a dismissal — so it would open and shut in one breath.
    */
-  const openFromMenu = (open: () => void) => {
-    setOptionsOpen(false);
-    window.setTimeout(open, 80);
-  };
+  const openFromMenu =
+    (
+      open: () => void,
+    ) => {
+      setOptionsOpen(
+        false,
+      );
+      window.setTimeout(
+        open,
+        80,
+      );
+    };
 
   /** The phone's compact row, and the menu that holds everything it replaced. */
-  const phoneToolbar = (
-    <div
-      className={`flex items-center gap-2 shrink-0 px-3 py-2 border-b border-slice-shadow-dark/50 bg-slice-bg ${
-        scrollsAsOneColumn ? 'sm:sticky sm:top-0 sm:z-20' : ''
-      }`}
-    >
-      <div className="relative min-w-0 flex-1">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
-          aria-hidden
-        />
-        <Input
-          placeholder={t('search-tracks', { defaultValue: 'Search {{count}} tracks…', count: total })}
-          className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-10 text-sm text-slice-text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          aria-label={t('search-placeholder', { defaultValue: 'Search songs, artists...' })}
-        />
-      </div>
-      <button
-        ref={optionsRef}
-        type="button"
-        className="slice-opt"
-        aria-haspopup="menu"
-        aria-expanded={optionsOpen}
-        aria-label={t('library-options', { defaultValue: 'Library options' })}
-        onClick={() => setOptionsOpen((open) => !open)}
+  const phoneToolbar =
+    (
+      <div
+        className={`flex items-center gap-2 shrink-0 px-3 py-2 border-b border-slice-shadow-dark/50 bg-slice-bg ${
+          scrollsAsOneColumn
+            ? 'sm:sticky sm:top-0 sm:z-20'
+            : ''
+        }`}
       >
-        <SlidersHorizontal className="size-5" aria-hidden />
-        {(Boolean(filters.artist) || filters.sort !== 'recent' || filters.view !== 'grid') && (
-          <span className="slice-opt__dot" aria-hidden />
-        )}
-      </button>
-      <AnchoredMenu
-        open={optionsOpen}
-        onClose={() => setOptionsOpen(false)}
-        anchorRef={optionsRef}
-        label={t('library-options', { defaultValue: 'Library options' })}
-        className="slice-tokens slice-menu-panel w-64"
-      >
-        <MenuLabel>{t('sort-by', { defaultValue: 'Sort by' })}</MenuLabel>
-        {SONG_SORTS.map((option) => (
-          <MenuItem
-            key={option}
-            checked={filters.view === 'grid' && filters.sort === option}
-            onSelect={() => {
-              setFilters({ sort: option as SongSort, dir: undefined, view: 'grid' });
-              setOptionsOpen(false);
-            }}
-          >
-            {sortLabel(option, t)}
-          </MenuItem>
-        ))}
-        <MenuSeparator />
-        <MenuLabel>{ts('view-toggle', { defaultValue: 'Library view' })}</MenuLabel>
-        {viewTabs.map((tab) => (
-          <MenuItem
-            key={tab.id}
-            icon={tab.icon}
-            checked={filters.view === tab.id}
-            onSelect={() => {
-              handleViewChange(tab.id);
-              setOptionsOpen(false);
-            }}
-          >
-            {tab.label}
-          </MenuItem>
-        ))}
-        {!readOnly && (
-          <>
-            <MenuSeparator />
-            <MenuItem
-              icon={Shuffle}
-              onSelect={() => openFromMenu(() => setRandomOpen(true))}
-            >
-              {ts('random-title', { defaultValue: 'Surprise Me' })}
-            </MenuItem>
-            {session && (
-              <MenuItem
-                icon={Layers}
-                onSelect={() => openFromMenu(() => setPacksOpen(true))}
-              >
-                {ts('packs-title', { defaultValue: 'Packs' })}
-              </MenuItem>
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
+            aria-hidden
+          />
+          <Input
+            placeholder={t(
+              'search-tracks',
+              {
+                defaultValue:
+                  'Search {{count}} tracks…',
+                count:
+                  total,
+              },
             )}
-            {session && (
-              <MenuItem
-                icon={Upload}
-                onSelect={() => openFromMenu(() => setUploadOpen(true))}
-              >
-                {t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
-              </MenuItem>
+            className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-10 text-sm text-slice-text"
+            value={
+              searchInput
+            }
+            onChange={(
+              e,
+            ) =>
+              setSearchInput(
+                e
+                  .target
+                  .value,
+              )
+            }
+            aria-label={t(
+              'search-placeholder',
+              {
+                defaultValue:
+                  'Search songs, artists...',
+              },
             )}
-          </>
-        )}
-        {artistFacet.length > 0 && (
-          <>
-            <MenuSeparator />
-            <MenuLabel>{ts('filtered-by-artist', { defaultValue: 'Artist' })}</MenuLabel>
-            {artistFacet.slice(0, 12).map((artist) => (
+          />
+        </div>
+        <button
+          ref={
+            optionsRef
+          }
+          type="button"
+          className="slice-opt"
+          aria-haspopup="menu"
+          aria-expanded={
+            optionsOpen
+          }
+          aria-label={t(
+            'library-options',
+            {
+              defaultValue:
+                'Library options',
+            },
+          )}
+          onClick={() =>
+            setOptionsOpen(
+              (
+                open,
+              ) =>
+                !open,
+            )
+          }
+        >
+          <SlidersHorizontal
+            className="size-5"
+            aria-hidden
+          />
+          {(Boolean(
+            filters.artist,
+          ) ||
+            filters.sort !==
+              'recent' ||
+            filters.view !==
+              'grid') && (
+            <span
+              className="slice-opt__dot"
+              aria-hidden
+            />
+          )}
+        </button>
+        <AnchoredMenu
+          open={
+            optionsOpen
+          }
+          onClose={() =>
+            setOptionsOpen(
+              false,
+            )
+          }
+          anchorRef={
+            optionsRef
+          }
+          label={t(
+            'library-options',
+            {
+              defaultValue:
+                'Library options',
+            },
+          )}
+          className="slice-tokens slice-menu-panel w-64"
+        >
+          <MenuLabel>
+            {t(
+              'sort-by',
+              {
+                defaultValue:
+                  'Sort by',
+              },
+            )}
+          </MenuLabel>
+          {SONG_SORTS.map(
+            (
+              option,
+            ) => (
               <MenuItem
-                key={artist.key}
-                checked={filters.artist === artist.key}
-                hint={artist.songCount}
+                key={
+                  option
+                }
+                checked={
+                  filters.view ===
+                    'grid' &&
+                  filters.sort ===
+                    option
+                }
                 onSelect={() => {
-                  setFilters({ artist: filters.artist === artist.key ? undefined : artist.key });
-                  setOptionsOpen(false);
+                  setFilters(
+                    {
+                      sort: option as SongSort,
+                      dir: undefined,
+                      view: 'grid',
+                    },
+                  );
+                  setOptionsOpen(
+                    false,
+                  );
                 }}
               >
-                {artist.display}
+                {sortLabel(
+                  option,
+                  t,
+                )}
               </MenuItem>
-            ))}
-          </>
-        )}
-      </AnchoredMenu>
-    </div>
-  );
+            ),
+          )}
+          <MenuSeparator />
+          <MenuLabel>
+            {ts(
+              'view-toggle',
+              {
+                defaultValue:
+                  'Library view',
+              },
+            )}
+          </MenuLabel>
+          {viewTabs.map(
+            (
+              tab,
+            ) => (
+              <MenuItem
+                key={
+                  tab.id
+                }
+                icon={
+                  tab.icon
+                }
+                checked={
+                  filters.view ===
+                  tab.id
+                }
+                onSelect={() => {
+                  handleViewChange(
+                    tab.id,
+                  );
+                  setOptionsOpen(
+                    false,
+                  );
+                }}
+              >
+                {
+                  tab.label
+                }
+              </MenuItem>
+            ),
+          )}
+          {!readOnly && (
+            <>
+              <MenuSeparator />
+              <MenuItem
+                icon={
+                  Shuffle
+                }
+                onSelect={() =>
+                  openFromMenu(
+                    () =>
+                      setRandomOpen(
+                        true,
+                      ),
+                  )
+                }
+              >
+                {ts(
+                  'random-title',
+                  {
+                    defaultValue:
+                      'Surprise Me',
+                  },
+                )}
+              </MenuItem>
+              {session && (
+                <MenuItem
+                  icon={
+                    Layers
+                  }
+                  onSelect={() =>
+                    openFromMenu(
+                      () =>
+                        setPacksOpen(
+                          true,
+                        ),
+                    )
+                  }
+                >
+                  {ts(
+                    'packs-title',
+                    {
+                      defaultValue:
+                        'Packs',
+                    },
+                  )}
+                </MenuItem>
+              )}
+              {session && (
+                <MenuItem
+                  icon={
+                    Upload
+                  }
+                  onSelect={() =>
+                    openFromMenu(
+                      () =>
+                        setUploadOpen(
+                          true,
+                        ),
+                    )
+                  }
+                >
+                  {t(
+                    'upload-track-title',
+                    {
+                      defaultValue:
+                        'UPLOAD TRACK',
+                    },
+                  )}
+                </MenuItem>
+              )}
+            </>
+          )}
+          {artistFacet.length >
+            0 && (
+            <>
+              <MenuSeparator />
+              <MenuLabel>
+                {ts(
+                  'filtered-by-artist',
+                  {
+                    defaultValue:
+                      'Artist',
+                  },
+                )}
+              </MenuLabel>
+              {artistFacet
+                .slice(
+                  0,
+                  12,
+                )
+                .map(
+                  (
+                    artist,
+                  ) => (
+                    <MenuItem
+                      key={
+                        artist.key
+                      }
+                      checked={
+                        filters.artist ===
+                        artist.key
+                      }
+                      hint={
+                        artist.songCount
+                      }
+                      onSelect={() => {
+                        setFilters(
+                          {
+                            artist:
+                              filters.artist ===
+                              artist.key
+                                ? undefined
+                                : artist.key,
+                          },
+                        );
+                        setOptionsOpen(
+                          false,
+                        );
+                      }}
+                    >
+                      {
+                        artist.display
+                      }
+                    </MenuItem>
+                  ),
+                )}
+            </>
+          )}
+        </AnchoredMenu>
+      </div>
+    );
 
   return (
     <div
       className={`slice-lib w-full h-full bg-slice-bg flex flex-col ${
-        scrollsAsOneColumn ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden'
+        scrollsAsOneColumn
+          ? 'overflow-y-auto overscroll-contain'
+          : 'overflow-hidden'
       }`}
     >
       {/* Sticky only in the scrolling arrangement: the search box, the sort and
@@ -776,54 +1860,114 @@ export function SongLibrary({
       {isPhone ? (
         phoneToolbar
       ) : (
-      <div
-        className={`flex flex-wrap gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50 bg-slice-bg ${
-          scrollsAsOneColumn ? 'sm:sticky sm:top-0 sm:z-20' : ''
-        }`}
-      >
-        <div className="relative flex-1 min-w-[10rem]">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
-            aria-hidden
-          />
-          {/* `pointer-coarse:h-11` rather than `.touch-target`: that utility
+        <div
+          className={`flex flex-wrap gap-2 items-center shrink-0 p-3 border-b border-slice-shadow-dark/50 bg-slice-bg ${
+            scrollsAsOneColumn
+              ? 'sm:sticky sm:top-0 sm:z-20'
+              : ''
+          }`}
+        >
+          <div className="relative flex-1 min-w-[10rem]">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4"
+              aria-hidden
+            />
+            {/* `pointer-coarse:h-11` rather than `.touch-target`: that utility
               grows the hit area with an `::after`, and neither a replaced
               `<input>` nor a `<select>` renders one. These two controls can be
               44px, so on a coarse pointer they are. */}
-          <Input
-            placeholder={t('search-tracks', { defaultValue: 'Search {{count}} tracks…', count: total })}
-            className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-9 pointer-coarse:h-11 text-sm text-slice-text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            aria-label={t('search-placeholder', { defaultValue: 'Search songs, artists...' })}
-          />
-        </div>
+            <Input
+              placeholder={t(
+                'search-tracks',
+                {
+                  defaultValue:
+                    'Search {{count}} tracks…',
+                  count:
+                    total,
+                },
+              )}
+              className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-9 pointer-coarse:h-11 text-sm text-slice-text"
+              value={
+                searchInput
+              }
+              onChange={(
+                e,
+              ) =>
+                setSearchInput(
+                  e
+                    .target
+                    .value,
+                )
+              }
+              aria-label={t(
+                'search-placeholder',
+                {
+                  defaultValue:
+                    'Search songs, artists...',
+                },
+              )}
+            />
+          </div>
 
-        {filters.view === 'grid' && (
-          /* The shared `Select`, on its new `slice` tier — not a bare
+          {filters.view ===
+            'grid' && (
+            /* The shared `Select`, on its new `slice` tier — not a bare
              `<select>`. A native one renders the OS's own dropdown: unstyled,
              unanimated, and in the platform's palette rather than the game's,
              which is the one control on this row that looked like it belonged
              to a different application. The tier portals its popup inside
              `.slice-theme` so the neumorphic tokens resolve; see
              `ui/select.tsx`. */
-          <Select
-            tier="slice"
-            value={filters.sort}
-            onChange={(e) => setFilters({ sort: e.target.value as SongSort, dir: undefined })}
-            className="h-9 pointer-coarse:h-11 text-xs font-bold"
-            containerClassName="shrink-0 w-32"
-            aria-label={t('sort-by', { defaultValue: 'Sort by' })}
-          >
-            {SONG_SORTS.map((option) => (
-              <option key={option} value={option}>
-                {sortLabel(option, t)}
-              </option>
-            ))}
-          </Select>
-        )}
+            <Select
+              tier="slice"
+              value={
+                filters.sort
+              }
+              onChange={(
+                e,
+              ) =>
+                setFilters(
+                  {
+                    sort: e
+                      .target
+                      .value as SongSort,
+                    dir: undefined,
+                  },
+                )
+              }
+              className="h-9 pointer-coarse:h-11 text-xs font-bold"
+              containerClassName="shrink-0 w-32"
+              aria-label={t(
+                'sort-by',
+                {
+                  defaultValue:
+                    'Sort by',
+                },
+              )}
+            >
+              {SONG_SORTS.map(
+                (
+                  option,
+                ) => (
+                  <option
+                    key={
+                      option
+                    }
+                    value={
+                      option
+                    }
+                  >
+                    {sortLabel(
+                      option,
+                      t,
+                    )}
+                  </option>
+                ),
+              )}
+            </Select>
+          )}
 
-        {/* L13 — grid/table view toggle. `Tabs` (not a hand-rolled
+          {/* L13 — grid/table view toggle. `Tabs` (not a hand-rolled
             toggle group) sitting in a `.neumorphic-inset` well, the same
             neumorphic-treatment-around-a-sanctioned-primitive pattern
             `editor/DifficultyTabs.tsx` uses for its difficulty strip.
@@ -838,116 +1982,216 @@ export function SongLibrary({
             Dropping the width entirely is not the fix either: the grid sizes
             from the well and the well from its content, and that circularity
             collapses the track to a single 53px column. */}
-        <div className="neumorphic-inset shrink-0 w-[11.75rem] p-1">
-          <Tabs
-            tabs={viewTabs}
-            value={filters.view}
-            onChange={handleViewChange}
-            size="sm"
-            sheet={false}
-            aria-label={ts('view-toggle', { defaultValue: 'Library view' })}
-          />
-        </div>
+          <div className="neumorphic-inset shrink-0 w-[11.75rem] p-1">
+            <Tabs
+              tabs={
+                viewTabs
+              }
+              value={
+                filters.view
+              }
+              onChange={
+                handleViewChange
+              }
+              size="sm"
+              sheet={
+                false
+              }
+              aria-label={ts(
+                'view-toggle',
+                {
+                  defaultValue:
+                    'Library view',
+                },
+              )}
+            />
+          </div>
 
-        {!readOnly &&
-          randomDialog(
-            <Button
-              variant="default"
-              className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg p-0 touch-target"
-              aria-label={ts('random-button', { defaultValue: 'Pick a random song' })}
-              title={ts('random-button', { defaultValue: 'Pick a random song' })}
-            >
-              <Shuffle className="w-4 h-4" aria-hidden />
-            </Button>,
-          )}
+          {!readOnly &&
+            randomDialog(
+              <Button
+                variant="default"
+                className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg p-0 touch-target"
+                aria-label={ts(
+                  'random-button',
+                  {
+                    defaultValue:
+                      'Pick a random song',
+                  },
+                )}
+                title={ts(
+                  'random-button',
+                  {
+                    defaultValue:
+                      'Pick a random song',
+                  },
+                )}
+              >
+                <Shuffle
+                  className="w-4 h-4"
+                  aria-hidden
+                />
+              </Button>,
+            )}
 
-        {/* L16 — the pack builder's entry point. Without one, `ChartPack` is a
+          {/* L16 — the pack builder's entry point. Without one, `ChartPack` is a
             model nothing can reach: two features shipped dormant on this branch
             already. */}
-        {!readOnly &&
-          session &&
-          packsDialog(
-            <Button
-              variant="ghost"
-              className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/30 p-0 touch-target"
-              aria-label={ts('packs-title', { defaultValue: 'Packs' })}
-            >
-              <Layers className="w-4 h-4" aria-hidden />
-            </Button>,
-          )}
+          {!readOnly &&
+            session &&
+            packsDialog(
+              <Button
+                variant="ghost"
+                className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark/30 p-0 touch-target"
+                aria-label={ts(
+                  'packs-title',
+                  {
+                    defaultValue:
+                      'Packs',
+                  },
+                )}
+              >
+                <Layers
+                  className="w-4 h-4"
+                  aria-hidden
+                />
+              </Button>,
+            )}
 
-        {!readOnly &&
-          session &&
-          uploadDialog(
-            <Button
-              className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600 p-0 touch-target"
-              aria-label={t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
-            >
-              <Upload className="w-4 h-4" />
-            </Button>,
-          )}
-      </div>
+          {!readOnly &&
+            session &&
+            uploadDialog(
+              <Button
+                className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 rounded-lg bg-blue-500 text-white hover:bg-blue-600 p-0 touch-target"
+                aria-label={t(
+                  'upload-track-title',
+                  {
+                    defaultValue:
+                      'UPLOAD TRACK',
+                  },
+                )}
+              >
+                <Upload className="w-4 h-4" />
+              </Button>,
+            )}
+        </div>
       )}
 
       {/* A phone has no toolbar buttons to carry the dialogs, so they are mounted here
           and opened from the options menu. */}
-      {isPhone && !readOnly && (
-        <>
-          {randomDialog()}
-          {session && packsDialog()}
-          {session && uploadDialog()}
-        </>
-      )}
+      {isPhone &&
+        !readOnly && (
+          <>
+            {randomDialog()}
+            {session &&
+              packsDialog()}
+            {session &&
+              uploadDialog()}
+          </>
+        )}
 
       {/* L15 — the artist facet. Hidden while a search is running: chips are a
           way to browse, and a query is a statement that you already know what
           you want. */}
       {!filters.q &&
         (isPhone
-          ? Boolean(filters.artist)
-          : filters.artist || artistFacet.length > 0 || artistFacetLoading) && (
-        <div className="shrink-0 border-b border-slice-shadow-dark/50 px-3 py-2">
-          {filters.artist ? (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-slice-text-light">
-                {ts('filtered-by-artist', { defaultValue: 'Artist' })}
-              </span>
-              <span className="text-xs font-black text-slice-text truncate max-w-48">
-                {activeArtist?.display ?? filters.artist}
-              </span>
-              <a
-                href={artistPath(filters.artist)}
-                className="text-[11px] font-bold text-blue-500 hover:underline"
-              >
-                {ts('open-artist-page', { defaultValue: 'Artist page' })}
-              </a>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-[11px] font-bold text-slice-text-muted hover:text-slice-text"
-                onClick={() => setFilters({ artist: undefined })}
-              >
-                {ts('clear-artist-filter', { defaultValue: 'Clear' })}
-              </Button>
-            </div>
-          ) : artistFacetLoading && artistFacet.length === 0 ? (
-            /* Placeholder chips at the real chips' metrics, so the band is its
+          ? Boolean(
+              filters.artist,
+            )
+          : filters.artist ||
+            artistFacet.length >
+              0 ||
+            artistFacetLoading) && (
+          <div className="shrink-0 border-b border-slice-shadow-dark/50 px-3 py-2">
+            {filters.artist ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-slice-text-light">
+                  {ts(
+                    'filtered-by-artist',
+                    {
+                      defaultValue:
+                        'Artist',
+                    },
+                  )}
+                </span>
+                <span className="text-xs font-black text-slice-text truncate max-w-48">
+                  {activeArtist?.display ??
+                    filters.artist}
+                </span>
+                <a
+                  href={artistPath(
+                    filters.artist,
+                  )}
+                  className="text-[11px] font-bold text-blue-500 hover:underline"
+                >
+                  {ts(
+                    'open-artist-page',
+                    {
+                      defaultValue:
+                        'Artist page',
+                    },
+                  )}
+                </a>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[11px] font-bold text-slice-text-muted hover:text-slice-text"
+                  onClick={() =>
+                    setFilters(
+                      {
+                        artist:
+                          undefined,
+                      },
+                    )
+                  }
+                >
+                  {ts(
+                    'clear-artist-filter',
+                    {
+                      defaultValue:
+                        'Clear',
+                    },
+                  )}
+                </Button>
+              </div>
+            ) : artistFacetLoading &&
+              artistFacet.length ===
+                0 ? (
+              /* Placeholder chips at the real chips' metrics, so the band is its
                settled height on the FIRST paint and the list below never moves.
                Same row classes as the real one — an empty `flex` row here
                instead would leave the band a couple of pixels short and put a
                smaller version of the same shift back. */
-            <div className="flex gap-1.5 overflow-x-auto -m-1.5 p-1.5" aria-hidden>
-              {[64, 88, 72, 96].map((w, i) => (
-                <div
-                  key={i}
-                  className="slice-skeleton h-[26px] shrink-0 rounded-full"
-                  style={{ width: w }}
-                />
-              ))}
-            </div>
-          ) : (
-            /* `-m-1.5 p-1.5` is the halo's room, not spacing.
+              <div
+                className="flex gap-1.5 overflow-x-auto -m-1.5 p-1.5"
+                aria-hidden
+              >
+                {[
+                  64,
+                  88,
+                  72,
+                  96,
+                ].map(
+                  (
+                    w,
+                    i,
+                  ) => (
+                    <div
+                      key={
+                        i
+                      }
+                      className="slice-skeleton h-[26px] shrink-0 rounded-full"
+                      style={{
+                        width:
+                          w,
+                      }}
+                    />
+                  ),
+                )}
+              </div>
+            ) : (
+              /* `-m-1.5 p-1.5` is the halo's room, not spacing.
                `overflow-x: auto` makes the OTHER axis compute to `auto` too, so
                this scroller clips on all four sides — and `.neumorphic-chip`
                reaches 6px past its box (2px offset + 4px blur). Every chip's
@@ -956,73 +2200,166 @@ export function SongLibrary({
                padding gives the halo somewhere to land inside the clip and the
                equal negative margin keeps the band's metrics exactly where they
                were, so nothing below it moves. */
-            <div className={cn('flex gap-1.5 overflow-x-auto scroll-fade-x -m-1.5 p-1.5', facetArrival)}>
-              {artistFacet.map((artist) => (
-                <button
-                  key={artist.key}
-                  type="button"
-                  onClick={() => setFilters({ artist: artist.key })}
-                  className="neumorphic-chip shrink-0 px-3 py-1 text-[11px] font-bold text-slice-text-muted hover:text-slice-text touch-target"
-                >
-                  <span className="truncate max-w-32 inline-block align-middle">
-                    {artist.display}
-                  </span>
-                  <span className="ml-1.5 text-slice-text-light tabular-nums">
-                    {artist.songCount}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              <div
+                className={cn(
+                  'flex gap-1.5 overflow-x-auto scroll-fade-x -m-1.5 p-1.5',
+                  facetArrival,
+                )}
+              >
+                {artistFacet.map(
+                  (
+                    artist,
+                  ) => (
+                    <button
+                      key={
+                        artist.key
+                      }
+                      type="button"
+                      onClick={() =>
+                        setFilters(
+                          {
+                            artist:
+                              artist.key,
+                          },
+                        )
+                      }
+                      className="neumorphic-chip shrink-0 px-3 py-1 text-[11px] font-bold text-slice-text-muted hover:text-slice-text touch-target"
+                    >
+                      <span className="truncate max-w-32 inline-block align-middle">
+                        {
+                          artist.display
+                        }
+                      </span>
+                      <span className="ml-1.5 text-slice-text-light tabular-nums">
+                        {
+                          artist.songCount
+                        }
+                      </span>
+                    </button>
+                  ),
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
-      {filters.view === 'table' ? (
+      {filters.view ===
+      'table' ? (
         <>
-          {visibleSongs.length === 0 && !loading && (
-            <p className={cn('text-center text-slice-text-light py-12 text-sm font-bold', listArrival)}>
-              {filters.q
-                ? t('no-search-results', {
-                    defaultValue: 'Nothing matches "{{query}}".',
-                    query: filters.q,
-                  })
-                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
-            </p>
-          )}
-          {(visibleSongs.length > 0 || loading) && (
+          {visibleSongs.length ===
+            0 &&
+            !loading && (
+              <p
+                className={cn(
+                  'text-center text-slice-text-light py-12 text-sm font-bold',
+                  listArrival,
+                )}
+              >
+                {filters.q
+                  ? t(
+                      'no-search-results',
+                      {
+                        defaultValue:
+                          'Nothing matches "{{query}}".',
+                        query:
+                          filters.q,
+                      },
+                    )
+                  : t(
+                      'library-empty',
+                      {
+                        defaultValue:
+                          'No tracks yet — upload the first one.',
+                      },
+                    )}
+              </p>
+            )}
+          {(visibleSongs.length >
+            0 ||
+            loading) && (
             <SongTable
-              songs={visibleSongs}
-              sort={filters.sort}
-              dir={filters.dir ?? 'desc'}
-              onSortChange={handleTableSort}
-              onSelect={(song) => {
+              songs={
+                visibleSongs
+              }
+              sort={
+                filters.sort
+              }
+              dir={
+                filters.dir ??
+                'desc'
+              }
+              onSortChange={
+                handleTableSort
+              }
+              onSelect={(
+                song,
+              ) => {
                 stopPreview();
-                onSelect(song);
+                onSelect(
+                  song,
+                );
               }}
-              onHighlight={onHighlight}
-              selectedSongId={selectedSongId}
-              authed={Boolean(session)}
-              hasMore={Boolean(nextCursor)}
-              loading={loading}
-              onLoadMore={() => void load(nextCursor, true)}
-              readOnly={readOnly}
-              selectAction={selectAction}
+              onHighlight={
+                onHighlight
+              }
+              selectedSongId={
+                selectedSongId
+              }
+              authed={Boolean(
+                session,
+              )}
+              hasMore={Boolean(
+                nextCursor,
+              )}
+              loading={
+                loading
+              }
+              onLoadMore={() =>
+                void load(
+                  nextCursor,
+                  true,
+                )
+              }
+              readOnly={
+                readOnly
+              }
+              selectAction={
+                selectAction
+              }
               className="flex-1 min-h-0"
             />
           )}
         </>
       ) : (
         <div className="flex-1 overflow-y-auto px-2.5 pb-2">
-          {visibleSongs.length === 0 && !loading && (
-            <p className={cn('text-center text-slice-text-light py-12 text-sm font-bold', listArrival)}>
-              {filters.q
-                ? t('no-search-results', {
-                    defaultValue: 'Nothing matches "{{query}}".',
-                    query: filters.q,
-                  })
-                : t('library-empty', { defaultValue: 'No tracks yet — upload the first one.' })}
-            </p>
-          )}
+          {visibleSongs.length ===
+            0 &&
+            !loading && (
+              <p
+                className={cn(
+                  'text-center text-slice-text-light py-12 text-sm font-bold',
+                  listArrival,
+                )}
+              >
+                {filters.q
+                  ? t(
+                      'no-search-results',
+                      {
+                        defaultValue:
+                          'Nothing matches "{{query}}".',
+                        query:
+                          filters.q,
+                      },
+                    )
+                  : t(
+                      'library-empty',
+                      {
+                        defaultValue:
+                          'No tracks yet — upload the first one.',
+                      },
+                    )}
+              </p>
+            )}
 
           {/* The first page, in the shape it will arrive in.
               This branch used to render NOTHING while `loading` was true with
@@ -1031,131 +2368,301 @@ export function SongLibrary({
               rows appeared. Rows only, no controls: a skeleton that draws
               buttons invites a click on a button that is not there yet. Same
               grid as the real row, so nothing moves when they land. */}
-          {visibleSongs.length === 0 && loading && (
-            <ul aria-hidden data-testid="library-skeleton">
-              {Array.from({ length: 6 }, (_, i) => (
-                <li key={i} className="slice-trow slice-trow--skeleton">
-                  <span className="slice-skeleton h-3 w-6" />
-                  <span className="slice-skeleton size-11" />
-                  <span className="min-w-0 space-y-1.5">
-                    <span className="slice-skeleton block h-3.5 w-1/2 max-w-56" />
-                    <span className="slice-skeleton block h-2.5 w-1/3 max-w-40" />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          {visibleSongs.length ===
+            0 &&
+            loading && (
+              <ul
+                aria-hidden
+                data-testid="library-skeleton"
+              >
+                {Array.from(
+                  {
+                    length: 6,
+                  },
+                  (
+                    _,
+                    i,
+                  ) => (
+                    <li
+                      key={
+                        i
+                      }
+                      className="slice-trow slice-trow--skeleton"
+                    >
+                      <span className="slice-skeleton h-3 w-6" />
+                      <span className="slice-skeleton size-11" />
+                      <span className="min-w-0 space-y-1.5">
+                        <span className="slice-skeleton block h-3.5 w-1/2 max-w-56" />
+                        <span className="slice-skeleton block h-2.5 w-1/3 max-w-40" />
+                      </span>
+                    </li>
+                  ),
+                )}
+              </ul>
+            )}
 
           {/* Column heads, as the sleeve prints them. Hidden on a phone, where
               the row is two lines and the heads would label nothing. */}
-          {visibleSongs.length > 0 && (
-            <div className={cn('slice-trow slice-trow--head', listArrival)} aria-hidden>
-              <span>#</span>
-              <span />
-              <span>{t('col-title', { defaultValue: 'Title / artist' })}</span>
-              <span className="slice-trow__dens-col">
-                {t('col-density', { defaultValue: 'Density' })}
+          {visibleSongs.length >
+            0 && (
+            <div
+              className={cn(
+                'slice-trow slice-trow--head',
+                listArrival,
+              )}
+              aria-hidden
+            >
+              <span>
+                #
               </span>
-              <span className="slice-trow__num-col">{t('col-bpm', { defaultValue: 'BPM' })}</span>
-              <span className="slice-trow__num-col">{t('col-time', { defaultValue: 'Time' })}</span>
+              <span />
+              <span>
+                {t(
+                  'col-title',
+                  {
+                    defaultValue:
+                      'Title / artist',
+                  },
+                )}
+              </span>
+              <span className="slice-trow__dens-col">
+                {t(
+                  'col-density',
+                  {
+                    defaultValue:
+                      'Density',
+                  },
+                )}
+              </span>
+              <span className="slice-trow__num-col">
+                {t(
+                  'col-bpm',
+                  {
+                    defaultValue:
+                      'BPM',
+                  },
+                )}
+              </span>
+              <span className="slice-trow__num-col">
+                {t(
+                  'col-time',
+                  {
+                    defaultValue:
+                      'Time',
+                  },
+                )}
+              </span>
               <span />
             </div>
           )}
 
-          <ul className={listArrival}>
-            {visibleSongs.map((song, index) => {
-              const previewing = previewId === song.id && !previewRef.current?.paused;
-              const chart = rowChartState(song);
-              return (
-                <li key={song.id} className={isNewSong(song.id) ? ARRIVE : undefined}>
-                  {/* The row is one grid: number, cover (which is also the
+          <ul
+            className={
+              listArrival
+            }
+          >
+            {visibleSongs.map(
+              (
+                song,
+                index,
+              ) => {
+                const previewing =
+                  previewId ===
+                    song.id &&
+                  !previewRef
+                    .current
+                    ?.paused;
+                const chart =
+                  rowChartState(
+                    song,
+                  );
+                return (
+                  <li
+                    key={
+                      song.id
+                    }
+                    className={
+                      isNewSong(
+                        song.id,
+                      )
+                        ? ARRIVE
+                        : undefined
+                    }
+                  >
+                    {/* The row is one grid: number, cover (which is also the
                       preview button), title and artist, the density strip,
                       tempo, length, and the actions. Hover inverts it to paper
                       and the selected row is cut paper | pink — the same device
                       as the wordmark. The actions stay at their 44px touch
                       targets; on a phone the strip and the figures drop out so
                       the title keeps the width. */}
-                  <div
-                    className={`slice-trow group ${selectedSongId === song.id ? 'is-sel' : ''}`}
-                    onClick={() => onHighlight(song)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') onHighlight(song);
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={selectedSongId === song.id}
-                  >
-                    <span className="slice-trow__no">A{index + 1}</span>
-
-                    <button
-                      type="button"
-                      className={`slice-trow__cover ${song.coverUrl ? 'slice-duotone' : ''}`}
-                      data-ink={index % 2 ? 'pink' : undefined}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        togglePreview(song);
+                    <div
+                      className={`slice-trow group ${selectedSongId === song.id ? 'is-sel' : ''}`}
+                      onClick={() =>
+                        onHighlight(
+                          song,
+                        )
+                      }
+                      onKeyDown={(
+                        e,
+                      ) => {
+                        if (
+                          e.key ===
+                          'Enter'
+                        )
+                          onHighlight(
+                            song,
+                          );
                       }}
-                      aria-label={t('preview', { defaultValue: 'Preview' })}
+                      role="button"
+                      tabIndex={
+                        0
+                      }
+                      aria-pressed={
+                        selectedSongId ===
+                        song.id
+                      }
                     >
-                      {song.coverUrl ? (
-                        <img src={song.coverUrl} alt="" loading="lazy" />
-                      ) : (
-                        <span
-                          className={`slice-trow__ph ${index % 2 ? 'slice-dots-pink' : 'slice-dots-cyan'}`}
-                        />
-                      )}
-                      <span className="slice-trow__cover-ic" data-on={previewing || undefined}>
-                        {previewing ? (
-                          <Pause className="size-4" aria-hidden />
-                        ) : (
-                          <Play className="size-4" aria-hidden />
-                        )}
+                      <span className="slice-trow__no">
+                        A
+                        {index +
+                          1}
                       </span>
-                    </button>
 
-                    <div className="min-w-0">
-                      <div className="slice-trow__title">{song.title}</div>
-                      <div className="slice-trow__artist">
-                        {/* L15 — the first thing anyone tries after playing a
+                      <button
+                        type="button"
+                        className={`slice-trow__cover ${song.coverUrl ? 'slice-duotone' : ''}`}
+                        data-ink={
+                          index %
+                          2
+                            ? 'pink'
+                            : undefined
+                        }
+                        onClick={(
+                          e,
+                        ) => {
+                          e.stopPropagation();
+                          togglePreview(
+                            song,
+                          );
+                        }}
+                        aria-label={t(
+                          'preview',
+                          {
+                            defaultValue:
+                              'Preview',
+                          },
+                        )}
+                      >
+                        {song.coverUrl ? (
+                          <img
+                            src={
+                              song.coverUrl
+                            }
+                            alt=""
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span
+                            className={`slice-trow__ph ${index % 2 ? 'slice-dots-pink' : 'slice-dots-cyan'}`}
+                          />
+                        )}
+                        <span
+                          className="slice-trow__cover-ic"
+                          data-on={
+                            previewing ||
+                            undefined
+                          }
+                        >
+                          {previewing ? (
+                            <Pause
+                              className="size-4"
+                              aria-hidden
+                            />
+                          ) : (
+                            <Play
+                              className="size-4"
+                              aria-hidden
+                            />
+                          )}
+                        </span>
+                      </button>
+
+                      <div className="min-w-0">
+                        <div className="slice-trow__title">
+                          {
+                            song.title
+                          }
+                        </div>
+                        <div className="slice-trow__artist">
+                          {/* L15 — the first thing anyone tries after playing a
                             track they liked. `artistKey` comes off the row, so
                             the client never re-derives it. `stopPropagation`
                             because the whole row is also a button. */}
-                        <span className="slice-trow__artist-name">
-                          {song.artistKey ? (
-                            <a
-                              href={artistPath(song.artistKey)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="hover:underline"
-                            >
-                              {song.artist}
-                            </a>
-                          ) : (
-                            song.artist
-                          )}
-                        </span>
-                        {/* Ownership and a chart's state are labels on the ARTIST
+                          <span className="slice-trow__artist-name">
+                            {song.artistKey ? (
+                              <a
+                                href={artistPath(
+                                  song.artistKey,
+                                )}
+                                onClick={(
+                                  e,
+                                ) =>
+                                  e.stopPropagation()
+                                }
+                                className="hover:underline"
+                              >
+                                {
+                                  song.artist
+                                }
+                              </a>
+                            ) : (
+                              song.artist
+                            )}
+                          </span>
+                          {/* Ownership and a chart's state are labels on the ARTIST
                             line, never lines of their own: a row that grows a line
                             when it has a label makes the list ragged. Where the
                             density column is hidden the chart state rides here too. */}
-                        {song.isOwner && (
-                          <span className="slice-trow__tag slice-trow__tag--own">
-                            {t('your-track', { defaultValue: 'YOUR TRACK' })}
-                          </span>
-                        )}
-                        {chart === 'charting' && (
-                          <span className="slice-trow__tag slice-trow__tag--live slice-trow__tag--inline">
-                            {t('charting', { defaultValue: 'Charting…' })}
-                          </span>
-                        )}
-                        {chart === 'failed' && (
-                          <span className="slice-trow__tag slice-trow__tag--inline">
-                            {t('chart-on-play', { defaultValue: 'Chart on play' })}
-                          </span>
-                        )}
+                          {song.isOwner && (
+                            <span className="slice-trow__tag slice-trow__tag--own">
+                              {t(
+                                'your-track',
+                                {
+                                  defaultValue:
+                                    'YOUR TRACK',
+                                },
+                              )}
+                            </span>
+                          )}
+                          {chart ===
+                            'charting' && (
+                            <span className="slice-trow__tag slice-trow__tag--live slice-trow__tag--inline">
+                              {t(
+                                'charting',
+                                {
+                                  defaultValue:
+                                    'Charting…',
+                                },
+                              )}
+                            </span>
+                          )}
+                          {chart ===
+                            'failed' && (
+                            <span className="slice-trow__tag slice-trow__tag--inline">
+                              {t(
+                                'chart-on-play',
+                                {
+                                  defaultValue:
+                                    'Chart on play',
+                                },
+                              )}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* O3 — the row stays visible while the worker charts it.
+                      {/* O3 — the row stays visible while the worker charts it.
                         Hiding a pending song would read as a failed upload, and
                         it is playable either way: with no stored chart the client
                         generates one locally and patches it back. The state sits
@@ -1163,105 +2670,199 @@ export function SongLibrary({
                         no strip, so the cell is free and the row keeps its height.
                         "Charting…" is shown only while the job can still be alive
                         (`rowChartState`), not for ever. */}
-                    <span className="slice-trow__dens-col">
-                      {chart === 'charting' ? (
-                        <span className="slice-trow__state slice-trow__state--live">
-                          {t('charting', { defaultValue: 'Charting…' })}
-                        </span>
-                      ) : chart === 'failed' ? (
-                        <span className="slice-trow__state">
-                          {t('chart-on-play', { defaultValue: 'Chart on play' })}
-                        </span>
-                      ) : (
-                        <DensityStrip density={song.densityStrip} />
-                      )}
-                    </span>
-                    <span className="slice-trow__num slice-trow__num-col">
-                      {song.bpm > 0 ? Math.round(song.bpm) : '—'}
-                    </span>
-                    <span className="slice-trow__num slice-trow__num-col">
-                      {formatSongDuration(song.duration)}
-                    </span>
+                      <span className="slice-trow__dens-col">
+                        {chart ===
+                        'charting' ? (
+                          <span className="slice-trow__state slice-trow__state--live">
+                            {t(
+                              'charting',
+                              {
+                                defaultValue:
+                                  'Charting…',
+                              },
+                            )}
+                          </span>
+                        ) : chart ===
+                          'failed' ? (
+                          <span className="slice-trow__state">
+                            {t(
+                              'chart-on-play',
+                              {
+                                defaultValue:
+                                  'Chart on play',
+                              },
+                            )}
+                          </span>
+                        ) : (
+                          <DensityStrip
+                            density={
+                              song.densityStrip
+                            }
+                          />
+                        )}
+                      </span>
+                      <span className="slice-trow__num slice-trow__num-col">
+                        {song.bpm >
+                        0
+                          ? Math.round(
+                              song.bpm,
+                            )
+                          : '—'}
+                      </span>
+                      <span className="slice-trow__num slice-trow__num-col">
+                        {formatSongDuration(
+                          song.duration,
+                        )}
+                      </span>
 
-                    <div className="slice-trow__acts">
-                      {!readOnly && song.isOwner && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteId(song.id);
-                          }}
-                          // Visible by default and hover-revealed only where hover
-                          // exists: `opacity-0` alone left the control invisible on
-                          // every touch device while it still took its width.
-                          // Ghost, not filled: this is only the entry point to a
-                          // confirm dialog, and a filled red block per row on a
-                          // library you own every track of was the loudest thing
-                          // on the screen.
-                          className="h-8 w-8 touch-target text-red-400 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-                          aria-label={t('delete-song', { defaultValue: 'Delete Song' })}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {session && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-8 w-8 shrink-0 touch-target ${
-                            song.isLiked ? 'text-red-500' : 'text-slice-text-light'
-                          }`}
-                          onClick={(e) => void handleLike(e, song)}
-                          disabled={likingId === song.id}
-                          aria-label={
-                            song.isLiked
-                              ? t('unlike', { defaultValue: 'Unlike' })
-                              : t('like', { defaultValue: 'Like' })
-                          }
-                        >
-                          <Heart className={`w-4 h-4 ${song.isLiked ? 'fill-current' : ''}`} />
-                        </Button>
-                      )}
-                      {/* `onSelect` is "the row's primary action", and what that
+                      <div className="slice-trow__acts">
+                        {!readOnly &&
+                          song.isOwner && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(
+                                e,
+                              ) => {
+                                e.stopPropagation();
+                                setDeleteId(
+                                  song.id,
+                                );
+                              }}
+                              // Visible by default and hover-revealed only where hover
+                              // exists: `opacity-0` alone left the control invisible on
+                              // every touch device while it still took its width.
+                              // Ghost, not filled: this is only the entry point to a
+                              // confirm dialog, and a filled red block per row on a
+                              // library you own every track of was the loudest thing
+                              // on the screen.
+                              className="h-8 w-8 touch-target text-red-400 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                              aria-label={t(
+                                'delete-song',
+                                {
+                                  defaultValue:
+                                    'Delete Song',
+                                },
+                              )}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        {session && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 shrink-0 touch-target ${
+                              song.isLiked
+                                ? 'text-red-500'
+                                : 'text-slice-text-light'
+                            }`}
+                            onClick={(
+                              e,
+                            ) =>
+                              void handleLike(
+                                e,
+                                song,
+                              )
+                            }
+                            disabled={
+                              likingId ===
+                              song.id
+                            }
+                            aria-label={
+                              song.isLiked
+                                ? t(
+                                    'unlike',
+                                    {
+                                      defaultValue:
+                                        'Unlike',
+                                    },
+                                  )
+                                : t(
+                                    'like',
+                                    {
+                                      defaultValue:
+                                        'Like',
+                                    },
+                                  )
+                            }
+                          >
+                            <Heart
+                              className={`w-4 h-4 ${song.isLiked ? 'fill-current' : ''}`}
+                            />
+                          </Button>
+                        )}
+                        {/* `onSelect` is "the row's primary action", and what that
                           IS belongs to the caller: the solo menu opens the details
                           panel so a run is confirmed before it starts, and the
                           multiplayer lobby nominates the song. Icon-only on a
                           phone; the accessible name is the same. */}
-                      {!readOnly && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            stopPreview();
-                            onSelect(song);
-                          }}
-                          className="slice-go touch-target"
-                          aria-label={selectLabel}
-                        >
-                          <SelectIcon className="size-4 sm:hidden" aria-hidden />
-                          <span className="hidden sm:inline">{selectLabel}</span>
-                        </button>
-                      )}
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            onClick={(
+                              e,
+                            ) => {
+                              e.stopPropagation();
+                              stopPreview();
+                              onSelect(
+                                song,
+                              );
+                            }}
+                            className="slice-go touch-target"
+                            aria-label={
+                              selectLabel
+                            }
+                          >
+                            <SelectIcon
+                              className="size-4 sm:hidden"
+                              aria-hidden
+                            />
+                            <span className="hidden sm:inline">
+                              {
+                                selectLabel
+                              }
+                            </span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </li>
-              );
-            })}
+                  </li>
+                );
+              },
+            )}
           </ul>
 
           {nextCursor && (
             <div className="p-4 flex justify-center">
               <Button
                 variant="default"
-                onClick={() => void load(nextCursor, true)}
-                disabled={loading}
+                onClick={() =>
+                  void load(
+                    nextCursor,
+                    true,
+                  )
+                }
+                disabled={
+                  loading
+                }
                 className="rounded-xl"
               >
                 {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+                  <Loader2
+                    className="w-4 h-4 animate-spin"
+                    aria-hidden
+                  />
                 ) : (
-                  t('load-more', { defaultValue: 'Load more ({{count}} total)', count: total })
+                  t(
+                    'load-more',
+                    {
+                      defaultValue:
+                        'Load more ({{count}} total)',
+                      count:
+                        total,
+                    },
+                  )
                 )}
               </Button>
             </div>
@@ -1270,16 +2871,46 @@ export function SongLibrary({
       )}
 
       <NeumorphicModal
-        isOpen={deleteId !== null}
-        onClose={() => setDeleteId(null)}
-        onConfirm={() => void confirmDelete()}
-        title={t('wipe-track-title', { defaultValue: 'Wipe Track Data?' })}
-        description={t('wipe-track-description', {
-          defaultValue:
-            'This will permanently delete the song, analysis data, and leaderboard entries. This action is irreversible.',
-        })}
-        confirmText={t('purge', { defaultValue: 'PURGE' })}
-        cancelText={t('cancel', { defaultValue: 'CANCEL' })}
+        isOpen={
+          deleteId !==
+          null
+        }
+        onClose={() =>
+          setDeleteId(
+            null,
+          )
+        }
+        onConfirm={() =>
+          void confirmDelete()
+        }
+        title={t(
+          'wipe-track-title',
+          {
+            defaultValue:
+              'Wipe Track Data?',
+          },
+        )}
+        description={t(
+          'wipe-track-description',
+          {
+            defaultValue:
+              'This will permanently delete the song, analysis data, and leaderboard entries. This action is irreversible.',
+          },
+        )}
+        confirmText={t(
+          'purge',
+          {
+            defaultValue:
+              'PURGE',
+          },
+        )}
+        cancelText={t(
+          'cancel',
+          {
+            defaultValue:
+              'CANCEL',
+          },
+        )}
         variant="danger"
       />
     </div>
@@ -1296,45 +2927,123 @@ function RandomForm({
   authed,
 }: {
   constraints: RandomConstraints;
-  onChange: (next: RandomConstraints) => void;
+  onChange: (
+    next: RandomConstraints,
+  ) => void;
   onSubmit: () => void;
   loading: boolean;
   authed: boolean;
 }) {
-  const { t: ts } = useTranslation('r-slice-it');
+  const {
+    t: ts,
+  } =
+    useTranslation(
+      'r-slice-it',
+    );
 
-  const setDuration = (key: 'durationMin' | 'durationMax', raw: string) => {
-    const value =
-      raw === '' ? undefined : Math.max(0, Math.min(MAX_SONG_DURATION_SEC, Number(raw)));
-    onChange({ ...constraints, [key]: Number.isFinite(value) ? value : undefined });
-  };
+  const setDuration =
+    (
+      key:
+        | 'durationMin'
+        | 'durationMax',
+      raw: string,
+    ) => {
+      const value =
+        raw ===
+        ''
+          ? undefined
+          : Math.max(
+              0,
+              Math.min(
+                MAX_SONG_DURATION_SEC,
+                Number(
+                  raw,
+                ),
+              ),
+            );
+      onChange(
+        {
+          ...constraints,
+          [key]:
+            Number.isFinite(
+              value,
+            )
+              ? value
+              : undefined,
+        },
+      );
+    };
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <label className="block space-y-1">
           <span className="text-xs font-bold text-slice-text-light uppercase">
-            {ts('random-duration-min', { defaultValue: 'Min length (sec)' })}
+            {ts(
+              'random-duration-min',
+              {
+                defaultValue:
+                  'Min length (sec)',
+              },
+            )}
           </span>
           <Input
             type="number"
-            min={0}
-            max={MAX_SONG_DURATION_SEC}
-            value={constraints.durationMin ?? ''}
-            onChange={(e) => setDuration('durationMin', e.target.value)}
+            min={
+              0
+            }
+            max={
+              MAX_SONG_DURATION_SEC
+            }
+            value={
+              constraints.durationMin ??
+              ''
+            }
+            onChange={(
+              e,
+            ) =>
+              setDuration(
+                'durationMin',
+                e
+                  .target
+                  .value,
+              )
+            }
             className="bg-slice-card-bg text-slice-text border border-slice-shadow-dark/30"
           />
         </label>
         <label className="block space-y-1">
           <span className="text-xs font-bold text-slice-text-light uppercase">
-            {ts('random-duration-max', { defaultValue: 'Max length (sec)' })}
+            {ts(
+              'random-duration-max',
+              {
+                defaultValue:
+                  'Max length (sec)',
+              },
+            )}
           </span>
           <Input
             type="number"
-            min={0}
-            max={MAX_SONG_DURATION_SEC}
-            value={constraints.durationMax ?? ''}
-            onChange={(e) => setDuration('durationMax', e.target.value)}
+            min={
+              0
+            }
+            max={
+              MAX_SONG_DURATION_SEC
+            }
+            value={
+              constraints.durationMax ??
+              ''
+            }
+            onChange={(
+              e,
+            ) =>
+              setDuration(
+                'durationMax',
+                e
+                  .target
+                  .value,
+              )
+            }
             className="bg-slice-card-bg text-slice-text border border-slice-shadow-dark/30"
           />
         </label>
@@ -1342,42 +3051,110 @@ function RandomForm({
 
       <label className="flex items-center justify-between gap-3">
         <span className="text-sm font-bold text-slice-text">
-          {ts('random-unplayed-only', { defaultValue: 'Only songs I have not played' })}
+          {ts(
+            'random-unplayed-only',
+            {
+              defaultValue:
+                'Only songs I have not played',
+            },
+          )}
         </span>
         <Switch
-          checked={constraints.unplayedOnly ?? false}
-          onCheckedChange={(checked) => onChange({ ...constraints, unplayedOnly: checked })}
-          disabled={!authed}
-          aria-label={ts('random-unplayed-only', { defaultValue: 'Only songs I have not played' })}
+          checked={
+            constraints.unplayedOnly ??
+            false
+          }
+          onCheckedChange={(
+            checked,
+          ) =>
+            onChange(
+              {
+                ...constraints,
+                unplayedOnly:
+                  checked,
+              },
+            )
+          }
+          disabled={
+            !authed
+          }
+          aria-label={ts(
+            'random-unplayed-only',
+            {
+              defaultValue:
+                'Only songs I have not played',
+            },
+          )}
         />
       </label>
 
       <label className="flex items-center justify-between gap-3">
         <span className="text-sm font-bold text-slice-text">
-          {ts('random-liked-only', { defaultValue: 'Only songs I have liked' })}
+          {ts(
+            'random-liked-only',
+            {
+              defaultValue:
+                'Only songs I have liked',
+            },
+          )}
         </span>
         <Switch
-          checked={constraints.likedOnly ?? false}
-          onCheckedChange={(checked) => onChange({ ...constraints, likedOnly: checked })}
-          disabled={!authed}
-          aria-label={ts('random-liked-only', { defaultValue: 'Only songs I have liked' })}
+          checked={
+            constraints.likedOnly ??
+            false
+          }
+          onCheckedChange={(
+            checked,
+          ) =>
+            onChange(
+              {
+                ...constraints,
+                likedOnly:
+                  checked,
+              },
+            )
+          }
+          disabled={
+            !authed
+          }
+          aria-label={ts(
+            'random-liked-only',
+            {
+              defaultValue:
+                'Only songs I have liked',
+            },
+          )}
         />
       </label>
 
       {!authed && (
         <p className="text-xs text-slice-text-light">
-          {ts('random-signin-hint', {
-            defaultValue: 'Sign in to constrain by unplayed or liked tracks.',
-          })}
+          {ts(
+            'random-signin-hint',
+            {
+              defaultValue:
+                'Sign in to constrain by unplayed or liked tracks.',
+            },
+          )}
         </p>
       )}
 
       <Button
-        onClick={onSubmit}
-        loading={loading}
+        onClick={
+          onSubmit
+        }
+        loading={
+          loading
+        }
         className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold h-12 rounded-xl"
       >
-        {ts('random-submit', { defaultValue: 'Surprise Me' })}
+        {ts(
+          'random-submit',
+          {
+            defaultValue:
+              'Surprise Me',
+          },
+        )}
       </Button>
     </div>
   );
@@ -1385,12 +3162,35 @@ function RandomForm({
 
 /* ─── Upload ─────────────────────────────────────────────────────────────── */
 
-function UploadForm({ onDone }: { onDone: () => void }) {
-  const { t } = useTranslation('c-game');
-  const { t: ts } = useTranslation('r-slice-it');
-  const { data: session } = useSession();
+function UploadForm({
+  onDone,
+}: {
+  onDone: () => void;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-game',
+    );
+  const {
+    t: ts,
+  } =
+    useTranslation(
+      'r-slice-it',
+    );
+  const {
+    data: session,
+  } =
+    useSession();
 
-  const [file, setFile] = React.useState<File | null>(null);
+  const [
+    file,
+    setFile,
+  ] =
+    React.useState<File | null>(
+      null,
+    );
   /**
    * L16 — tracks 2..n of an album upload.
    *
@@ -1400,254 +3200,723 @@ function UploadForm({ onDone }: { onDone: () => void }) {
    * intact is what let the album path be additive rather than a rewrite of the
    * one form on the site that is exercised on every single upload.
    */
-  const [extraFiles, setExtraFiles] = React.useState<File[]>([]);
-  const [album, setAlbum] = React.useState('');
-  const [cover, setCover] = React.useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = React.useState<string | null>(null);
-  const [title, setTitle] = React.useState('');
-  const [artist, setArtist] = React.useState('');
-  const [description, setDescription] = React.useState('');
-  const [duration, setDuration] = React.useState(0);
-  const [uploading, setUploading] = React.useState(false);
-  const [progress, setProgress] = React.useState(0);
-  const [statusText, setStatusText] = React.useState('');
+  const [
+    extraFiles,
+    setExtraFiles,
+  ] =
+    React.useState<
+      File[]
+    >(
+      [],
+    );
+  const [
+    album,
+    setAlbum,
+  ] =
+    React.useState(
+      '',
+    );
+  const [
+    cover,
+    setCover,
+  ] =
+    React.useState<File | null>(
+      null,
+    );
+  const [
+    coverPreview,
+    setCoverPreview,
+  ] =
+    React.useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const [
+    title,
+    setTitle,
+  ] =
+    React.useState(
+      '',
+    );
+  const [
+    artist,
+    setArtist,
+  ] =
+    React.useState(
+      '',
+    );
+  const [
+    description,
+    setDescription,
+  ] =
+    React.useState(
+      '',
+    );
+  const [
+    duration,
+    setDuration,
+  ] =
+    React.useState(
+      0,
+    );
+  const [
+    uploading,
+    setUploading,
+  ] =
+    React.useState(
+      false,
+    );
+  const [
+    progress,
+    setProgress,
+  ] =
+    React.useState(
+      0,
+    );
+  const [
+    statusText,
+    setStatusText,
+  ] =
+    React.useState(
+      '',
+    );
 
   // Object URLs leak until revoked, and this component can be opened and closed
   // repeatedly without ever submitting.
   React.useEffect(() => {
     return () => {
-      if (coverPreview) URL.revokeObjectURL(coverPreview);
-    };
-  }, [coverPreview]);
-
-  const pickAudio = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const chosen = Array.from(event.target.files ?? []);
-    const picked = chosen[0];
-    if (!picked) return;
-
-    // iPhones hand over .m4a/.aac voice memos and Music exports freely; the
-    // server only decodes MP3/WAV/OGG/FLAC, so say so before the upload, not
-    // after fifty megabytes of cellular data.
-    const unsupported = chosen.find((f) => /\.(m4a|aac|mp4|caf|aiff?|wma|amr)$/i.test(f.name));
-    if (unsupported) {
-      toast.error(
-        ts('audio-format-unsupported', {
-          defaultValue: '{{name}} is not supported. Convert it to MP3, WAV, OGG or FLAC.',
-          name: unsupported.name,
-        }),
-      );
-      event.target.value = '';
-      return;
-    }
-
-    const oversize = chosen.find((f) => f.size > AUDIO_MAX_BYTES);
-    if (oversize) {
-      toast.error(
-        t('audio-too-large', {
-          defaultValue: 'Audio file too large ({{sizeMb}} MB). Maximum size is 50 MB.',
-          sizeMb: (oversize.size / 1024 / 1024).toFixed(1),
-        }),
-      );
-      event.target.value = '';
-      return;
-    }
-
-    setFile(picked);
-    // Sorted by name so the album's track order is the order the files are
-    // named in, which is what a ripped or downloaded album already gives you.
-    // Upload order becomes pack position, and "shuffled because the OS returned
-    // them that way" would be a strange album.
-    setExtraFiles(chosen.slice(1).sort((a, b) => a.name.localeCompare(b.name)));
-    setTitle(picked.name.replace(/\.[^/.]+$/, ''));
-    setArtist(session?.user?.name ?? 'Unknown');
-
-    const objectUrl = URL.createObjectURL(picked);
-    const probe = new Audio(objectUrl);
-    probe.onloadedmetadata = () => {
-      setDuration(probe.duration || 0);
-      URL.revokeObjectURL(objectUrl);
-    };
-    probe.onerror = () => URL.revokeObjectURL(objectUrl);
-
-    // ID3 tags, including embedded artwork — most people's files already carry
-    // a cover, and asking them to find one again is a step they will skip.
-    //
-    // Imported here rather than at the top of the file: `music-metadata` is a
-    // full container parser, it is reachable from `GameCanvas`, and it was
-    // therefore in the chunk every player downloads to *play* the game — to
-    // serve the one moment someone picks a file to upload.
-    try {
-      const { parseBlob } = await import('music-metadata');
-      const tags = await parseBlob(picked);
-      if (tags.common.title) setTitle(tags.common.title);
-      if (tags.common.artist) setArtist(tags.common.artist);
-      // The album tag is what makes a multi-file pick an album rather than a
-      // batch — and it is already in the file, so nobody has to type it.
-      if (tags.common.album) setAlbum(tags.common.album);
-      const picture = tags.common.picture?.[0];
-      if (picture && !cover) {
-        // `picture.data` is a view over a possibly-shared buffer; copy it into
-        // a plain ArrayBuffer so it satisfies BlobPart.
-        const source = picture.data as unknown as Uint8Array;
-        const bytes = new Uint8Array(source.length);
-        bytes.set(source);
-        const blob = new Blob([bytes.buffer as ArrayBuffer], {
-          type: picture.format || 'image/jpeg',
-        });
-        const embedded = new File([blob], 'cover', { type: blob.type });
-        if (embedded.size <= COVER_MAX_BYTES) {
-          setCover(embedded);
-          setCoverPreview(URL.createObjectURL(embedded));
-        }
-      }
-    } catch {
-      // No tags is normal; the filename is a fine fallback.
-    }
-  };
-
-  const pickCover = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const input = event.target;
-    const raw = input.files?.[0];
-    if (!raw) return;
-    if (raw.size > COVER_MAX_BYTES) {
-      toast.error(t('cover-too-large', { defaultValue: 'Cover image must be under 10 MB.' }));
-      input.value = '';
-      return;
-    }
-    // Phone photos (HEIC/HEIF, huge JPEGs) are re-encoded in the browser: the
-    // server only accepts PNG/JPEG/GIF/WebP and a 12 MP photo is a slow upload.
-    const picked = await normalizeCover(raw);
-    if (!picked) {
-      toast.error(
-        isHeicCover(raw)
-          ? ts('cover-heic-unsupported', {
-              defaultValue:
-                "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
-            })
-          : ts('cover-format-unsupported', {
-              defaultValue: 'That image format is not supported. Use JPEG, PNG or WebP.',
-            }),
-      );
-      input.value = '';
-      return;
-    }
-    setCoverPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(picked);
-    });
-    setCover(picked);
-  };
-
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!file || uploading) return;
-
-    if (duration > MAX_SONG_DURATION_SEC) {
-      toast.error(
-        t('audio-too-long', {
-          defaultValue: 'Tracks must be under {{minutes}} minutes.',
-          minutes: MAX_SONG_DURATION_SEC / 60,
-        }),
-      );
-      return;
-    }
-
-    // The pack this upload creates is titled with the album, so there has to be
-    // one. Checked here as well as on the server so the answer arrives before
-    // fifty megabytes do.
-    if (extraFiles.length > 0 && !album.trim()) {
-      toast.error(
-        ts('album-title-required', { defaultValue: 'An album upload needs an album title.' }),
-      );
-      return;
-    }
-
-    setUploading(true);
-    setProgress(0);
-    setStatusText(t('status-uploading', { defaultValue: 'Uploading track…' }));
-
-    const form = new FormData();
-    form.append('file', file);
-    // L16 — every extra track rides in the same request, so the songs and the
-    // album pack they belong to are created in one transaction. Twelve
-    // sequential uploads cannot be: the eighth failing leaves seven songs and
-    // no album.
-    for (const extra of extraFiles) form.append('file', extra);
-    form.append('title', title);
-    form.append('artist', artist);
-    if (album.trim()) form.append('album', album.trim());
-    form.append('description', description);
-    form.append('duration', String(duration));
-    if (cover) form.append('cover', cover);
-
-    // XHR rather than fetch, purely for upload progress — `fetch` still has no
-    // request-side progress event in any shipping browser.
-    const xhr = new XMLHttpRequest();
-    xhr.upload.addEventListener('progress', (e) => {
-      if (!e.lengthComputable) return;
-      const percent = Math.round((e.loaded / e.total) * 100);
-      setProgress(percent);
-      if (percent >= 100) {
-        // The bytes are up; the server is now decoding and charting, which is
-        // the slow part and has no progress to report.
-        setStatusText(t('status-analyzing', { defaultValue: 'Analyzing audio…' }));
-      }
-    });
-
-    xhr.addEventListener('load', () => {
-      setUploading(false);
-      let body: { error?: string; notes?: Record<string, number>; charting?: boolean } = {};
-      try {
-        body = JSON.parse(xhr.responseText);
-      } catch {
-        // Non-JSON body — fall through to the generic message.
-      }
-
-      if (xhr.status >= 200 && xhr.status < 300) {
-        const expert = body.notes?.expert;
-        // O3 — charting is a queued job now, so the upload response carries no
-        // note count and `charting: true` instead. Saying "map generated" here
-        // would be a lie: the row exists, the notes do not yet. The `expert`
-        // branch survives for the inline path (no queue available), which does
-        // still chart before responding.
-        toast.success(
-          expert
-            ? t('upload-success-notes', {
-                defaultValue: 'Track uploaded — {{count}} notes charted.',
-                count: expert,
-              })
-            : body.charting
-              ? ts('upload-success-charting', {
-                  defaultValue: 'Track uploaded. Charting it now — this takes a moment.',
-                })
-              : t('upload-success', { defaultValue: 'Track uploaded and map generated.' }),
+      if (
+        coverPreview
+      )
+        URL.revokeObjectURL(
+          coverPreview,
         );
-        onDone();
+    };
+  }, [
+    coverPreview,
+  ]);
+
+  const pickAudio =
+    async (
+      event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+      const chosen =
+        Array.from(
+          event
+            .target
+            .files ??
+            [],
+        );
+      const picked =
+        chosen[0];
+      if (
+        !picked
+      )
+        return;
+
+      // iPhones hand over .m4a/.aac voice memos and Music exports freely; the
+      // server only decodes MP3/WAV/OGG/FLAC, so say so before the upload, not
+      // after fifty megabytes of cellular data.
+      const unsupported =
+        chosen.find(
+          (
+            f,
+          ) =>
+            /\.(m4a|aac|mp4|caf|aiff?|wma|amr)$/i.test(
+              f.name,
+            ),
+        );
+      if (
+        unsupported
+      ) {
+        toast.error(
+          ts(
+            'audio-format-unsupported',
+            {
+              defaultValue:
+                '{{name}} is not supported. Convert it to MP3, WAV, OGG or FLAC.',
+              name: unsupported.name,
+            },
+          ),
+        );
+        event.target.value =
+          '';
         return;
       }
-      // Surface what the server actually said: "you already uploaded this
-      // track", "you have reached your upload limit" and "that file could not
-      // be decoded" are all things the user can act on.
-      toast.error(body.error || t('upload-failed', { defaultValue: 'Upload failed' }));
-    });
 
-    const fail = () => {
-      setUploading(false);
-      toast.error(t('upload-error', { defaultValue: 'Upload error' }));
+      const oversize =
+        chosen.find(
+          (
+            f,
+          ) =>
+            f.size >
+            AUDIO_MAX_BYTES,
+        );
+      if (
+        oversize
+      ) {
+        toast.error(
+          t(
+            'audio-too-large',
+            {
+              defaultValue:
+                'Audio file too large ({{sizeMb}} MB). Maximum size is 50 MB.',
+              sizeMb:
+                (
+                  oversize.size /
+                  1024 /
+                  1024
+                ).toFixed(
+                  1,
+                ),
+            },
+          ),
+        );
+        event.target.value =
+          '';
+        return;
+      }
+
+      setFile(
+        picked,
+      );
+      // Sorted by name so the album's track order is the order the files are
+      // named in, which is what a ripped or downloaded album already gives you.
+      // Upload order becomes pack position, and "shuffled because the OS returned
+      // them that way" would be a strange album.
+      setExtraFiles(
+        chosen
+          .slice(
+            1,
+          )
+          .sort(
+            (
+              a,
+              b,
+            ) =>
+              a.name.localeCompare(
+                b.name,
+              ),
+          ),
+      );
+      setTitle(
+        picked.name.replace(
+          /\.[^/.]+$/,
+          '',
+        ),
+      );
+      setArtist(
+        session
+          ?.user
+          ?.name ??
+          'Unknown',
+      );
+
+      const objectUrl =
+        URL.createObjectURL(
+          picked,
+        );
+      const probe =
+        new Audio(
+          objectUrl,
+        );
+      probe.onloadedmetadata =
+        () => {
+          setDuration(
+            probe.duration ||
+              0,
+          );
+          URL.revokeObjectURL(
+            objectUrl,
+          );
+        };
+      probe.onerror =
+        () =>
+          URL.revokeObjectURL(
+            objectUrl,
+          );
+
+      // ID3 tags, including embedded artwork — most people's files already carry
+      // a cover, and asking them to find one again is a step they will skip.
+      //
+      // Imported here rather than at the top of the file: `music-metadata` is a
+      // full container parser, it is reachable from `GameCanvas`, and it was
+      // therefore in the chunk every player downloads to *play* the game — to
+      // serve the one moment someone picks a file to upload.
+      try {
+        const {
+          parseBlob,
+        } =
+          await import('music-metadata');
+        const tags =
+          await parseBlob(
+            picked,
+          );
+        if (
+          tags
+            .common
+            .title
+        )
+          setTitle(
+            tags
+              .common
+              .title,
+          );
+        if (
+          tags
+            .common
+            .artist
+        )
+          setArtist(
+            tags
+              .common
+              .artist,
+          );
+        // The album tag is what makes a multi-file pick an album rather than a
+        // batch — and it is already in the file, so nobody has to type it.
+        if (
+          tags
+            .common
+            .album
+        )
+          setAlbum(
+            tags
+              .common
+              .album,
+          );
+        const picture =
+          tags
+            .common
+            .picture?.[0];
+        if (
+          picture &&
+          !cover
+        ) {
+          // `picture.data` is a view over a possibly-shared buffer; copy it into
+          // a plain ArrayBuffer so it satisfies BlobPart.
+          const source =
+            picture.data as unknown as Uint8Array;
+          const bytes =
+            new Uint8Array(
+              source.length,
+            );
+          bytes.set(
+            source,
+          );
+          const blob =
+            new Blob(
+              [
+                bytes.buffer as ArrayBuffer,
+              ],
+              {
+                type:
+                  picture.format ||
+                  'image/jpeg',
+              },
+            );
+          const embedded =
+            new File(
+              [
+                blob,
+              ],
+              'cover',
+              {
+                type: blob.type,
+              },
+            );
+          if (
+            embedded.size <=
+            COVER_MAX_BYTES
+          ) {
+            setCover(
+              embedded,
+            );
+            setCoverPreview(
+              URL.createObjectURL(
+                embedded,
+              ),
+            );
+          }
+        }
+      } catch {
+        // No tags is normal; the filename is a fine fallback.
+      }
     };
-    xhr.addEventListener('error', fail);
-    xhr.addEventListener('abort', fail);
-    // Without a ceiling a dropped mobile connection leaves the form on
-    // "Uploading…" forever with the submit button disabled.
-    xhr.timeout = 10 * 60 * 1000;
-    xhr.addEventListener('timeout', fail);
 
-    xhr.open('POST', '/api/slice-it/songs/upload');
-    xhr.send(form);
-  };
+  const pickCover =
+    async (
+      event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+      const input =
+        event.target;
+      const raw =
+        input
+          .files?.[0];
+      if (
+        !raw
+      )
+        return;
+      if (
+        raw.size >
+        COVER_MAX_BYTES
+      ) {
+        toast.error(
+          t(
+            'cover-too-large',
+            {
+              defaultValue:
+                'Cover image must be under 10 MB.',
+            },
+          ),
+        );
+        input.value =
+          '';
+        return;
+      }
+      // Phone photos (HEIC/HEIF, huge JPEGs) are re-encoded in the browser: the
+      // server only accepts PNG/JPEG/GIF/WebP and a 12 MP photo is a slow upload.
+      const picked =
+        await normalizeCover(
+          raw,
+        );
+      if (
+        !picked
+      ) {
+        toast.error(
+          isHeicCover(
+            raw,
+          )
+            ? ts(
+                'cover-heic-unsupported',
+                {
+                  defaultValue:
+                    "This browser can't open HEIC photos. Export it as JPEG or PNG, or pick it from Safari.",
+                },
+              )
+            : ts(
+                'cover-format-unsupported',
+                {
+                  defaultValue:
+                    'That image format is not supported. Use JPEG, PNG or WebP.',
+                },
+              ),
+        );
+        input.value =
+          '';
+        return;
+      }
+      setCoverPreview(
+        (
+          prev,
+        ) => {
+          if (
+            prev
+          )
+            URL.revokeObjectURL(
+              prev,
+            );
+          return URL.createObjectURL(
+            picked,
+          );
+        },
+      );
+      setCover(
+        picked,
+      );
+    };
+
+  const submit =
+    (
+      event: React.FormEvent,
+    ) => {
+      event.preventDefault();
+      if (
+        !file ||
+        uploading
+      )
+        return;
+
+      if (
+        duration >
+        MAX_SONG_DURATION_SEC
+      ) {
+        toast.error(
+          t(
+            'audio-too-long',
+            {
+              defaultValue:
+                'Tracks must be under {{minutes}} minutes.',
+              minutes:
+                MAX_SONG_DURATION_SEC /
+                60,
+            },
+          ),
+        );
+        return;
+      }
+
+      // The pack this upload creates is titled with the album, so there has to be
+      // one. Checked here as well as on the server so the answer arrives before
+      // fifty megabytes do.
+      if (
+        extraFiles.length >
+          0 &&
+        !album.trim()
+      ) {
+        toast.error(
+          ts(
+            'album-title-required',
+            {
+              defaultValue:
+                'An album upload needs an album title.',
+            },
+          ),
+        );
+        return;
+      }
+
+      setUploading(
+        true,
+      );
+      setProgress(
+        0,
+      );
+      setStatusText(
+        t(
+          'status-uploading',
+          {
+            defaultValue:
+              'Uploading track…',
+          },
+        ),
+      );
+
+      const form =
+        new FormData();
+      form.append(
+        'file',
+        file,
+      );
+      // L16 — every extra track rides in the same request, so the songs and the
+      // album pack they belong to are created in one transaction. Twelve
+      // sequential uploads cannot be: the eighth failing leaves seven songs and
+      // no album.
+      for (const extra of extraFiles)
+        form.append(
+          'file',
+          extra,
+        );
+      form.append(
+        'title',
+        title,
+      );
+      form.append(
+        'artist',
+        artist,
+      );
+      if (
+        album.trim()
+      )
+        form.append(
+          'album',
+          album.trim(),
+        );
+      form.append(
+        'description',
+        description,
+      );
+      form.append(
+        'duration',
+        String(
+          duration,
+        ),
+      );
+      if (
+        cover
+      )
+        form.append(
+          'cover',
+          cover,
+        );
+
+      // XHR rather than fetch, purely for upload progress — `fetch` still has no
+      // request-side progress event in any shipping browser.
+      const xhr =
+        new XMLHttpRequest();
+      xhr.upload.addEventListener(
+        'progress',
+        (
+          e,
+        ) => {
+          if (
+            !e.lengthComputable
+          )
+            return;
+          const percent =
+            Math.round(
+              (e.loaded /
+                e.total) *
+                100,
+            );
+          setProgress(
+            percent,
+          );
+          if (
+            percent >=
+            100
+          ) {
+            // The bytes are up; the server is now decoding and charting, which is
+            // the slow part and has no progress to report.
+            setStatusText(
+              t(
+                'status-analyzing',
+                {
+                  defaultValue:
+                    'Analyzing audio…',
+                },
+              ),
+            );
+          }
+        },
+      );
+
+      xhr.addEventListener(
+        'load',
+        () => {
+          setUploading(
+            false,
+          );
+          let body: {
+            error?: string;
+            notes?: Record<
+              string,
+              number
+            >;
+            charting?: boolean;
+          } =
+            {};
+          try {
+            body =
+              JSON.parse(
+                xhr.responseText,
+              );
+          } catch {
+            // Non-JSON body — fall through to the generic message.
+          }
+
+          if (
+            xhr.status >=
+              200 &&
+            xhr.status <
+              300
+          ) {
+            const expert =
+              body
+                .notes
+                ?.expert;
+            // O3 — charting is a queued job now, so the upload response carries no
+            // note count and `charting: true` instead. Saying "map generated" here
+            // would be a lie: the row exists, the notes do not yet. The `expert`
+            // branch survives for the inline path (no queue available), which does
+            // still chart before responding.
+            toast.success(
+              expert
+                ? t(
+                    'upload-success-notes',
+                    {
+                      defaultValue:
+                        'Track uploaded — {{count}} notes charted.',
+                      count:
+                        expert,
+                    },
+                  )
+                : body.charting
+                  ? ts(
+                      'upload-success-charting',
+                      {
+                        defaultValue:
+                          'Track uploaded. Charting it now — this takes a moment.',
+                      },
+                    )
+                  : t(
+                      'upload-success',
+                      {
+                        defaultValue:
+                          'Track uploaded and map generated.',
+                      },
+                    ),
+            );
+            onDone();
+            return;
+          }
+          // Surface what the server actually said: "you already uploaded this
+          // track", "you have reached your upload limit" and "that file could not
+          // be decoded" are all things the user can act on.
+          toast.error(
+            body.error ||
+              t(
+                'upload-failed',
+                {
+                  defaultValue:
+                    'Upload failed',
+                },
+              ),
+          );
+        },
+      );
+
+      const fail =
+        () => {
+          setUploading(
+            false,
+          );
+          toast.error(
+            t(
+              'upload-error',
+              {
+                defaultValue:
+                  'Upload error',
+              },
+            ),
+          );
+        };
+      xhr.addEventListener(
+        'error',
+        fail,
+      );
+      xhr.addEventListener(
+        'abort',
+        fail,
+      );
+      // Without a ceiling a dropped mobile connection leaves the form on
+      // "Uploading…" forever with the submit button disabled.
+      xhr.timeout =
+        10 *
+        60 *
+        1000;
+      xhr.addEventListener(
+        'timeout',
+        fail,
+      );
+
+      xhr.open(
+        'POST',
+        '/api/slice-it/songs/upload',
+      );
+      xhr.send(
+        form,
+      );
+    };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form
+      onSubmit={
+        submit
+      }
+      className="space-y-4"
+    >
       {!file ? (
         <label className="p-8 border-2 border-dashed border-slice-shadow-dark/50 rounded-xl flex flex-col items-center justify-center text-slice-text-muted relative h-56 cursor-pointer">
           <input
@@ -1657,33 +3926,66 @@ function UploadForm({ onDone }: { onDone: () => void }) {
             // one-file case is unchanged and is still what happens by default.
             multiple
             className="absolute inset-0 opacity-0 cursor-pointer"
-            onChange={(e) => void pickAudio(e)}
+            onChange={(
+              e,
+            ) =>
+              void pickAudio(
+                e,
+              )
+            }
           />
-          <Upload className="w-12 h-12 mb-4 text-slice-text-light" aria-hidden />
+          <Upload
+            className="w-12 h-12 mb-4 text-slice-text-light"
+            aria-hidden
+          />
           <span className="font-bold text-lg">
-            {t('click-to-select', { defaultValue: 'Click to select audio file' })}
+            {t(
+              'click-to-select',
+              {
+                defaultValue:
+                  'Click to select audio file',
+              },
+            )}
           </span>
           <span className="text-sm text-slice-text-light mt-2">
-            {t('supported-formats', { defaultValue: 'MP3, WAV, OGG and FLAC — up to 50 MB' })}
+            {t(
+              'supported-formats',
+              {
+                defaultValue:
+                  'MP3, WAV, OGG and FLAC — up to 50 MB',
+              },
+            )}
           </span>
           <span className="text-xs text-slice-text-light mt-1">
-            {ts('select-album-hint', {
-              defaultValue: 'Pick several files to upload a whole album at once.',
-            })}
+            {ts(
+              'select-album-hint',
+              {
+                defaultValue:
+                  'Pick several files to upload a whole album at once.',
+              },
+            )}
           </span>
         </label>
       ) : (
         <div className="space-y-4">
           <div className="p-3 bg-slice-card-bg rounded-xl border border-slice-shadow-dark/50 flex items-center justify-between gap-2">
             <span className="font-bold text-blue-600 truncate">
-              {file.name}
-              {extraFiles.length > 0 && (
+              {
+                file.name
+              }
+              {extraFiles.length >
+                0 && (
                 <span className="text-slice-text-light font-normal">
                   {' '}
-                  {ts('plus-more-tracks', {
-                    defaultValue: '+ {{count}} more',
-                    count: extraFiles.length,
-                  })}
+                  {ts(
+                    'plus-more-tracks',
+                    {
+                      defaultValue:
+                        '+ {{count}} more',
+                      count:
+                        extraFiles.length,
+                    },
+                  )}
                 </span>
               )}
             </span>
@@ -1692,11 +3994,21 @@ function UploadForm({ onDone }: { onDone: () => void }) {
               variant="ghost"
               size="sm"
               onClick={() => {
-                setFile(null);
-                setExtraFiles([]);
+                setFile(
+                  null,
+                );
+                setExtraFiles(
+                  [],
+                );
               }}
             >
-              {t('change', { defaultValue: 'Change' })}
+              {t(
+                'change',
+                {
+                  defaultValue:
+                    'Change',
+                },
+              )}
             </Button>
           </div>
 
@@ -1706,14 +4018,35 @@ function UploadForm({ onDone }: { onDone: () => void }) {
                 type="file"
                 accept="image/*"
                 className="absolute inset-0 opacity-0 cursor-pointer"
-                onChange={(e) => void pickCover(e)}
+                onChange={(
+                  e,
+                ) =>
+                  void pickCover(
+                    e,
+                  )
+                }
               />
               {coverPreview ? (
-                <img src={coverPreview} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={
+                    coverPreview
+                  }
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <span className="flex flex-col items-center text-slice-text-light text-[10px] font-bold uppercase">
-                  <ImageIcon className="w-6 h-6 mb-1" aria-hidden />
-                  {t('cover-art', { defaultValue: 'Cover' })}
+                  <ImageIcon
+                    className="w-6 h-6 mb-1"
+                    aria-hidden
+                  />
+                  {t(
+                    'cover-art',
+                    {
+                      defaultValue:
+                        'Cover',
+                    },
+                  )}
                 </span>
               )}
             </label>
@@ -1722,37 +4055,89 @@ function UploadForm({ onDone }: { onDone: () => void }) {
               {/* An album takes each track's title from its filename — there is
                   one title field and twelve tracks — so the field only appears
                   when there is exactly one of them. */}
-              {extraFiles.length === 0 && (
+              {extraFiles.length ===
+                0 && (
                 <Field
-                  label={t('label-title', { defaultValue: 'Title' })}
-                  value={title}
-                  onChange={setTitle}
+                  label={t(
+                    'label-title',
+                    {
+                      defaultValue:
+                        'Title',
+                    },
+                  )}
+                  value={
+                    title
+                  }
+                  onChange={
+                    setTitle
+                  }
                 />
               )}
               <Field
-                label={t('label-artist', { defaultValue: 'Artist' })}
-                value={artist}
-                onChange={setArtist}
+                label={t(
+                  'label-artist',
+                  {
+                    defaultValue:
+                      'Artist',
+                  },
+                )}
+                value={
+                  artist
+                }
+                onChange={
+                  setArtist
+                }
               />
               <Field
                 label={
-                  extraFiles.length > 0
-                    ? ts('label-album-required', { defaultValue: 'Album' })
-                    : ts('label-album', { defaultValue: 'Album (Optional)' })
+                  extraFiles.length >
+                  0
+                    ? ts(
+                        'label-album-required',
+                        {
+                          defaultValue:
+                            'Album',
+                        },
+                      )
+                    : ts(
+                        'label-album',
+                        {
+                          defaultValue:
+                            'Album (Optional)',
+                        },
+                      )
                 }
-                value={album}
-                onChange={setAlbum}
+                value={
+                  album
+                }
+                onChange={
+                  setAlbum
+                }
               />
             </div>
           </div>
 
           <Field
-            label={t('label-description', { defaultValue: 'Description (Optional)' })}
-            value={description}
-            onChange={setDescription}
-            placeholder={t('description-placeholder', {
-              defaultValue: 'Tell us about this track…',
-            })}
+            label={t(
+              'label-description',
+              {
+                defaultValue:
+                  'Description (Optional)',
+              },
+            )}
+            value={
+              description
+            }
+            onChange={
+              setDescription
+            }
+            placeholder={t(
+              'description-placeholder',
+              {
+                defaultValue:
+                  'Tell us about this track…',
+              },
+            )}
           />
         </div>
       )}
@@ -1760,13 +4145,29 @@ function UploadForm({ onDone }: { onDone: () => void }) {
       {uploading && (
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-bold text-slice-text-muted uppercase">
-            <span>{statusText}</span>
-            {progress > 0 && progress < 100 && <span>{progress}%</span>}
+            <span>
+              {
+                statusText
+              }
+            </span>
+            {progress >
+              0 &&
+              progress <
+                100 && (
+                <span>
+                  {
+                    progress
+                  }
+                  %
+                </span>
+              )}
           </div>
           <div className="w-full h-3 bg-slice-shadow-dark rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-500 origin-left transition-transform duration-300"
-              style={{ transform: `scaleX(${Math.max(5, progress) / 100})` }}
+              style={{
+                transform: `scaleX(${Math.max(5, progress) / 100})`,
+              }}
             />
           </div>
         </div>
@@ -1774,12 +4175,27 @@ function UploadForm({ onDone }: { onDone: () => void }) {
 
       <Button
         type="submit"
-        disabled={uploading || !file}
+        disabled={
+          uploading ||
+          !file
+        }
         className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold h-12 rounded-xl"
       >
         {uploading
-          ? t('processing', { defaultValue: 'PROCESSING…' })
-          : t('upload-track-title', { defaultValue: 'UPLOAD TRACK' })}
+          ? t(
+              'processing',
+              {
+                defaultValue:
+                  'PROCESSING…',
+              },
+            )
+          : t(
+              'upload-track-title',
+              {
+                defaultValue:
+                  'UPLOAD TRACK',
+              },
+            )}
       </Button>
     </form>
   );
@@ -1793,16 +4209,34 @@ function Field({
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (
+    value: string,
+  ) => void;
   placeholder?: string;
 }) {
   return (
     <label className="block space-y-1">
-      <span className="text-xs font-bold text-slice-text-light uppercase">{label}</span>
+      <span className="text-xs font-bold text-slice-text-light uppercase">
+        {
+          label
+        }
+      </span>
       <Input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
+        value={
+          value
+        }
+        onChange={(
+          e,
+        ) =>
+          onChange(
+            e
+              .target
+              .value,
+          )
+        }
+        placeholder={
+          placeholder
+        }
         className="bg-slice-card-bg text-slice-text border border-slice-shadow-dark/30"
       />
     </label>
@@ -1811,21 +4245,67 @@ function Field({
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
-function sortLabel(sort: SongSort, t: (key: string, opts: { defaultValue: string }) => string) {
-  switch (sort) {
+function sortLabel(
+  sort: SongSort,
+  t: (
+    key: string,
+    opts: {
+      defaultValue: string;
+    },
+  ) => string,
+) {
+  switch (
+    sort
+  ) {
     case 'recent':
-      return t('sort-recent', { defaultValue: 'Newest' });
+      return t(
+        'sort-recent',
+        {
+          defaultValue:
+            'Newest',
+        },
+      );
     case 'popular':
-      return t('sort-popular', { defaultValue: 'Most played' });
+      return t(
+        'sort-popular',
+        {
+          defaultValue:
+            'Most played',
+        },
+      );
     case 'liked':
-      return t('sort-liked', { defaultValue: 'Most liked' });
+      return t(
+        'sort-liked',
+        {
+          defaultValue:
+            'Most liked',
+        },
+      );
     case 'title':
-      return t('sort-title', { defaultValue: 'Title' });
+      return t(
+        'sort-title',
+        {
+          defaultValue:
+            'Title',
+        },
+      );
     case 'duration':
-      return t('sort-duration', { defaultValue: 'Shortest' });
+      return t(
+        'sort-duration',
+        {
+          defaultValue:
+            'Shortest',
+        },
+      );
     case 'difficulty':
       // C3 — `Song.chartRating`, the hardest rated chart of the song. Populated
       // and, until now, unreachable: see `docs/_handoff/rating-requests.md` §1.
-      return t('sort-difficulty', { defaultValue: 'Hardest' });
+      return t(
+        'sort-difficulty',
+        {
+          defaultValue:
+            'Hardest',
+        },
+      );
   }
 }

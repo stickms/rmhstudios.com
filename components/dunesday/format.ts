@@ -6,17 +6,42 @@
 
 import { parseDay } from '@/lib/dunesday/schedule';
 
-export function fmtDay(day: string, lang: string, opts: Intl.DateTimeFormatOptions): string {
+export function fmtDay(
+  day: string,
+  lang: string,
+  opts: Intl.DateTimeFormatOptions,
+): string {
   try {
-    return new Intl.DateTimeFormat(lang, { timeZone: 'UTC', ...opts }).format(parseDay(day));
+    return new Intl.DateTimeFormat(
+      lang,
+      {
+        timeZone:
+          'UTC',
+        ...opts,
+      },
+    ).format(
+      parseDay(
+        day,
+      ),
+    );
   } catch {
     return day;
   }
 }
 
-export const LONG: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
-export const SHORT: Intl.DateTimeFormatOptions = {
-  weekday: 'short',
-  month: 'short',
-  day: 'numeric',
-};
+export const LONG: Intl.DateTimeFormatOptions =
+  {
+    weekday:
+      'long',
+    month:
+      'long',
+    day: 'numeric',
+  };
+export const SHORT: Intl.DateTimeFormatOptions =
+  {
+    weekday:
+      'short',
+    month:
+      'short',
+    day: 'numeric',
+  };

@@ -120,7 +120,12 @@ export interface IntegrityVerdict {
   suspicions: SuspicionCode[];
 }
 
-const ok: IntegrityVerdict = { reject: false, suspicions: [] };
+const ok: IntegrityVerdict =
+  {
+    reject: false,
+    suspicions:
+      [],
+  };
 
 /**
  * Timing distribution: is this a person?
@@ -129,14 +134,43 @@ const ok: IntegrityVerdict = { reject: false, suspicions: [] };
  * because the check is statistical and the population it is applied to includes
  * the best players on the platform.
  */
-export function checkTiming(timing: TimingSummary | null | undefined): SuspicionCode[] {
-  if (!timing || timing.samples < MIN_TIMING_SAMPLES) return [];
-  const out: SuspicionCode[] = [];
-  if (Number.isFinite(timing.stdDevMs) && timing.stdDevMs < MIN_HUMAN_STDDEV_MS) {
-    out.push('timing_too_precise');
+export function checkTiming(
+  timing:
+    | TimingSummary
+    | null
+    | undefined,
+): SuspicionCode[] {
+  if (
+    !timing ||
+    timing.samples <
+      MIN_TIMING_SAMPLES
+  )
+    return [];
+  const out: SuspicionCode[] =
+    [];
+  if (
+    Number.isFinite(
+      timing.stdDevMs,
+    ) &&
+    timing.stdDevMs <
+      MIN_HUMAN_STDDEV_MS
+  ) {
+    out.push(
+      'timing_too_precise',
+    );
   }
-  if (!Number.isFinite(timing.meanMs) || Math.abs(timing.meanMs) > MAX_HUMAN_MEAN_MS) {
-    out.push('timing_mean_impossible');
+  if (
+    !Number.isFinite(
+      timing.meanMs,
+    ) ||
+    Math.abs(
+      timing.meanMs,
+    ) >
+      MAX_HUMAN_MEAN_MS
+  ) {
+    out.push(
+      'timing_mean_impossible',
+    );
   }
   return out;
 }
@@ -157,36 +191,81 @@ export function checkConsistency(input: {
   /** Notes in the chart the player actually played, when the server knows it. */
   chartNotes?: number;
   durationSeconds: number;
-  modifiers: Partial<Modifiers> | null | undefined;
+  modifiers:
+    | Partial<Modifiers>
+    | null
+    | undefined;
 }): IntegrityVerdict {
-  const suspicions: SuspicionCode[] = [];
-  const { score, maxCombo, notesResolved, chartNotes } = input;
+  const suspicions: SuspicionCode[] =
+    [];
+  const {
+    score,
+    maxCombo,
+    notesResolved,
+    chartNotes,
+  } =
+    input;
 
   // You cannot resolve more notes than the chart contains. A little slack for a
   // chart that was re-generated between the run starting and the score landing.
   if (
-    notesResolved !== undefined &&
-    chartNotes !== undefined &&
-    chartNotes > 0 &&
-    notesResolved > chartNotes * 1.05 + 8
+    notesResolved !==
+      undefined &&
+    chartNotes !==
+      undefined &&
+    chartNotes >
+      0 &&
+    notesResolved >
+      chartNotes *
+        1.05 +
+        8
   ) {
-    suspicions.push('notes_exceed_chart');
+    suspicions.push(
+      'notes_exceed_chart',
+    );
   }
 
   // Combo counts notes hit in a row, so it cannot exceed how many were resolved.
-  if (notesResolved !== undefined && maxCombo > notesResolved) {
-    suspicions.push('combo_exceeds_notes');
+  if (
+    notesResolved !==
+      undefined &&
+    maxCombo >
+      notesResolved
+  ) {
+    suspicions.push(
+      'combo_exceeds_notes',
+    );
   }
 
   // The strongest arithmetic bound. Accuracy caps the judgements, judgements cap
   // the per-note points, and combo caps the multiplier chain — so a claimed
   // accuracy implies a ceiling on score for a given note count.
-  if (notesResolved !== undefined && notesResolved > 0) {
-    const ceiling = scoreCeilingFor(input, notesResolved);
-    if (score > ceiling) suspicions.push('accuracy_score_mismatch');
+  if (
+    notesResolved !==
+      undefined &&
+    notesResolved >
+      0
+  ) {
+    const ceiling =
+      scoreCeilingFor(
+        input,
+        notesResolved,
+      );
+    if (
+      score >
+      ceiling
+    )
+      suspicions.push(
+        'accuracy_score_mismatch',
+      );
   }
 
-  return { reject: suspicions.length > 0, suspicions };
+  return {
+    reject:
+      suspicions.length >
+      0,
+    suspicions,
+  };
 }
 
 /**
@@ -211,33 +290,99 @@ function scoreCeilingFor(
     accuracy: number;
     maxCombo: number;
     durationSeconds: number;
-    modifiers: Partial<Modifiers> | null | undefined;
+    modifiers:
+      | Partial<Modifiers>
+      | null
+      | undefined;
   },
   notesResolved: number,
 ): number {
-  const mult = calculateScoreMultiplier(input.modifiers);
-  const n = notesResolved;
+  const mult =
+    calculateScoreMultiplier(
+      input.modifiers,
+    );
+  const n =
+    notesResolved;
   // Every per-note payout is multiplied by the combo at that moment, and the
   // run states the highest combo it ever reached. Using `maxCombo` rather than
   // `n` everywhere below is what makes these bounds bite on a run that scored a
   // lot without ever chaining — which is what an edited score looks like.
-  const combo = Math.max(1, Math.min(n, Math.floor(input.maxCombo) || 1));
+  const combo =
+    Math.max(
+      1,
+      Math.min(
+        n,
+        Math.floor(
+          input.maxCombo,
+        ) ||
+          1,
+      ),
+    );
 
   // The combo chain, capped by the highest combo actually claimed.
-  const byCombo = HIT_POINTS.MARVELOUS * Math.min((n * (n + 1)) / 2, n * combo);
+  const byCombo =
+    HIT_POINTS.MARVELOUS *
+    Math.min(
+      (n *
+        (n +
+          1)) /
+        2,
+      n *
+        combo,
+    );
 
-  const accuracy = Number.isFinite(input.accuracy) ? Math.max(0, Math.min(1, input.accuracy)) : 1;
-  const bestPointsPerWeight = HIT_POINTS.MARVELOUS / ACCURACY_WEIGHTS.MARVELOUS;
-  const byAccuracy = bestPointsPerWeight * (accuracy * n * 100) * combo;
+  const accuracy =
+    Number.isFinite(
+      input.accuracy,
+    )
+      ? Math.max(
+          0,
+          Math.min(
+            1,
+            input.accuracy,
+          ),
+        )
+      : 1;
+  const bestPointsPerWeight =
+    HIT_POINTS.MARVELOUS /
+    ACCURACY_WEIGHTS.MARVELOUS;
+  const byAccuracy =
+    bestPointsPerWeight *
+    (accuracy *
+      n *
+      100) *
+    combo;
 
-  const releases = HOLD_RELEASE_POINTS * n;
+  const releases =
+    HOLD_RELEASE_POINTS *
+    n;
   // Holds accrue per second of audio rather than per frame, so the bound is
   // "the whole song was one held note at the highest combo reached" — true as a
   // ceiling, and about 120x tighter than the old per-frame model.
-  const duration = Number.isFinite(input.durationSeconds) ? Math.max(0, input.durationSeconds) : 0;
-  const holds = HOLD_TICK_POINTS_PER_SECOND * duration * combo;
+  const duration =
+    Number.isFinite(
+      input.durationSeconds,
+    )
+      ? Math.max(
+          0,
+          input.durationSeconds,
+        )
+      : 0;
+  const holds =
+    HOLD_TICK_POINTS_PER_SECOND *
+    duration *
+    combo;
 
-  return Math.ceil((Math.min(byCombo, byAccuracy) + releases + holds) * mult * 1.05);
+  return Math.ceil(
+    (Math.min(
+      byCombo,
+      byAccuracy,
+    ) +
+      releases +
+      holds) *
+      mult *
+      1.05,
+  );
 }
 
 /**
@@ -256,29 +401,80 @@ export function checkElapsed(input: {
   durationSeconds: number;
   speed: number;
 }): IntegrityVerdict {
-  const speed = Number.isFinite(input.speed) && input.speed > 0 ? input.speed : 1;
-  const duration = Number.isFinite(input.durationSeconds) ? Math.max(0, input.durationSeconds) : 0;
-  if (duration <= 0) return ok;
+  const speed =
+    Number.isFinite(
+      input.speed,
+    ) &&
+    input.speed >
+      0
+      ? input.speed
+      : 1;
+  const duration =
+    Number.isFinite(
+      input.durationSeconds,
+    )
+      ? Math.max(
+          0,
+          input.durationSeconds,
+        )
+      : 0;
+  if (
+    duration <=
+    0
+  )
+    return ok;
 
-  const requiredMs = (duration / speed) * 1000 * 0.85;
-  if (input.elapsedMs < requiredMs) {
-    return { reject: true, suspicions: ['finished_too_fast'] };
+  const requiredMs =
+    (duration /
+      speed) *
+    1000 *
+    0.85;
+  if (
+    input.elapsedMs <
+    requiredMs
+  ) {
+    return {
+      reject: true,
+      suspicions:
+        [
+          'finished_too_fast',
+        ],
+    };
   }
   return ok;
 }
 
 /** Merge verdicts, preserving order and dropping duplicates. */
-export function mergeVerdicts(...verdicts: IntegrityVerdict[]): IntegrityVerdict {
-  const seen = new Set<SuspicionCode>();
-  const suspicions: SuspicionCode[] = [];
+export function mergeVerdicts(
+  ...verdicts: IntegrityVerdict[]
+): IntegrityVerdict {
+  const seen =
+    new Set<SuspicionCode>();
+  const suspicions: SuspicionCode[] =
+    [];
   let reject = false;
   for (const verdict of verdicts) {
-    if (verdict.reject) reject = true;
+    if (
+      verdict.reject
+    )
+      reject = true;
     for (const code of verdict.suspicions) {
-      if (seen.has(code)) continue;
-      seen.add(code);
-      suspicions.push(code);
+      if (
+        seen.has(
+          code,
+        )
+      )
+        continue;
+      seen.add(
+        code,
+      );
+      suspicions.push(
+        code,
+      );
     }
   }
-  return { reject, suspicions };
+  return {
+    reject,
+    suspicions,
+  };
 }

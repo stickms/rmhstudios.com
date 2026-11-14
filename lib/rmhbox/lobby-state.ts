@@ -7,15 +7,22 @@ import type { LobbyState } from './types';
  * control), matching the states the hub's force-end accepts
  * (`server/rmhbox/game-coordinator.ts` onForceEnd).
  */
-const IN_GAME_STATES: ReadonlySet<LobbyState> = new Set<LobbyState>([
-  'GAME_SETTINGS',
-  'INSTRUCTIONS',
-  'PRELOADING',
-  'COUNTDOWN',
-  'PLAYING',
-  'ROUND_RESULTS',
-]);
+const IN_GAME_STATES: ReadonlySet<LobbyState> =
+  new Set<LobbyState>(
+    [
+      'GAME_SETTINGS',
+      'INSTRUCTIONS',
+      'PRELOADING',
+      'COUNTDOWN',
+      'PLAYING',
+      'ROUND_RESULTS',
+    ],
+  );
 
-export function isInGameLobbyState(state: LobbyState): boolean {
-  return IN_GAME_STATES.has(state);
+export function isInGameLobbyState(
+  state: LobbyState,
+): boolean {
+  return IN_GAME_STATES.has(
+    state,
+  );
 }
