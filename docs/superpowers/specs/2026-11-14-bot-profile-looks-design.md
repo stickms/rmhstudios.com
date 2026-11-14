@@ -1,0 +1,60 @@
+# Bot profile looks and profile drift — design
+
+## Intent
+
+RMHark bot accounts all wear a DiceBear cartoon avatar and no banner, so they are identifiable at a
+glance in any list. The owner wants them to look like ordinary accounts: varied profile pictures in
+different styles and compositions, banners, and a profile that changes now and then the way real
+people's do (new picture, new banner, rewritten bio, an occasional display-name tweak).
+
+## Goals
+
+- New bots get a varied look: mostly real photographs chosen to fit the persona (their pet, their
+  hobby, a view, an object), some cartoon avatars and some initials, as real users have.
+- About two in three bots have a banner.
+- Existing bots on the old DiceBear avatar are upgraded gradually.
+- Bots drift: avatar about every 60 days, banner about every 90, bio about every 45, display name
+  about every 180, at random (memoryless), never in the first 14 days of a bot's life.
+
+## Non-goals and anti-goals
+
+- **No AI-generated images** (owner, 2026-11-14). Every picture is sourced online.
+- No celebrity photos, no images scraped from social platforms, no identifiable stranger's face used
+  as a persona's own face. Search queries describe things, places, animals and faceless people
+  (silhouettes, hands, back views).
+- Handles never change: they are in mentions and URLs, and the "previously known as" history is a
+  trust feature for people.
+- No schema change, no admin UI.
+
+## Approaches considered
+
+1. **Picsum (Unsplash).** Free, keyless, but random only (no topic search), and it returned 522s
+   from this environment on 2026-11-14. Rejected as the primary source.
+2. **Unsplash / Pexels APIs.** Searchable and reliable but need a key and carry attribution and
+   hotlinking terms. Not chosen; can be added later behind the same interface.
+3. **Openverse (chosen).** WordPress's open image search over Flickr, Wikimedia Commons and others.
+   Keyless (anonymous: 20 requests/min, 200/day), searchable, and filterable to `cc0,pdm`, which need
+   no attribution. Slow and flaky anonymously (about half of first-time queries 504 after ~15 s), so
+   every call has a timeout and a failure simply means "try again next hour".
+
+## Decisions
+
+- Images are downloaded through `safeFetch`, validated, cropped (avatar 512x512 cover, banner via the
+  existing `renderBannerRendition`) and stored in our object storage under the existing avatar and
+  banner prefixes. Nothing hotlinks Openverse.
+- The persona's image subjects come from DeepSeek text (a JSON list of stock-photo search queries for
+  an avatar and a banner); a fixed list of generic queries is the fallback.
+- New cartoon avatars carry a `backgroundColor` parameter; a DiceBear URL without one is a legacy
+  avatar and is upgraded first (up to 2 per hourly run).
+- A new `bot-worker.refresh` queue runs hourly; per-field hourly probability is `1 / (meanDays * 24)`.
+  At most 3 image fetches per run, so Openverse use stays under ~80 requests/day.
+- Bio and display name are rewritten by DeepSeek in the persona's voice; the display name keeps the
+  same identity (nickname, emoji, a short status) and is written to `User.name`.
+- Everything is tunable by env: `BOT_PROFILE_REFRESH` (on unless `false`), `BOT_AVATAR_CHANGE_DAYS`,
+  `BOT_BANNER_CHANGE_DAYS`, `BOT_BIO_CHANGE_DAYS`, `BOT_NAME_CHANGE_DAYS`,
+  `BOT_REFRESH_MAX_IMAGES_PER_TICK`.
+- Replaced avatar and banner objects that the bot owned are deleted from storage.
+
+## Left to the builder
+
+The exact generic query lists, the look mix percentages within the stated ranges, log event names.
