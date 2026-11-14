@@ -1425,6 +1425,15 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'tomb-read',
     'tomb-record',
     'tomb-record-karma',
+    // Deal values and the acquisition framing (2026-11-14, same overhaul).
+    'tomb-unit-billion',
+    'tomb-unit-million',
+    'tomb-nvidiamd-terms',
+    'tomb-buddhism-title',
+    'tomb-buddhism-terms',
+    'deals-tb-heading-acquisition',
+    'deals-tb-fig-facility',
+    'home-fig-acquisition',
   ],
   'c-rmh-pmc': [
     'cta-body-capabilities-page',

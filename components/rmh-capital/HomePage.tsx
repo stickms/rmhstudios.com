@@ -121,8 +121,8 @@ export default function HomePage() {
             <div className="fig rv d3">
               <Count to={35} pre="$" suf="M" className="fig-n steel" />
               <span className="fig-k">
-                {t('home-fig-facility', {
-                  defaultValue: 'Senior Secured Enlightenment Facility for Bain Capital',
+                {t('home-fig-acquisition', {
+                  defaultValue: "Facility for Bain Capital's acquisition of Tibetan Buddhism",
                 })}
               </span>
             </div>
