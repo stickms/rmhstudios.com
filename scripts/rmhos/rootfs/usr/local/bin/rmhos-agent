@@ -59,6 +59,8 @@ do_session() {
 	if adduser -D -u 1000 -G wheel -s /bin/ash "$user" >/dev/null 2>&1; then
 		uid=$(id -u "$user")
 		gid=$(id -g "$user")
+		# adduser -G wheel makes wheel (gid 10) the primary group, so the home
+		# tmpfs is owned by that gid, not 1000.
 		for g in video input audio; do
 			addgroup "$user" "$g" >/dev/null 2>&1
 		done
@@ -81,18 +83,21 @@ do_session() {
 # --- RESTORE -----------------------------------------------------------
 
 # Extract the archive into the home as the user. Entries that are absolute or
-# climb out with ".." are refused up front, by listing first.
+# climb out with ".." are refused up front. GNU tar (-P keeps names as stored;
+# busybox tar silently strips "/" and "../" from its listing, which would hide them) pipes
+# its listing straight into the check (nothing is written to the root filesystem).
 restore_archive() {
 	home=/home/$SESSION_USER
-	if ! tar -tf - <"$ARCHIVE" 2>/dev/null >/tmp/rmhos-home.list; then
-		log "home archive is not a readable tar"
-		return 1
-	fi
-	if grep -Eq '(^/|(^|/)\.\.(/|$))' /tmp/rmhos-home.list; then
+	if tar -tPf - <"$ARCHIVE" 2>/dev/null | grep -Eq '(^/|(^|/)\.\.(/|$))'; then
 		log "home archive has absolute or .. entries; refused"
 		return 1
 	fi
-	su -s /bin/sh "$SESSION_USER" -c "tar -xpf - -C '$home' --no-same-owner" <"$ARCHIVE" >/dev/null 2>&1
+	if ! err=$(su -s /bin/sh "$SESSION_USER" -c "tar -xpf - -C '$home' --no-same-owner" <"$ARCHIVE" 2>&1 >/dev/null); then
+		log "home archive could not be extracted: $(printf '%s' "$err" | head -n 3 | tr '\n' ' ')"
+		return 1
+	fi
+	# A crafted "./" entry may carry any mode; SAVE would preserve it.
+	chmod u+rwx "$home"
 }
 
 launch_desktop() {
@@ -123,7 +128,7 @@ do_restore() {
 	ok=1
 	if [ -f "$ARCHIVE" ]; then
 		restore_archive || ok=0
-		rm -f "$ARCHIVE" /tmp/rmhos-home.list
+		rm -f "$ARCHIVE"
 	fi
 	launch_desktop || ok=0
 	if [ "$ok" = 1 ]; then

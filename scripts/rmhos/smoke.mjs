@@ -354,6 +354,472 @@ async function fromSnapshot() {
   }
 }
 
+// --- tar bytes built here, never by the host's tar -------------------------
+
+function tarHeader({
+  name,
+  size = 0,
+  mode = 0o644,
+  type = '0',
+}) {
+  const h =
+    new Uint8Array(
+      512,
+    );
+  const put =
+    (
+      off,
+      str,
+    ) =>
+      h.set(
+        new TextEncoder().encode(
+          str,
+        ),
+        off,
+      );
+  put(
+    0,
+    name,
+  );
+  put(
+    100,
+    `${mode.toString(8).padStart(7, '0')}\0`,
+  );
+  put(
+    108,
+    '0000000\0',
+  );
+  put(
+    116,
+    '0000000\0',
+  );
+  put(
+    124,
+    `${size.toString(8).padStart(11, '0')}\0`,
+  );
+  put(
+    136,
+    '00000000000\0',
+  );
+  put(
+    148,
+    '        ',
+  );
+  h[156] =
+    type.charCodeAt(
+      0,
+    );
+  put(
+    257,
+    'ustar\0',
+  );
+  put(
+    263,
+    '00',
+  );
+  let sum = 0;
+  for (const b of h)
+    sum +=
+      b;
+  put(
+    148,
+    `${sum.toString(8).padStart(6, '0')}\0 `,
+  );
+  return h;
+}
+
+function makeTar(
+  entries,
+) {
+  const parts =
+    [];
+  for (const e of entries) {
+    const data =
+      new TextEncoder().encode(
+        e.content ??
+          '',
+      );
+    parts.push(
+      tarHeader(
+        {
+          ...e,
+          size: data.length,
+        },
+      ),
+    );
+    if (
+      data.length
+    ) {
+      const padded =
+        new Uint8Array(
+          Math.ceil(
+            data.length /
+              512,
+          ) *
+            512,
+        );
+      padded.set(
+        data,
+      );
+      parts.push(
+        padded,
+      );
+    }
+  }
+  parts.push(
+    new Uint8Array(
+      1024,
+    ),
+  );
+  const out =
+    new Uint8Array(
+      parts.reduce(
+        (
+          n,
+          a,
+        ) =>
+          n +
+          a.length,
+        0,
+      ),
+    );
+  let off = 0;
+  for (const a of parts) {
+    out.set(
+      a,
+      off,
+    );
+    off +=
+      a.length;
+  }
+  return out;
+}
+
+/** The entries of a tar: { name, mode, content }. */
+function readTar(
+  bytes,
+) {
+  const out =
+    [];
+  const text =
+    (
+      a,
+      from,
+      len,
+    ) =>
+      new TextDecoder()
+        .decode(
+          a.subarray(
+            from,
+            from +
+              len,
+          ),
+        )
+        .replace(
+          /\0.*$/s,
+          '',
+        );
+  for (
+    let off = 0;
+    off +
+      512 <=
+    bytes.length;
+  ) {
+    const h =
+      bytes.subarray(
+        off,
+        off +
+          512,
+      );
+    if (
+      h.every(
+        (
+          b,
+        ) =>
+          b ===
+          0,
+      )
+    )
+      break;
+    const size =
+      parseInt(
+        text(
+          h,
+          124,
+          12,
+        ),
+        8,
+      );
+    const name =
+      text(
+        h,
+        0,
+        100,
+      );
+    const mode =
+      parseInt(
+        text(
+          h,
+          100,
+          8,
+        ),
+        8,
+      );
+    out.push(
+      {
+        name,
+        mode,
+        content:
+          new TextDecoder().decode(
+            bytes.subarray(
+              off +
+                512,
+              off +
+                512 +
+                size,
+            ),
+          ),
+      },
+    );
+    off +=
+      512 +
+      Math.ceil(
+        size /
+          512,
+      ) *
+        512;
+  }
+  return out;
+}
+
+/** Restores the snapshot, opens SESSION, places `archive` in the share and sends RESTORE. */
+async function withArchive(
+  archive,
+) {
+  need(
+    [
+      'state.zst',
+    ],
+  );
+  const vm =
+    await startNodeVm(
+      {
+        dir,
+        initialState: true,
+        timeoutMs:
+          5 *
+          60 *
+          1000,
+      },
+    );
+  await vm.whenReady;
+  vm.send(
+    'SESSION smoke',
+  );
+  await vm.waitLine(
+    /^RMHOS SESSION_OK\r?$/m,
+  );
+  await vm.emulator.create_file(
+    '/sync/home.tar',
+    archive,
+  );
+  vm.send(
+    'RESTORE',
+  );
+  return vm;
+}
+
+async function refusedArchive() {
+  console.log(
+    '--- case 3: a crafted archive (absolute and ../ entries) is refused',
+  );
+  const vm =
+    await withArchive(
+      makeTar(
+        [
+          {
+            name: '/tmp/rmhos-escape.txt',
+            content:
+              'absolute\n',
+          },
+          {
+            name: '../escape.txt',
+            content:
+              'dotdot\n',
+          },
+        ],
+      ),
+    );
+  try {
+    // The agent answers "ERR restore" for a refused archive.
+    await vm.waitLine(
+      /^RMHOS ERR restore\r?$/m,
+    );
+    step(
+      vm,
+      'RMHOS ERR restore',
+    );
+    if (
+      !/home archive has absolute or \.\. entries; refused/.test(
+        vm.serial0,
+      )
+    ) {
+      throw new Error(
+        `the archive was not refused before extraction\n${vm.serial0.slice(-1500)}`,
+      );
+    }
+    // Refused before extraction means nothing was written outside the home
+    // (the guest filesystem is not visible from here; the log line is the proof).
+    if (
+      /RMHOS RESTORED/.test(
+        vm.serial1,
+      )
+    )
+      throw new Error(
+        'a crafted archive was restored',
+      );
+    vm.send(
+      'SAVE n2',
+    );
+    await vm.waitLine(
+      /^RMHOS SAVED n2 (\d+)\r?$/m,
+    );
+    step(
+      vm,
+      'protocol still alive: SAVED n2',
+    );
+    const names =
+      readTar(
+        await vm.emulator.read_file(
+          '/sync/home.tar',
+        ),
+      ).map(
+        (
+          e,
+        ) =>
+          e.name,
+      );
+    if (
+      names.some(
+        (
+          n,
+        ) =>
+          /escape/.test(
+            n,
+          ),
+      )
+    )
+      throw new Error(
+        `crafted entries ended up in the home: ${names}`,
+      );
+  } finally {
+    await vm.destroy();
+  }
+}
+
+async function validArchive() {
+  console.log(
+    '--- case 4: a valid archive is restored and saved back',
+  );
+  // note.txt first, then a "./" entry with mode 000: the agent must make the
+  // home usable again (u+rwx) so later sessions and SAVE keep working.
+  const vm =
+    await withArchive(
+      makeTar(
+        [
+          {
+            name: 'note.txt',
+            content:
+              'hello from the archive\n',
+          },
+          {
+            name: './',
+            type: '5',
+            mode: 0,
+          },
+        ],
+      ),
+    );
+  try {
+    await vm.waitLine(
+      /^RMHOS RESTORED\r?$/m,
+    );
+    step(
+      vm,
+      'RESTORED',
+    );
+    vm.send(
+      'SAVE n3',
+    );
+    await vm.waitLine(
+      /^RMHOS SAVED n3 (\d+)\r?$/m,
+    );
+    step(
+      vm,
+      'SAVED n3',
+    );
+    const entries =
+      readTar(
+        await vm.emulator.read_file(
+          '/sync/home.tar',
+        ),
+      );
+    const note =
+      entries.find(
+        (
+          e,
+        ) =>
+          e.name.replace(
+            /^\.\//,
+            '',
+          ) ===
+          'note.txt',
+      );
+    if (
+      !note
+    )
+      throw new Error(
+        `note.txt is not in the saved tar: ${entries.map((e) => e.name)}`,
+      );
+    if (
+      note.content !==
+      'hello from the archive\n'
+    )
+      throw new Error(
+        `note.txt content changed: ${JSON.stringify(note.content)}`,
+      );
+    const root =
+      entries.find(
+        (
+          e,
+        ) =>
+          e.name ===
+            './' ||
+          e.name ===
+            '.',
+      );
+    if (
+      !root ||
+      (root.mode &
+        0o700) !==
+        0o700
+    ) {
+      throw new Error(
+        `the home directory is not user-accessible after restore (mode ${root?.mode?.toString(8)})`,
+      );
+    }
+    step(
+      vm,
+      'note.txt round-trips; home mode ' +
+        root.mode.toString(
+          8,
+        ),
+    );
+  } finally {
+    await vm.destroy();
+  }
+}
+
 async function main() {
   need(
     [
@@ -364,16 +830,18 @@ async function main() {
       'manifest.json',
     ],
   );
-  const cold =
-    await coldBoot();
-  const warm =
-    await fromSnapshot();
-  console.log(
-    `SESSION_OK after ${cold.toFixed(1)}s (cold boot) and ${warm.toFixed(1)}s (from the snapshot)`,
-  );
-  console.log(
-    'rmhos smoke: OK',
-  );
+  // RMHOS_SMOKE_CASES=3,4 runs a subset (debugging); default is all four.
+  const only = new Set((process.env.RMHOS_SMOKE_CASES ?? '1,2,3,4').split(','));
+  let cold;
+  let warm;
+  if (only.has('1')) cold = await coldBoot();
+  if (only.has('2')) warm = await fromSnapshot();
+  if (only.has('3')) await refusedArchive();
+  if (only.has('4')) await validArchive();
+  if (cold !== undefined && warm !== undefined) {
+    console.log(`SESSION_OK after ${cold.toFixed(1)}s (cold boot) and ${warm.toFixed(1)}s (from the snapshot)`);
+  }
+  console.log('rmhos smoke: OK');
 }
 
 main().then(

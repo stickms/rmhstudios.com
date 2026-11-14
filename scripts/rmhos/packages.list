@@ -1,6 +1,7 @@
 # Alpine packages added to the minirootfs (one per line). The resolved
 # versions, dependencies included, land in packages.txt beside the image.
 alpine-base
+tar
 openrc
 busybox-openrc
 doas

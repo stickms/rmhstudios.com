@@ -4,7 +4,8 @@
 ARG ALPINE_VERSION=3.22
 
 # ---------------------------------------------------------------- base
-FROM i386/alpine:${ALPINE_VERSION} AS base
+# Pinned by digest (the tag is for reading); bump both together with versions.env.
+FROM i386/alpine:${ALPINE_VERSION}@sha256:a5a75741b67fad64c3492d6fec1228024d7b376278041b857787ce16914040d9 AS base
 # Optional extra CA (a TLS-inspecting proxy), copied in by build.sh. It is
 # trusted for the build only and never reaches the output files.
 COPY .build-ca/ /tmp/extra-ca/
