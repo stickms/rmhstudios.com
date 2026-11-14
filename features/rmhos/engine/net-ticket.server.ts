@@ -20,6 +20,18 @@ export type NetTicketResult =
         | 'bad_signature';
     };
 
+function assertSecret(
+  secret: string,
+): void {
+  if (
+    secret ===
+    ''
+  )
+    throw new Error(
+      'rmhos net ticket secret is empty',
+    );
+}
+
 function mac(
   secret: string,
   userId: string,
@@ -50,6 +62,9 @@ export function signNetTicket(
   secret: string,
   now: number = Date.now(),
 ): string {
+  assertSecret(
+    secret,
+  );
   const expiry =
     String(
       now +
@@ -79,6 +94,9 @@ export function verifyNetTicket(
   secret: string,
   now: number = Date.now(),
 ): NetTicketResult {
+  assertSecret(
+    secret,
+  );
   const parts =
     ticket.split(
       '.',

@@ -87,6 +87,51 @@ describe('net ticket', () => {
       },
     );
   });
+  it('rejects an extended expiry with the old signature', () => {
+    const [
+      id,
+      ,
+      sig,
+    ] =
+      t.split(
+        '.',
+      );
+    expect(
+      verifyNetTicket(
+        `${id}.${1_000 + 600_000}.${sig}`,
+        's3cret',
+        1_000,
+      ),
+    ).toEqual(
+      {
+        ok: false,
+        reason:
+          'bad_signature',
+      },
+    );
+  });
+  it('throws on an empty secret', () => {
+    expect(
+      () =>
+        signNetTicket(
+          'user_1',
+          '',
+          1_000,
+        ),
+    ).toThrow(
+      'rmhos net ticket secret is empty',
+    );
+    expect(
+      () =>
+        verifyNetTicket(
+          t,
+          '',
+          1_000,
+        ),
+    ).toThrow(
+      'rmhos net ticket secret is empty',
+    );
+  });
   it('rejects garbage', () => {
     expect(
       verifyNetTicket(

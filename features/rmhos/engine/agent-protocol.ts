@@ -130,7 +130,13 @@ function parseLine(
         type: 'poweroff',
       };
     case 'ERR':
-      return a
+      return a !==
+        undefined &&
+        b ===
+          undefined &&
+        TOKEN.test(
+          a,
+        )
         ? {
             type: 'error',
             code: a,
@@ -140,13 +146,32 @@ function parseLine(
           };
     case 'SAVED': {
       if (
-        !a ||
-        !b ||
+        a ===
+          undefined ||
+        b ===
+          undefined ||
         rest.length >
           0 ||
+        !TOKEN.test(
+          a,
+        ) ||
         !/^\d+$/.test(
           b,
         )
+      )
+        return {
+          ...PROTOCOL_ERROR,
+        };
+      const bytes =
+        Number(
+          b,
+        );
+      if (
+        !Number.isSafeInteger(
+          bytes,
+        ) ||
+        bytes <
+          0
       )
         return {
           ...PROTOCOL_ERROR,
@@ -155,10 +180,7 @@ function parseLine(
         type: 'saved',
         nonce:
           a,
-        bytes:
-          Number(
-            b,
-          ),
+        bytes,
       };
     }
     default:
@@ -167,6 +189,9 @@ function parseLine(
       };
   }
 }
+
+/** Longest unterminated line kept; the guest never legitimately sends more. */
+const MAX_BUFFER = 4096;
 
 /** Incremental parser: feed it raw serial chunks, get complete events back. */
 export class GuestLineParser {
@@ -201,6 +226,25 @@ export class GuestLineParser {
         events.push(
           event,
         );
+    }
+    if (
+      this
+        .buffer
+        .length >
+      MAX_BUFFER
+    ) {
+      if (
+        this.buffer.startsWith(
+          PREFIX,
+        )
+      )
+        events.push(
+          {
+            ...PROTOCOL_ERROR,
+          },
+        );
+      this.buffer =
+        '';
     }
     return events;
   }

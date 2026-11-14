@@ -176,6 +176,90 @@ describe('GuestLineParser', () => {
   });
 });
 
+describe('GuestLineParser hardening', () => {
+  it('drops an oversized unterminated noise line silently', () => {
+    const p =
+      new GuestLineParser();
+    expect(
+      p.push(
+        'x'.repeat(
+          5000,
+        ),
+      ),
+    ).toEqual(
+      [],
+    );
+    expect(
+      p.push(
+        'RMHOS READY\n',
+      ),
+    ).toEqual(
+      [
+        {
+          type: 'ready',
+        },
+      ],
+    );
+  });
+
+  it('reports one protocol error for an oversized RMHOS line', () => {
+    const p =
+      new GuestLineParser();
+    expect(
+      p.push(
+        'RMHOS ' +
+          'x'.repeat(
+            5000,
+          ),
+      ),
+    ).toEqual(
+      [
+        {
+          type: 'error',
+          code: 'protocol',
+        },
+      ],
+    );
+    expect(
+      p.push(
+        'RMHOS READY\n',
+      ),
+    ).toEqual(
+      [
+        {
+          type: 'ready',
+        },
+      ],
+    );
+  });
+
+  it.each(
+    [
+      'RMHOS ERR bad code!',
+      'RMHOS SAVED n1 99999999999999999999',
+      'RMHOS SAVED n1 -5',
+      'RMHOS SAVED bad! 5',
+    ],
+  )(
+    'rejects %s',
+    (
+      line,
+    ) =>
+      expect(
+        new GuestLineParser().push(
+          `${line}\n`,
+        ),
+      ).toEqual(
+        [
+          {
+            type: 'error',
+            code: 'protocol',
+          },
+        ],
+      ),
+  );
+});
+
 it('exposes the archive path inside the share', () => {
   expect(
     SHARE_ARCHIVE_PATH,
