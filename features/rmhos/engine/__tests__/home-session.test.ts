@@ -77,10 +77,14 @@ function setup(
     deleteShareFile: async (p: string) => void share.delete(p),
   };
   let poweroff: (() => void) | null = null;
+  let savedOnPoweroff: ((bytes: number) => void) | null = null;
   let held = false;
   const order: string[] = [];
   const agent = {
-    startSession: vi.fn(async () => void order.push('session')),
+    startSession: vi.fn(async (): Promise<{ name?: string }> => {
+      order.push('session');
+      return {};
+    }),
     restore: vi.fn(async () => {
       order.push('restore');
       if (opts.restoreError) throw opts.restoreError;
@@ -100,6 +104,12 @@ function setup(
         poweroff = null;
       };
     },
+    onSavedOnPoweroff: (cb: (bytes: number) => void) => {
+      savedOnPoweroff = cb;
+      return () => {
+        savedOnPoweroff = null;
+      };
+    },
   };
   const sync = new HomeSync({ userId: 'u1', vm, agent, store });
   const e = fakeEnv();
@@ -112,7 +122,9 @@ function setup(
     env: e.env,
     onChange: (s) => snaps.push(s),
   });
-  return { session, sync, store, agent, share, e, snaps, order, vm, firePoweroff: () => poweroff?.() };
+  return { session, sync, store, agent, share, e, snaps, order, vm, firePoweroff: () => poweroff?.(),
+    fireSavedOnPoweroff: (bytes: number) => savedOnPoweroff?.(bytes),
+  };
 }
 
 describe('HomeSession handshake', () => {
@@ -564,5 +576,49 @@ describe('power-off and a machine that stops mid-handshake', () => {
     await started;
     expect(t.session.snapshot.stage).toBe('stopped');
     expect(t.e.timers.size).toBe(0);
+  });
+});
+
+describe('saved-on-poweroff and the session name', () => {
+  it('the name the guest reports is kept on the snapshot', async () => {
+    const t = setup();
+    t.agent.startSession.mockResolvedValueOnce({ name: 'zed2' } as never);
+    await t.session.start();
+    expect(t.session.snapshot.linuxName).toBe('zed2');
+    const none = setup();
+    await none.session.start();
+    expect(none.session.snapshot.linuxName).toBeNull();
+  });
+
+  it('a tar the guest already saved is stored without a SAVE round trip, then the machine stops', async () => {
+    const t = setup();
+    await t.session.start();
+    t.session.markDirty();
+    t.share.set(SHARE_ARCHIVE_PATH, fakeTar(7));
+    t.fireSavedOnPoweroff(1536);
+    t.firePoweroff();
+    await vi.waitFor(() => expect(t.session.snapshot.stage).toBe('stopped'));
+    expect(t.agent.save).not.toHaveBeenCalled();
+    expect(await t.store.get('u1')).not.toBeNull();
+    expect(t.session.snapshot.lastSave?.result.status).toBe('saved');
+  });
+
+  it('a power-off with no saved-on-poweroff still sends one SAVE', async () => {
+    const t = setup();
+    await t.session.start();
+    t.firePoweroff();
+    await vi.waitFor(() => expect(t.session.snapshot.stage).toBe('stopped'));
+    expect(t.agent.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('a tar whose length is not what the guest said is refused, and nothing is stored', async () => {
+    const t = setup();
+    await t.session.start();
+    t.share.set(SHARE_ARCHIVE_PATH, fakeTar(7));
+    t.fireSavedOnPoweroff(999);
+    t.firePoweroff();
+    await vi.waitFor(() => expect(t.session.snapshot.stage).toBe('stopped'));
+    expect(await t.store.get('u1')).toBeNull();
+    expect(t.session.snapshot.lastSave?.result).toMatchObject({ status: 'failed', code: 'bad_archive' });
   });
 });

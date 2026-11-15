@@ -10,7 +10,7 @@
  * the person decides; nothing is overwritten.
  */
 import { AgentError, type AgentClient } from './agent';
-import type { HomeSync, SaveResult } from './home-sync';
+import type { HomeSync, SaveOptions, SaveResult } from './home-sync';
 
 export type SessionStage = 'idle' | 'handshake' | 'running' | 'failed' | 'stopped';
 export type SessionFailure = 'handshake' | 'corrupt';
@@ -19,6 +19,8 @@ export interface SessionSnapshot {
   stage: SessionStage;
   failure: SessionFailure | null;
   error: string | null;
+  /** The Linux name the guest reported for this session (when it says one). */
+  linuxName: string | null;
   /** RESTORE succeeded and the machine is still up: saving is allowed. */
   desktopReady: boolean;
   saving: boolean;
@@ -60,7 +62,7 @@ export function browserEnv(): SessionEnv {
 }
 
 export interface SessionDeps {
-  agent: Pick<AgentClient, 'startSession' | 'restore' | 'onPoweroff'>;
+  agent: Pick<AgentClient, 'startSession' | 'restore' | 'onPoweroff' | 'onSavedOnPoweroff'>;
   sync: Pick<
     HomeSync,
     | 'prepare'
@@ -91,6 +93,7 @@ export class HomeSession {
     stage: 'idle',
     failure: null,
     error: null,
+    linuxName: null,
     desktopReady: false,
     saving: false,
     dirty: false,
@@ -132,7 +135,8 @@ export class HomeSession {
         this.set({ stage: 'failed', failure: 'corrupt', error: 'stored home unreadable' });
         return;
       }
-      await agent.startSession(this.d.linuxUser);
+      const { name } = await agent.startSession(this.d.linuxUser);
+      if (name && stillStarting()) this.set({ linuxName: name });
       await agent.restore();
     } catch (e) {
       if (!stillStarting()) return;
@@ -180,11 +184,21 @@ export class HomeSession {
     env.win.addEventListener('beforeunload', onBeforeUnload);
     this.teardowns.push(() => env.win.removeEventListener('beforeunload', onBeforeUnload));
 
-    // The guest is going down: one short, best-effort save while the agent may still answer.
+    // The guest is going down. When it already saved its home on the way (`saved-on-poweroff`,
+    // announced before or after POWEROFF) that tar is stored without a SAVE round trip;
+    // otherwise one short, best-effort SAVE while the agent may still answer. Either way with
+    // its own 10 s bound, also when it joins a save already in flight.
+    let poweroffSave: Promise<SaveResult> | null = null;
+    this.teardowns.push(
+      agent.onSavedOnPoweroff((bytes) => {
+        poweroffSave ??= this.save({ timeoutMs: POWEROFF_SAVE_TIMEOUT_MS, alreadySaved: { bytes } });
+      }),
+    );
     this.teardowns.push(
       agent.onPoweroff(() => {
-        // Its own 10 s bound, also when it joins a save already in flight.
-        void this.save({ timeoutMs: POWEROFF_SAVE_TIMEOUT_MS }).finally(() => this.stop('stopped'));
+        void (poweroffSave ?? this.save({ timeoutMs: POWEROFF_SAVE_TIMEOUT_MS })).finally(() =>
+          this.stop('stopped'),
+        );
       }),
     );
   }
@@ -235,7 +249,7 @@ export class HomeSession {
    * save's own 120 s. A save that outlives its bound keeps running, but its late answer is
    * dropped here: it must not report anything once the caller has moved on.
    */
-  async save(opts: { timeoutMs?: number; allowEmpty?: boolean } = {}): Promise<SaveResult> {
+  async save(opts: SaveOptions = {}): Promise<SaveResult> {
     if (!this.running) return NOT_RUNNING;
     this.set({ saving: true });
     const epoch = this.inputEpoch;

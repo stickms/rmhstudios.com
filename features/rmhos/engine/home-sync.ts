@@ -91,6 +91,16 @@ export class BackupError extends Error {
 const isQuota = (e: unknown) => e instanceof Error && e.name === 'QuotaExceededError';
 
 /** `prepare()` outcome. `corrupt`: a stored archive exists and cannot be read; nothing was touched. */
+export interface SaveOptions {
+  timeoutMs?: number;
+  allowEmpty?: boolean;
+  /**
+   * The guest already wrote its home to the share on its own (`saved-on-poweroff`) and said how
+   * long the tar is: read the share instead of sending SAVE.
+   */
+  alreadySaved?: { bytes: number };
+}
+
 export type PrepareResult = 'local' | 'empty' | 'corrupt';
 
 /**
@@ -186,7 +196,7 @@ export class HomeSync {
     this.suspended = true;
   }
 
-  save(opts: { timeoutMs?: number; allowEmpty?: boolean } = {}): Promise<SaveResult> {
+  save(opts: SaveOptions = {}): Promise<SaveResult> {
     if (this.suspended) return Promise.resolve({ status: 'failed', code: 'suspended' });
     return (this.inFlight ??= this.doSave(opts).finally(() => {
       this.inFlight = null;
@@ -194,9 +204,9 @@ export class HomeSync {
   }
 
   /** Asks the guest for its home as a tar and checks what arrived. Throws `bad_archive` or the agent's error. */
-  private async readGuestTar(timeoutMs?: number): Promise<Bytes> {
+  private async readGuestTar(timeoutMs?: number, alreadySaved?: { bytes: number }): Promise<Bytes> {
     const { agent, vm } = this.deps;
-    const { bytes } = await agent.save(timeoutMs);
+    const { bytes } = alreadySaved ?? (await agent.save(timeoutMs));
     // v86 hands back its own copy of the file: used as is, not copied again.
     const tar = (await vm.readShareFile(SHARE_ARCHIVE_PATH)) as Bytes;
     await vm.deleteShareFile(SHARE_ARCHIVE_PATH).catch(() => {});
@@ -218,11 +228,11 @@ export class HomeSync {
     return (await store.get(userId))?.sha256 ?? null;
   }
 
-  private async doSave(opts: { timeoutMs?: number; allowEmpty?: boolean }): Promise<SaveResult> {
+  private async doSave(opts: SaveOptions): Promise<SaveResult> {
     const { store, userId } = this.deps;
     let tar: Bytes;
     try {
-      tar = await this.readGuestTar(opts.timeoutMs);
+      tar = await this.readGuestTar(opts.timeoutMs, opts.alreadySaved);
     } catch (e) {
       if (e instanceof Error && e.message === 'bad_archive')
         return { status: 'failed', code: 'bad_archive' };

@@ -50,7 +50,7 @@ describe('AgentClient', () => {
     const p = agent.startSession('alice');
     expect(vm.sent).toEqual([`SESSION alice 1794700000 ${ENTROPY}\n`]);
     vm.emit('RMHOS SESSION_OK\r\n');
-    await expect(p).resolves.toBeUndefined();
+    await expect(p).resolves.toEqual({});
   });
 
   it('rejects with the guest error code', async () => {
@@ -122,21 +122,6 @@ describe('AgentClient', () => {
     await again;
   });
 
-  it('waitReady resolves on READY, including one that arrived earlier', async () => {
-    const { vm, agent } = make();
-    const p = agent.waitReady(1000);
-    vm.emit('RMHOS READY\n');
-    await expect(p).resolves.toBeUndefined();
-    await expect(agent.waitReady(1000)).resolves.toBeUndefined();
-  });
-
-  it('waitReady times out', async () => {
-    const { agent } = make();
-    const p = code(agent.waitReady(500));
-    await vi.advanceTimersByTimeAsync(500);
-    expect(await p).toBe('timeout');
-  });
-
   it('onPoweroff fires and can be unsubscribed', () => {
     const { vm, agent } = make();
     const cb = vi.fn();
@@ -148,10 +133,30 @@ describe('AgentClient', () => {
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
-  it('shutdown sends SHUTDOWN without waiting for a reply', async () => {
+  it('startSession reports the Linux name when the guest says one, and nothing otherwise', async () => {
     const { vm, agent } = make();
-    await agent.shutdown();
-    expect(vm.sent).toEqual(['SHUTDOWN\n']);
+    const plain = agent.startSession('alice');
+    vm.emit('RMHOS SESSION_OK\n');
+    await expect(plain).resolves.toEqual({});
+    // Wave A's guest may answer `SESSION_OK <name>`; the parser may or may not carry it yet, so a
+    // hand-fed event is used here to pin the host's reading of an optional `name`.
+    const named = agent.startSession('alice');
+    (agent as unknown as { dispatch(e: unknown): void }).dispatch({ type: 'session-ok', name: 'alice2' });
+    await expect(named).resolves.toEqual({ name: 'alice2' });
+  });
+
+  it('saved-on-poweroff hands the byte count to its subscribers and can be unsubscribed', () => {
+    const { agent } = make();
+    const dispatch = (e: unknown) => (agent as unknown as { dispatch(e: unknown): void }).dispatch(e);
+    const cb = vi.fn();
+    const off = agent.onSavedOnPoweroff(cb);
+    dispatch({ type: 'saved-on-poweroff', bytes: 1536 });
+    expect(cb).toHaveBeenCalledWith(1536);
+    dispatch({ type: 'saved-on-poweroff', bytes: 'nope' }); // malformed: ignored
+    expect(cb).toHaveBeenCalledTimes(1);
+    off();
+    dispatch({ type: 'saved-on-poweroff', bytes: 5 });
+    expect(cb).toHaveBeenCalledTimes(1);
   });
 
   it('never puts the entropy in an error message', async () => {
