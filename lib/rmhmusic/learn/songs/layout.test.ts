@@ -141,6 +141,16 @@ describe('scoreLayout', () => {
     expect(last?.filled).toBe(false);
   });
 
+  it('leaves a lone eighth room for its flag before the next head', () => {
+    for (const width of [PHONE, WIDE]) {
+      const notes = allNotes(scoreLayout(song('ode-to-joy'), 'piano', width));
+      for (const n of notes.filter((x) => x.flag)) {
+        const next = notes[notes.indexOf(n) + 1];
+        if (next && next.system === n.system) expect(next.x - n.x, `${width}`).toBeGreaterThanOrEqual(24);
+      }
+    }
+  });
+
   it('stems up below the middle line and down from it, with ledger lines for middle C and G3', () => {
     const notes = allNotes(scoreLayout(song('au-clair-de-la-lune'), 'piano', WIDE));
     const c4 = notes[0];

@@ -282,6 +282,7 @@
   "song-stopped-dialog": "The run stopped while the settings were open. Start again.",
   "song-stopped-sound": "Sound stopped, so this run was dropped. Start again.",
   "song-unsaved": "Score {{score}}. Not saved.",
+  "song-wait-octave": "That {{note}} is in another octave. Play the one written.",
   "song-wait-play": "Play {{note}}.",
   "song-wait-said": "Bar {{bar}}: {{note}}",
   "song-wait-wrong": "That was {{played}}. Play {{note}}.",

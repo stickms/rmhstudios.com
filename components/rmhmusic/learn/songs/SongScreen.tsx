@@ -399,7 +399,12 @@ function SongRun({
   const due = nextDue(state);
   useEffect(() => {
     if (due === null) return;
-    const id = setTimeout(() => carry(send({ type: 'tick', at: performance.now() })), Math.max(0, due - performance.now()));
+    // A timer may fire a fraction of a millisecond before its time on this clock: the tick is for
+    // `due` at least, or the cursor would stay put and nothing would ask again.
+    const id = setTimeout(
+      () => carry(send({ type: 'tick', at: Math.max(due, performance.now()) })),
+      Math.max(0, due - performance.now()),
+    );
     return () => clearTimeout(id);
   }, [due, carry, send]);
 
@@ -477,9 +482,12 @@ function SongRun({
   // Focus: the sheet's first control stays put; at the end, Play again.
   const againButton = useRef<HTMLButtonElement>(null);
   const finished = 'record' in state;
+  // Once the save has settled (Start again is disabled while saving): the control that had focus
+  // (Stop, or a key the learner played on screen) is gone.
+  const settled = finished && state.kind !== 'saving';
   useEffect(() => {
-    if (finished) againButton.current?.focus({ preventScroll: true });
-  }, [finished]);
+    if (settled) againButton.current?.focus({ preventScroll: true });
+  }, [settled]);
 
   const cursor = cursorOf(state);
   const marks = marksOf(state);
@@ -492,6 +500,10 @@ function SongRun({
     bar: cursor >= 0 ? barOf(cursor) : 0,
     bars,
     wrongName: state.kind === 'waiting' && state.lastWrong !== null ? pitchName(state.lastWrong) : '',
+    octaveOff:
+      state.kind === 'waiting' &&
+      state.lastWrong !== null &&
+      pitchName(state.lastWrong) === pitchName(state.pitches[state.index] ?? -1),
   });
   const sub = noSound
     ? t('song-no-sound', { defaultValue: "Sound isn't playing." })
@@ -504,15 +516,12 @@ function SongRun({
     defaultValue: 'The score of {{title}}: {{bars}} bars, {{beats}} beats to a bar.',
   });
 
-  const startLabel =
-    state.kind === 'ready' && state.stopped === null
-      ? t('sprint-start', { defaultValue: 'Start' })
-      : t('rhythm-tap-again', { defaultValue: 'Start again' });
 
+  // Start and Stop take one width (min-w-24), so swapping them never moves the centred row.
   const controls = (
     <>
       {inRun ? (
-        <button type="button" onClick={() => carry(send({ type: 'again' }))} className={SECONDARY_BUTTON}>
+        <button type="button" onClick={() => carry(send({ type: 'again' }))} className={`${SECONDARY_BUTTON} min-w-24`}>
           {t('song-stop', { defaultValue: 'Stop' })}
         </button>
       ) : (
@@ -524,9 +533,9 @@ function SongRun({
             if (state.kind !== 'ready') carry(send({ type: 'again' }));
             carry(send({ type: 'start', at: performance.now() }));
           }}
-          className={PRIMARY_BUTTON}
+          className={`${PRIMARY_BUTTON} min-w-24`}
         >
-          {startLabel}
+          {t('sprint-start', { defaultValue: 'Start' })}
         </button>
       )}
       <button
@@ -623,7 +632,7 @@ function pitchName(midi: number): string {
 function describe(
   t: T,
   state: SongState,
-  at: { current: string; bar: number; bars: number; wrongName: string },
+  at: { current: string; bar: number; bars: number; wrongName: string; octaveOff: boolean },
 ): { line: string; said: string } {
   switch (state.kind) {
     case 'ready': {
@@ -643,7 +652,12 @@ function describe(
       return { line, said: '' };
     }
     case 'waiting': {
-      const line = at.wrongName
+      const line = at.octaveOff
+        ? t('song-wait-octave', {
+            note: at.current,
+            defaultValue: 'That {{note}} is in another octave. Play the one written.',
+          })
+        : at.wrongName
         ? t('song-wait-wrong', { played: at.wrongName, note: at.current, defaultValue: 'That was {{played}}. Play {{note}}.' })
         : t('song-wait-play', { note: at.current, defaultValue: 'Play {{note}}.' });
       const said = t('song-wait-said', {

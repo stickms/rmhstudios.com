@@ -119,7 +119,8 @@ function advance(s: Extract<SongState, { kind: 'playing' }>, at: number): Step {
       (notes as (PlayNoteResult | null)[])[i] = { outcome: 'missed', offMs: null };
     }
   }
-  if (notes.every((n) => n !== null)) {
+  const last = s.onsets.length - 1;
+  if (notes.every((n) => n !== null) && at >= closeAt(s, last)) {
     const done = notes as readonly PlayNoteResult[];
     const record: SongRunRecord = { mode: 'play', notes: done, extras: s.extras };
     return save(runOf(s), record, summarizePlay(done, s.extras), [{ type: 'halt' }]);
@@ -289,8 +290,10 @@ export function nextDue(s: SongState): number | null {
   if (s.kind !== 'playing') return null;
   const next = s.cursor + 1;
   if (next < s.onsets.length) return s.t0 + (s.onsets[next] ?? 0) * s.beatMs;
-  let due: number | null = null;
-  for (let i = 0; i < s.notes.length; i++) if (s.notes[i] === null) due = Math.max(due ?? -Infinity, closeAt(s, i));
+  // After the last onset: when the last open window closes — or, every note answered, when the last
+  // note's window would have (a note-on until then may still be an extra), which ends the run.
+  let due = closeAt(s, s.onsets.length - 1);
+  for (let i = 0; i < s.notes.length; i++) if (s.notes[i] === null) due = Math.max(due, closeAt(s, i));
   return due;
 }
 

@@ -52,6 +52,8 @@ const KEY_ACC_W = 9;
 const TIME_W = 18;
 const MIN_SQUEEZE = 0.5;
 const LEDGER_HALF = 11;
+/** Extra room after a lone eighth, so its flag clears the next head. */
+const FLAG_W = 8;
 
 /** How much room a note of this many beats takes after its head (units). */
 export function noteWidth(beats: number): number {
@@ -121,8 +123,30 @@ function headerWidth(song: Song, first: boolean): number {
 /** The y of the key signature's sharp (F) or flat (B) on the treble staff. */
 const KEY_SIG_STEP = { F: 8, B: 4 } as const;
 
+/**
+ * Eighths: two in one beat of one bar share a beam (`pairs` holds the first's index); any other
+ * eighth is lone and takes a flag.
+ */
+function eighths(song: Song, all: ReturnType<typeof notesOf>): { pairs: Set<number>; lone: Set<number> } {
+  const pairs = new Set<number>();
+  const lone = new Set<number>();
+  const beatOf = (n: (typeof all)[number]) => Math.floor(n.onset - barStart(song, n.bar) + 1e-9);
+  for (let i = 0; i < all.length; i++) {
+    const a = all[i];
+    if (!a || a.beats !== 0.5) continue;
+    const b = all[i + 1];
+    if (b && b.beats === 0.5 && b.bar === a.bar && beatOf(a) === beatOf(b)) {
+      pairs.add(i);
+      i++;
+    } else lone.add(i);
+  }
+  return { pairs, lone };
+}
+
 export function scoreLayout(song: Song, version: SongVersion, width: number): ScoreLayout {
   const all = notesOf(song);
+  const { pairs, lone } = eighths(song, all);
+  const roomOf = (n: (typeof all)[number]) => noteWidth(n.beats) + (lone.has(n.index) ? FLAG_W : 0);
   const bars: BarPlan[] = song.bars.map((_, b) => {
     const notes = all.filter((n) => n.bar === b);
     const acc = notes.filter((n) => n.printed !== null).length;
@@ -130,7 +154,7 @@ export function scoreLayout(song: Song, version: SongVersion, width: number): Sc
       bar: b,
       notes,
       fixed: BAR_LEAD + acc * ACC_W,
-      flex: notes.reduce((sum, n) => sum + noteWidth(n.beats), 0),
+      flex: notes.reduce((sum, n) => sum + roomOf(n), 0),
     };
   });
   const right = Math.max(EDGE + 1, width - EDGE);
@@ -211,7 +235,7 @@ export function scoreLayout(song: Song, version: SongVersion, width: number): Sc
           tab: fret ? { string: fret.string, fret: fret.fret, y: TAB_TOP + (5 - fret.string) * TAB_GAP } : null,
         });
         systemOf[n.index] = s;
-        x += noteWidth(n.beats) * stretch;
+        x += roomOf(n) * stretch;
       }
       barLines.push(Math.min(right, x));
     }
@@ -222,12 +246,13 @@ export function scoreLayout(song: Song, version: SongVersion, width: number): Sc
     const beams: LaidSystem['beams'] = [];
     for (let i = 0; i < notes.length; i++) {
       const a = notes[i];
-      const an = a ? all[a.index] : undefined;
-      if (!a || !an || an.beats !== 0.5) continue;
+      if (!a) continue;
+      if (lone.has(a.index)) {
+        a.flag = true;
+        continue;
+      }
       const b = notes[i + 1];
-      const bn = b ? all[b.index] : undefined;
-      const inBeat = (o: number) => Math.floor(o - barStart(song, an.bar) + 1e-9);
-      if (b && bn && bn.beats === 0.5 && bn.bar === an.bar && inBeat(an.onset) === inBeat(bn.onset) && a.stem && b.stem) {
+      if (pairs.has(a.index) && b && a.stem && b.stem) {
         const up = (a.step + b.step) / 2 < 4;
         const sa = stemOf(a.x, a.y, up);
         const sb = stemOf(b.x, b.y, up);
@@ -236,8 +261,6 @@ export function scoreLayout(song: Song, version: SongVersion, width: number): Sc
         b.stem = { ...sb, y2: beamY };
         beams.push({ x1: sa.x, y1: beamY, x2: sb.x, y2: beamY });
         i++;
-      } else {
-        a.flag = true;
       }
     }
 

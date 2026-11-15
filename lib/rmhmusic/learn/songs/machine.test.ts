@@ -179,6 +179,18 @@ describe('play along', () => {
     expect(nextDue(run('play').get())).toBeNull();
   });
 
+  it('still asks for a tick after the last note when every note was answered, and that tick ends the run', () => {
+    const m = begun();
+    targets.forEach((t, i) => {
+      m.send({ type: 'tick', at: t });
+      m.on([60, 62, 64, 67][i] ?? 0, t);
+    });
+    const due = nextDue(m.get());
+    expect(due).not.toBeNull();
+    m.send({ type: 'tick', at: due ?? 0 });
+    expect(m.get().kind).toBe('saving');
+  });
+
   it('drops a run that is stopped (away, a dialog, sound) and says why', () => {
     const m = begun();
     const fx = m.send({ type: 'stop', why: 'away' });
