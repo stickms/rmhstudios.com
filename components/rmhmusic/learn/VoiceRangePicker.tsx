@@ -3,7 +3,8 @@
  * radio group, the same pattern as the Sound dialog's rows (`radio-keys.ts`: one Tab stop on the
  * chosen row, the arrow keys move, Space or Enter picks; the chosen row carries a check). Each row
  * names the range and its compass in plain words ("A3 to D5"). Shown at the top of "Set up input"
- * for a voice learner; picking saves the range at once.
+ * for a voice learner; picking saves the range at once. Each row sits in its own box so the rule
+ * between rows stays straight under the button's rounded focus corners (as in the Sound dialog).
  */
 import {
   useId,
@@ -197,89 +198,92 @@ export function VoiceRangePicker() {
               range ===
               stored;
             return (
-              <button
+              <div
                 key={
                   range
                 }
-                ref={(
-                  el,
-                ) => {
-                  rows.current[
-                    index
-                  ] =
-                    el;
-                }}
-                type="button"
-                role="radio"
-                aria-checked={
-                  chosen
-                }
-                tabIndex={
-                  index ===
-                  tabStop
-                    ? 0
-                    : -1
-                }
-                data-voice-range={
-                  range
-                }
-                onClick={() =>
-                  pick(
-                    range,
-                  )
-                }
-                onKeyDown={(
-                  e,
-                ) => {
-                  const action =
-                    radioKey(
-                      e.key,
-                      index,
-                      VOICE_RANGES.length,
-                    );
-                  if (
-                    !action
-                  )
-                    return;
-                  e.preventDefault();
-                  if (
-                    action.kind ===
-                    'select'
-                  )
+              >
+                <button
+                  ref={(
+                    el,
+                  ) => {
+                    rows.current[
+                      index
+                    ] =
+                      el;
+                  }}
+                  type="button"
+                  role="radio"
+                  aria-checked={
+                    chosen
+                  }
+                  tabIndex={
+                    index ===
+                    tabStop
+                      ? 0
+                      : -1
+                  }
+                  data-voice-range={
+                    range
+                  }
+                  onClick={() =>
                     pick(
                       range,
-                    );
-                  else
-                    rows.current[
-                      action
-                        .index
-                    ]?.focus();
-                }}
-                className="flex min-h-11 w-full items-start gap-3 rounded-app-sm py-2.5 text-start transition-colors hover:text-app-accent"
-              >
-                <span className="flex h-6 w-5 shrink-0 items-center justify-center">
-                  {chosen && (
-                    <Check
-                      className="h-5 w-5 text-app-accent"
-                      aria-hidden="true"
-                    />
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium text-app-text">
-                    {voiceRangeName(
-                      t,
-                      range,
+                    )
+                  }
+                  onKeyDown={(
+                    e,
+                  ) => {
+                    const action =
+                      radioKey(
+                        e.key,
+                        index,
+                        VOICE_RANGES.length,
+                      );
+                    if (
+                      !action
+                    )
+                      return;
+                    e.preventDefault();
+                    if (
+                      action.kind ===
+                      'select'
+                    )
+                      pick(
+                        range,
+                      );
+                    else
+                      rows.current[
+                        action
+                          .index
+                      ]?.focus();
+                  }}
+                  className="flex min-h-11 w-full items-start gap-3 rounded-app-sm py-2.5 text-start transition-colors hover:text-app-accent"
+                >
+                  <span className="flex h-6 w-5 shrink-0 items-center justify-center">
+                    {chosen && (
+                      <Check
+                        className="h-5 w-5 text-app-accent"
+                        aria-hidden="true"
+                      />
                     )}
                   </span>
-                  <span className="block text-sm text-app-text-muted">
-                    {rangeDetail(
-                      t,
-                      range,
-                    )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-app-text">
+                      {voiceRangeName(
+                        t,
+                        range,
+                      )}
+                    </span>
+                    <span className="block text-sm text-app-text-muted">
+                      {rangeDetail(
+                        t,
+                        range,
+                      )}
+                    </span>
                   </span>
-                </span>
-              </button>
+                </button>
+              </div>
             );
           },
         )}
