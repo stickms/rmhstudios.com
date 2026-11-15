@@ -53,6 +53,7 @@ wfLoadExtension( 'ParserFunctions' );
 wfLoadExtension( 'Cite' );
 wfLoadExtension( 'WikiEditor' );
 wfLoadExtension( 'RMHStudiosLogin' );
+wfLoadExtension( 'RMHStudiosAssist' );
 
 ## Database: the site's own Postgres database. Every wiki table is in the
 ## `mediawiki` schema, apart from the site's tables in `public`, so the site's
@@ -85,6 +86,11 @@ $wgAuthenticationTokenVersion = '1';
 ## with a pass signed with this key (lib/wiki/sso.server.ts).
 $wgRMHStudiosLoginSiteUrl = rtrim( rmhWikiEnv( 'BETTER_AUTH_URL', 'https://rmhstudios.com' ), '/' );
 $wgRMHStudiosLoginKey = rmhWikiKey( RMH_WIKI_LOGIN_LABEL );
+
+## "Edit with AI" on the edit page: the reader describes the page and DeepSeek
+## writes it, through the site (POST /api/wiki/assist, with the reader's site
+## session). The wiki holds no AI key.
+$wgRMHStudiosAssistSiteUrl = $wgRMHStudiosLoginSiteUrl;
 
 ## The container keeps no state: no uploads, no outgoing mail, no files
 ## fetched from Wikimedia Commons. Pictures are linked, not stored.

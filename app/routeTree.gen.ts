@@ -399,6 +399,7 @@ import { Route as ApiV1WebhooksRouteImport } from './routes/api/v1/webhooks'
 import { Route as ApiVersecraftWorldRouteImport } from './routes/api/versecraft/world'
 import { Route as ApiVibeAiRouteImport } from './routes/api/vibe/ai'
 import { Route as ApiVibeStreamRouteImport } from './routes/api/vibe/stream'
+import { Route as ApiWikiAssistRouteImport } from './routes/api/wiki/assist'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as EmbedReplayIdRouteImport } from './routes/embed.replay.$id'
 import { Route as GamesLibraryIndexRouteImport } from './routes/games/_library/index'
@@ -2479,6 +2480,11 @@ const ApiVibeStreamRoute = ApiVibeStreamRouteImport.update({
   path: '/api/vibe/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWikiAssistRoute = ApiWikiAssistRouteImport.update({
+  id: '/api/wiki/assist',
+  path: '/api/wiki/assist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmbedPostIdRoute = EmbedPostIdRouteImport.update({
   id: '/embed/post/$id',
   path: '/embed/post/$id',
@@ -3435,6 +3441,7 @@ export interface FileRoutesByFullPath {
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
   '/api/vibe/ai': typeof ApiVibeAiRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
+  '/api/wiki/assist': typeof ApiWikiAssistRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/$gameId': typeof GamesLibraryGameIdRoute
@@ -3916,6 +3923,7 @@ export interface FileRoutesByTo {
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
   '/api/vibe/ai': typeof ApiVibeAiRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
+  '/api/wiki/assist': typeof ApiWikiAssistRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/$gameId': typeof GamesLibraryGameIdRoute
@@ -4424,6 +4432,7 @@ export interface FileRoutesById {
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
   '/api/vibe/ai': typeof ApiVibeAiRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
+  '/api/wiki/assist': typeof ApiWikiAssistRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/_library/$gameId': typeof GamesLibraryGameIdRoute
@@ -4932,6 +4941,7 @@ export interface FileRouteTypes {
     | '/api/versecraft/world'
     | '/api/vibe/ai'
     | '/api/vibe/stream'
+    | '/api/wiki/assist'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/games/$gameId'
@@ -5413,6 +5423,7 @@ export interface FileRouteTypes {
     | '/api/versecraft/world'
     | '/api/vibe/ai'
     | '/api/vibe/stream'
+    | '/api/wiki/assist'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/games/$gameId'
@@ -5920,6 +5931,7 @@ export interface FileRouteTypes {
     | '/api/versecraft/world'
     | '/api/vibe/ai'
     | '/api/vibe/stream'
+    | '/api/wiki/assist'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/games/_library/$gameId'
@@ -6206,6 +6218,7 @@ export interface RootRouteChildren {
   ApiVersecraftWorldRoute: typeof ApiVersecraftWorldRoute
   ApiVibeAiRoute: typeof ApiVibeAiRoute
   ApiVibeStreamRoute: typeof ApiVibeStreamRoute
+  ApiWikiAssistRoute: typeof ApiWikiAssistRoute
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   EmbedReplayIdRoute: typeof EmbedReplayIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
@@ -8989,6 +9002,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVibeStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/wiki/assist': {
+      id: '/api/wiki/assist'
+      path: '/api/wiki/assist'
+      fullPath: '/api/wiki/assist'
+      preLoaderRoute: typeof ApiWikiAssistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/embed/post/$id': {
       id: '/embed/post/$id'
       path: '/embed/post/$id'
@@ -10965,6 +10985,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVersecraftWorldRoute: ApiVersecraftWorldRoute,
   ApiVibeAiRoute: ApiVibeAiRoute,
   ApiVibeStreamRoute: ApiVibeStreamRoute,
+  ApiWikiAssistRoute: ApiWikiAssistRoute,
   EmbedPostIdRoute: EmbedPostIdRoute,
   EmbedReplayIdRoute: EmbedReplayIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
