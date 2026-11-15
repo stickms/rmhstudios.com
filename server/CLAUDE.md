@@ -2040,7 +2040,57 @@ Consequences:
   is
   the
   abuse-tracing
-  record.
+  record
+  (journald,
+  tag
+  `rmhos-net`;
+  lines
+  at
+  stream
+  open
+  and
+  close
+  carry
+  the
+  dialled
+  address
+  and
+  local
+  port).
+  Operator
+  controls
+  (user
+  deny-list
+  file,
+  session
+  and
+  byte
+  caps,
+  port
+  allow-list,
+  scan
+  brake)
+  are
+  env
+  variables
+  listed
+  in
+  the
+  runbook
+  table;
+  `__tests__/env-drift.test.ts`
+  fails
+  when
+  one
+  is
+  read
+  but
+  not
+  passed
+  through
+  compose
+  and
+  documented.
   Full
   runbook:
   [`docs/rmhos.md`](../docs/rmhos.md).

@@ -25,12 +25,14 @@ RUN apk add --no-cache build-base bc bison flex perl elfutils-dev openssl-dev \
         linux-headers e2fsprogs curl patch xz diffutils findutils
 ARG KERNEL_URL
 ARG KERNEL_SHA256
+ARG KERNEL_FILE
+# The exact tarball is kept and shipped beside the image (GPL-2.0 source, see NOTICE.md), not just
+# linked from kernel.org.
 RUN set -eu; \
-    curl -fsSL --retry 3 -o /tmp/linux.tar.xz "$KERNEL_URL"; \
-    echo "$KERNEL_SHA256  /tmp/linux.tar.xz" | sha256sum -c -; \
-    mkdir /src; \
-    tar -xJf /tmp/linux.tar.xz -C /src --strip-components=1; \
-    rm /tmp/linux.tar.xz
+    mkdir /out /src; \
+    curl -fsSL --retry 3 -o "/out/$KERNEL_FILE" "$KERNEL_URL"; \
+    echo "$KERNEL_SHA256  /out/$KERNEL_FILE" | sha256sum -c -; \
+    tar -xJf "/out/$KERNEL_FILE" -C /src --strip-components=1
 COPY patches/ /patches/
 RUN set -eu; cd /src; \
     for p in /patches/*.patch; do echo "patch $p"; patch -p1 < "$p"; done
@@ -44,7 +46,7 @@ ENV KBUILD_BUILD_USER=rmhos KBUILD_BUILD_HOST=rmhos \
     KBUILD_BUILD_TIMESTAMP="Thu Jan  1 00:00:00 UTC 1970"
 RUN set -eu; cd /src; \
     make ARCH=i386 -j"$(nproc)" bzImage; \
-    mkdir /out; cp arch/x86/boot/bzImage /out/bzImage; \
+    cp arch/x86/boot/bzImage /out/bzImage; \
     make -s ARCH=i386 kernelrelease > /out/kernelrelease; \
     ls -l /out
 
@@ -56,7 +58,8 @@ RUN set -eu; mkdir /out; \
     cp /usr/share/seabios/bios.bin /out/seabios.bin; \
     ls -l /usr/share/seavgabios; \
     cp /usr/share/seavgabios/vgabios-stdvga.bin /out/vgabios.bin; \
-    apk info -v seabios-bin seavgabios-bin | sort > /out/bios-packages.txt
+    apk info -v | grep -E '^(seabios-bin|seavgabios-bin)-[0-9]' | sort > /out/bios-packages.txt; \
+    [ "$(wc -l < /out/bios-packages.txt)" = 2 ]
 
 # -------------------------------------------------------------- rootfs
 FROM base AS rootfs
@@ -93,6 +96,11 @@ RUN set -eu; cd /rootfs; \
         if [ -e etc/init.d/$s ]; then rc "$s" shutdown; fi; \
     done; \
     chroot /rootfs /bin/sh -c 'passwd -l root >/dev/null'; \
+    for c in poweroff reboot halt; do \
+        rm -f sbin/$c; cp usr/local/sbin/rmhos-power sbin/$c; chmod 755 sbin/$c; \
+        [ -f sbin/$c ] && [ ! -L sbin/$c ] || { echo "sbin/$c is not the rmhOS wrapper" >&2; exit 1; }; \
+        chroot /rootfs /bin/busybox --list | grep -qx "$c" || { echo "busybox lacks $c" >&2; exit 1; }; \
+    done; \
     rm -f usr/lib/libLLVM* usr/lib/libgallium-*.so; \
     rm -rf usr/lib/gallium-pipe usr/share/doc usr/share/man usr/share/info; \
     mkdir -p mnt/host home; \
@@ -104,8 +112,16 @@ RUN set -eu; cd /rootfs; \
     mkdir -p /tmp/t/a /tmp/t/o && echo x > /tmp/t/a/f && tar -cf /tmp/t/t.tar -C /tmp/t a && \
         chroot /rootfs /bin/tar -xpf - -C /home --no-same-owner < /tmp/t/t.tar && \
         rm -rf /rootfs/home/a /tmp/t || { echo "tar lacks --no-same-owner" >&2; exit 1; }; \
-    chroot /rootfs /bin/sh -n /usr/local/bin/rmhos-agent
+    for f in usr/local/bin/rmhos-agent usr/local/bin/rmhos-poweroff-save usr/local/sbin/rmhos-power; do \
+        chroot /rootfs /bin/sh -n "/$f"; \
+    done
+# Every user and group name the image has: a visitor whose handle is one of them (guest, ntp, sshd,
+# cron, ftp, halt, shutdown, wheel, video, audio, input, ...) would make adduser fail, so the agent
+# gives that visitor <name>_rmh instead (rmhos-agent, pick_name).
 RUN set -eu; \
+    cat /rootfs/etc/passwd /rootfs/etc/group | cut -d: -f1 | sort -u > /rootfs/etc/rmhos-reserved-names; \
+    wc -l /rootfs/etc/rmhos-reserved-names; \
+    grep -qx root /rootfs/etc/rmhos-reserved-names; \
     apk --root /rootfs info -v | sort > /packages.txt; \
     wc -l /packages.txt; \
     used_kb=$(du -sk /rootfs | cut -f1); \
@@ -118,10 +134,11 @@ RUN set -eu; \
         -E hash_seed=5a1e5d5e-7a11-4a11-8a11-726d68306f73,root_owner=0:0 \
         -d /rootfs /out/rootfs.ext4 ${size_mb}M; \
     e2fsck -fn /out/rootfs.ext4; \
-    cp /packages.txt /out/packages.txt
+    cp /packages.txt /out/packages.txt; \
+    cp /rootfs/lib/apk/db/installed /out/apk-installed.txt
 
 # -------------------------------------------------------------- export
 FROM scratch AS export
-COPY --from=kernel /out/bzImage /out/kernelrelease /
+COPY --from=kernel /out/ /
 COPY --from=bios /out/seabios.bin /out/vgabios.bin /out/bios-packages.txt /
-COPY --from=rootfs /out/rootfs.ext4 /out/packages.txt /
+COPY --from=rootfs /out/rootfs.ext4 /out/packages.txt /out/apk-installed.txt /

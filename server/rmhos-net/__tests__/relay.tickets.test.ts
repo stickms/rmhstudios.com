@@ -134,13 +134,13 @@ describe('GET /rmhos-net/status', () => {
     const before = await status(port, mine);
     expect(before.status).toBe(200);
     expect(before.headers.get('cache-control')).toBe('no-store');
-    expect(await before.json()).toEqual({ connected: false, streams: 0 });
+    expect(await before.json()).toEqual({ connected: false, streams: 0, full: false });
     const c = await open(port, mine);
-    expect(await (await status(port, mine)).json()).toEqual({ connected: true, streams: 0 });
-    expect(await (await status(port, theirs)).json()).toEqual({ connected: false, streams: 0 });
+    expect(await (await status(port, mine)).json()).toEqual({ connected: true, streams: 0, full: false });
+    expect(await (await status(port, theirs)).json()).toEqual({ connected: false, streams: 0, full: false });
     c.ws.close();
     await c.closed;
-    expect(await (await status(port, mine)).json()).toEqual({ connected: false, streams: 0 });
+    expect(await (await status(port, mine)).json()).toEqual({ connected: false, streams: 0, full: false });
   });
 
   it('is 401 for a forged ticket, 503 when the relay is off', async () => {

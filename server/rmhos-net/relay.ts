@@ -9,6 +9,7 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { RMHOS } from '@features/rmhos/engine/constants';
 import { DOH_PATH, handleDohPreflight, handleDohQuery, type DohOptions } from './doh';
 import type { UsageMeter } from './meter';
+import type { DenyList } from './deny';
 import { checkConnect, type RelayPolicy, type Verdict } from './policy';
 import { TicketBook } from './tickets';
 import { CLOSE_REASON, decodePacket, encodeClose, encodeContinue, encodeData } from './wisp';
@@ -47,6 +48,8 @@ export interface RelayOptions {
   /** Status requests allowed per user per minute (default 12), DoH queries (default 600). */
   statusPerMinute?: number;
   dohPerMinute?: number;
+  /** Users the hub refuses (new tickets 403, live sessions closed 4003). Default: nobody. */
+  deny?: DenyList;
   /** CONNECTs allowed per user per window. Default 30 per 10 s. */
   connectRate?: {
     max: number;
@@ -102,6 +105,11 @@ const SUPERSEDED = 4000;
 const EXPIRED = 4001;
 const STATUS_PATH = `${RMHOS.netPath}status`;
 const OVER_QUEUE = 4008;
+/** The account is on the deny-list. */
+const DENIED = 4003;
+/** The hub is at its session cap. */
+const FULL = 4009;
+const SCAN_WINDOW_MS = 10 * 60 * 1000;
 
 // resolve4/resolve6 query the DNS servers directly with a bounded timeout and no libuv
 // thread (dns.lookup would pin one per stuck query). Every answer is still policy-checked.
@@ -159,6 +167,9 @@ interface Stream {
   host: string;
   port: number;
   startedAt: number;
+  /** The address actually dialled (after any lookup) and our local port on that upstream socket. */
+  address: string | null;
+  localPort: number | null;
   up: number;
   down: number;
   socket: net.Socket | null;
@@ -186,6 +197,23 @@ function writeHttpError(socket: Duplex, status: number, text: string): void {
   socket.destroy();
 }
 
+/**
+ * The visitor's address for the session log. The hub's port is published on 127.0.0.1 only and
+ * Apache (behind Cloudflare) is the sole client, so these headers are set by our own proxies and
+ * cannot be forged by a visitor: CF-Connecting-IP (Cloudflare), then the first X-Forwarded-For hop,
+ * then the socket's own peer address. Never trust them if the port is ever exposed directly.
+ */
+export function clientIp(req: http.IncomingMessage): string {
+  const one = (v: string | string[] | undefined): string =>
+    (Array.isArray(v) ? v[0] : v)?.split(',')[0]?.trim() ?? '';
+  return (
+    one(req.headers['cf-connecting-ip']) ||
+    one(req.headers['x-forwarded-for']) ||
+    req.socket.remoteAddress ||
+    ''
+  );
+}
+
 function parseTarget(raw: string | undefined): URL | null {
   try {
     return new URL(raw ?? '/', 'http://hub');
@@ -195,7 +223,7 @@ function parseTarget(raw: string | undefined): URL | null {
 }
 
 /** The HTTP server plus the sweep the entry point runs on its prune interval. */
-export type RelayServer = http.Server & { prune: () => void };
+export type RelayServer = http.Server & { prune: () => void; enforceDeny: () => void };
 
 export function createRelayServer(opts: RelayOptions): RelayServer {
   const { secret, policy, meter } = opts;
@@ -299,10 +327,34 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
   function authorize(
     ticket: string,
     refresh = true,
-  ): { ok: true; userId: string } | { ok: false } {
+  ): { ok: true; userId: string } | { ok: false; denied?: boolean } {
     const who = tickets.authorize(ticket, refresh);
+    if (who.ok && opts.deny?.has(who.userId)) {
+      sessions.get(who.userId)?.shutdown(DENIED);
+      return { ok: false, denied: true };
+    }
     if (who.ok && who.replaced) sessions.get(who.userId)?.shutdown(SUPERSEDED);
     return who;
+  }
+
+  /** Scan brake: distinct (address, port) destinations a user opened in the last 10 minutes. */
+  const destinations = new Map<string, Map<string, number>>();
+  function allowDestination(userId: string, address: string, port: number): boolean {
+    const t = now();
+    let seen = destinations.get(userId);
+    if (!seen) {
+      seen = new Map();
+      destinations.set(userId, seen);
+    }
+    for (const [k, at] of seen) if (at <= t - SCAN_WINDOW_MS) seen.delete(k);
+    const key = `${address}:${port}`;
+    if (seen.has(key)) {
+      seen.set(key, t);
+      return true;
+    }
+    if (seen.size >= policy.maxDestinationsPer10Min) return false;
+    seen.set(key, t);
+    return true;
   }
 
   const server = http.createServer((req, res) => {
@@ -344,7 +396,11 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
       if (!who.ok) return status(401, { error: 'unauthorized' });
       if (!statusLimit.allow(who.userId)) return status(429, { error: 'too many requests' });
       const live = sessions.get(who.userId);
-      return status(200, { connected: live !== undefined, streams: live?.streamCount() ?? 0 });
+      return status(200, {
+        connected: live !== undefined,
+        streams: live?.streamCount() ?? 0,
+        full: live === undefined && sessions.size >= policy.maxSessions,
+      });
     }
     if (url.pathname === DOH_PATH && dohOpts) {
       if (req.method === 'OPTIONS') return handleDohPreflight(dohOpts, res);
@@ -366,8 +422,13 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     if (path !== RMHOS.netPath) return writeHttpError(socket, 404, 'Not Found');
     if (!policy.enabled) return writeHttpError(socket, 503, 'Service Unavailable');
     const verdict = authorize(url.searchParams.get('ticket') ?? '');
-    if (!verdict.ok) return writeHttpError(socket, 401, 'Unauthorized');
-    wss.handleUpgrade(req, socket, head, (ws) => session(ws, verdict.userId));
+    if (!verdict.ok) {
+      return verdict.denied
+        ? writeHttpError(socket, 403, 'Forbidden')
+        : writeHttpError(socket, 401, 'Unauthorized');
+    }
+    const ip = clientIp(req);
+    wss.handleUpgrade(req, socket, head, (ws) => session(ws, verdict.userId, ip));
   });
 
   /**
@@ -406,7 +467,7 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     backstopTimer.unref();
   });
 
-  function session(ws: WebSocket, userId: string): void {
+  function session(ws: WebSocket, userId: string, ip: string): void {
     const streams = new Map<number, Stream>();
     let over = false;
     /** Guest bytes queued across every stream of this connection. */
@@ -434,9 +495,12 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
       if (notify) send(encodeClose(s.id, reason));
       log({
         evt: 'rmhos-net.stream',
+        state: 'close',
         userId,
         host: s.host,
+        address: s.address,
         port: s.port,
+        localPort: s.localPort,
         up: s.up,
         down: s.down,
         ms: Date.now() - s.startedAt,
@@ -550,6 +614,8 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
         host,
         port,
         startedAt: Date.now(),
+        address: null,
+        localPort: null,
         up: 0,
         down: 0,
         socket: null,
@@ -603,6 +669,10 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
       if (streams.get(id) !== s) return; // guest closed it, or the session ended
       if (!verdict.ok) return closeStream(s, verdict.reason, true);
 
+      s.address = verdict.address;
+      if (!allowDestination(userId, verdict.address, port)) {
+        return closeStream(s, CLOSE_REASON.throttled, true);
+      }
       const sock = connect({
         host: verdict.address,
         port,
@@ -613,6 +683,18 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
       let connected = false;
       sock.on('connect', () => {
         connected = true;
+        s.localPort = sock.localPort ?? null;
+        // Logged at open as well as at close: a stream still open at a crash, or hours long,
+        // would otherwise leave no record at all.
+        log({
+          evt: 'rmhos-net.stream',
+          state: 'open',
+          userId,
+          host: s.host,
+          address: s.address,
+          port: s.port,
+          localPort: s.localPort,
+        });
         sock.setTimeout(0);
       });
       sock.on('timeout', () => {
@@ -699,7 +781,7 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     function teardown(): void {
       if (!over) {
         over = true;
-        log({ evt: 'rmhos-net.session', userId, state: 'closed', code: peerCode });
+        log({ evt: 'rmhos-net.session', userId, state: 'closed', code: peerCode, ip });
         clearInterval(ping);
         if (sessions.get(userId) === handle) sessions.delete(userId);
       }
@@ -737,6 +819,8 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     const ping = setInterval(() => {
       // The ticket behind a live socket can lapse (12 h cap) with nobody asking: close it here.
       if (!tickets.valid(userId)) return handle.shutdown(EXPIRED);
+      if (opts.deny?.has(userId)) return handle.shutdown(DENIED);
+      if (meter.dayExhausted(userId)) closeAll(CLOSE_REASON.throttled, true);
       if (!alive) return ws.terminate();
       alive = false;
       ws.ping();
@@ -749,10 +833,19 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     });
     ws.on('error', teardown);
 
+    // The hub-wide session cap. A user who already has a session replaces it (their own slot).
+    if (!sessions.has(userId) && sessions.size >= policy.maxSessions) {
+      over = true;
+      clearInterval(ping);
+      log({ evt: 'rmhos-net.session', userId, state: 'refused', reason: 'full', ip });
+      ws.close(FULL);
+      setTimeout(() => ws.terminate(), 2000).unref();
+      return;
+    }
     // One live session per user: the newer one wins.
     sessions.get(userId)?.shutdown(SUPERSEDED);
     sessions.set(userId, handle);
-    log({ evt: 'rmhos-net.session', userId, state: 'open' });
+    log({ evt: 'rmhos-net.session', userId, state: 'open', ip });
     send(encodeContinue(0, WINDOW));
   }
 
@@ -762,7 +855,16 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     wss.close();
   });
   return Object.assign(server, {
+    /** Closes the live session of every user now on the deny-list (after a reload). */
+    enforceDeny: () => {
+      for (const [userId, h] of [...sessions]) if (opts.deny?.has(userId)) h.shutdown(DENIED);
+    },
     prune: () => {
+      const t = now();
+      for (const [u, seen] of destinations) {
+        for (const [k, at] of seen) if (at <= t - SCAN_WINDOW_MS) seen.delete(k);
+        if (seen.size === 0) destinations.delete(u);
+      }
       tickets.prune();
       statusLimit.prune();
       dohLimit.prune();

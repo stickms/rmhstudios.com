@@ -30,8 +30,8 @@ async function main() {
   try {
     await vm.waitFor('RMHOS READY', () => /^RMHOS READY\r?$/m.test(vm.serial1));
     console.log(`[${vm.elapsed().toFixed(1)}s] READY`);
-    // The guest configures its network after the agent is up; take the state
-    // once that is logged (or the guest has stayed quiet for a while without it).
+    // The guest configures its network after the agent is up; take the state once that line is
+    // logged (rmhos-net.start always logs one, after at most 60 s), then once serial0 has been quiet.
     await vm.waitFor('rmhos-net line', () => /^rmhos-net: /m.test(vm.serial0));
     console.log(`[${vm.elapsed().toFixed(1)}s] ${vm.serial0.match(/^rmhos-net: .*$/m)[0].trim()}`);
     await vm.waitFor(

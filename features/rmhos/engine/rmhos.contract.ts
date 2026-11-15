@@ -3,7 +3,15 @@
  */
 import { endpoint } from '@/lib/contract/endpoint';
 
-export type RmhosNet = { enabled: true; url: string; ticket: string } | { enabled: false };
+/**
+ * `reason: 'not-eligible'` means networking is on for the site but this account does not qualify
+ * (RMHOS_NET_ACCESS members/verified, or too new); absent, networking is simply off.
+ */
+export type RmhosNetOffReason = 'not-eligible';
+
+export type RmhosNet =
+  | { enabled: true; url: string; ticket: string }
+  | { enabled: false; reason?: RmhosNetOffReason };
 
 export interface RmhosSession {
   linuxUser: string;

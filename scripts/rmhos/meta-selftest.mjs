@@ -28,6 +28,8 @@ function fresh() {
     'vgabios.bin': 'vga',
     'state.zst': 'state',
     'packages.txt': 'pkgs',
+    'apk-installed.txt': 'apk',
+    'linux-6.12.117.tar.xz': 'kernel source',
   })) {
     writeFileSync(path.join(tmp, name), text);
   }

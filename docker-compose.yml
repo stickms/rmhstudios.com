@@ -422,6 +422,10 @@ services:
     # `--profile rmhos-net` once deploy/rmhos-net/probe-firewall.sh proves the egress firewall.
     profiles: ['rmhos-net']
     image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app:latest
+    # Stamped by deploy.sh: a hash of what the hub runs (bundle + configuration). A deploy that
+    # finds it unchanged leaves the container, and every user's network session, alone.
+    labels:
+      rmhos.hub-fingerprint: ${RMHOS_HUB_FINGERPRINT:-}
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-rmhos-net
     # Never auto-restart: after a reboot or daemon restart the hub must not come back before
     # the firewall is re-proven. The next deploy starts it again.
@@ -454,13 +458,37 @@ services:
       # Its own secret, shared only with the web tier that mints tickets.
       - RMHOS_NET_TICKET_SECRET=${RMHOS_NET_TICKET_SECRET:-}
       - RMHOS_NET_DENIED_PORTS=${RMHOS_NET_DENIED_PORTS:-25,465,587,2525}
+      # Optional allow-list: when set, ONLY these ports pass and the deny-list is ignored.
+      - RMHOS_NET_ALLOWED_PORTS=${RMHOS_NET_ALLOWED_PORTS:-}
       - RMHOS_NET_DOH_UPSTREAM=${RMHOS_NET_DOH_UPSTREAM:-}
+      - RMHOS_NET_CORS_ORIGIN=${RMHOS_NET_CORS_ORIGIN:-}
+      # Per-user caps.
+      - RMHOS_NET_MAX_STREAMS=${RMHOS_NET_MAX_STREAMS:-}
+      - RMHOS_NET_BYTES_PER_SECOND=${RMHOS_NET_BYTES_PER_SECOND:-}
+      - RMHOS_NET_BYTES_PER_DAY=${RMHOS_NET_BYTES_PER_DAY:-}
+      - RMHOS_NET_MAX_DESTINATIONS_PER_10MIN=${RMHOS_NET_MAX_DESTINATIONS_PER_10MIN:-}
+      # Hub-wide caps.
+      - RMHOS_NET_MAX_SESSIONS=${RMHOS_NET_MAX_SESSIONS:-}
+      - RMHOS_NET_GLOBAL_BYTES_PER_SECOND=${RMHOS_NET_GLOBAL_BYTES_PER_SECOND:-}
+      - RMHOS_NET_GLOBAL_BYTES_PER_DAY=${RMHOS_NET_GLOBAL_BYTES_PER_DAY:-}
+      # Cutting off one account: ids here are read at start; ids in the file are re-read on SIGHUP and
+      # every 60 s, with no restart (docs/rmhos.md, "Cut off one user"). The file lives in the one
+      # read-only mount below; a missing file is simply an empty list.
+      - RMHOS_NET_DENY_USERS=${RMHOS_NET_DENY_USERS:-}
+      - RMHOS_NET_DENY_FILE=${RMHOS_NET_DENY_FILE:-/deny/users.txt}
+    # The ONE mount: a directory (not a file, so an editor that replaces the file's inode is still
+    # seen) holding the optional deny-list. Read-only; the hub cannot write to the host.
+    volumes:
+      - ./deploy/rmhos-net/deny:/deny:ro
     command: ['node', '--max-old-space-size=128', 'dist-server/server/rmhos-net/index.cjs']
+    # journald, not json-file: the stream log is the abuse-tracing record, and json-file lives and
+    # dies with the container (recreated by every deploy that changes the hub, and removed by
+    # `container prune`). Lines stay JSON on stdout; `journalctl -t rmhos-net` reads them back and
+    # `docker compose logs` still works. Retention is journald's (SystemMaxUse), see docs/rmhos.md.
     logging:
-      driver: json-file
+      driver: journald
       options:
-        max-size: '10m'
-        max-file: '3'
+        tag: rmhos-net
     healthcheck:
       # node, not curl: the image's curl is not guaranteed for uid 65534, and node
       # is certainly present. /health answers even when the relay is switched off.
@@ -929,6 +957,9 @@ services:
 networks:
   rmhos-egress:
     driver: bridge
+    # Pinned off: the firewall script only covers IPv6 when RMHOS_EGRESS_IPV6_SUBNET is set, and a
+    # daemon-wide IPv6 default must not hand the hub an unfirewalled address family.
+    enable_ipv6: false
     name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-rmhos-egress
     ipam:
       config:

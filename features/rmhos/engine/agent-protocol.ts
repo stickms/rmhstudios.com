@@ -3,6 +3,10 @@
 // (a session restored from the shared boot snapshot starts with the snapshot's clock
 // and kernel RNG state, so the host sends the time and fresh entropy with it)
 // Guest -> host: lines prefixed "RMHOS "; anything else is kernel noise.
+//   RMHOS SESSION_OK [<name>]      <name> is the Linux user actually created: the requested one, or
+//                                  <name>_rmh when the image already has an account of that name
+//   RMHOS SAVED_ON_POWEROFF <n>    a poweroff/reboot/halt inside the guest has put the home (n
+//                                  bytes) into the share at SHARE_ARCHIVE_PATH; POWEROFF follows
 
 export type HostCommand =
   | {
@@ -30,6 +34,8 @@ export type GuestEvent =
     }
   | {
       type: 'session-ok';
+      /** The Linux user name the guest created; absent from an older guest image. */
+      user?: string;
     }
   | {
       type: 'restored';
@@ -37,6 +43,11 @@ export type GuestEvent =
   | {
       type: 'saved';
       nonce: string;
+      bytes: number;
+    }
+  | {
+      type: 'saved-on-poweroff';
+      /** Size of the archive the guest left in the share just before it announced POWEROFF. */
       bytes: number;
     }
   | {
@@ -94,13 +105,37 @@ function parseLine(line: string): GuestEvent | null {
         type: 'ready',
       };
     case 'SESSION_OK':
-      return {
-        type: 'session-ok',
-      };
+      if (a === undefined)
+        return {
+          type: 'session-ok',
+        };
+      return b === undefined && TOKEN.test(a)
+        ? {
+            type: 'session-ok',
+            user: a,
+          }
+        : {
+            ...PROTOCOL_ERROR,
+          };
     case 'RESTORED':
       return {
         type: 'restored',
       };
+    case 'SAVED_ON_POWEROFF': {
+      if (a === undefined || b !== undefined || !/^\d+$/.test(a))
+        return {
+          ...PROTOCOL_ERROR,
+        };
+      const bytes = Number(a);
+      return Number.isSafeInteger(bytes)
+        ? {
+            type: 'saved-on-poweroff',
+            bytes,
+          }
+        : {
+            ...PROTOCOL_ERROR,
+          };
+    }
     case 'POWEROFF':
       return {
         type: 'poweroff',

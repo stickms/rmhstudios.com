@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Reproducible rmhOS image build: kernel, root filesystem, BIOS files.
+# rmhOS image build from pinned inputs: kernel, root filesystem, BIOS files. (Not bit-for-bit
+# reproducible: Alpine packages float within the pinned release, so two builds can differ and a
+# rebuild is a new version.)
 #
 #   pnpm rmhos:image            # writes public/rmhos-dev/
 #
@@ -7,6 +9,9 @@
 #   RMHOS_OUT_DIR           output directory (default <repo>/public/rmhos-dev)
 #   HTTPS_PROXY/HTTP_PROXY  passed into the build; with a loopback proxy the
 #                           build also runs on the host network
+#   RMHOS_BUILD_COMMIT, RMHOS_BUILD_RUN_URL
+#                           recorded in packages.txt and manifest.json (default: GITHUB_SHA and the
+#                           workflow run URL on a runner, else `git rev-parse HEAD`, else "unknown")
 #   RMHOS_BUILD_CA_BUNDLE   a PEM file installed as an extra trusted CA inside
 #                           the build (for a TLS-inspecting proxy). It is copied
 #                           to a git-ignored folder and never ships.
@@ -21,7 +26,16 @@ out=${RMHOS_OUT_DIR:-$root/public/rmhos-dev}
 max_kernel=$((12 * 1024 * 1024))
 max_rootfs=$((400 * 1024 * 1024))
 kernel_major=${KERNEL_SERIES%%.*}
-kernel_url="https://cdn.kernel.org/pub/linux/kernel/v${kernel_major}.x/linux-${KERNEL_VERSION}.tar.xz"
+kernel_file="linux-${KERNEL_VERSION}.tar.xz"
+kernel_url="https://cdn.kernel.org/pub/linux/kernel/v${kernel_major}.x/${kernel_file}"
+
+# Where this image came from, so a published version can be tied back to a commit.
+build_commit=${RMHOS_BUILD_COMMIT:-${GITHUB_SHA:-$(git -C "$root" rev-parse HEAD 2>/dev/null || echo unknown)}}
+build_run_url=${RMHOS_BUILD_RUN_URL:-}
+if [ -z "$build_run_url" ] && [ -n "${GITHUB_RUN_ID:-}" ]; then
+  build_run_url="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID}"
+fi
+build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 command -v docker >/dev/null || { echo "build.sh: docker is required" >&2; exit 1; }
 
@@ -41,6 +55,7 @@ args=(
   --build-arg "ALPINE_MINIROOTFS_SHA256=$ALPINE_MINIROOTFS_SHA256"
   --build-arg "KERNEL_URL=$kernel_url"
   --build-arg "KERNEL_SHA256=$KERNEL_SHA256"
+  --build-arg "KERNEL_FILE=$kernel_file"
 )
 for v in HTTPS_PROXY HTTP_PROXY NO_PROXY; do
   if [ -n "${!v:-}" ]; then args+=(--build-arg "$v=${!v}"); fi
@@ -55,7 +70,7 @@ trap 'rm -rf "$tmp" "$ca_dir"' EXIT
 echo "build.sh: building rmhOS image (kernel ${KERNEL_VERSION}, Alpine ${ALPINE_VERSION} ${ALPINE_ARCH})"
 DOCKER_BUILDKIT=1 docker build --platform linux/386 "${args[@]}" --target export --output "type=local,dest=$tmp" "$here"
 
-for f in bzImage rootfs.ext4 seabios.bin vgabios.bin packages.txt bios-packages.txt kernelrelease; do
+for f in bzImage rootfs.ext4 seabios.bin vgabios.bin packages.txt bios-packages.txt kernelrelease apk-installed.txt "$kernel_file"; do
   [ -s "$tmp/$f" ] || { echo "build.sh: build produced no $f" >&2; exit 1; }
 done
 
@@ -71,12 +86,16 @@ esac
 
 mkdir -p "$out"
 # A snapshot belongs to the exact files it was taken against: never keep an old one.
-rm -f "$out/state.zst" "$out/state.meta.json" "$out/manifest.json"
-for f in bzImage rootfs.ext4 seabios.bin vgabios.bin; do
+rm -f "$out/state.zst" "$out/state.meta.json" "$out/manifest.json" "$out"/linux-*.tar.xz
+# apk-installed.txt is Alpine's package database: per package its licence (L:), checksum (C:) and
+# origin, the written record behind packages.txt. The kernel tarball is the exact GPL source.
+for f in bzImage rootfs.ext4 seabios.bin vgabios.bin apk-installed.txt "$kernel_file"; do
   cp "$tmp/$f" "$out/$f"
 done
+printf '{\n  "commit": "%s",\n  "runUrl": "%s",\n  "date": "%s"\n}\n' "$build_commit" "$build_run_url" "$build_date" > "$out/build-info.json"
 {
   echo "# rmhOS image contents: Alpine ${ALPINE_VERSION} (${ALPINE_ARCH}) packages, then the BIOS packages."
+  echo "# Built from commit ${build_commit} on ${build_date}${build_run_url:+ (workflow run ${build_run_url})}."
   echo "# Removed from the image to fit its size budget: Mesa software GL (libgallium, LLVM); the fbdev X server does not use them."
   echo "# Kernel: Linux ${KERNEL_VERSION} (GPL-2.0), source ${kernel_url}"
   cat "$tmp/packages.txt"

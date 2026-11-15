@@ -5,9 +5,17 @@ import { isIP } from 'node:net';
 
 export interface RelayPolicy {
   deniedPorts: ReadonlySet<number>;
+  /** When set, ONLY these ports are allowed and `deniedPorts` is ignored. */
+  allowedPorts: ReadonlySet<number> | null;
   maxStreams: number;
   bytesPerSecond: number;
   bytesPerDay: number;
+  /** Scan brake: distinct (address, port) pairs one user may open per 10 minutes. */
+  maxDestinationsPer10Min: number;
+  /** Hub-wide ceilings, shared by every user on top of the per-user ones. */
+  maxSessions: number;
+  globalBytesPerSecond: number;
+  globalBytesPerDay: number;
 }
 
 const DEFAULT_DENIED_PORTS = [25, 465, 587, 2525]; // outbound mail
@@ -30,15 +38,33 @@ function ports(raw: string | undefined): Set<number> {
   return out.size > 0 ? out : new Set(DEFAULT_DENIED_PORTS);
 }
 
+/** RMHOS_NET_ALLOWED_PORTS: unset/blank = no allow-list; set but with no valid port = allow nothing (fail closed). */
+function allowed(raw: string | undefined): Set<number> | null {
+  if (raw === undefined || raw.trim() === '') return null;
+  const out = new Set<number>();
+  for (const part of raw.split(',')) {
+    const t = part.trim();
+    if (!/^\d+$/.test(t)) continue;
+    const n = Number(t);
+    if (n >= 1 && n <= 65535) out.add(n);
+  }
+  return out;
+}
+
 export function loadPolicy(env: NodeJS.ProcessEnv): RelayPolicy & {
   enabled: boolean;
 } {
   return {
     enabled: env.RMHOS_NET_ENABLED !== '0',
     deniedPorts: ports(env.RMHOS_NET_DENIED_PORTS),
+    allowedPorts: allowed(env.RMHOS_NET_ALLOWED_PORTS),
     maxStreams: int(env.RMHOS_NET_MAX_STREAMS, 64),
     bytesPerSecond: int(env.RMHOS_NET_BYTES_PER_SECOND, 2 * 1024 * 1024),
     bytesPerDay: int(env.RMHOS_NET_BYTES_PER_DAY, 2 * 1024 ** 3),
+    maxDestinationsPer10Min: int(env.RMHOS_NET_MAX_DESTINATIONS_PER_10MIN, 300),
+    maxSessions: int(env.RMHOS_NET_MAX_SESSIONS, 200),
+    globalBytesPerSecond: int(env.RMHOS_NET_GLOBAL_BYTES_PER_SECOND, 20 * 1024 * 1024),
+    globalBytesPerDay: int(env.RMHOS_NET_GLOBAL_BYTES_PER_DAY, 100 * 1024 ** 3),
   };
 }
 
@@ -86,7 +112,7 @@ export async function checkConnect(
     };
   }
   if (req.streamType !== 'tcp') return blocked;
-  if (p.deniedPorts.has(req.port)) return blocked;
+  if (p.allowedPorts ? !p.allowedPorts.has(req.port) : p.deniedPorts.has(req.port)) return blocked;
   if (req.openStreams >= p.maxStreams)
     return {
       ok: false,

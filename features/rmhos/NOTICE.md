@@ -290,3 +290,431 @@ emulator
 is
 [v86](https://github.com/copy/v86)
 (BSD-2-Clause).
+
+## Source, and a written offer
+
+Beside
+every
+published
+image
+(the
+same
+directory
+as
+`packages.txt`)
+we
+publish
+the
+source
+and
+the
+records
+that
+go
+with
+it,
+so
+that
+nothing
+depends
+on
+a
+third
+party
+still
+hosting
+an
+old
+file:
+
+- `linux-6.12.117.tar.xz`:
+  the
+  exact
+  kernel
+  source
+  tarball
+  the
+  build
+  compiled
+  (sha256
+  above),
+  not
+  only
+  a
+  link
+  to
+  kernel.org.
+- `apk-installed.txt`:
+  Alpine's
+  own
+  package
+  database
+  for
+  the
+  image,
+  the
+  written
+  record
+  behind
+  `packages.txt`.
+  For
+  every
+  package
+  it
+  has
+  the
+  version,
+  the
+  licence
+  (`L:`),
+  the
+  checksum
+  (`C:`)
+  and
+  the
+  origin
+  package
+  its
+  source
+  comes
+  from
+  (`o:`).
+- `packages.txt`:
+  package
+  names
+  and
+  versions,
+  with
+  the
+  commit
+  and
+  the
+  date
+  the
+  image
+  was
+  built
+  from.
+- Our
+  `kernel.config`,
+  patches
+  and
+  build
+  scripts
+  are
+  in
+  `scripts/rmhos/`
+  of
+  the
+  site
+  repository;
+  `manifest.json`
+  and
+  the
+  `packages.txt`
+  header
+  record
+  the
+  commit
+  that
+  built
+  the
+  image,
+  so
+  the
+  exact
+  scripts
+  can
+  be
+  fetched.
+
+Written
+offer.
+For
+three
+years
+after
+the
+date
+a
+published
+image
+was
+built
+(the
+date
+in
+its
+`packages.txt`),
+on
+request
+we
+will
+give
+you,
+for
+no
+more
+than
+the
+cost
+of
+doing
+so,
+the
+complete
+corresponding
+source
+code
+of
+any
+software
+in
+that
+image
+that
+is
+licensed
+under
+the
+GPL
+or
+LGPL,
+at
+the
+exact
+versions
+listed
+in
+`apk-installed.txt`.
+Alpine's
+mirrors
+replace
+package
+versions
+in
+place,
+so
+a
+source
+package
+that
+was
+available
+when
+the
+image
+was
+built
+can
+later
+disappear
+from
+the
+upstream
+index;
+this
+offer
+covers
+it.
+Ask
+through
+the
+issue
+tracker
+of
+the
+site
+repository,
+<https://github.com/stickms/rmhstudios.com/issues>,
+or
+through
+the
+contact
+address
+given
+in
+section
+12
+(Contact)
+of
+the
+site
+Terms
+at
+`/terms`.
+
+## Third-party licences
+
+Each
+component
+keeps
+its
+own
+licence;
+the
+authoritative
+list
+for
+the
+userland
+is
+the
+`L:`
+field
+of
+every
+package
+in
+`apk-installed.txt`.
+The
+main
+ones:
+
+- Linux
+  kernel:
+  GNU
+  General
+  Public
+  License,
+  version
+  2
+  (GPL-2.0),
+  see
+  above.
+- busybox,
+  GNU
+  tar,
+  socat,
+  git,
+  htop,
+  pcmanfm,
+  mousepad,
+  netsurf:
+  GPL
+  (version
+  2
+  or
+  later,
+  or
+  version
+  2
+  only,
+  per
+  package).
+- nano:
+  GNU
+  General
+  Public
+  License,
+  version
+  3
+  or
+  later.
+- IceWM:
+  GNU
+  Lesser
+  General
+  Public
+  License,
+  version
+  2
+  or
+  later
+  (GPL
+  for
+  some
+  parts).
+- musl
+  libc:
+  MIT.
+  Xorg
+  (xorg-server
+  and
+  its
+  drivers),
+  xterm,
+  xinit,
+  xauth:
+  MIT/X11-style
+  licences.
+  OpenRC:
+  BSD-2-Clause.
+  doas:
+  ISC.
+  curl:
+  the
+  curl
+  licence
+  (MIT-style).
+  openssh-client:
+  BSD-style.
+  ca-certificates:
+  MPL-2.0
+  for
+  the
+  certificate
+  bundle.
+- DejaVu
+  fonts
+  (`font-dejavu`):
+  the
+  Bitstream
+  Vera
+  licence
+  with
+  the
+  DejaVu
+  changes
+  in
+  the
+  public
+  domain;
+  the
+  fonts
+  are
+  installed
+  unmodified,
+  and
+  this
+  notice
+  together
+  with
+  `apk-installed.txt`
+  accompanies
+  every
+  copy.
+- SeaBIOS
+  and
+  its
+  VGA
+  BIOS:
+  GNU
+  Lesser
+  General
+  Public
+  License,
+  version
+  3.
+- v86
+  (the
+  emulator):
+  BSD-2-Clause,
+  "Copyright
+  (c)
+  2012,
+  The
+  v86
+  contributors";
+  its
+  licence
+  file
+  is
+  in
+  the
+  npm
+  package
+  and
+  reproduced
+  at
+  <https://github.com/copy/v86/blob/master/LICENSE>.

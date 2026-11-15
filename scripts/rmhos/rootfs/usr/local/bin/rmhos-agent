@@ -3,8 +3,13 @@
 # (features/rmhos/engine/agent-protocol.ts):
 #
 #   host -> guest   SESSION <user> <epochSeconds> <entropyHex> | RESTORE | SAVE <nonce> | SHUTDOWN
-#   guest -> host   RMHOS READY | SESSION_OK | RESTORED | SAVED <nonce> <bytes>
-#                   | POWEROFF | ERR <code>
+#   guest -> host   RMHOS READY | SESSION_OK [<name>] | RESTORED | SAVED <nonce> <bytes>
+#                   | SAVED_ON_POWEROFF <bytes> | POWEROFF | ERR <code>
+#
+# SESSION_OK carries the Linux user name actually created: the requested one, or <name>_rmh when
+# the requested one already exists in the image (guest, ntp, sshd, ...: /etc/rmhos-reserved-names).
+# Before announcing POWEROFF a wrapped poweroff/reboot/halt (rmhos-poweroff-save) tars the home
+# into the 9p share and prints SAVED_ON_POWEROFF, so a shutdown inside the guest loses nothing.
 #
 # POSIX sh (busybox ash). Log lines go to /dev/ttyS0 (serial0); /dev/console
 # is tty0 only, because it is the last console= argument. Anything that is not
@@ -15,6 +20,7 @@ SHARE=/mnt/host
 ARCHIVE=$SHARE/sync/home.tar
 XLOG=/tmp/rmhos-x.log
 SESSION_USER=
+RESERVED=/etc/rmhos-reserved-names
 CR=$(printf '\r')
 
 log() {
@@ -78,6 +84,26 @@ debug_hooks() {
 	) &
 }
 
+# The name the Linux account gets: the requested one unless the image already has a user or group of
+# that name (adduser would fail and the visitor could never start a session), then <name>_rmh.
+# Prints the name; fails when even that is taken.
+pick_name() {
+	name=$1
+	if taken "$name"; then
+		name=$(printf '%s' "$1" | cut -c1-26)_rmh
+		if taken "$name"; then
+			return 1
+		fi
+	fi
+	printf '%s' "$name"
+}
+
+taken() {
+	if [ -r "$RESERVED" ] && grep -qx -- "$1" "$RESERVED"; then return 0; fi
+	id "$1" >/dev/null 2>&1 && return 0
+	grep -q "^$1:" /etc/group 2>/dev/null
+}
+
 do_session() {
 	user=${1%% *}
 	rest=${1#* }
@@ -106,6 +132,13 @@ do_session() {
 		return
 	fi
 	log "clock $(date +%s)"
+	requested=$user
+	if ! user=$(pick_name "$requested"); then
+		log "no free Linux user name for $requested"
+		reply "ERR session"
+		return
+	fi
+	[ "$user" = "$requested" ] || log "user name $requested is taken in the image, using $user"
 	if adduser -D -u 1000 -G wheel -s /bin/ash "$user" >/dev/null 2>&1; then
 		uid=$(id -u "$user")
 		gid=$(id -g "$user")
@@ -119,9 +152,10 @@ do_session() {
 			cp -a /etc/skel/. "/home/$user/" &&
 			chown -R "$uid:$gid" "/home/$user"; then
 			SESSION_USER=$user
+			printf '%s' "$user" >/run/rmhos-session-user
 			log "session for $user"
 			debug_hooks
-			reply "SESSION_OK"
+			reply "SESSION_OK $user"
 			return
 		fi
 		umount "/home/$user" 2>/dev/null
@@ -135,17 +169,22 @@ do_session() {
 
 # The refusal of absolute and ".." paths below is hygiene, not a privilege
 # boundary: the user has passwordless doas by design (the VM is theirs).
-# Extract the archive into the home as the user. Entries that are absolute or
-# climb out with ".." are refused up front. GNU tar (-P keeps names as stored;
-# busybox tar silently strips "/" and "../" from its listing, which would hide them) pipes
-# its listing straight into the check (nothing is written to the root filesystem).
+# The archive is read ONCE (a home can be 128 MB and the 9p share is slow: the listing pass that
+# used to precede extraction doubled the time). GNU tar, running as the user in their own home,
+# strips a leading "/" (and says so) and skips a ".." member (and says so, exit status 2); either
+# message means the archive was crafted, so the home is put back to a fresh skeleton and the
+# restore is refused. Nothing is ever written outside the home: tar runs unprivileged.
 restore_archive() {
 	home=/home/$SESSION_USER
-	if tar -tPf - <"$ARCHIVE" 2>/dev/null | grep -Eq '(^/|(^|/)\.\.(/|$))'; then
+	err=$(su -s /bin/sh "$SESSION_USER" -c "tar -xpf - -C '$home' --no-same-owner" <"$ARCHIVE" 2>&1 >/dev/null)
+	status=$?
+	if printf '%s' "$err" | grep -Eq "Removing leading|Member name contains"; then
 		log "home archive has absolute or .. entries; refused"
+		find "$home" -mindepth 1 -delete 2>/dev/null
+		cp -a /etc/skel/. "$home/" && chown -R "$(id -u "$SESSION_USER"):$(id -g "$SESSION_USER")" "$home"
 		return 1
 	fi
-	if ! err=$(su -s /bin/sh "$SESSION_USER" -c "tar -xpf - -C '$home' --no-same-owner" <"$ARCHIVE" 2>&1 >/dev/null); then
+	if [ "$status" != 0 ]; then
 		log "home archive could not be extracted: $(printf '%s' "$err" | head -n 3 | tr '\n' ' ')"
 		return 1
 	fi
@@ -158,13 +197,17 @@ launch_desktop() {
 	chmod 666 "$XLOG"
 	if openvt -c 1 -s -f -- su -l "$SESSION_USER" -c "exec startx -- vt1 >>$XLOG 2>&1"; then
 		log "desktop launched"
-		# Say what became of the X server, for the serial0 log.
+		# Say what became of the X server, for the serial0 log. Not a fixed sleep: under the emulator
+		# an idle guest's clock is fast-forwarded, so "45 s later" can be before X has even started.
+		# Poll for what X leaves when it is up (its socket and its process) and stop at once.
 		(
-			sleep 45
-			if pidof Xorg >/dev/null 2>&1; then log "X server is running"; else
-				log "X server is not running"
-				chvt 2 2>/dev/null
-			fi
+			n=0
+			while [ "$n" -lt 150 ]; do
+				if [ -S /tmp/.X11-unix/X0 ] && pidof Xorg >/dev/null 2>&1; then break; fi
+				sleep 1
+				n=$((n + 1))
+			done
+			if [ "$n" -lt 150 ]; then log "X server is running"; else log "X server is not running"; fi
 			{
 				grep -E '\((EE|WW)\)|Fatal' /var/log/Xorg.0.log 2>/dev/null | tail -n 20
 				tail -n 10 "$XLOG" 2>/dev/null
@@ -203,7 +246,12 @@ do_save() {
 		return
 	fi
 	mkdir -p "$SHARE/sync"
-	if tar -cpf "$ARCHIVE" -C "/home/$SESSION_USER" . 2>/dev/null; then
+	# GNU tar exits 1 when a file changed while it was being read. The running desktop writes in the
+	# home all the time (.Xauthority, icewm and session logs), so this is the NORMAL case with a
+	# desktop up, not a failure: the archive is complete. Only 2 (a real error) is "not saved".
+	tar -cpf "$ARCHIVE" -C "/home/$SESSION_USER" . 2>/dev/null
+	rc=$?
+	if [ "$rc" -le 1 ]; then
 		bytes=$(wc -c <"$ARCHIVE")
 		set -- $bytes
 		reply "SAVED $nonce $1"
