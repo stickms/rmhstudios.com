@@ -177,7 +177,18 @@ export const PEOPLE: Record<
         years:
           '1896–1934',
         portrait:
-          null,
+          {
+            width: 282,
+            height: 360,
+            author:
+              'Unknown',
+            license:
+              'Public domain',
+            source:
+              commons(
+                'Lev-Semyonovich-Vygotsky-1896-1934.jpg',
+              ),
+          },
       },
     festinger:
       {
@@ -224,7 +235,18 @@ export const PEOPLE: Record<
         years:
           '1896–1971',
         portrait:
-          null,
+          {
+            width: 262,
+            height: 360,
+            author:
+              'Wellcome Collection',
+            license:
+              'CC BY 4.0',
+            source:
+              commons(
+                'Donald_Woods_Winnicott.jpg',
+              ),
+          },
       },
     seligman:
       {
