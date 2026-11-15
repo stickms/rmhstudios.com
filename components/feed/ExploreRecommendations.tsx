@@ -16,6 +16,10 @@ import { DeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { FeedItem } from '@/lib/feed-types';
 import { useArrival } from '@/components/ui/arrive';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+
+/** Avatar / community tile size on the Explore rows, in px. */
+const AVATAR_SIZE = 40;
 
 interface Community {
   id: string;
@@ -204,7 +208,7 @@ export function ExploreRecommendations({
   const studioPosts = tab === 'top' ? blogPosts.slice(0, 3) : [];
 
   // Steel section 10, Explore: stations per kind, rows on rules. Each station is a heading on the spine and rows under
-  // it; there are no cards, tiles or pictures.
+  // it. People and communities lead with a 40px picture (avatar, or the community's emoji tile); nothing else has one.
   return (
     <Spine className={arrival}>
       {/* Trending tags */}
@@ -214,7 +218,7 @@ export function ExploreRecommendations({
           <SpineItem dot={false}>
             <div className="t-body flex flex-wrap gap-x-5 gap-y-2">
               {data.trendingTags.map((tag) => (
-                <span key={tag.tag} className="inline-flex items-baseline gap-1.5">
+                <span key={tag.tag} className="inline-flex items-center gap-1.5">
                   <Link to={`/tag/${tag.tag}` as string} className="font-medium">
                     #{tag.tag}
                   </Link>
@@ -234,14 +238,22 @@ export function ExploreRecommendations({
           {data.suggestedUsers.map((u) => (
             <SpineItem key={u.id}>
               <div className="flex items-center justify-between gap-3">
-                <Link to={`/u/${u.handle || u.id}` as string} className="min-w-0">
-                  <p className="t-body truncate font-semibold">{u.name || u.handle}</p>
-                  <p className="t-meta truncate">
-                    {t('follower-count', {
-                      count: u.followerCount,
-                      defaultValue: '{{count}} followers',
-                    })}
-                  </p>
+                <Link
+                  to={`/u/${u.handle || u.id}` as string}
+                  className="flex min-w-0 items-center gap-3"
+                >
+                  <UserAvatar src={u.image} alt="" size={AVATAR_SIZE} />
+                  <span className="min-w-0">
+                    <span className="t-body block truncate font-semibold">
+                      {u.name || u.handle}
+                    </span>
+                    <span className="t-meta block truncate">
+                      {t('follower-count', {
+                        count: u.followerCount,
+                        defaultValue: '{{count}} followers',
+                      })}
+                    </span>
+                  </span>
                 </Link>
                 <FollowButton userId={u.id} />
               </div>
@@ -265,10 +277,13 @@ export function ExploreRecommendations({
               <SpineItem key={l.user.id}>
                 <Link
                   to={`/u/${l.user.handle || l.user.id}` as string}
-                  className="flex items-baseline justify-between gap-3"
+                  className="flex items-center justify-between gap-3"
                 >
-                  <span className="t-body truncate font-semibold">
-                    {l.user.name || l.user.handle}
+                  <span className="flex min-w-0 items-center gap-3">
+                    <UserAvatar src={l.user.image} alt="" size={AVATAR_SIZE} />
+                    <span className="t-body truncate font-semibold">
+                      {l.user.name || l.user.handle}
+                    </span>
                   </span>
                   <span className="t-meta">{l.total.toLocaleString()}</span>
                 </Link>
@@ -283,12 +298,22 @@ export function ExploreRecommendations({
             <SpineStation>{t('communities-heading', { defaultValue: 'Communities' })}</SpineStation>
             {data.communities.map((c) => (
               <SpineItem key={c.id}>
-                <Link to={`/c/${c.slug}` as string} className="block">
-                  <p className="t-body truncate font-semibold">{c.name}</p>
-                  <p className="t-meta truncate">
-                    {c.memberCount} member{c.memberCount === 1 ? '' : 's'}
-                    {c.description ? ` · ${c.description}` : ''}
-                  </p>
+                <Link to={`/c/${c.slug}` as string} className="flex items-center gap-3">
+                  {/* A community's picture is its emoji; a placeholder tile per Steel section 5 (bg-subtle, 1px rule, 8px). */}
+                  <span
+                    aria-hidden
+                    className="flex shrink-0 items-center justify-center rounded-site border border-site-border bg-site-bg-subtle text-xl"
+                    style={{ width: AVATAR_SIZE, height: AVATAR_SIZE }}
+                  >
+                    {c.icon || '👥'}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="t-body block truncate font-semibold">{c.name}</span>
+                    <span className="t-meta block truncate">
+                      {c.memberCount} member{c.memberCount === 1 ? '' : 's'}
+                      {c.description ? ` · ${c.description}` : ''}
+                    </span>
+                  </span>
                 </Link>
               </SpineItem>
             ))}
