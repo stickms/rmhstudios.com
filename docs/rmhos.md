@@ -1,0 +1,203 @@
+# rmhOS
+
+rmhOS is a full-screen app at `/rmhos` that boots a real Linux desktop (a 32-bit x86 machine, IceWM on Alpine Linux)
+inside the visitor's browser tab. It runs in an emulator ([v86](https://github.com/copy/v86), WebAssembly) on the
+visitor's own device: the site serves files, signs people in and relays their network traffic, and it never runs a
+visitor's code on a server. The design and its owner decisions are in
+[`superpowers/specs/2026-11-14-rmhos-design.md`](superpowers/specs/2026-11-14-rmhos-design.md) (its "Owner amendments"
+section wins over the text under it); this page is the runbook.
+
+## The three moving parts
+
+| Part          | Where                                                                                              | What it does                                                                                                                                                                                                              |
+| ------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The page      | `features/rmhos/` (`engine/`, `ui/`, `api/`), route `app/routes/rmhos.tsx`                         | Downloads the image, runs v86, hands the guest the visitor's identity over a serial line, keeps the home folder in IndexedDB, shows the toolbar. `GET /api/rmhos/session` returns the Linux user name and a relay ticket. |
+| The image     | `scripts/rmhos/` (kernel config, patches, rootfs overlay, Dockerfile), published to R2/CDN         | A reproducible kernel + root filesystem + BIOS files + a post-boot snapshot (`state.zst`) so a session starts in about 3 s instead of about 15 to 30 s.                                                                   |
+| The relay hub | `server/rmhos-net/` (one Node process, port 7009, path `/rmhos-net/`), compose service `rmhos-net` | One WebSocket per user carrying Wisp streams to the internet under a policy; DNS over HTTPS (`POST /rmhos-net/dns-query`); `GET /rmhos-net/status`. The only thing in the feature that touches the network.               |
+
+The catalog entry is `features/rmhos/catalog.ts` (id `rmhos`, `authGate: true`, status Beta). The i18n namespace is
+`c-rmhos`; its keys are added by hand to every `locales/<lng>/c-rmhos.json` (`pnpm i18n:extract` does not scan
+`features/`, and running it rewrites thousands of locale files; do not).
+
+## Run it locally
+
+```bash
+pnpm install
+pnpm rmhos:image            # kernel + rootfs + snapshot into public/rmhos-dev (git-ignored; needs Docker, 15 to 25 min cold)
+pnpm rmhos:smoke            # boots it headless: cold boot, restore, crafted archives, snapshot refusal
+pnpm dev                    # vite (7005) + the hubs, including the relay hub (7009); open /rmhos signed in
+```
+
+With no CDN base the page loads the image from `/rmhos-dev/`. Behind a TLS-inspecting proxy build with
+`RMHOS_BUILD_CA_BUNDLE=<pem>` (the CA is installed inside the build only and never ships); `HTTPS_PROXY` is passed
+into the build, and with a loopback proxy the build runs on the host network (`scripts/rmhos/build.sh`).
+
+v86 always builds an `https://` DoH URL, so **DNS cannot work on plain-http localhost**. To see the internet end to
+end locally put a TLS front in front of both servers: `testing/e2e/rmhos-tls-front.mjs` (self-signed certificate,
+forwards `/rmhos-net/*` including WebSocket upgrades to 7009 and the rest to Vite) and run
+`testing/e2e/rmhos-net.mjs`, which is the end-to-end check (header of that file lists the exact commands, including
+`BETTER_AUTH_URL=https://localhost:7443` for sign-in). Without TLS the machine still boots and the WebSocket relay
+works; only name resolution fails.
+
+## Publish a new image version
+
+The image changes only when `scripts/rmhos/versions.env`, `kernel.config`, `patches/`, the rootfs overlay or the
+package list change.
+
+1. Run the **`rmhos-image`** workflow (`.github/workflows/rmhos-image.yml`, manual). It builds the image, boots it
+   headless, writes the snapshot and `manifest.json` (its `version` is a hash over every boot input including the
+   snapshot, so a new image is a new path and an old page never mixes files from two builds), and uploads to R2 under
+   `rmhos/<version>/` (immutable). It needs the repository secrets `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`,
+   `S3_SECRET_ACCESS_KEY` and `S3_BUCKET`; they are given to the publish step only.
+2. Paste the printed manifest values (version, and size and sha256 of `bzImage`, `rootfs.ext4`, `state.zst`,
+   `seabios.bin`, `vgabios.bin`) into `PINNED_IMAGE` in `features/rmhos/engine/image-manifest.ts`.
+3. Commit. Until this commit deploys, the site keeps booting the previous version.
+
+The page cannot boot at all until an image version has been published and pinned.
+
+## Environment variables
+
+| Variable                                              | Read by       | Default                         | Meaning                                                                                                                                                  |
+| ----------------------------------------------------- | ------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RMHOS_NET_TICKET_SECRET`                             | web and hub   | none (required for networking)  | HMAC key for relay tickets, used for nothing else. Unset: the web tier reports networking off and the hub refuses to start. It is the hub's only secret. |
+| `RMHOS_NET_ENABLED`                                   | web and hub   | on                              | `0` switches networking off: the session says disabled (toolbar "Network off", no WebSocket is opened) and the hub answers 503. Takes effect on restart. |
+| `RMHOS_NET_PORT`                                      | hub           | `7009`                          | Listen port.                                                                                                                                             |
+| `RMHOS_NET_DENIED_PORTS`                              | hub           | `25,465,587,2525`               | TCP ports the relay refuses (mail). An empty or unparseable list falls back to the default, never to "deny nothing".                                     |
+| `RMHOS_NET_MAX_STREAMS`                               | hub           | `64`                            | Concurrent streams per connection.                                                                                                                       |
+| `RMHOS_NET_BYTES_PER_SECOND`                          | hub           | 2 MiB                           | Per-user token bucket (up and down together).                                                                                                            |
+| `RMHOS_NET_BYTES_PER_DAY`                             | hub           | 2 GiB                           | Per-user UTC-day budget; past it new streams are refused and open ones closed.                                                                           |
+| `RMHOS_NET_DOH_UPSTREAM`                              | hub           | `https://1.1.1.1/dns-query`     | The one DoH resolver the hub forwards guest DNS to. Must be https; its address is policy-checked like any destination.                                   |
+| `RMHOS_NET_CORS_ORIGIN`                               | hub           | empty                           | Allowed origin when the page and the hub are on different origins.                                                                                       |
+| `VITE_RMHOS_NET_URL`                                  | web (build)   | the site origin + `/rmhos-net/` | Public relay URL when it is not the site's own origin. Otherwise `BETTER_AUTH_URL`'s origin with the scheme swapped to ws(s).                            |
+| `PORT_RMHOS_NET`                                      | `deploy.sh`   | `7009`                          | Loopback port the deploy health-checks.                                                                                                                  |
+| `RMHOS_BUILD_CA_BUNDLE`, `RMHOS_OUT_DIR`, `RMHOS_DIR` | image scripts | see `scripts/rmhos/*.sh`        | Extra CA for the build, output directory, and image directory for the smoke test.                                                                        |
+
+## The relay policy
+
+The relay is on unless `RMHOS_NET_ENABLED=0`, and needs `RMHOS_NET_TICKET_SECRET`. It never forwards for an anonymous
+visitor (no valid ticket, no socket). For a signed-in user:
+
+- **TCP only**, any port except the deny-list (25, 465, 587, 2525). UDP is closed; DNS goes through DoH.
+- **Public addresses only.** Literal addresses and every address a name resolves to must be public: loopback,
+  private, link-local, CGNAT, multicast, metadata (169.254.169.254) and IPv6 equivalents are refused with close reason
+  `blocked`; a name that resolves to a mix is refused (rebinding). `server/rmhos-net/private-ip.ts` is its own copy of
+  the address test, so the hub bundle carries no site code.
+- **Caps:** 64 streams per connection, 30 CONNECTs per user per 10 s, 8 concurrent lookups, bytes per second and per
+  day as above, bounded queues in both directions (a client that ignores flow-control credit is closed, one that
+  respects it is paused).
+- **Switching it off** needs no deploy of code: set `RMHOS_NET_ENABLED=0` (or remove `RMHOS_NET_TICKET_SECRET`) in the
+  environment and restart the web tier and the hub. `docker compose --profile rmhos-net stop rmhos-net` stops only
+  the hub (the toolbar then shows "Network unavailable"; the machine keeps working).
+
+## Ticket lifecycle
+
+A relay ticket is `userId.expiry.signature` (HMAC-SHA256, 60 s expiry), minted by `GET /api/rmhos/session`. v86 takes
+its relay URL and DoH URL once, when the machine is built, and reuses them for the whole session (it reconnects the
+WebSocket with the same URL every 10 s and sends every DNS query to the same DoH URL), so a bare 60 s ticket would
+fail DNS after a minute and could never reconnect. The hub therefore keeps a per-server table of tickets it has seen
+(`server/rmhos-net/tickets.ts`):
+
+- A ticket must be **first presented** (WebSocket upgrade, DoH query or status request) within its 60 s. The page
+  fetches the session just before it builds the machine, after the emulator module has loaded, and fetches again if
+  more than about 45 s have passed (a slow state download, a cold-boot fallback).
+- Once seen, a ticket is accepted again for reconnects, DNS and status while its signature verifies, it was used within
+  the last **15 minutes** (any accepted use, any relayed byte for that user and every answered ping refreshes it) and
+  it is less than **12 hours** old. Otherwise 401.
+- **One ticket per user:** presenting a newer ticket removes the older one and closes that user's older socket (close
+  code 4000). An older ticket cannot displace a newer one.
+- The table holds at most 10 000 tickets (the one idle longest goes first), is pruned every 10 minutes and lives only
+  in the hub's memory: **restarting the hub invalidates every ticket**; a page then needs a reload (a new session
+  request) to get network back.
+- **The ticket is a bearer credential for the life of the session.** Whoever holds it can spend that user's relay
+  allowance (under that user's caps) until it goes idle. It appears in the relay WebSocket URL and the DoH URL, which
+  go to our own origin (or `VITE_RMHOS_NET_URL`); Apache logs `/rmhos-net/` without the query string
+  (`combined_noquery` in `deploy/apache/rmhstudios.conf`), the hub never logs it, and it is never in server-rendered
+  HTML (the session query is client-only, `no-store` and not dehydrated).
+- `GET /rmhos-net/status?ticket=…` returns `{ connected, streams }` for that ticket's own user (same auth as DoH). The
+  page polls it once when the desktop is ready and every 15 s while the tab is visible to drive the toolbar: `on`,
+  `connecting`, or `error` (three failed polls in a row, or 30 s disconnected). With networking disabled the toolbar
+  says "Network off" and nothing is polled or opened.
+
+## The sandbox
+
+The hub dials the internet for strangers, so it is isolated from the rest of the VPS:
+
+- **Container:** its own image entry (`dist-server/server/rmhos-net/index.cjs`, which bundles no Prisma and no Better
+  Auth code), non-root `65534:65534`, `read_only`, `cap_drop: [ALL]`, `no-new-privileges`, `pids_limit 256`,
+  `mem_limit 256m`, `cpus 0.5`, `tmpfs /tmp`. It has no `DATABASE_URL`, `REDIS_URL`, `BETTER_AUTH_SECRET` or S3 keys;
+  its only secret is `RMHOS_NET_TICKET_SECRET`. It is the only member of the `rmhos-egress` Docker network, so it
+  shares no network with any other service. It publishes on loopback only; Apache maps `/rmhos-net/` to it.
+  `server/rmhos-net/__tests__/compose-sandbox.test.ts` pins all of this.
+- **Host firewall:** `deploy/rmhos-net/egress-firewall.sh` puts drops on the `DOCKER-USER` chain for packets from the
+  `rmhos-egress` subnet to every private, loopback, link-local, CGNAT and metadata range and to the host itself, so
+  the isolation holds even if the application check were bypassed. It needs root, and the CD deploy is sandboxed
+  (no privilege), so the rules are installed **once, by the owner, as a systemd unit**:
+
+  ```bash
+  # on the VPS, as root; first edit ExecStart's repo path to where deploy.sh runs from
+  sudo cp deploy/systemd/rmhos-net-firewall.service /etc/systemd/system/
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now rmhos-net-firewall.service
+  systemctl status rmhos-net-firewall.service      # active (exited)
+  sudo iptables -S RMHOS-EGRESS                    # the drop list
+  ```
+
+  The unit runs before `docker.service`, so the rules exist after a reboot before any container does. Re-run it
+  (`systemctl restart`) after editing the script.
+
+- **The deploy probe:** `deploy.sh` runs `deploy/rmhos-net/probe-firewall.sh`: a throwaway container on the
+  `rmhos-egress` network must **time out** (not connect, not be refused) connecting to the host's gateway. Only then
+  does it start the hub (compose profile `rmhos-net`, restart policy `no`). If the probe fails the deploy prints
+  `rmhOS network relay NOT started: egress firewall not proven` with the install commands above, leaves the hub stopped
+  and carries on; the site itself is unaffected. The same happens when `RMHOS_NET_TICKET_SECRET` is not in the env
+  file. **Networking therefore stays off in production until the unit is installed and `RMHOS_NET_TICKET_SECRET` is
+  set.** Because the restart policy is `no`, the hub stays down after a crash until the next deploy.
+- **Health:** the hub answers `GET /health` (`/rmhos-net/health` through Apache); `deploy.sh` checks it. The Go `status` service does not watch it yet.
+
+## Whose address, and what the logs are for
+
+Traffic leaves from the VPS's own IP address, so abuse complaints and IP reputation land on us. The mitigations are the
+mail-port block, the byte and rate caps, the per-day budget and the stream log. The hub writes one JSON line on stdout
+per event (`docker logs <project>-rmhos-net`):
+
+- `rmhos-net.session` `{ userId, state: "open" | "closed" }` for each relay socket.
+- `rmhos-net.stream` `{ userId, host, port, up, down, ms, reason }` for each stream when it ends. `host` is the address
+  v86 dialled (it resolves names itself through DoH; the log has no DNS query text). `reason` is the Wisp close reason
+  (`voluntary`, `blocked`, `throttled`, `refused`, `timeout`, `unreachable`, `networkError`).
+
+**Abuse report procedure.** From the complaint take the time and the remote address (the VPS is the source), find the
+`rmhos-net.stream` lines for that address and port in the window, and read the `userId`. That is the RMH account id
+(`user.id` in the database): look the account up, then suspend it through the normal admin tools. To cut the relay for
+everyone while you investigate, set `RMHOS_NET_ENABLED=0` and restart, or stop the hub container. The logs carry no
+payloads. Keep them for as long as your retention policy for operational logs says, and no longer.
+
+## The home folder
+
+The home folder lives **in the browser only**: an archive in IndexedDB on that device, saved every 5 minutes and on the
+Save button (and offered at unload). No server has a copy, there is no quota beyond the 128 MB home tmpfs and the
+browser's own storage limit, and files do not follow the account to another device. **Clearing site data deletes it.**
+A private window or a browser that blocks storage keeps files for the page's lifetime only (the toolbar says so).
+Everything outside the home folder resets on every boot. Tell users to use Download backup (a `.tar.gz`) before they
+clear site data or switch browsers, and Restore backup to bring one back; the toolbar offers both.
+
+## Licence obligations and where each is met
+
+| Obligation                                                                                    | Where it is met                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Linux (GPL-2.0): corresponding source and the licence stated; no source tree committed        | The About dialog and `features/rmhos/NOTICE.md` name the licence and link the exact upstream tarball (`linux-6.12.117.tar.xz`) with its sha256; our `kernel.config` and `patches/` are in `scripts/rmhos/`; the build downloads the tarball and refuses a hash mismatch; `pnpm rmhos:image` rebuilds the shipped kernel. |
+| Alpine userland (mostly MIT, BSD, GPL, LGPL): list of what is shipped and where its source is | `packages.txt` is generated by the build and published beside the image (linked from About); `NOTICE.md` points to the Alpine package index and mirrors.                                                                                                                                                                 |
+| SeaBIOS (LGPL-3.0)                                                                            | Stated in About and `NOTICE.md`; the BIOS files come from Alpine's `seabios-bin` and `seavgabios-bin` packages, listed in `packages.txt`.                                                                                                                                                                                |
+| v86 (BSD-2-Clause): keep the copyright notice and licence                                     | Stated in About and `NOTICE.md` with a link; the npm package carries its own licence file.                                                                                                                                                                                                                               |
+| "Linux" used descriptively, not as the product name                                           | The product is rmhOS; the copy says "built on the Linux kernel". `uname -r` ends in `-rmhos`.                                                                                                                                                                                                                            |
+| No third-party logos in the app or its art                                                    | The boot logo is our own monogram (no mascot). The three catalog images in `public/images/games/` are flat placeholders, made by hand: no generator in the repo produces app card art generically (`scripts/game-art/rmhmusic.mjs` is RMH Music's own); replace them with real art before launch.                        |
+
+A test keeps the About dialog's facts equal to `NOTICE.md` (`features/rmhos/ui/__tests__/about-facts.test.ts`).
+
+## Tests
+
+- Hub: `pnpm exec vitest run server/rmhos-net` (policy, Wisp, meter, relay integration, limits, ticket book, ticket
+  lifecycle on a live hub with an injected clock, status endpoint, sandbox pins, "imports nothing from the site").
+- Page and engine: `pnpm exec vitest run features/rmhos`.
+- Image: `pnpm rmhos:smoke`, `pnpm rmhos:selftest`.
+- End to end through the real hub: `testing/e2e/rmhos-net.mjs` (see its header; needs a built image, Chromium, Docker
+  Postgres for sign-in and a TLS front).

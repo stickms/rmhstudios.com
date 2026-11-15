@@ -68,6 +68,7 @@ people
 adsense
 albums-storage
 coins
+rmhos
 translations
 ```
 

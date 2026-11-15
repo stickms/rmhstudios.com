@@ -7,7 +7,7 @@ docs. `AGENTS.md` mirrors this file for non-Claude tooling.
 ## What this is
 
 A single web platform: a social feed (RMHarks), 18 browser games (several
-multiplayer/3D), 12 full apps (RMHTube, RMHMusic, RMHType, RMHStudy, RMHCode,
+multiplayer/3D), 13 full apps (RMHTube, RMHMusic, RMHType, RMHStudy, RMHCode,
 RMHLadder, …), a blog/news/library system, a coin economy with Stripe
 memberships, and a scoped developer API — served by a React SSR tier with Node
 realtime hubs and a Go worker fleet behind it. The catalog in `lib/catalog`
@@ -29,10 +29,10 @@ locales, RTL for `ar`/`ur`). Node ≥24.18, pnpm workspace.
 | Path           | What                                                                                                                                                                     | Details                                          |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | `app/`         | TanStack Start routes: pages, API routes, `globals.css` (the `--site-*` theme tokens), router. `routeTree.gen.ts` is GENERATED — never edit.                             | [`app/CLAUDE.md`](app/CLAUDE.md)                 |
-| `features/`    | **Feature-sliced code** (redesign A1): one folder per game/app — `feature.ts` manifest, `engine/` (old `lib/<id>`), `ui/` (old `components/<id>`), `server/` (socket handlers, registered by `server/socket-server/features.ts`). Imported as `@features/<id>/...`. Moved so far: `balatro`, `void-breaker`; the rest still live under `lib/<id>` + `components/<id>`. Routes stay thin in `app/routes/`. | [`features/CLAUDE.md`](features/CLAUDE.md)       |
+| `features/`    | **Feature-sliced code** (redesign A1): one folder per game/app — `feature.ts` manifest, `engine/` (old `lib/<id>`), `ui/` (old `components/<id>`), `server/` (socket handlers, registered by `server/socket-server/features.ts`). Imported as `@features/<id>/...`. Moved so far: `balatro`, `void-breaker`, `rmhos`; the rest still live under `lib/<id>` + `components/<id>`. Routes stay thin in `app/routes/`. | [`features/CLAUDE.md`](features/CLAUDE.md)       |
 | `components/`  | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper; `shared/` = the full-screen app tier (`--app-*`, `AppShell`).    | [`components/CLAUDE.md`](components/CLAUDE.md)   |
 | `lib/`         | Shared logic: auth, prisma, feed, economy, i18n, motion tokens, per-game logic, `.server.ts` server-only modules.                                                        | [`lib/CLAUDE.md`](lib/CLAUDE.md)                 |
-| `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                  | [`server/CLAUDE.md`](server/CLAUDE.md)           |
+| `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), the rmhOS relay hub rmhos-net (7009), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                  | [`server/CLAUDE.md`](server/CLAUDE.md)           |
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): `status` and `assets` run in prod; the gateway, Go hubs, workers and supervisor were removed (§5.2, D3).            | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                           | `lib/CLAUDE.md`                                  |
 | `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, `useFluidDrag`, `useLiquidBackground`, `useReveal`, …).                       | `lib/CLAUDE.md`                                  |
@@ -67,7 +67,7 @@ make gazelle && make test    # Go: regenerate BUILD files, run Bazel tests
 ```
 
 Local ports: web 7005 · socket-server 7001 · rmhtube 7003 · rmhbox 7676 ·
-status 7008 · assets 7007. Env: see `.env.example`; minimum is
+status 7008 · assets 7007 · rmhos-net 7009. Env: see `.env.example`; minimum is
 `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
 
 ## The commit gate — run this before EVERY commit

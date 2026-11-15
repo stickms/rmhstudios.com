@@ -21,6 +21,7 @@ Current production (Docker Compose on the VPS):
 | `socket` (games hub)                | **Node** | 7001                          | `dist-server/server/socket-server/index.cjs` |
 | `rmhbox` (party games)              | **Node** | 7676                          | `dist-server/server/rmhbox/index.cjs`        |
 | `rmhtube` (watch together)          | **Node** | 7003                          | `dist-server/server/rmhtube/index.cjs`       |
+| `rmhos-net` (rmhOS relay hub)       | **Node** | 7009 (profile `rmhos-net`)    | `dist-server/server/rmhos-net/index.cjs`     |
 | `ladder-worker` (job cron)          | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs` |
 | `homes-worker` (listings cron)      | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`  |
 | `jobs` (pg-boss async backbone)     | **Node** | —                             | `dist-server/server/jobs/index.cjs`          |
@@ -205,6 +206,20 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
 - **`rmhtube/`** — watch-together hub, port 7003, path `/rmhtube-ws/`.
   Hard auth. Leader-authoritative sync (2s heartbeat), media queue, chat.
   **Restores rooms from DB on boot** (rmhbox restores lobbies only with durable lobbies on; see above).
+- **`rmhos-net/`** — the rmhOS relay hub, port 7009, path `/rmhos-net/` (WebSocket carrying Wisp v1
+  streams, `POST /rmhos-net/dns-query` DoH, `GET /rmhos-net/status`, `GET /health`). **It dials the
+  internet for strangers, so it is a sandbox, not a normal hub:** its own container on its own
+  `rmhos-egress` network, non-root, read-only, no database/redis/auth/S3 secrets (only
+  `RMHOS_NET_TICKET_SECRET`), behind a compose profile that `deploy.sh` starts only once
+  `deploy/rmhos-net/probe-firewall.sh` proves the host firewall (a root systemd unit the owner installs
+  once). **Its bundle imports nothing from `lib/` or `components/`** — only two pure `@features/rmhos/engine`
+  modules (`constants`, `net-ticket.server`) — and `__tests__/no-site-imports.test.ts` fails on anything
+  else (also `@/features/…`, `@/server/…`). Auth is a ticket (`userId.expiry.sig`, 60 s) that must be first
+  presented within its minute; `tickets.ts` then keeps it good for reconnects and DNS while in use (15 min
+  idle, 12 h cap, one per user). Per-instance state only: no module-level maps. Policy (`policy.ts`: TCP only,
+  public addresses, mail ports denied), caps and the per-user meter live here; the stream log
+  (`rmhos-net.stream`, `rmhos-net.session`) is the abuse-tracing record. Full runbook:
+  [`docs/rmhos.md`](../docs/rmhos.md).
 - **`ladder-worker/`** — RMHLadder job-discovery pipeline consumer. No port. The
   schedule is a **pg-boss cron** (queue `ladder.pipeline`, `exclusive`, UTC,
   `LADDER_CRON_SCHEDULE`, default every 12h): the worker registers the queue +
@@ -313,12 +328,12 @@ history if a rollback ever needs it.
 ## Dev, build, prod
 
 - **Dev:** `pnpm dev` = concurrently Vite (7005) + socket-server + rmhbox +
-  rmhtube + ladder-worker + homes-worker + jobs, each under `tsx watch`. The Go
+  rmhtube + rmhos-net + ladder-worker + homes-worker + jobs, each under `tsx watch`. The Go
   `status` does not run in dev; the Discord bot starts in `jobs` only with a token AND
   `DISCORD_BOT_GUILD_ALLOWLIST` (dev is not `NODE_ENV=production`). The recap, doctrine and bot-worker crons run in `jobs` (D3), so they do (the bot-worker idles without `DEEPSEEK_API_KEY`).
 - **Build order is load-bearing:** `pnpm build` = build-vibe-packages →
-  `vite build` → esbuild bundles exactly **6 entrypoints**
-  (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker, jobs) into
+  `vite build` → esbuild bundles exactly **7 entrypoints**
+  (socket-server, rmhbox, rmhtube, rmhos-net, ladder-worker, homes-worker, jobs) into
   `dist-server/**/*.cjs` with `--packages=external` (deps, including the
   generated Prisma client, resolve at runtime — `prisma generate` must have run).
 - **Adding a new Node service** requires editing the `build` and `start`
@@ -381,8 +396,8 @@ history if a rollback ever needs it.
    success.
 5. Per-socket rate limits reset on reconnect; the rule maps in each
    `config.ts` are the de-facto event allowlists.
-6. `tsconfig.server.json` includes more than gets bundled — esbuild's 6
-   entrypoints (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker,
+6. `tsconfig.server.json` includes more than gets bundled — esbuild's 7
+   entrypoints (socket-server, rmhbox, rmhtube, rmhos-net, ladder-worker, homes-worker,
    jobs) are the truth.
 7. **Server code imports `lib/` RELATIVELY, never through `@/`.** esbuild does
    apply the `paths` map in `tsconfig.server.json`, so `@/lib/x` resolves —
@@ -428,5 +443,5 @@ on boot. Also confirm:
       pg-boss cron registered in `jobs/index.ts` (`exclusive` where reentrancy
       matters, a deliberate `retryLimit`, ticks that catch their own errors).
       `scheduler-ratchet.test.ts` fails on a new server-side `setInterval`.
-- [ ] The service still starts: `pnpm dev` boots all six workers/hubs, and a
+- [ ] The service still starts: `pnpm dev` boots all seven workers/hubs, and a
       broken import surfaces immediately there.
