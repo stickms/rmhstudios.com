@@ -108,6 +108,11 @@ export function WhyTrending({
           Info
         }
         variant="ghost"
+        size="icon-xs"
+        // Sits inline after a tag's count, so it is sized to the text line, not to a 36px control: a 24px round hover
+        // target with a 14px glyph. The 44px touch target (K1) is kept on coarse pointers; negative margins stop it
+        // from growing the row.
+        className="-my-1 size-6 rounded-full pointer-coarse:-my-3.5 pointer-coarse:-mx-2 pointer-coarse:size-11 [&_svg:not([class*='size-'])]:size-3.5"
         label={t(
           'why-open',
           {
