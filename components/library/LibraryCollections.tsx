@@ -11,6 +11,7 @@
  * already live in a collection) and calls `onChanged` after each change.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { BookLeaves } from './BookLeaves';
 import { LibraryDialogShell } from './LibraryDialogShell';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -444,6 +445,7 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
       <div className="lib-book__3d">
         <div className={`lib-book__cover ${book.coverUrl ? 'has-cover' : ''}`}>
           <span className="lib-book__edge" aria-hidden="true" />
+          <BookLeaves />
           {book.coverUrl ? (
             <BlurImage
               src={book.coverUrl}
