@@ -87,8 +87,11 @@ import {
 } from '@/lib/rmhark-ai/bot-worker-config';
 import {
   composePersona,
+  hasNameStyle,
+  NAME_STYLES,
   rollPersona,
-  withPoliticalLean,
+  withNameStyle,
+  botPromptPersona,
   POSTING_HABITS,
 } from '@/lib/rmhark-ai/persona';
 import { habitPostsPerDay } from '@/lib/rmhark-ai/bot-stats';
@@ -1792,7 +1795,7 @@ describe('dm tick', () => {
     expect(
       dmReply,
     ).toHaveBeenCalledWith(
-      withPoliticalLean(
+      botPromptPersona(
         'THEME: x.',
         'bot',
       ),
@@ -2014,6 +2017,13 @@ describe('profile refresh', () => {
     'https://api.dicebear.com/9.x/micah/svg?seed=x';
   const STORED =
     '/api/profile/avatar/bot-old.webp';
+  const OLD_PERSONA =
+    'THEME: home barista.';
+  const STYLED_PERSONA =
+    withNameStyle(
+      OLD_PERSONA,
+      NAME_STYLES[1]!,
+    );
 
   function bot(
     id: string,
@@ -2030,7 +2040,7 @@ describe('profile refresh', () => {
       bannerUrl:
         null,
       botPersona:
-        'THEME: home barista.',
+        STYLED_PERSONA,
       createdAt:
         new Date(
           NOW -
@@ -2455,5 +2465,161 @@ describe('profile refresh', () => {
     expect(
       botProfiles,
     ).not.toHaveBeenCalled();
+  });
+
+  it('restyle pass: a bot without a name style gets one and a styled name, and drift waits for it', async () => {
+    const update =
+      vi.fn(
+        async (
+          _id: string,
+          _p: object,
+        ) => {},
+      );
+    const styledName =
+      vi.fn(
+        async (
+          persona: string,
+          _n: string,
+        ) =>
+          hasNameStyle(
+            persona,
+          )
+            ? 'xXCrispyNoodleXx'
+            : 'wrong',
+      );
+    const bio =
+      vi.fn(
+        async () =>
+          'new bio',
+      );
+    await runRefreshTick(
+      deps(
+        {
+          now: () =>
+            NOW,
+          random:
+            () =>
+              0, // every drift draw would land, were drift running
+          repo: {
+            botProfiles:
+              async () => [
+                bot(
+                  'old',
+                  {
+                    image:
+                      STORED,
+                    botPersona:
+                      OLD_PERSONA,
+                  },
+                ),
+                bot(
+                  'styled',
+                  {
+                    image:
+                      STORED,
+                  },
+                ),
+              ],
+            updateBotProfile:
+              update,
+          },
+          ai: {
+            ...ai,
+            styledName,
+            bio,
+          },
+          look: fakeLook(),
+        },
+      ),
+    );
+    expect(
+      update,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    const [
+      id,
+      patch,
+    ] =
+      update
+        .mock
+        .calls[0]!;
+    expect(
+      id,
+    ).toBe(
+      'old',
+    );
+    expect(
+      patch,
+    ).toEqual(
+      {
+        name: 'xXCrispyNoodleXx',
+        persona:
+          withNameStyle(
+            OLD_PERSONA,
+            NAME_STYLES[0]!,
+          ),
+      },
+    );
+    expect(
+      bio,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('a failed styled name leaves the bot for the next run', async () => {
+    const update =
+      vi.fn(
+        async () => {},
+      );
+    await runRefreshTick(
+      deps(
+        {
+          now: () =>
+            NOW,
+          repo: {
+            botProfiles:
+              async () => [
+                bot(
+                  'old',
+                  {
+                    image:
+                      STORED,
+                    botPersona:
+                      OLD_PERSONA,
+                  },
+                ),
+              ],
+            updateBotProfile:
+              update,
+          },
+          ai: {
+            ...ai,
+            styledName:
+              async () =>
+                Promise.reject(
+                  new Error(
+                    'down',
+                  ),
+                ),
+          },
+          look: fakeLook(),
+        },
+      ),
+    );
+    expect(
+      update,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('new personas carry a name style', () => {
+    expect(
+      hasNameStyle(
+        composePersona(
+          rollPersona(),
+        ),
+      ),
+    ).toBe(
+      true,
+    );
   });
 });
