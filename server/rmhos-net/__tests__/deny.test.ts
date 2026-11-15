@@ -301,33 +301,6 @@ describe('deny-list reload safety', () => {
     );
   });
 
-  it('reports added ids immediately and does not retry when the list only grows', () => {
-    const {
-      h,
-      deny,
-    } =
-      harness(
-        'a\n',
-      );
-    h.file =
-      'a\nb\n';
-    h.mtime =
-      h.now -
-      10;
-    expect(
-      deny.reload(),
-    ).toEqual(
-      [
-        'b',
-      ],
-    );
-    expect(
-      h.timers,
-    ).toHaveLength(
-      0,
-    );
-  });
-
   it('keeps env ids through every reload, and a missing file at start is an empty file list', () => {
     const deny =
       createDenyList(
@@ -354,6 +327,232 @@ describe('deny-list reload safety', () => {
       deny.size,
     ).toBe(
       1,
+    );
+  });
+});
+
+describe('deny-list reload: settling and quiet logs', () => {
+  it('waits for a file written less than 2 s ago even when it only grows, then believes it', () => {
+    const {
+      h,
+      deny,
+    } =
+      harness(
+        'a\n',
+      );
+    h.file =
+      'a\nb\n';
+    h.mtime =
+      h.now -
+      10;
+    const late: string[][] =
+      [];
+    expect(
+      deny.reload(
+        (
+          a,
+        ) =>
+          late.push(
+            a,
+          ),
+      ),
+    ).toEqual(
+      [],
+    );
+    expect(
+      h.timers.map(
+        (
+          t,
+        ) =>
+          t.ms,
+      ),
+    ).toEqual(
+      [
+        2000,
+      ],
+    );
+    h.timers[0]!.fn();
+    expect(
+      late,
+    ).toEqual(
+      [
+        [
+          'b',
+        ],
+      ],
+    );
+    expect(
+      deny.has(
+        'b',
+      ),
+    ).toBe(
+      true,
+    );
+  });
+
+  it('a file truncated mid-line to the same count does not lift the block before it settles', () => {
+    const {
+      h,
+      deny,
+    } =
+      harness(
+        'abcdef\n',
+      );
+    h.file =
+      'abc';
+    h.mtime =
+      h.now -
+      100;
+    expect(
+      deny.reload(),
+    ).toEqual(
+      [],
+    );
+    expect(
+      deny.has(
+        'abcdef',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      deny.has(
+        'abc',
+      ),
+    ).toBe(
+      false,
+    );
+    // the save finishes: the retry sees the whole line again and nothing changes
+    h.file =
+      'abcdef\n';
+    h.timers[0]!.fn();
+    expect(
+      deny.has(
+        'abcdef',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      deny.size,
+    ).toBe(
+      1,
+    );
+  });
+
+  it('an unchanged file needs no retry, whatever its age', () => {
+    const {
+      h,
+      deny,
+    } =
+      harness(
+        'a\nb\n',
+      );
+    h.mtime =
+      h.now -
+      5;
+    expect(
+      deny.reload(),
+    ).toEqual(
+      [],
+    );
+    expect(
+      h.timers,
+    ).toHaveLength(
+      0,
+    );
+  });
+
+  it('warns once when the file goes missing, not on every reload, and again after it came back and went', () => {
+    const {
+      h,
+      deny,
+    } =
+      harness(
+        'a\n',
+      );
+    h.file =
+      null;
+    for (
+      let i = 0;
+      i <
+      5;
+      i++
+    )
+      deny.reload();
+    const warns =
+      () =>
+        h.events.filter(
+          (
+            e,
+          ) =>
+            e.evt ===
+              'rmhos-net.deny.warn' &&
+            e.reason ===
+              'file-missing',
+        );
+    expect(
+      warns(),
+    ).toHaveLength(
+      1,
+    );
+    h.file =
+      'a\n';
+    h.mtime =
+      h.now -
+      5000;
+    deny.reload();
+    h.file =
+      null;
+    deny.reload();
+    expect(
+      warns(),
+    ).toHaveLength(
+      2,
+    );
+  });
+
+  it('logs nothing for the normal state of no deny file at all', () => {
+    const events: Record<
+      string,
+      unknown
+    >[] =
+      [];
+    const deny =
+      createDenyList(
+        {
+          RMHOS_NET_DENY_FILE:
+            '/deny/users.txt',
+        },
+        () => {
+          throw Object.assign(
+            new Error(
+              'ENOENT',
+            ),
+            {
+              code: 'ENOENT',
+            },
+          );
+        },
+      );
+    deny.onEvent =
+      (
+        l,
+      ) =>
+        events.push(
+          l,
+        );
+    for (
+      let i = 0;
+      i <
+      5;
+      i++
+    )
+      deny.reload();
+    expect(
+      events,
+    ).toEqual(
+      [],
     );
   });
 });

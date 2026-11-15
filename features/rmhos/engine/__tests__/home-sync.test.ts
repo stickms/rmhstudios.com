@@ -3751,3 +3751,101 @@ describe('importWithoutMachine', () => {
     );
   });
 });
+
+describe('importWithoutMachine on a tab that holds its own lock (a failed boot)', () => {
+  it('uses the held lock: succeeds although the account lock is taken, and does not release it', async () => {
+    // The tab's own earlier acquisition: the lock manager shows the account as held.
+    const held =
+      new Set(
+        [
+          'rmhos:u1',
+        ],
+      );
+    let requests = 0;
+    const locks =
+      {
+        async request(
+          name: string,
+          _o: {
+            ifAvailable: true;
+          },
+          cb: (
+            lock:
+              | object
+              | null,
+          ) => Promise<void> | void,
+        ) {
+          requests++;
+          return held.has(
+            name,
+          )
+            ? cb(
+                null,
+              )
+            : cb(
+                {},
+              );
+        },
+      };
+    let released = 0;
+    const store =
+      memoryHomeStore();
+    const current =
+      {
+        archive:
+          await gzip(
+            fakeTar(
+              1,
+            ),
+          ),
+        sha256:
+          'old',
+        savedAt: 5,
+      };
+    await putEntry(
+      store,
+      'u1',
+      current,
+    );
+    const backup =
+      await gzip(
+        fakeTar(
+          2,
+        ),
+      );
+    await importWithoutMachine(
+      'u1',
+      store,
+      backup,
+      {
+        locks,
+        retries: 0,
+        held: {
+          release:
+            () =>
+              void released++,
+        },
+      },
+    );
+    expect(
+      (
+        await store.get(
+          'u1',
+        )
+      )
+        ?.archive,
+    ).toEqual(
+      backup,
+    );
+    expect(
+      requests,
+    ).toBe(
+      0,
+    ); // no second request: the tab is not refused by itself
+    expect(
+      released,
+    ).toBe(
+      0,
+    ); // the page still owns it
+  });
+});

@@ -71,6 +71,14 @@ reseed_rng() {
 # Debug aid for the smoke test: only when the host put /debug-rng in the share,
 # print RNG output and watch the clock. Never in normal runs.
 debug_hooks() {
+	# Smoke only: hold the save lock for a long time, to prove a wedged save cannot hang the others.
+	if [ -e "$SHARE/debug-hold-save-lock" ]; then
+		(
+			flock -x 9
+			log "debug: holding the save lock"
+			sleep 600
+		) 9>/run/rmhos-save.lock &
+	fi
 	[ -e "$SHARE/debug-rng" ] || return 0
 	log "entropy bytes written $ENTROPY_WRITTEN"
 	log "rng $(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
@@ -267,7 +275,8 @@ do_save() {
 	if bytes=$(/usr/local/bin/rmhos-save-home "$SESSION_USER"); then
 		reply "SAVED $nonce $bytes"
 	else
-		reply "ERR save"
+		# 2: the lock stayed held for 30 s (another save is wedged): busy, not a failed tar
+		if [ "$?" = 2 ]; then reply "ERR busy"; else reply "ERR save"; fi
 	fi
 }
 

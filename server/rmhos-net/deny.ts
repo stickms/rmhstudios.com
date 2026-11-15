@@ -4,10 +4,11 @@
 // `#` comments), re-read on SIGHUP and every 60 s.
 //
 // A reload must never LIFT a block by accident, so:
-//   - a file that cannot be read, or that has been deleted, keeps the last list (a warning is logged);
-//   - a file that comes back empty, or with fewer entries than the list now in force, while it was
-//     modified less than 2 s ago is treated as a half-written save: the reload is retried once, 2 s
-//     later, and only that second read is believed;
+//   - a file that cannot be read, or that has been deleted, keeps the last list (one warning when it
+//     goes from readable to missing, not one per reload: no deny file is the normal state);
+//   - a file whose list differs from the one in force while it was modified less than 2 s ago (empty,
+//     shorter, or truncated mid-line to the same count) is treated as a half-written save: the reload
+//     is retried once, 2 s later, and only that second read is believed;
 //   - a file that is older than 2 s is believed at once, so an operator who really empties it clears
 //     the list, and the hub logs how many entries that removed.
 import {
@@ -158,6 +159,8 @@ export function createDenyList(
     new Set<string>(
       fromEnv,
     );
+  // Whether the last read of the file worked; the start-up read below sets it.
+  let fileReadable = false;
   const list: DenyList =
     {
       has: (
@@ -184,16 +187,19 @@ export function createDenyList(
   // The file read into memory in one go, or null (with a warning) when it cannot be read.
   function read(): Set<string> | null {
     try {
-      return new Set(
-        [
-          ...fromEnv,
-          ...parse(
-            readFile(
-              file,
+      const set =
+        new Set(
+          [
+            ...fromEnv,
+            ...parse(
+              readFile(
+                file,
+              ),
             ),
-          ),
-        ],
-      );
+          ],
+        );
+      fileReadable = true;
+      return set;
     } catch (err) {
       const code =
         (
@@ -210,24 +216,31 @@ export function createDenyList(
           err.message.includes(
             'ENOENT',
           ));
-      list.onEvent(
-        {
-          evt: 'rmhos-net.deny.warn',
-          reason:
-            missing
-              ? 'file-missing'
-              : 'file-unreadable',
-          keeping:
-            current.size,
-          error:
-            err instanceof
-            Error
-              ? err.message
-              : String(
-                  err,
-                ),
-        },
-      );
+      // Warn when the file goes from readable to unreadable, not on every reload: no deny file at
+      // all is the normal production state and must not log a line a minute.
+      if (
+        fileReadable
+      ) {
+        fileReadable = false;
+        list.onEvent(
+          {
+            evt: 'rmhos-net.deny.warn',
+            reason:
+              missing
+                ? 'file-missing'
+                : 'file-unreadable',
+            keeping:
+              current.size,
+            error:
+              err instanceof
+              Error
+                ? err.message
+                : String(
+                    err,
+                  ),
+          },
+        );
+      }
       return null;
     }
   }
@@ -250,10 +263,25 @@ export function createDenyList(
       null
     )
       return [];
+    // A file written less than 2 s ago may be half-written whatever its size (an editor truncating
+    // mid-line leaves the same count with a shorter id), so a changed list is believed only once the
+    // file has settled. An unchanged list needs no second look.
+    const unchanged =
+      next.size ===
+        current.size &&
+      [
+        ...next,
+      ].every(
+        (
+          id,
+        ) =>
+          current.has(
+            id,
+          ),
+      );
     if (
       !isRetry &&
-      next.size <
-        current.size
+      !unchanged
     ) {
       const mtime =
         io.mtimeMs(
@@ -270,7 +298,7 @@ export function createDenyList(
           {
             evt: 'rmhos-net.deny.warn',
             reason:
-              'file-shrank-while-fresh',
+              'file-changed-while-fresh',
             had: current.size,
             read: next.size,
           },
@@ -346,6 +374,7 @@ export function createDenyList(
             ),
           ],
         );
+      fileReadable = true;
     } catch {
       current =
         new Set(

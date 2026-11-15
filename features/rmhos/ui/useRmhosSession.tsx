@@ -43,7 +43,10 @@ import {
   machineStep,
 } from '../engine/session-loss';
 import type { RmhosSession as RmhosSessionAnswer } from '../engine/rmhos.contract';
-import { holdHomeLock } from '../engine/tab-lock';
+import {
+  holdHomeLock,
+  type HomeLock,
+} from '../engine/tab-lock';
 import {
   BootFailure,
   createVm,
@@ -326,6 +329,16 @@ export function useRmhosMachine(
     useRef<VmHandle | null>(
       null,
     );
+  // The account lock this tab holds right now (set once granted, cleared when the attempt is torn
+  // down). A failed boot keeps it until the page leaves the failure; a restore on that screen must
+  // use it, not ask for a second one and be refused by this very tab.
+  const heldLockRef =
+    useRef<{
+      userId: string;
+      lock: HomeLock;
+    } | null>(
+      null,
+    );
 
   // One store for the life of the page, so a restart keeps the in-memory fallback's contents and
   // no restart leaks an IndexedDB connection. The stored files are read from it directly, so they
@@ -550,6 +563,23 @@ export function useRmhosMachine(
           );
           return;
         }
+        heldLockRef.current =
+          {
+            userId,
+            lock,
+          };
+        cleanups.push(
+          () => {
+            if (
+              heldLockRef
+                .current
+                ?.lock ===
+              lock
+            )
+              heldLockRef.current =
+                null;
+          },
+        );
         if (
           cancelled
         )
@@ -1109,6 +1139,17 @@ export function useRmhosMachine(
             machineUser,
             getStore(),
             gz,
+            {
+              held:
+                heldLockRef
+                  .current
+                  ?.userId ===
+                machineUser
+                  ? heldLockRef
+                      .current
+                      .lock
+                  : null,
+            },
           );
         },
         [

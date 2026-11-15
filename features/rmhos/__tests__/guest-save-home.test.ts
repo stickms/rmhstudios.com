@@ -323,7 +323,7 @@ describe('rmhos-save-home', () => {
     writeFileSync(
       join(
         w.sync,
-        '.home.tar.12345',
+        '.home.tar.999999',
       ),
       'half',
     );
@@ -341,7 +341,7 @@ describe('rmhos-save-home', () => {
       existsSync(
         join(
           w.sync,
-          '.home.tar.12345',
+          '.home.tar.999999',
         ),
       ),
     ).toBe(
@@ -411,12 +411,175 @@ describe('rmhos-save-home', () => {
     expect(
       helper,
     ).toContain(
-      'flock -x 9',
+      'flock -n 9',
     );
     expect(
       helper,
     ).toContain(
       'mv -f "$tmp" "$ARCHIVE"',
+    );
+  });
+});
+
+describe('rmhos-save-home when another save holds the lock', () => {
+  it('gives up after the bounded wait with status 2, leaves no temporary and the old archive untouched', async () => {
+    const w =
+      world();
+    const first =
+      await runOnce(
+        w.env,
+      );
+    expect(
+      first.code,
+    ).toBe(
+      0,
+    );
+    const before =
+      readFileSync(
+        w.archive,
+      );
+    // a wedged writer: holds the lock file for longer than the wait
+    const holder =
+      spawn(
+        'flock',
+        [
+          '-x',
+          join(
+            w
+              .env
+              .RMHOS_RUN as string,
+            'rmhos-save.lock',
+          ),
+          'sleep',
+          '8',
+        ],
+        {
+          stdio:
+            'ignore',
+        },
+      );
+    await new Promise(
+      (
+        r,
+      ) =>
+        setTimeout(
+          r,
+          400,
+        ),
+    );
+    const t0 =
+      Date.now();
+    const r =
+      await runOnce(
+        {
+          ...w.env,
+          RMHOS_SAVE_LOCK_WAIT:
+            '2',
+        },
+      );
+    const took =
+      Date.now() -
+      t0;
+    holder.kill();
+    expect(
+      r.code,
+    ).toBe(
+      2,
+    );
+    expect(
+      r.out,
+    ).toBe(
+      '',
+    );
+    expect(
+      took,
+    ).toBeGreaterThanOrEqual(
+      1500,
+    );
+    expect(
+      took,
+    ).toBeLessThan(
+      6000,
+    );
+    expect(
+      readdirSync(
+        w.sync,
+      ),
+    ).toEqual(
+      [
+        'home.tar',
+      ],
+    );
+    expect(
+      readFileSync(
+        w.archive,
+      ).equals(
+        before,
+      ),
+    ).toBe(
+      true,
+    );
+  }, 20_000);
+
+  it('does not hold the lock while tar runs: a writer that is tarring never blocks the one renaming', () => {
+    const helper =
+      readFileSync(
+        script,
+        'utf8',
+      );
+    expect(
+      helper.indexOf(
+        'tar -cpf',
+      ),
+    ).toBeLessThan(
+      helper.indexOf(
+        'flock -n 9',
+      ),
+    );
+    expect(
+      helper,
+    ).not.toMatch(
+      /flock -x/,
+    );
+  });
+
+  it('is told apart by both callers: the agent answers ERR busy, poweroff skips the save and still announces POWEROFF', () => {
+    const dir =
+      resolve(
+        'scripts/rmhos/rootfs/usr/local/bin',
+      );
+    expect(
+      readFileSync(
+        join(
+          dir,
+          'rmhos-agent',
+        ),
+        'utf8',
+      ),
+    ).toContain(
+      'reply "ERR busy"',
+    );
+    const off =
+      readFileSync(
+        join(
+          dir,
+          'rmhos-poweroff-save',
+        ),
+        'utf8',
+      );
+    expect(
+      off,
+    ).toContain(
+      'save skipped',
+    );
+    expect(
+      off.indexOf(
+        'save skipped',
+      ),
+    ).toBeLessThan(
+      off.indexOf(
+        "printf 'RMHOS POWEROFF",
+      ),
     );
   });
 });

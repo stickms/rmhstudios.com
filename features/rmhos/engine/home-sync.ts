@@ -16,6 +16,7 @@ import type {
 import {
   acquireHomeLock,
   type AcquireOptions,
+  type HomeLock,
 } from './tab-lock';
 import {
   StoredHome,
@@ -1107,15 +1108,26 @@ export async function importWithoutMachine(
   userId: string,
   store: HomeStore,
   gz: Uint8Array,
-  lockOptions: AcquireOptions = {},
+  lockOptions: AcquireOptions & {
+    /**
+     * The lock this tab already holds for the account (a boot that failed, or is still
+     * downloading, keeps it until the page tears the attempt down). It is used as it is, never
+     * released here, and no second request is made: a tab must not be refused by itself.
+     */
+    held?: HomeLock | null;
+  } = {},
 ): Promise<void> {
   // The store is written, so the per-account Web Lock is held for the whole import: a machine
   // running in another tab saves over the same entry and would undo (or tear) the backup.
+  const own =
+    lockOptions.held ??
+    null;
   const lock =
-    await acquireHomeLock(
+    own ??
+    (await acquireHomeLock(
       userId,
       lockOptions,
-    );
+    ));
   if (
     !lock
   )
@@ -1153,6 +1165,9 @@ export async function importWithoutMachine(
       gz,
     );
   } finally {
-    lock.release();
+    if (
+      !own
+    )
+      lock.release();
   }
 }

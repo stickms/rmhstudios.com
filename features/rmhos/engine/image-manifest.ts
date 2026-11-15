@@ -48,7 +48,7 @@ export const PUBLISHED_IMAGE: PinnedImage | null = null;
 
 /** A sandbox build served from `public/rmhos-dev/` (its `manifest.json` must match). Dev only. */
 export const DEV_IMAGE: PinnedImage = {
-  version: 'a58b09f01b89',
+  version: '547dff4092a2',
   files: {
     bzImage: {
       size: 1946112,
@@ -56,11 +56,11 @@ export const DEV_IMAGE: PinnedImage = {
     },
     rootfs: {
       size: 288358400,
-      sha256: '15b90da2f8253cc20e29117b2c7017fd1fd7e99fb776fb7836c1a5f01eb7e81f',
+      sha256: '0b1f1bd9602230964c3a9ac222f38500d7574850b4f65dcd7f7924574b4fcc66',
     },
     state: {
-      size: 7262028,
-      sha256: '985fa0daea54035c9e01a7d456bf931f87aed8b15117e91bdf1d514b2a0ba98f',
+      size: 7220298,
+      sha256: 'ad7c71809cfd7f0f8c1a03da54824bc29689eb0d1d211afe60e88eac67fbeeed',
     },
     seabios: {
       size: 131072,

@@ -11,6 +11,8 @@
 //   7 the snapshot/meta refusal self-test
 //   8 a poweroff inside the guest saves the home into the share BEFORE announcing POWEROFF
 //   9 a visitor named like a system account (guest) gets <name>_rmh, reported in SESSION_OK
+//  11 a save that holds the save lock for longer than the 30 s deadline cannot hang the others: SAVE
+//     answers ERR busy, and a poweroff skips its save and STILL announces POWEROFF in time
 //  10 (RMHOS_SMOKE_BIG=1 only) restore and save a 100 MB home of mixed small and large files, timed
 // Exits non-zero on any failure.
 //
@@ -1308,6 +1310,117 @@ async function poweroffSaves() {
   }
 }
 
+async function wedgedSave() {
+  console.log(
+    '--- case 11: a save that holds the lock past the deadline cannot hang SAVE or poweroff',
+  );
+  need(
+    [
+      'state.zst',
+    ],
+  );
+  const vm =
+    await startNodeVm(
+      {
+        dir,
+        initialState: true,
+        timeoutMs:
+          5 *
+          60 *
+          1000,
+      },
+    );
+  try {
+    await vm.whenReady;
+    // The agent's debug hook starts a background process that holds /run/rmhos-save.lock for 10 min.
+    await vm.emulator.create_file(
+      '/debug-hold-save-lock',
+      new TextEncoder().encode(
+        '1\n',
+      ),
+    );
+    vm.send(
+      sessionLine(),
+    );
+    await vm.waitLine(
+      SESSION_OK,
+    );
+    await vm.waitFor(
+      'the lock holder',
+      () =>
+        /debug: holding the save lock/.test(
+          vm.serial0,
+        ),
+    );
+    // The agent SAVE waits at most 30 s for the lock and answers busy (not a hang, not "save").
+    const t0 =
+      Date.now();
+    vm.send(
+      'SAVE wedged1',
+    );
+    await vm.waitLine(
+      /^RMHOS ERR busy\r?$/m,
+    );
+    const saveS =
+      (Date.now() -
+        t0) /
+      1000;
+    step(
+      vm,
+      `SAVE answered ERR busy after ${saveS.toFixed(1)} s`,
+    );
+    if (
+      saveS >
+      45
+    )
+      throw new Error(
+        `SAVE took ${saveS.toFixed(1)} s to give up (deadline 30 s)`,
+      );
+    // The poweroff save gives up the same way, and POWEROFF still arrives, with no SAVED_ON_POWEROFF.
+    const t1 =
+      Date.now();
+    vm.send(
+      'SHUTDOWN',
+    );
+    await vm.waitLine(
+      /^RMHOS POWEROFF\r?$/m,
+    );
+    const offS =
+      (Date.now() -
+        t1) /
+      1000;
+    if (
+      offS >
+      45
+    )
+      throw new Error(
+        `POWEROFF took ${offS.toFixed(1)} s (deadline 30 s plus a few)`,
+      );
+    if (
+      /RMHOS SAVED_ON_POWEROFF/.test(
+        vm.serial1,
+      )
+    )
+      throw new Error(
+        'a poweroff save ran under a held lock',
+      );
+    if (
+      !/save skipped, another save held the lock/.test(
+        vm.serial0,
+      )
+    )
+      throw new Error(
+        `the skipped save was not logged\n${vm.serial0.slice(-1500)}`,
+      );
+    step(
+      vm,
+      `POWEROFF arrived after ${offS.toFixed(1)} s with the save skipped`,
+    );
+  } finally {
+    await vm.destroy();
+  }
+}
+
 async function collidingName() {
   console.log(
     '--- case 9: a visitor named like a system account gets <name>_rmh',
@@ -1722,14 +1835,14 @@ async function main() {
       'manifest.json',
     ],
   );
-  // RMHOS_SMOKE_CASES=3,4 runs a subset (debugging); default is cases 1-9 (10 is opt-in).
+  // RMHOS_SMOKE_CASES=3,4 runs a subset (debugging); default is cases 1-9 and 11 (10 is opt-in).
   const only =
     new Set(
       (
         process
           .env
           .RMHOS_SMOKE_CASES ??
-        `1,2,3,4,5,6,7,8,9${process.env.RMHOS_SMOKE_BIG ? ',10' : ''}`
+        `1,2,3,4,5,6,7,8,9,11${process.env.RMHOS_SMOKE_BIG ? ',10' : ''}`
       ).split(
         ',',
       ),
@@ -1792,6 +1905,12 @@ async function main() {
     )
   )
     await collidingName();
+  if (
+    only.has(
+      '11',
+    )
+  )
+    await wedgedSave();
   if (
     only.has(
       '10',

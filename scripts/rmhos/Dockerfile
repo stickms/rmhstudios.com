@@ -106,7 +106,7 @@ RUN set -eu; cd /rootfs; \
     mkdir -p mnt/host home; \
     ls -l usr/libexec/Xorg* usr/bin/Xorg 2>/dev/null || true; \
     ls etc/runlevels/*; \
-    for b in openvt stty su tar adduser addgroup deluser; do \
+    for b in openvt stty su tar adduser addgroup deluser flock; do \
         chroot /rootfs /bin/busybox --list | grep -qx "$b" || { echo "busybox lacks $b" >&2; exit 1; }; \
     done; \
     mkdir -p /tmp/t/a /tmp/t/o && echo x > /tmp/t/a/f && tar -cf /tmp/t/t.tar -C /tmp/t a && \

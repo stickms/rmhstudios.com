@@ -19,7 +19,11 @@ if [ -n "$user" ] && [ -d "/home/$user" ] && grep -q " $SHARE 9p " /proc/mounts 
 	if bytes=$(/usr/local/bin/rmhos-save-home "$user"); then
 		printf 'RMHOS SAVED_ON_POWEROFF %s\n' "$bytes" >"$PORT" 2>/dev/null
 	else
-		printf 'rmhos-poweroff-save: could not tar /home/%s\n' "$user" >/dev/ttyS0 2>/dev/null
+		if [ "$?" = 2 ]; then
+			printf 'rmhos-poweroff-save: save skipped, another save held the lock for 30 s\n' >/dev/ttyS0 2>/dev/null
+		else
+			printf 'rmhos-poweroff-save: could not tar /home/%s\n' "$user" >/dev/ttyS0 2>/dev/null
+		fi
 	fi
 fi
 printf 'RMHOS POWEROFF\n' >"$PORT" 2>/dev/null
