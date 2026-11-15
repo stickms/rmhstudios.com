@@ -1,6 +1,6 @@
 // rmhOS network relay hub entry point. Runs sandboxed (see deploy/rmhos-net and
 // the rmhos-net service in docker-compose.yml): one JSON log line per event on stdout.
-import { loadHubConfig } from './config';
+import { loadHubConfig, type HubConfig } from './config';
 import { UsageMeter } from './meter';
 import { createRelayServer } from './relay';
 
@@ -10,7 +10,7 @@ function log(line: object): void {
   process.stdout.write(`${JSON.stringify({ t: now, ts: new Date(now).toISOString(), ...line })}\n`);
 }
 
-let cfg;
+let cfg: HubConfig;
 try {
   cfg = loadHubConfig(process.env);
 } catch (err) {

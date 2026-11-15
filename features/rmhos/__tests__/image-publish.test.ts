@@ -23,7 +23,13 @@ function image() {
     join(dir, 'build-info.json'),
     JSON.stringify({ commit: 'c0ffee', runUrl: 'https://github.com/o/r/actions/runs/1', date: '2026-11-15T00:00:00Z' }),
   );
-  const manifest = computeManifest(dir, VERSIONS);
+  // The scripts are plain JS, so their return types are inferred loosely: say what the tests rely on.
+  const manifest = computeManifest(dir, VERSIONS) as unknown as {
+    version: string;
+    kernel: unknown;
+    build: { commit: string; runUrl: string; date: string };
+    files: Record<string, { size: number; sha256: string }>;
+  };
   writeFileSync(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   return { dir, manifest };
 }
@@ -169,7 +175,7 @@ describe('write-manifest', () => {
 describe('print-pin', () => {
   it('maps the manifest to the published-image shape in one place', () => {
     const { manifest } = image();
-    const pin = toPin(manifest);
+    const pin = toPin(manifest) as { version: string; files: Record<string, { size: number; sha256: string }> };
     expect(Object.keys(pin.files)).toEqual(['bzImage', 'rootfs', 'state', 'seabios', 'vgabios']);
     expect(pin.version).toBe(manifest.version);
     expect(pin.files.rootfs).toEqual({
