@@ -364,4 +364,25 @@ describe('HomeSession teardown', () => {
     t.e.fire('win:beforeunload', ev);
     expect(ev.defaultPrevented).toBe(true);
   });
+
+  it('after a previous_stale refusal the offer is withdrawn from the snapshot', async () => {
+    const t = setup({ restoreError: new AgentError('timeout') });
+    await t.store.put('u1', { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 });
+    await t.sync.importArchive(await gzip(fakeTar(8)));
+    const fresh = new HomeSession({
+      agent: t.agent,
+      sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
+      bootKind: 'snapshot',
+      linuxUser: 'zed',
+      autosaveMs: 300_000,
+      env: t.e.env,
+      onChange: () => {},
+    });
+    await fresh.start();
+    expect(fresh.snapshot.previousAvailable).toBe(true);
+    // Another tab saves over the restored backup while the failure screen is up.
+    await t.store.put('u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 7 });
+    await expect(fresh.putPreviousBack()).rejects.toMatchObject({ code: 'previous_stale' });
+    expect(fresh.snapshot).toMatchObject({ previousAvailable: false, previousSavedAt: null });
+  });
 });

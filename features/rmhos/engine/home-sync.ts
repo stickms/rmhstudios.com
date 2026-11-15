@@ -286,7 +286,14 @@ export class HomeSync {
           readable = false;
         }
         if (readable) {
-          await store.put(`${userId}:replaced`, { ...previous, forSha: entry.sha256 });
+          const kept = await store.get(`${userId}:replaced`);
+          if (kept?.forSha && previous.sha256 === kept.forSha) {
+            // The stored home is still an unmodified imported backup (the person holds it as a
+            // file): the home before it stays the one previous copy, now for this backup.
+            await store.put(`${userId}:replaced`, { ...kept, forSha: entry.sha256 });
+          } else {
+            await store.put(`${userId}:replaced`, { ...previous, forSha: entry.sha256 });
+          }
         } else {
           // An unreadable current archive has to be kept, and there is room for one copy only.
           if (await store.get(`${userId}:damaged`)) throw new BackupError('damaged_exists');
@@ -375,6 +382,8 @@ export class HomeSync {
 
   /** Deletes one of the two extra copies (never the current one). */
   async removeCopy(kind: 'replaced' | 'damaged'): Promise<void> {
+    // Runtime guard: the type is no protection against a stray string, and 'current' must never go.
+    if (kind !== 'replaced' && kind !== 'damaged') throw new Error(`cannot remove copy: ${kind}`);
     await this.deps.store.delete(`${this.deps.userId}:${kind}`);
   }
 }
