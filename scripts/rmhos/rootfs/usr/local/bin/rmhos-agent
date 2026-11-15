@@ -1,0 +1,240 @@
+#!/bin/sh
+# rmhOS guest agent. Speaks the host line protocol on /dev/ttyS1
+# (features/rmhos/engine/agent-protocol.ts):
+#
+#   host -> guest   SESSION <user> <epochSeconds> <entropyHex> | RESTORE | SAVE <nonce> | SHUTDOWN
+#   guest -> host   RMHOS READY | SESSION_OK | RESTORED | SAVED <nonce> <bytes>
+#                   | POWEROFF | ERR <code>
+#
+# POSIX sh (busybox ash). Log lines go to /dev/ttyS0 (serial0); /dev/console
+# is tty0 only, because it is the last console= argument. Anything that is not
+# prefixed "RMHOS " is for that log only.
+
+PORT=/dev/ttyS1
+SHARE=/mnt/host
+ARCHIVE=$SHARE/sync/home.tar
+XLOG=/tmp/rmhos-x.log
+SESSION_USER=
+CR=$(printf '\r')
+
+log() {
+	printf 'rmhos-agent: %s\n' "$*" >/dev/ttyS0 2>/dev/null
+	return 0
+}
+
+reply() {
+	printf 'RMHOS %s\n' "$*" >&3
+}
+
+# The kernel release, for the console log (the smoke test reads it).
+printf 'rmhos-kernel %s\n' "$(uname -r)" >/dev/ttyS0 2>/dev/null
+
+mkdir -p "$SHARE"
+if mount -t 9p -o trans=virtio,version=9p2000.L host9p "$SHARE" 2>/dev/null; then
+	mkdir -p "$SHARE/sync"
+	log "9p share mounted at $SHARE"
+else
+	log "9p share host9p not available"
+fi
+
+exec 3<>"$PORT" || {
+	log "cannot open $PORT"
+	exit 1
+}
+stty raw -echo <&3 || log "stty on $PORT failed"
+set -f
+
+# --- SESSION -----------------------------------------------------------
+
+# A session restored from the shared boot snapshot starts with the snapshot's
+# clock and kernel RNG state. The host sends the time and 64 fresh random bytes
+# with SESSION. A write to /dev/urandom only stirs the input pool, the CRNG that
+# serves reads keeps its old key until it reseeds (timer-based, and the first
+# reseed after a restore can be many seconds away), so the pool is stirred and
+# then RNDRESEEDCRNG (_IO('R', 7) = 0x5207) forces the reseed. socat is the
+# smallest thing in Alpine that can issue that ioctl.
+reseed_rng() {
+	bytes=$(printf '%s' "$1" | sed 's/../\\x&/g')
+	# busybox printf writes NUL bytes fine (checked in the guest); the count
+	# below is the guard: all 64 bytes must reach the pool.
+	ENTROPY_WRITTEN=$(printf '%b' "$bytes" | tee /dev/urandom | wc -c)
+	[ "$ENTROPY_WRITTEN" = 64 ] || return 1
+	socat -u /dev/null OPEN:/dev/urandom,rdonly,ioctl-void=0x5207 >/dev/null 2>&1
+}
+
+# Debug aid for the smoke test: only when the host put /debug-rng in the share,
+# print RNG output and watch the clock. Never in normal runs.
+debug_hooks() {
+	[ -e "$SHARE/debug-rng" ] || return 0
+	log "entropy bytes written $ENTROPY_WRITTEN"
+	log "rng $(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
+	(
+		n=0
+		while [ "$n" -lt 8 ]; do
+			sleep 5
+			log "tick $(date +%s) up $(cut -d' ' -f1 /proc/uptime)"
+			n=$((n + 1))
+		done
+	) &
+}
+
+do_session() {
+	user=${1%% *}
+	rest=${1#* }
+	[ "$rest" = "$1" ] && rest=
+	epoch=${rest%% *}
+	entropy=${rest#* }
+	[ "$entropy" = "$rest" ] && entropy=
+	if [ -n "$SESSION_USER" ]; then
+		reply "ERR busy"
+		return
+	fi
+	if ! printf '%s\n' "$user" | grep -Eq '^[a-z][a-z0-9_-]{0,30}$'; then
+		reply "ERR bad_user"
+		return
+	fi
+	# Epoch plausibility: 2020-01-01 .. 2100-01-01 (the host enforces the same).
+	if ! printf '%s\n' "$epoch" | grep -Eq '^[1-9][0-9]{0,15}$' ||
+		[ "$epoch" -lt 1577836800 ] || [ "$epoch" -gt 4102444800 ] ||
+		! printf '%s\n' "$entropy" | grep -Eq '^[0-9a-f]{128}$'; then
+		reply "ERR bad_session"
+		return
+	fi
+	if ! date -s "@$epoch" >/dev/null 2>&1 || ! reseed_rng "$entropy"; then
+		log "could not set the clock or reseed the RNG"
+		reply "ERR session"
+		return
+	fi
+	log "clock $(date +%s)"
+	if adduser -D -u 1000 -G wheel -s /bin/ash "$user" >/dev/null 2>&1; then
+		uid=$(id -u "$user")
+		gid=$(id -g "$user")
+		# adduser -G wheel makes wheel (gid 10) the primary group, so the home
+		# tmpfs is owned by that gid, not 1000.
+		for g in video input audio; do
+			addgroup "$user" "$g" >/dev/null 2>&1
+		done
+		mkdir -p "/home/$user"
+		if mount -t tmpfs -o "size=128m,uid=$uid,gid=$gid,mode=700" tmpfs "/home/$user" &&
+			cp -a /etc/skel/. "/home/$user/" &&
+			chown -R "$uid:$gid" "/home/$user"; then
+			SESSION_USER=$user
+			log "session for $user"
+			debug_hooks
+			reply "SESSION_OK"
+			return
+		fi
+		umount "/home/$user" 2>/dev/null
+		deluser "$user" >/dev/null 2>&1
+	fi
+	log "session setup failed for $user"
+	reply "ERR session"
+}
+
+# --- RESTORE -----------------------------------------------------------
+
+# The refusal of absolute and ".." paths below is hygiene, not a privilege
+# boundary: the user has passwordless doas by design (the VM is theirs).
+# Extract the archive into the home as the user. Entries that are absolute or
+# climb out with ".." are refused up front. GNU tar (-P keeps names as stored;
+# busybox tar silently strips "/" and "../" from its listing, which would hide them) pipes
+# its listing straight into the check (nothing is written to the root filesystem).
+restore_archive() {
+	home=/home/$SESSION_USER
+	if tar -tPf - <"$ARCHIVE" 2>/dev/null | grep -Eq '(^/|(^|/)\.\.(/|$))'; then
+		log "home archive has absolute or .. entries; refused"
+		return 1
+	fi
+	if ! err=$(su -s /bin/sh "$SESSION_USER" -c "tar -xpf - -C '$home' --no-same-owner" <"$ARCHIVE" 2>&1 >/dev/null); then
+		log "home archive could not be extracted: $(printf '%s' "$err" | head -n 3 | tr '\n' ' ')"
+		return 1
+	fi
+	# A crafted "./" entry may carry any mode; SAVE would preserve it.
+	chmod u+rwx "$home"
+}
+
+launch_desktop() {
+	: >"$XLOG"
+	chmod 666 "$XLOG"
+	if openvt -c 1 -s -f -- su -l "$SESSION_USER" -c "exec startx -- vt1 >>$XLOG 2>&1"; then
+		log "desktop launched"
+		# Say what became of the X server, for the serial0 log.
+		(
+			sleep 45
+			if pidof Xorg >/dev/null 2>&1; then log "X server is running"; else
+				log "X server is not running"
+				chvt 2 2>/dev/null
+			fi
+			{
+				grep -E '\((EE|WW)\)|Fatal' /var/log/Xorg.0.log 2>/dev/null | tail -n 20
+				tail -n 10 "$XLOG" 2>/dev/null
+			} | while IFS= read -r l; do log "x: $l"; done
+		) &
+		return 0
+	fi
+	log "startx failed"
+	return 1
+}
+
+do_restore() {
+	if [ -z "$SESSION_USER" ]; then
+		reply "ERR no_session"
+		return
+	fi
+	ok=1
+	if [ -f "$ARCHIVE" ]; then
+		restore_archive || ok=0
+		rm -f "$ARCHIVE"
+	fi
+	launch_desktop || ok=0
+	if [ "$ok" = 1 ]; then
+		reply "RESTORED"
+	else
+		reply "ERR restore"
+	fi
+}
+
+# --- SAVE --------------------------------------------------------------
+
+do_save() {
+	nonce=$1
+	if [ -z "$SESSION_USER" ] || ! printf '%s\n' "$nonce" | grep -Eq '^[A-Za-z0-9_-]{1,31}$'; then
+		reply "ERR save"
+		return
+	fi
+	mkdir -p "$SHARE/sync"
+	if tar -cpf "$ARCHIVE" -C "/home/$SESSION_USER" . 2>/dev/null; then
+		bytes=$(wc -c <"$ARCHIVE")
+		set -- $bytes
+		reply "SAVED $nonce $1"
+	else
+		rm -f "$ARCHIVE"
+		reply "ERR save"
+	fi
+}
+
+# --- main loop ---------------------------------------------------------
+
+log "ready on $PORT"
+reply "READY"
+
+while IFS= read -r line <&3; do
+	line=${line%"$CR"}
+	cmd=${line%% *}
+	arg=
+	[ "$cmd" != "$line" ] && arg=${line#* }
+	case $cmd in
+	SESSION) do_session "$arg" ;;
+	RESTORE) do_restore ;;
+	SAVE) do_save "$arg" ;;
+	SHUTDOWN)
+		log "shutdown requested"
+		poweroff
+		;;
+	"") ;;
+	*) reply "ERR unknown" ;;
+	esac
+done
+
+log "serial port closed; agent exiting"
+exit 1

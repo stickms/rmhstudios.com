@@ -51,6 +51,7 @@ import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as RmhcalculatorRouteImport } from './routes/rmhcalculator'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
+import { Route as RmhosRouteImport } from './routes/rmhos'
 import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhtubeRouteImport } from './routes/rmhtube'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
@@ -722,6 +723,11 @@ const RmhcodeRoute = RmhcodeRouteImport.update({
 const RmhmusicRoute = RmhmusicRouteImport.update({
   id: '/rmhmusic',
   path: '/rmhmusic',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RmhosRoute = RmhosRouteImport.update({
+  id: '/rmhos',
+  path: '/rmhos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RmhstudyRoute = RmhstudyRouteImport.update({
@@ -3120,6 +3126,7 @@ export interface FileRoutesByFullPath {
   '/rmhcalculator': typeof RmhcalculatorRoute
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
+  '/rmhos': typeof RmhosRoute
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
@@ -3616,6 +3623,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmhcalculator': typeof RmhcalculatorRoute
+  '/rmhos': typeof RmhosRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sohumbum': typeof SohumbumRoute
@@ -4105,6 +4113,7 @@ export interface FileRoutesById {
   '/rmhcalculator': typeof RmhcalculatorRoute
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
+  '/rmhos': typeof RmhosRoute
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
@@ -4614,6 +4623,7 @@ export interface FileRouteTypes {
     | '/rmhcalculator'
     | '/rmhcode'
     | '/rmhmusic'
+    | '/rmhos'
     | '/rmhstudy'
     | '/rmhtube'
     | '/rmhtype'
@@ -5110,6 +5120,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/rmh-internal-affairs'
     | '/rmhcalculator'
+    | '/rmhos'
     | '/security'
     | '/sitemap.xml'
     | '/sohumbum'
@@ -5598,6 +5609,7 @@ export interface FileRouteTypes {
     | '/rmhcalculator'
     | '/rmhcode'
     | '/rmhmusic'
+    | '/rmhos'
     | '/rmhstudy'
     | '/rmhtube'
     | '/rmhtype'
@@ -6106,6 +6118,7 @@ export interface RootRouteChildren {
   RmhcalculatorRoute: typeof RmhcalculatorRoute
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
+  RmhosRoute: typeof RmhosRoute
   RmhstudyRoute: typeof RmhstudyRouteWithChildren
   RmhtubeRoute: typeof RmhtubeRouteWithChildren
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
@@ -6538,6 +6551,13 @@ declare module '@tanstack/react-router' {
       path: '/rmhmusic'
       fullPath: '/rmhmusic'
       preLoaderRoute: typeof RmhmusicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmhos': {
+      id: '/rmhos'
+      path: '/rmhos'
+      fullPath: '/rmhos'
+      preLoaderRoute: typeof RmhosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmhstudy': {
@@ -10856,6 +10876,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhcalculatorRoute: RmhcalculatorRoute,
   RmhcodeRoute: RmhcodeRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,
+  RmhosRoute: RmhosRoute,
   RmhstudyRoute: RmhstudyRouteWithChildren,
   RmhtubeRoute: RmhtubeRouteWithChildren,
   RmhtypeRoute: RmhtypeRouteWithChildren,

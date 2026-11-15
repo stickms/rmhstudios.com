@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+# The host-facing guest agent (serial1 line protocol).
+description="rmhOS guest agent"
+command=/usr/local/bin/rmhos-agent
+command_background=true
+pidfile=/run/rmhos-agent.pid
+output_log=/dev/null
+error_log=/dev/null
+
+depend() {
+	need localmount
+	use udev
+	# Do not make the host wait for DHCP before it can talk to the guest.
+	before networking
+}

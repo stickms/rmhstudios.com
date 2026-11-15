@@ -407,6 +407,73 @@ services:
       retries: 3
       start_period: 15s
 
+  # ─── rmhOS network relay hub (SANDBOXED) ───────────────────────────────────
+  # Forwards the in-browser Linux guest's TCP streams to the internet, so it is
+  # the one service that makes outbound connections on behalf of strangers.
+  # It is therefore written out explicitly instead of merging *common: no
+  # env_file, no database/auth/storage secrets, no host.docker.internal alias,
+  # no /app/db volume, and it is the ONLY member of the `rmhos-egress` network,
+  # which deploy/rmhos-net/egress-firewall.sh walls off from every private
+  # range (RFC1918, loopback, link-local, CGNAT) before this service starts.
+  # server/rmhos-net/__tests__/compose-sandbox.test.ts pins all of this.
+  rmhos-net:
+    # Behind a profile so the fleet `up` never starts it and never creates its network (a
+    # subnet clash can then only fail the hub's own start). deploy.sh starts it with
+    # `--profile rmhos-net` once deploy/rmhos-net/probe-firewall.sh proves the egress firewall.
+    profiles: ['rmhos-net']
+    image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-rmhos-net
+    # Never auto-restart: after a reboot or daemon restart the hub must not come back before
+    # the firewall is re-proven. The next deploy starts it again.
+    restart: 'no'
+    init: true
+    user: '65534:65534'
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 256m
+    cpus: 0.5
+    tmpfs:
+      - /tmp
+    networks:
+      - rmhos-egress
+    # The embedded resolver forwards to these from inside the sandbox network;
+    # they must be public because the firewall drops private destinations.
+    dns:
+      - 1.1.1.1
+      - 9.9.9.9
+    ports:
+      - '127.0.0.1:${PORT_RMHOS_NET:-7009}:7009'
+    environment:
+      - RMHOS_NET_PORT=7009
+      # Unset/empty = on; `0` switches the relay off (the hub then answers 503).
+      - RMHOS_NET_ENABLED=${RMHOS_NET_ENABLED:-}
+      # Its own secret, shared only with the web tier that mints tickets.
+      - RMHOS_NET_TICKET_SECRET=${RMHOS_NET_TICKET_SECRET:-}
+      - RMHOS_NET_DENIED_PORTS=${RMHOS_NET_DENIED_PORTS:-25,465,587,2525}
+      - RMHOS_NET_DOH_UPSTREAM=${RMHOS_NET_DOH_UPSTREAM:-}
+    command: ['node', '--max-old-space-size=192', 'dist-server/server/rmhos-net/index.cjs']
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    healthcheck:
+      # node, not curl: the image's curl is not guaranteed for uid 65534, and node
+      # is certainly present. /health answers even when the relay is switched off.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:7009/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   # ─── Ladder Worker (RMHLadder job-discovery cron) ──────────────────────────
   # Node cron process: self-bootstraps an empty DB (seed → probe → run), then
   # runs the pipeline on LADDER_CRON_SCHEDULE (default every 12h). No port.
@@ -856,3 +923,13 @@ services:
       echo 'bucket ready';
       "
     restart: 'no'
+
+# The relay hub's private network. Nothing else joins it. The subnet is pinned
+# because deploy/rmhos-net/egress-firewall.sh matches on it; keep the two equal.
+networks:
+  rmhos-egress:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-rmhos-egress
+    ipam:
+      config:
+        - subnet: 172.31.86.0/24

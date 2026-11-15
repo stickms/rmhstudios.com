@@ -1,0 +1,292 @@
+# rmhOS: licences and sources
+
+rmhOS
+runs
+a
+Linux
+desktop
+inside
+your
+browser.
+It
+is
+built
+on
+the
+Linux
+kernel;
+"Linux"
+is
+used
+here
+descriptively,
+it
+is
+not
+the
+name
+of
+the
+product.
+
+## Kernel
+
+- The
+  kernel
+  is
+  Linux,
+  licensed
+  under
+  the
+  GNU
+  General
+  Public
+  License,
+  version
+  2
+  (GPL-2.0).
+- Exact
+  upstream
+  source:
+  <https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.117.tar.xz>
+  (sha256
+  `74e99aa5e60e242e0a165fed8cb2ea0d054bf7a401f01861d403d75733456613`).
+  The
+  build
+  downloads
+  it
+  and
+  refuses
+  to
+  continue
+  if
+  the
+  hash
+  differs.
+- Our
+  kernel
+  configuration
+  (`kernel.config`)
+  and
+  patches
+  (`patches/`)
+  are
+  in
+  `scripts/rmhos/`
+  of
+  the
+  site
+  repository.
+  The
+  patch
+  adds
+  an
+  rmhOS
+  boot
+  logo;
+  the
+  logo
+  artwork
+  is
+  our
+  own
+  plain
+  monogram.
+  Nothing
+  else
+  in
+  the
+  source
+  is
+  modified.
+- The
+  kernel
+  source
+  itself
+  is
+  not
+  stored
+  in
+  the
+  repository,
+  and
+  no
+  binary
+  is
+  committed:
+  `pnpm rmhos:image`
+  (`scripts/rmhos/build.sh`)
+  rebuilds
+  the
+  kernel
+  and
+  the
+  root
+  filesystem
+  from
+  the
+  pinned
+  inputs.
+
+## Userland
+
+The
+root
+filesystem
+is
+Alpine
+Linux
+3.22
+(x86).
+Every
+package,
+with
+its
+version,
+is
+listed
+in
+`packages.txt`,
+which
+is
+shipped
+beside
+the
+image
+(generated
+by
+the
+build
+from
+`apk info -v`).
+Each
+package
+carries
+its
+own
+licence,
+mostly
+MIT,
+BSD,
+GPL
+and
+LGPL
+variants;
+the
+licence
+of
+a
+package
+is
+recorded
+in
+the
+Alpine
+package
+index
+at
+<https://pkgs.alpinelinux.org/packages>,
+and
+its
+source
+is
+available
+from
+<https://dl-cdn.alpinelinux.org/alpine/v3.22/>
+and
+the
+Alpine
+`aports`
+tree.
+
+To
+keep
+the
+image
+small,
+the
+Mesa
+software
+GL
+libraries
+that
+`xorg-server`
+depends
+on
+(libgallium,
+LLVM)
+are
+deleted
+from
+the
+filesystem;
+the
+framebuffer
+X
+server
+does
+not
+use
+them.
+
+## BIOS
+
+The
+emulated
+PC
+boots
+with
+SeaBIOS
+and
+its
+VGA
+BIOS
+(`seabios.bin`,
+`vgabios.bin`),
+taken
+from
+Alpine's
+`seabios-bin`
+and
+`seavgabios-bin`
+packages
+(version
+1.16.3).
+SeaBIOS
+is
+licensed
+under
+the
+GNU
+LGPL,
+version 3.
+The
+v86
+npm
+package
+does
+not
+ship
+BIOS
+images,
+which
+is
+why
+they
+come
+from
+Alpine;
+they
+are
+listed
+in
+`packages.txt`.
+
+## Emulator
+
+The
+x86
+emulator
+is
+[v86](https://github.com/copy/v86)
+(BSD-2-Clause).

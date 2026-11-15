@@ -92,6 +92,7 @@ function fixture(
   options: {
     realFlock?: boolean;
     fakeDisk?: boolean;
+    rmhosSecret?: boolean;
   } = {},
 ) {
   const dir =
@@ -139,7 +140,10 @@ function fixture(
       dir,
       '.env.production',
     ),
-    'DATABASE_URL=postgresql://fixture:fixture@db:5432/rmh\n',
+    'DATABASE_URL=postgresql://fixture:fixture@db:5432/rmh\n' +
+      (options.rmhosSecret
+        ? 'RMHOS_NET_TICKET_SECRET=fixture-secret\n'
+        : ''),
   );
   writeFileSync(
     join(
@@ -276,6 +280,24 @@ case "$*" in *--output=size*) printf 'Size\\n100G\\n' ;; *) printf 'Avail\\n%sG\
       'deploy/post-deploy-guard.sh',
     ),
     '#!/bin/bash\necho $$ > "$MOCK_ROOT/guard.pid"\nexec sleep 30\n',
+    {
+      mode: 0o755,
+    },
+  );
+  // The real probe needs a Docker network and a firewall; here it is a stand-in whose
+  // verdict the test chooses (see deploy/rmhos-net/__tests__ for the real script).
+  mkdirSync(
+    join(
+      dir,
+      'deploy/rmhos-net',
+    ),
+  );
+  writeFileSync(
+    join(
+      dir,
+      'deploy/rmhos-net/probe-firewall.sh',
+    ),
+    '#!/bin/bash\necho probed >> "$MOCK_ROOT/probe.log"\n[ "${MOCK_PROBE:-proven}" = proven ]\n',
     {
       mode: 0o755,
     },
@@ -531,6 +553,266 @@ describe('production deploy orchestration', () => {
       shaA,
     );
   }, 25_000);
+  // The relay hub dials the internet for strangers: it starts only behind a proven firewall,
+  // and rmhOS can never fail the site deploy.
+  describe('rmhOS relay hub step', () => {
+    const hubUp =
+      (
+        docker: string,
+      ) =>
+        docker
+          .split(
+            '\n',
+          )
+          .some(
+            (
+              l,
+            ) =>
+              / --profile rmhos-net up -d --no-build rmhos-net/.test(
+                l,
+              ),
+          );
+    const hubStop =
+      (
+        docker: string,
+      ) =>
+        docker
+          .split(
+            '\n',
+          )
+          .some(
+            (
+              l,
+            ) =>
+              / --profile rmhos-net stop rmhos-net/.test(
+                l,
+              ),
+          );
+
+    it('starts the hub when the probe proves the firewall', () => {
+      const r =
+        fixture(
+          {},
+          {
+            rmhosSecret: true,
+          },
+        );
+      expect(
+        r
+          .result
+          .status,
+        r
+          .result
+          .stdout +
+          r
+            .result
+            .stderr,
+      ).toBe(
+        0,
+      );
+      expect(
+        hubUp(
+          r.docker,
+        ),
+      ).toBe(
+        true,
+      );
+      expect(
+        hubStop(
+          r.docker,
+        ),
+      ).toBe(
+        false,
+      );
+      expect(
+        r
+          .result
+          .stdout,
+      ).not.toContain(
+        'NOT started',
+      );
+    }, 40_000);
+
+    it('keeps the hub stopped, warns loudly and still succeeds when the probe fails', () => {
+      const r =
+        fixture(
+          {
+            MOCK_PROBE:
+              'open',
+          },
+          {
+            rmhosSecret: true,
+          },
+        );
+      expect(
+        r
+          .result
+          .status,
+        r
+          .result
+          .stdout +
+          r
+            .result
+            .stderr,
+      ).toBe(
+        0,
+      );
+      expect(
+        hubUp(
+          r.docker,
+        ),
+      ).toBe(
+        false,
+      );
+      expect(
+        hubStop(
+          r.docker,
+        ),
+      ).toBe(
+        true,
+      );
+      expect(
+        r
+          .result
+          .stdout,
+      ).toContain(
+        'rmhOS network relay NOT started',
+      );
+      expect(
+        r
+          .result
+          .stdout,
+      ).toContain(
+        'rmhos-net-firewall.service',
+      );
+    }, 40_000);
+
+    it('does not start the hub, probe, or warn at length without a ticket secret', () => {
+      const r =
+        fixture(
+          {
+            MOCK_PROBE:
+              'open',
+          },
+        );
+      expect(
+        r
+          .result
+          .status,
+        r
+          .result
+          .stdout +
+          r
+            .result
+            .stderr,
+      ).toBe(
+        0,
+      );
+      expect(
+        hubUp(
+          r.docker,
+        ),
+      ).toBe(
+        false,
+      );
+      expect(
+        existsSync(
+          join(
+            r.dir,
+            'probe.log',
+          ),
+        ),
+      ).toBe(
+        false,
+      );
+      expect(
+        r
+          .result
+          .stdout,
+      ).toContain(
+        'RMHOS_NET_TICKET_SECRET is not set',
+      );
+      expect(
+        r
+          .result
+          .stdout,
+      ).not.toContain(
+        'NOT started',
+      );
+    }, 40_000);
+
+    // PORT_RMHOS_NET is defined only in the production case, and the hub block runs under
+    // `set -u`; staging is currently disabled (it exits before the block), so this pins the
+    // default instead of reaching it.
+    it('defaults the hub port wherever the block uses it', () => {
+      const script =
+        readFileSync(
+          resolve(
+            'deploy.sh',
+          ),
+          'utf8',
+        );
+      const uses =
+        script
+          .split(
+            '\n',
+          )
+          .filter(
+            (
+              l,
+            ) =>
+              l.includes(
+                'PORT_RMHOS_NET',
+              ) &&
+              !/^\s*#?\s*PORT_RMHOS_NET=/.test(
+                l,
+              ),
+          );
+      expect(
+        uses.length,
+      ).toBeGreaterThan(
+        0,
+      );
+      for (const l of uses)
+        expect(
+          l,
+        ).not.toMatch(
+          /PORT_RMHOS_NET(?!:-)/,
+        );
+    });
+
+    it('never starts the hub in the fleet `up`', () => {
+      const r =
+        fixture(
+          {},
+          {
+            rmhosSecret: true,
+          },
+        );
+      const fleet =
+        r.docker
+          .split(
+            '\n',
+          )
+          .find(
+            (
+              l,
+            ) =>
+              / up -d --no-build --remove-orphans/.test(
+                l,
+              ),
+          );
+      expect(
+        fleet,
+      ).toBeDefined();
+      expect(
+        fleet,
+      ).not.toContain(
+        'rmhos-net',
+      );
+    }, 40_000);
+  });
+
   it('does not reclaim or retry when a pull fails for another reason', () => {
     const {
       result,

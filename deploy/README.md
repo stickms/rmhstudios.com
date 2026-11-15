@@ -22,7 +22,7 @@ Terraform DNS config.
 | `docker/`                        | Docker daemon config / helpers                                      |
 | `postgres/`                      | Postgres tuning + host setup (DB runs on the host, reached via `host.docker.internal`) |
 | `backup/`                        | DB backup scripts (driven by the systemd timer)                    |
-| `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmh-disk-cleanup.{service,timer}`, `rmh-host-check.{service,timer}`, `rmhstudios-perf-tuning.service` |
+| `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmh-disk-cleanup.{service,timer}`, `rmh-host-check.{service,timer}`, `rmhstudios-perf-tuning.service`, `rmhos-net-firewall.service` |
 | `terraform/`                     | Cloudflare **DNS** as code — see [`terraform/README.md`](./terraform/README.md) |
 | `apply-cloudflare-cache-rules.sh`, `apply-perf-tuning.sh` | idempotent host/CDN tuning helpers with `VERIFY_ONLY=1` drift checks |
 | `disk-report.sh`, `move-docker-storage.sh` | disk diagnostics + moving Docker's data-root onto a separate volume |
@@ -146,6 +146,17 @@ sudo du -xh --max-depth=1 / | sort -h     # where the space is
 docker system df                          # Docker's own split: images vs cache
 ./deploy/disk-report.sh                   # read-only summary
 ```
+
+**rmhOS relay hub firewall (required before the hub starts).** The `rmhos-net` container
+is only started when `deploy/rmhos-net/probe-firewall.sh` proves its egress drops exist; the
+root unit installs them (and re-installs after a reboot, before Docker starts):
+
+```bash
+sudo cp deploy/systemd/rmhos-net-firewall.service /etc/systemd/system/   # fix the repo path first
+sudo systemctl daemon-reload && sudo systemctl enable --now rmhos-net-firewall.service
+```
+
+Without it the deploy still succeeds; the hub stays stopped and the log says so.
 
 **Automatic cleanup between deploys.** `deploy.sh` can only clean Docker's data (the
 webhook is sandboxed) and only runs on a push, so a root timer covers the rest:

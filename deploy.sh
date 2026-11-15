@@ -56,6 +56,7 @@ case "$ENVIRONMENT" in
         PORT_SOCKET=7001
         PORT_RMHBOX=7676
         PORT_RMHTUBE=7003
+        PORT_RMHOS_NET=7009
         PORT_STATUS=7008
         COMPOSE_PROFILES=""
         ;;
@@ -71,6 +72,7 @@ case "$ENVIRONMENT" in
         # PORT_SOCKET=8001
         # PORT_RMHBOX=8676
         # PORT_RMHTUBE=8003
+        # PORT_RMHOS_NET=8009
         # COMPOSE_PROFILES=""
         ;;
     *)
@@ -1492,6 +1494,38 @@ if [ "$ENVIRONMENT" = "production" ]; then
         step_done
     } 2>/dev/null || log "WARNING: the wiki step failed; the site deploy is unaffected."
 fi
+
+# ── rmhOS relay hub ──────────────────────────────────────────────────────────
+# The hub dials the internet for strangers, so it only starts once its egress firewall is PROVEN
+# (deploy/rmhos-net/probe-firewall.sh: a throwaway container on its network must time out
+# connecting to the host). The firewall itself is a root systemd unit this sandboxed deploy cannot
+# install (deploy/systemd/rmhos-net-firewall.service). The service sits behind a compose profile,
+# so the fleet `up` above never starts it. Nothing here needs privilege, and nothing here can fail
+# the site deploy: an unproven firewall, a missing secret or a failed start leaves the hub stopped.
+rmhos_net_stop() { dc --profile rmhos-net stop rmhos-net >/dev/null 2>&1 || true; }
+{
+    if ! grep -Eq '^RMHOS_NET_TICKET_SECRET=.+' "$ENV_FILE" 2>/dev/null; then
+        log "rmhOS relay hub: RMHOS_NET_TICKET_SECRET is not set; the hub is not started."
+        rmhos_net_stop
+    elif DOCKER_BIN="$DOCKER_BIN" PROJECT_NAME="$PROJECT_NAME" ENV_FILE="$ENV_FILE" \
+            bash "$REPO_DIR/deploy/rmhos-net/probe-firewall.sh"; then
+        if dc --profile rmhos-net up -d --no-build rmhos-net >/dev/null 2>&1 && check_http "${PORT_RMHOS_NET:-7009}"; then
+            log "rmhOS relay hub is up (loopback port ${PORT_RMHOS_NET:-7009}), egress firewall proven."
+        else
+            log "WARNING: the rmhOS relay hub did not start healthy; stopping it. The site deploy is unaffected."
+            rmhos_net_stop
+        fi
+    else
+        rmhos_net_stop
+        log "  ┌── rmhOS network relay NOT started: egress firewall not proven ───────"
+        log "  │ The hub reaches the internet for strangers and must not run without its"
+        log "  │ iptables drops. This deploy cannot install them (no root). Once, as root:"
+        log "  │   sudo cp deploy/systemd/rmhos-net-firewall.service /etc/systemd/system/"
+        log "  │   sudo systemctl daemon-reload && sudo systemctl enable --now rmhos-net-firewall.service"
+        log "  │ (fix ExecStart's repo path first). The next deploy starts the hub. The site is unaffected."
+        log "  └───────────────────────────────────────────────────────────────────────"
+    fi
+} || log "WARNING: the rmhOS relay hub step failed; the site deploy is unaffected."
 
 # ── Step 6: Prune stale images ───────────────────────────────────────────────
 log "Pruning dangling images..."

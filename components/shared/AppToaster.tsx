@@ -108,7 +108,12 @@ const LIVE: Record<
     info: 'polite',
   };
 
-export default function AppToaster() {
+export default function AppToaster({
+  className,
+}: {
+  /** Extra classes for the stack, e.g. to move it clear of an app's own controls. */
+  className?: string;
+} = {}) {
   const {
     t,
   } =
@@ -134,7 +139,12 @@ export default function AppToaster() {
     // The region is always mounted — an aria-live container inserted at the
     // same moment as its first message is not reliably announced.
     <div
-      className="pointer-events-none fixed inset-x-0 top-0 z-100 flex flex-col items-center gap-2 px-3 pt-[calc(var(--app-safe-top)+1rem)]"
+      className={[
+        'pointer-events-none fixed inset-x-0 top-0 z-100 flex flex-col items-center gap-2 px-3 pt-[calc(var(--app-safe-top)+1rem)]',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       role="region"
       aria-label={t(
         'notifications',

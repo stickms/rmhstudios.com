@@ -333,6 +333,18 @@ const ALLOWED: Readonly<
         reason:
           'leader-authoritative 2 s sync heartbeat per room',
       },
+    'server/rmhos-net/relay.ts':
+      {
+        count: 1,
+        reason:
+          'per-connection WebSocket liveness ping on the sandboxed relay hub',
+      },
+    'server/rmhos-net/index.ts':
+      {
+        count: 1,
+        reason:
+          "prunes the hub's in-memory usage meter every 10 minutes",
+      },
   };
 
 /** Non-`.server` lib modules that only the server tier loads, so they are scanned too. */

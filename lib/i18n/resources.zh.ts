@@ -49,6 +49,7 @@ const zhResources = {
   "c-rmhcode": () => import("@/locales/zh/c-rmhcode.json"),
   "c-rmhcoins": () => import("@/locales/zh/c-rmhcoins.json"),
   "c-rmhmusic": () => import("@/locales/zh/c-rmhmusic.json"),
+  "c-rmhos": () => import("@/locales/zh/c-rmhos.json"),
   "c-rmhstudy": () => import("@/locales/zh/c-rmhstudy.json"),
   "c-rmhtech": () => import("@/locales/zh/c-rmhtech.json"),
   "c-rmhtube": () => import("@/locales/zh/c-rmhtube.json"),

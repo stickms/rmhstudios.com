@@ -89,6 +89,7 @@ VPS):
 | `socket` (games hub)            | **Node** | 7001                          | `dist-server/server/socket-server/index.cjs`           |
 | `rmhbox` (party games)          | **Node** | 7676                          | `dist-server/server/rmhbox/index.cjs`                  |
 | `rmhtube` (watch together)      | **Node** | 7003                          | `dist-server/server/rmhtube/index.cjs`                 |
+| `rmhos-net` (rmhOS relay hub)   | **Node** | 7009 (profile `rmhos-net`)    | `dist-server/server/rmhos-net/index.cjs`               |
 | `ladder-worker` (job cron)      | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs`           |
 | `homes-worker` (listings cron)  | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`            |
 | `jobs` (pg-boss async backbone) | **Node** | —                             | `dist-server/server/jobs/index.cjs`                    |
@@ -1876,6 +1877,173 @@ Consequences:
   on;
   see
   above).
+- **`rmhos-net/`**
+  —
+  the
+  rmhOS
+  relay
+  hub,
+  port
+  7009,
+  path
+  `/rmhos-net/`
+  (WebSocket
+  carrying
+  Wisp
+  v1
+  streams,
+  `POST /rmhos-net/dns-query`
+  DoH,
+  `GET /rmhos-net/status`,
+  `GET /health`).
+  **It
+  dials
+  the
+  internet
+  for
+  strangers,
+  so
+  it
+  is
+  a
+  sandbox,
+  not
+  a
+  normal
+  hub:**
+  its
+  own
+  container
+  on
+  its
+  own
+  `rmhos-egress`
+  network,
+  non-root,
+  read-only,
+  no
+  database/redis/auth/S3
+  secrets
+  (only
+  `RMHOS_NET_TICKET_SECRET`),
+  behind
+  a
+  compose
+  profile
+  that
+  `deploy.sh`
+  starts
+  only
+  once
+  `deploy/rmhos-net/probe-firewall.sh`
+  proves
+  the
+  host
+  firewall
+  (a
+  root
+  systemd
+  unit
+  the
+  owner
+  installs
+  once).
+  **Its
+  bundle
+  imports
+  nothing
+  from
+  `lib/`
+  or
+  `components/`**
+  —
+  only
+  two
+  pure
+  `@features/rmhos/engine`
+  modules
+  (`constants`,
+  `net-ticket.server`)
+  —
+  and
+  `__tests__/no-site-imports.test.ts`
+  fails
+  on
+  anything
+  else
+  (also
+  `@/features/…`,
+  `@/server/…`).
+  Auth
+  is
+  a
+  ticket
+  (`userId.expiry.sig`,
+  60
+  s)
+  that
+  must
+  be
+  first
+  presented
+  within
+  its
+  minute;
+  `tickets.ts`
+  then
+  keeps
+  it
+  good
+  for
+  reconnects
+  and
+  DNS
+  while
+  in
+  use
+  (15
+  min
+  idle,
+  12
+  h
+  cap,
+  one
+  per
+  user).
+  Per-instance
+  state
+  only:
+  no
+  module-level
+  maps.
+  Policy
+  (`policy.ts`:
+  TCP
+  only,
+  public
+  addresses,
+  mail
+  ports
+  denied),
+  caps
+  and
+  the
+  per-user
+  meter
+  live
+  here;
+  the
+  stream
+  log
+  (`rmhos-net.stream`,
+  `rmhos-net.session`)
+  is
+  the
+  abuse-tracing
+  record.
+  Full
+  runbook:
+  [`docs/rmhos.md`](../docs/rmhos.md).
 - **`ladder-worker/`**
   —
   RMHLadder
@@ -2946,6 +3114,7 @@ it.
   socket-server +
   rmhbox +
   rmhtube +
+  rmhos-net +
   ladder-worker +
   homes-worker +
   jobs,
@@ -3007,11 +3176,12 @@ it.
   esbuild
   bundles
   exactly
-  **6
+  **7
   entrypoints**
   (socket-server,
   rmhbox,
   rmhtube,
+  rmhos-net,
   ladder-worker,
   homes-worker,
   jobs)
@@ -3485,11 +3655,12 @@ it.
    bundled
    —
    esbuild's
-   6
+   7
    entrypoints
    (socket-server,
    rmhbox,
    rmhtube,
+   rmhos-net,
    ladder-worker,
    homes-worker,
    jobs)
@@ -3927,7 +4098,7 @@ confirm:
       `pnpm dev`
       boots
       all
-      six
+      seven
       workers/hubs,
       and
       a

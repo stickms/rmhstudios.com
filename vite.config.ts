@@ -5,6 +5,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
 import { hoverPolicy } from './lib/hover-css';
+import { rmhosDevImage } from './vite.rmhos-dev';
 // `.server` stubbing, the compile-time constants, the quiet logger and the rolldown
 // checks are shared with the island build (vite.islands.config.ts, redesign audit B1).
 import {
@@ -154,6 +155,7 @@ export default defineConfig({
   define: sharedDefine(),
   css: { postcss: { plugins: [hoverPolicy()] } },
   plugins: [
+    rmhosDevImage(process.cwd()),
     stubServerFiles(),
     tailwindcss(),
     tanstackStart({

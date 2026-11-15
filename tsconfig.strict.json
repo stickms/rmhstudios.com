@@ -30,10 +30,12 @@
     "lib/sitewide-announcement-schema.ts",
     "lib/sitewide-announcement.contract.ts",
     "server/shared/session-auth.ts",
-    "server/shared/redis-adapter.ts"
+    "server/shared/redis-adapter.ts",
+    "features/rmhos/engine/*.ts"
   ],
   "exclude": [
     "node_modules",
+    "features/rmhos/engine/vm.ts",
     "**/__tests__/**",
     "**/*.test.ts"
   ]

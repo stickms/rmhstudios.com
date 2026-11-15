@@ -9,7 +9,7 @@
  *  - **accessibility / degradation contracts** (`eversion.css`; the jelly sheets that carried most of
  *    them were deleted in Steel phase 1): "these outrank theme, material and utility layers" is the point, and WCAG 2.2.2 / 2.3.1 depend
  *    on it;
- *  - **beating an inline style** that script writes (`balatro` canvas size, `rmhcalculator` field-sizing fallback),
+ *  - **beating an inline style** that script writes (`balatro` canvas size (v86 rewrites the canvas's inline width and height on every mode change; rmhOS avoids it by creating the machine with screen scale 0), `rmhcalculator` field-sizing fallback),
  *    a third-party stylesheet (`tf2-hud` CodeMirror) or a competing rule at higher specificity that a layer move
  *    cannot reorder (`page-motion` `animation: none` on the page root, the scrollbar reveal in `base-interaction`,
  *    the sticky reset in the radial shell).

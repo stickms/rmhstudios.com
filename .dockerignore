@@ -112,6 +112,9 @@ public/vibe-packages
 # the committed masters inside the image build, so shipping them in the context
 # would just bloat the ~350 MB public/ layer.
 public/images/_variants
+# rmhOS dev image (scripts/rmhos/build.sh output, hundreds of MB). Production
+# serves it from the CDN, never from the app image.
+public/rmhos-dev
 
 # ─── Unused scripts ─────────────────────────────────────────────────
 scripts/news-pipeline
@@ -154,3 +157,6 @@ data/balatro/
 # Multiplayer pack sources (scripts/balatro/build-game-pack.py builds them into
 # data/balatro-pack/mp-<sha>.zip, which is all the image needs).
 data/balatro-mp/
+# rmhOS dev image (scripts/rmhos/build.sh output, hundreds of MB). Production
+# serves it from the CDN, never from the app image.
+public/rmhos-dev

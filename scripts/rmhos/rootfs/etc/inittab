@@ -1,0 +1,9 @@
+# rmhOS: the desktop owns tty1 (started by rmhos-agent). tty2 has a login so that a failed X
+# start still leaves a console (the agent switches to it).
+tty2::respawn:/sbin/getty 38400 tty2
+::sysinit:/sbin/openrc sysinit
+::sysinit:/sbin/openrc boot
+::wait:/sbin/openrc default
+
+::ctrlaltdel:/sbin/reboot
+::shutdown:/sbin/openrc shutdown

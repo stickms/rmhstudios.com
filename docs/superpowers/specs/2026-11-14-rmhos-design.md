@@ -33,7 +33,27 @@ plan
 and
 changed
 three
-things.
+things;
+a
+fourth
+(the
+ticket
+lifecycle)
+was
+fixed
+on
+the
+controller's
+ruling
+while
+the
+network
+was
+first
+tried
+end
+to
+end.
 
 1. **The
    home
@@ -251,9 +271,38 @@ things.
      rule
      set
      (`deploy/rmhos-net/egress-firewall.sh`,
-     run
+     installed
+     once
      by
-     `deploy.sh`)
+     the
+     owner
+     as
+     the
+     root
+     systemd
+     unit
+     `deploy/systemd/rmhos-net-firewall.service`;
+     `deploy.sh`
+     cannot
+     take
+     privilege,
+     so
+     it
+     only
+     probes
+     from
+     a
+     throwaway
+     container
+     and
+     starts
+     the
+     hub
+     when
+     the
+     drop
+     is
+     proven)
      on
      the
      `DOCKER-USER`
@@ -376,6 +425,476 @@ things.
      later,
      optional
      step.
+
+4. **Relay
+   ticket
+   lifecycle
+   (controller
+   ruling,
+   Task
+   10).**
+   The
+   first
+   design
+   had
+   a
+   60
+   s
+   ticket
+   baked
+   into
+   the
+   relay
+   URL
+   and
+   the
+   DoH
+   URL
+   when
+   the
+   machine
+   starts.
+   v86
+   reuses
+   those
+   URLs
+   for
+   its
+   whole
+   life:
+   it
+   reconnects
+   the
+   WebSocket
+   with
+   the
+   same
+   URL
+   every
+   10
+   s
+   and
+   sends
+   every
+   DNS
+   query
+   to
+   the
+   same
+   DoH
+   URL.
+   DNS
+   therefore
+   returned
+   401
+   about
+   a
+   minute
+   into
+   a
+   session
+   and
+   a
+   dropped
+   socket
+   could
+   never
+   reconnect.
+   The
+   hub
+   now
+   treats
+   a
+   ticket
+   as
+   a
+   session
+   credential:
+   - A
+     ticket
+     is
+     still
+     an
+     HMAC
+     over
+     `userId.expiry`
+     (60
+     s)
+     and
+     must
+     be
+     FIRST
+     presented,
+     on
+     a
+     WebSocket
+     upgrade,
+     a
+     DoH
+     query
+     or
+     a
+     status
+     request,
+     within
+     that
+     window.
+     The
+     hub
+     then
+     records
+     it
+     in
+     a
+     per-server
+     table
+     (`server/rmhos-net/tickets.ts`).
+   - A
+     recorded
+     ticket
+     is
+     accepted
+     again,
+     for
+     WebSocket
+     reconnects,
+     DoH
+     and
+     status,
+     after
+     its
+     60
+     s
+     are
+     up,
+     while
+     its
+     signature
+     verifies,
+     it
+     was
+     used
+     within
+     the
+     last
+     15
+     minutes
+     (sliding:
+     any
+     accepted
+     use,
+     any
+     relayed
+     stream
+     activity
+     for
+     that
+     user
+     and
+     every
+     answered
+     ping
+     refreshes
+     it)
+     and
+     it
+     is
+     under
+     12
+     hours
+     old
+     (hard
+     cap).
+     Otherwise 401.
+   - One
+     live
+     ticket
+     per
+     user:
+     first
+     presenting
+     a
+     newer
+     ticket
+     removes
+     the
+     older
+     one
+     and
+     closes
+     that
+     user's
+     older
+     socket
+     with
+     code 4000.
+     An
+     older
+     ticket
+     cannot
+     displace
+     a
+     newer
+     one.
+   - The
+     table
+     is
+     per
+     `createRelayServer`
+     instance,
+     capped
+     at
+     10
+     000
+     entries
+     (the
+     oldest
+     `lastSeen`
+     goes
+     first)
+     and
+     pruned
+     on
+     the
+     hub's
+     prune
+     interval.
+     The
+     DoH
+     in-flight
+     counter
+     is
+     per
+     instance
+     too.
+   - The
+     page
+     asks
+     for
+     the
+     session
+     (and
+     so
+     the
+     ticket)
+     when
+     `createVm`
+     has
+     loaded
+     the
+     emulator
+     and
+     is
+     about
+     to
+     build
+     the
+     machine,
+     not
+     at
+     page
+     load,
+     and
+     again
+     before
+     a
+     cold-boot
+     rebuild
+     if
+     the
+     first
+     ticket
+     is
+     more
+     than
+     45
+     s
+     old.
+     It
+     adds
+     no
+     reconnection
+     logic:
+     v86's
+     own
+     reconnect
+     is
+     enough.
+   - **The
+     ticket
+     is
+     a
+     bearer
+     credential
+     for
+     the
+     life
+     of
+     the
+     session**
+     (up
+     to
+     12
+     h
+     while
+     used).
+     It
+     appears
+     in
+     the
+     relay
+     WebSocket
+     URL
+     and
+     the
+     DoH
+     URL,
+     both
+     on
+     our
+     own
+     origin
+     (or
+     `VITE_RMHOS_NET_URL`);
+     Apache
+     logs
+     `/rmhos-net/`
+     requests
+     without
+     the
+     query
+     string
+     (`combined_noquery`),
+     the
+     hub
+     never
+     logs
+     it,
+     and
+     it
+     is
+     never
+     in
+     server-rendered
+     HTML
+     (the
+     session
+     query
+     is
+     client-only,
+     `no-store`,
+     not
+     dehydrated).
+     Anyone
+     who
+     copies
+     it
+     can
+     use
+     that
+     user's
+     relay
+     allowance,
+     under
+     that
+     user's
+     caps,
+     until
+     it
+     goes
+     idle;
+     a
+     restart
+     of
+     the
+     hub
+     invalidates
+     every
+     recorded
+     ticket
+     (a
+     page
+     then
+     needs
+     a
+     reload
+     for
+     a
+     new
+     one).
+5. **Network
+   status
+   in
+   the
+   toolbar.**
+   v86
+   reports
+   no
+   connection
+   event,
+   so
+   the
+   hub
+   answers
+   `GET /rmhos-net/status?ticket=…`
+   with
+   `{ connected, streams }`
+   for
+   that
+   ticket's
+   user
+   only
+   (same
+   auth
+   as
+   DoH).
+   The
+   page
+   asks
+   once
+   when
+   the
+   desktop
+   is
+   ready
+   and
+   every
+   15
+   s
+   while
+   the
+   tab
+   is
+   visible:
+   `off`
+   when
+   the
+   session
+   says
+   networking
+   is
+   disabled;
+   `on`
+   while
+   the
+   hub
+   says
+   connected;
+   `error`
+   after
+   three
+   failed
+   polls
+   in
+   a
+   row
+   or
+   30
+   s
+   of
+   `connected: false`;
+   `connecting`
+   otherwise.
 
 ## Intent
 
