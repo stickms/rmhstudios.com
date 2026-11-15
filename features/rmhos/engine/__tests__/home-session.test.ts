@@ -1,61 +1,242 @@
-import { describe, expect, it, vi } from 'vitest';
+import {
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { AgentError } from '../agent';
 import { SHARE_ARCHIVE_PATH } from '../agent-protocol';
-import { HomeSession, type SessionEnv, type SessionSnapshot } from '../home-session';
+import {
+  HomeSession,
+  type SessionEnv,
+  type SessionSnapshot,
+} from '../home-session';
 import { HomeSync } from '../home-sync';
 import { memoryHomeStore } from '../home-store';
 import { putEntry } from './store-helpers';
 
-async function gzip(data: Uint8Array): Promise<Uint8Array> {
-  const s = new Blob([data as BlobPart]).stream().pipeThrough(new CompressionStream('gzip'));
-  return new Uint8Array(await new Response(s).arrayBuffer());
+async function gzip(
+  data: Uint8Array,
+): Promise<Uint8Array> {
+  const s =
+    new Blob(
+      [
+        data as BlobPart,
+      ],
+    )
+      .stream()
+      .pipeThrough(
+        new CompressionStream(
+          'gzip',
+        ),
+      );
+  return new Uint8Array(
+    await new Response(
+      s,
+    ).arrayBuffer(),
+  );
 }
-function fakeTar(fill: number): Uint8Array {
-  const t = new Uint8Array(1536);
-  t.fill(fill, 0, 100);
-  t.set(new TextEncoder().encode('ustar  \0'), 257);
+function fakeTar(
+  fill: number,
+): Uint8Array {
+  const t =
+    new Uint8Array(
+      1536,
+    );
+  t.fill(
+    fill,
+    0,
+    100,
+  );
+  t.set(
+    new TextEncoder().encode(
+      'ustar  \0',
+    ),
+    257,
+  );
   return t;
 }
 
 /** An environment that records every timer and listener, so teardown can be asserted. */
 function fakeEnv() {
-  const timers = new Map<number, () => void>();
+  const timers =
+    new Map<
+      number,
+      () => void
+    >();
   let next = 1;
-  const timeouts = new Map<number, { cb: () => void; ms: number }>();
+  const timeouts =
+    new Map<
+      number,
+      {
+        cb: () => void;
+        ms: number;
+      }
+    >();
   let nextTimeout = 5000;
-  const listeners = new Map<string, Set<(ev: Event) => void>>();
-  const target = (prefix: string) => ({
-    addEventListener: (t: string, cb: (ev: Event) => void) => {
-      const k = `${prefix}:${t}`;
-      (listeners.get(k) ?? listeners.set(k, new Set()).get(k)!).add(cb);
-    },
-    removeEventListener: (t: string, cb: (ev: Event) => void) =>
-      void listeners.get(`${prefix}:${t}`)?.delete(cb),
-  });
-  const state = { now: 1_000, visibility: 'visible' };
-  const env: SessionEnv = {
-    now: () => state.now,
-    setInterval: (cb) => {
-      timers.set(next, cb);
-      return next++;
-    },
-    clearInterval: (h) => void timers.delete(h as number),
-    setTimeout: (cb, ms) => {
-      timeouts.set(nextTimeout, { cb, ms });
-      return nextTimeout++;
-    },
-    clearTimeout: (h) => void timeouts.delete(h as number),
-    doc: Object.defineProperty(target('doc'), 'visibilityState', {
-      get: () => state.visibility,
-    }) as SessionEnv['doc'],
-    win: target('win'),
-  };
-  const count = (k: string) => listeners.get(k)?.size ?? 0;
-  const fire = (k: string, ev: Event = new Event('x')) =>
-    [...(listeners.get(k) ?? [])].forEach((cb) => cb(ev));
+  const listeners =
+    new Map<
+      string,
+      Set<
+        (
+          ev: Event,
+        ) => void
+      >
+    >();
+  const target =
+    (
+      prefix: string,
+    ) => ({
+      addEventListener:
+        (
+          t: string,
+          cb: (
+            ev: Event,
+          ) => void,
+        ) => {
+          const k = `${prefix}:${t}`;
+          (
+            listeners.get(
+              k,
+            ) ??
+            listeners
+              .set(
+                k,
+                new Set(),
+              )
+              .get(
+                k,
+              )!
+          ).add(
+            cb,
+          );
+        },
+      removeEventListener:
+        (
+          t: string,
+          cb: (
+            ev: Event,
+          ) => void,
+        ) =>
+          void listeners
+            .get(
+              `${prefix}:${t}`,
+            )
+            ?.delete(
+              cb,
+            ),
+    });
+  const state =
+    {
+      now: 1_000,
+      visibility:
+        'visible',
+    };
+  const env: SessionEnv =
+    {
+      now: () =>
+        state.now,
+      setInterval:
+        (
+          cb,
+        ) => {
+          timers.set(
+            next,
+            cb,
+          );
+          return next++;
+        },
+      clearInterval:
+        (
+          h,
+        ) =>
+          void timers.delete(
+            h as number,
+          ),
+      setTimeout:
+        (
+          cb,
+          ms,
+        ) => {
+          timeouts.set(
+            nextTimeout,
+            {
+              cb,
+              ms,
+            },
+          );
+          return nextTimeout++;
+        },
+      clearTimeout:
+        (
+          h,
+        ) =>
+          void timeouts.delete(
+            h as number,
+          ),
+      doc: Object.defineProperty(
+        target(
+          'doc',
+        ),
+        'visibilityState',
+        {
+          get: () =>
+            state.visibility,
+        },
+      ) as SessionEnv['doc'],
+      win: target(
+        'win',
+      ),
+    };
+  const count =
+    (
+      k: string,
+    ) =>
+      listeners.get(
+        k,
+      )
+        ?.size ??
+      0;
+  const fire =
+    (
+      k: string,
+      ev: Event = new Event(
+        'x',
+      ),
+    ) =>
+      [
+        ...(listeners.get(
+          k,
+        ) ??
+          []),
+      ].forEach(
+        (
+          cb,
+        ) =>
+          cb(
+            ev,
+          ),
+      );
   /** Lets every pending bound expire (the deadline of a bounded save). */
-  const expire = () => [...timeouts.values()].forEach((t) => t.cb());
-  return { env, timers, timeouts, expire, state, count, fire };
+  const expire =
+    () =>
+      [
+        ...timeouts.values(),
+      ].forEach(
+        (
+          t,
+        ) =>
+          t.cb(),
+      );
+  return {
+    env,
+    timers,
+    timeouts,
+    expire,
+    state,
+    count,
+    fire,
+  };
 }
 
 function setup(
@@ -68,557 +249,1877 @@ function setup(
     saveError?: Error;
   } = {},
 ) {
-  const share = new Map<string, Uint8Array>();
+  const share =
+    new Map<
+      string,
+      Uint8Array
+    >();
   // The in-memory store reports kind 'memory' (storage blocked); tests act like IndexedDB unless asked.
-  const store = { ...memoryHomeStore(), kind: opts.memory ? ('memory' as const) : ('indexeddb' as const) };
-  const vm = {
-    writeShareFile: async (p: string, d: Uint8Array) => void share.set(p, d),
-    readShareFile: async (p: string) => share.get(p)!,
-    deleteShareFile: async (p: string) => void share.delete(p),
-  };
-  let poweroff: (() => void) | null = null;
-  let savedOnPoweroff: ((bytes: number) => void) | null = null;
+  const store =
+    {
+      ...memoryHomeStore(),
+      kind: opts.memory
+        ? ('memory' as const)
+        : ('indexeddb' as const),
+    };
+  const vm =
+    {
+      writeShareFile:
+        async (
+          p: string,
+          d: Uint8Array,
+        ) =>
+          void share.set(
+            p,
+            d,
+          ),
+      readShareFile:
+        async (
+          p: string,
+        ) =>
+          share.get(
+            p,
+          )!,
+      deleteShareFile:
+        async (
+          p: string,
+        ) =>
+          void share.delete(
+            p,
+          ),
+    };
+  let poweroff:
+    | (() => void)
+    | null =
+    null;
+  let savedOnPoweroff:
+    | ((
+        bytes: number,
+      ) => void)
+    | null =
+    null;
   let held = false;
-  const order: string[] = [];
-  const agent = {
-    startSession: vi.fn(async (): Promise<{ user?: string }> => {
-      order.push('session');
-      return {};
-    }),
-    restore: vi.fn(async () => {
-      order.push('restore');
-      if (opts.restoreError) throw opts.restoreError;
-    }),
-    save: vi.fn(async () => {
-      if (opts.saveError) throw opts.saveError;
-      if (opts.holdSave && !held) {
-        held = true;
-        await opts.holdSave;
-      }
-      share.set(SHARE_ARCHIVE_PATH, fakeTar(9));
-      return { bytes: 1536 };
-    }),
-    onPoweroff: (cb: () => void) => {
-      poweroff = cb;
-      return () => {
-        poweroff = null;
-      };
-    },
-    onSavedOnPoweroff: (cb: (bytes: number) => void) => {
-      savedOnPoweroff = cb;
-      return () => {
-        savedOnPoweroff = null;
-      };
-    },
-  };
-  const sync = new HomeSync({ userId: 'u1', vm, agent, store });
-  const e = fakeEnv();
-  const snaps: SessionSnapshot[] = [];
-  const session = new HomeSession({
-    agent,
+  const order: string[] =
+    [];
+  const agent =
+    {
+      startSession:
+        vi.fn(
+          async (): Promise<{
+            user?: string;
+          }> => {
+            order.push(
+              'session',
+            );
+            return {};
+          },
+        ),
+      restore:
+        vi.fn(
+          async () => {
+            order.push(
+              'restore',
+            );
+            if (
+              opts.restoreError
+            )
+              throw opts.restoreError;
+          },
+        ),
+      save: vi.fn(
+        async () => {
+          if (
+            opts.saveError
+          )
+            throw opts.saveError;
+          if (
+            opts.holdSave &&
+            !held
+          ) {
+            held = true;
+            await opts.holdSave;
+          }
+          share.set(
+            SHARE_ARCHIVE_PATH,
+            fakeTar(
+              9,
+            ),
+          );
+          return {
+            bytes: 1536,
+          };
+        },
+      ),
+      onPoweroff:
+        (
+          cb: () => void,
+        ) => {
+          poweroff =
+            cb;
+          return () => {
+            poweroff =
+              null;
+          };
+        },
+      onSavedOnPoweroff:
+        (
+          cb: (
+            bytes: number,
+          ) => void,
+        ) => {
+          savedOnPoweroff =
+            cb;
+          return () => {
+            savedOnPoweroff =
+              null;
+          };
+        },
+    };
+  const sync =
+    new HomeSync(
+      {
+        userId:
+          'u1',
+        vm,
+        agent,
+        store,
+      },
+    );
+  const e =
+    fakeEnv();
+  const snaps: SessionSnapshot[] =
+    [];
+  const session =
+    new HomeSession(
+      {
+        agent,
+        sync,
+        linuxUser:
+          'zed',
+        autosaveMs: 300_000,
+        env: e.env,
+        onChange:
+          (
+            s,
+          ) =>
+            snaps.push(
+              s,
+            ),
+      },
+    );
+  return {
+    session,
     sync,
-    linuxUser: 'zed',
-    autosaveMs: 300_000,
-    env: e.env,
-    onChange: (s) => snaps.push(s),
-  });
-  return { session, sync, store, agent, share, e, snaps, order, vm, firePoweroff: () => poweroff?.(),
-    fireSavedOnPoweroff: (bytes: number) => savedOnPoweroff?.(bytes),
+    store,
+    agent,
+    share,
+    e,
+    snaps,
+    order,
+    vm,
+    firePoweroff:
+      () =>
+        poweroff?.(),
+    fireSavedOnPoweroff:
+      (
+        bytes: number,
+      ) =>
+        savedOnPoweroff?.(
+          bytes,
+        ),
   };
 }
 
 describe('HomeSession handshake', () => {
   it('prepares, signs in, restores, then runs; the runner only starts once the machine is running', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
-    expect(t.order).toEqual(['session', 'restore']);
-    expect(t.session.snapshot).toMatchObject({ stage: 'running', desktopReady: true });
-    expect(t.e.timers.size).toBe(1);
+    expect(
+      t.order,
+    ).toEqual(
+      [
+        'session',
+        'restore',
+      ],
+    );
+    expect(
+      t
+        .session
+        .snapshot,
+    ).toMatchObject(
+      {
+        stage:
+          'running',
+        desktopReady: true,
+      },
+    );
+    expect(
+      t
+        .e
+        .timers
+        .size,
+    ).toBe(
+      1,
+    );
   });
 
   it('a failed RESTORE is a visible failure and no save is possible', async () => {
-    const t = setup({ restoreError: new AgentError('timeout') });
+    const t =
+      setup(
+        {
+          restoreError:
+            new AgentError(
+              'timeout',
+            ),
+        },
+      );
     await t.session.start();
-    expect(t.session.snapshot).toMatchObject({
-      stage: 'failed',
-      failure: 'handshake',
-      desktopReady: false,
-      error: 'agent: timeout',
-    });
-    expect(await t.session.save()).toEqual({ status: 'failed', code: 'not-running' });
-    expect(t.agent.save).not.toHaveBeenCalled();
-    expect(t.e.timers.size).toBe(0);
-    expect(t.e.count('win:beforeunload')).toBe(0);
-    expect(await t.store.get('u1')).toBeNull();
+    expect(
+      t
+        .session
+        .snapshot,
+    ).toMatchObject(
+      {
+        stage:
+          'failed',
+        failure:
+          'handshake',
+        desktopReady: false,
+        error:
+          'agent: timeout',
+      },
+    );
+    expect(
+      await t.session.save(),
+    ).toEqual(
+      {
+        status:
+          'failed',
+        code: 'not-running',
+      },
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).not.toHaveBeenCalled();
+    expect(
+      t
+        .e
+        .timers
+        .size,
+    ).toBe(
+      0,
+    );
+    expect(
+      t.e.count(
+        'win:beforeunload',
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      await t.store.get(
+        'u1',
+      ),
+    ).toBeNull();
   });
 
   it('an unreadable stored archive stops the boot: corrupt, nothing signed in, nothing overwritten', async () => {
-    const t = setup();
-    const damaged = { archive: new Uint8Array([1, 2, 3]), sha256: 'x', savedAt: 1 };
-    await putEntry(t.store, 'u1', damaged);
+    const t =
+      setup();
+    const damaged =
+      {
+        archive:
+          new Uint8Array(
+            [
+              1,
+              2,
+              3,
+            ],
+          ),
+        sha256:
+          'x',
+        savedAt: 1,
+      };
+    await putEntry(
+      t.store,
+      'u1',
+      damaged,
+    );
     await t.session.start();
-    expect(t.session.snapshot).toMatchObject({ stage: 'failed', failure: 'corrupt' });
-    expect(t.agent.startSession).not.toHaveBeenCalled();
-    expect(await t.session.save()).toEqual({ status: 'failed', code: 'not-running' });
-    expect(t.e.timers.size).toBe(0);
-    expect(await t.store.get('u1')).toEqual(damaged);
+    expect(
+      t
+        .session
+        .snapshot,
+    ).toMatchObject(
+      {
+        stage:
+          'failed',
+        failure:
+          'corrupt',
+      },
+    );
+    expect(
+      t
+        .agent
+        .startSession,
+    ).not.toHaveBeenCalled();
+    expect(
+      await t.session.save(),
+    ).toEqual(
+      {
+        status:
+          'failed',
+        code: 'not-running',
+      },
+    );
+    expect(
+      t
+        .e
+        .timers
+        .size,
+    ).toBe(
+      0,
+    );
+    expect(
+      await t.store.get(
+        'u1',
+      ),
+    ).toEqual(
+      damaged,
+    );
     // The person chooses to start empty: the entry is kept under :damaged.
     await t.session.startEmpty();
-    expect(await t.store.get('u1')).toBeNull();
-    expect(await t.store.get('u1:damaged')).toEqual(damaged);
+    expect(
+      await t.store.get(
+        'u1',
+      ),
+    ).toBeNull();
+    expect(
+      await t.store.get(
+        'u1:damaged',
+      ),
+    ).toEqual(
+      damaged,
+    );
   });
 });
 
 describe('HomeSession saving', () => {
   it('autosave, hiding the tab and a manual save all go through sync.save', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
-    [...t.e.timers.values()][0]!();
-    await vi.waitFor(() => expect(t.session.snapshot.lastSave).not.toBeNull());
-    expect(t.agent.save).toHaveBeenCalledTimes(1);
+    [
+      ...t.e.timers.values(),
+    ][0]!();
+    await vi.waitFor(
+      () =>
+        expect(
+          t
+            .session
+            .snapshot
+            .lastSave,
+        ).not.toBeNull(),
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
     // Clean, and saved a moment ago: hiding the tab has nothing to do.
-    t.e.state.visibility = 'hidden';
-    t.e.fire('doc:visibilitychange');
-    await new Promise((r) => setImmediate(r));
-    expect(t.agent.save).toHaveBeenCalledTimes(1);
+    t.e.state.visibility =
+      'hidden';
+    t.e.fire(
+      'doc:visibilitychange',
+    );
+    await new Promise(
+      (
+        r,
+      ) =>
+        setImmediate(
+          r,
+        ),
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
     // Input since the last save: hiding the tab saves.
     t.session.markDirty();
-    t.e.fire('doc:visibilitychange');
-    await vi.waitFor(() => expect(t.agent.save).toHaveBeenCalledTimes(2));
-    expect((await t.session.save()).status).toMatch(/saved|unchanged/);
+    t.e.fire(
+      'doc:visibilitychange',
+    );
+    await vi.waitFor(
+      () =>
+        expect(
+          t
+            .agent
+            .save,
+        ).toHaveBeenCalledTimes(
+          2,
+        ),
+    );
+    expect(
+      (
+        await t.session.save()
+      )
+        .status,
+    ).toMatch(
+      /saved|unchanged/,
+    );
   });
 
   describe('scheduled saves skip a save that would change nothing', () => {
-    const tick = (t: ReturnType<typeof setup>) => [...t.e.timers.values()][0]!();
-    const hide = (t: ReturnType<typeof setup>) => {
-      t.e.state.visibility = 'hidden';
-      t.e.fire('doc:visibilitychange');
-    };
-    const settle = () => new Promise((r) => setImmediate(r));
+    const tick =
+      (
+        t: ReturnType<
+          typeof setup
+        >,
+      ) =>
+        [
+          ...t.e.timers.values(),
+        ][0]!();
+    const hide =
+      (
+        t: ReturnType<
+          typeof setup
+        >,
+      ) => {
+        t.e.state.visibility =
+          'hidden';
+        t.e.fire(
+          'doc:visibilitychange',
+        );
+      };
+    const settle =
+      () =>
+        new Promise(
+          (
+            r,
+          ) =>
+            setImmediate(
+              r,
+            ),
+        );
 
     it('clean and saved less than 90 % of an interval ago: neither the tick nor hiding saves', async () => {
-      const t = setup();
+      const t =
+        setup();
       await t.session.start();
       await t.session.save();
-      expect(t.agent.save).toHaveBeenCalledTimes(1);
+      expect(
+        t
+          .agent
+          .save,
+      ).toHaveBeenCalledTimes(
+        1,
+      );
       t.e.state.now += 200_000;
-      tick(t);
-      hide(t);
+      tick(
+        t,
+      );
+      hide(
+        t,
+      );
       await settle();
-      expect(t.agent.save).toHaveBeenCalledTimes(1);
+      expect(
+        t
+          .agent
+          .save,
+      ).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
     it('a good save older than that is saved again (background programs change files without input)', async () => {
-      const t = setup();
+      const t =
+        setup();
       await t.session.start();
       await t.session.save();
       t.e.state.now += 280_000; // the next tick is 300 s after the last one: the margin lets it through
-      tick(t);
-      await vi.waitFor(() => expect(t.agent.save).toHaveBeenCalledTimes(2));
+      tick(
+        t,
+      );
+      await vi.waitFor(
+        () =>
+          expect(
+            t
+              .agent
+              .save,
+          ).toHaveBeenCalledTimes(
+            2,
+          ),
+      );
     });
 
     it('dirty, a failed last save, or never saved: the scheduled save runs', async () => {
-      const t = setup();
+      const t =
+        setup();
       await t.session.start();
-      tick(t); // never saved
-      await vi.waitFor(() => expect(t.session.snapshot.lastSave).not.toBeNull());
-      expect(t.agent.save).toHaveBeenCalledTimes(1);
+      tick(
+        t,
+      ); // never saved
+      await vi.waitFor(
+        () =>
+          expect(
+            t
+              .session
+              .snapshot
+              .lastSave,
+          ).not.toBeNull(),
+      );
+      expect(
+        t
+          .agent
+          .save,
+      ).toHaveBeenCalledTimes(
+        1,
+      );
       t.session.markDirty();
-      tick(t);
-      await vi.waitFor(() => expect(t.agent.save).toHaveBeenCalledTimes(2));
+      tick(
+        t,
+      );
+      await vi.waitFor(
+        () =>
+          expect(
+            t
+              .agent
+              .save,
+          ).toHaveBeenCalledTimes(
+            2,
+          ),
+      );
 
-      const f = setup({ saveError: new AgentError('timeout') });
+      const f =
+        setup(
+          {
+            saveError:
+              new AgentError(
+                'timeout',
+              ),
+          },
+        );
       await f.session.start();
       await f.session.save(); // fails
       f.e.state.now += 1_000;
-      hide(f);
-      await vi.waitFor(() => expect(f.agent.save).toHaveBeenCalledTimes(2));
+      hide(
+        f,
+      );
+      await vi.waitFor(
+        () =>
+          expect(
+            f
+              .agent
+              .save,
+          ).toHaveBeenCalledTimes(
+            2,
+          ),
+      );
     });
 
     it('a manual save is never skipped', async () => {
-      const t = setup();
+      const t =
+        setup();
       await t.session.start();
       await t.session.save();
       await t.session.save();
-      expect(t.agent.save).toHaveBeenCalledTimes(2);
+      expect(
+        t
+          .agent
+          .save,
+      ).toHaveBeenCalledTimes(
+        2,
+      );
     });
   });
 
   it('input marks the session dirty; a good save clears it, input during a save does not', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
     t.session.markDirty();
-    expect(t.session.snapshot.dirty).toBe(true);
+    expect(
+      t
+        .session
+        .snapshot
+        .dirty,
+    ).toBe(
+      true,
+    );
     await t.session.save();
-    expect(t.session.snapshot.dirty).toBe(false);
-    const p = t.session.save();
+    expect(
+      t
+        .session
+        .snapshot
+        .dirty,
+    ).toBe(
+      false,
+    );
+    const p =
+      t.session.save();
     t.session.markDirty();
     await p;
-    expect(t.session.snapshot.dirty).toBe(true);
+    expect(
+      t
+        .session
+        .snapshot
+        .dirty,
+    ).toBe(
+      true,
+    );
   });
 
   it('importing a backup suspends saves: the store keeps the backup', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
-    const backup = await gzip(fakeTar(5));
-    await t.session.importBackup(backup);
-    const r = await t.session.save();
-    expect(r).toEqual({ status: 'failed', code: 'suspended' });
-    expect(t.agent.save).not.toHaveBeenCalled();
-    expect((await t.store.get('u1'))!.archive).toEqual(backup);
+    const backup =
+      await gzip(
+        fakeTar(
+          5,
+        ),
+      );
+    await t.session.importBackup(
+      backup,
+    );
+    const r =
+      await t.session.save();
+    expect(
+      r,
+    ).toEqual(
+      {
+        status:
+          'failed',
+        code: 'suspended',
+      },
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).not.toHaveBeenCalled();
+    expect(
+      (await t.store.get(
+        'u1',
+      ))!
+        .archive,
+    ).toEqual(
+      backup,
+    );
   });
 
   it('guest power-off: one last save, then everything is torn down', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
     t.firePoweroff();
-    await vi.waitFor(() => expect(t.session.snapshot.stage).toBe('stopped'));
-    expect(t.agent.save).toHaveBeenCalledTimes(1);
-    expect(t.session.snapshot.desktopReady).toBe(false);
-    expect(t.e.timers.size).toBe(0);
-    expect(t.e.count('win:beforeunload')).toBe(0);
+    await vi.waitFor(
+      () =>
+        expect(
+          t
+            .session
+            .snapshot
+            .stage,
+        ).toBe(
+          'stopped',
+        ),
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      t
+        .session
+        .snapshot
+        .desktopReady,
+    ).toBe(
+      false,
+    );
+    expect(
+      t
+        .e
+        .timers
+        .size,
+    ).toBe(
+      0,
+    );
+    expect(
+      t.e.count(
+        'win:beforeunload',
+      ),
+    ).toBe(
+      0,
+    );
   });
 });
 
 describe('HomeSession teardown', () => {
   it('machineStopped clears the timer and the listeners and blocks saves', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
-    expect(t.e.count('doc:visibilitychange')).toBe(1);
-    expect(t.e.count('win:beforeunload')).toBe(1);
-    t.session.machineStopped('failed');
-    expect(t.session.snapshot).toMatchObject({ stage: 'failed', desktopReady: false });
-    expect(t.e.timers.size).toBe(0);
-    expect(t.e.count('doc:visibilitychange')).toBe(0);
-    expect(t.e.count('win:beforeunload')).toBe(0);
-    expect(await t.session.save()).toEqual({ status: 'failed', code: 'not-running' });
+    expect(
+      t.e.count(
+        'doc:visibilitychange',
+      ),
+    ).toBe(
+      1,
+    );
+    expect(
+      t.e.count(
+        'win:beforeunload',
+      ),
+    ).toBe(
+      1,
+    );
+    t.session.machineStopped(
+      'failed',
+    );
+    expect(
+      t
+        .session
+        .snapshot,
+    ).toMatchObject(
+      {
+        stage:
+          'failed',
+        desktopReady: false,
+      },
+    );
+    expect(
+      t
+        .e
+        .timers
+        .size,
+    ).toBe(
+      0,
+    );
+    expect(
+      t.e.count(
+        'doc:visibilitychange',
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      t.e.count(
+        'win:beforeunload',
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      await t.session.save(),
+    ).toEqual(
+      {
+        status:
+          'failed',
+        code: 'not-running',
+      },
+    );
   });
 
   it('dispose removes timers and listeners and silences later updates', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
-    const seen = t.snaps.length;
+    const seen =
+      t
+        .snaps
+        .length;
     t.session.dispose();
-    expect(t.e.timers.size).toBe(0);
-    expect(t.e.count('doc:visibilitychange')).toBe(0);
-    expect(t.e.count('win:beforeunload')).toBe(0);
+    expect(
+      t
+        .e
+        .timers
+        .size,
+    ).toBe(
+      0,
+    );
+    expect(
+      t.e.count(
+        'doc:visibilitychange',
+      ),
+    ).toBe(
+      0,
+    );
+    expect(
+      t.e.count(
+        'win:beforeunload',
+      ),
+    ).toBe(
+      0,
+    );
     t.session.markDirty();
-    expect(await t.session.save()).toEqual({ status: 'failed', code: 'not-running' });
-    expect(t.snaps.length).toBe(seen);
+    expect(
+      await t.session.save(),
+    ).toEqual(
+      {
+        status:
+          'failed',
+        code: 'not-running',
+      },
+    );
+    expect(
+      t
+        .snaps
+        .length,
+    ).toBe(
+      seen,
+    );
   });
 
   it('dispose during the handshake: it never becomes running', async () => {
-    const t = setup();
-    const started = t.session.start();
+    const t =
+      setup();
+    const started =
+      t.session.start();
     t.session.dispose();
     await started;
-    expect(t.e.timers.size).toBe(0);
-    expect(t.session.snapshot.stage).not.toBe('running');
+    expect(
+      t
+        .e
+        .timers
+        .size,
+    ).toBe(
+      0,
+    );
+    expect(
+      t
+        .session
+        .snapshot
+        .stage,
+    ).not.toBe(
+      'running',
+    );
   });
 
   describe('the unload prompt', () => {
-    const ask = (t: ReturnType<typeof setup>) => {
-      const ev = new Event('beforeunload', { cancelable: true });
-      t.e.fire('win:beforeunload', ev);
-      return ev.defaultPrevented;
-    };
+    const ask =
+      (
+        t: ReturnType<
+          typeof setup
+        >,
+      ) => {
+        const ev =
+          new Event(
+            'beforeunload',
+            {
+              cancelable: true,
+            },
+          );
+        t.e.fire(
+          'win:beforeunload',
+          ev,
+        );
+        return ev.defaultPrevented;
+      };
 
     it('does not ask right after a good save', async () => {
-      const t = setup();
+      const t =
+        setup();
       await t.session.start();
-      expect(ask(t)).toBe(false);
+      expect(
+        ask(
+          t,
+        ),
+      ).toBe(
+        false,
+      );
       await t.session.save();
-      expect(ask(t)).toBe(false);
+      expect(
+        ask(
+          t,
+        ),
+      ).toBe(
+        false,
+      );
     });
 
     it('asks while the toolbar says Unsaved changes (dirty), however recent the last save', async () => {
-      const t = setup();
+      const t =
+        setup();
       await t.session.start();
       await t.session.save();
       t.session.markDirty();
-      expect(ask(t)).toBe(true);
+      expect(
+        ask(
+          t,
+        ),
+      ).toBe(
+        true,
+      );
       await t.session.save();
-      expect(ask(t)).toBe(false);
+      expect(
+        ask(
+          t,
+        ),
+      ).toBe(
+        false,
+      );
     });
 
     it('asks while a save is still running', async () => {
-      const t = setup();
+      const t =
+        setup();
       await t.session.start();
       let release!: () => void;
       t.agent.save.mockImplementationOnce(
         () =>
-          new Promise((resolve) => {
-            release = () => {
-              t.share.set(SHARE_ARCHIVE_PATH, fakeTar(9));
-              resolve({ bytes: 1536 });
-            };
-          }),
+          new Promise(
+            (
+              resolve,
+            ) => {
+              release =
+                () => {
+                  t.share.set(
+                    SHARE_ARCHIVE_PATH,
+                    fakeTar(
+                      9,
+                    ),
+                  );
+                  resolve(
+                    {
+                      bytes: 1536,
+                    },
+                  );
+                };
+            },
+          ),
       );
-      const saving = t.session.save();
-      expect(t.session.snapshot.saving).toBe(true);
-      expect(ask(t)).toBe(true);
+      const saving =
+        t.session.save();
+      expect(
+        t
+          .session
+          .snapshot
+          .saving,
+      ).toBe(
+        true,
+      );
+      expect(
+        ask(
+          t,
+        ),
+      ).toBe(
+        true,
+      );
       release();
       await saving;
-      expect(ask(t)).toBe(false);
+      expect(
+        ask(
+          t,
+        ),
+      ).toBe(
+        false,
+      );
     });
 
     it('asks when the last save failed', async () => {
-      const t = setup();
+      const t =
+        setup();
       await t.session.start();
-      t.agent.save.mockRejectedValueOnce(new AgentError('timeout'));
+      t.agent.save.mockRejectedValueOnce(
+        new AgentError(
+          'timeout',
+        ),
+      );
       await t.session.save();
-      expect(t.session.snapshot.lastSave?.result.status).toBe('failed');
-      expect(ask(t)).toBe(true);
+      expect(
+        t
+          .session
+          .snapshot
+          .lastSave
+          ?.result
+          .status,
+      ).toBe(
+        'failed',
+      );
+      expect(
+        ask(
+          t,
+        ),
+      ).toBe(
+        true,
+      );
     });
 
     it('asks when the last good save is older than one autosave interval', async () => {
-      const t = setup();
+      const t =
+        setup();
       await t.session.start();
-      expect(ask(t)).toBe(false);
+      expect(
+        ask(
+          t,
+        ),
+      ).toBe(
+        false,
+      );
       t.e.state.now += 400_000;
-      expect(ask(t)).toBe(true);
+      expect(
+        ask(
+          t,
+        ),
+      ).toBe(
+        true,
+      );
     });
   });
 
   it('dispose during a save: nothing is written afterwards', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
     let release!: () => void;
     t.agent.save.mockImplementationOnce(
       () =>
-        new Promise((resolve) => {
-          release = () => {
-            t.share.set(SHARE_ARCHIVE_PATH, fakeTar(9));
-            resolve({ bytes: 1536 });
-          };
-        }),
+        new Promise(
+          (
+            resolve,
+          ) => {
+            release =
+              () => {
+                t.share.set(
+                  SHARE_ARCHIVE_PATH,
+                  fakeTar(
+                    9,
+                  ),
+                );
+                resolve(
+                  {
+                    bytes: 1536,
+                  },
+                );
+              };
+          },
+        ),
     );
-    const saving = t.session.save();
+    const saving =
+      t.session.save();
     t.session.dispose();
     release();
     await saving;
-    expect(await t.store.get('u1')).toBeNull();
+    expect(
+      await t.store.get(
+        'u1',
+      ),
+    ).toBeNull();
   });
 
   it('a failed handshake offers the previous files back when a backup replaced them', async () => {
-    const t = setup({ restoreError: new AgentError('timeout') });
-    const old = { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 };
-    await putEntry(t.store, 'u1', old);
-    await t.sync.importArchive(await gzip(fakeTar(8))); // as the page does before restarting
-    const fresh = new HomeSession({
-      agent: t.agent,
-      sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
-      linuxUser: 'zed',
-      autosaveMs: 300_000,
-      env: t.e.env,
-      onChange: () => {},
-    });
+    const t =
+      setup(
+        {
+          restoreError:
+            new AgentError(
+              'timeout',
+            ),
+        },
+      );
+    const old =
+      {
+        archive:
+          await gzip(
+            fakeTar(
+              1,
+            ),
+          ),
+        sha256:
+          'old',
+        savedAt: 1,
+      };
+    await putEntry(
+      t.store,
+      'u1',
+      old,
+    );
+    await t.sync.importArchive(
+      await gzip(
+        fakeTar(
+          8,
+        ),
+      ),
+    ); // as the page does before restarting
+    const fresh =
+      new HomeSession(
+        {
+          agent:
+            t.agent,
+          sync: new HomeSync(
+            {
+              userId:
+                'u1',
+              vm: t.vm,
+              agent:
+                t.agent,
+              store:
+                t.store,
+            },
+          ),
+          linuxUser:
+            'zed',
+          autosaveMs: 300_000,
+          env: t
+            .e
+            .env,
+          onChange:
+            () => {},
+        },
+      );
     await fresh.start();
-    expect(fresh.snapshot).toMatchObject({
-      stage: 'failed',
-      failure: 'handshake',
-      previousAvailable: true,
-      previousSavedAt: 1,
-    });
+    expect(
+      fresh.snapshot,
+    ).toMatchObject(
+      {
+        stage:
+          'failed',
+        failure:
+          'handshake',
+        previousAvailable: true,
+        previousSavedAt: 1,
+      },
+    );
     await fresh.putPreviousBack();
-    expect(await t.store.get('u1')).toEqual(old);
+    expect(
+      await t.store.get(
+        'u1',
+      ),
+    ).toEqual(
+      old,
+    );
   });
 
   it('put-back is not offered when a save has changed the main entry since the backup', async () => {
-    const t = setup({ restoreError: new AgentError('timeout') });
-    await putEntry(t.store, 'u1', { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 });
-    await t.sync.importArchive(await gzip(fakeTar(8)));
-    await putEntry(t.store, 'u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 7 }); // work saved after the restore
-    const fresh = new HomeSession({
-      agent: t.agent,
-      sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
-      linuxUser: 'zed',
-      autosaveMs: 300_000,
-      env: t.e.env,
-      onChange: () => {},
-    });
+    const t =
+      setup(
+        {
+          restoreError:
+            new AgentError(
+              'timeout',
+            ),
+        },
+      );
+    await putEntry(
+      t.store,
+      'u1',
+      {
+        archive:
+          await gzip(
+            fakeTar(
+              1,
+            ),
+          ),
+        sha256:
+          'old',
+        savedAt: 1,
+      },
+    );
+    await t.sync.importArchive(
+      await gzip(
+        fakeTar(
+          8,
+        ),
+      ),
+    );
+    await putEntry(
+      t.store,
+      'u1',
+      {
+        archive:
+          await gzip(
+            fakeTar(
+              9,
+            ),
+          ),
+        sha256:
+          'newer',
+        savedAt: 7,
+      },
+    ); // work saved after the restore
+    const fresh =
+      new HomeSession(
+        {
+          agent:
+            t.agent,
+          sync: new HomeSync(
+            {
+              userId:
+                'u1',
+              vm: t.vm,
+              agent:
+                t.agent,
+              store:
+                t.store,
+            },
+          ),
+          linuxUser:
+            'zed',
+          autosaveMs: 300_000,
+          env: t
+            .e
+            .env,
+          onChange:
+            () => {},
+        },
+      );
     await fresh.start();
-    expect(fresh.snapshot).toMatchObject({ stage: 'failed', previousAvailable: false, previousSavedAt: null });
-    expect(await t.store.get('u1:replaced')).toBeNull(); // dropped at start
-    await expect(fresh.putPreviousBack()).rejects.toMatchObject({ code: 'previous_stale' });
+    expect(
+      fresh.snapshot,
+    ).toMatchObject(
+      {
+        stage:
+          'failed',
+        previousAvailable: false,
+        previousSavedAt:
+          null,
+      },
+    );
+    expect(
+      await t.store.get(
+        'u1:replaced',
+      ),
+    ).toBeNull(); // dropped at start
+    await expect(
+      fresh.putPreviousBack(),
+    ).rejects.toMatchObject(
+      {
+        code: 'previous_stale',
+      },
+    );
   });
 
   it('with storage blocked (in-memory store) the unload prompt asks whenever the desktop is ready', async () => {
-    const t = setup({ memory: true });
+    const t =
+      setup(
+        {
+          memory: true,
+        },
+      );
     await t.session.start();
     await t.session.save();
-    expect(t.session.snapshot.storeKind).toBe('memory');
-    expect(t.session.snapshot.dirty).toBe(false);
-    const ev = new Event('beforeunload', { cancelable: true });
-    t.e.fire('win:beforeunload', ev);
-    expect(ev.defaultPrevented).toBe(true);
+    expect(
+      t
+        .session
+        .snapshot
+        .storeKind,
+    ).toBe(
+      'memory',
+    );
+    expect(
+      t
+        .session
+        .snapshot
+        .dirty,
+    ).toBe(
+      false,
+    );
+    const ev =
+      new Event(
+        'beforeunload',
+        {
+          cancelable: true,
+        },
+      );
+    t.e.fire(
+      'win:beforeunload',
+      ev,
+    );
+    expect(
+      ev.defaultPrevented,
+    ).toBe(
+      true,
+    );
   });
 
   it('after a previous_stale refusal the offer is withdrawn from the snapshot', async () => {
-    const t = setup({ restoreError: new AgentError('timeout') });
-    await putEntry(t.store, 'u1', { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 });
-    await t.sync.importArchive(await gzip(fakeTar(8)));
-    const fresh = new HomeSession({
-      agent: t.agent,
-      sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
-      linuxUser: 'zed',
-      autosaveMs: 300_000,
-      env: t.e.env,
-      onChange: () => {},
-    });
+    const t =
+      setup(
+        {
+          restoreError:
+            new AgentError(
+              'timeout',
+            ),
+        },
+      );
+    await putEntry(
+      t.store,
+      'u1',
+      {
+        archive:
+          await gzip(
+            fakeTar(
+              1,
+            ),
+          ),
+        sha256:
+          'old',
+        savedAt: 1,
+      },
+    );
+    await t.sync.importArchive(
+      await gzip(
+        fakeTar(
+          8,
+        ),
+      ),
+    );
+    const fresh =
+      new HomeSession(
+        {
+          agent:
+            t.agent,
+          sync: new HomeSync(
+            {
+              userId:
+                'u1',
+              vm: t.vm,
+              agent:
+                t.agent,
+              store:
+                t.store,
+            },
+          ),
+          linuxUser:
+            'zed',
+          autosaveMs: 300_000,
+          env: t
+            .e
+            .env,
+          onChange:
+            () => {},
+        },
+      );
     await fresh.start();
-    expect(fresh.snapshot.previousAvailable).toBe(true);
+    expect(
+      fresh
+        .snapshot
+        .previousAvailable,
+    ).toBe(
+      true,
+    );
     // Another tab saves over the restored backup while the failure screen is up.
-    await putEntry(t.store, 'u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 7 });
-    await expect(fresh.putPreviousBack()).rejects.toMatchObject({ code: 'previous_stale' });
-    expect(fresh.snapshot).toMatchObject({ previousAvailable: false, previousSavedAt: null });
+    await putEntry(
+      t.store,
+      'u1',
+      {
+        archive:
+          await gzip(
+            fakeTar(
+              9,
+            ),
+          ),
+        sha256:
+          'newer',
+        savedAt: 7,
+      },
+    );
+    await expect(
+      fresh.putPreviousBack(),
+    ).rejects.toMatchObject(
+      {
+        code: 'previous_stale',
+      },
+    );
+    expect(
+      fresh.snapshot,
+    ).toMatchObject(
+      {
+        previousAvailable: false,
+        previousSavedAt:
+          null,
+      },
+    );
   });
 });
 
 describe('leaving without a browser unload', () => {
   it('nothing unsaved: leaves at once, without a save', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
-    expect(await t.session.saveBeforeLeaving()).toBe(true);
-    expect(t.agent.save).not.toHaveBeenCalled();
+    expect(
+      await t.session.saveBeforeLeaving(),
+    ).toBe(
+      true,
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).not.toHaveBeenCalled();
   });
 
   it('unsaved changes: one save lands in the store, then it is safe to leave', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
     t.session.markDirty();
-    expect(await t.session.saveBeforeLeaving()).toBe(true);
-    expect(t.agent.save).toHaveBeenCalledTimes(1);
-    expect(await t.store.get('u1')).not.toBeNull();
-    expect(t.session.snapshot.dirty).toBe(false);
+    expect(
+      await t.session.saveBeforeLeaving(),
+    ).toBe(
+      true,
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      await t.store.get(
+        'u1',
+      ),
+    ).not.toBeNull();
+    expect(
+      t
+        .session
+        .snapshot
+        .dirty,
+    ).toBe(
+      false,
+    );
   });
 
   it('a save that fails means the person is asked', async () => {
-    const t = setup({ saveError: new AgentError('timeout') });
+    const t =
+      setup(
+        {
+          saveError:
+            new AgentError(
+              'timeout',
+            ),
+        },
+      );
     await t.session.start();
     t.session.markDirty();
-    expect(await t.session.saveBeforeLeaving()).toBe(false);
-    expect(await t.store.get('u1')).toBeNull();
+    expect(
+      await t.session.saveBeforeLeaving(),
+    ).toBe(
+      false,
+    );
+    expect(
+      await t.store.get(
+        'u1',
+      ),
+    ).toBeNull();
   });
 
   it('a save that never answers is given up on at the bound, and the person is asked', async () => {
     let release!: () => void;
-    const t = setup({ holdSave: new Promise<void>((r) => (release = r)) });
+    const t =
+      setup(
+        {
+          holdSave:
+            new Promise<void>(
+              (
+                r,
+              ) =>
+                (release =
+                  r),
+            ),
+        },
+      );
     await t.session.start();
     t.session.markDirty();
-    const leaving = t.session.saveBeforeLeaving(15_000);
+    const leaving =
+      t.session.saveBeforeLeaving(
+        15_000,
+      );
     await Promise.resolve();
-    expect([...t.e.timeouts.values()].map((x) => x.ms)).toContain(15_000);
+    expect(
+      [
+        ...t.e.timeouts.values(),
+      ].map(
+        (
+          x,
+        ) =>
+          x.ms,
+      ),
+    ).toContain(
+      15_000,
+    );
     t.e.expire();
-    expect(await leaving).toBe(false);
+    expect(
+      await leaving,
+    ).toBe(
+      false,
+    );
     release();
   });
 
   it('with storage blocked a save would die with the page: the person is asked, nothing is attempted', async () => {
-    const t = setup({ memory: true });
+    const t =
+      setup(
+        {
+          memory: true,
+        },
+      );
     await t.session.start();
     t.session.markDirty();
-    expect(await t.session.saveBeforeLeaving()).toBe(false);
-    expect(t.agent.save).not.toHaveBeenCalled();
+    expect(
+      await t.session.saveBeforeLeaving(),
+    ).toBe(
+      false,
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).not.toHaveBeenCalled();
   });
 
   it('a machine that is no longer running has nothing to lose', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
     t.session.markDirty();
-    t.session.machineStopped('stopped');
-    expect(await t.session.saveBeforeLeaving()).toBe(true);
+    t.session.machineStopped(
+      'stopped',
+    );
+    expect(
+      await t.session.saveBeforeLeaving(),
+    ).toBe(
+      true,
+    );
   });
 });
 
 describe('power-off and a machine that stops mid-handshake', () => {
   it('the power-off save has its own 10 s bound when it joins a save already in flight', async () => {
     let release!: () => void;
-    const t = setup({ holdSave: new Promise<void>((r) => (release = r)) });
+    const t =
+      setup(
+        {
+          holdSave:
+            new Promise<void>(
+              (
+                r,
+              ) =>
+                (release =
+                  r),
+            ),
+        },
+      );
     await t.session.start();
     t.session.markDirty();
-    const autosave = t.session.save(); // in flight, never answering
+    const autosave =
+      t.session.save(); // in flight, never answering
     await Promise.resolve();
     t.firePoweroff();
     await Promise.resolve();
-    expect([...t.e.timeouts.values()].map((x) => x.ms)).toContain(10_000);
+    expect(
+      [
+        ...t.e.timeouts.values(),
+      ].map(
+        (
+          x,
+        ) =>
+          x.ms,
+      ),
+    ).toContain(
+      10_000,
+    );
     t.e.expire();
-    await new Promise((r) => setImmediate(r));
-    expect(t.session.snapshot.stage).toBe('stopped');
+    await new Promise(
+      (
+        r,
+      ) =>
+        setImmediate(
+          r,
+        ),
+    );
+    expect(
+      t
+        .session
+        .snapshot
+        .stage,
+    ).toBe(
+      'stopped',
+    );
     // The superseded save finishes late: it reports nothing after "stopped".
-    const seen = t.snaps.length;
+    const seen =
+      t
+        .snaps
+        .length;
     release();
     await autosave;
-    expect(t.snaps.length).toBe(seen);
-    expect(t.session.snapshot.lastSave?.result).toMatchObject({ status: 'failed', code: 'timeout' });
+    expect(
+      t
+        .snaps
+        .length,
+    ).toBe(
+      seen,
+    );
+    expect(
+      t
+        .session
+        .snapshot
+        .lastSave
+        ?.result,
+    ).toMatchObject(
+      {
+        status:
+          'failed',
+        code: 'timeout',
+      },
+    );
   });
 
   it('a machine that stops while the handshake waits is not overwritten with "handshake"', async () => {
-    let fail!: (e: Error) => void;
-    const t = setup();
-    t.agent.restore.mockImplementation(() => new Promise<void>((_, rej) => (fail = rej)));
-    const started = t.session.start();
-    await new Promise((r) => setImmediate(r));
-    t.session.machineStopped('failed');
-    fail(new AgentError('closed'));
+    let fail!: (
+      e: Error,
+    ) => void;
+    const t =
+      setup();
+    t.agent.restore.mockImplementation(
+      () =>
+        new Promise<void>(
+          (
+            _,
+            rej,
+          ) =>
+            (fail =
+              rej),
+        ),
+    );
+    const started =
+      t.session.start();
+    await new Promise(
+      (
+        r,
+      ) =>
+        setImmediate(
+          r,
+        ),
+    );
+    t.session.machineStopped(
+      'failed',
+    );
+    fail(
+      new AgentError(
+        'closed',
+      ),
+    );
     await started;
-    expect(t.session.snapshot).toMatchObject({ stage: 'failed', failure: null });
+    expect(
+      t
+        .session
+        .snapshot,
+    ).toMatchObject(
+      {
+        stage:
+          'failed',
+        failure:
+          null,
+      },
+    );
   });
 
   it('a restore that succeeds after the machine stopped does not start a session', async () => {
     let ok!: () => void;
-    const t = setup();
-    t.agent.restore.mockImplementation(() => new Promise<void>((r) => (ok = r)));
-    const started = t.session.start();
-    await new Promise((r) => setImmediate(r));
-    t.session.machineStopped('stopped');
+    const t =
+      setup();
+    t.agent.restore.mockImplementation(
+      () =>
+        new Promise<void>(
+          (
+            r,
+          ) =>
+            (ok =
+              r),
+        ),
+    );
+    const started =
+      t.session.start();
+    await new Promise(
+      (
+        r,
+      ) =>
+        setImmediate(
+          r,
+        ),
+    );
+    t.session.machineStopped(
+      'stopped',
+    );
     ok();
     await started;
-    expect(t.session.snapshot.stage).toBe('stopped');
-    expect(t.e.timers.size).toBe(0);
+    expect(
+      t
+        .session
+        .snapshot
+        .stage,
+    ).toBe(
+      'stopped',
+    );
+    expect(
+      t
+        .e
+        .timers
+        .size,
+    ).toBe(
+      0,
+    );
   });
 });
 
 describe('saved-on-poweroff and the session name', () => {
   it('the name the guest reports is kept on the snapshot', async () => {
-    const t = setup();
-    t.agent.startSession.mockResolvedValueOnce({ user: 'zed2' });
+    const t =
+      setup();
+    t.agent.startSession.mockResolvedValueOnce(
+      {
+        user: 'zed2',
+      },
+    );
     await t.session.start();
-    expect(t.session.snapshot.linuxName).toBe('zed2');
-    const none = setup();
+    expect(
+      t
+        .session
+        .snapshot
+        .linuxName,
+    ).toBe(
+      'zed2',
+    );
+    const none =
+      setup();
     await none.session.start();
-    expect(none.session.snapshot.linuxName).toBeNull();
+    expect(
+      none
+        .session
+        .snapshot
+        .linuxName,
+    ).toBeNull();
   });
 
   it('a tar the guest already saved is stored without a SAVE round trip, then the machine stops', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
     t.session.markDirty();
-    t.share.set(SHARE_ARCHIVE_PATH, fakeTar(7));
-    t.fireSavedOnPoweroff(1536);
+    t.share.set(
+      SHARE_ARCHIVE_PATH,
+      fakeTar(
+        7,
+      ),
+    );
+    t.fireSavedOnPoweroff(
+      1536,
+    );
     t.firePoweroff();
-    await vi.waitFor(() => expect(t.session.snapshot.stage).toBe('stopped'));
-    expect(t.agent.save).not.toHaveBeenCalled();
-    expect(await t.store.get('u1')).not.toBeNull();
-    expect(t.session.snapshot.lastSave?.result.status).toBe('saved');
+    await vi.waitFor(
+      () =>
+        expect(
+          t
+            .session
+            .snapshot
+            .stage,
+        ).toBe(
+          'stopped',
+        ),
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).not.toHaveBeenCalled();
+    expect(
+      await t.store.get(
+        'u1',
+      ),
+    ).not.toBeNull();
+    expect(
+      t
+        .session
+        .snapshot
+        .lastSave
+        ?.result
+        .status,
+    ).toBe(
+      'saved',
+    );
   });
 
   it('a power-off with no saved-on-poweroff still sends one SAVE', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
     t.firePoweroff();
-    await vi.waitFor(() => expect(t.session.snapshot.stage).toBe('stopped'));
-    expect(t.agent.save).toHaveBeenCalledTimes(1);
+    await vi.waitFor(
+      () =>
+        expect(
+          t
+            .session
+            .snapshot
+            .stage,
+        ).toBe(
+          'stopped',
+        ),
+    );
+    expect(
+      t
+        .agent
+        .save,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
   });
 
   it('a tar whose length is not what the guest said is refused, and nothing is stored', async () => {
-    const t = setup();
+    const t =
+      setup();
     await t.session.start();
-    t.share.set(SHARE_ARCHIVE_PATH, fakeTar(7));
-    t.fireSavedOnPoweroff(999);
+    t.share.set(
+      SHARE_ARCHIVE_PATH,
+      fakeTar(
+        7,
+      ),
+    );
+    t.fireSavedOnPoweroff(
+      999,
+    );
     t.firePoweroff();
-    await vi.waitFor(() => expect(t.session.snapshot.stage).toBe('stopped'));
-    expect(await t.store.get('u1')).toBeNull();
-    expect(t.session.snapshot.lastSave?.result).toMatchObject({ status: 'failed', code: 'bad_archive' });
+    await vi.waitFor(
+      () =>
+        expect(
+          t
+            .session
+            .snapshot
+            .stage,
+        ).toBe(
+          'stopped',
+        ),
+    );
+    expect(
+      await t.store.get(
+        'u1',
+      ),
+    ).toBeNull();
+    expect(
+      t
+        .session
+        .snapshot
+        .lastSave
+        ?.result,
+    ).toMatchObject(
+      {
+        status:
+          'failed',
+        code: 'bad_archive',
+      },
+    );
   });
 });

@@ -10,22 +10,20 @@
 # the stop script announces once. Without a session there is nothing to save.
 PORT=/dev/ttyS1
 SHARE=/mnt/host
-ARCHIVE=$SHARE/sync/home.tar
 [ -e /run/rmhos-poweroff ] && exit 0
 : >/run/rmhos-poweroff
 user=$(cat /run/rmhos-session-user 2>/dev/null)
 if [ -n "$user" ] && [ -d "/home/$user" ] && grep -q " $SHARE 9p " /proc/mounts 2>/dev/null; then
-	mkdir -p "$SHARE/sync"
-	# exit 1 = a file changed while it was read (the desktop is still writing): complete, not a failure
-	tar -cpf "$ARCHIVE" -C "/home/$user" . 2>/dev/null
-	rc=$?
-	if [ "$rc" -le 1 ]; then
-		bytes=$(wc -c <"$ARCHIVE")
-		set -- $bytes
-		printf 'RMHOS SAVED_ON_POWEROFF %s\n' "$1" >"$PORT" 2>/dev/null
+	# rmhos-save-home writes to a temporary name and renames under a lock: the agent's SAVE may be
+	# writing the same file right now.
+	if bytes=$(/usr/local/bin/rmhos-save-home "$user"); then
+		printf 'RMHOS SAVED_ON_POWEROFF %s\n' "$bytes" >"$PORT" 2>/dev/null
 	else
-		rm -f "$ARCHIVE"
-		printf 'rmhos-poweroff-save: could not tar /home/%s\n' "$user" >/dev/ttyS0 2>/dev/null
+		if [ "$?" = 2 ]; then
+			printf 'rmhos-poweroff-save: save skipped, another save held the lock for 30 s\n' >/dev/ttyS0 2>/dev/null
+		else
+			printf 'rmhos-poweroff-save: could not tar /home/%s\n' "$user" >/dev/ttyS0 2>/dev/null
+		fi
 	fi
 fi
 printf 'RMHOS POWEROFF\n' >"$PORT" 2>/dev/null

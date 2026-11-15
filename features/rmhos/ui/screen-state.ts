@@ -12,5 +12,10 @@ export function screenInteractive(input: {
   /** A boot, failure or signed-out panel is over the screen. */
   overlay: boolean;
 }): boolean {
-  return input.phase === 'running' && input.desktopReady && !input.overlay;
+  return (
+    input.phase ===
+      'running' &&
+    input.desktopReady &&
+    !input.overlay
+  );
 }

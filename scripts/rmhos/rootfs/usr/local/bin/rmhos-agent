@@ -71,6 +71,14 @@ reseed_rng() {
 # Debug aid for the smoke test: only when the host put /debug-rng in the share,
 # print RNG output and watch the clock. Never in normal runs.
 debug_hooks() {
+	# Smoke only: hold the save lock for a long time, to prove a wedged save cannot hang the others.
+	if [ -e "$SHARE/debug-hold-save-lock" ]; then
+		(
+			flock -x 9
+			log "debug: holding the save lock"
+			sleep 600
+		) 9>/run/rmhos-save.lock &
+	fi
 	[ -e "$SHARE/debug-rng" ] || return 0
 	log "entropy bytes written $ENTROPY_WRITTEN"
 	log "rng $(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
@@ -169,19 +177,35 @@ do_session() {
 
 # The refusal of absolute and ".." paths below is hygiene, not a privilege
 # boundary: the user has passwordless doas by design (the VM is theirs).
-# The archive is read ONCE (a home can be 128 MB and the 9p share is slow: the listing pass that
-# used to precede extraction doubled the time). GNU tar, running as the user in their own home,
-# strips a leading "/" (and says so) and skips a ".." member (and says so, exit status 2); either
-# message means the archive was crafted, so the home is put back to a fresh skeleton and the
-# restore is refused. Nothing is ever written outside the home: tar runs unprivileged.
+# A listing pass first (LC_ALL=C: the member names are matched as bytes, whatever the locale), then
+# the extraction. The listing is the check that does not depend on any wording: an absolute member,
+# a member named ".." or one with a ".." path component refuses the archive before anything is
+# extracted. The extraction is a second, independent line: GNU tar, running as the user in their own
+# home, strips a leading "/" and skips a ".." member and says so (LC_ALL=C pins the English text the
+# grep below looks for; exit status 2 for a skipped ".." member), so even a listing that missed
+# something cannot leave a crafted entry in the home: it is put back to a fresh skeleton.
+# Nothing is ever written outside the home: tar runs unprivileged.
+refuse_archive() {
+	home=/home/$SESSION_USER
+	log "home archive has absolute or .. entries; refused"
+	find "$home" -mindepth 1 -delete 2>/dev/null
+	cp -a /etc/skel/. "$home/" && chown -R "$(id -u "$SESSION_USER"):$(id -g "$SESSION_USER")" "$home"
+	return 1
+}
+
 restore_archive() {
 	home=/home/$SESSION_USER
-	err=$(su -s /bin/sh "$SESSION_USER" -c "tar -xpf - -C '$home' --no-same-owner" <"$ARCHIVE" 2>&1 >/dev/null)
+	if ! listing=$(LC_ALL=C tar -tf "$ARCHIVE" 2>/dev/null | grep -E '^/|(^|/)\.\.(/|$)'); then
+		listing=
+	fi
+	if [ -n "$listing" ]; then
+		refuse_archive
+		return 1
+	fi
+	err=$(su -s /bin/sh "$SESSION_USER" -c "LC_ALL=C tar -xpf - -C '$home' --no-same-owner" <"$ARCHIVE" 2>&1 >/dev/null)
 	status=$?
 	if printf '%s' "$err" | grep -Eq "Removing leading|Member name contains"; then
-		log "home archive has absolute or .. entries; refused"
-		find "$home" -mindepth 1 -delete 2>/dev/null
-		cp -a /etc/skel/. "$home/" && chown -R "$(id -u "$SESSION_USER"):$(id -g "$SESSION_USER")" "$home"
+		refuse_archive
 		return 1
 	fi
 	if [ "$status" != 0 ]; then
@@ -245,19 +269,14 @@ do_save() {
 		reply "ERR save"
 		return
 	fi
-	mkdir -p "$SHARE/sync"
-	# GNU tar exits 1 when a file changed while it was being read. The running desktop writes in the
-	# home all the time (.Xauthority, icewm and session logs), so this is the NORMAL case with a
-	# desktop up, not a failure: the archive is complete. Only 2 (a real error) is "not saved".
-	tar -cpf "$ARCHIVE" -C "/home/$SESSION_USER" . 2>/dev/null
-	rc=$?
-	if [ "$rc" -le 1 ]; then
-		bytes=$(wc -c <"$ARCHIVE")
-		set -- $bytes
-		reply "SAVED $nonce $1"
+	# rmhos-save-home does the tar (a changed-while-read exit 1 is the normal case with a desktop up and
+	# counts as saved) into a temporary name, renamed into place under a lock, because
+	# rmhos-poweroff-save can be writing the same home.tar at this moment.
+	if bytes=$(/usr/local/bin/rmhos-save-home "$SESSION_USER"); then
+		reply "SAVED $nonce $bytes"
 	else
-		rm -f "$ARCHIVE"
-		reply "ERR save"
+		# 2: the lock stayed held for 30 s (another save is wedged): busy, not a failed tar
+		if [ "$?" = 2 ]; then reply "ERR busy"; else reply "ERR save"; fi
 	fi
 }
 

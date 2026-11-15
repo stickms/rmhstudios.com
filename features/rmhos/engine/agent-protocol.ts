@@ -59,26 +59,60 @@ export type GuestEvent =
     };
 
 /** Path of the home archive inside the 9p share. */
-export const SHARE_ARCHIVE_PATH = '/sync/home.tar';
+export const SHARE_ARCHIVE_PATH =
+  '/sync/home.tar';
 
-const TOKEN = /^[a-z0-9_-]{1,31}$/i;
+const TOKEN =
+  /^[a-z0-9_-]{1,31}$/i;
 
 /** Plausible session clocks: 2020-01-01T00:00:00Z .. 2100-01-01T00:00:00Z (the guest checks the same). */
 const EPOCH_MIN = 1577836800;
 const EPOCH_MAX = 4102444800;
-const ENTROPY = /^[0-9a-f]{128}$/;
+const ENTROPY =
+  /^[0-9a-f]{128}$/;
 
-function token(value: string, what: string): string {
-  if (!TOKEN.test(value)) throw new Error(`invalid ${what}`);
+function token(
+  value: string,
+  what: string,
+): string {
+  if (
+    !TOKEN.test(
+      value,
+    )
+  )
+    throw new Error(
+      `invalid ${what}`,
+    );
   return value;
 }
 
-export function encodeCommand(c: HostCommand): string {
-  switch (c.type) {
+export function encodeCommand(
+  c: HostCommand,
+): string {
+  switch (
+    c.type
+  ) {
     case 'session': {
-      if (!Number.isSafeInteger(c.epoch) || c.epoch < EPOCH_MIN || c.epoch > EPOCH_MAX)
-        throw new Error('invalid epoch');
-      if (!ENTROPY.test(c.entropy)) throw new Error('invalid entropy');
+      if (
+        !Number.isSafeInteger(
+          c.epoch,
+        ) ||
+        c.epoch <
+          EPOCH_MIN ||
+        c.epoch >
+          EPOCH_MAX
+      )
+        throw new Error(
+          'invalid epoch',
+        );
+      if (
+        !ENTROPY.test(
+          c.entropy,
+        )
+      )
+        throw new Error(
+          'invalid entropy',
+        );
       return `SESSION ${token(c.user, 'user')} ${c.epoch} ${c.entropy}\n`;
     }
     case 'restore':
@@ -90,26 +124,56 @@ export function encodeCommand(c: HostCommand): string {
   }
 }
 
-const PREFIX = 'RMHOS ';
-const PROTOCOL_ERROR: GuestEvent = {
-  type: 'error',
-  code: 'protocol',
-};
+const PREFIX =
+  'RMHOS ';
+const PROTOCOL_ERROR: GuestEvent =
+  {
+    type: 'error',
+    code: 'protocol',
+  };
 
-function parseLine(line: string): GuestEvent | null {
-  if (!line.startsWith(PREFIX)) return null;
-  const [verb, a, b, ...rest] = line.slice(PREFIX.length).split(' ');
-  switch (verb) {
+function parseLine(
+  line: string,
+): GuestEvent | null {
+  if (
+    !line.startsWith(
+      PREFIX,
+    )
+  )
+    return null;
+  const [
+    verb,
+    a,
+    b,
+    ...rest
+  ] =
+    line
+      .slice(
+        PREFIX.length,
+      )
+      .split(
+        ' ',
+      );
+  switch (
+    verb
+  ) {
     case 'READY':
       return {
         type: 'ready',
       };
     case 'SESSION_OK':
-      if (a === undefined)
+      if (
+        a ===
+        undefined
+      )
         return {
           type: 'session-ok',
         };
-      return b === undefined && TOKEN.test(a)
+      return b ===
+        undefined &&
+        TOKEN.test(
+          a,
+        )
         ? {
             type: 'session-ok',
             user: a,
@@ -122,12 +186,25 @@ function parseLine(line: string): GuestEvent | null {
         type: 'restored',
       };
     case 'SAVED_ON_POWEROFF': {
-      if (a === undefined || b !== undefined || !/^\d+$/.test(a))
+      if (
+        a ===
+          undefined ||
+        b !==
+          undefined ||
+        !/^\d+$/.test(
+          a,
+        )
+      )
         return {
           ...PROTOCOL_ERROR,
         };
-      const bytes = Number(a);
-      return Number.isSafeInteger(bytes)
+      const bytes =
+        Number(
+          a,
+        );
+      return Number.isSafeInteger(
+        bytes,
+      )
         ? {
             type: 'saved-on-poweroff',
             bytes,
@@ -141,7 +218,13 @@ function parseLine(line: string): GuestEvent | null {
         type: 'poweroff',
       };
     case 'ERR':
-      return a !== undefined && b === undefined && TOKEN.test(a)
+      return a !==
+        undefined &&
+        b ===
+          undefined &&
+        TOKEN.test(
+          a,
+        )
         ? {
             type: 'error',
             code: a,
@@ -151,23 +234,40 @@ function parseLine(line: string): GuestEvent | null {
           };
     case 'SAVED': {
       if (
-        a === undefined ||
-        b === undefined ||
-        rest.length > 0 ||
-        !TOKEN.test(a) ||
-        !/^\d+$/.test(b)
+        a ===
+          undefined ||
+        b ===
+          undefined ||
+        rest.length >
+          0 ||
+        !TOKEN.test(
+          a,
+        ) ||
+        !/^\d+$/.test(
+          b,
+        )
       )
         return {
           ...PROTOCOL_ERROR,
         };
-      const bytes = Number(b);
-      if (!Number.isSafeInteger(bytes) || bytes < 0)
+      const bytes =
+        Number(
+          b,
+        );
+      if (
+        !Number.isSafeInteger(
+          bytes,
+        ) ||
+        bytes <
+          0
+      )
         return {
           ...PROTOCOL_ERROR,
         };
       return {
         type: 'saved',
-        nonce: a,
+        nonce:
+          a,
         bytes,
       };
     }
@@ -183,23 +283,56 @@ const MAX_BUFFER = 4096;
 
 /** Incremental parser: feed it raw serial chunks, get complete events back. */
 export class GuestLineParser {
-  private buffer = '';
+  private buffer =
+    '';
 
-  push(chunk: string): GuestEvent[] {
-    this.buffer += chunk;
-    const lines = this.buffer.split('\n');
-    this.buffer = lines.pop() ?? '';
-    const events: GuestEvent[] = [];
+  push(
+    chunk: string,
+  ): GuestEvent[] {
+    this.buffer +=
+      chunk;
+    const lines =
+      this.buffer.split(
+        '\n',
+      );
+    this.buffer =
+      lines.pop() ??
+      '';
+    const events: GuestEvent[] =
+      [];
     for (const raw of lines) {
-      const event = parseLine(raw.replace(/\r$/, ''));
-      if (event) events.push(event);
+      const event =
+        parseLine(
+          raw.replace(
+            /\r$/,
+            '',
+          ),
+        );
+      if (
+        event
+      )
+        events.push(
+          event,
+        );
     }
-    if (this.buffer.length > MAX_BUFFER) {
-      if (this.buffer.startsWith(PREFIX))
-        events.push({
-          ...PROTOCOL_ERROR,
-        });
-      this.buffer = '';
+    if (
+      this
+        .buffer
+        .length >
+      MAX_BUFFER
+    ) {
+      if (
+        this.buffer.startsWith(
+          PREFIX,
+        )
+      )
+        events.push(
+          {
+            ...PROTOCOL_ERROR,
+          },
+        );
+      this.buffer =
+        '';
     }
     return events;
   }

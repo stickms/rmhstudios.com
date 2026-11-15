@@ -85,6 +85,7 @@
   "restart-confirm": "Restart rmhOS? Unsaved changes are lost.",
   "restore-backup": "Restore backup",
   "restore-confirm-keeps": "Replace your files with this backup? Your current files are kept as one previous copy until you save.",
+  "restore-locked": "rmhOS is open in another tab. Restore the backup there.",
   "restore-storage-full": "Browser storage is full. The backup was not restored. Your current files are unchanged.",
   "retry": "Try again",
   "save": "Save",

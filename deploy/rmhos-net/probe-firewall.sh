@@ -2,7 +2,7 @@
 #
 # Unprivileged proof that the rmhos-egress firewall is in place.
 #
-# Runs a throwaway container on the hub's network and makes three TCP connections. ALL must come
+# Runs a throwaway container on the hub's network and makes four TCP connections. ALL must come
 # out right, because a timeout alone proves nothing (any host with a default-drop INPUT policy,
 # ufw for one, produces it with none of our rules installed):
 #
@@ -15,10 +15,15 @@
 #      192.0.2.0/24), must TIME OUT. If it is refused too, the refusals do not come from our rule:
 #      something else on the path (a transparent proxy, a router) answers for that address, and the
 #      sentinel proves nothing.
-#   3. the network's gateway (the Docker host itself) must TIME OUT: the INPUT drop swallows the
-#      SYN. A refusal (RST) or a completed connection means the packet reached the host.
+#   3. the INPUT SENTINEL, the network's gateway (the Docker host itself) on port 9, must be REFUSED:
+#      only the `-d <gateway>/32 -p tcp --dport 9 -j REJECT --reject-with tcp-reset` rule that
+#      egress-firewall.sh puts first in RMHOS-INPUT can answer, and only for a packet that really
+#      travelled INPUT -> RMHOS-INPUT. (A timeout here would prove nothing: any default-drop INPUT host
+#      produces it.)
+#   4. the gateway on another port (10, which falls through to the RMHOS-INPUT drop) must TIME OUT.
+#      A refusal (RST) or a completed connection means the packet reached the host unfiltered.
 #
-#   exit 0  firewall proven (sentinel refused, control and gateway timed out) -> deploy.sh may start the hub
+#   exit 0  firewall proven (both sentinels refused, both controls timed out) -> deploy.sh may start the hub
 #   exit 1  not proven (anything else, including network/image unavailable)
 #
 # Needs only the Docker CLI: no root, no sudo. Environment (deploy.sh exports these):
@@ -67,7 +72,9 @@ fi
 
 # Sentinel first (a refusal is immediate), then the gateway. Exit codes: 20 sentinel timed out
 # (no rule on the forwarding path), 21 sentinel connected, 22 sentinel other error; 23 the control was
-# not dropped; then 10 gateway timed out (the proof), 11 connected, 12 refused, 13 other error.
+# not dropped; 24 gateway sentinel timed out (no RMHOS-INPUT rule on the INPUT path), 25 gateway sentinel
+# connected, 26 gateway sentinel other error; then 10 gateway:CONTROL timed out (the proof), 11 connected,
+# 12 refused, 13 other error.
 js="const net=require('net');
 function t(h,p,k){const s=net.connect({host:h,port:p});s.setTimeout($PROBE_TIMEOUT_MS);
 s.on('timeout',()=>k('timeout'));s.on('connect',()=>k('connect'));
@@ -75,19 +82,24 @@ s.on('error',(e)=>k(e.code==='ECONNREFUSED'?'refused':'error'));}
 t('$SENTINEL',$PROBE_PORT,(a)=>{
 if(a==='timeout')process.exit(20);if(a==='connect')process.exit(21);if(a!=='refused')process.exit(22);
 t('$SENTINEL',$CONTROL_PORT,(c)=>{if(c!=='timeout')process.exit(23);
-t('$gateway',$PROBE_PORT,(b)=>process.exit(b==='timeout'?10:b==='connect'?11:b==='refused'?12:13));});});"
+t('$gateway',$PROBE_PORT,(g)=>{
+if(g==='timeout')process.exit(24);if(g==='connect')process.exit(25);if(g!=='refused')process.exit(26);
+t('$gateway',$CONTROL_PORT,(b)=>process.exit(b==='timeout'?10:b==='connect'?11:b==='refused'?12:13));});});});"
 
 "$DOCKER_BIN" run --rm --network "$net" --user 65534:65534 --read-only --cap-drop ALL \
   --security-opt no-new-privileges:true --pids-limit 64 --memory 128m \
   --entrypoint node "$image" -e "$js" >/dev/null 2>&1
 code=$?
 case "$code" in
-  10) say "sentinel $SENTINEL:$PROBE_PORT refused, control $SENTINEL:$CONTROL_PORT and $gateway:$PROBE_PORT timed out: egress firewall proven"; exit 0 ;;
+  10) say "sentinels $SENTINEL:$PROBE_PORT and $gateway:$PROBE_PORT refused, controls $SENTINEL:$CONTROL_PORT and $gateway:$CONTROL_PORT timed out: egress firewall proven"; exit 0 ;;
+  24) say "gateway sentinel $gateway:$PROBE_PORT timed out instead of being refused: RMHOS-INPUT is not on the INPUT path (no jump, or the host drops by default policy and our chain is absent): NOT proven"; exit 1 ;;
+  25) say "connected to the host's gateway sentinel $gateway:$PROBE_PORT: NOT firewalled"; exit 1 ;;
+  26) say "gateway sentinel $gateway:$PROBE_PORT failed with an unexpected error: not proven"; exit 1 ;;
   23) say "control $SENTINEL:$CONTROL_PORT was answered instead of dropped: something other than the RMHOS-EGRESS chain answers for $SENTINEL, so the sentinel proves nothing: NOT proven"; exit 1 ;;
   20) say "sentinel $SENTINEL:$PROBE_PORT timed out instead of being refused: the RMHOS-EGRESS chain is not on the forwarding path (rules missing, or Docker's FORWARD does not reach DOCKER-USER): NOT proven"; exit 1 ;;
   21) say "connected to the unroutable sentinel $SENTINEL:$PROBE_PORT: NOT firewalled"; exit 1 ;;
   22) say "sentinel $SENTINEL:$PROBE_PORT failed with an unexpected error: not proven"; exit 1 ;;
-  11) say "connected to the host at $gateway:$PROBE_PORT: NOT firewalled"; exit 1 ;;
-  12) say "host at $gateway answered with a refusal: NOT firewalled"; exit 1 ;;
+  11) say "connected to the host at $gateway:$CONTROL_PORT: NOT firewalled"; exit 1 ;;
+  12) say "host at $gateway answered $CONTROL_PORT with a refusal: the drop after the sentinel is missing: NOT firewalled"; exit 1 ;;
   *)  say "probe inconclusive (exit $code): not proven"; exit 1 ;;
 esac

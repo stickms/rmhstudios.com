@@ -28,23 +28,71 @@ export default function DamagedExistsDialog({
   onRemove,
   onClose,
 }: Props) {
-  const { t } = useTranslation('c-rmhos');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhos',
+    );
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent container={container} className="max-w-md" aria-describedby={undefined}>
+    <Dialog
+      open={
+        open
+      }
+      onOpenChange={(
+        o,
+      ) =>
+        !o &&
+        onClose()
+      }
+    >
+      <DialogContent
+        container={
+          container
+        }
+        className="max-w-md"
+        aria-describedby={
+          undefined
+        }
+      >
         <DialogHeader>
           <DialogTitle className="text-sm font-normal">
-            {t('damaged-exists', {
-              defaultValue: 'An earlier damaged copy is still stored. Download it or remove it first.',
-            })}
+            {t(
+              'damaged-exists',
+              {
+                defaultValue:
+                  'An earlier damaged copy is still stored. Download it or remove it first.',
+              },
+            )}
           </DialogTitle>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="primary" onClick={onDownload}>
-            {t('download-earlier', { defaultValue: 'Download the earlier copy' })}
+          <Button
+            variant="primary"
+            onClick={
+              onDownload
+            }
+          >
+            {t(
+              'download-earlier',
+              {
+                defaultValue:
+                  'Download the earlier copy',
+              },
+            )}
           </Button>
-          <Button onClick={onRemove}>
-            {t('remove-earlier', { defaultValue: 'Remove the earlier copy' })}
+          <Button
+            onClick={
+              onRemove
+            }
+          >
+            {t(
+              'remove-earlier',
+              {
+                defaultValue:
+                  'Remove the earlier copy',
+              },
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

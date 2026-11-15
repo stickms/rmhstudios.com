@@ -13,52 +13,156 @@ export const DISCONNECTED_MS_TO_ERROR = 30_000;
 export const POLL_MS = 15_000;
 
 /** What the poll can say about the relay. */
-export type PolledNet = 'connecting' | 'on' | 'error' | 'full';
+export type PolledNet =
+  | 'connecting'
+  | 'on'
+  | 'error'
+  | 'full';
 
 export interface NetTracker {
   failures: number;
-  disconnectedSince: number | null;
+  disconnectedSince:
+    | number
+    | null;
 }
 
-export type NetSample = { at: number; result: { connected: boolean; full?: boolean } | 'failed' | 'ended' };
+export type NetSample =
+  {
+    at: number;
+    result:
+      | {
+          connected: boolean;
+          full?: boolean;
+        }
+      | 'failed'
+      | 'ended';
+  };
 
-export const initialTracker: NetTracker = { failures: 0, disconnectedSince: null };
+export const initialTracker: NetTracker =
+  {
+    failures: 0,
+    disconnectedSince:
+      null,
+  };
 
 export function trackNet(
   prev: NetTracker,
   sample: NetSample,
-): { tracker: NetTracker; state: PolledNet; ended: boolean } {
+): {
+  tracker: NetTracker;
+  state: PolledNet;
+  ended: boolean;
+} {
   // 401: the hub no longer knows this ticket (12 h cap, idle, evicted). Nothing will reconnect.
-  if (sample.result === 'ended') return { tracker: prev, state: 'error', ended: true };
-  if (sample.result === 'failed') {
-    const failures = prev.failures + 1;
+  if (
+    sample.result ===
+    'ended'
+  )
     return {
-      tracker: { ...prev, failures },
-      state: failures >= FAILURES_TO_ERROR ? 'error' : 'connecting',
+      tracker:
+        prev,
+      state:
+        'error',
+      ended: true,
+    };
+  if (
+    sample.result ===
+    'failed'
+  ) {
+    const failures =
+      prev.failures +
+      1;
+    return {
+      tracker:
+        {
+          ...prev,
+          failures,
+        },
+      state:
+        failures >=
+        FAILURES_TO_ERROR
+          ? 'error'
+          : 'connecting',
       ended: false,
     };
   }
-  if (sample.result.connected) {
-    return { tracker: { failures: 0, disconnectedSince: null }, state: 'on', ended: false };
+  if (
+    sample
+      .result
+      .connected
+  ) {
+    return {
+      tracker:
+        {
+          failures: 0,
+          disconnectedSince:
+            null,
+        },
+      state:
+        'on',
+      ended: false,
+    };
   }
-  const since = prev.disconnectedSince ?? sample.at;
-  if (sample.result.full) {
-    return { tracker: { failures: 0, disconnectedSince: since }, state: 'full', ended: false };
+  const since =
+    prev.disconnectedSince ??
+    sample.at;
+  if (
+    sample
+      .result
+      .full
+  ) {
+    return {
+      tracker:
+        {
+          failures: 0,
+          disconnectedSince:
+            since,
+        },
+      state:
+        'full',
+      ended: false,
+    };
   }
   return {
-    tracker: { failures: 0, disconnectedSince: since },
-    state: sample.at - since >= DISCONNECTED_MS_TO_ERROR ? 'error' : 'connecting',
+    tracker:
+      {
+        failures: 0,
+        disconnectedSince:
+          since,
+      },
+    state:
+      sample.at -
+        since >=
+      DISCONNECTED_MS_TO_ERROR
+        ? 'error'
+        : 'connecting',
     ended: false,
   };
 }
 
 /** `https://host/rmhos-net/status?ticket=…` from the relay's own URL. */
-export function statusUrl(relayUrl: string, ticket: string): string {
-  const u = new URL(relayUrl);
-  u.protocol = u.protocol === 'wss:' || u.protocol === 'https:' ? 'https:' : 'http:';
+export function statusUrl(
+  relayUrl: string,
+  ticket: string,
+): string {
+  const u =
+    new URL(
+      relayUrl,
+    );
+  u.protocol =
+    u.protocol ===
+      'wss:' ||
+    u.protocol ===
+      'https:'
+      ? 'https:'
+      : 'http:';
   u.pathname = `${u.pathname.replace(/\/?$/, '/')}status`;
-  u.search = '';
-  u.searchParams.set('ticket', ticket);
+  u.search =
+    '';
+  u.searchParams.set(
+    'ticket',
+    ticket,
+  );
   return u.toString();
 }
 
@@ -68,20 +172,62 @@ export function statusUrl(relayUrl: string, ticket: string): string {
  */
 export function statusSample(
   status: number,
-  body: { connected?: unknown; full?: unknown } | null,
-): { connected: boolean; full: boolean } | 'failed' | 'ended' | null {
-  if (status === 429) return null;
-  if (status === 401) return 'ended';
-  if (status >= 200 && status < 300) return { connected: body?.connected === true, full: body?.full === true };
+  body: {
+    connected?: unknown;
+    full?: unknown;
+  } | null,
+):
+  | {
+      connected: boolean;
+      full: boolean;
+    }
+  | 'failed'
+  | 'ended'
+  | null {
+  if (
+    status ===
+    429
+  )
+    return null;
+  if (
+    status ===
+    401
+  )
+    return 'ended';
+  if (
+    status >=
+      200 &&
+    status <
+      300
+  )
+    return {
+      connected:
+        body?.connected ===
+        true,
+      full:
+        body?.full ===
+        true,
+    };
   return 'failed';
 }
 
 /** Lets a poll through at most once per `minGapMs` (the visibility-triggered ones). */
-export function createPollGate(minGapMs: number) {
-  let last = -Infinity;
-  return (now: number): boolean => {
-    if (now - last < minGapMs) return false;
-    last = now;
+export function createPollGate(
+  minGapMs: number,
+) {
+  let last =
+    -Infinity;
+  return (
+    now: number,
+  ): boolean => {
+    if (
+      now -
+        last <
+      minGapMs
+    )
+      return false;
+    last =
+      now;
     return true;
   };
 }

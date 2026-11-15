@@ -1544,10 +1544,15 @@ rmhos_hub_fingerprint() {
             log "rmhOS relay hub unchanged (fingerprint ${_hub_fp:0:12}); left running, network sessions are not interrupted. Egress firewall proven."
         else
             export RMHOS_HUB_FINGERPRINT="$_hub_fp"
-            if dc --profile rmhos-net up -d --no-build rmhos-net >/dev/null 2>&1 && check_http "${PORT_RMHOS_NET:-7009}"; then
+            # `up`'s output is kept (not discarded) so that a hub that does not start leaves its reason in the log.
+            _hub_up_rc=0
+            _hub_up_out=$(dc --profile rmhos-net up -d --no-build rmhos-net 2>&1) || _hub_up_rc=$?
+            if [ "$_hub_up_rc" -eq 0 ] && check_http "${PORT_RMHOS_NET:-7009}"; then
                 log "rmhOS relay hub (re)started (loopback port ${PORT_RMHOS_NET:-7009}), egress firewall proven. Users' network sessions ended; they restart rmhOS to reconnect."
             else
-                log "WARNING: the rmhOS relay hub did not start healthy; stopping it. The site deploy is unaffected."
+                log "WARNING: the rmhOS relay hub did not start healthy (compose up status ${_hub_up_rc}); stopping it. The site deploy is unaffected."
+                log "  last 20 lines of the hub's compose up output:"
+                printf '%s\n' "$_hub_up_out" | tail -n 20 | while IFS= read -r _hub_line; do log "  | ${_hub_line}"; done
                 rmhos_net_stop
             fi
             unset RMHOS_HUB_FINGERPRINT

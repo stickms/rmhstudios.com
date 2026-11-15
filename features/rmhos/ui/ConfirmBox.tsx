@@ -29,19 +29,64 @@ export default function ConfirmBox({
   onConfirm,
   onCancel,
 }: Props) {
-  const { t } = useTranslation('c-rmhos');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhos',
+    );
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onCancel()}>
-      <DialogContent container={container} className="max-w-sm" aria-describedby={undefined}>
+    <Dialog
+      open={
+        open
+      }
+      onOpenChange={(
+        o,
+      ) =>
+        !o &&
+        onCancel()
+      }
+    >
+      <DialogContent
+        container={
+          container
+        }
+        className="max-w-sm"
+        aria-describedby={
+          undefined
+        }
+      >
         <DialogHeader>
-          <DialogTitle className="text-sm font-normal">{title}</DialogTitle>
+          <DialogTitle className="text-sm font-normal">
+            {
+              title
+            }
+          </DialogTitle>
         </DialogHeader>
         <DialogFooter>
-          <Button onClick={onCancel}>
-            {cancelLabel ?? t('cancel', { defaultValue: 'Cancel' })}
+          <Button
+            onClick={
+              onCancel
+            }
+          >
+            {cancelLabel ??
+              t(
+                'cancel',
+                {
+                  defaultValue:
+                    'Cancel',
+                },
+              )}
           </Button>
-          <Button variant="primary" onClick={onConfirm}>
-            {confirmLabel}
+          <Button
+            variant="primary"
+            onClick={
+              onConfirm
+            }
+          >
+            {
+              confirmLabel
+            }
           </Button>
         </DialogFooter>
       </DialogContent>
