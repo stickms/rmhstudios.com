@@ -3711,6 +3711,59 @@ is.
   or
   decorative
   `ResizeObserver`.
+  One
+  exception
+  (owner,
+  2026-11-15):
+  the
+  predictive
+  link
+  prefetcher
+  (`lib/foresight-prefetch.ts`,
+  ForesightJS)
+  may
+  keep
+  its
+  one
+  `MutationObserver`
+  on
+  the
+  document
+  and
+  the
+  IntersectionObserver/ResizeObserver
+  it
+  tracks
+  link
+  positions
+  with,
+  because
+  a
+  faster
+  navigation
+  is
+  worth
+  that
+  cost.
+  It
+  loads
+  at
+  idle
+  after
+  `load`,
+  never
+  on
+  the
+  critical
+  path,
+  and
+  still
+  requests
+  animation
+  frames
+  only
+  from
+  input.
   No
   `requestAnimationFrame`
   callback

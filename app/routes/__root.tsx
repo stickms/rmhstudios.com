@@ -22,6 +22,7 @@ import { NavigationProgress } from '@/components/ui/NavigationProgress';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
 import { startViewportPrefetch } from '@/lib/viewport-prefetch';
+import { startForesightPrefetch } from '@/lib/foresight-prefetch';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { installGlobalErrorHandlers } from '@/lib/client-errors';
@@ -192,7 +193,9 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
  * render (session lookup + the page's queries) whose bytes were thrown away.
  * The router's own intent preload (`defaultPreload: 'intent'` in
  * `app/router.tsx`) already fetches what a client navigation actually uses —
- * the route chunks and loader data. One prefetch mechanism, not three.
+ * the route chunks and loader data. Everything that prefetches goes through
+ * `router.preloadRoute`: intent preload, the touch viewport prefetcher, and the
+ * ForesightJS predictor (lib/foresight-prefetch.ts), which only starts it earlier.
  *
  * The old exclusion list also documented eight GET handlers that WRITE on a
  * plain GET (unsubscribe, mark-as-read, doctrine rows, AI spend). Those are
@@ -455,6 +458,11 @@ function RootComponent() {
   // the router is still adopting the server's matches re-runs the root loader
   // and holds hydration up behind it (app/router.tsx). It still waits for `load`.
   useEffect(() => startViewportPrefetch(router), [router]);
+
+  // Predictive prefetch (ForesightJS): pointer trajectory, Tab stops, scroll and
+  // touchstart start the same router preload earlier than a hover would. Loaded
+  // at idle after `load`, for the same hydration reason as the line above.
+  useEffect(() => startForesightPrefetch(router), [router]);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
