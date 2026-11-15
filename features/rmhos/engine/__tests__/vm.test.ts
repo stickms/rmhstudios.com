@@ -4,31 +4,25 @@ import { resolveImageManifest } from '../image-manifest';
 
 describe('relayConfig', () => {
   it('turns the session URL into a Wisp URL with the ticket', () => {
-    const r = relayConfig(
-      { url: 'wss://rmhstudios.com/rmhos-net/', ticket: 'abc.def' },
-      'ignored',
-      true,
-    );
+    const r = relayConfig({ url: 'wss://rmhstudios.com/rmhos-net/', ticket: 'abc.def' });
     expect(r.relayUrl).toBe('wisps://rmhstudios.com/rmhos-net/?ticket=abc.def');
   });
 
   it('uses wisp:// for a plain ws:// relay', () => {
-    const r = relayConfig({ url: 'ws://localhost:7005/rmhos-net/', ticket: 't' }, 'x', false);
+    const r = relayConfig({ url: 'ws://localhost:7005/rmhos-net/', ticket: 't' });
     expect(r.relayUrl).toBe('wisp://localhost:7005/rmhos-net/?ticket=t');
   });
 
   it('carries the ticket to the DoH forwarder through the doh_server host string', () => {
     // v86 builds `https://${doh_server}/dns-query`; the trailing `#` swallows the appended path.
-    const r = relayConfig({ url: 'wss://rmhstudios.com/rmhos-net/', ticket: 'a.b' }, 'x', true);
+    const r = relayConfig({ url: 'wss://rmhstudios.com/rmhos-net/', ticket: 'a.b' });
     expect(r.dohServer).toBe('rmhstudios.com/rmhos-net/dns-query?ticket=a.b#');
     const url = new URL(`https://${r.dohServer}/dns-query`);
     expect(url.pathname + url.search).toBe('/rmhos-net/dns-query?ticket=a.b');
   });
 
-  it('points at the same origin with no ticket when there is no relay', () => {
-    const r = relayConfig(null, 'rmhstudios.com', true);
-    expect(r.relayUrl).toBe('wisps://rmhstudios.com/rmhos-net/');
-    expect(r.dohServer).not.toContain('ticket');
+  it('is empty when there is no relay, so v86 builds no network adapter and opens no socket', () => {
+    expect(relayConfig(null)).toEqual({ relayUrl: '', dohServer: '' });
   });
 });
 
@@ -90,6 +84,31 @@ describe('createVm cancellation', () => {
     ac.abort();
     release();
     await expect(p).rejects.toMatchObject({ name: 'AbortError' });
+    expect(ctor).not.toHaveBeenCalled();
+  });
+});
+
+describe('createVm ticket timing', () => {
+  it('asks for the relay ticket only after the emulator has loaded, and builds nothing if aborted meanwhile', async () => {
+    const order: string[] = [];
+    const ctor = vi.fn();
+    const ac = new AbortController();
+    const p = createVm({
+      screen: {} as HTMLDivElement,
+      manifest: resolveImageManifest(undefined),
+      net: async () => {
+        order.push('net');
+        ac.abort();
+        return { url: 'ws://localhost:7005/rmhos-net/', ticket: 't' };
+      },
+      signal: ac.signal,
+      loader: async () => {
+        order.push('loader');
+        return { V86: ctor as never };
+      },
+    });
+    await expect(p).rejects.toMatchObject({ name: 'AbortError' });
+    expect(order).toEqual(['loader', 'net']);
     expect(ctor).not.toHaveBeenCalled();
   });
 });

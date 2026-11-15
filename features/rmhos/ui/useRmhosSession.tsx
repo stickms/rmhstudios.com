@@ -22,11 +22,13 @@ import { browserEnv, HomeSession, type SessionSnapshot } from '../engine/home-se
 import { openHomeStore, type HomeStore } from '../engine/home-store';
 import { HomeSync, type SaveResult } from '../engine/home-sync';
 import { resolveImageManifest } from '../engine/image-manifest';
+import { fetchRelayTicket } from '../engine/relay-ticket';
 import type { RmhosNet } from '../engine/rmhos.contract';
 import { acquireHomeLock } from '../engine/tab-lock';
 import { createVm } from '../engine/vm';
 import type { VmHandle, VmPhase, VmPhaseDetail } from '../engine/vm-types';
 import { rmhosSessionQuery } from './rmhos.queries';
+import { initialTracker, POLL_MS, statusUrl, trackNet } from './net-status';
 
 /** The machine's phases, plus `session` while the guest is being told who is signing in. */
 export type RmhosPhase = VmPhase | 'session';
@@ -73,6 +75,8 @@ export interface RmhosSessionValue {
   restart: (opts?: { save?: boolean }) => Promise<void>;
   linuxUser: string | null;
   net: RmhosNet | null;
+  /** From the hub's status endpoint (see net-status.ts); only meaningful when `net.enabled`. */
+  netState: 'connecting' | 'on' | 'error';
 }
 
 declare global {
@@ -115,6 +119,10 @@ export function useRmhosMachine(
   useEffect(() => {
     if (import.meta.env.DEV) window.__rmhosPhase = phase;
   }, [phase]);
+
+  /** The ticket the running machine was built with: the status poll uses the same credential. */
+  const netRef = useRef<{ url: string; ticket: string } | null>(null);
+  const [netState, setNetState] = useState<'connecting' | 'on' | 'error'>('connecting');
 
   const runnerRef = useRef<HomeSession | null>(null);
   const vmRef = useRef<VmHandle | null>(null);
@@ -167,13 +175,18 @@ export function useRmhosMachine(
         cleanups.push(() => lock.release());
         if (cancelled) return;
 
-        const net = session.net.enabled
-          ? { url: session.net.url, ticket: session.net.ticket }
-          : null;
+        // The relay ticket is good for 60 s of first use and v86 bakes it in when the machine is
+        // built, so it is fetched when createVm asks (after the emulator module has loaded), not
+        // at page load. Whether the relay is on at all is the page-load answer.
+        const getNet = async () => {
+          if (!session.net.enabled) return null;
+          netRef.current = await fetchRelayTicket();
+          return netRef.current;
+        };
         const vm = await createVm({
           screen,
           manifest: resolveImageManifest(CDN_BASE || undefined),
-          net,
+          net: getNet,
           signal: ac.signal,
         });
         if (cancelled) {
@@ -256,6 +269,42 @@ export function useRmhosMachine(
     };
   }, [enabled, userId, sessionReady, attempt, screenRef]);
 
+  // Network state from the hub: once the desktop is up, then every 15 s while the tab is visible.
+  const desktopReady = snap?.desktopReady ?? false;
+  useEffect(() => {
+    setNetState('connecting');
+    if (!desktopReady || !netRef.current) return;
+    let tracker = initialTracker;
+    let stopped = false;
+    const poll = async () => {
+      const n = netRef.current;
+      if (!n || stopped || document.visibilityState !== 'visible') return;
+      let result: { connected: boolean } | 'failed' = 'failed';
+      try {
+        const r = await fetch(statusUrl(n.url, n.ticket), { cache: 'no-store' });
+        if (r.ok) {
+          const body = (await r.json()) as { connected?: unknown };
+          result = { connected: body.connected === true };
+        }
+      } catch {
+        // counted as a failed poll
+      }
+      if (stopped) return;
+      const next = trackNet(tracker, { at: Date.now(), result });
+      tracker = next.tracker;
+      setNetState(next.state);
+    };
+    void poll();
+    const timer = setInterval(() => void poll(), POLL_MS);
+    const onVisible = () => void poll();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [desktopReady, attempt]);
+
   const restart = useCallback(
     async (opts?: { save?: boolean }) => {
       if (opts?.save !== false) await runnerRef.current?.save();
@@ -270,7 +319,7 @@ export function useRmhosMachine(
     detail,
     bootKind,
     failure,
-    desktopReady: snap?.desktopReady ?? false,
+    desktopReady,
     dirty: snap?.dirty ?? false,
     markDirty: useCallback(() => runnerRef.current?.markDirty(), []),
     setKeyboardCapture: useCallback((on: boolean) => vmRef.current?.setKeyboardCapture(on), []),
@@ -292,5 +341,6 @@ export function useRmhosMachine(
     restart,
     linuxUser: sessionQ.data?.linuxUser ?? null,
     net: sessionQ.data?.net ?? null,
+    netState,
   };
 }

@@ -21,10 +21,20 @@ import type { VmHandle, VmPhase, VmPhaseDetail } from './vm-types';
 
 export type { VmHandle, VmPhase, VmPhaseDetail } from './vm-types';
 
+export type NetConfig = { url: string; ticket: string } | null;
+
+/** A ticket is minted for 60 s of first use; past this age it is fetched again before it is baked in. */
+export const TICKET_REFRESH_MS = 45_000;
+
 export interface CreateVmOptions {
   screen: HTMLDivElement;
   manifest: ImageManifest;
-  net: { url: string; ticket: string } | null;
+  /**
+   * The relay and ticket. A function is called as late as possible (after the emulator module
+   * has loaded, just before the machine is built, and again before a cold-boot rebuild if the
+   * ticket is older than TICKET_REFRESH_MS), because v86 bakes the URLs in when it starts.
+   */
+  net: NetConfig | (() => Promise<NetConfig>);
   /** Aborting while the emulator is still loading rejects with an AbortError and starts nothing. */
   signal?: AbortSignal;
   /** Test seam: how the emulator module is loaded. Defaults to the memoised v86 import. */
@@ -42,14 +52,13 @@ function baseUrlOf(manifest: ImageManifest): string {
  * way to set a path or a query. A ticket cannot ride on that, so the value closes the host
  * early: `host/rmhos-net/dns-query?ticket=T#` makes the request URL
  * `https://host/rmhos-net/dns-query?ticket=T` (the trailing `#` swallows the appended path).
- * Without a relay the sockets point at the hub with no ticket, which it refuses.
+ * Without a relay (networking off) both are empty and v86 opens nothing.
  */
-export function relayConfig(net: CreateVmOptions['net'], pageHost: string, pageIsHttps: boolean) {
+export function relayConfig(net: NetConfig) {
   if (!net) {
-    return {
-      relayUrl: `${pageIsHttps ? 'wisps' : 'wisp'}://${pageHost}${RMHOS.netPath}`,
-      dohServer: `${pageHost}${RMHOS.netPath}dns-query#`,
-    };
+    // An empty relay URL makes v86 build no network adapter at all: the card exists, nothing is
+    // dialled, no WebSocket is opened.
+    return { relayUrl: '', dohServer: '' };
   }
   const u = new URL(net.url);
   const secure = u.protocol === 'wss:' || u.protocol === 'https:';
@@ -131,7 +140,14 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   // The page may have left while the emulator module loaded: build nothing (640 MB a machine).
   if (signal?.aborted) throw new DOMException('rmhOS machine creation aborted', 'AbortError');
   const base = baseUrlOf(manifest);
-  const { relayUrl, dohServer } = relayConfig(net, location.host, location.protocol === 'https:');
+  let mintedAt = Date.now();
+  const configure = async () => {
+    const n = typeof net === 'function' ? await net() : net;
+    mintedAt = Date.now();
+    return relayConfig(n);
+  };
+  let { relayUrl, dohServer } = await configure();
+  if (signal?.aborted) throw new DOMException('rmhOS machine creation aborted', 'AbortError');
 
   let captureOn = screen.ownerDocument.activeElement === screen;
   const setCapture = (e: V86Instance, on: boolean) =>
@@ -179,7 +195,17 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
         void e.destroy().catch(() => {});
         emulator = null;
         setPhase('downloading');
-        emulator = build(false);
+        void (async () => {
+          // The state download may have been slow: a ticket nearly out of its first-use window is replaced.
+          if (typeof net === 'function' && Date.now() - mintedAt > TICKET_REFRESH_MS) {
+            try {
+              ({ relayUrl, dohServer } = await configure());
+            } catch {
+              // keep the old one: a cold boot without a working network beats none
+            }
+          }
+          if (!destroyed) emulator = build(false);
+        })();
       } else {
         setPhase('failed', { error: why });
       }

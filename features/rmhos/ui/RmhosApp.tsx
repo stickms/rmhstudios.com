@@ -78,8 +78,7 @@ export default function RmhosApp() {
       toast.error(t('save-failed', { defaultValue: 'Could not save ({{code}})', code: r.code }));
   }, [session.lastSave, t]);
 
-  const net: NetState =
-    !session.net || !session.net.enabled ? 'off' : session.desktopReady ? 'on' : 'connecting';
+  const net: NetState = !session.net || !session.net.enabled ? 'off' : session.netState;
   const state = toolbarState({
     phase: session.phase === 'session' ? 'booting' : session.phase,
     desktopReady: session.desktopReady,
