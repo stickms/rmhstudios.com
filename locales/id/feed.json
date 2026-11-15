@@ -1510,5 +1510,8 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "Di sekitar peringkatmu",
+  "leaderboard-near-you-hint": "Pemain tepat di atas dan di bawah peringkatmu.",
+  "quest-to-go_other": "{{count}} lagi"
 }

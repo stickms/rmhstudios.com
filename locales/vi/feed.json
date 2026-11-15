@@ -1510,5 +1510,8 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "Quanh thứ hạng của bạn",
+  "leaderboard-near-you-hint": "Những người chơi ngay trên và dưới thứ hạng của bạn.",
+  "quest-to-go_other": "Còn {{count}}"
 }

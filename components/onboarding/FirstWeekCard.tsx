@@ -58,8 +58,11 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
 
   if (graduated) return null;
 
-  const doneCount = status.steps.filter((s) => s.done).length;
-  const total = status.steps.length;
+  // Endowed progress (Nunes & Dreze, 2006): a goal that starts partly done is
+  // finished more often. The credit is real — signing up IS the first step — so
+  // it is shown as a done row and counted, not invented.
+  const doneCount = status.steps.filter((s) => s.done).length + 1;
+  const total = status.steps.length + 1;
 
   const graduate = async () => {
     setClaiming(true);
@@ -115,6 +118,17 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
       </p>
 
       <ul className="mb-3 space-y-1.5">
+        <li>
+          <span className="flex items-start gap-2.5 py-0.5 text-sm">
+            <CheckCircle2
+              className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-success"
+              aria-hidden
+            />
+            <span className="min-w-0 flex-1 text-site-text-muted line-through">
+              {t('first-week-step-account', { defaultValue: 'Create your account' })}
+            </span>
+          </span>
+        </li>
         {status.steps.map((step) => {
           const locked = !step.available && !step.done;
           const row = (

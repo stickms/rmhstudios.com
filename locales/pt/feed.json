@@ -1600,5 +1600,10 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "Perto da sua posição",
+  "leaderboard-near-you-hint": "Os jogadores logo acima e abaixo da sua posição.",
+  "quest-to-go_other": "Faltam {{count}}",
+  "quest-to-go_many": "Faltam {{count}}",
+  "quest-to-go_one": "Faltam {{count}}"
 }

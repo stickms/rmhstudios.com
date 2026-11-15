@@ -1555,5 +1555,9 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "آپ کی رینک کے آس پاس",
+  "leaderboard-near-you-hint": "آپ کی رینک سے بالکل اوپر اور نیچے والے کھلاڑی۔",
+  "quest-to-go_other": "{{count}} باقی",
+  "quest-to-go_one": "{{count}} باقی"
 }

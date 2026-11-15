@@ -921,5 +921,6 @@
   "membership-status-success": "Payment received. Your membership is being activated.",
   "membership-current-line": "You are on {{plan}}.",
   "plan-included": "Included in your plan",
-  "plan-create-account": "Create an account"
+  "plan-create-account": "Create an account",
+  "first-week-step-account": "Create your account"
 }

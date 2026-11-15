@@ -1510,5 +1510,8 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "あなたの順位の前後",
+  "leaderboard-near-you-hint": "あなたのすぐ上と下の順位のプレイヤー。",
+  "quest-to-go_other": "あと{{count}}"
 }

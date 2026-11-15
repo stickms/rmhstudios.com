@@ -266,6 +266,10 @@ function QuestSection({
  <div className="space-y-3">
  {quests.map((q) => {
  const pct = Math.min(100, Math.round((q.progress / q.target) * 100));
+ // Goal-gradient (Clark Hull, 1932): effort rises as the goal gets close, so
+ // the last third says how few are left instead of only "x / y".
+ const remaining = Math.max(0, q.target - q.progress);
+ const nearGoal = remaining > 0 && q.progress > 0 && remaining <= Math.ceil(q.target / 3);
  return (
  <div
  key={q.id}
@@ -287,6 +291,15 @@ function QuestSection({
  <span>
  {Math.min(q.progress, q.target)} / {q.target}
  </span>
+ {nearGoal && (
+ <span className="font-medium text-site-text">
+ {t('quest-to-go', {
+ defaultValue_one: '{{count}} to go',
+ defaultValue: '{{count}} to go',
+ count: remaining,
+ })}
+ </span>
+ )}
  <span aria-hidden>·</span>
  <span className="inline-flex items-center gap-1">
  <Zap className="h-3 w-3 text-site-accent"/> {q.xp}
