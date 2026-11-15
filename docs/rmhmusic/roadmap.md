@@ -26,27 +26,40 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 
 ## 2. Work in progress (uncommitted work was stopped at the user's request)
 
-### Realistic instrument sounds — started, not wired
+### Realistic instrument sounds — built and wired on a branch, awaiting the owner's audition
 - Plan (approved by the owner): `docs/superpowers/plans/2026-11-09-rmhmusic-instrument-sounds.md`.
   v1 instruments: **piano** (Salamander Grand V3, CC BY 3.0 — attribution required), **steel-string
   guitar** ("Ella Gitauru", MIT plus one sentence about attributing alterations; the CC0 nylon
-  guitar is the stated fallback only if the steel one cannot be built), **violin** and **flute**
-  (VSCO 2 Community Edition, CC0). ~1.9 MB total, ≤0.6 MB per learner. Decisions the owner confirmed:
-  default sound follows the learner's instrument; no "Mixed" option; credits page
-  `/rmhmusic/credits` linked from the Sound dialog (not a footer); chord lessons use only
-  piano/guitar (monophonic sounds fall back with one plain sentence).
-- Done (committed but **unwired and unimported**, tests pass): `lib/rmhmusic/learn/audio/instruments/`
-  — `types.ts`, `catalog.ts`, `zones.ts` (+`zones-data.ts` placeholder), `voice-pool.ts`,
-  `load-machine.ts`, `loader.ts`, `chord.ts` with 41 unit tests. They implement zone mapping /
-  detune maths, voice stealing, the `idle → loading → ready | failed` loader machine, and chord
-  strum/block timing.
-- **Not done:** the sampler engine behind `voice.ts` (synth stays the fallback), the build script
-  (fetch commit-pinned sources with SHA-256 checks, YIN pitch verification, guitar per-fret pitch
-  restore via `asetrate`, mono 64 kbps MP3), the converted audio under
-  `public/music/rmhmusic/instruments/`, the nullable `sound` column on `MusicLearnProfile`, the
-  Sound dialog, the credits page, wiring into ear / chord / hint / note-finder lessons, and the
-  per-instrument release value for the mic echo guard (`RELEASE_MS` in `voice.ts`).
-- Nobody has **listened** to any sample. The plan ends with an owner audition step.
+  guitar was NOT needed: the steel guitar built), **violin** and **flute** (VSCO 2 Community
+  Edition, CC0). Decisions the owner confirmed: default sound follows the learner's instrument; no
+  "Mixed" option; credits page `/rmhmusic/credits` linked from the Sound dialog (not a footer);
+  chord lessons use only piano/guitar (violin/flute fall back with one plain sentence in the dialog).
+- **Done (branch `claude/hopeful-bohr-99d1vw`, 2026-11-15, not yet merged or deployed):**
+  - Samples: `public/music/rmhmusic/instruments/<id>/<midi>.mp3`, 66 zones, mono 44.1 kHz CBR 64 kbps,
+    **1,933,035 bytes** (piano 565,476 · guitar 593,874 · violin 489,285 · flute 284,400). Built by
+    `scripts/rmhmusic/build-instruments.ts` from `scripts/rmhmusic/sources.json` (commit-pinned
+    URLs + SHA-256, guitar RAR from the author's Google Drive; per-fret pitch restore with
+    `asetrate`; loudness baked in; bit-exact, re-runs give identical files; YIN on every encoded
+    file fails the build at ≥0.35 st). Generated `zones-data.ts`; `assets.test.ts` holds files to it.
+  - Engine: `instruments/sampler.ts` (the `Instrument`), `instruments/engine.ts` (registry, master
+    gain + compressor, the lesson **sound session**: `loading` for at most `LOAD_WAIT_MS` 2.5 s, then
+    the samples, or the synth for the rest of that session), wired into `voice.ts` / `sequence.ts`
+    (`PlayOptions.instrument`, chord trim 1/√n, guitar strum). `soundReleaseMs` = the longer of the
+    instrument's and the synth's release (the echo guard). Metronome clicks stay the synth click.
+  - Setting: nullable `MusicLearnProfile.sound` (migration `20261115160000_music_learn_sound`),
+    `profileSchema.sound` (zod enum of `INSTRUMENT_IDS`, optional so old clients leave it alone),
+    store `setSound`, `resolveSound` / `chordSoundFor` in `catalog.ts`; `SoundDialog` from LearnHome;
+    `/rmhmusic/credits` (`SoundCredits`, full Ella MIT text, Salamander attribution); every pitched
+    lesson (ear, chord, match, find/fretboard, flashcards, first note, Practice) gets `{ instrument }`.
+- **Not done / still open:** the owner's **audition** (nobody has listened to any sample; checks
+  were YIN pitch, onset and peak on decoded/rendered audio only); Safari / iPhone (silent switch
+  mutes Web Audio; decoding MP3 on iOS) never tried; ear questions are moved by octaves into the
+  sound's range (`fitToRange`), but a note the learner taps or is asked to match outside the
+  sound's range (e.g. a C3 key with the flute) plays on the synth for that note (plan §5.2 range
+  plumbing into the generators not done); the 2.5 s wait counts from when the audio context runs;
+  the R2 sync re-versions `public/music` (games' music URLs change once); no second piano velocity
+  layer; no offline cache. The full `tsc -b` could not run in the agent container (OOM-killed);
+  a scoped check of the changed files passed — run `pnpm typecheck` once on a bigger machine.
 
 ### Sight reading game ("Sprint") — planned only, no code
 - Plan: `docs/superpowers/plans/2026-11-09-rmhmusic-note-sprint.md`. Timed MIDI reading game:
@@ -107,76 +120,18 @@ These are design sketches in plain TypeScript/SQL/JSON, **not compiled and not i
 Check them against the real files named in each heading before using them; where they differ,
 the code and the two plan files win. Task order for each feature is in its plan.
 
-### 6.1 Sampler engine (instrument sounds, plan §3 and §6)
+### 6.1 Sampler engine (instrument sounds, plan §3 and §6) — implemented
 
-Already real and tested: `lib/rmhmusic/learn/audio/instruments/types.ts` (`Instrument`,
-`InstrumentMeta`, `Zone`, `ZoneMap`, `PlayOpts`, `NoteHandle`, `INSTRUMENT_IDS`), `catalog.ts`
-(per-instrument meta), `zones.ts` (nearest zone + detune maths), `voice-pool.ts`, `load-machine.ts`
-(`LoadState`: idle → loading → ready | failed), `loader.ts`, `chord.ts`. Still to write:
-
-```ts
-// lib/rmhmusic/learn/audio/instruments/sampler.ts  (NEW)
-// One class implementing Instrument over the shared AudioContext from voice.ts.
-//  - load(): single-flight; fetch zones JSON + each MP3 (fetch + decodeAudioData, never at page
-//    load), drive load-machine events; resolve with the settled state.
-//  - play(midi, opts): zone = pickZone(zones, midi) -> AudioBufferSourceNode with
-//    playbackRate = 2 ** ((midi - zone.keyCenter) * 100 + zone.tuneCents) / 1200), gain from
-//    velocity * 10 ** (zone.gainDb / 20) * busGain / sqrt(opts.chordOf ?? 1), optional one-pole
-//    low-pass when meta.softLowpass and velocity < ~0.4; steal the oldest voice via voice-pool
-//    when meta.maxVoices is reached (mono => legato handover). stop(when) ramps gain to 0 over
-//    meta.releaseMs and disconnects on 'ended'.
-//  - A not-ready instrument returns a silent NoteHandle (never throws); callers fall back to synth.
-export function createSampler(meta: InstrumentMeta, zones: ZoneMap, ctx: () => AudioContext): Instrument;
-
-// lib/rmhmusic/learn/audio/voice.ts  (EDIT)
-//  - PlayOptions gains `instrument?: InstrumentId`; playNote() asks the registry for that
-//    instrument, uses it when state === 'ready' && canPlay(midi), else the existing synth.
-//  - soundStatus() already allows 'loading' | 'failed'; map the active instrument's LoadState.
-//  - soundReleaseMs(opts) returns the instrument's releaseMs (the mic echo guard in
-//    input/echo-window.ts and MatchNoteLesson wait this long after a note ends).
-//  - A lesson waits at most 2.5 s for 'loading', then uses the synth for the rest of the session
-//    (do not flip timbre mid-lesson). Chord lessons: only meta.polyphony === 'chord' instruments.
-```
-
-Build script (`scripts/rmhmusic/build-instruments.ts`, NEW) driven by `sources.json`:
-
-```jsonc
-{
-  "piano": {
-    "source": { "url": "https://raw.githubusercontent.com/<repo>/<commit>/<path>", "sha256": "…" },
-    "licence": "CC-BY-3.0", "credit": "salamander",
-    "zones": [{ "src": "A2v8.flac", "keyCenter": 45, "tuneCents": -12, "gainDb": -1.5 }]
-  },
-  "guitar": { "source": { "url": "<Google Drive RAR, see plan §2.4>", "sha256": "…" },
-              "restorePitch": "asetrate=16000*2^(fret/12)", "layer": "mf" }
-}
-// Steps: fetch (verify SHA-256, fail on zero-byte files) -> decode -> trim pre-roll -> restore
-// pitch where flagged -> measure pitch with lib/rmhmusic/learn/pitch YIN and FAIL if it is not
-// within 15 cents of keyCenter (VSCO wind file names are an octave low) -> mono 64 kbps MP3 ->
-// write public/music/rmhmusic/instruments/<id>/*.mp3 and generated zones JSON
-// (lib/rmhmusic/learn/audio/instruments/zones-data.ts) with durations and SHA-256s.
-```
-
-Learner setting, credits and wiring:
-
-```prisma
-// prisma/schema.prisma — additive, nullable (null = follow the learner's instrument)
-model MusicLearnProfile { /* …existing… */ sound String? @db.VarChar(16) }
-```
-
-```ts
-// lib/rmhmusic/api/rmhmusic.learn.profile.server.ts (EDIT): zod z.enum(INSTRUMENT_IDS).nullable() in the
-// body schema, via defineHandler({ rateLimit: 'write', body }, …). Client: store.ts `sound`,
-// resolveSound(profile) = profile.sound ?? (profile.instrument === 'guitar' ? 'guitar' : 'piano').
-// UI: components/rmhmusic/learn/SoundDialog.tsx — plain text rows (no chips), opened from
-// LearnHome; picking one calls load() (prefetch) and plays one note. Credits route
-// app/routes/rmhmusic/credits.tsx + lib/rmhmusic/credits.ts (Salamander CC BY 3.0 attribution
-// text and the full MIT text for the guitar; plan §2.2). Then pass { instrument } from
-// EarLesson / PlayChordLesson / MatchNoteLesson / FindNoteLesson via useNoteSound(enabled, opts).
-```
-
-Owner audition after it works (nobody has listened): one note and one interval per instrument,
-chords on piano and guitar, the steel guitar's brightness (16 kHz source), Safari/iPhone silent switch.
+The sketches that were here are now code; read the files, not a sketch:
+`lib/rmhmusic/learn/audio/instruments/` (`sampler.ts`, `engine.ts`, `catalog.ts` with
+`resolveSound` / `chordSoundFor`, `credits.ts`, generated `zones-data.ts`), `audio/voice.ts`,
+`audio/sequence.ts`, `scripts/rmhmusic/build-instruments.ts` + `sources.json`,
+`components/rmhmusic/learn/SoundDialog.tsx`, `SoundCredits.tsx`, `app/routes/rmhmusic/credits.tsx`.
+Rebuild the samples: `pnpm exec tsx scripts/rmhmusic/build-instruments.ts [piano guitar violin flute]`
+(needs `ffmpeg` with libmp3lame and `unar`; `RMHMUSIC_ARCHIVE_DIR` may point at an already
+downloaded `BJAM 5.26.04.rar`). Next steps if wanted: pass the instrument's `range` into the
+question generators of the match / find lessons (plan §5.2), a "Change sound" link in the ear sound row, a second Salamander
+velocity layer (+0.53 MB), an offline cache.
 
 ### 6.2 Sight reading game — Sprint (plan: `2026-11-09-rmhmusic-note-sprint.md`)
 
