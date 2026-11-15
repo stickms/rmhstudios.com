@@ -7,7 +7,8 @@
 #   - a small Apache: a handful of workers, so the wiki holds at most that many
 #     database connections (scripts/db-connection-budget.mjs counts them);
 #   - this site's LocalSettings.php, the RMHStudiosLogin extension (sign in with
-#     rmhstudios.com), the starter pages, and the startup script.
+#     rmhstudios.com), RMHStudiosAssist ("Edit with AI"), the starter pages,
+#     and the startup script.
 #
 # No secret is baked in: the database URL and the auth secret come from the
 # environment at run time, so the image is safe to build anywhere. Built on the
@@ -55,11 +56,13 @@ RUN printf '%s\n' \
 COPY env.php /usr/local/lib/rmhstudios/env.php
 COPY LocalSettings.php /var/www/html/LocalSettings.php
 COPY extensions/RMHStudiosLogin /var/www/html/extensions/RMHStudiosLogin
+COPY extensions/RMHStudiosAssist /var/www/html/extensions/RMHStudiosAssist
 COPY pages /usr/local/share/rmhstudios-wiki/pages
 COPY Sidebar.wiki /usr/local/share/rmhstudios-wiki/Sidebar.wiki
 COPY bootstrap.sh /usr/local/bin/wiki-bootstrap
 RUN chmod -R a+rX /usr/local/lib/rmhstudios /usr/local/share/rmhstudios-wiki \
       /var/www/html/LocalSettings.php /var/www/html/extensions/RMHStudiosLogin \
+      /var/www/html/extensions/RMHStudiosAssist \
  && chmod 0755 /usr/local/bin/wiki-bootstrap
 
 # Bring the database up to date, then serve. A failed bootstrap stops the

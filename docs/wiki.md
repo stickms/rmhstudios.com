@@ -135,6 +135,8 @@ reader ── Cloudflare ── Apache (wiki.rmhstudios.com.conf) ── mediawi
 | Sign in with rmhstudios.com (MediaWiki extension)                                     | `deploy/mediawiki/extensions/RMHStudiosLogin/`                                           |
 | Starter pages and sidebar (imported on the first start only)                          | `deploy/mediawiki/pages/*.wiki`, `deploy/mediawiki/Sidebar.wiki`                         |
 | The site's half of sign-in                                                            | `lib/wiki/sso.server.ts`, `lib/wiki/api/wiki.sso.server.ts`, `lib/wiki/wiki.contract.ts` |
+| Edit with AI on the edit page (MediaWiki extension)                                   | `deploy/mediawiki/extensions/RMHStudiosAssist/`                                          |
+| The site's half of Edit with AI (streams DeepSeek, CORS for the wiki)                 | `app/routes/api/wiki/assist.ts`, prompt `WIKI_WRITE` in `lib/ai/prompts/index.ts`        |
 | Compose service (`mediawiki`, profile `wiki`, loopback port 7010)                     | `docker-compose.yml`                                                                     |
 | Apache vhost                                                                          | `deploy/apache/wiki.rmhstudios.com.conf`                                                 |
 | DNS record                                                                            | `deploy/terraform/dns.tf` (`cloudflare_record.wiki`)                                     |
@@ -954,6 +956,359 @@ other
 fails
 a
 test.
+
+## Edit with AI
+
+Every
+wikitext
+edit
+page
+has
+an
+**Edit
+with
+AI**
+button
+above
+the
+editor.
+Press
+it,
+describe
+the
+page
+in
+your
+own
+words
+(what
+it
+should
+cover,
+the
+sections
+you
+want,
+facts
+to
+include,
+the
+tone)
+and
+press
+**Write
+page**.
+On
+a
+page
+that
+already
+has
+text,
+say
+what
+to
+change
+instead
+and
+press
+**Revise
+page**.
+DeepSeek
+writes
+the
+whole
+page
+in
+wikitext,
+and
+it
+appears
+in
+the
+edit
+box
+as
+it
+is
+written.
+Nothing
+is
+saved:
+read
+it,
+fix
+it,
+and
+press
+**Save
+changes**,
+or
+press
+**Undo**
+to
+get
+the
+box
+back
+exactly
+as
+it
+was.
+The
+edit
+summary
+is
+filled
+in
+as
+"Written
+with
+the
+AI
+assistant"
+when
+it
+is
+empty,
+so
+the
+page
+history
+says
+so.
+The
+assistant
+does
+not
+know
+facts
+it
+was
+not
+given:
+it
+leaves
+a
+placeholder
+in
+square
+brackets,
+such
+as
+`[release date]`,
+where
+one
+is
+missing.
+
+How
+it
+works:
+
+- The
+  extension
+  `RMHStudiosAssist`
+  adds
+  the
+  button
+  on
+  the
+  edit
+  page
+  of
+  a
+  wikitext
+  page
+  (not
+  CSS
+  or
+  JavaScript
+  pages),
+  for
+  signed-in
+  editors.
+- The
+  browser
+  sends
+  the
+  instruction,
+  the
+  title
+  and
+  the
+  current
+  text
+  to
+  `POST https://rmhstudios.com/api/wiki/assist`,
+  with
+  the
+  reader's
+  rmhstudios.com
+  session
+  cookie.
+  The
+  wiki
+  and
+  the
+  site
+  are
+  the
+  same
+  site,
+  so
+  the
+  browser
+  sends
+  it.
+- The
+  site
+  answers
+  the
+  wiki's
+  origin
+  with
+  CORS
+  headers,
+  on
+  every
+  response,
+  and
+  refuses
+  a
+  page
+  on
+  any
+  other
+  origin.
+  It
+  needs
+  a
+  site
+  sign-in,
+  takes
+  the
+  shared
+  AI
+  rate
+  limit
+  and
+  the
+  monthly
+  AI
+  allowance
+  every
+  AI
+  feature
+  on
+  the
+  site
+  uses,
+  and
+  meters
+  the
+  call
+  in
+  `AiUsage`
+  under
+  the
+  reader.
+  Suspended
+  accounts
+  are
+  refused.
+- The
+  answer
+  is
+  an
+  event
+  stream
+  of
+  text
+  pieces,
+  so
+  the
+  page
+  appears
+  as
+  it
+  is
+  written;
+  a
+  page
+  can
+  take
+  a
+  minute.
+- The
+  wiki
+  holds
+  no
+  AI
+  key,
+  and
+  the
+  instruction
+  and
+  the
+  page
+  are
+  framed
+  as
+  data
+  in
+  the
+  prompt
+  (`WIKI_WRITE`),
+  never
+  as
+  instructions
+  to
+  the
+  model.
+
+If
+the
+reader's
+rmhstudios.com
+session
+has
+ended
+while
+their
+wiki
+session
+has
+not,
+the
+panel
+says
+so
+with
+a
+link
+to
+sign
+in
+to
+rmhstudios.com.
+If
+they
+have
+used
+the
+month's
+AI
+allowance,
+or
+are
+sending
+too
+many
+requests,
+it
+says
+that.
 
 ## Who can do what on the wiki
 

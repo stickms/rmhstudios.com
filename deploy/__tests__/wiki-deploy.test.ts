@@ -136,6 +136,7 @@ describe('the image', () => {
       'COPY env.php /usr/local/lib/rmhstudios/env.php',
       'COPY LocalSettings.php /var/www/html/LocalSettings.php',
       'COPY extensions/RMHStudiosLogin /var/www/html/extensions/RMHStudiosLogin',
+      'COPY extensions/RMHStudiosAssist /var/www/html/extensions/RMHStudiosAssist',
       'COPY pages /usr/local/share/rmhstudios-wiki/pages',
       'COPY Sidebar.wiki /usr/local/share/rmhstudios-wiki/Sidebar.wiki',
       'COPY bootstrap.sh /usr/local/bin/wiki-bootstrap',
@@ -230,6 +231,46 @@ describe('LocalSettings.php', () => {
   it('keeps no state in the container: no uploads, no mail', () => {
     expect(code).toContain('$wgEnableUploads = false;');
     expect(code).toContain('$wgEnableEmail = false;');
+  });
+});
+
+describe('Edit with AI', () => {
+  const assistDir = 'deploy/mediawiki/extensions/RMHStudiosAssist';
+  const manifest = JSON.parse(read(`${assistDir}/extension.json`)) as {
+    Hooks: Record<string, string>;
+    ResourceModules: Record<string, { messages: string[]; packageFiles: string[] }>;
+  };
+  const script = read(`${assistDir}/resources/assist.js`);
+  const hooks = read(`${assistDir}/includes/Hooks.php`);
+  const messages = JSON.parse(read(`${assistDir}/i18n/en.json`)) as Record<string, unknown>;
+
+  it('is loaded, and calls the site at the address the wiki signs in through', () => {
+    expect(php(settings)).toContain("wfLoadExtension( 'RMHStudiosAssist' );");
+    expect(php(settings)).toContain('$wgRMHStudiosAssistSiteUrl = $wgRMHStudiosLoginSiteUrl;');
+  });
+
+  it('appears on the edit page of wikitext pages, for signed-in editors only', () => {
+    expect(manifest.Hooks).toHaveProperty(['EditPage::showEditForm:initial']);
+    expect(hooks).toContain('$editor->contentModel !== CONTENT_MODEL_WIKITEXT');
+    expect(hooks).toContain('$out->getUser()->isRegistered()');
+  });
+
+  it('posts to the endpoint the site serves, with the site session, and keeps the wiki key-free', () => {
+    expect(script).toContain("config.siteUrl + '/api/wiki/assist'");
+    expect(script).toContain("credentials: 'include'");
+    expect(read('lib/wiki/wiki.contract.ts')).toContain("path: '/api/wiki/assist'");
+    expect(php(settings)).not.toMatch(/DEEPSEEK/);
+  });
+
+  it('writes text into the box, never HTML into the page', () => {
+    expect(script).not.toMatch(/\.html\(|innerHTML/);
+    expect(script).toContain("$box.textSelection( 'setContents', value )");
+  });
+
+  it('has every message it uses', () => {
+    const used = manifest.ResourceModules['ext.rmhstudiosAssist']!.messages;
+    for (const key of used) expect(messages, key).toHaveProperty([key]);
+    for (const [, key] of script.matchAll(/mw\.msg\(\s*'([\w-]+)'/g)) expect(used).toContain(key);
   });
 });
 
