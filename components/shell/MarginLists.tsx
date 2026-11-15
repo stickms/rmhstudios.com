@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { exploreApi } from '@/lib/discovery/explore.contract';
 import { marginExploreKey } from '@/lib/discovery/margin-query';
+import { useMarginRefreshOnFollow } from '@/hooks/useMarginRefreshOnFollow';
 import type { ExploreResult } from '@/lib/explore.server';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useFreshUser } from '@/stores/userDisplayStore';
@@ -45,6 +46,9 @@ export default function MarginLists() {
   const viewerId =
     session?.user
       ?.id;
+  useMarginRefreshOnFollow(
+    viewerId,
+  );
   // Supplementary: a failure leaves the lists out. The cache is shared across pages, so a client navigation re-uses it.
   const {
     data,

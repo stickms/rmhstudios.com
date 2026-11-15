@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
-import { invalidateMarginExplore } from '@/lib/discovery/margin-query';
+import { notifyFollowChanged } from '@/lib/discovery/margin-query';
 import { exploreApi, tipsLeaderboardApi } from '@/lib/discovery/explore.contract';
 import { RMHarkCard } from './RMHarkCard';
 import { WhyTrending } from '@/components/discovery/WhyTrending';
@@ -461,7 +460,6 @@ export function ExploreRecommendations({
 function FollowButton({ userId }: { userId: string }) {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
-  const queryClient = useQueryClient();
   const [following, setFollowing] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -485,7 +483,7 @@ function FollowButton({ userId }: { userId: string }) {
         setBusy(true);
         try {
           await api(toggleFollowApi, { params: { id: userId } });
-          void invalidateMarginExplore(queryClient);
+          notifyFollowChanged();
         } catch {
           setFollowing(was);
         } finally {

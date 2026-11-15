@@ -5,9 +5,8 @@ import { Spinner } from'@/components/ui/spinner';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { Link } from'@tanstack/react-router';
 import { useSession } from'@/components/Providers';
-import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/contract/client';
-import { invalidateMarginExplore } from '@/lib/discovery/margin-query';
+import { notifyFollowChanged } from '@/lib/discovery/margin-query';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -39,7 +38,6 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  const initialFetched = useRef(false);
  const fetchingRef = useRef(false);
  const { data: session } = useSession();
- const queryClient = useQueryClient();
  // Steel M9: rows replace the spinner and fade in; the class stays, so each later page's rows fade as they mount.
  const arrival = useArrival(users.length > 0 || !loading);
 
@@ -121,7 +119,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  try {
  // A non-2xx throws HttpError, so the catch below is the revert path.
  await api(toggleFollowApi, { params: { id: targetUser.id } });
- void invalidateMarginExplore(queryClient);
+ notifyFollowChanged();
  } catch {
  setUsers((prev) =>
  prev.map((u) =>
