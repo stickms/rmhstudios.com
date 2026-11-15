@@ -11,33 +11,42 @@ import { toast } from '@/lib/shared/app-toast';
 import type { CopyKind, StoredCopies as Copies } from '../engine/home-sync';
 import ConfirmBox from './ConfirmBox';
 import { copyFileName, downloadBytes } from './download';
+import { formatBytes } from './format';
 import { copyTime } from './save-messages';
-import type { RmhosSessionValue } from './useRmhosSession';
 
-type Source = Pick<RmhosSessionValue, 'storedCopies' | 'exportCopy' | 'removeCopy'>;
-
-
-function size(bytes: number): string {
-  return bytes < 1024 * 1024
-    ? `${Math.max(1, Math.round(bytes / 1024))} KB`
-    : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+/** Where the copies come from: the store itself (see engine/stored-home.ts), never the machine. */
+export interface StoredCopiesSource {
+  storedCopies: () => Promise<Copies | null>;
+  exportCopy: (kind: CopyKind) => Promise<Uint8Array | null>;
+  removeCopy: (kind: 'replaced' | 'damaged') => Promise<void>;
+  /** Deletes everything stored for the account (the caller stops its machine first). */
+  deleteAll: () => Promise<void>;
 }
+
 
 export default function StoredCopies({
   session,
   container,
   currentDamaged,
+  readOnly = false,
+  machineUp = false,
 }: {
-  session: Source;
+  session: StoredCopiesSource;
   container: HTMLElement | null;
+  /** Another tab is running rmhOS for this account: list and download only. */
+  readOnly?: boolean;
   /** The current archive is unreadable: its download carries the damaged name. */
   currentDamaged: boolean;
+  /** A machine is up in this tab: deleting the files stops it. */
+  machineUp?: boolean;
 }) {
-  const { t } = useTranslation('c-rmhos');
+  const { t, i18n } = useTranslation('c-rmhos');
+  const locale = i18n.language;
   const [copies, setCopies] = useState<Copies | null>(null);
   const [removing, setRemoving] = useState<'replaced' | 'damaged' | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const { storedCopies, exportCopy, removeCopy } = session;
+  const { storedCopies, exportCopy, removeCopy, deleteAll } = session;
   const load = useCallback(() => {
     void storedCopies().then(setCopies, () => setCopies(null));
   }, [storedCopies]);
@@ -91,8 +100,8 @@ export default function StoredCopies({
                   {' '}
                   {t('copy-detail', {
                     defaultValue: '{{size}}, saved {{time}}',
-                    size: size(r.info!.size),
-                    time: copyTime(r.info!.savedAt),
+                    size: formatBytes(r.info!.size, locale),
+                    time: copyTime(r.info!.savedAt, locale),
                   })}
                 </span>
               </span>
@@ -100,7 +109,7 @@ export default function StoredCopies({
                 <Button size="sm" onClick={() => void download(r.kind)}>
                   {t('download', { defaultValue: 'Download' })}
                 </Button>
-                {r.kind !== 'current' && (
+                {r.kind !== 'current' && !readOnly && (
                   <Button size="sm" onClick={() => setRemoving(r.kind as 'replaced' | 'damaged')}>
                     {t('remove', { defaultValue: 'Remove' })}
                   </Button>
@@ -109,6 +118,47 @@ export default function StoredCopies({
             </li>
           ))}
       </ul>
+      {!readOnly && (
+        <div>
+          <Button size="sm" onClick={() => setDeleting(true)}>
+            {t('delete-files', { defaultValue: 'Delete my files from this browser' })}
+          </Button>
+        </div>
+      )}
+      <ConfirmBox
+        open={deleting}
+        container={container}
+        title={
+          machineUp
+            ? t('delete-files-confirm-stops', {
+                defaultValue:
+                  'Delete your files from this browser? This removes your saved files, the files replaced by a backup and any damaged copy, and stops rmhOS. It cannot be undone. Download a backup first to keep them.',
+              })
+            : t('delete-files-confirm', {
+                defaultValue:
+                  'Delete your files from this browser? This removes your saved files, the files replaced by a backup and any damaged copy. It cannot be undone. Download a backup first to keep them.',
+              })
+        }
+        confirmLabel={t('delete', { defaultValue: 'Delete' })}
+        onCancel={() => setDeleting(false)}
+        onConfirm={() => {
+          setDeleting(false);
+          deleteAll().then(
+            () => {
+              toast.success(
+                t('files-deleted', { defaultValue: 'Your files were deleted from this browser.' }),
+              );
+              load();
+            },
+            () =>
+              toast.error(
+                t('delete-files-failed-stopped', {
+                  defaultValue: 'Could not delete the files. rmhOS was stopped; restart it to continue.',
+                }),
+              ),
+          );
+        }}
+      />
       <ConfirmBox
         open={removing !== null}
         container={container}
@@ -116,7 +166,7 @@ export default function StoredCopies({
           removing === 'replaced' && copies.replaced
             ? t('remove-replaced-confirm', {
                 defaultValue: 'Remove the files from {{time}}? They cannot be recovered.',
-                time: copyTime(copies.replaced.savedAt),
+                time: copyTime(copies.replaced.savedAt, locale),
               })
             : t('remove-damaged-confirm', {
                 defaultValue: 'Remove the earlier damaged copy? It cannot be recovered.',

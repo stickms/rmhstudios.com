@@ -1497,23 +1497,60 @@ fi
 
 # ── rmhOS relay hub ──────────────────────────────────────────────────────────
 # The hub dials the internet for strangers, so it only starts once its egress firewall is PROVEN
-# (deploy/rmhos-net/probe-firewall.sh: a throwaway container on its network must time out
-# connecting to the host). The firewall itself is a root systemd unit this sandboxed deploy cannot
-# install (deploy/systemd/rmhos-net-firewall.service). The service sits behind a compose profile,
-# so the fleet `up` above never starts it. Nothing here needs privilege, and nothing here can fail
-# the site deploy: an unproven firewall, a missing secret or a failed start leaves the hub stopped.
+# (deploy/rmhos-net/probe-firewall.sh: from a throwaway container on its network the unroutable
+# sentinel must be refused by our chain and the host must time out). The firewall itself is a root
+# systemd unit this sandboxed deploy cannot install (deploy/systemd/rmhos-net-firewall.service).
+# The service sits behind a compose profile, so the fleet `up` above never starts it. Nothing here
+# needs privilege, and nothing here can fail the site deploy: an unproven firewall, a missing secret
+# or a failed start leaves the hub stopped.
+#
+# A hub restart ends every user's network session (tickets and meters live in its memory), and the
+# image tag moves on every deploy, so compose would recreate the hub on every push. It is therefore
+# recreated only when something it RUNS changed: the fingerprint below (its bundle and the ws it
+# loads, in the NEW image, plus its resolved compose configuration, which includes every RMHOS_NET_*
+# value) is stamped on the container as the label rmhos.hub-fingerprint; an equal fingerprint, a
+# running hub, a passing probe and a healthy /health leave the container alone.
 rmhos_net_stop() { dc --profile rmhos-net stop rmhos-net >/dev/null 2>&1 || true; }
+# The secret must be set to something the hub accepts: 32+ characters, quoted or not.
+rmhos_secret_ok() {
+    local v
+    v=$(sed -n 's/^RMHOS_NET_TICKET_SECRET=//p' "$ENV_FILE" 2>/dev/null | tail -n1)
+    v=${v%\"}; v=${v#\"}; v=${v%\'}; v=${v#\'}
+    [ "${#v}" -ge 32 ]
+}
+rmhos_hub_fingerprint() {
+    local img bundle cfg
+    img=$(dc --profile rmhos-net config --images rmhos-net 2>/dev/null | head -n1) || return 1
+    [ -n "$img" ] || return 1
+    bundle=$("$DOCKER_BIN" run --rm --entrypoint sh "$img" -c 'sha256sum dist-server/server/rmhos-net/index.cjs node_modules/ws/package.json && node --version' 2>/dev/null) || return 1
+    [ -n "$bundle" ] || return 1
+    # The label itself is part of the configuration: hash it empty.
+    cfg=$(RMHOS_HUB_FINGERPRINT='' dc --profile rmhos-net config rmhos-net 2>/dev/null) || return 1
+    [ -n "$cfg" ] || return 1
+    printf '%s\n%s\n' "$bundle" "$cfg" | sha256sum | cut -d' ' -f1
+}
 {
-    if ! grep -Eq '^RMHOS_NET_TICKET_SECRET=.+' "$ENV_FILE" 2>/dev/null; then
-        log "rmhOS relay hub: RMHOS_NET_TICKET_SECRET is not set; the hub is not started."
+    if ! rmhos_secret_ok; then
+        log "rmhOS relay hub: RMHOS_NET_TICKET_SECRET is not set (or is under 32 characters); the hub is not started."
         rmhos_net_stop
     elif DOCKER_BIN="$DOCKER_BIN" PROJECT_NAME="$PROJECT_NAME" ENV_FILE="$ENV_FILE" \
             bash "$REPO_DIR/deploy/rmhos-net/probe-firewall.sh"; then
-        if dc --profile rmhos-net up -d --no-build rmhos-net >/dev/null 2>&1 && check_http "${PORT_RMHOS_NET:-7009}"; then
-            log "rmhOS relay hub is up (loopback port ${PORT_RMHOS_NET:-7009}), egress firewall proven."
+        _hub_fp=$(rmhos_hub_fingerprint 2>/dev/null || true)
+        _hub_cid=$(dc --profile rmhos-net ps -q rmhos-net 2>/dev/null | head -n1)
+        _hub_state=''
+        [ -z "$_hub_cid" ] || _hub_state=$("$DOCKER_BIN" inspect -f '{{.State.Running}} {{index .Config.Labels "rmhos.hub-fingerprint"}}' "$_hub_cid" 2>/dev/null || true)
+        if [ -n "$_hub_fp" ] && [ "$_hub_state" = "true $_hub_fp" ] \
+            && curl -fsS --max-time 4 "http://127.0.0.1:${PORT_RMHOS_NET:-7009}/health" >/dev/null 2>&1; then
+            log "rmhOS relay hub unchanged (fingerprint ${_hub_fp:0:12}); left running, network sessions are not interrupted. Egress firewall proven."
         else
-            log "WARNING: the rmhOS relay hub did not start healthy; stopping it. The site deploy is unaffected."
-            rmhos_net_stop
+            export RMHOS_HUB_FINGERPRINT="$_hub_fp"
+            if dc --profile rmhos-net up -d --no-build rmhos-net >/dev/null 2>&1 && check_http "${PORT_RMHOS_NET:-7009}"; then
+                log "rmhOS relay hub (re)started (loopback port ${PORT_RMHOS_NET:-7009}), egress firewall proven. Users' network sessions ended; they restart rmhOS to reconnect."
+            else
+                log "WARNING: the rmhOS relay hub did not start healthy; stopping it. The site deploy is unaffected."
+                rmhos_net_stop
+            fi
+            unset RMHOS_HUB_FINGERPRINT
         fi
     else
         rmhos_net_stop

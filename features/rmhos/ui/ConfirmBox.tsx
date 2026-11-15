@@ -14,6 +14,8 @@ interface Props {
   container: HTMLElement | null;
   title: string;
   confirmLabel: string;
+  /** Defaults to "Cancel". */
+  cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -23,6 +25,7 @@ export default function ConfirmBox({
   container,
   title,
   confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
 }: Props) {
@@ -34,7 +37,9 @@ export default function ConfirmBox({
           <DialogTitle className="text-sm font-normal">{title}</DialogTitle>
         </DialogHeader>
         <DialogFooter>
-          <Button onClick={onCancel}>{t('cancel', { defaultValue: 'Cancel' })}</Button>
+          <Button onClick={onCancel}>
+            {cancelLabel ?? t('cancel', { defaultValue: 'Cancel' })}
+          </Button>
           <Button variant="primary" onClick={onConfirm}>
             {confirmLabel}
           </Button>

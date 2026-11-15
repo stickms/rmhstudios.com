@@ -6,6 +6,7 @@
 import { AgentError, type AgentClient } from './agent';
 import { SHARE_ARCHIVE_PATH } from './agent-protocol';
 import type { CachedHome, HomeStore, StoreOp } from './home-store';
+import { StoredHome, type CopyKind, type StoredCopies } from './stored-home';
 import type { VmHandle } from './vm-types';
 
 export type SaveResult =
@@ -21,9 +22,17 @@ export type SaveResult =
 
 type Bytes = Uint8Array<ArrayBuffer>;
 
+/**
+ * Runs `data` through a (de)compression stream. The bytes are written to the stream as one chunk
+ * and the output is collected by a Response: no Blob copy of the input (a tar can be 100 MB) and
+ * no second wrapper around the result.
+ */
 async function pipe(data: Uint8Array, t: CompressionStream | DecompressionStream): Promise<Bytes> {
-  const stream = new Blob([data as BlobPart]).stream().pipeThrough(t);
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  const writer = t.writable.getWriter();
+  const written = writer.write(data as Uint8Array<ArrayBuffer>).then(() => writer.close());
+  // A failed write (a corrupt gzip) rejects the read side too; that is the error to report.
+  written.catch(() => {});
+  return new Uint8Array(await new Response(t.readable).arrayBuffer());
 }
 
 const gzip = (d: Uint8Array) => pipe(d, new CompressionStream('gzip'));
@@ -56,17 +65,7 @@ export async function checkBackup(gz: Uint8Array): Promise<Bytes> {
   return tar;
 }
 
-export type CopyKind = 'current' | 'replaced' | 'damaged';
-export interface StoredCopy {
-  /** Bytes of the stored gzip. */
-  size: number;
-  savedAt: number;
-}
-export interface StoredCopies {
-  current: StoredCopy | null;
-  replaced: StoredCopy | null;
-  damaged: StoredCopy | null;
-}
+export type { CopyKind, StoredCopies, StoredCopy } from './stored-home';
 
 /** Why a backup could not be stored. */
 export class BackupError extends Error {
@@ -92,14 +91,38 @@ export class BackupError extends Error {
 const isQuota = (e: unknown) => e instanceof Error && e.name === 'QuotaExceededError';
 
 /** `prepare()` outcome. `corrupt`: a stored archive exists and cannot be read; nothing was touched. */
+export interface SaveOptions {
+  timeoutMs?: number;
+  allowEmpty?: boolean;
+  /**
+   * The guest already wrote its home to the share on its own (`saved-on-poweroff`) and said how
+   * long the tar is: read the share instead of sending SAVE.
+   */
+  alreadySaved?: { bytes: number };
+}
+
 export type PrepareResult = 'local' | 'empty' | 'corrupt';
+
+/**
+ * `<userId>:meta`: a record with no archive that holds the sha256 and save time of the current
+ * entry. A save compares against it instead of reading the whole previous archive (tens of
+ * megabytes) just to learn its hash. Every transaction that writes or deletes the current entry
+ * writes or deletes this one in the same transaction. An entry saved before this key existed has
+ * none: the first save reads the archive once, then writes the key with the new archive.
+ */
+const metaKey = (userId: string) => `${userId}:meta`;
+const metaEntry = (e: { sha256: string; savedAt: number }): CachedHome => ({
+  archive: new Uint8Array(0),
+  sha256: e.sha256,
+  savedAt: e.savedAt,
+});
 
 export class HomeSync {
   private inFlight: Promise<SaveResult> | null = null;
-  private persisted = false;
   private suspended = false;
   /** sha256 of the tar this session loaded, or last wrote; null = nothing stored. */
   private knownSha: string | null = null;
+  private readonly stored: StoredHome;
 
   constructor(
     private readonly deps: {
@@ -108,7 +131,9 @@ export class HomeSync {
       agent: Pick<AgentClient, 'save'>;
       store: HomeStore;
     },
-  ) {}
+  ) {
+    this.stored = new StoredHome(deps.store, deps.userId);
+  }
 
   /** Where the archives live (see HomeStore.kind). */
   get storeKind(): 'indexeddb' | 'memory' {
@@ -158,6 +183,7 @@ export class HomeSync {
       await store.transact([
         { key: `${userId}:damaged`, put: cached },
         { key: userId, delete: true },
+        { key: metaKey(userId), delete: true },
       ]);
     } catch (e) {
       throw new BackupError(isQuota(e) ? 'storage-full' : 'storage_error');
@@ -170,7 +196,7 @@ export class HomeSync {
     this.suspended = true;
   }
 
-  save(opts: { timeoutMs?: number; allowEmpty?: boolean } = {}): Promise<SaveResult> {
+  save(opts: SaveOptions = {}): Promise<SaveResult> {
     if (this.suspended) return Promise.resolve({ status: 'failed', code: 'suspended' });
     return (this.inFlight ??= this.doSave(opts).finally(() => {
       this.inFlight = null;
@@ -178,10 +204,11 @@ export class HomeSync {
   }
 
   /** Asks the guest for its home as a tar and checks what arrived. Throws `bad_archive` or the agent's error. */
-  private async readGuestTar(timeoutMs?: number): Promise<Bytes> {
+  private async readGuestTar(timeoutMs?: number, alreadySaved?: { bytes: number }): Promise<Bytes> {
     const { agent, vm } = this.deps;
-    const { bytes } = await agent.save(timeoutMs);
-    const tar = new Uint8Array(await vm.readShareFile(SHARE_ARCHIVE_PATH));
+    const { bytes } = alreadySaved ?? (await agent.save(timeoutMs));
+    // v86 hands back its own copy of the file: used as is, not copied again.
+    const tar = (await vm.readShareFile(SHARE_ARCHIVE_PATH)) as Bytes;
     await vm.deleteShareFile(SHARE_ARCHIVE_PATH).catch(() => {});
     // The guest says how long the tar is; what was read must be exactly that, and a tar.
     if (tar.length !== bytes || tar.length === 0 || !looksLikeTar(tar))
@@ -189,29 +216,42 @@ export class HomeSync {
     return tar;
   }
 
-  private async doSave(opts: { timeoutMs?: number; allowEmpty?: boolean }): Promise<SaveResult> {
+  /**
+   * The sha256 of the stored current entry, without reading its archive: from `<userId>:meta`
+   * when there is one and the entry it describes is still there, else (an entry saved before the
+   * meta key existed) from the entry itself.
+   */
+  private async storedSha(): Promise<string | null> {
+    const { store, userId } = this.deps;
+    const meta = await store.get(metaKey(userId));
+    if (meta?.sha256 && (await store.has(userId))) return meta.sha256;
+    return (await store.get(userId))?.sha256 ?? null;
+  }
+
+  private async doSave(opts: SaveOptions): Promise<SaveResult> {
     const { store, userId } = this.deps;
     let tar: Bytes;
     try {
-      tar = await this.readGuestTar(opts.timeoutMs);
+      tar = await this.readGuestTar(opts.timeoutMs, opts.alreadySaved);
     } catch (e) {
       if (e instanceof Error && e.message === 'bad_archive')
         return { status: 'failed', code: 'bad_archive' };
       return { status: 'failed', code: e instanceof AgentError ? e.code : 'share' };
     }
     try {
-      const previous = await store.get(userId);
+      const storedSha = await this.storedSha();
       // Another tab (or an import) replaced the stored home since this session read or wrote it.
-      if ((previous?.sha256 ?? null) !== this.knownSha)
-        return { status: 'failed', code: 'changed_elsewhere' };
+      if (storedSha !== this.knownSha) return { status: 'failed', code: 'changed_elsewhere' };
       // The hash is of the tar: gzip output of one input is stable, but hashing the input
       // does not depend on that. A tar whose mtimes changed is a different tar, and is saved.
       const sha256 = await sha256Hex(tar);
-      if (previous?.sha256 === sha256) return { status: 'unchanged' };
-      if (previous && !opts.allowEmpty && tarIsEmpty(tar)) {
+      if (storedSha === sha256) return { status: 'unchanged' };
+      if (storedSha !== null && !opts.allowEmpty && tarIsEmpty(tar)) {
+        // Only now is the stored archive read: an empty home over a stored one is the rare case.
         let storedEmpty = false;
         try {
-          storedEmpty = tarIsEmpty(await checkBackup(previous.archive));
+          const previous = await store.get(userId);
+          storedEmpty = previous ? tarIsEmpty(await checkBackup(previous.archive)) : false;
         } catch {
           // An unreadable stored archive counts as non-empty: never replace it with nothing.
         }
@@ -223,8 +263,10 @@ export class HomeSync {
       try {
         // The home now differs from the restored backup, so the home it replaced can no longer be
         // put back and goes with this write: one transaction, so a failed save leaves both alone.
+        const entry = { archive, sha256, savedAt: Date.now() };
         await store.transact([
-          { key: userId, put: { archive, sha256, savedAt: Date.now() } },
+          { key: userId, put: entry },
+          { key: metaKey(userId), put: metaEntry(entry) },
           { key: `${userId}:replaced`, delete: true },
         ]);
       } catch (e) {
@@ -233,10 +275,6 @@ export class HomeSync {
           : { status: 'failed', code: 'storage_error' };
       }
       this.knownSha = sha256;
-      if (!this.persisted) {
-        this.persisted = true;
-        void Promise.resolve(globalThis.navigator?.storage?.persist?.()).catch(() => {});
-      }
       return { status: 'saved', bytes: archive.length };
     } catch {
       return { status: 'failed', code: 'storage_error' };
@@ -253,14 +291,13 @@ export class HomeSync {
   }
 
   /** The stored gzip and when it was saved, for naming a stale copy honestly. */
-  async storedInfo(): Promise<{ archive: Uint8Array; savedAt: number } | null> {
-    const c = await this.deps.store.get(this.deps.userId);
-    return c ? { archive: c.archive, savedAt: c.savedAt } : null;
+  storedInfo(): Promise<{ archive: Uint8Array; savedAt: number } | null> {
+    return this.stored.info();
   }
 
   /** The stored gzip, byte for byte (also when it is damaged), for a backup download. */
-  async exportArchive(): Promise<Uint8Array | null> {
-    return (await this.deps.store.get(this.deps.userId))?.archive ?? null;
+  exportArchive(): Promise<Uint8Array | null> {
+    return this.stored.exportCopy('current');
   }
 
   /**
@@ -309,7 +346,7 @@ export class HomeSync {
           ops.push({ key: `${userId}:replaced`, put: { ...previous, forSha: entry.sha256 } });
         }
       }
-      ops.push({ key: userId, put: entry });
+      ops.push({ key: userId, put: entry }, { key: metaKey(userId), put: metaEntry(entry) });
       // Every key moves together or none does: a failure leaves the old home, its previous
       // copy and the offer to put it back exactly as they were.
       await store.transact(ops);
@@ -354,6 +391,7 @@ export class HomeSync {
           key: userId,
           put: { archive: replaced.archive, sha256: replaced.sha256, savedAt: replaced.savedAt },
         },
+        { key: metaKey(userId), put: metaEntry(replaced) },
         { key: `${userId}:replaced`, delete: true },
       ]);
       this.knownSha = replaced.sha256;
@@ -376,27 +414,37 @@ export class HomeSync {
   }
 
   /** What is stored for this account, so none of it sits in the browser unseen. */
-  async storedCopies(): Promise<StoredCopies> {
-    const { store, userId } = this.deps;
-    const info = (c: CachedHome | null) =>
-      c ? { size: c.archive.length, savedAt: c.savedAt } : null;
-    return {
-      current: info(await store.get(userId)),
-      replaced: info(await store.get(`${userId}:replaced`)),
-      damaged: info(await store.get(`${userId}:damaged`)),
-    };
+  storedCopies(): Promise<StoredCopies> {
+    return this.stored.copies();
   }
 
   /** The stored gzip of one copy, byte for byte. */
-  async exportCopy(kind: CopyKind): Promise<Uint8Array | null> {
-    const key = kind === 'current' ? this.deps.userId : `${this.deps.userId}:${kind}`;
-    return (await this.deps.store.get(key))?.archive ?? null;
+  exportCopy(kind: CopyKind): Promise<Uint8Array | null> {
+    return this.stored.exportCopy(kind);
   }
 
   /** Deletes one of the two extra copies (never the current one). */
-  async removeCopy(kind: 'replaced' | 'damaged'): Promise<void> {
-    // Runtime guard: the type is no protection against a stray string, and 'current' must never go.
-    if (kind !== 'replaced' && kind !== 'damaged') throw new Error(`cannot remove copy: ${kind}`);
-    await this.deps.store.delete(`${this.deps.userId}:${kind}`);
+  removeCopy(kind: 'replaced' | 'damaged'): Promise<void> {
+    return this.stored.removeCopy(kind);
   }
+}
+
+/**
+ * Stores a backup for the account with no machine running (halted, stopped or powered off): the
+ * same validation, previous-copy and damaged-copy rules as `HomeSync.importArchive`, which only
+ * ever touches the store. The caller restarts the machine afterwards, which loads the backup.
+ */
+export async function importWithoutMachine(
+  userId: string,
+  store: HomeStore,
+  gz: Uint8Array,
+): Promise<void> {
+  const noMachine = () => Promise.reject(new Error('no machine'));
+  const sync = new HomeSync({
+    userId,
+    store,
+    vm: { writeShareFile: noMachine, readShareFile: noMachine, deleteShareFile: noMachine },
+    agent: { save: noMachine },
+  });
+  await sync.importArchive(gz);
 }

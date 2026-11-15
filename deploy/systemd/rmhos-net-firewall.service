@@ -17,6 +17,9 @@
 #   4. Verify:  systemctl status rmhos-net-firewall.service
 #               sudo iptables -S RMHOS-EGRESS
 #      Re-run after editing the script:  sudo systemctl restart rmhos-net-firewall.service
+#   5. Optional, to source relay traffic from a second public address instead of the host's own
+#      (docs/rmhos.md, "Whose address"): put   RMHOS_EGRESS_SNAT_TO=<that IPv4>   in
+#      /etc/default/rmhos-net-firewall and restart the unit. Unset = off.
 # ─────────────────────────────────────────────────────────────────────────────
 
 [Unit]
@@ -31,6 +34,7 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=/bin/bash /home/rmhstudios/rmhstudios.com/deploy/rmhos-net/egress-firewall.sh
 User=root
+EnvironmentFile=-/etc/default/rmhos-net-firewall
 
 [Install]
 WantedBy=multi-user.target

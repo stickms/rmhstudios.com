@@ -1,7 +1,7 @@
 // The one definition of the rmhOS virtual machine. The snapshot (snapshot.mjs),
-// the smoke test and the browser page (Task 7, which mirrors these values in
-// TypeScript) all build the machine from here: a v86 state only restores into
-// the same memory size, device set and kernel command line.
+// the smoke test and the browser page (features/rmhos/engine/vm-options.ts, which imports this
+// file as is) all build the machine from here: a v86 state only restores into the same memory
+// size, device set and kernel command line.
 //
 // `baseUrl` is where bzImage, rootfs.ext4, seabios.bin and vgabios.bin are
 // served from, ending in a slash (an https URL in the browser, a directory path
@@ -16,7 +16,10 @@ export const CMDLINE =
 /** What the snapshot is taken with. A restored machine may use a different relay URL. */
 export const PLACEHOLDER_RELAY_URL = 'wisp://127.0.0.1:1/';
 
-export function baseVmOptions({ baseUrl, relayUrl = PLACEHOLDER_RELAY_URL }) {
+// `rootfsSize` (bytes) is the browser's: with it v86 builds the disk without first asking the
+// server for the file size (a ranged request whose Content-Range answer a cross-origin CDN has
+// to expose). The snapshot script leaves it out; the size is not part of the saved state.
+export function baseVmOptions({ baseUrl, relayUrl = PLACEHOLDER_RELAY_URL, rootfsSize }) {
   return {
     memory_size: MEMORY_BYTES,
     vga_memory_size: VGA_MEMORY_BYTES,
@@ -35,6 +38,7 @@ export function baseVmOptions({ baseUrl, relayUrl = PLACEHOLDER_RELAY_URL }) {
     hda: {
       url: `${baseUrl}rootfs.ext4`,
       async: true,
+      ...(rootfsSize ? { size: rootfsSize } : {}),
     },
     cmdline: CMDLINE,
     filesystem: {},

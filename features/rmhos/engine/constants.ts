@@ -8,4 +8,6 @@ export const RMHOS = {
   ticketTtlMs: 60_000,
   netPath: '/rmhos-net/',
   netPort: 7009,
+  /** Shortest relay ticket secret the web tier and the hub accept (`openssl rand -hex 32` is 64). */
+  minSecretLength: 32,
 } as const;

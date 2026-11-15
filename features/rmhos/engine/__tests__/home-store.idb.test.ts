@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SHARE_ARCHIVE_PATH } from '../agent-protocol';
 import { HomeSync } from '../home-sync';
 import { openHomeStore, type CachedHome, type HomeStore } from '../home-store';
+import { putEntry } from './store-helpers';
 
 const entry = (n: number): CachedHome => ({
   archive: new Uint8Array([n, n]),
@@ -24,15 +25,24 @@ describe('openHomeStore on IndexedDB', () => {
   it('puts, gets and deletes, and says it is IndexedDB', async () => {
     expect(await store.get('a')).toBeNull();
     expect(store.kind).toBe('indexeddb');
-    await store.put('a', entry(1));
+    await putEntry(store, 'a', entry(1));
     expect(await store.get('a')).toEqual(entry(1));
     await store.delete('a');
     expect(await store.get('a')).toBeNull();
   });
 
+  it('has() says whether an entry exists without reading it', async () => {
+    expect(await store.has('a')).toBe(false);
+    await putEntry(store, 'a', entry(1));
+    expect(await store.has('a')).toBe(true);
+    expect(await store.has('b')).toBe(false);
+    await store.delete('a');
+    expect(await store.has('a')).toBe(false);
+  });
+
   it('transact applies every put and delete in one go', async () => {
-    await store.put('a', entry(1));
-    await store.put('gone', entry(9));
+    await putEntry(store, 'a', entry(1));
+    await putEntry(store, 'gone', entry(9));
     await store.transact([
       { key: 'a', put: entry(2) },
       { key: 'b', put: entry(3) },
@@ -44,8 +54,8 @@ describe('openHomeStore on IndexedDB', () => {
   });
 
   it('transact applies none of it when one op fails (the earlier ones are rolled back)', async () => {
-    await store.put('a', entry(1));
-    await store.put('gone', entry(9));
+    await putEntry(store, 'a', entry(1));
+    await putEntry(store, 'gone', entry(9));
     const unclonable = { ...entry(5), archive: (() => 1) as unknown as Uint8Array };
     await expect(
       store.transact([
@@ -58,12 +68,12 @@ describe('openHomeStore on IndexedDB', () => {
     expect(await store.get('gone')).toEqual(entry(9)); // not deleted
     expect(await store.get('c')).toBeNull();
     // The connection is still good afterwards.
-    await store.put('d', entry(4));
+    await putEntry(store, 'd', entry(4));
     expect(await store.get('d')).toEqual(entry(4));
   });
 
   it('close() leaves no open connection behind', async () => {
-    await store.put('a', entry(1));
+    await putEntry(store, 'a', entry(1));
     store.close();
     const again = openHomeStore();
     expect(await again.get('a')).toEqual(entry(1));
@@ -102,8 +112,8 @@ describe('a request that fails inside a transaction', () => {
   }
 
   it('rejects with the request error, so the QuotaExceededError name survives, and applies nothing', async () => {
-    await store.put('main', entry(1));
-    await store.put('gone', entry(9));
+    await putEntry(store, 'main', entry(1));
+    await putEntry(store, 'gone', entry(9));
     failPutsFor('main');
     const err = await store
       .transact([
@@ -150,7 +160,7 @@ describe('a request that fails inside a transaction', () => {
       sha256: 'old',
       savedAt: 1,
     };
-    await store.put('u1', old);
+    await putEntry(store, 'u1', old);
     const sync = new HomeSync({ userId: 'u1', vm, agent: agent as never, store });
     await sync.prepare();
     failPutsFor('u1');

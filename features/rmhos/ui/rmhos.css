@@ -114,13 +114,6 @@
   background: var(--app-bg-subtle);
 }
 
-.rmhos-app .rmhos-status {
-  flex: none;
-  padding: 4px 12px;
-  border-top: 1px solid var(--app-border);
-  background: var(--app-bg-subtle);
-}
-
 /* v86 owns the children of this box: one div for text mode, one canvas for graphics. */
 .rmhos-app .rmhos-screen {
   position: absolute;

@@ -10,14 +10,16 @@ export interface VmOptionsInput {
   /** Directory URL of bzImage, rootfs.ext4 and the BIOS files, ending in a slash. */
   baseUrl: string;
   relayUrl: string;
+  /** Bytes of rootfs.ext4, from the manifest: saves v86 its size probe. */
+  rootfsSize?: number | undefined;
 }
 
-export function vmOptions({ baseUrl, relayUrl }: VmOptionsInput) {
-  return baseVmOptions({ baseUrl, relayUrl }) as ReturnType<typeof baseVmOptions> & {
+export function vmOptions({ baseUrl, relayUrl, rootfsSize }: VmOptionsInput) {
+  return baseVmOptions({ baseUrl, relayUrl, rootfsSize }) as ReturnType<typeof baseVmOptions> & {
     cmdline: string;
     memory_size: number;
     vga_memory_size: number;
-    hda: { url: string; async: boolean };
+    hda: { url: string; async: boolean; size?: number };
     net_device: { type: string; relay_url: string };
     preserve_mac_from_state_image: boolean;
   };

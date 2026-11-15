@@ -49,7 +49,6 @@ const koResources = {
   "c-rmhcode": () => import("@/locales/ko/c-rmhcode.json"),
   "c-rmhcoins": () => import("@/locales/ko/c-rmhcoins.json"),
   "c-rmhmusic": () => import("@/locales/ko/c-rmhmusic.json"),
-  "c-rmhos": () => import("@/locales/ko/c-rmhos.json"),
   "c-rmhstudy": () => import("@/locales/ko/c-rmhstudy.json"),
   "c-rmhtech": () => import("@/locales/ko/c-rmhtech.json"),
   "c-rmhtube": () => import("@/locales/ko/c-rmhtube.json"),

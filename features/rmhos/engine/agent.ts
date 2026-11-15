@@ -17,10 +17,10 @@ export class AgentError extends Error {
 }
 
 export const AGENT_TIMEOUTS = {
-  ready: 120_000,
   session: 30_000,
-  restore: 120_000,
-  save: 120_000,
+  // Measured in Node: a 96 MiB home restores in 7.9 s and saves in 37.9 s; a browser tab is slower.
+  restore: 240_000,
+  save: 240_000,
 } as const;
 
 export interface AgentOptions {
@@ -45,8 +45,7 @@ export class AgentClient {
   private readonly parser = new GuestLineParser();
   private readonly off: () => void;
   private readonly poweroff = new Set<() => void>();
-  private readyWaiters = new Set<() => void>();
-  private readySeen = false;
+  private readonly savedOnPoweroff = new Set<(bytes: number) => void>();
   private pending: Pending | null = null;
   private readonly now: () => number;
   private readonly randomBytes: (n: number) => Uint8Array;
@@ -68,15 +67,15 @@ export class AgentClient {
     this.off();
     if (this.pending) this.settle().reject(new AgentError('closed'));
     this.poweroff.clear();
-    for (const w of this.readyWaiters) w();
-    this.readyWaiters.clear();
+    this.savedOnPoweroff.clear();
   }
 
   private dispatch(e: GuestEvent): void {
-    if (e.type === 'ready') {
-      this.readySeen = true;
-      for (const w of this.readyWaiters) w();
-      this.readyWaiters.clear();
+    // READY is the VM wrapper's cue (it turns a cold boot into `running`); nothing here waits on it.
+    if (e.type === 'ready') return;
+    // The guest has written its home to the share on its own, as it powers off.
+    if (e.type === 'saved-on-poweroff') {
+      for (const cb of [...this.savedOnPoweroff]) cb(e.bytes);
       return;
     }
     if (e.type === 'poweroff') {
@@ -111,33 +110,23 @@ export class AgentClient {
     });
   }
 
-  /** Resolves on `RMHOS READY`, also when it arrived before the call. */
-  waitReady(timeoutMs: number = AGENT_TIMEOUTS.ready): Promise<void> {
-    if (this.readySeen) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      const done = () => {
-        clearTimeout(timer);
-        this.readyWaiters.delete(done);
-        if (this.readySeen) resolve();
-        else reject(new AgentError('closed'));
-      };
-      const timer = setTimeout(() => {
-        this.readyWaiters.delete(done);
-        reject(new AgentError('timeout'));
-      }, timeoutMs);
-      this.readyWaiters.add(done);
-    });
-  }
-
-  /** Tells the guest who is signing in. The clock and entropy are generated here, never logged. */
-  async startSession(user: string, timeoutMs: number = AGENT_TIMEOUTS.session): Promise<void> {
+  /**
+   * Tells the guest who is signing in. The clock and entropy are generated here, never logged.
+   * Resolves to the Linux user the guest says it created, when it says one (`SESSION_OK <user>`;
+   * the guest maps the site's name to a valid, unreserved one, `<user>_rmh` on a collision).
+   */
+  async startSession(
+    user: string,
+    timeoutMs: number = AGENT_TIMEOUTS.session,
+  ): Promise<{ user?: string }> {
     const text = encodeCommand({
       type: 'session',
       user,
       epoch: Math.floor(this.now() / 1000),
       entropy: hex(this.randomBytes(64)),
     });
-    await this.command(text, (e) => e.type === 'session-ok', timeoutMs);
+    const e = await this.command(text, (ev) => ev.type === 'session-ok', timeoutMs);
+    return e.type === 'session-ok' && e.user ? { user: e.user } : {};
   }
 
   /** Extracts the home archive from the share (if any) and starts the desktop. */
@@ -155,13 +144,17 @@ export class AgentClient {
     return { bytes: e.type === 'saved' ? e.bytes : 0 };
   }
 
-  /** Fire and forget: the guest powers off, there is no reply. */
-  async shutdown(): Promise<void> {
-    this.vm.sendSerial1(encodeCommand({ type: 'shutdown' }));
-  }
-
   onPoweroff(cb: () => void): () => void {
     this.poweroff.add(cb);
     return () => this.poweroff.delete(cb);
+  }
+
+  /**
+   * The guest saved its home on its way down (`saved-on-poweroff`, with the tar's byte count): the
+   * tar is already in the share, so the host reads it without a SAVE round trip.
+   */
+  onSavedOnPoweroff(cb: (bytes: number) => void): () => void {
+    this.savedOnPoweroff.add(cb);
+    return () => this.savedOnPoweroff.delete(cb);
   }
 }

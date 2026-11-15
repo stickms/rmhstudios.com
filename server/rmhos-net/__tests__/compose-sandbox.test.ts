@@ -62,6 +62,16 @@ describe('rmhos-net compose service', () => {
     }
   });
 
+  it('has no IPv6 on the egress network, whatever the daemon default is', () => {
+    expect(
+      (compose.networks['rmhos-egress'] as { enable_ipv6?: boolean }).enable_ipv6,
+    ).toBe(false);
+  });
+
+  it('logs to journald under the rmhos-net tag, so the abuse record outlives the container', () => {
+    expect(hub.logging).toEqual({ driver: 'journald', options: { tag: 'rmhos-net' } });
+  });
+
   it('pins the network subnet to the one the firewall matches', () => {
     expect(compose.networks['rmhos-egress']?.ipam?.config?.[0]?.subnet).toBe(SUBNET);
   });
@@ -100,8 +110,9 @@ describe('rmhos-net compose service', () => {
     }
   });
 
-  it('mounts nothing from the host and has no route back to it', () => {
-    expect(hub.volumes).toBeUndefined();
+  it('mounts only the read-only deny-list directory and has no route back to the host', () => {
+    // The one exception: the optional deny-list directory, read-only.
+    expect(hub.volumes).toEqual(['./deploy/rmhos-net/deny:/deny:ro']);
     expect(hub.extra_hosts).toBeUndefined();
     expect(hub.network_mode).toBeUndefined();
   });

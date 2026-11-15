@@ -1,6 +1,6 @@
-# rmhOS: the desktop owns tty1 (started by rmhos-agent). tty2 has a login so that a failed X
-# start still leaves a console (the agent switches to it).
-tty2::respawn:/sbin/getty 38400 tty2
+# rmhOS: the desktop owns tty1 (started by rmhos-agent). There is no login console: root is locked
+# and the visitor's account is created per session without a password, so a getty could not be
+# used by anyone. The serial0 log (rmhos-agent lines, Xorg errors) is what explains a failed start.
 ::sysinit:/sbin/openrc sysinit
 ::sysinit:/sbin/openrc boot
 ::wait:/sbin/openrc default

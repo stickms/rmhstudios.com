@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AgentClient, AgentError } from '../agent';
+import { AGENT_TIMEOUTS, AgentClient, AgentError } from '../agent';
 
 const ENTROPY = 'ab'.repeat(64);
 
@@ -50,7 +50,7 @@ describe('AgentClient', () => {
     const p = agent.startSession('alice');
     expect(vm.sent).toEqual([`SESSION alice 1794700000 ${ENTROPY}\n`]);
     vm.emit('RMHOS SESSION_OK\r\n');
-    await expect(p).resolves.toBeUndefined();
+    await expect(p).resolves.toEqual({});
   });
 
   it('rejects with the guest error code', async () => {
@@ -122,21 +122,6 @@ describe('AgentClient', () => {
     await again;
   });
 
-  it('waitReady resolves on READY, including one that arrived earlier', async () => {
-    const { vm, agent } = make();
-    const p = agent.waitReady(1000);
-    vm.emit('RMHOS READY\n');
-    await expect(p).resolves.toBeUndefined();
-    await expect(agent.waitReady(1000)).resolves.toBeUndefined();
-  });
-
-  it('waitReady times out', async () => {
-    const { agent } = make();
-    const p = code(agent.waitReady(500));
-    await vi.advanceTimersByTimeAsync(500);
-    expect(await p).toBe('timeout');
-  });
-
   it('onPoweroff fires and can be unsubscribed', () => {
     const { vm, agent } = make();
     const cb = vi.fn();
@@ -148,10 +133,40 @@ describe('AgentClient', () => {
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
-  it('shutdown sends SHUTDOWN without waiting for a reply', async () => {
+  it('startSession reports the Linux user the guest created, from the parsed SESSION_OK', async () => {
     const { vm, agent } = make();
-    await agent.shutdown();
-    expect(vm.sent).toEqual(['SHUTDOWN\n']);
+    const plain = agent.startSession('alice');
+    vm.emit('RMHOS SESSION_OK\n');
+    await expect(plain).resolves.toEqual({});
+    const named = agent.startSession('alice');
+    vm.emit('RMHOS SESSION_OK alice_rmh\n');
+    await expect(named).resolves.toEqual({ user: 'alice_rmh' });
+  });
+
+  it('saved-on-poweroff hands the byte count to its subscribers and can be unsubscribed', () => {
+    const { vm, agent } = make();
+    const cb = vi.fn();
+    const off = agent.onSavedOnPoweroff(cb);
+    vm.emit('RMHOS SAVED_ON_POWEROFF 1536\n');
+    expect(cb).toHaveBeenCalledWith(1536);
+    vm.emit('RMHOS SAVED_ON_POWEROFF nope\n'); // the parser turns this into a protocol error
+    expect(cb).toHaveBeenCalledTimes(1);
+    off();
+    vm.emit('RMHOS SAVED_ON_POWEROFF 5\n');
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('RESTORE and SAVE wait up to 240 s (a big home in a slow browser tab), not 120 s', async () => {
+    expect(AGENT_TIMEOUTS.restore).toBe(240_000);
+    expect(AGENT_TIMEOUTS.save).toBe(240_000);
+    const { vm, agent } = make();
+    const restore = code(agent.restore());
+    await vi.advanceTimersByTimeAsync(120_001);
+    vm.emit('RMHOS RESTORED\n');
+    expect(await restore).toBe('resolved');
+    const save = code(agent.save());
+    await vi.advanceTimersByTimeAsync(240_001);
+    expect(await save).toBe('timeout');
   });
 
   it('never puts the entropy in an error message', async () => {

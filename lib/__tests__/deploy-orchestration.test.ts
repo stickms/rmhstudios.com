@@ -20,6 +20,7 @@ import {
   resolve,
 } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   recordRelease,
   promoteRelease,
@@ -93,6 +94,7 @@ function fixture(
     realFlock?: boolean;
     fakeDisk?: boolean;
     rmhosSecret?: boolean;
+    rmhosSecretValue?: string;
   } = {},
 ) {
   const dir =
@@ -142,7 +144,7 @@ function fixture(
     ),
     'DATABASE_URL=postgresql://fixture:fixture@db:5432/rmh\n' +
       (options.rmhosSecret
-        ? 'RMHOS_NET_TICKET_SECRET=fixture-secret\n'
+        ? `RMHOS_NET_TICKET_SECRET=${options.rmhosSecretValue ?? 'fixture-secret-0123456789abcdefghijklmnop'}\n`
         : ''),
   );
   writeFileSync(
@@ -211,6 +213,10 @@ if [ "$1" = pull ]; then
   if [ "\${MOCK_PULL_FAIL:-0}" = 1 ]; then echo 'manifest unknown' >&2; exit 1; fi
 fi
 case "$*" in
+  *'config --images'*) echo fixture-app:latest ;;
+  *'config rmhos-net'*) echo "cfg:\${MOCK_HUB_CFG:-A}" ;;
+  'run --rm --entrypoint sh '*) echo "\${MOCK_HUB_BUNDLE:-bundleA}" ;;
+  *'rmhos.hub-fingerprint'*) echo "\${MOCK_HUB_STATE:-}" ;;
   *'builder prune -af'*) touch "$MOCK_ROOT/reclaimed" ;;
   *'migrate status'*)
     if [ "\${MOCK_MIGRATION_FAIL:-0}" = 1 ]; then echo 'Pending migration'; exit 1; fi ;;
@@ -811,6 +817,68 @@ describe('production deploy orchestration', () => {
         'rmhos-net',
       );
     }, 40_000);
+
+    // What a deploy does to a hub that is already serving. Recreating it ends every user's network
+    // session, so it must happen only when the hub's own bundle or configuration changed.
+    describe('recreating the hub', () => {
+      const fingerprint = (bundle: string, cfg: string) =>
+        createHash('sha256').update(`${bundle}\ncfg:${cfg}\n`).digest('hex');
+      const run = (env: Record<string, string>) => {
+        const r = fixture(env, { rmhosSecret: true });
+        expect(r.result.status, r.result.stdout + r.result.stderr).toBe(0);
+        return r;
+      };
+      const running = (bundle = 'bundleA', cfg = 'A') => `true ${fingerprint(bundle, cfg)}`;
+
+      it('leaves a running hub alone when neither its bundle nor its configuration changed', () => {
+        const r = run({ MOCK_HUB_STATE: running() });
+        expect(hubUp(r.docker)).toBe(false);
+        expect(hubStop(r.docker)).toBe(false);
+        expect(r.result.stdout).toContain('rmhOS relay hub unchanged');
+        expect(r.result.stdout).toContain('network sessions are not interrupted');
+      }, 40_000);
+
+      it('recreates the hub when its bundle changed', () => {
+        const r = run({ MOCK_HUB_STATE: running('bundleOLD'), MOCK_HUB_BUNDLE: 'bundleA' });
+        expect(hubUp(r.docker)).toBe(true);
+        expect(r.result.stdout).not.toContain('rmhOS relay hub unchanged');
+        expect(r.result.stdout).toContain('Users\' network sessions ended');
+      }, 40_000);
+
+      it('recreates the hub when its configuration changed (any RMHOS_NET_* value)', () => {
+        const r = run({ MOCK_HUB_STATE: running('bundleA', 'OLD'), MOCK_HUB_CFG: 'A' });
+        expect(hubUp(r.docker)).toBe(true);
+      }, 40_000);
+
+      it('starts a hub that is not running even if its label matches', () => {
+        const r = run({ MOCK_HUB_STATE: `false ${fingerprint('bundleA', 'A')}` });
+        expect(hubUp(r.docker)).toBe(true);
+      }, 40_000);
+
+      it('recreates when the fingerprint cannot be computed (never skip on doubt)', () => {
+        const r = run({ MOCK_HUB_STATE: 'true ', MOCK_HUB_BUNDLE: '' });
+        expect(hubUp(r.docker)).toBe(true);
+      }, 40_000);
+
+      it('stops the hub whether or not it changed when the probe fails', () => {
+        for (const env of [
+          { MOCK_HUB_STATE: running() },
+          { MOCK_HUB_STATE: running('bundleOLD') },
+        ]) {
+          const r = run({ ...env, MOCK_PROBE: 'open' });
+          expect(hubStop(r.docker)).toBe(true);
+          expect(hubUp(r.docker)).toBe(false);
+          expect(r.result.stdout).toContain('rmhOS network relay NOT started');
+        }
+      }, 60_000);
+
+      it.each(['', '""', 'too-short-secret'])('does not start the hub for the ticket secret %j', (value) => {
+        const r = fixture({}, { rmhosSecret: true, rmhosSecretValue: value });
+        expect(r.result.status, r.result.stdout + r.result.stderr).toBe(0);
+        expect(hubUp(r.docker)).toBe(false);
+        expect(r.result.stdout).toContain('RMHOS_NET_TICKET_SECRET is not set (or is under 32 characters)');
+      }, 40_000);
+    });
   });
 
   it('does not reclaim or retry when a pull fails for another reason', () => {

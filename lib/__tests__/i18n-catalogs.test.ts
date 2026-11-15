@@ -197,6 +197,36 @@ const KNOWN_UNTRANSLATED: Record<
   string[]
 > =
   {
+    // rmhOS final-review fixes (2026-11-15). The non-English c-rmhos catalogs were English copies and are gone (a locale
+    // with no file has not started the namespace), so this only matters if they come back before the translate pipeline runs.
+    'c-rmhos':
+      [
+        'about-source-offer',
+        'about-user',
+        'boot-percent',
+        'delete',
+        'delete-files',
+        'delete-files-confirm',
+        'delete-files-confirm-stops',
+        'delete-files-failed-stopped',
+        'eviction-line',
+        'failed-boot-timeout',
+        'failed-image-invalid',
+        'failed-image-missing',
+        'failed-network',
+        'failed-stalled',
+        'files-deleted',
+        'keep-files',
+        'leave',
+        'leave-confirm',
+        'low-memory',
+        'net-full',
+        'net-not-eligible',
+        'sign-in',
+        'signed-out-body',
+        'signed-out-title',
+        'stay',
+      ],
     // CS:GO join fixes (2026-11-14): a room code opened on the other game's page. English-only until the translate pipeline runs.
     'c-tf2-game':
       [

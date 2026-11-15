@@ -3,16 +3,6 @@ import { RMHOS } from './constants';
 
 const CONTEXT = 'rmhos-net-ticket-v1';
 
-export type NetTicketResult =
-  | {
-      ok: true;
-      userId: string;
-    }
-  | {
-      ok: false;
-      reason: 'malformed' | 'expired' | 'bad_signature';
-    };
-
 function assertSecret(secret: string): void {
   if (secret === '') throw new Error('rmhos net ticket secret is empty');
 }
@@ -78,23 +68,5 @@ export function verifyNetTicketSignature(ticket: string, secret: string): NetTic
     ok: true,
     userId,
     expiry: Number(expiry),
-  };
-}
-
-export function verifyNetTicket(
-  ticket: string,
-  secret: string,
-  now: number = Date.now(),
-): NetTicketResult {
-  const sig = verifyNetTicketSignature(ticket, secret);
-  if (!sig.ok) return sig;
-  if (now > sig.expiry)
-    return {
-      ok: false,
-      reason: 'expired',
-    };
-  return {
-    ok: true,
-    userId: sig.userId,
   };
 }

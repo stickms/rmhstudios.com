@@ -50,9 +50,13 @@ export default function Toolbar(p: Props) {
   };
   const netText: Record<string, string> = {
     'net.off': t('net-off', { defaultValue: 'Network off' }),
+    'net.notEligible': t('net-not-eligible', {
+      defaultValue: 'Network not available for this account.',
+    }),
     'net.connecting': t('net-connecting', { defaultValue: 'Connecting' }),
     'net.online': t('net-online', { defaultValue: 'Online' }),
     'net.unavailable': t('net-unavailable', { defaultValue: 'Network unavailable' }),
+    'net.full': t('net-full', { defaultValue: 'The network is full right now. Try again later.' }),
   };
   // Never "Saved" while nothing outlives the page.
   const saveLabel =
@@ -121,25 +125,27 @@ export default function Toolbar(p: Props) {
             onClick={p.onFullscreen}
           >
             {p.fullscreen ? <Minimize aria-hidden="true" /> : <Maximize aria-hidden="true" />}
-            <span className="rmhos-toolbar-text">{labels.fullscreen}</span>
+            <span className="rmhos-toolbar-text">
+              {p.fullscreen ? labels.exitFullscreen : labels.fullscreen}
+            </span>
           </Button>
         )}
         {state.showBackup && (
-          <>
-            <Button size="sm" aria-label={labels.download} disabled={p.busy} onClick={p.onDownload}>
-              <Download aria-hidden="true" />
-              <span className="rmhos-toolbar-text">{labels.download}</span>
-            </Button>
-            <Button
-              size="sm"
-              aria-label={labels.restore}
-              disabled={p.busy}
-              onClick={() => p.fileInputRef.current?.click()}
-            >
-              <Upload aria-hidden="true" />
-              <span className="rmhos-toolbar-text">{labels.restore}</span>
-            </Button>
-          </>
+          <Button size="sm" aria-label={labels.download} disabled={p.busy} onClick={p.onDownload}>
+            <Download aria-hidden="true" />
+            <span className="rmhos-toolbar-text">{labels.download}</span>
+          </Button>
+        )}
+        {state.showRestore && (
+          <Button
+            size="sm"
+            aria-label={labels.restore}
+            disabled={p.busy}
+            onClick={() => p.fileInputRef.current?.click()}
+          >
+            <Upload aria-hidden="true" />
+            <span className="rmhos-toolbar-text">{labels.restore}</span>
+          </Button>
         )}
         <Button size="sm" aria-label={labels.about} onClick={p.onAbout}>
           <Info aria-hidden="true" />

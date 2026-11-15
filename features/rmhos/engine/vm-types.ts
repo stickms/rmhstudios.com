@@ -2,7 +2,30 @@
 
 export type VmPhase = 'idle' | 'downloading' | 'booting' | 'running' | 'stopped' | 'failed';
 
-export type VmPhaseDetail = { loaded: number; total: number } | { error: string };
+/**
+ * Why a machine ended in `failed`, as a code the page maps to plain words (the technical text
+ * stays in `error`, under "Details"):
+ *  - `image-missing`: a boot file answered 404/410/416 (the image is not where the page expects it);
+ *  - `image-invalid`: a boot file answered, but not usably (the disk server ignores Range, or it is
+ *    not the file the page pinned);
+ *  - `network`: a boot file could not be reached at all (offline, blocked, or missing CORS headers);
+ *  - `stalled`: the download made no progress for too long;
+ *  - `boot-timeout`: everything downloaded but the machine never came up;
+ *  - `start`: the emulator itself could not be started;
+ *  - `stopped`: the machine stopped by itself while the page was still starting it.
+ */
+export type BootFailureReason =
+  | 'image-missing'
+  | 'image-invalid'
+  | 'network'
+  | 'stalled'
+  | 'boot-timeout'
+  | 'start'
+  | 'stopped';
+
+export type VmPhaseDetail =
+  | { loaded: number; total: number }
+  | { error: string; reason?: BootFailureReason };
 
 export interface VmHandle {
   onPhase(cb: (p: VmPhase, detail?: VmPhaseDetail) => void): () => void;
@@ -21,6 +44,5 @@ export interface VmHandle {
   writeShareFile(path: string, data: Uint8Array): Promise<void>;
   readShareFile(path: string): Promise<Uint8Array>;
   deleteShareFile(path: string): Promise<void>;
-  restart(): Promise<void>;
   destroy(): void;
 }

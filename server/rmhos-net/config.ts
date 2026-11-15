@@ -1,6 +1,7 @@
 // Hub configuration, parsed locally: this folder imports nothing from the site
 // (see __tests__/no-site-imports.test.ts), so there is no shared envInt here.
 import { RMHOS } from '@features/rmhos/engine/constants';
+import { createDenyList, type DenyList } from './deny';
 import { loadPolicy, type RelayPolicy } from './policy';
 
 export interface HubConfig {
@@ -11,8 +12,10 @@ export interface HubConfig {
   };
   dohUpstream: string;
   corsOrigin: string;
+  deny: DenyList;
 }
 
+const MIN_SECRET_LENGTH = RMHOS.minSecretLength;
 const DEFAULT_DOH_UPSTREAM = 'https://1.1.1.1/dns-query';
 
 function port(raw: string | undefined): number {
@@ -44,11 +47,17 @@ function upstream(raw: string | undefined): string {
 export function loadHubConfig(env: NodeJS.ProcessEnv): HubConfig {
   const secret = env.RMHOS_NET_TICKET_SECRET ?? '';
   if (secret === '') throw new Error('RMHOS_NET_TICKET_SECRET is required');
+  if (secret.length < MIN_SECRET_LENGTH) {
+    throw new Error(
+      `RMHOS_NET_TICKET_SECRET must be at least ${MIN_SECRET_LENGTH} characters (generate one with: openssl rand -hex 32)`,
+    );
+  }
   return {
     port: port(env.RMHOS_NET_PORT),
     secret,
     policy: loadPolicy(env),
     dohUpstream: upstream(env.RMHOS_NET_DOH_UPSTREAM),
     corsOrigin: env.RMHOS_NET_CORS_ORIGIN?.trim() ?? '',
+    deny: createDenyList(env),
   };
 }

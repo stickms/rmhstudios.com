@@ -30,7 +30,8 @@ export interface HomeStore {
   /** Closes the IndexedDB connection. The store is not used afterwards. */
   close(): void;
   get(userId: string): Promise<CachedHome | null>;
-  put(userId: string, h: CachedHome): Promise<void>;
+  /** Whether an entry exists, without reading it (an archive can be tens of megabytes). */
+  has(userId: string): Promise<boolean>;
   delete(userId: string): Promise<void>;
   /**
    * Applies every op or none: one IndexedDB `readwrite` transaction (resolves on complete,
@@ -52,7 +53,7 @@ export function memoryHomeStore(
     kind: 'memory',
     close: () => {},
     get: async (id) => m.get(id) ?? null,
-    put: async (id, h) => void m.set(id, h),
+    has: async (id) => m.has(id),
     delete: async (id) => void m.delete(id),
     async transact(ops) {
       const err = opts.failTransact?.(ops);
@@ -156,10 +157,10 @@ export function openHomeStore(): HomeStore {
       if (!d) return fallback.get(id);
       return ((await request(d, 'readonly', (s) => s.get(id))) as CachedHome | undefined) ?? null;
     },
-    async put(id, h) {
+    async has(id) {
       const d = await db();
-      if (!d) return fallback.put(id, h);
-      await request(d, 'readwrite', (s) => s.put(h, id));
+      if (!d) return fallback.has(id);
+      return ((await request(d, 'readonly', (s) => s.count(id))) as number) > 0;
     },
     async delete(id) {
       const d = await db();

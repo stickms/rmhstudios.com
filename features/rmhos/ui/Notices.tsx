@@ -11,9 +11,13 @@ interface Props {
   session: RmhosSessionValue;
   busy: boolean;
   onDownload: () => void;
+  /** The browser may delete the stored files: say so, with the two things that help. */
+  evictionRisk?: boolean;
+  /** Asks the browser to keep the files; call it from the click. */
+  onKeep?: () => void;
 }
 
-export default function Notices({ session, busy, onDownload }: Props) {
+export default function Notices({ session, busy, onDownload, evictionRisk = false, onKeep }: Props) {
   const { t } = useTranslation('c-rmhos');
   const last = session.lastSave?.result;
   const report = last ? reportSave(last) : null;
@@ -21,7 +25,9 @@ export default function Notices({ session, busy, onDownload }: Props) {
   const emptyHome = report?.kind === 'notice' && report.key === 'empty-home';
   const blocked = session.desktopReady && session.storeKind === 'memory';
   const netEnded = session.net?.enabled === true && session.netEnded;
-  if (!changedElsewhere && !emptyHome && !blocked && !netEnded) return null;
+  // Only where files are being kept at all: with storage blocked the notice above says more.
+  const evictable = evictionRisk && session.desktopReady && session.storeKind === 'indexeddb';
+  if (!changedElsewhere && !emptyHome && !blocked && !netEnded && !evictable) return null;
 
   return (
     <div className="rmhos-notices" role="status">
@@ -31,6 +37,24 @@ export default function Notices({ session, busy, onDownload }: Props) {
             defaultValue: 'Files are not being saved: this browser is blocking storage.',
           })}
         </p>
+      )}
+      {evictable && (
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs text-(--app-warning)">
+            {t('eviction-line', {
+              defaultValue:
+                'This browser may delete these files to free space. Download a backup to keep them.',
+            })}
+          </p>
+          {onKeep && (
+            <Button size="sm" onClick={onKeep}>
+              {t('keep-files', { defaultValue: 'Keep my files in this browser' })}
+            </Button>
+          )}
+          <Button size="sm" disabled={busy} onClick={onDownload}>
+            {t('download-backup', { defaultValue: 'Download backup' })}
+          </Button>
+        </div>
       )}
       {netEnded && (
         <p className="text-xs text-(--app-warning)">
@@ -66,7 +90,7 @@ export default function Notices({ session, busy, onDownload }: Props) {
           <Button size="sm" disabled={busy} onClick={onDownload}>
             {t('download-backup', { defaultValue: 'Download backup' })}
           </Button>
-          <Button size="sm" onClick={() => void session.restart({ save: false })}>
+          <Button size="sm" onClick={() => void session.restart()}>
             {t('reload', { defaultValue: 'Reload' })}
           </Button>
         </div>

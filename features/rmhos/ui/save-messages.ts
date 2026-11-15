@@ -4,6 +4,7 @@
  * `none` says nothing (a restart is already pending, or the page does not know a save ran).
  */
 import { BackupError, type SaveResult } from '../engine/home-sync';
+import { formatTime } from './format';
 
 export type SaveReport =
   | { kind: 'none' }
@@ -48,15 +49,15 @@ export function reportRestoreError(e: unknown): RestoreFailure {
 type T = (key: string, options: { defaultValue: string; [k: string]: unknown }) => string;
 
 /** A stored copy's time, the way every dialog names it. */
-export function copyTime(savedAt: number): string {
-  return new Date(savedAt).toLocaleString();
+export function copyTime(savedAt: number, locale: string): string {
+  return formatTime(savedAt, locale);
 }
 
 /** The put-back confirmation names the time of the files it restores. */
-export function putBackCopy(t: T, savedAt: number): string {
+export function putBackCopy(t: T, savedAt: number, locale: string): string {
   return t('put-back-confirm', {
     defaultValue: 'Put back the files from {{time}}? The restored backup is removed.',
-    time: copyTime(savedAt),
+    time: copyTime(savedAt, locale),
   });
 }
 

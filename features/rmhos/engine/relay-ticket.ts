@@ -9,8 +9,11 @@ export type RelayTicket = { url: string; ticket: string };
  * load. A plain module, not the hook: see the useEffect + /api ratchet.
  */
 export async function fetchRelayTicket(): Promise<RelayTicket | null> {
-  const fresh = await api(rmhosSessionApi);
-  return fresh.net.enabled ? { url: fresh.net.url, ticket: fresh.net.ticket } : null;
+  const { net } = await api(rmhosSessionApi);
+  if (!net.enabled) return null;
+  // Asked without `?ticket=0`, an enabled answer always carries both.
+  if (!net.url || !net.ticket) throw new Error('the session answer has no relay ticket');
+  return { url: net.url, ticket: net.ticket };
 }
 
 /**
