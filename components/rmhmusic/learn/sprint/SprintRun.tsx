@@ -61,6 +61,7 @@ import {
   useNoteEvents,
   useNoteSound,
 } from '../useLearnInput';
+import { focusOf } from './focus';
 import {
   askHint,
   feedbackLine,
@@ -459,21 +460,28 @@ export function SprintRun({
       : inRun
         ? 'run'
         : 'end';
+  const focus =
+    focusOf(
+      state.kind,
+    );
   useEffect(() => {
     if (
-      phase ===
-      'ready'
+      focus ===
+      'start'
     )
       startButton.current?.focus();
     else if (
-      phase ===
-      'run'
+      focus ===
+      'sheet'
     )
       sheetBox.current?.focus();
-    else
+    else if (
+      focus ===
+      'end'
+    )
       endButton.current?.focus();
   }, [
-    phase,
+    focus,
   ]);
 
   const names =
@@ -761,6 +769,21 @@ export function SprintRun({
     );
   }
 
+  // The count and the caption are centred lines whose text changes every prompt. Keyed by their
+  // text, a new line is a new node rather than the old one re-centred, so the browser does not
+  // report each change as a layout shift (CLS stays 0 through a run).
+  const shownCount =
+    (state.kind ===
+      'asking' ||
+      state.kind ===
+        'feedback') &&
+    total >
+      0
+      ? count(
+          state.index,
+        )
+      : '';
+
   let answers: ReactNode;
   if (
     phase ===
@@ -975,24 +998,23 @@ export function SprintRun({
         )}
         className="rmm-sheet space-y-2 p-5 text-center sm:p-6"
       >
-        <p className="h-6 text-sm leading-6 text-app-text-muted">
-          {(state.kind ===
-            'asking' ||
-            state.kind ===
-              'feedback') &&
-          total >
-            0
-            ? count(
-                state.index,
-              )
-            : ''}
+        <p
+          key={`count:${shownCount}`}
+          className="h-6 text-sm leading-6 text-app-text-muted"
+        >
+          {
+            shownCount
+          }
         </p>
         <div className="mx-auto w-full max-w-72 sm:max-w-80">
           {
             sheet
           }
         </div>
-        <p className="min-h-12 text-sm leading-6 text-app-text-muted">
+        <p
+          key={`line:${line}`}
+          className="min-h-12 text-sm leading-6 text-app-text-muted"
+        >
           {
             line
           }

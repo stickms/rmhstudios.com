@@ -77,6 +77,14 @@ const RETURN_TO =
 const ROW =
   'flex min-h-20 w-full flex-col items-start justify-center px-4 py-2 text-start';
 
+/**
+ * A placeholder bar the shape of the text it stands for: the level's own name and hint, unseen
+ * under the bar, so a hint that wraps at this width wraps in the placeholder too and loading
+ * moves nothing.
+ */
+const SKELETON_TEXT =
+  'app-skeleton box-decoration-clone text-transparent';
+
 /** What is being played: a freeplay level or today's challenge, with its prompts. */
 type Playing =
   | {
@@ -571,11 +579,30 @@ export function SprintGame({
                           ROW
                         }
                       >
-                        <span className="flex h-6 items-center">
-                          <span className="app-skeleton h-4 w-40 max-w-full" />
+                        <span className="text-base leading-6">
+                          <span
+                            className={
+                              SKELETON_TEXT
+                            }
+                          >
+                            {levelName(
+                              t,
+                              level.id,
+                            )}
+                          </span>
                         </span>
-                        <span className="flex h-5 items-center">
-                          <span className="app-skeleton h-3.5 w-56 max-w-full" />
+                        <span className="text-sm leading-5">
+                          <span
+                            className={
+                              SKELETON_TEXT
+                            }
+                          >
+                            {levelHint(
+                              t,
+                              level.id,
+                              guitar,
+                            )}
+                          </span>
                         </span>
                         <span className="flex h-5 items-center">
                           <span className="app-skeleton h-3.5 w-32 max-w-full" />
