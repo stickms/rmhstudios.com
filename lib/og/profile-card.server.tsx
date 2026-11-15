@@ -18,9 +18,13 @@ import {
 } from './render.server';
 import {
   DIM,
+  HAIRLINE,
+  HAIRLINE_W,
   INK,
   MUTED,
+  RADIUS,
   SCALE,
+  SURFACE,
   fetchAvatarDataUri,
   loadFonts,
   satoriFonts,
@@ -234,7 +238,7 @@ async function renderProfileCardUncached(
                       style={{
                         fontSize:
                           nameSize,
-                        fontWeight: 700,
+                        fontWeight: 600,
                         letterSpacing:
                           displayTracking(
                             nameSize,
@@ -315,11 +319,10 @@ async function renderProfileCardUncached(
                         height:
                           QR_PLATE,
                         backgroundColor:
-                          '#ffffff',
+                          SURFACE,
                         borderRadius:
-                          14 *
-                          SCALE,
-                        border: `${SCALE}px solid rgba(0, 0, 0, 0.16)`,
+                          RADIUS,
+                        border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
                       }}
                     >
                       {/* Handed to satori, not the DOM: `alt` is inert here. */}

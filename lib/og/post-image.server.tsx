@@ -644,7 +644,7 @@ function quoteBlock(
                 fontSize:
                   12 *
                   SCALE,
-                fontWeight: 700,
+                fontWeight: 600,
                 color:
                   INK,
               }}
@@ -1053,7 +1053,7 @@ async function renderPostOgImageUncached(
                   fontSize:
                     17 *
                     SCALE,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   letterSpacing:
                     '-0.022em',
                   color:
@@ -1244,6 +1244,9 @@ async function renderPostOgImageUncached(
                       flexDirection:
                         'row',
                       gap: COL_GAP,
+                      // The picture hangs on the right edge, as on a page card.
+                      justifyContent:
+                        'space-between',
                     }}
                   >
                     {

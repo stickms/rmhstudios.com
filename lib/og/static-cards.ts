@@ -358,6 +358,130 @@ export const STATIC_CARDS: StaticCard[] =
         'Scoped API keys, a documented REST API, webhooks and quotas.',
     },
     {
+      path: '/psychology',
+      file: 'psychology',
+      eyebrow:
+        'Psychology',
+      title:
+        'The research behind the site.',
+      subtitle:
+        'What a century of research found, and where you meet it here.',
+      // The page's own pictures: four of the portraits it credits (Zeigarnik,
+      // Kahneman, Csikszentmihalyi, Jung), composited by hand from
+      // public/images/psychology/*.webp.
+      art: '/images/psychology/og-art.jpg',
+    },
+    {
+      path: '/achievements',
+      file: 'achievements',
+      eyebrow:
+        'Achievements',
+      title:
+        'What unlocks it, and who earned it.',
+      subtitle:
+        'Every achievement on RMH Studios, what it is worth, and the players who have it.',
+    },
+    {
+      path: '/arcade',
+      file: 'arcade',
+      eyebrow:
+        'Arcade',
+      title:
+        "Today's challenges and the standings.",
+      subtitle:
+        'Daily challenges, your streak, ranked standings and the player leaderboard.',
+    },
+    {
+      path: '/connections',
+      file: 'connections',
+      eyebrow:
+        'Connections grids',
+      title:
+        'Find the four groups of four.',
+      subtitle:
+        'Member-made Connections grids. Solve them, rate them and catch the daily pick.',
+    },
+    {
+      path: '/daily-mutator',
+      file: 'daily-mutator',
+      eyebrow:
+        'Daily Mutator',
+      title:
+        'One game, one twist, one seed.',
+      subtitle:
+        'The same twisted arcade run for everyone today, with one counted attempt.',
+    },
+    {
+      path: '/quotes',
+      file: 'quotes',
+      eyebrow:
+        'Steve Jobs quotes',
+      title:
+        'Stay hungry. Stay foolish.',
+      subtitle:
+        'Quotes on innovation, design, life and technology.',
+    },
+    {
+      path: '/rmhbox-packs',
+      file: 'rmhbox-packs',
+      eyebrow:
+        'RMHBox prompt packs',
+      title:
+        'Write the prompts. Play them tonight.',
+      subtitle:
+        'Community-made Wit-War prompt packs to share by code and play in an RMHBox lobby.',
+    },
+    {
+      path: '/kaikaidebtcounter',
+      file: 'kaikaidebtcounter',
+      eyebrow:
+        'Kaikai Debt Counter',
+      title:
+        'Everything Kaikai owes, live.',
+      subtitle:
+        'A compounding, public record. Anyone can add to it. Nobody can pay it down.',
+    },
+    {
+      path: '/explore',
+      file: 'explore',
+      eyebrow:
+        'Explore',
+      title:
+        'Find people, posts and places.',
+      subtitle:
+        'Search the feed, communities, games and apps, or ask the feed a question.',
+    },
+    {
+      path: '/sections',
+      file: 'sections',
+      eyebrow:
+        'Sections',
+      title:
+        'Every place on RMH Studios.',
+      subtitle:
+        'The feed, games, apps, communities, the store and the rest, as one list.',
+    },
+    {
+      path: '/strategies',
+      file: 'strategies',
+      eyebrow:
+        'RMH Strategies',
+      title:
+        'Puzzles, incidents and the sahur clock.',
+      subtitle:
+        'Daily and practice puzzles, live incident reports and the countdown to the next sahur.',
+    },
+    {
+      path: '/controller',
+      file: 'controller',
+      eyebrow:
+        'Phone controller',
+      title:
+        'Your phone is the controller.',
+      subtitle:
+        'Join a game on the big screen and play it from the phone in your hand.',
+    },
+    {
       path: '/help',
       file: 'help',
       eyebrow:
@@ -851,11 +975,24 @@ export function staticCardFor(
  * it are read from the catalog when it is drawn and a new section is one entry here, with no PNG to regenerate and
  * commit. (The older section PNGs are still on disk: a link shared before this change still points at them.)
  */
+/**
+ * The card design's version, carried on every card URL (`?v=`) here and by
+ * `ogCardPath` in lib/seo.
+ *
+ * Link-preview services (Discord, X, Slack, iMessage) cache an image by its
+ * URL, often for weeks, so a card redrawn under the same URL keeps unfurling
+ * in the old design. Bump this when the look of the cards changes (not when
+ * one card's content does: the renderers key that themselves) and every page's
+ * og:image becomes a new URL. `steel` is the Steel redesign of 2026-11-15.
+ */
+export const OG_CARD_VERSION =
+  'steel';
+
 export function staticCardImage(
   card: StaticCard,
 ): string {
   return card.file ===
     'default'
-    ? '/images/og/default.png'
-    : `/api/og/section/${card.file}`;
+    ? `/images/og/default.png?v=${OG_CARD_VERSION}`
+    : `/api/og/section/${card.file}?v=${OG_CARD_VERSION}`;
 }

@@ -16,6 +16,7 @@ import {
   DEFAULT_OG_IMAGE,
 } from '@/lib/seo';
 import {
+  OG_CARD_VERSION,
   STATIC_CARDS,
   staticCardFor,
   staticCardImage,
@@ -99,9 +100,13 @@ describe('static cards', () => {
               'public',
               staticCardImage(
                 card,
-              ).slice(
-                1,
-              ),
+              )
+                .split(
+                  '?',
+                )[0]
+                .slice(
+                  1,
+                ),
             ),
           ),
       );
@@ -130,7 +135,7 @@ describe('static cards', () => {
           card,
         ),
       ).toBe(
-        `/api/og/section/${card.file}`,
+        `/api/og/section/${card.file}?v=${OG_CARD_VERSION}`,
       );
     }
   });
@@ -443,7 +448,7 @@ describe('buildMeta', () => {
         'og:image',
       ),
     ).toBe(
-      `${SITE_URL}/api/og/section/library`,
+      `${SITE_URL}/api/og/section/library?v=${OG_CARD_VERSION}`,
     );
   });
 
@@ -588,7 +593,7 @@ describe('appRouteHead', () => {
         'og:image',
       ),
     ).toBe(
-      `${SITE_URL}/api/og/app/${app!.id}`,
+      `${SITE_URL}/api/og/app/${app!.id}?v=${OG_CARD_VERSION}`,
     );
     expect(
       meta(
@@ -596,7 +601,7 @@ describe('appRouteHead', () => {
         'twitter:image',
       ),
     ).toBe(
-      `${SITE_URL}/api/og/app/${app!.id}`,
+      `${SITE_URL}/api/og/app/${app!.id}?v=${OG_CARD_VERSION}`,
     );
     expect(
       meta(
@@ -862,7 +867,7 @@ describe('ogCardPath', () => {
         'hearthworks',
       ),
     ).toBe(
-      '/api/og/game/hearthworks',
+      `/api/og/game/hearthworks?v=${OG_CARD_VERSION}`,
     );
     expect(
       ogCardPath(
@@ -870,7 +875,7 @@ describe('ogCardPath', () => {
         'rmhtube',
       ),
     ).toBe(
-      '/api/og/app/rmhtube',
+      `/api/og/app/rmhtube?v=${OG_CARD_VERSION}`,
     );
     expect(
       ogCardPath(
@@ -878,7 +883,7 @@ describe('ogCardPath', () => {
         'tf2-play',
       ),
     ).toBe(
-      '/api/og/section/tf2-play',
+      `/api/og/section/tf2-play?v=${OG_CARD_VERSION}`,
     );
     expect(
       ogCardPath(
@@ -886,7 +891,7 @@ describe('ogCardPath', () => {
         'my-build',
       ),
     ).toBe(
-      '/api/og/build/my-build',
+      `/api/og/build/my-build?v=${OG_CARD_VERSION}`,
     );
     expect(
       ogCardPath(
@@ -894,7 +899,7 @@ describe('ogCardPath', () => {
         's',
       ),
     ).toBe(
-      '/api/og/story/s',
+      `/api/og/story/s?v=${OG_CARD_VERSION}`,
     );
     expect(
       ogCardPath(
@@ -902,7 +907,7 @@ describe('ogCardPath', () => {
         'a',
       ),
     ).toBe(
-      '/api/og/album/a',
+      `/api/og/album/a?v=${OG_CARD_VERSION}`,
     );
   });
 
@@ -913,7 +918,7 @@ describe('ogCardPath', () => {
         'a/b',
       ),
     ).toBe(
-      '/api/og/profile/a%2Fb',
+      `/api/og/profile/a%2Fb?v=${OG_CARD_VERSION}`,
     );
   });
 });

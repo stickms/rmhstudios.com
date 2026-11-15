@@ -283,7 +283,7 @@ async function renderProfileOgImageUncached(
                         style={{
                           fontSize:
                             nameSize,
-                          fontWeight: 700,
+                          fontWeight: 600,
                           letterSpacing:
                             displayTracking(
                               nameSize,
