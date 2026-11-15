@@ -19,20 +19,15 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import {
   ArrowRight,
-  CloudUpload,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from '@/lib/toast';
 import { SearchField } from '@/components/ui/search-field';
-import { useSession } from '@/components/Providers';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import {
   DEFAULT_VIBE_MODEL,
   type VibeModel,
 } from '@/lib/rmhvibe/vibe-types';
 import type { VibeCard } from '@/lib/rmhvibe/vibe.server';
-import { api } from '@/lib/contract/client';
-import { backfillVibeThumbsApi } from '@/lib/rmhvibe/vibe-admin.contract';
 import {
   Storefront,
   type StoreItem,
@@ -161,76 +156,6 @@ export function PagesTab({
     );
   const navigate =
     useNavigate();
-
-  // Admins get a one-click "backfill all thumbnails" control next to the search.
-  const session =
-    useSession();
-  const isAdmin =
-    Boolean(
-      (
-        session
-          .data
-          ?.user as
-          | {
-              isAdmin?: boolean;
-            }
-          | undefined
-      )
-        ?.isAdmin,
-    );
-  const [
-    backfilling,
-    setBackfilling,
-  ] =
-    useState(
-      false,
-    );
-
-  const backfillThumbs =
-    useCallback(async () => {
-      if (
-        backfilling
-      )
-        return;
-      setBackfilling(
-        true,
-      );
-      try {
-        const data =
-          await api(
-            backfillVibeThumbsApi,
-          );
-        toast.success(
-          t(
-            'backfill-thumbs-done',
-            {
-              defaultValue:
-                'Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.',
-              count:
-                data.count ??
-                0,
-            },
-          ),
-        );
-      } catch {
-        toast.error(
-          t(
-            'backfill-thumbs-failed',
-            {
-              defaultValue:
-                'Failed to queue thumbnail backfill. Try again.',
-            },
-          ),
-        );
-      } finally {
-        setBackfilling(
-          false,
-        );
-      }
-    }, [
-      backfilling,
-      t,
-    ]);
 
   // Prompt dock: type a prompt and stream a new page at /v/new.
   const inputRef =
@@ -524,8 +449,7 @@ export function PagesTab({
       ],
     );
 
-  // The shared page toolbar (the one /games and /create/builds use): the search takes the row at the page gutter, the
-  // admin backfill button sits after it. It used to be a `surface-chrome` title bar ("Pages" + search), which started the
+  // The shared page toolbar (the one /games and /create/builds use): the search takes the row at the page gutter. It used to be a `surface-chrome` title bar ("Pages" + search), which started the
   // search at x=76 on a phone while the heading and tab strip started at 16 — the tab already says "Pages".
   const toolbar =
     (
@@ -568,42 +492,6 @@ export function PagesTab({
               sortOptions
             }
           />
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={
-                backfillThumbs
-              }
-              disabled={
-                backfilling
-              }
-              aria-busy={
-                backfilling
-              }
-              className="vibe-backfill"
-              title={t(
-                'backfill-thumbs',
-                {
-                  defaultValue:
-                    'Backfill all page thumbnails',
-                },
-              )}
-              aria-label={t(
-                'backfill-thumbs',
-                {
-                  defaultValue:
-                    'Backfill all page thumbnails',
-                },
-              )}
-            >
-              <CloudUpload
-                size={
-                  18
-                }
-                aria-hidden="true"
-              />
-            </button>
-          )}
         </div>
       </div>
     );
@@ -626,7 +514,7 @@ export function PagesTab({
           )}
         </h2>
         <div className="mt-6 flex w-full justify-center">
-          <div className="vibe-dock vibe-dock--area vibe-rise-soft">
+          <div className="vibe-dock vibe-dock--area surface-field vibe-rise-soft">
             <textarea
               ref={
                 inputRef

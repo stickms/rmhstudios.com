@@ -66,6 +66,8 @@ export const SANCTIONED: Record<
       'library spinner',
     'lib-details-in':
       'library details enter',
+    'lib-riffle':
+      'library book hover: a one-shot there-and-back page flick, staggered per page (a transition has no way back without a second state change); under 360 ms, fires only on hover/focus (components/library/BookLeaves.tsx)',
     'sec-fade-down':
       'security page banner enter',
     'kd-aura-spin':

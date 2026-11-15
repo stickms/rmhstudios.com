@@ -498,8 +498,13 @@
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
+  gap: 2px 6px;
+}
+.store-persona-meta__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .store-persona-meta svg {
-  display: inline;
-  vertical-align: -1px;
+  flex: none;
 }

@@ -115,16 +115,22 @@ export function PersonasTab() {
   const personaMeta = useCallback(
     (p: Persona, showOwner: boolean) => (
       <span className="store-persona-meta">
-        <MessageSquare className="size-3" aria-hidden /> {fmt(p.chatCount)}
+        <span className="store-persona-meta__item">
+          <MessageSquare className="size-3" aria-hidden />
+          {fmt(p.chatCount)}
+        </span>
         {p.isPublic === false && (
           <>
-            <span aria-hidden> · </span>
-            <Lock className="size-3" aria-hidden /> {t('private', { defaultValue: 'Private' })}
+            <span aria-hidden>·</span>
+            <span className="store-persona-meta__item">
+              <Lock className="size-3" aria-hidden />
+              {t('private', { defaultValue: 'Private' })}
+            </span>
           </>
         )}
         {showOwner && p.owner && (
           <>
-            <span aria-hidden> · </span>
+            <span aria-hidden>·</span>
             {t('by-owner', {
               owner: p.owner.name || p.owner.handle || t('someone', { defaultValue: 'Someone' }),
               defaultValue: 'by {{owner}}',
@@ -292,7 +298,7 @@ export function PersonasTab() {
                     navigate({ to: `/personas/${p.id}` } as never),
                   );
                 }}
-                className="surface-press flex items-start gap-3 rounded-site px-3 py-3"
+                className="surface-press flex items-center gap-3 rounded-site border border-site-border p-3 hover:bg-site-bg-subtle"
               >
                 <div
                   data-persona-avatar

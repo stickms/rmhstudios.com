@@ -140,8 +140,8 @@
   transform-style: preserve-3d;
   transform-origin: left center;
   transition:
-    transform 420ms var(--ease-overshoot),
-    box-shadow 420ms ease;
+    transform 240ms var(--ease-overshoot),
+    box-shadow 240ms ease;
   will-change: transform;
 }
 
