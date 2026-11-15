@@ -2,7 +2,8 @@
 
 > **For LLMs and auditors:** this is the single place for RMH Music (`/rmhmusic`, the beginner
 > piano and guitar learning programme) status, unfinished work, future features, known gaps and
-> hand-off steps. Written 2026-11-09 when work was paused for an audit. If this file disagrees
+> hand-off steps. Written 2026-11-09 when work was paused for an audit; last updated 2026-11-15
+> (Phase 3, the tuner). If this file disagrees
 > with the code, the code wins; fix this file. Plans live in `docs/superpowers/plans/`.
 
 ## 1. What shipped (in production on `main`)
@@ -14,8 +15,9 @@
 | PR D | Reading: staff flashcards with spaced repetition (`lib/rmhmusic/learn/srs/`, table `music_learn_card`), find-middle-C, Practice (`/rmhmusic/practice`). |
 | #1525 (PR E) | Fretboard + keyboard note finder, pitch match (3 tries, cents-based points, mic echo guard), interval and chord ear training, play-a-chord. |
 | #1526 (PR F) | Metronome, rhythm lessons (note values, 4/4 vs 3/4, tap the beat), shared routed-modes module, catalog text and docs, large-text wrapping on the learn home. |
+| #1651 | Realistic instrument sounds (piano, steel-string guitar, violin, flute samples; Sound setting and dialog; `/rmhmusic/credits`) and the sight reading game "Sprint" (`/rmhmusic/sprint`: Freeplay and the Daily challenge, bests and daily rows `MusicSprintBest` / `MusicSprintDaily`). Details in §2.1 and §2.2. |
 
-Where things live: pure logic `lib/rmhmusic/learn/{theory,scoring,srs,content,machines,input,audio}`;
+Where things live: pure logic `lib/rmhmusic/learn/{theory,scoring,srs,content,machines,input,audio,sprint,tuner}`;
 UI `components/rmhmusic/learn/`; lesson path and units `lib/rmhmusic/learn/content/path.ts`
 (every `available` lesson's `mode` must be in `content/routing.ts` `ROUTED_MODES`); styles
 `components/rmhmusic/rmhmusic.css`; catalog `lib/catalog/apps/rmhmusic.ts`; progress API
@@ -24,9 +26,49 @@ Architecture rule: every lesson is an explicit `{initial, step}` state machine i
 all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbacks `onStart`,
 `onNoteStart`, `onAllStarted`).
 
-## 2. Work in progress (uncommitted work was stopped at the user's request)
+## 2. Recent work
 
-### Realistic instrument sounds — built and wired on a branch, awaiting the owner's audition
+### 2.0 Tuner and note reader (Phase 3) — built on `claude/hopeful-bohr-99d1vw`, not yet merged
+
+- Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase3-tuner.md`. Route `/rmhmusic/tuner`
+  (auth-gated, sitemap `'auth-gated'`, a sign-in return path), the sanctioned `<Tabs>` for **Tune**
+  and **Read notes**, a quiet "Tuner" link beside "Sight reading" at the foot of the learn home.
+- **Tuner:** the pure machine `lib/rmhmusic/learn/tuner/machine.ts` (strict island):
+  `silent → listening → locked(target, cents)`, level (RMS 0.01) and clarity (0.9) floors, the
+  median of the last 9 voiced frames, hysteresis (another target must be 0.4 semitone nearer, for
+  4 frames once locked), in tune = ±5 cents held 300 ms (left at 8 cents), silent after a 400 ms
+  gap. Presets: any note (chromatic) and guitar strings (`STANDARD_TUNING`, the nearest string is
+  the target; "Tune up / Tune down / In tune"). Frames come from the mic adapter's own 25 ms poll
+  (`createMicInput({ onFrame })` → store `subscribeMicFrames`): no `requestAnimationFrame`, nothing
+  while the mic is off or the page hidden. The dial (`components/rmhmusic/learn/tuner/TunePanel.tsx`)
+  is a static SVG with one needle written straight to the DOM; React renders on a new note, advice
+  or phase only; the live region speaks the locked note (and "in tune") once per change. Reference
+  tones (A4, or each guitar string) play through the learner's sound. Without the microphone the
+  tab says it needs it and offers to switch.
+- **Note reader** (`ReadPanel.tsx`, placement `tuner/read.ts`): any input's note-on is written on
+  the low card (piano treble from C4 / bass below; guitar an octave up with the small 8) with its
+  name and octave, the mic's cents and the last five notes; notes off the card are named and said
+  to be too high or too low.
+- **Smoke (2026-11-15, Chromium only, dev server + throwaway Postgres, fake mic: an oscillator in a
+  fake `getUserMedia` stream through the real YIN pipeline):** 440 Hz locks A4 at 0 cents (the
+  rounded readout, so within ±0.5) and says In tune, steady for 2 s (one name, one advice, one
+  live-region change); 435 Hz says Tune up at −20 cents; 446 Hz Tune down +23; guitar preset (the
+  default for a guitar learner): 108.73 Hz → A2 Tune up −20, 110 Hz → A2 In tune, 435 Hz → E4 Tune
+  down; ±10 cents 5 Hz vibrato on 440 Hz: A4 / In tune in all 160 samples over 4 s; hiding the page
+  stops the mic and the reading; the reader writes MIDI C4, C♯4 (sharp), G2 (bass staff), F♯6
+  (too high) and computer-key notes, and the mic's E4 at +7 cents; 390 and 1280 in Day and Night:
+  no horizontal scroll, CLS 0 (fixed during the smoke: re-centred text lines), skeleton height
+  equals loaded height, 0 rAF callbacks at rest and 0 while the mic is live; at 320 the six string
+  buttons are 44 px and the home's Sight reading / Tuner links sit on one row apart from the Sound
+  button. Screenshots looked at: notebook paper, no chips or badges.
+- **Not done:** Firefox / WebKit / iOS Safari, 200 % text, RTL with real strings (strings are
+  English until `pnpm i18n:translate`), a real microphone and instrument (thresholds are reasoned
+  and tested on synthetic tones only), alternate guitar tunings or other instruments' presets, the
+  reference tone is heard by an open microphone (no echo guard: the tuner reads the speaker while
+  it plays), the shared `<Tabs>` is 40 px tall without a coarse pointer (the primitive's own rule;
+  44 px on touch), `pnpm typecheck` on a bigger machine (scoped `tsc` passed).
+
+### 2.1 Realistic instrument sounds — shipped in #1651
 - Plan (approved by the owner): `docs/superpowers/plans/2026-11-09-rmhmusic-instrument-sounds.md`.
   v1 instruments: **piano** (Salamander Grand V3, CC BY 3.0 — attribution required), **steel-string
   guitar** ("Ella Gitauru", MIT plus one sentence about attributing alterations; the CC0 nylon
@@ -34,7 +76,7 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   Edition, CC0). Decisions the owner confirmed: default sound follows the learner's instrument; no
   "Mixed" option; credits page `/rmhmusic/credits` linked from the Sound dialog (not a footer);
   chord lessons use only piano/guitar (violin/flute fall back with one plain sentence in the dialog).
-- **Done (branch `claude/hopeful-bohr-99d1vw`, 2026-11-15, not yet merged or deployed):**
+- **Built (merged in #1651):**
   - Samples: `public/music/rmhmusic/instruments/<id>/<midi>.mp3`, 66 zones, mono 44.1 kHz CBR 64 kbps,
     **1,933,035 bytes** (piano 565,476 · guitar 593,874 · violin 489,285 · flute 284,400). Built by
     `scripts/rmhmusic/build-instruments.ts` from `scripts/rmhmusic/sources.json` (commit-pinned
@@ -66,7 +108,7 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   layer; no offline cache. The full `tsc -b` could not run in the agent container (OOM-killed);
   a scoped check of the changed files passed — run `pnpm typecheck` once on a bigger machine.
 
-### Sight reading game ("Sprint") — S1–S5 built, S6 smoke run (Chromium)
+### 2.2 Sight reading game ("Sprint") — shipped in #1651 (S1–S5 built, S6 smoke run in Chromium)
 - Plan: `docs/superpowers/plans/2026-11-09-rmhmusic-note-sprint.md`. Timed MIDI reading game:
   levels one note → accidentals → chords → short bars; **Freeplay** (20-prompt runs, personal bests)
   and a **Daily challenge** (one run per UTC day, 6 escalating levels, seeded by date, the first
@@ -113,9 +155,10 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   the result (it says "Saved."); level unlocking (every level is open); `pnpm typecheck` on a bigger
   machine (the container OOM-kills `tsc -b`; scoped checks passed).
 
-## 3. Future features (not started)
+## 3. Future features
 
-- **Phase 3:** tuner and note reader.
+- **Phase 3:** tuner and note reader — **built** (§2.0); left: the browser/device matrix and a
+  real-microphone check listed there, alternate tunings and other instruments' presets.
 - **Phase 4:** sheet music / tab play-along.
 - **Phase 5:** more instruments (cello, clarinet, oboe, ukulele, organ, `guitar-nylon`) and choir/voice.
 - **Phase 6:** social (friends, shared progress, possibly leaderboards for Sprint).
@@ -128,7 +171,8 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   until `pnpm i18n:translate` is run (only the 16 shipped `locales/*/c-rmhmusic.json` were kept
   when extracting; do not commit the thousands of other extractor files).
 - **Never tested on real hardware:** microphone + speaker (echo guard timings 250 ms confirm /
-  400 ms tail are reasoned), MIDI controllers, Bluetooth output latency (`OUTPUT_LATENCY_MS = 40`
+  400 ms tail are reasoned; the tuner's level/clarity floors, median window and hysteresis were
+  tuned on synthetic tones only), MIDI controllers, Bluetooth output latency (`OUTPUT_LATENCY_MS = 40`
   default for uncalibrated devices), a real iPhone / Mac Safari (silent switch, audio interruption).
 - **Verification gaps:** the full 320 px / 200 % text / RTL / Firefox / WebKit matrix was run on
   PR E's lessons only partly (Firefox/WebKit smoke on the learn home and note finder; RTL only the
@@ -229,11 +273,10 @@ offset) and a bar of notes with a "now" mark; keep `direction="ltr"` on all SVG 
 fixed-height sheet per level (skeleton equals loaded height). Mic is offered for note / accidental /
 bar only; for chords say once that the microphone hears one note at a time and never mark it wrong.
 
-### 6.3 Phase 3 starter (tuner and note reader)
+### 6.3 Phase 3 (tuner and note reader) — implemented
 
-Reuse `lib/rmhmusic/learn/pitch/` (YIN + `centsOff` from `scoring/pitch.ts`) and `input/mic.ts`
-(`echoCancellation: false`). A tuner is a pure `tunerStep(state, frame)` machine
-(`silent → listening → locked(note, cents)`) with hysteresis so the needle does not flicker; draw a
-static dial and update it from the hub's mic events (no rAF at rest; one `drive(fn)` while the
-microphone is live and the tab visible). Open question: instrument tuning presets (guitar standard
-tuning is `STANDARD_TUNING` in `theory/fretboard.ts`).
+The sketch that was here is now code; read the files: `lib/rmhmusic/learn/tuner/{machine,read}.ts`,
+`lib/rmhmusic/learn/input/mic.ts` (`onFrame`), `lib/rmhmusic/learn/store.ts` (`subscribeMicFrames`),
+`components/rmhmusic/learn/tuner/`, `app/routes/rmhmusic/tuner.tsx`. Possible next steps: tuning
+presets beyond guitar standard (drop D, ukulele, violin), a "tune by ear" mode that mutes the
+reading while the reference tone sounds, and a calibration offset (A4 = 442 Hz).
