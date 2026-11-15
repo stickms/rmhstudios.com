@@ -746,7 +746,7 @@ export const CLEF_GLYPHS: Record<
 // The same box, staff and clefs as a card, with a prompt's notes on it: one note, or a chord
 // stacked on one stem (a second's upper note beside an up stem, its lower note beside a down
 // one), each with the sharp or flat printed before it (staggered where they would touch); or a
-// bar of notes left to right, each on its own stem, with a pencilled "now" mark under the next
+// bar of notes left to right, each on its own stem, with a pencilled "now" mark over the next
 // note to play. One natural on its own lands exactly where `cardLayout` puts it.
 
 /** A written note: the natural it sits on (MIDI) and the accidental printed before it. */
@@ -784,7 +784,7 @@ export interface SheetLayout {
   accidentals: SheetAccidental[];
   ledgers: SheetLedger[];
   stems: CardLayout['stem'][];
-  /** The "now" mark's tip, under the note to play next (a bar only). */
+  /** The "now" mark's tip, over the note to play next (a bar only). */
   now: {
     x: number;
     y: number;
@@ -808,24 +808,14 @@ const SECOND_OFFSET =
 const ACC_GAP =
   HEAD_RX +
   7;
-const ACC_COLUMN = 9;
+/** A sharp is 9.2 units wide plus its stroke; a column more leaves a clear gap between two. */
+const ACC_COLUMN = 11.5;
 /** Accidentals closer than this many steps would touch, so they take another column. */
 const ACC_CLEAR_STEPS = 6;
 /** Half a ledger line's length past a head's centre. */
 const LEDGER_HALF = 12;
-const NOW_Y = 96;
-
-const clampStep =
-  (
-    step: number,
-  ) =>
-    Math.min(
-      CARD_MAX_STEP,
-      Math.max(
-        CARD_MIN_STEP,
-        step,
-      ),
-    );
+/** The now mark's tip: above the staff, clear of every note a sprint asks (highest head y 22). */
+const NOW_Y = 10;
 
 function stemFor(
   x: number,
@@ -966,6 +956,8 @@ export function sheetLayout(
     | 'chord'
     | 'bar',
   now?: number,
+  /** The lowest step drawn: `CARD_LOW_MIN_STEP` on the low card (guitar). */
+  minStep = CARD_MIN_STEP,
 ): SheetLayout {
   const placed =
     notes.map(
@@ -973,10 +965,14 @@ export function sheetLayout(
         nt,
       ) => {
         const step =
-          clampStep(
-            clefStep(
-              clef,
-              nt.written,
+          Math.min(
+            CARD_MAX_STEP,
+            Math.max(
+              minStep,
+              clefStep(
+                clef,
+                nt.written,
+              ),
             ),
           );
         return {
@@ -1288,10 +1284,10 @@ export function flatPath(
   return `M ${f(x - 2.5)} ${f(y - 12)} L ${f(x - 2.6)} ${f(y + 4.5)} C ${f(x + 5)} ${f(y + 0.5)} ${f(x + 4)} ${f(y - 5.5)} ${f(x - 2.55)} ${f(y - 0.8)}`;
 }
 
-/** The "now" mark: a small pencilled caret with its tip at (x, y). */
+/** The "now" mark: a small pencilled caret over the note, pointing down to it, tip at (x, y). */
 export function nowMarkPath(
   x: number,
   y: number,
 ): string {
-  return `M ${f(x - 4)} ${f(y + 4)} L ${f(x)} ${f(y)} L ${f(x + 4.2)} ${f(y + 3.8)}`;
+  return `M ${f(x - 4)} ${f(y - 4)} L ${f(x)} ${f(y)} L ${f(x + 4.2)} ${f(y - 3.8)}`;
 }

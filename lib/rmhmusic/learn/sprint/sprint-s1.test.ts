@@ -5,6 +5,7 @@ import {
 } from 'vitest';
 import { mulberry32 } from '@/lib/core/rng';
 import {
+  CARD_LOW_MIN_STEP,
   CARD_MAX_STEP,
   CARD_MIN_STEP,
 } from '../staff-card-layout';
@@ -1203,5 +1204,128 @@ describe('summarizeRun', () => {
           null,
       },
     );
+  });
+});
+
+describe('guitar reads the treble staff only', () => {
+  it('the daily run is the same prompts for everyone, drawn on treble for guitar', () => {
+    const piano =
+      dailyRun(
+        '2026-11-09',
+      );
+    const guitar =
+      dailyRun(
+        '2026-11-09',
+        'guitar',
+      );
+    expect(
+      guitar,
+    ).toHaveLength(
+      piano.length,
+    );
+    expect(
+      guitar.every(
+        (
+          p,
+        ) =>
+          p.clef ===
+          'treble',
+      ),
+    ).toBe(
+      true,
+    );
+    for (
+      let i = 0;
+      i <
+      piano.length;
+      i++
+    ) {
+      const p =
+        piano[
+          i
+        ]!;
+      const g =
+        guitar[
+          i
+        ]!;
+      expect(
+        g.level,
+      ).toBe(
+        p.level,
+      );
+      // A bass prompt sounds the same pitches on guitar (written an octave up on the treble
+      // staff); a treble prompt is the same page, sounding an octave lower as guitar music does.
+      if (
+        p.clef ===
+        'bass'
+      )
+        expect(
+          promptMidis(
+            g,
+            'guitar',
+          ),
+        ).toEqual(
+          promptMidis(
+            p,
+            'piano',
+          ),
+        );
+      else
+        expect(
+          g,
+        ).toEqual(
+          p,
+        );
+      for (const s of stepsOf(
+        g,
+      )) {
+        expect(
+          s,
+        ).toBeGreaterThanOrEqual(
+          CARD_LOW_MIN_STEP,
+        );
+        expect(
+          s,
+        ).toBeLessThanOrEqual(
+          SPRINT_MAX_STEP,
+        );
+      }
+    }
+    expect(
+      piano.some(
+        (
+          p,
+        ) =>
+          p.clef ===
+          'bass',
+      ),
+    ).toBe(
+      true,
+    );
+  });
+
+  it('freeplay for guitar never uses the bass staff', () => {
+    for (const level of SPRINT_LEVELS) {
+      const run =
+        makeRun(
+          level.id,
+          100,
+          mulberry32(
+            9,
+          ),
+          'guitar',
+        );
+      expect(
+        run.every(
+          (
+            p,
+          ) =>
+            p.clef ===
+            'treble',
+        ),
+      ).toBe(
+        true,
+      );
+    }
   });
 });

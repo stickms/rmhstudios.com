@@ -448,6 +448,8 @@ export function SprintSheet({
   state,
   label,
   className,
+  range = 'deck',
+  octaveClef = false,
 }: {
   clef: Card['clef'];
   notes: readonly SheetNote[];
@@ -457,17 +459,33 @@ export function SprintSheet({
   /** A bar: the note to play next. */
   now?: number;
   state: StaffCardState;
+  /**
+   * The image's name. While asking it must not give the answer away (say only what kind of prompt
+   * is on which staff); the notes are named once answered.
+   */
   label: string;
   className?: string;
+  /** `low`: the note finder's taller card, three ledger lines under the treble staff (guitar). */
+  range?:
+    | 'deck'
+    | 'low';
+  /** The treble clef with the small 8 under it (guitar music, read an octave down). */
+  octaveClef?: boolean;
 }) {
   const titleId =
     useId();
+  const low =
+    range ===
+    'low';
   const layout =
     sheetLayout(
       clef,
       notes,
       arrangement,
       now,
+      low
+        ? CARD_LOW_MIN_STEP
+        : CARD_MIN_STEP,
     );
   const answered =
     state !==
@@ -488,7 +506,7 @@ export function SprintSheet({
       )}
     >
       <svg
-        viewBox={`0 0 ${CARD_W} ${CARD_H}`}
+        viewBox={`0 0 ${CARD_W} ${low ? CARD_LOW_H : CARD_H}`}
         role="img"
         aria-labelledby={
           titleId
@@ -507,6 +525,9 @@ export function SprintSheet({
         <StaffRuling
           clef={
             clef
+          }
+          octaveClef={
+            octaveClef
           }
         />
         <g

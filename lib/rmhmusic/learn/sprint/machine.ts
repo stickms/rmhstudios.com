@@ -5,32 +5,48 @@
  *   ready → countdown (three quiet beats) → asking ⇄ feedback → complete | saving → saved |
  *   failed (Retry) | signed-out
  *
- * Timing. Every time is the note event's own `time` (the hub's `performance.now()` clock, MIDI's
- * `timeStamp`), never a clock read in a handler, so UI latency never pollutes a score. A prompt is
- * timed from `shown` (the frame it was drawn) to the note that completes the answer. A prompt
- * cannot be answered before it is drawn: until `shown` every note is ignored, and so is any note
- * timed before it (an event queued from the previous prompt). Note-offs never answer, so a key
- * held from the previous prompt answers nothing; a key must be struck again.
+ * Timing. Every note is timed by the event's own `time` from the input hub: every adapter stamps
+ * it with `performance.now()` when its event handler runs (MIDI's adapter reads the clock as the
+ * message arrives, not the message's own `timeStamp`), so a slow React render never pollutes a
+ * score, though the event loop's own delay does. A prompt is timed from `shown` to the note that
+ * completes the answer; the screen sends `shown` from an effect that runs once the prompt has been
+ * painted, which can be up to about a frame after the learner first saw it, so times are biased
+ * long by at most a frame (~16 ms), the same for every prompt. A prompt cannot be answered before
+ * it is drawn: until `shown` every note is ignored, and so is any note timed before it (an event
+ * queued from the previous prompt). Note-offs never answer, so a key held from the previous prompt
+ * answers nothing; a key must be struck again.
  *
- * Answers. One note (or an accidental): the first note struck, right on the exact sounding
- * pitch. A chord: the notes struck after the drawing collect in a window of `CHORD_WINDOW_MS` from
- * the first (the same window as `input/chord-window.ts`, without its carried-over held keys —
- * here a key from the previous prompt must be struck again); right the moment the collected pitch
- * classes are exactly the chord's (any octave or inversion), timed to that note. When the window
- * closes (`close` from the screen's timer, or a later note) three or more pitch classes are a wrong
- * attempt; fewer are a lone tap, not graded (the prompt stays, the clock keeps running). A bar:
- * its notes in order, each timed from the one before; a wrong note ends the prompt (no retry); a
- * repeat of the note just played (a doubled event) is ignored, since a bar never repeats a note.
+ * What counts as the right note depends on the input. A MIDI keyboard has every key, so it must
+ * play the written pitch. The computer keys reach one octave and a bit, the on-screen keys show a
+ * window of the keyboard, and a voice or an instrument heard by the microphone may sit in another
+ * octave; for them any octave of the written note is right (its pitch class). The screen says
+ * which.
+ *
+ * Answers. One note (or an accidental): the first note struck. A bar: its notes in order, each
+ * timed from the one before; a wrong note ends the prompt (no retry); a repeat of the note just
+ * played (a doubled event) is ignored, since a bar never repeats a note. A chord: the notes struck
+ * after the drawing collect in a window of `CHORD_WINDOW_MS` from the first (the same window as
+ * `input/chord-window.ts`; its collector is not reused because it counts keys still held from the
+ * previous prompt, which here must be struck again). The window is graded when it closes (`close`
+ * from the screen's timer, or a later note): right when the notes are exactly the chord's pitch
+ * classes in any octave or order — and, on the inverted-triad level, when the lowest note is the
+ * inversion's bass — timed to the last note that went in; three or more pitch classes otherwise are
+ * wrong (an extra note makes it wrong whatever the order); fewer are a lone tap, not graded (the
+ * prompt stays and the clock keeps running).
  *
  * The microphone hears one note at a time: it answers notes, accidentals and bars, never a chord.
- * While the input is the microphone, chord prompts are skipped (recorded as `skipped`, never
- * wrong, left out of the score), and a mic note on a chord prompt is ignored.
+ * A run played on the microphone skips its chord prompts (recorded as `skipped`, never wrong, left
+ * out of the score), and a mic note on a chord prompt is ignored. The input is fixed for a run:
+ * `input` is taken only before the run starts or after it ends (the screen also locks its input
+ * switch), so switching to the microphone mid-run cannot skip a hard prompt. If anything pauses a
+ * run, `resume` draws the current prompt afresh (its clock and any notes so far are reset).
  *
- * Exactly one `complete` effect per run, after the last prompt's feedback. A scored run then saves
- * (`save`, carrying its attempt; a stale answer is ignored; Retry is a new attempt; `unsaved`, when
- * nothing can keep the result yet, ends at `complete` with `scored` still true). An unscored
- * run (a daily challenge replayed the same day: practice) ends at `complete`. `again` starts a new
- * run from any finished state; in daily mode it is never scored.
+ * Exactly one `complete` effect per run, after the last prompt's feedback. A scored run with at
+ * least one prompt played then saves (`save`, carrying its attempt; a stale answer is ignored;
+ * Retry is a new attempt). A run ends at `complete` with a reason (`why`) when it is not kept: a
+ * daily replay (`practice`), nothing played (`empty`), nothing can keep results yet (`unsaved`), or
+ * the day already has its scored run from another tab or device (`already-scored`). `again` starts
+ * a new run from any finished state; in daily mode it is never scored.
  */
 import { CHORD_WINDOW_MS } from '../input/chord-window';
 import type { NoteEvent } from '../input/events';
@@ -58,12 +74,20 @@ export type SprintMode =
   | 'daily';
 
 /**
- * How a save ended: a lesson's outcomes, plus `unsaved` — nothing keeps sprint results yet (the
- * store has no table for them), so the run ends at `complete` and says plainly it was not saved.
+ * How a save ended: a lesson's outcomes, plus `unsaved` (nothing keeps sprint results yet) and
+ * `already-scored` (the day's challenge already has its scored run, from another tab or device).
  */
 export type SprintSaveOutcome =
   | CompleteOutcome
-  | 'unsaved';
+  | 'unsaved'
+  | 'already-scored';
+
+/** Why a finished run was not kept. */
+export type CompleteWhy =
+  | 'practice'
+  | 'empty'
+  | 'unsaved'
+  | 'already-scored';
 
 /** What every state carries: the run and what has been answered so far. */
 interface Run {
@@ -74,7 +98,7 @@ interface Run {
   instrument: Instrument;
   /** Whether this run's result is saved (false: a daily replay, practice). */
   scored: boolean;
-  /** The input is the microphone (chords are skipped). */
+  /** The input is the microphone (chords are skipped). Fixed while a run is under way. */
   mic: boolean;
   results: readonly PromptResult[];
 }
@@ -99,7 +123,7 @@ export type SprintState =
         | null;
       /** Chord: the notes in the open window. Bar: the notes played right so far. */
       got: readonly number[];
-      /** Bar: when each note in `got` was played. */
+      /** Bar: when each note in `got` was played. Chord: when the last note went in. */
       times: readonly number[];
       /** Chord: when the open window opened; null when none is open. */
       windowAt:
@@ -113,10 +137,13 @@ export type SprintState =
       index: number;
       result: PromptResult;
       played: readonly number[];
+      /** Wrong only by the octave: the right letter at another pitch (exact matching, MIDI). */
+      octaveOff: boolean;
     })
   | (Run & {
       kind: 'complete';
       summary: RunSummary;
+      why: CompleteWhy;
     })
   | (Run & {
       kind: 'saving';
@@ -156,6 +183,9 @@ export type SprintEvent =
   | {
       type: 'shown';
       at: number;
+    }
+  | {
+      type: 'resume';
     }
   | {
       type: 'note';
@@ -268,6 +298,45 @@ const same =
       [],
   });
 
+const pc =
+  (
+    m: number,
+  ) =>
+    ((Math.round(
+      m,
+    ) %
+      12) +
+      12) %
+    12;
+
+/** Whether a struck note is the wanted one: the exact pitch on MIDI, any octave otherwise. */
+export function sameNote(
+  source: NoteEvent['source'],
+  played: number,
+  wanted: number,
+): boolean {
+  return source ===
+    'midi'
+    ? played ===
+        wanted
+    : pc(
+        played,
+      ) ===
+        pc(
+          wanted,
+        );
+}
+
+/** Whether this input must play the written octave (see the header). */
+export function exactOctave(
+  source: NoteEvent['source'],
+): boolean {
+  return (
+    source ===
+    'midi'
+  );
+}
+
 const skippedResult =
   (
     p: SprintPrompt,
@@ -282,6 +351,72 @@ const skippedResult =
     points: 0,
     skipped: true,
   });
+
+function finished(
+  run: Run,
+  results: readonly PromptResult[],
+): Step {
+  const summary =
+    summarizeRun(
+      results,
+    );
+  const next: Run =
+    {
+      ...run,
+      results,
+    };
+  const complete: SprintEffect =
+    {
+      type: 'complete',
+      mode: run.mode,
+      scored:
+        run.scored,
+      summary,
+    };
+  if (
+    !run.scored ||
+    summary.played ===
+      0
+  ) {
+    return {
+      state:
+        {
+          ...next,
+          kind: 'complete',
+          summary,
+          why:
+            summary.played ===
+            0
+              ? 'empty'
+              : 'practice',
+        },
+      effects:
+        [
+          complete,
+        ],
+    };
+  }
+  return {
+    state:
+      {
+        ...next,
+        kind: 'saving',
+        summary,
+        attempt: 1,
+      },
+    effects:
+      [
+        complete,
+        {
+          type: 'save',
+          mode: run.mode,
+          attempt: 1,
+          summary,
+          results,
+        },
+      ],
+  };
+}
 
 /**
  * Ask prompt `index` — or, while the input is the microphone, skip the chords from there on —
@@ -318,83 +453,44 @@ function askFrom(
       ];
     i += 1;
   }
-  const next: Run =
-    {
-      ...run,
-      results,
-    };
   if (
-    i <
+    i >=
     run
       .prompts
       .length
-  ) {
-    return {
-      state:
-        {
-          ...next,
-          kind: 'asking',
-          index:
-            i,
-          shownAt:
-            null,
-          got: [],
-          times:
-            [],
-          windowAt:
-            null,
-          tooFew: 0,
-        },
-      effects:
-        [],
-    };
-  }
-  const summary =
-    summarizeRun(
+  )
+    return finished(
+      run,
       results,
     );
-  const complete: SprintEffect =
-    {
-      type: 'complete',
-      mode: run.mode,
-      scored:
-        run.scored,
-      summary,
-    };
-  if (
-    !run.scored
-  )
-    return {
-      state:
-        {
-          ...next,
-          kind: 'complete',
-          summary,
-        },
-      effects:
-        [
-          complete,
-        ],
-    };
   return {
     state:
       {
-        ...next,
-        kind: 'saving',
-        summary,
-        attempt: 1,
+        ...run,
+        results,
+        ...freshPrompt(
+          i,
+        ),
       },
     effects:
-      [
-        complete,
-        {
-          type: 'save',
-          mode: run.mode,
-          attempt: 1,
-          summary,
-          results,
-        },
-      ],
+      [],
+  };
+}
+
+function freshPrompt(
+  index: number,
+) {
+  return {
+    kind: 'asking' as const,
+    index,
+    shownAt:
+      null,
+    got: [],
+    times:
+      [],
+    windowAt:
+      null,
+    tooFew: 0,
   };
 }
 
@@ -412,6 +508,7 @@ function answer(
   at: number,
   noteMs: readonly number[],
   played: readonly number[],
+  octaveOff = false,
 ): Step {
   const p =
     s
@@ -468,17 +565,95 @@ function answer(
           s.index,
         result,
         played,
+        octaveOff,
       },
     effects:
       [],
   };
 }
 
-/** Close the chord window at `at`: an attempt is graded (it was not the chord); too few is not. */
+/**
+ * Close the chord window: right when the notes are exactly the chord (and, on the inverted-triad
+ * level, its bass is the lowest), timed to the last note in; another attempt is wrong; too few is
+ * not graded.
+ */
 function closeWindow(
   s: Asking,
   at: number,
 ): Step {
+  const p =
+    s
+      .prompts[
+      s
+        .index
+    ];
+  const target =
+    s
+      .targets[
+      s
+        .index
+    ];
+  if (
+    !p ||
+    !target
+  )
+    return same(
+      s,
+    );
+  const want =
+    pitchClasses(
+      target,
+    );
+  const have =
+    pitchClasses(
+      s.got,
+    );
+  const bass =
+    target[0];
+  const lowest =
+    Math.min(
+      ...s.got,
+    );
+  const right =
+    want.length ===
+      have.length &&
+    want.every(
+      (
+        x,
+        i,
+      ) =>
+        x ===
+        have[
+          i
+        ],
+    ) &&
+    (p.level !==
+      'inversion' ||
+      (bass !==
+        undefined &&
+        pc(
+          lowest,
+        ) ===
+          pc(
+            bass,
+          )));
+  if (
+    right
+  )
+    return answer(
+      s,
+      true,
+      s
+        .times[
+        s
+          .times
+          .length -
+          1
+      ] ??
+        at,
+      [],
+      s.got,
+    );
   if (
     isChordAttempt(
       s.got,
@@ -496,6 +671,8 @@ function closeWindow(
       {
         ...s,
         got: [],
+        times:
+          [],
         windowAt:
           null,
         tooFew:
@@ -568,11 +745,19 @@ function onNote(
     p.kind
   ) {
     case 'note':
-    case 'accidental':
+    case 'accidental': {
+      const want =
+        target[0] ??
+        Number.NaN;
+      const right =
+        sameNote(
+          e.source,
+          e.midi,
+          want,
+        );
       return answer(
         s,
-        e.midi ===
-          target[0],
+        right,
         at,
         [
           at -
@@ -581,7 +766,15 @@ function onNote(
         [
           e.midi,
         ],
+        !right &&
+          pc(
+            e.midi,
+          ) ===
+            pc(
+              want,
+            ),
       );
+    }
     case 'bar': {
       const last =
         s
@@ -618,13 +811,19 @@ function onNote(
             ] ??
               shownAt),
         );
-      if (
-        e.midi !==
+      const want =
         target[
           s
             .got
             .length
-        ]
+        ] ??
+        Number.NaN;
+      if (
+        !sameNote(
+          e.source,
+          e.midi,
+          want,
+        )
       ) {
         return answer(
           s,
@@ -638,6 +837,12 @@ function onNote(
             ...s.got,
             e.midi,
           ],
+          pc(
+            e.midi,
+          ) ===
+            pc(
+              want,
+            ),
         );
       }
       const got =
@@ -693,58 +898,29 @@ function onNote(
         cur =
           closed.state;
       }
-      const got =
+      if (
         cur.got.includes(
           e.midi,
         )
-          ? cur.got
-          : [
-              ...cur.got,
-              e.midi,
-            ];
-      const windowAt =
-        cur.windowAt ??
-        at;
-      const want =
-        pitchClasses(
-          target,
+      )
+        return same(
+          cur,
         );
-      const have =
-        pitchClasses(
-          got,
-        );
-      if (
-        want.length ===
-          have.length &&
-        want.every(
-          (
-            pc,
-            i,
-          ) =>
-            pc ===
-            have[
-              i
-            ],
-        )
-      ) {
-        return answer(
-          {
-            ...cur,
-            got,
-            windowAt,
-          },
-          true,
-          at,
-          [],
-          got,
-        );
-      }
       return {
         state:
           {
             ...cur,
-            got,
-            windowAt,
+            got: [
+              ...cur.got,
+              e.midi,
+            ],
+            times:
+              [
+                at,
+              ],
+            windowAt:
+              cur.windowAt ??
+              at,
           },
         effects:
           [],
@@ -756,6 +932,19 @@ function onNote(
       );
   }
 }
+
+const isFinished =
+  (
+    s: SprintState,
+  ) =>
+    s.kind ===
+      'complete' ||
+    s.kind ===
+      'saved' ||
+    s.kind ===
+      'failed' ||
+    s.kind ===
+      'signed-out';
 
 export function step(
   s: SprintState,
@@ -837,6 +1026,29 @@ export function step(
         effects:
           [],
       };
+    case 'resume':
+      if (
+        s.kind !==
+          'asking' ||
+        s.shownAt ===
+          null
+      )
+        return same(
+          s,
+        );
+      return {
+        state:
+          {
+            ...s,
+            ...freshPrompt(
+              s.index,
+            ),
+            tooFew:
+              s.tooFew,
+          },
+        effects:
+          [],
+      };
     case 'note':
       return s.kind ===
         'asking'
@@ -875,45 +1087,25 @@ export function step(
       );
     }
     case 'input': {
+      // Fixed for a run: only before it starts or after it ends.
       if (
         s.mic ===
-        e.mic
+          e.mic ||
+        (s.kind !==
+          'ready' &&
+          !isFinished(
+            s,
+          ))
       )
         return same(
           s,
         );
-      const next =
-        {
-          ...s,
-          mic: e.mic,
-        } as SprintState;
-      if (
-        next.kind ===
-          'asking' &&
-        e.mic
-      ) {
-        const p =
-          next
-            .prompts[
-            next
-              .index
-          ];
-        if (
-          p &&
-          !micAllowed(
-            p.kind,
-          )
-        )
-          return askFrom(
-            runOf(
-              next,
-            ),
-            next.index,
-          );
-      }
       return {
         state:
-          next,
+          {
+            ...s,
+            mic: e.mic,
+          },
         effects:
           [],
       };
@@ -965,11 +1157,13 @@ export function step(
               [],
           };
         case 'unsaved':
+        case 'already-scored':
           return {
             state:
               {
                 ...base,
                 kind: 'complete',
+                why: e.outcome,
               },
             effects:
               [],
@@ -1041,19 +1235,13 @@ export function step(
     }
     case 'again': {
       if (
-        s.kind !==
-          'complete' &&
-        s.kind !==
-          'saved' &&
-        s.kind !==
-          'failed' &&
-        s.kind !==
-          'signed-out'
-      ) {
+        !isFinished(
+          s,
+        )
+      )
         return same(
           s,
         );
-      }
       return {
         state:
           {

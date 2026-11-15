@@ -4,6 +4,7 @@ import {
   it,
 } from 'vitest';
 import { createMemorySaver } from './saver';
+import type { PromptResult } from './scoring';
 
 const summary =
   {
@@ -15,9 +16,25 @@ const summary =
     skipped: 0,
     avgMs: 1500,
   };
+const results: PromptResult[] =
+  [
+    {
+      level:
+        'note',
+      kind: 'note',
+      correct: true,
+      ms: 900,
+      noteMs:
+        [
+          900,
+        ],
+      points: 100,
+      skipped: false,
+    },
+  ];
 
 describe('the in-memory sprint saver (until results are stored)', () => {
-  it('keeps nothing: every save says unsaved', async () => {
+  it('keeps nothing: a save says unsaved', async () => {
     const saver =
       createMemorySaver();
     await expect(
@@ -26,6 +43,7 @@ describe('the in-memory sprint saver (until results are stored)', () => {
           level:
             'note',
           summary,
+          results,
         },
       ),
     ).resolves.toBe(
@@ -36,6 +54,7 @@ describe('the in-memory sprint saver (until results are stored)', () => {
         {
           date: '2026-11-09',
           summary,
+          results,
         },
       ),
     ).resolves.toBe(
@@ -43,7 +62,7 @@ describe('the in-memory sprint saver (until results are stored)', () => {
     );
   });
 
-  it("remembers this visit's daily run, so a replay that day is practice", async () => {
+  it("remembers this visit's daily run: a replay that day is practice, a second save is refused", async () => {
     const saver =
       createMemorySaver();
     await expect(
@@ -57,6 +76,7 @@ describe('the in-memory sprint saver (until results are stored)', () => {
       {
         date: '2026-11-09',
         summary,
+        results,
       },
     );
     await expect(
@@ -72,6 +92,17 @@ describe('the in-memory sprint saver (until results are stored)', () => {
       ),
     ).resolves.toBe(
       false,
+    );
+    await expect(
+      saver.saveDaily(
+        {
+          date: '2026-11-09',
+          summary,
+          results,
+        },
+      ),
+    ).resolves.toBe(
+      'already-scored',
     );
   });
 });

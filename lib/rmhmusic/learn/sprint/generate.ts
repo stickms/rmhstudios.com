@@ -593,10 +593,50 @@ const samePrompt =
     );
 
 /** `count` prompts of a level, never the same one twice in a row. */
+/**
+ * A prompt as the learner's instrument reads it. Guitar music is written on the treble staff only,
+ * with the small 8 under the clef (it sounds an octave lower than written), so a bass-staff prompt
+ * is written an octave up on the treble staff for a guitarist: the same letters and accidentals,
+ * sounding the same pitches as on the piano (`promptMidis`). A treble prompt is the same page on
+ * both instruments. The lowest bass note (E2) lands on the low card's E3, three ledger lines down.
+ */
+export function forInstrument(
+  p: SprintPrompt,
+  instrument: Instrument,
+): SprintPrompt {
+  if (
+    instrument !==
+      'guitar' ||
+    p.clef !==
+      'bass'
+  )
+    return p;
+  return {
+    ...p,
+    clef: 'treble',
+    notes:
+      p.notes.map(
+        (
+          n,
+        ) => ({
+          ...n,
+          written:
+            n.written +
+            12,
+        }),
+      ),
+  };
+}
+
+/**
+ * `count` prompts of a level, never the same one twice in a row, as `instrument` reads them. The
+ * dealing never depends on the instrument, so one seed deals the same prompts to everyone.
+ */
 export function makeRun(
   levelId: SprintLevelId,
   count: number,
   rand: () => number,
+  instrument: Instrument = 'piano',
 ): SprintPrompt[] {
   const out: SprintPrompt[] =
     [];
@@ -626,7 +666,15 @@ export function makeRun(
       p,
     );
   }
-  return out;
+  return out.map(
+    (
+      p,
+    ) =>
+      forInstrument(
+        p,
+        instrument,
+      ),
+  );
 }
 
 const DATE_RE =
@@ -717,9 +765,15 @@ export function dailySeed(
   return h;
 }
 
-/** The day's challenge: every daily level in order, five prompts each, the same for everyone. */
+/**
+ * The day's challenge: every daily level in order, five prompts each, the same for everyone. Runs
+ * stay comparable across instruments: the same seed deals the same prompts in the same order (the
+ * same indices), and a guitarist sees each one as guitar music writes it (`forInstrument`: on the
+ * treble staff, a bass prompt written an octave up), with the same notes to find.
+ */
 export function dailyRun(
   date: string,
+  instrument: Instrument = 'piano',
 ): SprintPrompt[] {
   const rand =
     mulberry32(
@@ -735,6 +789,7 @@ export function dailyRun(
         id,
         DAILY_PROMPTS_PER_LEVEL,
         rand,
+        instrument,
       ),
   );
 }

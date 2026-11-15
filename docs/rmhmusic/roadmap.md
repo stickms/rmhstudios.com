@@ -56,7 +56,10 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 - Built: `lib/rmhmusic/learn/sprint/` (levels and pars, seeded generators, `dailyRun`/`utcDate`,
   scoring, the `{initial, step}` machine), `sheetLayout` + `SprintSheet` (accidentals, stacked
   chords, bars with a now mark), `components/rmhmusic/learn/sprint/` and `/rmhmusic/sprint`, and a
-  "Sight reading" link at the foot of the learn home.
+  "Sight reading" link at the foot of the learn home. MIDI must play the written pitch; the
+  computer keys, on-screen keys and microphone count any octave (the hint says which). Guitar reads
+  the treble staff only (octave clef, low card); the daily run deals the same prompts to everyone
+  and draws a bass prompt an octave up on treble for guitar. The input is locked during a run.
 - Not yet: **S5 persistence.** The game saves through `SprintSaver` (`sprint/saver.ts`); the
   in-memory saver answers `unsaved`, so every result says "Not saved" and only the current visit
   remembers that today's challenge was played. Wiring S5 is a new saver in that one file. Bests,

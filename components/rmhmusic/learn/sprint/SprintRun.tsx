@@ -4,18 +4,19 @@
  * machine's timing and effects:
  *
  * - a plain "Ready" on the sheet and three quiet beats (`tick` every `BEAT_MS`), then the prompt;
- * - `shown` with `performance.now()` read in the effect that runs once the prompt is painted (the
- *   same clock as the hub's note times), so the time is
- *   measured from when the learner could see the notes;
+ * - `shown` with `performance.now()` read in a passive effect, which React runs after the browser
+ *   has painted the prompt: the reading can trail the paint by up to about a frame (~16 ms), the
+ *   same bias for every prompt, and it is the hub's clock, so note times compare with it;
  * - every note event from the hub as it is (its own `time`; nothing here reads a clock for a note);
  * - the chord window's close as a timer (`close`), and the feedback's short pause before `next`;
- * - `save` through the run's saver, answered with its attempt.
+ * - `save` through the run's saver, with every prompt's result, answered with its attempt;
+ * - `resume` when a dialog that paused the run closes, so the prompt is drawn and timed afresh.
  *
- * The sheet and the input region keep fixed boxes for every prompt and state (`SprintSheet` is one
- * card height; `.rmm-input-region` the keyboard's), so nothing moves during a run. Feedback is a
- * pencil tick or a red-pencil cross with the right notes written under the staff, and one sentence.
- * The microphone hears one note at a time: chord prompts are skipped for it (one plain sentence
- * says so in the result) and never marked wrong.
+ * The input is fixed for the run (the machine ignores a change; `onLockChange` tells the page to
+ * disable Change input from the count until the end). The sheet and the input region keep fixed
+ * boxes for every prompt and state — the "Ready" and result boxes are the sheet's height including
+ * its caption line — so nothing moves when a run starts or ends. Focus follows the run: Start on
+ * entry, the sheet during the run, Play again (or Try again) at the end.
  */
 
 import {
@@ -26,7 +27,6 @@ import {
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import { CHORD_WINDOW_MS } from '@/lib/rmhmusic/learn/input/chord-window';
 import { noteList } from '@/lib/rmhmusic/learn/note-list';
 import type {
@@ -38,13 +38,14 @@ import {
   createSprintMachine,
   type SprintMode,
   type SprintSaveOutcome,
-  type SprintState,
 } from '@/lib/rmhmusic/learn/sprint/machine';
-import type { RunSummary } from '@/lib/rmhmusic/learn/sprint/scoring';
+import type {
+  PromptResult,
+  RunSummary,
+} from '@/lib/rmhmusic/learn/sprint/scoring';
 import {
   PRIMARY_BUTTON,
   SECONDARY_BUTTON,
-  TEXT_BUTTON,
 } from '../buttons';
 import { DeviceRegion } from '../LessonParts';
 import { OnScreenKeyboard } from '../OnScreenKeyboard';
@@ -59,6 +60,13 @@ import {
   useNoteEvents,
   useNoteSound,
 } from '../useLearnInput';
+import {
+  askHint,
+  feedbackLine,
+  promptLabel,
+  resultSentence,
+  saveSentence,
+} from './sprint-text';
 
 const RETURN_TO =
   '/rmhmusic/sprint';
@@ -75,7 +83,7 @@ export function SprintRun({
   instrument,
   input,
   paused,
-  onChangeInput,
+  onLockChange,
   onDone,
   nextPrompts,
   save,
@@ -85,15 +93,19 @@ export function SprintRun({
   scored: boolean;
   instrument: Instrument;
   input: LearnInput;
-  /** A dialog is open over the run: the count and the feedback wait, nothing is drawn. */
+  /** A dialog is open over the run: the count and the feedback wait, notes are not taken. */
   paused: boolean;
-  onChangeInput: () => void;
+  /** True from the count until the run ends: the page locks its input switch. */
+  onLockChange: (
+    locked: boolean,
+  ) => void;
   /** Back to the level picker. */
   onDone: () => void;
   /** The prompts of the next run ("Play again"). */
   nextPrompts: () => SprintPrompt[];
   save: (
     summary: RunSummary,
+    results: readonly PromptResult[],
   ) => Promise<SprintSaveOutcome>;
 }) {
   const {
@@ -130,25 +142,10 @@ export function SprintRun({
       mic: true,
     },
   );
+  const guitar =
+    instrument ===
+    'guitar';
 
-  // Every note goes to the machine with its own time; it decides what counts.
-  useNoteEvents(
-    (
-      e,
-    ) => {
-      if (
-        !paused
-      )
-        carry(
-          send(
-            {
-              type: 'note',
-              note: e,
-            },
-          ),
-        );
-    },
-  );
   // The save effect, answered with its attempt (a stale answer is ignored by the machine). `send`
   // is the runner's, stable for the screen's life, so `carry` is too.
   const saveRef =
@@ -183,6 +180,7 @@ export function SprintRun({
               void saveRef
                 .current(
                   fx.summary,
+                  fx.results,
                 )
                 .catch(
                   () =>
@@ -214,6 +212,26 @@ export function SprintRun({
       ],
     );
 
+  // Every note goes to the machine with its own time; it decides what counts.
+  useNoteEvents(
+    (
+      e,
+    ) => {
+      if (
+        !paused
+      )
+        carry(
+          send(
+            {
+              type: 'note',
+              note: e,
+            },
+          ),
+        );
+    },
+  );
+
+  // The input: taken by the machine only before a run or after it (fixed while one is under way).
   const mic =
     input ===
     'mic';
@@ -228,6 +246,47 @@ export function SprintRun({
     );
   }, [
     mic,
+    carry,
+    send,
+  ]);
+
+  const inRun =
+    state.kind ===
+      'countdown' ||
+    state.kind ===
+      'asking' ||
+    state.kind ===
+      'feedback';
+  useEffect(() => {
+    onLockChange(
+      inRun,
+    );
+  }, [
+    inRun,
+    onLockChange,
+  ]);
+
+  // A dialog paused the run: once it closes, the prompt is drawn and timed afresh.
+  const wasPaused =
+    useRef(
+      paused,
+    );
+  useEffect(() => {
+    if (
+      wasPaused.current &&
+      !paused
+    )
+      carry(
+        send(
+          {
+            type: 'resume',
+          },
+        ),
+      );
+    wasPaused.current =
+      paused;
+  }, [
+    paused,
     carry,
     send,
   ]);
@@ -268,8 +327,7 @@ export function SprintRun({
     send,
   ]);
 
-  // `shown`: a passive effect runs after the browser has painted the prompt, so its clock reading
-  // is when the learner could first see it (no frame loop needed).
+  // `shown`: this passive effect runs once the prompt has been painted (see the header).
   const askingIndex =
     state.kind ===
       'asking' &&
@@ -376,6 +434,44 @@ export function SprintRun({
     send,
   ]);
 
+  // Focus follows the run: Start on entry, the sheet once the count starts, the next action at the
+  // end — the control that had it is gone each time.
+  const startButton =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const sheetBox =
+    useRef<HTMLElement>(
+      null,
+    );
+  const endButton =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const phase =
+    state.kind ===
+    'ready'
+      ? 'ready'
+      : inRun
+        ? 'run'
+        : 'end';
+  useEffect(() => {
+    if (
+      phase ===
+      'ready'
+    )
+      startButton.current?.focus();
+    else if (
+      phase ===
+      'run'
+    )
+      sheetBox.current?.focus();
+    else
+      endButton.current?.focus();
+  }, [
+    phase,
+  ]);
+
   const names =
     (
       prompt: SprintPrompt,
@@ -390,9 +486,18 @@ export function SprintRun({
     state
       .prompts
       .length;
+  const lowCard =
+    guitar;
+  /** The sheet's box, caption line included: the "Ready" and result boxes take the same. */
+  const sheetSize =
+    lowCard
+      ? 'aspect-[200/117]'
+      : 'aspect-[200/102]';
 
   let sheet: ReactNode;
   let line =
+    '';
+  let said =
     '';
   if (
     state.kind ===
@@ -402,37 +507,45 @@ export function SprintRun({
   ) {
     sheet =
       (
-        <div className="flex aspect-[200/102] w-full flex-col items-center justify-center gap-3">
-          <p className="rmm-display text-[2.5rem] leading-[3rem] text-app-text">
-            {t(
-              'sprint-ready',
-              {
-                defaultValue:
-                  'Ready',
-              },
-            )}
-          </p>
-          <p
-            aria-hidden="true"
-            className="flex gap-3"
+        <div>
+          <div
+            className={`flex ${sheetSize} w-full flex-col items-center justify-center gap-3`}
           >
-            {[
-              0,
-              1,
-              2,
-            ].map(
-              (
-                b,
-              ) => (
-                <span
-                  key={
-                    b
-                  }
-                  className={`h-2 w-2 rounded-full ${state.kind === 'countdown' && b <= state.beat ? 'bg-app-text' : 'bg-app-border'}`}
-                />
-              ),
-            )}
-          </p>
+            <p className="rmm-display text-[2.5rem] leading-[3rem] text-app-text">
+              {t(
+                'sprint-ready',
+                {
+                  defaultValue:
+                    'Ready',
+                },
+              )}
+            </p>
+            <p
+              aria-hidden="true"
+              className="flex gap-3"
+            >
+              {[
+                0,
+                1,
+                2,
+              ].map(
+                (
+                  b,
+                ) => (
+                  <span
+                    key={
+                      b
+                    }
+                    className={`h-2 w-2 rounded-full ${state.kind === 'countdown' && b <= state.beat ? 'bg-app-text' : 'bg-app-border'}`}
+                  />
+                ),
+              )}
+            </p>
+          </div>
+          <div
+            aria-hidden="true"
+            className="h-9"
+          />
         </div>
       );
     line =
@@ -446,6 +559,8 @@ export function SprintRun({
                 'The first prompt is coming.',
             },
           );
+    said =
+      line;
   } else if (
     state.kind ===
       'asking' ||
@@ -506,10 +621,20 @@ export function SprintRun({
             label={promptLabel(
               t,
               prompt,
+              state.kind ===
+                'feedback',
               names(
                 prompt,
               ),
             )}
+            range={
+              lowCard
+                ? 'low'
+                : 'deck'
+            }
+            octaveClef={
+              guitar
+            }
           />
         );
       if (
@@ -517,82 +642,95 @@ export function SprintRun({
         'asking'
       ) {
         line =
-          prompt.kind ===
-          'chord'
-            ? state.tooFew >
-              0
-              ? t(
-                  'sprint-chord-too-few',
-                  {
-                    defaultValue:
-                      'Play all the notes together.',
-                  },
-                )
-              : t(
-                  'sprint-chord-hint',
-                  {
-                    defaultValue:
-                      'Play the notes together.',
-                  },
-                )
-            : prompt.kind ===
-                'bar'
-              ? t(
-                  'sprint-bar-hint',
-                  {
-                    defaultValue:
-                      'Play the notes in order.',
-                  },
-                )
-              : t(
-                  'sprint-note-hint',
-                  {
-                    defaultValue:
-                      'Play the note.',
-                  },
-                );
-      } else {
-        line =
-          right
-            ? t(
-                'sprint-right',
-                {
-                  seconds:
-                    formatSeconds(
-                      i18n.language,
-                      state
-                        .result
-                        .ms ??
-                        0,
-                    ),
-                  defaultValue:
-                    'Right, in {{seconds}} s.',
-                },
+          askHint(
+            t,
+            prompt,
+            input,
+            state.tooFew,
+          );
+        said =
+          state.shownAt !==
+            null &&
+          state
+            .got
+            .length ===
+            0
+            ? count(
+                state.index,
               )
-            : t(
-                'sprint-wrong',
-                {
-                  notes:
-                    names(
-                      prompt,
-                    ),
-                  defaultValue:
-                    'Not this time: it was {{notes}}.',
-                },
-              );
+            : '';
+      } else {
+        // The note the learner missed, named with its octave (for a wrong octave on MIDI).
+        const missed =
+          Math.max(
+            0,
+            Math.min(
+              prompt
+                .notes
+                .length -
+                1,
+              state
+                .played
+                .length -
+                1,
+            ),
+          );
+        const target =
+          state
+            .targets[
+            state
+              .index
+          ]?.[
+            missed
+          ];
+        const written =
+          prompt
+            .notes[
+            missed
+          ];
+        const exact =
+          written &&
+          target !==
+            undefined
+            ? `${sheetNoteName(written)}${Math.floor(target / 12) - 1}`
+            : '';
+        line =
+          feedbackLine(
+            t,
+            i18n.language,
+            state,
+            names(
+              prompt,
+            ),
+            exact,
+          );
+        said =
+          line;
       }
     }
   } else {
+    const result =
+      resultSentence(
+        t,
+        i18n.language,
+        state.summary,
+      );
     sheet =
       (
-        <div className="flex aspect-[200/102] w-full items-center justify-center p-4 text-center">
-          <p className="text-base leading-6 text-app-text">
-            {resultSentence(
-              t,
-              i18n.language,
-              state,
-            )}
-          </p>
+        <div>
+          <div
+            className={`flex ${sheetSize} w-full items-center justify-center p-4 text-center`}
+          >
+            <p className="text-base leading-6 text-app-text">
+              {
+                result
+              }
+            </p>
+          </div>
+          <div
+            aria-hidden="true"
+            className="h-9"
+          />
         </div>
       );
     line =
@@ -600,39 +738,29 @@ export function SprintRun({
         t,
         state,
       );
+    said = `${result} ${line}`;
   }
 
-  const inRun =
-    state.kind ===
-      'asking' ||
-    state.kind ===
-      'feedback';
-  const count =
-    inRun &&
-    total >
-      0
-      ? t(
-          'sprint-count',
-          {
-            n:
-              state.index +
-              1,
-            total,
-            defaultValue:
-              'Prompt {{n}} of {{total}}',
-          },
-        )
-      : '';
-  const finished =
-    !inRun &&
-    state.kind !==
-      'ready' &&
-    state.kind !==
-      'countdown';
+  function count(
+    index: number,
+  ): string {
+    return t(
+      'sprint-count',
+      {
+        n:
+          index +
+          1,
+        total,
+        defaultValue:
+          'Prompt {{n}} of {{total}}',
+      },
+    );
+  }
 
   let answers: ReactNode;
   if (
-    finished
+    phase ===
+    'end'
   ) {
     answers =
       (
@@ -640,6 +768,9 @@ export function SprintRun({
           {state.kind ===
           'failed' ? (
             <button
+              ref={
+                endButton
+              }
               type="button"
               onClick={() =>
                 carry(
@@ -664,6 +795,9 @@ export function SprintRun({
             </button>
           ) : (
             <button
+              ref={
+                endButton
+              }
               type="button"
               onClick={() =>
                 carry(
@@ -702,7 +836,7 @@ export function SprintRun({
                   RETURN_TO,
               }}
               className={
-                TEXT_BUTTON
+                SECONDARY_BUTTON
               }
             >
               {t(
@@ -734,13 +868,16 @@ export function SprintRun({
         </div>
       );
   } else if (
-    state.kind ===
+    phase ===
     'ready'
   ) {
     answers =
       (
         <div className="rmm-sheet flex h-full items-center justify-center p-4">
           <button
+            ref={
+              startButton
+            }
             type="button"
             onClick={() =>
               carry(
@@ -812,25 +949,35 @@ export function SprintRun({
       );
   }
 
-  const said =
-    state.kind ===
-      'feedback' ||
-    finished
-      ? line
-      : state.kind ===
-            'asking' &&
-          state.shownAt !==
-            null
-        ? count
-        : '';
-
   return (
     <div className="space-y-4">
-      <section className="rmm-sheet space-y-2 p-5 text-center sm:p-6">
-        <p className="h-6 text-sm leading-6 text-app-text-muted">
+      <section
+        ref={
+          sheetBox
+        }
+        tabIndex={
+          -1
+        }
+        aria-label={t(
+          'sprint-sheet',
           {
-            count
-          }
+            defaultValue:
+              'The prompt',
+          },
+        )}
+        className="rmm-sheet space-y-2 p-5 text-center sm:p-6"
+      >
+        <p className="h-6 text-sm leading-6 text-app-text-muted">
+          {(state.kind ===
+            'asking' ||
+            state.kind ===
+              'feedback') &&
+          total >
+            0
+            ? count(
+                state.index,
+              )
+            : ''}
         </p>
         <div className="mx-auto w-full max-w-72 sm:max-w-80">
           {
@@ -856,253 +1003,24 @@ export function SprintRun({
           answers
         }
       </div>
-      {state.mic &&
-      (inRun ||
-        state.kind ===
-          'countdown') &&
-      state.prompts.some(
-        (
-          p,
-        ) =>
-          p.kind ===
-          'chord',
-      ) ? (
-        <p className="text-sm leading-6 text-app-text-muted">
-          {t(
-            'sprint-mic-chords',
-            {
-              defaultValue:
-                'The microphone hears one note at a time, so chords are skipped.',
-            },
-          )}{' '}
-          <button
-            type="button"
-            onClick={
-              onChangeInput
-            }
-            className={
-              TEXT_BUTTON
-            }
-          >
-            {t(
-              'chord-change-input',
+      <p className="min-h-6 text-sm leading-6 text-app-text-muted">
+        {state.mic &&
+        state.prompts.some(
+          (
+            p,
+          ) =>
+            p.kind ===
+            'chord',
+        )
+          ? t(
+              'sprint-mic-chords-skipped',
               {
                 defaultValue:
-                  'Change input',
+                  'Chords are skipped: the microphone hears one note at a time.',
               },
-            )}
-          </button>
-        </p>
-      ) : null}
+            )
+          : ''}
+      </p>
     </div>
   );
-}
-
-/** The sheet's accessible name: the notes in words and the staff they are on. */
-function promptLabel(
-  t: TFunction<'c-rmhmusic'>,
-  prompt: SprintPrompt,
-  notes: string,
-): string {
-  if (
-    prompt.kind ===
-    'bar'
-  ) {
-    return prompt.clef ===
-      'bass'
-      ? t(
-          'sprint-label-bar-bass',
-          {
-            notes,
-            defaultValue:
-              '{{notes}} in order on the bass staff',
-          },
-        )
-      : t(
-          'sprint-label-bar-treble',
-          {
-            notes,
-            defaultValue:
-              '{{notes}} in order on the treble staff',
-          },
-        );
-  }
-  if (
-    prompt.kind ===
-    'chord'
-  ) {
-    return prompt.clef ===
-      'bass'
-      ? t(
-          'sprint-label-chord-bass',
-          {
-            notes,
-            defaultValue:
-              '{{notes}} together on the bass staff',
-          },
-        )
-      : t(
-          'sprint-label-chord-treble',
-          {
-            notes,
-            defaultValue:
-              '{{notes}} together on the treble staff',
-          },
-        );
-  }
-  return prompt.clef ===
-    'bass'
-    ? t(
-        'flash-card-named-bass',
-        {
-          note: notes,
-          defaultValue:
-            '{{note}} on the bass staff',
-        },
-      )
-    : t(
-        'flash-card-named-treble',
-        {
-          note: notes,
-          defaultValue:
-            '{{note}} on the treble staff',
-        },
-      );
-}
-
-function formatSeconds(
-  language: string,
-  ms: number,
-): string {
-  return new Intl.NumberFormat(
-    language,
-    {
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    },
-  ).format(
-    ms /
-      1000,
-  );
-}
-
-type Finished =
-  Extract<
-    SprintState,
-    {
-      summary: RunSummary;
-    }
-  >;
-
-/** The result as one sentence (two when chords were skipped for the microphone). */
-function resultSentence(
-  t: TFunction<'c-rmhmusic'>,
-  language: string,
-  state: Finished,
-): string {
-  const s =
-    state.summary;
-  const base =
-    s.avgMs ===
-    null
-      ? t(
-          'sprint-result-none',
-          {
-            score:
-              s.score,
-            total:
-              s.played,
-            defaultValue:
-              'You scored {{score}}: none of the {{total}} prompts was right.',
-          },
-        )
-      : t(
-          'sprint-result',
-          {
-            score:
-              s.score,
-            correct:
-              s.correct,
-            total:
-              s.played,
-            seconds:
-              formatSeconds(
-                language,
-                s.avgMs,
-              ),
-            defaultValue:
-              'You scored {{score}}, with {{correct}} of {{total}} right in {{seconds}} s on average.',
-          },
-        );
-  if (
-    s.skipped ===
-    0
-  )
-    return base;
-  return `${base} ${t(
-    'sprint-result-skipped',
-    {
-      defaultValue:
-        'Chords were skipped for the microphone and are not in the score.',
-    },
-  )}`;
-}
-
-/** Whether the result was kept, in plain words. */
-function saveSentence(
-  t: TFunction<'c-rmhmusic'>,
-  state: Finished,
-): string {
-  switch (
-    state.kind
-  ) {
-    case 'saving':
-      return t(
-        'sprint-saving',
-        {
-          defaultValue:
-            'Saving…',
-        },
-      );
-    case 'saved':
-      return t(
-        'sprint-saved',
-        {
-          defaultValue:
-            'Saved.',
-        },
-      );
-    case 'failed':
-      return t(
-        'sprint-save-failed',
-        {
-          defaultValue:
-            "Couldn't save this result.",
-        },
-      );
-    case 'signed-out':
-      return t(
-        'sprint-signed-out',
-        {
-          defaultValue:
-            'Not saved: sign in again to keep your results.',
-        },
-      );
-    case 'complete':
-      return state.scored
-        ? t(
-            'sprint-not-saved',
-            {
-              defaultValue:
-                'Not saved: results are not kept yet.',
-            },
-          )
-        : t(
-            'sprint-practice',
-            {
-              defaultValue:
-                "Practice: today's score is your first run.",
-            },
-          );
-  }
 }

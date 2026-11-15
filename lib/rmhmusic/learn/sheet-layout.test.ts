@@ -9,7 +9,10 @@ import { makeRun } from './sprint/generate';
 import {
   BAR_X,
   CARD_H,
+  CARD_LOW_H,
+  CARD_LOW_MIN_STEP,
   CARD_NOTE_X,
+  CARD_TOP,
   CARD_W,
   HEAD_RX,
   cardLayout,
@@ -333,6 +336,37 @@ describe('sheet layout (the sight reading game)', () => {
     ).toBeGreaterThan(
       1,
     );
+    // Columns far enough apart that a sharp (9.2 units wide, plus its stroke) never touches the next.
+    const cols =
+      [
+        ...new Set(
+          xs,
+        ),
+      ].sort(
+        (
+          a,
+          b,
+        ) =>
+          a -
+          b,
+      );
+    for (
+      let i = 1;
+      i <
+      cols.length;
+      i++
+    )
+      expect(
+        cols[
+          i
+        ]! -
+          cols[
+            i -
+              1
+          ]!,
+      ).toBeGreaterThanOrEqual(
+        11,
+      );
     // Far apart ones share a column.
     const far =
       sheetLayout(
@@ -426,104 +460,162 @@ describe('sheet layout (the sight reading game)', () => {
     ).toBeNull();
   });
 
-  it('fits every sprint prompt inside the card box (one height per sheet)', () => {
-    for (const level of SPRINT_LEVELS) {
-      for (const p of makeRun(
-        level.id,
-        300,
-        mulberry32(
-          5,
-        ),
-      )) {
-        const s =
-          sheetLayout(
-            p.clef,
-            p.notes,
-            p.kind ===
-              'bar'
-              ? 'bar'
-              : 'chord',
-            p.kind ===
-              'bar'
-              ? 3
-              : undefined,
-          );
-        const ys =
-          [
-            ...s.heads.map(
+  it.each(
+    [
+      [
+        'piano',
+        CARD_H,
+        undefined,
+      ],
+      [
+        'guitar',
+        CARD_LOW_H,
+        CARD_LOW_MIN_STEP,
+      ],
+    ] as const,
+  )(
+    'fits every %s sprint prompt inside its card box (one height per sheet)',
+    (
+      instrument,
+      h,
+      minStep,
+    ) => {
+      for (const level of SPRINT_LEVELS) {
+        for (const p of makeRun(
+          level.id,
+          300,
+          mulberry32(
+            5,
+          ),
+          instrument,
+        )) {
+          const s =
+            sheetLayout(
+              p.clef,
+              p.notes,
+              p.kind ===
+                'bar'
+                ? 'bar'
+                : 'chord',
+              p.kind ===
+                'bar'
+                ? 3
+                : undefined,
+              minStep,
+            );
+          // Nothing is clamped: every note lands on its own step.
+          expect(
+            s.heads.every(
               (
-                h,
+                hd,
               ) =>
-                h.y,
+                hd.step >=
+                (minStep ??
+                  -4),
             ),
-            ...s.stems.flatMap(
-              (
-                t,
-              ) => [
-                t.y1,
-                t.y2,
-              ],
-            ),
-            ...s.accidentals.flatMap(
-              (
-                a,
-              ) => [
-                a.y -
-                  12,
-                a.y +
-                  10,
-              ],
-            ),
-            ...(s.now
-              ? [
-                  s
-                    .now
-                    .y +
-                    4,
-                ]
-              : []),
-          ];
-        for (const y of ys) {
-          expect(
-            y,
-          ).toBeGreaterThanOrEqual(
-            0,
+          ).toBe(
+            true,
           );
-          expect(
-            y,
-          ).toBeLessThanOrEqual(
-            CARD_H,
-          );
-        }
-        const xs =
-          [
-            ...s.heads.map(
-              (
-                h,
-              ) =>
-                h.x,
-            ),
-            ...s.accidentals.map(
-              (
-                a,
-              ) =>
-                a.x,
-            ),
-          ];
-        for (const x of xs) {
-          expect(
-            x,
-          ).toBeGreaterThan(
-            46,
-          );
-          expect(
-            x,
-          ).toBeLessThan(
-            CARD_W -
-              4,
-          );
+          const ys =
+            [
+              ...s.heads.map(
+                (
+                  hd,
+                ) =>
+                  hd.y,
+              ),
+              ...s.stems.flatMap(
+                (
+                  t,
+                ) => [
+                  t.y1,
+                  t.y2,
+                ],
+              ),
+              ...s.accidentals.flatMap(
+                (
+                  a,
+                ) => [
+                  a.y -
+                    12,
+                  a.y +
+                    10,
+                ],
+              ),
+            ];
+          for (const y of ys) {
+            expect(
+              y,
+            ).toBeGreaterThanOrEqual(
+              0,
+            );
+            expect(
+              y,
+            ).toBeLessThanOrEqual(
+              h,
+            );
+          }
+          // The now mark sits above the staff, clear of every note and stem.
+          if (
+            s.now
+          ) {
+            expect(
+              s
+                .now
+                .y -
+                5,
+            ).toBeGreaterThanOrEqual(
+              0,
+            );
+            expect(
+              s
+                .now
+                .y,
+            ).toBeLessThan(
+              CARD_TOP -
+                15,
+            );
+            expect(
+              Math.min(
+                ...ys,
+              ),
+            ).toBeGreaterThan(
+              s
+                .now
+                .y +
+                1,
+            );
+          }
+          const xs =
+            [
+              ...s.heads.map(
+                (
+                  h,
+                ) =>
+                  h.x,
+              ),
+              ...s.accidentals.map(
+                (
+                  a,
+                ) =>
+                  a.x,
+              ),
+            ];
+          for (const x of xs) {
+            expect(
+              x,
+            ).toBeGreaterThan(
+              46,
+            );
+            expect(
+              x,
+            ).toBeLessThan(
+              CARD_W -
+                4,
+            );
+          }
         }
       }
-    }
-  });
+    },
+  );
 });

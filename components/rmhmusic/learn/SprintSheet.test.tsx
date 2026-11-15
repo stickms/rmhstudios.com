@@ -233,4 +233,33 @@ describe('SprintSheet', () => {
       'B',
     );
   });
+
+  it('guitar: the low card with the octave clef, its 8 set left to right', () => {
+    const html =
+      renderToStaticMarkup(
+        <SprintSheet
+          clef="treble"
+          notes={[
+            n(
+              52,
+            ),
+          ]}
+          arrangement="chord"
+          state="ask"
+          label="A note on the treble staff"
+          range="low"
+          octaveClef
+        />,
+      );
+    expect(
+      html,
+    ).toContain(
+      'viewBox="0 0 200 117"',
+    );
+    expect(
+      html,
+    ).toMatch(
+      /<text[^>]*direction="ltr"[^>]*>8<\/text>/,
+    );
+  });
 });

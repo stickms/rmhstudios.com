@@ -5,25 +5,30 @@
  * same 30 prompts for everyone on a UTC day; the first finished run is the scored one, later runs
  * that day are practice). A game beside the path: it completes no lesson and gates nothing.
  *
- * The page is the lessons' `Shell` (back link, title, Change input). The picker and the run keep
- * fixed boxes, and the loading placeholder draws the picker's rows, so loading moves nothing.
- * Results are saved through a `SprintSaver` (`lib/rmhmusic/learn/sprint/saver.ts`); until results
- * are stored the result says plainly that it was not saved.
+ * The page is the lessons' `Shell` (back link, title, Change input). The input is chosen before a
+ * run and fixed during it: Change input is disabled from the count until the run ends, and says
+ * why. With the microphone, the chord levels are listed but not offered (one sentence says why).
+ * Guitar reads the treble staff only, with the small 8 under the clef, on the taller low card.
+ * The picker's rows and its loading placeholder are the same height, so loading moves nothing.
+ * Results go through a `SprintSaver` (`lib/rmhmusic/learn/sprint/saver.ts`); until results are
+ * stored the result says plainly that it was not saved.
  */
 
 import {
   useEffect,
+  useId,
   useRef,
   useState,
 } from 'react';
 import type { ReactNode } from 'react';
+import { Link } from '@tanstack/react-router';
 import { SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useArrival } from '@/components/ui/arrive';
 import { mulberry32 } from '@/lib/core/rng';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
+import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
 import {
   dailyRun,
   makeRun,
@@ -33,141 +38,39 @@ import {
 import {
   FREEPLAY_PROMPTS,
   SPRINT_LEVELS,
+  micAllowed,
   type SprintLevelId,
 } from '@/lib/rmhmusic/learn/sprint/levels';
 import {
   createMemorySaver,
   type SprintSaver,
 } from '@/lib/rmhmusic/learn/sprint/saver';
-import { SECONDARY_BUTTON } from '../buttons';
+import {
+  PRIMARY_BUTTON,
+  SECONDARY_BUTTON,
+} from '../buttons';
 import { InputSetup } from '../InputSetup';
 import { Shell } from '../LessonScreen';
 import { useInputRelease } from '../useLearnInput';
 import { SprintRun } from './SprintRun';
+import {
+  levelHint,
+  levelName,
+} from './sprint-text';
 
 type Mode =
   | 'freeplay'
   | 'daily';
 
-/** Rows of the picker (and of its placeholder): a 44px-tall text row each. */
+const RETURN_TO =
+  '/rmhmusic/sprint';
+
+/**
+ * One row of the picker, and of its placeholder: two text lines (24px + 20px) in a 72px row, so
+ * the placeholder is exactly as tall as the loaded list.
+ */
 const ROW =
-  'flex min-h-11 w-full items-center gap-3 px-4 py-2 text-start';
-
-export function levelName(
-  t: TFunction<'c-rmhmusic'>,
-  id: SprintLevelId,
-): string {
-  switch (
-    id
-  ) {
-    case 'note':
-      return t(
-        'sprint-level-note',
-        {
-          defaultValue:
-            'One note',
-        },
-      );
-    case 'note-both':
-      return t(
-        'sprint-level-note-both',
-        {
-          defaultValue:
-            'Notes on both staves',
-        },
-      );
-    case 'accidental':
-      return t(
-        'sprint-level-accidental',
-        {
-          defaultValue:
-            'Sharps and flats',
-        },
-      );
-    case 'triad':
-      return t(
-        'sprint-level-triad',
-        {
-          defaultValue:
-            'Triads',
-        },
-      );
-    case 'inversion':
-      return t(
-        'sprint-level-inversion',
-        {
-          defaultValue:
-            'Inverted triads',
-        },
-      );
-    case 'bar':
-      return t(
-        'sprint-level-bar',
-        {
-          defaultValue:
-            'Four notes in a row',
-        },
-      );
-  }
-}
-
-function levelHint(
-  t: TFunction<'c-rmhmusic'>,
-  id: SprintLevelId,
-): string {
-  switch (
-    id
-  ) {
-    case 'note':
-      return t(
-        'sprint-level-note-hint',
-        {
-          defaultValue:
-            'Naturals on the treble staff',
-        },
-      );
-    case 'note-both':
-      return t(
-        'sprint-level-note-both-hint',
-        {
-          defaultValue:
-            'Naturals on the treble and bass staves',
-        },
-      );
-    case 'accidental':
-      return t(
-        'sprint-level-accidental-hint',
-        {
-          defaultValue:
-            'A sharp or a flat before the note',
-        },
-      );
-    case 'triad':
-      return t(
-        'sprint-level-triad-hint',
-        {
-          defaultValue:
-            'Three notes together, root position',
-        },
-      );
-    case 'inversion':
-      return t(
-        'sprint-level-inversion-hint',
-        {
-          defaultValue:
-            'Three notes together, first or second inversion',
-        },
-      );
-    case 'bar':
-      return t(
-        'sprint-level-bar-hint',
-        {
-          defaultValue:
-            'Play them in order',
-        },
-      );
-  }
-}
+  'flex min-h-18 w-full flex-col items-start justify-center px-4 py-2 text-start';
 
 /** What is being played: a freeplay level or today's challenge, with its prompts. */
 type Playing =
@@ -239,6 +142,20 @@ export function SprintGame({
       null,
     );
   const [
+    locked,
+    setLocked,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    dailyFailed,
+    setDailyFailed,
+  ] =
+    useState(
+      false,
+    );
+  const [
     setupOpen,
     setSetupOpen,
   ] =
@@ -249,6 +166,16 @@ export function SprintGame({
     useRef<HTMLButtonElement>(
       null,
     );
+  const firstRow =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const backToPicker =
+    useRef(
+      false,
+    );
+  const lockedReason =
+    useId();
   useInputRelease();
 
   useEffect(() => {
@@ -256,6 +183,20 @@ export function SprintGame({
       .getState()
       .load();
   }, []);
+
+  // Back from a run: focus goes to the first level, where the learner chooses again.
+  useEffect(() => {
+    if (
+      playing ===
+        null &&
+      backToPicker.current
+    ) {
+      backToPicker.current = false;
+      firstRow.current?.focus();
+    }
+  }, [
+    playing,
+  ]);
 
   const ready =
     status ===
@@ -269,37 +210,51 @@ export function SprintGame({
     useArrival(
       !loading,
     );
+  const instrument: Instrument =
+    profile?.instrument ??
+    'piano';
+  const guitar =
+    instrument ===
+    'guitar';
+  const mic =
+    profile?.input ===
+    'mic';
 
-  const playLevel =
+  const freeplayPrompts =
     (
       level: SprintLevelId,
     ) =>
-      setPlaying(
-        {
-          mode: 'freeplay',
-          level,
-          prompts:
-            makeRun(
-              level,
-              FREEPLAY_PROMPTS,
-              mulberry32(
-                seed(),
-              ),
-            ),
-        },
+      makeRun(
+        level,
+        FREEPLAY_PROMPTS,
+        mulberry32(
+          seed(),
+        ),
+        instrument,
       );
   const playDaily =
     async () => {
       // The day is decided once, here, when the run is dealt (`utcDate`); a run started before
-      // midnight UTC stays that day's run.
+      // midnight UTC stays that day's run, and that dealt date is what is saved.
       const date =
         utcDate(
           Date.now(),
         );
-      const done =
-        await saver.dailyDone(
-          date,
+      let done: boolean;
+      try {
+        done =
+          await saver.dailyDone(
+            date,
+          );
+      } catch {
+        setDailyFailed(
+          true,
         );
+        return;
+      }
+      setDailyFailed(
+        false,
+      );
       setPlaying(
         {
           mode: 'daily',
@@ -307,6 +262,7 @@ export function SprintGame({
           prompts:
             dailyRun(
               date,
+              instrument,
             ),
           scored:
             !done,
@@ -317,24 +273,74 @@ export function SprintGame({
   let body: ReactNode;
   if (
     status ===
-      'error' &&
-    error ===
-      'unauthorized'
+    'error'
   ) {
     body =
       (
-        <p
+        <div
           role="alert"
-          className="rmm-sheet p-5 text-app-text"
+          className={`rmm-sheet space-y-3 p-4 ${arrival}`}
         >
-          {t(
-            'error-signed-out',
-            {
-              defaultValue:
-                'Your session ended. Sign in again to continue.',
-            },
+          <p className="text-app-text">
+            {error ===
+            'unauthorized'
+              ? t(
+                  'error-signed-out',
+                  {
+                    defaultValue:
+                      'Your session ended. Sign in again to continue.',
+                  },
+                )
+              : t(
+                  'sprint-load-failed',
+                  {
+                    defaultValue:
+                      "Couldn't load your settings.",
+                  },
+                )}
+          </p>
+          {error ===
+          'unauthorized' ? (
+            <Link
+              to="/login"
+              search={{
+                callbackURL:
+                  RETURN_TO,
+              }}
+              className={
+                PRIMARY_BUTTON
+              }
+            >
+              {t(
+                'sign-in',
+                {
+                  defaultValue:
+                    'Sign in',
+                },
+              )}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() =>
+                void useLearnStore
+                  .getState()
+                  .load()
+              }
+              className={
+                PRIMARY_BUTTON
+              }
+            >
+              {t(
+                'retry',
+                {
+                  defaultValue:
+                    'Try again',
+                },
+              )}
+            </button>
           )}
-        </p>
+        </div>
       );
   } else if (
     playing &&
@@ -357,7 +363,7 @@ export function SprintGame({
               : true
           }
           instrument={
-            profile.instrument
+            instrument
           }
           input={
             profile.input
@@ -365,32 +371,32 @@ export function SprintGame({
           paused={
             setupOpen
           }
-          onChangeInput={() =>
-            setSetupOpen(
-              true,
-            )
+          onLockChange={
+            setLocked
           }
-          onDone={() =>
+          onDone={() => {
+            backToPicker.current = true;
+            setLocked(
+              false,
+            );
             setPlaying(
               null,
-            )
-          }
+            );
+          }}
           nextPrompts={() =>
             playing.mode ===
             'freeplay'
-              ? makeRun(
+              ? freeplayPrompts(
                   playing.level,
-                  FREEPLAY_PROMPTS,
-                  mulberry32(
-                    seed(),
-                  ),
                 )
               : dailyRun(
                   playing.date,
+                  instrument,
                 )
           }
           save={(
             summary,
+            results,
           ) =>
             playing.mode ===
             'freeplay'
@@ -399,12 +405,14 @@ export function SprintGame({
                     level:
                       playing.level,
                     summary,
+                    results,
                   },
                 )
               : saver.saveDaily(
                   {
                     date: playing.date,
                     summary,
+                    results,
                   },
                 )
           }
@@ -478,6 +486,7 @@ export function SprintGame({
               {SPRINT_LEVELS.map(
                 (
                   level,
+                  i,
                 ) => (
                   <li
                     key={
@@ -487,20 +496,65 @@ export function SprintGame({
                     {loading ? (
                       <div
                         aria-hidden="true"
-                        className={`${ROW} min-h-16 flex-col items-start justify-center`}
+                        className={
+                          ROW
+                        }
                       >
-                        <span className="app-skeleton h-5 w-40 max-w-full" />
-                        <span className="app-skeleton h-4 w-56 max-w-full" />
+                        <span className="flex h-6 items-center">
+                          <span className="app-skeleton h-4 w-40 max-w-full" />
+                        </span>
+                        <span className="flex h-5 items-center">
+                          <span className="app-skeleton h-3.5 w-56 max-w-full" />
+                        </span>
+                      </div>
+                    ) : mic &&
+                      !micAllowed(
+                        level.kind,
+                      ) ? (
+                      <div
+                        className={
+                          ROW
+                        }
+                      >
+                        <span className="text-base leading-6 text-app-text-muted">
+                          {levelName(
+                            t,
+                            level.id,
+                          )}
+                        </span>
+                        <span className="text-sm leading-5 text-app-text-muted">
+                          {t(
+                            'sprint-level-mic',
+                            {
+                              defaultValue:
+                                'Not with the microphone: it hears one note at a time.',
+                            },
+                          )}
+                        </span>
                       </div>
                     ) : (
                       <button
+                        ref={
+                          i ===
+                          0
+                            ? firstRow
+                            : undefined
+                        }
                         type="button"
                         onClick={() =>
-                          playLevel(
-                            level.id,
+                          setPlaying(
+                            {
+                              mode: 'freeplay',
+                              level:
+                                level.id,
+                              prompts:
+                                freeplayPrompts(
+                                  level.id,
+                                ),
+                            },
                           )
                         }
-                        className={`${ROW} min-h-16 flex-col items-start justify-center rounded-app-sm transition-colors hover:bg-app-surface-hover`}
+                        className={`${ROW} rounded-app-sm transition-colors hover:bg-app-surface-hover`}
                       >
                         <span className="text-base leading-6 text-app-text">
                           {levelName(
@@ -512,6 +566,7 @@ export function SprintGame({
                           {levelHint(
                             t,
                             level.id,
+                            guitar,
                           )}
                         </span>
                       </button>
@@ -525,6 +580,12 @@ export function SprintGame({
               loading={
                 loading
               }
+              failed={
+                dailyFailed
+              }
+              mic={
+                mic
+              }
               onPlay={() =>
                 void playDaily()
               }
@@ -534,9 +595,6 @@ export function SprintGame({
       );
   }
 
-  const inRun =
-    playing !==
-    null;
   return (
     <Shell
       title={t(
@@ -550,22 +608,21 @@ export function SprintGame({
         loading
       }
       action={
-        <div
-          className={
-            inRun
-              ? undefined
-              : 'invisible'
-          }
-          inert={
-            !inRun ||
-            undefined
-          }
-        >
+        <div className="flex flex-col items-end">
           <button
             ref={
               setupButton
             }
             type="button"
+            disabled={
+              locked ||
+              loading
+            }
+            aria-describedby={
+              locked
+                ? lockedReason
+                : undefined
+            }
             onClick={() =>
               setSetupOpen(
                 true,
@@ -597,6 +654,22 @@ export function SprintGame({
               )}
             </span>
           </button>
+          <span
+            id={
+              lockedReason
+            }
+            className="sr-only"
+          >
+            {locked
+              ? t(
+                  'sprint-input-locked',
+                  {
+                    defaultValue:
+                      'The input stays the same until this run ends.',
+                  },
+                )
+              : ''}
+          </span>
         </div>
       }
     >
@@ -618,12 +691,16 @@ export function SprintGame({
   );
 }
 
-/** Today's challenge: what it is, and Start. One box of a fixed height in both states. */
+/** Today's challenge: what it is, and the button. One box of a fixed height in every state. */
 function DailyIntro({
   loading,
+  failed,
+  mic,
   onPlay,
 }: {
   loading: boolean;
+  failed: boolean;
+  mic: boolean;
   onPlay: () => void;
 }) {
   const {
@@ -633,7 +710,7 @@ function DailyIntro({
       'c-rmhmusic',
     );
   return (
-    <section className="rmm-sheet flex min-h-48 flex-col items-start justify-center gap-3 p-5">
+    <section className="rmm-sheet flex min-h-56 flex-col items-start justify-center gap-3 p-5">
       <p className="text-base leading-6 text-app-text">
         {t(
           'sprint-daily-about',
@@ -642,6 +719,17 @@ function DailyIntro({
               'Six levels, five prompts each, the same for everyone today. Your first finished run is your score; later runs today are practice.',
           },
         )}
+      </p>
+      <p className="min-h-5 text-sm leading-5 text-app-text-muted">
+        {mic
+          ? t(
+              'sprint-daily-mic',
+              {
+                defaultValue:
+                  'With the microphone the chord levels are skipped, and the score counts the rest.',
+              },
+            )
+          : ''}
       </p>
       <button
         type="button"
@@ -663,6 +751,20 @@ function DailyIntro({
           },
         )}
       </button>
+      <p
+        role="status"
+        className="min-h-5 text-sm leading-5 text-app-danger"
+      >
+        {failed
+          ? t(
+              'sprint-daily-check-failed',
+              {
+                defaultValue:
+                  "Couldn't check today's challenge. Try again.",
+              },
+            )
+          : ''}
+      </p>
     </section>
   );
 }

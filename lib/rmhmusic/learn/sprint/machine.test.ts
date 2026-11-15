@@ -663,7 +663,7 @@ describe('sprint machine: the run', () => {
 });
 
 describe('sprint machine: chords', () => {
-  it('right as soon as the chord is complete inside the window, timed to its last note', () => {
+  it('graded when the window closes, timed to its last note', () => {
     let s =
       started(
         [
@@ -690,6 +690,20 @@ describe('sprint machine: chords', () => {
             2050,
           ),
         ],
+      ).state;
+    // Not graded until the window closes: another note could still make it wrong.
+    expect(
+      s.kind,
+    ).toBe(
+      'asking',
+    );
+    s =
+      step(
+        s,
+        {
+          type: 'close',
+          at: 2600,
+        },
       ).state;
     expect(
       s,
@@ -732,6 +746,10 @@ describe('sprint machine: chords', () => {
             72,
             120,
           ),
+          {
+            type: 'close',
+            at: 700,
+          },
         ],
       ).state;
     expect(
@@ -1008,8 +1026,8 @@ describe('sprint machine: chords', () => {
     );
   });
 
-  it('switching to the microphone while a chord is asked skips it', () => {
-    let s =
+  it('the input is fixed for a run: switching to the microphone mid-run skips nothing', () => {
+    const s =
       started(
         [
           P.cmaj,
@@ -1019,22 +1037,248 @@ describe('sprint machine: chords', () => {
           at: 0,
         },
       );
-    s =
+    expect(
       step(
         s,
         {
           type: 'input',
           mic: true,
         },
+      )
+        .state,
+    ).toBe(
+      s,
+    );
+    const counting =
+      run(
+        initial(
+          {
+            prompts:
+              [
+                P.cmaj,
+              ],
+            mode: 'freeplay',
+            scored: true,
+            mic: false,
+          },
+        ),
+        [
+          {
+            type: 'start',
+          },
+        ],
+      ).state;
+    expect(
+      step(
+        counting,
+        {
+          type: 'input',
+          mic: true,
+        },
+      )
+        .state,
+    ).toBe(
+      counting,
+    );
+    // Before the run starts it is taken.
+    const ready =
+      initial(
+        {
+          prompts:
+            [
+              P.cmaj,
+              P.c4,
+            ],
+          mode: 'freeplay',
+          scored: true,
+          mic: false,
+        },
+      );
+    expect(
+      step(
+        ready,
+        {
+          type: 'input',
+          mic: true,
+        },
+      )
+        .state,
+    ).toMatchObject(
+      {
+        kind: 'ready',
+        mic: true,
+      },
+    );
+  });
+
+  it('an extra note in the window makes the chord wrong, whatever the order', () => {
+    for (const order of [
+      [
+        60,
+        64,
+        67,
+        71,
+      ],
+      [
+        71,
+        60,
+        64,
+        67,
+      ],
+      [
+        64,
+        71,
+        67,
+        60,
+      ],
+    ]) {
+      let s =
+        started(
+          [
+            P.cmaj,
+          ],
+          {
+            at: 0,
+          },
+        );
+      s =
+        run(
+          s,
+          [
+            ...order.map(
+              (
+                m,
+                i,
+              ) =>
+                on(
+                  m,
+                  100 +
+                    i *
+                      10,
+                ),
+            ),
+            {
+              type: 'close',
+              at: 700,
+            },
+          ],
+        ).state;
+      expect(
+        s,
+      ).toMatchObject(
+        {
+          kind: 'feedback',
+          result:
+            {
+              correct: false,
+            },
+        },
+      );
+    }
+  });
+
+  it('the inverted-triad level wants the inversion in the bass', () => {
+    // First inversion of C major: E G C.
+    const inv =
+      {
+        ...P.cmaj,
+        level:
+          'inversion',
+        notes:
+          [
+            note(
+              64,
+            ),
+            note(
+              67,
+            ),
+            note(
+              72,
+            ),
+          ],
+      } as SprintPrompt;
+    let s =
+      started(
+        [
+          inv,
+        ],
+        {
+          at: 0,
+        },
+      );
+    s =
+      run(
+        s,
+        [
+          on(
+            60,
+            100,
+          ),
+          on(
+            64,
+            110,
+          ),
+          on(
+            67,
+            120,
+          ),
+          {
+            type: 'close',
+            at: 700,
+          },
+        ],
       ).state;
     expect(
       s,
     ).toMatchObject(
       {
-        kind: 'asking',
-        index: 1,
-        shownAt:
-          null,
+        kind: 'feedback',
+        result:
+          {
+            correct: false,
+          },
+      },
+    );
+    s =
+      started(
+        [
+          inv,
+        ],
+        {
+          at: 0,
+        },
+      );
+    s =
+      run(
+        s,
+        [
+          on(
+            52,
+            100,
+          ),
+          on(
+            60,
+            110,
+          ),
+          on(
+            67,
+            120,
+          ),
+          {
+            type: 'close',
+            at: 700,
+          },
+        ],
+      ).state;
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        kind: 'feedback',
+        result:
+          {
+            correct: true,
+          },
       },
     );
   });
@@ -1069,6 +1313,335 @@ describe('sprint machine: chords', () => {
             'mic',
           ),
         ],
+      ).state;
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        kind: 'asking',
+        got: [],
+      },
+    );
+  });
+});
+
+describe('sprint machine: which octave counts', () => {
+  it('MIDI must play the written pitch; another octave is wrong, and says so', () => {
+    let s =
+      started(
+        [
+          P.c4,
+        ],
+        {
+          at: 0,
+        },
+      );
+    s =
+      step(
+        s,
+        on(
+          72,
+          100,
+          'midi',
+        ),
+      ).state;
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        kind: 'feedback',
+        result:
+          {
+            correct: false,
+          },
+        octaveOff: true,
+      },
+    );
+    s =
+      started(
+        [
+          P.c4,
+        ],
+        {
+          at: 0,
+        },
+      );
+    s =
+      step(
+        s,
+        on(
+          62,
+          100,
+          'midi',
+        ),
+      ).state;
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        kind: 'feedback',
+        result:
+          {
+            correct: false,
+          },
+        octaveOff: false,
+      },
+    );
+  });
+
+  it.each(
+    [
+      'keys',
+      'screen',
+      'mic',
+    ] as const,
+  )(
+    '%s: any octave of the written note is right',
+    (
+      source,
+    ) => {
+      let s =
+        started(
+          [
+            P.c4,
+          ],
+          {
+            at: 0,
+          },
+        );
+      s =
+        step(
+          s,
+          on(
+            72,
+            100,
+            source,
+          ),
+        ).state;
+      expect(
+        s,
+      ).toMatchObject(
+        {
+          kind: 'feedback',
+          result:
+            {
+              correct: true,
+            },
+        },
+      );
+      s =
+        started(
+          [
+            P.fs4,
+          ],
+          {
+            at: 0,
+          },
+        );
+      s =
+        step(
+          s,
+          on(
+            54,
+            100,
+            source,
+          ),
+        ).state;
+      expect(
+        s,
+      ).toMatchObject(
+        {
+          kind: 'feedback',
+          result:
+            {
+              correct: true,
+            },
+        },
+      );
+      s =
+        started(
+          [
+            P.c4,
+          ],
+          {
+            at: 0,
+          },
+        );
+      s =
+        step(
+          s,
+          on(
+            61,
+            100,
+            source,
+          ),
+        ).state;
+      expect(
+        s,
+      ).toMatchObject(
+        {
+          kind: 'feedback',
+          result:
+            {
+              correct: false,
+            },
+          octaveOff: false,
+        },
+      );
+    },
+  );
+
+  it.each(
+    [
+      'keys',
+      'screen',
+      'mic',
+    ] as const,
+  )(
+    '%s: a bar in any octave, note by note',
+    (
+      source,
+    ) => {
+      let s =
+        started(
+          [
+            P.bar,
+          ],
+          {
+            at: 0,
+          },
+        );
+      s =
+        run(
+          s,
+          [
+            on(
+              72,
+              100,
+              source,
+            ),
+            on(
+              62,
+              200,
+              source,
+            ),
+            on(
+              76,
+              300,
+              source,
+            ),
+            on(
+              65,
+              400,
+              source,
+            ),
+          ],
+        ).state;
+      expect(
+        s,
+      ).toMatchObject(
+        {
+          kind: 'feedback',
+          result:
+            {
+              correct: true,
+            },
+        },
+      );
+    },
+  );
+
+  it('MIDI: a bar note in the wrong octave ends the bar', () => {
+    let s =
+      started(
+        [
+          P.bar,
+        ],
+        {
+          at: 0,
+        },
+      );
+    s =
+      run(
+        s,
+        [
+          on(
+            60,
+            100,
+          ),
+          on(
+            74,
+            200,
+          ),
+        ],
+      ).state;
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        kind: 'feedback',
+        result:
+          {
+            correct: false,
+          },
+        octaveOff: true,
+      },
+    );
+  });
+});
+
+describe('sprint machine: pausing', () => {
+  it('resume draws the prompt afresh: its clock and its notes so far are reset', () => {
+    let s =
+      started(
+        [
+          P.bar,
+        ],
+        {
+          at: 0,
+        },
+      );
+    s =
+      step(
+        s,
+        on(
+          60,
+          100,
+        ),
+      ).state;
+    s =
+      step(
+        s,
+        {
+          type: 'resume',
+        },
+      ).state;
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        kind: 'asking',
+        index: 0,
+        shownAt:
+          null,
+        got: [],
+      },
+    );
+    s =
+      step(
+        s,
+        {
+          type: 'shown',
+          at: 5000,
+        },
+      ).state;
+    s =
+      step(
+        s,
+        on(
+          60,
+          4000,
+        ),
       ).state;
     expect(
       s,
@@ -1526,11 +2099,106 @@ describe('sprint machine: completing and saving', () => {
       {
         kind: 'complete',
         scored: true,
+        why: 'unsaved',
         summary:
           {
             score: 100,
           },
       },
+    );
+  });
+
+  it('another tab or device already scored the day: complete, not kept', () => {
+    const {
+      state,
+    } =
+      finish(
+        started(
+          [
+            P.c4,
+          ],
+          {
+            mode: 'daily',
+          },
+        ),
+      );
+    const s =
+      step(
+        state,
+        {
+          type: 'answered',
+          attempt: 1,
+          outcome:
+            'already-scored',
+        },
+      ).state;
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        kind: 'complete',
+        why: 'already-scored',
+      },
+    );
+  });
+
+  it('nothing played (every prompt a chord on the microphone): no save, an empty result', () => {
+    const {
+      state,
+      effects,
+    } =
+      run(
+        initial(
+          {
+            prompts:
+              [
+                P.cmaj,
+                P.cmaj,
+              ],
+            mode: 'daily',
+            scored: true,
+            mic: true,
+          },
+        ),
+        [
+          {
+            type: 'start',
+          },
+          {
+            type: 'tick',
+          },
+          {
+            type: 'tick',
+          },
+          {
+            type: 'tick',
+          },
+        ],
+      );
+    expect(
+      state,
+    ).toMatchObject(
+      {
+        kind: 'complete',
+        why: 'empty',
+        summary:
+          {
+            played: 0,
+            skipped: 2,
+          },
+      },
+    );
+    expect(
+      effects.map(
+        (
+          e,
+        ) =>
+          e.type,
+      ),
+    ).toEqual(
+      [
+        'complete',
+      ],
     );
   });
 
@@ -1556,6 +2224,7 @@ describe('sprint machine: completing and saving', () => {
       {
         kind: 'complete',
         scored: false,
+        why: 'practice',
       },
     );
     expect(
