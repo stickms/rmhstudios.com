@@ -115,6 +115,7 @@ const enResources = {
   "library": () => import("@/locales/en/library.json"),
   "nav": () => import("@/locales/en/nav.json"),
   "pages": () => import("@/locales/en/pages.json"),
+  "psychology": () => import("@/locales/en/psychology.json"),
   "r-altair": () => import("@/locales/en/r-altair.json"),
   "r-discord": () => import("@/locales/en/r-discord.json"),
   "r-kowloon-knockout": () => import("@/locales/en/r-kowloon-knockout.json"),

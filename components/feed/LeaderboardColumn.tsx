@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/http';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +27,8 @@ interface Entry {
 interface LeaderboardData {
   scope: Scope;
   entries: Entry[];
+  /** The viewer and the players either side, when they are outside the top 100. */
+  nearby?: Entry[] | null;
 }
 
 const fmt = (n: number) => n.toLocaleString();
@@ -71,6 +75,40 @@ export function LeaderboardColumn({
       : []),
   ];
 
+  const renderRow = (e: Entry) => (
+    <div
+      key={e.userId}
+      className={`flex items-center gap-3 border-b border-site-border py-3 ${
+        e.isViewer ? 'bg-site-bg-subtle' : ''
+      }`}
+    >
+      <span className={`w-6 text-center text-sm font-semibold ${rankClass(e.rank)}`}>
+        {e.rank}
+      </span>
+      <UserAvatar user={e.user} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-site-text">
+          {e.user.name ||
+            e.user.handle ||
+            t('player-fallback', { defaultValue: 'Player' })}
+        </p>
+        <p className="flex items-center gap-2 text-xs text-site-text-muted">
+          <span className="inline-flex items-center gap-1 font-semibold text-site-text">
+            <Zap className="h-3 w-3" aria-hidden />
+            {''}
+            {t('leaderboard-level', { defaultValue: 'Lv {{n}}', n: e.level })}
+          </span>
+          <span>
+            {fmt(e.xp)} {t('leaderboard-xp', { defaultValue: 'XP' })}
+          </span>
+        </p>
+      </div>
+      <span className="flex items-center gap-1 text-sm font-semibold text-site-text">
+        <Coins className="h-3.5 w-3.5 text-site-podium-gold" aria-hidden /> {fmt(e.coins)}
+      </span>
+    </div>
+  );
+
   return (
     <div>
       {!hideHeader && (
@@ -108,42 +146,40 @@ export function LeaderboardColumn({
                   })
                 : t('leaderboard-empty', { defaultValue: 'No ranked players yet.' })
             }
+            action={
+              // Winnicott's holding environment / Seligman's learned helplessness:
+              // an empty state always offers the next step, never just a dead end.
+              scope === 'friends' ? (
+                <Link to="/explore" search={{ q: '', tab: 'top' }}>
+                  <Button variant="default">
+                    {t('leaderboard-find-people', { defaultValue: 'Find people' })}
+                  </Button>
+                </Link>
+              ) : undefined
+            }
           />
         ) : (
           <div className={arrival}>
-            {entries.map((e) => (
-              <div
-                key={e.userId}
-                className={`flex items-center gap-3 border-b border-site-border py-3 ${
-                  e.isViewer ? 'bg-site-bg-subtle' : ''
-                }`}
+            {entries.map(renderRow)}
+            {scope === 'global' && board.data?.nearby && board.data.nearby.length > 0 ? (
+              <section
+                aria-labelledby="leaderboard-near-you"
+                className="pt-6"
               >
-                <span className={`w-6 text-center text-sm font-semibold ${rankClass(e.rank)}`}>
-                  {e.rank}
-                </span>
-                <UserAvatar user={e.user} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-site-text">
-                    {e.user.name ||
-                      e.user.handle ||
-                      t('player-fallback', { defaultValue: 'Player' })}
-                  </p>
-                  <p className="flex items-center gap-2 text-xs text-site-text-muted">
-                    <span className="inline-flex items-center gap-1 font-semibold text-site-text">
-                      <Zap className="h-3 w-3" aria-hidden />
-                      {''}
-                      {t('leaderboard-level', { defaultValue: 'Lv {{n}}', n: e.level })}
-                    </span>
-                    <span>
-                      {fmt(e.xp)} {t('leaderboard-xp', { defaultValue: 'XP' })}
-                    </span>
-                  </p>
-                </div>
-                <span className="flex items-center gap-1 text-sm font-semibold text-site-text">
-                  <Coins className="h-3.5 w-3.5 text-site-podium-gold" aria-hidden /> {fmt(e.coins)}
-                </span>
-              </div>
-            ))}
+                <h3
+                  id="leaderboard-near-you"
+                  className="t-label pb-1"
+                >
+                  {t('leaderboard-near-you', { defaultValue: 'Around your rank' })}
+                </h3>
+                <p className="t-meta pb-2">
+                  {t('leaderboard-near-you-hint', {
+                    defaultValue: 'The players just above and below your rank.',
+                  })}
+                </p>
+                {board.data.nearby.map(renderRow)}
+              </section>
+            ) : null}
           </div>
         )}
       </div>

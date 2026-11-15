@@ -31,9 +31,21 @@ export interface LeaderboardEntry {
 export interface LeaderboardResult {
   scope: LeaderboardScope;
   entries: LeaderboardEntry[];
+  /**
+   * The viewer and up to {@link NEARBY_SPAN} players either side of them, when
+   * the viewer is ranked but outside the global top {@link LIMIT}. Social
+   * comparison (Festinger, 1954) motivates against people close to you; a
+   * top-100 you are nowhere near only discourages (Marsh's big-fish-little-pond
+   * effect). `null` for the friends board, signed-out viewers, and viewers who
+   * already appear in `entries`.
+   */
+  nearby: LeaderboardEntry[] | null;
 }
 
 const LIMIT = 100;
+
+/** Players shown above and below the viewer in the `nearby` slice. */
+export const NEARBY_SPAN = 2;
 // The global board is the same full-table `xp desc` scan for everyone, so cache
 // it viewer-independently and re-stamp `isViewer` per request. The friends board
 // is viewer-specific (its member set + `isViewer` depend on the viewer), so it's
@@ -68,6 +80,69 @@ async function buildEntries(
   }));
 }
 
+const NEARBY_TTL_MS = 30_000;
+
+/**
+ * The viewer's global rank and the {@link NEARBY_SPAN} players on each side,
+ * in the same `xp desc, userId asc` order as {@link buildEntries}. Three small
+ * indexed reads (a count and two `take: NEARBY_SPAN` scans), cached per viewer.
+ */
+async function buildNearby(
+  viewerId: string,
+): Promise<LeaderboardEntry[] | null> {
+  const me = await prismaRead.userProfile.findUnique({
+    where: { userId: viewerId },
+    select: { xp: true },
+  });
+  if (!me || me.xp <= 0) return null;
+  const human = { user: { isBot: false } };
+  const ahead = {
+    ...human,
+    OR: [{ xp: { gt: me.xp } }, { xp: me.xp, userId: { lt: viewerId } }],
+  };
+  const behind = {
+    ...human,
+    OR: [
+      { xp: { lt: me.xp, gt: 0 } },
+      { xp: me.xp, userId: { gt: viewerId } },
+    ],
+  };
+  const select = {
+    userId: true,
+    xp: true,
+    coins: true,
+    user: { select: userDisplaySelect },
+  } as const;
+  const [aheadCount, above, self, below] = await Promise.all([
+    prismaRead.userProfile.count({ where: ahead }),
+    prismaRead.userProfile.findMany({
+      where: ahead,
+      orderBy: [{ xp: 'asc' }, { userId: 'desc' }],
+      take: NEARBY_SPAN,
+      select,
+    }),
+    prismaRead.userProfile.findUnique({ where: { userId: viewerId }, select }),
+    prismaRead.userProfile.findMany({
+      where: behind,
+      orderBy: [{ xp: 'desc' }, { userId: 'asc' }],
+      take: NEARBY_SPAN,
+      select,
+    }),
+  ]);
+  if (!self) return null;
+  const rows = [...above.reverse(), self, ...below];
+  const firstRank = aheadCount + 1 - above.length;
+  return rows.map((r, i) => ({
+    rank: firstRank + i,
+    userId: r.userId,
+    xp: r.xp,
+    level: levelFromXp(r.xp),
+    coins: Number(r.coins),
+    isViewer: r.userId === viewerId,
+    user: resolveUser(r.user),
+  }));
+}
+
 export async function getLeaderboard(
   viewerId: string | null,
   scope: LeaderboardScope,
@@ -89,7 +164,7 @@ export async function getLeaderboard(
         return buildEntries({ userId: { in: ids } }, viewerId);
       },
     );
-    return { scope: 'friends', entries };
+    return { scope: 'friends', entries, nearby: null };
   }
 
   // Global: cache viewer-independently, then re-stamp `isViewer` for this viewer.
@@ -98,10 +173,21 @@ export async function getLeaderboard(
     GLOBAL_TTL_MS,
     () => buildEntries({ user: { isBot: false } }, null),
   );
+  const viewerListed =
+    viewerId != null && entries.some((e) => e.userId === viewerId);
+  const nearby =
+    viewerId && !viewerListed
+      ? await cached<LeaderboardEntry[] | null>(
+          `leaderboard:nearby:${viewerId}`,
+          NEARBY_TTL_MS,
+          () => buildNearby(viewerId),
+        )
+      : null;
   return {
     scope: 'global',
     entries: viewerId
       ? entries.map((e) => (e.userId === viewerId ? { ...e, isViewer: true } : e))
       : entries,
+    nearby,
   };
 }

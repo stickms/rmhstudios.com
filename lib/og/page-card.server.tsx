@@ -134,6 +134,11 @@ export interface PageCardData {
   path?:
     | string
     | null;
+  /**
+   * The footer's host, for a card about a page on a sibling site (the wiki:
+   * `wiki.rmhstudios.com`). Defaults to `rmhstudios.com`.
+   */
+  host?: string;
   variant?: PageCardVariant;
   /** How long a rendered PNG stays cached. Defaults to 30 minutes. */
   ttlMs?: number;
@@ -627,14 +632,17 @@ async function renderPageCardUncached(
           SCALE,
       0,
     );
-  const withPath = `rmhstudios.com${data.path ?? ''}`;
+  const host =
+    data.host ??
+    'rmhstudios.com';
+  const withPath = `${host}${data.path ?? ''}`;
   const shown =
     chipsWidth +
       withPath.length *
         13 <=
     frame.width
       ? withPath
-      : 'rmhstudios.com';
+      : host;
   const url =
     (
       <div

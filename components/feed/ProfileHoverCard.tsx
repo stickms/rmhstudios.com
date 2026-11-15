@@ -16,6 +16,7 @@ import { useSession } from'@/components/Providers';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { AnimatedCount } from'@/components/ui/AnimatedCount';
 import { api } from '@/lib/contract/client';
+import { notifyFollowChanged } from '@/lib/discovery/margin-query';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { getProfileApi } from '@/lib/profile/profile.contract';
 import { useArrival } from '@/components/ui/arrive';
@@ -84,7 +85,11 @@ export function ProfileHoverCard({
  ? { ...p, isFollowing: wasFollowing, followerCount: p.followerCount + (wasFollowing ? 1 : -1) }
  : p
  ),
- commit: () => api(toggleFollowApi, { params: { id: followId } }),
+ commit: () =>
+ api(toggleFollowApi, { params: { id: followId } }).then((result) => {
+ notifyFollowChanged();
+ return result;
+ }),
  });
  };
 

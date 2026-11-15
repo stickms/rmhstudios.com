@@ -1510,5 +1510,11 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "내 순위 주변",
+  "leaderboard-near-you-hint": "내 순위 바로 위와 아래의 플레이어.",
+  "quest-to-go_other": "{{count}}개 남음",
+  "ai-working-feed": "질문과 관련된 공개 게시물을 찾아 최대 60개를 읽고 있어요…",
+  "ai-read-posts_other": "게시물 {{count}}개를 바탕으로 작성",
+  "leaderboard-find-people": "사람 찾기"
 }

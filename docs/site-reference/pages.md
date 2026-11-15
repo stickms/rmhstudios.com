@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 367 routes. 200 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 368 routes. 201 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -135,6 +135,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/pricing` | redirects to `/store?tab=membership` | public | `app/routes/_site/pricing.tsx` |
 | `/profile/:id` | redirects to `/u/$userid` | public | `app/routes/_site/profile/$id.tsx` |
 | `/progress` | Progress | public | `app/routes/_site/progress.tsx` |
+| `/psychology` | Psychology | public | `app/routes/_site/psychology.tsx` |
 | `/qotd` | Question of the Day | public | `app/routes/_site/qotd.tsx` |
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
 | `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
