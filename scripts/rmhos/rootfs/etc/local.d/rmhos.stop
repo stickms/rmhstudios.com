@@ -1,4 +1,6 @@
 #!/bin/sh
-# Guest-initiated shutdown: tell the host the machine is going away.
-printf 'RMHOS POWEROFF\n' > /dev/ttyS1 2>/dev/null
+# Guest-initiated shutdown that did not come through the wrapped poweroff/reboot/halt (init was
+# signalled, the machine was killed from a service): save and announce here. A no-op when the
+# wrapper already did.
+/usr/local/bin/rmhos-poweroff-save
 exit 0

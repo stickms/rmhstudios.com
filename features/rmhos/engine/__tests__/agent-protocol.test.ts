@@ -173,6 +173,30 @@ describe('GuestLineParser', () => {
     ]);
   });
 
+  it('parses SESSION_OK with the Linux name the guest actually created, and bare SESSION_OK', () => {
+    const p = new GuestLineParser();
+    expect(p.push('RMHOS SESSION_OK guest_rmh\nRMHOS SESSION_OK\n')).toEqual([
+      { type: 'session-ok', user: 'guest_rmh' },
+      { type: 'session-ok' },
+    ]);
+    // a name with spaces or extra words is not a token
+    expect(p.push('RMHOS SESSION_OK a b\nRMHOS SESSION_OK bad!name\n')).toEqual([
+      { type: 'error', code: 'protocol' },
+      { type: 'error', code: 'protocol' },
+    ]);
+  });
+
+  it('parses SAVED_ON_POWEROFF <bytes> (the home was saved into the share before POWEROFF)', () => {
+    const p = new GuestLineParser();
+    expect(p.push('RMHOS SAVED_ON_POWEROFF 6144\nRMHOS POWEROFF\n')).toEqual([
+      { type: 'saved-on-poweroff', bytes: 6144 },
+      { type: 'poweroff' },
+    ]);
+    for (const bad of ['RMHOS SAVED_ON_POWEROFF\n', 'RMHOS SAVED_ON_POWEROFF x\n', 'RMHOS SAVED_ON_POWEROFF 1 2\n', 'RMHOS SAVED_ON_POWEROFF -1\n']) {
+      expect(new GuestLineParser().push(bad), bad).toEqual([{ type: 'error', code: 'protocol' }]);
+    }
+  });
+
   it('flags an unknown RMHOS verb as a protocol error', () => {
     expect(new GuestLineParser().push('RMHOS WAT\n')).toEqual([
       {
