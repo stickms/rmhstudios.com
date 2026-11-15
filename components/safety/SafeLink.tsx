@@ -1,37 +1,160 @@
-import { useEffect, useState } from 'react';
-import { hostOfUrl, outHref, type LinkRisk } from '@/lib/safety/link-risk';
+import {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  hostOfUrl,
+  outHref,
+  type LinkRisk,
+} from '@/lib/safety/link-risk';
 import { api } from '@/lib/contract/client';
 import { linksCheckApi } from '@/lib/safety/safety.contract';
 
 // Module-level batcher: every link on a page asks once, in one request.
-const known = new Map<string, LinkRisk>();
-const waiting = new Map<string, Array<(r: LinkRisk) => void>>();
-let timer: ReturnType<typeof setTimeout> | null = null;
+const known =
+  new Map<
+    string,
+    LinkRisk
+  >();
+const waiting =
+  new Map<
+    string,
+    Array<
+      (
+        r: LinkRisk,
+      ) => void
+    >
+  >();
+let timer: ReturnType<
+  typeof setTimeout
+> | null =
+  null;
 
 function flush() {
-  timer = null;
-  const hosts = [...waiting.keys()].slice(0, 20);
-  const batch = new Map(hosts.map((h) => [h, waiting.get(h)!]));
-  hosts.forEach((h) => waiting.delete(h));
-  api(linksCheckApi, { body: { hosts } })
-    .catch((): { risk: Record<string, LinkRisk> } => ({ risk: {} }))
-    .then((d) => {
-      for (const [h, cbs] of batch) {
-        const risk = d.risk?.[h] ?? 'ok';
-        known.set(h, risk);
-        cbs.forEach((cb) => cb(risk));
-      }
-    });
-  if (waiting.size > 0) timer = setTimeout(flush, 30);
+  timer =
+    null;
+  const hosts =
+    [
+      ...waiting.keys(),
+    ].slice(
+      0,
+      20,
+    );
+  const batch =
+    new Map(
+      hosts.map(
+        (
+          h,
+        ) => [
+          h,
+          waiting.get(
+            h,
+          )!,
+        ],
+      ),
+    );
+  hosts.forEach(
+    (
+      h,
+    ) =>
+      waiting.delete(
+        h,
+      ),
+  );
+  api(
+    linksCheckApi,
+    {
+      body: {
+        hosts,
+      },
+    },
+  )
+    .catch(
+      (): {
+        risk: Record<
+          string,
+          LinkRisk
+        >;
+      } => ({
+        risk: {},
+      }),
+    )
+    .then(
+      (
+        d,
+      ) => {
+        for (const [
+          h,
+          cbs,
+        ] of batch) {
+          const risk =
+            d
+              .risk?.[
+              h
+            ] ??
+            'ok';
+          known.set(
+            h,
+            risk,
+          );
+          cbs.forEach(
+            (
+              cb,
+            ) =>
+              cb(
+                risk,
+              ),
+          );
+        }
+      },
+    );
+  if (
+    waiting.size >
+    0
+  )
+    timer =
+      setTimeout(
+        flush,
+        30,
+      );
 }
 
-function lookup(host: string, cb: (r: LinkRisk) => void) {
-  const hit = known.get(host);
-  if (hit) return cb(hit);
-  const list = waiting.get(host) ?? [];
-  list.push(cb);
-  waiting.set(host, list);
-  if (!timer) timer = setTimeout(flush, 30);
+function lookup(
+  host: string,
+  cb: (
+    r: LinkRisk,
+  ) => void,
+) {
+  const hit =
+    known.get(
+      host,
+    );
+  if (
+    hit
+  )
+    return cb(
+      hit,
+    );
+  const list =
+    waiting.get(
+      host,
+    ) ??
+    [];
+  list.push(
+    cb,
+  );
+  waiting.set(
+    host,
+    list,
+  );
+  if (
+    !timer
+  )
+    timer =
+      setTimeout(
+        flush,
+        30,
+      );
 }
 
 /**
@@ -48,20 +171,52 @@ export function SafeLink({
   className?: string;
   children: React.ReactNode;
 }) {
-  const [risk, setRisk] = useState<LinkRisk>('ok');
+  const [
+    risk,
+    setRisk,
+  ] =
+    useState<LinkRisk>(
+      'ok',
+    );
   useEffect(() => {
-    const host = hostOfUrl(href);
-    if (host) lookup(host, setRisk);
-  }, [href]);
+    const host =
+      hostOfUrl(
+        href,
+      );
+    if (
+      host
+    )
+      lookup(
+        host,
+        setRisk,
+      );
+  }, [
+    href,
+  ]);
   return (
     <a
-      href={risk === 'ok' ? href : outHref(href)}
+      href={
+        risk ===
+        'ok'
+          ? href
+          : outHref(
+              href,
+            )
+      }
       target="_blank"
       rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
-      className={className}
+      onClick={(
+        e,
+      ) =>
+        e.stopPropagation()
+      }
+      className={
+        className
+      }
     >
-      {children}
+      {
+        children
+      }
     </a>
   );
 }

@@ -1,16 +1,29 @@
-import { lazy, useRef, useState, type RefObject } from 'react';
+import {
+  lazy,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
-const EmojiPickerPanel = lazy(() => import('./EmojiPickerPanel'));
+const EmojiPickerPanel =
+  lazy(
+    () =>
+      import('./EmojiPickerPanel'),
+  );
 
 interface EmojiPickerButtonProps {
-  onSelect: (emoji: string) => void;
+  onSelect: (
+    emoji: string,
+  ) => void;
   /** Which way the popover opens relative to the button. Default 'up' (compose bars sit at the bottom). */
-  direction?: 'up' | 'down';
+  direction?:
+    | 'up'
+    | 'down';
   className?: string;
   /**
    * Replaces the default `text-site-text-muted hover:text-site-accent` color classes on the
@@ -33,24 +46,59 @@ export function EmojiPickerButton({
   buttonClassName,
   buttonStyle,
 }: EmojiPickerButtonProps) {
-  const { t } = useTranslation('feed');
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const triggerRef =
+    useRef<HTMLButtonElement>(
+      null,
+    );
   // Outside-press dismissal, Escape, the close animation and the presence hold
   // all live in AnchoredMenu now — this file used to carry its own copy of the
   // first two, and the outside test was against a `rootRef` the panel no longer
   // renders inside.
 
   return (
-    <div className={`relative ${className}`}>
+    <div
+      className={`relative ${className}`}
+    >
       <button
-        ref={triggerRef}
+        ref={
+          triggerRef
+        }
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label={t('emoji-picker-open', { defaultValue: 'Add emoji' })}
-        aria-expanded={open}
+        onClick={() =>
+          setOpen(
+            (
+              v,
+            ) =>
+              !v,
+          )
+        }
+        aria-label={t(
+          'emoji-picker-open',
+          {
+            defaultValue:
+              'Add emoji',
+          },
+        )}
+        aria-expanded={
+          open
+        }
         className={`p-1.5 transition-colors ${buttonClassName ?? 'text-site-text-muted hover:text-site-accent'}`}
-        style={buttonStyle}
+        style={
+          buttonStyle
+        }
       >
         <Smile className="w-5 h-5" />
       </button>
@@ -72,11 +120,26 @@ export function EmojiPickerButton({
           approximating by hand, so the caller's preference is now a hint that
           gets overridden when the chosen side has no room. */}
       <EmojiPickerPopover
-        open={open}
-        onClose={() => setOpen(false)}
-        anchorRef={triggerRef}
-        side={direction === 'up' ? 'top' : 'bottom'}
-        onSelect={onSelect}
+        open={
+          open
+        }
+        onClose={() =>
+          setOpen(
+            false,
+          )
+        }
+        anchorRef={
+          triggerRef
+        }
+        side={
+          direction ===
+          'up'
+            ? 'top'
+            : 'bottom'
+        }
+        onSelect={
+          onSelect
+        }
       />
     </div>
   );
@@ -97,28 +160,63 @@ export function EmojiPickerPopover({
   onClose: () => void;
   /** The control the popover hangs off, and where focus returns. */
   anchorRef: RefObject<HTMLElement | null>;
-  side: 'top' | 'bottom';
-  onSelect: (emoji: string) => void;
+  side:
+    | 'top'
+    | 'bottom';
+  onSelect: (
+    emoji: string,
+  ) => void;
 }) {
-  const { t } = useTranslation('feed');
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
   return (
     <AnchoredMenu
-      open={open}
-      onClose={onClose}
-      anchorRef={anchorRef}
-      side={side}
+      open={
+        open
+      }
+      onClose={
+        onClose
+      }
+      anchorRef={
+        anchorRef
+      }
+      side={
+        side
+      }
       align="end"
-      focusOnOpen={false}
-      label={t('emoji-picker-open', { defaultValue: 'Add emoji' })}
+      focusOnOpen={
+        false
+      }
+      label={t(
+        'emoji-picker-open',
+        {
+          defaultValue:
+            'Add emoji',
+        },
+      )}
       // The picker renders its own emoji and re-renders as you scroll/pick;
       // exclude it from the app-wide twemoji observer so it never rewrites a
       // node the picker owns (which crashes React) and never walks its huge
       // subtree on every scroll mutation.
       className="p-0"
     >
-      <div data-no-twemoji>
-        <ArrivalSuspense fallback={<Skeleton className="h-[360px] w-[300px] rounded-site" />}>
-          <EmojiPickerPanel onSelect={onSelect} />
+      <div
+        data-no-twemoji
+      >
+        <ArrivalSuspense
+          fallback={
+            <Skeleton className="h-[360px] w-[300px] rounded-site" />
+          }
+        >
+          <EmojiPickerPanel
+            onSelect={
+              onSelect
+            }
+          />
         </ArrivalSuspense>
       </div>
     </AnchoredMenu>

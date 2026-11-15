@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
-import { games, apps } from '@/lib/catalog';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
+import {
+  games,
+  apps,
+} from '@/lib/catalog';
 import { GAME_SCORE_RULES } from '@/lib/game/registry';
 
 /**
@@ -16,22 +23,61 @@ import { GAME_SCORE_RULES } from '@/lib/game/registry';
  * `scoring` (the score-validation half of a game record) is stripped from the
  * card snapshot and pinned separately below, so the two halves are each exact.
  */
-function card<T extends object>(entry: T): Omit<T, 'scoring'> {
-  const { scoring: _scoring, ...rest } = entry as T & { scoring?: unknown };
-  return rest as Omit<T, 'scoring'>;
+function card<
+  T extends
+    object,
+>(
+  entry: T,
+): Omit<
+  T,
+  'scoring'
+> {
+  const {
+    scoring:
+      _scoring,
+    ...rest
+  } =
+    entry as T & {
+      scoring?: unknown;
+    };
+  return rest as Omit<
+    T,
+    'scoring'
+  >;
 }
 
 describe('catalog contract', () => {
   it('games: ids, order and every card field', () => {
-    expect(games.map(card)).toMatchSnapshot();
+    expect(
+      games.map(
+        card,
+      ),
+    ).toMatchSnapshot();
   });
 
   it('apps: ids, order and every card field', () => {
-    expect(apps.map(card)).toMatchSnapshot();
+    expect(
+      apps.map(
+        card,
+      ),
+    ).toMatchSnapshot();
   });
 
   it('scoring rules: every scored board, by id (their order carries no meaning)', () => {
-    const byId = [...GAME_SCORE_RULES].sort((a, b) => a.id.localeCompare(b.id));
-    expect(byId).toMatchSnapshot();
+    const byId =
+      [
+        ...GAME_SCORE_RULES,
+      ].sort(
+        (
+          a,
+          b,
+        ) =>
+          a.id.localeCompare(
+            b.id,
+          ),
+      );
+    expect(
+      byId,
+    ).toMatchSnapshot();
   });
 });

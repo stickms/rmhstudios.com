@@ -12,9 +12,15 @@ import type { CreationSort } from '@/lib/ranking/best';
 export interface PersonaListItem {
   id: string;
   name: string;
-  tagline: string | null;
-  emoji: string | null;
-  avatarUrl: string | null;
+  tagline:
+    | string
+    | null;
+  emoji:
+    | string
+    | null;
+  avatarUrl:
+    | string
+    | null;
   chatCount: number;
   owner: ResolvedUser;
 }
@@ -22,38 +28,95 @@ export interface PersonaListItem {
 export interface MyPersonaItem {
   id: string;
   name: string;
-  tagline: string | null;
-  emoji: string | null;
-  avatarUrl: string | null;
+  tagline:
+    | string
+    | null;
+  emoji:
+    | string
+    | null;
+  avatarUrl:
+    | string
+    | null;
   chatCount: number;
   isPublic: boolean;
 }
 
 /** Public personas, ranked (`sort`, default `best`: lib/ranking/best.ts), plus the viewer's own. Works signed out. */
-export const listPersonasApi = endpoint<{
-  query: { q?: string; sort?: CreationSort };
-  res: { personas: PersonaListItem[]; mine: MyPersonaItem[]; signedIn: boolean };
-}>()({ method: 'GET', path: '/api/personas' });
+export const listPersonasApi =
+  endpoint<{
+    query: {
+      q?: string;
+      sort?: CreationSort;
+    };
+    res: {
+      personas: PersonaListItem[];
+      mine: MyPersonaItem[];
+      signedIn: boolean;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/personas',
+    },
+  );
 
 /** 201. */
-export const createPersonaApi = endpoint<{
-  body: z.infer<typeof createPersonaBody>;
-  res: { success: true; id: string };
-}>()({ method: 'POST', path: '/api/personas' });
+export const createPersonaApi =
+  endpoint<{
+    body: z.infer<
+      typeof createPersonaBody
+    >;
+    res: {
+      success: true;
+      id: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/personas',
+    },
+  );
 
 /** Persona detail plus this viewer's conversation. 404 when missing or private. */
-export const getPersonaApi = endpoint<{ res: PersonaChatPayload }>()({
-  method: 'GET',
-  path: '/api/personas/$id',
-});
+export const getPersonaApi =
+  endpoint<{
+    res: PersonaChatPayload;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/personas/$id',
+    },
+  );
 
-export const deletePersonaApi = endpoint<{ res: { success: true } }>()({
-  method: 'DELETE',
-  path: '/api/personas/$id',
-});
+export const deletePersonaApi =
+  endpoint<{
+    res: {
+      success: true;
+    };
+  }>()(
+    {
+      method:
+        'DELETE',
+      path: '/api/personas/$id',
+    },
+  );
 
 /** One chat turn with a persona (a model call: pass `AI_TIMEOUT_MS`). */
-export const chatWithPersonaApi = endpoint<{
-  body: { message: string };
-  res: { reply: string };
-}>()({ method: 'POST', path: '/api/personas/$id/chat' });
+export const chatWithPersonaApi =
+  endpoint<{
+    body: {
+      message: string;
+    };
+    res: {
+      reply: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/personas/$id/chat',
+    },
+  );

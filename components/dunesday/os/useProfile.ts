@@ -5,38 +5,96 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { useResolvedUser, useSession } from '@/components/Providers';
+import {
+  useResolvedUser,
+  useSession,
+} from '@/components/Providers';
 
 export interface Profile {
   name: string;
-  image: string | null;
-  handle: string | null;
+  image:
+    | string
+    | null;
+  handle:
+    | string
+    | null;
   signedIn: boolean;
   pending: boolean;
 }
 
 export function useProfile(): Profile {
-  const { t } = useTranslation('c-dunesday');
-  const { data: session, isPending } = useSession();
-  const { resolved } = useResolvedUser();
-  const user = session?.user as { name?: string | null; image?: string | null } | undefined;
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-dunesday',
+    );
+  const {
+    data: session,
+    isPending,
+  } =
+    useSession();
+  const {
+    resolved,
+  } =
+    useResolvedUser();
+  const user =
+    session?.user as
+      | {
+          name?:
+            | string
+            | null;
+          image?:
+            | string
+            | null;
+        }
+      | undefined;
   const name =
-    resolved?.name?.trim() || user?.name?.trim() || t('guest', { defaultValue: 'Guest' });
+    resolved?.name?.trim() ||
+    user?.name?.trim() ||
+    t(
+      'guest',
+      {
+        defaultValue:
+          'Guest',
+      },
+    );
   return {
-    name: name.slice(0, 40),
-    image: resolved?.image ?? user?.image ?? null,
-    handle: resolved?.handle ?? null,
-    signedIn: Boolean(user),
-    pending: isPending,
+    name: name.slice(
+      0,
+      40,
+    ),
+    image:
+      resolved?.image ??
+      user?.image ??
+      null,
+    handle:
+      resolved?.handle ??
+      null,
+    signedIn:
+      Boolean(
+        user,
+      ),
+    pending:
+      isPending,
   };
 }
 
 /** A folder-safe version of the display name for C:\Users\<name>. */
-export function profileFolderName(name: string): string {
+export function profileFolderName(
+  name: string,
+): string {
   return (
     name
-      .replace(/[\\/:*?"<>|.]/g, '')
+      .replace(
+        /[\\/:*?"<>|.]/g,
+        '',
+      )
       .trim()
-      .slice(0, 40) || 'User'
+      .slice(
+        0,
+        40,
+      ) ||
+    'User'
   );
 }

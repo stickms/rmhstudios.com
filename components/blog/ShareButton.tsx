@@ -12,7 +12,9 @@ interface ShareButtonProps {
    * button hardcoded before — so `/news/$slug` was copying a `/blog/…` link
    * that 404s.
    */
-  section?: 'blog' | 'news';
+  section?:
+    | 'blog'
+    | 'news';
   /** Extra classes for positioning at the call site. */
   className?: string;
 }
@@ -31,15 +33,34 @@ interface ShareButtonProps {
  * value is identical during SSR and after hydration — reading `window` in the
  * render path made this component client-only for no benefit.
  */
-export function ShareButton({ slug, section = 'blog', className }: ShareButtonProps) {
-  const { t } = useTranslation('c-blog');
+export function ShareButton({
+  slug,
+  section = 'blog',
+  className,
+}: ShareButtonProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-blog',
+    );
 
   return (
     <CopyButton
       value={`${SITE_URL}/${section}/${slug}`}
-      icon={Share2}
-      label={t('copy-link', { defaultValue: 'Copy Link' })}
-      className={className}
+      icon={
+        Share2
+      }
+      label={t(
+        'copy-link',
+        {
+          defaultValue:
+            'Copy Link',
+        },
+      )}
+      className={
+        className
+      }
     />
   );
 }

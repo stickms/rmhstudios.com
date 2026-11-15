@@ -13,8 +13,16 @@
  */
 
 /** What can be remixed. Matches the `kind` values written to `RemixEdge`. */
-export const REMIX_KINDS = ['build', 'theme', 'playlist', 'world', 'level'] as const;
-export type RemixKind = (typeof REMIX_KINDS)[number];
+export const REMIX_KINDS =
+  [
+    'build',
+    'theme',
+    'playlist',
+    'world',
+    'level',
+  ] as const;
+export type RemixKind =
+  (typeof REMIX_KINDS)[number];
 
 /**
  * How far the ancestry walk will follow parents.
@@ -35,7 +43,12 @@ export const MAX_ANCESTRY_DEPTH = 20;
  * levels totalling 17.5% is a deliberate ceiling — see `remixShares`, which
  * enforces it rather than trusting this table.
  */
-export const REMIX_SHARE_RATES: readonly number[] = [0.1, 0.05, 0.025];
+export const REMIX_SHARE_RATES: readonly number[] =
+  [
+    0.1,
+    0.05,
+    0.025,
+  ];
 
 /** Hard ceiling on the fraction of a sale that may be routed upstream. */
 export const MAX_TOTAL_REMIX_SHARE = 0.25;
@@ -77,35 +90,136 @@ export function remixShares(
   ancestors: readonly AncestorRef[],
   sellerId: string,
 ): RemixShare[] {
-  if (!Number.isFinite(price) || price <= 0) return [];
+  if (
+    !Number.isFinite(
+      price,
+    ) ||
+    price <=
+      0
+  )
+    return [];
 
-  const byUser = new Map<string, number>();
-  for (let i = 0; i < ancestors.length && i < REMIX_SHARE_RATES.length; i++) {
-    const { authorId } = ancestors[i];
-    if (authorId === sellerId) continue;
-    const coins = Math.floor(price * REMIX_SHARE_RATES[i]);
-    if (coins <= 0) continue;
-    byUser.set(authorId, (byUser.get(authorId) ?? 0) + coins);
+  const byUser =
+    new Map<
+      string,
+      number
+    >();
+  for (
+    let i = 0;
+    i <
+      ancestors.length &&
+    i <
+      REMIX_SHARE_RATES.length;
+    i++
+  ) {
+    const {
+      authorId,
+    } =
+      ancestors[
+        i
+      ];
+    if (
+      authorId ===
+      sellerId
+    )
+      continue;
+    const coins =
+      Math.floor(
+        price *
+          REMIX_SHARE_RATES[
+            i
+          ],
+      );
+    if (
+      coins <=
+      0
+    )
+      continue;
+    byUser.set(
+      authorId,
+      (byUser.get(
+        authorId,
+      ) ??
+        0) +
+        coins,
+    );
   }
 
-  const shares = [...byUser.entries()].map(([userId, coins]) => ({ userId, coins }));
+  const shares =
+    [
+      ...byUser.entries(),
+    ].map(
+      ([
+        userId,
+        coins,
+      ]) => ({
+        userId,
+        coins,
+      }),
+    );
 
   // The ceiling is enforced here rather than assumed from the rate table, so a
   // future edit to the rates cannot silently start over-paying. Scaling down
   // preserves the relative split.
-  const cap = Math.floor(price * MAX_TOTAL_REMIX_SHARE);
-  const total = shares.reduce((sum, s) => sum + s.coins, 0);
-  if (total > cap) {
-    const scale = cap / total;
+  const cap =
+    Math.floor(
+      price *
+        MAX_TOTAL_REMIX_SHARE,
+    );
+  const total =
+    shares.reduce(
+      (
+        sum,
+        s,
+      ) =>
+        sum +
+        s.coins,
+      0,
+    );
+  if (
+    total >
+    cap
+  ) {
+    const scale =
+      cap /
+      total;
     return shares
-      .map((s) => ({ userId: s.userId, coins: Math.floor(s.coins * scale) }))
-      .filter((s) => s.coins > 0);
+      .map(
+        (
+          s,
+        ) => ({
+          userId:
+            s.userId,
+          coins:
+            Math.floor(
+              s.coins *
+                scale,
+            ),
+        }),
+      )
+      .filter(
+        (
+          s,
+        ) =>
+          s.coins >
+          0,
+      );
   }
 
   return shares;
 }
 
 /** Total coins routed upstream for a sale — what the seller does NOT receive. */
-export function totalRemixShare(shares: readonly RemixShare[]): number {
-  return shares.reduce((sum, s) => sum + s.coins, 0);
+export function totalRemixShare(
+  shares: readonly RemixShare[],
+): number {
+  return shares.reduce(
+    (
+      sum,
+      s,
+    ) =>
+      sum +
+      s.coins,
+    0,
+  );
 }

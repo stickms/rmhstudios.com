@@ -24,8 +24,14 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
-import type { GameState, TabId } from '@/lib/temple-of-joy/types';
-import { useTempleSnapshot, useTempleValue } from './hooks';
+import type {
+  GameState,
+  TabId,
+} from '@/lib/temple-of-joy/types';
+import {
+  useTempleSnapshot,
+  useTempleValue,
+} from './hooks';
 import { Glyph } from './ui';
 import { computeAlerts } from './panels/alerts';
 
@@ -34,7 +40,9 @@ interface TabDef {
   glyph: string;
   label: string;
   /** Hide until the mechanic behind it exists. */
-  visible?: (s: GameState) => boolean;
+  visible?: (
+    s: GameState,
+  ) => boolean;
 }
 
 /**
@@ -46,18 +54,115 @@ interface TabDef {
  */
 const BAR_SLOTS = 5;
 
-const TABS: TabDef[] = [
-  { id: 'temple', glyph: '⛪', label: 'Temple' },
-  { id: 'sources', glyph: '🕯️', label: 'Sources' },
-  { id: 'blessings', glyph: '✨', label: 'Blessings' },
-  { id: 'garden', glyph: '🌱', label: 'Garden', visible: (s) => s.garden.unlocked },
-  { id: 'choir', glyph: '🎼', label: 'Choir', visible: (s) => s.choir.unlocked },
-  { id: 'exchange', glyph: '📈', label: 'Exchange', visible: (s) => s.exchange.unlocked },
-  { id: 'hours', glyph: '📖', label: 'Hours', visible: (s) => s.hours.unlocked },
-  { id: 'legacy', glyph: '☁️', label: 'Ladder', visible: (s) => s.grace > 0 || s.ascensions > 0 },
-  { id: 'trophies', glyph: '🏆', label: 'Trophies' },
-  { id: 'settings', glyph: '⚙️', label: 'Settings' },
-];
+const TABS: TabDef[] =
+  [
+    {
+      id: 'temple',
+      glyph:
+        '⛪',
+      label:
+        'Temple',
+    },
+    {
+      id: 'sources',
+      glyph:
+        '🕯️',
+      label:
+        'Sources',
+    },
+    {
+      id: 'blessings',
+      glyph:
+        '✨',
+      label:
+        'Blessings',
+    },
+    {
+      id: 'garden',
+      glyph:
+        '🌱',
+      label:
+        'Garden',
+      visible:
+        (
+          s,
+        ) =>
+          s
+            .garden
+            .unlocked,
+    },
+    {
+      id: 'choir',
+      glyph:
+        '🎼',
+      label:
+        'Choir',
+      visible:
+        (
+          s,
+        ) =>
+          s
+            .choir
+            .unlocked,
+    },
+    {
+      id: 'exchange',
+      glyph:
+        '📈',
+      label:
+        'Exchange',
+      visible:
+        (
+          s,
+        ) =>
+          s
+            .exchange
+            .unlocked,
+    },
+    {
+      id: 'hours',
+      glyph:
+        '📖',
+      label:
+        'Hours',
+      visible:
+        (
+          s,
+        ) =>
+          s
+            .hours
+            .unlocked,
+    },
+    {
+      id: 'legacy',
+      glyph:
+        '☁️',
+      label:
+        'Ladder',
+      visible:
+        (
+          s,
+        ) =>
+          s.grace >
+            0 ||
+          s.ascensions >
+            0,
+    },
+    {
+      id: 'trophies',
+      glyph:
+        '🏆',
+      label:
+        'Trophies',
+    },
+    {
+      id: 'settings',
+      glyph:
+        '⚙️',
+      label:
+        'Settings',
+    },
+  ];
 
 /**
  * The bar's five slots, and what falls off the end of them.
@@ -71,32 +176,135 @@ const TABS: TabDef[] = [
  * slot rather than being appended, so the count never grows and the others
  * never shift under a thumb that is already moving.
  */
-function splitRooms(shown: TabDef[], active: TabId, variant: 'rail' | 'bar') {
-  if (variant !== 'bar' || shown.length <= BAR_SLOTS) return { slots: shown, hidden: [] };
+function splitRooms(
+  shown: TabDef[],
+  active: TabId,
+  variant:
+    | 'rail'
+    | 'bar',
+) {
+  if (
+    variant !==
+      'bar' ||
+    shown.length <=
+      BAR_SLOTS
+  )
+    return {
+      slots:
+        shown,
+      hidden:
+        [],
+    };
 
-  let slots = shown.slice(0, BAR_SLOTS - 1);
-  const hidden = shown.filter((tab) => !slots.includes(tab));
-  if (hidden.some((tab) => tab.id === active)) {
-    slots = [...slots.slice(0, BAR_SLOTS - 2), shown.find((tab) => tab.id === active)!];
+  let slots =
+    shown.slice(
+      0,
+      BAR_SLOTS -
+        1,
+    );
+  const hidden =
+    shown.filter(
+      (
+        tab,
+      ) =>
+        !slots.includes(
+          tab,
+        ),
+    );
+  if (
+    hidden.some(
+      (
+        tab,
+      ) =>
+        tab.id ===
+        active,
+    )
+  ) {
+    slots =
+      [
+        ...slots.slice(
+          0,
+          BAR_SLOTS -
+            2,
+        ),
+        shown.find(
+          (
+            tab,
+          ) =>
+            tab.id ===
+            active,
+        )!,
+      ];
   }
-  return { slots, hidden };
+  return {
+    slots,
+    hidden,
+  };
 }
 
 /** The rooms this save has unlocked, plus which of them want attention. */
 function useRooms() {
-  const state = useTempleSnapshot(
-    (s) => ({
-      visible: TABS.filter((tab) => !tab.visible || tab.visible(s))
-        .map((tab) => tab.id)
-        .join(','),
-      alerts: computeAlerts(s).join(','),
-    }),
-    700,
-  );
-  const visibleIds = state.visible.split(',').filter(Boolean) as TabId[];
+  const state =
+    useTempleSnapshot(
+      (
+        s,
+      ) => ({
+        visible:
+          TABS.filter(
+            (
+              tab,
+            ) =>
+              !tab.visible ||
+              tab.visible(
+                s,
+              ),
+          )
+            .map(
+              (
+                tab,
+              ) =>
+                tab.id,
+            )
+            .join(
+              ',',
+            ),
+        alerts:
+          computeAlerts(
+            s,
+          ).join(
+            ',',
+          ),
+      }),
+      700,
+    );
+  const visibleIds =
+    state.visible
+      .split(
+        ',',
+      )
+      .filter(
+        Boolean,
+      ) as TabId[];
   return {
-    shown: TABS.filter((tab) => visibleIds.includes(tab.id)),
-    alerts: new Set(state.alerts.split(',').filter(Boolean)),
+    shown:
+      TABS.filter(
+        (
+          tab,
+        ) =>
+          visibleIds.includes(
+            tab.id,
+          ),
+      ),
+    alerts:
+      new Set(
+        state.alerts
+          .split(
+            ',',
+          )
+          .filter(
+            Boolean,
+          ),
+      ),
   };
 }
 
@@ -105,20 +313,60 @@ export function TempleTabs({
   more = false,
   onMore,
 }: {
-  variant?: 'rail' | 'bar';
+  variant?:
+    | 'rail'
+    | 'bar';
   /** Whether the overflow sheet is open — for the More button's `aria-expanded`
       only. The sheet itself is rendered by the shell, outside the subtree that
       goes `inert` while it is up. */
   more?: boolean;
-  onMore?: (open: boolean) => void;
+  onMore?: (
+    open: boolean,
+  ) => void;
 }) {
-  const { t } = useTranslation('c-temple-of-joy');
-  const active = useTempleValue((s) => s.tab);
-  const railRef = useRef<HTMLDivElement>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-temple-of-joy',
+    );
+  const active =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.tab,
+    );
+  const railRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
 
-  const { shown, alerts } = useRooms();
-  const { slots, hidden } = splitRooms(shown, active, variant);
-  const moreAlert = hidden.some((tab) => alerts.has(tab.id) && tab.id !== active);
+  const {
+    shown,
+    alerts,
+  } =
+    useRooms();
+  const {
+    slots,
+    hidden,
+  } =
+    splitRooms(
+      shown,
+      active,
+      variant,
+    );
+  const moreAlert =
+    hidden.some(
+      (
+        tab,
+      ) =>
+        alerts.has(
+          tab.id,
+        ) &&
+        tab.id !==
+          active,
+    );
 
   /**
    * Left/Right walk the rail; Home/End jump to its ends.
@@ -131,90 +379,224 @@ export function TempleTabs({
   // every render, so the memo could only ever be kept by hashing it into the
   // dependency list — which the compiler rejects, and rightly. The React
   // Compiler memoizes this correctly on its own.
-  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-    event.preventDefault();
+  const onKeyDown =
+    (
+      event: React.KeyboardEvent<HTMLDivElement>,
+    ) => {
+      if (
+        ![
+          'ArrowLeft',
+          'ArrowRight',
+          'Home',
+          'End',
+        ].includes(
+          event.key,
+        )
+      )
+        return;
+      event.preventDefault();
 
-    const slotIds = slots.map((tab) => tab.id);
-    const index = slotIds.indexOf(active);
-    // The rail is laid out in the writing direction, so in RTL the left arrow
-    // should move to the *next* tab, not the previous one.
-    const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';
-    const step = event.key === 'ArrowLeft' ? (rtl ? 1 : -1) : rtl ? -1 : 1;
+      const slotIds =
+        slots.map(
+          (
+            tab,
+          ) =>
+            tab.id,
+        );
+      const index =
+        slotIds.indexOf(
+          active,
+        );
+      // The rail is laid out in the writing direction, so in RTL the left arrow
+      // should move to the *next* tab, not the previous one.
+      const rtl =
+        getComputedStyle(
+          event.currentTarget,
+        )
+          .direction ===
+        'rtl';
+      const step =
+        event.key ===
+        'ArrowLeft'
+          ? rtl
+            ? 1
+            : -1
+          : rtl
+            ? -1
+            : 1;
 
-    const next =
-      event.key === 'Home'
-        ? 0
-        : event.key === 'End'
-          ? slotIds.length - 1
-          : (index + step + slotIds.length) % slotIds.length;
+      const next =
+        event.key ===
+        'Home'
+          ? 0
+          : event.key ===
+              'End'
+            ? slotIds.length -
+              1
+            : (index +
+                step +
+                slotIds.length) %
+              slotIds.length;
 
-    const target = slotIds[next];
-    if (!target) return;
-    templeAudio.play('tab');
-    useTempleStore.getState().setTab(target);
-    railRef.current?.querySelector<HTMLButtonElement>(`[data-tab="${target}"]`)?.focus();
-  };
+      const target =
+        slotIds[
+          next
+        ];
+      if (
+        !target
+      )
+        return;
+      templeAudio.play(
+        'tab',
+      );
+      useTempleStore
+        .getState()
+        .setTab(
+          target,
+        );
+      railRef.current
+        ?.querySelector<HTMLButtonElement>(
+          `[data-tab="${target}"]`,
+        )
+        ?.focus();
+    };
 
-  const tabButton = (tab: TabDef) => {
-    const selected = tab.id === active;
-    return (
-      <button
-        key={tab.id}
-        type="button"
-        role="tab"
-        data-tab={tab.id}
-        aria-selected={selected}
-        aria-controls="toj-panel"
-        // Roving tabindex: one stop for the whole rail, then arrow keys.
-        tabIndex={selected ? 0 : -1}
-        className="toj-tab"
-        onClick={() => {
-          templeAudio.play('tab');
-          useTempleStore.getState().setTab(tab.id);
-        }}
-      >
-        <span className="toj-tab-glyph">
-          <Glyph>{tab.glyph}</Glyph>
-        </span>
-        {/* An element, not a bare text node: on the desktop rail the tabs
+  const tabButton =
+    (
+      tab: TabDef,
+    ) => {
+      const selected =
+        tab.id ===
+        active;
+      return (
+        <button
+          key={
+            tab.id
+          }
+          type="button"
+          role="tab"
+          data-tab={
+            tab.id
+          }
+          aria-selected={
+            selected
+          }
+          aria-controls="toj-panel"
+          // Roving tabindex: one stop for the whole rail, then arrow keys.
+          tabIndex={
+            selected
+              ? 0
+              : -1
+          }
+          className="toj-tab"
+          onClick={() => {
+            templeAudio.play(
+              'tab',
+            );
+            useTempleStore
+              .getState()
+              .setTab(
+                tab.id,
+              );
+          }}
+        >
+          <span className="toj-tab-glyph">
+            <Glyph>
+              {
+                tab.glyph
+              }
+            </Glyph>
+          </span>
+          {/* An element, not a bare text node: on the desktop rail the tabs
             are grid cells of equal width, and only a real box can be told
             to ellipsise the one locale where "Blessings" is two words. */}
-        <span className="toj-tab-label">{t(`tab-${tab.id}`, { defaultValue: tab.label })}</span>
-        {alerts.has(tab.id) && !selected && <span className="toj-tab-dot" aria-hidden />}
-      </button>
-    );
-  };
+          <span className="toj-tab-label">
+            {t(
+              `tab-${tab.id}`,
+              {
+                defaultValue:
+                  tab.label,
+              },
+            )}
+          </span>
+          {alerts.has(
+            tab.id,
+          ) &&
+            !selected && (
+              <span
+                className="toj-tab-dot"
+                aria-hidden
+              />
+            )}
+        </button>
+      );
+    };
 
   return (
     <>
       <div
-        ref={railRef}
+        ref={
+          railRef
+        }
         className="toj-tabs"
-        data-variant={variant}
+        data-variant={
+          variant
+        }
         role="tablist"
-        aria-label={t('temple-sections', { defaultValue: 'Temple sections' })}
-        onKeyDown={onKeyDown}
+        aria-label={t(
+          'temple-sections',
+          {
+            defaultValue:
+              'Temple sections',
+          },
+        )}
+        onKeyDown={
+          onKeyDown
+        }
       >
-        {slots.map(tabButton)}
+        {slots.map(
+          tabButton,
+        )}
 
-        {hidden.length > 0 && (
+        {hidden.length >
+          0 && (
           <button
             type="button"
             className="toj-tab"
             data-more="true"
             aria-haspopup="dialog"
-            aria-expanded={more}
+            aria-expanded={
+              more
+            }
             onClick={() => {
-              templeAudio.play('tab');
-              onMore?.(true);
+              templeAudio.play(
+                'tab',
+              );
+              onMore?.(
+                true,
+              );
             }}
           >
             <span className="toj-tab-glyph">
-              <Glyph>⋯</Glyph>
+              <Glyph>
+                ⋯
+              </Glyph>
             </span>
-            <span className="toj-tab-label">{t('tab-more', { defaultValue: 'More' })}</span>
-            {moreAlert && <span className="toj-tab-dot" aria-hidden />}
+            <span className="toj-tab-label">
+              {t(
+                'tab-more',
+                {
+                  defaultValue:
+                    'More',
+                },
+              )}
+            </span>
+            {moreAlert && (
+              <span
+                className="toj-tab-dot"
+                aria-hidden
+              />
+            )}
           </button>
         )}
       </div>
@@ -233,19 +615,59 @@ export function TempleTabs({
  * shell marks `inert` while it is open — a dialog inside the thing it disables
  * disables itself.
  */
-export function TempleRooms({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation('c-temple-of-joy');
-  const active = useTempleValue((s) => s.tab);
-  const { shown, alerts } = useRooms();
-  const { hidden } = splitRooms(shown, active, 'bar');
+export function TempleRooms({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-temple-of-joy',
+    );
+  const active =
+    useTempleValue(
+      (
+        s,
+      ) =>
+        s.tab,
+    );
+  const {
+    shown,
+    alerts,
+  } =
+    useRooms();
+  const {
+    hidden,
+  } =
+    splitRooms(
+      shown,
+      active,
+      'bar',
+    );
 
   return (
     <MoreSheet
-      tabs={hidden}
-      alerts={alerts}
-      active={active}
-      onClose={onClose}
-      label={t('temple-sections', { defaultValue: 'Temple sections' })}
+      tabs={
+        hidden
+      }
+      alerts={
+        alerts
+      }
+      active={
+        active
+      }
+      onClose={
+        onClose
+      }
+      label={t(
+        'temple-sections',
+        {
+          defaultValue:
+            'Temple sections',
+        },
+      )}
     />
   );
 }
@@ -263,43 +685,104 @@ function MoreSheet({
   onClose: () => void;
   label: string;
 }) {
-  const { t } = useTranslation('c-temple-of-joy');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-temple-of-joy',
+    );
 
   // The Radix dialog primitive in the temple's clothes (see TempleDialogs'
   // Scrim): Escape, outside press, focus trap, focus return and scroll lock.
   return (
     <DialogPrimitive.Root
       open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+      onOpenChange={(
+        open,
+      ) => {
+        if (
+          !open
+        )
+          onClose();
       }}
     >
-      <DialogPrimitive.Overlay className="toj-scrim" data-sheet="true">
-        <DialogPrimitive.Content className="toj-sheet" aria-describedby={undefined}>
-          <DialogPrimitive.Title className="sr-only">{label}</DialogPrimitive.Title>
-          <span className="toj-sheet-grip" aria-hidden />
+      <DialogPrimitive.Overlay
+        className="toj-scrim"
+        data-sheet="true"
+      >
+        <DialogPrimitive.Content
+          className="toj-sheet"
+          aria-describedby={
+            undefined
+          }
+        >
+          <DialogPrimitive.Title className="sr-only">
+            {
+              label
+            }
+          </DialogPrimitive.Title>
+          <span
+            className="toj-sheet-grip"
+            aria-hidden
+          />
           <div className="toj-sheet-grid">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                className="toj-sheet-tab"
-                aria-current={tab.id === active ? 'page' : undefined}
-                onClick={() => {
-                  templeAudio.play('tab');
-                  useTempleStore.getState().setTab(tab.id);
-                  onClose();
-                }}
-              >
-                <span className="toj-sheet-glyph">
-                  <Glyph>{tab.glyph}</Glyph>
-                </span>
-                <span>{t(`tab-${tab.id}`, { defaultValue: tab.label })}</span>
-                {alerts.has(tab.id) && tab.id !== active && (
-                  <span className="toj-tab-dot" aria-hidden />
-                )}
-              </button>
-            ))}
+            {tabs.map(
+              (
+                tab,
+              ) => (
+                <button
+                  key={
+                    tab.id
+                  }
+                  type="button"
+                  className="toj-sheet-tab"
+                  aria-current={
+                    tab.id ===
+                    active
+                      ? 'page'
+                      : undefined
+                  }
+                  onClick={() => {
+                    templeAudio.play(
+                      'tab',
+                    );
+                    useTempleStore
+                      .getState()
+                      .setTab(
+                        tab.id,
+                      );
+                    onClose();
+                  }}
+                >
+                  <span className="toj-sheet-glyph">
+                    <Glyph>
+                      {
+                        tab.glyph
+                      }
+                    </Glyph>
+                  </span>
+                  <span>
+                    {t(
+                      `tab-${tab.id}`,
+                      {
+                        defaultValue:
+                          tab.label,
+                      },
+                    )}
+                  </span>
+                  {alerts.has(
+                    tab.id,
+                  ) &&
+                    tab.id !==
+                      active && (
+                      <span
+                        className="toj-tab-dot"
+                        aria-hidden
+                      />
+                    )}
+                </button>
+              ),
+            )}
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Overlay>

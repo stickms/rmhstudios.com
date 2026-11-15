@@ -47,31 +47,65 @@ import type { Db } from './ledger-core';
  * pending state (the settings panel) and callers that want to ENFORCE the
  * current one (the ledger) read the same row and interpret it differently.
  */
-export async function readPlayLimits(db: Db, userId: string): Promise<PlayLimits> {
-  const row = await db.userPlayLimits.findUnique({
-    where: { userId },
-    select: {
-      dailyCoinCap: true,
-      selfExcludedUntil: true,
-      coolOffUntil: true,
-      pendingCap: true,
-      pendingCapAt: true,
-    },
-  });
-  return row ?? NO_LIMITS;
+export async function readPlayLimits(
+  db: Db,
+  userId: string,
+): Promise<PlayLimits> {
+  const row =
+    await db.userPlayLimits.findUnique(
+      {
+        where:
+          {
+            userId,
+          },
+        select:
+          {
+            dailyCoinCap: true,
+            selfExcludedUntil: true,
+            coolOffUntil: true,
+            pendingCap: true,
+            pendingCapAt: true,
+          },
+      },
+    );
+  return (
+    row ??
+    NO_LIMITS
+  );
 }
 
 /** Coins this member has already staked since midnight UTC. */
-export async function stakedToday(db: Db, userId: string, now: Date = new Date()): Promise<number> {
-  const agg = await db.coinTransaction.aggregate({
-    where: {
-      senderId: userId,
-      type: 'WAGER',
-      createdAt: { gte: dayWindowStart(now) },
-    },
-    _sum: { amount: true },
-  });
-  return Number(agg._sum.amount ?? 0);
+export async function stakedToday(
+  db: Db,
+  userId: string,
+  now: Date = new Date(),
+): Promise<number> {
+  const agg =
+    await db.coinTransaction.aggregate(
+      {
+        where:
+          {
+            senderId:
+              userId,
+            type: 'WAGER',
+            createdAt:
+              {
+                gte: dayWindowStart(
+                  now,
+                ),
+              },
+          },
+        _sum: {
+          amount: true,
+        },
+      },
+    );
+  return Number(
+    agg
+      ._sum
+      .amount ??
+      0,
+  );
 }
 
 /**
@@ -94,29 +128,79 @@ export async function assertPlayAllowedOn(
   amount: number,
   now: Date = new Date(),
 ): Promise<void> {
-  const limits = await readPlayLimits(db, userId);
+  const limits =
+    await readPlayLimits(
+      db,
+      userId,
+    );
 
-  const blocked = blockedBy(limits, now);
-  if (blocked === 'SELF_EXCLUDED') {
-    throw new AppError('SELF_EXCLUDED', {
-      until: limits.selfExcludedUntil?.toISOString() ?? '',
-    });
+  const blocked =
+    blockedBy(
+      limits,
+      now,
+    );
+  if (
+    blocked ===
+    'SELF_EXCLUDED'
+  ) {
+    throw new AppError(
+      'SELF_EXCLUDED',
+      {
+        until:
+          limits.selfExcludedUntil?.toISOString() ??
+          '',
+      },
+    );
   }
-  if (blocked === 'COOL_OFF_ACTIVE') {
-    throw new AppError('COOL_OFF_ACTIVE', {
-      until: limits.coolOffUntil?.toISOString() ?? '',
-    });
+  if (
+    blocked ===
+    'COOL_OFF_ACTIVE'
+  ) {
+    throw new AppError(
+      'COOL_OFF_ACTIVE',
+      {
+        until:
+          limits.coolOffUntil?.toISOString() ??
+          '',
+      },
+    );
   }
 
-  const cap = effectiveCap(limits, now);
-  if (cap === null) return;
+  const cap =
+    effectiveCap(
+      limits,
+      now,
+    );
+  if (
+    cap ===
+    null
+  )
+    return;
 
-  const already = await stakedToday(db, userId, now);
-  if (already + amount > cap) {
-    throw new AppError('STAKE_LIMIT_REACHED', {
-      cap,
-      staked: already,
-      remaining: Math.max(0, cap - already),
-    });
+  const already =
+    await stakedToday(
+      db,
+      userId,
+      now,
+    );
+  if (
+    already +
+      amount >
+    cap
+  ) {
+    throw new AppError(
+      'STAKE_LIMIT_REACHED',
+      {
+        cap,
+        staked:
+          already,
+        remaining:
+          Math.max(
+            0,
+            cap -
+              already,
+          ),
+      },
+    );
   }
 }

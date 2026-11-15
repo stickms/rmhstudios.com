@@ -19,10 +19,11 @@
  * scores and the Altair meta shop have not been moved yet —
  * add the id in the same commit that teaches the game to save, not before.
  */
-export const SHARED_SAVE_GAMES = [
-  'void-breaker',
-  'neon-driftway',
-] as const;
+export const SHARED_SAVE_GAMES =
+  [
+    'void-breaker',
+    'neon-driftway',
+  ] as const;
 
 /**
  * Games that save on the shared table but are not in the public catalog
@@ -33,16 +34,29 @@ export const SHARED_SAVE_GAMES = [
  * `balatro`: /balatro, signed-in only and unlisted. One row holds a snapshot of
  * the game's whole save directory (features/balatro/engine/cloud-saves.ts).
  */
-export const UNLISTED_SHARED_SAVE_GAMES = ['balatro'] as const;
+export const UNLISTED_SHARED_SAVE_GAMES =
+  [
+    'balatro',
+  ] as const;
 
 export type SharedSaveGameId =
   | (typeof SHARED_SAVE_GAMES)[number]
   | (typeof UNLISTED_SHARED_SAVE_GAMES)[number];
 
-const ALLOWED = new Set<string>([...SHARED_SAVE_GAMES, ...UNLISTED_SHARED_SAVE_GAMES]);
+const ALLOWED =
+  new Set<string>(
+    [
+      ...SHARED_SAVE_GAMES,
+      ...UNLISTED_SHARED_SAVE_GAMES,
+    ],
+  );
 
-export function isSharedSaveGame(id: string): id is SharedSaveGameId {
-  return ALLOWED.has(id);
+export function isSharedSaveGame(
+  id: string,
+): id is SharedSaveGameId {
+  return ALLOWED.has(
+    id,
+  );
 }
 
 /**

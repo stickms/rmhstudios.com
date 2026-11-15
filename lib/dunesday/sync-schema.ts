@@ -8,27 +8,89 @@
 
 import { z } from 'zod';
 
-export const FEED_ID = /^[A-Za-z0-9_-]{8,32}$/;
-export const TOKEN_HEADER = 'x-dunesday-token';
+export const FEED_ID =
+  /^[A-Za-z0-9_-]{8,32}$/;
+export const TOKEN_HEADER =
+  'x-dunesday-token';
 
-const MAX_STATE_CHARS = 64 * 1024;
+const MAX_STATE_CHARS =
+  64 *
+  1024;
 
-export const syncBodySchema = z.object({
-  state: z
-    .unknown()
-    .refine((v) => v !== null && typeof v === 'object', 'state must be an object')
-    .refine((v) => JSON.stringify(v).length <= MAX_STATE_CHARS, 'state is too large'),
-  timeZone: z.string().min(1).max(64),
-});
+export const syncBodySchema =
+  z.object(
+    {
+      state:
+        z
+          .unknown()
+          .refine(
+            (
+              v,
+            ) =>
+              v !==
+                null &&
+              typeof v ===
+                'object',
+            'state must be an object',
+          )
+          .refine(
+            (
+              v,
+            ) =>
+              JSON.stringify(
+                v,
+              )
+                .length <=
+              MAX_STATE_CHARS,
+            'state is too large',
+          ),
+      timeZone:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            64,
+          ),
+    },
+  );
 
-export const discordSettingsSchema = z.object({
-  /** Omit to keep the saved webhook; null or "" to remove it. */
-  webhookUrl: z.string().max(500).nullable().optional(),
-  daily: z.boolean(),
-  progress: z.boolean(),
-  name: z.string().max(40).nullable(),
-});
+export const discordSettingsSchema =
+  z.object(
+    {
+      /** Omit to keep the saved webhook; null or "" to remove it. */
+      webhookUrl:
+        z
+          .string()
+          .max(
+            500,
+          )
+          .nullable()
+          .optional(),
+      daily:
+        z.boolean(),
+      progress:
+        z.boolean(),
+      name: z
+        .string()
+        .max(
+          40,
+        )
+        .nullable(),
+    },
+  );
 
-export const discordTestSchema = z.object({
-  webhookUrl: z.string().max(500).nullable().optional(),
-});
+export const discordTestSchema =
+  z.object(
+    {
+      webhookUrl:
+        z
+          .string()
+          .max(
+            500,
+          )
+          .nullable()
+          .optional(),
+    },
+  );

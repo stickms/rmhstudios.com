@@ -1,5 +1,8 @@
 import { cn } from '@/lib/utils';
-import { normalizeForDisplay, VOICE_PEAK_BUCKETS } from '@/lib/voice/peaks';
+import {
+  normalizeForDisplay,
+  VOICE_PEAK_BUCKETS,
+} from '@/lib/voice/peaks';
 
 /**
  * The bars a voice note draws.
@@ -24,24 +27,61 @@ export function VoiceWaveform({
   className?: string;
 }) {
   const bars =
-    peaks.length > 0 ? normalizeForDisplay(peaks) : new Array(VOICE_PEAK_BUCKETS).fill(0);
-  const filled = Math.round(bars.length * Math.min(Math.max(progress, 0), 1));
+    peaks.length >
+    0
+      ? normalizeForDisplay(
+          peaks,
+        )
+      : new Array(
+          VOICE_PEAK_BUCKETS,
+        ).fill(
+          0,
+        );
+  const filled =
+    Math.round(
+      bars.length *
+        Math.min(
+          Math.max(
+            progress,
+            0,
+          ),
+          1,
+        ),
+    );
 
   return (
-    <div aria-hidden="true" className={cn('flex h-8 w-full items-center gap-[2px]', className)}>
-      {bars.map((peak, i) => (
-        <span
-          key={i}
-          className={cn(
-            'min-w-[2px] flex-1 rounded-full bg-current',
-            i < filled ? 'opacity-95' : 'opacity-40',
-          )}
-          // Height is data, not design: a token cannot express "this bar is
-          // 0.62 loud". Floored at 12% so silence is still a visible line
-          // rather than a gap the eye reads as the end of the clip.
-          style={{ height: `${Math.max(12, Math.round(peak * 100))}%` }}
-        />
-      ))}
+    <div
+      aria-hidden="true"
+      className={cn(
+        'flex h-8 w-full items-center gap-[2px]',
+        className,
+      )}
+    >
+      {bars.map(
+        (
+          peak,
+          i,
+        ) => (
+          <span
+            key={
+              i
+            }
+            className={cn(
+              'min-w-[2px] flex-1 rounded-full bg-current',
+              i <
+                filled
+                ? 'opacity-95'
+                : 'opacity-40',
+            )}
+            // Height is data, not design: a token cannot express "this bar is
+            // 0.62 loud". Floored at 12% so silence is still a visible line
+            // rather than a gap the eye reads as the end of the clip.
+            style={{
+              height: `${Math.max(12, Math.round(peak * 100))}%`,
+            }}
+          />
+        ),
+      )}
     </div>
   );
 }

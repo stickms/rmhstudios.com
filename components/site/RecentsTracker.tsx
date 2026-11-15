@@ -10,21 +10,45 @@ import { matchCatalogRoute } from '@/lib/games/route-match';
 import { recordRecent } from '@/hooks/useRecents';
 
 export function RecentsTracker() {
-  const pathname = useLocation({ select: (l) => l.pathname });
+  const pathname =
+    useLocation(
+      {
+        select:
+          (
+            l,
+          ) =>
+            l.pathname,
+      },
+    );
 
   useEffect(() => {
-    if (!pathname) return;
-    const match = matchCatalogRoute(pathname);
-    if (match) {
-      recordRecent({
-        href: match.href,
-        title: match.title,
-        gradient: match.gradient,
-        image: match.image,
-        kind: match.kind,
-      });
+    if (
+      !pathname
+    )
+      return;
+    const match =
+      matchCatalogRoute(
+        pathname,
+      );
+    if (
+      match
+    ) {
+      recordRecent(
+        {
+          href: match.href,
+          title:
+            match.title,
+          gradient:
+            match.gradient,
+          image:
+            match.image,
+          kind: match.kind,
+        },
+      );
     }
-  }, [pathname]);
+  }, [
+    pathname,
+  ]);
 
   return null;
 }

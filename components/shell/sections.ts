@@ -10,75 +10,185 @@
  * Client-safe and free of React: `href` is a function of the signed-in handle because "You" is the viewer's own page.
  */
 
-export type SectionId = 'front' | 'explore' | 'games' | 'inbox' | 'you';
+export type SectionId =
+  | 'front'
+  | 'explore'
+  | 'games'
+  | 'inbox'
+  | 'you';
 
 export interface Section {
   id: SectionId;
   /** Where the section lands. `viewerPath` is `/u/<handle>` for a signed-in viewer, otherwise null. */
-  href: (viewerPath: string | null) => string;
+  href: (
+    viewerPath:
+      | string
+      | null,
+  ) => string;
   /** Paths (and their descendants) that make this section the current one. `/` matches only itself. */
   match: string[];
 }
 
-export const SECTIONS: readonly Section[] = [
-  { id: 'front', href: () => '/', match: ['/'] },
-  {
-    id: 'explore',
-    href: () => '/explore',
-    match: ['/explore', '/search', '/tag'],
-  },
-  {
-    id: 'games',
-    href: () => '/games',
-    match: ['/games', '/apps'],
-  },
-  {
-    id: 'inbox',
-    href: () => '/messages',
-    match: ['/messages', '/notifications'],
-  },
-  {
-    id: 'you',
-    href: (viewerPath) => viewerPath ?? '/login',
-    match: ['/u', '/settings', '/profile', '/login'],
-  },
-] as const;
+export const SECTIONS: readonly Section[] =
+  [
+    {
+      id: 'front',
+      href: () =>
+        '/',
+      match:
+        [
+          '/',
+        ],
+    },
+    {
+      id: 'explore',
+      href: () =>
+        '/explore',
+      match:
+        [
+          '/explore',
+          '/search',
+          '/tag',
+        ],
+    },
+    {
+      id: 'games',
+      href: () =>
+        '/games',
+      match:
+        [
+          '/games',
+          '/apps',
+        ],
+    },
+    {
+      id: 'inbox',
+      href: () =>
+        '/messages',
+      match:
+        [
+          '/messages',
+          '/notifications',
+        ],
+    },
+    {
+      id: 'you',
+      href: (
+        viewerPath,
+      ) =>
+        viewerPath ??
+        '/login',
+      match:
+        [
+          '/u',
+          '/settings',
+          '/profile',
+          '/login',
+        ],
+    },
+  ] as const;
 
 /** The sections the desktop sidebar lists as words: all but "You", which is the account row at its foot. */
-export const SIDEBAR_SECTIONS: readonly Section[] = SECTIONS.filter((section) => section.id !== 'you');
+export const SIDEBAR_SECTIONS: readonly Section[] =
+  SECTIONS.filter(
+    (
+      section,
+    ) =>
+      section.id !==
+      'you',
+  );
 
-const matches = (pathname: string, base: string) =>
-  base === '/' ? pathname === '/' : pathname === base || pathname.startsWith(`${base}/`);
+const matches =
+  (
+    pathname: string,
+    base: string,
+  ) =>
+    base ===
+    '/'
+      ? pathname ===
+        '/'
+      : pathname ===
+          base ||
+        pathname.startsWith(
+          `${base}/`,
+        );
 
 /** The section `pathname` belongs to, or null when it belongs to none of the five. */
-export function currentSection(pathname: string): SectionId | null {
-  for (const s of SECTIONS) if (s.match.some((m) => matches(pathname, m))) return s.id;
+export function currentSection(
+  pathname: string,
+): SectionId | null {
+  for (const s of SECTIONS)
+    if (
+      s.match.some(
+        (
+          m,
+        ) =>
+          matches(
+            pathname,
+            m,
+          ),
+      )
+    )
+      return s.id;
   return null;
 }
 
 /** The path of the viewer's own profile, or null when signed out. */
 export function viewerPathFor(
-  user: { id: string; handle?: string | null } | null | undefined,
-): string | null {
-  return user ? `/u/${user.handle || user.id}` : null;
+  user:
+    | {
+        id: string;
+        handle?:
+          | string
+          | null;
+      }
+    | null
+    | undefined,
+):
+  | string
+  | null {
+  return user
+    ? `/u/${user.handle || user.id}`
+    : null;
 }
 
 /** Whether `pathname` is the viewer's own profile or a page under it (their posts), given {@link viewerPathFor}. */
-export function isViewerPath(pathname: string, viewerPath: string | null): boolean {
-  return viewerPath !== null && matches(pathname, viewerPath);
+export function isViewerPath(
+  pathname: string,
+  viewerPath:
+    | string
+    | null,
+): boolean {
+  return (
+    viewerPath !==
+      null &&
+    matches(
+      pathname,
+      viewerPath,
+    )
+  );
 }
 
 /**
  * Where "Write a post" goes: `/share` opens the composer with an empty draft. Typed `string` because that route's search
  * params (title, text, url) are all optional in practice but required by its generated type.
  */
-export const WRITE_HREF: string = '/share';
+export const WRITE_HREF: string =
+  '/share';
 
 /**
  * Whether the page at `pathname` has an ink primary of its own (R4: one per view). On the front page that is Post (or
  * Sign in), and on a post it is Reply (or Sign in), so the sidebar's "Write a post" steps down to the plain button there
  * and stays the shell's primary everywhere else.
  */
-export function pageOwnsPrimary(pathname: string): boolean {
-  return pathname === '/' || /^\/u\/[^/]+\/post\/[^/]+\/?$/.test(pathname);
+export function pageOwnsPrimary(
+  pathname: string,
+): boolean {
+  return (
+    pathname ===
+      '/' ||
+    /^\/u\/[^/]+\/post\/[^/]+\/?$/.test(
+      pathname,
+    )
+  );
 }

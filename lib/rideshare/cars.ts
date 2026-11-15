@@ -129,167 +129,711 @@ export interface CarBodySpec {
    `halfWidth` is how far it bulges. The nose and tail stations close the surface
    (halfWidth 0), which is what makes the loft a solid rather than a tube. */
 
-export const CAR_BODIES: CarBodySpec[] = [
-  {
-    id: 'RMH_X',
-    length: 4.5,
-    accent: 0.18,
-    sections: [
-      { t: 0.0, halfWidth: 0.0, top: 0.61, floor: 0.55, round: 3.2, crown: 0.05 },
-      { t: 0.09, halfWidth: 0.62, top: 0.86, floor: 0.28, round: 3.6, crown: 0.08 },
-      { t: 0.24, halfWidth: 0.86, top: 1.02, floor: 0.24, round: 4.0, crown: 0.14 },
-      { t: 0.38, halfWidth: 0.9, top: 1.42, floor: 0.24, round: 3.4, crown: 0.3 },
-      { t: 0.55, halfWidth: 0.9, top: 1.5, floor: 0.24, round: 3.2, crown: 0.32 },
-      { t: 0.72, halfWidth: 0.88, top: 1.38, floor: 0.24, round: 3.6, crown: 0.28 },
-      { t: 0.88, halfWidth: 0.78, top: 1.06, floor: 0.28, round: 4.0, crown: 0.16 },
-      { t: 0.97, halfWidth: 0.5, top: 0.92, floor: 0.44, round: 3.4, crown: 0.08 },
-      { t: 1.0, halfWidth: 0.0, top: 0.7, floor: 0.64, round: 3.0, crown: 0.05 },
-    ],
-    axles: [
-      { t: 0.19, halfTrack: 0.78, radius: 0.32 },
-      { t: 0.82, halfTrack: 0.78, radius: 0.32 },
-    ],
-  },
-  {
-    id: 'RMH_BIKE',
-    length: 1.9,
-    accent: 0.34,
-    // Read the sections as the frame itself rather than as a body panel: the
-    // hull starts at the bar ends, drops down the stem, runs low along the deck
-    // between the wheels, and climbs again into the saddle. A lofted surface is
-    // one closed tube, so it cannot draw the open triangle of a real frame —
-    // this is the shape that IS one tube and still reads as something you ride.
-    sections: [
-      { t: 0.0, halfWidth: 0.0, top: 1.05, floor: 0.99, round: 2.0, crown: 0.0 },
-      { t: 0.07, halfWidth: 0.15, top: 1.08, floor: 0.74, round: 2.2, crown: 0.0 },
-      { t: 0.16, halfWidth: 0.1, top: 0.94, floor: 0.56, round: 2.4, crown: 0.0 },
-      { t: 0.34, halfWidth: 0.11, top: 0.56, floor: 0.32, round: 2.6, crown: 0.0 },
-      { t: 0.52, halfWidth: 0.13, top: 0.54, floor: 0.3, round: 2.6, crown: 0.0 },
-      { t: 0.68, halfWidth: 0.14, top: 0.74, floor: 0.34, round: 2.4, crown: 0.0 },
-      { t: 0.8, halfWidth: 0.17, top: 0.96, floor: 0.46, round: 2.2, crown: 0.0 },
-      { t: 0.92, halfWidth: 0.14, top: 0.94, floor: 0.7, round: 2.2, crown: 0.0 },
-      { t: 1.0, halfWidth: 0.0, top: 0.9, floor: 0.84, round: 2.0, crown: 0.0 },
-    ],
-    axles: [
-      { t: 0.03, halfTrack: 0, radius: 0.34 },
-      { t: 0.97, halfTrack: 0, radius: 0.34 },
-    ],
-  },
-  {
-    id: 'RMH_XL',
-    length: 5.3,
-    accent: 0.2,
-    sections: [
-      { t: 0.0, halfWidth: 0.0, top: 0.74, floor: 0.68, round: 4.0, crown: 0.05 },
-      { t: 0.07, halfWidth: 0.72, top: 1.06, floor: 0.34, round: 4.4, crown: 0.08 },
-      { t: 0.18, halfWidth: 0.98, top: 1.28, floor: 0.3, round: 5.0, crown: 0.1 },
-      { t: 0.3, halfWidth: 1.02, top: 1.86, floor: 0.3, round: 4.6, crown: 0.14 },
-      { t: 0.5, halfWidth: 1.04, top: 1.94, floor: 0.3, round: 5.2, crown: 0.12 },
-      { t: 0.72, halfWidth: 1.04, top: 1.92, floor: 0.3, round: 5.4, crown: 0.12 },
-      { t: 0.9, halfWidth: 1.0, top: 1.86, floor: 0.32, round: 5.6, crown: 0.12 },
-      { t: 0.98, halfWidth: 0.74, top: 1.7, floor: 0.42, round: 4.8, crown: 0.08 },
-      { t: 1.0, halfWidth: 0.0, top: 1.03, floor: 0.97, round: 4.0, crown: 0.05 },
-    ],
-    axles: [
-      { t: 0.16, halfTrack: 0.88, radius: 0.38 },
-      { t: 0.85, halfTrack: 0.88, radius: 0.38 },
-    ],
-  },
-  {
-    id: 'RMH_COMFORT',
-    length: 4.9,
-    accent: 0.24,
-    sections: [
-      { t: 0.0, halfWidth: 0.0, top: 0.58, floor: 0.52, round: 3.4, crown: 0.05 },
-      { t: 0.08, halfWidth: 0.66, top: 0.82, floor: 0.26, round: 3.8, crown: 0.08 },
-      { t: 0.22, halfWidth: 0.92, top: 0.96, floor: 0.22, round: 4.2, crown: 0.14 },
-      { t: 0.36, halfWidth: 0.94, top: 1.36, floor: 0.22, round: 3.6, crown: 0.32 },
-      { t: 0.54, halfWidth: 0.94, top: 1.44, floor: 0.22, round: 3.4, crown: 0.34 },
-      { t: 0.7, halfWidth: 0.92, top: 1.34, floor: 0.22, round: 3.8, crown: 0.3 },
-      { t: 0.84, halfWidth: 0.88, top: 1.0, floor: 0.26, round: 4.4, crown: 0.16 },
-      { t: 0.97, halfWidth: 0.62, top: 0.94, floor: 0.42, round: 3.8, crown: 0.08 },
-      { t: 1.0, halfWidth: 0.0, top: 0.7, floor: 0.64, round: 3.2, crown: 0.05 },
-    ],
-    axles: [
-      { t: 0.18, halfTrack: 0.8, radius: 0.34 },
-      { t: 0.84, halfTrack: 0.8, radius: 0.34 },
-    ],
-  },
-  {
-    id: 'RMH_GREEN',
-    length: 4.6,
-    accent: 0.3,
-    sections: [
-      { t: 0.0, halfWidth: 0.0, top: 0.67, floor: 0.61, round: 3.0, crown: 0.06 },
-      { t: 0.06, halfWidth: 0.7, top: 1.06, floor: 0.26, round: 3.4, crown: 0.1 },
-      { t: 0.16, halfWidth: 0.9, top: 1.32, floor: 0.22, round: 3.2, crown: 0.18 },
-      { t: 0.32, halfWidth: 0.94, top: 1.52, floor: 0.22, round: 3.0, crown: 0.26 },
-      { t: 0.52, halfWidth: 0.94, top: 1.56, floor: 0.22, round: 3.0, crown: 0.26 },
-      { t: 0.72, halfWidth: 0.92, top: 1.48, floor: 0.22, round: 3.2, crown: 0.24 },
-      { t: 0.9, halfWidth: 0.84, top: 1.22, floor: 0.26, round: 3.6, crown: 0.16 },
-      { t: 0.98, halfWidth: 0.56, top: 1.02, floor: 0.42, round: 3.2, crown: 0.08 },
-      { t: 1.0, halfWidth: 0.0, top: 0.73, floor: 0.67, round: 2.8, crown: 0.05 },
-    ],
-    axles: [
-      { t: 0.14, halfTrack: 0.8, radius: 0.34 },
-      { t: 0.87, halfTrack: 0.8, radius: 0.34 },
-    ],
-  },
-  {
-    id: 'RMH_BLACK',
-    length: 5.2,
-    accent: 0.42,
-    sections: [
-      { t: 0.0, halfWidth: 0.0, top: 0.53, floor: 0.47, round: 3.6, crown: 0.05 },
-      { t: 0.07, halfWidth: 0.7, top: 0.76, floor: 0.22, round: 4.2, crown: 0.08 },
-      { t: 0.24, halfWidth: 0.96, top: 0.9, floor: 0.18, round: 4.8, crown: 0.14 },
-      { t: 0.4, halfWidth: 0.98, top: 1.3, floor: 0.18, round: 3.8, crown: 0.34 },
-      { t: 0.56, halfWidth: 0.98, top: 1.38, floor: 0.18, round: 3.6, crown: 0.36 },
-      { t: 0.72, halfWidth: 0.96, top: 1.26, floor: 0.18, round: 4.2, crown: 0.32 },
-      { t: 0.88, halfWidth: 0.9, top: 0.94, floor: 0.22, round: 4.8, crown: 0.16 },
-      { t: 0.98, halfWidth: 0.6, top: 0.88, floor: 0.4, round: 4.0, crown: 0.08 },
-      { t: 1.0, halfWidth: 0.0, top: 0.66, floor: 0.6, round: 3.4, crown: 0.05 },
-    ],
-    axles: [
-      { t: 0.2, halfTrack: 0.82, radius: 0.36 },
-      { t: 0.83, halfTrack: 0.82, radius: 0.36 },
-    ],
-  },
-  {
-    id: 'RMH_HELI',
-    length: 6.4,
-    accent: 0.5,
-    // A pod and a boom, which is why the halfWidth collapses so hard after the
-    // cabin: everything from t = 0.5 back is a 45 cm tube with a fin on the end.
-    sections: [
-      { t: 0.0, halfWidth: 0.0, top: 1.15, floor: 1.09, round: 2.0, crown: 0.05 },
-      { t: 0.05, halfWidth: 0.52, top: 1.5, floor: 0.6, round: 2.2, crown: 0.1 },
-      { t: 0.16, halfWidth: 0.86, top: 1.94, floor: 0.5, round: 2.4, crown: 0.18 },
-      { t: 0.3, halfWidth: 0.9, top: 2.08, floor: 0.52, round: 2.6, crown: 0.2 },
-      { t: 0.44, halfWidth: 0.72, top: 2.0, floor: 0.86, round: 2.6, crown: 0.18 },
-      { t: 0.56, halfWidth: 0.3, top: 1.86, floor: 1.42, round: 2.4, crown: 0.1 },
-      { t: 0.72, halfWidth: 0.22, top: 1.78, floor: 1.48, round: 2.2, crown: 0.06 },
-      { t: 0.88, halfWidth: 0.2, top: 1.76, floor: 1.5, round: 2.2, crown: 0.06 },
-      { t: 0.95, halfWidth: 0.16, top: 2.12, floor: 1.54, round: 2.2, crown: 0.05 },
-      // The loft closes at the TOP of the fin, so the boom's underside sweeps up
-      // to meet it — a tail that ends in a blade rather than a stump.
-      { t: 1.0, halfWidth: 0.0, top: 2.15, floor: 2.09, round: 2.0, crown: 0.05 },
-    ],
-    // Skids, not wheels: a pair of narrow rollers under the pod that read as
-    // skid feet, since an "axle" of zero radius would draw nothing at all.
-    axles: [
-      { t: 0.18, halfTrack: 0.8, radius: 0.19 },
-      { t: 0.42, halfTrack: 0.8, radius: 0.19 },
-    ],
-    rotor: { y: 2.62, t: 0.35, radius: 2.45, blades: 5 },
-  },
-];
+export const CAR_BODIES: CarBodySpec[] =
+  [
+    {
+      id: 'RMH_X',
+      length: 4.5,
+      accent: 0.18,
+      sections:
+        [
+          {
+            t: 0.0,
+            halfWidth: 0.0,
+            top: 0.61,
+            floor: 0.55,
+            round: 3.2,
+            crown: 0.05,
+          },
+          {
+            t: 0.09,
+            halfWidth: 0.62,
+            top: 0.86,
+            floor: 0.28,
+            round: 3.6,
+            crown: 0.08,
+          },
+          {
+            t: 0.24,
+            halfWidth: 0.86,
+            top: 1.02,
+            floor: 0.24,
+            round: 4.0,
+            crown: 0.14,
+          },
+          {
+            t: 0.38,
+            halfWidth: 0.9,
+            top: 1.42,
+            floor: 0.24,
+            round: 3.4,
+            crown: 0.3,
+          },
+          {
+            t: 0.55,
+            halfWidth: 0.9,
+            top: 1.5,
+            floor: 0.24,
+            round: 3.2,
+            crown: 0.32,
+          },
+          {
+            t: 0.72,
+            halfWidth: 0.88,
+            top: 1.38,
+            floor: 0.24,
+            round: 3.6,
+            crown: 0.28,
+          },
+          {
+            t: 0.88,
+            halfWidth: 0.78,
+            top: 1.06,
+            floor: 0.28,
+            round: 4.0,
+            crown: 0.16,
+          },
+          {
+            t: 0.97,
+            halfWidth: 0.5,
+            top: 0.92,
+            floor: 0.44,
+            round: 3.4,
+            crown: 0.08,
+          },
+          {
+            t: 1.0,
+            halfWidth: 0.0,
+            top: 0.7,
+            floor: 0.64,
+            round: 3.0,
+            crown: 0.05,
+          },
+        ],
+      axles:
+        [
+          {
+            t: 0.19,
+            halfTrack: 0.78,
+            radius: 0.32,
+          },
+          {
+            t: 0.82,
+            halfTrack: 0.78,
+            radius: 0.32,
+          },
+        ],
+    },
+    {
+      id: 'RMH_BIKE',
+      length: 1.9,
+      accent: 0.34,
+      // Read the sections as the frame itself rather than as a body panel: the
+      // hull starts at the bar ends, drops down the stem, runs low along the deck
+      // between the wheels, and climbs again into the saddle. A lofted surface is
+      // one closed tube, so it cannot draw the open triangle of a real frame —
+      // this is the shape that IS one tube and still reads as something you ride.
+      sections:
+        [
+          {
+            t: 0.0,
+            halfWidth: 0.0,
+            top: 1.05,
+            floor: 0.99,
+            round: 2.0,
+            crown: 0.0,
+          },
+          {
+            t: 0.07,
+            halfWidth: 0.15,
+            top: 1.08,
+            floor: 0.74,
+            round: 2.2,
+            crown: 0.0,
+          },
+          {
+            t: 0.16,
+            halfWidth: 0.1,
+            top: 0.94,
+            floor: 0.56,
+            round: 2.4,
+            crown: 0.0,
+          },
+          {
+            t: 0.34,
+            halfWidth: 0.11,
+            top: 0.56,
+            floor: 0.32,
+            round: 2.6,
+            crown: 0.0,
+          },
+          {
+            t: 0.52,
+            halfWidth: 0.13,
+            top: 0.54,
+            floor: 0.3,
+            round: 2.6,
+            crown: 0.0,
+          },
+          {
+            t: 0.68,
+            halfWidth: 0.14,
+            top: 0.74,
+            floor: 0.34,
+            round: 2.4,
+            crown: 0.0,
+          },
+          {
+            t: 0.8,
+            halfWidth: 0.17,
+            top: 0.96,
+            floor: 0.46,
+            round: 2.2,
+            crown: 0.0,
+          },
+          {
+            t: 0.92,
+            halfWidth: 0.14,
+            top: 0.94,
+            floor: 0.7,
+            round: 2.2,
+            crown: 0.0,
+          },
+          {
+            t: 1.0,
+            halfWidth: 0.0,
+            top: 0.9,
+            floor: 0.84,
+            round: 2.0,
+            crown: 0.0,
+          },
+        ],
+      axles:
+        [
+          {
+            t: 0.03,
+            halfTrack: 0,
+            radius: 0.34,
+          },
+          {
+            t: 0.97,
+            halfTrack: 0,
+            radius: 0.34,
+          },
+        ],
+    },
+    {
+      id: 'RMH_XL',
+      length: 5.3,
+      accent: 0.2,
+      sections:
+        [
+          {
+            t: 0.0,
+            halfWidth: 0.0,
+            top: 0.74,
+            floor: 0.68,
+            round: 4.0,
+            crown: 0.05,
+          },
+          {
+            t: 0.07,
+            halfWidth: 0.72,
+            top: 1.06,
+            floor: 0.34,
+            round: 4.4,
+            crown: 0.08,
+          },
+          {
+            t: 0.18,
+            halfWidth: 0.98,
+            top: 1.28,
+            floor: 0.3,
+            round: 5.0,
+            crown: 0.1,
+          },
+          {
+            t: 0.3,
+            halfWidth: 1.02,
+            top: 1.86,
+            floor: 0.3,
+            round: 4.6,
+            crown: 0.14,
+          },
+          {
+            t: 0.5,
+            halfWidth: 1.04,
+            top: 1.94,
+            floor: 0.3,
+            round: 5.2,
+            crown: 0.12,
+          },
+          {
+            t: 0.72,
+            halfWidth: 1.04,
+            top: 1.92,
+            floor: 0.3,
+            round: 5.4,
+            crown: 0.12,
+          },
+          {
+            t: 0.9,
+            halfWidth: 1.0,
+            top: 1.86,
+            floor: 0.32,
+            round: 5.6,
+            crown: 0.12,
+          },
+          {
+            t: 0.98,
+            halfWidth: 0.74,
+            top: 1.7,
+            floor: 0.42,
+            round: 4.8,
+            crown: 0.08,
+          },
+          {
+            t: 1.0,
+            halfWidth: 0.0,
+            top: 1.03,
+            floor: 0.97,
+            round: 4.0,
+            crown: 0.05,
+          },
+        ],
+      axles:
+        [
+          {
+            t: 0.16,
+            halfTrack: 0.88,
+            radius: 0.38,
+          },
+          {
+            t: 0.85,
+            halfTrack: 0.88,
+            radius: 0.38,
+          },
+        ],
+    },
+    {
+      id: 'RMH_COMFORT',
+      length: 4.9,
+      accent: 0.24,
+      sections:
+        [
+          {
+            t: 0.0,
+            halfWidth: 0.0,
+            top: 0.58,
+            floor: 0.52,
+            round: 3.4,
+            crown: 0.05,
+          },
+          {
+            t: 0.08,
+            halfWidth: 0.66,
+            top: 0.82,
+            floor: 0.26,
+            round: 3.8,
+            crown: 0.08,
+          },
+          {
+            t: 0.22,
+            halfWidth: 0.92,
+            top: 0.96,
+            floor: 0.22,
+            round: 4.2,
+            crown: 0.14,
+          },
+          {
+            t: 0.36,
+            halfWidth: 0.94,
+            top: 1.36,
+            floor: 0.22,
+            round: 3.6,
+            crown: 0.32,
+          },
+          {
+            t: 0.54,
+            halfWidth: 0.94,
+            top: 1.44,
+            floor: 0.22,
+            round: 3.4,
+            crown: 0.34,
+          },
+          {
+            t: 0.7,
+            halfWidth: 0.92,
+            top: 1.34,
+            floor: 0.22,
+            round: 3.8,
+            crown: 0.3,
+          },
+          {
+            t: 0.84,
+            halfWidth: 0.88,
+            top: 1.0,
+            floor: 0.26,
+            round: 4.4,
+            crown: 0.16,
+          },
+          {
+            t: 0.97,
+            halfWidth: 0.62,
+            top: 0.94,
+            floor: 0.42,
+            round: 3.8,
+            crown: 0.08,
+          },
+          {
+            t: 1.0,
+            halfWidth: 0.0,
+            top: 0.7,
+            floor: 0.64,
+            round: 3.2,
+            crown: 0.05,
+          },
+        ],
+      axles:
+        [
+          {
+            t: 0.18,
+            halfTrack: 0.8,
+            radius: 0.34,
+          },
+          {
+            t: 0.84,
+            halfTrack: 0.8,
+            radius: 0.34,
+          },
+        ],
+    },
+    {
+      id: 'RMH_GREEN',
+      length: 4.6,
+      accent: 0.3,
+      sections:
+        [
+          {
+            t: 0.0,
+            halfWidth: 0.0,
+            top: 0.67,
+            floor: 0.61,
+            round: 3.0,
+            crown: 0.06,
+          },
+          {
+            t: 0.06,
+            halfWidth: 0.7,
+            top: 1.06,
+            floor: 0.26,
+            round: 3.4,
+            crown: 0.1,
+          },
+          {
+            t: 0.16,
+            halfWidth: 0.9,
+            top: 1.32,
+            floor: 0.22,
+            round: 3.2,
+            crown: 0.18,
+          },
+          {
+            t: 0.32,
+            halfWidth: 0.94,
+            top: 1.52,
+            floor: 0.22,
+            round: 3.0,
+            crown: 0.26,
+          },
+          {
+            t: 0.52,
+            halfWidth: 0.94,
+            top: 1.56,
+            floor: 0.22,
+            round: 3.0,
+            crown: 0.26,
+          },
+          {
+            t: 0.72,
+            halfWidth: 0.92,
+            top: 1.48,
+            floor: 0.22,
+            round: 3.2,
+            crown: 0.24,
+          },
+          {
+            t: 0.9,
+            halfWidth: 0.84,
+            top: 1.22,
+            floor: 0.26,
+            round: 3.6,
+            crown: 0.16,
+          },
+          {
+            t: 0.98,
+            halfWidth: 0.56,
+            top: 1.02,
+            floor: 0.42,
+            round: 3.2,
+            crown: 0.08,
+          },
+          {
+            t: 1.0,
+            halfWidth: 0.0,
+            top: 0.73,
+            floor: 0.67,
+            round: 2.8,
+            crown: 0.05,
+          },
+        ],
+      axles:
+        [
+          {
+            t: 0.14,
+            halfTrack: 0.8,
+            radius: 0.34,
+          },
+          {
+            t: 0.87,
+            halfTrack: 0.8,
+            radius: 0.34,
+          },
+        ],
+    },
+    {
+      id: 'RMH_BLACK',
+      length: 5.2,
+      accent: 0.42,
+      sections:
+        [
+          {
+            t: 0.0,
+            halfWidth: 0.0,
+            top: 0.53,
+            floor: 0.47,
+            round: 3.6,
+            crown: 0.05,
+          },
+          {
+            t: 0.07,
+            halfWidth: 0.7,
+            top: 0.76,
+            floor: 0.22,
+            round: 4.2,
+            crown: 0.08,
+          },
+          {
+            t: 0.24,
+            halfWidth: 0.96,
+            top: 0.9,
+            floor: 0.18,
+            round: 4.8,
+            crown: 0.14,
+          },
+          {
+            t: 0.4,
+            halfWidth: 0.98,
+            top: 1.3,
+            floor: 0.18,
+            round: 3.8,
+            crown: 0.34,
+          },
+          {
+            t: 0.56,
+            halfWidth: 0.98,
+            top: 1.38,
+            floor: 0.18,
+            round: 3.6,
+            crown: 0.36,
+          },
+          {
+            t: 0.72,
+            halfWidth: 0.96,
+            top: 1.26,
+            floor: 0.18,
+            round: 4.2,
+            crown: 0.32,
+          },
+          {
+            t: 0.88,
+            halfWidth: 0.9,
+            top: 0.94,
+            floor: 0.22,
+            round: 4.8,
+            crown: 0.16,
+          },
+          {
+            t: 0.98,
+            halfWidth: 0.6,
+            top: 0.88,
+            floor: 0.4,
+            round: 4.0,
+            crown: 0.08,
+          },
+          {
+            t: 1.0,
+            halfWidth: 0.0,
+            top: 0.66,
+            floor: 0.6,
+            round: 3.4,
+            crown: 0.05,
+          },
+        ],
+      axles:
+        [
+          {
+            t: 0.2,
+            halfTrack: 0.82,
+            radius: 0.36,
+          },
+          {
+            t: 0.83,
+            halfTrack: 0.82,
+            radius: 0.36,
+          },
+        ],
+    },
+    {
+      id: 'RMH_HELI',
+      length: 6.4,
+      accent: 0.5,
+      // A pod and a boom, which is why the halfWidth collapses so hard after the
+      // cabin: everything from t = 0.5 back is a 45 cm tube with a fin on the end.
+      sections:
+        [
+          {
+            t: 0.0,
+            halfWidth: 0.0,
+            top: 1.15,
+            floor: 1.09,
+            round: 2.0,
+            crown: 0.05,
+          },
+          {
+            t: 0.05,
+            halfWidth: 0.52,
+            top: 1.5,
+            floor: 0.6,
+            round: 2.2,
+            crown: 0.1,
+          },
+          {
+            t: 0.16,
+            halfWidth: 0.86,
+            top: 1.94,
+            floor: 0.5,
+            round: 2.4,
+            crown: 0.18,
+          },
+          {
+            t: 0.3,
+            halfWidth: 0.9,
+            top: 2.08,
+            floor: 0.52,
+            round: 2.6,
+            crown: 0.2,
+          },
+          {
+            t: 0.44,
+            halfWidth: 0.72,
+            top: 2.0,
+            floor: 0.86,
+            round: 2.6,
+            crown: 0.18,
+          },
+          {
+            t: 0.56,
+            halfWidth: 0.3,
+            top: 1.86,
+            floor: 1.42,
+            round: 2.4,
+            crown: 0.1,
+          },
+          {
+            t: 0.72,
+            halfWidth: 0.22,
+            top: 1.78,
+            floor: 1.48,
+            round: 2.2,
+            crown: 0.06,
+          },
+          {
+            t: 0.88,
+            halfWidth: 0.2,
+            top: 1.76,
+            floor: 1.5,
+            round: 2.2,
+            crown: 0.06,
+          },
+          {
+            t: 0.95,
+            halfWidth: 0.16,
+            top: 2.12,
+            floor: 1.54,
+            round: 2.2,
+            crown: 0.05,
+          },
+          // The loft closes at the TOP of the fin, so the boom's underside sweeps up
+          // to meet it — a tail that ends in a blade rather than a stump.
+          {
+            t: 1.0,
+            halfWidth: 0.0,
+            top: 2.15,
+            floor: 2.09,
+            round: 2.0,
+            crown: 0.05,
+          },
+        ],
+      // Skids, not wheels: a pair of narrow rollers under the pod that read as
+      // skid feet, since an "axle" of zero radius would draw nothing at all.
+      axles:
+        [
+          {
+            t: 0.18,
+            halfTrack: 0.8,
+            radius: 0.19,
+          },
+          {
+            t: 0.42,
+            halfTrack: 0.8,
+            radius: 0.19,
+          },
+        ],
+      rotor:
+        {
+          y: 2.62,
+          t: 0.35,
+          radius: 2.45,
+          blades: 5,
+        },
+    },
+  ];
 
-const BODY_BY_ID = new Map<RideClassId, CarBodySpec>(CAR_BODIES.map((b) => [b.id, b]));
+const BODY_BY_ID =
+  new Map<
+    RideClassId,
+    CarBodySpec
+  >(
+    CAR_BODIES.map(
+      (
+        b,
+      ) => [
+        b.id,
+        b,
+      ],
+    ),
+  );
 
 /** The body for a ride class, or `undefined` if that class has none. */
-export function getCarBody(id: string): CarBodySpec | undefined {
-  return BODY_BY_ID.get(id as RideClassId);
+export function getCarBody(
+  id: string,
+):
+  | CarBodySpec
+  | undefined {
+  return BODY_BY_ID.get(
+    id as RideClassId,
+  );
 }
 
 /**
@@ -297,7 +841,18 @@ export function getCarBody(id: string): CarBodySpec | undefined {
  *
  * Used for the stage's ground ring, which is the footprint the family stands on.
  */
-export const FLEET_LENGTH = CAR_BODIES.reduce((m, b) => Math.max(m, b.length), 0);
+export const FLEET_LENGTH =
+  CAR_BODIES.reduce(
+    (
+      m,
+      b,
+    ) =>
+      Math.max(
+        m,
+        b.length,
+      ),
+    0,
+  );
 
 /**
  * The furthest any body reaches from the turntable's axis, in metres — the
@@ -307,23 +862,57 @@ export const FLEET_LENGTH = CAR_BODIES.reduce((m, b) => Math.max(m, b.length), 0
  * keeps the family to scale: pick RMH-Bike after RMH-Heli and the bike is
  * genuinely tiny on screen, because it is.
  */
-export const FLEET_RADIUS = CAR_BODIES.reduce(
-  (m, b) =>
-    Math.max(
+export const FLEET_RADIUS =
+  CAR_BODIES.reduce(
+    (
       m,
-      b.length / 2,
-      b.rotor ? Math.abs(b.length * (0.5 - b.rotor.t)) + b.rotor.radius : 0,
-    ),
-  0,
-);
+      b,
+    ) =>
+      Math.max(
+        m,
+        b.length /
+          2,
+        b.rotor
+          ? Math.abs(
+              b.length *
+                (0.5 -
+                  b
+                    .rotor
+                    .t),
+            ) +
+              b
+                .rotor
+                .radius
+          : 0,
+      ),
+    0,
+  );
 
 /** The tallest point in the fleet above the ground, in metres — the rotor mast. */
-export const FLEET_HEIGHT = CAR_BODIES.reduce(
-  (m, b) =>
-    Math.max(
+export const FLEET_HEIGHT =
+  CAR_BODIES.reduce(
+    (
       m,
-      b.rotor ? b.rotor.y : 0,
-      b.sections.reduce((h, s) => Math.max(h, s.top), 0),
-    ),
-  0,
-);
+      b,
+    ) =>
+      Math.max(
+        m,
+        b.rotor
+          ? b
+              .rotor
+              .y
+          : 0,
+        b.sections.reduce(
+          (
+            h,
+            s,
+          ) =>
+            Math.max(
+              h,
+              s.top,
+            ),
+          0,
+        ),
+      ),
+    0,
+  );

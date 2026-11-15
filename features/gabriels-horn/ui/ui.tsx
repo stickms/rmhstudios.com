@@ -8,23 +8,39 @@
  * appearances come out right without any screen knowing they exist.
  */
 
-import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
+import type {
+  ButtonHTMLAttributes,
+  ReactNode,
+  Ref,
+} from 'react';
 import { cn } from '@/lib/utils';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variant =
+  | 'primary'
+  | 'secondary'
+  | 'ghost'
+  | 'danger';
 
-const VARIANT: Record<Variant, string> = {
-  primary: 'bg-app-accent text-app-accent-fg hover:bg-app-accent-hover',
-  secondary:
-    'bg-app-surface text-app-text border border-app-border hover:bg-app-surface-hover',
-  ghost: 'text-app-text-muted hover:bg-app-surface-hover hover:text-app-text',
-  danger:
-    'bg-transparent text-app-danger border border-app-danger hover:bg-app-danger-dim',
-};
+const VARIANT: Record<
+  Variant,
+  string
+> =
+  {
+    primary:
+      'bg-app-accent text-app-accent-fg hover:bg-app-accent-hover',
+    secondary:
+      'bg-app-surface text-app-text border border-app-border hover:bg-app-surface-hover',
+    ghost:
+      'text-app-text-muted hover:bg-app-surface-hover hover:text-app-text',
+    danger:
+      'bg-transparent text-app-danger border border-app-danger hover:bg-app-danger-dim',
+  };
 
 export interface HornButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
-  size?: 'sm' | 'md';
+  size?:
+    | 'sm'
+    | 'md';
   /** React 19 passes refs as an ordinary prop — no `forwardRef` wrapper needed. */
   ref?: Ref<HTMLButtonElement>;
 }
@@ -38,8 +54,12 @@ export function HornButton({
 }: HornButtonProps) {
   return (
     <button
-      type={type}
-      data-horn-variant={variant}
+      type={
+        type
+      }
+      data-horn-variant={
+        variant
+      }
       className={cn(
         'inline-flex items-center justify-center gap-2 rounded-app-sm font-semibold',
         'transition-colors disabled:cursor-not-allowed disabled:opacity-45',
@@ -47,8 +67,13 @@ export function HornButton({
         // phone, mid-round, under a clock. `sm` is used for icon-only chrome
         // and inline row actions, and padding on a 12px glyph gives a ~26px
         // target — small enough to miss twice while a phase timer runs.
-        size === 'sm' ? 'min-h-9 px-2.5 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:min-w-11' : 'min-h-11 px-4 py-2.5 text-sm',
-        VARIANT[variant],
+        size ===
+          'sm'
+          ? 'min-h-9 px-2.5 py-1.5 text-xs pointer-coarse:min-h-11 pointer-coarse:min-w-11'
+          : 'min-h-11 px-4 py-2.5 text-sm',
+        VARIANT[
+          variant
+        ],
         className,
       )}
       {...rest}
@@ -73,12 +98,28 @@ export function Panel({
 }: {
   children: ReactNode;
   className?: string;
-  tier?: 'pane' | 'fill';
-  as?: 'section' | 'div' | 'aside';
+  tier?:
+    | 'pane'
+    | 'fill';
+  as?:
+    | 'section'
+    | 'div'
+    | 'aside';
 }) {
   return (
-    <Tag className={cn(tier === 'fill' ? 'gh-fill' : 'gh-pane', 'p-3.5', className)}>
-      {children}
+    <Tag
+      className={cn(
+        tier ===
+          'fill'
+          ? 'gh-fill'
+          : 'gh-pane',
+        'p-3.5',
+        className,
+      )}
+    >
+      {
+        children
+      }
     </Tag>
   );
 }
@@ -95,19 +136,39 @@ export function SeatAvatar({
   className,
 }: {
   name: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   size?: number;
   className?: string;
 }) {
-  const initial = (name.trim()[0] ?? '?').toUpperCase();
+  const initial =
+    (
+      name.trim()[0] ??
+      '?'
+    ).toUpperCase();
   return avatarUrl ? (
     <img
-      src={avatarUrl}
+      src={
+        avatarUrl
+      }
       alt=""
-      width={size}
-      height={size}
-      className={cn('shrink-0 rounded-full object-cover', className)}
-      style={{ width: size, height: size }}
+      width={
+        size
+      }
+      height={
+        size
+      }
+      className={cn(
+        'shrink-0 rounded-full object-cover',
+        className,
+      )}
+      style={{
+        width:
+          size,
+        height:
+          size,
+      }}
     />
   ) : (
     <span
@@ -116,9 +177,21 @@ export function SeatAvatar({
         'grid shrink-0 place-items-center rounded-full bg-app-surface-active font-semibold text-app-text-muted',
         className,
       )}
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.42) }}
+      style={{
+        width:
+          size,
+        height:
+          size,
+        fontSize:
+          Math.round(
+            size *
+              0.42,
+          ),
+      }}
     >
-      {initial}
+      {
+        initial
+      }
     </span>
   );
 }

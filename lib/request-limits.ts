@@ -27,10 +27,16 @@ export class RequestTooLargeError extends Error {
   /** HTTP status callers should map this to. */
   readonly status = 413;
   readonly maxBytes: number;
-  constructor(maxBytes: number) {
-    super(`Request body exceeds the ${maxBytes}-byte limit.`);
-    this.name = 'RequestTooLargeError';
-    this.maxBytes = maxBytes;
+  constructor(
+    maxBytes: number,
+  ) {
+    super(
+      `Request body exceeds the ${maxBytes}-byte limit.`,
+    );
+    this.name =
+      'RequestTooLargeError';
+    this.maxBytes =
+      maxBytes;
   }
 }
 
@@ -39,32 +45,71 @@ export class RequestTooLargeError extends Error {
  * stream (so an oversize body is stopped mid-flight) and falls back to
  * `arrayBuffer()` with a post-hoc check only when no stream is exposed.
  */
-async function readBytesLimited(request: Request, maxBytes: number): Promise<Uint8Array> {
-  const body = request.body;
-  if (!body) {
+async function readBytesLimited(
+  request: Request,
+  maxBytes: number,
+): Promise<Uint8Array> {
+  const body =
+    request.body;
+  if (
+    !body
+  ) {
     // No readable stream on this runtime — buffer then check. The declared
     // Content-Length gate below already caught the honest oversize case; this
     // still bounds the dishonest one, just after the fact.
-    const buf = new Uint8Array(await request.arrayBuffer());
-    if (buf.byteLength > maxBytes) throw new RequestTooLargeError(maxBytes);
+    const buf =
+      new Uint8Array(
+        await request.arrayBuffer(),
+      );
+    if (
+      buf.byteLength >
+      maxBytes
+    )
+      throw new RequestTooLargeError(
+        maxBytes,
+      );
     return buf;
   }
 
-  const reader = body.getReader();
-  const chunks: Uint8Array[] = [];
+  const reader =
+    body.getReader();
+  const chunks: Uint8Array[] =
+    [];
   let total = 0;
   try {
     for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (!value) continue;
-      total += value.byteLength;
-      if (total > maxBytes) {
+      const {
+        done,
+        value,
+      } =
+        await reader.read();
+      if (
+        done
+      )
+        break;
+      if (
+        !value
+      )
+        continue;
+      total +=
+        value.byteLength;
+      if (
+        total >
+        maxBytes
+      ) {
         // Stop pulling more bytes immediately — don't buffer the rest.
-        await reader.cancel().catch(() => {});
-        throw new RequestTooLargeError(maxBytes);
+        await reader
+          .cancel()
+          .catch(
+            () => {},
+          );
+        throw new RequestTooLargeError(
+          maxBytes,
+        );
       }
-      chunks.push(value);
+      chunks.push(
+        value,
+      );
     }
   } finally {
     try {
@@ -74,12 +119,23 @@ async function readBytesLimited(request: Request, maxBytes: number): Promise<Uin
     }
   }
 
-  if (chunks.length === 1) return chunks[0];
-  const out = new Uint8Array(total);
+  if (
+    chunks.length ===
+    1
+  )
+    return chunks[0];
+  const out =
+    new Uint8Array(
+      total,
+    );
   let offset = 0;
   for (const chunk of chunks) {
-    out.set(chunk, offset);
-    offset += chunk.byteLength;
+    out.set(
+      chunk,
+      offset,
+    );
+    offset +=
+      chunk.byteLength;
   }
   return out;
 }
@@ -95,20 +151,49 @@ async function readBytesLimited(request: Request, maxBytes: number): Promise<Uin
  * the body isn't valid JSON. An empty body parses as an empty object, matching
  * the common `request.json().catch(() => ({}))` ergonomics callers rely on.
  */
-export async function readJsonLimited<T = unknown>(
+export async function readJsonLimited<
+  T =
+    unknown,
+>(
   request: Request,
   maxBytes: number = DEFAULT_JSON_LIMIT,
 ): Promise<T> {
   // 1. Fast path: an honest, oversize Content-Length is rejected without reading.
-  const declared = Number(request.headers.get('content-length'));
-  if (Number.isFinite(declared) && declared > maxBytes) {
-    throw new RequestTooLargeError(maxBytes);
+  const declared =
+    Number(
+      request.headers.get(
+        'content-length',
+      ),
+    );
+  if (
+    Number.isFinite(
+      declared,
+    ) &&
+    declared >
+      maxBytes
+  ) {
+    throw new RequestTooLargeError(
+      maxBytes,
+    );
   }
 
   // 2. Read the body with a hard byte ceiling (defends against a lying length).
-  const bytes = await readBytesLimited(request, maxBytes);
-  if (bytes.byteLength === 0) return {} as T;
+  const bytes =
+    await readBytesLimited(
+      request,
+      maxBytes,
+    );
+  if (
+    bytes.byteLength ===
+    0
+  )
+    return {} as T;
 
-  const text = new TextDecoder().decode(bytes);
-  return JSON.parse(text) as T;
+  const text =
+    new TextDecoder().decode(
+      bytes,
+    );
+  return JSON.parse(
+    text,
+  ) as T;
 }

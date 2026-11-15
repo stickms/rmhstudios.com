@@ -1,5 +1,8 @@
 import { useSyncExternalStore } from 'react';
-import { quantiseDisplayScale, readDisplayScale } from '@/lib/display-scale';
+import {
+  quantiseDisplayScale,
+  readDisplayScale,
+} from '@/lib/display-scale';
 
 /**
  * useDisplayScale — the live device-pixel scale of the page, zoom included.
@@ -19,39 +22,86 @@ import { quantiseDisplayScale, readDisplayScale } from '@/lib/display-scale';
  * hydration is quiet and the first client render corrects it.
  */
 export function useDisplayScale(): number {
-  return useSyncExternalStore(subscribe, getSnapshot, () => 1);
+  return useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    () =>
+      1,
+  );
 }
 
 function getSnapshot(): number {
-  return quantiseDisplayScale(readDisplayScale(window));
+  return quantiseDisplayScale(
+    readDisplayScale(
+      window,
+    ),
+  );
 }
 
-function subscribe(onChange: () => void): () => void {
-  let query: MediaQueryList | null = null;
+function subscribe(
+  onChange: () => void,
+): () => void {
+  let query: MediaQueryList | null =
+    null;
 
   // Re-arm at the new ratio, then report: one listener can only watch one ratio.
-  const onRatioChange = () => {
-    arm();
-    onChange();
-  };
+  const onRatioChange =
+    () => {
+      arm();
+      onChange();
+    };
 
-  const arm = () => {
-    query?.removeEventListener('change', onRatioChange);
-    const dpr = window.devicePixelRatio || 1;
-    query = window.matchMedia(`(resolution: ${dpr}dppx)`);
-    query.addEventListener('change', onRatioChange);
-  };
+  const arm =
+    () => {
+      query?.removeEventListener(
+        'change',
+        onRatioChange,
+      );
+      const dpr =
+        window.devicePixelRatio ||
+        1;
+      query =
+        window.matchMedia(
+          `(resolution: ${dpr}dppx)`,
+        );
+      query.addEventListener(
+        'change',
+        onRatioChange,
+      );
+    };
 
   arm();
-  window.addEventListener('resize', onChange);
-  const visual = window.visualViewport;
-  visual?.addEventListener('resize', onChange);
-  visual?.addEventListener('scroll', onChange);
+  window.addEventListener(
+    'resize',
+    onChange,
+  );
+  const visual =
+    window.visualViewport;
+  visual?.addEventListener(
+    'resize',
+    onChange,
+  );
+  visual?.addEventListener(
+    'scroll',
+    onChange,
+  );
 
   return () => {
-    query?.removeEventListener('change', onRatioChange);
-    window.removeEventListener('resize', onChange);
-    visual?.removeEventListener('resize', onChange);
-    visual?.removeEventListener('scroll', onChange);
+    query?.removeEventListener(
+      'change',
+      onRatioChange,
+    );
+    window.removeEventListener(
+      'resize',
+      onChange,
+    );
+    visual?.removeEventListener(
+      'resize',
+      onChange,
+    );
+    visual?.removeEventListener(
+      'scroll',
+      onChange,
+    );
   };
 }

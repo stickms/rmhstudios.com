@@ -16,81 +16,147 @@ import metadata from '@/data/library-metadata.json';
 import { asset } from '@/lib/storage/asset';
 
 /** A table-of-contents entry: a chapter/section title and the page it starts on. */
-export type TocEntry = { title: string; page: number; depth?: number };
+export type TocEntry =
+  {
+    title: string;
+    page: number;
+    depth?: number;
+  };
 
-type RawMeta = {
-  title: string;
-  description: string;
-  pages: number;
-  cover?: string | null;
-  toc?: TocEntry[];
-};
+type RawMeta =
+  {
+    title: string;
+    description: string;
+    pages: number;
+    cover?:
+      | string
+      | null;
+    toc?: TocEntry[];
+  };
 
-export type LibraryBook = {
-  /** URL-safe identifier derived from the filename. */
-  slug: string;
-  /** Original filename within public/library (e.g. "everything-platform.pdf"). */
-  filename: string;
-  /** Public URL the browser can fetch the PDF from. */
-  url: string;
-  /** Clean, human-readable title (DeepSeek-generated). */
-  title: string;
-  /** One-sentence description (DeepSeek-generated; may be empty). */
-  description: string;
-  /** Total page count (for EPUBs, the number of spine documents/sections). */
-  pages: number;
-  /** Document format: PDFs render in the 3D book reader, EPUBs in the EPUB reader. */
-  format: 'pdf' | 'epub';
-  /** Public URL of the rendered first-page cover image, or null if none. */
-  coverUrl: string | null;
-  /** Deterministic accent hue (0–360) used for the spine tint / cover fallback. */
-  hue: number;
-  /** Pre-computed table of contents (chapter → page), when known. May be empty. */
-  toc: TocEntry[];
-  /** Where the book comes from: the bundled static catalog or a user upload. */
-  source?: 'static' | 'upload';
-  /** LibraryDocument id for uploaded books (used for delete/report/edit). */
-  id?: string;
-  /** Uploader attribution, for user-uploaded books. */
-  uploadedBy?: { handle: string | null; name: string | null } | null;
-  /**
-   * Curated/official entry — bundled static books and admin uploads. Curated
-   * books fill the top section of the shelf; community uploads sit below.
-   */
-  curated?: boolean;
-  /** Manual sort order within a section (lower first); only set for DB rows. */
-  position?: number;
-  /** ISO upload date, for community attribution ("Uploaded … · {date}"). */
-  createdAt?: string | null;
-  /** Hidden from non-admins (only ever surfaced to admins in edit mode). */
-  hidden?: boolean;
-  /** Reported by a user — surfaced to admins in edit mode. */
-  reported?: boolean;
-};
+export type LibraryBook =
+  {
+    /** URL-safe identifier derived from the filename. */
+    slug: string;
+    /** Original filename within public/library (e.g. "everything-platform.pdf"). */
+    filename: string;
+    /** Public URL the browser can fetch the PDF from. */
+    url: string;
+    /** Clean, human-readable title (DeepSeek-generated). */
+    title: string;
+    /** One-sentence description (DeepSeek-generated; may be empty). */
+    description: string;
+    /** Total page count (for EPUBs, the number of spine documents/sections). */
+    pages: number;
+    /** Document format: PDFs render in the 3D book reader, EPUBs in the EPUB reader. */
+    format:
+      | 'pdf'
+      | 'epub';
+    /** Public URL of the rendered first-page cover image, or null if none. */
+    coverUrl:
+      | string
+      | null;
+    /** Deterministic accent hue (0–360) used for the spine tint / cover fallback. */
+    hue: number;
+    /** Pre-computed table of contents (chapter → page), when known. May be empty. */
+    toc: TocEntry[];
+    /** Where the book comes from: the bundled static catalog or a user upload. */
+    source?:
+      | 'static'
+      | 'upload';
+    /** LibraryDocument id for uploaded books (used for delete/report/edit). */
+    id?: string;
+    /** Uploader attribution, for user-uploaded books. */
+    uploadedBy?: {
+      handle:
+        | string
+        | null;
+      name:
+        | string
+        | null;
+    } | null;
+    /**
+     * Curated/official entry — bundled static books and admin uploads. Curated
+     * books fill the top section of the shelf; community uploads sit below.
+     */
+    curated?: boolean;
+    /** Manual sort order within a section (lower first); only set for DB rows. */
+    position?: number;
+    /** ISO upload date, for community attribution ("Uploaded … · {date}"). */
+    createdAt?:
+      | string
+      | null;
+    /** Hidden from non-admins (only ever surfaced to admins in edit mode). */
+    hidden?: boolean;
+    /** Reported by a user — surfaced to admins in edit mode. */
+    reported?: boolean;
+  };
 
 /** "everything_platform_minute_vol1.pdf" → "Everything Platform Minute Vol1". */
-function humanize(filename: string): string {
+function humanize(
+  filename: string,
+): string {
   return filename
-    .replace(/\.pdf$/i, '')
-    .replace(/[-_]+/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(
+      /\.pdf$/i,
+      '',
+    )
+    .replace(
+      /[-_]+/g,
+      ' ',
+    )
+    .replace(
+      /\s+/g,
+      ' ',
+    )
     .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .replace(
+      /\b\w/g,
+      (
+        c,
+      ) =>
+        c.toUpperCase(),
+    );
 }
 
 /** Lowercase, hyphenated slug from a filename (extension stripped). */
-function slugify(filename: string): string {
+function slugify(
+  filename: string,
+): string {
   return filename
-    .replace(/\.pdf$/i, '')
+    .replace(
+      /\.pdf$/i,
+      '',
+    )
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(
+      /[^a-z0-9]+/g,
+      '-',
+    )
+    .replace(
+      /^-+|-+$/g,
+      '',
+    );
 }
 
 /** Stable hue in [0, 360) from a string, so each book keeps the same tint. */
-function hueFromString(s: string): number {
+function hueFromString(
+  s: string,
+): number {
   let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
+  for (
+    let i = 0;
+    i <
+    s.length;
+    i++
+  )
+    h =
+      (h *
+        31 +
+        s.charCodeAt(
+          i,
+        )) %
+      360;
   return h;
 }
 
@@ -100,33 +166,92 @@ function hueFromString(s: string): number {
  * stay stable and resolvable.
  */
 function buildBooks(): LibraryBook[] {
-  const seen = new Map<string, number>();
-  const books = Object.entries(metadata as Record<string, RawMeta>).map(([filename, meta]) => {
-    let slug = slugify(filename) || 'book';
-    const n = seen.get(slug) ?? 0;
-    seen.set(slug, n + 1);
-    if (n > 0) slug = `${slug}-${n + 1}`;
+  const seen =
+    new Map<
+      string,
+      number
+    >();
+  const books =
+    Object.entries(
+      metadata as Record<
+        string,
+        RawMeta
+      >,
+    ).map(
+      ([
+        filename,
+        meta,
+      ]) => {
+        let slug =
+          slugify(
+            filename,
+          ) ||
+          'book';
+        const n =
+          seen.get(
+            slug,
+          ) ??
+          0;
+        seen.set(
+          slug,
+          n +
+            1,
+        );
+        if (
+          n >
+          0
+        )
+          slug = `${slug}-${n + 1}`;
 
-    return {
-      slug,
-      filename,
-      url: asset(`/library/${encodeURIComponent(filename)}`),
-      title: meta.title || humanize(filename),
-      description: meta.description || '',
-      pages: meta.pages || 0,
-      format: 'pdf',
-      coverUrl: meta.cover ? `/library/covers/${encodeURIComponent(meta.cover)}` : null,
-      hue: hueFromString(filename),
-      toc: meta.toc ?? [],
-      source: 'static',
-      curated: true,
-    } satisfies LibraryBook;
-  });
+        return {
+          slug,
+          filename,
+          url: asset(
+            `/library/${encodeURIComponent(filename)}`,
+          ),
+          title:
+            meta.title ||
+            humanize(
+              filename,
+            ),
+          description:
+            meta.description ||
+            '',
+          pages:
+            meta.pages ||
+            0,
+          format:
+            'pdf',
+          coverUrl:
+            meta.cover
+              ? `/library/covers/${encodeURIComponent(meta.cover)}`
+              : null,
+          hue: hueFromString(
+            filename,
+          ),
+          toc:
+            meta.toc ??
+            [],
+          source:
+            'static',
+          curated: true,
+        } satisfies LibraryBook;
+      },
+    );
 
-  return books.sort((a, b) => a.title.localeCompare(b.title));
+  return books.sort(
+    (
+      a,
+      b,
+    ) =>
+      a.title.localeCompare(
+        b.title,
+      ),
+  );
 }
 
-const BOOKS = buildBooks();
+const BOOKS =
+  buildBooks();
 
 /** All books, alphabetised by title. */
 export function listLibraryBooks(): LibraryBook[] {
@@ -134,6 +259,16 @@ export function listLibraryBooks(): LibraryBook[] {
 }
 
 /** A single book by slug, or undefined if it doesn't exist. */
-export function getLibraryBook(slug: string): LibraryBook | undefined {
-  return BOOKS.find((b) => b.slug === slug);
+export function getLibraryBook(
+  slug: string,
+):
+  | LibraryBook
+  | undefined {
+  return BOOKS.find(
+    (
+      b,
+    ) =>
+      b.slug ===
+      slug,
+  );
 }

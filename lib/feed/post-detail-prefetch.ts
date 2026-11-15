@@ -12,13 +12,33 @@ import { startIntentFetch } from '@/lib/route/intent-fetch';
  * when-and-how-long rules (never on hover, taken once, 1s once answered) live
  * in `lib/route/intent-fetch`, because the response is per-viewer.
  */
-export const postBodyUrl = (postId: string) => `/api/rmharks/${encodeURIComponent(postId)}`;
-export const postCommentsUrl = (postId: string) =>
-  `/api/rmharks/${encodeURIComponent(postId)}/comment`;
+export const postBodyUrl =
+  (
+    postId: string,
+  ) =>
+    `/api/rmharks/${encodeURIComponent(postId)}`;
+export const postCommentsUrl =
+  (
+    postId: string,
+  ) =>
+    `/api/rmharks/${encodeURIComponent(postId)}/comment`;
 
 /** Start the detail page's two GETs for a post. Client-only. */
-export function prefetchPostDetail(postId: string): void {
-  if (!postId) return;
-  startIntentFetch(postBodyUrl(postId));
-  startIntentFetch(postCommentsUrl(postId));
+export function prefetchPostDetail(
+  postId: string,
+): void {
+  if (
+    !postId
+  )
+    return;
+  startIntentFetch(
+    postBodyUrl(
+      postId,
+    ),
+  );
+  startIntentFetch(
+    postCommentsUrl(
+      postId,
+    ),
+  );
 }

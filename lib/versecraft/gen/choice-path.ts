@@ -20,15 +20,52 @@ export interface ChoicePathEntry {
 }
 
 /** Deterministic, order-sensitive short hash of a choice path. */
-export function choicePathHash(entries: ChoicePathEntry[]): string {
-  if (!entries.length) return '';
-  const serialized = entries.map((e) => `${e.chapter}:${e.tone}:${e.label ?? ''}`).join('|');
+export function choicePathHash(
+  entries: ChoicePathEntry[],
+): string {
+  if (
+    !entries.length
+  )
+    return '';
+  const serialized =
+    entries
+      .map(
+        (
+          e,
+        ) =>
+          `${e.chapter}:${e.tone}:${e.label ?? ''}`,
+      )
+      .join(
+        '|',
+      );
   // FNV-1a 32-bit, rendered as hex — short and collision-resistant enough for
   // a per-player cache key.
   let h = 0x811c9dc5;
-  for (let i = 0; i < serialized.length; i++) {
-    h ^= serialized.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
+  for (
+    let i = 0;
+    i <
+    serialized.length;
+    i++
+  ) {
+    h ^=
+      serialized.charCodeAt(
+        i,
+      );
+    h =
+      Math.imul(
+        h,
+        0x01000193,
+      );
   }
-  return (h >>> 0).toString(16).padStart(8, '0');
+  return (
+    h >>>
+    0
+  )
+    .toString(
+      16,
+    )
+    .padStart(
+      8,
+      '0',
+    );
 }

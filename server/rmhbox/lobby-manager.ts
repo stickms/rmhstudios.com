@@ -9,16 +9,37 @@
  * Implementation: docs/rmhbox/implementation/phase-2.md §1–§12
  */
 
-import { Server, Socket } from 'socket.io';
+import {
+  Server,
+  Socket,
+} from 'socket.io';
 import { nanoid } from 'nanoid';
 import { config } from './config';
 import { PresenceGrace } from '../shared/presence-grace';
 import { logger } from './logger';
 import { generateRoomCode } from '../../lib/rmhbox/utils';
-import { S2C, C2S } from '../../lib/rmhbox/events';
+import {
+  S2C,
+  C2S,
+} from '../../lib/rmhbox/events';
 import { MINIGAME_REGISTRY } from '../../lib/rmhbox/minigame-registry';
-import type { GameAction, ChatMessage, ClientLobbyState, ClientPlayerInfo, ClientSpectatorInfo, ClientGameInfo, PublicLobbyInfo, MatchSummary, JoinInProgressPolicy } from '../../lib/rmhbox/types';
-import type { RMHboxLobby, LobbySettings, RMHboxPlayer, RMHboxSpectator } from './types';
+import type {
+  GameAction,
+  ChatMessage,
+  ClientLobbyState,
+  ClientPlayerInfo,
+  ClientSpectatorInfo,
+  ClientGameInfo,
+  PublicLobbyInfo,
+  MatchSummary,
+  JoinInProgressPolicy,
+} from '../../lib/rmhbox/types';
+import type {
+  RMHboxLobby,
+  LobbySettings,
+  RMHboxPlayer,
+  RMHboxSpectator,
+} from './types';
 import { getDefaultSettings } from '../../lib/rmhbox/game-settings';
 import {
   CreateLobbySchema,
@@ -56,54 +77,134 @@ export interface SharedClientParts {
   matchHistory: MatchSummary[];
   seq: number;
   /** Lazily filled: the spectator view of the running minigame, computed at most once. */
-  spectatorGame?: { state: unknown };
+  spectatorGame?: {
+    state: unknown;
+  };
 }
 
 export class LobbyManager {
   private readonly io: Server;
-  private readonly lobbies = new Map<string, RMHboxLobby>();
+  private readonly lobbies =
+    new Map<
+      string,
+      RMHboxLobby
+    >();
   /** Fast userId → lobbyId index for O(1) lookup */
-  private readonly userToLobby = new Map<string, string>();
+  private readonly userToLobby =
+    new Map<
+      string,
+      string
+    >();
   /** Discord voice-channel key → lobbyId, for auto-connecting players in the same voice chat */
-  private readonly channelToLobby = new Map<string, string>();
+  private readonly channelToLobby =
+    new Map<
+      string,
+      string
+    >();
   /** Per-lobby incrementing sequence counter for game actions */
-  private readonly seqCounters = new Map<string, number>();
+  private readonly seqCounters =
+    new Map<
+      string,
+      number
+    >();
   /**
    * Disconnect grace. Holds a dropped player's slot for the shared window,
    * tells the lobby who it is waiting for so the clients can pause, and
    * removes them when the window closes.
    */
-  private readonly presence = new PresenceGrace({
-    graceMs: config.DISCONNECT_GRACE_PERIOD_MS,
-    onChange: (lobbyId, waiting) => {
-      this.io.to(`lobby:${lobbyId}`).emit(S2C.PEERS_WAITING, waiting);
-    },
-    onExpire: (lobbyId, userId) => {
-      const lobby = this.lobbies.get(lobbyId);
-      if (!lobby) return;
-      const player = lobby.players.get(userId);
-      // They reconnected between the timer firing and this callback running.
-      if (!player || player.isConnected) return;
-      logger.info({ event: 'grace_period_expired', userId, lobbyId });
-      this.removePlayer(lobby, userId);
-    },
-  });
+  private readonly presence =
+    new PresenceGrace(
+      {
+        graceMs:
+          config.DISCONNECT_GRACE_PERIOD_MS,
+        onChange:
+          (
+            lobbyId,
+            waiting,
+          ) => {
+            this.io
+              .to(
+                `lobby:${lobbyId}`,
+              )
+              .emit(
+                S2C.PEERS_WAITING,
+                waiting,
+              );
+          },
+        onExpire:
+          (
+            lobbyId,
+            userId,
+          ) => {
+            const lobby =
+              this.lobbies.get(
+                lobbyId,
+              );
+            if (
+              !lobby
+            )
+              return;
+            const player =
+              lobby.players.get(
+                userId,
+              );
+            // They reconnected between the timer firing and this callback running.
+            if (
+              !player ||
+              player.isConnected
+            )
+              return;
+            logger.info(
+              {
+                event:
+                  'grace_period_expired',
+                userId,
+                lobbyId,
+              },
+            );
+            this.removePlayer(
+              lobby,
+              userId,
+            );
+          },
+      },
+    );
   /** End-session disband timers keyed by lobbyId */
-  private readonly disbandTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly disbandTimers =
+    new Map<
+      string,
+      ReturnType<
+        typeof setTimeout
+      >
+    >();
   /** Pending join-in-progress players (for join_next_subround policy) keyed by lobbyId */
-  private readonly pendingJoinPlayers = new Map<string, string[]>();
+  private readonly pendingJoinPlayers =
+    new Map<
+      string,
+      string[]
+    >();
 
-  private gcInterval: ReturnType<typeof setInterval> | null = null;
+  private gcInterval: ReturnType<
+    typeof setInterval
+  > | null =
+    null;
 
   /** Optional callback invoked when a new spectator joins a lobby mid-game. */
-  onSpectatorJoinedMidGame?: (lobbyId: string, spectatorUserId: string, socket: Socket) => void;
+  onSpectatorJoinedMidGame?: (
+    lobbyId: string,
+    spectatorUserId: string,
+    socket: Socket,
+  ) => void;
 
   /**
    * Called when a player leaves the lobby for good (leave, kick, grace expiry)
    * while it still exists, so the running minigame — which holds a roster
    * snapshot — hears about it.
    */
-  onPlayerRemoved?: (lobbyId: string, userId: string) => void;
+  onPlayerRemoved?: (
+    lobbyId: string,
+    userId: string,
+  ) => void;
 
   /**
    * Teardown listeners: the game coordinator and vote manager stop their
@@ -111,7 +212,12 @@ export class LobbyManager {
    * being disbanded. Without this a running game or vote kept ticking under
    * SESSION_RESULTS / after the lobby was gone.
    */
-  private readonly teardownListeners: Array<(lobbyId: string) => void> = [];
+  private readonly teardownListeners: Array<
+    (
+      lobbyId: string,
+    ) => void
+  > =
+    [];
 
   /** Set during process shutdown: disconnects no longer start grace windows. */
   shuttingDown = false;
@@ -121,103 +227,236 @@ export class LobbyManager {
    * always unless RMHBOX_DURABLE_LOBBIES=1 found its store at boot — they are
    * never called and nothing here behaves differently.
    */
-  onLobbyChanged?: (lobbyId: string) => void;
-  onLobbyRemoved?: (lobbyId: string) => void;
+  onLobbyChanged?: (
+    lobbyId: string,
+  ) => void;
+  onLobbyRemoved?: (
+    lobbyId: string,
+  ) => void;
 
   /** Restored lobbies: one timer each that drops spectators who did not come back (restoreLobby). */
-  private readonly restoredSpectatorTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly restoredSpectatorTimers =
+    new Map<
+      string,
+      ReturnType<
+        typeof setTimeout
+      >
+    >();
 
-  onTeardown(fn: (lobbyId: string) => void): void {
-    this.teardownListeners.push(fn);
+  onTeardown(
+    fn: (
+      lobbyId: string,
+    ) => void,
+  ): void {
+    this.teardownListeners.push(
+      fn,
+    );
   }
 
-  private teardown(lobbyId: string): void {
-    for (const fn of this.teardownListeners) {
+  private teardown(
+    lobbyId: string,
+  ): void {
+    for (const fn of this
+      .teardownListeners) {
       try {
-        fn(lobbyId);
+        fn(
+          lobbyId,
+        );
       } catch (err) {
-        logger.error({ event: 'lobby_teardown_listener_error', lobbyId, error: String(err) });
+        logger.error(
+          {
+            event:
+              'lobby_teardown_listener_error',
+            lobbyId,
+            error:
+              String(
+                err,
+              ),
+          },
+        );
       }
     }
   }
 
-  constructor(io: Server) {
-    this.io = io;
+  constructor(
+    io: Server,
+  ) {
+    this.io =
+      io;
   }
 
   // ─── Lobby accessors (§12.1) ───────────────────────────────
 
-  getLobbies(): Map<string, RMHboxLobby> {
-    return this.lobbies;
+  getLobbies(): Map<
+    string,
+    RMHboxLobby
+  > {
+    return this
+      .lobbies;
   }
 
-  getLobby(lobbyId: string): RMHboxLobby | undefined {
-    return this.lobbies.get(lobbyId);
+  getLobby(
+    lobbyId: string,
+  ):
+    | RMHboxLobby
+    | undefined {
+    return this.lobbies.get(
+      lobbyId,
+    );
   }
 
-  getLobbyByUserId(userId: string): RMHboxLobby | undefined {
-    const lobbyId = this.userToLobby.get(userId);
-    if (!lobbyId) return undefined;
-    return this.lobbies.get(lobbyId);
+  getLobbyByUserId(
+    userId: string,
+  ):
+    | RMHboxLobby
+    | undefined {
+    const lobbyId =
+      this.userToLobby.get(
+        userId,
+      );
+    if (
+      !lobbyId
+    )
+      return undefined;
+    return this.lobbies.get(
+      lobbyId,
+    );
   }
 
   /** Alias for getLobbyByUserId */
-  findLobbyByUserId(userId: string): RMHboxLobby | undefined {
-    return this.getLobbyByUserId(userId);
+  findLobbyByUserId(
+    userId: string,
+  ):
+    | RMHboxLobby
+    | undefined {
+    return this.getLobbyByUserId(
+      userId,
+    );
   }
 
-  getLobbyBySocketId(socketId: string): RMHboxLobby | undefined {
+  getLobbyBySocketId(
+    socketId: string,
+  ):
+    | RMHboxLobby
+    | undefined {
     for (const lobby of this.lobbies.values()) {
       for (const player of lobby.players.values()) {
-        if (player.socketId === socketId) return lobby;
+        if (
+          player.socketId ===
+          socketId
+        )
+          return lobby;
       }
       for (const spectator of lobby.spectators.values()) {
-        if (spectator.socketId === socketId) return lobby;
+        if (
+          spectator.socketId ===
+          socketId
+        )
+          return lobby;
       }
     }
     return undefined;
   }
 
   /** Get pending join-in-progress players for a lobby (join_next_subround policy) */
-  getPendingJoinPlayers(lobbyId: string): string[] {
-    return this.pendingJoinPlayers.get(lobbyId) ?? [];
+  getPendingJoinPlayers(
+    lobbyId: string,
+  ): string[] {
+    return (
+      this.pendingJoinPlayers.get(
+        lobbyId,
+      ) ??
+      []
+    );
   }
 
   /** Clear pending join-in-progress players for a lobby */
-  clearPendingJoinPlayers(lobbyId: string): void {
-    this.pendingJoinPlayers.delete(lobbyId);
+  clearPendingJoinPlayers(
+    lobbyId: string,
+  ): void {
+    this.pendingJoinPlayers.delete(
+      lobbyId,
+    );
   }
 
   // ─── Room code generation (§1.2) ───────────────────────────
 
   /** Generate a lobby ID that is not already in use */
   private generateUniqueLobbyId(): string {
-    for (let i = 0; i < MAX_CODE_ATTEMPTS; i++) {
-      const code = generateRoomCode();
-      if (!this.lobbies.has(code)) return code;
+    for (
+      let i = 0;
+      i <
+      MAX_CODE_ATTEMPTS;
+      i++
+    ) {
+      const code =
+        generateRoomCode();
+      if (
+        !this.lobbies.has(
+          code,
+        )
+      )
+        return code;
     }
-    throw new Error('Failed to generate unique lobby ID after max attempts');
+    throw new Error(
+      'Failed to generate unique lobby ID after max attempts',
+    );
   }
 
   // ─── Broadcasting helpers (§12.2) ──────────────────────────
 
   /** Broadcast a game action to all members in a lobby with auto-incrementing seq */
-  broadcastAction(lobbyId: string, action: { type: string; payload?: unknown }): void {
-    const seq = (this.seqCounters.get(lobbyId) ?? 0) + 1;
+  broadcastAction(
+    lobbyId: string,
+    action: {
+      type: string;
+      payload?: unknown;
+    },
+  ): void {
+    const seq =
+      (this.seqCounters.get(
+        lobbyId,
+      ) ??
+        0) +
+      1;
     // Don't recreate the counter for a disbanded lobby (a late timer or
     // handler broadcasting after disband used to leak one per lobby).
-    if (this.lobbies.has(lobbyId)) {
-      this.seqCounters.set(lobbyId, seq);
+    if (
+      this.lobbies.has(
+        lobbyId,
+      )
+    ) {
+      this.seqCounters.set(
+        lobbyId,
+        seq,
+      );
       // A countdown tick changes nothing worth persisting (restore re-bases seq).
-      if (action.type !== 'TIMER_TICK') this.markChanged(lobbyId);
+      if (
+        action.type !==
+        'TIMER_TICK'
+      )
+        this.markChanged(
+          lobbyId,
+        );
     }
-    const fullAction: GameAction = {
-      type: action.type,
-      payload: action.payload ?? null,
-      seq,
-      timestamp: Date.now(),
-    };
-    this.io.to(`lobby:${lobbyId}`).emit(S2C.GAME_ACTION, fullAction);
+    const fullAction: GameAction =
+      {
+        type: action.type,
+        payload:
+          action.payload ??
+          null,
+        seq,
+        timestamp:
+          Date.now(),
+      };
+    this.io
+      .to(
+        `lobby:${lobbyId}`,
+      )
+      .emit(
+        S2C.GAME_ACTION,
+        fullAction,
+      );
   }
 
   /**
@@ -225,149 +464,562 @@ export class LobbyManager {
    * lobbies: every client-visible mutation reaches broadcastAction or a full
    * sync, both of which call this. A no-op unless a store is attached.
    */
-  markChanged(lobbyId: string): void {
-    this.onLobbyChanged?.(lobbyId);
+  markChanged(
+    lobbyId: string,
+  ): void {
+    this.onLobbyChanged?.(
+      lobbyId,
+    );
   }
 
   /** The lobby's current action sequence number (0 if unknown). */
-  getSeq(lobbyId: string): number {
-    return this.seqCounters.get(lobbyId) ?? 0;
+  getSeq(
+    lobbyId: string,
+  ): number {
+    return (
+      this.seqCounters.get(
+        lobbyId,
+      ) ??
+      0
+    );
   }
 
-  broadcastToPlayers(lobbyId: string, event: string, data: unknown): void {
-    this.io.to(`lobby:${lobbyId}:players`).emit(event, data);
+  broadcastToPlayers(
+    lobbyId: string,
+    event: string,
+    data: unknown,
+  ): void {
+    this.io
+      .to(
+        `lobby:${lobbyId}:players`,
+      )
+      .emit(
+        event,
+        data,
+      );
   }
 
-  broadcastToSpectators(lobbyId: string, event: string, data: unknown): void {
-    this.io.to(`lobby:${lobbyId}:spectators`).emit(event, data);
+  broadcastToSpectators(
+    lobbyId: string,
+    event: string,
+    data: unknown,
+  ): void {
+    this.io
+      .to(
+        `lobby:${lobbyId}:spectators`,
+      )
+      .emit(
+        event,
+        data,
+      );
   }
 
-  sendToPlayer(lobbyId: string, userId: string, event: string, data: unknown): void {
-    this.io.to(`lobby:${lobbyId}:player:${userId}`).emit(event, data);
+  sendToPlayer(
+    lobbyId: string,
+    userId: string,
+    event: string,
+    data: unknown,
+  ): void {
+    this.io
+      .to(
+        `lobby:${lobbyId}:player:${userId}`,
+      )
+      .emit(
+        event,
+        data,
+      );
   }
 
   /** Add a system chat message to a lobby and broadcast it */
-  addSystemChat(lobbyId: string, message: string): void {
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return;
+  addSystemChat(
+    lobbyId: string,
+    message: string,
+  ): void {
+    const lobby =
+      this.lobbies.get(
+        lobbyId,
+      );
+    if (
+      !lobby
+    )
+      return;
 
-    const chatMsg: ChatMessage = {
-      id: nanoid(),
-      userId: 'system',
-      userName: 'System',
-      content: message,
-      timestamp: Date.now(),
-      type: 'system',
-    };
+    const chatMsg: ChatMessage =
+      {
+        id: nanoid(),
+        userId:
+          'system',
+        userName:
+          'System',
+        content:
+          message,
+        timestamp:
+          Date.now(),
+        type: 'system',
+      };
 
-    lobby.chat.push(chatMsg);
+    lobby.chat.push(
+      chatMsg,
+    );
     // Ring buffer: trim oldest messages beyond history limit
-    if (lobby.chat.length > config.CHAT_HISTORY_LENGTH) {
-      lobby.chat.splice(0, lobby.chat.length - config.CHAT_HISTORY_LENGTH);
+    if (
+      lobby
+        .chat
+        .length >
+      config.CHAT_HISTORY_LENGTH
+    ) {
+      lobby.chat.splice(
+        0,
+        lobby
+          .chat
+          .length -
+          config.CHAT_HISTORY_LENGTH,
+      );
     }
 
-    this.broadcastAction(lobbyId, {
-      type: 'CHAT_MESSAGE',
-      payload: chatMsg,
-    });
+    this.broadcastAction(
+      lobbyId,
+      {
+        type: 'CHAT_MESSAGE',
+        payload:
+          chatMsg,
+      },
+    );
   }
 
   // ─── Connection event wiring (§13) ─────────────────────────
 
-  handleConnection(socket: Socket): void {
-    socket.on('rmhbox:lobby:create', validated(socket, 'rmhbox:lobby:create', CreateLobbySchema, (s, d) => this.createLobby(s, d)));
-    socket.on('rmhbox:lobby:join', validated(socket, 'rmhbox:lobby:join', JoinLobbySchema, (s, d) => this.joinLobby(s, d)));
-    socket.on(C2S.LOBBY_AUTO_JOIN, () => this.autoJoinByChannel(socket));
-    socket.on('rmhbox:lobby:leave', validated(socket, 'rmhbox:lobby:leave', LeaveLobbySchema, (s, d) => this.leaveLobby(s, d)));
-    socket.on('rmhbox:lobby:kick', validated(socket, 'rmhbox:lobby:kick', KickPlayerSchema, (s, d) => this.kickPlayer(s, d)));
-    socket.on('rmhbox:lobby:transfer_host', validated(socket, 'rmhbox:lobby:transfer_host', TransferHostSchema, (s, d) => this.transferHost(s, d)));
-    socket.on('rmhbox:lobby:update_settings', validated(socket, 'rmhbox:lobby:update_settings', UpdateSettingsSchema, (s, d) => this.updateSettings(s, d)));
-    socket.on('rmhbox:lobby:end_session', validated(socket, 'rmhbox:lobby:end_session', EndSessionSchema, (s, d) => this.endSession(s, d)));
-    socket.on('rmhbox:lobby:toggle_ready', validated(socket, 'rmhbox:lobby:toggle_ready', ToggleReadySchema, (s, d) => this.toggleReady(s, d)));
-    socket.on('rmhbox:lobby:request_promotion', validated(socket, 'rmhbox:lobby:request_promotion', RequestPromotionSchema, (s, d) => this.requestPromotion(s, d)));
-    socket.on('rmhbox:lobby:promote_spectator', validated(socket, 'rmhbox:lobby:promote_spectator', PromoteSpectatorSchema, (s, d) => this.promoteSpectator(s, d)));
-    socket.on('rmhbox:lobby:browse', validated(socket, 'rmhbox:lobby:browse', BrowseLobbiesSchema, (s, d) => this.browseLobbies(s, d)));
-    socket.on('rmhbox:game:pick', validated(socket, 'rmhbox:game:pick', PickGameSchema, (s, d) => this.pickGame(s, d)));
-    socket.on(C2S.PLAYER_AWAY, () => this.setPlayerAway(socket, true));
-    socket.on(C2S.PLAYER_ACTIVE, () => this.setPlayerAway(socket, false));
+  handleConnection(
+    socket: Socket,
+  ): void {
+    socket.on(
+      'rmhbox:lobby:create',
+      validated(
+        socket,
+        'rmhbox:lobby:create',
+        CreateLobbySchema,
+        (
+          s,
+          d,
+        ) =>
+          this.createLobby(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:lobby:join',
+      validated(
+        socket,
+        'rmhbox:lobby:join',
+        JoinLobbySchema,
+        (
+          s,
+          d,
+        ) =>
+          this.joinLobby(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      C2S.LOBBY_AUTO_JOIN,
+      () =>
+        this.autoJoinByChannel(
+          socket,
+        ),
+    );
+    socket.on(
+      'rmhbox:lobby:leave',
+      validated(
+        socket,
+        'rmhbox:lobby:leave',
+        LeaveLobbySchema,
+        (
+          s,
+          d,
+        ) =>
+          this.leaveLobby(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:lobby:kick',
+      validated(
+        socket,
+        'rmhbox:lobby:kick',
+        KickPlayerSchema,
+        (
+          s,
+          d,
+        ) =>
+          this.kickPlayer(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:lobby:transfer_host',
+      validated(
+        socket,
+        'rmhbox:lobby:transfer_host',
+        TransferHostSchema,
+        (
+          s,
+          d,
+        ) =>
+          this.transferHost(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:lobby:update_settings',
+      validated(
+        socket,
+        'rmhbox:lobby:update_settings',
+        UpdateSettingsSchema,
+        (
+          s,
+          d,
+        ) =>
+          this.updateSettings(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:lobby:end_session',
+      validated(
+        socket,
+        'rmhbox:lobby:end_session',
+        EndSessionSchema,
+        (
+          s,
+          d,
+        ) =>
+          this.endSession(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:lobby:toggle_ready',
+      validated(
+        socket,
+        'rmhbox:lobby:toggle_ready',
+        ToggleReadySchema,
+        (
+          s,
+          d,
+        ) =>
+          this.toggleReady(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:lobby:request_promotion',
+      validated(
+        socket,
+        'rmhbox:lobby:request_promotion',
+        RequestPromotionSchema,
+        (
+          s,
+          d,
+        ) =>
+          this.requestPromotion(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:lobby:promote_spectator',
+      validated(
+        socket,
+        'rmhbox:lobby:promote_spectator',
+        PromoteSpectatorSchema,
+        (
+          s,
+          d,
+        ) =>
+          this.promoteSpectator(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:lobby:browse',
+      validated(
+        socket,
+        'rmhbox:lobby:browse',
+        BrowseLobbiesSchema,
+        (
+          s,
+          d,
+        ) =>
+          this.browseLobbies(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      'rmhbox:game:pick',
+      validated(
+        socket,
+        'rmhbox:game:pick',
+        PickGameSchema,
+        (
+          s,
+          d,
+        ) =>
+          this.pickGame(
+            s,
+            d,
+          ),
+      ),
+    );
+    socket.on(
+      C2S.PLAYER_AWAY,
+      () =>
+        this.setPlayerAway(
+          socket,
+          true,
+        ),
+    );
+    socket.on(
+      C2S.PLAYER_ACTIVE,
+      () =>
+        this.setPlayerAway(
+          socket,
+          false,
+        ),
+    );
   }
 
   // ─── Away state (Discord Activity PiP) ─────────────────────
 
-  private setPlayerAway(socket: Socket, away: boolean): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.getLobbyByUserId(userId);
-    if (!lobby) return;
-    const player = lobby.players.get(userId);
-    if (!player || player.isAway === away) return;
-    player.isAway = away;
-    this.broadcastAction(lobby.id, {
-      type: 'PLAYER_AWAY_CHANGED',
-      payload: { userId, isAway: away },
-    });
-    logger.info({ event: away ? 'player_away' : 'player_active', lobbyId: lobby.id, userId });
+  private setPlayerAway(
+    socket: Socket,
+    away: boolean,
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.getLobbyByUserId(
+        userId,
+      );
+    if (
+      !lobby
+    )
+      return;
+    const player =
+      lobby.players.get(
+        userId,
+      );
+    if (
+      !player ||
+      player.isAway ===
+        away
+    )
+      return;
+    player.isAway =
+      away;
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'PLAYER_AWAY_CHANGED',
+        payload:
+          {
+            userId,
+            isAway:
+              away,
+          },
+      },
+    );
+    logger.info(
+      {
+        event:
+          away
+            ? 'player_away'
+            : 'player_active',
+        lobbyId:
+          lobby.id,
+        userId,
+      },
+    );
   }
 
   // ─── Disconnect handling (§4.2) ────────────────────────────
 
-  handleDisconnect(socket: Socket): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.getLobbyByUserId(userId);
-    if (!lobby) return;
-    if (this.shuttingDown) return;
+  handleDisconnect(
+    socket: Socket,
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.getLobbyByUserId(
+        userId,
+      );
+    if (
+      !lobby
+    )
+      return;
+    if (
+      this
+        .shuttingDown
+    )
+      return;
 
-    const player = lobby.players.get(userId);
+    const player =
+      lobby.players.get(
+        userId,
+      );
     // A late disconnect from an old tab (or the duplicate-session socket
     // being kicked) must not mark the live session offline.
-    if (player && player.socketId !== socket.id) return;
-    if (player) {
+    if (
+      player &&
+      player.socketId !==
+        socket.id
+    )
+      return;
+    if (
+      player
+    ) {
       player.isConnected = false;
       player.isReady = false;
-      player.socketId = null;
-      player.lastSeenAt = Date.now();
-      lobby.lastActivityAt = Date.now();
+      player.socketId =
+        null;
+      player.lastSeenAt =
+        Date.now();
+      lobby.lastActivityAt =
+        Date.now();
 
       // Broadcast ready-state change so other clients see them as unready
-      this.broadcastAction(lobby.id, {
-        type: 'PLAYER_READY_CHANGED',
-        payload: { userId, isReady: false },
-      });
+      this.broadcastAction(
+        lobby.id,
+        {
+          type: 'PLAYER_READY_CHANGED',
+          payload:
+            {
+              userId,
+              isReady: false,
+            },
+        },
+      );
 
-      logger.info({ event: 'player_disconnected', userId, lobbyId: lobby.id });
+      logger.info(
+        {
+          event:
+            'player_disconnected',
+          userId,
+          lobbyId:
+            lobby.id,
+        },
+      );
 
       // Broadcast disconnect to lobby
-      this.broadcastAction(lobby.id, {
-        type: 'PLAYER_DISCONNECTED',
-        payload: { userId, userName: player.userName },
-      });
+      this.broadcastAction(
+        lobby.id,
+        {
+          type: 'PLAYER_DISCONNECTED',
+          payload:
+            {
+              userId,
+              userName:
+                player.userName,
+            },
+        },
+      );
 
       // Hold their slot and pause the lobby for the shared grace window.
-      this.presence.hold(lobby.id, userId, player.userName);
+      this.presence.hold(
+        lobby.id,
+        userId,
+        player.userName,
+      );
       return;
     }
 
-    const spectator = lobby.spectators.get(userId);
-    if (spectator && spectator.socketId !== socket.id) return;
-    if (spectator) {
+    const spectator =
+      lobby.spectators.get(
+        userId,
+      );
+    if (
+      spectator &&
+      spectator.socketId !==
+        socket.id
+    )
+      return;
+    if (
+      spectator
+    ) {
       // Spectators are removed immediately — no grace period
-      this.dropDisconnectedSpectator(lobby, spectator);
+      this.dropDisconnectedSpectator(
+        lobby,
+        spectator,
+      );
     }
   }
 
-  private dropDisconnectedSpectator(lobby: RMHboxLobby, spectator: RMHboxSpectator): void {
-    const userId = spectator.userId;
-    lobby.spectators.delete(userId);
-    this.userToLobby.delete(userId);
-    lobby.lastActivityAt = Date.now();
+  private dropDisconnectedSpectator(
+    lobby: RMHboxLobby,
+    spectator: RMHboxSpectator,
+  ): void {
+    const userId =
+      spectator.userId;
+    lobby.spectators.delete(
+      userId,
+    );
+    this.userToLobby.delete(
+      userId,
+    );
+    lobby.lastActivityAt =
+      Date.now();
 
-    logger.info({ event: 'spectator_disconnected', userId, lobbyId: lobby.id });
+    logger.info(
+      {
+        event:
+          'spectator_disconnected',
+        userId,
+        lobbyId:
+          lobby.id,
+      },
+    );
 
-    this.broadcastAction(lobby.id, {
-      type: 'SPECTATOR_LEFT',
-      payload: { userId, userName: spectator.userName },
-    });
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'SPECTATOR_LEFT',
+        payload:
+          {
+            userId,
+            userName:
+              spectator.userName,
+          },
+      },
+    );
 
-    this.addSystemChat(lobby.id, `${spectator.userName} left`);
+    this.addSystemChat(
+      lobby.id,
+      `${spectator.userName} left`,
+    );
   }
 
   // ─── Restore after a restart (durable lobbies) ─────────────
@@ -386,54 +1038,161 @@ export class LobbyManager {
    * Returns false (and changes nothing) when the lobby id is already taken;
    * a member already indexed in another lobby is left out.
    */
-  restoreLobby(lobby: RMHboxLobby, storedSeq: number, roundCancelled: boolean): boolean {
-    if (this.lobbies.has(lobby.id)) return false;
-    for (const userId of Array.from(lobby.players.keys())) {
-      if (this.userToLobby.has(userId)) lobby.players.delete(userId);
+  restoreLobby(
+    lobby: RMHboxLobby,
+    storedSeq: number,
+    roundCancelled: boolean,
+  ): boolean {
+    if (
+      this.lobbies.has(
+        lobby.id,
+      )
+    )
+      return false;
+    for (const userId of Array.from(
+      lobby.players.keys(),
+    )) {
+      if (
+        this.userToLobby.has(
+          userId,
+        )
+      )
+        lobby.players.delete(
+          userId,
+        );
     }
-    for (const userId of Array.from(lobby.spectators.keys())) {
-      if (this.userToLobby.has(userId)) lobby.spectators.delete(userId);
+    for (const userId of Array.from(
+      lobby.spectators.keys(),
+    )) {
+      if (
+        this.userToLobby.has(
+          userId,
+        )
+      )
+        lobby.spectators.delete(
+          userId,
+        );
     }
-    if (lobby.players.size === 0 || !lobby.players.has(lobby.hostUserId)) return false;
+    if (
+      lobby
+        .players
+        .size ===
+        0 ||
+      !lobby.players.has(
+        lobby.hostUserId,
+      )
+    )
+      return false;
 
-    this.lobbies.set(lobby.id, lobby);
-    this.seqCounters.set(lobby.id, Math.max(0, storedSeq) + RESTORED_SEQ_GAP);
-    for (const userId of lobby.players.keys()) this.userToLobby.set(userId, lobby.id);
-    for (const userId of lobby.spectators.keys()) this.userToLobby.set(userId, lobby.id);
-    if (lobby.discordChannelKey && !this.channelToLobby.has(lobby.discordChannelKey)) {
-      this.channelToLobby.set(lobby.discordChannelKey, lobby.id);
+    this.lobbies.set(
+      lobby.id,
+      lobby,
+    );
+    this.seqCounters.set(
+      lobby.id,
+      Math.max(
+        0,
+        storedSeq,
+      ) +
+        RESTORED_SEQ_GAP,
+    );
+    for (const userId of lobby.players.keys())
+      this.userToLobby.set(
+        userId,
+        lobby.id,
+      );
+    for (const userId of lobby.spectators.keys())
+      this.userToLobby.set(
+        userId,
+        lobby.id,
+      );
+    if (
+      lobby.discordChannelKey &&
+      !this.channelToLobby.has(
+        lobby.discordChannelKey,
+      )
+    ) {
+      this.channelToLobby.set(
+        lobby.discordChannelKey,
+        lobby.id,
+      );
     }
 
     // The spectator sweep is armed BEFORE the player holds: equal timeouts fire
     // in creation order, so absent spectators are gone before the last absent
     // player's removal would otherwise promote one of them to an offline host.
-    if (lobby.spectators.size > 0) {
-      const timer = setTimeout(() => {
-        this.restoredSpectatorTimers.delete(lobby.id);
-        const current = this.lobbies.get(lobby.id);
-        if (current !== lobby) return;
-        for (const spectator of Array.from(lobby.spectators.values())) {
-          if (!spectator.isConnected) this.dropDisconnectedSpectator(lobby, spectator);
-        }
-      }, config.DISCONNECT_GRACE_PERIOD_MS);
+    if (
+      lobby
+        .spectators
+        .size >
+      0
+    ) {
+      const timer =
+        setTimeout(
+          () => {
+            this.restoredSpectatorTimers.delete(
+              lobby.id,
+            );
+            const current =
+              this.lobbies.get(
+                lobby.id,
+              );
+            if (
+              current !==
+              lobby
+            )
+              return;
+            for (const spectator of Array.from(
+              lobby.spectators.values(),
+            )) {
+              if (
+                !spectator.isConnected
+              )
+                this.dropDisconnectedSpectator(
+                  lobby,
+                  spectator,
+                );
+            }
+          },
+          config.DISCONNECT_GRACE_PERIOD_MS,
+        );
       timer.unref?.();
-      this.restoredSpectatorTimers.set(lobby.id, timer);
+      this.restoredSpectatorTimers.set(
+        lobby.id,
+        timer,
+      );
     }
     for (const player of lobby.players.values()) {
-      this.presence.hold(lobby.id, player.userId, player.userName);
+      this.presence.hold(
+        lobby.id,
+        player.userId,
+        player.userName,
+      );
     }
 
     this.addSystemChat(
       lobby.id,
-      roundCancelled ? 'The server restarted; the round was cancelled.' : 'The server restarted.',
+      roundCancelled
+        ? 'The server restarted; the round was cancelled.'
+        : 'The server restarted.',
     );
-    logger.info({
-      event: 'lobby_restored',
-      lobbyId: lobby.id,
-      players: lobby.players.size,
-      spectators: lobby.spectators.size,
-      roundCancelled,
-    });
+    logger.info(
+      {
+        event:
+          'lobby_restored',
+        lobbyId:
+          lobby.id,
+        players:
+          lobby
+            .players
+            .size,
+        spectators:
+          lobby
+            .spectators
+            .size,
+        roundCancelled,
+      },
+    );
     return true;
   }
 
@@ -441,25 +1200,69 @@ export class LobbyManager {
    * Stop waiting for a user — they reconnected, left on purpose, or were
    * kicked. Called by the reconnection handler and the leave/kick paths.
    */
-  cancelGraceTimer(userId: string): void {
-    const lobbyId = this.userToLobby.get(userId);
-    if (lobbyId) this.presence.release(lobbyId, userId);
+  cancelGraceTimer(
+    userId: string,
+  ): void {
+    const lobbyId =
+      this.userToLobby.get(
+        userId,
+      );
+    if (
+      lobbyId
+    )
+      this.presence.release(
+        lobbyId,
+        userId,
+      );
   }
 
   /** The set of players a lobby is currently waiting on, for a fresh snapshot. */
-  getPeersWaiting(lobbyId: string) {
-    return this.presence.getWaiting(lobbyId);
+  getPeersWaiting(
+    lobbyId: string,
+  ) {
+    return this.presence.getWaiting(
+      lobbyId,
+    );
   }
 
   // ─── Lobby creation (§2.1) ─────────────────────────────────
 
-  private createLobby(socket: Socket, payload: { settings?: Partial<LobbySettings> }): void {
-    const lobbyId = this.createLobbyForSocket(socket, payload.settings, null);
-    if (!lobbyId) return; // error already emitted
+  private createLobby(
+    socket: Socket,
+    payload: {
+      settings?: Partial<LobbySettings>;
+    },
+  ): void {
+    const lobbyId =
+      this.createLobbyForSocket(
+        socket,
+        payload.settings,
+        null,
+      );
+    if (
+      !lobbyId
+    )
+      return; // error already emitted
 
-    const lobby = this.lobbies.get(lobbyId)!;
-    const clientState = this.buildClientState(lobby, socket.data.userId as string);
-    socket.emit(S2C.LOBBY_CREATED, { lobbyId, lobby: clientState });
+    const lobby =
+      this.lobbies.get(
+        lobbyId,
+      )!;
+    const clientState =
+      this.buildClientState(
+        lobby,
+        socket
+          .data
+          .userId as string,
+      );
+    socket.emit(
+      S2C.LOBBY_CREATED,
+      {
+        lobbyId,
+        lobby:
+          clientState,
+      },
+    );
   }
 
   /**
@@ -472,85 +1275,194 @@ export class LobbyManager {
    */
   private createLobbyForSocket(
     socket: Socket,
-    partialSettings: Partial<LobbySettings> | undefined,
-    discordChannelKey: string | null,
-  ): string | null {
-    const userId = socket.data.userId as string;
-    const userName = socket.data.userName as string;
-    const avatarUrl = (socket.data.avatarUrl as string | null) ?? null;
+    partialSettings:
+      | Partial<LobbySettings>
+      | undefined,
+    discordChannelKey:
+      | string
+      | null,
+  ):
+    | string
+    | null {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const userName =
+      socket
+        .data
+        .userName as string;
+    const avatarUrl =
+      (socket
+        .data
+        .avatarUrl as
+        | string
+        | null) ??
+      null;
 
     // Check if user is already in a lobby
-    if (this.userToLobby.has(userId)) {
-      socket.emit(S2C.ERROR, { code: 'ALREADY_IN_LOBBY', message: 'You are already in a lobby.' });
+    if (
+      this.userToLobby.has(
+        userId,
+      )
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'ALREADY_IN_LOBBY',
+          message:
+            'You are already in a lobby.',
+        },
+      );
       return null;
     }
 
-    const payload = { settings: partialSettings };
-    const lobbyId = this.generateUniqueLobbyId();
+    const payload =
+      {
+        settings:
+          partialSettings,
+      };
+    const lobbyId =
+      this.generateUniqueLobbyId();
 
     // Default settings, merged with any provided partial settings
-    const settings: LobbySettings = {
-      isPublic: false,
-      maxPlayers: config.DEFAULT_MAX_PLAYERS,
-      maxSpectators: config.DEFAULT_MAX_SPECTATORS,
-      allowMidGameJoin: true,
-      allowSpectatorPromotion: true,
-      autoStartThreshold: null,
-      gameDurationOverride: null,
-      ...payload.settings,
-    };
+    const settings: LobbySettings =
+      {
+        isPublic: false,
+        maxPlayers:
+          config.DEFAULT_MAX_PLAYERS,
+        maxSpectators:
+          config.DEFAULT_MAX_SPECTATORS,
+        allowMidGameJoin: true,
+        allowSpectatorPromotion: true,
+        autoStartThreshold:
+          null,
+        gameDurationOverride:
+          null,
+        ...payload.settings,
+      };
 
     // Clamp settings
-    settings.maxPlayers = Math.max(2, Math.min(config.ABSOLUTE_MAX_PLAYERS, settings.maxPlayers));
-    settings.maxSpectators = Math.max(0, Math.min(config.MAX_SPECTATORS, settings.maxSpectators));
+    settings.maxPlayers =
+      Math.max(
+        2,
+        Math.min(
+          config.ABSOLUTE_MAX_PLAYERS,
+          settings.maxPlayers,
+        ),
+      );
+    settings.maxSpectators =
+      Math.max(
+        0,
+        Math.min(
+          config.MAX_SPECTATORS,
+          settings.maxSpectators,
+        ),
+      );
 
-    const now = Date.now();
-    const player: RMHboxPlayer = {
+    const now =
+      Date.now();
+    const player: RMHboxPlayer =
+      {
+        userId,
+        userName,
+        avatarUrl,
+        socketId:
+          socket.id,
+        isConnected: true,
+        isReady: true, // Host is always ready
+        isAway: false,
+        score: 0,
+        roundScore: 0,
+        joinedAt:
+          now,
+        lastSeenAt:
+          now,
+        role: 'player',
+      };
+
+    const lobby: RMHboxLobby =
+      {
+        id: lobbyId,
+        hostUserId:
+          userId,
+        settings,
+        players:
+          new Map(
+            [
+              [
+                userId,
+                player,
+              ],
+            ],
+          ),
+        spectators:
+          new Map(),
+        state:
+          'WAITING',
+        chat: [],
+        createdAt:
+          now,
+        lastActivityAt:
+          now,
+        currentGame:
+          null,
+        selectedGame:
+          null,
+        matchHistory:
+          [],
+        roundNumber: 0,
+        pendingGameSettings:
+          null,
+        resolvedGameSettings:
+          null,
+        discordChannelKey,
+      };
+
+    this.lobbies.set(
+      lobbyId,
+      lobby,
+    );
+    this.userToLobby.set(
       userId,
-      userName,
-      avatarUrl,
-      socketId: socket.id,
-      isConnected: true,
-      isReady: true, // Host is always ready
-      isAway: false,
-      score: 0,
-      roundScore: 0,
-      joinedAt: now,
-      lastSeenAt: now,
-      role: 'player',
-    };
-
-    const lobby: RMHboxLobby = {
-      id: lobbyId,
-      hostUserId: userId,
-      settings,
-      players: new Map([[userId, player]]),
-      spectators: new Map(),
-      state: 'WAITING',
-      chat: [],
-      createdAt: now,
-      lastActivityAt: now,
-      currentGame: null,
-      selectedGame: null,
-      matchHistory: [],
-      roundNumber: 0,
-      pendingGameSettings: null,
-      resolvedGameSettings: null,
-      discordChannelKey,
-    };
-
-    this.lobbies.set(lobbyId, lobby);
-    this.userToLobby.set(userId, lobbyId);
-    this.seqCounters.set(lobbyId, 0);
-    if (discordChannelKey) this.channelToLobby.set(discordChannelKey, lobbyId);
-    this.markChanged(lobbyId);
+      lobbyId,
+    );
+    this.seqCounters.set(
+      lobbyId,
+      0,
+    );
+    if (
+      discordChannelKey
+    )
+      this.channelToLobby.set(
+        discordChannelKey,
+        lobbyId,
+      );
+    this.markChanged(
+      lobbyId,
+    );
 
     // Join Socket.io rooms
-    socket.join(`lobby:${lobbyId}`);
-    socket.join(`lobby:${lobbyId}:players`);
-    socket.join(`lobby:${lobbyId}:player:${userId}`);
+    socket.join(
+      `lobby:${lobbyId}`,
+    );
+    socket.join(
+      `lobby:${lobbyId}:players`,
+    );
+    socket.join(
+      `lobby:${lobbyId}:player:${userId}`,
+    );
 
-    logger.info({ event: 'lobby_created', lobbyId, userId, userName, discordChannelKey });
+    logger.info(
+      {
+        event:
+          'lobby_created',
+        lobbyId,
+        userId,
+        userName,
+        discordChannelKey,
+      },
+    );
     return lobbyId;
   }
 
@@ -559,122 +1471,350 @@ export class LobbyManager {
   // in the same lobby automatically — no room code needed. Users who open it
   // outside a voice channel fall through to the manual code-entry browser.
 
-  private channelKey(guildId: string | null, channelId: string): string {
+  private channelKey(
+    guildId:
+      | string
+      | null,
+    channelId: string,
+  ): string {
     return `${guildId ?? 'dm'}:${channelId}`;
   }
 
-  private autoJoinByChannel(socket: Socket): void {
-    const userId = socket.data.userId as string;
+  private autoJoinByChannel(
+    socket: Socket,
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
 
     // Already in a lobby (e.g. created/joined earlier, or reconnected) — just
     // re-send the current state so the client lands back where it belongs.
-    if (this.userToLobby.has(userId)) {
-      const lobby = this.getLobbyByUserId(userId);
-      if (lobby) socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
+    if (
+      this.userToLobby.has(
+        userId,
+      )
+    ) {
+      const lobby =
+        this.getLobbyByUserId(
+          userId,
+        );
+      if (
+        lobby
+      )
+        socket.emit(
+          S2C.LOBBY_STATE_SNAPSHOT,
+          this.buildClientState(
+            lobby,
+            userId,
+          ),
+        );
       return;
     }
 
-    const channelId = (socket.data.discordChannelId as string | null) ?? null;
-    if (!channelId) {
+    const channelId =
+      (socket
+        .data
+        .discordChannelId as
+        | string
+        | null) ??
+      null;
+    if (
+      !channelId
+    ) {
       // No voice-channel context — nothing to auto-join. The client shows the
       // lobby browser so the user can create or enter a code manually.
-      socket.emit(S2C.ERROR, { code: 'NO_VOICE_CHANNEL', message: 'No voice channel to auto-join.' });
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NO_VOICE_CHANNEL',
+          message:
+            'No voice channel to auto-join.',
+        },
+      );
       return;
     }
 
-    const key = this.channelKey((socket.data.discordGuildId as string | null) ?? null, channelId);
+    const key =
+      this.channelKey(
+        (socket
+          .data
+          .discordGuildId as
+          | string
+          | null) ??
+          null,
+        channelId,
+      );
 
     // Join the existing lobby for this voice channel, if one is live.
-    const existingLobbyId = this.channelToLobby.get(key);
-    if (existingLobbyId) {
-      const existing = this.lobbies.get(existingLobbyId);
-      if (existing && existing.state !== 'DISBANDED') {
-        logger.info({ event: 'lobby_auto_join', lobbyId: existingLobbyId, userId, channelKey: key });
-        this.joinLobby(socket, { lobbyId: existingLobbyId, asSpectator: false });
+    const existingLobbyId =
+      this.channelToLobby.get(
+        key,
+      );
+    if (
+      existingLobbyId
+    ) {
+      const existing =
+        this.lobbies.get(
+          existingLobbyId,
+        );
+      if (
+        existing &&
+        existing.state !==
+          'DISBANDED'
+      ) {
+        logger.info(
+          {
+            event:
+              'lobby_auto_join',
+            lobbyId:
+              existingLobbyId,
+            userId,
+            channelKey:
+              key,
+          },
+        );
+        this.joinLobby(
+          socket,
+          {
+            lobbyId:
+              existingLobbyId,
+            asSpectator: false,
+          },
+        );
         return;
       }
       // Stale mapping (lobby gone) — drop it and fall through to create.
-      this.channelToLobby.delete(key);
+      this.channelToLobby.delete(
+        key,
+      );
     }
 
     // First person in from this voice channel — create the lobby for everyone.
-    const lobbyId = this.createLobbyForSocket(socket, undefined, key);
-    if (!lobbyId) return; // error already emitted
+    const lobbyId =
+      this.createLobbyForSocket(
+        socket,
+        undefined,
+        key,
+      );
+    if (
+      !lobbyId
+    )
+      return; // error already emitted
 
-    const lobby = this.lobbies.get(lobbyId)!;
-    logger.info({ event: 'lobby_auto_created', lobbyId, userId, channelKey: key });
-    socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
+    const lobby =
+      this.lobbies.get(
+        lobbyId,
+      )!;
+    logger.info(
+      {
+        event:
+          'lobby_auto_created',
+        lobbyId,
+        userId,
+        channelKey:
+          key,
+      },
+    );
+    socket.emit(
+      S2C.LOBBY_STATE_SNAPSHOT,
+      this.buildClientState(
+        lobby,
+        userId,
+      ),
+    );
   }
 
   // ─── Lobby join (§3.1) ─────────────────────────────────────
 
-  private joinLobby(socket: Socket, payload: { lobbyId: string; asSpectator: boolean }): void {
-    const userId = socket.data.userId as string;
-    const userName = socket.data.userName as string;
-    const avatarUrl = (socket.data.avatarUrl as string | null) ?? null;
+  private joinLobby(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+      asSpectator: boolean;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const userName =
+      socket
+        .data
+        .userName as string;
+    const avatarUrl =
+      (socket
+        .data
+        .avatarUrl as
+        | string
+        | null) ??
+      null;
 
     // Validate lobby exists
-    const lobby = this.lobbies.get(payload.lobbyId);
-    if (!lobby) {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_NOT_FOUND', message: 'Lobby not found.' });
+    const lobby =
+      this.lobbies.get(
+        payload.lobbyId,
+      );
+    if (
+      !lobby
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_NOT_FOUND',
+          message:
+            'Lobby not found.',
+        },
+      );
       return;
     }
 
     // Validate lobby is not disbanded
-    if (lobby.state === 'DISBANDED') {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_NOT_FOUND', message: 'Lobby has been disbanded.' });
+    if (
+      lobby.state ===
+      'DISBANDED'
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_NOT_FOUND',
+          message:
+            'Lobby has been disbanded.',
+        },
+      );
       return;
     }
 
     // Validate user is not already in a different lobby
-    if (this.userToLobby.has(userId)) {
-      const existingLobbyId = this.userToLobby.get(userId)!;
-      if (existingLobbyId === payload.lobbyId) {
+    if (
+      this.userToLobby.has(
+        userId,
+      )
+    ) {
+      const existingLobbyId =
+        this.userToLobby.get(
+          userId,
+        )!;
+      if (
+        existingLobbyId ===
+        payload.lobbyId
+      ) {
         // User is re-joining the same lobby (e.g., page navigation after create).
         // Re-send state snapshot instead of erroring.
-        const existingLobby = this.lobbies.get(existingLobbyId);
-        if (existingLobby) {
+        const existingLobby =
+          this.lobbies.get(
+            existingLobbyId,
+          );
+        if (
+          existingLobby
+        ) {
           // Ensure socket rooms are current
-          socket.join(`lobby:${existingLobbyId}`);
-          const player = existingLobby.players.get(userId);
-          if (player) {
-            player.socketId = socket.id;
+          socket.join(
+            `lobby:${existingLobbyId}`,
+          );
+          const player =
+            existingLobby.players.get(
+              userId,
+            );
+          if (
+            player
+          ) {
+            player.socketId =
+              socket.id;
             player.isConnected = true;
-            player.lastSeenAt = Date.now();
-            socket.join(`lobby:${existingLobbyId}:players`);
+            player.lastSeenAt =
+              Date.now();
+            socket.join(
+              `lobby:${existingLobbyId}:players`,
+            );
           }
-          const spectator = existingLobby.spectators.get(userId);
-          if (spectator) {
-            spectator.socketId = socket.id;
+          const spectator =
+            existingLobby.spectators.get(
+              userId,
+            );
+          if (
+            spectator
+          ) {
+            spectator.socketId =
+              socket.id;
             spectator.isConnected = true;
-            socket.join(`lobby:${existingLobbyId}:spectators`);
+            socket.join(
+              `lobby:${existingLobbyId}:spectators`,
+            );
           }
-          socket.join(`lobby:${existingLobbyId}:player:${userId}`);
-          socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(existingLobby, userId));
-          logger.info({ event: 'lobby_rejoin_same', lobbyId: existingLobbyId, userId, userName });
+          socket.join(
+            `lobby:${existingLobbyId}:player:${userId}`,
+          );
+          socket.emit(
+            S2C.LOBBY_STATE_SNAPSHOT,
+            this.buildClientState(
+              existingLobby,
+              userId,
+            ),
+          );
+          logger.info(
+            {
+              event:
+                'lobby_rejoin_same',
+              lobbyId:
+                existingLobbyId,
+              userId,
+              userName,
+            },
+          );
           return;
         }
       }
-      socket.emit(S2C.ERROR, { code: 'ALREADY_IN_LOBBY', message: 'You are already in a lobby.' });
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'ALREADY_IN_LOBBY',
+          message:
+            'You are already in a lobby.',
+        },
+      );
       return;
     }
 
-    const now = Date.now();
+    const now =
+      Date.now();
 
     // Determine join role
-    let joinAsSpectator = payload.asSpectator;
-    let jipPolicy: JoinInProgressPolicy | null = null;
-    if (!joinAsSpectator) {
+    let joinAsSpectator =
+      payload.asSpectator;
+    let jipPolicy: JoinInProgressPolicy | null =
+      null;
+    if (
+      !joinAsSpectator
+    ) {
       // Check join-in-progress policy if game is playing
-      if (lobby.state === 'PLAYING') {
-        if (lobby.currentGame) {
-          const gameDef = MINIGAME_REGISTRY[lobby.currentGame.minigameId];
-          jipPolicy = gameDef?.joinInProgressPolicy ?? 'spectate_only';
-          if (jipPolicy === 'spectate_only') {
+      if (
+        lobby.state ===
+        'PLAYING'
+      ) {
+        if (
+          lobby.currentGame
+        ) {
+          const gameDef =
+            MINIGAME_REGISTRY[
+              lobby
+                .currentGame
+                .minigameId
+            ];
+          jipPolicy =
+            gameDef?.joinInProgressPolicy ??
+            'spectate_only';
+          if (
+            jipPolicy ===
+            'spectate_only'
+          ) {
             joinAsSpectator = true;
           }
           // join_next_subround: join as spectator, added to pending list below
-          if (jipPolicy === 'join_next_subround') {
+          if (
+            jipPolicy ===
+            'join_next_subround'
+          ) {
             joinAsSpectator = true;
           }
           // join_immediately: join as player (handled below)
@@ -684,150 +1824,399 @@ export class LobbyManager {
         }
       }
       // Force spectator if lobby is full
-      if (lobby.players.size >= lobby.settings.maxPlayers) {
+      if (
+        lobby
+          .players
+          .size >=
+        lobby
+          .settings
+          .maxPlayers
+      ) {
         joinAsSpectator = true;
       }
     }
 
-    if (joinAsSpectator) {
+    if (
+      joinAsSpectator
+    ) {
       // Join as spectator
-      if (lobby.spectators.size >= lobby.settings.maxSpectators) {
-        socket.emit(S2C.ERROR, { code: 'LOBBY_FULL', message: 'Spectator slots are full.' });
+      if (
+        lobby
+          .spectators
+          .size >=
+        lobby
+          .settings
+          .maxSpectators
+      ) {
+        socket.emit(
+          S2C.ERROR,
+          {
+            code: 'LOBBY_FULL',
+            message:
+              'Spectator slots are full.',
+          },
+        );
         return;
       }
 
-      const spectator: RMHboxSpectator = {
+      const spectator: RMHboxSpectator =
+        {
+          userId,
+          userName,
+          avatarUrl,
+          socketId:
+            socket.id,
+          isConnected: true,
+          joinedAt:
+            now,
+          role: 'spectator',
+        };
+
+      lobby.spectators.set(
         userId,
-        userName,
-        avatarUrl,
-        socketId: socket.id,
-        isConnected: true,
-        joinedAt: now,
-        role: 'spectator',
-      };
+        spectator,
+      );
+      this.userToLobby.set(
+        userId,
+        lobby.id,
+      );
 
-      lobby.spectators.set(userId, spectator);
-      this.userToLobby.set(userId, lobby.id);
+      socket.join(
+        `lobby:${lobby.id}`,
+      );
+      socket.join(
+        `lobby:${lobby.id}:spectators`,
+      );
+      socket.join(
+        `lobby:${lobby.id}:player:${userId}`,
+      );
 
-      socket.join(`lobby:${lobby.id}`);
-      socket.join(`lobby:${lobby.id}:spectators`);
-      socket.join(`lobby:${lobby.id}:player:${userId}`);
+      lobby.lastActivityAt =
+        now;
 
-      lobby.lastActivityAt = now;
+      this.broadcastAction(
+        lobby.id,
+        {
+          type: 'SPECTATOR_JOINED',
+          payload:
+            {
+              userId,
+              userName,
+              avatarUrl,
+            },
+        },
+      );
 
-      this.broadcastAction(lobby.id, {
-        type: 'SPECTATOR_JOINED',
-        payload: { userId, userName, avatarUrl },
-      });
-
-      socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
-      this.addSystemChat(lobby.id, `${userName} joined`);
+      socket.emit(
+        S2C.LOBBY_STATE_SNAPSHOT,
+        this.buildClientState(
+          lobby,
+          userId,
+        ),
+      );
+      this.addSystemChat(
+        lobby.id,
+        `${userName} joined`,
+      );
 
       // Handle join_next_subround: add to pending list for game handler
-      if (jipPolicy === 'join_next_subround') {
-        const pending = this.pendingJoinPlayers.get(lobby.id) ?? [];
-        pending.push(userId);
-        this.pendingJoinPlayers.set(lobby.id, pending);
-        logger.info({ event: 'pending_join_player_added', lobbyId: lobby.id, userId });
+      if (
+        jipPolicy ===
+        'join_next_subround'
+      ) {
+        const pending =
+          this.pendingJoinPlayers.get(
+            lobby.id,
+          ) ??
+          [];
+        pending.push(
+          userId,
+        );
+        this.pendingJoinPlayers.set(
+          lobby.id,
+          pending,
+        );
+        logger.info(
+          {
+            event:
+              'pending_join_player_added',
+            lobbyId:
+              lobby.id,
+            userId,
+          },
+        );
       }
 
       // Notify game coordinator so it can assign a spectator target and send game state
-      if (lobby.state === 'PLAYING' && this.onSpectatorJoinedMidGame) {
-        this.onSpectatorJoinedMidGame(lobby.id, userId, socket);
+      if (
+        lobby.state ===
+          'PLAYING' &&
+        this
+          .onSpectatorJoinedMidGame
+      ) {
+        this.onSpectatorJoinedMidGame(
+          lobby.id,
+          userId,
+          socket,
+        );
       }
 
-      logger.info({ event: 'spectator_joined', lobbyId: lobby.id, userId, userName });
+      logger.info(
+        {
+          event:
+            'spectator_joined',
+          lobbyId:
+            lobby.id,
+          userId,
+          userName,
+        },
+      );
     } else {
       // Join as player
-      if (lobby.players.size >= lobby.settings.maxPlayers) {
-        socket.emit(S2C.ERROR, { code: 'LOBBY_FULL', message: 'Player slots are full.' });
+      if (
+        lobby
+          .players
+          .size >=
+        lobby
+          .settings
+          .maxPlayers
+      ) {
+        socket.emit(
+          S2C.ERROR,
+          {
+            code: 'LOBBY_FULL',
+            message:
+              'Player slots are full.',
+          },
+        );
         return;
       }
 
-      const player: RMHboxPlayer = {
+      const player: RMHboxPlayer =
+        {
+          userId,
+          userName,
+          avatarUrl,
+          socketId:
+            socket.id,
+          isConnected: true,
+          isReady: false,
+          isAway: false,
+          score: 0,
+          roundScore: 0,
+          joinedAt:
+            now,
+          lastSeenAt:
+            now,
+          role: 'player',
+        };
+
+      lobby.players.set(
         userId,
-        userName,
-        avatarUrl,
-        socketId: socket.id,
-        isConnected: true,
-        isReady: false,
-        isAway: false,
-        score: 0,
-        roundScore: 0,
-        joinedAt: now,
-        lastSeenAt: now,
-        role: 'player',
-      };
+        player,
+      );
+      this.userToLobby.set(
+        userId,
+        lobby.id,
+      );
 
-      lobby.players.set(userId, player);
-      this.userToLobby.set(userId, lobby.id);
+      socket.join(
+        `lobby:${lobby.id}`,
+      );
+      socket.join(
+        `lobby:${lobby.id}:players`,
+      );
+      socket.join(
+        `lobby:${lobby.id}:player:${userId}`,
+      );
 
-      socket.join(`lobby:${lobby.id}`);
-      socket.join(`lobby:${lobby.id}:players`);
-      socket.join(`lobby:${lobby.id}:player:${userId}`);
+      lobby.lastActivityAt =
+        now;
 
-      lobby.lastActivityAt = now;
+      this.broadcastAction(
+        lobby.id,
+        {
+          type: 'PLAYER_JOINED',
+          payload:
+            {
+              userId,
+              userName,
+              avatarUrl,
+            },
+        },
+      );
 
-      this.broadcastAction(lobby.id, {
-        type: 'PLAYER_JOINED',
-        payload: { userId, userName, avatarUrl },
-      });
-
-      socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
-      this.addSystemChat(lobby.id, `${userName} joined`);
+      socket.emit(
+        S2C.LOBBY_STATE_SNAPSHOT,
+        this.buildClientState(
+          lobby,
+          userId,
+        ),
+      );
+      this.addSystemChat(
+        lobby.id,
+        `${userName} joined`,
+      );
 
       // Handle join_immediately: notify the active game handler
-      if (jipPolicy === 'join_immediately' && lobby.currentGame?.handler) {
+      if (
+        jipPolicy ===
+          'join_immediately' &&
+        lobby
+          .currentGame
+          ?.handler
+      ) {
         try {
-          lobby.currentGame.handler.handlePlayerJoin(userId);
-          logger.info({ event: 'player_joined_in_progress', lobbyId: lobby.id, userId });
+          lobby.currentGame.handler.handlePlayerJoin(
+            userId,
+          );
+          logger.info(
+            {
+              event:
+                'player_joined_in_progress',
+              lobbyId:
+                lobby.id,
+              userId,
+            },
+          );
         } catch (err) {
-          logger.error({ event: 'jip_handler_error', lobbyId: lobby.id, userId, error: String(err) });
+          logger.error(
+            {
+              event:
+                'jip_handler_error',
+              lobbyId:
+                lobby.id,
+              userId,
+              error:
+                String(
+                  err,
+                ),
+            },
+          );
         }
       }
 
-      logger.info({ event: 'player_joined', lobbyId: lobby.id, userId, userName });
+      logger.info(
+        {
+          event:
+            'player_joined',
+          lobbyId:
+            lobby.id,
+          userId,
+          userName,
+        },
+      );
     }
   }
 
   // ─── Lobby leave (§4.1) ────────────────────────────────────
 
-  private leaveLobby(socket: Socket, payload: { lobbyId: string }): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.getLobbyByUserId(userId);
-    if (!lobby || lobby.id !== payload.lobbyId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
+  private leaveLobby(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.getLobbyByUserId(
+        userId,
+      );
+    if (
+      !lobby ||
+      lobby.id !==
+        payload.lobbyId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'You are not in a lobby.',
+        },
+      );
       return;
     }
 
     // Cancel any grace timer
-    this.cancelGraceTimer(userId);
+    this.cancelGraceTimer(
+      userId,
+    );
 
-    const isPlayer = lobby.players.has(userId);
-    const isSpectator = lobby.spectators.has(userId);
+    const isPlayer =
+      lobby.players.has(
+        userId,
+      );
+    const isSpectator =
+      lobby.spectators.has(
+        userId,
+      );
 
-    if (isPlayer) {
-      this.removePlayer(lobby, userId);
-    } else if (isSpectator) {
-      const spectator = lobby.spectators.get(userId)!;
-      lobby.spectators.delete(userId);
-      this.userToLobby.delete(userId);
+    if (
+      isPlayer
+    ) {
+      this.removePlayer(
+        lobby,
+        userId,
+      );
+    } else if (
+      isSpectator
+    ) {
+      const spectator =
+        lobby.spectators.get(
+          userId,
+        )!;
+      lobby.spectators.delete(
+        userId,
+      );
+      this.userToLobby.delete(
+        userId,
+      );
 
       // Leave Socket.io rooms
-      socket.leave(`lobby:${lobby.id}`);
-      socket.leave(`lobby:${lobby.id}:spectators`);
-      socket.leave(`lobby:${lobby.id}:player:${userId}`);
+      socket.leave(
+        `lobby:${lobby.id}`,
+      );
+      socket.leave(
+        `lobby:${lobby.id}:spectators`,
+      );
+      socket.leave(
+        `lobby:${lobby.id}:player:${userId}`,
+      );
 
-      lobby.lastActivityAt = Date.now();
+      lobby.lastActivityAt =
+        Date.now();
 
-      this.broadcastAction(lobby.id, {
-        type: 'SPECTATOR_LEFT',
-        payload: { userId, userName: spectator.userName },
-      });
+      this.broadcastAction(
+        lobby.id,
+        {
+          type: 'SPECTATOR_LEFT',
+          payload:
+            {
+              userId,
+              userName:
+                spectator.userName,
+            },
+        },
+      );
 
-      this.addSystemChat(lobby.id, `${spectator.userName} left`);
+      this.addSystemChat(
+        lobby.id,
+        `${spectator.userName} left`,
+      );
 
-      logger.info({ event: 'spectator_left', lobbyId: lobby.id, userId });
+      logger.info(
+        {
+          event:
+            'spectator_left',
+          lobbyId:
+            lobby.id,
+          userId,
+        },
+      );
     }
   }
 
@@ -835,688 +2224,1957 @@ export class LobbyManager {
    * Remove a player from a lobby, handling host succession and cleanup.
    * Shared between explicit leave, kick, and grace period expiry.
    */
-  private removePlayer(lobby: RMHboxLobby, userId: string): void {
-    const player = lobby.players.get(userId);
-    if (!player) return;
+  private removePlayer(
+    lobby: RMHboxLobby,
+    userId: string,
+  ): void {
+    const player =
+      lobby.players.get(
+        userId,
+      );
+    if (
+      !player
+    )
+      return;
 
-    const userName = player.userName;
-    const wasHost = lobby.hostUserId === userId;
+    const userName =
+      player.userName;
+    const wasHost =
+      lobby.hostUserId ===
+      userId;
 
-    lobby.players.delete(userId);
-    this.userToLobby.delete(userId);
-    lobby.lastActivityAt = Date.now();
+    lobby.players.delete(
+      userId,
+    );
+    this.userToLobby.delete(
+      userId,
+    );
+    lobby.lastActivityAt =
+      Date.now();
 
     // Leave Socket.io rooms if socket is still connected
-    if (player.socketId) {
-      const socketRoom = this.io.sockets.sockets?.get(player.socketId);
-      if (socketRoom) {
-        socketRoom.leave(`lobby:${lobby.id}`);
-        socketRoom.leave(`lobby:${lobby.id}:players`);
-        socketRoom.leave(`lobby:${lobby.id}:player:${userId}`);
+    if (
+      player.socketId
+    ) {
+      const socketRoom =
+        this.io.sockets.sockets?.get(
+          player.socketId,
+        );
+      if (
+        socketRoom
+      ) {
+        socketRoom.leave(
+          `lobby:${lobby.id}`,
+        );
+        socketRoom.leave(
+          `lobby:${lobby.id}:players`,
+        );
+        socketRoom.leave(
+          `lobby:${lobby.id}:player:${userId}`,
+        );
       }
     }
     // A running minigame shares this player object through its roster
     // snapshot: mark it gone so the snapshot agrees with the lobby.
     player.isConnected = false;
-    player.socketId = null;
+    player.socketId =
+      null;
 
     // Handle host succession
-    if (wasHost) {
-      if (lobby.players.size > 0) {
+    if (
+      wasHost
+    ) {
+      if (
+        lobby
+          .players
+          .size >
+        0
+      ) {
         // Find the player who joined earliest
-        let earliestJoin = Infinity;
-        let newHostId = '';
-        for (const [pid, p] of lobby.players) {
-          if (p.joinedAt < earliestJoin) {
-            earliestJoin = p.joinedAt;
-            newHostId = pid;
+        let earliestJoin =
+          Infinity;
+        let newHostId =
+          '';
+        for (const [
+          pid,
+          p,
+        ] of lobby.players) {
+          if (
+            p.joinedAt <
+            earliestJoin
+          ) {
+            earliestJoin =
+              p.joinedAt;
+            newHostId =
+              pid;
           }
         }
-        lobby.hostUserId = newHostId;
-        const newHost = lobby.players.get(newHostId)!;
+        lobby.hostUserId =
+          newHostId;
+        const newHost =
+          lobby.players.get(
+            newHostId,
+          )!;
 
         // Auto-ready the new host
-        if (!newHost.isReady) {
+        if (
+          !newHost.isReady
+        ) {
           newHost.isReady = true;
-          this.broadcastAction(lobby.id, {
-            type: 'PLAYER_READY_CHANGED',
-            payload: { userId: newHostId, isReady: true },
-          });
+          this.broadcastAction(
+            lobby.id,
+            {
+              type: 'PLAYER_READY_CHANGED',
+              payload:
+                {
+                  userId:
+                    newHostId,
+                  isReady: true,
+                },
+            },
+          );
         }
 
-        this.broadcastAction(lobby.id, {
-          type: 'HOST_TRANSFERRED',
-          payload: { newHostUserId: newHostId, newHostUserName: newHost.userName },
-        });
+        this.broadcastAction(
+          lobby.id,
+          {
+            type: 'HOST_TRANSFERRED',
+            payload:
+              {
+                newHostUserId:
+                  newHostId,
+                newHostUserName:
+                  newHost.userName,
+              },
+          },
+        );
 
-        this.addSystemChat(lobby.id, `Host transferred to ${newHost.userName}`);
+        this.addSystemChat(
+          lobby.id,
+          `Host transferred to ${newHost.userName}`,
+        );
 
-        logger.info({ event: 'host_transferred', lobbyId: lobby.id, newHostUserId: newHostId });
-      } else if (lobby.spectators.size > 0) {
+        logger.info(
+          {
+            event:
+              'host_transferred',
+            lobbyId:
+              lobby.id,
+            newHostUserId:
+              newHostId,
+          },
+        );
+      } else if (
+        lobby
+          .spectators
+          .size >
+        0
+      ) {
         // Promote earliest spectator to player and make them host
-        let earliestJoin = Infinity;
-        let newHostId = '';
-        for (const [sid, s] of lobby.spectators) {
-          if (s.joinedAt < earliestJoin) {
-            earliestJoin = s.joinedAt;
-            newHostId = sid;
+        let earliestJoin =
+          Infinity;
+        let newHostId =
+          '';
+        for (const [
+          sid,
+          s,
+        ] of lobby.spectators) {
+          if (
+            s.joinedAt <
+            earliestJoin
+          ) {
+            earliestJoin =
+              s.joinedAt;
+            newHostId =
+              sid;
           }
         }
-        const spectator = lobby.spectators.get(newHostId)!;
-        lobby.spectators.delete(newHostId);
+        const spectator =
+          lobby.spectators.get(
+            newHostId,
+          )!;
+        lobby.spectators.delete(
+          newHostId,
+        );
 
-        const newPlayer: RMHboxPlayer = {
-          userId: spectator.userId,
-          userName: spectator.userName,
-          avatarUrl: spectator.avatarUrl,
-          socketId: spectator.socketId,
-          isConnected: spectator.isConnected,
-          isReady: true, // Host is always ready
-          isAway: false,
-          score: 0,
-          roundScore: 0,
-          joinedAt: spectator.joinedAt,
-          lastSeenAt: Date.now(),
-          role: 'player',
-        };
-        lobby.players.set(newHostId, newPlayer);
-        lobby.hostUserId = newHostId;
+        const newPlayer: RMHboxPlayer =
+          {
+            userId:
+              spectator.userId,
+            userName:
+              spectator.userName,
+            avatarUrl:
+              spectator.avatarUrl,
+            socketId:
+              spectator.socketId,
+            isConnected:
+              spectator.isConnected,
+            isReady: true, // Host is always ready
+            isAway: false,
+            score: 0,
+            roundScore: 0,
+            joinedAt:
+              spectator.joinedAt,
+            lastSeenAt:
+              Date.now(),
+            role: 'player',
+          };
+        lobby.players.set(
+          newHostId,
+          newPlayer,
+        );
+        lobby.hostUserId =
+          newHostId;
 
         // Update Socket.io rooms for the promoted spectator
-        if (spectator.socketId) {
-          const socketRoom = this.io.sockets.sockets?.get(spectator.socketId);
-          if (socketRoom) {
-            socketRoom.leave(`lobby:${lobby.id}:spectators`);
-            socketRoom.join(`lobby:${lobby.id}:players`);
+        if (
+          spectator.socketId
+        ) {
+          const socketRoom =
+            this.io.sockets.sockets?.get(
+              spectator.socketId,
+            );
+          if (
+            socketRoom
+          ) {
+            socketRoom.leave(
+              `lobby:${lobby.id}:spectators`,
+            );
+            socketRoom.join(
+              `lobby:${lobby.id}:players`,
+            );
           }
         }
 
-        this.broadcastAction(lobby.id, {
-          type: 'HOST_TRANSFERRED',
-          payload: { newHostUserId: newHostId, newHostUserName: spectator.userName },
-        });
+        this.broadcastAction(
+          lobby.id,
+          {
+            type: 'HOST_TRANSFERRED',
+            payload:
+              {
+                newHostUserId:
+                  newHostId,
+                newHostUserName:
+                  spectator.userName,
+              },
+          },
+        );
 
-        this.addSystemChat(lobby.id, `Host transferred to ${spectator.userName}`);
+        this.addSystemChat(
+          lobby.id,
+          `Host transferred to ${spectator.userName}`,
+        );
 
-        logger.info({ event: 'host_transferred_from_spectator', lobbyId: lobby.id, newHostUserId: newHostId });
+        logger.info(
+          {
+            event:
+              'host_transferred_from_spectator',
+            lobbyId:
+              lobby.id,
+            newHostUserId:
+              newHostId,
+          },
+        );
       } else {
         // Nobody remains — disband
-        this.disband(lobby.id, 'All players left');
+        this.disband(
+          lobby.id,
+          'All players left',
+        );
         return;
       }
     }
 
     // If no players and no spectators remain, disband
-    if (lobby.players.size === 0 && lobby.spectators.size === 0) {
-      this.disband(lobby.id, 'All players left');
+    if (
+      lobby
+        .players
+        .size ===
+        0 &&
+      lobby
+        .spectators
+        .size ===
+        0
+    ) {
+      this.disband(
+        lobby.id,
+        'All players left',
+      );
       return;
     }
 
-    this.broadcastAction(lobby.id, {
-      type: 'PLAYER_LEFT',
-      payload: { userId, userName },
-    });
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'PLAYER_LEFT',
+        payload:
+          {
+            userId,
+            userName,
+          },
+      },
+    );
 
-    this.addSystemChat(lobby.id, `${userName} left`);
+    this.addSystemChat(
+      lobby.id,
+      `${userName} left`,
+    );
 
-    logger.info({ event: 'player_left', lobbyId: lobby.id, userId });
+    logger.info(
+      {
+        event:
+          'player_left',
+        lobbyId:
+          lobby.id,
+        userId,
+      },
+    );
 
     try {
-      this.onPlayerRemoved?.(lobby.id, userId);
+      this.onPlayerRemoved?.(
+        lobby.id,
+        userId,
+      );
     } catch (err) {
-      logger.error({ event: 'player_removed_listener_error', lobbyId: lobby.id, userId, error: String(err) });
+      logger.error(
+        {
+          event:
+            'player_removed_listener_error',
+          lobbyId:
+            lobby.id,
+          userId,
+          error:
+            String(
+              err,
+            ),
+        },
+      );
     }
   }
 
   // ─── Host controls (§5) ────────────────────────────────────
 
-  private kickPlayer(socket: Socket, payload: { lobbyId: string; targetUserId: string }): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.lobbies.get(payload.lobbyId);
-    if (!lobby) {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_NOT_FOUND', message: 'Lobby not found.' });
+  private kickPlayer(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+      targetUserId: string;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.lobbies.get(
+        payload.lobbyId,
+      );
+    if (
+      !lobby
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_NOT_FOUND',
+          message:
+            'Lobby not found.',
+        },
+      );
       return;
     }
 
-    if (lobby.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can kick players.' });
+    if (
+      lobby.hostUserId !==
+      userId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_HOST',
+          message:
+            'Only the host can kick players.',
+        },
+      );
       return;
     }
 
-    if (payload.targetUserId === userId) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'You cannot kick yourself.' });
+    if (
+      payload.targetUserId ===
+      userId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'INVALID_PAYLOAD',
+          message:
+            'You cannot kick yourself.',
+        },
+      );
       return;
     }
 
-    const targetPlayer = lobby.players.get(payload.targetUserId);
-    const targetSpectator = lobby.spectators.get(payload.targetUserId);
-    if (!targetPlayer && !targetSpectator) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'Target user is not in this lobby.' });
+    const targetPlayer =
+      lobby.players.get(
+        payload.targetUserId,
+      );
+    const targetSpectator =
+      lobby.spectators.get(
+        payload.targetUserId,
+      );
+    if (
+      !targetPlayer &&
+      !targetSpectator
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'Target user is not in this lobby.',
+        },
+      );
       return;
     }
 
-    const targetUserName = targetPlayer?.userName ?? targetSpectator!.userName;
-    const targetSocketId = targetPlayer?.socketId ?? targetSpectator?.socketId;
+    const targetUserName =
+      targetPlayer?.userName ??
+      targetSpectator!
+        .userName;
+    const targetSocketId =
+      targetPlayer?.socketId ??
+      targetSpectator?.socketId;
 
     // Emit kicked event to the target before removing them
-    if (targetSocketId) {
-      const targetSocket = this.io.sockets.sockets?.get(targetSocketId);
-      if (targetSocket) {
-        targetSocket.emit(S2C.LOBBY_KICKED, { reason: 'Kicked by host' });
+    if (
+      targetSocketId
+    ) {
+      const targetSocket =
+        this.io.sockets.sockets?.get(
+          targetSocketId,
+        );
+      if (
+        targetSocket
+      ) {
+        targetSocket.emit(
+          S2C.LOBBY_KICKED,
+          {
+            reason:
+              'Kicked by host',
+          },
+        );
         // Force-disconnect from lobby rooms
-        targetSocket.leave(`lobby:${lobby.id}`);
-        targetSocket.leave(`lobby:${lobby.id}:players`);
-        targetSocket.leave(`lobby:${lobby.id}:spectators`);
-        targetSocket.leave(`lobby:${lobby.id}:player:${payload.targetUserId}`);
+        targetSocket.leave(
+          `lobby:${lobby.id}`,
+        );
+        targetSocket.leave(
+          `lobby:${lobby.id}:players`,
+        );
+        targetSocket.leave(
+          `lobby:${lobby.id}:spectators`,
+        );
+        targetSocket.leave(
+          `lobby:${lobby.id}:player:${payload.targetUserId}`,
+        );
       }
     }
 
     // Remove the target
-    if (targetPlayer) {
-      lobby.players.delete(payload.targetUserId);
+    if (
+      targetPlayer
+    ) {
+      lobby.players.delete(
+        payload.targetUserId,
+      );
       // Shared with a running minigame's roster snapshot (see removePlayer).
       targetPlayer.isConnected = false;
-      targetPlayer.socketId = null;
+      targetPlayer.socketId =
+        null;
     } else {
-      lobby.spectators.delete(payload.targetUserId);
+      lobby.spectators.delete(
+        payload.targetUserId,
+      );
     }
-    this.userToLobby.delete(payload.targetUserId);
-    this.cancelGraceTimer(payload.targetUserId);
+    this.userToLobby.delete(
+      payload.targetUserId,
+    );
+    this.cancelGraceTimer(
+      payload.targetUserId,
+    );
 
-    lobby.lastActivityAt = Date.now();
+    lobby.lastActivityAt =
+      Date.now();
 
-    this.broadcastAction(lobby.id, {
-      type: 'PLAYER_KICKED',
-      payload: { userId: payload.targetUserId, userName: targetUserName },
-    });
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'PLAYER_KICKED',
+        payload:
+          {
+            userId:
+              payload.targetUserId,
+            userName:
+              targetUserName,
+          },
+      },
+    );
 
-    this.addSystemChat(lobby.id, `${targetUserName} was kicked by the host`);
+    this.addSystemChat(
+      lobby.id,
+      `${targetUserName} was kicked by the host`,
+    );
 
-    logger.info({ event: 'player_kicked', lobbyId: lobby.id, targetUserId: payload.targetUserId, byUserId: userId });
+    logger.info(
+      {
+        event:
+          'player_kicked',
+        lobbyId:
+          lobby.id,
+        targetUserId:
+          payload.targetUserId,
+        byUserId:
+          userId,
+      },
+    );
 
-    if (targetPlayer) {
+    if (
+      targetPlayer
+    ) {
       try {
-        this.onPlayerRemoved?.(lobby.id, payload.targetUserId);
+        this.onPlayerRemoved?.(
+          lobby.id,
+          payload.targetUserId,
+        );
       } catch (err) {
-        logger.error({ event: 'player_removed_listener_error', lobbyId: lobby.id, error: String(err) });
+        logger.error(
+          {
+            event:
+              'player_removed_listener_error',
+            lobbyId:
+              lobby.id,
+            error:
+              String(
+                err,
+              ),
+          },
+        );
       }
     }
   }
 
-  private transferHost(socket: Socket, payload: { lobbyId: string; targetUserId: string }): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.lobbies.get(payload.lobbyId);
-    if (!lobby) {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_NOT_FOUND', message: 'Lobby not found.' });
+  private transferHost(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+      targetUserId: string;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.lobbies.get(
+        payload.lobbyId,
+      );
+    if (
+      !lobby
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_NOT_FOUND',
+          message:
+            'Lobby not found.',
+        },
+      );
       return;
     }
 
-    if (lobby.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can transfer host.' });
+    if (
+      lobby.hostUserId !==
+      userId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_HOST',
+          message:
+            'Only the host can transfer host.',
+        },
+      );
       return;
     }
 
-    const targetPlayer = lobby.players.get(payload.targetUserId);
-    if (!targetPlayer) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'Target user is not a player in this lobby.' });
+    const targetPlayer =
+      lobby.players.get(
+        payload.targetUserId,
+      );
+    if (
+      !targetPlayer
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'Target user is not a player in this lobby.',
+        },
+      );
       return;
     }
 
-    lobby.hostUserId = payload.targetUserId;
-    lobby.lastActivityAt = Date.now();
+    lobby.hostUserId =
+      payload.targetUserId;
+    lobby.lastActivityAt =
+      Date.now();
 
     // Auto-ready the new host
-    if (!targetPlayer.isReady) {
+    if (
+      !targetPlayer.isReady
+    ) {
       targetPlayer.isReady = true;
-      this.broadcastAction(lobby.id, {
-        type: 'PLAYER_READY_CHANGED',
-        payload: { userId: payload.targetUserId, isReady: true },
-      });
+      this.broadcastAction(
+        lobby.id,
+        {
+          type: 'PLAYER_READY_CHANGED',
+          payload:
+            {
+              userId:
+                payload.targetUserId,
+              isReady: true,
+            },
+        },
+      );
     }
 
-    this.broadcastAction(lobby.id, {
-      type: 'HOST_TRANSFERRED',
-      payload: { newHostUserId: payload.targetUserId, newHostUserName: targetPlayer.userName },
-    });
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'HOST_TRANSFERRED',
+        payload:
+          {
+            newHostUserId:
+              payload.targetUserId,
+            newHostUserName:
+              targetPlayer.userName,
+          },
+      },
+    );
 
-    this.addSystemChat(lobby.id, `Host transferred to ${targetPlayer.userName}`);
+    this.addSystemChat(
+      lobby.id,
+      `Host transferred to ${targetPlayer.userName}`,
+    );
 
-    logger.info({ event: 'host_transferred', lobbyId: lobby.id, newHostUserId: payload.targetUserId, byUserId: userId });
+    logger.info(
+      {
+        event:
+          'host_transferred',
+        lobbyId:
+          lobby.id,
+        newHostUserId:
+          payload.targetUserId,
+        byUserId:
+          userId,
+      },
+    );
   }
 
-  private updateSettings(socket: Socket, payload: { lobbyId: string; settings: Partial<LobbySettings> }): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.lobbies.get(payload.lobbyId);
-    if (!lobby) {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_NOT_FOUND', message: 'Lobby not found.' });
+  private updateSettings(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+      settings: Partial<LobbySettings>;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.lobbies.get(
+        payload.lobbyId,
+      );
+    if (
+      !lobby
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_NOT_FOUND',
+          message:
+            'Lobby not found.',
+        },
+      );
       return;
     }
 
-    if (lobby.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can update settings.' });
+    if (
+      lobby.hostUserId !==
+      userId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_HOST',
+          message:
+            'Only the host can update settings.',
+        },
+      );
       return;
     }
 
-    if (lobby.state !== 'WAITING') {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_IN_GAME', message: 'Settings can only be changed in the waiting state.' });
+    if (
+      lobby.state !==
+      'WAITING'
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_IN_GAME',
+          message:
+            'Settings can only be changed in the waiting state.',
+        },
+      );
       return;
     }
 
     // Merge settings with validation
-    const newSettings = { ...lobby.settings };
-    if (payload.settings.isPublic !== undefined) newSettings.isPublic = payload.settings.isPublic;
-    if (payload.settings.maxPlayers !== undefined) {
-      newSettings.maxPlayers = Math.max(2, Math.min(config.ABSOLUTE_MAX_PLAYERS, payload.settings.maxPlayers));
+    const newSettings =
+      {
+        ...lobby.settings,
+      };
+    if (
+      payload
+        .settings
+        .isPublic !==
+      undefined
+    )
+      newSettings.isPublic =
+        payload.settings.isPublic;
+    if (
+      payload
+        .settings
+        .maxPlayers !==
+      undefined
+    ) {
+      newSettings.maxPlayers =
+        Math.max(
+          2,
+          Math.min(
+            config.ABSOLUTE_MAX_PLAYERS,
+            payload
+              .settings
+              .maxPlayers,
+          ),
+        );
     }
-    if (payload.settings.maxSpectators !== undefined) {
-      newSettings.maxSpectators = Math.max(0, Math.min(config.MAX_SPECTATORS, payload.settings.maxSpectators));
+    if (
+      payload
+        .settings
+        .maxSpectators !==
+      undefined
+    ) {
+      newSettings.maxSpectators =
+        Math.max(
+          0,
+          Math.min(
+            config.MAX_SPECTATORS,
+            payload
+              .settings
+              .maxSpectators,
+          ),
+        );
     }
-    if (payload.settings.allowMidGameJoin !== undefined) newSettings.allowMidGameJoin = payload.settings.allowMidGameJoin;
-    if (payload.settings.allowSpectatorPromotion !== undefined) newSettings.allowSpectatorPromotion = payload.settings.allowSpectatorPromotion;
-    if (payload.settings.autoStartThreshold !== undefined) newSettings.autoStartThreshold = payload.settings.autoStartThreshold;
-    if (payload.settings.gameDurationOverride !== undefined) newSettings.gameDurationOverride = payload.settings.gameDurationOverride;
+    if (
+      payload
+        .settings
+        .allowMidGameJoin !==
+      undefined
+    )
+      newSettings.allowMidGameJoin =
+        payload.settings.allowMidGameJoin;
+    if (
+      payload
+        .settings
+        .allowSpectatorPromotion !==
+      undefined
+    )
+      newSettings.allowSpectatorPromotion =
+        payload.settings.allowSpectatorPromotion;
+    if (
+      payload
+        .settings
+        .autoStartThreshold !==
+      undefined
+    )
+      newSettings.autoStartThreshold =
+        payload.settings.autoStartThreshold;
+    if (
+      payload
+        .settings
+        .gameDurationOverride !==
+      undefined
+    )
+      newSettings.gameDurationOverride =
+        payload.settings.gameDurationOverride;
 
-    lobby.settings = newSettings;
-    lobby.lastActivityAt = Date.now();
+    lobby.settings =
+      newSettings;
+    lobby.lastActivityAt =
+      Date.now();
 
-    this.broadcastAction(lobby.id, {
-      type: 'SETTINGS_UPDATED',
-      payload: newSettings,
-    });
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'SETTINGS_UPDATED',
+        payload:
+          newSettings,
+      },
+    );
 
-    logger.info({ event: 'settings_updated', lobbyId: lobby.id, userId, settings: newSettings });
+    logger.info(
+      {
+        event:
+          'settings_updated',
+        lobbyId:
+          lobby.id,
+        userId,
+        settings:
+          newSettings,
+      },
+    );
   }
 
-  private endSession(socket: Socket, payload: { lobbyId: string }): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.getLobbyByUserId(userId);
-    if (!lobby || lobby.id !== payload.lobbyId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
+  private endSession(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.getLobbyByUserId(
+        userId,
+      );
+    if (
+      !lobby ||
+      lobby.id !==
+        payload.lobbyId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'You are not in a lobby.',
+        },
+      );
       return;
     }
 
-    if (lobby.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can end the session.' });
+    if (
+      lobby.hostUserId !==
+      userId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_HOST',
+          message:
+            'Only the host can end the session.',
+        },
+      );
       return;
     }
 
     // Ending twice re-broadcast the results and leaked the first disband timer.
-    if (lobby.state === 'SESSION_RESULTS' || lobby.state === 'DISBANDED') return;
+    if (
+      lobby.state ===
+        'SESSION_RESULTS' ||
+      lobby.state ===
+        'DISBANDED'
+    )
+      return;
 
     // Stop whatever is running (a game, a vote, a phase timer) first: its
     // completion used to land on SESSION_RESULTS and overwrite it.
-    this.teardown(lobby.id);
+    this.teardown(
+      lobby.id,
+    );
 
     // Transition to SESSION_RESULTS
-    lobby.state = 'SESSION_RESULTS';
-    lobby.lastActivityAt = Date.now();
-    this.markChanged(lobby.id);
+    lobby.state =
+      'SESSION_RESULTS';
+    lobby.lastActivityAt =
+      Date.now();
+    this.markChanged(
+      lobby.id,
+    );
 
-    logger.info({ event: 'session_ending', lobbyId: lobby.id, userId });
+    logger.info(
+      {
+        event:
+          'session_ending',
+        lobbyId:
+          lobby.id,
+        userId,
+      },
+    );
 
     // Build cumulative standings from match history
-    const standings = this.buildSessionStandings(lobby);
+    const standings =
+      this.buildSessionStandings(
+        lobby,
+      );
 
-    this.io.to(`lobby:${lobby.id}`).emit(S2C.GAME_SESSION_RESULTS, {
-      standings,
-      matchHistory: lobby.matchHistory.map((m) => ({
-        matchId: `${m.minigameId}-${m.roundNumber}`,
-        minigameId: m.minigameId,
-        minigameDisplayName: MINIGAME_REGISTRY[m.minigameId]?.displayName ?? m.minigameId,
-        playerCount: m.standings.length,
-        winnerUserName: m.standings[0]?.userName ?? null,
-        rankings: m.standings,
-        durationMs: m.endedAt - m.startedAt,
-        playedAt: m.startedAt,
-      })),
-    });
+    this.io
+      .to(
+        `lobby:${lobby.id}`,
+      )
+      .emit(
+        S2C.GAME_SESSION_RESULTS,
+        {
+          standings,
+          matchHistory:
+            lobby.matchHistory.map(
+              (
+                m,
+              ) => ({
+                matchId: `${m.minigameId}-${m.roundNumber}`,
+                minigameId:
+                  m.minigameId,
+                minigameDisplayName:
+                  MINIGAME_REGISTRY[
+                    m
+                      .minigameId
+                  ]
+                    ?.displayName ??
+                  m.minigameId,
+                playerCount:
+                  m
+                    .standings
+                    .length,
+                winnerUserName:
+                  m
+                    .standings[0]
+                    ?.userName ??
+                  null,
+                rankings:
+                  m.standings,
+                durationMs:
+                  m.endedAt -
+                  m.startedAt,
+                playedAt:
+                  m.startedAt,
+              }),
+            ),
+        },
+      );
 
     // Schedule disband after delay
-    const previous = this.disbandTimers.get(lobby.id);
-    if (previous) clearTimeout(previous);
-    const timer = setTimeout(() => {
-      this.disbandTimers.delete(lobby.id);
-      this.disband(lobby.id, 'Session ended');
-    }, SESSION_RESULTS_DISBAND_DELAY_MS);
+    const previous =
+      this.disbandTimers.get(
+        lobby.id,
+      );
+    if (
+      previous
+    )
+      clearTimeout(
+        previous,
+      );
+    const timer =
+      setTimeout(
+        () => {
+          this.disbandTimers.delete(
+            lobby.id,
+          );
+          this.disband(
+            lobby.id,
+            'Session ended',
+          );
+        },
+        SESSION_RESULTS_DISBAND_DELAY_MS,
+      );
 
-    this.disbandTimers.set(lobby.id, timer);
+    this.disbandTimers.set(
+      lobby.id,
+      timer,
+    );
   }
 
   /** Build cumulative standings from player scores */
-  private buildSessionStandings(lobby: RMHboxLobby) {
-    const standings = Array.from(lobby.players.values())
-      .map((p) => ({
-        userId: p.userId,
-        userName: p.userName,
-        totalScore: p.score,
-        wins: lobby.matchHistory.filter((m) => m.standings[0]?.userId === p.userId).length,
-        rank: 0,
-      }))
-      .sort((a, b) => b.totalScore - a.totalScore);
+  private buildSessionStandings(
+    lobby: RMHboxLobby,
+  ) {
+    const standings =
+      Array.from(
+        lobby.players.values(),
+      )
+        .map(
+          (
+            p,
+          ) => ({
+            userId:
+              p.userId,
+            userName:
+              p.userName,
+            totalScore:
+              p.score,
+            wins: lobby.matchHistory.filter(
+              (
+                m,
+              ) =>
+                m
+                  .standings[0]
+                  ?.userId ===
+                p.userId,
+            )
+              .length,
+            rank: 0,
+          }),
+        )
+        .sort(
+          (
+            a,
+            b,
+          ) =>
+            b.totalScore -
+            a.totalScore,
+        );
 
     // Assign ranks
-    standings.forEach((s, i) => { s.rank = i + 1; });
+    standings.forEach(
+      (
+        s,
+        i,
+      ) => {
+        s.rank =
+          i +
+          1;
+      },
+    );
     return standings;
   }
 
   // ─── Ready-up (§7) ────────────────────────────────────────
 
-  private toggleReady(socket: Socket, payload: { lobbyId: string }): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.getLobbyByUserId(userId);
-    if (!lobby || lobby.id !== payload.lobbyId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
+  private toggleReady(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.getLobbyByUserId(
+        userId,
+      );
+    if (
+      !lobby ||
+      lobby.id !==
+        payload.lobbyId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'You are not in a lobby.',
+        },
+      );
       return;
     }
 
-    const player = lobby.players.get(userId);
-    if (!player) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not a player in this lobby.' });
+    const player =
+      lobby.players.get(
+        userId,
+      );
+    if (
+      !player
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'You are not a player in this lobby.',
+        },
+      );
       return;
     }
 
     // Host is permanently ready once a game is picked — cannot toggle
-    if (userId === lobby.hostUserId) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Host cannot toggle ready state.' });
+    if (
+      userId ===
+      lobby.hostUserId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'INVALID_PAYLOAD',
+          message:
+            'Host cannot toggle ready state.',
+        },
+      );
       return;
     }
 
     // Non-host players cannot ready up until the host has picked a game
-    if (!player.isReady && !lobby.selectedGame) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Wait for the host to pick a game first.' });
+    if (
+      !player.isReady &&
+      !lobby.selectedGame
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'INVALID_PAYLOAD',
+          message:
+            'Wait for the host to pick a game first.',
+        },
+      );
       return;
     }
 
-    player.isReady = !player.isReady;
-    lobby.lastActivityAt = Date.now();
+    player.isReady =
+      !player.isReady;
+    lobby.lastActivityAt =
+      Date.now();
 
-    this.broadcastAction(lobby.id, {
-      type: 'PLAYER_READY_CHANGED',
-      payload: { userId, isReady: player.isReady },
-    });
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'PLAYER_READY_CHANGED',
+        payload:
+          {
+            userId,
+            isReady:
+              player.isReady,
+          },
+      },
+    );
 
-    logger.info({ event: 'player_ready_changed', lobbyId: lobby.id, userId, isReady: player.isReady });
+    logger.info(
+      {
+        event:
+          'player_ready_changed',
+        lobbyId:
+          lobby.id,
+        userId,
+        isReady:
+          player.isReady,
+      },
+    );
 
     // Check auto-start threshold
-    if (lobby.settings.autoStartThreshold !== null) {
-      const readyCount = Array.from(lobby.players.values()).filter((p) => p.isReady).length;
-      if (readyCount >= lobby.settings.autoStartThreshold) {
-        this.broadcastAction(lobby.id, {
-          type: 'AUTO_START_TRIGGERED',
-          payload: { readyCount, threshold: lobby.settings.autoStartThreshold },
-        });
+    if (
+      lobby
+        .settings
+        .autoStartThreshold !==
+      null
+    ) {
+      const readyCount =
+        Array.from(
+          lobby.players.values(),
+        ).filter(
+          (
+            p,
+          ) =>
+            p.isReady,
+        ).length;
+      if (
+        readyCount >=
+        lobby
+          .settings
+          .autoStartThreshold
+      ) {
+        this.broadcastAction(
+          lobby.id,
+          {
+            type: 'AUTO_START_TRIGGERED',
+            payload:
+              {
+                readyCount,
+                threshold:
+                  lobby
+                    .settings
+                    .autoStartThreshold,
+              },
+          },
+        );
 
-        logger.info({ event: 'auto_start_triggered', lobbyId: lobby.id, readyCount, threshold: lobby.settings.autoStartThreshold });
+        logger.info(
+          {
+            event:
+              'auto_start_triggered',
+            lobbyId:
+              lobby.id,
+            readyCount,
+            threshold:
+              lobby
+                .settings
+                .autoStartThreshold,
+          },
+        );
       }
     }
   }
 
   // ─── Game Pick (host picks game without starting) ──────────
 
-  private pickGame(socket: Socket, payload: { lobbyId: string; minigameId: string }): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.getLobbyByUserId(userId);
-    if (!lobby || lobby.id !== payload.lobbyId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in this lobby.' });
+  private pickGame(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+      minigameId: string;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.getLobbyByUserId(
+        userId,
+      );
+    if (
+      !lobby ||
+      lobby.id !==
+        payload.lobbyId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'You are not in this lobby.',
+        },
+      );
       return;
     }
 
-    if (lobby.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can pick a game.' });
+    if (
+      lobby.hostUserId !==
+      userId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_HOST',
+          message:
+            'Only the host can pick a game.',
+        },
+      );
       return;
     }
 
-    if (lobby.state !== 'WAITING') {
-      socket.emit(S2C.ERROR, { code: 'INVALID_STATE', message: 'Lobby must be in WAITING state.' });
+    if (
+      lobby.state !==
+      'WAITING'
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'INVALID_STATE',
+          message:
+            'Lobby must be in WAITING state.',
+        },
+      );
       return;
     }
 
-    const isVoteMode = payload.minigameId === '__vote__';
+    const isVoteMode =
+      payload.minigameId ===
+      '__vote__';
 
-    if (!isVoteMode) {
-      const def = MINIGAME_REGISTRY[payload.minigameId];
-      if (!def) {
-        socket.emit(S2C.ERROR, { code: 'INVALID_GAME', message: 'Unknown minigame.' });
+    if (
+      !isVoteMode
+    ) {
+      const def =
+        MINIGAME_REGISTRY[
+          payload
+            .minigameId
+        ];
+      if (
+        !def
+      ) {
+        socket.emit(
+          S2C.ERROR,
+          {
+            code: 'INVALID_GAME',
+            message:
+              'Unknown minigame.',
+          },
+        );
         return;
       }
     }
 
-    const displayName = isVoteMode
-      ? 'Player Vote'
-      : (MINIGAME_REGISTRY[payload.minigameId]?.displayName ?? payload.minigameId);
+    const displayName =
+      isVoteMode
+        ? 'Player Vote'
+        : (MINIGAME_REGISTRY[
+            payload
+              .minigameId
+          ]
+            ?.displayName ??
+          payload.minigameId);
 
-    const prevSelection = lobby.selectedGame?.minigameId;
-    lobby.selectedGame = { minigameId: payload.minigameId, displayName };
-    lobby.lastActivityAt = Date.now();
+    const prevSelection =
+      lobby
+        .selectedGame
+        ?.minigameId;
+    lobby.selectedGame =
+      {
+        minigameId:
+          payload.minigameId,
+        displayName,
+      };
+    lobby.lastActivityAt =
+      Date.now();
 
     // Initialize or clear pending game settings for the selected game
-    if (!isVoteMode) {
-      const def = MINIGAME_REGISTRY[payload.minigameId];
-      if (def?.settingsSchema && def.settingsSchema.length > 0) {
+    if (
+      !isVoteMode
+    ) {
+      const def =
+        MINIGAME_REGISTRY[
+          payload
+            .minigameId
+        ];
+      if (
+        def?.settingsSchema &&
+        def
+          .settingsSchema
+          .length >
+          0
+      ) {
         // Only reset settings when the game selection actually changes
-        if (prevSelection !== payload.minigameId) {
-          lobby.pendingGameSettings = getDefaultSettings(def.settingsSchema);
+        if (
+          prevSelection !==
+          payload.minigameId
+        ) {
+          lobby.pendingGameSettings =
+            getDefaultSettings(
+              def.settingsSchema,
+            );
         }
       } else {
-        lobby.pendingGameSettings = null;
+        lobby.pendingGameSettings =
+          null;
       }
     } else {
-      lobby.pendingGameSettings = null;
+      lobby.pendingGameSettings =
+        null;
     }
 
     // Mark host as permanently ready
-    const hostPlayer = lobby.players.get(userId);
-    if (hostPlayer && !hostPlayer.isReady) {
+    const hostPlayer =
+      lobby.players.get(
+        userId,
+      );
+    if (
+      hostPlayer &&
+      !hostPlayer.isReady
+    ) {
       hostPlayer.isReady = true;
-      this.broadcastAction(lobby.id, {
-        type: 'PLAYER_READY_CHANGED',
-        payload: { userId, isReady: true },
-      });
+      this.broadcastAction(
+        lobby.id,
+        {
+          type: 'PLAYER_READY_CHANGED',
+          payload:
+            {
+              userId,
+              isReady: true,
+            },
+        },
+      );
     }
 
     // If changing the pick, unready all non-host players
-    if (prevSelection && prevSelection !== payload.minigameId) {
+    if (
+      prevSelection &&
+      prevSelection !==
+        payload.minigameId
+    ) {
       for (const player of lobby.players.values()) {
-        if (player.userId !== lobby.hostUserId && player.isReady) {
+        if (
+          player.userId !==
+            lobby.hostUserId &&
+          player.isReady
+        ) {
           player.isReady = false;
-          this.broadcastAction(lobby.id, {
-            type: 'PLAYER_READY_CHANGED',
-            payload: { userId: player.userId, isReady: false },
-          });
+          this.broadcastAction(
+            lobby.id,
+            {
+              type: 'PLAYER_READY_CHANGED',
+              payload:
+                {
+                  userId:
+                    player.userId,
+                  isReady: false,
+                },
+            },
+          );
         }
       }
     }
 
     // Broadcast game picked
-    this.broadcastAction(lobby.id, {
-      type: 'GAME_PICKED',
-      payload: { minigameId: payload.minigameId, displayName },
-    });
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'GAME_PICKED',
+        payload:
+          {
+            minigameId:
+              payload.minigameId,
+            displayName,
+          },
+      },
+    );
 
-    logger.info({ event: 'game_picked', lobbyId: lobby.id, userId, minigameId: payload.minigameId, displayName });
+    logger.info(
+      {
+        event:
+          'game_picked',
+        lobbyId:
+          lobby.id,
+        userId,
+        minigameId:
+          payload.minigameId,
+        displayName,
+      },
+    );
   }
 
   // ─── Spectator promotion (§8) ──────────────────────────────
 
-  private requestPromotion(socket: Socket, payload: { lobbyId: string }): void {
-    const userId = socket.data.userId as string;
-    const lobby = this.getLobbyByUserId(userId);
-    if (!lobby || lobby.id !== payload.lobbyId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
+  private requestPromotion(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+    },
+  ): void {
+    const userId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.getLobbyByUserId(
+        userId,
+      );
+    if (
+      !lobby ||
+      lobby.id !==
+        payload.lobbyId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'You are not in a lobby.',
+        },
+      );
       return;
     }
 
-    const spectator = lobby.spectators.get(userId);
-    if (!spectator) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not a spectator in this lobby.' });
+    const spectator =
+      lobby.spectators.get(
+        userId,
+      );
+    if (
+      !spectator
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'You are not a spectator in this lobby.',
+        },
+      );
       return;
     }
 
     // Only allow promotion in WAITING or ROUND_RESULTS states
-    if (lobby.state !== 'WAITING' && lobby.state !== 'ROUND_RESULTS') {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_IN_GAME', message: 'Promotion is only allowed between rounds.' });
+    if (
+      lobby.state !==
+        'WAITING' &&
+      lobby.state !==
+        'ROUND_RESULTS'
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_IN_GAME',
+          message:
+            'Promotion is only allowed between rounds.',
+        },
+      );
       return;
     }
 
-    if (!lobby.settings.allowSpectatorPromotion) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Spectator promotion is disabled.' });
+    if (
+      !lobby
+        .settings
+        .allowSpectatorPromotion
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'INVALID_PAYLOAD',
+          message:
+            'Spectator promotion is disabled.',
+        },
+      );
       return;
     }
 
-    if (lobby.players.size >= lobby.settings.maxPlayers) {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_FULL', message: 'Player slots are full.' });
+    if (
+      lobby
+        .players
+        .size >=
+      lobby
+        .settings
+        .maxPlayers
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_FULL',
+          message:
+            'Player slots are full.',
+        },
+      );
       return;
     }
 
     // Move spectator to players
-    lobby.spectators.delete(userId);
-    const newPlayer: RMHboxPlayer = {
-      userId: spectator.userId,
-      userName: spectator.userName,
-      avatarUrl: spectator.avatarUrl,
-      socketId: spectator.socketId,
-      isConnected: spectator.isConnected,
-      isReady: false,
-      isAway: false,
-      score: 0,
-      roundScore: 0,
-      joinedAt: spectator.joinedAt,
-      lastSeenAt: Date.now(),
-      role: 'player',
-    };
-    lobby.players.set(userId, newPlayer);
+    lobby.spectators.delete(
+      userId,
+    );
+    const newPlayer: RMHboxPlayer =
+      {
+        userId:
+          spectator.userId,
+        userName:
+          spectator.userName,
+        avatarUrl:
+          spectator.avatarUrl,
+        socketId:
+          spectator.socketId,
+        isConnected:
+          spectator.isConnected,
+        isReady: false,
+        isAway: false,
+        score: 0,
+        roundScore: 0,
+        joinedAt:
+          spectator.joinedAt,
+        lastSeenAt:
+          Date.now(),
+        role: 'player',
+      };
+    lobby.players.set(
+      userId,
+      newPlayer,
+    );
 
     // Update Socket.io rooms
-    socket.leave(`lobby:${lobby.id}:spectators`);
-    socket.join(`lobby:${lobby.id}:players`);
+    socket.leave(
+      `lobby:${lobby.id}:spectators`,
+    );
+    socket.join(
+      `lobby:${lobby.id}:players`,
+    );
 
-    lobby.lastActivityAt = Date.now();
+    lobby.lastActivityAt =
+      Date.now();
 
-    this.broadcastAction(lobby.id, {
-      type: 'SPECTATOR_PROMOTED',
-      payload: { userId, userName: spectator.userName },
-    });
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'SPECTATOR_PROMOTED',
+        payload:
+          {
+            userId,
+            userName:
+              spectator.userName,
+          },
+      },
+    );
 
-    this.addSystemChat(lobby.id, `${spectator.userName} joined as a player`);
+    this.addSystemChat(
+      lobby.id,
+      `${spectator.userName} joined as a player`,
+    );
 
-    logger.info({ event: 'spectator_promoted', lobbyId: lobby.id, userId });
+    logger.info(
+      {
+        event:
+          'spectator_promoted',
+        lobbyId:
+          lobby.id,
+        userId,
+      },
+    );
   }
 
   // ─── Host-initiated spectator promotion ────────────────────
 
-  private promoteSpectator(socket: Socket, payload: { lobbyId: string; userId: string }): void {
-    const hostId = socket.data.userId as string;
-    const lobby = this.getLobbyByUserId(hostId);
-    if (!lobby || lobby.id !== payload.lobbyId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_IN_LOBBY', message: 'You are not in a lobby.' });
+  private promoteSpectator(
+    socket: Socket,
+    payload: {
+      lobbyId: string;
+      userId: string;
+    },
+  ): void {
+    const hostId =
+      socket
+        .data
+        .userId as string;
+    const lobby =
+      this.getLobbyByUserId(
+        hostId,
+      );
+    if (
+      !lobby ||
+      lobby.id !==
+        payload.lobbyId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_IN_LOBBY',
+          message:
+            'You are not in a lobby.',
+        },
+      );
       return;
     }
 
-    if (lobby.hostUserId !== hostId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can promote spectators.' });
+    if (
+      lobby.hostUserId !==
+      hostId
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'NOT_HOST',
+          message:
+            'Only the host can promote spectators.',
+        },
+      );
       return;
     }
 
     // Only allow promotion in WAITING or ROUND_RESULTS states
-    if (lobby.state !== 'WAITING' && lobby.state !== 'ROUND_RESULTS') {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_IN_GAME', message: 'Promotion is only allowed between rounds.' });
+    if (
+      lobby.state !==
+        'WAITING' &&
+      lobby.state !==
+        'ROUND_RESULTS'
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_IN_GAME',
+          message:
+            'Promotion is only allowed between rounds.',
+        },
+      );
       return;
     }
 
-    const spectator = lobby.spectators.get(payload.userId);
-    if (!spectator) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'That user is not a spectator.' });
+    const spectator =
+      lobby.spectators.get(
+        payload.userId,
+      );
+    if (
+      !spectator
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'INVALID_PAYLOAD',
+          message:
+            'That user is not a spectator.',
+        },
+      );
       return;
     }
 
-    if (lobby.players.size >= lobby.settings.maxPlayers) {
-      socket.emit(S2C.ERROR, { code: 'LOBBY_FULL', message: 'Player slots are full.' });
+    if (
+      lobby
+        .players
+        .size >=
+      lobby
+        .settings
+        .maxPlayers
+    ) {
+      socket.emit(
+        S2C.ERROR,
+        {
+          code: 'LOBBY_FULL',
+          message:
+            'Player slots are full.',
+        },
+      );
       return;
     }
 
     // Move spectator to players
-    lobby.spectators.delete(payload.userId);
-    const newPlayer: RMHboxPlayer = {
-      userId: spectator.userId,
-      userName: spectator.userName,
-      avatarUrl: spectator.avatarUrl,
-      socketId: spectator.socketId,
-      isConnected: spectator.isConnected,
-      isReady: false,
-      isAway: false,
-      score: 0,
-      roundScore: 0,
-      joinedAt: spectator.joinedAt,
-      lastSeenAt: Date.now(),
-      role: 'player',
-    };
-    lobby.players.set(payload.userId, newPlayer);
+    lobby.spectators.delete(
+      payload.userId,
+    );
+    const newPlayer: RMHboxPlayer =
+      {
+        userId:
+          spectator.userId,
+        userName:
+          spectator.userName,
+        avatarUrl:
+          spectator.avatarUrl,
+        socketId:
+          spectator.socketId,
+        isConnected:
+          spectator.isConnected,
+        isReady: false,
+        isAway: false,
+        score: 0,
+        roundScore: 0,
+        joinedAt:
+          spectator.joinedAt,
+        lastSeenAt:
+          Date.now(),
+        role: 'player',
+      };
+    lobby.players.set(
+      payload.userId,
+      newPlayer,
+    );
 
     // Update Socket.io rooms for the promoted spectator
-    const specSocket = spectator.socketId ? this.io.sockets.sockets.get(spectator.socketId) : undefined;
-    if (specSocket) {
-      specSocket.leave(`lobby:${lobby.id}:spectators`);
-      specSocket.join(`lobby:${lobby.id}:players`);
+    const specSocket =
+      spectator.socketId
+        ? this.io.sockets.sockets.get(
+            spectator.socketId,
+          )
+        : undefined;
+    if (
+      specSocket
+    ) {
+      specSocket.leave(
+        `lobby:${lobby.id}:spectators`,
+      );
+      specSocket.join(
+        `lobby:${lobby.id}:players`,
+      );
     }
 
-    lobby.lastActivityAt = Date.now();
+    lobby.lastActivityAt =
+      Date.now();
 
-    this.broadcastAction(lobby.id, {
-      type: 'SPECTATOR_PROMOTED',
-      payload: { userId: payload.userId, userName: spectator.userName },
-    });
+    this.broadcastAction(
+      lobby.id,
+      {
+        type: 'SPECTATOR_PROMOTED',
+        payload:
+          {
+            userId:
+              payload.userId,
+            userName:
+              spectator.userName,
+          },
+      },
+    );
 
-    this.addSystemChat(lobby.id, `${spectator.userName} was promoted by the host`);
+    this.addSystemChat(
+      lobby.id,
+      `${spectator.userName} was promoted by the host`,
+    );
 
-    logger.info({ event: 'host_promoted_spectator', lobbyId: lobby.id, userId: payload.userId, hostId });
+    logger.info(
+      {
+        event:
+          'host_promoted_spectator',
+        lobbyId:
+          lobby.id,
+        userId:
+          payload.userId,
+        hostId,
+      },
+    );
   }
 
   // ─── Lobby browser (§9) ───────────────────────────────────
 
-  private browseLobbies(socket: Socket, payload: { cursor?: string; limit: number }): void {
+  private browseLobbies(
+    socket: Socket,
+    payload: {
+      cursor?: string;
+      limit: number;
+    },
+  ): void {
     // Filter public, non-disbanded lobbies
-    const publicLobbies: Array<{ id: string; lobby: RMHboxLobby }> = [];
-    for (const [id, lobby] of this.lobbies) {
-      if (lobby.settings.isPublic && lobby.state !== 'DISBANDED') {
-        publicLobbies.push({ id, lobby });
+    const publicLobbies: Array<{
+      id: string;
+      lobby: RMHboxLobby;
+    }> =
+      [];
+    for (const [
+      id,
+      lobby,
+    ] of this
+      .lobbies) {
+      if (
+        lobby
+          .settings
+          .isPublic &&
+        lobby.state !==
+          'DISBANDED'
+      ) {
+        publicLobbies.push(
+          {
+            id,
+            lobby,
+          },
+        );
       }
     }
 
     // Sort by player count descending (most active first)
-    publicLobbies.sort((a, b) => b.lobby.players.size - a.lobby.players.size);
+    publicLobbies.sort(
+      (
+        a,
+        b,
+      ) =>
+        b
+          .lobby
+          .players
+          .size -
+        a
+          .lobby
+          .players
+          .size,
+    );
 
     // Apply cursor-based pagination
     let startIndex = 0;
-    if (payload.cursor) {
-      const cursorIndex = publicLobbies.findIndex((l) => l.id === payload.cursor);
-      if (cursorIndex >= 0) {
-        startIndex = cursorIndex + 1;
+    if (
+      payload.cursor
+    ) {
+      const cursorIndex =
+        publicLobbies.findIndex(
+          (
+            l,
+          ) =>
+            l.id ===
+            payload.cursor,
+        );
+      if (
+        cursorIndex >=
+        0
+      ) {
+        startIndex =
+          cursorIndex +
+          1;
       }
     }
 
-    const page = publicLobbies.slice(startIndex, startIndex + payload.limit);
-    const nextCursor = page.length === payload.limit && startIndex + payload.limit < publicLobbies.length
-      ? page[page.length - 1].id
-      : null;
+    const page =
+      publicLobbies.slice(
+        startIndex,
+        startIndex +
+          payload.limit,
+      );
+    const nextCursor =
+      page.length ===
+        payload.limit &&
+      startIndex +
+        payload.limit <
+        publicLobbies.length
+        ? page[
+            page.length -
+              1
+          ]
+            .id
+        : null;
 
-    const lobbies: PublicLobbyInfo[] = page.map(({ id, lobby }) => {
-      const hostPlayer = lobby.players.get(lobby.hostUserId);
-      return {
-        lobbyId: id,
-        hostName: hostPlayer?.userName ?? 'Unknown',
-        playerCount: lobby.players.size,
-        maxPlayers: lobby.settings.maxPlayers,
-        spectatorCount: lobby.spectators.size,
-        state: lobby.state,
-        currentGame: lobby.currentGame?.minigameId ?? null,
-        selectedGame: lobby.selectedGame?.displayName ?? null,
-        roundNumber: lobby.roundNumber,
-      };
-    });
+    const lobbies: PublicLobbyInfo[] =
+      page.map(
+        ({
+          id,
+          lobby,
+        }) => {
+          const hostPlayer =
+            lobby.players.get(
+              lobby.hostUserId,
+            );
+          return {
+            lobbyId:
+              id,
+            hostName:
+              hostPlayer?.userName ??
+              'Unknown',
+            playerCount:
+              lobby
+                .players
+                .size,
+            maxPlayers:
+              lobby
+                .settings
+                .maxPlayers,
+            spectatorCount:
+              lobby
+                .spectators
+                .size,
+            state:
+              lobby.state,
+            currentGame:
+              lobby
+                .currentGame
+                ?.minigameId ??
+              null,
+            selectedGame:
+              lobby
+                .selectedGame
+                ?.displayName ??
+              null,
+            roundNumber:
+              lobby.roundNumber,
+          };
+        },
+      );
 
-    socket.emit(S2C.LOBBY_BROWSE_RESULT, { lobbies, nextCursor });
+    socket.emit(
+      S2C.LOBBY_BROWSE_RESULT,
+      {
+        lobbies,
+        nextCursor,
+      },
+    );
 
-    logger.debug({ event: 'lobby_browse', userId: socket.data.userId, resultCount: lobbies.length });
+    logger.debug(
+      {
+        event:
+          'lobby_browse',
+        userId:
+          socket
+            .data
+            .userId,
+        resultCount:
+          lobbies.length,
+      },
+    );
   }
 
   // ─── Build client state (§10) ──────────────────────────────
@@ -1529,60 +4187,156 @@ export class LobbyManager {
   buildClientState(
     lobby: RMHboxLobby,
     userId: string,
-    shared: SharedClientParts = this.buildSharedClientParts(lobby),
+    shared: SharedClientParts = this.buildSharedClientParts(
+      lobby,
+    ),
   ): ClientLobbyState {
-    const myRole: 'player' | 'spectator' = lobby.players.has(userId) ? 'player' : 'spectator';
+    const myRole:
+      | 'player'
+      | 'spectator' =
+      lobby.players.has(
+        userId,
+      )
+        ? 'player'
+        : 'spectator';
 
-    let currentGame: ClientGameInfo | null = null;
-    if (lobby.currentGame) {
-      const handler = lobby.currentGame.handler;
-      let gameState: unknown = {};
+    let currentGame: ClientGameInfo | null =
+      null;
+    if (
+      lobby.currentGame
+    ) {
+      const handler =
+        lobby
+          .currentGame
+          .handler;
+      let gameState: unknown =
+        {};
 
       // Handler may be null during pre-game phases (INSTRUCTIONS, PRELOADING, COUNTDOWN)
-      if (handler) {
-        if (myRole === 'player') {
-          gameState = handler.getStateForPlayer(userId);
+      if (
+        handler
+      ) {
+        if (
+          myRole ===
+          'player'
+        ) {
+          gameState =
+            handler.getStateForPlayer(
+              userId,
+            );
         } else {
           // perf: the spectator view does not depend on who is asking, so the
           // heartbeat computes it once per tick and shares it across spectators.
-          if (!shared.spectatorGame) shared.spectatorGame = { state: handler.getStateForSpectator() };
-          gameState = shared.spectatorGame.state;
+          if (
+            !shared.spectatorGame
+          )
+            shared.spectatorGame =
+              {
+                state:
+                  handler.getStateForSpectator(),
+              };
+          gameState =
+            shared
+              .spectatorGame
+              .state;
         }
       }
 
       // Determine client-visible phase from lobby state
-      let phase: ClientGameInfo['phase'] = 'playing';
-      if (lobby.state === 'INSTRUCTIONS') phase = 'instructions';
-      else if (lobby.state === 'PRELOADING') phase = 'preloading';
-      else if (lobby.state === 'COUNTDOWN') phase = 'countdown';
-      else if (lobby.state === 'ROUND_RESULTS') phase = 'results';
+      let phase: ClientGameInfo['phase'] =
+        'playing';
+      if (
+        lobby.state ===
+        'INSTRUCTIONS'
+      )
+        phase =
+          'instructions';
+      else if (
+        lobby.state ===
+        'PRELOADING'
+      )
+        phase =
+          'preloading';
+      else if (
+        lobby.state ===
+        'COUNTDOWN'
+      )
+        phase =
+          'countdown';
+      else if (
+        lobby.state ===
+        'ROUND_RESULTS'
+      )
+        phase =
+          'results';
 
-      currentGame = {
-        minigameId: lobby.currentGame.minigameId,
-        displayName: MINIGAME_REGISTRY[lobby.currentGame.minigameId]?.displayName ?? lobby.currentGame.minigameId,
-        phase,
-        timeRemaining: null,
-        publicState: (typeof gameState === 'object' && gameState !== null ? gameState : {}) as Record<string, unknown>,
-        privateState: {}, // Phase 3: placeholder for future per-player private state
-        spectatorMode: handler?.spectatorMode ?? null,
-      };
+      currentGame =
+        {
+          minigameId:
+            lobby
+              .currentGame
+              .minigameId,
+          displayName:
+            MINIGAME_REGISTRY[
+              lobby
+                .currentGame
+                .minigameId
+            ]
+              ?.displayName ??
+            lobby
+              .currentGame
+              .minigameId,
+          phase,
+          timeRemaining:
+            null,
+          publicState:
+            (typeof gameState ===
+              'object' &&
+            gameState !==
+              null
+              ? gameState
+              : {}) as Record<
+              string,
+              unknown
+            >,
+          privateState:
+            {}, // Phase 3: placeholder for future per-player private state
+          spectatorMode:
+            handler?.spectatorMode ??
+            null,
+        };
     }
 
     return {
-      lobbyId: lobby.id,
-      hostUserId: lobby.hostUserId,
-      state: lobby.state,
-      settings: { ...lobby.settings },
-      players: shared.players,
-      spectators: shared.spectators,
+      lobbyId:
+        lobby.id,
+      hostUserId:
+        lobby.hostUserId,
+      state:
+        lobby.state,
+      settings:
+        {
+          ...lobby.settings,
+        },
+      players:
+        shared.players,
+      spectators:
+        shared.spectators,
       currentGame,
-      selectedGame: lobby.selectedGame ?? null,
-      roundNumber: lobby.roundNumber,
-      chat: [...lobby.chat],
+      selectedGame:
+        lobby.selectedGame ??
+        null,
+      roundNumber:
+        lobby.roundNumber,
+      chat: [
+        ...lobby.chat,
+      ],
       myRole,
-      myUserId: userId,
+      myUserId:
+        userId,
       seq: shared.seq,
-      matchHistory: shared.matchHistory,
+      matchHistory:
+        shared.matchHistory,
     };
   }
 
@@ -1592,163 +4346,408 @@ export class LobbyManager {
    * lobby and reuses it for every player and spectator instead of rebuilding
    * it per recipient. Treat the result as read-only.
    */
-  buildSharedClientParts(lobby: RMHboxLobby): SharedClientParts {
-    const players: ClientPlayerInfo[] = Array.from(lobby.players.values()).map((p) => ({
-      userId: p.userId,
-      userName: p.userName,
-      avatarUrl: p.avatarUrl,
-      isConnected: p.isConnected,
-      isReady: p.isReady,
-      isAway: p.isAway,
-      score: p.score,
-      roundScore: p.roundScore,
-      isHost: p.userId === lobby.hostUserId,
-    }));
+  buildSharedClientParts(
+    lobby: RMHboxLobby,
+  ): SharedClientParts {
+    const players: ClientPlayerInfo[] =
+      Array.from(
+        lobby.players.values(),
+      ).map(
+        (
+          p,
+        ) => ({
+          userId:
+            p.userId,
+          userName:
+            p.userName,
+          avatarUrl:
+            p.avatarUrl,
+          isConnected:
+            p.isConnected,
+          isReady:
+            p.isReady,
+          isAway:
+            p.isAway,
+          score:
+            p.score,
+          roundScore:
+            p.roundScore,
+          isHost:
+            p.userId ===
+            lobby.hostUserId,
+        }),
+      );
 
-    const spectators: ClientSpectatorInfo[] = Array.from(lobby.spectators.values()).map((s) => ({
-      userId: s.userId,
-      userName: s.userName,
-      avatarUrl: s.avatarUrl,
-      isConnected: s.isConnected,
-    }));
+    const spectators: ClientSpectatorInfo[] =
+      Array.from(
+        lobby.spectators.values(),
+      ).map(
+        (
+          s,
+        ) => ({
+          userId:
+            s.userId,
+          userName:
+            s.userName,
+          avatarUrl:
+            s.avatarUrl,
+          isConnected:
+            s.isConnected,
+        }),
+      );
 
-    const matchHistory: MatchSummary[] = lobby.matchHistory.map((m) => ({
-      matchId: `${m.minigameId}-${m.roundNumber}`,
-      minigameId: m.minigameId,
-      minigameDisplayName: MINIGAME_REGISTRY[m.minigameId]?.displayName ?? m.minigameId,
-      playerCount: m.standings.length,
-      winnerUserName: m.standings[0]?.userName ?? null,
-      rankings: m.standings,
-      durationMs: m.endedAt - m.startedAt,
-      playedAt: m.startedAt,
-    }));
+    const matchHistory: MatchSummary[] =
+      lobby.matchHistory.map(
+        (
+          m,
+        ) => ({
+          matchId: `${m.minigameId}-${m.roundNumber}`,
+          minigameId:
+            m.minigameId,
+          minigameDisplayName:
+            MINIGAME_REGISTRY[
+              m
+                .minigameId
+            ]
+              ?.displayName ??
+            m.minigameId,
+          playerCount:
+            m
+              .standings
+              .length,
+          winnerUserName:
+            m
+              .standings[0]
+              ?.userName ??
+            null,
+          rankings:
+            m.standings,
+          durationMs:
+            m.endedAt -
+            m.startedAt,
+          playedAt:
+            m.startedAt,
+        }),
+      );
 
-    return { players, spectators, matchHistory, seq: this.seqCounters.get(lobby.id) ?? 0 };
+    return {
+      players,
+      spectators,
+      matchHistory,
+      seq:
+        this.seqCounters.get(
+          lobby.id,
+        ) ??
+        0,
+    };
   }
 
   // ─── Garbage collector (§11) ───────────────────────────────
 
   startGarbageCollector(): void {
-    this.gcInterval = setInterval(() => this.runGC(), config.LOBBY_GC_INTERVAL_MS);
+    this.gcInterval =
+      setInterval(
+        () =>
+          this.runGC(),
+        config.LOBBY_GC_INTERVAL_MS,
+      );
   }
 
   stopGarbageCollector(): void {
-    if (this.gcInterval) {
-      clearInterval(this.gcInterval);
-      this.gcInterval = null;
+    if (
+      this
+        .gcInterval
+    ) {
+      clearInterval(
+        this
+          .gcInterval,
+      );
+      this.gcInterval =
+        null;
     }
   }
 
   private runGC(): void {
-    const now = Date.now();
-    for (const [id, lobby] of this.lobbies) {
-      if (lobby.state === 'DISBANDED') continue;
+    const now =
+      Date.now();
+    for (const [
+      id,
+      lobby,
+    ] of this
+      .lobbies) {
+      if (
+        lobby.state ===
+        'DISBANDED'
+      )
+        continue;
 
-      const allDisconnected = this.areAllDisconnected(lobby);
-      const isEmpty = lobby.players.size === 0 && lobby.spectators.size === 0;
+      const allDisconnected =
+        this.areAllDisconnected(
+          lobby,
+        );
+      const isEmpty =
+        lobby
+          .players
+          .size ===
+          0 &&
+        lobby
+          .spectators
+          .size ===
+          0;
 
       // Check idle timeout (only in WAITING state)
-      const isIdle = lobby.state === 'WAITING' && now - lobby.lastActivityAt > config.LOBBY_IDLE_TIMEOUT_MS;
+      const isIdle =
+        lobby.state ===
+          'WAITING' &&
+        now -
+          lobby.lastActivityAt >
+          config.LOBBY_IDLE_TIMEOUT_MS;
 
       // Check absolute timeout (any state) — but only if no clients are connected
-      const isExpired = allDisconnected && now - lobby.lastActivityAt > config.LOBBY_ABSOLUTE_TIMEOUT_MS;
+      const isExpired =
+        allDisconnected &&
+        now -
+          lobby.lastActivityAt >
+          config.LOBBY_ABSOLUTE_TIMEOUT_MS;
 
       // Check empty timeout (all disconnected or nobody present)
-      const isEmptyTooLong = (isEmpty || allDisconnected) && now - lobby.lastActivityAt > config.LOBBY_EMPTY_TIMEOUT_MS;
+      const isEmptyTooLong =
+        (isEmpty ||
+          allDisconnected) &&
+        now -
+          lobby.lastActivityAt >
+          config.LOBBY_EMPTY_TIMEOUT_MS;
 
-      if (isExpired || isIdle || isEmptyTooLong) {
-        const reason = isExpired ? 'expired' : isIdle ? 'idle' : 'empty';
-        logger.info({ event: 'lobby_gc', lobbyId: id, reason });
-        this.disband(id, 'Inactive lobby');
+      if (
+        isExpired ||
+        isIdle ||
+        isEmptyTooLong
+      ) {
+        const reason =
+          isExpired
+            ? 'expired'
+            : isIdle
+              ? 'idle'
+              : 'empty';
+        logger.info(
+          {
+            event:
+              'lobby_gc',
+            lobbyId:
+              id,
+            reason,
+          },
+        );
+        this.disband(
+          id,
+          'Inactive lobby',
+        );
       }
     }
   }
 
   /** Check if all players and spectators in a lobby are disconnected */
-  private areAllDisconnected(lobby: RMHboxLobby): boolean {
-    if (lobby.players.size === 0 && lobby.spectators.size === 0) return true;
+  private areAllDisconnected(
+    lobby: RMHboxLobby,
+  ): boolean {
+    if (
+      lobby
+        .players
+        .size ===
+        0 &&
+      lobby
+        .spectators
+        .size ===
+        0
+    )
+      return true;
 
     for (const player of lobby.players.values()) {
-      if (player.isConnected) return false;
+      if (
+        player.isConnected
+      )
+        return false;
     }
     for (const spectator of lobby.spectators.values()) {
-      if (spectator.isConnected) return false;
+      if (
+        spectator.isConnected
+      )
+        return false;
     }
     return true;
   }
 
   // ─── Disband ───────────────────────────────────────────────
 
-  private disband(lobbyId: string, reason: string): void {
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return;
+  private disband(
+    lobbyId: string,
+    reason: string,
+  ): void {
+    const lobby =
+      this.lobbies.get(
+        lobbyId,
+      );
+    if (
+      !lobby
+    )
+      return;
 
     // Stop the coordinator's game/timers/grace and the vote manager's vote.
-    this.teardown(lobbyId);
-    lobby.state = 'DISBANDED';
+    this.teardown(
+      lobbyId,
+    );
+    lobby.state =
+      'DISBANDED';
 
-    logger.info({ event: 'lobby_disbanded', lobbyId, reason });
+    logger.info(
+      {
+        event:
+          'lobby_disbanded',
+        lobbyId,
+        reason,
+      },
+    );
 
-    this.io.to(`lobby:${lobbyId}`).emit(S2C.LOBBY_DISBANDED, { reason });
+    this.io
+      .to(
+        `lobby:${lobbyId}`,
+      )
+      .emit(
+        S2C.LOBBY_DISBANDED,
+        {
+          reason,
+        },
+      );
 
     // Remove all connected sockets from lobby rooms to prevent ghost messages
     // if the lobby code is reused later
-    const lobbyRooms = [
-      `lobby:${lobbyId}`,
-      `lobby:${lobbyId}:players`,
-      `lobby:${lobbyId}:spectators`,
-    ];
-    for (const [userId, player] of lobby.players) {
-      if (player.socketId) {
-        const sock = this.io.sockets.sockets?.get(player.socketId);
-        if (sock) {
-          for (const room of lobbyRooms) sock.leave(room);
-          sock.leave(`lobby:${lobbyId}:player:${userId}`);
+    const lobbyRooms =
+      [
+        `lobby:${lobbyId}`,
+        `lobby:${lobbyId}:players`,
+        `lobby:${lobbyId}:spectators`,
+      ];
+    for (const [
+      userId,
+      player,
+    ] of lobby.players) {
+      if (
+        player.socketId
+      ) {
+        const sock =
+          this.io.sockets.sockets?.get(
+            player.socketId,
+          );
+        if (
+          sock
+        ) {
+          for (const room of lobbyRooms)
+            sock.leave(
+              room,
+            );
+          sock.leave(
+            `lobby:${lobbyId}:player:${userId}`,
+          );
         }
       }
     }
-    for (const [userId, spectator] of lobby.spectators) {
-      if (spectator.socketId) {
-        const sock = this.io.sockets.sockets?.get(spectator.socketId);
-        if (sock) {
-          for (const room of lobbyRooms) sock.leave(room);
-          sock.leave(`lobby:${lobbyId}:player:${userId}`);
+    for (const [
+      userId,
+      spectator,
+    ] of lobby.spectators) {
+      if (
+        spectator.socketId
+      ) {
+        const sock =
+          this.io.sockets.sockets?.get(
+            spectator.socketId,
+          );
+        if (
+          sock
+        ) {
+          for (const room of lobbyRooms)
+            sock.leave(
+              room,
+            );
+          sock.leave(
+            `lobby:${lobbyId}:player:${userId}`,
+          );
         }
       }
     }
 
     // Clean up all user→lobby mappings
     for (const userId of lobby.players.keys()) {
-      this.userToLobby.delete(userId);
-      this.cancelGraceTimer(userId);
+      this.userToLobby.delete(
+        userId,
+      );
+      this.cancelGraceTimer(
+        userId,
+      );
     }
     for (const userId of lobby.spectators.keys()) {
-      this.userToLobby.delete(userId);
+      this.userToLobby.delete(
+        userId,
+      );
     }
 
     // Release the voice-channel mapping so the next person to open the Activity
     // from this channel starts a fresh lobby instead of joining a dead one.
-    if (lobby.discordChannelKey && this.channelToLobby.get(lobby.discordChannelKey) === lobbyId) {
-      this.channelToLobby.delete(lobby.discordChannelKey);
+    if (
+      lobby.discordChannelKey &&
+      this.channelToLobby.get(
+        lobby.discordChannelKey,
+      ) ===
+        lobbyId
+    ) {
+      this.channelToLobby.delete(
+        lobby.discordChannelKey,
+      );
     }
 
     // Clean up lobby data
-    this.presence.clearRoom(lobbyId);
-    this.lobbies.delete(lobbyId);
-    this.seqCounters.delete(lobbyId);
+    this.presence.clearRoom(
+      lobbyId,
+    );
+    this.lobbies.delete(
+      lobbyId,
+    );
+    this.seqCounters.delete(
+      lobbyId,
+    );
 
     // Cancel any disband timer
-    const disbandTimer = this.disbandTimers.get(lobbyId);
-    if (disbandTimer) {
-      clearTimeout(disbandTimer);
-      this.disbandTimers.delete(lobbyId);
+    const disbandTimer =
+      this.disbandTimers.get(
+        lobbyId,
+      );
+    if (
+      disbandTimer
+    ) {
+      clearTimeout(
+        disbandTimer,
+      );
+      this.disbandTimers.delete(
+        lobbyId,
+      );
     }
-    const spectatorTimer = this.restoredSpectatorTimers.get(lobbyId);
-    if (spectatorTimer) {
-      clearTimeout(spectatorTimer);
-      this.restoredSpectatorTimers.delete(lobbyId);
+    const spectatorTimer =
+      this.restoredSpectatorTimers.get(
+        lobbyId,
+      );
+    if (
+      spectatorTimer
+    ) {
+      clearTimeout(
+        spectatorTimer,
+      );
+      this.restoredSpectatorTimers.delete(
+        lobbyId,
+      );
     }
 
-    this.onLobbyRemoved?.(lobbyId);
+    this.onLobbyRemoved?.(
+      lobbyId,
+    );
   }
 }

@@ -5,17 +5,37 @@
  * /settings/privacy. Auto-saves on add/remove.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { Plus, X, Download, Upload } from 'lucide-react';
+import {
+  Plus,
+  X,
+  Download,
+  Upload,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { SettingsSection } from '@/components/settings/SettingsSection';
-import { mergeImportedWords, serializeMutedWords } from '@/lib/feed/muted-import';
-import { MUTE_DURATIONS, type MuteDuration, type MutedExpiries } from '@/lib/feed/muted-expiry';
-import { getMutedWordsApi, setMutedWordsApi } from '@/lib/preferences/preferences.contract';
+import {
+  mergeImportedWords,
+  serializeMutedWords,
+} from '@/lib/feed/muted-import';
+import {
+  MUTE_DURATIONS,
+  type MuteDuration,
+  type MutedExpiries,
+} from '@/lib/feed/muted-expiry';
+import {
+  getMutedWordsApi,
+  setMutedWordsApi,
+} from '@/lib/preferences/preferences.contract';
 import { api } from '@/lib/contract/client';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -23,42 +43,135 @@ import { cn } from '@/lib/utils';
 const MAX_WORDS = 100;
 const MAX_WORD_LEN = 50;
 
-type DurationChoice = 'forever' | MuteDuration;
+type DurationChoice =
+  | 'forever'
+  | MuteDuration;
 
 /** Short "3d" / "5h" / "12m" label for the time left on a timed mute. */
-function timeLeft(at: number, now: number): string {
-  const ms = Math.max(0, at - now);
-  const day = 24 * 60 * 60 * 1000;
-  if (ms >= day) return `${Math.ceil(ms / day)}d`;
-  const hour = 60 * 60 * 1000;
-  if (ms >= hour) return `${Math.ceil(ms / hour)}h`;
+function timeLeft(
+  at: number,
+  now: number,
+): string {
+  const ms =
+    Math.max(
+      0,
+      at -
+        now,
+    );
+  const day =
+    24 *
+    60 *
+    60 *
+    1000;
+  if (
+    ms >=
+    day
+  )
+    return `${Math.ceil(ms / day)}d`;
+  const hour =
+    60 *
+    60 *
+    1000;
+  if (
+    ms >=
+    hour
+  )
+    return `${Math.ceil(ms / hour)}h`;
   return `${Math.max(1, Math.ceil(ms / 60_000))}m`;
 }
 
 export function MutedWordsPanel() {
-  const { t } = useTranslation('feed');
-  const [words, setWords] = useState<string[]>([]);
-  const [expiries, setExpiries] = useState<MutedExpiries>({});
-  const [duration, setDuration] = useState<DurationChoice>('forever');
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(true);
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const [
+    words,
+    setWords,
+  ] =
+    useState<
+      string[]
+    >(
+      [],
+    );
+  const [
+    expiries,
+    setExpiries,
+  ] =
+    useState<MutedExpiries>(
+      {},
+    );
+  const [
+    duration,
+    setDuration,
+  ] =
+    useState<DurationChoice>(
+      'forever',
+    );
+  const [
+    input,
+    setInput,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      true,
+    );
   // Steel M9: the saved words fill the gap under the form once fetched.
-  const arrival = useArrival(!loading);
-  const [saving, setSaving] = useState(false);
+  const arrival =
+    useArrival(
+      !loading,
+    );
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState(
+      false,
+    );
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const data = await api(getMutedWordsApi);
- if (active) {
- setWords(Array.isArray(data.words) ? data.words : []);
- setExpiries(data.expiries && typeof data.expiries === 'object' ? data.expiries : {});
- }
- } catch {
- // Leave the list empty — same as a non-ok answer before.
- } finally {
-        if (active) setLoading(false);
+        const data =
+          await api(
+            getMutedWordsApi,
+          );
+        if (
+          active
+        ) {
+          setWords(
+            Array.isArray(
+              data.words,
+            )
+              ? data.words
+              : [],
+          );
+          setExpiries(
+            data.expiries &&
+              typeof data.expiries ===
+                'object'
+              ? data.expiries
+              : {},
+          );
+        }
+      } catch {
+        // Leave the list empty — same as a non-ok answer before.
+      } finally {
+        if (
+          active
+        )
+          setLoading(
+            false,
+          );
       }
     })();
     return () => {
@@ -66,177 +179,582 @@ export function MutedWordsPanel() {
     };
   }, []);
 
-  const persist = useCallback(
-    async (
-      next: string[],
-      previous: string[],
-      nextExpiries: MutedExpiries,
-      previousExpiries: MutedExpiries,
-    ) => {
-      setSaving(true);
-      try {
-        const data = await api(setMutedWordsApi, { body: { words: next, expiries: nextExpiries } });
-        // Trust the server's normalized list.
-        if (Array.isArray(data.words)) setWords(data.words);
-        if (data.expiries && typeof data.expiries === 'object') setExpiries(data.expiries);
-      } catch {
-        setWords(previous);
-        setExpiries(previousExpiries);
-        toast.error(t('muted-save-failed', { defaultValue: 'Could not save muted words.' }));
-      } finally {
-        setSaving(false);
-      }
-    },
-    [t],
-  );
+  const persist =
+    useCallback(
+      async (
+        next: string[],
+        previous: string[],
+        nextExpiries: MutedExpiries,
+        previousExpiries: MutedExpiries,
+      ) => {
+        setSaving(
+          true,
+        );
+        try {
+          const data =
+            await api(
+              setMutedWordsApi,
+              {
+                body: {
+                  words:
+                    next,
+                  expiries:
+                    nextExpiries,
+                },
+              },
+            );
+          // Trust the server's normalized list.
+          if (
+            Array.isArray(
+              data.words,
+            )
+          )
+            setWords(
+              data.words,
+            );
+          if (
+            data.expiries &&
+            typeof data.expiries ===
+              'object'
+          )
+            setExpiries(
+              data.expiries,
+            );
+        } catch {
+          setWords(
+            previous,
+          );
+          setExpiries(
+            previousExpiries,
+          );
+          toast.error(
+            t(
+              'muted-save-failed',
+              {
+                defaultValue:
+                  'Could not save muted words.',
+              },
+            ),
+          );
+        } finally {
+          setSaving(
+            false,
+          );
+        }
+      },
+      [
+        t,
+      ],
+    );
 
-  const addWord = () => {
-    const w = input.trim().toLowerCase().slice(0, MAX_WORD_LEN);
-    setInput('');
-    if (!w) return;
-    if (words.includes(w)) return;
-    if (words.length >= MAX_WORDS) {
-      toast.error(t('muted-limit', { defaultValue: 'You have reached the muted-word limit.' }));
-      return;
-    }
-    const previous = words;
-    const previousExpiries = expiries;
-    const next = [...words, w];
-    const nextExpiries =
-      duration === 'forever' ? expiries : { ...expiries, [w]: Date.now() + MUTE_DURATIONS[duration] };
-    setWords(next); // optimistic
-    setExpiries(nextExpiries);
-    void persist(next, previous, nextExpiries, previousExpiries);
-  };
-
-  const fileInput = useRef<HTMLInputElement>(null);
-
-  const exportWords = () => {
-    const url = URL.createObjectURL(new Blob([serializeMutedWords(words)], { type: 'text/plain' }));
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'muted-words.txt';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importWords = async (file: File | undefined) => {
-    if (!file) return;
-    try {
-      const { words: merged, added } = mergeImportedWords(words, await file.text());
-      if (added === 0) {
-        toast.info(t('muted-import-none', { defaultValue: 'No new words to import.' }));
+  const addWord =
+    () => {
+      const w =
+        input
+          .trim()
+          .toLowerCase()
+          .slice(
+            0,
+            MAX_WORD_LEN,
+          );
+      setInput(
+        '',
+      );
+      if (
+        !w
+      )
+        return;
+      if (
+        words.includes(
+          w,
+        )
+      )
+        return;
+      if (
+        words.length >=
+        MAX_WORDS
+      ) {
+        toast.error(
+          t(
+            'muted-limit',
+            {
+              defaultValue:
+                'You have reached the muted-word limit.',
+            },
+          ),
+        );
         return;
       }
-      const previous = words;
-      setWords(merged); // optimistic
-      void persist(merged, previous, expiries, expiries);
-      toast.success(t('muted-import-done', { defaultValue: 'Imported {{added}} words.', added }));
-    } catch {
-      toast.error(t('muted-import-failed', { defaultValue: 'Could not read that file.' }));
-    }
-  };
+      const previous =
+        words;
+      const previousExpiries =
+        expiries;
+      const next =
+        [
+          ...words,
+          w,
+        ];
+      const nextExpiries =
+        duration ===
+        'forever'
+          ? expiries
+          : {
+              ...expiries,
+              [w]:
+                Date.now() +
+                MUTE_DURATIONS[
+                  duration
+                ],
+            };
+      setWords(
+        next,
+      ); // optimistic
+      setExpiries(
+        nextExpiries,
+      );
+      void persist(
+        next,
+        previous,
+        nextExpiries,
+        previousExpiries,
+      );
+    };
 
-  const removeWord = (w: string) => {
-    const previous = words;
-    const previousExpiries = expiries;
-    const next = words.filter((x) => x !== w);
-    const nextExpiries = { ...expiries };
-    delete nextExpiries[w];
-    setWords(next); // optimistic
-    setExpiries(nextExpiries);
-    void persist(next, previous, nextExpiries, previousExpiries);
-  };
+  const fileInput =
+    useRef<HTMLInputElement>(
+      null,
+    );
+
+  const exportWords =
+    () => {
+      const url =
+        URL.createObjectURL(
+          new Blob(
+            [
+              serializeMutedWords(
+                words,
+              ),
+            ],
+            {
+              type: 'text/plain',
+            },
+          ),
+        );
+      const a =
+        document.createElement(
+          'a',
+        );
+      a.href =
+        url;
+      a.download =
+        'muted-words.txt';
+      a.click();
+      URL.revokeObjectURL(
+        url,
+      );
+    };
+
+  const importWords =
+    async (
+      file:
+        | File
+        | undefined,
+    ) => {
+      if (
+        !file
+      )
+        return;
+      try {
+        const {
+          words:
+            merged,
+          added,
+        } =
+          mergeImportedWords(
+            words,
+            await file.text(),
+          );
+        if (
+          added ===
+          0
+        ) {
+          toast.info(
+            t(
+              'muted-import-none',
+              {
+                defaultValue:
+                  'No new words to import.',
+              },
+            ),
+          );
+          return;
+        }
+        const previous =
+          words;
+        setWords(
+          merged,
+        ); // optimistic
+        void persist(
+          merged,
+          previous,
+          expiries,
+          expiries,
+        );
+        toast.success(
+          t(
+            'muted-import-done',
+            {
+              defaultValue:
+                'Imported {{added}} words.',
+              added,
+            },
+          ),
+        );
+      } catch {
+        toast.error(
+          t(
+            'muted-import-failed',
+            {
+              defaultValue:
+                'Could not read that file.',
+            },
+          ),
+        );
+      }
+    };
+
+  const removeWord =
+    (
+      w: string,
+    ) => {
+      const previous =
+        words;
+      const previousExpiries =
+        expiries;
+      const next =
+        words.filter(
+          (
+            x,
+          ) =>
+            x !==
+            w,
+        );
+      const nextExpiries =
+        {
+          ...expiries,
+        };
+      delete nextExpiries[
+        w
+      ];
+      setWords(
+        next,
+      ); // optimistic
+      setExpiries(
+        nextExpiries,
+      );
+      void persist(
+        next,
+        previous,
+        nextExpiries,
+        previousExpiries,
+      );
+    };
 
   return (
     <SettingsSection
-      title={t('muted-title', { defaultValue: 'Muted words' })}
-      description={t('muted-description', {
-        defaultValue:
-          'Hide posts from your feed when they contain any of these words (case-insensitive). Only you can see this list.',
-      })}
+      title={t(
+        'muted-title',
+        {
+          defaultValue:
+            'Muted words',
+        },
+      )}
+      description={t(
+        'muted-description',
+        {
+          defaultValue:
+            'Hide posts from your feed when they contain any of these words (case-insensitive). Only you can see this list.',
+        },
+      )}
     >
-
       <div className="flex flex-wrap items-center gap-2">
         <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+          value={
+            input
+          }
+          onChange={(
+            e,
+          ) =>
+            setInput(
+              e
+                .target
+                .value,
+            )
+          }
+          onKeyDown={(
+            e,
+          ) => {
+            if (
+              e.key ===
+              'Enter'
+            ) {
               e.preventDefault();
               addWord();
             }
           }}
-          maxLength={MAX_WORD_LEN}
-          placeholder={t('muted-placeholder', { defaultValue: 'Add a word or phrase…' })}
-          aria-label={t('muted-input-label', { defaultValue: 'Add a muted word' })}
+          maxLength={
+            MAX_WORD_LEN
+          }
+          placeholder={t(
+            'muted-placeholder',
+            {
+              defaultValue:
+                'Add a word or phrase…',
+            },
+          )}
+          aria-label={t(
+            'muted-input-label',
+            {
+              defaultValue:
+                'Add a muted word',
+            },
+          )}
           className="min-w-full flex-1 sm:min-w-48"
         />
         <Select
-          value={duration}
-          onChange={(e) => setDuration(e.target.value as DurationChoice)}
-          aria-label={t('muted-duration-label', { defaultValue: 'How long to mute' })}
+          value={
+            duration
+          }
+          onChange={(
+            e,
+          ) =>
+            setDuration(
+              e
+                .target
+                .value as DurationChoice,
+            )
+          }
+          aria-label={t(
+            'muted-duration-label',
+            {
+              defaultValue:
+                'How long to mute',
+            },
+          )}
           containerClassName="min-w-0 flex-1 sm:flex-none"
         >
-          <option value="forever">{t('muted-duration-forever', { defaultValue: 'Until I remove it' })}</option>
-          <option value="day">{t('muted-duration-day', { defaultValue: '1 day' })}</option>
-          <option value="week">{t('muted-duration-week', { defaultValue: '1 week' })}</option>
-          <option value="month">{t('muted-duration-month', { defaultValue: '30 days' })}</option>
+          <option value="forever">
+            {t(
+              'muted-duration-forever',
+              {
+                defaultValue:
+                  'Until I remove it',
+              },
+            )}
+          </option>
+          <option value="day">
+            {t(
+              'muted-duration-day',
+              {
+                defaultValue:
+                  '1 day',
+              },
+            )}
+          </option>
+          <option value="week">
+            {t(
+              'muted-duration-week',
+              {
+                defaultValue:
+                  '1 week',
+              },
+            )}
+          </option>
+          <option value="month">
+            {t(
+              'muted-duration-month',
+              {
+                defaultValue:
+                  '30 days',
+              },
+            )}
+          </option>
         </Select>
-        <Button onClick={addWord} disabled={saving || !input.trim()} className="gap-2">
-          <Plus className="h-4 w-4" aria-hidden />
-          {t('muted-add', { defaultValue: 'Add' })}
+        <Button
+          onClick={
+            addWord
+          }
+          disabled={
+            saving ||
+            !input.trim()
+          }
+          className="gap-2"
+        >
+          <Plus
+            className="h-4 w-4"
+            aria-hidden
+          />
+          {t(
+            'muted-add',
+            {
+              defaultValue:
+                'Add',
+            },
+          )}
         </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="default" size="sm" onClick={exportWords} disabled={words.length === 0} className="gap-2">
-          <Download className="h-4 w-4" aria-hidden />
-          {t('muted-export', { defaultValue: 'Export' })}
+        <Button
+          variant="default"
+          size="sm"
+          onClick={
+            exportWords
+          }
+          disabled={
+            words.length ===
+            0
+          }
+          className="gap-2"
+        >
+          <Download
+            className="h-4 w-4"
+            aria-hidden
+          />
+          {t(
+            'muted-export',
+            {
+              defaultValue:
+                'Export',
+            },
+          )}
         </Button>
-        <Button variant="default" size="sm" onClick={() => fileInput.current?.click()} disabled={saving} className="gap-2">
-          <Upload className="h-4 w-4" aria-hidden />
-          {t('muted-import', { defaultValue: 'Import' })}
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() =>
+            fileInput.current?.click()
+          }
+          disabled={
+            saving
+          }
+          className="gap-2"
+        >
+          <Upload
+            className="h-4 w-4"
+            aria-hidden
+          />
+          {t(
+            'muted-import',
+            {
+              defaultValue:
+                'Import',
+            },
+          )}
         </Button>
         <input
-          ref={fileInput}
+          ref={
+            fileInput
+          }
           type="file"
           accept=".txt,.csv,.json,text/plain,application/json"
           className="sr-only"
-          tabIndex={-1}
+          tabIndex={
+            -1
+          }
           aria-hidden
-          onChange={(e) => {
-            void importWords(e.target.files?.[0]);
-            e.target.value = '';
+          onChange={(
+            e,
+          ) => {
+            void importWords(
+              e
+                .target
+                .files?.[0],
+            );
+            e.target.value =
+              '';
           }}
         />
       </div>
 
-      {!loading && words.length === 0 ? (
-        <p className={cn('text-sm text-site-text-muted', arrival)}>
-          {t('muted-empty', { defaultValue: 'No muted words yet.' })}
+      {!loading &&
+      words.length ===
+        0 ? (
+        <p
+          className={cn(
+            'text-sm text-site-text-muted',
+            arrival,
+          )}
+        >
+          {t(
+            'muted-empty',
+            {
+              defaultValue:
+                'No muted words yet.',
+            },
+          )}
         </p>
       ) : (
-        <ul className={cn('flex flex-wrap gap-2', arrival)}>
-          {words.map((w) => (
-            <li key={w}>
-              <span className="inline-flex items-center gap-2 rounded-full relative px-3 py-1 text-sm text-site-text">
-                {w}
-                {expiries[w] ? (
-                  <span className="font-mono text-xs text-site-text-muted">{timeLeft(expiries[w], Date.now())}</span>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => removeWord(w)}
-                  disabled={saving}
-                  aria-label={t('muted-remove', { defaultValue: 'Remove {{word}}', word: w })}
-                  className="relative text-site-text-muted hover:text-site-danger disabled:opacity-50 after:absolute after:-inset-3 after:content-['']"
-                >
-                  <X className="h-3.5 w-3.5" aria-hidden />
-                </button>
-              </span>
-            </li>
-          ))}
+        <ul
+          className={cn(
+            'flex flex-wrap gap-2',
+            arrival,
+          )}
+        >
+          {words.map(
+            (
+              w,
+            ) => (
+              <li
+                key={
+                  w
+                }
+              >
+                <span className="inline-flex items-center gap-2 rounded-full relative px-3 py-1 text-sm text-site-text">
+                  {
+                    w
+                  }
+                  {expiries[
+                    w
+                  ] ? (
+                    <span className="font-mono text-xs text-site-text-muted">
+                      {timeLeft(
+                        expiries[
+                          w
+                        ],
+                        Date.now(),
+                      )}
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      removeWord(
+                        w,
+                      )
+                    }
+                    disabled={
+                      saving
+                    }
+                    aria-label={t(
+                      'muted-remove',
+                      {
+                        defaultValue:
+                          'Remove {{word}}',
+                        word: w,
+                      },
+                    )}
+                    className="relative text-site-text-muted hover:text-site-danger disabled:opacity-50 after:absolute after:-inset-3 after:content-['']"
+                  >
+                    <X
+                      className="h-3.5 w-3.5"
+                      aria-hidden
+                    />
+                  </button>
+                </span>
+              </li>
+            ),
+          )}
         </ul>
       )}
     </SettingsSection>

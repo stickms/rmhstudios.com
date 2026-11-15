@@ -38,7 +38,11 @@
  * needs the same drag to produce the same orientation every time.
  */
 
-import { CATEGORY_ORDER, valueNow, type GridFrame } from './stats';
+import {
+  CATEGORY_ORDER,
+  valueNow,
+  type GridFrame,
+} from './stats';
 
 /* -------------------------------------------------------------------------- */
 /* Vectors                                                                    */
@@ -90,25 +94,70 @@ export interface Projected {
  * appear to turn inside out, because they exchange a visible axis with the
  * invisible one.
  */
-export const ROTATION_PLANES = ['xy', 'xz', 'yz', 'xw', 'yw', 'zw'] as const;
-export type RotationPlane = (typeof ROTATION_PLANES)[number];
+export const ROTATION_PLANES =
+  [
+    'xy',
+    'xz',
+    'yz',
+    'xw',
+    'yw',
+    'zw',
+  ] as const;
+export type RotationPlane =
+  (typeof ROTATION_PLANES)[number];
 
 /** Angles in radians, one per plane. */
-export type Rotation4 = Record<RotationPlane, number>;
+export type Rotation4 =
+  Record<
+    RotationPlane,
+    number
+  >;
 
 export function identityRotation(): Rotation4 {
-  return { xy: 0, xz: 0, yz: 0, xw: 0, yw: 0, zw: 0 };
+  return {
+    xy: 0,
+    xz: 0,
+    yz: 0,
+    xw: 0,
+    yw: 0,
+    zw: 0,
+  };
 }
 
 /** Which two coordinates each plane mixes. */
-const PLANE_AXES: Record<RotationPlane, [keyof Vec4, keyof Vec4]> = {
-  xy: ['x', 'y'],
-  xz: ['x', 'z'],
-  yz: ['y', 'z'],
-  xw: ['x', 'w'],
-  yw: ['y', 'w'],
-  zw: ['z', 'w'],
-};
+const PLANE_AXES: Record<
+  RotationPlane,
+  [
+    keyof Vec4,
+    keyof Vec4,
+  ]
+> =
+  {
+    xy: [
+      'x',
+      'y',
+    ],
+    xz: [
+      'x',
+      'z',
+    ],
+    yz: [
+      'y',
+      'z',
+    ],
+    xw: [
+      'x',
+      'w',
+    ],
+    yw: [
+      'y',
+      'w',
+    ],
+    zw: [
+      'z',
+      'w',
+    ],
+  };
 
 /**
  * Rotate a point through all six planes, in {@link ROTATION_PLANES} order.
@@ -122,23 +171,74 @@ const PLANE_AXES: Record<RotationPlane, [keyof Vec4, keyof Vec4]> = {
  * Mutates nothing; the loop copies into a scratch object so a caller can rotate
  * thousands of points a frame without allocating.
  */
-export function rotate4(point: Vec4, rotation: Rotation4, out?: Vec4): Vec4 {
-  const result = out ?? { x: 0, y: 0, z: 0, w: 0 };
-  result.x = point.x;
-  result.y = point.y;
-  result.z = point.z;
-  result.w = point.w;
+export function rotate4(
+  point: Vec4,
+  rotation: Rotation4,
+  out?: Vec4,
+): Vec4 {
+  const result =
+    out ?? {
+      x: 0,
+      y: 0,
+      z: 0,
+      w: 0,
+    };
+  result.x =
+    point.x;
+  result.y =
+    point.y;
+  result.z =
+    point.z;
+  result.w =
+    point.w;
 
   for (const plane of ROTATION_PLANES) {
-    const angle = rotation[plane];
-    if (angle === 0) continue;
-    const [a, b] = PLANE_AXES[plane];
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    const va = result[a];
-    const vb = result[b];
-    result[a] = va * cos - vb * sin;
-    result[b] = va * sin + vb * cos;
+    const angle =
+      rotation[
+        plane
+      ];
+    if (
+      angle ===
+      0
+    )
+      continue;
+    const [
+      a,
+      b,
+    ] =
+      PLANE_AXES[
+        plane
+      ];
+    const cos =
+      Math.cos(
+        angle,
+      );
+    const sin =
+      Math.sin(
+        angle,
+      );
+    const va =
+      result[
+        a
+      ];
+    const vb =
+      result[
+        b
+      ];
+    result[
+      a
+    ] =
+      va *
+        cos -
+      vb *
+        sin;
+    result[
+      b
+    ] =
+      va *
+        sin +
+      vb *
+        cos;
   }
   return result;
 }
@@ -155,14 +255,35 @@ export function advanceRotation(
   ratesPerSecond: Partial<Rotation4>,
   dtSeconds: number,
 ): Rotation4 {
-  const next = { ...rotation };
-  const TAU = Math.PI * 2;
+  const next =
+    {
+      ...rotation,
+    };
+  const TAU =
+    Math.PI *
+    2;
   for (const plane of ROTATION_PLANES) {
-    const rate = ratesPerSecond[plane] ?? 0;
-    if (rate === 0) continue;
+    const rate =
+      ratesPerSecond[
+        plane
+      ] ??
+      0;
+    if (
+      rate ===
+      0
+    )
+      continue;
     // Wrapped, so a tab left open overnight does not accumulate a float big
     // enough for `Math.sin` to lose precision on.
-    next[plane] = (next[plane] + rate * dtSeconds) % TAU;
+    next[
+      plane
+    ] =
+      (next[
+        plane
+      ] +
+        rate *
+          dtSeconds) %
+      TAU;
   }
   return next;
 }
@@ -197,12 +318,35 @@ export const Z_DISTANCE = 3.4;
  * show, and the reason a tesseract renders as a cube inside a cube: the inner
  * cube is not smaller, it is *further away along w*.
  */
-export function project4to3(point: Vec4, distance = W_DISTANCE): Vec3 & { scale: number } {
+export function project4to3(
+  point: Vec4,
+  distance = W_DISTANCE,
+): Vec3 & {
+  scale: number;
+} {
   // Clamped so a point at or past the eye cannot divide by zero or flip sign —
   // one such point is a mark that jumps across the screen for a single frame.
-  const denominator = Math.max(0.35, distance - point.w);
-  const scale = distance / denominator;
-  return { x: point.x * scale, y: point.y * scale, z: point.z * scale, scale };
+  const denominator =
+    Math.max(
+      0.35,
+      distance -
+        point.w,
+    );
+  const scale =
+    distance /
+    denominator;
+  return {
+    x:
+      point.x *
+      scale,
+    y:
+      point.y *
+      scale,
+    z:
+      point.z *
+      scale,
+    scale,
+  };
 }
 
 /** R³ → screen, by the same perspective divide on `z`. */
@@ -210,10 +354,31 @@ export function project3to2(
   point: Vec3,
   distance = Z_DISTANCE,
   radius = 1,
-): { x: number; y: number; scale: number } {
-  const denominator = Math.max(0.35, distance - point.z);
-  const scale = distance / denominator;
-  return { x: point.x * scale * radius, y: point.y * scale * radius, scale };
+): {
+  x: number;
+  y: number;
+  scale: number;
+} {
+  const denominator =
+    Math.max(
+      0.35,
+      distance -
+        point.z,
+    );
+  const scale =
+    distance /
+    denominator;
+  return {
+    x:
+      point.x *
+      scale *
+      radius,
+    y:
+      point.y *
+      scale *
+      radius,
+    scale,
+  };
 }
 
 /**
@@ -231,9 +396,22 @@ export function projectPoint(
   radius: number,
   scratch?: Vec4,
 ): Projected {
-  const rotated = rotate4(point, rotation, scratch);
-  const three = project4to3(rotated);
-  const screen = project3to2(three, Z_DISTANCE, radius);
+  const rotated =
+    rotate4(
+      point,
+      rotation,
+      scratch,
+    );
+  const three =
+    project4to3(
+      rotated,
+    );
+  const screen =
+    project3to2(
+      three,
+      Z_DISTANCE,
+      radius,
+    );
   return {
     x: screen.x,
     // NEGATED, once, here: canvas y grows downward and the data's y axis grows
@@ -242,8 +420,11 @@ export function projectPoint(
     // keeps the tesseract frame and the cloud in the same space — flipping only
     // the points would slide the data off the ruler it is measured against.
     y: -screen.y,
-    depth: three.z,
-    scale: three.scale * screen.scale,
+    depth:
+      three.z,
+    scale:
+      three.scale *
+      screen.scale,
     w: rotated.w,
   };
 }
@@ -260,18 +441,43 @@ export function projectPoint(
  * happening in `xw` unless something with known, rigid structure is being
  * rotated alongside the points. The tesseract is the ruler.
  */
-export const TESSERACT_VERTICES: readonly Vec4[] = (() => {
-  const out: Vec4[] = [];
-  for (let i = 0; i < 16; i++) {
-    out.push({
-      x: i & 1 ? 1 : -1,
-      y: i & 2 ? 1 : -1,
-      z: i & 4 ? 1 : -1,
-      w: i & 8 ? 1 : -1,
-    });
-  }
-  return out;
-})();
+export const TESSERACT_VERTICES: readonly Vec4[] =
+  (() => {
+    const out: Vec4[] =
+      [];
+    for (
+      let i = 0;
+      i <
+      16;
+      i++
+    ) {
+      out.push(
+        {
+          x:
+            i &
+            1
+              ? 1
+              : -1,
+          y:
+            i &
+            2
+              ? 1
+              : -1,
+          z:
+            i &
+            4
+              ? 1
+              : -1,
+          w:
+            i &
+            8
+              ? 1
+              : -1,
+        },
+      );
+    }
+    return out;
+  })();
 
 /**
  * Its 32 edges: two vertices are joined exactly when their indices differ in a
@@ -281,16 +487,46 @@ export const TESSERACT_VERTICES: readonly Vec4[] = (() => {
  * wrong is a shape that is subtly not a tesseract and nobody can tell by
  * looking.
  */
-export const TESSERACT_EDGES: readonly [number, number][] = (() => {
-  const out: [number, number][] = [];
-  for (let a = 0; a < 16; a++) {
-    for (let bit = 0; bit < 4; bit++) {
-      const b = a ^ (1 << bit);
-      if (b > a) out.push([a, b]);
+export const TESSERACT_EDGES: readonly [
+  number,
+  number,
+][] =
+  (() => {
+    const out: [
+      number,
+      number,
+    ][] =
+      [];
+    for (
+      let a = 0;
+      a <
+      16;
+      a++
+    ) {
+      for (
+        let bit = 0;
+        bit <
+        4;
+        bit++
+      ) {
+        const b =
+          a ^
+          (1 <<
+            bit);
+        if (
+          b >
+          a
+        )
+          out.push(
+            [
+              a,
+              b,
+            ],
+          );
+      }
     }
-  }
-  return out;
-})();
+    return out;
+  })();
 
 /**
  * Which of the four coordinates an edge runs along — 0 = x … 3 = w.
@@ -300,9 +536,35 @@ export const TESSERACT_EDGES: readonly [number, number][] = (() => {
  * ordinary ones. That is what makes the inside-out rotation legible instead of
  * merely busy.
  */
-export function edgeAxis(edge: readonly [number, number]): 0 | 1 | 2 | 3 {
-  const diff = edge[0] ^ edge[1];
-  return (diff === 1 ? 0 : diff === 2 ? 1 : diff === 4 ? 2 : 3) as 0 | 1 | 2 | 3;
+export function edgeAxis(
+  edge: readonly [
+    number,
+    number,
+  ],
+):
+  | 0
+  | 1
+  | 2
+  | 3 {
+  const diff =
+    edge[0] ^
+    edge[1];
+  return (
+    diff ===
+    1
+      ? 0
+      : diff ===
+          2
+        ? 1
+        : diff ===
+            4
+          ? 2
+          : 3
+  ) as
+    | 0
+    | 1
+    | 2
+    | 3;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -318,24 +580,35 @@ export function edgeAxis(edge: readonly [number, number]): 0 | 1 | 2 | 3 {
  * (month × category) bucket — because that is the shape the stats payload
  * carries and the same grid the 3D terrain and the globe are drawn from.
  */
-export const HYPER_MEASURES = [
-  'time',
-  'category',
-  'count',
-  'principal',
-  'accrued',
-  'average',
-] as const;
-export type HyperMeasure = (typeof HYPER_MEASURES)[number];
+export const HYPER_MEASURES =
+  [
+    'time',
+    'category',
+    'count',
+    'principal',
+    'accrued',
+    'average',
+  ] as const;
+export type HyperMeasure =
+  (typeof HYPER_MEASURES)[number];
 
 /** One cell of the (month × category) grid, reduced to its six measures. */
 export interface HyperDatum {
   /** Normalised to `[-1, 1]` in the same order as {@link HYPER_MEASURES}. */
-  measures: Record<HyperMeasure, number>;
+  measures: Record<
+    HyperMeasure,
+    number
+  >;
   /** Palette slot — the category index, so colour survives every rebinding. */
   categoryIndex: number;
   /** Everything the tooltip needs, carried along unnormalised. */
-  label: { startMs: number; category: string; count: number; principalCents: number; accruedCents: number };
+  label: {
+    startMs: number;
+    category: string;
+    count: number;
+    principalCents: number;
+    accruedCents: number;
+  };
 }
 
 /**
@@ -347,13 +620,34 @@ export interface HyperDatum {
  */
 export function toVec4(
   datum: HyperDatum,
-  binding: { x: HyperMeasure; y: HyperMeasure; z: HyperMeasure; w: HyperMeasure },
+  binding: {
+    x: HyperMeasure;
+    y: HyperMeasure;
+    z: HyperMeasure;
+    w: HyperMeasure;
+  },
 ): Vec4 {
   return {
-    x: datum.measures[binding.x],
-    y: datum.measures[binding.y],
-    z: datum.measures[binding.z],
-    w: datum.measures[binding.w],
+    x: datum
+      .measures[
+      binding
+        .x
+    ],
+    y: datum
+      .measures[
+      binding
+        .y
+    ],
+    z: datum
+      .measures[
+      binding
+        .z
+    ],
+    w: datum
+      .measures[
+      binding
+        .w
+    ],
   };
 }
 
@@ -366,20 +660,66 @@ export function toVec4(
  * log-spaced. A degenerate domain (every value identical) maps to the centre
  * rather than dividing by zero.
  */
-export function normalise(value: number, min: number, max: number, log = false): number {
+export function normalise(
+  value: number,
+  min: number,
+  max: number,
+  log = false,
+): number {
   // The degenerate check comes FIRST, before the log branch's floors get a
   // chance to invent a range that is not there: `max(10, max)` would turn a
   // one-valued dimension into a real interval and pin every point to its
   // extreme, which reads as "all of these are the minimum" rather than as
   // "this axis does not distinguish them".
-  if (max <= min) return 0;
-  if (log) {
-    const lo = Math.log10(Math.max(1, min));
-    const hi = Math.log10(Math.max(10, max));
-    if (hi <= lo) return 0;
-    return ((Math.log10(Math.max(1, value)) - lo) / (hi - lo)) * 2 - 1;
+  if (
+    max <=
+    min
+  )
+    return 0;
+  if (
+    log
+  ) {
+    const lo =
+      Math.log10(
+        Math.max(
+          1,
+          min,
+        ),
+      );
+    const hi =
+      Math.log10(
+        Math.max(
+          10,
+          max,
+        ),
+      );
+    if (
+      hi <=
+      lo
+    )
+      return 0;
+    return (
+      ((Math.log10(
+        Math.max(
+          1,
+          value,
+        ),
+      ) -
+        lo) /
+        (hi -
+          lo)) *
+        2 -
+      1
+    );
   }
-  return ((value - min) / (max - min)) * 2 - 1;
+  return (
+    ((value -
+      min) /
+      (max -
+        min)) *
+      2 -
+    1
+  );
 }
 
 /**
@@ -395,40 +735,109 @@ export function normalise(value: number, min: number, max: number, log = false):
  * while it is watched: the older buckets pull further along their axis as their
  * compounding runs ahead of the newer ones.
  */
-export function buildHyperData(frame: GridFrame, atMs: number): HyperDatum[] {
-  const categoryCount = Math.max(1, frame.categories.length);
-  const monthCount = Math.max(1, frame.months.length);
+export function buildHyperData(
+  frame: GridFrame,
+  atMs: number,
+): HyperDatum[] {
+  const categoryCount =
+    Math.max(
+      1,
+      frame
+        .categories
+        .length,
+    );
+  const monthCount =
+    Math.max(
+      1,
+      frame
+        .months
+        .length,
+    );
 
   /* Pass 1 — the raw measures, plus what range each one actually occupies. */
   interface Raw {
     categoryIndex: number;
-    raw: Record<HyperMeasure, number>;
+    raw: Record<
+      HyperMeasure,
+      number
+    >;
     label: HyperDatum['label'];
   }
-  const raws: Raw[] = [];
-  for (let i = 0; i < frame.cells.length; i++) {
-    const cell = frame.cells[i]!;
-    if (cell.count === 0) continue;
-    const categoryIndex = CATEGORY_ORDER.indexOf(cell.category);
-    const accrued = valueNow(cell, atMs);
-    raws.push({
-      categoryIndex: categoryIndex < 0 ? CATEGORY_ORDER.length - 1 : categoryIndex,
-      raw: {
-        time: Math.floor(i / categoryCount),
-        category: categoryIndex < 0 ? categoryCount - 1 : categoryIndex,
-        count: cell.count,
-        principal: cell.principalCents,
-        accrued,
-        average: cell.principalCents / Math.max(1, cell.count),
+  const raws: Raw[] =
+    [];
+  for (
+    let i = 0;
+    i <
+    frame
+      .cells
+      .length;
+    i++
+  ) {
+    const cell =
+      frame
+        .cells[
+        i
+      ]!;
+    if (
+      cell.count ===
+      0
+    )
+      continue;
+    const categoryIndex =
+      CATEGORY_ORDER.indexOf(
+        cell.category,
+      );
+    const accrued =
+      valueNow(
+        cell,
+        atMs,
+      );
+    raws.push(
+      {
+        categoryIndex:
+          categoryIndex <
+          0
+            ? CATEGORY_ORDER.length -
+              1
+            : categoryIndex,
+        raw: {
+          time: Math.floor(
+            i /
+              categoryCount,
+          ),
+          category:
+            categoryIndex <
+            0
+              ? categoryCount -
+                1
+              : categoryIndex,
+          count:
+            cell.count,
+          principal:
+            cell.principalCents,
+          accrued,
+          average:
+            cell.principalCents /
+            Math.max(
+              1,
+              cell.count,
+            ),
+        },
+        label:
+          {
+            startMs:
+              cell.startMs,
+            category:
+              cell.category,
+            count:
+              cell.count,
+            principalCents:
+              cell.principalCents,
+            accruedCents:
+              accrued,
+          },
       },
-      label: {
-        startMs: cell.startMs,
-        category: cell.category,
-        count: cell.count,
-        principalCents: cell.principalCents,
-        accruedCents: accrued,
-      },
-    });
+    );
   }
 
   /**
@@ -447,38 +856,127 @@ export function buildHyperData(frame: GridFrame, atMs: number): HyperDatum[] {
    * differences between buckets become the thing you can see, which is the
    * entire job of the view.
    */
-  const measures = HYPER_MEASURES;
-  const extent = {} as Record<HyperMeasure, { min: number; max: number }>;
+  const measures =
+    HYPER_MEASURES;
+  const extent =
+    {} as Record<
+      HyperMeasure,
+      {
+        min: number;
+        max: number;
+      }
+    >;
   for (const measure of measures) {
-    let min = Infinity;
-    let max = -Infinity;
+    let min =
+      Infinity;
+    let max =
+      -Infinity;
     for (const item of raws) {
-      const value = item.raw[measure];
-      if (value < min) min = value;
-      if (value > max) max = value;
+      const value =
+        item
+          .raw[
+          measure
+        ];
+      if (
+        value <
+        min
+      )
+        min =
+          value;
+      if (
+        value >
+        max
+      )
+        max =
+          value;
     }
-    extent[measure] = raws.length === 0 ? { min: 0, max: 0 } : { min, max };
+    extent[
+      measure
+    ] =
+      raws.length ===
+      0
+        ? {
+            min: 0,
+            max: 0,
+          }
+        : {
+            min,
+            max,
+          };
   }
 
   // `time` and `category` are positional indices, so they are normalised over
   // the whole axis rather than over the occupied part: a month with nothing in
   // it is still a month, and squeezing it out would make the time axis lie.
-  extent.time = { min: 0, max: Math.max(0, monthCount - 1) };
-  extent.category = { min: 0, max: Math.max(0, categoryCount - 1) };
+  extent.time =
+    {
+      min: 0,
+      max: Math.max(
+        0,
+        monthCount -
+          1,
+      ),
+    };
+  extent.category =
+    {
+      min: 0,
+      max: Math.max(
+        0,
+        categoryCount -
+          1,
+      ),
+    };
 
   /** Money and counts stay log-scaled; the two positional axes are linear. */
-  const isLog = (measure: HyperMeasure) => measure !== 'time' && measure !== 'category';
+  const isLog =
+    (
+      measure: HyperMeasure,
+    ) =>
+      measure !==
+        'time' &&
+      measure !==
+        'category';
 
-  return raws.map((item) => ({
-    categoryIndex: item.categoryIndex,
-    measures: Object.fromEntries(
-      measures.map((measure) => [
-        measure,
-        normalise(item.raw[measure], extent[measure].min, extent[measure].max, isLog(measure)),
-      ]),
-    ) as Record<HyperMeasure, number>,
-    label: item.label,
-  }));
+  return raws.map(
+    (
+      item,
+    ) => ({
+      categoryIndex:
+        item.categoryIndex,
+      measures:
+        Object.fromEntries(
+          measures.map(
+            (
+              measure,
+            ) => [
+              measure,
+              normalise(
+                item
+                  .raw[
+                  measure
+                ],
+                extent[
+                  measure
+                ]
+                  .min,
+                extent[
+                  measure
+                ]
+                  .max,
+                isLog(
+                  measure,
+                ),
+              ),
+            ],
+          ),
+        ) as Record<
+          HyperMeasure,
+          number
+        >,
+      label:
+        item.label,
+    }),
+  );
 }
 
 /** The binding the panel opens with — the one that best shows the archive's shape. */
@@ -487,7 +985,13 @@ export const DEFAULT_BINDING: {
   y: HyperMeasure;
   z: HyperMeasure;
   w: HyperMeasure;
-} = { x: 'time', y: 'accrued', z: 'category', w: 'count' };
+} =
+  {
+    x: 'time',
+    y: 'accrued',
+    z: 'category',
+    w: 'count',
+  };
 
 /**
  * Default rotation rates, in radians per second.
@@ -497,4 +1001,9 @@ export const DEFAULT_BINDING: {
  * is what is visibly moving — a shape tumbling in all six planes at once is
  * indistinguishable from noise, which defeats the entire point of drawing it.
  */
-export const DEFAULT_RATES: Partial<Rotation4> = { xw: 0.19, yw: 0.11, zw: 0.07 };
+export const DEFAULT_RATES: Partial<Rotation4> =
+  {
+    xw: 0.19,
+    yw: 0.11,
+    zw: 0.07,
+  };

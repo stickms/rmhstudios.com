@@ -50,7 +50,12 @@ import {
   TICK_LOOKAHEAD_SEC,
   TICK_VOLUME_SCALE,
 } from './constants';
-import type { BeatMap, HitResult, RunStats, Slice } from './types';
+import type {
+  BeatMap,
+  HitResult,
+  RunStats,
+  Slice,
+} from './types';
 import {
   DEFAULT_HIT_SOUND_ID,
   HIT_SOUND_SAMPLE_IDS,
@@ -59,8 +64,14 @@ import {
   pickHitSound,
   RANDOM_HIT_SOUND_ID,
 } from './hit-sound-pool';
-import { MIN_TIMING_SAMPLES, type TimingSummary } from './integrity';
-import { prepareChart, scorableNoteCount } from './chart';
+import {
+  MIN_TIMING_SAMPLES,
+  type TimingSummary,
+} from './integrity';
+import {
+  prepareChart,
+  scorableNoteCount,
+} from './chart';
 import {
   buildReplayInputs,
   JUDGMENT_CODE,
@@ -72,7 +83,10 @@ import {
   type ReplayInput,
 } from './replay';
 import type { SliceItReplay } from '@/lib/game/replay';
-import { sfxGain, useSliceItStore } from './store';
+import {
+  sfxGain,
+  useSliceItStore,
+} from './store';
 import {
   accuracyOf,
   accuracyWeight,
@@ -81,18 +95,36 @@ import {
   pointsFor,
   timingScale,
 } from './scoring';
-import { reportFinish, reportScore } from './net/client';
-import { hapticsEnabled, hapticsIntensity, vibrate } from '@/lib/shared/platform';
+import {
+  reportFinish,
+  reportScore,
+} from './net/client';
+import {
+  hapticsEnabled,
+  hapticsIntensity,
+  vibrate,
+} from '@/lib/shared/platform';
 
 /** Colours the feedback text is drawn in, per judgement. */
-const FEEDBACK_COLORS: Record<HitResult, string> = JUDGEMENT_COLORS;
+const FEEDBACK_COLORS: Record<
+  HitResult,
+  string
+> =
+  JUDGEMENT_COLORS;
 
 /**
  * V5 — combo milestones. Exported so `GameCanvas.tsx` can look up how far a
  * given crossing sits up the list (for the escalating treatment) without a
  * second copy of these numbers living in the renderer.
  */
-export const COMBO_MILESTONES = [50, 100, 250, 500, 1000] as const;
+export const COMBO_MILESTONES =
+  [
+    50,
+    100,
+    250,
+    500,
+    1000,
+  ] as const;
 
 /**
  * A8 — haptic duration per judgement, ms, before the intensity setting scales
@@ -103,7 +135,13 @@ export const COMBO_MILESTONES = [50, 100, 250, 500, 1000] as const;
  * would be felt as one buzz. MISS is longest because it is the one result a
  * player needs to notice without looking at the screen.
  */
-const HAPTIC_MS: Record<Exclude<HitResult, 'NONE'>, number> = {
+const HAPTIC_MS: Record<
+  Exclude<
+    HitResult,
+    'NONE'
+  >,
+  number
+> = {
   MARVELOUS: 6,
   PERFECT: 6,
   GREAT: 10,
@@ -130,16 +168,39 @@ const OFFSET_RING_SIZE = 64;
  * or a growl — the file is a percussive tick, and playbackRate resampling
  * degrades fast past about an octave.
  */
-const REGISTER_PITCH: Record<'low' | 'mid' | 'high', number> = {
-  low: 0.667,
-  mid: 1,
-  high: 1.5,
-};
+const REGISTER_PITCH: Record<
+  | 'low'
+  | 'mid'
+  | 'high',
+  number
+> =
+  {
+    low: 0.667,
+    mid: 1,
+    high: 1.5,
+  };
 
 /** A blank judgement histogram. */
-function emptyJudgements(): Record<Exclude<HitResult, 'NONE'>, number> {
-  const out = {} as Record<Exclude<HitResult, 'NONE'>, number>;
-  for (const judgement of JUDGEMENT_ORDER) out[judgement] = 0;
+function emptyJudgements(): Record<
+  Exclude<
+    HitResult,
+    'NONE'
+  >,
+  number
+> {
+  const out =
+    {} as Record<
+      Exclude<
+        HitResult,
+        'NONE'
+      >,
+      number
+    >;
+  for (const judgement of JUDGEMENT_ORDER)
+    out[
+      judgement
+    ] =
+      0;
   return out;
 }
 
@@ -172,17 +233,32 @@ export interface Feedback {
 
 export class GameEngine {
   private audioManager: AudioManager;
-  private beatMap: BeatMap | null = null;
+  private beatMap: BeatMap | null =
+    null;
   /** The prepared chart, sorted by time. */
-  private slices: Slice[] = [];
-  private processedSliceIds = new Set<string>();
+  private slices: Slice[] =
+    [];
+  private processedSliceIds =
+    new Set<string>();
   /** lane → the LONG note currently being held. */
-  private activeHolds = new Map<number, Slice>();
+  private activeHolds =
+    new Map<
+      number,
+      Slice
+    >();
   /** lane → audio time that lane's hold has already been paid for. */
-  private holdBilledTo = new Map<number, number>();
+  private holdBilledTo =
+    new Map<
+      number,
+      number
+    >();
   /** Sub-point remainder carried between hold accruals, so it is not lost. */
   private holdCredit = 0;
-  private lastInputTime = new Map<number, number>();
+  private lastInputTime =
+    new Map<
+      number,
+      number
+    >();
 
   /**
    * Index of the earliest note that has not yet been resolved *or* expired.
@@ -190,7 +266,8 @@ export class GameEngine {
    */
   private cursor = 0;
 
-  public feedbackQueue: Feedback[] = [];
+  public feedbackQueue: Feedback[] =
+    [];
   private feedbackIdCounter = 0;
 
   private score = 0;
@@ -199,11 +276,13 @@ export class GameEngine {
   private speedMultiplier = 1;
   private notesResolved = 0;
   private hitPoints = 0;
-  private songId = '';
+  private songId =
+    '';
   /** Notes in the prepared chart that count toward accuracy. */
   private totalNotes = 0;
   /** Judgement histogram, for the HUD and the results screen. */
-  private judgements = emptyJudgements();
+  private judgements =
+    emptyJudgements();
 
   private inMultiplayer = false;
   private lastReportAt = 0;
@@ -212,7 +291,8 @@ export class GameEngine {
   /* ── The health gauge (opt-in; see `Modifiers.healthGauge`) ────────────── */
 
   /** 0–{@link HEALTH_MAX}. Stays pinned at full while the gauge is off. */
-  private health = HEALTH_MAX;
+  private health =
+    HEALTH_MAX;
   /**
    * What draining to zero costs.
    *
@@ -220,13 +300,20 @@ export class GameEngine {
    * the reason the modifier does not need a multiplayer clamp of its own. See
    * the note on `forMultiplayer` in `modifiers.ts`.
    */
-  private failMode: 'fail' | 'survive' = 'fail';
+  private failMode:
+    | 'fail'
+    | 'survive' =
+    'fail';
   /** Sticky: once the gauge has touched zero, its score bonus is gone. */
   private gaugeBroken = false;
   /** True when a fail-condition modifier ended this run. Solo only. */
   private failed = false;
   /** Which one. `null` until {@link failed} is true — see {@link fail}. */
-  private failReason: 'health' | 'perfectionist' | null = null;
+  private failReason:
+    | 'health'
+    | 'perfectionist'
+    | null =
+    null;
 
   /** Running mean/variance of hit timing error (Welford). See `recordOffset`. */
   private offsetCount = 0;
@@ -241,12 +328,19 @@ export class GameEngine {
    * One stable object, returned by reference from {@link getRecentOffsets}, so
    * reading it every frame allocates nothing.
    */
-  private readonly offsetRing = {
-    /** Signed seconds; negative is early. `0` marks an unused slot. */
-    offsets: new Float32Array(OFFSET_RING_SIZE),
-    /** `performance.now()` at the hit, for the fade. */
-    times: new Float32Array(OFFSET_RING_SIZE),
-  };
+  private readonly offsetRing =
+    {
+      /** Signed seconds; negative is early. `0` marks an unused slot. */
+      offsets:
+        new Float32Array(
+          OFFSET_RING_SIZE,
+        ),
+      /** `performance.now()` at the hit, for the fade. */
+      times:
+        new Float32Array(
+          OFFSET_RING_SIZE,
+        ),
+    };
   private offsetHead = 0;
 
   /**
@@ -255,7 +349,11 @@ export class GameEngine {
    * `magnitude` is 0–1, so the renderer's reaction scales with what was actually
    * lost rather than firing identically for a 25-chain and a 400-chain.
    */
-  private comboBreak: { at: number; magnitude: number } | null = null;
+  private comboBreak: {
+    at: number;
+    magnitude: number;
+  } | null =
+    null;
 
   /**
    * V5 — the highest combo milestone already celebrated this run, so a
@@ -265,14 +363,21 @@ export class GameEngine {
    */
   private lastMilestone = 0;
   /** The most recent milestone worth drawing, or null. Read once per frame. */
-  private comboMilestone: { value: number; at: number } | null = null;
+  private comboMilestone: {
+    value: number;
+    at: number;
+  } | null =
+    null;
 
   /**
    * The sample the previous hit played, so Shuffle never plays it twice
    * running. Only written on the Shuffle path — with a fixed pick there is
    * nothing to choose between, and the player asked for that one sound.
    */
-  private lastHitSample: string | null = null;
+  private lastHitSample:
+    | string
+    | null =
+    null;
 
   /* ── Replay capture (R3) ───────────────────────────────────────────────── *
    *
@@ -289,9 +394,18 @@ export class GameEngine {
    * to overflow it is past `MAX_NOTES_PER_SECOND` anyway, and truncating is
    * better than sending a payload that will be rejected whole.
    * ----------------------------------------------------------------------- */
-  private readonly replayTimes = new Int32Array(REPLAY_MAX_INPUTS);
-  private readonly replayLanes = new Uint8Array(REPLAY_MAX_INPUTS);
-  private readonly replayJudgments = new Uint8Array(REPLAY_MAX_INPUTS);
+  private readonly replayTimes =
+    new Int32Array(
+      REPLAY_MAX_INPUTS,
+    );
+  private readonly replayLanes =
+    new Uint8Array(
+      REPLAY_MAX_INPUTS,
+    );
+  private readonly replayJudgments =
+    new Uint8Array(
+      REPLAY_MAX_INPUTS,
+    );
   private replayCount = 0;
   /** True once a run has produced more resolutions than the log can hold. */
   private replayTruncated = false;
@@ -299,7 +413,10 @@ export class GameEngine {
   /* ── Replay playback (R4) ──────────────────────────────────────────────── */
 
   /** Non-null while this engine is *playing back* a log rather than a player. */
-  private replayInput: ReplayInput[] | null = null;
+  private replayInput:
+    | ReplayInput[]
+    | null =
+    null;
   private replayCursor = 0;
   /**
    * Playback position in seconds, driven by the viewer.
@@ -327,7 +444,11 @@ export class GameEngine {
   private unrankable = false;
 
   /** P1 — A/B loop. Non-null means `update()` rewinds at `end`. */
-  private practiceLoop: { start: number; end: number } | null = null;
+  private practiceLoop: {
+    start: number;
+    end: number;
+  } | null =
+    null;
 
   /** P3 — resolve every note perfectly at its own time, taking no input. */
   private autoplay = false;
@@ -344,44 +465,78 @@ export class GameEngine {
   private tickScheduledTo = 0;
 
   constructor() {
-    this.audioManager = AudioManager.getInstance();
+    this.audioManager =
+      AudioManager.getInstance();
   }
 
   /** P1/P3 — enter practice. Unrankable for as long as it is set. */
-  setPractice(enabled: boolean, loop: { start: number; end: number } | null = null): void {
-    this.unrankable = enabled || this.autoplay;
-    this.practiceLoop = enabled ? loop : null;
+  setPractice(
+    enabled: boolean,
+    loop: {
+      start: number;
+      end: number;
+    } | null = null,
+  ): void {
+    this.unrankable =
+      enabled ||
+      this
+        .autoplay;
+    this.practiceLoop =
+      enabled
+        ? loop
+        : null;
   }
 
   /** P3 — autoplay. Also unrankable; also structural rather than cosmetic. */
-  setAutoplay(enabled: boolean): void {
-    this.autoplay = enabled;
-    this.unrankable = enabled || this.practiceLoop !== null;
+  setAutoplay(
+    enabled: boolean,
+  ): void {
+    this.autoplay =
+      enabled;
+    this.unrankable =
+      enabled ||
+      this
+        .practiceLoop !==
+        null;
   }
 
   /** True when nothing this run produces may reach a leaderboard. */
   isUnrankable(): boolean {
-    return this.unrankable || this.replayInput !== null;
+    return (
+      this
+        .unrankable ||
+      this
+        .replayInput !==
+        null
+    );
   }
 
   isAutoplay(): boolean {
-    return this.autoplay;
+    return this
+      .autoplay;
   }
 
-  getPracticeLoop(): { start: number; end: number } | null {
-    return this.practiceLoop;
+  getPracticeLoop(): {
+    start: number;
+    end: number;
+  } | null {
+    return this
+      .practiceLoop;
   }
 
   getActiveMap(): BeatMap | null {
-    return this.beatMap;
+    return this
+      .beatMap;
   }
 
   getSlices(): Slice[] {
-    return this.slices;
+    return this
+      .slices;
   }
 
   getProcessedSliceIds(): Set<string> {
-    return this.processedSliceIds;
+    return this
+      .processedSliceIds;
   }
 
   /**
@@ -393,20 +548,44 @@ export class GameEngine {
    * drops Sudden Death from a lobby. Draining to zero there forfeits the
    * modifier's bonus and the run plays on.
    */
-  setMultiplayer(value: boolean): void {
-    this.inMultiplayer = value;
-    this.failMode = value ? 'survive' : 'fail';
+  setMultiplayer(
+    value: boolean,
+  ): void {
+    this.inMultiplayer =
+      value;
+    this.failMode =
+      value
+        ? 'survive'
+        : 'fail';
   }
 
-  async loadMap(map: BeatMap, preloadedBuffer?: AudioBuffer): Promise<void> {
-    const store = useSliceItStore.getState();
-    const modifiers = store.modifiers;
+  async loadMap(
+    map: BeatMap,
+    preloadedBuffer?: AudioBuffer,
+  ): Promise<void> {
+    const store =
+      useSliceItStore.getState();
+    const modifiers =
+      store.modifiers;
 
-    this.beatMap = map;
-    this.songId = map.id;
+    this.beatMap =
+      map;
+    this.songId =
+      map.id;
     // Deterministic: same song + same settings ⇒ same notes, on a retry and on
     // every machine in a lobby.
-    this.slices = prepareChart(map, modifiers).sort((a, b) => a.time - b.time);
+    this.slices =
+      prepareChart(
+        map,
+        modifiers,
+      ).sort(
+        (
+          a,
+          b,
+        ) =>
+          a.time -
+          b.time,
+      );
     // Bombs and silent notes never enter the accuracy denominator, so neither do
     // they count toward "misses left for grade X" — see `missesAllowedFor`.
     //
@@ -414,23 +593,59 @@ export class GameEngine {
     // its head, so a chart's maximum reachable `notesResolved` is one *more*
     // than its note count for every LONG note in it. Sized here, once, rather
     // than recomputed on every frame `missesAllowedFor` reads it.
-    const releasableHolds = this.slices.filter((s) => s.type === 'LONG' && !!s.duration).length;
-    this.totalNotes = scorableNoteCount(this.slices) + releasableHolds;
+    const releasableHolds =
+      this.slices.filter(
+        (
+          s,
+        ) =>
+          s.type ===
+            'LONG' &&
+          !!s.duration,
+      ).length;
+    this.totalNotes =
+      scorableNoteCount(
+        this
+          .slices,
+      ) +
+      releasableHolds;
 
     this.reset();
-    store.setSongId(map.id);
+    store.setSongId(
+      map.id,
+    );
 
-    if (preloadedBuffer) {
-      this.audioManager.loadFromBuffer(preloadedBuffer);
+    if (
+      preloadedBuffer
+    ) {
+      this.audioManager.loadFromBuffer(
+        preloadedBuffer,
+      );
     } else {
-      await this.audioManager.loadTrack(map.audioUrl);
+      await this.audioManager.loadTrack(
+        map.audioUrl,
+      );
     }
-    this.audioManager.setPlaybackRate(this.speedMultiplier);
+    this.audioManager.setPlaybackRate(
+      this
+        .speedMultiplier,
+    );
 
     // Warm the hit sound so the first note is not the one that stutters. On
     // Shuffle that is the whole pool, since any of them can be the first note.
-    for (const file of hitSoundPreloadList(store.hitSound)) {
-      this.audioManager.preloadHitSound(asset(hitSoundPath(file))).catch(() => {});
+    for (const file of hitSoundPreloadList(
+      store.hitSound,
+    )) {
+      this.audioManager
+        .preloadHitSound(
+          asset(
+            hitSoundPath(
+              file,
+            ),
+          ),
+        )
+        .catch(
+          () => {},
+        );
     }
   }
 
@@ -447,12 +662,30 @@ export class GameEngine {
    * on one machine: it reaches no judgement, no replay and no leaderboard, and
    * seeding it would only make every retry sound identical.
    */
-  private nextHitSample(setting: string): string | null {
-    if (setting === RANDOM_HIT_SOUND_ID) {
-      this.lastHitSample = pickHitSound(HIT_SOUND_SAMPLE_IDS, this.lastHitSample);
-      return this.lastHitSample;
+  private nextHitSample(
+    setting: string,
+  ):
+    | string
+    | null {
+    if (
+      setting ===
+      RANDOM_HIT_SOUND_ID
+    ) {
+      this.lastHitSample =
+        pickHitSound(
+          HIT_SOUND_SAMPLE_IDS,
+          this
+            .lastHitSample,
+        );
+      return this
+        .lastHitSample;
     }
-    if (!setting || setting === DEFAULT_HIT_SOUND_ID) return null;
+    if (
+      !setting ||
+      setting ===
+        DEFAULT_HIT_SOUND_ID
+    )
+      return null;
     return setting;
   }
 
@@ -468,7 +701,9 @@ export class GameEngine {
    *
    * Omitted, it is a full bar, which is every other caller.
    */
-  reset(startingHealth?: number): void {
+  reset(
+    startingHealth?: number,
+  ): void {
     this.processedSliceIds.clear();
     this.activeHolds.clear();
     this.holdBilledTo.clear();
@@ -483,46 +718,85 @@ export class GameEngine {
     this.hitPoints = 0;
     this.finished = false;
     this.lastReportAt = 0;
-    this.judgements = emptyJudgements();
+    this.judgements =
+      emptyJudgements();
     // Clamped rather than trusted: a course reducer that produced a negative or
     // out-of-range number must not be able to start a run already dead, or
     // already immortal.
     this.health =
-      typeof startingHealth === 'number' && Number.isFinite(startingHealth)
-        ? Math.max(0, Math.min(HEALTH_MAX, startingHealth))
+      typeof startingHealth ===
+        'number' &&
+      Number.isFinite(
+        startingHealth,
+      )
+        ? Math.max(
+            0,
+            Math.min(
+              HEALTH_MAX,
+              startingHealth,
+            ),
+          )
         : HEALTH_MAX;
     this.gaugeBroken = false;
     this.failed = false;
-    this.failReason = null;
+    this.failReason =
+      null;
     this.offsetCount = 0;
     this.offsetMean = 0;
     this.offsetM2 = 0;
-    this.offsetRing.offsets.fill(0);
-    this.offsetRing.times.fill(0);
+    this.offsetRing.offsets.fill(
+      0,
+    );
+    this.offsetRing.times.fill(
+      0,
+    );
     this.offsetHead = 0;
-    this.comboBreak = null;
+    this.comboBreak =
+      null;
     this.lastMilestone = 0;
-    this.comboMilestone = null;
+    this.comboMilestone =
+      null;
     // The log is emptied by moving one integer: the arrays keep their memory for
     // the next run, which is the whole reason they are pre-sized.
     this.replayCount = 0;
     this.replayTruncated = false;
     this.replayCursor = 0;
 
-    for (const slice of this.slices) {
+    for (const slice of this
+      .slices) {
       slice.hit = false;
-      slice.hitTime = undefined;
+      slice.hitTime =
+        undefined;
     }
 
-    const store = useSliceItStore.getState();
-    this.speedMultiplier = store.modifiers.speed || 1;
-    store.setScore(0, 0, this.speedMultiplier);
-    store.setMaxCombo(0);
-    store.setAccuracy(0);
-    store.setIsPaused(false);
+    const store =
+      useSliceItStore.getState();
+    this.speedMultiplier =
+      store
+        .modifiers
+        .speed ||
+      1;
+    store.setScore(
+      0,
+      0,
+      this
+        .speedMultiplier,
+    );
+    store.setMaxCombo(
+      0,
+    );
+    store.setAccuracy(
+      0,
+    );
+    store.setIsPaused(
+      false,
+    );
 
     this.audioManager.stop();
-    this.audioManager.setPlaybackRate(this.speedMultiplier);
+    this.audioManager.setPlaybackRate(
+      this
+        .speedMultiplier,
+    );
   }
 
   /**
@@ -540,19 +814,36 @@ export class GameEngine {
    * `LEAD_IN_SECONDS` for why it must not be derived from a player setting.
    */
   start(): void {
-    this.audioManager.setPlaybackRate(this.speedMultiplier);
-    this.audioManager.play(LEAD_IN_SECONDS);
+    this.audioManager.setPlaybackRate(
+      this
+        .speedMultiplier,
+    );
+    this.audioManager.play(
+      LEAD_IN_SECONDS,
+    );
   }
 
   pause(): void {
     this.audioManager.pause();
-    useSliceItStore.getState().setIsPaused(true);
+    useSliceItStore
+      .getState()
+      .setIsPaused(
+        true,
+      );
   }
 
   resume(): void {
-    if (useSliceItStore.getState().status === 'PLAYING') {
+    if (
+      useSliceItStore.getState()
+        .status ===
+      'PLAYING'
+    ) {
       this.audioManager.play();
-      useSliceItStore.getState().setIsPaused(false);
+      useSliceItStore
+        .getState()
+        .setIsPaused(
+          false,
+        );
     }
   }
 
@@ -568,14 +859,45 @@ export class GameEngine {
    * instead of being left for the miss sweep to flag the instant playback
    * resumes past it.
    */
-  seek(seconds: number): void {
-    const target = Math.max(0, seconds);
-    this.audioManager.seek(target);
-    for (let i = this.cursor; i < this.slices.length; i++) {
-      const slice = this.slices[i];
-      if (slice.time >= target - this.missWindow) break;
-      this.processedSliceIds.add(slice.id);
-      this.cursor = i + 1;
+  seek(
+    seconds: number,
+  ): void {
+    const target =
+      Math.max(
+        0,
+        seconds,
+      );
+    this.audioManager.seek(
+      target,
+    );
+    for (
+      let i =
+        this
+          .cursor;
+      i <
+      this
+        .slices
+        .length;
+      i++
+    ) {
+      const slice =
+        this
+          .slices[
+          i
+        ];
+      if (
+        slice.time >=
+        target -
+          this
+            .missWindow
+      )
+        break;
+      this.processedSliceIds.add(
+        slice.id,
+      );
+      this.cursor =
+        i +
+        1;
     }
   }
 
@@ -588,25 +910,69 @@ export class GameEngine {
    * a note left saying `hit: true` never re-arms and the player watches it go
    * by; and `processedSliceIds` would swallow it even if it did.
    */
-  private seekBackTo(seconds: number): void {
-    const target = Math.max(0, seconds);
-    this.audioManager.seek(target);
+  private seekBackTo(
+    seconds: number,
+  ): void {
+    const target =
+      Math.max(
+        0,
+        seconds,
+      );
+    this.audioManager.seek(
+      target,
+    );
 
-    let cursor = this.slices.length;
-    for (let i = 0; i < this.slices.length; i++) {
-      const slice = this.slices[i];
-      if (slice.time >= target - this.missWindow) {
-        cursor = i;
+    let cursor =
+      this
+        .slices
+        .length;
+    for (
+      let i = 0;
+      i <
+      this
+        .slices
+        .length;
+      i++
+    ) {
+      const slice =
+        this
+          .slices[
+          i
+        ];
+      if (
+        slice.time >=
+        target -
+          this
+            .missWindow
+      ) {
+        cursor =
+          i;
         break;
       }
     }
-    for (let i = cursor; i < this.slices.length; i++) {
-      const slice = this.slices[i];
-      this.processedSliceIds.delete(slice.id);
+    for (
+      let i =
+        cursor;
+      i <
+      this
+        .slices
+        .length;
+      i++
+    ) {
+      const slice =
+        this
+          .slices[
+          i
+        ];
+      this.processedSliceIds.delete(
+        slice.id,
+      );
       slice.hit = false;
-      slice.hitTime = undefined;
+      slice.hitTime =
+        undefined;
     }
-    this.cursor = cursor;
+    this.cursor =
+      cursor;
 
     // A combo across a rewind is not a combo. Everything else — score,
     // accuracy, the histogram — is left alone: practice is for reading the
@@ -616,13 +982,18 @@ export class GameEngine {
     this.holdBilledTo.clear();
     // Beats before the rewind point are already scheduled and in the past;
     // re-arm from here or the metronome stays silent for the rest of the loop.
-    this.tickScheduledTo = target;
+    this.tickScheduledTo =
+      target;
   }
 
   /** P4 — is either audible guide switched on? */
   private tickEnabled(): boolean {
-    const store = useSliceItStore.getState();
-    return store.metronome || store.assistTick;
+    const store =
+      useSliceItStore.getState();
+    return (
+      store.metronome ||
+      store.assistTick
+    );
   }
 
   /**
@@ -632,49 +1003,148 @@ export class GameEngine {
    * `performance.now()`, because the two drift and the whole point of a guide
    * is that it agrees with the music.
    */
-  private scheduleTicks(currentTime: number): void {
-    const context = this.audioManager.getContext();
-    if (!context) return;
+  private scheduleTicks(
+    currentTime: number,
+  ): void {
+    const context =
+      this.audioManager.getContext();
+    if (
+      !context
+    )
+      return;
 
-    const horizon = currentTime + TICK_LOOKAHEAD_SEC;
-    if (this.tickScheduledTo >= horizon) return;
-    const from = Math.max(this.tickScheduledTo, currentTime);
+    const horizon =
+      currentTime +
+      TICK_LOOKAHEAD_SEC;
+    if (
+      this
+        .tickScheduledTo >=
+      horizon
+    )
+      return;
+    const from =
+      Math.max(
+        this
+          .tickScheduledTo,
+        currentTime,
+      );
 
-    const store = useSliceItStore.getState();
-    const rate = this.speedMultiplier || 1;
-    const volume = sfxGain(store.volume, store.sfxVolume) * TICK_VOLUME_SCALE;
+    const store =
+      useSliceItStore.getState();
+    const rate =
+      this
+        .speedMultiplier ||
+      1;
+    const volume =
+      sfxGain(
+        store.volume,
+        store.sfxVolume,
+      ) *
+      TICK_VOLUME_SCALE;
     // Sounds are scheduled on the render clock, which is ahead of the heard position
     // `currentTime` carries by the output latency: scheduling from the heard
     // position would put every guide tick that much late against the music.
     const renderTime =
-      currentTime + (this.audioManager.getRenderPosition() - this.audioManager.getCurrentTime());
-    const atContext = (trackTime: number) => context.currentTime + (trackTime - renderTime) / rate;
+      currentTime +
+      (this.audioManager.getRenderPosition() -
+        this.audioManager.getCurrentTime());
+    const atContext =
+      (
+        trackTime: number,
+      ) =>
+        context.currentTime +
+        (trackTime -
+          renderTime) /
+          rate;
 
-    if (store.metronome) {
-      const bpm = this.beatMap?.bpm && this.beatMap.bpm > 0 ? this.beatMap.bpm : 120;
-      const beat = 60 / bpm;
-      const first = Math.ceil(from / beat) * beat;
-      for (let t = first; t < horizon; t += beat) {
-        this.audioManager.scheduleSfx(TICK_FREQ_BEAT, 'square', 0.03, volume, atContext(t));
+    if (
+      store.metronome
+    ) {
+      const bpm =
+        this
+          .beatMap
+          ?.bpm &&
+        this
+          .beatMap
+          .bpm >
+          0
+          ? this
+              .beatMap
+              .bpm
+          : 120;
+      const beat =
+        60 /
+        bpm;
+      const first =
+        Math.ceil(
+          from /
+            beat,
+        ) *
+        beat;
+      for (
+        let t =
+          first;
+        t <
+        horizon;
+        t +=
+          beat
+      ) {
+        this.audioManager.scheduleSfx(
+          TICK_FREQ_BEAT,
+          'square',
+          0.03,
+          volume,
+          atContext(
+            t,
+          ),
+        );
       }
     }
 
-    if (store.assistTick) {
-      for (let i = this.cursor; i < this.slices.length; i++) {
-        const slice = this.slices[i];
-        if (slice.time >= horizon) break;
-        if (slice.time < from || slice.type === 'BOMB') continue;
+    if (
+      store.assistTick
+    ) {
+      for (
+        let i =
+          this
+            .cursor;
+        i <
+        this
+          .slices
+          .length;
+        i++
+      ) {
+        const slice =
+          this
+            .slices[
+            i
+          ];
+        if (
+          slice.time >=
+          horizon
+        )
+          break;
+        if (
+          slice.time <
+            from ||
+          slice.type ===
+            'BOMB'
+        )
+          continue;
         this.audioManager.scheduleSfx(
           TICK_FREQ_NOTE,
           'triangle',
           0.02,
           volume,
-          atContext(slice.time),
+          atContext(
+            slice.time,
+          ),
         );
       }
     }
 
-    this.tickScheduledTo = horizon;
+    this.tickScheduledTo =
+      horizon;
   }
 
   /**
@@ -687,16 +1157,31 @@ export class GameEngine {
    * against.
    */
   private now(): number {
-    if (this.replayInput !== null) return this.replayTime;
-    const store = useSliceItStore.getState();
+    if (
+      this
+        .replayInput !==
+      null
+    )
+      return this
+        .replayTime;
+    const store =
+      useSliceItStore.getState();
     // I5 — the two offsets COMPOSE, they do not substitute for each other.
     // `audioOffset` is how late the sound is; `inputOffset` is how late the
     // keypress is. Folded into one number they cancel and mask each other,
     // which is why "I calibrated and it still feels wrong" is the most common
     // complaint in this genre — the player was tuning one knob against two
     // faults.
-    const offsetSeconds = ((store.audioOffset || 0) + (store.inputOffset || 0)) / 1000;
-    return this.audioManager.getCurrentTime() - offsetSeconds;
+    const offsetSeconds =
+      ((store.audioOffset ||
+        0) +
+        (store.inputOffset ||
+          0)) /
+      1000;
+    return (
+      this.audioManager.getCurrentTime() -
+      offsetSeconds
+    );
   }
 
   /**
@@ -707,9 +1192,15 @@ export class GameEngine {
    * keeps the rate it was scored at.
    */
   private runMultiplier(): number {
-    return calculateScoreMultiplier(useSliceItStore.getState().modifiers, {
-      gaugeBroken: this.gaugeBroken,
-    });
+    return calculateScoreMultiplier(
+      useSliceItStore.getState()
+        .modifiers,
+      {
+        gaugeBroken:
+          this
+            .gaugeBroken,
+      },
+    );
   }
 
   /**
@@ -723,7 +1214,13 @@ export class GameEngine {
    * Timing exists.
    */
   private get missWindow(): number {
-    return HIT_WINDOWS.BAD * timingScale(useSliceItStore.getState().modifiers);
+    return (
+      HIT_WINDOWS.BAD *
+      timingScale(
+        useSliceItStore.getState()
+          .modifiers,
+      )
+    );
   }
 
   /**
@@ -732,7 +1229,13 @@ export class GameEngine {
    * factor and speed already do to it.
    */
   private releaseTimingScale(): number {
-    return timingScale(useSliceItStore.getState().modifiers) * RELEASE_WINDOW_SCALE;
+    return (
+      timingScale(
+        useSliceItStore.getState()
+          .modifiers,
+      ) *
+      RELEASE_WINDOW_SCALE
+    );
   }
 
   /**
@@ -742,70 +1245,181 @@ export class GameEngine {
    * 2x gives you half the real-time warning — which is the point of playing it
    * at 2x.
    */
-  getEffectiveLane(slice: Slice, currentTime: number): number {
-    if (slice.type !== 'SWITCH') return slice.lane;
-    const leadTime = 0.8 / this.speedMultiplier;
-    return currentTime >= slice.time - leadTime ? (slice.lane === 0 ? 1 : 0) : slice.lane;
+  getEffectiveLane(
+    slice: Slice,
+    currentTime: number,
+  ): number {
+    if (
+      slice.type !==
+      'SWITCH'
+    )
+      return slice.lane;
+    const leadTime =
+      0.8 /
+      this
+        .speedMultiplier;
+    return currentTime >=
+      slice.time -
+        leadTime
+      ? slice.lane ===
+        0
+        ? 1
+        : 0
+      : slice.lane;
   }
 
   update(): void {
-    const store = useSliceItStore.getState();
+    const store =
+      useSliceItStore.getState();
     // A replay is a viewer inside the song library, not a run: it must never need
     // (or flip) the global `status`, because `MENU` is what keeps the library — and
     // the very dialog the viewer lives in — mounted. See `setRunStatus`.
-    if ((store.status !== 'PLAYING' && this.replayInput === null) || store.isPaused) return;
+    if (
+      (store.status !==
+        'PLAYING' &&
+        this
+          .replayInput ===
+          null) ||
+      store.isPaused
+    )
+      return;
 
-    const currentTime = this.now();
-    const duration = this.audioManager.getDuration();
+    const currentTime =
+      this.now();
+    const duration =
+      this.audioManager.getDuration();
 
-    if (!this.finished && duration > 0 && currentTime >= duration) {
+    if (
+      !this
+        .finished &&
+      duration >
+        0 &&
+      currentTime >=
+        duration
+    ) {
       this.finished = true;
-      this.setRunStatus('FINISHED');
+      this.setRunStatus(
+        'FINISHED',
+      );
       this.audioManager.stop();
-      if (this.inMultiplayer) this.publish(true);
+      if (
+        this
+          .inMultiplayer
+      )
+        this.publish(
+          true,
+        );
       return;
     }
 
-    if (this.slices.length === 0) return;
+    if (
+      this
+        .slices
+        .length ===
+      0
+    )
+      return;
 
     // Before the hold accrual and before the miss sweep: a logged input has to
     // resolve its note while the note still exists, or the sweep expires it and
     // the replay shows a miss the run never had.
-    if (this.replayInput !== null) this.stepReplay(currentTime);
+    if (
+      this
+        .replayInput !==
+      null
+    )
+      this.stepReplay(
+        currentTime,
+      );
 
     // P1 — rewind at the loop end. Before anything resolves, so a note sitting
     // exactly on the boundary is judged in the pass it belongs to rather than
     // twice.
-    if (this.practiceLoop !== null && currentTime >= this.practiceLoop.end) {
-      this.seekBackTo(this.practiceLoop.start);
+    if (
+      this
+        .practiceLoop !==
+        null &&
+      currentTime >=
+        this
+          .practiceLoop
+          .end
+    ) {
+      this.seekBackTo(
+        this
+          .practiceLoop
+          .start,
+      );
       return;
     }
 
     // P4 — top the tick schedule up. Cheap: it walks only the beats inside the
     // lookahead that have not been scheduled yet, which is normally none.
-    if (this.tickEnabled()) this.scheduleTicks(currentTime);
+    if (
+      this.tickEnabled()
+    )
+      this.scheduleTicks(
+        currentTime,
+      );
 
     // P3 — autoplay resolves in `update()` rather than by synthesising input
     // events. A fake keydown would go through the same dispatch-latency
     // reconstruction a real one does and land a fraction late, which is exactly
     // the artefact a reference playthrough must not have.
-    if (this.autoplay) {
-      for (let i = this.cursor; i < this.slices.length; i++) {
-        const slice = this.slices[i];
-        if (slice.time > currentTime) break;
-        if (this.processedSliceIds.has(slice.id)) continue;
+    if (
+      this
+        .autoplay
+    ) {
+      for (
+        let i =
+          this
+            .cursor;
+        i <
+        this
+          .slices
+          .length;
+        i++
+      ) {
+        const slice =
+          this
+            .slices[
+            i
+          ];
+        if (
+          slice.time >
+          currentTime
+        )
+          break;
+        if (
+          this.processedSliceIds.has(
+            slice.id,
+          )
+        )
+          continue;
         // Never slice a bomb — the demo has to model correct play, and a
         // reference run that eats every mine teaches the opposite.
-        if (slice.type === 'BOMB') {
-          this.processedSliceIds.add(slice.id);
+        if (
+          slice.type ===
+          'BOMB'
+        ) {
+          this.processedSliceIds.add(
+            slice.id,
+          );
           continue;
         }
-        this.resolve(slice, 'MARVELOUS', slice.lane, 0);
+        this.resolve(
+          slice,
+          'MARVELOUS',
+          slice.lane,
+          0,
+        );
       }
     }
 
-    const scoreMultiplier = this.runMultiplier();
-    const missWindow = this.missWindow;
+    const scoreMultiplier =
+      this.runMultiplier();
+    const missWindow =
+      this
+        .missWindow;
 
     // Holds accrue while held and expire if held too far past their end.
     //
@@ -815,41 +1429,109 @@ export class GameEngine {
     // stuttered, and — because `update()` was being called twice per frame —
     // twice what it was meant to be on all of them. Audio time is the only clock
     // in here that is the same for everybody.
-    if (this.activeHolds.size > 0) {
-      for (const [lane, slice] of this.activeHolds) {
-        const holdEnd = slice.time + (slice.duration ?? 0);
+    if (
+      this
+        .activeHolds
+        .size >
+      0
+    ) {
+      for (const [
+        lane,
+        slice,
+      ] of this
+        .activeHolds) {
+        const holdEnd =
+          slice.time +
+          (slice.duration ??
+            0);
         // G5 — the timeout boundary is the RELEASE window, not the tap one: a
         // hold nobody let go of is judged exactly like a release that landed
         // outside `releaseTimingScale()`'s BAD window, because that is what it
         // is. Using the narrower tap `missWindow` here would fire this sweep
         // before `submitRelease` (had the player actually released late) would
         // itself have called it a MISS.
-        if (currentTime > holdEnd + HIT_WINDOWS.BAD * this.releaseTimingScale()) {
-          this.activeHolds.delete(lane);
-          this.holdBilledTo.delete(lane);
+        if (
+          currentTime >
+          holdEnd +
+            HIT_WINDOWS.BAD *
+              this.releaseTimingScale()
+        ) {
+          this.activeHolds.delete(
+            lane,
+          );
+          this.holdBilledTo.delete(
+            lane,
+          );
           // A release nobody made is now a judged event like any other — the
           // whole point of G5 is that an unjudged tail no longer exists.
-          this.notesResolved++;
-          this.hitPoints += accuracyWeight('MISS');
+          this
+            .notesResolved++;
+          this.hitPoints +=
+            accuracyWeight(
+              'MISS',
+            );
           this.judgements.MISS += 1;
           this.breakCombo();
-          this.pushFeedback('MISS', lane, FEEDBACK_COLORS.MISS);
-          this.applyHealth('MISS');
-          this.checkFailConditions('MISS');
+          this.pushFeedback(
+            'MISS',
+            lane,
+            FEEDBACK_COLORS.MISS,
+          );
+          this.applyHealth(
+            'MISS',
+          );
+          this.checkFailConditions(
+            'MISS',
+          );
           this.commit();
-        } else if (currentTime < holdEnd) {
-          const billedTo = this.holdBilledTo.get(lane) ?? currentTime;
+        } else if (
+          currentTime <
+          holdEnd
+        ) {
+          const billedTo =
+            this.holdBilledTo.get(
+              lane,
+            ) ??
+            currentTime;
           // Clamped: a stall must not pay out the time the player was absent.
-          const dt = Math.min(Math.max(0, currentTime - billedTo), HOLD_TICK_MAX_STEP_SEC);
-          this.holdBilledTo.set(lane, currentTime);
+          const dt =
+            Math.min(
+              Math.max(
+                0,
+                currentTime -
+                  billedTo,
+              ),
+              HOLD_TICK_MAX_STEP_SEC,
+            );
+          this.holdBilledTo.set(
+            lane,
+            currentTime,
+          );
           this.holdCredit +=
-            HOLD_TICK_POINTS_PER_SECOND * dt * (this.combo > 0 ? this.combo : 1) * scoreMultiplier;
+            HOLD_TICK_POINTS_PER_SECOND *
+            dt *
+            (this
+              .combo >
+            0
+              ? this
+                  .combo
+              : 1) *
+            scoreMultiplier;
           // Whole points only, with the fraction carried — otherwise a 60 Hz
           // update at combo 1 floors to zero every time and holds score nothing.
-          const whole = Math.floor(this.holdCredit);
-          if (whole > 0) {
-            this.score += whole;
-            this.holdCredit -= whole;
+          const whole =
+            Math.floor(
+              this
+                .holdCredit,
+            );
+          if (
+            whole >
+            0
+          ) {
+            this.score +=
+              whole;
+            this.holdCredit -=
+              whole;
           }
         }
       }
@@ -857,21 +1539,57 @@ export class GameEngine {
 
     // Sweep expired notes. The cursor only ever moves forward, so this is one
     // pass over the chart across the whole song rather than one per frame.
-    while (this.cursor < this.slices.length) {
-      const slice = this.slices[this.cursor];
-      if (slice.time + missWindow >= currentTime) break;
-      if (!this.processedSliceIds.has(slice.id)) {
-        if (slice.type === 'BOMB') {
+    while (
+      this
+        .cursor <
+      this
+        .slices
+        .length
+    ) {
+      const slice =
+        this
+          .slices[
+          this
+            .cursor
+        ];
+      if (
+        slice.time +
+          missWindow >=
+        currentTime
+      )
+        break;
+      if (
+        !this.processedSliceIds.has(
+          slice.id,
+        )
+      ) {
+        if (
+          slice.type ===
+          'BOMB'
+        ) {
           // A bomb you left alone is a bomb you dodged.
-          this.processedSliceIds.add(slice.id);
+          this.processedSliceIds.add(
+            slice.id,
+          );
         } else {
-          this.resolve(slice, 'MISS', slice.lane);
+          this.resolve(
+            slice,
+            'MISS',
+            slice.lane,
+          );
         }
       }
-      this.cursor++;
+      this
+        .cursor++;
     }
 
-    if (this.inMultiplayer) this.publish(false);
+    if (
+      this
+        .inMultiplayer
+    )
+      this.publish(
+        false,
+      );
   }
 
   /**
@@ -885,36 +1603,104 @@ export class GameEngine {
    * player as if they had hit late. Reconstructing the audio position at the
    * moment of the press removes the main thread from the judgement.
    */
-  submitInput(lane: number, pressTime?: number): void {
-    const store = useSliceItStore.getState();
-    if (store.isPaused) return;
+  submitInput(
+    lane: number,
+    pressTime?: number,
+  ): void {
+    const store =
+      useSliceItStore.getState();
+    if (
+      store.isPaused
+    )
+      return;
 
     // One press must never resolve two notes.
-    const now = performance.now();
-    if (now - (this.lastInputTime.get(lane) ?? 0) < INPUT_COOLDOWN_MS) return;
-    this.lastInputTime.set(lane, now);
+    const now =
+      performance.now();
+    if (
+      now -
+        (this.lastInputTime.get(
+          lane,
+        ) ??
+          0) <
+      INPUT_COOLDOWN_MS
+    )
+      return;
+    this.lastInputTime.set(
+      lane,
+      now,
+    );
 
-    if (!this.beatMap) return;
+    if (
+      !this
+        .beatMap
+    )
+      return;
 
-    const currentTime = this.now() - this.dispatchDelaySeconds(pressTime, now);
-    const targeted = this.getTargetedSlice(lane);
+    const currentTime =
+      this.now() -
+      this.dispatchDelaySeconds(
+        pressTime,
+        now,
+      );
+    const targeted =
+      this.getTargetedSlice(
+        lane,
+      );
 
-    if (!targeted || Math.abs(targeted.time - currentTime) > this.missWindow) {
+    if (
+      !targeted ||
+      Math.abs(
+        targeted.time -
+          currentTime,
+      ) >
+        this
+          .missWindow
+    ) {
       // Ghost tap. Breaks the combo but does not count against accuracy — you
       // did not miss a note, you hit nothing.
       this.breakCombo();
-      this.pushFeedback('MISS', lane, FEEDBACK_COLORS.MISS);
+      this.pushFeedback(
+        'MISS',
+        lane,
+        FEEDBACK_COLORS.MISS,
+      );
       this.commit();
       return;
     }
 
-    if (targeted.type === 'BOMB') {
-      this.processedSliceIds.add(targeted.id);
+    if (
+      targeted.type ===
+      'BOMB'
+    ) {
+      this.processedSliceIds.add(
+        targeted.id,
+      );
       this.breakCombo();
-      this.score = Math.max(0, this.score - BOMB_PENALTY);
-      this.pushFeedback('BOMB!', lane, '#ff0000');
-      this.audioManager.playSfX(150, 'sawtooth', 0.3, sfxGain(store.volume, store.sfxVolume));
-      this.drainHealth(HEALTH_BOMB_DRAIN);
+      this.score =
+        Math.max(
+          0,
+          this
+            .score -
+            BOMB_PENALTY,
+        );
+      this.pushFeedback(
+        'BOMB!',
+        lane,
+        '#ff0000',
+      );
+      this.audioManager.playSfX(
+        150,
+        'sawtooth',
+        0.3,
+        sfxGain(
+          store.volume,
+          store.sfxVolume,
+        ),
+      );
+      this.drainHealth(
+        HEALTH_BOMB_DRAIN,
+      );
       this.commit();
       return;
     }
@@ -924,9 +1710,25 @@ export class GameEngine {
     // which is the whole reason the judgement is fair — a timing summary that
     // did not carry it would tell the player to calibrate away the browser's
     // event queue, and `integrity.ts` would see a mean skewed late on every run.
-    const offset = currentTime - targeted.time;
-    const result = judge(offset, timingScale(store.modifiers));
-    this.resolve(targeted, result, this.getEffectiveLane(targeted, currentTime), offset);
+    const offset =
+      currentTime -
+      targeted.time;
+    const result =
+      judge(
+        offset,
+        timingScale(
+          store.modifiers,
+        ),
+      );
+    this.resolve(
+      targeted,
+      result,
+      this.getEffectiveLane(
+        targeted,
+        currentTime,
+      ),
+      offset,
+    );
   }
 
   /**
@@ -942,33 +1744,85 @@ export class GameEngine {
    * more judgement like any other, which is the actual point: there is
    * something to improve at.
    */
-  submitRelease(lane: number): void {
-    const held = this.activeHolds.get(lane);
-    if (!held) return;
-    this.activeHolds.delete(lane);
-    this.holdBilledTo.delete(lane);
+  submitRelease(
+    lane: number,
+  ): void {
+    const held =
+      this.activeHolds.get(
+        lane,
+      );
+    if (
+      !held
+    )
+      return;
+    this.activeHolds.delete(
+      lane,
+    );
+    this.holdBilledTo.delete(
+      lane,
+    );
 
-    const currentTime = this.now();
-    const holdEnd = held.time + (held.duration ?? 0);
-    const scoreMultiplier = this.runMultiplier();
+    const currentTime =
+      this.now();
+    const holdEnd =
+      held.time +
+      (held.duration ??
+        0);
+    const scoreMultiplier =
+      this.runMultiplier();
 
-    const offset = currentTime - holdEnd;
-    const result = judge(offset, this.releaseTimingScale());
+    const offset =
+      currentTime -
+      holdEnd;
+    const result =
+      judge(
+        offset,
+        this.releaseTimingScale(),
+      );
 
-    this.notesResolved++;
-    this.hitPoints += accuracyWeight(result);
-    this.judgements[result] += 1;
+    this
+      .notesResolved++;
+    this.hitPoints +=
+      accuracyWeight(
+        result,
+      );
+    this.judgements[
+      result
+    ] +=
+      1;
     // `pointsFor` already returns 0 for MISS/BAD, so this is safe unconditional
     // — combo is read, not advanced: the LONG note's head already spent its one
     // combo increment, and the release only decides whether that chain survives.
-    this.score += pointsFor(result, this.combo, scoreMultiplier);
+    this.score +=
+      pointsFor(
+        result,
+        this
+          .combo,
+        scoreMultiplier,
+      );
 
-    if (result === 'MISS' || result === 'BAD') {
+    if (
+      result ===
+        'MISS' ||
+      result ===
+        'BAD'
+    ) {
       this.breakCombo();
     }
-    this.pushFeedback(result, lane, FEEDBACK_COLORS[result], offset);
-    this.checkFailConditions(result);
-    this.feedbackHaptic(result);
+    this.pushFeedback(
+      result,
+      lane,
+      FEEDBACK_COLORS[
+        result
+      ],
+      offset,
+    );
+    this.checkFailConditions(
+      result,
+    );
+    this.feedbackHaptic(
+      result,
+    );
     this.commit();
   }
 
@@ -978,55 +1832,149 @@ export class GameEngine {
    * Also what the renderer glows: showing the player which note is "armed" is
    * the difference between a two-lane game feeling readable and feeling random.
    */
-  getTargetedSlice(lane: number): Slice | null {
-    if (this.slices.length === 0) return null;
-    const currentTime = this.now();
-    const missWindow = this.missWindow;
+  getTargetedSlice(
+    lane: number,
+  ): Slice | null {
+    if (
+      this
+        .slices
+        .length ===
+      0
+    )
+      return null;
+    const currentTime =
+      this.now();
+    const missWindow =
+      this
+        .missWindow;
 
-    for (let i = this.cursor; i < this.slices.length; i++) {
-      const slice = this.slices[i];
+    for (
+      let i =
+        this
+          .cursor;
+      i <
+      this
+        .slices
+        .length;
+      i++
+    ) {
+      const slice =
+        this
+          .slices[
+          i
+        ];
       // Notes further out than the window cannot be hit yet, and the chart is
       // sorted, so nothing after this one can be either.
-      if (slice.time - currentTime > missWindow) break;
-      if (this.processedSliceIds.has(slice.id)) continue;
-      if (slice.type === 'SILENT') continue;
-      if (currentTime > slice.time + missWindow) continue;
-      if (slice.type === 'BOMB' && currentTime > slice.time) continue;
+      if (
+        slice.time -
+          currentTime >
+        missWindow
+      )
+        break;
+      if (
+        this.processedSliceIds.has(
+          slice.id,
+        )
+      )
+        continue;
+      if (
+        slice.type ===
+        'SILENT'
+      )
+        continue;
+      if (
+        currentTime >
+        slice.time +
+          missWindow
+      )
+        continue;
+      if (
+        slice.type ===
+          'BOMB' &&
+        currentTime >
+          slice.time
+      )
+        continue;
 
       // A SWITCH note is always targeted in the lane it will *arrive* in, so
       // the glow tells the player where to press rather than where it started.
       const sliceLane =
-        slice.type === 'SWITCH'
-          ? slice.lane === 0
+        slice.type ===
+        'SWITCH'
+          ? slice.lane ===
+            0
             ? 1
             : 0
-          : this.getEffectiveLane(slice, currentTime);
-      if (sliceLane === lane) return slice;
+          : this.getEffectiveLane(
+              slice,
+              currentTime,
+            );
+      if (
+        sliceLane ===
+        lane
+      )
+        return slice;
     }
     return null;
   }
 
   getState() {
     return {
-      notesResolved: this.notesResolved,
+      notesResolved:
+        this
+          .notesResolved,
       /** Notes in the chart that count toward accuracy — the HUD's denominator. */
-      totalNotes: this.totalNotes,
+      totalNotes:
+        this
+          .totalNotes,
       /** Accuracy weight banked so far, out of `notesResolved * 100`. */
-      hitPoints: this.hitPoints,
-      score: this.score,
-      combo: this.combo,
-      maxCombo: this.maxCombo,
-      accuracy: accuracyOf(this.hitPoints, this.notesResolved),
-      multiplier: this.speedMultiplier,
+      hitPoints:
+        this
+          .hitPoints,
+      score:
+        this
+          .score,
+      combo:
+        this
+          .combo,
+      maxCombo:
+        this
+          .maxCombo,
+      accuracy:
+        accuracyOf(
+          this
+            .hitPoints,
+          this
+            .notesResolved,
+        ),
+      multiplier:
+        this
+          .speedMultiplier,
       // The viewer's clock during playback; the audio clock otherwise. A
       // renderer asking "where are we" must get the position the notes are being
       // judged against, and in a replay that is not the audio element's.
-      currentTime: this.replayInput !== null ? this.replayTime : this.audioManager.getCurrentTime(),
-      health: this.health,
-      gaugeBroken: this.gaugeBroken,
-      failed: this.failed,
-      isFullCombo: this.isFullCombo,
-      isPerfect: this.isPerfect,
+      currentTime:
+        this
+          .replayInput !==
+        null
+          ? this
+              .replayTime
+          : this.audioManager.getCurrentTime(),
+      health:
+        this
+          .health,
+      gaugeBroken:
+        this
+          .gaugeBroken,
+      failed:
+        this
+          .failed,
+      isFullCombo:
+        this
+          .isFullCombo,
+      isPerfect:
+        this
+          .isPerfect,
     };
   }
 
@@ -1042,11 +1990,38 @@ export class GameEngine {
    * `timeStamp` chosen to make a late press look early. Both get clamped, so the
    * correction can only ever recover real dispatch latency.
    */
-  private dispatchDelaySeconds(pressTime: number | undefined, now: number): number {
-    if (pressTime === undefined || !Number.isFinite(pressTime)) return 0;
-    const delayMs = now - pressTime;
-    if (!(delayMs > 0)) return 0;
-    return Math.min(delayMs, MAX_INPUT_DISPATCH_SEC * 1000) / 1000;
+  private dispatchDelaySeconds(
+    pressTime:
+      | number
+      | undefined,
+    now: number,
+  ): number {
+    if (
+      pressTime ===
+        undefined ||
+      !Number.isFinite(
+        pressTime,
+      )
+    )
+      return 0;
+    const delayMs =
+      now -
+      pressTime;
+    if (
+      !(
+        delayMs >
+        0
+      )
+    )
+      return 0;
+    return (
+      Math.min(
+        delayMs,
+        MAX_INPUT_DISPATCH_SEC *
+          1000,
+      ) /
+      1000
+    );
   }
 
   /**
@@ -1054,35 +2029,86 @@ export class GameEngine {
    *   by the miss sweep, which has no press to measure and falls back to the
    *   clock.
    */
-  private resolve(slice: Slice, result: HitResult, lane: number, offsetSeconds?: number): void {
-    this.processedSliceIds.add(slice.id);
-    slice.hit = result !== 'MISS';
-    slice.hitTime = performance.now();
+  private resolve(
+    slice: Slice,
+    result: HitResult,
+    lane: number,
+    offsetSeconds?: number,
+  ): void {
+    this.processedSliceIds.add(
+      slice.id,
+    );
+    slice.hit =
+      result !==
+      'MISS';
+    slice.hitTime =
+      performance.now();
 
-    const store = useSliceItStore.getState();
-    const scoreMultiplier = this.runMultiplier();
+    const store =
+      useSliceItStore.getState();
+    const scoreMultiplier =
+      this.runMultiplier();
 
-    this.notesResolved++;
-    const weight = accuracyWeight(result);
-    this.hitPoints += weight;
-    if (result !== 'NONE') this.judgements[result] += 1;
+    this
+      .notesResolved++;
+    const weight =
+      accuracyWeight(
+        result,
+      );
+    this.hitPoints +=
+      weight;
+    if (
+      result !==
+      'NONE'
+    )
+      this.judgements[
+        result
+      ] +=
+        1;
 
-    if (result === 'MISS' || result === 'BAD') {
+    if (
+      result ===
+        'MISS' ||
+      result ===
+        'BAD'
+    ) {
       this.breakCombo();
     } else {
-      this.combo++;
-      this.maxCombo = Math.max(this.maxCombo, this.combo);
+      this
+        .combo++;
+      this.maxCombo =
+        Math.max(
+          this
+            .maxCombo,
+          this
+            .combo,
+        );
 
       // V5 — fires once per crossing, not every frame the combo sits on the
       // number: this runs once per resolved note, and a note only ever pushes
       // `combo` through a given value once (it always changes on the very
       // next judgement, one way or the other).
       if (
-        (COMBO_MILESTONES as readonly number[]).includes(this.combo) &&
-        this.combo !== this.lastMilestone
+        (
+          COMBO_MILESTONES as readonly number[]
+        ).includes(
+          this
+            .combo,
+        ) &&
+        this
+          .combo !==
+          this
+            .lastMilestone
       ) {
-        this.lastMilestone = this.combo;
-        this.comboMilestone = { value: this.combo, at: performance.now() };
+        this.lastMilestone =
+          this.combo;
+        this.comboMilestone =
+          {
+            value:
+              this
+                .combo,
+            at: performance.now(),
+          };
         // Visual only. This used to also play a rising sine per tier, quietened
         // twice and shortened once before being dropped outright: a milestone
         // fires in the middle of a streak, which is exactly when the player is
@@ -1093,33 +2119,92 @@ export class GameEngine {
       }
     }
 
-    if (result !== 'MISS') {
-      this.score += pointsFor(result, this.combo, scoreMultiplier);
-      if (slice.type === 'LONG') {
-        this.activeHolds.set(lane, slice);
-        this.holdBilledTo.set(lane, this.now());
+    if (
+      result !==
+      'MISS'
+    ) {
+      this.score +=
+        pointsFor(
+          result,
+          this
+            .combo,
+          scoreMultiplier,
+        );
+      if (
+        slice.type ===
+        'LONG'
+      ) {
+        this.activeHolds.set(
+          lane,
+          slice,
+        );
+        this.holdBilledTo.set(
+          lane,
+          this.now(),
+        );
       }
 
-      const sfxVolume = sfxGain(store.volume, store.sfxVolume);
-      const sample = this.nextHitSample(store.hitSound);
-      const clean = result === 'MARVELOUS' || result === 'PERFECT';
+      const sfxVolume =
+        sfxGain(
+          store.volume,
+          store.sfxVolume,
+        );
+      const sample =
+        this.nextHitSample(
+          store.hitSound,
+        );
+      const clean =
+        result ===
+          'MARVELOUS' ||
+        result ===
+          'PERFECT';
       // G12 — pitch the hit sound by the note's own register, so a chart sounds
       // like the drum pattern it charts instead of one sample N times. A chart
       // with no `sound` (generated before G12) reads as `mid` and is unchanged.
-      const register = REGISTER_PITCH[slice.sound ?? 'mid'];
-      if (sample) {
+      const register =
+        REGISTER_PITCH[
+          slice.sound ??
+            'mid'
+        ];
+      if (
+        sample
+      ) {
         this.audioManager.playHitSoundFile(
-          asset(hitSoundPath(sample)),
+          asset(
+            hitSoundPath(
+              sample,
+            ),
+          ),
           sfxVolume,
-          (clean ? 1.0 : 0.85) * register,
+          (clean
+            ? 1.0
+            : 0.85) *
+            register,
         );
       } else {
-        this.audioManager.playSfX((clean ? 880 : 440) * register, 'triangle', 0.1, sfxVolume);
+        this.audioManager.playSfX(
+          (clean
+            ? 880
+            : 440) *
+            register,
+          'triangle',
+          0.1,
+          sfxVolume,
+        );
       }
     }
 
-    const offset = offsetSeconds ?? this.now() - slice.time;
-    if (result !== 'MISS') this.recordOffset(offset);
+    const offset =
+      offsetSeconds ??
+      this.now() -
+        slice.time;
+    if (
+      result !==
+      'MISS'
+    )
+      this.recordOffset(
+        offset,
+      );
     // For a hit, `slice.time + offset` is the moment the input happened — the
     // same reconstruction `submitInput` judged from, not the moment the engine
     // got around to it. Recording the clock instead would bake this machine's
@@ -1131,14 +2216,38 @@ export class GameEngine {
     // the following note than its own, which is exactly the ambiguity a
     // re-judge cannot resolve. A missed note is logged at the note's own time,
     // which is the one unambiguous thing about it.
-    this.recordReplay(lane, result, offsetSeconds === undefined ? slice.time : slice.time + offset);
-    this.pushFeedback(result, lane, FEEDBACK_COLORS[result], offset);
+    this.recordReplay(
+      lane,
+      result,
+      offsetSeconds ===
+        undefined
+        ? slice.time
+        : slice.time +
+            offset,
+    );
+    this.pushFeedback(
+      result,
+      lane,
+      FEEDBACK_COLORS[
+        result
+      ],
+      offset,
+    );
     // Last, so the histogram and the combo are already updated if this ends the
     // run — the results screen must describe the note that killed you.
-    if (result !== 'NONE') {
-      this.applyHealth(result);
-      this.checkFailConditions(result);
-      this.feedbackHaptic(result);
+    if (
+      result !==
+      'NONE'
+    ) {
+      this.applyHealth(
+        result,
+      );
+      this.checkFailConditions(
+        result,
+      );
+      this.feedbackHaptic(
+        result,
+      );
     }
     this.commit();
   }
@@ -1156,14 +2265,26 @@ export class GameEngine {
    * information.
    */
   private breakCombo(): void {
-    const lost = this.combo;
+    const lost =
+      this
+        .combo;
     this.combo = 0;
-    if (lost < COMBO_BREAK_THRESHOLD) return;
+    if (
+      lost <
+      COMBO_BREAK_THRESHOLD
+    )
+      return;
 
-    this.comboBreak = {
-      at: performance.now(),
-      magnitude: Math.min(1, lost / COMBO_BREAK_FULL_INTENSITY),
-    };
+    this.comboBreak =
+      {
+        at: performance.now(),
+        magnitude:
+          Math.min(
+            1,
+            lost /
+              COMBO_BREAK_FULL_INTENSITY,
+          ),
+      };
     // Visual only, like the milestone above. A 220 ms square tone at full SFX
     // volume fired on the one event the player least needs narrating — they
     // already know they missed, the judgement popup already says so, and the
@@ -1175,13 +2296,21 @@ export class GameEngine {
    * The most recent combo break worth drawing, or null. Read once per frame by
    * the renderer, which decides for itself when it has gone stale.
    */
-  getComboBreak(): { at: number; magnitude: number } | null {
-    return this.comboBreak;
+  getComboBreak(): {
+    at: number;
+    magnitude: number;
+  } | null {
+    return this
+      .comboBreak;
   }
 
   /** The most recent combo-milestone crossing worth drawing, or null. */
-  getComboMilestone(): { value: number; at: number } | null {
-    return this.comboMilestone;
+  getComboMilestone(): {
+    value: number;
+    at: number;
+  } | null {
+    return this
+      .comboMilestone;
   }
 
   /**
@@ -1193,7 +2322,8 @@ export class GameEngine {
    * weakest device that opens the game.
    */
   getCombo(): number {
-    return this.combo;
+    return this
+      .combo;
   }
 
   /**
@@ -1206,7 +2336,8 @@ export class GameEngine {
    * to read one number.
    */
   getHealth(): number {
-    return this.health;
+    return this
+      .health;
   }
 
   /**
@@ -1217,17 +2348,46 @@ export class GameEngine {
    * and `stepReplay` re-runs every resolution from the original run through
    * this same code path.
    */
-  private feedbackHaptic(result: Exclude<HitResult, 'NONE'>): void {
-    if (this.replayInput !== null) return;
-    if (!hapticsEnabled()) return;
-    vibrate(Math.round(HAPTIC_MS[result] * hapticsIntensity()));
+  private feedbackHaptic(
+    result: Exclude<
+      HitResult,
+      'NONE'
+    >,
+  ): void {
+    if (
+      this
+        .replayInput !==
+      null
+    )
+      return;
+    if (
+      !hapticsEnabled()
+    )
+      return;
+    vibrate(
+      Math.round(
+        HAPTIC_MS[
+          result
+        ] *
+          hapticsIntensity(),
+      ),
+    );
   }
 
   /* ── Health gauge ──────────────────────────────────────────────────────── */
 
   /** Move the gauge by a judgement's delta. A no-op while the modifier is off. */
-  private applyHealth(result: Exclude<HitResult, 'NONE'>): void {
-    this.drainHealth(-HEALTH_DELTA[result]);
+  private applyHealth(
+    result: Exclude<
+      HitResult,
+      'NONE'
+    >,
+  ): void {
+    this.drainHealth(
+      -HEALTH_DELTA[
+        result
+      ],
+    );
   }
 
   /**
@@ -1238,13 +2398,36 @@ export class GameEngine {
    * readout, but {@link gaugeBroken} is sticky: the bonus is forfeited for the
    * rest of the run whatever the bar does afterwards.
    */
-  private drainHealth(amount: number): void {
-    if (!useSliceItStore.getState().modifiers.healthGauge) return;
-    this.health = Math.max(0, Math.min(HEALTH_MAX, this.health - amount));
-    if (this.health > 0) return;
+  private drainHealth(
+    amount: number,
+  ): void {
+    if (
+      !useSliceItStore.getState()
+        .modifiers
+        .healthGauge
+    )
+      return;
+    this.health =
+      Math.max(
+        0,
+        Math.min(
+          HEALTH_MAX,
+          this
+            .health -
+            amount,
+        ),
+      );
+    if (
+      this
+        .health >
+      0
+    )
+      return;
 
     this.gaugeBroken = true;
-    this.fail('health');
+    this.fail(
+      'health',
+    );
   }
 
   /**
@@ -1257,25 +2440,41 @@ export class GameEngine {
    * Perfectionist) can't re-run the "stop the song, flip the status" sequence
    * twice or overwrite the reason that actually got there first.
    */
-  private fail(reason: 'health' | 'perfectionist'): void {
+  private fail(
+    reason:
+      | 'health'
+      | 'perfectionist',
+  ): void {
     // Multiplayer: the run continues, the multiplier does not. Perfectionist
     // never reaches here in a match at all — `forMultiplayer` (`modifiers.ts`)
     // strips it before the modifiers ever land in the store — but the guard
     // stays, for the same reason `checkFailConditions` re-checks the modifier
     // itself rather than trusting that upstream cleanup ran.
-    if (this.failMode === 'survive') return;
-    if (this.finished) return;
+    if (
+      this
+        .failMode ===
+      'survive'
+    )
+      return;
+    if (
+      this
+        .finished
+    )
+      return;
 
     this.finished = true;
     this.failed = true;
-    this.failReason = reason;
+    this.failReason =
+      reason;
     this.audioManager.stop();
     // `FINISHED`, not a new `FAILED` status. The store's `GameStatus` is read by
     // every screen in the game and a third value would have to be handled by all
     // of them; what the results screen needs to say "you failed" — and why —
     // is the flag on this engine, which it already holds. See
     // `getRunStats().failed`/`.failReason`.
-    this.setRunStatus('FINISHED');
+    this.setRunStatus(
+      'FINISHED',
+    );
   }
 
   /**
@@ -1285,9 +2484,20 @@ export class GameEngine {
    * viewer opened; flipping to `FINISHED` at the end of the track would have thrown
    * the results screen over somebody else's leaderboard.
    */
-  private setRunStatus(status: 'FINISHED'): void {
-    if (this.replayInput !== null) return;
-    useSliceItStore.getState().setStatus(status);
+  private setRunStatus(
+    status: 'FINISHED',
+  ): void {
+    if (
+      this
+        .replayInput !==
+      null
+    )
+      return;
+    useSliceItStore
+      .getState()
+      .setStatus(
+        status,
+      );
   }
 
   /**
@@ -1299,10 +2509,25 @@ export class GameEngine {
    * bomb don't produce a `HitResult` at all and so never reach here, which is
    * correct: neither is a note the chart asked the player to judge.
    */
-  private checkFailConditions(result: Exclude<HitResult, 'NONE'>): void {
-    const modifiers = useSliceItStore.getState().modifiers;
-    if (modifiers.perfectionist && result !== 'MARVELOUS' && result !== 'PERFECT') {
-      this.fail('perfectionist');
+  private checkFailConditions(
+    result: Exclude<
+      HitResult,
+      'NONE'
+    >,
+  ): void {
+    const modifiers =
+      useSliceItStore.getState()
+        .modifiers;
+    if (
+      modifiers.perfectionist &&
+      result !==
+        'MARVELOUS' &&
+      result !==
+        'PERFECT'
+    ) {
+      this.fail(
+        'perfectionist',
+      );
     }
     // Sudden Death has no engine-side effect to guard here: `suddenDeath` ends
     // nothing today (see `docs/_handoff/note-vocab-requests.md`). The
@@ -1321,21 +2546,49 @@ export class GameEngine {
    * amount of skill produces that. Keeping the summary — not the samples — is
    * enough to tell those apart and is a few numbers on the wire.
    */
-  private recordOffset(offsetSeconds: number): void {
-    if (!Number.isFinite(offsetSeconds)) return;
-    this.offsetCount++;
+  private recordOffset(
+    offsetSeconds: number,
+  ): void {
+    if (
+      !Number.isFinite(
+        offsetSeconds,
+      )
+    )
+      return;
+    this
+      .offsetCount++;
     // Welford, so the variance is stable and needs no second pass over samples
     // we are deliberately not keeping.
-    const delta = offsetSeconds - this.offsetMean;
-    this.offsetMean += delta / this.offsetCount;
-    this.offsetM2 += delta * (offsetSeconds - this.offsetMean);
+    const delta =
+      offsetSeconds -
+      this
+        .offsetMean;
+    this.offsetMean +=
+      delta /
+      this
+        .offsetCount;
+    this.offsetM2 +=
+      delta *
+      (offsetSeconds -
+        this
+          .offsetMean);
 
     // …and the last few samples verbatim, which the summary cannot reconstruct
     // and the error bar needs. Client-side only: the submission still carries
     // three numbers, not a per-note payload. See `integrity.ts`.
-    this.offsetRing.offsets[this.offsetHead] = offsetSeconds;
-    this.offsetRing.times[this.offsetHead] = performance.now();
-    this.offsetHead = (this.offsetHead + 1) % OFFSET_RING_SIZE;
+    this.offsetRing.offsets[
+      this.offsetHead
+    ] =
+      offsetSeconds;
+    this.offsetRing.times[
+      this.offsetHead
+    ] =
+      performance.now();
+    this.offsetHead =
+      (this
+        .offsetHead +
+        1) %
+      OFFSET_RING_SIZE;
   }
 
   /**
@@ -1343,7 +2596,12 @@ export class GameEngine {
    * anything. Sent with the score; see `features/slice-it/engine/integrity.ts`.
    */
   getTimingSummary(): TimingSummary | null {
-    if (this.offsetCount < MIN_TIMING_SAMPLES) return null;
+    if (
+      this
+        .offsetCount <
+      MIN_TIMING_SAMPLES
+    )
+      return null;
     return this.getTimingStats();
   }
 
@@ -1359,10 +2617,32 @@ export class GameEngine {
    */
   getTimingStats(): TimingSummary {
     return {
-      samples: this.offsetCount,
-      meanMs: this.offsetCount > 0 ? this.offsetMean * 1000 : 0,
+      samples:
+        this
+          .offsetCount,
+      meanMs:
+        this
+          .offsetCount >
+        0
+          ? this
+              .offsetMean *
+            1000
+          : 0,
       stdDevMs:
-        this.offsetCount > 0 ? Math.sqrt(Math.max(0, this.offsetM2 / this.offsetCount)) * 1000 : 0,
+        this
+          .offsetCount >
+        0
+          ? Math.sqrt(
+              Math.max(
+                0,
+                this
+                  .offsetM2 /
+                  this
+                    .offsetCount,
+              ),
+            ) *
+            1000
+          : 0,
     };
   }
 
@@ -1372,13 +2652,20 @@ export class GameEngine {
    * Returned by reference and never copied — the caller reads it once per frame.
    * A slot whose `times` entry is 0 was never written.
    */
-  getRecentOffsets(): { readonly offsets: Float32Array; readonly times: Float32Array } {
-    return this.offsetRing;
+  getRecentOffsets(): {
+    readonly offsets: Float32Array;
+    readonly times: Float32Array;
+  } {
+    return this
+      .offsetRing;
   }
 
   /** The hit-window scale this run is being judged at. Widest window × this. */
   getTimingScale(): number {
-    return timingScale(useSliceItStore.getState().modifiers);
+    return timingScale(
+      useSliceItStore.getState()
+        .modifiers,
+    );
   }
 
   /* ── Replay capture (R3) ───────────────────────────────────────────────── */
@@ -1403,41 +2690,115 @@ export class GameEngine {
    *
    * @param atSeconds When the input happened, in audio time.
    */
-  private recordReplay(lane: number, result: HitResult, atSeconds: number): void {
+  private recordReplay(
+    lane: number,
+    result: HitResult,
+    atSeconds: number,
+  ): void {
     // Playback re-runs `resolve` for every logged input; re-recording them would
     // be writing the log back over itself.
-    if (this.replayInput !== null) return;
+    if (
+      this
+        .replayInput !==
+      null
+    )
+      return;
 
-    const code = JUDGMENT_CODE[result];
-    if (code === NOT_RECORDED) return;
+    const code =
+      JUDGMENT_CODE[
+        result
+      ];
+    if (
+      code ===
+      NOT_RECORDED
+    )
+      return;
 
-    const index = this.replayCount;
-    if (index >= REPLAY_MAX_INPUTS) {
+    const index =
+      this
+        .replayCount;
+    if (
+      index >=
+      REPLAY_MAX_INPUTS
+    ) {
       this.replayTruncated = true;
       return;
     }
 
-    const bounded = atSeconds > 0 ? (atSeconds < 3600 ? atSeconds : 3600) : 0;
-    const ms = Math.round(bounded * 1000);
-    const previous = index > 0 ? this.replayTimes[index - 1] : 0;
-    this.replayTimes[index] = ms < previous ? previous : ms;
-    this.replayLanes[index] = lane > 0 ? (lane < 7 ? lane : 7) : 0;
-    this.replayJudgments[index] = code;
-    this.replayCount = index + 1;
+    const bounded =
+      atSeconds >
+      0
+        ? atSeconds <
+          3600
+          ? atSeconds
+          : 3600
+        : 0;
+    const ms =
+      Math.round(
+        bounded *
+          1000,
+      );
+    const previous =
+      index >
+      0
+        ? this
+            .replayTimes[
+            index -
+              1
+          ]
+        : 0;
+    this.replayTimes[
+      index
+    ] =
+      ms <
+      previous
+        ? previous
+        : ms;
+    this.replayLanes[
+      index
+    ] =
+      lane >
+      0
+        ? lane <
+          7
+          ? lane
+          : 7
+        : 0;
+    this.replayJudgments[
+      index
+    ] =
+      code;
+    this.replayCount =
+      index +
+      1;
   }
 
   /** How many resolutions the log holds, and whether it hit its ceiling. */
-  getReplayStats(): { count: number; truncated: boolean } {
-    return { count: this.replayCount, truncated: this.replayTruncated };
+  getReplayStats(): {
+    count: number;
+    truncated: boolean;
+  } {
+    return {
+      count:
+        this
+          .replayCount,
+      truncated:
+        this
+          .replayTruncated,
+    };
   }
 
   /** The recorded log, materialised into the shape the shared schema stores. */
   getReplayLog(): ReplayInput[] {
     return buildReplayInputs(
-      this.replayTimes,
-      this.replayLanes,
-      this.replayJudgments,
-      this.replayCount,
+      this
+        .replayTimes,
+      this
+        .replayLanes,
+      this
+        .replayJudgments,
+      this
+        .replayCount,
     );
   }
 
@@ -1451,13 +2812,31 @@ export class GameEngine {
    * under, which is what makes the log replayable at all.
    */
   getReplay(): SliceItReplay | null {
-    if (this.replayCount === 0 || !this.songId) return null;
-    const modifiers = useSliceItStore.getState().modifiers;
+    if (
+      this
+        .replayCount ===
+        0 ||
+      !this
+        .songId
+    )
+      return null;
+    const modifiers =
+      useSliceItStore.getState()
+        .modifiers;
     return {
-      track: this.songId,
-      seed: replaySeed(this.songId, modifiers),
-      mods: replayMods(modifiers),
-      inputs: this.getReplayLog(),
+      track:
+        this
+          .songId,
+      seed: replaySeed(
+        this
+          .songId,
+        modifiers,
+      ),
+      mods: replayMods(
+        modifiers,
+      ),
+      inputs:
+        this.getReplayLog(),
     };
   }
 
@@ -1476,26 +2855,45 @@ export class GameEngine {
    * The chart must already be loaded (`loadMap`) under the replay's modifiers,
    * or the notes the log refers to are not the notes on screen.
    */
-  loadReplay(inputs: ReplayInput[]): void {
-    this.replayInput = inputs;
+  loadReplay(
+    inputs: ReplayInput[],
+  ): void {
+    this.replayInput =
+      inputs;
     this.replayCursor = 0;
     this.replayTime = 0;
   }
 
   /** True while this engine is playing a log back. */
   isReplay(): boolean {
-    return this.replayInput !== null;
+    return (
+      this
+        .replayInput !==
+      null
+    );
   }
 
   /**
    * Advance playback to `seconds` and resolve everything the log says happened
    * up to it. Called once per frame by the viewer, which owns the clock.
    */
-  advanceReplay(seconds: number): void {
-    if (this.replayInput === null) return;
+  advanceReplay(
+    seconds: number,
+  ): void {
+    if (
+      this
+        .replayInput ===
+      null
+    )
+      return;
     // Never backwards: `update` and the miss sweep both assume a clock that only
     // moves forward. Going back in time is `seekReplay`, which re-simulates.
-    this.replayTime = Math.max(this.replayTime, seconds);
+    this.replayTime =
+      Math.max(
+        this
+          .replayTime,
+        seconds,
+      );
     this.update();
   }
 
@@ -1510,17 +2908,31 @@ export class GameEngine {
    * that scrubbing does not need to be incremental, and correct in a way that an
    * incremental version would have to keep proving.
    */
-  seekReplay(seconds: number): void {
-    const log = this.replayInput;
-    if (log === null) return;
+  seekReplay(
+    seconds: number,
+  ): void {
+    const log =
+      this
+        .replayInput;
+    if (
+      log ===
+      null
+    )
+      return;
 
-    const target = Math.max(0, seconds);
+    const target =
+      Math.max(
+        0,
+        seconds,
+      );
     // `update` refuses to run while the store says paused, which is correct for a
     // game and wrong for a scrub: seeking a *paused* replay is the normal case. The
     // flag is forced for the duration of the re-simulation and put back exactly as
     // it was. (The run status is not touched: `update` lets a replay through.)
-    const before = useSliceItStore.getState();
-    const wasPaused = before.isPaused;
+    const before =
+      useSliceItStore.getState();
+    const wasPaused =
+      before.isPaused;
 
     // `reset` clears the cursor and every counter. It does not clear the log —
     // in playback the log is the input device, not run state.
@@ -1528,28 +2940,47 @@ export class GameEngine {
     this.replayCursor = 0;
     this.replayTime = 0;
 
-    useSliceItStore.getState().setIsPaused(false);
+    useSliceItStore
+      .getState()
+      .setIsPaused(
+        false,
+      );
 
     // Step the clock to each logged input in turn, so the miss sweep and the
     // hold accrual see the same sequence of times they saw live. Landing
     // straight on `target` would resolve every input in one frame and pay a
     // three-minute hold at a single billing step.
     for (const input of log) {
-      const at = input.t / 1000;
-      if (at > target) break;
-      this.replayTime = at;
+      const at =
+        input.t /
+        1000;
+      if (
+        at >
+        target
+      )
+        break;
+      this.replayTime =
+        at;
       this.update();
     }
-    this.replayTime = target;
+    this.replayTime =
+      target;
     this.update();
 
-    const after = useSliceItStore.getState();
-    if (wasPaused) after.setIsPaused(true);
+    const after =
+      useSliceItStore.getState();
+    if (
+      wasPaused
+    )
+      after.setIsPaused(
+        true,
+      );
   }
 
   /** Playback position in seconds, for a scrubber. */
   getReplayTime(): number {
-    return this.replayTime;
+    return this
+      .replayTime;
   }
 
   /**
@@ -1561,28 +2992,80 @@ export class GameEngine {
    * left alone it would sit open until the sweep expired it and break a combo
    * the run never broke.
    */
-  private stepReplay(now: number): void {
-    const log = this.replayInput;
-    if (log === null) return;
+  private stepReplay(
+    now: number,
+  ): void {
+    const log =
+      this
+        .replayInput;
+    if (
+      log ===
+      null
+    )
+      return;
 
-    for (const [lane, slice] of this.activeHolds) {
-      if (now >= slice.time + (slice.duration ?? 0)) this.submitRelease(lane);
+    for (const [
+      lane,
+      slice,
+    ] of this
+      .activeHolds) {
+      if (
+        now >=
+        slice.time +
+          (slice.duration ??
+            0)
+      )
+        this.submitRelease(
+          lane,
+        );
     }
 
-    while (this.replayCursor < log.length) {
-      const input = log[this.replayCursor];
-      const at = input.t / 1000;
-      if (at > now) break;
-      this.replayCursor++;
+    while (
+      this
+        .replayCursor <
+      log.length
+    ) {
+      const input =
+        log[
+          this
+            .replayCursor
+        ];
+      const at =
+        input.t /
+        1000;
+      if (
+        at >
+        now
+      )
+        break;
+      this
+        .replayCursor++;
 
-      const lane = input.lane ?? 0;
-      const slice = this.getTargetedSlice(lane);
+      const lane =
+        input.lane ??
+        0;
+      const slice =
+        this.getTargetedSlice(
+          lane,
+        );
       // No note under this input means the log and the chart disagree — a
       // different difficulty, an edited chart, a modifier set the payload did
       // not carry. Skipped rather than forced: inventing a resolution would make
       // the viewer show a run that never happened.
-      if (!slice) continue;
-      this.resolve(slice, REPLAY_TO_HIT_RESULT[input.judgment], lane, at - slice.time);
+      if (
+        !slice
+      )
+        continue;
+      this.resolve(
+        slice,
+        REPLAY_TO_HIT_RESULT[
+          input
+            .judgment
+        ],
+        lane,
+        at -
+          slice.time,
+      );
     }
   }
 
@@ -1596,62 +3079,165 @@ export class GameEngine {
    * printed next to it, and this one would be read mid-run on every frame.
    */
   get isFullCombo(): boolean {
-    return this.judgements.MISS === 0 && this.judgements.BAD === 0;
+    return (
+      this
+        .judgements
+        .MISS ===
+        0 &&
+      this
+        .judgements
+        .BAD ===
+        0
+    );
   }
 
   /** Every resolved note was MARVELOUS. False before anything is resolved. */
   get isPerfect(): boolean {
-    return this.notesResolved > 0 && this.judgements.MARVELOUS === this.notesResolved;
+    return (
+      this
+        .notesResolved >
+        0 &&
+      this
+        .judgements
+        .MARVELOUS ===
+        this
+          .notesResolved
+    );
   }
 
   /** The full run tally, for the results screen. */
   getRunStats(): RunStats {
     return {
-      score: this.score,
-      maxCombo: this.maxCombo,
-      accuracy: accuracyOf(this.hitPoints, this.notesResolved),
-      notesResolved: this.notesResolved,
-      judgements: { ...this.judgements },
-      health: this.health,
-      gaugeBroken: this.gaugeBroken,
-      failed: this.failed,
-      failReason: this.failReason,
-      isFullCombo: this.isFullCombo,
-      isPerfect: this.isPerfect,
+      score:
+        this
+          .score,
+      maxCombo:
+        this
+          .maxCombo,
+      accuracy:
+        accuracyOf(
+          this
+            .hitPoints,
+          this
+            .notesResolved,
+        ),
+      notesResolved:
+        this
+          .notesResolved,
+      judgements:
+        {
+          ...this
+            .judgements,
+        },
+      health:
+        this
+          .health,
+      gaugeBroken:
+        this
+          .gaugeBroken,
+      failed:
+        this
+          .failed,
+      failReason:
+        this
+          .failReason,
+      isFullCombo:
+        this
+          .isFullCombo,
+      isPerfect:
+        this
+          .isPerfect,
     };
   }
 
-  private pushFeedback(text: string, lane: number, color: string, offset?: number): void {
+  private pushFeedback(
+    text: string,
+    lane: number,
+    color: string,
+    offset?: number,
+  ): void {
     // H9 — suppress popups the player has asked not to see.
     //
     // Filtered here rather than in the renderer so a hidden judgement costs
     // nothing at all: on a dense chart the queue is the allocation, and an
     // expert hiding everything above GREAT is hiding the ones that fire most.
     // Non-judgement text ("BOMB!") is never suppressed — it is not a grade.
-    const rank = JUDGEMENT_ORDER.indexOf(text as Exclude<HitResult, 'NONE'>);
-    if (rank !== -1) {
-      const floor = JUDGEMENT_ORDER.indexOf(
-        useSliceItStore.getState().showJudgementsBelow as Exclude<HitResult, 'NONE'>,
+    const rank =
+      JUDGEMENT_ORDER.indexOf(
+        text as Exclude<
+          HitResult,
+          'NONE'
+        >,
       );
-      if (floor !== -1 && rank < floor) return;
+    if (
+      rank !==
+      -1
+    ) {
+      const floor =
+        JUDGEMENT_ORDER.indexOf(
+          useSliceItStore.getState()
+            .showJudgementsBelow as Exclude<
+            HitResult,
+            'NONE'
+          >,
+        );
+      if (
+        floor !==
+          -1 &&
+        rank <
+          floor
+      )
+        return;
     }
-    this.feedbackQueue.push({
-      id: this.feedbackIdCounter++,
-      text,
-      lane,
-      time: performance.now(),
-      color,
-      ...(offset !== undefined ? { offset } : {}),
-    });
-    if (this.feedbackQueue.length > 20) this.feedbackQueue.shift();
+    this.feedbackQueue.push(
+      {
+        id: this
+          .feedbackIdCounter++,
+        text,
+        lane,
+        time: performance.now(),
+        color,
+        ...(offset !==
+        undefined
+          ? {
+              offset,
+            }
+          : {}),
+      },
+    );
+    if (
+      this
+        .feedbackQueue
+        .length >
+      20
+    )
+      this.feedbackQueue.shift();
   }
 
   /** Push the run's state into the store the HUD reads. */
   private commit(): void {
-    const store = useSliceItStore.getState();
-    store.setScore(this.score, this.combo, this.speedMultiplier);
-    store.setAccuracy(accuracyOf(this.hitPoints, this.notesResolved));
-    store.setMaxCombo(this.maxCombo);
+    const store =
+      useSliceItStore.getState();
+    store.setScore(
+      this
+        .score,
+      this
+        .combo,
+      this
+        .speedMultiplier,
+    );
+    store.setAccuracy(
+      accuracyOf(
+        this
+          .hitPoints,
+        this
+          .notesResolved,
+      ),
+    );
+    store.setMaxCombo(
+      this
+        .maxCombo,
+    );
   }
 
   /**
@@ -1661,28 +3247,62 @@ export class GameEngine {
    * `Math.random() < 0.05` meant a 144Hz display emitted twice as often as a
    * 60Hz one, so the best hardware in the room generated the most traffic.
    */
-  private publish(final: boolean): void {
-    const now = performance.now();
-    if (!final && now - this.lastReportAt < SCORE_REPORT_INTERVAL_MS) return;
-    this.lastReportAt = now;
+  private publish(
+    final: boolean,
+  ): void {
+    const now =
+      performance.now();
+    if (
+      !final &&
+      now -
+        this
+          .lastReportAt <
+        SCORE_REPORT_INTERVAL_MS
+    )
+      return;
+    this.lastReportAt =
+      now;
 
-    const report = {
-      score: this.score,
-      combo: this.combo,
-      maxCombo: this.maxCombo,
-      accuracy: accuracyOf(this.hitPoints, this.notesResolved),
-      // The real gauge, or a full bar when the modifier is off — which is what
-      // the sidebar has been drawing all along, except now it means something
-      // for the seats that opted in. It never reaches zero *and* ends a run
-      // here: `failMode` is `'survive'` for the whole of a match.
-      health: this.health,
-    };
+    const report =
+      {
+        score:
+          this
+            .score,
+        combo:
+          this
+            .combo,
+        maxCombo:
+          this
+            .maxCombo,
+        accuracy:
+          accuracyOf(
+            this
+              .hitPoints,
+            this
+              .notesResolved,
+          ),
+        // The real gauge, or a full bar when the modifier is off — which is what
+        // the sidebar has been drawing all along, except now it means something
+        // for the seats that opted in. It never reaches zero *and* ends a run
+        // here: `failMode` is `'survive'` for the whole of a match.
+        health:
+          this
+            .health,
+      };
 
     // `reportFinish` queues through the client's outbox, so a drop in the last
     // second of a song does not cost the player their result; `reportScore`
     // deliberately does not, because a stale score flushed four seconds later
     // is worse than a gap on the sidebar.
-    if (final) reportFinish(report);
-    else reportScore(report);
+    if (
+      final
+    )
+      reportFinish(
+        report,
+      );
+    else
+      reportScore(
+        report,
+      );
   }
 }

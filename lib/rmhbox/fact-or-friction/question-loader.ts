@@ -12,44 +12,92 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { TriviaQuestionSchema, type TriviaQuestion } from './schemas';
+import {
+  TriviaQuestionSchema,
+  type TriviaQuestion,
+} from './schemas';
 import { FF_QUESTION_DISTRIBUTION } from '../constants';
 import { logger } from '../../../server/rmhbox/logger';
 
 // ─── Singleton Cache ─────────────────────────────────────────────
 
-let cachedQuestions: TriviaQuestion[] | null = null;
+let cachedQuestions:
+  | TriviaQuestion[]
+  | null =
+  null;
 
 /**
  * Load and validate all trivia questions from questions.json.
  * Uses singleton caching — returns the same array on subsequent calls.
  */
 export function loadQuestions(): TriviaQuestion[] {
-  if (cachedQuestions) return cachedQuestions;
+  if (
+    cachedQuestions
+  )
+    return cachedQuestions;
 
-  const filePath = join(process.cwd(), 'data', 'rmhbox', 'fact-or-friction', 'questions.json');
-  const raw = JSON.parse(readFileSync(filePath, 'utf-8')) as unknown[];
+  const filePath =
+    join(
+      process.cwd(),
+      'data',
+      'rmhbox',
+      'fact-or-friction',
+      'questions.json',
+    );
+  const raw =
+    JSON.parse(
+      readFileSync(
+        filePath,
+        'utf-8',
+      ),
+    ) as unknown[];
 
-  const valid: TriviaQuestion[] = [];
+  const valid: TriviaQuestion[] =
+    [];
   for (const entry of raw) {
-    const result = TriviaQuestionSchema.safeParse(entry);
-    if (result.success) {
-      valid.push(result.data);
+    const result =
+      TriviaQuestionSchema.safeParse(
+        entry,
+      );
+    if (
+      result.success
+    ) {
+      valid.push(
+        result.data,
+      );
     } else {
-      logger.warn({
-        event: 'ff_question_validation_failed',
-        error: result.error.message,
-        entry: JSON.stringify(entry).slice(0, 200),
-      });
+      logger.warn(
+        {
+          event:
+            'ff_question_validation_failed',
+          error:
+            result
+              .error
+              .message,
+          entry:
+            JSON.stringify(
+              entry,
+            ).slice(
+              0,
+              200,
+            ),
+        },
+      );
     }
   }
 
-  cachedQuestions = valid;
-  logger.info({
-    event: 'ff_questions_loaded',
-    totalLoaded: valid.length,
-    totalRaw: raw.length,
-  });
+  cachedQuestions =
+    valid;
+  logger.info(
+    {
+      event:
+        'ff_questions_loaded',
+      totalLoaded:
+        valid.length,
+      totalRaw:
+        raw.length,
+    },
+  );
   return cachedQuestions;
 }
 
@@ -57,7 +105,8 @@ export function loadQuestions(): TriviaQuestion[] {
  * Reset the cached questions (useful for testing).
  */
 export function resetQuestionCache(): void {
-  cachedQuestions = null;
+  cachedQuestions =
+    null;
 }
 
 // ─── Question Selection ──────────────────────────────────────────
@@ -66,16 +115,50 @@ export function resetQuestionCache(): void {
  * Fisher-Yates shuffle (in-place).
  */
 // eslint-disable-next-line no-restricted-syntax -- shuffles IN PLACE (caller ignores the return value)
-function shuffle<T>(arr: T[]): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+function shuffle<
+  T,
+>(
+  arr: T[],
+): T[] {
+  for (
+    let i =
+      arr.length -
+      1;
+    i >
+    0;
+    i--
+  ) {
+    const j =
+      Math.floor(
+        Math.random() *
+          (i +
+            1),
+      );
+    [
+      arr[
+        i
+      ],
+      arr[
+        j
+      ],
+    ] =
+      [
+        arr[
+          j
+        ],
+        arr[
+          i
+        ],
+      ];
   }
   return arr;
 }
 
 /** A question tagged with its original pool index for deduplication. */
-export type IndexedQuestion = TriviaQuestion & { poolIndex: number };
+export type IndexedQuestion =
+  TriviaQuestion & {
+    poolIndex: number;
+  };
 
 /**
  * Select questions for a single game round.
@@ -91,32 +174,98 @@ export function selectQuestionsForGame(
   pool: TriviaQuestion[],
   usedIndices: Set<number>,
 ): IndexedQuestion[] {
-  const distribution = FF_QUESTION_DISTRIBUTION;
+  const distribution =
+    FF_QUESTION_DISTRIBUTION;
 
   // Tag each question with its original pool index, then filter out used ones
-  const available: IndexedQuestion[] = pool
-    .map((q, index) => ({ ...q, poolIndex: index }))
-    .filter((q) => !usedIndices.has(q.poolIndex));
+  const available: IndexedQuestion[] =
+    pool
+      .map(
+        (
+          q,
+          index,
+        ) => ({
+          ...q,
+          poolIndex:
+            index,
+        }),
+      )
+      .filter(
+        (
+          q,
+        ) =>
+          !usedIndices.has(
+            q.poolIndex,
+          ),
+      );
 
   // Group by difficulty
-  const byDifficulty: Record<string, IndexedQuestion[]> = {
-    easy: shuffle(available.filter((q) => q.difficulty === 'easy')),
-    medium: shuffle(available.filter((q) => q.difficulty === 'medium')),
-    hard: shuffle(available.filter((q) => q.difficulty === 'hard')),
-  };
+  const byDifficulty: Record<
+    string,
+    IndexedQuestion[]
+  > =
+    {
+      easy: shuffle(
+        available.filter(
+          (
+            q,
+          ) =>
+            q.difficulty ===
+            'easy',
+        ),
+      ),
+      medium:
+        shuffle(
+          available.filter(
+            (
+              q,
+            ) =>
+              q.difficulty ===
+              'medium',
+          ),
+        ),
+      hard: shuffle(
+        available.filter(
+          (
+            q,
+          ) =>
+            q.difficulty ===
+            'hard',
+        ),
+      ),
+    };
 
   // Pick from each bucket
-  const selected: IndexedQuestion[] = [];
-  for (const [diff, count] of Object.entries(distribution)) {
-    const bucket = byDifficulty[diff] ?? [];
-    selected.push(...bucket.slice(0, count));
+  const selected: IndexedQuestion[] =
+    [];
+  for (const [
+    diff,
+    count,
+  ] of Object.entries(
+    distribution,
+  )) {
+    const bucket =
+      byDifficulty[
+        diff
+      ] ??
+      [];
+    selected.push(
+      ...bucket.slice(
+        0,
+        count,
+      ),
+    );
   }
 
   // Shuffle all selected questions
-  shuffle(selected);
+  shuffle(
+    selected,
+  );
 
   // Reorder to avoid consecutive same-category (best effort)
-  return deconflictCategories(selected);
+  return deconflictCategories(
+    selected,
+  );
 }
 
 /**
@@ -124,21 +273,58 @@ export function selectQuestionsForGame(
  * Uses a greedy algorithm — picks the first question from remaining
  * that doesn't share a category with the last placed question.
  */
-function deconflictCategories(questions: IndexedQuestion[]): IndexedQuestion[] {
-  if (questions.length <= 1) return questions;
+function deconflictCategories(
+  questions: IndexedQuestion[],
+): IndexedQuestion[] {
+  if (
+    questions.length <=
+    1
+  )
+    return questions;
 
-  const remaining = [...questions];
-  const result: IndexedQuestion[] = [remaining.shift()!];
+  const remaining =
+    [
+      ...questions,
+    ];
+  const result: IndexedQuestion[] =
+    [
+      remaining.shift()!,
+    ];
 
-  while (remaining.length > 0) {
-    const lastCategory = result[result.length - 1].category;
-    const diffIdx = remaining.findIndex((q) => q.category !== lastCategory);
+  while (
+    remaining.length >
+    0
+  ) {
+    const lastCategory =
+      result[
+        result.length -
+          1
+      ]
+        .category;
+    const diffIdx =
+      remaining.findIndex(
+        (
+          q,
+        ) =>
+          q.category !==
+          lastCategory,
+      );
 
-    if (diffIdx >= 0) {
-      result.push(remaining.splice(diffIdx, 1)[0]);
+    if (
+      diffIdx >=
+      0
+    ) {
+      result.push(
+        remaining.splice(
+          diffIdx,
+          1,
+        )[0],
+      );
     } else {
       // No choice — must use same category
-      result.push(remaining.shift()!);
+      result.push(
+        remaining.shift()!,
+      );
     }
   }
 

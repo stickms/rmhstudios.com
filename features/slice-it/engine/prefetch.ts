@@ -17,8 +17,13 @@ import { getSliceSongApi } from '@features/slice-it/engine/play.contract';
  */
 
 /** Per-song state, so a lobby that flicks between songs does not re-fetch. */
-const warmed = new Set<string>();
-const inFlight = new Map<string, AbortController>();
+const warmed =
+  new Set<string>();
+const inFlight =
+  new Map<
+    string,
+    AbortController
+  >();
 
 export interface PrefetchOptions {
   /** Cancel an in-flight prefetch (the host changed the song). */
@@ -33,46 +38,113 @@ export interface PrefetchOptions {
  * player exactly what they had before it existed, and surfacing it would mean a
  * toast about something they did not ask for.
  */
-export async function prefetchRun(songId: string, options: PrefetchOptions = {}): Promise<void> {
-  if (!songId || warmed.has(songId)) return;
+export async function prefetchRun(
+  songId: string,
+  options: PrefetchOptions = {},
+): Promise<void> {
+  if (
+    !songId ||
+    warmed.has(
+      songId,
+    )
+  )
+    return;
 
   // A second call for the same song while the first is still running is the
   // common case — React strict mode, or a lobby re-render — and firing two
   // full audio fetches for one song is the opposite of the point.
-  const existing = inFlight.get(songId);
-  if (existing) return;
+  const existing =
+    inFlight.get(
+      songId,
+    );
+  if (
+    existing
+  )
+    return;
 
-  const controller = new AbortController();
-  inFlight.set(songId, controller);
-  const onAbort = () => controller.abort();
-  options.signal?.addEventListener('abort', onAbort, { once: true });
+  const controller =
+    new AbortController();
+  inFlight.set(
+    songId,
+    controller,
+  );
+  const onAbort =
+    () =>
+      controller.abort();
+  options.signal?.addEventListener(
+    'abort',
+    onAbort,
+    {
+      once: true,
+    },
+  );
 
   try {
-    const song = await api(getSliceSongApi, {
-      params: { id: songId },
-      query: options.difficulty ? { difficulty: options.difficulty } : {},
-      signal: controller.signal,
-    });
-    if (!song.audioUrl) return;
+    const song =
+      await api(
+        getSliceSongApi,
+        {
+          params:
+            {
+              id: songId,
+            },
+          query:
+            options.difficulty
+              ? {
+                  difficulty:
+                    options.difficulty,
+                }
+              : {},
+          signal:
+            controller.signal,
+        },
+      );
+    if (
+      !song.audioUrl
+    )
+      return;
 
     // The audio is the expensive half — megabytes against the chart's
     // kilobytes. `arrayBuffer()` rather than leaving the body unread: an
     // unread body is a response the cache may never commit.
-    const audio = await fetch(song.audioUrl, { signal: controller.signal, cache: 'default' });
-    if (!audio.ok) return;
+    const audio =
+      await fetch(
+        song.audioUrl,
+        {
+          signal:
+            controller.signal,
+          cache:
+            'default',
+        },
+      );
+    if (
+      !audio.ok
+    )
+      return;
     await audio.arrayBuffer();
-    warmed.add(songId);
+    warmed.add(
+      songId,
+    );
   } catch {
     // Aborted, offline, 404 — all the same outcome: the real load will do it.
   } finally {
-    options.signal?.removeEventListener('abort', onAbort);
-    inFlight.delete(songId);
+    options.signal?.removeEventListener(
+      'abort',
+      onAbort,
+    );
+    inFlight.delete(
+      songId,
+    );
   }
 }
 
 /** Whether a song's bytes are already in the browser's cache from a prefetch. */
-export function isPrefetched(songId: string): boolean {
-  return warmed.has(songId);
+export function isPrefetched(
+  songId: string,
+): boolean {
+  return warmed.has(
+    songId,
+  );
 }
 
 /**
@@ -83,7 +155,8 @@ export function isPrefetched(songId: string): boolean {
  * fetched again rather than assumed warm.
  */
 export function clearPrefetchCache(): void {
-  for (const controller of inFlight.values()) controller.abort();
+  for (const controller of inFlight.values())
+    controller.abort();
   inFlight.clear();
   warmed.clear();
 }

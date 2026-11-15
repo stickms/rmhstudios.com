@@ -19,34 +19,79 @@ export interface RendererHandle {
   destroy: () => void;
 }
 
-export function createWebGLRenderer(canvas: HTMLCanvasElement): RendererHandle {
-  const gl = initWebGL(canvas);
-  setGLContext(gl);
-  const spriteBatch = new SpriteBatch(gl);
-  const shapeBatch = new ShapeBatch(gl);
+export function createWebGLRenderer(
+  canvas: HTMLCanvasElement,
+): RendererHandle {
+  const gl =
+    initWebGL(
+      canvas,
+    );
+  setGLContext(
+    gl,
+  );
+  const spriteBatch =
+    new SpriteBatch(
+      gl,
+    );
+  const shapeBatch =
+    new ShapeBatch(
+      gl,
+    );
 
-  const overlay = document.createElement('canvas');
-  overlay.width = canvas.width;
-  overlay.height = canvas.height;
-  overlay.style.position = 'absolute';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.pointerEvents = 'none';
-  canvas.parentElement?.appendChild(overlay);
-  const overlayCtx = overlay.getContext('2d')!;
+  const overlay =
+    document.createElement(
+      'canvas',
+    );
+  overlay.width =
+    canvas.width;
+  overlay.height =
+    canvas.height;
+  overlay.style.position =
+    'absolute';
+  overlay.style.top =
+    '0';
+  overlay.style.left =
+    '0';
+  overlay.style.width =
+    '100%';
+  overlay.style.height =
+    '100%';
+  overlay.style.pointerEvents =
+    'none';
+  canvas.parentElement?.appendChild(
+    overlay,
+  );
+  const overlayCtx =
+    overlay.getContext(
+      '2d',
+    )!;
 
   return {
-    renderer: { gl, spriteBatch, shapeBatch, overlayCtx, overlayDirty: false },
+    renderer:
+      {
+        gl,
+        spriteBatch,
+        shapeBatch,
+        overlayCtx,
+        overlayDirty: false,
+      },
     syncOverlay() {
-      if (overlay.width !== canvas.width || overlay.height !== canvas.height) {
-        overlay.width = canvas.width;
-        overlay.height = canvas.height;
+      if (
+        overlay.width !==
+          canvas.width ||
+        overlay.height !==
+          canvas.height
+      ) {
+        overlay.width =
+          canvas.width;
+        overlay.height =
+          canvas.height;
       }
     },
     destroy() {
-      overlay.parentElement?.removeChild(overlay);
+      overlay.parentElement?.removeChild(
+        overlay,
+      );
     },
   };
 }

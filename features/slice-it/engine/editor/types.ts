@@ -11,9 +11,17 @@
  * server bundle compiles this tree directly.
  */
 
-import type { Difficulty, Slice, SliceType } from '@features/slice-it/engine/types';
+import type {
+  Difficulty,
+  Slice,
+  SliceType,
+} from '@features/slice-it/engine/types';
 
-export type { Difficulty, Slice, SliceType };
+export type {
+  Difficulty,
+  Slice,
+  SliceType,
+};
 
 /**
  * A tempo marker.
@@ -39,8 +47,21 @@ export interface SvPoint {
 }
 
 /** The timing map every generated chart has: one point, the song's own BPM. */
-export function singleTimingPoint(bpm: number, meter = 4): TimingPoint[] {
-  return [{ time: 0, bpm: bpm > 0 ? bpm : 120, meter }];
+export function singleTimingPoint(
+  bpm: number,
+  meter = 4,
+): TimingPoint[] {
+  return [
+    {
+      time: 0,
+      bpm:
+        bpm >
+        0
+          ? bpm
+          : 120,
+      meter,
+    },
+  ];
 }
 
 /** A note plus the editor state that is never persisted. */
@@ -69,7 +90,9 @@ export interface LintIssue {
     | 'empty-stretch' // >8s with nothing
     | 'off-grid' // not near any subdivision of the beat
     | 'nesting-violation'; // present at a lower tier but not a higher one
-  severity: 'error' | 'warning';
+  severity:
+    | 'error'
+    | 'warning';
   message: string;
 }
 
@@ -82,15 +105,43 @@ export interface EditorChart {
   /** Set when the in-memory notes differ from what was last saved. */
   dirty: boolean;
   /** Null until the rater runs (C3). */
-  rating: number | null;
+  rating:
+    | number
+    | null;
 }
 
-export type Charts = Record<Difficulty, EditorChart>;
+export type Charts =
+  Record<
+    Difficulty,
+    EditorChart
+  >;
 
-export type SnapDivision = 1 | 2 | 3 | 4 | 6 | 8 | 12 | 16 | 24 | 32;
+export type SnapDivision =
+  | 1
+  | 2
+  | 3
+  | 4
+  | 6
+  | 8
+  | 12
+  | 16
+  | 24
+  | 32;
 
 /** Offered by the toolbar, coarsest first. */
-export const SNAP_DIVISIONS: readonly SnapDivision[] = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
+export const SNAP_DIVISIONS: readonly SnapDivision[] =
+  [
+    1,
+    2,
+    3,
+    4,
+    6,
+    8,
+    12,
+    16,
+    24,
+    32,
+  ];
 
 export type EditorTool =
   | 'select' // box select, drag, the default
@@ -105,7 +156,10 @@ export type EditorTool =
  * `cascade` is the default because a human editing four independent lists breaks
  * the invariant within ten minutes and never notices.
  */
-export type NestingMode = 'cascade' | 'warn' | 'off';
+export type NestingMode =
+  | 'cascade'
+  | 'warn'
+  | 'off';
 
 /**
  * Drop the fields that only exist while editing.
@@ -116,23 +170,52 @@ export type NestingMode = 'cascade' | 'warn' | 'off';
  * chart's `isGenerated` flag rather than persisted per note (§7.3 is a session
  * affordance, not a durable property of a note).
  */
-export function toSlice(note: EditorNote): Slice {
-  const slice: Slice = {
-    id: note.id,
-    time: note.time,
-    type: note.type,
-    lane: note.lane,
-  };
-  if (note.duration != null) slice.duration = note.duration;
-  if (note.speedMultiplier != null) slice.speedMultiplier = note.speedMultiplier;
+export function toSlice(
+  note: EditorNote,
+): Slice {
+  const slice: Slice =
+    {
+      id: note.id,
+      time: note.time,
+      type: note.type,
+      lane: note.lane,
+    };
+  if (
+    note.duration !=
+    null
+  )
+    slice.duration =
+      note.duration;
+  if (
+    note.speedMultiplier !=
+    null
+  )
+    slice.speedMultiplier =
+      note.speedMultiplier;
   return slice;
 }
 
-export function toSlices(notes: readonly EditorNote[]): Slice[] {
-  return notes.map(toSlice);
+export function toSlices(
+  notes: readonly EditorNote[],
+): Slice[] {
+  return notes.map(
+    toSlice,
+  );
 }
 
 /** The inverse: adopt a stored note list, tagging every note with `auto`. */
-export function toEditorNotes(slices: readonly Slice[], auto: boolean): EditorNote[] {
-  return slices.map((slice) => ({ ...toSlice(slice), auto }));
+export function toEditorNotes(
+  slices: readonly Slice[],
+  auto: boolean,
+): EditorNote[] {
+  return slices.map(
+    (
+      slice,
+    ) => ({
+      ...toSlice(
+        slice,
+      ),
+      auto,
+    }),
+  );
 }

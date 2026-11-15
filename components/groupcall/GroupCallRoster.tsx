@@ -37,7 +37,13 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/shallow';
 import { m as motion } from 'framer-motion';
-import { Crown, MicOff, PhoneOutgoing, SignalLow, SignalZero } from 'lucide-react';
+import {
+  Crown,
+  MicOff,
+  PhoneOutgoing,
+  SignalLow,
+  SignalZero,
+} from 'lucide-react';
 import {
   selectGroupCallPeers,
   selectSelfParticipant,
@@ -55,7 +61,9 @@ import { cn } from '@/lib/utils';
  * card. `strip` — overlapped avatars, for the pinned bar, where names would not
  * fit and are carried as screen-reader text instead.
  */
-export type GroupCallRosterLayout = 'list' | 'strip';
+export type GroupCallRosterLayout =
+  | 'list'
+  | 'strip';
 
 export interface GroupCallRosterProps {
   layout?: GroupCallRosterLayout;
@@ -72,7 +80,9 @@ export interface GroupCallRosterProps {
    * The incoming card names the caller in its own headline; repeating them as
    * the first roster row underneath reads as a duplicate rather than as state.
    */
-  excludeUserId?: string | null;
+  excludeUserId?:
+    | string
+    | null;
   /** Rendered above the rows, and only when there is at least one row to head. */
   heading?: ReactNode;
   /** `strip` only: how many avatars before the rest collapse into a "+N" chip. */
@@ -81,8 +91,20 @@ export interface GroupCallRosterProps {
 }
 
 /** Ordered remote ids. A string array, so `useShallow` survives a level tick. */
-const selectPeerIds = (state: GroupCallStore): string[] =>
-  selectGroupCallPeers(state).map((peer) => peer.participant.userId);
+const selectPeerIds =
+  (
+    state: GroupCallStore,
+  ): string[] =>
+    selectGroupCallPeers(
+      state,
+    ).map(
+      (
+        peer,
+      ) =>
+        peer
+          .participant
+          .userId,
+    );
 
 /**
  * The two leg states worth telling the user about.
@@ -91,15 +113,26 @@ const selectPeerIds = (state: GroupCallStore): string[] =>
  * anything about them would put "connecting" next to seven names each time
  * somebody joins; `closed` means the row is on its way off the roster anyway.
  */
-type RosterTrouble = 'reconnecting' | 'failed';
+type RosterTrouble =
+  | 'reconnecting'
+  | 'failed';
 
-function troubleOf(status: GroupCallPeerStatus): RosterTrouble | null {
-  return status === 'reconnecting' || status === 'failed' ? status : null;
+function troubleOf(
+  status: GroupCallPeerStatus,
+): RosterTrouble | null {
+  return status ===
+    'reconnecting' ||
+    status ===
+      'failed'
+    ? status
+    : null;
 }
 
 interface RosterAvatarProps {
   name: string;
-  image: string | null;
+  image:
+    | string
+    | null;
   size: number;
   speaking: boolean;
   reducedMotion: boolean;
@@ -117,17 +150,44 @@ interface RosterAvatarProps {
  * `alt=""` on purpose: the name is always adjacent (visibly in `list`, as
  * screen-reader text in `strip`), so a named image would read it twice.
  */
-function RosterAvatar({ name, image, size, speaking, reducedMotion }: RosterAvatarProps) {
+function RosterAvatar({
+  name,
+  image,
+  size,
+  speaking,
+  reducedMotion,
+}: RosterAvatarProps) {
   return (
     <motion.span
       className={cn(
         'relative inline-flex shrink-0 rounded-full ring-2 transition-shadow',
-        speaking ? 'ring-site-accent' : 'ring-transparent',
+        speaking
+          ? 'ring-site-accent'
+          : 'ring-transparent',
       )}
-      animate={{ scale: speaking && !reducedMotion ? 1.06 : 1 }}
-      transition={transition}
+      animate={{
+        scale:
+          speaking &&
+          !reducedMotion
+            ? 1.06
+            : 1,
+      }}
+      transition={
+        transition
+      }
     >
-      <UserAvatar src={image} alt="" size={size} fallbackName={name} />
+      <UserAvatar
+        src={
+          image
+        }
+        alt=""
+        size={
+          size
+        }
+        fallbackName={
+          name
+        }
+      />
     </motion.span>
   );
 }
@@ -135,7 +195,9 @@ function RosterAvatar({ name, image, size, speaking, reducedMotion }: RosterAvat
 interface RosterRowProps {
   layout: GroupCallRosterLayout;
   name: string;
-  image: string | null;
+  image:
+    | string
+    | null;
   host: boolean;
   muted: boolean;
   speaking: boolean;
@@ -167,49 +229,143 @@ function RosterRow({
   self,
   reducedMotion,
 }: RosterRowProps) {
-  const { t } = useTranslation('c-groupcall');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-groupcall',
+    );
 
-  const displayName = self ? t('you', { defaultValue: 'You' }) : name;
-  const statusLabel = ringing
-    ? t('ringing', { defaultValue: 'Ringing…' })
-    : trouble === 'failed'
-      ? t('peer-failed', { defaultValue: "Can't connect" })
-      : trouble === 'reconnecting'
-        ? t('reconnecting', { defaultValue: 'Reconnecting…' })
-        : null;
+  const displayName =
+    self
+      ? t(
+          'you',
+          {
+            defaultValue:
+              'You',
+          },
+        )
+      : name;
+  const statusLabel =
+    ringing
+      ? t(
+          'ringing',
+          {
+            defaultValue:
+              'Ringing…',
+          },
+        )
+      : trouble ===
+          'failed'
+        ? t(
+            'peer-failed',
+            {
+              defaultValue:
+                "Can't connect",
+            },
+          )
+        : trouble ===
+            'reconnecting'
+          ? t(
+              'reconnecting',
+              {
+                defaultValue:
+                  'Reconnecting…',
+              },
+            )
+          : null;
 
-  const avatar = (
-    <RosterAvatar
-      name={name}
-      image={image}
-      size={layout === 'strip' ? 26 : 32}
-      speaking={speaking}
-      reducedMotion={reducedMotion}
-    />
-  );
+  const avatar =
+    (
+      <RosterAvatar
+        name={
+          name
+        }
+        image={
+          image
+        }
+        size={
+          layout ===
+          'strip'
+            ? 26
+            : 32
+        }
+        speaking={
+          speaking
+        }
+        reducedMotion={
+          reducedMotion
+        }
+      />
+    );
 
-  const TroubleIcon = trouble === 'failed' ? SignalZero : SignalLow;
-  const troubleTone = trouble === 'failed' ? 'text-site-danger' : 'text-site-warning';
+  const TroubleIcon =
+    trouble ===
+    'failed'
+      ? SignalZero
+      : SignalLow;
+  const troubleTone =
+    trouble ===
+    'failed'
+      ? 'text-site-danger'
+      : 'text-site-warning';
 
-  if (layout === 'strip') {
+  if (
+    layout ===
+    'strip'
+  ) {
     // One badge, not three: the corner of a 26px avatar holds exactly one glyph,
     // so the states are ranked by how much they change what the user should do.
-    const BadgeIcon = trouble ? TroubleIcon : ringing ? PhoneOutgoing : muted ? MicOff : null;
-    const badgeTone = trouble ? troubleTone : 'text-site-text-muted';
+    const BadgeIcon =
+      trouble
+        ? TroubleIcon
+        : ringing
+          ? PhoneOutgoing
+          : muted
+            ? MicOff
+            : null;
+    const badgeTone =
+      trouble
+        ? troubleTone
+        : 'text-site-text-muted';
 
     return (
-      <li className={cn('relative -ms-2 first:ms-0', speaking && 'z-10', ringing && 'opacity-70')}>
-        {avatar}
+      <li
+        className={cn(
+          'relative -ms-2 first:ms-0',
+          speaking &&
+            'z-10',
+          ringing &&
+            'opacity-70',
+        )}
+      >
+        {
+          avatar
+        }
         {BadgeIcon && (
           <span className="surface-card absolute -bottom-0.5 -end-0.5 inline-flex rounded-full p-0.5">
-            <BadgeIcon className={cn('h-2.5 w-2.5', badgeTone)} aria-hidden />
+            <BadgeIcon
+              className={cn(
+                'h-2.5 w-2.5',
+                badgeTone,
+              )}
+              aria-hidden
+            />
           </span>
         )}
         <span className="sr-only">
-          {displayName}
-          {statusLabel ? ` — ${statusLabel}` : ''}
-          {muted ? ` — ${t('muted', { defaultValue: 'muted' })}` : ''}
-          {speaking ? ` — ${t('speaking', { defaultValue: 'Speaking' })}` : ''}
+          {
+            displayName
+          }
+          {statusLabel
+            ? ` — ${statusLabel}`
+            : ''}
+          {muted
+            ? ` — ${t('muted', { defaultValue: 'muted' })}`
+            : ''}
+          {speaking
+            ? ` — ${t('speaking', { defaultValue: 'Speaking' })}`
+            : ''}
         </span>
       </li>
     );
@@ -219,37 +375,85 @@ function RosterRow({
     <li
       className={cn(
         'surface-card flex items-center gap-2.5 rounded-site px-2.5 py-1.5',
-        ringing && 'opacity-70',
+        ringing &&
+          'opacity-70',
       )}
     >
-      {avatar}
+      {
+        avatar
+      }
       <span className="flex min-w-0 flex-1 items-center gap-1.5">
-        <span className="truncate text-sm font-medium text-site-text">{displayName}</span>
+        <span className="truncate text-sm font-medium text-site-text">
+          {
+            displayName
+          }
+        </span>
         {host && (
           <>
-            <Crown className="h-3.5 w-3.5 shrink-0 text-site-text-muted" aria-hidden />
-            <span className="sr-only">{t('host', { defaultValue: 'Host' })}</span>
+            <Crown
+              className="h-3.5 w-3.5 shrink-0 text-site-text-muted"
+              aria-hidden
+            />
+            <span className="sr-only">
+              {t(
+                'host',
+                {
+                  defaultValue:
+                    'Host',
+                },
+              )}
+            </span>
           </>
         )}
-        {speaking && <span className="sr-only">{t('speaking', { defaultValue: 'Speaking' })}</span>}
+        {speaking && (
+          <span className="sr-only">
+            {t(
+              'speaking',
+              {
+                defaultValue:
+                  'Speaking',
+              },
+            )}
+          </span>
+        )}
       </span>
 
       <span className="flex shrink-0 items-center gap-1.5 text-xs">
         {muted && (
           <>
-            <MicOff className="h-3.5 w-3.5 text-site-text-muted" aria-hidden />
-            <span className="sr-only">{t('muted', { defaultValue: 'muted' })}</span>
+            <MicOff
+              className="h-3.5 w-3.5 text-site-text-muted"
+              aria-hidden
+            />
+            <span className="sr-only">
+              {t(
+                'muted',
+                {
+                  defaultValue:
+                    'muted',
+                },
+              )}
+            </span>
           </>
         )}
         {statusLabel && (
           <span
             className={cn(
               'inline-flex items-center gap-1',
-              trouble ? troubleTone : 'text-site-text-muted',
+              trouble
+                ? troubleTone
+                : 'text-site-text-muted',
             )}
           >
-            {trouble && <TroubleIcon className="h-3.5 w-3.5" aria-hidden />}
-            {statusLabel}
+            {trouble && (
+              <TroubleIcon
+                className="h-3.5 w-3.5"
+                aria-hidden
+              />
+            )}
+            {
+              statusLabel
+            }
           </span>
         )}
       </span>
@@ -274,24 +478,81 @@ function PeerRow({
   layout: GroupCallRosterLayout;
   reducedMotion: boolean;
 }) {
-  const participant = useGroupCallStore((s) => s.peers[userId]?.participant ?? null);
-  const status = useGroupCallStore((s) => s.peers[userId]?.status ?? 'new');
-  const speaking = useGroupCallStore((s) => s.peers[userId]?.speaking ?? false);
+  const participant =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s
+          .peers[
+          userId
+        ]
+          ?.participant ??
+        null,
+    );
+  const status =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s
+          .peers[
+          userId
+        ]
+          ?.status ??
+        'new',
+    );
+  const speaking =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s
+          .peers[
+          userId
+        ]
+          ?.speaking ??
+        false,
+    );
 
-  if (!participant) return null;
+  if (
+    !participant
+  )
+    return null;
 
   return (
     <RosterRow
-      layout={layout}
-      name={participant.name}
-      image={participant.image}
-      host={participant.host}
-      muted={participant.muted}
-      speaking={speaking}
-      ringing={participant.joinedAt === null}
-      trouble={troubleOf(status)}
-      self={false}
-      reducedMotion={reducedMotion}
+      layout={
+        layout
+      }
+      name={
+        participant.name
+      }
+      image={
+        participant.image
+      }
+      host={
+        participant.host
+      }
+      muted={
+        participant.muted
+      }
+      speaking={
+        speaking
+      }
+      ringing={
+        participant.joinedAt ===
+        null
+      }
+      trouble={troubleOf(
+        status,
+      )}
+      self={
+        false
+      }
+      reducedMotion={
+        reducedMotion
+      }
     />
   );
 }
@@ -313,56 +574,187 @@ export function GroupCallRoster({
   max,
   className,
 }: GroupCallRosterProps) {
-  const { t } = useTranslation('c-groupcall');
-  const reducedMotion = useReducedMotion();
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-groupcall',
+    );
+  const reducedMotion =
+    useReducedMotion();
 
-  const peerIds = useGroupCallStore(useShallow(selectPeerIds));
-  const selfParticipant = useGroupCallStore(selectSelfParticipant);
-  const selfMuted = useGroupCallStore((s) => s.muted);
-  const selfSpeaking = useGroupCallStore((s) => s.self.speaking);
+  const peerIds =
+    useGroupCallStore(
+      useShallow(
+        selectPeerIds,
+      ),
+    );
+  const selfParticipant =
+    useGroupCallStore(
+      selectSelfParticipant,
+    );
+  const selfMuted =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s.muted,
+    );
+  const selfSpeaking =
+    useGroupCallStore(
+      (
+        s,
+      ) =>
+        s
+          .self
+          .speaking,
+    );
 
-  const ids = excludeUserId ? peerIds.filter((id) => id !== excludeUserId) : peerIds;
+  const ids =
+    excludeUserId
+      ? peerIds.filter(
+          (
+            id,
+          ) =>
+            id !==
+            excludeUserId,
+        )
+      : peerIds;
   // Truncation is a `strip` concern only: the list scrolls, and a "+3" chip in
   // place of three rows that were about to be reachable is worse than scrolling.
-  const capped = layout === 'strip' && typeof max === 'number' && ids.length > max;
-  const shown = capped && typeof max === 'number' ? ids.slice(0, max) : ids;
-  const overflow = ids.length - shown.length;
+  const capped =
+    layout ===
+      'strip' &&
+    typeof max ===
+      'number' &&
+    ids.length >
+      max;
+  const shown =
+    capped &&
+    typeof max ===
+      'number'
+      ? ids.slice(
+          0,
+          max,
+        )
+      : ids;
+  const overflow =
+    ids.length -
+    shown.length;
 
-  const showSelf = includeSelf && selfParticipant !== null;
-  if (shown.length === 0 && !showSelf) return null;
+  const showSelf =
+    includeSelf &&
+    selfParticipant !==
+      null;
+  if (
+    shown.length ===
+      0 &&
+    !showSelf
+  )
+    return null;
 
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
-      {heading}
+    <div
+      className={cn(
+        'flex flex-col gap-1.5',
+        className,
+      )}
+    >
+      {
+        heading
+      }
       <ul
         className={cn(
-          layout === 'strip' ? 'flex items-center' : 'flex flex-col gap-1',
-          layout === 'list' && 'max-h-64 overflow-y-auto',
+          layout ===
+            'strip'
+            ? 'flex items-center'
+            : 'flex flex-col gap-1',
+          layout ===
+            'list' &&
+            'max-h-64 overflow-y-auto',
         )}
-        aria-label={t('roster-label', { defaultValue: 'People in this call' })}
+        aria-label={t(
+          'roster-label',
+          {
+            defaultValue:
+              'People in this call',
+          },
+        )}
       >
-        {showSelf && selfParticipant && (
-          <RosterRow
-            layout={layout}
-            name={selfParticipant.name}
-            image={selfParticipant.image}
-            host={selfParticipant.host}
-            muted={selfMuted}
-            speaking={selfSpeaking}
-            ringing={false}
-            trouble={null}
-            self
-            reducedMotion={reducedMotion}
-          />
+        {showSelf &&
+          selfParticipant && (
+            <RosterRow
+              layout={
+                layout
+              }
+              name={
+                selfParticipant.name
+              }
+              image={
+                selfParticipant.image
+              }
+              host={
+                selfParticipant.host
+              }
+              muted={
+                selfMuted
+              }
+              speaking={
+                selfSpeaking
+              }
+              ringing={
+                false
+              }
+              trouble={
+                null
+              }
+              self
+              reducedMotion={
+                reducedMotion
+              }
+            />
+          )}
+        {shown.map(
+          (
+            userId,
+          ) => (
+            <PeerRow
+              key={
+                userId
+              }
+              userId={
+                userId
+              }
+              layout={
+                layout
+              }
+              reducedMotion={
+                reducedMotion
+              }
+            />
+          ),
         )}
-        {shown.map((userId) => (
-          <PeerRow key={userId} userId={userId} layout={layout} reducedMotion={reducedMotion} />
-        ))}
-        {overflow > 0 && (
+        {overflow >
+          0 && (
           <li className="surface-card -ms-2 inline-flex h-[26px] min-w-[26px] items-center justify-center rounded-full px-1.5 text-rem-65 font-semibold text-site-text-muted">
-            <span aria-hidden>+{overflow}</span>
+            <span
+              aria-hidden
+            >
+              +
+              {
+                overflow
+              }
+            </span>
             <span className="sr-only">
-              {t('more-people', { count: overflow, defaultValue: '{{count}} more' })}
+              {t(
+                'more-people',
+                {
+                  count:
+                    overflow,
+                  defaultValue:
+                    '{{count}} more',
+                },
+              )}
             </span>
           </li>
         )}

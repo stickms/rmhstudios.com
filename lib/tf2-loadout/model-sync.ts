@@ -19,7 +19,8 @@
 /** Bump when the converter's output changes for the same game files: every model is then rebuilt once. */
 export const MODEL_BUILDER_VERSION = 14;
 
-export const STATE_KEY = 'tf2-models/_state.json';
+export const STATE_KEY =
+  'tf2-models/_state.json';
 
 export interface PublishedModel {
   /** Hash of everything the GLB was built from (game files + builder version). */
@@ -32,9 +33,14 @@ export interface ModelState {
   v: 1;
   builder: number;
   /** Steam build id of the game the models were last synced from. */
-  steamBuild: string | null;
+  steamBuild:
+    | string
+    | null;
   updatedAt: string;
-  models: Record<string, PublishedModel>;
+  models: Record<
+    string,
+    PublishedModel
+  >;
 }
 
 export interface WantedModel {
@@ -53,21 +59,70 @@ export interface SyncPlan {
   stale: string[];
 }
 
-export function emptyState(builder = MODEL_BUILDER_VERSION): ModelState {
-  return { v: 1, builder, steamBuild: null, updatedAt: new Date(0).toISOString(), models: {} };
+export function emptyState(
+  builder = MODEL_BUILDER_VERSION,
+): ModelState {
+  return {
+    v: 1,
+    builder,
+    steamBuild:
+      null,
+    updatedAt:
+      new Date(
+        0,
+      ).toISOString(),
+    models:
+      {},
+  };
 }
 
-export function parseState(json: string | null | undefined): ModelState {
-  if (!json) return emptyState();
+export function parseState(
+  json:
+    | string
+    | null
+    | undefined,
+): ModelState {
+  if (
+    !json
+  )
+    return emptyState();
   try {
-    const raw = JSON.parse(json) as Partial<ModelState>;
-    if (raw && raw.v === 1 && raw.models && typeof raw.models === 'object') {
+    const raw =
+      JSON.parse(
+        json,
+      ) as Partial<ModelState>;
+    if (
+      raw &&
+      raw.v ===
+        1 &&
+      raw.models &&
+      typeof raw.models ===
+        'object'
+    ) {
       return {
         v: 1,
-        builder: typeof raw.builder === 'number' ? raw.builder : 0,
-        steamBuild: typeof raw.steamBuild === 'string' ? raw.steamBuild : null,
-        updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date(0).toISOString(),
-        models: raw.models as Record<string, PublishedModel>,
+        builder:
+          typeof raw.builder ===
+          'number'
+            ? raw.builder
+            : 0,
+        steamBuild:
+          typeof raw.steamBuild ===
+          'string'
+            ? raw.steamBuild
+            : null,
+        updatedAt:
+          typeof raw.updatedAt ===
+          'string'
+            ? raw.updatedAt
+            : new Date(
+                0,
+              ).toISOString(),
+        models:
+          raw.models as Record<
+            string,
+            PublishedModel
+          >,
       };
     }
   } catch {
@@ -88,22 +143,67 @@ export interface RunDecision {
  */
 export function shouldRun(
   state: ModelState,
-  steamBuild: string | null,
-  { force = false, builder = MODEL_BUILDER_VERSION }: { force?: boolean; builder?: number } = {},
+  steamBuild:
+    | string
+    | null,
+  {
+    force = false,
+    builder = MODEL_BUILDER_VERSION,
+  }: {
+    force?: boolean;
+    builder?: number;
+  } = {},
 ): RunDecision {
-  if (force) return { run: true, reason: 'forced' };
-  if (Object.keys(state.models).length === 0) return { run: true, reason: 'nothing published yet' };
-  if (state.builder !== builder) {
-    return { run: true, reason: `converter changed (v${state.builder} → v${builder})` };
+  if (
+    force
+  )
+    return {
+      run: true,
+      reason:
+        'forced',
+    };
+  if (
+    Object.keys(
+      state.models,
+    )
+      .length ===
+    0
+  )
+    return {
+      run: true,
+      reason:
+        'nothing published yet',
+    };
+  if (
+    state.builder !==
+    builder
+  ) {
+    return {
+      run: true,
+      reason: `converter changed (v${state.builder} → v${builder})`,
+    };
   }
-  if (!steamBuild) return { run: true, reason: 'Steam build id unavailable' };
-  if (state.steamBuild !== steamBuild) {
+  if (
+    !steamBuild
+  )
+    return {
+      run: true,
+      reason:
+        'Steam build id unavailable',
+    };
+  if (
+    state.steamBuild !==
+    steamBuild
+  ) {
     return {
       run: true,
       reason: `game updated (build ${state.steamBuild ?? 'none'} → ${steamBuild})`,
     };
   }
-  return { run: false, reason: `game build ${steamBuild} already synced` };
+  return {
+    run: false,
+    reason: `game build ${steamBuild} already synced`,
+  };
 }
 
 /**
@@ -113,32 +213,86 @@ export function shouldRun(
 export function planSync(
   state: ModelState,
   wanted: readonly WantedModel[],
-  { force = false }: { force?: boolean } = {},
+  {
+    force = false,
+  }: {
+    force?: boolean;
+  } = {},
 ): SyncPlan {
-  const upload: WantedModel[] = [];
+  const upload: WantedModel[] =
+    [];
   let unchanged = 0;
-  const wantedNames = new Set<string>();
+  const wantedNames =
+    new Set<string>();
   for (const w of wanted) {
-    wantedNames.add(w.name);
-    if (!force && state.models[w.name]?.src === w.src) unchanged++;
-    else upload.push(w);
+    wantedNames.add(
+      w.name,
+    );
+    if (
+      !force &&
+      state
+        .models[
+        w
+          .name
+      ]
+        ?.src ===
+        w.src
+    )
+      unchanged++;
+    else
+      upload.push(
+        w,
+      );
   }
-  const stale = Object.keys(state.models)
-    .filter((n) => !wantedNames.has(n))
-    .sort();
-  return { upload, unchanged, stale };
+  const stale =
+    Object.keys(
+      state.models,
+    )
+      .filter(
+        (
+          n,
+        ) =>
+          !wantedNames.has(
+            n,
+          ),
+      )
+      .sort();
+  return {
+    upload,
+    unchanged,
+    stale,
+  };
 }
 
 /** The state after publishing `published` (and, if pruned, without `removed`). */
 export function nextState(
   state: ModelState,
-  published: Record<string, PublishedModel>,
-  steamBuild: string | null,
+  published: Record<
+    string,
+    PublishedModel
+  >,
+  steamBuild:
+    | string
+    | null,
   removed: readonly string[] = [],
   builder = MODEL_BUILDER_VERSION,
   now = new Date(),
 ): ModelState {
-  const models = { ...state.models, ...published };
-  for (const name of removed) delete models[name];
-  return { v: 1, builder, steamBuild, updatedAt: now.toISOString(), models };
+  const models =
+    {
+      ...state.models,
+      ...published,
+    };
+  for (const name of removed)
+    delete models[
+      name
+    ];
+  return {
+    v: 1,
+    builder,
+    steamBuild,
+    updatedAt:
+      now.toISOString(),
+    models,
+  };
 }

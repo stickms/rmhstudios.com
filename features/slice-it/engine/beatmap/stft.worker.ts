@@ -11,7 +11,10 @@
  * numeric kernel has exactly one definition, and workers and the reference path
  * cannot drift into producing different charts on different hardware.
  */
-import { parentPort, workerData } from 'node:worker_threads';
+import {
+  parentPort,
+  workerData,
+} from 'node:worker_threads';
 
 import { computeSpectrogramRange } from './spectrum';
 
@@ -27,16 +30,28 @@ export interface StftWorkerData {
   to: number;
 }
 
-const data = workerData as StftWorkerData;
+const data =
+  workerData as StftWorkerData;
 
 computeSpectrogramRange(
-  new Float32Array(data.samples),
+  new Float32Array(
+    data.samples,
+  ),
   data.sampleRate,
-  new Float32Array(data.out),
+  new Float32Array(
+    data.out,
+  ),
   data.from,
   data.to,
-  { frameSize: data.frameSize, hopSize: data.hopSize },
+  {
+    frameSize:
+      data.frameSize,
+    hopSize:
+      data.hopSize,
+  },
 );
 
 // The result is already in shared memory; this is just the completion signal.
-parentPort?.postMessage(null);
+parentPort?.postMessage(
+  null,
+);

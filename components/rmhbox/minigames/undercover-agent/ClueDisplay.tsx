@@ -17,9 +17,15 @@
  */
 
 import { m as motion } from 'framer-motion';
-import { Infinity as InfinityIcon, MessageSquare } from 'lucide-react';
+import {
+  Infinity as InfinityIcon,
+  MessageSquare,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { ActiveClue, Team } from './UndercoverAgentGame';
+import type {
+  ActiveClue,
+  Team,
+} from './UndercoverAgentGame';
 
 interface ClueDisplayProps {
   clue: ActiveClue | null;
@@ -27,7 +33,9 @@ interface ClueDisplayProps {
   isWaiting: boolean;
   spymasterName: string;
   teamId: Team;
-  onEndTurn: (() => void) | undefined;
+  onEndTurn:
+    | (() => void)
+    | undefined;
 }
 
 export default function ClueDisplay({
@@ -38,58 +46,128 @@ export default function ClueDisplay({
   teamId,
   onEndTurn,
 }: ClueDisplayProps) {
-  const { t } = useTranslation('c-rmhbox');
-  const teamTextColor = teamId === 'red' ? 'text-app-danger' : 'text-app-info';
-  const teamBgColor = teamId === 'red' ? 'bg-app-danger/20' : 'bg-app-info/20';
-  if (isWaiting && !clue) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  const teamTextColor =
+    teamId ===
+    'red'
+      ? 'text-app-danger'
+      : 'text-app-info';
+  const teamBgColor =
+    teamId ===
+    'red'
+      ? 'bg-app-danger/20'
+      : 'bg-app-info/20';
+  if (
+    isWaiting &&
+    !clue
+  ) {
     return (
       <div className="surface-card mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-app p-4 text-center">
         <MessageSquare className="h-6 w-6 text-app-text-muted animate-pulse" />
         <p className="text-sm text-app-text-muted">
-          {t('waiting-for-label', { defaultValue: 'Waiting for' })}{' '}
-          <span className="font-semibold text-app-accent">{spymasterName}</span>{' '}
-          {t('to-give-a-clue', { defaultValue: 'to give a clue…' })}
+          {t(
+            'waiting-for-label',
+            {
+              defaultValue:
+                'Waiting for',
+            },
+          )}{' '}
+          <span className="font-semibold text-app-accent">
+            {
+              spymasterName
+            }
+          </span>{' '}
+          {t(
+            'to-give-a-clue',
+            {
+              defaultValue:
+                'to give a clue…',
+            },
+          )}
         </p>
       </div>
     );
   }
 
-  if (!clue) return null;
+  if (
+    !clue
+  )
+    return null;
 
   const displayNumber =
-    clue.number === 'unlimited' ? <InfinityIcon className="h-5 w-5 inline-block" /> : clue.number;
+    clue.number ===
+    'unlimited' ? (
+      <InfinityIcon className="h-5 w-5 inline-block" />
+    ) : (
+      clue.number
+    );
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{
+        opacity: 0,
+        y: -10,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+      }}
       className="surface-card mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-app p-4"
     >
       {/* Clue word + number */}
       <div className="flex items-baseline gap-3">
-        <span className={`text-2xl font-extrabold uppercase tracking-wide ${teamTextColor}`}>
-          {clue.word}
+        <span
+          className={`text-2xl font-extrabold uppercase tracking-wide ${teamTextColor}`}
+        >
+          {
+            clue.word
+          }
         </span>
         <span
           className={`rounded-full ${teamBgColor} px-3 py-1 text-lg font-bold ${teamTextColor}`}
         >
-          {displayNumber}
+          {
+            displayNumber
+          }
         </span>
       </div>
 
       {/* Guesses remaining */}
       <p className="text-sm text-app-text-muted">
-        {t('guesses-remaining', { defaultValue: 'Guesses remaining:' })}{' '}
-        <span className="font-mono font-semibold text-app-text">{guessesRemaining}</span>
+        {t(
+          'guesses-remaining',
+          {
+            defaultValue:
+              'Guesses remaining:',
+          },
+        )}{' '}
+        <span className="font-mono font-semibold text-app-text">
+          {
+            guessesRemaining
+          }
+        </span>
       </p>
 
       {/* End turn button (only for operatives on the active team) */}
       {onEndTurn && (
         <button
-          onClick={onEndTurn}
+          onClick={
+            onEndTurn
+          }
           className="mt-1 rounded-app-sm border border-app-border px-4 py-1.5 text-sm font-medium text-app-text-muted transition-colors hover:border-app-accent hover:text-app-accent"
         >
-          {t('end-turn', { defaultValue: 'End Turn' })}
+          {t(
+            'end-turn',
+            {
+              defaultValue:
+                'End Turn',
+            },
+          )}
         </button>
       )}
     </motion.div>

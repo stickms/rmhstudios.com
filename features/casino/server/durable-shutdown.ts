@@ -33,27 +33,82 @@ import {
 } from './casino-shutdown';
 import type { TablePersistence } from './table-persistence';
 
-export async function saveTablesOrRefund<T extends { roomId: string }>(
+export async function saveTablesOrRefund<
+  T extends
+    {
+      roomId: string;
+    },
+>(
   game: CasinoGame,
   tables: TablePersistence,
   stored: T[],
-  claimsFor: (table: T) => StakeClaim[],
+  claimsFor: (
+    table: T,
+  ) => StakeClaim[],
   inFlight: InFlight,
   deadlineMs: number,
 ): Promise<ShutdownRefundSummary> {
-  const startedAt = Date.now();
-  const outcome = await tables.saveAtShutdown(
-    stored.map((t) => ({ id: t.roomId, data: t })),
-    deadlineMs / 2,
-  );
-  const remainingMs = Math.max(0, deadlineMs - (Date.now() - startedAt));
+  const startedAt =
+    Date.now();
+  const outcome =
+    await tables.saveAtShutdown(
+      stored.map(
+        (
+          t,
+        ) => ({
+          id: t.roomId,
+          data: t,
+        }),
+      ),
+      deadlineMs /
+        2,
+    );
+  const remainingMs =
+    Math.max(
+      0,
+      deadlineMs -
+        (Date.now() -
+          startedAt),
+    );
 
-  if (outcome !== 'saved') {
-    const claims = stored.flatMap(claimsFor);
-    logger.error({ event: 'casino_tables_not_saved_refunding', game, outcome, tables: stored.length, claims: claims.length });
-    return settleShutdownClaims(game, claims, inFlight, remainingMs);
+  if (
+    outcome !==
+    'saved'
+  ) {
+    const claims =
+      stored.flatMap(
+        claimsFor,
+      );
+    logger.error(
+      {
+        event:
+          'casino_tables_not_saved_refunding',
+        game,
+        outcome,
+        tables:
+          stored.length,
+        claims:
+          claims.length,
+      },
+    );
+    return settleShutdownClaims(
+      game,
+      claims,
+      inFlight,
+      remainingMs,
+    );
   }
   // Nothing to refund; still wait (inside the deadline) for in-flight work.
-  const summary = await settleShutdownClaims(game, [], inFlight, remainingMs);
-  return { ...summary, saved: stored.length };
+  const summary =
+    await settleShutdownClaims(
+      game,
+      [],
+      inFlight,
+      remainingMs,
+    );
+  return {
+    ...summary,
+    saved:
+      stored.length,
+  };
 }

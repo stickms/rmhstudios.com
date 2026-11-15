@@ -6,9 +6,32 @@
 import { z } from 'zod';
 import { PLAYTIME_PRIVACY_VALUES } from '@/lib/playtime/privacy';
 
-export const playtimeSettings = z.object({
-  playtimePrivacy: z.enum(PLAYTIME_PRIVACY_VALUES),
-  noticeDismissed: z.boolean(),
-});
-export const setPlaytimePrivacyBody = z.object({ playtimePrivacy: z.enum(PLAYTIME_PRIVACY_VALUES) });
-export const dismissPlaytimeNoticeBody = z.object({ dismissNotice: z.literal(true) });
+export const playtimeSettings =
+  z.object(
+    {
+      playtimePrivacy:
+        z.enum(
+          PLAYTIME_PRIVACY_VALUES,
+        ),
+      noticeDismissed:
+        z.boolean(),
+    },
+  );
+export const setPlaytimePrivacyBody =
+  z.object(
+    {
+      playtimePrivacy:
+        z.enum(
+          PLAYTIME_PRIVACY_VALUES,
+        ),
+    },
+  );
+export const dismissPlaytimeNoticeBody =
+  z.object(
+    {
+      dismissNotice:
+        z.literal(
+          true,
+        ),
+    },
+  );

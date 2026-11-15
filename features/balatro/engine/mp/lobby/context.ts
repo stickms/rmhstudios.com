@@ -11,29 +11,56 @@ import type { MatchClient } from '../match/match-member';
 import type { SnapshotStore } from '../rejoin/rejoin-store';
 import type { ReplayTap } from '../replay/tap';
 import type { OptionalPackStore } from '../optional-packs';
-import type { GameEvent, Id, LobbyState, OptionalPack, RefCheckpoint, StartedMatch } from '../types';
-import type { PeerKind, WireData } from '../wire';
-import type { BridgeLike, FsLike, HubLike, PeerConnector, Scheduler } from '../transport/types';
+import type {
+  GameEvent,
+  Id,
+  LobbyState,
+  OptionalPack,
+  RefCheckpoint,
+  StartedMatch,
+} from '../types';
+import type {
+  PeerKind,
+  WireData,
+} from '../wire';
+import type {
+  BridgeLike,
+  FsLike,
+  HubLike,
+  PeerConnector,
+  Scheduler,
+} from '../transport/types';
 
 export interface MpSettings {
   avatarJoker: string;
   blindCol: number;
-  timerSound: 'always' | 'once' | 'off';
+  timerSound:
+    | 'always'
+    | 'once'
+    | 'off';
   chat: boolean;
-  nemesisLayout: 'standard' | 'mirrored' | 'classic';
+  nemesisLayout:
+    | 'standard'
+    | 'mirrored'
+    | 'classic';
   showMpContent: boolean;
   muted: string[];
 }
 
-export const DEFAULT_SETTINGS: MpSettings = {
-  avatarJoker: 'j_joker',
-  blindCol: 1,
-  timerSound: 'always',
-  chat: true,
-  nemesisLayout: 'standard',
-  showMpContent: false,
-  muted: [],
-};
+export const DEFAULT_SETTINGS: MpSettings =
+  {
+    avatarJoker:
+      'j_joker',
+    blindCol: 1,
+    timerSound:
+      'always',
+    chat: true,
+    nemesisLayout:
+      'standard',
+    showMpContent: false,
+    muted:
+      [],
+  };
 
 export interface RuntimeDeps {
   bridge: BridgeLike;
@@ -51,13 +78,18 @@ export interface RuntimeDeps {
   randomId(): string;
   randomSeed(): string;
   randomInt(): number;
-  log(msg: string, isError?: boolean): void;
+  log(
+    msg: string,
+    isError?: boolean,
+  ): void;
   /**
    * The ids this account blocked on the site (GET /api/moderation/block). Chat
    * starts with them muted; optional (tests, signed out). /api/pulse carries no
    * block list, so this is its own request, made once per session.
    */
-  blockedIds?(): Promise<readonly string[]>;
+  blockedIds?(): Promise<
+    readonly string[]
+  >;
   /**
    * EX-14: optional content packs (the Release ruleset's art). Absent = this peer can fetch none
    * (tests that do not care; such a peer never holds one, so a ruleset needing one cannot start).
@@ -76,7 +108,9 @@ export interface RoleCtx {
   deps: RuntimeDeps;
   me: Id;
   name: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   settings: MpSettings;
   chat: Chat;
   glyphs(): Uint8Array | null;
@@ -85,54 +119,134 @@ export interface RoleCtx {
   /** EX-14: the optional packs this peer has mounted (player_info / hello `packs`). */
   packs(): OptionalPack[];
   /** Lua's lobby screen. */
-  view(state: LobbyState, isHost: boolean, block?: string | null): void;
-  error(code: string): void;
+  view(
+    state: LobbyState,
+    isHost: boolean,
+    block?:
+      | string
+      | null,
+  ): void;
+  error(
+    code: string,
+  ): void;
   /** The running match on this peer (null outside one). */
   client(): MatchClient | null;
   /**
    * Start (or adopt, for a rejoin/migration) the local match; `fresh` = boot the Lua run.
    * `logNext` (a rejoin): where this player's replay log continues (welcome.logNext).
    */
-  beginMatch(match: StartedMatch, how: 'start' | 'rejoin' | 'live', logNext?: number): void;
+  beginMatch(
+    match: StartedMatch,
+    how:
+      | 'start'
+      | 'rejoin'
+      | 'live',
+    logNext?: number,
+  ): void;
   /** The newest checkpoint held for the running match. */
   heldCheckpoint(): RefCheckpoint | null;
-  holdCheckpoint(cp: RefCheckpoint): void;
+  holdCheckpoint(
+    cp: RefCheckpoint,
+  ): void;
   /** The role ended (left, kicked, closed). */
-  roleEnded(why: string): void;
+  roleEnded(
+    why: string,
+  ): void;
   /** This member was promoted (hub `promote`). */
-  promoted(p: { code: string; token: string; ice: unknown }, lobby: LobbyState): void;
+  promoted(
+    p: {
+      code: string;
+      token: string;
+      ice: unknown;
+    },
+    lobby: LobbyState,
+  ): void;
   /** This host was replaced (hub `host-changed` naming someone else). */
-  demoted(code: string): void;
+  demoted(
+    code: string,
+  ): void;
   /** WS13's replay/spectate seam (replay/attach.ts), or null when it is not loaded. */
   replayTap(): ReplayTap | null;
 }
 
 /** What a role offers the runtime (the MatchClient calls through these). */
 export interface Role {
-  readonly kind: 'host' | 'member';
-  readonly code: string | null;
+  readonly kind:
+    | 'host'
+    | 'member';
+  readonly code:
+    | string
+    | null;
   lobby(): LobbyState | null;
-  sendGame(e: GameEvent): void;
-  sendPeer<K extends PeerKind>(kind: K, d: WireData<K>, to: '*' | Id): void;
-  chat(text: string): void;
-  ready(on: boolean): void;
-  setTeam(team: NonNullable<LobbyState['players'][number]['team']>): void;
+  sendGame(
+    e: GameEvent,
+  ): void;
+  sendPeer<
+    K extends
+      PeerKind,
+  >(
+    kind: K,
+    d: WireData<K>,
+    to:
+      | '*'
+      | Id,
+  ): void;
+  chat(
+    text: string,
+  ): void;
+  ready(
+    on: boolean,
+  ): void;
+  setTeam(
+    team: NonNullable<
+      LobbyState['players'][number]['team']
+    >,
+  ): void;
   playerInfo(): void;
-  vote(stepId: string, option: string): void;
-  draft(stepId: string, key: string): void;
+  vote(
+    stepId: string,
+    option: string,
+  ): void;
+  draft(
+    stepId: string,
+    key: string,
+  ): void;
   /** Lua's lobby intents only the host may act on; members ignore them. */
-  hostIntent(i: HostIntent): void;
+  hostIntent(
+    i: HostIntent,
+  ): void;
   /** Lua says the run is live again (first flags after a rejoin restore). */
   caughtUp(): void;
   /** NET-09: this tab was hidden or shown (the peers see a display-only "away"). */
-  setHidden(hidden: boolean): void;
+  setHidden(
+    hidden: boolean,
+  ): void;
   leave(): void;
   stop(): void;
 }
 
 export type HostIntent =
-  | { t: 'set_option'; key: string; value: unknown }
-  | { t: 'set_deck'; deck: string; stake: number; mpStake: LobbyState['mpStake']; challenge: string | null }
-  | { t: 'start' }
-  | { t: 'kick'; userId: Id }
-  | { t: 'return_lobby' };
+  | {
+      t: 'set_option';
+      key: string;
+      value: unknown;
+    }
+  | {
+      t: 'set_deck';
+      deck: string;
+      stake: number;
+      mpStake: LobbyState['mpStake'];
+      challenge:
+        | string
+        | null;
+    }
+  | {
+      t: 'start';
+    }
+  | {
+      t: 'kick';
+      userId: Id;
+    }
+  | {
+      t: 'return_lobby';
+    };

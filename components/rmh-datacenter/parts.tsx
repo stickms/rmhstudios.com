@@ -30,21 +30,34 @@ export function Stat({
   label: string;
   value: string;
   note: string;
-  tone?: 'health' | 'load';
+  tone?:
+    | 'health'
+    | 'load';
 }) {
   return (
     <Card className="flex flex-col gap-2 p-4">
-      <span className="text-xs font-medium text-site-accent">{label}</span>
+      <span className="text-xs font-medium text-site-accent">
+        {
+          label
+        }
+      </span>
       <span
         className={
-          tone === 'load'
+          tone ===
+          'load'
             ? 'text-3xl font-semibold tracking-tight text-site-warning'
             : 'text-3xl font-semibold tracking-tight text-site-text'
         }
       >
-        {value}
+        {
+          value
+        }
       </span>
-      <span className="text-sm text-site-text-muted">{note}</span>
+      <span className="text-sm text-site-text-muted">
+        {
+          note
+        }
+      </span>
     </Card>
   );
 }
@@ -61,20 +74,45 @@ export function SectionHeading({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium text-site-accent">{kicker}</span>
-      <h2 id={id} className="text-2xl font-semibold tracking-tight text-site-text">
-        {heading}
+      <span className="text-xs font-medium text-site-accent">
+        {
+          kicker
+        }
+      </span>
+      <h2
+        id={
+          id
+        }
+        className="text-2xl font-semibold tracking-tight text-site-text"
+      >
+        {
+          heading
+        }
       </h2>
     </div>
   );
 }
 
 /** A labelled row of a spec table. */
-export function SpecRow({ term, children }: { term: string; children: ReactNode }) {
+export function SpecRow({
+  term,
+  children,
+}: {
+  term: string;
+  children: ReactNode;
+}) {
   return (
     <div className="grid gap-1 border-b border-site-border py-3 last:border-b-0 sm:grid-cols-[minmax(0,11rem)_1fr] sm:gap-6">
-      <dt className="text-xs font-medium text-site-accent">{term}</dt>
-      <dd className="text-sm text-site-text-muted">{children}</dd>
+      <dt className="text-xs font-medium text-site-accent">
+        {
+          term
+        }
+      </dt>
+      <dd className="text-sm text-site-text-muted">
+        {
+          children
+        }
+      </dd>
     </div>
   );
 }

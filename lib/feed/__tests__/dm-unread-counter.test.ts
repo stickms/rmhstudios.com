@@ -3,71 +3,240 @@
  * (`dm:unread:<uid>`, 60s TTL). Both read endpoints used to update Postgres and
  * notify the stream, which then re-read the stale counter.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
-const h = vi.hoisted(() => ({
-  del: vi.fn(async (..._k: string[]) => {}),
-  updateMany: vi.fn(async (_a: unknown) => ({ count: 3 })),
-  conversationFindMany: vi.fn(async () => [{ id: 'c1' }]),
-}));
+const h =
+  vi.hoisted(
+    () => ({
+      del: vi.fn(
+        async (
+          ..._k: string[]
+        ) => {},
+      ),
+      updateMany:
+        vi.fn(
+          async (
+            _a: unknown,
+          ) => ({
+            count: 3,
+          }),
+        ),
+      conversationFindMany:
+        vi.fn(
+          async () => [
+            {
+              id: 'c1',
+            },
+          ],
+        ),
+    }),
+  );
 
-vi.mock('@/lib/auth', () => ({
-  auth: { api: { getSession: async () => ({ user: { id: 'me' }, session: {} }) } },
-}));
-vi.mock('@/lib/rate-limit.server', () => ({ withRateLimitAsync: async () => null }));
-vi.mock('@/lib/redis.server', () => ({ redisDel: h.del }));
-vi.mock('@/lib/message-events', () => ({ notifyUser: vi.fn() }));
-vi.mock('@/lib/chat-plus/receipts.server', () => ({
-  getPairPrivacy: async () => ({ receiptsHidden: true }),
-}));
-vi.mock('@/lib/prisma.server', () => ({
-  prisma: {
-    conversation: {
-      findUnique: async () => ({ participantOneId: 'me', participantTwoId: 'other' }),
-      findMany: h.conversationFindMany,
+vi.mock(
+  '@/lib/auth',
+  () => ({
+    auth: {
+      api: {
+        getSession:
+          async () => ({
+            user: {
+              id: 'me',
+            },
+            session:
+              {},
+          }),
+      },
     },
-    directMessage: { updateMany: h.updateMany },
-  },
-}));
+  }),
+);
+vi.mock(
+  '@/lib/rate-limit.server',
+  () => ({
+    withRateLimitAsync:
+      async () =>
+        null,
+  }),
+);
+vi.mock(
+  '@/lib/redis.server',
+  () => ({
+    redisDel:
+      h.del,
+  }),
+);
+vi.mock(
+  '@/lib/message-events',
+  () => ({
+    notifyUser:
+      vi.fn(),
+  }),
+);
+vi.mock(
+  '@/lib/chat-plus/receipts.server',
+  () => ({
+    getPairPrivacy:
+      async () => ({
+        receiptsHidden: true,
+      }),
+  }),
+);
+vi.mock(
+  '@/lib/prisma.server',
+  () => ({
+    prisma:
+      {
+        conversation:
+          {
+            findUnique:
+              async () => ({
+                participantOneId:
+                  'me',
+                participantTwoId:
+                  'other',
+              }),
+            findMany:
+              h.conversationFindMany,
+          },
+        directMessage:
+          {
+            updateMany:
+              h.updateMany,
+          },
+      },
+  }),
+);
 
 import { route as ReadAll } from '@/lib/messages/api/messages.read-all.server';
 import { route as ReadOne } from '@/lib/messages/api/messages.$conversationId.read.server';
 
-type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
-const post = (route: unknown, params: Record<string, string> = {}) =>
-  handlersOf<Handler>(route).POST({
-    request: new Request('https://x.test/x', {
-      method: 'POST',
-      headers: { 'cf-connecting-ip': String(Math.random()), cookie: 'better-auth.session_token=t' },
-    }),
-    params,
-  });
+type Handler =
+  (a: {
+    request: Request;
+    params: Record<
+      string,
+      string
+    >;
+  }) => Promise<Response>;
+const post =
+  (
+    route: unknown,
+    params: Record<
+      string,
+      string
+    > = {},
+  ) =>
+    handlersOf<Handler>(
+      route,
+    ).POST(
+      {
+        request:
+          new Request(
+            'https://x.test/x',
+            {
+              method:
+                'POST',
+              headers:
+                {
+                  'cf-connecting-ip':
+                    String(
+                      Math.random(),
+                    ),
+                  cookie:
+                    'better-auth.session_token=t',
+                },
+            },
+          ),
+        params,
+      },
+    );
 
-beforeEach(() => {
-  h.del.mockClear();
-  h.updateMany.mockClear();
-  h.conversationFindMany.mockClear();
-  h.updateMany.mockResolvedValue({ count: 3 });
-});
+beforeEach(
+  () => {
+    h.del.mockClear();
+    h.updateMany.mockClear();
+    h.conversationFindMany.mockClear();
+    h.updateMany.mockResolvedValue(
+      {
+        count: 3,
+      },
+    );
+  },
+);
 
 describe('DM unread counter', () => {
   it('read-all drops the counter and uses one statement', async () => {
-    expect((await post(ReadAll)).status).toBe(200);
-    expect(h.del).toHaveBeenCalledWith('dm:unread:me');
-    expect(h.updateMany).toHaveBeenCalledTimes(1);
-    expect(h.conversationFindMany).not.toHaveBeenCalled();
+    expect(
+      (
+        await post(
+          ReadAll,
+        )
+      )
+        .status,
+    ).toBe(
+      200,
+    );
+    expect(
+      h.del,
+    ).toHaveBeenCalledWith(
+      'dm:unread:me',
+    );
+    expect(
+      h.updateMany,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      h.conversationFindMany,
+    ).not.toHaveBeenCalled();
   });
 
   it('marking one conversation read drops the counter', async () => {
-    expect((await post(ReadOne, { conversationId: 'c1' })).status).toBe(200);
-    expect(h.del).toHaveBeenCalledWith('dm:unread:me');
+    expect(
+      (
+        await post(
+          ReadOne,
+          {
+            conversationId:
+              'c1',
+          },
+        )
+      )
+        .status,
+    ).toBe(
+      200,
+    );
+    expect(
+      h.del,
+    ).toHaveBeenCalledWith(
+      'dm:unread:me',
+    );
   });
 
   it('leaves the counter alone when nothing was unread', async () => {
-    h.updateMany.mockResolvedValue({ count: 0 });
-    await post(ReadAll);
-    await post(ReadOne, { conversationId: 'c1' });
-    expect(h.del).not.toHaveBeenCalled();
+    h.updateMany.mockResolvedValue(
+      {
+        count: 0,
+      },
+    );
+    await post(
+      ReadAll,
+    );
+    await post(
+      ReadOne,
+      {
+        conversationId:
+          'c1',
+      },
+    );
+    expect(
+      h.del,
+    ).not.toHaveBeenCalled();
   });
 });

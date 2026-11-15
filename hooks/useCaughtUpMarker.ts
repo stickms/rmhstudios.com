@@ -1,7 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useSession } from '@/components/Providers';
 import type { FeedItem } from '@/lib/feed-types';
-import { caughtUpBoundary, caughtUpKey, newestSeen } from '@/lib/feed/caught-up';
+import {
+  caughtUpBoundary,
+  caughtUpKey,
+  newestSeen,
+} from '@/lib/feed/caught-up';
 
 /**
  * X7 — where to draw "You're all caught up" in the home timeline.
@@ -14,55 +23,155 @@ import { caughtUpBoundary, caughtUpKey, newestSeen } from '@/lib/feed/caught-up'
  * or be empty (private windows, blocked storage); every access is guarded and
  * the feed simply renders without a divider.
  */
-export function useCaughtUpMarker(items: readonly FeedItem[], enabled: boolean): string | null {
-  const { data: session } = useSession();
-  const userId = session?.user?.id ?? null;
-  const key = caughtUpKey(userId);
-  const [seenThrough, setSeenThrough] = useState<string | null>(null);
-  const latest = useRef(items);
-  latest.current = items;
+export function useCaughtUpMarker(
+  items: readonly FeedItem[],
+  enabled: boolean,
+):
+  | string
+  | null {
+  const {
+    data: session,
+  } =
+    useSession();
+  const userId =
+    session
+      ?.user
+      ?.id ??
+    null;
+  const key =
+    caughtUpKey(
+      userId,
+    );
+  const [
+    seenThrough,
+    setSeenThrough,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const latest =
+    useRef(
+      items,
+    );
+  latest.current =
+    items;
 
   // Read the previous session's marker once per account, after hydration.
   useEffect(() => {
-    if (!enabled) return;
+    if (
+      !enabled
+    )
+      return;
     try {
-      setSeenThrough(window.localStorage.getItem(key));
+      setSeenThrough(
+        window.localStorage.getItem(
+          key,
+        ),
+      );
     } catch {
-      setSeenThrough(null);
+      setSeenThrough(
+        null,
+      );
     }
-  }, [enabled, key]);
+  }, [
+    enabled,
+    key,
+  ]);
 
   // Persist what this session saw when the member leaves it.
   useEffect(() => {
-    if (!enabled) return;
-    let written: string | null = null;
-    const flush = () => {
-      const newest = newestSeen(latest.current);
-      if (!newest || newest === written) return;
-      try {
-        const stored = window.localStorage.getItem(key);
-        if (!stored || Date.parse(newest) > Date.parse(stored)) {
-          window.localStorage.setItem(key, newest);
+    if (
+      !enabled
+    )
+      return;
+    let written:
+      | string
+      | null =
+      null;
+    const flush =
+      () => {
+        const newest =
+          newestSeen(
+            latest.current,
+          );
+        if (
+          !newest ||
+          newest ===
+            written
+        )
+          return;
+        try {
+          const stored =
+            window.localStorage.getItem(
+              key,
+            );
+          if (
+            !stored ||
+            Date.parse(
+              newest,
+            ) >
+              Date.parse(
+                stored,
+              )
+          ) {
+            window.localStorage.setItem(
+              key,
+              newest,
+            );
+          }
+          written =
+            newest;
+        } catch {
+          /* storage unavailable — no divider next time, nothing else lost */
         }
-        written = newest;
-      } catch {
-        /* storage unavailable — no divider next time, nothing else lost */
-      }
-    };
-    const onHide = () => {
-      if (document.visibilityState === 'hidden') flush();
-    };
-    document.addEventListener('visibilitychange', onHide);
-    window.addEventListener('pagehide', flush);
+      };
+    const onHide =
+      () => {
+        if (
+          document.visibilityState ===
+          'hidden'
+        )
+          flush();
+      };
+    document.addEventListener(
+      'visibilitychange',
+      onHide,
+    );
+    window.addEventListener(
+      'pagehide',
+      flush,
+    );
     return () => {
-      document.removeEventListener('visibilitychange', onHide);
-      window.removeEventListener('pagehide', flush);
+      document.removeEventListener(
+        'visibilitychange',
+        onHide,
+      );
+      window.removeEventListener(
+        'pagehide',
+        flush,
+      );
       flush();
     };
-  }, [enabled, key]);
+  }, [
+    enabled,
+    key,
+  ]);
 
   return useMemo(
-    () => (enabled ? caughtUpBoundary(items, seenThrough) : null),
-    [enabled, items, seenThrough],
+    () =>
+      enabled
+        ? caughtUpBoundary(
+            items,
+            seenThrough,
+          )
+        : null,
+    [
+      enabled,
+      items,
+      seenThrough,
+    ],
   );
 }

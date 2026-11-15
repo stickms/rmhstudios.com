@@ -27,16 +27,24 @@ export interface Room {
 }
 
 export type RoomFeature =
-  'private-bath' | 'balcony' | 'walk-in-closet' | 'no-window' | 'shared-wall-noise';
+  | 'private-bath'
+  | 'balcony'
+  | 'walk-in-closet'
+  | 'no-window'
+  | 'shared-wall-noise';
 
 /** Multipliers on a room's points. Below 1 is a drawback. */
-export const FEATURE_WEIGHTS: Record<RoomFeature, number> = {
-  'private-bath': 1.2,
-  balcony: 1.08,
-  'walk-in-closet': 1.05,
-  'no-window': 0.8,
-  'shared-wall-noise': 0.95,
-};
+export const FEATURE_WEIGHTS: Record<
+  RoomFeature,
+  number
+> =
+  {
+    'private-bath': 1.2,
+    balcony: 1.08,
+    'walk-in-closet': 1.05,
+    'no-window': 0.8,
+    'shared-wall-noise': 0.95,
+  };
 
 export interface Share {
   roomId: string;
@@ -44,24 +52,116 @@ export interface Share {
   cents: number;
 }
 
-export function roomPoints(room: Room): number {
-  const area = Math.max(0, room.area);
-  return (room.features ?? []).reduce((p, f) => p * (FEATURE_WEIGHTS[f] ?? 1), area);
+export function roomPoints(
+  room: Room,
+): number {
+  const area =
+    Math.max(
+      0,
+      room.area,
+    );
+  return (
+    room.features ??
+    []
+  ).reduce(
+    (
+      p,
+      f,
+    ) =>
+      p *
+      (FEATURE_WEIGHTS[
+        f
+      ] ??
+        1),
+    area,
+  );
 }
 
 /** Split integer `totalCents` by `weights`, summing exactly (largest remainder). */
-export function apportion(totalCents: number, weights: readonly number[]): number[] {
-  const sum = weights.reduce((a, b) => a + b, 0);
-  if (weights.length === 0) return [];
-  const raw = weights.map((w) => (sum > 0 ? (totalCents * w) / sum : totalCents / weights.length));
-  const floors = raw.map(Math.floor);
-  let left = totalCents - floors.reduce((a, b) => a + b, 0);
-  const order = raw
-    .map((r, i) => [r - Math.floor(r), i] as const)
-    .sort((a, b) => b[0] - a[0] || a[1] - b[1]);
-  for (const [, i] of order) {
-    if (left <= 0) break;
-    floors[i]!++;
+export function apportion(
+  totalCents: number,
+  weights: readonly number[],
+): number[] {
+  const sum =
+    weights.reduce(
+      (
+        a,
+        b,
+      ) =>
+        a +
+        b,
+      0,
+    );
+  if (
+    weights.length ===
+    0
+  )
+    return [];
+  const raw =
+    weights.map(
+      (
+        w,
+      ) =>
+        sum >
+        0
+          ? (totalCents *
+              w) /
+            sum
+          : totalCents /
+            weights.length,
+    );
+  const floors =
+    raw.map(
+      Math.floor,
+    );
+  let left =
+    totalCents -
+    floors.reduce(
+      (
+        a,
+        b,
+      ) =>
+        a +
+        b,
+      0,
+    );
+  const order =
+    raw
+      .map(
+        (
+          r,
+          i,
+        ) =>
+          [
+            r -
+              Math.floor(
+                r,
+              ),
+            i,
+          ] as const,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          b[0] -
+            a[0] ||
+          a[1] -
+            b[1],
+      );
+  for (const [
+    ,
+    i,
+  ] of order) {
+    if (
+      left <=
+      0
+    )
+      break;
+    floors[
+      i
+    ]!++;
     left--;
   }
   return floors;
@@ -78,28 +178,92 @@ export function explainSplit(
   rooms: readonly Room[],
   sharedShare = 0.3,
 ): ShareDetail[] {
-  if (rooms.length === 0 || totalCents <= 0) return [];
-  const s = Math.min(1, Math.max(0, sharedShare));
-  const points = rooms.map(roomPoints);
-  const sharedCents = Math.round(totalCents * s);
-  const shared = apportion(
-    sharedCents,
-    rooms.map(() => 1),
+  if (
+    rooms.length ===
+      0 ||
+    totalCents <=
+      0
+  )
+    return [];
+  const s =
+    Math.min(
+      1,
+      Math.max(
+        0,
+        sharedShare,
+      ),
+    );
+  const points =
+    rooms.map(
+      roomPoints,
+    );
+  const sharedCents =
+    Math.round(
+      totalCents *
+        s,
+    );
+  const shared =
+    apportion(
+      sharedCents,
+      rooms.map(
+        () =>
+          1,
+      ),
+    );
+  const priv =
+    apportion(
+      totalCents -
+        sharedCents,
+      points,
+    );
+  return rooms.map(
+    (
+      r,
+      i,
+    ) => ({
+      roomId:
+        r.id,
+      points:
+        points[
+          i
+        ]!,
+      sharedCents:
+        shared[
+          i
+        ]!,
+      privateCents:
+        priv[
+          i
+        ]!,
+      cents:
+        shared[
+          i
+        ]! +
+        priv[
+          i
+        ]!,
+    }),
   );
-  const priv = apportion(totalCents - sharedCents, points);
-  return rooms.map((r, i) => ({
-    roomId: r.id,
-    points: points[i]!,
-    sharedCents: shared[i]!,
-    privateCents: priv[i]!,
-    cents: shared[i]! + priv[i]!,
-  }));
 }
 
-export function splitRent(totalCents: number, rooms: readonly Room[], sharedShare = 0.3): Share[] {
-  return explainSplit(totalCents, rooms, sharedShare).map(({ roomId, points, cents }) => ({
-    roomId,
-    points,
-    cents,
-  }));
+export function splitRent(
+  totalCents: number,
+  rooms: readonly Room[],
+  sharedShare = 0.3,
+): Share[] {
+  return explainSplit(
+    totalCents,
+    rooms,
+    sharedShare,
+  ).map(
+    ({
+      roomId,
+      points,
+      cents,
+    }) => ({
+      roomId,
+      points,
+      cents,
+    }),
+  );
 }

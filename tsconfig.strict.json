@@ -33,5 +33,10 @@
     "server/shared/redis-adapter.ts",
     "features/rmhos/engine/*.ts"
   ],
-  "exclude": ["node_modules", "features/rmhos/engine/vm.ts", "**/__tests__/**", "**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    "features/rmhos/engine/vm.ts",
+    "**/__tests__/**",
+    "**/*.test.ts"
+  ]
 }

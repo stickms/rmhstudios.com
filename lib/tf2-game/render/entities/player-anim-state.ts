@@ -31,7 +31,8 @@ const FADE_TURN_DEGREES = 60;
  */
 export const MOVE_POSE_RATE = 6;
 /** … and body_yaw / body_pitch at DOD_BODYYAW_RATE degrees per second (flicks, snapshot steps). */
-export const AIM_POSE_RATE = BODY_YAW_RATE;
+export const AIM_POSE_RATE =
+  BODY_YAW_RATE;
 
 // PlayerAnimEvent_t (multiplayer_animstate.h).
 export const PLAYERANIMEVENT_ATTACK_PRIMARY = 0;
@@ -60,27 +61,80 @@ export const SLOT_VCD = 5;
 export const SLOT_CUSTOM = 6;
 
 /** SDK Approach: `cur` moved toward `goal` by at most `step`. */
-export function approach(goal: number, cur: number, step: number): number {
-  const d = goal - cur;
-  if (d > step) return cur + step;
-  if (d < -step) return cur - step;
+export function approach(
+  goal: number,
+  cur: number,
+  step: number,
+): number {
+  const d =
+    goal -
+    cur;
+  if (
+    d >
+    step
+  )
+    return (
+      cur +
+      step
+    );
+  if (
+    d <
+    -step
+  )
+    return (
+      cur -
+      step
+    );
   return goal;
 }
 
 /** Approach for angles in degrees, the short way round. */
-export function approachAngle(goal: number, cur: number, step: number): number {
-  const d = angleNormalize(goal - cur);
-  if (d > step) return angleNormalize(cur + step);
-  if (d < -step) return angleNormalize(cur - step);
+export function approachAngle(
+  goal: number,
+  cur: number,
+  step: number,
+): number {
+  const d =
+    angleNormalize(
+      goal -
+        cur,
+    );
+  if (
+    d >
+    step
+  )
+    return angleNormalize(
+      cur +
+        step,
+    );
+  if (
+    d <
+    -step
+  )
+    return angleNormalize(
+      cur -
+        step,
+    );
   return goal;
 }
 
-export const angleNormalize = (a: number): number => {
-  a %= 360;
-  if (a > 180) a -= 360;
-  if (a < -180) a += 360;
-  return a;
-};
+export const angleNormalize =
+  (
+    a: number,
+  ): number => {
+    a %= 360;
+    if (
+      a >
+      180
+    )
+      a -= 360;
+    if (
+      a <
+      -180
+    )
+      a += 360;
+    return a;
+  };
 
 /**
  * Translates a base activity for the held weapon's activity role (PRIMARY, SECONDARY, MELEE,
@@ -90,10 +144,25 @@ export const angleNormalize = (a: number): number => {
  * `default:` does) and a base activity without a row stays as it is (PREFIRE/POSTFIRE, …).
  * No role ('') translates nothing.
  */
-export function translateActivity(base: string, role: string): string {
-  if (!role) return base;
-  const table = PLAYER_ACTTABLES[role] ?? PLAYER_ACTTABLES.PRIMARY;
-  return table[base] ?? base;
+export function translateActivity(
+  base: string,
+  role: string,
+): string {
+  if (
+    !role
+  )
+    return base;
+  const table =
+    PLAYER_ACTTABLES[
+      role
+    ] ??
+    PLAYER_ACTTABLES.PRIMARY;
+  return (
+    table[
+      base
+    ] ??
+    base
+  );
 }
 
 export interface PlayerAnimInput {
@@ -111,7 +180,9 @@ export interface PlayerAnimInput {
   eyeYaw: number;
   eyePitch: number;
   /** TF_COND bit test. */
-  inCond: (cond: number) => boolean;
+  inCond: (
+    cond: number,
+  ) => boolean;
   /** Weapon role suffix (playerAnimSuffix), '' for none. */
   suffix: string;
   isMinigun: boolean;
@@ -119,7 +190,9 @@ export interface PlayerAnimInput {
   /** Fall speed (units/s, positive down) for the stomp check; 0 when unknown. */
   fallVelocity?: number;
   /** Whether the model has an activity (crouch tables etc.). */
-  hasActivity: (act: string) => boolean;
+  hasActivity: (
+    act: string,
+  ) => boolean;
 }
 
 export interface GestureRequest {
@@ -149,8 +222,10 @@ export class TFPlayerAnimState {
   /** Set when the main sequence must restart (RestartMainSequence). */
   restartMain = false;
   /** Outputs of the last update. */
-  mainActivity = 'ACT_MP_STAND_IDLE';
-  translatedMain = 'ACT_MP_STAND_IDLE';
+  mainActivity =
+    'ACT_MP_STAND_IDLE';
+  translatedMain =
+    'ACT_MP_STAND_IDLE';
   /**
    * Pose parameters. The compute*() steps write their goals here; `update()` then replaces them
    * with the smoothed values the model is posed with (MOVE_POSE_RATE / AIM_POSE_RATE).
@@ -166,17 +241,23 @@ export class TFPlayerAnimState {
   private smoothBodyPitch = 0;
   private poseInit = false;
   /** Gestures to start this frame. */
-  readonly gestures: GestureRequest[] = [];
+  readonly gestures: GestureRequest[] =
+    [];
 
-  reset(eyeYaw = 0): void {
+  reset(
+    eyeYaw = 0,
+  ): void {
     this.jumping = false;
     this.inAirWalk = false;
     this.inSwim = false;
     this.firstSwimFrame = true;
     this.holdDeployedUntil = 0;
-    this.estimateYaw = eyeYaw;
-    this.goalFeetYaw = eyeYaw;
-    this.currentFeetYaw = eyeYaw;
+    this.estimateYaw =
+      eyeYaw;
+    this.goalFeetYaw =
+      eyeYaw;
+    this.currentFeetYaw =
+      eyeYaw;
     this.lastAimTurnTime = 0;
     this.gestures.length = 0;
     this.poseInit = false;
@@ -186,107 +267,283 @@ export class TFPlayerAnimState {
    * Moves the posed parameters toward this frame's goals (in moveX … bodyPitch) at their
    * approach rates and writes the result back. The first update after a reset takes the goals.
    */
-  smoothPoseParams(dt: number): void {
-    if (!this.poseInit || dt <= 0) {
-      if (!this.poseInit) {
-        this.smoothMoveX = this.moveX;
-        this.smoothMoveY = this.moveY;
-        this.smoothBodyYaw = this.bodyYaw;
-        this.smoothBodyPitch = this.bodyPitch;
+  smoothPoseParams(
+    dt: number,
+  ): void {
+    if (
+      !this
+        .poseInit ||
+      dt <=
+        0
+    ) {
+      if (
+        !this
+          .poseInit
+      ) {
+        this.smoothMoveX =
+          this.moveX;
+        this.smoothMoveY =
+          this.moveY;
+        this.smoothBodyYaw =
+          this.bodyYaw;
+        this.smoothBodyPitch =
+          this.bodyPitch;
         this.poseInit = true;
       }
     } else {
-      const m = MOVE_POSE_RATE * dt;
-      const a = AIM_POSE_RATE * dt;
-      this.smoothMoveX = approach(this.moveX, this.smoothMoveX, m);
-      this.smoothMoveY = approach(this.moveY, this.smoothMoveY, m);
-      this.smoothBodyYaw = approachAngle(this.bodyYaw, this.smoothBodyYaw, a);
-      this.smoothBodyPitch = approachAngle(this.bodyPitch, this.smoothBodyPitch, a);
+      const m =
+        MOVE_POSE_RATE *
+        dt;
+      const a =
+        AIM_POSE_RATE *
+        dt;
+      this.smoothMoveX =
+        approach(
+          this
+            .moveX,
+          this
+            .smoothMoveX,
+          m,
+        );
+      this.smoothMoveY =
+        approach(
+          this
+            .moveY,
+          this
+            .smoothMoveY,
+          m,
+        );
+      this.smoothBodyYaw =
+        approachAngle(
+          this
+            .bodyYaw,
+          this
+            .smoothBodyYaw,
+          a,
+        );
+      this.smoothBodyPitch =
+        approachAngle(
+          this
+            .bodyPitch,
+          this
+            .smoothBodyPitch,
+          a,
+        );
     }
-    this.moveX = this.smoothMoveX;
-    this.moveY = this.smoothMoveY;
-    this.bodyYaw = this.smoothBodyYaw;
-    this.bodyPitch = this.smoothBodyPitch;
+    this.moveX =
+      this.smoothMoveX;
+    this.moveY =
+      this.smoothMoveY;
+    this.bodyYaw =
+      this.smoothBodyYaw;
+    this.bodyPitch =
+      this.smoothBodyPitch;
   }
 
-  private isAiming(inp: PlayerAnimInput): boolean {
-    return inp.inCond(TF_COND.AIMING);
+  private isAiming(
+    inp: PlayerAnimInput,
+  ): boolean {
+    return inp.inCond(
+      TF_COND.AIMING,
+    );
   }
 
-  private inDuck(inp: PlayerAnimInput): boolean {
-    return inp.ducked && inp.hasActivity(translateActivity('ACT_MP_CROUCHWALK', inp.suffix));
+  private inDuck(
+    inp: PlayerAnimInput,
+  ): boolean {
+    return (
+      inp.ducked &&
+      inp.hasActivity(
+        translateActivity(
+          'ACT_MP_CROUCHWALK',
+          inp.suffix,
+        ),
+      )
+    );
   }
 
   // ─── activity selection ──────────────────────────────────────────────────
 
   /** SDK CTFPlayerAnimState::HandleJumping. */
-  private handleJumping(inp: PlayerAnimInput): string | null {
-    const duck = this.inDuck(inp);
-    if (inp.isMinigun && inp.inCond(TF_COND.AIMING)) return null; // a firing heavy never jumps/airwalks
-    let act: string | null = null;
-    if ((inp.vz > AIRWALK_RISE_SPEED || this.inAirWalk) && !duck) {
-      if (inp.onGround && this.inAirWalk) {
+  private handleJumping(
+    inp: PlayerAnimInput,
+  ):
+    | string
+    | null {
+    const duck =
+      this.inDuck(
+        inp,
+      );
+    if (
+      inp.isMinigun &&
+      inp.inCond(
+        TF_COND.AIMING,
+      )
+    )
+      return null; // a firing heavy never jumps/airwalks
+    let act:
+      | string
+      | null =
+      null;
+    if (
+      (inp.vz >
+        AIRWALK_RISE_SPEED ||
+        this
+          .inAirWalk) &&
+      !duck
+    ) {
+      if (
+        inp.onGround &&
+        this
+          .inAirWalk
+      ) {
         this.inAirWalk = false;
         this.restartMain = true;
-        this.gestures.push({
-          slot: SLOT_JUMP,
-          activity: translateActivity('ACT_MP_JUMP_LAND', inp.suffix),
-          autoKill: true,
-        });
-      } else if (inp.waterLevel >= 2) {
+        this.gestures.push(
+          {
+            slot: SLOT_JUMP,
+            activity:
+              translateActivity(
+                'ACT_MP_JUMP_LAND',
+                inp.suffix,
+              ),
+            autoKill: true,
+          },
+        );
+      } else if (
+        inp.waterLevel >=
+        2
+      ) {
         this.inAirWalk = false;
         this.restartMain = true;
-      } else if (!inp.onGround) {
-        act = 'ACT_MP_AIRWALK';
+      } else if (
+        !inp.onGround
+      ) {
+        act =
+          'ACT_MP_AIRWALK';
         this.inAirWalk = true;
       }
-    } else if (this.jumping) {
-      if (this.firstJumpFrame) {
+    } else if (
+      this
+        .jumping
+    ) {
+      if (
+        this
+          .firstJumpFrame
+      ) {
         this.firstJumpFrame = false;
         this.restartMain = true;
       }
-      if (inp.waterLevel >= 2) {
+      if (
+        inp.waterLevel >=
+        2
+      ) {
         this.jumping = false;
         this.restartMain = true;
-      } else if (inp.time - this.jumpStartTime > 0.2 && inp.onGround) {
+      } else if (
+        inp.time -
+          this
+            .jumpStartTime >
+          0.2 &&
+        inp.onGround
+      ) {
         this.jumping = false;
         this.restartMain = true;
-        this.gestures.push({
-          slot: SLOT_JUMP,
-          activity: translateActivity('ACT_MP_JUMP_LAND', inp.suffix),
-          autoKill: true,
-        });
+        this.gestures.push(
+          {
+            slot: SLOT_JUMP,
+            activity:
+              translateActivity(
+                'ACT_MP_JUMP_LAND',
+                inp.suffix,
+              ),
+            autoKill: true,
+          },
+        );
       }
-      if (this.jumping)
-        act = inp.time - this.jumpStartTime > 0.5 ? 'ACT_MP_JUMP_FLOAT' : 'ACT_MP_JUMP_START';
+      if (
+        this
+          .jumping
+      )
+        act =
+          inp.time -
+            this
+              .jumpStartTime >
+          0.5
+            ? 'ACT_MP_JUMP_FLOAT'
+            : 'ACT_MP_JUMP_START';
     }
-    return this.jumping || this.inAirWalk ? act : null;
+    return this
+      .jumping ||
+      this
+        .inAirWalk
+      ? act
+      : null;
   }
 
   /** SDK CTFPlayerAnimState::HandleDucking. */
-  private handleDucking(inp: PlayerAnimInput, speed: number): string | null {
-    if (!this.inDuck(inp)) return null;
-    const aiming = this.isAiming(inp);
-    if (speed < MOVING_MINIMUM_SPEED) {
-      return aiming || this.holdDeployedUntil > inp.time
+  private handleDucking(
+    inp: PlayerAnimInput,
+    speed: number,
+  ):
+    | string
+    | null {
+    if (
+      !this.inDuck(
+        inp,
+      )
+    )
+      return null;
+    const aiming =
+      this.isAiming(
+        inp,
+      );
+    if (
+      speed <
+      MOVING_MINIMUM_SPEED
+    ) {
+      return aiming ||
+        this
+          .holdDeployedUntil >
+          inp.time
         ? 'ACT_MP_CROUCH_DEPLOYED_IDLE'
         : 'ACT_MP_CROUCH_IDLE';
     }
-    if (aiming && !inp.isMinigun) return 'ACT_MP_CROUCH_DEPLOYED';
+    if (
+      aiming &&
+      !inp.isMinigun
+    )
+      return 'ACT_MP_CROUCH_DEPLOYED';
     return 'ACT_MP_CROUCHWALK';
   }
 
   /** SDK CTFPlayerAnimState::HandleSwimming. */
-  private handleSwimming(inp: PlayerAnimInput): string | null {
-    if (inp.waterLevel >= 2) {
-      if (this.firstSwimFrame) {
+  private handleSwimming(
+    inp: PlayerAnimInput,
+  ):
+    | string
+    | null {
+    if (
+      inp.waterLevel >=
+      2
+    ) {
+      if (
+        this
+          .firstSwimFrame
+      ) {
         this.restartMain = true;
         this.firstSwimFrame = false;
       }
       this.inSwim = true;
       if (
-        this.isAiming(inp) &&
-        (inp.isMinigun || (inp.isSniperRifle && inp.inCond(TF_COND.ZOOMED)))
+        this.isAiming(
+          inp,
+        ) &&
+        (inp.isMinigun ||
+          (inp.isSniperRifle &&
+            inp.inCond(
+              TF_COND.ZOOMED,
+            )))
       ) {
         return 'ACT_MP_SWIM_DEPLOYED';
       }
@@ -298,55 +555,151 @@ export class TFPlayerAnimState {
   }
 
   /** SDK CTFPlayerAnimState::HandleMoving. */
-  private handleMoving(inp: PlayerAnimInput, speed: number): string {
-    if (speed > MOVING_MINIMUM_SPEED) this.holdDeployedUntil = 0;
-    if (this.isAiming(inp))
-      return speed > MOVING_MINIMUM_SPEED ? 'ACT_MP_DEPLOYED' : 'ACT_MP_DEPLOYED_IDLE';
-    if (this.holdDeployedUntil > inp.time) return 'ACT_MP_DEPLOYED_IDLE';
-    return speed > MOVING_MINIMUM_SPEED ? 'ACT_MP_RUN' : 'ACT_MP_STAND_IDLE';
+  private handleMoving(
+    inp: PlayerAnimInput,
+    speed: number,
+  ): string {
+    if (
+      speed >
+      MOVING_MINIMUM_SPEED
+    )
+      this.holdDeployedUntil = 0;
+    if (
+      this.isAiming(
+        inp,
+      )
+    )
+      return speed >
+        MOVING_MINIMUM_SPEED
+        ? 'ACT_MP_DEPLOYED'
+        : 'ACT_MP_DEPLOYED_IDLE';
+    if (
+      this
+        .holdDeployedUntil >
+      inp.time
+    )
+      return 'ACT_MP_DEPLOYED_IDLE';
+    return speed >
+      MOVING_MINIMUM_SPEED
+      ? 'ACT_MP_RUN'
+      : 'ACT_MP_STAND_IDLE';
   }
 
   /** SDK CMultiPlayerAnimState::CalcMainActivity (TF handlers). */
-  calcMainActivity(inp: PlayerAnimInput): string {
-    const speed = Math.hypot(inp.vx, inp.vy);
+  calcMainActivity(
+    inp: PlayerAnimInput,
+  ): string {
+    const speed =
+      Math.hypot(
+        inp.vx,
+        inp.vy,
+      );
     return (
-      this.handleJumping(inp) ??
-      this.handleDucking(inp, speed) ??
-      this.handleSwimming(inp) ??
-      this.handleMoving(inp, speed)
+      this.handleJumping(
+        inp,
+      ) ??
+      this.handleDucking(
+        inp,
+        speed,
+      ) ??
+      this.handleSwimming(
+        inp,
+      ) ??
+      this.handleMoving(
+        inp,
+        speed,
+      )
     );
   }
 
   /** Base → model activity: the swim translation, then the weapon's table (TranslateActivity). */
-  translate(base: string, inp: PlayerAnimInput): string {
-    let act = base;
-    if (this.inSwim) {
+  translate(
+    base: string,
+    inp: PlayerAnimInput,
+  ): string {
+    let act =
+      base;
+    if (
+      this
+        .inSwim
+    ) {
       act =
         {
-          ACT_MP_ATTACK_STAND_PRIMARYFIRE: 'ACT_MP_ATTACK_SWIM_PRIMARYFIRE',
-          ACT_MP_ATTACK_STAND_SECONDARYFIRE: 'ACT_MP_ATTACK_SWIM_SECONDARYFIRE',
-          ACT_MP_ATTACK_STAND_GRENADE: 'ACT_MP_ATTACK_SWIM_GRENADE',
-          ACT_MP_RELOAD_STAND: 'ACT_MP_RELOAD_SWIM',
-        }[act] ?? act;
+          ACT_MP_ATTACK_STAND_PRIMARYFIRE:
+            'ACT_MP_ATTACK_SWIM_PRIMARYFIRE',
+          ACT_MP_ATTACK_STAND_SECONDARYFIRE:
+            'ACT_MP_ATTACK_SWIM_SECONDARYFIRE',
+          ACT_MP_ATTACK_STAND_GRENADE:
+            'ACT_MP_ATTACK_SWIM_GRENADE',
+          ACT_MP_RELOAD_STAND:
+            'ACT_MP_RELOAD_SWIM',
+        }[
+          act
+        ] ??
+        act;
     }
-    const t = translateActivity(act, inp.suffix);
-    return inp.hasActivity(t) ? t : act;
+    const t =
+      translateActivity(
+        act,
+        inp.suffix,
+      );
+    return inp.hasActivity(
+      t,
+    )
+      ? t
+      : act;
   }
 
   // ─── pose parameters ─────────────────────────────────────────────────────
 
   /** SDK EstimateYaw. */
-  private estimateYawUpdate(inp: PlayerAnimInput, entityYaw: number): void {
-    if (inp.dt <= 0) return;
-    if (inp.vx === 0 && inp.vy === 0) {
-      let d = angleNormalize(entityYaw - this.estimateYaw);
-      d *= inp.dt < 0.25 ? inp.dt * 4 : inp.dt;
-      this.estimateYaw = angleNormalize(this.estimateYaw + d);
+  private estimateYawUpdate(
+    inp: PlayerAnimInput,
+    entityYaw: number,
+  ): void {
+    if (
+      inp.dt <=
+      0
+    )
+      return;
+    if (
+      inp.vx ===
+        0 &&
+      inp.vy ===
+        0
+    ) {
+      let d =
+        angleNormalize(
+          entityYaw -
+            this
+              .estimateYaw,
+        );
+      d *=
+        inp.dt <
+        0.25
+          ? inp.dt *
+            4
+          : inp.dt;
+      this.estimateYaw =
+        angleNormalize(
+          this
+            .estimateYaw +
+            d,
+        );
     } else {
-      this.estimateYaw = Math.max(
-        -180,
-        Math.min(180, (Math.atan2(inp.vy, inp.vx) * 180) / Math.PI),
-      );
+      this.estimateYaw =
+        Math.max(
+          -180,
+          Math.min(
+            180,
+            (Math.atan2(
+              inp.vy,
+              inp.vx,
+            ) *
+              180) /
+              Math.PI,
+          ),
+        );
     }
   }
 
@@ -358,85 +711,232 @@ export class TFPlayerAnimState {
   computeMoveYaw(
     inp: PlayerAnimInput,
     entityYaw: number,
-    groundSpeedAt: (x: number, y: number) => number,
+    groundSpeedAt: (
+      x: number,
+      y: number,
+    ) => number,
   ): void {
-    this.estimateYawUpdate(inp, entityYaw);
-    const speed = Math.hypot(inp.vx, inp.vy);
-    if (speed <= MOVING_MINIMUM_SPEED) {
+    this.estimateYawUpdate(
+      inp,
+      entityYaw,
+    );
+    const speed =
+      Math.hypot(
+        inp.vx,
+        inp.vy,
+      );
+    if (
+      speed <=
+      MOVING_MINIMUM_SPEED
+    ) {
       this.moveX = 0;
       this.moveY = 0;
       return;
     }
-    const yaw = angleNormalize(-(angleNormalize(inp.eyeYaw) - this.estimateYaw));
-    let x = Math.cos((yaw * Math.PI) / 180);
-    let y = -Math.sin((yaw * Math.PI) / 180);
-    const inv = Math.max(Math.abs(x), Math.abs(y));
-    if (inv !== 0) {
-      x /= inv;
-      y /= inv;
+    const yaw =
+      angleNormalize(
+        -(
+          angleNormalize(
+            inp.eyeYaw,
+          ) -
+          this
+            .estimateYaw
+        ),
+      );
+    let x =
+      Math.cos(
+        (yaw *
+          Math.PI) /
+          180,
+      );
+    let y =
+      -Math.sin(
+        (yaw *
+          Math.PI) /
+          180,
+      );
+    const inv =
+      Math.max(
+        Math.abs(
+          x,
+        ),
+        Math.abs(
+          y,
+        ),
+      );
+    if (
+      inv !==
+      0
+    ) {
+      x /=
+        inv;
+      y /=
+        inv;
     }
-    const maxSpeed = groundSpeedAt(x, y);
-    if (maxSpeed > speed) {
-      x *= speed / maxSpeed;
-      y *= speed / maxSpeed;
+    const maxSpeed =
+      groundSpeedAt(
+        x,
+        y,
+      );
+    if (
+      maxSpeed >
+      speed
+    ) {
+      x *=
+        speed /
+        maxSpeed;
+      y *=
+        speed /
+        maxSpeed;
     }
-    this.moveX = x;
-    this.moveY = y;
+    this.moveX =
+      x;
+    this.moveY =
+      y;
   }
 
   /** SDK ComputePoseParam_AimYaw: feet lag and the torso twist (body_yaw). */
-  computeAimYaw(inp: PlayerAnimInput): void {
-    const moving = Math.hypot(inp.vx, inp.vy, inp.vz) > 1;
-    const eyeYaw = angleNormalize(inp.eyeYaw);
-    if (moving || this.forceAimYaw) {
-      this.goalFeetYaw = eyeYaw;
-    } else if (this.lastAimTurnTime <= 0) {
-      this.goalFeetYaw = eyeYaw;
-      this.currentFeetYaw = eyeYaw;
-      this.lastAimTurnTime = inp.time;
+  computeAimYaw(
+    inp: PlayerAnimInput,
+  ): void {
+    const moving =
+      Math.hypot(
+        inp.vx,
+        inp.vy,
+        inp.vz,
+      ) >
+      1;
+    const eyeYaw =
+      angleNormalize(
+        inp.eyeYaw,
+      );
+    if (
+      moving ||
+      this
+        .forceAimYaw
+    ) {
+      this.goalFeetYaw =
+        eyeYaw;
+    } else if (
+      this
+        .lastAimTurnTime <=
+      0
+    ) {
+      this.goalFeetYaw =
+        eyeYaw;
+      this.currentFeetYaw =
+        eyeYaw;
+      this.lastAimTurnTime =
+        inp.time;
     } else {
-      const d = angleNormalize(this.goalFeetYaw - eyeYaw);
-      if (Math.abs(d) > MAX_BODY_YAW) this.goalFeetYaw += MAX_BODY_YAW * (d > 0 ? -1 : 1);
-    }
-    this.goalFeetYaw = angleNormalize(this.goalFeetYaw);
-    if (this.goalFeetYaw !== this.currentFeetYaw) {
-      if (this.forceAimYaw) this.currentFeetYaw = this.goalFeetYaw;
-      else {
-        this.currentFeetYaw = convergeYaw(
-          this.goalFeetYaw,
-          BODY_YAW_RATE,
-          inp.dt,
-          this.currentFeetYaw,
+      const d =
+        angleNormalize(
+          this
+            .goalFeetYaw -
+            eyeYaw,
         );
-        this.lastAimTurnTime = inp.time;
+      if (
+        Math.abs(
+          d,
+        ) >
+        MAX_BODY_YAW
+      )
+        this.goalFeetYaw +=
+          MAX_BODY_YAW *
+          (d >
+          0
+            ? -1
+            : 1);
+    }
+    this.goalFeetYaw =
+      angleNormalize(
+        this
+          .goalFeetYaw,
+      );
+    if (
+      this
+        .goalFeetYaw !==
+      this
+        .currentFeetYaw
+    ) {
+      if (
+        this
+          .forceAimYaw
+      )
+        this.currentFeetYaw =
+          this.goalFeetYaw;
+      else {
+        this.currentFeetYaw =
+          convergeYaw(
+            this
+              .goalFeetYaw,
+            BODY_YAW_RATE,
+            inp.dt,
+            this
+              .currentFeetYaw,
+          );
+        this.lastAimTurnTime =
+          inp.time;
       }
     }
-    this.bodyYaw = -angleNormalize(eyeYaw - this.currentFeetYaw);
+    this.bodyYaw =
+      -angleNormalize(
+        eyeYaw -
+          this
+            .currentFeetYaw,
+      );
     this.forceAimYaw = false;
   }
 
   /** SDK ComputePoseParam_AimPitch. */
-  computeAimPitch(inp: PlayerAnimInput): void {
-    this.bodyPitch = -angleNormalize(inp.eyePitch);
+  computeAimPitch(
+    inp: PlayerAnimInput,
+  ): void {
+    this.bodyPitch =
+      -angleNormalize(
+        inp.eyePitch,
+      );
   }
 
   // ─── events ──────────────────────────────────────────────────────────────
 
   /** SDK CTFPlayerAnimState::DoAnimationEvent → gesture requests. */
-  doAnimationEvent(event: number, inp: PlayerAnimInput): void {
-    const duck = this.inDuck(inp);
-    const g = (base: string, autoKill = true, ifNotPlaying = false) =>
-      this.gestures.push({
-        slot: SLOT_ATTACK_AND_RELOAD,
-        activity: this.translate(base, inp),
-        autoKill,
-        ifNotPlaying,
-      });
-    switch (event) {
+  doAnimationEvent(
+    event: number,
+    inp: PlayerAnimInput,
+  ): void {
+    const duck =
+      this.inDuck(
+        inp,
+      );
+    const g =
+      (
+        base: string,
+        autoKill = true,
+        ifNotPlaying = false,
+      ) =>
+        this.gestures.push(
+          {
+            slot: SLOT_ATTACK_AND_RELOAD,
+            activity:
+              this.translate(
+                base,
+                inp,
+              ),
+            autoKill,
+            ifNotPlaying,
+          },
+        );
+    switch (
+      event
+    ) {
       case PLAYERANIMEVENT_ATTACK_PRIMARY:
-        if (inp.isMinigun) {
+        if (
+          inp.isMinigun
+        ) {
           g(
-            this.inSwim
+            this
+              .inSwim
               ? 'ACT_MP_ATTACK_SWIM_PRIMARYFIRE'
               : duck
                 ? 'ACT_MP_ATTACK_CROUCH_PRIMARYFIRE'
@@ -444,20 +944,32 @@ export class TFPlayerAnimState {
             true,
             true,
           );
-        } else if (inp.isSniperRifle && inp.inCond(TF_COND.ZOOMED)) {
+        } else if (
+          inp.isSniperRifle &&
+          inp.inCond(
+            TF_COND.ZOOMED,
+          )
+        ) {
           g(
             duck
               ? 'ACT_MP_ATTACK_CROUCH_PRIMARYFIRE_DEPLOYED'
               : 'ACT_MP_ATTACK_STAND_PRIMARYFIRE_DEPLOYED',
           );
-          this.holdDeployedUntil = inp.time + 2;
+          this.holdDeployedUntil =
+            inp.time +
+            2;
         } else {
-          g(duck ? 'ACT_MP_ATTACK_CROUCH_PRIMARYFIRE' : 'ACT_MP_ATTACK_STAND_PRIMARYFIRE');
+          g(
+            duck
+              ? 'ACT_MP_ATTACK_CROUCH_PRIMARYFIRE'
+              : 'ACT_MP_ATTACK_STAND_PRIMARYFIRE',
+          );
         }
         break;
       case PLAYERANIMEVENT_ATTACK_SECONDARY:
         g(
-          inp.waterLevel >= 2
+          inp.waterLevel >=
+            2
             ? 'ACT_MP_ATTACK_SWIM_SECONDARYFIRE'
             : duck
               ? 'ACT_MP_ATTACK_CROUCH_SECONDARYFIRE'
@@ -465,15 +977,23 @@ export class TFPlayerAnimState {
         );
         break;
       case PLAYERANIMEVENT_ATTACK_GRENADE:
-        this.gestures.push({
-          slot: SLOT_GRENADE,
-          activity: this.translate('ACT_MP_ATTACK_STAND_GRENADE', inp),
-          autoKill: true,
-        });
+        this.gestures.push(
+          {
+            slot: SLOT_GRENADE,
+            activity:
+              this.translate(
+                'ACT_MP_ATTACK_STAND_GRENADE',
+                inp,
+              ),
+            autoKill: true,
+          },
+        );
         break;
       case PLAYERANIMEVENT_ATTACK_PRE:
         g(
-          this.inSwim && inp.isMinigun
+          this
+            .inSwim &&
+            inp.isMinigun
             ? 'ACT_MP_ATTACK_SWIM_PREFIRE'
             : duck
               ? 'ACT_MP_ATTACK_CROUCH_PREFIRE'
@@ -483,7 +1003,9 @@ export class TFPlayerAnimState {
         break;
       case PLAYERANIMEVENT_ATTACK_POST:
         g(
-          this.inSwim && inp.isMinigun
+          this
+            .inSwim &&
+            inp.isMinigun
             ? 'ACT_MP_ATTACK_SWIM_POSTFIRE'
             : duck
               ? 'ACT_MP_ATTACK_CROUCH_POSTFIRE'
@@ -494,46 +1016,73 @@ export class TFPlayerAnimState {
       case PLAYERANIMEVENT_RELOAD_LOOP:
       case PLAYERANIMEVENT_RELOAD_END: {
         const tail =
-          event === PLAYERANIMEVENT_RELOAD_LOOP
+          event ===
+          PLAYERANIMEVENT_RELOAD_LOOP
             ? '_LOOP'
-            : event === PLAYERANIMEVENT_RELOAD_END
+            : event ===
+                PLAYERANIMEVENT_RELOAD_END
               ? '_END'
               : '';
-        const pose = this.inAirWalk
-          ? 'AIRWALK'
-          : inp.ducked
-            ? 'CROUCH'
-            : this.inSwim
-              ? 'SWIM'
-              : 'STAND';
-        g(`ACT_MP_RELOAD_${pose}${tail}`);
+        const pose =
+          this
+            .inAirWalk
+            ? 'AIRWALK'
+            : inp.ducked
+              ? 'CROUCH'
+              : this
+                    .inSwim
+                ? 'SWIM'
+                : 'STAND';
+        g(
+          `ACT_MP_RELOAD_${pose}${tail}`,
+        );
         break;
       }
       case PLAYERANIMEVENT_JUMP:
         this.jumping = true;
         this.firstJumpFrame = true;
-        this.jumpStartTime = inp.time;
+        this.jumpStartTime =
+          inp.time;
         this.restartMain = true;
         break;
       case PLAYERANIMEVENT_DOUBLEJUMP:
-        if (!this.jumping) {
+        if (
+          !this
+            .jumping
+        ) {
           this.jumping = true;
           this.firstJumpFrame = true;
-          this.jumpStartTime = inp.time;
+          this.jumpStartTime =
+            inp.time;
           this.restartMain = true;
         }
         this.inAirWalk = false;
-        this.gestures.push({ slot: SLOT_JUMP, activity: 'ACT_MP_DOUBLEJUMP', autoKill: true });
+        this.gestures.push(
+          {
+            slot: SLOT_JUMP,
+            activity:
+              'ACT_MP_DOUBLEJUMP',
+            autoKill: true,
+          },
+        );
         break;
       case PLAYERANIMEVENT_SPAWN:
-        this.reset(inp.eyeYaw);
+        this.reset(
+          inp.eyeYaw,
+        );
         break;
       case PLAYERANIMEVENT_FLINCH_CHEST:
-        this.gestures.push({
-          slot: SLOT_FLINCH,
-          activity: this.translate('ACT_MP_GESTURE_FLINCH', inp),
-          autoKill: true,
-        });
+        this.gestures.push(
+          {
+            slot: SLOT_FLINCH,
+            activity:
+              this.translate(
+                'ACT_MP_GESTURE_FLINCH',
+                inp,
+              ),
+            autoKill: true,
+          },
+        );
         break;
     }
   }
@@ -546,26 +1095,85 @@ export class TFPlayerAnimState {
   update(
     inp: PlayerAnimInput,
     entityYaw: number,
-    groundSpeedAt: (x: number, y: number) => number,
+    groundSpeedAt: (
+      x: number,
+      y: number,
+    ) => number,
   ): number {
-    this.mainActivity = this.calcMainActivity(inp);
-    this.translatedMain = this.translate(this.mainActivity, inp);
-    this.computeMoveYaw(inp, entityYaw, groundSpeedAt);
-    this.computeAimPitch(inp);
-    this.computeAimYaw(inp);
-    this.smoothPoseParams(inp.dt);
-    return this.currentFeetYaw;
+    this.mainActivity =
+      this.calcMainActivity(
+        inp,
+      );
+    this.translatedMain =
+      this.translate(
+        this
+          .mainActivity,
+        inp,
+      );
+    this.computeMoveYaw(
+      inp,
+      entityYaw,
+      groundSpeedAt,
+    );
+    this.computeAimPitch(
+      inp,
+    );
+    this.computeAimYaw(
+      inp,
+    );
+    this.smoothPoseParams(
+      inp.dt,
+    );
+    return this
+      .currentFeetYaw;
   }
 }
 
 /** SDK ConvergeYawAngles. */
-export function convergeYaw(goal: number, rate: number, dt: number, current: number): number {
-  let delta = goal - current;
-  const deltaAbs = Math.abs(delta);
-  delta = angleNormalize(delta);
-  const scale = Math.min(1, Math.max(0.01, deltaAbs / FADE_TURN_DEGREES));
-  const step = rate * dt * scale;
-  if (deltaAbs < step) current = goal;
-  else current += step * (delta < 0 ? -1 : 1);
-  return angleNormalize(current);
+export function convergeYaw(
+  goal: number,
+  rate: number,
+  dt: number,
+  current: number,
+): number {
+  let delta =
+    goal -
+    current;
+  const deltaAbs =
+    Math.abs(
+      delta,
+    );
+  delta =
+    angleNormalize(
+      delta,
+    );
+  const scale =
+    Math.min(
+      1,
+      Math.max(
+        0.01,
+        deltaAbs /
+          FADE_TURN_DEGREES,
+      ),
+    );
+  const step =
+    rate *
+    dt *
+    scale;
+  if (
+    deltaAbs <
+    step
+  )
+    current =
+      goal;
+  else
+    current +=
+      step *
+      (delta <
+      0
+        ? -1
+        : 1);
+  return angleNormalize(
+    current,
+  );
 }

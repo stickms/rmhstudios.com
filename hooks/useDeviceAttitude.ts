@@ -26,7 +26,13 @@
  * turned so far before its screen is out of sight.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   IDENTITY,
   MOTION_CONSENT_EVENT,
@@ -58,7 +64,9 @@ export type MotionStatus =
 
 export interface DeviceAttitudeOptions {
   /** Called on an animation frame with the smoothed rotation for the object. */
-  onRotate: (rotation: Quat) => void;
+  onRotate: (
+    rotation: Quat,
+  ) => void;
   /** Called when the sensor stops driving the object, so the caller can reset. */
   onRest?: () => void;
   /**
@@ -93,175 +101,439 @@ export function useDeviceAttitude({
   gain = 1.5,
   smoothing = 0.18,
 }: DeviceAttitudeOptions): DeviceAttitude {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion =
+    useReducedMotion();
   // Both resolve on the client only: the server has no sensor and no
   // localStorage, and a first render that disagreed would hydrate-mismatch.
-  const [supported, setSupported] = useState(false);
-  const [enabled, setEnabled] = useState(false);
-  const [status, setStatus] = useState<MotionStatus>('unsupported');
+  const [
+    supported,
+    setSupported,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    enabled,
+    setEnabled,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    status,
+    setStatus,
+  ] =
+    useState<MotionStatus>(
+      'unsupported',
+    );
   /**
    * The watchdog heard nothing. Kept apart from `supported` so it is not a
    * permanent verdict: the listener stays attached, and a sample that arrives
    * later (a sensor slow to wake, a tab that mounted hidden) brings the control
    * back. Turning motion on again re-arms the watchdog.
    */
-  const [silent, setSilent] = useState(false);
+  const [
+    silent,
+    setSilent,
+  ] =
+    useState(
+      false,
+    );
 
   // Handlers live in refs so a caller passing inline closures (the normal case)
   // doesn't tear down and re-arm the sensor on every render.
-  const onRotateRef = useRef(onRotate);
-  const onRestRef = useRef(onRest);
-  onRotateRef.current = onRotate;
-  onRestRef.current = onRest;
+  const onRotateRef =
+    useRef(
+      onRotate,
+    );
+  const onRestRef =
+    useRef(
+      onRest,
+    );
+  onRotateRef.current =
+    onRotate;
+  onRestRef.current =
+    onRest;
 
-  const recenterRef = useRef<(() => void) | null>(null);
+  const recenterRef =
+    useRef<
+      | (() => void)
+      | null
+    >(
+      null,
+    );
 
   useEffect(() => {
-    if (reducedMotion) {
-      setSupported(false);
+    if (
+      reducedMotion
+    ) {
+      setSupported(
+        false,
+      );
       return;
     }
-    setSupported(motionCapableDevice());
-  }, [reducedMotion]);
+    setSupported(
+      motionCapableDevice(),
+    );
+  }, [
+    reducedMotion,
+  ]);
 
   useEffect(() => {
-    const consent = readMotionConsent();
+    const consent =
+      readMotionConsent();
     // Where the platform gates the sensor there must be an explicit grant.
     // Everywhere else the event fires freely, so motion is on unless it was
     // deliberately switched off — matching the site's aurora tilt (§5.5x C.3).
-    setEnabled(motionPermissionGateExists() ? consent === true : consent !== false);
+    setEnabled(
+      motionPermissionGateExists()
+        ? consent ===
+            true
+        : consent !==
+            false,
+    );
 
     // The Settings → Appearance row writes the same consent; mirror it live.
-    const onConsent = (event: Event) =>
-      setEnabled((event as CustomEvent<boolean>).detail !== false);
-    window.addEventListener(MOTION_CONSENT_EVENT, onConsent);
-    return () => window.removeEventListener(MOTION_CONSENT_EVENT, onConsent);
+    const onConsent =
+      (
+        event: Event,
+      ) =>
+        setEnabled(
+          (
+            event as CustomEvent<boolean>
+          )
+            .detail !==
+            false,
+        );
+    window.addEventListener(
+      MOTION_CONSENT_EVENT,
+      onConsent,
+    );
+    return () =>
+      window.removeEventListener(
+        MOTION_CONSENT_EVENT,
+        onConsent,
+      );
   }, []);
 
   useEffect(() => {
-    if (!supported) {
-      setStatus('unsupported');
+    if (
+      !supported
+    ) {
+      setStatus(
+        'unsupported',
+      );
       return;
     }
-    if (!enabled) {
-      setStatus((prev) => (prev === 'denied' ? prev : 'off'));
+    if (
+      !enabled
+    ) {
+      setStatus(
+        (
+          prev,
+        ) =>
+          prev ===
+          'denied'
+            ? prev
+            : 'off',
+      );
       onRestRef.current?.();
       return;
     }
 
-    setStatus('waiting');
-    setSilent(false);
+    setStatus(
+      'waiting',
+    );
+    setSilent(
+      false,
+    );
 
     // The pose the viewer opened in is "facing the object", so however they are
     // holding the phone when they arrive is the front view.
-    let neutral: Quat | null = null;
-    let target: Quat = IDENTITY;
-    let current: Quat = IDENTITY;
+    let neutral: Quat | null =
+      null;
+    let target: Quat =
+      IDENTITY;
+    let current: Quat =
+      IDENTITY;
     let frame = 0;
     let live = false;
 
-    const step = () => {
-      frame = 0;
-      current = nlerp(current, target, smoothing);
-      const settled = angleBetween(current, target) < SETTLED;
-      if (settled) current = target;
-      onRotateRef.current(current);
-      if (!settled) frame = requestAnimationFrame(step);
-    };
+    const step =
+      () => {
+        frame = 0;
+        current =
+          nlerp(
+            current,
+            target,
+            smoothing,
+          );
+        const settled =
+          angleBetween(
+            current,
+            target,
+          ) <
+          SETTLED;
+        if (
+          settled
+        )
+          current =
+            target;
+        onRotateRef.current(
+          current,
+        );
+        if (
+          !settled
+        )
+          frame =
+            requestAnimationFrame(
+              step,
+            );
+      };
 
-    const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(step);
-    };
+    const schedule =
+      () => {
+        if (
+          !frame
+        )
+          frame =
+            requestAnimationFrame(
+              step,
+            );
+      };
 
-    const onOrientation = (event: DeviceOrientationEvent) => {
-      const { alpha, beta, gamma } = event;
-      // A browser that fires the event with nulls has no sensor behind it —
-      // leave the watchdog to stand the whole thing down.
-      if (alpha === null || beta === null || gamma === null) return;
+    const onOrientation =
+      (
+        event: DeviceOrientationEvent,
+      ) => {
+        const {
+          alpha,
+          beta,
+          gamma,
+        } =
+          event;
+        // A browser that fires the event with nulls has no sensor behind it —
+        // leave the watchdog to stand the whole thing down.
+        if (
+          alpha ===
+            null ||
+          beta ===
+            null ||
+          gamma ===
+            null
+        )
+          return;
 
-      const device = deviceQuaternion(alpha, beta, gamma, screenAngle());
-      if (!neutral) neutral = device;
+        const device =
+          deviceQuaternion(
+            alpha,
+            beta,
+            gamma,
+            screenAngle(),
+          );
+        if (
+          !neutral
+        )
+          neutral =
+            device;
 
-      target = orbitRotation(device, neutral, gain);
-      if (!live) {
-        live = true;
-        setSilent(false);
-        setStatus('active');
-      }
-      schedule();
-    };
+        target =
+          orbitRotation(
+            device,
+            neutral,
+            gain,
+          );
+        if (
+          !live
+        ) {
+          live = true;
+          setSilent(
+            false,
+          );
+          setStatus(
+            'active',
+          );
+        }
+        schedule();
+      };
 
     // Rotating the screen re-maps the axes mid-flight; take the new pose as the
     // front view rather than letting the object snap a quarter turn.
-    const onRecenter = () => {
-      neutral = null;
-      target = IDENTITY;
-      schedule();
-    };
+    const onRecenter =
+      () => {
+        neutral =
+          null;
+        target =
+          IDENTITY;
+        schedule();
+      };
 
-    recenterRef.current = onRecenter;
+    recenterRef.current =
+      onRecenter;
 
-    window.addEventListener('deviceorientation', onOrientation, { passive: true });
-    window.addEventListener('orientationchange', onRecenter, { passive: true });
-    window.screen?.orientation?.addEventListener?.('change', onRecenter);
+    window.addEventListener(
+      'deviceorientation',
+      onOrientation,
+      {
+        passive: true,
+      },
+    );
+    window.addEventListener(
+      'orientationchange',
+      onRecenter,
+      {
+        passive: true,
+      },
+    );
+    window.screen?.orientation?.addEventListener?.(
+      'change',
+      onRecenter,
+    );
 
     // Hidden tabs get no sensor events: only count silence while visible.
     let watchdog = 0;
-    const armWatchdog = () => {
-      window.clearTimeout(watchdog);
-      watchdog = 0;
-      if (live || document.visibilityState === 'hidden') return;
-      watchdog = window.setTimeout(() => {
-        if (!live) setSilent(true);
-      }, WATCHDOG_MS);
-    };
+    const armWatchdog =
+      () => {
+        window.clearTimeout(
+          watchdog,
+        );
+        watchdog = 0;
+        if (
+          live ||
+          document.visibilityState ===
+            'hidden'
+        )
+          return;
+        watchdog =
+          window.setTimeout(
+            () => {
+              if (
+                !live
+              )
+                setSilent(
+                  true,
+                );
+            },
+            WATCHDOG_MS,
+          );
+      };
     armWatchdog();
-    document.addEventListener('visibilitychange', armWatchdog);
+    document.addEventListener(
+      'visibilitychange',
+      armWatchdog,
+    );
 
     return () => {
-      recenterRef.current = null;
-      window.clearTimeout(watchdog);
-      document.removeEventListener('visibilitychange', armWatchdog);
-      if (frame) cancelAnimationFrame(frame);
-      window.removeEventListener('deviceorientation', onOrientation);
-      window.removeEventListener('orientationchange', onRecenter);
-      window.screen?.orientation?.removeEventListener?.('change', onRecenter);
+      recenterRef.current =
+        null;
+      window.clearTimeout(
+        watchdog,
+      );
+      document.removeEventListener(
+        'visibilitychange',
+        armWatchdog,
+      );
+      if (
+        frame
+      )
+        cancelAnimationFrame(
+          frame,
+        );
+      window.removeEventListener(
+        'deviceorientation',
+        onOrientation,
+      );
+      window.removeEventListener(
+        'orientationchange',
+        onRecenter,
+      );
+      window.screen?.orientation?.removeEventListener?.(
+        'change',
+        onRecenter,
+      );
       onRestRef.current?.();
     };
-  }, [supported, enabled, gain, smoothing]);
+  }, [
+    supported,
+    enabled,
+    gain,
+    smoothing,
+  ]);
 
-  const toggle = useCallback(async (): Promise<MotionStatus> => {
-    if (enabled) {
-      writeMotionConsent(false);
-      setEnabled(false);
-      setStatus('off');
-      return 'off';
-    }
-    // Called straight from the click handler so Safari still counts it as a
-    // user gesture; anything awaited before this point would forfeit that.
-    const granted = await requestMotionAccess();
-    if (!granted) {
-      setStatus('denied');
-      return 'denied';
-    }
-    writeMotionConsent(true);
-    setEnabled(true);
-    setStatus('waiting');
-    return 'waiting';
-  }, [enabled]);
+  const toggle =
+    useCallback(async (): Promise<MotionStatus> => {
+      if (
+        enabled
+      ) {
+        writeMotionConsent(
+          false,
+        );
+        setEnabled(
+          false,
+        );
+        setStatus(
+          'off',
+        );
+        return 'off';
+      }
+      // Called straight from the click handler so Safari still counts it as a
+      // user gesture; anything awaited before this point would forfeit that.
+      const granted =
+        await requestMotionAccess();
+      if (
+        !granted
+      ) {
+        setStatus(
+          'denied',
+        );
+        return 'denied';
+      }
+      writeMotionConsent(
+        true,
+      );
+      setEnabled(
+        true,
+      );
+      setStatus(
+        'waiting',
+      );
+      return 'waiting';
+    }, [
+      enabled,
+    ]);
 
-  const recenter = useCallback(() => recenterRef.current?.(), []);
+  const recenter =
+    useCallback(
+      () =>
+        recenterRef.current?.(),
+      [],
+    );
 
-  const offered = supported && !silent;
+  const offered =
+    supported &&
+    !silent;
   return useMemo(
     () => ({
-      supported: offered,
+      supported:
+        offered,
       enabled,
       // Silence reads as "no sensor here" until a sample proves otherwise.
-      status: silent && status === 'waiting' ? ('unsupported' as const) : status,
+      status:
+        silent &&
+        status ===
+          'waiting'
+          ? ('unsupported' as const)
+          : status,
       toggle,
       recenter,
     }),
-    [offered, silent, enabled, status, toggle, recenter],
+    [
+      offered,
+      silent,
+      enabled,
+      status,
+      toggle,
+      recenter,
+    ],
   );
 }

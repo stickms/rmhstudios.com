@@ -28,12 +28,23 @@
  * Client-only (touches `indexedDB`); import from components, never the server.
  */
 
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  openDB,
+  type DBSchema,
+  type IDBPDatabase,
+} from 'idb';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
-const DB_NAME = 'rmh-drafts';
+const DB_NAME =
+  'rmh-drafts';
 const DB_VERSION = 1;
-const STORE = 'drafts';
+const STORE =
+  'drafts';
 
 /**
  * Longer than the composer's 600ms: these surfaces are long-form, an IndexedDB
@@ -43,13 +54,23 @@ const STORE = 'drafts';
 const DEBOUNCE_MS = 800;
 
 /** Drafts older than this are junk — see `clearExpiredDrafts`. */
-export const DEFAULT_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
+export const DEFAULT_MAX_AGE_MS =
+  14 *
+  24 *
+  60 *
+  60 *
+  1000;
 
 /** One persisted draft. `value` is whatever shape the surface hands us. */
-export interface DraftRecord<T = unknown> {
+export interface DraftRecord<
+  T =
+    unknown,
+> {
   key: string;
   surface: string;
-  entityId: string | null;
+  entityId:
+    | string
+    | null;
   userId: string;
   value: T;
   savedAt: number;
@@ -60,22 +81,52 @@ interface DraftDB extends DBSchema {
     key: string;
     value: DraftRecord;
     // Sweeping by age is the only whole-store query, so it gets the only index.
-    indexes: { 'by-savedAt': number };
+    indexes: {
+      'by-savedAt': number;
+    };
   };
 }
 
-let dbPromise: Promise<IDBPDatabase<DraftDB>> | null = null;
+let dbPromise: Promise<
+  IDBPDatabase<DraftDB>
+> | null =
+  null;
 
-function getDB(): Promise<IDBPDatabase<DraftDB>> {
-  if (!dbPromise) {
-    dbPromise = openDB<DraftDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(STORE)) {
-          const store = db.createObjectStore(STORE, { keyPath: 'key' });
-          store.createIndex('by-savedAt', 'savedAt');
-        }
-      },
-    });
+function getDB(): Promise<
+  IDBPDatabase<DraftDB>
+> {
+  if (
+    !dbPromise
+  ) {
+    dbPromise =
+      openDB<DraftDB>(
+        DB_NAME,
+        DB_VERSION,
+        {
+          upgrade(
+            db,
+          ) {
+            if (
+              !db.objectStoreNames.contains(
+                STORE,
+              )
+            ) {
+              const store =
+                db.createObjectStore(
+                  STORE,
+                  {
+                    keyPath:
+                      'key',
+                  },
+                );
+              store.createIndex(
+                'by-savedAt',
+                'savedAt',
+              );
+            }
+          },
+        },
+      );
   }
   return dbPromise;
 }
@@ -85,36 +136,78 @@ function getDB(): Promise<IDBPDatabase<DraftDB>> {
  * surface must derive it the same way — a second copy of this template is how
  * drafts start leaking between accounts.
  */
-export function draftKey(surface: string, entityId: string | null | undefined, userId: string) {
+export function draftKey(
+  surface: string,
+  entityId:
+    | string
+    | null
+    | undefined,
+  userId: string,
+) {
   return `${surface}:${entityId ?? 'new'}:${userId}`;
 }
 
 /** Read one draft. Resolves to `null` when absent or storage is unavailable. */
-export async function loadDraft<T>(key: string): Promise<DraftRecord<T> | null> {
+export async function loadDraft<
+  T,
+>(
+  key: string,
+): Promise<DraftRecord<T> | null> {
   try {
-    const db = await getDB();
-    const row = await db.get(STORE, key);
-    return (row as DraftRecord<T> | undefined) ?? null;
+    const db =
+      await getDB();
+    const row =
+      await db.get(
+        STORE,
+        key,
+      );
+    return (
+      (row as
+        | DraftRecord<T>
+        | undefined) ??
+      null
+    );
   } catch {
     return null; // private mode / storage disabled — editing still works
   }
 }
 
 /** Write one draft (best-effort; swallows quota and private-mode failures). */
-export async function saveDraft<T>(record: Omit<DraftRecord<T>, 'savedAt'>): Promise<void> {
+export async function saveDraft<
+  T,
+>(
+  record: Omit<
+    DraftRecord<T>,
+    'savedAt'
+  >,
+): Promise<void> {
   try {
-    const db = await getDB();
-    await db.put(STORE, { ...record, savedAt: Date.now() } as DraftRecord);
+    const db =
+      await getDB();
+    await db.put(
+      STORE,
+      {
+        ...record,
+        savedAt:
+          Date.now(),
+      } as DraftRecord,
+    );
   } catch {
     /* storage unavailable — the editor keeps working, just without recovery */
   }
 }
 
 /** Delete one draft. */
-export async function deleteDraft(key: string): Promise<void> {
+export async function deleteDraft(
+  key: string,
+): Promise<void> {
   try {
-    const db = await getDB();
-    await db.delete(STORE, key);
+    const db =
+      await getDB();
+    await db.delete(
+      STORE,
+      key,
+    );
   } catch {
     /* nothing to do — the record either never existed or is unreachable */
   }
@@ -129,18 +222,39 @@ export async function deleteDraft(key: string): Promise<void> {
  * from an idle callback on app start; it walks the `by-savedAt` index over a
  * bounded key range rather than scanning the store.
  */
-export async function clearExpiredDrafts(maxAgeMs = DEFAULT_MAX_AGE_MS): Promise<number> {
+export async function clearExpiredDrafts(
+  maxAgeMs = DEFAULT_MAX_AGE_MS,
+): Promise<number> {
   try {
-    const db = await getDB();
-    const cutoff = Date.now() - maxAgeMs;
-    const tx = db.transaction(STORE, 'readwrite');
-    const index = tx.store.index('by-savedAt');
-    let cursor = await index.openCursor(IDBKeyRange.upperBound(cutoff, true));
+    const db =
+      await getDB();
+    const cutoff =
+      Date.now() -
+      maxAgeMs;
+    const tx =
+      db.transaction(
+        STORE,
+        'readwrite',
+      );
+    const index =
+      tx.store.index(
+        'by-savedAt',
+      );
+    let cursor =
+      await index.openCursor(
+        IDBKeyRange.upperBound(
+          cutoff,
+          true,
+        ),
+      );
     let removed = 0;
-    while (cursor) {
+    while (
+      cursor
+    ) {
       await cursor.delete();
       removed += 1;
-      cursor = await cursor.continue();
+      cursor =
+        await cursor.continue();
     }
     await tx.done;
     return removed;
@@ -149,13 +263,20 @@ export async function clearExpiredDrafts(maxAgeMs = DEFAULT_MAX_AGE_MS): Promise
   }
 }
 
-export interface UseDraftOptions<T> {
+export interface UseDraftOptions<
+  T,
+> {
   /** Stable name for the editor kind — `'compose'`, `'comment'`, `'blog'`, … */
   surface: string;
   /** The entity being edited; omit/null for a new one (keys as `new`). */
-  entityId?: string | null;
+  entityId?:
+    | string
+    | null;
   /** The signed-in user. Persistence is OFF while this is null — see below. */
-  userId: string | null | undefined;
+  userId:
+    | string
+    | null
+    | undefined;
   /** The live editor value. Written back debounced whenever it is "dirty". */
   value: T;
   /**
@@ -163,7 +284,9 @@ export interface UseDraftOptions<T> {
    * object". A draft that fails this is deleted rather than stored, so clearing
    * an editor clears its draft.
    */
-  isDirty?: (value: T) => boolean;
+  isDirty?: (
+    value: T,
+  ) => boolean;
   /**
    * Turn autosave off without unmounting — for seeded editors (a quote, a
    * share-target payload) that would otherwise overwrite a real draft with
@@ -172,7 +295,9 @@ export interface UseDraftOptions<T> {
   enabled?: boolean;
 }
 
-export interface UseDraftResult<T> {
+export interface UseDraftResult<
+  T,
+> {
   /** A stored draft worth offering back, or null. Render your restore prompt off this. */
   recovered: T | null;
   /** "Restore": returns the value to apply and closes the prompt (keeps the record). */
@@ -185,15 +310,49 @@ export interface UseDraftResult<T> {
   ready: boolean;
 }
 
-function defaultIsDirty(value: unknown): boolean {
-  if (value == null) return false;
-  if (typeof value === 'string') return value.trim().length > 0;
-  if (Array.isArray(value)) return value.length > 0;
-  if (typeof value === 'object') return Object.keys(value as object).length > 0;
+function defaultIsDirty(
+  value: unknown,
+): boolean {
+  if (
+    value ==
+    null
+  )
+    return false;
+  if (
+    typeof value ===
+    'string'
+  )
+    return (
+      value.trim()
+        .length >
+      0
+    );
+  if (
+    Array.isArray(
+      value,
+    )
+  )
+    return (
+      value.length >
+      0
+    );
+  if (
+    typeof value ===
+    'object'
+  )
+    return (
+      Object.keys(
+        value as object,
+      )
+        .length >
+      0
+    );
   return true;
 }
 
-export function useDraft<T>({
+export function useDraft<
+  T,
+>({
   surface,
   entityId = null,
   userId,
@@ -204,132 +363,310 @@ export function useDraft<T>({
   // No user, no key, no persistence. Falling back to an `anon` segment would
   // put every signed-out visitor on a shared device in the same bucket, which
   // is the exact leak the key format exists to prevent.
-  const key = userId ? draftKey(surface, entityId, userId) : null;
+  const key =
+    userId
+      ? draftKey(
+          surface,
+          entityId,
+          userId,
+        )
+      : null;
 
-  const [recovered, setRecovered] = useState<T | null>(null);
-  const [ready, setReady] = useState(false);
+  const [
+    recovered,
+    setRecovered,
+  ] =
+    useState<T | null>(
+      null,
+    );
+  const [
+    ready,
+    setReady,
+  ] =
+    useState(
+      false,
+    );
 
   // Mirrored in refs so the debounce timer and the unmount flush always read
   // the freshest value/key without re-arming on every keystroke.
-  const valueRef = useRef(value);
-  valueRef.current = value;
-  const keyRef = useRef(key);
-  keyRef.current = key;
-  const isDirtyRef = useRef(isDirty);
-  isDirtyRef.current = isDirty;
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const valueRef =
+    useRef(
+      value,
+    );
+  valueRef.current =
+    value;
+  const keyRef =
+    useRef(
+      key,
+    );
+  keyRef.current =
+    key;
+  const isDirtyRef =
+    useRef(
+      isDirty,
+    );
+  isDirtyRef.current =
+    isDirty;
+  const timer =
+    useRef<ReturnType<
+      typeof setTimeout
+    > | null>(
+      null,
+    );
   /**
    * A debounced write is owed. Separate from `timer` because React runs the
    * autosave effect's cleanup (which clears the timer) BEFORE the unmount
    * flush below on unmount — reading `timer` there always saw null, and a
    * draft typed within the debounce of navigating away was lost.
    */
-  const pending = useRef(false);
+  const pending =
+    useRef(
+      false,
+    );
 
-  const write = useCallback(() => {
-    const k = keyRef.current;
-    if (!k || !userId) return;
-    const current = valueRef.current;
-    if (isDirtyRef.current(current)) {
-      void saveDraft<T>({ key: k, surface, entityId, userId, value: current });
-    } else {
-      void deleteDraft(k);
-    }
-  }, [surface, entityId, userId]);
-  const writeRef = useRef(write);
-  writeRef.current = write;
+  const write =
+    useCallback(() => {
+      const k =
+        keyRef.current;
+      if (
+        !k ||
+        !userId
+      )
+        return;
+      const current =
+        valueRef.current;
+      if (
+        isDirtyRef.current(
+          current,
+        )
+      ) {
+        void saveDraft<T>(
+          {
+            key: k,
+            surface,
+            entityId,
+            userId,
+            value:
+              current,
+          },
+        );
+      } else {
+        void deleteDraft(
+          k,
+        );
+      }
+    }, [
+      surface,
+      entityId,
+      userId,
+    ]);
+  const writeRef =
+    useRef(
+      write,
+    );
+  writeRef.current =
+    write;
 
   // Load pass. Runs per key, so switching entities re-asks the store.
   useEffect(() => {
     let alive = true;
-    setReady(false);
-    setRecovered(null);
-    if (!key) {
-      setReady(true);
+    setReady(
+      false,
+    );
+    setRecovered(
+      null,
+    );
+    if (
+      !key
+    ) {
+      setReady(
+        true,
+      );
       return;
     }
-    void loadDraft<T>(key).then((record) => {
-      if (!alive) return;
-      const fresh = record && Date.now() - record.savedAt <= DEFAULT_MAX_AGE_MS ? record : null;
-      // An expired record is swept here too, so a surface the user revisits
-      // cleans up after itself even if the idle sweep never ran.
-      if (record && !fresh) void deleteDraft(key);
-      setRecovered(fresh ? fresh.value : null);
-      setReady(true);
-    });
+    void loadDraft<T>(
+      key,
+    ).then(
+      (
+        record,
+      ) => {
+        if (
+          !alive
+        )
+          return;
+        const fresh =
+          record &&
+          Date.now() -
+            record.savedAt <=
+            DEFAULT_MAX_AGE_MS
+            ? record
+            : null;
+        // An expired record is swept here too, so a surface the user revisits
+        // cleans up after itself even if the idle sweep never ran.
+        if (
+          record &&
+          !fresh
+        )
+          void deleteDraft(
+            key,
+          );
+        setRecovered(
+          fresh
+            ? fresh.value
+            : null,
+        );
+        setReady(
+          true,
+        );
+      },
+    );
     return () => {
       alive = false;
     };
-  }, [key]);
+  }, [
+    key,
+  ]);
 
   // Autosave pass.
   useEffect(() => {
     // Disabled, keyless, loading, or (below) a restore prompt open: whatever
     // write was owed is no longer wanted.
-    if (!enabled || !key || !ready) {
+    if (
+      !enabled ||
+      !key ||
+      !ready
+    ) {
       pending.current = false;
       return;
     }
     // Suspended while a restore prompt is open. The editor is empty at that
     // moment by definition — the user has not answered yet — and writing that
     // empty value back would delete the very draft being offered.
-    if (recovered !== null) {
+    if (
+      recovered !==
+      null
+    ) {
       pending.current = false;
       return;
     }
 
-    if (timer.current) clearTimeout(timer.current);
+    if (
+      timer.current
+    )
+      clearTimeout(
+        timer.current,
+      );
     pending.current = true;
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      pending.current = false;
-      write();
-    }, DEBOUNCE_MS);
+    timer.current =
+      setTimeout(
+        () => {
+          timer.current =
+            null;
+          pending.current = false;
+          write();
+        },
+        DEBOUNCE_MS,
+      );
 
     // Clears the timer only: `pending` survives so the unmount flush still
     // sees the owed write (a re-run re-arms it; an early return drops it).
     return () => {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = null;
+      if (
+        timer.current
+      )
+        clearTimeout(
+          timer.current,
+        );
+      timer.current =
+        null;
     };
-  }, [value, enabled, key, ready, recovered, write]);
+  }, [
+    value,
+    enabled,
+    key,
+    ready,
+    recovered,
+    write,
+  ]);
 
   // Flush on unmount — but only a write we had already committed to. Navigating
   // away mid-sentence must still save; a component that was idle must not get a
   // spurious write (it would resurrect a draft `clear()` just removed). Mount-
   // only, so a `write` identity change (a new user) never flushes mid-life.
   useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-      timer.current = null;
-      if (pending.current) {
-        pending.current = false;
-        writeRef.current();
-      }
-    },
+    () =>
+      () => {
+        if (
+          timer.current
+        )
+          clearTimeout(
+            timer.current,
+          );
+        timer.current =
+          null;
+        if (
+          pending.current
+        ) {
+          pending.current = false;
+          writeRef.current();
+        }
+      },
     [],
   );
 
-  const accept = useCallback(() => {
-    const restored = recovered;
-    setRecovered(null);
-    return restored;
-  }, [recovered]);
+  const accept =
+    useCallback(() => {
+      const restored =
+        recovered;
+      setRecovered(
+        null,
+      );
+      return restored;
+    }, [
+      recovered,
+    ]);
 
-  const discard = useCallback(() => {
-    setRecovered(null);
-    if (keyRef.current) void deleteDraft(keyRef.current);
-  }, []);
+  const discard =
+    useCallback(() => {
+      setRecovered(
+        null,
+      );
+      if (
+        keyRef.current
+      )
+        void deleteDraft(
+          keyRef.current,
+        );
+    }, []);
 
-  const clear = useCallback(() => {
-    pending.current = false;
-    if (timer.current) {
-      clearTimeout(timer.current);
-      timer.current = null;
-    }
-    setRecovered(null);
-    if (keyRef.current) void deleteDraft(keyRef.current);
-  }, []);
+  const clear =
+    useCallback(() => {
+      pending.current = false;
+      if (
+        timer.current
+      ) {
+        clearTimeout(
+          timer.current,
+        );
+        timer.current =
+          null;
+      }
+      setRecovered(
+        null,
+      );
+      if (
+        keyRef.current
+      )
+        void deleteDraft(
+          keyRef.current,
+        );
+    }, []);
 
-  return { recovered, accept, discard, clear, ready };
+  return {
+    recovered,
+    accept,
+    discard,
+    clear,
+    ready,
+  };
 }

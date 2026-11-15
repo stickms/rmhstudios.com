@@ -10,12 +10,24 @@ import { ArrivalSuspense } from '@/components/ui/arrive';
 import { useSession } from '@/components/Providers';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
-const LibraryReadingStrip = lazy(() => import('./LibraryReadingStrip'));
+const LibraryReadingStrip =
+  lazy(
+    () =>
+      import('./LibraryReadingStrip'),
+  );
 
 export function LibraryReadingMount() {
-  const { data } = useSession();
-  const idle = useIdleReady();
-  if (!data || !idle) return null;
+  const {
+    data,
+  } =
+    useSession();
+  const idle =
+    useIdleReady();
+  if (
+    !data ||
+    !idle
+  )
+    return null;
   return (
     <ArrivalSuspense>
       <LibraryReadingStrip />

@@ -10,23 +10,73 @@ import {
 import { Button } from '@/components/ui/button';
 import type { PatchNote } from './PatchNotesMount';
 
-export function PatchNotesDialog({ note, onClose }: { note: PatchNote; onClose: () => void }) {
-  const { t } = useTranslation('f-arcade');
+export function PatchNotesDialog({
+  note,
+  onClose,
+}: {
+  note: PatchNote;
+  onClose: () => void;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-arcade',
+    );
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
+    <Dialog
+      open
+      onOpenChange={(
+        o,
+      ) =>
+        !o &&
+        onClose()
+      }
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {t('patch-title', { defaultValue: 'What changed: {{title}}', title: note.title })}
+            {t(
+              'patch-title',
+              {
+                defaultValue:
+                  'What changed: {{title}}',
+                title:
+                  note.title,
+              },
+            )}
           </DialogTitle>
           <DialogDescription>
-            {t('patch-version', { defaultValue: 'Update {{version}}', version: note.version })}
+            {t(
+              'patch-version',
+              {
+                defaultValue:
+                  'Update {{version}}',
+                version:
+                  note.version,
+              },
+            )}
           </DialogDescription>
         </DialogHeader>
-        <p className="whitespace-pre-wrap break-words text-sm text-site-text">{note.body}</p>
+        <p className="whitespace-pre-wrap break-words text-sm text-site-text">
+          {
+            note.body
+          }
+        </p>
         <DialogFooter>
-          <Button variant="default" onClick={onClose}>
-            {t('patch-ok', { defaultValue: 'Got it' })}
+          <Button
+            variant="default"
+            onClick={
+              onClose
+            }
+          >
+            {t(
+              'patch-ok',
+              {
+                defaultValue:
+                  'Got it',
+              },
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

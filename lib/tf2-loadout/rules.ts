@@ -4,7 +4,10 @@
  * here refuses a loadout — {@link loadoutWarnings} only says what would not work in the game.
  */
 
-import { killstreakerById, sheenById } from './killstreak';
+import {
+  killstreakerById,
+  sheenById,
+} from './killstreak';
 import {
   COSMETIC_SLOTS,
   acceptedSlots,
@@ -19,38 +22,147 @@ import {
 } from './catalog-types';
 
 /** Stock weapons and tools by defindex. Resolved against the catalog, so one it lacks is skipped. */
-export const STOCK_ITEMS: Record<TfClass, readonly number[]> = {
-  // The Scout's pistol is 23; where the catalog folds it into the Engineer's pistol (22) that one is used.
-  scout: [13, 23, 22, 0],
-  soldier: [18, 10, 6],
-  pyro: [21, 12, 2],
-  demoman: [19, 20, 1],
-  heavy: [15, 11, 5],
-  engineer: [9, 22, 7, 28, 25, 26],
-  medic: [17, 29, 8],
-  sniper: [14, 16, 3],
-  spy: [24, 735, 4, 27, 30],
-};
+export const STOCK_ITEMS: Record<
+  TfClass,
+  readonly number[]
+> =
+  {
+    // The Scout's pistol is 23; where the catalog folds it into the Engineer's pistol (22) that one is used.
+    scout:
+      [
+        13,
+        23,
+        22,
+        0,
+      ],
+    soldier:
+      [
+        18,
+        10,
+        6,
+      ],
+    pyro: [
+      21,
+      12,
+      2,
+    ],
+    demoman:
+      [
+        19,
+        20,
+        1,
+      ],
+    heavy:
+      [
+        15,
+        11,
+        5,
+      ],
+    engineer:
+      [
+        9,
+        22,
+        7,
+        28,
+        25,
+        26,
+      ],
+    medic:
+      [
+        17,
+        29,
+        8,
+      ],
+    sniper:
+      [
+        14,
+        16,
+        3,
+      ],
+    spy: [
+      24,
+      735,
+      4,
+      27,
+      30,
+    ],
+  };
 
 /** The loadout a class has in the game before anything is changed: its stock weapons, no cosmetics. */
-export function stockLoadout(catalog: Catalog, cls: TfClass): LoadoutSlots {
-  const byId = new Map(catalog.items.map((i) => [i.id, i]));
-  const out: LoadoutSlots = {};
-  for (const id of STOCK_ITEMS[cls]) {
-    const item = byId.get(id);
-    if (!item) continue;
-    const slot: ItemSlot | null = slotFor(item, cls);
-    if (!slot || !acceptedSlots(slot).includes(slot) || out[slot]) continue;
-    out[slot] = { item: id };
+export function stockLoadout(
+  catalog: Catalog,
+  cls: TfClass,
+): LoadoutSlots {
+  const byId =
+    new Map(
+      catalog.items.map(
+        (
+          i,
+        ) => [
+          i.id,
+          i,
+        ],
+      ),
+    );
+  const out: LoadoutSlots =
+    {};
+  for (const id of STOCK_ITEMS[
+    cls
+  ]) {
+    const item =
+      byId.get(
+        id,
+      );
+    if (
+      !item
+    )
+      continue;
+    const slot: ItemSlot | null =
+      slotFor(
+        item,
+        cls,
+      );
+    if (
+      !slot ||
+      !acceptedSlots(
+        slot,
+      ).includes(
+        slot,
+      ) ||
+      out[
+        slot
+      ]
+    )
+      continue;
+    out[
+      slot
+    ] =
+      {
+        item: id,
+      };
   }
   return out;
 }
 
 export type LoadoutWarning =
-  | { kind: 'cosmetic-limit'; count: number; limit: number }
-  | { kind: 'overlap'; a: number; b: number }
-  | { kind: 'duplicate'; item: number }
-  | { kind: 'class'; item: number };
+  | {
+      kind: 'cosmetic-limit';
+      count: number;
+      limit: number;
+    }
+  | {
+      kind: 'overlap';
+      a: number;
+      b: number;
+    }
+  | {
+      kind: 'duplicate';
+      item: number;
+    }
+  | {
+      kind: 'class';
+      item: number;
+    };
 
 /** Everything in `slots` that could not be done in the game, in a stable order. */
 export function loadoutWarnings(
@@ -58,31 +170,176 @@ export function loadoutWarnings(
   cls: TfClass,
   slots: LoadoutSlots,
 ): LoadoutWarning[] {
-  const byId = new Map(catalog.items.map((i) => [i.id, i]));
-  const out: LoadoutWarning[] = [];
+  const byId =
+    new Map(
+      catalog.items.map(
+        (
+          i,
+        ) => [
+          i.id,
+          i,
+        ],
+      ),
+    );
+  const out: LoadoutWarning[] =
+    [];
 
-  const worn: { key: string; item: CatalogItem }[] = [];
-  for (const [key, e] of Object.entries(slots)) {
-    const item = byId.get(e.item);
-    if (!item) continue;
-    if (slotFor(item, cls) === null) out.push({ kind: 'class', item: item.id });
-    if (key.startsWith('cosmetic')) worn.push({ key, item });
+  const worn: {
+    key: string;
+    item: CatalogItem;
+  }[] =
+    [];
+  for (const [
+    key,
+    e,
+  ] of Object.entries(
+    slots,
+  )) {
+    const item =
+      byId.get(
+        e.item,
+      );
+    if (
+      !item
+    )
+      continue;
+    if (
+      slotFor(
+        item,
+        cls,
+      ) ===
+      null
+    )
+      out.push(
+        {
+          kind: 'class',
+          item: item.id,
+        },
+      );
+    if (
+      key.startsWith(
+        'cosmetic',
+      )
+    )
+      worn.push(
+        {
+          key,
+          item,
+        },
+      );
   }
-  worn.sort((x, y) => Number(x.key.slice(8)) - Number(y.key.slice(8)));
+  worn.sort(
+    (
+      x,
+      y,
+    ) =>
+      Number(
+        x.key.slice(
+          8,
+        ),
+      ) -
+      Number(
+        y.key.slice(
+          8,
+        ),
+      ),
+  );
 
-  if (worn.length > COSMETIC_SLOTS) {
-    out.push({ kind: 'cosmetic-limit', count: worn.length, limit: COSMETIC_SLOTS });
+  if (
+    worn.length >
+    COSMETIC_SLOTS
+  ) {
+    out.push(
+      {
+        kind: 'cosmetic-limit',
+        count:
+          worn.length,
+        limit:
+          COSMETIC_SLOTS,
+      },
+    );
   }
-  const seen = new Set<number>();
+  const seen =
+    new Set<number>();
   for (const w of worn) {
-    if (seen.has(w.item.id)) out.push({ kind: 'duplicate', item: w.item.id });
-    seen.add(w.item.id);
+    if (
+      seen.has(
+        w
+          .item
+          .id,
+      )
+    )
+      out.push(
+        {
+          kind: 'duplicate',
+          item: w
+            .item
+            .id,
+        },
+      );
+    seen.add(
+      w
+        .item
+        .id,
+    );
   }
-  for (let i = 0; i < worn.length; i++) {
-    for (let j = i + 1; j < worn.length; j++) {
-      if (worn[i].item.id === worn[j].item.id) continue;
-      if (regionsConflict(worn[i].item.r, worn[j].item.r, catalog.conflicts)) {
-        out.push({ kind: 'overlap', a: worn[i].item.id, b: worn[j].item.id });
+  for (
+    let i = 0;
+    i <
+    worn.length;
+    i++
+  ) {
+    for (
+      let j =
+        i +
+        1;
+      j <
+      worn.length;
+      j++
+    ) {
+      if (
+        worn[
+          i
+        ]
+          .item
+          .id ===
+        worn[
+          j
+        ]
+          .item
+          .id
+      )
+        continue;
+      if (
+        regionsConflict(
+          worn[
+            i
+          ]
+            .item
+            .r,
+          worn[
+            j
+          ]
+            .item
+            .r,
+          catalog.conflicts,
+        )
+      ) {
+        out.push(
+          {
+            kind: 'overlap',
+            a: worn[
+              i
+            ]
+              .item
+              .id,
+            b: worn[
+              j
+            ]
+              .item
+              .id,
+          },
+        );
       }
     }
   }
@@ -99,15 +356,71 @@ export function clashesWithWorn(
   catalog: Catalog,
   slots: LoadoutSlots,
   key: string,
-): (item: CatalogItem) => boolean {
-  if (!key.startsWith('cosmetic')) return () => false;
-  const byId = new Map(catalog.items.map((i) => [i.id, i]));
-  const others = Object.entries(slots)
-    .filter(([k]) => k !== key && k.startsWith('cosmetic'))
-    .map(([, e]) => byId.get(e.item))
-    .filter((i): i is CatalogItem => !!i);
-  return (item) =>
-    others.some((o) => o.id === item.id || regionsConflict(item.r, o.r, catalog.conflicts));
+): (
+  item: CatalogItem,
+) => boolean {
+  if (
+    !key.startsWith(
+      'cosmetic',
+    )
+  )
+    return () =>
+      false;
+  const byId =
+    new Map(
+      catalog.items.map(
+        (
+          i,
+        ) => [
+          i.id,
+          i,
+        ],
+      ),
+    );
+  const others =
+    Object.entries(
+      slots,
+    )
+      .filter(
+        ([
+          k,
+        ]) =>
+          k !==
+            key &&
+          k.startsWith(
+            'cosmetic',
+          ),
+      )
+      .map(
+        ([
+          ,
+          e,
+        ]) =>
+          byId.get(
+            e.item,
+          ),
+      )
+      .filter(
+        (
+          i,
+        ): i is CatalogItem =>
+          !!i,
+      );
+  return (
+    item,
+  ) =>
+    others.some(
+      (
+        o,
+      ) =>
+        o.id ===
+          item.id ||
+        regionsConflict(
+          item.r,
+          o.r,
+          catalog.conflicts,
+        ),
+    );
 }
 
 /**
@@ -121,28 +434,102 @@ export function equipInto(
   key: string,
   item: CatalogItem,
   unrestricted: boolean,
-): { slots: LoadoutSlots; removed: CatalogItem[] } {
-  const next: LoadoutSlots = { ...slots };
-  const removed: CatalogItem[] = [];
-  const byId = new Map(catalog.items.map((i) => [i.id, i]));
-  const isWorn = key.startsWith('cosmetic') || key.startsWith('taunt');
-  if (!unrestricted) {
-    for (const [k, e] of Object.entries(next)) {
-      if (k === key) continue;
-      const other = byId.get(e.item);
-      const sameItem = isWorn && e.item === item.id && k.startsWith(key.replace(/\d+$/, ''));
+): {
+  slots: LoadoutSlots;
+  removed: CatalogItem[];
+} {
+  const next: LoadoutSlots =
+    {
+      ...slots,
+    };
+  const removed: CatalogItem[] =
+    [];
+  const byId =
+    new Map(
+      catalog.items.map(
+        (
+          i,
+        ) => [
+          i.id,
+          i,
+        ],
+      ),
+    );
+  const isWorn =
+    key.startsWith(
+      'cosmetic',
+    ) ||
+    key.startsWith(
+      'taunt',
+    );
+  if (
+    !unrestricted
+  ) {
+    for (const [
+      k,
+      e,
+    ] of Object.entries(
+      next,
+    )) {
+      if (
+        k ===
+        key
+      )
+        continue;
+      const other =
+        byId.get(
+          e.item,
+        );
+      const sameItem =
+        isWorn &&
+        e.item ===
+          item.id &&
+        k.startsWith(
+          key.replace(
+            /\d+$/,
+            '',
+          ),
+        );
       const overlaps =
-        key.startsWith('cosmetic') &&
-        k.startsWith('cosmetic') &&
-        regionsConflict(item.r, other?.r, catalog.conflicts);
-      if (sameItem || overlaps) {
-        delete next[k];
-        if (overlaps && other) removed.push(other);
+        key.startsWith(
+          'cosmetic',
+        ) &&
+        k.startsWith(
+          'cosmetic',
+        ) &&
+        regionsConflict(
+          item.r,
+          other?.r,
+          catalog.conflicts,
+        );
+      if (
+        sameItem ||
+        overlaps
+      ) {
+        delete next[
+          k
+        ];
+        if (
+          overlaps &&
+          other
+        )
+          removed.push(
+            other,
+          );
       }
     }
   }
-  next[key] = { item: item.id };
-  return { slots: next, removed };
+  next[
+    key
+  ] =
+    {
+      item: item.id,
+    };
+  return {
+    slots:
+      next,
+    removed,
+  };
 }
 
 /**
@@ -152,50 +539,212 @@ export function equipInto(
  * arrives from an older save, a shared link or a draft from being shown (or re-saved) as if it worked.
  * Items the catalog no longer has are left alone. Returns the same object when nothing changed.
  */
-export function withSupportedOptions(catalog: Catalog, slots: LoadoutSlots): LoadoutSlots {
-  const byId = new Map(catalog.items.map((i) => [i.id, i]));
-  const paints = new Set(catalog.paints.map((p) => p.id));
-  const effects = new Map(catalog.effects.map((e) => [e.id, e]));
-  const kits = new Map((catalog.kits ?? []).map((k) => [k.id, k]));
-  let out: LoadoutSlots | null = null;
-  for (const [key, entry] of Object.entries(slots)) {
-    const item = byId.get(entry.item);
-    if (!item) continue;
-    const next = { ...entry };
-    const effect = next.effect !== undefined ? effects.get(next.effect) : undefined;
+export function withSupportedOptions(
+  catalog: Catalog,
+  slots: LoadoutSlots,
+): LoadoutSlots {
+  const byId =
+    new Map(
+      catalog.items.map(
+        (
+          i,
+        ) => [
+          i.id,
+          i,
+        ],
+      ),
+    );
+  const paints =
+    new Set(
+      catalog.paints.map(
+        (
+          p,
+        ) =>
+          p.id,
+      ),
+    );
+  const effects =
+    new Map(
+      catalog.effects.map(
+        (
+          e,
+        ) => [
+          e.id,
+          e,
+        ],
+      ),
+    );
+  const kits =
+    new Map(
+      (
+        catalog.kits ??
+        []
+      ).map(
+        (
+          k,
+        ) => [
+          k.id,
+          k,
+        ],
+      ),
+    );
+  let out: LoadoutSlots | null =
+    null;
+  for (const [
+    key,
+    entry,
+  ] of Object.entries(
+    slots,
+  )) {
+    const item =
+      byId.get(
+        entry.item,
+      );
+    if (
+      !item
+    )
+      continue;
+    const next =
+      {
+        ...entry,
+      };
+    const effect =
+      next.effect !==
+      undefined
+        ? effects.get(
+            next.effect,
+          )
+        : undefined;
     // Keep legacy draft data during a failed catalog upgrade until classification is available.
     if (
-      next.effect !== undefined &&
-      (!effect || (effect.category && !effectAppliesTo(effect, item)))
+      next.effect !==
+        undefined &&
+      (!effect ||
+        (effect.category &&
+          !effectAppliesTo(
+            effect,
+            item,
+          )))
     ) {
       delete next.effect;
       delete next.fx;
     }
-    if (next.paint !== undefined && !(item.p && paints.has(next.paint))) delete next.paint;
-    if (next.style !== undefined && !item.st?.some((s) => s.k === next.style)) delete next.style;
-    if (next.festive && !item.fz) delete next.festive;
-    const kit = next.kit !== undefined ? kits.get(next.kit) : undefined;
-    const kitOk = !item.sk && !!(kit && item.wk && kit.w[item.wk]);
-    if (next.kit !== undefined && !kitOk) {
+    if (
+      next.paint !==
+        undefined &&
+      !(
+        item.p &&
+        paints.has(
+          next.paint,
+        )
+      )
+    )
+      delete next.paint;
+    if (
+      next.style !==
+        undefined &&
+      !item.st?.some(
+        (
+          s,
+        ) =>
+          s.k ===
+          next.style,
+      )
+    )
+      delete next.style;
+    if (
+      next.festive &&
+      !item.fz
+    )
+      delete next.festive;
+    const kit =
+      next.kit !==
+      undefined
+        ? kits.get(
+            next.kit,
+          )
+        : undefined;
+    const kitOk =
+      !item.sk &&
+      !!(
+        kit &&
+        item.wk &&
+        kit
+          .w[
+          item
+            .wk
+        ]
+      );
+    if (
+      next.kit !==
+        undefined &&
+      !kitOk
+    ) {
       delete next.kit;
-      if (!item.sk) {
+      if (
+        !item.sk
+      ) {
         delete next.wear;
         delete next.seed;
       }
     }
-    if ((next.wear !== undefined || next.seed !== undefined) && !item.wk) {
+    if (
+      (next.wear !==
+        undefined ||
+        next.seed !==
+          undefined) &&
+      !item.wk
+    ) {
       delete next.wear;
       delete next.seed;
     }
     // A killstreak kit only on a weapon, its killstreaker only with a sheen.
-    const weapon = item.s === 'primary' || item.s === 'secondary' || item.s === 'melee';
-    if (next.sheen !== undefined && (!weapon || !sheenById(next.sheen))) delete next.sheen;
+    const weapon =
+      item.s ===
+        'primary' ||
+      item.s ===
+        'secondary' ||
+      item.s ===
+        'melee';
     if (
-      next.streaker !== undefined &&
-      (next.sheen === undefined || !killstreakerById(next.streaker))
+      next.sheen !==
+        undefined &&
+      (!weapon ||
+        !sheenById(
+          next.sheen,
+        ))
+    )
+      delete next.sheen;
+    if (
+      next.streaker !==
+        undefined &&
+      (next.sheen ===
+        undefined ||
+        !killstreakerById(
+          next.streaker,
+        ))
     )
       delete next.streaker;
-    if (Object.keys(next).length !== Object.keys(entry).length) (out ??= { ...slots })[key] = next;
+    if (
+      Object.keys(
+        next,
+      )
+        .length !==
+      Object.keys(
+        entry,
+      )
+        .length
+    )
+      (out ??=
+        {
+          ...slots,
+        })[
+        key
+      ] =
+        next;
   }
-  return out ?? slots;
+  return (
+    out ??
+    slots
+  );
 }

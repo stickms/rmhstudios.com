@@ -18,25 +18,86 @@
 
 import { useTranslation } from 'react-i18next';
 import { Segmented } from './ios';
-import { usePf2eTheme, type Pf2eThemeMode } from './theme';
+import {
+  usePf2eTheme,
+  type Pf2eThemeMode,
+} from './theme';
 
 export function ThemeToggle() {
-  const { t } = useTranslation('r-pf2ecal');
-  const { mode, setMode } = usePf2eTheme();
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-pf2ecal',
+    );
+  const {
+    mode,
+    setMode,
+  } =
+    usePf2eTheme();
 
-  const segments: ReadonlyArray<{ value: Pf2eThemeMode; label: string }> = [
-    { value: 'auto', label: t('theme-auto', { defaultValue: 'Auto' }) },
-    { value: 'light', label: t('theme-light', { defaultValue: 'Light' }) },
-    { value: 'dark', label: t('theme-dark', { defaultValue: 'Dark' }) },
-  ];
+  const segments: ReadonlyArray<{
+    value: Pf2eThemeMode;
+    label: string;
+  }> =
+    [
+      {
+        value:
+          'auto',
+        label:
+          t(
+            'theme-auto',
+            {
+              defaultValue:
+                'Auto',
+            },
+          ),
+      },
+      {
+        value:
+          'light',
+        label:
+          t(
+            'theme-light',
+            {
+              defaultValue:
+                'Light',
+            },
+          ),
+      },
+      {
+        value:
+          'dark',
+        label:
+          t(
+            'theme-dark',
+            {
+              defaultValue:
+                'Dark',
+            },
+          ),
+      },
+    ];
 
   return (
     <div className="pf2e-theme-toggle">
       <Segmented
-        segments={segments}
-        value={mode}
-        onChange={setMode}
-        label={t('theme-label', { defaultValue: 'Appearance' })}
+        segments={
+          segments
+        }
+        value={
+          mode
+        }
+        onChange={
+          setMode
+        }
+        label={t(
+          'theme-label',
+          {
+            defaultValue:
+              'Appearance',
+          },
+        )}
       />
     </div>
   );

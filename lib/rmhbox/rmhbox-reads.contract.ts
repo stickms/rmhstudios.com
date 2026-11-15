@@ -9,33 +9,60 @@ import type { GameLog } from '@/lib/rmhbox/history-display';
 import type { LeaderboardEntry } from '@/lib/rmhbox/types';
 
 /** Ranked players: all-time from the profile table, weekly / monthly / per-minigame from match players. */
-export const getRmhboxLeaderboardApi = endpoint<{
-  query: {
-    period?: 'all-time' | 'weekly' | 'monthly' | undefined;
-    minigame?: string | undefined;
-    metric?: 'score' | 'wins' | 'games' | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-  };
-  res: {
-    entries: LeaderboardEntry[];
-    total: number;
-    period: string;
-    metric: string;
-    /** The signed-in caller's rank, or null. */
-    userRank: number | null;
-    minigame?: string;
-  };
-}>()({ method: 'GET', path: '/api/rmhbox/leaderboard' });
+export const getRmhboxLeaderboardApi =
+  endpoint<{
+    query: {
+      period?:
+        | 'all-time'
+        | 'weekly'
+        | 'monthly'
+        | undefined;
+      minigame?:
+        | string
+        | undefined;
+      metric?:
+        | 'score'
+        | 'wins'
+        | 'games'
+        | undefined;
+      limit?:
+        | number
+        | undefined;
+      offset?:
+        | number
+        | undefined;
+    };
+    res: {
+      entries: LeaderboardEntry[];
+      total: number;
+      period: string;
+      metric: string;
+      /** The signed-in caller's rank, or null. */
+      userRank:
+        | number
+        | null;
+      minigame?: string;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/rmhbox/leaderboard',
+    },
+  );
 
 export interface RmhboxMatchSummary {
   id: string;
   minigameId: string;
   lobbyId: string;
   startedAt: string;
-  endedAt: string | null;
+  endedAt:
+    | string
+    | null;
   durationMs: number;
-  winnerUserId: string | null;
+  winnerUserId:
+    | string
+    | null;
   playerCount: number;
   players: Array<{
     userId: string;
@@ -48,12 +75,32 @@ export interface RmhboxMatchSummary {
 }
 
 /** A page of finished matches, newest first, optionally narrowed to one minigame or player. */
-export const listRmhboxMatchesApi = endpoint<{
-  query: {
-    minigame?: string | undefined;
-    userId?: string | undefined;
-    limit?: number | undefined;
-    offset?: number | undefined;
-  };
-  res: { matches: RmhboxMatchSummary[]; total: number; limit: number; offset: number };
-}>()({ method: 'GET', path: '/api/rmhbox/history' });
+export const listRmhboxMatchesApi =
+  endpoint<{
+    query: {
+      minigame?:
+        | string
+        | undefined;
+      userId?:
+        | string
+        | undefined;
+      limit?:
+        | number
+        | undefined;
+      offset?:
+        | number
+        | undefined;
+    };
+    res: {
+      matches: RmhboxMatchSummary[];
+      total: number;
+      limit: number;
+      offset: number;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/rmhbox/history',
+    },
+  );

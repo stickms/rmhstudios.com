@@ -22,7 +22,10 @@ let registered = false;
 
 /** Registers every available module's classes and factories. Idempotent. */
 export function registerAllSimModules(): void {
-  if (registered) return;
+  if (
+    registered
+  )
+    return;
   registered = true;
   registerStockWeapons();
   registerMapEntities();
@@ -33,6 +36,14 @@ export function registerAllSimModules(): void {
  * The game mode for a map (CTF flags, control points, payload, KOTH, arena),
  * or null to run with the core rules only. Install it with `world.setMode`.
  */
-export function gameModeForMap(world: GameWorld, map: string, mode: Tf2Mode): GameMode | null {
-  return createGameModeForMap(world, map, mode);
+export function gameModeForMap(
+  world: GameWorld,
+  map: string,
+  mode: Tf2Mode,
+): GameMode | null {
+  return createGameModeForMap(
+    world,
+    map,
+    mode,
+  );
 }

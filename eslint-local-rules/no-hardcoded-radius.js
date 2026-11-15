@@ -16,10 +16,13 @@ import { createPatternRule } from './class-strings.js';
 export const PATTERN =
   /(?<![\w:-])rounded(?:-(?:[tblrse]|tl|tr|bl|br|ss|se|es|ee))?-(?:(?:sm|md|lg|xl|2xl|3xl)(?![\w-])|\[(?![^\]]*(?:var\(|inherit))[^\]]*\])/g;
 
-export default createPatternRule({
-  description:
-    'Use rounded-site / rounded-site-sm, not a fixed Tailwind radius or a literal arbitrary radius (Steel §2)',
-  message:
-    'Hardcoded radius `{{match}}`: Steel has two radii. Use rounded-site (8px) / rounded-site-sm (4px), or `rounded-[var(--token)]`. rounded-full and rounded-none are fine.',
-  pattern: PATTERN,
-});
+export default createPatternRule(
+  {
+    description:
+      'Use rounded-site / rounded-site-sm, not a fixed Tailwind radius or a literal arbitrary radius (Steel §2)',
+    message:
+      'Hardcoded radius `{{match}}`: Steel has two radii. Use rounded-site (8px) / rounded-site-sm (4px), or `rounded-[var(--token)]`. rounded-full and rounded-none are fine.',
+    pattern:
+      PATTERN,
+  },
+);

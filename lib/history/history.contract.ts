@@ -5,7 +5,16 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { HistoryBeatInput } from '@/lib/history/schema';
 
-export const recordHistoryBeatApi = endpoint<{ body: HistoryBeatInput; res: { ok: boolean } }>()({
-  method: 'POST',
-  path: '/api/history/beat',
-});
+export const recordHistoryBeatApi =
+  endpoint<{
+    body: HistoryBeatInput;
+    res: {
+      ok: boolean;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/history/beat',
+    },
+  );

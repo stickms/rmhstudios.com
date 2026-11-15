@@ -8,11 +8,24 @@
  * is a no-op and Settings hides the row.
  */
 
-import { createContext, useContext } from 'react';
+import {
+  createContext,
+  useContext,
+} from 'react';
 
-export const MainMenuContext = createContext<(() => void) | null>(null);
+export const MainMenuContext =
+  createContext<
+    | (() => void)
+    | null
+  >(
+    null,
+  );
 
 /** Leave the running temple for the title screen, or `null` when there is none. */
-export function useMainMenu(): (() => void) | null {
-  return useContext(MainMenuContext);
+export function useMainMenu():
+  | (() => void)
+  | null {
+  return useContext(
+    MainMenuContext,
+  );
 }

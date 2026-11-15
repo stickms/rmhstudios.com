@@ -13,15 +13,29 @@
  *   - Nothing is drawn until the model has loaded, and nothing at all when the channel's
  *     index does not list it: there is no stand-in.
  */
-import { PerspectiveCamera, Scene, type WebGLRenderer } from 'three';
-import { sourceFovToVertical, type SourceCamera } from '../camera';
+import {
+  PerspectiveCamera,
+  Scene,
+  type WebGLRenderer,
+} from 'three';
+import {
+  sourceFovToVertical,
+  type SourceCamera,
+} from '../camera';
 import { SOURCE_UNIT } from '../coords';
 import type { Vec3Like } from '../lighting';
-import { LightProbe, type RenderContext } from './common';
+import {
+  LightProbe,
+  type RenderContext,
+} from './common';
 import { ModelInstance } from './model-instance';
-import { BobState, VIEWMODEL_FOV } from './viewmodel';
+import {
+  BobState,
+  VIEWMODEL_FOV,
+} from './viewmodel';
 
-const ACT_VM_IDLE = 'ACT_VM_IDLE';
+const ACT_VM_IDLE =
+  'ACT_VM_IDLE';
 
 export interface SpViewModelInput {
   eyeOrigin: Vec3Like;
@@ -32,109 +46,279 @@ export interface SpViewModelInput {
 }
 
 export class SpViewModelRenderer {
-  readonly scene = new Scene();
+  readonly scene =
+    new Scene();
   readonly camera: PerspectiveCamera;
-  private inst: ModelInstance | null = null;
+  private inst: ModelInstance | null =
+    null;
   /** Activities to start on the next update, in order of preference. */
-  private pending: string[] | null = null;
+  private pending:
+    | string[]
+    | null =
+    null;
   private visible = false;
-  private readonly bob = new BobState();
-  private readonly probe = new LightProbe();
-  private readonly origin = { x: 0, y: 0, z: 0 };
-  private readonly angles = { x: 0, y: 0, z: 0 };
-  fov = VIEWMODEL_FOV;
+  private readonly bob =
+    new BobState();
+  private readonly probe =
+    new LightProbe();
+  private readonly origin =
+    {
+      x: 0,
+      y: 0,
+      z: 0,
+    };
+  private readonly angles =
+    {
+      x: 0,
+      y: 0,
+      z: 0,
+    };
+  fov =
+    VIEWMODEL_FOV;
 
   /** `mdl`: the model channel path (e.g. `models/weapons/v_portalgun.mdl`). */
-  constructor(readonly mdl: string) {
-    this.camera = new PerspectiveCamera(
-      sourceFovToVertical(VIEWMODEL_FOV),
-      16 / 9,
-      1 * SOURCE_UNIT,
-      2048 * SOURCE_UNIT,
-    );
-    this.scene.name = 'viewmodel';
+  constructor(
+    readonly mdl: string,
+  ) {
+    this.camera =
+      new PerspectiveCamera(
+        sourceFovToVertical(
+          VIEWMODEL_FOV,
+        ),
+        16 /
+          9,
+        1 *
+          SOURCE_UNIT,
+        2048 *
+          SOURCE_UNIT,
+      );
+    this.scene.name =
+      'viewmodel';
   }
 
   /** (Re)starts the first of `activities` the model has (SendWeaponAnim). */
-  play(...activities: string[]): void {
-    this.pending = activities;
+  play(
+    ...activities: string[]
+  ): void {
+    this.pending =
+      activities;
   }
 
-  update(inp: SpViewModelInput, ctx: RenderContext): void {
-    if (!this.inst) {
+  update(
+    inp: SpViewModelInput,
+    ctx: RenderContext,
+  ): void {
+    if (
+      !this
+        .inst
+    ) {
       // undefined: still loading (peek starts it); null: not in the channel. Draw nothing.
-      const asset = ctx.models.peek(this.mdl);
-      if (!asset) {
+      const asset =
+        ctx.models.peek(
+          this
+            .mdl,
+        );
+      if (
+        !asset
+      ) {
         this.visible = false;
         return;
       }
-      this.inst = new ModelInstance(asset, { fog: ctx.lighting?.shared });
-      this.scene.add(this.inst.root);
-      this.inst.animator?.setActivity(ACT_VM_IDLE);
+      this.inst =
+        new ModelInstance(
+          asset,
+          {
+            fog: ctx
+              .lighting
+              ?.shared,
+          },
+        );
+      this.scene.add(
+        this
+          .inst
+          .root,
+      );
+      this.inst.animator?.setActivity(
+        ACT_VM_IDLE,
+      );
     }
-    const inst = this.inst;
-    this.visible = inp.visible;
-    inst.root.visible = inp.visible;
-    if (!inp.visible) {
+    const inst =
+      this
+        .inst;
+    this.visible =
+      inp.visible;
+    inst.root.visible =
+      inp.visible;
+    if (
+      !inp.visible
+    ) {
       // A hidden view model does not animate; what it was told to play while hidden is moot.
-      this.pending = null;
+      this.pending =
+        null;
       return;
     }
-    const anim = inst.animator;
-    if (anim) {
-      if (this.pending) {
-        for (const act of this.pending) {
-          const seq = anim.set.selectWeightedSequence(act);
-          if (!seq) continue;
-          anim.setSequence(seq, { restart: true, fade: !seq.snap });
+    const anim =
+      inst.animator;
+    if (
+      anim
+    ) {
+      if (
+        this
+          .pending
+      ) {
+        for (const act of this
+          .pending) {
+          const seq =
+            anim.set.selectWeightedSequence(
+              act,
+            );
+          if (
+            !seq
+          )
+            continue;
+          anim.setSequence(
+            seq,
+            {
+              restart: true,
+              fade: !seq.snap,
+            },
+          );
           break;
         }
-        this.pending = null;
+        this.pending =
+          null;
       }
-      const main = anim.main;
-      if (!main || (!main.seq.looping && main.cycle >= 1)) anim.setActivity(ACT_VM_IDLE);
+      const main =
+        anim.main;
+      if (
+        !main ||
+        (!main
+          .seq
+          .looping &&
+          main.cycle >=
+            1)
+      )
+        anim.setActivity(
+          ACT_VM_IDLE,
+        );
     }
-    this.origin.x = inp.eyeOrigin.x;
-    this.origin.y = inp.eyeOrigin.y;
-    this.origin.z = inp.eyeOrigin.z;
-    this.angles.x = inp.eyeAngles.x;
-    this.angles.y = inp.eyeAngles.y;
-    this.angles.z = inp.eyeAngles.z;
-    this.bob.calc(Math.hypot(inp.velocity.x, inp.velocity.y), ctx.time);
-    this.bob.apply(this.origin, this.angles);
-    inst.place(this.origin, this.angles);
-    this.probe.update(ctx, inst.uniforms, inp.eyeOrigin, 0);
-    inst.animate(ctx.dt);
+    this.origin.x =
+      inp.eyeOrigin.x;
+    this.origin.y =
+      inp.eyeOrigin.y;
+    this.origin.z =
+      inp.eyeOrigin.z;
+    this.angles.x =
+      inp.eyeAngles.x;
+    this.angles.y =
+      inp.eyeAngles.y;
+    this.angles.z =
+      inp.eyeAngles.z;
+    this.bob.calc(
+      Math.hypot(
+        inp
+          .velocity
+          .x,
+        inp
+          .velocity
+          .y,
+      ),
+      ctx.time,
+    );
+    this.bob.apply(
+      this
+        .origin,
+      this
+        .angles,
+    );
+    inst.place(
+      this
+        .origin,
+      this
+        .angles,
+    );
+    this.probe.update(
+      ctx,
+      inst.uniforms,
+      inp.eyeOrigin,
+      0,
+    );
+    inst.animate(
+      ctx.dt,
+    );
     inst.applyPose();
     inst.updateMatrices();
   }
 
   /** Draws the view model over the world (call after the world is rendered). */
-  render(renderer: WebGLRenderer, cam: SourceCamera): void {
-    if (!this.visible || !this.inst) return;
-    const c = this.camera;
-    c.position.copy(cam.camera.position);
-    c.quaternion.copy(cam.camera.quaternion);
-    c.aspect = cam.camera.aspect;
-    const vfov = sourceFovToVertical(this.fov);
-    if (c.fov !== vfov) c.fov = vfov;
+  render(
+    renderer: WebGLRenderer,
+    cam: SourceCamera,
+  ): void {
+    if (
+      !this
+        .visible ||
+      !this
+        .inst
+    )
+      return;
+    const c =
+      this
+        .camera;
+    c.position.copy(
+      cam
+        .camera
+        .position,
+    );
+    c.quaternion.copy(
+      cam
+        .camera
+        .quaternion,
+    );
+    c.aspect =
+      cam.camera.aspect;
+    const vfov =
+      sourceFovToVertical(
+        this
+          .fov,
+      );
+    if (
+      c.fov !==
+      vfov
+    )
+      c.fov =
+        vfov;
     c.updateProjectionMatrix();
-    c.updateMatrixWorld(true);
-    const autoClear = renderer.autoClear;
+    c.updateMatrixWorld(
+      true,
+    );
+    const autoClear =
+      renderer.autoClear;
     renderer.autoClear = false;
     renderer.clearDepth();
-    renderer.render(this.scene, c);
-    renderer.autoClear = autoClear;
+    renderer.render(
+      this
+        .scene,
+      c,
+    );
+    renderer.autoClear =
+      autoClear;
   }
 
   /** Whether the model is loaded and drawn this frame. */
   get shown(): boolean {
-    return this.visible && !!this.inst;
+    return (
+      this
+        .visible &&
+      !!this
+        .inst
+    );
   }
 
   dispose(): void {
     this.inst?.dispose();
-    this.inst = null;
+    this.inst =
+      null;
     this.scene.clear();
   }
 }

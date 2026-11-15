@@ -40,18 +40,24 @@ export interface Candidate {
 /** What is known about the member, assembled from Activity and FeedSignal. */
 export interface TasteProfile {
   /** Facets they engage with, and how strongly. Values are unbounded. */
-  affinities: Record<string, number>;
+  affinities: Record<
+    string,
+    number
+  >;
   /** Facets they asked not to see. Absolute — never softened by affinity. */
   muted: ReadonlySet<string>;
   /** Entity ids they have already seen or played. */
   seen: ReadonlySet<string>;
 }
 
-export const EMPTY_PROFILE: TasteProfile = {
-  affinities: {},
-  muted: new Set(),
-  seen: new Set(),
-};
+export const EMPTY_PROFILE: TasteProfile =
+  {
+    affinities:
+      {},
+    muted:
+      new Set(),
+    seen: new Set(),
+  };
 
 /** Half-life of the recency term, in days. */
 export const RECENCY_HALF_LIFE_DAYS = 14;
@@ -63,10 +69,28 @@ export const RECENCY_HALF_LIFE_DAYS = 14;
  * moment something crosses it, and there is no age at which a good result
  * should become worthless.
  */
-export function recencyFactor(createdAt: number | undefined, now: number): number {
-  if (!createdAt) return 0.5;
-  const days = Math.max(0, (now - createdAt) / 86_400_000);
-  return Math.pow(0.5, days / RECENCY_HALF_LIFE_DAYS);
+export function recencyFactor(
+  createdAt:
+    | number
+    | undefined,
+  now: number,
+): number {
+  if (
+    !createdAt
+  )
+    return 0.5;
+  const days =
+    Math.max(
+      0,
+      (now -
+        createdAt) /
+        86_400_000,
+    );
+  return Math.pow(
+    0.5,
+    days /
+      RECENCY_HALF_LIFE_DAYS,
+  );
 }
 
 /**
@@ -76,8 +100,18 @@ export function recencyFactor(createdAt: number | undefined, now: number): numbe
  * difference between 1,000 and 1,010, and a linear term lets one viral item
  * dominate every rail on the site.
  */
-export function popularityFactor(popularity: number | undefined): number {
-  return Math.log1p(Math.max(0, popularity ?? 0));
+export function popularityFactor(
+  popularity:
+    | number
+    | undefined,
+): number {
+  return Math.log1p(
+    Math.max(
+      0,
+      popularity ??
+        0,
+    ),
+  );
 }
 
 /**
@@ -86,9 +120,26 @@ export function popularityFactor(popularity: number | undefined): number {
  * Also `log1p`: somebody who has played one game forty times should not have a
  * rail that is only that game.
  */
-export function affinityFactor(facet: string | undefined, profile: TasteProfile): number {
-  if (!facet) return 0;
-  return Math.log1p(Math.max(0, profile.affinities[facet] ?? 0));
+export function affinityFactor(
+  facet:
+    | string
+    | undefined,
+  profile: TasteProfile,
+): number {
+  if (
+    !facet
+  )
+    return 0;
+  return Math.log1p(
+    Math.max(
+      0,
+      profile
+        .affinities[
+        facet
+      ] ??
+        0,
+    ),
+  );
 }
 
 /** Relative weight of each term. Exposed so a surface can retune one rail. */
@@ -99,17 +150,23 @@ export interface Weights {
   recency: number;
 }
 
-export const DEFAULT_WEIGHTS: Weights = {
-  base: 1,
-  affinity: 1.4,
-  popularity: 0.6,
-  recency: 0.8,
-};
+export const DEFAULT_WEIGHTS: Weights =
+  {
+    base: 1,
+    affinity: 1.4,
+    popularity: 0.6,
+    recency: 0.8,
+  };
 
 export interface ScoredCandidate extends Candidate {
   score: number;
   /** The terms, so "why am I seeing this" (M4) can be answered from the data. */
-  terms: { base: number; affinity: number; popularity: number; recency: number };
+  terms: {
+    base: number;
+    affinity: number;
+    popularity: number;
+    recency: number;
+  };
 }
 
 /**
@@ -126,25 +183,86 @@ export interface ScoredCandidate extends Candidate {
 export function scoreCandidates(
   candidates: readonly Candidate[],
   profile: TasteProfile,
-  opts: { now?: number; weights?: Weights } = {},
+  opts: {
+    now?: number;
+    weights?: Weights;
+  } = {},
 ): ScoredCandidate[] {
-  const now = opts.now ?? Date.now();
-  const w = opts.weights ?? DEFAULT_WEIGHTS;
+  const now =
+    opts.now ??
+    Date.now();
+  const w =
+    opts.weights ??
+    DEFAULT_WEIGHTS;
 
   return candidates
-    .filter((c) => !profile.seen.has(c.id) && !(c.facet && profile.muted.has(c.facet)))
-    .map((c, i) => {
-      const base = w.base / Math.log2(i + 2);
-      const affinity = w.affinity * affinityFactor(c.facet, profile);
-      const popularity = w.popularity * popularityFactor(c.popularity);
-      const recency = w.recency * recencyFactor(c.createdAt, now);
-      return {
-        ...c,
-        score: base + affinity + popularity + recency,
-        terms: { base, affinity, popularity, recency },
-      };
-    })
-    .sort((a, b) => b.score - a.score);
+    .filter(
+      (
+        c,
+      ) =>
+        !profile.seen.has(
+          c.id,
+        ) &&
+        !(
+          c.facet &&
+          profile.muted.has(
+            c.facet,
+          )
+        ),
+    )
+    .map(
+      (
+        c,
+        i,
+      ) => {
+        const base =
+          w.base /
+          Math.log2(
+            i +
+              2,
+          );
+        const affinity =
+          w.affinity *
+          affinityFactor(
+            c.facet,
+            profile,
+          );
+        const popularity =
+          w.popularity *
+          popularityFactor(
+            c.popularity,
+          );
+        const recency =
+          w.recency *
+          recencyFactor(
+            c.createdAt,
+            now,
+          );
+        return {
+          ...c,
+          score:
+            base +
+            affinity +
+            popularity +
+            recency,
+          terms:
+            {
+              base,
+              affinity,
+              popularity,
+              recency,
+            },
+        };
+      },
+    )
+    .sort(
+      (
+        a,
+        b,
+      ) =>
+        b.score -
+        a.score,
+    );
 }
 
 /**
@@ -158,34 +276,76 @@ export function scoreCandidates(
  * perfectly normal thing to be), the shortfall is refilled from what the cap
  * excluded. A half-empty rail is worse than a repetitive one.
  */
-export function diversify<T extends { id: string; facet?: string }>(
+export function diversify<
+  T extends
+    {
+      id: string;
+      facet?: string;
+    },
+>(
   scored: readonly T[],
   limit: number,
   maxPerFacet = 2,
 ): T[] {
-  const out: T[] = [];
-  const counts = new Map<string, number>();
-  const overflow: T[] = [];
+  const out: T[] =
+    [];
+  const counts =
+    new Map<
+      string,
+      number
+    >();
+  const overflow: T[] =
+    [];
 
   for (const item of scored) {
-    if (out.length >= limit) break;
-    const facet = item.facet;
-    if (!facet) {
-      out.push(item);
+    if (
+      out.length >=
+      limit
+    )
+      break;
+    const facet =
+      item.facet;
+    if (
+      !facet
+    ) {
+      out.push(
+        item,
+      );
       continue;
     }
-    const n = counts.get(facet) ?? 0;
-    if (n >= maxPerFacet) {
-      overflow.push(item);
+    const n =
+      counts.get(
+        facet,
+      ) ??
+      0;
+    if (
+      n >=
+      maxPerFacet
+    ) {
+      overflow.push(
+        item,
+      );
       continue;
     }
-    counts.set(facet, n + 1);
-    out.push(item);
+    counts.set(
+      facet,
+      n +
+        1,
+    );
+    out.push(
+      item,
+    );
   }
 
   for (const item of overflow) {
-    if (out.length >= limit) break;
-    out.push(item);
+    if (
+      out.length >=
+      limit
+    )
+      break;
+    out.push(
+      item,
+    );
   }
   return out;
 }
@@ -204,12 +364,42 @@ export type RecommendationReason =
   | 'matches-your-search'
   | 'new-to-you';
 
-export function reasonFor(c: ScoredCandidate): RecommendationReason {
-  const { affinity, popularity, recency, base } = c.terms;
-  const top = Math.max(affinity, popularity, recency, base);
-  if (top === 0) return 'new-to-you';
-  if (top === affinity) return 'because-you-like';
-  if (top === popularity) return 'popular-now';
-  if (top === recency) return 'just-posted';
+export function reasonFor(
+  c: ScoredCandidate,
+): RecommendationReason {
+  const {
+    affinity,
+    popularity,
+    recency,
+    base,
+  } =
+    c.terms;
+  const top =
+    Math.max(
+      affinity,
+      popularity,
+      recency,
+      base,
+    );
+  if (
+    top ===
+    0
+  )
+    return 'new-to-you';
+  if (
+    top ===
+    affinity
+  )
+    return 'because-you-like';
+  if (
+    top ===
+    popularity
+  )
+    return 'popular-now';
+  if (
+    top ===
+    recency
+  )
+    return 'just-posted';
   return 'matches-your-search';
 }

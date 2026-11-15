@@ -6,12 +6,30 @@
  * The API input schema is in `./signals-schema`.
  */
 
-export const FEED_SIGNAL_KINDS = ['less_author', 'mute_tag', 'follow_tag'] as const;
-export type FeedSignalKind = (typeof FEED_SIGNAL_KINDS)[number];
+export const FEED_SIGNAL_KINDS =
+  [
+    'less_author',
+    'mute_tag',
+    'follow_tag',
+  ] as const;
+export type FeedSignalKind =
+  (typeof FEED_SIGNAL_KINDS)[number];
 
 /** Normalize a hashtag target (strip '#', lowercase). */
-export function normalizeTag(tag: string): string {
-  return tag.trim().replace(/^#/, '').toLowerCase().slice(0, 64);
+export function normalizeTag(
+  tag: string,
+): string {
+  return tag
+    .trim()
+    .replace(
+      /^#/,
+      '',
+    )
+    .toLowerCase()
+    .slice(
+      0,
+      64,
+    );
 }
 
 export interface FeedSignalsView {
@@ -21,9 +39,27 @@ export interface FeedSignalsView {
 }
 
 /** The muted-tag Prisma `where` fragment for feed queries, or `{}` when none. */
-export function mutedTagWhere(mutedTags: string[]) {
-  if (mutedTags.length === 0) return {};
+export function mutedTagWhere(
+  mutedTags: string[],
+) {
+  if (
+    mutedTags.length ===
+    0
+  )
+    return {};
   return {
-    NOT: { hashtags: { some: { hashtag: { tag: { in: mutedTags } } } } },
+    NOT: {
+      hashtags:
+        {
+          some: {
+            hashtag:
+              {
+                tag: {
+                  in: mutedTags,
+                },
+              },
+          },
+        },
+    },
   };
 }

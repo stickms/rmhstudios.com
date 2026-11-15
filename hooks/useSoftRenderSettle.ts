@@ -1,4 +1,7 @@
-import { useEffect, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+} from 'react';
 import { settleSoftRender } from '@/lib/low-end';
 
 /**
@@ -14,35 +17,105 @@ import { settleSoftRender } from '@/lib/low-end';
  * off on such a browser; a direct visit to a game page still records it for the next load. It runs after the window
  * `load` event, at idle (400 ms at most), because the throwaway GL context it creates must not compete with hydration.
  */
-export function useSoftRenderSettle(pathname?: string): void {
-  const settled = useRef(false);
+export function useSoftRenderSettle(
+  pathname?: string,
+): void {
+  const settled =
+    useRef(
+      false,
+    );
   useEffect(() => {
     let cancelled = false;
-    const w = window as Window & {
-      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
-      cancelIdleCallback?: (h: number) => void;
-    };
-    const idle = typeof w.requestIdleCallback === 'function';
-    let handle: number | null = null;
-    const run = () => {
-      if (cancelled || settled.current) return;
-      if (document.querySelector('.site-shell')) return;
-      settled.current = true;
-      settleSoftRender();
-    };
-    const schedule = () => {
-      if (cancelled) return;
-      handle = idle ? w.requestIdleCallback!(run, { timeout: 400 }) : window.setTimeout(run, 200);
-    };
-    if (document.readyState === 'complete') schedule();
-    else window.addEventListener('load', schedule, { once: true });
+    const w =
+      window as Window & {
+        requestIdleCallback?: (
+          cb: () => void,
+          o?: {
+            timeout: number;
+          },
+        ) => number;
+        cancelIdleCallback?: (
+          h: number,
+        ) => void;
+      };
+    const idle =
+      typeof w.requestIdleCallback ===
+      'function';
+    let handle:
+      | number
+      | null =
+      null;
+    const run =
+      () => {
+        if (
+          cancelled ||
+          settled.current
+        )
+          return;
+        if (
+          document.querySelector(
+            '.site-shell',
+          )
+        )
+          return;
+        settled.current = true;
+        settleSoftRender();
+      };
+    const schedule =
+      () => {
+        if (
+          cancelled
+        )
+          return;
+        handle =
+          idle
+            ? w.requestIdleCallback!(
+                run,
+                {
+                  timeout: 400,
+                },
+              )
+            : window.setTimeout(
+                run,
+                200,
+              );
+      };
+    if (
+      document.readyState ===
+      'complete'
+    )
+      schedule();
+    else
+      window.addEventListener(
+        'load',
+        schedule,
+        {
+          once: true,
+        },
+      );
     return () => {
       cancelled = true;
-      window.removeEventListener('load', schedule);
-      if (handle !== null) {
-        if (idle) w.cancelIdleCallback?.(handle);
-        else window.clearTimeout(handle);
+      window.removeEventListener(
+        'load',
+        schedule,
+      );
+      if (
+        handle !==
+        null
+      ) {
+        if (
+          idle
+        )
+          w.cancelIdleCallback?.(
+            handle,
+          );
+        else
+          window.clearTimeout(
+            handle,
+          );
       }
     };
-  }, [pathname]);
+  }, [
+    pathname,
+  ]);
 }

@@ -15,36 +15,92 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { Compass, Layers } from 'lucide-react';
+import {
+  Compass,
+  Layers,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageTabs } from '@/components/feed/PageTabs';
 import type { TabItem } from '@/components/ui/tabs';
 
-export function StudyTabs({ active }: { active: '/study' | '/study/browse' }) {
-  const { t } = useTranslation('site');
+export function StudyTabs({
+  active,
+}: {
+  active:
+    | '/study'
+    | '/study/browse';
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
 
-  const tabs: TabItem[] = [
-    { id: '/study', label: t('study-tab-decks', { defaultValue: 'My decks' }), icon: Layers },
-    {
-      id: '/study/browse',
-      label: t('study-tab-browse', { defaultValue: 'Browse decks' }),
-      icon: Compass,
-    },
-  ];
+  const tabs: TabItem[] =
+    [
+      {
+        id: '/study',
+        label:
+          t(
+            'study-tab-decks',
+            {
+              defaultValue:
+                'My decks',
+            },
+          ),
+        icon: Layers,
+      },
+      {
+        id: '/study/browse',
+        label:
+          t(
+            'study-tab-browse',
+            {
+              defaultValue:
+                'Browse decks',
+            },
+          ),
+        icon: Compass,
+      },
+    ];
 
   return (
     <PageTabs
-      tabs={tabs}
-      value={active}
-      aria-label={t('study-tabs-aria-label', { defaultValue: 'Flashcards' })}
-      renderTab={(tab, props) => (
+      tabs={
+        tabs
+      }
+      value={
+        active
+      }
+      aria-label={t(
+        'study-tabs-aria-label',
+        {
+          defaultValue:
+            'Flashcards',
+        },
+      )}
+      renderTab={(
+        tab,
+        props,
+      ) => (
         <Link
-          to={tab.id}
-          id={props.id}
-          aria-current={props['aria-current']}
+          to={
+            tab.id
+          }
+          id={
+            props.id
+          }
+          aria-current={
+            props[
+              'aria-current'
+            ]
+          }
           className={`${props.className} min-h-11`}
         >
-          {props.children}
+          {
+            props.children
+          }
         </Link>
       )}
     />

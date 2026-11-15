@@ -16,98 +16,236 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
 import { siteAppCssFiles } from './css-tiers';
 
-const ROOT = process.cwd();
+const ROOT =
+  process.cwd();
 
 /** keyframe name -> why it exists (owner). */
-export const SANCTIONED: Record<string, string> = {
-  // --- app/globals.css: site-wide ---------------------------------------------------------------
-  arrive: 'Steel M9: content that arrives after the view has painted fades in, 160 ms opacity (components/ui/arrive.tsx)',
-  'motion-presence': 'no-op presence animation so Radix keeps a [data-motion] node until its exit transition ends',
-  'vinyl-spin': 'feed VinylRecord while playing (components/feed/VinylRecord.tsx)',
-  'doctrine-shake': 'doctrine page: 0.15s error shake',
-  // Game / arm effects whose classes live in the global sheet (owner is the game, not the site):
-  'rainbow-shift': 'signal-forge title (.rainbow-text)',
-  glitch: 'signal-forge title (.glitch-text)',
-  'dr-rise': 'dream-rift menu rise (game)',
-  'dr-float': 'dream-rift menu float (game)',
-  'dr-title-glow': 'dream-rift title glow (game)',
+export const SANCTIONED: Record<
+  string,
+  string
+> =
+  {
+    // --- app/globals.css: site-wide ---------------------------------------------------------------
+    arrive:
+      'Steel M9: content that arrives after the view has painted fades in, 160 ms opacity (components/ui/arrive.tsx)',
+    'motion-presence':
+      'no-op presence animation so Radix keeps a [data-motion] node until its exit transition ends',
+    'vinyl-spin':
+      'feed VinylRecord while playing (components/feed/VinylRecord.tsx)',
+    'doctrine-shake':
+      'doctrine page: 0.15s error shake',
+    // Game / arm effects whose classes live in the global sheet (owner is the game, not the site):
+    'rainbow-shift':
+      'signal-forge title (.rainbow-text)',
+    glitch:
+      'signal-forge title (.glitch-text)',
+    'dr-rise':
+      'dream-rift menu rise (game)',
+    'dr-float':
+      'dream-rift menu float (game)',
+    'dr-title-glow':
+      'dream-rift title glow (game)',
 
-  // --- components/ui ----------------------------------------------------------------------------
-  'ui-sheet-presence': 'no-op presence animation so Radix keeps a Sheet mounted through its exit transition',
-  'ui-dialog-presence': 'no-op presence animation so Radix keeps a Dialog mounted through its exit transition',
+    // --- components/ui ----------------------------------------------------------------------------
+    'ui-sheet-presence':
+      'no-op presence animation so Radix keeps a Sheet mounted through its exit transition',
+    'ui-dialog-presence':
+      'no-op presence animation so Radix keeps a Dialog mounted through its exit transition',
 
-  // --- feature pages (site tier) ----------------------------------------------------------------
-  'lib-rise': 'library card rise',
-  'lib-spin': 'library spinner',
-  'lib-details-in': 'library details enter',
-  'sec-fade-down': 'security page banner enter',
-  'kd-aura-spin': 'kaikai-debt aura',
-  'kd-aura-spin-reverse': 'kaikai-debt aura (counter-rotating)',
-  'kd-globe-turn': 'kaikai-debt globe',
-  'kd-sweep-1': 'kaikai-debt sweep',
-  'kd-sweep-2': 'kaikai-debt sweep',
-  'kd-flash-in': 'kaikai-debt flash',
-  'rmhcalc-pulse': 'RMHCalculator live indicator',
-  'rmht-rise': 'RMHTech rise',
-  'rmht-spin': 'RMHTech spin',
-  'rmht-glow': 'RMHTech glow',
-  'rmht-fade': 'RMHTech fade',
-  'rmht-cue': 'RMHTech scroll cue',
-  'rmht-metalflow': 'RMHTech metal flow',
-  'rmht-metalblob': 'RMHTech metal blob',
-  'rmht-metalsheen': 'RMHTech metal sheen',
+    // --- feature pages (site tier) ----------------------------------------------------------------
+    'lib-rise':
+      'library card rise',
+    'lib-spin':
+      'library spinner',
+    'lib-details-in':
+      'library details enter',
+    'sec-fade-down':
+      'security page banner enter',
+    'kd-aura-spin':
+      'kaikai-debt aura',
+    'kd-aura-spin-reverse':
+      'kaikai-debt aura (counter-rotating)',
+    'kd-globe-turn':
+      'kaikai-debt globe',
+    'kd-sweep-1':
+      'kaikai-debt sweep',
+    'kd-sweep-2':
+      'kaikai-debt sweep',
+    'kd-flash-in':
+      'kaikai-debt flash',
+    'rmhcalc-pulse':
+      'RMHCalculator live indicator',
+    'rmht-rise':
+      'RMHTech rise',
+    'rmht-spin':
+      'RMHTech spin',
+    'rmht-glow':
+      'RMHTech glow',
+    'rmht-fade':
+      'RMHTech fade',
+    'rmht-cue':
+      'RMHTech scroll cue',
+    'rmht-metalflow':
+      'RMHTech metal flow',
+    'rmht-metalblob':
+      'RMHTech metal blob',
+    'rmht-metalsheen':
+      'RMHTech metal sheen',
 
-  // --- app tier ---------------------------------------------------------------------------------
-  'app-toast-in': 'app tier toast enter',
-  'app-toast-out': 'app tier toast exit',
-  'app-fade-in': 'app tier fade-in',
-  'app-slide-up': 'app tier slide-up',
-  'app-sheet-up': 'app tier bottom sheet enter',
-  'app-skeleton-pulse': 'app tier skeleton pulse',
-  'app-spin': 'app tier <Spinner>',
-  'vibe-rise': 'RMHVibe rise',
-  'vibe-rise-soft': 'RMHVibe soft rise',
-  'vibe-spin': 'RMHVibe spinner',
-  'vibe-pulse': 'RMHVibe pulse',
-  'rmhtype-blink': 'RMHType caret blink',
-  'rmhtube-reaction-float': 'RMHTube floating reaction',
-};
+    // --- app tier ---------------------------------------------------------------------------------
+    'app-toast-in':
+      'app tier toast enter',
+    'app-toast-out':
+      'app tier toast exit',
+    'app-fade-in':
+      'app tier fade-in',
+    'app-slide-up':
+      'app tier slide-up',
+    'app-sheet-up':
+      'app tier bottom sheet enter',
+    'app-skeleton-pulse':
+      'app tier skeleton pulse',
+    'app-spin':
+      'app tier <Spinner>',
+    'vibe-rise':
+      'RMHVibe rise',
+    'vibe-rise-soft':
+      'RMHVibe soft rise',
+    'vibe-spin':
+      'RMHVibe spinner',
+    'vibe-pulse':
+      'RMHVibe pulse',
+    'rmhtype-blink':
+      'RMHType caret blink',
+    'rmhtube-reaction-float':
+      'RMHTube floating reaction',
+  };
 
-const FILES = siteAppCssFiles();
+const FILES =
+  siteAppCssFiles();
 
-const found = new Map<string, string[]>();
+const found =
+  new Map<
+    string,
+    string[]
+  >();
 for (const f of FILES) {
-  const css = readFileSync(join(ROOT, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  for (const m of css.matchAll(/@keyframes\s+([\w-]+)/g)) {
-    const name = m[1] as string;
-    found.set(name, [...(found.get(name) ?? []), f]);
+  const css =
+    readFileSync(
+      join(
+        ROOT,
+        f,
+      ),
+      'utf8',
+    ).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    );
+  for (const m of css.matchAll(
+    /@keyframes\s+([\w-]+)/g,
+  )) {
+    const name =
+      m[1] as string;
+    found.set(
+      name,
+      [
+        ...(found.get(
+          name,
+        ) ??
+          []),
+        f,
+      ],
+    );
   }
 }
 
 describe('@keyframes are sanctioned (site + app tier)', () => {
   it('scans real stylesheets', () => {
-    expect(FILES).toContain('app/globals.css');
-    expect(FILES).toContain('components/shared/app-theme.css');
-    expect(FILES).not.toContain('components/temple-of-joy/temple-of-joy.css');
+    expect(
+      FILES,
+    ).toContain(
+      'app/globals.css',
+    );
+    expect(
+      FILES,
+    ).toContain(
+      'components/shared/app-theme.css',
+    );
+    expect(
+      FILES,
+    ).not.toContain(
+      'components/temple-of-joy/temple-of-joy.css',
+    );
   });
 
   it('every @keyframes name is on the SANCTIONED list', () => {
-    const unknown = [...found].filter(([n]) => !(n in SANCTIONED)).map(([n, f]) => `${n} (${f.join(', ')})`);
+    const unknown =
+      [
+        ...found,
+      ]
+        .filter(
+          ([
+            n,
+          ]) =>
+            !(
+              n in
+              SANCTIONED
+            ),
+        )
+        .map(
+          ([
+            n,
+            f,
+          ]) =>
+            `${n} (${f.join(', ')})`,
+        );
     expect(
       unknown,
       'New @keyframes: prefer a CSS transition with @starting-style (CLAUDE.md "Never fake a law"). If a keyframe is truly needed, add it to SANCTIONED in lib/__tests__/keyframes-sanctioned.test.ts with a reason.',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   });
 
   it('the list stays honest: every entry still has a @keyframes', () => {
-    const stale = Object.keys(SANCTIONED).filter((n) => !found.has(n));
-    expect(stale, 'Delete these entries; their @keyframes are gone.').toEqual([]);
+    const stale =
+      Object.keys(
+        SANCTIONED,
+      ).filter(
+        (
+          n,
+        ) =>
+          !found.has(
+            n,
+          ),
+      );
+    expect(
+      stale,
+      'Delete these entries; their @keyframes are gone.',
+    ).toEqual(
+      [],
+    );
   });
 
   it('each entry states a reason', () => {
-    for (const [n, why] of Object.entries(SANCTIONED)) expect(why.length, n).toBeGreaterThan(8);
+    for (const [
+      n,
+      why,
+    ] of Object.entries(
+      SANCTIONED,
+    ))
+      expect(
+        why.length,
+        n,
+      ).toBeGreaterThan(
+        8,
+      );
   });
 });

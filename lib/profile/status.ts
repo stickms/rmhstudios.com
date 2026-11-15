@@ -13,18 +13,30 @@
 export const STATUS_MAX_TEXT = 80;
 export const STATUS_MAX_EMOJI = 16;
 
-export type StatusExpiresIn = '30m' | '1h' | 'today';
+export type StatusExpiresIn =
+  | '30m'
+  | '1h'
+  | 'today';
 
 export interface UserStatus {
-  emoji: string | null;
+  emoji:
+    | string
+    | null;
   text: string;
 }
 
 /** The raw status columns as stored on `UserProfile`. */
 export interface StatusFields {
-  statusEmoji?: string | null;
-  statusText?: string | null;
-  statusExpires?: Date | string | null;
+  statusEmoji?:
+    | string
+    | null;
+  statusText?:
+    | string
+    | null;
+  statusExpires?:
+    | Date
+    | string
+    | null;
 }
 
 /**
@@ -32,21 +44,50 @@ export interface StatusFields {
  * Returns `null` when there is no status set or it has expired.
  */
 export function resolveStatus(
-  profile: StatusFields | null | undefined,
+  profile:
+    | StatusFields
+    | null
+    | undefined,
   now: number = Date.now(),
 ): UserStatus | null {
-  if (!profile) return null;
-  const emoji = profile.statusEmoji?.trim() || null;
-  const text = profile.statusText?.trim() || '';
-  if (!emoji && !text) return null;
-  if (profile.statusExpires) {
+  if (
+    !profile
+  )
+    return null;
+  const emoji =
+    profile.statusEmoji?.trim() ||
+    null;
+  const text =
+    profile.statusText?.trim() ||
+    '';
+  if (
+    !emoji &&
+    !text
+  )
+    return null;
+  if (
+    profile.statusExpires
+  ) {
     const exp =
-      typeof profile.statusExpires === 'string'
-        ? Date.parse(profile.statusExpires)
+      typeof profile.statusExpires ===
+      'string'
+        ? Date.parse(
+            profile.statusExpires,
+          )
         : profile.statusExpires.getTime();
-    if (Number.isFinite(exp) && exp < now) return null;
+    if (
+      Number.isFinite(
+        exp,
+      ) &&
+      exp <
+        now
+    )
+      return null;
   }
-  return { emoji, text };
+  return {
+    emoji,
+    text,
+  };
 }
 
 /**
@@ -54,14 +95,44 @@ export function resolveStatus(
  * cleared". `today` means end of the current UTC day.
  */
 export function statusExpiresAt(
-  expiresIn: StatusExpiresIn | null | undefined,
+  expiresIn:
+    | StatusExpiresIn
+    | null
+    | undefined,
   now: Date = new Date(),
 ): Date | null {
-  if (!expiresIn) return null;
-  if (expiresIn === '30m') return new Date(now.getTime() + 30 * 60_000);
-  if (expiresIn === '1h') return new Date(now.getTime() + 60 * 60_000);
-  const end = new Date(now);
-  end.setUTCHours(23, 59, 59, 999);
+  if (
+    !expiresIn
+  )
+    return null;
+  if (
+    expiresIn ===
+    '30m'
+  )
+    return new Date(
+      now.getTime() +
+        30 *
+          60_000,
+    );
+  if (
+    expiresIn ===
+    '1h'
+  )
+    return new Date(
+      now.getTime() +
+        60 *
+          60_000,
+    );
+  const end =
+    new Date(
+      now,
+    );
+  end.setUTCHours(
+    23,
+    59,
+    59,
+    999,
+  );
   return end;
 }
 
@@ -77,10 +148,36 @@ export interface StatusPreset {
 }
 
 /** Quick-pick statuses shown in the editor. */
-export const STATUS_PRESETS: StatusPreset[] = [
-  { emoji: '🎮', key: 'preset-gaming', text: 'Grinding the pass' },
-  { emoji: '📚', key: 'preset-studying', text: 'Studying' },
-  { emoji: '🎧', key: 'preset-vibing', text: 'Vibing' },
-  { emoji: '💤', key: 'preset-afk', text: 'AFK' },
-  { emoji: '🛠️', key: 'preset-building', text: 'Building something' },
-];
+export const STATUS_PRESETS: StatusPreset[] =
+  [
+    {
+      emoji:
+        '🎮',
+      key: 'preset-gaming',
+      text: 'Grinding the pass',
+    },
+    {
+      emoji:
+        '📚',
+      key: 'preset-studying',
+      text: 'Studying',
+    },
+    {
+      emoji:
+        '🎧',
+      key: 'preset-vibing',
+      text: 'Vibing',
+    },
+    {
+      emoji:
+        '💤',
+      key: 'preset-afk',
+      text: 'AFK',
+    },
+    {
+      emoji:
+        '🛠️',
+      key: 'preset-building',
+      text: 'Building something',
+    },
+  ];

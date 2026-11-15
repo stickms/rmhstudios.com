@@ -33,43 +33,124 @@ export type DatacenterRoute =
   | '/rmh-datacenter/power'
   | '/rmh-datacenter/contact';
 
-export function DatacenterTabs({ active }: { active: DatacenterRoute }) {
-  const { t } = useTranslation('c-rmh-datacenter');
+export function DatacenterTabs({
+  active,
+}: {
+  active: DatacenterRoute;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmh-datacenter',
+    );
 
-  const tabs: TabItem[] = [
-    { id: '/rmh-datacenter', label: t('tab-overview', { defaultValue: 'Overview' }) },
-    {
-      id: '/rmh-datacenter/facilities',
-      label: t('tab-facilities', { defaultValue: 'Facilities' }),
-    },
-    {
-      id: '/rmh-datacenter/platform',
-      label: t('tab-platform', { defaultValue: 'Platform' }),
-    },
-    {
-      id: '/rmh-datacenter/network',
-      label: t('tab-network', { defaultValue: 'Network' }),
-    },
-    { id: '/rmh-datacenter/power', label: t('tab-power', { defaultValue: 'Power' }) },
-    {
-      id: '/rmh-datacenter/contact',
-      label: t('tab-contact', { defaultValue: 'Contact' }),
-    },
-  ];
+  const tabs: TabItem[] =
+    [
+      {
+        id: '/rmh-datacenter',
+        label:
+          t(
+            'tab-overview',
+            {
+              defaultValue:
+                'Overview',
+            },
+          ),
+      },
+      {
+        id: '/rmh-datacenter/facilities',
+        label:
+          t(
+            'tab-facilities',
+            {
+              defaultValue:
+                'Facilities',
+            },
+          ),
+      },
+      {
+        id: '/rmh-datacenter/platform',
+        label:
+          t(
+            'tab-platform',
+            {
+              defaultValue:
+                'Platform',
+            },
+          ),
+      },
+      {
+        id: '/rmh-datacenter/network',
+        label:
+          t(
+            'tab-network',
+            {
+              defaultValue:
+                'Network',
+            },
+          ),
+      },
+      {
+        id: '/rmh-datacenter/power',
+        label:
+          t(
+            'tab-power',
+            {
+              defaultValue:
+                'Power',
+            },
+          ),
+      },
+      {
+        id: '/rmh-datacenter/contact',
+        label:
+          t(
+            'tab-contact',
+            {
+              defaultValue:
+                'Contact',
+            },
+          ),
+      },
+    ];
 
   return (
     <PageTabs
-      tabs={tabs}
-      value={active}
-      aria-label={t('tabs-aria-label', { defaultValue: 'RMH Datacenter' })}
-      renderTab={(tab, props) => (
+      tabs={
+        tabs
+      }
+      value={
+        active
+      }
+      aria-label={t(
+        'tabs-aria-label',
+        {
+          defaultValue:
+            'RMH Datacenter',
+        },
+      )}
+      renderTab={(
+        tab,
+        props,
+      ) => (
         <Link
-          to={tab.id}
-          id={props.id}
-          aria-current={props['aria-current']}
+          to={
+            tab.id
+          }
+          id={
+            props.id
+          }
+          aria-current={
+            props[
+              'aria-current'
+            ]
+          }
           className={`${props.className} min-h-11`}
         >
-          {props.children}
+          {
+            props.children
+          }
         </Link>
       )}
     />

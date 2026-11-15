@@ -22,7 +22,11 @@ import type { QualityPlan } from '../client/quality';
 import { SharedModelTextures } from './model-textures';
 
 /** Models loading at once: a phone holds few decodes in memory; elsewhere the limit only keeps the burst off the network stack. */
-export const MODEL_LOADS = { phone: 6, other: 24 } as const;
+export const MODEL_LOADS =
+  {
+    phone: 6,
+    other: 24,
+  } as const;
 
 export interface BoundedGltfLoaderOptions {
   /** Models loading at once. */
@@ -30,33 +34,66 @@ export interface BoundedGltfLoaderOptions {
 }
 
 interface Loader {
-  loadAsync(url: string): Promise<GLTF>;
+  loadAsync(
+    url: string,
+  ): Promise<GLTF>;
 }
 
-export function boundedGltfLoader(inner: Loader, opts: BoundedGltfLoaderOptions): Loader {
-  const limit = Math.max(1, Math.floor(opts.concurrency));
-  const waiting: Array<() => void> = [];
+export function boundedGltfLoader(
+  inner: Loader,
+  opts: BoundedGltfLoaderOptions,
+): Loader {
+  const limit =
+    Math.max(
+      1,
+      Math.floor(
+        opts.concurrency,
+      ),
+    );
+  const waiting: Array<
+    () => void
+  > =
+    [];
   let active = 0;
-  const release = () => {
-    active--;
-    const next = waiting.shift();
-    if (next) {
-      active++;
-      next();
-    }
-  };
-  const slot = (): Promise<void> => {
-    if (active < limit) {
-      active++;
-      return Promise.resolve();
-    }
-    return new Promise((resolve) => waiting.push(resolve));
-  };
+  const release =
+    () => {
+      active--;
+      const next =
+        waiting.shift();
+      if (
+        next
+      ) {
+        active++;
+        next();
+      }
+    };
+  const slot =
+    (): Promise<void> => {
+      if (
+        active <
+        limit
+      ) {
+        active++;
+        return Promise.resolve();
+      }
+      return new Promise(
+        (
+          resolve,
+        ) =>
+          waiting.push(
+            resolve,
+          ),
+      );
+    };
   return {
-    async loadAsync(url: string): Promise<GLTF> {
+    async loadAsync(
+      url: string,
+    ): Promise<GLTF> {
       await slot();
       try {
-        return await inner.loadAsync(url);
+        return await inner.loadAsync(
+          url,
+        );
       } finally {
         release();
       }
@@ -65,8 +102,35 @@ export function boundedGltfLoader(inner: Loader, opts: BoundedGltfLoaderOptions)
 }
 
 /** The model loader a client uses for a match: the queue, shared textures, and the plan's texture cap on the phone tier. */
-export function modelLoaderFor(plan: Pick<QualityPlan, 'tier' | 'maxTextureSize'>): Loader {
-  const phone = plan.tier === 'mobile';
-  const textures = new SharedModelTextures(phone ? { maxSize: plan.maxTextureSize } : {});
-  return boundedGltfLoader(new Tf2GLTFLoader(undefined, textures), { concurrency: phone ? MODEL_LOADS.phone : MODEL_LOADS.other });
+export function modelLoaderFor(
+  plan: Pick<
+    QualityPlan,
+    | 'tier'
+    | 'maxTextureSize'
+  >,
+): Loader {
+  const phone =
+    plan.tier ===
+    'mobile';
+  const textures =
+    new SharedModelTextures(
+      phone
+        ? {
+            maxSize:
+              plan.maxTextureSize,
+          }
+        : {},
+    );
+  return boundedGltfLoader(
+    new Tf2GLTFLoader(
+      undefined,
+      textures,
+    ),
+    {
+      concurrency:
+        phone
+          ? MODEL_LOADS.phone
+          : MODEL_LOADS.other,
+    },
+  );
 }

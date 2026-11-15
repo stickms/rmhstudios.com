@@ -34,7 +34,9 @@ export const BOWL_BALLS = 2;
 export const BOWL_BOOST_SECONDS = 3600;
 
 /** Seconds before the lane may be used again. */
-export const BOWL_COOLDOWN_SECONDS = 24 * 3600;
+export const BOWL_COOLDOWN_SECONDS =
+  24 *
+  3600;
 
 /** What a perfect frame is worth. The ceiling of the whole mechanic. */
 export const BOWL_MAX_MULTIPLIER = 4;
@@ -87,9 +89,24 @@ export function createBowl(): BowlState {
  * on purpose: a player has to be able to look at seven pins down and know, with
  * no arithmetic, that they got seven tenths of the way to the good outcome.
  */
-export function bowlMultiplier(pins: number): number {
-  const share = Math.max(0, Math.min(1, pins / BOWL_PINS));
-  return 1 + (BOWL_MAX_MULTIPLIER - 1) * share;
+export function bowlMultiplier(
+  pins: number,
+): number {
+  const share =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        pins /
+          BOWL_PINS,
+      ),
+    );
+  return (
+    1 +
+    (BOWL_MAX_MULTIPLIER -
+      1) *
+      share
+  );
 }
 
 /**
@@ -100,19 +117,49 @@ export function bowlMultiplier(pins: number): number {
  * pins with it. Capped well short of the lane so the widest ball can still miss
  * — an investment that made a strike automatic would end the mechanic.
  */
-export function bowlBallRadius(globes: number): number {
-  const extra = Math.max(0, Math.min(globes - 1, 7));
-  return 0.105 + extra * 0.007;
+export function bowlBallRadius(
+  globes: number,
+): number {
+  const extra =
+    Math.max(
+      0,
+      Math.min(
+        globes -
+          1,
+        7,
+      ),
+    );
+  return (
+    0.105 +
+    extra *
+      0.007
+  );
 }
 
 /** Whether the lane is open at all yet. */
-export function bowlUnlocked(lifetimeJoy: number): boolean {
-  return lifetimeJoy >= BOWL_UNLOCK_LIFETIME_JOY;
+export function bowlUnlocked(
+  lifetimeJoy: number,
+): boolean {
+  return (
+    lifetimeJoy >=
+    BOWL_UNLOCK_LIFETIME_JOY
+  );
 }
 
 /** Whether a frame may be started right now. */
-export function bowlReady(bowl: BowlState, lifetimeJoy: number): boolean {
-  return bowlUnlocked(lifetimeJoy) && bowl.cooldown <= 0 && bowl.remaining <= 0;
+export function bowlReady(
+  bowl: BowlState,
+  lifetimeJoy: number,
+): boolean {
+  return (
+    bowlUnlocked(
+      lifetimeJoy,
+    ) &&
+    bowl.cooldown <=
+      0 &&
+    bowl.remaining <=
+      0
+  );
 }
 
 /**
@@ -123,38 +170,104 @@ export function bowlReady(bowl: BowlState, lifetimeJoy: number): boolean {
  * window of time, not a window of attention, and the vigil credits the extra
  * income for whatever part of it overlapped the absence.
  */
-export function advanceBowl(bowl: BowlState, seconds: number): BowlState {
-  if (!(seconds > 0)) return bowl;
-  const cooldown = Math.max(0, bowl.cooldown - seconds);
-  const remaining = Math.max(0, bowl.remaining - seconds);
-  if (cooldown === bowl.cooldown && remaining === bowl.remaining) return bowl;
+export function advanceBowl(
+  bowl: BowlState,
+  seconds: number,
+): BowlState {
+  if (
+    !(
+      seconds >
+      0
+    )
+  )
+    return bowl;
+  const cooldown =
+    Math.max(
+      0,
+      bowl.cooldown -
+        seconds,
+    );
+  const remaining =
+    Math.max(
+      0,
+      bowl.remaining -
+        seconds,
+    );
+  if (
+    cooldown ===
+      bowl.cooldown &&
+    remaining ===
+      bowl.remaining
+  )
+    return bowl;
   return {
     ...bowl,
     cooldown,
     remaining,
     // A spent boost stops multiplying anything the instant it runs out; leaving
     // the factor behind would make a dead boost look live in the breakdown.
-    multiplier: remaining > 0 ? bowl.multiplier : 1,
+    multiplier:
+      remaining >
+      0
+        ? bowl.multiplier
+        : 1,
   };
 }
 
 /** The frame is over: bank the result and start both clocks. */
-export function finishFrame(bowl: BowlState, pins: number, firstBall: number): BowlState {
-  const knocked = Math.max(0, Math.min(BOWL_PINS, Math.round(pins)));
-  const multiplier = bowlMultiplier(knocked);
+export function finishFrame(
+  bowl: BowlState,
+  pins: number,
+  firstBall: number,
+): BowlState {
+  const knocked =
+    Math.max(
+      0,
+      Math.min(
+        BOWL_PINS,
+        Math.round(
+          pins,
+        ),
+      ),
+    );
+  const multiplier =
+    bowlMultiplier(
+      knocked,
+    );
   return {
     ...bowl,
     revealed: true,
-    frames: bowl.frames + 1,
-    lastPins: knocked,
-    bestPins: Math.max(bowl.bestPins, knocked),
-    strikes: bowl.strikes + (firstBall >= BOWL_PINS ? 1 : 0),
-    cooldown: BOWL_COOLDOWN_SECONDS,
+    frames:
+      bowl.frames +
+      1,
+    lastPins:
+      knocked,
+    bestPins:
+      Math.max(
+        bowl.bestPins,
+        knocked,
+      ),
+    strikes:
+      bowl.strikes +
+      (firstBall >=
+      BOWL_PINS
+        ? 1
+        : 0),
+    cooldown:
+      BOWL_COOLDOWN_SECONDS,
     // A frame that knocked nothing down costs the day but does not lock the
     // hands: an hour of ×1 that you also cannot tap through would be strictly
     // worse than not bowling, and a mechanic nobody should ever use is not a
     // mechanic.
-    remaining: knocked > 0 ? BOWL_BOOST_SECONDS : 0,
-    multiplier: knocked > 0 ? multiplier : 1,
+    remaining:
+      knocked >
+      0
+        ? BOWL_BOOST_SECONDS
+        : 0,
+    multiplier:
+      knocked >
+      0
+        ? multiplier
+        : 1,
   };
 }

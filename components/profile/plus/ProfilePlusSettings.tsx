@@ -1,4 +1,7 @@
-import { lazy, useState } from 'react';
+import {
+  lazy,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -7,12 +10,32 @@ import { useSession } from '@/components/Providers';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 
 // Each section is its own chunk, fetched when its tab is first opened.
-const IdentitySettings = lazy(() => import('./settings/IdentitySettings'));
-const TopFourSettings = lazy(() => import('./settings/TopFourSettings'));
-const StampSettings = lazy(() => import('./settings/StampSettings'));
-const ShareSettings = lazy(() => import('./settings/ShareSettings'));
+const IdentitySettings =
+  lazy(
+    () =>
+      import('./settings/IdentitySettings'),
+  );
+const TopFourSettings =
+  lazy(
+    () =>
+      import('./settings/TopFourSettings'),
+  );
+const StampSettings =
+  lazy(
+    () =>
+      import('./settings/StampSettings'),
+  );
+const ShareSettings =
+  lazy(
+    () =>
+      import('./settings/ShareSettings'),
+  );
 
-type Section = 'about' | 'top-four' | 'stamps' | 'share';
+type Section =
+  | 'about'
+  | 'top-four'
+  | 'stamps'
+  | 'share';
 
 /**
  * Settings → Profile → "More about you": the editors for the profile extras —
@@ -21,38 +44,155 @@ type Section = 'about' | 'top-four' | 'stamps' | 'share';
  * and webrings (P10, P6). Mounted lazily by the profile settings page.
  */
 export default function ProfilePlusSettings() {
-  const { t } = useTranslation('f-profile-plus');
-  const { data: session } = useSession();
-  const [section, setSection] = useState<Section>('about');
-  const user = session?.user as { id: string; handle?: string | null } | undefined;
-  if (!user) return null;
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-profile-plus',
+    );
+  const {
+    data: session,
+  } =
+    useSession();
+  const [
+    section,
+    setSection,
+  ] =
+    useState<Section>(
+      'about',
+    );
+  const user =
+    session?.user as
+      | {
+          id: string;
+          handle?:
+            | string
+            | null;
+        }
+      | undefined;
+  if (
+    !user
+  )
+    return null;
 
   return (
     <SettingsSection
-      title={t('plus-title', { defaultValue: 'More about you' })}
-      description={t('plus-subtitle', {
-        defaultValue:
-          'Everything here is optional, and each piece appears on your profile only once you set it.',
-      })}
+      title={t(
+        'plus-title',
+        {
+          defaultValue:
+            'More about you',
+        },
+      )}
+      description={t(
+        'plus-subtitle',
+        {
+          defaultValue:
+            'Everything here is optional, and each piece appears on your profile only once you set it.',
+        },
+      )}
     >
       <Tabs
-        aria-label={t('plus-sections', { defaultValue: 'Profile sections' })}
+        aria-label={t(
+          'plus-sections',
+          {
+            defaultValue:
+              'Profile sections',
+          },
+        )}
         tabs={[
-          { id: 'about', label: t('tab-about', { defaultValue: 'About you' }) },
-          { id: 'top-four', label: t('tab-top-four', { defaultValue: 'Top four' }) },
-          { id: 'stamps', label: t('tab-stamps', { defaultValue: 'Stamps' }) },
-          { id: 'share', label: t('tab-share', { defaultValue: 'Card & rings' }) },
+          {
+            id: 'about',
+            label:
+              t(
+                'tab-about',
+                {
+                  defaultValue:
+                    'About you',
+                },
+              ),
+          },
+          {
+            id: 'top-four',
+            label:
+              t(
+                'tab-top-four',
+                {
+                  defaultValue:
+                    'Top four',
+                },
+              ),
+          },
+          {
+            id: 'stamps',
+            label:
+              t(
+                'tab-stamps',
+                {
+                  defaultValue:
+                    'Stamps',
+                },
+              ),
+          },
+          {
+            id: 'share',
+            label:
+              t(
+                'tab-share',
+                {
+                  defaultValue:
+                    'Card & rings',
+                },
+              ),
+          },
         ]}
-        value={section}
-        onChange={(id) => setSection(id as Section)}
+        value={
+          section
+        }
+        onChange={(
+          id,
+        ) =>
+          setSection(
+            id as Section,
+          )
+        }
       />
 
       <div>
-        <ArrivalSuspense fallback={<Skeleton className="h-48 w-full" />}>
-          {section === 'about' ? <IdentitySettings userId={user.id} /> : null}
-          {section === 'top-four' ? <TopFourSettings /> : null}
-          {section === 'stamps' ? <StampSettings userId={user.id} /> : null}
-          {section === 'share' ? <ShareSettings handleOrId={user.handle || user.id} /> : null}
+        <ArrivalSuspense
+          fallback={
+            <Skeleton className="h-48 w-full" />
+          }
+        >
+          {section ===
+          'about' ? (
+            <IdentitySettings
+              userId={
+                user.id
+              }
+            />
+          ) : null}
+          {section ===
+          'top-four' ? (
+            <TopFourSettings />
+          ) : null}
+          {section ===
+          'stamps' ? (
+            <StampSettings
+              userId={
+                user.id
+              }
+            />
+          ) : null}
+          {section ===
+          'share' ? (
+            <ShareSettings
+              handleOrId={
+                user.handle ||
+                user.id
+              }
+            />
+          ) : null}
         </ArrivalSuspense>
       </div>
     </SettingsSection>

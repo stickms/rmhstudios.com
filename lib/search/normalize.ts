@@ -19,10 +19,17 @@
  * the marks leaves the ASCII-ish base. Scripts without combining marks (CJK,
  * Hebrew, Arabic) pass through untouched.
  */
-export function fold(text: string): string {
+export function fold(
+  text: string,
+): string {
   return text
-    .normalize('NFKD')
-    .replace(/\p{Diacritic}/gu, '')
+    .normalize(
+      'NFKD',
+    )
+    .replace(
+      /\p{Diacritic}/gu,
+      '',
+    )
     .toLowerCase();
 }
 
@@ -33,11 +40,21 @@ export function fold(text: string): string {
  * `\p{L}\p{N}` keeps letters and digits in every script, so this is not
  * Latin-only; everything else (punctuation, emoji, separators) becomes a space.
  */
-export function foldWords(text: string): string {
-  return fold(text)
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+export function foldWords(
+  text: string,
+): string {
+  return fold(
+    text,
+  )
+    .replace(
+      /[^\p{L}\p{N}]+/gu,
+      ' ',
+    )
     .trim()
-    .replace(/\s+/g, ' ');
+    .replace(
+      /\s+/g,
+      ' ',
+    );
 }
 
 /**
@@ -45,23 +62,52 @@ export function foldWords(text: string): string {
  * type in front of a name. Searching `@ada` and `ada` must find the same person
  * — the `@` is how the site *renders* handles, not part of the handle itself.
  */
-export function normalizeQuery(raw: string): string {
-  return foldWords(raw.replace(/^\s*[@#/]+/, ''));
+export function normalizeQuery(
+  raw: string,
+): string {
+  return foldWords(
+    raw.replace(
+      /^\s*[@#/]+/,
+      '',
+    ),
+  );
 }
 
 /** Split normalised text into tokens. Returns `[]` for blank input. */
-export function tokenize(normalized: string): string[] {
-  return normalized ? normalized.split(' ').filter(Boolean) : [];
+export function tokenize(
+  normalized: string,
+): string[] {
+  return normalized
+    ? normalized
+        .split(
+          ' ',
+        )
+        .filter(
+          Boolean,
+        )
+    : [];
 }
 
 /**
  * First letter of each token — `"RMH Studios Box"` → `"rsb"`. Lets an acronym
  * query find the thing it abbreviates.
  */
-export function initials(normalized: string): string {
-  return tokenize(normalized)
-    .map((t) => t[0] ?? '')
-    .join('');
+export function initials(
+  normalized: string,
+): string {
+  return tokenize(
+    normalized,
+  )
+    .map(
+      (
+        t,
+      ) =>
+        t[0] ??
+        '',
+    )
+    .join(
+      '',
+    );
 }
 
 /**
@@ -69,18 +115,44 @@ export function initials(normalized: string): string {
  * spaces and one trailing space, so prefixes and suffixes carry weight.
  * `"cat"` → `"  c"`, `" ca"`, `"cat"`, `"at "`.
  */
-export function trigrams(token: string): Set<string> {
+export function trigrams(
+  token: string,
+): Set<string> {
   const padded = `  ${token} `;
-  const out = new Set<string>();
-  for (let i = 0; i + 3 <= padded.length; i++) out.add(padded.slice(i, i + 3));
+  const out =
+    new Set<string>();
+  for (
+    let i = 0;
+    i +
+      3 <=
+    padded.length;
+    i++
+  )
+    out.add(
+      padded.slice(
+        i,
+        i +
+          3,
+      ),
+    );
   return out;
 }
 
 /** Trigram set for a whole (possibly multi-word) normalised string. */
-export function trigramSet(normalized: string): Set<string> {
-  const out = new Set<string>();
-  for (const token of tokenize(normalized)) {
-    for (const g of trigrams(token)) out.add(g);
+export function trigramSet(
+  normalized: string,
+): Set<string> {
+  const out =
+    new Set<string>();
+  for (const token of tokenize(
+    normalized,
+  )) {
+    for (const g of trigrams(
+      token,
+    ))
+      out.add(
+        g,
+      );
   }
   return out;
 }

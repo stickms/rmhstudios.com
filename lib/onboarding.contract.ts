@@ -6,16 +6,46 @@ import type {
   OnboardingStatus,
 } from '@/lib/onboarding.server';
 
-export const getOnboardingApi = endpoint<{ res: OnboardingStatus & { reward: number } }>()({
-  method: 'GET',
-  path: '/api/onboarding',
-});
+export const getOnboardingApi =
+  endpoint<{
+    res: OnboardingStatus & {
+      reward: number;
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/onboarding',
+    },
+  );
 
-export const claimOnboardingApi = endpoint<{
-  res: { result: OnboardingClaimResult; claimed: boolean; reward: number };
-}>()({ method: 'POST', path: '/api/onboarding' });
+export const claimOnboardingApi =
+  endpoint<{
+    res: {
+      result: OnboardingClaimResult;
+      claimed: boolean;
+      reward: number;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/onboarding',
+    },
+  );
 
 /** Claim the First Week graduation reward once every step is done. */
-export const claimFirstWeekApi = endpoint<{
-  res: { result: FirstWeekGraduationResult; graduated: boolean; reward: number };
-}>()({ method: 'POST', path: '/api/onboarding/first-week' });
+export const claimFirstWeekApi =
+  endpoint<{
+    res: {
+      result: FirstWeekGraduationResult;
+      graduated: boolean;
+      reward: number;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/onboarding/first-week',
+    },
+  );

@@ -2,16 +2,20 @@ import { getAudioContext } from '@/lib/shared/platform';
 import { OutputClock } from './output-clock';
 export class AudioManager {
   private static instance: AudioManager;
-  private audioContext: AudioContext | null = null;
-  private source: AudioBufferSourceNode | null = null;
-  private gainNode: GainNode | null = null;
-  private buffer: AudioBuffer | null = null;
+  private audioContext: AudioContext | null =
+    null;
+  private source: AudioBufferSourceNode | null =
+    null;
+  private gainNode: GainNode | null =
+    null;
+  private buffer: AudioBuffer | null =
+    null;
   private startTime: number = 0;
   private pauseTime: number = 0;
   private isPlaying: boolean = false;
   private playbackRate: number = 1.0;
   private volume: number = 1.0;
-  
+
   // Track position logic
   private offsetAtLastRateChange: number = 0;
   private timeAtLastRateChange: number = 0;
@@ -22,79 +26,161 @@ export class AudioManager {
    * advances in steps, coarse ones in Firefox. Everything that positions or judges
    * the playfield reads this instead.
    */
-  private readonly clock = new OutputClock();
-  private lastObservedAt = Number.NEGATIVE_INFINITY;
-  private analyser: AnalyserNode | null = null;
+  private readonly clock =
+    new OutputClock();
+  private lastObservedAt =
+    Number.NEGATIVE_INFINITY;
+  private analyser: AnalyserNode | null =
+    null;
   /** The latest `loadTrack`/`loadFromBuffer`: an older load that resolves later must not replace it. */
   private loadToken = 0;
 
   private constructor() {}
 
   public static getInstance(): AudioManager {
-    if (!AudioManager.instance) {
-      AudioManager.instance = new AudioManager();
+    if (
+      !AudioManager.instance
+    ) {
+      AudioManager.instance =
+        new AudioManager();
     }
     return AudioManager.instance;
   }
 
   public initialize() {
-    if (this.audioContext) return;
+    if (
+      this
+        .audioContext
+    )
+      return;
     // Shared and null-safe: construction throws on a device without Web Audio
     // (or once the per-document context budget is spent), and this used to be
     // on the init path of everything that plays a sound.
-    this.audioContext = getAudioContext();
-    if (!this.audioContext) return;
-    this.gainNode = this.audioContext.createGain();
-    this.gainNode.connect(this.audioContext.destination);
-    this.gainNode.gain.value = this.volume;
+    this.audioContext =
+      getAudioContext();
+    if (
+      !this
+        .audioContext
+    )
+      return;
+    this.gainNode =
+      this.audioContext.createGain();
+    this.gainNode.connect(
+      this
+        .audioContext
+        .destination,
+    );
+    this.gainNode.gain.value =
+      this.volume;
     // A tap for visualisers: a pass-through that costs nothing when nothing reads it.
     try {
-      this.analyser = this.audioContext.createAnalyser();
+      this.analyser =
+        this.audioContext.createAnalyser();
       this.analyser.fftSize = 2048;
       this.analyser.smoothingTimeConstant = 0;
-      this.gainNode.connect(this.analyser);
+      this.gainNode.connect(
+        this
+          .analyser,
+      );
     } catch {
-      this.analyser = null;
+      this.analyser =
+        null;
     }
   }
 
   /** The visualiser tap, or null where Web Audio cannot make one. */
   public getAnalyser(): AnalyserNode | null {
-    return this.analyser;
+    return this
+      .analyser;
   }
 
   /**
    * Feed the clock a reading, at most every 8 ms: it is called from several places a
    * frame, and `getOutputTimestamp()` is not free.
    */
-  private observeClock(perfMs: number): void {
-    const ctx = this.audioContext;
-    if (!ctx) return;
-    if (perfMs - this.lastObservedAt < 8 && this.clock.ready) return;
-    this.lastObservedAt = perfMs;
-    let timestamp: { contextTime: number; performanceTime: number } | null = null;
+  private observeClock(
+    perfMs: number,
+  ): void {
+    const ctx =
+      this
+        .audioContext;
+    if (
+      !ctx
+    )
+      return;
+    if (
+      perfMs -
+        this
+          .lastObservedAt <
+        8 &&
+      this
+        .clock
+        .ready
+    )
+      return;
+    this.lastObservedAt =
+      perfMs;
+    let timestamp: {
+      contextTime: number;
+      performanceTime: number;
+    } | null =
+      null;
     try {
-      const ts = ctx.getOutputTimestamp?.();
-      if (ts && typeof ts.contextTime === 'number' && typeof ts.performanceTime === 'number') {
-        timestamp = { contextTime: ts.contextTime, performanceTime: ts.performanceTime };
+      const ts =
+        ctx.getOutputTimestamp?.();
+      if (
+        ts &&
+        typeof ts.contextTime ===
+          'number' &&
+        typeof ts.performanceTime ===
+          'number'
+      ) {
+        timestamp =
+          {
+            contextTime:
+              ts.contextTime,
+            performanceTime:
+              ts.performanceTime,
+          };
       }
     } catch {
-      timestamp = null;
+      timestamp =
+        null;
     }
-    this.clock.observe({
-      timestamp,
-      contextTime: ctx.currentTime,
-      perfMs,
-      latencySeconds: ctx.outputLatency || ctx.baseLatency || 0,
-    });
+    this.clock.observe(
+      {
+        timestamp,
+        contextTime:
+          ctx.currentTime,
+        perfMs,
+        latencySeconds:
+          ctx.outputLatency ||
+          ctx.baseLatency ||
+          0,
+      },
+    );
   }
 
   /** The context time of the sound being heard at page time `perfMs`. */
-  private heardContextTime(perfMs: number): number {
-    this.observeClock(perfMs);
-    const heard = this.clock.contextTimeAt(perfMs);
+  private heardContextTime(
+    perfMs: number,
+  ): number {
+    this.observeClock(
+      perfMs,
+    );
+    const heard =
+      this.clock.contextTimeAt(
+        perfMs,
+      );
     // Before the first reading there is nothing to apply: fall back to the render time.
-    return Number.isFinite(heard) ? heard : (this.audioContext?.currentTime ?? 0);
+    return Number.isFinite(
+      heard,
+    )
+      ? heard
+      : (this
+          .audioContext
+          ?.currentTime ??
+          0);
   }
 
   /**
@@ -102,10 +188,21 @@ export class AudioManager {
    * asked to play at `contextTime` actually reaches the listener. A calibration tap
    * is measured against this, not against when the click was scheduled.
    */
-  public heardPerfTime(contextTime: number): number {
-    this.observeClock(performance.now());
-    const t = this.clock.perfTimeHeard(contextTime);
-    return Number.isFinite(t) ? t : performance.now();
+  public heardPerfTime(
+    contextTime: number,
+  ): number {
+    this.observeClock(
+      performance.now(),
+    );
+    const t =
+      this.clock.perfTimeHeard(
+        contextTime,
+      );
+    return Number.isFinite(
+      t,
+    )
+      ? t
+      : performance.now();
   }
 
   /**
@@ -114,44 +211,97 @@ export class AudioManager {
    * It runs ahead of {@link getCurrentTime} by the output latency.
    */
   public getRenderPosition(): number {
-    if (!this.isPlaying) return this.pauseTime;
+    if (
+      !this
+        .isPlaying
+    )
+      return this
+        .pauseTime;
     return this.renderPosition();
   }
 
   private renderPosition(): number {
-    if (!this.audioContext) return this.pauseTime;
+    if (
+      !this
+        .audioContext
+    )
+      return this
+        .pauseTime;
     return (
-      this.offsetAtLastRateChange +
-      (this.audioContext.currentTime - this.timeAtLastRateChange) * this.playbackRate
+      this
+        .offsetAtLastRateChange +
+      (this
+        .audioContext
+        .currentTime -
+        this
+          .timeAtLastRateChange) *
+        this
+          .playbackRate
     );
   }
 
   public getContext(): AudioContext | null {
-    return this.audioContext;
+    return this
+      .audioContext;
   }
 
-  public async loadTrack(url: string): Promise<AudioBuffer> {
-    if (!this.audioContext) this.initialize();
-    const token = ++this.loadToken;
-    
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch audio: ${response.status} ${response.statusText}`);
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = await this.audioContext!.decodeAudioData(arrayBuffer);
+  public async loadTrack(
+    url: string,
+  ): Promise<AudioBuffer> {
+    if (
+      !this
+        .audioContext
+    )
+      this.initialize();
+    const token =
+      ++this
+        .loadToken;
+
+    const response =
+      await fetch(
+        url,
+      );
+    if (
+      !response.ok
+    )
+      throw new Error(
+        `Failed to fetch audio: ${response.status} ${response.statusText}`,
+      );
+    const arrayBuffer =
+      await response.arrayBuffer();
+    const buffer =
+      await this.audioContext!.decodeAudioData(
+        arrayBuffer,
+      );
     // Superseded by a later load: hand the caller its buffer, but leave the current track alone.
-    if (token !== this.loadToken) return buffer;
+    if (
+      token !==
+      this
+        .loadToken
+    )
+      return buffer;
     // A new track starts from the top: the old source must not keep sounding over it.
     this.stop();
-    this.buffer = buffer;
-    return this.buffer;
+    this.buffer =
+      buffer;
+    return this
+      .buffer;
   }
 
   /** Load a pre-decoded AudioBuffer directly, avoiding a network request. */
-  public loadFromBuffer(buffer: AudioBuffer): void {
-    if (!this.audioContext) this.initialize();
-    this.loadToken++;
+  public loadFromBuffer(
+    buffer: AudioBuffer,
+  ): void {
+    if (
+      !this
+        .audioContext
+    )
+      this.initialize();
+    this
+      .loadToken++;
     this.stop();
-    this.buffer = buffer;
+    this.buffer =
+      buffer;
   }
 
   /**
@@ -166,46 +316,118 @@ export class AudioManager {
    * not wall-clock, so a run at 2x speed gets the same *visible* runway rather
    * than half of one.
    */
-  public play(leadInSeconds = 0) {
-    if (!this.audioContext || !this.buffer) return;
-    if (this.audioContext.state === 'suspended') {
+  public play(
+    leadInSeconds = 0,
+  ) {
+    if (
+      !this
+        .audioContext ||
+      !this
+        .buffer
+    )
+      return;
+    if (
+      this
+        .audioContext
+        .state ===
+      'suspended'
+    ) {
       this.audioContext.resume();
     }
 
-    if (this.isPlaying) this.stop();
+    if (
+      this
+        .isPlaying
+    )
+      this.stop();
 
-    this.source = this.audioContext.createBufferSource();
-    this.source.buffer = this.buffer;
-    this.source.playbackRate.value = this.playbackRate;
-    
+    this.source =
+      this.audioContext.createBufferSource();
+    this.source.buffer =
+      this.buffer;
+    this.source.playbackRate.value =
+      this.playbackRate;
+
     // RMS Normalization — normalize to a consistent average loudness level,
     // then the user's volume control is applied on top via gainNode.
-    const numChannels = this.buffer.numberOfChannels;
+    const numChannels =
+      this
+        .buffer
+        .numberOfChannels;
     let sumOfSquares = 0;
     let sampleCount = 0;
     const step = 50; // sample every 50th value for performance
-    for (let c = 0; c < numChannels; c++) {
-      const channelData = this.buffer.getChannelData(c);
-      for (let i = 0; i < channelData.length; i += step) {
-        sumOfSquares += channelData[i] * channelData[i];
+    for (
+      let c = 0;
+      c <
+      numChannels;
+      c++
+    ) {
+      const channelData =
+        this.buffer.getChannelData(
+          c,
+        );
+      for (
+        let i = 0;
+        i <
+        channelData.length;
+        i +=
+          step
+      ) {
+        sumOfSquares +=
+          channelData[
+            i
+          ] *
+          channelData[
+            i
+          ];
         sampleCount++;
       }
     }
-    const rms = sampleCount > 0 ? Math.sqrt(sumOfSquares / sampleCount) : 0;
+    const rms =
+      sampleCount >
+      0
+        ? Math.sqrt(
+            sumOfSquares /
+              sampleCount,
+          )
+        : 0;
     // ~-20 dBFS target — comfortable with headroom; cap at 4× to avoid over-amplifying very quiet tracks
-    const targetRms = 0.10;
-    const normalizationGain = rms > 0 ? Math.min(targetRms / rms, 4.0) : 1.0;
-    
+    const targetRms = 0.1;
+    const normalizationGain =
+      rms >
+      0
+        ? Math.min(
+            targetRms /
+              rms,
+            4.0,
+          )
+        : 1.0;
+
     // Connect: source → normNode (per-song RMS normalization) → gainNode (user volume)
-    if (!this.gainNode) this.initialize();
-    const normNode = this.audioContext.createGain();
-    normNode.gain.value = normalizationGain;
-    
-    this.source.connect(normNode);
-    normNode.connect(this.gainNode!); // Connect to user volume gain
+    if (
+      !this
+        .gainNode
+    )
+      this.initialize();
+    const normNode =
+      this.audioContext.createGain();
+    normNode.gain.value =
+      normalizationGain;
+
+    this.source.connect(
+      normNode,
+    );
+    normNode.connect(
+      this
+        .gainNode!,
+    ); // Connect to user volume gain
 
     // Calculate start time
-    const now = this.audioContext.currentTime;
+    const now =
+      this
+        .audioContext
+        .currentTime;
     // If we were paused, resume from pauseTime. Else from 0.
     //
     // `pauseTime` can be NEGATIVE: pausing during a lead-in stores the position
@@ -215,19 +437,48 @@ export class AudioManager {
     // 0, would swallow the rest of the runway and drop the player straight into
     // the song with notes already on top of the line.
     // A track that ran out (`onended` parks the clock at the end) plays again from the top.
-    const duration = this.getDuration();
-    const paused = duration > 0 && this.pauseTime >= duration ? 0 : this.pauseTime;
-    const offset = Math.max(0, paused);
-    const pendingLeadIn = Math.max(0, leadInSeconds, paused < 0 ? -paused : 0);
+    const duration =
+      this.getDuration();
+    const paused =
+      duration >
+        0 &&
+      this
+        .pauseTime >=
+        duration
+        ? 0
+        : this
+            .pauseTime;
+    const offset =
+      Math.max(
+        0,
+        paused,
+      );
+    const pendingLeadIn =
+      Math.max(
+        0,
+        leadInSeconds,
+        paused <
+          0
+          ? -paused
+          : 0,
+      );
 
     // The lead-in is expressed in song seconds, so the wall-clock wait shrinks
     // with the playback rate: `getCurrentTime()` then reads exactly
     // `offset - pendingLeadIn` at this instant whatever the rate is, and the
     // runway a note travels is the same at 0.5x and 2x.
-    const leadIn = pendingLeadIn / this.playbackRate;
-    const startAt = now + leadIn;
+    const leadIn =
+      pendingLeadIn /
+      this
+        .playbackRate;
+    const startAt =
+      now +
+      leadIn;
 
-    this.source.start(startAt, offset);
+    this.source.start(
+      startAt,
+      offset,
+    );
     // The clock's estimate (output latency + context offset) belongs to the output
     // device, not to this track, so starting, pausing or seeking does not reset it.
 
@@ -237,41 +488,72 @@ export class AudioManager {
     // that rises linearly and crosses zero exactly as the first sample sounds —
     // one timeline, no separate "are we in the lead-in" state for callers to
     // get out of step with.
-    this.startTime = startAt - (offset / this.playbackRate);
-    this.timeAtLastRateChange = startAt;
-    this.offsetAtLastRateChange = offset;
+    this.startTime =
+      startAt -
+      offset /
+        this
+          .playbackRate;
+    this.timeAtLastRateChange =
+      startAt;
+    this.offsetAtLastRateChange =
+      offset;
     this.pauseTime = 0;
 
     this.isPlaying = true;
-    
-    const source = this.source;
-    source.onended = () => {
-      // `pause`/`seek`/`stop`/a re-play replace or null `this.source` before their own `onended` arrives, so only a
-      // natural end still finds its source current. Park the clock at the end (callers detect the end by
-      // `getCurrentTime() >= getDuration()`), so `isPlaying` no longer sticks at true after the track ran out.
-      if (this.source !== source) return;
-      this.source = null;
-      this.pauseTime = this.getDuration();
-      this.isPlaying = false;
-    };
+
+    const source =
+      this
+        .source;
+    source.onended =
+      () => {
+        // `pause`/`seek`/`stop`/a re-play replace or null `this.source` before their own `onended` arrives, so only a
+        // natural end still finds its source current. Park the clock at the end (callers detect the end by
+        // `getCurrentTime() >= getDuration()`), so `isPlaying` no longer sticks at true after the track ran out.
+        if (
+          this
+            .source !==
+          source
+        )
+          return;
+        this.source =
+          null;
+        this.pauseTime =
+          this.getDuration();
+        this.isPlaying = false;
+      };
   }
 
   public pause() {
-    if (!this.source || !this.isPlaying || !this.audioContext) return;
-    
+    if (
+      !this
+        .source ||
+      !this
+        .isPlaying ||
+      !this
+        .audioContext
+    )
+      return;
+
     // Resume from where the source was actually stopped (the render head), not from
     // the heard position, which trails it by the output latency and would replay
     // that much audio.
-    const stoppedAt = this.renderPosition();
+    const stoppedAt =
+      this.renderPosition();
     this.source.stop();
-    this.pauseTime = stoppedAt;
+    this.pauseTime =
+      stoppedAt;
     this.isPlaying = false;
-    this.source = null;
+    this.source =
+      null;
   }
-  
+
   public resume() {
-     if (this.isPlaying) return;
-     this.play(); // Play handles using pauseTime offset
+    if (
+      this
+        .isPlaying
+    )
+      return;
+    this.play(); // Play handles using pauseTime offset
   }
 
   /**
@@ -286,25 +568,50 @@ export class AudioManager {
    * just relocating that offset and, if we were mid-playback, restarting the
    * source there.
    */
-  public seek(seconds: number) {
-    const wasPlaying = this.isPlaying;
-    if (this.source) {
+  public seek(
+    seconds: number,
+  ) {
+    const wasPlaying =
+      this
+        .isPlaying;
+    if (
+      this
+        .source
+    ) {
       try {
         this.source.stop();
       } catch {
         // Already stopped, or never started — nothing to clean up.
       }
-      this.source = null;
+      this.source =
+        null;
     }
     this.isPlaying = false;
-    this.pauseTime = Math.max(0, Math.min(seconds, this.getDuration() || seconds));
-    if (wasPlaying) this.play();
+    this.pauseTime =
+      Math.max(
+        0,
+        Math.min(
+          seconds,
+          this.getDuration() ||
+            seconds,
+        ),
+      );
+    if (
+      wasPlaying
+    )
+      this.play();
   }
 
   public stop() {
-    if (this.source) {
-      try { this.source.stop(); } catch(e) {}
-      this.source = null;
+    if (
+      this
+        .source
+    ) {
+      try {
+        this.source.stop();
+      } catch (e) {}
+      this.source =
+        null;
     }
     this.pauseTime = 0;
     this.isPlaying = false;
@@ -313,31 +620,69 @@ export class AudioManager {
     this.timeAtLastRateChange = 0;
   }
 
-  public setPlaybackRate(rate: number) {
-    if (rate === this.playbackRate) return;
+  public setPlaybackRate(
+    rate: number,
+  ) {
+    if (
+      rate ===
+      this
+        .playbackRate
+    )
+      return;
 
-    if (this.isPlaying && this.audioContext) {
-        // The rate change is scheduled on the render clock, so the new segment is
-        // anchored there: its position is where the source IS at that instant.
-        const now = this.audioContext.currentTime;
-        const positionAtChange = this.renderPosition();
+    if (
+      this
+        .isPlaying &&
+      this
+        .audioContext
+    ) {
+      // The rate change is scheduled on the render clock, so the new segment is
+      // anchored there: its position is where the source IS at that instant.
+      const now =
+        this
+          .audioContext
+          .currentTime;
+      const positionAtChange =
+        this.renderPosition();
 
-        if (this.source) {
-            this.source.playbackRate.setValueAtTime(rate, now);
-        }
-
-        this.offsetAtLastRateChange = positionAtChange;
-        this.timeAtLastRateChange = now;
-    }
-    
-    this.playbackRate = rate;
-  }
-  
-  public setVolume(volume: number) {
-      this.volume = Math.max(0, Math.min(1, volume));
-      if (this.gainNode) {
-          this.gainNode.gain.value = this.volume;
+      if (
+        this
+          .source
+      ) {
+        this.source.playbackRate.setValueAtTime(
+          rate,
+          now,
+        );
       }
+
+      this.offsetAtLastRateChange =
+        positionAtChange;
+      this.timeAtLastRateChange =
+        now;
+    }
+
+    this.playbackRate =
+      rate;
+  }
+
+  public setVolume(
+    volume: number,
+  ) {
+    this.volume =
+      Math.max(
+        0,
+        Math.min(
+          1,
+          volume,
+        ),
+      );
+    if (
+      this
+        .gainNode
+    ) {
+      this.gainNode.gain.value =
+        this.volume;
+    }
   }
 
   /**
@@ -351,54 +696,134 @@ export class AudioManager {
    * True while paused mid-song, so a pause does not read as "not started".
    */
   public hasBegun(): boolean {
-    return this.isPlaying || this.pauseTime !== 0;
+    return (
+      this
+        .isPlaying ||
+      this
+        .pauseTime !==
+        0
+    );
   }
 
   public getCurrentTime(): number {
-    if (!this.audioContext) return 0;
-    if (!this.isPlaying) return this.pauseTime;
-    
+    if (
+      !this
+        .audioContext
+    )
+      return 0;
+    if (
+      !this
+        .isPlaying
+    )
+      return this
+        .pauseTime;
+
     // The song position the player is HEARING now. Position is a function of the
     // context time, and the context time of the sound reaching the speaker is the
     // render time minus the output latency — which the clock measures.
-    const heard = this.heardContextTime(performance.now());
+    const heard =
+      this.heardContextTime(
+        performance.now(),
+      );
     // Time passed since last rate change * rate + offset at that time
-    return this.offsetAtLastRateChange + (heard - this.timeAtLastRateChange) * this.playbackRate;
+    return (
+      this
+        .offsetAtLastRateChange +
+      (heard -
+        this
+          .timeAtLastRateChange) *
+        this
+          .playbackRate
+    );
   }
-  
-  public playSfX(freq: number, type: OscillatorType = 'sine', duration: number = 0.1, volume: number = 0.5) {
-    if (!this.audioContext) this.initialize();
-    if (!this.audioContext) return;
-    
+
+  public playSfX(
+    freq: number,
+    type: OscillatorType = 'sine',
+    duration: number = 0.1,
+    volume: number = 0.5,
+  ) {
+    if (
+      !this
+        .audioContext
+    )
+      this.initialize();
+    if (
+      !this
+        .audioContext
+    )
+      return;
+
     // Resume if suspended
-    if (this.audioContext.state === 'suspended') {
-        this.audioContext.resume();
+    if (
+      this
+        .audioContext
+        .state ===
+      'suspended'
+    ) {
+      this.audioContext.resume();
     }
 
-    const t = this.audioContext.currentTime;
-    const osc = this.audioContext.createOscillator();
-    const gain = this.audioContext.createGain();
-    
+    const t =
+      this
+        .audioContext
+        .currentTime;
+    const osc =
+      this.audioContext.createOscillator();
+    const gain =
+      this.audioContext.createGain();
+
     // SOFTER SFX LOGIC
     // Use sine wave for less harshness
-    osc.type = 'sine'; 
-    
+    osc.type =
+      'sine';
+
     // Pitch Envelope
     // Start slightly higher and drop quickly for a "tick" sound without being a hard click
-    osc.frequency.setValueAtTime(freq * 1.2, t);
-    osc.frequency.exponentialRampToValueAtTime(freq, t + 0.02);
-    
+    osc.frequency.setValueAtTime(
+      freq *
+        1.2,
+      t,
+    );
+    osc.frequency.exponentialRampToValueAtTime(
+      freq,
+      t +
+        0.02,
+    );
+
     // Amplitude Envelope (ADSR - emphasis on Attack/Decay)
     // Soft attack to avoid popping
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(volume, t + 0.005); 
-    gain.gain.exponentialRampToValueAtTime(0.01, t + duration);
-    
-    osc.connect(gain);
-    gain.connect(this.audioContext.destination);
-    
-    osc.start(t);
-    osc.stop(t + duration);
+    gain.gain.setValueAtTime(
+      0,
+      t,
+    );
+    gain.gain.linearRampToValueAtTime(
+      volume,
+      t +
+        0.005,
+    );
+    gain.gain.exponentialRampToValueAtTime(
+      0.01,
+      t +
+        duration,
+    );
+
+    osc.connect(
+      gain,
+    );
+    gain.connect(
+      this
+        .audioContext
+        .destination,
+    );
+
+    osc.start(
+      t,
+    );
+    osc.stop(
+      t +
+        duration,
+    );
   }
 
   /**
@@ -421,67 +846,183 @@ export class AudioManager {
     volume: number,
     when: number,
   ) {
-    if (!this.audioContext) this.initialize();
-    if (!this.audioContext) return;
-    if (this.audioContext.state === 'suspended') this.audioContext.resume();
+    if (
+      !this
+        .audioContext
+    )
+      this.initialize();
+    if (
+      !this
+        .audioContext
+    )
+      return;
+    if (
+      this
+        .audioContext
+        .state ===
+      'suspended'
+    )
+      this.audioContext.resume();
 
-    const ctx = this.audioContext;
-    if (when < ctx.currentTime) return;
+    const ctx =
+      this
+        .audioContext;
+    if (
+      when <
+      ctx.currentTime
+    )
+      return;
 
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, when);
+    const osc =
+      ctx.createOscillator();
+    const gain =
+      ctx.createGain();
+    osc.type =
+      type;
+    osc.frequency.setValueAtTime(
+      freq,
+      when,
+    );
 
     // Same soft attack as playSfX — a hard gate on a square wave pops, and a
     // pop every beat is its own kind of distracting.
-    gain.gain.setValueAtTime(0, when);
-    gain.gain.linearRampToValueAtTime(volume, when + 0.004);
-    gain.gain.exponentialRampToValueAtTime(0.0001, when + duration);
+    gain.gain.setValueAtTime(
+      0,
+      when,
+    );
+    gain.gain.linearRampToValueAtTime(
+      volume,
+      when +
+        0.004,
+    );
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      when +
+        duration,
+    );
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(when);
-    osc.stop(when + duration + 0.02);
+    osc.connect(
+      gain,
+    );
+    gain.connect(
+      ctx.destination,
+    );
+    osc.start(
+      when,
+    );
+    osc.stop(
+      when +
+        duration +
+        0.02,
+    );
   }
 
   // ── Hit Sound File Playback ──────────────────────────────────────────────
-  private hitSoundCache: Map<string, AudioBuffer> = new Map();
-  private hitSoundLoading: Map<string, Promise<AudioBuffer>> = new Map();
+  private hitSoundCache: Map<
+    string,
+    AudioBuffer
+  > =
+    new Map();
+  private hitSoundLoading: Map<
+    string,
+    Promise<AudioBuffer>
+  > =
+    new Map();
 
   /**
    * Check whether a hit sound is already decoded and cached.
    */
-  public isHitSoundCached(url: string): boolean {
-    return this.hitSoundCache.has(url);
+  public isHitSoundCached(
+    url: string,
+  ): boolean {
+    return this.hitSoundCache.has(
+      url,
+    );
   }
 
   /**
    * Pre-load a hit sound file into the cache so playback is instant.
    */
-  public async preloadHitSound(url: string): Promise<AudioBuffer> {
-    if (this.hitSoundCache.has(url)) return this.hitSoundCache.get(url)!;
-    if (this.hitSoundLoading.has(url)) return this.hitSoundLoading.get(url)!;
+  public async preloadHitSound(
+    url: string,
+  ): Promise<AudioBuffer> {
+    if (
+      this.hitSoundCache.has(
+        url,
+      )
+    )
+      return this.hitSoundCache.get(
+        url,
+      )!;
+    if (
+      this.hitSoundLoading.has(
+        url,
+      )
+    )
+      return this.hitSoundLoading.get(
+        url,
+      )!;
 
-    if (!this.audioContext) this.initialize();
+    if (
+      !this
+        .audioContext
+    )
+      this.initialize();
 
-    const loadPromise = fetch(url)
-      .then(res => {
-        if (!res.ok) throw new Error(`Failed to load hit sound: ${res.status}`);
-        return res.arrayBuffer();
-      })
-      .then(ab => this.audioContext!.decodeAudioData(ab))
-      .then(buf => {
-        this.hitSoundCache.set(url, buf);
-        this.hitSoundLoading.delete(url);
-        return buf;
-      })
-      .catch(err => {
-        this.hitSoundLoading.delete(url);
-        throw err;
-      });
+    const loadPromise =
+      fetch(
+        url,
+      )
+        .then(
+          (
+            res,
+          ) => {
+            if (
+              !res.ok
+            )
+              throw new Error(
+                `Failed to load hit sound: ${res.status}`,
+              );
+            return res.arrayBuffer();
+          },
+        )
+        .then(
+          (
+            ab,
+          ) =>
+            this.audioContext!.decodeAudioData(
+              ab,
+            ),
+        )
+        .then(
+          (
+            buf,
+          ) => {
+            this.hitSoundCache.set(
+              url,
+              buf,
+            );
+            this.hitSoundLoading.delete(
+              url,
+            );
+            return buf;
+          },
+        )
+        .catch(
+          (
+            err,
+          ) => {
+            this.hitSoundLoading.delete(
+              url,
+            );
+            throw err;
+          },
+        );
 
-    this.hitSoundLoading.set(url, loadPromise);
+    this.hitSoundLoading.set(
+      url,
+      loadPromise,
+    );
     return loadPromise;
   }
 
@@ -489,35 +1030,86 @@ export class AudioManager {
    * Play a cached hit sound file at the given volume.
    * Falls back to synthesised SFX if the buffer isn't cached yet.
    */
-  public playHitSoundFile(url: string, volume: number = 0.5, pitch: number = 1.0) {
-    if (!this.audioContext) this.initialize();
-    if (!this.audioContext) return;
+  public playHitSoundFile(
+    url: string,
+    volume: number = 0.5,
+    pitch: number = 1.0,
+  ) {
+    if (
+      !this
+        .audioContext
+    )
+      this.initialize();
+    if (
+      !this
+        .audioContext
+    )
+      return;
 
-    if (this.audioContext.state === 'suspended') {
+    if (
+      this
+        .audioContext
+        .state ===
+      'suspended'
+    ) {
       this.audioContext.resume();
     }
 
-    const buf = this.hitSoundCache.get(url);
-    if (!buf) {
+    const buf =
+      this.hitSoundCache.get(
+        url,
+      );
+    if (
+      !buf
+    ) {
       // Buffer not ready — fire-and-forget preload for next time, play synth fallback now
-      this.preloadHitSound(url);
-      this.playSfX(880, 'triangle', 0.1, volume);
+      this.preloadHitSound(
+        url,
+      );
+      this.playSfX(
+        880,
+        'triangle',
+        0.1,
+        volume,
+      );
       return;
     }
 
-    const source = this.audioContext.createBufferSource();
-    source.buffer = buf;
-    source.playbackRate.value = pitch;
+    const source =
+      this.audioContext.createBufferSource();
+    source.buffer =
+      buf;
+    source.playbackRate.value =
+      pitch;
 
-    const gain = this.audioContext.createGain();
-    gain.gain.value = Math.max(0, Math.min(1, volume));
+    const gain =
+      this.audioContext.createGain();
+    gain.gain.value =
+      Math.max(
+        0,
+        Math.min(
+          1,
+          volume,
+        ),
+      );
 
-    source.connect(gain);
-    gain.connect(this.audioContext.destination);
+    source.connect(
+      gain,
+    );
+    gain.connect(
+      this
+        .audioContext
+        .destination,
+    );
     source.start();
   }
 
   public getDuration(): number {
-    return this.buffer ? this.buffer.duration : 0;
+    return this
+      .buffer
+      ? this
+          .buffer
+          .duration
+      : 0;
   }
 }

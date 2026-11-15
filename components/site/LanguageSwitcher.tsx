@@ -1,13 +1,35 @@
-import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
-import { createPortal } from "react-dom";
-import { useTranslation } from "react-i18next";
-import { Globe, Check, ChevronDown } from "lucide-react";
-import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/i18n/config";
-import { useLocaleStore } from "@/stores/localeStore";
-import { usePopPresence } from "@/hooks/usePopPresence";
-import { cn } from "@/lib/utils";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
+import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
+import {
+  Globe,
+  Check,
+  ChevronDown,
+} from 'lucide-react';
+import {
+  LOCALES,
+  LOCALE_LABELS,
+  type Locale,
+} from '@/lib/i18n/config';
+import { useLocaleStore } from '@/stores/localeStore';
+import { usePopPresence } from '@/hooks/usePopPresence';
+import { cn } from '@/lib/utils';
 
-type MenuRect = { left: number; top: number; width: number; maxHeight: number; openUp: boolean };
+type MenuRect =
+  {
+    left: number;
+    top: number;
+    width: number;
+    maxHeight: number;
+    openUp: boolean;
+  };
 
 const MENU_MIN_WIDTH = 200;
 const MENU_MAX_HEIGHT = 288;
@@ -16,190 +38,494 @@ const VIEWPORT_PAD = 8;
 
 /** Styled language picker: a pill trigger that opens a portalled, scrollable menu. */
 export function LanguageSwitcher() {
-  const { t } = useTranslation("nav");
-  const locale = useLocaleStore((s) => s.locale);
-  const setLocale = useLocaleStore((s) => s.setLocale);
+  const {
+    t,
+  } =
+    useTranslation(
+      'nav',
+    );
+  const locale =
+    useLocaleStore(
+      (
+        s,
+      ) =>
+        s.locale,
+    );
+  const setLocale =
+    useLocaleStore(
+      (
+        s,
+      ) =>
+        s.setLocale,
+    );
 
-  const [open, setOpen] = useState(false);
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
   // Holds the menu mounted through its close so the reabsorb is visible; the
   // listeners below stay on `open`, so a leaving menu already ignores input.
-  const { present, state } = usePopPresence(open);
-  const [rect, setRect] = useState<MenuRect | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const listboxId = useId();
-
-  const label = t("language", { defaultValue: "Language" });
-
-  const measure = useCallback(() => {
-    const el = triggerRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    // Trigger fully scrolled out of view — close rather than float the menu.
-    if (r.bottom <= 0 || r.top >= window.innerHeight) {
-      setOpen(false);
-      return;
-    }
-    const width = Math.max(r.width, MENU_MIN_WIDTH);
-    const spaceBelow = window.innerHeight - r.bottom - VIEWPORT_PAD;
-    const spaceAbove = r.top - VIEWPORT_PAD;
-    const openUp = spaceBelow < Math.min(MENU_MAX_HEIGHT, 160) && spaceAbove > spaceBelow;
-    const maxHeight = Math.min(MENU_MAX_HEIGHT, openUp ? spaceAbove : spaceBelow);
-    // Right-align the menu to the trigger, clamped to stay on-screen.
-    const left = Math.min(
-      Math.max(r.right - width, VIEWPORT_PAD),
-      window.innerWidth - width - VIEWPORT_PAD,
+  const {
+    present,
+    state,
+  } =
+    usePopPresence(
+      open,
     );
-    const top = openUp ? r.top - GAP : r.bottom + GAP;
-    setRect({ left, top, width, maxHeight, openUp });
-  }, []);
+  const [
+    rect,
+    setRect,
+  ] =
+    useState<MenuRect | null>(
+      null,
+    );
+  const triggerRef =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const menuRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const listboxId =
+    useId();
+
+  const label =
+    t(
+      'language',
+      {
+        defaultValue:
+          'Language',
+      },
+    );
+
+  const measure =
+    useCallback(() => {
+      const el =
+        triggerRef.current;
+      if (
+        !el
+      )
+        return;
+      const r =
+        el.getBoundingClientRect();
+      // Trigger fully scrolled out of view — close rather than float the menu.
+      if (
+        r.bottom <=
+          0 ||
+        r.top >=
+          window.innerHeight
+      ) {
+        setOpen(
+          false,
+        );
+        return;
+      }
+      const width =
+        Math.max(
+          r.width,
+          MENU_MIN_WIDTH,
+        );
+      const spaceBelow =
+        window.innerHeight -
+        r.bottom -
+        VIEWPORT_PAD;
+      const spaceAbove =
+        r.top -
+        VIEWPORT_PAD;
+      const openUp =
+        spaceBelow <
+          Math.min(
+            MENU_MAX_HEIGHT,
+            160,
+          ) &&
+        spaceAbove >
+          spaceBelow;
+      const maxHeight =
+        Math.min(
+          MENU_MAX_HEIGHT,
+          openUp
+            ? spaceAbove
+            : spaceBelow,
+        );
+      // Right-align the menu to the trigger, clamped to stay on-screen.
+      const left =
+        Math.min(
+          Math.max(
+            r.right -
+              width,
+            VIEWPORT_PAD,
+          ),
+          window.innerWidth -
+            width -
+            VIEWPORT_PAD,
+        );
+      const top =
+        openUp
+          ? r.top -
+            GAP
+          : r.bottom +
+            GAP;
+      setRect(
+        {
+          left,
+          top,
+          width,
+          maxHeight,
+          openUp,
+        },
+      );
+    }, []);
 
   useEffect(() => {
-    if (open) measure();
-  }, [open, measure]);
+    if (
+      open
+    )
+      measure();
+  }, [
+    open,
+    measure,
+  ]);
 
   useEffect(() => {
-    if (!open) return;
+    if (
+      !open
+    )
+      return;
     let raf = 0;
     // Keep the menu glued to the trigger while any ancestor scrolls or the
     // viewport resizes (capture phase catches nested scrollers like the mobile
     // sidebar drawer). rAF-throttled so rapid scroll coalesces to one measure
     // per frame. measure() itself closes the menu if the trigger leaves view.
-    const reposition = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(measure);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-      }
-    };
-    const onPointer = (e: PointerEvent) => {
-      const target = e.target as Node;
-      if (menuRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    window.addEventListener("scroll", reposition, true);
-    window.addEventListener("resize", reposition);
-    window.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onPointer);
+    const reposition =
+      () => {
+        cancelAnimationFrame(
+          raf,
+        );
+        raf =
+          requestAnimationFrame(
+            measure,
+          );
+      };
+    const onKey =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          e.key ===
+          'Escape'
+        ) {
+          setOpen(
+            false,
+          );
+          triggerRef.current?.focus();
+        }
+      };
+    const onPointer =
+      (
+        e: PointerEvent,
+      ) => {
+        const target =
+          e.target as Node;
+        if (
+          menuRef.current?.contains(
+            target,
+          ) ||
+          triggerRef.current?.contains(
+            target,
+          )
+        )
+          return;
+        setOpen(
+          false,
+        );
+      };
+    window.addEventListener(
+      'scroll',
+      reposition,
+      true,
+    );
+    window.addEventListener(
+      'resize',
+      reposition,
+    );
+    window.addEventListener(
+      'keydown',
+      onKey,
+    );
+    document.addEventListener(
+      'pointerdown',
+      onPointer,
+    );
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", reposition, true);
-      window.removeEventListener("resize", reposition);
-      window.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onPointer);
+      cancelAnimationFrame(
+        raf,
+      );
+      window.removeEventListener(
+        'scroll',
+        reposition,
+        true,
+      );
+      window.removeEventListener(
+        'resize',
+        reposition,
+      );
+      window.removeEventListener(
+        'keydown',
+        onKey,
+      );
+      document.removeEventListener(
+        'pointerdown',
+        onPointer,
+      );
     };
-  }, [open, measure]);
+  }, [
+    open,
+    measure,
+  ]);
 
   // Focus the active option when the menu opens, for keyboard users.
   useEffect(() => {
-    if (open && rect) {
+    if (
+      open &&
+      rect
+    ) {
       menuRef.current
-        ?.querySelector<HTMLButtonElement>('[data-active="true"]')
+        ?.querySelector<HTMLButtonElement>(
+          '[data-active="true"]',
+        )
         ?.focus();
     }
-  }, [open, rect]);
+  }, [
+    open,
+    rect,
+  ]);
 
-  const choose = (l: Locale) => {
-    setLocale(l);
-    setOpen(false);
-    triggerRef.current?.focus();
-  };
+  const choose =
+    (
+      l: Locale,
+    ) => {
+      setLocale(
+        l,
+      );
+      setOpen(
+        false,
+      );
+      triggerRef.current?.focus();
+    };
 
-  const onMenuKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    e.preventDefault();
-    const items = Array.from(
-      menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]') ?? [],
-    );
-    if (items.length === 0) return;
-    const idx = items.indexOf(document.activeElement as HTMLButtonElement);
-    const next = e.key === "ArrowDown"
-      ? items[(idx + 1 + items.length) % items.length]
-      : items[(idx - 1 + items.length) % items.length];
-    next?.focus();
-  };
+  const onMenuKey =
+    (
+      e: React.KeyboardEvent<HTMLDivElement>,
+    ) => {
+      if (
+        e.key !==
+          'ArrowDown' &&
+        e.key !==
+          'ArrowUp'
+      )
+        return;
+      e.preventDefault();
+      const items =
+        Array.from(
+          menuRef.current?.querySelectorAll<HTMLButtonElement>(
+            '[role="option"]',
+          ) ??
+            [],
+        );
+      if (
+        items.length ===
+        0
+      )
+        return;
+      const idx =
+        items.indexOf(
+          document.activeElement as HTMLButtonElement,
+        );
+      const next =
+        e.key ===
+        'ArrowDown'
+          ? items[
+              (idx +
+                1 +
+                items.length) %
+                items.length
+            ]
+          : items[
+              (idx -
+                1 +
+                items.length) %
+                items.length
+            ];
+      next?.focus();
+    };
 
   return (
     <>
       <button
-        ref={triggerRef}
+        ref={
+          triggerRef
+        }
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() =>
+          setOpen(
+            (
+              v,
+            ) =>
+              !v,
+          )
+        }
         aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={open ? listboxId : undefined}
-        aria-label={label}
-        title={label}
+        aria-expanded={
+          open
+        }
+        aria-controls={
+          open
+            ? listboxId
+            : undefined
+        }
+        aria-label={
+          label
+        }
+        title={
+          label
+        }
         className={cn(
-          "surface-field inline-flex items-center gap-2 rounded-site-sm px-2.5 py-1.5",
-          "text-sm text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:ring-offset-1 focus-visible:ring-offset-site-bg",
-          open && "bg-site-surface-hover text-site-text",
+          'surface-field inline-flex items-center gap-2 rounded-site-sm px-2.5 py-1.5',
+          'text-sm text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:ring-offset-1 focus-visible:ring-offset-site-bg',
+          open &&
+            'bg-site-surface-hover text-site-text',
         )}
       >
-        <Globe className="h-4 w-4 shrink-0" aria-hidden />
-        <span className="min-w-0 truncate">{LOCALE_LABELS[locale]}</span>
+        <Globe
+          className="h-4 w-4 shrink-0"
+          aria-hidden
+        />
+        <span className="min-w-0 truncate">
+          {
+            LOCALE_LABELS[
+              locale
+            ]
+          }
+        </span>
         <ChevronDown
-          className={cn("h-4 w-4 shrink-0 text-site-text-muted transition-transform", open && "rotate-180")}
+          className={cn(
+            'h-4 w-4 shrink-0 text-site-text-muted transition-transform',
+            open &&
+              'rotate-180',
+          )}
           aria-hidden
         />
       </button>
 
-      {present && rect && typeof document !== "undefined" &&
+      {present &&
+        rect &&
+        typeof document !==
+          'undefined' &&
         createPortal(
           <div
-            ref={menuRef}
-            id={listboxId}
+            ref={
+              menuRef
+            }
+            id={
+              listboxId
+            }
             role="listbox"
-            aria-label={label}
-            onKeyDown={onMenuKey}
+            aria-label={
+              label
+            }
+            onKeyDown={
+              onMenuKey
+            }
             // The shared bloom (globals.css §7.1). This menu already knows which
             // way it opened — `rect.openUp` is the same collision decision Radix
             // makes for its poppers — so it hands that to the animation as the
             // edge to unfurl from, and a list that flipped above the trigger
             // grows upward out of it instead of downward into it.
             data-motion="pop"
-            data-state={state}
-            style={{
-              position: "fixed",
-              left: rect.left,
-              [rect.openUp ? "bottom" : "top"]: rect.openUp
-                ? window.innerHeight - rect.top
-                : rect.top,
-              width: rect.width,
-              maxHeight: rect.maxHeight,
-              "--motion-origin": rect.openUp ? "bottom center" : "top center",
-            } as CSSProperties}
+            data-state={
+              state
+            }
+            style={
+              {
+                position:
+                  'fixed',
+                left: rect.left,
+                [rect.openUp
+                  ? 'bottom'
+                  : 'top']:
+                  rect.openUp
+                    ? window.innerHeight -
+                      rect.top
+                    : rect.top,
+                width:
+                  rect.width,
+                maxHeight:
+                  rect.maxHeight,
+                '--motion-origin':
+                  rect.openUp
+                    ? 'bottom center'
+                    : 'top center',
+              } as CSSProperties
+            }
             className="z-popover overflow-y-auto overscroll-contain surface-overlay py-1.5"
           >
-            {LOCALES.map((l) => {
-              const active = l === locale;
-              return (
-                <button
-                  key={l}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  data-active={active}
-                  onClick={() => choose(l)}
-                  data-evert=""
-                  data-row-glow=""
-                  className={cn(
-                    "flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors",
-                    "focus:outline-none",
-                    active
-                      ? "text-site-accent"
-                      : "text-site-text-muted hover:text-site-text focus-visible:text-site-text",
-                  )}
-                >
-                  <span className="min-w-0 flex-1 truncate">{LOCALE_LABELS[l]}</span>
-                  {active && <Check className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />}
-                </button>
-              );
-            })}
+            {LOCALES.map(
+              (
+                l,
+              ) => {
+                const active =
+                  l ===
+                  locale;
+                return (
+                  <button
+                    key={
+                      l
+                    }
+                    type="button"
+                    role="option"
+                    aria-selected={
+                      active
+                    }
+                    data-active={
+                      active
+                    }
+                    onClick={() =>
+                      choose(
+                        l,
+                      )
+                    }
+                    data-evert=""
+                    data-row-glow=""
+                    className={cn(
+                      'flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors',
+                      'focus:outline-none',
+                      active
+                        ? 'text-site-accent'
+                        : 'text-site-text-muted hover:text-site-text focus-visible:text-site-text',
+                    )}
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {
+                        LOCALE_LABELS[
+                          l
+                        ]
+                      }
+                    </span>
+                    {active && (
+                      <Check
+                        className="h-4 w-4 shrink-0 text-site-accent"
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                );
+              },
+            )}
           </div>,
           document.body,
         )}

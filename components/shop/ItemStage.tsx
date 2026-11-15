@@ -5,16 +5,22 @@ import { ProfileBanner } from '@/components/profile/ProfileBanner';
 import { Emoji } from '@/components/ui/emoji';
 import type { ShopItemKind } from '@/lib/shop/catalog';
 import { getPremiumTheme } from '@/lib/shop/themes';
-import { ItemPicture, type ItemArt } from './ItemPicture';
+import {
+  ItemPicture,
+  type ItemArt,
+} from './ItemPicture';
 
 /** The kinds a profile head shows. Pets and post flair are drawn nowhere on a profile, so they get the picture alone. */
-const ON_PROFILE: ReadonlySet<ShopItemKind> = new Set([
-  'BANNER',
-  'THEME',
-  'NAME_COLOR',
-  'AVATAR_FRAME',
-  'BADGE',
-]);
+const ON_PROFILE: ReadonlySet<ShopItemKind> =
+  new Set(
+    [
+      'BANNER',
+      'THEME',
+      'NAME_COLOR',
+      'AVATAR_FRAME',
+      'BADGE',
+    ],
+  );
 
 /**
  * The large preview in an item's dialog: the item drawn where it applies, on a small copy of the
@@ -35,65 +41,190 @@ export function ItemStage({
   /** The item's name, for the picture's accessible name. */
   name: string;
 }) {
-  const { t } = useTranslation('feed');
-  const { data: session } = useSession();
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const {
+    data: session,
+  } =
+    useSession();
 
-  if (!kind || !ON_PROFILE.has(kind)) {
-    return <ItemPicture kind={kind} art={art} className="mx-auto max-w-64" />;
+  if (
+    !kind ||
+    !ON_PROFILE.has(
+      kind,
+    )
+  ) {
+    return (
+      <ItemPicture
+        kind={
+          kind
+        }
+        art={
+          art
+        }
+        className="mx-auto max-w-64"
+      />
+    );
   }
 
-  const viewerName = session?.user?.name || t('stage-your-name', { defaultValue: 'Your name' });
-  const handle = (session?.user as { handle?: string | null } | undefined)?.handle;
-  const palette = kind === 'THEME' ? getPremiumTheme(art.themeId) : undefined;
+  const viewerName =
+    session
+      ?.user
+      ?.name ||
+    t(
+      'stage-your-name',
+      {
+        defaultValue:
+          'Your name',
+      },
+    );
+  const handle =
+    (
+      session?.user as
+        | {
+            handle?:
+              | string
+              | null;
+          }
+        | undefined
+    )
+      ?.handle;
+  const palette =
+    kind ===
+    'THEME'
+      ? getPremiumTheme(
+          art.themeId,
+        )
+      : undefined;
   const backdrop =
-    kind === 'BANNER' ? (art.gradient ?? art.color) : kind === 'THEME' ? (art.gradient ?? palette?.gradient) : null;
+    kind ===
+    'BANNER'
+      ? (art.gradient ??
+        art.color)
+      : kind ===
+          'THEME'
+        ? (art.gradient ??
+          palette?.gradient)
+        : null;
   const nameStyle =
-    kind !== 'NAME_COLOR'
+    kind !==
+    'NAME_COLOR'
       ? undefined
       : art.gradient
         ? {
-            backgroundImage: art.gradient,
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            color: 'transparent',
+            backgroundImage:
+              art.gradient,
+            WebkitBackgroundClip:
+              'text',
+            backgroundClip:
+              'text',
+            color:
+              'transparent',
           }
-        : { color: art.color };
+        : {
+            color:
+              art.color,
+          };
 
   return (
     <div
       role="img"
-      aria-label={t('stage-label', {
-        defaultValue: '{{name}}, shown on your profile',
-        name,
-      })}
+      aria-label={t(
+        'stage-label',
+        {
+          defaultValue:
+            '{{name}}, shown on your profile',
+          name,
+        },
+      )}
       data-slot="item-stage"
       data-no-twemoji
       className="flex flex-col gap-3 rounded-site border border-site-border bg-site-bg p-3"
     >
-      {backdrop ? <ProfileBanner src={null} backdrop={backdrop} /> : null}
+      {backdrop ? (
+        <ProfileBanner
+          src={
+            null
+          }
+          backdrop={
+            backdrop
+          }
+        />
+      ) : null}
       <div className="flex min-w-0 items-center gap-3">
         <UserAvatar
           user={{
-            id: session?.user?.id ?? 'preview',
+            id:
+              session
+                ?.user
+                ?.id ??
+              'preview',
             name: viewerName,
-            image: session?.user?.image ?? null,
-            ...(kind === 'AVATAR_FRAME'
-              ? { cosmetics: { avatarFrame: { color: art.color, gradient: art.gradient } } }
+            image:
+              session
+                ?.user
+                ?.image ??
+              null,
+            ...(kind ===
+            'AVATAR_FRAME'
+              ? {
+                  cosmetics:
+                    {
+                      avatarFrame:
+                        {
+                          color:
+                            art.color,
+                          gradient:
+                            art.gradient,
+                        },
+                    },
+                }
               : {}),
           }}
           size="lg"
-          linkToProfile={false}
+          linkToProfile={
+            false
+          }
         />
         <div className="min-w-0 flex-1">
           <p className="flex min-w-0 items-center gap-1.5">
-            <span className="t-heading truncate" style={nameStyle}>
-              {viewerName}
+            <span
+              className="t-heading truncate"
+              style={
+                nameStyle
+              }
+            >
+              {
+                viewerName
+              }
             </span>
-            {kind === 'BADGE' && art.emoji ? <Emoji size={18}>{art.emoji}</Emoji> : null}
+            {kind ===
+              'BADGE' &&
+            art.emoji ? (
+              <Emoji
+                size={
+                  18
+                }
+              >
+                {
+                  art.emoji
+                }
+              </Emoji>
+            ) : null}
           </p>
           {handle ? (
-            <p className="t-meta truncate" dir="ltr">
-              @{handle}
+            <p
+              className="t-meta truncate"
+              dir="ltr"
+            >
+              @
+              {
+                handle
+              }
             </p>
           ) : null}
         </div>
@@ -102,9 +233,20 @@ export function ItemStage({
           <span
             aria-hidden
             className="inline-flex h-9 shrink-0 items-center rounded-site px-4 text-sm font-medium"
-            style={{ background: palette.accent, color: palette.accentFg }}
+            style={{
+              background:
+                palette.accent,
+              color:
+                palette.accentFg,
+            }}
           >
-            {t('stage-follow', { defaultValue: 'Follow' })}
+            {t(
+              'stage-follow',
+              {
+                defaultValue:
+                  'Follow',
+              },
+            )}
           </span>
         ) : null}
       </div>
