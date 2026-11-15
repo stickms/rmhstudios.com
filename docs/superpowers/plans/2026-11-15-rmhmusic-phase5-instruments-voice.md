@@ -29,7 +29,7 @@ through the chosen sound (default for voice: the piano); there is no "voice" tim
 | Oboe | same repo, `Woodwinds/Oboe/Sus/*_v3_Main.wav` | as above | **use** |
 | Nylon guitar | FreePats "Spanish Classical Guitar" 2019-06-18, `SpanishClassicalGuitar-SFZ+FLAC-20190618.7z` from `freepats.zenvoid.org` | `cc0.txt` (CC0 1.0 legal code) and `readme.txt` ("Published under the terms of Creative Commons CC0 public domain dedication") inside the archive; the page says the same | **use** |
 | Ukulele | FreePats "Ukulele" 2026-08-11 (tenor, Flight Fireball, Mateusz Dąbrowski), `Ukulele-SFZ+FLAC-20260811.7z` from the `freepats/ukulele1` GitHub release | `LICENSE.txt` (CC0 1.0 legal code) and `README.txt` (CC0) inside the archive; the page says the same. One member (`chuck.wav`, a percussive sample we do not use) fails its CRC in `unar`; the 13 pitched FLACs extract whole | **use** |
-| Organ | `sgossner/VCSL@c1ea7bcc3c` `Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_*.wav` (Simon Dalzell / Ivy Audio) | repo `LICENSE`: CC0 1.0; `README.md`: "under a Creative Commons 0 license … even make commercial software, no royalties, no credit, no special terms"; the folder's `Info.txt`: "Bearer is granted right to redistribute … Credit to both original author and Versilian Studios is encouraged" | **use, credited** (credit is encouraged, not required; nothing share-alike, non-commercial or restricted). Flag for counsel with the other CC0 claims (roadmap §4). The VSCO 2 CE copy (`Keys/Organ`) carries the same `Info.txt` and sits under that repo's CC0; VCSL is preferred because its README states the commercial terms in words |
+| Organ | `sgossner/VCSL@c1ea7bcc3c` `Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_*_rr1.wav`, the quiet stop on manual III, from C3 up (Simon Dalzell / Ivy Audio; the build's YIN found the loud `Loud/Rode_Man3Open_*` stop ambiguous between octaves, so it was dropped — §2 of the roadmap has the shipped zones) | repo `LICENSE`: CC0 1.0; `README.md`: "under a Creative Commons 0 license … even make commercial software, no royalties, no credit, no special terms"; the folder's `Info.txt`: "Bearer is granted right to redistribute … Credit to both original author and Versilian Studios is encouraged" | **use, credited** (credit is encouraged, not required; nothing share-alike, non-commercial or restricted). Flag for counsel with the other CC0 claims (roadmap §4). The VSCO 2 CE copy (`Keys/Organ`) carries the same `Info.txt` and sits under that repo's CC0; VCSL is preferred because its README states the commercial terms in words |
 
 Rejected or not used: VSCO "Upright Piano" (not needed); anything SA/NC (none chosen).
 
@@ -49,7 +49,7 @@ a measured pitch ≥ 0.35 st from the key centre and on a residual > 10 cents af
 | `oboe` | 9, A♯3 … F6 | 3.5 s | mono / 1 | 58–91 |
 | `guitar-nylon` | about 22, every two semitones E2 … C6 | 3 s | chord / 8, strum 14 ms | 40–84 |
 | `ukulele` | 13, whole tones C4 … C6 | 2.5 s (the uke decays by then) | chord / 4, strum 16 ms | 60–85 |
-| `organ` | about 15, a minor third apart | 3.5 s | chord / 8, block | 36–84 |
+| `organ` | 13, a minor third apart, C3 … C6 (the quiet stop; shipped) | 3.5 s | chord / 8, block | 48–86 |
 
 ## 3. Engine and setting changes (A)
 

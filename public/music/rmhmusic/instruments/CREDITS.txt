@@ -55,7 +55,7 @@ Source: https://freepats.zenvoid.org/GuitarFamily/ukulele.html
 Fetched from: https://github.com/freepats/ukulele1/releases/tag/2026-08-11
 Changes: Converted by RMH Studios: one dynamic layer, trimmed, faded, mixed to mono, loudness matched and encoded as 64 kbps MP3. The build script and its pinned sources are in the RMH Studios repository (scripts/rmhmusic/).
 
-== Versilian Community Sample Library: Pipe Organ (loud, manual III open) ==
+== Versilian Community Sample Library: Pipe Organ (quiet stop, manual III) ==
 "Pipe Organ" from the Versilian Community Sample Library (VCSL) by Versilian Studios LLC, sampled by Simon Dalzell of Ivy Audio, CC0 1.0. https://github.com/sgossner/VCSL. Trimmed and converted to mono MP3.
 
 Author: Simon Dalzell (Ivy Audio) and Versilian Studios LLC

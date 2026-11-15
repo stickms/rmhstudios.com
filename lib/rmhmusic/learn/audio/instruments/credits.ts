@@ -172,7 +172,7 @@ export const SOUND_CREDITS: Readonly<
     'vcsl-organ':
       {
         id: 'vcsl-organ',
-        work: 'Versilian Community Sample Library: Pipe Organ (loud, manual III open)',
+        work: 'Versilian Community Sample Library: Pipe Organ (quiet stop, manual III)',
         author:
           'Simon Dalzell (Ivy Audio) and Versilian Studios LLC',
         licence:

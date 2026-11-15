@@ -451,7 +451,7 @@ export function fitToRange(
       );
 }
 
-/** Whether a sound plays chords (block or strummed): only piano and guitar do. */
+/** Whether a sound plays chords (block or strummed): the keyboards and plucked strings; the bowed strings and winds are single-note. */
 export function playsChords(
   id: InstrumentId,
 ): boolean {

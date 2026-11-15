@@ -673,7 +673,8 @@ async function extractArchive(
     0
   )
     return;
-  // unar reports failures for entries we do not ask for; only the members we use must come out whole.
+  // unar can fail on entries we do not use (the ukulele bank's chuck.wav fails its CRC); its
+  // error is printed here, and the check on each member we use, after this, decides.
   await run(
     'unar',
     [
@@ -690,7 +691,15 @@ async function extractArchive(
       ...members,
     ],
   ).catch(
-    () => {},
+    (
+      e: Error & {
+        stderr?: string;
+      },
+    ) => {
+      console.error(
+        `build-instruments: unar on ${id} reported: ${(e.stderr || e.message).trim()}`,
+      );
+    },
   );
 }
 
