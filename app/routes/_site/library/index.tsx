@@ -21,7 +21,6 @@ import {
   CloudUpload,
   Disc3,
   FileText,
-  Layers,
   LayoutGrid,
   ListVideo,
   Newspaper,
@@ -43,6 +42,7 @@ import { getRequestSession } from '@/lib/auth-session.server';
 import { getAllPosts, type Post } from '@/lib/blog';
 import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
+import { BookLeaves } from '@/components/library/BookLeaves';
 import { LibraryReadingMount } from '@/components/reading/LibraryReadingMount';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -105,12 +105,12 @@ const fetchPlaylists = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 // The library grew past a comfortable single scroll (reads + albums +
-// collections + books + playlists). A sticky category navigator filters to one
+// books with their collections + playlists). A sticky category navigator filters to one
 // section; the active category is mirrored into `?view=` so deep links (e.g.
 // the /playlists redirect → /library?view=playlists) land on the right section.
 // The section used to be "Music" (`?view=music`), named for the retired
 // listening-party app; that old link still lands on the playlists.
-const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'collections', 'books', 'playlists'] as const;
+const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'books', 'playlists'] as const;
 type LibraryView = (typeof LIBRARY_VIEWS)[number];
 
 // useLayoutEffect warns during SSR; the scroll settle below only ever has work
@@ -128,7 +128,13 @@ export const Route = createFileRoute('/_site/library/')({
     links: [buildCanonical('/library')],
   }),
   validateSearch: (search: Record<string, unknown>): { view?: LibraryView } => {
-    const view = search.view === 'music' ? 'playlists' : search.view;
+    // Retired names: `music` became the playlists; `collections` now lives at the top of Books.
+    const view =
+      search.view === 'music'
+        ? 'playlists'
+        : search.view === 'collections'
+          ? 'books'
+          : search.view;
     return LIBRARY_VIEWS.includes(view as LibraryView) ? { view: view as LibraryView } : {};
   },
   // perf audit §4.2: the server fns were awaited sequentially — serial HTTP
@@ -493,11 +499,6 @@ function Library() {
                   icon: ListVideo,
                 },
                 {
-                  id: 'collections',
-                  label: t('cat-collections', { defaultValue: 'Collections' }),
-                  icon: Layers,
-                },
-                {
                   id: 'reads',
                   label: t('cat-reads', { defaultValue: 'Reads' }),
                   icon: Newspaper,
@@ -549,7 +550,7 @@ function Library() {
 
               {shows('albums') && <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />}
 
-              {shows('collections') && (
+              {shows('books') && (
                 <LibraryCollections
                   books={books}
                   collections={collections}
@@ -841,6 +842,7 @@ function BookSpine({
         <div className="lib-book__3d">
           <div className={`lib-book__cover ${book.coverUrl ? 'has-cover' : ''}`}>
             <span className="lib-book__edge" aria-hidden="true" />
+            <BookLeaves />
             {book.coverUrl ? (
               <BlurImage
                 src={book.coverUrl}
