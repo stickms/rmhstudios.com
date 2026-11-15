@@ -21,7 +21,10 @@ import {
   type InputHub,
 } from './input/hub';
 import { createKeyboardInput } from './input/keyboard';
-import { createMicInput } from './input/mic';
+import {
+  createMicInput,
+  type MicFrame,
+} from './input/mic';
 import {
   createMidiInput,
   type MidiInputAdapter,
@@ -185,6 +188,34 @@ export function subscribeMicLevel(
   };
 }
 
+/** Listeners for the microphone's analysis frames (the tuner), fed while the mic runs. */
+const micFrameListeners =
+  new Set<
+    (
+      frame: Readonly<MicFrame>,
+    ) => void
+  >();
+
+/**
+ * Hear every analysis frame of the microphone (about 40 a second while it is on, nothing while it
+ * is off): the tuner's input. The frame object is reused; copy what you keep. Returns a function
+ * that removes the listener.
+ */
+export function subscribeMicFrames(
+  l: (
+    frame: Readonly<MicFrame>,
+  ) => void,
+): () => void {
+  micFrameListeners.add(
+    l,
+  );
+  return () => {
+    micFrameListeners.delete(
+      l,
+    );
+  };
+}
+
 function ensureInput(): BuiltInput | null {
   // The adapters read browser APIs; on the server there is nothing to build.
   if (
@@ -202,6 +233,17 @@ function ensureInput(): BuiltInput | null {
     const mic =
       createMicInput(
         {
+          onFrame:
+            (
+              frame,
+            ) => {
+              for (const l of [
+                ...micFrameListeners,
+              ])
+                l(
+                  frame,
+                );
+            },
           onLevel:
             (
               rms,

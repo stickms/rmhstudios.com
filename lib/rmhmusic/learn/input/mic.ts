@@ -61,10 +61,30 @@ export function fftSizeFor(
   return size;
 }
 
+/**
+ * One analysis frame, for the tuner: what YIN heard (or null) and the frame's level. The object is
+ * reused for every frame; a listener copies what it keeps.
+ */
+export interface MicFrame {
+  /** `performance.now()` of the poll. */
+  time: number;
+  /** Fundamental in Hz, or null for silence and noise. */
+  freq:
+    | number
+    | null;
+  /** YIN's confidence 0..1 (0 when nothing was heard). */
+  clarity: number;
+  rms: number;
+}
+
 export function createMicInput(
   opts: {
     onLevel?: (
       rms: number,
+    ) => void;
+    /** Every poll's frame while the mic runs (about 40 a second): the tuner's input. */
+    onFrame?: (
+      frame: Readonly<MicFrame>,
     ) => void;
   } = {},
 ): InputAdapter {
@@ -232,6 +252,13 @@ export function createMicInput(
             midi: 0,
             cents: 0,
           };
+        const heard: MicFrame =
+          {
+            time: 0,
+            freq: null,
+            clarity: 0,
+            rms: 0,
+          };
         timer =
           setInterval(
             () => {
@@ -264,6 +291,13 @@ export function createMicInput(
                 rms,
               );
 
+              heard.time =
+                now;
+              heard.rms =
+                rms;
+              heard.freq =
+                null;
+              heard.clarity = 0;
               // Silence (most frames) skips the detector entirely; a NaN level fails this test too.
               let pitched = false;
               if (
@@ -279,6 +313,10 @@ export function createMicInput(
                 if (
                   pitch
                 ) {
+                  heard.freq =
+                    pitch.freq;
+                  heard.clarity =
+                    pitch.clarity;
                   const exact =
                     freqToMidi(
                       pitch.freq,
@@ -294,6 +332,9 @@ export function createMicInput(
                   pitched = true;
                 }
               }
+              opts.onFrame?.(
+                heard,
+              );
               const events =
                 seg.push(
                   pitched
