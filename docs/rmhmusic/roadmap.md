@@ -38,7 +38,7 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   home.
 - **Songbook** (`lib/rmhmusic/learn/songs/`, strict island): eight public-domain melodies transcribed
   by hand (Mary Had a Little Lamb, Twinkle Twinkle, Lightly Row, Ode to Joy, Au clair de la lune,
-  Frère Jacques, Amazing Grace — first and last lines, Minuet in G — first eight bars) in a tiny
+  Frère Jacques, Amazing Grace — the first line's opening run into the last line's close, Minuet in G — first eight bars) in a tiny
   notation (`notation.ts`); titles and composers are data, not translated. One staff for both
   versions: piano as written; guitar reads it with the octave clef, sounds an octave lower and gets
   a tab staff whose frets come from `fingering.ts` (`fingerFor`: the lowest fret, so open position
@@ -63,7 +63,23 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 - **Persistence:** `MusicSongBest` (user, song, mode, best score), migration
   `20261115190000_music_song_best`; `GET /api/rmhmusic/songs`, `POST /api/rmhmusic/songs/best`
   (contracts + `implement()`, zod, rate limit `write`); the server re-scores the run from its
-  per-note results (`scoring.ts` `checkSongRun`). Not anti-cheat: it keeps an honest client honest.
+  per-note results (`scoring.ts` `checkSongRun`) and keeps the best with one atomic
+  `INSERT … ON CONFLICT DO UPDATE SET "bestScore" = GREATEST(…)`. Not anti-cheat: a fabricated run
+  can raise the learner's own best (accepted: it is their own row, no coins or XP depend on it).
+- **Review fixes (2026-11-15, after a read-only review):** a cancelled "Hear it" stops holding input
+  at the cancel (`hear-gate.ts`: only the mic waits its echo tail, and Start with it); the mic onset
+  (`MIC_ONSET_MS`) is taken off only while the latency is the uncalibrated default — a calibrated
+  latency holds the delay of the input it was measured with, so a learner who calibrated on the
+  keys and plays on the mic still reads about 60 ms late (accepted, documented); a note-on goes to
+  the open note of its own pitch first (overlapping eighths); a run token stops a second metronome;
+  the mic segmenter's opt-in re-attack (a 6 dB rise within 80 ms after a decay to half the peak, same
+  pitch) is on only on the songs screen, with a mic hint on repeated notes and "Skip this note"
+  after 6 s in Wait for me (counts as wrong); the mode tabs and Change input are locked during
+  either run; Amazing Grace no longer asks a tied D5 twice; every song's parsed score is pinned by
+  a snapshot; "Traditional" is translated; the keys help names the black keys; the live region
+  says each note with its number and a pickup as "Pickup". An unknown song id shows the friendly
+  "Song not found" page with HTTP 200 (a 404 status would need a route loader and `notFound()`,
+  which would swap in the site's own 404 page; left as is).
 - **Smoke (2026-11-15, Chromium only, dev server + throwaway Postgres, harness in the session
   scratchpad `t35/songs.cjs`):** Wait for me on the computer keys (Mary Had a Little Lamb, one wrong
   note → 25 of 26 first time, score 98, saved, row in `music_song_best`) and on fake MIDI (Ode to
@@ -83,7 +99,7 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   `pnpm i18n:translate`), a real MIDI keyboard, the microphone in either mode (untested in the
   browser; known limit: the mic segmenter only reports a repeated note after a short silence, so
   repeated notes on a sustaining instrument may be missed, and `MIC_ONSET_MS` is reasoned, not
-  measured), audible check of "Hear it" (headless has no output; the sequence started and ended),
+  measured; the re-attack thresholds are tuned on synthetic levels only), audible check of "Hear it" (headless has no output; the sequence started and ended),
   a calibrated latency other than the 40 ms default, the shared `<Tabs>` is 40 px tall without a
   coarse pointer (the primitive's rule), choosing the other version on the page, more songs, rests
   and ties in the notation, a song longer than the window shows bars already played only by

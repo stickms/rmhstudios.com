@@ -10,7 +10,7 @@ Date: 2026-11-15. Roadmap: `docs/rmhmusic/roadmap.md` §3 (Phase 4). Branch
   copyrighted arrangements. Traditional tunes and composers dead for more than 70 years: Mary Had
   a Little Lamb, Twinkle Twinkle Little Star, Ode to Joy (Beethoven's theme), Frère Jacques,
   Lightly Row, Au clair de la lune, Minuet in G (the theme, attributed to Christian Petzold) and
-  Amazing Grace (the tune "New Britain"; its first and last lines). Each is one melody line in C or
+  Amazing Grace (the tune "New Britain"; the first line's opening run into the last line's close, no tie). Each is one melody line in C or
   G major, 4/4 or 3/4, with a tempo; one has a pickup. Titles and composers are proper names and
   stay data (not translated keys).
 - **The format** is a tiny text notation parsed by a pure, tested function
