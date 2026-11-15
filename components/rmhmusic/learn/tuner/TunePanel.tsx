@@ -110,19 +110,32 @@ function polar(
     (deg *
       Math.PI) /
     180;
+  // Rounded to 1/100 of a unit: the server's and the browser's sin/cos can differ in the last
+  // digits, which would be a hydration mismatch on every tick.
+  const round =
+    (
+      v: number,
+    ) =>
+      Math.round(
+        v *
+          100,
+      ) /
+      100;
   return {
-    x:
+    x: round(
       PIVOT_X +
-      r *
-        Math.sin(
-          a,
-        ),
-    y:
+        r *
+          Math.sin(
+            a,
+          ),
+    ),
+    y: round(
       PIVOT_Y -
-      r *
-        Math.cos(
-          a,
-        ),
+        r *
+          Math.cos(
+            a,
+          ),
+    ),
   };
 }
 
@@ -332,14 +345,17 @@ export function TunePanel({
         ) {
           shownCents.current =
             rounded;
-          cents.current.textContent =
+          // A new text node each time, not a changed one: a centred line whose existing text
+          // changes width is re-centred, which the browser counts as a layout shift.
+          cents.current.replaceChildren(
             rounded ===
-            null
+              null
               ? ''
               : centsText(
                   tRef.current,
                   rounded,
-                );
+                ),
+          );
         }
         const next =
           viewOf(
@@ -690,7 +706,7 @@ export function TunePanel({
                       p,
                     )
                   }
-                  className="h-4 w-4 accent-[var(--app-accent)]"
+                  className="h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-full border-2 bg-transparent checked:border-[6px] checked:border-[color:var(--app-accent)]!"
                 />
                 {p ===
                 'chromatic'
@@ -827,6 +843,7 @@ export function TunePanel({
           </g>
         </svg>
         <p
+          key={`name:${name}`}
           dir="ltr"
           className={cn(
             'rmm-display h-12 text-[2.5rem] leading-[3rem]',
@@ -839,7 +856,10 @@ export function TunePanel({
             name
           }
         </p>
-        <p className="h-6 text-base leading-6 text-app-text">
+        <p
+          key={`advice:${view.kind}:${view.advice}`}
+          className="h-6 text-base leading-6 text-app-text"
+        >
           {adviceText(
             t,
             view,

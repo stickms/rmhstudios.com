@@ -9,7 +9,10 @@
  * The sheet's lines and the input region keep their heights in every state, so a note never moves
  * the page. The polite status line names each new note once.
  */
-import { useState } from 'react';
+import {
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type {
@@ -33,6 +36,8 @@ import {
 export const HISTORY = 5;
 
 interface ReadNote {
+  /** Counts notes on this screen: the keys of the lines that show it. */
+  seq: number;
   midi: number;
   /** The microphone's cents; absent for exact sources. */
   cents?: number;
@@ -92,6 +97,10 @@ export function ReadPanel({
     >(
       [],
     );
+  const seq =
+    useRef(
+      0,
+    );
 
   useNoteEvents(
     (
@@ -107,6 +116,7 @@ export function ReadPanel({
           midi: e.midi,
           source:
             e.source,
+          seq: ++seq.current,
         };
       if (
         e.source ===
@@ -343,7 +353,10 @@ export function ReadPanel({
         )}
         className="rmm-sheet space-y-1 p-5 text-center sm:p-6"
       >
-        <p className="h-6 text-sm leading-6 text-app-text-muted">
+        <p
+          key={`hint:${!!current}`}
+          className="h-6 text-sm leading-6 text-app-text-muted"
+        >
           {current
             ? ''
             : t(
@@ -376,6 +389,7 @@ export function ReadPanel({
           }
         />
         <p
+          key={`name:${current?.seq ?? 0}`}
           dir="ltr"
           className="rmm-display h-12 text-[2.5rem] leading-[3rem] text-app-text"
         >
@@ -383,12 +397,18 @@ export function ReadPanel({
             name
           }
         </p>
-        <p className="h-6 text-sm leading-6 text-app-text-muted tabular-nums">
+        <p
+          key={`detail:${current?.seq ?? 0}`}
+          className="h-6 text-sm leading-6 text-app-text-muted tabular-nums"
+        >
           {
             detail
           }
         </p>
-        <p className="h-6 truncate text-sm leading-6 text-app-text-muted">
+        <p
+          key={`history:${current?.seq ?? 0}`}
+          className="h-6 truncate text-sm leading-6 text-app-text-muted"
+        >
           {
             history
           }
