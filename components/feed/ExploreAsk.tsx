@@ -40,7 +40,14 @@ function Answer({
   answer,
   footer,
   onRetry,
+  working,
 }: {
+  /**
+   * What the request is actually doing while it waits. Labor illusion (Buell &
+   * Norton, 2011): people value a result more when they can see the work that
+   * went into it — so name the real steps, never invented ones.
+   */
+  working?: string;
   loading: boolean;
   error: boolean;
   answer: string | null;
@@ -56,7 +63,7 @@ function Answer({
       <div className="t-label mb-2">{t('ai-answer', { defaultValue: 'AI answer' })}</div>
       {loading ? (
         <div className="flex items-center gap-2 py-1 text-sm text-site-text-muted">
-          <Spinner size={14} /> {t('ai-thinking', { defaultValue: 'Reading the results…' })}
+          <Spinner size={14} /> {working ?? t('ai-thinking', { defaultValue: 'Reading the results…' })}
         </div>
       ) : error ? (
         <p className={cn('text-sm text-site-text-muted', arrival)}>
@@ -85,6 +92,7 @@ function AskTheFeed() {
   const { data: session } = useSession();
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
+  const [sourceCount, setSourceCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
@@ -97,6 +105,7 @@ function AskTheFeed() {
     try {
       const data = await api(askFeedApi, { body: { question: q }, timeoutMs: AI_TIMEOUT_MS });
       setAnswer(typeof data.answer === 'string' ? data.answer : '');
+      setSourceCount(typeof data.sourceCount === 'number' ? data.sourceCount : 0);
     } catch {
       setError(true);
     } finally {
@@ -138,7 +147,26 @@ function AskTheFeed() {
       </div>
       {(loading || error || answer !== null) && (
         <div className="mt-3">
-          <Answer loading={loading} error={error} answer={answer} onRetry={ask} />
+          <Answer
+            loading={loading}
+            error={error}
+            answer={answer}
+            onRetry={ask}
+            working={t('ai-working-feed', {
+              defaultValue: 'Searching public posts for your question and reading up to 60 of them…',
+            })}
+            footer={
+              sourceCount > 0 ? (
+                <p className="mt-2 text-xs text-site-text-muted">
+                  {t('ai-read-posts', {
+                    count: sourceCount,
+                    defaultValue_one: 'Written from {{count}} post',
+                    defaultValue: 'Written from {{count}} posts',
+                  })}
+                </p>
+              ) : null
+            }
+          />
         </div>
       )}
     </AskShell>

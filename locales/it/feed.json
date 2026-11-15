@@ -1600,5 +1600,15 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "Intorno alla tua posizione",
+  "leaderboard-near-you-hint": "I giocatori subito sopra e sotto la tua posizione.",
+  "quest-to-go_other": "Ne mancano {{count}}",
+  "quest-to-go_many": "Ne mancano {{count}}",
+  "quest-to-go_one": "Ne mancano {{count}}",
+  "ai-working-feed": "Cerco post pubblici sulla tua domanda e ne leggo fino a 60…",
+  "ai-read-posts_other": "Scritto da {{count}} post",
+  "leaderboard-find-people": "Trova persone",
+  "ai-read-posts_many": "Scritto da {{count}} post",
+  "ai-read-posts_one": "Scritto da {{count}} post"
 }

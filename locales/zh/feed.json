@@ -1510,5 +1510,11 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "你的排名附近",
+  "leaderboard-near-you-hint": "排名紧挨在你前后的玩家。",
+  "quest-to-go_other": "还差 {{count}} 个",
+  "ai-working-feed": "正在搜索与你的问题相关的公开帖子，并阅读其中最多 60 条…",
+  "ai-read-posts_other": "基于 {{count}} 条帖子撰写",
+  "leaderboard-find-people": "找人"
 }

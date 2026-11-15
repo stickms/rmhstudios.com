@@ -1510,5 +1510,11 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "あなたの順位の前後",
+  "leaderboard-near-you-hint": "あなたのすぐ上と下の順位のプレイヤー。",
+  "quest-to-go_other": "あと{{count}}",
+  "ai-working-feed": "質問に関する公開投稿を検索し、最大 60 件を読んでいます…",
+  "ai-read-posts_other": "{{count}} 件の投稿をもとに作成",
+  "leaderboard-find-people": "人を探す"
 }
