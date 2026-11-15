@@ -90,7 +90,7 @@ export default function Notices({ session, busy, onDownload, evictionRisk = fals
           <Button size="sm" disabled={busy} onClick={onDownload}>
             {t('download-backup', { defaultValue: 'Download backup' })}
           </Button>
-          <Button size="sm" onClick={() => void session.restart({ save: false })}>
+          <Button size="sm" onClick={() => void session.restart()}>
             {t('reload', { defaultValue: 'Reload' })}
           </Button>
         </div>

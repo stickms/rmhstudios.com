@@ -50,6 +50,9 @@ export default function Toolbar(p: Props) {
   };
   const netText: Record<string, string> = {
     'net.off': t('net-off', { defaultValue: 'Network off' }),
+    'net.notEligible': t('net-not-eligible', {
+      defaultValue: 'Network not available for this account.',
+    }),
     'net.connecting': t('net-connecting', { defaultValue: 'Connecting' }),
     'net.online': t('net-online', { defaultValue: 'Online' }),
     'net.unavailable': t('net-unavailable', { defaultValue: 'Network unavailable' }),

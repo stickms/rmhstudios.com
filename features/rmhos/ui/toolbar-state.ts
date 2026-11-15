@@ -5,7 +5,23 @@
 import type { SaveResult } from '../engine/home-sync';
 import type { VmPhase } from '../engine/vm-types';
 
-export type NetState = 'off' | 'connecting' | 'on' | 'error';
+export type NetState = 'off' | 'not-eligible' | 'connecting' | 'on' | 'error';
+
+/**
+ * The toolbar's network state from the session's `net` and the status poll. `reason` is optional
+ * on a disabled `net` (the server may say `not-eligible`: this account is not allowed networking),
+ * so it is read defensively: an unknown or absent reason is plain "off".
+ */
+export function netStateOf(
+  net: unknown,
+  polled: 'connecting' | 'on' | 'error',
+): NetState {
+  if (!net || typeof net !== 'object') return 'off';
+  if ((net as { enabled?: unknown }).enabled === true) return polled;
+  return 'reason' in net && (net as { reason?: unknown }).reason === 'not-eligible'
+    ? 'not-eligible'
+    : 'off';
+}
 
 export interface ToolbarInput {
   phase: VmPhase;
@@ -33,6 +49,7 @@ export interface ToolbarState {
 
 const NET_KEYS: Record<NetState, string> = {
   off: 'net.off',
+  'not-eligible': 'net.notEligible',
   connecting: 'net.connecting',
   on: 'net.online',
   error: 'net.unavailable',

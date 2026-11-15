@@ -1,6 +1,6 @@
 // The one definition of the rmhOS virtual machine. The snapshot (snapshot.mjs),
-// the smoke test and the browser page (Task 7, which mirrors these values in
-// TypeScript) all build the machine from here: a v86 state only restores into
+// the smoke test and the browser page (features/rmhos/engine/vm-options.ts, which
+// mirrors these values in TypeScript) all build the machine from here: a v86 state only restores into
 // the same memory size, device set and kernel command line.
 //
 // `baseUrl` is where bzImage, rootfs.ext4, seabios.bin and vgabios.bin are

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toolbarState } from '../toolbar-state';
+import { netStateOf, toolbarState } from '../toolbar-state';
 
 type Input = Parameters<typeof toolbarState>[0];
 const base: Input = {
@@ -70,5 +70,24 @@ describe('toolbarState', () => {
     ['error', 'net.unavailable'],
   ] as const)('net %s', (net, key) => {
     expect(run({ net }).netLabelKey).toBe(key);
+  });
+});
+
+describe('netStateOf', () => {
+  it.each([
+    ['enabled follows the poll', { enabled: true, url: 'x', ticket: 't' }, 'on', 'on'],
+    ['enabled, still connecting', { enabled: true }, 'connecting', 'connecting'],
+    ['disabled with no reason', { enabled: false }, 'on', 'off'],
+    ['disabled, not eligible', { enabled: false, reason: 'not-eligible' }, 'on', 'not-eligible'],
+    ['disabled, switched off', { enabled: false, reason: 'disabled' }, 'on', 'off'],
+    ['disabled, a reason this page does not know', { enabled: false, reason: 42 }, 'on', 'off'],
+    ['no session yet', null, 'on', 'off'],
+    ['junk', 'x', 'on', 'off'],
+  ] as const)('%s', (_n, net, polled, want) => {
+    expect(netStateOf(net, polled)).toBe(want);
+  });
+
+  it('not-eligible gets its own label key', () => {
+    expect(run({ net: 'not-eligible' }).netLabelKey).toBe('net.notEligible');
   });
 });

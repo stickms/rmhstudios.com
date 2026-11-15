@@ -52,8 +52,8 @@ describe('the copy of a restore', () => {
 
   it('the put-back confirm carries the time of the files it restores', () => {
     const at = Date.UTC(2026, 10, 14, 9, 30);
-    const text = putBackCopy(t, at);
-    expect(text).toContain(copyTime(at));
+    const text = putBackCopy(t, at, 'en');
+    expect(text).toContain(copyTime(at, 'en'));
     expect(text).toMatch(/^Put back the files from .+\? The restored backup is removed\.$/);
   });
 });

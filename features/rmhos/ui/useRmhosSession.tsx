@@ -2,8 +2,7 @@
  * The rmhOS session as React state: boots the machine, and hands the home-folder orchestration
  * (identity handshake, RESTORE, saves, unload prompt, power-off) to HomeSession
  * (../engine/home-session.ts), which is where the rules and their tests live.
- * `useRmhosMachine` runs it once, in RmhosApp; everything below it (the toolbar, dialogs) reads
- * the result with `useRmhosSession()`.
+ * `useRmhosMachine` runs it once, in RmhosApp, which passes what its children need as props.
  *
  * Guards that protect the stored archive (the only copy of the person's files):
  *  - one machine per account per browser: a Web Lock is taken before anything boots;
@@ -11,7 +10,7 @@
  *  - the session's saves are suspended after a backup import, so a restart (a new HomeSync) is
  *    the only way on.
  */
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/components/session/session-context';
@@ -61,7 +60,6 @@ export type RmhosFailure = 'load' | 'handshake' | 'corrupt' | 'locked';
 export interface RmhosSessionValue {
   phase: RmhosPhase;
   detail: VmPhaseDetail | undefined;
-  bootKind: 'snapshot' | 'cold' | null;
   failure: RmhosFailure | null;
   /** The guest's RESTORE succeeded: the desktop is up and saving is safe. False again after power-off. */
   desktopReady: boolean;
@@ -105,10 +103,11 @@ export interface RmhosSessionValue {
   /** After `corrupt`: keeps the unreadable entry aside; the next start has an empty home. */
   startEmpty: () => Promise<void>;
   /**
-   * Starts over: a best-effort save (unless `save: false`, which an imported backup needs: a save
-   * would replace it with the current home), then a fresh machine and handshake.
+   * Starts over with a fresh machine and handshake. It never saves first: every caller either has
+   * no machine, or is leaving the current home behind on purpose (an imported backup would be
+   * replaced by a save of the current one).
    */
-  restart: (opts?: { save?: boolean }) => Promise<void>;
+  restart: () => Promise<void>;
   /** The session ended (or there never was one) and no machine is left: show the sign-in panel. */
   signedOut: boolean;
   /** Unsaved changes would be lost by leaving now (the unload prompt's rule). */
@@ -135,15 +134,6 @@ declare global {
   }
 }
 
-const Ctx = createContext<RmhosSessionValue | null>(null);
-export const RmhosSessionProvider = Ctx.Provider;
-
-export function useRmhosSession(): RmhosSessionValue {
-  const v = useContext(Ctx);
-  if (!v) throw new Error('useRmhosSession must be used inside RmhosApp');
-  return v;
-}
-
 const NOT_RUNNING: SaveResult = { status: 'failed', code: 'not-running' };
 
 export function useRmhosMachine(
@@ -163,7 +153,6 @@ export function useRmhosMachine(
 
   const [phase, setPhase] = useState<RmhosPhase>('idle');
   const [detail, setDetail] = useState<VmPhaseDetail | undefined>();
-  const [bootKind, setBootKind] = useState<'snapshot' | 'cold' | null>(null);
   const [failure, setFailure] = useState<RmhosFailure | null>(null);
   const [snap, setSnap] = useState<SessionSnapshot | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -211,7 +200,6 @@ export function useRmhosMachine(
       // screen. The previous machine was torn down by the cleanup of the run before this one.
       setPhase('idle');
       setDetail(undefined);
-      setBootKind(null);
       setFailure(null);
       setSnap(null);
       return;
@@ -230,7 +218,6 @@ export function useRmhosMachine(
     const cleanups: Array<() => void> = [];
     let cancelled = false;
     setDetail(undefined);
-    setBootKind(null);
     setFailure(null);
     setSnap(null);
 
@@ -301,7 +288,6 @@ export function useRmhosMachine(
 
         let runner: HomeSession | null = null;
         const startRunner = () => {
-          setBootKind(vm.bootKind());
           runner = new HomeSession({
             agent,
             sync,
@@ -410,8 +396,7 @@ export function useRmhosMachine(
   }, [desktopReady, attempt]);
 
   const restart = useCallback(
-    async (opts?: { save?: boolean }) => {
-      if (opts?.save !== false) await runnerRef.current?.save();
+    async () => {
       await sessionQ.refetch(); // a fresh relay ticket for the new machine
       setHalted(false);
       setAttempt((n) => n + 1);
@@ -422,7 +407,6 @@ export function useRmhosMachine(
   return {
     phase,
     detail,
-    bootKind,
     failure,
     desktopReady,
     dirty: snap?.dirty ?? false,
@@ -474,7 +458,8 @@ export function useRmhosMachine(
       async () => (await runnerRef.current?.saveBeforeLeaving()) ?? true,
       [],
     ),
-    linuxUser: sessionQ.data?.linuxUser ?? null,
+    // What the guest says it created, else what the site asked for.
+    linuxUser: snap?.linuxName ?? sessionQ.data?.linuxUser ?? null,
     net: sessionQ.data?.net ?? null,
     netState,
     netEnded,

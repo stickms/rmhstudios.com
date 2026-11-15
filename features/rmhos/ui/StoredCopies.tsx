@@ -11,6 +11,7 @@ import { toast } from '@/lib/shared/app-toast';
 import type { CopyKind, StoredCopies as Copies } from '../engine/home-sync';
 import ConfirmBox from './ConfirmBox';
 import { copyFileName, downloadBytes } from './download';
+import { formatBytes } from './format';
 import { copyTime } from './save-messages';
 
 /** Where the copies come from: the store itself (see engine/stored-home.ts), never the machine. */
@@ -22,12 +23,6 @@ export interface StoredCopiesSource {
   deleteAll: () => Promise<void>;
 }
 
-
-function size(bytes: number): string {
-  return bytes < 1024 * 1024
-    ? `${Math.max(1, Math.round(bytes / 1024))} KB`
-    : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export default function StoredCopies({
   session,
@@ -45,7 +40,8 @@ export default function StoredCopies({
   /** A machine is up in this tab: deleting the files stops it. */
   machineUp?: boolean;
 }) {
-  const { t } = useTranslation('c-rmhos');
+  const { t, i18n } = useTranslation('c-rmhos');
+  const locale = i18n.language;
   const [copies, setCopies] = useState<Copies | null>(null);
   const [removing, setRemoving] = useState<'replaced' | 'damaged' | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -104,8 +100,8 @@ export default function StoredCopies({
                   {' '}
                   {t('copy-detail', {
                     defaultValue: '{{size}}, saved {{time}}',
-                    size: size(r.info!.size),
-                    time: copyTime(r.info!.savedAt),
+                    size: formatBytes(r.info!.size, locale),
+                    time: copyTime(r.info!.savedAt, locale),
                   })}
                 </span>
               </span>
@@ -170,7 +166,7 @@ export default function StoredCopies({
           removing === 'replaced' && copies.replaced
             ? t('remove-replaced-confirm', {
                 defaultValue: 'Remove the files from {{time}}? They cannot be recovered.',
-                time: copyTime(copies.replaced.savedAt),
+                time: copyTime(copies.replaced.savedAt, locale),
               })
             : t('remove-damaged-confirm', {
                 defaultValue: 'Remove the earlier damaged copy? It cannot be recovered.',
