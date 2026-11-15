@@ -124,14 +124,14 @@ describe('HomeSync', () => {
     expect(a).toEqual(b);
   });
 
-  it('asks the browser to persist storage once after the first save', async () => {
+  it('never asks the browser to persist storage by itself: that needs a click (see persistence.ts)', async () => {
     const persist = vi.fn(async () => true);
     vi.stubGlobal('navigator', { storage: { persist } });
     try {
       const { sync } = setup({ tars: [fakeTar(1), fakeTar(2)] });
       await sync.save();
       await sync.save();
-      expect(persist).toHaveBeenCalledTimes(1);
+      expect(persist).not.toHaveBeenCalled();
     } finally {
       vi.unstubAllGlobals();
     }

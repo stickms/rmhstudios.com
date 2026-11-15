@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { memoryHomeStore, type CachedHome } from '../home-store';
-import { createStoredFiles, StoredHome } from '../stored-home';
+import { canDeleteFiles, createStoredFiles, machineUp, StoredHome } from '../stored-home';
 
 const entry = (n: number, savedAt = n): CachedHome => ({
   archive: new Uint8Array(n),
@@ -59,5 +59,40 @@ describe('stored files without a machine', () => {
     expect(await signedOut.info()).toBeNull();
     await signedOut.removeCopy('damaged');
     expect(out).not.toHaveBeenCalled();
+  });
+});
+
+describe('delete my files', () => {
+  it('removes the current archive, the replaced copy and the damaged copy together, and only this account', async () => {
+    const store = memoryHomeStore();
+    await store.transact([
+      { key: 'u1', put: entry(10) },
+      { key: 'u1:replaced', put: { ...entry(20), forSha: 'x' } },
+      { key: 'u1:damaged', put: entry(30) },
+      { key: 'u2', put: entry(99) },
+      { key: 'u2:damaged', put: entry(98) },
+    ]);
+    await createStoredFiles('u1', () => store).deleteAll();
+    expect(await store.get('u1')).toBeNull();
+    expect(await store.get('u1:replaced')).toBeNull();
+    expect(await store.get('u1:damaged')).toBeNull();
+    expect(await store.get('u2')).not.toBeNull();
+    expect(await store.get('u2:damaged')).not.toBeNull();
+  });
+
+  it('is all or nothing: a failed transaction deletes none of them', async () => {
+    const store = memoryHomeStore({ failTransact: () => new Error('boom') });
+    await store.put('u1', entry(10));
+    await store.put('u1:damaged', entry(30));
+    await expect(createStoredFiles('u1', () => store).deleteAll()).rejects.toThrow('boom');
+    expect(await store.get('u1')).not.toBeNull();
+    expect(await store.get('u1:damaged')).not.toBeNull();
+  });
+
+  it('the rule: a machine in this tab is stopped first, another tab\'s machine is never touched', () => {
+    for (const phase of ['downloading', 'booting', 'session', 'running']) expect(machineUp(phase)).toBe(true);
+    for (const phase of ['idle', 'failed', 'stopped']) expect(machineUp(phase)).toBe(false);
+    expect(canDeleteFiles({ readOnly: false })).toBe(true);
+    expect(canDeleteFiles({ readOnly: true })).toBe(false);
   });
 });

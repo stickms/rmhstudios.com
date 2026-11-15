@@ -18,6 +18,8 @@ export interface StoredCopiesSource {
   storedCopies: () => Promise<Copies | null>;
   exportCopy: (kind: CopyKind) => Promise<Uint8Array | null>;
   removeCopy: (kind: 'replaced' | 'damaged') => Promise<void>;
+  /** Deletes everything stored for the account (the caller stops its machine first). */
+  deleteAll: () => Promise<void>;
 }
 
 
@@ -32,6 +34,7 @@ export default function StoredCopies({
   container,
   currentDamaged,
   readOnly = false,
+  machineUp = false,
 }: {
   session: StoredCopiesSource;
   container: HTMLElement | null;
@@ -39,12 +42,15 @@ export default function StoredCopies({
   readOnly?: boolean;
   /** The current archive is unreadable: its download carries the damaged name. */
   currentDamaged: boolean;
+  /** A machine is up in this tab: deleting the files stops it. */
+  machineUp?: boolean;
 }) {
   const { t } = useTranslation('c-rmhos');
   const [copies, setCopies] = useState<Copies | null>(null);
   const [removing, setRemoving] = useState<'replaced' | 'damaged' | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const { storedCopies, exportCopy, removeCopy } = session;
+  const { storedCopies, exportCopy, removeCopy, deleteAll } = session;
   const load = useCallback(() => {
     void storedCopies().then(setCopies, () => setCopies(null));
   }, [storedCopies]);
@@ -116,6 +122,47 @@ export default function StoredCopies({
             </li>
           ))}
       </ul>
+      {!readOnly && (
+        <div>
+          <Button size="sm" onClick={() => setDeleting(true)}>
+            {t('delete-files', { defaultValue: 'Delete my files from this browser' })}
+          </Button>
+        </div>
+      )}
+      <ConfirmBox
+        open={deleting}
+        container={container}
+        title={
+          machineUp
+            ? t('delete-files-confirm-stops', {
+                defaultValue:
+                  'Delete your files from this browser? This removes your saved files, the files replaced by a backup and any damaged copy, and stops rmhOS. It cannot be undone. Download a backup first to keep them.',
+              })
+            : t('delete-files-confirm', {
+                defaultValue:
+                  'Delete your files from this browser? This removes your saved files, the files replaced by a backup and any damaged copy. It cannot be undone. Download a backup first to keep them.',
+              })
+        }
+        confirmLabel={t('delete', { defaultValue: 'Delete' })}
+        onCancel={() => setDeleting(false)}
+        onConfirm={() => {
+          setDeleting(false);
+          deleteAll().then(
+            () => {
+              toast.success(
+                t('files-deleted', { defaultValue: 'Your files were deleted from this browser.' }),
+              );
+              load();
+            },
+            () =>
+              toast.error(
+                t('delete-files-failed', {
+                  defaultValue: 'Could not delete the files. Nothing was changed.',
+                }),
+              ),
+          );
+        }}
+      />
       <ConfirmBox
         open={removing !== null}
         container={container}

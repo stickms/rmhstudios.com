@@ -156,6 +156,8 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   let dropRejectionListener: (() => void) | null = null;
   /** The running emulator's own fall-back-to-cold-boot step (only a snapshot boot has one). */
   let fallBackNow: ((why: string) => void) | null = null;
+  /** The snapshot is the file v86 reported last, and it is not complete. */
+  let stateDownloading = false;
   /** Set once the emulator is built; until then a stall rejects createVm instead. */
   let built = false;
   let rejectEarly: ((e: BootFailure) => void) | null = null;
@@ -182,8 +184,11 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       reason === 'stalled'
         ? `no download progress for ${STALL_MS / 1000} s`
         : `the machine did not report ready (${usedState ? 'snapshot' : 'cold boot'})`;
-    // A snapshot that stalls or never restores costs one cold boot, not the whole session.
-    if (usedState && fallBackNow) return fallBackNow(`snapshot: ${why}`);
+    // A snapshot that stalls mid-download or never restores costs one cold boot, not the whole
+    // session. A stall on any other file (v86 loads the snapshot before the kernel) would only
+    // stall again on a cold boot, so it ends the boot.
+    if (usedState && fallBackNow && (reason === 'boot-timeout' || stateDownloading))
+      return fallBackNow(`snapshot: ${why}`);
     failBoot(reason, `${why} while ${stage}`);
   });
   signal?.addEventListener('abort', () => watchdog.stop(), { once: true });
@@ -240,6 +245,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     usedState = withState && !!manifest.state;
     ready = false;
     serial1Seen = '';
+    stateDownloading = false;
     watchdog.downloading();
     const options = {
       ...vmOptions({ baseUrl: base, relayUrl, rootfsSize: manifest.rootfs.size }),
@@ -325,10 +331,12 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     e.add_listener('download-progress', (ev) => {
       if (finished || destroyed) return;
       watchdog.progress();
-      loadedBy.set(
-        ev.file_name,
-        Math.min(ev.loaded, expected.find((f) => f.url === ev.file_name)?.size ?? ev.loaded),
-      );
+      stateDownloading =
+        ev.file_name === manifest.state?.url && ev.loaded < (manifest.state?.size ?? 0);
+      // The emulator's own wasm is reported here too; it is not part of the bar's total.
+      const file = expected.find((f) => f.url === ev.file_name);
+      if (!file) return;
+      loadedBy.set(ev.file_name, Math.min(ev.loaded, file.size));
       let loaded = 0;
       for (const v of loadedBy.values()) loaded += v;
       setPhase('downloading', { loaded, total });

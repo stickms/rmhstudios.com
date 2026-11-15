@@ -1,5 +1,6 @@
 /** About: what rmhOS is built from, and where the files live. Facts: about-facts.ts. */
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,12 @@ interface Props {
   currentDamaged: boolean;
   /** Another tab is running rmhOS for this account: stored copies can be downloaded, not removed. */
   readOnly?: boolean;
+  /** A machine is up in this tab: deleting the files stops it. */
+  machineUp?: boolean;
+  /** The browser may delete the stored files (it said persistence is not granted). */
+  evictionRisk?: boolean;
+  /** Asks the browser to keep the files; call it from the click. */
+  onKeep?: () => void;
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -49,6 +56,9 @@ export default function AboutDialog({
   session,
   currentDamaged,
   readOnly = false,
+  machineUp = false,
+  evictionRisk = false,
+  onKeep,
 }: Props) {
   const { t } = useTranslation('c-rmhos');
   const manifest = resolveImageManifest(CDN_BASE || undefined);
@@ -107,12 +117,30 @@ export default function AboutDialog({
               })}
             </li>
           </ul>
+          {evictionRisk && (
+            <div className="flex flex-col gap-2">
+              <p className="text-(--app-warning)">
+                {t('eviction-line', {
+                  defaultValue:
+                    'This browser may delete these files to free space. Download a backup to keep them.',
+                })}
+              </p>
+              {onKeep && (
+                <div>
+                  <Button size="sm" onClick={onKeep}>
+                    {t('keep-files', { defaultValue: 'Keep my files in this browser' })}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
           {open && (
             <StoredCopies
               session={session}
               container={container}
               currentDamaged={currentDamaged}
               readOnly={readOnly}
+              machineUp={machineUp}
             />
           )}
           <p className="text-(--app-text-muted)">

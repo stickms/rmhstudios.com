@@ -299,10 +299,23 @@ describe('the boot watchdog and the image probe in createVm', () => {
     expect(FakeV86.all).toHaveLength(2); // no second fallback
   });
 
+  it('a stall on the kernel after the snapshot is complete ends the boot (a cold boot would stall again)', async () => {
+    const { p, c } = start();
+    const vm = await p;
+    const seen = track(vm);
+    FakeV86.last!.emit('download-progress', { file_name: manifest.state!.url, loaded: manifest.state!.size });
+    FakeV86.last!.emit('download-progress', { file_name: manifest.bzImage.url, loaded: 10 });
+    await c.advance(STALL_MS + 1000);
+    expect(FakeV86.all).toHaveLength(1);
+    expect(seen.at(-1)![0]).toBe('failed');
+    expect(seen.at(-1)![1]).toMatchObject({ reason: 'stalled' });
+  });
+
   it('a snapshot download that stalls falls back to a cold boot instead of failing', async () => {
     const { p, c } = start();
     const vm = await p;
     track(vm);
+    FakeV86.last!.emit('download-progress', { file_name: manifest.state!.url, loaded: 1000 });
     await c.advance(STALL_MS + 1000);
     await flush();
     expect(FakeV86.all).toHaveLength(2);

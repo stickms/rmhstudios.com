@@ -12,6 +12,11 @@ interface Props {
   /** How to release the keyboard; read as the screen's description. */
   hint: string;
   hintId: string;
+  /**
+   * False while a boot, failure or signed-out panel is over the screen (see screen-state.ts):
+   * the screen is then inert: not focusable, not clickable, not in the tab order.
+   */
+  interactive: boolean;
   onCapture: (on: boolean) => void;
   onRelease: () => void;
   /** The guest was used: the home folder may have changed. */
@@ -19,7 +24,7 @@ interface Props {
 }
 
 const Screen = forwardRef<HTMLDivElement, Props>(function Screen(
-  { label, hint, hintId, onCapture, onRelease, onInput },
+  { label, hint, hintId, interactive, onCapture, onRelease, onInput },
   ref,
 ) {
   const keyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -47,11 +52,14 @@ const Screen = forwardRef<HTMLDivElement, Props>(function Screen(
       <div
         ref={ref}
         className="rmhos-screen"
-        tabIndex={0}
+        // The guest's own text mode draws left to right whatever the page language is.
+        dir="ltr"
+        tabIndex={interactive ? 0 : -1}
+        inert={!interactive}
         role="application"
         aria-label={label}
         aria-describedby={hintId}
-        onFocus={() => onCapture(true)}
+        onFocus={() => interactive && onCapture(true)}
         onBlur={(e) => {
           // Leaving the screen gives the pointer back too.
           if (document.pointerLockElement === e.currentTarget) document.exitPointerLock?.();

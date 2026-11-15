@@ -93,6 +93,11 @@ export interface RmhosSessionValue {
   removeCopy: (kind: 'replaced' | 'damaged') => Promise<void>;
   /** Puts the replaced home back as the stored one; restart (without saving) afterwards. */
   putPreviousBack: () => Promise<void>;
+  /**
+   * Stops this tab's machine (no save) and deletes everything stored for the account: the current
+   * archive, the replaced copy and the damaged copy. "Restart" brings the machine back, empty.
+   */
+  deleteAllFiles: () => Promise<void>;
   /** The desktop's home straight from the guest, writing nothing: a backup when saving is refused. */
   exportLive: () => Promise<Uint8Array | null>;
   /** Validates and stores a backup. Saves are suspended afterwards: restart (without saving). */
@@ -162,6 +167,8 @@ export function useRmhosMachine(
   const [failure, setFailure] = useState<RmhosFailure | null>(null);
   const [snap, setSnap] = useState<SessionSnapshot | null>(null);
   const [attempt, setAttempt] = useState(0);
+  /** The machine was stopped on purpose (deleting the files): nothing runs until Restart. */
+  const [halted, setHalted] = useState(false);
   useEffect(() => {
     if (import.meta.env.DEV) window.__rmhosPhase = phase;
   }, [phase]);
@@ -206,6 +213,12 @@ export function useRmhosMachine(
       setDetail(undefined);
       setBootKind(null);
       setFailure(null);
+      setSnap(null);
+      return;
+    }
+    if (halted) {
+      setPhase('stopped');
+      setDetail(undefined);
       setSnap(null);
       return;
     }
@@ -349,7 +362,7 @@ export function useRmhosMachine(
       ac.abort();
       for (const c of cleanups.reverse()) c();
     };
-  }, [enabled, machineUser, sessionReady, attempt, screenRef, getStore]);
+  }, [enabled, machineUser, sessionReady, attempt, halted, screenRef, getStore]);
 
   // Network state from the hub: once the desktop is up, then every 15 s while the tab is visible.
   const desktopReady = snap?.desktopReady ?? false;
@@ -400,6 +413,7 @@ export function useRmhosMachine(
     async (opts?: { save?: boolean }) => {
       if (opts?.save !== false) await runnerRef.current?.save();
       await sessionQ.refetch(); // a fresh relay ticket for the new machine
+      setHalted(false);
       setAttempt((n) => n + 1);
     },
     [sessionQ],
@@ -447,6 +461,13 @@ export function useRmhosMachine(
       await runnerRef.current.startEmpty();
     }, []),
     restart,
+    deleteAllFiles: useCallback(async () => {
+      // Stop first: a machine that is still up would save the files straight back. Disposing the
+      // runner suspends its sync at once; the delete is queued behind any write already issued.
+      runnerRef.current?.dispose();
+      setHalted(true);
+      await stored.deleteAll();
+    }, [stored]),
     signedOut,
     isUnsaved: useCallback(() => runnerRef.current?.isUnsaved() ?? false, []),
     saveBeforeLeaving: useCallback(

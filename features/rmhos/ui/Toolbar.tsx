@@ -121,7 +121,9 @@ export default function Toolbar(p: Props) {
             onClick={p.onFullscreen}
           >
             {p.fullscreen ? <Minimize aria-hidden="true" /> : <Maximize aria-hidden="true" />}
-            <span className="rmhos-toolbar-text">{labels.fullscreen}</span>
+            <span className="rmhos-toolbar-text">
+              {p.fullscreen ? labels.exitFullscreen : labels.fullscreen}
+            </span>
           </Button>
         )}
         {state.showBackup && (

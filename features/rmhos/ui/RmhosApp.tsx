@@ -12,6 +12,7 @@ import { readString, writeString } from '@/lib/core/persist';
 import { toast } from '@/lib/shared/app-toast';
 import { Button } from '@/components/ui/button';
 import { checkBackup } from '../engine/home-sync';
+import { machineUp } from '../engine/stored-home';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { CDN_BASE } from '@/lib/storage/asset';
 import ComingSoon from './ComingSoon';
@@ -29,9 +30,11 @@ import {
   restoreFailureCopy,
 } from './save-messages';
 import Screen from './Screen';
+import { screenInteractive } from './screen-state';
 import SignedOut from './SignedOut';
 import Toolbar from './Toolbar';
 import { toolbarState, type NetState } from './toolbar-state';
+import { usePersisted } from './usePersisted';
 import { RmhosSessionProvider, useRmhosMachine } from './useRmhosSession';
 
 /** Backups are read into memory whole: refuse anything this big before reading. */
@@ -135,6 +138,24 @@ function RmhosMachine() {
     signedOut: session.signedOut,
   });
 
+  // Whether the browser promised to keep the files. Re-read after every save.
+  const keeping = usePersisted(session.lastSave?.at);
+  const { persisted: persistedNow, keep } = keeping;
+
+  const interactive = screenInteractive({
+    phase: session.phase,
+    desktopReady: session.desktopReady,
+    overlay: session.signedOut || session.phase !== 'running',
+  });
+  // Keys never go to a guest that is not on screen, whatever had focus a moment ago.
+  const { setKeyboardCapture } = session;
+  useEffect(() => {
+    if (!interactive) {
+      setKeyboardCapture(false);
+      setCaptured(false);
+    }
+  }, [interactive, setKeyboardCapture]);
+
   const fail = useCallback((msg: string) => {
     toast.error(msg);
   }, []);
@@ -234,7 +255,12 @@ function RmhosMachine() {
           fullscreen={fullscreen}
           fullscreenAvailable={fullscreenAvailable}
           fileInputRef={fileInputRef}
-          onSave={() => void session.saveNow()}
+          onSave={() => {
+            // The click is the user activation persist() may need (a prompt in some browsers):
+            // asked here, first, never silently at an autosave.
+            if (persistedNow === false) void keep();
+            void session.saveNow();
+          }}
           onRestart={() => setConfirmRestart(true)}
           onFullscreen={toggleFullscreen}
           onAbout={() => setAbout(true)}
@@ -254,7 +280,7 @@ function RmhosMachine() {
             })}
           </span>
         </div>
-        {noticeOpen && (
+        {noticeOpen && !session.signedOut && (
           <div className="rmhos-notices flex items-center justify-between gap-2" role="note">
             <p className="text-xs text-(--app-text-muted)">
               {t('files-kept', { defaultValue: 'Files are kept in this browser on this device.' })}
@@ -264,7 +290,13 @@ function RmhosMachine() {
             </Button>
           </div>
         )}
-        <Notices session={session} busy={busy} onDownload={() => void download()} />
+        <Notices
+          session={session}
+          busy={busy}
+          onDownload={() => void download()}
+          evictionRisk={keeping.risk}
+          onKeep={() => void keep()}
+        />
         <div className="rmhos-stage">
           <Screen
             ref={screenRef}
@@ -274,6 +306,7 @@ function RmhosMachine() {
                 'Keys go to rmhOS while this screen has focus. Press Ctrl+Alt+Shift+Escape to use the page again.',
             })}
             hintId={hintId}
+            interactive={interactive}
             onCapture={(on) => {
               setCaptured(on);
               session.setKeyboardCapture(on);
@@ -310,9 +343,17 @@ function RmhosMachine() {
           open={about}
           onOpenChange={setAbout}
           container={container}
-          session={session}
+          session={{
+            storedCopies: session.storedCopies,
+            exportCopy: session.exportCopy,
+            removeCopy: session.removeCopy,
+            deleteAll: session.deleteAllFiles,
+          }}
           currentDamaged={session.failure === 'corrupt'}
           readOnly={session.failure === 'locked'}
+          machineUp={machineUp(session.phase)}
+          evictionRisk={keeping.risk}
+          onKeep={() => void keep()}
         />
         <ConfirmBox
           open={blocker.status === 'blocked'}

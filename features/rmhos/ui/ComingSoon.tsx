@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/session/session-context';
 import AboutDialog from './AboutDialog';
+import { usePersisted } from './usePersisted';
 import { useStoredHome } from './useStoredHome';
 
 export default function ComingSoon() {
@@ -20,6 +21,7 @@ export default function ComingSoon() {
   const [about, setAbout] = useState(false);
   const { data: account } = useSession();
   const { stored } = useStoredHome(account?.user?.id ?? null);
+  const keeping = usePersisted(about);
   return (
     <div className="rmhos-root" ref={rootRef}>
       <div className="rmhos-toolbar" role="group" aria-label={t('toolbar-label', { defaultValue: 'rmhOS controls' })}>
@@ -51,7 +53,10 @@ export default function ComingSoon() {
           storedCopies: stored.copies,
           exportCopy: stored.exportCopy,
           removeCopy: stored.removeCopy,
+          deleteAll: stored.deleteAll,
         }}
+        evictionRisk={keeping.risk}
+        onKeep={() => void keeping.keep()}
         currentDamaged={false}
       />
     </div>

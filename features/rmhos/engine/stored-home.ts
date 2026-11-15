@@ -62,6 +62,31 @@ export class StoredHome {
     if (kind !== 'replaced' && kind !== 'damaged') throw new Error(`cannot remove copy: ${kind}`);
     await this.store.delete(this.key(kind));
   }
+
+  /**
+   * Deletes everything this browser holds for the account: the current archive, the home a backup
+   * replaced and a damaged copy, in one transaction (all or none). Only the caller's rule decides
+   * when that is allowed (`canDeleteFiles`); this removes unconditionally.
+   */
+  async deleteAll(): Promise<void> {
+    await this.store.transact(
+      (['current', 'replaced', 'damaged'] as const).map((k) => ({ key: this.key(k), delete: true as const })),
+    );
+  }
+}
+
+/**
+ * Deleting the files is refused while a machine could write them back: a running machine's next
+ * save would recreate the entry. The page stops the machine first (`machineUp`), then deletes;
+ * another tab's machine (`readOnly`) is never stopped from here, so nothing is deleted from under it.
+ */
+export function canDeleteFiles(state: { readOnly: boolean }): boolean {
+  return !state.readOnly;
+}
+
+/** Phases with a machine that must be stopped before the files can go. */
+export function machineUp(phase: string): boolean {
+  return phase === 'downloading' || phase === 'booting' || phase === 'session' || phase === 'running';
 }
 
 /**
@@ -73,6 +98,7 @@ export interface StoredFiles {
   exportCopy(kind: CopyKind): Promise<Uint8Array | null>;
   info(): Promise<{ archive: Uint8Array; savedAt: number } | null>;
   removeCopy(kind: 'replaced' | 'damaged'): Promise<void>;
+  deleteAll(): Promise<void>;
 }
 
 export function createStoredFiles(userId: string | null, getStore: () => HomeStore): StoredFiles {
@@ -82,5 +108,6 @@ export function createStoredFiles(userId: string | null, getStore: () => HomeSto
     exportCopy: async (kind) => (await home()?.exportCopy(kind)) ?? null,
     info: async () => (await home()?.info()) ?? null,
     removeCopy: async (kind) => void (await home()?.removeCopy(kind)),
+    deleteAll: async () => void (await home()?.deleteAll()),
   };
 }

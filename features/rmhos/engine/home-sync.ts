@@ -87,7 +87,6 @@ export type PrepareResult = 'local' | 'empty' | 'corrupt';
 
 export class HomeSync {
   private inFlight: Promise<SaveResult> | null = null;
-  private persisted = false;
   private suspended = false;
   /** sha256 of the tar this session loaded, or last wrote; null = nothing stored. */
   private knownSha: string | null = null;
@@ -227,10 +226,6 @@ export class HomeSync {
           : { status: 'failed', code: 'storage_error' };
       }
       this.knownSha = sha256;
-      if (!this.persisted) {
-        this.persisted = true;
-        void Promise.resolve(globalThis.navigator?.storage?.persist?.()).catch(() => {});
-      }
       return { status: 'saved', bytes: archive.length };
     } catch {
       return { status: 'failed', code: 'storage_error' };
