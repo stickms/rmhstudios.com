@@ -1,0 +1,12 @@
+# rmhOS relay hub recovery: run rmhos-net-recover.service every two minutes. Install
+# instructions live in rmhos-net-recover.service.
+[Unit]
+Description=rmhOS relay hub recovery check every two minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitInactiveSec=2min
+AccuracySec=10s
+
+[Install]
+WantedBy=timers.target

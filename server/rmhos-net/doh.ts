@@ -15,6 +15,8 @@ const DNS_MESSAGE = 'application/dns-message';
 export interface DohOptions {
   /** Ticket check shared with the WebSocket upgrade; records the use. */
   authorize: (ticket: string) => { ok: true; userId: string } | { ok: false };
+  /** Per-user request budget (a window per minute); false answers 429. */
+  rateLimit?: (userId: string) => boolean;
   /** Per server instance: queries in flight per user. */
   inFlight: Map<string, number>;
   enabled: boolean;
@@ -97,6 +99,7 @@ export async function handleDohQuery(
   if (!opts.enabled) return reply(opts, res, 503, 'disabled');
   const verdict = opts.authorize(ticket);
   if (!verdict.ok) return reply(opts, res, 401, 'unauthorized');
+  if (opts.rateLimit && !opts.rateLimit(verdict.userId)) return reply(opts, res, 429, 'too many queries');
   const type = (req.headers['content-type'] ?? '').split(';')[0]?.trim().toLowerCase();
   if (type !== DNS_MESSAGE) return reply(opts, res, 415, 'unsupported media type');
 

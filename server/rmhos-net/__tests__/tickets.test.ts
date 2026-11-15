@@ -140,3 +140,68 @@ describe('TicketBook', () => {
     expect(other.book.authorize(ticket)).toEqual({ ok: false });
   });
 });
+
+describe('TicketBook invalidation callbacks and refresh', () => {
+  function watched(maxTickets?: number) {
+    const clock = { t: T0 };
+    const gone: string[] = [];
+    const b = new TicketBook(SECRET, () => clock.t, {
+      ...(maxTickets !== undefined ? { maxTickets } : {}),
+      onInvalid: (u) => gone.push(u),
+    });
+    return { clock, b, gone };
+  }
+
+  it('reports a user whose ticket went idle, was found past 12 h, or was swept by prune', () => {
+    const { clock, b, gone } = watched();
+    const t1 = signNetTicket('idle', SECRET, T0);
+    b.authorize(t1);
+    clock.t += IDLE_MS + 1;
+    expect(b.authorize(t1)).toEqual({ ok: false });
+    expect(gone).toEqual(['idle']);
+
+    const t2 = signNetTicket('old', SECRET, clock.t);
+    b.authorize(t2);
+    for (let spent = 0; spent <= MAX_AGE_MS; spent += 10 * 60_000) {
+      clock.t += 10 * 60_000;
+      b.touch('old');
+    }
+    expect(b.valid('old')).toBe(false);
+    b.prune();
+    expect(gone).toEqual(['idle', 'old']);
+  });
+
+  it('reports the user of a cap-evicted ticket, and not a superseded one', () => {
+    const { clock, b, gone } = watched(2);
+    b.authorize(signNetTicket('a', SECRET, T0));
+    clock.t += 1;
+    b.authorize(signNetTicket('b', SECRET, clock.t));
+    clock.t += 1;
+    b.authorize(signNetTicket('c', SECRET, clock.t)); // table full: a (oldest lastSeen) goes
+    expect(gone).toEqual(['a']);
+    clock.t += 1;
+    b.authorize(signNetTicket('b', SECRET, clock.t)); // supersedes b's own: the relay closes with 4000
+    expect(gone).toEqual(['a']);
+  });
+
+  it('status-style authorisation (refresh: false) does not keep a ticket alive', () => {
+    const { clock, b } = watched();
+    const t = signNetTicket('poller', SECRET, T0);
+    b.authorize(t);
+    for (let i = 0; i < 6; i++) {
+      clock.t += 4 * 60_000;
+      if (i < 3) expect(b.authorize(t, false)).toMatchObject({ ok: true });
+    }
+    // 24 min after the last real use, however often it was asked about
+    expect(b.authorize(t, false)).toEqual({ ok: false });
+  });
+
+  it('valid() follows the same two windows', () => {
+    const { clock, b } = watched();
+    expect(b.valid('nobody')).toBe(false);
+    b.authorize(signNetTicket('v', SECRET, T0));
+    expect(b.valid('v')).toBe(true);
+    clock.t += IDLE_MS + 1;
+    expect(b.valid('v')).toBe(false);
+  });
+});
