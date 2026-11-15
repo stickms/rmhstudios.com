@@ -70,7 +70,10 @@ export class StoredHome {
    */
   async deleteAll(): Promise<void> {
     await this.store.transact(
-      (['current', 'replaced', 'damaged'] as const).map((k) => ({ key: this.key(k), delete: true as const })),
+      [
+        ...(['current', 'replaced', 'damaged'] as const).map((k) => ({ key: this.key(k), delete: true as const })),
+        { key: `${this.userId}:meta`, delete: true as const },
+      ],
     );
   }
 }

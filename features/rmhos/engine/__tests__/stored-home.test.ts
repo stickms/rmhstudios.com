@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { memoryHomeStore, type CachedHome } from '../home-store';
 import { canDeleteFiles, createStoredFiles, machineUp, StoredHome } from '../stored-home';
+import { putEntry } from './store-helpers';
 
 const entry = (n: number, savedAt = n): CachedHome => ({
   archive: new Uint8Array(n),
@@ -81,9 +82,11 @@ describe('delete my files', () => {
   });
 
   it('is all or nothing: a failed transaction deletes none of them', async () => {
-    const store = memoryHomeStore({ failTransact: () => new Error('boom') });
-    await store.put('u1', entry(10));
-    await store.put('u1:damaged', entry(30));
+    let failing = false;
+    const store = memoryHomeStore({ failTransact: () => (failing ? new Error('boom') : null) });
+    await putEntry(store, 'u1', entry(10));
+    await putEntry(store, 'u1:damaged', entry(30));
+    failing = true;
     await expect(createStoredFiles('u1', () => store).deleteAll()).rejects.toThrow('boom');
     expect(await store.get('u1')).not.toBeNull();
     expect(await store.get('u1:damaged')).not.toBeNull();

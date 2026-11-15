@@ -81,6 +81,8 @@ export interface SessionDeps {
 
 const NOT_RUNNING: SaveResult = { status: 'failed', code: 'not-running' };
 const POWEROFF_SAVE_TIMEOUT_MS = 10_000;
+/** A good save younger than this share of the autosave interval makes a scheduled save redundant. */
+const SAVED_RECENTLY = 0.9;
 /** Leaving the page (navigation, sign-out) waits this long for one last save. */
 export const LEAVE_SAVE_TIMEOUT_MS = 15_000;
 
@@ -155,11 +157,13 @@ export class HomeSession {
     this.readyAt = env.now();
     this.set({ stage: 'running', desktopReady: true });
 
-    const timer = env.setInterval(() => void this.save(), this.d.autosaveMs);
+    const timer = env.setInterval(() => {
+      if (!this.savedRecently()) void this.save();
+    }, this.d.autosaveMs);
     this.teardowns.push(() => env.clearInterval(timer));
 
     const onVisibility = () => {
-      if (env.doc.visibilityState === 'hidden') void this.save();
+      if (env.doc.visibilityState === 'hidden' && !this.savedRecently()) void this.save();
     };
     env.doc.addEventListener('visibilitychange', onVisibility);
     this.teardowns.push(() => env.doc.removeEventListener('visibilitychange', onVisibility));
@@ -183,6 +187,20 @@ export class HomeSession {
         void this.save({ timeoutMs: POWEROFF_SAVE_TIMEOUT_MS }).finally(() => this.stop('stopped'));
       }),
     );
+  }
+
+  /**
+   * Nothing to do for the scheduled saves (the autosave tick, a tab going hidden): no input since
+   * the last good save, and that save is less than 90 % of an interval old. The margin keeps the
+   * tick, which fires exactly one interval after the previous one, from skipping every other
+   * round; programs that change files without input are still picked up at the next tick. A save
+   * reads and compresses the whole home, which on a phone or tablet is the memory peak.
+   */
+  private savedRecently(): boolean {
+    const last = this.snap.lastSave;
+    const good = last && (last.result.status === 'saved' || last.result.status === 'unchanged');
+    if (!good || this.snap.dirty || this.snap.saving) return false;
+    return this.d.env.now() - last.at < this.d.autosaveMs * SAVED_RECENTLY;
   }
 
   /** What the unload prompt asks about. */

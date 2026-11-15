@@ -4,6 +4,7 @@ import { SHARE_ARCHIVE_PATH } from '../agent-protocol';
 import { HomeSession, type SessionEnv, type SessionSnapshot } from '../home-session';
 import { HomeSync } from '../home-sync';
 import { memoryHomeStore } from '../home-store';
+import { putEntry } from './store-helpers';
 
 async function gzip(data: Uint8Array): Promise<Uint8Array> {
   const s = new Blob([data as BlobPart]).stream().pipeThrough(new CompressionStream('gzip'));
@@ -142,7 +143,7 @@ describe('HomeSession handshake', () => {
   it('an unreadable stored archive stops the boot: corrupt, nothing signed in, nothing overwritten', async () => {
     const t = setup();
     const damaged = { archive: new Uint8Array([1, 2, 3]), sha256: 'x', savedAt: 1 };
-    await t.store.put('u1', damaged);
+    await putEntry(t.store, 'u1', damaged);
     await t.session.start();
     expect(t.session.snapshot).toMatchObject({ stage: 'failed', failure: 'corrupt' });
     expect(t.agent.startSession).not.toHaveBeenCalled();
@@ -163,10 +164,72 @@ describe('HomeSession saving', () => {
     [...t.e.timers.values()][0]!();
     await vi.waitFor(() => expect(t.session.snapshot.lastSave).not.toBeNull());
     expect(t.agent.save).toHaveBeenCalledTimes(1);
+    // Clean, and saved a moment ago: hiding the tab has nothing to do.
     t.e.state.visibility = 'hidden';
+    t.e.fire('doc:visibilitychange');
+    await new Promise((r) => setImmediate(r));
+    expect(t.agent.save).toHaveBeenCalledTimes(1);
+    // Input since the last save: hiding the tab saves.
+    t.session.markDirty();
     t.e.fire('doc:visibilitychange');
     await vi.waitFor(() => expect(t.agent.save).toHaveBeenCalledTimes(2));
     expect((await t.session.save()).status).toMatch(/saved|unchanged/);
+  });
+
+  describe('scheduled saves skip a save that would change nothing', () => {
+    const tick = (t: ReturnType<typeof setup>) => [...t.e.timers.values()][0]!();
+    const hide = (t: ReturnType<typeof setup>) => {
+      t.e.state.visibility = 'hidden';
+      t.e.fire('doc:visibilitychange');
+    };
+    const settle = () => new Promise((r) => setImmediate(r));
+
+    it('clean and saved less than 90 % of an interval ago: neither the tick nor hiding saves', async () => {
+      const t = setup();
+      await t.session.start();
+      await t.session.save();
+      expect(t.agent.save).toHaveBeenCalledTimes(1);
+      t.e.state.now += 200_000;
+      tick(t);
+      hide(t);
+      await settle();
+      expect(t.agent.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('a good save older than that is saved again (background programs change files without input)', async () => {
+      const t = setup();
+      await t.session.start();
+      await t.session.save();
+      t.e.state.now += 280_000; // the next tick is 300 s after the last one: the margin lets it through
+      tick(t);
+      await vi.waitFor(() => expect(t.agent.save).toHaveBeenCalledTimes(2));
+    });
+
+    it('dirty, a failed last save, or never saved: the scheduled save runs', async () => {
+      const t = setup();
+      await t.session.start();
+      tick(t); // never saved
+      await vi.waitFor(() => expect(t.session.snapshot.lastSave).not.toBeNull());
+      expect(t.agent.save).toHaveBeenCalledTimes(1);
+      t.session.markDirty();
+      tick(t);
+      await vi.waitFor(() => expect(t.agent.save).toHaveBeenCalledTimes(2));
+
+      const f = setup({ saveError: new AgentError('timeout') });
+      await f.session.start();
+      await f.session.save(); // fails
+      f.e.state.now += 1_000;
+      hide(f);
+      await vi.waitFor(() => expect(f.agent.save).toHaveBeenCalledTimes(2));
+    });
+
+    it('a manual save is never skipped', async () => {
+      const t = setup();
+      await t.session.start();
+      await t.session.save();
+      await t.session.save();
+      expect(t.agent.save).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('input marks the session dirty; a good save clears it, input during a save does not', async () => {
@@ -328,7 +391,7 @@ describe('HomeSession teardown', () => {
   it('a failed handshake offers the previous files back when a backup replaced them', async () => {
     const t = setup({ restoreError: new AgentError('timeout') });
     const old = { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 };
-    await t.store.put('u1', old);
+    await putEntry(t.store, 'u1', old);
     await t.sync.importArchive(await gzip(fakeTar(8))); // as the page does before restarting
     const fresh = new HomeSession({
       agent: t.agent,
@@ -351,9 +414,9 @@ describe('HomeSession teardown', () => {
 
   it('put-back is not offered when a save has changed the main entry since the backup', async () => {
     const t = setup({ restoreError: new AgentError('timeout') });
-    await t.store.put('u1', { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 });
+    await putEntry(t.store, 'u1', { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 });
     await t.sync.importArchive(await gzip(fakeTar(8)));
-    await t.store.put('u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 7 }); // work saved after the restore
+    await putEntry(t.store, 'u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 7 }); // work saved after the restore
     const fresh = new HomeSession({
       agent: t.agent,
       sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
@@ -381,7 +444,7 @@ describe('HomeSession teardown', () => {
 
   it('after a previous_stale refusal the offer is withdrawn from the snapshot', async () => {
     const t = setup({ restoreError: new AgentError('timeout') });
-    await t.store.put('u1', { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 });
+    await putEntry(t.store, 'u1', { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 });
     await t.sync.importArchive(await gzip(fakeTar(8)));
     const fresh = new HomeSession({
       agent: t.agent,
@@ -394,7 +457,7 @@ describe('HomeSession teardown', () => {
     await fresh.start();
     expect(fresh.snapshot.previousAvailable).toBe(true);
     // Another tab saves over the restored backup while the failure screen is up.
-    await t.store.put('u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 7 });
+    await putEntry(t.store, 'u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 7 });
     await expect(fresh.putPreviousBack()).rejects.toMatchObject({ code: 'previous_stale' });
     expect(fresh.snapshot).toMatchObject({ previousAvailable: false, previousSavedAt: null });
   });

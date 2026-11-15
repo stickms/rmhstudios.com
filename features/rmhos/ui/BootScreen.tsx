@@ -12,6 +12,8 @@ interface Props {
   failure: RmhosFailure | null;
   /** A phone with no keyboard: ask before downloading the machine. */
   needsKeyboardNotice: boolean;
+  /** With the notice: this device may not have the memory for it either. */
+  lowMemory?: boolean;
   onStart: () => void;
   /** Starts the machine over (Try again / Restart). */
   onRetry: () => void;
@@ -31,6 +33,7 @@ export default function BootScreen({
   detail,
   failure,
   needsKeyboardNotice,
+  lowMemory = false,
   onStart,
   onRetry,
   onDownloadDamaged,
@@ -113,6 +116,14 @@ export default function BootScreen({
             <p className="text-sm text-(--app-text-muted)">
               {t('keyboard-needed', { defaultValue: 'rmhOS needs a keyboard.' })}
             </p>
+            {lowMemory && (
+              <p className="text-sm text-(--app-text-muted)">
+                {t('low-memory', {
+                  defaultValue:
+                    'This device may not have enough memory to run it, and the page could close.',
+                })}
+              </p>
+            )}
             <div>
               <Button variant="primary" onClick={onStart}>
                 {t('start-anyway', { defaultValue: 'Start anyway' })}

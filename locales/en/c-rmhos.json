@@ -58,6 +58,7 @@
   "keyboard-needed": "rmhOS needs a keyboard.",
   "leave": "Leave",
   "leave-confirm": "Leave rmhOS? Unsaved changes are lost.",
+  "low-memory": "This device may not have enough memory to run it, and the page could close.",
   "net-connecting": "Connecting",
   "net-off": "Network off",
   "net-online": "Online",

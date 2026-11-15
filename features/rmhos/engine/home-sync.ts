@@ -22,9 +22,17 @@ export type SaveResult =
 
 type Bytes = Uint8Array<ArrayBuffer>;
 
+/**
+ * Runs `data` through a (de)compression stream. The bytes are written to the stream as one chunk
+ * and the output is collected by a Response: no Blob copy of the input (a tar can be 100 MB) and
+ * no second wrapper around the result.
+ */
 async function pipe(data: Uint8Array, t: CompressionStream | DecompressionStream): Promise<Bytes> {
-  const stream = new Blob([data as BlobPart]).stream().pipeThrough(t);
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  const writer = t.writable.getWriter();
+  const written = writer.write(data as Uint8Array<ArrayBuffer>).then(() => writer.close());
+  // A failed write (a corrupt gzip) rejects the read side too; that is the error to report.
+  written.catch(() => {});
+  return new Uint8Array(await new Response(t.readable).arrayBuffer());
 }
 
 const gzip = (d: Uint8Array) => pipe(d, new CompressionStream('gzip'));
@@ -84,6 +92,20 @@ const isQuota = (e: unknown) => e instanceof Error && e.name === 'QuotaExceededE
 
 /** `prepare()` outcome. `corrupt`: a stored archive exists and cannot be read; nothing was touched. */
 export type PrepareResult = 'local' | 'empty' | 'corrupt';
+
+/**
+ * `<userId>:meta`: a record with no archive that holds the sha256 and save time of the current
+ * entry. A save compares against it instead of reading the whole previous archive (tens of
+ * megabytes) just to learn its hash. Every transaction that writes or deletes the current entry
+ * writes or deletes this one in the same transaction. An entry saved before this key existed has
+ * none: the first save reads the archive once, then writes the key with the new archive.
+ */
+const metaKey = (userId: string) => `${userId}:meta`;
+const metaEntry = (e: { sha256: string; savedAt: number }): CachedHome => ({
+  archive: new Uint8Array(0),
+  sha256: e.sha256,
+  savedAt: e.savedAt,
+});
 
 export class HomeSync {
   private inFlight: Promise<SaveResult> | null = null;
@@ -151,6 +173,7 @@ export class HomeSync {
       await store.transact([
         { key: `${userId}:damaged`, put: cached },
         { key: userId, delete: true },
+        { key: metaKey(userId), delete: true },
       ]);
     } catch (e) {
       throw new BackupError(isQuota(e) ? 'storage-full' : 'storage_error');
@@ -174,12 +197,25 @@ export class HomeSync {
   private async readGuestTar(timeoutMs?: number): Promise<Bytes> {
     const { agent, vm } = this.deps;
     const { bytes } = await agent.save(timeoutMs);
-    const tar = new Uint8Array(await vm.readShareFile(SHARE_ARCHIVE_PATH));
+    // v86 hands back its own copy of the file: used as is, not copied again.
+    const tar = (await vm.readShareFile(SHARE_ARCHIVE_PATH)) as Bytes;
     await vm.deleteShareFile(SHARE_ARCHIVE_PATH).catch(() => {});
     // The guest says how long the tar is; what was read must be exactly that, and a tar.
     if (tar.length !== bytes || tar.length === 0 || !looksLikeTar(tar))
       throw new Error('bad_archive');
     return tar;
+  }
+
+  /**
+   * The sha256 of the stored current entry, without reading its archive: from `<userId>:meta`
+   * when there is one and the entry it describes is still there, else (an entry saved before the
+   * meta key existed) from the entry itself.
+   */
+  private async storedSha(): Promise<string | null> {
+    const { store, userId } = this.deps;
+    const meta = await store.get(metaKey(userId));
+    if (meta?.sha256 && (await store.has(userId))) return meta.sha256;
+    return (await store.get(userId))?.sha256 ?? null;
   }
 
   private async doSave(opts: { timeoutMs?: number; allowEmpty?: boolean }): Promise<SaveResult> {
@@ -193,18 +229,19 @@ export class HomeSync {
       return { status: 'failed', code: e instanceof AgentError ? e.code : 'share' };
     }
     try {
-      const previous = await store.get(userId);
+      const storedSha = await this.storedSha();
       // Another tab (or an import) replaced the stored home since this session read or wrote it.
-      if ((previous?.sha256 ?? null) !== this.knownSha)
-        return { status: 'failed', code: 'changed_elsewhere' };
+      if (storedSha !== this.knownSha) return { status: 'failed', code: 'changed_elsewhere' };
       // The hash is of the tar: gzip output of one input is stable, but hashing the input
       // does not depend on that. A tar whose mtimes changed is a different tar, and is saved.
       const sha256 = await sha256Hex(tar);
-      if (previous?.sha256 === sha256) return { status: 'unchanged' };
-      if (previous && !opts.allowEmpty && tarIsEmpty(tar)) {
+      if (storedSha === sha256) return { status: 'unchanged' };
+      if (storedSha !== null && !opts.allowEmpty && tarIsEmpty(tar)) {
+        // Only now is the stored archive read: an empty home over a stored one is the rare case.
         let storedEmpty = false;
         try {
-          storedEmpty = tarIsEmpty(await checkBackup(previous.archive));
+          const previous = await store.get(userId);
+          storedEmpty = previous ? tarIsEmpty(await checkBackup(previous.archive)) : false;
         } catch {
           // An unreadable stored archive counts as non-empty: never replace it with nothing.
         }
@@ -216,8 +253,10 @@ export class HomeSync {
       try {
         // The home now differs from the restored backup, so the home it replaced can no longer be
         // put back and goes with this write: one transaction, so a failed save leaves both alone.
+        const entry = { archive, sha256, savedAt: Date.now() };
         await store.transact([
-          { key: userId, put: { archive, sha256, savedAt: Date.now() } },
+          { key: userId, put: entry },
+          { key: metaKey(userId), put: metaEntry(entry) },
           { key: `${userId}:replaced`, delete: true },
         ]);
       } catch (e) {
@@ -297,7 +336,7 @@ export class HomeSync {
           ops.push({ key: `${userId}:replaced`, put: { ...previous, forSha: entry.sha256 } });
         }
       }
-      ops.push({ key: userId, put: entry });
+      ops.push({ key: userId, put: entry }, { key: metaKey(userId), put: metaEntry(entry) });
       // Every key moves together or none does: a failure leaves the old home, its previous
       // copy and the offer to put it back exactly as they were.
       await store.transact(ops);
@@ -342,6 +381,7 @@ export class HomeSync {
           key: userId,
           put: { archive: replaced.archive, sha256: replaced.sha256, savedAt: replaced.savedAt },
         },
+        { key: metaKey(userId), put: metaEntry(replaced) },
         { key: `${userId}:replaced`, delete: true },
       ]);
       this.knownSha = replaced.sha256;

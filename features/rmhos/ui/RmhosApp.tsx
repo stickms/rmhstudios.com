@@ -12,6 +12,7 @@ import { readString, writeString } from '@/lib/core/persist';
 import { toast } from '@/lib/shared/app-toast';
 import { Button } from '@/components/ui/button';
 import { checkBackup } from '../engine/home-sync';
+import { deviceGate, readDeviceFacts } from './device-gate';
 import { machineUp } from '../engine/stored-home';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { CDN_BASE } from '@/lib/storage/asset';
@@ -41,9 +42,6 @@ import { RmhosSessionProvider, useRmhosMachine } from './useRmhosSession';
 export const MAX_BACKUP_BYTES = 128 * 1024 * 1024;
 const NOTICE_KEY = 'rmhos:files-notice-dismissed';
 
-function isPhone(): boolean {
-  return window.matchMedia('(pointer: coarse)').matches && window.innerWidth < 768;
-}
 
 function RmhosMachine() {
   const { t } = useTranslation('c-rmhos');
@@ -51,7 +49,9 @@ function RmhosMachine() {
   const rootRef = useRef<HTMLDivElement>(null);
   const screenRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [confirmed, setConfirmed] = useState(() => !isPhone());
+  // A phone or tablet is asked before the machine downloads (by capability: see device-gate.ts).
+  const [gate] = useState(() => deviceGate(readDeviceFacts()));
+  const [confirmed, setConfirmed] = useState(() => !gate.warn);
   const session = useRmhosMachine(screenRef, confirmed);
 
   // Leaving by a router navigation (Back, a swipe, any link) fires no beforeunload and unmounts
@@ -326,6 +326,7 @@ function RmhosMachine() {
               detail={session.detail}
               failure={session.failure}
               needsKeyboardNotice={!confirmed}
+              lowMemory={gate.lowMemory}
               onStart={() => setConfirmed(true)}
               onRetry={() => void session.restart()}
               onDownloadDamaged={async () => {
