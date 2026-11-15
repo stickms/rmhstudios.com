@@ -3,9 +3,11 @@ import {
   expect,
   it,
 } from 'vitest';
+import { ECHO_TAIL_MS } from '../input/echo-window';
 import { midiToFreq } from '../pitch/notes';
 import { STANDARD_TUNING } from '../theory/fretboard';
 import {
+  FAR_CENTS,
   FRAME_MS,
   HOLD_MS,
   IN_TUNE_CENTS,
@@ -16,6 +18,7 @@ import {
   MIN_RMS,
   adviceOf,
   createTunerMachine,
+  shownNote,
   tunerInitial,
   tunerStep,
   tunerTargets,
@@ -124,6 +127,19 @@ const centsUp =
         cents /
           100,
     );
+const lockedOf =
+  (
+    s: TunerState,
+  ) => {
+    if (
+      s.kind !==
+      'locked'
+    )
+      throw new Error(
+        `not locked: ${s.kind}`,
+      );
+    return s;
+  };
 
 describe('tuner machine', () => {
   it('starts silent and stays silent on silence and on frames under the floors', () => {
@@ -200,6 +216,64 @@ describe('tuner machine', () => {
     );
   });
 
+  it('ignores a frame with a non-finite time', () => {
+    const s =
+      tunerInitial(
+        'chromatic',
+      );
+    expect(
+      tunerStep(
+        s,
+        {
+          type: 'frame',
+          frame:
+            voiced(
+              440,
+              Number.NaN,
+            ),
+        },
+      ),
+    ).toBe(
+      s,
+    );
+    const locked =
+      feed(
+        s,
+        10,
+        () =>
+          440,
+      ).state;
+    expect(
+      tunerStep(
+        locked,
+        {
+          type: 'frame',
+          frame:
+            voiced(
+              880,
+              Number.POSITIVE_INFINITY,
+            ),
+        },
+      ),
+    ).toBe(
+      locked,
+    );
+    expect(
+      tunerStep(
+        locked,
+        {
+          type: 'frame',
+          frame:
+            quiet(
+              Number.NaN,
+            ),
+        },
+      ),
+    ).toBe(
+      locked,
+    );
+  });
+
   it('listens first, then locks A4 on a steady 440 Hz within a cent', () => {
     let s =
       tunerInitial(
@@ -230,37 +304,88 @@ describe('tuner machine', () => {
           440,
         FRAME_MS,
       );
-    expect(
-      run
-        .state
-        .kind,
-    ).toBe(
-      'locked',
-    );
-    if (
-      run
-        .state
-        .kind !==
-      'locked'
-    )
-      throw new Error(
-        'not locked',
+    const l =
+      lockedOf(
+        run.state,
       );
     expect(
-      run
-        .state
-        .target,
+      l.target,
     ).toBe(
       69,
     );
     expect(
       Math.abs(
-        run
-          .state
-          .cents,
+        l.cents,
       ),
     ).toBeLessThan(
       1,
+    );
+  });
+
+  it('uses the lower median: an even window never averages two notes into a third', () => {
+    // A2 then A3: the mean of the two would be D♯3, a note nobody played.
+    let s =
+      tunerStep(
+        tunerInitial(
+          'chromatic',
+        ),
+        {
+          type: 'frame',
+          frame:
+            voiced(
+              midiToFreq(
+                45,
+              ),
+              0,
+            ),
+        },
+      );
+    s =
+      tunerStep(
+        s,
+        {
+          type: 'frame',
+          frame:
+            voiced(
+              midiToFreq(
+                57,
+              ),
+              FRAME_MS,
+            ),
+        },
+      );
+    expect(
+      s.kind ===
+        'listening' &&
+        s.candidate,
+    ).toBe(
+      45,
+    );
+    // Just after locking the window holds four frames: one stray frame must not pull the reading.
+    const run =
+      feed(
+        tunerInitial(
+          'chromatic',
+        ),
+        LOCK_FRAMES +
+          1,
+        (
+          i,
+        ) =>
+          i ===
+          LOCK_FRAMES
+            ? 445
+            : 440,
+      );
+    expect(
+      Math.abs(
+        lockedOf(
+          run.state,
+        )
+          .cents,
+      ),
+    ).toBeLessThan(
+      0.5,
     );
   });
 
@@ -277,23 +402,16 @@ describe('tuner machine', () => {
             3,
           ),
       );
-    const locked =
-      run.seen.filter(
-        (
-          x,
-        ) =>
-          x.kind ===
-          'locked',
-      );
     const firstLocked =
-      locked[0];
-    if (
-      !firstLocked ||
-      firstLocked.kind !==
-        'locked'
-    )
-      throw new Error(
-        'never locked',
+      lockedOf(
+        run.seen.find(
+          (
+            x,
+          ) =>
+            x.kind ===
+            'locked',
+        ) ??
+          run.state,
       );
     expect(
       firstLocked.inTune,
@@ -316,15 +434,15 @@ describe('tuner machine', () => {
             'locked' &&
           x.inTune,
       );
-    expect(
-      firstInTune,
-    ).toBeGreaterThan(
-      0,
-    );
     const lockedAt =
       run.seen.indexOf(
         firstLocked,
       );
+    expect(
+      firstInTune,
+    ).toBeGreaterThan(
+      lockedAt,
+    );
     expect(
       (firstInTune -
         lockedAt) *
@@ -401,43 +519,140 @@ describe('tuner machine', () => {
     );
   });
 
-  it('tells "tune up" for 435 Hz (A4, about 20 cents flat) and "tune down" when sharp', () => {
-    const flat =
+  it('"hold it there" and "tune up" do not trade places at the band edge (5 in, 8 out)', () => {
+    // Coming from flat, 6 cents flat is still "tune up"; 4 flat is "hold" (not yet held long).
+    let run =
       feed(
         tunerInitial(
           'chromatic',
         ),
         20,
         () =>
-          435,
-      );
-    if (
-      flat
-        .state
-        .kind !==
-      'locked'
-    )
-      throw new Error(
-        'not locked',
+          centsUp(
+            69,
+            -20,
+          ),
       );
     expect(
-      flat
-        .state
-        .target,
+      adviceOf(
+        run.state,
+      ),
+    ).toBe(
+      'up',
+    );
+    run =
+      feed(
+        run.state,
+        12,
+        () =>
+          centsUp(
+            69,
+            -6,
+          ),
+        run.end,
+      );
+    expect(
+      adviceOf(
+        run.state,
+      ),
+    ).toBe(
+      'up',
+    );
+    run =
+      feed(
+        run.state,
+        6,
+        () =>
+          centsUp(
+            69,
+            -4,
+          ),
+        run.end,
+      );
+    expect(
+      adviceOf(
+        run.state,
+      ),
+    ).toBe(
+      'hold',
+    );
+    // Wobbling between 4 and 7 cents flat stays "hold" (it never left 8).
+    run =
+      feed(
+        run.state,
+        8,
+        (
+          i,
+        ) =>
+          centsUp(
+            69,
+            i %
+              2
+              ? -7
+              : -4,
+          ),
+        run.end,
+      );
+    expect(
+      new Set(
+        run.seen.map(
+          adviceOf,
+        ),
+      ),
+    ).toEqual(
+      new Set(
+        [
+          'hold',
+        ],
+      ),
+    );
+    run =
+      feed(
+        run.state,
+        12,
+        () =>
+          centsUp(
+            69,
+            -12,
+          ),
+        run.end,
+      );
+    expect(
+      adviceOf(
+        run.state,
+      ),
+    ).toBe(
+      'up',
+    );
+  });
+
+  it('tells "tune up" for 435 Hz (A4, about 20 cents flat) and "tune down" when sharp', () => {
+    const flat =
+      lockedOf(
+        feed(
+          tunerInitial(
+            'chromatic',
+          ),
+          20,
+          () =>
+            435,
+        )
+          .state,
+      );
+    expect(
+      flat.target,
     ).toBe(
       69,
     );
     expect(
-      flat
-        .state
-        .cents,
+      flat.cents,
     ).toBeCloseTo(
       -19.8,
       0,
     );
     expect(
       adviceOf(
-        flat.state,
+        flat,
       ),
     ).toBe(
       'up',
@@ -478,26 +693,18 @@ describe('tuner machine', () => {
     for (const st of run.seen.slice(
       LOCK_FRAMES +
         1,
-    )) {
+    ))
       expect(
-        st.kind,
+        lockedOf(
+          st,
+        )
+          .target,
       ).toBe(
-        'locked',
+        69,
       );
-      if (
-        st.kind ===
-        'locked'
-      )
-        expect(
-          st.target,
-        ).toBe(
-          69,
-        );
-    }
   });
 
   it('does not flicker between neighbours near a boundary (hysteresis)', () => {
-    // A4 + 45 / 55 cents, alternating: a plain nearest-note reading would flip A4 / A#4.
     const run =
       feed(
         tunerInitial(
@@ -529,10 +736,10 @@ describe('tuner machine', () => {
             (
               x,
             ) =>
-              x.kind ===
-              'locked'
-                ? x.target
-                : 0,
+              lockedOf(
+                x,
+              )
+                .target,
           ),
       );
     expect(
@@ -543,7 +750,6 @@ describe('tuner machine', () => {
   });
 
   it('holds the note on a tone with slight vibrato and calls it in tune', () => {
-    // ±10 cents at 5 Hz around 440.
     const run =
       feed(
         tunerInitial(
@@ -585,10 +791,10 @@ describe('tuner machine', () => {
           (
             x,
           ) =>
-            x.kind ===
-            'locked'
-              ? x.target
-              : 0,
+            lockedOf(
+              x,
+            )
+              .target,
         ),
       ),
     ).toEqual(
@@ -627,23 +833,14 @@ describe('tuner machine', () => {
           ),
         run.end,
       );
-    if (
-      run
-        .state
-        .kind !==
-      'locked'
-    )
-      throw new Error(
-        'not locked',
-      );
     expect(
-      run
-        .state
+      lockedOf(
+        run.state,
+      )
         .target,
     ).toBe(
       71,
     );
-    // The new note starts out of the "in tune" hold: it has to be earned again.
     const moved =
       run.seen.find(
         (
@@ -728,79 +925,61 @@ describe('tuner machine', () => {
 
   it('guitar preset: tune up against A2 for a flat A string, in tune on the string', () => {
     const flat =
-      feed(
-        tunerInitial(
-          'guitar',
-        ),
-        20,
-        () =>
-          centsUp(
-            45,
-            -20,
+      lockedOf(
+        feed(
+          tunerInitial(
+            'guitar',
           ),
-      );
-    if (
-      flat
-        .state
-        .kind !==
-      'locked'
-    )
-      throw new Error(
-        'not locked',
+          20,
+          () =>
+            centsUp(
+              45,
+              -20,
+            ),
+        )
+          .state,
       );
     expect(
-      flat
-        .state
-        .target,
+      flat.target,
     ).toBe(
       45,
     );
     expect(
       adviceOf(
-        flat.state,
+        flat,
       ),
     ).toBe(
       'up',
     );
-    // A string tuned a semitone low (G#2) is still the A string, far flat.
+    // An A string a semitone low (G♯2) is still the A string, far flat — but within reach.
     const low =
-      feed(
-        tunerInitial(
-          'guitar',
-        ),
-        20,
-        () =>
-          midiToFreq(
-            44,
+      lockedOf(
+        feed(
+          tunerInitial(
+            'guitar',
           ),
-      );
-    if (
-      low
-        .state
-        .kind !==
-      'locked'
-    )
-      throw new Error(
-        'not locked',
+          20,
+          () =>
+            midiToFreq(
+              44.1,
+            ),
+        )
+          .state,
       );
     expect(
-      low
-        .state
-        .target,
+      low.target,
     ).toBe(
       45,
     );
     expect(
-      low
-        .state
-        .cents,
+      low.cents,
     ).toBeCloseTo(
-      -100,
+      -90,
       0,
     );
     expect(
       adviceOf(
-        low.state,
+        low,
       ),
     ).toBe(
       'up',
@@ -826,32 +1005,199 @@ describe('tuner machine', () => {
     );
   });
 
-  it('guitar preset: 435 Hz is nearest the high E string, so it says tune down', () => {
-    const run =
+  it('guitar preset: an octave of a string is that string (folded cents)', () => {
+    // E3 (the low E's 12th fret / an octave slip) is the low E, in tune, not "D3, tune down".
+    const e3 =
       feed(
         tunerInitial(
           'guitar',
         ),
-        20,
+        40,
         () =>
-          435,
+          midiToFreq(
+            52,
+          ),
       );
-    if (
-      run
-        .state
-        .kind !==
-      'locked'
-    )
-      throw new Error(
-        'not locked',
+    const l =
+      lockedOf(
+        e3.state,
       );
     expect(
-      run
-        .state
-        .target,
+      l.target,
     ).toBe(
-      64,
+      40,
     );
+    expect(
+      Math.abs(
+        l.cents,
+      ),
+    ).toBeLessThan(
+      1,
+    );
+    expect(
+      adviceOf(
+        l,
+      ),
+    ).toBe(
+      'in-tune',
+    );
+    // A4, 20 cents flat, is the A string 20 cents flat (not "E4, tune down, +480").
+    const a4 =
+      lockedOf(
+        feed(
+          tunerInitial(
+            'guitar',
+          ),
+          20,
+          () =>
+            435,
+        )
+          .state,
+      );
+    expect(
+      a4.target,
+    ).toBe(
+      45,
+    );
+    expect(
+      a4.cents,
+    ).toBeCloseTo(
+      -19.8,
+      0,
+    );
+    expect(
+      adviceOf(
+        a4,
+      ),
+    ).toBe(
+      'up',
+    );
+    // Tuning the low E 10 cents flat, octave-slip frames keep the low E and its cents.
+    const slip =
+      feed(
+        tunerInitial(
+          'guitar',
+        ),
+        40,
+        (
+          i,
+        ) =>
+          centsUp(
+            i %
+              3
+              ? 40
+              : 52,
+            -10,
+          ),
+      );
+    for (const st of slip.seen.slice(
+      LOCK_FRAMES +
+        1,
+    )) {
+      expect(
+        lockedOf(
+          st,
+        )
+          .target,
+      ).toBe(
+        40,
+      );
+      expect(
+        lockedOf(
+          st,
+        )
+          .cents,
+      ).toBeCloseTo(
+        -10,
+        0,
+      );
+    }
+  });
+
+  it('guitar preset: far from every string it names the note heard and gives no direction', () => {
+    // F3 + 20 cents: 1.2 semitones from any E and 1.8 from any G, in every octave.
+    const far =
+      lockedOf(
+        feed(
+          tunerInitial(
+            'guitar',
+          ),
+          20,
+          () =>
+            centsUp(
+              53,
+              20,
+            ),
+        )
+          .state,
+      );
+    expect(
+      adviceOf(
+        far,
+      ),
+    ).toBe(
+      'far',
+    );
+    expect(
+      Math.abs(
+        far.cents,
+      ),
+    ).toBeGreaterThan(
+      FAR_CENTS,
+    );
+    expect(
+      shownNote(
+        far,
+      ),
+    ).toBe(
+      53,
+    );
+    expect(
+      far.inTune,
+    ).toBe(
+      false,
+    );
+    // Near a string again: the string and its advice come back.
+    const back =
+      feed(
+        far,
+        20,
+        () =>
+          midiToFreq(
+            55,
+          ),
+        20 *
+          FRAME_MS,
+      );
+    expect(
+      adviceOf(
+        back.state,
+      ),
+    ).not.toBe(
+      'far',
+    );
+    expect(
+      shownNote(
+        back.state,
+      ),
+    ).toBe(
+      55,
+    );
+  });
+
+  it('chromatic preset is never far', () => {
+    const run =
+      feed(
+        tunerInitial(
+          'chromatic',
+        ),
+        20,
+        () =>
+          centsUp(
+            53,
+            20,
+          ),
+      );
     expect(
       adviceOf(
         run.state,
@@ -873,7 +1219,7 @@ describe('tuner machine', () => {
       );
     const p: TunerPreset =
       'guitar';
-    const s =
+    expect(
       tunerStep(
         run.state,
         {
@@ -881,9 +1227,7 @@ describe('tuner machine', () => {
           preset:
             p,
         },
-      );
-    expect(
-      s,
+      ),
     ).toEqual(
       tunerInitial(
         'guitar',
@@ -892,6 +1236,163 @@ describe('tuner machine', () => {
     expect(
       tunerStep(
         run.state,
+        {
+          type: 'reset',
+        },
+      ),
+    ).toEqual(
+      tunerInitial(
+        'chromatic',
+      ),
+    );
+  });
+
+  it('ignores the mic while its own reference tone sounds, plus the echo tail, then starts afresh', () => {
+    const run =
+      feed(
+        tunerInitial(
+          'chromatic',
+        ),
+        20,
+        () =>
+          440,
+      );
+    const start =
+      run.end;
+    const end =
+      start +
+      2000;
+    let s =
+      tunerStep(
+        run.state,
+        {
+          type: 'reference',
+          end,
+        },
+      );
+    expect(
+      s.kind,
+    ).toBe(
+      'muted',
+    );
+    // The speaker's A4 at the mic: ignored, during the tone and the tail.
+    const during =
+      feed(
+        s,
+        Math.floor(
+          (end +
+            ECHO_TAIL_MS -
+            start) /
+            FRAME_MS,
+        ),
+        () =>
+          440,
+        start,
+      );
+    for (const st of during.seen)
+      expect(
+        st.kind,
+      ).toBe(
+        'muted',
+      );
+    // A second tone while muted extends the window.
+    s =
+      tunerStep(
+        during.state,
+        {
+          type: 'reference',
+          end:
+            end +
+            1000,
+        },
+      );
+    expect(
+      s.kind ===
+        'muted' &&
+        s.until,
+    ).toBe(
+      end +
+        1000 +
+        ECHO_TAIL_MS,
+    );
+    // A shorter one never shortens it.
+    expect(
+      tunerStep(
+        s,
+        {
+          type: 'reference',
+          end:
+            end -
+            500,
+        },
+      ),
+    ).toBe(
+      s,
+    );
+    // After the window the reading starts from nothing (no frame from the tone survives).
+    const after =
+      tunerStep(
+        s,
+        {
+          type: 'frame',
+          frame:
+            voiced(
+              midiToFreq(
+                71,
+              ),
+              end +
+                1000 +
+                ECHO_TAIL_MS,
+            ),
+        },
+      );
+    expect(
+      after.kind,
+    ).toBe(
+      'listening',
+    );
+    expect(
+      after.kind ===
+        'listening' &&
+        after
+          .recent
+          .length,
+    ).toBe(
+      1,
+    );
+    // A preset change while muted stays muted; a reset (the mic stopped) does not.
+    const muted =
+      tunerStep(
+        tunerInitial(
+          'chromatic',
+        ),
+        {
+          type: 'reference',
+          end: 100,
+        },
+      );
+    expect(
+      tunerStep(
+        muted,
+        {
+          type: 'preset',
+          preset:
+            'guitar',
+        },
+      ),
+    ).toEqual(
+      {
+        kind: 'muted',
+        preset:
+          'guitar',
+        until:
+          100 +
+          ECHO_TAIL_MS,
+      },
+    );
+    expect(
+      tunerStep(
+        muted,
         {
           type: 'reset',
         },

@@ -332,9 +332,6 @@ export function createMicInput(
                   pitched = true;
                 }
               }
-              opts.onFrame?.(
-                heard,
-              );
               const events =
                 seg.push(
                   pitched
@@ -353,6 +350,19 @@ export function createMicInput(
                     i
                   ],
                 );
+              // The notes first: a frame listener (the tuner) runs after them, and its own bug
+              // can neither drop a note event nor stop this poll.
+              if (
+                opts.onFrame
+              ) {
+                try {
+                  opts.onFrame(
+                    heard,
+                  );
+                } catch {
+                  // Swallowed on purpose (see above); the store's fan-out also isolates listeners.
+                }
+              }
             },
             POLL_MS,
           );

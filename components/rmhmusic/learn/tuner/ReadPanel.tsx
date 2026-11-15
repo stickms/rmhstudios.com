@@ -4,17 +4,17 @@
  * (`SprintSheet`, one note) where `readPlacement` puts it — piano: treble from middle C, bass
  * below; guitar: treble an octave up with the small 8 — with its name and octave, the cents for
  * the microphone, and the last few notes before it as plain text. A note the card cannot reach is
- * named and said to be too high or too low, never drawn in the wrong place.
+ * named and said to be too high or too low on its own staff, never drawn in the wrong place.
  *
- * The sheet's lines and the input region keep their heights in every state, so a note never moves
- * the page. The polite status line names each new note once.
+ * The notes are kept by the screen (`useReadNotes` in `TunerScreen`), so switching tabs keeps
+ * them. The sheet's lines and the input region keep their heights in every state, so a note never
+ * moves the page. The polite status line names each new note, a repeated one too.
  */
 import {
   useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import type {
   Instrument,
   LearnInput,
@@ -31,11 +31,12 @@ import {
   useInputPhases,
   useNoteEvents,
 } from '../useLearnInput';
+import { centsText } from './cents';
 
 /** How many earlier notes the history line keeps. */
 export const HISTORY = 5;
 
-interface ReadNote {
+export interface ReadNote {
   /** Counts notes on this screen: the keys of the lines that show it. */
   seq: number;
   midi: number;
@@ -44,50 +45,8 @@ interface ReadNote {
   source: InputSource;
 }
 
-function centsLine(
-  t: TFunction,
-  cents: number,
-): string {
-  const n =
-    Math.round(
-      cents,
-    );
-  const signed =
-    n >
-    0
-      ? `+${n}`
-      : n <
-          0
-        ? `−${-n}`
-        : '0';
-  return t(
-    'tuner-cents',
-    {
-      cents:
-        signed,
-      defaultValue:
-        '{{cents}} cents',
-    },
-  );
-}
-
-export function ReadPanel({
-  input,
-  instrument,
-  loading,
-}: {
-  input: LearnInput | null;
-  instrument: Instrument;
-  loading: boolean;
-}) {
-  const {
-    t,
-  } =
-    useTranslation(
-      'c-rmhmusic',
-    );
-  const phases =
-    useInputPhases();
+/** The notes played on this screen, newest first (the current one and {@link HISTORY} before it). */
+export function useReadNotes(): readonly ReadNote[] {
   const [
     notes,
     setNotes,
@@ -101,7 +60,6 @@ export function ReadPanel({
     useRef(
       0,
     );
-
   useNoteEvents(
     (
       e,
@@ -113,10 +71,10 @@ export function ReadPanel({
         return;
       const note: ReadNote =
         {
+          seq: ++seq.current,
           midi: e.midi,
           source:
             e.source,
-          seq: ++seq.current,
         };
       if (
         e.source ===
@@ -144,12 +102,55 @@ export function ReadPanel({
       );
     },
   );
+  return notes;
+}
+
+/** "A4, C4, E4"-style lists in the reader's language (plain commas where Intl cannot). */
+function formatList(
+  lang: string,
+  items: string[],
+): string {
+  try {
+    return new Intl.ListFormat(
+      lang,
+      {
+        style:
+          'short',
+        type: 'unit',
+      },
+    ).format(
+      items,
+    );
+  } catch {
+    return items.join(
+      ', ',
+    );
+  }
+}
+
+export function ReadPanel({
+  notes,
+  input,
+  instrument,
+  loading,
+}: {
+  notes: readonly ReadNote[];
+  input: LearnInput | null;
+  instrument: Instrument;
+  loading: boolean;
+}) {
+  const {
+    t,
+    i18n,
+  } =
+    useTranslation(
+      'c-rmhmusic',
+    );
+  const phases =
+    useInputPhases();
 
   const current =
     notes[0];
-  const guitar =
-    instrument ===
-    'guitar';
   const placed =
     current
       ? readPlacement(
@@ -158,10 +159,9 @@ export function ReadPanel({
         )
       : null;
   const onCard =
-    placed !==
-      null &&
-    typeof placed !==
-      'string'
+    placed &&
+    'note' in
+      placed
       ? placed
       : null;
   const name =
@@ -171,7 +171,7 @@ export function ReadPanel({
         )
       : '';
   const clef =
-    onCard?.clef ??
+    placed?.clef ??
     'treble';
   const staffName =
     clef ===
@@ -222,35 +222,33 @@ export function ReadPanel({
   let detail =
     '';
   if (
-    placed ===
-    'high'
+    placed &&
+    'off' in
+      placed
   )
     detail =
-      t(
-        'tuner-read-high',
-        {
-          defaultValue:
-            'Too high to write on this staff.',
-        },
-      );
-  else if (
-    placed ===
-    'low'
-  )
-    detail =
-      t(
-        'tuner-read-low',
-        {
-          defaultValue:
-            'Too low to write on this staff.',
-        },
-      );
+      placed.off ===
+      'high'
+        ? t(
+            'tuner-read-high',
+            {
+              defaultValue:
+                'Too high to write on this staff.',
+            },
+          )
+        : t(
+            'tuner-read-low',
+            {
+              defaultValue:
+                'Too low to write on this staff.',
+            },
+          );
   else if (
     current?.cents !==
     undefined
   )
     detail =
-      centsLine(
+      centsText(
         t,
         current.cents,
       );
@@ -274,13 +272,19 @@ export function ReadPanel({
           'tuner-read-history',
           {
             notes:
-              earlier.join(
-                ', ',
+              formatList(
+                i18n.language,
+                earlier,
               ),
             defaultValue:
               'Before: {{notes}}',
           },
         )
+      : '';
+  // A no-break space on every other note makes a repeated note a change, so it is said again.
+  const said =
+    current
+      ? `${name}${current.seq % 2 ? ' ' : ''}`
       : '';
 
   let region;
@@ -341,6 +345,9 @@ export function ReadPanel({
       );
   }
 
+  const key =
+    current?.seq ??
+    0;
   return (
     <div className="space-y-4">
       <section
@@ -385,11 +392,12 @@ export function ReadPanel({
           }
           range="low"
           octaveClef={
-            guitar
+            instrument ===
+            'guitar'
           }
         />
         <p
-          key={`name:${current?.seq ?? 0}`}
+          key={`name:${key}`}
           dir="ltr"
           className="rmm-display h-12 text-[2.5rem] leading-[3rem] text-app-text"
         >
@@ -398,7 +406,7 @@ export function ReadPanel({
           }
         </p>
         <p
-          key={`detail:${current?.seq ?? 0}`}
+          key={`detail:${key}`}
           className="h-6 text-sm leading-6 text-app-text-muted tabular-nums"
         >
           {
@@ -406,7 +414,7 @@ export function ReadPanel({
           }
         </p>
         <p
-          key={`history:${current?.seq ?? 0}`}
+          key={`history:${key}`}
           className="h-6 truncate text-sm leading-6 text-app-text-muted"
         >
           {
@@ -418,7 +426,7 @@ export function ReadPanel({
           className="sr-only"
         >
           {
-            name
+            said
           }
         </p>
       </section>

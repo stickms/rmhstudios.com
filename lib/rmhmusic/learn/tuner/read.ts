@@ -7,7 +7,8 @@
  *   and the clef carries the small 8).
  *
  * A black key is written as the natural below it with a sharp. A note the card cannot reach is
- * reported as `high` or `low` instead of being drawn at the wrong place.
+ * reported as `off: 'high' | 'low'` (on the clef it belongs to) instead of being drawn at the wrong
+ * place.
  */
 import { midiToName } from '../pitch/notes';
 import {
@@ -35,37 +36,49 @@ const BLACK =
     ],
   );
 
-export interface ReadPlacement {
+interface Staff {
   clef: Clef;
-  /** The written note in `SheetNote`'s shape: the natural it sits on and its sharp. */
-  note: {
-    written: number;
-    accidental:
-      | 0
-      | 1;
-  };
   /** The treble clef with the small 8 (guitar). */
   octaveClef: boolean;
 }
+
+/** Where a note is written, or that it is off the card — on the staff it belongs to either way. */
+export type ReadPlacement =
+  | (Staff & {
+      /** The written note in `SheetNote`'s shape: the natural it sits on and its sharp. */
+      note: {
+        written: number;
+        accidental:
+          | 0
+          | 1;
+      };
+    })
+  | (Staff & {
+      off:
+        | 'high'
+        | 'low';
+    });
 
 export function readPlacement(
   midi: number,
   instrument:
     | 'piano'
     | 'guitar',
-):
-  | ReadPlacement
-  | 'high'
-  | 'low' {
+): ReadPlacement {
+  const guitar =
+    instrument ===
+    'guitar';
   if (
     !Number.isFinite(
       midi,
     )
   )
-    return 'low';
-  const guitar =
-    instrument ===
-    'guitar';
+    return {
+      clef: 'treble',
+      octaveClef:
+        guitar,
+      off: 'low',
+    };
   const clef: Clef =
     guitar ||
     midi >=
@@ -98,14 +111,26 @@ export function readPlacement(
     step >
     READ_MAX_STEP
   )
-    return 'high';
+    return {
+      clef,
+      octaveClef:
+        guitar,
+      off: 'high',
+    };
   if (
     step <
     READ_MIN_STEP
   )
-    return 'low';
+    return {
+      clef,
+      octaveClef:
+        guitar,
+      off: 'low',
+    };
   return {
     clef,
+    octaveClef:
+      guitar,
     note: {
       written:
         natural,
@@ -114,8 +139,6 @@ export function readPlacement(
           ? 1
           : 0,
     },
-    octaveClef:
-      guitar,
   };
 }
 

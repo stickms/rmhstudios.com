@@ -6,7 +6,9 @@
  *
  * The page is the lessons' `Shell` (back link, title, Change input). The learner's chosen input
  * starts on entry as in a lesson (`useLessonInputStart`); the microphone stops when the page is
- * hidden or left (`useInputRelease`). The reference tones and the on-screen keys sound through the
+ * hidden or left (`useInputRelease`). The note reader's notes are kept here, across the tabs. Both
+ * tab panels are rendered (the tabs' `aria-controls` point at them); only the active one has
+ * content. The reference tones and the on-screen keys sound through the
  * learner's sound, in one sound session for the page. The tuner's preset starts as the learner's
  * instrument (guitar strings for guitar, any note otherwise) and can be changed.
  */
@@ -38,7 +40,10 @@ import {
   useLessonInputStart,
   useNoteSound,
 } from '../useLearnInput';
-import { ReadPanel } from './ReadPanel';
+import {
+  ReadPanel,
+  useReadNotes,
+} from './ReadPanel';
 import { TunePanel } from './TunePanel';
 
 type TabId =
@@ -106,6 +111,9 @@ export function TunerScreen() {
 
   useInputRelease();
   useLessonInputStart();
+  // The reader's notes live here, so switching tabs keeps them.
+  const readNotes =
+    useReadNotes();
 
   useEffect(() => {
     void useLearnStore
@@ -306,44 +314,66 @@ export function TunerScreen() {
               },
             )}
           />
-          <div
-            role="tabpanel"
-            id={`${TABS_ID}-panel-${tab}`}
-            aria-labelledby={`${TABS_ID}-tab-${tab}`}
-          >
-            {tab ===
-            'tune' ? (
-              <TunePanel
-                input={
-                  input
+          {(
+            [
+              'tune',
+              'read',
+            ] as const
+          ).map(
+            (
+              id,
+            ) => (
+              <div
+                key={
+                  id
                 }
-                preset={
-                  preset
+                role="tabpanel"
+                id={`${TABS_ID}-panel-${id}`}
+                aria-labelledby={`${TABS_ID}-tab-${id}`}
+                hidden={
+                  tab !==
+                  id
                 }
-                onPreset={
-                  setPreset
-                }
-                sound={
-                  sound
-                }
-                loading={
-                  loading
-                }
-              />
-            ) : (
-              <ReadPanel
-                input={
-                  input
-                }
-                instrument={
-                  instrument
-                }
-                loading={
-                  loading
-                }
-              />
-            )}
-          </div>
+              >
+                {tab !==
+                id ? null : id ===
+                  'tune' ? (
+                  <TunePanel
+                    input={
+                      input
+                    }
+                    preset={
+                      preset
+                    }
+                    onPreset={
+                      setPreset
+                    }
+                    sound={
+                      sound
+                    }
+                    loading={
+                      loading
+                    }
+                  />
+                ) : (
+                  <ReadPanel
+                    notes={
+                      readNotes
+                    }
+                    input={
+                      input
+                    }
+                    instrument={
+                      instrument
+                    }
+                    loading={
+                      loading
+                    }
+                  />
+                )}
+              </div>
+            ),
+          )}
         </div>
       );
   }

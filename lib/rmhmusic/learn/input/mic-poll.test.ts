@@ -351,4 +351,58 @@ describe('mic poll', () => {
       count,
     );
   });
+
+  it('a throwing onFrame listener neither drops note events nor stops the poll', async () => {
+    let calls = 0;
+    const mic =
+      createMicInput(
+        {
+          onFrame:
+            () => {
+              calls++;
+              throw new Error(
+                'listener bug',
+              );
+            },
+        },
+      );
+    const got: NoteEvent[] =
+      [];
+    mic.subscribe(
+      (
+        e,
+      ) =>
+        got.push(
+          e,
+        ),
+    );
+    await mic.start();
+    signal.freq = 440;
+    await vi.advanceTimersByTimeAsync(
+      250,
+    );
+    expect(
+      calls,
+    ).toBe(
+      10,
+    );
+    expect(
+      got.map(
+        (
+          e,
+        ) => [
+          e.type,
+          e.midi,
+        ],
+      ),
+    ).toEqual(
+      [
+        [
+          'on',
+          69,
+        ],
+      ],
+    );
+    mic.stop();
+  });
 });

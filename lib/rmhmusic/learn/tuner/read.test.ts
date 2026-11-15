@@ -37,11 +37,11 @@ describe('note reader placement', () => {
     ).toEqual(
       {
         clef: 'treble',
+        octaveClef: false,
         note: {
           written: 60,
           accidental: 0,
         },
-        octaveClef: false,
       },
     );
     expect(
@@ -52,11 +52,11 @@ describe('note reader placement', () => {
     ).toEqual(
       {
         clef: 'bass',
+        octaveClef: false,
         note: {
           written: 59,
           accidental: 0,
         },
-        octaveClef: false,
       },
     );
     expect(
@@ -67,63 +67,88 @@ describe('note reader placement', () => {
     ).toEqual(
       {
         clef: 'treble',
+        octaveClef: false,
         note: {
           written: 60,
           accidental: 1,
         },
-        octaveClef: false,
       },
     );
   });
 
-  it('piano: says high or low past the card instead of drawing it', () => {
+  it('piano: says high or low past the card, on the clef the note belongs to', () => {
     expect(
       readPlacement(
         84,
         'piano',
       ),
-    ).not.toBeTypeOf(
-      'string',
+    ).toHaveProperty(
+      'note',
     ); // C6, two ledger lines up
     expect(
       readPlacement(
         85,
         'piano',
       ),
-    ).not.toBeTypeOf(
-      'string',
+    ).toHaveProperty(
+      'note',
     ); // C♯6 sits on C6
     expect(
       readPlacement(
         86,
         'piano',
       ),
-    ).toBe(
-      'high',
-    ); // D6
+    ).toEqual(
+      {
+        clef: 'treble',
+        octaveClef: false,
+        off: 'high',
+      },
+    );
     expect(
       readPlacement(
         31,
         'piano',
       ),
-    ).not.toBeTypeOf(
-      'string',
+    ).toHaveProperty(
+      'note',
     ); // G1
+    // A0 stays on the bass staff (it is below it), it does not flip the card to treble.
+    expect(
+      readPlacement(
+        21,
+        'piano',
+      ),
+    ).toEqual(
+      {
+        clef: 'bass',
+        octaveClef: false,
+        off: 'low',
+      },
+    );
     expect(
       readPlacement(
         30,
         'piano',
       ),
-    ).toBe(
-      'low',
-    ); // F♯1 sits on F1
+    ).toEqual(
+      {
+        clef: 'bass',
+        octaveClef: false,
+        off: 'low',
+      },
+    );
     expect(
       readPlacement(
         Number.NaN,
         'piano',
       ),
-    ).toBe(
-      'low',
+    ).toEqual(
+      {
+        clef: 'treble',
+        octaveClef: false,
+        off: 'low',
+      },
     );
   });
 
@@ -136,11 +161,11 @@ describe('note reader placement', () => {
     ).toEqual(
       {
         clef: 'treble',
+        octaveClef: true,
         note: {
           written: 52,
           accidental: 0,
         },
-        octaveClef: true,
       },
     );
     expect(
@@ -148,32 +173,40 @@ describe('note reader placement', () => {
         72,
         'guitar',
       ),
-    ).not.toBeTypeOf(
-      'string',
+    ).toHaveProperty(
+      'note',
     ); // C5, written C6
     expect(
       readPlacement(
         73,
         'guitar',
       ),
-    ).not.toBeTypeOf(
-      'string',
+    ).toHaveProperty(
+      'note',
     );
     expect(
       readPlacement(
         74,
         'guitar',
       ),
-    ).toBe(
-      'high',
+    ).toEqual(
+      {
+        clef: 'treble',
+        octaveClef: true,
+        off: 'high',
+      },
     );
     expect(
       readPlacement(
         39,
         'guitar',
       ),
-    ).toBe(
-      'low',
+    ).toEqual(
+      {
+        clef: 'treble',
+        octaveClef: true,
+        off: 'low',
+      },
     );
   });
 

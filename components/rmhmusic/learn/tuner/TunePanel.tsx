@@ -1,13 +1,20 @@
 /**
  * The tuner tab: a static drawn scale (−50…+50 cents) with one needle, the note (or string) being
- * tuned to, plain advice ("Tune up", "Tune down", "In tune") and the cents, over the microphone.
+ * tuned to, plain advice ("Tune up", "Tune down", "In tune", "Not near a string") and the cents,
+ * over the microphone.
  *
  * The reading is the pure tuner machine (`lib/rmhmusic/learn/tuner/machine.ts`) fed by the mic's
  * own analysis poll (`subscribeMicFrames`, a 25 ms timer that runs only while the microphone is
  * on): there is no frame loop. Each frame writes the needle's `transform` and the cents text
- * straight to the DOM; React re-renders only when the note, the advice or the phase changes, and
- * the polite live region changes (so speaks) only when the locked note or "in tune" changes. The
- * mic stops when the page is hidden (`useInputRelease` on the screen), so nothing runs then.
+ * straight to the DOM; React re-renders only when the note, the advice or the phase changes. The
+ * polite live region says the note and the advice (both change only at band crossings, with
+ * hysteresis), and keeps the last thing it said through silence, so a string plucked again and
+ * still in tune is not announced again. The mic stops when the page is hidden (`useInputRelease`
+ * on the screen), so nothing runs then.
+ *
+ * A reference tone is heard by the microphone too (it runs with no echo cancellation): while one
+ * sounds, and for the echo tail after, the machine ignores the mic (`reference`) and the screen
+ * says "Listening…".
  *
  * Without the microphone (MIDI, the computer or on-screen keys) the dial rests and the input
  * region says the tuner needs the microphone, with a button to switch to it. The boxes keep their
@@ -21,7 +28,10 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { playNote } from '@/lib/rmhmusic/learn/audio/voice';
+import {
+  playNote,
+  soundReleaseMs,
+} from '@/lib/rmhmusic/learn/audio/voice';
 import type { InstrumentId } from '@/lib/rmhmusic/learn/audio/instruments/types';
 import {
   useLearnStore,
@@ -30,9 +40,11 @@ import {
 import type { LearnInput } from '@/lib/rmhmusic/learn/schemas';
 import {
   adviceOf,
+  shownNote,
   tunerInitial,
   tunerStep,
   type TunerAdvice,
+  type TunerEvent,
   type TunerPreset,
   type TunerState,
 } from '@/lib/rmhmusic/learn/tuner/machine';
@@ -46,8 +58,9 @@ import {
   chooseInput,
   useInputPhases,
 } from '../useLearnInput';
+import { centsText } from './cents';
 
-/** How long a reference tone sounds. */
+/** How long a reference tone is held before its release. */
 const REFERENCE_MS = 2000;
 /** The chromatic preset's reference: A4, 440 Hz. */
 const A4 = 69;
@@ -64,7 +77,7 @@ const DEG_PER_CENT =
 /** What React renders; changes only when the note, the advice or the phase does. */
 interface View {
   kind: TunerState['kind'];
-  target:
+  shown:
     | number
     | null;
   advice: TunerAdvice | null;
@@ -75,11 +88,10 @@ function viewOf(
 ): View {
   return {
     kind: s.kind,
-    target:
-      s.kind ===
-      'locked'
-        ? s.target
-        : null,
+    shown:
+      shownNote(
+        s,
+      ),
     advice:
       adviceOf(
         s,
@@ -94,10 +106,33 @@ const sameView =
   ) =>
     a.kind ===
       b.kind &&
-    a.target ===
-      b.target &&
+    a.shown ===
+      b.shown &&
     a.advice ===
       b.advice;
+
+/** The needle's angle: the cents on the dial, at rest unless a string or note is near. */
+function needleDeg(
+  s: TunerState,
+): number {
+  if (
+    s.kind !==
+      'locked' ||
+    s.advice ===
+      'far'
+  )
+    return 0;
+  return (
+    Math.max(
+      -50,
+      Math.min(
+        50,
+        s.cents,
+      ),
+    ) *
+    DEG_PER_CENT
+  );
+}
 
 function polar(
   deg: number,
@@ -139,34 +174,6 @@ function polar(
   };
 }
 
-/** "−12 cents" / "+3 cents", with a real minus sign. */
-function centsText(
-  t: TFunction,
-  cents: number,
-): string {
-  const n =
-    Math.round(
-      cents,
-    );
-  const signed =
-    n >
-    0
-      ? `+${n}`
-      : n <
-          0
-        ? `−${-n}`
-        : '0';
-  return t(
-    'tuner-cents',
-    {
-      cents:
-        signed,
-      defaultValue:
-        '{{cents}} cents',
-    },
-  );
-}
-
 function adviceText(
   t: TFunction,
   view: View,
@@ -184,7 +191,9 @@ function adviceText(
     );
   if (
     view.kind ===
-    'listening'
+      'listening' ||
+    view.kind ===
+      'muted'
   )
     return t(
       'tuner-listening',
@@ -218,6 +227,14 @@ function adviceText(
         {
           defaultValue:
             'In tune',
+        },
+      );
+    case 'far':
+      return t(
+        'tuner-far',
+        {
+          defaultValue:
+            'Not near a string',
         },
       );
     default:
@@ -315,25 +332,15 @@ export function TunePanel({
       (
         s: TunerState,
       ) => {
-        const deg =
-          s.kind ===
-          'locked'
-            ? Math.max(
-                -50,
-                Math.min(
-                  50,
-                  s.cents,
-                ),
-              ) *
-              DEG_PER_CENT
-            : 0;
         needle.current?.setAttribute(
           'transform',
-          `rotate(${deg.toFixed(2)} ${PIVOT_X} ${PIVOT_Y})`,
+          `rotate(${(needleDeg(s) || 0).toFixed(2)} ${PIVOT_X} ${PIVOT_Y})`,
         );
         const rounded =
           s.kind ===
-          'locked'
+            'locked' &&
+          s.advice !==
+            'far'
             ? Math.round(
                 s.cents,
               )
@@ -375,39 +382,15 @@ export function TunePanel({
         }
       },
     ).current;
-
-  // A new preset, or the mic going off, starts the reading afresh.
-  useEffect(() => {
-    machine.current =
-      tunerInitial(
-        preset,
-      );
-    paint(
-      machine.current,
-    );
-  }, [
-    preset,
-    micOn,
-    paint,
-  ]);
-
-  // The mic's frames, only while it is on (the store calls nothing otherwise).
-  useEffect(() => {
-    if (
-      !micOn
-    )
-      return;
-    return subscribeMicFrames(
+  const send =
+    useRef(
       (
-        frame,
+        e: TunerEvent,
       ) => {
         const next =
           tunerStep(
             machine.current,
-            {
-              type: 'frame',
-              frame,
-            },
+            e,
           );
         if (
           next ===
@@ -420,10 +403,55 @@ export function TunePanel({
           next,
         );
       },
+    ).current;
+
+  // A new preset, or the mic going off, starts the reading afresh (a reference tone still
+  // sounding keeps the mic muted: the machine keeps `muted` across a preset change).
+  useEffect(() => {
+    send(
+      {
+        type: 'preset',
+        preset,
+      },
+    );
+  }, [
+    preset,
+    send,
+  ]);
+  useEffect(() => {
+    if (
+      !micOn
+    )
+      send(
+        {
+          type: 'reset',
+        },
+      );
+  }, [
+    micOn,
+    send,
+  ]);
+
+  // The mic's frames, only while it is on (the store calls nothing otherwise).
+  useEffect(() => {
+    if (
+      !micOn
+    )
+      return;
+    return subscribeMicFrames(
+      (
+        frame,
+      ) =>
+        send(
+          {
+            type: 'frame',
+            frame,
+          },
+        ),
     );
   }, [
     micOn,
-    paint,
+    send,
   ]);
 
   // The reference tone: one at a time, released after REFERENCE_MS, and on leaving.
@@ -461,15 +489,30 @@ export function TunePanel({
       midi: number,
     ) => {
       stopReference();
+      const voicing =
+        sound
+          ? {
+              instrument:
+                sound,
+            }
+          : {};
+      // The mic hears the speaker: ignore it until the tone and its release have ended (+ the echo
+      // tail, which the machine adds), on the frames' own clock.
+      send(
+        {
+          type: 'reference',
+          end:
+            performance.now() +
+            REFERENCE_MS +
+            soundReleaseMs(
+              voicing,
+            ),
+        },
+      );
       const release =
         playNote(
           midi,
-          sound
-            ? {
-                instrument:
-                  sound,
-              }
-            : {},
+          voicing,
         );
       const timer =
         setTimeout(
@@ -490,32 +533,67 @@ export function TunePanel({
   const locked =
     view.kind ===
       'locked' &&
-    view.target !==
+    view.shown !==
       null;
+  const far =
+    view.advice ===
+    'far';
   const inTune =
     view.advice ===
     'in-tune';
   const name =
     locked &&
-    view.target !==
+    view.shown !==
       null
       ? readName(
-          view.target,
+          view.shown,
         )
       : '';
-  const announcement =
-    locked
-      ? inTune
-        ? t(
-            'tuner-say-in-tune',
-            {
-              name,
-              defaultValue:
-                '{{name}}, in tune',
-            },
-          )
-        : name
-      : '';
+
+  // Said once per change of note or advice, and kept through silence and listening.
+  const [
+    said,
+    setSaid,
+  ] =
+    useState(
+      '',
+    );
+  const advice =
+    adviceText(
+      t,
+      view,
+    );
+  useEffect(() => {
+    if (
+      !locked
+    )
+      return;
+    setSaid(
+      t(
+        'tuner-say',
+        {
+          name,
+          advice,
+          defaultValue:
+            '{{name}}: {{advice}}',
+        },
+      ),
+    );
+  }, [
+    locked,
+    name,
+    advice,
+    t,
+  ]);
+  useEffect(
+    () =>
+      setSaid(
+        '',
+      ),
+    [
+      preset,
+    ],
+  );
 
   const ticks =
     [];
@@ -656,13 +734,13 @@ export function TunePanel({
     <div className="space-y-4">
       <section
         aria-label={t(
-          'tuner-dial',
+          'tuner-reading-label',
           {
             defaultValue:
-              'Tuner',
+              'The reading',
           },
         )}
-        className="rmm-sheet space-y-1 p-5 text-center sm:p-6"
+        className="rmm-sheet rmm-tuner space-y-1 p-5 text-center sm:p-6"
       >
         <fieldset className="flex flex-wrap justify-center gap-x-6">
           <legend className="sr-only">
@@ -805,7 +883,8 @@ export function TunePanel({
             stroke="currentColor"
             fill="currentColor"
             className={cn(
-              !locked &&
+              (!locked ||
+                far) &&
                 'text-app-text-muted opacity-40',
               locked &&
                 inTune &&
@@ -860,10 +939,9 @@ export function TunePanel({
           key={`advice:${view.kind}:${view.advice}`}
           className="h-6 text-base leading-6 text-app-text"
         >
-          {adviceText(
-            t,
-            view,
-          )}
+          {
+            advice
+          }
         </p>
         <p
           ref={
@@ -877,7 +955,7 @@ export function TunePanel({
           className="sr-only"
         >
           {
-            announcement
+            said
           }
         </p>
       </section>

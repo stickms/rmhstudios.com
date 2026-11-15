@@ -21,6 +21,7 @@ import {
   type InputHub,
 } from './input/hub';
 import { createKeyboardInput } from './input/keyboard';
+import { createFanOut } from './input/fan-out';
 import {
   createMicInput,
   type MicFrame,
@@ -189,11 +190,9 @@ export function subscribeMicLevel(
 }
 
 /** Listeners for the microphone's analysis frames (the tuner), fed while the mic runs. */
-const micFrameListeners =
-  new Set<
-    (
-      frame: Readonly<MicFrame>,
-    ) => void
+const micFrames =
+  createFanOut<
+    Readonly<MicFrame>
   >();
 
 /**
@@ -206,14 +205,9 @@ export function subscribeMicFrames(
     frame: Readonly<MicFrame>,
   ) => void,
 ): () => void {
-  micFrameListeners.add(
+  return micFrames.add(
     l,
   );
-  return () => {
-    micFrameListeners.delete(
-      l,
-    );
-  };
 }
 
 function ensureInput(): BuiltInput | null {
@@ -234,16 +228,7 @@ function ensureInput(): BuiltInput | null {
       createMicInput(
         {
           onFrame:
-            (
-              frame,
-            ) => {
-              for (const l of [
-                ...micFrameListeners,
-              ])
-                l(
-                  frame,
-                );
-            },
+            micFrames.emit,
           onLevel:
             (
               rms,
