@@ -7,6 +7,8 @@
 
 import {
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -20,6 +22,12 @@ import { useTranslation } from 'react-i18next';
 import { getLesson } from '@/lib/rmhmusic/learn/content/path';
 import { isPlayable } from '@/lib/rmhmusic/learn/content/routing';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
+import {
+  chordSoundFor,
+  resolveSound,
+} from '@/lib/rmhmusic/learn/audio/instruments/catalog';
+import { beginSoundSession } from '@/lib/rmhmusic/learn/audio/instruments/engine';
+import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 import {
   PRIMARY_BUTTON,
   SECONDARY_BUTTON,
@@ -442,6 +450,85 @@ export function LessonScreen({
     isPlayable(
       lesson,
     );
+  // The sound this lesson's notes are voiced with: the learner's (`resolveSound`), except that a
+  // lesson of chords keeps to a sound that plays them (`chordSoundFor`: violin and flute fall back
+  // to the learner's instrument; the Sound dialog says so). Rhythm lessons make no pitched sound.
+  const instrument =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.instrument ??
+        'piano',
+    );
+  const chosen =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.sound ??
+        null,
+    );
+  const mode =
+    lesson?.mode;
+  const pitched =
+    playable &&
+    mode !==
+      'rhythm-basics';
+  const soundId =
+    mode ===
+      'ear-chord' ||
+    mode ===
+      'play-chord'
+      ? chordSoundFor(
+          {
+            instrument,
+            sound:
+              chosen,
+          },
+        )
+      : resolveSound(
+          {
+            instrument,
+            sound:
+              chosen,
+          },
+        );
+  const sound =
+    useMemo<PlayOptions>(
+      () => ({
+        instrument:
+          soundId,
+      }),
+      [
+        soundId,
+      ],
+    );
+  // One sound session per lesson: the samples load (at most LOAD_WAIT_MS of "Loading sound…"),
+  // else the simple tone plays for the rest of the lesson. Ended when the lesson is left. A layout
+  // effect: it must begin before the lesson's own (passive) effects play the first question.
+  const loaded =
+    status ===
+    'ready';
+  useLayoutEffect(() => {
+    if (
+      !loaded ||
+      !pitched
+    )
+      return;
+    return beginSoundSession(
+      soundId,
+    );
+  }, [
+    loaded,
+    pitched,
+    soundId,
+    lessonId,
+  ]);
 
   // The store is empty until `load()` runs in the browser (a no-op when the home already loaded it).
   useEffect(() => {
@@ -515,6 +602,9 @@ export function LessonScreen({
           paused={
             setupOpen
           }
+          sound={
+            sound
+          }
         />
       ) : lesson.mode ===
           'keyboard-map' ||
@@ -530,6 +620,9 @@ export function LessonScreen({
           paused={
             setupOpen
           }
+          sound={
+            sound
+          }
         />
       ) : lesson.mode ===
         'match-note' ? (
@@ -542,6 +635,9 @@ export function LessonScreen({
           }
           paused={
             setupOpen
+          }
+          sound={
+            sound
           }
         />
       ) : lesson.mode ===
@@ -558,6 +654,9 @@ export function LessonScreen({
           paused={
             setupOpen
           }
+          sound={
+            sound
+          }
         />
       ) : lesson.mode ===
         'play-chord' ? (
@@ -570,6 +669,9 @@ export function LessonScreen({
           }
           paused={
             setupOpen
+          }
+          sound={
+            sound
           }
           onChangeInput={() =>
             setSetupOpen(
@@ -600,6 +702,9 @@ export function LessonScreen({
           }
           paused={
             setupOpen
+          }
+          sound={
+            sound
           }
         />
       );

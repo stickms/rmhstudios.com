@@ -16,6 +16,8 @@
 
 import {
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -30,6 +32,9 @@ import {
   stateFromRow,
 } from '@/lib/rmhmusic/learn/content/practice';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
+import { beginSoundSession } from '@/lib/rmhmusic/learn/audio/instruments/engine';
+import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
+import { useLearnerSound } from './SoundDialog';
 import {
   PRIMARY_BUTTON,
   SECONDARY_BUTTON,
@@ -82,6 +87,29 @@ function Practice({
     useTranslation(
       'c-rmhmusic',
     );
+  // The learner's sound, in its own sound session (as a lesson: loading, then samples or the tone).
+  const soundId =
+    useLearnerSound();
+  const sound =
+    useMemo<PlayOptions>(
+      () => ({
+        instrument:
+          soundId,
+      }),
+      [
+        soundId,
+      ],
+    );
+  // Before the session's own effects can sound anything (see LessonScreen).
+  useLayoutEffect(
+    () =>
+      beginSoundSession(
+        soundId,
+      ),
+    [
+      soundId,
+    ],
+  );
   return (
     <FlashcardSession
       cards={
@@ -89,6 +117,9 @@ function Practice({
       }
       paused={
         paused
+      }
+      sound={
+        sound
       }
       save={(
         _fx,

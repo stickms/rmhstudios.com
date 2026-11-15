@@ -54,6 +54,23 @@ describe('rmhmusicReturnPath', () => {
     );
   });
 
+  it('returns to the sound credits', () => {
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/credits',
+      ),
+    ).toBe(
+      '/rmhmusic/credits',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/credits/x',
+      ),
+    ).toBe(
+      '/rmhmusic',
+    );
+  });
+
   it('sends everything else to the app home, never off the app', () => {
     for (const bad of [
       undefined,

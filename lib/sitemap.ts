@@ -713,6 +713,8 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/rmhmusic/practice':
       'personal', // the learner's own card reviews, behind sign-in
+    '/rmhmusic/credits':
+      'auth-gated', // the sampled sounds' licence notices, inside the signed-in app
     '/alexdebtcounter':
       'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
     '/sohumbum2':

@@ -38,7 +38,10 @@ import type {
   KeyboardEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { playNote } from '@/lib/rmhmusic/learn/audio/voice';
+import {
+  playNote,
+  type PlayOptions,
+} from '@/lib/rmhmusic/learn/audio/voice';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import {
   FIRST_FRETS,
@@ -133,6 +136,7 @@ export function FretboardView({
   right,
   wrong,
   className,
+  voice,
 }: {
   /** False once the question is answered: the cells stay focusable but answer nothing. */
   asking: boolean;
@@ -144,6 +148,8 @@ export function FretboardView({
   /** Where the learner tapped, when that was wrong. */
   wrong?: FretPosition | null;
   className?: string;
+  /** How a tapped string sounds (the lesson's sound); the synth when absent. */
+  voice?: PlayOptions;
 }) {
   const {
     t,
@@ -194,7 +200,10 @@ export function FretboardView({
       const release =
         playNote(
           midi,
-          0.8,
+          {
+            ...voice,
+            velocity: 0.8,
+          },
         );
       releases.current.add(
         release,

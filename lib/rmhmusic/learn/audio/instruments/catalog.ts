@@ -167,6 +167,121 @@ export function defaultSoundFor(
     : 'piano';
 }
 
+/**
+ * The sound a learner hears: the one they chose, if its samples exist, else their instrument's
+ * default (`defaultSoundFor`).
+ */
+export function resolveSound(profile: {
+  instrument:
+    | 'piano'
+    | 'guitar';
+  sound?: InstrumentId | null;
+}): InstrumentId {
+  return profile.sound &&
+    isAvailable(
+      profile.sound,
+    )
+    ? profile.sound
+    : defaultSoundFor(
+        profile.instrument,
+      );
+}
+
+/**
+ * The sound a lesson that plays chords uses: the chosen sound if it plays chords, else the
+ * learner's instrument default (violin and flute play single notes and intervals only).
+ */
+export function chordSoundFor(profile: {
+  instrument:
+    | 'piano'
+    | 'guitar';
+  sound?: InstrumentId | null;
+}): InstrumentId {
+  const sound =
+    resolveSound(
+      profile,
+    );
+  return playsChords(
+    sound,
+  )
+    ? sound
+    : defaultSoundFor(
+        profile.instrument,
+      );
+}
+
+/**
+ * `notes` moved by whole octaves into the range of `id`, when they fit in it (an interval or a
+ * chord quality is the same an octave up), so a violin or flute question sounds on its own samples
+ * instead of the synth. Notes that do not fit in any octave, or no sound, come back unchanged.
+ */
+export function fitToRange(
+  notes: readonly number[],
+  id:
+    | InstrumentId
+    | undefined,
+): number[] {
+  if (
+    !id ||
+    notes.length ===
+      0
+  )
+    return [
+      ...notes,
+    ];
+  const [
+    lo,
+    hi,
+  ] =
+    INSTRUMENT_CATALOG[
+      id
+    ]
+      .range;
+  const min =
+    Math.min(
+      ...notes,
+    );
+  const max =
+    Math.max(
+      ...notes,
+    );
+  if (
+    max -
+      min >
+    hi -
+      lo
+  )
+    return [
+      ...notes,
+    ];
+  let shift = 0;
+  while (
+    min +
+      shift <
+    lo
+  )
+    shift += 12;
+  while (
+    max +
+      shift >
+    hi
+  )
+    shift -= 12;
+  return min +
+    shift <
+    lo
+    ? [
+        ...notes,
+      ]
+    : notes.map(
+        (
+          n,
+        ) =>
+          n +
+          shift,
+      );
+}
+
 /** Whether a sound plays chords (block or strummed): only piano and guitar do. */
 export function playsChords(
   id: InstrumentId,

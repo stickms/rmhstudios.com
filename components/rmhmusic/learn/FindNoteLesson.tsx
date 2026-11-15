@@ -45,6 +45,7 @@ import {
   scoreFrom,
 } from '@/lib/rmhmusic/learn/scoring/stars';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
+import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import {
   noteLetter,
@@ -96,10 +97,13 @@ const FOCUS_FIRST: Record<
 export function FindNoteLesson({
   lessonId,
   paused = false,
+  sound,
 }: {
   lessonId: string;
   /** A dialog is open over the lesson: nothing answers. */
   paused?: boolean;
+  /** How the learner's notes are voiced (the lesson's sound); the synth when absent. */
+  sound?: PlayOptions;
 }) {
   const {
     t,
@@ -191,6 +195,7 @@ export function FindNoteLesson({
     useInputPhases();
   useNoteSound(
     !paused,
+    sound,
   );
   useLessonInputStart();
 
@@ -661,6 +666,9 @@ export function FindNoteLesson({
         <FretboardView
           asking={
             asking
+          }
+          voice={
+            sound
           }
           onAnswer={(
             p,

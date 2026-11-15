@@ -42,6 +42,8 @@ import {
   INSTRUMENTS,
   profileSchema,
 } from './schemas';
+import { isInstrumentId } from './audio/instruments/catalog';
+import type { InstrumentId } from './audio/instruments/types';
 import type {
   Instrument,
   LearnInput,
@@ -111,6 +113,10 @@ export interface LearnState {
   ): Promise<void>;
   setLatency(
     ms: number,
+  ): Promise<void>;
+  /** The sound lessons play; null follows the instrument. */
+  setSound(
+    sound: InstrumentId | null,
   ): Promise<void>;
   /** Resolves with how the save went, so the lesson can say so without reading the shared `error`. */
   completeLesson(
@@ -433,7 +439,9 @@ const sameProfile =
       a.latencyMs ===
         b.latencyMs &&
       a.dailyGoal ===
-        b.dailyGoal);
+        b.dailyGoal &&
+      a.sound ===
+        b.sound);
 
 const sameList =
   <
@@ -878,6 +886,26 @@ export const useLearnStore =
               key: 'input',
               value:
                 next,
+            },
+          );
+        },
+
+        setSound(
+          sound,
+        ) {
+          if (
+            sound !==
+              null &&
+            !isInstrumentId(
+              sound,
+            )
+          )
+            return Promise.resolve();
+          return change(
+            {
+              key: 'sound',
+              value:
+                sound,
             },
           );
         },

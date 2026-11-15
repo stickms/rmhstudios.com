@@ -14,6 +14,8 @@ const LESSON =
   /^\/rmhmusic\/lesson\/[a-z0-9-]{1,64}$/;
 const PRACTICE =
   '/rmhmusic/practice';
+const CREDITS =
+  '/rmhmusic/credits';
 
 export function rmhmusicReturnPath(
   input: unknown,
@@ -38,7 +40,9 @@ export function rmhmusicReturnPath(
     path,
   ) ||
     path ===
-      PRACTICE
+      PRACTICE ||
+    path ===
+      CREDITS
     ? path
     : HOME;
 }

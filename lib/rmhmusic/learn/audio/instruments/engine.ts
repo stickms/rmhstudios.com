@@ -26,7 +26,7 @@ import type {
   InstrumentId,
 } from './types';
 
-/** How long a lesson waits for its samples before it settles for the synth (ms). */
+/** How long a lesson waits for its samples before it falls back to the synth (ms). */
 export const LOAD_WAIT_MS = 2500;
 
 /** What a session plays: still deciding, the samples, or the synth (and why). */
@@ -295,6 +295,8 @@ let session: {
   timer: ReturnType<
     typeof setTimeout
   > | null;
+  /** Stops waiting for the audio context to start running. */
+  off: () => void;
 } | null =
   null;
 
@@ -324,7 +326,7 @@ function changed() {
         .kind ===
       'ready'
     )
-      settle(
+      decide(
         {
           kind: 'instrument',
         },
@@ -335,7 +337,7 @@ function changed() {
         .kind ===
       'failed'
     )
-      settle(
+      decide(
         {
           kind: 'synth',
           reason:
@@ -346,7 +348,7 @@ function changed() {
   notify();
 }
 
-function settle(
+function decide(
   choice: SessionChoice,
 ) {
   if (
@@ -392,6 +394,7 @@ export function beginSoundSession(
         null as ReturnType<
           typeof setTimeout
         > | null,
+      off: () => {},
     };
   session =
     mine;
@@ -401,42 +404,90 @@ export function beginSoundSession(
       .kind ===
     'ready'
   )
-    settle(
+    decide(
       {
         kind: 'instrument',
       },
     );
   else {
-    mine.timer =
-      setTimeout(
+    // The wait counts from when sound can play (the context is running, usually after the learner's
+    // first tap), not from the mount: a learner reading the page for 3 s still gets the samples.
+    const startWait =
+      () => {
+        if (
+          session !==
+            mine ||
+          mine.timer ||
+          mine
+            .choice
+            .kind !==
+            'pending'
+        )
+          return;
+        mine.timer =
+          setTimeout(
+            () => {
+              if (
+                session ===
+                  mine &&
+                mine
+                  .choice
+                  .kind ===
+                  'pending'
+              ) {
+                decide(
+                  {
+                    kind: 'synth',
+                    reason:
+                      'timeout',
+                  },
+                );
+                notify();
+              }
+            },
+            LOAD_WAIT_MS,
+          );
+      };
+    const ctx =
+      getAudioContext();
+    if (
+      !ctx ||
+      ctx.state ===
+        'running'
+    )
+      startWait();
+    else {
+      const onState =
         () => {
           if (
-            session ===
-              mine &&
-            mine
-              .choice
-              .kind ===
-              'pending'
-          ) {
-            settle(
-              {
-                kind: 'synth',
-                reason:
-                  'timeout',
-              },
-            );
-            notify();
-          }
-        },
-        LOAD_WAIT_MS,
+            ctx.state !==
+            'running'
+          )
+            return;
+          ctx.removeEventListener(
+            'statechange',
+            onState,
+          );
+          startWait();
+        };
+      ctx.addEventListener(
+        'statechange',
+        onState,
       );
+      mine.off =
+        () =>
+          ctx.removeEventListener(
+            'statechange',
+            onState,
+          );
+    }
     // A user-initiated load: a failed instrument gets one more try when a lesson asks for it.
     void inst.load(
       {
         user: true,
       },
     );
-    // `load` may settle synchronously (no Web Audio: failed at once).
+    // `load` may finish synchronously (no Web Audio: failed at once).
     if (
       mine
         .choice
@@ -466,6 +517,7 @@ export function endSoundSession(): void {
     clearTimeout(
       session.timer,
     );
+  session.off();
   session =
     null;
   notify();

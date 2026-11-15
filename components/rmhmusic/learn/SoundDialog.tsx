@@ -1,0 +1,621 @@
+/**
+ * SoundDialog — "Sound": which recorded instrument the lessons play (piano, steel-string guitar,
+ * violin, flute). Plain text rows, one button each (Tab moves between them, Enter or Space picks);
+ * the chosen one carries a check. Picking a sound saves it, loads its samples and plays one note
+ * through it, so choosing is also hearing. Nothing loads until a row is picked.
+ *
+ * The learner's own instrument's sound is the default and is stored as "follow my instrument"
+ * (null), so a learner who switches between piano and guitar keeps hearing their instrument. Violin
+ * and flute play single notes and intervals; chord lessons then use the learner's instrument, which
+ * one sentence says. The sound credits page is linked here, not from a footer.
+ *
+ * Built like InputSetup: the shared `Dialog` portaled into the RMH Music root (`useDialogHost`),
+ * focus returned to the opening button.
+ */
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import type { RefObject } from 'react';
+import { Link } from '@tanstack/react-router';
+import {
+  Check,
+  Loader2,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useDialogHost } from '@/components/shared/useDialogHost';
+import {
+  availableSounds,
+  defaultSoundFor,
+  playsChords,
+  resolveSound,
+} from '@/lib/rmhmusic/learn/audio/instruments/catalog';
+import {
+  getInstrument,
+  onInstrumentChange,
+} from '@/lib/rmhmusic/learn/audio/instruments/engine';
+import type { InstrumentId } from '@/lib/rmhmusic/learn/audio/instruments/types';
+import {
+  playNote,
+  wakeSound,
+} from '@/lib/rmhmusic/learn/audio/voice';
+import { useLearnStore } from '@/lib/rmhmusic/learn/store';
+import { TEXT_BUTTON } from './buttons';
+import { cn } from '@/lib/utils';
+
+/** The note a picked sound plays: the middle of what lessons ask that instrument for. */
+const PREVIEW_MIDI: Readonly<
+  Record<
+    InstrumentId,
+    number
+  >
+> =
+  {
+    piano: 60,
+    guitar: 55,
+    violin: 67,
+    flute: 72,
+  };
+const PREVIEW_MS = 900;
+
+/** A sound's name. Literal defaults, one call per id (the i18n default-drift gate reads them). */
+export function soundName(
+  t: TFunction,
+  id: InstrumentId,
+): string {
+  switch (
+    id
+  ) {
+    case 'piano':
+      return t(
+        'sound-piano',
+        {
+          defaultValue:
+            'Piano',
+        },
+      );
+    case 'guitar':
+      return t(
+        'sound-guitar',
+        {
+          defaultValue:
+            'Acoustic guitar',
+        },
+      );
+    case 'violin':
+      return t(
+        'sound-violin',
+        {
+          defaultValue:
+            'Violin',
+        },
+      );
+    case 'flute':
+      return t(
+        'sound-flute',
+        {
+          defaultValue:
+            'Flute',
+        },
+      );
+  }
+}
+
+function soundDetail(
+  t: TFunction,
+  id: InstrumentId,
+): string {
+  switch (
+    id
+  ) {
+    case 'piano':
+      return t(
+        'sound-piano-detail',
+        {
+          defaultValue:
+            'A grand piano. Plays chords.',
+        },
+      );
+    case 'guitar':
+      return t(
+        'sound-guitar-detail',
+        {
+          defaultValue:
+            'A steel-string guitar. Plays chords.',
+        },
+      );
+    case 'violin':
+      return t(
+        'sound-violin-detail',
+        {
+          defaultValue:
+            'Single notes and intervals.',
+        },
+      );
+    case 'flute':
+      return t(
+        'sound-flute-detail',
+        {
+          defaultValue:
+            'Single notes and intervals.',
+        },
+      );
+  }
+}
+
+/** Re-render when any instrument's loading state changes. */
+function useInstrumentTick(): void {
+  const [
+    ,
+    setTick,
+  ] =
+    useState(
+      0,
+    );
+  useEffect(
+    () =>
+      onInstrumentChange(
+        () =>
+          setTick(
+            (
+              n,
+            ) =>
+              n +
+              1,
+          ),
+      ),
+    [],
+  );
+}
+
+interface SoundDialogProps {
+  open: boolean;
+  onOpenChange: (
+    open: boolean,
+  ) => void;
+  returnFocus?: RefObject<HTMLElement | null>;
+}
+
+export function SoundDialog({
+  open,
+  onOpenChange,
+  returnFocus,
+}: SoundDialogProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhmusic',
+    );
+  const {
+    host,
+    sentinel,
+  } =
+    useDialogHost(
+      '.rmhmusic-theme',
+    );
+  const instrument =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.instrument ??
+        'piano',
+    );
+  const stored =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.sound ??
+        null,
+    );
+  const saveFailed =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s.saveFailed.includes(
+          'sound',
+        ),
+    );
+  const [
+    picked,
+    setPicked,
+  ] =
+    useState<InstrumentId | null>(
+      null,
+    );
+  const token =
+    useRef(
+      0,
+    );
+  const stopPreview =
+    useRef<
+      () => void
+    >(
+      () => {},
+    );
+  useInstrumentTick();
+
+  const current =
+    resolveSound(
+      {
+        instrument,
+        sound:
+          stored,
+      },
+    );
+  const fallback =
+    defaultSoundFor(
+      instrument,
+    );
+
+  useEffect(() => {
+    if (
+      !open
+    ) {
+      token.current++;
+      stopPreview.current();
+      setPicked(
+        null,
+      );
+    }
+  }, [
+    open,
+  ]);
+  useEffect(
+    () =>
+      () =>
+        stopPreview.current(),
+    [],
+  );
+
+  const pick =
+    (
+      id: InstrumentId,
+    ) => {
+      const mine =
+        ++token.current;
+      setPicked(
+        id,
+      );
+      void useLearnStore
+        .getState()
+        .setSound(
+          id ===
+            fallback
+            ? null
+            : id,
+        );
+      // Inside the tap: browsers start audio only from a gesture.
+      const woke =
+        wakeSound();
+      const inst =
+        getInstrument(
+          id,
+        );
+      if (
+        !inst
+      )
+        return;
+      void Promise.all(
+        [
+          inst.load(
+            {
+              user: true,
+            },
+          ),
+          woke,
+        ],
+      ).then(
+        ([
+          state,
+        ]) => {
+          if (
+            mine !==
+              token.current ||
+            state.kind !==
+              'ready'
+          )
+            return;
+          stopPreview.current();
+          const release =
+            playNote(
+              PREVIEW_MIDI[
+                id
+              ],
+              {
+                instrument:
+                  id,
+              },
+            );
+          const timer =
+            setTimeout(
+              release,
+              PREVIEW_MS,
+            );
+          stopPreview.current =
+            () => {
+              clearTimeout(
+                timer,
+              );
+              release();
+            };
+        },
+      );
+    };
+
+  const status =
+    (
+      id: InstrumentId,
+    ):
+      | string
+      | null => {
+      if (
+        picked !==
+        id
+      )
+        return null;
+      const state =
+        getInstrument(
+          id,
+        )?.state;
+      if (
+        state?.kind ===
+        'loading'
+      )
+        return t(
+          'sound-loading',
+          {
+            defaultValue:
+              'Loading sound…',
+          },
+        );
+      if (
+        state?.kind ===
+        'failed'
+      )
+        return t(
+          'sound-load-failed',
+          {
+            defaultValue:
+              "Couldn't load this sound. Lessons will play a simple tone.",
+          },
+        );
+      return null;
+    };
+
+  return (
+    <>
+      {
+        sentinel
+      }
+      {host && (
+        <Dialog
+          open={
+            open
+          }
+          onOpenChange={
+            onOpenChange
+          }
+        >
+          <DialogContent
+            container={
+              host
+            }
+            className="app-glass max-w-md grid-cols-[minmax(0,1fr)] gap-4 p-5 text-app-text sm:p-6"
+            aria-describedby={
+              undefined
+            }
+            onCloseAutoFocus={(
+              e,
+            ) => {
+              const target =
+                returnFocus?.current;
+              if (
+                !target
+              )
+                return;
+              e.preventDefault();
+              target.focus();
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle className="rmm-display text-2xl leading-8 text-app-text">
+                {t(
+                  'sound-title',
+                  {
+                    defaultValue:
+                      'Sound',
+                  },
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            <ul className="divide-y divide-app-border">
+              {availableSounds().map(
+                (
+                  id,
+                ) => {
+                  const chosen =
+                    id ===
+                    current;
+                  const line =
+                    status(
+                      id,
+                    );
+                  return (
+                    <li
+                      key={
+                        id
+                      }
+                    >
+                      <button
+                        type="button"
+                        aria-pressed={
+                          chosen
+                        }
+                        data-sound={
+                          id
+                        }
+                        onClick={() =>
+                          pick(
+                            id,
+                          )
+                        }
+                        className="flex min-h-11 w-full items-start gap-3 rounded-app-sm py-3 text-start transition-colors hover:text-app-accent"
+                      >
+                        <span className="flex h-6 w-5 shrink-0 items-center justify-center">
+                          {chosen && (
+                            <Check
+                              className="h-5 w-5 text-app-accent"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-medium text-app-text">
+                            {soundName(
+                              t,
+                              id,
+                            )}
+                          </span>
+                          <span className="block text-sm text-app-text-muted">
+                            {soundDetail(
+                              t,
+                              id,
+                            )}
+                          </span>
+                        </span>
+                      </button>
+                      {/* One line kept for the status, so a load never moves the rows below. */}
+                      <p
+                        role="status"
+                        className={cn(
+                          'flex min-h-5 items-center gap-1.5 ps-8 text-sm text-app-text-muted',
+                          !line &&
+                            'hidden',
+                        )}
+                      >
+                        {line &&
+                          getInstrument(
+                            id,
+                          )
+                            ?.state
+                            .kind ===
+                            'loading' && (
+                            <Loader2
+                              className="app-spin h-4 w-4"
+                              aria-hidden="true"
+                            />
+                          )}
+                        {
+                          line
+                        }
+                      </p>
+                    </li>
+                  );
+                },
+              )}
+            </ul>
+            <div className="min-h-5 space-y-1 text-sm text-app-text-muted">
+              {!playsChords(
+                current,
+              ) && (
+                <p>
+                  {fallback ===
+                  'guitar'
+                    ? t(
+                        'sound-chords-guitar',
+                        {
+                          defaultValue:
+                            'Chord lessons use the guitar.',
+                        },
+                      )
+                    : t(
+                        'sound-chords-piano',
+                        {
+                          defaultValue:
+                            'Chord lessons use the piano.',
+                        },
+                      )}
+                </p>
+              )}
+              {saveFailed && (
+                <p
+                  role="alert"
+                  className="text-app-danger"
+                >
+                  {t(
+                    'sound-save-failed',
+                    {
+                      defaultValue:
+                        "Couldn't save your sound. Pick it again.",
+                    },
+                  )}
+                </p>
+              )}
+            </div>
+            <Link
+              to="/rmhmusic/credits"
+              className={
+                TEXT_BUTTON
+              }
+            >
+              {t(
+                'sound-credits-link',
+                {
+                  defaultValue:
+                    'Sound credits',
+                },
+              )}
+            </Link>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+}
+
+/** For lessons and the home: the instrument id the learner hears. */
+export function useLearnerSound(): InstrumentId {
+  const instrument =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.instrument ??
+        'piano',
+    );
+  const stored =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.sound ??
+        null,
+    );
+  return resolveSound(
+    {
+      instrument,
+      sound:
+        stored,
+    },
+  );
+}

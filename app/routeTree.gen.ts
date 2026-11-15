@@ -179,6 +179,7 @@ import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
+import { Route as RmhmusicCreditsRouteImport } from './routes/rmhmusic/credits'
 import { Route as RmhmusicPracticeRouteImport } from './routes/rmhmusic/practice'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
@@ -1365,6 +1366,11 @@ const RmhcodeAuthRoute = RmhcodeAuthRouteImport.update({
 const RmhmusicIndexRoute = RmhmusicIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicCreditsRoute = RmhmusicCreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhmusicPracticeRoute = RmhmusicPracticeRouteImport.update({
@@ -3249,6 +3255,7 @@ export interface FileRoutesByFullPath {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
@@ -3731,6 +3738,7 @@ export interface FileRoutesByTo {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
@@ -4239,6 +4247,7 @@ export interface FileRoutesById {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
@@ -4749,6 +4758,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhmusic/credits'
     | '/rmhmusic/practice'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
@@ -5231,6 +5241,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhmusic/credits'
     | '/rmhmusic/practice'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
@@ -5738,6 +5749,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhmusic/credits'
     | '/rmhmusic/practice'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
@@ -7460,6 +7472,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/rmhmusic/'
       preLoaderRoute: typeof RmhmusicIndexRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/credits': {
+      id: '/rmhmusic/credits'
+      path: '/credits'
+      fullPath: '/rmhmusic/credits'
+      preLoaderRoute: typeof RmhmusicCreditsRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhmusic/practice': {
@@ -10523,12 +10542,14 @@ const RmhcodeRouteWithChildren =
   RmhcodeRoute._addFileChildren(RmhcodeRouteChildren)
 
 interface RmhmusicRouteChildren {
+  RmhmusicCreditsRoute: typeof RmhmusicCreditsRoute
   RmhmusicPracticeRoute: typeof RmhmusicPracticeRoute
   RmhmusicIndexRoute: typeof RmhmusicIndexRoute
   RmhmusicLessonLessonIdRoute: typeof RmhmusicLessonLessonIdRoute
 }
 
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
+  RmhmusicCreditsRoute: RmhmusicCreditsRoute,
   RmhmusicPracticeRoute: RmhmusicPracticeRoute,
   RmhmusicIndexRoute: RmhmusicIndexRoute,
   RmhmusicLessonLessonIdRoute: RmhmusicLessonLessonIdRoute,

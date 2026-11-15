@@ -39,6 +39,11 @@ import {
 } from './buttons';
 import { HomeHero } from './HomeHero';
 import { InputSetup } from './InputSetup';
+import {
+  SoundDialog,
+  soundName,
+  useLearnerSound,
+} from './SoundDialog';
 import { ModeToggle } from './ModeToggle';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
@@ -136,6 +141,19 @@ export function LearnHome() {
     useRef<HTMLButtonElement>(
       null,
     );
+  const [
+    soundOpen,
+    setSoundOpen,
+  ] =
+    useState(
+      false,
+    );
+  const soundButton =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const soundId =
+    useLearnerSound();
   const onOpenLesson =
     (
       lessonId: string,
@@ -506,6 +524,39 @@ export function LearnHome() {
                   )}
                 </span>
               </button>
+              <button
+                ref={
+                  soundButton
+                }
+                type="button"
+                onClick={() =>
+                  setSoundOpen(
+                    true,
+                  )
+                }
+                aria-label={t(
+                  'sound-button-named',
+                  {
+                    name: soundName(
+                      t,
+                      soundId,
+                    ),
+                    defaultValue:
+                      'Sound: {{name}}',
+                  },
+                )}
+                className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
+              >
+                <span>
+                  {t(
+                    'sound-button',
+                    {
+                      defaultValue:
+                        'Sound',
+                    },
+                  )}
+                </span>
+              </button>
               {practiceDue && (
                 <Link
                   to="/rmhmusic/practice"
@@ -657,6 +708,17 @@ export function LearnHome() {
           }
           returnFocus={
             setupButton
+          }
+        />
+        <SoundDialog
+          open={
+            soundOpen
+          }
+          onOpenChange={
+            setSoundOpen
+          }
+          returnFocus={
+            soundButton
           }
         />
       </div>

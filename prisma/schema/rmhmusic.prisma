@@ -8,6 +8,8 @@ model MusicLearnProfile {
   input      String   @default("screen")
   latencyMs  Int      @default(0)
   dailyGoal  Int      @default(1)
+  /// The sampled sound lessons play (`INSTRUMENT_IDS`); null follows `instrument`.
+  sound      String?  @db.VarChar(16)
   updatedAt  DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

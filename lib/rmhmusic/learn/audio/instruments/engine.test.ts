@@ -409,6 +409,90 @@ describe('a lesson sound session', () => {
     );
   });
 
+  it('starts the wait only once sound can play (the context is running)', () => {
+    const listeners =
+      new Set<
+        () => void
+      >();
+    const sleepy =
+      {
+        ...fakeContext(),
+        state:
+          'suspended' as string,
+      };
+    sleepy.addEventListener =
+      vi.fn(
+        (
+          _: string,
+          fn: () => void,
+        ) =>
+          listeners.add(
+            fn,
+          ),
+      );
+    sleepy.removeEventListener =
+      vi.fn(
+        (
+          _: string,
+          fn: () => void,
+        ) =>
+          listeners.delete(
+            fn,
+          ),
+      );
+    ctx =
+      sleepy;
+    beginSoundSession(
+      'piano',
+    );
+    vi.advanceTimersByTime(
+      LOAD_WAIT_MS *
+        3,
+    );
+    expect(
+      currentSession()
+        ?.choice,
+    ).toEqual(
+      {
+        kind: 'pending',
+      },
+    );
+    expect(
+      soundStatus(),
+    ).toBe(
+      'asleep',
+    );
+    sleepy.state =
+      'running';
+    for (const fn of [
+      ...listeners,
+    ])
+      fn();
+    expect(
+      soundStatus(),
+    ).toBe(
+      'loading',
+    );
+    vi.advanceTimersByTime(
+      LOAD_WAIT_MS,
+    );
+    expect(
+      currentSession()
+        ?.choice,
+    ).toEqual(
+      {
+        kind: 'synth',
+        reason:
+          'timeout',
+      },
+    );
+    expect(
+      listeners.size,
+    ).toBe(
+      0,
+    );
+  });
+
   it('goes to the synth at once when the samples fail', () => {
     beginSoundSession(
       'piano',

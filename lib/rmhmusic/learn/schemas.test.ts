@@ -100,6 +100,56 @@ describe('lessonCompleteSchema', () => {
 });
 
 describe('profileSchema', () => {
+  it('takes a sound that is a known instrument, null (follow the instrument) or nothing', () => {
+    for (const sound of [
+      'piano',
+      'guitar',
+      'violin',
+      'flute',
+      null,
+      undefined,
+    ]) {
+      expect(
+        profileSchema.safeParse(
+          {
+            ...profile,
+            sound,
+          },
+        )
+          .success,
+        String(
+          sound,
+        ),
+      ).toBe(
+        true,
+      );
+    }
+    expect(
+      profileSchema.safeParse(
+        {
+          ...profile,
+          sound:
+            'cello',
+        },
+      )
+        .success,
+    ).toBe(
+      false,
+    );
+    expect(
+      profileSchema.safeParse(
+        {
+          ...profile,
+          sound:
+            '',
+        },
+      )
+        .success,
+    ).toBe(
+      false,
+    );
+  });
+
   it('accepts the edges', () => {
     expect(
       profileSchema.safeParse(

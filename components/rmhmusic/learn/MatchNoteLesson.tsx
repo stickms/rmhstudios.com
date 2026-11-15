@@ -39,6 +39,7 @@ import { useTranslation } from 'react-i18next';
 import {
   playNote,
   soundReleaseMs,
+  type PlayOptions,
 } from '@/lib/rmhmusic/learn/audio/voice';
 import { resumeAudio } from '@/lib/rmhmusic/learn/audio/resume';
 import {
@@ -104,10 +105,14 @@ type Sound =
 export function MatchNoteLesson({
   lessonId,
   paused = false,
+  sound:
+    voice,
 }: {
   lessonId: string;
   /** A dialog is open over the lesson: nothing answers. */
   paused?: boolean;
+  /** How the learner's notes are voiced (the lesson's sound); the synth when absent. */
+  sound?: PlayOptions;
 }) {
   const {
     t,
@@ -164,10 +169,18 @@ export function MatchNoteLesson({
         createEchoGuard(
           {
             releaseMs:
-              soundReleaseMs(),
+              soundReleaseMs(
+                voice,
+              ),
           },
         ),
     );
+  const soundRef =
+    useRef(
+      voice,
+    );
+  soundRef.current =
+    voice;
   const replayTimer =
     useRef<ReturnType<
       typeof setTimeout
@@ -257,6 +270,7 @@ export function MatchNoteLesson({
             const release =
               playNote(
                 fx.midi,
+                soundRef.current,
               );
             const timer =
               setTimeout(
@@ -291,6 +305,7 @@ export function MatchNoteLesson({
     useInputPhases();
   useNoteSound(
     !paused,
+    voice,
   );
   useLessonInputStart();
 
