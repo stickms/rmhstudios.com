@@ -21,6 +21,7 @@
  * playing" path (`soundStatus`, `wakeSound` in `voice.ts`) and never counts the question as heard.
  * A sequence that did start is stopped with `cancel`, safe to call twice.
  */
+import { mulberry32 } from '@/lib/core/rng';
 import { strumOffsets } from './instruments/chord';
 import { INSTRUMENT_CATALOG } from './instruments/catalog';
 import {
@@ -42,8 +43,33 @@ export const CHORD_HOLD_MS = 1400;
  */
 export const INTERVAL_GAP_MS = 750;
 
+/**
+ * The strum's humanise source when the caller passes none: seeded by the chord's notes, so the same
+ * chord always strums the same way (plan §5.3: a deterministic +-3 ms from a seeded `rand`).
+ */
+export function chordRand(
+  midis: readonly number[],
+): () => number {
+  let seed = 0x9e3779b9;
+  for (const m of midis)
+    seed =
+      Math.imul(
+        seed ^
+          Math.round(
+            m,
+          ),
+        0x85ebca6b,
+      ) >>>
+      0;
+  return mulberry32(
+    seed,
+  );
+}
+
 export interface SequenceOptions extends PlayOptions {
   holdMs?: number;
+  /** 0..1, for a strummed chord's humanise; default {@link chordRand} of the notes. */
+  rand?: () => number;
   /** Note `index` (of the notes that are numbers) has started sounding. */
   onNoteStart?: (
     index: number,
@@ -80,6 +106,7 @@ export function playSequence(
     holdMs = DEFAULT_HOLD_MS,
     onNoteStart,
     onAllStarted,
+    rand,
     ...voice
   } = opts;
   const notes =
@@ -128,7 +155,10 @@ export function playSequence(
       ? strumOffsets(
           notes.length,
           strumMs,
-          Math.random,
+          rand ??
+            chordRand(
+              notes,
+            ),
         )
       : [];
   const order =

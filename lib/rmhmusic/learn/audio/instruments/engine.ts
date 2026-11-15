@@ -7,7 +7,11 @@
  * the instrument plays; if they fail, or are not ready within {@link LOAD_WAIT_MS}, the synth plays
  * **for the rest of that session**, so the timbre never changes mid-lesson. Samples that arrive
  * late are used by the next session. A load delay is never counted as heard: while the session is
- * deciding, sound is not `ready`, so lessons neither play nor accept answers.
+ * deciding, sound is not `ready`, and a note asked for anyway (a key tap, a flashcard reveal) is
+ * dropped by `voice.ts` (it never plays on the synth, and its `onStart` never fires).
+ *
+ * Memory: at most {@link MAX_DECODED} instruments stay decoded; the least recently used one is
+ * disposed when another becomes ready (never the running session's).
  */
 import { asset } from '@/lib/storage/asset';
 import { getAudioContext } from '@/lib/shared/platform';
@@ -116,12 +120,14 @@ function browserDeps(
         fetch:
           (
             url,
+            signal,
           ) =>
             fetch(
               url,
               {
                 credentials:
                   'omit',
+                signal,
               },
             ),
         sleep:
@@ -197,7 +203,77 @@ const instruments =
     Instrument
   >();
 
-/** The instrument for `id`, created on first use (nothing is fetched until `load()`). */
+/**
+ * Instruments kept decoded at once (plan §2.3: 6 to 12 MB of buffers each, two at most resident).
+ * A third that becomes ready evicts the least recently used one, never the running session's.
+ */
+export const MAX_DECODED = 2;
+/** Instrument ids by last use, least recent first. */
+const recency: InstrumentId[] =
+  [];
+
+function touch(
+  id: InstrumentId,
+) {
+  const i =
+    recency.indexOf(
+      id,
+    );
+  if (
+    i >=
+    0
+  )
+    recency.splice(
+      i,
+      1,
+    );
+  recency.push(
+    id,
+  );
+}
+
+/** Dispose the least recently used decoded instruments beyond {@link MAX_DECODED}. */
+function evict() {
+  const decoded =
+    recency.filter(
+      (
+        id,
+      ) =>
+        instruments.get(
+          id,
+        )
+          ?.state
+          .kind ===
+        'ready',
+    );
+  let excess =
+    decoded.length -
+    MAX_DECODED;
+  for (const id of decoded) {
+    if (
+      excess <=
+      0
+    )
+      break;
+    // The running lesson's timbre is never taken away from it.
+    if (
+      session?.id ===
+      id
+    )
+      continue;
+    excess--;
+    instruments
+      .get(
+        id,
+      )
+      ?.dispose();
+  }
+}
+
+/**
+ * The instrument for `id`, created on first use (nothing is fetched until `load()`). Counts as a
+ * use for {@link MAX_DECODED}; a read that is not a use (a status line) takes {@link peekInstrument}.
+ */
 export function getInstrument(
   id: InstrumentId,
 ): Instrument | null {
@@ -226,25 +302,42 @@ export function getInstrument(
       inst,
     );
   }
+  touch(
+    id,
+  );
   return inst;
+}
+
+/** The instrument for `id` if one was made, without creating it or counting a use. */
+export function peekInstrument(
+  id: InstrumentId,
+): Instrument | null {
+  return (
+    instruments.get(
+      id,
+    ) ??
+    null
+  );
 }
 
 /** Tests: swap how instruments are made and forget the ones made so far (and the session). */
 export function __setInstrumentFactory(
   f: Factory | null,
 ): void {
+  endSoundSession();
   for (const inst of instruments.values())
     inst.dispose();
   instruments.clear();
+  recency.length = 0;
   factory =
     f ??
     defaultFactory;
-  endSoundSession();
 }
 
 /**
- * Start loading `id` in the background when the browser is idle (a lesson route, the Sound
- * dialog). Skipped with Data Saver on: the lesson then loads on its own when it begins.
+ * Start loading `id` in the background (LessonScreen calls it, browser idle, when a pitched lesson
+ * route mounts; never the home page). Skipped with Data Saver on: the lesson's own session then
+ * loads it when it begins.
  */
 export function prefetchSound(
   id: InstrumentId,
@@ -307,8 +400,9 @@ function notify() {
     fn();
 }
 
-/** Re-read the session after any instrument changes state. */
+/** Re-read the session (and the decoded budget) after any instrument changes state. */
 function changed() {
+  evict();
   if (
     session &&
     session
@@ -548,29 +642,94 @@ export function onInstrumentChange(
 }
 
 /**
- * The instrument that should voice `midi` now, or null for the synth: it must be ready and reach
- * the note, and inside a session only once the session chose the samples.
+ * The sampled instrument the running session fell back from, when its notes play the simple tone
+ * instead (the samples failed or were not ready in time): the lessons say so once. Null when the
+ * session plays its samples, is still deciding, or there is no Web Audio at all (then nothing plays
+ * and the lessons say that instead).
+ */
+export function sessionFallback(): InstrumentId | null {
+  if (
+    !session ||
+    session
+      .choice
+      .kind !==
+      'synth'
+  )
+    return null;
+  const state =
+    instruments.get(
+      session.id,
+    )?.state;
+  if (
+    state?.kind ===
+      'failed' &&
+    state.reason ===
+      'unsupported'
+  )
+    return null;
+  return session.id;
+}
+
+/** How a note is voiced: the samples, the synth, or not at all yet (the session is deciding). */
+export type NoteRoute =
+  | {
+      kind: 'instrument';
+      inst: Instrument;
+    }
+  | {
+      kind: 'synth';
+    }
+  | {
+      kind: 'pending';
+    };
+
+const SYNTH: NoteRoute =
+  {
+    kind: 'synth',
+  };
+const PENDING: NoteRoute =
+  {
+    kind: 'pending',
+  };
+
+/**
+ * How `midi` with sound `id` is voiced now. Inside a lesson's session for `id` the session decides,
+ * and its choice holds for the rest of the lesson, so the timbre never changes mid-lesson: while it
+ * is still deciding the note is `pending` (the caller drops it: never the synth, never "heard");
+ * once it chose the samples they play every note they reach (a note out of their range is the one
+ * exception, on the synth, plan §3.4); once it chose the synth, the synth plays everything. Outside
+ * a session (the Sound dialog's preview) a ready instrument plays and anything else is the synth.
  */
 export function instrumentFor(
   id:
     | InstrumentId
     | undefined,
   midi: number,
-): Instrument | null {
+): NoteRoute {
   if (
     !id
   )
-    return null;
+    return SYNTH;
   if (
     session &&
     session.id ===
-      id &&
-    session
-      .choice
-      .kind !==
-      'instrument'
-  )
-    return null;
+      id
+  ) {
+    if (
+      session
+        .choice
+        .kind ===
+      'pending'
+    )
+      return PENDING;
+    if (
+      session
+        .choice
+        .kind ===
+      'synth'
+    )
+      return SYNTH;
+  }
   const inst =
     getInstrument(
       id,
@@ -585,6 +744,9 @@ export function instrumentFor(
       midi,
     )
   )
-    return null;
-  return inst;
+    return SYNTH;
+  return {
+    kind: 'instrument',
+    inst,
+  };
 }

@@ -16,6 +16,7 @@ import type {
 } from './types';
 import { chordGain } from './chord';
 import { velocityGain } from './zones';
+import { ZONE_TIMEOUT_MS } from './loader';
 
 const zone =
   (
@@ -356,6 +357,181 @@ describe('sampler loading', () => {
     );
   });
 
+  it('gives up on a zone whose request hangs: aborted after ZONE_TIMEOUT_MS, failed as network, retried by a later load', async () => {
+    vi.useFakeTimers();
+    try {
+      const {
+        deps,
+      } =
+        setup();
+      const signals: AbortSignal[] =
+        [];
+      const hung =
+        vi.fn(
+          (
+            _url: string,
+            signal?: AbortSignal,
+          ) =>
+            new Promise<never>(
+              () => {
+                if (
+                  signal
+                )
+                  signals.push(
+                    signal,
+                  );
+              },
+            ),
+        );
+      const inst =
+        createSampler(
+          meta(),
+          [
+            zone(
+              60,
+            ),
+          ],
+          {
+            ...deps,
+            loader:
+              {
+                ...deps.loader,
+                fetch:
+                  hung,
+              },
+          },
+        );
+      const first =
+        inst.load(
+          {
+            user: true,
+          },
+        );
+      expect(
+        inst
+          .state
+          .kind,
+      ).toBe(
+        'loading',
+      );
+      await vi.advanceTimersByTimeAsync(
+        ZONE_TIMEOUT_MS -
+          1,
+      );
+      expect(
+        inst
+          .state
+          .kind,
+      ).toBe(
+        'loading',
+      );
+      await vi.advanceTimersByTimeAsync(
+        1,
+      );
+      await expect(
+        first,
+      ).resolves.toMatchObject(
+        {
+          kind: 'failed',
+          reason:
+            'network',
+        },
+      );
+      expect(
+        signals[0]
+          .aborted,
+      ).toBe(
+        true,
+      );
+      // Not retried against the hung server, and the single flight is over: a new load fetches.
+      expect(
+        hung,
+      ).toHaveBeenCalledTimes(
+        1,
+      );
+      const second =
+        inst.load(
+          {
+            user: true,
+          },
+        );
+      expect(
+        second,
+      ).not.toBe(
+        first,
+      );
+      expect(
+        hung,
+      ).toHaveBeenCalledTimes(
+        2,
+      );
+      await vi.advanceTimersByTimeAsync(
+        ZONE_TIMEOUT_MS,
+      );
+      await expect(
+        second,
+      ).resolves.toMatchObject(
+        {
+          kind: 'failed',
+        },
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('times out a body that never arrives, too', async () => {
+    vi.useFakeTimers();
+    try {
+      const {
+        deps,
+      } =
+        setup();
+      const inst =
+        createSampler(
+          meta(),
+          [
+            zone(
+              60,
+            ),
+          ],
+          {
+            ...deps,
+            loader:
+              {
+                ...deps.loader,
+                fetch:
+                  async () => ({
+                    ok: true,
+                    status: 200,
+                    arrayBuffer:
+                      () =>
+                        new Promise<ArrayBuffer>(
+                          () => {},
+                        ),
+                  }),
+              },
+          },
+        );
+      const p =
+        inst.load();
+      await vi.advanceTimersByTimeAsync(
+        ZONE_TIMEOUT_MS,
+      );
+      await expect(
+        p,
+      ).resolves.toMatchObject(
+        {
+          kind: 'failed',
+          reason:
+            'network',
+        },
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('fails as unsupported without Web Audio, and plays nothing', async () => {
     const {
       deps,
@@ -667,6 +843,122 @@ describe('sampler playing', () => {
         .ctx
         .createBiquadFilter,
     ).not.toHaveBeenCalled();
+  });
+
+  it('a voice released before its start (a cancelled strum) is stopped by then and never ramps', async () => {
+    const {
+      inst,
+      sources,
+      gains,
+    } =
+      setup();
+    await inst.load();
+    const h =
+      inst.play(
+        60,
+        {
+          when: 10.05,
+        },
+      );
+    h.stop(
+      10,
+    );
+    expect(
+      sources[0]
+        .start,
+    ).toHaveBeenCalledWith(
+      10.05,
+      0.01,
+    );
+    expect(
+      sources[0]
+        .stop,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      sources[0]
+        .stop
+        .mock
+        .calls[0][0],
+    ).toBeLessThanOrEqual(
+      10.05,
+    );
+    expect(
+      gains[0]
+        .gain
+        .cancelScheduledValues,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('releases from the level the attack reached, computed, never read from the param', async () => {
+    const {
+      inst,
+      gains,
+    } =
+      setup();
+    await inst.load();
+    const level =
+      velocityGain(
+        1,
+      ) *
+      10 **
+        (2 /
+          20);
+    // Half-way up the attack ramp.
+    const mid =
+      inst.play(
+        60,
+        {
+          velocity: 1,
+        },
+      );
+    gains[0].gain.value = 123; // what an automated param's `value` might report: never used
+    mid.stop(
+      10 +
+        ATTACK_S /
+          2,
+    );
+    const [
+      held0,
+      at0,
+    ] =
+      gains[0].gain.setValueAtTime.mock.calls.at(
+        -1,
+      )!;
+    expect(
+      held0,
+    ).toBeCloseTo(
+      level /
+        2,
+      9,
+    );
+    expect(
+      at0,
+    ).toBe(
+      10 +
+        ATTACK_S /
+          2,
+    );
+    // After the attack: the full level.
+    const held =
+      inst.play(
+        60,
+        {
+          velocity: 1,
+        },
+      );
+    held.stop(
+      11,
+    );
+    expect(
+      gains[1]
+        .gain
+        .setValueAtTime,
+    ).toHaveBeenLastCalledWith(
+      level,
+      11,
+    );
   });
 
   it('dispose stops the voices and frees the buffers', async () => {

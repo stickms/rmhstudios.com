@@ -6,8 +6,12 @@
  * A note is voiced by the sampled instrument (`instruments/engine.ts`) when that instrument is
  * loaded and reaches the note, and inside a lesson's sound session only once the session chose the
  * samples; otherwise by the synth below: one triangle-wave oscillator per note through a short gain
- * envelope. MIDI keyboards have their own sound and the mic is the learner's instrument, so callers
- * sound only `screen` / `keys` notes.
+ * envelope. While a lesson's session is still deciding (`soundStatus()` is `loading`, at most
+ * `LOAD_WAIT_MS` once sound runs) a note is DROPPED, never played on the synth, and its `onStart`
+ * never fires: whichever the session settles on then voices every note of the lesson. Lessons that
+ * gate on `soundStatus()` (the ear lessons, MatchNote's Hear it) say "Loading sound…"; the others
+ * (key taps, flashcard reveals) are simply silent until then. MIDI keyboards have their own sound
+ * and the mic is the learner's instrument, so callers sound only `screen` / `keys` notes.
  *
  * Client-only: the shared context comes from `getAudioContext()` inside `playNote`, never at
  * module load, so SSR is safe. Without Web Audio (or while the context cannot run) a note is a
@@ -44,23 +48,39 @@ export const MAX_VOICES = 12;
 const SYNTH_VOICES = 6;
 
 /**
- * How long a note of the sound `opts` names can keep sounding after release (ms): the longer of
- * the instrument's own release and the synth's, since a lesson's session may hand its notes to
- * either. The mic echo guard waits this out.
+ * How long a note of the sound `opts` names can keep sounding after release (ms), for the sound in
+ * use NOW: the synth's once the lesson's session settled on the synth; otherwise the longer of the
+ * instrument's own release and the synth's (the session is still deciding, or the samples play and
+ * a note out of their range takes the synth). The mic echo guard asks this at every note, so it
+ * follows the session rather than the value at mount.
  */
 export function soundReleaseMs(
   opts: PlayOptions = {},
 ): number {
-  return opts.instrument
-    ? Math.max(
-        RELEASE_MS,
-        INSTRUMENT_CATALOG[
-          opts
-            .instrument
-        ]
-          .releaseMs,
-      )
-    : RELEASE_MS;
+  if (
+    !opts.instrument
+  )
+    return RELEASE_MS;
+  const s =
+    currentSession();
+  if (
+    s &&
+    s.id ===
+      opts.instrument &&
+    s
+      .choice
+      .kind ===
+      'synth'
+  )
+    return RELEASE_MS;
+  return Math.max(
+    RELEASE_MS,
+    INSTRUMENT_CATALOG[
+      opts
+        .instrument
+    ]
+      .releaseMs,
+  );
 }
 
 interface Voice {
@@ -225,16 +245,24 @@ export function playNote(
         0,
     );
 
-  const inst =
+  const route =
     instrumentFor(
       o.instrument,
       midi,
     );
+  // The lesson's session has not settled on the samples or the synth yet: the note is dropped, so
+  // the timbre never changes mid-lesson and nothing counts as heard (`onStart` never fires).
   if (
-    inst
+    route.kind ===
+    'pending'
+  )
+    return noop;
+  if (
+    route.kind ===
+    'instrument'
   ) {
     const handle =
-      inst.play(
+      route.inst.play(
         midi,
         {
           velocity,
@@ -383,21 +411,38 @@ export function playNote(
             1,
           );
         const t =
-          Math.max(
-            ctx.currentTime,
-            now,
+          ctx.currentTime;
+        osc.onended =
+          () => {
+            osc.disconnect();
+            gain.disconnect();
+          };
+        // Released before it starts (a strum cancelled mid-way): it never sounds.
+        if (
+          t <
+          now
+        ) {
+          osc.stop(
+            t,
           );
-        // Hold the current level, then fall exponentially-ish to silence.
+          return;
+        }
+        // Hold the level the attack has reached (computed: the param's `value` lags its
+        // automation), then fall exponentially-ish to silence.
+        const level =
+          t >=
+          now +
+            ATTACK_S
+            ? peak
+            : (peak *
+                (t -
+                  now)) /
+              ATTACK_S;
         gain.gain.cancelScheduledValues(
           t,
         );
         gain.gain.setValueAtTime(
-          t >
-            ctx.currentTime
-            ? 0
-            : gain
-                .gain
-                .value,
+          level,
           t,
         );
         gain.gain.setTargetAtTime(
@@ -410,11 +455,6 @@ export function playNote(
           t +
             RELEASE_S,
         );
-        osc.onended =
-          () => {
-            osc.disconnect();
-            gain.disconnect();
-          };
       },
     };
   voices.push(

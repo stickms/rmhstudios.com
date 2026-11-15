@@ -4,6 +4,8 @@
  *
  * - At most {@link CONCURRENCY} fetch + decode at a time.
  * - A network failure (a thrown fetch, a 5xx) is retried twice, after 400 ms then 1.2 s.
+ * - A zone that takes longer than {@link ZONE_TIMEOUT_MS} is aborted and fails as `network` (not
+ *   retried), so a hung server can never hold the instrument's single-flight load open.
  * - A decode failure is not retried (the bytes will not change), and neither is a CORS failure
  *   (deterministic): a cross-origin `fetch` that throws a TypeError while the browser is online is
  *   treated as CORS. The CDN only allows our own origins, so previews and localhost with a CDN
@@ -18,10 +20,22 @@ export const RETRY_DELAYS_MS: readonly number[] =
     400,
     1200,
   ];
+/**
+ * How long one zone's request may take, response and body together (ms). Past it the request is
+ * aborted and the zone fails as `network`, without a retry: a server that hangs once is likely to
+ * hang again, and the load must settle (`failed`) so the single flight ends and a later load by
+ * the learner can try again.
+ */
+export const ZONE_TIMEOUT_MS = 10_000;
+
+/** A zone request that ran past {@link ZONE_TIMEOUT_MS}. */
+class ZoneTimeout extends Error {}
 
 export interface LoaderDeps {
+  /** `signal` aborts the request when it runs past {@link ZONE_TIMEOUT_MS}. */
   fetch(
     url: string,
+    signal?: AbortSignal,
   ): Promise<{
     ok: boolean;
     status: number;
@@ -93,10 +107,46 @@ export async function loadZone(
     RETRY_DELAYS_MS.length;
     attempt++
   ) {
+    // One deadline per attempt: the abort stops a real request, and the race settles even a fetch
+    // (or body) that ignores the signal and never answers.
+    const controller =
+      new AbortController();
+    let timer:
+      | ReturnType<
+          typeof setTimeout
+        >
+      | undefined;
+    const deadline =
+      new Promise<never>(
+        (
+          _,
+          reject,
+        ) => {
+          timer =
+            setTimeout(
+              () => {
+                controller.abort();
+                reject(
+                  new ZoneTimeout(),
+                );
+              },
+              ZONE_TIMEOUT_MS,
+            );
+        },
+      );
+    deadline.catch(
+      () => {},
+    );
     try {
       const res =
-        await deps.fetch(
-          url,
+        await Promise.race(
+          [
+            deps.fetch(
+              url,
+              controller.signal,
+            ),
+            deadline,
+          ],
         );
       if (
         !res.ok
@@ -110,10 +160,23 @@ export async function loadZone(
           break;
       } else {
         bytes =
-          await res.arrayBuffer();
+          await Promise.race(
+            [
+              res.arrayBuffer(),
+              deadline,
+            ],
+          );
         break;
       }
     } catch (err) {
+      if (
+        err instanceof
+        ZoneTimeout
+      ) {
+        reason =
+          'network';
+        break;
+      }
       reason =
         classifyFetchError(
           err,
@@ -131,6 +194,10 @@ export async function loadZone(
         'cors'
       )
         break;
+    } finally {
+      clearTimeout(
+        timer,
+      );
     }
     if (
       attempt <

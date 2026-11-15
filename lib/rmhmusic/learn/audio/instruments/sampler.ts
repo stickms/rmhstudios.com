@@ -427,32 +427,36 @@ export function createSampler(
             id,
             at,
           );
-          const t =
-            Math.max(
-              at,
-              when,
-            );
-          gain.gain.cancelScheduledValues(
-            t,
-          );
-          // Before the attack has finished the level is still rising; hold where it is.
-          gain.gain.setValueAtTime(
-            t <=
-              ctx.currentTime
-              ? gain
-                  .gain
-                  .value
-              : level,
-            t,
-          );
-          gain.gain.linearRampToValueAtTime(
-            0,
-            t +
-              seconds,
-          );
           try {
+            if (
+              at <
+              when
+            ) {
+              // Released before it starts (a strum cancelled mid-way): stopping the source at or
+              // before its start means it never sounds, so nothing is left to fade.
+              src.stop(
+                at,
+              );
+              return;
+            }
+            gain.gain.cancelScheduledValues(
+              at,
+            );
+            // Hold the level the envelope has reached (computed, never read back from the param,
+            // whose `value` lags its automation), then fall to silence.
+            gain.gain.setValueAtTime(
+              envelopeAt(
+                at,
+              ),
+              at,
+            );
+            gain.gain.linearRampToValueAtTime(
+              0,
+              at +
+                seconds,
+            );
             src.stop(
-              t +
+              at +
                 seconds +
                 0.01,
             );
@@ -461,6 +465,28 @@ export function createSampler(
           }
         },
       };
+    /** The level the attack ramp has reached at time `t`. */
+    function envelopeAt(
+      t: number,
+    ): number {
+      if (
+        t <=
+        when
+      )
+        return 0;
+      if (
+        t >=
+        when +
+          ATTACK_S
+      )
+        return level;
+      return (
+        (level *
+          (t -
+            when)) /
+        ATTACK_S
+      );
+    }
     src.onended =
       () => {
         src.disconnect();

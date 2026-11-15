@@ -934,3 +934,76 @@ describe('hearStillWanted', () => {
     );
   });
 });
+
+describe('echo guard: a release that follows the sound', () => {
+  it('asks a releaseMs function at each key release, so a lesson that fell back to the tone uses its release', () => {
+    let release = 1000;
+    const g =
+      createEchoGuard(
+        {
+          tailMs:
+            ECHO_TAIL_MS,
+          releaseMs:
+            () =>
+              release,
+        },
+      );
+    g.admit(
+      local(
+        'on',
+        60,
+        0,
+      ),
+    );
+    g.admit(
+      local(
+        'off',
+        60,
+        100,
+      ),
+    );
+    expect(
+      g.admit(
+        mic(
+          'on',
+          62,
+          100 +
+            1000 +
+            ECHO_TAIL_MS -
+            1,
+        ),
+      ),
+    ).toBe(
+      false,
+    );
+    release =
+      RELEASE;
+    g.admit(
+      local(
+        'on',
+        60,
+        5000,
+      ),
+    );
+    g.admit(
+      local(
+        'off',
+        60,
+        5100,
+      ),
+    );
+    expect(
+      g.admit(
+        mic(
+          'on',
+          62,
+          5100 +
+            RELEASE +
+            ECHO_TAIL_MS,
+        ),
+      ),
+    ).toBe(
+      true,
+    );
+  });
+});
