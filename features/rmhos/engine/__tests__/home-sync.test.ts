@@ -89,10 +89,10 @@ describe('HomeSync', () => {
 
   it('an identical second save is unchanged and does not write again', async () => {
     const { sync, store } = setup();
-    const put = vi.spyOn(store, 'put');
+    const write = vi.spyOn(store, 'transact');
     await sync.save();
     expect(await sync.save()).toEqual({ status: 'unchanged' });
-    expect(put).toHaveBeenCalledTimes(1);
+    expect(write).toHaveBeenCalledTimes(1);
   });
 
   it('a changed tar is saved again', async () => {
@@ -106,7 +106,7 @@ describe('HomeSync', () => {
     const { sync, store } = setup({ tars: [fakeTar(1), fakeTar(2)] });
     await sync.save();
     const before = await store.get('u1');
-    vi.spyOn(store, 'put').mockRejectedValue(new DOMException('full', 'QuotaExceededError'));
+    vi.spyOn(store, 'transact').mockRejectedValue(new DOMException('full', 'QuotaExceededError'));
     expect(await sync.save()).toEqual({ status: 'storage-full' });
     expect(await store.get('u1')).toEqual(before);
   });
@@ -275,7 +275,7 @@ describe('memory home store', () => {
     it('only a QuotaExceededError is storage-full; anything else is storage_error', async () => {
       const failing = (err: Error): HomeStore => ({
         ...memoryHomeStore(),
-        put: async () => {
+        transact: async () => {
           throw err;
         },
       });
@@ -309,9 +309,9 @@ describe('memory home store', () => {
       let failNext = false;
       const failing: HomeStore = {
         ...store,
-        put: async (id, h) => {
-          if (failNext && id === 'u1') throw quota;
-          return store.put(id, h);
+        transact: async (ops) => {
+          if (failNext) throw quota;
+          return store.transact(ops);
         },
       };
       const { sync, agent } = setup({ store: failing, tars: [fakeTar(2)] });
@@ -334,7 +334,7 @@ describe('memory home store', () => {
       const store = memoryHomeStore();
       const broken: HomeStore = {
         ...store,
-        put: async () => {
+        transact: async () => {
           throw new Error('boom');
         },
       };
@@ -605,6 +605,125 @@ describe('memory home store', () => {
       release();
       expect(await saving).toEqual({ status: 'failed', code: 'suspended' });
       expect(await store.get('u1')).toBeNull();
+    });
+  });
+
+  describe('multi-key changes are atomic', () => {
+    /** A store whose transactions fail while `failing.on` is set, leaving the data alone. */
+    function flaky() {
+      const failing = { on: false, error: new Error('boom') };
+      const store = memoryHomeStore({ failTransact: () => (failing.on ? failing.error : null) });
+      return { store, failing };
+    }
+    const P = async () => ({ archive: await gzip(fakeTar(1)), sha256: 'P', savedAt: 111 });
+    const snapshot = async (store: HomeStore) => ({
+      main: await store.get('u1'),
+      replaced: await store.get('u1:replaced'),
+      damaged: await store.get('u1:damaged'),
+    });
+
+    /** Home P, then backup A imported over it (a session later: a fresh HomeSync). */
+    async function afterImportA() {
+      const { store, failing } = flaky();
+      const t = setup({ store, tars: [fakeTar(5)] });
+      await store.put('u1', await P());
+      await t.sync.prepare();
+      await t.sync.importArchive(await gzip(fakeTar(8)));
+      const next = new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent as never, store });
+      await next.prepare();
+      return { store, failing, next, vm: t.vm, agent: t.agent };
+    }
+
+    it('import B fails: state exactly as before (main A, :replaced P for A), put-back still offered, P recoverable', async () => {
+      const { store, failing, next, vm, agent } = await afterImportA();
+      const before = await snapshot(store);
+      expect(before.replaced!.sha256).toBe('P');
+      failing.on = true;
+      failing.error = Object.assign(new Error('full'), { name: 'QuotaExceededError' });
+      await expect(next.importArchive(await gzip(fakeTar(3)))).rejects.toMatchObject({
+        code: 'storage-full',
+      });
+      expect(await snapshot(store)).toEqual(before);
+      failing.on = false;
+      // A fresh machine over the same store: the offer is still there and P comes back.
+      const again = new HomeSync({ userId: 'u1', vm, agent: agent as never, store });
+      await again.prepare();
+      expect(await again.previousOffer()).toEqual({ savedAt: 111 });
+      await again.putPreviousBack();
+      expect(await store.get('u1')).toEqual(await P());
+    });
+
+    it('a retry of the failed import then keeps P (it does not overwrite :replaced with A)', async () => {
+      const { store, failing, next } = await afterImportA();
+      const backupB = await gzip(fakeTar(3));
+      failing.on = true;
+      await expect(next.importArchive(backupB)).rejects.toBeInstanceOf(BackupError);
+      failing.on = false;
+      await next.importArchive(backupB);
+      expect((await store.get('u1:replaced'))!.sha256).toBe('P');
+      expect((await store.get('u1:replaced'))!.forSha).toBe((await store.get('u1'))!.sha256);
+    });
+
+    it('importing A twice leaves :replaced alone', async () => {
+      const { store, next } = await afterImportA();
+      const before = await snapshot(store);
+      await next.importArchive(before.main!.archive); // the same backup again
+      expect(await snapshot(store)).toEqual({ ...before, main: expect.anything() });
+      expect((await store.get('u1:replaced'))).toEqual(before.replaced);
+    });
+
+    it('put-back whose transaction fails changes nothing', async () => {
+      const { store, failing, next } = await afterImportA();
+      const before = await snapshot(store);
+      failing.on = true;
+      await expect(next.putPreviousBack()).rejects.toBeInstanceOf(BackupError);
+      expect(await snapshot(store)).toEqual(before);
+      expect(await next.previousOffer()).toEqual({ savedAt: 111 });
+    });
+
+    it('discardDamaged failing leaves the main entry where it was', async () => {
+      const { store, failing } = flaky();
+      const t = setup({ store });
+      const damaged = { archive: new Uint8Array([9, 9]), sha256: 'bad', savedAt: 1 };
+      await store.put('u1', damaged);
+      failing.on = true;
+      await expect(t.sync.discardDamaged()).rejects.toBeInstanceOf(BackupError);
+      expect(await snapshot(store)).toEqual({ main: damaged, replaced: null, damaged: null });
+    });
+
+    it('the save that changes main and the cleanup of :replaced are one write', async () => {
+      const { store, failing, next } = await afterImportA(); // the guest saves fakeTar(5)
+      const before = await snapshot(store);
+      failing.on = true;
+      expect((await next.save()).status).toMatch(/failed|storage-full/);
+      // The save failed: neither the new main nor the removal of :replaced happened.
+      expect(await snapshot(store)).toEqual(before);
+      failing.on = false;
+      expect((await next.save()).status).toBe('saved');
+      expect(await store.get('u1:replaced')).toBeNull();
+    });
+
+    it('importing over an unreadable main keeps P when main was still the imported backup', async () => {
+      const { store, next } = await afterImportA();
+      // The imported backup A has become unreadable in storage (sha field unchanged).
+      const main = (await store.get('u1'))!;
+      await store.put('u1', { ...main, archive: new Uint8Array([1, 2, 3]) });
+      const backupB = await gzip(fakeTar(3));
+      await next.importArchive(backupB);
+      const replaced = (await store.get('u1:replaced'))!;
+      expect(replaced.sha256).toBe('P'); // not dropped
+      expect(replaced.forSha).toBe((await store.get('u1'))!.sha256);
+      expect(Array.from((await store.get('u1:damaged'))!.archive)).toEqual([1, 2, 3]);
+    });
+
+    it('dropStaleReplaced at start keeps :replaced when main is missing or unreadable', async () => {
+      const t = setup();
+      await t.store.put('u1:replaced', { archive: await gzip(fakeTar(2)), sha256: 'r', savedAt: 2, forSha: 'gone' });
+      expect(await t.sync.prepare()).toBe('empty'); // no main entry
+      expect(await t.store.get('u1:replaced')).not.toBeNull();
+      await t.store.put('u1', { archive: new Uint8Array([9, 9]), sha256: 'x', savedAt: 1 });
+      expect(await t.sync.prepare()).toBe('corrupt'); // unreadable main
+      expect(await t.store.get('u1:replaced')).not.toBeNull();
     });
   });
 });

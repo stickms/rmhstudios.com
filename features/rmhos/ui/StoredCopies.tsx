@@ -10,17 +10,12 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/lib/shared/app-toast';
 import type { CopyKind, StoredCopies as Copies } from '../engine/home-sync';
 import ConfirmBox from './ConfirmBox';
-import { BACKUP_FILE, DAMAGED_FILE, downloadBytes, REPLACED_FILE } from './download';
+import { copyFileName, downloadBytes } from './download';
 import { copyTime } from './save-messages';
 import type { RmhosSessionValue } from './useRmhosSession';
 
 type Source = Pick<RmhosSessionValue, 'storedCopies' | 'exportCopy' | 'removeCopy'>;
 
-const FILE: Record<CopyKind, string> = {
-  current: BACKUP_FILE,
-  replaced: REPLACED_FILE,
-  damaged: DAMAGED_FILE,
-};
 
 function size(bytes: number): string {
   return bytes < 1024 * 1024
@@ -54,8 +49,7 @@ export default function StoredCopies({
     try {
       const bytes = await exportCopy(kind);
       if (!bytes) throw new Error('missing');
-      const name = kind === 'current' && currentDamaged ? DAMAGED_FILE : FILE[kind];
-      downloadBytes(name, bytes);
+      downloadBytes(copyFileName(kind, currentDamaged), bytes);
     } catch {
       toast.error(
         t('copy-download-failed', { defaultValue: 'Could not download the copy. Nothing was changed.' }),

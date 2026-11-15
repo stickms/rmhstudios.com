@@ -221,9 +221,16 @@ export default function RmhosApp() {
         />
         {/* Always laid out, so the toolbar and the screen never move when focus changes. */}
         <div className="rmhos-hintbar text-xs text-(--app-text)" aria-hidden={!captured}>
-          {t('capture-hint', {
-            defaultValue: 'Keys go to rmhOS. Press Ctrl+Alt+Shift+Esc to leave.',
-          })}
+          <span
+            className="rmhos-hintbar-text"
+            title={t('capture-hint', {
+              defaultValue: 'Keys go to rmhOS. Press Ctrl+Alt+Shift+Esc to leave.',
+            })}
+          >
+            {t('capture-hint', {
+              defaultValue: 'Keys go to rmhOS. Press Ctrl+Alt+Shift+Esc to leave.',
+            })}
+          </span>
         </div>
         {noticeOpen && (
           <div className="rmhos-notices flex items-center justify-between gap-2" role="note">

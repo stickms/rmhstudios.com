@@ -482,6 +482,9 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^7.1.1
         version: 7.1.1(eslint@10.13.0(jiti@2.7.0))
+      fake-indexeddb:
+        specifier: 6.2.8
+        version: 6.2.8
       gemoji:
         specifier: ^8.1.0
         version: 8.1.0
@@ -5346,6 +5349,10 @@ packages:
 
   extractwords@2.1.0:
     resolution: {integrity: sha512-JQkYsRZYXzr31RlzQ8NBenPzqAPBCDbMHyrsU/SX9K37uZtItyvw0O9Cngd+j0eI0ujxfiV20n1ryJETtLUvDA==}
+    engines: {node: '>=18'}
+
+  fake-indexeddb@6.2.8:
+    resolution: {integrity: sha512-mpVW/HLUqwKXJ6F/s0hMgdK1eQfM4ncTHDioNGHWL0WKV3VcZCoZq1NKgboBbAge07aRCO7L48yziKssL59XEQ==}
     engines: {node: '>=18'}
 
   fast-check@3.23.2:
@@ -13052,6 +13059,8 @@ snapshots:
   extend@3.0.2: {}
 
   extractwords@2.1.0: {}
+
+  fake-indexeddb@6.2.8: {}
 
   fast-check@3.23.2:
     dependencies:

@@ -196,7 +196,13 @@
   font-weight: 500;
   border-bottom: 1px solid var(--app-border);
   background: var(--app-bg-subtle);
+}
+
+/* A long translation is cut with an ellipsis (the full text is in the title), never wrapped. */
+.rmhos-app .rmhos-hintbar-text {
+  min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
