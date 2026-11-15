@@ -2,8 +2,10 @@
  * The IndexedDB implementation of HomeStore, against fake-indexeddb (a dev dependency, exact
  * version): the transaction is the whole point of `transact`, so it is tested for real.
  */
-import { IDBFactory } from 'fake-indexeddb';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SHARE_ARCHIVE_PATH } from '../agent-protocol';
+import { HomeSync } from '../home-sync';
 import { openHomeStore, type CachedHome, type HomeStore } from '../home-store';
 
 const entry = (n: number): CachedHome => ({
@@ -73,5 +75,88 @@ describe('openHomeStore on IndexedDB', () => {
     await mem.transact([{ key: 'a', put: entry(1) }]);
     expect(await mem.get('a')).toEqual(entry(1));
     expect(mem.kind).toBe('memory');
+  });
+});
+
+/**
+ * A REQUEST that fails asynchronously inside the transaction, with a QuotaExceededError (what a
+ * full disk does): `put` is wrapped to run an `add` on a key that already exists, which the
+ * database rejects as a constraint error on the request, and the request's error is then the
+ * quota error. This is the path where `tx.error` is still null when `onerror` fires.
+ */
+describe('a request that fails inside a transaction', () => {
+  const quota = () => new DOMException('disk full', 'QuotaExceededError');
+  const realPut = IDBObjectStore.prototype.put;
+
+  afterEach(() => {
+    IDBObjectStore.prototype.put = realPut;
+  });
+
+  function failPutsFor(key: string) {
+    IDBObjectStore.prototype.put = function (value: unknown, k?: IDBValidKey) {
+      if (k !== key) return realPut.call(this, value, k);
+      const req = this.add(value, k); // the key exists: the request fails, asynchronously
+      Object.defineProperty(req, 'error', { configurable: true, get: () => quota(), set: () => {} });
+      return req;
+    };
+  }
+
+  it('rejects with the request error, so the QuotaExceededError name survives, and applies nothing', async () => {
+    await store.put('main', entry(1));
+    await store.put('gone', entry(9));
+    failPutsFor('main');
+    const err = await store
+      .transact([
+        { key: 'other', put: entry(2) },
+        { key: 'gone', delete: true },
+        { key: 'main', put: entry(3) },
+      ])
+      .then(
+        () => null,
+        (e: unknown) => e,
+      );
+    IDBObjectStore.prototype.put = realPut;
+    expect(err).toBeInstanceOf(DOMException);
+    expect((err as DOMException).name).toBe('QuotaExceededError');
+    expect(await store.get('main')).toEqual(entry(1));
+    expect(await store.get('other')).toBeNull();
+    expect(await store.get('gone')).toEqual(entry(9));
+  });
+
+  it('HomeSync.save on top of it reports storage-full, with the stored home untouched', async () => {
+    const tar = new Uint8Array(1536);
+    tar.set(new TextEncoder().encode('ustar  \0'), 257);
+    tar[0] = 2;
+    const share = new Map<string, Uint8Array>();
+    const vm = {
+      writeShareFile: async (p: string, d: Uint8Array) => void share.set(p, d),
+      readShareFile: async (p: string) => share.get(p)!,
+      deleteShareFile: async (p: string) => void share.delete(p),
+    };
+    const agent = {
+      save: vi.fn(async () => {
+        share.set(SHARE_ARCHIVE_PATH, tar);
+        return { bytes: tar.length };
+      }),
+    };
+    const gz = async (d: Uint8Array) =>
+      new Uint8Array(
+        await new Response(
+          new Blob([d as BlobPart]).stream().pipeThrough(new CompressionStream('gzip')),
+        ).arrayBuffer(),
+      );
+    const old: CachedHome = {
+      archive: await gz(new Uint8Array(1536).fill(0)),
+      sha256: 'old',
+      savedAt: 1,
+    };
+    await store.put('u1', old);
+    const sync = new HomeSync({ userId: 'u1', vm, agent: agent as never, store });
+    await sync.prepare();
+    failPutsFor('u1');
+    const result = await sync.save();
+    IDBObjectStore.prototype.put = realPut;
+    expect(result).toEqual({ status: 'storage-full' });
+    expect(await store.get('u1')).toEqual(old);
   });
 });

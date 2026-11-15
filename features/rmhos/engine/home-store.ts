@@ -97,9 +97,16 @@ function request<T>(
 function transaction(db: IDBDatabase, ops: StoreOp[]) {
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(STORE, 'readwrite');
+    // A failing request (quota, say) reaches `onerror` first, while `tx.error` is still null (it
+    // is set only once the transaction aborts), so the request's own error is what carries the
+    // name that tells a full disk from anything else. `onabort` follows and is the fallback.
+    let requestError: DOMException | null = null;
     tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error ?? new Error('transaction failed'));
-    tx.onabort = () => reject(tx.error ?? new DOMException('aborted', 'AbortError'));
+    tx.onerror = (ev) => {
+      requestError = (ev.target as IDBRequest | null)?.error ?? requestError;
+      reject(requestError ?? tx.error ?? new Error('transaction failed'));
+    };
+    tx.onabort = () => reject(tx.error ?? requestError ?? new DOMException('aborted', 'AbortError'));
     try {
       const st = tx.objectStore(STORE);
       for (const op of ops) {
