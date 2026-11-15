@@ -1396,7 +1396,7 @@ describe('sprint machine: which octave counts', () => {
       'mic',
     ] as const,
   )(
-    '%s: any octave of the written note is right',
+    '%s accepts any octave of the written note',
     (
       source,
     ) => {

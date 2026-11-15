@@ -149,7 +149,7 @@ describe('sprint sentences', () => {
         0,
       ),
     ).toBe(
-      'Play the note: any octave counts.',
+      'Play the note in any octave.',
     );
     expect(
       askHint(
@@ -159,7 +159,7 @@ describe('sprint sentences', () => {
         0,
       ),
     ).toBe(
-      'Play the note: any octave counts.',
+      'Play the note in any octave.',
     );
     expect(
       askHint(
@@ -169,7 +169,7 @@ describe('sprint sentences', () => {
         0,
       ),
     ).toBe(
-      'Play the notes in order: any octave counts.',
+      'Play the notes in order, in any octave.',
     );
   });
 

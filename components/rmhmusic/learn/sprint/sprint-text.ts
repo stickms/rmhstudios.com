@@ -355,7 +355,7 @@ export function askHint(
           {
             ns: 'c-rmhmusic',
             defaultValue:
-              'Play the notes in order: any octave counts.',
+              'Play the notes in order, in any octave.',
           },
         );
   }
@@ -373,7 +373,7 @@ export function askHint(
         {
           ns: 'c-rmhmusic',
           defaultValue:
-            'Play the note: any octave counts.',
+            'Play the note in any octave.',
         },
       );
 }
