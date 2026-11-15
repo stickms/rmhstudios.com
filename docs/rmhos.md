@@ -23,7 +23,7 @@ section wins over the text under it); this page is the runbook.
 
 | Part          | Where                                                                                              | What it does                                                                                                                                                                                                              |
 | ------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The page      | `features/rmhos/` (`engine/`, `ui/`, `api/`), route `app/routes/rmhos.tsx`                         | Downloads the image, runs v86, hands the guest the visitor's identity over a serial line, keeps the home folder in IndexedDB, shows the toolbar. `GET /api/rmhos/session` returns the Linux user name and a relay ticket. |
+| The page      | `features/rmhos/` (`engine/`, `ui/`, `api/`), route `app/routes/rmhos.tsx`                         | Downloads the image, runs v86, hands the guest the visitor's identity over a serial line, keeps the home folder in IndexedDB, shows the toolbar. `GET /api/rmhos/session` returns the Linux user name and a relay ticket (`?ticket=0` answers without minting one: the page asks that way on load, and the machine start asks for its ticket). |
 | The image     | `scripts/rmhos/` (kernel config, patches, rootfs overlay, Dockerfile), published to R2/CDN         | A kernel + root filesystem + BIOS files built from pinned inputs (not bit-for-bit reproducible: Alpine packages float within the release) + a post-boot snapshot (`state.zst`) so a session starts in about 3 s instead of about 15 to 30 s. |
 | The relay hub | `server/rmhos-net/` (one Node process, port 7009, path `/rmhos-net/`), compose service `rmhos-net` | One WebSocket per user carrying Wisp streams to the internet under a policy; DNS over HTTPS (`POST /rmhos-net/dns-query`); `GET /rmhos-net/status`. The only thing in the feature that touches the network.               |
 
@@ -105,6 +105,11 @@ versions must stay on the CDN (see [Roll back an image](#roll-back-an-image)).
    curl -s -o /dev/null -D - -r 0-99 "$CDN/rmhos/$V/state.zst"   # 206, content-type: application/zstd, no content-encoding
    ```
 
+   Before it builds the machine the page sends HEAD to `seabios.bin`, `vgabios.bin`, `bzImage` and `state.zst`, and one
+   ranged GET with `Range` and `X-Accept-Encoding: identity` to `rootfs.ext4` (besides v86's own requests), so the rule
+   must allow GET, HEAD and both headers. A 200 to the ranged request means the disk server ignores `Range`: the page
+   reports it as an invalid image and does not boot.
+
    Cloudflare does not cache `.ext4` or `.zst` by default (they are not on its default extension list), so add a Cache
    Rule for the hostname: URI path starts with `/rmhos/`, Eligible for cache, Edge TTL "use cache-control header if
    present" (the objects carry `immutable`). The files are well under Cloudflare's per-object cache limit (the rootfs is
@@ -114,7 +119,7 @@ versions must stay on the CDN (see [Roll back an image](#roll-back-an-image)).
 4. **Paste the pin.** The last step of the workflow, and `publish-r2.mjs`, print a ready-to-paste TypeScript block
    (`scripts/rmhos/print-pin.mjs`, also runnable on any image directory: `node scripts/rmhos/print-pin.mjs public/rmhos-dev`)
    for the published-image constant `PUBLISHED_IMAGE` in `features/rmhos/engine/image-manifest.ts`. Paste it over the
-   constant.
+   whole `export const PUBLISHED_IMAGE: PinnedImage | null = null;` line (the block keeps that type annotation).
 5. **Flip the catalog to Beta** in the same commit (`features/rmhos/catalog.ts`, see the state-of-play note), commit,
    and let the deploy ship it. Until this commit deploys, the site keeps booting the previous version.
 6. **Look at it.** Open `/rmhos` signed in, in Day and in Night, wait for the desktop, check that it paints and that the
@@ -259,9 +264,12 @@ fail DNS after a minute and could never reconnect. The hub therefore keeps a per
 - `GET /rmhos-net/status?ticket=…` returns `{ connected, streams }` for that ticket's own user (same ticket check as
   DoH, but it does not refresh the ticket) and is limited to 12 requests per user per minute (429). The page polls it
   once when the desktop is ready and every 15 s while the tab is visible to drive the toolbar: `on`, `connecting`, or
-  `error` (three failed polls in a row, 30 s disconnected, or an immediate 401). A 429 counts as no information and
-  visibility changes trigger at most one extra poll per 5 s. With networking disabled the toolbar
-  says "Network off" and nothing is polled or opened.
+  `error` (three failed polls in a row, 30 s disconnected, or an immediate 401). `full: true` (the hub is at its session
+  cap and this user has none) shows "The network is full right now. Try again later." at once. A 429 counts as no
+  information and visibility changes trigger at most one extra poll per 5 s. With networking disabled the toolbar
+  says "Network off" and nothing is polled or opened. While the hub is down the session endpoint still says
+  `enabled: true` (the web tier does not probe the hub), so the page opens a socket and the status poll then shows
+  "Network unavailable".
 - DoH is limited by: the 16 queries in flight per user, a budget of 600 queries per user per minute (429), the same
   daily and per-second byte meter as relayed streams, 4 KiB per query, one fixed upstream.
 
@@ -528,9 +536,9 @@ clear site data or switch browsers, and Restore backup to bring one back; the to
 
 **Sizes and times** (smoke case 10, `RMHOS_SMOKE_BIG=1`, a 96 MiB home of 5016 files, 16 of them 5 MiB, in the headless
 emulator on a 4-core sandbox): RESTORE answers in about 8 s and SAVE in about 38 s (SAVE is the slow one because the
-desktop is running and the emulated CPU is shared). The host's timeouts are 120 s each, so a full 128 MB home fits on a
-machine like that with room to spare, and a phone several times slower would not; a timeout shows the "handshake" screen
-(restore) or "not saved" (save) and the data in IndexedDB stays safe. The RESTORE path reads the archive once. GNU tar
+desktop is running and the emulated CPU is shared). The host's timeouts are 240 s each, so a full 128 MB home fits on a
+machine like that with room to spare, and a browser tab up to about six times slower still fits; a timeout shows the
+"handshake" screen (restore) or "not saved" (save) and the data in IndexedDB stays safe. The RESTORE path reads the archive once. GNU tar
 exits 1 when a file changed while it was read, which is normal with a desktop writing in the home; the agent treats exit
 1 as saved and only exit 2 as "not saved".
 
