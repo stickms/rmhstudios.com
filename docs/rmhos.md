@@ -7,6 +7,14 @@ visitor's code on a server. The design and its owner decisions are in
 [`superpowers/specs/2026-11-14-rmhos-design.md`](superpowers/specs/2026-11-14-rmhos-design.md) (its "Owner amendments"
 section wins over the text under it); this page is the runbook.
 
+> **State of play.** Networking is **off in production** until two things exist: the egress firewall unit is
+> installed on the VPS (see [The sandbox](#the-sandbox)) **and** `RMHOS_NET_TICKET_SECRET` is set in the production env
+> file. The page itself **cannot boot** until an image has been published and its manifest committed (see
+> [Publish a new image version](#publish-a-new-image-version)). Until then the catalog card says "Coming soon":
+> `features/rmhos/catalog.ts` has `status: 'Coming soon'`, and it must go back to `'Beta'` in the same commit that pins
+> the first published image (regenerate the catalog snapshot with
+> `pnpm exec vitest run lib/__tests__/catalog-contract.test.ts -u`, and `pnpm docs:site` for the site reference).
+
 ## The three moving parts
 
 | Part          | Where                                                                                              | What it does                                                                                                                                                                                                              |
@@ -70,6 +78,8 @@ The page cannot boot at all until an image version has been published and pinned
 | `RMHOS_NET_CORS_ORIGIN`                               | hub           | empty                           | Allowed origin when the page and the hub are on different origins.                                                                                       |
 | `VITE_RMHOS_NET_URL`                                  | web (build)   | the site origin + `/rmhos-net/` | Public relay URL when it is not the site's own origin. Otherwise `BETTER_AUTH_URL`'s origin with the scheme swapped to ws(s).                            |
 | `PORT_RMHOS_NET`                                      | `deploy.sh`   | `7009`                          | Loopback port the deploy health-checks.                                                                                                                  |
+| `RMHOS_EGRESS_IPV6_SUBNET` | `deploy/rmhos-net/egress-firewall.sh` | unset | IPv6 prefix of the `rmhos-egress` network when Docker IPv6 is on there; the firewall then drops its private ranges too. |
+| `RMHOS_SMOKE_CASES`, `RMHOS_SMOKE_CMDLINE_EXTRA`, `RMHOS_SMOKE_VERBOSE` | `pnpm rmhos:smoke` | all seven cases, none, off | Run a subset (`3,4`), append to the cold boot's kernel command line, echo serial0. |
 | `RMHOS_BUILD_CA_BUNDLE`, `RMHOS_OUT_DIR`, `RMHOS_DIR` | image scripts | see `scripts/rmhos/*.sh`        | Extra CA for the build, output directory, and image directory for the smoke test.                                                                        |
 
 ## The relay policy
@@ -85,9 +95,32 @@ visitor (no valid ticket, no socket). For a signed-in user:
 - **Caps:** 64 streams per connection, 30 CONNECTs per user per 10 s, 8 concurrent lookups, bytes per second and per
   day as above, bounded queues in both directions (a client that ignores flow-control credit is closed, one that
   respects it is paused).
+- **Memory bounds** (the container has 256 MB and restart policy `no`): the largest Wisp frame accepted is 64 KiB (v86
+  sends frames of at most the guest MTU, 1500 bytes; larger ones close the socket with 1009). A connection holds at most
+  about **17 MiB**: the accounted guest-to-remote queue (1 MiB per stream, 8 MiB per connection, then the connection is
+  closed with 4008) + up to 64 KiB in each of 64 upstream socket buffers (a write never takes a buffer past that mark)
+  + one 64 KiB read per stream waiting for the WebSocket + the WebSocket's 1 MiB send buffer. A process-wide backstop
+  closes the heaviest connection (4008) when the accounted queues of all connections together pass 96 MiB.
 - **Switching it off** needs no deploy of code: set `RMHOS_NET_ENABLED=0` (or remove `RMHOS_NET_TICKET_SECRET`) in the
   environment and restart the web tier and the hub. `docker compose --profile rmhos-net stop rmhos-net` stops only
   the hub (the toolbar then shows "Network unavailable"; the machine keeps working).
+
+## Switch the relay off now
+
+Stop the hub (sockets close at once; the toolbar shows "Network unavailable"; machines keep running), and stop the
+recovery timer if you installed it, or it would start the hub again:
+
+```bash
+cd /home/user/rmhstudios.com            # the checkout deploy.sh runs from
+sudo systemctl disable --now rmhos-net-recover.timer 2>/dev/null || true
+docker compose -p rmhstudios-prod --env-file .env.production --profile rmhos-net stop rmhos-net
+```
+
+To keep it off across deploys and make the page say "Network off" without ever opening a socket, also set
+`RMHOS_NET_ENABLED=0` (or delete `RMHOS_NET_TICKET_SECRET`) in `.env.production` and restart the web tier
+(`docker compose -p rmhstudios-prod --env-file .env.production up -d web`, or the next deploy). A deploy does not start
+the hub while `RMHOS_NET_TICKET_SECRET` is missing; with only `RMHOS_NET_ENABLED=0` the hub starts but refuses every
+connection with 503.
 
 ## Ticket lifecycle
 
@@ -100,23 +133,43 @@ fail DNS after a minute and could never reconnect. The hub therefore keeps a per
 - A ticket must be **first presented** (WebSocket upgrade, DoH query or status request) within its 60 s. The page
   fetches the session just before it builds the machine, after the emulator module has loaded, and fetches again if
   more than about 45 s have passed (a slow state download, a cold-boot fallback).
-- Once seen, a ticket is accepted again for reconnects, DNS and status while its signature verifies, it was used within
-  the last **15 minutes** (any accepted use, any relayed byte for that user and every answered ping refreshes it) and
-  it is less than **12 hours** old. Otherwise 401.
+- Once seen, a ticket is accepted again for reconnects and DNS while its signature verifies, it was used within the
+  last **15 minutes** (a WebSocket upgrade, a DoH query, any relayed byte for that user and every answered ping
+  refresh it) and it is less than **12 hours** old. Otherwise 401. **A status request does not count as use**: polling
+  alone cannot keep a ticket alive.
+- **A live socket ends with its ticket.** Whenever a ticket stops being valid (12 h reached, idle expiry, evicted by the
+  table cap) the user's socket is closed with code **4001** and its streams are torn down: on the hub's ping interval
+  (30 s) for age and idle, immediately for eviction. A connected tab answers pings, so in practice only the 12 h cap
+  ends an open session. v86 then reconnects with the same URL and is refused; the next status poll gets 401, the toolbar
+  shows "Network unavailable" and the page says "Your network session ended. Restart rmhOS to reconnect." Superseding by a
+  newer ticket still closes the older socket with 4000.
 - **One ticket per user:** presenting a newer ticket removes the older one and closes that user's older socket (close
   code 4000). An older ticket cannot displace a newer one.
-- The table holds at most 10 000 tickets (the one idle longest goes first), is pruned every 10 minutes and lives only
+- The table holds at most 10 000 tickets (the one idle longest goes first, and its socket is closed), is pruned every 10 minutes and lives only
   in the hub's memory: **restarting the hub invalidates every ticket**; a page then needs a reload (a new session
   request) to get network back.
 - **The ticket is a bearer credential for the life of the session.** Whoever holds it can spend that user's relay
-  allowance (under that user's caps) until it goes idle. It appears in the relay WebSocket URL and the DoH URL, which
-  go to our own origin (or `VITE_RMHOS_NET_URL`); Apache logs `/rmhos-net/` without the query string
-  (`combined_noquery` in `deploy/apache/rmhstudios.conf`), the hub never logs it, and it is never in server-rendered
-  HTML (the session query is client-only, `no-store` and not dehydrated).
-- `GET /rmhos-net/status?ticket=…` returns `{ connected, streams }` for that ticket's own user (same auth as DoH). The
-  page polls it once when the desktop is ready and every 15 s while the tab is visible to drive the toolbar: `on`,
-  `connecting`, or `error` (three failed polls in a row, or 30 s disconnected). With networking disabled the toolbar
+  allowance (under that user's caps) until it ends (idle, 12 h, replaced). Where it can appear:
+  - the relay WebSocket URL and the DoH URL (`?ticket=…`) on our own origin (or `VITE_RMHOS_NET_URL`), so in
+    **Cloudflare's edge and access logs** (Cloudflare terminates TLS in front of Apache) and in whatever Cloudflare
+    analytics keep request URLs;
+  - **Apache's access log: no**, `/rmhos-net/` is logged with `combined_noquery` (no query string)
+    (`deploy/apache/rmhstudios.conf`); but **Apache's ErrorLog** can echo the request URL on a proxy error (hub down, a
+    refused upgrade), so treat the error log as sensitive;
+  - the **browser's devtools network panel** and any browser extension that can read requests (the session response
+    carries it too, `no-store`);
+  - the hub never logs it, and it is never in server-rendered HTML (the session query is client-only and not
+    dehydrated).
+  It does **not** reach browser history (the URLs are made by script, as a WebSocket and `fetch` calls; no navigation
+  ever loads them) and it does not appear in a `Referer` (a same-origin `fetch` sends the page URL `/rmhos`, a WebSocket
+  handshake sends `Origin`, neither includes the request URL).
+- `GET /rmhos-net/status?ticket=…` returns `{ connected, streams }` for that ticket's own user (same ticket check as
+  DoH, but it does not refresh the ticket) and is limited to 12 requests per user per minute (429). The page polls it
+  once when the desktop is ready and every 15 s while the tab is visible to drive the toolbar: `on`, `connecting`, or
+  `error` (three failed polls in a row, 30 s disconnected, or an immediate 401). With networking disabled the toolbar
   says "Network off" and nothing is polled or opened.
+- DoH is limited by: the 16 queries in flight per user, a budget of 600 queries per user per minute (429), the same
+  daily and per-second byte meter as relayed streams, 4 KiB per query, one fixed upstream.
 
 ## The sandbox
 
@@ -151,7 +204,20 @@ The hub dials the internet for strangers, so it is isolated from the rest of the
   `rmhOS network relay NOT started: egress firewall not proven` with the install commands above, leaves the hub stopped
   and carries on; the site itself is unaffected. The same happens when `RMHOS_NET_TICKET_SECRET` is not in the env
   file. **Networking therefore stays off in production until the unit is installed and `RMHOS_NET_TICKET_SECRET` is
-  set.** Because the restart policy is `no`, the hub stays down after a crash until the next deploy.
+  set.** Because the restart policy is `no`, the hub stays down after a crash until it is brought back through the probe.
+  **Without a full deploy**, as the user that runs `deploy.sh`:
+
+  ```bash
+  cd /home/rmhstudios/rmhstudios.com
+  bash deploy/rmhos-net/recover.sh     # hub healthy: nothing; else probe the firewall, and only then `compose up -d`
+  ```
+
+  which is the same as `ENV_FILE=.env.production PROJECT_NAME=rmhstudios-prod bash deploy/rmhos-net/probe-firewall.sh &&
+  docker compose -p rmhstudios-prod --env-file .env.production --profile rmhos-net up -d --no-build rmhos-net`. To have
+  this happen by itself after a crash, install the optional units (edit the paths and user first):
+  `sudo cp deploy/systemd/rmhos-net-recover.{service,timer} /etc/systemd/system/ && sudo systemctl daemon-reload &&
+  sudo systemctl enable --now rmhos-net-recover.timer`. It runs the same script every two minutes, so the hub only ever
+  starts behind a proven firewall and only while `RMHOS_NET_TICKET_SECRET` is set.
 - **Health:** the hub answers `GET /health` (`/rmhos-net/health` through Apache); `deploy.sh` checks it. The Go `status` service does not watch it yet.
 
 ## Whose address, and what the logs are for
