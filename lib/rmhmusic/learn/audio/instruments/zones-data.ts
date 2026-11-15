@@ -3,11 +3,24 @@
  * instruments: one entry per converted MP3 under public/music/rmhmusic/instruments/<id>/.
  * An instrument with no zones has no samples built yet and is not offered.
  */
-import type { InstrumentId, ZoneMap } from './types';
+import type {
+  InstrumentId,
+  ZoneMap,
+} from './types';
 
-export const ZONES: Readonly<Record<InstrumentId, ZoneMap>> = {
-  piano: [],
-  guitar: [],
-  violin: [],
-  flute: [],
-};
+export const ZONES: Readonly<
+  Record<
+    InstrumentId,
+    ZoneMap
+  >
+> =
+  {
+    piano:
+      [],
+    guitar:
+      [],
+    violin:
+      [],
+    flute:
+      [],
+  };

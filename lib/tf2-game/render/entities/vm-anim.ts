@@ -19,7 +19,10 @@
  *     view model changes sequence at tick, not animation, boundaries.
  */
 import { VIEWMODEL_ACTTABLE } from './acttables';
-import type { Animator, SequenceDesc } from './animator';
+import type {
+  Animator,
+  SequenceDesc,
+} from './animator';
 
 /** Blend time for a STUDIO_SNAP view-model sequence change (seconds; ~3 frames at 60 Hz). */
 export const VM_SNAP_BLEND = 0.05;
@@ -27,37 +30,104 @@ export const VM_SNAP_BLEND = 0.05;
 /** What a weapon contributes to the translation: its role and its own activity table. */
 export interface VmWeaponTable {
   role: string;
-  vmActivities: Readonly<Record<string, string>>;
+  vmActivities: Readonly<
+    Record<
+      string,
+      string
+    >
+  >;
 }
 
 /** The arms activities to try for a base activity, best first (deduplicated). */
-export function vmActivityCandidates(base: string, w: VmWeaponTable | undefined): string[] {
-  const out: string[] = [];
-  const add = (a: string | undefined) => {
-    if (a && !out.includes(a)) out.push(a);
-  };
-  add(w?.vmActivities[base]);
-  if (w) add(VIEWMODEL_ACTTABLE[w.role]?.[base]);
-  add(base);
+export function vmActivityCandidates(
+  base: string,
+  w:
+    | VmWeaponTable
+    | undefined,
+): string[] {
+  const out: string[] =
+    [];
+  const add =
+    (
+      a:
+        | string
+        | undefined,
+    ) => {
+      if (
+        a &&
+        !out.includes(
+          a,
+        )
+      )
+        out.push(
+          a,
+        );
+    };
+  add(
+    w
+      ?.vmActivities[
+      base
+    ],
+  );
+  if (
+    w
+  )
+    add(
+      VIEWMODEL_ACTTABLE[
+        w
+          .role
+      ]?.[
+        base
+      ],
+    );
+  add(
+    base,
+  );
   return out;
 }
 
 /** The arms sequence for a base activity (SelectWeightedSequence over the first activity found). */
 export function resolveVmSequence(
-  anim: Pick<Animator, 'set'>,
+  anim: Pick<
+    Animator,
+    'set'
+  >,
   base: string,
-  w: VmWeaponTable | undefined,
+  w:
+    | VmWeaponTable
+    | undefined,
   random?: () => number,
-): { activity: string; seq: SequenceDesc } | null {
-  for (const act of vmActivityCandidates(base, w)) {
-    const seq = anim.set.selectWeightedSequence(act, random);
-    if (seq) return { activity: act, seq };
+): {
+  activity: string;
+  seq: SequenceDesc;
+} | null {
+  for (const act of vmActivityCandidates(
+    base,
+    w,
+  )) {
+    const seq =
+      anim.set.selectWeightedSequence(
+        act,
+        random,
+      );
+    if (
+      seq
+    )
+      return {
+        activity:
+          act,
+        seq,
+      };
   }
   return null;
 }
 
 /** What a view-model update did. */
-export type VmPlayResult = 'none' | 'continue' | 'restart' | 'change';
+export type VmPlayResult =
+  | 'none'
+  | 'continue'
+  | 'restart'
+  | 'change';
 
 /**
  * Plays a base view-model activity on the arms (viewmodel.ts calls it when the weapon's
@@ -69,25 +139,76 @@ export type VmPlayResult = 'none' | 'continue' | 'restart' | 'change';
 export function playVmActivity(
   anim: Animator,
   base: string,
-  w: VmWeaponTable | undefined,
+  w:
+    | VmWeaponTable
+    | undefined,
   restart: boolean,
 ): VmPlayResult {
-  if (!base) return 'none';
-  const r = resolveVmSequence(anim, base, w);
-  if (!r) return 'none';
-  anim.snapBlend = VM_SNAP_BLEND;
-  const main = anim.main;
-  if (main) {
+  if (
+    !base
+  )
+    return 'none';
+  const r =
+    resolveVmSequence(
+      anim,
+      base,
+      w,
+    );
+  if (
+    !r
+  )
+    return 'none';
+  anim.snapBlend =
+    VM_SNAP_BLEND;
+  const main =
+    anim.main;
+  if (
+    main
+  ) {
     // A looping sequence of this activity already playing keeps its cycle.
-    const list = anim.set.activities.get(r.activity);
-    if (main.seq.looping && list)
-      for (const e of list) if (e.seq === main.seq.name) return 'continue';
-    if (main.seq === r.seq) {
-      if (r.seq.looping || !restart) return 'continue';
-      anim.setSequence(r.seq, { restart: true });
+    const list =
+      anim.set.activities.get(
+        r.activity,
+      );
+    if (
+      main
+        .seq
+        .looping &&
+      list
+    )
+      for (const e of list)
+        if (
+          e.seq ===
+          main
+            .seq
+            .name
+        )
+          return 'continue';
+    if (
+      main.seq ===
+      r.seq
+    ) {
+      if (
+        r
+          .seq
+          .looping ||
+        !restart
+      )
+        return 'continue';
+      anim.setSequence(
+        r.seq,
+        {
+          restart: true,
+        },
+      );
       return 'restart';
     }
   }
-  anim.setSequence(r.seq, { restart: true });
+  anim.setSequence(
+    r.seq,
+    {
+      restart: true,
+    },
+  );
   return 'change';
 }

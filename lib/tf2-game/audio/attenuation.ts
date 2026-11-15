@@ -52,58 +52,164 @@ export const SNDLVL_TALKING = 80;
 export const SNDLVL_GUNFIRE = 140;
 
 /** soundflags.h SNDLVL_TO_ATTN. */
-export function sndlvlToAttn(soundlevel: number): number {
-  return soundlevel > 50 ? 20 / (soundlevel - 50) : 4;
+export function sndlvlToAttn(
+  soundlevel: number,
+): number {
+  return soundlevel >
+    50
+    ? 20 /
+        (soundlevel -
+          50)
+    : 4;
 }
 
 /** soundflags.h ATTN_TO_SNDLVL (truncated to an integer, as the macro's cast does). */
-export function attnToSndlvl(attn: number): number {
-  return attn ? Math.trunc(50 + 20 / attn) : 0;
+export function attnToSndlvl(
+  attn: number,
+): number {
+  return attn
+    ? Math.trunc(
+        50 +
+          20 /
+            attn,
+      )
+    : 0;
 }
 
 /** SNDLVL_TO_DIST_MULT: 0 for SNDLVL_NONE (no attenuation). */
-export function sndlvlToDistMult(soundlevel: number): number {
-  if (!soundlevel) return 0;
-  return Math.pow(10, SND_REFDB / 20) / Math.pow(10, soundlevel / 20) / SND_REFDIST;
+export function sndlvlToDistMult(
+  soundlevel: number,
+): number {
+  if (
+    !soundlevel
+  )
+    return 0;
+  return (
+    Math.pow(
+      10,
+      SND_REFDB /
+        20,
+    ) /
+    Math.pow(
+      10,
+      soundlevel /
+        20,
+    ) /
+    SND_REFDIST
+  );
 }
 
 /** SND_GetGainFromMult: the distance gain (0..1) of a sound `dist` units away. */
-export function gainFromDistMult(distMult: number, dist: number): number {
-  if (distMult <= 0) return 1;
-  const relative = dist * distMult;
-  let gain = relative > 0.1 ? 1 / relative : 10;
-  if (gain > SND_GAIN_MAX) gain = SND_GAIN_MAX;
-  if (gain < SND_GAIN_MIN) {
+export function gainFromDistMult(
+  distMult: number,
+  dist: number,
+): number {
+  if (
+    distMult <=
+    0
+  )
+    return 1;
+  const relative =
+    dist *
+    distMult;
+  let gain =
+    relative >
+    0.1
+      ? 1 /
+        relative
+      : 10;
+  if (
+    gain >
+    SND_GAIN_MAX
+  )
+    gain =
+      SND_GAIN_MAX;
+  if (
+    gain <
+    SND_GAIN_MIN
+  ) {
     // Sounds under snd_gain_min fall to zero over the distance it took them to get there.
-    const fade = 2 - relative * SND_GAIN_MIN;
+    const fade =
+      2 -
+      relative *
+        SND_GAIN_MIN;
     // At audibleRadius() the fade is 0 in exact arithmetic but ~1e-16 in doubles;
     // snap it so a voice at the edge is culled rather than kept at an inaudible gain.
-    gain = fade > 1e-9 ? SND_GAIN_MIN * fade : 0;
+    gain =
+      fade >
+      1e-9
+        ? SND_GAIN_MIN *
+          fade
+        : 0;
   }
   return gain;
 }
 
 /** The distance gain of a sound of `soundlevel` dB heard `dist` units away. */
-export function distanceGain(soundlevel: number, dist: number): number {
-  return gainFromDistMult(sndlvlToDistMult(soundlevel), dist);
+export function distanceGain(
+  soundlevel: number,
+  dist: number,
+): number {
+  return gainFromDistMult(
+    sndlvlToDistMult(
+      soundlevel,
+    ),
+    dist,
+  );
 }
 
 /** Distance up to which the sound plays at full volume (units); Infinity for SNDLVL_NONE. */
-export function fullVolumeRadius(soundlevel: number): number {
-  const m = sndlvlToDistMult(soundlevel);
-  return m > 0 ? 1 / m : Infinity;
+export function fullVolumeRadius(
+  soundlevel: number,
+): number {
+  const m =
+    sndlvlToDistMult(
+      soundlevel,
+    );
+  return m >
+    0
+    ? 1 /
+        m
+    : Infinity;
 }
 
 /** Distance past which the sound is silent (units); Infinity for SNDLVL_NONE. */
-export function audibleRadius(soundlevel: number): number {
-  const m = sndlvlToDistMult(soundlevel);
-  return m > 0 ? 2 / (SND_GAIN_MIN * m) : Infinity;
+export function audibleRadius(
+  soundlevel: number,
+): number {
+  const m =
+    sndlvlToDistMult(
+      soundlevel,
+    );
+  return m >
+    0
+    ? 2 /
+        (SND_GAIN_MIN *
+          m)
+    : Infinity;
 }
 
 /** soundlevel_t from an ambient_generic radius (SDK ComputeSoundlevel): 40 dB at `radius` units. */
-export function soundlevelForRadius(radius: number, everywhere = false): number {
-  if (!(radius > 0) || everywhere) return SNDLVL_NONE;
-  return Math.trunc(40 + 20 * Math.log10(radius / SND_REFDIST));
+export function soundlevelForRadius(
+  radius: number,
+  everywhere = false,
+): number {
+  if (
+    !(
+      radius >
+      0
+    ) ||
+    everywhere
+  )
+    return SNDLVL_NONE;
+  return Math.trunc(
+    40 +
+      20 *
+        Math.log10(
+          radius /
+            SND_REFDIST,
+        ),
+  );
 }
 
 /** A fade to silence between two distances for sounds at or under a level (see the header). */
@@ -122,37 +228,95 @@ export interface FalloffProfile {
 }
 
 /** The plain Source curve (TF2, HL2, Portal). */
-export const SOURCE_FALLOFF: FalloffProfile = { bands: [] };
+export const SOURCE_FALLOFF: FalloffProfile =
+  {
+    bands:
+      [],
+  };
 
 /** CS:GO's operator-stack falloff, approximated (see the header): quiet sounds stop carrying. */
-export const CSGO_FALLOFF: FalloffProfile = {
-  bands: [
-    // Foley: weapon draws, reloads, bolt pulls, pin pulls, item pickups (60–65 dB).
-    { maxSoundlevel: 70, fadeStart: 350, fadeEnd: 800 },
-    // Footsteps, ladder steps, grenade bounces, landings (75 dB).
-    { maxSoundlevel: 77, fadeStart: 600, fadeEnd: 1100 },
-  ],
-};
+export const CSGO_FALLOFF: FalloffProfile =
+  {
+    bands:
+      [
+        // Foley: weapon draws, reloads, bolt pulls, pin pulls, item pickups (60–65 dB).
+        {
+          maxSoundlevel: 70,
+          fadeStart: 350,
+          fadeEnd: 800,
+        },
+        // Footsteps, ladder steps, grenade bounces, landings (75 dB).
+        {
+          maxSoundlevel: 77,
+          fadeStart: 600,
+          fadeEnd: 1100,
+        },
+      ],
+  };
 
 /** The profile a game's sounds attenuate by. */
-export function falloffProfileFor(game: string): FalloffProfile {
-  return game === 'csgo' ? CSGO_FALLOFF : SOURCE_FALLOFF;
+export function falloffProfileFor(
+  game: string,
+): FalloffProfile {
+  return game ===
+    'csgo'
+    ? CSGO_FALLOFF
+    : SOURCE_FALLOFF;
 }
 
-function bandFor(profile: FalloffProfile, soundlevel: number): FalloffBand | null {
-  if (!soundlevel) return null;
-  for (const b of profile.bands) if (soundlevel <= b.maxSoundlevel) return b;
+function bandFor(
+  profile: FalloffProfile,
+  soundlevel: number,
+): FalloffBand | null {
+  if (
+    !soundlevel
+  )
+    return null;
+  for (const b of profile.bands)
+    if (
+      soundlevel <=
+      b.maxSoundlevel
+    )
+      return b;
   return null;
 }
 
 /** The profile's extra factor (0..1) at `dist`: 1 before the band's fade, 0 after it. */
-export function falloffFade(profile: FalloffProfile, soundlevel: number, dist: number): number {
-  const b = bandFor(profile, soundlevel);
-  if (!b || dist <= b.fadeStart) return 1;
-  if (dist >= b.fadeEnd) return 0;
+export function falloffFade(
+  profile: FalloffProfile,
+  soundlevel: number,
+  dist: number,
+): number {
+  const b =
+    bandFor(
+      profile,
+      soundlevel,
+    );
+  if (
+    !b ||
+    dist <=
+      b.fadeStart
+  )
+    return 1;
+  if (
+    dist >=
+    b.fadeEnd
+  )
+    return 0;
   // Smoothstep: no corner in loudness where the fade begins or ends.
-  const t = (dist - b.fadeStart) / (b.fadeEnd - b.fadeStart);
-  return 1 - t * t * (3 - 2 * t);
+  const t =
+    (dist -
+      b.fadeStart) /
+    (b.fadeEnd -
+      b.fadeStart);
+  return (
+    1 -
+    t *
+      t *
+      (3 -
+        2 *
+          t)
+  );
 }
 
 /** The distance gain under a profile: the Source curve times the profile's fade. */
@@ -161,13 +325,40 @@ export function profileDistanceGain(
   soundlevel: number,
   dist: number,
 ): number {
-  const g = distanceGain(soundlevel, dist);
-  return g > 0 ? g * falloffFade(profile, soundlevel, dist) : 0;
+  const g =
+    distanceGain(
+      soundlevel,
+      dist,
+    );
+  return g >
+    0
+    ? g *
+        falloffFade(
+          profile,
+          soundlevel,
+          dist,
+        )
+    : 0;
 }
 
 /** Distance past which a sound is silent under a profile (units). */
-export function profileAudibleRadius(profile: FalloffProfile, soundlevel: number): number {
-  const b = bandFor(profile, soundlevel);
-  const r = audibleRadius(soundlevel);
-  return b ? Math.min(r, b.fadeEnd) : r;
+export function profileAudibleRadius(
+  profile: FalloffProfile,
+  soundlevel: number,
+): number {
+  const b =
+    bandFor(
+      profile,
+      soundlevel,
+    );
+  const r =
+    audibleRadius(
+      soundlevel,
+    );
+  return b
+    ? Math.min(
+        r,
+        b.fadeEnd,
+      )
+    : r;
 }

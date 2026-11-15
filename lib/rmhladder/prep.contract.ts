@@ -6,7 +6,18 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { PrepSheet } from '@/lib/rmhladder/prep.server';
 
-export const buildPrepSheetApi = endpoint<{
-  body: { applicationId: string };
-  res: { sheet: PrepSheet };
-}>()({ method: 'POST', path: '/api/rmhladder/prep' });
+export const buildPrepSheetApi =
+  endpoint<{
+    body: {
+      applicationId: string;
+    };
+    res: {
+      sheet: PrepSheet;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/rmhladder/prep',
+    },
+  );

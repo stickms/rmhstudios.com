@@ -5,40 +5,86 @@
  * The server expects { drawingId, amount } where amount is the cumulative bid.
  */
 
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
 
 interface BidControlsProps {
   currentBid: number;
   currency: number;
-  onBid: (amount: number) => void;
+  onBid: (
+    amount: number,
+  ) => void;
   disabled?: boolean;
 }
 
 const INCREMENT = 50;
 
-export default function BidControls({ currentBid, currency, onBid, disabled }: BidControlsProps) {
-  const { t } = useTranslation("c-rmhbox");
-  const canIncrease = !disabled && currency >= INCREMENT;
-  const canDecrease = !disabled && currentBid >= INCREMENT;
+export default function BidControls({
+  currentBid,
+  currency,
+  onBid,
+  disabled,
+}: BidControlsProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  const canIncrease =
+    !disabled &&
+    currency >=
+      INCREMENT;
+  const canDecrease =
+    !disabled &&
+    currentBid >=
+      INCREMENT;
 
   return (
     <div className="flex items-center gap-2">
       <button
         className="w-8 h-8 rounded-full bg-app-border text-app-text font-bold disabled:opacity-40"
-        onClick={() => onBid(currentBid - INCREMENT)}
-        disabled={!canDecrease}
-        aria-label={t("decrease-bid", { defaultValue: "Decrease bid" })}
+        onClick={() =>
+          onBid(
+            currentBid -
+              INCREMENT,
+          )
+        }
+        disabled={
+          !canDecrease
+        }
+        aria-label={t(
+          'decrease-bid',
+          {
+            defaultValue:
+              'Decrease bid',
+          },
+        )}
       >
         −
       </button>
       <span className="w-16 text-center text-sm font-mono text-app-text">
-        {currentBid}
+        {
+          currentBid
+        }
       </span>
       <button
         className="w-8 h-8 rounded-full bg-app-accent text-app-accent-fg font-bold disabled:opacity-40"
-        onClick={() => onBid(currentBid + INCREMENT)}
-        disabled={!canIncrease}
-        aria-label={t("increase-bid", { defaultValue: "Increase bid" })}
+        onClick={() =>
+          onBid(
+            currentBid +
+              INCREMENT,
+          )
+        }
+        disabled={
+          !canIncrease
+        }
+        aria-label={t(
+          'increase-bid',
+          {
+            defaultValue:
+              'Increase bid',
+          },
+        )}
       >
         +
       </button>

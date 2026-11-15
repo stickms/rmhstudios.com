@@ -9,7 +9,7 @@ const entry: AppInfo = {
     'rmhOS boots a real Linux desktop inside your browser tab with an x86 emulator. It starts from a saved snapshot, so the desktop is ready in seconds, and it is signed in as your own account.',
   href: '/rmhos',
   cta: 'Open Desktop',
-  status: 'Beta',
+  status: 'Coming soon',
   isSteam: false,
   gradient: 'from-slate-500 via-zinc-600 to-neutral-700',
   iconName: 'Monitor',

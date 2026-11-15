@@ -21,44 +21,93 @@
  */
 
 /** Storage prefix. Separate namespace from `rmharks/` so serving rules can differ. */
-export const VOICE_PREFIX = 'dm-voice/';
+export const VOICE_PREFIX =
+  'dm-voice/';
 
 /**
  * `_` is the field separator. Conversation ids are cuids (`[a-z0-9]+`), so the
  * separator can never appear inside the id, and `_` is allowed by
  * `isSafeFilename`.
  */
-const FILENAME_RE = /^([A-Za-z0-9]+)_([A-Za-z0-9-]+)\.([A-Za-z0-9]{2,4})$/;
+const FILENAME_RE =
+  /^([A-Za-z0-9]+)_([A-Za-z0-9-]+)\.([A-Za-z0-9]{2,4})$/;
 
 /** Container extensions a browser `MediaRecorder` can hand us. */
-const EXT_BY_TYPE: Record<string, string> = {
-  'audio/webm': 'webm',
-  'audio/ogg': 'ogg',
-  'audio/mp4': 'm4a',
-  'audio/aac': 'aac',
-  'audio/mpeg': 'mp3',
-};
+const EXT_BY_TYPE: Record<
+  string,
+  string
+> =
+  {
+    'audio/webm':
+      'webm',
+    'audio/ogg':
+      'ogg',
+    'audio/mp4':
+      'm4a',
+    'audio/aac':
+      'aac',
+    'audio/mpeg':
+      'mp3',
+  };
 
-const TYPE_BY_EXT: Record<string, string> = {
-  webm: 'audio/webm',
-  ogg: 'audio/ogg',
-  m4a: 'audio/mp4',
-  mp4: 'audio/mp4',
-  aac: 'audio/aac',
-  mp3: 'audio/mpeg',
-};
+const TYPE_BY_EXT: Record<
+  string,
+  string
+> =
+  {
+    webm: 'audio/webm',
+    ogg: 'audio/ogg',
+    m4a: 'audio/mp4',
+    mp4: 'audio/mp4',
+    aac: 'audio/aac',
+    mp3: 'audio/mpeg',
+  };
 
 /** Container extension for a recorder MIME type (codec parameters ignored). */
-export function voiceExtForContentType(contentType: string): string | null {
-  const base = contentType.toLowerCase().split(';')[0].trim();
-  return EXT_BY_TYPE[base] ?? null;
+export function voiceExtForContentType(
+  contentType: string,
+):
+  | string
+  | null {
+  const base =
+    contentType
+      .toLowerCase()
+      .split(
+        ';',
+      )[0]
+      .trim();
+  return (
+    EXT_BY_TYPE[
+      base
+    ] ??
+    null
+  );
 }
 
 /** MIME type to serve a stored object with, derived from its filename. */
-export function voiceContentTypeForFilename(filename: string): string {
-  const dot = filename.lastIndexOf('.');
-  const ext = dot >= 0 ? filename.slice(dot + 1).toLowerCase() : '';
-  return TYPE_BY_EXT[ext] ?? 'application/octet-stream';
+export function voiceContentTypeForFilename(
+  filename: string,
+): string {
+  const dot =
+    filename.lastIndexOf(
+      '.',
+    );
+  const ext =
+    dot >=
+    0
+      ? filename
+          .slice(
+            dot +
+              1,
+          )
+          .toLowerCase()
+      : '';
+  return (
+    TYPE_BY_EXT[
+      ext
+    ] ??
+    'application/octet-stream'
+  );
 }
 
 /**
@@ -67,21 +116,48 @@ export function voiceContentTypeForFilename(filename: string): string {
  * The random half is caller-supplied so the server controls entropy (and tests
  * stay deterministic). It must be `[A-Za-z0-9-]+`.
  */
-export function voiceFilename(conversationId: string, unique: string, ext: string): string {
+export function voiceFilename(
+  conversationId: string,
+  unique: string,
+  ext: string,
+): string {
   return `${conversationId}_${unique}.${ext.replace(/^\./, '')}`;
 }
 
 /** The conversation a filename belongs to, or `null` if it is not one of ours. */
 export function parseVoiceFilename(
   filename: string,
-): { conversationId: string; unique: string; ext: string } | null {
-  const m = FILENAME_RE.exec(filename);
-  if (!m) return null;
-  if (!TYPE_BY_EXT[m[3].toLowerCase()]) return null;
-  return { conversationId: m[1], unique: m[2], ext: m[3].toLowerCase() };
+): {
+  conversationId: string;
+  unique: string;
+  ext: string;
+} | null {
+  const m =
+    FILENAME_RE.exec(
+      filename,
+    );
+  if (
+    !m
+  )
+    return null;
+  if (
+    !TYPE_BY_EXT[
+      m[3].toLowerCase()
+    ]
+  )
+    return null;
+  return {
+    conversationId:
+      m[1],
+    unique:
+      m[2],
+    ext: m[3].toLowerCase(),
+  };
 }
 
-export function voiceObjectKey(filename: string): string {
+export function voiceObjectKey(
+  filename: string,
+): string {
   return `${VOICE_PREFIX}${filename}`;
 }
 
@@ -91,15 +167,44 @@ export function voiceObjectKey(filename: string): string {
  * A same-origin API path, never a CDN origin — see the note at the top of this
  * file.
  */
-export function voicePlaybackUrl(filename: string): string {
+export function voicePlaybackUrl(
+  filename: string,
+): string {
   return `/api/messages/voice/${filename}`;
 }
 
 /** Recover the filename from a stored `audioUrl`. `null` for anything else. */
-export function voiceFilenameFromUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const prefix = '/api/messages/voice/';
-  if (!url.startsWith(prefix)) return null;
-  const filename = url.slice(prefix.length).split('?')[0];
-  return parseVoiceFilename(filename) ? filename : null;
+export function voiceFilenameFromUrl(
+  url:
+    | string
+    | null
+    | undefined,
+):
+  | string
+  | null {
+  if (
+    !url
+  )
+    return null;
+  const prefix =
+    '/api/messages/voice/';
+  if (
+    !url.startsWith(
+      prefix,
+    )
+  )
+    return null;
+  const filename =
+    url
+      .slice(
+        prefix.length,
+      )
+      .split(
+        '?',
+      )[0];
+  return parseVoiceFilename(
+    filename,
+  )
+    ? filename
+    : null;
 }

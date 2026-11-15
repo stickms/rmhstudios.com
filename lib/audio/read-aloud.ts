@@ -13,7 +13,11 @@
  * nothing.
  */
 
-export type ReaderState = 'idle' | 'playing' | 'paused' | 'ended';
+export type ReaderState =
+  | 'idle'
+  | 'playing'
+  | 'paused'
+  | 'ended';
 
 export interface ReaderOptions {
   /**
@@ -21,9 +25,14 @@ export interface ReaderOptions {
    * `createReader` — the caller's own paragraph indices, so highlighting is a
    * direct lookup.
    */
-  onParagraph?: (index: number, text: string) => void;
+  onParagraph?: (
+    index: number,
+    text: string,
+  ) => void;
   /** Fires on every state transition (drives the play/pause button). */
-  onStateChange?: (state: ReaderState) => void;
+  onStateChange?: (
+    state: ReaderState,
+  ) => void;
   /** 0.1–10, default 1. */
   rate?: number;
   /** 0–2, default 1. */
@@ -34,7 +43,9 @@ export interface ReaderOptions {
 
 export interface Reader {
   /** Start, or resume from a pause. `from` restarts at that paragraph index. */
-  play: (from?: number) => void;
+  play: (
+    from?: number,
+  ) => void;
   pause: () => void;
   /** Stop and rewind to the top. */
   stop: () => void;
@@ -62,29 +73,82 @@ interface Chunk {
 }
 
 export function speechSupported(): boolean {
-  return typeof window !== 'undefined' && 'speechSynthesis' in window;
+  return (
+    typeof window !==
+      'undefined' &&
+    'speechSynthesis' in
+      window
+  );
 }
 
 /** Split a paragraph on sentence boundaries, packing chunks up to the cap. */
-function chunkParagraph(text: string, paragraph: number): Chunk[] {
-  const flat = text.replace(/\s+/g, ' ').trim();
-  if (!flat) return [];
-  if (flat.length <= MAX_CHUNK_CHARS) return [{ paragraph, text: flat }];
+function chunkParagraph(
+  text: string,
+  paragraph: number,
+): Chunk[] {
+  const flat =
+    text
+      .replace(
+        /\s+/g,
+        ' ',
+      )
+      .trim();
+  if (
+    !flat
+  )
+    return [];
+  if (
+    flat.length <=
+    MAX_CHUNK_CHARS
+  )
+    return [
+      {
+        paragraph,
+        text: flat,
+      },
+    ];
 
   // Keep the terminator on the sentence so the voice keeps its intonation.
-  const sentences = flat.match(/[^.!?…]+[.!?…]*\s*/g) ?? [flat];
-  const chunks: Chunk[] = [];
-  let buffer = '';
+  const sentences =
+    flat.match(
+      /[^.!?…]+[.!?…]*\s*/g,
+    ) ?? [
+      flat,
+    ];
+  const chunks: Chunk[] =
+    [];
+  let buffer =
+    '';
   for (const sentence of sentences) {
-    if (buffer && buffer.length + sentence.length > MAX_CHUNK_CHARS) {
-      chunks.push({ paragraph, text: buffer.trim() });
-      buffer = '';
+    if (
+      buffer &&
+      buffer.length +
+        sentence.length >
+        MAX_CHUNK_CHARS
+    ) {
+      chunks.push(
+        {
+          paragraph,
+          text: buffer.trim(),
+        },
+      );
+      buffer =
+        '';
     }
     // A single sentence longer than the cap is spoken whole — breaking mid
     // clause sounds worse than risking the cutoff, and it is rare in prose.
-    buffer += sentence;
+    buffer +=
+      sentence;
   }
-  if (buffer.trim()) chunks.push({ paragraph, text: buffer.trim() });
+  if (
+    buffer.trim()
+  )
+    chunks.push(
+      {
+        paragraph,
+        text: buffer.trim(),
+      },
+    );
   return chunks;
 }
 
@@ -92,33 +156,90 @@ function chunkParagraph(text: string, paragraph: number): Chunk[] {
  * Pick a voice for `lang`. Exact locale first (`pt-BR` over `pt-PT`), then the
  * base language, then whatever the browser defaults to.
  */
-function pickVoice(synth: SpeechSynthesis, lang: string): SpeechSynthesisVoice | null {
-  const voices = synth.getVoices();
-  if (!voices.length) return null; // still loading — the default voice is fine
-  const wanted = lang.toLowerCase();
-  const base = wanted.split('-')[0];
+function pickVoice(
+  synth: SpeechSynthesis,
+  lang: string,
+): SpeechSynthesisVoice | null {
+  const voices =
+    synth.getVoices();
+  if (
+    !voices.length
+  )
+    return null; // still loading — the default voice is fine
+  const wanted =
+    lang.toLowerCase();
+  const base =
+    wanted.split(
+      '-',
+    )[0];
   return (
-    voices.find((v) => v.lang.toLowerCase() === wanted) ??
-    voices.find((v) => v.lang.toLowerCase().startsWith(`${base}-`)) ??
-    voices.find((v) => v.lang.toLowerCase() === base) ??
+    voices.find(
+      (
+        v,
+      ) =>
+        v.lang.toLowerCase() ===
+        wanted,
+    ) ??
+    voices.find(
+      (
+        v,
+      ) =>
+        v.lang
+          .toLowerCase()
+          .startsWith(
+            `${base}-`,
+          ),
+    ) ??
+    voices.find(
+      (
+        v,
+      ) =>
+        v.lang.toLowerCase() ===
+        base,
+    ) ??
     null
   );
 }
 
 export function createReader(
   paragraphs: readonly string[],
-  { onParagraph, onStateChange, rate = 1, pitch = 1, volume = 1 }: ReaderOptions = {},
+  {
+    onParagraph,
+    onStateChange,
+    rate = 1,
+    pitch = 1,
+    volume = 1,
+  }: ReaderOptions = {},
 ): Reader | null {
-  if (!speechSupported()) return null;
-  const synth = window.speechSynthesis;
+  if (
+    !speechSupported()
+  )
+    return null;
+  const synth =
+    window.speechSynthesis;
 
-  const chunks = paragraphs.flatMap((text, i) => chunkParagraph(text, i));
-  if (!chunks.length) return null;
+  const chunks =
+    paragraphs.flatMap(
+      (
+        text,
+        i,
+      ) =>
+        chunkParagraph(
+          text,
+          i,
+        ),
+    );
+  if (
+    !chunks.length
+  )
+    return null;
 
-  let state: ReaderState = 'idle';
+  let state: ReaderState =
+    'idle';
   let cursor = 0;
   /** Last paragraph announced, so `onParagraph` fires once per paragraph. */
-  let announced = -1;
+  let announced =
+    -1;
   let destroyed = false;
   /**
    * The current utterance chain. `cancel()` fires the old chain's `end` /
@@ -128,72 +249,177 @@ export function createReader(
    */
   let chain = 0;
 
-  const setState = (next: ReaderState) => {
-    if (state === next) return;
-    state = next;
-    onStateChange?.(next);
-  };
+  const setState =
+    (
+      next: ReaderState,
+    ) => {
+      if (
+        state ===
+        next
+      )
+        return;
+      state =
+        next;
+      onStateChange?.(
+        next,
+      );
+    };
 
-  const speak = (at: number, run: number) => {
-    if (run !== chain) return;
-    if (destroyed || at >= chunks.length) {
-      cursor = chunks.length;
-      announced = -1;
-      setState('ended');
-      return;
-    }
-    cursor = at;
-    const chunk = chunks[at];
-    const utterance = new SpeechSynthesisUtterance(chunk.text);
-
-    // The document's language, read at speak time — NOT a constant. i18next
-    // swaps `<html lang>` when the visitor changes locale, and a hardcoded
-    // 'en-US' here would read Arabic, Japanese and Turkish articles with an
-    // English voice, i.e. as gibberish.
-    const lang = document.documentElement.lang || 'en';
-    utterance.lang = lang;
-    const voice = pickVoice(synth, lang);
-    if (voice) utterance.voice = voice;
-    utterance.rate = rate;
-    utterance.pitch = pitch;
-    utterance.volume = volume;
-
-    utterance.onstart = () => {
-      if (destroyed || run !== chain) return;
-      setState('playing');
-      if (chunk.paragraph !== announced) {
-        announced = chunk.paragraph;
-        onParagraph?.(chunk.paragraph, paragraphs[chunk.paragraph]);
+  const speak =
+    (
+      at: number,
+      run: number,
+    ) => {
+      if (
+        run !==
+        chain
+      )
+        return;
+      if (
+        destroyed ||
+        at >=
+          chunks.length
+      ) {
+        cursor =
+          chunks.length;
+        announced =
+          -1;
+        setState(
+          'ended',
+        );
+        return;
       }
-    };
-    utterance.onend = () => {
-      // `cancel()` also fires `onend`; the state check keeps a stop from
-      // immediately starting the next chunk.
-      if (destroyed || run !== chain || state !== 'playing') return;
-      speak(at + 1, run);
-    };
-    utterance.onerror = () => {
-      if (destroyed || run !== chain) return;
-      setState('idle');
+      cursor =
+        at;
+      const chunk =
+        chunks[
+          at
+        ];
+      const utterance =
+        new SpeechSynthesisUtterance(
+          chunk.text,
+        );
+
+      // The document's language, read at speak time — NOT a constant. i18next
+      // swaps `<html lang>` when the visitor changes locale, and a hardcoded
+      // 'en-US' here would read Arabic, Japanese and Turkish articles with an
+      // English voice, i.e. as gibberish.
+      const lang =
+        document
+          .documentElement
+          .lang ||
+        'en';
+      utterance.lang =
+        lang;
+      const voice =
+        pickVoice(
+          synth,
+          lang,
+        );
+      if (
+        voice
+      )
+        utterance.voice =
+          voice;
+      utterance.rate =
+        rate;
+      utterance.pitch =
+        pitch;
+      utterance.volume =
+        volume;
+
+      utterance.onstart =
+        () => {
+          if (
+            destroyed ||
+            run !==
+              chain
+          )
+            return;
+          setState(
+            'playing',
+          );
+          if (
+            chunk.paragraph !==
+            announced
+          ) {
+            announced =
+              chunk.paragraph;
+            onParagraph?.(
+              chunk.paragraph,
+              paragraphs[
+                chunk
+                  .paragraph
+              ],
+            );
+          }
+        };
+      utterance.onend =
+        () => {
+          // `cancel()` also fires `onend`; the state check keeps a stop from
+          // immediately starting the next chunk.
+          if (
+            destroyed ||
+            run !==
+              chain ||
+            state !==
+              'playing'
+          )
+            return;
+          speak(
+            at +
+              1,
+            run,
+          );
+        };
+      utterance.onerror =
+        () => {
+          if (
+            destroyed ||
+            run !==
+              chain
+          )
+            return;
+          setState(
+            'idle',
+          );
+        };
+
+      synth.speak(
+        utterance,
+      );
     };
 
-    synth.speak(utterance);
-  };
-
-  const stop = () => {
-    chain++;
-    setState('idle');
-    cursor = 0;
-    announced = -1;
-    synth.cancel();
-  };
+  const stop =
+    () => {
+      chain++;
+      setState(
+        'idle',
+      );
+      cursor = 0;
+      announced =
+        -1;
+      synth.cancel();
+    };
 
   return {
-    play: (from?: number) => {
-      if (destroyed) return;
-      if (from === undefined && state === 'paused') {
+    play: (
+      from?: number,
+    ) => {
+      if (
+        destroyed
+      )
+        return;
+      if (
+        from ===
+          undefined &&
+        state ===
+          'paused'
+      ) {
         synth.resume();
-        setState('playing');
+        setState(
+          'playing',
+        );
         return;
       }
       // Safari and Chrome keep ONE global utterance queue per document, so a
@@ -201,31 +427,75 @@ export function createReader(
       // the two articles interleave.
       chain++;
       synth.cancel();
-      const start = from === undefined ? 0 : chunks.findIndex((c) => c.paragraph >= from);
-      announced = -1;
-      setState('playing');
-      speak(start === -1 ? 0 : start, chain);
+      const start =
+        from ===
+        undefined
+          ? 0
+          : chunks.findIndex(
+              (
+                c,
+              ) =>
+                c.paragraph >=
+                from,
+            );
+      announced =
+        -1;
+      setState(
+        'playing',
+      );
+      speak(
+        start ===
+          -1
+          ? 0
+          : start,
+        chain,
+      );
     },
-    pause: () => {
-      if (destroyed || state !== 'playing') return;
-      synth.pause();
-      setState('paused');
-    },
+    pause:
+      () => {
+        if (
+          destroyed ||
+          state !==
+            'playing'
+        )
+          return;
+        synth.pause();
+        setState(
+          'paused',
+        );
+      },
     stop,
     get state() {
       return state;
     },
     get index() {
-      if (state === 'idle' || state === 'ended') return -1;
-      return chunks[cursor]?.paragraph ?? -1;
+      if (
+        state ===
+          'idle' ||
+        state ===
+          'ended'
+      )
+        return -1;
+      return (
+        chunks[
+          cursor
+        ]
+          ?.paragraph ??
+        -1
+      );
     },
-    destroy: () => {
-      if (destroyed) return;
-      destroyed = true;
-      chain++;
-      // Guaranteed: an unmounted article must not keep talking.
-      synth.cancel();
-      state = 'idle';
-    },
+    destroy:
+      () => {
+        if (
+          destroyed
+        )
+          return;
+        destroyed = true;
+        chain++;
+        // Guaranteed: an unmounted article must not keep talking.
+        synth.cancel();
+        state =
+          'idle';
+      },
   };
 }

@@ -6,7 +6,22 @@
 
 export const LEVEL_BADGE_TIERS = 10;
 
-export function levelBadgeTier(level: number): number {
-  if (!Number.isFinite(level) || level < 0) return 0;
-  return Math.min(LEVEL_BADGE_TIERS, Math.floor(level / 10));
+export function levelBadgeTier(
+  level: number,
+): number {
+  if (
+    !Number.isFinite(
+      level,
+    ) ||
+    level <
+      0
+  )
+    return 0;
+  return Math.min(
+    LEVEL_BADGE_TIERS,
+    Math.floor(
+      level /
+        10,
+    ),
+  );
 }

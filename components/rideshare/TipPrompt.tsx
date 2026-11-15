@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Gift, Heart } from 'lucide-react';
+import {
+  Gift,
+  Heart,
+} from 'lucide-react';
 import {
   TIP_PERCENTS,
   suggestedTipCents,
@@ -14,44 +17,120 @@ interface TipPromptProps {
   fareCents: number;
   /** A tip already left for this trip (cents). When > 0 we show a thank-you. */
   tipCents: number;
-  onTip: (cents: number) => Promise<void>;
+  onTip: (
+    cents: number,
+  ) => Promise<void>;
 }
 
 /**
  * Post-trip tipping for riders. 100% of a tip goes to the driver. Shows preset
  * percentages plus a custom amount, or a thank-you once a tip is recorded.
  */
-export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
-  const { t } = useTranslation("c-rideshare");
-  const [selected, setSelected] = useState<number | null>(null);
-  const [custom, setCustom] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+export function TipPrompt({
+  fareCents,
+  tipCents,
+  onTip,
+}: TipPromptProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rideshare',
+    );
+  const [
+    selected,
+    setSelected,
+  ] =
+    useState<
+      | number
+      | null
+    >(
+      null,
+    );
+  const [
+    custom,
+    setCustom,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    submitting,
+    setSubmitting,
+  ] =
+    useState(
+      false,
+    );
 
-  if (tipCents > 0) {
+  if (
+    tipCents >
+    0
+  ) {
     return (
       <div className="rounded-site border border-site-success/30 bg-site-success/10 p-5 text-center">
         <Heart className="mx-auto h-7 w-7 fill-site-success text-site-success" />
         <h3 className="mt-2 font-semibold text-site-text">
-          {t("you-tipped", { defaultValue: "You tipped {{amount}}", amount: formatUsd(tipCents) })}
+          {t(
+            'you-tipped',
+            {
+              defaultValue:
+                'You tipped {{amount}}',
+              amount:
+                formatUsd(
+                  tipCents,
+                ),
+            },
+          )}
         </h3>
         <p className="mt-1 text-sm text-site-text-muted">
-          {t("driver-gets-all-thanks", { defaultValue: "Your driver gets 100% of it. Thanks for the love!" })}
+          {t(
+            'driver-gets-all-thanks',
+            {
+              defaultValue:
+                'Your driver gets 100% of it. Thanks for the love!',
+            },
+          )}
         </p>
       </div>
     );
   }
 
-  const customCents = Math.round(parseFloat(custom || '0') * 100);
-  const amount = selected ?? (customCents > 0 ? customCents : 0);
-  const valid = amount > 0 && amount <= MAX_TIP_CENTS;
+  const customCents =
+    Math.round(
+      parseFloat(
+        custom ||
+          '0',
+      ) *
+        100,
+    );
+  const amount =
+    selected ??
+    (customCents >
+    0
+      ? customCents
+      : 0);
+  const valid =
+    amount >
+      0 &&
+    amount <=
+      MAX_TIP_CENTS;
 
   async function submit() {
-    if (!valid) return;
-    setSubmitting(true);
+    if (
+      !valid
+    )
+      return;
+    setSubmitting(
+      true,
+    );
     try {
-      await onTip(amount);
+      await onTip(
+        amount,
+      );
     } finally {
-      setSubmitting(false);
+      setSubmitting(
+        false,
+      );
     }
   }
 
@@ -59,58 +138,167 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
     <div className="relative rounded-site p-5">
       <div className="flex items-center gap-2">
         <Gift className="h-5 w-5 text-site-accent" />
-        <h3 className="font-semibold text-site-text">{t("add-tip-header", { defaultValue: "Add a tip for your driver" })}</h3>
+        <h3 className="font-semibold text-site-text">
+          {t(
+            'add-tip-header',
+            {
+              defaultValue:
+                'Add a tip for your driver',
+            },
+          )}
+        </h3>
       </div>
       <p className="mt-1 text-sm text-site-text-muted">
-        {t("tip-goes-to-driver", { defaultValue: "100% of your tip goes straight to your driver." })}
+        {t(
+          'tip-goes-to-driver',
+          {
+            defaultValue:
+              '100% of your tip goes straight to your driver.',
+          },
+        )}
       </p>
 
       <div className="mt-4 grid grid-cols-4 gap-2">
-        {TIP_PERCENTS.map((pct) => {
-          const cents = suggestedTipCents(fareCents, pct);
-          const active = selected === cents && custom === '';
-          return (
-            <button
-              key={pct}
-              type="button"
-              onClick={() => {
-                setSelected(cents);
-                setCustom('');
-              }}
-              className={`surface-press min-h-11 rounded-site-sm px-2 py-2 text-center transition-colors ${
-                active
-                  ? 'border-site-accent bg-site-accent/10 text-site-accent'
-                  : 'text-site-text hover:border-site-text'
-              }`}
-            >
-              <div className="text-sm font-semibold">{pct === 0 ? t("no-tip", { defaultValue: "No tip" }) : `${Math.round(pct * 100)}%`}</div>
-              {pct > 0 && <div className="text-xs text-site-text-muted">{formatUsd(cents)}</div>}
-            </button>
-          );
-        })}
+        {TIP_PERCENTS.map(
+          (
+            pct,
+          ) => {
+            const cents =
+              suggestedTipCents(
+                fareCents,
+                pct,
+              );
+            const active =
+              selected ===
+                cents &&
+              custom ===
+                '';
+            return (
+              <button
+                key={
+                  pct
+                }
+                type="button"
+                onClick={() => {
+                  setSelected(
+                    cents,
+                  );
+                  setCustom(
+                    '',
+                  );
+                }}
+                className={`surface-press min-h-11 rounded-site-sm px-2 py-2 text-center transition-colors ${
+                  active
+                    ? 'border-site-accent bg-site-accent/10 text-site-accent'
+                    : 'text-site-text hover:border-site-text'
+                }`}
+              >
+                <div className="text-sm font-semibold">
+                  {pct ===
+                  0
+                    ? t(
+                        'no-tip',
+                        {
+                          defaultValue:
+                            'No tip',
+                        },
+                      )
+                    : `${Math.round(pct * 100)}%`}
+                </div>
+                {pct >
+                  0 && (
+                  <div className="text-xs text-site-text-muted">
+                    {formatUsd(
+                      cents,
+                    )}
+                  </div>
+                )}
+              </button>
+            );
+          },
+        )}
       </div>
 
       <div className="mt-3 flex items-center gap-2">
         <div className="relative flex-1">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-site-text-muted">$</span>
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-site-text-muted">
+            $
+          </span>
           <Input
             type="number"
-            min={0}
+            min={
+              0
+            }
             step="0.50"
             inputMode="decimal"
-            value={custom}
-            onChange={(e) => {
-              setCustom(e.target.value);
-              setSelected(null);
+            value={
+              custom
+            }
+            onChange={(
+              e,
+            ) => {
+              setCustom(
+                e
+                  .target
+                  .value,
+              );
+              setSelected(
+                null,
+              );
             }}
-            placeholder={t("custom-amount-placeholder", { defaultValue: "Custom amount" })}
-            aria-label={t("custom-amount-placeholder", { defaultValue: "Custom amount" })}
+            placeholder={t(
+              'custom-amount-placeholder',
+              {
+                defaultValue:
+                  'Custom amount',
+              },
+            )}
+            aria-label={t(
+              'custom-amount-placeholder',
+              {
+                defaultValue:
+                  'Custom amount',
+              },
+            )}
             className="pl-7"
           />
         </div>
-        <Button onClick={submit} disabled={!valid} loading={submitting}>
-          {!submitting && <Gift aria-hidden />}
-          {amount > 0 ? t("tip-with-amount", { defaultValue: "Tip {{amount}}", amount: formatUsd(amount) }) : t("tip-label", { defaultValue: "Tip" })}
+        <Button
+          onClick={
+            submit
+          }
+          disabled={
+            !valid
+          }
+          loading={
+            submitting
+          }
+        >
+          {!submitting && (
+            <Gift
+              aria-hidden
+            />
+          )}
+          {amount >
+          0
+            ? t(
+                'tip-with-amount',
+                {
+                  defaultValue:
+                    'Tip {{amount}}',
+                  amount:
+                    formatUsd(
+                      amount,
+                    ),
+                },
+              )
+            : t(
+                'tip-label',
+                {
+                  defaultValue:
+                    'Tip',
+                },
+              )}
         </Button>
       </div>
     </div>

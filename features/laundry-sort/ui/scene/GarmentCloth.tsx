@@ -28,7 +28,11 @@
  * touches three.js objects directly.
  */
 
-import { useEffect, useMemo, useRef } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { WASH_COLORS } from '@features/laundry-sort/engine/constants';
@@ -45,137 +49,348 @@ interface Props {
   garment: Garment;
   quality: QualityFlags;
   /** Simulated seconds, read from the world so the fade uses the same clock. */
-  timeRef: { current: number };
+  timeRef: {
+    current: number;
+  };
   /** Highlighted while the player is holding it — one of possibly several. */
-  heldRef: { current: ReadonlySet<number> | null };
+  heldRef: {
+    current: ReadonlySet<number> | null;
+  };
   /** Read for `alpha` at draw time — see the blend in the frame callback. */
   matchRef: React.RefObject<LaundryMatch | null>;
 }
 
-export function GarmentCloth({ garment, quality, timeRef, heldRef, matchRef }: Props) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const materialRef = useRef<THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial>(null);
-  const wash = WASH_COLORS[garment.colorIndex] ?? WASH_COLORS[0];
-
-  const geometry = useMemo(() => {
-    const { shell } = garment.topology;
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute(
-      'position',
-      new THREE.BufferAttribute(new Float32Array(shell.vertexCount * 3), 3),
+export function GarmentCloth({
+  garment,
+  quality,
+  timeRef,
+  heldRef,
+  matchRef,
+}: Props) {
+  const meshRef =
+    useRef<THREE.Mesh>(
+      null,
     );
-    geo.setAttribute(
-      'normal',
-      new THREE.BufferAttribute(new Float32Array(shell.vertexCount * 3), 3),
+  const materialRef =
+    useRef<
+      | THREE.MeshStandardMaterial
+      | THREE.MeshPhysicalMaterial
+    >(
+      null,
     );
-    geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(shell.uvs), 2));
-    geo.setIndex(new THREE.BufferAttribute(new Uint16Array(shell.indices), 1));
-    return geo;
-  }, [garment]);
+  const wash =
+    WASH_COLORS[
+      garment
+        .colorIndex
+    ] ??
+    WASH_COLORS[0];
 
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  const geometry =
+    useMemo(() => {
+      const {
+        shell,
+      } =
+        garment.topology;
+      const geo =
+        new THREE.BufferGeometry();
+      geo.setAttribute(
+        'position',
+        new THREE.BufferAttribute(
+          new Float32Array(
+            shell.vertexCount *
+              3,
+          ),
+          3,
+        ),
+      );
+      geo.setAttribute(
+        'normal',
+        new THREE.BufferAttribute(
+          new Float32Array(
+            shell.vertexCount *
+              3,
+          ),
+          3,
+        ),
+      );
+      geo.setAttribute(
+        'uv',
+        new THREE.BufferAttribute(
+          new Float32Array(
+            shell.uvs,
+          ),
+          2,
+        ),
+      );
+      geo.setIndex(
+        new THREE.BufferAttribute(
+          new Uint16Array(
+            shell.indices,
+          ),
+          1,
+        ),
+      );
+      return geo;
+    }, [
+      garment,
+    ]);
 
-  const texture = useMemo(() => weaveTexture(wash.weave), [wash.weave]);
-  const baseColor = useMemo(() => new THREE.Color(wash.hex), [wash.hex]);
+  useEffect(
+    () =>
+      () =>
+        geometry.dispose(),
+    [
+      geometry,
+    ],
+  );
+
+  const texture =
+    useMemo(
+      () =>
+        weaveTexture(
+          wash.weave,
+        ),
+      [
+        wash.weave,
+      ],
+    );
+  const baseColor =
+    useMemo(
+      () =>
+        new THREE.Color(
+          wash.hex,
+        ),
+      [
+        wash.hex,
+      ],
+    );
 
   // Scratch for the interpolated pose, one per garment, allocated once.
-  const blended = useMemo(() => new Float32Array(garment.pos.length), [garment]);
-
-  useFrame(() => {
-    const mesh = meshRef.current;
-    const material = materialRef.current;
-    if (!mesh || !material) return;
-
-    // Draw the cloth between its last two 60Hz ticks rather than AT the last
-    // one, so it moves continuously on a 120/144/240Hz panel. Alpha and the
-    // two position buffers are written together inside `match.advance()`, so
-    // reading them here is consistent whatever order R3F runs frame callbacks.
-    const a = matchRef.current?.alpha ?? 1;
-    let drawPos = garment.pos;
-    if (a < 1) {
-      const cur = garment.pos;
-      const prev = garment.renderPrev;
-      for (let i = 0; i < cur.length; i++) blended[i] = prev[i] + (cur[i] - prev[i]) * a;
-      drawPos = blended;
-    }
-
-    const position = geometry.getAttribute('position') as THREE.BufferAttribute;
-    const normal = geometry.getAttribute('normal') as THREE.BufferAttribute;
-    const { topology } = garment;
-    // Positions and normals in one pass, straight into the attribute buffers.
-    // No allocation, which is why this can run on every garment every frame.
-    writeShell(
-      topology.shell,
-      topology.indices,
-      drawPos,
-      position.array as Float32Array,
-      normal.array as Float32Array,
+  const blended =
+    useMemo(
+      () =>
+        new Float32Array(
+          garment
+            .pos
+            .length,
+        ),
+      [
+        garment,
+      ],
     );
-    position.needsUpdate = true;
-    normal.needsUpdate = true;
 
-    // Resolved garments fade rather than vanish, so the player sees where the
-    // points came from.
-    if (garment.expiresAt !== null) {
-      const left = Math.max(0, garment.expiresAt - timeRef.current);
-      material.opacity = Math.min(1, left / FADE);
-      material.transparent = true;
-    } else if (material.opacity !== 1) {
-      material.opacity = 1;
-      material.transparent = false;
-    }
+  useFrame(
+    () => {
+      const mesh =
+        meshRef.current;
+      const material =
+        materialRef.current;
+      if (
+        !mesh ||
+        !material
+      )
+        return;
 
-    // Held cloth lifts toward white so it stays readable under a fast drag; a
-    // sorted one glows green on its way out and a missed one goes flat.
-    const held = heldRef.current?.has(garment.id) ?? false;
-    const emissive = material.emissive;
-    if (held) {
-      emissive.setRGB(0.16, 0.16, 0.18);
-    } else if (garment.state === 'sorted') {
-      emissive.setRGB(0.05, 0.14, 0.06);
-    } else if (garment.state === 'missed') {
-      emissive.setRGB(0.02, 0.02, 0.02);
-    } else {
-      emissive.setRGB(0, 0, 0);
-    }
-  });
+      // Draw the cloth between its last two 60Hz ticks rather than AT the last
+      // one, so it moves continuously on a 120/144/240Hz panel. Alpha and the
+      // two position buffers are written together inside `match.advance()`, so
+      // reading them here is consistent whatever order R3F runs frame callbacks.
+      const a =
+        matchRef
+          .current
+          ?.alpha ??
+        1;
+      let drawPos =
+        garment.pos;
+      if (
+        a <
+        1
+      ) {
+        const cur =
+          garment.pos;
+        const prev =
+          garment.renderPrev;
+        for (
+          let i = 0;
+          i <
+          cur.length;
+          i++
+        )
+          blended[
+            i
+          ] =
+            prev[
+              i
+            ] +
+            (cur[
+              i
+            ] -
+              prev[
+                i
+              ]) *
+              a;
+        drawPos =
+          blended;
+      }
 
-  const common = {
-    color: baseColor,
-    map: texture ?? undefined,
-    // The weave doubles as a bump map, so the fabric catches the light along
-    // its stripes and checks — surface detail on top of the shell's shape.
-    bumpMap: texture ?? undefined,
-    bumpScale: 0.35,
-    // The shell is a closed solid: front sheet, back sheet, stitched rim. Back
-    // faces are never visible, so drawing them is pure waste.
-    side: THREE.FrontSide,
-    roughness: 0.94,
-    metalness: 0,
-    flatShading: false,
-  } as const;
+      const position =
+        geometry.getAttribute(
+          'position',
+        ) as THREE.BufferAttribute;
+      const normal =
+        geometry.getAttribute(
+          'normal',
+        ) as THREE.BufferAttribute;
+      const {
+        topology,
+      } =
+        garment;
+      // Positions and normals in one pass, straight into the attribute buffers.
+      // No allocation, which is why this can run on every garment every frame.
+      writeShell(
+        topology.shell,
+        topology.indices,
+        drawPos,
+        position.array as Float32Array,
+        normal.array as Float32Array,
+      );
+      position.needsUpdate = true;
+      normal.needsUpdate = true;
+
+      // Resolved garments fade rather than vanish, so the player sees where the
+      // points came from.
+      if (
+        garment.expiresAt !==
+        null
+      ) {
+        const left =
+          Math.max(
+            0,
+            garment.expiresAt -
+              timeRef.current,
+          );
+        material.opacity =
+          Math.min(
+            1,
+            left /
+              FADE,
+          );
+        material.transparent = true;
+      } else if (
+        material.opacity !==
+        1
+      ) {
+        material.opacity = 1;
+        material.transparent = false;
+      }
+
+      // Held cloth lifts toward white so it stays readable under a fast drag; a
+      // sorted one glows green on its way out and a missed one goes flat.
+      const held =
+        heldRef.current?.has(
+          garment.id,
+        ) ??
+        false;
+      const emissive =
+        material.emissive;
+      if (
+        held
+      ) {
+        emissive.setRGB(
+          0.16,
+          0.16,
+          0.18,
+        );
+      } else if (
+        garment.state ===
+        'sorted'
+      ) {
+        emissive.setRGB(
+          0.05,
+          0.14,
+          0.06,
+        );
+      } else if (
+        garment.state ===
+        'missed'
+      ) {
+        emissive.setRGB(
+          0.02,
+          0.02,
+          0.02,
+        );
+      } else {
+        emissive.setRGB(
+          0,
+          0,
+          0,
+        );
+      }
+    },
+  );
+
+  const common =
+    {
+      color:
+        baseColor,
+      map:
+        texture ??
+        undefined,
+      // The weave doubles as a bump map, so the fabric catches the light along
+      // its stripes and checks — surface detail on top of the shell's shape.
+      bumpMap:
+        texture ??
+        undefined,
+      bumpScale: 0.35,
+      // The shell is a closed solid: front sheet, back sheet, stitched rim. Back
+      // faces are never visible, so drawing them is pure waste.
+      side: THREE.FrontSide,
+      roughness: 0.94,
+      metalness: 0,
+      flatShading: false,
+    } as const;
 
   return (
     <mesh
-      ref={meshRef}
-      geometry={geometry}
-      castShadow={quality.shadows}
-      receiveShadow={quality.shadows}
+      ref={
+        meshRef
+      }
+      geometry={
+        geometry
+      }
+      castShadow={
+        quality.shadows
+      }
+      receiveShadow={
+        quality.shadows
+      }
       // Always in frame, and we do our own picking, so culling and the
       // bounding-sphere recompute it needs are pure overhead.
-      frustumCulled={false}
+      frustumCulled={
+        false
+      }
     >
       {quality.postProcessing ? (
         <meshPhysicalMaterial
-          ref={materialRef as React.Ref<THREE.MeshPhysicalMaterial>}
+          ref={
+            materialRef as React.Ref<THREE.MeshPhysicalMaterial>
+          }
           {...common}
-          sheen={0.65}
-          sheenRoughness={0.85}
-          sheenColor={baseColor}
+          sheen={
+            0.65
+          }
+          sheenRoughness={
+            0.85
+          }
+          sheenColor={
+            baseColor
+          }
         />
       ) : (
         <meshStandardMaterial
-          ref={materialRef as React.Ref<THREE.MeshStandardMaterial>}
+          ref={
+            materialRef as React.Ref<THREE.MeshStandardMaterial>
+          }
           {...common}
         />
       )}

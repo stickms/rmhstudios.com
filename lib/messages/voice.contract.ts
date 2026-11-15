@@ -12,12 +12,25 @@ export interface SentVoiceMessage {
   senderId: string;
   read: boolean;
   createdAt: string;
-  audioUrl: string | null;
-  audioDurationMs: number | null;
+  audioUrl:
+    | string
+    | null;
+  audioDurationMs:
+    | number
+    | null;
   audioPeaks: number[];
 }
 
-export const sendVoiceMessageApi = endpoint<{
-  body: FormData;
-  res: { message: SentVoiceMessage };
-}>()({ method: 'POST', path: '/api/messages/$conversationId/voice' });
+export const sendVoiceMessageApi =
+  endpoint<{
+    body: FormData;
+    res: {
+      message: SentVoiceMessage;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/messages/$conversationId/voice',
+    },
+  );

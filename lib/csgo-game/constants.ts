@@ -18,20 +18,43 @@ import {
   TF_TEAM_RED,
 } from '../tf2-game/core/constants';
 
-export const CS_TEAM_UNASSIGNED = TEAM_UNASSIGNED;
-export const CS_TEAM_SPECTATOR = TEAM_SPECTATOR;
-export const CS_TEAM_T = TF_TEAM_RED;
-export const CS_TEAM_CT = TF_TEAM_BLUE;
-export const otherCsTeam = (team: number): number =>
-  team === CS_TEAM_T ? CS_TEAM_CT : team === CS_TEAM_CT ? CS_TEAM_T : team;
-export const csTeamName = (team: number): 't' | 'ct' | 'spectator' | 'none' =>
-  team === CS_TEAM_T
-    ? 't'
-    : team === CS_TEAM_CT
-      ? 'ct'
-      : team === CS_TEAM_SPECTATOR
-        ? 'spectator'
-        : 'none';
+export const CS_TEAM_UNASSIGNED =
+  TEAM_UNASSIGNED;
+export const CS_TEAM_SPECTATOR =
+  TEAM_SPECTATOR;
+export const CS_TEAM_T =
+  TF_TEAM_RED;
+export const CS_TEAM_CT =
+  TF_TEAM_BLUE;
+export const otherCsTeam =
+  (
+    team: number,
+  ): number =>
+    team ===
+    CS_TEAM_T
+      ? CS_TEAM_CT
+      : team ===
+          CS_TEAM_CT
+        ? CS_TEAM_T
+        : team;
+export const csTeamName =
+  (
+    team: number,
+  ):
+    | 't'
+    | 'ct'
+    | 'spectator'
+    | 'none' =>
+    team ===
+    CS_TEAM_T
+      ? 't'
+      : team ===
+          CS_TEAM_CT
+        ? 'ct'
+        : team ===
+            CS_TEAM_SPECTATOR
+          ? 'spectator'
+          : 'none';
 
 /**
  * The "class" a CS player has once on a team. The shared round rules count players with a class as
@@ -40,8 +63,14 @@ export const csTeamName = (team: number): 't' | 'ct' | 'spectator' | 'none' =>
 export const CS_PLAYER_CLASS = 1;
 
 /** The two modes Dust II is played in here. */
-export type CsMode = 'de' | 'dm';
-export const CS_MODES: readonly CsMode[] = ['de', 'dm'];
+export type CsMode =
+  | 'de'
+  | 'dm';
+export const CS_MODES: readonly CsMode[] =
+  [
+    'de',
+    'dm',
+  ];
 
 // ─── Player (cs_shareddefs / VDC "Counter-Strike: Global Offensive Player") ─────────────────────
 
@@ -89,7 +118,8 @@ export const CASH_LOSS_PLANTED = 800;
 export const CASH_PLANT = 300;
 export const CASH_DEFUSE = 300;
 /** Killing a teammate: −$300 (and, here, no kill reward). */
-export const CASH_TEAMKILL_PENALTY = -300;
+export const CASH_TEAMKILL_PENALTY =
+  -300;
 /** A kill reward when the weapon data names none (most rifles and pistols): $300. */
 export const DEFAULT_KILL_AWARD = 300;
 

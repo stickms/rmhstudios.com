@@ -10,39 +10,83 @@
 // get the identical result. See features/altair/engine/verify/.
 // =============================================================================
 
-export type RandomSource = () => number;
+export type RandomSource =
+  () => number;
 
-let source: RandomSource | null = null;
+let source: RandomSource | null =
+  null;
 
 /** The simulation's random number in [0, 1). */
 export function rand(): number {
-  return source ? source() : Math.random();
+  return source
+    ? source()
+    : Math.random();
 }
 
 /** True inside a seeded (replayable) simulation scope: dmath.ts then uses its engine-independent functions. */
 export function isSeeded(): boolean {
-  return source !== null;
+  return (
+    source !==
+    null
+  );
 }
 
 /** mulberry32: tiny, well known, fully deterministic. */
-export function createSeededRng(seed: number): RandomSource {
-  let a = seed >>> 0;
+export function createSeededRng(
+  seed: number,
+): RandomSource {
+  let a =
+    seed >>>
+    0;
   return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    a =
+      (a +
+        0x6d2b79f5) >>>
+      0;
+    let t =
+      a;
+    t =
+      Math.imul(
+        t ^
+          (t >>>
+            15),
+        t |
+          1,
+      );
+    t ^=
+      t +
+      Math.imul(
+        t ^
+          (t >>>
+            7),
+        t |
+          61,
+      );
+    return (
+      ((t ^
+        (t >>>
+          14)) >>>
+        0) /
+      4294967296
+    );
   };
 }
 
 /** Run fn with `src` as the simulation's random source, restoring the previous one after. */
-export function withRng<T>(src: RandomSource, fn: () => T): T {
-  const prev = source;
-  source = src;
+export function withRng<
+  T,
+>(
+  src: RandomSource,
+  fn: () => T,
+): T {
+  const prev =
+    source;
+  source =
+    src;
   try {
     return fn();
   } finally {
-    source = prev;
+    source =
+      prev;
   }
 }

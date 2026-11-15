@@ -1,4 +1,7 @@
-import type { Cycle, Phase } from './calendar';
+import type {
+  Cycle,
+  Phase,
+} from './calendar';
 import type { ElectionSnapshot } from './types';
 
 /** Body of GET /api/elections. */

@@ -29,41 +29,145 @@
 import { Rng } from '../rng';
 import type { Id } from '../types';
 
-export type Pairing = Record<Id, Id | ''>;
+export type Pairing =
+  Record<
+    Id,
+    | Id
+    | ''
+  >;
 
 /** The used-pair key for two ids (order-independent). `''` stands for the bye. */
-export function pairKey(a: Id | '', b: Id | ''): string {
-  return JSON.stringify(a < b ? [a, b] : [b, a]);
+export function pairKey(
+  a:
+    | Id
+    | '',
+  b:
+    | Id
+    | '',
+): string {
+  return JSON.stringify(
+    a <
+      b
+      ? [
+          a,
+          b,
+        ]
+      : [
+          b,
+          a,
+        ],
+  );
 }
 
-type Slot = Id | null; // null = the BYE slot
-type Round = [Slot, Slot][];
+type Slot =
+  Id | null; // null = the BYE slot
+type Round =
+  [
+    Slot,
+    Slot,
+  ][];
 
 /** The circle method: n′−1 disjoint perfect matchings over an even-length order. */
-export function circleRounds(order: readonly Slot[]): Round[] {
-  const n = order.length;
-  if (n < 2 || n % 2 !== 0) return [];
-  const fixed = order[0] as Slot;
-  const rest = order.slice(1);
-  const rounds: Round[] = [];
-  for (let r = 0; r < n - 1; r++) {
-    const rot = [...rest.slice(r), ...rest.slice(0, r)];
-    const list = [fixed, ...rot];
-    const round: Round = [];
-    for (let i = 0; i < n / 2; i++) round.push([list[i] as Slot, list[n - 1 - i] as Slot]);
-    rounds.push(round);
+export function circleRounds(
+  order: readonly Slot[],
+): Round[] {
+  const n =
+    order.length;
+  if (
+    n <
+      2 ||
+    n %
+      2 !==
+      0
+  )
+    return [];
+  const fixed =
+    order[0] as Slot;
+  const rest =
+    order.slice(
+      1,
+    );
+  const rounds: Round[] =
+    [];
+  for (
+    let r = 0;
+    r <
+    n -
+      1;
+    r++
+  ) {
+    const rot =
+      [
+        ...rest.slice(
+          r,
+        ),
+        ...rest.slice(
+          0,
+          r,
+        ),
+      ];
+    const list =
+      [
+        fixed,
+        ...rot,
+      ];
+    const round: Round =
+      [];
+    for (
+      let i = 0;
+      i <
+      n /
+        2;
+      i++
+    )
+      round.push(
+        [
+          list[
+            i
+          ] as Slot,
+          list[
+            n -
+              1 -
+              i
+          ] as Slot,
+        ],
+      );
+    rounds.push(
+      round,
+    );
   }
   return rounds;
 }
 
-function slotKey(a: Slot, b: Slot): string {
-  return pairKey(a ?? '', b ?? '');
+function slotKey(
+  a: Slot,
+  b: Slot,
+): string {
+  return pairKey(
+    a ??
+      '',
+    b ??
+      '',
+  );
 }
 
-function byeOf(round: Round): Id | null {
-  for (const [a, b] of round) {
-    if (a === null) return b;
-    if (b === null) return a;
+function byeOf(
+  round: Round,
+): Id | null {
+  for (const [
+    a,
+    b,
+  ] of round) {
+    if (
+      a ===
+      null
+    )
+      return b;
+    if (
+      b ===
+      null
+    )
+      return a;
   }
   return null;
 }
@@ -71,28 +175,97 @@ function byeOf(round: Round): Id | null {
 const SEARCH_BUDGET = 50_000;
 
 /** Bounded backtracking: any perfect matching of `slots` avoiding `used` (and the bye rule). */
-function searchMatching(slots: Slot[], used: Set<string>, avoidBye: Id | null): Round | null {
-  let budget = SEARCH_BUDGET;
-  const go = (rem: Slot[]): Round | null => {
-    if (rem.length === 0) return [];
-    if (--budget <= 0) return null;
-    const first = rem[0] as Slot;
-    for (let j = 1; j < rem.length; j++) {
-      const other = rem[j] as Slot;
-      if (used.has(slotKey(first, other))) continue;
+function searchMatching(
+  slots: Slot[],
+  used: Set<string>,
+  avoidBye: Id | null,
+): Round | null {
+  let budget =
+    SEARCH_BUDGET;
+  const go =
+    (
+      rem: Slot[],
+    ): Round | null => {
       if (
-        avoidBye !== null &&
-        ((first === null && other === avoidBye) || (other === null && first === avoidBye))
+        rem.length ===
+        0
       )
-        continue;
-      const next = rem.filter((_, i) => i !== 0 && i !== j);
-      const sub = go(next);
-      if (sub) return [[first, other], ...sub];
-      if (budget <= 0) return null;
-    }
-    return null;
-  };
-  return go(slots);
+        return [];
+      if (
+        --budget <=
+        0
+      )
+        return null;
+      const first =
+        rem[0] as Slot;
+      for (
+        let j = 1;
+        j <
+        rem.length;
+        j++
+      ) {
+        const other =
+          rem[
+            j
+          ] as Slot;
+        if (
+          used.has(
+            slotKey(
+              first,
+              other,
+            ),
+          )
+        )
+          continue;
+        if (
+          avoidBye !==
+            null &&
+          ((first ===
+            null &&
+            other ===
+              avoidBye) ||
+            (other ===
+              null &&
+              first ===
+                avoidBye))
+        )
+          continue;
+        const next =
+          rem.filter(
+            (
+              _,
+              i,
+            ) =>
+              i !==
+                0 &&
+              i !==
+                j,
+          );
+        const sub =
+          go(
+            next,
+          );
+        if (
+          sub
+        )
+          return [
+            [
+              first,
+              other,
+            ],
+            ...sub,
+          ];
+        if (
+          budget <=
+          0
+        )
+          return null;
+      }
+      return null;
+    };
+  return go(
+    slots,
+  );
 }
 
 export interface PairingInput {
@@ -111,49 +284,247 @@ export interface PairingResult {
 }
 
 /** The per-match stable order of a set of players. */
-export function stableOrder(alive: readonly Id[], salt: number): Id[] {
-  const sorted = [...alive].sort();
-  return Rng.fromSeed(salt).shuffle(sorted);
+export function stableOrder(
+  alive: readonly Id[],
+  salt: number,
+): Id[] {
+  const sorted =
+    [
+      ...alive,
+    ].sort();
+  return Rng.fromSeed(
+    salt,
+  ).shuffle(
+    sorted,
+  );
 }
 
-export function computePairing(input: PairingInput, rng: Rng): PairingResult {
-  const { alive, lastBye } = input;
-  const pairing: Pairing = {};
-  if (alive.length === 0) return { pairing, usedPairs: [...input.usedPairs], lastBye };
-  if (alive.length === 1) {
-    pairing[alive[0] as Id] = '';
-    return { pairing, usedPairs: [...input.usedPairs], lastBye: alive[0] as Id };
+export function computePairing(
+  input: PairingInput,
+  rng: Rng,
+): PairingResult {
+  const {
+    alive,
+    lastBye,
+  } =
+    input;
+  const pairing: Pairing =
+    {};
+  if (
+    alive.length ===
+    0
+  )
+    return {
+      pairing,
+      usedPairs:
+        [
+          ...input.usedPairs,
+        ],
+      lastBye,
+    };
+  if (
+    alive.length ===
+    1
+  ) {
+    pairing[
+      alive[0] as Id
+    ] =
+      '';
+    return {
+      pairing,
+      usedPairs:
+        [
+          ...input.usedPairs,
+        ],
+      lastBye:
+        alive[0] as Id,
+    };
   }
-  const order: Slot[] = stableOrder(alive, input.salt);
-  const odd = order.length % 2 === 1;
-  if (odd) order.push(null);
-  const rounds = circleRounds(order);
-  let used = new Set(input.usedPairs);
-  const clean = (r: Round) => r.every(([a, b]) => !used.has(slotKey(a, b)));
-  const byeOk = (r: Round) => !odd || lastBye === null || byeOf(r) !== lastBye;
+  const order: Slot[] =
+    stableOrder(
+      alive,
+      input.salt,
+    );
+  const odd =
+    order.length %
+      2 ===
+    1;
+  if (
+    odd
+  )
+    order.push(
+      null,
+    );
+  const rounds =
+    circleRounds(
+      order,
+    );
+  let used =
+    new Set(
+      input.usedPairs,
+    );
+  const clean =
+    (
+      r: Round,
+    ) =>
+      r.every(
+        ([
+          a,
+          b,
+        ]) =>
+          !used.has(
+            slotKey(
+              a,
+              b,
+            ),
+          ),
+      );
+  const byeOk =
+    (
+      r: Round,
+    ) =>
+      !odd ||
+      lastBye ===
+        null ||
+      byeOf(
+        r,
+      ) !==
+        lastBye;
 
-  let candidates = rounds.filter((r) => clean(r) && byeOk(r));
-  if (candidates.length === 0) candidates = rounds.filter(clean);
-  if (candidates.length === 0) {
-    const slots: Slot[] = rng.shuffle(alive);
-    if (odd) slots.push(null);
+  let candidates =
+    rounds.filter(
+      (
+        r,
+      ) =>
+        clean(
+          r,
+        ) &&
+        byeOk(
+          r,
+        ),
+    );
+  if (
+    candidates.length ===
+    0
+  )
+    candidates =
+      rounds.filter(
+        clean,
+      );
+  if (
+    candidates.length ===
+    0
+  ) {
+    const slots: Slot[] =
+      rng.shuffle(
+        alive,
+      );
+    if (
+      odd
+    )
+      slots.push(
+        null,
+      );
     const found =
-      searchMatching(slots, used, odd ? lastBye : null) ?? searchMatching(slots, used, null);
-    if (found) candidates = [found];
+      searchMatching(
+        slots,
+        used,
+        odd
+          ? lastBye
+          : null,
+      ) ??
+      searchMatching(
+        slots,
+        used,
+        null,
+      );
+    if (
+      found
+    )
+      candidates =
+        [
+          found,
+        ];
   }
-  if (candidates.length === 0) {
-    used = new Set();
-    candidates = rounds.filter(byeOk);
-    if (candidates.length === 0) candidates = rounds;
+  if (
+    candidates.length ===
+    0
+  ) {
+    used =
+      new Set();
+    candidates =
+      rounds.filter(
+        byeOk,
+      );
+    if (
+      candidates.length ===
+      0
+    )
+      candidates =
+        rounds;
   }
-  const chosen = candidates[rng.int(candidates.length)] as Round;
-  const partner = new Map<Id, Id | ''>();
-  for (const [a, b] of chosen) {
-    if (a !== null) partner.set(a, b ?? '');
-    if (b !== null) partner.set(b, a ?? '');
-    used.add(slotKey(a, b));
+  const chosen =
+    candidates[
+      rng.int(
+        candidates.length,
+      )
+    ] as Round;
+  const partner =
+    new Map<
+      Id,
+      | Id
+      | ''
+    >();
+  for (const [
+    a,
+    b,
+  ] of chosen) {
+    if (
+      a !==
+      null
+    )
+      partner.set(
+        a,
+        b ??
+          '',
+      );
+    if (
+      b !==
+      null
+    )
+      partner.set(
+        b,
+        a ??
+          '',
+      );
+    used.add(
+      slotKey(
+        a,
+        b,
+      ),
+    );
   }
-  for (const id of alive) pairing[id] = partner.get(id) ?? '';
-  const bye = odd ? byeOf(chosen) : null;
-  return { pairing, usedPairs: [...used], lastBye: bye };
+  for (const id of alive)
+    pairing[
+      id
+    ] =
+      partner.get(
+        id,
+      ) ??
+      '';
+  const bye =
+    odd
+      ? byeOf(
+          chosen,
+        )
+      : null;
+  return {
+    pairing,
+    usedPairs:
+      [
+        ...used,
+      ],
+    lastBye:
+      bye,
+  };
 }

@@ -38,7 +38,10 @@
  * browser bundle and the esbuild server bundle pull this file in verbatim.
  */
 
-import type { z, ZodType } from 'zod';
+import type {
+  z,
+  ZodType,
+} from 'zod';
 
 /**
  * One event's payload shapes. Every field is optional because most events
@@ -54,7 +57,11 @@ export interface EventSpec {
   ack?: ZodType;
 }
 
-export type EventMap = Record<string, EventSpec>;
+export type EventMap =
+  Record<
+    string,
+    EventSpec
+  >;
 
 /**
  * Declare an event map.
@@ -63,14 +70,24 @@ export type EventMap = Record<string, EventSpec>;
  * parameter, which pins the literal keys and the exact zod types so the
  * helpers below can derive real signatures instead of `Record<string, unknown>`.
  */
-export function defineEvents<const E extends EventMap>(events: E): E {
+export function defineEvents<
+  const E extends
+    EventMap,
+>(
+  events: E,
+): E {
   return events;
 }
 
 /* ─── Deriving both directions ───────────────────────────────────────────── */
 
 /** The parsed (post-`safeParse`) type of a schema slot, or `never` if absent. */
-export type Payload<S> = S extends ZodType ? z.infer<S> : never;
+export type Payload<
+  S,
+> =
+  S extends ZodType
+    ? z.infer<S>
+    : never;
 
 /**
  * The names whose spec actually declares direction `D`.
@@ -81,15 +98,38 @@ export type Payload<S> = S extends ZodType ? z.infer<S> : never;
  * undefined`) instead of resolving to `undefined`. Testing for presence works
  * either way; testing for absence silently matches everything.
  */
-type KeysWith<E extends EventMap, D extends keyof EventSpec> = {
-  [K in keyof E]: E[K][D] extends ZodType ? K : never;
+type KeysWith<
+  E extends
+    EventMap,
+  D extends
+    keyof EventSpec,
+> = {
+  [
+    K in keyof E
+  ]: E[K][D] extends ZodType
+    ? K
+    : never;
 }[keyof E] &
   string;
 
 /** Event names carrying a client→server payload — the server's inbound surface. */
-export type C2SKeys<E extends EventMap> = KeysWith<E, 'c2s'>;
+export type C2SKeys<
+  E extends
+    EventMap,
+> =
+  KeysWith<
+    E,
+    'c2s'
+  >;
 /** Event names carrying a server→client payload. */
-export type S2CKeys<E extends EventMap> = KeysWith<E, 's2c'>;
+export type S2CKeys<
+  E extends
+    EventMap,
+> =
+  KeysWith<
+    E,
+    's2c'
+  >;
 
 /**
  * The client→server half: what the client may `emit` and the server listens for.
@@ -98,33 +138,118 @@ export type S2CKeys<E extends EventMap> = KeysWith<E, 's2c'>;
  * it can be handed straight to `Socket<ServerToClient<E>, ClientToServer<E>>`
  * on the client and the mirror image on the server.
  */
-export type ClientToServer<E extends EventMap> = {
-  [K in KeysWith<E, 'c2s'>]: E[K]['ack'] extends ZodType
-    ? (payload: Payload<E[K]['c2s']>, ack: (result: Payload<E[K]['ack']>) => void) => void
-    : (payload: Payload<E[K]['c2s']>) => void;
-};
+export type ClientToServer<
+  E extends
+    EventMap,
+> =
+  {
+    [
+      K in KeysWith<
+        E,
+        'c2s'
+      >
+    ]: E[K]['ack'] extends ZodType
+      ? (
+          payload: Payload<
+            E[K]['c2s']
+          >,
+          ack: (
+            result: Payload<
+              E[K]['ack']
+            >,
+          ) => void,
+        ) => void
+      : (
+          payload: Payload<
+            E[K]['c2s']
+          >,
+        ) => void;
+  };
 
 /** The server→client half: what the server emits and the client listens for. */
-export type ServerToClient<E extends EventMap> = {
-  [K in KeysWith<E, 's2c'>]: (payload: Payload<E[K]['s2c']>) => void;
-};
+export type ServerToClient<
+  E extends
+    EventMap,
+> =
+  {
+    [
+      K in KeysWith<
+        E,
+        's2c'
+      >
+    ]: (
+      payload: Payload<
+        E[K]['s2c']
+      >,
+    ) => void;
+  };
 
 /** The payload type of a single event, for annotating a handler in isolation. */
-export type C2SPayload<E extends EventMap, K extends KeysWith<E, 'c2s'>> = Payload<E[K]['c2s']>;
-export type S2CPayload<E extends EventMap, K extends KeysWith<E, 's2c'>> = Payload<E[K]['s2c']>;
-export type AckPayload<E extends EventMap, K extends keyof E> = Payload<E[K]['ack']>;
+export type C2SPayload<
+  E extends
+    EventMap,
+  K extends
+    KeysWith<
+      E,
+      'c2s'
+    >,
+> = Payload<
+  E[K]['c2s']
+>;
+export type S2CPayload<
+  E extends
+    EventMap,
+  K extends
+    KeysWith<
+      E,
+      's2c'
+    >,
+> = Payload<
+  E[K]['s2c']
+>;
+export type AckPayload<
+  E extends
+    EventMap,
+  K extends
+    keyof E,
+> = Payload<
+  E[K]['ack']
+>;
 
 /* ─── Reflection, for the handshake and for tests ────────────────────────── */
 
 /** Every event name in the map, sorted — declaration order must not matter. */
-export function eventNames<E extends EventMap>(events: E): string[] {
-  return Object.keys(events).sort();
+export function eventNames<
+  E extends
+    EventMap,
+>(
+  events: E,
+): string[] {
+  return Object.keys(
+    events,
+  ).sort();
 }
 
 /** Names that carry a client→server payload, i.e. the server's inbound surface. */
-export function inboundNames<E extends EventMap>(events: E): string[] {
-  return Object.keys(events)
-    .filter((name) => events[name].c2s !== undefined)
+export function inboundNames<
+  E extends
+    EventMap,
+>(
+  events: E,
+): string[] {
+  return Object.keys(
+    events,
+  )
+    .filter(
+      (
+        name,
+      ) =>
+        events[
+          name
+        ]
+          .c2s !==
+        undefined,
+    )
     .sort();
 }
 
@@ -138,18 +263,41 @@ export function inboundNames<E extends EventMap>(events: E): string[] {
  * internals have no stable serialization across zod versions, so hashing them
  * would churn the protocol version on a dependency bump.
  */
-export function eventSignatures<E extends EventMap>(events: E): string[] {
-  return Object.keys(events)
+export function eventSignatures<
+  E extends
+    EventMap,
+>(
+  events: E,
+): string[] {
+  return Object.keys(
+    events,
+  )
     .sort()
-    .map((name) => {
-      const spec = events[name];
-      const directions = [
-        spec.c2s ? 'c2s' : null,
-        spec.s2c ? 's2c' : null,
-        spec.ack ? 'ack' : null,
-      ].filter(Boolean);
-      return `${name}:${directions.join('+')}`;
-    });
+    .map(
+      (
+        name,
+      ) => {
+        const spec =
+          events[
+            name
+          ];
+        const directions =
+          [
+            spec.c2s
+              ? 'c2s'
+              : null,
+            spec.s2c
+              ? 's2c'
+              : null,
+            spec.ack
+              ? 'ack'
+              : null,
+          ].filter(
+            Boolean,
+          );
+        return `${name}:${directions.join('+')}`;
+      },
+    );
 }
 
 /**
@@ -159,12 +307,16 @@ export function eventSignatures<E extends EventMap>(events: E): string[] {
  * client that needs to hear it is by definition one that disagrees with us
  * about the app's own event names.
  */
-export const PROTOCOL_ERROR_EVENT = 'protocol:error';
+export const PROTOCOL_ERROR_EVENT =
+  'protocol:error';
 
 /** Payload of {@link PROTOCOL_ERROR_EVENT}. Kept small — it crosses a trust boundary. */
 export interface ProtocolErrorPayload {
   /** The event whose payload failed to parse. */
   event: string;
   /** Machine-readable cause. `invalid_payload` today; room for the E2 version check. */
-  reason: 'invalid_payload' | 'unknown_event' | 'version_mismatch';
+  reason:
+    | 'invalid_payload'
+    | 'unknown_event'
+    | 'version_mismatch';
 }

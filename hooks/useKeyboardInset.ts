@@ -44,32 +44,81 @@ import { keyboardInset } from '@/lib/keyboard-inset';
  */
 export function useKeyboardInset(): void {
   useEffect(() => {
-    const visual = window.visualViewport;
-    if (!visual) return;
+    const visual =
+      window.visualViewport;
+    if (
+      !visual
+    )
+      return;
 
-    const root = document.documentElement;
+    const root =
+      document.documentElement;
     let last = 0;
 
-    const measure = () => {
-      const inset = keyboardInset({ layoutHeight: root.clientHeight, visualViewport: visual });
-      if (inset === last) return;
-      last = inset;
-      if (inset === 0) root.style.removeProperty('--kb-inset');
-      else root.style.setProperty('--kb-inset', `${inset}px`);
-    };
+    const measure =
+      () => {
+        const inset =
+          keyboardInset(
+            {
+              layoutHeight:
+                root.clientHeight,
+              visualViewport:
+                visual,
+            },
+          );
+        if (
+          inset ===
+          last
+        )
+          return;
+        last =
+          inset;
+        if (
+          inset ===
+          0
+        )
+          root.style.removeProperty(
+            '--kb-inset',
+          );
+        else
+          root.style.setProperty(
+            '--kb-inset',
+            `${inset}px`,
+          );
+      };
 
     measure();
-    visual.addEventListener('resize', measure);
+    visual.addEventListener(
+      'resize',
+      measure,
+    );
     // A keyboard's arrival often lands as a viewport SCROLL rather than a resize
     // — that is the engine panning to reveal the field — so both are watched.
-    visual.addEventListener('scroll', measure);
-    window.addEventListener('orientationchange', measure);
+    visual.addEventListener(
+      'scroll',
+      measure,
+    );
+    window.addEventListener(
+      'orientationchange',
+      measure,
+    );
 
     return () => {
-      visual.removeEventListener('resize', measure);
-      visual.removeEventListener('scroll', measure);
-      window.removeEventListener('orientationchange', measure);
-      root.style.removeProperty('--kb-inset');
+      visual.removeEventListener(
+        'resize',
+        measure,
+      );
+      visual.removeEventListener(
+        'scroll',
+        measure,
+      );
+      window.removeEventListener(
+        'orientationchange',
+        measure,
+      );
+      root.style.removeProperty(
+        '--kb-inset',
+      );
     };
   }, []);
 }

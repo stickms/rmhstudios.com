@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatValue } from '@/lib/ops/alarm-rules';
-import type { ChartSeries, DeployMarker } from '@/lib/ops/series';
+import type {
+  ChartSeries,
+  DeployMarker,
+} from '@/lib/ops/series';
 
 // The SVG draws only lines and is stretched to the plot box
 // (preserveAspectRatio="none" + non-scaling strokes); every label and the
@@ -11,18 +14,60 @@ const H = 160; // = the plot box's CSS height (h-40), so y is in real pixels
 const PAD_Y = 8;
 
 /** The next 1 / 2 / 2.5 / 5 × 10^n at or above v, so axis ticks read cleanly. */
-function niceCeil(v: number): number {
-  const p = 10 ** Math.floor(Math.log10(v));
-  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p;
-  return 10 * p;
+function niceCeil(
+  v: number,
+): number {
+  const p =
+    10 **
+    Math.floor(
+      Math.log10(
+        v,
+      ),
+    );
+  for (const m of [
+    1,
+    2,
+    2.5,
+    5,
+    10,
+  ])
+    if (
+      m *
+        p >=
+      v
+    )
+      return (
+        m *
+        p
+      );
+  return (
+    10 *
+    p
+  );
 }
 
-const fmtTime = (t: number, withDate: boolean) =>
-  new Date(t).toLocaleString(undefined, {
-    ...(withDate ? { month: 'short', day: 'numeric' } : {}),
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+const fmtTime =
+  (
+    t: number,
+    withDate: boolean,
+  ) =>
+    new Date(
+      t,
+    ).toLocaleString(
+      undefined,
+      {
+        ...(withDate
+          ? {
+              month:
+                'short',
+              day: 'numeric',
+            }
+          : {}),
+        hour: 'numeric',
+        minute:
+          '2-digit',
+      },
+    );
 
 /**
  * One metric over time as an inline-SVG line, with each alarm rule's threshold
@@ -41,104 +86,374 @@ export function MetricChart({
   deploys?: DeployMarker[];
   withDate: boolean;
 }) {
-  const { t } = useTranslation('f-oncall');
-  const [active, setActive] = useState<number | null>(null);
-  const pts = series.points;
-  const latest = pts.length ? pts[pts.length - 1]!.v : null;
-  const fmt = (v: number | null) => formatValue(v, series.unit);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-oncall',
+    );
+  const [
+    active,
+    setActive,
+  ] =
+    useState<
+      | number
+      | null
+    >(
+      null,
+    );
+  const pts =
+    series.points;
+  const latest =
+    pts.length
+      ? pts[
+          pts.length -
+            1
+        ]!
+          .v
+      : null;
+  const fmt =
+    (
+      v:
+        | number
+        | null,
+    ) =>
+      formatValue(
+        v,
+        series.unit,
+      );
 
-  const title = series.worstOf
-    ? t('chart-worst', { defaultValue: '{{title}} — worst of each', title: series.title })
-    : series.title;
+  const title =
+    series.worstOf
+      ? t(
+          'chart-worst',
+          {
+            defaultValue:
+              '{{title}} — worst of each',
+            title:
+              series.title,
+          },
+        )
+      : series.title;
 
-  if (pts.length < 2) {
+  if (
+    pts.length <
+    2
+  ) {
     return (
       <div className="relative">
-        <h3 className="t-body font-semibold text-site-text">{title}</h3>
+        <h3 className="t-body font-semibold text-site-text">
+          {
+            title
+          }
+        </h3>
         <p className="my-6 text-center t-body text-site-text-muted">
-          {t('chart-empty-2', {
-            defaultValue:
-              'No data for this metric yet. It appears a few minutes after the metric first sees traffic.',
-          })}
+          {t(
+            'chart-empty-2',
+            {
+              defaultValue:
+                'No data for this metric yet. It appears a few minutes after the metric first sees traffic.',
+            },
+          )}
         </p>
       </div>
     );
   }
 
-  const top = niceCeil(
-    Math.max(...pts.map((p) => p.v), ...series.thresholds.map((th) => th.value), 1e-9) * 1.05,
-  );
-  const t0 = pts[0]!.t;
-  const t1 = pts[pts.length - 1]!.t;
-  const x = (ts: number) => ((ts - t0) / Math.max(t1 - t0, 1)) * W;
-  const y = (v: number) => PAD_Y + (1 - v / top) * (H - PAD_Y * 2);
-  const px = pts.map((p) => x(p.t));
-  const line = pts
-    .map((p, i) => `${i === 0 ? 'M' : 'L'}${px[i]!.toFixed(1)} ${y(p.v).toFixed(1)}`)
-    .join(' ');
-  const cur = active === null ? null : pts[active]!;
-  const over = (v: number) => series.thresholds.some((th) => !th.muted && v > th.value);
+  const top =
+    niceCeil(
+      Math.max(
+        ...pts.map(
+          (
+            p,
+          ) =>
+            p.v,
+        ),
+        ...series.thresholds.map(
+          (
+            th,
+          ) =>
+            th.value,
+        ),
+        1e-9,
+      ) *
+        1.05,
+    );
+  const t0 =
+    pts[0]!
+      .t;
+  const t1 =
+    pts[
+      pts.length -
+        1
+    ]!
+      .t;
+  const x =
+    (
+      ts: number,
+    ) =>
+      ((ts -
+        t0) /
+        Math.max(
+          t1 -
+            t0,
+          1,
+        )) *
+      W;
+  const y =
+    (
+      v: number,
+    ) =>
+      PAD_Y +
+      (1 -
+        v /
+          top) *
+        (H -
+          PAD_Y *
+            2);
+  const px =
+    pts.map(
+      (
+        p,
+      ) =>
+        x(
+          p.t,
+        ),
+    );
+  const line =
+    pts
+      .map(
+        (
+          p,
+          i,
+        ) =>
+          `${i === 0 ? 'M' : 'L'}${px[i]!.toFixed(1)} ${y(p.v).toFixed(1)}`,
+      )
+      .join(
+        ' ',
+      );
+  const cur =
+    active ===
+    null
+      ? null
+      : pts[
+          active
+        ]!;
+  const over =
+    (
+      v: number,
+    ) =>
+      series.thresholds.some(
+        (
+          th,
+        ) =>
+          !th.muted &&
+          v >
+            th.value,
+      );
   // Deploys inside the plotted span, and for the hovered point the deploy(s)
   // since the previous point — "this is the first reading after deploy X".
-  const marks = deploys.filter((d) => d.at >= t0 && d.at <= t1);
-  const deployBefore = (i: number) =>
-    marks.filter((d) => d.at <= pts[i]!.t && (i === 0 || d.at > pts[i - 1]!.t)).at(-1);
-  const curDeploy = active === null ? undefined : deployBefore(active);
-  const ticks = [1, 0.5, 0].map((f) => top * f);
+  const marks =
+    deploys.filter(
+      (
+        d,
+      ) =>
+        d.at >=
+          t0 &&
+        d.at <=
+          t1,
+    );
+  const deployBefore =
+    (
+      i: number,
+    ) =>
+      marks
+        .filter(
+          (
+            d,
+          ) =>
+            d.at <=
+              pts[
+                i
+              ]!
+                .t &&
+            (i ===
+              0 ||
+              d.at >
+                pts[
+                  i -
+                    1
+                ]!
+                  .t),
+        )
+        .at(
+          -1,
+        );
+  const curDeploy =
+    active ===
+    null
+      ? undefined
+      : deployBefore(
+          active,
+        );
+  const ticks =
+    [
+      1,
+      0.5,
+      0,
+    ].map(
+      (
+        f,
+      ) =>
+        top *
+        f,
+    );
 
-  const nearest = (vx: number) => {
-    let best = 0;
-    for (let i = 1; i < px.length; i++)
-      if (Math.abs(px[i]! - vx) < Math.abs(px[best]! - vx)) best = i;
-    return best;
-  };
-  const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setActive(nearest(((e.clientX - rect.left) / rect.width) * W));
-  };
-  const onKey = (e: React.KeyboardEvent<SVGSVGElement>) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    e.preventDefault();
-    const i = active ?? pts.length - 1;
-    setActive(Math.min(pts.length - 1, Math.max(0, i + (e.key === 'ArrowRight' ? 1 : -1))));
-  };
+  const nearest =
+    (
+      vx: number,
+    ) => {
+      let best = 0;
+      for (
+        let i = 1;
+        i <
+        px.length;
+        i++
+      )
+        if (
+          Math.abs(
+            px[
+              i
+            ]! -
+              vx,
+          ) <
+          Math.abs(
+            px[
+              best
+            ]! -
+              vx,
+          )
+        )
+          best =
+            i;
+      return best;
+    };
+  const onMove =
+    (
+      e: React.PointerEvent<SVGSVGElement>,
+    ) => {
+      const rect =
+        e.currentTarget.getBoundingClientRect();
+      setActive(
+        nearest(
+          ((e.clientX -
+            rect.left) /
+            rect.width) *
+            W,
+        ),
+      );
+    };
+  const onKey =
+    (
+      e: React.KeyboardEvent<SVGSVGElement>,
+    ) => {
+      if (
+        e.key !==
+          'ArrowLeft' &&
+        e.key !==
+          'ArrowRight'
+      )
+        return;
+      e.preventDefault();
+      const i =
+        active ??
+        pts.length -
+          1;
+      setActive(
+        Math.min(
+          pts.length -
+            1,
+          Math.max(
+            0,
+            i +
+              (e.key ===
+              'ArrowRight'
+                ? 1
+                : -1),
+          ),
+        ),
+      );
+    };
 
   return (
     <div className="relative min-w-0">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h3 className="min-w-0 t-body font-semibold text-site-text">{title}</h3>
-        <p className="t-meta tabular-nums" aria-live="polite">
+        <h3 className="min-w-0 t-body font-semibold text-site-text">
+          {
+            title
+          }
+        </h3>
+        <p
+          className="t-meta tabular-nums"
+          aria-live="polite"
+        >
           {cur ? (
             <>
               <span
                 className={
-                  over(cur.v) ? 'font-semibold text-site-danger' : 'font-semibold text-site-text'
+                  over(
+                    cur.v,
+                  )
+                    ? 'font-semibold text-site-danger'
+                    : 'font-semibold text-site-text'
                 }
               >
-                {fmt(cur.v)}
+                {fmt(
+                  cur.v,
+                )}
               </span>{' '}
-              {fmtTime(cur.t, withDate)}
+              {fmtTime(
+                cur.t,
+                withDate,
+              )}
               {curDeploy && (
                 <span className="ml-2 text-site-text">
-                  {t('chart-after-deploy', {
-                    defaultValue: 'after deploy {{sha}} ({{status}})',
-                    sha: curDeploy.sha,
-                    status: curDeploy.status,
-                  })}
+                  {t(
+                    'chart-after-deploy',
+                    {
+                      defaultValue:
+                        'after deploy {{sha}} ({{status}})',
+                      sha: curDeploy.sha,
+                      status:
+                        curDeploy.status,
+                    },
+                  )}
                 </span>
               )}
             </>
           ) : (
             <>
-              {t('chart-latest', { defaultValue: 'Latest' })}{' '}
+              {t(
+                'chart-latest',
+                {
+                  defaultValue:
+                    'Latest',
+                },
+              )}{' '}
               <span
                 className={
-                  latest !== null && over(latest)
+                  latest !==
+                    null &&
+                  over(
+                    latest,
+                  )
                     ? 'font-semibold text-site-danger'
                     : 'font-semibold text-site-text'
                 }
               >
-                {fmt(latest)}
+                {fmt(
+                  latest,
+                )}
               </span>
             </>
           )}
@@ -146,172 +461,400 @@ export function MetricChart({
       </div>
 
       <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1 t-meta">
-        {series.thresholds.map((th) => (
-          <li key={th.label} className="flex items-center gap-1.5">
+        {series.thresholds.map(
+          (
+            th,
+          ) => (
+            <li
+              key={
+                th.label
+              }
+              className="flex items-center gap-1.5"
+            >
+              <svg
+                aria-hidden
+                width="16"
+                height="2"
+                className={
+                  th.muted
+                    ? 'text-site-text-muted'
+                    : 'text-site-danger'
+                }
+              >
+                <line
+                  x1="0"
+                  x2="16"
+                  y1="1"
+                  y2="1"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeDasharray="4 3"
+                />
+              </svg>
+              {th.muted
+                ? t(
+                    'chart-threshold-muted',
+                    {
+                      defaultValue:
+                        '{{rule}} (muted)',
+                      rule: th.label,
+                    },
+                  )
+                : t(
+                    'chart-threshold',
+                    {
+                      defaultValue:
+                        'Alarm above {{value}} · {{rule}}',
+                      value:
+                        fmt(
+                          th.value,
+                        ),
+                      rule: th.label,
+                    },
+                  )}
+            </li>
+          ),
+        )}
+        {marks.length >
+          0 && (
+          <li className="flex items-center gap-1.5">
             <svg
               aria-hidden
-              width="16"
-              height="2"
-              className={th.muted ? 'text-site-text-muted' : 'text-site-danger'}
+              width="2"
+              height="12"
+              className="text-site-text-muted"
             >
               <line
-                x1="0"
-                x2="16"
-                y1="1"
-                y2="1"
+                x1="1"
+                x2="1"
+                y1="0"
+                y2="12"
                 stroke="currentColor"
                 strokeWidth="2"
-                strokeDasharray="4 3"
               />
             </svg>
-            {th.muted
-              ? t('chart-threshold-muted', { defaultValue: '{{rule}} (muted)', rule: th.label })
-              : t('chart-threshold', {
-                  defaultValue: 'Alarm above {{value}} · {{rule}}',
-                  value: fmt(th.value),
-                  rule: th.label,
-                })}
-          </li>
-        ))}
-        {marks.length > 0 && (
-          <li className="flex items-center gap-1.5">
-            <svg aria-hidden width="2" height="12" className="text-site-text-muted">
-              <line x1="1" x2="1" y1="0" y2="12" stroke="currentColor" strokeWidth="2" />
-            </svg>
-            {t('chart-deploys', { defaultValue: '{{n}} deploys', n: marks.length })}
+            {t(
+              'chart-deploys',
+              {
+                defaultValue:
+                  '{{n}} deploys',
+                n: marks.length,
+              },
+            )}
           </li>
         )}
       </ul>
 
       <div className="mt-3 flex gap-2">
-        <div className="relative h-40 w-12 shrink-0 text-end t-meta tabular-nums" aria-hidden>
-          {ticks.map((v) => (
-            <span key={v} className="absolute right-0 -translate-y-1/2" style={{ top: y(v) }}>
-              {fmt(v)}
-            </span>
-          ))}
+        <div
+          className="relative h-40 w-12 shrink-0 text-end t-meta tabular-nums"
+          aria-hidden
+        >
+          {ticks.map(
+            (
+              v,
+            ) => (
+              <span
+                key={
+                  v
+                }
+                className="absolute right-0 -translate-y-1/2"
+                style={{
+                  top: y(
+                    v,
+                  ),
+                }}
+              >
+                {fmt(
+                  v,
+                )}
+              </span>
+            ),
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="relative h-40">
             <svg
               role="img"
-              tabIndex={0}
-              aria-label={t('chart-label', {
-                defaultValue:
-                  '{{title}}, latest {{value}}. Use the arrow keys to read earlier points.',
-                title,
-                value: fmt(latest),
-              })}
+              tabIndex={
+                0
+              }
+              aria-label={t(
+                'chart-label',
+                {
+                  defaultValue:
+                    '{{title}}, latest {{value}}. Use the arrow keys to read earlier points.',
+                  title,
+                  value:
+                    fmt(
+                      latest,
+                    ),
+                },
+              )}
               viewBox={`0 0 ${W} ${H}`}
               preserveAspectRatio="none"
               className="absolute inset-0 h-full w-full touch-pan-y overflow-visible rounded-[var(--site-control-radius)] text-site-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/40"
-              onPointerMove={onMove}
-              onPointerLeave={() => setActive(null)}
-              onKeyDown={onKey}
-              onBlur={() => setActive(null)}
+              onPointerMove={
+                onMove
+              }
+              onPointerLeave={() =>
+                setActive(
+                  null,
+                )
+              }
+              onKeyDown={
+                onKey
+              }
+              onBlur={() =>
+                setActive(
+                  null,
+                )
+              }
             >
-              {ticks.map((v) => (
-                <line
-                  key={v}
-                  x1={0}
-                  x2={W}
-                  y1={y(v)}
-                  y2={y(v)}
-                  className="text-site-border"
-                  stroke="currentColor"
-                  strokeOpacity={0.6}
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              {series.thresholds.map((th) => (
-                <line
-                  key={th.label}
-                  x1={0}
-                  x2={W}
-                  y1={y(th.value)}
-                  y2={y(th.value)}
-                  className={th.muted ? 'text-site-text-muted' : 'text-site-danger'}
-                  stroke="currentColor"
-                  strokeDasharray="5 4"
-                  strokeOpacity={th.muted ? 0.5 : 0.8}
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              {marks.map((d) => (
-                <line
-                  key={`${d.at}-${d.sha}`}
-                  x1={x(d.at)}
-                  x2={x(d.at)}
-                  y1={0}
-                  y2={H}
-                  className={d.status === 'success' ? 'text-site-text-muted' : 'text-site-warning'}
-                  stroke="currentColor"
-                  strokeOpacity={0.7}
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
+              {ticks.map(
+                (
+                  v,
+                ) => (
+                  <line
+                    key={
+                      v
+                    }
+                    x1={
+                      0
+                    }
+                    x2={
+                      W
+                    }
+                    y1={y(
+                      v,
+                    )}
+                    y2={y(
+                      v,
+                    )}
+                    className="text-site-border"
+                    stroke="currentColor"
+                    strokeOpacity={
+                      0.6
+                    }
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ),
+              )}
+              {series.thresholds.map(
+                (
+                  th,
+                ) => (
+                  <line
+                    key={
+                      th.label
+                    }
+                    x1={
+                      0
+                    }
+                    x2={
+                      W
+                    }
+                    y1={y(
+                      th.value,
+                    )}
+                    y2={y(
+                      th.value,
+                    )}
+                    className={
+                      th.muted
+                        ? 'text-site-text-muted'
+                        : 'text-site-danger'
+                    }
+                    stroke="currentColor"
+                    strokeDasharray="5 4"
+                    strokeOpacity={
+                      th.muted
+                        ? 0.5
+                        : 0.8
+                    }
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ),
+              )}
+              {marks.map(
+                (
+                  d,
+                ) => (
+                  <line
+                    key={`${d.at}-${d.sha}`}
+                    x1={x(
+                      d.at,
+                    )}
+                    x2={x(
+                      d.at,
+                    )}
+                    y1={
+                      0
+                    }
+                    y2={
+                      H
+                    }
+                    className={
+                      d.status ===
+                      'success'
+                        ? 'text-site-text-muted'
+                        : 'text-site-warning'
+                    }
+                    stroke="currentColor"
+                    strokeOpacity={
+                      0.7
+                    }
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ),
+              )}
               <path
-                d={line}
+                d={
+                  line
+                }
                 fill="none"
                 stroke="currentColor"
-                strokeWidth={2}
+                strokeWidth={
+                  2
+                }
                 strokeLinejoin="round"
                 strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
               />
-              {cur && active !== null && (
-                <line
-                  x1={px[active]}
-                  x2={px[active]}
-                  y1={0}
-                  y2={H}
-                  className="text-site-text-muted"
-                  stroke="currentColor"
-                  strokeOpacity={0.5}
-                  vectorEffect="non-scaling-stroke"
+              {cur &&
+                active !==
+                  null && (
+                  <line
+                    x1={
+                      px[
+                        active
+                      ]
+                    }
+                    x2={
+                      px[
+                        active
+                      ]
+                    }
+                    y1={
+                      0
+                    }
+                    y2={
+                      H
+                    }
+                    className="text-site-text-muted"
+                    stroke="currentColor"
+                    strokeOpacity={
+                      0.5
+                    }
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
+            </svg>
+            {cur &&
+              active !==
+                null && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-site-accent ring-2 ring-site-surface"
+                  style={{
+                    left: `${(px[active]! / W) * 100}%`,
+                    top: y(
+                      cur.v,
+                    ),
+                  }}
                 />
               )}
-            </svg>
-            {cur && active !== null && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-site-accent ring-2 ring-site-surface"
-                style={{ left: `${(px[active]! / W) * 100}%`, top: y(cur.v) }}
-              />
-            )}
           </div>
-          <div className="mt-1 flex justify-between t-meta" aria-hidden>
-            <span>{fmtTime(t0, withDate)}</span>
-            <span>{fmtTime(t1, withDate)}</span>
+          <div
+            className="mt-1 flex justify-between t-meta"
+            aria-hidden
+          >
+            <span>
+              {fmtTime(
+                t0,
+                withDate,
+              )}
+            </span>
+            <span>
+              {fmtTime(
+                t1,
+                withDate,
+              )}
+            </span>
           </div>
         </div>
       </div>
 
       <details className="mt-2 t-meta">
         <summary className="cursor-pointer select-none">
-          {t('chart-table', { defaultValue: 'Show data' })}
+          {t(
+            'chart-table',
+            {
+              defaultValue:
+                'Show data',
+            },
+          )}
         </summary>
         <div className="mt-2 max-h-48 overflow-auto">
           <table className="w-full text-start tabular-nums">
             <thead>
               <tr>
                 <th className="py-1 pr-4 font-medium">
-                  {t('chart-col-time', { defaultValue: 'Time' })}
+                  {t(
+                    'chart-col-time',
+                    {
+                      defaultValue:
+                        'Time',
+                    },
+                  )}
                 </th>
                 <th className="py-1 font-medium">
-                  {t('chart-col-value', { defaultValue: 'Value' })}
+                  {t(
+                    'chart-col-value',
+                    {
+                      defaultValue:
+                        'Value',
+                    },
+                  )}
                 </th>
               </tr>
             </thead>
             <tbody>
-              {[...pts].reverse().map((p) => (
-                <tr key={p.t}>
-                  <td className="py-0.5 pr-4">{fmtTime(p.t, withDate)}</td>
-                  <td className={over(p.v) ? 'py-0.5 text-site-danger' : 'py-0.5 text-site-text'}>
-                    {fmt(p.v)}
-                  </td>
-                </tr>
-              ))}
+              {[
+                ...pts,
+              ]
+                .reverse()
+                .map(
+                  (
+                    p,
+                  ) => (
+                    <tr
+                      key={
+                        p.t
+                      }
+                    >
+                      <td className="py-0.5 pr-4">
+                        {fmtTime(
+                          p.t,
+                          withDate,
+                        )}
+                      </td>
+                      <td
+                        className={
+                          over(
+                            p.v,
+                          )
+                            ? 'py-0.5 text-site-danger'
+                            : 'py-0.5 text-site-text'
+                        }
+                      >
+                        {fmt(
+                          p.v,
+                        )}
+                      </td>
+                    </tr>
+                  ),
+                )}
             </tbody>
           </table>
         </div>

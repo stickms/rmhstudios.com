@@ -2,7 +2,16 @@
 import { endpoint } from '@/lib/contract/endpoint';
 import type { WatchStateDTO } from '@/lib/sohumtracker/types';
 
-export const getWatchActivityApi = endpoint<{
-  query: { days: number };
-  res: WatchStateDTO;
-}>()({ method: 'GET', path: '/api/sohumtracker/activity' });
+export const getWatchActivityApi =
+  endpoint<{
+    query: {
+      days: number;
+    };
+    res: WatchStateDTO;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/sohumtracker/activity',
+    },
+  );

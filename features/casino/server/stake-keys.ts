@@ -3,16 +3,32 @@
  * Pure; `stake-ledger.ts` explains what the keys mean and reads them back.
  */
 
-export type StakeFate = 'returned' | 'paid';
+export type StakeFate =
+  | 'returned'
+  | 'paid';
 
 export interface StakeKeys {
-  payout(stakeId: string): string;
-  returned(stakeId: string): string;
+  payout(
+    stakeId: string,
+  ): string;
+  returned(
+    stakeId: string,
+  ): string;
 }
 
-export function stakeKeys(prefix: string): StakeKeys {
+export function stakeKeys(
+  prefix: string,
+): StakeKeys {
   return {
-    payout: (stakeId) => `${prefix}-payout:${stakeId}`,
-    returned: (stakeId) => `${prefix}-return:${stakeId}`,
+    payout:
+      (
+        stakeId,
+      ) =>
+        `${prefix}-payout:${stakeId}`,
+    returned:
+      (
+        stakeId,
+      ) =>
+        `${prefix}-return:${stakeId}`,
   };
 }

@@ -9,28 +9,79 @@ import { apiJson } from './api';
  * member's wishlist is fetched once and shared across every heart on the page,
  * after first idle, so a catalog of hundreds of cards costs one small request.
  */
-export function ShopWishButton({ itemId }: { itemId: string }) {
-  const idle = useIdleReady();
-  const { data } = useQuery({
-    queryKey: ['economy-plus', 'wishlist-shop-ids'],
-    queryFn: async () => {
-      const r = await apiJson<{ items: { entityType: string; entityId: string }[] }>(
-        '/api/wishlist',
-      );
-      return new Set(r.items.filter((i) => i.entityType === 'shop_item').map((i) => i.entityId));
-    },
-    enabled: idle,
-    staleTime: 5 * 60_000,
-  });
+export function ShopWishButton({
+  itemId,
+}: {
+  itemId: string;
+}) {
+  const idle =
+    useIdleReady();
+  const {
+    data,
+  } =
+    useQuery(
+      {
+        queryKey:
+          [
+            'economy-plus',
+            'wishlist-shop-ids',
+          ],
+        queryFn:
+          async () => {
+            const r =
+              await apiJson<{
+                items: {
+                  entityType: string;
+                  entityId: string;
+                }[];
+              }>(
+                '/api/wishlist',
+              );
+            return new Set(
+              r.items
+                .filter(
+                  (
+                    i,
+                  ) =>
+                    i.entityType ===
+                    'shop_item',
+                )
+                .map(
+                  (
+                    i,
+                  ) =>
+                    i.entityId,
+                ),
+            );
+          },
+        enabled:
+          idle,
+        staleTime:
+          5 *
+          60_000,
+      },
+    );
   // Until the wishlist is known the heart would guess its own state; show nothing instead, then fade it in (M9).
-  const arrival = useArrival(!!data);
-  if (!data) return null;
+  const arrival =
+    useArrival(
+      !!data,
+    );
+  if (
+    !data
+  )
+    return null;
   return (
     <WishButton
       entityType="shop_item"
-      entityId={itemId}
-      initialWished={data.has(itemId)}
-      className={arrival}
+      entityId={
+        itemId
+      }
+      initialWished={data.has(
+        itemId,
+      )}
+      className={
+        arrival
+      }
     />
   );
 }

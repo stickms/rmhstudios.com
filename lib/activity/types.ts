@@ -21,19 +21,27 @@ import { z } from 'zod';
 /* -------------------------------------------------------------------------- */
 
 /** Mirrors `enum ActivityVerb` in `prisma/schema/`. */
-export const ACTIVITY_VERBS = [
-  'VIEWED',
-  'PLAYED',
-  'SAVED',
-  'COMPLETED',
-  'RATED',
-  'SHARED',
-] as const;
+export const ACTIVITY_VERBS =
+  [
+    'VIEWED',
+    'PLAYED',
+    'SAVED',
+    'COMPLETED',
+    'RATED',
+    'SHARED',
+  ] as const;
 
-export type ActivityVerb = (typeof ACTIVITY_VERBS)[number];
+export type ActivityVerb =
+  (typeof ACTIVITY_VERBS)[number];
 
-export function isActivityVerb(value: string): value is ActivityVerb {
-  return (ACTIVITY_VERBS as readonly string[]).includes(value);
+export function isActivityVerb(
+  value: string,
+): value is ActivityVerb {
+  return (
+    ACTIVITY_VERBS as readonly string[]
+  ).includes(
+    value,
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -49,21 +57,23 @@ export function isActivityVerb(value: string): value is ActivityVerb {
  * rejected by Postgres at flush time and take the whole batch down with it, so
  * the emitter drops over-long kinds instead of learning that at 2am.
  */
-export const ACTIVITY_KINDS = [
-  'post',
-  'game',
-  'doc',
-  'video',
-  'song',
-  'deck',
-  'build',
-  'guide',
-  'app',
-  'news',
-  'blog',
-] as const;
+export const ACTIVITY_KINDS =
+  [
+    'post',
+    'game',
+    'doc',
+    'video',
+    'song',
+    'deck',
+    'build',
+    'guide',
+    'app',
+    'news',
+    'blog',
+  ] as const;
 
-export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
+export type ActivityKind =
+  (typeof ACTIVITY_KINDS)[number];
 
 /** `@db.VarChar(24)` on `Activity.kind`. */
 export const ACTIVITY_KIND_MAX = 24;
@@ -79,7 +89,14 @@ export const ACTIVITY_ENTITY_ID_MAX = 191;
  * carry "which level", "how far in", "which surface referred them" — the things
  * a resume card renders — not a nested copy of the entity.
  */
-export type ActivityMeta = Record<string, string | number | boolean | null>;
+export type ActivityMeta =
+  Record<
+    string,
+    | string
+    | number
+    | boolean
+    | null
+  >;
 
 /** One event as a caller describes it. `at` defaults to the emit time. */
 export interface ActivityEvent {
@@ -100,8 +117,17 @@ export interface ActivityEvent {
  * different tuple — one user's event silently swallowing another's. NUL cannot
  * appear in any of the four fields, so the join is unambiguous.
  */
-export function activityKey(event: Pick<ActivityEvent, 'userId' | 'verb' | 'kind' | 'entityId'>) {
-  const SEP = '\u0000';
+export function activityKey(
+  event: Pick<
+    ActivityEvent,
+    | 'userId'
+    | 'verb'
+    | 'kind'
+    | 'entityId'
+  >,
+) {
+  const SEP =
+    '\u0000';
   return `${event.userId}${SEP}${event.verb}${SEP}${event.kind}${SEP}${event.entityId}`;
 }
 
@@ -114,16 +140,68 @@ export function activityKey(event: Pick<ActivityEvent, 'userId' | 'verb' | 'kind
  * `Json` column, so without a ceiling a signed-in caller can write arbitrary
  * kilobytes per event at whatever rate the bucket allows.
  */
-const metaSchema = z
-  .record(z.string().max(40), z.union([z.string().max(200), z.number(), z.boolean(), z.null()]))
-  .refine((m) => Object.keys(m).length <= 12, { message: 'too many meta keys' });
+const metaSchema =
+  z
+    .record(
+      z
+        .string()
+        .max(
+          40,
+        ),
+      z.union(
+        [
+          z
+            .string()
+            .max(
+              200,
+            ),
+          z.number(),
+          z.boolean(),
+          z.null(),
+        ],
+      ),
+    )
+    .refine(
+      (
+        m,
+      ) =>
+        Object.keys(
+          m,
+        )
+          .length <=
+        12,
+      {
+        message:
+          'too many meta keys',
+      },
+    );
 
-export const activityEventSchema = z.object({
-  verb: z.enum(ACTIVITY_VERBS),
-  kind: z.string().min(1).max(ACTIVITY_KIND_MAX),
-  entityId: z.string().min(1).max(ACTIVITY_ENTITY_ID_MAX),
-  meta: metaSchema.optional(),
-});
+export const activityEventSchema =
+  z.object(
+    {
+      verb: z.enum(
+        ACTIVITY_VERBS,
+      ),
+      kind: z
+        .string()
+        .min(
+          1,
+        )
+        .max(
+          ACTIVITY_KIND_MAX,
+        ),
+      entityId:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            ACTIVITY_ENTITY_ID_MAX,
+          ),
+      meta: metaSchema.optional(),
+    },
+  );
 
 /**
  * Clients POST a BATCH, never a single event.
@@ -135,11 +213,27 @@ export const activityEventSchema = z.object({
  */
 export const ACTIVITY_BATCH_MAX = 50;
 
-export const activityBatchSchema = z.object({
-  events: z.array(activityEventSchema).min(1).max(ACTIVITY_BATCH_MAX),
-});
+export const activityBatchSchema =
+  z.object(
+    {
+      events:
+        z
+          .array(
+            activityEventSchema,
+          )
+          .min(
+            1,
+          )
+          .max(
+            ACTIVITY_BATCH_MAX,
+          ),
+    },
+  );
 
-export type ActivityBatchInput = z.infer<typeof activityBatchSchema>;
+export type ActivityBatchInput =
+  z.infer<
+    typeof activityBatchSchema
+  >;
 
 /* -------------------------------------------------------------------------- */
 /* Read shape                                                                 */

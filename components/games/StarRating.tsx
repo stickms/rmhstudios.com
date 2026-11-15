@@ -13,48 +13,127 @@ export function StarRating({
   label,
 }: {
   value: number;
-  onRate?: (stars: number) => void;
+  onRate?: (
+    stars: number,
+  ) => void;
   size?: number;
   label?: string;
 }) {
-  const [hover, setHover] = useState(0);
-  const shown = hover || value;
-  const interactive = !!onRate;
+  const [
+    hover,
+    setHover,
+  ] =
+    useState(
+      0,
+    );
+  const shown =
+    hover ||
+    value;
+  const interactive =
+    !!onRate;
 
   return (
     <span
       className="inline-flex items-center"
-      role={interactive ? 'radiogroup' : undefined}
-      aria-label={label}
+      role={
+        interactive
+          ? 'radiogroup'
+          : undefined
+      }
+      aria-label={
+        label
+      }
     >
-      {[1, 2, 3, 4, 5].map((n) => {
-        const filled = n <= shown;
-        const star = (
-          <Star
-            className={cn(filled ? 'fill-site-warning text-site-warning' : 'text-site-text-muted')}
-            style={{ width: size, height: size }}
-            aria-hidden
-          />
-        );
-        if (!interactive) return <span key={n}>{star}</span>;
-        return (
-          <button
-            key={n}
-            type="button"
-            role="radio"
-            aria-checked={value === n}
-            aria-label={`${n}`}
-            onMouseEnter={() => setHover(n)}
-            onMouseLeave={() => setHover(0)}
-            onFocus={() => setHover(n)}
-            onBlur={() => setHover(0)}
-            onClick={() => onRate(n)}
-            className="flex h-11 w-9 items-center justify-center"
-          >
-            {star}
-          </button>
-        );
-      })}
+      {[
+        1,
+        2,
+        3,
+        4,
+        5,
+      ].map(
+        (
+          n,
+        ) => {
+          const filled =
+            n <=
+            shown;
+          const star =
+            (
+              <Star
+                className={cn(
+                  filled
+                    ? 'fill-site-warning text-site-warning'
+                    : 'text-site-text-muted',
+                )}
+                style={{
+                  width:
+                    size,
+                  height:
+                    size,
+                }}
+                aria-hidden
+              />
+            );
+          if (
+            !interactive
+          )
+            return (
+              <span
+                key={
+                  n
+                }
+              >
+                {
+                  star
+                }
+              </span>
+            );
+          return (
+            <button
+              key={
+                n
+              }
+              type="button"
+              role="radio"
+              aria-checked={
+                value ===
+                n
+              }
+              aria-label={`${n}`}
+              onMouseEnter={() =>
+                setHover(
+                  n,
+                )
+              }
+              onMouseLeave={() =>
+                setHover(
+                  0,
+                )
+              }
+              onFocus={() =>
+                setHover(
+                  n,
+                )
+              }
+              onBlur={() =>
+                setHover(
+                  0,
+                )
+              }
+              onClick={() =>
+                onRate(
+                  n,
+                )
+              }
+              className="flex h-11 w-9 items-center justify-center"
+            >
+              {
+                star
+              }
+            </button>
+          );
+        },
+      )}
     </span>
   );
 }

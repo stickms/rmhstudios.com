@@ -15,25 +15,56 @@
  * Redis or the cache.
  */
 
-type Slot = { wanted: boolean; starters: Set<() => void> };
+type Slot =
+  {
+    wanted: boolean;
+    starters: Set<
+      () => void
+    >;
+  };
 
-const SLOT_KEY = Symbol.for('rmh.cache.bridgeStart');
+const SLOT_KEY =
+  Symbol.for(
+    'rmh.cache.bridgeStart',
+  );
 
 function slot(): Slot {
-  const g = globalThis as unknown as Record<symbol, Slot | undefined>;
-  return (g[SLOT_KEY] ??= { wanted: false, starters: new Set() });
+  const g =
+    globalThis as unknown as Record<
+      symbol,
+      | Slot
+      | undefined
+    >;
+  return (g[
+    SLOT_KEY
+  ] ??=
+    {
+      wanted: false,
+      starters:
+        new Set(),
+    });
 }
 
 /** Server start-up: start the bridge in every loaded copy, and in every copy loaded later. */
 export function requestCacheBridge(): void {
-  const s = slot();
+  const s =
+    slot();
   s.wanted = true;
-  for (const start of s.starters) start();
+  for (const start of s.starters)
+    start();
 }
 
 /** Called once per copy of `cached.server` at import. Starts it now if start-up already asked. */
-export function registerCacheBridgeStarter(start: () => void): void {
-  const s = slot();
-  s.starters.add(start);
-  if (s.wanted) start();
+export function registerCacheBridgeStarter(
+  start: () => void,
+): void {
+  const s =
+    slot();
+  s.starters.add(
+    start,
+  );
+  if (
+    s.wanted
+  )
+    start();
 }

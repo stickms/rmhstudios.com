@@ -13,57 +13,209 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, Link2, Link2Off, TriangleAlert } from 'lucide-react';
+import {
+  AlertTriangle,
+  Link2,
+  Link2Off,
+  TriangleAlert,
+} from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { DIFFICULTIES } from '@features/slice-it/engine/constants';
-import { checkNesting, repairNesting, violationsByTier } from '@features/slice-it/engine/editor/nesting';
+import {
+  checkNesting,
+  repairNesting,
+  violationsByTier,
+} from '@features/slice-it/engine/editor/nesting';
 import { useEditorStore } from '@features/slice-it/engine/editor/store';
-import type { Difficulty, NestingMode } from '@features/slice-it/engine/editor/types';
+import type {
+  Difficulty,
+  NestingMode,
+} from '@features/slice-it/engine/editor/types';
 import { Button } from '@/components/ui/button';
 
 export function DifficultyTabs() {
-  const { t } = useTranslation('r-slice-it');
-  const charts = useEditorStore((s) => s.charts);
-  const active = useEditorStore((s) => s.active);
-  const setActive = useEditorStore((s) => s.setActive);
-  const nestingMode = useEditorStore((s) => s.nestingMode);
-  const setNestingMode = useEditorStore((s) => s.setNestingMode);
-  const apply = useEditorStore((s) => s.apply);
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-slice-it',
+    );
+  const charts =
+    useEditorStore(
+      (
+        s,
+      ) =>
+        s.charts,
+    );
+  const active =
+    useEditorStore(
+      (
+        s,
+      ) =>
+        s.active,
+    );
+  const setActive =
+    useEditorStore(
+      (
+        s,
+      ) =>
+        s.setActive,
+    );
+  const nestingMode =
+    useEditorStore(
+      (
+        s,
+      ) =>
+        s.nestingMode,
+    );
+  const setNestingMode =
+    useEditorStore(
+      (
+        s,
+      ) =>
+        s.setNestingMode,
+    );
+  const apply =
+    useEditorStore(
+      (
+        s,
+      ) =>
+        s.apply,
+    );
 
   // Only meaningful in `warn` mode — in `cascade` the invariant cannot break, and
   // in `off` the author has said the tiers are siblings rather than a ladder.
-  const violations = useMemo(
-    () => (nestingMode === 'warn' ? checkNesting(charts) : []),
-    [charts, nestingMode],
-  );
-  const perTier = useMemo(() => violationsByTier(violations), [violations]);
+  const violations =
+    useMemo(
+      () =>
+        nestingMode ===
+        'warn'
+          ? checkNesting(
+              charts,
+            )
+          : [],
+      [
+        charts,
+        nestingMode,
+      ],
+    );
+  const perTier =
+    useMemo(
+      () =>
+        violationsByTier(
+          violations,
+        ),
+      [
+        violations,
+      ],
+    );
 
-  const label: Record<Difficulty, string> = {
-    easy: t('editor-difficulty-easy', { defaultValue: 'Easy' }),
-    normal: t('editor-difficulty-normal', { defaultValue: 'Normal' }),
-    hard: t('editor-difficulty-hard', { defaultValue: 'Hard' }),
-    expert: t('editor-difficulty-expert', { defaultValue: 'Expert' }),
-  };
+  const label: Record<
+    Difficulty,
+    string
+  > =
+    {
+      easy: t(
+        'editor-difficulty-easy',
+        {
+          defaultValue:
+            'Easy',
+        },
+      ),
+      normal:
+        t(
+          'editor-difficulty-normal',
+          {
+            defaultValue:
+              'Normal',
+          },
+        ),
+      hard: t(
+        'editor-difficulty-hard',
+        {
+          defaultValue:
+            'Hard',
+        },
+      ),
+      expert:
+        t(
+          'editor-difficulty-expert',
+          {
+            defaultValue:
+              'Expert',
+          },
+        ),
+    };
 
-  const tabs = DIFFICULTIES.map((difficulty) => ({
-    id: difficulty,
-    label: charts[difficulty].dirty ? `${label[difficulty]} •` : label[difficulty],
-    count: charts[difficulty].notes.length,
-    badge: perTier[difficulty] > 0 ? perTier[difficulty] : undefined,
-    icon: perTier[difficulty] > 0 ? TriangleAlert : undefined,
-  }));
+  const tabs =
+    DIFFICULTIES.map(
+      (
+        difficulty,
+      ) => ({
+        id: difficulty,
+        label:
+          charts[
+            difficulty
+          ]
+            .dirty
+            ? `${label[difficulty]} •`
+            : label[
+                difficulty
+              ],
+        count:
+          charts[
+            difficulty
+          ]
+            .notes
+            .length,
+        badge:
+          perTier[
+            difficulty
+          ] >
+          0
+            ? perTier[
+                difficulty
+              ]
+            : undefined,
+        icon:
+          perTier[
+            difficulty
+          ] >
+          0
+            ? TriangleAlert
+            : undefined,
+      }),
+    );
 
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className="neumorphic-inset min-w-0 flex-1 p-1.5">
         <Tabs
-          tabs={tabs}
-          value={active}
-          onChange={(id) => setActive(id as Difficulty)}
+          tabs={
+            tabs
+          }
+          value={
+            active
+          }
+          onChange={(
+            id,
+          ) =>
+            setActive(
+              id as Difficulty,
+            )
+          }
           size="sm"
-          sheet={false}
-          aria-label={t('editor-difficulty-tabs', { defaultValue: 'Difficulty' })}
+          sheet={
+            false
+          }
+          aria-label={t(
+            'editor-difficulty-tabs',
+            {
+              defaultValue:
+                'Difficulty',
+            },
+          )}
         />
       </div>
 
@@ -72,43 +224,109 @@ export function DifficultyTabs() {
           htmlFor="slice-nesting-mode"
           className="flex items-center gap-1.5 text-xs opacity-70"
         >
-          {nestingMode === 'off' ? (
-            <Link2Off className="h-4 w-4" aria-hidden />
+          {nestingMode ===
+          'off' ? (
+            <Link2Off
+              className="h-4 w-4"
+              aria-hidden
+            />
           ) : (
-            <Link2 className="h-4 w-4" aria-hidden />
+            <Link2
+              className="h-4 w-4"
+              aria-hidden
+            />
           )}
-          {t('editor-nesting-label', { defaultValue: 'Nesting' })}
+          {t(
+            'editor-nesting-label',
+            {
+              defaultValue:
+                'Nesting',
+            },
+          )}
         </label>
         <Select
           id="slice-nesting-mode"
           controlSize="sm"
-          value={nestingMode}
-          onChange={(event) => setNestingMode(event.target.value as NestingMode)}
+          value={
+            nestingMode
+          }
+          onChange={(
+            event,
+          ) =>
+            setNestingMode(
+              event
+                .target
+                .value as NestingMode,
+            )
+          }
         >
           <option value="cascade">
-            {t('editor-nesting-cascade', { defaultValue: 'Cascade' })}
+            {t(
+              'editor-nesting-cascade',
+              {
+                defaultValue:
+                  'Cascade',
+              },
+            )}
           </option>
-          <option value="warn">{t('editor-nesting-warn', { defaultValue: 'Warn' })}</option>
-          <option value="off">{t('editor-nesting-off', { defaultValue: 'Off' })}</option>
+          <option value="warn">
+            {t(
+              'editor-nesting-warn',
+              {
+                defaultValue:
+                  'Warn',
+              },
+            )}
+          </option>
+          <option value="off">
+            {t(
+              'editor-nesting-off',
+              {
+                defaultValue:
+                  'Off',
+              },
+            )}
+          </option>
         </Select>
       </div>
 
-      {violations.length > 0 && (
+      {violations.length >
+        0 && (
         <div className="flex items-center gap-2 text-xs">
-          <AlertTriangle className="h-4 w-4 text-site-warning" aria-hidden />
+          <AlertTriangle
+            className="h-4 w-4 text-site-warning"
+            aria-hidden
+          />
           <span>
-            {t('editor-nesting-violations', {
-              defaultValue: '{{count}} notes break Easy ⊆ Normal ⊆ Hard ⊆ Expert',
-              count: violations.length,
-            })}
+            {t(
+              'editor-nesting-violations',
+              {
+                defaultValue:
+                  '{{count}} notes break Easy ⊆ Normal ⊆ Hard ⊆ Expert',
+                count:
+                  violations.length,
+              },
+            )}
           </span>
           <Button
             size="xs"
             variant="default"
-            onClick={() => apply(repairNesting(charts))}
+            onClick={() =>
+              apply(
+                repairNesting(
+                  charts,
+                ),
+              )
+            }
             className="neumorphic-sm border-0"
           >
-            {t('editor-nesting-repair', { defaultValue: 'Repair' })}
+            {t(
+              'editor-nesting-repair',
+              {
+                defaultValue:
+                  'Repair',
+              },
+            )}
           </Button>
         </div>
       )}

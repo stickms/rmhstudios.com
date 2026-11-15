@@ -1,5 +1,14 @@
-import { describe, it, expect } from 'vitest';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { games } from '@/lib/catalog';
 
@@ -18,65 +27,210 @@ import { games } from '@/lib/catalog';
  * entry cannot linger.
  */
 
-const ROOT = process.cwd();
+const ROOT =
+  process.cwd();
 
 /** Catalog id → the directories its runtime lives in. Defaults to `components/<id>`. */
-const DIRS: Record<string, string[]> = {
-  'daily-puzzles': ['components/daily-puzzles'],
-  // Half-Life 2 / Portal: their pages are components/sp-game; the game surface is the shared GameCanvas.
-  'half-life-2': ['components/sp-game', 'components/tf2-game'],
-  portal: ['components/sp-game', 'components/tf2-game'],
-  csgo: ['components/csgo-game', 'components/tf2-game'],
-};
+const DIRS: Record<
+  string,
+  string[]
+> =
+  {
+    'daily-puzzles':
+      [
+        'components/daily-puzzles',
+      ],
+    // Half-Life 2 / Portal: their pages are components/sp-game; the game surface is the shared GameCanvas.
+    'half-life-2':
+      [
+        'components/sp-game',
+        'components/tf2-game',
+      ],
+    portal:
+      [
+        'components/sp-game',
+        'components/tf2-game',
+      ],
+    csgo: [
+      'components/csgo-game',
+      'components/tf2-game',
+    ],
+  };
 
-const EXEMPT: Record<string, string> = {
-  altair: 'turn-paced co-op board; no live clock to pause',
-  'daily-puzzles': 'untimed puzzles',
-  'gabriels-horn': 'online-only table game; cannot pause for the table',
-  rmhbox: 'party game hosted for a room; the host screen drives timing',
-  'temple-of-joy': 'idle game — it is meant to keep running while hidden',
-  velum2099: 'text adventure with no clock',
-  versecraft: 'narrative puzzle with no clock',
-};
+const EXEMPT: Record<
+  string,
+  string
+> =
+  {
+    altair:
+      'turn-paced co-op board; no live clock to pause',
+    'daily-puzzles':
+      'untimed puzzles',
+    'gabriels-horn':
+      'online-only table game; cannot pause for the table',
+    rmhbox:
+      'party game hosted for a room; the host screen drives timing',
+    'temple-of-joy':
+      'idle game — it is meant to keep running while hidden',
+    velum2099:
+      'text adventure with no clock',
+    versecraft:
+      'narrative puzzle with no clock',
+  };
 
 function catalogIds(): string[] {
-  return games.map((g) => g.id);
+  return games.map(
+    (
+      g,
+    ) =>
+      g.id,
+  );
 }
 
-function walk(dir: string, out: string[] = []): string[] {
-  if (!existsSync(dir)) return out;
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) walk(p, out);
-    else if (/\.(tsx?|jsx?)$/.test(name) && !/\.test\./.test(name)) out.push(p);
+function walk(
+  dir: string,
+  out: string[] = [],
+): string[] {
+  if (
+    !existsSync(
+      dir,
+    )
+  )
+    return out;
+  for (const name of readdirSync(
+    dir,
+  )) {
+    const p =
+      join(
+        dir,
+        name,
+      );
+    if (
+      statSync(
+        p,
+      ).isDirectory()
+    )
+      walk(
+        p,
+        out,
+      );
+    else if (
+      /\.(tsx?|jsx?)$/.test(
+        name,
+      ) &&
+      !/\.test\./.test(
+        name,
+      )
+    )
+      out.push(
+        p,
+      );
   }
   return out;
 }
 
-function usesHook(id: string): boolean {
-  const dirs = DIRS[id] ?? [
-    existsSync(join(ROOT, 'features', id, 'ui')) ? `features/${id}/ui` : `components/${id}`,
-  ];
-  return dirs.some((d) =>
-    walk(join(ROOT, d)).some((file) => /\buseGameSession\(/.test(readFileSync(file, 'utf8'))),
+function usesHook(
+  id: string,
+): boolean {
+  const dirs =
+    DIRS[
+      id
+    ] ?? [
+      existsSync(
+        join(
+          ROOT,
+          'features',
+          id,
+          'ui',
+        ),
+      )
+        ? `features/${id}/ui`
+        : `components/${id}`,
+    ];
+  return dirs.some(
+    (
+      d,
+    ) =>
+      walk(
+        join(
+          ROOT,
+          d,
+        ),
+      ).some(
+        (
+          file,
+        ) =>
+          /\buseGameSession\(/.test(
+            readFileSync(
+              file,
+              'utf8',
+            ),
+          ),
+      ),
   );
 }
 
 describe('game session contract (U3)', () => {
-  const ids = catalogIds();
+  const ids =
+    catalogIds();
 
   it('every catalog game mounts useGameSession or is a documented exemption', () => {
-    const missing = ids.filter((id) => !(id in EXEMPT) && !usesHook(id));
-    expect(missing, 'mount useGameSession in these games (hooks/useGameSession.ts)').toEqual([]);
+    const missing =
+      ids.filter(
+        (
+          id,
+        ) =>
+          !(
+            id in
+            EXEMPT
+          ) &&
+          !usesHook(
+            id,
+          ),
+      );
+    expect(
+      missing,
+      'mount useGameSession in these games (hooks/useGameSession.ts)',
+    ).toEqual(
+      [],
+    );
   });
 
   it('the exemption list only shrinks — remove entries that now use the hook', () => {
-    const stale = Object.keys(EXEMPT).filter((id) => usesHook(id));
-    expect(stale).toEqual([]);
+    const stale =
+      Object.keys(
+        EXEMPT,
+      ).filter(
+        (
+          id,
+        ) =>
+          usesHook(
+            id,
+          ),
+      );
+    expect(
+      stale,
+    ).toEqual(
+      [],
+    );
   });
 
   it('every exemption names a real catalog game', () => {
-    const unknown = Object.keys(EXEMPT).filter((id) => !ids.includes(id));
-    expect(unknown).toEqual([]);
+    const unknown =
+      Object.keys(
+        EXEMPT,
+      ).filter(
+        (
+          id,
+        ) =>
+          !ids.includes(
+            id,
+          ),
+      );
+    expect(
+      unknown,
+    ).toEqual(
+      [],
+    );
   });
 });

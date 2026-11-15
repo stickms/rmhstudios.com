@@ -30,7 +30,9 @@ export interface Band {
    * Rating spread allowed, or null for "anyone". A null band is what makes a
    * queue always eventually resolve.
    */
-  spread: number | null;
+  spread:
+    | number
+    | null;
 }
 
 /**
@@ -39,17 +41,41 @@ export interface Band {
  * Fifteen seconds of a fair fight is worth waiting for; ninety seconds of one
  * is not, because by then the alternative is not a worse match, it is no match.
  */
-export const DEFAULT_BANDS: readonly Band[] = [
-  { afterMs: 0, spread: 100 },
-  { afterMs: 15_000, spread: 200 },
-  { afterMs: 45_000, spread: 400 },
-  { afterMs: 90_000, spread: null },
-];
+export const DEFAULT_BANDS: readonly Band[] =
+  [
+    {
+      afterMs: 0,
+      spread: 100,
+    },
+    {
+      afterMs: 15_000,
+      spread: 200,
+    },
+    {
+      afterMs: 45_000,
+      spread: 400,
+    },
+    {
+      afterMs: 90_000,
+      spread:
+        null,
+    },
+  ];
 
 /** The band in force for someone who has been searching `waitedMs`. */
-export function bandFor(waitedMs: number, bands: readonly Band[] = DEFAULT_BANDS): Band {
-  let current = bands[0];
-  for (const b of bands) if (waitedMs >= b.afterMs) current = b;
+export function bandFor(
+  waitedMs: number,
+  bands: readonly Band[] = DEFAULT_BANDS,
+): Band {
+  let current =
+    bands[0];
+  for (const b of bands)
+    if (
+      waitedMs >=
+      b.afterMs
+    )
+      current =
+        b;
   return current;
 }
 
@@ -62,14 +88,43 @@ export function bandFor(waitedMs: number, bands: readonly Band[] = DEFAULT_BANDS
  * own freshly-narrow band.
  */
 export function eligible(
-  a: { rating: number; waitedMs: number },
-  b: { rating: number; waitedMs: number },
+  a: {
+    rating: number;
+    waitedMs: number;
+  },
+  b: {
+    rating: number;
+    waitedMs: number;
+  },
   bands: readonly Band[] = DEFAULT_BANDS,
 ): boolean {
-  const sa = bandFor(a.waitedMs, bands).spread;
-  const sb = bandFor(b.waitedMs, bands).spread;
-  if (sa === null || sb === null) return true;
-  return Math.abs(a.rating - b.rating) <= Math.max(sa, sb);
+  const sa =
+    bandFor(
+      a.waitedMs,
+      bands,
+    ).spread;
+  const sb =
+    bandFor(
+      b.waitedMs,
+      bands,
+    ).spread;
+  if (
+    sa ===
+      null ||
+    sb ===
+      null
+  )
+    return true;
+  return (
+    Math.abs(
+      a.rating -
+        b.rating,
+    ) <=
+    Math.max(
+      sa,
+      sb,
+    )
+  );
 }
 
 /**
@@ -78,11 +133,48 @@ export function eligible(
  * Median rather than mean: one person who left a queue open in a background tab
  * for an hour should not tell everybody else to expect an hour.
  */
-export function estimateWaitMs(recentMs: readonly number[], minSamples = 5): number | null {
-  if (recentMs.length < minSamples) return null;
-  const sorted = [...recentMs].sort((x, y) => x - y);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+export function estimateWaitMs(
+  recentMs: readonly number[],
+  minSamples = 5,
+):
+  | number
+  | null {
+  if (
+    recentMs.length <
+    minSamples
+  )
+    return null;
+  const sorted =
+    [
+      ...recentMs,
+    ].sort(
+      (
+        x,
+        y,
+      ) =>
+        x -
+        y,
+    );
+  const mid =
+    Math.floor(
+      sorted.length /
+        2,
+    );
+  return sorted.length %
+    2
+    ? sorted[
+        mid
+      ]
+    : Math.round(
+        (sorted[
+          mid -
+            1
+        ] +
+          sorted[
+            mid
+          ]) /
+          2,
+      );
 }
 
 /**
@@ -96,29 +188,85 @@ export function estimateWaitMs(recentMs: readonly number[], minSamples = 5): num
  * Returns null when no group of at least `min` can be assembled within the
  * bands currently in force.
  */
-export function pickGroup<T extends { rating: number; waitedMs: number; size: number }>(
+export function pickGroup<
+  T extends
+    {
+      rating: number;
+      waitedMs: number;
+      size: number;
+    },
+>(
   queue: readonly T[],
   min: number,
   max: number,
   bands: readonly Band[] = DEFAULT_BANDS,
-): T[] | null {
-  if (queue.length === 0) return null;
-  const byWait = [...queue].sort((a, b) => b.waitedMs - a.waitedMs);
+):
+  | T[]
+  | null {
+  if (
+    queue.length ===
+    0
+  )
+    return null;
+  const byWait =
+    [
+      ...queue,
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        b.waitedMs -
+        a.waitedMs,
+    );
 
   for (const seed of byWait) {
-    if (seed.size > max) continue; // cannot ever be seated here
-    const group: T[] = [seed];
-    let seats = seed.size;
+    if (
+      seed.size >
+      max
+    )
+      continue; // cannot ever be seated here
+    const group: T[] =
+      [
+        seed,
+      ];
+    let seats =
+      seed.size;
 
     for (const other of byWait) {
-      if (other === seed || seats >= max) continue;
-      if (seats + other.size > max) continue;
-      if (!eligible(seed, other, bands)) continue;
-      group.push(other);
-      seats += other.size;
+      if (
+        other ===
+          seed ||
+        seats >=
+          max
+      )
+        continue;
+      if (
+        seats +
+          other.size >
+        max
+      )
+        continue;
+      if (
+        !eligible(
+          seed,
+          other,
+          bands,
+        )
+      )
+        continue;
+      group.push(
+        other,
+      );
+      seats +=
+        other.size;
     }
 
-    if (seats >= min) return group;
+    if (
+      seats >=
+      min
+    )
+      return group;
   }
   return null;
 }

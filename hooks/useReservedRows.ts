@@ -44,12 +44,37 @@ import { useEffect } from 'react';
  * @param loaded   The real row count once it is known, or `null` while loading.
  * @param fallback What to reserve on the first open. Use the panel's own cap.
  */
-export function useReservedRows(key: string, loaded: number | null, fallback: number): number {
+export function useReservedRows(
+  key: string,
+  loaded:
+    | number
+    | null,
+  fallback: number,
+): number {
   useEffect(() => {
-    if (loaded !== null) lastSeen.set(key, loaded);
-  }, [key, loaded]);
+    if (
+      loaded !==
+      null
+    )
+      lastSeen.set(
+        key,
+        loaded,
+      );
+  }, [
+    key,
+    loaded,
+  ]);
 
-  return lastSeen.get(key) ?? fallback;
+  return (
+    lastSeen.get(
+      key,
+    ) ??
+    fallback
+  );
 }
 
-const lastSeen = new Map<string, number>();
+const lastSeen =
+  new Map<
+    string,
+    number
+  >();

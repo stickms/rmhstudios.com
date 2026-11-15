@@ -1,13 +1,38 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import {
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { seriesDetailQuery } from '@/lib/posts-plus/series-detail.queries';
-import { Link, useNavigate } from '@tanstack/react-router';
+import {
+  Link,
+  useNavigate,
+} from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { ArrowDown, ArrowUp, BellOff, BellPlus, Pencil, Plus, Trash2, X } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  BellOff,
+  BellPlus,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { RMHarkCard } from '@/components/feed/RMHarkCard';
-import { Spine, SpineItem, SpineStation } from '@/components/ui/spine';
+import {
+  Spine,
+  SpineItem,
+  SpineStation,
+} from '@/components/ui/spine';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
@@ -20,7 +45,10 @@ import type { FeedItem } from '@/lib/feed-types';
 import { MAX_SERIES_TITLE } from '@/lib/posts-plus/constants';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
-import { HttpError, serverError } from '@/lib/http';
+import {
+  HttpError,
+  serverError,
+} from '@/lib/http';
 import {
   deleteSeriesApi,
   followSeriesApi,
@@ -31,18 +59,32 @@ import {
 } from '@/lib/posts-plus/series.contract';
 
 // The "add an existing post" picker loads only when the owner opens it.
-const AddSeriesPostDialog = lazy(() => import('./AddSeriesPostDialog'));
+const AddSeriesPostDialog =
+  lazy(
+    () =>
+      import('./AddSeriesPostDialog'),
+  );
 
 interface View {
   series: {
     id: string;
     title: string;
-    description: string | null;
+    description:
+      | string
+      | null;
     total: number;
     followCount: number;
     following: boolean;
     isOwner: boolean;
-    author: { id: string; name: string | null; handle: string | null };
+    author: {
+      id: string;
+      name:
+        | string
+        | null;
+      handle:
+        | string
+        | null;
+    };
   };
   items: FeedItem[];
 }
@@ -52,62 +94,196 @@ interface View {
  * parts notify followers), and for the author the tools to rename it, reorder or
  * remove parts, add existing posts, or delete the series (the posts stay).
  */
-export function SeriesPage({ id }: { id: string }) {
-  const { t } = useTranslation('f-posts-plus');
-  const { data: session } = useSession();
-  const confirm = useConfirm();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const seriesQ = useQuery(seriesDetailQuery(id));
-  const view = (seriesQ.data as View | undefined) ?? null;
-  const missing = seriesQ.error instanceof HttpError && seriesQ.error.status === 404;
-  const [renaming, setRenaming] = useState(false);
-  const [title, setTitle] = useState('');
-  const [adding, setAdding] = useState(false);
-  const [busy, setBusy] = useState(false);
+export function SeriesPage({
+  id,
+}: {
+  id: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-posts-plus',
+    );
+  const {
+    data: session,
+  } =
+    useSession();
+  const confirm =
+    useConfirm();
+  const navigate =
+    useNavigate();
+  const queryClient =
+    useQueryClient();
+  const seriesQ =
+    useQuery(
+      seriesDetailQuery(
+        id,
+      ),
+    );
+  const view =
+    (seriesQ.data as
+      | View
+      | undefined) ??
+    null;
+  const missing =
+    seriesQ.error instanceof
+      HttpError &&
+    seriesQ
+      .error
+      .status ===
+      404;
+  const [
+    renaming,
+    setRenaming,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    title,
+    setTitle,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    adding,
+    setAdding,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
   // Steel M9: a series fetched here replaces the skeleton; one seeded by the loader is there on first paint.
-  const arrival = useArrival(!!view || missing);
+  const arrival =
+    useArrival(
+      !!view ||
+        missing,
+    );
 
   // Refetch after a mutation; a failed first load keeps the old toast.
-  const load = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: seriesDetailQuery(id).queryKey });
-  }, [queryClient, id]);
+  const load =
+    useCallback(async () => {
+      await queryClient.invalidateQueries(
+        {
+          queryKey:
+            seriesDetailQuery(
+              id,
+            )
+              .queryKey,
+        },
+      );
+    }, [
+      queryClient,
+      id,
+    ]);
 
-  const loadFailed = seriesQ.isError && !missing;
+  const loadFailed =
+    seriesQ.isError &&
+    !missing;
   useEffect(() => {
-    if (loadFailed)
-      toast.error(t('series-load-failed', { defaultValue: 'Could not load the series' }));
-  }, [loadFailed, t]);
+    if (
+      loadFailed
+    )
+      toast.error(
+        t(
+          'series-load-failed',
+          {
+            defaultValue:
+              'Could not load the series',
+          },
+        ),
+      );
+  }, [
+    loadFailed,
+    t,
+  ]);
 
   // Keep the rename field in step with the loaded title.
-  const loadedTitle = view?.series.title;
+  const loadedTitle =
+    view
+      ?.series
+      .title;
   useEffect(() => {
-    if (loadedTitle !== undefined) setTitle(loadedTitle);
-  }, [loadedTitle]);
+    if (
+      loadedTitle !==
+      undefined
+    )
+      setTitle(
+        loadedTitle,
+      );
+  }, [
+    loadedTitle,
+  ]);
 
-  const call = async (run: () => Promise<unknown>, failed: string) => {
-    setBusy(true);
-    try {
-      await run();
-      return true;
-    } catch (e) {
-      toast.error(serverError(e) ?? failed);
-      return false;
-    } finally {
-      setBusy(false);
-    }
-  };
+  const call =
+    async (
+      run: () => Promise<unknown>,
+      failed: string,
+    ) => {
+      setBusy(
+        true,
+      );
+      try {
+        await run();
+        return true;
+      } catch (e) {
+        toast.error(
+          serverError(
+            e,
+          ) ??
+            failed,
+        );
+        return false;
+      } finally {
+        setBusy(
+          false,
+        );
+      }
+    };
 
-  if (missing) {
+  if (
+    missing
+  ) {
     return (
-      <PageLayout title={t('series-page-title', { defaultValue: 'Series' })} backTo="/series">
+      <PageLayout
+        title={t(
+          'series-page-title',
+          {
+            defaultValue:
+              'Series',
+          },
+        )}
+        backTo="/series"
+      >
         <EmptyState
-          className={arrival}
-          title={t('series-missing', { defaultValue: 'This series does not exist' })}
+          className={
+            arrival
+          }
+          title={t(
+            'series-missing',
+            {
+              defaultValue:
+                'This series does not exist',
+            },
+          )}
           action={
             <Link to="/">
               <Button variant="default">
-                {t('series-home', { defaultValue: 'Back to the feed' })}
+                {t(
+                  'series-home',
+                  {
+                    defaultValue:
+                      'Back to the feed',
+                  },
+                )}
               </Button>
             </Link>
           }
@@ -116,9 +292,19 @@ export function SeriesPage({ id }: { id: string }) {
     );
   }
 
-  if (!view) {
+  if (
+    !view
+  ) {
     return (
-      <PageLayout title={t('series-page-title', { defaultValue: 'Series' })}>
+      <PageLayout
+        title={t(
+          'series-page-title',
+          {
+            defaultValue:
+              'Series',
+          },
+        )}
+      >
         <div className="space-y-3">
           <Skeleton className="h-20 w-full rounded-site" />
           <Skeleton className="h-32 w-full rounded-site" />
@@ -127,121 +313,394 @@ export function SeriesPage({ id }: { id: string }) {
     );
   }
 
-  const { series, items } = view;
-  const owner = series.isOwner;
+  const {
+    series,
+    items,
+  } =
+    view;
+  const owner =
+    series.isOwner;
 
-  const toggleFollow = async () => {
-    const next = !series.following;
-    const ok = await call(
-      () => api(next ? followSeriesApi : unfollowSeriesApi, { params: { id } }),
-      t('series-follow-failed', { defaultValue: 'Could not update your follow' }),
-    );
-    if (ok) await load();
-  };
+  const toggleFollow =
+    async () => {
+      const next =
+        !series.following;
+      const ok =
+        await call(
+          () =>
+            api(
+              next
+                ? followSeriesApi
+                : unfollowSeriesApi,
+              {
+                params:
+                  {
+                    id,
+                  },
+              },
+            ),
+          t(
+            'series-follow-failed',
+            {
+              defaultValue:
+                'Could not update your follow',
+            },
+          ),
+        );
+      if (
+        ok
+      )
+        await load();
+    };
 
-  const rename = async () => {
-    const ok = await call(
-      () => api(updateSeriesApi, { params: { id }, body: { title: title.trim() } }),
-      t('series-rename-failed', { defaultValue: 'Could not rename the series' }),
-    );
-    if (ok) {
-      setRenaming(false);
-      await load();
-    }
-  };
+  const rename =
+    async () => {
+      const ok =
+        await call(
+          () =>
+            api(
+              updateSeriesApi,
+              {
+                params:
+                  {
+                    id,
+                  },
+                body: {
+                  title:
+                    title.trim(),
+                },
+              },
+            ),
+          t(
+            'series-rename-failed',
+            {
+              defaultValue:
+                'Could not rename the series',
+            },
+          ),
+        );
+      if (
+        ok
+      ) {
+        setRenaming(
+          false,
+        );
+        await load();
+      }
+    };
 
-  const remove = async () => {
-    const yes = await confirm({
-      title: t('series-delete-title', { defaultValue: 'Delete this series?' }),
-      description: t('series-delete-desc', {
-        defaultValue: 'The posts stay exactly where they are; only the grouping goes.',
-      }),
-      confirmLabel: t('series-delete-confirm', { defaultValue: 'Delete series' }),
-      danger: true,
-    });
-    if (!yes) return;
-    const ok = await call(
-      () => api(deleteSeriesApi, { params: { id } }),
-      t('series-delete-failed', { defaultValue: 'Could not delete the series' }),
-    );
-    if (ok) void navigate({ to: '/series' });
-  };
+  const remove =
+    async () => {
+      const yes =
+        await confirm(
+          {
+            title:
+              t(
+                'series-delete-title',
+                {
+                  defaultValue:
+                    'Delete this series?',
+                },
+              ),
+            description:
+              t(
+                'series-delete-desc',
+                {
+                  defaultValue:
+                    'The posts stay exactly where they are; only the grouping goes.',
+                },
+              ),
+            confirmLabel:
+              t(
+                'series-delete-confirm',
+                {
+                  defaultValue:
+                    'Delete series',
+                },
+              ),
+            danger: true,
+          },
+        );
+      if (
+        !yes
+      )
+        return;
+      const ok =
+        await call(
+          () =>
+            api(
+              deleteSeriesApi,
+              {
+                params:
+                  {
+                    id,
+                  },
+              },
+            ),
+          t(
+            'series-delete-failed',
+            {
+              defaultValue:
+                'Could not delete the series',
+            },
+          ),
+        );
+      if (
+        ok
+      )
+        void navigate(
+          {
+            to: '/series',
+          },
+        );
+    };
 
-  const move = async (postId: string, direction: 'up' | 'down') => {
-    const ok = await call(
-      () => api(moveSeriesPostApi, { params: { id, postId }, body: { direction } }),
-      t('series-move-failed', { defaultValue: 'Could not reorder the series' }),
-    );
-    if (ok) await load();
-  };
+  const move =
+    async (
+      postId: string,
+      direction:
+        | 'up'
+        | 'down',
+    ) => {
+      const ok =
+        await call(
+          () =>
+            api(
+              moveSeriesPostApi,
+              {
+                params:
+                  {
+                    id,
+                    postId,
+                  },
+                body: {
+                  direction,
+                },
+              },
+            ),
+          t(
+            'series-move-failed',
+            {
+              defaultValue:
+                'Could not reorder the series',
+            },
+          ),
+        );
+      if (
+        ok
+      )
+        await load();
+    };
 
-  const take = async (postId: string) => {
-    const ok = await call(
-      () => api(removeSeriesPostApi, { params: { id, postId } }),
-      t('series-remove-failed', { defaultValue: 'Could not remove the post' }),
-    );
-    if (ok) await load();
-  };
+  const take =
+    async (
+      postId: string,
+    ) => {
+      const ok =
+        await call(
+          () =>
+            api(
+              removeSeriesPostApi,
+              {
+                params:
+                  {
+                    id,
+                    postId,
+                  },
+              },
+            ),
+          t(
+            'series-remove-failed',
+            {
+              defaultValue:
+                'Could not remove the post',
+            },
+          ),
+        );
+      if (
+        ok
+      )
+        await load();
+    };
 
   return (
     <PageLayout
-      title={series.title}
+      title={
+        series.title
+      }
       wrapTitle
-      backTo={owner ? '/series' : undefined}
-      description={series.description ?? undefined}
+      backTo={
+        owner
+          ? '/series'
+          : undefined
+      }
+      description={
+        series.description ??
+        undefined
+      }
     >
-      <Spine className={cn('pb-12', arrival)}>
-        <SpineItem dot={false} className="flex flex-wrap items-center gap-3">
+      <Spine
+        className={cn(
+          'pb-12',
+          arrival,
+        )}
+      >
+        <SpineItem
+          dot={
+            false
+          }
+          className="flex flex-wrap items-center gap-3"
+        >
           <p className="min-w-0 flex-1 text-sm text-site-text-muted">
-            {t('series-by', { defaultValue: 'A series by' })}{' '}
+            {t(
+              'series-by',
+              {
+                defaultValue:
+                  'A series by',
+              },
+            )}{' '}
             <Link
               to="/u/$userid"
-              params={{ userid: series.author.handle ?? series.author.id }}
+              params={{
+                userid:
+                  series
+                    .author
+                    .handle ??
+                  series
+                    .author
+                    .id,
+              }}
               className="font-semibold text-site-text hover:underline"
             >
-              {series.author.name ?? series.author.handle}
+              {series
+                .author
+                .name ??
+                series
+                  .author
+                  .handle}
             </Link>
-            {' · '}
-            {t('series-parts', { defaultValue: '{{n}} parts', n: series.total })}
-            {' · '}
-            {t('series-followers', { defaultValue: '{{n}} following', n: series.followCount })}
+            {
+              ' · '
+            }
+            {t(
+              'series-parts',
+              {
+                defaultValue:
+                  '{{n}} parts',
+                n: series.total,
+              },
+            )}
+            {
+              ' · '
+            }
+            {t(
+              'series-followers',
+              {
+                defaultValue:
+                  '{{n}} following',
+                n: series.followCount,
+              },
+            )}
           </p>
 
-          {!owner && session && (
-            <Button
-              variant={series.following ? 'default' : 'default'}
-              size="sm"
-              loading={busy}
-              onClick={() => void toggleFollow()}
-            >
-              {series.following ? <BellOff aria-hidden /> : <BellPlus aria-hidden />}
-              {series.following
-                ? t('series-unfollow', { defaultValue: 'Following' })
-                : t('series-follow', { defaultValue: 'Follow series' })}
-            </Button>
-          )}
-          {!owner && !session && (
-            <Link to="/login" search={{ callbackURL: `/series/${id}` }}>
-              <Button variant="default" size="sm">
-                {t('series-sign-in', { defaultValue: 'Sign in to follow' })}
+          {!owner &&
+            session && (
+              <Button
+                variant={
+                  series.following
+                    ? 'default'
+                    : 'default'
+                }
+                size="sm"
+                loading={
+                  busy
+                }
+                onClick={() =>
+                  void toggleFollow()
+                }
+              >
+                {series.following ? (
+                  <BellOff
+                    aria-hidden
+                  />
+                ) : (
+                  <BellPlus
+                    aria-hidden
+                  />
+                )}
+                {series.following
+                  ? t(
+                      'series-unfollow',
+                      {
+                        defaultValue:
+                          'Following',
+                      },
+                    )
+                  : t(
+                      'series-follow',
+                      {
+                        defaultValue:
+                          'Follow series',
+                      },
+                    )}
               </Button>
-            </Link>
-          )}
+            )}
+          {!owner &&
+            !session && (
+              <Link
+                to="/login"
+                search={{
+                  callbackURL: `/series/${id}`,
+                }}
+              >
+                <Button
+                  variant="default"
+                  size="sm"
+                >
+                  {t(
+                    'series-sign-in',
+                    {
+                      defaultValue:
+                        'Sign in to follow',
+                    },
+                  )}
+                </Button>
+              </Link>
+            )}
 
           {owner && (
             <div className="flex flex-wrap items-center gap-2">
               {renaming ? (
                 <form
                   className="flex items-center gap-2"
-                  onSubmit={(e) => {
+                  onSubmit={(
+                    e,
+                  ) => {
                     e.preventDefault();
                     void rename();
                   }}
                 >
                   <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value.slice(0, MAX_SERIES_TITLE))}
-                    aria-label={t('series-name', { defaultValue: 'Series name' })}
+                    value={
+                      title
+                    }
+                    onChange={(
+                      e,
+                    ) =>
+                      setTitle(
+                        e.target.value.slice(
+                          0,
+                          MAX_SERIES_TITLE,
+                        ),
+                      )
+                    }
+                    aria-label={t(
+                      'series-name',
+                      {
+                        defaultValue:
+                          'Series name',
+                      },
+                    )}
                     className="h-9 w-full min-w-0 sm:w-56"
                     autoFocus
                   />
@@ -249,95 +708,269 @@ export function SeriesPage({ id }: { id: string }) {
                     type="submit"
                     size="sm"
                     variant="default"
-                    loading={busy}
-                    disabled={title.trim().length < 2}
+                    loading={
+                      busy
+                    }
+                    disabled={
+                      title.trim()
+                        .length <
+                      2
+                    }
                   >
-                    {t('series-save', { defaultValue: 'Save' })}
+                    {t(
+                      'series-save',
+                      {
+                        defaultValue:
+                          'Save',
+                      },
+                    )}
                   </Button>
                   <IconButton
-                    icon={X}
-                    label={t('cancel', { defaultValue: 'Cancel' })}
+                    icon={
+                      X
+                    }
+                    label={t(
+                      'cancel',
+                      {
+                        defaultValue:
+                          'Cancel',
+                      },
+                    )}
                     onClick={() => {
-                      setRenaming(false);
-                      setTitle(series.title);
+                      setRenaming(
+                        false,
+                      );
+                      setTitle(
+                        series.title,
+                      );
                     }}
                   />
                 </form>
               ) : (
-                <Button size="sm" variant="default" onClick={() => setRenaming(true)}>
-                  <Pencil aria-hidden />
-                  {t('series-rename', { defaultValue: 'Rename' })}
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() =>
+                    setRenaming(
+                      true,
+                    )
+                  }
+                >
+                  <Pencil
+                    aria-hidden
+                  />
+                  {t(
+                    'series-rename',
+                    {
+                      defaultValue:
+                        'Rename',
+                    },
+                  )}
                 </Button>
               )}
-              <Button size="sm" variant="default" onClick={() => setAdding(true)}>
-                <Plus aria-hidden />
-                {t('series-add-post', { defaultValue: 'Add a post' })}
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() =>
+                  setAdding(
+                    true,
+                  )
+                }
+              >
+                <Plus
+                  aria-hidden
+                />
+                {t(
+                  'series-add-post',
+                  {
+                    defaultValue:
+                      'Add a post',
+                  },
+                )}
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => void remove()}>
-                <Trash2 aria-hidden />
-                {t('series-delete', { defaultValue: 'Delete' })}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  void remove()
+                }
+              >
+                <Trash2
+                  aria-hidden
+                />
+                {t(
+                  'series-delete',
+                  {
+                    defaultValue:
+                      'Delete',
+                  },
+                )}
               </Button>
             </div>
           )}
         </SpineItem>
 
-        {items.length === 0 ? (
+        {items.length ===
+        0 ? (
           <EmptyState
-            title={t('series-empty', { defaultValue: 'No parts yet' })}
+            title={t(
+              'series-empty',
+              {
+                defaultValue:
+                  'No parts yet',
+              },
+            )}
             description={
               owner
-                ? t('series-empty-owner', {
-                    defaultValue:
-                      'Add one of your public posts, or pick this series when you compose a new one.',
-                  })
-                : t('series-empty-reader', {
-                    defaultValue: 'Nothing has been added to this series yet.',
-                  })
+                ? t(
+                    'series-empty-owner',
+                    {
+                      defaultValue:
+                        'Add one of your public posts, or pick this series when you compose a new one.',
+                    },
+                  )
+                : t(
+                    'series-empty-reader',
+                    {
+                      defaultValue:
+                        'Nothing has been added to this series yet.',
+                    },
+                  )
             }
           />
         ) : (
-          items.map((item, i) => (
-            <div key={item.id}>
-              <div className="flex items-center gap-2">
-                <SpineStation>
-                  {t('series-part-label', { defaultValue: 'Part {{k}}', k: i + 1 })}
-                </SpineStation>
-                {owner && (
-                  <span className="ms-auto flex items-center gap-2">
-                    <IconButton
-                      icon={ArrowUp}
-                      label={t('series-move-up', { defaultValue: 'Move earlier' })}
-                      disabled={i === 0 || busy}
-                      onClick={() => void move(item.id, 'up')}
-                    />
-                    <IconButton
-                      icon={ArrowDown}
-                      label={t('series-move-down', { defaultValue: 'Move later' })}
-                      disabled={i === items.length - 1 || busy}
-                      onClick={() => void move(item.id, 'down')}
-                    />
-                    <IconButton
-                      icon={X}
-                      label={t('series-remove', { defaultValue: 'Take out of the series' })}
-                      disabled={busy}
-                      onClick={() => void take(item.id)}
-                    />
-                  </span>
-                )}
+          items.map(
+            (
+              item,
+              i,
+            ) => (
+              <div
+                key={
+                  item.id
+                }
+              >
+                <div className="flex items-center gap-2">
+                  <SpineStation>
+                    {t(
+                      'series-part-label',
+                      {
+                        defaultValue:
+                          'Part {{k}}',
+                        k:
+                          i +
+                          1,
+                      },
+                    )}
+                  </SpineStation>
+                  {owner && (
+                    <span className="ms-auto flex items-center gap-2">
+                      <IconButton
+                        icon={
+                          ArrowUp
+                        }
+                        label={t(
+                          'series-move-up',
+                          {
+                            defaultValue:
+                              'Move earlier',
+                          },
+                        )}
+                        disabled={
+                          i ===
+                            0 ||
+                          busy
+                        }
+                        onClick={() =>
+                          void move(
+                            item.id,
+                            'up',
+                          )
+                        }
+                      />
+                      <IconButton
+                        icon={
+                          ArrowDown
+                        }
+                        label={t(
+                          'series-move-down',
+                          {
+                            defaultValue:
+                              'Move later',
+                          },
+                        )}
+                        disabled={
+                          i ===
+                            items.length -
+                              1 ||
+                          busy
+                        }
+                        onClick={() =>
+                          void move(
+                            item.id,
+                            'down',
+                          )
+                        }
+                      />
+                      <IconButton
+                        icon={
+                          X
+                        }
+                        label={t(
+                          'series-remove',
+                          {
+                            defaultValue:
+                              'Take out of the series',
+                          },
+                        )}
+                        disabled={
+                          busy
+                        }
+                        onClick={() =>
+                          void take(
+                            item.id,
+                          )
+                        }
+                      />
+                    </span>
+                  )}
+                </div>
+                <RMHarkCard
+                  item={
+                    item
+                  }
+                />
               </div>
-              <RMHarkCard item={item} />
-            </div>
-          ))
+            ),
+          )
         )}
       </Spine>
 
       {adding && (
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            null
+          }
+        >
           <AddSeriesPostDialog
-            seriesId={id}
-            authorKey={series.author.handle ?? series.author.id}
-            onClose={() => setAdding(false)}
-            onAdded={() => void load()}
+            seriesId={
+              id
+            }
+            authorKey={
+              series
+                .author
+                .handle ??
+              series
+                .author
+                .id
+            }
+            onClose={() =>
+              setAdding(
+                false,
+              )
+            }
+            onAdded={() =>
+              void load()
+            }
           />
         </Suspense>
       )}

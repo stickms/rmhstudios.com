@@ -26,16 +26,28 @@
  * erroring — goes through it.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
-import { X, Compass } from 'lucide-react';
+import {
+  X,
+  Compass,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { RefObject } from 'react';
 import type { Card } from '@/lib/globeset/cards';
 import type { Quat } from '@/lib/device-attitude';
 import { formatDuration } from '@/lib/globeset/game';
-import { closeRoomCamera, openRoomCamera, type RoomCameraError } from '@/lib/globeset/room';
+import {
+  closeRoomCamera,
+  openRoomCamera,
+  type RoomCameraError,
+} from '@/lib/globeset/room';
 import { GlobeSetGlobe } from './GlobeSetGlobe';
 
 export interface GlobeSetRoomProps {
@@ -52,43 +64,89 @@ export interface GlobeSetRoomProps {
   elapsedSeconds: number;
   cardsLeft: number;
   sets: number;
-  onToggle: (card: Card) => void;
+  onToggle: (
+    card: Card,
+  ) => void;
   onClear: () => void;
   onExit: () => void;
 }
 
-export function GlobeSetRoom(props: GlobeSetRoomProps) {
-  const { t } = useTranslation('c-daily-puzzles');
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [live, setLive] = useState(false);
+export function GlobeSetRoom(
+  props: GlobeSetRoomProps,
+) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-daily-puzzles',
+    );
+  const videoRef =
+    useRef<HTMLVideoElement | null>(
+      null,
+    );
+  const streamRef =
+    useRef<MediaStream | null>(
+      null,
+    );
+  const [
+    live,
+    setLive,
+  ] =
+    useState(
+      false,
+    );
 
   // Exit is read from a ref inside the mount effect so that opening the camera
   // is armed exactly once. Re-running it on a changed callback would request
   // the camera again mid-session, which on iOS re-prompts.
-  const onExitRef = useRef(props.onExit);
-  onExitRef.current = props.onExit;
+  const onExitRef =
+    useRef(
+      props.onExit,
+    );
+  onExitRef.current =
+    props.onExit;
 
-  const message = useCallback(
-    (reason: RoomCameraError) => {
-      if (reason === 'denied') {
-        return t('globeset-room-denied', {
-          defaultValue:
-            'Camera access was declined, so the room view has nothing to stand in front of. The globe is still on the page.',
-        });
-      }
-      if (reason === 'in-use') {
-        return t('globeset-room-busy', {
-          defaultValue:
-            'Another app is using the camera. Close it and try the room view again.',
-        });
-      }
-      return t('globeset-room-unavailable', {
-        defaultValue: 'This device would not open its camera — the globe is still on the page.',
-      });
-    },
-    [t],
-  );
+  const message =
+    useCallback(
+      (
+        reason: RoomCameraError,
+      ) => {
+        if (
+          reason ===
+          'denied'
+        ) {
+          return t(
+            'globeset-room-denied',
+            {
+              defaultValue:
+                'Camera access was declined, so the room view has nothing to stand in front of. The globe is still on the page.',
+            },
+          );
+        }
+        if (
+          reason ===
+          'in-use'
+        ) {
+          return t(
+            'globeset-room-busy',
+            {
+              defaultValue:
+                'Another app is using the camera. Close it and try the room view again.',
+            },
+          );
+        }
+        return t(
+          'globeset-room-unavailable',
+          {
+            defaultValue:
+              'This device would not open its camera — the globe is still on the page.',
+          },
+        );
+      },
+      [
+        t,
+      ],
+    );
 
   useEffect(() => {
     let cancelled = false;
@@ -96,46 +154,82 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
     // rendered unconditionally, so this reference is good for the whole life of
     // the component — and reading `videoRef.current` during teardown is the
     // classic way to find it already null and leave a stream attached.
-    const video = videoRef.current;
+    const video =
+      videoRef.current;
 
     void (async () => {
-      const result = await openRoomCamera();
-      if (cancelled) {
+      const result =
+        await openRoomCamera();
+      if (
+        cancelled
+      ) {
         // Left before the permission prompt resolved. The stream still has to
         // be released, or we leak a camera nobody is looking at.
-        if (result.ok) closeRoomCamera(result.stream);
+        if (
+          result.ok
+        )
+          closeRoomCamera(
+            result.stream,
+          );
         return;
       }
-      if (!result.ok) {
-        toast.error(message(result.reason));
+      if (
+        !result.ok
+      ) {
+        toast.error(
+          message(
+            result.reason,
+          ),
+        );
         onExitRef.current();
         return;
       }
-      streamRef.current = result.stream;
-      if (video) {
-        video.srcObject = result.stream;
+      streamRef.current =
+        result.stream;
+      if (
+        video
+      ) {
+        video.srcObject =
+          result.stream;
         // iOS will not start a stream without this gesture-free combination,
         // and `play()` rejects if the element is torn down first — which is a
         // normal race on a fast exit, not an error worth surfacing.
-        void video.play().catch(() => {});
+        void video
+          .play()
+          .catch(
+            () => {},
+          );
       }
-      setLive(true);
+      setLive(
+        true,
+      );
     })();
 
     return () => {
       cancelled = true;
-      if (video) video.srcObject = null;
-      closeRoomCamera(streamRef.current);
-      streamRef.current = null;
+      if (
+        video
+      )
+        video.srcObject =
+          null;
+      closeRoomCamera(
+        streamRef.current,
+      );
+      streamRef.current =
+        null;
     };
-  }, [message]);
+  }, [
+    message,
+  ]);
 
   return (
     <div className="fixed inset-0 z-[400] overflow-hidden bg-site-bg">
       {/* The room. `playsInline` keeps iOS from stealing it into its own
           fullscreen player; `muted` is what makes autoplay legal at all. */}
       <video
-        ref={videoRef}
+        ref={
+          videoRef
+        }
         className="absolute inset-0 h-full w-full object-cover"
         playsInline
         muted
@@ -146,34 +240,101 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
       <div className="app-hud flex flex-col justify-between p-4">
         <div className="surface-overlay flex items-center justify-between gap-4 rounded-site px-4 py-2">
           <dl className="flex items-center gap-5 text-site-text">
-            <Figure label={t('globeset-stat-time', { defaultValue: 'Time' })}>
-              {formatDuration(props.elapsedSeconds)}
+            <Figure
+              label={t(
+                'globeset-stat-time',
+                {
+                  defaultValue:
+                    'Time',
+                },
+              )}
+            >
+              {formatDuration(
+                props.elapsedSeconds,
+              )}
             </Figure>
-            <Figure label={t('globeset-stat-cards-left', { defaultValue: 'Cards left' })}>
-              {props.cardsLeft}
+            <Figure
+              label={t(
+                'globeset-stat-cards-left',
+                {
+                  defaultValue:
+                    'Cards left',
+                },
+              )}
+            >
+              {
+                props.cardsLeft
+              }
             </Figure>
-            <Figure label={t('globeset-stat-sets', { defaultValue: 'Sets' })}>{props.sets}</Figure>
+            <Figure
+              label={t(
+                'globeset-stat-sets',
+                {
+                  defaultValue:
+                    'Sets',
+                },
+              )}
+            >
+              {
+                props.sets
+              }
+            </Figure>
           </dl>
-          <Button type="button" variant="default" size="sm" onClick={props.onExit}>
-            <X aria-hidden />
-            {t('globeset-ar-exit', { defaultValue: 'Leave' })}
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            onClick={
+              props.onExit
+            }
+          >
+            <X
+              aria-hidden
+            />
+            {t(
+              'globeset-ar-exit',
+              {
+                defaultValue:
+                  'Leave',
+              },
+            )}
           </Button>
         </div>
 
         {live && (
           <div className="flex items-center justify-center">
             <GlobeSetGlobe
-              board={props.board}
-              selected={props.selected}
-              hinted={props.hinted}
-              solving={props.solving}
-              locked={props.locked}
-              shapes={props.shapes}
-              attitudeRef={props.attitudeRef}
-              gyroActive={props.gyroActive}
+              board={
+                props.board
+              }
+              selected={
+                props.selected
+              }
+              hinted={
+                props.hinted
+              }
+              solving={
+                props.solving
+              }
+              locked={
+                props.locked
+              }
+              shapes={
+                props.shapes
+              }
+              attitudeRef={
+                props.attitudeRef
+              }
+              gyroActive={
+                props.gyroActive
+              }
               ledgerOnGlass
-              onToggle={props.onToggle}
-              onClear={props.onClear}
+              onToggle={
+                props.onToggle
+              }
+              onClear={
+                props.onClear
+              }
             />
           </div>
         )}
@@ -184,16 +345,26 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
         <p className="surface-overlay mx-auto rounded-site px-4 py-2 text-center text-sm text-site-text">
           {props.tiltLive ? (
             <span className="inline-flex items-center gap-1.5">
-              <Compass className="h-4 w-4 shrink-0" aria-hidden />
-              {t('globeset-room-hint-tilt', {
-                defaultValue:
-                  'Turn to look around the globe, and tap a card to pick it. It follows you if you walk — this phone can see which way you point, not where you stand.',
-              })}
+              <Compass
+                className="h-4 w-4 shrink-0"
+                aria-hidden
+              />
+              {t(
+                'globeset-room-hint-tilt',
+                {
+                  defaultValue:
+                    'Turn to look around the globe, and tap a card to pick it. It follows you if you walk — this phone can see which way you point, not where you stand.',
+                },
+              )}
             </span>
           ) : (
-            t('globeset-room-hint-drag', {
-              defaultValue: 'Drag to spin the globe, and tap a card to pick it.',
-            })
+            t(
+              'globeset-room-hint-drag',
+              {
+                defaultValue:
+                  'Drag to spin the globe, and tap a card to pick it.',
+              },
+            )
           )}
         </p>
       </div>
@@ -201,13 +372,25 @@ export function GlobeSetRoom(props: GlobeSetRoomProps) {
   );
 }
 
-function Figure({ label, children }: { label: string; children: React.ReactNode }) {
+function Figure({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <dt className="text-xs font-medium text-site-text-muted">
-        {label}
+        {
+          label
+        }
       </dt>
-      <dd className="font-mono text-base font-bold tabular-nums">{children}</dd>
+      <dd className="font-mono text-base font-bold tabular-nums">
+        {
+          children
+        }
+      </dd>
     </div>
   );
 }

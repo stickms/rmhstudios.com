@@ -14,11 +14,28 @@
  * Design doc: `docs/slice-it-chart-editor.md` §7.2.
  */
 
-import { bundle, deleteNotes, moveNotes, placeNote, type Command } from './commands';
+import {
+  bundle,
+  deleteNotes,
+  moveNotes,
+  placeNote,
+  type Command,
+} from './commands';
 import { newNoteId } from './uuid';
-import type { Charts, Difficulty, EditorNote, NestingMode } from './types';
+import type {
+  Charts,
+  Difficulty,
+  EditorNote,
+  NestingMode,
+} from './types';
 
-export const TIER_ORDER = ['easy', 'normal', 'hard', 'expert'] as const;
+export const TIER_ORDER =
+  [
+    'easy',
+    'normal',
+    'hard',
+    'expert',
+  ] as const;
 
 export interface NestingViolation {
   difficulty: Difficulty;
@@ -35,25 +52,72 @@ export interface NestingViolation {
  * because the tiers are independent lists that happen to agree. Comparing ids
  * would report every cascaded note as a violation.
  */
-export function noteKey(note: EditorNote): string {
+export function noteKey(
+  note: EditorNote,
+): string {
   return `${Math.round(note.time * 1000)}:${note.lane}`;
 }
 
-export function checkNesting(charts: Charts): NestingViolation[] {
-  const violations: NestingViolation[] = [];
-  for (let i = 0; i < TIER_ORDER.length - 1; i++) {
-    const lower = charts[TIER_ORDER[i]];
-    const higher = charts[TIER_ORDER[i + 1]];
-    if (!lower || !higher) continue;
-    const higherKeys = new Set(higher.notes.map(noteKey));
+export function checkNesting(
+  charts: Charts,
+): NestingViolation[] {
+  const violations: NestingViolation[] =
+    [];
+  for (
+    let i = 0;
+    i <
+    TIER_ORDER.length -
+      1;
+    i++
+  ) {
+    const lower =
+      charts[
+        TIER_ORDER[
+          i
+        ]
+      ];
+    const higher =
+      charts[
+        TIER_ORDER[
+          i +
+            1
+        ]
+      ];
+    if (
+      !lower ||
+      !higher
+    )
+      continue;
+    const higherKeys =
+      new Set(
+        higher.notes.map(
+          noteKey,
+        ),
+      );
     for (const note of lower.notes) {
-      if (!higherKeys.has(noteKey(note))) {
-        violations.push({
-          difficulty: TIER_ORDER[i],
-          noteId: note.id,
-          time: note.time,
-          missingFrom: TIER_ORDER[i + 1],
-        });
+      if (
+        !higherKeys.has(
+          noteKey(
+            note,
+          ),
+        )
+      ) {
+        violations.push(
+          {
+            difficulty:
+              TIER_ORDER[
+                i
+              ],
+            noteId:
+              note.id,
+            time: note.time,
+            missingFrom:
+              TIER_ORDER[
+                i +
+                  1
+              ],
+          },
+        );
       }
     }
   }
@@ -63,9 +127,25 @@ export function checkNesting(charts: Charts): NestingViolation[] {
 /** Violations grouped by the tier they are reported on, for the tab badges. */
 export function violationsByTier(
   violations: readonly NestingViolation[],
-): Record<Difficulty, number> {
-  const counts: Record<Difficulty, number> = { easy: 0, normal: 0, hard: 0, expert: 0 };
-  for (const violation of violations) counts[violation.difficulty] += 1;
+): Record<
+  Difficulty,
+  number
+> {
+  const counts: Record<
+    Difficulty,
+    number
+  > =
+    {
+      easy: 0,
+      normal: 0,
+      hard: 0,
+      expert: 0,
+    };
+  for (const violation of violations)
+    counts[
+      violation.difficulty
+    ] +=
+      1;
   return counts;
 }
 
@@ -79,19 +159,71 @@ export function violationsByTier(
  * one timestamp in one lane, which is unhittable (the engine's per-lane debounce
  * swallows the second).
  */
-export function cascadePlace(charts: Charts, difficulty: Difficulty, note: EditorNote): Command[] {
-  const from = TIER_ORDER.indexOf(difficulty as (typeof TIER_ORDER)[number]);
-  if (from < 0) return [placeNote(difficulty, note)];
-  const key = noteKey(note);
+export function cascadePlace(
+  charts: Charts,
+  difficulty: Difficulty,
+  note: EditorNote,
+): Command[] {
+  const from =
+    TIER_ORDER.indexOf(
+      difficulty as (typeof TIER_ORDER)[number],
+    );
+  if (
+    from <
+    0
+  )
+    return [
+      placeNote(
+        difficulty,
+        note,
+      ),
+    ];
+  const key =
+    noteKey(
+      note,
+    );
 
-  const commands: Command[] = [];
-  for (const tier of TIER_ORDER.slice(from)) {
-    const existing = charts[tier];
-    if (!existing) continue;
-    if (tier !== difficulty && existing.notes.some((n) => noteKey(n) === key)) continue;
+  const commands: Command[] =
+    [];
+  for (const tier of TIER_ORDER.slice(
+    from,
+  )) {
+    const existing =
+      charts[
+        tier
+      ];
+    if (
+      !existing
+    )
+      continue;
+    if (
+      tier !==
+        difficulty &&
+      existing.notes.some(
+        (
+          n,
+        ) =>
+          noteKey(
+            n,
+          ) ===
+          key,
+      )
+    )
+      continue;
     // A fresh id per tier: the lists are independent, and reusing one id across
     // four of them would make "delete this note" ambiguous.
-    commands.push(placeNote(tier, tier === difficulty ? note : { ...note, id: newNoteId() }));
+    commands.push(
+      placeNote(
+        tier,
+        tier ===
+          difficulty
+          ? note
+          : {
+              ...note,
+              id: newNoteId(),
+            },
+      ),
+    );
   }
   return commands;
 }
@@ -109,17 +241,66 @@ export function cascadeDelete(
   difficulty: Difficulty,
   notes: readonly EditorNote[],
 ): Command[] {
-  const to = TIER_ORDER.indexOf(difficulty as (typeof TIER_ORDER)[number]);
-  if (to < 0) return [deleteNotes(difficulty, notes)];
-  const keys = new Set(notes.map(noteKey));
+  const to =
+    TIER_ORDER.indexOf(
+      difficulty as (typeof TIER_ORDER)[number],
+    );
+  if (
+    to <
+    0
+  )
+    return [
+      deleteNotes(
+        difficulty,
+        notes,
+      ),
+    ];
+  const keys =
+    new Set(
+      notes.map(
+        noteKey,
+      ),
+    );
 
-  const commands: Command[] = [];
-  for (const tier of TIER_ORDER.slice(0, to + 1)) {
-    const existing = charts[tier];
-    if (!existing) continue;
+  const commands: Command[] =
+    [];
+  for (const tier of TIER_ORDER.slice(
+    0,
+    to +
+      1,
+  )) {
+    const existing =
+      charts[
+        tier
+      ];
+    if (
+      !existing
+    )
+      continue;
     const doomed =
-      tier === difficulty ? notes.slice() : existing.notes.filter((n) => keys.has(noteKey(n)));
-    if (doomed.length > 0) commands.push(deleteNotes(tier, doomed));
+      tier ===
+      difficulty
+        ? notes.slice()
+        : existing.notes.filter(
+            (
+              n,
+            ) =>
+              keys.has(
+                noteKey(
+                  n,
+                ),
+              ),
+          );
+    if (
+      doomed.length >
+      0
+    )
+      commands.push(
+        deleteNotes(
+          tier,
+          doomed,
+        ),
+      );
   }
   return commands;
 }
@@ -148,16 +329,51 @@ export function cascadeMove(
   deltaLane: number,
   keys: number,
 ): Command[] {
-  const noteKeys = new Set(notes.map(noteKey));
+  const noteKeys =
+    new Set(
+      notes.map(
+        noteKey,
+      ),
+    );
 
-  const commands: Command[] = [];
+  const commands: Command[] =
+    [];
   for (const tier of TIER_ORDER) {
-    const existing = charts[tier];
-    if (!existing) continue;
+    const existing =
+      charts[
+        tier
+      ];
+    if (
+      !existing
+    )
+      continue;
     const targets =
-      tier === difficulty ? notes.slice() : existing.notes.filter((n) => noteKeys.has(noteKey(n)));
-    if (targets.length > 0) {
-      commands.push(moveNotes(tier, targets, deltaTime, deltaLane, keys));
+      tier ===
+      difficulty
+        ? notes.slice()
+        : existing.notes.filter(
+            (
+              n,
+            ) =>
+              noteKeys.has(
+                noteKey(
+                  n,
+                ),
+              ),
+          );
+    if (
+      targets.length >
+      0
+    ) {
+      commands.push(
+        moveNotes(
+          tier,
+          targets,
+          deltaTime,
+          deltaLane,
+          keys,
+        ),
+      );
     }
   }
   return commands;
@@ -178,8 +394,22 @@ export function nestedPlace(
   difficulty: Difficulty,
   note: EditorNote,
 ): Command | null {
-  if (mode !== 'cascade') return placeNote(difficulty, note);
-  return bundle('Place note (nested)', cascadePlace(charts, difficulty, note));
+  if (
+    mode !==
+    'cascade'
+  )
+    return placeNote(
+      difficulty,
+      note,
+    );
+  return bundle(
+    'Place note (nested)',
+    cascadePlace(
+      charts,
+      difficulty,
+      note,
+    ),
+  );
 }
 
 export function nestedDelete(
@@ -188,9 +418,27 @@ export function nestedDelete(
   difficulty: Difficulty,
   notes: readonly EditorNote[],
 ): Command | null {
-  if (notes.length === 0) return null;
-  if (mode !== 'cascade') return deleteNotes(difficulty, notes);
-  return bundle('Delete notes (nested)', cascadeDelete(charts, difficulty, notes));
+  if (
+    notes.length ===
+    0
+  )
+    return null;
+  if (
+    mode !==
+    'cascade'
+  )
+    return deleteNotes(
+      difficulty,
+      notes,
+    );
+  return bundle(
+    'Delete notes (nested)',
+    cascadeDelete(
+      charts,
+      difficulty,
+      notes,
+    ),
+  );
 }
 
 export function nestedMove(
@@ -202,11 +450,32 @@ export function nestedMove(
   deltaLane: number,
   keys: number,
 ): Command | null {
-  if (notes.length === 0) return null;
-  if (mode !== 'cascade') return moveNotes(difficulty, notes, deltaTime, deltaLane, keys);
+  if (
+    notes.length ===
+    0
+  )
+    return null;
+  if (
+    mode !==
+    'cascade'
+  )
+    return moveNotes(
+      difficulty,
+      notes,
+      deltaTime,
+      deltaLane,
+      keys,
+    );
   return bundle(
     'Move notes (nested)',
-    cascadeMove(charts, difficulty, notes, deltaTime, deltaLane, keys),
+    cascadeMove(
+      charts,
+      difficulty,
+      notes,
+      deltaTime,
+      deltaLane,
+      keys,
+    ),
   );
 }
 
@@ -219,23 +488,82 @@ export function nestedMove(
  * nested and a human then broke is much more likely to want the note back than
  * to want it gone.
  */
-export function repairNesting(charts: Charts): Command | null {
-  const commands: Command[] = [];
+export function repairNesting(
+  charts: Charts,
+): Command | null {
+  const commands: Command[] =
+    [];
   // Walk downward so a note promoted from Easy into Normal is then visible to
   // the Normal→Hard pass in the same sweep.
-  let working = charts;
-  for (let i = 0; i < TIER_ORDER.length - 1; i++) {
-    const lower = working[TIER_ORDER[i]];
-    const higher = working[TIER_ORDER[i + 1]];
-    if (!lower || !higher) continue;
-    const higherKeys = new Set(higher.notes.map(noteKey));
+  let working =
+    charts;
+  for (
+    let i = 0;
+    i <
+    TIER_ORDER.length -
+      1;
+    i++
+  ) {
+    const lower =
+      working[
+        TIER_ORDER[
+          i
+        ]
+      ];
+    const higher =
+      working[
+        TIER_ORDER[
+          i +
+            1
+        ]
+      ];
+    if (
+      !lower ||
+      !higher
+    )
+      continue;
+    const higherKeys =
+      new Set(
+        higher.notes.map(
+          noteKey,
+        ),
+      );
     for (const note of lower.notes) {
-      if (higherKeys.has(noteKey(note))) continue;
-      const command = placeNote(TIER_ORDER[i + 1], { ...note, id: newNoteId() });
-      commands.push(command);
-      working = command.apply(working);
-      higherKeys.add(noteKey(note));
+      if (
+        higherKeys.has(
+          noteKey(
+            note,
+          ),
+        )
+      )
+        continue;
+      const command =
+        placeNote(
+          TIER_ORDER[
+            i +
+              1
+          ],
+          {
+            ...note,
+            id: newNoteId(),
+          },
+        );
+      commands.push(
+        command,
+      );
+      working =
+        command.apply(
+          working,
+        );
+      higherKeys.add(
+        noteKey(
+          note,
+        ),
+      );
     }
   }
-  return bundle('Repair nesting', commands);
+  return bundle(
+    'Repair nesting',
+    commands,
+  );
 }

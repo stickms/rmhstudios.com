@@ -17,10 +17,22 @@
  * The title is absolutely centered to the screen width regardless of side content.
  */
 
-import { useState, useCallback } from 'react';
+import {
+  useState,
+  useCallback,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Circle, Infinity as InfinityIcon, Pause, Play } from 'lucide-react';
+import {
+  Link,
+  useNavigate,
+} from '@tanstack/react-router';
+import {
+  ArrowLeft,
+  Circle,
+  Infinity as InfinityIcon,
+  Pause,
+  Play,
+} from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
@@ -42,62 +54,142 @@ function TimerRing({
   paused: boolean;
   infinite: boolean;
   isHost: boolean;
-  lobbyId: string | null;
+  lobbyId:
+    | string
+    | null;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const [
+    hovered,
+    setHovered,
+  ] =
+    useState(
+      false,
+    );
 
   const totalRadius = 20; // SVG viewBox is 40x40, so radius is half minus stroke width
   const strokeWidth = 4;
 
-  const radius = totalRadius - strokeWidth / 2;
-  const circumference = 2 * Math.PI * radius;
+  const radius =
+    totalRadius -
+    strokeWidth /
+      2;
+  const circumference =
+    2 *
+    Math.PI *
+    radius;
 
   // Infinite → full ring; otherwise deplete as normal
-  const ratio = infinite ? 1 : Math.max(0, seconds) / (total || 1);
-  const offset = circumference * (1 - ratio);
+  const ratio =
+    infinite
+      ? 1
+      : Math.max(
+          0,
+          seconds,
+        ) /
+        (total ||
+          1);
+  const offset =
+    circumference *
+    (1 -
+      ratio);
 
   // Color: paused → warning (yellow), ≤10s → danger, infinite → accent, else → accent
-  const strokeColor = paused
-    ? 'var(--app-warning)'
-    : !infinite && seconds <= 10
-      ? 'var(--app-danger)'
-      : 'var(--app-accent)';
+  const strokeColor =
+    paused
+      ? 'var(--app-warning)'
+      : !infinite &&
+          seconds <=
+            10
+        ? 'var(--app-danger)'
+        : 'var(--app-accent)';
 
-  const handleClick = useCallback(() => {
-    if (!isHost || !lobbyId || infinite) return;
-    emit(C2S.GAME_PAUSE_TIMER, { lobbyId });
-  }, [isHost, lobbyId, infinite]);
+  const handleClick =
+    useCallback(() => {
+      if (
+        !isHost ||
+        !lobbyId ||
+        infinite
+      )
+        return;
+      emit(
+        C2S.GAME_PAUSE_TIMER,
+        {
+          lobbyId,
+        },
+      );
+    }, [
+      isHost,
+      lobbyId,
+      infinite,
+    ]);
 
-  const interactive = isHost && !infinite;
+  const interactive =
+    isHost &&
+    !infinite;
 
   return (
     <div
       className={`relative flex items-center justify-center ${interactive ? 'cursor-pointer' : ''}`}
-      onClick={handleClick}
-      onMouseEnter={() => interactive && setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onClick={
+        handleClick
+      }
+      onMouseEnter={() =>
+        interactive &&
+        setHovered(
+          true,
+        )
+      }
+      onMouseLeave={() =>
+        setHovered(
+          false,
+        )
+      }
     >
-      <svg width="40" height="40" style={{ transform: 'rotate(-90deg) scaleX(-1)' }}>
+      <svg
+        width="40"
+        height="40"
+        style={{
+          transform:
+            'rotate(-90deg) scaleX(-1)',
+        }}
+      >
         <circle
           cx="20"
           cy="20"
-          r={radius}
+          r={
+            radius
+          }
           fill="none"
           stroke="var(--app-border)"
-          strokeWidth={strokeWidth}
+          strokeWidth={
+            strokeWidth
+          }
         />
         <circle
           cx="20"
           cy="20"
-          r={radius}
+          r={
+            radius
+          }
           fill="none"
-          stroke={strokeColor}
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
+          stroke={
+            strokeColor
+          }
+          strokeWidth={
+            strokeWidth
+          }
+          strokeDasharray={
+            circumference
+          }
+          strokeDashoffset={
+            offset
+          }
           strokeLinecap="round"
           className={
-            paused || infinite ? '' : 'transition-[stroke-dashoffset] duration-1000 ease-linear'
+            paused ||
+            infinite
+              ? ''
+              : 'transition-[stroke-dashoffset] duration-1000 ease-linear'
           }
         />
       </svg>
@@ -106,7 +198,8 @@ function TimerRing({
         className={`absolute flex items-center justify-center text-xs font-bold ${paused ? 'text-app-warning' : 'text-app-text'}`}
       >
         {/* Host hover: show pause/play icon replacing the number */}
-        {interactive && hovered ? (
+        {interactive &&
+        hovered ? (
           paused ? (
             <Play className="h-3.5 w-3.5 text-app-warning" />
           ) : (
@@ -122,7 +215,12 @@ function TimerRing({
         ) : infinite ? (
           <InfinityIcon className="h-4 w-4" />
         ) : (
-          Math.max(0, Math.ceil(seconds))
+          Math.max(
+            0,
+            Math.ceil(
+              seconds,
+            ),
+          )
         )}
       </span>
     </div>
@@ -131,7 +229,12 @@ function TimerRing({
 
 interface RMHboxHeaderProps {
   /** Controls layout behavior */
-  context?: 'landing' | 'lobby' | 'game' | 'minigames' | 'history';
+  context?:
+    | 'landing'
+    | 'lobby'
+    | 'game'
+    | 'minigames'
+    | 'history';
   /** Override the center title (e.g. minigame name) */
   title?: string;
   /** Override back link href (for minigames/history contexts) */
@@ -146,45 +249,147 @@ export default function RMHboxHeader({
   backHref,
   backLabel,
 }: RMHboxHeaderProps) {
-  const { t } = useTranslation('c-rmhbox');
-  const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
-  const theme = useRMHboxStore((s) => s.settings.theme) ?? 'dark';
-  const updateSettings = useRMHboxStore((s) => s.updateSettings);
-  const timerInfo = useRMHboxStore((s) => s.timerInfo);
-  const lobby = useRMHboxStore((s) => s.lobby);
-  const navigate = useNavigate();
-  const goBack = useBackOrFallback();
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  const connectionStatus =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s.connectionStatus,
+    );
+  const theme =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s
+          .settings
+          .theme,
+    ) ??
+    'dark';
+  const updateSettings =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s.updateSettings,
+    );
+  const timerInfo =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s.timerInfo,
+    );
+  const lobby =
+    useRMHboxStore(
+      (
+        s,
+      ) =>
+        s.lobby,
+    );
+  const navigate =
+    useNavigate();
+  const goBack =
+    useBackOrFallback();
 
-  const handleToggleTheme = useCallback(() => {
-    updateSettings({ theme: theme === 'dark' ? 'light' : 'dark' });
-  }, [theme, updateSettings]);
+  const handleToggleTheme =
+    useCallback(() => {
+      updateSettings(
+        {
+          theme:
+            theme ===
+            'dark'
+              ? 'light'
+              : 'dark',
+        },
+      );
+    }, [
+      theme,
+      updateSettings,
+    ]);
 
-  const isGame = context === 'game';
+  const isGame =
+    context ===
+    'game';
   // The landing has no back link: leaving RMHbox for the games list is the page's Quit button.
-  const hasBackLink = context === 'minigames' || context === 'history' || context === 'lobby';
-  const showConnection = context !== 'minigames' && context !== 'history';
-  const showTimer = timerInfo !== null;
-  const isHost = !!(lobby && lobby.hostUserId === lobby.myUserId);
+  const hasBackLink =
+    context ===
+      'minigames' ||
+    context ===
+      'history' ||
+    context ===
+      'lobby';
+  const showConnection =
+    context !==
+      'minigames' &&
+    context !==
+      'history';
+  const showTimer =
+    timerInfo !==
+    null;
+  const isHost =
+    !!(
+      lobby &&
+      lobby.hostUserId ===
+        lobby.myUserId
+    );
 
-  const displayTitle = title ?? 'RMHbox';
+  const displayTitle =
+    title ??
+    'RMHbox';
 
   const statusIcon =
-    connectionStatus === 'connected' ? (
+    connectionStatus ===
+    'connected' ? (
       <Circle className="h-2.5 w-2.5 fill-app-success text-app-success inline-block" />
-    ) : connectionStatus === 'connecting' ? (
+    ) : connectionStatus ===
+      'connecting' ? (
       <Circle className="h-2.5 w-2.5 fill-app-warning text-app-warning inline-block" />
     ) : (
       <Circle className="h-2.5 w-2.5 fill-app-danger text-app-danger inline-block" />
     );
 
   const statusText =
-    connectionStatus === 'connected'
-      ? t('connected', { defaultValue: 'Connected' })
-      : connectionStatus === 'connecting'
-        ? t('connecting', { defaultValue: 'Connecting...' })
-        : connectionStatus === 'disconnected'
-          ? t('disconnected', { defaultValue: 'Disconnected' })
-          : t('connection-error', { defaultValue: 'Error' });
+    connectionStatus ===
+    'connected'
+      ? t(
+          'connected',
+          {
+            defaultValue:
+              'Connected',
+          },
+        )
+      : connectionStatus ===
+          'connecting'
+        ? t(
+            'connecting',
+            {
+              defaultValue:
+                'Connecting...',
+            },
+          )
+        : connectionStatus ===
+            'disconnected'
+          ? t(
+              'disconnected',
+              {
+                defaultValue:
+                  'Disconnected',
+              },
+            )
+          : t(
+              'connection-error',
+              {
+                defaultValue:
+                  'Error',
+              },
+            );
 
   return (
     <header className="grid h-16 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-app-border bg-app-bg px-3 sm:px-4">
@@ -192,40 +397,99 @@ export default function RMHboxHeader({
       <div className="flex min-w-0 items-center gap-2">
         {hasBackLink && (
           <Link
-            to={backHref ?? '/rmhbox'}
+            to={
+              backHref ??
+              '/rmhbox'
+            }
             className="text-sm font-medium text-app-text-muted hover:text-app-accent transition-colors text-nowrap"
             // when in a lobby, the back link becomes a "Leave" action that also disconnects from the lobby
-            onClick={(e) => {
-              if (context === 'lobby') {
+            onClick={(
+              e,
+            ) => {
+              if (
+                context ===
+                'lobby'
+              ) {
                 e.preventDefault();
-                if (!lobby) return;
-                emit(C2S.LOBBY_LEAVE, { lobbyId: lobby.lobbyId });
-                useRMHboxStore.getState().leaveLobby();
-                navigate({ to: '/rmhbox' });
+                if (
+                  !lobby
+                )
+                  return;
+                emit(
+                  C2S.LOBBY_LEAVE,
+                  {
+                    lobbyId:
+                      lobby.lobbyId,
+                  },
+                );
+                useRMHboxStore
+                  .getState()
+                  .leaveLobby();
+                navigate(
+                  {
+                    to: '/rmhbox',
+                  },
+                );
                 return;
               }
               // Everywhere else the arrow means what it says: step back to
               // wherever this session came from, and only fall through to the
               // href on a cold load. See `useBackOrFallback`.
-              goBack(e);
+              goBack(
+                e,
+              );
             }}
           >
             <span className="flex items-center gap-1.5">
-              <ArrowLeft className="h-4 w-4 shrink-0 rtl-flip" aria-hidden />
+              <ArrowLeft
+                className="h-4 w-4 shrink-0 rtl-flip"
+                aria-hidden
+              />
               {/* The arrow alone carries the meaning once space is tight. */}
-              <span className="hidden xs:inline">{backLabel ?? t('back', { defaultValue: 'Back' })}</span>
-              <span className="sr-only xs:hidden">{backLabel ?? t('back', { defaultValue: 'Back' })}</span>
+              <span className="hidden xs:inline">
+                {backLabel ??
+                  t(
+                    'back',
+                    {
+                      defaultValue:
+                        'Back',
+                    },
+                  )}
+              </span>
+              <span className="sr-only xs:hidden">
+                {backLabel ??
+                  t(
+                    'back',
+                    {
+                      defaultValue:
+                        'Back',
+                    },
+                  )}
+              </span>
             </span>
           </Link>
         )}
         {showTimer && (
           <TimerRing
-            seconds={timerInfo.remaining}
-            total={timerInfo.total}
-            paused={timerInfo.paused}
-            infinite={timerInfo.infinite}
-            isHost={isHost}
-            lobbyId={lobby?.lobbyId ?? null}
+            seconds={
+              timerInfo.remaining
+            }
+            total={
+              timerInfo.total
+            }
+            paused={
+              timerInfo.paused
+            }
+            infinite={
+              timerInfo.infinite
+            }
+            isHost={
+              isHost
+            }
+            lobbyId={
+              lobby?.lobbyId ??
+              null
+            }
           />
         )}
       </div>
@@ -234,9 +498,14 @@ export default function RMHboxHeader({
           instead of running through the back link or the controls. */}
       <h1
         className="min-w-0 truncate px-2 text-center text-xl font-bold leading-tight text-app-accent sm:text-2xl"
-        style={{ fontFamily: 'var(--app-font-display)' }}
+        style={{
+          fontFamily:
+            'var(--app-font-display)',
+        }}
       >
-        {displayTitle}
+        {
+          displayTitle
+        }
       </h1>
 
       {/* Right side */}
@@ -244,17 +513,34 @@ export default function RMHboxHeader({
         {showConnection && (
           <span
             className="flex items-center gap-1.5 text-sm text-app-text-muted"
-            title={statusText}
+            title={
+              statusText
+            }
           >
-            {statusIcon}
-            {!isGame && !showTimer && !hasBackLink && (
-              <span className="hidden sm:inline">{statusText}</span>
-            )}
+            {
+              statusIcon
+            }
+            {!isGame &&
+              !showTimer &&
+              !hasBackLink && (
+                <span className="hidden sm:inline">
+                  {
+                    statusText
+                  }
+                </span>
+              )}
           </span>
         )}
         <>
           <HostControlModal />
-          <SettingsMenu theme={theme} onToggleTheme={handleToggleTheme} />
+          <SettingsMenu
+            theme={
+              theme
+            }
+            onToggleTheme={
+              handleToggleTheme
+            }
+          />
         </>
       </div>
     </header>

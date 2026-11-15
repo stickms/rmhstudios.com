@@ -11,378 +11,1167 @@
  * Uses a mock Prisma client for environment-agnostic testing.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MOCK_USERS, createPlayer, createMockResults, createMockPrisma } from './setup';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+} from 'vitest';
+import {
+  MOCK_USERS,
+  createPlayer,
+  createMockResults,
+  createMockPrisma,
+} from './setup';
 import type { MockPrismaClient } from './setup';
 
 // Mock the prisma-client module
 let mockPrisma: MockPrismaClient;
 
-vi.mock('../../../server/rmhbox/prisma-client', () => ({
-  getPrismaClient: () => mockPrisma,
-}));
+vi.mock(
+  '../../../server/rmhbox/prisma-client',
+  () => ({
+    getPrismaClient:
+      () =>
+        mockPrisma,
+  }),
+);
 
 // Import after mocking
-const { LeaderboardService } = await import('../../../server/rmhbox/leaderboard');
+const {
+  LeaderboardService,
+} =
+  await import('../../../server/rmhbox/leaderboard');
 
 describe('Match-End Persistence (§2)', () => {
-  let service: InstanceType<typeof LeaderboardService>;
+  let service: InstanceType<
+    typeof LeaderboardService
+  >;
 
-  beforeEach(() => {
-    mockPrisma = createMockPrisma();
-    service = new LeaderboardService();
-    vi.clearAllMocks();
-  });
+  beforeEach(
+    () => {
+      mockPrisma =
+        createMockPrisma();
+      service =
+        new LeaderboardService();
+      vi.clearAllMocks();
+    },
+  );
 
   it('should create an RMHboxMatch record with correct fields', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const bob = createPlayer(MOCK_USERS.bob);
-    const players = new Map([
-      [alice.userId, alice],
-      [bob.userId, bob],
-    ]);
-    const results = createMockResults([alice, bob]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const bob =
+      createPlayer(
+        MOCK_USERS.bob,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+          [
+            bob.userId,
+            bob,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+          bob,
+        ],
+      );
 
     // Mock profile creation returns
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-test-1' });
-    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(null);
-    mockPrisma.rMHboxProfile.create.mockResolvedValue({ id: 'profile-1', userId: alice.userId });
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
+      {
+        id: 'match-test-1',
+      },
+    );
+    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(
+      null,
+    );
+    mockPrisma.rMHboxProfile.create.mockResolvedValue(
+      {
+        id: 'profile-1',
+        userId:
+          alice.userId,
+      },
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
-    expect(mockPrisma.rMHboxMatch.create).toHaveBeenCalledTimes(1);
-    const createCall = mockPrisma.rMHboxMatch.create.mock.calls[0][0];
-    expect(createCall.data.minigameId).toBe('rhyme-time');
-    expect(createCall.data.lobbyId).toBe('LOBBY01');
-    expect(createCall.data.playerCount).toBe(2);
-    expect(createCall.data.winnerUserId).toBe(alice.userId);
+    expect(
+      mockPrisma
+        .rMHboxMatch
+        .create,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    const createCall =
+      mockPrisma
+        .rMHboxMatch
+        .create
+        .mock
+        .calls[0][0];
+    expect(
+      createCall
+        .data
+        .minigameId,
+    ).toBe(
+      'rhyme-time',
+    );
+    expect(
+      createCall
+        .data
+        .lobbyId,
+    ).toBe(
+      'LOBBY01',
+    );
+    expect(
+      createCall
+        .data
+        .playerCount,
+    ).toBe(
+      2,
+    );
+    expect(
+      createCall
+        .data
+        .winnerUserId,
+    ).toBe(
+      alice.userId,
+    );
   });
 
   it('should create RMHboxMatchPlayer records for each player', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const bob = createPlayer(MOCK_USERS.bob);
-    const players = new Map([
-      [alice.userId, alice],
-      [bob.userId, bob],
-    ]);
-    const results = createMockResults([alice, bob]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const bob =
+      createPlayer(
+        MOCK_USERS.bob,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+          [
+            bob.userId,
+            bob,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+          bob,
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-test-2' });
-    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(null);
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
+      {
+        id: 'match-test-2',
+      },
+    );
+    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(
+      null,
+    );
     mockPrisma.rMHboxProfile.create
-      .mockResolvedValueOnce({ id: 'profile-alice', userId: alice.userId })
-      .mockResolvedValueOnce({ id: 'profile-bob', userId: bob.userId });
+      .mockResolvedValueOnce(
+        {
+          id: 'profile-alice',
+          userId:
+            alice.userId,
+        },
+      )
+      .mockResolvedValueOnce(
+        {
+          id: 'profile-bob',
+          userId:
+            bob.userId,
+        },
+      );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
-    expect(mockPrisma.rMHboxMatchPlayer.create).toHaveBeenCalledTimes(2);
+    expect(
+      mockPrisma
+        .rMHboxMatchPlayer
+        .create,
+    ).toHaveBeenCalledTimes(
+      2,
+    );
 
     // First player (winner) should have wasWinner = true
-    const firstCall = mockPrisma.rMHboxMatchPlayer.create.mock.calls[0][0];
-    expect(firstCall.data.wasWinner).toBe(true);
-    expect(firstCall.data.rank).toBe(1);
+    const firstCall =
+      mockPrisma
+        .rMHboxMatchPlayer
+        .create
+        .mock
+        .calls[0][0];
+    expect(
+      firstCall
+        .data
+        .wasWinner,
+    ).toBe(
+      true,
+    );
+    expect(
+      firstCall
+        .data
+        .rank,
+    ).toBe(
+      1,
+    );
 
     // Second player should have wasWinner = false
-    const secondCall = mockPrisma.rMHboxMatchPlayer.create.mock.calls[1][0];
-    expect(secondCall.data.wasWinner).toBe(false);
-    expect(secondCall.data.rank).toBe(2);
+    const secondCall =
+      mockPrisma
+        .rMHboxMatchPlayer
+        .create
+        .mock
+        .calls[1][0];
+    expect(
+      secondCall
+        .data
+        .wasWinner,
+    ).toBe(
+      false,
+    );
+    expect(
+      secondCall
+        .data
+        .rank,
+    ).toBe(
+      2,
+    );
   });
 
   it('should create a new RMHboxProfile when one does not exist', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const players = new Map([[alice.userId, alice]]);
-    const results = createMockResults([alice]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-1' });
-    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(null);
-    mockPrisma.rMHboxProfile.create.mockResolvedValue({ id: 'profile-new', userId: alice.userId });
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
+      {
+        id: 'match-1',
+      },
+    );
+    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(
+      null,
+    );
+    mockPrisma.rMHboxProfile.create.mockResolvedValue(
+      {
+        id: 'profile-new',
+        userId:
+          alice.userId,
+      },
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
-    expect(mockPrisma.rMHboxProfile.create).toHaveBeenCalledTimes(1);
-    const createData = mockPrisma.rMHboxProfile.create.mock.calls[0][0].data;
-    expect(createData.userId).toBe(alice.userId);
-    expect(createData.totalGamesPlayed).toBe(1);
-    expect(createData.totalWins).toBe(1); // Alice is rank 1
-    expect(createData.currentWinStreak).toBe(1);
-    expect(createData.bestWinStreak).toBe(1);
+    expect(
+      mockPrisma
+        .rMHboxProfile
+        .create,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    const createData =
+      mockPrisma
+        .rMHboxProfile
+        .create
+        .mock
+        .calls[0][0]
+        .data;
+    expect(
+      createData.userId,
+    ).toBe(
+      alice.userId,
+    );
+    expect(
+      createData.totalGamesPlayed,
+    ).toBe(
+      1,
+    );
+    expect(
+      createData.totalWins,
+    ).toBe(
+      1,
+    ); // Alice is rank 1
+    expect(
+      createData.currentWinStreak,
+    ).toBe(
+      1,
+    );
+    expect(
+      createData.bestWinStreak,
+    ).toBe(
+      1,
+    );
   });
 
   it('should update existing RMHboxProfile with incremented stats', async () => {
-    const bob = createPlayer(MOCK_USERS.bob);
-    const players = new Map([[bob.userId, bob]]);
-    const results = createMockResults([bob]);
+    const bob =
+      createPlayer(
+        MOCK_USERS.bob,
+      );
+    const players =
+      new Map(
+        [
+          [
+            bob.userId,
+            bob,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          bob,
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-2' });
-    mockPrisma.rMHboxProfile.findMany.mockResolvedValue([
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
       {
-        id: 'profile-bob',
-        userId: bob.userId,
-        totalGamesPlayed: 5,
-        totalWins: 2,
-        totalScore: 500,
-        totalPlayTimeMs: 30000,
-        minigameStats: {},
-        currentWinStreak: 1,
-        bestWinStreak: 3,
+        id: 'match-2',
       },
-    ]);
+    );
+    mockPrisma.rMHboxProfile.findMany.mockResolvedValue(
+      [
+        {
+          id: 'profile-bob',
+          userId:
+            bob.userId,
+          totalGamesPlayed: 5,
+          totalWins: 2,
+          totalScore: 500,
+          totalPlayTimeMs: 30000,
+          minigameStats:
+            {},
+          currentWinStreak: 1,
+          bestWinStreak: 3,
+        },
+      ],
+    );
 
-    await service.persistMatchResults('LOBBY01', 'category-crash', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'category-crash',
+      results,
+      players,
+      null,
+    );
 
-    expect(mockPrisma.rMHboxProfile.update).toHaveBeenCalledTimes(1);
-    const updateData = mockPrisma.rMHboxProfile.update.mock.calls[0][0].data;
-    expect(updateData.totalGamesPlayed).toEqual({ increment: 1 });
-    expect(updateData.totalScore).toEqual({ increment: 100 }); // Score for rank 1
+    expect(
+      mockPrisma
+        .rMHboxProfile
+        .update,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    const updateData =
+      mockPrisma
+        .rMHboxProfile
+        .update
+        .mock
+        .calls[0][0]
+        .data;
+    expect(
+      updateData.totalGamesPlayed,
+    ).toEqual(
+      {
+        increment: 1,
+      },
+    );
+    expect(
+      updateData.totalScore,
+    ).toEqual(
+      {
+        increment: 100,
+      },
+    ); // Score for rank 1
   });
 
   it('should reset win streak when player does not win', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const bob = createPlayer(MOCK_USERS.bob);
-    const players = new Map([
-      [alice.userId, alice],
-      [bob.userId, bob],
-    ]);
-    const results = createMockResults([alice, bob]); // Alice wins, Bob is 2nd
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const bob =
+      createPlayer(
+        MOCK_USERS.bob,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+          [
+            bob.userId,
+            bob,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+          bob,
+        ],
+      ); // Alice wins, Bob is 2nd
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-3' });
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
+      {
+        id: 'match-3',
+      },
+    );
     // Profiles are read for the whole match in one query: Bob already has one
     // (with a streak), Alice does not, so she is simply absent from the result.
-    mockPrisma.rMHboxProfile.findMany.mockResolvedValue([
+    mockPrisma.rMHboxProfile.findMany.mockResolvedValue(
+      [
+        {
+          id: 'profile-bob',
+          userId:
+            bob.userId,
+          totalGamesPlayed: 3,
+          totalWins: 2,
+          totalScore: 300,
+          totalPlayTimeMs: 20000,
+          minigameStats:
+            {},
+          currentWinStreak: 2,
+          bestWinStreak: 2,
+        },
+      ],
+    );
+    mockPrisma.rMHboxProfile.create.mockResolvedValue(
       {
-        id: 'profile-bob',
-        userId: bob.userId,
-        totalGamesPlayed: 3,
-        totalWins: 2,
-        totalScore: 300,
-        totalPlayTimeMs: 20000,
-        minigameStats: {},
-        currentWinStreak: 2,
-        bestWinStreak: 2,
+        id: 'profile-alice',
+        userId:
+          alice.userId,
       },
-    ]);
-    mockPrisma.rMHboxProfile.create.mockResolvedValue({
-      id: 'profile-alice',
-      userId: alice.userId,
-    });
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
     // Bob's win streak should be reset to 0
-    const bobUpdate = mockPrisma.rMHboxProfile.update.mock.calls[0][0].data;
-    expect(bobUpdate.currentWinStreak).toBe(0);
-    expect(bobUpdate.bestWinStreak).toBe(2); // Best stays the same
+    const bobUpdate =
+      mockPrisma
+        .rMHboxProfile
+        .update
+        .mock
+        .calls[0][0]
+        .data;
+    expect(
+      bobUpdate.currentWinStreak,
+    ).toBe(
+      0,
+    );
+    expect(
+      bobUpdate.bestWinStreak,
+    ).toBe(
+      2,
+    ); // Best stays the same
   });
 
   it('should increment win streak and update best when player wins', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const players = new Map([[alice.userId, alice]]);
-    const results = createMockResults([alice]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-4' });
-    mockPrisma.rMHboxProfile.findMany.mockResolvedValue([
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
       {
-        id: 'profile-alice',
-        userId: alice.userId,
-        totalGamesPlayed: 5,
-        totalWins: 3,
-        totalScore: 500,
-        totalPlayTimeMs: 30000,
-        minigameStats: {},
-        currentWinStreak: 2,
-        bestWinStreak: 3,
+        id: 'match-4',
       },
-    ]);
+    );
+    mockPrisma.rMHboxProfile.findMany.mockResolvedValue(
+      [
+        {
+          id: 'profile-alice',
+          userId:
+            alice.userId,
+          totalGamesPlayed: 5,
+          totalWins: 3,
+          totalScore: 500,
+          totalPlayTimeMs: 30000,
+          minigameStats:
+            {},
+          currentWinStreak: 2,
+          bestWinStreak: 3,
+        },
+      ],
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
-    const updateData = mockPrisma.rMHboxProfile.update.mock.calls[0][0].data;
-    expect(updateData.currentWinStreak).toBe(3); // 2 + 1
-    expect(updateData.bestWinStreak).toBe(3); // max(3, 3) = 3
+    const updateData =
+      mockPrisma
+        .rMHboxProfile
+        .update
+        .mock
+        .calls[0][0]
+        .data;
+    expect(
+      updateData.currentWinStreak,
+    ).toBe(
+      3,
+    ); // 2 + 1
+    expect(
+      updateData.bestWinStreak,
+    ).toBe(
+      3,
+    ); // max(3, 3) = 3
   });
 
   it('should update bestWinStreak when current exceeds best', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const players = new Map([[alice.userId, alice]]);
-    const results = createMockResults([alice]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-5' });
-    mockPrisma.rMHboxProfile.findMany.mockResolvedValue([
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
       {
-        id: 'profile-alice',
-        userId: alice.userId,
-        totalGamesPlayed: 5,
-        totalWins: 3,
-        totalScore: 500,
-        totalPlayTimeMs: 30000,
-        minigameStats: {},
-        currentWinStreak: 3,
-        bestWinStreak: 3,
+        id: 'match-5',
       },
-    ]);
+    );
+    mockPrisma.rMHboxProfile.findMany.mockResolvedValue(
+      [
+        {
+          id: 'profile-alice',
+          userId:
+            alice.userId,
+          totalGamesPlayed: 5,
+          totalWins: 3,
+          totalScore: 500,
+          totalPlayTimeMs: 30000,
+          minigameStats:
+            {},
+          currentWinStreak: 3,
+          bestWinStreak: 3,
+        },
+      ],
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
-    const updateData = mockPrisma.rMHboxProfile.update.mock.calls[0][0].data;
-    expect(updateData.currentWinStreak).toBe(4); // 3 + 1
-    expect(updateData.bestWinStreak).toBe(4); // max(3, 4) = 4
+    const updateData =
+      mockPrisma
+        .rMHboxProfile
+        .update
+        .mock
+        .calls[0][0]
+        .data;
+    expect(
+      updateData.currentWinStreak,
+    ).toBe(
+      4,
+    ); // 3 + 1
+    expect(
+      updateData.bestWinStreak,
+    ).toBe(
+      4,
+    ); // max(3, 4) = 4
   });
 
   it('should update per-minigame stats in minigameStats JSON', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const players = new Map([[alice.userId, alice]]);
-    const results = createMockResults([alice]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-6' });
-    mockPrisma.rMHboxProfile.findMany.mockResolvedValue([
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
       {
-        id: 'profile-alice',
-        userId: alice.userId,
-        totalGamesPlayed: 2,
-        totalWins: 1,
-        totalScore: 200,
-        totalPlayTimeMs: 10000,
-        minigameStats: {
-          'rhyme-time': {
-            gamesPlayed: 1,
-            wins: 1,
-            bestScore: 100,
-            totalScore: 100,
-            totalRank: 1,
-            averageRank: 1,
-          },
-        },
-        currentWinStreak: 1,
-        bestWinStreak: 1,
+        id: 'match-6',
       },
-    ]);
+    );
+    mockPrisma.rMHboxProfile.findMany.mockResolvedValue(
+      [
+        {
+          id: 'profile-alice',
+          userId:
+            alice.userId,
+          totalGamesPlayed: 2,
+          totalWins: 1,
+          totalScore: 200,
+          totalPlayTimeMs: 10000,
+          minigameStats:
+            {
+              'rhyme-time':
+                {
+                  gamesPlayed: 1,
+                  wins: 1,
+                  bestScore: 100,
+                  totalScore: 100,
+                  totalRank: 1,
+                  averageRank: 1,
+                },
+            },
+          currentWinStreak: 1,
+          bestWinStreak: 1,
+        },
+      ],
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
-    const updateData = mockPrisma.rMHboxProfile.update.mock.calls[0][0].data;
-    const updatedStats = updateData.minigameStats['rhyme-time'];
-    expect(updatedStats.gamesPlayed).toBe(2);
-    expect(updatedStats.wins).toBe(2);
-    expect(updatedStats.bestScore).toBe(100); // max(100, 100)
-    expect(updatedStats.totalScore).toBe(200);
+    const updateData =
+      mockPrisma
+        .rMHboxProfile
+        .update
+        .mock
+        .calls[0][0]
+        .data;
+    const updatedStats =
+      updateData
+        .minigameStats[
+        'rhyme-time'
+      ];
+    expect(
+      updatedStats.gamesPlayed,
+    ).toBe(
+      2,
+    );
+    expect(
+      updatedStats.wins,
+    ).toBe(
+      2,
+    );
+    expect(
+      updatedStats.bestScore,
+    ).toBe(
+      100,
+    ); // max(100, 100)
+    expect(
+      updatedStats.totalScore,
+    ).toBe(
+      200,
+    );
   });
 
   it('should not throw when database write fails (fire-and-forget)', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const players = new Map([[alice.userId, alice]]);
-    const results = createMockResults([alice]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockRejectedValue(new Error('DB connection failed'));
+    mockPrisma.rMHboxMatch.create.mockRejectedValue(
+      new Error(
+        'DB connection failed',
+      ),
+    );
 
     // Should not throw
     await expect(
-      service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null),
+      service.persistMatchResults(
+        'LOBBY01',
+        'rhyme-time',
+        results,
+        players,
+        null,
+      ),
     ).resolves.not.toThrow();
   });
 
   it('should handle empty results gracefully', async () => {
-    const players = new Map<string, ReturnType<typeof createPlayer>>();
-    const results = createMockResults([]);
+    const players =
+      new Map<
+        string,
+        ReturnType<
+          typeof createPlayer
+        >
+      >();
+    const results =
+      createMockResults(
+        [],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-empty' });
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
+      {
+        id: 'match-empty',
+      },
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
-    expect(mockPrisma.rMHboxMatch.create).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.rMHboxMatchPlayer.create).toHaveBeenCalledTimes(0);
+    expect(
+      mockPrisma
+        .rMHboxMatch
+        .create,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      mockPrisma
+        .rMHboxMatchPlayer
+        .create,
+    ).toHaveBeenCalledTimes(
+      0,
+    );
   });
 
   it('should skip players not found in the players map', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const players = new Map([[alice.userId, alice]]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+        ],
+      );
     // Results include bob who is NOT in the players map
-    const results = createMockResults([alice, createPlayer(MOCK_USERS.bob)]);
+    const results =
+      createMockResults(
+        [
+          alice,
+          createPlayer(
+            MOCK_USERS.bob,
+          ),
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-skip' });
-    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(null);
-    mockPrisma.rMHboxProfile.create.mockResolvedValue({
-      id: 'profile-alice',
-      userId: alice.userId,
-    });
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
+      {
+        id: 'match-skip',
+      },
+    );
+    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(
+      null,
+    );
+    mockPrisma.rMHboxProfile.create.mockResolvedValue(
+      {
+        id: 'profile-alice',
+        userId:
+          alice.userId,
+      },
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
     // Only Alice should get a profile and match player record
-    expect(mockPrisma.rMHboxProfile.create).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.rMHboxMatchPlayer.create).toHaveBeenCalledTimes(1);
+    expect(
+      mockPrisma
+        .rMHboxProfile
+        .create,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      mockPrisma
+        .rMHboxMatchPlayer
+        .create,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
   });
 
   it('should skip transient Discord identities, which have no user row', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const guest = createPlayer({
-      ...MOCK_USERS.bob,
-      userId: 'discord:1234567890',
-      userName: 'Guest',
-    });
-    const players = new Map([
-      [alice.userId, alice],
-      [guest.userId, guest],
-    ]);
-    const results = createMockResults([alice, guest]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const guest =
+      createPlayer(
+        {
+          ...MOCK_USERS.bob,
+          userId:
+            'discord:1234567890',
+          userName:
+            'Guest',
+        },
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+          [
+            guest.userId,
+            guest,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+          guest,
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-guest' });
-    mockPrisma.rMHboxProfile.findMany.mockResolvedValue([]);
-    mockPrisma.rMHboxProfile.create.mockResolvedValue({
-      id: 'profile-alice',
-      userId: alice.userId,
-    });
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
+      {
+        id: 'match-guest',
+      },
+    );
+    mockPrisma.rMHboxProfile.findMany.mockResolvedValue(
+      [],
+    );
+    mockPrisma.rMHboxProfile.create.mockResolvedValue(
+      {
+        id: 'profile-alice',
+        userId:
+          alice.userId,
+      },
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
     // The guest is never looked up or written — RMHboxProfile.userId is a
     // foreign key to User, so a `discord:` id would raise P2003.
-    const lookup = mockPrisma.rMHboxProfile.findMany.mock.calls[0][0];
-    expect(lookup.where.userId.in).toEqual([alice.userId]);
-    expect(mockPrisma.rMHboxProfile.create).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.rMHboxProfile.create.mock.calls[0][0].data.userId).toBe(alice.userId);
-    expect(mockPrisma.rMHboxMatchPlayer.create).toHaveBeenCalledTimes(1);
+    const lookup =
+      mockPrisma
+        .rMHboxProfile
+        .findMany
+        .mock
+        .calls[0][0];
+    expect(
+      lookup
+        .where
+        .userId
+        .in,
+    ).toEqual(
+      [
+        alice.userId,
+      ],
+    );
+    expect(
+      mockPrisma
+        .rMHboxProfile
+        .create,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      mockPrisma
+        .rMHboxProfile
+        .create
+        .mock
+        .calls[0][0]
+        .data
+        .userId,
+    ).toBe(
+      alice.userId,
+    );
+    expect(
+      mockPrisma
+        .rMHboxMatchPlayer
+        .create,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
   });
 
   it('should still persist the other players when one player write fails', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const bob = createPlayer(MOCK_USERS.bob);
-    const players = new Map([
-      [alice.userId, alice],
-      [bob.userId, bob],
-    ]);
-    const results = createMockResults([alice, bob]);
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const bob =
+      createPlayer(
+        MOCK_USERS.bob,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+          [
+            bob.userId,
+            bob,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+          bob,
+        ],
+      );
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-partial' });
-    mockPrisma.rMHboxProfile.findMany.mockResolvedValue([]);
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
+      {
+        id: 'match-partial',
+      },
+    );
+    mockPrisma.rMHboxProfile.findMany.mockResolvedValue(
+      [],
+    );
     mockPrisma.rMHboxProfile.create
-      .mockRejectedValueOnce(new Error('deleted account'))
-      .mockResolvedValueOnce({ id: 'profile-bob', userId: bob.userId });
+      .mockRejectedValueOnce(
+        new Error(
+          'deleted account',
+        ),
+      )
+      .mockResolvedValueOnce(
+        {
+          id: 'profile-bob',
+          userId:
+            bob.userId,
+        },
+      );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, null);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      null,
+    );
 
     // Alice's failure must not take Bob's row down with it.
-    expect(mockPrisma.rMHboxMatchPlayer.create).toHaveBeenCalledTimes(1);
-    expect(mockPrisma.rMHboxMatchPlayer.create.mock.calls[0][0].data.userId).toBe(bob.userId);
+    expect(
+      mockPrisma
+        .rMHboxMatchPlayer
+        .create,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      mockPrisma
+        .rMHboxMatchPlayer
+        .create
+        .mock
+        .calls[0][0]
+        .data
+        .userId,
+    ).toBe(
+      bob.userId,
+    );
   });
 
   it('should store gameLog when provided', async () => {
-    const alice = createPlayer(MOCK_USERS.alice);
-    const players = new Map([[alice.userId, alice]]);
-    const results = createMockResults([alice]);
-    const gameLog = {
-      events: [{ timestamp: Date.now(), type: 'answer', data: { correct: true } }],
-    };
+    const alice =
+      createPlayer(
+        MOCK_USERS.alice,
+      );
+    const players =
+      new Map(
+        [
+          [
+            alice.userId,
+            alice,
+          ],
+        ],
+      );
+    const results =
+      createMockResults(
+        [
+          alice,
+        ],
+      );
+    const gameLog =
+      {
+        events:
+          [
+            {
+              timestamp:
+                Date.now(),
+              type: 'answer',
+              data: {
+                correct: true,
+              },
+            },
+          ],
+      };
 
-    mockPrisma.rMHboxMatch.create.mockResolvedValue({ id: 'match-log' });
-    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(null);
-    mockPrisma.rMHboxProfile.create.mockResolvedValue({
-      id: 'profile-alice',
-      userId: alice.userId,
-    });
+    mockPrisma.rMHboxMatch.create.mockResolvedValue(
+      {
+        id: 'match-log',
+      },
+    );
+    mockPrisma.rMHboxProfile.findUnique.mockResolvedValue(
+      null,
+    );
+    mockPrisma.rMHboxProfile.create.mockResolvedValue(
+      {
+        id: 'profile-alice',
+        userId:
+          alice.userId,
+      },
+    );
 
-    await service.persistMatchResults('LOBBY01', 'rhyme-time', results, players, gameLog);
+    await service.persistMatchResults(
+      'LOBBY01',
+      'rhyme-time',
+      results,
+      players,
+      gameLog,
+    );
 
-    const createData = mockPrisma.rMHboxMatch.create.mock.calls[0][0].data;
-    expect(createData.gameLog).toEqual(gameLog);
+    const createData =
+      mockPrisma
+        .rMHboxMatch
+        .create
+        .mock
+        .calls[0][0]
+        .data;
+    expect(
+      createData.gameLog,
+    ).toEqual(
+      gameLog,
+    );
   });
 });

@@ -8,48 +8,139 @@
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/components/ui/select';
 
-export interface SortOption<T extends string> {
+export interface SortOption<
+  T extends
+    string,
+> {
   value: T;
   label: string;
 }
 
-export function SortSelect<T extends string>({
+export function SortSelect<
+  T extends
+    string,
+>({
   value,
   onChange,
   options,
 }: {
   value: T;
-  onChange: (value: T) => void;
+  onChange: (
+    value: T,
+  ) => void;
   options: readonly SortOption<T>[];
 }) {
-  const { t } = useTranslation('builds');
-  const label = t('sort-label', { defaultValue: 'Sort' });
+  const {
+    t,
+  } =
+    useTranslation(
+      'builds',
+    );
+  const label =
+    t(
+      'sort-label',
+      {
+        defaultValue:
+          'Sort',
+      },
+    );
   return (
     <label className="builds-sort">
-      <span className="sr-only">{label}</span>
+      <span className="sr-only">
+        {
+          label
+        }
+      </span>
       <Select
         controlSize="sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value as T)}
-        aria-label={label}
+        value={
+          value
+        }
+        onChange={(
+          e,
+        ) =>
+          onChange(
+            e
+              .target
+              .value as T,
+          )
+        }
+        aria-label={
+          label
+        }
         containerClassName="w-36"
       >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
+        {options.map(
+          (
+            o,
+          ) => (
+            <option
+              key={
+                o.value
+              }
+              value={
+                o.value
+              }
+            >
+              {
+                o.label
+              }
+            </option>
+          ),
+        )}
       </Select>
     </label>
   );
 }
 
 /** The three sorts every ranked Create list offers, Best first. */
-export function useCreationSortOptions(): SortOption<'best' | 'popular' | 'newest'>[] {
-  const { t } = useTranslation('builds');
+export function useCreationSortOptions(): SortOption<
+  | 'best'
+  | 'popular'
+  | 'newest'
+>[] {
+  const {
+    t,
+  } =
+    useTranslation(
+      'builds',
+    );
   return [
-    { value: 'best', label: t('sort-best', { defaultValue: 'Best' }) },
-    { value: 'popular', label: t('sort-popular', { defaultValue: 'Popular' }) },
-    { value: 'newest', label: t('sort-newest', { defaultValue: 'Newest' }) },
+    {
+      value:
+        'best',
+      label:
+        t(
+          'sort-best',
+          {
+            defaultValue:
+              'Best',
+          },
+        ),
+    },
+    {
+      value:
+        'popular',
+      label:
+        t(
+          'sort-popular',
+          {
+            defaultValue:
+              'Popular',
+          },
+        ),
+    },
+    {
+      value:
+        'newest',
+      label:
+        t(
+          'sort-newest',
+          {
+            defaultValue:
+              'Newest',
+          },
+        ),
+    },
   ];
 }

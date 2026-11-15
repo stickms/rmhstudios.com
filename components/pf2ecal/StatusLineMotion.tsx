@@ -1,6 +1,9 @@
 // `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
 // is the component that honours it (eslint `no-restricted-imports`).
-import { AnimatePresence, m as motion } from 'framer-motion';
+import {
+  AnimatePresence,
+  m as motion,
+} from 'framer-motion';
 import { EASE } from './motion';
 
 /**
@@ -11,19 +14,41 @@ import { EASE } from './motion';
  * `AnimatePresence` were on the critical path of every page of the site
  * (third-pass audit RT1).
  */
-export function StatusLineMotion({ message }: { message: string | null }) {
+export function StatusLineMotion({
+  message,
+}: {
+  message:
+    | string
+    | null;
+}) {
   return (
     <AnimatePresence mode="wait">
       {message && (
         <motion.p
-          key={message}
+          key={
+            message
+          }
           className="pf2e-caption"
-          initial={{ opacity: 0, y: -3 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 3 }}
-          transition={{ duration: 0.18, ease: EASE }}
+          initial={{
+            opacity: 0,
+            y: -3,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          exit={{
+            opacity: 0,
+            y: 3,
+          }}
+          transition={{
+            duration: 0.18,
+            ease: EASE,
+          }}
         >
-          {message}
+          {
+            message
+          }
         </motion.p>
       )}
     </AnimatePresence>

@@ -16,94 +16,236 @@
  * missing button is indistinguishable from a broken one.
  */
 
-import { Bell, BellOff, BellRing } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  Bell,
+  BellOff,
+  BellRing,
+} from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { usePushSubscription } from '@/lib/usePushSubscription';
 import { api } from '@/lib/contract/client';
-import { getSohumAlertApi, setSohumAlertApi } from '@/lib/sohumtracker/alert.contract';
+import {
+  getSohumAlertApi,
+  setSohumAlertApi,
+} from '@/lib/sohumtracker/alert.contract';
 
 export function AlertToggle() {
-  const { t } = useTranslation('r-sohumtracker');
-  const { data: session, isPending } = useSession();
-  const signedIn = Boolean(session?.user);
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-sohumtracker',
+    );
+  const {
+    data: session,
+    isPending,
+  } =
+    useSession();
+  const signedIn =
+    Boolean(
+      session?.user,
+    );
 
-  const { supported, subscribed, busy, subscribe } = usePushSubscription(signedIn);
-  const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [saving, setSaving] = useState(false);
+  const {
+    supported,
+    subscribed,
+    busy,
+    subscribe,
+  } =
+    usePushSubscription(
+      signedIn,
+    );
+  const [
+    enabled,
+    setEnabled,
+  ] =
+    useState<
+      | boolean
+      | null
+    >(
+      null,
+    );
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState(
+      false,
+    );
 
   // The stored preference, which is a different question from whether this
   // BROWSER has a push subscription — he may have turned it on from his phone.
   useEffect(() => {
-    if (!signedIn) {
-      setEnabled(null);
+    if (
+      !signedIn
+    ) {
+      setEnabled(
+        null,
+      );
       return;
     }
     let cancelled = false;
-    api(getSohumAlertApi, { retries: 0 })
-      .then((data) => {
-        if (!cancelled) setEnabled(data.enabled);
-      })
-      .catch(() => {
-        // A failed read leaves the button in its "unknown" state, which renders
-        // as off. Pressing it then writes the truth, so there is nothing to
-        // recover from and nothing worth interrupting the page for.
-      });
+    api(
+      getSohumAlertApi,
+      {
+        retries: 0,
+      },
+    )
+      .then(
+        (
+          data,
+        ) => {
+          if (
+            !cancelled
+          )
+            setEnabled(
+              data.enabled,
+            );
+        },
+      )
+      .catch(
+        () => {
+          // A failed read leaves the button in its "unknown" state, which renders
+          // as off. Pressing it then writes the truth, so there is nothing to
+          // recover from and nothing worth interrupting the page for.
+        },
+      );
     return () => {
       cancelled = true;
     };
-  }, [signedIn]);
+  }, [
+    signedIn,
+  ]);
 
-  const toggle = useCallback(async () => {
-    const next = !enabled;
-    setSaving(true);
-    try {
-      // Permission first, and only when turning ON: asking for it in order to
-      // switch something OFF is the kind of prompt that makes people block the
-      // site outright.
-      if (next && !subscribed) {
-        const granted = await subscribe();
-        if (!granted) {
-          toast.error(
-            t('alert-denied', {
-              defaultValue: 'Your browser refused notifications, so there is nowhere to send it.',
-            }),
-          );
-          return;
-        }
-      }
-      await api(setSohumAlertApi, { body: { enabled: next } });
-      setEnabled(next);
-      toast.success(
-        next
-          ? t('alert-on', { defaultValue: "You'll be told when he joins a voice channel." })
-          : t('alert-off', { defaultValue: 'Alerts off.' }),
+  const toggle =
+    useCallback(async () => {
+      const next =
+        !enabled;
+      setSaving(
+        true,
       );
-    } catch {
-      toast.error(t('alert-failed', { defaultValue: 'That did not save. Try again.' }));
-    } finally {
-      setSaving(false);
-    }
-  }, [enabled, subscribed, subscribe, t]);
+      try {
+        // Permission first, and only when turning ON: asking for it in order to
+        // switch something OFF is the kind of prompt that makes people block the
+        // site outright.
+        if (
+          next &&
+          !subscribed
+        ) {
+          const granted =
+            await subscribe();
+          if (
+            !granted
+          ) {
+            toast.error(
+              t(
+                'alert-denied',
+                {
+                  defaultValue:
+                    'Your browser refused notifications, so there is nowhere to send it.',
+                },
+              ),
+            );
+            return;
+          }
+        }
+        await api(
+          setSohumAlertApi,
+          {
+            body: {
+              enabled:
+                next,
+            },
+          },
+        );
+        setEnabled(
+          next,
+        );
+        toast.success(
+          next
+            ? t(
+                'alert-on',
+                {
+                  defaultValue:
+                    "You'll be told when he joins a voice channel.",
+                },
+              )
+            : t(
+                'alert-off',
+                {
+                  defaultValue:
+                    'Alerts off.',
+                },
+              ),
+        );
+      } catch {
+        toast.error(
+          t(
+            'alert-failed',
+            {
+              defaultValue:
+                'That did not save. Try again.',
+            },
+          ),
+        );
+      } finally {
+        setSaving(
+          false,
+        );
+      }
+    }, [
+      enabled,
+      subscribed,
+      subscribe,
+      t,
+    ]);
 
-  if (isPending) return null;
+  if (
+    isPending
+  )
+    return null;
 
   // The label collapses to the icon on a phone (`.stk-btn__label`), so the
   // control never squeezes the page title into an ellipsis. Every branch
   // therefore carries an `aria-label` — the accessible name must not disappear
   // with the visible one.
-  if (!signedIn) {
-    const label = t('alert-signin', { defaultValue: 'Sign in to be alerted' });
+  if (
+    !signedIn
+  ) {
+    const label =
+      t(
+        'alert-signin',
+        {
+          defaultValue:
+            'Sign in to be alerted',
+        },
+      );
     return (
       <a
         className="stk-btn stk-btn--ghost"
         href="/login?callbackURL=%2Fsohumtracker"
-        aria-label={label}
+        aria-label={
+          label
+        }
       >
-        <Bell aria-hidden size={15} />
-        <span className="stk-btn__label">{label}</span>
+        <Bell
+          aria-hidden
+          size={
+            15
+          }
+        />
+        <span className="stk-btn__label">
+          {
+            label
+          }
+        </span>
       </a>
     );
   }
@@ -111,31 +253,96 @@ export function AlertToggle() {
   // Push unavailable is a fact about the browser, not a failure — Safari without
   // an installed PWA, or a dev server with no service worker. Saying so beats a
   // button that silently never fires.
-  if (!supported) {
-    const label = t('alert-unsupported', { defaultValue: 'Notifications unavailable here' });
+  if (
+    !supported
+  ) {
+    const label =
+      t(
+        'alert-unsupported',
+        {
+          defaultValue:
+            'Notifications unavailable here',
+        },
+      );
     return (
-      <span className="stk-btn stk-btn--ghost" aria-disabled aria-label={label}>
-        <BellOff aria-hidden size={15} />
-        <span className="stk-btn__label">{label}</span>
+      <span
+        className="stk-btn stk-btn--ghost"
+        aria-disabled
+        aria-label={
+          label
+        }
+      >
+        <BellOff
+          aria-hidden
+          size={
+            15
+          }
+        />
+        <span className="stk-btn__label">
+          {
+            label
+          }
+        </span>
       </span>
     );
   }
 
-  const label = enabled
-    ? t('alert-enabled', { defaultValue: 'Alerting on voice' })
-    : t('alert-enable', { defaultValue: 'Alert me on voice' });
+  const label =
+    enabled
+      ? t(
+          'alert-enabled',
+          {
+            defaultValue:
+              'Alerting on voice',
+          },
+        )
+      : t(
+          'alert-enable',
+          {
+            defaultValue:
+              'Alert me on voice',
+          },
+        );
 
   return (
     <button
       type="button"
       className="stk-btn stk-btn--ghost"
-      onClick={toggle}
-      disabled={saving || busy}
-      aria-pressed={enabled === true}
-      aria-label={label}
+      onClick={
+        toggle
+      }
+      disabled={
+        saving ||
+        busy
+      }
+      aria-pressed={
+        enabled ===
+        true
+      }
+      aria-label={
+        label
+      }
     >
-      {enabled ? <BellRing aria-hidden size={15} /> : <Bell aria-hidden size={15} />}
-      <span className="stk-btn__label">{label}</span>
+      {enabled ? (
+        <BellRing
+          aria-hidden
+          size={
+            15
+          }
+        />
+      ) : (
+        <Bell
+          aria-hidden
+          size={
+            15
+          }
+        />
+      )}
+      <span className="stk-btn__label">
+        {
+          label
+        }
+      </span>
     </button>
   );
 }

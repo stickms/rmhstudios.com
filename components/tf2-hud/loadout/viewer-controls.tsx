@@ -3,57 +3,156 @@
  * model, wheel or pinch to zoom, and a button that returns to the framed view.
  */
 
-import { useCallback, useEffect, useRef, type ComponentProps, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type ComponentProps,
+  type RefObject,
+} from 'react';
 import { useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Crosshair } from 'lucide-react';
 import { IconButton } from '@/components/ui/icon-button';
 import { useTranslation } from 'react-i18next';
 
-type Orbit = { target: { copy: (v: unknown) => void }; update: () => void; saveState: () => void };
+type Orbit =
+  {
+    target: {
+      copy: (
+        v: unknown,
+      ) => void;
+    };
+    update: () => void;
+    saveState: () => void;
+  };
 
 /** Orbit controls that remember the framed view and register a function that goes back to it. */
 export function ViewerOrbit({
   resetRef,
   ...props
-}: ComponentProps<typeof OrbitControls> & { resetRef: RefObject<(() => void) | null> }) {
-  const controls = useThree((s) => s.controls) as unknown as (Orbit & { reset: () => void }) | null;
-  const invalidate = useThree((s) => s.invalidate);
+}: ComponentProps<
+  typeof OrbitControls
+> & {
+  resetRef: RefObject<
+    | (() => void)
+    | null
+  >;
+}) {
+  const controls =
+    useThree(
+      (
+        s,
+      ) =>
+        s.controls,
+    ) as unknown as
+      | (Orbit & {
+          reset: () => void;
+        })
+      | null;
+  const invalidate =
+    useThree(
+      (
+        s,
+      ) =>
+        s.invalidate,
+    );
   useEffect(() => {
-    if (!controls) return;
-    const ref = resetRef;
-    ref.current = () => {
-      controls.reset();
-      invalidate();
-    };
+    if (
+      !controls
+    )
+      return;
+    const ref =
+      resetRef;
+    ref.current =
+      () => {
+        controls.reset();
+        invalidate();
+      };
     return () => {
-      ref.current = null;
+      ref.current =
+        null;
     };
-  }, [controls, invalidate, resetRef]);
-  return <OrbitControls makeDefault enablePan enableZoom enableRotate enableDamping {...props} />;
+  }, [
+    controls,
+    invalidate,
+    resetRef,
+  ]);
+  return (
+    <OrbitControls
+      makeDefault
+      enablePan
+      enableZoom
+      enableRotate
+      enableDamping
+      {...props}
+    />
+  );
 }
 
 /** Call after the camera has been framed so "reset" returns to it. */
-export function rememberView(controls: unknown): void {
-  (controls as Orbit | null)?.saveState();
+export function rememberView(
+  controls: unknown,
+): void {
+  (
+    controls as Orbit | null
+  )?.saveState();
 }
 
 export function useResetView() {
-  const ref = useRef<(() => void) | null>(null);
-  const reset = useCallback(() => ref.current?.(), []);
-  return { ref, reset };
+  const ref =
+    useRef<
+      | (() => void)
+      | null
+    >(
+      null,
+    );
+  const reset =
+    useCallback(
+      () =>
+        ref.current?.(),
+      [],
+    );
+  return {
+    ref,
+    reset,
+  };
 }
 
-export function ResetViewButton({ onClick }: { onClick: () => void }) {
-  const { t } = useTranslation('c-tf2-hud');
-  const label = t('reset-view', { defaultValue: 'Reset view' });
+export function ResetViewButton({
+  onClick,
+}: {
+  onClick: () => void;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  const label =
+    t(
+      'reset-view',
+      {
+        defaultValue:
+          'Reset view',
+      },
+    );
   return (
     <IconButton
-      icon={Crosshair}
-      label={label}
-      showTooltip={false}
+      icon={
+        Crosshair
+      }
+      label={
+        label
+      }
+      showTooltip={
+        false
+      }
       variant="default"
-      onClick={onClick}
+      onClick={
+        onClick
+      }
       // The viewer's background is near-black and so is the outline variant's ink: a solid, lighter chip
       // with a bright edge stays visible over the model and the backdrop alike.
       className="absolute end-2 top-2 z-10 size-9 border-app-border-bright bg-app-surface text-app-text hover:bg-app-surface-hover"

@@ -36,13 +36,34 @@ export interface ViewGeometry {
 }
 
 /** First index whose `time` is >= `t`. Standard lower bound over a sorted array. */
-export function lowerBoundByTime(slices: readonly TimedSlice[], t: number): number {
+export function lowerBoundByTime(
+  slices: readonly TimedSlice[],
+  t: number,
+): number {
   let lo = 0;
-  let hi = slices.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (slices[mid].time < t) lo = mid + 1;
-    else hi = mid;
+  let hi =
+    slices.length;
+  while (
+    lo <
+    hi
+  ) {
+    const mid =
+      (lo +
+        hi) >>
+      1;
+    if (
+      slices[
+        mid
+      ]
+        .time <
+      t
+    )
+      lo =
+        mid +
+        1;
+    else
+      hi =
+        mid;
   }
   return lo;
 }
@@ -53,11 +74,23 @@ export function lowerBoundByTime(slices: readonly TimedSlice[], t: number): numb
  * Derived from the renderer's own cull: a future note is dropped once its
  * scroll position leaves the canvas by more than the 100px margin.
  */
-export function maxAheadSeconds(geom: ViewGeometry): number {
-  const travel = geom.vertical
-    ? geom.cursorPosition + 100
-    : geom.axisLength + 100 - geom.cursorPosition;
-  return Math.max(0, travel) / geom.pixelsPerSecond;
+export function maxAheadSeconds(
+  geom: ViewGeometry,
+): number {
+  const travel =
+    geom.vertical
+      ? geom.cursorPosition +
+        100
+      : geom.axisLength +
+        100 -
+        geom.cursorPosition;
+  return (
+    Math.max(
+      0,
+      travel,
+    ) /
+    geom.pixelsPerSecond
+  );
 }
 
 /**
@@ -68,8 +101,15 @@ export function maxAheadSeconds(geom: ViewGeometry): number {
  * being held. The extra second is slack, because being generous here is free
  * and being tight is a note that disappears mid-hold.
  */
-export function maxBehindSeconds(geom: ViewGeometry): number {
-  return geom.longestHold + geom.axisLength / geom.pixelsPerSecond + 1;
+export function maxBehindSeconds(
+  geom: ViewGeometry,
+): number {
+  return (
+    geom.longestHold +
+    geom.axisLength /
+      geom.pixelsPerSecond +
+    1
+  );
 }
 
 /**
@@ -83,13 +123,38 @@ export function visibleSliceRange(
   slices: readonly TimedSlice[],
   currentTime: number,
   geom: ViewGeometry,
-): { from: number; to: number } {
-  if (!(geom.pixelsPerSecond > 0)) return { from: 0, to: slices.length };
+): {
+  from: number;
+  to: number;
+} {
+  if (
+    !(
+      geom.pixelsPerSecond >
+      0
+    )
+  )
+    return {
+      from: 0,
+      to: slices.length,
+    };
   return {
-    from: lowerBoundByTime(slices, currentTime - maxBehindSeconds(geom)),
+    from: lowerBoundByTime(
+      slices,
+      currentTime -
+        maxBehindSeconds(
+          geom,
+        ),
+    ),
     // `to` is exclusive, and a note exactly at the far edge is still on screen,
     // so nudge past it rather than relying on the strictness of `<`.
-    to: lowerBoundByTime(slices, currentTime + maxAheadSeconds(geom) + 1e-6),
+    to: lowerBoundByTime(
+      slices,
+      currentTime +
+        maxAheadSeconds(
+          geom,
+        ) +
+        1e-6,
+    ),
   };
 }
 
@@ -108,14 +173,36 @@ export function visibleSliceRange(
  * object every run. Keying on the map there would pin the first playtest's hold
  * length for the rest of the session.
  */
-const holdCache = new WeakMap<object, number>();
-export function longestHoldSeconds(slices: readonly TimedSlice[]): number {
-  const cached = holdCache.get(slices);
-  if (cached !== undefined) return cached;
+const holdCache =
+  new WeakMap<
+    object,
+    number
+  >();
+export function longestHoldSeconds(
+  slices: readonly TimedSlice[],
+): number {
+  const cached =
+    holdCache.get(
+      slices,
+    );
+  if (
+    cached !==
+    undefined
+  )
+    return cached;
   let longest = 0;
   for (const slice of slices) {
-    if (slice.duration && slice.duration > longest) longest = slice.duration;
+    if (
+      slice.duration &&
+      slice.duration >
+        longest
+    )
+      longest =
+        slice.duration;
   }
-  holdCache.set(slices, longest);
+  holdCache.set(
+    slices,
+    longest,
+  );
   return longest;
 }

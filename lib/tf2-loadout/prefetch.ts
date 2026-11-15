@@ -12,8 +12,10 @@
 const MAX_PARALLEL = 2;
 const MAX_QUEUED = 6;
 
-const seen = new Set<string>();
-const queue: string[] = [];
+const seen =
+  new Set<string>();
+const queue: string[] =
+  [];
 let running = 0;
 
 interface Connection {
@@ -23,43 +25,126 @@ interface Connection {
 
 /** False on a connection where speculative downloads would cost the person something. */
 export function mayPrefetch(): boolean {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
-  if (document.visibilityState === 'hidden') return false;
-  const c = (navigator as Navigator & { connection?: Connection }).connection;
-  return !(c?.saveData || (c?.effectiveType && /^(slow-)?2g$/.test(c.effectiveType)));
+  if (
+    typeof window ===
+      'undefined' ||
+    typeof document ===
+      'undefined'
+  )
+    return false;
+  if (
+    document.visibilityState ===
+    'hidden'
+  )
+    return false;
+  const c =
+    (
+      navigator as Navigator & {
+        connection?: Connection;
+      }
+    )
+      .connection;
+  return !(
+    c?.saveData ||
+    (c?.effectiveType &&
+      /^(slow-)?2g$/.test(
+        c.effectiveType,
+      ))
+  );
 }
 
 function pump(): void {
-  while (running < MAX_PARALLEL && queue.length) {
-    const url = queue.shift()!;
+  while (
+    running <
+      MAX_PARALLEL &&
+    queue.length
+  ) {
+    const url =
+      queue.shift()!;
     running++;
-    fetch(url, { priority: 'low' } as RequestInit)
+    fetch(
+      url,
+      {
+        priority:
+          'low',
+      } as RequestInit,
+    )
       // The body is read and dropped: the HTTP cache keeps the response, and nothing here holds it.
-      .then((res) => (res.ok ? res.arrayBuffer() : undefined))
-      .catch(() => {
-        // Not fetched: a later real request simply loads it normally.
-        seen.delete(url);
-      })
-      .finally(() => {
-        running--;
-        pump();
-      });
+      .then(
+        (
+          res,
+        ) =>
+          res.ok
+            ? res.arrayBuffer()
+            : undefined,
+      )
+      .catch(
+        () => {
+          // Not fetched: a later real request simply loads it normally.
+          seen.delete(
+            url,
+          );
+        },
+      )
+      .finally(
+        () => {
+          running--;
+          pump();
+        },
+      );
   }
 }
 
 /** Ask for `urls` to be fetched in the background, if the connection allows and they have not been already. */
-export function prefetch(...urls: string[]): void {
-  if (!mayPrefetch()) return;
+export function prefetch(
+  ...urls: string[]
+): void {
+  if (
+    !mayPrefetch()
+  )
+    return;
   for (const url of urls) {
-    if (seen.has(url)) continue;
-    seen.add(url);
-    queue.push(url);
+    if (
+      seen.has(
+        url,
+      )
+    )
+      continue;
+    seen.add(
+      url,
+    );
+    queue.push(
+      url,
+    );
   }
   // A new intent matters more than an old, unstarted one.
-  while (queue.length > MAX_QUEUED) seen.delete(queue.shift()!);
-  const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
-  if (idle) idle(pump);
-  else setTimeout(pump, 50);
+  while (
+    queue.length >
+    MAX_QUEUED
+  )
+    seen.delete(
+      queue.shift()!,
+    );
+  const idle =
+    (
+      window as Window & {
+        requestIdleCallback?: (
+          cb: () => void,
+        ) => number;
+      }
+    )
+      .requestIdleCallback;
+  if (
+    idle
+  )
+    idle(
+      pump,
+    );
+  else
+    setTimeout(
+      pump,
+      50,
+    );
 }
 
 /** For tests. */

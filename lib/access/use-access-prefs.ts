@@ -8,5 +8,10 @@ import {
 
 /** Hydration-safe: the server and the hydrating render both see the defaults. */
 export function useAccessPrefs(): AccessPrefs {
-  return useSyncExternalStore(subscribeAccessPrefs, getAccessPrefs, () => DEFAULT_ACCESS_PREFS);
+  return useSyncExternalStore(
+    subscribeAccessPrefs,
+    getAccessPrefs,
+    () =>
+      DEFAULT_ACCESS_PREFS,
+  );
 }

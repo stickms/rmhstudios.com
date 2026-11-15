@@ -20,23 +20,66 @@ import {
 } from '../extract';
 import type { NormalizedListing } from '../types';
 
-function toNumber(v: string | null): number | null {
-  if (v == null) return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
+function toNumber(
+  v:
+    | string
+    | null,
+):
+  | number
+  | null {
+  if (
+    v ==
+    null
+  )
+    return null;
+  const n =
+    Number(
+      v,
+    );
+  return Number.isFinite(
+    n,
+  )
+    ? n
+    : null;
 }
 
-function toDate(v: string | null): Date | null {
-  if (!v) return null;
-  const t = Date.parse(v);
-  return Number.isFinite(t) ? new Date(t) : null;
+function toDate(
+  v:
+    | string
+    | null,
+): Date | null {
+  if (
+    !v
+  )
+    return null;
+  const t =
+    Date.parse(
+      v,
+    );
+  return Number.isFinite(
+    t,
+  )
+    ? new Date(
+        t,
+      )
+    : null;
 }
 
-function stripHtml(html: string | null): string {
+function stripHtml(
+  html:
+    | string
+    | null,
+): string {
   return html
     ? html
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
+        .replace(
+          /<[^>]+>/g,
+          ' ',
+        )
+        .replace(
+          /\s+/g,
+          ' ',
+        )
         .trim()
     : '';
 }
@@ -45,38 +88,135 @@ function stripHtml(html: string | null): string {
  * Map one parsed feed item to a normalized listing. Returns null when the item
  * has no usable URL or title (nothing worth persisting).
  */
-export function mapFeedItem(item: FeedItem, externalId: string): NormalizedListing | null {
-  const { fields } = item;
-  const url = pickField(fields, ['link', 'guid', 'dc:source']);
-  const rawTitle = pickField(fields, ['title']);
-  if (!url || !rawTitle || !externalId) return null;
+export function mapFeedItem(
+  item: FeedItem,
+  externalId: string,
+): NormalizedListing | null {
+  const {
+    fields,
+  } =
+    item;
+  const url =
+    pickField(
+      fields,
+      [
+        'link',
+        'guid',
+        'dc:source',
+      ],
+    );
+  const rawTitle =
+    pickField(
+      fields,
+      [
+        'title',
+      ],
+    );
+  if (
+    !url ||
+    !rawTitle ||
+    !externalId
+  )
+    return null;
 
-  const descriptionHtml = pickField(fields, [
-    'description',
-    'content:encoded',
-    'summary',
-    'content',
-  ]);
+  const descriptionHtml =
+    pickField(
+      fields,
+      [
+        'description',
+        'content:encoded',
+        'summary',
+        'content',
+      ],
+    );
   const text = `${rawTitle} ${stripHtml(descriptionHtml)}`;
 
-  const lat = toNumber(pickField(fields, ['geo:lat', 'geo:latitude']));
-  const lng = toNumber(pickField(fields, ['geo:long', 'geo:lng', 'geo:longitude']));
+  const lat =
+    toNumber(
+      pickField(
+        fields,
+        [
+          'geo:lat',
+          'geo:latitude',
+        ],
+      ),
+    );
+  const lng =
+    toNumber(
+      pickField(
+        fields,
+        [
+          'geo:long',
+          'geo:lng',
+          'geo:longitude',
+        ],
+      ),
+    );
 
   return {
     externalId,
-    title: cleanTitle(rawTitle),
+    title:
+      cleanTitle(
+        rawTitle,
+      ),
     descriptionHtml,
     url,
-    price: extractPrice(text),
-    beds: extractBeds(text),
-    baths: extractBaths(text),
-    sqft: extractSqft(text),
-    propertyType: extractPropertyType(text),
-    petsAllowed: extractPetsAllowed(text),
-    locationRaw: neighborhoodFromTitle(rawTitle),
-    lat: lat != null && lng != null ? lat : null,
-    lng: lat != null && lng != null ? lng : null,
-    imageUrls: item.imageUrls.slice(0, 12),
-    postedAt: toDate(pickField(fields, ['dc:date', 'pubdate', 'updated', 'lastbuilddate'])),
+    price:
+      extractPrice(
+        text,
+      ),
+    beds: extractBeds(
+      text,
+    ),
+    baths:
+      extractBaths(
+        text,
+      ),
+    sqft: extractSqft(
+      text,
+    ),
+    propertyType:
+      extractPropertyType(
+        text,
+      ),
+    petsAllowed:
+      extractPetsAllowed(
+        text,
+      ),
+    locationRaw:
+      neighborhoodFromTitle(
+        rawTitle,
+      ),
+    lat:
+      lat !=
+        null &&
+      lng !=
+        null
+        ? lat
+        : null,
+    lng:
+      lat !=
+        null &&
+      lng !=
+        null
+        ? lng
+        : null,
+    imageUrls:
+      item.imageUrls.slice(
+        0,
+        12,
+      ),
+    postedAt:
+      toDate(
+        pickField(
+          fields,
+          [
+            'dc:date',
+            'pubdate',
+            'updated',
+            'lastbuilddate',
+          ],
+        ),
+      ),
   };
 }

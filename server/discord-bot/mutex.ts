@@ -9,30 +9,54 @@
  * assume the lock is already held) is kept exactly.
  */
 export class Mutex {
-  private tail: Promise<void> = Promise.resolve();
+  private tail: Promise<void> =
+    Promise.resolve();
 
   /** Wait for the lock; resolves to the release function. */
-  lock(): Promise<() => void> {
+  lock(): Promise<
+    () => void
+  > {
     let release!: () => void;
-    const next = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const prev = this.tail;
-    this.tail = prev.then(() => next);
-    return prev.then(() => {
-      let released = false;
-      return () => {
-        if (!released) {
-          released = true;
-          release();
-        }
-      };
-    });
+    const next =
+      new Promise<void>(
+        (
+          resolve,
+        ) => {
+          release =
+            resolve;
+        },
+      );
+    const prev =
+      this
+        .tail;
+    this.tail =
+      prev.then(
+        () =>
+          next,
+      );
+    return prev.then(
+      () => {
+        let released = false;
+        return () => {
+          if (
+            !released
+          ) {
+            released = true;
+            release();
+          }
+        };
+      },
+    );
   }
 
   /** Run `fn` holding the lock. */
-  async run<T>(fn: () => Promise<T>): Promise<T> {
-    const release = await this.lock();
+  async run<
+    T,
+  >(
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    const release =
+      await this.lock();
     try {
       return await fn();
     } finally {
@@ -43,13 +67,28 @@ export class Mutex {
 
 /** One mutex per key, created on first use (Go's lockGuild). */
 export class KeyedMutex {
-  private readonly locks = new Map<string, Mutex>();
+  private readonly locks =
+    new Map<
+      string,
+      Mutex
+    >();
 
-  get(key: string): Mutex {
-    let m = this.locks.get(key);
-    if (!m) {
-      m = new Mutex();
-      this.locks.set(key, m);
+  get(
+    key: string,
+  ): Mutex {
+    let m =
+      this.locks.get(
+        key,
+      );
+    if (
+      !m
+    ) {
+      m =
+        new Mutex();
+      this.locks.set(
+        key,
+        m,
+      );
     }
     return m;
   }

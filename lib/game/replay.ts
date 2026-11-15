@@ -20,27 +20,54 @@
  */
 
 import { z } from 'zod';
-import { LIGHTS_OUT_VERSION, NEON_DRIFTWAY_GHOST_VERSION, SLICE_IT_VERSION } from './replay-meta';
+import {
+  LIGHTS_OUT_VERSION,
+  NEON_DRIFTWAY_GHOST_VERSION,
+  SLICE_IT_VERSION,
+} from './replay-meta';
 import { createSeededRng } from '@/lib/lights-out/seed';
-import { getDailyShape, isActiveCell, getShapeLabel } from '@/lib/lights-out/shapes';
-import { generatePuzzle, toggleCellInGrid, isSolved, type Grid } from '@/lib/lights-out/lights-out';
+import {
+  getDailyShape,
+  isActiveCell,
+  getShapeLabel,
+} from '@/lib/lights-out/shapes';
+import {
+  generatePuzzle,
+  toggleCellInGrid,
+  isSolved,
+  type Grid,
+} from '@/lib/lights-out/lights-out';
 import {
   DAILY_PUZZLE_VERSION,
   dailyPuzzleReplaySchema,
 } from '@/lib/daily-puzzles/replay-schema';
 
 // Version tags live in ./replay-meta (zod-free, for route definitions).
-export { LIGHTS_OUT_VERSION, SLICE_IT_VERSION };
+export {
+  LIGHTS_OUT_VERSION,
+  SLICE_IT_VERSION,
+};
 
 /** A JSON-serializable value — replay payloads are stored as JSON and travel
  * through server-function loaders, so the element type must be serializable
  * (TanStack's `ValidateSerializableMapped` rejects `unknown`). */
 export type ReplayJsonValue =
-  string | number | boolean | null | ReplayJsonValue[] | { [key: string]: ReplayJsonValue };
+  | string
+  | number
+  | boolean
+  | null
+  | ReplayJsonValue[]
+  | {
+      [
+        key: string
+      ]: ReplayJsonValue;
+    };
 
 /** Loose base shape every replay payload conforms to. Per-game schemas narrow it. */
 export interface ReplayData {
-  seed?: number | string;
+  seed?:
+    | number
+    | string;
   inputs?: ReplayJsonValue[];
   snapshots?: ReplayJsonValue[];
 }
@@ -61,7 +88,9 @@ export interface ReplayData {
  * apart is what lets a game have replays without having to earn a verifier
  * first.
  */
-export type ReplayKind = 'deterministic' | 'keyframe';
+export type ReplayKind =
+  | 'deterministic'
+  | 'keyframe';
 
 export interface ReplayableGame {
   /** Stable game key (matches `GameReplay.game`, ≤ 32 chars). */
@@ -81,7 +110,11 @@ export interface ReplayableGame {
    * when the log is invalid/inconsistent. When present, its score is
    * authoritative (the client-submitted score is not trusted).
    */
-  verify?(data: unknown): { score: number } | null;
+  verify?(
+    data: unknown,
+  ): {
+    score: number;
+  } | null;
   /**
    * Set when the verifier lives in a server-only module rather than on this
    * object, because it needs a database.
@@ -107,7 +140,11 @@ export interface ReplayableGame {
    * `saveReplay` is already async, so awaiting this costs nothing. A game
    * declares one or the other, never both.
    */
-  verifyAsync?(data: unknown): Promise<{ score: number } | null>;
+  verifyAsync?(
+    data: unknown,
+  ): Promise<{
+    score: number;
+  } | null>;
 }
 
 /**
@@ -118,14 +155,32 @@ export interface ReplayableGame {
  * actually ships a verifier — a game that declares `deterministic` and forgets
  * one is treated as untrusted rather than given the benefit of the doubt.
  */
-export function replayScoreIsTrusted(def: ReplayableGame | undefined): boolean {
-  if (!def) return false;
-  if ((def.kind ?? 'deterministic') !== 'deterministic') return false;
-  return Boolean(def.verify || def.verifyAsync || def.serverVerified);
+export function replayScoreIsTrusted(
+  def:
+    | ReplayableGame
+    | undefined,
+): boolean {
+  if (
+    !def
+  )
+    return false;
+  if (
+    (def.kind ??
+      'deterministic') !==
+    'deterministic'
+  )
+    return false;
+  return Boolean(
+    def.verify ||
+    def.verifyAsync ||
+    def.serverVerified,
+  );
 }
 
 /** Hard cap on stored payload size (`JSON.stringify` byte length). */
-export const REPLAY_SIZE_CAP = 256 * 1024;
+export const REPLAY_SIZE_CAP =
+  256 *
+  1024;
 
 /* ------------------------------------------------------------------ *
  * Lights Out — fully deterministic; real re-simulation.
@@ -137,55 +192,168 @@ export const REPLAY_SIZE_CAP = 256 * 1024;
  * accepts the run only if the board ends solved.
  * ------------------------------------------------------------------ */
 
-
 /** A move is a clicked cell [row, col]. Bounds are generous but finite (anti-DoS). */
-const lightsOutMove = z.tuple([z.number().int().min(0).max(31), z.number().int().min(0).max(31)]);
+const lightsOutMove =
+  z.tuple(
+    [
+      z
+        .number()
+        .int()
+        .min(
+          0,
+        )
+        .max(
+          31,
+        ),
+      z
+        .number()
+        .int()
+        .min(
+          0,
+        )
+        .max(
+          31,
+        ),
+    ],
+  );
 
-const lightsOutSchema = z.object({
-  // Non-negative because getDailyShape uses `seed % SHAPES.length`; a negative
-  // seed would index the shape table out of range.
-  seed: z.number().int().min(0).max(99_999_999),
-  inputs: z.array(lightsOutMove).min(1).max(2_000),
-});
+const lightsOutSchema =
+  z.object(
+    {
+      // Non-negative because getDailyShape uses `seed % SHAPES.length`; a negative
+      // seed would index the shape table out of range.
+      seed: z
+        .number()
+        .int()
+        .min(
+          0,
+        )
+        .max(
+          99_999_999,
+        ),
+      inputs:
+        z
+          .array(
+            lightsOutMove,
+          )
+          .min(
+            1,
+          )
+          .max(
+            2_000,
+          ),
+    },
+  );
 
-export type LightsOutReplay = z.infer<typeof lightsOutSchema>;
+export type LightsOutReplay =
+  z.infer<
+    typeof lightsOutSchema
+  >;
 
 /** Reconstruct the exact starting board a given seed produces. */
-export function lightsOutInitialGrid(seed: number): {
+export function lightsOutInitialGrid(
+  seed: number,
+): {
   grid: Grid;
-  shape: ReturnType<typeof getDailyShape>;
+  shape: ReturnType<
+    typeof getDailyShape
+  >;
 } {
-  const shape = getDailyShape(seed);
-  const grid = generatePuzzle(createSeededRng(seed), shape);
-  return { grid, shape };
+  const shape =
+    getDailyShape(
+      seed,
+    );
+  const grid =
+    generatePuzzle(
+      createSeededRng(
+        seed,
+      ),
+      shape,
+    );
+  return {
+    grid,
+    shape,
+  };
 }
 
 /** Human-readable shape label for a lights-out seed (used by chrome/OG). */
-export function lightsOutShapeLabel(seed: number): string {
-  return getShapeLabel(getDailyShape(seed));
+export function lightsOutShapeLabel(
+  seed: number,
+): string {
+  return getShapeLabel(
+    getDailyShape(
+      seed,
+    ),
+  );
 }
 
-function verifyLightsOut(data: unknown): { score: number } | null {
-  const parsed = lightsOutSchema.safeParse(data);
-  if (!parsed.success) return null;
+function verifyLightsOut(
+  data: unknown,
+): {
+  score: number;
+} | null {
+  const parsed =
+    lightsOutSchema.safeParse(
+      data,
+    );
+  if (
+    !parsed.success
+  )
+    return null;
 
-  const { seed, inputs } = parsed.data;
-  const { grid: start, shape } = lightsOutInitialGrid(seed);
+  const {
+    seed,
+    inputs,
+  } =
+    parsed.data;
+  const {
+    grid: start,
+    shape,
+  } =
+    lightsOutInitialGrid(
+      seed,
+    );
 
-  let grid = start;
-  for (const [r, c] of inputs) {
+  let grid =
+    start;
+  for (const [
+    r,
+    c,
+  ] of inputs) {
     // A click on an inactive/out-of-range cell is impossible in real play →
     // the log is inconsistent with the board this seed produces.
-    if (!isActiveCell(shape, r, c)) return null;
-    grid = toggleCellInGrid(grid, r, c, shape);
+    if (
+      !isActiveCell(
+        shape,
+        r,
+        c,
+      )
+    )
+      return null;
+    grid =
+      toggleCellInGrid(
+        grid,
+        r,
+        c,
+        shape,
+      );
   }
 
   // A valid replay is a *winning* run: the board must end fully off.
-  if (!isSolved(grid, shape)) return null;
+  if (
+    !isSolved(
+      grid,
+      shape,
+    )
+  )
+    return null;
 
   // Fewer moves is better in-game, but the stored score is simply the move
   // count; the leaderboard index sorts it — presentation decides direction.
-  return { score: inputs.length };
+  return {
+    score:
+      inputs.length,
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -204,8 +372,15 @@ function verifyLightsOut(data: unknown): { score: number } | null {
  * (`R8`) and never on the request path.
  * ------------------------------------------------------------------ */
 
-
-const sliceItJudgment = z.enum(['perfect', 'great', 'good', 'miss']);
+const sliceItJudgment =
+  z.enum(
+    [
+      'perfect',
+      'great',
+      'good',
+      'miss',
+    ],
+  );
 
 /**
  * The four-value judgement vocabulary this schema stores.
@@ -216,7 +391,10 @@ const sliceItJudgment = z.enum(['perfect', 'great', 'good', 'miss']);
  * the speedrun verifier and by every game-agnostic consumer of a replay, so it
  * does not grow to fit one game's judgement ladder.
  */
-export type SliceItJudgment = z.infer<typeof sliceItJudgment>;
+export type SliceItJudgment =
+  z.infer<
+    typeof sliceItJudgment
+  >;
 
 /**
  * Hard cap on the input log, and the size the recorder pre-allocates.
@@ -239,50 +417,137 @@ export const SLICE_IT_MAX_INPUTS = 20_000;
  * the run played. `speed` and `strictTiming` are here for the same reason on the
  * judging side: they scale every hit window.
  */
-const sliceItMods = z.object({
-  difficulty: z.enum(['easy', 'normal', 'hard', 'expert']).optional(),
-  speed: z.number().min(0.25).max(4).optional(),
-  bombs: z.boolean().optional(),
-  switching: z.boolean().optional(),
-  oneTrack: z.boolean().optional(),
-  strictTiming: z.boolean().optional(),
-});
-
-const sliceItSchema = z.object({
-  track: z.string().min(1).max(64),
-  /**
-   * Fingerprint of the run's chart seed. Slice It's real seed is a string; this
-   * is it hashed into the numeric range the cross-game field allows, and is used
-   * as a checksum against a chart rebuilt from `mods` — see
-   * `features/slice-it/engine/replay.ts#replaySeed`.
-   */
-  seed: z.number().int().min(0).max(99_999_999).optional(),
-  mods: sliceItMods.optional(),
-  /** The chart's content hash at the time of the run (`C12`), when it had one. */
-  chartHash: z.string().length(64).optional(),
-  inputs: z
-    .array(
-      z.object({
-        t: z
+const sliceItMods =
+  z.object(
+    {
+      difficulty:
+        z
+          .enum(
+            [
+              'easy',
+              'normal',
+              'hard',
+              'expert',
+            ],
+          )
+          .optional(),
+      speed:
+        z
           .number()
-          .min(0)
-          .max(60 * 60 * 1000), // ms into the track (≤ 1h)
-        lane: z.number().int().min(0).max(7).optional(),
-        judgment: sliceItJudgment,
-      }),
-    )
-    .min(1)
-    .max(SLICE_IT_MAX_INPUTS),
-});
+          .min(
+            0.25,
+          )
+          .max(
+            4,
+          )
+          .optional(),
+      bombs:
+        z
+          .boolean()
+          .optional(),
+      switching:
+        z
+          .boolean()
+          .optional(),
+      oneTrack:
+        z
+          .boolean()
+          .optional(),
+      strictTiming:
+        z
+          .boolean()
+          .optional(),
+    },
+  );
+
+const sliceItSchema =
+  z.object(
+    {
+      track:
+        z
+          .string()
+          .min(
+            1,
+          )
+          .max(
+            64,
+          ),
+      /**
+       * Fingerprint of the run's chart seed. Slice It's real seed is a string; this
+       * is it hashed into the numeric range the cross-game field allows, and is used
+       * as a checksum against a chart rebuilt from `mods` — see
+       * `features/slice-it/engine/replay.ts#replaySeed`.
+       */
+      seed: z
+        .number()
+        .int()
+        .min(
+          0,
+        )
+        .max(
+          99_999_999,
+        )
+        .optional(),
+      mods: sliceItMods.optional(),
+      /** The chart's content hash at the time of the run (`C12`), when it had one. */
+      chartHash:
+        z
+          .string()
+          .length(
+            64,
+          )
+          .optional(),
+      inputs:
+        z
+          .array(
+            z.object(
+              {
+                t: z
+                  .number()
+                  .min(
+                    0,
+                  )
+                  .max(
+                    60 *
+                      60 *
+                      1000,
+                  ), // ms into the track (≤ 1h)
+                lane: z
+                  .number()
+                  .int()
+                  .min(
+                    0,
+                  )
+                  .max(
+                    7,
+                  )
+                  .optional(),
+                judgment:
+                  sliceItJudgment,
+              },
+            ),
+          )
+          .min(
+            1,
+          )
+          .max(
+            SLICE_IT_MAX_INPUTS,
+          ),
+    },
+  );
 
 /**
  * Exported so Slice It's own routes can compose it (`z.object({ replay: … })`)
  * instead of re-declaring the payload shape a second time and letting the two
  * drift. The registry entry below is the same object.
  */
-export const sliceItReplaySchema = sliceItSchema;
+export const sliceItReplaySchema =
+  sliceItSchema;
 
-export type SliceItReplay = z.infer<typeof sliceItSchema>;
+export type SliceItReplay =
+  z.infer<
+    typeof sliceItSchema
+  >;
 
 /**
  * Base points per judgment; a combo multiplier grows up to 2× at 100-combo.
@@ -293,36 +558,77 @@ export type SliceItReplay = z.infer<typeof sliceItSchema>;
  * tampered `GameReplay.score` disagrees with its own inputs. Anything showing a
  * player a score must read the leaderboard row, never this.
  */
-const SLICE_IT_POINTS: Record<z.infer<typeof sliceItJudgment>, number> = {
+const SLICE_IT_POINTS: Record<
+  z.infer<
+    typeof sliceItJudgment
+  >,
+  number
+> = {
   perfect: 100,
   great: 70,
   good: 40,
   miss: 0,
 };
 
-function verifySliceIt(data: unknown): { score: number } | null {
-  const parsed = sliceItSchema.safeParse(data);
-  if (!parsed.success) return null;
+function verifySliceIt(
+  data: unknown,
+): {
+  score: number;
+} | null {
+  const parsed =
+    sliceItSchema.safeParse(
+      data,
+    );
+  if (
+    !parsed.success
+  )
+    return null;
 
   let score = 0;
   let combo = 0;
-  let lastT = -1;
-  for (const note of parsed.data.inputs) {
+  let lastT =
+    -1;
+  for (const note of parsed
+    .data
+    .inputs) {
     // Timestamps must be monotonic — a note "before" the previous one means the
     // log was reordered/tampered.
-    if (note.t < lastT) return null;
-    lastT = note.t;
+    if (
+      note.t <
+      lastT
+    )
+      return null;
+    lastT =
+      note.t;
 
-    if (note.judgment === 'miss') {
+    if (
+      note.judgment ===
+      'miss'
+    ) {
       combo = 0;
       continue;
     }
     combo += 1;
-    const multiplier = 1 + Math.min(combo, 100) / 100;
-    score += Math.round(SLICE_IT_POINTS[note.judgment] * multiplier);
+    const multiplier =
+      1 +
+      Math.min(
+        combo,
+        100,
+      ) /
+        100;
+    score +=
+      Math.round(
+        SLICE_IT_POINTS[
+          note
+            .judgment
+        ] *
+          multiplier,
+      );
   }
 
-  return { score };
+  return {
+    score,
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -334,67 +640,147 @@ function verifySliceIt(data: unknown): { score: number } | null {
  * Bounds are finite on every axis so a payload can't be made expensive.
  * ------------------------------------------------------------------ */
 
-const neonDriftwayGhostSchema = z.object({
-  level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-  samples: z
-    .array(
-      z.tuple([
-        z.number().int().min(0).max(24 * 60 * 60 * 1000),
-        z.number().finite().min(-50).max(50),
-        z.number().finite().min(0).max(10_000_000),
-      ]),
-    )
-    .min(10)
-    .max(6_000),
-});
+const neonDriftwayGhostSchema =
+  z.object(
+    {
+      level:
+        z.union(
+          [
+            z.literal(
+              1,
+            ),
+            z.literal(
+              2,
+            ),
+            z.literal(
+              3,
+            ),
+          ],
+        ),
+      samples:
+        z
+          .array(
+            z.tuple(
+              [
+                z
+                  .number()
+                  .int()
+                  .min(
+                    0,
+                  )
+                  .max(
+                    24 *
+                      60 *
+                      60 *
+                      1000,
+                  ),
+                z
+                  .number()
+                  .finite()
+                  .min(
+                    -50,
+                  )
+                  .max(
+                    50,
+                  ),
+                z
+                  .number()
+                  .finite()
+                  .min(
+                    0,
+                  )
+                  .max(
+                    10_000_000,
+                  ),
+              ],
+            ),
+          )
+          .min(
+            10,
+          )
+          .max(
+            6_000,
+          ),
+    },
+  );
 
-export type NeonDriftwayGhostReplay = z.infer<typeof neonDriftwayGhostSchema>;
+export type NeonDriftwayGhostReplay =
+  z.infer<
+    typeof neonDriftwayGhostSchema
+  >;
 
 /* ------------------------------------------------------------------ *
  * Registry
  * ------------------------------------------------------------------ */
 
-export const replayableGames: Record<string, ReplayableGame> = {
-  'lights-out': {
-    game: 'lights-out',
-    version: LIGHTS_OUT_VERSION,
-    schema: lightsOutSchema,
-    verify: verifyLightsOut,
-  },
-  'slice-it': {
-    game: 'slice-it',
-    version: SLICE_IT_VERSION,
-    schema: sliceItSchema,
-    verify: verifySliceIt,
-  },
-  /**
-   * The five Daily Puzzle modes, as one game (P4).
-   *
-   * One entry rather than five because they share a storage shape, a version
-   * and a verifier; the mode is a field in the payload. Splitting them would
-   * mean five near-identical registrations and five places to bump a version.
-   *
-   * `serverVerified` because the solution is a `DailyPuzzle` row — see
-   * `lib/daily-puzzles/replay.server.ts` for why the client cannot be asked to
-   * supply it.
-   */
-  'daily-puzzle': {
-    game: 'daily-puzzle',
-    version: DAILY_PUZZLE_VERSION,
-    schema: dailyPuzzleReplaySchema,
-    serverVerified: true,
-  },
-  'neon-driftway': {
-    game: 'neon-driftway',
-    version: NEON_DRIFTWAY_GHOST_VERSION,
-    kind: 'keyframe',
-    schema: neonDriftwayGhostSchema,
-  },
-};
+export const replayableGames: Record<
+  string,
+  ReplayableGame
+> =
+  {
+    'lights-out':
+      {
+        game: 'lights-out',
+        version:
+          LIGHTS_OUT_VERSION,
+        schema:
+          lightsOutSchema,
+        verify:
+          verifyLightsOut,
+      },
+    'slice-it':
+      {
+        game: 'slice-it',
+        version:
+          SLICE_IT_VERSION,
+        schema:
+          sliceItSchema,
+        verify:
+          verifySliceIt,
+      },
+    /**
+     * The five Daily Puzzle modes, as one game (P4).
+     *
+     * One entry rather than five because they share a storage shape, a version
+     * and a verifier; the mode is a field in the payload. Splitting them would
+     * mean five near-identical registrations and five places to bump a version.
+     *
+     * `serverVerified` because the solution is a `DailyPuzzle` row — see
+     * `lib/daily-puzzles/replay.server.ts` for why the client cannot be asked to
+     * supply it.
+     */
+    'daily-puzzle':
+      {
+        game: 'daily-puzzle',
+        version:
+          DAILY_PUZZLE_VERSION,
+        schema:
+          dailyPuzzleReplaySchema,
+        serverVerified: true,
+      },
+    'neon-driftway':
+      {
+        game: 'neon-driftway',
+        version:
+          NEON_DRIFTWAY_GHOST_VERSION,
+        kind: 'keyframe',
+        schema:
+          neonDriftwayGhostSchema,
+      },
+  };
 
-export function getReplayable(game: string): ReplayableGame | undefined {
-  return replayableGames[game];
+export function getReplayable(
+  game: string,
+):
+  | ReplayableGame
+  | undefined {
+  return replayableGames[
+    game
+  ];
 }
 
 /** Games that can be captured, for UI menus. */
-export const REPLAYABLE_GAME_IDS = Object.keys(replayableGames);
+export const REPLAYABLE_GAME_IDS =
+  Object.keys(
+    replayableGames,
+  );

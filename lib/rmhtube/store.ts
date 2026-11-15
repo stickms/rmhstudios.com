@@ -5,11 +5,18 @@
  * preferences (persisted to localStorage).
  */
 
-import type { RealtimeStatus, PeerWaitState } from '@/lib/shared/realtime/types';
+import type {
+  RealtimeStatus,
+  PeerWaitState,
+} from '@/lib/shared/realtime/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
-import { acceptServerAnchor, initialVideoState, type PendingLocalAnchor } from './sync-math';
+import {
+  acceptServerAnchor,
+  initialVideoState,
+  type PendingLocalAnchor,
+} from './sync-math';
 import { toast } from '@/lib/shared/app-toast';
 import type {
   ClientRoomState,
@@ -25,8 +32,22 @@ import type {
 } from './types';
 
 /** Turn a broadcast queue into this viewer's queue (see `QueueBroadcastItem`). */
-function adoptQueue(items: QueueBroadcastItem[], myUserId: string): ClientQueueItem[] {
-  return items.map(({ voters, ...item }) => ({ ...item, votedByMe: voters.includes(myUserId) }));
+function adoptQueue(
+  items: QueueBroadcastItem[],
+  myUserId: string,
+): ClientQueueItem[] {
+  return items.map(
+    ({
+      voters,
+      ...item
+    }) => ({
+      ...item,
+      votedByMe:
+        voters.includes(
+          myUserId,
+        ),
+    }),
+  );
 }
 
 // ─── User Settings ───────────────────────────────────────────────
@@ -47,8 +68,14 @@ export interface RmhTubeUserSettings {
   captionsEnabled: boolean;
 
   // Appearance
-  theme: 'dark' | 'light' | 'high-contrast';
-  layoutDensity: 'compact' | 'comfortable' | 'spacious';
+  theme:
+    | 'dark'
+    | 'light'
+    | 'high-contrast';
+  layoutDensity:
+    | 'compact'
+    | 'comfortable'
+    | 'spacious';
   theaterMode: boolean;
 
   // Chat
@@ -61,34 +88,67 @@ export interface RmhTubeUserSettings {
   hasSeenTour: boolean;
 }
 
-const DEFAULT_SETTINGS: RmhTubeUserSettings = {
-  masterVolume: 0.7,
-  muted: false,
-  captionsEnabled: false,
-  theme: 'dark',
-  layoutDensity: 'comfortable',
-  theaterMode: false,
-  showTimestamps: true,
-  showSystemMessages: true,
-  roomHistory: [],
-  favoriteRooms: [],
-  hasSeenTour: false,
-};
+const DEFAULT_SETTINGS: RmhTubeUserSettings =
+  {
+    masterVolume: 0.7,
+    muted: false,
+    captionsEnabled: false,
+    theme:
+      'dark',
+    layoutDensity:
+      'comfortable',
+    theaterMode: false,
+    showTimestamps: true,
+    showSystemMessages: true,
+    roomHistory:
+      [],
+    favoriteRooms:
+      [],
+    hasSeenTour: false,
+  };
 
-const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS) as (keyof RmhTubeUserSettings)[];
+const SETTINGS_KEYS =
+  Object.keys(
+    DEFAULT_SETTINGS,
+  ) as (keyof RmhTubeUserSettings)[];
 
 /**
  * Rebuild a settings object from a persisted blob, keeping only keys that still
  * exist. Without the filter, a browser that stored the retired keys carries
  * them forward forever.
  */
-function sanitizeSettings(raw: unknown): RmhTubeUserSettings {
-  const source = (raw ?? {}) as Partial<RmhTubeUserSettings>;
-  const next = { ...DEFAULT_SETTINGS };
+function sanitizeSettings(
+  raw: unknown,
+): RmhTubeUserSettings {
+  const source =
+    (raw ??
+      {}) as Partial<RmhTubeUserSettings>;
+  const next =
+    {
+      ...DEFAULT_SETTINGS,
+    };
   for (const key of SETTINGS_KEYS) {
-    const value = source[key];
-    if (value !== undefined && typeof value === typeof DEFAULT_SETTINGS[key]) {
-      (next as Record<string, unknown>)[key] = value;
+    const value =
+      source[
+        key
+      ];
+    if (
+      value !==
+        undefined &&
+      typeof value ===
+        typeof DEFAULT_SETTINGS[
+          key
+        ]
+    ) {
+      (
+        next as Record<
+          string,
+          unknown
+        >
+      )[
+        key
+      ] =
+        value;
     }
   }
   return next;
@@ -106,7 +166,8 @@ const CHAT_SCROLLBACK = 200;
  * `acceptServerAnchor`). Module state rather than store state: it is
  * bookkeeping for the merge rule, and nothing renders from it.
  */
-let pendingLocalAnchor: PendingLocalAnchor | null = null;
+let pendingLocalAnchor: PendingLocalAnchor | null =
+  null;
 
 // ─── Store Interface ─────────────────────────────────────────────
 
@@ -119,150 +180,440 @@ export interface RmhTubeStore {
   settings: RmhTubeUserSettings;
   systemMessages: SystemMessage[];
 
-  setConnectionStatus: (status: RmhTubeStore['connectionStatus']) => void;
-  setPeersWaiting: (waiting: PeerWaitState | null) => void;
-  applyAction: (action: RoomAction) => void;
-  applyFullSync: (fullState: ClientRoomState) => void;
+  setConnectionStatus: (
+    status: RmhTubeStore['connectionStatus'],
+  ) => void;
+  setPeersWaiting: (
+    waiting: PeerWaitState | null,
+  ) => void;
+  applyAction: (
+    action: RoomAction,
+  ) => void;
+  applyFullSync: (
+    fullState: ClientRoomState,
+  ) => void;
   /** Apply an anchor from the server, dropping any that arrives out of order. */
-  applyVideoState: (videoState: VideoState) => void;
+  applyVideoState: (
+    videoState: VideoState,
+  ) => void;
   /** Apply a local optimistic anchor (the leader acting on its own player). */
-  setVideoState: (videoState: VideoState) => void;
-  updateSettings: (partial: Partial<RmhTubeUserSettings>) => void;
-  addSystemMessage: (event: SystemMessage['event'], content: string) => void;
+  setVideoState: (
+    videoState: VideoState,
+  ) => void;
+  updateSettings: (
+    partial: Partial<RmhTubeUserSettings>,
+  ) => void;
+  addSystemMessage: (
+    event: SystemMessage['event'],
+    content: string,
+  ) => void;
   leaveRoom: () => void;
   reset: () => void;
-  addRoomToHistory: (entry: RoomHistoryEntry) => void;
-  removeRoomFromHistory: (roomId: string) => void;
-  toggleFavoriteRoom: (roomId: string) => void;
+  addRoomToHistory: (
+    entry: RoomHistoryEntry,
+  ) => void;
+  removeRoomFromHistory: (
+    roomId: string,
+  ) => void;
+  toggleFavoriteRoom: (
+    roomId: string,
+  ) => void;
 }
 
 // ─── Store Implementation ────────────────────────────────────────
 
-export const useRmhTubeStore = create<RmhTubeStore>()(
-  persist(
-    (set, get) => ({
-      connectionStatus: 'idle',
-      peersWaiting: null,
-      room: null,
-      lastSeq: -1,
-      settings: { ...DEFAULT_SETTINGS },
-      systemMessages: [],
-
-      setConnectionStatus: (status) => set({ connectionStatus: status }),
-      setPeersWaiting: (waiting) => set({ peersWaiting: waiting }),
-
-      applyAction: (action) => {
-        const state = get();
-        if (action.seq <= state.lastSeq) return;
-
-        const updatedRoom = state.room
-          ? applyRoomAction(state.room, action, state)
-          : state.room;
-
-        set({ room: updatedRoom, lastSeq: action.seq });
-      },
-
-      applyFullSync: (fullState) => {
-        pendingLocalAnchor = null;
-        set({ room: fullState, lastSeq: fullState.seq, systemMessages: [] });
-      },
-
-      applyVideoState: (videoState) => {
-        set((state) => {
-          if (!state.room) return {};
-          if (!acceptServerAnchor(state.room.videoState, videoState, pendingLocalAnchor, Date.now())) {
-            return {};
-          }
-          // The server has spoken at (or past) our optimistic revision.
-          if (pendingLocalAnchor && videoState.rev >= pendingLocalAnchor.baseRev) pendingLocalAnchor = null;
-          return { room: { ...state.room, videoState } };
-        });
-      },
-
-      setVideoState: (videoState) => {
-        set((state) => {
-          if (!state.room) return {};
-          if (videoState.rev > state.room.videoState.rev) {
-            pendingLocalAnchor = {
-              baseRev: pendingLocalAnchor?.baseRev ?? state.room.videoState.rev,
-              at: Date.now(),
-            };
-          }
-          return { room: { ...state.room, videoState } };
-        });
-      },
-
-      updateSettings: (partial) => {
-        set((state) => ({ settings: { ...state.settings, ...partial } }));
-      },
-
-      addSystemMessage: (event, content) => {
-        if (!get().settings.showSystemMessages) return;
-        const msg: SystemMessage = {
-          id: `sys-${nanoid(8)}`,
-          type: 'system',
-          event,
-          content,
-          createdAt: Date.now(),
-        };
-        set((state) => ({
-          systemMessages: [...state.systemMessages.slice(-100), msg],
-        }));
-      },
-
-      leaveRoom: () => set({ room: null, lastSeq: -1, systemMessages: [], peersWaiting: null }),
-
-      reset: () => set({
-        connectionStatus: 'disconnected',
-        peersWaiting: null,
+export const useRmhTubeStore =
+  create<RmhTubeStore>()(
+    persist(
+      (
+        set,
+        get,
+      ) => ({
+        connectionStatus:
+          'idle',
+        peersWaiting:
+          null,
         room: null,
-        lastSeq: -1,
-        systemMessages: [],
-      }),
-
-      addRoomToHistory: (entry) => {
-        set((state) => {
-          const history = state.settings.roomHistory.filter((r) => r.roomId !== entry.roomId);
-          history.unshift(entry);
-          return {
-            settings: { ...state.settings, roomHistory: history.slice(0, 20) },
-          };
-        });
-      },
-
-      removeRoomFromHistory: (roomId) => {
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            roomHistory: state.settings.roomHistory.filter((r) => r.roomId !== roomId),
-            favoriteRooms: state.settings.favoriteRooms.filter((id) => id !== roomId),
+        lastSeq:
+          -1,
+        settings:
+          {
+            ...DEFAULT_SETTINGS,
           },
-        }));
-      },
+        systemMessages:
+          [],
 
-      toggleFavoriteRoom: (roomId) => {
-        set((state) => {
-          const favs = state.settings.favoriteRooms;
-          const next = favs.includes(roomId)
-            ? favs.filter((id) => id !== roomId)
-            : [...favs.slice(0, 9), roomId];
-          return { settings: { ...state.settings, favoriteRooms: next } };
-        });
+        setConnectionStatus:
+          (
+            status,
+          ) =>
+            set(
+              {
+                connectionStatus:
+                  status,
+              },
+            ),
+        setPeersWaiting:
+          (
+            waiting,
+          ) =>
+            set(
+              {
+                peersWaiting:
+                  waiting,
+              },
+            ),
+
+        applyAction:
+          (
+            action,
+          ) => {
+            const state =
+              get();
+            if (
+              action.seq <=
+              state.lastSeq
+            )
+              return;
+
+            const updatedRoom =
+              state.room
+                ? applyRoomAction(
+                    state.room,
+                    action,
+                    state,
+                  )
+                : state.room;
+
+            set(
+              {
+                room: updatedRoom,
+                lastSeq:
+                  action.seq,
+              },
+            );
+          },
+
+        applyFullSync:
+          (
+            fullState,
+          ) => {
+            pendingLocalAnchor =
+              null;
+            set(
+              {
+                room: fullState,
+                lastSeq:
+                  fullState.seq,
+                systemMessages:
+                  [],
+              },
+            );
+          },
+
+        applyVideoState:
+          (
+            videoState,
+          ) => {
+            set(
+              (
+                state,
+              ) => {
+                if (
+                  !state.room
+                )
+                  return {};
+                if (
+                  !acceptServerAnchor(
+                    state
+                      .room
+                      .videoState,
+                    videoState,
+                    pendingLocalAnchor,
+                    Date.now(),
+                  )
+                ) {
+                  return {};
+                }
+                // The server has spoken at (or past) our optimistic revision.
+                if (
+                  pendingLocalAnchor &&
+                  videoState.rev >=
+                    pendingLocalAnchor.baseRev
+                )
+                  pendingLocalAnchor =
+                    null;
+                return {
+                  room: {
+                    ...state.room,
+                    videoState,
+                  },
+                };
+              },
+            );
+          },
+
+        setVideoState:
+          (
+            videoState,
+          ) => {
+            set(
+              (
+                state,
+              ) => {
+                if (
+                  !state.room
+                )
+                  return {};
+                if (
+                  videoState.rev >
+                  state
+                    .room
+                    .videoState
+                    .rev
+                ) {
+                  pendingLocalAnchor =
+                    {
+                      baseRev:
+                        pendingLocalAnchor?.baseRev ??
+                        state
+                          .room
+                          .videoState
+                          .rev,
+                      at: Date.now(),
+                    };
+                }
+                return {
+                  room: {
+                    ...state.room,
+                    videoState,
+                  },
+                };
+              },
+            );
+          },
+
+        updateSettings:
+          (
+            partial,
+          ) => {
+            set(
+              (
+                state,
+              ) => ({
+                settings:
+                  {
+                    ...state.settings,
+                    ...partial,
+                  },
+              }),
+            );
+          },
+
+        addSystemMessage:
+          (
+            event,
+            content,
+          ) => {
+            if (
+              !get()
+                .settings
+                .showSystemMessages
+            )
+              return;
+            const msg: SystemMessage =
+              {
+                id: `sys-${nanoid(8)}`,
+                type: 'system',
+                event,
+                content,
+                createdAt:
+                  Date.now(),
+              };
+            set(
+              (
+                state,
+              ) => ({
+                systemMessages:
+                  [
+                    ...state.systemMessages.slice(
+                      -100,
+                    ),
+                    msg,
+                  ],
+              }),
+            );
+          },
+
+        leaveRoom:
+          () =>
+            set(
+              {
+                room: null,
+                lastSeq:
+                  -1,
+                systemMessages:
+                  [],
+                peersWaiting:
+                  null,
+              },
+            ),
+
+        reset:
+          () =>
+            set(
+              {
+                connectionStatus:
+                  'disconnected',
+                peersWaiting:
+                  null,
+                room: null,
+                lastSeq:
+                  -1,
+                systemMessages:
+                  [],
+              },
+            ),
+
+        addRoomToHistory:
+          (
+            entry,
+          ) => {
+            set(
+              (
+                state,
+              ) => {
+                const history =
+                  state.settings.roomHistory.filter(
+                    (
+                      r,
+                    ) =>
+                      r.roomId !==
+                      entry.roomId,
+                  );
+                history.unshift(
+                  entry,
+                );
+                return {
+                  settings:
+                    {
+                      ...state.settings,
+                      roomHistory:
+                        history.slice(
+                          0,
+                          20,
+                        ),
+                    },
+                };
+              },
+            );
+          },
+
+        removeRoomFromHistory:
+          (
+            roomId,
+          ) => {
+            set(
+              (
+                state,
+              ) => ({
+                settings:
+                  {
+                    ...state.settings,
+                    roomHistory:
+                      state.settings.roomHistory.filter(
+                        (
+                          r,
+                        ) =>
+                          r.roomId !==
+                          roomId,
+                      ),
+                    favoriteRooms:
+                      state.settings.favoriteRooms.filter(
+                        (
+                          id,
+                        ) =>
+                          id !==
+                          roomId,
+                      ),
+                  },
+              }),
+            );
+          },
+
+        toggleFavoriteRoom:
+          (
+            roomId,
+          ) => {
+            set(
+              (
+                state,
+              ) => {
+                const favs =
+                  state
+                    .settings
+                    .favoriteRooms;
+                const next =
+                  favs.includes(
+                    roomId,
+                  )
+                    ? favs.filter(
+                        (
+                          id,
+                        ) =>
+                          id !==
+                          roomId,
+                      )
+                    : [
+                        ...favs.slice(
+                          0,
+                          9,
+                        ),
+                        roomId,
+                      ];
+                return {
+                  settings:
+                    {
+                      ...state.settings,
+                      favoriteRooms:
+                        next,
+                    },
+                };
+              },
+            );
+          },
+      }),
+      {
+        name: 'rmhtube-settings',
+        partialize:
+          (
+            state,
+          ) => ({
+            settings:
+              state.settings,
+          }),
+        merge:
+          (
+            persisted,
+            current,
+          ) => {
+            const p =
+              persisted as
+                | {
+                    settings?: unknown;
+                  }
+                | undefined;
+            return {
+              ...(current as RmhTubeStore),
+              settings:
+                sanitizeSettings(
+                  p?.settings,
+                ),
+            };
+          },
       },
-    }),
-    {
-      name: 'rmhtube-settings',
-      partialize: (state) => ({ settings: state.settings }),
-      merge: (persisted, current) => {
-        const p = persisted as { settings?: unknown } | undefined;
-        return {
-          ...(current as RmhTubeStore),
-          settings: sanitizeSettings(p?.settings),
-        };
-      },
-    },
-  ),
-);
+    ),
+  );
 
 // ─── Room Action Reducer ─────────────────────────────────────────
 
@@ -271,89 +622,227 @@ export function applyRoomAction(
   action: RoomAction,
   store?: RmhTubeStore,
 ): ClientRoomState {
-  const { type, payload } = action;
-  const data = (payload ?? {}) as Record<string, unknown>;
+  const {
+    type,
+    payload,
+  } =
+    action;
+  const data =
+    (payload ??
+      {}) as Record<
+      string,
+      unknown
+    >;
 
-  switch (type) {
+  switch (
+    type
+  ) {
     case 'MEMBER_JOINED': {
-      const userId = data.userId as string;
+      const userId =
+        data.userId as string;
       // A rejoin broadcasts this again, and the list is keyed by userId
       // everywhere else — a duplicate entry shows the same person twice and
       // inflates the vote-skip threshold they are counted against.
-      const existing = room.members.find((m) => m.userId === userId);
-      store?.addSystemMessage('join', `${data.userName} joined the room`);
-      const member: ClientMemberInfo = {
-        userId,
-        userName: data.userName as string,
-        avatarUrl: (data.avatarUrl as string | null) ?? null,
-        isConnected: true,
-        isHost: userId === room.hostUserId,
-        isLeader: userId === room.leaderUserId,
-        role: existing?.role ?? 'member',
-        status: 'watching',
-      };
+      const existing =
+        room.members.find(
+          (
+            m,
+          ) =>
+            m.userId ===
+            userId,
+        );
+      store?.addSystemMessage(
+        'join',
+        `${data.userName} joined the room`,
+      );
+      const member: ClientMemberInfo =
+        {
+          userId,
+          userName:
+            data.userName as string,
+          avatarUrl:
+            (data.avatarUrl as
+              | string
+              | null) ??
+            null,
+          isConnected: true,
+          isHost:
+            userId ===
+            room.hostUserId,
+          isLeader:
+            userId ===
+            room.leaderUserId,
+          role:
+            existing?.role ??
+            'member',
+          status:
+            'watching',
+        };
       return {
         ...room,
-        members: existing
-          ? room.members.map((m) => (m.userId === userId ? member : m))
-          : [...room.members, member],
+        members:
+          existing
+            ? room.members.map(
+                (
+                  m,
+                ) =>
+                  m.userId ===
+                  userId
+                    ? member
+                    : m,
+              )
+            : [
+                ...room.members,
+                member,
+              ],
       };
     }
 
     case 'MEMBER_LEFT':
-      store?.addSystemMessage('leave', `${room.members.find(m => m.userId === data.userId)?.userName ?? 'Someone'} left the room`);
+      store?.addSystemMessage(
+        'leave',
+        `${room.members.find((m) => m.userId === data.userId)?.userName ?? 'Someone'} left the room`,
+      );
       return {
         ...room,
-        controlRequests: (room.controlRequests ?? []).filter((id) => id !== data.userId),
-        members: room.members.filter((m) => m.userId !== data.userId),
+        controlRequests:
+          (
+            room.controlRequests ??
+            []
+          ).filter(
+            (
+              id,
+            ) =>
+              id !==
+              data.userId,
+          ),
+        members:
+          room.members.filter(
+            (
+              m,
+            ) =>
+              m.userId !==
+              data.userId,
+          ),
       };
 
     case 'MEMBER_KICKED':
-      store?.addSystemMessage('kick', `${room.members.find(m => m.userId === data.userId)?.userName ?? 'Someone'} was kicked`);
+      store?.addSystemMessage(
+        'kick',
+        `${room.members.find((m) => m.userId === data.userId)?.userName ?? 'Someone'} was kicked`,
+      );
       return {
         ...room,
-        controlRequests: (room.controlRequests ?? []).filter((id) => id !== data.userId),
-        members: room.members.filter((m) => m.userId !== data.userId),
+        controlRequests:
+          (
+            room.controlRequests ??
+            []
+          ).filter(
+            (
+              id,
+            ) =>
+              id !==
+              data.userId,
+          ),
+        members:
+          room.members.filter(
+            (
+              m,
+            ) =>
+              m.userId !==
+              data.userId,
+          ),
       };
 
     case 'HOST_TRANSFERRED': {
-      const newHostId = data.newHostUserId as string;
-      const newLeaderId = (data.newLeaderUserId as string) ?? newHostId;
-      store?.addSystemMessage('host_transfer', `${data.newHostUserName} is now the host`);
+      const newHostId =
+        data.newHostUserId as string;
+      const newLeaderId =
+        (data.newLeaderUserId as string) ??
+        newHostId;
+      store?.addSystemMessage(
+        'host_transfer',
+        `${data.newHostUserName} is now the host`,
+      );
       return {
         ...room,
-        hostUserId: newHostId,
-        leaderUserId: newLeaderId,
-        members: room.members.map((m) => ({
-          ...m,
-          isHost: m.userId === newHostId,
-          isLeader: m.userId === newLeaderId,
-          role: m.userId === newHostId ? 'host' as const : (m.role === 'host' ? 'member' as const : m.role),
-        })),
+        hostUserId:
+          newHostId,
+        leaderUserId:
+          newLeaderId,
+        members:
+          room.members.map(
+            (
+              m,
+            ) => ({
+              ...m,
+              isHost:
+                m.userId ===
+                newHostId,
+              isLeader:
+                m.userId ===
+                newLeaderId,
+              role:
+                m.userId ===
+                newHostId
+                  ? ('host' as const)
+                  : m.role ===
+                      'host'
+                    ? ('member' as const)
+                    : m.role,
+            }),
+          ),
       };
     }
 
     case 'SETTINGS_UPDATED':
-      store?.addSystemMessage('settings_change', 'Room settings were updated');
+      store?.addSystemMessage(
+        'settings_change',
+        'Room settings were updated',
+      );
       return {
         ...room,
-        settings: { ...room.settings, ...(data as object) },
+        settings:
+          {
+            ...room.settings,
+            ...(data as object),
+          },
       };
 
     case 'MEMBER_CONNECTED':
       return {
         ...room,
-        members: room.members.map((m) =>
-          m.userId === data.userId ? { ...m, isConnected: true } : m,
-        ),
+        members:
+          room.members.map(
+            (
+              m,
+            ) =>
+              m.userId ===
+              data.userId
+                ? {
+                    ...m,
+                    isConnected: true,
+                  }
+                : m,
+          ),
       };
 
     case 'MEMBER_DISCONNECTED':
       return {
         ...room,
-        members: room.members.map((m) =>
-          m.userId === data.userId ? { ...m, isConnected: false } : m,
-        ),
+        members:
+          room.members.map(
+            (
+              m,
+            ) =>
+              m.userId ===
+              data.userId
+                ? {
+                    ...m,
+                    isConnected: false,
+                  }
+                : m,
+          ),
       };
 
     case 'CHAT_MESSAGE':
@@ -367,19 +856,49 @@ export function applyRoomAction(
         // whole history on each new message — in memory, in sort cost, and in DOM
         // nodes. Older messages remain server-side history.
         chat: [
-          ...room.chat.slice(1 - CHAT_SCROLLBACK),
+          ...room.chat.slice(
+            1 -
+              CHAT_SCROLLBACK,
+          ),
           {
             id: data.id as string,
-            userId: data.userId as string,
-            userName: data.userName as string,
-            content: data.content as string,
-            createdAt: data.createdAt as number,
-            replyToId: (data.replyToId as string | null) ?? null,
-            replyToContent: (data.replyToContent as string | null) ?? null,
-            replyToUserName: (data.replyToUserName as string | null) ?? null,
-            mentions: (data.mentions as string[]) ?? [],
-            reactions: (data.reactions as Record<string, string[]>) ?? {},
-            timestamp: (data.timestamp as number | null) ?? null,
+            userId:
+              data.userId as string,
+            userName:
+              data.userName as string,
+            content:
+              data.content as string,
+            createdAt:
+              data.createdAt as number,
+            replyToId:
+              (data.replyToId as
+                | string
+                | null) ??
+              null,
+            replyToContent:
+              (data.replyToContent as
+                | string
+                | null) ??
+              null,
+            replyToUserName:
+              (data.replyToUserName as
+                | string
+                | null) ??
+              null,
+            mentions:
+              (data.mentions as string[]) ??
+              [],
+            reactions:
+              (data.reactions as Record<
+                string,
+                string[]
+              >) ??
+              {},
+            timestamp:
+              (data.timestamp as
+                | number
+                | null) ??
+              null,
           },
         ],
       };
@@ -387,91 +906,200 @@ export function applyRoomAction(
     case 'QUEUE_ITEM_ADDED':
       return {
         ...room,
-        queue: [...room.queue, ...adoptQueue([data.item as QueueBroadcastItem], room.myUserId)],
+        queue:
+          [
+            ...room.queue,
+            ...adoptQueue(
+              [
+                data.item as QueueBroadcastItem,
+              ],
+              room.myUserId,
+            ),
+          ],
       };
 
     case 'QUEUE_ITEM_REMOVED':
       return {
         ...room,
-        queue: room.queue.filter((q) => q.id !== data.itemId),
+        queue:
+          room.queue.filter(
+            (
+              q,
+            ) =>
+              q.id !==
+              data.itemId,
+          ),
         // Removing an item above the playhead shifts it. The server sends the
         // corrected index; without it the pointer silently drifted and the next
         // skip replayed or skipped a video.
-        currentIndex: (data.currentIndex as number) ?? room.currentIndex,
+        currentIndex:
+          (data.currentIndex as number) ??
+          room.currentIndex,
       };
 
     case 'QUEUE_REORDERED':
       return {
         ...room,
-        queue: adoptQueue(data.queue as QueueBroadcastItem[], room.myUserId),
-        currentIndex: (data.currentIndex as number) ?? room.currentIndex,
+        queue:
+          adoptQueue(
+            data.queue as QueueBroadcastItem[],
+            room.myUserId,
+          ),
+        currentIndex:
+          (data.currentIndex as number) ??
+          room.currentIndex,
       };
 
     case 'QUEUE_ITEM_META': {
-      const itemId = data.itemId as string;
-      const patch = {
-        ...(data.duration !== undefined ? { duration: data.duration as number | null } : {}),
-        ...(data.live !== undefined ? { live: data.live as boolean } : {}),
-        ...(data.title !== undefined ? { title: data.title as string } : {}),
-      };
+      const itemId =
+        data.itemId as string;
+      const patch =
+        {
+          ...(data.duration !==
+          undefined
+            ? {
+                duration:
+                  data.duration as
+                    | number
+                    | null,
+              }
+            : {}),
+          ...(data.live !==
+          undefined
+            ? {
+                live: data.live as boolean,
+              }
+            : {}),
+          ...(data.title !==
+          undefined
+            ? {
+                title:
+                  data.title as string,
+              }
+            : {}),
+        };
       return {
         ...room,
-        queue: room.queue.map((q) => (q.id === itemId ? { ...q, ...patch } : q)),
+        queue:
+          room.queue.map(
+            (
+              q,
+            ) =>
+              q.id ===
+              itemId
+                ? {
+                    ...q,
+                    ...patch,
+                  }
+                : q,
+          ),
         currentItem:
-          room.currentItem?.id === itemId
-            ? { ...room.currentItem, ...patch }
+          room
+            .currentItem
+            ?.id ===
+          itemId
+            ? {
+                ...room.currentItem,
+                ...patch,
+              }
             : room.currentItem,
       };
     }
 
     case 'NOW_PLAYING': {
-      const prevItem = room.currentItem;
-      const broadcast = data.item as QueueBroadcastItem | null;
-      const item = broadcast ? adoptQueue([broadcast], room.myUserId)[0] : null;
-      store?.addSystemMessage('now_playing', `Now playing: ${item?.title ?? 'Unknown'}`);
+      const prevItem =
+        room.currentItem;
+      const broadcast =
+        data.item as QueueBroadcastItem | null;
+      const item =
+        broadcast
+          ? adoptQueue(
+              [
+                broadcast,
+              ],
+              room.myUserId,
+            )[0]
+          : null;
+      store?.addSystemMessage(
+        'now_playing',
+        `Now playing: ${item?.title ?? 'Unknown'}`,
+      );
       return {
         ...room,
-        currentItem: item,
-        currentIndex: data.index as number,
+        currentItem:
+          item,
+        currentIndex:
+          data.index as number,
         // The server stamps the fresh anchor; adopting it verbatim (rather than
         // minting one on the local clock) keeps the whole room on one time base
         // from the item's very first frame.
-        videoState: data.videoState as VideoState,
-        skipVotes: [],
-        playedItems: prevItem
-          ? [...room.playedItems.slice(-49), prevItem]
-          : room.playedItems,
+        videoState:
+          data.videoState as VideoState,
+        skipVotes:
+          [],
+        playedItems:
+          prevItem
+            ? [
+                ...room.playedItems.slice(
+                  -49,
+                ),
+                prevItem,
+              ]
+            : room.playedItems,
       };
     }
 
     case 'PLAYBACK_ENDED':
       return {
         ...room,
-        currentItem: null,
-        currentIndex: -1,
-        videoState: (data.videoState as VideoState) ?? initialVideoState(Date.now()),
-        skipVotes: [],
+        currentItem:
+          null,
+        currentIndex:
+          -1,
+        videoState:
+          (data.videoState as VideoState) ??
+          initialVideoState(
+            Date.now(),
+          ),
+        skipVotes:
+          [],
       };
 
     case 'VOTE_SKIP_UPDATED':
       return {
         ...room,
-        skipVotes: data.voters as string[],
+        skipVotes:
+          data.voters as string[],
       };
 
     case 'VOTE_SKIP_PASSED':
       return {
         ...room,
-        skipVotes: [],
+        skipVotes:
+          [],
       };
 
     case 'CHAT_REACTION': {
-      const msgId = data.messageId as string;
-      const reactions = data.reactions as Record<string, string[]>;
+      const msgId =
+        data.messageId as string;
+      const reactions =
+        data.reactions as Record<
+          string,
+          string[]
+        >;
       return {
         ...room,
-        chat: room.chat.map((msg) =>
-          msg.id === msgId ? { ...msg, reactions } : msg,
+        chat: room.chat.map(
+          (
+            msg,
+          ) =>
+            msg.id ===
+            msgId
+              ? {
+                  ...msg,
+                  reactions,
+                }
+              : msg,
         ),
       };
     }
@@ -479,97 +1107,199 @@ export function applyRoomAction(
     case 'MESSAGE_PINNED':
       return {
         ...room,
-        pinnedMessage: data.message as ChatMessage,
+        pinnedMessage:
+          data.message as ChatMessage,
       };
 
     case 'MESSAGE_UNPINNED':
       return {
         ...room,
-        pinnedMessage: null,
+        pinnedMessage:
+          null,
       };
 
     case 'QUEUE_VOTE_UPDATED': {
-      const itemId = data.itemId as string;
-      const votes = data.votes as number;
-      const voters = data.voters as string[];
+      const itemId =
+        data.itemId as string;
+      const votes =
+        data.votes as number;
+      const voters =
+        data.voters as string[];
       return {
         ...room,
-        queue: room.queue.map((q) =>
-          q.id === itemId
-            ? { ...q, votes, votedByMe: voters.includes(room.myUserId) }
-            : q,
-        ),
+        queue:
+          room.queue.map(
+            (
+              q,
+            ) =>
+              q.id ===
+              itemId
+                ? {
+                    ...q,
+                    votes,
+                    votedByMe:
+                      voters.includes(
+                        room.myUserId,
+                      ),
+                  }
+                : q,
+          ),
       };
     }
 
     case 'QUEUE_HISTORY_UPDATED':
       return {
         ...room,
-        playedItems: adoptQueue(data.playedItems as QueueBroadcastItem[], room.myUserId),
+        playedItems:
+          adoptQueue(
+            data.playedItems as QueueBroadcastItem[],
+            room.myUserId,
+          ),
       };
 
     case 'CONTROL_REQUESTED': {
-      const requester = data.userId as string;
-      const pending = room.controlRequests ?? [];
-      if (pending.includes(requester)) return room;
-      store?.addSystemMessage('leader_change', `${data.userName} asked for playback control`);
+      const requester =
+        data.userId as string;
+      const pending =
+        room.controlRequests ??
+        [];
+      if (
+        pending.includes(
+          requester,
+        )
+      )
+        return room;
+      store?.addSystemMessage(
+        'leader_change',
+        `${data.userName} asked for playback control`,
+      );
       // Only the people who can act on it are interrupted.
-      if (room.myUserId === room.hostUserId || room.myUserId === room.leaderUserId) {
-        toast.info(`${data.userName} asked for control — give it from the member list`);
+      if (
+        room.myUserId ===
+          room.hostUserId ||
+        room.myUserId ===
+          room.leaderUserId
+      ) {
+        toast.info(
+          `${data.userName} asked for control — give it from the member list`,
+        );
       }
-      return { ...room, controlRequests: [...pending, requester] };
+      return {
+        ...room,
+        controlRequests:
+          [
+            ...pending,
+            requester,
+          ],
+      };
     }
 
     case 'LEADER_CHANGED': {
-      const newLeaderId = data.newLeaderUserId as string;
+      const newLeaderId =
+        data.newLeaderUserId as string;
       const why =
-        data.reason === 'failover'
+        data.reason ===
+        'failover'
           ? ' (the previous leader disconnected)'
-          : data.reason === 'restored'
+          : data.reason ===
+              'restored'
             ? ' again'
             : '';
-      store?.addSystemMessage('leader_change', `${data.newLeaderUserName} is now the leader${why}`);
+      store?.addSystemMessage(
+        'leader_change',
+        `${data.newLeaderUserName} is now the leader${why}`,
+      );
       return {
         ...room,
-        controlRequests: (room.controlRequests ?? []).filter((id) => id !== newLeaderId),
-        leaderUserId: newLeaderId,
-        members: room.members.map((m) => ({
-          ...m,
-          isLeader: m.userId === newLeaderId,
-        })),
+        controlRequests:
+          (
+            room.controlRequests ??
+            []
+          ).filter(
+            (
+              id,
+            ) =>
+              id !==
+              newLeaderId,
+          ),
+        leaderUserId:
+          newLeaderId,
+        members:
+          room.members.map(
+            (
+              m,
+            ) => ({
+              ...m,
+              isLeader:
+                m.userId ===
+                newLeaderId,
+            }),
+          ),
       };
     }
 
     case 'MEMBER_BANNED':
       return {
         ...room,
-        members: room.members.filter((m) => m.userId !== data.userId),
-        bannedUsers: [
-          ...room.bannedUsers,
-          {
-            userId: data.userId as string,
-            userName: data.userName as string,
-            bannedAt: data.bannedAt as number,
-            bannedBy: data.bannedBy as string,
-            reason: (data.reason as string | null) ?? null,
-          },
-        ],
+        members:
+          room.members.filter(
+            (
+              m,
+            ) =>
+              m.userId !==
+              data.userId,
+          ),
+        bannedUsers:
+          [
+            ...room.bannedUsers,
+            {
+              userId:
+                data.userId as string,
+              userName:
+                data.userName as string,
+              bannedAt:
+                data.bannedAt as number,
+              bannedBy:
+                data.bannedBy as string,
+              reason:
+                (data.reason as
+                  | string
+                  | null) ??
+                null,
+            },
+          ],
       };
 
     case 'MEMBER_UNBANNED':
       return {
         ...room,
-        bannedUsers: room.bannedUsers.filter((b) => b.userId !== data.userId),
+        bannedUsers:
+          room.bannedUsers.filter(
+            (
+              b,
+            ) =>
+              b.userId !==
+              data.userId,
+          ),
       };
 
     case 'MEMBER_STATUS_CHANGED':
       return {
         ...room,
-        members: room.members.map((m) =>
-          m.userId === data.userId
-            ? { ...m, status: data.status as ClientMemberInfo['status'] }
-            : m,
-        ),
+        members:
+          room.members.map(
+            (
+              m,
+            ) =>
+              m.userId ===
+              data.userId
+                ? {
+                    ...m,
+                    status:
+                      data.status as ClientMemberInfo['status'],
+                  }
+                : m,
+          ),
       };
 
     default:
@@ -588,8 +1318,21 @@ export function applyRoomAction(
  * and re-sorted the whole transcript on updates unrelated to chat.
  */
 export function getChatEntries(
-  chat: ChatEntry[] | undefined,
+  chat:
+    | ChatEntry[]
+    | undefined,
   systemMessages: ChatEntry[],
 ): ChatEntry[] {
-  return [...(chat ?? []), ...systemMessages].sort((a, b) => a.createdAt - b.createdAt);
+  return [
+    ...(chat ??
+      []),
+    ...systemMessages,
+  ].sort(
+    (
+      a,
+      b,
+    ) =>
+      a.createdAt -
+      b.createdAt,
+  );
 }

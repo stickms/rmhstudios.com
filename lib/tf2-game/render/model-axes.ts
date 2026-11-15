@@ -17,59 +17,187 @@
  * mapping of Source model space), so every model is placed with `sourceTransformToMatrix(…)
  * · modelFrame(gltf)` — static props, characters, view models and projectiles alike.
  */
-import { Box3, Matrix4, type Mesh, type Object3D } from 'three';
+import {
+  Box3,
+  Matrix4,
+  type Mesh,
+  type Object3D,
+} from 'three';
 
 /** Source inches → metres (the converter's scale). */
 const SCALE = 0.01905;
 
 /** A 3×3 signed permutation, row-major: GLB = R · Source. */
-export type AxisRotation = readonly [
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-];
+export type AxisRotation =
+  readonly [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ];
 
 /** Source (x, y, z) → three/glTF (y, z, x): the default bind frame of characters. */
-export const PERM_SOURCE_TO_GL: AxisRotation = [0, 1, 0, 0, 0, 1, 1, 0, 0];
-export const IDENTITY_ROTATION: AxisRotation = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+export const PERM_SOURCE_TO_GL: AxisRotation =
+  [
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+  ];
+export const IDENTITY_ROTATION: AxisRotation =
+  [
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+  ];
 
 /** The 24 proper axis rotations (signed permutation matrices with determinant +1). */
-export const AXIS_ROTATIONS: readonly AxisRotation[] = (() => {
-  const perms = [
-    [0, 1, 2],
-    [0, 2, 1],
-    [1, 0, 2],
-    [1, 2, 0],
-    [2, 0, 1],
-    [2, 1, 0],
-  ];
-  const out: AxisRotation[] = [];
-  for (const p of perms) {
-    for (let s = 0; s < 8; s++) {
-      const m = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-      for (let r = 0; r < 3; r++) m[r * 3 + p[r]] = s & (1 << r) ? -1 : 1;
-      const det =
-        m[0] * (m[4] * m[8] - m[5] * m[7]) -
-        m[1] * (m[3] * m[8] - m[5] * m[6]) +
-        m[2] * (m[3] * m[7] - m[4] * m[6]);
-      if (det > 0) out.push(m as unknown as AxisRotation);
+export const AXIS_ROTATIONS: readonly AxisRotation[] =
+  (() => {
+    const perms =
+      [
+        [
+          0,
+          1,
+          2,
+        ],
+        [
+          0,
+          2,
+          1,
+        ],
+        [
+          1,
+          0,
+          2,
+        ],
+        [
+          1,
+          2,
+          0,
+        ],
+        [
+          2,
+          0,
+          1,
+        ],
+        [
+          2,
+          1,
+          0,
+        ],
+      ];
+    const out: AxisRotation[] =
+      [];
+    for (const p of perms) {
+      for (
+        let s = 0;
+        s <
+        8;
+        s++
+      ) {
+        const m =
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+          ];
+        for (
+          let r = 0;
+          r <
+          3;
+          r++
+        )
+          m[
+            r *
+              3 +
+              p[
+                r
+              ]
+          ] =
+            s &
+            (1 <<
+              r)
+              ? -1
+              : 1;
+        const det =
+          m[0] *
+            (m[4] *
+              m[8] -
+              m[5] *
+                m[7]) -
+          m[1] *
+            (m[3] *
+              m[8] -
+              m[5] *
+                m[6]) +
+          m[2] *
+            (m[3] *
+              m[7] -
+              m[4] *
+                m[6]);
+        if (
+          det >
+          0
+        )
+          out.push(
+            m as unknown as AxisRotation,
+          );
+      }
     }
-  }
-  return out;
-})();
+    return out;
+  })();
 
 export interface Bounds3 {
-  min: [number, number, number];
-  max: [number, number, number];
+  min: [
+    number,
+    number,
+    number,
+  ];
+  max: [
+    number,
+    number,
+    number,
+  ];
 }
 
-const sameRot = (a: AxisRotation, b: AxisRotation) => a.every((v, i) => v === b[i]);
+const sameRot =
+  (
+    a: AxisRotation,
+    b: AxisRotation,
+  ) =>
+    a.every(
+      (
+        v,
+        i,
+      ) =>
+        v ===
+        b[
+          i
+        ],
+    );
 
 /** Fit errors this close count as a tie (a hull symmetric under some of the rotations). */
 const FIT_TIE = 1e-3;
@@ -81,50 +209,178 @@ const FIT_TIE = 1e-3;
  * `prefer` — the rotation the model's own skeleton implies, see `impliedBindRotation` — then
  * wins that tie, ahead of the fixed preference order.
  */
-export function detectAxisRotation(hull: Bounds3, glb: Bounds3, prefer: AxisRotation | null = null): AxisRotation {
-  const size = Math.hypot(
-    hull.max[0] - hull.min[0],
-    hull.max[1] - hull.min[1],
-    hull.max[2] - hull.min[2],
-  );
-  const gsize = Math.hypot(
-    glb.max[0] - glb.min[0],
-    glb.max[1] - glb.min[1],
-    glb.max[2] - glb.min[2],
-  );
-  if (!(size > 1e-6) || !(gsize > 1e-6)) return PERM_SOURCE_TO_GL;
-  let best: AxisRotation = PERM_SOURCE_TO_GL;
-  let bestErr = Infinity;
-  let bestRaw = Infinity;
-  let preferRaw = Infinity;
-  const norm = Math.max(size, gsize);
+export function detectAxisRotation(
+  hull: Bounds3,
+  glb: Bounds3,
+  prefer: AxisRotation | null = null,
+): AxisRotation {
+  const size =
+    Math.hypot(
+      hull
+        .max[0] -
+        hull
+          .min[0],
+      hull
+        .max[1] -
+        hull
+          .min[1],
+      hull
+        .max[2] -
+        hull
+          .min[2],
+    );
+  const gsize =
+    Math.hypot(
+      glb
+        .max[0] -
+        glb
+          .min[0],
+      glb
+        .max[1] -
+        glb
+          .min[1],
+      glb
+        .max[2] -
+        glb
+          .min[2],
+    );
+  if (
+    !(
+      size >
+      1e-6
+    ) ||
+    !(
+      gsize >
+      1e-6
+    )
+  )
+    return PERM_SOURCE_TO_GL;
+  let best: AxisRotation =
+    PERM_SOURCE_TO_GL;
+  let bestErr =
+    Infinity;
+  let bestRaw =
+    Infinity;
+  let preferRaw =
+    Infinity;
+  const norm =
+    Math.max(
+      size,
+      gsize,
+    );
   for (const r of AXIS_ROTATIONS) {
     let err = 0;
-    for (let row = 0; row < 3; row++) {
+    for (
+      let row = 0;
+      row <
+      3;
+      row++
+    ) {
       // Image of the hull along GLB axis `row`.
       let lo = 0;
       let hi = 0;
-      for (let col = 0; col < 3; col++) {
-        const k = r[row * 3 + col];
-        if (k === 0) continue;
-        lo += k > 0 ? hull.min[col] : -hull.max[col];
-        hi += k > 0 ? hull.max[col] : -hull.min[col];
+      for (
+        let col = 0;
+        col <
+        3;
+        col++
+      ) {
+        const k =
+          r[
+            row *
+              3 +
+              col
+          ];
+        if (
+          k ===
+          0
+        )
+          continue;
+        lo +=
+          k >
+          0
+            ? hull
+                .min[
+                col
+              ]
+            : -hull
+                .max[
+                col
+              ];
+        hi +=
+          k >
+          0
+            ? hull
+                .max[
+                col
+              ]
+            : -hull
+                .min[
+                col
+              ];
       }
-      err += Math.abs(lo - glb.min[row]) + Math.abs(hi - glb.max[row]);
+      err +=
+        Math.abs(
+          lo -
+            glb
+              .min[
+              row
+            ],
+        ) +
+        Math.abs(
+          hi -
+            glb
+              .max[
+              row
+            ],
+        );
     }
-    err /= norm;
-    const raw = err;
-    if (prefer && sameRot(r, prefer)) preferRaw = raw;
+    err /=
+      norm;
+    const raw =
+      err;
+    if (
+      prefer &&
+      sameRot(
+        r,
+        prefer,
+      )
+    )
+      preferRaw =
+        raw;
     // Preference order on near-ties (symmetric models): the character mapping, then Source axes.
-    if (sameRot(r, PERM_SOURCE_TO_GL)) err -= 0.02;
-    else if (sameRot(r, IDENTITY_ROTATION)) err -= 0.01;
-    if (err < bestErr) {
-      bestErr = err;
-      bestRaw = raw;
-      best = r;
+    if (
+      sameRot(
+        r,
+        PERM_SOURCE_TO_GL,
+      )
+    )
+      err -= 0.02;
+    else if (
+      sameRot(
+        r,
+        IDENTITY_ROTATION,
+      )
+    )
+      err -= 0.01;
+    if (
+      err <
+      bestErr
+    ) {
+      bestErr =
+        err;
+      bestRaw =
+        raw;
+      best =
+        r;
     }
   }
-  return prefer && preferRaw <= bestRaw + FIT_TIE ? prefer : best;
+  return prefer &&
+    preferRaw <=
+      bestRaw +
+        FIT_TIE
+    ? prefer
+    : best;
 }
 
 /**
@@ -134,68 +390,317 @@ export function detectAxisRotation(hull: Bounds3, glb: Bounds3, prefer: AxisRota
  * idle root turned against the bind root, R2 = posed · bindᵀ, gives R = R2ᵀ · P. Null when the
  * two roots agree (nothing to learn) or differ by no axis rotation.
  */
-export function impliedBindRotation(rootBind: ArrayLike<number>, rootPosed: ArrayLike<number>): AxisRotation | null {
-  const qa = quatMatrix(rootPosed);
-  const qb = quatMatrix(rootBind);
-  const m = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  for (let i = 0; i < 3; i++)
-    for (let j = 0; j < 3; j++) {
+export function impliedBindRotation(
+  rootBind: ArrayLike<number>,
+  rootPosed: ArrayLike<number>,
+): AxisRotation | null {
+  const qa =
+    quatMatrix(
+      rootPosed,
+    );
+  const qb =
+    quatMatrix(
+      rootBind,
+    );
+  const m =
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+    ];
+  for (
+    let i = 0;
+    i <
+    3;
+    i++
+  )
+    for (
+      let j = 0;
+      j <
+      3;
+      j++
+    ) {
       let s = 0;
-      for (let k = 0; k < 3; k++) s += qa[i * 3 + k] * qb[j * 3 + k];
-      m[i * 3 + j] = s;
+      for (
+        let k = 0;
+        k <
+        3;
+        k++
+      )
+        s +=
+          qa[
+            i *
+              3 +
+              k
+          ] *
+          qb[
+            j *
+              3 +
+              k
+          ];
+      m[
+        i *
+          3 +
+          j
+      ] =
+        s;
     }
-  const r2 = nearestAxisRotation(m);
-  if (!r2 || sameRot(r2, IDENTITY_ROTATION)) return null;
-  const p = PERM_SOURCE_TO_GL;
-  const out = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  for (let i = 0; i < 3; i++)
-    for (let j = 0; j < 3; j++) {
+  const r2 =
+    nearestAxisRotation(
+      m,
+    );
+  if (
+    !r2 ||
+    sameRot(
+      r2,
+      IDENTITY_ROTATION,
+    )
+  )
+    return null;
+  const p =
+    PERM_SOURCE_TO_GL;
+  const out =
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+    ];
+  for (
+    let i = 0;
+    i <
+    3;
+    i++
+  )
+    for (
+      let j = 0;
+      j <
+      3;
+      j++
+    ) {
       let s = 0;
-      for (let k = 0; k < 3; k++) s += r2[k * 3 + i] * p[k * 3 + j]; // R2ᵀ · P
-      out[i * 3 + j] = s;
+      for (
+        let k = 0;
+        k <
+        3;
+        k++
+      )
+        s +=
+          r2[
+            k *
+              3 +
+              i
+          ] *
+          p[
+            k *
+              3 +
+              j
+          ]; // R2ᵀ · P
+      out[
+        i *
+          3 +
+          j
+      ] =
+        s;
     }
-  return AXIS_ROTATIONS.find((a) => sameRot(a, out as unknown as AxisRotation)) ?? null;
+  return (
+    AXIS_ROTATIONS.find(
+      (
+        a,
+      ) =>
+        sameRot(
+          a,
+          out as unknown as AxisRotation,
+        ),
+    ) ??
+    null
+  );
 }
 
 /**
  * three model space = P · Source; GLB = R · Source → three model = P · Rᵀ · GLB. `r` is any rotation
  * (row-major): an axis rotation, or the converter's recorded clip frame (`source.clipFrame`).
  */
-export function frameMatrixFor(r: ArrayLike<number>, out = new Matrix4()): Matrix4 {
-  const p = PERM_SOURCE_TO_GL;
-  const m = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
+export function frameMatrixFor(
+  r: ArrayLike<number>,
+  out = new Matrix4(),
+): Matrix4 {
+  const p =
+    PERM_SOURCE_TO_GL;
+  const m =
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+    ];
+  for (
+    let i = 0;
+    i <
+    3;
+    i++
+  ) {
+    for (
+      let j = 0;
+      j <
+      3;
+      j++
+    ) {
       let s = 0;
-      for (let k = 0; k < 3; k++) s += p[i * 3 + k] * r[j * 3 + k]; // P · Rᵀ
-      m[i * 3 + j] = s;
+      for (
+        let k = 0;
+        k <
+        3;
+        k++
+      )
+        s +=
+          p[
+            i *
+              3 +
+              k
+          ] *
+          r[
+            j *
+              3 +
+              k
+          ]; // P · Rᵀ
+      m[
+        i *
+          3 +
+          j
+      ] =
+        s;
     }
   }
-  return out.set(m[0], m[1], m[2], 0, m[3], m[4], m[5], 0, m[6], m[7], m[8], 0, 0, 0, 0, 1);
+  return out.set(
+    m[0],
+    m[1],
+    m[2],
+    0,
+    m[3],
+    m[4],
+    m[5],
+    0,
+    m[6],
+    m[7],
+    m[8],
+    0,
+    0,
+    0,
+    0,
+    1,
+  );
 }
 
 interface SourceExtras {
-  source?: { hullMin?: number[]; hullMax?: number[] };
+  source?: {
+    hullMin?: number[];
+    hullMax?: number[];
+  };
   skinned?: boolean;
 }
 
-const frames = new WeakMap<object, { rotation: AxisRotation; matrix: Matrix4 }>();
+const frames =
+  new WeakMap<
+    object,
+    {
+      rotation: AxisRotation;
+      matrix: Matrix4;
+    }
+  >();
 
 /** Bind-pose bounds of every mesh under `root` (its node transforms applied), in GLB space. */
-export function bindBounds(root: Object3D): Bounds3 | null {
-  root.updateMatrixWorld(true);
-  const box = new Box3();
-  const tmp = new Box3();
-  root.traverse((o) => {
-    const mesh = o as Mesh;
-    if (!mesh.isMesh || !mesh.geometry) return;
-    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
-    if (!mesh.geometry.boundingBox) return;
-    tmp.copy(mesh.geometry.boundingBox).applyMatrix4(mesh.matrixWorld);
-    box.union(tmp);
-  });
-  if (box.isEmpty()) return null;
-  return { min: [box.min.x, box.min.y, box.min.z], max: [box.max.x, box.max.y, box.max.z] };
+export function bindBounds(
+  root: Object3D,
+): Bounds3 | null {
+  root.updateMatrixWorld(
+    true,
+  );
+  const box =
+    new Box3();
+  const tmp =
+    new Box3();
+  root.traverse(
+    (
+      o,
+    ) => {
+      const mesh =
+        o as Mesh;
+      if (
+        !mesh.isMesh ||
+        !mesh.geometry
+      )
+        return;
+      if (
+        !mesh
+          .geometry
+          .boundingBox
+      )
+        mesh.geometry.computeBoundingBox();
+      if (
+        !mesh
+          .geometry
+          .boundingBox
+      )
+        return;
+      tmp
+        .copy(
+          mesh
+            .geometry
+            .boundingBox,
+        )
+        .applyMatrix4(
+          mesh.matrixWorld,
+        );
+      box.union(
+        tmp,
+      );
+    },
+  );
+  if (
+    box.isEmpty()
+  )
+    return null;
+  return {
+    min: [
+      box
+        .min
+        .x,
+      box
+        .min
+        .y,
+      box
+        .min
+        .z,
+    ],
+    max: [
+      box
+        .max
+        .x,
+      box
+        .max
+        .y,
+      box
+        .max
+        .z,
+    ],
+  };
 }
 
 /**
@@ -203,26 +708,92 @@ export function bindBounds(root: Object3D): Bounds3 | null {
  * is the GLB's scene extras. `prefer` breaks a tie between rotations the hull fits equally
  * (`detectAxisRotation`); a frame found with it is not cached.
  */
-export function modelFrame(scene: Object3D, prefer: AxisRotation | null = null): { rotation: AxisRotation; matrix: Matrix4 } {
-  const cached = frames.get(scene);
-  if (cached && (!prefer || sameRot(cached.rotation, prefer))) return cached;
-  const ex = (scene.userData ?? {}) as SourceExtras;
-  const hmin = ex.source?.hullMin;
-  const hmax = ex.source?.hullMax;
-  let rotation: AxisRotation = ex.skinned === false ? IDENTITY_ROTATION : PERM_SOURCE_TO_GL;
-  const bounds = bindBounds(scene);
-  if (hmin?.length === 3 && hmax?.length === 3 && bounds) {
-    rotation = detectAxisRotation(
-      {
-        min: [hmin[0] * SCALE, hmin[1] * SCALE, hmin[2] * SCALE],
-        max: [hmax[0] * SCALE, hmax[1] * SCALE, hmax[2] * SCALE],
-      },
-      bounds,
-      prefer,
+export function modelFrame(
+  scene: Object3D,
+  prefer: AxisRotation | null = null,
+): {
+  rotation: AxisRotation;
+  matrix: Matrix4;
+} {
+  const cached =
+    frames.get(
+      scene,
     );
+  if (
+    cached &&
+    (!prefer ||
+      sameRot(
+        cached.rotation,
+        prefer,
+      ))
+  )
+    return cached;
+  const ex =
+    (scene.userData ??
+      {}) as SourceExtras;
+  const hmin =
+    ex
+      .source
+      ?.hullMin;
+  const hmax =
+    ex
+      .source
+      ?.hullMax;
+  let rotation: AxisRotation =
+    ex.skinned ===
+    false
+      ? IDENTITY_ROTATION
+      : PERM_SOURCE_TO_GL;
+  const bounds =
+    bindBounds(
+      scene,
+    );
+  if (
+    hmin?.length ===
+      3 &&
+    hmax?.length ===
+      3 &&
+    bounds
+  ) {
+    rotation =
+      detectAxisRotation(
+        {
+          min: [
+            hmin[0] *
+              SCALE,
+            hmin[1] *
+              SCALE,
+            hmin[2] *
+              SCALE,
+          ],
+          max: [
+            hmax[0] *
+              SCALE,
+            hmax[1] *
+              SCALE,
+            hmax[2] *
+              SCALE,
+          ],
+        },
+        bounds,
+        prefer,
+      );
   }
-  const entry = { rotation, matrix: frameMatrixFor(rotation) };
-  if (!prefer) frames.set(scene, entry);
+  const entry =
+    {
+      rotation,
+      matrix:
+        frameMatrixFor(
+          rotation,
+        ),
+    };
+  if (
+    !prefer
+  )
+    frames.set(
+      scene,
+      entry,
+    );
   return entry;
 }
 
@@ -230,24 +801,94 @@ export function modelFrame(scene: Object3D, prefer: AxisRotation | null = null):
  * The axis rotation nearest a 3×3 rotation (row-major), or null when none is within ~40°
  * on every axis.
  */
-export function nearestAxisRotation(m: ArrayLike<number>): AxisRotation | null {
-  const out = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  const used = new Set<number>();
-  for (let r = 0; r < 3; r++) {
-    let best = -1;
+export function nearestAxisRotation(
+  m: ArrayLike<number>,
+): AxisRotation | null {
+  const out =
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+    ];
+  const used =
+    new Set<number>();
+  for (
+    let r = 0;
+    r <
+    3;
+    r++
+  ) {
+    let best =
+      -1;
     let bestAbs = 0;
-    for (let c = 0; c < 3; c++) {
-      const a = Math.abs(m[r * 3 + c]);
-      if (a > bestAbs && !used.has(c)) {
-        bestAbs = a;
-        best = c;
+    for (
+      let c = 0;
+      c <
+      3;
+      c++
+    ) {
+      const a =
+        Math.abs(
+          m[
+            r *
+              3 +
+              c
+          ],
+        );
+      if (
+        a >
+          bestAbs &&
+        !used.has(
+          c,
+        )
+      ) {
+        bestAbs =
+          a;
+        best =
+          c;
       }
     }
-    if (best < 0 || bestAbs < 0.75) return null;
-    used.add(best);
-    out[r * 3 + best] = Math.sign(m[r * 3 + best]);
+    if (
+      best <
+        0 ||
+      bestAbs <
+        0.75
+    )
+      return null;
+    used.add(
+      best,
+    );
+    out[
+      r *
+        3 +
+        best
+    ] =
+      Math.sign(
+        m[
+          r *
+            3 +
+            best
+        ],
+      );
   }
-  return AXIS_ROTATIONS.find((a) => sameRot(a, out as unknown as AxisRotation)) ?? null;
+  return (
+    AXIS_ROTATIONS.find(
+      (
+        a,
+      ) =>
+        sameRot(
+          a,
+          out as unknown as AxisRotation,
+        ),
+    ) ??
+    null
+  );
 }
 
 /**
@@ -263,38 +904,101 @@ export function animatedFrame(
   rootBind: ArrayLike<number>,
   rootPosed: ArrayLike<number>,
 ): Matrix4 {
-  const qa = quatMatrix(rootPosed);
-  const qb = quatMatrix(rootBind);
+  const qa =
+    quatMatrix(
+      rootPosed,
+    );
+  const qb =
+    quatMatrix(
+      rootBind,
+    );
   // M = Ra · Rbᵀ
-  const m = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  for (let i = 0; i < 3; i++)
-    for (let j = 0; j < 3; j++) {
+  const m =
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+    ];
+  for (
+    let i = 0;
+    i <
+    3;
+    i++
+  )
+    for (
+      let j = 0;
+      j <
+      3;
+      j++
+    ) {
       let s = 0;
-      for (let k = 0; k < 3; k++) s += qa[i * 3 + k] * qb[j * 3 + k];
-      m[i * 3 + j] = s;
+      for (
+        let k = 0;
+        k <
+        3;
+        k++
+      )
+        s +=
+          qa[
+            i *
+              3 +
+              k
+          ] *
+          qb[
+            j *
+              3 +
+              k
+          ];
+      m[
+        i *
+          3 +
+          j
+      ] =
+        s;
     }
-  const r2 = nearestAxisRotation(m);
-  if (!r2 || sameRot(r2, IDENTITY_ROTATION)) return bindFrame;
+  const r2 =
+    nearestAxisRotation(
+      m,
+    );
+  if (
+    !r2 ||
+    sameRot(
+      r2,
+      IDENTITY_ROTATION,
+    )
+  )
+    return bindFrame;
   // three = Cbind · bind = Cbind · R2ᵀ · posed
-  const r2t = new Matrix4().set(
-    r2[0],
-    r2[3],
-    r2[6],
-    0,
-    r2[1],
-    r2[4],
-    r2[7],
-    0,
-    r2[2],
-    r2[5],
-    r2[8],
-    0,
-    0,
-    0,
-    0,
-    1,
-  );
-  return bindFrame.clone().multiply(r2t);
+  const r2t =
+    new Matrix4().set(
+      r2[0],
+      r2[3],
+      r2[6],
+      0,
+      r2[1],
+      r2[4],
+      r2[7],
+      0,
+      r2[2],
+      r2[5],
+      r2[8],
+      0,
+      0,
+      0,
+      0,
+      1,
+    );
+  return bindFrame
+    .clone()
+    .multiply(
+      r2t,
+    );
 }
 
 /**
@@ -307,22 +1011,92 @@ export function hullMiss(
   hullMin: ArrayLike<number>,
   hullMax: ArrayLike<number>,
 ): number {
-  const e = frame.elements;
-  const n = Math.floor(points.length / 3);
+  const e =
+    frame.elements;
+  const n =
+    Math.floor(
+      points.length /
+        3,
+    );
   let miss = 0;
-  for (let i = 0; i < n; i++) {
-    const x = points[i * 3];
-    const y = points[i * 3 + 1];
-    const z = points[i * 3 + 2];
+  for (
+    let i = 0;
+    i <
+    n;
+    i++
+  ) {
+    const x =
+      points[
+        i *
+          3
+      ];
+    const y =
+      points[
+        i *
+          3 +
+          1
+      ];
+    const z =
+      points[
+        i *
+          3 +
+          2
+      ];
     // three model space is Source (y, z, x): Source x = three z, y = three x, z = three y.
-    const src = [
-      (e[2] * x + e[6] * y + e[10] * z + e[14]) / SCALE,
-      (e[0] * x + e[4] * y + e[8] * z + e[12]) / SCALE,
-      (e[1] * x + e[5] * y + e[9] * z + e[13]) / SCALE,
-    ];
-    for (let a = 0; a < 3; a++) miss += Math.max(0, hullMin[a] - src[a], src[a] - hullMax[a]);
+    const src =
+      [
+        (e[2] *
+          x +
+          e[6] *
+            y +
+          e[10] *
+            z +
+          e[14]) /
+          SCALE,
+        (e[0] *
+          x +
+          e[4] *
+            y +
+          e[8] *
+            z +
+          e[12]) /
+          SCALE,
+        (e[1] *
+          x +
+          e[5] *
+            y +
+          e[9] *
+            z +
+          e[13]) /
+          SCALE,
+      ];
+    for (
+      let a = 0;
+      a <
+      3;
+      a++
+    )
+      miss +=
+        Math.max(
+          0,
+          hullMin[
+            a
+          ] -
+            src[
+              a
+            ],
+          src[
+            a
+          ] -
+            hullMax[
+              a
+            ],
+        );
   }
-  return n ? miss / n : 0;
+  return n
+    ? miss /
+        n
+    : 0;
 }
 
 /**
@@ -339,23 +1113,101 @@ export function checkPosedFrame(
   hullMin: ArrayLike<number>,
   hullMax: ArrayLike<number>,
 ): Matrix4 {
-  if (guess === bindFrame || guess.equals(bindFrame)) return guess;
-  const g = hullMiss(guess, posedBones, hullMin, hullMax);
-  const b = hullMiss(bindFrame, posedBones, hullMin, hullMax);
-  return g - b > 1 && b < g * 0.5 ? bindFrame : guess;
+  if (
+    guess ===
+      bindFrame ||
+    guess.equals(
+      bindFrame,
+    )
+  )
+    return guess;
+  const g =
+    hullMiss(
+      guess,
+      posedBones,
+      hullMin,
+      hullMax,
+    );
+  const b =
+    hullMiss(
+      bindFrame,
+      posedBones,
+      hullMin,
+      hullMax,
+    );
+  return g -
+    b >
+    1 &&
+    b <
+      g *
+        0.5
+    ? bindFrame
+    : guess;
 }
 
-function quatMatrix(q: ArrayLike<number>): number[] {
-  const [x, y, z, w] = [q[0], q[1], q[2], q[3]];
+function quatMatrix(
+  q: ArrayLike<number>,
+): number[] {
+  const [
+    x,
+    y,
+    z,
+    w,
+  ] =
+    [
+      q[0],
+      q[1],
+      q[2],
+      q[3],
+    ];
   return [
-    1 - 2 * (y * y + z * z),
-    2 * (x * y - w * z),
-    2 * (x * z + w * y),
-    2 * (x * y + w * z),
-    1 - 2 * (x * x + z * z),
-    2 * (y * z - w * x),
-    2 * (x * z - w * y),
-    2 * (y * z + w * x),
-    1 - 2 * (x * x + y * y),
+    1 -
+      2 *
+        (y *
+          y +
+          z *
+            z),
+    2 *
+      (x *
+        y -
+        w *
+          z),
+    2 *
+      (x *
+        z +
+        w *
+          y),
+    2 *
+      (x *
+        y +
+        w *
+          z),
+    1 -
+      2 *
+        (x *
+          x +
+          z *
+            z),
+    2 *
+      (y *
+        z -
+        w *
+          x),
+    2 *
+      (x *
+        z -
+        w *
+          y),
+    2 *
+      (y *
+        z +
+        w *
+          x),
+    1 -
+      2 *
+        (x *
+          x +
+          y *
+            y),
   ];
 }

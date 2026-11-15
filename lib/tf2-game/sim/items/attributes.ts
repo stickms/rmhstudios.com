@@ -24,7 +24,10 @@
  * Environment-agnostic and allocation-free per hook.
  */
 
-import type { AttributeOp, CatalogAttribute } from '../../../tf2-loadout/catalog-types';
+import type {
+  AttributeOp,
+  CatalogAttribute,
+} from '../../../tf2-loadout/catalog-types';
 
 export interface ItemAttribute {
   readonly cls: string;
@@ -33,16 +36,31 @@ export interface ItemAttribute {
 }
 
 /** SDK: attribute_manager.cpp ApplyAttribute. */
-export function applyAttributeOp(value: number, op: AttributeOp, mod: number): number {
-  switch (op) {
+export function applyAttributeOp(
+  value: number,
+  op: AttributeOp,
+  mod: number,
+): number {
+  switch (
+    op
+  ) {
     case 0:
-      return value * mod;
+      return (
+        value *
+        mod
+      );
     case 1:
-      return value + mod;
+      return (
+        value +
+        mod
+      );
     case 2:
       return mod;
     case 3:
-      return value | mod;
+      return (
+        value |
+        mod
+      );
     default:
       return value;
   }
@@ -50,8 +68,15 @@ export function applyAttributeOp(value: number, op: AttributeOp, mod: number): n
 
 /** One item's attributes, indexed by class. Immutable. */
 export class AttributeSet {
-  static readonly EMPTY = new AttributeSet([]);
-  private readonly byClass = new Map<string, ItemAttribute[]>();
+  static readonly EMPTY =
+    new AttributeSet(
+      [],
+    );
+  private readonly byClass =
+    new Map<
+      string,
+      ItemAttribute[]
+    >();
   /** Attribute classes whose value is a string (custom_projectile_model …): kept for reporting only. */
   readonly textClasses: readonly string[];
   readonly all: readonly ItemAttribute[];
@@ -60,49 +85,132 @@ export class AttributeSet {
   readonly defindex: number;
 
   constructor(
-    attrs: readonly CatalogAttribute[] | readonly ItemAttribute[],
-    item: { itemClass?: string; defindex?: number } = {},
+    attrs:
+      | readonly CatalogAttribute[]
+      | readonly ItemAttribute[],
+    item: {
+      itemClass?: string;
+      defindex?: number;
+    } = {},
   ) {
-    this.itemClass = item.itemClass ?? '';
-    this.defindex = item.defindex ?? -1;
-    const list: ItemAttribute[] = [];
-    const text: string[] = [];
+    this.itemClass =
+      item.itemClass ??
+      '';
+    this.defindex =
+      item.defindex ??
+      -1;
+    const list: ItemAttribute[] =
+      [];
+    const text: string[] =
+      [];
     for (const a of attrs) {
-      const item: ItemAttribute | null = Array.isArray(a)
-        ? typeof a[1] === 'number'
-          ? { cls: a[0], value: a[1], op: a[2] }
-          : (text.push(a[0]), null)
-        : (a as ItemAttribute);
-      if (!item) continue;
-      list.push(item);
-      const cur = this.byClass.get(item.cls);
-      if (cur) cur.push(item);
-      else this.byClass.set(item.cls, [item]);
+      const item: ItemAttribute | null =
+        Array.isArray(
+          a,
+        )
+          ? typeof a[1] ===
+            'number'
+            ? {
+                cls: a[0],
+                value:
+                  a[1],
+                op: a[2],
+              }
+            : (text.push(
+                a[0],
+              ),
+              null)
+          : (a as ItemAttribute);
+      if (
+        !item
+      )
+        continue;
+      list.push(
+        item,
+      );
+      const cur =
+        this.byClass.get(
+          item.cls,
+        );
+      if (
+        cur
+      )
+        cur.push(
+          item,
+        );
+      else
+        this.byClass.set(
+          item.cls,
+          [
+            item,
+          ],
+        );
     }
-    this.all = list;
-    this.textClasses = text;
+    this.all =
+      list;
+    this.textClasses =
+      text;
   }
 
   get size(): number {
-    return this.all.length;
+    return this
+      .all
+      .length;
   }
 
-  has(cls: string): boolean {
-    return this.byClass.has(cls);
+  has(
+    cls: string,
+  ): boolean {
+    return this.byClass.has(
+      cls,
+    );
   }
 
   /** Applies this set's attributes of `cls` to `value`, in schema order. */
-  apply(cls: string, value: number): number {
-    const list = this.byClass.get(cls);
-    if (!list) return value;
-    for (let i = 0; i < list.length; i++)
-      value = applyAttributeOp(value, list[i].op, list[i].value);
+  apply(
+    cls: string,
+    value: number,
+  ): number {
+    const list =
+      this.byClass.get(
+        cls,
+      );
+    if (
+      !list
+    )
+      return value;
+    for (
+      let i = 0;
+      i <
+      list.length;
+      i++
+    )
+      value =
+        applyAttributeOp(
+          value,
+          list[
+            i
+          ]
+            .op,
+          list[
+            i
+          ]
+            .value,
+        );
     return value;
   }
 
   /** Every attribute class present (numeric and text). */
   classes(): string[] {
-    return [...new Set([...this.byClass.keys(), ...this.textClasses])];
+    return [
+      ...new Set(
+        [
+          ...this.byClass.keys(),
+          ...this
+            .textClasses,
+        ],
+      ),
+    ];
   }
 }
 
@@ -121,22 +229,85 @@ export interface AttributeOwner {
   readonly activeSlot: number;
 }
 
-const carrierOf = (w: unknown): (AttributeCarrier & { attributes: AttributeSet }) | null => {
-  const a = (w as AttributeCarrier | null)?.attributes;
-  return a instanceof AttributeSet ? (w as AttributeCarrier & { attributes: AttributeSet }) : null;
-};
+const carrierOf =
+  (
+    w: unknown,
+  ):
+    | (AttributeCarrier & {
+        attributes: AttributeSet;
+      })
+    | null => {
+    const a =
+      (
+        w as AttributeCarrier | null
+      )
+        ?.attributes;
+    return a instanceof
+      AttributeSet
+      ? (w as AttributeCarrier & {
+          attributes: AttributeSet;
+        })
+      : null;
+  };
 
 /** CALL_ATTRIB_HOOK_FLOAT_ON_OTHER(player, value, cls). */
-export function hookPlayer(owner: AttributeOwner | null, cls: string, value: number): number {
-  if (!owner) return value;
-  const worn = owner.wornAttributes;
-  for (let i = 0; i < worn.length; i++) value = worn[i].apply(cls, value);
-  const weapons = owner.weapons;
-  for (let i = 0; i < weapons.length; i++) {
-    const c = carrierOf(weapons[i]);
-    if (!c || c.attributes.size === 0) continue;
-    if (c.provideOnActive && i !== owner.activeSlot) continue;
-    value = c.attributes.apply(cls, value);
+export function hookPlayer(
+  owner: AttributeOwner | null,
+  cls: string,
+  value: number,
+): number {
+  if (
+    !owner
+  )
+    return value;
+  const worn =
+    owner.wornAttributes;
+  for (
+    let i = 0;
+    i <
+    worn.length;
+    i++
+  )
+    value =
+      worn[
+        i
+      ].apply(
+        cls,
+        value,
+      );
+  const weapons =
+    owner.weapons;
+  for (
+    let i = 0;
+    i <
+    weapons.length;
+    i++
+  ) {
+    const c =
+      carrierOf(
+        weapons[
+          i
+        ],
+      );
+    if (
+      !c ||
+      c
+        .attributes
+        .size ===
+        0
+    )
+      continue;
+    if (
+      c.provideOnActive &&
+      i !==
+        owner.activeSlot
+    )
+      continue;
+    value =
+      c.attributes.apply(
+        cls,
+        value,
+      );
   }
   return value;
 }
@@ -151,11 +322,36 @@ export function hookWeapon(
   cls: string,
   value: number,
 ): number {
-  const c = carrierOf(weapon);
-  if (c) value = c.attributes.apply(cls, value);
-  if (owner) {
-    const worn = owner.wornAttributes;
-    for (let i = 0; i < worn.length; i++) value = worn[i].apply(cls, value);
+  const c =
+    carrierOf(
+      weapon,
+    );
+  if (
+    c
+  )
+    value =
+      c.attributes.apply(
+        cls,
+        value,
+      );
+  if (
+    owner
+  ) {
+    const worn =
+      owner.wornAttributes;
+    for (
+      let i = 0;
+      i <
+      worn.length;
+      i++
+    )
+      value =
+        worn[
+          i
+        ].apply(
+          cls,
+          value,
+        );
   }
   return value;
 }
@@ -164,8 +360,24 @@ export function hookWeapon(
  * CALL_ATTRIB_HOOK_INT: the float result rounded to the nearest integer (RoundFloatToInt →
  * _mm_cvtss_si32 on a float: halves go to the even neighbour, so the Huntsman's 25 × 0.5 is 12).
  */
-export function hookInt(value: number): number {
-  const f = Math.fround(value);
-  const r = Math.round(f);
-  return r - f === 0.5 && (r & 1) !== 0 ? r - 1 : r;
+export function hookInt(
+  value: number,
+): number {
+  const f =
+    Math.fround(
+      value,
+    );
+  const r =
+    Math.round(
+      f,
+    );
+  return r -
+    f ===
+    0.5 &&
+    (r &
+      1) !==
+      0
+    ? r -
+        1
+    : r;
 }

@@ -27,8 +27,10 @@
 import { vi } from 'vitest';
 
 /** Article titles the fixtures agree on, so a mocked race can actually finish. */
-export const START_ARTICLE = 'Start_Article';
-export const TARGET_ARTICLE = 'Target_Article';
+export const START_ARTICLE =
+  'Start_Article';
+export const TARGET_ARTICLE =
+  'Target_Article';
 
 /**
  * `wikipedia-proxy` with no network: an in-memory cache and a fixed article
@@ -36,45 +38,106 @@ export const TARGET_ARTICLE = 'Target_Article';
  */
 export function wikipediaProxyMock() {
   return {
-    createArticleCache: () => {
-      const cache = new Map<string, unknown>();
-      return {
-        get: (key: string) => cache.get(key),
-        set: (key: string, val: unknown) => cache.set(key, val),
-        has: (key: string) => cache.has(key),
-        delete: (key: string) => cache.delete(key),
-        clear: () => cache.clear(),
-        size: cache.size,
-      };
-    },
-    fetchArticle: vi.fn().mockResolvedValue({
-      title: 'Mock_Article',
-      sanitizedHtml: `<p>Mock article content. <a data-wiki-target="${TARGET_ARTICLE}">Link</a></p>`,
-      links: new Set([TARGET_ARTICLE, 'Other_Article', 'Another_Article']),
-    }),
+    createArticleCache:
+      () => {
+        const cache =
+          new Map<
+            string,
+            unknown
+          >();
+        return {
+          get: (
+            key: string,
+          ) =>
+            cache.get(
+              key,
+            ),
+          set: (
+            key: string,
+            val: unknown,
+          ) =>
+            cache.set(
+              key,
+              val,
+            ),
+          has: (
+            key: string,
+          ) =>
+            cache.has(
+              key,
+            ),
+          delete:
+            (
+              key: string,
+            ) =>
+              cache.delete(
+                key,
+              ),
+          clear:
+            () =>
+              cache.clear(),
+          size: cache.size,
+        };
+      },
+    fetchArticle:
+      vi
+        .fn()
+        .mockResolvedValue(
+          {
+            title:
+              'Mock_Article',
+            sanitizedHtml: `<p>Mock article content. <a data-wiki-target="${TARGET_ARTICLE}">Link</a></p>`,
+            links:
+              new Set(
+                [
+                  TARGET_ARTICLE,
+                  'Other_Article',
+                  'Another_Article',
+                ],
+              ),
+          },
+        ),
   };
 }
 
 /** `data-loader` with one deterministic start/target pair. */
 export function dataLoaderMock() {
   return {
-    selectArticlePair: () => ({
-      id: 'test-pair-001',
-      startArticle: {
-        title: START_ARTICLE,
-        url: `https://en.wikipedia.org/wiki/${START_ARTICLE}`,
-        description: 'The starting article for this race',
-      },
-      targetArticle: {
-        title: TARGET_ARTICLE,
-        url: `https://en.wikipedia.org/wiki/${TARGET_ARTICLE}`,
-        description: 'The target article to reach',
-      },
-      optimalPathLength: 4,
-      difficulty: 'medium' as const,
-      tags: ['test'],
-    }),
-    pairKey: (pair: { startArticle: { title: string }; targetArticle: { title: string } }) =>
-      `${pair.startArticle.title}::${pair.targetArticle.title}`,
+    selectArticlePair:
+      () => ({
+        id: 'test-pair-001',
+        startArticle:
+          {
+            title:
+              START_ARTICLE,
+            url: `https://en.wikipedia.org/wiki/${START_ARTICLE}`,
+            description:
+              'The starting article for this race',
+          },
+        targetArticle:
+          {
+            title:
+              TARGET_ARTICLE,
+            url: `https://en.wikipedia.org/wiki/${TARGET_ARTICLE}`,
+            description:
+              'The target article to reach',
+          },
+        optimalPathLength: 4,
+        difficulty:
+          'medium' as const,
+        tags: [
+          'test',
+        ],
+      }),
+    pairKey:
+      (pair: {
+        startArticle: {
+          title: string;
+        };
+        targetArticle: {
+          title: string;
+        };
+      }) =>
+        `${pair.startArticle.title}::${pair.targetArticle.title}`,
   };
 }

@@ -2,7 +2,7 @@
  * GalleryCarousel — Grid display of gallery drawings with SVG stroke rendering.
  */
 
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
 import DrawingCard from './DrawingCard';
 import type { MMStroke } from './DrawingCard';
 
@@ -17,24 +17,54 @@ interface GalleryCarouselProps {
   drawings: GalleryDrawing[];
 }
 
-export default function GalleryCarousel({ drawings }: GalleryCarouselProps) {
-  const { t } = useTranslation("c-rmhbox");
-  if (drawings.length === 0) {
+export default function GalleryCarousel({
+  drawings,
+}: GalleryCarouselProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  if (
+    drawings.length ===
+    0
+  ) {
     return (
-      <p className="text-sm text-app-text-muted">{t("no-drawings-to-display", { defaultValue: "No drawings to display." })}</p>
+      <p className="text-sm text-app-text-muted">
+        {t(
+          'no-drawings-to-display',
+          {
+            defaultValue:
+              'No drawings to display.',
+          },
+        )}
+      </p>
     );
   }
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg">
-      {drawings.map((drawing) => (
-        <DrawingCard
-          key={drawing.drawingId}
-          strokes={drawing.strokes}
-          backgroundColor={drawing.backgroundColor}
-          label={drawing.label}
-        />
-      ))}
+      {drawings.map(
+        (
+          drawing,
+        ) => (
+          <DrawingCard
+            key={
+              drawing.drawingId
+            }
+            strokes={
+              drawing.strokes
+            }
+            backgroundColor={
+              drawing.backgroundColor
+            }
+            label={
+              drawing.label
+            }
+          />
+        ),
+      )}
     </div>
   );
 }

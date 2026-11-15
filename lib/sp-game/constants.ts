@@ -10,7 +10,9 @@
 
 import type { MoveParams } from '../tf2-game/sim/movement-types';
 
-export type SpGame = 'hl2' | 'portal';
+export type SpGame =
+  | 'hl2'
+  | 'portal';
 
 /** sv_gravity in Half-Life 2 and Portal. */
 export const SP_GRAVITY = 600;
@@ -43,57 +45,105 @@ export const PLAYER_MAX_SAFE_FALL_SPEED = 526.5;
 export const PLAYER_MIN_BOUNCE_SPEED = 173;
 export const PLAYER_FALL_PUNCH_THRESHOLD = 303;
 /** DAMAGE_FOR_FALL_SPEED: damage per unit/s past the safe speed (CSingleplayRules::FlPlayerFallDamage). */
-export const DAMAGE_FOR_FALL_SPEED = 100 / (PLAYER_FATAL_FALL_SPEED - PLAYER_MAX_SAFE_FALL_SPEED);
+export const DAMAGE_FOR_FALL_SPEED =
+  100 /
+  (PLAYER_FATAL_FALL_SPEED -
+    PLAYER_MAX_SAFE_FALL_SPEED);
 
 /** g_DefaultViewVectors (gamerules.cpp). */
 export const HL2_VIEW_Z = 64;
-export const HL2_HULL_MIN = Object.freeze({ x: -16, y: -16, z: 0 });
-export const HL2_HULL_MAX = Object.freeze({ x: 16, y: 16, z: 72 });
-export const HL2_DUCK_HULL_MIN = Object.freeze({ x: -16, y: -16, z: 0 });
-export const HL2_DUCK_HULL_MAX = Object.freeze({ x: 16, y: 16, z: 36 });
+export const HL2_HULL_MIN =
+  Object.freeze(
+    {
+      x: -16,
+      y: -16,
+      z: 0,
+    },
+  );
+export const HL2_HULL_MAX =
+  Object.freeze(
+    {
+      x: 16,
+      y: 16,
+      z: 72,
+    },
+  );
+export const HL2_DUCK_HULL_MIN =
+  Object.freeze(
+    {
+      x: -16,
+      y: -16,
+      z: 0,
+    },
+  );
+export const HL2_DUCK_HULL_MAX =
+  Object.freeze(
+    {
+      x: 16,
+      y: 16,
+      z: 36,
+    },
+  );
 export const HL2_DUCK_VIEW_Z = 28;
 export const HL2_DEAD_VIEW_Z = 14;
 
 /** Movement for Half-Life 2 single player. */
-export const HL2_MOVE_PARAMS: Readonly<MoveParams> = Object.freeze({
-  gravity: SP_GRAVITY,
-  sv_friction: 4,
-  sv_stopspeed: 100,
-  sv_accelerate: 10,
-  sv_airaccelerate: 10,
-  sv_maxvelocity: 3500,
-  sv_stepsize: 18,
-  /** sv_maxspeed. */
-  maxSpeedCap: 320,
-  jumpImpulse: HL2_JUMP_IMPULSE,
-  hullMin: HL2_HULL_MIN,
-  hullMax: HL2_HULL_MAX,
-  duckHullMin: HL2_DUCK_HULL_MIN,
-  duckHullMax: HL2_DUCK_HULL_MAX,
-  duckViewZ: HL2_DUCK_VIEW_Z,
-  viewZ: HL2_VIEW_Z,
-  /** shareddefs.h, non-TF build. */
-  timeToDuck: 0.4,
-  timeToUnduck: 0.2,
-  maxSafeFallSpeed: PLAYER_MAX_SAFE_FALL_SPEED,
-  minBounceSpeed: PLAYER_MIN_BOUNCE_SPEED,
-  fallPunchThreshold: PLAYER_FALL_PUNCH_THRESHOLD,
-  /** CGameMovement::CheckWaterJump. */
-  waterJumpForward: 24,
-  waterJumpUp: 256,
-  tfRules: false,
-  hl2JumpBoost: true,
-});
+export const HL2_MOVE_PARAMS: Readonly<MoveParams> =
+  Object.freeze(
+    {
+      gravity:
+        SP_GRAVITY,
+      sv_friction: 4,
+      sv_stopspeed: 100,
+      sv_accelerate: 10,
+      sv_airaccelerate: 10,
+      sv_maxvelocity: 3500,
+      sv_stepsize: 18,
+      /** sv_maxspeed. */
+      maxSpeedCap: 320,
+      jumpImpulse:
+        HL2_JUMP_IMPULSE,
+      hullMin:
+        HL2_HULL_MIN,
+      hullMax:
+        HL2_HULL_MAX,
+      duckHullMin:
+        HL2_DUCK_HULL_MIN,
+      duckHullMax:
+        HL2_DUCK_HULL_MAX,
+      duckViewZ:
+        HL2_DUCK_VIEW_Z,
+      viewZ:
+        HL2_VIEW_Z,
+      /** shareddefs.h, non-TF build. */
+      timeToDuck: 0.4,
+      timeToUnduck: 0.2,
+      maxSafeFallSpeed:
+        PLAYER_MAX_SAFE_FALL_SPEED,
+      minBounceSpeed:
+        PLAYER_MIN_BOUNCE_SPEED,
+      fallPunchThreshold:
+        PLAYER_FALL_PUNCH_THRESHOLD,
+      /** CGameMovement::CheckWaterJump. */
+      waterJumpForward: 24,
+      waterJumpUp: 256,
+      tfRules: false,
+      hl2JumpBoost: true,
+    },
+  );
 
 /**
  * Portal moves like Half-Life 2 (same engine branch, same convars) without the
  * single-player jump boost — documented community behaviour is that Portal
  * removed the accelerated back-hop.
  */
-export const PORTAL_MOVE_PARAMS: Readonly<MoveParams> = Object.freeze({
-  ...HL2_MOVE_PARAMS,
-  hl2JumpBoost: false,
-});
+export const PORTAL_MOVE_PARAMS: Readonly<MoveParams> =
+  Object.freeze(
+    {
+      ...HL2_MOVE_PARAMS,
+      hl2JumpBoost: false,
+    },
+  );
 
 /** Suit power (hl2_player.cpp): drains per second and the recharge rate. */
 export const SUITPOWER_CHARGE_RATE = 12.5;
@@ -117,17 +167,39 @@ export const PLAYER_USE_RANGE = 80;
 
 /** Damage types (shareddefs.h DMG_*), the subset these maps use. */
 export const DMG_GENERIC = 0;
-export const DMG_CRUSH = 1 << 0;
-export const DMG_BULLET = 1 << 1;
-export const DMG_SLASH = 1 << 2;
-export const DMG_BURN = 1 << 3;
-export const DMG_FALL = 1 << 5;
-export const DMG_BLAST = 1 << 6;
-export const DMG_CLUB = 1 << 7;
-export const DMG_SHOCK = 1 << 8;
-export const DMG_DROWN = 1 << 14;
-export const DMG_RADIATION = 1 << 18;
-export const DMG_DISSOLVE = 1 << 20;
+export const DMG_CRUSH =
+  1 <<
+  0;
+export const DMG_BULLET =
+  1 <<
+  1;
+export const DMG_SLASH =
+  1 <<
+  2;
+export const DMG_BURN =
+  1 <<
+  3;
+export const DMG_FALL =
+  1 <<
+  5;
+export const DMG_BLAST =
+  1 <<
+  6;
+export const DMG_CLUB =
+  1 <<
+  7;
+export const DMG_SHOCK =
+  1 <<
+  8;
+export const DMG_DROWN =
+  1 <<
+  14;
+export const DMG_RADIATION =
+  1 <<
+  18;
+export const DMG_DISSOLVE =
+  1 <<
+  20;
 
 /** The player's entity id (slot 1, like a listen server's first client). */
 export const PLAYER_ENTITY_ID = 1;

@@ -34,7 +34,12 @@ import {
   PARTY_ROOM_GRACE_MS,
   type PartyMember,
 } from './party-contract';
-import { DEFAULT_BANDS, estimateWaitMs, pickGroup, type Band } from '../../lib/matchmaking/bands';
+import {
+  DEFAULT_BANDS,
+  estimateWaitMs,
+  pickGroup,
+  type Band,
+} from '../../lib/matchmaking/bands';
 
 /** How often each non-empty queue tries to form a match. */
 const TICK_MS = 2_000;
@@ -54,9 +59,14 @@ export interface QueueEntry {
 }
 
 interface GameQueue {
-  entries: Map<string, QueueEntry>;
+  entries: Map<
+    string,
+    QueueEntry
+  >;
   recentWaits: number[];
-  timer: ReturnType<typeof setInterval> | null;
+  timer: ReturnType<
+    typeof setInterval
+  > | null;
   /**
    * A tick is awaiting createRoomForParty. A second interval tick used to run
    * concurrently, see the (temporarily) empty queue and stopTicking — so the
@@ -72,45 +82,104 @@ export interface QueueConfig {
   bands: readonly Band[];
 }
 
-const QUEUE_CONFIG: Record<string, Partial<QueueConfig>> = {
+const QUEUE_CONFIG: Record<
+  string,
+  Partial<QueueConfig>
+> = {
   // A four-seat brawler: two is a match, four is a better one. Patient, because
   // a bad round is thirty seconds.
-  'kowloon-knockout': { minPlayers: 2, maxPlayers: 4 },
+  'kowloon-knockout':
+    {
+      minPlayers: 2,
+      maxPlayers: 4,
+    },
   // A table game. Two can play, but an empty table is what kills it, so the
   // bands open faster than the default.
-  holdem: {
-    minPlayers: 2,
-    maxPlayers: 6,
-    bands: [
-      { afterMs: 0, spread: 200 },
-      { afterMs: 10_000, spread: 500 },
-      { afterMs: 30_000, spread: null },
-    ],
-  },
-  'synapse-storm': { minPlayers: 2, maxPlayers: 8 },
-  'laundry-sort': { minPlayers: 2, maxPlayers: 8 },
-  "gabriels-horn": { minPlayers: 2, maxPlayers: 6 },
+  holdem:
+    {
+      minPlayers: 2,
+      maxPlayers: 6,
+      bands:
+        [
+          {
+            afterMs: 0,
+            spread: 200,
+          },
+          {
+            afterMs: 10_000,
+            spread: 500,
+          },
+          {
+            afterMs: 30_000,
+            spread:
+              null,
+          },
+        ],
+    },
+  'synapse-storm':
+    {
+      minPlayers: 2,
+      maxPlayers: 8,
+    },
+  'laundry-sort':
+    {
+      minPlayers: 2,
+      maxPlayers: 8,
+    },
+  'gabriels-horn':
+    {
+      minPlayers: 2,
+      maxPlayers: 6,
+    },
 };
 
-function configFor(game: string): QueueConfig {
-  const impl = partyGames.get(game);
-  const override = QUEUE_CONFIG[game] ?? {};
+function configFor(
+  game: string,
+): QueueConfig {
+  const impl =
+    partyGames.get(
+      game,
+    );
+  const override =
+    QUEUE_CONFIG[
+      game
+    ] ??
+    {};
   return {
-    minPlayers: override.minPlayers ?? 2,
-    maxPlayers: override.maxPlayers ?? impl?.maxPartySize ?? 2,
-    bands: override.bands ?? DEFAULT_BANDS,
+    minPlayers:
+      override.minPlayers ??
+      2,
+    maxPlayers:
+      override.maxPlayers ??
+      impl?.maxPartySize ??
+      2,
+    bands:
+      override.bands ??
+      DEFAULT_BANDS,
   };
 }
 
-const queues = new Map<string, GameQueue>();
+const queues =
+  new Map<
+    string,
+    GameQueue
+  >();
 /** Which queue a key is in, so LEAVE and disconnect do not have to search. */
-const keyToGame = new Map<string, string>();
+const keyToGame =
+  new Map<
+    string,
+    string
+  >();
 /**
  * Keys taken out of a queue for a match whose room is still being created,
  * key -> game. LEAVE during that await deletes the key here, so a failed room
  * creation does not resurrect someone who already left.
  */
-const inFlight = new Map<string, string>();
+const inFlight =
+  new Map<
+    string,
+    string
+  >();
 
 /**
  * perf: socketId -> queue keys it was added under, so a disconnect looks up its
@@ -118,28 +187,70 @@ const inFlight = new Map<string, string>();
  * whose entry has since been matched or left; dropSocket re-checks the live
  * entry, and the whole row is deleted when the socket disconnects.
  */
-const socketToKeys = new Map<string, Set<string>>();
+const socketToKeys =
+  new Map<
+    string,
+    Set<string>
+  >();
 
-function indexSockets(key: string, socketIds: Iterable<string>): void {
+function indexSockets(
+  key: string,
+  socketIds: Iterable<string>,
+): void {
   for (const id of socketIds) {
-    let keys = socketToKeys.get(id);
-    if (!keys) socketToKeys.set(id, (keys = new Set()));
-    keys.add(key);
+    let keys =
+      socketToKeys.get(
+        id,
+      );
+    if (
+      !keys
+    )
+      socketToKeys.set(
+        id,
+        (keys =
+          new Set()),
+      );
+    keys.add(
+      key,
+    );
   }
 }
 
-function queueFor(game: string): GameQueue {
-  let q = queues.get(game);
-  if (!q) {
-    q = { entries: new Map(), recentWaits: [], timer: null, ticking: false };
-    queues.set(game, q);
+function queueFor(
+  game: string,
+): GameQueue {
+  let q =
+    queues.get(
+      game,
+    );
+  if (
+    !q
+  ) {
+    q =
+      {
+        entries:
+          new Map(),
+        recentWaits:
+          [],
+        timer:
+          null,
+        ticking: false,
+      };
+    queues.set(
+      game,
+      q,
+    );
   }
   return q;
 }
 
 /** Is this game queueable at all? Only a party-enabled game can be. */
-export function isQueueable(game: string): boolean {
-  return partyGames.has(game);
+export function isQueueable(
+  game: string,
+): boolean {
+  return partyGames.has(
+    game,
+  );
 }
 
 export interface QueueState {
@@ -149,42 +260,147 @@ export interface QueueState {
   /** People searching, counting party members individually. */
   searching: number;
   /** Median recent wait, or null when there is not enough history to say. */
-  estimateMs: number | null;
+  estimateMs:
+    | number
+    | null;
   /** Current rating spread, or null once the search accepts anyone. */
-  spread: number | null;
+  spread:
+    | number
+    | null;
 }
 
-export function stateFor(game: string, key: string, now = Date.now()): QueueState | null {
-  const q = queues.get(game);
-  const entry = q?.entries.get(key);
-  if (!q || !entry) return null;
+export function stateFor(
+  game: string,
+  key: string,
+  now = Date.now(),
+): QueueState | null {
+  const q =
+    queues.get(
+      game,
+    );
+  const entry =
+    q?.entries.get(
+      key,
+    );
+  if (
+    !q ||
+    !entry
+  )
+    return null;
 
-  const byWait = [...q.entries.values()].sort((a, b) => a.joinedAt - b.joinedAt);
-  const cfg = configFor(game);
-  const waited = now - entry.joinedAt;
-  let spread: number | null = cfg.bands[0]?.spread ?? null;
-  for (const b of cfg.bands) if (waited >= b.afterMs) spread = b.spread;
+  const byWait =
+    [
+      ...q.entries.values(),
+    ].sort(
+      (
+        a,
+        b,
+      ) =>
+        a.joinedAt -
+        b.joinedAt,
+    );
+  const cfg =
+    configFor(
+      game,
+    );
+  const waited =
+    now -
+    entry.joinedAt;
+  let spread:
+    | number
+    | null =
+    cfg
+      .bands[0]
+      ?.spread ??
+    null;
+  for (const b of cfg.bands)
+    if (
+      waited >=
+      b.afterMs
+    )
+      spread =
+        b.spread;
 
   return {
     game,
-    position: byWait.findIndex((e) => e.key === key),
-    searching: [...q.entries.values()].reduce((n, e) => n + e.members.length, 0),
-    estimateMs: estimateWaitMs(q.recentWaits),
+    position:
+      byWait.findIndex(
+        (
+          e,
+        ) =>
+          e.key ===
+          key,
+      ),
+    searching:
+      [
+        ...q.entries.values(),
+      ].reduce(
+        (
+          n,
+          e,
+        ) =>
+          n +
+          e
+            .members
+            .length,
+        0,
+      ),
+    estimateMs:
+      estimateWaitMs(
+        q.recentWaits,
+      ),
     spread,
   };
 }
 
 /** Queue stats for a game nobody has joined yet — what PEEK answers. */
-export function statsFor(game: string): { searching: number; estimateMs: number | null } {
-  const q = queues.get(game);
-  if (!q) return { searching: 0, estimateMs: null };
+export function statsFor(
+  game: string,
+): {
+  searching: number;
+  estimateMs:
+    | number
+    | null;
+} {
+  const q =
+    queues.get(
+      game,
+    );
+  if (
+    !q
+  )
+    return {
+      searching: 0,
+      estimateMs:
+        null,
+    };
   return {
-    searching: [...q.entries.values()].reduce((n, e) => n + e.members.length, 0),
-    estimateMs: estimateWaitMs(q.recentWaits),
+    searching:
+      [
+        ...q.entries.values(),
+      ].reduce(
+        (
+          n,
+          e,
+        ) =>
+          n +
+          e
+            .members
+            .length,
+        0,
+      ),
+    estimateMs:
+      estimateWaitMs(
+        q.recentWaits,
+      ),
   };
 }
 
-export type StatePusher = (entry: QueueEntry, state: QueueState) => void;
+export type StatePusher =
+  (
+    entry: QueueEntry,
+    state: QueueState,
+  ) => void;
 /**
  * Called once per MEMBER, not once per entry.
  *
@@ -193,20 +409,28 @@ export type StatePusher = (entry: QueueEntry, state: QueueState) => void;
  * entry and let the transport fan out, which delivered every member N copies of
  * the event — each carrying a different member's ticket.
  */
-export type MatchNotifier = (
-  member: PartyMember,
-  game: string,
-  roomId: string,
-  token: string,
-) => void;
+export type MatchNotifier =
+  (
+    member: PartyMember,
+    game: string,
+    roomId: string,
+    token: string,
+  ) => void;
 
-let pushState: StatePusher = () => {};
-let notifyMatch: MatchNotifier = () => {};
+let pushState: StatePusher =
+  () => {};
+let notifyMatch: MatchNotifier =
+  () => {};
 
 /** Wire the transport once at boot, so this module never imports a socket. */
-export function configureMatchmaking(opts: { pushState: StatePusher; notifyMatch: MatchNotifier }) {
-  pushState = opts.pushState;
-  notifyMatch = opts.notifyMatch;
+export function configureMatchmaking(opts: {
+  pushState: StatePusher;
+  notifyMatch: MatchNotifier;
+}) {
+  pushState =
+    opts.pushState;
+  notifyMatch =
+    opts.notifyMatch;
 }
 
 /**
@@ -223,77 +447,244 @@ export function join(
   members: PartyMember[],
   rating: number,
   socketIds: string[],
-): { ok: true } | { ok: false; reason: string } {
-  if (!isQueueable(game)) return { ok: false, reason: 'not-queueable' };
+):
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      reason: string;
+    } {
+  if (
+    !isQueueable(
+      game,
+    )
+  )
+    return {
+      ok: false,
+      reason:
+        'not-queueable',
+    };
 
-  const cfg = configFor(game);
-  if (members.length > cfg.maxPlayers) return { ok: false, reason: 'party-too-big' };
+  const cfg =
+    configFor(
+      game,
+    );
+  if (
+    members.length >
+    cfg.maxPlayers
+  )
+    return {
+      ok: false,
+      reason:
+        'party-too-big',
+    };
 
-  const existingGame = keyToGame.get(key);
-  if (existingGame && existingGame !== game) leave(key);
-
-  const q = queueFor(game);
-  const existing = q.entries.get(key);
-  if (existing) {
-    for (const id of socketIds) existing.socketIds.add(id);
-  } else {
-    q.entries.set(key, {
+  const existingGame =
+    keyToGame.get(
       key,
-      members,
-      rating,
-      joinedAt: Date.now(),
-      socketIds: new Set(socketIds),
-    });
+    );
+  if (
+    existingGame &&
+    existingGame !==
+      game
+  )
+    leave(
+      key,
+    );
+
+  const q =
+    queueFor(
+      game,
+    );
+  const existing =
+    q.entries.get(
+      key,
+    );
+  if (
+    existing
+  ) {
+    for (const id of socketIds)
+      existing.socketIds.add(
+        id,
+      );
+  } else {
+    q.entries.set(
+      key,
+      {
+        key,
+        members,
+        rating,
+        joinedAt:
+          Date.now(),
+        socketIds:
+          new Set(
+            socketIds,
+          ),
+      },
+    );
   }
-  keyToGame.set(key, game);
-  indexSockets(key, socketIds);
-  ensureTicking(game);
-  return { ok: true };
+  keyToGame.set(
+    key,
+    game,
+  );
+  indexSockets(
+    key,
+    socketIds,
+  );
+  ensureTicking(
+    game,
+  );
+  return {
+    ok: true,
+  };
 }
 
 /** Leave whatever queue this key is in. Idempotent. */
-export function leave(key: string): void {
-  inFlight.delete(key);
-  const game = keyToGame.get(key);
-  if (!game) return;
-  keyToGame.delete(key);
-  const q = queues.get(game);
-  if (!q) return;
-  q.entries.delete(key);
-  if (q.entries.size === 0) stopTicking(game);
+export function leave(
+  key: string,
+): void {
+  inFlight.delete(
+    key,
+  );
+  const game =
+    keyToGame.get(
+      key,
+    );
+  if (
+    !game
+  )
+    return;
+  keyToGame.delete(
+    key,
+  );
+  const q =
+    queues.get(
+      game,
+    );
+  if (
+    !q
+  )
+    return;
+  q.entries.delete(
+    key,
+  );
+  if (
+    q
+      .entries
+      .size ===
+    0
+  )
+    stopTicking(
+      game,
+    );
 }
 
 /** Drop a socket from every entry; drop the entry when it has none left. */
-export function dropSocket(socketId: string): void {
-  const keys = socketToKeys.get(socketId);
-  if (!keys) return;
-  socketToKeys.delete(socketId);
+export function dropSocket(
+  socketId: string,
+): void {
+  const keys =
+    socketToKeys.get(
+      socketId,
+    );
+  if (
+    !keys
+  )
+    return;
+  socketToKeys.delete(
+    socketId,
+  );
   for (const key of keys) {
-    const game = keyToGame.get(key);
-    const q = game ? queues.get(game) : undefined;
-    const entry = q?.entries.get(key);
-    if (!game || !q || !entry) continue;
-    if (!entry.socketIds.delete(socketId)) continue;
-    if (entry.socketIds.size === 0) {
-      q.entries.delete(key);
-      keyToGame.delete(key);
+    const game =
+      keyToGame.get(
+        key,
+      );
+    const q =
+      game
+        ? queues.get(
+            game,
+          )
+        : undefined;
+    const entry =
+      q?.entries.get(
+        key,
+      );
+    if (
+      !game ||
+      !q ||
+      !entry
+    )
+      continue;
+    if (
+      !entry.socketIds.delete(
+        socketId,
+      )
+    )
+      continue;
+    if (
+      entry
+        .socketIds
+        .size ===
+      0
+    ) {
+      q.entries.delete(
+        key,
+      );
+      keyToGame.delete(
+        key,
+      );
     }
-    if (q.entries.size === 0) stopTicking(game);
+    if (
+      q
+        .entries
+        .size ===
+      0
+    )
+      stopTicking(
+        game,
+      );
   }
 }
 
-function ensureTicking(game: string): void {
-  const q = queueFor(game);
-  if (q.timer) return;
-  q.timer = setInterval(() => tick(game), TICK_MS);
+function ensureTicking(
+  game: string,
+): void {
+  const q =
+    queueFor(
+      game,
+    );
+  if (
+    q.timer
+  )
+    return;
+  q.timer =
+    setInterval(
+      () =>
+        tick(
+          game,
+        ),
+      TICK_MS,
+    );
   q.timer.unref?.();
 }
 
-function stopTicking(game: string): void {
-  const q = queues.get(game);
-  if (!q?.timer) return;
-  clearInterval(q.timer);
-  q.timer = null;
+function stopTicking(
+  game: string,
+): void {
+  const q =
+    queues.get(
+      game,
+    );
+  if (
+    !q?.timer
+  )
+    return;
+  clearInterval(
+    q.timer,
+  );
+  q.timer =
+    null;
 }
 
 /**
@@ -304,114 +695,346 @@ function stopTicking(game: string): void {
  * would both be assembled against the same pre-match queue, and the second's
  * group could contain an entry the first has already seated.
  */
-async function tick(game: string): Promise<void> {
-  const q = queues.get(game);
+async function tick(
+  game: string,
+): Promise<void> {
+  const q =
+    queues.get(
+      game,
+    );
   // A previous tick is still creating a room: it owns this queue until it
   // finishes (and re-arms or stops the timer itself).
-  if (q?.ticking) return;
-  if (!q || q.entries.size === 0) {
-    stopTicking(game);
+  if (
+    q?.ticking
+  )
+    return;
+  if (
+    !q ||
+    q
+      .entries
+      .size ===
+      0
+  ) {
+    stopTicking(
+      game,
+    );
     return;
   }
 
-  const now = Date.now();
-  const cfg = configFor(game);
-  const candidates = [...q.entries.values()].map((e) => ({
-    entry: e,
-    rating: e.rating,
-    waitedMs: now - e.joinedAt,
-    size: e.members.length,
-  }));
+  const now =
+    Date.now();
+  const cfg =
+    configFor(
+      game,
+    );
+  const candidates =
+    [
+      ...q.entries.values(),
+    ].map(
+      (
+        e,
+      ) => ({
+        entry:
+          e,
+        rating:
+          e.rating,
+        waitedMs:
+          now -
+          e.joinedAt,
+        size: e
+          .members
+          .length,
+      }),
+    );
 
-  const group = pickGroup(candidates, cfg.minPlayers, cfg.maxPlayers, cfg.bands);
-  if (group) {
+  const group =
+    pickGroup(
+      candidates,
+      cfg.minPlayers,
+      cfg.maxPlayers,
+      cfg.bands,
+    );
+  if (
+    group
+  ) {
     // Remove them from the queue BEFORE the await. Room creation is async, and
     // leaving them in means the next tick can seat the same people twice.
     for (const g of group) {
-      q.entries.delete(g.entry.key);
-      keyToGame.delete(g.entry.key);
-      inFlight.set(g.entry.key, game);
+      q.entries.delete(
+        g
+          .entry
+          .key,
+      );
+      keyToGame.delete(
+        g
+          .entry
+          .key,
+      );
+      inFlight.set(
+        g
+          .entry
+          .key,
+        game,
+      );
     }
 
-    const impl = partyGames.get(game);
-    if (impl) {
-      const members = group.flatMap((g) => g.entry.members);
+    const impl =
+      partyGames.get(
+        game,
+      );
+    if (
+      impl
+    ) {
+      const members =
+        group.flatMap(
+          (
+            g,
+          ) =>
+            g
+              .entry
+              .members,
+        );
       q.ticking = true;
       try {
-        const ref = await impl.createRoomForParty(members);
+        const ref =
+          await impl.createRoomForParty(
+            members,
+          );
         for (const g of group) {
-          const waited = now - g.entry.joinedAt;
-          q.recentWaits.push(waited);
-          if (q.recentWaits.length > HISTORY) q.recentWaits.shift();
+          const waited =
+            now -
+            g
+              .entry
+              .joinedAt;
+          q.recentWaits.push(
+            waited,
+          );
+          if (
+            q
+              .recentWaits
+              .length >
+            HISTORY
+          )
+            q.recentWaits.shift();
 
-          for (const m of g.entry.members) {
-            const token = mintPartyTicket({
-              partyId: g.entry.key,
-              userId: m.userId,
-              game,
-              roomId: ref.roomId,
-            });
+          for (const m of g
+            .entry
+            .members) {
+            const token =
+              mintPartyTicket(
+                {
+                  partyId:
+                    g
+                      .entry
+                      .key,
+                  userId:
+                    m.userId,
+                  game,
+                  roomId:
+                    ref.roomId,
+                },
+              );
             // One call per member, carrying that member's own ticket.
-            notifyMatch(m, game, ref.roomId, token);
+            notifyMatch(
+              m,
+              game,
+              ref.roomId,
+              token,
+            );
           }
         }
-        logger.info({ event: 'mm_matched', game, roomId: ref.roomId, groups: group.length });
+        logger.info(
+          {
+            event:
+              'mm_matched',
+            game,
+            roomId:
+              ref.roomId,
+            groups:
+              group.length,
+          },
+        );
 
         // Same reclamation the party system does: a matched group that never
         // arrives must not leave a room behind.
-        if (impl.reapIfEmpty) {
-          const reap = impl.reapIfEmpty.bind(impl);
-          const roomId = ref.roomId;
-          setTimeout(() => {
-            try {
-              reap(roomId);
-            } catch (err) {
-              logger.warn({ event: 'mm_reap_failed', game, roomId, error: String(err) });
-            }
-          }, PARTY_ROOM_GRACE_MS).unref?.();
+        if (
+          impl.reapIfEmpty
+        ) {
+          const reap =
+            impl.reapIfEmpty.bind(
+              impl,
+            );
+          const roomId =
+            ref.roomId;
+          setTimeout(
+            () => {
+              try {
+                reap(
+                  roomId,
+                );
+              } catch (err) {
+                logger.warn(
+                  {
+                    event:
+                      'mm_reap_failed',
+                    game,
+                    roomId,
+                    error:
+                      String(
+                        err,
+                      ),
+                  },
+                );
+              }
+            },
+            PARTY_ROOM_GRACE_MS,
+          ).unref?.();
         }
       } catch (err) {
-        logger.warn({ event: 'mm_room_failed', game, error: String(err) });
+        logger.warn(
+          {
+            event:
+              'mm_room_failed',
+            game,
+            error:
+              String(
+                err,
+              ),
+          },
+        );
         // Put them back rather than dropping them: a game that briefly cannot
         // make a room should cost a couple of seconds, not the whole search.
         // But only who is still searching: not a key that left (or re-joined,
         // here or elsewhere) during the await, and only its sockets that are
         // still connected (dropSocket removes a disconnected socket's row).
         for (const g of group) {
-          const key = g.entry.key;
-          if (inFlight.get(key) !== game) continue;
-          if (q.entries.has(key) || keyToGame.has(key)) continue;
-          for (const id of [...g.entry.socketIds]) {
-            if (!socketToKeys.get(id)?.has(key)) g.entry.socketIds.delete(id);
+          const key =
+            g
+              .entry
+              .key;
+          if (
+            inFlight.get(
+              key,
+            ) !==
+            game
+          )
+            continue;
+          if (
+            q.entries.has(
+              key,
+            ) ||
+            keyToGame.has(
+              key,
+            )
+          )
+            continue;
+          for (const id of [
+            ...g
+              .entry
+              .socketIds,
+          ]) {
+            if (
+              !socketToKeys
+                .get(
+                  id,
+                )
+                ?.has(
+                  key,
+                )
+            )
+              g.entry.socketIds.delete(
+                id,
+              );
           }
-          if (g.entry.socketIds.size === 0) continue;
-          q.entries.set(key, g.entry);
-          keyToGame.set(key, game);
+          if (
+            g
+              .entry
+              .socketIds
+              .size ===
+            0
+          )
+            continue;
+          q.entries.set(
+            key,
+            g.entry,
+          );
+          keyToGame.set(
+            key,
+            game,
+          );
         }
         // A leave/drop during the await may have stopped the timer.
-        if (q.entries.size > 0) ensureTicking(game);
+        if (
+          q
+            .entries
+            .size >
+          0
+        )
+          ensureTicking(
+            game,
+          );
       } finally {
         q.ticking = false;
         for (const g of group) {
-          if (inFlight.get(g.entry.key) === game) inFlight.delete(g.entry.key);
+          if (
+            inFlight.get(
+              g
+                .entry
+                .key,
+            ) ===
+            game
+          )
+            inFlight.delete(
+              g
+                .entry
+                .key,
+            );
         }
       }
     } else {
-      for (const g of group) inFlight.delete(g.entry.key);
+      for (const g of group)
+        inFlight.delete(
+          g
+            .entry
+            .key,
+        );
     }
   }
 
   for (const entry of q.entries.values()) {
-    const state = stateFor(game, entry.key);
-    if (state) pushState(entry, state);
+    const state =
+      stateFor(
+        game,
+        entry.key,
+      );
+    if (
+      state
+    )
+      pushState(
+        entry,
+        state,
+      );
   }
 
-  if (q.entries.size === 0) stopTicking(game);
+  if (
+    q
+      .entries
+      .size ===
+    0
+  )
+    stopTicking(
+      game,
+    );
 }
 
 /** Test seam: drop all state. Never called in production. */
 export function __resetMatchmaking(): void {
-  for (const game of [...queues.keys()]) stopTicking(game);
+  for (const game of [
+    ...queues.keys(),
+  ])
+    stopTicking(
+      game,
+    );
   queues.clear();
   keyToGame.clear();
   socketToKeys.clear();

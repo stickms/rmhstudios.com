@@ -11,7 +11,11 @@
  * `planBudget` is pure; the registry (figure-registry.ts) feeds it positions a few times a second.
  */
 
-export type Tier = 'full' | 'slow' | 'frozen' | 'proc';
+export type Tier =
+  | 'full'
+  | 'slow'
+  | 'frozen'
+  | 'proc';
 
 export interface BudgetEntry {
   id: number;
@@ -34,38 +38,135 @@ export interface BudgetOptions {
   hysteresis: number;
 }
 
-export const DEFAULT_BUDGET: BudgetOptions = { full: 24, slow: 16, models: 48, hysteresis: 4 };
+export const DEFAULT_BUDGET: BudgetOptions =
+  {
+    full: 24,
+    slow: 16,
+    models: 48,
+    hysteresis: 4,
+  };
 
 /** Seconds between mixer updates of a `slow` figure. */
 export const SLOW_STEP_S = 0.1;
 
 export function planBudget(
   entries: readonly BudgetEntry[],
-  prev: ReadonlyMap<number, Tier>,
+  prev: ReadonlyMap<
+    number,
+    Tier
+  >,
   opts: BudgetOptions = DEFAULT_BUDGET,
-): Map<number, Tier> {
-  const ranked = [...entries].sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-    if (a.visible !== b.visible) return a.visible ? -1 : 1;
-    return a.distSq - b.distSq || a.id - b.id;
-  });
-  const out = new Map<number, Tier>();
-  ranked.forEach((e, rank) => {
-    if (e.pinned) {
-      out.set(e.id, 'full');
-      return;
-    }
-    const was = prev.get(e.id);
-    const wasModel = was !== undefined && was !== 'proc';
-    const cut = wasModel ? opts.models + opts.hysteresis : opts.models - opts.hysteresis;
-    if (rank >= Math.max(cut, 0)) {
-      out.set(e.id, 'proc');
-      return;
-    }
-    if (!e.visible) out.set(e.id, 'frozen');
-    else if (rank < opts.full) out.set(e.id, 'full');
-    else if (rank < opts.full + opts.slow) out.set(e.id, 'slow');
-    else out.set(e.id, 'frozen');
-  });
+): Map<
+  number,
+  Tier
+> {
+  const ranked =
+    [
+      ...entries,
+    ].sort(
+      (
+        a,
+        b,
+      ) => {
+        if (
+          a.pinned !==
+          b.pinned
+        )
+          return a.pinned
+            ? -1
+            : 1;
+        if (
+          a.visible !==
+          b.visible
+        )
+          return a.visible
+            ? -1
+            : 1;
+        return (
+          a.distSq -
+            b.distSq ||
+          a.id -
+            b.id
+        );
+      },
+    );
+  const out =
+    new Map<
+      number,
+      Tier
+    >();
+  ranked.forEach(
+    (
+      e,
+      rank,
+    ) => {
+      if (
+        e.pinned
+      ) {
+        out.set(
+          e.id,
+          'full',
+        );
+        return;
+      }
+      const was =
+        prev.get(
+          e.id,
+        );
+      const wasModel =
+        was !==
+          undefined &&
+        was !==
+          'proc';
+      const cut =
+        wasModel
+          ? opts.models +
+            opts.hysteresis
+          : opts.models -
+            opts.hysteresis;
+      if (
+        rank >=
+        Math.max(
+          cut,
+          0,
+        )
+      ) {
+        out.set(
+          e.id,
+          'proc',
+        );
+        return;
+      }
+      if (
+        !e.visible
+      )
+        out.set(
+          e.id,
+          'frozen',
+        );
+      else if (
+        rank <
+        opts.full
+      )
+        out.set(
+          e.id,
+          'full',
+        );
+      else if (
+        rank <
+        opts.full +
+          opts.slow
+      )
+        out.set(
+          e.id,
+          'slow',
+        );
+      else
+        out.set(
+          e.id,
+          'frozen',
+        );
+    },
+  );
   return out;
 }

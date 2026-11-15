@@ -8,10 +8,24 @@ export function SaveNoteSearch({
   onChange,
 }: {
   value: string;
-  onChange: (v: string) => void;
+  onChange: (
+    v: string,
+  ) => void;
 }) {
-  const { t } = useTranslation('f-posts-plus');
-  const label = t('notes-search', { defaultValue: 'Search your notes' });
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-posts-plus',
+    );
+  const label =
+    t(
+      'notes-search',
+      {
+        defaultValue:
+          'Search your notes',
+      },
+    );
   return (
     <div className="relative mb-4">
       <Search
@@ -20,10 +34,25 @@ export function SaveNoteSearch({
       />
       <Input
         type="search"
-        value={value}
-        onChange={(e) => onChange(e.target.value.slice(0, 100))}
-        placeholder={label}
-        aria-label={label}
+        value={
+          value
+        }
+        onChange={(
+          e,
+        ) =>
+          onChange(
+            e.target.value.slice(
+              0,
+              100,
+            ),
+          )
+        }
+        placeholder={
+          label
+        }
+        aria-label={
+          label
+        }
         className="ps-9"
       />
     </div>

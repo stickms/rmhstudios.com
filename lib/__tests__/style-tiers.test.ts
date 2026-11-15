@@ -14,103 +14,421 @@
  * utilities back on every page's critical path — add the line the test prints.
  */
 
-import { describe, it, expect } from 'vitest';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
-import { SITE_SHEET_ROUTES, styleTierFor } from '@/lib/style-tier';
+import {
+  describe,
+  it,
+  expect,
+} from 'vitest';
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+} from 'node:fs';
+import {
+  dirname,
+  join,
+  relative,
+  resolve,
+} from 'node:path';
+import {
+  SITE_SHEET_ROUTES,
+  styleTierFor,
+} from '@/lib/style-tier';
 
-const ROOT = join(__dirname, '..', '..');
-const APP = join(ROOT, 'app');
-const ROUTES = join(APP, 'routes');
-const EXTS = ['.tsx', '.ts', '.mts', '.jsx', '.js', '.mjs'];
+const ROOT =
+  join(
+    __dirname,
+    '..',
+    '..',
+  );
+const APP =
+  join(
+    ROOT,
+    'app',
+  );
+const ROUTES =
+  join(
+    APP,
+    'routes',
+  );
+const EXTS =
+  [
+    '.tsx',
+    '.ts',
+    '.mts',
+    '.jsx',
+    '.js',
+    '.mjs',
+  ];
 
-function walk(dir: string, out: string[] = []): string[] {
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) walk(p, out);
-    else out.push(p);
+function walk(
+  dir: string,
+  out: string[] = [],
+): string[] {
+  for (const name of readdirSync(
+    dir,
+  )) {
+    const p =
+      join(
+        dir,
+        name,
+      );
+    if (
+      statSync(
+        p,
+      ).isDirectory()
+    )
+      walk(
+        p,
+        out,
+      );
+    else
+      out.push(
+        p,
+      );
   }
   return out;
 }
 
-function resolveImport(from: string, spec: string): string | null {
+function resolveImport(
+  from: string,
+  spec: string,
+):
+  | string
+  | null {
   let base: string;
-  if (spec.startsWith('@/')) base = join(ROOT, spec.slice(2));
-  else if (spec.startsWith('@features/')) base = join(ROOT, 'features', spec.slice('@features/'.length));
-  else if (spec.startsWith('.')) base = resolve(dirname(from), spec);
-  else return null;
-  base = base.replace(/\?.*$/, '');
-  for (const c of [base, ...EXTS.map((e) => base + e), ...EXTS.map((e) => join(base, 'index' + e))]) {
-    if (existsSync(c) && statSync(c).isFile()) return c;
+  if (
+    spec.startsWith(
+      '@/',
+    )
+  )
+    base =
+      join(
+        ROOT,
+        spec.slice(
+          2,
+        ),
+      );
+  else if (
+    spec.startsWith(
+      '@features/',
+    )
+  )
+    base =
+      join(
+        ROOT,
+        'features',
+        spec.slice(
+          '@features/'
+            .length,
+        ),
+      );
+  else if (
+    spec.startsWith(
+      '.',
+    )
+  )
+    base =
+      resolve(
+        dirname(
+          from,
+        ),
+        spec,
+      );
+  else
+    return null;
+  base =
+    base.replace(
+      /\?.*$/,
+      '',
+    );
+  for (const c of [
+    base,
+    ...EXTS.map(
+      (
+        e,
+      ) =>
+        base +
+        e,
+    ),
+    ...EXTS.map(
+      (
+        e,
+      ) =>
+        join(
+          base,
+          'index' +
+            e,
+        ),
+    ),
+  ]) {
+    if (
+      existsSync(
+        c,
+      ) &&
+      statSync(
+        c,
+      ).isFile()
+    )
+      return c;
   }
   return null;
 }
 
 const IMPORT_RE =
   /(?:import|export)\s[^'"`;]*?from\s*['"]([^'"]+)['"]|import\s*['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g;
-const depCache = new Map<string, string[]>();
-function deps(file: string): string[] {
-  let out = depCache.get(file);
-  if (out) return out;
-  out = [];
-  if (EXTS.some((e) => file.endsWith(e))) {
-    for (const m of readFileSync(file, 'utf8').matchAll(IMPORT_RE)) {
+const depCache =
+  new Map<
+    string,
+    string[]
+  >();
+function deps(
+  file: string,
+): string[] {
+  let out =
+    depCache.get(
+      file,
+    );
+  if (
+    out
+  )
+    return out;
+  out =
+    [];
+  if (
+    EXTS.some(
+      (
+        e,
+      ) =>
+        file.endsWith(
+          e,
+        ),
+    )
+  ) {
+    for (const m of readFileSync(
+      file,
+      'utf8',
+    ).matchAll(
+      IMPORT_RE,
+    )) {
       // `import type` / `export type` are erased by the compiler: they bring no code, so no class names, onto the
       // page. Typed API contracts (`*.contract.ts`) import their response types from `*.server.ts` modules this
       // way; following those edges reached server code (and through it game logic the site sheet skips) that no
       // page ever loads. Mixed imports (`import { type A, b }`) are still followed.
-      if (/^(?:import|export)\s+type\s/.test(m[0])) continue;
-      const spec = m[1] ?? m[2] ?? m[3];
+      if (
+        /^(?:import|export)\s+type\s/.test(
+          m[0],
+        )
+      )
+        continue;
+      const spec =
+        m[1] ??
+        m[2] ??
+        m[3];
       // A `*.server` module is emptied out of the client bundle (stubServerFiles in vite.config.ts), so nothing it
       // imports renders on a page. Route loaders reach server logic this way (a `createServerFn` in a
       // `*.queries.ts`, redesign B4); following that edge counted game code the server scores with as page code.
-      if (spec && /\.server(?:\.[cm]?[jt]sx?)?$/.test(spec)) continue;
-      const r = resolveImport(file, spec);
-      if (r) out.push(r);
+      if (
+        spec &&
+        /\.server(?:\.[cm]?[jt]sx?)?$/.test(
+          spec,
+        )
+      )
+        continue;
+      const r =
+        resolveImport(
+          file,
+          spec,
+        );
+      if (
+        r
+      )
+        out.push(
+          r,
+        );
     }
   }
-  depCache.set(file, out);
+  depCache.set(
+    file,
+    out,
+  );
   return out;
 }
 
-function reach(roots: string[]): Set<string> {
-  const seen = new Set<string>();
-  const stack = [...roots];
-  while (stack.length) {
-    const f = stack.pop()!;
-    if (seen.has(f)) continue;
-    seen.add(f);
-    stack.push(...deps(f));
+function reach(
+  roots: string[],
+): Set<string> {
+  const seen =
+    new Set<string>();
+  const stack =
+    [
+      ...roots,
+    ];
+  while (
+    stack.length
+  ) {
+    const f =
+      stack.pop()!;
+    if (
+      seen.has(
+        f,
+      )
+    )
+      continue;
+    seen.add(
+      f,
+    );
+    stack.push(
+      ...deps(
+        f,
+      ),
+    );
   }
   return seen;
 }
 
-function sourceNots(sheet: string): string[] {
-  const css = readFileSync(join(APP, sheet), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  return [...css.matchAll(/@source\s+not\s+["']([^"']+)["']/g)].map((m) =>
-    relative(ROOT, resolve(APP, m[1])),
+function sourceNots(
+  sheet: string,
+): string[] {
+  const css =
+    readFileSync(
+      join(
+        APP,
+        sheet,
+      ),
+      'utf8',
+    ).replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    );
+  return [
+    ...css.matchAll(
+      /@source\s+not\s+["']([^"']+)["']/g,
+    ),
+  ].map(
+    (
+      m,
+    ) =>
+      relative(
+        ROOT,
+        resolve(
+          APP,
+          m[1],
+        ),
+      ),
   );
 }
 
 /** `/news/$slug` → its route file(s): `news.$slug.tsx` and/or a `news.$slug/` directory. */
-function routeFiles(id: string): string[] {
-  const base = join(ROUTES, id.slice(1).replace(/\//g, '.'));
-  const files: string[] = [];
-  if (existsSync(base + '.tsx')) files.push(base + '.tsx');
-  if (existsSync(base) && statSync(base).isDirectory()) files.push(...walk(base));
+function routeFiles(
+  id: string,
+): string[] {
+  const base =
+    join(
+      ROUTES,
+      id
+        .slice(
+          1,
+        )
+        .replace(
+          /\//g,
+          '.',
+        ),
+    );
+  const files: string[] =
+    [];
+  if (
+    existsSync(
+      base +
+        '.tsx',
+    )
+  )
+    files.push(
+      base +
+        '.tsx',
+    );
+  if (
+    existsSync(
+      base,
+    ) &&
+    statSync(
+      base,
+    ).isDirectory()
+  )
+    files.push(
+      ...walk(
+        base,
+      ),
+    );
   return files;
 }
 
-const pages = walk(ROUTES).filter((f) => /\.(tsx|ts)$/.test(f) && !f.includes(`${join('routes', 'api')}`));
-const isSiteRoute = (f: string) => {
-  const r = relative(ROUTES, f);
-  return r === '__root.tsx' || r === '_site.tsx' || r.startsWith('_site/');
-};
-const siteRoots = [...pages.filter(isSiteRoute), ...[...SITE_SHEET_ROUTES].flatMap(routeFiles)];
+const pages =
+  walk(
+    ROUTES,
+  ).filter(
+    (
+      f,
+    ) =>
+      /\.(tsx|ts)$/.test(
+        f,
+      ) &&
+      !f.includes(
+        `${join('routes', 'api')}`,
+      ),
+  );
+const isSiteRoute =
+  (
+    f: string,
+  ) => {
+    const r =
+      relative(
+        ROUTES,
+        f,
+      );
+    return (
+      r ===
+        '__root.tsx' ||
+      r ===
+        '_site.tsx' ||
+      r.startsWith(
+        '_site/',
+      )
+    );
+  };
+const siteRoots =
+  [
+    ...pages.filter(
+      isSiteRoute,
+    ),
+    ...[
+      ...SITE_SHEET_ROUTES,
+    ].flatMap(
+      routeFiles,
+    ),
+  ];
 // Page routes only: a top-level `.ts` route is a server handler and renders no classes.
-const appRoots = pages.filter((f) => !isSiteRoute(f) && f.endsWith('.tsx'));
-const siteReach = reach(siteRoots);
-const appReach = reach(appRoots);
+const appRoots =
+  pages.filter(
+    (
+      f,
+    ) =>
+      !isSiteRoute(
+        f,
+      ) &&
+      f.endsWith(
+        '.tsx',
+      ),
+  );
+const siteReach =
+  reach(
+    siteRoots,
+  );
+const appReach =
+  reach(
+    appRoots,
+  );
 
 // The infrastructure exclusions (scripts, docs, …) live in globals.css and
 // apply to both sheets; the tier exclusions are what site-tier.css adds.
@@ -118,57 +436,200 @@ const appReach = reach(appRoots);
 // gitignored paths, but the Docker build context has no .gitignore (.dockerignore drops it),
 // so without these lines the vite build scans the island build that ran just before it
 // (dist-islands/) and the site sheet grows past its budget. They exist only after a build.
-const BUILD_OUTPUTS = ['dist-islands'];
-const tierExcluded = sourceNots('site-tier.css').filter((p) => !BUILD_OUTPUTS.includes(p));
-const under = (file: string, path: string) => {
-  const r = relative(ROOT, file);
-  return r === path || r.startsWith(path + '/');
-};
+const BUILD_OUTPUTS =
+  [
+    'dist-islands',
+  ];
+const tierExcluded =
+  sourceNots(
+    'site-tier.css',
+  ).filter(
+    (
+      p,
+    ) =>
+      !BUILD_OUTPUTS.includes(
+        p,
+      ),
+  );
+const under =
+  (
+    file: string,
+    path: string,
+  ) => {
+    const r =
+      relative(
+        ROOT,
+        file,
+      );
+    return (
+      r ===
+        path ||
+      r.startsWith(
+        path +
+          '/',
+      )
+    );
+  };
 
 describe('entry stylesheet tiers', () => {
   it('every SITE_SHEET_ROUTES entry is a real top-level route', () => {
-    for (const id of SITE_SHEET_ROUTES) expect(routeFiles(id), id).not.toEqual([]);
+    for (const id of SITE_SHEET_ROUTES)
+      expect(
+        routeFiles(
+          id,
+        ),
+        id,
+      ).not.toEqual(
+        [],
+      );
   });
 
   it('no page that takes the site sheet renders code the site sheet does not scan', () => {
-    const offenders: string[] = [];
+    const offenders: string[] =
+      [];
     for (const file of siteReach) {
-      const path = tierExcluded.find((p) => under(file, p));
-      if (path) offenders.push(`${relative(ROOT, file)}  (excluded by @source not "${path}")`);
+      const path =
+        tierExcluded.find(
+          (
+            p,
+          ) =>
+            under(
+              file,
+              p,
+            ),
+        );
+      if (
+        path
+      )
+        offenders.push(
+          `${relative(ROOT, file)}  (excluded by @source not "${path}")`,
+        );
     }
     expect(
       offenders,
       'a site page imports code app/site-tier.css skips, so its utilities are missing there — remove that `@source not` line, or keep the import out of the site shell',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
     // Checks every file the site shell reaches against every exclusion: ~5s on a
     // loaded CI shard, right at vitest's 5s default, which made it time out (not
     // fail) and block deploys. Same treatment as fouc-contract's graph walk.
   }, 30_000);
 
   it('every exclusion still names something that exists', () => {
-    const stale = tierExcluded.filter((p) => !existsSync(join(ROOT, p)));
-    expect(stale, 'delete these `@source not` lines from app/site-tier.css').toEqual([]);
+    const stale =
+      tierExcluded.filter(
+        (
+          p,
+        ) =>
+          !existsSync(
+            join(
+              ROOT,
+              p,
+            ),
+          ),
+      );
+    expect(
+      stale,
+      'delete these `@source not` lines from app/site-tier.css',
+    ).toEqual(
+      [],
+    );
   });
 
   it('game- and app-only directories are excluded from the site sheet', () => {
-    const missing = new Set<string>();
+    const missing =
+      new Set<string>();
     for (const file of appReach) {
-      if (siteReach.has(file)) continue;
-      const parts = relative(ROOT, file).split('/');
-      if (!(parts[0] === 'components' || parts[0] === 'lib' || parts[0] === 'features') || parts.length < 3) continue;
+      if (
+        siteReach.has(
+          file,
+        )
+      )
+        continue;
+      const parts =
+        relative(
+          ROOT,
+          file,
+        ).split(
+          '/',
+        );
+      if (
+        !(
+          parts[0] ===
+            'components' ||
+          parts[0] ===
+            'lib' ||
+          parts[0] ===
+            'features'
+        ) ||
+        parts.length <
+          3
+      )
+        continue;
       // A feature is excluded per part (engine/, ui/, server/), never whole: its catalog.ts is the
       // card a site page renders (gradient classes the site sheet must see), so features/<id> itself
       // always stays scanned.
-      if (parts[0] === 'features' && parts.length < 4) continue;
-      const dir = parts.slice(0, parts[0] === 'features' ? 3 : 2).join('/');
-      if (tierExcluded.some((p) => dir === p || dir.startsWith(p + '/'))) continue;
-      const dirHasSiteFile = [...siteReach].some((f) => under(f, dir));
-      if (!dirHasSiteFile) missing.add(`@source not "../${dir}";`);
+      if (
+        parts[0] ===
+          'features' &&
+        parts.length <
+          4
+      )
+        continue;
+      const dir =
+        parts
+          .slice(
+            0,
+            parts[0] ===
+              'features'
+              ? 3
+              : 2,
+          )
+          .join(
+            '/',
+          );
+      if (
+        tierExcluded.some(
+          (
+            p,
+          ) =>
+            dir ===
+              p ||
+            dir.startsWith(
+              p +
+                '/',
+            ),
+        )
+      )
+        continue;
+      const dirHasSiteFile =
+        [
+          ...siteReach,
+        ].some(
+          (
+            f,
+          ) =>
+            under(
+              f,
+              dir,
+            ),
+        );
+      if (
+        !dirHasSiteFile
+      )
+        missing.add(
+          `@source not "../${dir}";`,
+        );
     }
     expect(
-      [...missing].sort(),
+      [
+        ...missing,
+      ].sort(),
       'only full-screen routes import these directories, yet the site sheet scans them — add the lines to app/site-tier.css',
-    ).toEqual([]);
+    ).toEqual(
+      [],
+    );
   }, 30_000); // same graph walk as above (~2.5s on CI)
 
   it('the app-tier sheet is the unfiltered superset (minus islands, which no site document renders)', () => {
@@ -177,39 +638,235 @@ describe('entry stylesheet tiers', () => {
     // exclusion the superset carries — exactly the set of islands, no more, no less.
     // Per part, like every feature exclusion: `features/<id>/catalog.ts` is the card site pages render,
     // so it stays scanned even for an island.
-    const islands = readdirSync(join(ROOT, 'features'))
-      .filter((id) => existsSync(join(ROOT, 'features', id, 'island.tsx')))
-      .flatMap((id) =>
-        ['engine', 'ui', 'server']
-          .filter((part) => existsSync(join(ROOT, 'features', id, part)))
-          .map((part) => `features/${id}/${part}`),
+    const islands =
+      readdirSync(
+        join(
+          ROOT,
+          'features',
+        ),
       )
-      .sort();
-    for (const sheet of ['site-tier.css', 'app-tier.css']) {
-      for (const out of BUILD_OUTPUTS) expect(sourceNots(sheet), `${sheet} must exclude ${out}`).toContain(out);
+        .filter(
+          (
+            id,
+          ) =>
+            existsSync(
+              join(
+                ROOT,
+                'features',
+                id,
+                'island.tsx',
+              ),
+            ),
+        )
+        .flatMap(
+          (
+            id,
+          ) =>
+            [
+              'engine',
+              'ui',
+              'server',
+            ]
+              .filter(
+                (
+                  part,
+                ) =>
+                  existsSync(
+                    join(
+                      ROOT,
+                      'features',
+                      id,
+                      part,
+                    ),
+                  ),
+              )
+              .map(
+                (
+                  part,
+                ) =>
+                  `features/${id}/${part}`,
+              ),
+        )
+        .sort();
+    for (const sheet of [
+      'site-tier.css',
+      'app-tier.css',
+    ]) {
+      for (const out of BUILD_OUTPUTS)
+        expect(
+          sourceNots(
+            sheet,
+          ),
+          `${sheet} must exclude ${out}`,
+        ).toContain(
+          out,
+        );
     }
-    expect(sourceNots('app-tier.css').filter((p) => !BUILD_OUTPUTS.includes(p)).sort()).toEqual(islands);
-    for (const dir of islands) expect(tierExcluded, `site-tier.css must skip ${dir} too`).toContain(dir);
-    const css = readFileSync(join(APP, 'app-tier.css'), 'utf8');
-    expect(css).toMatch(/@import 'tailwindcss';\s*@import '\.\/globals\.css';/);
-    expect(readFileSync(join(APP, 'site-tier.css'), 'utf8')).toMatch(
+    expect(
+      sourceNots(
+        'app-tier.css',
+      )
+        .filter(
+          (
+            p,
+          ) =>
+            !BUILD_OUTPUTS.includes(
+              p,
+            ),
+        )
+        .sort(),
+    ).toEqual(
+      islands,
+    );
+    for (const dir of islands)
+      expect(
+        tierExcluded,
+        `site-tier.css must skip ${dir} too`,
+      ).toContain(
+        dir,
+      );
+    const css =
+      readFileSync(
+        join(
+          APP,
+          'app-tier.css',
+        ),
+        'utf8',
+      );
+    expect(
+      css,
+    ).toMatch(
+      /@import 'tailwindcss';\s*@import '\.\/globals\.css';/,
+    );
+    expect(
+      readFileSync(
+        join(
+          APP,
+          'site-tier.css',
+        ),
+        'utf8',
+      ),
+    ).toMatch(
       /@import 'tailwindcss';\s*@import '\.\/globals\.css';/,
     );
     // The body must not pull Tailwind in itself, or each entry would emit it twice.
-    expect(readFileSync(join(APP, 'globals.css'), 'utf8')).not.toMatch(/@import\s+['"]tailwindcss['"]/);
+    expect(
+      readFileSync(
+        join(
+          APP,
+          'globals.css',
+        ),
+        'utf8',
+      ),
+    ).not.toMatch(
+      /@import\s+['"]tailwindcss['"]/,
+    );
   });
 
   it('picks the sheet by route, and keeps the superset once it is loaded', () => {
-    expect(styleTierFor(['__root__'], false)).toBe('site');
-    expect(styleTierFor(['__root__', '/_site', '/_site/'], false)).toBe('site');
-    expect(styleTierFor(['__root__', '/login'], false)).toBe('site');
-    expect(styleTierFor(['__root__', '/altair'], false)).toBe('app');
-    expect(styleTierFor(['__root__', '/a-route-added-later'], false)).toBe('app');
-    expect(styleTierFor(['__root__', '/_site', '/_site/'], true)).toBe('app');
+    expect(
+      styleTierFor(
+        [
+          '__root__',
+        ],
+        false,
+      ),
+    ).toBe(
+      'site',
+    );
+    expect(
+      styleTierFor(
+        [
+          '__root__',
+          '/_site',
+          '/_site/',
+        ],
+        false,
+      ),
+    ).toBe(
+      'site',
+    );
+    expect(
+      styleTierFor(
+        [
+          '__root__',
+          '/login',
+        ],
+        false,
+      ),
+    ).toBe(
+      'site',
+    );
+    expect(
+      styleTierFor(
+        [
+          '__root__',
+          '/altair',
+        ],
+        false,
+      ),
+    ).toBe(
+      'app',
+    );
+    expect(
+      styleTierFor(
+        [
+          '__root__',
+          '/a-route-added-later',
+        ],
+        false,
+      ),
+    ).toBe(
+      'app',
+    );
+    expect(
+      styleTierFor(
+        [
+          '__root__',
+          '/_site',
+          '/_site/',
+        ],
+        true,
+      ),
+    ).toBe(
+      'app',
+    );
     // The API dispatcher: the root's 404 for an unknown path, the empty top-level render
     // for a registered endpoint asked with a method it does not handle.
-    expect(styleTierFor(['__root__', '/api/$'], false)).toBe('site');
-    expect(styleTierFor(['__root__', '/api/$'], false, true)).toBe('site');
-    expect(styleTierFor(['__root__', '/api/$'], false, false)).toBe('app');
+    expect(
+      styleTierFor(
+        [
+          '__root__',
+          '/api/$',
+        ],
+        false,
+      ),
+    ).toBe(
+      'site',
+    );
+    expect(
+      styleTierFor(
+        [
+          '__root__',
+          '/api/$',
+        ],
+        false,
+        true,
+      ),
+    ).toBe(
+      'site',
+    );
+    expect(
+      styleTierFor(
+        [
+          '__root__',
+          '/api/$',
+        ],
+        false,
+        false,
+      ),
+    ).toBe(
+      'app',
+    );
   });
 });

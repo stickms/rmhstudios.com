@@ -13,17 +13,83 @@
  * `BALATRO_E2E_TURBO`: `UxD` (default `8x4`), or `off` (also `1x1`) for real-speed frames —
  * the nightly run uses `off`, so the fast path never becomes the only path.
  */
-export type Turbo = [updates: number, drawEvery: number];
+export type Turbo =
+  [
+    updates: number,
+    drawEvery: number,
+  ];
 
-export const DEFAULT_TURBO: Turbo = [8, 4];
+export const DEFAULT_TURBO: Turbo =
+  [
+    8,
+    4,
+  ];
 
-export function turboSetting(env: Record<string, string | undefined> = process.env): Turbo {
-  const v = (env.BALATRO_E2E_TURBO ?? '').trim().toLowerCase();
-  if (v === 'off' || v === '0' || v === 'false') return [1, 1];
-  const m = /^(\d{1,2})x(\d{1,2})$/.exec(v);
-  if (!m) return DEFAULT_TURBO;
-  const clamp = (n: number) => Math.min(64, Math.max(1, n));
-  return [clamp(Number(m[1])), clamp(Number(m[2]))];
+export function turboSetting(
+  env: Record<
+    string,
+    | string
+    | undefined
+  > = process.env,
+): Turbo {
+  const v =
+    (
+      env.BALATRO_E2E_TURBO ??
+      ''
+    )
+      .trim()
+      .toLowerCase();
+  if (
+    v ===
+      'off' ||
+    v ===
+      '0' ||
+    v ===
+      'false'
+  )
+    return [
+      1,
+      1,
+    ];
+  const m =
+    /^(\d{1,2})x(\d{1,2})$/.exec(
+      v,
+    );
+  if (
+    !m
+  )
+    return DEFAULT_TURBO;
+  const clamp =
+    (
+      n: number,
+    ) =>
+      Math.min(
+        64,
+        Math.max(
+          1,
+          n,
+        ),
+      );
+  return [
+    clamp(
+      Number(
+        m[1],
+      ),
+    ),
+    clamp(
+      Number(
+        m[2],
+      ),
+    ),
+  ];
 }
 
-export const turboOn = ([updates, drawEvery]: Turbo) => updates > 1 || drawEvery > 1;
+export const turboOn =
+  ([
+    updates,
+    drawEvery,
+  ]: Turbo) =>
+    updates >
+      1 ||
+    drawEvery >
+      1;

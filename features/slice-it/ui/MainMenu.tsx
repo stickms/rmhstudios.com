@@ -3,23 +3,46 @@ import * as React from 'react';
 // is the component that honours it — `motion` bundles its own full feature
 // implementation, which lands in the SHARED ENTRY CHUNK when the module is
 // reachable from a route's top level.
-import { AnimatePresence, m as motion } from 'framer-motion';
-import { APPLE_SPRING, DURATION, EASE, scaleIn } from '@/lib/app-motion';
+import {
+  AnimatePresence,
+  m as motion,
+} from 'framer-motion';
+import {
+  APPLE_SPRING,
+  DURATION,
+  EASE,
+  scaleIn,
+} from '@/lib/app-motion';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
-import { LogOut, Settings } from 'lucide-react';
-import { musicGain, useSliceItStore } from '@features/slice-it/engine/store';
+import {
+  LogOut,
+  Settings,
+} from 'lucide-react';
+import {
+  musicGain,
+  useSliceItStore,
+} from '@features/slice-it/engine/store';
 import { GameEngine } from '@features/slice-it/engine/engine';
-import { hitSoundPath, hitSoundPreloadList } from '@features/slice-it/engine/hit-sound-pool';
+import {
+  hitSoundPath,
+  hitSoundPreloadList,
+} from '@features/slice-it/engine/hit-sound-pool';
 import { asset } from '@/lib/storage/asset';
 import { AudioManager } from '@/lib/audio/AudioManager';
-import { addMatchListener, spectatingLobbyCode } from '@features/slice-it/engine/net/client';
+import {
+  addMatchListener,
+  spectatingLobbyCode,
+} from '@features/slice-it/engine/net/client';
 import { useStartRun } from '@features/slice-it/engine/useStartRun';
 import type { SliceSong } from '@features/slice-it/engine/types';
 import { useStableSession } from '@/hooks/useStableSession';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import {
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router';
 import { useQuitGame } from '@/hooks/useQuitGame';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { SongLibrary } from '@features/slice-it/ui/SongLibrary';
@@ -41,79 +64,239 @@ import './slice-menu.css';
  * shipped without one and sat dormant, which is the mistake this exists to
  * avoid repeating.
  */
-type SoloMode = 'library' | 'daily' | 'setlists';
+type SoloMode =
+  | 'library'
+  | 'daily'
+  | 'setlists';
 
 interface MainMenuProps {
   engine: GameEngine | null;
 }
 
-export function MainMenu({ engine: propEngine }: MainMenuProps) {
-  const { t } = useTranslation('c-game');
-  const { t: ts } = useTranslation('r-slice-it');
-  const volume = useSliceItStore((state) => state.volume);
-  const musicVolume = useSliceItStore((state) => state.musicVolume);
-  const hitSound = useSliceItStore((state) => state.hitSound);
-  const setSongId = useSliceItStore((state) => state.setSongId);
-  const setIsMultiplayer = useSliceItStore((state) => state.setIsMultiplayer);
-  const engine = propEngine;
+export function MainMenu({
+  engine:
+    propEngine,
+}: MainMenuProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-game',
+    );
+  const {
+    t: ts,
+  } =
+    useTranslation(
+      'r-slice-it',
+    );
+  const volume =
+    useSliceItStore(
+      (
+        state,
+      ) =>
+        state.volume,
+    );
+  const musicVolume =
+    useSliceItStore(
+      (
+        state,
+      ) =>
+        state.musicVolume,
+    );
+  const hitSound =
+    useSliceItStore(
+      (
+        state,
+      ) =>
+        state.hitSound,
+    );
+  const setSongId =
+    useSliceItStore(
+      (
+        state,
+      ) =>
+        state.setSongId,
+    );
+  const setIsMultiplayer =
+    useSliceItStore(
+      (
+        state,
+      ) =>
+        state.setIsMultiplayer,
+    );
+  const engine =
+    propEngine;
   // Not `authClient.useSession()` directly: its focus revalidation reports a
   // momentary `{ data: null, isPending: false }` when you come back to the tab,
   // which threw the sign-in takeover over a live session. See the hook.
-  const session = useStableSession();
-  const navigate = useNavigate();
-  const quit = useQuitGame();
+  const session =
+    useStableSession();
+  const navigate =
+    useNavigate();
+  const quit =
+    useQuitGame();
   // The details panel is a column beside the library on a wide screen and a sheet
   // over it on a narrow one; the primary nav is in the sleeve on a wide screen, in
   // the head on a tablet and in a row under it on a phone.
-  const isWide = useMediaQuery('(min-width: 1024px)');
-  const isPhone = useMediaQuery('(max-width: 639px)');
-  const search = useSearch({ strict: false }) as Record<string, string | undefined>;
-  const { startRun, isLoading } = useStartRun(engine);
-  const [showSettings, setShowSettings] = React.useState(false);
-  const [showCalibration, setShowCalibration] = React.useState(false);
-  const [showMultiplayer, setShowMultiplayer] = React.useState(false);
-  const [soloMode, setSoloMode] = React.useState<SoloMode>('library');
+  const isWide =
+    useMediaQuery(
+      '(min-width: 1024px)',
+    );
+  const isPhone =
+    useMediaQuery(
+      '(max-width: 639px)',
+    );
+  const search =
+    useSearch(
+      {
+        strict: false,
+      },
+    ) as Record<
+      string,
+      | string
+      | undefined
+    >;
+  const {
+    startRun,
+    isLoading,
+  } =
+    useStartRun(
+      engine,
+    );
+  const [
+    showSettings,
+    setShowSettings,
+  ] =
+    React.useState(
+      false,
+    );
+  const [
+    showCalibration,
+    setShowCalibration,
+  ] =
+    React.useState(
+      false,
+    );
+  const [
+    showMultiplayer,
+    setShowMultiplayer,
+  ] =
+    React.useState(
+      false,
+    );
+  const [
+    soloMode,
+    setSoloMode,
+  ] =
+    React.useState<SoloMode>(
+      'library',
+    );
   // Auto-show multiplayer lobby when returning from a multiplayer match
-  const { isMultiplayer } = useSliceItStore();
+  const {
+    isMultiplayer,
+  } =
+    useSliceItStore();
   React.useEffect(() => {
-    if (isMultiplayer) {
-      setShowMultiplayer(true);
+    if (
+      isMultiplayer
+    ) {
+      setShowMultiplayer(
+        true,
+      );
     }
-  }, [isMultiplayer]);
+  }, [
+    isMultiplayer,
+  ]);
 
   // Auto-open multiplayer lobby when joining via invite link
   React.useEffect(() => {
-    if (search.lobby) {
-      setShowMultiplayer(true);
+    if (
+      search.lobby
+    ) {
+      setShowMultiplayer(
+        true,
+      );
     }
-  }, [search]);
+  }, [
+    search,
+  ]);
 
   // Apply volume on mount
   React.useEffect(() => {
-    AudioManager.getInstance().setVolume(musicGain(volume, musicVolume));
-  }, [volume, musicVolume]);
+    AudioManager.getInstance().setVolume(
+      musicGain(
+        volume,
+        musicVolume,
+      ),
+    );
+  }, [
+    volume,
+    musicVolume,
+  ]);
 
   // Preload persisted hit sound on mount — the whole pool if it is Shuffle.
   React.useEffect(() => {
-    const files = hitSoundPreloadList(hitSound);
-    if (files.length === 0) return;
-    const am = AudioManager.getInstance();
+    const files =
+      hitSoundPreloadList(
+        hitSound,
+      );
+    if (
+      files.length ===
+      0
+    )
+      return;
+    const am =
+      AudioManager.getInstance();
     am.initialize();
-    for (const file of files) am.preloadHitSound(asset(hitSoundPath(file))).catch(() => {});
+    for (const file of files)
+      am.preloadHitSound(
+        asset(
+          hitSoundPath(
+            file,
+          ),
+        ),
+      ).catch(
+        () => {},
+      );
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The track whose details panel is open.
-  const [selectedSong, setSelectedSong] = React.useState<SliceSong | null>(null);
+  const [
+    selectedSong,
+    setSelectedSong,
+  ] =
+    React.useState<SliceSong | null>(
+      null,
+    );
   // Whether the record's full sheet is open. A tablet opens it on pick; a phone
   // shows the compact record strip instead and opens the sheet on request.
-  const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [
+    sheetOpen,
+    setSheetOpen,
+  ] =
+    React.useState(
+      false,
+    );
   React.useEffect(() => {
-    if (selectedSong?.id) setSongId(selectedSong.id);
-  }, [selectedSong, setSongId]);
+    if (
+      selectedSong?.id
+    )
+      setSongId(
+        selectedSong.id,
+      );
+  }, [
+    selectedSong,
+    setSongId,
+  ]);
 
   // Ref to stop SongLibrary preview audio from outside
-  const stopPreviewRef = React.useRef<(() => void) | null>(null);
-
+  const stopPreviewRef =
+    React.useRef<
+      | (() => void)
+      | null
+    >(
+      null,
+    );
 
   /**
    * Open a track's details panel.
@@ -122,44 +305,79 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
    * several megabytes and a synchronous decode to render a title, a cover and
    * a leaderboard. The panel fetches what it needs itself.
    */
-  const handleSelectSong = React.useCallback((song: SliceSong) => {
-    stopPreviewRef.current?.();
-    // `startTransition`, because this update is what was eating the opening
-    // animation. Measured: the click ran a ~250ms task on the main thread —
-    // React rendering the whole panel subtree synchronously — and the panel's
-    // entrance spring is integrated on that same thread. A spring that misses
-    // 120ms does not slow down, it jumps: the slide covered 636px→106px in one
-    // frame gap, which is the "the fade plays and then restarts" this looked
-    // like. Nothing remounts; the animation loses its middle.
-    //
-    // Marking the open as a transition lets React render that subtree in
-    // interruptible slices and yield between them, so the frames the animation
-    // needs keep landing.
-    React.startTransition(() => {
-      setSelectedSong(song);
-      setSheetOpen(!isPhone);
-    });
-  }, [isPhone]);
+  const handleSelectSong =
+    React.useCallback(
+      (
+        song: SliceSong,
+      ) => {
+        stopPreviewRef.current?.();
+        // `startTransition`, because this update is what was eating the opening
+        // animation. Measured: the click ran a ~250ms task on the main thread —
+        // React rendering the whole panel subtree synchronously — and the panel's
+        // entrance spring is integrated on that same thread. A spring that misses
+        // 120ms does not slow down, it jumps: the slide covered 636px→106px in one
+        // frame gap, which is the "the fade plays and then restarts" this looked
+        // like. Nothing remounts; the animation loses its middle.
+        //
+        // Marking the open as a transition lets React render that subtree in
+        // interruptible slices and yield between them, so the frames the animation
+        // needs keep landing.
+        React.startTransition(
+          () => {
+            setSelectedSong(
+              song,
+            );
+            setSheetOpen(
+              !isPhone,
+            );
+          },
+        );
+      },
+      [
+        isPhone,
+      ],
+    );
 
   // Closing the sheet: a phone keeps the compact record (the pick stays); a tablet
   // has no strip, so closing also clears the pick.
-  const closeSheet = React.useCallback(() => {
-    setSheetOpen(false);
-    if (!isPhone) setSelectedSong(null);
-  }, [isPhone]);
+  const closeSheet =
+    React.useCallback(() => {
+      setSheetOpen(
+        false,
+      );
+      if (
+        !isPhone
+      )
+        setSelectedSong(
+          null,
+        );
+    }, [
+      isPhone,
+    ]);
 
-  const handleStartGame = React.useCallback(
-    async (song: SliceSong) => {
-      stopPreviewRef.current?.();
-      setSelectedSong(song);
-      // The whole load-decode-chart-countdown sequence lives in one place
-      // now; it used to be duplicated between here and the multiplayer
-      // path, which is how a host ended up incrementing the play count
-      // twice for the same match.
-      await startRun(song.id).catch(() => {});
-    },
-    [startRun],
-  );
+  const handleStartGame =
+    React.useCallback(
+      async (
+        song: SliceSong,
+      ) => {
+        stopPreviewRef.current?.();
+        setSelectedSong(
+          song,
+        );
+        // The whole load-decode-chart-countdown sequence lives in one place
+        // now; it used to be duplicated between here and the multiplayer
+        // path, which is how a host ended up incrementing the play count
+        // twice for the same match.
+        await startRun(
+          song.id,
+        ).catch(
+          () => {},
+        );
+      },
+      [
+        startRun,
+      ],
+    );
 
   /**
    * The server said the match is loading: load the chart and report back.
@@ -177,142 +395,382 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
    * `onStart` keeps a call of its own for the rejoin path (`N12`), where the
    * server sends START straight to a returning socket with no loading phase.
    */
-  const matchLoadStartedRef = React.useRef(false);
-  const lobbyState = useSliceItStore((s) => s.lobby?.state ?? null);
+  const matchLoadStartedRef =
+    React.useRef(
+      false,
+    );
+  const lobbyState =
+    useSliceItStore(
+      (
+        s,
+      ) =>
+        s
+          .lobby
+          ?.state ??
+        null,
+    );
   // One load per match. `loading` repeats — the server re-emits it as each seat
   // reports in — so the guard is cleared by the lobby going back to `waiting`
   // (or the player leaving it), which is the only thing that means "next match".
   React.useEffect(() => {
-    if (lobbyState === null || lobbyState === 'waiting') matchLoadStartedRef.current = false;
-  }, [lobbyState]);
+    if (
+      lobbyState ===
+        null ||
+      lobbyState ===
+        'waiting'
+    )
+      matchLoadStartedRef.current = false;
+  }, [
+    lobbyState,
+  ]);
 
   React.useEffect(() => {
-    if (!engine) return;
-    const beginMatch = (songId: string) => {
-      // A watcher has no seat and no chart to load — `N1` is a view of someone
-      // else's match, and the loading events reach the spectator room too.
-      if (spectatingLobbyCode()) return;
-      if (matchLoadStartedRef.current) return;
-      matchLoadStartedRef.current = true;
-      setIsMultiplayer(true);
-      setShowMultiplayer(false);
-      void startRun(songId, { countPlay: false, multiplayer: true }).catch(() => {
-        // Let the next `loading` retry rather than stranding this client as the
-        // one seat the room is waiting on.
-        matchLoadStartedRef.current = false;
-      });
-    };
+    if (
+      !engine
+    )
+      return;
+    const beginMatch =
+      (
+        songId: string,
+      ) => {
+        // A watcher has no seat and no chart to load — `N1` is a view of someone
+        // else's match, and the loading events reach the spectator room too.
+        if (
+          spectatingLobbyCode()
+        )
+          return;
+        if (
+          matchLoadStartedRef.current
+        )
+          return;
+        matchLoadStartedRef.current = true;
+        setIsMultiplayer(
+          true,
+        );
+        setShowMultiplayer(
+          false,
+        );
+        void startRun(
+          songId,
+          {
+            countPlay: false,
+            multiplayer: true,
+          },
+        ).catch(
+          () => {
+            // Let the next `loading` retry rather than stranding this client as the
+            // one seat the room is waiting on.
+            matchLoadStartedRef.current = false;
+          },
+        );
+      };
 
-    return addMatchListener({
-      onLoading: () => {
-        // The song has been in the snapshot since the host picked it; the
-        // loading payload only carries who has reported in so far.
-        const songId = useSliceItStore.getState().lobby?.song?.id;
-        if (songId) beginMatch(songId);
+    return addMatchListener(
+      {
+        onLoading:
+          () => {
+            // The song has been in the snapshot since the host picked it; the
+            // loading payload only carries who has reported in so far.
+            const songId =
+              useSliceItStore.getState()
+                .lobby
+                ?.song
+                ?.id;
+            if (
+              songId
+            )
+              beginMatch(
+                songId,
+              );
+          },
+        onStart:
+          (
+            payload,
+          ) =>
+            beginMatch(
+              payload
+                .song
+                .id,
+            ),
       },
-      onStart: (payload) => beginMatch(payload.song.id),
-    });
-  }, [engine, startRun, setIsMultiplayer]);
+    );
+  }, [
+    engine,
+    startRun,
+    setIsMultiplayer,
+  ]);
 
   // The four places the menu goes. Three swap the stage; Versus opens the lobby.
   // On a wide screen they are the sleeve's printed track box; below that they sit
   // in the bar (a tablet) or at the foot of the screen (a phone).
-  const renderNav = (box: boolean) => (
-    <nav className={box ? 'slice-nav slice-nav--box' : 'slice-nav'} aria-label={t('menu-nav', { defaultValue: 'Slice It! menu' })}>
-      <button
-        type="button"
-        className="slice-nav__item"
-        aria-pressed={soloMode === 'library'}
-        onClick={() => setSoloMode('library')}
+  const renderNav =
+    (
+      box: boolean,
+    ) => (
+      <nav
+        className={
+          box
+            ? 'slice-nav slice-nav--box'
+            : 'slice-nav'
+        }
+        aria-label={t(
+          'menu-nav',
+          {
+            defaultValue:
+              'Slice It! menu',
+          },
+        )}
       >
-        <span>{t('menu-nav-library', { defaultValue: 'Library' })}</span>
-      </button>
-      <button
-        type="button"
-        className="slice-nav__item"
-        aria-pressed={soloMode === 'daily'}
-        aria-label={ts('daily-challenge', { defaultValue: 'Daily Challenge' })}
-        onClick={() => setSoloMode(soloMode === 'daily' ? 'library' : 'daily')}
-      >
-        <span>{t('menu-nav-daily', { defaultValue: 'Daily' })}</span>
-      </button>
-      <button
-        type="button"
-        className="slice-nav__item"
-        aria-pressed={soloMode === 'setlists'}
-        aria-label={ts('setlists', { defaultValue: 'Setlists' })}
-        onClick={() => setSoloMode(soloMode === 'setlists' ? 'library' : 'setlists')}
-      >
-        <span>{t('menu-nav-setlists', { defaultValue: 'Setlists' })}</span>
-      </button>
-      <button
-        type="button"
-        className="slice-nav__item slice-nav__item--versus"
-        aria-label={t('multiplayer', { defaultValue: 'MULTIPLAYER' })}
-        onClick={() => setShowMultiplayer(true)}
-      >
-        <span>{t('menu-nav-versus', { defaultValue: 'Versus' })}</span>
-      </button>
-    </nav>
-  );
+        <button
+          type="button"
+          className="slice-nav__item"
+          aria-pressed={
+            soloMode ===
+            'library'
+          }
+          onClick={() =>
+            setSoloMode(
+              'library',
+            )
+          }
+        >
+          <span>
+            {t(
+              'menu-nav-library',
+              {
+                defaultValue:
+                  'Library',
+              },
+            )}
+          </span>
+        </button>
+        <button
+          type="button"
+          className="slice-nav__item"
+          aria-pressed={
+            soloMode ===
+            'daily'
+          }
+          aria-label={ts(
+            'daily-challenge',
+            {
+              defaultValue:
+                'Daily Challenge',
+            },
+          )}
+          onClick={() =>
+            setSoloMode(
+              soloMode ===
+                'daily'
+                ? 'library'
+                : 'daily',
+            )
+          }
+        >
+          <span>
+            {t(
+              'menu-nav-daily',
+              {
+                defaultValue:
+                  'Daily',
+              },
+            )}
+          </span>
+        </button>
+        <button
+          type="button"
+          className="slice-nav__item"
+          aria-pressed={
+            soloMode ===
+            'setlists'
+          }
+          aria-label={ts(
+            'setlists',
+            {
+              defaultValue:
+                'Setlists',
+            },
+          )}
+          onClick={() =>
+            setSoloMode(
+              soloMode ===
+                'setlists'
+                ? 'library'
+                : 'setlists',
+            )
+          }
+        >
+          <span>
+            {t(
+              'menu-nav-setlists',
+              {
+                defaultValue:
+                  'Setlists',
+              },
+            )}
+          </span>
+        </button>
+        <button
+          type="button"
+          className="slice-nav__item slice-nav__item--versus"
+          aria-label={t(
+            'multiplayer',
+            {
+              defaultValue:
+                'MULTIPLAYER',
+            },
+          )}
+          onClick={() =>
+            setShowMultiplayer(
+              true,
+            )
+          }
+        >
+          <span>
+            {t(
+              'menu-nav-versus',
+              {
+                defaultValue:
+                  'Versus',
+              },
+            )}
+          </span>
+        </button>
+      </nav>
+    );
 
-  const renderLogo = (titleClass: string, logoClass: string) => (
-    <h1 className={titleClass}>
-      <img
-        className={logoClass}
-        src="/images/games/logos/slice-it-line.svg"
-        alt={t('game-title', { defaultValue: 'Slice It!' })}
-        width={1395}
-        height={282}
-        decoding="async"
-        fetchPriority="high"
-      />
-    </h1>
-  );
+  const renderLogo =
+    (
+      titleClass: string,
+      logoClass: string,
+    ) => (
+      <h1
+        className={
+          titleClass
+        }
+      >
+        <img
+          className={
+            logoClass
+          }
+          src="/images/games/logos/slice-it-line.svg"
+          alt={t(
+            'game-title',
+            {
+              defaultValue:
+                'Slice It!',
+            },
+          )}
+          width={
+            1395
+          }
+          height={
+            282
+          }
+          decoding="async"
+          fetchPriority="high"
+        />
+      </h1>
+    );
 
   // Settings over Leave, at the right of the wordmark: the two controls the old
   // top bar carried, on every width.
-  const renderActs = () => (
-    <div className="slice-acts">
-      <button
-        type="button"
-        className="slice-bar__icon"
-        onClick={() => setShowSettings(true)}
-        aria-label={t('settings', { defaultValue: 'Settings' })}
-        title={t('settings', { defaultValue: 'Settings' })}
-      >
-        <Settings className="size-[18px]" aria-hidden />
-      </button>
-      <button
-        type="button"
-        className="slice-bar__icon"
-        onClick={quit}
-        aria-label={t('quit', { defaultValue: 'QUIT' })}
-        title={t('quit', { defaultValue: 'QUIT' })}
-      >
-        <LogOut className="size-[18px]" aria-hidden />
-      </button>
-    </div>
-  );
+  const renderActs =
+    () => (
+      <div className="slice-acts">
+        <button
+          type="button"
+          className="slice-bar__icon"
+          onClick={() =>
+            setShowSettings(
+              true,
+            )
+          }
+          aria-label={t(
+            'settings',
+            {
+              defaultValue:
+                'Settings',
+            },
+          )}
+          title={t(
+            'settings',
+            {
+              defaultValue:
+                'Settings',
+            },
+          )}
+        >
+          <Settings
+            className="size-[18px]"
+            aria-hidden
+          />
+        </button>
+        <button
+          type="button"
+          className="slice-bar__icon"
+          onClick={
+            quit
+          }
+          aria-label={t(
+            'quit',
+            {
+              defaultValue:
+                'QUIT',
+            },
+          )}
+          title={t(
+            'quit',
+            {
+              defaultValue:
+                'QUIT',
+            },
+          )}
+        >
+          <LogOut
+            className="size-[18px]"
+            aria-hidden
+          />
+        </button>
+      </div>
+    );
 
   // Unified Main Menu View
   return (
     <div className="slice-menu absolute inset-0 z-50 flex flex-col overflow-hidden bg-slice-bg text-slice-text">
-      {showCalibration && <CalibrationScreen onBack={() => setShowCalibration(false)} />}
-
-      {showMultiplayer && !showCalibration && (
-        <MultiplayerLobby
-          onBack={() => {
-            setShowMultiplayer(false);
-            setIsMultiplayer(false);
-          }}
-          onOpenSettings={() => setShowSettings(true)}
+      {showCalibration && (
+        <CalibrationScreen
+          onBack={() =>
+            setShowCalibration(
+              false,
+            )
+          }
         />
       )}
 
-      {!showMultiplayer && !showCalibration && (
-        <>
-          {/* Only the track load takes the screen. `session.isPending` used to
+      {showMultiplayer &&
+        !showCalibration && (
+          <MultiplayerLobby
+            onBack={() => {
+              setShowMultiplayer(
+                false,
+              );
+              setIsMultiplayer(
+                false,
+              );
+            }}
+            onOpenSettings={() =>
+              setShowSettings(
+                true,
+              )
+            }
+          />
+        )}
+
+      {!showMultiplayer &&
+        !showCalibration && (
+          <>
+            {/* Only the track load takes the screen. `session.isPending` used to
               take it too, so the entire menu sat behind a dimmed "VALIDATING
               SESSION" spinner until the auth round trip came back — blocking
               the library, the search box and both mode buttons on a request
@@ -322,254 +780,487 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
               the sign-in wall) resolve themselves when it arrives. Loading a
               track is different: it replaces the stage, so it is allowed to
               cover it. */}
-          {isLoading && (
-            <div className="slice-loading absolute inset-0 z-70 bg-slice-bg/85 flex items-center justify-center flex-col gap-4">
-              <div className="w-9 h-9 border-[3px] border-slice-primary border-t-transparent rounded-full animate-spin" />
-              <div className="slice-label text-slice-primary animate-pulse">
-                {t('initializing-track', { defaultValue: 'Initializing Track' })}
-              </div>
-            </div>
-          )}
-
-          {/* No bar across the top. On a wide screen the wordmark, Settings and Leave
-              are the head of the sleeve (below); under 1024px there is no sleeve, so
-              the same head opens the page, with the four places beside the wordmark
-              on a tablet and in a row under it on a phone. */}
-          {!isWide && (
-            <header className="slice-bar">
-              {renderLogo('slice-bar__title', 'slice-bar__logo')}
-              {!isPhone && renderNav(false)}
-              {renderActs()}
-            </header>
-          )}
-
-          {/* A phone: the four places, one short row under the bar. At the top, so the
-              bottom edge stays free for Safari's own bar. */}
-          {isPhone && renderNav(false)}
-
-          <div className="slice-menu__stage flex-1 min-h-0 flex relative">
-            {/* Auth overlay. `items-center-safe` + `overflow-y-auto`: plain
-                `items-center` clips the card at both ends once it is taller than
-                the box (a landscape phone), putting the Log In button out of
-                reach. */}
-            {session.signedOut && (
-              <div className="slice-auth absolute inset-0 z-60 bg-slice-bg/92 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain p-6">
-                <motion.div
-                  className="slice-panel w-full max-w-sm space-y-5 p-7 text-center"
-                  variants={scaleIn}
-                  initial="initial"
-                  animate="animate"
-                >
-                  <img
-                    className="mx-auto h-auto w-full max-w-[17rem]"
-                    src="/images/games/logos/slice-it-line.svg"
-                    alt=""
-                    width={1395}
-                    height={282}
-                    decoding="async"
-                  />
-                  <hr className="slice-slash" />
-                  <h3 className="slice-display text-xl uppercase text-slice-text">
-                    {t('connect-to-start', { defaultValue: 'Connect to Start' })}
-                  </h3>
-                  <p className="slice-label normal-case tracking-normal text-[13px] leading-snug">
-                    {t('auth-required', {
-                      defaultValue: 'Authentication is required for leaderboard ranking',
-                    })}
-                  </p>
-                  <Button
-                    className="slice-btn-primary w-full"
-                    onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
-                  >
-                    {t('log-in', { defaultValue: 'Log In' })}
-                  </Button>
-                </motion.div>
+            {isLoading && (
+              <div className="slice-loading absolute inset-0 z-70 bg-slice-bg/85 flex items-center justify-center flex-col gap-4">
+                <div className="w-9 h-9 border-[3px] border-slice-primary border-t-transparent rounded-full animate-spin" />
+                <div className="slice-label text-slice-primary animate-pulse">
+                  {t(
+                    'initializing-track',
+                    {
+                      defaultValue:
+                        'Initializing Track',
+                    },
+                  )}
+                </div>
               </div>
             )}
 
-            {/* The stage: library, daily challenge (S1), or setlists/courses
+            {/* No bar across the top. On a wide screen the wordmark, Settings and Leave
+              are the head of the sleeve (below); under 1024px there is no sleeve, so
+              the same head opens the page, with the four places beside the wordmark
+              on a tablet and in a row under it on a phone. */}
+            {!isWide && (
+              <header className="slice-bar">
+                {renderLogo(
+                  'slice-bar__title',
+                  'slice-bar__logo',
+                )}
+                {!isPhone &&
+                  renderNav(
+                    false,
+                  )}
+                {renderActs()}
+              </header>
+            )}
+
+            {/* A phone: the four places, one short row under the bar. At the top, so the
+              bottom edge stays free for Safari's own bar. */}
+            {isPhone &&
+              renderNav(
+                false,
+              )}
+
+            <div className="slice-menu__stage flex-1 min-h-0 flex relative">
+              {/* Auth overlay. `items-center-safe` + `overflow-y-auto`: plain
+                `items-center` clips the card at both ends once it is taller than
+                the box (a landscape phone), putting the Log In button out of
+                reach. */}
+              {session.signedOut && (
+                <div className="slice-auth absolute inset-0 z-60 bg-slice-bg/92 flex items-center-safe justify-center-safe overflow-y-auto overscroll-contain p-6">
+                  <motion.div
+                    className="slice-panel w-full max-w-sm space-y-5 p-7 text-center"
+                    variants={
+                      scaleIn
+                    }
+                    initial="initial"
+                    animate="animate"
+                  >
+                    <img
+                      className="mx-auto h-auto w-full max-w-[17rem]"
+                      src="/images/games/logos/slice-it-line.svg"
+                      alt=""
+                      width={
+                        1395
+                      }
+                      height={
+                        282
+                      }
+                      decoding="async"
+                    />
+                    <hr className="slice-slash" />
+                    <h3 className="slice-display text-xl uppercase text-slice-text">
+                      {t(
+                        'connect-to-start',
+                        {
+                          defaultValue:
+                            'Connect to Start',
+                        },
+                      )}
+                    </h3>
+                    <p className="slice-label normal-case tracking-normal text-[13px] leading-snug">
+                      {t(
+                        'auth-required',
+                        {
+                          defaultValue:
+                            'Authentication is required for leaderboard ranking',
+                        },
+                      )}
+                    </p>
+                    <Button
+                      className="slice-btn-primary w-full"
+                      onClick={() =>
+                        navigate(
+                          {
+                            to: '/login',
+                            search:
+                              {
+                                callbackURL:
+                                  undefined,
+                              },
+                          },
+                        )
+                      }
+                    >
+                      {t(
+                        'log-in',
+                        {
+                          defaultValue:
+                            'Log In',
+                        },
+                      )}
+                    </Button>
+                  </motion.div>
+                </div>
+              )}
+
+              {/* The stage: library, daily challenge (S1), or setlists/courses
                 (S8/S2). One at a time — each is a different mode, not a filter
                 over the same list. Cross-faded, and `mode="wait"` so the
                 outgoing mode is gone before the next one measures itself. */}
-            <div className="slice-menu__col flex min-w-0 flex-1 flex-col overflow-hidden">
-              {/* A phone: the picked record, compact, above the list. */}
-              {isPhone && soloMode === 'library' && selectedSong && (
-                <PhoneRecord
-                  song={selectedSong}
-                  onStart={handleStartGame}
-                  onDetails={() => setSheetOpen(true)}
-                />
-              )}
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={soloMode}
-                  className="slice-menu__mode flex min-h-0 flex-1 flex-col"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: DURATION.fast, ease: EASE.standard }}
+              <div className="slice-menu__col flex min-w-0 flex-1 flex-col overflow-hidden">
+                {/* A phone: the picked record, compact, above the list. */}
+                {isPhone &&
+                  soloMode ===
+                    'library' &&
+                  selectedSong && (
+                    <PhoneRecord
+                      song={
+                        selectedSong
+                      }
+                      onStart={
+                        handleStartGame
+                      }
+                      onDetails={() =>
+                        setSheetOpen(
+                          true,
+                        )
+                      }
+                    />
+                  )}
+                <AnimatePresence
+                  mode="wait"
+                  initial={
+                    false
+                  }
                 >
-                  {soloMode === 'daily' && (
-                    <DailyPanel
-                      engine={engine}
-                      onPlay={(songId) => startRun(songId)}
-                      onBack={() => setSoloMode('library')}
-                    />
-                  )}
-                  {soloMode === 'setlists' && (
-                    <SetlistPanel
-                      engine={engine}
-                      onPlay={(songId) => startRun(songId)}
-                      onBack={() => setSoloMode('library')}
-                    />
-                  )}
-                  {soloMode === 'library' && (
-                    <SongLibrary
-                      /* OPEN opens the details panel; it does not start the run.
+                  <motion.div
+                    key={
+                      soloMode
+                    }
+                    className="slice-menu__mode flex min-h-0 flex-1 flex-col"
+                    initial={{
+                      opacity: 0,
+                    }}
+                    animate={{
+                      opacity: 1,
+                    }}
+                    exit={{
+                      opacity: 0,
+                    }}
+                    transition={{
+                      duration:
+                        DURATION.fast,
+                      ease: EASE.standard,
+                    }}
+                  >
+                    {soloMode ===
+                      'daily' && (
+                      <DailyPanel
+                        engine={
+                          engine
+                        }
+                        onPlay={(
+                          songId,
+                        ) =>
+                          startRun(
+                            songId,
+                          )
+                        }
+                        onBack={() =>
+                          setSoloMode(
+                            'library',
+                          )
+                        }
+                      />
+                    )}
+                    {soloMode ===
+                      'setlists' && (
+                      <SetlistPanel
+                        engine={
+                          engine
+                        }
+                        onPlay={(
+                          songId,
+                        ) =>
+                          startRun(
+                            songId,
+                          )
+                        }
+                        onBack={() =>
+                          setSoloMode(
+                            'library',
+                          )
+                        }
+                      />
+                    )}
+                    {soloMode ===
+                      'library' && (
+                      <SongLibrary
+                        /* OPEN opens the details panel; it does not start the run.
                          Starting straight from the row dropped the player into a
                          chart at whatever difficulty and modifiers were left over
                          from the last song, with nothing in between to look at —
                          and those controls, plus the score multiplier they add up
                          to, all live in the panel. `START GAME` there is the
                          control that commits. */
-                      onSelect={handleSelectSong}
-                      onHighlight={handleSelectSong}
-                      selectedSongId={selectedSong?.id ?? null}
-                      onStopPreviewRef={stopPreviewRef}
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                        onSelect={
+                          handleSelectSong
+                        }
+                        onHighlight={
+                          handleSelectSong
+                        }
+                        selectedSongId={
+                          selectedSong?.id ??
+                          null
+                        }
+                        onStopPreviewRef={
+                          stopPreviewRef
+                        }
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
 
-            {/* Wide: the sleeve. The wordmark, the printed track box that is the
+              {/* Wide: the sleeve. The wordmark, the printed track box that is the
                 navigation, and the record you have picked — its cover, its
                 pressings, START. It is on every mode, because the nav lives in
                 it; the record only shows in the library. On the right of the
                 list, and after it in the document: you pick a track, then you
                 reach what opens for it. */}
-            {isWide && (
-              <aside className="slice-sleeve" aria-label={t('song-details', { defaultValue: 'Song Details' })}>
-                <div className="slice-sleeve__top">
-                  <div className="slice-sleeve__head">
-                    {renderLogo('slice-sleeve__title', 'slice-sleeve__logo')}
-                    {renderActs()}
-                  </div>
-                  {renderNav(true)}
-                </div>
-                <div className="slice-sleeve__body">
-                  {soloMode === 'library' && selectedSong ? (
-                    <SongDetailsPanel
-                      song={selectedSong}
-                      onPlay={handleStartGame}
-                      onSongUpdated={(updates) =>
-                        setSelectedSong((current) => (current ? { ...current, ...updates } : current))
-                      }
-                    />
-                  ) : (
-                    <div className="slice-side__empty">
-                      <div className="slice-side__art">
-                        <OptimizedImage
-                          src="/images/games/banners/slice-it.webp"
-                          alt=""
-                          width={840}
-                          height={280}
-                          priority
-                          className="size-full object-cover"
-                        />
-                      </div>
-                      <p className="slice-display text-lg text-slice-text">
-                        {t('menu-tagline', { defaultValue: 'Slice through every beat.' })}
-                      </p>
-                      <hr className="slice-slash" />
-                      <p className="slice-label normal-case tracking-normal text-[13px] leading-relaxed">
-                        {t('side-empty', {
-                          defaultValue: 'Pick a track to see its charts, your scores and the modifiers.',
-                        })}
-                      </p>
-                    </div>
+              {isWide && (
+                <aside
+                  className="slice-sleeve"
+                  aria-label={t(
+                    'song-details',
+                    {
+                      defaultValue:
+                        'Song Details',
+                    },
                   )}
-                </div>
-              </aside>
-            )}
+                >
+                  <div className="slice-sleeve__top">
+                    <div className="slice-sleeve__head">
+                      {renderLogo(
+                        'slice-sleeve__title',
+                        'slice-sleeve__logo',
+                      )}
+                      {renderActs()}
+                    </div>
+                    {renderNav(
+                      true,
+                    )}
+                  </div>
+                  <div className="slice-sleeve__body">
+                    {soloMode ===
+                      'library' &&
+                    selectedSong ? (
+                      <SongDetailsPanel
+                        song={
+                          selectedSong
+                        }
+                        onPlay={
+                          handleStartGame
+                        }
+                        onSongUpdated={(
+                          updates,
+                        ) =>
+                          setSelectedSong(
+                            (
+                              current,
+                            ) =>
+                              current
+                                ? {
+                                    ...current,
+                                    ...updates,
+                                  }
+                                : current,
+                          )
+                        }
+                      />
+                    ) : (
+                      <div className="slice-side__empty">
+                        <div className="slice-side__art">
+                          <OptimizedImage
+                            src="/images/games/banners/slice-it.webp"
+                            alt=""
+                            width={
+                              840
+                            }
+                            height={
+                              280
+                            }
+                            priority
+                            className="size-full object-cover"
+                          />
+                        </div>
+                        <p className="slice-display text-lg text-slice-text">
+                          {t(
+                            'menu-tagline',
+                            {
+                              defaultValue:
+                                'Slice through every beat.',
+                            },
+                          )}
+                        </p>
+                        <hr className="slice-slash" />
+                        <p className="slice-label normal-case tracking-normal text-[13px] leading-relaxed">
+                          {t(
+                            'side-empty',
+                            {
+                              defaultValue:
+                                'Pick a track to see its charts, your scores and the modifiers.',
+                            },
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </aside>
+              )}
 
-            {/* Narrow: the details slide over the library. The sheet slides; it
+              {/* Narrow: the details slide over the library. The sheet slides; it
                 used to appear and vanish. A spring, not a duration: this is a
                 surface that travels. Two KEYED siblings, not a fragment —
                 `AnimatePresence` tracks its direct children by key. */}
-            <AnimatePresence>
-              {!isWide && selectedSong && sheetOpen && [
-                <motion.button
-                  key="song-details-backdrop"
-                  type="button"
-                  className="absolute inset-0 bg-black/50 z-65"
-                  onClick={closeSheet}
-                  aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: DURATION.base, ease: EASE.standard }}
-                />,
-                <motion.div
-                  key="song-details-panel"
-                  className="slice-sheet"
-                  initial={{ x: '100%' }}
-                  animate={{ x: 0 }}
-                  exit={{ x: '100%' }}
-                  transition={APPLE_SPRING.smooth}
-                >
-                  <div className="slice-sheet__head">
-                    <span className="slice-label">
-                      {t('song-details', { defaultValue: 'Song Details' })}
-                    </span>
-                    <button
+              <AnimatePresence>
+                {!isWide &&
+                  selectedSong &&
+                  sheetOpen && [
+                    <motion.button
+                      key="song-details-backdrop"
                       type="button"
-                      className="slice-bar__icon"
-                      onClick={closeSheet}
-                      aria-label={t('close-song-details', { defaultValue: 'Close song details' })}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        aria-hidden
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto">
-                    <SongDetailsPanel
-                      song={selectedSong}
-                      onPlay={handleStartGame}
-                      onSongUpdated={(updates) =>
-                        setSelectedSong((current) => (current ? { ...current, ...updates } : current))
+                      className="absolute inset-0 bg-black/50 z-65"
+                      onClick={
+                        closeSheet
                       }
-                    />
-                  </div>
-                </motion.div>,
-              ]}
-            </AnimatePresence>
-          </div>
-
-        </>
-      )}
+                      aria-label={t(
+                        'close-song-details',
+                        {
+                          defaultValue:
+                            'Close song details',
+                        },
+                      )}
+                      initial={{
+                        opacity: 0,
+                      }}
+                      animate={{
+                        opacity: 1,
+                      }}
+                      exit={{
+                        opacity: 0,
+                      }}
+                      transition={{
+                        duration:
+                          DURATION.base,
+                        ease: EASE.standard,
+                      }}
+                    />,
+                    <motion.div
+                      key="song-details-panel"
+                      className="slice-sheet"
+                      initial={{
+                        x: '100%',
+                      }}
+                      animate={{
+                        x: 0,
+                      }}
+                      exit={{
+                        x: '100%',
+                      }}
+                      transition={
+                        APPLE_SPRING.smooth
+                      }
+                    >
+                      <div className="slice-sheet__head">
+                        <span className="slice-label">
+                          {t(
+                            'song-details',
+                            {
+                              defaultValue:
+                                'Song Details',
+                            },
+                          )}
+                        </span>
+                        <button
+                          type="button"
+                          className="slice-bar__icon"
+                          onClick={
+                            closeSheet
+                          }
+                          aria-label={t(
+                            'close-song-details',
+                            {
+                              defaultValue:
+                                'Close song details',
+                            },
+                          )}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            <line
+                              x1="18"
+                              y1="6"
+                              x2="6"
+                              y2="18"
+                            />
+                            <line
+                              x1="6"
+                              y1="6"
+                              x2="18"
+                              y2="18"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex-1 overflow-y-auto">
+                        <SongDetailsPanel
+                          song={
+                            selectedSong
+                          }
+                          onPlay={
+                            handleStartGame
+                          }
+                          onSongUpdated={(
+                            updates,
+                          ) =>
+                            setSelectedSong(
+                              (
+                                current,
+                              ) =>
+                                current
+                                  ? {
+                                      ...current,
+                                      ...updates,
+                                    }
+                                  : current,
+                            )
+                          }
+                        />
+                      </div>
+                    </motion.div>,
+                  ]}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
 
       {/* Settings — extracted to its own file once it grew past a drawer.
           See `SettingsPanel.tsx` for why. */}
       {showSettings && (
         <SettingsPanel
-          onClose={() => setShowSettings(false)}
+          onClose={() =>
+            setShowSettings(
+              false,
+            )
+          }
           onCalibrate={() => {
-            setShowSettings(false);
-            setShowCalibration(true);
+            setShowSettings(
+              false,
+            );
+            setShowCalibration(
+              true,
+            );
           }}
         />
       )}

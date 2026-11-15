@@ -15,22 +15,31 @@ export interface Rect {
 }
 
 // ── Abilities (metroidvania gates) ───────────────────────────────────────────
-export type AbilityId = "doubleJump" | "dash" | "wallGrip";
+export type AbilityId =
+  | 'doubleJump'
+  | 'dash'
+  | 'wallGrip';
 
-export const ABILITY_LABEL: Record<AbilityId, string> = {
-  doubleJump: "Lucky Coin",
-  dash: "All-In Dash",
-  wallGrip: "Card Grip",
-};
+export const ABILITY_LABEL: Record<
+  AbilityId,
+  string
+> =
+  {
+    doubleJump:
+      'Lucky Coin',
+    dash: 'All-In Dash',
+    wallGrip:
+      'Card Grip',
+  };
 
 // ── Rooms ─────────────────────────────────────────────────────────────────────
 export type RoomId =
-  | "lobby"
-  | "pokerHall"
-  | "slotVault"
-  | "securityWing"
-  | "maintenance"
-  | "vault";
+  | 'lobby'
+  | 'pokerHall'
+  | 'slotVault'
+  | 'securityWing'
+  | 'maintenance'
+  | 'vault';
 
 // ── Dialogue ──────────────────────────────────────────────────────────────────
 export interface DialogueChoice {
@@ -51,7 +60,12 @@ export interface DialogueData {
 }
 
 // ── Entities placed in rooms ─────────────────────────────────────────────────
-export type NpcId = "dealer" | "janitor" | "witch" | "guard" | "house";
+export type NpcId =
+  | 'dealer'
+  | 'janitor'
+  | 'witch'
+  | 'guard'
+  | 'house';
 
 export interface DoorSpec {
   id: string;
@@ -64,30 +78,34 @@ export interface DoorSpec {
   lockedByKey?: number; // requires this many vault keys
   lockedByAbility?: AbilityId;
   costChips?: number; // toll door — pay chips once
-  facing?: "left" | "right";
+  facing?:
+    | 'left'
+    | 'right';
 }
 
 export interface NpcSpec {
   id: NpcId;
   col: number;
   row: number;
-  facing?: "left" | "right";
+  facing?:
+    | 'left'
+    | 'right';
 }
 
 export type EntityKind =
-  | "chip"
-  | "key"
-  | "ability"
-  | "lever"
-  | "plate"
-  | "mover"
-  | "laser"
-  | "camera"
-  | "save"
-  | "sign"
-  | "slotReel"
-  | "vaultCore"
-  | "pokerTable";
+  | 'chip'
+  | 'key'
+  | 'ability'
+  | 'lever'
+  | 'plate'
+  | 'mover'
+  | 'laser'
+  | 'camera'
+  | 'save'
+  | 'sign'
+  | 'slotReel'
+  | 'vaultCore'
+  | 'pokerTable';
 
 export interface EntitySpec {
   kind: EntityKind;
@@ -123,7 +141,13 @@ export interface RoomData {
   npcs: NpcSpec[];
   entities: EntitySpec[];
   // Visual theme key controls backdrop tint / decorations.
-  theme: "lobby" | "poker" | "slots" | "security" | "maintenance" | "vault";
+  theme:
+    | 'lobby'
+    | 'poker'
+    | 'slots'
+    | 'security'
+    | 'maintenance'
+    | 'vault';
 }
 
 // ── Scene transition ─────────────────────────────────────────────────────────
@@ -134,8 +158,14 @@ export interface SceneTransition {
 
 // ── Quest / objective tracking ───────────────────────────────────────────────
 export interface QuestState {
-  flags: Record<string, boolean>;
-  abilities: Record<AbilityId, boolean>;
+  flags: Record<
+    string,
+    boolean
+  >;
+  abilities: Record<
+    AbilityId,
+    boolean
+  >;
   keys: number;
   chips: number;
   debt: number;
@@ -144,6 +174,10 @@ export interface QuestState {
 export interface Objective {
   id: string;
   text: string;
-  done: (s: QuestState) => boolean;
-  hidden?: (s: QuestState) => boolean;
+  done: (
+    s: QuestState,
+  ) => boolean;
+  hidden?: (
+    s: QuestState,
+  ) => boolean;
 }

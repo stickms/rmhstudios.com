@@ -11,22 +11,64 @@
 import { api } from '@/lib/contract/client';
 import { getDailyPuzzleApi } from './daily-puzzles.contract';
 
-function parseDateKey(dateKey: string): Date {
-    const [y, m, d] = dateKey.split('-').map(Number);
-    return new Date(y, m - 1, d);
+function parseDateKey(
+  dateKey: string,
+): Date {
+  const [
+    y,
+    m,
+    d,
+  ] =
+    dateKey
+      .split(
+        '-',
+      )
+      .map(
+        Number,
+      );
+  return new Date(
+    y,
+    m -
+      1,
+    d,
+  );
 }
 
-export async function fetchDailyPuzzle<T>(
-    gameMode: string,
-    dateKey: string,
-    fallback: (date: Date) => T,
+export async function fetchDailyPuzzle<
+  T,
+>(
+  gameMode: string,
+  dateKey: string,
+  fallback: (
+    date: Date,
+  ) => T,
 ): Promise<T> {
-    try {
-        // A stalled mobile connection must not leave the puzzle on its loading screen.
-        const json = await api(getDailyPuzzleApi, { query: { gameMode, date: dateKey }, timeoutMs: 12_000, retries: 0 });
-        if (json && json.puzzle) return json.puzzle as T;
-    } catch {
-        /* fall through to the local generator */
-    }
-    return fallback(parseDateKey(dateKey));
+  try {
+    // A stalled mobile connection must not leave the puzzle on its loading screen.
+    const json =
+      await api(
+        getDailyPuzzleApi,
+        {
+          query:
+            {
+              gameMode,
+              date: dateKey,
+            },
+          timeoutMs: 12_000,
+          retries: 0,
+        },
+      );
+    if (
+      json &&
+      json.puzzle
+    )
+      return json.puzzle as T;
+  } catch {
+    /* fall through to the local generator */
+  }
+  return fallback(
+    parseDateKey(
+      dateKey,
+    ),
+  );
 }

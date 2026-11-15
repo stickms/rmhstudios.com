@@ -23,9 +23,11 @@
 import { prisma } from '@/lib/prisma.server';
 
 async function main() {
-  const startedAt = Date.now();
+  const startedAt =
+    Date.now();
 
-  const users = await prisma.$executeRawUnsafe(`
+  const users =
+    await prisma.$executeRawUnsafe(`
     UPDATE "user" u SET
       "followerCount"  = c.followers,
       "followingCount" = c.following,
@@ -45,7 +47,8 @@ async function main() {
     );
   `);
 
-  const pollOptions = await prisma.$executeRawUnsafe(`
+  const pollOptions =
+    await prisma.$executeRawUnsafe(`
     UPDATE "rmheet_poll_option" o SET "voteCount" = c.votes
     FROM (
       SELECT o2."id", (SELECT COUNT(*) FROM "rmheet_poll_vote" v WHERE v."optionId" = o2."id")::int AS votes
@@ -54,7 +57,8 @@ async function main() {
     WHERE o."id" = c."id" AND o."voteCount" <> c.votes;
   `);
 
-  const comments = await prisma.$executeRawUnsafe(`
+  const comments =
+    await prisma.$executeRawUnsafe(`
     UPDATE "rmheet_comment" cm SET
       "likeCount"  = c.likes,
       "replyCount" = c.replies
@@ -68,7 +72,8 @@ async function main() {
     WHERE cm."id" = c."id" AND (cm."likeCount" <> c.likes OR cm."replyCount" <> c.replies);
   `);
 
-  const hashtags = await prisma.$executeRawUnsafe(`
+  const hashtags =
+    await prisma.$executeRawUnsafe(`
     UPDATE "hashtag" h SET "postCount" = c.posts
     FROM (
       SELECT h2."id",
@@ -80,7 +85,9 @@ async function main() {
     WHERE h."id" = c."id" AND h."postCount" <> c.posts;
   `);
 
-  const ms = Date.now() - startedAt;
+  const ms =
+    Date.now() -
+    startedAt;
   console.log(
     `[reconcile-social-counts] corrected users=${users} pollOptions=${pollOptions} ` +
       `comments=${comments} hashtags=${hashtags} in ${ms}ms`,
@@ -88,10 +95,19 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
-    console.error('[reconcile-social-counts] failed:', e);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch(
+    (
+      e,
+    ) => {
+      console.error(
+        '[reconcile-social-counts] failed:',
+        e,
+      );
+      process.exitCode = 1;
+    },
+  )
+  .finally(
+    async () => {
+      await prisma.$disconnect();
+    },
+  );

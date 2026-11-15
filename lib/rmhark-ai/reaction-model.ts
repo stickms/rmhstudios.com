@@ -37,7 +37,10 @@ export interface Headline {
   publishedAt: number;
 }
 
-export type PostKind = 'announcement' | 'news' | 'usual';
+export type PostKind =
+  | 'announcement'
+  | 'news'
+  | 'usual';
 
 export interface PostKindPmf {
   announcement: number;
@@ -85,8 +88,18 @@ export const REACTION_LINK_PROB = 0.5;
 export const MAX_REACTION_LINK_LENGTH = 2048;
 
 /** Hours between two epoch-millisecond instants, never negative. */
-export function ageHours(now: number, then: number): number {
-  return Math.max(0, now - then) / HOUR;
+export function ageHours(
+  now: number,
+  then: number,
+): number {
+  return (
+    Math.max(
+      0,
+      now -
+        then,
+    ) /
+    HOUR
+  );
 }
 
 /**
@@ -95,24 +108,62 @@ export function ageHours(now: number, then: number): number {
  * The three probabilities always sum to 1.
  */
 export function postKindPmf(input: {
-  announcementAgeH: number | null;
+  announcementAgeH:
+    | number
+    | null;
   headlineCount: number;
 }): PostKindPmf {
-  const { announcementAgeH, headlineCount } = input;
+  const {
+    announcementAgeH,
+    headlineCount,
+  } =
+    input;
   const announcement =
-    announcementAgeH !== null &&
-    announcementAgeH >= 0 &&
-    announcementAgeH <= ANNOUNCEMENT_REACTION_WINDOW_H
-      ? ANNOUNCEMENT_PEAK_SHARE * Math.exp(-announcementAgeH / ANNOUNCEMENT_SHARE_TAU_H)
+    announcementAgeH !==
+      null &&
+    announcementAgeH >=
+      0 &&
+    announcementAgeH <=
+      ANNOUNCEMENT_REACTION_WINDOW_H
+      ? ANNOUNCEMENT_PEAK_SHARE *
+        Math.exp(
+          -announcementAgeH /
+            ANNOUNCEMENT_SHARE_TAU_H,
+        )
       : 0;
-  const news = headlineCount > 0 ? NEWS_SHARE * (1 - announcement) : 0;
-  return { announcement, news, usual: 1 - announcement - news };
+  const news =
+    headlineCount >
+    0
+      ? NEWS_SHARE *
+        (1 -
+          announcement)
+      : 0;
+  return {
+    announcement,
+    news,
+    usual:
+      1 -
+      announcement -
+      news,
+  };
 }
 
 /** Draw a kind from the distribution with a uniform `u` in [0, 1). */
-export function sampleKind(pmf: PostKindPmf, u: number): PostKind {
-  if (u < pmf.announcement) return 'announcement';
-  if (u < pmf.announcement + pmf.news) return 'news';
+export function sampleKind(
+  pmf: PostKindPmf,
+  u: number,
+): PostKind {
+  if (
+    u <
+    pmf.announcement
+  )
+    return 'announcement';
+  if (
+    u <
+    pmf.announcement +
+      pmf.news
+  )
+    return 'news';
   return 'usual';
 }
 
@@ -120,67 +171,198 @@ export function sampleKind(pmf: PostKindPmf, u: number): PostKind {
  * A headline's pull: fresh stories that few bots have covered win. Zero once
  * the story is older than `HEADLINE_MAX_AGE_H`.
  */
-export function headlineWeight(ageH: number, reactions: number): number {
-  if (!Number.isFinite(ageH) || ageH < 0 || ageH > HEADLINE_MAX_AGE_H) return 0;
-  const crowding = Math.pow(1 + Math.max(0, reactions), HEADLINE_CROWDING_EXPONENT);
-  return Math.exp(-ageH / HEADLINE_TAU_H) / crowding;
+export function headlineWeight(
+  ageH: number,
+  reactions: number,
+): number {
+  if (
+    !Number.isFinite(
+      ageH,
+    ) ||
+    ageH <
+      0 ||
+    ageH >
+      HEADLINE_MAX_AGE_H
+  )
+    return 0;
+  const crowding =
+    Math.pow(
+      1 +
+        Math.max(
+          0,
+          reactions,
+        ),
+      HEADLINE_CROWDING_EXPONENT,
+    );
+  return (
+    Math.exp(
+      -ageH /
+        HEADLINE_TAU_H,
+    ) /
+    crowding
+  );
 }
 
 /**
  * Pick one item in proportion to its weight with a uniform `u` in [0, 1).
  * Null when there is nothing to pick (no items, or every weight is zero).
  */
-export function pickWeighted<T>(
+export function pickWeighted<
+  T,
+>(
   items: readonly T[],
   weights: readonly number[],
   u: number,
 ): T | null {
   // A missing, negative or non-finite (NaN) weight counts as zero: one NaN must not poison the total.
-  const weightAt = (i: number): number => {
-    const w = weights[i] ?? 0;
-    return Number.isFinite(w) && w > 0 ? w : 0;
-  };
+  const weightAt =
+    (
+      i: number,
+    ): number => {
+      const w =
+        weights[
+          i
+        ] ??
+        0;
+      return Number.isFinite(
+        w,
+      ) &&
+        w >
+          0
+        ? w
+        : 0;
+    };
   let total = 0;
-  for (let i = 0; i < items.length; i++) total += weightAt(i);
-  if (total <= 0) return null;
-  let cursor = u * total;
-  let last: T | null = null;
-  for (let i = 0; i < items.length; i++) {
-    const w = weightAt(i);
-    if (w <= 0) continue;
-    last = items[i] as T;
-    if (cursor < w) return last;
-    cursor -= w;
+  for (
+    let i = 0;
+    i <
+    items.length;
+    i++
+  )
+    total +=
+      weightAt(
+        i,
+      );
+  if (
+    total <=
+    0
+  )
+    return null;
+  let cursor =
+    u *
+    total;
+  let last: T | null =
+    null;
+  for (
+    let i = 0;
+    i <
+    items.length;
+    i++
+  ) {
+    const w =
+      weightAt(
+        i,
+      );
+    if (
+      w <=
+      0
+    )
+      continue;
+    last =
+      items[
+        i
+      ] as T;
+    if (
+      cursor <
+      w
+    )
+      return last;
+    cursor -=
+      w;
   }
   return last;
 }
 
 /** Expected bot comments per hour under an announcement post of this age. */
-export function announcementCommentsPerHour(ageH: number): number {
-  if (!Number.isFinite(ageH) || ageH < 0 || ageH > ANNOUNCEMENT_REACTION_WINDOW_H) return 0;
+export function announcementCommentsPerHour(
+  ageH: number,
+): number {
+  if (
+    !Number.isFinite(
+      ageH,
+    ) ||
+    ageH <
+      0 ||
+    ageH >
+      ANNOUNCEMENT_REACTION_WINDOW_H
+  )
+    return 0;
   return (
     ANNOUNCEMENT_COMMENT_FLOOR_PER_H +
-    ANNOUNCEMENT_COMMENT_PEAK_PER_H * Math.exp(-ageH / ANNOUNCEMENT_COMMENT_TAU_H)
+    ANNOUNCEMENT_COMMENT_PEAK_PER_H *
+      Math.exp(
+        -ageH /
+          ANNOUNCEMENT_COMMENT_TAU_H,
+      )
   );
 }
 
 /** Expected bot comments in one reply tick of `tickMs`. */
-export function announcementCommentsPerTick(ageH: number, tickMs: number): number {
-  return announcementCommentsPerHour(ageH) * (Math.max(0, tickMs) / HOUR);
+export function announcementCommentsPerTick(
+  ageH: number,
+  tickMs: number,
+): number {
+  return (
+    announcementCommentsPerHour(
+      ageH,
+    ) *
+    (Math.max(
+      0,
+      tickMs,
+    ) /
+      HOUR)
+  );
 }
 
 /**
  * A Poisson draw with mean `lambda` (Knuth's method), fed by `random`. Capped
  * so a misconfigured rate can never flood a thread in one tick.
  */
-export function samplePoisson(lambda: number, random: () => number, cap = 20): number {
-  if (!Number.isFinite(lambda) || lambda <= 0) return 0;
-  const limit = Math.exp(-Math.min(lambda, 30));
+export function samplePoisson(
+  lambda: number,
+  random: () => number,
+  cap = 20,
+): number {
+  if (
+    !Number.isFinite(
+      lambda,
+    ) ||
+    lambda <=
+      0
+  )
+    return 0;
+  const limit =
+    Math.exp(
+      -Math.min(
+        lambda,
+        30,
+      ),
+    );
   let k = 0;
   let p = 1;
   do {
     k++;
-    p *= random();
-  } while (p > limit && k <= cap);
-  return Math.min(k - 1, cap);
+    p *=
+      random();
+  } while (
+    p >
+      limit &&
+    k <=
+      cap
+  );
+  return Math.min(
+    k -
+      1,
+    cap,
+  );
 }

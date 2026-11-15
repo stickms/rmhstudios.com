@@ -4,53 +4,119 @@
  * not been synced), in which case the weapon keeps its own texture.
  */
 
-import { useEffect, useState } from 'react';
-import { CanvasTexture, SRGBColorSpace } from 'three';
+import {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  CanvasTexture,
+  SRGBColorSpace,
+} from 'three';
 import { renderWarPaint } from '@/lib/tf2-loadout/warpaint-client';
 
 export function useWarPaintTexture(
-  script: string | undefined,
+  script:
+    | string
+    | undefined,
   wear: number,
   seed: number,
 ): CanvasTexture | null {
-  const [texture, setTexture] = useState<CanvasTexture | null>(null);
+  const [
+    texture,
+    setTexture,
+  ] =
+    useState<CanvasTexture | null>(
+      null,
+    );
 
   useEffect(() => {
-    if (!script) {
-      setTexture(null);
+    if (
+      !script
+    ) {
+      setTexture(
+        null,
+      );
       return undefined;
     }
     let alive = true;
     // Dragging the seed fires a lot of changes; the worker only ever keeps the latest.
-    const timer = setTimeout(() => {
-      void renderWarPaint(script, wear, seed).then((res) => {
-        if (!alive || !res) return;
-        const canvas = document.createElement('canvas');
-        canvas.width = res.w;
-        canvas.height = res.h;
-        canvas
-          .getContext('2d')
-          ?.putImageData(
-            new ImageData(res.rgba as Uint8ClampedArray<ArrayBuffer>, res.w, res.h),
-            0,
-            0,
+    const timer =
+      setTimeout(
+        () => {
+          void renderWarPaint(
+            script,
+            wear,
+            seed,
+          ).then(
+            (
+              res,
+            ) => {
+              if (
+                !alive ||
+                !res
+              )
+                return;
+              const canvas =
+                document.createElement(
+                  'canvas',
+                );
+              canvas.width =
+                res.w;
+              canvas.height =
+                res.h;
+              canvas
+                .getContext(
+                  '2d',
+                )
+                ?.putImageData(
+                  new ImageData(
+                    res.rgba as Uint8ClampedArray<ArrayBuffer>,
+                    res.w,
+                    res.h,
+                  ),
+                  0,
+                  0,
+                );
+              const tex =
+                new CanvasTexture(
+                  canvas,
+                );
+              tex.colorSpace =
+                SRGBColorSpace;
+              tex.flipY = false; // glTF's UV origin is the top left, like the image
+              tex.anisotropy = 4;
+              setTexture(
+                (
+                  old,
+                ) => {
+                  old?.dispose();
+                  return tex;
+                },
+              );
+            },
           );
-        const tex = new CanvasTexture(canvas);
-        tex.colorSpace = SRGBColorSpace;
-        tex.flipY = false; // glTF's UV origin is the top left, like the image
-        tex.anisotropy = 4;
-        setTexture((old) => {
-          old?.dispose();
-          return tex;
-        });
-      });
-    }, 120);
+        },
+        120,
+      );
     return () => {
       alive = false;
-      clearTimeout(timer);
+      clearTimeout(
+        timer,
+      );
     };
-  }, [script, wear, seed]);
+  }, [
+    script,
+    wear,
+    seed,
+  ]);
 
-  useEffect(() => () => texture?.dispose(), [texture]);
+  useEffect(
+    () =>
+      () =>
+        texture?.dispose(),
+    [
+      texture,
+    ],
+  );
   return texture;
 }

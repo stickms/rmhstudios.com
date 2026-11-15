@@ -12,12 +12,35 @@ export interface QotdAnswering {
 
 interface QotdAnsweringState {
   answering: QotdAnswering | null;
-  start: (a: QotdAnswering) => void;
+  start: (
+    a: QotdAnswering,
+  ) => void;
   clear: () => void;
 }
 
-export const useQotdAnswering = create<QotdAnsweringState>((set) => ({
-  answering: null,
-  start: (answering) => set({ answering }),
-  clear: () => set({ answering: null }),
-}));
+export const useQotdAnswering =
+  create<QotdAnsweringState>(
+    (
+      set,
+    ) => ({
+      answering:
+        null,
+      start:
+        (
+          answering,
+        ) =>
+          set(
+            {
+              answering,
+            },
+          ),
+      clear:
+        () =>
+          set(
+            {
+              answering:
+                null,
+            },
+          ),
+    }),
+  );

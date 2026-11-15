@@ -6,8 +6,14 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": ["金菊含秋淚未乾", "玉人對影問誰憐"],
-    "en": ["Golden chrysanthemums hold autumn tears not yet dried", "The jade lady faces a shadow and asks — who will pity her?"]
+    "zh": [
+      "金菊含秋淚未乾",
+      "玉人對影問誰憐"
+    ],
+    "en": [
+      "Golden chrysanthemums hold autumn tears not yet dried",
+      "The jade lady faces a shadow and asks — who will pity her?"
+    ]
   },
   "passages": [
     {

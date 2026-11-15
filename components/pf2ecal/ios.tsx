@@ -46,9 +46,25 @@ export function Group({
 }) {
   return (
     <section>
-      {title && <h3 className="pf2e-group-title">{title}</h3>}
-      <div className="pf2e-group">{children}</div>
-      {footer && <div className="pf2e-group-footer">{footer}</div>}
+      {title && (
+        <h3 className="pf2e-group-title">
+          {
+            title
+          }
+        </h3>
+      )}
+      <div className="pf2e-group">
+        {
+          children
+        }
+      </div>
+      {footer && (
+        <div className="pf2e-group-footer">
+          {
+            footer
+          }
+        </div>
+      )}
     </section>
   );
 }
@@ -71,22 +87,56 @@ export function Row({
   onClick?: () => void;
   disabled?: boolean;
 }) {
-  const content = (
-    <>
-      {label && <span className="pf2e-row-label">{label}</span>}
-      {value && <span className="pf2e-row-value">{value}</span>}
-      {children}
-    </>
-  );
+  const content =
+    (
+      <>
+        {label && (
+          <span className="pf2e-row-label">
+            {
+              label
+            }
+          </span>
+        )}
+        {value && (
+          <span className="pf2e-row-value">
+            {
+              value
+            }
+          </span>
+        )}
+        {
+          children
+        }
+      </>
+    );
 
-  if (onClick) {
+  if (
+    onClick
+  ) {
     return (
-      <button type="button" className="pf2e-row" onClick={onClick} disabled={disabled}>
-        {content}
+      <button
+        type="button"
+        className="pf2e-row"
+        onClick={
+          onClick
+        }
+        disabled={
+          disabled
+        }
+      >
+        {
+          content
+        }
       </button>
     );
   }
-  return <div className="pf2e-row">{content}</div>;
+  return (
+    <div className="pf2e-row">
+      {
+        content
+      }
+    </div>
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -105,13 +155,28 @@ export function Switch({
   disabled,
 }: {
   checked: boolean;
-  onChange: (next: boolean) => void;
+  onChange: (
+    next: boolean,
+  ) => void;
   /** Accessible name. Required — an unlabelled switch is unusable non-visually. */
   label: string;
   disabled?: boolean;
 }) {
   return (
-    <UiSwitch checked={checked} onCheckedChange={onChange} aria-label={label} disabled={disabled} />
+    <UiSwitch
+      checked={
+        checked
+      }
+      onCheckedChange={
+        onChange
+      }
+      aria-label={
+        label
+      }
+      disabled={
+        disabled
+      }
+    />
   );
 }
 
@@ -119,7 +184,10 @@ export function Switch({
 /* Segmented control                                                          */
 /* -------------------------------------------------------------------------- */
 
-export interface Segment<T extends string> {
+export interface Segment<
+  T extends
+    string,
+> {
   value: T;
   label: string;
 }
@@ -136,51 +204,87 @@ export interface Segment<T extends string> {
  * even to say it is NOT used trips it. Hence the circumlocution — the gate is
  * doing its job; this comment is just staying out of its way.)
  */
-export function Segmented<T extends string>({
+export function Segmented<
+  T extends
+    string,
+>({
   segments,
   value,
   onChange,
   label,
 }: {
-  segments: ReadonlyArray<Segment<T>>;
+  segments: ReadonlyArray<
+    Segment<T>
+  >;
   value: T;
-  onChange: (next: T) => void;
+  onChange: (
+    next: T,
+  ) => void;
   label: string;
 }) {
-  const index = Math.max(
-    0,
-    segments.findIndex((s) => s.value === value),
-  );
+  const index =
+    Math.max(
+      0,
+      segments.findIndex(
+        (
+          s,
+        ) =>
+          s.value ===
+          value,
+      ),
+    );
   return (
     <div
       className="pf2e-segmented"
       role="radiogroup"
-      aria-label={label}
+      aria-label={
+        label
+      }
       style={
         {
-          '--pf2e-seg-count': segments.length,
-          '--pf2e-seg-index': index,
+          '--pf2e-seg-count':
+            segments.length,
+          '--pf2e-seg-index':
+            index,
         } as React.CSSProperties
       }
     >
       {/* The pill sits behind the labels and is driven by `--pf2e-seg-index`.
           One transform, one element, no layout projection. */}
-      <span className="pf2e-segmented-thumb" aria-hidden />
-      {segments.map((segment) => (
-        <button
-          key={segment.value}
-          type="button"
-          role="radio"
-          // `aria-checked` only. `aria-pressed` belongs to a toggle button and
-          // is invalid on a radio — it was here to hang CSS off, which the CSS
-          // now takes from `aria-checked` instead.
-          aria-checked={segment.value === value}
-          className="pf2e-segment"
-          onClick={() => onChange(segment.value)}
-        >
-          {segment.label}
-        </button>
-      ))}
+      <span
+        className="pf2e-segmented-thumb"
+        aria-hidden
+      />
+      {segments.map(
+        (
+          segment,
+        ) => (
+          <button
+            key={
+              segment.value
+            }
+            type="button"
+            role="radio"
+            // `aria-checked` only. `aria-pressed` belongs to a toggle button and
+            // is invalid on a radio — it was here to hang CSS off, which the CSS
+            // now takes from `aria-checked` instead.
+            aria-checked={
+              segment.value ===
+              value
+            }
+            className="pf2e-segment"
+            onClick={() =>
+              onChange(
+                segment.value,
+              )
+            }
+          >
+            {
+              segment.label
+            }
+          </button>
+        ),
+      )}
     </div>
   );
 }

@@ -6,11 +6,19 @@
  */
 
 import { Box } from 'lucide-react';
-import { lazy, useMemo, useState, type ReactNode } from 'react';
+import {
+  lazy,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { SilentErrorBoundary } from '@/components/errors/SilentErrorBoundary';
 import { merge } from '@/lib/tf2-loadout/bodygroups';
-import type { Bodygroups, HeldStance } from '@/lib/tf2-loadout/catalog-types';
+import type {
+  Bodygroups,
+  HeldStance,
+} from '@/lib/tf2-loadout/catalog-types';
 import { supportsWebGL } from '@/lib/shared/platform';
 import {
   animUrl,
@@ -20,7 +28,12 @@ import {
   tauntClip,
   useAnimIndex,
 } from '@/lib/tf2-loadout/use-anims';
-import { classModel, modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
+import {
+  classModel,
+  modelUrl,
+  pickModel,
+  useModelIds,
+} from '@/lib/tf2-loadout/use-models';
 import type { Team } from '@/lib/tf2-loadout/team-skins';
 import { cn } from '@/lib/utils';
 import type { EffectSpec } from './EffectParticles';
@@ -30,13 +43,28 @@ import { SearchSelect } from '../ui';
 import { TfTabs } from '../TfTabs';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
-export const PlayerScene = lazy(() => import('./PlayerScene'));
+export const PlayerScene =
+  lazy(
+    () =>
+      import('./PlayerScene'),
+  );
 
-function Note({ children }: { children: ReactNode }) {
+function Note({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-xs text-app-text-dim">
-      <Box className="size-6" aria-hidden />
-      <p className="max-w-64">{children}</p>
+      <Box
+        className="size-6"
+        aria-hidden
+      />
+      <p className="max-w-64">
+        {
+          children
+        }
+      </p>
     </div>
   );
 }
@@ -72,44 +100,150 @@ export function usePlayerParts({
   cls: string;
   worn: readonly WornItem[];
   taunt?: number;
-  animation?: string | null;
+  animation?:
+    | string
+    | null;
 }) {
-  const ids = useModelIds();
-  const anims = useAnimIndex();
-  const clips = useMemo(() => classClips(anims, cls), [anims, cls]);
-  const picked = animation && clips.includes(animation) ? animation : null;
-  const tauntPlaying = taunt !== undefined ? tauntClip(anims, taunt, cls) : null;
+  const ids =
+    useModelIds();
+  const anims =
+    useAnimIndex();
+  const clips =
+    useMemo(
+      () =>
+        classClips(
+          anims,
+          cls,
+        ),
+      [
+        anims,
+        cls,
+      ],
+    );
+  const picked =
+    animation &&
+    clips.includes(
+      animation,
+    )
+      ? animation
+      : null;
+  const tauntPlaying =
+    taunt !==
+    undefined
+      ? tauntClip(
+          anims,
+          taunt,
+          cls,
+        )
+      : null;
   // The body's own idle is the class's loadout-screen pose, which holds its usual weapon. Holding
   // another kind (a melee, a secondary) needs that kind's standing animation, where the class has one.
-  const stance = worn.find((w) => w.stance)?.stance;
-  const stanceClip = stanceClipFor(clips, cls, stance);
-  const clip = picked ?? tauntPlaying ?? stanceClip;
-  const webgl = useMemo(() => (typeof window === 'undefined' ? true : supportsWebGL()), []);
-  const body = ids ? classModel(ids, cls) : null;
-
-  const bodygroups = useMemo(() => merge(worn.map((w) => w.bodygroups)), [worn]);
-
-  const parts = useMemo<PlayerPart[]>(() => {
-    if (!ids) return [];
-    const out: PlayerPart[] = [];
-    for (const w of worn) {
-      const name = pickModel(ids, w.itemId, cls, w.style);
-      if (name) {
-        out.push({
-          key: `${w.slotKey}:${name}`,
-          url: modelUrl(name),
+  const stance =
+    worn.find(
+      (
+        w,
+      ) =>
+        w.stance,
+    )?.stance;
+  const stanceClip =
+    stanceClipFor(
+      clips,
+      cls,
+      stance,
+    );
+  const clip =
+    picked ??
+    tauntPlaying ??
+    stanceClip;
+  const webgl =
+    useMemo(
+      () =>
+        typeof window ===
+        'undefined'
+          ? true
+          : supportsWebGL(),
+      [],
+    );
+  const body =
+    ids
+      ? classModel(
+          ids,
           cls,
-          tint: w.tint,
-          effect: w.effect,
-          paint: w.paint,
-          festive: w.festive,
-        });
-      }
-    }
-    return out;
-  }, [ids, worn, cls]);
+        )
+      : null;
 
-  return { ids, webgl, body, bodygroups, parts, clip, clips, picked };
+  const bodygroups =
+    useMemo(
+      () =>
+        merge(
+          worn.map(
+            (
+              w,
+            ) =>
+              w.bodygroups,
+          ),
+        ),
+      [
+        worn,
+      ],
+    );
+
+  const parts =
+    useMemo<
+      PlayerPart[]
+    >(() => {
+      if (
+        !ids
+      )
+        return [];
+      const out: PlayerPart[] =
+        [];
+      for (const w of worn) {
+        const name =
+          pickModel(
+            ids,
+            w.itemId,
+            cls,
+            w.style,
+          );
+        if (
+          name
+        ) {
+          out.push(
+            {
+              key: `${w.slotKey}:${name}`,
+              url: modelUrl(
+                name,
+              ),
+              cls,
+              tint: w.tint,
+              effect:
+                w.effect,
+              paint:
+                w.paint,
+              festive:
+                w.festive,
+            },
+          );
+        }
+      }
+      return out;
+    }, [
+      ids,
+      worn,
+      cls,
+    ]);
+
+  return {
+    ids,
+    webgl,
+    body,
+    bodygroups,
+    parts,
+    clip,
+    clips,
+    picked,
+  };
 }
 
 export default function PlayerViewer({
@@ -135,81 +269,283 @@ export default function PlayerViewer({
   /** The equipped taunt's unusual effect, if any: it surrounds the whole player. */
   tauntEffect?: EffectSpec;
   /** An animation picked from the list: it plays instead of the taunt. */
-  animation?: string | null;
-  onAnimationChange?: (clip: string | null) => void;
+  animation?:
+    | string
+    | null;
+  onAnimationChange?: (
+    clip:
+      | string
+      | null,
+  ) => void;
   className?: string;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
-  const { ids, webgl, body, bodygroups, parts, clip, clips, picked } = usePlayerParts({
-    cls,
-    worn,
-    taunt,
-    animation,
-  });
-  const options = useMemo(() => clips.map((c, id) => ({ id, label: clipLabel(c) })), [clips]);
-  const [teamPick, setTeamPick] = useState<Team>('red');
-  const team = teamProp ?? teamPick;
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  const {
+    ids,
+    webgl,
+    body,
+    bodygroups,
+    parts,
+    clip,
+    clips,
+    picked,
+  } =
+    usePlayerParts(
+      {
+        cls,
+        worn,
+        taunt,
+        animation,
+      },
+    );
+  const options =
+    useMemo(
+      () =>
+        clips.map(
+          (
+            c,
+            id,
+          ) => ({
+            id,
+            label:
+              clipLabel(
+                c,
+              ),
+          }),
+        ),
+      [
+        clips,
+      ],
+    );
+  const [
+    teamPick,
+    setTeamPick,
+  ] =
+    useState<Team>(
+      'red',
+    );
+  const team =
+    teamProp ??
+    teamPick;
 
-  const content = !webgl ? (
-    <Note>{t('model-no-webgl', { defaultValue: 'Your browser cannot show 3D models.' })}</Note>
-  ) : ids === null ? (
-    <Note>{t('model-checking', { defaultValue: 'Checking for a 3D model…' })}</Note>
-  ) : !body ? (
-    <Note>{t('player-unavailable', { defaultValue: 'The 3D player is not available yet.' })}</Note>
-  ) : (
-    <SilentErrorBoundary
-      key={cls}
-      label="tf2-player"
-      fallback={
-        <Note>{t('model-failed', { defaultValue: 'This model could not be loaded.' })}</Note>
-      }
-    >
-      <ArrivalSuspense
-        fallback={<Note>{t('model-loading', { defaultValue: 'Loading 3D model…' })}</Note>}
+  const content =
+    !webgl ? (
+      <Note>
+        {t(
+          'model-no-webgl',
+          {
+            defaultValue:
+              'Your browser cannot show 3D models.',
+          },
+        )}
+      </Note>
+    ) : ids ===
+      null ? (
+      <Note>
+        {t(
+          'model-checking',
+          {
+            defaultValue:
+              'Checking for a 3D model…',
+          },
+        )}
+      </Note>
+    ) : !body ? (
+      <Note>
+        {t(
+          'player-unavailable',
+          {
+            defaultValue:
+              'The 3D player is not available yet.',
+          },
+        )}
+      </Note>
+    ) : (
+      <SilentErrorBoundary
+        key={
+          cls
+        }
+        label="tf2-player"
+        fallback={
+          <Note>
+            {t(
+              'model-failed',
+              {
+                defaultValue:
+                  'This model could not be loaded.',
+              },
+            )}
+          </Note>
+        }
       >
-        <PlayerScene
-          body={modelUrl(body)}
-          bodygroups={bodygroups}
-          parts={parts}
-          bodyEffect={tauntEffect}
-          tauntUrl={clip ? animUrl(cls, clip) : undefined}
-          team={team}
-        />
-      </ArrivalSuspense>
-    </SilentErrorBoundary>
-  );
+        <ArrivalSuspense
+          fallback={
+            <Note>
+              {t(
+                'model-loading',
+                {
+                  defaultValue:
+                    'Loading 3D model…',
+                },
+              )}
+            </Note>
+          }
+        >
+          <PlayerScene
+            body={modelUrl(
+              body,
+            )}
+            bodygroups={
+              bodygroups
+            }
+            parts={
+              parts
+            }
+            bodyEffect={
+              tauntEffect
+            }
+            tauntUrl={
+              clip
+                ? animUrl(
+                    cls,
+                    clip,
+                  )
+                : undefined
+            }
+            team={
+              team
+            }
+          />
+        </ArrivalSuspense>
+      </SilentErrorBoundary>
+    );
 
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
+    <div
+      className={cn(
+        'flex flex-col gap-1',
+        className,
+      )}
+    >
       <div
         role="img"
-        aria-label={t('model-view', { defaultValue: '3D model viewer' })}
+        aria-label={t(
+          'model-view',
+          {
+            defaultValue:
+              '3D model viewer',
+          },
+        )}
         className={cn(
           'h-72 overflow-hidden rounded-app border border-app-border bg-app-bg sm:h-80 lg:h-[clamp(13rem,34dvh,20rem)]',
         )}
       >
-        {content}
+        {
+          content
+        }
       </div>
-      {teamProp === undefined && body ? (
+      {teamProp ===
+        undefined &&
+      body ? (
         <TfTabs
           size="sm"
-          aria-label={t('player-team', { defaultValue: 'Team colours' })}
+          aria-label={t(
+            'player-team',
+            {
+              defaultValue:
+                'Team colours',
+            },
+          )}
           tabs={[
-            { id: 'red', label: t('team-red', { defaultValue: 'RED' }) },
-            { id: 'blu', label: t('team-blu', { defaultValue: 'BLU' }) },
+            {
+              id: 'red',
+              label:
+                t(
+                  'team-red',
+                  {
+                    defaultValue:
+                      'RED',
+                  },
+                ),
+            },
+            {
+              id: 'blu',
+              label:
+                t(
+                  'team-blu',
+                  {
+                    defaultValue:
+                      'BLU',
+                  },
+                ),
+            },
           ]}
-          value={team}
-          onChange={(id) => setTeamPick(id === 'blu' ? 'blu' : 'red')}
+          value={
+            team
+          }
+          onChange={(
+            id,
+          ) =>
+            setTeamPick(
+              id ===
+                'blu'
+                ? 'blu'
+                : 'red',
+            )
+          }
         />
       ) : null}
-      {onAnimationChange && options.length ? (
+      {onAnimationChange &&
+      options.length ? (
         <SearchSelect
-          value={picked ? clips.indexOf(picked) : undefined}
-          options={options}
-          onChange={(id) => onAnimationChange(id === undefined ? null : clips[id])}
-          noneLabel={t('animation-auto', { defaultValue: 'Animation: automatic' })}
-          placeholder={t('animation-search', { defaultValue: 'Search animations' })}
-          label={t('animation-pick', { defaultValue: 'Animation' })}
+          value={
+            picked
+              ? clips.indexOf(
+                  picked,
+                )
+              : undefined
+          }
+          options={
+            options
+          }
+          onChange={(
+            id,
+          ) =>
+            onAnimationChange(
+              id ===
+                undefined
+                ? null
+                : clips[
+                    id
+                  ],
+            )
+          }
+          noneLabel={t(
+            'animation-auto',
+            {
+              defaultValue:
+                'Animation: automatic',
+            },
+          )}
+          placeholder={t(
+            'animation-search',
+            {
+              defaultValue:
+                'Search animations',
+            },
+          )}
+          label={t(
+            'animation-pick',
+            {
+              defaultValue:
+                'Animation',
+            },
+          )}
         />
       ) : null}
     </div>

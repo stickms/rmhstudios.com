@@ -34,58 +34,223 @@ export interface TextAnchor {
   end: number;
 }
 
-export type Resolved = { start: number; end: number; how: 'position' | 'unique' | 'context' };
+export type Resolved =
+  {
+    start: number;
+    end: number;
+    how:
+      | 'position'
+      | 'unique'
+      | 'context';
+  };
 
 const CONTEXT = 32;
 
-export function createAnchor(text: string, start: number, end: number): TextAnchor | null {
-  if (start < 0 || end > text.length || end <= start) return null;
+export function createAnchor(
+  text: string,
+  start: number,
+  end: number,
+): TextAnchor | null {
+  if (
+    start <
+      0 ||
+    end >
+      text.length ||
+    end <=
+      start
+  )
+    return null;
   return {
-    exact: text.slice(start, end),
-    prefix: text.slice(Math.max(0, start - CONTEXT), start),
-    suffix: text.slice(end, end + CONTEXT),
+    exact:
+      text.slice(
+        start,
+        end,
+      ),
+    prefix:
+      text.slice(
+        Math.max(
+          0,
+          start -
+            CONTEXT,
+        ),
+        start,
+      ),
+    suffix:
+      text.slice(
+        end,
+        end +
+          CONTEXT,
+      ),
     start,
     end,
   };
 }
 
 /** Length of the common suffix of a and b (how well a prefix matches). */
-function tailMatch(a: string, b: string): number {
+function tailMatch(
+  a: string,
+  b: string,
+): number {
   let n = 0;
-  while (n < a.length && n < b.length && a[a.length - 1 - n] === b[b.length - 1 - n]) n++;
+  while (
+    n <
+      a.length &&
+    n <
+      b.length &&
+    a[
+      a.length -
+        1 -
+        n
+    ] ===
+      b[
+        b.length -
+          1 -
+          n
+      ]
+  )
+    n++;
   return n;
 }
 
 /** Length of the common prefix of a and b (how well a suffix matches). */
-function headMatch(a: string, b: string): number {
+function headMatch(
+  a: string,
+  b: string,
+): number {
   let n = 0;
-  while (n < a.length && n < b.length && a[n] === b[n]) n++;
+  while (
+    n <
+      a.length &&
+    n <
+      b.length &&
+    a[
+      n
+    ] ===
+      b[
+        n
+      ]
+  )
+    n++;
   return n;
 }
 
-export function resolveAnchor(text: string, anchor: TextAnchor): Resolved | null {
-  const { exact, start, end } = anchor;
-  if (!exact) return null;
-  if (text.slice(start, end) === exact) return { start, end, how: 'position' };
+export function resolveAnchor(
+  text: string,
+  anchor: TextAnchor,
+): Resolved | null {
+  const {
+    exact,
+    start,
+    end,
+  } =
+    anchor;
+  if (
+    !exact
+  )
+    return null;
+  if (
+    text.slice(
+      start,
+      end,
+    ) ===
+    exact
+  )
+    return {
+      start,
+      end,
+      how: 'position',
+    };
 
-  const hits: number[] = [];
-  for (let i = text.indexOf(exact); i !== -1; i = text.indexOf(exact, i + 1)) hits.push(i);
-  if (hits.length === 0) return null;
-  if (hits.length === 1) return { start: hits[0]!, end: hits[0]! + exact.length, how: 'unique' };
+  const hits: number[] =
+    [];
+  for (
+    let i =
+      text.indexOf(
+        exact,
+      );
+    i !==
+    -1;
+    i =
+      text.indexOf(
+        exact,
+        i +
+          1,
+      )
+  )
+    hits.push(
+      i,
+    );
+  if (
+    hits.length ===
+    0
+  )
+    return null;
+  if (
+    hits.length ===
+    1
+  )
+    return {
+      start:
+        hits[0]!,
+      end:
+        hits[0]! +
+        exact.length,
+      how: 'unique',
+    };
 
-  let best = hits[0]!;
-  let bestScore = -Infinity;
+  let best =
+    hits[0]!;
+  let bestScore =
+    -Infinity;
   for (const h of hits) {
-    const before = text.slice(Math.max(0, h - CONTEXT), h);
-    const after = text.slice(h + exact.length, h + exact.length + CONTEXT);
+    const before =
+      text.slice(
+        Math.max(
+          0,
+          h -
+            CONTEXT,
+        ),
+        h,
+      );
+    const after =
+      text.slice(
+        h +
+          exact.length,
+        h +
+          exact.length +
+          CONTEXT,
+      );
     // Context dominates; distance only breaks ties.
     const score =
-      (tailMatch(before, anchor.prefix) + headMatch(after, anchor.suffix)) * 1_000_000 -
-      Math.abs(h - start);
-    if (score > bestScore) {
-      bestScore = score;
-      best = h;
+      (tailMatch(
+        before,
+        anchor.prefix,
+      ) +
+        headMatch(
+          after,
+          anchor.suffix,
+        )) *
+        1_000_000 -
+      Math.abs(
+        h -
+          start,
+      );
+    if (
+      score >
+      bestScore
+    ) {
+      bestScore =
+        score;
+      best =
+        h;
     }
   }
-  return { start: best, end: best + exact.length, how: 'context' };
+  return {
+    start:
+      best,
+    end:
+      best +
+      exact.length,
+    how: 'context',
+  };
 }

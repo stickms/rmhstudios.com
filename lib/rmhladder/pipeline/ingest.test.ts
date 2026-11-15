@@ -1,27 +1,50 @@
-import { describe, expect, it } from 'vitest';
-import { assessJob, extractApplicationDeadline, summarizeDescription } from './ingest';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
+import {
+  assessJob,
+  extractApplicationDeadline,
+  summarizeDescription,
+} from './ingest';
 import type { NormalizedJob } from '../adapters/types';
 import type { VerificationEvidence } from '../verification';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-function makeNormalized(overrides: Partial<NormalizedJob> = {}): NormalizedJob {
+function makeNormalized(
+  overrides: Partial<NormalizedJob> = {},
+): NormalizedJob {
   return {
-    externalId: 'ext-1',
-    title: 'Software Engineering Intern',
-    locationRaw: 'New York, NY',
-    country: 'US',
+    externalId:
+      'ext-1',
+    title:
+      'Software Engineering Intern',
+    locationRaw:
+      'New York, NY',
+    country:
+      'US',
     remoteHint: false,
-    postedAt: new Date('2026-06-01'),
-    absoluteUrl: 'https://boards.greenhouse.io/acme/jobs/1',
-    applyUrl: 'https://boards.greenhouse.io/acme/jobs/1#app',
-    descriptionHtml: '<p>Join our summer intern program.</p>',
-    requisitionId: 'REQ-100',
+    postedAt:
+      new Date(
+        '2026-06-01',
+      ),
+    absoluteUrl:
+      'https://boards.greenhouse.io/acme/jobs/1',
+    applyUrl:
+      'https://boards.greenhouse.io/acme/jobs/1#app',
+    descriptionHtml:
+      '<p>Join our summer intern program.</p>',
+    requisitionId:
+      'REQ-100',
     ...overrides,
   };
 }
 
-function makeEvidence(overrides: Partial<VerificationEvidence> = {}): VerificationEvidence {
+function makeEvidence(
+  overrides: Partial<VerificationEvidence> = {},
+): VerificationEvidence {
   return {
     fetched: true,
     httpStatus: 200,
@@ -34,10 +57,14 @@ function makeEvidence(overrides: Partial<VerificationEvidence> = {}): Verificati
     closedLanguage: false,
     blocked: false,
     isSearchResultsPage: false,
-    companyName: 'Acme Corp',
-    jobTitle: 'Software Engineering Intern',
-    locationLabel: 'New York, NY',
-    platform: 'greenhouse',
+    companyName:
+      'Acme Corp',
+    jobTitle:
+      'Software Engineering Intern',
+    locationLabel:
+      'New York, NY',
+    platform:
+      'greenhouse',
     ...overrides,
   };
 }
@@ -47,12 +74,21 @@ function baseArgs(
   evidenceOverrides: Partial<VerificationEvidence> = {},
 ) {
   return {
-    normalized: makeNormalized(normalizedOverrides),
-    companyName: 'Acme Corp',
-    companyId: 'acme-id',
+    normalized:
+      makeNormalized(
+        normalizedOverrides,
+      ),
+    companyName:
+      'Acme Corp',
+    companyId:
+      'acme-id',
     companyPriority: 1,
-    platform: 'greenhouse',
-    evidence: makeEvidence(evidenceOverrides),
+    platform:
+      'greenhouse',
+    evidence:
+      makeEvidence(
+        evidenceOverrides,
+      ),
   };
 }
 
@@ -60,29 +96,84 @@ function baseArgs(
 
 describe('summarizeDescription', () => {
   it('returns null summary and empty text for null html', () => {
-    const { summary, text } = summarizeDescription(null);
-    expect(summary).toBeNull();
-    expect(text).toBe('');
+    const {
+      summary,
+      text,
+    } =
+      summarizeDescription(
+        null,
+      );
+    expect(
+      summary,
+    ).toBeNull();
+    expect(
+      text,
+    ).toBe(
+      '',
+    );
   });
 
   it('returns collapsed text for simple html', () => {
-    const { summary, text } = summarizeDescription('<p>Hello  world</p>');
-    expect(text).toBe('Hello world');
-    expect(summary).toBe('Hello world');
+    const {
+      summary,
+      text,
+    } =
+      summarizeDescription(
+        '<p>Hello  world</p>',
+      );
+    expect(
+      text,
+    ).toBe(
+      'Hello world',
+    );
+    expect(
+      summary,
+    ).toBe(
+      'Hello world',
+    );
   });
 
   it('truncates summary at 500 chars but text is the full content', () => {
-    const longWord = 'a'.repeat(600);
+    const longWord =
+      'a'.repeat(
+        600,
+      );
     const html = `<p>${longWord}</p>`;
-    const { summary, text } = summarizeDescription(html);
-    expect(text).toBe(longWord);
-    expect(summary).not.toBeNull();
-    expect(summary!.length).toBe(500);
+    const {
+      summary,
+      text,
+    } =
+      summarizeDescription(
+        html,
+      );
+    expect(
+      text,
+    ).toBe(
+      longWord,
+    );
+    expect(
+      summary,
+    ).not.toBeNull();
+    expect(
+      summary!
+        .length,
+    ).toBe(
+      500,
+    );
   });
 
   it('collapses whitespace across tags', () => {
-    const { text } = summarizeDescription('<p>Hello</p>  <p>World</p>');
-    expect(text).toBe('Hello World');
+    const {
+      text,
+    } =
+      summarizeDescription(
+        '<p>Hello</p>  <p>World</p>',
+      );
+    expect(
+      text,
+    ).toBe(
+      'Hello World',
+    );
   });
 });
 
@@ -90,45 +181,182 @@ describe('summarizeDescription', () => {
 
 describe('assessJob — US intern verified_active', () => {
   it('returns verified_active with no review reasons for a strong US internship', () => {
-    const result = assessJob(baseArgs());
-    expect(result.verificationInput.usConfirmed).toBe(true);
-    expect(result.reviewReasons).not.toContain('ambiguous_us_location');
-    expect(result.reviewReasons).not.toContain('low_confidence');
+    const result =
+      assessJob(
+        baseArgs(),
+      );
+    expect(
+      result
+        .verificationInput
+        .usConfirmed,
+    ).toBe(
+      true,
+    );
+    expect(
+      result.reviewReasons,
+    ).not.toContain(
+      'ambiguous_us_location',
+    );
+    expect(
+      result.reviewReasons,
+    ).not.toContain(
+      'low_confidence',
+    );
     // strong evidence → verified_active or verified_probable (not needs_manual_review)
-    expect(['verified_active', 'verified_probable']).toContain(result.fields.verificationStatus);
-    expect(result.reviewReasons).toHaveLength(0);
+    expect(
+      [
+        'verified_active',
+        'verified_probable',
+      ],
+    ).toContain(
+      result
+        .fields
+        .verificationStatus,
+    );
+    expect(
+      result.reviewReasons,
+    ).toHaveLength(
+      0,
+    );
   });
 
   it('produces a dedupeHash string', () => {
-    const result = assessJob(baseArgs());
-    expect(typeof result.dedupeHash).toBe('string');
-    expect(result.dedupeHash).toHaveLength(64); // sha256 hex
+    const result =
+      assessJob(
+        baseArgs(),
+      );
+    expect(
+      typeof result.dedupeHash,
+    ).toBe(
+      'string',
+    );
+    expect(
+      result.dedupeHash,
+    ).toHaveLength(
+      64,
+    ); // sha256 hex
   });
 
   it('fills standard fields', () => {
-    const result = assessJob(baseArgs());
-    expect(result.fields.title).toBe('Software Engineering Intern');
-    expect(result.fields.normalizedTitle).toBeTruthy();
-    expect(result.fields.locationRaw).toBe('New York, NY');
-    expect(result.fields.sourcePlatform).toBe('greenhouse');
-    expect(result.fields.originalPostingUrl).toBe('https://boards.greenhouse.io/acme/jobs/1');
-    expect(result.fields.canonicalApplyUrl).toBe('https://boards.greenhouse.io/acme/jobs/1#app');
-    expect(result.fields.externalRequisitionId).toBe('REQ-100');
-    expect(result.fields.fullDescription).toBe('<p>Join our summer intern program.</p>');
-    expect(result.fields.descriptionText).toBe('Join our summer intern program.');
-    expect(result.fields.contentHash).toMatch(/^[a-f0-9]{64}$/);
+    const result =
+      assessJob(
+        baseArgs(),
+      );
+    expect(
+      result
+        .fields
+        .title,
+    ).toBe(
+      'Software Engineering Intern',
+    );
+    expect(
+      result
+        .fields
+        .normalizedTitle,
+    ).toBeTruthy();
+    expect(
+      result
+        .fields
+        .locationRaw,
+    ).toBe(
+      'New York, NY',
+    );
+    expect(
+      result
+        .fields
+        .sourcePlatform,
+    ).toBe(
+      'greenhouse',
+    );
+    expect(
+      result
+        .fields
+        .originalPostingUrl,
+    ).toBe(
+      'https://boards.greenhouse.io/acme/jobs/1',
+    );
+    expect(
+      result
+        .fields
+        .canonicalApplyUrl,
+    ).toBe(
+      'https://boards.greenhouse.io/acme/jobs/1#app',
+    );
+    expect(
+      result
+        .fields
+        .externalRequisitionId,
+    ).toBe(
+      'REQ-100',
+    );
+    expect(
+      result
+        .fields
+        .fullDescription,
+    ).toBe(
+      '<p>Join our summer intern program.</p>',
+    );
+    expect(
+      result
+        .fields
+        .descriptionText,
+    ).toBe(
+      'Join our summer intern program.',
+    );
+    expect(
+      result
+        .fields
+        .contentHash,
+    ).toMatch(
+      /^[a-f0-9]{64}$/,
+    );
   });
 
   it('sets employmentType internship for intern programType', () => {
-    const result = assessJob(baseArgs());
-    expect(result.fields.programType).not.toBe('other');
-    expect(result.fields.employmentType).toBe('internship');
+    const result =
+      assessJob(
+        baseArgs(),
+      );
+    expect(
+      result
+        .fields
+        .programType,
+    ).not.toBe(
+      'other',
+    );
+    expect(
+      result
+        .fields
+        .employmentType,
+    ).toBe(
+      'internship',
+    );
   });
 
   it('companyIsTarget=true when companyPriority<=2', () => {
-    const r1 = assessJob({ ...baseArgs(), companyPriority: 1 });
-    const r2 = assessJob({ ...baseArgs(), companyPriority: 3 });
-    expect(r1.fields.relevanceScoreBase).toBeGreaterThan(r2.fields.relevanceScoreBase);
+    const r1 =
+      assessJob(
+        {
+          ...baseArgs(),
+          companyPriority: 1,
+        },
+      );
+    const r2 =
+      assessJob(
+        {
+          ...baseArgs(),
+          companyPriority: 3,
+        },
+      );
+    expect(
+      r1
+        .fields
+        .relevanceScoreBase,
+    ).toBeGreaterThan(
+      r2
+        .fields
+        .relevanceScoreBase,
+    );
   });
 });
 
@@ -136,33 +364,77 @@ describe('assessJob — US intern verified_active', () => {
 
 describe('assessJob — London analyst → non_us_role override', () => {
   it('overrides verification status to non_us_role', () => {
-    const result = assessJob(
-      baseArgs(
-        { locationRaw: 'London, UK', country: null, title: 'Investment Banking Analyst' },
-        { usConfirmed: false },
-      ),
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'London, UK',
+            country:
+              null,
+            title:
+              'Investment Banking Analyst',
+          },
+          {
+            usConfirmed: false,
+          },
+        ),
+      );
+    expect(
+      result
+        .fields
+        .verificationStatus,
+    ).toBe(
+      'non_us_role',
     );
-    expect(result.fields.verificationStatus).toBe('non_us_role');
   });
 
   it('does NOT add low_confidence reason when non_us_role', () => {
-    const result = assessJob(
-      baseArgs(
-        { locationRaw: 'London, UK', country: null, title: 'Investment Banking Analyst' },
-        { usConfirmed: false },
-      ),
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'London, UK',
+            country:
+              null,
+            title:
+              'Investment Banking Analyst',
+          },
+          {
+            usConfirmed: false,
+          },
+        ),
+      );
+    expect(
+      result.reviewReasons,
+    ).not.toContain(
+      'low_confidence',
     );
-    expect(result.reviewReasons).not.toContain('low_confidence');
   });
 
   it('sets usConfirmed false and isUS false on the enriched evidence', () => {
-    const result = assessJob(
-      baseArgs(
-        { locationRaw: 'London, UK', country: null },
-        { usConfirmed: true }, // adapter said true but assessJob must override
-      ),
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'London, UK',
+            country:
+              null,
+          },
+          {
+            usConfirmed: true,
+          }, // adapter said true but assessJob must override
+        ),
+      );
+    expect(
+      result
+        .verificationInput
+        .usConfirmed,
+    ).toBe(
+      false,
     );
-    expect(result.verificationInput.usConfirmed).toBe(false);
   });
 });
 
@@ -170,8 +442,22 @@ describe('assessJob — London analyst → non_us_role override', () => {
 
 describe('assessJob — ambiguous location', () => {
   it('adds ambiguous_us_location when isUS is null', () => {
-    const result = assessJob(baseArgs({ locationRaw: 'Main Campus', country: null }));
-    expect(result.reviewReasons).toContain('ambiguous_us_location');
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'Main Campus',
+            country:
+              null,
+          },
+        ),
+      );
+    expect(
+      result.reviewReasons,
+    ).toContain(
+      'ambiguous_us_location',
+    );
   });
 });
 
@@ -180,10 +466,32 @@ describe('assessJob — ambiguous location', () => {
 describe('assessJob — senior/non-early-career title', () => {
   it('nulls graduationYearTarget and schoolYearTarget when classification is no', () => {
     // Use a title that strongly classifies as 'no'
-    const result = assessJob(baseArgs({ title: 'Senior Vice President, Finance' }));
-    expect(result.fields.earlyCareerClassification).toBe('no');
-    expect(result.fields.graduationYearTarget).toBeNull();
-    expect(result.fields.schoolYearTarget).toBeNull();
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            title:
+              'Senior Vice President, Finance',
+          },
+        ),
+      );
+    expect(
+      result
+        .fields
+        .earlyCareerClassification,
+    ).toBe(
+      'no',
+    );
+    expect(
+      result
+        .fields
+        .graduationYearTarget,
+    ).toBeNull();
+    expect(
+      result
+        .fields
+        .schoolYearTarget,
+    ).toBeNull();
   });
 });
 
@@ -192,21 +500,37 @@ describe('assessJob — senior/non-early-career title', () => {
 describe('assessJob — low evidence → low_confidence', () => {
   it('adds low_confidence reason when confidence < 60 after computeVerification', () => {
     // Minimal evidence: not an API source, no title match, no apply, no reqId
-    const result = assessJob(
-      baseArgs(
-        { locationRaw: 'New York, NY', country: 'US' },
-        {
-          apiSource: false,
-          titleMatch: false,
-          companyMatch: false,
-          applyPresent: false,
-          reqIdPresent: false,
-          usConfirmed: false, // assessJob will override from location
-        },
-      ),
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'New York, NY',
+            country:
+              'US',
+          },
+          {
+            apiSource: false,
+            titleMatch: false,
+            companyMatch: false,
+            applyPresent: false,
+            reqIdPresent: false,
+            usConfirmed: false, // assessJob will override from location
+          },
+        ),
+      );
+    expect(
+      result.reviewReasons,
+    ).toContain(
+      'low_confidence',
     );
-    expect(result.reviewReasons).toContain('low_confidence');
-    expect(result.fields.verificationStatus).toBe('needs_manual_review');
+    expect(
+      result
+        .fields
+        .verificationStatus,
+    ).toBe(
+      'needs_manual_review',
+    );
   });
 });
 
@@ -214,14 +538,46 @@ describe('assessJob — low evidence → low_confidence', () => {
 
 describe('assessJob — remoteStatus handling', () => {
   it('keeps remote_us for a US remote job', () => {
-    const result = assessJob(baseArgs({ locationRaw: 'Remote', country: 'US' }));
-    expect(result.fields.remoteStatus).toBe('remote_us');
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'Remote',
+            country:
+              'US',
+          },
+        ),
+      );
+    expect(
+      result
+        .fields
+        .remoteStatus,
+    ).toBe(
+      'remote_us',
+    );
   });
 
   it('downgrades remote_us to onsite when location is non-US', () => {
-    const result = assessJob(baseArgs({ locationRaw: 'Remote - London', country: null }));
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'Remote - London',
+            country:
+              null,
+          },
+        ),
+      );
     // isUS is false (london signal), so remote_us must be downgraded
-    expect(result.fields.remoteStatus).not.toBe('remote_us');
+    expect(
+      result
+        .fields
+        .remoteStatus,
+    ).not.toBe(
+      'remote_us',
+    );
   });
 });
 
@@ -229,24 +585,82 @@ describe('assessJob — remoteStatus handling', () => {
 
 describe('assessJob — dedupeHash stability', () => {
   it('produces the same hash for identical inputs', () => {
-    const r1 = assessJob(baseArgs());
-    const r2 = assessJob(baseArgs());
-    expect(r1.dedupeHash).toBe(r2.dedupeHash);
+    const r1 =
+      assessJob(
+        baseArgs(),
+      );
+    const r2 =
+      assessJob(
+        baseArgs(),
+      );
+    expect(
+      r1.dedupeHash,
+    ).toBe(
+      r2.dedupeHash,
+    );
   });
 
   it('produces different hashes for different cities', () => {
-    const r1 = assessJob(baseArgs({ locationRaw: 'New York, NY' }));
-    const r2 = assessJob(baseArgs({ locationRaw: 'Chicago, IL' }));
-    expect(r1.dedupeHash).not.toBe(r2.dedupeHash);
+    const r1 =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'New York, NY',
+          },
+        ),
+      );
+    const r2 =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'Chicago, IL',
+          },
+        ),
+      );
+    expect(
+      r1.dedupeHash,
+    ).not.toBe(
+      r2.dedupeHash,
+    );
   });
 });
 
 describe('assessJob — content hash', () => {
   it('changes when source content changes without changing fuzzy identity', () => {
-    const first = assessJob(baseArgs({ descriptionHtml: '<p>Original description</p>' }));
-    const changed = assessJob(baseArgs({ descriptionHtml: '<p>Updated description</p>' }));
-    expect(first.dedupeHash).toBe(changed.dedupeHash);
-    expect(first.fields.contentHash).not.toBe(changed.fields.contentHash);
+    const first =
+      assessJob(
+        baseArgs(
+          {
+            descriptionHtml:
+              '<p>Original description</p>',
+          },
+        ),
+      );
+    const changed =
+      assessJob(
+        baseArgs(
+          {
+            descriptionHtml:
+              '<p>Updated description</p>',
+          },
+        ),
+      );
+    expect(
+      first.dedupeHash,
+    ).toBe(
+      changed.dedupeHash,
+    );
+    expect(
+      first
+        .fields
+        .contentHash,
+    ).not.toBe(
+      changed
+        .fields
+        .contentHash,
+    );
   });
 });
 
@@ -254,41 +668,102 @@ describe('assessJob — content hash', () => {
 
 describe('assessJob — fields completeness', () => {
   it('carries usLocationConfidence', () => {
-    const result = assessJob(baseArgs());
-    expect(typeof result.fields.usLocationConfidence).toBe('number');
+    const result =
+      assessJob(
+        baseArgs(),
+      );
+    expect(
+      typeof result
+        .fields
+        .usLocationConfidence,
+    ).toBe(
+      'number',
+    );
   });
 
   it('carries urgencyFlag', () => {
-    const result = assessJob(baseArgs());
-    expect(typeof result.fields.urgencyFlag).toBe('boolean');
+    const result =
+      assessJob(
+        baseArgs(),
+      );
+    expect(
+      typeof result
+        .fields
+        .urgencyFlag,
+    ).toBe(
+      'boolean',
+    );
   });
 
   it('carries descriptionSummary', () => {
-    const result = assessJob(baseArgs());
-    expect(result.fields.descriptionSummary).toBeTruthy();
+    const result =
+      assessJob(
+        baseArgs(),
+      );
+    expect(
+      result
+        .fields
+        .descriptionSummary,
+    ).toBeTruthy();
   });
 
   it('carries postingDate', () => {
-    const result = assessJob(baseArgs());
-    expect(result.fields.postingDate).toBeInstanceOf(Date);
+    const result =
+      assessJob(
+        baseArgs(),
+      );
+    expect(
+      result
+        .fields
+        .postingDate,
+    ).toBeInstanceOf(
+      Date,
+    );
   });
 
   it('sets employmentType full_time for non-intern program types', () => {
-    const result = assessJob(
-      baseArgs(
-        { title: 'Entry Level Business Analyst', descriptionHtml: '<p>Join our team.</p>' },
-        {},
-      ),
-    );
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            title:
+              'Entry Level Business Analyst',
+            descriptionHtml:
+              '<p>Join our team.</p>',
+          },
+          {},
+        ),
+      );
     // entry_level is not in the internship-type list → full_time
-    expect(result.fields.programType).toBe('entry_level');
-    expect(result.fields.employmentType).toBe('full_time');
+    expect(
+      result
+        .fields
+        .programType,
+    ).toBe(
+      'entry_level',
+    );
+    expect(
+      result
+        .fields
+        .employmentType,
+    ).toBe(
+      'full_time',
+    );
   });
 
   it('carries externalId from the normalized job', () => {
-    const result = assessJob(baseArgs());
+    const result =
+      assessJob(
+        baseArgs(),
+      );
     // makeNormalized defaults externalId to 'ext-1'
-    expect(result.fields.externalId).toBe('ext-1');
+    expect(
+      result
+        .fields
+        .externalId,
+    ).toBe(
+      'ext-1',
+    );
   });
 });
 
@@ -296,28 +771,76 @@ describe('assessJob — fields completeness', () => {
 
 describe('assessJob — non_us_role evidence string', () => {
   it('London job with locationRaw: evidence contains non-US classification message', () => {
-    const result = assessJob(
-      baseArgs(
-        { locationRaw: 'London, UK', country: null, title: 'Investment Banking Analyst' },
-        { usConfirmed: false },
-      ),
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'London, UK',
+            country:
+              null,
+            title:
+              'Investment Banking Analyst',
+          },
+          {
+            usConfirmed: false,
+          },
+        ),
+      );
+    expect(
+      result
+        .fields
+        .verificationStatus,
+    ).toBe(
+      'non_us_role',
     );
-    expect(result.fields.verificationStatus).toBe('non_us_role');
-    expect(result.fields.verificationEvidence).toMatch(
+    expect(
+      result
+        .fields
+        .verificationEvidence,
+    ).toMatch(
       /Location classified non-US \(London, UK\) — excluded from US pipeline\./,
     );
   });
 
   it('non-US job with country code: evidence includes location identifier', () => {
-    const result = assessJob(
-      baseArgs(
-        { locationRaw: 'London', country: 'GB', title: 'Director of Operations' },
-        { usConfirmed: false },
-      ),
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'London',
+            country:
+              'GB',
+            title:
+              'Director of Operations',
+          },
+          {
+            usConfirmed: false,
+          },
+        ),
+      );
+    expect(
+      result
+        .fields
+        .verificationStatus,
+    ).toBe(
+      'non_us_role',
     );
-    expect(result.fields.verificationStatus).toBe('non_us_role');
-    expect(result.fields.verificationEvidence).toMatch(/Location classified non-US/);
-    expect(result.fields.verificationEvidence).toMatch(/excluded from US pipeline/);
+    expect(
+      result
+        .fields
+        .verificationEvidence,
+    ).toMatch(
+      /Location classified non-US/,
+    );
+    expect(
+      result
+        .fields
+        .verificationEvidence,
+    ).toMatch(
+      /excluded from US pipeline/,
+    );
   });
 });
 
@@ -325,34 +848,94 @@ describe('assessJob — non_us_role evidence string', () => {
 
 describe('assessJob — country field semantics', () => {
   it('US intern: country is "US"', () => {
-    const result = assessJob(baseArgs({ locationRaw: 'New York, NY', country: 'US' }));
-    expect(result.fields.country).toBe('US');
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'New York, NY',
+            country:
+              'US',
+          },
+        ),
+      );
+    expect(
+      result
+        .fields
+        .country,
+    ).toBe(
+      'US',
+    );
   });
 
   it('London job with country "GB": country is "GB"', () => {
-    const result = assessJob(
-      baseArgs(
-        { locationRaw: 'London', country: 'GB', title: 'Director of Operations' },
-        { usConfirmed: false },
-      ),
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'London',
+            country:
+              'GB',
+            title:
+              'Director of Operations',
+          },
+          {
+            usConfirmed: false,
+          },
+        ),
+      );
+    expect(
+      result
+        .fields
+        .country,
+    ).toBe(
+      'GB',
     );
-    expect(result.fields.country).toBe('GB');
   });
 
   it('London via locationRaw only (no country): country is null', () => {
-    const result = assessJob(
-      baseArgs(
-        { locationRaw: 'London, UK', country: null, title: 'Investment Banking Analyst' },
-        { usConfirmed: false },
-      ),
-    );
-    expect(result.fields.country).toBeNull();
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'London, UK',
+            country:
+              null,
+            title:
+              'Investment Banking Analyst',
+          },
+          {
+            usConfirmed: false,
+          },
+        ),
+      );
+    expect(
+      result
+        .fields
+        .country,
+    ).toBeNull();
   });
 
   it('Main Campus ambiguous location (no country): country is null', () => {
-    const result = assessJob(baseArgs({ locationRaw: 'Main Campus', country: null }));
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            locationRaw:
+              'Main Campus',
+            country:
+              null,
+          },
+        ),
+      );
     // isUS is null (ambiguous) → country is null
-    expect(result.fields.country).toBeNull();
+    expect(
+      result
+        .fields
+        .country,
+    ).toBeNull();
   });
 });
 
@@ -361,27 +944,69 @@ describe('assessJob — country field semantics', () => {
 describe('assessJob — unclear early career', () => {
   it('adds ambiguous_early_career for unclear classification', () => {
     // Operations Specialist deterministically classifies as unclear
-    const result = assessJob(baseArgs({ title: 'Operations Specialist' }, {}));
-    expect(result.fields.earlyCareerClassification).toBe('unclear');
-    expect(result.reviewReasons).toContain('ambiguous_early_career');
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            title:
+              'Operations Specialist',
+          },
+          {},
+        ),
+      );
+    expect(
+      result
+        .fields
+        .earlyCareerClassification,
+    ).toBe(
+      'unclear',
+    );
+    expect(
+      result.reviewReasons,
+    ).toContain(
+      'ambiguous_early_career',
+    );
   });
 });
 
 describe('application deadline extraction', () => {
   it('extracts explicit apply-by dates and carries them into assessment', () => {
-    const deadline = extractApplicationDeadline('Applications close July 31, 2026.');
-    expect(deadline?.getFullYear()).toBe(2026);
-    expect(deadline?.getMonth()).toBe(6);
-
-    const result = assessJob(
-      baseArgs({
-        descriptionHtml: '<p>Apply by July 31, 2026 for consideration.</p>',
-      }),
+    const deadline =
+      extractApplicationDeadline(
+        'Applications close July 31, 2026.',
+      );
+    expect(
+      deadline?.getFullYear(),
+    ).toBe(
+      2026,
     );
-    expect(result.fields.applicationDeadline?.getDate()).toBe(31);
+    expect(
+      deadline?.getMonth(),
+    ).toBe(
+      6,
+    );
+
+    const result =
+      assessJob(
+        baseArgs(
+          {
+            descriptionHtml:
+              '<p>Apply by July 31, 2026 for consideration.</p>',
+          },
+        ),
+      );
+    expect(
+      result.fields.applicationDeadline?.getDate(),
+    ).toBe(
+      31,
+    );
   });
 
   it('does not infer a deadline from an unrelated date', () => {
-    expect(extractApplicationDeadline('The program begins July 31, 2026.')).toBeNull();
+    expect(
+      extractApplicationDeadline(
+        'The program begins July 31, 2026.',
+      ),
+    ).toBeNull();
   });
 });

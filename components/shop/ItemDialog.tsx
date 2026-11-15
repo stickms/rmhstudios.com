@@ -31,46 +31,104 @@ export function ItemDialog({
   actions,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (
+    open: boolean,
+  ) => void;
   kind: ShopItemKind | null;
   art: ItemArt;
   name: string;
   description?: ReactNode;
   /** Label and value pairs, drawn as rows on rules. */
-  facts: { label: string; value: ReactNode }[];
+  facts: {
+    label: string;
+    value: ReactNode;
+  }[];
   /** A line above the actions: why the primary is unavailable, or what happens next. */
   note?: ReactNode;
   actions: ReactNode;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileFullscreen className="sm:max-w-md">
+    <Dialog
+      open={
+        open
+      }
+      onOpenChange={
+        onOpenChange
+      }
+    >
+      <DialogContent
+        mobileFullscreen
+        className="sm:max-w-md"
+      >
         <DialogHeader>
-          <DialogTitle>{name}</DialogTitle>
-          {description ? <DialogDescription>{description}</DialogDescription> : null}
+          <DialogTitle>
+            {
+              name
+            }
+          </DialogTitle>
+          {description ? (
+            <DialogDescription>
+              {
+                description
+              }
+            </DialogDescription>
+          ) : null}
         </DialogHeader>
 
-        <ItemStage kind={kind} art={art} name={name} />
+        <ItemStage
+          kind={
+            kind
+          }
+          art={
+            art
+          }
+          name={
+            name
+          }
+        />
 
         <dl className="border-t border-site-border">
-          {facts.map((fact) => (
-            <div
-              key={fact.label}
-              className="flex min-h-10 items-center justify-between gap-4 border-b border-site-border py-2"
-            >
-              <dt className="t-body text-site-text-muted">{fact.label}</dt>
-              <dd className="t-body min-w-0 text-end text-site-text">{fact.value}</dd>
-            </div>
-          ))}
+          {facts.map(
+            (
+              fact,
+            ) => (
+              <div
+                key={
+                  fact.label
+                }
+                className="flex min-h-10 items-center justify-between gap-4 border-b border-site-border py-2"
+              >
+                <dt className="t-body text-site-text-muted">
+                  {
+                    fact.label
+                  }
+                </dt>
+                <dd className="t-body min-w-0 text-end text-site-text">
+                  {
+                    fact.value
+                  }
+                </dd>
+              </div>
+            ),
+          )}
         </dl>
 
         <div className="flex flex-col gap-3">
           {note ? (
-            <p className="t-body text-site-text-muted" aria-live="polite">
-              {note}
+            <p
+              className="t-body text-site-text-muted"
+              aria-live="polite"
+            >
+              {
+                note
+              }
             </p>
           ) : null}
-          <DialogFooter className="[&>*]:w-full sm:[&>*]:w-auto">{actions}</DialogFooter>
+          <DialogFooter className="[&>*]:w-full sm:[&>*]:w-auto">
+            {
+              actions
+            }
+          </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>

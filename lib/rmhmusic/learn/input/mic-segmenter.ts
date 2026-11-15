@@ -26,78 +26,163 @@ export interface Segmenter {
    * common "nothing happened" answer is one shared empty array (no allocation
    * per frame at the 25 ms poll).
    */
-  push(frame: PitchFrame | null, time: number): readonly NoteEvent[];
+  push(
+    frame: PitchFrame | null,
+    time: number,
+  ): readonly NoteEvent[];
   /** Release the sounding note, if any (used when the mic is switched off). */
-  flush(time: number): readonly NoteEvent[];
+  flush(
+    time: number,
+  ): readonly NoteEvent[];
 }
 
-const NONE: readonly NoteEvent[] = Object.freeze([]);
+const NONE: readonly NoteEvent[] =
+  Object.freeze(
+    [],
+  );
 
 export function createSegmenter(): Segmenter {
-  let active: number | null = null;
-  let candidate: number | null = null;
+  let active:
+    | number
+    | null =
+    null;
+  let candidate:
+    | number
+    | null =
+    null;
   let candidateCount = 0;
   let silentCount = 0;
 
-  const off = (midi: number, time: number): NoteEvent => ({
-    type: 'off',
-    midi,
-    velocity: MIC_VELOCITY,
-    time,
-    source: 'mic',
-  });
+  const off =
+    (
+      midi: number,
+      time: number,
+    ): NoteEvent => ({
+      type: 'off',
+      midi,
+      velocity:
+        MIC_VELOCITY,
+      time,
+      source:
+        'mic',
+    });
 
   return {
-    push(frame, time) {
-      if (frame === null) {
-        candidate = null;
+    push(
+      frame,
+      time,
+    ) {
+      if (
+        frame ===
+        null
+      ) {
+        candidate =
+          null;
         candidateCount = 0;
-        if (active === null) return NONE;
+        if (
+          active ===
+          null
+        )
+          return NONE;
         silentCount++;
-        if (silentCount < OFF_FRAMES) return NONE;
-        const ended = active;
-        active = null;
+        if (
+          silentCount <
+          OFF_FRAMES
+        )
+          return NONE;
+        const ended =
+          active;
+        active =
+          null;
         silentCount = 0;
-        return [off(ended, time)];
+        return [
+          off(
+            ended,
+            time,
+          ),
+        ];
       }
 
       silentCount = 0;
-      if (frame.midi === active) {
-        candidate = null;
+      if (
+        frame.midi ===
+        active
+      ) {
+        candidate =
+          null;
         candidateCount = 0;
         return NONE;
       }
 
-      if (frame.midi === candidate) candidateCount++;
+      if (
+        frame.midi ===
+        candidate
+      )
+        candidateCount++;
       else {
-        candidate = frame.midi;
+        candidate =
+          frame.midi;
         candidateCount = 1;
       }
-      if (candidateCount < ON_FRAMES) return NONE;
+      if (
+        candidateCount <
+        ON_FRAMES
+      )
+        return NONE;
 
-      const events: NoteEvent[] = [];
-      if (active !== null) events.push(off(active, time));
-      events.push({
-        type: 'on',
-        midi: frame.midi,
-        velocity: MIC_VELOCITY,
-        time,
-        source: 'mic',
-        cents: frame.cents,
-      });
-      active = frame.midi;
-      candidate = null;
+      const events: NoteEvent[] =
+        [];
+      if (
+        active !==
+        null
+      )
+        events.push(
+          off(
+            active,
+            time,
+          ),
+        );
+      events.push(
+        {
+          type: 'on',
+          midi: frame.midi,
+          velocity:
+            MIC_VELOCITY,
+          time,
+          source:
+            'mic',
+          cents:
+            frame.cents,
+        },
+      );
+      active =
+        frame.midi;
+      candidate =
+        null;
       candidateCount = 0;
       return events;
     },
 
-    flush(time) {
-      const ended = active;
-      active = null;
-      candidate = null;
+    flush(
+      time,
+    ) {
+      const ended =
+        active;
+      active =
+        null;
+      candidate =
+        null;
       candidateCount = 0;
       silentCount = 0;
-      return ended === null ? NONE : [off(ended, time)];
+      return ended ===
+        null
+        ? NONE
+        : [
+            off(
+              ended,
+              time,
+            ),
+          ];
     },
   };
 }

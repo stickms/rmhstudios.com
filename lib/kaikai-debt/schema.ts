@@ -4,7 +4,10 @@
  */
 
 import { z } from 'zod';
-import { MAX_CLAIM_CHARS, MAX_QUESTION_CHARS } from '@/lib/kaikai-debt/debt';
+import {
+  MAX_CLAIM_CHARS,
+  MAX_QUESTION_CHARS,
+} from '@/lib/kaikai-debt/debt';
 
 /**
  * What someone types to add to the pile: prose, not a form.
@@ -15,14 +18,44 @@ import { MAX_CLAIM_CHARS, MAX_QUESTION_CHARS } from '@/lib/kaikai-debt/debt';
  * argued for, and the $5–$250 clamp in `ai.server.ts` bounds it regardless of
  * what either of them decides.
  */
-export const addDebtSchema = z.object({
-  claim: z.string().trim().min(3).max(MAX_CLAIM_CHARS),
-});
+export const addDebtSchema =
+  z.object(
+    {
+      claim:
+        z
+          .string()
+          .trim()
+          .min(
+            3,
+          )
+          .max(
+            MAX_CLAIM_CHARS,
+          ),
+    },
+  );
 
-export type AddDebtInput = z.infer<typeof addDebtSchema>;
+export type AddDebtInput =
+  z.infer<
+    typeof addDebtSchema
+  >;
 
-export const askDebtSchema = z.object({
-  question: z.string().trim().min(3).max(MAX_QUESTION_CHARS),
-});
+export const askDebtSchema =
+  z.object(
+    {
+      question:
+        z
+          .string()
+          .trim()
+          .min(
+            3,
+          )
+          .max(
+            MAX_QUESTION_CHARS,
+          ),
+    },
+  );
 
-export type AskDebtInput = z.infer<typeof askDebtSchema>;
+export type AskDebtInput =
+  z.infer<
+    typeof askDebtSchema
+  >;

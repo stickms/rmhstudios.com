@@ -58,21 +58,53 @@ interface Sample {
 export const NET_GRAPH_WINDOW_MS = 1000;
 
 export class NetGraphMeter {
-  private readonly samples: Sample[] = [];
+  private readonly samples: Sample[] =
+    [];
   private outBytes = 0;
   private outPackets = 0;
 
   /** One input packet sent. */
-  recordOut(bytes: number): void {
-    this.outBytes += bytes;
-    this.outPackets++;
+  recordOut(
+    bytes: number,
+  ): void {
+    this.outBytes +=
+      bytes;
+    this
+      .outPackets++;
   }
 
   /** Takes a sample of the counters (call a few times a second). */
-  sample(now: number, c: NetCounters): void {
-    this.samples.push({ t: now, c: { ...c }, outBytes: this.outBytes, outPackets: this.outPackets });
+  sample(
+    now: number,
+    c: NetCounters,
+  ): void {
+    this.samples.push(
+      {
+        t: now,
+        c: {
+          ...c,
+        },
+        outBytes:
+          this
+            .outBytes,
+        outPackets:
+          this
+            .outPackets,
+      },
+    );
     // Keep a little more than one window.
-    while (this.samples.length > 2 && now - this.samples[1].t >= NET_GRAPH_WINDOW_MS) this.samples.shift();
+    while (
+      this
+        .samples
+        .length >
+        2 &&
+      now -
+        this
+          .samples[1]
+          .t >=
+        NET_GRAPH_WINDOW_MS
+    )
+      this.samples.shift();
   }
 
   reset(): void {
@@ -80,24 +112,144 @@ export class NetGraphMeter {
   }
 
   stats(): NetGraphStats | null {
-    if (this.samples.length < 2) return null;
-    const a = this.samples[0];
-    const b = this.samples[this.samples.length - 1];
-    const dt = (b.t - a.t) / 1000;
-    if (dt <= 0) return null;
-    const snaps = Math.max(0, b.c.snapshots - a.c.snapshots);
-    const interval = Math.max(1, b.c.snapshotInterval);
-    const expected = b.c.newestTick > a.c.newestTick && a.c.newestTick > 0 ? (b.c.newestTick - a.c.newestTick) / interval : 0;
-    const lossPct = expected > 0 ? Math.max(0, Math.min(100, (1 - snaps / expected) * 100)) : 0;
+    if (
+      this
+        .samples
+        .length <
+      2
+    )
+      return null;
+    const a =
+      this
+        .samples[0];
+    const b =
+      this
+        .samples[
+        this
+          .samples
+          .length -
+          1
+      ];
+    const dt =
+      (b.t -
+        a.t) /
+      1000;
+    if (
+      dt <=
+      0
+    )
+      return null;
+    const snaps =
+      Math.max(
+        0,
+        b
+          .c
+          .snapshots -
+          a
+            .c
+            .snapshots,
+      );
+    const interval =
+      Math.max(
+        1,
+        b
+          .c
+          .snapshotInterval,
+      );
+    const expected =
+      b
+        .c
+        .newestTick >
+        a
+          .c
+          .newestTick &&
+      a
+        .c
+        .newestTick >
+        0
+        ? (b
+            .c
+            .newestTick -
+            a
+              .c
+              .newestTick) /
+          interval
+        : 0;
+    const lossPct =
+      expected >
+      0
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              (1 -
+                snaps /
+                  expected) *
+                100,
+            ),
+          )
+        : 0;
     return {
-      inBytesPerSec: Math.max(0, b.c.inBytes - a.c.inBytes) / dt,
-      outBytesPerSec: Math.max(0, b.outBytes - a.outBytes) / dt,
-      inPacketsPerSec: Math.max(0, b.c.inPackets - a.c.inPackets) / dt,
-      outPacketsPerSec: Math.max(0, b.outPackets - a.outPackets) / dt,
-      lossPct: b.c.lossPct ?? lossPct,
-      chokePct: b.c.chokePct ?? 0,
-      ...(b.c.jitterMs !== undefined ? { jitterMs: b.c.jitterMs } : {}),
-      updateRate: snaps / dt,
+      inBytesPerSec:
+        Math.max(
+          0,
+          b
+            .c
+            .inBytes -
+            a
+              .c
+              .inBytes,
+        ) /
+        dt,
+      outBytesPerSec:
+        Math.max(
+          0,
+          b.outBytes -
+            a.outBytes,
+        ) /
+        dt,
+      inPacketsPerSec:
+        Math.max(
+          0,
+          b
+            .c
+            .inPackets -
+            a
+              .c
+              .inPackets,
+        ) /
+        dt,
+      outPacketsPerSec:
+        Math.max(
+          0,
+          b.outPackets -
+            a.outPackets,
+        ) /
+        dt,
+      lossPct:
+        b
+          .c
+          .lossPct ??
+        lossPct,
+      chokePct:
+        b
+          .c
+          .chokePct ??
+        0,
+      ...(b
+        .c
+        .jitterMs !==
+      undefined
+        ? {
+            jitterMs:
+              b
+                .c
+                .jitterMs,
+          }
+        : {}),
+      updateRate:
+        snaps /
+        dt,
     };
   }
 }

@@ -13,31 +13,82 @@ import { useThemeStore } from '@/stores/themeStore';
 import { cn } from '@/lib/utils';
 
 export function AccentPicker() {
-  const { t } = useTranslation('feed');
-  const accent = useThemeStore((s) => s.accent);
-  const setAccent = useThemeStore((s) => s.setAccent);
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const accent =
+    useThemeStore(
+      (
+        s,
+      ) =>
+        s.accent,
+    );
+  const setAccent =
+    useThemeStore(
+      (
+        s,
+      ) =>
+        s.setAccent,
+    );
 
-  const defaultLabel = t('settings-accent-default', { defaultValue: 'Theme default' });
+  const defaultLabel =
+    t(
+      'settings-accent-default',
+      {
+        defaultValue:
+          'Theme default',
+      },
+    );
   const selectedLabel =
-    ACCENT_PRESETS.find((p) => p.id === accent)?.label ?? (accent === null ? defaultLabel : null);
+    ACCENT_PRESETS.find(
+      (
+        p,
+      ) =>
+        p.id ===
+        accent,
+    )
+      ?.label ??
+    (accent ===
+    null
+      ? defaultLabel
+      : null);
 
   return (
     <div className="flex flex-col gap-2">
       <div
         role="radiogroup"
-        aria-label={t('settings-accent-aria', { defaultValue: 'Accent color' })}
+        aria-label={t(
+          'settings-accent-aria',
+          {
+            defaultValue:
+              'Accent color',
+          },
+        )}
         className="flex flex-wrap gap-2.5"
       >
         {/* Theme default — clears any accent override. */}
         <button
           type="button"
           role="radio"
-          aria-checked={accent === null}
-          onClick={() => setAccent(null)}
-          title={defaultLabel}
+          aria-checked={
+            accent ===
+            null
+          }
+          onClick={() =>
+            setAccent(
+              null,
+            )
+          }
+          title={
+            defaultLabel
+          }
           className={cn(
             'surface-field flex h-11 w-11 items-center justify-center rounded-full border-2 border-dashed transition-colors',
-            accent === null
+            accent ===
+              null
               ? 'border-site-accent ring-2 ring-site-accent'
               : 'border-site-border hover:border-site-text/40',
           )}
@@ -46,33 +97,72 @@ export function AccentPicker() {
             The DASHED border is what tells it apart from a preset: on the
             default theme the theme accent is near-black, so this swatch and
             the "Ink" preset were the same two circles. */}
-          <span aria-hidden className="h-4 w-4 rounded-full bg-site-accent" />
-          <span className="sr-only">{defaultLabel}</span>
+          <span
+            aria-hidden
+            className="h-4 w-4 rounded-full bg-site-accent"
+          />
+          <span className="sr-only">
+            {
+              defaultLabel
+            }
+          </span>
         </button>
 
-        {ACCENT_PRESETS.map((preset) => {
-          const active = accent === preset.id;
-          return (
-            <button
-              key={preset.id}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => setAccent(preset.id)}
-              title={preset.label}
-              className={cn(
-                'flex h-11 w-11 items-center justify-center rounded-full border-2 transition-transform',
-                active
-                  ? 'border-site-text ring-2 ring-site-text/40'
-                  : 'border-site-border',
-              )}
-              style={{ background: preset.value }}
-            >
-              {active && <Check className="h-5 w-5" aria-hidden style={{ color: preset.fg }} />}
-              <span className="sr-only">{preset.label}</span>
-            </button>
-          );
-        })}
+        {ACCENT_PRESETS.map(
+          (
+            preset,
+          ) => {
+            const active =
+              accent ===
+              preset.id;
+            return (
+              <button
+                key={
+                  preset.id
+                }
+                type="button"
+                role="radio"
+                aria-checked={
+                  active
+                }
+                onClick={() =>
+                  setAccent(
+                    preset.id,
+                  )
+                }
+                title={
+                  preset.label
+                }
+                className={cn(
+                  'flex h-11 w-11 items-center justify-center rounded-full border-2 transition-transform',
+                  active
+                    ? 'border-site-text ring-2 ring-site-text/40'
+                    : 'border-site-border',
+                )}
+                style={{
+                  background:
+                    preset.value,
+                }}
+              >
+                {active && (
+                  <Check
+                    className="h-5 w-5"
+                    aria-hidden
+                    style={{
+                      color:
+                        preset.fg,
+                    }}
+                  />
+                )}
+                <span className="sr-only">
+                  {
+                    preset.label
+                  }
+                </span>
+              </button>
+            );
+          },
+        )}
       </div>
 
       {/* The swatches' only differentiator was colour — the names existed
@@ -81,10 +171,14 @@ export function AccentPicker() {
           matters most. */}
       {selectedLabel ? (
         <p className="text-xs text-site-text-muted">
-          {t('settings-accent-selected', {
-            defaultValue: 'Selected: {{name}}',
-            name: selectedLabel,
-          })}
+          {t(
+            'settings-accent-selected',
+            {
+              defaultValue:
+                'Selected: {{name}}',
+              name: selectedLabel,
+            },
+          )}
         </p>
       ) : null}
     </div>

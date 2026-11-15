@@ -25,7 +25,9 @@ export const AR_GLOBE_RADIUS_M = 0.22;
 
 /** A card's width in the room, in metres. About the size of a playing card. */
 export const AR_CARD_WIDTH_M = 0.1;
-export const AR_CARD_HEIGHT_M = AR_CARD_WIDTH_M * 0.7;
+export const AR_CARD_HEIGHT_M =
+  AR_CARD_WIDTH_M *
+  0.7;
 
 /** How far in front of the viewer the globe lands when no surface was found. */
 export const AR_FALLBACK_DISTANCE_M = 0.9;
@@ -34,12 +36,21 @@ export const AR_FALLBACK_DISTANCE_M = 0.9;
 export const AR_TEXTURE_PPM = 2048;
 
 interface XRCapableNavigator {
-  xr?: { isSessionSupported?: (mode: string) => Promise<boolean> };
+  xr?: {
+    isSessionSupported?: (
+      mode: string,
+    ) => Promise<boolean>;
+  };
 }
 
 /** True where the browser exposes WebXR at all. Says nothing about hardware. */
 export function hasWebXr(): boolean {
-  return typeof navigator !== 'undefined' && 'xr' in navigator;
+  return (
+    typeof navigator !==
+      'undefined' &&
+    'xr' in
+      navigator
+  );
 }
 
 /**
@@ -57,10 +68,26 @@ export function hasWebXr(): boolean {
  */
 export async function arSupported(): Promise<boolean> {
   try {
-    if (!hasWebXr()) return false;
-    const xr = (navigator as XRCapableNavigator).xr;
-    if (typeof xr?.isSessionSupported !== 'function') return false;
-    return (await xr.isSessionSupported('immersive-ar')) === true;
+    if (
+      !hasWebXr()
+    )
+      return false;
+    const xr =
+      (
+        navigator as XRCapableNavigator
+      )
+        .xr;
+    if (
+      typeof xr?.isSessionSupported !==
+      'function'
+    )
+      return false;
+    return (
+      (await xr.isSessionSupported(
+        'immersive-ar',
+      )) ===
+      true
+    );
   } catch {
     return false;
   }
@@ -69,14 +96,36 @@ export async function arSupported(): Promise<boolean> {
 /* ── The card face, as data ──────────────────────────────────────────────── */
 
 /** Dot centres on the card face, in fractions of its width/height. */
-export const AR_DOT_SLOTS: readonly { x: number; y: number }[] = [
-  { x: 0.2, y: 0.305 },
-  { x: 0.5, y: 0.305 },
-  { x: 0.8, y: 0.305 },
-  { x: 0.2, y: 0.72 },
-  { x: 0.5, y: 0.72 },
-  { x: 0.8, y: 0.72 },
-];
+export const AR_DOT_SLOTS: readonly {
+  x: number;
+  y: number;
+}[] =
+  [
+    {
+      x: 0.2,
+      y: 0.305,
+    },
+    {
+      x: 0.5,
+      y: 0.305,
+    },
+    {
+      x: 0.8,
+      y: 0.305,
+    },
+    {
+      x: 0.2,
+      y: 0.72,
+    },
+    {
+      x: 0.5,
+      y: 0.72,
+    },
+    {
+      x: 0.8,
+      y: 0.72,
+    },
+  ];
 
 /** Dot radius, as a fraction of the card's width. Matches the SVG board. */
 export const AR_DOT_RADIUS = 0.11;
@@ -90,25 +139,67 @@ export const AR_DOT_RADIUS = 0.11;
  * a visible magenta: a card that renders in the wrong colour is a bug the
  * player can report, one that renders invisibly is a bug nobody can describe.
  */
-export function readPalette(from: Element): {
+export function readPalette(
+  from: Element,
+): {
   face: string;
   edge: string;
   ink: string;
   dots: string[];
 } {
-  const styles = getComputedStyle(from);
-  const read = (name: string, fallback: string) => styles.getPropertyValue(name).trim() || fallback;
+  const styles =
+    getComputedStyle(
+      from,
+    );
+  const read =
+    (
+      name: string,
+      fallback: string,
+    ) =>
+      styles
+        .getPropertyValue(
+          name,
+        )
+        .trim() ||
+      fallback;
   return {
-    face: read('--globeset-card-face', '#f7f7f5'),
-    edge: read('--globeset-card-edge', '#c9cbd2'),
-    ink: read('--globeset-dot-ink', '#17181c'),
+    face: read(
+      '--globeset-card-face',
+      '#f7f7f5',
+    ),
+    edge: read(
+      '--globeset-card-edge',
+      '#c9cbd2',
+    ),
+    ink: read(
+      '--globeset-dot-ink',
+      '#17181c',
+    ),
     dots: [
-      read('--globeset-dot-red', '#ff00ff'),
-      read('--globeset-dot-orange', '#ff00ff'),
-      read('--globeset-dot-yellow', '#ff00ff'),
-      read('--globeset-dot-green', '#ff00ff'),
-      read('--globeset-dot-blue', '#ff00ff'),
-      read('--globeset-dot-purple', '#ff00ff'),
+      read(
+        '--globeset-dot-red',
+        '#ff00ff',
+      ),
+      read(
+        '--globeset-dot-orange',
+        '#ff00ff',
+      ),
+      read(
+        '--globeset-dot-yellow',
+        '#ff00ff',
+      ),
+      read(
+        '--globeset-dot-green',
+        '#ff00ff',
+      ),
+      read(
+        '--globeset-dot-blue',
+        '#ff00ff',
+      ),
+      read(
+        '--globeset-dot-purple',
+        '#ff00ff',
+      ),
     ],
   };
 }

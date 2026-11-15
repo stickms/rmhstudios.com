@@ -35,46 +35,113 @@ export interface RssChannel {
   items: RssItem[];
 }
 
-function xmlEscape(s: string): string {
-  return s.replace(/[<>&'"]/g, (c) =>
-    ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]!,
+function xmlEscape(
+  s: string,
+): string {
+  return s.replace(
+    /[<>&'"]/g,
+    (
+      c,
+    ) =>
+      ({
+        '<': '&lt;',
+        '>': '&gt;',
+        '&': '&amp;',
+        "'": '&apos;',
+        '"': '&quot;',
+      })[
+        c
+      ]!,
   );
 }
 
 /** CDATA-wrap, defusing any nested `]]>` so the payload can't break out. */
-function cdata(s: string): string {
+function cdata(
+  s: string,
+): string {
   return `<![CDATA[${s.replace(/]]>/g, ']]]]><![CDATA[>')}]]>`;
 }
 
-function isValidDate(d?: Date): d is Date {
-  return !!d && !Number.isNaN(d.getTime());
+function isValidDate(
+  d?: Date,
+): d is Date {
+  return (
+    !!d &&
+    !Number.isNaN(
+      d.getTime(),
+    )
+  );
 }
 
-export function renderRssFeed(channel: RssChannel): string {
-  const lang = channel.language ?? 'en';
-  const lastBuild = channel.items
-    .map((i) => i.pubDate)
-    .filter(isValidDate)
-    .sort((a, b) => b.getTime() - a.getTime())[0];
+export function renderRssFeed(
+  channel: RssChannel,
+): string {
+  const lang =
+    channel.language ??
+    'en';
+  const lastBuild =
+    channel.items
+      .map(
+        (
+          i,
+        ) =>
+          i.pubDate,
+      )
+      .filter(
+        isValidDate,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          b.getTime() -
+          a.getTime(),
+      )[0];
 
-  const itemsXml = channel.items
-    .map((item) => {
-      const parts = [
-        `      <title>${xmlEscape(item.title)}</title>`,
-        `      <link>${xmlEscape(item.link)}</link>`,
-        `      <guid isPermaLink="true">${xmlEscape(item.guid)}</guid>`,
-        `      <description>${cdata(item.description)}</description>`,
-      ];
-      if (isValidDate(item.pubDate)) parts.push(`      <pubDate>${item.pubDate.toUTCString()}</pubDate>`);
-      for (const cat of item.categories ?? []) {
-        if (cat) parts.push(`      <category>${xmlEscape(cat)}</category>`);
-      }
-      if (item.imageUrl) {
-        parts.push(`      <enclosure url="${xmlEscape(item.imageUrl)}" type="image/jpeg" />`);
-      }
-      return `    <item>\n${parts.join('\n')}\n    </item>`;
-    })
-    .join('\n');
+  const itemsXml =
+    channel.items
+      .map(
+        (
+          item,
+        ) => {
+          const parts =
+            [
+              `      <title>${xmlEscape(item.title)}</title>`,
+              `      <link>${xmlEscape(item.link)}</link>`,
+              `      <guid isPermaLink="true">${xmlEscape(item.guid)}</guid>`,
+              `      <description>${cdata(item.description)}</description>`,
+            ];
+          if (
+            isValidDate(
+              item.pubDate,
+            )
+          )
+            parts.push(
+              `      <pubDate>${item.pubDate.toUTCString()}</pubDate>`,
+            );
+          for (const cat of item.categories ??
+            []) {
+            if (
+              cat
+            )
+              parts.push(
+                `      <category>${xmlEscape(cat)}</category>`,
+              );
+          }
+          if (
+            item.imageUrl
+          ) {
+            parts.push(
+              `      <enclosure url="${xmlEscape(item.imageUrl)}" type="image/jpeg" />`,
+            );
+          }
+          return `    <item>\n${parts.join('\n')}\n    </item>`;
+        },
+      )
+      .join(
+        '\n',
+      );
 
   return (
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
@@ -85,7 +152,11 @@ export function renderRssFeed(channel: RssChannel): string {
     `    <atom:link href="${xmlEscape(channel.feedUrl)}" rel="self" type="application/rss+xml" />\n` +
     `    <description>${xmlEscape(channel.description)}</description>\n` +
     `    <language>${xmlEscape(lang)}</language>\n` +
-    (isValidDate(lastBuild) ? `    <lastBuildDate>${lastBuild.toUTCString()}</lastBuildDate>\n` : '') +
+    (isValidDate(
+      lastBuild,
+    )
+      ? `    <lastBuildDate>${lastBuild.toUTCString()}</lastBuildDate>\n`
+      : '') +
     `${itemsXml}\n` +
     `  </channel>\n` +
     `</rss>\n`

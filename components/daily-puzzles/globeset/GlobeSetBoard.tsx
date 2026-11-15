@@ -14,10 +14,20 @@
  * own selection would have to hand all three back up anyway.
  */
 
-import { useCallback, useEffect } from 'react';
-import { AnimatePresence, m as motion } from 'framer-motion';
+import {
+  useCallback,
+  useEffect,
+} from 'react';
+import {
+  AnimatePresence,
+  m as motion,
+} from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { colorParity, DOT_COLORS, type Card } from '@/lib/globeset/cards';
+import {
+  colorParity,
+  DOT_COLORS,
+  type Card,
+} from '@/lib/globeset/cards';
 import { X } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { APPLE_SPRING } from '@/lib/app-motion';
@@ -44,7 +54,9 @@ export interface GlobeSetBoardProps {
   /** No input — the run is over, or the solver has the board. */
   locked: boolean;
   shapes: boolean;
-  onToggle: (card: Card) => void;
+  onToggle: (
+    card: Card,
+  ) => void;
   onClear: () => void;
 }
 
@@ -58,77 +70,214 @@ export function GlobeSetBoard({
   onToggle,
   onClear,
 }: GlobeSetBoardProps) {
-  const { t } = useTranslation('c-daily-puzzles');
-  const reduced = useReducedMotion();
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-daily-puzzles',
+    );
+  const reduced =
+    useReducedMotion();
 
   // Only cards still face-up count toward the ledger: a selection can outlive a
   // refill for the length of an exit animation.
-  const live = selected.filter((card) => board.includes(card));
-  const parity = colorParity(live);
+  const live =
+    selected.filter(
+      (
+        card,
+      ) =>
+        board.includes(
+          card,
+        ),
+    );
+  const parity =
+    colorParity(
+      live,
+    );
 
   // 1–7 toggle a card, Escape clears. Bound on the window rather than the board
   // so the shortcut works wherever focus is, and skipped while the player is
   // typing (the race lobby has a room-code field).
-  const onKey = useCallback(
-    (event: KeyboardEvent) => {
-      if (locked || event.metaKey || event.ctrlKey || event.altKey) return;
-      const el = document.activeElement as HTMLElement | null;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {
-        return;
-      }
-      if (event.key === 'Escape') {
-        onClear();
-        return;
-      }
-      const position = Number(event.key);
-      if (Number.isInteger(position) && position >= 1 && position <= board.length) {
-        event.preventDefault();
-        onToggle(board[position - 1]);
-      }
-    },
-    [board, locked, onClear, onToggle],
-  );
+  const onKey =
+    useCallback(
+      (
+        event: KeyboardEvent,
+      ) => {
+        if (
+          locked ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.altKey
+        )
+          return;
+        const el =
+          document.activeElement as HTMLElement | null;
+        if (
+          el &&
+          (el.tagName ===
+            'INPUT' ||
+            el.tagName ===
+              'TEXTAREA' ||
+            el.isContentEditable)
+        ) {
+          return;
+        }
+        if (
+          event.key ===
+          'Escape'
+        ) {
+          onClear();
+          return;
+        }
+        const position =
+          Number(
+            event.key,
+          );
+        if (
+          Number.isInteger(
+            position,
+          ) &&
+          position >=
+            1 &&
+          position <=
+            board.length
+        ) {
+          event.preventDefault();
+          onToggle(
+            board[
+              position -
+                1
+            ],
+          );
+        }
+      },
+      [
+        board,
+        locked,
+        onClear,
+        onToggle,
+      ],
+    );
 
   useEffect(() => {
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onKey]);
+    window.addEventListener(
+      'keydown',
+      onKey,
+    );
+    return () =>
+      window.removeEventListener(
+        'keydown',
+        onKey,
+      );
+  }, [
+    onKey,
+  ]);
 
-  const colorName = (id: string, fallback: string) =>
-    t(`globeset-color-${id}`, { defaultValue: fallback });
+  const colorName =
+    (
+      id: string,
+      fallback: string,
+    ) =>
+      t(
+        `globeset-color-${id}`,
+        {
+          defaultValue:
+            fallback,
+        },
+      );
 
   return (
     <div>
       <ul
         className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:grid-cols-7"
-        aria-label={t('globeset-board-label', { defaultValue: 'Cards in play' })}
+        aria-label={t(
+          'globeset-board-label',
+          {
+            defaultValue:
+              'Cards in play',
+          },
+        )}
       >
-        <AnimatePresence mode="popLayout" initial={false}>
-          {board.map((card, index) => (
-            <motion.li
-              key={card}
-              layout={!reduced}
-              className="list-none"
-              initial={reduced ? false : { opacity: 0, scale: 0.86 }}
-              animate={{ opacity: 1, scale: 1 }}
-              // `pointerEvents: 'none'` is the load-bearing half: a claimed
-              // card lingers in the DOM for the length of its exit, and
-              // without this it is still clickable on its way out.
-              exit={{ opacity: 0, scale: 0.7, pointerEvents: 'none' }}
-              transition={reduced ? { duration: 0 } : APPLE_SPRING.snappy}
-            >
-              <GlobeSetCard
-                card={card}
-                position={index + 1}
-                selected={selected.includes(card)}
-                hinted={hinted.includes(card)}
-                solving={solving.includes(card)}
-                disabled={locked}
-                shapes={shapes}
-                onToggle={() => onToggle(card)}
-              />
-            </motion.li>
-          ))}
+        <AnimatePresence
+          mode="popLayout"
+          initial={
+            false
+          }
+        >
+          {board.map(
+            (
+              card,
+              index,
+            ) => (
+              <motion.li
+                key={
+                  card
+                }
+                layout={
+                  !reduced
+                }
+                className="list-none"
+                initial={
+                  reduced
+                    ? false
+                    : {
+                        opacity: 0,
+                        scale: 0.86,
+                      }
+                }
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                }}
+                // `pointerEvents: 'none'` is the load-bearing half: a claimed
+                // card lingers in the DOM for the length of its exit, and
+                // without this it is still clickable on its way out.
+                exit={{
+                  opacity: 0,
+                  scale: 0.7,
+                  pointerEvents:
+                    'none',
+                }}
+                transition={
+                  reduced
+                    ? {
+                        duration: 0,
+                      }
+                    : APPLE_SPRING.snappy
+                }
+              >
+                <GlobeSetCard
+                  card={
+                    card
+                  }
+                  position={
+                    index +
+                    1
+                  }
+                  selected={selected.includes(
+                    card,
+                  )}
+                  hinted={hinted.includes(
+                    card,
+                  )}
+                  solving={solving.includes(
+                    card,
+                  )}
+                  disabled={
+                    locked
+                  }
+                  shapes={
+                    shapes
+                  }
+                  onToggle={() =>
+                    onToggle(
+                      card,
+                    )
+                  }
+                />
+              </motion.li>
+            ),
+          )}
         </AnimatePresence>
       </ul>
 
@@ -141,55 +290,134 @@ export function GlobeSetBoard({
           type="button"
           variant="ghost"
           size="xs"
-          onClick={onClear}
-          disabled={live.length === 0}
+          onClick={
+            onClear
+          }
+          disabled={
+            live.length ===
+            0
+          }
         >
-          <X className="h-3 w-3" aria-hidden />
-          {t('globeset-clear', { defaultValue: 'Clear' })}
+          <X
+            className="h-3 w-3"
+            aria-hidden
+          />
+          {t(
+            'globeset-clear',
+            {
+              defaultValue:
+                'Clear',
+            },
+          )}
         </Button>
         <span className="text-xs font-medium uppercase tracking-wide text-site-text-muted">
-          {t('globeset-ledger-label', { defaultValue: 'Odd colours' })}
+          {t(
+            'globeset-ledger-label',
+            {
+              defaultValue:
+                'Odd colours',
+            },
+          )}
         </span>
         <ul className="flex items-center gap-2">
-          {DOT_COLORS.map((dot, i) => {
-            const odd = parity[i];
-            return (
-              <li key={dot.id}>
-                <span
-                  className={
-                    odd
-                      ? 'block h-4 w-4 rounded-full border-2 border-site-text'
-                      : 'block h-4 w-4 rounded-full border-2 border-transparent opacity-25'
+          {DOT_COLORS.map(
+            (
+              dot,
+              i,
+            ) => {
+              const odd =
+                parity[
+                  i
+                ];
+              return (
+                <li
+                  key={
+                    dot.id
                   }
-                  style={{ background: `var(${dot.token})` }}
-                  title={colorName(dot.id, dot.id)}
-                />
-                <span className="sr-only">
-                  {odd
-                    ? t('globeset-ledger-odd', {
-                        defaultValue: '{{color}}: odd — still unpaired',
-                        color: colorName(dot.id, dot.id),
-                      })
-                    : t('globeset-ledger-even', {
-                        defaultValue: '{{color}}: even',
-                        color: colorName(dot.id, dot.id),
-                      })}
-                </span>
-              </li>
-            );
-          })}
+                >
+                  <span
+                    className={
+                      odd
+                        ? 'block h-4 w-4 rounded-full border-2 border-site-text'
+                        : 'block h-4 w-4 rounded-full border-2 border-transparent opacity-25'
+                    }
+                    style={{
+                      background: `var(${dot.token})`,
+                    }}
+                    title={colorName(
+                      dot.id,
+                      dot.id,
+                    )}
+                  />
+                  <span className="sr-only">
+                    {odd
+                      ? t(
+                          'globeset-ledger-odd',
+                          {
+                            defaultValue:
+                              '{{color}}: odd — still unpaired',
+                            color:
+                              colorName(
+                                dot.id,
+                                dot.id,
+                              ),
+                          },
+                        )
+                      : t(
+                          'globeset-ledger-even',
+                          {
+                            defaultValue:
+                              '{{color}}: even',
+                            color:
+                              colorName(
+                                dot.id,
+                                dot.id,
+                              ),
+                          },
+                        )}
+                  </span>
+                </li>
+              );
+            },
+          )}
         </ul>
         {/* Screen readers get the whole answer in one sentence rather than six
             separate dot labels they would have to hold in their head. */}
-        <p aria-live="polite" className="sr-only">
-          {parity.some(Boolean)
-            ? t('globeset-ledger-status-odd', {
-                defaultValue: 'Unpaired colours: {{count}}',
-                count: parity.filter(Boolean).length,
-              })
-            : live.length > 0
-              ? t('globeset-ledger-status-complete', { defaultValue: 'Every colour is paired.' })
-              : t('globeset-ledger-status-empty', { defaultValue: 'No cards selected.' })}
+        <p
+          aria-live="polite"
+          className="sr-only"
+        >
+          {parity.some(
+            Boolean,
+          )
+            ? t(
+                'globeset-ledger-status-odd',
+                {
+                  defaultValue:
+                    'Unpaired colours: {{count}}',
+                  count:
+                    parity.filter(
+                      Boolean,
+                    )
+                      .length,
+                },
+              )
+            : live.length >
+                0
+              ? t(
+                  'globeset-ledger-status-complete',
+                  {
+                    defaultValue:
+                      'Every colour is paired.',
+                  },
+                )
+              : t(
+                  'globeset-ledger-status-empty',
+                  {
+                    defaultValue:
+                      'No cards selected.',
+                  },
+                )}
         </p>
       </div>
     </div>

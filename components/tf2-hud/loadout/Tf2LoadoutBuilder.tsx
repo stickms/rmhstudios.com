@@ -4,7 +4,10 @@
  * as a per-class draft in this browser or save and share it from your account.
  */
 
-import { Link, useNavigate } from '@tanstack/react-router';
+import {
+  Link,
+  useNavigate,
+} from '@tanstack/react-router';
 import {
   AlertTriangle,
   Check,
@@ -21,13 +24,22 @@ import {
   X,
   Eye,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/lib/toast';
 import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { SignInRequiredDialog } from '@/components/shared/SignInRequiredDialog';
 import { useSession } from '@/components/Providers';
-import { TfTabs, type TfTab } from '@/components/tf2-hud/TfTabs';
+import {
+  TfTabs,
+  type TfTab,
+} from '@/components/tf2-hud/TfTabs';
 import {
   Btn,
   EmptyNote,
@@ -63,7 +75,11 @@ import {
   type LoadoutSlots,
   type TfClass,
 } from '@/lib/tf2-loadout/catalog-types';
-import { hasDraft, loadDraft, saveDraft } from '@/lib/tf2-loadout/local-drafts';
+import {
+  hasDraft,
+  loadDraft,
+  saveDraft,
+} from '@/lib/tf2-loadout/local-drafts';
 import { WEAR_NAMES } from '@/lib/tf2-loadout/fx';
 import {
   clashesWithWorn,
@@ -73,15 +89,32 @@ import {
   withSupportedOptions,
 } from '@/lib/tf2-loadout/rules';
 import type { AiAction } from '@/lib/tf2-loadout/ai-core';
-import { useCatalog, type CatalogIndex } from '@/lib/tf2-loadout/use-catalog';
+import {
+  useCatalog,
+  type CatalogIndex,
+} from '@/lib/tf2-loadout/use-catalog';
 import { prefetch } from '@/lib/tf2-loadout/prefetch';
-import { modelUrl, pickModel, useModelIds } from '@/lib/tf2-loadout/use-models';
+import {
+  modelUrl,
+  pickModel,
+  useModelIds,
+} from '@/lib/tf2-loadout/use-models';
 import ItemModelViewer from './ItemModelViewer';
 import ItemCustomizeModal from './ItemCustomizeModal';
 import LoadoutAssistant from './LoadoutAssistant';
-import { kitOf, warPaintOf } from '@/lib/tf2-loadout/warpaint';
-import { rarityColor, tierName } from '@/lib/tf2-loadout/rarity';
-import { animUrl, tauntClip, useAnimIndex } from '@/lib/tf2-loadout/use-anims';
+import {
+  kitOf,
+  warPaintOf,
+} from '@/lib/tf2-loadout/warpaint';
+import {
+  rarityColor,
+  tierName,
+} from '@/lib/tf2-loadout/rarity';
+import {
+  animUrl,
+  tauntClip,
+  useAnimIndex,
+} from '@/lib/tf2-loadout/use-anims';
 import PlayerViewer from './PlayerViewer';
 import {
   effectSpecOf,
@@ -99,14 +132,33 @@ import WarningList from './WarningList';
 import { CLASS_DEFAULT } from './labels';
 import { useArrival } from '@/components/ui/arrive';
 
-const SITE = () => (typeof window === 'undefined' ? '' : window.location.origin);
+const SITE =
+  () =>
+    typeof window ===
+    'undefined'
+      ? ''
+      : window
+          .location
+          .origin;
 const PAGE = 60;
-const LAST_CLASS_KEY = 'rmh-tf2-loadout-class';
+const LAST_CLASS_KEY =
+  'rmh-tf2-loadout-class';
 
 function lastClass(): TfClass {
   try {
-    const v = localStorage.getItem(LAST_CLASS_KEY);
-    if (v && (TF_CLASSES as readonly string[]).includes(v)) return v as TfClass;
+    const v =
+      localStorage.getItem(
+        LAST_CLASS_KEY,
+      );
+    if (
+      v &&
+      (
+        TF_CLASSES as readonly string[]
+      ).includes(
+        v,
+      )
+    )
+      return v as TfClass;
   } catch {
     /* storage unavailable */
   }
@@ -120,43 +172,125 @@ export default function Tf2LoadoutBuilder({
   initialClass?: TfClass;
   loadoutId?: string;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
-  const cat = useCatalog();
-  const arrival = useArrival(cat.status !== 'loading');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  const cat =
+    useCatalog();
+  const arrival =
+    useArrival(
+      cat.status !==
+        'loading',
+    );
 
   // From `lg` the whole page — header included — is exactly the window, so only the columns scroll.
   // Sizing just the <main> to the window left the page one header taller than it, and it scrolled too.
   return (
     <div className="app-page flex min-h-dvh flex-col bg-app-bg text-app-text lg:h-dvh lg:overflow-hidden">
       <Tf2Header
-        title={t('loadout-title', { defaultValue: 'Loadout Builder' })}
-        backLabel={t('tf2-hub', { defaultValue: 'TF2 Hub' })}
+        title={t(
+          'loadout-title',
+          {
+            defaultValue:
+              'Loadout Builder',
+          },
+        )}
+        backLabel={t(
+          'tf2-hub',
+          {
+            defaultValue:
+              'TF2 Hub',
+          },
+        )}
         backHref="/tf2"
         rightActions={
           <Link
             to="/tf2/loadout/mine"
             className="inline-flex h-8 items-center gap-1.5 rounded-app-sm border border-app-border-bright px-3 text-xs font-semibold hover:bg-app-surface-hover"
           >
-            <FolderOpen className="size-4" aria-hidden />
-            {t('my-loadouts', { defaultValue: 'My loadouts' })}
+            <FolderOpen
+              className="size-4"
+              aria-hidden
+            />
+            {t(
+              'my-loadouts',
+              {
+                defaultValue:
+                  'My loadouts',
+              },
+            )}
           </Link>
         }
       />
-      {cat.status === 'loading' ? (
-        <p role="status" className="p-10 text-center text-sm text-app-text-muted">
-          {t('catalog-loading', { defaultValue: 'Loading the item catalog…' })}
+      {cat.status ===
+      'loading' ? (
+        <p
+          role="status"
+          className="p-10 text-center text-sm text-app-text-muted"
+        >
+          {t(
+            'catalog-loading',
+            {
+              defaultValue:
+                'Loading the item catalog…',
+            },
+          )}
         </p>
-      ) : cat.status === 'error' ? (
-        <p role="alert" className={cn('p-10 text-center text-sm text-app-danger', arrival)}>
-          {t('catalog-error', { defaultValue: 'Could not load the item catalog.' })}{' '}
-          <button type="button" className="underline" onClick={cat.retry}>
-            {t('retry', { defaultValue: 'Retry' })}
+      ) : cat.status ===
+        'error' ? (
+        <p
+          role="alert"
+          className={cn(
+            'p-10 text-center text-sm text-app-danger',
+            arrival,
+          )}
+        >
+          {t(
+            'catalog-error',
+            {
+              defaultValue:
+                'Could not load the item catalog.',
+            },
+          )}{' '}
+          <button
+            type="button"
+            className="underline"
+            onClick={
+              cat.retry
+            }
+          >
+            {t(
+              'retry',
+              {
+                defaultValue:
+                  'Retry',
+              },
+            )}
           </button>
         </p>
       ) : (
         // A box-less wrapper keeps the builder a flex item of the page; it fades in over the catalog wait (M9).
-        <div className={arrival ? 'arrive-group' : 'contents'}>
-          <Builder idx={cat.index} initialClass={initialClass} loadoutId={loadoutId} />
+        <div
+          className={
+            arrival
+              ? 'arrive-group'
+              : 'contents'
+          }
+        >
+          <Builder
+            idx={
+              cat.index
+            }
+            initialClass={
+              initialClass
+            }
+            loadoutId={
+              loadoutId
+            }
+          />
         </div>
       )}
     </div>
@@ -172,91 +306,306 @@ function Builder({
   initialClass?: TfClass;
   loadoutId?: string;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
-  const navigate = useNavigate();
-  const { data: session } = useSession();
-  const { copy } = useClipboard();
-  const { catalog } = idx;
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  const navigate =
+    useNavigate();
+  const {
+    data: session,
+  } =
+    useSession();
+  const {
+    copy,
+  } =
+    useClipboard();
+  const {
+    catalog,
+  } =
+    idx;
 
-  const [cls, setCls] = useState<TfClass>(initialClass ?? 'scout');
+  const [
+    cls,
+    setCls,
+  ] =
+    useState<TfClass>(
+      initialClass ??
+        'scout',
+    );
   // The initial, untouched slots object: autosave ignores it, so an empty draft is only ever written
   // for a loadout the player (or a load) actually set.
-  const initialSlots = useRef<LoadoutSlots>({}).current;
-  const [slots, setSlots] = useState<LoadoutSlots>(initialSlots);
-  const [selected, setSelected] = useState<LoadoutSlotKey | null>(null);
-  const [activeTauntSlot, setActiveTauntSlot] = useState<LoadoutSlotKey | null>(null);
+  const initialSlots =
+    useRef<LoadoutSlots>(
+      {},
+    ).current;
+  const [
+    slots,
+    setSlots,
+  ] =
+    useState<LoadoutSlots>(
+      initialSlots,
+    );
+  const [
+    selected,
+    setSelected,
+  ] =
+    useState<LoadoutSlotKey | null>(
+      null,
+    );
+  const [
+    activeTauntSlot,
+    setActiveTauntSlot,
+  ] =
+    useState<LoadoutSlotKey | null>(
+      null,
+    );
   // The weapon the player holds: the last weapon slot picked. Picking one also ends the taunt, so the
   // player stands holding it; picking a taunt slot performs that taunt instead.
-  const [heldSlot, setHeldSlot] = useState<HeldSlot | null>(null);
+  const [
+    heldSlot,
+    setHeldSlot,
+  ] =
+    useState<HeldSlot | null>(
+      null,
+    );
   // An animation picked from the list, played in place of the taunt until a slot is selected again.
-  const [animation, setAnimation] = useState<string | null>(null);
-  const showSlot = (key: LoadoutSlotKey) => {
-    setAnimation(null);
-    if (key.startsWith('taunt')) setActiveTauntSlot(key);
-    else if (isHeldSlot(key)) {
-      setHeldSlot(key);
-      setActiveTauntSlot(null);
-    }
-  };
-  const selectSlot = (key: LoadoutSlotKey) => {
-    setSelected(key);
-    showSlot(key);
-  };
-  const [remote, setRemote] = useState<{
-    id: string;
-    slug: string;
-    title: string;
-    description: string;
-    visibility: Visibility;
-  } | null>(null);
-  const [dirty, setDirty] = useState(false);
-  const [saveOpen, setSaveOpen] = useState(false);
-  const [signIn, setSignIn] = useState<'save' | 'ai' | null>(null);
-  const [ready, setReady] = useState(false);
-  const [extraCosmetics, setExtraCosmetics] = useState(0);
-  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [
+    animation,
+    setAnimation,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const showSlot =
+    (
+      key: LoadoutSlotKey,
+    ) => {
+      setAnimation(
+        null,
+      );
+      if (
+        key.startsWith(
+          'taunt',
+        )
+      )
+        setActiveTauntSlot(
+          key,
+        );
+      else if (
+        isHeldSlot(
+          key,
+        )
+      ) {
+        setHeldSlot(
+          key,
+        );
+        setActiveTauntSlot(
+          null,
+        );
+      }
+    };
+  const selectSlot =
+    (
+      key: LoadoutSlotKey,
+    ) => {
+      setSelected(
+        key,
+      );
+      showSlot(
+        key,
+      );
+    };
+  const [
+    remote,
+    setRemote,
+  ] =
+    useState<{
+      id: string;
+      slug: string;
+      title: string;
+      description: string;
+      visibility: Visibility;
+    } | null>(
+      null,
+    );
+  const [
+    dirty,
+    setDirty,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    saveOpen,
+    setSaveOpen,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    signIn,
+    setSignIn,
+  ] =
+    useState<
+      | 'save'
+      | 'ai'
+      | null
+    >(
+      null,
+    );
+  const [
+    ready,
+    setReady,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    extraCosmetics,
+    setExtraCosmetics,
+  ] =
+    useState(
+      0,
+    );
+  const [
+    assistantOpen,
+    setAssistantOpen,
+  ] =
+    useState(
+      false,
+    );
   // What the loadout was before the assistant last changed it, so one tap undoes the batch.
-  const [undoSlots, setUndoSlots] = useState<LoadoutSlots | null>(null);
+  const [
+    undoSlots,
+    setUndoSlots,
+  ] =
+    useState<LoadoutSlots | null>(
+      null,
+    );
   // Screen readers: what the last change did (the picker is a separate region from the slots).
-  const [announce, setAnnounce] = useState('');
+  const [
+    announce,
+    setAnnounce,
+  ] =
+    useState(
+      '',
+    );
   // Wide screens show the picker beside the slots; narrower ones open it as a sheet.
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const hydrated = useRef(false);
+  const isDesktop =
+    useMediaQuery(
+      '(min-width: 1024px)',
+    );
+  const hydrated =
+    useRef(
+      false,
+    );
 
   // Boot: an existing loadout, or this class's local draft.
   useEffect(() => {
     let alive = true;
-    if (loadoutId) {
+    if (
+      loadoutId
+    ) {
       loadoutApi
-        .get(loadoutId)
-        .then((d) => {
-          if (!alive) return;
-          if (!d.isOwner) {
-            void navigate({ to: '/tf2/loadout/l/$slug', params: { slug: d.slug }, replace: true });
-            return;
-          }
-          setCls(d.tfClass);
-          setSlots(withSupportedOptions(catalog, d.slots));
-          setRemote({
-            id: d.id,
-            slug: d.slug,
-            title: d.title,
-            description: d.description,
-            visibility: d.visibility,
-          });
-          setReady(true);
-          hydrated.current = true;
-        })
-        .catch(() => {
-          if (!alive) return;
-          toast.error(t('loadout-missing', { defaultValue: 'That loadout could not be opened.' }));
-          void navigate({ to: '/tf2/loadout', search: {}, replace: true });
-        });
+        .get(
+          loadoutId,
+        )
+        .then(
+          (
+            d,
+          ) => {
+            if (
+              !alive
+            )
+              return;
+            if (
+              !d.isOwner
+            ) {
+              void navigate(
+                {
+                  to: '/tf2/loadout/l/$slug',
+                  params:
+                    {
+                      slug: d.slug,
+                    },
+                  replace: true,
+                },
+              );
+              return;
+            }
+            setCls(
+              d.tfClass,
+            );
+            setSlots(
+              withSupportedOptions(
+                catalog,
+                d.slots,
+              ),
+            );
+            setRemote(
+              {
+                id: d.id,
+                slug: d.slug,
+                title:
+                  d.title,
+                description:
+                  d.description,
+                visibility:
+                  d.visibility,
+              },
+            );
+            setReady(
+              true,
+            );
+            hydrated.current = true;
+          },
+        )
+        .catch(
+          () => {
+            if (
+              !alive
+            )
+              return;
+            toast.error(
+              t(
+                'loadout-missing',
+                {
+                  defaultValue:
+                    'That loadout could not be opened.',
+                },
+              ),
+            );
+            void navigate(
+              {
+                to: '/tf2/loadout',
+                search:
+                  {},
+                replace: true,
+              },
+            );
+          },
+        );
     } else {
-      const c = initialClass ?? lastClass();
-      setCls(c);
-      setSlots(draftOrStock(c));
-      setReady(true);
+      const c =
+        initialClass ??
+        lastClass();
+      setCls(
+        c,
+      );
+      setSlots(
+        draftOrStock(
+          c,
+        ),
+      );
+      setReady(
+        true,
+      );
       hydrated.current = true;
     }
     return () => {
@@ -264,292 +613,948 @@ function Builder({
     };
     // Boot once per target loadout; `t` and `navigate` are stable enough to ignore.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadoutId]);
+  }, [
+    loadoutId,
+  ]);
 
   // Unsaved work lives in a per-class draft.
   useEffect(() => {
-    if (!hydrated.current || remote || slots === initialSlots) return;
-    saveDraft(cls, slots);
-  }, [cls, slots, remote, initialSlots]);
+    if (
+      !hydrated.current ||
+      remote ||
+      slots ===
+        initialSlots
+    )
+      return;
+    saveDraft(
+      cls,
+      slots,
+    );
+  }, [
+    cls,
+    slots,
+    remote,
+    initialSlots,
+  ]);
 
-  const changeClass = (next: TfClass) => {
-    if (remote || next === cls) return;
-    try {
-      localStorage.setItem(LAST_CLASS_KEY, next);
-    } catch {
-      /* storage unavailable */
-    }
-    setCls(next);
-    setActiveTauntSlot(null);
-    setHeldSlot(null);
-    setAnimation(null);
-    setSlots(draftOrStock(next));
-    setExtraCosmetics(0);
-    setSelected(null);
-  };
+  const changeClass =
+    (
+      next: TfClass,
+    ) => {
+      if (
+        remote ||
+        next ===
+          cls
+      )
+        return;
+      try {
+        localStorage.setItem(
+          LAST_CLASS_KEY,
+          next,
+        );
+      } catch {
+        /* storage unavailable */
+      }
+      setCls(
+        next,
+      );
+      setActiveTauntSlot(
+        null,
+      );
+      setHeldSlot(
+        null,
+      );
+      setAnimation(
+        null,
+      );
+      setSlots(
+        draftOrStock(
+          next,
+        ),
+      );
+      setExtraCosmetics(
+        0,
+      );
+      setSelected(
+        null,
+      );
+    };
 
-  const weaponKeys = useMemo(() => weaponSlotsFor(catalog, cls), [catalog, cls]);
+  const weaponKeys =
+    useMemo(
+      () =>
+        weaponSlotsFor(
+          catalog,
+          cls,
+        ),
+      [
+        catalog,
+        cls,
+      ],
+    );
 
   // A class that has never been edited here starts from its stock weapons; one the player emptied
   // on purpose stays empty.
-  const draftOrStock = (c: TfClass): LoadoutSlots =>
-    hasDraft(c) ? withSupportedOptions(catalog, loadDraft(c)) : stockLoadout(catalog, c);
+  const draftOrStock =
+    (
+      c: TfClass,
+    ): LoadoutSlots =>
+      hasDraft(
+        c,
+      )
+        ? withSupportedOptions(
+            catalog,
+            loadDraft(
+              c,
+            ),
+          )
+        : stockLoadout(
+            catalog,
+            c,
+          );
 
   // The game's three cosmetic slots, plus any the player adds (or the loadout already holds), up to the
   // builder's cap. Anything the game could not do is allowed and flagged by the warnings below.
-  const cosmeticKeys = useMemo(
-    () => cosmeticSlotKeys(slots, COSMETIC_SLOTS + extraCosmetics),
-    [slots, extraCosmetics],
-  );
-  const warnings = useMemo(() => loadoutWarnings(catalog, cls, slots), [catalog, cls, slots]);
+  const cosmeticKeys =
+    useMemo(
+      () =>
+        cosmeticSlotKeys(
+          slots,
+          COSMETIC_SLOTS +
+            extraCosmetics,
+        ),
+      [
+        slots,
+        extraCosmetics,
+      ],
+    );
+  const warnings =
+    useMemo(
+      () =>
+        loadoutWarnings(
+          catalog,
+          cls,
+          slots,
+        ),
+      [
+        catalog,
+        cls,
+        slots,
+      ],
+    );
   // Items that clash with another worn item, tinted yellow in their slots.
-  const conflicting = useMemo(() => {
-    const ids = new Set<number>();
-    for (const w of warnings) {
-      if (w.kind === 'overlap') {
-        ids.add(w.a);
-        ids.add(w.b);
-      } else if (w.kind === 'duplicate') ids.add(w.item);
-    }
-    return ids;
-  }, [warnings]);
+  const conflicting =
+    useMemo(() => {
+      const ids =
+        new Set<number>();
+      for (const w of warnings) {
+        if (
+          w.kind ===
+          'overlap'
+        ) {
+          ids.add(
+            w.a,
+          );
+          ids.add(
+            w.b,
+          );
+        } else if (
+          w.kind ===
+          'duplicate'
+        )
+          ids.add(
+            w.item,
+          );
+      }
+      return ids;
+    }, [
+      warnings,
+    ]);
 
   // What the 3D player wears: the cosmetics, with their paint, and the held weapon.
-  const anims = useAnimIndex();
-  const activeTaunt = activeTauntSlot ? slots[activeTauntSlot] : undefined;
+  const anims =
+    useAnimIndex();
+  const activeTaunt =
+    activeTauntSlot
+      ? slots[
+          activeTauntSlot
+        ]
+      : undefined;
   // Before anything is picked the first equipped taunt plays; once a weapon slot is picked, none does.
-  const idleDefault = heldSlot === null;
-  const tauntItem = activeTaunt?.item ?? (idleDefault ? tauntItemOf(slots) : undefined);
+  const idleDefault =
+    heldSlot ===
+    null;
+  const tauntItem =
+    activeTaunt?.item ??
+    (idleDefault
+      ? tauntItemOf(
+          slots,
+        )
+      : undefined);
   // A taunt holsters the weapon (unless the schema forces one out), but only while its animation is what
   // is showing: an animation picked from the list, or a taunt with no clip yet, leaves the player armed.
   const tauntWeapon =
-    animation === null && tauntItem !== undefined && tauntClip(anims, tauntItem, cls)
-      ? tauntWeaponOf(idx, tauntItem)
+    animation ===
+      null &&
+    tauntItem !==
+      undefined &&
+    tauntClip(
+      anims,
+      tauntItem,
+      cls,
+    )
+      ? tauntWeaponOf(
+          idx,
+          tauntItem,
+        )
       : undefined;
-  const worn = useMemo(
-    () => wornItems(idx, cls, slots, cosmeticKeys, heldSlot, tauntWeapon),
-    [slots, idx, cosmeticKeys, cls, heldSlot, tauntWeapon],
-  );
-  const tauntEffect = activeTaunt
-    ? effectSpecOf(idx, activeTaunt, 'taunt')
-    : idleDefault
-      ? tauntEffectOf(idx, slots)
-      : undefined;
-
-  const slotLabel = useCallback(
-    (key: LoadoutSlotKey): string => {
-      if (key.startsWith('cosmetic'))
-        return t('slot-cosmetic', { defaultValue: 'Cosmetic {{n}}', n: key.slice(8) });
-      if (key.startsWith('taunt'))
-        return t('slot-taunt', { defaultValue: 'Taunt {{n}}', n: key.slice(5) });
-      switch (key) {
-        case 'primary':
-          return t('slot-primary', { defaultValue: 'Primary' });
-        case 'secondary':
-          return t('slot-secondary', { defaultValue: 'Secondary' });
-        case 'melee':
-          return t('slot-melee', { defaultValue: 'Melee' });
-        case 'building':
-          return t('slot-building', { defaultValue: 'Sapper / Toolbox' });
-        case 'pda':
-          return t('slot-pda', { defaultValue: 'PDA' });
-        case 'pda2':
-          return t('slot-pda2', { defaultValue: 'PDA 2' });
-        case 'action':
-          return t('slot-action', { defaultValue: 'Action' });
-        default:
-          return key;
-      }
-    },
-    [t],
-  );
-
-  const edit = (next: LoadoutSlots) => {
-    setSlots(next);
-    setDirty(true);
-  };
-
-  const equip = (key: LoadoutSlotKey, item: CatalogItem) => {
-    showSlot(key);
-    const { slots: next, removed } = equipInto(catalog, slots, key, item, true);
-    edit(next);
-    setAnnounce(
-      t('announce-equipped', {
-        defaultValue: '{{item}} equipped in {{slot}}.',
-        item: item.n,
-        slot: slotLabel(key),
-      }),
+  const worn =
+    useMemo(
+      () =>
+        wornItems(
+          idx,
+          cls,
+          slots,
+          cosmeticKeys,
+          heldSlot,
+          tauntWeapon,
+        ),
+      [
+        slots,
+        idx,
+        cosmeticKeys,
+        cls,
+        heldSlot,
+        tauntWeapon,
+      ],
     );
-    if (removed.length) {
-      toast.info(
-        t('removed-overlap', {
-          defaultValue: 'Removed {{names}} — it overlaps {{item}}.',
-          names: removed.map((r) => r.n).join(', '),
-          item: item.n,
-        }),
+  const tauntEffect =
+    activeTaunt
+      ? effectSpecOf(
+          idx,
+          activeTaunt,
+          'taunt',
+        )
+      : idleDefault
+        ? tauntEffectOf(
+            idx,
+            slots,
+          )
+        : undefined;
+
+  const slotLabel =
+    useCallback(
+      (
+        key: LoadoutSlotKey,
+      ): string => {
+        if (
+          key.startsWith(
+            'cosmetic',
+          )
+        )
+          return t(
+            'slot-cosmetic',
+            {
+              defaultValue:
+                'Cosmetic {{n}}',
+              n: key.slice(
+                8,
+              ),
+            },
+          );
+        if (
+          key.startsWith(
+            'taunt',
+          )
+        )
+          return t(
+            'slot-taunt',
+            {
+              defaultValue:
+                'Taunt {{n}}',
+              n: key.slice(
+                5,
+              ),
+            },
+          );
+        switch (
+          key
+        ) {
+          case 'primary':
+            return t(
+              'slot-primary',
+              {
+                defaultValue:
+                  'Primary',
+              },
+            );
+          case 'secondary':
+            return t(
+              'slot-secondary',
+              {
+                defaultValue:
+                  'Secondary',
+              },
+            );
+          case 'melee':
+            return t(
+              'slot-melee',
+              {
+                defaultValue:
+                  'Melee',
+              },
+            );
+          case 'building':
+            return t(
+              'slot-building',
+              {
+                defaultValue:
+                  'Sapper / Toolbox',
+              },
+            );
+          case 'pda':
+            return t(
+              'slot-pda',
+              {
+                defaultValue:
+                  'PDA',
+              },
+            );
+          case 'pda2':
+            return t(
+              'slot-pda2',
+              {
+                defaultValue:
+                  'PDA 2',
+              },
+            );
+          case 'action':
+            return t(
+              'slot-action',
+              {
+                defaultValue:
+                  'Action',
+              },
+            );
+          default:
+            return key;
+        }
+      },
+      [
+        t,
+      ],
+    );
+
+  const edit =
+    (
+      next: LoadoutSlots,
+    ) => {
+      setSlots(
+        next,
       );
-    }
-  };
+      setDirty(
+        true,
+      );
+    };
 
-  const patch = (key: LoadoutSlotKey, change: Partial<LoadoutEntry>) => {
-    const cur = slots[key];
-    if (!cur) return;
-    const merged: LoadoutEntry = { ...cur, ...change };
-    // A field set to undefined means "clear it".
-    for (const k of Object.keys(merged) as (keyof LoadoutEntry)[]) {
-      if (merged[k] === undefined) delete merged[k];
-    }
-    edit({ ...slots, [key]: merged });
-  };
+  const equip =
+    (
+      key: LoadoutSlotKey,
+      item: CatalogItem,
+    ) => {
+      showSlot(
+        key,
+      );
+      const {
+        slots:
+          next,
+        removed,
+      } =
+        equipInto(
+          catalog,
+          slots,
+          key,
+          item,
+          true,
+        );
+      edit(
+        next,
+      );
+      setAnnounce(
+        t(
+          'announce-equipped',
+          {
+            defaultValue:
+              '{{item}} equipped in {{slot}}.',
+            item: item.n,
+            slot: slotLabel(
+              key,
+            ),
+          },
+        ),
+      );
+      if (
+        removed.length
+      ) {
+        toast.info(
+          t(
+            'removed-overlap',
+            {
+              defaultValue:
+                'Removed {{names}} — it overlaps {{item}}.',
+              names:
+                removed
+                  .map(
+                    (
+                      r,
+                    ) =>
+                      r.n,
+                  )
+                  .join(
+                    ', ',
+                  ),
+              item: item.n,
+            },
+          ),
+        );
+      }
+    };
 
-  const clear = (key: LoadoutSlotKey) => {
-    const next = { ...slots };
-    delete next[key];
-    edit(next);
-    setAnnounce(t('announce-emptied', { defaultValue: '{{slot}} emptied.', slot: slotLabel(key) }));
-  };
+  const patch =
+    (
+      key: LoadoutSlotKey,
+      change: Partial<LoadoutEntry>,
+    ) => {
+      const cur =
+        slots[
+          key
+        ];
+      if (
+        !cur
+      )
+        return;
+      const merged: LoadoutEntry =
+        {
+          ...cur,
+          ...change,
+        };
+      // A field set to undefined means "clear it".
+      for (const k of Object.keys(
+        merged,
+      ) as (keyof LoadoutEntry)[]) {
+        if (
+          merged[
+            k
+          ] ===
+          undefined
+        )
+          delete merged[
+            k
+          ];
+      }
+      edit(
+        {
+          ...slots,
+          [key]:
+            merged,
+        },
+      );
+    };
 
-  const clearAll = () => {
-    edit({});
-    setSelected(null);
-  };
+  const clear =
+    (
+      key: LoadoutSlotKey,
+    ) => {
+      const next =
+        {
+          ...slots,
+        };
+      delete next[
+        key
+      ];
+      edit(
+        next,
+      );
+      setAnnounce(
+        t(
+          'announce-emptied',
+          {
+            defaultValue:
+              '{{slot}} emptied.',
+            slot: slotLabel(
+              key,
+            ),
+          },
+        ),
+      );
+    };
 
-  const resetToStock = () => {
-    edit(stockLoadout(catalog, cls));
-    setExtraCosmetics(0);
-    setSelected(null);
-    setAnnounce(t('announce-stock', { defaultValue: 'Back to the stock loadout.' }));
-  };
+  const clearAll =
+    () => {
+      edit(
+        {},
+      );
+      setSelected(
+        null,
+      );
+    };
+
+  const resetToStock =
+    () => {
+      edit(
+        stockLoadout(
+          catalog,
+          cls,
+        ),
+      );
+      setExtraCosmetics(
+        0,
+      );
+      setSelected(
+        null,
+      );
+      setAnnounce(
+        t(
+          'announce-stock',
+          {
+            defaultValue:
+              'Back to the stock loadout.',
+          },
+        ),
+      );
+    };
 
   // The assistant's suggestions land through the same rules as a tap on a tile.
-  const applyActions = (actions: AiAction[]) => {
-    let next: LoadoutSlots = { ...slots };
-    const names: string[] = [];
-    const removed: string[] = [];
-    for (const a of actions) {
-      const item = idx.item(a.item);
-      if (!item) continue;
-      const r = equipInto(catalog, next, a.slot, item, true);
-      next = r.slots;
-      removed.push(...r.removed.map((x) => x.n));
-      next[a.slot] = {
-        item: item.id,
-        ...(a.paint !== undefined ? { paint: a.paint } : {}),
-        ...(a.effect !== undefined ? { effect: a.effect } : {}),
-      };
-      names.push(item.n);
-    }
-    if (!names.length) return;
-    setUndoSlots(slots);
-    edit(next);
-    const extra = Math.max(
-      0,
-      ...Object.keys(next).map((k) => Number(/^cosmetic(\d+)$/.exec(k)?.[1] ?? 0)),
+  const applyActions =
+    (
+      actions: AiAction[],
+    ) => {
+      let next: LoadoutSlots =
+        {
+          ...slots,
+        };
+      const names: string[] =
+        [];
+      const removed: string[] =
+        [];
+      for (const a of actions) {
+        const item =
+          idx.item(
+            a.item,
+          );
+        if (
+          !item
+        )
+          continue;
+        const r =
+          equipInto(
+            catalog,
+            next,
+            a.slot,
+            item,
+            true,
+          );
+        next =
+          r.slots;
+        removed.push(
+          ...r.removed.map(
+            (
+              x,
+            ) =>
+              x.n,
+          ),
+        );
+        next[
+          a.slot
+        ] =
+          {
+            item: item.id,
+            ...(a.paint !==
+            undefined
+              ? {
+                  paint:
+                    a.paint,
+                }
+              : {}),
+            ...(a.effect !==
+            undefined
+              ? {
+                  effect:
+                    a.effect,
+                }
+              : {}),
+          };
+        names.push(
+          item.n,
+        );
+      }
+      if (
+        !names.length
+      )
+        return;
+      setUndoSlots(
+        slots,
+      );
+      edit(
+        next,
+      );
+      const extra =
+        Math.max(
+          0,
+          ...Object.keys(
+            next,
+          ).map(
+            (
+              k,
+            ) =>
+              Number(
+                /^cosmetic(\d+)$/.exec(
+                  k,
+                )?.[1] ??
+                  0,
+              ),
+          ),
+        );
+      if (
+        extra >
+        COSMETIC_SLOTS
+      )
+        setExtraCosmetics(
+          extra -
+            COSMETIC_SLOTS,
+        );
+      const msg =
+        t(
+          'ai-equipped-toast',
+          {
+            defaultValue:
+              'Equipped {{names}}.',
+            names:
+              names.join(
+                ', ',
+              ),
+          },
+        );
+      setAnnounce(
+        msg,
+      );
+      toast.success(
+        removed.length
+          ? `${msg} ${t('ai-removed-toast', { defaultValue: 'Replaced {{names}}.', names: removed.join(', ') })}`
+          : msg,
+      );
+    };
+
+  const undoApply =
+    () => {
+      if (
+        !undoSlots
+      )
+        return;
+      edit(
+        undoSlots,
+      );
+      setUndoSlots(
+        null,
+      );
+      setAnnounce(
+        t(
+          'ai-undone',
+          {
+            defaultValue:
+              'Undone.',
+          },
+        ),
+      );
+    };
+
+  const filled =
+    Object.keys(
+      slots,
+    ).length;
+
+  const classTabs: TfTab[] =
+    TF_CLASSES.map(
+      (
+        c,
+      ) => ({
+        id: c,
+        label:
+          t(
+            `class-${c}`,
+            {
+              defaultValue:
+                CLASS_DEFAULT[
+                  c
+                ],
+            },
+          ),
+        disabled:
+          Boolean(
+            remote,
+          ) &&
+          c !==
+            cls,
+      }),
     );
-    if (extra > COSMETIC_SLOTS) setExtraCosmetics(extra - COSMETIC_SLOTS);
-    const msg = t('ai-equipped-toast', {
-      defaultValue: 'Equipped {{names}}.',
-      names: names.join(', '),
-    });
-    setAnnounce(msg);
-    toast.success(
-      removed.length
-        ? `${msg} ${t('ai-removed-toast', { defaultValue: 'Replaced {{names}}.', names: removed.join(', ') })}`
-        : msg,
-    );
-  };
-
-  const undoApply = () => {
-    if (!undoSlots) return;
-    edit(undoSlots);
-    setUndoSlots(null);
-    setAnnounce(t('ai-undone', { defaultValue: 'Undone.' }));
-  };
-
-  const filled = Object.keys(slots).length;
-
-  const classTabs: TfTab[] = TF_CLASSES.map((c) => ({
-    id: c,
-    label: t(`class-${c}`, { defaultValue: CLASS_DEFAULT[c] }),
-    disabled: Boolean(remote) && c !== cls,
-  }));
 
   const shareUrl =
-    remote && remote.visibility !== 'PRIVATE' ? `${SITE()}/tf2/loadout/l/${remote.slug}` : null;
+    remote &&
+    remote.visibility !==
+      'PRIVATE'
+      ? `${SITE()}/tf2/loadout/l/${remote.slug}`
+      : null;
 
-  const afterSave = (saved: NonNullable<typeof remote>) => {
-    setRemote(saved);
-    setDirty(false);
-    setSaveOpen(false);
-    toast.success(t('loadout-saved', { defaultValue: 'Loadout saved.' }));
-  };
+  const afterSave =
+    (
+      saved: NonNullable<
+        typeof remote
+      >,
+    ) => {
+      setRemote(
+        saved,
+      );
+      setDirty(
+        false,
+      );
+      setSaveOpen(
+        false,
+      );
+      toast.success(
+        t(
+          'loadout-saved',
+          {
+            defaultValue:
+              'Loadout saved.',
+          },
+        ),
+      );
+    };
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pb-16 pt-4 lg:min-h-0 lg:overflow-hidden lg:pb-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <TfTabs
-          tabs={classTabs}
-          value={cls}
-          onChange={(id) => changeClass(id as TfClass)}
-          aria-label={t('class', { defaultValue: 'Class' })}
+          tabs={
+            classTabs
+          }
+          value={
+            cls
+          }
+          onChange={(
+            id,
+          ) =>
+            changeClass(
+              id as TfClass,
+            )
+          }
+          aria-label={t(
+            'class',
+            {
+              defaultValue:
+                'Class',
+            },
+          )}
           className="max-w-full"
         />
         <div className="flex flex-wrap items-center gap-2">
           {remote ? (
             <>
-              <span className="max-w-48 truncate text-sm font-semibold">{remote.title}</span>
-              {remote.visibility !== 'PRIVATE' ? (
-                <Pill tone={remote.visibility === 'PUBLIC' ? 'success' : 'info'}>
-                  {remote.visibility === 'PUBLIC'
-                    ? t('public', { defaultValue: 'Public' })
-                    : t('unlisted', { defaultValue: 'Unlisted' })}
+              <span className="max-w-48 truncate text-sm font-semibold">
+                {
+                  remote.title
+                }
+              </span>
+              {remote.visibility !==
+              'PRIVATE' ? (
+                <Pill
+                  tone={
+                    remote.visibility ===
+                    'PUBLIC'
+                      ? 'success'
+                      : 'info'
+                  }
+                >
+                  {remote.visibility ===
+                  'PUBLIC'
+                    ? t(
+                        'public',
+                        {
+                          defaultValue:
+                            'Public',
+                        },
+                      )
+                    : t(
+                        'unlisted',
+                        {
+                          defaultValue:
+                            'Unlisted',
+                        },
+                      )}
                 </Pill>
               ) : null}
               <Btn
                 size="sm"
                 variant="ghost"
-                icon={Plus}
+                icon={
+                  Plus
+                }
                 onClick={() => {
-                  setRemote(null);
-                  void navigate({ to: '/tf2/loadout', search: { class: cls }, replace: true });
+                  setRemote(
+                    null,
+                  );
+                  void navigate(
+                    {
+                      to: '/tf2/loadout',
+                      search:
+                        {
+                          class:
+                            cls,
+                        },
+                      replace: true,
+                    },
+                  );
                 }}
               >
-                {t('new-loadout', { defaultValue: 'New' })}
+                {t(
+                  'new-loadout',
+                  {
+                    defaultValue:
+                      'New',
+                  },
+                )}
               </Btn>
             </>
           ) : null}
           {shareUrl ? (
             <Btn
               size="sm"
-              icon={Copy}
+              icon={
+                Copy
+              }
               onClick={() =>
-                void copy(shareUrl).then(() =>
-                  toast.success(t('link-copied', { defaultValue: 'Link copied.' })),
+                void copy(
+                  shareUrl,
+                ).then(
+                  () =>
+                    toast.success(
+                      t(
+                        'link-copied',
+                        {
+                          defaultValue:
+                            'Link copied.',
+                        },
+                      ),
+                    ),
                 )
               }
             >
-              {t('copy-link', { defaultValue: 'Copy link' })}
+              {t(
+                'copy-link',
+                {
+                  defaultValue:
+                    'Copy link',
+                },
+              )}
             </Btn>
           ) : null}
-          <Btn size="sm" icon={Sparkles} onClick={() => setAssistantOpen(true)}>
-            {t('ai-open', { defaultValue: 'Ask AI' })}
+          <Btn
+            size="sm"
+            icon={
+              Sparkles
+            }
+            onClick={() =>
+              setAssistantOpen(
+                true,
+              )
+            }
+          >
+            {t(
+              'ai-open',
+              {
+                defaultValue:
+                  'Ask AI',
+              },
+            )}
           </Btn>
-          <Btn size="sm" variant="ghost" icon={RotateCcw} onClick={resetToStock}>
-            {t('reset-stock', { defaultValue: 'Stock' })}
+          <Btn
+            size="sm"
+            variant="ghost"
+            icon={
+              RotateCcw
+            }
+            onClick={
+              resetToStock
+            }
+          >
+            {t(
+              'reset-stock',
+              {
+                defaultValue:
+                  'Stock',
+              },
+            )}
           </Btn>
-          <Btn size="sm" variant="ghost" icon={Trash2} disabled={filled === 0} onClick={clearAll}>
-            {t('clear-all', { defaultValue: 'Clear' })}
+          <Btn
+            size="sm"
+            variant="ghost"
+            icon={
+              Trash2
+            }
+            disabled={
+              filled ===
+              0
+            }
+            onClick={
+              clearAll
+            }
+          >
+            {t(
+              'clear-all',
+              {
+                defaultValue:
+                  'Clear',
+              },
+            )}
           </Btn>
           <Btn
             size="sm"
             variant="primary"
-            icon={Save}
-            disabled={filled === 0 || (remote !== null && !dirty)}
-            onClick={() => (session ? setSaveOpen(true) : setSignIn('save'))}
+            icon={
+              Save
+            }
+            disabled={
+              filled ===
+                0 ||
+              (remote !==
+                null &&
+                !dirty)
+            }
+            onClick={() =>
+              session
+                ? setSaveOpen(
+                    true,
+                  )
+                : setSignIn(
+                    'save',
+                  )
+            }
           >
             {remote
-              ? t('save-changes', { defaultValue: 'Save changes' })
-              : t('save-loadout', { defaultValue: 'Save loadout' })}
+              ? t(
+                  'save-changes',
+                  {
+                    defaultValue:
+                      'Save changes',
+                  },
+                )
+              : t(
+                  'save-loadout',
+                  {
+                    defaultValue:
+                      'Save loadout',
+                  },
+                )}
           </Btn>
         </div>
       </div>
@@ -558,110 +1563,321 @@ function Builder({
           the item picker beside it each scroll on their own, and the page never does. A phone scrolls the page. */}
       <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]">
         <section
-          aria-label={t('loadout-slots', { defaultValue: 'Loadout slots' })}
+          aria-label={t(
+            'loadout-slots',
+            {
+              defaultValue:
+                'Loadout slots',
+            },
+          )}
           className="flex flex-col gap-4 lg:min-h-0"
         >
           {/* The player sits right under the class bar and stays in view; the options scroll under it. */}
           <PlayerViewer
-            cls={cls}
-            worn={worn}
-            tauntEffect={tauntEffect}
-            taunt={tauntItem}
-            animation={animation}
-            onAnimationChange={setAnimation}
+            cls={
+              cls
+            }
+            worn={
+              worn
+            }
+            tauntEffect={
+              tauntEffect
+            }
+            taunt={
+              tauntItem
+            }
+            animation={
+              animation
+            }
+            onAnimationChange={
+              setAnimation
+            }
             className="lg:shrink-0"
           />
           <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pe-1">
-            <RulesPanel warnings={warnings} idx={idx} />
-            <SlotGroup title={t('weapons', { defaultValue: 'Weapons' })}>
-              {weaponKeys.map((k) => (
-                <SlotCell
-                  key={k}
-                  slotKey={k}
-                  label={slotLabel(k)}
-                  idx={idx}
-                  entry={slots[k]}
-                  selected={selected === k}
-                  onSelect={() => selectSlot(k)}
-                  ready={ready}
-                />
-              ))}
+            <RulesPanel
+              warnings={
+                warnings
+              }
+              idx={
+                idx
+              }
+            />
+            <SlotGroup
+              title={t(
+                'weapons',
+                {
+                  defaultValue:
+                    'Weapons',
+                },
+              )}
+            >
+              {weaponKeys.map(
+                (
+                  k,
+                ) => (
+                  <SlotCell
+                    key={
+                      k
+                    }
+                    slotKey={
+                      k
+                    }
+                    label={slotLabel(
+                      k,
+                    )}
+                    idx={
+                      idx
+                    }
+                    entry={
+                      slots[
+                        k
+                      ]
+                    }
+                    selected={
+                      selected ===
+                      k
+                    }
+                    onSelect={() =>
+                      selectSlot(
+                        k,
+                      )
+                    }
+                    ready={
+                      ready
+                    }
+                  />
+                ),
+              )}
             </SlotGroup>
-            <SlotGroup title={t('cosmetics', { defaultValue: 'Cosmetics' })}>
-              {cosmeticKeys.map((k) => (
-                <SlotCell
-                  key={k}
-                  conflict={!!slots[k] && conflicting.has(slots[k]!.item)}
-                  slotKey={k}
-                  label={slotLabel(k)}
-                  idx={idx}
-                  entry={slots[k]}
-                  selected={selected === k}
-                  onSelect={() => selectSlot(k)}
-                  ready={ready}
-                />
-              ))}
-              {cosmeticKeys.length < MAX_COSMETIC_SLOTS ? (
+            <SlotGroup
+              title={t(
+                'cosmetics',
+                {
+                  defaultValue:
+                    'Cosmetics',
+                },
+              )}
+            >
+              {cosmeticKeys.map(
+                (
+                  k,
+                ) => (
+                  <SlotCell
+                    key={
+                      k
+                    }
+                    conflict={
+                      !!slots[
+                        k
+                      ] &&
+                      conflicting.has(
+                        slots[
+                          k
+                        ]!
+                          .item,
+                      )
+                    }
+                    slotKey={
+                      k
+                    }
+                    label={slotLabel(
+                      k,
+                    )}
+                    idx={
+                      idx
+                    }
+                    entry={
+                      slots[
+                        k
+                      ]
+                    }
+                    selected={
+                      selected ===
+                      k
+                    }
+                    onSelect={() =>
+                      selectSlot(
+                        k,
+                      )
+                    }
+                    ready={
+                      ready
+                    }
+                  />
+                ),
+              )}
+              {cosmeticKeys.length <
+              MAX_COSMETIC_SLOTS ? (
                 <button
                   type="button"
                   onClick={() => {
-                    setExtraCosmetics(Math.max(0, cosmeticKeys.length - COSMETIC_SLOTS) + 1);
-                    setSelected(cosmeticKey(cosmeticKeys.length));
+                    setExtraCosmetics(
+                      Math.max(
+                        0,
+                        cosmeticKeys.length -
+                          COSMETIC_SLOTS,
+                      ) +
+                        1,
+                    );
+                    setSelected(
+                      cosmeticKey(
+                        cosmeticKeys.length,
+                      ),
+                    );
                   }}
                   className="flex aspect-square min-w-0 flex-col items-center justify-center gap-1 rounded-app-sm border border-dashed border-app-border text-xs text-app-text-dim hover:border-app-accent hover:text-app-text"
                 >
-                  <Plus className="size-5" aria-hidden />
-                  {t('add-cosmetic-slot', { defaultValue: 'Add slot' })}
+                  <Plus
+                    className="size-5"
+                    aria-hidden
+                  />
+                  {t(
+                    'add-cosmetic-slot',
+                    {
+                      defaultValue:
+                        'Add slot',
+                    },
+                  )}
                 </button>
               ) : null}
             </SlotGroup>
-            <SlotGroup title={t('action-and-taunts', { defaultValue: 'Action & taunts' })}>
-              {['action', ...TAUNT_KEYS].map((k) => (
-                <SlotCell
-                  key={k}
-                  slotKey={k}
-                  label={slotLabel(k)}
-                  idx={idx}
-                  entry={slots[k]}
-                  selected={selected === k}
-                  onSelect={() => selectSlot(k)}
-                  ready={ready}
-                />
-              ))}
+            <SlotGroup
+              title={t(
+                'action-and-taunts',
+                {
+                  defaultValue:
+                    'Action & taunts',
+                },
+              )}
+            >
+              {[
+                'action',
+                ...TAUNT_KEYS,
+              ].map(
+                (
+                  k,
+                ) => (
+                  <SlotCell
+                    key={
+                      k
+                    }
+                    slotKey={
+                      k
+                    }
+                    label={slotLabel(
+                      k,
+                    )}
+                    idx={
+                      idx
+                    }
+                    entry={
+                      slots[
+                        k
+                      ]
+                    }
+                    selected={
+                      selected ===
+                      k
+                    }
+                    onSelect={() =>
+                      selectSlot(
+                        k,
+                      )
+                    }
+                    ready={
+                      ready
+                    }
+                  />
+                ),
+              )}
             </SlotGroup>
             <p className="text-xs text-app-text-dim">
-              {t('catalog-source', {
-                defaultValue: 'Items from {{source}}, updated automatically.',
-                source: catalog.source.label,
-              })}
+              {t(
+                'catalog-source',
+                {
+                  defaultValue:
+                    'Items from {{source}}, updated automatically.',
+                  source:
+                    catalog
+                      .source
+                      .label,
+                },
+              )}
             </p>
           </div>
         </section>
 
         {isDesktop ? (
           <section
-            aria-label={t('item-picker', { defaultValue: 'Item picker' })}
+            aria-label={t(
+              'item-picker',
+              {
+                defaultValue:
+                  'Item picker',
+              },
+            )}
             className="min-h-96 overflow-y-auto overscroll-contain rounded-app border border-app-border bg-app-bg-subtle lg:min-h-0"
           >
             {selected ? (
               <Picker
                 key={`${cls}:${selected}`}
-                idx={idx}
-                cls={cls}
-                slotKey={selected}
-                label={slotLabel(selected)}
-                entry={slots[selected]}
-                slots={slots}
-                onEquip={(item) => equip(selected, item)}
-                onPatch={(change) => patch(selected, change)}
-                onClear={() => clear(selected)}
-                onClose={() => setSelected(null)}
+                idx={
+                  idx
+                }
+                cls={
+                  cls
+                }
+                slotKey={
+                  selected
+                }
+                label={slotLabel(
+                  selected,
+                )}
+                entry={
+                  slots[
+                    selected
+                  ]
+                }
+                slots={
+                  slots
+                }
+                onEquip={(
+                  item,
+                ) =>
+                  equip(
+                    selected,
+                    item,
+                  )
+                }
+                onPatch={(
+                  change,
+                ) =>
+                  patch(
+                    selected,
+                    change,
+                  )
+                }
+                onClear={() =>
+                  clear(
+                    selected,
+                  )
+                }
+                onClose={() =>
+                  setSelected(
+                    null,
+                  )
+                }
               />
             ) : (
               <EmptyNote>
-                {t('pick-a-slot', {
-                  defaultValue: 'Pick a slot on the left to choose an item for it.',
-                })}
+                {t(
+                  'pick-a-slot',
+                  {
+                    defaultValue:
+                      'Pick a slot on the left to choose an item for it.',
+                  },
+                )}
               </EmptyNote>
             )}
           </section>
@@ -671,81 +1887,212 @@ function Builder({
       {!isDesktop ? (
         <Modal
           sheet
-          open={selected !== null}
-          onOpenChange={(o) => !o && setSelected(null)}
-          title={selected ? slotLabel(selected) : ''}
-          description={t('sheet-desc', {
-            defaultValue: 'Choose an item for this slot. Close the sheet when you are done.',
-          })}
+          open={
+            selected !==
+            null
+          }
+          onOpenChange={(
+            o,
+          ) =>
+            !o &&
+            setSelected(
+              null,
+            )
+          }
+          title={
+            selected
+              ? slotLabel(
+                  selected,
+                )
+              : ''
+          }
+          description={t(
+            'sheet-desc',
+            {
+              defaultValue:
+                'Choose an item for this slot. Close the sheet when you are done.',
+            },
+          )}
         >
           {selected ? (
             <Picker
               key={`${cls}:${selected}`}
-              idx={idx}
-              cls={cls}
-              slotKey={selected}
-              label={slotLabel(selected)}
-              entry={slots[selected]}
-              slots={slots}
+              idx={
+                idx
+              }
+              cls={
+                cls
+              }
+              slotKey={
+                selected
+              }
+              label={slotLabel(
+                selected,
+              )}
+              entry={
+                slots[
+                  selected
+                ]
+              }
+              slots={
+                slots
+              }
               embedded
-              onEquip={(item) => equip(selected, item)}
-              onPatch={(change) => patch(selected, change)}
-              onClear={() => clear(selected)}
-              onClose={() => setSelected(null)}
+              onEquip={(
+                item,
+              ) =>
+                equip(
+                  selected,
+                  item,
+                )
+              }
+              onPatch={(
+                change,
+              ) =>
+                patch(
+                  selected,
+                  change,
+                )
+              }
+              onClear={() =>
+                clear(
+                  selected,
+                )
+              }
+              onClose={() =>
+                setSelected(
+                  null,
+                )
+              }
             />
           ) : null}
         </Modal>
       ) : null}
 
-      <p role="status" aria-live="polite" className="sr-only">
-        {announce}
+      <p
+        role="status"
+        aria-live="polite"
+        className="sr-only"
+      >
+        {
+          announce
+        }
       </p>
 
       <SaveDialog
-        open={saveOpen}
-        onOpenChange={setSaveOpen}
-        cls={cls}
-        slots={slots}
-        remote={remote}
-        onSaved={(saved) => {
-          afterSave(saved);
-          if (!remote) {
-            void navigate({
-              to: '/tf2/loadout',
-              search: { id: saved.id, class: cls },
-              replace: true,
-            });
+        open={
+          saveOpen
+        }
+        onOpenChange={
+          setSaveOpen
+        }
+        cls={
+          cls
+        }
+        slots={
+          slots
+        }
+        remote={
+          remote
+        }
+        onSaved={(
+          saved,
+        ) => {
+          afterSave(
+            saved,
+          );
+          if (
+            !remote
+          ) {
+            void navigate(
+              {
+                to: '/tf2/loadout',
+                search:
+                  {
+                    id: saved.id,
+                    class:
+                      cls,
+                  },
+                replace: true,
+              },
+            );
           }
         }}
         onNeedSignIn={() => {
-          setSaveOpen(false);
-          setSignIn('save');
+          setSaveOpen(
+            false,
+          );
+          setSignIn(
+            'save',
+          );
         }}
       />
       <LoadoutAssistant
-        open={assistantOpen}
-        onOpenChange={setAssistantOpen}
-        sheet={!isDesktop}
-        cls={cls}
-        slots={slots}
-        idx={idx}
-        signedIn={Boolean(session)}
+        open={
+          assistantOpen
+        }
+        onOpenChange={
+          setAssistantOpen
+        }
+        sheet={
+          !isDesktop
+        }
+        cls={
+          cls
+        }
+        slots={
+          slots
+        }
+        idx={
+          idx
+        }
+        signedIn={Boolean(
+          session,
+        )}
         onNeedSignIn={() => {
-          setAssistantOpen(false);
-          setSignIn('ai');
+          setAssistantOpen(
+            false,
+          );
+          setSignIn(
+            'ai',
+          );
         }}
-        onApply={applyActions}
-        canUndo={undoSlots !== null}
-        onUndo={undoApply}
+        onApply={
+          applyActions
+        }
+        canUndo={
+          undoSlots !==
+          null
+        }
+        onUndo={
+          undoApply
+        }
       />
       {signIn ? (
         <SignInRequiredDialog
           open
-          onClose={() => setSignIn(null)}
+          onClose={() =>
+            setSignIn(
+              null,
+            )
+          }
           feature={
-            signIn === 'ai'
-              ? t('feature-loadout-ai', { defaultValue: 'Use the loadout assistant' })
-              : t('feature-save-loadouts', { defaultValue: 'Save loadouts to your account' })
+            signIn ===
+            'ai'
+              ? t(
+                  'feature-loadout-ai',
+                  {
+                    defaultValue:
+                      'Use the loadout assistant',
+                  },
+                )
+              : t(
+                  'feature-save-loadouts',
+                  {
+                    defaultValue:
+                      'Save loadouts to your account',
+                  },
+                )
           }
         />
       ) : null}
@@ -757,11 +2104,21 @@ function RulesPanel({
   warnings,
   idx,
 }: {
-  warnings: ReturnType<typeof loadoutWarnings>;
+  warnings: ReturnType<
+    typeof loadoutWarnings
+  >;
   idx: CatalogIndex;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
-  if (!warnings.length) return null;
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  if (
+    !warnings.length
+  )
+    return null;
   return (
     <div className="rounded-app border border-app-border bg-app-bg-subtle p-3 text-xs">
       {warnings.length ? (
@@ -770,22 +2127,50 @@ function RulesPanel({
           className="rounded-app-sm border border-app-warning/50 bg-app-warning/10 p-2.5"
         >
           <p className="flex items-center gap-1.5 font-semibold text-app-warning">
-            <AlertTriangle className="size-4 shrink-0" aria-hidden />
-            {t('not-possible', { defaultValue: 'Not possible in the game' })}
+            <AlertTriangle
+              className="size-4 shrink-0"
+              aria-hidden
+            />
+            {t(
+              'not-possible',
+              {
+                defaultValue:
+                  'Not possible in the game',
+              },
+            )}
           </p>
-          <WarningList warnings={warnings} idx={idx} />
+          <WarningList
+            warnings={
+              warnings
+            }
+            idx={
+              idx
+            }
+          />
         </div>
       ) : null}
     </div>
   );
 }
 
-export function SlotGroup({ title, children }: { title: string; children: React.ReactNode }) {
+export function SlotGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-app border border-app-border bg-app-bg-subtle">
-      <PanelHead title={title} />
+      <PanelHead
+        title={
+          title
+        }
+      />
       <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-3">
-        {children}
+        {
+          children
+        }
       </div>
     </div>
   );
@@ -804,56 +2189,123 @@ export function SlotCell({
   slotKey: LoadoutSlotKey;
   label: string;
   idx: CatalogIndex;
-  entry: LoadoutEntry | undefined;
+  entry:
+    | LoadoutEntry
+    | undefined;
   selected: boolean;
   conflict?: boolean;
   onSelect: () => void;
   ready: boolean;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
-  const item = entry ? idx.item(entry.item) : undefined;
-  const effect = entry?.effect !== undefined ? idx.effect(entry.effect) : undefined;
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  const item =
+    entry
+      ? idx.item(
+          entry.item,
+        )
+      : undefined;
+  const effect =
+    entry?.effect !==
+    undefined
+      ? idx.effect(
+          entry.effect,
+        )
+      : undefined;
   return (
-    <div className="flex min-w-0 flex-col gap-1" data-slot={slotKey}>
+    <div
+      className="flex min-w-0 flex-col gap-1"
+      data-slot={
+        slotKey
+      }
+    >
       <span className="truncate text-[11px] pointer-coarse:text-xs font-semibold uppercase tracking-wider text-app-text-dim">
-        {label}
+        {
+          label
+        }
       </span>
       {item ? (
         <ItemTile
-          item={item}
-          paint={entry?.paint !== undefined ? idx.paint(entry.paint) : undefined}
-          selected={selected}
-          conflict={conflict}
-          onClick={onSelect}
+          item={
+            item
+          }
+          paint={
+            entry?.paint !==
+            undefined
+              ? idx.paint(
+                  entry.paint,
+                )
+              : undefined
+          }
+          selected={
+            selected
+          }
+          conflict={
+            conflict
+          }
+          onClick={
+            onSelect
+          }
           label={`${label}: ${item.n}`}
         />
       ) : (
         <button
           type="button"
-          onClick={onSelect}
-          aria-pressed={selected}
+          onClick={
+            onSelect
+          }
+          aria-pressed={
+            selected
+          }
           aria-label={
             entry
-              ? t('unknown-item-slot', {
-                  defaultValue: '{{slot}}: item {{id}} (no longer in the game)',
-                  slot: label,
-                  id: entry.item,
-                })
-              : t('empty-slot', { defaultValue: '{{slot}}: empty', slot: label })
+              ? t(
+                  'unknown-item-slot',
+                  {
+                    defaultValue:
+                      '{{slot}}: item {{id}} (no longer in the game)',
+                    slot: label,
+                    id: entry.item,
+                  },
+                )
+              : t(
+                  'empty-slot',
+                  {
+                    defaultValue:
+                      '{{slot}}: empty',
+                    slot: label,
+                  },
+                )
           }
           className={`flex aspect-[5/4] w-full items-center justify-center rounded-app-sm border-2 border-dashed text-xs text-app-text-dim transition-[box-shadow] duration-(--app-duration-fast) hover:ring-2 hover:ring-app-border-bright ${
             selected
               ? 'border-app-accent ring-2 ring-app-accent'
               : 'border-app-border-bright'
           }`}
-          disabled={!ready}
+          disabled={
+            !ready
+          }
         >
-          {entry ? `#${entry.item}` : <Plus className="size-4" aria-hidden />}
+          {entry ? (
+            `#${entry.item}`
+          ) : (
+            <Plus
+              className="size-4"
+              aria-hidden
+            />
+          )}
         </button>
       )}
       <span className="min-h-4 truncate text-xs text-app-text-muted">
-        {item?.n ?? ''}
-        {effect ? ` · ${effect.n}` : ''}
+        {item?.n ??
+          ''}
+        {effect
+          ? ` · ${effect.n}`
+          : ''}
       </span>
     </div>
   );
@@ -876,107 +2328,361 @@ export function Picker({
   cls: TfClass;
   slotKey: LoadoutSlotKey;
   label: string;
-  entry: LoadoutEntry | undefined;
+  entry:
+    | LoadoutEntry
+    | undefined;
   /** The whole loadout, to mark the items that would clash with what is already worn. */
   slots: LoadoutSlots;
-  onEquip: (item: CatalogItem) => void;
-  onPatch: (change: Partial<LoadoutEntry>) => void;
+  onEquip: (
+    item: CatalogItem,
+  ) => void;
+  onPatch: (
+    change: Partial<LoadoutEntry>,
+  ) => void;
   onClear: () => void;
   onClose: () => void;
   /** Inside a sheet that already has a title and a close button. */
   embedded?: boolean;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
-  const { catalog } = idx;
-  const [query, setQuery] = useState('');
-  const [type, setType] = useState('');
-  const [shown, setShown] = useState(PAGE);
-  const [previewing, setPreviewing] = useState<CatalogItem | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  const {
+    catalog,
+  } =
+    idx;
+  const [
+    query,
+    setQuery,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    type,
+    setType,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    shown,
+    setShown,
+  ] =
+    useState(
+      PAGE,
+    );
+  const [
+    previewing,
+    setPreviewing,
+  ] =
+    useState<CatalogItem | null>(
+      null,
+    );
 
-  const all = useMemo(() => itemsForSlot(catalog, cls, slotKey), [catalog, cls, slotKey]);
+  const all =
+    useMemo(
+      () =>
+        itemsForSlot(
+          catalog,
+          cls,
+          slotKey,
+        ),
+      [
+        catalog,
+        cls,
+        slotKey,
+      ],
+    );
   // Dwelling on a tile (or tabbing to it) is the cue that it may be equipped next: fetch its model, or the
   // taunt's animation, now so the equip is instant. A quick sweep across the grid fetches nothing.
-  const modelIds = useModelIds();
-  const anims = useAnimIndex();
-  const dwell = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const warm = (it: CatalogItem) => {
-    clearTimeout(dwell.current);
-    dwell.current = setTimeout(() => {
-      if (it.s === 'taunt') {
-        const clip = tauntClip(anims, it.id, cls);
-        if (clip) prefetch(animUrl(cls, clip));
-        return;
-      }
-      const name = modelIds ? pickModel(modelIds, modelItemId(it), cls) : null;
-      if (name) prefetch(modelUrl(name));
-    }, 200);
-  };
-  useEffect(() => () => clearTimeout(dwell.current), []);
-  const clashes = useMemo(
-    () => clashesWithWorn(catalog, slots, slotKey),
-    [catalog, slots, slotKey],
-  );
-  const types = useMemo(() => [...new Set(all.map((i) => i.t).filter(Boolean))].sort(), [all]);
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return all.filter(
-      (i) =>
-        (!type || i.t === type) &&
-        (!q || i.n.toLowerCase().includes(q) || i.t.toLowerCase().includes(q)),
+  const modelIds =
+    useModelIds();
+  const anims =
+    useAnimIndex();
+  const dwell =
+    useRef<
+      | ReturnType<
+          typeof setTimeout
+        >
+      | undefined
+    >(
+      undefined,
     );
-  }, [all, query, type]);
-
-  useEffect(() => setShown(PAGE), [query, type]);
-  const more = useSentinel(() => setShown((n) => n + PAGE), {
-    enabled: shown < matches.length,
-    watch: shown,
-  });
-
-  const current = entry ? idx.item(entry.item) : undefined;
-  const slot = current ? slotFor(current, cls) : null;
-  const customizable = Boolean(
-    current &&
-    (current.p ||
-      current.st ||
-      slot === 'head' ||
-      slot === 'misc' ||
-      slot === 'taunt' ||
-      slot === 'primary' ||
-      slot === 'secondary' ||
-      slot === 'melee'),
+  const warm =
+    (
+      it: CatalogItem,
+    ) => {
+      clearTimeout(
+        dwell.current,
+      );
+      dwell.current =
+        setTimeout(
+          () => {
+            if (
+              it.s ===
+              'taunt'
+            ) {
+              const clip =
+                tauntClip(
+                  anims,
+                  it.id,
+                  cls,
+                );
+              if (
+                clip
+              )
+                prefetch(
+                  animUrl(
+                    cls,
+                    clip,
+                  ),
+                );
+              return;
+            }
+            const name =
+              modelIds
+                ? pickModel(
+                    modelIds,
+                    modelItemId(
+                      it,
+                    ),
+                    cls,
+                  )
+                : null;
+            if (
+              name
+            )
+              prefetch(
+                modelUrl(
+                  name,
+                ),
+              );
+          },
+          200,
+        );
+    };
+  useEffect(
+    () =>
+      () =>
+        clearTimeout(
+          dwell.current,
+        ),
+    [],
   );
-  const [customizeOpen, setCustomizeOpen] = useState(false);
-  const wide = useMediaQuery('(min-width: 1024px)');
+  const clashes =
+    useMemo(
+      () =>
+        clashesWithWorn(
+          catalog,
+          slots,
+          slotKey,
+        ),
+      [
+        catalog,
+        slots,
+        slotKey,
+      ],
+    );
+  const types =
+    useMemo(
+      () =>
+        [
+          ...new Set(
+            all
+              .map(
+                (
+                  i,
+                ) =>
+                  i.t,
+              )
+              .filter(
+                Boolean,
+              ),
+          ),
+        ].sort(),
+      [
+        all,
+      ],
+    );
+  const matches =
+    useMemo(() => {
+      const q =
+        query
+          .trim()
+          .toLowerCase();
+      return all.filter(
+        (
+          i,
+        ) =>
+          (!type ||
+            i.t ===
+              type) &&
+          (!q ||
+            i.n
+              .toLowerCase()
+              .includes(
+                q,
+              ) ||
+            i.t
+              .toLowerCase()
+              .includes(
+                q,
+              )),
+      );
+    }, [
+      all,
+      query,
+      type,
+    ]);
+
+  useEffect(
+    () =>
+      setShown(
+        PAGE,
+      ),
+    [
+      query,
+      type,
+    ],
+  );
+  const more =
+    useSentinel(
+      () =>
+        setShown(
+          (
+            n,
+          ) =>
+            n +
+            PAGE,
+        ),
+      {
+        enabled:
+          shown <
+          matches.length,
+        watch:
+          shown,
+      },
+    );
+
+  const current =
+    entry
+      ? idx.item(
+          entry.item,
+        )
+      : undefined;
+  const slot =
+    current
+      ? slotFor(
+          current,
+          cls,
+        )
+      : null;
+  const customizable =
+    Boolean(
+      current &&
+      (current.p ||
+        current.st ||
+        slot ===
+          'head' ||
+        slot ===
+          'misc' ||
+        slot ===
+          'taunt' ||
+        slot ===
+          'primary' ||
+        slot ===
+          'secondary' ||
+        slot ===
+          'melee'),
+    );
+  const [
+    customizeOpen,
+    setCustomizeOpen,
+  ] =
+    useState(
+      false,
+    );
+  const wide =
+    useMediaQuery(
+      '(min-width: 1024px)',
+    );
 
   return (
     <div className="flex flex-col">
       {embedded ? (
         entry ? (
           <div className="flex justify-end px-3 pt-1">
-            <Btn size="sm" variant="ghost" icon={Trash2} onClick={onClear}>
-              {t('empty-the-slot', { defaultValue: 'Empty' })}
+            <Btn
+              size="sm"
+              variant="ghost"
+              icon={
+                Trash2
+              }
+              onClick={
+                onClear
+              }
+            >
+              {t(
+                'empty-the-slot',
+                {
+                  defaultValue:
+                    'Empty',
+                },
+              )}
             </Btn>
           </div>
         ) : null
       ) : (
         <PanelHead
-          title={label}
+          title={
+            label
+          }
           // A landscape phone has no height for two sticky bars over the items: they scroll away there.
           className="sticky top-0 z-10 bg-app-bg-subtle [@media(max-height:560px)]:static"
           actions={
             <>
               {entry ? (
-                <Btn size="xs" variant="ghost" icon={Trash2} onClick={onClear}>
-                  {t('empty-the-slot', { defaultValue: 'Empty' })}
+                <Btn
+                  size="xs"
+                  variant="ghost"
+                  icon={
+                    Trash2
+                  }
+                  onClick={
+                    onClear
+                  }
+                >
+                  {t(
+                    'empty-the-slot',
+                    {
+                      defaultValue:
+                        'Empty',
+                    },
+                  )}
                 </Btn>
               ) : null}
               <button
                 type="button"
-                onClick={onClose}
-                aria-label={t('close', { defaultValue: 'Close' })}
+                onClick={
+                  onClose
+                }
+                aria-label={t(
+                  'close',
+                  {
+                    defaultValue:
+                      'Close',
+                  },
+                )}
                 className="inline-flex size-7 items-center justify-center rounded-app-sm text-app-text-muted hover:bg-app-surface-hover hover:text-app-text pointer-coarse:size-11"
               >
-                <X className="size-4" aria-hidden />
+                <X
+                  className="size-4"
+                  aria-hidden
+                />
               </button>
             </>
           }
@@ -986,65 +2692,212 @@ export function Picker({
       {current ? (
         <div className="grid gap-3 border-b border-app-border p-3 sm:grid-cols-[13rem_minmax(0,1fr)]">
           <ItemModelViewer
-            itemId={modelItemId(current)}
-            cls={cls}
-            taunt={current.s === 'taunt'}
-            festive={entry?.festive}
-            style={entry?.style}
-            paint={entry ? warPaintOf(idx, entry) : undefined}
-            tint={current.p && entry?.paint !== undefined ? idx.paint(entry.paint)?.rgb : undefined}
+            itemId={modelItemId(
+              current,
+            )}
+            cls={
+              cls
+            }
+            taunt={
+              current.s ===
+              'taunt'
+            }
+            festive={
+              entry?.festive
+            }
+            style={
+              entry?.style
+            }
+            paint={
+              entry
+                ? warPaintOf(
+                    idx,
+                    entry,
+                  )
+                : undefined
+            }
+            tint={
+              current.p &&
+              entry?.paint !==
+                undefined
+                ? idx.paint(
+                    entry.paint,
+                  )
+                    ?.rgb
+                : undefined
+            }
           />
           <div className="flex min-w-0 flex-col gap-3">
             <div className="min-w-0">
               <p
                 className="truncate text-sm font-semibold"
-                style={{ color: qualityAccent(current.q) ?? undefined }}
+                style={{
+                  color:
+                    qualityAccent(
+                      current.q,
+                    ) ??
+                    undefined,
+                }}
               >
-                {current.n}
+                {
+                  current.n
+                }
               </p>
-              <p className="truncate text-xs text-app-text-dim">{current.t}</p>
+              <p className="truncate text-xs text-app-text-dim">
+                {
+                  current.t
+                }
+              </p>
             </div>
-            {customizable && entry ? (
+            {customizable &&
+            entry ? (
               <div className="flex flex-wrap items-center gap-1.5">
-                <Btn size="sm" icon={SlidersHorizontal} onClick={() => setCustomizeOpen(true)}>
-                  {t('customize', { defaultValue: 'Customize' })}
+                <Btn
+                  size="sm"
+                  icon={
+                    SlidersHorizontal
+                  }
+                  onClick={() =>
+                    setCustomizeOpen(
+                      true,
+                    )
+                  }
+                >
+                  {t(
+                    'customize',
+                    {
+                      defaultValue:
+                        'Customize',
+                    },
+                  )}
                 </Btn>
-                {entry.paint !== undefined && idx.paint(entry.paint) ? (
+                {entry.paint !==
+                  undefined &&
+                idx.paint(
+                  entry.paint,
+                ) ? (
                   <Pill>
                     <span
                       aria-hidden
                       className="me-1 inline-block size-2.5 rounded-full border border-app-border-bright"
-                      style={{ background: idx.paint(entry.paint)!.rgb }}
+                      style={{
+                        background:
+                          idx.paint(
+                            entry.paint,
+                          )!
+                            .rgb,
+                      }}
                     />
-                    {idx.paint(entry.paint)!.n}
+                    {
+                      idx.paint(
+                        entry.paint,
+                      )!
+                        .n
+                    }
                   </Pill>
                 ) : null}
-                {entry.style !== undefined && current?.st?.find((x) => x.k === entry.style) ? (
-                  <Pill>{current.st!.find((x) => x.k === entry.style)!.n}</Pill>
-                ) : null}
-                {entry.effect !== undefined && idx.effect(entry.effect) ? (
-                  <Pill tone="accent">{idx.effect(entry.effect)!.n}</Pill>
-                ) : null}
-                {kitOf(current, entry) !== undefined ? (
+                {entry.style !==
+                  undefined &&
+                current?.st?.find(
+                  (
+                    x,
+                  ) =>
+                    x.k ===
+                    entry.style,
+                ) ? (
                   <Pill>
-                    {(catalog.kits ?? []).find((k) => k.id === kitOf(current, entry))?.n ??
-                      '#' + kitOf(current, entry)}
-                    {entry.wear ? ` · ${WEAR_NAMES[entry.wear - 1]}` : ''}
+                    {
+                      current.st!.find(
+                        (
+                          x,
+                        ) =>
+                          x.k ===
+                          entry.style,
+                      )!
+                        .n
+                    }
                   </Pill>
-                ) : current.sk && entry.wear ? (
-                  <Pill>{WEAR_NAMES[entry.wear - 1]}</Pill>
+                ) : null}
+                {entry.effect !==
+                  undefined &&
+                idx.effect(
+                  entry.effect,
+                ) ? (
+                  <Pill tone="accent">
+                    {
+                      idx.effect(
+                        entry.effect,
+                      )!
+                        .n
+                    }
+                  </Pill>
+                ) : null}
+                {kitOf(
+                  current,
+                  entry,
+                ) !==
+                undefined ? (
+                  <Pill>
+                    {(
+                      catalog.kits ??
+                      []
+                    ).find(
+                      (
+                        k,
+                      ) =>
+                        k.id ===
+                        kitOf(
+                          current,
+                          entry,
+                        ),
+                    )
+                      ?.n ??
+                      '#' +
+                        kitOf(
+                          current,
+                          entry,
+                        )}
+                    {entry.wear
+                      ? ` · ${WEAR_NAMES[entry.wear - 1]}`
+                      : ''}
+                  </Pill>
+                ) : current.sk &&
+                  entry.wear ? (
+                  <Pill>
+                    {
+                      WEAR_NAMES[
+                        entry.wear -
+                          1
+                      ]
+                    }
+                  </Pill>
                 ) : null}
                 {entry.festive ? (
-                  <Pill tone="accent">{t('festivized', { defaultValue: 'Festivized' })}</Pill>
+                  <Pill tone="accent">
+                    {t(
+                      'festivized',
+                      {
+                        defaultValue:
+                          'Festivized',
+                      },
+                    )}
+                  </Pill>
                 ) : null}
                 {current.rt ? (
                   <Pill>
                     <span
                       aria-hidden
                       className="me-1 inline-block size-2.5 rounded-full border border-app-border-bright"
-                      style={{ background: rarityColor(current.rt) }}
+                      style={{
+                        background:
+                          rarityColor(
+                            current.rt,
+                          ),
+                      }}
                     />
-                    {tierName(current)}
+                    {tierName(
+                      current,
+                    )}
                   </Pill>
                 ) : null}
               </div>
@@ -1056,7 +2909,9 @@ export function Picker({
       <div
         className={cn(
           'sticky z-10 flex flex-wrap gap-2 border-b border-app-border bg-app-bg-subtle p-3 [@media(max-height:560px)]:static',
-          embedded ? 'top-0' : 'top-9',
+          embedded
+            ? 'top-0'
+            : 'top-9',
         )}
       >
         <div className="relative min-w-40 flex-1">
@@ -1068,104 +2923,294 @@ export function Picker({
             type="search"
             // Opening a slot moves focus to the search box on wide screens; on a phone that
             // would raise the keyboard over the sheet before anything is seen.
-            autoFocus={!embedded}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('search-items', {
-              defaultValue: 'Search {{count}} items',
-              count: all.length,
-            })}
-            aria-label={t('search-items-label', { defaultValue: 'Search items' })}
+            autoFocus={
+              !embedded
+            }
+            value={
+              query
+            }
+            onChange={(
+              e,
+            ) =>
+              setQuery(
+                e
+                  .target
+                  .value,
+              )
+            }
+            placeholder={t(
+              'search-items',
+              {
+                defaultValue:
+                  'Search {{count}} items',
+                count:
+                  all.length,
+              },
+            )}
+            aria-label={t(
+              'search-items-label',
+              {
+                defaultValue:
+                  'Search items',
+              },
+            )}
             className="h-9 ps-8 text-sm"
           />
         </div>
-        {types.length > 1 ? (
+        {types.length >
+        1 ? (
           <SelectField
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            aria-label={t('item-type', { defaultValue: 'Item type' })}
+            value={
+              type
+            }
+            onChange={(
+              e,
+            ) =>
+              setType(
+                e
+                  .target
+                  .value,
+              )
+            }
+            aria-label={t(
+              'item-type',
+              {
+                defaultValue:
+                  'Item type',
+              },
+            )}
             className="h-9 w-40 text-sm"
           >
-            <option value="">{t('all-types', { defaultValue: 'All types' })}</option>
-            {types.map((ty) => (
-              <option key={ty} value={ty}>
-                {ty}
-              </option>
-            ))}
+            <option value="">
+              {t(
+                'all-types',
+                {
+                  defaultValue:
+                    'All types',
+                },
+              )}
+            </option>
+            {types.map(
+              (
+                ty,
+              ) => (
+                <option
+                  key={
+                    ty
+                  }
+                  value={
+                    ty
+                  }
+                >
+                  {
+                    ty
+                  }
+                </option>
+              ),
+            )}
           </SelectField>
         ) : null}
-        <p role="status" className="basis-full text-[11px] text-app-text-dim pointer-coarse:text-xs">
-          {t('showing-count', {
-            defaultValue: 'Showing {{shown}} of {{total}}',
-            shown: Math.min(shown, matches.length),
-            total: matches.length,
-          })}
+        <p
+          role="status"
+          className="basis-full text-[11px] text-app-text-dim pointer-coarse:text-xs"
+        >
+          {t(
+            'showing-count',
+            {
+              defaultValue:
+                'Showing {{shown}} of {{total}}',
+              shown:
+                Math.min(
+                  shown,
+                  matches.length,
+                ),
+              total:
+                matches.length,
+            },
+          )}
         </p>
       </div>
 
-      {matches.length === 0 ? (
-        <EmptyNote>{t('no-items-match', { defaultValue: 'No items match.' })}</EmptyNote>
+      {matches.length ===
+      0 ? (
+        <EmptyNote>
+          {t(
+            'no-items-match',
+            {
+              defaultValue:
+                'No items match.',
+            },
+          )}
+        </EmptyNote>
       ) : (
         <ul className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 xl:grid-cols-4">
-          {matches.slice(0, shown).map((it) => {
-            const active = entry?.item === it.id;
-            return (
-              <li
-                key={it.id}
-                className="flex min-w-0 flex-col gap-1 [contain-intrinsic-size:auto_9rem] [content-visibility:auto]"
-                onPointerEnter={() => warm(it)}
-                onFocus={() => warm(it)}
-              >
-                <ItemTile
-                  item={it}
-                  selected={active}
-                  conflict={!active && clashes(it)}
-                  onClick={() => onEquip(it)}
-                />
-                <div className="flex items-center gap-1">
-                  <span
-                    aria-hidden
-                    className="flex min-w-0 flex-1 items-center gap-1 truncate text-xs"
-                    style={{ color: qualityAccent(it.q) ?? undefined }}
+          {matches
+            .slice(
+              0,
+              shown,
+            )
+            .map(
+              (
+                it,
+              ) => {
+                const active =
+                  entry?.item ===
+                  it.id;
+                return (
+                  <li
+                    key={
+                      it.id
+                    }
+                    className="flex min-w-0 flex-col gap-1 [contain-intrinsic-size:auto_9rem] [content-visibility:auto]"
+                    onPointerEnter={() =>
+                      warm(
+                        it,
+                      )
+                    }
+                    onFocus={() =>
+                      warm(
+                        it,
+                      )
+                    }
                   >
-                    {active ? <Check className="size-3 shrink-0" aria-hidden /> : null}
-                    <span className="truncate">{it.n}</span>
-                  </span>
-                  <IconButton
-                    icon={Eye}
-                    label={t('preview-item', { defaultValue: 'Preview {{name}}', name: it.n })}
-                    showTooltip={false}
-                    size="icon-sm"
-                    onClick={() => setPreviewing(it)}
-                  />
-                </div>
-              </li>
-            );
-          })}
+                    <ItemTile
+                      item={
+                        it
+                      }
+                      selected={
+                        active
+                      }
+                      conflict={
+                        !active &&
+                        clashes(
+                          it,
+                        )
+                      }
+                      onClick={() =>
+                        onEquip(
+                          it,
+                        )
+                      }
+                    />
+                    <div className="flex items-center gap-1">
+                      <span
+                        aria-hidden
+                        className="flex min-w-0 flex-1 items-center gap-1 truncate text-xs"
+                        style={{
+                          color:
+                            qualityAccent(
+                              it.q,
+                            ) ??
+                            undefined,
+                        }}
+                      >
+                        {active ? (
+                          <Check
+                            className="size-3 shrink-0"
+                            aria-hidden
+                          />
+                        ) : null}
+                        <span className="truncate">
+                          {
+                            it.n
+                          }
+                        </span>
+                      </span>
+                      <IconButton
+                        icon={
+                          Eye
+                        }
+                        label={t(
+                          'preview-item',
+                          {
+                            defaultValue:
+                              'Preview {{name}}',
+                            name: it.n,
+                          },
+                        )}
+                        showTooltip={
+                          false
+                        }
+                        size="icon-sm"
+                        onClick={() =>
+                          setPreviewing(
+                            it,
+                          )
+                        }
+                      />
+                    </div>
+                  </li>
+                );
+              },
+            )}
         </ul>
       )}
-      {shown < matches.length ? <div ref={more} aria-hidden className="h-8" /> : null}
-      {previewing ? (
-        <ItemPreviewModal
-          item={previewing}
-          cls={cls}
-          idx={idx}
-          sheet={!wide}
-          equipped={entry?.item === previewing.id}
-          onEquip={() => onEquip(previewing)}
-          onClose={() => setPreviewing(null)}
+      {shown <
+      matches.length ? (
+        <div
+          ref={
+            more
+          }
+          aria-hidden
+          className="h-8"
         />
       ) : null}
-      {customizeOpen && current && entry ? (
+      {previewing ? (
+        <ItemPreviewModal
+          item={
+            previewing
+          }
+          cls={
+            cls
+          }
+          idx={
+            idx
+          }
+          sheet={
+            !wide
+          }
+          equipped={
+            entry?.item ===
+            previewing.id
+          }
+          onEquip={() =>
+            onEquip(
+              previewing,
+            )
+          }
+          onClose={() =>
+            setPreviewing(
+              null,
+            )
+          }
+        />
+      ) : null}
+      {customizeOpen &&
+      current &&
+      entry ? (
         <ItemCustomizeModal
           open
-          onOpenChange={setCustomizeOpen}
-          sheet={!wide}
-          item={current}
-          entry={entry}
-          cls={cls}
-          idx={idx}
-          onPatch={onPatch}
+          onOpenChange={
+            setCustomizeOpen
+          }
+          sheet={
+            !wide
+          }
+          item={
+            current
+          }
+          entry={
+            entry
+          }
+          cls={
+            cls
+          }
+          idx={
+            idx
+          }
+          onPatch={
+            onPatch
+          }
         />
       ) : null}
     </div>
@@ -1182,7 +3227,9 @@ function SaveDialog({
   onNeedSignIn,
 }: {
   open: boolean;
-  onOpenChange: (o: boolean) => void;
+  onOpenChange: (
+    o: boolean,
+  ) => void;
   cls: TfClass;
   slots: LoadoutSlots;
   remote: {
@@ -1201,109 +3248,361 @@ function SaveDialog({
   }) => void;
   onNeedSignIn: () => void;
 }) {
-  const { t } = useTranslation('c-tf2-hud');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [visibility, setVisibility] = useState<Visibility>('PRIVATE');
-  const [busy, setBusy] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-hud',
+    );
+  const [
+    title,
+    setTitle,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    description,
+    setDescription,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    visibility,
+    setVisibility,
+  ] =
+    useState<Visibility>(
+      'PRIVATE',
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
 
   useEffect(() => {
-    if (!open) return;
-    setTitle(remote?.title ?? `${CLASS_DEFAULT[cls]} loadout`);
-    setDescription(remote?.description ?? '');
-    setVisibility(remote?.visibility ?? 'PRIVATE');
-  }, [open, remote, cls]);
+    if (
+      !open
+    )
+      return;
+    setTitle(
+      remote?.title ??
+        `${CLASS_DEFAULT[cls]} loadout`,
+    );
+    setDescription(
+      remote?.description ??
+        '',
+    );
+    setVisibility(
+      remote?.visibility ??
+        'PRIVATE',
+    );
+  }, [
+    open,
+    remote,
+    cls,
+  ]);
 
-  const save = async () => {
-    setBusy(true);
-    try {
-      const body = { title: title.trim(), description, tfClass: cls, slots, visibility };
-      const d = remote ? await loadoutApi.update(remote.id, body) : await loadoutApi.create(body);
-      onSaved({
-        id: d.id,
-        slug: d.slug,
-        title: d.title,
-        description: d.description,
-        visibility: d.visibility,
-      });
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) onNeedSignIn();
-      else
-        toast.error(
-          e instanceof ApiError
-            ? e.message
-            : t('loadout-save-failed', { defaultValue: 'Could not save the loadout.' }),
+  const save =
+    async () => {
+      setBusy(
+        true,
+      );
+      try {
+        const body =
+          {
+            title:
+              title.trim(),
+            description,
+            tfClass:
+              cls,
+            slots,
+            visibility,
+          };
+        const d =
+          remote
+            ? await loadoutApi.update(
+                remote.id,
+                body,
+              )
+            : await loadoutApi.create(
+                body,
+              );
+        onSaved(
+          {
+            id: d.id,
+            slug: d.slug,
+            title:
+              d.title,
+            description:
+              d.description,
+            visibility:
+              d.visibility,
+          },
         );
-    } finally {
-      setBusy(false);
-    }
-  };
+      } catch (e) {
+        if (
+          e instanceof
+            ApiError &&
+          e.status ===
+            401
+        )
+          onNeedSignIn();
+        else
+          toast.error(
+            e instanceof
+              ApiError
+              ? e.message
+              : t(
+                  'loadout-save-failed',
+                  {
+                    defaultValue:
+                      'Could not save the loadout.',
+                  },
+                ),
+          );
+      } finally {
+        setBusy(
+          false,
+        );
+      }
+    };
 
   return (
     <Modal
-      open={open}
-      onOpenChange={onOpenChange}
+      open={
+        open
+      }
+      onOpenChange={
+        onOpenChange
+      }
       title={
         remote
-          ? t('save-changes', { defaultValue: 'Save changes' })
-          : t('save-loadout', { defaultValue: 'Save loadout' })
+          ? t(
+              'save-changes',
+              {
+                defaultValue:
+                  'Save changes',
+              },
+            )
+          : t(
+              'save-loadout',
+              {
+                defaultValue:
+                  'Save loadout',
+              },
+            )
       }
-      description={t('save-loadout-desc', {
-        defaultValue:
-          'Name it, then choose who can see it. Public loadouts appear in the workshop.',
-      })}
+      description={t(
+        'save-loadout-desc',
+        {
+          defaultValue:
+            'Name it, then choose who can see it. Public loadouts appear in the workshop.',
+        },
+      )}
       footer={
         <>
-          <Btn variant="ghost" onClick={() => onOpenChange(false)}>
-            {t('cancel', { defaultValue: 'Cancel' })}
+          <Btn
+            variant="ghost"
+            onClick={() =>
+              onOpenChange(
+                false,
+              )
+            }
+          >
+            {t(
+              'cancel',
+              {
+                defaultValue:
+                  'Cancel',
+              },
+            )}
           </Btn>
-          <Btn variant="primary" disabled={busy || !title.trim()} onClick={() => void save()}>
-            {busy ? t('saving', { defaultValue: 'Saving…' }) : t('save', { defaultValue: 'Save' })}
+          <Btn
+            variant="primary"
+            disabled={
+              busy ||
+              !title.trim()
+            }
+            onClick={() =>
+              void save()
+            }
+          >
+            {busy
+              ? t(
+                  'saving',
+                  {
+                    defaultValue:
+                      'Saving…',
+                  },
+                )
+              : t(
+                  'save',
+                  {
+                    defaultValue:
+                      'Save',
+                  },
+                )}
           </Btn>
         </>
       }
     >
       <div className="flex flex-col gap-3">
-        <Field label={t('title', { defaultValue: 'Title' })}>
+        <Field
+          label={t(
+            'title',
+            {
+              defaultValue:
+                'Title',
+            },
+          )}
+        >
           <TextField
-            value={title}
-            maxLength={80}
-            onChange={(e) => setTitle(e.target.value)}
-            aria-label={t('title', { defaultValue: 'Title' })}
+            value={
+              title
+            }
+            maxLength={
+              80
+            }
+            onChange={(
+              e,
+            ) =>
+              setTitle(
+                e
+                  .target
+                  .value,
+              )
+            }
+            aria-label={t(
+              'title',
+              {
+                defaultValue:
+                  'Title',
+              },
+            )}
           />
         </Field>
-        <Field label={t('description', { defaultValue: 'Description' })}>
+        <Field
+          label={t(
+            'description',
+            {
+              defaultValue:
+                'Description',
+            },
+          )}
+        >
           <textarea
-            value={description}
-            maxLength={2000}
-            rows={3}
-            onChange={(e) => setDescription(e.target.value)}
-            aria-label={t('description', { defaultValue: 'Description' })}
+            value={
+              description
+            }
+            maxLength={
+              2000
+            }
+            rows={
+              3
+            }
+            onChange={(
+              e,
+            ) =>
+              setDescription(
+                e
+                  .target
+                  .value,
+              )
+            }
+            aria-label={t(
+              'description',
+              {
+                defaultValue:
+                  'Description',
+              },
+            )}
             className="w-full rounded-app-sm border border-app-border-bright bg-app-bg p-2 text-xs text-app-text focus-visible:border-app-accent"
           />
         </Field>
         <Field
-          label={t('visibility', { defaultValue: 'Visibility' })}
-          hint={t('visibility-hint', {
-            defaultValue: 'Unlisted loadouts are reachable by link but not listed in the workshop.',
-          })}
+          label={t(
+            'visibility',
+            {
+              defaultValue:
+                'Visibility',
+            },
+          )}
+          hint={t(
+            'visibility-hint',
+            {
+              defaultValue:
+                'Unlisted loadouts are reachable by link but not listed in the workshop.',
+            },
+          )}
         >
           <SelectField
-            value={visibility}
-            aria-label={t('visibility', { defaultValue: 'Visibility' })}
-            onChange={(e) => setVisibility(e.target.value as Visibility)}
+            value={
+              visibility
+            }
+            aria-label={t(
+              'visibility',
+              {
+                defaultValue:
+                  'Visibility',
+              },
+            )}
+            onChange={(
+              e,
+            ) =>
+              setVisibility(
+                e
+                  .target
+                  .value as Visibility,
+              )
+            }
           >
-            <option value="PRIVATE">{t('private', { defaultValue: 'Private' })}</option>
-            <option value="UNLISTED">{t('unlisted', { defaultValue: 'Unlisted' })}</option>
+            <option value="PRIVATE">
+              {t(
+                'private',
+                {
+                  defaultValue:
+                    'Private',
+                },
+              )}
+            </option>
+            <option value="UNLISTED">
+              {t(
+                'unlisted',
+                {
+                  defaultValue:
+                    'Unlisted',
+                },
+              )}
+            </option>
             <option value="PUBLIC">
-              {t('public-workshop', { defaultValue: 'Public (workshop)' })}
+              {t(
+                'public-workshop',
+                {
+                  defaultValue:
+                    'Public (workshop)',
+                },
+              )}
             </option>
           </SelectField>
         </Field>
-        {visibility === 'PUBLIC' ? (
+        {visibility ===
+        'PUBLIC' ? (
           <p className="flex items-center gap-1.5 text-xs text-app-text-muted">
-            <Globe className="size-3.5" aria-hidden />
-            {t('public-note', { defaultValue: 'Anyone can find, like and copy this loadout.' })}
+            <Globe
+              className="size-3.5"
+              aria-hidden
+            />
+            {t(
+              'public-note',
+              {
+                defaultValue:
+                  'Anyone can find, like and copy this loadout.',
+              },
+            )}
           </p>
         ) : null}
       </div>

@@ -1,6 +1,15 @@
 /* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
-import { useEffect, useRef, useState } from 'react';
-import { Loader2, MapPin, Search, X } from 'lucide-react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Loader2,
+  MapPin,
+  Search,
+  X,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { api } from '@/lib/contract/client';
@@ -14,8 +23,12 @@ export interface HomesPlace {
 
 interface LocationSearchProps {
   value: string;
-  onQueryChange: (q: string) => void;
-  onSelect: (place: HomesPlace) => void;
+  onQueryChange: (
+    q: string,
+  ) => void;
+  onSelect: (
+    place: HomesPlace,
+  ) => void;
   /** Called when the user submits free text without picking a suggestion. */
   onSubmit?: () => void;
   placeholder?: string;
@@ -35,69 +48,192 @@ export function LocationSearch({
   placeholder = 'City, neighborhood, or ZIP',
   autoFocus,
 }: LocationSearchProps) {
-  const [results, setResults] = useState<HomesPlace[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [
+    results,
+    setResults,
+  ] =
+    useState<
+      HomesPlace[]
+    >(
+      [],
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    open,
+    setOpen,
+  ] =
+    useState(
+      false,
+    );
+  const boxRef =
+    useRef<HTMLDivElement>(
+      null,
+    );
+  const debounceRef =
+    useRef<ReturnType<
+      typeof setTimeout
+    > | null>(
+      null,
+    );
   // The RESULTS are what is held through the close, not just a flag: choosing a
   // suggestion clears the list on the same tick it closes the menu, and a list
   // that emptied itself mid-exit would collapse to a bare pill on the way out.
 
   useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    function onClick(
+      e: MouseEvent,
+    ) {
+      if (
+        boxRef.current &&
+        !boxRef.current.contains(
+          e.target as Node,
+        )
+      )
+        setOpen(
+          false,
+        );
     }
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    document.addEventListener(
+      'mousedown',
+      onClick,
+    );
+    return () =>
+      document.removeEventListener(
+        'mousedown',
+        onClick,
+      );
   }, []);
 
-  function handleChange(q: string) {
-    onQueryChange(q);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (q.trim().length < 3) {
-      setResults([]);
-      setOpen(false);
+  function handleChange(
+    q: string,
+  ) {
+    onQueryChange(
+      q,
+    );
+    if (
+      debounceRef.current
+    )
+      clearTimeout(
+        debounceRef.current,
+      );
+    if (
+      q.trim()
+        .length <
+      3
+    ) {
+      setResults(
+        [],
+      );
+      setOpen(
+        false,
+      );
       return;
     }
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const data = await api(homesGeocodeApi, { query: { q: q.trim() } });
-        setResults(data.results ?? []);
-        setOpen(true);
-      } catch {
-        // ignore transient errors — user can retry
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
+    debounceRef.current =
+      setTimeout(
+        async () => {
+          setLoading(
+            true,
+          );
+          try {
+            const data =
+              await api(
+                homesGeocodeApi,
+                {
+                  query:
+                    {
+                      q: q.trim(),
+                    },
+                },
+              );
+            setResults(
+              data.results ??
+                [],
+            );
+            setOpen(
+              true,
+            );
+          } catch {
+            // ignore transient errors — user can retry
+          } finally {
+            setLoading(
+              false,
+            );
+          }
+        },
+        300,
+      );
   }
 
-  function choose(place: HomesPlace) {
-    onQueryChange(place.label);
-    onSelect(place);
-    setOpen(false);
+  function choose(
+    place: HomesPlace,
+  ) {
+    onQueryChange(
+      place.label,
+    );
+    onSelect(
+      place,
+    );
+    setOpen(
+      false,
+    );
   }
 
   return (
-    <div ref={boxRef} className="relative w-full">
+    <div
+      ref={
+        boxRef
+      }
+      className="relative w-full"
+    >
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
         <Input
           type="text"
-          value={value}
-          autoFocus={autoFocus}
-          onChange={(e) => handleChange(e.target.value)}
-          onFocus={() => results.length && setOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+          value={
+            value
+          }
+          autoFocus={
+            autoFocus
+          }
+          onChange={(
+            e,
+          ) =>
+            handleChange(
+              e
+                .target
+                .value,
+            )
+          }
+          onFocus={() =>
+            results.length &&
+            setOpen(
+              true,
+            )
+          }
+          onKeyDown={(
+            e,
+          ) => {
+            if (
+              e.key ===
+              'Enter'
+            ) {
               e.preventDefault();
-              setOpen(false);
+              setOpen(
+                false,
+              );
               onSubmit?.();
             }
           }}
-          placeholder={placeholder}
+          placeholder={
+            placeholder
+          }
           className="h-11 pl-9 pr-9"
         />
         {loading ? (
@@ -108,9 +244,15 @@ export function LocationSearch({
               type="button"
               aria-label="Clear location"
               onClick={() => {
-                onQueryChange('');
-                setResults([]);
-                setOpen(false);
+                onQueryChange(
+                  '',
+                );
+                setResults(
+                  [],
+                );
+                setOpen(
+                  false,
+                );
               }}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-site-text-muted hover:text-site-text"
             >
@@ -132,30 +274,63 @@ export function LocationSearch({
           while the user is still typing, and pulling focus out of the field on
           the first keystroke would make it impossible to type in. */}
       <AnchoredMenu
-        open={open && results.length > 0}
-        onClose={() => setOpen(false)}
-        anchorRef={boxRef}
+        open={
+          open &&
+          results.length >
+            0
+        }
+        onClose={() =>
+          setOpen(
+            false,
+          )
+        }
+        anchorRef={
+          boxRef
+        }
         role="listbox"
         align="start"
-        focusOnOpen={false}
-        label={placeholder ?? 'Location suggestions'}
+        focusOnOpen={
+          false
+        }
+        label={
+          placeholder ??
+          'Location suggestions'
+        }
         className="w-[var(--anchored-menu-anchor-w)] max-h-72"
       >
-        {results.map((r, i) => (
-          <button
-            key={`${r.lat},${r.lng},${i}`}
-            type="button"
-            role="option"
-            aria-selected={false}
-            onClick={() => choose(r)}
-            data-evert=""
-            data-row-glow=""
-            className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2.5 px-4 py-2 text-left text-sm text-site-text transition-colors duration-site"
-          >
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" aria-hidden />
-            <span className="line-clamp-2">{r.label}</span>
-          </button>
-        ))}
+        {results.map(
+          (
+            r,
+            i,
+          ) => (
+            <button
+              key={`${r.lat},${r.lng},${i}`}
+              type="button"
+              role="option"
+              aria-selected={
+                false
+              }
+              onClick={() =>
+                choose(
+                  r,
+                )
+              }
+              data-evert=""
+              data-row-glow=""
+              className="flex w-full min-h-9 pointer-coarse:min-h-11 items-start gap-2.5 px-4 py-2 text-left text-sm text-site-text transition-colors duration-site"
+            >
+              <MapPin
+                className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted"
+                aria-hidden
+              />
+              <span className="line-clamp-2">
+                {
+                  r.label
+                }
+              </span>
+            </button>
+          ),
+        )}
       </AnchoredMenu>
     </div>
   );

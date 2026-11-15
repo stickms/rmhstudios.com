@@ -8,48 +8,126 @@
  * number comparison per render instead of a deep compare of four difficulties.
  */
 
-import { useEffect, useMemo, useRef } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { useEditorStore } from './store';
-import { buildLintRequest, issuesByNote, type LintResult } from './lint';
-import { createLintRunner, type LintRunner } from './lint-runner';
-import type { Difficulty, LintIssue } from './types';
+import {
+  buildLintRequest,
+  issuesByNote,
+  type LintResult,
+} from './lint';
+import {
+  createLintRunner,
+  type LintRunner,
+} from './lint-runner';
+import type {
+  Difficulty,
+  LintIssue,
+} from './types';
 
-export function useLintRunner(): { flush: () => void } {
-  const setLint = useEditorStore((state) => state.setLint);
-  const revision = useEditorStore((state) => state.revision);
-  const loadState = useEditorStore((state) => state.loadState);
-  const nestingMode = useEditorStore((state) => state.nestingMode);
-  const runnerRef = useRef<LintRunner | null>(null);
+export function useLintRunner(): {
+  flush: () => void;
+} {
+  const setLint =
+    useEditorStore(
+      (
+        state,
+      ) =>
+        state.setLint,
+    );
+  const revision =
+    useEditorStore(
+      (
+        state,
+      ) =>
+        state.revision,
+    );
+  const loadState =
+    useEditorStore(
+      (
+        state,
+      ) =>
+        state.loadState,
+    );
+  const nestingMode =
+    useEditorStore(
+      (
+        state,
+      ) =>
+        state.nestingMode,
+    );
+  const runnerRef =
+    useRef<LintRunner | null>(
+      null,
+    );
 
   useEffect(() => {
-    const runner = createLintRunner((result: LintResult) => setLint(result));
-    runnerRef.current = runner;
+    const runner =
+      createLintRunner(
+        (
+          result: LintResult,
+        ) =>
+          setLint(
+            result,
+          ),
+      );
+    runnerRef.current =
+      runner;
     return () => {
       runner.dispose();
-      runnerRef.current = null;
+      runnerRef.current =
+        null;
     };
-  }, [setLint]);
+  }, [
+    setLint,
+  ]);
 
   useEffect(() => {
-    if (loadState !== 'ready') return;
+    if (
+      loadState !==
+      'ready'
+    )
+      return;
     // Read the document non-reactively: this effect is already keyed on the
     // revision, and subscribing to `charts` as well would re-run it for a
     // selection change, which cannot alter a single finding.
-    const state = useEditorStore.getState();
-    if (!state.song) return;
+    const state =
+      useEditorStore.getState();
+    if (
+      !state.song
+    )
+      return;
     runnerRef.current?.schedule(
-      buildLintRequest({
-        charts: state.charts,
-        timingPoints: state.timingPoints,
-        duration: state.song.duration,
-        revision,
-        checkNesting: nestingMode !== 'off',
-      }),
+      buildLintRequest(
+        {
+          charts:
+            state.charts,
+          timingPoints:
+            state.timingPoints,
+          duration:
+            state
+              .song
+              .duration,
+          revision,
+          checkNesting:
+            nestingMode !==
+            'off',
+        },
+      ),
     );
-  }, [revision, loadState, nestingMode]);
+  }, [
+    revision,
+    loadState,
+    nestingMode,
+  ]);
 
   return {
-    flush: () => runnerRef.current?.flush(),
+    flush:
+      () =>
+        runnerRef.current?.flush(),
   };
 }
 
@@ -60,7 +138,28 @@ export function useLintRunner(): { flush: () => void } {
  * replaces the object when it accepted a newer result, so an unchanged
  * reference means there is genuinely nothing to rebuild.
  */
-export function useLintIssues(difficulty: Difficulty): Map<string, LintIssue[]> {
-  const lint = useEditorStore((state) => state.lint);
-  return useMemo(() => issuesByNote(lint, difficulty), [lint, difficulty]);
+export function useLintIssues(
+  difficulty: Difficulty,
+): Map<
+  string,
+  LintIssue[]
+> {
+  const lint =
+    useEditorStore(
+      (
+        state,
+      ) =>
+        state.lint,
+    );
+  return useMemo(
+    () =>
+      issuesByNote(
+        lint,
+        difficulty,
+      ),
+    [
+      lint,
+      difficulty,
+    ],
+  );
 }

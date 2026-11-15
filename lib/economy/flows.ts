@@ -47,7 +47,10 @@
  */
 
 /** Which direction a flow moves the total supply. */
-export type FlowKind = 'faucet' | 'sink' | 'transfer';
+export type FlowKind =
+  | 'faucet'
+  | 'sink'
+  | 'transfer';
 
 export interface CoinFlow {
   /** Stable id, also the sort key within a kind. */
@@ -75,401 +78,511 @@ export interface CoinFlow {
   pairsWith?: string;
 }
 
-export const COIN_FLOWS: readonly CoinFlow[] = [
-  // ── Faucets ───────────────────────────────────────────────────────────────
-  {
-    id: 'signup-grant',
-    kind: 'faucet',
-    surface: 'Creating an account',
-    source: 'lib/economy/ledger-core.ts',
-    bounded: true,
-    note: 'STARTING_BALANCE, once per profile row.',
-  },
-  {
-    id: 'daily-claim',
-    kind: 'faucet',
-    surface: 'The "out of coins" safety net',
-    source: 'lib/api/routes/coins.claim.server.ts',
-    bounded: true,
-    note: 'Guarded by onlyIfBalanceBelow, so it cannot pay a member who is already flush.',
-  },
-  {
-    id: 'daily-wheel',
-    kind: 'faucet',
-    surface: '/wallet — the daily spin',
-    source: 'lib/wheel/api/wheel.spin.server.ts',
-    bounded: true,
-    note: 'One spin per UTC day (DailyWheelSpin). Bounded per day, unbounded over a lifetime.',
-  },
-  {
-    id: 'streak-reward',
-    kind: 'faucet',
-    surface: 'Keeping a daily streak',
-    source: 'lib/streak.server.ts',
-    bounded: true,
-    note: 'Once per day, scaling with streak length.',
-  },
-  {
-    id: 'quest-reward',
-    kind: 'faucet',
-    surface: 'Completing a quest',
-    source: 'lib/quests/engine.server.ts, lib/game/results.server.ts',
-    bounded: true,
-    note: 'Fixed coins per quest definition (arcade daily challenges included); the quest set is finite per cycle.',
-  },
-  {
-    id: 'achievement-reward',
-    kind: 'faucet',
-    surface: 'Earning an achievement',
-    source: 'lib/achievements/engine.server.ts',
-    bounded: true,
-    note: 'Once per achievement per member — the most strictly bounded faucet here.',
-  },
-  {
-    id: 'battlepass-claim',
-    kind: 'faucet',
-    surface: 'Claiming a season tier',
-    source: 'lib/battlepass/api/battlepass.claim.server.ts',
-    bounded: true,
-    note: 'Fixed tiers per season.',
-  },
-  {
-    id: 'creator-earnings-payout',
-    kind: 'faucet',
-    surface: 'Creator earnings withdrawal',
-    source: 'lib/creator/earnings.server.ts',
-    bounded: false,
-    note: 'Pays out an earnings balance accrued from transfers; the matching debit is elsewhere.',
-  },
-  {
-    id: 'prediction-payout',
-    kind: 'faucet',
-    surface: '/predictions — a resolved market',
-    source: 'lib/predictions/predictions.server.ts',
-    bounded: false,
-    note: 'Paired with the WAGER debit that opened the position. Read the pair, not the leg.',
-    pairsWith: 'prediction-stake',
-  },
-  {
-    id: 'prediction-bot-grant',
-    kind: 'faucet',
-    surface: 'Synthetic market-makers',
-    source: 'lib/predictions/predictions-ai.server.ts',
-    bounded: false,
-    note: 'Tops up bot accounts by 50. Coins held by bots are float that no member can spend.',
-  },
-  {
-    id: 'wager-settlement',
-    kind: 'faucet',
-    surface: '/wager — a settled match',
-    source: 'lib/wager/wager.server.ts',
-    bounded: false,
-    note: 'Payouts and stake refunds. Net-negative against the stakes by WAGER_RAKE_BPS.',
-    pairsWith: 'wager-stake',
-  },
-  {
-    id: 'tournament-settlement',
-    kind: 'faucet',
-    surface: 'Tournaments — prizes and refunds',
-    source: 'lib/tournaments/tournament.server.ts',
-    bounded: false,
-    note: 'Net-negative against entry fees by TOURNAMENT_RAKE_BPS.',
-    pairsWith: 'tournament-entry',
-  },
-  {
-    id: 'pool-settlement',
-    kind: 'faucet',
-    surface: 'A funding pool settling or refunding',
-    source: 'lib/commerce/pools.server.ts',
-    bounded: false,
-    note: 'Returns what was contributed; supply-neutral across the pair.',
-    pairsWith: 'pool-contribution',
-  },
-  {
-    id: 'staking-payout',
-    kind: 'faucet',
-    surface: '/wallet — a matured stake',
-    source: 'lib/staking/staking.server.ts',
-    bounded: false,
-    note: 'Principal plus yield. The yield is genuinely new supply and the only pure-yield faucet here.',
-  },
-  {
-    id: 'casino-payout',
-    kind: 'faucet',
-    surface: 'Blackjack, roulette, baccarat, hold\'em, plinko',
-    source: 'server/socket-server/handlers/*.ts, features/casino/server/*.ts, lib/api/routes/coins.bet.server.ts',
-    bounded: false,
-    note: 'Paired with the WAGER debit of the stake. Net-negative by the house edge of each game.',
-    pairsWith: 'casino-stake',
-  },
-  {
-    id: 'admin-grant',
-    kind: 'faucet',
-    surface: 'Admin adjustment',
-    source: 'lib/coins.server.ts',
-    bounded: false,
-    note: 'Discretionary. The only faucet with no rule behind it, which is why it is typed ADMIN.',
-  },
+export const COIN_FLOWS: readonly CoinFlow[] =
+  [
+    // ── Faucets ───────────────────────────────────────────────────────────────
+    {
+      id: 'signup-grant',
+      kind: 'faucet',
+      surface:
+        'Creating an account',
+      source:
+        'lib/economy/ledger-core.ts',
+      bounded: true,
+      note: 'STARTING_BALANCE, once per profile row.',
+    },
+    {
+      id: 'daily-claim',
+      kind: 'faucet',
+      surface:
+        'The "out of coins" safety net',
+      source:
+        'lib/api/routes/coins.claim.server.ts',
+      bounded: true,
+      note: 'Guarded by onlyIfBalanceBelow, so it cannot pay a member who is already flush.',
+    },
+    {
+      id: 'daily-wheel',
+      kind: 'faucet',
+      surface:
+        '/wallet — the daily spin',
+      source:
+        'lib/wheel/api/wheel.spin.server.ts',
+      bounded: true,
+      note: 'One spin per UTC day (DailyWheelSpin). Bounded per day, unbounded over a lifetime.',
+    },
+    {
+      id: 'streak-reward',
+      kind: 'faucet',
+      surface:
+        'Keeping a daily streak',
+      source:
+        'lib/streak.server.ts',
+      bounded: true,
+      note: 'Once per day, scaling with streak length.',
+    },
+    {
+      id: 'quest-reward',
+      kind: 'faucet',
+      surface:
+        'Completing a quest',
+      source:
+        'lib/quests/engine.server.ts, lib/game/results.server.ts',
+      bounded: true,
+      note: 'Fixed coins per quest definition (arcade daily challenges included); the quest set is finite per cycle.',
+    },
+    {
+      id: 'achievement-reward',
+      kind: 'faucet',
+      surface:
+        'Earning an achievement',
+      source:
+        'lib/achievements/engine.server.ts',
+      bounded: true,
+      note: 'Once per achievement per member — the most strictly bounded faucet here.',
+    },
+    {
+      id: 'battlepass-claim',
+      kind: 'faucet',
+      surface:
+        'Claiming a season tier',
+      source:
+        'lib/battlepass/api/battlepass.claim.server.ts',
+      bounded: true,
+      note: 'Fixed tiers per season.',
+    },
+    {
+      id: 'creator-earnings-payout',
+      kind: 'faucet',
+      surface:
+        'Creator earnings withdrawal',
+      source:
+        'lib/creator/earnings.server.ts',
+      bounded: false,
+      note: 'Pays out an earnings balance accrued from transfers; the matching debit is elsewhere.',
+    },
+    {
+      id: 'prediction-payout',
+      kind: 'faucet',
+      surface:
+        '/predictions — a resolved market',
+      source:
+        'lib/predictions/predictions.server.ts',
+      bounded: false,
+      note: 'Paired with the WAGER debit that opened the position. Read the pair, not the leg.',
+      pairsWith:
+        'prediction-stake',
+    },
+    {
+      id: 'prediction-bot-grant',
+      kind: 'faucet',
+      surface:
+        'Synthetic market-makers',
+      source:
+        'lib/predictions/predictions-ai.server.ts',
+      bounded: false,
+      note: 'Tops up bot accounts by 50. Coins held by bots are float that no member can spend.',
+    },
+    {
+      id: 'wager-settlement',
+      kind: 'faucet',
+      surface:
+        '/wager — a settled match',
+      source:
+        'lib/wager/wager.server.ts',
+      bounded: false,
+      note: 'Payouts and stake refunds. Net-negative against the stakes by WAGER_RAKE_BPS.',
+      pairsWith:
+        'wager-stake',
+    },
+    {
+      id: 'tournament-settlement',
+      kind: 'faucet',
+      surface:
+        'Tournaments — prizes and refunds',
+      source:
+        'lib/tournaments/tournament.server.ts',
+      bounded: false,
+      note: 'Net-negative against entry fees by TOURNAMENT_RAKE_BPS.',
+      pairsWith:
+        'tournament-entry',
+    },
+    {
+      id: 'pool-settlement',
+      kind: 'faucet',
+      surface:
+        'A funding pool settling or refunding',
+      source:
+        'lib/commerce/pools.server.ts',
+      bounded: false,
+      note: 'Returns what was contributed; supply-neutral across the pair.',
+      pairsWith:
+        'pool-contribution',
+    },
+    {
+      id: 'staking-payout',
+      kind: 'faucet',
+      surface:
+        '/wallet — a matured stake',
+      source:
+        'lib/staking/staking.server.ts',
+      bounded: false,
+      note: 'Principal plus yield. The yield is genuinely new supply and the only pure-yield faucet here.',
+    },
+    {
+      id: 'casino-payout',
+      kind: 'faucet',
+      surface:
+        "Blackjack, roulette, baccarat, hold'em, plinko",
+      source:
+        'server/socket-server/handlers/*.ts, features/casino/server/*.ts, lib/api/routes/coins.bet.server.ts',
+      bounded: false,
+      note: 'Paired with the WAGER debit of the stake. Net-negative by the house edge of each game.',
+      pairsWith:
+        'casino-stake',
+    },
+    {
+      id: 'admin-grant',
+      kind: 'faucet',
+      surface:
+        'Admin adjustment',
+      source:
+        'lib/coins.server.ts',
+      bounded: false,
+      note: 'Discretionary. The only faucet with no rule behind it, which is why it is typed ADMIN.',
+    },
 
-  {
-    id: 'community-goal-refund',
-    kind: 'faucet',
-    surface: '/wallet?tab=community — a goal that missed its deadline or was cancelled',
-    source: 'lib/economy/community-goal.server.ts',
-    bounded: false,
-    note: 'Returns exactly what was pledged, once per pledge (claimed refundedAt + ledger key); supply-neutral across the pair.',
-    pairsWith: 'community-goal-pledge',
-  },
-  {
-    id: 'advent-door',
-    kind: 'faucet',
-    surface: '/advent — today\'s door, December 1–24',
-    source: 'lib/gifting/advent.server.ts',
-    bounded: true,
-    note: '25 coins a door, one door a day (unique claim row + ledger key), 600 coins per member per year at most.',
-  },
-  {
-    id: 'scheduled-gift-refund',
-    kind: 'faucet',
-    surface: '/wallet?tab=gifts — a cancelled or undeliverable scheduled gift',
-    source: 'lib/gifting/scheduled-gift.server.ts',
-    bounded: false,
-    note: 'Refunds the price paid at send time, at most once (shared idempotency key); supply-neutral across the pair.',
-    pairsWith: 'scheduled-gift-payment',
-  },
+    {
+      id: 'community-goal-refund',
+      kind: 'faucet',
+      surface:
+        '/wallet?tab=community — a goal that missed its deadline or was cancelled',
+      source:
+        'lib/economy/community-goal.server.ts',
+      bounded: false,
+      note: 'Returns exactly what was pledged, once per pledge (claimed refundedAt + ledger key); supply-neutral across the pair.',
+      pairsWith:
+        'community-goal-pledge',
+    },
+    {
+      id: 'advent-door',
+      kind: 'faucet',
+      surface:
+        "/advent — today's door, December 1–24",
+      source:
+        'lib/gifting/advent.server.ts',
+      bounded: true,
+      note: '25 coins a door, one door a day (unique claim row + ledger key), 600 coins per member per year at most.',
+    },
+    {
+      id: 'scheduled-gift-refund',
+      kind: 'faucet',
+      surface:
+        '/wallet?tab=gifts — a cancelled or undeliverable scheduled gift',
+      source:
+        'lib/gifting/scheduled-gift.server.ts',
+      bounded: false,
+      note: 'Refunds the price paid at send time, at most once (shared idempotency key); supply-neutral across the pair.',
+      pairsWith:
+        'scheduled-gift-payment',
+    },
 
-  // ── Sinks ─────────────────────────────────────────────────────────────────
-  {
-    id: 'community-goal-pledge',
-    kind: 'sink',
-    surface: '/wallet?tab=community',
-    source: 'lib/economy/community-goal.server.ts',
-    bounded: false,
-    note: 'Escrowed against a site-wide goal; funded goals keep it (a true sink), missed ones refund it.',
-  },
-  {
-    id: 'gem-purchase',
-    kind: 'sink',
-    surface: 'Buying gems on the games inventory',
-    source: 'lib/cards/gems.server.ts',
-    bounded: false,
-    note: 'One coin per gem, in units of 100, burned in the same transaction that credits the gems. Gems cannot be traded, so they only buy booster packs.',
-  },
-  {
-    id: 'scheduled-gift-payment',
-    kind: 'sink',
-    surface: '/wallet?tab=gifts — a store gift scheduled for a future date',
-    source: 'lib/gifting/scheduled-gift.server.ts',
-    bounded: false,
-    note: 'Paid at send time; the item is granted on delivery, or the payment refunded.',
-  },
-  {
-    id: 'daily-shop-bundle',
-    kind: 'sink',
-    surface: '/store?tab=daily — build-your-bundle',
-    source: 'lib/shop/daily-shop.server.ts',
-    bounded: false,
-    note: 'Three featured items at a discount, debited and granted in one transaction.',
-  },
-  {
-    id: 'shop-purchase',
-    kind: 'sink',
-    surface: '/shop',
-    source: 'app/routes/api/shop/purchase.ts',
-    bounded: false,
-    note: 'The primary intended sink: cosmetics and inventory bought from the house.',
-  },
-  {
-    id: 'coin-purchase',
-    kind: 'sink',
-    surface: 'In-app unlocks',
-    source: 'lib/economy/api/coins.purchase.server.ts',
-    bounded: false,
-    note: 'Priced unlocks charged against the house rather than another member.',
-  },
-  {
-    id: 'battlepass-unlock',
-    kind: 'sink',
-    surface: 'Buying into a season',
-    source: 'lib/battlepass/api/battlepass.unlock.server.ts',
-    bounded: true,
-    note: 'Once per season.',
-  },
-  {
-    id: 'streak-freeze',
-    kind: 'sink',
-    surface: 'Freezing a streak',
-    source: 'lib/streak.server.ts',
-    bounded: false,
-    note: 'FREEZE_COST per use.',
-  },
-  {
-    id: 'gift-membership',
-    kind: 'sink',
-    surface: 'Gifting a membership',
-    source: 'lib/gifting/gift.server.ts',
-    bounded: false,
-    note: 'Coins are destroyed; the membership is granted out of band.',
-  },
-  {
-    id: 'creator-earnings-spend',
-    kind: 'sink',
-    surface: 'Creator tooling paid for in coins',
-    source: 'lib/creator/earnings.server.ts',
-    bounded: false,
-    note: 'Charged against the house.',
-  },
-  {
-    id: 'pool-contribution',
-    kind: 'sink',
-    surface: 'Contributing to a pool',
-    source: 'lib/commerce/pools.server.ts',
-    bounded: false,
-    note: 'Held until the pool settles or refunds — escrow, not destruction, across the pair.',
-  },
-  {
-    id: 'staking-principal',
-    kind: 'sink',
-    surface: 'Opening a stake',
-    source: 'lib/staking/staking.server.ts',
-    bounded: false,
-    note: 'Escrow. Booked REWARD rather than WAGER: a time deposit is not a bet, and W8 deliberately does not gate it.',
-  },
-  {
-    id: 'prediction-stake',
-    kind: 'sink',
-    surface: '/predictions — opening a position',
-    source: 'lib/predictions/predictions.server.ts',
-    bounded: false,
-    note: 'WAGER. Gated by the responsible-play check (W8).',
-  },
-  {
-    id: 'wager-stake',
-    kind: 'sink',
-    surface: '/wager — staking a match',
-    source: 'lib/wager/wager.server.ts',
-    bounded: false,
-    note: 'WAGER, via escrow. Gated by W8.',
-  },
-  {
-    id: 'tournament-entry',
-    kind: 'sink',
-    surface: 'Tournament entry fee and seed pool',
-    source: 'lib/tournaments/tournament.server.ts',
-    bounded: false,
-    note: 'WAGER. Gated by W8.',
-  },
-  {
-    id: 'compute-pack',
-    kind: 'sink',
-    surface: 'RMH Datacenter — buying compute',
-    source: 'lib/datacenter/compute.server.ts',
-    bounded: true,
-    note: 'Capped at MAX_PACKS_PER_MONTH per member per month. The one sink whose price can be set honestly, because providing what it sells costs the platform real money (W2).',
-  },
-  {
-    id: 'casino-stake',
-    kind: 'sink',
-    surface: 'Every table stake and side bet',
-    source: 'server/socket-server/handlers/*.ts, features/casino/server/*.ts, lib/api/routes/coins.bet.server.ts',
-    bounded: false,
-    note: 'WAGER. Gated by W8 — the single check that covers all five tables plus plinko.',
-  },
+    // ── Sinks ─────────────────────────────────────────────────────────────────
+    {
+      id: 'community-goal-pledge',
+      kind: 'sink',
+      surface:
+        '/wallet?tab=community',
+      source:
+        'lib/economy/community-goal.server.ts',
+      bounded: false,
+      note: 'Escrowed against a site-wide goal; funded goals keep it (a true sink), missed ones refund it.',
+    },
+    {
+      id: 'gem-purchase',
+      kind: 'sink',
+      surface:
+        'Buying gems on the games inventory',
+      source:
+        'lib/cards/gems.server.ts',
+      bounded: false,
+      note: 'One coin per gem, in units of 100, burned in the same transaction that credits the gems. Gems cannot be traded, so they only buy booster packs.',
+    },
+    {
+      id: 'scheduled-gift-payment',
+      kind: 'sink',
+      surface:
+        '/wallet?tab=gifts — a store gift scheduled for a future date',
+      source:
+        'lib/gifting/scheduled-gift.server.ts',
+      bounded: false,
+      note: 'Paid at send time; the item is granted on delivery, or the payment refunded.',
+    },
+    {
+      id: 'daily-shop-bundle',
+      kind: 'sink',
+      surface:
+        '/store?tab=daily — build-your-bundle',
+      source:
+        'lib/shop/daily-shop.server.ts',
+      bounded: false,
+      note: 'Three featured items at a discount, debited and granted in one transaction.',
+    },
+    {
+      id: 'shop-purchase',
+      kind: 'sink',
+      surface:
+        '/shop',
+      source:
+        'app/routes/api/shop/purchase.ts',
+      bounded: false,
+      note: 'The primary intended sink: cosmetics and inventory bought from the house.',
+    },
+    {
+      id: 'coin-purchase',
+      kind: 'sink',
+      surface:
+        'In-app unlocks',
+      source:
+        'lib/economy/api/coins.purchase.server.ts',
+      bounded: false,
+      note: 'Priced unlocks charged against the house rather than another member.',
+    },
+    {
+      id: 'battlepass-unlock',
+      kind: 'sink',
+      surface:
+        'Buying into a season',
+      source:
+        'lib/battlepass/api/battlepass.unlock.server.ts',
+      bounded: true,
+      note: 'Once per season.',
+    },
+    {
+      id: 'streak-freeze',
+      kind: 'sink',
+      surface:
+        'Freezing a streak',
+      source:
+        'lib/streak.server.ts',
+      bounded: false,
+      note: 'FREEZE_COST per use.',
+    },
+    {
+      id: 'gift-membership',
+      kind: 'sink',
+      surface:
+        'Gifting a membership',
+      source:
+        'lib/gifting/gift.server.ts',
+      bounded: false,
+      note: 'Coins are destroyed; the membership is granted out of band.',
+    },
+    {
+      id: 'creator-earnings-spend',
+      kind: 'sink',
+      surface:
+        'Creator tooling paid for in coins',
+      source:
+        'lib/creator/earnings.server.ts',
+      bounded: false,
+      note: 'Charged against the house.',
+    },
+    {
+      id: 'pool-contribution',
+      kind: 'sink',
+      surface:
+        'Contributing to a pool',
+      source:
+        'lib/commerce/pools.server.ts',
+      bounded: false,
+      note: 'Held until the pool settles or refunds — escrow, not destruction, across the pair.',
+    },
+    {
+      id: 'staking-principal',
+      kind: 'sink',
+      surface:
+        'Opening a stake',
+      source:
+        'lib/staking/staking.server.ts',
+      bounded: false,
+      note: 'Escrow. Booked REWARD rather than WAGER: a time deposit is not a bet, and W8 deliberately does not gate it.',
+    },
+    {
+      id: 'prediction-stake',
+      kind: 'sink',
+      surface:
+        '/predictions — opening a position',
+      source:
+        'lib/predictions/predictions.server.ts',
+      bounded: false,
+      note: 'WAGER. Gated by the responsible-play check (W8).',
+    },
+    {
+      id: 'wager-stake',
+      kind: 'sink',
+      surface:
+        '/wager — staking a match',
+      source:
+        'lib/wager/wager.server.ts',
+      bounded: false,
+      note: 'WAGER, via escrow. Gated by W8.',
+    },
+    {
+      id: 'tournament-entry',
+      kind: 'sink',
+      surface:
+        'Tournament entry fee and seed pool',
+      source:
+        'lib/tournaments/tournament.server.ts',
+      bounded: false,
+      note: 'WAGER. Gated by W8.',
+    },
+    {
+      id: 'compute-pack',
+      kind: 'sink',
+      surface:
+        'RMH Datacenter — buying compute',
+      source:
+        'lib/datacenter/compute.server.ts',
+      bounded: true,
+      note: 'Capped at MAX_PACKS_PER_MONTH per member per month. The one sink whose price can be set honestly, because providing what it sells costs the platform real money (W2).',
+    },
+    {
+      id: 'casino-stake',
+      kind: 'sink',
+      surface:
+        'Every table stake and side bet',
+      source:
+        'server/socket-server/handlers/*.ts, features/casino/server/*.ts, lib/api/routes/coins.bet.server.ts',
+      bounded: false,
+      note: 'WAGER. Gated by W8 — the single check that covers all five tables plus plinko.',
+    },
 
-  // ── Transfers (supply-neutral; fees inside them are sinks) ────────────────
-  {
-    id: 'tip',
-    kind: 'transfer',
-    surface: 'Tipping a post or a creator',
-    source: 'lib/economy/api/coins.tip.server.ts',
-    bounded: false,
-    note: 'Member to member.',
-  },
-  {
-    id: 'chat-tip',
-    kind: 'transfer',
-    surface: '/messages — the /tip slash command',
-    source: 'lib/chat-plus/tip.server.ts',
-    bounded: false,
-    note: 'Member to member inside a DM or group chat; same transferCoins path as a post tip.',
-  },
-  {
-    id: 'coin-gift',
-    kind: 'transfer',
-    surface: 'Sending coins to someone',
-    source: 'lib/gifting/coin-gift.server.ts',
-    bounded: false,
-    note: 'Member to member.',
-  },
-  {
-    id: 'post-unlock',
-    kind: 'transfer',
-    surface: 'Unlocking a paywalled post',
-    source: 'app/routes/api/rmharks/$id/unlock.ts',
-    bounded: false,
-    note: 'Buyer to author.',
-  },
-  {
-    id: 'build-unlock',
-    kind: 'transfer',
-    surface: 'Unlocking a paid User Build',
-    source: 'app/routes/api/user-builds/$id/unlock.ts',
-    bounded: false,
-    note: 'Buyer to author. The seam B3 (a build store with revenue share) builds on.',
-  },
-  {
-    id: 'award',
-    kind: 'transfer',
-    surface: 'Giving an award',
-    source: 'lib/awards/awards.server.ts',
-    bounded: false,
-    note: 'Giver to recipient.',
-  },
-  {
-    id: 'creator-tier',
-    kind: 'transfer',
-    surface: 'Subscribing to a creator tier',
-    source: 'lib/creator/tiers.server.ts, lib/memberships.server.ts',
-    bounded: false,
-    note: 'Supporter to creator.',
-  },
-  {
-    id: 'market-sale',
-    kind: 'transfer',
-    surface: 'The player marketplace',
-    source: 'lib/market/market.server.ts',
-    bounded: false,
-    note: 'Buyer to seller, minus a fee that IS destroyed.',
-  },
-  {
-    id: 'card-market-sale',
-    kind: 'transfer',
-    surface: 'The trading-card Community Market',
-    source: 'lib/cards/market.server.ts',
-    bounded: false,
-    note: 'Buyer to seller, minus a 10% fee that IS destroyed. Cards drop only from playtime (3 per title per account) and sellers must be level 3 and a week old.',
-  },
-  {
-    id: 'storefront-sale',
-    kind: 'transfer',
-    surface: 'A creator storefront',
-    source: 'lib/storefront/storefront.server.ts',
-    bounded: false,
-    note: 'Buyer to creator, minus a fee.',
-  },
-  {
-    id: 'theme-sale',
-    kind: 'transfer',
-    surface: 'Buying a community theme',
-    source: 'lib/themes/themes.server.ts',
-    bounded: false,
-    note: 'Buyer to author.',
-  },
-] as const;
+    // ── Transfers (supply-neutral; fees inside them are sinks) ────────────────
+    {
+      id: 'tip',
+      kind: 'transfer',
+      surface:
+        'Tipping a post or a creator',
+      source:
+        'lib/economy/api/coins.tip.server.ts',
+      bounded: false,
+      note: 'Member to member.',
+    },
+    {
+      id: 'chat-tip',
+      kind: 'transfer',
+      surface:
+        '/messages — the /tip slash command',
+      source:
+        'lib/chat-plus/tip.server.ts',
+      bounded: false,
+      note: 'Member to member inside a DM or group chat; same transferCoins path as a post tip.',
+    },
+    {
+      id: 'coin-gift',
+      kind: 'transfer',
+      surface:
+        'Sending coins to someone',
+      source:
+        'lib/gifting/coin-gift.server.ts',
+      bounded: false,
+      note: 'Member to member.',
+    },
+    {
+      id: 'post-unlock',
+      kind: 'transfer',
+      surface:
+        'Unlocking a paywalled post',
+      source:
+        'app/routes/api/rmharks/$id/unlock.ts',
+      bounded: false,
+      note: 'Buyer to author.',
+    },
+    {
+      id: 'build-unlock',
+      kind: 'transfer',
+      surface:
+        'Unlocking a paid User Build',
+      source:
+        'app/routes/api/user-builds/$id/unlock.ts',
+      bounded: false,
+      note: 'Buyer to author. The seam B3 (a build store with revenue share) builds on.',
+    },
+    {
+      id: 'award',
+      kind: 'transfer',
+      surface:
+        'Giving an award',
+      source:
+        'lib/awards/awards.server.ts',
+      bounded: false,
+      note: 'Giver to recipient.',
+    },
+    {
+      id: 'creator-tier',
+      kind: 'transfer',
+      surface:
+        'Subscribing to a creator tier',
+      source:
+        'lib/creator/tiers.server.ts, lib/memberships.server.ts',
+      bounded: false,
+      note: 'Supporter to creator.',
+    },
+    {
+      id: 'market-sale',
+      kind: 'transfer',
+      surface:
+        'The player marketplace',
+      source:
+        'lib/market/market.server.ts',
+      bounded: false,
+      note: 'Buyer to seller, minus a fee that IS destroyed.',
+    },
+    {
+      id: 'card-market-sale',
+      kind: 'transfer',
+      surface:
+        'The trading-card Community Market',
+      source:
+        'lib/cards/market.server.ts',
+      bounded: false,
+      note: 'Buyer to seller, minus a 10% fee that IS destroyed. Cards drop only from playtime (3 per title per account) and sellers must be level 3 and a week old.',
+    },
+    {
+      id: 'storefront-sale',
+      kind: 'transfer',
+      surface:
+        'A creator storefront',
+      source:
+        'lib/storefront/storefront.server.ts',
+      bounded: false,
+      note: 'Buyer to creator, minus a fee.',
+    },
+    {
+      id: 'theme-sale',
+      kind: 'transfer',
+      surface:
+        'Buying a community theme',
+      source:
+        'lib/themes/themes.server.ts',
+      bounded: false,
+      note: 'Buyer to author.',
+    },
+  ] as const;
 
 /** Flows of one kind, in declaration order. */
-export function flowsOfKind(kind: FlowKind): readonly CoinFlow[] {
-  return COIN_FLOWS.filter((f) => f.kind === kind);
+export function flowsOfKind(
+  kind: FlowKind,
+): readonly CoinFlow[] {
+  return COIN_FLOWS.filter(
+    (
+      f,
+    ) =>
+      f.kind ===
+      kind,
+  );
 }
 
 /**
@@ -487,13 +600,39 @@ export function supplyShape(): {
   unboundedSinks: number;
   transfers: number;
 } {
-  const f = flowsOfKind('faucet');
-  const s = flowsOfKind('sink');
+  const f =
+    flowsOfKind(
+      'faucet',
+    );
+  const s =
+    flowsOfKind(
+      'sink',
+    );
   return {
-    faucets: f.length,
-    unboundedFaucets: f.filter((x) => !x.bounded).length,
-    sinks: s.length,
-    unboundedSinks: s.filter((x) => !x.bounded).length,
-    transfers: flowsOfKind('transfer').length,
+    faucets:
+      f.length,
+    unboundedFaucets:
+      f.filter(
+        (
+          x,
+        ) =>
+          !x.bounded,
+      )
+        .length,
+    sinks:
+      s.length,
+    unboundedSinks:
+      s.filter(
+        (
+          x,
+        ) =>
+          !x.bounded,
+      )
+        .length,
+    transfers:
+      flowsOfKind(
+        'transfer',
+      )
+        .length,
   };
 }

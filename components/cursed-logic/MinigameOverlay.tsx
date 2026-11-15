@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MinigameKind } from '@/lib/cursed-logic/types';
 
@@ -11,118 +16,365 @@ const HOLD_NUDGES_MAX = 3;
 const RAPID_MS = 750;
 const RAPID_REVEAL_MS = 180;
 
-type Distort = 'none' | 'reverse' | 'jitter' | 'shrink' | 'hide';
+type Distort =
+  | 'none'
+  | 'reverse'
+  | 'jitter'
+  | 'shrink'
+  | 'hide';
 
 function pickChaosDistort(): Distort {
-  const opts: Distort[] = ['reverse', 'jitter', 'shrink', 'hide'];
-  return opts[Math.floor(Math.random() * opts.length)] ?? 'reverse';
+  const opts: Distort[] =
+    [
+      'reverse',
+      'jitter',
+      'shrink',
+      'hide',
+    ];
+  return (
+    opts[
+      Math.floor(
+        Math.random() *
+          opts.length,
+      )
+    ] ??
+    'reverse'
+  );
 }
 
 interface MinigameOverlayProps {
   kind: MinigameKind;
   chaosDistort: boolean;
-  onComplete: (success: boolean) => void;
+  onComplete: (
+    success: boolean,
+  ) => void;
 }
 
-export function MinigameOverlay({ kind, chaosDistort, onComplete }: MinigameOverlayProps) {
-  const distort = chaosDistort ? pickChaosDistort() : 'none';
+export function MinigameOverlay({
+  kind,
+  chaosDistort,
+  onComplete,
+}: MinigameOverlayProps) {
+  const distort =
+    chaosDistort
+      ? pickChaosDistort()
+      : 'none';
 
-  if (kind === 'timed_press') {
+  if (
+    kind ===
+    'timed_press'
+  ) {
     return (
-      <TimedPressOverlay distort={distort} onComplete={onComplete} />
+      <TimedPressOverlay
+        distort={
+          distort
+        }
+        onComplete={
+          onComplete
+        }
+      />
     );
   }
-  if (kind === 'hold_zone') {
+  if (
+    kind ===
+    'hold_zone'
+  ) {
     return (
-      <HoldZoneOverlay distort={distort} onComplete={onComplete} />
+      <HoldZoneOverlay
+        distort={
+          distort
+        }
+        onComplete={
+          onComplete
+        }
+      />
     );
   }
   return (
-    <RapidChoiceOverlay onComplete={onComplete} />
+    <RapidChoiceOverlay
+      onComplete={
+        onComplete
+      }
+    />
   );
 }
 
 interface TimedPressProps {
   distort: Distort;
-  onComplete: (success: boolean) => void;
+  onComplete: (
+    success: boolean,
+  ) => void;
 }
 
-function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
-  const { t } = useTranslation("c-cursed-logic");
-  const [position, setPosition] = useState(0);
-  const [result, setResult] = useState<'pending' | 'hit' | 'miss' | null>(null);
-  const startRef = useRef<number>(0);
-  const rafRef = useRef<number>(0);
-  const positionRef = useRef(0);
-  const zoneStart = distort === 'shrink' ? 0.44 : ZONE_START;
-  const zoneEnd = distort === 'shrink' ? 0.56 : ZONE_END;
-  const reverse = distort === 'reverse';
+function TimedPressOverlay({
+  distort,
+  onComplete,
+}: TimedPressProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-cursed-logic',
+    );
+  const [
+    position,
+    setPosition,
+  ] =
+    useState(
+      0,
+    );
+  const [
+    result,
+    setResult,
+  ] =
+    useState<
+      | 'pending'
+      | 'hit'
+      | 'miss'
+      | null
+    >(
+      null,
+    );
+  const startRef =
+    useRef<number>(
+      0,
+    );
+  const rafRef =
+    useRef<number>(
+      0,
+    );
+  const positionRef =
+    useRef(
+      0,
+    );
+  const zoneStart =
+    distort ===
+    'shrink'
+      ? 0.44
+      : ZONE_START;
+  const zoneEnd =
+    distort ===
+    'shrink'
+      ? 0.56
+      : ZONE_END;
+  const reverse =
+    distort ===
+    'reverse';
 
-  const tick = useCallback(() => {
-    const t = (Date.now() - startRef.current) / BAR_MS;
-    if (t >= 1) {
-      setResult('miss');
-      return;
-    }
-    const p = reverse ? 1 - t : t;
-    const jitter = distort === 'jitter' ? (Math.random() - 0.5) * 0.1 : 0;
-    const next = Math.max(0, Math.min(1, p + jitter));
-    positionRef.current = next;
-    setPosition(next);
-    rafRef.current = requestAnimationFrame(tick);
-  }, [distort, reverse]);
+  const tick =
+    useCallback(() => {
+      const t =
+        (Date.now() -
+          startRef.current) /
+        BAR_MS;
+      if (
+        t >=
+        1
+      ) {
+        setResult(
+          'miss',
+        );
+        return;
+      }
+      const p =
+        reverse
+          ? 1 -
+            t
+          : t;
+      const jitter =
+        distort ===
+        'jitter'
+          ? (Math.random() -
+              0.5) *
+            0.1
+          : 0;
+      const next =
+        Math.max(
+          0,
+          Math.min(
+            1,
+            p +
+              jitter,
+          ),
+        );
+      positionRef.current =
+        next;
+      setPosition(
+        next,
+      );
+      rafRef.current =
+        requestAnimationFrame(
+          tick,
+        );
+    }, [
+      distort,
+      reverse,
+    ]);
 
   useEffect(() => {
-    startRef.current = Date.now();
-    if (distort === 'hide') {
+    startRef.current =
+      Date.now();
+    if (
+      distort ===
+      'hide'
+    ) {
       const showAt = 120;
-      const id = setTimeout(() => {
-        rafRef.current = requestAnimationFrame(tick);
-      }, showAt);
+      const id =
+        setTimeout(
+          () => {
+            rafRef.current =
+              requestAnimationFrame(
+                tick,
+              );
+          },
+          showAt,
+        );
       return () => {
-        clearTimeout(id);
-        cancelAnimationFrame(rafRef.current);
+        clearTimeout(
+          id,
+        );
+        cancelAnimationFrame(
+          rafRef.current,
+        );
       };
     }
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [distort, tick]);
+    rafRef.current =
+      requestAnimationFrame(
+        tick,
+      );
+    return () =>
+      cancelAnimationFrame(
+        rafRef.current,
+      );
+  }, [
+    distort,
+    tick,
+  ]);
 
-  const handlePress = useCallback(() => {
-    if (result !== null) return;
-    const pos = positionRef.current;
-    const inZone = pos >= zoneStart && pos <= zoneEnd;
-    setResult(inZone ? 'hit' : 'miss');
-  }, [result, zoneStart, zoneEnd]);
+  const handlePress =
+    useCallback(() => {
+      if (
+        result !==
+        null
+      )
+        return;
+      const pos =
+        positionRef.current;
+      const inZone =
+        pos >=
+          zoneStart &&
+        pos <=
+          zoneEnd;
+      setResult(
+        inZone
+          ? 'hit'
+          : 'miss',
+      );
+    }, [
+      result,
+      zoneStart,
+      zoneEnd,
+    ]);
 
   useEffect(() => {
-    if (result === null) return;
-    const id = setTimeout(() => onComplete(result === 'hit'), 400);
-    return () => clearTimeout(id);
-  }, [result, onComplete]);
+    if (
+      result ===
+      null
+    )
+      return;
+    const id =
+      setTimeout(
+        () =>
+          onComplete(
+            result ===
+              'hit',
+          ),
+        400,
+      );
+    return () =>
+      clearTimeout(
+        id,
+      );
+  }, [
+    result,
+    onComplete,
+  ]);
 
-  const [indicatorVisible, setIndicatorVisible] = useState(distort !== 'hide');
+  const [
+    indicatorVisible,
+    setIndicatorVisible,
+  ] =
+    useState(
+      distort !==
+        'hide',
+    );
   useEffect(() => {
-    if (distort !== 'hide') return;
-    const id = setTimeout(() => setIndicatorVisible(true), 120);
-    return () => clearTimeout(id);
-  }, [distort]);
+    if (
+      distort !==
+      'hide'
+    )
+      return;
+    const id =
+      setTimeout(
+        () =>
+          setIndicatorVisible(
+            true,
+          ),
+        120,
+      );
+    return () =>
+      clearTimeout(
+        id,
+      );
+  }, [
+    distort,
+  ]);
 
   return (
     <div
       className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-4 bg-black/70 backdrop-blur-sm"
-      onClick={result === null ? handlePress : undefined}
+      onClick={
+        result ===
+        null
+          ? handlePress
+          : undefined
+      }
       role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (result === null && (e.key === ' ' || e.key === 'Enter')) {
+      tabIndex={
+        0
+      }
+      onKeyDown={(
+        e,
+      ) => {
+        if (
+          result ===
+            null &&
+          (e.key ===
+            ' ' ||
+            e.key ===
+              'Enter')
+        ) {
           e.preventDefault();
           handlePress();
         }
       }}
-      aria-label={t("press-zone-aria", { defaultValue: "Press when the indicator is in the zone" })}
+      aria-label={t(
+        'press-zone-aria',
+        {
+          defaultValue:
+            'Press when the indicator is in the zone',
+        },
+      )}
     >
-      <p className="text-cyan-300 text-sm font-mono">{t("press-zone-hint", { defaultValue: "Press when in the zone" })}</p>
+      <p className="text-cyan-300 text-sm font-mono">
+        {t(
+          'press-zone-hint',
+          {
+            defaultValue:
+              'Press when in the zone',
+          },
+        )}
+      </p>
       <div className="w-full max-w-xs h-10 rounded-lg bg-white/10 border border-cyan-500/40 relative overflow-hidden">
         <div
           className="absolute inset-y-0 rounded bg-cyan-500/40 border border-cyan-400/60"
@@ -134,129 +386,427 @@ function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
         {indicatorVisible && (
           <div
             className="absolute top-1 bottom-1 w-1.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)]"
-            style={{ left: `calc(${position * 100}% - 3px)` }}
+            style={{
+              left: `calc(${position * 100}% - 3px)`,
+            }}
           />
         )}
       </div>
-      {result === 'hit' && <p className="text-cyan-400 font-mono font-bold">{t("result-hit", { defaultValue: "Hit!" })}</p>}
-      {result === 'miss' && <p className="text-amber-400/90 font-mono">{t("result-miss", { defaultValue: "Miss" })}</p>}
+      {result ===
+        'hit' && (
+        <p className="text-cyan-400 font-mono font-bold">
+          {t(
+            'result-hit',
+            {
+              defaultValue:
+                'Hit!',
+            },
+          )}
+        </p>
+      )}
+      {result ===
+        'miss' && (
+        <p className="text-amber-400/90 font-mono">
+          {t(
+            'result-miss',
+            {
+              defaultValue:
+                'Miss',
+            },
+          )}
+        </p>
+      )}
     </div>
   );
 }
 
 interface HoldZoneProps {
   distort: Distort;
-  onComplete: (success: boolean) => void;
+  onComplete: (
+    success: boolean,
+  ) => void;
 }
 
-function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
-  const { t } = useTranslation("c-cursed-logic");
-  const [progress, setProgress] = useState(0);
-  const [position, setPosition] = useState(0.5);
-  const [failed, setFailed] = useState(false);
-  const [holding, setHolding] = useState(false);
-  const [nudgesLeft, setNudgesLeft] = useState(HOLD_NUDGES_MAX);
-  const startRef = useRef<number>(0);
-  const posRef = useRef(0.5);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const zoneMargin = distort === 'shrink' ? 0.32 : 0.26;
-  const zoneStart = zoneMargin;
-  const zoneEnd = 1 - zoneMargin;
-  const onCompleteRef = useRef(onComplete);
-  const completedRef = useRef(false);
-  onCompleteRef.current = onComplete;
+function HoldZoneOverlay({
+  distort,
+  onComplete,
+}: HoldZoneProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-cursed-logic',
+    );
+  const [
+    progress,
+    setProgress,
+  ] =
+    useState(
+      0,
+    );
+  const [
+    position,
+    setPosition,
+  ] =
+    useState(
+      0.5,
+    );
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    holding,
+    setHolding,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    nudgesLeft,
+    setNudgesLeft,
+  ] =
+    useState(
+      HOLD_NUDGES_MAX,
+    );
+  const startRef =
+    useRef<number>(
+      0,
+    );
+  const posRef =
+    useRef(
+      0.5,
+    );
+  const intervalRef =
+    useRef<ReturnType<
+      typeof setInterval
+    > | null>(
+      null,
+    );
+  const zoneMargin =
+    distort ===
+    'shrink'
+      ? 0.32
+      : 0.26;
+  const zoneStart =
+    zoneMargin;
+  const zoneEnd =
+    1 -
+    zoneMargin;
+  const onCompleteRef =
+    useRef(
+      onComplete,
+    );
+  const completedRef =
+    useRef(
+      false,
+    );
+  onCompleteRef.current =
+    onComplete;
 
-  const fail = useCallback(() => {
-    if (completedRef.current) return;
-    completedRef.current = true;
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setFailed(true);
-    setTimeout(() => onCompleteRef.current(false), 300);
-  }, []);
+  const fail =
+    useCallback(() => {
+      if (
+        completedRef.current
+      )
+        return;
+      completedRef.current = true;
+      if (
+        intervalRef.current
+      )
+        clearInterval(
+          intervalRef.current,
+        );
+      setFailed(
+        true,
+      );
+      setTimeout(
+        () =>
+          onCompleteRef.current(
+            false,
+          ),
+        300,
+      );
+    }, []);
 
   useEffect(() => {
-    if (!holding) return;
+    if (
+      !holding
+    )
+      return;
     completedRef.current = false;
-    startRef.current = Date.now();
+    startRef.current =
+      Date.now();
     posRef.current = 0.5;
-    setPosition(0.5);
-    setFailed(false);
-    setNudgesLeft(HOLD_NUDGES_MAX);
-    intervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startRef.current;
-      const p = elapsed / HOLD_MS;
-      const drift = (Math.random() - 0.5) * 0.2 * (distort === 'jitter' ? 1.6 : 1);
-      posRef.current = Math.max(0, Math.min(1, posRef.current + drift));
-      setPosition(posRef.current);
-      setProgress(p);
+    setPosition(
+      0.5,
+    );
+    setFailed(
+      false,
+    );
+    setNudgesLeft(
+      HOLD_NUDGES_MAX,
+    );
+    intervalRef.current =
+      setInterval(
+        () => {
+          const elapsed =
+            Date.now() -
+            startRef.current;
+          const p =
+            elapsed /
+            HOLD_MS;
+          const drift =
+            (Math.random() -
+              0.5) *
+            0.2 *
+            (distort ===
+            'jitter'
+              ? 1.6
+              : 1);
+          posRef.current =
+            Math.max(
+              0,
+              Math.min(
+                1,
+                posRef.current +
+                  drift,
+              ),
+            );
+          setPosition(
+            posRef.current,
+          );
+          setProgress(
+            p,
+          );
 
-      if (posRef.current < zoneStart || posRef.current > zoneEnd) {
-        fail();
-        return;
-      }
-      if (p >= 1) {
-        if (completedRef.current) return;
-        completedRef.current = true;
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        setTimeout(() => onCompleteRef.current(true), 300);
-      }
-    }, 45);
+          if (
+            posRef.current <
+              zoneStart ||
+            posRef.current >
+              zoneEnd
+          ) {
+            fail();
+            return;
+          }
+          if (
+            p >=
+            1
+          ) {
+            if (
+              completedRef.current
+            )
+              return;
+            completedRef.current = true;
+            if (
+              intervalRef.current
+            )
+              clearInterval(
+                intervalRef.current,
+              );
+            setTimeout(
+              () =>
+                onCompleteRef.current(
+                  true,
+                ),
+              300,
+            );
+          }
+        },
+        45,
+      );
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (
+        intervalRef.current
+      )
+        clearInterval(
+          intervalRef.current,
+        );
     };
-  }, [holding, zoneStart, zoneEnd, fail]);
+  }, [
+    holding,
+    zoneStart,
+    zoneEnd,
+    fail,
+  ]);
 
-  const handleNudge = useCallback(() => {
-    if (!holding || failed || nudgesLeft <= 0) return;
-    const center = 0.5;
-    const pull = (center - posRef.current) * HOLD_NUDGE_STRENGTH;
-    posRef.current = Math.max(0, Math.min(1, posRef.current + pull));
-    setPosition(posRef.current);
-    setNudgesLeft((n) => Math.max(0, n - 1));
-  }, [holding, failed, nudgesLeft]);
+  const handleNudge =
+    useCallback(() => {
+      if (
+        !holding ||
+        failed ||
+        nudgesLeft <=
+          0
+      )
+        return;
+      const center = 0.5;
+      const pull =
+        (center -
+          posRef.current) *
+        HOLD_NUDGE_STRENGTH;
+      posRef.current =
+        Math.max(
+          0,
+          Math.min(
+            1,
+            posRef.current +
+              pull,
+          ),
+        );
+      setPosition(
+        posRef.current,
+      );
+      setNudgesLeft(
+        (
+          n,
+        ) =>
+          Math.max(
+            0,
+            n -
+              1,
+          ),
+      );
+    }, [
+      holding,
+      failed,
+      nudgesLeft,
+    ]);
 
   // Only the pointer that started the hold may end it. On a phone the Brace
   // button is tapped with a SECOND finger while the first keeps holding; that
   // tap's pointerup used to bubble to the window listener and fail the hold, so
   // the minigame could not be won on touch.
-  const holdPointerRef = useRef<number | null>(null);
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    holdPointerRef.current = e.pointerId;
-    setHolding(true);
-  }, []);
-  const handlePointerUp = useCallback((e?: React.PointerEvent) => {
-    if (e && holdPointerRef.current !== null && e.pointerId !== holdPointerRef.current) return;
-    if (!holding || progress >= 1 || failed) return;
-    setHolding(false);
-    fail();
-  }, [holding, progress, failed, fail]);
+  const holdPointerRef =
+    useRef<
+      | number
+      | null
+    >(
+      null,
+    );
+  const handlePointerDown =
+    useCallback(
+      (
+        e: React.PointerEvent,
+      ) => {
+        holdPointerRef.current =
+          e.pointerId;
+        setHolding(
+          true,
+        );
+      },
+      [],
+    );
+  const handlePointerUp =
+    useCallback(
+      (
+        e?: React.PointerEvent,
+      ) => {
+        if (
+          e &&
+          holdPointerRef.current !==
+            null &&
+          e.pointerId !==
+            holdPointerRef.current
+        )
+          return;
+        if (
+          !holding ||
+          progress >=
+            1 ||
+          failed
+        )
+          return;
+        setHolding(
+          false,
+        );
+        fail();
+      },
+      [
+        holding,
+        progress,
+        failed,
+        fail,
+      ],
+    );
 
   useEffect(() => {
-    const up = (e: PointerEvent) => {
-      if (holdPointerRef.current !== null && e.pointerId !== holdPointerRef.current) return;
-      setHolding((h) => {
-        if (h) fail();
-        return false;
-      });
-    };
-    window.addEventListener('pointerup', up);
-    window.addEventListener('pointercancel', up);
+    const up =
+      (
+        e: PointerEvent,
+      ) => {
+        if (
+          holdPointerRef.current !==
+            null &&
+          e.pointerId !==
+            holdPointerRef.current
+        )
+          return;
+        setHolding(
+          (
+            h,
+          ) => {
+            if (
+              h
+            )
+              fail();
+            return false;
+          },
+        );
+      };
+    window.addEventListener(
+      'pointerup',
+      up,
+    );
+    window.addEventListener(
+      'pointercancel',
+      up,
+    );
     return () => {
-      window.removeEventListener('pointerup', up);
-      window.removeEventListener('pointercancel', up);
+      window.removeEventListener(
+        'pointerup',
+        up,
+      );
+      window.removeEventListener(
+        'pointercancel',
+        up,
+      );
     };
-  }, [fail]);
+  }, [
+    fail,
+  ]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && holding && !failed) {
-        e.preventDefault();
-        handleNudge();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [holding, failed, handleNudge]);
+    const onKey =
+      (
+        e: KeyboardEvent,
+      ) => {
+        if (
+          e.code ===
+            'Space' &&
+          holding &&
+          !failed
+        ) {
+          e.preventDefault();
+          handleNudge();
+        }
+      };
+    window.addEventListener(
+      'keydown',
+      onKey,
+    );
+    return () =>
+      window.removeEventListener(
+        'keydown',
+        onKey,
+      );
+  }, [
+    holding,
+    failed,
+    handleNudge,
+  ]);
 
   return (
     // `HOLD_MS` is 1200: this minigame is one press held for over a second,
@@ -267,7 +817,15 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
       data-gesture=""
       className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm"
     >
-      <p className="text-cyan-300 text-sm font-mono">{t("hold-hint", { defaultValue: "Hold — Brace to correct drift" })}</p>
+      <p className="text-cyan-300 text-sm font-mono">
+        {t(
+          'hold-hint',
+          {
+            defaultValue:
+              'Hold — Brace to correct drift',
+          },
+        )}
+      </p>
       <div className="w-full max-w-xs h-12 rounded-lg bg-white/10 border border-cyan-500/40 relative overflow-hidden">
         <div
           className="absolute inset-y-0 rounded bg-cyan-500/40 border border-cyan-400/60"
@@ -278,7 +836,9 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
         />
         <div
           className="pointer-events-none absolute inset-y-1 left-0 w-full transition-transform duration-75"
-          style={{ transform: `translateX(${position * 100}%)` }}
+          style={{
+            transform: `translateX(${position * 100}%)`,
+          }}
         >
           <div className="absolute inset-y-0 -ml-1 w-2 rounded-full bg-amber-400" />
         </div>
@@ -286,110 +846,335 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
       <div className="flex gap-3 items-center">
         <button
           type="button"
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
-          onContextMenu={(e) => e.preventDefault()}
+          onPointerDown={
+            handlePointerDown
+          }
+          onPointerUp={
+            handlePointerUp
+          }
+          onPointerLeave={
+            handlePointerUp
+          }
+          onContextMenu={(
+            e,
+          ) =>
+            e.preventDefault()
+          }
           className="min-h-12 touch-none select-none rounded-xl border-2 border-cyan-500/60 bg-cyan-500/20 px-6 py-3 font-mono font-bold text-cyan-200"
         >
-          {holding ? t("hold-active", { defaultValue: "Holding…" }) : t("hold-idle", { defaultValue: "Hold" })}
+          {holding
+            ? t(
+                'hold-active',
+                {
+                  defaultValue:
+                    'Holding…',
+                },
+              )
+            : t(
+                'hold-idle',
+                {
+                  defaultValue:
+                    'Hold',
+                },
+              )}
         </button>
         <button
           type="button"
-          onClick={handleNudge}
-          disabled={!holding || failed || nudgesLeft <= 0}
+          onClick={
+            handleNudge
+          }
+          disabled={
+            !holding ||
+            failed ||
+            nudgesLeft <=
+              0
+          }
           className="min-h-12 touch-manipulation rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-4 py-3 font-mono text-amber-200 disabled:opacity-40"
         >
-          {t("brace-btn", { defaultValue: "Brace ({{count}})", count: nudgesLeft })}
+          {t(
+            'brace-btn',
+            {
+              defaultValue:
+                'Brace ({{count}})',
+              count:
+                nudgesLeft,
+            },
+          )}
         </button>
       </div>
-      <p className="text-white/50 text-xs font-mono">{t("nudge-hint", { defaultValue: "Space or Brace to nudge toward center" })}</p>
-      {progress > 0 && progress < 1 && !failed && (
-        <div className="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden">
-          <div
-            className="h-full bg-cyan-500/80 w-full origin-left transition-transform duration-100"
-            style={{ transform: `scaleX(${(progress * 100) / 100})` }}
-          />
-        </div>
-      )}
-      {failed && progress < 1 && <p className="text-amber-400/90 font-mono">{t("hold-failed", { defaultValue: "Lost grip" })}</p>}
+      <p className="text-white/50 text-xs font-mono">
+        {t(
+          'nudge-hint',
+          {
+            defaultValue:
+              'Space or Brace to nudge toward center',
+          },
+        )}
+      </p>
+      {progress >
+        0 &&
+        progress <
+          1 &&
+        !failed && (
+          <div className="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden">
+            <div
+              className="h-full bg-cyan-500/80 w-full origin-left transition-transform duration-100"
+              style={{
+                transform: `scaleX(${(progress * 100) / 100})`,
+              }}
+            />
+          </div>
+        )}
+      {failed &&
+        progress <
+          1 && (
+          <p className="text-amber-400/90 font-mono">
+            {t(
+              'hold-failed',
+              {
+                defaultValue:
+                  'Lost grip',
+              },
+            )}
+          </p>
+        )}
     </div>
   );
 }
 
 interface RapidChoiceProps {
-  onComplete: (success: boolean) => void;
+  onComplete: (
+    success: boolean,
+  ) => void;
 }
 
-function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
-  const { t } = useTranslation("c-cursed-logic");
-  const [ready, setReady] = useState(false);
-  const [chosen, setChosen] = useState<number | null>(null);
-  const [timedOut, setTimedOut] = useState(false);
-  const betterIndexRef = useRef<number>(Math.random() < 0.5 ? 0 : 1);
-  const completedRef = useRef(false);
+function RapidChoiceOverlay({
+  onComplete,
+}: RapidChoiceProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-cursed-logic',
+    );
+  const [
+    ready,
+    setReady,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    chosen,
+    setChosen,
+  ] =
+    useState<
+      | number
+      | null
+    >(
+      null,
+    );
+  const [
+    timedOut,
+    setTimedOut,
+  ] =
+    useState(
+      false,
+    );
+  const betterIndexRef =
+    useRef<number>(
+      Math.random() <
+        0.5
+        ? 0
+        : 1,
+    );
+  const completedRef =
+    useRef(
+      false,
+    );
 
   useEffect(() => {
-    const t = setTimeout(() => setReady(true), RAPID_REVEAL_MS);
-    return () => clearTimeout(t);
+    const t =
+      setTimeout(
+        () =>
+          setReady(
+            true,
+          ),
+        RAPID_REVEAL_MS,
+      );
+    return () =>
+      clearTimeout(
+        t,
+      );
   }, []);
 
   useEffect(() => {
-    if (!ready || chosen !== null) return;
-    const t = setTimeout(() => {
-      if (completedRef.current) return;
-      completedRef.current = true;
-      setTimedOut(true);
-      setTimeout(() => onComplete(false), 350);
-    }, RAPID_MS);
-    return () => clearTimeout(t);
-  }, [ready, chosen, onComplete]);
+    if (
+      !ready ||
+      chosen !==
+        null
+    )
+      return;
+    const t =
+      setTimeout(
+        () => {
+          if (
+            completedRef.current
+          )
+            return;
+          completedRef.current = true;
+          setTimedOut(
+            true,
+          );
+          setTimeout(
+            () =>
+              onComplete(
+                false,
+              ),
+            350,
+          );
+        },
+        RAPID_MS,
+      );
+    return () =>
+      clearTimeout(
+        t,
+      );
+  }, [
+    ready,
+    chosen,
+    onComplete,
+  ]);
 
-  const handleChoice = useCallback(
-    (index: number) => {
-      if (chosen !== null) return;
-      completedRef.current = true;
-      setChosen(index);
-      const success = index === betterIndexRef.current;
-      setTimeout(() => onComplete(success), 400);
-    },
-    [chosen, onComplete]
-  );
+  const handleChoice =
+    useCallback(
+      (
+        index: number,
+      ) => {
+        if (
+          chosen !==
+          null
+        )
+          return;
+        completedRef.current = true;
+        setChosen(
+          index,
+        );
+        const success =
+          index ===
+          betterIndexRef.current;
+        setTimeout(
+          () =>
+            onComplete(
+              success,
+            ),
+          400,
+        );
+      },
+      [
+        chosen,
+        onComplete,
+      ],
+    );
 
   return (
     <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
       <p className="text-cyan-300 text-sm font-mono">
-        {!ready ? '…' : t("choose-quickly", { defaultValue: "Choose quickly" })}
+        {!ready
+          ? '…'
+          : t(
+              'choose-quickly',
+              {
+                defaultValue:
+                  'Choose quickly',
+              },
+            )}
       </p>
       {ready && (
         <div className="flex gap-4">
           <button
             type="button"
-            onClick={() => handleChoice(0)}
-            disabled={chosen !== null}
+            onClick={() =>
+              handleChoice(
+                0,
+              )
+            }
+            disabled={
+              chosen !==
+              null
+            }
             className="rounded-xl border-2 border-cyan-500/50 bg-cyan-500/10 px-6 py-4 font-mono text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
           >
-            {t("choice-absorb", { defaultValue: "Absorb" })}
+            {t(
+              'choice-absorb',
+              {
+                defaultValue:
+                  'Absorb',
+              },
+            )}
           </button>
           <button
             type="button"
-            onClick={() => handleChoice(1)}
-            disabled={chosen !== null}
+            onClick={() =>
+              handleChoice(
+                1,
+              )
+            }
+            disabled={
+              chosen !==
+              null
+            }
             className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-6 py-4 font-mono text-amber-200 hover:bg-amber-500/20 disabled:opacity-50"
           >
-            {t("choice-deflect", { defaultValue: "Deflect" })}
+            {t(
+              'choice-deflect',
+              {
+                defaultValue:
+                  'Deflect',
+              },
+            )}
           </button>
         </div>
       )}
-      {ready && !chosen && !timedOut && (
-        <p className="text-white/40 text-xs font-mono">~0.7s</p>
-      )}
-      {chosen !== null && (
+      {ready &&
+        !chosen &&
+        !timedOut && (
+          <p className="text-white/40 text-xs font-mono">
+            ~0.7s
+          </p>
+        )}
+      {chosen !==
+        null && (
         <p className="text-white/70 font-mono text-sm">
-          {chosen === betterIndexRef.current ? t("rapid-recovered", { defaultValue: "Recovered" }) : t("rapid-staggered", { defaultValue: "Staggered" })}
+          {chosen ===
+          betterIndexRef.current
+            ? t(
+                'rapid-recovered',
+                {
+                  defaultValue:
+                    'Recovered',
+                },
+              )
+            : t(
+                'rapid-staggered',
+                {
+                  defaultValue:
+                    'Staggered',
+                },
+              )}
         </p>
       )}
-      {timedOut && <p className="text-amber-400/90 font-mono text-sm">{t("rapid-too-slow", { defaultValue: "Too slow" })}</p>}
+      {timedOut && (
+        <p className="text-amber-400/90 font-mono text-sm">
+          {t(
+            'rapid-too-slow',
+            {
+              defaultValue:
+                'Too slow',
+            },
+          )}
+        </p>
+      )}
     </div>
   );
 }

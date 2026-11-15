@@ -8,34 +8,83 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type { QuotaStatus } from '@/lib/library/quota.server';
 
 /** Multipart: `file` (PDF/EPUB), optional `cover`, `title`, `description`, `pages`. Answers 201. */
-export const uploadLibraryBookApi = endpoint<{
-  body: FormData;
-  res: { slug: string; url: string };
-}>()({ method: 'POST', path: '/api/library/upload' });
+export const uploadLibraryBookApi =
+  endpoint<{
+    body: FormData;
+    res: {
+      slug: string;
+      url: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/library/upload',
+    },
+  );
 
 /** The caller's library usage, as the upload dialog reads it. */
-export type LibraryQuota = QuotaStatus;
+export type LibraryQuota =
+  QuotaStatus;
 
 /** The signed-in user's library usage, cap, own uploads and pending appeal. */
-export const getLibraryQuotaApi = endpoint<{ res: QuotaStatus }>()({
-  method: 'GET',
-  path: '/api/library/quota',
-});
+export const getLibraryQuotaApi =
+  endpoint<{
+    res: QuotaStatus;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/library/quota',
+    },
+  );
 
 /** File an appeal for a higher cap. 400/409 carry the reason as `{ error }`. */
-export const requestLibraryQuotaApi = endpoint<{
-  body: { requestedTotal: number; reason: string };
-  res: { ok: true };
-}>()({ method: 'POST', path: '/api/library/quota' });
+export const requestLibraryQuotaApi =
+  endpoint<{
+    body: {
+      requestedTotal: number;
+      reason: string;
+    };
+    res: {
+      ok: true;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/library/quota',
+    },
+  );
 
 /** Owner or admin only. */
-export const deleteLibraryUploadApi = endpoint<{ res: { ok: true } }>()({
-  method: 'DELETE',
-  path: '/api/library/$slug',
-});
+export const deleteLibraryUploadApi =
+  endpoint<{
+    res: {
+      ok: true;
+    };
+  }>()(
+    {
+      method:
+        'DELETE',
+      path: '/api/library/$slug',
+    },
+  );
 
 /** Blank fields when AI is not configured, so the form falls back to the filename. */
-export const draftLibraryMetadataApi = endpoint<{
-  body: { text: string };
-  res: { title: string; description: string };
-}>()({ method: 'POST', path: '/api/library/draft' });
+export const draftLibraryMetadataApi =
+  endpoint<{
+    body: {
+      text: string;
+    };
+    res: {
+      title: string;
+      description: string;
+    };
+  }>()(
+    {
+      method:
+        'POST',
+      path: '/api/library/draft',
+    },
+  );

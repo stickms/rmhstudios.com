@@ -10,20 +10,39 @@
 import { haversineKm } from './distance';
 
 export interface WatchCriteria {
-  listingType: 'RENT' | 'SALE' | null;
+  listingType:
+    | 'RENT'
+    | 'SALE'
+    | null;
   propertyTypes: string[];
-  lat: number | null;
-  lng: number | null;
-  radiusKm: number | null;
-  minPriceCents: number | null;
-  maxPriceCents: number | null;
-  minBeds: number | null;
-  minBaths: number | null;
+  lat:
+    | number
+    | null;
+  lng:
+    | number
+    | null;
+  radiusKm:
+    | number
+    | null;
+  minPriceCents:
+    | number
+    | null;
+  maxPriceCents:
+    | number
+    | null;
+  minBeds:
+    | number
+    | null;
+  minBaths:
+    | number
+    | null;
   petsRequired: boolean;
 }
 
 export interface MatchableListing {
-  listingType: 'RENT' | 'SALE';
+  listingType:
+    | 'RENT'
+    | 'SALE';
   propertyType: string;
   priceCents: number;
   beds: number;
@@ -34,22 +53,83 @@ export interface MatchableListing {
 }
 
 /** Does `listing` satisfy every criterion set on `watch`? */
-export function listingMatchesWatch(watch: WatchCriteria, listing: MatchableListing): boolean {
-  if (watch.listingType && listing.listingType !== watch.listingType) return false;
-  if (watch.propertyTypes.length && !watch.propertyTypes.includes(listing.propertyType)) {
+export function listingMatchesWatch(
+  watch: WatchCriteria,
+  listing: MatchableListing,
+): boolean {
+  if (
+    watch.listingType &&
+    listing.listingType !==
+      watch.listingType
+  )
+    return false;
+  if (
+    watch
+      .propertyTypes
+      .length &&
+    !watch.propertyTypes.includes(
+      listing.propertyType,
+    )
+  ) {
     return false;
   }
-  if (watch.minPriceCents != null && listing.priceCents < watch.minPriceCents) return false;
-  if (watch.maxPriceCents != null && listing.priceCents > watch.maxPriceCents) return false;
-  if (watch.minBeds != null && listing.beds < watch.minBeds) return false;
-  if (watch.minBaths != null && listing.baths < watch.minBaths) return false;
-  if (watch.petsRequired && !listing.petsAllowed) return false;
-  if (watch.lat != null && watch.lng != null && watch.radiusKm != null) {
-    const d = haversineKm(
-      { lat: watch.lat, lng: watch.lng },
-      { lat: listing.lat, lng: listing.lng },
-    );
-    if (d > watch.radiusKm) return false;
+  if (
+    watch.minPriceCents !=
+      null &&
+    listing.priceCents <
+      watch.minPriceCents
+  )
+    return false;
+  if (
+    watch.maxPriceCents !=
+      null &&
+    listing.priceCents >
+      watch.maxPriceCents
+  )
+    return false;
+  if (
+    watch.minBeds !=
+      null &&
+    listing.beds <
+      watch.minBeds
+  )
+    return false;
+  if (
+    watch.minBaths !=
+      null &&
+    listing.baths <
+      watch.minBaths
+  )
+    return false;
+  if (
+    watch.petsRequired &&
+    !listing.petsAllowed
+  )
+    return false;
+  if (
+    watch.lat !=
+      null &&
+    watch.lng !=
+      null &&
+    watch.radiusKm !=
+      null
+  ) {
+    const d =
+      haversineKm(
+        {
+          lat: watch.lat,
+          lng: watch.lng,
+        },
+        {
+          lat: listing.lat,
+          lng: listing.lng,
+        },
+      );
+    if (
+      d >
+      watch.radiusKm
+    )
+      return false;
   }
   return true;
 }

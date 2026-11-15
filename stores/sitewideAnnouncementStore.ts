@@ -10,14 +10,39 @@ import { create } from 'zustand';
  */
 interface SitewideAnnouncementState {
   open: boolean;
-  setOpen: (open: boolean) => void;
+  setOpen: (
+    open: boolean,
+  ) => void;
   whatsNewOpen: boolean;
-  setWhatsNewOpen: (open: boolean) => void;
+  setWhatsNewOpen: (
+    open: boolean,
+  ) => void;
 }
 
-export const useSitewideAnnouncementStore = create<SitewideAnnouncementState>((set) => ({
-  open: false,
-  setOpen: (open) => set({ open }),
-  whatsNewOpen: false,
-  setWhatsNewOpen: (whatsNewOpen) => set({ whatsNewOpen }),
-}));
+export const useSitewideAnnouncementStore =
+  create<SitewideAnnouncementState>(
+    (
+      set,
+    ) => ({
+      open: false,
+      setOpen:
+        (
+          open,
+        ) =>
+          set(
+            {
+              open,
+            },
+          ),
+      whatsNewOpen: false,
+      setWhatsNewOpen:
+        (
+          whatsNewOpen,
+        ) =>
+          set(
+            {
+              whatsNewOpen,
+            },
+          ),
+    }),
+  );

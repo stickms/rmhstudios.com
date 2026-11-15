@@ -60,7 +60,8 @@ export interface SpanContext {
 export const FLAG_SAMPLED = 0x01;
 
 /** The only `traceparent` version this parser accepts (`00`). */
-const VERSION = '00';
+const VERSION =
+  '00';
 
 /**
  * `version-traceId-spanId-flags`, all lowercase hex.
@@ -69,34 +70,79 @@ const VERSION = '00';
  * spec's explicit "invalid" sentinels — a header carrying either is worse than
  * no header, because it correlates every request to the same id.
  */
-const TRACEPARENT_RE = /^([0-9a-f]{2})-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$/;
-const INVALID_TRACE_ID = '0'.repeat(32);
-const INVALID_SPAN_ID = '0'.repeat(16);
+const TRACEPARENT_RE =
+  /^([0-9a-f]{2})-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$/;
+const INVALID_TRACE_ID =
+  '0'.repeat(
+    32,
+  );
+const INVALID_SPAN_ID =
+  '0'.repeat(
+    16,
+  );
 
-const HEX = '0123456789abcdef';
+const HEX =
+  '0123456789abcdef';
 
 /** Lowercase hex for `bytes` random bytes, via Web Crypto (no `node:crypto`). */
-function randomHex(bytes: number): string {
-  const buf = new Uint8Array(bytes);
-  globalThis.crypto.getRandomValues(buf);
-  let out = '';
-  for (const b of buf) out += HEX[b >> 4] + HEX[b & 0x0f];
+function randomHex(
+  bytes: number,
+): string {
+  const buf =
+    new Uint8Array(
+      bytes,
+    );
+  globalThis.crypto.getRandomValues(
+    buf,
+  );
+  let out =
+    '';
+  for (const b of buf)
+    out +=
+      HEX[
+        b >>
+          4
+      ] +
+      HEX[
+        b &
+          0x0f
+      ];
   return out;
 }
 
 /** A fresh 128-bit trace id. */
 export function newTraceId(): string {
-  let id = randomHex(16);
+  let id =
+    randomHex(
+      16,
+    );
   // Astronomically unlikely, but an all-zero id is the spec's "invalid"
   // sentinel and would silently merge every trace that drew it.
-  while (id === INVALID_TRACE_ID) id = randomHex(16);
+  while (
+    id ===
+    INVALID_TRACE_ID
+  )
+    id =
+      randomHex(
+        16,
+      );
   return id;
 }
 
 /** A fresh 64-bit span id. */
 export function newSpanId(): string {
-  let id = randomHex(8);
-  while (id === INVALID_SPAN_ID) id = randomHex(8);
+  let id =
+    randomHex(
+      8,
+    );
+  while (
+    id ===
+    INVALID_SPAN_ID
+  )
+    id =
+      randomHex(
+        8,
+      );
   return id;
 }
 
@@ -109,21 +155,76 @@ export function newSpanId(): string {
  * no upstream emitting them, so accepting a shape we have never seen is more
  * likely to import garbage than to preserve a real trace.
  */
-export function parseTraceparent(header: string | null | undefined): SpanContext | null {
-  if (!header) return null;
-  const match = TRACEPARENT_RE.exec(header.trim().toLowerCase());
-  if (!match) return null;
+export function parseTraceparent(
+  header:
+    | string
+    | null
+    | undefined,
+): SpanContext | null {
+  if (
+    !header
+  )
+    return null;
+  const match =
+    TRACEPARENT_RE.exec(
+      header
+        .trim()
+        .toLowerCase(),
+    );
+  if (
+    !match
+  )
+    return null;
 
-  const [, version, traceId, spanId, flags] = match;
-  if (version !== VERSION) return null;
-  if (traceId === INVALID_TRACE_ID || spanId === INVALID_SPAN_ID) return null;
+  const [
+    ,
+    version,
+    traceId,
+    spanId,
+    flags,
+  ] =
+    match;
+  if (
+    version !==
+    VERSION
+  )
+    return null;
+  if (
+    traceId ===
+      INVALID_TRACE_ID ||
+    spanId ===
+      INVALID_SPAN_ID
+  )
+    return null;
 
-  return { traceId, spanId, flags: parseInt(flags, 16), remote: true };
+  return {
+    traceId,
+    spanId,
+    flags:
+      parseInt(
+        flags,
+        16,
+      ),
+    remote: true,
+  };
 }
 
 /** Serialise a span context as a `traceparent` header value. */
-export function formatTraceparent(span: SpanContext): string {
-  const flags = (span.flags & 0xff).toString(16).padStart(2, '0');
+export function formatTraceparent(
+  span: SpanContext,
+): string {
+  const flags =
+    (
+      span.flags &
+      0xff
+    )
+      .toString(
+        16,
+      )
+      .padStart(
+        2,
+        '0',
+      );
   return `${VERSION}-${span.traceId}-${span.spanId}-${flags}`;
 }
 
@@ -134,16 +235,31 @@ export function formatTraceparent(span: SpanContext): string {
  * which is what continues an inbound request's trace. Without one it is a fresh
  * sampled root.
  */
-export function startSpan(parent?: SpanContext | null): SpanContext {
-  if (parent) {
+export function startSpan(
+  parent?: SpanContext | null,
+): SpanContext {
+  if (
+    parent
+  ) {
     return {
-      traceId: parent.traceId,
-      spanId: newSpanId(),
-      flags: parent.flags,
+      traceId:
+        parent.traceId,
+      spanId:
+        newSpanId(),
+      flags:
+        parent.flags,
       remote: false,
     };
   }
-  return { traceId: newTraceId(), spanId: newSpanId(), flags: FLAG_SAMPLED, remote: false };
+  return {
+    traceId:
+      newTraceId(),
+    spanId:
+      newSpanId(),
+    flags:
+      FLAG_SAMPLED,
+    remote: false,
+  };
 }
 
 /**
@@ -152,8 +268,17 @@ export function startSpan(parent?: SpanContext | null): SpanContext {
  * The single entry point a transport (HTTP handler, socket middleware, job
  * consumer) should call with whatever `traceparent` it received.
  */
-export function spanFromHeader(header: string | null | undefined): SpanContext {
-  return startSpan(parseTraceparent(header));
+export function spanFromHeader(
+  header:
+    | string
+    | null
+    | undefined,
+): SpanContext {
+  return startSpan(
+    parseTraceparent(
+      header,
+    ),
+  );
 }
 
 /**
@@ -169,14 +294,25 @@ export interface TraceScope {
   /** The ids for this unit of work. */
   span: SpanContext;
   /** Phase name → accumulated milliseconds. Written via `lib/otel/timing.ts`. */
-  timings: Map<string, number>;
+  timings: Map<
+    string,
+    number
+  >;
   /** `performance.now()` when the scope opened — the origin for the total. */
   startedAt: number;
 }
 
 /** A fresh scope around `span`, with no phases recorded yet. */
-export function newScope(span: SpanContext): TraceScope {
-  return { span, timings: new Map(), startedAt: performance.now() };
+export function newScope(
+  span: SpanContext,
+): TraceScope {
+  return {
+    span,
+    timings:
+      new Map(),
+    startedAt:
+      performance.now(),
+  };
 }
 
 /**
@@ -192,9 +328,20 @@ export function newScope(span: SpanContext): TraceScope {
  * nowhere else (dev and tests load one copy). Pinning the instance on
  * `globalThis` under a registered symbol makes every copy share it.
  */
-const STORAGE_KEY = Symbol.for('rmh.otel.traceScopeStorage');
-const globalStore = globalThis as unknown as Record<symbol, AsyncLocalStorage<TraceScope>>;
-const storage = (globalStore[STORAGE_KEY] ??= new AsyncLocalStorage<TraceScope>());
+const STORAGE_KEY =
+  Symbol.for(
+    'rmh.otel.traceScopeStorage',
+  );
+const globalStore =
+  globalThis as unknown as Record<
+    symbol,
+    AsyncLocalStorage<TraceScope>
+  >;
+const storage =
+  (globalStore[
+    STORAGE_KEY
+  ] ??=
+    new AsyncLocalStorage<TraceScope>());
 
 /**
  * Run `fn` inside a span.
@@ -203,12 +350,41 @@ const storage = (globalStore[STORAGE_KEY] ??= new AsyncLocalStorage<TraceScope>(
  * workers want (`withTrace(() => runTick())`). Called with a span, it adopts
  * that one, which is how a request handler continues an inbound trace.
  */
-export function withTrace<T>(fn: () => T): T;
-export function withTrace<T>(span: SpanContext, fn: () => T): T;
-export function withTrace<T>(spanOrFn: SpanContext | (() => T), maybeFn?: () => T): T {
-  const span = typeof spanOrFn === 'function' ? startSpan() : spanOrFn;
-  const fn = typeof spanOrFn === 'function' ? spanOrFn : maybeFn!;
-  return storage.run(newScope(span), fn);
+export function withTrace<
+  T,
+>(
+  fn: () => T,
+): T;
+export function withTrace<
+  T,
+>(
+  span: SpanContext,
+  fn: () => T,
+): T;
+export function withTrace<
+  T,
+>(
+  spanOrFn:
+    | SpanContext
+    | (() => T),
+  maybeFn?: () => T,
+): T {
+  const span =
+    typeof spanOrFn ===
+    'function'
+      ? startSpan()
+      : spanOrFn;
+  const fn =
+    typeof spanOrFn ===
+    'function'
+      ? spanOrFn
+      : maybeFn!;
+  return storage.run(
+    newScope(
+      span,
+    ),
+    fn,
+  );
 }
 
 /**
@@ -230,25 +406,41 @@ export function withTrace<T>(spanOrFn: SpanContext | (() => T), maybeFn?: () => 
  * `enterQueryBudget()` in `lib/prisma.server.ts`, and for the same reason: by
  * the time the response hook runs, the async context may no longer be ours.
  */
-export function enterTrace(span: SpanContext): TraceScope {
-  const scope = newScope(span);
-  storage.enterWith(scope);
+export function enterTrace(
+  span: SpanContext,
+): TraceScope {
+  const scope =
+    newScope(
+      span,
+    );
+  storage.enterWith(
+    scope,
+  );
   return scope;
 }
 
 /** The scope for the current async context, if one was entered. */
-export function currentScope(): TraceScope | undefined {
+export function currentScope():
+  | TraceScope
+  | undefined {
   return storage.getStore();
 }
 
 /** The span for the current async context, if one was entered. */
-export function currentSpan(): SpanContext | undefined {
-  return storage.getStore()?.span;
+export function currentSpan():
+  | SpanContext
+  | undefined {
+  return storage.getStore()
+    ?.span;
 }
 
 /** The current trace id, or `undefined` outside any traced scope. */
-export function currentTraceId(): string | undefined {
-  return storage.getStore()?.span.traceId;
+export function currentTraceId():
+  | string
+  | undefined {
+  return storage.getStore()
+    ?.span
+    .traceId;
 }
 
 /**
@@ -257,9 +449,21 @@ export function currentTraceId(): string | undefined {
  * Empty outside a traced scope, so `{ ...traceFields(), event: 'x' }` is safe
  * everywhere and never emits `traceId: undefined` keys into the log stream.
  */
-export function traceFields(): { traceId?: string; spanId?: string } {
-  const span = storage.getStore()?.span;
-  return span ? { traceId: span.traceId, spanId: span.spanId } : {};
+export function traceFields(): {
+  traceId?: string;
+  spanId?: string;
+} {
+  const span =
+    storage.getStore()
+      ?.span;
+  return span
+    ? {
+        traceId:
+          span.traceId,
+        spanId:
+          span.spanId,
+      }
+    : {};
 }
 
 /**
@@ -269,10 +473,25 @@ export function traceFields(): { traceId?: string; spanId?: string } {
  * span has a distinct parent — the same thing an instrumented HTTP client would
  * do. Empty outside a traced scope.
  */
-export function traceHeaders(): Record<string, string> {
-  const span = storage.getStore()?.span;
-  if (!span) return {};
-  return { traceparent: formatTraceparent(startSpan(span)) };
+export function traceHeaders(): Record<
+  string,
+  string
+> {
+  const span =
+    storage.getStore()
+      ?.span;
+  if (
+    !span
+  )
+    return {};
+  return {
+    traceparent:
+      formatTraceparent(
+        startSpan(
+          span,
+        ),
+      ),
+  };
 }
 
 /**
@@ -290,9 +509,12 @@ export function traceHeaders(): Record<string, string> {
  * here — because a trace id is a random value we minted, not anything derived
  * from the request.
  */
-export function serverTimingTrace(span: SpanContext): string {
+export function serverTimingTrace(
+  span: SpanContext,
+): string {
   return `trace;desc="${span.traceId}"`;
 }
 
 /** The `Server-Timing` metric name `lib/rum.ts` looks for. */
-export const SERVER_TIMING_TRACE_NAME = 'trace';
+export const SERVER_TIMING_TRACE_NAME =
+  'trace';

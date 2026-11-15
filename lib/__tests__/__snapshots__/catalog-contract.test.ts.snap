@@ -355,7 +355,7 @@ exports[`catalog contract > apps: ids, order and every card field 1`] = `
     "logoPath": "/images/games/logos/rmhos.webp",
     "longDescription": "rmhOS boots a real Linux desktop inside your browser tab with an x86 emulator. It starts from a saved snapshot, so the desktop is ready in seconds, and it is signed in as your own account.",
     "order": 130,
-    "status": "Beta",
+    "status": "Coming soon",
     "tags": [
       "linux",
       "desktop",

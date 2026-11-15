@@ -24,7 +24,7 @@ Generated from `lib/catalog`, the single source of truth every card on the site 
 | **RMHCalculator** | [`/rmhcalculator`](https://rmhstudios.com/rmhcalculator) | Beta | required | `Calculator` `Graphing` `AI` `DeepSeek` `Beta` |
 | **RMHHomes** | [`/homes`](https://rmhstudios.com/homes) | Beta | required | `Housing` `Search` `Maps` `Beta` |
 | **Dunesday** | [`/dunesday`](https://rmhstudios.com/dunesday) | New | — | `Planner` `Movies` `AI` |
-| **rmhOS** | [`/rmhos`](https://rmhstudios.com/rmhos) | Beta | required | `linux` `desktop` `terminal` |
+| **rmhOS** | [`/rmhos`](https://rmhstudios.com/rmhos) | Coming soon | required | `linux` `desktop` `terminal` |
 
 ## Unlisted
 
@@ -113,7 +113,7 @@ Every MCU film and series plus Dune, scheduled night by night before 18 Dec 2026
 
 rmhOS boots a real Linux desktop inside your browser tab with an x86 emulator. It starts from a saved snapshot, so the desktop is ready in seconds, and it is signed in as your own account.
 
-**Route:** `/rmhos` · **Catalog id:** `rmhos` · **Status:** Beta · **Sign-in:** required
+**Route:** `/rmhos` · **Catalog id:** `rmhos` · **Status:** Coming soon · **Sign-in:** required
 
 ### RMHdle
 

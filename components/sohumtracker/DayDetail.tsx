@@ -10,10 +10,16 @@
  */
 
 import { Link } from '@tanstack/react-router';
-import { Check, Link2 } from 'lucide-react';
+import {
+  Check,
+  Link2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatCount, formatDuration } from '@/lib/sohumtracker/config';
+import {
+  formatCount,
+  formatDuration,
+} from '@/lib/sohumtracker/config';
 import { formatDayLong } from '@/lib/sohumtracker/dates';
 import type { WatchDayDTO } from '@/lib/sohumtracker/types';
 import { SummaryCard } from './SummaryCard';
@@ -24,201 +30,557 @@ interface DayDetailProps {
   showPermalink?: boolean;
 }
 
-export function DayDetail({ day, showPermalink = true }: DayDetailProps) {
-  const { t } = useTranslation('r-sohumtracker');
-  const [copied, setCopied] = useState(false);
+export function DayDetail({
+  day,
+  showPermalink = true,
+}: DayDetailProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'r-sohumtracker',
+    );
+  const [
+    copied,
+    setCopied,
+  ] =
+    useState(
+      false,
+    );
 
-  const quiet = day.voiceSec === 0 && day.messages === 0 && day.gamingSec === 0;
+  const quiet =
+    day.voiceSec ===
+      0 &&
+    day.messages ===
+      0 &&
+    day.gamingSec ===
+      0;
 
-  const copyLink = async () => {
-    const url = `${window.location.origin}/sohumtracker/${day.dateKey}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard access can be refused (insecure context, permissions). The
-      // permalink beside this button still works, so a failed copy needs no
-      // error state — it just does not flip to "copied".
-    }
-  };
+  const copyLink =
+    async () => {
+      const url = `${window.location.origin}/sohumtracker/${day.dateKey}`;
+      try {
+        await navigator.clipboard.writeText(
+          url,
+        );
+        setCopied(
+          true,
+        );
+        window.setTimeout(
+          () =>
+            setCopied(
+              false,
+            ),
+          2000,
+        );
+      } catch {
+        // Clipboard access can be refused (insecure context, permissions). The
+        // permalink beside this button still works, so a failed copy needs no
+        // error state — it just does not flip to "copied".
+      }
+    };
 
   // Literal keys, one `t()` per fact: a data table of {key,label} would read
   // better and would extract nothing (`i18next-parser` is a static scanner).
-  const facts: Array<{ id: string; label: string; value: string } | null> = [
-    {
-      id: 'signed-in',
-      label: t('fact-signed-in', { defaultValue: 'Signed in to Discord' }),
-      value: formatDuration(day.onlineSec + day.idleSec + day.dndSec),
-    },
-    {
-      id: 'online',
-      label: t('fact-online', { defaultValue: 'Online' }),
-      value: formatDuration(day.onlineSec),
-    },
-    {
-      id: 'idle',
-      label: t('fact-idle', { defaultValue: 'Idle' }),
-      value: formatDuration(day.idleSec),
-    },
-    day.dndSec > 0
-      ? {
-          id: 'dnd',
-          label: t('fact-dnd', { defaultValue: 'Do not disturb' }),
-          value: formatDuration(day.dndSec),
-        }
-      : null,
-    {
-      id: 'desktop',
-      label: t('fact-desktop', { defaultValue: 'On desktop' }),
-      value: formatDuration(day.desktopSec),
-    },
-    {
-      id: 'mobile',
-      label: t('fact-mobile', { defaultValue: 'On mobile' }),
-      value: formatDuration(day.mobileSec),
-    },
-    day.webSec > 0
-      ? {
-          id: 'web',
-          label: t('fact-web', { defaultValue: 'On web' }),
-          value: formatDuration(day.webSec),
-        }
-      : null,
-    {
-      id: 'voice',
-      label: t('fact-voice', { defaultValue: 'In voice' }),
-      value: formatDuration(day.voiceSec),
-    },
-    {
-      id: 'sessions',
-      label: t('fact-sessions', { defaultValue: 'Voice sessions' }),
-      value: formatCount(day.voiceSessions),
-    },
-    {
-      id: 'longest',
-      label: t('fact-longest', { defaultValue: 'Longest stretch' }),
-      value: formatDuration(day.longestVoiceSec),
-    },
-    {
-      id: 'alone',
-      label: t('fact-alone', { defaultValue: 'Alone in the channel' }),
-      value: formatDuration(day.aloneSec),
-    },
-    {
-      id: 'muted',
-      label: t('fact-muted', { defaultValue: 'Muted' }),
-      value: formatDuration(day.mutedSec),
-    },
-    {
-      id: 'deafened',
-      label: t('fact-deafened', { defaultValue: 'Deafened' }),
-      value: formatDuration(day.deafenedSec),
-    },
-    day.streamingSec > 0
-      ? {
-          id: 'streaming',
-          label: t('fact-streaming', { defaultValue: 'Streaming' }),
-          value: formatDuration(day.streamingSec),
-        }
-      : null,
-    {
-      id: 'late-voice',
-      label: t('fact-late-voice', { defaultValue: 'In voice after midnight' }),
-      value: formatDuration(day.lateNightSec),
-    },
-    {
-      id: 'messages',
-      label: t('fact-messages', { defaultValue: 'Messages' }),
-      value: formatCount(day.messages),
-    },
-    {
-      id: 'words',
-      label: t('fact-words', { defaultValue: 'Words typed' }),
-      value: formatCount(day.words),
-    },
-    {
-      id: 'questions',
-      label: t('fact-questions', { defaultValue: 'Questions asked' }),
-      value: formatCount(day.questions),
-    },
-    {
-      id: 'late-messages',
-      label: t('fact-late-messages', { defaultValue: 'Messages after midnight' }),
-      value: formatCount(day.lateNightMessages),
-    },
-    {
-      id: 'links',
-      label: t('fact-links', { defaultValue: 'Links shared' }),
-      value: formatCount(day.links),
-    },
-    {
-      // Always shown, including at zero. A missing row and a zero row read the
-      // same way at a glance, and only one of them is a finding.
-      id: 'job-mentions',
-      label: t('fact-job-mentions', { defaultValue: 'Mentioned looking for work' }),
-      value: formatCount(day.jobMentions),
-    },
-    day.typingAbandoned > 0
-      ? {
-          id: 'typing-abandoned',
-          label: t('fact-typing-abandoned', { defaultValue: 'Typed and never sent' }),
-          value: t('fact-typing-abandoned-value', {
-            count: day.typingAbandoned,
-            duration: formatDuration(day.typingAbandonedSec),
-            defaultValue: '{{count}} drafts · {{duration}}',
-          }),
-        }
-      : null,
-    {
-      id: 'reactions-given',
-      label: t('fact-reactions-given', { defaultValue: 'Reactions given' }),
-      value: formatCount(day.reactionsGiven),
-    },
-    {
-      id: 'reactions-received',
-      label: t('fact-reactions-received', { defaultValue: 'Reactions received' }),
-      value: formatCount(day.reactionsReceived),
-    },
-    {
-      id: 'gaming',
-      label: t('fact-gaming', { defaultValue: 'In games' }),
-      value: formatDuration(day.gamingSec),
-    },
-    day.topGame
-      ? {
-          id: 'top-game',
-          label: t('fact-top-game', { defaultValue: 'Most-played' }),
-          value: `${day.topGame} · ${formatDuration(day.topGameSec)}`,
-        }
-      : null,
-    day.topChannel
-      ? {
-          id: 'top-channel',
-          label: t('fact-top-channel', { defaultValue: 'Busiest channel' }),
-          value: `#${day.topChannel}`,
-        }
-      : null,
-  ];
+  const facts: Array<{
+    id: string;
+    label: string;
+    value: string;
+  } | null> =
+    [
+      {
+        id: 'signed-in',
+        label:
+          t(
+            'fact-signed-in',
+            {
+              defaultValue:
+                'Signed in to Discord',
+            },
+          ),
+        value:
+          formatDuration(
+            day.onlineSec +
+              day.idleSec +
+              day.dndSec,
+          ),
+      },
+      {
+        id: 'online',
+        label:
+          t(
+            'fact-online',
+            {
+              defaultValue:
+                'Online',
+            },
+          ),
+        value:
+          formatDuration(
+            day.onlineSec,
+          ),
+      },
+      {
+        id: 'idle',
+        label:
+          t(
+            'fact-idle',
+            {
+              defaultValue:
+                'Idle',
+            },
+          ),
+        value:
+          formatDuration(
+            day.idleSec,
+          ),
+      },
+      day.dndSec >
+      0
+        ? {
+            id: 'dnd',
+            label:
+              t(
+                'fact-dnd',
+                {
+                  defaultValue:
+                    'Do not disturb',
+                },
+              ),
+            value:
+              formatDuration(
+                day.dndSec,
+              ),
+          }
+        : null,
+      {
+        id: 'desktop',
+        label:
+          t(
+            'fact-desktop',
+            {
+              defaultValue:
+                'On desktop',
+            },
+          ),
+        value:
+          formatDuration(
+            day.desktopSec,
+          ),
+      },
+      {
+        id: 'mobile',
+        label:
+          t(
+            'fact-mobile',
+            {
+              defaultValue:
+                'On mobile',
+            },
+          ),
+        value:
+          formatDuration(
+            day.mobileSec,
+          ),
+      },
+      day.webSec >
+      0
+        ? {
+            id: 'web',
+            label:
+              t(
+                'fact-web',
+                {
+                  defaultValue:
+                    'On web',
+                },
+              ),
+            value:
+              formatDuration(
+                day.webSec,
+              ),
+          }
+        : null,
+      {
+        id: 'voice',
+        label:
+          t(
+            'fact-voice',
+            {
+              defaultValue:
+                'In voice',
+            },
+          ),
+        value:
+          formatDuration(
+            day.voiceSec,
+          ),
+      },
+      {
+        id: 'sessions',
+        label:
+          t(
+            'fact-sessions',
+            {
+              defaultValue:
+                'Voice sessions',
+            },
+          ),
+        value:
+          formatCount(
+            day.voiceSessions,
+          ),
+      },
+      {
+        id: 'longest',
+        label:
+          t(
+            'fact-longest',
+            {
+              defaultValue:
+                'Longest stretch',
+            },
+          ),
+        value:
+          formatDuration(
+            day.longestVoiceSec,
+          ),
+      },
+      {
+        id: 'alone',
+        label:
+          t(
+            'fact-alone',
+            {
+              defaultValue:
+                'Alone in the channel',
+            },
+          ),
+        value:
+          formatDuration(
+            day.aloneSec,
+          ),
+      },
+      {
+        id: 'muted',
+        label:
+          t(
+            'fact-muted',
+            {
+              defaultValue:
+                'Muted',
+            },
+          ),
+        value:
+          formatDuration(
+            day.mutedSec,
+          ),
+      },
+      {
+        id: 'deafened',
+        label:
+          t(
+            'fact-deafened',
+            {
+              defaultValue:
+                'Deafened',
+            },
+          ),
+        value:
+          formatDuration(
+            day.deafenedSec,
+          ),
+      },
+      day.streamingSec >
+      0
+        ? {
+            id: 'streaming',
+            label:
+              t(
+                'fact-streaming',
+                {
+                  defaultValue:
+                    'Streaming',
+                },
+              ),
+            value:
+              formatDuration(
+                day.streamingSec,
+              ),
+          }
+        : null,
+      {
+        id: 'late-voice',
+        label:
+          t(
+            'fact-late-voice',
+            {
+              defaultValue:
+                'In voice after midnight',
+            },
+          ),
+        value:
+          formatDuration(
+            day.lateNightSec,
+          ),
+      },
+      {
+        id: 'messages',
+        label:
+          t(
+            'fact-messages',
+            {
+              defaultValue:
+                'Messages',
+            },
+          ),
+        value:
+          formatCount(
+            day.messages,
+          ),
+      },
+      {
+        id: 'words',
+        label:
+          t(
+            'fact-words',
+            {
+              defaultValue:
+                'Words typed',
+            },
+          ),
+        value:
+          formatCount(
+            day.words,
+          ),
+      },
+      {
+        id: 'questions',
+        label:
+          t(
+            'fact-questions',
+            {
+              defaultValue:
+                'Questions asked',
+            },
+          ),
+        value:
+          formatCount(
+            day.questions,
+          ),
+      },
+      {
+        id: 'late-messages',
+        label:
+          t(
+            'fact-late-messages',
+            {
+              defaultValue:
+                'Messages after midnight',
+            },
+          ),
+        value:
+          formatCount(
+            day.lateNightMessages,
+          ),
+      },
+      {
+        id: 'links',
+        label:
+          t(
+            'fact-links',
+            {
+              defaultValue:
+                'Links shared',
+            },
+          ),
+        value:
+          formatCount(
+            day.links,
+          ),
+      },
+      {
+        // Always shown, including at zero. A missing row and a zero row read the
+        // same way at a glance, and only one of them is a finding.
+        id: 'job-mentions',
+        label:
+          t(
+            'fact-job-mentions',
+            {
+              defaultValue:
+                'Mentioned looking for work',
+            },
+          ),
+        value:
+          formatCount(
+            day.jobMentions,
+          ),
+      },
+      day.typingAbandoned >
+      0
+        ? {
+            id: 'typing-abandoned',
+            label:
+              t(
+                'fact-typing-abandoned',
+                {
+                  defaultValue:
+                    'Typed and never sent',
+                },
+              ),
+            value:
+              t(
+                'fact-typing-abandoned-value',
+                {
+                  count:
+                    day.typingAbandoned,
+                  duration:
+                    formatDuration(
+                      day.typingAbandonedSec,
+                    ),
+                  defaultValue:
+                    '{{count}} drafts · {{duration}}',
+                },
+              ),
+          }
+        : null,
+      {
+        id: 'reactions-given',
+        label:
+          t(
+            'fact-reactions-given',
+            {
+              defaultValue:
+                'Reactions given',
+            },
+          ),
+        value:
+          formatCount(
+            day.reactionsGiven,
+          ),
+      },
+      {
+        id: 'reactions-received',
+        label:
+          t(
+            'fact-reactions-received',
+            {
+              defaultValue:
+                'Reactions received',
+            },
+          ),
+        value:
+          formatCount(
+            day.reactionsReceived,
+          ),
+      },
+      {
+        id: 'gaming',
+        label:
+          t(
+            'fact-gaming',
+            {
+              defaultValue:
+                'In games',
+            },
+          ),
+        value:
+          formatDuration(
+            day.gamingSec,
+          ),
+      },
+      day.topGame
+        ? {
+            id: 'top-game',
+            label:
+              t(
+                'fact-top-game',
+                {
+                  defaultValue:
+                    'Most-played',
+                },
+              ),
+            value: `${day.topGame} · ${formatDuration(day.topGameSec)}`,
+          }
+        : null,
+      day.topChannel
+        ? {
+            id: 'top-channel',
+            label:
+              t(
+                'fact-top-channel',
+                {
+                  defaultValue:
+                    'Busiest channel',
+                },
+              ),
+            value: `#${day.topChannel}`,
+          }
+        : null,
+    ];
 
   return (
     <div className="stk-detail">
       <div className="stk-detail__head">
-        <h3 className="stk-detail__title">{formatDayLong(day.dateKey)}</h3>
+        <h3 className="stk-detail__title">
+          {formatDayLong(
+            day.dateKey,
+          )}
+        </h3>
         {showPermalink ? (
           <>
-            <button type="button" className="stk-btn stk-btn--ghost" onClick={copyLink}>
-              {copied ? <Check aria-hidden size={15} /> : <Link2 aria-hidden size={15} />}
+            <button
+              type="button"
+              className="stk-btn stk-btn--ghost"
+              onClick={
+                copyLink
+              }
+            >
+              {copied ? (
+                <Check
+                  aria-hidden
+                  size={
+                    15
+                  }
+                />
+              ) : (
+                <Link2
+                  aria-hidden
+                  size={
+                    15
+                  }
+                />
+              )}
               {copied
-                ? t('share-copied', { defaultValue: 'Copied' })
-                : t('share-copy', { defaultValue: 'Copy link' })}
+                ? t(
+                    'share-copied',
+                    {
+                      defaultValue:
+                        'Copied',
+                    },
+                  )
+                : t(
+                    'share-copy',
+                    {
+                      defaultValue:
+                        'Copy link',
+                    },
+                  )}
             </button>
             <Link
               to="/sohumtracker/$date"
-              params={{ date: day.dateKey }}
+              params={{
+                date: day.dateKey,
+              }}
               className="stk-btn stk-btn--ghost"
             >
-              {t('share-open', { defaultValue: 'Open this day' })}
+              {t(
+                'share-open',
+                {
+                  defaultValue:
+                    'Open this day',
+                },
+              )}
             </Link>
           </>
         ) : null}
@@ -227,33 +589,78 @@ export function DayDetail({ day, showPermalink = true }: DayDetailProps) {
       {quiet ? (
         <p className="stk-empty">
           <span className="stk-empty__title">
-            {t('day-quiet-title', { defaultValue: 'Nothing recorded' })}
+            {t(
+              'day-quiet-title',
+              {
+                defaultValue:
+                  'Nothing recorded',
+              },
+            )}
           </span>
           <span className="stk-empty__body">
-            {t('day-quiet-body', {
-              defaultValue:
-                'No voice, no messages, no games. Either he was doing something else or he was not online at all — this page cannot tell the two apart, and neither can his résumé.',
-            })}
+            {t(
+              'day-quiet-body',
+              {
+                defaultValue:
+                  'No voice, no messages, no games. Either he was doing something else or he was not online at all — this page cannot tell the two apart, and neither can his résumé.',
+              },
+            )}
           </span>
         </p>
       ) : (
         <>
           <SummaryCard
-            summary={day.summary}
-            emptyTitle={t('day-summary-pending-title', { defaultValue: 'No write-up yet' })}
-            emptyBody={t('day-summary-pending-body', {
-              defaultValue:
-                'The day is summarised once its figures settle. The measurements below are already final.',
-            })}
+            summary={
+              day.summary
+            }
+            emptyTitle={t(
+              'day-summary-pending-title',
+              {
+                defaultValue:
+                  'No write-up yet',
+              },
+            )}
+            emptyBody={t(
+              'day-summary-pending-body',
+              {
+                defaultValue:
+                  'The day is summarised once its figures settle. The measurements below are already final.',
+              },
+            )}
           />
 
           <div className="stk-facts">
-            {facts.filter((fact) => fact !== null).map((fact) => (
-              <div key={fact.id} className="stk-fact">
-                <span className="stk-fact__label">{fact.label}</span>
-                <span className="stk-fact__value">{fact.value}</span>
-              </div>
-            ))}
+            {facts
+              .filter(
+                (
+                  fact,
+                ) =>
+                  fact !==
+                  null,
+              )
+              .map(
+                (
+                  fact,
+                ) => (
+                  <div
+                    key={
+                      fact.id
+                    }
+                    className="stk-fact"
+                  >
+                    <span className="stk-fact__label">
+                      {
+                        fact.label
+                      }
+                    </span>
+                    <span className="stk-fact__value">
+                      {
+                        fact.value
+                      }
+                    </span>
+                  </div>
+                ),
+              )}
           </div>
         </>
       )}

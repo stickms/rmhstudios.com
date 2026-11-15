@@ -53,7 +53,8 @@ export const ARTIST_KEY_MAX = 200;
  * merely leaves a collaboration with its own page, which is what most services
  * do anyway.
  */
-const FEATURING = /\s[([]?\s*(?:feat\.?|ft\.?|featuring|with|w\/|vs\.?|x)\s+.*$/i;
+const FEATURING =
+  /\s[([]?\s*(?:feat\.?|ft\.?|featuring|with|w\/|vs\.?|x)\s+.*$/i;
 
 /**
  * Latin-1 accented letters and the ASCII they fold to.
@@ -71,8 +72,10 @@ const FEATURING = /\s[([]?\s*(?:feat\.?|ft\.?|featuring|with|w\/|vs\.?|x)\s+.*$/
  * written. That is a stale grouping for a handful of rows, self-healing on the
  * next edit, and the alternative was requiring the `unaccent` extension.
  */
-export const LATIN1_FOLD_FROM = 'àáâãäåçèéêëìíîïñòóôõöùúûüýÿÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝ';
-export const LATIN1_FOLD_TO = 'aaaaaaceeeeiiiinooooouuuuyyAAAAAACEEEEIIIINOOOOOUUUUY';
+export const LATIN1_FOLD_FROM =
+  'àáâãäåçèéêëìíîïñòóôõöùúûüýÿÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝ';
+export const LATIN1_FOLD_TO =
+  'aaaaaaceeeeiiiinooooouuuuyyAAAAAACEEEEIIIINOOOOOUUUUY';
 
 /**
  * The grouping key for a display artist string, or `null` when there is nothing
@@ -90,22 +93,50 @@ export const LATIN1_FOLD_TO = 'aaaaaaceeeeiiiinooooouuuuyyAAAAAACEEEEIIIINOOOOOU
  * artistKeyOf('  ***  ')            // null
  * ```
  */
-export function artistKeyOf(artist: string | null | undefined): string | null {
-  if (!artist) return null;
+export function artistKeyOf(
+  artist:
+    | string
+    | null
+    | undefined,
+):
+  | string
+  | null {
+  if (
+    !artist
+  )
+    return null;
 
-  const folded = artist
-    .normalize('NFKD')
-    // Combining marks left behind by the decomposition above.
-    .replace(/[̀-ͯ]/g, '')
-    .replace(FEATURING, '')
-    .toLowerCase()
-    // Everything that is not a letter or a digit is a separator, and separators
-    // vanish rather than collapsing to a space: "Mother 3", "Mother-3" and
-    // "Mother3" are one artist and a retained space would keep two of them apart.
-    .replace(/[^\p{L}\p{N}]+/gu, '');
+  const folded =
+    artist
+      .normalize(
+        'NFKD',
+      )
+      // Combining marks left behind by the decomposition above.
+      .replace(
+        /[̀-ͯ]/g,
+        '',
+      )
+      .replace(
+        FEATURING,
+        '',
+      )
+      .toLowerCase()
+      // Everything that is not a letter or a digit is a separator, and separators
+      // vanish rather than collapsing to a space: "Mother 3", "Mother-3" and
+      // "Mother3" are one artist and a retained space would keep two of them apart.
+      .replace(
+        /[^\p{L}\p{N}]+/gu,
+        '',
+      );
 
-  if (!folded) return null;
-  return folded.slice(0, ARTIST_KEY_MAX);
+  if (
+    !folded
+  )
+    return null;
+  return folded.slice(
+    0,
+    ARTIST_KEY_MAX,
+  );
 }
 
 /**
@@ -115,7 +146,9 @@ export function artistKeyOf(artist: string | null | undefined): string | null {
  * legitimately contain characters that are not URL-safe — CJK, Cyrillic — and
  * three call sites remembering to encode is three chances for two of them to.
  */
-export function artistPath(key: string): string {
+export function artistPath(
+  key: string,
+): string {
   return `/slice-it/artist/${encodeURIComponent(key)}`;
 }
 
@@ -128,19 +161,49 @@ export function artistPath(key: string): string {
  * the alternative tiebreak, "whichever row the database happened to return
  * first", makes the artist page's own title flicker between deploys.
  */
-export function artistDisplayName(names: readonly string[]): string {
-  const counts = new Map<string, number>();
+export function artistDisplayName(
+  names: readonly string[],
+): string {
+  const counts =
+    new Map<
+      string,
+      number
+    >();
   for (const raw of names) {
-    const name = raw.trim();
-    if (!name) continue;
-    counts.set(name, (counts.get(name) ?? 0) + 1);
+    const name =
+      raw.trim();
+    if (
+      !name
+    )
+      continue;
+    counts.set(
+      name,
+      (counts.get(
+        name,
+      ) ??
+        0) +
+        1,
+    );
   }
-  let best = '';
+  let best =
+    '';
   let bestCount = 0;
-  for (const [name, count] of counts) {
-    if (count > bestCount || (count === bestCount && name.length > best.length)) {
-      best = name;
-      bestCount = count;
+  for (const [
+    name,
+    count,
+  ] of counts) {
+    if (
+      count >
+        bestCount ||
+      (count ===
+        bestCount &&
+        name.length >
+          best.length)
+    ) {
+      best =
+        name;
+      bestCount =
+        count;
     }
   }
   return best;

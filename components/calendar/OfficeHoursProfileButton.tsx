@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { CalendarClock } from 'lucide-react';
@@ -12,35 +15,98 @@ import { useArrival } from '@/components/ui/arrive';
  * published windows. The check is one small CDN-cached GET made after idle, so
  * a profile view pays nothing at first paint.
  */
-export function OfficeHoursProfileButton({ userId }: { userId: string }) {
-  const { t } = useTranslation('f-calendar');
-  const idle = useIdleReady();
-  const [available, setAvailable] = useState(false);
-  const arrival = useArrival(available);
+export function OfficeHoursProfileButton({
+  userId,
+}: {
+  userId: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-calendar',
+    );
+  const idle =
+    useIdleReady();
+  const [
+    available,
+    setAvailable,
+  ] =
+    useState(
+      false,
+    );
+  const arrival =
+    useArrival(
+      available,
+    );
 
   useEffect(() => {
-    if (!idle) return;
+    if (
+      !idle
+    )
+      return;
     let live = true;
-    void api<{ available: boolean }>(
+    void api<{
+      available: boolean;
+    }>(
       `/api/office-hours/host/${encodeURIComponent(userId)}/summary`,
-    ).then((r) => {
-      if (live) setAvailable(!!r.data?.available);
-    });
+    ).then(
+      (
+        r,
+      ) => {
+        if (
+          live
+        )
+          setAvailable(
+            !!r
+              .data
+              ?.available,
+          );
+      },
+    );
     return () => {
       live = false;
     };
-  }, [idle, userId]);
+  }, [
+    idle,
+    userId,
+  ]);
 
-  if (!available) return null;
+  if (
+    !available
+  )
+    return null;
   return (
-    <Link to="/office-hours/$userId" params={{ userId }} className={arrival}>
+    <Link
+      to="/office-hours/$userId"
+      params={{
+        userId,
+      }}
+      className={
+        arrival
+      }
+    >
       <Button variant="default">
-        <CalendarClock aria-hidden />
+        <CalendarClock
+          aria-hidden
+        />
         <span className="hidden xs:inline">
-          {t('book-office-hours', { defaultValue: 'Book office hours' })}
+          {t(
+            'book-office-hours',
+            {
+              defaultValue:
+                'Book office hours',
+            },
+          )}
         </span>
         <span className="xs:hidden sr-only">
-          {t('book-office-hours', { defaultValue: 'Book office hours' })}
+          {t(
+            'book-office-hours',
+            {
+              defaultValue:
+                'Book office hours',
+            },
+          )}
         </span>
       </Button>
     </Link>

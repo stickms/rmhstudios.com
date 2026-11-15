@@ -22,12 +22,21 @@
  * leaderboard never reads any of this: it ranks the server's rows.
  */
 
-import { readJson, removeKey, writeJson } from '@/lib/core/persist';
-import { isCard, type Card } from './cards';
+import {
+  readJson,
+  removeKey,
+  writeJson,
+} from '@/lib/core/persist';
+import {
+  isCard,
+  type Card,
+} from './cards';
 import { dealForDate } from './game';
 
-const RUN_KEY = 'rmh-globeset-run';
-const STATS_KEY = 'rmh-globeset-stats';
+const RUN_KEY =
+  'rmh-globeset-run';
+const STATS_KEY =
+  'rmh-globeset-stats';
 const VERSION = 1;
 /** Dates kept for the streak. A year of history is far more than it needs. */
 const MAX_PLAYED_DATES = 400;
@@ -37,7 +46,11 @@ export interface RunSnapshot {
   dateKey: string;
   board: Card[];
   drawIndex: number;
-  found: { cards: Card[]; atMs: number; bySolver: boolean }[];
+  found: {
+    cards: Card[];
+    atMs: number;
+    bySolver: boolean;
+  }[];
   misses: number;
   hints: number;
   solverUsed: boolean;
@@ -48,18 +61,23 @@ export interface RunSnapshot {
 export interface GlobeSetStats {
   v: number;
   runs: number;
-  bestSeconds: number | null;
+  bestSeconds:
+    | number
+    | null;
   totalGlobeSets: number;
   playedDates: string[];
 }
 
-const EMPTY_STATS: GlobeSetStats = {
-  v: VERSION,
-  runs: 0,
-  bestSeconds: null,
-  totalGlobeSets: 0,
-  playedDates: [],
-};
+const EMPTY_STATS: GlobeSetStats =
+  {
+    v: VERSION,
+    runs: 0,
+    bestSeconds:
+      null,
+    totalGlobeSets: 0,
+    playedDates:
+      [],
+  };
 
 /* ─── The in-progress run ────────────────────────────────────────────────── */
 
@@ -71,70 +89,230 @@ const EMPTY_STATS: GlobeSetStats = {
  * That single check rejects a truncated write, a snapshot from a different
  * day's deck, and a hand-edited board that "already found" ten GlobeSets.
  */
-export function snapshotMatchesDeck(snapshot: RunSnapshot, deck: readonly Card[]): boolean {
-  if (!Number.isInteger(snapshot.drawIndex)) return false;
-  if (snapshot.drawIndex < 0 || snapshot.drawIndex > deck.length) return false;
-  if (!Array.isArray(snapshot.board) || !snapshot.board.every(isCard)) return false;
-  if (!Array.isArray(snapshot.found)) return false;
+export function snapshotMatchesDeck(
+  snapshot: RunSnapshot,
+  deck: readonly Card[],
+): boolean {
+  if (
+    !Number.isInteger(
+      snapshot.drawIndex,
+    )
+  )
+    return false;
+  if (
+    snapshot.drawIndex <
+      0 ||
+    snapshot.drawIndex >
+      deck.length
+  )
+    return false;
+  if (
+    !Array.isArray(
+      snapshot.board,
+    ) ||
+    !snapshot.board.every(
+      isCard,
+    )
+  )
+    return false;
+  if (
+    !Array.isArray(
+      snapshot.found,
+    )
+  )
+    return false;
 
-  const dealt = new Set(deck.slice(0, snapshot.drawIndex));
-  const accounted = new Set<Card>();
+  const dealt =
+    new Set(
+      deck.slice(
+        0,
+        snapshot.drawIndex,
+      ),
+    );
+  const accounted =
+    new Set<Card>();
   for (const card of snapshot.board) {
-    if (accounted.has(card)) return false;
-    accounted.add(card);
+    if (
+      accounted.has(
+        card,
+      )
+    )
+      return false;
+    accounted.add(
+      card,
+    );
   }
   for (const entry of snapshot.found) {
-    if (!Array.isArray(entry?.cards) || !entry.cards.every(isCard)) return false;
+    if (
+      !Array.isArray(
+        entry?.cards,
+      ) ||
+      !entry.cards.every(
+        isCard,
+      )
+    )
+      return false;
     for (const card of entry.cards) {
-      if (accounted.has(card)) return false;
-      accounted.add(card);
+      if (
+        accounted.has(
+          card,
+        )
+      )
+        return false;
+      accounted.add(
+        card,
+      );
     }
   }
-  if (accounted.size !== dealt.size) return false;
-  for (const card of accounted) if (!dealt.has(card)) return false;
+  if (
+    accounted.size !==
+    dealt.size
+  )
+    return false;
+  for (const card of accounted)
+    if (
+      !dealt.has(
+        card,
+      )
+    )
+      return false;
   return true;
 }
 
 /** The saved run for `dateKey`, or `null` when there is nothing usable. */
-export function loadRun(dateKey: string): RunSnapshot | null {
-  const saved = readJson<RunSnapshot | null>(RUN_KEY, null);
-  if (!saved || saved.v !== VERSION || saved.dateKey !== dateKey) return null;
-  if (typeof saved.elapsedMs !== 'number' || !Number.isFinite(saved.elapsedMs)) return null;
-  if (saved.elapsedMs < 0) return null;
-  if (!snapshotMatchesDeck(saved, dealForDate(dateKey))) {
-    removeKey(RUN_KEY);
+export function loadRun(
+  dateKey: string,
+): RunSnapshot | null {
+  const saved =
+    readJson<RunSnapshot | null>(
+      RUN_KEY,
+      null,
+    );
+  if (
+    !saved ||
+    saved.v !==
+      VERSION ||
+    saved.dateKey !==
+      dateKey
+  )
+    return null;
+  if (
+    typeof saved.elapsedMs !==
+      'number' ||
+    !Number.isFinite(
+      saved.elapsedMs,
+    )
+  )
+    return null;
+  if (
+    saved.elapsedMs <
+    0
+  )
+    return null;
+  if (
+    !snapshotMatchesDeck(
+      saved,
+      dealForDate(
+        dateKey,
+      ),
+    )
+  ) {
+    removeKey(
+      RUN_KEY,
+    );
     return null;
   }
   return saved;
 }
 
-export function saveRun(snapshot: Omit<RunSnapshot, 'v' | 'updatedAt'>): void {
-  writeJson(RUN_KEY, { ...snapshot, v: VERSION, updatedAt: Date.now() });
+export function saveRun(
+  snapshot: Omit<
+    RunSnapshot,
+    | 'v'
+    | 'updatedAt'
+  >,
+): void {
+  writeJson(
+    RUN_KEY,
+    {
+      ...snapshot,
+      v: VERSION,
+      updatedAt:
+        Date.now(),
+    },
+  );
 }
 
 /** Drop the saved run — on completion, or when the player restarts the day. */
 export function clearRun(): void {
-  removeKey(RUN_KEY);
+  removeKey(
+    RUN_KEY,
+  );
 }
 
 /* ─── The player's record ────────────────────────────────────────────────── */
 
 export function loadStats(): GlobeSetStats {
-  const saved = readJson<GlobeSetStats | null>(STATS_KEY, null);
-  if (!saved || saved.v !== VERSION) return { ...EMPTY_STATS };
+  const saved =
+    readJson<GlobeSetStats | null>(
+      STATS_KEY,
+      null,
+    );
+  if (
+    !saved ||
+    saved.v !==
+      VERSION
+  )
+    return {
+      ...EMPTY_STATS,
+    };
   return {
     v: VERSION,
-    runs: Number.isFinite(saved.runs) ? Math.max(0, Math.floor(saved.runs)) : 0,
+    runs: Number.isFinite(
+      saved.runs,
+    )
+      ? Math.max(
+          0,
+          Math.floor(
+            saved.runs,
+          ),
+        )
+      : 0,
     bestSeconds:
-      typeof saved.bestSeconds === 'number' && Number.isFinite(saved.bestSeconds)
+      typeof saved.bestSeconds ===
+        'number' &&
+      Number.isFinite(
+        saved.bestSeconds,
+      )
         ? saved.bestSeconds
         : null,
-    totalGlobeSets: Number.isFinite(saved.totalGlobeSets)
-      ? Math.max(0, Math.floor(saved.totalGlobeSets))
-      : 0,
-    playedDates: Array.isArray(saved.playedDates)
-      ? saved.playedDates.filter((d) => typeof d === 'string').slice(-MAX_PLAYED_DATES)
-      : [],
+    totalGlobeSets:
+      Number.isFinite(
+        saved.totalGlobeSets,
+      )
+        ? Math.max(
+            0,
+            Math.floor(
+              saved.totalGlobeSets,
+            ),
+          )
+        : 0,
+    playedDates:
+      Array.isArray(
+        saved.playedDates,
+      )
+        ? saved.playedDates
+            .filter(
+              (
+                d,
+              ) =>
+                typeof d ===
+                'string',
+            )
+            .slice(
+              -MAX_PLAYED_DATES,
+            )
+        : [],
   };
 }
 
@@ -150,24 +328,58 @@ export function recordCompletion(input: {
   globeSets: number;
   solverUsed: boolean;
 }): GlobeSetStats {
-  const stats = loadStats();
-  const dates = new Set(stats.playedDates);
-  const firstTimeToday = !dates.has(input.dateKey);
-  dates.add(input.dateKey);
+  const stats =
+    loadStats();
+  const dates =
+    new Set(
+      stats.playedDates,
+    );
+  const firstTimeToday =
+    !dates.has(
+      input.dateKey,
+    );
+  dates.add(
+    input.dateKey,
+  );
 
-  const next: GlobeSetStats = {
-    v: VERSION,
-    runs: stats.runs + (firstTimeToday ? 1 : 0),
-    bestSeconds:
-      input.solverUsed || input.timeSeconds <= 0
-        ? stats.bestSeconds
-        : stats.bestSeconds == null
-          ? input.timeSeconds
-          : Math.min(stats.bestSeconds, input.timeSeconds),
-    totalGlobeSets: stats.totalGlobeSets + (firstTimeToday ? input.globeSets : 0),
-    playedDates: [...dates].sort().slice(-MAX_PLAYED_DATES),
-  };
-  writeJson(STATS_KEY, next);
+  const next: GlobeSetStats =
+    {
+      v: VERSION,
+      runs:
+        stats.runs +
+        (firstTimeToday
+          ? 1
+          : 0),
+      bestSeconds:
+        input.solverUsed ||
+        input.timeSeconds <=
+          0
+          ? stats.bestSeconds
+          : stats.bestSeconds ==
+              null
+            ? input.timeSeconds
+            : Math.min(
+                stats.bestSeconds,
+                input.timeSeconds,
+              ),
+      totalGlobeSets:
+        stats.totalGlobeSets +
+        (firstTimeToday
+          ? input.globeSets
+          : 0),
+      playedDates:
+        [
+          ...dates,
+        ]
+          .sort()
+          .slice(
+            -MAX_PLAYED_DATES,
+          ),
+    };
+  writeJson(
+    STATS_KEY,
+    next,
+  );
   return next;
 }
 
@@ -177,20 +389,60 @@ export function recordCompletion(input: {
  * Yesterday still counts so the number does not read as broken at 9am before
  * today's run — the same rule the Daily Puzzles hub uses for its streak.
  */
-export function streakFrom(playedDates: readonly string[], todayKey: string): number {
-  const played = new Set(playedDates);
-  const cursor = new Date(`${todayKey}T00:00:00Z`);
-  if (Number.isNaN(cursor.getTime())) return 0;
+export function streakFrom(
+  playedDates: readonly string[],
+  todayKey: string,
+): number {
+  const played =
+    new Set(
+      playedDates,
+    );
+  const cursor =
+    new Date(
+      `${todayKey}T00:00:00Z`,
+    );
+  if (
+    Number.isNaN(
+      cursor.getTime(),
+    )
+  )
+    return 0;
 
-  const key = () => cursor.toISOString().slice(0, 10);
-  if (!played.has(key())) {
-    cursor.setUTCDate(cursor.getUTCDate() - 1);
-    if (!played.has(key())) return 0;
+  const key =
+    () =>
+      cursor
+        .toISOString()
+        .slice(
+          0,
+          10,
+        );
+  if (
+    !played.has(
+      key(),
+    )
+  ) {
+    cursor.setUTCDate(
+      cursor.getUTCDate() -
+        1,
+    );
+    if (
+      !played.has(
+        key(),
+      )
+    )
+      return 0;
   }
   let streak = 0;
-  while (played.has(key())) {
+  while (
+    played.has(
+      key(),
+    )
+  ) {
     streak++;
-    cursor.setUTCDate(cursor.getUTCDate() - 1);
+    cursor.setUTCDate(
+      cursor.getUTCDate() -
+        1,
+    );
   }
   return streak;
 }

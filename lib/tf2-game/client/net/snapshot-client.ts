@@ -69,76 +69,173 @@ export interface SnapshotClientStats {
    * (only possible when the two streams travel separately — the peer-to-peer
    * DataChannels); each is held and retried after the next reliable packet.
    */
-  errors: Record<SnapshotDecodeError | 'reliable' | 'unknown-string', number>;
+  errors: Record<
+    | SnapshotDecodeError
+    | 'reliable'
+    | 'unknown-string',
+    number
+  >;
 }
 
 /** Snapshots held for their string definitions (a few ticks' worth at most). */
 const DEFERRED_MAX = 8;
 
 export class SnapshotClient {
-  readonly strings = new ClientStringTable();
-  private readonly frames: SnapshotFrame[] = [];
-  private readonly records = new WeakMap<EntityState, NetRecord>();
+  readonly strings =
+    new ClientStringTable();
+  private readonly frames: SnapshotFrame[] =
+    [];
+  private readonly records =
+    new WeakMap<
+      EntityState,
+      NetRecord
+    >();
   /** Newest decoded frame. */
-  latest: SnapshotFrame | null = null;
+  latest: SnapshotFrame | null =
+    null;
   /** The newest decoded snapshot's header. */
-  localEntity = -1;
+  localEntity =
+    -1;
   ackCmd = 0;
-  hello: HelloMessage | null = null;
-  readonly roster = new Map<number, RosterEntry>();
-  readonly scores = new Map<number, ScoreRow>();
-  readonly stats: SnapshotClientStats = {
-    snapshots: 0,
-    snapshotBytes: 0,
-    reliablePackets: 0,
-    reliableBytes: 0,
-    stale: 0,
-    errors: { malformed: 0, 'no-baseline': 0, 'unknown-schema': 0, reliable: 0, 'unknown-string': 0 },
-  };
-  private deferred: Uint8Array[] = [];
+  hello: HelloMessage | null =
+    null;
+  readonly roster =
+    new Map<
+      number,
+      RosterEntry
+    >();
+  readonly scores =
+    new Map<
+      number,
+      ScoreRow
+    >();
+  readonly stats: SnapshotClientStats =
+    {
+      snapshots: 0,
+      snapshotBytes: 0,
+      reliablePackets: 0,
+      reliableBytes: 0,
+      stale: 0,
+      errors:
+        {
+          malformed: 0,
+          'no-baseline': 0,
+          'unknown-schema': 0,
+          reliable: 0,
+          'unknown-string': 0,
+        },
+    };
+  private deferred: Uint8Array[] =
+    [];
 
   /** The tick the next input packet acknowledges (0 before the first snapshot). */
   get ackTick(): number {
-    return this.latest ? this.latest.tick : 0;
+    return this
+      .latest
+      ? this
+          .latest
+          .tick
+      : 0;
   }
 
   /** Applies a reliable packet; returns the events it carried (in order). */
   onReliable(
     bytes: Uint8Array,
-  ): { tick: number; events: TimedEvent[]; messages: ReliableMessage[] } | null {
-    const decoded = decodeReliable(bytes, this.strings);
-    if (!decoded) {
-      this.stats.errors.reliable++;
+  ): {
+    tick: number;
+    events: TimedEvent[];
+    messages: ReliableMessage[];
+  } | null {
+    const decoded =
+      decodeReliable(
+        bytes,
+        this
+          .strings,
+      );
+    if (
+      !decoded
+    ) {
+      this
+        .stats
+        .errors
+        .reliable++;
       return null;
     }
-    this.stats.reliablePackets++;
-    this.stats.reliableBytes += bytes.byteLength;
-    const events: TimedEvent[] = [];
+    this
+      .stats
+      .reliablePackets++;
+    this.stats.reliableBytes +=
+      bytes.byteLength;
+    const events: TimedEvent[] =
+      [];
     for (const m of decoded.messages) {
-      switch (m.kind) {
+      switch (
+        m.kind
+      ) {
         case 'event':
-          events.push({ tick: decoded.tick, event: m.event, reliable: true });
+          events.push(
+            {
+              tick: decoded.tick,
+              event:
+                m.event,
+              reliable: true,
+            },
+          );
           break;
         case 'hello':
-          if (this.hello && this.hello.localEntity !== m.localEntity) this.reset();
-          this.hello = m;
-          this.localEntity = m.localEntity;
+          if (
+            this
+              .hello &&
+            this
+              .hello
+              .localEntity !==
+              m.localEntity
+          )
+            this.reset();
+          this.hello =
+            m;
+          this.localEntity =
+            m.localEntity;
           break;
         case 'player':
-          if (m.present) this.roster.set(m.entity, { entity: m.entity, name: m.name, bot: m.bot });
+          if (
+            m.present
+          )
+            this.roster.set(
+              m.entity,
+              {
+                entity:
+                  m.entity,
+                name: m.name,
+                bot: m.bot,
+              },
+            );
           else {
-            this.roster.delete(m.entity);
-            this.scores.delete(m.entity);
+            this.roster.delete(
+              m.entity,
+            );
+            this.scores.delete(
+              m.entity,
+            );
           }
           break;
         case 'scores':
-          for (const r of m.rows) this.scores.set(r.entity, r);
+          for (const r of m.rows)
+            this.scores.set(
+              r.entity,
+              r,
+            );
           break;
         default:
           break;
       }
     }
-    return { tick: decoded.tick, events, messages: decoded.messages };
+    return {
+      tick: decoded.tick,
+      events,
+      messages:
+        decoded.messages,
+    };
   }
 
   /**
@@ -146,48 +243,152 @@ export class SnapshotClient {
    * when it is stale, malformed or its baseline is gone (the server then
    * re-deltas from the frame we keep acking).
    */
-  onSnapshot(bytes: Uint8Array): (DecodedSnapshot & { cosmetic: TimedEvent[] }) | null {
-    const tick = snapshotTick(bytes);
-    if (tick !== null && this.latest && tick <= this.latest.tick) {
-      this.stats.stale++;
+  onSnapshot(
+    bytes: Uint8Array,
+  ):
+    | (DecodedSnapshot & {
+        cosmetic: TimedEvent[];
+      })
+    | null {
+    const tick =
+      snapshotTick(
+        bytes,
+      );
+    if (
+      tick !==
+        null &&
+      this
+        .latest &&
+      tick <=
+        this
+          .latest
+          .tick
+    ) {
+      this
+        .stats
+        .stale++;
       return null;
     }
     let missing = false;
-    const result = decodeSnapshot(
-      bytes,
-      (tick) => this.frame(tick),
-      (id) => {
-        const s = this.strings.get(id);
-        if (s === undefined) missing = true;
-        return s;
-      },
-    );
-    if (typeof result === 'string') {
-      this.stats.errors[result]++;
+    const result =
+      decodeSnapshot(
+        bytes,
+        (
+          tick,
+        ) =>
+          this.frame(
+            tick,
+          ),
+        (
+          id,
+        ) => {
+          const s =
+            this.strings.get(
+              id,
+            );
+          if (
+            s ===
+            undefined
+          )
+            missing = true;
+          return s;
+        },
+      );
+    if (
+      typeof result ===
+      'string'
+    ) {
+      this
+        .stats
+        .errors[
+        result
+      ]++;
       return null;
     }
-    if (this.latest && result.tick <= this.latest.tick) return null;
-    if (missing) {
+    if (
+      this
+        .latest &&
+      result.tick <=
+        this
+          .latest
+          .tick
+    )
+      return null;
+    if (
+      missing
+    ) {
       // Its definitions are still on their way: keep it (it is not acknowledged, so the
       // server keeps sending from the last baseline we did take) and retry it later.
-      this.stats.errors['unknown-string']++;
-      this.deferred.push(bytes.slice());
-      while (this.deferred.length > DEFERRED_MAX) this.deferred.shift();
+      this
+        .stats
+        .errors[
+        'unknown-string'
+      ]++;
+      this.deferred.push(
+        bytes.slice(),
+      );
+      while (
+        this
+          .deferred
+          .length >
+        DEFERRED_MAX
+      )
+        this.deferred.shift();
       return null;
     }
-    this.stats.snapshots++;
-    this.stats.snapshotBytes += bytes.byteLength;
-    this.frames.push(result.frame);
-    while (this.frames.length > SNAPSHOT_HISTORY) this.frames.shift();
+    this
+      .stats
+      .snapshots++;
+    this.stats.snapshotBytes +=
+      bytes.byteLength;
+    this.frames.push(
+      result.frame,
+    );
+    while (
+      this
+        .frames
+        .length >
+      SNAPSHOT_HISTORY
+    )
+      this.frames.shift();
     // Frames older than the baseline the server just used will never be used again.
-    if (result.baseTick > 0) {
-      while (this.frames.length > 1 && this.frames[0].tick < result.baseTick) this.frames.shift();
+    if (
+      result.baseTick >
+      0
+    ) {
+      while (
+        this
+          .frames
+          .length >
+          1 &&
+        this
+          .frames[0]
+          .tick <
+          result.baseTick
+      )
+        this.frames.shift();
     }
-    this.latest = result.frame;
-    this.localEntity = result.localEntity;
-    this.ackCmd = result.ackCmd;
-    const cosmetic = result.events.map((e) => ({ tick: e.tick, event: e.event, reliable: false }));
-    return { ...result, cosmetic };
+    this.latest =
+      result.frame;
+    this.localEntity =
+      result.localEntity;
+    this.ackCmd =
+      result.ackCmd;
+    const cosmetic =
+      result.events.map(
+        (
+          e,
+        ) => ({
+          tick: e.tick,
+          event:
+            e.event,
+          reliable: false,
+        }),
+      );
+    return {
+      ...result,
+      cosmetic,
+    };
   }
 
   /**
@@ -195,69 +396,196 @@ export class SnapshotClient {
    * (call after `onReliable` and feed each to `onSnapshot` again).
    */
   takeDeferred(): Uint8Array[] {
-    const out = this.deferred;
-    this.deferred = [];
+    const out =
+      this
+        .deferred;
+    this.deferred =
+      [];
     return out;
   }
 
   /** A kept frame by tick. */
-  frame(tick: number): SnapshotFrame | null {
-    for (let i = this.frames.length - 1; i >= 0; i--)
-      if (this.frames[i].tick === tick) return this.frames[i];
+  frame(
+    tick: number,
+  ): SnapshotFrame | null {
+    for (
+      let i =
+        this
+          .frames
+          .length -
+        1;
+      i >=
+      0;
+      i--
+    )
+      if (
+        this
+          .frames[
+          i
+        ]
+          .tick ===
+        tick
+      )
+        return this
+          .frames[
+          i
+        ];
     return null;
   }
 
   /** An entity in the newest frame. */
-  entity(key: number): EntityState | null {
-    return this.latest ? frameGet(this.latest, key) : null;
+  entity(
+    key: number,
+  ): EntityState | null {
+    return this
+      .latest
+      ? frameGet(
+          this
+            .latest,
+          key,
+        )
+      : null;
   }
 
   /** A state's fields by name (cached per state; do not mutate). */
-  record(state: EntityState): NetRecord {
-    let r = this.records.get(state);
-    if (!r) {
-      r = stateToRecord(state);
-      this.records.set(state, r);
+  record(
+    state: EntityState,
+  ): NetRecord {
+    let r =
+      this.records.get(
+        state,
+      );
+    if (
+      !r
+    ) {
+      r =
+        stateToRecord(
+          state,
+        );
+      this.records.set(
+        state,
+        r,
+      );
     }
     return r;
   }
 
   rules(): NetRecord | null {
-    const s = this.entity(RULES_KEY);
-    return s ? this.record(s) : null;
+    const s =
+      this.entity(
+        RULES_KEY,
+      );
+    return s
+      ? this.record(
+          s,
+        )
+      : null;
   }
 
   /** The local player's record (owner view). */
   localPlayer(): NetRecord | null {
-    if (this.localEntity < 0) return null;
-    const s = this.entity(this.localEntity);
-    return s ? this.record(s) : null;
+    if (
+      this
+        .localEntity <
+      0
+    )
+      return null;
+    const s =
+      this.entity(
+        this
+          .localEntity,
+      );
+    return s
+      ? this.record(
+          s,
+        )
+      : null;
   }
 
   /** The local player's weapons by slot (owner-only records). */
-  localWeapons(): Array<{ slot: number; record: NetRecord }> {
-    const out: Array<{ slot: number; record: NetRecord }> = [];
-    if (this.localEntity < 0) return out;
-    for (let slot = 0; slot < 8; slot++) {
-      const s = this.entity(weaponKey(this.localEntity, slot));
-      if (s) out.push({ slot, record: this.record(s) });
+  localWeapons(): Array<{
+    slot: number;
+    record: NetRecord;
+  }> {
+    const out: Array<{
+      slot: number;
+      record: NetRecord;
+    }> =
+      [];
+    if (
+      this
+        .localEntity <
+      0
+    )
+      return out;
+    for (
+      let slot = 0;
+      slot <
+      8;
+      slot++
+    ) {
+      const s =
+        this.entity(
+          weaponKey(
+            this
+              .localEntity,
+            slot,
+          ),
+        );
+      if (
+        s
+      )
+        out.push(
+          {
+            slot,
+            record:
+              this.record(
+                s,
+              ),
+          },
+        );
     }
     return out;
   }
 
   /** Every world entity (not rules or weapons) in the newest frame. */
-  forEachEntity(fn: (state: EntityState, record: NetRecord) => void): void {
-    const f = this.latest;
-    if (!f) return;
-    for (const s of f.states) if (keyKind(s.key) === 'entity') fn(s, this.record(s));
+  forEachEntity(
+    fn: (
+      state: EntityState,
+      record: NetRecord,
+    ) => void,
+  ): void {
+    const f =
+      this
+        .latest;
+    if (
+      !f
+    )
+      return;
+    for (const s of f.states)
+      if (
+        keyKind(
+          s.key,
+        ) ===
+        'entity'
+      )
+        fn(
+          s,
+          this.record(
+            s,
+          ),
+        );
   }
 
   /** Forget everything (new match / new player). */
   reset(): void {
-    this.deferred = [];
+    this.deferred =
+      [];
     this.frames.length = 0;
-    this.latest = null;
-    this.localEntity = -1;
+    this.latest =
+      null;
+    this.localEntity =
+      -1;
     this.ackCmd = 0;
     this.roster.clear();
     this.scores.clear();

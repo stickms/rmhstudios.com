@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from '@tanstack/react-router';
+import {
+  Link,
+  useNavigate,
+} from '@tanstack/react-router';
 import { toast } from '@/lib/toast';
-import { Link2, Plus, Users } from 'lucide-react';
+import {
+  Link2,
+  Plus,
+  Users,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
@@ -23,25 +30,53 @@ import { api } from '@/lib/contract/client';
 import { serverError } from '@/lib/http';
 import { createRingApi } from '@/lib/profile/webrings.contract';
 
-function RingCard({ ring }: { ring: RingSummary }) {
-  const { t } = useTranslation('f-profile-plus');
+function RingCard({
+  ring,
+}: {
+  ring: RingSummary;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-profile-plus',
+    );
   return (
     <li>
       <Link
-        to={`/rings/${ring.slug}` as string}
+        to={
+          `/rings/${ring.slug}` as string
+        }
         className="surface-press block rounded-site p-5"
       >
-        <p className="truncate site-section-label">{ring.name}</p>
+        <p className="truncate site-section-label">
+          {
+            ring.name
+          }
+        </p>
         {ring.description ? (
-          <p className="mt-1 line-clamp-2 text-sm text-site-text-muted">{ring.description}</p>
+          <p className="mt-1 line-clamp-2 text-sm text-site-text-muted">
+            {
+              ring.description
+            }
+          </p>
         ) : null}
         <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-site-text-muted">
-          <Users className="size-3.5" aria-hidden />
-          {t('ring-members', {
-            count: ring.memberCount,
-            defaultValue_one: '{{count}} member',
-            defaultValue: '{{count}} members',
-          })}
+          <Users
+            className="size-3.5"
+            aria-hidden
+          />
+          {t(
+            'ring-members',
+            {
+              count:
+                ring.memberCount,
+              defaultValue_one:
+                '{{count}} member',
+              defaultValue:
+                '{{count}} members',
+            },
+          )}
         </p>
       </Link>
     </li>
@@ -50,121 +85,353 @@ function RingCard({ ring }: { ring: RingSummary }) {
 
 /** P6 — the ring directory: rings you are in, popular rings, and starting one. */
 export default function RingsIndex() {
-  const { t } = useTranslation('f-profile-plus');
-  const { data: session } = useSession();
-  const signedIn = Boolean(session?.user);
-  const navigate = useNavigate();
-  const { data } = useJson<{ popular: RingSummary[]; mine: RingSummary[] }>('/api/webrings');
-  const arrival = useArrival(data !== undefined);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [creating, setCreating] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-profile-plus',
+    );
+  const {
+    data: session,
+  } =
+    useSession();
+  const signedIn =
+    Boolean(
+      session?.user,
+    );
+  const navigate =
+    useNavigate();
+  const {
+    data,
+  } =
+    useJson<{
+      popular: RingSummary[];
+      mine: RingSummary[];
+    }>(
+      '/api/webrings',
+    );
+  const arrival =
+    useArrival(
+      data !==
+        undefined,
+    );
+  const [
+    name,
+    setName,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    description,
+    setDescription,
+  ] =
+    useState(
+      '',
+    );
+  const [
+    creating,
+    setCreating,
+  ] =
+    useState(
+      false,
+    );
 
   async function create() {
-    setCreating(true);
+    setCreating(
+      true,
+    );
     try {
-      const json = await api(createRingApi, { body: { name, description } });
-      toast.success(t('ring-created', { defaultValue: 'Ring started' }));
-      void navigate({ to: `/rings/${json.ring.slug}` as string });
+      const json =
+        await api(
+          createRingApi,
+          {
+            body: {
+              name,
+              description,
+            },
+          },
+        );
+      toast.success(
+        t(
+          'ring-created',
+          {
+            defaultValue:
+              'Ring started',
+          },
+        ),
+      );
+      void navigate(
+        {
+          to: `/rings/${json.ring.slug}` as string,
+        },
+      );
     } catch (e) {
       toast.error(
-        serverError(e) ?? t('ring-create-failed', { defaultValue: "Couldn't start that ring" }),
+        serverError(
+          e,
+        ) ??
+          t(
+            'ring-create-failed',
+            {
+              defaultValue:
+                "Couldn't start that ring",
+            },
+          ),
       );
     } finally {
-      setCreating(false);
+      setCreating(
+        false,
+      );
     }
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
       <p className="text-sm text-site-text-muted">
-        {t('rings-intro', {
-          defaultValue:
-            'A webring is a small circle of members who share a thing — pixel artists, speedrunners, night owls. Join one and your profile gets a previous / next strip so people can hop around the ring.',
-        })}
+        {t(
+          'rings-intro',
+          {
+            defaultValue:
+              'A webring is a small circle of members who share a thing — pixel artists, speedrunners, night owls. Join one and your profile gets a previous / next strip so people can hop around the ring.',
+          },
+        )}
       </p>
 
-      {data === undefined ? (
+      {data ===
+      undefined ? (
         <Skeleton className="h-40 w-full" />
       ) : (
         <>
-          {data && data.mine.length > 0 ? (
-            <section className={cn('space-y-3', arrival)} aria-labelledby="rings-mine">
-              <h2 id="rings-mine" className="site-section-label">
-                {t('rings-mine', { defaultValue: 'Your rings' })}
+          {data &&
+          data
+            .mine
+            .length >
+            0 ? (
+            <section
+              className={cn(
+                'space-y-3',
+                arrival,
+              )}
+              aria-labelledby="rings-mine"
+            >
+              <h2
+                id="rings-mine"
+                className="site-section-label"
+              >
+                {t(
+                  'rings-mine',
+                  {
+                    defaultValue:
+                      'Your rings',
+                  },
+                )}
               </h2>
               <ul className="grid gap-3 sm:grid-cols-2">
-                {data.mine.map((r) => (
-                  <RingCard key={r.slug} ring={r} />
-                ))}
+                {data.mine.map(
+                  (
+                    r,
+                  ) => (
+                    <RingCard
+                      key={
+                        r.slug
+                      }
+                      ring={
+                        r
+                      }
+                    />
+                  ),
+                )}
               </ul>
             </section>
           ) : null}
 
-          <section className={cn('space-y-3', arrival)} aria-labelledby="rings-popular">
-            <h2 id="rings-popular" className="site-section-label">
-              {t('rings-popular', { defaultValue: 'Popular rings' })}
+          <section
+            className={cn(
+              'space-y-3',
+              arrival,
+            )}
+            aria-labelledby="rings-popular"
+          >
+            <h2
+              id="rings-popular"
+              className="site-section-label"
+            >
+              {t(
+                'rings-popular',
+                {
+                  defaultValue:
+                    'Popular rings',
+                },
+              )}
             </h2>
-            {data && data.popular.length > 0 ? (
+            {data &&
+            data
+              .popular
+              .length >
+              0 ? (
               <ul className="grid gap-3 sm:grid-cols-2">
-                {data.popular.map((r) => (
-                  <RingCard key={r.slug} ring={r} />
-                ))}
+                {data.popular.map(
+                  (
+                    r,
+                  ) => (
+                    <RingCard
+                      key={
+                        r.slug
+                      }
+                      ring={
+                        r
+                      }
+                    />
+                  ),
+                )}
               </ul>
             ) : (
               <EmptyState
-                icon={Link2}
-                title={t('rings-none', { defaultValue: 'No rings yet' })}
-                description={t('rings-none-desc', { defaultValue: 'Start the first one below.' })}
+                icon={
+                  Link2
+                }
+                title={t(
+                  'rings-none',
+                  {
+                    defaultValue:
+                      'No rings yet',
+                  },
+                )}
+                description={t(
+                  'rings-none-desc',
+                  {
+                    defaultValue:
+                      'Start the first one below.',
+                  },
+                )}
               />
             )}
           </section>
         </>
       )}
 
-      <section className="space-y-3 rounded-site p-5"aria-labelledby="rings-start">
-        <h2 id="rings-start" className="site-section-label">
-          {t('rings-start', { defaultValue: 'Start a ring' })}
+      <section
+        className="space-y-3 rounded-site p-5"
+        aria-labelledby="rings-start"
+      >
+        <h2
+          id="rings-start"
+          className="site-section-label"
+        >
+          {t(
+            'rings-start',
+            {
+              defaultValue:
+                'Start a ring',
+            },
+          )}
         </h2>
         {signedIn ? (
           <>
             <div className="space-y-2">
-              <Label htmlFor="ring-name">{t('ring-name', { defaultValue: 'Name' })}</Label>
+              <Label htmlFor="ring-name">
+                {t(
+                  'ring-name',
+                  {
+                    defaultValue:
+                      'Name',
+                  },
+                )}
+              </Label>
               <Input
                 id="ring-name"
-                value={name}
-                maxLength={RING_NAME_MAX}
-                placeholder={t('ring-name-placeholder', { defaultValue: 'Pixel artists' })}
-                onChange={(e) => setName(e.target.value)}
+                value={
+                  name
+                }
+                maxLength={
+                  RING_NAME_MAX
+                }
+                placeholder={t(
+                  'ring-name-placeholder',
+                  {
+                    defaultValue:
+                      'Pixel artists',
+                  },
+                )}
+                onChange={(
+                  e,
+                ) =>
+                  setName(
+                    e
+                      .target
+                      .value,
+                  )
+                }
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ring-description">
-                {t('ring-description', { defaultValue: 'What is it about? (optional)' })}
+                {t(
+                  'ring-description',
+                  {
+                    defaultValue:
+                      'What is it about? (optional)',
+                  },
+                )}
               </Label>
               <Textarea
                 id="ring-description"
-                rows={3}
-                value={description}
-                maxLength={RING_DESCRIPTION_MAX}
-                onChange={(e) => setDescription(e.target.value)}
+                rows={
+                  3
+                }
+                value={
+                  description
+                }
+                maxLength={
+                  RING_DESCRIPTION_MAX
+                }
+                onChange={(
+                  e,
+                ) =>
+                  setDescription(
+                    e
+                      .target
+                      .value,
+                  )
+                }
               />
             </div>
             <div className="flex items-center gap-3">
               <Button
                 variant="default"
-                loading={creating}
-                disabled={name.trim().length < 3}
-                onClick={() => void create()}
+                loading={
+                  creating
+                }
+                disabled={
+                  name.trim()
+                    .length <
+                  3
+                }
+                onClick={() =>
+                  void create()
+                }
               >
-                <Plus aria-hidden />
-                {t('ring-create', { defaultValue: 'Start ring' })}
+                <Plus
+                  aria-hidden
+                />
+                {t(
+                  'ring-create',
+                  {
+                    defaultValue:
+                      'Start ring',
+                  },
+                )}
               </Button>
               <span className="text-xs text-site-text-muted">
-                {t('ring-limit', {
-                  max: RING_MAX_OWNED,
-                  defaultValue: 'You can run up to {{max}} rings.',
-                })}
+                {t(
+                  'ring-limit',
+                  {
+                    max: RING_MAX_OWNED,
+                    defaultValue:
+                      'You can run up to {{max}} rings.',
+                  },
+                )}
               </span>
             </div>
           </>
@@ -172,12 +439,27 @@ export default function RingsIndex() {
           <p className="text-sm text-site-text-muted">
             <Link
               to="/login"
-              search={{ callbackURL: '/rings' }}
+              search={{
+                callbackURL:
+                  '/rings',
+              }}
               className="text-site-accent hover:underline"
             >
-              {t('rings-sign-in', { defaultValue: 'Sign in' })}
+              {t(
+                'rings-sign-in',
+                {
+                  defaultValue:
+                    'Sign in',
+                },
+              )}
             </Link>{' '}
-            {t('rings-sign-in-rest', { defaultValue: 'to join or start a ring.' })}
+            {t(
+              'rings-sign-in-rest',
+              {
+                defaultValue:
+                  'to join or start a ring.',
+              },
+            )}
           </p>
         )}
       </section>
