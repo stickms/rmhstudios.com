@@ -1,7 +1,8 @@
 /**
  * The committed instrument samples match the generated zone map: every file exists, its SHA-256 is
  * the one the build wrote, sizes stay inside the byte budget, every note of each instrument's range
- * has a zone within its allowed shift, and every instrument has a credit.
+ * has a zone within its allowed shift, and every instrument has a credit. Budget: 0.6 MB per
+ * instrument (the Phase 5 plan).
  */
 import { createHash } from 'node:crypto';
 import {
@@ -98,7 +99,7 @@ describe('committed instrument samples', () => {
       }
     });
 
-    it(`${id}: no stray files and the directory is under 650 KB`, () => {
+    it(`${id}: no stray files and the directory is at most 0.6 MB (600,000 bytes)`, () => {
       const files =
         readdirSync(
           dirOf(
@@ -139,9 +140,8 @@ describe('committed instrument samples', () => {
         bytes;
       expect(
         bytes,
-      ).toBeLessThan(
-        650 *
-          1024,
+      ).toBeLessThanOrEqual(
+        600_000,
       );
     });
 
@@ -200,7 +200,7 @@ describe('committed instrument samples', () => {
     });
   }
 
-  it('all four together stay under 2.1 MB', () => {
+  it('all ten together stay under 4 MB', () => {
     expect(
       total,
     ).toBeGreaterThan(
@@ -209,9 +209,7 @@ describe('committed instrument samples', () => {
     expect(
       total,
     ).toBeLessThan(
-      2.1 *
-        1024 *
-        1024,
+      4_000_000,
     );
   });
 });

@@ -1,13 +1,13 @@
 /**
- * SoundDialog — "Sound": which recorded instrument the lessons play (piano, steel-string guitar,
- * violin, flute). A radio group (plan §4): Tab reaches the chosen row, the arrow keys move between
+ * SoundDialog — "Sound": which recorded instrument the lessons play (`INSTRUMENT_IDS`), listed by
+ * family (keyboards, plucked strings, bowed strings, winds) under plain headings. ONE radio group (plan §4): Tab reaches the chosen row, the arrow keys move between
  * rows and Space or Enter picks (`radio-keys.ts`); the chosen one carries a check. Each row's load
  * status is an always-present live region the row names as its description. Picking a sound saves it, loads its samples and plays one note
  * through it, so choosing is also hearing. Nothing loads until a row is picked.
  *
  * The learner's own instrument's sound is the default and is stored as "follow my instrument"
- * (null), so a learner who switches between piano and guitar keeps hearing their instrument. Violin
- * and flute play single notes and intervals; chord lessons then use the learner's instrument, which
+ * (null), so a learner who switches between piano and guitar keeps hearing their instrument. The
+ * bowed strings and the winds play single notes and intervals; chord lessons then use the learner's instrument, which
  * one sentence says. The sound credits page is linked here, not from a footer.
  *
  * Built like InputSetup: the shared `Dialog` portaled into the RMH Music root (`useDialogHost`),
@@ -35,7 +35,8 @@ import {
 } from '@/components/ui/dialog';
 import { useDialogHost } from '@/components/shared/useDialogHost';
 import {
-  availableSounds,
+  SOUND_FAMILIES,
+  isAvailable,
   defaultSoundFor,
   playsChords,
   resolveSound,
@@ -67,6 +68,12 @@ const PREVIEW_MIDI: Readonly<
     guitar: 55,
     violin: 67,
     flute: 72,
+    cello: 48,
+    clarinet: 62,
+    oboe: 69,
+    'guitar-nylon': 55,
+    ukulele: 67,
+    organ: 60,
   };
 const PREVIEW_MS = 900;
 
@@ -110,6 +117,54 @@ export function soundName(
             'Flute',
         },
       );
+    case 'cello':
+      return t(
+        'sound-cello',
+        {
+          defaultValue:
+            'Cello',
+        },
+      );
+    case 'clarinet':
+      return t(
+        'sound-clarinet',
+        {
+          defaultValue:
+            'Clarinet',
+        },
+      );
+    case 'oboe':
+      return t(
+        'sound-oboe',
+        {
+          defaultValue:
+            'Oboe',
+        },
+      );
+    case 'guitar-nylon':
+      return t(
+        'sound-guitar-nylon',
+        {
+          defaultValue:
+            'Nylon-string guitar',
+        },
+      );
+    case 'ukulele':
+      return t(
+        'sound-ukulele',
+        {
+          defaultValue:
+            'Ukulele',
+        },
+      );
+    case 'organ':
+      return t(
+        'sound-organ',
+        {
+          defaultValue:
+            'Organ',
+        },
+      );
   }
 }
 
@@ -150,6 +205,97 @@ function soundDetail(
         {
           defaultValue:
             'Single notes and intervals.',
+        },
+      );
+    case 'cello':
+      return t(
+        'sound-cello-detail',
+        {
+          defaultValue:
+            'A cello section. Single notes and intervals.',
+        },
+      );
+    case 'clarinet':
+      return t(
+        'sound-clarinet-detail',
+        {
+          defaultValue:
+            'Single notes and intervals.',
+        },
+      );
+    case 'oboe':
+      return t(
+        'sound-oboe-detail',
+        {
+          defaultValue:
+            'Single notes and intervals.',
+        },
+      );
+    case 'guitar-nylon':
+      return t(
+        'sound-guitar-nylon-detail',
+        {
+          defaultValue:
+            'A classical guitar. Plays chords.',
+        },
+      );
+    case 'ukulele':
+      return t(
+        'sound-ukulele-detail',
+        {
+          defaultValue:
+            'A tenor ukulele. Plays chords.',
+        },
+      );
+    case 'organ':
+      return t(
+        'sound-organ-detail',
+        {
+          defaultValue:
+            'A quiet pipe organ stop. Plays chords.',
+        },
+      );
+  }
+}
+
+/** A family heading in the Sound dialog. */
+function familyName(
+  t: TFunction,
+  id: (typeof SOUND_FAMILIES)[number]['id'],
+): string {
+  switch (
+    id
+  ) {
+    case 'keyboards':
+      return t(
+        'sound-family-keyboards',
+        {
+          defaultValue:
+            'Keyboards',
+        },
+      );
+    case 'plucked':
+      return t(
+        'sound-family-plucked',
+        {
+          defaultValue:
+            'Plucked strings',
+        },
+      );
+    case 'bowed':
+      return t(
+        'sound-family-bowed',
+        {
+          defaultValue:
+            'Bowed strings',
+        },
+      );
+    case 'winds':
+      return t(
+        'sound-family-winds',
+        {
+          defaultValue:
+            'Winds',
         },
       );
   }
@@ -267,8 +413,33 @@ export function SoundDialog({
       instrument,
     );
   // A radio group: one Tab stop (the chosen row), arrows move between rows, Space or Enter picks.
+  // The rows in the order they are shown (by family), which is the order the arrow keys move in.
+  const families =
+    SOUND_FAMILIES.map(
+      (
+        f,
+      ) => ({
+        id: f.id,
+        ids: f.ids.filter(
+          isAvailable,
+        ),
+      }),
+    ).filter(
+      (
+        f,
+      ) =>
+        f
+          .ids
+          .length >
+        0,
+    );
   const sounds =
-    availableSounds();
+    families.flatMap(
+      (
+        f,
+      ) =>
+        f.ids,
+    );
   const tabStop =
     Math.max(
       0,
@@ -475,142 +646,170 @@ export function SoundDialog({
                     'Sound',
                 },
               )}
-              className="divide-y divide-app-border"
+              className="space-y-3"
             >
-              {sounds.map(
+              {families.map(
                 (
-                  id,
-                  index,
-                ) => {
-                  const chosen =
-                    id ===
-                    current;
-                  const line =
-                    status(
-                      id,
-                    );
-                  const statusId = `${baseId}-${id}-status`;
-                  return (
-                    <div
-                      key={
-                        id
-                      }
+                  family,
+                ) => (
+                  <div
+                    key={
+                      family.id
+                    }
+                    role="group"
+                    aria-labelledby={`${baseId}-family-${family.id}`}
+                  >
+                    <p
+                      id={`${baseId}-family-${family.id}`}
+                      className="pt-1 text-sm font-semibold text-app-text-muted"
                     >
-                      <button
-                        ref={(
-                          el,
+                      {familyName(
+                        t,
+                        family.id,
+                      )}
+                    </p>
+                    <div className="divide-y divide-app-border">
+                      {family.ids.map(
+                        (
+                          id,
                         ) => {
-                          rows.current[
-                            index
-                          ] =
-                            el;
-                        }}
-                        type="button"
-                        role="radio"
-                        aria-checked={
-                          chosen
-                        }
-                        aria-describedby={
-                          statusId
-                        }
-                        tabIndex={
-                          index ===
-                          tabStop
-                            ? 0
-                            : -1
-                        }
-                        data-sound={
-                          id
-                        }
-                        onClick={() =>
-                          pick(
-                            id,
-                          )
-                        }
-                        onKeyDown={(
-                          e,
-                        ) => {
-                          const action =
-                            radioKey(
-                              e.key,
-                              index,
-                              sounds.length,
-                            );
-                          if (
-                            !action
-                          )
-                            return;
-                          e.preventDefault();
-                          if (
-                            action.kind ===
-                            'select'
-                          )
-                            pick(
+                          const index =
+                            sounds.indexOf(
                               id,
                             );
-                          else
-                            rows.current[
-                              action
-                                .index
-                            ]?.focus();
-                        }}
-                        className="flex min-h-11 w-full items-start gap-3 rounded-app-sm py-3 text-start transition-colors hover:text-app-accent"
-                      >
-                        <span className="flex h-6 w-5 shrink-0 items-center justify-center">
-                          {chosen && (
-                            <Check
-                              className="h-5 w-5 text-app-accent"
-                              aria-hidden="true"
-                            />
-                          )}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-medium text-app-text">
-                            {soundName(
-                              t,
+                          const chosen =
+                            id ===
+                            current;
+                          const line =
+                            status(
                               id,
-                            )}
-                          </span>
-                          <span className="block text-sm text-app-text-muted">
-                            {soundDetail(
-                              t,
-                              id,
-                            )}
-                          </span>
-                        </span>
-                      </button>
-                      {/* Always in the tree (an empty live region takes no room), so screen readers hear
+                            );
+                          const statusId = `${baseId}-${id}-status`;
+                          return (
+                            <div
+                              key={
+                                id
+                              }
+                            >
+                              <button
+                                ref={(
+                                  el,
+                                ) => {
+                                  rows.current[
+                                    index
+                                  ] =
+                                    el;
+                                }}
+                                type="button"
+                                role="radio"
+                                aria-checked={
+                                  chosen
+                                }
+                                aria-describedby={
+                                  statusId
+                                }
+                                tabIndex={
+                                  index ===
+                                  tabStop
+                                    ? 0
+                                    : -1
+                                }
+                                data-sound={
+                                  id
+                                }
+                                onClick={() =>
+                                  pick(
+                                    id,
+                                  )
+                                }
+                                onKeyDown={(
+                                  e,
+                                ) => {
+                                  const action =
+                                    radioKey(
+                                      e.key,
+                                      index,
+                                      sounds.length,
+                                    );
+                                  if (
+                                    !action
+                                  )
+                                    return;
+                                  e.preventDefault();
+                                  if (
+                                    action.kind ===
+                                    'select'
+                                  )
+                                    pick(
+                                      id,
+                                    );
+                                  else
+                                    rows.current[
+                                      action
+                                        .index
+                                    ]?.focus();
+                                }}
+                                className="flex min-h-11 w-full items-start gap-3 rounded-app-sm py-3 text-start transition-colors hover:text-app-accent"
+                              >
+                                <span className="flex h-6 w-5 shrink-0 items-center justify-center">
+                                  {chosen && (
+                                    <Check
+                                      className="h-5 w-5 text-app-accent"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block font-medium text-app-text">
+                                    {soundName(
+                                      t,
+                                      id,
+                                    )}
+                                  </span>
+                                  <span className="block text-sm text-app-text-muted">
+                                    {soundDetail(
+                                      t,
+                                      id,
+                                    )}
+                                  </span>
+                                </span>
+                              </button>
+                              {/* Always in the tree (an empty live region takes no room), so screen readers hear
                         the load's progress; the row's radio names it as its description. */}
-                      <p
-                        id={
-                          statusId
-                        }
-                        role="status"
-                        className={cn(
-                          'flex items-center gap-1.5 ps-8 text-sm text-app-text-muted',
-                          line &&
-                            'min-h-5',
-                        )}
-                      >
-                        {line &&
-                          peekInstrument(
-                            id,
-                          )
-                            ?.state
-                            .kind ===
-                            'loading' && (
-                            <Loader2
-                              className="app-spin h-4 w-4"
-                              aria-hidden="true"
-                            />
-                          )}
-                        {
-                          line
-                        }
-                      </p>
+                              <p
+                                id={
+                                  statusId
+                                }
+                                role="status"
+                                className={cn(
+                                  'flex items-center gap-1.5 ps-8 text-sm text-app-text-muted',
+                                  line &&
+                                    'min-h-5',
+                                )}
+                              >
+                                {line &&
+                                  peekInstrument(
+                                    id,
+                                  )
+                                    ?.state
+                                    .kind ===
+                                    'loading' && (
+                                    <Loader2
+                                      className="app-spin h-4 w-4"
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                {
+                                  line
+                                }
+                              </p>
+                            </div>
+                          );
+                        },
+                      )}
                     </div>
-                  );
-                },
+                  </div>
+                ),
               )}
             </div>
             <div className="min-h-5 space-y-1 text-sm text-app-text-muted">

@@ -689,6 +689,756 @@
           "note": "VSCO wind file names are an octave below the sounding pitch"
         }
       ]
+    },
+    "cello": {
+      "name": "VS Chamber Orchestra: Community Edition, Cello Section, sustain with vibrato (susvib), loud layer v3",
+      "author": "Versilian Studios (Sam Gossner)",
+      "licence": "CC0-1.0",
+      "credit": "vsco",
+      "homepage": "https://github.com/sgossner/VSCO-2-CE",
+      "zones": [
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_C1_v3_1.wav",
+          "sha256": "19195ab85ab71626bd11e7100febdaeeba1c237ff5887b934fd0ffd8dfad82cb",
+          "keyCenter": 36,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "36.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_E1_v3_1.wav",
+          "sha256": "ee190b95be4f2416b9f41d248d255a4d7067b722f9b21482b30bc9872a9bb0d1",
+          "keyCenter": 40,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "40.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_G1_v3_1.wav",
+          "sha256": "e4c61d4ab855ec20ddb69ff608a1c066ff8a779ddd08d1dfe1d534d3a4563ad0",
+          "keyCenter": 43,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "43.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_B1_v3_1.wav",
+          "sha256": "8331a0e13f41243efab111f9b5e9185524c27ee48631269acecafc954ab7eaa8",
+          "keyCenter": 47,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "47.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_D2_v3_1.wav",
+          "sha256": "fc946615cd6550570c8f05d61c0d59b9079bf9daba8bf25be7943487fea5a7ae",
+          "keyCenter": 50,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "50.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_F2_v3_1.wav",
+          "sha256": "d965197faf2e6ab8675f1d65505e5ba934a5ab769412d314bad94133e18f24d0",
+          "keyCenter": 53,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "53.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_A2_v3_1.wav",
+          "sha256": "b7f226f19b9616abe5fa4a27ef50116667e19eb0127f30eacfa6d1a83e9149f0",
+          "keyCenter": 57,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "57.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_C3_v3_1.wav",
+          "sha256": "51e884d54eea3bf4ba7ee35289a09f15ddb6a52cd849248d01bf18477ccbd07b",
+          "keyCenter": 60,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "60.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_E3_v3_1.wav",
+          "sha256": "24a7ffdc23087026c4ef2d421441253c71490df9cf0757e93ffb14b4e61481ef",
+          "keyCenter": 64,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "64.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_G3_v3_1.wav",
+          "sha256": "17df597c259a849870aa25e9fbfa6093371851f83ba7b9deb9cb9e1ec11463a7",
+          "keyCenter": 67,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "67.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_B3_v3_1.wav",
+          "sha256": "1c8b571516ac503df871bbea74756dfc3813b4bc10a76921d231afb0175cdbf1",
+          "keyCenter": 71,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "71.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_D4_v3_1.wav",
+          "sha256": "2ea7f580738dbcf143b9c9f72703071aa7a8f6bfa33cdd2c2e5da961df1805bb",
+          "keyCenter": 74,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "74.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_F4_v3_1.wav",
+          "sha256": "24ea4a0f892cb60c4a52d6a5b1ef8281e4e9a9f78b5f938e078da7cbbfd5ba19",
+          "keyCenter": 77,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "77.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        }
+      ]
+    },
+    "clarinet": {
+      "name": "VS Chamber Orchestra: Community Edition, Clarinet, long sustain (susLong), middle layer v2",
+      "author": "Versilian Studios (Sam Gossner)",
+      "licence": "CC0-1.0",
+      "credit": "vsco",
+      "homepage": "https://github.com/sgossner/VSCO-2-CE",
+      "zones": [
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_D2_v2_rr1_sum.wav",
+          "sha256": "b1a793ff45d8f068dd83b591924b1a29bbece98e6e8177b31fc003f2f426fe00",
+          "keyCenter": 50,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "50.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_F2_v2_rr1_sum.wav",
+          "sha256": "36348e1fd1a1e53485c7f48983cfd758ced036f6af1a832671bf5ef1f8b00448",
+          "keyCenter": 53,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "53.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_A%232_v2_rr1_sum.wav",
+          "sha256": "82be872b7915c833e06910846e3398b55591f69bfe6474c39dd4051742db2700",
+          "keyCenter": 58,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "58.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_D3_v2_rr1_sum.wav",
+          "sha256": "30e686ffc58caa48bbfae309a06f1c27c75b192fb653729ffdf8586cbd9b8405",
+          "keyCenter": 62,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "62.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_F3_v2_rr1_sum.wav",
+          "sha256": "3c9a237651cd049cacdf4052ef85ff406da1d9e5d4f59439c20f45a7578ff431",
+          "keyCenter": 65,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "65.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_A%233_v2_rr1_sum.wav",
+          "sha256": "779e2cad84f6f5103272f17cb4637a94d8e9c533a5811233595960cad61b391f",
+          "keyCenter": 70,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "70.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_D4_v2_rr1_sum.wav",
+          "sha256": "4bdc53f3ef917cc9146e10cec5eb33744524e8b510c4a39c080dc5c774b3c956",
+          "keyCenter": 74,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "74.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_F4_v2_rr1_sum.wav",
+          "sha256": "9988142d8fd2856af4217e3983316a42ef1d91b6381afd9fa138072d91122c2e",
+          "keyCenter": 77,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "77.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_A%234_v2_rr1_sum.wav",
+          "sha256": "569e902693e7d04ecd20507f0a3dd0be92a7a3cdf14ab685d89aefacff2a34cb",
+          "keyCenter": 82,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "82.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_D5_v2_rr1_sum.wav",
+          "sha256": "4cedd1d7bd779fe357529e34ff398bc0e80c5088fc3908944962d65fcdc94823",
+          "keyCenter": 86,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "86.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Clarinet/susLong/DCClar_susLong_F%235_v2_rr1_sum.wav",
+          "sha256": "2f024789f1b2ecc25f0e07dcff06084e4c2def83ff74e693c098c28fbec319fc",
+          "keyCenter": 89,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "89.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch; this file (named F#5) measures F6"
+        }
+      ]
+    },
+    "oboe": {
+      "name": "VS Chamber Orchestra: Community Edition, Oboe, sustain (Sus), loud layer v3",
+      "author": "Versilian Studios (Sam Gossner)",
+      "licence": "CC0-1.0",
+      "credit": "vsco",
+      "homepage": "https://github.com/sgossner/VSCO-2-CE",
+      "zones": [
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Oboe/Sus/Oboe_Sus_A%232_v3_Main.wav",
+          "sha256": "78333824a35f1187a8d30e039ca1965113ee194cd9710afe2c3a1e9eb5a486b6",
+          "keyCenter": 58,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "58.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Oboe/Sus/Oboe_Sus_D3_v3_Main.wav",
+          "sha256": "8016596d214a18c814bd19e9c9c61a4e902f6d067ddeeeaa7b5e4e2ff2238a7c",
+          "keyCenter": 62,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "62.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Oboe/Sus/Oboe_Sus_F3_v3_Main.wav",
+          "sha256": "58d69a9cb3cd71dae917b83afe2efc3dbee1ab6c1d330fe2c3faf89b269f673c",
+          "keyCenter": 65,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "65.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Oboe/Sus/Oboe_Sus_A%233_v3_Main.wav",
+          "sha256": "fcd9b2165297d50d1968bea121226450f78838b9d18087f3925ce92b6e9798b9",
+          "keyCenter": 70,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "70.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Oboe/Sus/Oboe_Sus_D4_v3_Main.wav",
+          "sha256": "d8ffaa22803a6238ae8c9d4664e9659e717916d70a2f2c48742f3eb519815497",
+          "keyCenter": 74,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "74.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Oboe/Sus/Oboe_Sus_F4_v1_Main.wav",
+          "sha256": "e4d1bf4166f77f42ad1f113f23c758db109e860c4764d5dd19705c70917a7c43",
+          "keyCenter": 77,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "77.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch; the soft layer here, whose fundamental is strong enough for YIN (the loud F4 is dominated by its second harmonic)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Oboe/Sus/Oboe_Sus_A%234_v3_Main.wav",
+          "sha256": "dc9a1faae5ccaea8aea2b67438b9efde2c1b1b7f422c97b70d493445e07009e8",
+          "keyCenter": 82,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "82.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Oboe/Sus/Oboe_Sus_D5_v3_Main.wav",
+          "sha256": "13fb1986bbde4d6e61c13c39d0fb18eec4d0bbffd2f8c9fcda11d9874f5cbe92",
+          "keyCenter": 86,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "86.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Oboe/Sus/Oboe_Sus_F5_v3_Main.wav",
+          "sha256": "9c24e524a1c8fdaf82a5874c944db46de26ff8ce4a0eb209d3e12fd65634e2f3",
+          "keyCenter": 89,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "89.mp3",
+          "note": "VSCO file names are an octave below the sounding pitch"
+        }
+      ]
+    },
+    "organ": {
+      "name": "Versilian Community Sample Library, Pipe Organ, quiet stop on manual III (a stopped flute pipe; sounds an octave above its file name)",
+      "author": "Simon Dalzell (Ivy Audio) for Versilian Studios",
+      "licence": "CC0-1.0 (VCSL LICENSE and README; the folder's Info.txt encourages credit)",
+      "credit": "vcsl-organ",
+      "homepage": "https://github.com/sgossner/VCSL",
+      "zones": [
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_C2_rr1.wav",
+          "sha256": "5906348057006cfa5451a2cb3f02b8cd639d89f9ddf3cc98df3102f5c942cd5a",
+          "keyCenter": 48,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "48.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_D%232_rr1.wav",
+          "sha256": "eb92c50999e9a117939de73e74b263730b66eadbdb868f67b9bd89681ed8f113",
+          "keyCenter": 51,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "51.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_F%232_rr1.wav",
+          "sha256": "3afa6caad64d5ef3c527b8bc4c22b7a0c55bc5dfaa6701c8b2b98c53de5876ae",
+          "keyCenter": 54,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "54.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_A2_rr1.wav",
+          "sha256": "c39ec6c7e26dee6a3661e54a96c4a2a04bce08130864244458a7db1b627b3c93",
+          "keyCenter": 57,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "57.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_C3_rr1.wav",
+          "sha256": "55b246625c8a2fe71c271d2335ba6cc5f12d3cd48cc691aa047197b7f825084f",
+          "keyCenter": 60,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "60.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_D%233_rr1.wav",
+          "sha256": "fa2784dca7e6ef639be46a2d9f129f480755b678c9cce145d257bb59839a77a9",
+          "keyCenter": 63,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "63.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_F%233_rr1.wav",
+          "sha256": "7ad4206bebfaffe36d3c506e55670abf4a5bed9c72d52a8eea44fe5a20c62b9a",
+          "keyCenter": 66,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "66.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_A3_rr1.wav",
+          "sha256": "97df359ea6827d9b751cf85de91fb460d8c95871cb98dff0441494bc35ca1cb1",
+          "keyCenter": 69,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "69.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_C4_rr1.wav",
+          "sha256": "14f3a97253046b883e9689d9fb5420b9eb69e7b65564e2396b5098f245b0cd10",
+          "keyCenter": 72,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "72.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_D%234_rr1.wav",
+          "sha256": "f7547dc90d06e1329420f3e9db4b11d0cb616878357949884dd411ce693fc508",
+          "keyCenter": 75,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "75.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_F%234_rr1.wav",
+          "sha256": "e7e1996aaf564294f3c0476592b3055fc00e6e6d19348172ea604170a1b07076",
+          "keyCenter": 78,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "78.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_A4_rr1.wav",
+          "sha256": "9b23b50db700b4b881ddac02ca8d99922d745c3cd9fcc31022b0fa48a2eec31c",
+          "keyCenter": 81,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "81.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VCSL/c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e/Aerophones/Edge-blown%20Aerophones/Pipe%20Organ/Quiet/NT5_Man3Quiet_C5_rr1.wav",
+          "sha256": "16c3916dbf17c878d4430fd4c5fe7b15aeb4fd0c568f651d05149b22e72c8bc8",
+          "keyCenter": 84,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "84.mp3",
+          "note": "The quiet stop sounds an octave above its file name; below C3 its third harmonic outweighs the fundamental, so those zones are not used (the loud stop's pitch is ambiguous between octaves and is not used either)"
+        }
+      ]
+    },
+    "guitar-nylon": {
+      "name": "FreePats Spanish Classical Guitar 2019-06-18 (nylon strings)",
+      "author": "roberto@zenvoid.org (FreePats)",
+      "licence": "CC0-1.0 (cc0.txt and readme.txt in the archive)",
+      "credit": "freepats-guitar",
+      "homepage": "https://freepats.zenvoid.org/Guitar/acoustic-guitar.html",
+      "archive": {
+        "url": "https://freepats.zenvoid.org/Guitar/SpanishClassicalGuitar/SpanishClassicalGuitar-SFZ+FLAC-20190618.7z",
+        "file": "SpanishClassicalGuitar-SFZ+FLAC-20190618.7z",
+        "sha256": "903916921a21662d2237ade7f0e98e55de93cb7b86da219e4e10f4ad385b8f5e"
+      },
+      "zones": [
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/E2.flac",
+          "sha256": "18ce73f4243991132901b47efe3affa155c1b934d838cf02a29df5c62c8706a8",
+          "keyCenter": 40,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "40.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/G2.flac",
+          "sha256": "71e69e5eff738f668b4e3e2f53f72de7725fd3b7969339bb44aba8e7c1df78d2",
+          "keyCenter": 43,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "43.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/A2.flac",
+          "sha256": "692be630714f59824b612502034b53e9c376374386cb255b81a0bd3c4cdcdd92",
+          "keyCenter": 45,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "45.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/B2.flac",
+          "sha256": "fa2881b3cbeec65770890b16f74bcec8c0295952292b52ab3ffe95d130c0e879",
+          "keyCenter": 47,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "47.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/D3.flac",
+          "sha256": "c4c08268b1147446afcd7c872355aa71d03822c12fb1b56c7f275617ab2b01a1",
+          "keyCenter": 50,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "50.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/E3.flac",
+          "sha256": "f8cc3192a328f10cdb774ff3bf5efb06d1015e64c5ae141c1c31143bb329c915",
+          "keyCenter": 52,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "52.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/F#3.flac",
+          "sha256": "e948bee94ac13c463de192d4d03589fe249d2bf425055be0142d6864541d4b59",
+          "keyCenter": 54,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "54.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/G#3.flac",
+          "sha256": "47a68a55575dd6159525189ad1bd26e0d66e04d49b5efc0775a3719c31298756",
+          "keyCenter": 56,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "56.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/A#3.flac",
+          "sha256": "41f39ff65aa2ba1ec3db52f17a88970a905cbb9d374c3b3e0e489413f7dc6db5",
+          "keyCenter": 58,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "58.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/C4.flac",
+          "sha256": "e8fcd63c262ebef3e84d1f24242918cc578f8b0db54049ad109815b01d1226f0",
+          "keyCenter": 60,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "60.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/D4.flac",
+          "sha256": "1fe411c50d107374e59bc6a89e6513d32f4608783c8be8c36f0b81fdab5dd321",
+          "keyCenter": 62,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "62.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/E4.flac",
+          "sha256": "b8882fbba2b6a9d0cbae02867be4273aa8f0fddd00bc6f3d993dff6c77997246",
+          "keyCenter": 64,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "64.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/F#4.flac",
+          "sha256": "bff470dc100007504ffa6f4e1dc0ced43962b4f37a1904f616e92d09edd636d0",
+          "keyCenter": 66,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "66.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/A4.flac",
+          "sha256": "bac918520eb26172cd734e79df9c53fc206e5aab60884583dd7d9ab5b17d16d1",
+          "keyCenter": 69,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "69.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/B4.flac",
+          "sha256": "ca2b8e768bd7ce5b0037c3645b4c60aeaf077bb128ce3dd8eef98fcd3a36f778",
+          "keyCenter": 71,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "71.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/C#5.flac",
+          "sha256": "3004eac9668ec8d8858a54f8962ab6dec25ccc773c4d7d08b2b7d6e2dbb61e3b",
+          "keyCenter": 73,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "73.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/D#5.flac",
+          "sha256": "9fa313d7dd5d00c84947552e0bdcdc9f92be9fd80b68bf0d641b92ead1d99dad",
+          "keyCenter": 75,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "75.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/F5.flac",
+          "sha256": "e4096ad0b1812adf7e3f71f231c18d3c356658cc688f058f5bc05a92e2996a0e",
+          "keyCenter": 77,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "77.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/G5.flac",
+          "sha256": "0d887f7f14d526e5af1a1aa7060af92c49e3dc57f1e534c215ce93b8e3f31cc8",
+          "keyCenter": 79,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "79.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/A5.flac",
+          "sha256": "a0111ff90a40a7d68155803d0708c3c025cc1db44c3e222270c900d56b845a43",
+          "keyCenter": 81,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "81.mp3"
+        },
+        {
+          "member": "SpanishClassicalGuitar-SFZ+FLAC-20190618/samples/B5.flac",
+          "sha256": "0c417e8aa71eb880d612e298285e78dc9762277a46227f9b04345e8be7d17066",
+          "keyCenter": 83,
+          "durationS": 3,
+          "fadeS": 0.6,
+          "out": "83.mp3"
+        }
+      ]
+    },
+    "ukulele": {
+      "name": "FreePats Ukulele 2026-08-11 (Flight Fireball tenor ukulele)",
+      "author": "Mateusz Dąbrowski (FreePats)",
+      "licence": "CC0-1.0 (LICENSE.txt and README.txt in the archive)",
+      "credit": "freepats-ukulele",
+      "homepage": "https://freepats.zenvoid.org/GuitarFamily/ukulele.html",
+      "archive": {
+        "url": "https://github.com/freepats/ukulele1/releases/download/2026-08-11/Ukulele-SFZ+FLAC-20260811.7z",
+        "file": "Ukulele-SFZ+FLAC-20260811.7z",
+        "sha256": "d71b66382687175dca8aad53cad3290f6b418d48b6a2c0722af58b372f054bf4"
+      },
+      "zones": [
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/C4.flac",
+          "sha256": "aa23ee3722f8f418c7078243b4e1e2cb8022ff7c9e94801098cf3aa1694ec4b4",
+          "keyCenter": 60,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "60.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/D4.flac",
+          "sha256": "113ecda48383232739edbc471c2ed6be5bf3999be0075c7fa6d6bd0e98edfe98",
+          "keyCenter": 62,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "62.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/E4.flac",
+          "sha256": "8d5ea8c5ca9cddca9d5af0c37b8e022fddc71444d0f81718695c9de706d8908e",
+          "keyCenter": 64,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "64.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/F#4.flac",
+          "sha256": "5b4a82c7c8c9e57185e2510771a06df25c225fd78487e54b79d960f08c6e2653",
+          "keyCenter": 66,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "66.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/G4.flac",
+          "sha256": "e1952cca1c74d0dbab6053c081eda7f79e1eb2f11c1bd485aafdd51f77df1e93",
+          "keyCenter": 67,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "67.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/A4.flac",
+          "sha256": "ce575bc244682dfc6499a68e6ebb1195f043cc14dc49a8c2e4ea7e384bd2f114",
+          "keyCenter": 69,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "69.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/B4.flac",
+          "sha256": "04102fb6c825f6ec23c4c08b89b34aba1412109d2e3950eb2399decd53ad49ae",
+          "keyCenter": 71,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "71.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/C#5.flac",
+          "sha256": "604a9de9ab270294fa123cd9bf175fedaf295c63a9305e7cb3e187b666a6798e",
+          "keyCenter": 73,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "73.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/D#5.flac",
+          "sha256": "0a6e011f0ef5d96ef51554cb5daaad788ec3240b723b4846411698194ff2f2b0",
+          "keyCenter": 75,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "75.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/F5.flac",
+          "sha256": "5b85d224cee53fba23fda855ff34b919553bfc9df9ee1990df68aeff59857bc3",
+          "keyCenter": 77,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "77.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/G5.flac",
+          "sha256": "429f4ab8c6fff45041c7d688341a2d0af2710036a72505ad62198a1e6188c226",
+          "keyCenter": 79,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "79.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/A5.flac",
+          "sha256": "877bcb793b9c7320777c0b164b78444a39c9b93da6ddafc95da5e91b085bccc7",
+          "keyCenter": 81,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "81.mp3"
+        },
+        {
+          "member": "Ukulele SFZ+FLAC-20260811/samples/C6.flac",
+          "sha256": "e397e1a73588074f9d636f9b128fbca8c52fd08df89cc893c5467f9256ea02cd",
+          "keyCenter": 84,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "84.mp3"
+        }
+      ]
     }
   }
 }

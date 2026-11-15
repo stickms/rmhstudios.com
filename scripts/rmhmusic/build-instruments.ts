@@ -1,12 +1,14 @@
 /**
- * Build the sampled instruments RMH Music plays (piano, steel-string guitar, violin, flute) from
- * pinned upstream recordings. Run by a developer, never in CI:
+ * Build the sampled instruments RMH Music plays (`INSTRUMENT_IDS`: piano, two guitars, ukulele,
+ * organ, violin, cello, flute, clarinet, oboe) from pinned upstream recordings. Run by a developer,
+ * never in CI:
  *
- *   pnpm exec tsx scripts/rmhmusic/build-instruments.ts [piano guitar violin flute] [--pin]
+ *   pnpm exec tsx scripts/rmhmusic/build-instruments.ts [<id> ...] [--pin]
  *
- * Needs `ffmpeg` with libmp3lame, and `unar` (or `lsar`/`unar` from The Unarchiver) for the
- * guitar's RAR5 archive. Sources come from `sources.json`: commit-pinned raw.githubusercontent.com
- * URLs (Salamander, VSCO 2 CE) and the guitar author's Google Drive RAR. Every file is checked
+ * Needs `ffmpeg` with libmp3lame, and `unar` (The Unarchiver) for the archives: the steel guitar's
+ * RAR5 and the FreePats 7z banks (nylon guitar, ukulele). Sources come from `sources.json`:
+ * commit-pinned raw.githubusercontent.com URLs (Salamander, VSCO 2 CE, VCSL), the steel guitar
+ * author's Google Drive RAR and the FreePats archives. Every file is checked
  * against its SHA-256 before use (`--pin` fills in a missing hash once and writes it back; a hash
  * that is present and different always fails). Downloads are cached in `scripts/rmhmusic/.cache/`
  * (gitignored).
@@ -55,6 +57,10 @@ import {
   CREDITS_FILE,
   creditsText,
 } from '../../lib/rmhmusic/learn/audio/instruments/credits';
+import {
+  INSTRUMENT_IDS,
+  type InstrumentId,
+} from '../../lib/rmhmusic/learn/audio/instruments/types';
 import { detectPitch } from '../../lib/rmhmusic/learn/pitch/yin';
 
 const run =
@@ -102,14 +108,9 @@ const CREDITS_TXT =
 /** The most a zone may sound from its key centre after its tuning correction (cents). */
 const RESIDUAL_CENTS = 10;
 const IDS =
-  [
-    'piano',
-    'guitar',
-    'violin',
-    'flute',
-  ] as const;
+  INSTRUMENT_IDS;
 type Id =
-  (typeof IDS)[number];
+  InstrumentId;
 const RATE = 44100;
 
 interface SourceZone {
@@ -999,16 +1000,16 @@ async function readExisting(): Promise<
   >
 > {
   const empty =
-    {
-      piano:
-        [],
-      guitar:
-        [],
-      violin:
-        [],
-      flute:
-        [],
-    } as Record<
+    Object.fromEntries(
+      IDS.map(
+        (
+          id,
+        ) => [
+          id,
+          [],
+        ],
+      ),
+    ) as unknown as Record<
       Id,
       Omit<
         BuiltZone,

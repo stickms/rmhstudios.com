@@ -30,9 +30,10 @@ import {
   sessionFallback,
 } from './engine';
 import type { LoadState } from './load-machine';
-import type {
-  Instrument,
-  InstrumentId,
+import {
+  INSTRUMENT_IDS,
+  type Instrument,
+  type InstrumentId,
 } from './types';
 import {
   RELEASE_MS,
@@ -810,24 +811,18 @@ describe('decoded instruments', () => {
   beforeEach(
     () => {
       fakes =
-        {
-          piano:
-            fakeInstrument(
-              'piano',
-            ),
-          guitar:
-            fakeInstrument(
-              'guitar',
-            ),
-          violin:
-            fakeInstrument(
-              'violin',
-            ),
-          flute:
-            fakeInstrument(
-              'flute',
-            ),
-        };
+        Object.fromEntries(
+          INSTRUMENT_IDS.map(
+            (
+              id,
+            ) => [
+              id,
+              fakeInstrument(
+                id,
+              ),
+            ],
+          ),
+        ) as typeof fakes;
       __setInstrumentFactory(
         (
           id,

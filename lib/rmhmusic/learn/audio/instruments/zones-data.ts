@@ -742,4 +742,879 @@ export const ZONES: Readonly<
             '989132f528d7a36fee6b1f572700431a746764bd1ab0a7901b8cffddc63c6e5d',
         },
       ],
+    cello:
+      [
+        {
+          file: '36.mp3',
+          keyCenter: 36,
+          tuneCents: 0,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '917a8006a8c7258d76a40006a2292bdd4dd5d5043e0762fe8a45c3279b0d06b3',
+        },
+        {
+          file: '40.mp3',
+          keyCenter: 40,
+          tuneCents: 3,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'c1ded9e0dec0df76ed77b89fee9e111d3634657738be66bd992cfbd6efa9aaf3',
+        },
+        {
+          file: '43.mp3',
+          keyCenter: 43,
+          tuneCents: 1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'e6f7a555a8648f7fcd99d404d7848c72ce499515e43d3ee9d6c2c1de3a787e6a',
+        },
+        {
+          file: '47.mp3',
+          keyCenter: 47,
+          tuneCents: 0,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '05c0eb36f5f5392c211f8244bd7ef1940c42fc0af58c391bf2842eab311942b4',
+        },
+        {
+          file: '50.mp3',
+          keyCenter: 50,
+          tuneCents: 0,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '7b04678086c46043fd52c0a6baf2c90289f23fde8d21f2190a2693c61db8ccbe',
+        },
+        {
+          file: '53.mp3',
+          keyCenter: 53,
+          tuneCents:
+            -3,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '3d687563e328013b4e6cd8ae1e186ed0614501361d291d7a125c7c3ad318705f',
+        },
+        {
+          file: '57.mp3',
+          keyCenter: 57,
+          tuneCents: 1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'b7c4412b2c0c704ab5914cbc26ee3c5ca349bdd63ee402018ae8966c1e892ff4',
+        },
+        {
+          file: '60.mp3',
+          keyCenter: 60,
+          tuneCents: 3,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '2efc2d20f5e7b50327ecf7493e7991984307d24c3a7f2fbebe8515e9548c4fde',
+        },
+        {
+          file: '64.mp3',
+          keyCenter: 64,
+          tuneCents: 2,
+          gainDb:
+            -0.1,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '118564dbe70ee933bbd8ca673066e96dfcdca6b61e15da91a507da9194ee182b',
+        },
+        {
+          file: '67.mp3',
+          keyCenter: 67,
+          tuneCents: 1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'd5e4872c2b087f7de892fa88f4b7980a58128371447750a758518d9c53e39d90',
+        },
+        {
+          file: '71.mp3',
+          keyCenter: 71,
+          tuneCents:
+            -1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'ac5e6214efe892da3c0afc7bac6a8f72156ddb038690acf4928f119eba629c78',
+        },
+        {
+          file: '74.mp3',
+          keyCenter: 74,
+          tuneCents:
+            -1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'c6e09f4ce25baecec74bc1b88c53c3b80040a50c97fb721ef1a37fd331842362',
+        },
+        {
+          file: '77.mp3',
+          keyCenter: 77,
+          tuneCents: 1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '21df2161024e09974d9cde57e1eae74526ebb7b96c4c132c4977492fa726cb3b',
+        },
+      ],
+    clarinet:
+      [
+        {
+          file: '50.mp3',
+          keyCenter: 50,
+          tuneCents:
+            -4,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '6057a8a9fd4f24e48e2016591a14974fc36e51d5a77c6f2b40b95dd042315422',
+        },
+        {
+          file: '53.mp3',
+          keyCenter: 53,
+          tuneCents:
+            -1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'b6a8eead0f1b2e9b65e2151762c0a271b7548079a0b329da5d770043df3e6db5',
+        },
+        {
+          file: '58.mp3',
+          keyCenter: 58,
+          tuneCents:
+            -1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '2e35d423148100b6b8d86027ceee33f7d52b38c2ac5d46aa0a9d7329d1cc097f',
+        },
+        {
+          file: '62.mp3',
+          keyCenter: 62,
+          tuneCents:
+            -3,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'af53e60fde947185f3343d7eb8feadf6c8b6d97b1697dec89d209de9dac30729',
+        },
+        {
+          file: '65.mp3',
+          keyCenter: 65,
+          tuneCents:
+            -6,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'ed50e55aae05752d4a229aa45e4ace5445d89b30b0c0cff31467df41aa6695e0',
+        },
+        {
+          file: '70.mp3',
+          keyCenter: 70,
+          tuneCents:
+            -3,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '99dbae1b83d02f969261c69d5e930d811b5ddf9e6499263b23a1f8637c3361eb',
+        },
+        {
+          file: '74.mp3',
+          keyCenter: 74,
+          tuneCents:
+            -4,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'd93cc5da61b7e77e5c01598721d4f7fcf64d39918041a5a2a507edee5d87f38f',
+        },
+        {
+          file: '77.mp3',
+          keyCenter: 77,
+          tuneCents:
+            -6,
+          gainDb:
+            -0.1,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'ae4c473474632e5a2e723ae18299650efeed19ca9ae9c1f670d68bae748c2acb',
+        },
+        {
+          file: '82.mp3',
+          keyCenter: 82,
+          tuneCents:
+            -4,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '2a839903df3512722944bf77f7fc8572ed83002e8ff5e2ef417782b29d9f6e3e',
+        },
+        {
+          file: '86.mp3',
+          keyCenter: 86,
+          tuneCents:
+            -6,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'c81971b095a699cd2c7ab9b4374b1687071a28989e9ec3cc2b1bc5ad37079dd5',
+        },
+        {
+          file: '89.mp3',
+          keyCenter: 89,
+          tuneCents:
+            -1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'f479ca474ed4da8c1af5251f4dec58f39b21fe03d4e8e131e16d84902b255ef7',
+        },
+      ],
+    oboe: [
+      {
+        file: '58.mp3',
+        keyCenter: 58,
+        tuneCents:
+          -3,
+        gainDb: 0,
+        startOffsetS: 0,
+        durationS: 3.5,
+        sha256:
+          '70e5a407fe1e8d89abe2cd8347cc504f494d48d9704b3eb5164b752c16c3e79c',
+      },
+      {
+        file: '62.mp3',
+        keyCenter: 62,
+        tuneCents:
+          -3,
+        gainDb: 0,
+        startOffsetS: 0,
+        durationS: 3.5,
+        sha256:
+          'b57e68a06b69cd65c402164bcb286c37ed4efb958894f5642c7c43512c701961',
+      },
+      {
+        file: '65.mp3',
+        keyCenter: 65,
+        tuneCents:
+          -3,
+        gainDb: 0,
+        startOffsetS: 0,
+        durationS: 3.5,
+        sha256:
+          '2a488041e48f7b24d364041b36e03a16f92f22cd4637e8c80ba8ba1c4b4b94dc',
+      },
+      {
+        file: '70.mp3',
+        keyCenter: 70,
+        tuneCents:
+          -2,
+        gainDb: 0,
+        startOffsetS: 0,
+        durationS: 3.5,
+        sha256:
+          '10cddc6218b45d712a0e4154d22249213b7c877faaf3a01098c95049f4e7bede',
+      },
+      {
+        file: '74.mp3',
+        keyCenter: 74,
+        tuneCents:
+          -2,
+        gainDb: 0,
+        startOffsetS: 0,
+        durationS: 3.5,
+        sha256:
+          '359127b0ab8570c6c07afe9ec4f2f1c152f30bcf202430016d67732d79866671',
+      },
+      {
+        file: '77.mp3',
+        keyCenter: 77,
+        tuneCents:
+          -2,
+        gainDb: 0,
+        startOffsetS: 0,
+        durationS: 3.5,
+        sha256:
+          '999a5d56249edd0521d5a1986d227c3596c55bb640be29191215d234a9a185f4',
+      },
+      {
+        file: '82.mp3',
+        keyCenter: 82,
+        tuneCents: 1,
+        gainDb:
+          -0.1,
+        startOffsetS: 0,
+        durationS: 3.5,
+        sha256:
+          '87746e19f37a081fa992a65fa7a4c66affe6fd37e6aea813b1d29faa30ab68c4',
+      },
+      {
+        file: '86.mp3',
+        keyCenter: 86,
+        tuneCents:
+          -1,
+        gainDb: 0,
+        startOffsetS: 0,
+        durationS: 3.5,
+        sha256:
+          '51fee311541751a2373d410b0cb7ee29c27b6533ddc45f15ed68146f5c26dcfe',
+      },
+      {
+        file: '89.mp3',
+        keyCenter: 89,
+        tuneCents: 0,
+        gainDb: 0,
+        startOffsetS: 0,
+        durationS: 3.5,
+        sha256:
+          'bad8eace9ba3a43ed04d38c5c256042ad2763d16ba56d91989ab061513778446',
+      },
+    ],
+    'guitar-nylon':
+      [
+        {
+          file: '40.mp3',
+          keyCenter: 40,
+          tuneCents:
+            -1,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            'd0793598a2a6270a47e29fcf32c864642a49290a279979f47b6f216919b9c2e0',
+        },
+        {
+          file: '43.mp3',
+          keyCenter: 43,
+          tuneCents:
+            -9,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            'cc6514b23ed3ca2423341859fe2b0d3c5ba4be87d4ccdd1183684d5b2a0c486a',
+        },
+        {
+          file: '45.mp3',
+          keyCenter: 45,
+          tuneCents:
+            -1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            '78365186b7af20459bf3f1ebc92ec64c0deb3c6a73be73472ea20e07ab366396',
+        },
+        {
+          file: '47.mp3',
+          keyCenter: 47,
+          tuneCents:
+            -7,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            '339f7a49b4285e70d3a8e30fdcdbec7633a55c6431170b077b8ea0c4965b4598',
+        },
+        {
+          file: '50.mp3',
+          keyCenter: 50,
+          tuneCents:
+            -4,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            '0b278cf73afeff49094fd25b55f41954c1303aece6f3284a97381e26db52f3f7',
+        },
+        {
+          file: '52.mp3',
+          keyCenter: 52,
+          tuneCents:
+            -4,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            'a434221bcd0064958cc1906f8f862d99d6b9ac0aee3d786a7abe537da23a06ac',
+        },
+        {
+          file: '54.mp3',
+          keyCenter: 54,
+          tuneCents:
+            -2,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            '23cd98ff92c9f001027783a2ce9e3d9a88fa693a524513ceb5fe8b4b86d14035',
+        },
+        {
+          file: '56.mp3',
+          keyCenter: 56,
+          tuneCents:
+            -9,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            '56b3da246c8441877308530b70aba811822f77a43e754573470ca90a280cc4b9',
+        },
+        {
+          file: '58.mp3',
+          keyCenter: 58,
+          tuneCents:
+            -12,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 2.49,
+          sha256:
+            '306cf023d4ceb023f27fcdab781712c83637a12d26eeb55b1d77973d42776ee0',
+        },
+        {
+          file: '60.mp3',
+          keyCenter: 60,
+          tuneCents:
+            -8,
+          gainDb:
+            -0.1,
+          startOffsetS: 0,
+          durationS: 2.418,
+          sha256:
+            '4010c5f499d089e533dd684920d608ba7a71c1d3f79c14be7c423ff0f0d9066b',
+        },
+        {
+          file: '62.mp3',
+          keyCenter: 62,
+          tuneCents:
+            -8,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            'af575c4e6ce8f196142a840aa6445e67bf22212bd7a2e0e30e47399ccc015bb2',
+        },
+        {
+          file: '64.mp3',
+          keyCenter: 64,
+          tuneCents: 0,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            'eb59124e3b8293b1359e027e8c5fbd84376ca93c4c82c5cbc003f77ec912458e',
+        },
+        {
+          file: '66.mp3',
+          keyCenter: 66,
+          tuneCents:
+            -3,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            '057bef5e47ea366bfbfb8f5eff2d59d5cf35295fd853ce6d16cc0bf225e01a0c',
+        },
+        {
+          file: '69.mp3',
+          keyCenter: 69,
+          tuneCents:
+            -3,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3,
+          sha256:
+            '4f8ce4bf31c0d6f50bac2ffec3e3efe095b524e1311be6a417bece2b94e07c85',
+        },
+        {
+          file: '71.mp3',
+          keyCenter: 71,
+          tuneCents:
+            -13,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 1.9,
+          sha256:
+            '13c80b5a3f0c25f0c799e2abd19b86018cb10f9f2886199bb8f48339b581bbc7',
+        },
+        {
+          file: '73.mp3',
+          keyCenter: 73,
+          tuneCents:
+            -9,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 1.754,
+          sha256:
+            '6b91889ce946ecb46a8dfb0474b22237284fc6e6ff9b89be7d4a322c7df0de38',
+        },
+        {
+          file: '75.mp3',
+          keyCenter: 75,
+          tuneCents:
+            -3,
+          gainDb:
+            -0.1,
+          startOffsetS: 0,
+          durationS: 1.257,
+          sha256:
+            '3ead7ddf2a0cd81b104d4bb2299dc84307779d08f4206cea941364a095ac058f',
+        },
+        {
+          file: '77.mp3',
+          keyCenter: 77,
+          tuneCents: 2,
+          gainDb:
+            -0.1,
+          startOffsetS: 0,
+          durationS: 1.546,
+          sha256:
+            '2fe7ec6fd021d591d76269db8af62e6176cdf8fcd151930812bf7a73a9eebee5',
+        },
+        {
+          file: '79.mp3',
+          keyCenter: 79,
+          tuneCents: 2,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 1.424,
+          sha256:
+            'de882386ae20ecf9c22995122a256e9594e361d0b5cc31c38539c6ba0e741d4d',
+        },
+        {
+          file: '81.mp3',
+          keyCenter: 81,
+          tuneCents:
+            -8,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 1.631,
+          sha256:
+            '098492646b34e9236cd88a3daea4a5046bad3105a1a3d1fe0aa2263ee4de4dee',
+        },
+        {
+          file: '83.mp3',
+          keyCenter: 83,
+          tuneCents:
+            -2,
+          gainDb: 0.2,
+          startOffsetS: 0,
+          durationS: 0.981,
+          sha256:
+            'b55d59c3f67643172ed6e6b123528fc5fcfc9f869ede881dfcd65876afb612f5',
+        },
+      ],
+    ukulele:
+      [
+        {
+          file: '60.mp3',
+          keyCenter: 60,
+          tuneCents:
+            -1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 2.5,
+          sha256:
+            '8eae2a85801c24f6c712afd6dac25467f09b943ef65e30c64970f571f9890cc6',
+        },
+        {
+          file: '62.mp3',
+          keyCenter: 62,
+          tuneCents:
+            -4,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 2.5,
+          sha256:
+            'b9ed5374100bbbfd050ece24ff8e669b1f5509098488bd9913a9789b365e4f91',
+        },
+        {
+          file: '64.mp3',
+          keyCenter: 64,
+          tuneCents:
+            -1,
+          gainDb:
+            -0.1,
+          startOffsetS: 0,
+          durationS: 2.5,
+          sha256:
+            '33460915f7edafbb61d37843fbd3050d6af940dfad24d4abad4df715313793d6',
+        },
+        {
+          file: '66.mp3',
+          keyCenter: 66,
+          tuneCents:
+            -4,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 1.9,
+          sha256:
+            '5fcf38b470792d0c53630e834bf34cd1ab37412bd6c57f8afbc9edfe4a99d28e',
+        },
+        {
+          file: '67.mp3',
+          keyCenter: 67,
+          tuneCents: 3,
+          gainDb:
+            -0.1,
+          startOffsetS: 0,
+          durationS: 1.75,
+          sha256:
+            '193089955b396ba55abf83bfaa6369c34116ad2699898b894d5b91ec922f6758',
+        },
+        {
+          file: '69.mp3',
+          keyCenter: 69,
+          tuneCents: 1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 2.5,
+          sha256:
+            '26583c7f9cc15eb48b29c189570e706ca3bc9de8eb505c649c1f098b68ce3042',
+        },
+        {
+          file: '71.mp3',
+          keyCenter: 71,
+          tuneCents: 0,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 2,
+          sha256:
+            'f157071eeb7afe4071a9b8d2aed57b5e28e3385f9b3e9285c583b3fb39f7e88b',
+        },
+        {
+          file: '73.mp3',
+          keyCenter: 73,
+          tuneCents: 3,
+          gainDb: 0.2,
+          startOffsetS: 0,
+          durationS: 2,
+          sha256:
+            '11800d7c78ad079c4b518c91e6afc6f9055397360c83cfc33ef73ab91962784e',
+        },
+        {
+          file: '75.mp3',
+          keyCenter: 75,
+          tuneCents: 3,
+          gainDb: 0.1,
+          startOffsetS: 0,
+          durationS: 1.25,
+          sha256:
+            'bc4439321c555226dbbea0330bcc74c4e5f66760f6b621d1c947808a93d0f3e3',
+        },
+        {
+          file: '77.mp3',
+          keyCenter: 77,
+          tuneCents: 5,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 1.35,
+          sha256:
+            'e7927633790238be968bf673531bf53fa6b0a1c3c0ab707676480d081782af8b',
+        },
+        {
+          file: '79.mp3',
+          keyCenter: 79,
+          tuneCents: 7,
+          gainDb: 0.3,
+          startOffsetS: 0,
+          durationS: 1.5,
+          sha256:
+            '551dfae1467b37ee29dc9f47cb268f702e1784d5852589446af98c2974a064ca',
+        },
+        {
+          file: '81.mp3',
+          keyCenter: 81,
+          tuneCents: 9,
+          gainDb:
+            -0.1,
+          startOffsetS: 0,
+          durationS: 1.7,
+          sha256:
+            '6e7165b9e30019b488b6ad4ae1e69592ecf3b2e5b048820b42884d65d495dafa',
+        },
+        {
+          file: '84.mp3',
+          keyCenter: 84,
+          tuneCents: 2,
+          gainDb:
+            -0.3,
+          startOffsetS: 0,
+          durationS: 1.1,
+          sha256:
+            '7e83c9449b62437b0db3657b37fd8b2e37d070cb10d7c6146ada610c952d841f',
+        },
+      ],
+    organ:
+      [
+        {
+          file: '48.mp3',
+          keyCenter: 48,
+          tuneCents: 0,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'd33e7fdfa92d5c4616734aa09779d029ace9d523f2814141e6c1a1a23475c6e5',
+        },
+        {
+          file: '51.mp3',
+          keyCenter: 51,
+          tuneCents:
+            -3,
+          gainDb:
+            -0.1,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'ccf0994e0a9208540733113924deb23d9b90e37ec1846a0880c3348fd0bb2753',
+        },
+        {
+          file: '54.mp3',
+          keyCenter: 54,
+          tuneCents:
+            -5,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '82be99923499a3485f1f11be69814c81c385679262ab4b7b59af19f71e0d0679',
+        },
+        {
+          file: '57.mp3',
+          keyCenter: 57,
+          tuneCents:
+            -4,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '55a1a16d3d2285be4091c082c430f675833570591226d377b82b4947a81f2869',
+        },
+        {
+          file: '60.mp3',
+          keyCenter: 60,
+          tuneCents:
+            -2,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '9b9e156d797efc5fcd1c5d191d16ef628fb5e3cb4a65a6d8a11d30e5c84e6555',
+        },
+        {
+          file: '63.mp3',
+          keyCenter: 63,
+          tuneCents: 0,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '4106dae3fadf4a658d220f6faf438533bf49e251a0f450a91046bba1dceb9ab9',
+        },
+        {
+          file: '66.mp3',
+          keyCenter: 66,
+          tuneCents: 0,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'ffff8cd6227060012eef2e4d7b5cd5c37a57ae0a408c96a84cd2e832a2b80981',
+        },
+        {
+          file: '69.mp3',
+          keyCenter: 69,
+          tuneCents: 3,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '4efb3477c9e7187d500afb952192ecea61b25f2298850f26087efc8cc1939ae0',
+        },
+        {
+          file: '72.mp3',
+          keyCenter: 72,
+          tuneCents: 4,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '6ececab846f4011a784595a3df0b0483cf566aaf42b22a680e19414c50d4b558',
+        },
+        {
+          file: '75.mp3',
+          keyCenter: 75,
+          tuneCents: 3,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'b8731d653433f5186a322aaf08fcfef15a59ffdbee7d187b76ac49f0dc42a79d',
+        },
+        {
+          file: '78.mp3',
+          keyCenter: 78,
+          tuneCents: 1,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '1dc85111c120e6e8225ecc5a56b27bffc85664aea5af46c933e7a842018b0031',
+        },
+        {
+          file: '81.mp3',
+          keyCenter: 81,
+          tuneCents: 0,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            '9d84a66a49c30f20bdd67dd09aae6bbcbabb2cbec7221ad0f8be99a83d556de8',
+        },
+        {
+          file: '84.mp3',
+          keyCenter: 84,
+          tuneCents: 3,
+          gainDb: 0,
+          startOffsetS: 0,
+          durationS: 3.5,
+          sha256:
+            'e018331f1911f27b0cf0b9f0fcc9a490d1feac3337ed902a78b4eba9650535be',
+        },
+      ],
   };
