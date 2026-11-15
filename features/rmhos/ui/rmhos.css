@@ -49,73 +49,109 @@
 
 /* The shared primitives (Button, Dialog) read --site-*; inside the app they wear the app palette. */
 .rmhos-app {
-  --site-accent: var(--app-accent);
-  --site-accent-fg: var(--app-accent-fg);
-  --site-accent-hover: var(--app-accent-hover);
+  --site-accent: var(
+    --app-accent
+  );
+  --site-accent-fg: var(
+    --app-accent-fg
+  );
+  --site-accent-hover: var(
+    --app-accent-hover
+  );
 }
 
-.rmhos-app .rmhos-root {
+.rmhos-app
+  .rmhos-root {
   position: relative;
   width: 100%;
   height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: var(--app-bg);
+  background: var(
+    --app-bg
+  );
 }
 
 /* The screen and the boot panel share this box; the status line sits under it. */
-.rmhos-app .rmhos-stage {
+.rmhos-app
+  .rmhos-stage {
   position: relative;
-  flex: 1 1 auto;
+  flex: 1
+    1
+    auto;
   min-height: 0;
 }
 
-.rmhos-app .rmhos-toolbar {
+.rmhos-app
+  .rmhos-toolbar {
   flex: none;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px 12px;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--app-border);
-  background: var(--app-bg-subtle);
+  gap: 6px
+    12px;
+  padding: 6px
+    12px;
+  border-bottom: 1px
+    solid
+    var(
+      --app-border
+    );
+  background: var(
+    --app-bg-subtle
+  );
 }
 
-.rmhos-app .rmhos-toolbar-status,
-.rmhos-app .rmhos-toolbar-actions {
+.rmhos-app
+  .rmhos-toolbar-status,
+.rmhos-app
+  .rmhos-toolbar-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 12px;
+  gap: 6px
+    12px;
   min-width: 0;
 }
 
-.rmhos-app .rmhos-toolbar-actions {
+.rmhos-app
+  .rmhos-toolbar-actions {
   gap: 6px;
 }
 
 /* Icons alone on a phone: every button keeps its aria-label. */
-.rmhos-app .rmhos-toolbar-text {
+.rmhos-app
+  .rmhos-toolbar-text {
   display: none;
 }
 
 @media (min-width: 640px) {
-  .rmhos-app .rmhos-toolbar-text {
+  .rmhos-app
+    .rmhos-toolbar-text {
     display: inline;
   }
 }
 
-.rmhos-app .rmhos-notices {
+.rmhos-app
+  .rmhos-notices {
   flex: none;
-  padding: 6px 12px;
-  border-top: 1px solid var(--app-border);
-  background: var(--app-bg-subtle);
+  padding: 6px
+    12px;
+  border-top: 1px
+    solid
+    var(
+      --app-border
+    );
+  background: var(
+    --app-bg-subtle
+  );
 }
 
 /* v86 owns the children of this box: one div for text mode, one canvas for graphics. */
-.rmhos-app .rmhos-screen {
+.rmhos-app
+  .rmhos-screen {
   position: absolute;
   inset: 0;
   display: flex;
@@ -125,22 +161,30 @@
   cursor: default;
 }
 
-.rmhos-app .rmhos-screen > div {
+.rmhos-app
+  .rmhos-screen
+  > div {
   white-space: pre;
-  font: 14px/1 monospace;
-  color: var(--app-text);
+  font: 14px/1
+    monospace;
+  color: var(
+    --app-text
+  );
 }
 
 /* The machine is created with screen scale 0, so v86 writes no inline size on the canvas: the box
    decides. Fit it, keeping the aspect ratio and smoothing the scale (not pixelated). */
-.rmhos-app .rmhos-screen > canvas {
+.rmhos-app
+  .rmhos-screen
+  > canvas {
   width: 100%;
   height: 100%;
   object-fit: contain;
   image-rendering: auto;
 }
 
-.rmhos-app .rmhos-boot {
+.rmhos-app
+  .rmhos-boot {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -148,51 +192,92 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: var(--app-bg);
+  background: var(
+    --app-bg
+  );
 }
 
-.rmhos-app .rmhos-boot-panel {
-  width: min(28rem, 100%);
+.rmhos-app
+  .rmhos-boot-panel {
+  width: min(
+    28rem,
+    100%
+  );
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.rmhos-app .rmhos-boot-bar {
+.rmhos-app
+  .rmhos-boot-bar {
   height: 4px;
   border-radius: 2px;
-  background: var(--app-border);
+  background: var(
+    --app-border
+  );
   overflow: hidden;
 }
 
-.rmhos-app .rmhos-boot-bar > span {
+.rmhos-app
+  .rmhos-boot-bar
+  > span {
   display: block;
   height: 100%;
-  background: var(--app-accent);
-  transition: width 120ms ease;
+  background: var(
+    --app-accent
+  );
+  transition: width
+    120ms
+    ease;
 }
 
 /* Keys go to the guest while the screen has focus: say so with a ring, not just a hint. It is
    `:focus`, not `:focus-visible`, because a click captures the keyboard just the same. */
-.rmhos-app .rmhos-screen:focus {
-  outline: var(--app-focus-width, 3px) solid var(--app-focus-ring, var(--app-accent));
-  outline-offset: calc(-1 * var(--app-focus-width, 3px));
+.rmhos-app
+  .rmhos-screen:focus {
+  outline: var(
+      --app-focus-width,
+      3px
+    )
+    solid
+    var(
+      --app-focus-ring,
+      var(
+        --app-accent
+      )
+    );
+  outline-offset: calc(
+    -1 *
+      var(
+        --app-focus-width,
+        3px
+      )
+  );
 }
 
-.rmhos-app .rmhos-hintbar {
+.rmhos-app
+  .rmhos-hintbar {
   flex: none;
   box-sizing: border-box;
   height: 24px;
-  padding: 0 12px;
+  padding: 0
+    12px;
   display: flex;
   align-items: center;
   font-weight: 500;
-  border-bottom: 1px solid var(--app-border);
-  background: var(--app-bg-subtle);
+  border-bottom: 1px
+    solid
+    var(
+      --app-border
+    );
+  background: var(
+    --app-bg-subtle
+  );
 }
 
 /* A long translation is cut with an ellipsis (the full text is in the title), never wrapped. */
-.rmhos-app .rmhos-hintbar-text {
+.rmhos-app
+  .rmhos-hintbar-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -200,12 +285,14 @@
 }
 
 /* Hidden, not removed: the row keeps its height whether or not the screen has focus. */
-.rmhos-app .rmhos-hintbar[aria-hidden='true'] {
+.rmhos-app
+  .rmhos-hintbar[aria-hidden='true'] {
   visibility: hidden;
 }
 
 /* Toasts at the bottom: the shared stack is top-centre, over the toolbar's buttons. */
-.rmhos-app .rmhos-toasts {
+.rmhos-app
+  .rmhos-toasts {
   inset-block-start: auto;
   inset-block-end: 0;
   padding-block-start: 0;

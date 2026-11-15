@@ -10,118 +10,347 @@
 //     later, and only that second read is believed;
 //   - a file that is older than 2 s is believed at once, so an operator who really empties it clears
 //     the list, and the hub logs how many entries that removed.
-import { readFileSync, statSync } from 'node:fs';
+import {
+  readFileSync,
+  statSync,
+} from 'node:fs';
 
 export const SETTLE_MS = 2000;
 
 export interface DenyList {
-  has(userId: string): boolean;
+  has(
+    userId: string,
+  ): boolean;
   /**
    * Re-read the file; returns the ids that are newly denied. When the file looks half-written the
    * answer is `[]` now and the retry 2 s later reports through `onRetry` (the caller enforces there).
    */
-  reload(onRetry?: (added: string[]) => void): string[];
+  reload(
+    onRetry?: (
+      added: string[],
+    ) => void,
+  ): string[];
   /** Operational log lines (warnings, removals); the hub points this at its JSON logger. */
-  onEvent: (line: Record<string, unknown>) => void;
+  onEvent: (
+    line: Record<
+      string,
+      unknown
+    >,
+  ) => void;
   readonly size: number;
 }
 
 export interface DenyIo {
   /** mtime of the file in epoch ms, or null when it cannot be stat'ed. */
-  mtimeMs: (path: string) => number | null;
+  mtimeMs: (
+    path: string,
+  ) =>
+    | number
+    | null;
   now: () => number;
   /** Schedule the one retry. Default: an unref'd setTimeout. */
-  later: (fn: () => void, ms: number) => void;
+  later: (
+    fn: () => void,
+    ms: number,
+  ) => void;
 }
 
-const defaultIo: DenyIo = {
-  mtimeMs: (p) => {
-    try {
-      return statSync(p).mtimeMs;
-    } catch {
-      return null;
-    }
-  },
-  now: () => Date.now(),
-  later: (fn, ms) => {
-    setTimeout(fn, ms).unref();
-  },
-};
+const defaultIo: DenyIo =
+  {
+    mtimeMs:
+      (
+        p,
+      ) => {
+        try {
+          return statSync(
+            p,
+          )
+            .mtimeMs;
+        } catch {
+          return null;
+        }
+      },
+    now: () =>
+      Date.now(),
+    later:
+      (
+        fn,
+        ms,
+      ) => {
+        setTimeout(
+          fn,
+          ms,
+        ).unref();
+      },
+  };
 
-function parse(text: string): string[] {
+function parse(
+  text: string,
+): string[] {
   return text
-    .split('\n')
-    .map((line) => line.replace(/#.*$/, ''))
-    .flatMap((line) => line.split(','))
-    .map((t) => t.trim())
-    .filter((t) => t !== '');
+    .split(
+      '\n',
+    )
+    .map(
+      (
+        line,
+      ) =>
+        line.replace(
+          /#.*$/,
+          '',
+        ),
+    )
+    .flatMap(
+      (
+        line,
+      ) =>
+        line.split(
+          ',',
+        ),
+    )
+    .map(
+      (
+        t,
+      ) =>
+        t.trim(),
+    )
+    .filter(
+      (
+        t,
+      ) =>
+        t !==
+        '',
+    );
 }
 
 export function createDenyList(
   env: NodeJS.ProcessEnv,
-  readFile: (path: string) => string = (p) => readFileSync(p, 'utf8'),
+  readFile: (
+    path: string,
+  ) => string = (
+    p,
+  ) =>
+    readFileSync(
+      p,
+      'utf8',
+    ),
   ioOverrides: Partial<DenyIo> = {},
 ): DenyList {
-  const io = { ...defaultIo, ...ioOverrides };
-  const fromEnv = parse((env.RMHOS_NET_DENY_USERS ?? '').replace(/,/g, '\n'));
-  const file = env.RMHOS_NET_DENY_FILE?.trim() ?? '';
-  let current = new Set<string>(fromEnv);
-  const list: DenyList = {
-    has: (id) => current.has(id),
-    onEvent: () => {},
-    reload(onRetry) {
-      return apply(false, onRetry);
-    },
-    get size() {
-      return current.size;
-    },
-  };
+  const io =
+    {
+      ...defaultIo,
+      ...ioOverrides,
+    };
+  const fromEnv =
+    parse(
+      (
+        env.RMHOS_NET_DENY_USERS ??
+        ''
+      ).replace(
+        /,/g,
+        '\n',
+      ),
+    );
+  const file =
+    env.RMHOS_NET_DENY_FILE?.trim() ??
+    '';
+  let current =
+    new Set<string>(
+      fromEnv,
+    );
+  const list: DenyList =
+    {
+      has: (
+        id,
+      ) =>
+        current.has(
+          id,
+        ),
+      onEvent:
+        () => {},
+      reload(
+        onRetry,
+      ) {
+        return apply(
+          false,
+          onRetry,
+        );
+      },
+      get size() {
+        return current.size;
+      },
+    };
 
   // The file read into memory in one go, or null (with a warning) when it cannot be read.
   function read(): Set<string> | null {
     try {
-      return new Set([...fromEnv, ...parse(readFile(file))]);
+      return new Set(
+        [
+          ...fromEnv,
+          ...parse(
+            readFile(
+              file,
+            ),
+          ),
+        ],
+      );
     } catch (err) {
-      const code = (err as NodeJS.ErrnoException | undefined)?.code;
-      const missing = code === 'ENOENT' || (err instanceof Error && err.message.includes('ENOENT'));
-      list.onEvent({
-        evt: 'rmhos-net.deny.warn',
-        reason: missing ? 'file-missing' : 'file-unreadable',
-        keeping: current.size,
-        error: err instanceof Error ? err.message : String(err),
-      });
+      const code =
+        (
+          err as
+            | NodeJS.ErrnoException
+            | undefined
+        )
+          ?.code;
+      const missing =
+        code ===
+          'ENOENT' ||
+        (err instanceof
+          Error &&
+          err.message.includes(
+            'ENOENT',
+          ));
+      list.onEvent(
+        {
+          evt: 'rmhos-net.deny.warn',
+          reason:
+            missing
+              ? 'file-missing'
+              : 'file-unreadable',
+          keeping:
+            current.size,
+          error:
+            err instanceof
+            Error
+              ? err.message
+              : String(
+                  err,
+                ),
+        },
+      );
       return null;
     }
   }
 
-  function apply(isRetry: boolean, onRetry?: (added: string[]) => void): string[] {
-    if (file === '') return [];
-    const next = read();
-    if (next === null) return [];
-    if (!isRetry && next.size < current.size) {
-      const mtime = io.mtimeMs(file);
-      if (mtime !== null && io.now() - mtime < SETTLE_MS) {
-        list.onEvent({ evt: 'rmhos-net.deny.warn', reason: 'file-shrank-while-fresh', had: current.size, read: next.size });
-        io.later(() => {
-          const added = apply(true);
-          onRetry?.(added);
-        }, SETTLE_MS);
+  function apply(
+    isRetry: boolean,
+    onRetry?: (
+      added: string[],
+    ) => void,
+  ): string[] {
+    if (
+      file ===
+      ''
+    )
+      return [];
+    const next =
+      read();
+    if (
+      next ===
+      null
+    )
+      return [];
+    if (
+      !isRetry &&
+      next.size <
+        current.size
+    ) {
+      const mtime =
+        io.mtimeMs(
+          file,
+        );
+      if (
+        mtime !==
+          null &&
+        io.now() -
+          mtime <
+          SETTLE_MS
+      ) {
+        list.onEvent(
+          {
+            evt: 'rmhos-net.deny.warn',
+            reason:
+              'file-shrank-while-fresh',
+            had: current.size,
+            read: next.size,
+          },
+        );
+        io.later(
+          () => {
+            const added =
+              apply(
+                true,
+              );
+            onRetry?.(
+              added,
+            );
+          },
+          SETTLE_MS,
+        );
         return [];
       }
     }
-    const added = [...next].filter((id) => !current.has(id));
-    const removed = [...current].filter((id) => !next.has(id)).length;
-    current = next;
-    if (removed > 0) list.onEvent({ evt: 'rmhos-net.deny.removed', removed, total: current.size });
+    const added =
+      [
+        ...next,
+      ].filter(
+        (
+          id,
+        ) =>
+          !current.has(
+            id,
+          ),
+      );
+    const removed =
+      [
+        ...current,
+      ].filter(
+        (
+          id,
+        ) =>
+          !next.has(
+            id,
+          ),
+      ).length;
+    current =
+      next;
+    if (
+      removed >
+      0
+    )
+      list.onEvent(
+        {
+          evt: 'rmhos-net.deny.removed',
+          removed,
+          total:
+            current.size,
+        },
+      );
     return added;
   }
 
   // Start-up: an unreadable file is an empty list (there is nothing earlier to keep).
-  if (file !== '') {
+  if (
+    file !==
+    ''
+  ) {
     try {
-      current = new Set([...fromEnv, ...parse(readFile(file))]);
+      current =
+        new Set(
+          [
+            ...fromEnv,
+            ...parse(
+              readFile(
+                file,
+              ),
+            ),
+          ],
+        );
     } catch {
-      current = new Set(fromEnv);
+      current =
+        new Set(
+          fromEnv,
+        );
     }
   }
   return list;

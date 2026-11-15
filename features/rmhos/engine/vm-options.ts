@@ -11,16 +11,37 @@ export interface VmOptionsInput {
   baseUrl: string;
   relayUrl: string;
   /** Bytes of rootfs.ext4, from the manifest: saves v86 its size probe. */
-  rootfsSize?: number | undefined;
+  rootfsSize?:
+    | number
+    | undefined;
 }
 
-export function vmOptions({ baseUrl, relayUrl, rootfsSize }: VmOptionsInput) {
-  return baseVmOptions({ baseUrl, relayUrl, rootfsSize }) as ReturnType<typeof baseVmOptions> & {
+export function vmOptions({
+  baseUrl,
+  relayUrl,
+  rootfsSize,
+}: VmOptionsInput) {
+  return baseVmOptions(
+    {
+      baseUrl,
+      relayUrl,
+      rootfsSize,
+    },
+  ) as ReturnType<
+    typeof baseVmOptions
+  > & {
     cmdline: string;
     memory_size: number;
     vga_memory_size: number;
-    hda: { url: string; async: boolean; size?: number };
-    net_device: { type: string; relay_url: string };
+    hda: {
+      url: string;
+      async: boolean;
+      size?: number;
+    };
+    net_device: {
+      type: string;
+      relay_url: string;
+    };
     preserve_mac_from_state_image: boolean;
   };
 }

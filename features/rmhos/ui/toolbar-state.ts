@@ -7,7 +7,13 @@ import type { RmhosSession } from '../engine/rmhos.contract';
 import type { VmPhase } from '../engine/vm-types';
 import type { PolledNet } from './net-status';
 
-export type NetState = 'off' | 'not-eligible' | 'connecting' | 'on' | 'error' | 'full';
+export type NetState =
+  | 'off'
+  | 'not-eligible'
+  | 'connecting'
+  | 'on'
+  | 'error'
+  | 'full';
 
 /**
  * The toolbar's network state from the session's `net` and the status poll. A disabled `net`
@@ -15,10 +21,24 @@ export type NetState = 'off' | 'not-eligible' | 'connecting' | 'on' | 'error' | 
  * plain "off". While the hub is down `net` still says `enabled: true` and the poll then says
  * `error`: that is the "unavailable" state.
  */
-export function netStateOf(net: RmhosSession['net'] | null, polled: PolledNet): NetState {
-  if (!net) return 'off';
-  if (net.enabled) return polled;
-  return net.reason === 'not-eligible' ? 'not-eligible' : 'off';
+export function netStateOf(
+  net:
+    | RmhosSession['net']
+    | null,
+  polled: PolledNet,
+): NetState {
+  if (
+    !net
+  )
+    return 'off';
+  if (
+    net.enabled
+  )
+    return polled;
+  return net.reason ===
+    'not-eligible'
+    ? 'not-eligible'
+    : 'off';
 }
 
 export interface ToolbarInput {
@@ -45,31 +65,87 @@ export interface ToolbarState {
   showRestore: boolean;
 }
 
-const NET_KEYS: Record<NetState, string> = {
-  off: 'net.off',
-  'not-eligible': 'net.notEligible',
-  connecting: 'net.connecting',
-  on: 'net.online',
-  error: 'net.unavailable',
-  full: 'net.full',
-};
+const NET_KEYS: Record<
+  NetState,
+  string
+> =
+  {
+    off: 'net.off',
+    'not-eligible':
+      'net.notEligible',
+    connecting:
+      'net.connecting',
+    on: 'net.online',
+    error:
+      'net.unavailable',
+    full: 'net.full',
+  };
 
-export function toolbarState(input: ToolbarInput): ToolbarState {
-  const { phase, desktopReady, lastSave, saving, dirty, net } = input;
-  const signedOut = input.signedOut === true;
-  let saveLabelKey = 'save.saved';
-  if (saving) saveLabelKey = 'save.saving';
-  else if (lastSave?.status === 'storage-full') saveLabelKey = 'save.storageFull';
-  else if (lastSave?.status === 'failed') saveLabelKey = 'save.failed';
-  else if (dirty) saveLabelKey = 'save.unsaved';
-  const live = phase === 'running' || phase === 'stopped';
+export function toolbarState(
+  input: ToolbarInput,
+): ToolbarState {
+  const {
+    phase,
+    desktopReady,
+    lastSave,
+    saving,
+    dirty,
+    net,
+  } =
+    input;
+  const signedOut =
+    input.signedOut ===
+    true;
+  let saveLabelKey =
+    'save.saved';
+  if (
+    saving
+  )
+    saveLabelKey =
+      'save.saving';
+  else if (
+    lastSave?.status ===
+    'storage-full'
+  )
+    saveLabelKey =
+      'save.storageFull';
+  else if (
+    lastSave?.status ===
+    'failed'
+  )
+    saveLabelKey =
+      'save.failed';
+  else if (
+    dirty
+  )
+    saveLabelKey =
+      'save.unsaved';
+  const live =
+    phase ===
+      'running' ||
+    phase ===
+      'stopped';
   return {
     saveLabelKey,
-    saveDisabled: !desktopReady || saving || phase !== 'running',
-    netLabelKey: NET_KEYS[net],
-    showRestart: !signedOut && (live || phase === 'failed'),
+    saveDisabled:
+      !desktopReady ||
+      saving ||
+      phase !==
+        'running',
+    netLabelKey:
+      NET_KEYS[
+        net
+      ],
+    showRestart:
+      !signedOut &&
+      (live ||
+        phase ===
+          'failed'),
     // The stored archive is read from the browser's store, so downloading it needs no machine.
-    showBackup: !signedOut,
-    showRestore: !signedOut && live,
+    showBackup:
+      !signedOut,
+    showRestore:
+      !signedOut &&
+      live,
   };
 }

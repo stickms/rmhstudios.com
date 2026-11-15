@@ -11,7 +11,9 @@ export interface DeviceFacts {
   coarsePointer: boolean;
   innerWidth: number;
   /** `navigator.deviceMemory` in GB, or undefined when the browser does not say. */
-  deviceMemory: number | undefined;
+  deviceMemory:
+    | number
+    | undefined;
 }
 
 export interface DeviceGate {
@@ -21,17 +23,50 @@ export interface DeviceGate {
   lowMemory: boolean;
 }
 
-export function deviceGate(f: DeviceFacts): DeviceGate {
-  if (!f.coarsePointer) return { warn: false, lowMemory: false };
-  const lowMemory = f.deviceMemory === undefined || f.deviceMemory <= 4;
-  return { warn: f.innerWidth < 768 || lowMemory, lowMemory };
+export function deviceGate(
+  f: DeviceFacts,
+): DeviceGate {
+  if (
+    !f.coarsePointer
+  )
+    return {
+      warn: false,
+      lowMemory: false,
+    };
+  const lowMemory =
+    f.deviceMemory ===
+      undefined ||
+    f.deviceMemory <=
+      4;
+  return {
+    warn:
+      f.innerWidth <
+        768 ||
+      lowMemory,
+    lowMemory,
+  };
 }
 
 export function readDeviceFacts(): DeviceFacts {
-  const mem = (navigator as { deviceMemory?: number }).deviceMemory;
+  const mem =
+    (
+      navigator as {
+        deviceMemory?: number;
+      }
+    )
+      .deviceMemory;
   return {
-    coarsePointer: window.matchMedia('(pointer: coarse)').matches,
-    innerWidth: window.innerWidth,
-    deviceMemory: typeof mem === 'number' ? mem : undefined,
+    coarsePointer:
+      window.matchMedia(
+        '(pointer: coarse)',
+      )
+        .matches,
+    innerWidth:
+      window.innerWidth,
+    deviceMemory:
+      typeof mem ===
+      'number'
+        ? mem
+        : undefined,
   };
 }

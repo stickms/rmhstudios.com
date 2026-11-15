@@ -694,8 +694,7 @@ ones:
   General
   Public
   License,
-  version
-  3.
+  version 3.
 - v86
   (the
   emulator):
