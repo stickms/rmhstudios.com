@@ -130,9 +130,12 @@ export function SprintRun({
           prompts,
           mode,
           scored,
+          // A singer's run skips the chord prompts whatever the input (one voice, one note).
           mic:
             input ===
-            'mic',
+              'mic' ||
+            instrument ===
+              'voice',
           instrument,
         },
       ),
@@ -239,7 +242,9 @@ export function SprintRun({
   // The input: taken by the machine only before a run or after it (fixed while one is under way).
   const mic =
     input ===
-    'mic';
+      'mic' ||
+    instrument ===
+      'voice';
   useEffect(() => {
     carry(
       send(
@@ -645,7 +650,8 @@ export function SprintRun({
                 : 'deck'
             }
             octaveClef={
-              guitar
+              guitar ||
+              !!prompt.octaveClef
             }
           />
         );

@@ -29,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useArrival } from '@/components/ui/arrive';
 import { mulberry32 } from '@/lib/core/rng';
+import { resolveVoiceRange } from '@/lib/rmhmusic/learn/voice/range';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
 import {
@@ -282,6 +283,13 @@ export function SprintGame({
   const instrument: Instrument =
     profile?.instrument ??
     'piano';
+  const singer =
+    instrument ===
+    'voice';
+  const range =
+    resolveVoiceRange(
+      profile?.voiceRange,
+    );
   const guitar =
     instrument ===
     'guitar';
@@ -300,6 +308,7 @@ export function SprintGame({
           seed(),
         ),
         instrument,
+        range,
       );
   const playDaily =
     async () => {
@@ -332,6 +341,7 @@ export function SprintGame({
             dailyRun(
               date,
               instrument,
+              range,
             ),
           scored:
             !done,
@@ -471,6 +481,7 @@ export function SprintGame({
               : dailyRun(
                   playing.date,
                   instrument,
+                  range,
                 )
           }
           save={(
@@ -562,7 +573,16 @@ export function SprintGame({
                 undefined
               }
             >
-              {SPRINT_LEVELS.map(
+              {SPRINT_LEVELS.filter(
+                // A singer is offered the single-note levels only.
+                (
+                  level,
+                ) =>
+                  !singer ||
+                  micAllowed(
+                    level.kind,
+                  ),
+              ).map(
                 (
                   level,
                   i,
@@ -701,7 +721,8 @@ export function SprintGame({
                 dailyFailed
               }
               mic={
-                mic
+                mic ||
+                singer
               }
               standing={
                 overview
