@@ -98,6 +98,10 @@ import {
   useFallbackNotice,
   useSoundStatus,
 } from './useSoundNotice';
+import {
+  matchSoundLine,
+  soundLineKey,
+} from './sound-line';
 
 /** How long the hint sounds. */
 const HEAR_MS = 900;
@@ -864,14 +868,30 @@ export function MatchNoteLesson({
       position,
     );
   // A Hear it that could not sound takes the sentence line (a fixed box, so nothing moves) until
-  // the learner plays or moves on.
+  // the learner plays or moves on. Each sound line has its own key (sound-line.ts), so Loading
+  // sound... turning into the fallback notice is a new line, not the old one re-wrapped in place.
+  const soundKind =
+    matchSoundLine(
+      {
+        here:
+          sound.at ===
+          position,
+        heard:
+          sound.kind,
+        live: liveSound,
+        fellBack:
+          fellBack !=
+          null,
+        asking:
+          lesson.kind ===
+          'asking',
+      },
+    );
   let soundLine =
     '';
   if (
-    sound.at ===
-      position &&
-    sound.kind ===
-      'blocked'
+    soundKind ===
+    'blocked'
   ) {
     soundLine =
       t(
@@ -882,10 +902,8 @@ export function MatchNoteLesson({
         },
       );
   } else if (
-    sound.at ===
-      position &&
-    sound.kind ===
-      'none'
+    soundKind ===
+    'none'
   ) {
     soundLine =
       t(
@@ -896,12 +914,8 @@ export function MatchNoteLesson({
         },
       );
   } else if (
-    sound.at ===
-      position &&
-    sound.kind ===
-      'loading' &&
-    liveSound ===
-      'loading'
+    soundKind ===
+    'loading'
   ) {
     soundLine =
       t(
@@ -912,9 +926,9 @@ export function MatchNoteLesson({
         },
       );
   } else if (
-    fellBack &&
-    lesson.kind ===
-      'asking'
+    soundKind ===
+      'fallback' &&
+    fellBack
   ) {
     soundLine =
       fallbackLine(
@@ -923,11 +937,16 @@ export function MatchNoteLesson({
       );
   }
   if (
+    soundKind &&
     soundLine
   ) {
     line =
       soundLine;
-    lineKey = `sound-${position}`;
+    lineKey =
+      soundLineKey(
+        soundKind,
+        position,
+      );
   }
 
   const said =
