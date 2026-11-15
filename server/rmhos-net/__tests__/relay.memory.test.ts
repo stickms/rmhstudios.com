@@ -202,7 +202,8 @@ describe('the down direction (remote to a guest that does not read)', () => {
     await until(() => sockets.length === 3);
     clients.forEach(stopReading);
     for (const d of sockets) flood(d, 12 * MIB);
-    await until(() => sockets.some((d) => d.destroyed), 8000);
+    // the 250 ms timer finds it: shed well within a second of the flood
+    await until(() => sockets.some((d) => d.destroyed), 1500);
     await new Promise((r) => setTimeout(r, 600));
     const shed = sockets.filter((d) => d.destroyed).length;
     expect(shed).toBeGreaterThanOrEqual(1);

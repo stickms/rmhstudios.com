@@ -455,7 +455,7 @@ services:
       - RMHOS_NET_TICKET_SECRET=${RMHOS_NET_TICKET_SECRET:-}
       - RMHOS_NET_DENIED_PORTS=${RMHOS_NET_DENIED_PORTS:-25,465,587,2525}
       - RMHOS_NET_DOH_UPSTREAM=${RMHOS_NET_DOH_UPSTREAM:-}
-    command: ['node', '--max-old-space-size=192', 'dist-server/server/rmhos-net/index.cjs']
+    command: ['node', '--max-old-space-size=128', 'dist-server/server/rmhos-net/index.cjs']
     logging:
       driver: json-file
       options:
