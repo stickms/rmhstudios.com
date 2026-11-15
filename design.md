@@ -1030,6 +1030,60 @@ later.
   `noindex`
   instead.
 
+- **Drawn
+  in
+  Steel.**
+  A
+  card
+  is
+  this
+  design
+  on
+  a
+  1200×630
+  page:
+  flat
+  `--site-bg`,
+  the
+  favicon
+  as
+  the
+  mark,
+  1px
+  rules
+  between
+  the
+  brand
+  row,
+  body
+  and
+  footer,
+  Geist
+  at
+  400/500/600,
+  a
+  picture
+  in
+  a
+  bordered
+  `--site-bg-subtle`
+  box.
+  The
+  renderers
+  share
+  one
+  frame
+  (`lib/og/chrome.server.tsx`),
+  so
+  a
+  card
+  type
+  never
+  improvises
+  its
+  own
+  look.
+
 `lib/__tests__/og-page-coverage.test.ts`
 holds
 this

@@ -340,34 +340,40 @@ does.
 A
 card
 is
-1200×630,
+1200×630
+(1080×1920
+for
+a
+story),
 and
 it
 is
 the
-same
-three
-things
-the
-site
-is
-([`design.md`](../design.md)
-§1,
-§3):
+site's
+Steel
+Day
+edition
+([`design.md`](../design.md))
+on
+a
+single
+page:
 
-| Layer       | On the card                                                                                                                                           |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The scene   | White canvas, the ring backdrop radiating from a centre off the right edge, two very faint aurora blobs. Nothing above 5% ink — it sits behind text.  |
-| The glass   | Content on a `.glass-pane`-equivalent: 72% white fill, hairline rim, specular top edge. Genuinely translucent, so the scene shows through it.         |
-| The globe   | The navigation globe as the mark, drawn from the same cage `components/radial/LiquidGlobe.tsx` draws — six meridians, seven parallels, same weights.  |
-| The picture | When the page has one — a post's attachments, a game's key art — it takes the right ~40% of the pane, rounded and hairlined like every other surface. |
+| Part          | On the card                                                                                                                                                                                                                                                             |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The page      | Flat `#fafafa` (`--site-bg`). No gradient, glass, glow, shadow or backdrop (R1).                                                                                                                                                                                        |
+| The brand row | The favicon (`public/favicon.svg`, rasterised once per process by `brandMark` and ringed with a 1px hairline so its white disc reads on the page), "RMH Studios" at 600, and the kind of page as a `t-label` kicker: 13px, 600, muted, sentence case, no tracking (Y2). |
+| Rules         | A 1px `--site-border` rule under the brand row and another over the footer: rules before boxes (R3). Content sits directly on the page between them.                                                                                                                    |
+| The title     | Geist 600, tracked at `t-title`'s -0.025em; the subtitle 400 in `--site-text-muted`. Weights are 400/500/600 only (Y1).                                                                                                                                                 |
+| The picture   | When the page has one (a post's attachments, a game's key art, a section's `art`), it is a picture box: `--site-bg-subtle`, a 1px border, the 8px radius, hung on the right edge.                                                                                       |
+| The footer    | The URL, or stat chips: controls in `--site-surface` with a 1px border and the 8px radius, the headline figure ink-filled (one per card, R4).                                                                                                                           |
 
 The
 palette
 is
-**Daylight's
+**Steel's
+Day
 `:root`
-`--site-*`
 block,
 restated
 by
@@ -399,10 +405,8 @@ keep
 it
 in
 sync
-when
-that
-block
-moves.
+with
+`app/globals/tokens-themes.css`.
 
 Geometry
 goes
@@ -431,16 +435,15 @@ iMessage
 ~340px),
 so
 the
-site's
-22px
+8px
 radius
 and
 1px
-hairline
+rule
 are
 drawn
 at
-44px
+16px
 and
 2px
 in
@@ -448,111 +451,93 @@ order
 to
 _arrive_
 at
-22
+8
 and 1.
+The
+fonts
+are
+static
+Geist
+TTFs
+in
+`public/fonts/og/`
+(`python3 scripts/gen-og-fonts.py`).
 
-### What replaced what
+### Changing the design
+
+Link-preview
+services
+cache
+an
+image
+by
+its
+URL,
+often
+for
+weeks.
+Every
+card
+URL
+therefore
+carries
+the
+design's
+version,
+`?v=${OG_CARD_VERSION}`
+(`lib/og/static-cards.ts`,
+added
+by
+`ogCardPath`
+and
+`staticCardImage`).
+When
+the
+look
+of
+the
+cards
+changes,
+bump
+it
+so
+every
+page's
+`og:image`
+becomes
+a
+new
+URL,
+and
+run
+`pnpm og:cards`
+to
+redraw
+the
+one
+pre-rendered
+file,
+`public/images/og/default.png`.
 
 The
-previous
-cards
-were
-a
-dark
-`#0b0d12`
-canvas
-with
-an
-amber
-`#f5a623`
-accent
-(and,
-on
+elections
+card
+(`lib/og/elections-card.server.tsx`)
+keeps
 the
-stat
-card,
-a
-seven-hue
-accent
-palette),
-plus
-a
-default
-image
+elections
+app's
+own
+look,
+as
+the
+full-screen
+apps
+do
 on
-a
-purple
-gradient.
-None
-of
-that
-matched
-a
-theme
 the
 site
-has
-shipped
-since
-the
-rewrite
-—
-the
-default
-theme
-is
-strict
-monochrome
-glass,
-and
-"restraint
-in
-the
-palette
-is
-what
-lets
-the
-optics
-be
-loud".
-The
-per-kind
-hues
-are
-gone
-with
-it;
-what
-a
-card
-_is_
-still
-reads,
-because
-the
-kicker
-says
-so
-in
-words,
-which
-is
-also
-the
-rule
-that
-colour
-may
-never
-be
-the
-only
-carrier
-of
-meaning
-(`design.md`
-§7).
+(L8).
 
 ---
 
@@ -565,7 +550,7 @@ meaning
 | `lib/og/media.server.ts`          | **Pictures.** Resolves a stored object / `public/` path / remote URL to bytes, then re-encodes to the exact box the card draws                                                                                                                                |
 | `lib/og/collage.ts`               | The 1–4 photo grid, as geometry. Client-safe, so the "every tile is inside the box" rule is testable                                                                                                                                                          |
 | `lib/og/post-visibility.ts`       | **The one rule** deciding whether a post's card, description and title may show the post. Client-safe                                                                                                                                                         |
-| `lib/og/chrome.server.tsx`        | The design system: `globeMark`, `cardFrame`, `pane`, `inset`, `statChips`, `avatarDisc`, `framedImage`, `mediaTag`, `verifiedBadge`, `kicker`, `fitText`, `frameMetrics`                                                                                      |
+| `lib/og/chrome.server.tsx`        | The design system: `brandMark` (the favicon), `cardFrame`, `pane`, `inset`, `statChips`, `avatarDisc`, `framedImage`, `mediaTag`, `verifiedBadge`, `kicker`, `fitText`, `frameMetrics`                                                                                      |
 | `lib/og/page-card.server.tsx`     | **The generic card.** Kicker + title + subtitle + byline + stats + optional `art`, landscape or story. Most cards are this                                                                                                                                    |
 | `lib/og/post-image.server.tsx`    | The post card — author, text, **the attached pictures**, poll, quote, engagement                                                                                                                                                                              |
 | `lib/og/post-story.server.tsx`    | The 1080×1920 post card for stories                                                                                                                                                                                                                           |

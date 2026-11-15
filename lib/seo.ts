@@ -1,4 +1,5 @@
 import {
+  OG_CARD_VERSION,
   staticCardFor,
   staticCardImage,
 } from '@/lib/og/static-cards';
@@ -15,8 +16,11 @@ export const SITE_URL =
  * different ways depending on which head won. There is now one, at the 1200×630
  * every consumer expects.
  */
-export const DEFAULT_OG_IMAGE =
-  '/images/og/default.png';
+// The card design's version, carried on every card URL (`?v=`); defined beside
+// the static cards, which lib/seo already imports (see its comment there).
+export { OG_CARD_VERSION };
+
+export const DEFAULT_OG_IMAGE = `/images/og/default.png?v=${OG_CARD_VERSION}`;
 export const OG_IMAGE_WIDTH = 1200;
 export const OG_IMAGE_HEIGHT = 630;
 
@@ -44,7 +48,7 @@ export function ogCardPath(
     | 'album',
   id: string,
 ): string {
-  return `/api/og/${kind}/${encodeURIComponent(id)}`;
+  return `/api/og/${kind}/${encodeURIComponent(id)}?v=${OG_CARD_VERSION}`;
 }
 
 /** Absolute-ise a site-relative asset path; pass absolute URLs through. */
