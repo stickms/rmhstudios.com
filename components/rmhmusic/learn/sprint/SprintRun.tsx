@@ -9,7 +9,8 @@
  *   same bias for every prompt, and it is the hub's clock, so note times compare with it;
  * - every note event from the hub as it is (its own `time`; nothing here reads a clock for a note);
  * - the chord window's close as a timer (`close`), and the feedback's short pause before `next`;
- * - `save` through the run's saver, with every prompt's result, answered with its attempt;
+ * - `save` through the run's saver, with every prompt's result, answered with its attempt, and
+ *   `onStart` when Start is pressed on a scored run (the daily challenge records its start);
  * - `resume` when a dialog that paused the run closes, so the prompt is drawn and timed afresh.
  *
  * The input is fixed for the run (the machine ignores a change; `onLockChange` tells the page to
@@ -80,6 +81,7 @@ export function SprintRun({
   prompts,
   mode,
   scored,
+  onStart,
   instrument,
   input,
   paused,
@@ -91,6 +93,8 @@ export function SprintRun({
   prompts: SprintPrompt[];
   mode: SprintMode;
   scored: boolean;
+  /** Start was pressed on a scored run (the daily challenge records its start). */
+  onStart?: () => void;
   instrument: Instrument;
   input: LearnInput;
   /** A dialog is open over the run: the count and the feedback wait, notes are not taken. */
@@ -879,15 +883,19 @@ export function SprintRun({
               startButton
             }
             type="button"
-            onClick={() =>
+            onClick={() => {
+              if (
+                state.scored
+              )
+                onStart?.();
               carry(
                 send(
                   {
                     type: 'start',
                   },
                 ),
-              )
-            }
+              );
+            }}
             className={
               PRIMARY_BUTTON
             }

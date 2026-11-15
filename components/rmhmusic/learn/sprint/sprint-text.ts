@@ -16,6 +16,7 @@ import type { SprintLevelId } from '@/lib/rmhmusic/learn/sprint/levels';
 import type { SprintPrompt } from '@/lib/rmhmusic/learn/sprint/generate';
 import type { SprintState } from '@/lib/rmhmusic/learn/sprint/machine';
 import type { RunSummary } from '@/lib/rmhmusic/learn/sprint/scoring';
+import type { SprintOverview } from '@/lib/rmhmusic/learn/sprint/sprint.contract';
 
 type T =
   TFunction<'c-rmhmusic'>;
@@ -639,5 +640,117 @@ export function saveSentence(
             },
           );
       }
+  }
+}
+
+/** A level's stored best, for its picker row ('' until the bests are read). */
+export function bestSentence(
+  t: T,
+  language: string,
+  overview: SprintOverview | null,
+  level: SprintLevelId,
+): string {
+  if (
+    !overview
+  )
+    return '';
+  const best =
+    overview.bests.find(
+      (
+        b,
+      ) =>
+        b.level ===
+        level,
+    );
+  if (
+    !best
+  )
+    return t(
+      'sprint-best-none',
+      {
+        ns: 'c-rmhmusic',
+        defaultValue:
+          'Not played yet.',
+      },
+    );
+  if (
+    best.bestAvgMs ===
+    null
+  )
+    return t(
+      'sprint-best-score',
+      {
+        ns: 'c-rmhmusic',
+        score:
+          best.bestScore,
+        defaultValue:
+          'Best score {{score}}.',
+      },
+    );
+  return t(
+    'sprint-best',
+    {
+      ns: 'c-rmhmusic',
+      score:
+        best.bestScore,
+      seconds:
+        formatSeconds(
+          language,
+          best.bestAvgMs,
+        ),
+      defaultValue:
+        'Best score {{score}}, fastest average {{seconds}} s.',
+    },
+  );
+}
+
+/** Where today's challenge stands, and the run of days with a scored challenge ('' when nothing to say). */
+export function dailyStateSentence(
+  t: T,
+  overview: SprintOverview,
+): string {
+  const n =
+    overview.streak;
+  switch (
+    overview.daily
+  ) {
+    case 'scored':
+      return t(
+        'sprint-daily-scored',
+        {
+          ns: 'c-rmhmusic',
+          count:
+            n,
+          defaultValue_one:
+            "Today's score is in; runs today are practice. {{count}} day in a row.",
+          defaultValue:
+            "Today's score is in; runs today are practice. {{count}} days in a row.",
+        },
+      );
+    case 'started':
+      return t(
+        'sprint-daily-started',
+        {
+          ns: 'c-rmhmusic',
+          defaultValue:
+            "You started today's challenge and left before the end; runs today are practice.",
+        },
+      );
+    case 'open':
+      return n ===
+        0
+        ? ''
+        : t(
+            'sprint-daily-streak',
+            {
+              ns: 'c-rmhmusic',
+              count:
+                n,
+              defaultValue_one:
+                'You have played the challenge {{count}} day in a row.',
+              defaultValue:
+                'You have played the challenge {{count}} days in a row.',
+            },
+          );
   }
 }

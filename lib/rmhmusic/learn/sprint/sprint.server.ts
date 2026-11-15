@@ -1,0 +1,129 @@
+/**
+ * Sight reading results (`music_sprint_best`, `music_sprint_daily`) — plan task S5. The rules are
+ * the pure `record.ts`; this file reads and writes rows, always with the server's clock.
+ *
+ * - **Freeplay:** a checked run (recomputed points) updates the level's best: the higher score
+ *   and, independently, the faster average reaction.
+ * - **Daily, started:** the scored run is recorded when it STARTS (`startDaily`, a row with no
+ *   score). Only the first start of a date is scored, so abandoning a bad run does not deal a fresh
+ *   one: the date then reads `started` and later runs are practice. A start that never reached the
+ *   server (offline) is not needed to save: the save creates the row itself.
+ * - **Daily, finished:** the save fills the date's row once (`UPDATE … WHERE score IS NULL`, one
+ *   statement, so two tabs cannot both score). A second save answers `already-scored`, unless it
+ *   is the same run retried (equal recomputed results), which answers `saved`.
+ * - **Dates:** the dealt date must pass `acceptDealtDate` (today, or yesterday within the grace
+ *   window); it is never relabelled.
+ */
+import type { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma.server';
+import { utcDate } from './generate';
+import { isSprintLevelId, type SprintLevelId } from './levels';
+import {
+  acceptDealtDate,
+  checkDailyRun,
+  checkFreeplayRun,
+  dailyStreak,
+  nextBest,
+  sameRun,
+} from './record';
+import type { PromptResult } from './scoring';
+import type { SprintDailyState, SprintLevelBest, SprintOverview } from './sprint.contract';
+
+/** How many scored dates the streak reads back (a streak longer than this shows this). */
+const STREAK_LOOKBACK = 400;
+
+export async function loadSprintOverview(userId: string, date: string, now: number): Promise<SprintOverview> {
+  const [bests, row, scored] = await Promise.all([
+    prisma.musicSprintBest.findMany({
+      where: { userId },
+      select: { level: true, bestScore: true, bestAvgMs: true },
+    }),
+    prisma.musicSprintDaily.findUnique({
+      where: { userId_date: { userId, date } },
+      select: { score: true },
+    }),
+    prisma.musicSprintDaily.findMany({
+      where: { userId, score: { not: null } },
+      select: { date: true },
+      orderBy: { date: 'desc' },
+      take: STREAK_LOOKBACK,
+    }),
+  ]);
+  const daily: SprintDailyState = !row ? 'open' : row.score === null ? 'started' : 'scored';
+  return {
+    bests: bests.flatMap((b): SprintLevelBest[] =>
+      isSprintLevelId(b.level) ? [{ level: b.level, bestScore: b.bestScore, bestAvgMs: b.bestAvgMs }] : [],
+    ),
+    daily,
+    streak: dailyStreak(
+      scored.map((r) => r.date),
+      utcDate(now),
+    ),
+  };
+}
+
+/** Keep a freeplay run. Null when the run is not a possible run of that level. */
+export async function saveSprintFreeplay(
+  userId: string,
+  level: SprintLevelId,
+  results: readonly PromptResult[],
+): Promise<SprintLevelBest | null> {
+  const run = checkFreeplayRun(level, results);
+  if (!run) return null;
+  return prisma.$transaction(async (tx) => {
+    const prev = await tx.musicSprintBest.findUnique({
+      where: { userId_level: { userId, level } },
+      select: { bestScore: true, bestAvgMs: true },
+    });
+    const best = nextBest(prev, run.summary);
+    await tx.musicSprintBest.upsert({
+      where: { userId_level: { userId, level } },
+      create: { userId, level, ...best },
+      update: best,
+    });
+    return { level, ...best };
+  });
+}
+
+/** Record the start of the date's scored run. Null for a date outside the window. */
+export async function startSprintDaily(userId: string, date: string, now: number): Promise<{ scored: boolean } | null> {
+  if (!acceptDealtDate(date, now)) return null;
+  const made = await prisma.musicSprintDaily.createMany({
+    data: [{ userId, date }],
+    skipDuplicates: true,
+  });
+  return { scored: made.count === 1 };
+}
+
+export type DailySaveOutcome = 'saved' | 'already-scored' | 'invalid';
+
+/** Keep the date's scored run, once. */
+export async function saveSprintDaily(
+  userId: string,
+  date: string,
+  results: readonly PromptResult[],
+  now: number,
+): Promise<DailySaveOutcome> {
+  if (!acceptDealtDate(date, now)) return 'invalid';
+  const run = checkDailyRun(results);
+  if (!run) return 'invalid';
+  // The start may never have reached the server: make the row if it is missing.
+  await prisma.musicSprintDaily.createMany({ data: [{ userId, date }], skipDuplicates: true });
+  const filled = await prisma.musicSprintDaily.updateMany({
+    where: { userId, date, score: null },
+    data: {
+      score: run.summary.score,
+      avgMs: run.summary.avgMs,
+      played: run.summary.played,
+      skipped: run.summary.skipped,
+      results: run.results as unknown as Prisma.InputJsonValue,
+      scoredAt: new Date(now),
+    },
+  });
+  if (filled.count === 1) return 'saved';
+  const stored = await prisma.musicSprintDaily.findUnique({
+    where: { userId_date: { userId, date } },
+    select: { results: true },
+  });
+  return sameRun(stored?.results, run.results) ? 'saved' : 'already-scored';
+}

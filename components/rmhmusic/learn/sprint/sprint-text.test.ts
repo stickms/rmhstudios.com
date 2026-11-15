@@ -20,6 +20,8 @@ import {
 } from '@/lib/rmhmusic/learn/sprint/machine';
 import {
   askHint,
+  bestSentence,
+  dailyStateSentence,
   feedbackLine,
   promptLabel,
   resultSentence,
@@ -403,6 +405,120 @@ describe('sprint sentences', () => {
       ),
     ).toContain(
       'sign in',
+    );
+  });
+});
+
+describe('stored results, said plainly', () => {
+  const overview =
+    {
+      bests:
+        [
+          {
+            level:
+              'note' as const,
+            bestScore: 87,
+            bestAvgMs: 1150,
+          },
+          {
+            level:
+              'triad' as const,
+            bestScore: 0,
+            bestAvgMs:
+              null,
+          },
+        ],
+      daily:
+        'open' as const,
+      streak: 0,
+    };
+  it("says a level's best score and fastest average, or that it has not been played", () => {
+    expect(
+      bestSentence(
+        t,
+        'en',
+        overview,
+        'note',
+      ),
+    ).toBe(
+      'Best score 87, fastest average 1.2 s.',
+    );
+    expect(
+      bestSentence(
+        t,
+        'en',
+        overview,
+        'triad',
+      ),
+    ).toBe(
+      'Best score 0.',
+    );
+    expect(
+      bestSentence(
+        t,
+        'en',
+        overview,
+        'bar',
+      ),
+    ).toBe(
+      'Not played yet.',
+    );
+    expect(
+      bestSentence(
+        t,
+        'en',
+        null,
+        'note',
+      ),
+    ).toBe(
+      '',
+    );
+  });
+  it("says where today's challenge stands, with the run of days", () => {
+    expect(
+      dailyStateSentence(
+        t,
+        overview,
+      ),
+    ).toBe(
+      '',
+    );
+    expect(
+      dailyStateSentence(
+        t,
+        {
+          ...overview,
+          streak: 3,
+        },
+      ),
+    ).toBe(
+      'You have played the challenge 3 days in a row.',
+    );
+    expect(
+      dailyStateSentence(
+        t,
+        {
+          ...overview,
+          daily:
+            'scored',
+          streak: 1,
+        },
+      ),
+    ).toBe(
+      "Today's score is in; runs today are practice. 1 day in a row.",
+    );
+    expect(
+      dailyStateSentence(
+        t,
+        {
+          ...overview,
+          daily:
+            'started',
+          streak: 0,
+        },
+      ),
+    ).toBe(
+      "You started today's challenge and left before the end; runs today are practice.",
     );
   });
 });

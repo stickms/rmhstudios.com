@@ -10,8 +10,10 @@
  * why. With the microphone, the chord levels are listed but not offered (one sentence says why).
  * Guitar reads the treble staff only, with the small 8 under the clef, on the taller low card.
  * The picker's rows and its loading placeholder are the same height, so loading moves nothing.
- * Results go through a `SprintSaver` (`lib/rmhmusic/learn/sprint/saver.ts`); until results are
- * stored the result says plainly that it was not saved.
+ * Results go through a `SprintSaver` (`lib/rmhmusic/learn/sprint/saver.ts`, the API one by
+ * default): each picker row says the level's best in a plain sentence (a third line kept in the
+ * placeholder too), and the Daily challenge says where today stands and the run of days played.
+ * A scored daily run is recorded when Start is pressed, so leaving it does not deal it again.
  */
 
 import {
@@ -42,7 +44,8 @@ import {
   type SprintLevelId,
 } from '@/lib/rmhmusic/learn/sprint/levels';
 import {
-  createMemorySaver,
+  createApiSaver,
+  type SprintOverview,
   type SprintSaver,
 } from '@/lib/rmhmusic/learn/sprint/saver';
 import {
@@ -54,6 +57,8 @@ import { Shell } from '../LessonScreen';
 import { useInputRelease } from '../useLearnInput';
 import { SprintRun } from './SprintRun';
 import {
+  bestSentence,
+  dailyStateSentence,
   levelHint,
   levelName,
 } from './sprint-text';
@@ -66,11 +71,11 @@ const RETURN_TO =
   '/rmhmusic/sprint';
 
 /**
- * One row of the picker, and of its placeholder: two text lines (24px + 20px) in a 72px row, so
- * the placeholder is exactly as tall as the loaded list.
+ * One row of the picker, and of its placeholder: three text lines (24px + 20px + 20px: the name,
+ * the hint, the best) in an 80px row, so the placeholder is exactly as tall as the loaded list.
  */
 const ROW =
-  'flex min-h-18 w-full flex-col items-start justify-center px-4 py-2 text-start';
+  'flex min-h-20 w-full flex-col items-start justify-center px-4 py-2 text-start';
 
 /** What is being played: a freeplay level or today's challenge, with its prompts. */
 type Playing =
@@ -94,6 +99,7 @@ export function SprintGame({
 } = {}) {
   const {
     t,
+    i18n,
   } =
     useTranslation(
       'c-rmhmusic',
@@ -104,7 +110,7 @@ export function SprintGame({
     useState(
       () =>
         givenSaver ??
-        createMemorySaver(),
+        createApiSaver(),
     );
   const status =
     useLearnStore(
@@ -155,6 +161,14 @@ export function SprintGame({
     useState(
       false,
     );
+  /** Bests and today's challenge; null until read (or when it could not be). */
+  const [
+    overview,
+    setOverview,
+  ] =
+    useState<SprintOverview | null>(
+      null,
+    );
   const [
     setupOpen,
     setSetupOpen,
@@ -202,6 +216,53 @@ export function SprintGame({
     status ===
       'ready' &&
     !!profile;
+
+  // The bests and today's challenge, read when the picker shows (again after every run). A failed
+  // read leaves the best lines empty; playing the daily checks again on its own.
+  useEffect(() => {
+    if (
+      !ready ||
+      playing
+    )
+      return;
+    let live = true;
+    saver
+      .overview(
+        utcDate(
+          Date.now(),
+        ),
+      )
+      .then(
+        (
+          o,
+        ) => {
+          if (
+            live
+          )
+            setOverview(
+              o,
+            );
+        },
+      )
+      .catch(
+        () => {
+          if (
+            live
+          )
+            setOverview(
+              null,
+            );
+        },
+      );
+    return () => {
+      live = false;
+    };
+  }, [
+    ready,
+    playing,
+    saver,
+  ]);
+
   const loading =
     !ready &&
     status !==
@@ -362,6 +423,16 @@ export function SprintGame({
               ? playing.scored
               : true
           }
+          onStart={
+            playing.mode ===
+              'daily' &&
+            playing.scored
+              ? () =>
+                  void saver.startDaily(
+                    playing.date,
+                  )
+              : undefined
+          }
           instrument={
             instrument
           }
@@ -506,6 +577,9 @@ export function SprintGame({
                         <span className="flex h-5 items-center">
                           <span className="app-skeleton h-3.5 w-56 max-w-full" />
                         </span>
+                        <span className="flex h-5 items-center">
+                          <span className="app-skeleton h-3.5 w-32 max-w-full" />
+                        </span>
                       </div>
                     ) : mic &&
                       !micAllowed(
@@ -529,6 +603,14 @@ export function SprintGame({
                               defaultValue:
                                 'Not with the microphone: it hears one note at a time.',
                             },
+                          )}
+                        </span>
+                        <span className="min-h-5 text-sm leading-5 text-app-text-muted">
+                          {bestSentence(
+                            t,
+                            i18n.language,
+                            overview,
+                            level.id,
                           )}
                         </span>
                       </div>
@@ -569,6 +651,14 @@ export function SprintGame({
                             guitar,
                           )}
                         </span>
+                        <span className="min-h-5 text-sm leading-5 text-app-text-muted">
+                          {bestSentence(
+                            t,
+                            i18n.language,
+                            overview,
+                            level.id,
+                          )}
+                        </span>
                       </button>
                     )}
                   </li>
@@ -585,6 +675,14 @@ export function SprintGame({
               }
               mic={
                 mic
+              }
+              standing={
+                overview
+                  ? dailyStateSentence(
+                      t,
+                      overview,
+                    )
+                  : ''
               }
               onPlay={() =>
                 void playDaily()
@@ -696,11 +794,14 @@ function DailyIntro({
   loading,
   failed,
   mic,
+  standing,
   onPlay,
 }: {
   loading: boolean;
   failed: boolean;
   mic: boolean;
+  /** Where today's challenge stands and the run of days played, one plain sentence (or ''). */
+  standing: string;
   onPlay: () => void;
 }) {
   const {
@@ -710,13 +811,13 @@ function DailyIntro({
       'c-rmhmusic',
     );
   return (
-    <section className="rmm-sheet flex min-h-56 flex-col items-start justify-center gap-3 p-5">
+    <section className="rmm-sheet flex min-h-64 flex-col items-start justify-center gap-3 p-5">
       <p className="text-base leading-6 text-app-text">
         {t(
-          'sprint-daily-about',
+          'sprint-daily-about-start',
           {
             defaultValue:
-              'Six levels, five prompts each, the same for everyone today. Your first finished run is your score; later runs today are practice.',
+              'Six levels, five prompts each, the same for everyone today. Your first run is your score from the moment you press Start; later runs today are practice.',
           },
         )}
       </p>
@@ -730,6 +831,11 @@ function DailyIntro({
               },
             )
           : ''}
+      </p>
+      <p className="min-h-5 text-sm leading-5 text-app-text-muted">
+        {
+          standing
+        }
       </p>
       <button
         type="button"
