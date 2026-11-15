@@ -69,6 +69,272 @@ untrue.
 
 ---
 
+## 0. The rule: every public page has its own card
+
+A
+page's
+link
+preview
+is
+part
+of
+the
+page
+([`design.md`](../design.md)
+§7).
+Every
+route
+the
+sitemap
+lists
+as
+public
+must
+unfurl
+as
+itself:
+
+1. **Through
+   `buildMeta`.**
+   `head()`
+   calls
+   `buildMeta`,
+   or
+   a
+   helper
+   built
+   on
+   it
+   (`definePage`,
+   `gameRouteHead`,
+   `appRouteHead`,
+   `appHubHead`).
+   It
+   never
+   writes
+   `og:*`
+   or
+   `twitter:*`
+   tags
+   by
+   hand:
+   `buildMeta`
+   owns
+   the
+   absolute
+   image
+   URL,
+   its
+   declared
+   size
+   and
+   the
+   matching
+   `twitter:card`.
+2. **A
+   page
+   about
+   one
+   thing
+   names
+   its
+   own
+   card.**
+   A
+   `$param`
+   route
+   passes
+   `image: ogCardPath(kind, id)`
+   (or
+   `definePage({ ogCard })`),
+   so
+   a
+   shared
+   post
+   shows
+   the
+   post
+   and
+   a
+   shared
+   game
+   shows
+   the
+   game.
+   If
+   no
+   card
+   kind
+   fits
+   yet,
+   add
+   a
+   renderer
+   under
+   `lib/og/api/`
+   rather
+   than
+   falling
+   back.
+3. **Every
+   other
+   page
+   has
+   a
+   section
+   card.**
+   Its
+   path
+   resolves,
+   by
+   longest
+   prefix,
+   to
+   an
+   entry
+   in
+   `lib/og/static-cards.ts`
+   other
+   than
+   the
+   home
+   page's:
+   an
+   eyebrow
+   naming
+   the
+   kind
+   of
+   page,
+   a
+   title
+   of
+   at
+   most
+   48
+   characters,
+   a
+   subtitle
+   of
+   at
+   most
+   100,
+   and
+   `art`
+   when
+   the
+   section
+   has
+   its
+   own
+   picture.
+   Adding
+   a
+   page
+   means
+   adding
+   its
+   entry
+   in
+   the
+   same
+   change.
+4. **Copy
+   is
+   the
+   page's
+   own.**
+   The
+   description
+   says
+   what
+   this
+   page
+   holds,
+   in
+   the
+   words
+   of
+   `design.md`
+   §6.
+   The
+   site
+   tagline
+   is
+   the
+   home
+   page's
+   alone.
+
+Private
+routes
+(anything
+in
+the
+sitemap's
+`EXCLUDED_ROUTES`:
+admin,
+settings,
+composers,
+capability
+links)
+are
+exempt;
+they
+carry
+`noindex`
+instead.
+
+`lib/__tests__/og-page-coverage.test.ts`
+enforces
+1
+to
+3
+for
+every
+public
+route.
+Its
+`BACKLOG`
+names
+the
+routes
+that
+broke
+the
+rule
+when
+it
+was
+written,
+and
+entries
+only
+come
+out.
+To
+see
+a
+card
+before
+shipping
+it,
+render
+it
+with
+`renderPageCard`
+from
+`lib/og/page-card.server.tsx`
+in
+a
+`tsx`
+script,
+as
+`scripts/gen-og-cards.tsx`
+does.
+
+---
+
 ## 1. The design
 
 A
