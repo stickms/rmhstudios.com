@@ -2,7 +2,7 @@
  * The v86 wrapper. Client only: v86 is loaded with a dynamic import() so it
  * is never in the server render and ships only in the /rmhos chunk.
  *
- * Wiring decisions (measured in Task 6, see the report):
+ * Wiring decisions (measured against the dev image):
  *  - The machine is `vmOptions()`, the same definition the snapshot was taken
  *    with. The network device is always declared, with or without a relay.
  *  - The snapshot is `initial_state: { url: state.zst }` (v86 decompresses a
@@ -14,13 +14,16 @@ import type { V86 as V86Class, V86 as V86Instance, V86Options } from 'v86';
 // The one servable copy of the emulator core: Vite emits it as a hashed, same-origin asset.
 // Here and not in image-manifest.ts, which stays a pure module the strict island checks.
 import wasmUrl from 'v86/build/v86.wasm?url';
+import { reportClientError } from '@/lib/client-errors';
+import { BootWatchdog, browserClock, STALL_MS, type WatchdogClock } from './boot-watchdog';
 import { RMHOS } from './constants';
+import { probeImage, type ProbeResult } from './image-probe';
 import type { ImageManifest } from './image-manifest';
 import { MODIFIER_BREAK_CODES } from './scancodes';
 import { vmOptions } from './vm-options';
-import type { VmHandle, VmPhase, VmPhaseDetail } from './vm-types';
+import type { BootFailureReason, VmHandle, VmPhase, VmPhaseDetail } from './vm-types';
 
-export type { VmHandle, VmPhase, VmPhaseDetail } from './vm-types';
+export type { BootFailureReason, VmHandle, VmPhase, VmPhaseDetail } from './vm-types';
 
 export type NetConfig = { url: string; ticket: string } | null;
 
@@ -40,6 +43,25 @@ export interface CreateVmOptions {
   signal?: AbortSignal;
   /** Test seam: how the emulator module is loaded. Defaults to the memoised v86 import. */
   loader?: () => Promise<{ V86: typeof V86Class }>;
+  /** Test seam: the clock the boot watchdog runs on. */
+  clock?: WatchdogClock;
+  /** Test seam: how the image files are probed before the machine is built. */
+  fetch?: typeof fetch;
+  /** Test seam: where a failed or degraded boot is reported (default: the site's client error log). */
+  report?: (error: Error) => void;
+  /** Each preflight request is given up on after this long. */
+  probeTimeoutMs?: number;
+}
+
+/** createVm could not produce a machine. `reason` is what the page tells the person. */
+export class BootFailure extends Error {
+  constructor(
+    readonly reason: BootFailureReason,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'BootFailure';
+  }
 }
 
 /** The directory the BIOS, kernel and disk are served from (they share one). */
@@ -121,6 +143,8 @@ const loadV86 = createV86Loader(() => import('v86'));
 
 export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   const { screen, manifest, net, signal } = opts;
+  const report =
+    opts.report ?? ((e: Error) => reportClientError(e, { source: 'rmhos-boot' }));
   const phaseListeners = new Set<(p: VmPhase, d?: VmPhaseDetail) => void>();
   const serialListeners = new Set<(c: string) => void>();
   let phase: VmPhase = 'idle';
@@ -130,6 +154,13 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   let usedState = false;
   let serial1Seen = '';
   let dropRejectionListener: (() => void) | null = null;
+  /** The running emulator's own fall-back-to-cold-boot step (only a snapshot boot has one). */
+  let fallBackNow: ((why: string) => void) | null = null;
+  /** Set once the emulator is built; until then a stall rejects createVm instead. */
+  let built = false;
+  let rejectEarly: ((e: BootFailure) => void) | null = null;
+  const early = new Promise<never>((_, rej) => (rejectEarly = rej));
+  early.catch(() => {});
 
   const setPhase = (p: VmPhase, d?: VmPhaseDetail) => {
     if (destroyed && p !== 'stopped') return;
@@ -137,7 +168,46 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     for (const cb of phaseListeners) cb(p, d);
   };
 
-  const { V86 } = await (opts.loader ?? loadV86)();
+  /** Ends the boot for good: one line for the operator, one state for the person. */
+  const failBoot = (reason: BootFailureReason, error: string) => {
+    watchdog.stop();
+    report(new Error(`rmhOS boot failed (${reason}): ${error}`));
+    if (!built) rejectEarly?.(new BootFailure(reason, error));
+    else setPhase('failed', { error, reason });
+  };
+
+  const watchdog = new BootWatchdog(opts.clock ?? browserClock, (reason, stage) => {
+    if (destroyed || signal?.aborted) return;
+    const why =
+      reason === 'stalled'
+        ? `no download progress for ${STALL_MS / 1000} s`
+        : `the machine did not report ready (${usedState ? 'snapshot' : 'cold boot'})`;
+    // A snapshot that stalls or never restores costs one cold boot, not the whole session.
+    if (usedState && fallBackNow) return fallBackNow(`snapshot: ${why}`);
+    failBoot(reason, `${why} while ${stage}`);
+  });
+  signal?.addEventListener('abort', () => watchdog.stop(), { once: true });
+  /** Awaits a startup step, restarting the stall timer around it, and ending early on a stall. */
+  const step = async <T>(p: Promise<T>): Promise<T> => {
+    watchdog.downloading();
+    try {
+      return await Promise.race([p, early]);
+    } finally {
+      if (!built) watchdog.downloading();
+    }
+  };
+  watchdog.downloading();
+
+  // The files are probed while the emulator module loads: both wait on the network.
+  const fetchFn = opts.fetch ?? ((...a: Parameters<typeof fetch>) => globalThis.fetch(...a));
+  const probing: Promise<ProbeResult> = probeImage(manifest, {
+    fetch: fetchFn,
+    signal,
+    timeoutMs: opts.probeTimeoutMs ?? 15_000,
+  });
+  probing.catch(() => {});
+
+  const { V86 } = await step((opts.loader ?? loadV86)());
   // The page may have left while the emulator module loaded: build nothing (640 MB a machine).
   if (signal?.aborted) throw new DOMException('rmhOS machine creation aborted', 'AbortError');
   const base = baseUrlOf(manifest);
@@ -147,8 +217,19 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     mintedAt = Date.now();
     return relayConfig(n);
   };
-  let { relayUrl, dohServer } = await configure();
+  let { relayUrl, dohServer } = await step(configure());
   if (signal?.aborted) throw new DOMException('rmhOS machine creation aborted', 'AbortError');
+  const probe = await step(probing);
+  if (signal?.aborted) throw new DOMException('rmhOS machine creation aborted', 'AbortError');
+  if (probe.failure) {
+    failBoot(probe.failure.reason, probe.failure.detail);
+    // failBoot rejected `early`; this line is only reached if it did not.
+    throw new BootFailure(probe.failure.reason, probe.failure.detail);
+  }
+  // No usable snapshot (404, 416, unreachable): the machine boots cold, once, without it.
+  const stateUsable = probe.stateUsable;
+  if (manifest.state && !stateUsable && probe.stateProblem)
+    report(new Error(`rmhOS booting cold, snapshot unusable: ${probe.stateProblem}`));
 
   let captureOn = screen.ownerDocument.activeElement === screen;
   const setCapture = (e: V86Instance, on: boolean) =>
@@ -159,8 +240,13 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     usedState = withState && !!manifest.state;
     ready = false;
     serial1Seen = '';
+    watchdog.downloading();
     const options = {
-      ...vmOptions({ baseUrl: base, relayUrl }),
+      ...vmOptions({ baseUrl: base, relayUrl, rootfsSize: manifest.rootfs.size }),
+      // The one wasm file the page serves. v86 derives its "fallback" build (for browsers
+      // without a wasm feature) by replacing `v86.wasm` in this path; the hashed asset name
+      // makes that a no-op, so such a browser refetches this same file and then the boot
+      // watchdog ends it as `stalled`. Nothing is served for the fallback build.
       wasm_path: wasmUrl,
       screen_container: screen,
       // Scale 0: v86's screen adapter then never writes an inline width/height on the canvas
@@ -176,7 +262,15 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       },
       ...(usedState && manifest.state ? { initial_state: { url: manifest.state.url } } : {}),
     } as unknown as V86Options;
-    const e = new V86(options);
+    let e: V86Instance;
+    try {
+      e = new V86(options);
+    } catch (err) {
+      fallBackNow = null;
+      const why = `the emulator could not start: ${(err as Error)?.message ?? String(err)}`;
+      failBoot('start', why);
+      throw new BootFailure('start', why);
+    }
     // Keys reach the guest only while the screen has focus (see VmHandle.setKeyboardCapture).
     // v86 builds its keyboard adapter during its async init, after the constructor returns, so
     // this is applied again when the emulator reports it is loaded and ready.
@@ -193,8 +287,10 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       if (finished || destroyed) return;
       finished = true;
       if (usedState) {
+        report(new Error(`rmhOS falling back to a cold boot: ${why}`));
         void e.destroy().catch(() => {});
         emulator = null;
+        fallBackNow = null;
         setPhase('downloading');
         void (async () => {
           // The state download may have been slow: a ticket nearly out of its first-use window is replaced.
@@ -205,12 +301,18 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
               // keep the old one: a cold boot without a working network beats none
             }
           }
-          if (!destroyed) emulator = build(false);
+          if (destroyed) return;
+          try {
+            emulator = build(false);
+          } catch {
+            // build() already ended the boot as `failed`
+          }
         })();
       } else {
-        setPhase('failed', { error: why });
+        failBoot('start', why);
       }
     };
+    fallBackNow = usedState ? fallBack : null;
     // One bar for the BIOS, kernel and snapshot together: v86 reports each file on its own scale.
     const loadedBy = new Map<string, number>();
     const expected = [
@@ -222,6 +324,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     const total = expected.reduce((n, f) => n + f.size, 0);
     e.add_listener('download-progress', (ev) => {
       if (finished || destroyed) return;
+      watchdog.progress();
       loadedBy.set(
         ev.file_name,
         Math.min(ev.loaded, expected.find((f) => f.url === ev.file_name)?.size ?? ev.loaded),
@@ -236,18 +339,28 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
         fallBack(`could not download ${ev.file_name}`);
       else if (!finished) {
         finished = true;
-        setPhase('failed', { error: `could not download ${ev.file_name}` });
+        const status = (ev as { request?: { status?: number } }).request?.status;
+        failBoot(
+          status === 404 || status === 410 || status === 416 ? 'image-missing' : 'image-invalid',
+          `could not download ${ev.file_name}${status ? ` (status ${status})` : ''}`,
+        );
       }
     });
     e.add_listener('emulator-loaded', () => {
       // v86 sends emulator-ready before emulator-loaded: do not step back from running.
-      if (!finished && !destroyed && phase !== 'running') setPhase('booting');
+      if (!finished && !destroyed && phase !== 'running') {
+        setPhase('booting');
+        watchdog.booting(usedState ? 'snapshot' : 'cold');
+      }
     });
     e.add_listener('emulator-ready', () => {
       if (destroyed) return;
       ready = true;
       // A restored machine is past READY already; a cold one is running once the agent says so.
-      if (usedState) setPhase('running');
+      if (usedState) {
+        watchdog.stop();
+        setPhase('running');
+      }
     });
     e.add_listener('emulator-stopped', () => {
       if (!destroyed && phase === 'running') setPhase('stopped');
@@ -263,8 +376,10 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     e.add_listener('serial1-output-byte', (b: number) => {
       const chunk = String.fromCharCode(b);
       serial1Seen = (serial1Seen + chunk).slice(-4096);
-      if (!usedState && phase !== 'running' && serial1Seen.includes('RMHOS READY'))
+      if (!usedState && phase !== 'running' && serial1Seen.includes('RMHOS READY')) {
+        watchdog.stop();
         setPhase('running');
+      }
       for (const cb of serialListeners) cb(chunk);
     });
     // A state that downloads but will not restore surfaces as an unhandled rejection out of v86's
@@ -292,7 +407,8 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   };
 
   setPhase('downloading');
-  emulator = build(true);
+  built = true;
+  emulator = build(stateUsable);
 
   const need = (): V86Instance => {
     if (!emulator) throw new Error('rmhOS machine is not started');
@@ -329,16 +445,10 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       if (!fs || !hit || hit.id === -1) return;
       fs.Unlink(hit.parentid, hit.name);
     },
-    async restart() {
-      setPhase('booting');
-      serial1Seen = '';
-      need().restart();
-      // A forced reboot is a cold boot: the agent announces itself again.
-      usedState = false;
-    },
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      watchdog.stop();
       dropRejectionListener?.();
       void emulator?.destroy().catch(() => {});
       emulator = null;

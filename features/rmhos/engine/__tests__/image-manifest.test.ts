@@ -75,4 +75,17 @@ describe('machine definition', () => {
     expect(built.hda).toEqual({ url: '/x/rootfs.ext4', async: true });
     expect(built.preserve_mac_from_state_image).toBe(true);
   });
+
+  it('gives the disk a size only when the page knows it, so v86 sends no size probe', async () => {
+    const opts = await import(
+      /* @vite-ignore */ pathToFileURL(
+        resolve(__dirname, '../../../../scripts/rmhos/vm-options.mjs'),
+      ).href
+    );
+    const { vmOptions } = await import('../vm-options');
+    // The snapshot script passes no size: its machine definition is unchanged.
+    expect(opts.baseVmOptions({ baseUrl: '/x/' }).hda).toEqual({ url: '/x/rootfs.ext4', async: true });
+    const sized = vmOptions({ baseUrl: '/x/', relayUrl: 'wisp://a/', rootfsSize: 288358400 });
+    expect(sized.hda).toEqual({ url: '/x/rootfs.ext4', async: true, size: 288358400 });
+  });
 });

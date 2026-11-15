@@ -16,7 +16,10 @@ export const CMDLINE =
 /** What the snapshot is taken with. A restored machine may use a different relay URL. */
 export const PLACEHOLDER_RELAY_URL = 'wisp://127.0.0.1:1/';
 
-export function baseVmOptions({ baseUrl, relayUrl = PLACEHOLDER_RELAY_URL }) {
+// `rootfsSize` (bytes) is the browser's: with it v86 builds the disk without first asking the
+// server for the file size (a ranged request whose Content-Range answer a cross-origin CDN has
+// to expose). The snapshot script leaves it out; the size is not part of the saved state.
+export function baseVmOptions({ baseUrl, relayUrl = PLACEHOLDER_RELAY_URL, rootfsSize }) {
   return {
     memory_size: MEMORY_BYTES,
     vga_memory_size: VGA_MEMORY_BYTES,
@@ -35,6 +38,7 @@ export function baseVmOptions({ baseUrl, relayUrl = PLACEHOLDER_RELAY_URL }) {
     hda: {
       url: `${baseUrl}rootfs.ext4`,
       async: true,
+      ...(rootfsSize ? { size: rootfsSize } : {}),
     },
     cmdline: CMDLINE,
     filesystem: {},

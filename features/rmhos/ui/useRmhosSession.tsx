@@ -30,8 +30,8 @@ import { resolveImageManifest } from '../engine/image-manifest';
 import { createTicketHolder } from '../engine/relay-ticket';
 import type { RmhosNet } from '../engine/rmhos.contract';
 import { holdHomeLock } from '../engine/tab-lock';
-import { createVm } from '../engine/vm';
-import type { VmHandle, VmPhase, VmPhaseDetail } from '../engine/vm-types';
+import { BootFailure, createVm } from '../engine/vm';
+import type { BootFailureReason, VmHandle, VmPhase, VmPhaseDetail } from '../engine/vm-types';
 import { rmhosSessionQuery } from './rmhos.queries';
 import {
   createPollGate,
@@ -179,11 +179,11 @@ export function useRmhosMachine(
     setFailure(null);
     setSnap(null);
 
-    const fail = (error: string, kind: RmhosFailure = 'load') => {
+    const fail = (error: string, kind: RmhosFailure = 'load', reason?: BootFailureReason) => {
       if (cancelled) return;
       setFailure(kind);
       setPhase('failed');
-      setDetail({ error });
+      setDetail(reason ? { error, reason } : { error });
     };
 
     if (!session) {
@@ -250,7 +250,6 @@ export function useRmhosMachine(
           runner = new HomeSession({
             agent,
             sync,
-            bootKind: vm.bootKind(),
             linuxUser: session.linuxUser,
             autosaveMs: RMHOS.autosaveMs,
             env: browserEnv(),
@@ -295,6 +294,7 @@ export function useRmhosMachine(
         );
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
+        if (err instanceof BootFailure) return fail(err.message, 'load', err.reason);
         fail(err instanceof Error ? err.message : String(err));
       }
     })();

@@ -48,7 +48,7 @@ function fakeEnv() {
   return { env, timers, state, count, fire };
 }
 
-function setup(opts: { restoreError?: Error; cold?: boolean; stored?: Uint8Array; memory?: boolean } = {}) {
+function setup(opts: { restoreError?: Error; stored?: Uint8Array; memory?: boolean } = {}) {
   const share = new Map<string, Uint8Array>();
   // The in-memory store reports kind 'memory' (storage blocked); tests act like IndexedDB unless asked.
   const store = { ...memoryHomeStore(), kind: opts.memory ? ('memory' as const) : ('indexeddb' as const) };
@@ -60,7 +60,6 @@ function setup(opts: { restoreError?: Error; cold?: boolean; stored?: Uint8Array
   let poweroff: (() => void) | null = null;
   const order: string[] = [];
   const agent = {
-    waitReady: vi.fn(async () => void order.push('ready')),
     startSession: vi.fn(async () => void order.push('session')),
     restore: vi.fn(async () => {
       order.push('restore');
@@ -83,7 +82,6 @@ function setup(opts: { restoreError?: Error; cold?: boolean; stored?: Uint8Array
   const session = new HomeSession({
     agent,
     sync,
-    bootKind: opts.cold ? 'cold' : 'snapshot',
     linuxUser: 'zed',
     autosaveMs: 300_000,
     env: e.env,
@@ -93,18 +91,12 @@ function setup(opts: { restoreError?: Error; cold?: boolean; stored?: Uint8Array
 }
 
 describe('HomeSession handshake', () => {
-  it('prepares, signs in, restores, then runs; a snapshot boot does not wait for READY', async () => {
+  it('prepares, signs in, restores, then runs; the runner only starts once the machine is running', async () => {
     const t = setup();
     await t.session.start();
     expect(t.order).toEqual(['session', 'restore']);
     expect(t.session.snapshot).toMatchObject({ stage: 'running', desktopReady: true });
     expect(t.e.timers.size).toBe(1);
-  });
-
-  it('a cold boot waits for READY first', async () => {
-    const t = setup({ cold: true });
-    await t.session.start();
-    expect(t.order).toEqual(['ready', 'session', 'restore']);
   });
 
   it('a failed RESTORE is a visible failure and no save is possible', async () => {
@@ -217,7 +209,7 @@ describe('HomeSession teardown', () => {
   });
 
   it('dispose during the handshake: it never becomes running', async () => {
-    const t = setup({ cold: true });
+    const t = setup();
     const started = t.session.start();
     t.session.dispose();
     await started;
@@ -317,7 +309,6 @@ describe('HomeSession teardown', () => {
     const fresh = new HomeSession({
       agent: t.agent,
       sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
-      bootKind: 'snapshot',
       linuxUser: 'zed',
       autosaveMs: 300_000,
       env: t.e.env,
@@ -342,7 +333,6 @@ describe('HomeSession teardown', () => {
     const fresh = new HomeSession({
       agent: t.agent,
       sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
-      bootKind: 'snapshot',
       linuxUser: 'zed',
       autosaveMs: 300_000,
       env: t.e.env,
@@ -372,7 +362,6 @@ describe('HomeSession teardown', () => {
     const fresh = new HomeSession({
       agent: t.agent,
       sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
-      bootKind: 'snapshot',
       linuxUser: 'zed',
       autosaveMs: 300_000,
       env: t.e.env,

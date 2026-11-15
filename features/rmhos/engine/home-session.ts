@@ -5,8 +5,8 @@
  * an empty home), the autosave timer, the tab-hidden save, the unload prompt, the guest's
  * power-off, and taking all of that down again when the machine stops or the page leaves.
  *
- * Order: prepare() puts the stored tar in the share -> (cold boot only) wait for the guest's READY
- * -> SESSION -> RESTORE -> running. A stored archive that cannot be read stops the boot (`corrupt`):
+ * Order: prepare() puts the stored tar in the share -> SESSION -> RESTORE -> running. The runner
+ * starts only once the machine is running, which on a cold boot means the guest already said READY. A stored archive that cannot be read stops the boot (`corrupt`):
  * the person decides; nothing is overwritten.
  */
 import { AgentError, type AgentClient } from './agent';
@@ -56,7 +56,7 @@ export function browserEnv(): SessionEnv {
 }
 
 export interface SessionDeps {
-  agent: Pick<AgentClient, 'waitReady' | 'startSession' | 'restore' | 'onPoweroff'>;
+  agent: Pick<AgentClient, 'startSession' | 'restore' | 'onPoweroff'>;
   sync: Pick<
     HomeSync,
     | 'prepare'
@@ -74,7 +74,6 @@ export interface SessionDeps {
     | 'removeCopy'
     | 'storeKind'
   >;
-  bootKind: 'snapshot' | 'cold';
   linuxUser: string;
   autosaveMs: number;
   env: SessionEnv;
@@ -82,7 +81,6 @@ export interface SessionDeps {
 }
 
 const NOT_RUNNING: SaveResult = { status: 'failed', code: 'not-running' };
-const READY_TIMEOUT_MS = 120_000;
 const POWEROFF_SAVE_TIMEOUT_MS = 10_000;
 
 export class HomeSession {
@@ -127,7 +125,6 @@ export class HomeSession {
         this.set({ stage: 'failed', failure: 'corrupt', error: 'stored home unreadable' });
         return;
       }
-      if (this.d.bootKind === 'cold') await agent.waitReady(READY_TIMEOUT_MS);
       await agent.startSession(this.d.linuxUser);
       await agent.restore();
     } catch (e) {
