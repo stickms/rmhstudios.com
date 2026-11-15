@@ -114,7 +114,10 @@ const PROFILE: Profile =
       'screen',
     latencyMs: 0,
     dailyGoal: 1,
-    sound: null,
+    sound:
+      null,
+    voiceRange:
+      null,
   };
 const ROW: LessonProgressRow =
   {
@@ -587,6 +590,91 @@ describe('learn store', () => {
         instrument:
           'guitar',
       },
+    );
+  });
+
+  it('setVoiceRange saves a singer and their range in the whole profile, and ignores junk', async () => {
+    seedReady(
+      PROFILE,
+    );
+    const sung =
+      {
+        ...PROFILE,
+        instrument:
+          'voice' as const,
+        voiceRange:
+          'tenor' as const,
+      };
+    fetchMock.mockResolvedValue(
+      json(
+        {
+          profile:
+            sung,
+        },
+      ),
+    );
+    const store =
+      useLearnStore.getState();
+    await Promise.all(
+      [
+        store.setInstrument(
+          'voice',
+        ),
+        store.setVoiceRange(
+          'tenor',
+        ),
+      ],
+    );
+    expect(
+      useLearnStore.getState()
+        .profile
+        ?.voiceRange,
+    ).toBe(
+      'tenor',
+    );
+    expect(
+      useLearnStore.getState()
+        .profile
+        ?.instrument,
+    ).toBe(
+      'voice',
+    );
+    const bodies =
+      fetchMock.mock.calls.map(
+        ([
+          ,
+          init,
+        ]) =>
+          JSON.parse(
+            String(
+              init?.body,
+            ),
+          ),
+      );
+    expect(
+      bodies.at(
+        -1,
+      ),
+    ).toEqual(
+      sung,
+    );
+    const calls =
+      fetchMock
+        .mock
+        .calls
+        .length;
+    await useLearnStore
+      .getState()
+      .setVoiceRange(
+        'baritone' as never,
+      );
+    expect(
+      fetchMock
+        .mock
+        .calls
+        .length,
+    ).toBe(
+      calls,
     );
   });
 

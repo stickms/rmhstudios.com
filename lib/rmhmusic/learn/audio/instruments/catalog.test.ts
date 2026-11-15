@@ -9,6 +9,8 @@ import {
 } from 'vitest';
 import {
   INSTRUMENT_CATALOG,
+  defaultSoundFor,
+  resolveSound,
   SOUND_FAMILIES,
   playsChords,
 } from './catalog';
@@ -185,5 +187,38 @@ describe('instrument catalogue (Phase 5)', () => {
         ),
       );
     }
+  });
+  it('a voice learner hears the piano unless they chose a sound', () => {
+    expect(
+      defaultSoundFor(
+        'voice',
+      ),
+    ).toBe(
+      'piano',
+    );
+    expect(
+      resolveSound(
+        {
+          instrument:
+            'voice',
+          sound:
+            null,
+        },
+      ),
+    ).toBe(
+      'piano',
+    );
+    expect(
+      resolveSound(
+        {
+          instrument:
+            'voice',
+          sound:
+            'cello',
+        },
+      ),
+    ).toBe(
+      'cello',
+    );
   });
 });

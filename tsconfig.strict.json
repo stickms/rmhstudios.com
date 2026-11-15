@@ -34,7 +34,8 @@
     "features/rmhos/engine/*.ts",
     "lib/rmhmusic/learn/sprint/*.ts",
     "lib/rmhmusic/learn/tuner/*.ts",
-    "lib/rmhmusic/learn/songs/*.ts"
+    "lib/rmhmusic/learn/songs/*.ts",
+    "lib/rmhmusic/learn/voice/*.ts"
   ],
   "exclude": [
     "node_modules",

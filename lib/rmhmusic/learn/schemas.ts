@@ -5,7 +5,21 @@ export const INSTRUMENTS =
   [
     'piano',
     'guitar',
+    'voice',
   ] as const;
+/**
+ * A singer's range (`voice/range.ts` gives each its compass and staff). Baritones pick `bass`.
+ * Stored in `MusicLearnProfile.voiceRange` (null until chosen).
+ */
+export const VOICE_RANGES =
+  [
+    'soprano',
+    'alto',
+    'tenor',
+    'bass',
+  ] as const;
+export type VoiceRange =
+  (typeof VOICE_RANGES)[number];
 export const INPUTS =
   [
     'screen',
@@ -60,6 +74,14 @@ export const profileSchema =
         z
           .enum(
             INSTRUMENT_IDS,
+          )
+          .nullable()
+          .optional(),
+      /** A voice learner's range; null until chosen. Optional so an older client leaves it alone. */
+      voiceRange:
+        z
+          .enum(
+            VOICE_RANGES,
           )
           .nullable()
           .optional(),

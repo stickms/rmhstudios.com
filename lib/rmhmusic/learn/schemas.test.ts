@@ -100,6 +100,69 @@ describe('lessonCompleteSchema', () => {
 });
 
 describe('profileSchema', () => {
+  it('takes voice as an instrument and a known vocal range, null or nothing', () => {
+    expect(
+      profileSchema.safeParse(
+        {
+          ...profile,
+          instrument:
+            'voice',
+        },
+      )
+        .success,
+    ).toBe(
+      true,
+    );
+    for (const voiceRange of [
+      'soprano',
+      'alto',
+      'tenor',
+      'bass',
+      null,
+      undefined,
+    ])
+      expect(
+        profileSchema.safeParse(
+          {
+            ...profile,
+            instrument:
+              'voice',
+            voiceRange,
+          },
+        )
+          .success,
+        String(
+          voiceRange,
+        ),
+      ).toBe(
+        true,
+      );
+    expect(
+      profileSchema.safeParse(
+        {
+          ...profile,
+          voiceRange:
+            'baritone',
+        },
+      )
+        .success,
+    ).toBe(
+      false,
+    );
+    expect(
+      profileSchema.safeParse(
+        {
+          ...profile,
+          instrument:
+            'drums',
+        },
+      )
+        .success,
+    ).toBe(
+      false,
+    );
+  });
+
   it('takes a sound that is a known instrument, null (follow the instrument) or nothing', () => {
     for (const sound of [
       'piano',
@@ -129,7 +192,7 @@ describe('profileSchema', () => {
         {
           ...profile,
           sound:
-            'cello',
+            'harp',
         },
       )
         .success,

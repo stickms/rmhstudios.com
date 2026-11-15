@@ -28,6 +28,7 @@ const PROFILE: Profile =
     latencyMs: 0,
     dailyGoal: 1,
     sound: null,
+    voiceRange: null,
   };
 const ROW: LessonProgressRow =
   {
