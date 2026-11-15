@@ -53,7 +53,7 @@ import {
   fitText,
   frameMetrics,
   framedImage,
-  globeMark,
+  brandMark,
   kicker,
   pane,
   statChips,
@@ -273,7 +273,7 @@ async function renderPageCardUncached(
   // the subtitle, and the byline each reserve their band only when present.
   //
   // The lead is measured rather than assumed to be one line. It is set
-  // uppercase and tracked at 0.2em, so it takes about 0.82em per character —
+  // set as a 600-weight label, and the estimate below assumes about 0.82em per character (generous for sentence case) —
   // over half again what the fitter's mixed-case estimate would say — and a
   // card with art has barely half the width to spend it in. Reserving one band
   // for a lead that wraps to two is how the title below it gets sized for room
@@ -421,7 +421,7 @@ async function renderPageCardUncached(
           style={{
             fontSize:
               titleSize,
-            fontWeight: 700,
+            fontWeight: 600,
             lineHeight: 1.06,
             letterSpacing:
               displayTracking(
@@ -503,7 +503,7 @@ async function renderPageCardUncached(
               fontSize:
                 15 *
                 SCALE,
-              fontWeight: 700,
+              fontWeight: 600,
               color:
                 INK,
             }}
@@ -720,12 +720,9 @@ async function renderPageCardUncached(
                       SCALE,
                   }}
                 >
-                  {globeMark(
+                  {brandMark(
                     110 *
                       SCALE,
-                    {
-                      weight: 0.85,
-                    },
                   )}
                 </div>,
               ]

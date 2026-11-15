@@ -19,7 +19,7 @@ PKG = ROOT / "node_modules" / "@fontsource-variable"
 OUT = ROOT / "public" / "fonts" / "og"
 
 JOBS = [
-    ("geist", "Geist", [400, 700, 800]),
+    ("geist", "Geist", [400, 500, 600, 700, 800]),
     ("geist-mono", "GeistMono", [400, 700]),
 ]
 

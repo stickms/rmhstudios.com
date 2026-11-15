@@ -34,7 +34,7 @@ import {
   displayTracking,
   fitText,
   frameMetrics,
-  globeMark,
+  brandMark,
   pane,
 } from '@/lib/og/chrome.server';
 
@@ -267,7 +267,7 @@ async function renderPostStoryImageUncached(
                               fontSize:
                                 24 *
                                 SCALE,
-                              fontWeight: 700,
+                              fontWeight: 600,
                               color:
                                 INK,
                             }}
@@ -342,11 +342,8 @@ async function renderPostStoryImageUncached(
                   SCALE,
               }}
             >
-              {globeMark(
+              {brandMark(
                 MARK,
-                {
-                  weight: 0.85,
-                },
               )}
             </div>,
           ],

@@ -1004,6 +1004,50 @@ page.
       `jsonLdScript(...)`
       from
       `@/lib/schema`.
+- [ ] A
+      public
+      page
+      has
+      its
+      own
+      link
+      preview
+      (`design.md`
+      §7,
+      `docs/open-graph.md`
+      §0):
+      a
+      page
+      about
+      one
+      thing
+      passes
+      `image: ogCardPath(kind, id)`,
+      any
+      other
+      page
+      has
+      a
+      section
+      card
+      in
+      `lib/og/static-cards.ts`
+      added
+      in
+      the
+      same
+      change,
+      and
+      no
+      `og:*`
+      tag
+      is
+      written
+      by
+      hand.
+      `lib/__tests__/og-page-coverage.test.ts`
+      enforces
+      it.
 
 ### i18n
 

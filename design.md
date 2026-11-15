@@ -832,3 +832,280 @@ when
 the
 wording
 changes.
+
+## 7. Link previews
+
+Every
+public
+page
+unfurls
+as
+itself.
+A
+link
+pasted
+into
+Discord,
+iMessage
+or
+X
+is
+the
+first
+thing
+most
+people
+see
+of
+a
+page,
+so
+its
+Open
+Graph
+data
+is
+part
+of
+the
+page's
+design,
+not
+metadata
+to
+fill
+in
+later.
+
+- **Personal.**
+  The
+  title
+  and
+  description
+  name
+  this
+  page,
+  in
+  the
+  page's
+  own
+  words,
+  not
+  the
+  site's
+  tagline.
+  A
+  page
+  about
+  one
+  thing
+  (a
+  post,
+  a
+  profile,
+  a
+  game,
+  a
+  book,
+  a
+  deck)
+  shows
+  that
+  thing:
+  its
+  card
+  comes
+  from
+  `ogCardPath(kind, id)`
+  or
+  `definePage`'s
+  `ogCard`,
+  and
+  draws
+  the
+  thing's
+  own
+  picture
+  where
+  it
+  has
+  one.
+- **Relevant.**
+  Any
+  other
+  page
+  resolves
+  to
+  a
+  section
+  card
+  in
+  `lib/og/static-cards.ts`:
+  an
+  eyebrow
+  saying
+  what
+  kind
+  of
+  page
+  it
+  is,
+  a
+  title
+  and
+  subtitle
+  in
+  the
+  copy
+  rules
+  of
+  §6,
+  and
+  the
+  section's
+  own
+  picture
+  where
+  it
+  has
+  one.
+  No
+  public
+  page
+  except
+  the
+  home
+  page
+  falls
+  back
+  to
+  the
+  site-wide
+  default
+  card.
+- **One
+  path.**
+  `head()`
+  goes
+  through
+  `buildMeta`
+  (directly
+  or
+  through
+  `definePage`,
+  `gameRouteHead`,
+  `appRouteHead`,
+  `appHubHead`),
+  which
+  owns
+  the
+  whole
+  `og:*`
+  and
+  `twitter:*`
+  block.
+  Never
+  hand-roll
+  those
+  tags.
+- **Private
+  pages
+  are
+  exempt.**
+  Routes
+  the
+  sitemap
+  excludes
+  (admin,
+  settings,
+  composers,
+  capability
+  links)
+  are
+  not
+  shared
+  publicly;
+  they
+  set
+  `noindex`
+  instead.
+
+- **Drawn
+  in
+  Steel.**
+  A
+  card
+  is
+  this
+  design
+  on
+  a
+  1200×630
+  page:
+  flat
+  `--site-bg`,
+  the
+  favicon
+  as
+  the
+  mark,
+  1px
+  rules
+  between
+  the
+  brand
+  row,
+  body
+  and
+  footer,
+  Geist
+  at
+  400/500/600,
+  a
+  picture
+  in
+  a
+  bordered
+  `--site-bg-subtle`
+  box.
+  The
+  renderers
+  share
+  one
+  frame
+  (`lib/og/chrome.server.tsx`),
+  so
+  a
+  card
+  type
+  never
+  improvises
+  its
+  own
+  look.
+
+`lib/__tests__/og-page-coverage.test.ts`
+holds
+this
+for
+every
+route
+the
+sitemap
+lists
+as
+public,
+with
+a
+backlog
+that
+only
+shrinks.
+The
+card
+system
+itself
+is
+documented
+in
+[`docs/open-graph.md`](docs/open-graph.md).
