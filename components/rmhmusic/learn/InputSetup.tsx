@@ -1,6 +1,6 @@
 /**
  * InputSetup — the "Set up input" dialog: choose how you play, then optionally
- * check timing. Built on the shared `Dialog` (Radix owns the focus trap and
+ * check timing. A singer first picks their range ("Your voice", `VoiceRangePicker`). Built on the shared `Dialog` (Radix owns the focus trap and
  * Escape; focus goes back to the opening button, `returnFocus`) and portaled into the RMH Music root
  * (`useDialogHost`) so it keeps the app's `--app-*` palette, the way RMHTube's
  * settings dialog does.
@@ -18,6 +18,8 @@ import {
 import { useDialogHost } from '@/components/shared/useDialogHost';
 import { InputChooser } from './InputChooser';
 import { LatencyCalibration } from './LatencyCalibration';
+import { VoiceRangePicker } from './VoiceRangePicker';
+import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 
 interface InputSetupProps {
   open: boolean;
@@ -48,6 +50,16 @@ export function InputSetup({
   } =
     useDialogHost(
       '.rmhmusic-theme',
+    );
+  const singer =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.instrument ===
+        'voice',
     );
   const [
     view,
@@ -132,13 +144,29 @@ export function InputSetup({
             </DialogHeader>
             {view ===
             'choose' ? (
-              <InputChooser
-                onCalibrate={() =>
-                  setView(
-                    'calibrate',
-                  )
-                }
-              />
+              <>
+                {singer && (
+                  <>
+                    <VoiceRangePicker />
+                    <p className="text-sm text-app-text-muted">
+                      {t(
+                        'voice-setup-mic',
+                        {
+                          defaultValue:
+                            'Singers answer with the microphone. The keys still work where a lesson shows them.',
+                        },
+                      )}
+                    </p>
+                  </>
+                )}
+                <InputChooser
+                  onCalibrate={() =>
+                    setView(
+                      'calibrate',
+                    )
+                  }
+                />
+              </>
             ) : (
               <LatencyCalibration
                 onDone={() =>

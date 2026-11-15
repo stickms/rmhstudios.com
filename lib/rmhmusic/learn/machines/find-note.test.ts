@@ -1309,3 +1309,56 @@ describe('playHintFits', () => {
     );
   });
 });
+
+describe('targetStaff for a singer (Phase 5)', () => {
+  it('draws the voice on its range staff: alto treble at pitch, tenor an octave up, bass on the bass staff', () => {
+    expect(
+      targetStaff(
+        57,
+        'voice',
+        'alto',
+      ),
+    ).toEqual(
+      {
+        clef: 'treble',
+        midi: 57,
+      },
+    );
+    expect(
+      targetStaff(
+        48,
+        'voice',
+        'tenor',
+      ),
+    ).toEqual(
+      {
+        clef: 'treble',
+        midi: 60,
+      },
+    );
+    expect(
+      targetStaff(
+        60,
+        'voice',
+        'bass',
+      ),
+    ).toEqual(
+      {
+        clef: 'bass',
+        midi: 60,
+      },
+    );
+    // no range yet: alto
+    expect(
+      targetStaff(
+        60,
+        'voice',
+      ),
+    ).toEqual(
+      {
+        clef: 'treble',
+        midi: 60,
+      },
+    );
+  });
+});

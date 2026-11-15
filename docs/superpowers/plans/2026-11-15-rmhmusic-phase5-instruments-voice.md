@@ -84,7 +84,7 @@ a measured pitch ≥ 0.35 st from the key centre and on a residual > 10 cents af
   | Range | Sounding compass | Staff |
   | --- | --- | --- |
   | soprano | C4–G5 (60–79) | treble |
-  | alto | G3–C5 (55–72) | treble |
+  | alto | A3–D5 (57–74; A3 is the lowest note the staff card draws) | treble |
   | tenor | C3–G4 (48–67) | treble with the small 8 (written an octave up, like guitar) |
   | bass (baritone or bass) | G2–C4 (43–60) | bass |
 
@@ -97,7 +97,7 @@ a measured pitch ≥ 0.35 st from the key centre and on a residual > 10 cents af
 - LearnHome's instrument tabs gain **Voice** (lucide `MicVocal`); the heading says "Learn to sing".
 - Choosing Voice saves `instrument: 'voice'` and the input `mic`, and opens "Set up input". For a voice
   learner that dialog starts with **Your voice**: a radio group of the four ranges (each row: name and
-  its compass, e.g. "Alto, G3 to C5"), the same radio-keys pattern as the Sound dialog, then the
+  its compass, e.g. "Alto, A3 to D5"), the same radio-keys pattern as the Sound dialog, then the
   existing input chooser (MIDI, keys and on-screen keys stay available).
 
 ### 4.3 The voice path (`VOICE_PATH` in `content/path.ts`; `pathFor(instrument)`)

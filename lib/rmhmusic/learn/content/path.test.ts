@@ -9,6 +9,8 @@ import { INTERVALS } from '../theory/intervals';
 import { rhythmActivity } from '../machines/rhythm';
 import {
   PATH,
+  VOICE_PATH,
+  VOICE_RANGE_DECK,
   getLesson,
   isKnownLesson,
 } from './path';
@@ -17,13 +19,31 @@ import {
   isPlayable,
 } from './routing';
 
+// Both paths' lessons, once each (the rhythm unit is on both).
 const lessons =
-  PATH.flatMap(
-    (
-      unit,
-    ) =>
-      unit.lessons,
-  );
+  [
+    ...new Map(
+      [
+        ...PATH,
+        ...VOICE_PATH,
+      ]
+        .flatMap(
+          (
+            unit,
+          ) =>
+            unit.lessons,
+        )
+        .map(
+          (
+            l,
+          ) =>
+            [
+              l.id,
+              l,
+            ] as const,
+        ),
+    ).values(),
+  ];
 
 describe('learning path', () => {
   it('has unique, kebab-case lesson ids of at most 64 chars', () => {
@@ -118,7 +138,12 @@ describe('learning path', () => {
   });
   it('ships the first-note lesson, the staff-reading lessons, the note finders, the pitch match, the ear training, playing a chord and the rhythm lessons', () => {
     const available =
-      lessons.filter(
+      PATH.flatMap(
+        (
+          u,
+        ) =>
+          u.lessons,
+      ).filter(
         (
           l,
         ) =>
@@ -424,10 +449,15 @@ describe('learning path', () => {
         l.id,
       ).toBeDefined();
       expect(
-        DECKS[
-          l.deck ??
-            ''
-        ],
+        l.deck ===
+          VOICE_RANGE_DECK
+          ? DECKS[
+              'voice-alto'
+            ]
+          : DECKS[
+              l.deck ??
+                ''
+            ],
         `${l.id} -> ${l.deck}`,
       ).toBeDefined();
     }
@@ -550,7 +580,9 @@ describe('learning path', () => {
         x.mode !==
           'ear-interval' &&
         x.mode !==
-          'ear-chord',
+          'ear-chord' &&
+        x.mode !==
+          'sing-interval',
     )) {
       expect(
         l.pool,

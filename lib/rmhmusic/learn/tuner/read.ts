@@ -61,9 +61,11 @@ export type ReadPlacement =
 
 export function readPlacement(
   midi: number,
+  /** A singer reads like the piano here: the treble card from C4, the bass card below. */
   instrument:
     | 'piano'
-    | 'guitar',
+    | 'guitar'
+    | 'voice',
 ): ReadPlacement {
   const guitar =
     instrument ===

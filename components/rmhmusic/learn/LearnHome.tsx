@@ -22,12 +22,16 @@ import {
 import {
   ArrowLeft,
   Guitar,
+  MicVocal,
   Piano,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
-import { PATH } from '@/lib/rmhmusic/learn/content/path';
+import {
+  PATH,
+  pathFor,
+} from '@/lib/rmhmusic/learn/content/path';
 import { practiceAvailable } from '@/lib/rmhmusic/learn/content/practice';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
@@ -301,6 +305,32 @@ export function LearnHome() {
   const instrument =
     profile?.instrument ??
     'piano';
+  const path =
+    pathFor(
+      instrument,
+    );
+  // Choosing Voice opens "Set up input" until the singer has a range and the microphone: the range
+  // is asked there first, and the microphone starts only from a tap on its row.
+  const chooseInstrument =
+    (
+      next: Instrument,
+    ) => {
+      void useLearnStore
+        .getState()
+        .setInstrument(
+          next,
+        );
+      if (
+        next ===
+          'voice' &&
+        (!profile?.voiceRange ||
+          profile.input !==
+            'mic')
+      )
+        onSetupChange(
+          true,
+        );
+    };
   const tabs =
     [
       {
@@ -326,6 +356,18 @@ export function LearnHome() {
             },
           ),
         icon: Guitar,
+      },
+      {
+        id: 'voice',
+        label:
+          t(
+            'instrument-voice',
+            {
+              defaultValue:
+                'Voice',
+            },
+          ),
+        icon: MicVocal,
       },
     ];
 
@@ -478,11 +520,9 @@ export function LearnHome() {
             onChange={(
               id,
             ) =>
-              void useLearnStore
-                .getState()
-                .setInstrument(
-                  id as Instrument,
-                )
+              chooseInstrument(
+                id as Instrument,
+              )
             }
             aria-label={t(
               'instrument-label',
@@ -595,7 +635,7 @@ export function LearnHome() {
             </p>
           )}
           <div className="rmm-sheet">
-            {PATH.map(
+            {path.map(
               (
                 unit,
               ) => (
@@ -727,21 +767,30 @@ export function LearnHome() {
           <h1 className="rmm-display text-[2.5rem] leading-[3rem] text-app-text sm:text-5xl sm:leading-[3.5rem]">
             {ready
               ? instrument ===
-                'guitar'
+                'voice'
                 ? t(
-                    'heading-guitar',
+                    'heading-voice',
                     {
                       defaultValue:
-                        'Learn guitar',
+                        'Learn to sing',
                     },
                   )
-                : t(
-                    'heading-piano',
-                    {
-                      defaultValue:
-                        'Learn piano',
-                    },
-                  )
+                : instrument ===
+                    'guitar'
+                  ? t(
+                      'heading-guitar',
+                      {
+                        defaultValue:
+                          'Learn guitar',
+                      },
+                    )
+                  : t(
+                      'heading-piano',
+                      {
+                        defaultValue:
+                          'Learn piano',
+                      },
+                    )
               : t(
                   'heading-default',
                   {

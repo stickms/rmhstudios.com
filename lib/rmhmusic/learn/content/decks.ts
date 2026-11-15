@@ -7,6 +7,11 @@
  * found again.
  */
 import type { Clef } from '../theory/clef';
+import type { VoiceRange } from '../schemas';
+import {
+  rangeNaturals,
+  voiceReading,
+} from '../voice/range';
 
 export interface Card {
   /** `<clef>:<midi>`, e.g. `treble:64`. Stored forever with the card's schedule. */
@@ -20,6 +25,8 @@ export interface Deck {
   clef: Clef;
   /** Natural notes only, lowest first. */
   midis: number[];
+  /** Read with the treble clef's small 8 (tenor voice): the cards are written an octave up. */
+  octaveClef?: boolean;
 }
 
 export function cardId(
@@ -64,6 +71,38 @@ function naturals(
         m,
       );
   return out;
+}
+
+function voiceRangeDeck(
+  range: VoiceRange,
+): Deck {
+  const {
+    clef,
+    octaveClef,
+    writtenShift,
+  } =
+    voiceReading(
+      range,
+    );
+  return {
+    id: `voice-${range}`,
+    clef,
+    midis:
+      rangeNaturals(
+        range,
+      ).map(
+        (
+          m,
+        ) =>
+          m +
+          writtenShift,
+      ),
+    ...(octaveClef
+      ? {
+          octaveClef,
+        }
+      : {}),
+  };
 }
 
 export const DECKS: Record<
@@ -133,7 +172,41 @@ export const DECKS: Record<
             60,
           ),
       },
+    /** The natural notes of each voice range, as that range reads them (`voice/range.ts`). */
+    'voice-soprano':
+      voiceRangeDeck(
+        'soprano',
+      ),
+    'voice-alto':
+      voiceRangeDeck(
+        'alto',
+      ),
+    'voice-tenor':
+      voiceRangeDeck(
+        'tenor',
+      ),
+    'voice-bass':
+      voiceRangeDeck(
+        'bass',
+      ),
   };
+
+/** The deck of a voice range (the `voice-range` lesson deck resolved for the learner). */
+export function voiceDeck(
+  range: VoiceRange,
+): Deck {
+  const deck =
+    DECKS[
+      `voice-${range}`
+    ];
+  if (
+    !deck
+  )
+    throw new RangeError(
+      `no deck for ${range}`,
+    );
+  return deck;
+}
 
 /** No session is longer than this, whatever is asked (a guard against a wild `count`). */
 export const MAX_SESSION_CARDS = 200;

@@ -68,7 +68,7 @@ const NATURAL_PITCH_CLASSES =
   );
 
 describe('decks', () => {
-  it('has the five decks with matching ids', () => {
+  it('has the five reading decks and the four voice-range decks, with matching ids', () => {
     expect(
       Object.keys(
         DECKS,
@@ -80,6 +80,10 @@ describe('decks', () => {
         'treble-all',
         'treble-lines',
         'treble-spaces',
+        'voice-alto',
+        'voice-bass',
+        'voice-soprano',
+        'voice-tenor',
       ],
     );
     for (const [

@@ -41,8 +41,8 @@ describe('voice ranges', () => {
       VOICE_RANGE.alto,
     ).toMatchObject(
       {
-        low: 55,
-        high: 72,
+        low: 57,
+        high: 74,
       },
     );
     expect(
@@ -189,7 +189,6 @@ describe('voice ranges', () => {
       ),
     ).toEqual(
       [
-        55,
         57,
         59,
         60,
@@ -200,6 +199,7 @@ describe('voice ranges', () => {
         69,
         71,
         72,
+        74,
       ],
     );
     expect(

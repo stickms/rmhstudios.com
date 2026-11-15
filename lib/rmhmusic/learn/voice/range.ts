@@ -42,11 +42,11 @@ export const VOICE_RANGE: Readonly<
         octaveClef: false,
         writtenShift: 0,
       },
-    /** G3 to C5. */
+    /** A3 to D5 (A3 is the lowest note the staff card draws, two ledger lines below the treble staff). */
     alto: {
       id: 'alto',
-      low: 55,
-      high: 72,
+      low: 57,
+      high: 74,
       clef: 'treble',
       octaveClef: false,
       writtenShift: 0,

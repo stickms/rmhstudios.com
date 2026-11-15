@@ -28,6 +28,16 @@ import {
   type Stars,
 } from '../scoring/stars';
 import type { CompleteOutcome } from './learn-data';
+import { dealRounds } from '../content/decks';
+import type { VoiceRange } from '../schemas';
+import {
+  INTERVALS,
+  type IntervalName,
+} from '../theory/intervals';
+import {
+  VOICE_RANGE,
+  rangeNaturals,
+} from '../voice/range';
 import type { Machine } from './runner';
 
 /** Targets in one lesson. */
@@ -37,9 +47,14 @@ export const MATCH_TRIES = 3;
 /** Notes closer together than this (ms, on the events' `performance.now()` clock) are one try. */
 export const SAME_TICK_MS = 100;
 
-/** One note to match: the pitch it sounds. */
+/**
+ * One note to match: the pitch it sounds. Interval singing (`sing-interval`) also gives the first
+ * note (`from`), which the staff shows and Hear it plays before the target, and the interval's name.
+ */
 export interface Target {
   midi: number;
+  from?: number;
+  interval?: IntervalName;
 }
 
 /** A note as the hub reports it (cents only from the microphone). */
@@ -138,10 +153,11 @@ export type Event =
     };
 
 export type Effect =
-  /** Sound the target (the learner asked to hear it). */
+  /** Sound the target (the learner asked to hear it), after `from` when it is an interval. */
   | {
       type: 'play';
       midi: number;
+      from?: number;
     }
   /** Save the completion; answer with `answered` carrying `attempt`. */
   | {
@@ -357,6 +373,12 @@ export function step(
                 {
                   type: 'play',
                   midi: card.midi,
+                  ...(card.from ===
+                  undefined
+                    ? {}
+                    : {
+                        from: card.from,
+                      }),
                 },
               ],
           }
@@ -553,7 +575,27 @@ export function createMatchNoteMachine(
  */
 export function matchNotePool(
   lessonId: string,
+  range?: VoiceRange,
 ): number[] {
+  if (
+    lessonId ===
+      'voice-match-five' ||
+    lessonId ===
+      'voice-match-range'
+  ) {
+    const naturals =
+      rangeNaturals(
+        range ??
+          'alto',
+      );
+    return lessonId ===
+      'voice-match-five'
+      ? naturals.slice(
+          0,
+          5,
+        )
+      : naturals;
+  }
   return lessonId ===
     'match-white-keys'
     ? [
@@ -573,6 +615,91 @@ export function matchNotePool(
         65,
         67,
       ];
+}
+
+/**
+ * Interval singing: `count` targets, each a natural first note of the range and a note one of the
+ * pool's intervals above it (the interval's sizes, so a third may be minor or major), both inside
+ * the range. The first notes are dealt like a deck (every usable one before any repeats).
+ */
+export function singIntervalTargets(
+  pool: readonly string[],
+  range: VoiceRange,
+  count: number,
+  rand: () => number,
+): Target[] {
+  const {
+    high,
+  } =
+    VOICE_RANGE[
+      range
+    ];
+  const names =
+    pool.filter(
+      (
+        n,
+      ): n is IntervalName =>
+        n in
+        INTERVALS,
+    );
+  const naturals =
+    rangeNaturals(
+      range,
+    );
+  const pairs: {
+    from: number;
+    midi: number;
+    interval: IntervalName;
+  }[] =
+    [];
+  for (const from of naturals)
+    for (const interval of names)
+      for (const size of INTERVALS[
+        interval
+      ]
+        .semitones) {
+        const midi =
+          from +
+          size;
+        // A natural second note keeps the staff and the sung note in plain letters.
+        if (
+          midi <=
+            high &&
+          naturals.includes(
+            midi,
+          )
+        )
+          pairs.push(
+            {
+              from,
+              midi,
+              interval,
+            },
+          );
+      }
+  if (
+    pairs.length ===
+    0
+  )
+    return [];
+  return dealRounds(
+    pairs.map(
+      (
+        _,
+        i,
+      ) =>
+        i,
+    ),
+    count,
+    rand,
+  ).map(
+    (
+      i,
+    ) =>
+      pairs[
+        i
+      ] as Target,
+  );
 }
 
 function unreachable(

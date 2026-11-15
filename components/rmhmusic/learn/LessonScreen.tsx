@@ -667,7 +667,9 @@ export function LessonScreen({
           }
         />
       ) : lesson.mode ===
-        'match-note' ? (
+          'match-note' ||
+        lesson.mode ===
+          'sing-interval' ? (
         <MatchNoteLesson
           key={
             lesson.id
@@ -843,7 +845,9 @@ export function LessonScreen({
           'fretboard' ? (
         <FindNoteSkeleton />
       ) : lesson.mode ===
-        'match-note' ? (
+          'match-note' ||
+        lesson.mode ===
+          'sing-interval' ? (
         <MatchNoteSkeleton />
       ) : lesson.mode ===
           'ear-interval' ||

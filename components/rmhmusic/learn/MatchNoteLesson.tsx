@@ -17,6 +17,10 @@
  *   a close note is "a little flat" or "sharp"; every other source plays exact pitches and is
  *   simply spot on or a wrong note (a different octave is named as such). After a spot-on try or
  *   the third, the target's outcome stays with Next.
+ * - Singers (Phase 5): targets come from their range (`voice-match-five`, `voice-match-range`),
+ *   drawn on the range's staff (`targetStaff` with the range: tenor an octave up with the 8, bass on
+ *   the bass staff). Interval singing (`sing-interval`) reuses this screen: the staff shows the
+ *   first note, the line names the interval, Hear it plays both notes, and the second is matched.
  * - Guitar learners: the hub reports sounding pitch, which is what is matched and named; the staff
  *   shows guitar music's written pitch an octave up, with the treble clef's small 8 (as in the
  *   note finder, `targetStaff`).
@@ -36,6 +40,10 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import { getLesson } from '@/lib/rmhmusic/learn/content/path';
+import type { IntervalName } from '@/lib/rmhmusic/learn/theory/intervals';
+import { resolveVoiceRange } from '@/lib/rmhmusic/learn/voice/range';
 import {
   playNote,
   soundReleaseMs,
@@ -57,6 +65,7 @@ import {
   MATCH_TRIES,
   createMatchNoteMachine,
   matchNotePool,
+  singIntervalTargets,
   type Effect,
   type Played,
   type State,
@@ -68,7 +77,10 @@ import {
   type PlayedPitch,
 } from '@/lib/rmhmusic/learn/scoring/pitch';
 import { starsFor } from '@/lib/rmhmusic/learn/scoring/stars';
-import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
+import type {
+  Instrument,
+  VoiceRange,
+} from '@/lib/rmhmusic/learn/schemas';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { getAudioContext } from '@/lib/shared/platform';
 import { cn } from '@/lib/utils';
@@ -105,6 +117,67 @@ import {
 
 /** How long the hint sounds. */
 const HEAR_MS = 900;
+/** An interval's hint: the first note sounds this long, then the second for `HEAR_MS`. */
+const INTERVAL_GAP_MS = 700;
+
+/** Interval singing's instruction: one sentence per interval, so a translation can word each. */
+function singIntervalLine(
+  t: TFunction,
+  interval:
+    | IntervalName
+    | undefined,
+  note: string,
+): string {
+  switch (
+    interval
+  ) {
+    case 'second':
+      return t(
+        'sing-interval-second',
+        {
+          note,
+          defaultValue:
+            'Sing a second above {{note}}.',
+        },
+      );
+    case 'third':
+      return t(
+        'sing-interval-third',
+        {
+          note,
+          defaultValue:
+            'Sing a third above {{note}}.',
+        },
+      );
+    case 'fifth':
+      return t(
+        'sing-interval-fifth',
+        {
+          note,
+          defaultValue:
+            'Sing a fifth above {{note}}.',
+        },
+      );
+    case 'octave':
+      return t(
+        'sing-interval-octave',
+        {
+          note,
+          defaultValue:
+            'Sing an octave above {{note}}.',
+        },
+      );
+    default:
+      return t(
+        'sing-interval-other',
+        {
+          note,
+          defaultValue:
+            'Hear it, then sing the second note above {{note}}.',
+        },
+      );
+  }
+}
 
 type Sound =
   | 'ok'
@@ -155,6 +228,30 @@ export function MatchNoteLesson({
   const guitar =
     instrument ===
     'guitar';
+  // A singer's range, read once like the instrument (null: alto until chosen).
+  const [
+    range,
+  ] =
+    useState<VoiceRange>(
+      () =>
+        resolveVoiceRange(
+          useLearnStore.getState()
+            .profile
+            ?.voiceRange,
+        ),
+    );
+  const singer =
+    instrument ===
+    'voice';
+  const lessonInfo =
+    getLesson(
+      lessonId,
+    );
+  // Interval singing (`sing-interval`): the staff shows the first note, Hear it plays both, and the
+  // learner sings the second.
+  const intervals =
+    lessonInfo?.mode ===
+    'sing-interval';
   // How the last Hear it went, and where in the lesson (`position`): a problem is said only until
   // the learner moves on.
   const [
@@ -246,13 +343,24 @@ export function MatchNoteLesson({
         machine:
           () =>
             createMatchNoteMachine(
-              dealTargets(
-                matchNotePool(
-                  lessonId,
-                ),
-                MATCH_TARGETS,
-                Math.random,
-              ),
+              intervals
+                ? singIntervalTargets(
+                    lessonInfo?.pool ??
+                      [],
+                    range,
+                    MATCH_TARGETS,
+                    Math.random,
+                  )
+                : dealTargets(
+                    matchNotePool(
+                      lessonId,
+                      singer
+                        ? range
+                        : undefined,
+                    ),
+                    MATCH_TARGETS,
+                    Math.random,
+                  ),
             ),
         save: (
           fx,
@@ -276,15 +384,74 @@ export function MatchNoteLesson({
               'play'
             )
               return;
+            // An interval: the first note, then the second (the one to sing) as it ends.
+            const first =
+              fx.from;
+            const length =
+              first ===
+              undefined
+                ? HEAR_MS
+                : HEAR_MS +
+                  INTERVAL_GAP_MS;
             guard.hint(
               performance.now(),
-              HEAR_MS,
+              length,
             );
-            const release =
-              playNote(
-                fx.midi,
-                soundRef.current,
+            const releases: (() => void)[] =
+              [];
+            let second: ReturnType<
+              typeof setTimeout
+            > | null =
+              null;
+            if (
+              first ===
+              undefined
+            )
+              releases.push(
+                playNote(
+                  fx.midi,
+                  soundRef.current,
+                ),
               );
+            else {
+              releases.push(
+                playNote(
+                  first,
+                  soundRef.current,
+                ),
+              );
+              second =
+                setTimeout(
+                  () => {
+                    second =
+                      null;
+                    releases[0]?.();
+                    releases.push(
+                      playNote(
+                        fx.midi,
+                        soundRef.current,
+                      ),
+                    );
+                  },
+                  INTERVAL_GAP_MS,
+                );
+            }
+            const release =
+              () => {
+                if (
+                  second !==
+                  null
+                )
+                  clearTimeout(
+                    second,
+                  );
+                second =
+                  null;
+                for (const r of releases.splice(
+                  0,
+                ))
+                  r();
+              };
             const timer =
               setTimeout(
                 () => {
@@ -293,7 +460,7 @@ export function MatchNoteLesson({
                   );
                   release();
                 },
-                HEAR_MS,
+                length,
               );
             hints.current.set(
               timer,
@@ -580,10 +747,15 @@ export function MatchNoteLesson({
 
   const target =
     session.card;
+  // What the staff shows and the sentence names: the target, or an interval's first note.
+  const shown =
+    target?.from ??
+    target?.midi;
   const name =
-    target
+    shown !==
+    undefined
       ? midiToName(
-          target.midi,
+          shown,
         )
       : '';
 
@@ -778,22 +950,38 @@ export function MatchNoteLesson({
       !last
     ) {
       line =
-        input ===
-        'screen'
-          ? t(
-              'match-hint-screen',
-              {
-                defaultValue:
-                  'Play the note you see on the keys below.',
-              },
+        intervals &&
+        target?.from !==
+          undefined
+          ? singIntervalLine(
+              t,
+              target.interval,
+              name,
             )
-          : t(
-              'match-hint',
-              {
-                defaultValue:
-                  'Play the note you see.',
-              },
-            );
+          : singer
+            ? t(
+                'match-hint-sing',
+                {
+                  defaultValue:
+                    'Sing the note you see.',
+                },
+              )
+            : input ===
+                'screen'
+              ? t(
+                  'match-hint-screen',
+                  {
+                    defaultValue:
+                      'Play the note you see on the keys below.',
+                  },
+                )
+              : t(
+                  'match-hint',
+                  {
+                    defaultValue:
+                      'Play the note you see.',
+                  },
+                );
     } else {
       lineKey = `try-${lesson.index}-${lesson.tries.length}`;
       line =
@@ -960,7 +1148,11 @@ export function MatchNoteLesson({
           0
           ? line
           : session.announce
-            ? `${title}. ${name}.`
+            ? intervals &&
+              target?.from !==
+                undefined
+              ? `${title}. ${singIntervalLine(t, target.interval, name)}`
+              : `${title}. ${name}.`
             : ''
         : line;
 
@@ -973,15 +1165,22 @@ export function MatchNoteLesson({
   ) {
     const staff =
       targetStaff(
-        target.midi,
+        shown ??
+          target.midi,
         instrument,
+        range,
       );
+    const octaveClef =
+      guitar ||
+      (singer &&
+        range ===
+          'tenor');
     const written =
       midiToName(
         staff.midi,
       );
     const label =
-      guitar
+      octaveClef
         ? t(
             'find-staff-guitar',
             {
@@ -991,19 +1190,29 @@ export function MatchNoteLesson({
                 '{{note}}, written as {{written}} on the treble staff',
             },
           )
-        : t(
-            'flash-card-named-treble',
-            {
-              note: name,
-              defaultValue:
-                '{{note}} on the treble staff',
-            },
-          );
+        : staff.clef ===
+            'bass'
+          ? t(
+              'flash-card-named-bass',
+              {
+                note: name,
+                defaultValue:
+                  '{{note}} on the bass staff',
+              },
+            )
+          : t(
+              'flash-card-named-treble',
+              {
+                note: name,
+                defaultValue:
+                  '{{note}} on the treble staff',
+              },
+            );
     question =
       (
         <StaffCard
           card={{
-            id: `${instrument}:${target.midi}`,
+            id: `${instrument}:${target.from ?? ''}:${target.midi}`,
             clef: staff.clef,
             midi: staff.midi,
           }}
@@ -1011,7 +1220,7 @@ export function MatchNoteLesson({
             session,
           )}
           octaveClef={
-            guitar
+            octaveClef
           }
           caption={
             name
