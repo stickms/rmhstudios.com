@@ -225,6 +225,9 @@ case "$*" in
   *'{{.DockerRootDir}}'*) echo "$MOCK_ROOT" ;;
   *'{{.State.Running}} {{.RestartCount}}'*)
     if [ -f "$MOCK_ROOT/late-failure" ] && [ ! -f "$MOCK_ROOT/restored" ]; then echo "true $(cat "$MOCK_ROOT/late-failure")"; else echo 'true 0'; fi ;;
+  *'--profile rmhos-net up -d'*)
+    for i in $(seq 1 25); do echo "hub-up-line-$i"; done
+    [ "\${MOCK_HUB_UP_FAIL:-0}" != 1 ] || exit 1 ;;
   *' up -d '*) [ ! -f "$MOCK_ROOT/late-failure" ] || touch "$MOCK_ROOT/restored" ;;
   *' ps -q '*) echo fixture-worker ;;
   *'{{.State.Health.Status}}'*) echo "\${MOCK_WIKI_HEALTH:-healthy}" ;;
@@ -241,7 +244,7 @@ esac
       dir,
       'bin/curl',
     ),
-    '#!/bin/bash\nexit 0\n',
+    '#!/bin/bash\nif [ "${MOCK_HUB_UNHEALTHY:-0}" = 1 ] && [[ "$*" == *:7009/health* ]]; then exit 1; fi\nexit 0\n',
     {
       mode: 0o755,
     },
@@ -821,63 +824,362 @@ describe('production deploy orchestration', () => {
     // What a deploy does to a hub that is already serving. Recreating it ends every user's network
     // session, so it must happen only when the hub's own bundle or configuration changed.
     describe('recreating the hub', () => {
-      const fingerprint = (bundle: string, cfg: string) =>
-        createHash('sha256').update(`${bundle}\ncfg:${cfg}\n`).digest('hex');
-      const run = (env: Record<string, string>) => {
-        const r = fixture(env, { rmhosSecret: true });
-        expect(r.result.status, r.result.stdout + r.result.stderr).toBe(0);
-        return r;
-      };
-      const running = (bundle = 'bundleA', cfg = 'A') => `true ${fingerprint(bundle, cfg)}`;
+      const fingerprint =
+        (
+          bundle: string,
+          cfg: string,
+        ) =>
+          createHash(
+            'sha256',
+          )
+            .update(
+              `${bundle}\ncfg:${cfg}\n`,
+            )
+            .digest(
+              'hex',
+            );
+      const run =
+        (
+          env: Record<
+            string,
+            string
+          >,
+        ) => {
+          const r =
+            fixture(
+              env,
+              {
+                rmhosSecret: true,
+              },
+            );
+          expect(
+            r
+              .result
+              .status,
+            r
+              .result
+              .stdout +
+              r
+                .result
+                .stderr,
+          ).toBe(
+            0,
+          );
+          return r;
+        };
+      const running =
+        (
+          bundle = 'bundleA',
+          cfg = 'A',
+        ) =>
+          `true ${fingerprint(bundle, cfg)}`;
 
       it('leaves a running hub alone when neither its bundle nor its configuration changed', () => {
-        const r = run({ MOCK_HUB_STATE: running() });
-        expect(hubUp(r.docker)).toBe(false);
-        expect(hubStop(r.docker)).toBe(false);
-        expect(r.result.stdout).toContain('rmhOS relay hub unchanged');
-        expect(r.result.stdout).toContain('network sessions are not interrupted');
+        const r =
+          run(
+            {
+              MOCK_HUB_STATE:
+                running(),
+            },
+          );
+        expect(
+          hubUp(
+            r.docker,
+          ),
+        ).toBe(
+          false,
+        );
+        expect(
+          hubStop(
+            r.docker,
+          ),
+        ).toBe(
+          false,
+        );
+        expect(
+          r
+            .result
+            .stdout,
+        ).toContain(
+          'rmhOS relay hub unchanged',
+        );
+        expect(
+          r
+            .result
+            .stdout,
+        ).toContain(
+          'network sessions are not interrupted',
+        );
       }, 40_000);
 
       it('recreates the hub when its bundle changed', () => {
-        const r = run({ MOCK_HUB_STATE: running('bundleOLD'), MOCK_HUB_BUNDLE: 'bundleA' });
-        expect(hubUp(r.docker)).toBe(true);
-        expect(r.result.stdout).not.toContain('rmhOS relay hub unchanged');
-        expect(r.result.stdout).toContain('Users\' network sessions ended');
+        const r =
+          run(
+            {
+              MOCK_HUB_STATE:
+                running(
+                  'bundleOLD',
+                ),
+              MOCK_HUB_BUNDLE:
+                'bundleA',
+            },
+          );
+        expect(
+          hubUp(
+            r.docker,
+          ),
+        ).toBe(
+          true,
+        );
+        expect(
+          r
+            .result
+            .stdout,
+        ).not.toContain(
+          'rmhOS relay hub unchanged',
+        );
+        expect(
+          r
+            .result
+            .stdout,
+        ).toContain(
+          "Users' network sessions ended",
+        );
       }, 40_000);
 
       it('recreates the hub when its configuration changed (any RMHOS_NET_* value)', () => {
-        const r = run({ MOCK_HUB_STATE: running('bundleA', 'OLD'), MOCK_HUB_CFG: 'A' });
-        expect(hubUp(r.docker)).toBe(true);
+        const r =
+          run(
+            {
+              MOCK_HUB_STATE:
+                running(
+                  'bundleA',
+                  'OLD',
+                ),
+              MOCK_HUB_CFG:
+                'A',
+            },
+          );
+        expect(
+          hubUp(
+            r.docker,
+          ),
+        ).toBe(
+          true,
+        );
       }, 40_000);
 
+      it.each(
+        [
+          [
+            'compose up fails',
+            {
+              MOCK_HUB_UP_FAIL:
+                '1',
+            },
+          ],
+          [
+            'the hub never answers /health',
+            {
+              MOCK_HUB_UNHEALTHY:
+                '1',
+              HTTP_HEALTH_TRIES:
+                '1',
+            },
+          ],
+        ],
+      )(
+        'logs the last 20 lines of compose up, stops the hub and still succeeds when %s',
+        (
+          _n,
+          env,
+        ) => {
+          const r =
+            run(
+              {
+                MOCK_HUB_STATE:
+                  running(
+                    'bundleOLD',
+                  ),
+                ...env,
+              },
+            );
+          expect(
+            hubUp(
+              r.docker,
+            ),
+          ).toBe(
+            true,
+          );
+          expect(
+            hubStop(
+              r.docker,
+            ),
+          ).toBe(
+            true,
+          );
+          expect(
+            r
+              .result
+              .stdout,
+          ).toContain(
+            'did not start healthy',
+          );
+          expect(
+            r
+              .result
+              .stdout,
+          ).toContain(
+            'hub-up-line-25',
+          );
+          expect(
+            r
+              .result
+              .stdout,
+          ).toContain(
+            'hub-up-line-6',
+          );
+          expect(
+            r
+              .result
+              .stdout,
+          ).not.toMatch(
+            /hub-up-line-5\b/,
+          );
+        },
+        40_000,
+      );
+
       it('starts a hub that is not running even if its label matches', () => {
-        const r = run({ MOCK_HUB_STATE: `false ${fingerprint('bundleA', 'A')}` });
-        expect(hubUp(r.docker)).toBe(true);
+        const r =
+          run(
+            {
+              MOCK_HUB_STATE: `false ${fingerprint('bundleA', 'A')}`,
+            },
+          );
+        expect(
+          hubUp(
+            r.docker,
+          ),
+        ).toBe(
+          true,
+        );
       }, 40_000);
 
       it('recreates when the fingerprint cannot be computed (never skip on doubt)', () => {
-        const r = run({ MOCK_HUB_STATE: 'true ', MOCK_HUB_BUNDLE: '' });
-        expect(hubUp(r.docker)).toBe(true);
+        const r =
+          run(
+            {
+              MOCK_HUB_STATE:
+                'true ',
+              MOCK_HUB_BUNDLE:
+                '',
+            },
+          );
+        expect(
+          hubUp(
+            r.docker,
+          ),
+        ).toBe(
+          true,
+        );
       }, 40_000);
 
       it('stops the hub whether or not it changed when the probe fails', () => {
         for (const env of [
-          { MOCK_HUB_STATE: running() },
-          { MOCK_HUB_STATE: running('bundleOLD') },
+          {
+            MOCK_HUB_STATE:
+              running(),
+          },
+          {
+            MOCK_HUB_STATE:
+              running(
+                'bundleOLD',
+              ),
+          },
         ]) {
-          const r = run({ ...env, MOCK_PROBE: 'open' });
-          expect(hubStop(r.docker)).toBe(true);
-          expect(hubUp(r.docker)).toBe(false);
-          expect(r.result.stdout).toContain('rmhOS network relay NOT started');
+          const r =
+            run(
+              {
+                ...env,
+                MOCK_PROBE:
+                  'open',
+              },
+            );
+          expect(
+            hubStop(
+              r.docker,
+            ),
+          ).toBe(
+            true,
+          );
+          expect(
+            hubUp(
+              r.docker,
+            ),
+          ).toBe(
+            false,
+          );
+          expect(
+            r
+              .result
+              .stdout,
+          ).toContain(
+            'rmhOS network relay NOT started',
+          );
         }
       }, 60_000);
 
-      it.each(['', '""', 'too-short-secret'])('does not start the hub for the ticket secret %j', (value) => {
-        const r = fixture({}, { rmhosSecret: true, rmhosSecretValue: value });
-        expect(r.result.status, r.result.stdout + r.result.stderr).toBe(0);
-        expect(hubUp(r.docker)).toBe(false);
-        expect(r.result.stdout).toContain('RMHOS_NET_TICKET_SECRET is not set (or is under 32 characters)');
-      }, 40_000);
+      it.each(
+        [
+          '',
+          '""',
+          'too-short-secret',
+        ],
+      )(
+        'does not start the hub for the ticket secret %j',
+        (
+          value,
+        ) => {
+          const r =
+            fixture(
+              {},
+              {
+                rmhosSecret: true,
+                rmhosSecretValue:
+                  value,
+              },
+            );
+          expect(
+            r
+              .result
+              .status,
+            r
+              .result
+              .stdout +
+              r
+                .result
+                .stderr,
+          ).toBe(
+            0,
+          );
+          expect(
+            hubUp(
+              r.docker,
+            ),
+          ).toBe(
+            false,
+          );
+          expect(
+            r
+              .result
+              .stdout,
+          ).toContain(
+            'RMHOS_NET_TICKET_SECRET is not set (or is under 32 characters)',
+          );
+        },
+        40_000,
+      );
     });
   });
 

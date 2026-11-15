@@ -112,7 +112,7 @@ RUN set -eu; cd /rootfs; \
     mkdir -p /tmp/t/a /tmp/t/o && echo x > /tmp/t/a/f && tar -cf /tmp/t/t.tar -C /tmp/t a && \
         chroot /rootfs /bin/tar -xpf - -C /home --no-same-owner < /tmp/t/t.tar && \
         rm -rf /rootfs/home/a /tmp/t || { echo "tar lacks --no-same-owner" >&2; exit 1; }; \
-    for f in usr/local/bin/rmhos-agent usr/local/bin/rmhos-poweroff-save usr/local/sbin/rmhos-power; do \
+    for f in usr/local/bin/rmhos-agent usr/local/bin/rmhos-poweroff-save usr/local/bin/rmhos-save-home usr/local/sbin/rmhos-power; do \
         chroot /rootfs /bin/sh -n "/$f"; \
     done
 # Every user and group name the image has: a visitor whose handle is one of them (guest, ntp, sshd,

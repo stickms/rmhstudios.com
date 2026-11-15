@@ -14,8 +14,8 @@
 #   INPUT path (traffic addressed to this host itself, incl. the bridge gateway
 #   and the host's public addresses):
 #       INPUT -s 172.31.86.0/24 -> RMHOS-INPUT
-#       RMHOS-INPUT: DROP new connections, RETURN (replies to the published port
-#       are ESTABLISHED and unaffected)
+#       RMHOS-INPUT: a SENTINEL (REJECT tcp-reset for <gateway>:9), then DROP new
+#       connections, RETURN (replies to the published port are ESTABLISHED and unaffected)
 #
 # Idempotent: each of our chains is declared inside one iptables-restore
 # transaction (which empties and refills it atomically, so there is no window
@@ -31,6 +31,11 @@
 # packet really travelled FORWARD -> DOCKER-USER -> RMHOS-EGRESS. This script also checks that
 # FORWARD reaches DOCKER-USER at all (it does not with Docker's `"iptables": false` or an nftables
 # backend Docker does not use), so the rules cannot sit in a chain nothing traverses.
+#
+# The INPUT side has its own sentinel, because a timeout from the gateway proves nothing (any host with
+# a default-drop INPUT policy times out): RMHOS-INPUT holds a REJECT (tcp-reset) for <gateway>:9 before
+# its drop, so a container that connects to gateway:9 is REFUSED only if its packet really reached
+# INPUT -> RMHOS-INPUT, while gateway:10 (no sentinel) must still TIME OUT, i.e. be dropped.
 #
 # Optional source NAT: RMHOS_EGRESS_SNAT_TO=<public IPv4> makes relay traffic leave from that
 # address instead of the host's main one (docs/rmhos.md, "Whose address").
@@ -68,6 +73,8 @@ V6_SUBNET="${RMHOS_EGRESS_IPV6_SUBNET:-}"
 SNAT_TO="${RMHOS_EGRESS_SNAT_TO:-}"
 SENTINEL_V4="192.0.2.1"
 SENTINEL_PORT="9"
+# The bridge gateway of SUBNET (Docker assigns the first address); probe-firewall.sh reads the real one.
+GATEWAY_V4="172.31.86.1"
 
 say() { echo "[rmhos-net firewall] $*"; }
 die() { echo "[rmhos-net firewall] ERROR: $*" >&2; exit 1; }
@@ -127,6 +134,9 @@ apply() {
     done
     echo '-A RMHOS-EGRESS -j RETURN'
     echo ':RMHOS-INPUT - [0:0]'
+    if [ "$tool" = iptables ]; then
+      echo "-A RMHOS-INPUT -d $GATEWAY_V4/32 -p tcp --dport $SENTINEL_PORT -j REJECT --reject-with tcp-reset"
+    fi
     echo '-A RMHOS-INPUT -m conntrack --ctstate NEW -j DROP'
     echo '-A RMHOS-INPUT -j RETURN'
     echo 'COMMIT'
@@ -154,6 +164,14 @@ apply() {
   if [ "$tool" = iptables ]; then
     "$tool" -w -S RMHOS-EGRESS | grep -q -- "-d $SENTINEL_V4/32 -p tcp -m tcp --dport $SENTINEL_PORT -j REJECT --reject-with tcp-reset" \
       || die "$tool: the sentinel REJECT rule is missing from RMHOS-EGRESS after install"
+  fi
+  if [ "$tool" = iptables ]; then
+    local input_rules sentinel_line drop_line
+    input_rules=$("$tool" -w -S RMHOS-INPUT)
+    sentinel_line=$(echo "$input_rules" | grep -n -- "-d $GATEWAY_V4/32 -p tcp -m tcp --dport $SENTINEL_PORT -j REJECT --reject-with tcp-reset" | head -n1 | cut -d: -f1)
+    drop_line=$(echo "$input_rules" | grep -n -- '-j DROP$' | head -n1 | cut -d: -f1)
+    [ -n "$sentinel_line" ] || die "$tool: the INPUT sentinel REJECT rule is missing from RMHOS-INPUT after install"
+    [ -n "$drop_line" ] && [ "$sentinel_line" -lt "$drop_line" ] || die "$tool: the INPUT sentinel is not before the RMHOS-INPUT drop"
   fi
   check_forward "$tool"
   local drops

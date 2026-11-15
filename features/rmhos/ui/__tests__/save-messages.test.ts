@@ -37,6 +37,7 @@ describe('reportRestoreError', () => {
     [new BackupError('storage_error'), 'not-stored'],
     [new BackupError('damaged_exists'), 'damaged-exists'],
     [new BackupError('previous_stale'), 'stale'],
+    [new BackupError('locked'), 'locked'],
     [new Error('anything else'), 'not-stored'],
   ] as const)('%s', (e, expected) => expect(reportRestoreError(e)).toBe(expected));
 });
@@ -48,6 +49,10 @@ describe('the copy of a restore', () => {
       'Browser storage is full. The backup was not restored. Your current files are unchanged.',
     );
     expect(text).not.toMatch(/Changes are not saved/);
+  });
+
+  it('a restore refused by the account lock says to restore in the other tab', () => {
+    expect(restoreFailureCopy(t, 'locked')).toBe('rmhOS is open in another tab. Restore the backup there.');
   });
 
   it('the put-back confirm carries the time of the files it restores', () => {

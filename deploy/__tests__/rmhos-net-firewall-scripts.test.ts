@@ -34,6 +34,7 @@ case " $* " in
   *' -C '*) shift_args=("$@"); key=$(echo "\${shift_args[*]}" | sed -E 's/(^| )-C / /; s/^ //'); grep -qxF -- "$key" "$STATE/jumps" ;;
   *' -I '*) key="$*"; key="\${key/-I /}"; key=$(echo "$key" | sed -E 's/ [0-9]+ / /'); echo "$key" >> "$STATE/jumps" ;;
   *' -S FORWARD'*) [ "\${MOCK_FORWARD:-1}" = 1 ] && echo '-A FORWARD -j DOCKER-USER' || echo '-P FORWARD ACCEPT' ;;
+  *' -S RMHOS-INPUT'*) grep '^-A RMHOS-INPUT' "$STATE/restore" | sed 's/-p tcp --dport/-p tcp -m tcp --dport/' ;;
   *' -S RMHOS-EGRESS'*) grep '^-A RMHOS-EGRESS' "$STATE/restore" | sed 's/-p tcp --dport/-p tcp -m tcp --dport/' ;;
   *' -L DOCKER-USER'*) exit 0 ;;
 esac`,
@@ -76,6 +77,19 @@ describe('egress-firewall.sh', () => {
     expect(result.stdout).toContain('FORWARD reaches DOCKER-USER');
   });
 
+  it('writes the INPUT sentinel (REJECT tcp-reset for the gateway:9) before the RMHOS-INPUT drop', () => {
+    const { result, restore } = firewall();
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const lines = restore.split('\n');
+    const sentinel = lines.findIndex((l) =>
+      l.includes('-A RMHOS-INPUT -d 172.31.86.1/32 -p tcp --dport 9 -j REJECT --reject-with tcp-reset'),
+    );
+    const drop = lines.findIndex((l) => l.includes('-A RMHOS-INPUT -m conntrack --ctstate NEW -j DROP'));
+    expect(sentinel).toBeGreaterThan(-1);
+    expect(drop).toBeGreaterThan(sentinel);
+    expect(restore).not.toMatch(/ip6/);
+  });
+
   it('fails loudly when FORWARD does not reach DOCKER-USER and Docker is running', () => {
     if (!existsSync('/var/run/docker.sock')) return; // the fatal branch needs a Docker socket on this host
     const { result } = firewall({}, { forward: false });
@@ -115,7 +129,7 @@ describe('egress-firewall.sh', () => {
 
 // ── recover.sh ─────────────────────────────────────────────────────────────────────────────────────
 function recover(
-  o: { probe: 'ok' | 'fail'; healthy: boolean; secret?: string; label?: string },
+  o: { probe: 'ok' | 'fail'; healthy: boolean; secret?: string; label?: string; upFails?: boolean; neverHealthy?: boolean },
 ) {
   const dir = mkdtempSync(join(tmpdir(), 'rmhos-recover-'));
   dirs.push(dir);
@@ -128,13 +142,18 @@ function recover(
     'probe-firewall.sh',
     `echo probed >> "$MOCK_ROOT/calls"; [ "$MOCK_PROBE" = ok ]`,
   );
-  bash(join(dir, 'bin'), 'curl', '[ "$MOCK_HEALTHY" = 1 ]');
+  // healthy from the start, or (once `up -d` has run) after it, unless the hub never comes up
+  bash(join(dir, 'bin'), 'curl', '[ "$MOCK_HEALTHY" = 1 ] || { [ -f "$MOCK_ROOT/up-done" ] && [ "$MOCK_NEVER" != 1 ]; }');
   bash(
     join(dir, 'bin'),
     'docker',
     `echo "$*" >> "$MOCK_ROOT/calls"
 case "$*" in
   *' ps -aq rmhos-net'*) echo hubcid ;;
+  *' up -d '*)
+    for i in $(seq 1 25); do echo "up-line-$i"; done
+    [ "$MOCK_UP_FAILS" != 1 ] || exit 1
+    touch "$MOCK_ROOT/up-done" ;;
   inspect*) echo "$MOCK_LABEL" ;;
 esac
 exit 0`,
@@ -152,6 +171,9 @@ exit 0`,
       MOCK_PROBE: o.probe,
       MOCK_HEALTHY: o.healthy ? '1' : '0',
       MOCK_LABEL: o.label ?? '',
+      MOCK_UP_FAILS: o.upFails ? '1' : '0',
+      MOCK_NEVER: o.neverHealthy ? '1' : '0',
+      RECOVER_HEALTH_TRIES: '1',
     },
     encoding: 'utf8',
   });
@@ -188,6 +210,18 @@ describe('recover.sh', () => {
     expect(result.status, result.stdout).toBe(0);
     expect(calls).toContain('--profile rmhos-net up -d --no-build rmhos-net');
     expect(calls).toContain('rmhos.hub-fingerprint');
+  });
+
+  it.each([
+    ['compose up fails', { upFails: true }],
+    ['the hub never answers /health', { neverHealthy: true }],
+  ])('logs the last 20 lines of compose up when %s, and exits non-zero', (_n, extra) => {
+    const { result } = recover({ probe: 'ok', healthy: false, ...extra });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('hub did not start healthy');
+    expect(result.stdout).toContain('| up-line-25');
+    expect(result.stdout).toContain('| up-line-6');
+    expect(result.stdout).not.toContain('| up-line-5\n');
   });
 
   it.each(['', '"short"', 'x'.repeat(31)])('does nothing for the secret %j', (secret) => {

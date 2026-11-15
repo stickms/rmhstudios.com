@@ -6,6 +6,7 @@
 import { AgentError, type AgentClient } from './agent';
 import { SHARE_ARCHIVE_PATH } from './agent-protocol';
 import type { CachedHome, HomeStore, StoreOp } from './home-store';
+import { acquireHomeLock, type AcquireOptions } from './tab-lock';
 import { StoredHome, type CopyKind, type StoredCopies } from './stored-home';
 import type { VmHandle } from './vm-types';
 
@@ -74,6 +75,8 @@ export class BackupError extends Error {
    * `damaged_exists`: an earlier damaged copy is stored and another would have to be kept: the
    * operation was refused before anything was touched. `previous_stale`: the home that a backup
    * replaced can no longer be put back (the restored backup has been saved over, or is gone).
+   * `locked`: another tab of this account holds the per-account lock (it may be running the
+   * machine, which saves over the store), so nothing was written.
    */
   constructor(
     readonly code:
@@ -81,7 +84,8 @@ export class BackupError extends Error {
       | 'storage-full'
       | 'storage_error'
       | 'damaged_exists'
-      | 'previous_stale',
+      | 'previous_stale'
+      | 'locked',
   ) {
     super(code);
     this.name = 'BackupError';
@@ -438,13 +442,22 @@ export async function importWithoutMachine(
   userId: string,
   store: HomeStore,
   gz: Uint8Array,
+  lockOptions: AcquireOptions = {},
 ): Promise<void> {
-  const noMachine = () => Promise.reject(new Error('no machine'));
-  const sync = new HomeSync({
-    userId,
-    store,
-    vm: { writeShareFile: noMachine, readShareFile: noMachine, deleteShareFile: noMachine },
-    agent: { save: noMachine },
-  });
-  await sync.importArchive(gz);
+  // The store is written, so the per-account Web Lock is held for the whole import: a machine
+  // running in another tab saves over the same entry and would undo (or tear) the backup.
+  const lock = await acquireHomeLock(userId, lockOptions);
+  if (!lock) throw new BackupError('locked');
+  try {
+    const noMachine = () => Promise.reject(new Error('no machine'));
+    const sync = new HomeSync({
+      userId,
+      store,
+      vm: { writeShareFile: noMachine, readShareFile: noMachine, deleteShareFile: noMachine },
+      agent: { save: noMachine },
+    });
+    await sync.importArchive(gz);
+  } finally {
+    lock.release();
+  }
 }

@@ -806,6 +806,69 @@ describe('what a save reads from the store', () => {
   });
 });
 
+describe('importWithoutMachine and the per-account lock', () => {
+  /** Grants a name to one holder at a time, like navigator.locks with ifAvailable. */
+  const fakeLocks = () => {
+    const held = new Set<string>();
+    const log: string[] = [];
+    return {
+      held,
+      log,
+      async request(name: string, _o: { ifAvailable: true }, cb: (lock: object | null) => Promise<void> | void) {
+        if (held.has(name)) return cb(null);
+        held.add(name);
+        log.push(`acquire ${name}`);
+        try {
+          await cb({});
+        } finally {
+          held.delete(name);
+          log.push(`release ${name}`);
+        }
+      },
+    };
+  };
+
+  it('holds the account lock while it writes, and releases it afterwards', async () => {
+    const locks = fakeLocks();
+    const store = memoryHomeStore();
+    const seen: boolean[] = [];
+    const watching = {
+      ...store,
+      transact: async (ops: Parameters<typeof store.transact>[0]) => {
+        seen.push(locks.held.has('rmhos:u1'));
+        return store.transact(ops);
+      },
+    } as typeof store;
+    await importWithoutMachine('u1', watching, await gzip(fakeTar(2)), { locks, retries: 0 });
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every(Boolean)).toBe(true);
+    expect(locks.held.size).toBe(0);
+    expect(locks.log).toEqual(['acquire rmhos:u1', 'release rmhos:u1']);
+  });
+
+  it('refuses with `locked` and writes nothing when another tab holds the lock', async () => {
+    const locks = fakeLocks();
+    locks.held.add('rmhos:u1'); // the other tab
+    const store = memoryHomeStore();
+    const current = { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 5 };
+    await putEntry(store, 'u1', current);
+    await expect(
+      importWithoutMachine('u1', store, await gzip(fakeTar(2)), { locks, retries: 0 }),
+    ).rejects.toMatchObject({ name: 'BackupError', code: 'locked' });
+    expect((await store.get('u1'))?.sha256).toBe('old');
+    expect(await store.get('u1:replaced')).toBeNull();
+    expect(locks.held.has('rmhos:u1')).toBe(true); // the other tab still has it
+  });
+
+  it('releases the lock when the import itself fails', async () => {
+    const locks = fakeLocks();
+    await expect(
+      importWithoutMachine('u1', memoryHomeStore(), new Uint8Array([1, 2, 3]), { locks, retries: 0 }),
+    ).rejects.toMatchObject({ code: 'invalid' });
+    expect(locks.held.size).toBe(0);
+  });
+});
+
 describe('importWithoutMachine', () => {
   it('stores a valid backup over the current files and keeps them as the previous copy', async () => {
     const store = memoryHomeStore();

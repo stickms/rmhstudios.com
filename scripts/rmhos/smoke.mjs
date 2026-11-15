@@ -275,10 +275,11 @@ async function refusedArchive() {
     if (!/home archive has absolute or \.\. entries; refused/.test(vm.serial0)) {
       throw new Error(`the archive was not refused\n${vm.serial0.slice(-1500)}`);
     }
-    // The archive is read once and extracted unprivileged; a crafted one is detected by tar's own
-    // "Removing leading /" / "Member name contains .." messages and the home is reset to a fresh
-    // skeleton. Nothing is written outside the home (tar runs as the user); the saved tar below
-    // proves nothing crafted stayed inside it either.
+    // A crafted one is refused by the listing pass (absolute or .. members, matched under LC_ALL=C
+    // whatever tar says), and again by tar's own "Removing leading /" / "Member name contains .."
+    // messages if the listing missed it; the home is reset to a fresh skeleton. Nothing is written
+    // outside the home (tar runs as the user); the saved tar below proves nothing crafted stayed
+    // inside it either.
     if (/RMHOS RESTORED/.test(vm.serial1)) throw new Error('a crafted archive was restored');
     vm.send('SAVE n2');
     await vm.waitLine(/^RMHOS SAVED n2 (\d+)\r?$/m);

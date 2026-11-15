@@ -473,7 +473,10 @@ services:
       - RMHOS_NET_GLOBAL_BYTES_PER_DAY=${RMHOS_NET_GLOBAL_BYTES_PER_DAY:-}
       # Cutting off one account: ids here are read at start; ids in the file are re-read on SIGHUP and
       # every 60 s, with no restart (docs/rmhos.md, "Cut off one user"). The file lives in the one
-      # read-only mount below; a missing file is simply an empty list.
+      # read-only mount below. A reload never lifts a block by accident: a deleted or unreadable file
+      # keeps the last list (and logs a warning); a file that turns up empty or shorter within 2 s of
+      # its last write is re-read once, 2 s later; a file emptied on purpose (older than 2 s) clears the
+      # list and the hub logs how many entries went. Only at start does a missing file mean an empty list.
       - RMHOS_NET_DENY_USERS=${RMHOS_NET_DENY_USERS:-}
       - RMHOS_NET_DENY_FILE=${RMHOS_NET_DENY_FILE:-/deny/users.txt}
     # The ONE mount: a directory (not a file, so an editor that replaces the file's inode is still

@@ -1,0 +1,38 @@
+#!/bin/sh
+# Save a user's home folder into the 9p share as sync/home.tar. Used by BOTH writers, the agent's SAVE
+# and rmhos-poweroff-save, which can run at the same moment (a SAVE in flight while the user powers off):
+#
+#   rmhos-save-home <user>     prints the archive's size in bytes and exits 0, or exits 1 (saves nothing)
+#
+# The archive is written to a temporary name in the SAME directory and then renamed into place, under
+# an exclusive flock on a lock file in /run, so a reader never sees a half-written home.tar and two
+# writers never interleave. Temporaries a killed writer left behind are removed under the lock.
+# The three paths are overridable only so a host-side test can run this script (features/rmhos/__tests__).
+SHARE=${RMHOS_SHARE:-/mnt/host}
+HOMES=${RMHOS_HOMES:-/home}
+DIR=$SHARE/sync
+ARCHIVE=$DIR/home.tar
+LOCK=${RMHOS_RUN:-/run}/rmhos-save.lock
+user=$1
+[ -n "$user" ] && [ -d "$HOMES/$user" ] || exit 1
+mkdir -p "$DIR" || exit 1
+(
+	flock -x 9 || exit 1
+	rm -f "$DIR"/.home.tar.*
+	tmp=$DIR/.home.tar.$$
+	# exit 1 = a file changed while it was read (the desktop is still writing): the archive is
+	# complete, not a failure. Only 2 or more is "not saved".
+	tar -cpf "$tmp" -C "$HOMES/$user" . 2>/dev/null
+	rc=$?
+	if [ "$rc" -gt 1 ]; then
+		rm -f "$tmp"
+		exit 1
+	fi
+	set -- $(wc -c <"$tmp")
+	bytes=$1
+	mv -f "$tmp" "$ARCHIVE" || {
+		rm -f "$tmp"
+		exit 1
+	}
+	printf '%s\n' "$bytes"
+) 9>"$LOCK"

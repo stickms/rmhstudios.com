@@ -1,5 +1,6 @@
 // The image publish path: the R2 upload (against an injected client: R2 is not reachable from CI
 // tests), the manifest, and the block the owner pastes into image-manifest.ts afterwards.
+import { createHash } from 'node:crypto';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -130,11 +131,33 @@ describe('publish-r2', () => {
 
   it('refuses a file that does not match the manifest', async () => {
     const { dir, manifest } = image();
-    writeFileSync(join(dir, 'bzImage'), 'tampered');
+    writeFileSync(join(dir, 'packages.txt'), 'tampered'); // not a boot input: the version still matches
     const client = fakeClient({});
     await expect(publish({ client, bucket: 'b', dir, manifest, ...quiet })).rejects.toThrow(
-      /bzImage does not match manifest\.json/,
+      /packages\.txt does not match manifest\.json/,
     );
+  });
+
+  it('recomputes manifest.version from the boot files and refuses a mismatch before sending anything', async () => {
+    const { dir, manifest } = image();
+    // a manifest that names another version's path
+    const wrong = { ...manifest, version: '0'.repeat(12) };
+    const client = fakeClient({});
+    await expect(publish({ client, bucket: 'b', dir, manifest: wrong, ...quiet })).rejects.toThrow(
+      new RegExp(`says version ${'0'.repeat(12)} but the boot files .* hash to ${manifest.version}`),
+    );
+    expect(client.calls).toEqual([]);
+    // and a boot file replaced after the manifest was written (its hash entry rewritten to match)
+    writeFileSync(join(dir, 'bzImage'), 'other kernel');
+    const body = readFileSync(join(dir, 'bzImage'));
+    const sha256 = createHash('sha256').update(body).digest('hex');
+    const reshaped = { ...manifest, files: { ...manifest.files, bzImage: { size: body.length, sha256 } } };
+    await expect(publish({ client, bucket: 'b', dir, manifest: reshaped, ...quiet })).rejects.toThrow(/hash to/);
+    expect(client.calls).toEqual([]);
+    // the honest manifest still publishes
+    const fresh = image();
+    await publish({ client, bucket: 'b', dir: fresh.dir, manifest: fresh.manifest, ...quiet });
+    expect(client.calls.length).toBeGreaterThan(0);
   });
 
   it('propagates an unexpected HEAD failure instead of publishing blind', async () => {

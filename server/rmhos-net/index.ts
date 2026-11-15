@@ -56,12 +56,15 @@ server.listen(cfg.port, () => {
 // Deny-list file: re-read on SIGHUP and every 60 s; anyone newly denied loses their live session
 // at once. A self-rescheduling timeout (unref'd), not an interval: it is not periodic housekeeping
 // the scheduler ratchet should count, and a slow read cannot overlap itself.
+cfg.deny.onEvent = log;
 function reloadDeny(reason: string): void {
-  const added = cfg.deny.reload();
-  if (added.length > 0) {
-    log({ evt: 'rmhos-net.deny', reason, added: added.length, total: cfg.deny.size });
-    server.enforceDeny();
-  }
+  const report = (added: string[]) => {
+    if (added.length > 0) {
+      log({ evt: 'rmhos-net.deny', reason, added: added.length, total: cfg.deny.size });
+      server.enforceDeny();
+    }
+  };
+  report(cfg.deny.reload(report));
 }
 function scheduleDenyReload(): void {
   setTimeout(() => {

@@ -28,7 +28,7 @@ export function reportSave(r: SaveResult): SaveReport {
 }
 
 /** Why storing a backup (or putting the previous files back) failed, in the page's terms. */
-export type RestoreFailure = 'invalid' | 'storage-full' | 'damaged-exists' | 'stale' | 'not-stored';
+export type RestoreFailure = 'invalid' | 'storage-full' | 'damaged-exists' | 'stale' | 'locked' | 'not-stored';
 
 export function reportRestoreError(e: unknown): RestoreFailure {
   if (!(e instanceof BackupError)) return 'not-stored';
@@ -41,6 +41,8 @@ export function reportRestoreError(e: unknown): RestoreFailure {
       return 'damaged-exists';
     case 'previous_stale':
       return 'stale';
+    case 'locked':
+      return 'locked';
     default:
       return 'not-stored';
   }
@@ -70,6 +72,10 @@ export function restoreFailureCopy(t: T, f: RestoreFailure): string {
       return t('restore-storage-full', {
         defaultValue:
           'Browser storage is full. The backup was not restored. Your current files are unchanged.',
+      });
+    case 'locked':
+      return t('restore-locked', {
+        defaultValue: 'rmhOS is open in another tab. Restore the backup there.',
       });
     case 'stale':
       return t('put-back-stale', {

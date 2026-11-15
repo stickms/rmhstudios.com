@@ -67,9 +67,21 @@ if [ -n "$cid" ]; then
   RMHOS_HUB_FINGERPRINT=$("$DOCKER_BIN" inspect -f '{{index .Config.Labels "rmhos.hub-fingerprint"}}' "$cid" 2>/dev/null || true)
   export RMHOS_HUB_FINGERPRINT
 fi
-if dc up -d --no-build rmhos-net; then
+# The output is captured so a hub that does not come up leaves its reason in the journal.
+up_rc=0
+up_out=$(dc up -d --no-build rmhos-net 2>&1) || up_rc=$?
+healthy=0
+if [ "$up_rc" -eq 0 ]; then
+  tries="${RECOVER_HEALTH_TRIES:-12}"
+  for i in $(seq 1 "$tries"); do
+    if curl -fsS -m 3 "http://127.0.0.1:${PORT}/health" >/dev/null 2>&1; then healthy=1; break; fi
+    [ "$i" -ge "$tries" ] || sleep 5
+  done
+fi
+if [ "$healthy" -eq 1 ]; then
   say "hub started"
 else
-  say "compose up failed"
+  say "hub did not start healthy (compose up status $up_rc); last 20 lines of its compose up output:"
+  printf '%s\n' "$up_out" | tail -n 20 | while IFS= read -r line; do say "  | $line"; done
   exit 1
 fi

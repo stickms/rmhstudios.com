@@ -303,13 +303,19 @@ The hub dials the internet for strangers, so it is isolated from the rest of the
   (`systemctl restart`) after editing the script.
 
 - **The deploy probe:** `deploy.sh` runs `deploy/rmhos-net/probe-firewall.sh`: a throwaway container on the
-  `rmhos-egress` network makes three connections and **all three** must come out right: the *sentinel*
-  `192.0.2.1:9` (TEST-NET-1, never routed) must be **refused**, which only the `REJECT --reject-with tcp-reset` rule
-  that `egress-firewall.sh` puts first in `RMHOS-EGRESS` can do, and only for a packet that really travelled
-  `FORWARD` to `DOCKER-USER` to `RMHOS-EGRESS`; a *control* (the same address, port 10, which falls through to the
-  chain's drop) must **time out**, so a router or proxy that refuses everything cannot fake the sentinel; and the host's
-  gateway must **time out** (the INPUT drop). A timeout alone proves nothing: any host with a default-drop INPUT
-  policy (ufw) times out with none of our rules installed. `egress-firewall.sh` also fails loudly if `FORWARD` does not
+  `rmhos-egress` network makes four connections and **all four** must come out right. Each side of the firewall has a
+  *sentinel* that must be **refused** and a *control* that must **time out**:
+
+  - `192.0.2.1:9` (sentinel) **refused**: the `REJECT --reject-with tcp-reset` rule first in `RMHOS-EGRESS` answered, so
+    a packet really travelled `FORWARD` to `DOCKER-USER` to `RMHOS-EGRESS` (TEST-NET-1 is never routed).
+  - `192.0.2.1:10` (control) **timed out**: the chain's drop of `192.0.2.0/24` swallowed it, so a router or proxy
+    that refuses everything cannot fake the sentinel.
+  - gateway`:9` (INPUT sentinel) **refused**: the `REJECT` rule first in `RMHOS-INPUT` answered, so a packet really
+    reached `INPUT` and then `RMHOS-INPUT`.
+  - gateway`:10` (INPUT control) **timed out**: the `RMHOS-INPUT` drop swallowed it.
+
+  A timeout alone proves nothing: any host with a default-drop INPUT policy (ufw) times out at the gateway with none of
+  our rules installed, which is why the gateway needs its own refused sentinel. `egress-firewall.sh` also fails loudly if `FORWARD` does not
   reach `DOCKER-USER` while Docker is running (Docker with `"iptables": false`, or an iptables front end Docker does not
   use). Only then does the deploy start the hub (compose profile `rmhos-net`, restart policy `no`). If the probe fails
   the deploy prints `rmhOS network relay NOT started: egress firewall not proven` with the install commands above,
@@ -459,6 +465,12 @@ stays until you delete the line. Also suspend the account through the admin tool
 hub is not restarted. `RMHOS_NET_DENY_USERS` (comma-separated, read at start) is the same list in the environment; use the
 file, since the environment needs a restart. Removing a line lifts the block at the next reload.
 
+A reload never lifts a block by accident. A file that is **deleted or unreadable** keeps the last list and logs
+`rmhos-net.deny.warn` (to lift every block, empty the file; do not delete it). A file that is empty or shorter than the
+list in force **and was written less than 2 s ago** is read once more 2 s later (an editor that truncates before it
+writes). A file you emptied on purpose (older than 2 s) clears the list at once, and the hub logs
+`rmhos-net.deny.removed` with how many entries went.
+
 ## Abuse complaint walkthrough
 
 1. **Get the facts from the complaint:** the remote address (ours is the source: the VPS address, or
@@ -494,6 +506,18 @@ So **a deploy that changes `server/rmhos-net/`, `features/rmhos/engine/constants
 service or a `RMHOS_NET_*` value ends every network session**; do those at a quiet hour. A deploy that changes only the
 page or the rest of the site does not.
 
+The fingerprint covers the hub bundle, its `ws` dependency and Node's version, **not the libraries of the base image**.
+A deploy whose only change is an operating-system security update in the base image therefore leaves the running hub on
+the old libraries. To pick that update up, stop the hub just before deploying (it is then "down", so the deploy starts it
+from the new image; this ends the network sessions, so pick a quiet hour). If `rmhos-net-recover.timer` is enabled, stop
+it too, or it will bring the old hub back first:
+
+```bash
+sudo systemctl stop rmhos-net-recover.timer 2>/dev/null || true
+docker compose -p rmhstudios-prod --env-file .env.production --profile rmhos-net stop rmhos-net
+# deploy as usual; afterwards: sudo systemctl start rmhos-net-recover.timer
+```
+
 ## Roll back an image
 
 Revert the commit that pinned the new image (`git revert <sha>` of the commit that edited `PUBLISHED_IMAGE` in
@@ -520,8 +544,9 @@ established-accept), `sudo iptables -S FORWARD | grep DOCKER-USER` (it must show
 (`-s 172.31.86.0/24 -j RMHOS-EGRESS` first) and `sudo ufw status` if ufw is installed. Then `bash deploy/rmhos-net/probe-firewall.sh`
 as the deploy user. The real script and probe were run in the development sandbox (root, nf_tables, a Docker daemon, a
 scratch compose project with `node:24-alpine` tagged as the app image, `iptables-save` restored exactly afterwards):
-no rules gave "not proven" (control answered), our rules gave "proven" (sentinel refused, control and gateway timed out), and a
-host with a default-drop INPUT rule for the subnet but **without** our chain gave "not proven". That sandbox
+no rules gave "not proven" (control answered), our rules gave "proven" (both sentinels refused, both controls timed
+out), and our egress chain with no `RMHOS-INPUT` jump on a host that drops new connections from the subnet gave "not
+proven" (gateway sentinel timed out). That sandbox
 answers every forwarded connection itself, which is why the control exists: it is what makes the proof independent of
 the network in front of the host.
 

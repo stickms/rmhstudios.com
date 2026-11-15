@@ -11,7 +11,7 @@
 #   publish    default false: build, boot and keep the artifact only. true uploads to R2,
 #              and only from main (a test dispatch from a branch cannot touch the bucket).
 #   from_run   the id of an earlier run of this workflow: publish THAT run's artifact instead of
-#              rebuilding. The build is not bit-for-bit reproducible (apk versions float), so a
+#              rebuilding (verified first: it must be a successful run of this workflow on main). The build is not bit-for-bit reproducible (apk versions float), so a
 #              rebuild is a different version; when the upload failed after a good build, use this.
 #   force      pass --force to publish-r2 (overwrite an existing rmhos/<version>/).
 #
@@ -68,6 +68,28 @@ jobs:
           for v in S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
             [ -n "${!v}" ] || { echo "::error::missing repository secret $v"; exit 1; }
           done
+
+      # from_run publishes bytes this job did not build, so the source run is checked first, with the
+      # default token (actions: read): it must be a run of THIS workflow, on main, that succeeded. A
+      # run of another workflow, of a branch, or a failed run has an artifact nobody vouched for.
+      - name: Verify the source run (from_run)
+        if: inputs.from_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FROM_RUN: ${{ inputs.from_run }}
+        run: |
+          set -euo pipefail
+          [[ "$FROM_RUN" =~ ^[0-9]+$ ]] || { echo "::error::from_run must be a numeric run id, got '$FROM_RUN'"; exit 1; }
+          read -r wf_path branch status conclusion < <(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${FROM_RUN}" \
+            --jq '[.path, .head_branch, .status, .conclusion] | map(. // "none") | join(" ")')
+          echo "run ${FROM_RUN}: workflow=${wf_path} branch=${branch} status=${status} conclusion=${conclusion}"
+          case "$wf_path" in
+            .github/workflows/rmhos-image.yml | .github/workflows/rmhos-image.yml@*) ;;
+            *) echo "::error::run ${FROM_RUN} is a run of ${wf_path}, not of rmhos-image.yml"; exit 1 ;;
+          esac
+          [ "$branch" = "main" ] || { echo "::error::run ${FROM_RUN} ran on '${branch}', not main"; exit 1; }
+          [ "$status" = "completed" ] && [ "$conclusion" = "success" ] \
+            || { echo "::error::run ${FROM_RUN} did not conclude successfully (status ${status}, conclusion ${conclusion})"; exit 1; }
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-deps

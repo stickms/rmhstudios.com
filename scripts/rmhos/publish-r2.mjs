@@ -8,6 +8,8 @@
 //     node scripts/rmhos/publish-r2.mjs [dir] [--force]        (default public/rmhos-dev)
 //
 // Safety, because a published version is immutable and old tabs keep running it:
+//  - manifest.version is RECOMPUTED from the boot files (write-manifest's bootVersion) and a mismatch
+//    stops the run before anything is sent;
 //  - it REFUSES to overwrite: if rmhos/<version>/manifest.json already exists the run stops
 //    (--force overrides, for repairing a half-published version with the same bytes);
 //  - every file is checked against the manifest's size and sha256 before it is sent;
@@ -23,6 +25,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { requireMeta } from './image-meta.mjs';
 import { pinReport } from './print-pin.mjs';
+import { bootVersion } from './write-manifest.mjs';
 
 export const CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const TYPES = {
@@ -50,6 +53,16 @@ export async function publish({
   sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
   log = console.log,
 }) {
+  // The version names an immutable path that old tabs keep running, so it must be what the boot files
+  // hash to, not whatever the manifest claims (a hand-edited or stale manifest must not publish
+  // different bytes under another version's path).
+  const actual = bootVersion(dir);
+  if (actual !== manifest.version) {
+    throw new Error(
+      `manifest.json says version ${manifest.version} but the boot files in ${dir} hash to ${actual}; ` +
+        'refusing to publish (rebuild the manifest with write-manifest.mjs)',
+    );
+  }
   const prefix = `rmhos/${manifest.version}/`;
   if (!force) {
     let exists = true;

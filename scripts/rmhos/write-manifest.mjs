@@ -34,6 +34,22 @@ export function readVersions(file = path.join(here, 'versions.env')) {
 
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 
+/** The version of the boot files in `dir`: first 12 hex of the sha256 over them, in BOOT order. */
+export function bootVersion(dir) {
+  const whole = createHash('sha256');
+  for (const name of BOOT) {
+    const p = path.join(dir, name);
+    let bytes;
+    try {
+      bytes = readFileSync(p);
+    } catch {
+      throw new Error(`${p} is missing`);
+    }
+    whole.update(bytes);
+  }
+  return whole.digest('hex').slice(0, 12);
+}
+
 /** The manifest for the files in `dir`. Throws (naming the file) when one is missing. */
 export function computeManifest(dir, versions = readVersions()) {
   const kernelVersion = versions.KERNEL_VERSION;

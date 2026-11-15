@@ -29,6 +29,23 @@ describe('rmhos-image workflow', () => {
     }
   });
 
+  it('verifies the source run with the API before downloading its artifact', () => {
+    const verify = named(/Verify the source run/);
+    expect(verify?.if).toBe("inputs.from_run != ''");
+    expect(steps.indexOf(verify!)).toBeLessThan(steps.indexOf(named(/Fetch the artifact/)!));
+    expect(steps.indexOf(verify!)).toBeLessThan(steps.findIndex((s) => /Publish to R2/.test(s.name ?? '')));
+    const run = String(verify?.run);
+    expect(run).toContain('actions/runs/${FROM_RUN}');
+    expect(run).toContain('rmhos-image.yml');
+    expect(run).toContain('"$branch" = "main"');
+    expect(run).toContain('"$conclusion" = "success"');
+    // the input reaches the shell through env, never interpolated into the script
+    expect(run).not.toContain('${{');
+    expect(JSON.stringify(verify)).toContain('github.token');
+    // and the default token is enough: the workflow asks for actions: read
+    expect((wf as unknown as { permissions: Record<string, string> }).permissions.actions).toBe('read');
+  });
+
   it('checks main and every secret in the FIRST step, before the build', () => {
     const first = steps[0];
     expect(first?.name).toMatch(/Preflight/);
