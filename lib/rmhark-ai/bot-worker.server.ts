@@ -38,7 +38,14 @@
 import { prisma } from '@/lib/prisma.server';
 import { Prisma } from '@prisma/client';
 import { decideInitiation, canBotMessage, formatDmHistory, type DmPrivacy } from './dm-policy';
-import { composePersona, rollPersona, withPoliticalLean } from './persona';
+import {
+  botPromptPersona,
+  composePersona,
+  hasNameStyle,
+  pickNameStyle,
+  rollPersona,
+  withNameStyle,
+} from './persona';
 import {
   cartoonAvatarUrl,
   genericAvatarQuery,
@@ -54,6 +61,7 @@ import {
   generateBotImageQueries,
   generateBotNameVariant,
   generateBotProfile,
+  generateBotStyledName,
   generateDirectMessageOpener,
   generateDirectMessageReply,
   generatePost,
@@ -138,6 +146,8 @@ export interface BotProfileRow {
 /** A change to a bot's profile; absent fields are left as they are. */
 export interface BotProfilePatch {
   name?: string;
+  /** The private persona text (`User.botPersona`), e.g. with a NAME STYLE line added. */
+  persona?: string;
   image?: string;
   bio?: string;
   banner?: { url: string; sizeBytes: number };
@@ -348,6 +358,7 @@ export const prismaBotRepo: BotRepo = {
     const user = {
       ...(patch.name !== undefined ? { name: patch.name } : {}),
       ...(patch.image !== undefined ? { image: patch.image } : {}),
+      ...(patch.persona !== undefined ? { botPersona: patch.persona } : {}),
     };
     const profile = {
       ...(patch.bio !== undefined ? { bio: patch.bio } : {}),
@@ -741,12 +752,12 @@ const consoleLog: BotLog = {
 };
 
 /**
- * The persona text as the AI is handed it: a bot that predates the political axis gets its lean
- * from a hash of its id (nothing stored). An empty persona stays empty: callers skip those bots.
+ * The persona text as the AI is handed it: a bot that predates the political or typing axis gets
+ * its lean and typing habit from a hash of its id (nothing stored). An empty persona stays empty: callers skip those bots.
  * Every `d.ai.*` call that takes a persona goes through here.
  */
 function aiPersona(botId: string, persona: string): string {
-  return persona === '' ? '' : withPoliticalLean(persona, botId);
+  return botPromptPersona(persona, botId);
 }
 
 /** The text generation + image calls, injectable so ticks can run without DeepSeek. */
@@ -780,6 +791,8 @@ export interface BotAi {
   bio(persona: string, currentBio: string): Promise<string>;
   /** A small change to the display name. Throws on failure or no change. */
   nameVariant(persona: string, currentName: string): Promise<string>;
+  /** A display name in the persona's NAME STYLE (the restyle pass). Throws on failure. */
+  styledName(persona: string, currentName: string): Promise<string>;
 }
 
 /**
@@ -826,6 +839,7 @@ export function deepseekAi(model: string): BotAi {
     imageQueries: (persona) => generateBotImageQueries(persona, { model }),
     bio: (persona, currentBio) => generateBotBio(persona, currentBio, { model }),
     nameVariant: (persona, currentName) => generateBotNameVariant(persona, currentName, { model }),
+    styledName: (persona, currentName) => generateBotStyledName(persona, currentName, { model }),
   };
 }
 
@@ -1152,8 +1166,35 @@ async function firstUpdates(d: BotDeps, look: BotLook, pending: BotProfileRow[])
 }
 
 /**
- * The refresh run. While any bot still wears the old placeholder avatar, it only does the first
- * pass (`firstUpdates`): no bot drifts until every bot has had its first update. After that, every
+ * The restyle pass: a bot minted before name styles gets one rolled (a gamer tag, an anime or
+ * pop-culture nod, a hashtag, …), stored as a NAME STYLE line in its persona, and a display name
+ * written in it. Up to `restylesPerTick` bots a run; a failed generation leaves the bot for the next
+ * run. Handles never change. Returns how many bots were renamed.
+ */
+async function restyleNames(d: BotDeps, pending: BotProfileRow[]): Promise<number> {
+  let changed = 0;
+  await forEachLimited(
+    Math.min(pending.length, d.cfg.restylesPerTick),
+    d.cfg.genConcurrency,
+    (i) =>
+      isolated(d, 'bot_worker.restyle_failed', async () => {
+        const b = pending[i]!;
+        const style = pickNameStyle(d.random());
+        const persona = withNameStyle(b.botPersona, style);
+        const name = await d.ai.styledName(aiPersona(b.id, persona), b.name);
+        await d.repo.updateBotProfile(b.id, { name, persona });
+        changed++;
+        d.log.info('bot_worker.restyle', { botId: b.id, style: style.id });
+      }),
+  );
+  d.log.info('bot_worker.restyle_pass', { renamed: changed, remaining: pending.length - changed });
+  return changed;
+}
+
+/**
+ * The refresh run. While any bot is still waiting for a one-time update (its first look: the old
+ * placeholder avatar; or its name style: no NAME STYLE line), it only does those passes
+ * (`firstUpdates`, `restyleNames`): no bot drifts until every bot has had both. After that, every
  * bot gets a small chance of a new avatar, banner, bio or display name (`refreshPlan`), with at most
  * `refreshMaxImagesPerTick` pictures fetched a run. Handles never change. Returns how many bots
  * changed.
@@ -1162,8 +1203,14 @@ export async function runRefreshTick(d: BotDeps): Promise<number> {
   const look = d.look;
   if (!look || !d.cfg.profileRefresh) return 0;
   const bots = shuffled(await d.repo.botProfiles(), d.random);
-  const pending = bots.filter((b) => needsFirstUpdate(b.image));
-  if (pending.length > 0) return firstUpdates(d, look, pending);
+  const pendingLooks = bots.filter((b) => needsFirstUpdate(b.image));
+  const pendingNames = bots.filter((b) => b.botPersona !== '' && !hasNameStyle(b.botPersona));
+  if (pendingLooks.length > 0 || pendingNames.length > 0) {
+    let changed = 0;
+    if (pendingLooks.length > 0) changed += await firstUpdates(d, look, pendingLooks);
+    if (pendingNames.length > 0) changed += await restyleNames(d, pendingNames);
+    return changed;
+  }
 
   const budget: ImageBudget = { left: d.cfg.refreshMaxImagesPerTick };
   let changed = 0;
