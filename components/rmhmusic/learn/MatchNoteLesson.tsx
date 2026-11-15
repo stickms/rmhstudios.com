@@ -39,6 +39,7 @@ import { useTranslation } from 'react-i18next';
 import {
   playNote,
   soundReleaseMs,
+  soundStatus,
   type PlayOptions,
 } from '@/lib/rmhmusic/learn/audio/voice';
 import { resumeAudio } from '@/lib/rmhmusic/learn/audio/resume';
@@ -92,6 +93,11 @@ import {
   useNoteEvents,
   useNoteSound,
 } from './useLearnInput';
+import {
+  fallbackLine,
+  useFallbackNotice,
+  useSoundStatus,
+} from './useSoundNotice';
 
 /** How long the hint sounds. */
 const HEAR_MS = 900;
@@ -100,7 +106,8 @@ type Sound =
   | 'ok'
   | 'waking'
   | 'blocked'
-  | 'none';
+  | 'none'
+  | 'loading';
 
 export function MatchNoteLesson({
   lessonId,
@@ -159,8 +166,15 @@ export function MatchNoteLesson({
         at: '',
       },
     );
+  const soundRef =
+    useRef(
+      voice,
+    );
+  soundRef.current =
+    voice;
   // When the microphone may not be believed (the hint, the keys' sounds), and the note it may still
-  // owe the learner (`input/echo-window.ts`).
+  // owe the learner (`input/echo-window.ts`). The release is asked at each note, so it follows the
+  // sound in use now (the samples, or the simple tone the lesson fell back to), not the one at mount.
   const [
     guard,
   ] =
@@ -169,18 +183,13 @@ export function MatchNoteLesson({
         createEchoGuard(
           {
             releaseMs:
-              soundReleaseMs(
-                voice,
-              ),
+              () =>
+                soundReleaseMs(
+                  soundRef.current,
+                ),
           },
         ),
     );
-  const soundRef =
-    useRef(
-      voice,
-    );
-  soundRef.current =
-    voice;
   const replayTimer =
     useRef<ReturnType<
       typeof setTimeout
@@ -493,6 +502,19 @@ export function MatchNoteLesson({
         ctx.state ===
         'running'
       ) {
+        // The lesson's samples are still on the way: the hint would be dropped, so say so instead.
+        if (
+          soundStatus() ===
+          'loading'
+        ) {
+          setSound(
+            {
+              kind: 'loading',
+              at,
+            },
+          );
+          return;
+        }
         setSound(
           {
             kind: 'ok',
@@ -833,6 +855,14 @@ export function MatchNoteLesson({
       );
   }
 
+  // Live: a "Loading sound…" line goes once the session settles; the fallback is said once, where
+  // the lesson first saw it.
+  const liveSound =
+    useSoundStatus();
+  const fellBack =
+    useFallbackNotice(
+      position,
+    );
   // A Hear it that could not sound takes the sentence line (a fixed box, so nothing moves) until
   // the learner plays or moves on.
   let soundLine =
@@ -864,6 +894,32 @@ export function MatchNoteLesson({
           defaultValue:
             "This browser can't play sound.",
         },
+      );
+  } else if (
+    sound.at ===
+      position &&
+    sound.kind ===
+      'loading' &&
+    liveSound ===
+      'loading'
+  ) {
+    soundLine =
+      t(
+        'ear-sound-loading',
+        {
+          defaultValue:
+            'Loading sound…',
+        },
+      );
+  } else if (
+    fellBack &&
+    lesson.kind ===
+      'asking'
+  ) {
+    soundLine =
+      fallbackLine(
+        t,
+        fellBack,
       );
   }
   if (

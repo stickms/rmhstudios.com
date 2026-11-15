@@ -1,7 +1,8 @@
 /**
  * SoundDialog — "Sound": which recorded instrument the lessons play (piano, steel-string guitar,
- * violin, flute). Plain text rows, one button each (Tab moves between them, Enter or Space picks);
- * the chosen one carries a check. Picking a sound saves it, loads its samples and plays one note
+ * violin, flute). A radio group (plan §4): Tab reaches the chosen row, the arrow keys move between
+ * rows and Space or Enter picks (`radio-keys.ts`); the chosen one carries a check. Each row's load
+ * status is an always-present live region the row names as its description. Picking a sound saves it, loads its samples and plays one note
  * through it, so choosing is also hearing. Nothing loads until a row is picked.
  *
  * The learner's own instrument's sound is the default and is stored as "follow my instrument"
@@ -14,6 +15,7 @@
  */
 import {
   useEffect,
+  useId,
   useRef,
   useState,
 } from 'react';
@@ -41,6 +43,7 @@ import {
 import {
   getInstrument,
   onInstrumentChange,
+  peekInstrument,
 } from '@/lib/rmhmusic/learn/audio/instruments/engine';
 import type { InstrumentId } from '@/lib/rmhmusic/learn/audio/instruments/types';
 import {
@@ -49,6 +52,7 @@ import {
 } from '@/lib/rmhmusic/learn/audio/voice';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { TEXT_BUTTON } from './buttons';
+import { radioKey } from './radio-keys';
 import { cn } from '@/lib/utils';
 
 /** The note a picked sound plays: the middle of what lessons ask that instrument for. */
@@ -262,6 +266,24 @@ export function SoundDialog({
     defaultSoundFor(
       instrument,
     );
+  // A radio group: one Tab stop (the chosen row), arrows move between rows, Space or Enter picks.
+  const sounds =
+    availableSounds();
+  const tabStop =
+    Math.max(
+      0,
+      sounds.indexOf(
+        current,
+      ),
+    );
+  const rows =
+    useRef<
+      (HTMLButtonElement | null)[]
+    >(
+      [],
+    );
+  const baseId =
+    useId();
 
   useEffect(() => {
     if (
@@ -370,7 +392,7 @@ export function SoundDialog({
       )
         return null;
       const state =
-        getInstrument(
+        peekInstrument(
           id,
         )?.state;
       if (
@@ -444,10 +466,21 @@ export function SoundDialog({
                 )}
               </DialogTitle>
             </DialogHeader>
-            <ul className="divide-y divide-app-border">
-              {availableSounds().map(
+            <div
+              role="radiogroup"
+              aria-label={t(
+                'sound-title',
+                {
+                  defaultValue:
+                    'Sound',
+                },
+              )}
+              className="divide-y divide-app-border"
+            >
+              {sounds.map(
                 (
                   id,
+                  index,
                 ) => {
                   const chosen =
                     id ===
@@ -456,16 +489,35 @@ export function SoundDialog({
                     status(
                       id,
                     );
+                  const statusId = `${baseId}-${id}-status`;
                   return (
-                    <li
+                    <div
                       key={
                         id
                       }
                     >
                       <button
+                        ref={(
+                          el,
+                        ) => {
+                          rows.current[
+                            index
+                          ] =
+                            el;
+                        }}
                         type="button"
-                        aria-pressed={
+                        role="radio"
+                        aria-checked={
                           chosen
+                        }
+                        aria-describedby={
+                          statusId
+                        }
+                        tabIndex={
+                          index ===
+                          tabStop
+                            ? 0
+                            : -1
                         }
                         data-sound={
                           id
@@ -475,6 +527,33 @@ export function SoundDialog({
                             id,
                           )
                         }
+                        onKeyDown={(
+                          e,
+                        ) => {
+                          const action =
+                            radioKey(
+                              e.key,
+                              index,
+                              sounds.length,
+                            );
+                          if (
+                            !action
+                          )
+                            return;
+                          e.preventDefault();
+                          if (
+                            action.kind ===
+                            'select'
+                          )
+                            pick(
+                              id,
+                            );
+                          else
+                            rows.current[
+                              action
+                                .index
+                            ]?.focus();
+                        }}
                         className="flex min-h-11 w-full items-start gap-3 rounded-app-sm py-3 text-start transition-colors hover:text-app-accent"
                       >
                         <span className="flex h-6 w-5 shrink-0 items-center justify-center">
@@ -500,17 +579,21 @@ export function SoundDialog({
                           </span>
                         </span>
                       </button>
-                      {/* One line kept for the status, so a load never moves the rows below. */}
+                      {/* Always in the tree (an empty live region takes no room), so screen readers hear
+                        the load's progress; the row's radio names it as its description. */}
                       <p
+                        id={
+                          statusId
+                        }
                         role="status"
                         className={cn(
-                          'flex min-h-5 items-center gap-1.5 ps-8 text-sm text-app-text-muted',
-                          !line &&
-                            'hidden',
+                          'flex items-center gap-1.5 ps-8 text-sm text-app-text-muted',
+                          line &&
+                            'min-h-5',
                         )}
                       >
                         {line &&
-                          getInstrument(
+                          peekInstrument(
                             id,
                           )
                             ?.state
@@ -525,11 +608,11 @@ export function SoundDialog({
                           line
                         }
                       </p>
-                    </li>
+                    </div>
                   );
                 },
               )}
-            </ul>
+            </div>
             <div className="min-h-5 space-y-1 text-sm text-app-text-muted">
               {!playsChords(
                 current,

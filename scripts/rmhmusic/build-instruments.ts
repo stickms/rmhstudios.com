@@ -18,8 +18,13 @@
  *   - pitch with the app's own YIN (`lib/rmhmusic/learn/pitch/yin.ts`), median over the sustain;
  *     the build FAILS when it is `pitchToleranceSemitones` or more from `keyCenter` (VSCO wind
  *     file names are an octave low, so a wrong map fails here, never ships);
+ *   - tuning: what the zone sounds at its key centre after its `tuneCents` correction must be
+ *     within RESIDUAL_CENTS (10) of that key;
  *   - loudness: RMS over the first second and the peak give `gainDb` (target RMS, peak ceiling);
  *   - zero-byte sources or outputs fail.
+ * Downloads land in a temp file and are renamed into the cache only once their SHA-256 matches.
+ * Every run (and `--credits` alone, which needs no ffmpeg) also writes
+ * `public/music/rmhmusic/instruments/CREDITS.txt` from `credits.ts`.
  * Writes `public/music/rmhmusic/instruments/<id>/<midi>.mp3` and the generated
  * `lib/rmhmusic/learn/audio/instruments/zones-data.ts` (zones, durations, SHA-256s). Instruments
  * not named on the command line keep their existing generated entries.
@@ -33,6 +38,8 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  renameSync,
+  rmSync,
   statSync,
   writeFileSync,
   copyFileSync,
@@ -44,6 +51,10 @@ import {
 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import {
+  CREDITS_FILE,
+  creditsText,
+} from '../../lib/rmhmusic/learn/audio/instruments/credits';
 import { detectPitch } from '../../lib/rmhmusic/learn/pitch/yin';
 
 const run =
@@ -82,6 +93,14 @@ const ZONES_TS =
     ROOT,
     'lib/rmhmusic/learn/audio/instruments/zones-data.ts',
   );
+const CREDITS_TXT =
+  join(
+    ROOT,
+    'public',
+    CREDITS_FILE,
+  );
+/** The most a zone may sound from its key centre after its tuning correction (cents). */
+const RESIDUAL_CENTS = 10;
 const IDS =
   [
     'piano',
@@ -165,10 +184,29 @@ function fail(
   );
 }
 
-async function download(
+/** Progress on stdout (a developer's terminal; this script never runs in a bundle or in CI). */
+function report(
+  line: string,
+): void {
+  process.stdout.write(
+    `${line}\n`,
+  );
+}
+
+/**
+ * The cached copy of `url` at `to`, checked against its pinned SHA-256 (or, with --pin, recorded).
+ * A download (or a developer's local copy, `local`) lands in a temp file first and is renamed into
+ * the cache only once its hash matches, so an interrupted or wrong download never poisons the cache.
+ * Returns the hash.
+ */
+async function fetchVerified(
   url: string,
   to: string,
-): Promise<void> {
+  expected: string,
+  label: string,
+  pin: boolean,
+  local?: string,
+): Promise<string> {
   if (
     existsSync(
       to,
@@ -179,7 +217,12 @@ async function download(
       .size >
       0
   )
-    return;
+    return verify(
+      to,
+      expected,
+      label,
+      pin,
+    );
   mkdirSync(
     dirname(
       to,
@@ -188,26 +231,60 @@ async function download(
       recursive: true,
     },
   );
-  const res =
-    await fetch(
-      url,
+  const part = `${to}.part-${process.pid}`;
+  try {
+    if (
+      local &&
+      existsSync(
+        local,
+      )
+    )
+      copyFileSync(
+        local,
+        part,
+      );
+    else {
+      const res =
+        await fetch(
+          url,
+          {
+            redirect:
+              'follow',
+          },
+        );
+      if (
+        !res.ok
+      )
+        fail(
+          `download ${url}: HTTP ${res.status}`,
+        );
+      writeFileSync(
+        part,
+        Buffer.from(
+          await res.arrayBuffer(),
+        ),
+      );
+    }
+    const got =
+      verify(
+        part,
+        expected,
+        label,
+        pin,
+      );
+    renameSync(
+      part,
+      to,
+    );
+    return got;
+  } finally {
+    rmSync(
+      part,
       {
-        redirect:
-          'follow',
+        force: true,
       },
     );
-  if (
-    !res.ok
-  )
-    fail(
-      `download ${url}: HTTP ${res.status}`,
-    );
-  writeFileSync(
-    to,
-    Buffer.from(
-      await res.arrayBuffer(),
-    ),
-  );
+  }
 }
 
 /** Check (or with --pin, record) a file's SHA-256. Returns the hash. */
@@ -489,12 +566,9 @@ async function sourceFile(
         id,
         name,
       );
-    await download(
-      z.src,
-      path,
-    );
     z.sha256 =
-      verify(
+      await fetchVerified(
+        z.src,
         path,
         z.sha256,
         `${id} ${name}`,
@@ -562,38 +636,15 @@ async function extractArchive(
         .RMHMUSIC_ARCHIVE_DIR,
       a.file,
     );
-  if (
-    !existsSync(
-      path,
-    ) &&
-    local &&
-    existsSync(
-      local,
-    )
-  ) {
-    mkdirSync(
-      dirname(
-        path,
-      ),
-      {
-        recursive: true,
-      },
-    );
-    copyFileSync(
-      local,
-      path,
-    );
-  }
-  await download(
-    a.url,
-    path,
-  );
   a.sha256 =
-    verify(
+    await fetchVerified(
+      a.url,
       path,
       a.sha256,
       `${id} ${a.file}`,
       pin,
+      local ||
+        undefined,
     );
   const members =
     inst.zones
@@ -825,6 +876,24 @@ async function buildZone(
       `${id} ${z.out}: measured MIDI ${midi.toFixed(2)}, expected ${z.keyCenter} (off by ${dev.toFixed(2)} st)${octave}`,
     );
   }
+  // What the zone sounds when asked for its key centre: the measured pitch plus the playback
+  // correction (`playbackRate` adds `tuneCents`). It must land within RESIDUAL_CENTS of the key, or
+  // the tuning table (or the measurement) is wrong and lessons would play it out of tune.
+  const residualCents =
+    (midi +
+      tuneCents /
+        100 -
+      z.keyCenter) *
+    100;
+  if (
+    Math.abs(
+      residualCents,
+    ) >
+    RESIDUAL_CENTS
+  )
+    fail(
+      `${id} ${z.out}: plays ${residualCents.toFixed(1)} cents from MIDI ${z.keyCenter} after a ${tuneCents}c correction (limit ${RESIDUAL_CENTS})`,
+    );
   const {
     rmsDb,
     peakDb,
@@ -844,7 +913,7 @@ async function buildZone(
         10,
     ) /
     10;
-  console.log(
+  report(
     `${id.padEnd(6)} ${z.out.padEnd(7)} key ${z.keyCenter} measured ${midi.toFixed(3)} dev ${(dev * 100).toFixed(1)}c ` +
       `tune ${tuneCents}c baked ${bake}dB rms ${rmsDb.toFixed(1)} peak ${peakDb.toFixed(1)} gain ${gainDb} ${bytes.length} B`,
   );
@@ -1001,11 +1070,38 @@ export const ZONES: Readonly<Record<InstrumentId, ZoneMap>> = ${data};
   );
 }
 
+/** CREDITS.txt beside the samples, from `credits.ts`, so the shipped notice cannot drift. */
+function writeCredits(): void {
+  mkdirSync(
+    dirname(
+      CREDITS_TXT,
+    ),
+    {
+      recursive: true,
+    },
+  );
+  writeFileSync(
+    CREDITS_TXT,
+    creditsText(),
+  );
+  report(
+    `wrote ${CREDITS_TXT}`,
+  );
+}
+
 async function main() {
   const args =
     process.argv.slice(
       2,
     );
+  writeCredits();
+  // `--credits`: only (re)write CREDITS.txt, no ffmpeg or downloads.
+  if (
+    args.includes(
+      '--credits',
+    )
+  )
+    return;
   const pin =
     args.includes(
       '--pin',
@@ -1080,7 +1176,7 @@ async function main() {
           z.bytes,
         0,
       );
-    console.log(
+    report(
       `${id}: ${built.length} zones, ${total} bytes`,
     );
     all[
