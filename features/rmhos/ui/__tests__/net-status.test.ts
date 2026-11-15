@@ -10,6 +10,7 @@ function run(samples: NetSample[]) {
 const up = (at: number): NetSample => ({ at, result: { connected: true } });
 const down = (at: number): NetSample => ({ at, result: { connected: false } });
 const fail = (at: number): NetSample => ({ at, result: 'failed' });
+const ended = (at: number): NetSample => ({ at, result: 'ended' });
 
 describe('trackNet', () => {
   it('is on when the hub says connected', () => expect(run([up(0)])).toBe('on'));
@@ -31,6 +32,14 @@ describe('trackNet', () => {
   });
   it('recovers from error when the socket is back', () => {
     expect(run([down(0), down(30_000), up(45_000)])).toBe('on');
+  });
+});
+
+describe('a refused ticket', () => {
+  it('is an immediate, final error', () => {
+    const r = trackNet(initialTracker, ended(0));
+    expect(r).toMatchObject({ state: 'error', ended: true });
+    expect(trackNet(initialTracker, up(0)).ended).toBe(false);
   });
 });
 

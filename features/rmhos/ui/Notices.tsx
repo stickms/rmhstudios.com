@@ -20,7 +20,8 @@ export default function Notices({ session, busy, onDownload }: Props) {
   const changedElsewhere = report?.kind === 'notice' && report.key === 'changed-elsewhere';
   const emptyHome = report?.kind === 'notice' && report.key === 'empty-home';
   const blocked = session.desktopReady && session.storeKind === 'memory';
-  if (!changedElsewhere && !emptyHome && !blocked) return null;
+  const netEnded = session.net?.enabled === true && session.netEnded;
+  if (!changedElsewhere && !emptyHome && !blocked && !netEnded) return null;
 
   return (
     <div className="rmhos-notices" role="status">
@@ -28,6 +29,13 @@ export default function Notices({ session, busy, onDownload }: Props) {
         <p className="text-xs text-(--app-warning)">
           {t('notice-storage-blocked', {
             defaultValue: 'Files are not being saved: this browser is blocking storage.',
+          })}
+        </p>
+      )}
+      {netEnded && (
+        <p className="text-xs text-(--app-warning)">
+          {t('notice-net-ended', {
+            defaultValue: 'Your network session ended. Restart rmhOS to reconnect.',
           })}
         </p>
       )}

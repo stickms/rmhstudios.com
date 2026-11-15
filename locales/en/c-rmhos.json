@@ -36,6 +36,7 @@
   "net-unavailable": "Network unavailable",
   "notice-changed-elsewhere": "Your files were changed in another tab. Reload to use them, or download a backup of this session first.",
   "notice-empty-home": "Your home folder is empty. Nothing was saved over your stored files.",
+  "notice-net-ended": "Your network session ended. Restart rmhOS to reconnect.",
   "notice-storage-blocked": "Files are not being saved: this browser is blocking storage.",
   "put-previous-back": "Put the previous files back",
   "reload": "Reload",

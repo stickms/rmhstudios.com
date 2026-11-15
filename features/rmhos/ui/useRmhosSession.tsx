@@ -22,7 +22,7 @@ import { browserEnv, HomeSession, type SessionSnapshot } from '../engine/home-se
 import { openHomeStore, type HomeStore } from '../engine/home-store';
 import { HomeSync, type SaveResult } from '../engine/home-sync';
 import { resolveImageManifest } from '../engine/image-manifest';
-import { fetchRelayTicket } from '../engine/relay-ticket';
+import { createTicketHolder } from '../engine/relay-ticket';
 import type { RmhosNet } from '../engine/rmhos.contract';
 import { holdHomeLock } from '../engine/tab-lock';
 import { createVm } from '../engine/vm';
@@ -84,6 +84,8 @@ export interface RmhosSessionValue {
   net: RmhosNet | null;
   /** From the hub's status endpoint (see net-status.ts); only meaningful when `net.enabled`. */
   netState: 'connecting' | 'on' | 'error';
+  /** The hub no longer accepts this session's ticket (12 h cap, idle, evicted): restart to reconnect. */
+  netEnded: boolean;
 }
 
 declare global {
@@ -128,8 +130,9 @@ export function useRmhosMachine(
   }, [phase]);
 
   /** The ticket the running machine was built with: the status poll uses the same credential. */
-  const netRef = useRef<{ url: string; ticket: string } | null>(null);
+  const tickets = useRef(createTicketHolder());
   const [netState, setNetState] = useState<'connecting' | 'on' | 'error'>('connecting');
+  const [netEnded, setNetEnded] = useState(false);
 
   const runnerRef = useRef<HomeSession | null>(null);
   const vmRef = useRef<VmHandle | null>(null);
@@ -187,11 +190,10 @@ export function useRmhosMachine(
         // The relay ticket is good for 60 s of first use and v86 bakes it in when the machine is
         // built, so it is fetched when createVm asks (after the emulator module has loaded), not
         // at page load. Whether the relay is on at all is the page-load answer.
-        const getNet = async () => {
-          if (!session.net.enabled) return null;
-          netRef.current = await fetchRelayTicket();
-          return netRef.current;
-        };
+        // The run keeps its ticket to itself and publishes it for the status poll only once its
+        // machine exists and it is still the newest run.
+        const run = tickets.current.begin();
+        const getNet = async () => (session.net.enabled ? run.fetch() : null);
         const vm = await createVm({
           screen,
           manifest: resolveImageManifest(CDN_BASE || undefined),
@@ -202,6 +204,8 @@ export function useRmhosMachine(
           vm.destroy();
           return;
         }
+        run.publish();
+        cleanups.push(() => run.release());
         vmRef.current = vm;
         cleanups.push(() => {
           if (vmRef.current === vm) vmRef.current = null;
@@ -282,18 +286,21 @@ export function useRmhosMachine(
   const desktopReady = snap?.desktopReady ?? false;
   useEffect(() => {
     setNetState('connecting');
-    if (!desktopReady || !netRef.current) return;
+    setNetEnded(false);
+    if (!desktopReady || !tickets.current.current) return;
     let tracker = initialTracker;
     let stopped = false;
     const poll = async () => {
-      const n = netRef.current;
+      const n = tickets.current.current;
       if (!n || stopped || document.visibilityState !== 'visible') return;
-      let result: { connected: boolean } | 'failed' = 'failed';
+      let result: { connected: boolean } | 'failed' | 'ended' = 'failed';
       try {
         const r = await fetch(statusUrl(n.url, n.ticket), { cache: 'no-store' });
         if (r.ok) {
           const body = (await r.json()) as { connected?: unknown };
           result = { connected: body.connected === true };
+        } else if (r.status === 401) {
+          result = 'ended'; // the hub dropped this ticket; v86's reconnects will be refused too
         }
       } catch {
         // counted as a failed poll
@@ -302,9 +309,14 @@ export function useRmhosMachine(
       const next = trackNet(tracker, { at: Date.now(), result });
       tracker = next.tracker;
       setNetState(next.state);
+      if (next.ended) {
+        setNetEnded(true);
+        stopped = true;
+        clearInterval(timer);
+      }
     };
     void poll();
-    const timer = setInterval(() => void poll(), POLL_MS);
+    const timer: ReturnType<typeof setInterval> = setInterval(() => void poll(), POLL_MS);
     const onVisible = () => void poll();
     document.addEventListener('visibilitychange', onVisible);
     return () => {
@@ -364,5 +376,6 @@ export function useRmhosMachine(
     linuxUser: sessionQ.data?.linuxUser ?? null,
     net: sessionQ.data?.net ?? null,
     netState,
+    netEnded,
   };
 }
