@@ -1,33 +1,44 @@
 # Builds the rmhOS image (kernel, root filesystem, BIOS files) from pinned
-# upstream sources, proves it boots, and publishes it to R2 under
-# rmhos/<version>/ (immutable, content-addressed by the manifest version).
+# upstream inputs, proves it boots, keeps the result as a build artifact, and
+# optionally publishes it to R2 under rmhos/<version>/ (immutable, addressed by
+# the manifest version).
 #
 # Manual only: the image changes when scripts/rmhos/versions.env, kernel.config,
-# the patches or the rootfs overlay change. After a run, paste the printed
-# manifest into features/rmhos/image-manifest.ts.
+# the patches or the rootfs overlay change. After a published run, paste the
+# block printed by the last step into features/rmhos/engine/image-manifest.ts
+# (docs/rmhos.md, "Publish a new image version").
 #
-# The R2 credentials are given to the publish step only. Needs the same
-# repository secrets as the other R2 jobs: S3_ENDPOINT,
-# S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET (S3_REGION optional).
+#   publish    default false: build, boot and keep the artifact only. true uploads to R2,
+#              and only from main (a test dispatch from a branch cannot touch the bucket).
+#   from_run   the id of an earlier run of this workflow: publish THAT run's artifact instead of
+#              rebuilding. The build is not bit-for-bit reproducible (apk versions float), so a
+#              rebuild is a different version; when the upload failed after a good build, use this.
+#   force      pass --force to publish-r2 (overwrite an existing rmhos/<version>/).
+#
+# The R2 credentials are given to the preflight and publish steps only. Needs the
+# same repository secrets as the other R2 jobs: S3_ENDPOINT, S3_ACCESS_KEY_ID,
+# S3_SECRET_ACCESS_KEY, S3_BUCKET (S3_REGION optional).
 name: rmhos-image
 
 on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Upload
-          the
-          image
-          to
-          R2
-          after
-          it
-          passes
+        description: Upload the image to R2 after it passes (main only)
         type: boolean
-        default: true
+        default: false
+      from_run:
+        description: Publish the artifact of this earlier run id instead of rebuilding
+        type: string
+        default: ''
+      force:
+        description: Overwrite an existing rmhos/<version>/ in R2 (repair only)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: rmhos-image
@@ -37,30 +48,47 @@ jobs:
   image:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    env:
+      WANT_PUBLISH: ${{ inputs.publish || inputs.from_run != '' }}
     steps:
+      # First, before 25 minutes of build: a publish needs main and every R2 secret.
+      - name: Preflight (publish needs main and the R2 secrets)
+        if: env.WANT_PUBLISH == 'true'
+        env:
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::publishing is refused off main (this run is on ${GITHUB_REF}); run it on main, or leave publish off"
+            exit 1
+          fi
+          for v in S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
+            [ -n "${!v}" ] || { echo "::error::missing repository secret $v"; exit 1; }
+          done
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-deps
 
       # Builds the kernel and root filesystem, boots them headless, saves the
       # post-boot snapshot (state.zst) and writes manifest.json (its version
-      # covers the snapshot).
-      - name: Build
-          the
-          image
-          and
-          snapshot
-        run: pnpm
-          rmhos:image
+      # covers the snapshot). Records this commit and run in packages.txt and
+      # manifest.json.
+      - name: Build the image and snapshot
+        if: inputs.from_run == ''
+        env:
+          RMHOS_BUILD_COMMIT: ${{ github.sha }}
+          RMHOS_BUILD_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: pnpm rmhos:image
 
-      - name: Boot
-          it
-          headless
-          (smoke)
-        run: pnpm
-          rmhos:smoke
+      - name: Boot it headless (smoke)
+        if: inputs.from_run == ''
+        run: pnpm rmhos:smoke
 
-      - name: Size
-          budgets
+      - name: Size budgets
+        if: inputs.from_run == ''
         run: |
           set -euo pipefail
           dir=public/rmhos-dev
@@ -74,33 +102,40 @@ jobs:
           [ "$rootfs" -le $((400 * 1024 * 1024)) ]
           [ "$state" -le $((80 * 1024 * 1024)) ]
 
-      - name: Publish
-          to
-          R2
-        if: inputs.publish
-        env:
-          S3_ENDPOINT: ${{
-            secrets.S3_ENDPOINT
-            }}
-          S3_ACCESS_KEY_ID: ${{
-            secrets.S3_ACCESS_KEY_ID
-            }}
-          S3_SECRET_ACCESS_KEY: ${{
-            secrets.S3_SECRET_ACCESS_KEY
-            }}
-          S3_BUCKET: ${{
-            secrets.S3_BUCKET
-            }}
-          S3_REGION: ${{
-            secrets.S3_REGION
-            }}
-          S3_FORCE_PATH_STYLE: 'false' # R2 uses virtual-hosted-style addressing (see .env.example)
-        run: |
-          for v in S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET; do
-            [ -n "${!v}" ] || { echo "::error::missing repository secret $v"; exit 1; }
-          done
-          node scripts/rmhos/publish-r2.mjs public/rmhos-dev
+      # Kept so a failed publish costs a re-run of the upload, not of the build (a rebuild is a new
+      # version), and so what was published can be audited after the run logs expire.
+      - name: Keep the image as an artifact
+        if: inputs.from_run == ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rmhos-image-${{ github.run_id }}
+          path: public/rmhos-dev
+          retention-days: 30
+          if-no-files-found: error
+          compression-level: 0
 
-      - name: Manifest
-        run: cat
-          public/rmhos-dev/manifest.json
+      - name: Fetch the artifact of the earlier run
+        if: inputs.from_run != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: rmhos-image-${{ inputs.from_run }}
+          run-id: ${{ inputs.from_run }}
+          github-token: ${{ github.token }}
+          path: public/rmhos-dev
+
+      - name: Publish to R2
+        if: env.WANT_PUBLISH == 'true'
+        env:
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_REGION: ${{ secrets.S3_REGION }}
+          S3_FORCE_PATH_STYLE: 'false' # R2 uses virtual-hosted-style addressing (see .env.example)
+          FORCE_FLAG: ${{ inputs.force && '--force' || '' }}
+        run: node scripts/rmhos/publish-r2.mjs public/rmhos-dev $FORCE_FLAG
+
+      - name: Manifest and the block to paste
+        run: |
+          cat public/rmhos-dev/manifest.json
+          node scripts/rmhos/print-pin.mjs public/rmhos-dev
