@@ -10,8 +10,8 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
+  Amount,
   ArrowIcon,
-  Count,
   DealTombstones,
   PageHead,
   Plate,
@@ -121,13 +121,16 @@ export default function DealsPage() {
               )}
             >
               <div className="fig rv">
-                <Count
+                <Amount
                   className="fig-n steel"
-                  to={
-                    955
-                  }
-                  pre="$"
-                  suf="B"
+                  value="$955"
+                  unit={t(
+                    'tomb-unit-billion',
+                    {
+                      defaultValue:
+                        'billion',
+                    },
+                  )}
                 />
                 <span className="fig-k">
                   {t(
@@ -140,13 +143,16 @@ export default function DealsPage() {
                 </span>
               </div>
               <div className="fig rv d1">
-                <Count
+                <Amount
                   className="fig-n steel"
-                  to={
-                    6
-                  }
-                  pre="$"
-                  suf=".4T"
+                  value="$6.4"
+                  unit={t(
+                    'amount-unit-trillion',
+                    {
+                      defaultValue:
+                        'trillion',
+                    },
+                  )}
                 />
                 <span className="fig-k">
                   {t(
@@ -159,12 +165,9 @@ export default function DealsPage() {
                 </span>
               </div>
               <div className="fig rv d2">
-                <Count
+                <Amount
                   className="fig-n steel"
-                  to={
-                    20
-                  }
-                  suf="%"
+                  value="20%"
                 />
                 <span className="fig-k">
                   {t(
@@ -771,13 +774,16 @@ export default function DealsPage() {
               )}
             >
               <div className="fig rv">
-                <Count
+                <Amount
                   className="fig-n ink"
-                  to={
-                    35
-                  }
-                  pre="$"
-                  suf="M"
+                  value="$35"
+                  unit={t(
+                    'tomb-unit-million',
+                    {
+                      defaultValue:
+                        'million',
+                    },
+                  )}
                 />
                 <span className="fig-k">
                   {t(
