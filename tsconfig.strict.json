@@ -32,7 +32,8 @@
     "server/shared/session-auth.ts",
     "server/shared/redis-adapter.ts",
     "features/rmhos/engine/*.ts",
-    "lib/rmhmusic/learn/sprint/*.ts"
+    "lib/rmhmusic/learn/sprint/*.ts",
+    "lib/rmhmusic/learn/tuner/*.ts"
   ],
   "exclude": [
     "node_modules",
