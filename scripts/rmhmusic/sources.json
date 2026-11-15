@@ -1,0 +1,694 @@
+{
+  "$comment": "Pinned sources for scripts/rmhmusic/build-instruments.ts. Every file is checked against its SHA-256 before use. keyCenter is the SOUNDING MIDI note the build must measure (YIN) within pitchToleranceSemitones; tuneCents, where given, is the upstream tuning table (Salamander Retuned) and is otherwise measured.",
+  "encode": {
+    "codec": "libmp3lame",
+    "bitrateKbps": 64,
+    "sampleRate": 44100,
+    "channels": 1,
+    "targetRmsDb": -20,
+    "peakCeilingDb": -3
+  },
+  "pitchToleranceSemitones": 0.35,
+  "instruments": {
+    "piano": {
+      "name": "Salamander Grand Piano V3 (Yamaha C5), velocity layer v8 of 16, Retuned table",
+      "author": "Alexander Holm",
+      "licence": "CC-BY-3.0",
+      "credit": "salamander",
+      "homepage": "https://github.com/sfzinstruments/SalamanderGrandPiano",
+      "zones": [
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/C2v8.flac",
+          "sha256": "2fae21e19a214aeecd527a2235b106f66030df6ff51cfa789a5b4c6feb3d7357",
+          "keyCenter": 36,
+          "tuneCents": -9,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "36.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/D%232v8.flac",
+          "sha256": "662b21ad6ee7634777fe8b5952c70db1795a23bfc8557ecb35844ce8d12eba70",
+          "keyCenter": 39,
+          "tuneCents": -11,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "39.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/F%232v8.flac",
+          "sha256": "05c649a7114f0845ee09716831242af9726b2429dad92eb170fc84e92f92a8e1",
+          "keyCenter": 42,
+          "tuneCents": -7,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "42.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/A2v8.flac",
+          "sha256": "31dcdb3c1dea91943c4cccbb9f804dde2953ae1f16cb3990fe7def7acf60f944",
+          "keyCenter": 45,
+          "tuneCents": -4,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "45.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/C3v8.flac",
+          "sha256": "b9200830cdef54fe0eb92db928dea161cd26d1faf31c7a08a4f51c97549e05bf",
+          "keyCenter": 48,
+          "tuneCents": 0,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "48.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/D%233v8.flac",
+          "sha256": "900ad0d774e6cefd44c1081b66d50556b3121bf1d3f255c5329a9117447b9cff",
+          "keyCenter": 51,
+          "tuneCents": -6,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "51.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/F%233v8.flac",
+          "sha256": "116a760f8552491d361cae27ac06f4e46d226f9a50e5ea58f6c385fac7efca68",
+          "keyCenter": 54,
+          "tuneCents": -3,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "54.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/A3v8.flac",
+          "sha256": "b02ed7c37d6b902552274c92d66911751ee52aac20b28618387e1388b1653ed4",
+          "keyCenter": 57,
+          "tuneCents": -3,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "57.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/C4v8.flac",
+          "sha256": "36fb0535a1f21fe1dfc367c361dedda73710144e8c4940b40e97e6e5f8a3c694",
+          "keyCenter": 60,
+          "tuneCents": -6,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "60.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/D%234v8.flac",
+          "sha256": "295179461449c598c44ad712977d47b41c0c25d9c782d349094e748dc06c0dfa",
+          "keyCenter": 63,
+          "tuneCents": -3,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "63.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/F%234v8.flac",
+          "sha256": "be2dc339e8cec5f2f1da4ff583672dbc518bf5319547a08901b094617ac6998e",
+          "keyCenter": 66,
+          "tuneCents": 0,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "66.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/A4v8.flac",
+          "sha256": "59529694455698d7fd212cde8eec4029eaae8e5e6d454bb48bf36428eaa8009b",
+          "keyCenter": 69,
+          "tuneCents": -4,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "69.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/C5v8.flac",
+          "sha256": "f663242a552aad54113f186a6dd90c907c81d1f6374887a23179814544f78d79",
+          "keyCenter": 72,
+          "tuneCents": -8,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "72.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/D%235v8.flac",
+          "sha256": "f841ad0506994313f4202fbe3f07d917e60eeb10fb3461df3eae4fb9cd58432a",
+          "keyCenter": 75,
+          "tuneCents": -8,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "75.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/F%235v8.flac",
+          "sha256": "7757ef988e874313432a3b4ed586f0407fd4a9933b7ccc613b8ff96a2f83bc87",
+          "keyCenter": 78,
+          "tuneCents": -5,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "78.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/A5v8.flac",
+          "sha256": "c71f80ecee2dfc37519769ab97e2e92732bfce9314f6562ba884a737cfa018a9",
+          "keyCenter": 81,
+          "tuneCents": -7,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "81.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/C6v8.flac",
+          "sha256": "e5d5db275007d4b0e35ce94b00e0b53f6c659707517ee1326bd77eeba119693b",
+          "keyCenter": 84,
+          "tuneCents": -8,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "84.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/D%236v8.flac",
+          "sha256": "ef9d6d285795ea2ed51c0d0261d7d4997d1041dadc53939363a080edc5dcdc4e",
+          "keyCenter": 87,
+          "tuneCents": -12,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "87.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/F%236v8.flac",
+          "sha256": "8dd12f1be1cad3bb4be36c5609ff8426640d6d37b3ef0b9b3eed3b159ae51088",
+          "keyCenter": 90,
+          "tuneCents": -13,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "90.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/A6v8.flac",
+          "sha256": "6c49808b96392ddec4fd237a89af11fb70ed31da11a6022905f6eb3ae897c989",
+          "keyCenter": 93,
+          "tuneCents": -12,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "93.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sfzinstruments/SalamanderGrandPiano/3382bf9496bba2486f5ab0de55a264d1dfc38404/Samples/C7v8.flac",
+          "sha256": "fbe68e0670fd7edd46923e983da11a97ca7d2b8826585258b81918f97e268b68",
+          "keyCenter": 96,
+          "tuneCents": -17,
+          "durationS": 2.5,
+          "fadeS": 0.5,
+          "out": "96.mp3"
+        }
+      ]
+    },
+    "guitar": {
+      "name": "Ella Gitauru 5.26.04 (Fender DG8S steel-string dreadnought), dynamic layer mf",
+      "author": "Malaclypse the Younger",
+      "licence": "MIT (with the author added sentence: distributed alterations are attributed to whoever made them)",
+      "credit": "ella-gitauru",
+      "homepage": "https://sfzinstruments.github.io/guitars/",
+      "archive": {
+        "url": "https://drive.usercontent.google.com/download?id=1ekz211jPZlSYQTrBlYdWaIvhYKVpDZKX&export=download&confirm=t",
+        "file": "BJAM 5.26.04.rar",
+        "sha256": "7604ab82eb9e04ac829e264a60487fb15b497f51de5f194f20f5df832edf7482"
+      },
+      "zones": [
+        {
+          "member": "Ella G5/6E-mf00.ogg",
+          "sha256": "2bccc78245385542b64535c6414dfb4d633c22dbb08b4103954e62262be926c9",
+          "keyCenter": 40,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 0
+          },
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "40.mp3"
+        },
+        {
+          "member": "Ella G5/6E-mf03.ogg",
+          "sha256": "edd87e30777990ebd74f84e16d2d8075adbd18f7a26f0bff44318ae3f5311f68",
+          "keyCenter": 43,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 3
+          },
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "43.mp3"
+        },
+        {
+          "member": "Ella G5/5A-mf00.ogg",
+          "sha256": "6bdd52aec5ed85d2ad572a01cb5733fa589f961a55ec6ac95995fe068caf1838",
+          "keyCenter": 45,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 0
+          },
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "45.mp3"
+        },
+        {
+          "member": "Ella G5/6E-mf07.ogg",
+          "sha256": "7379a0d1d24ffc6edbc831722e64f3604e4c4d7761cd2556011a88c43d7b7a06",
+          "keyCenter": 47,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 7
+          },
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "47.mp3"
+        },
+        {
+          "member": "Ella G5/6E-mf09.ogg",
+          "sha256": "2bdc8ed81434a42debf5fc11b6682cd96fbf29cf91dcd45c68d7c209ef9a8f04",
+          "keyCenter": 49,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 9
+          },
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "49.mp3"
+        },
+        {
+          "member": "Ella G5/4D-mf01.ogg",
+          "sha256": "91a5f9bb627b3a1f9111e004c69dd19bc3163f5b2be333a7e432bf8bf09c7ef0",
+          "keyCenter": 51,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 1
+          },
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "51.mp3"
+        },
+        {
+          "member": "Ella G5/4D-mf03.ogg",
+          "sha256": "2309ad1c12ca64f4ee8c844a45def917293a6e88756c66c4415462209679e65c",
+          "keyCenter": 53,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 3
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "53.mp3"
+        },
+        {
+          "member": "Ella G5/4D-mf05.ogg",
+          "sha256": "b4362900fe9ad49a36249c09f98cb2c02be68cc4a53641c7eb36fde92d511ee5",
+          "keyCenter": 55,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 5
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "55.mp3"
+        },
+        {
+          "member": "Ella G5/4D-mf07.ogg",
+          "sha256": "0f67ba8b1dd58eef84baa59dac35a9fdd7b6ece792d2360c8fef56a5e1a6f43e",
+          "keyCenter": 57,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 7
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "57.mp3"
+        },
+        {
+          "member": "Ella G5/2B-mf00.ogg",
+          "sha256": "0eba23d380e15a3136d71c47a831fcad305b717464b4a8147db5ef248047e75e",
+          "keyCenter": 59,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 0
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "59.mp3"
+        },
+        {
+          "member": "Ella G5/4D-mf11.ogg",
+          "sha256": "8b73f207fc8cd54b233ab2cfe38b8b0ab5ca8094b9ddd01030c16df4cab02c11",
+          "keyCenter": 61,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 11
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "61.mp3"
+        },
+        {
+          "member": "Ella G5/4D-mf13.ogg",
+          "sha256": "45035b785206011b551036f7343743fd5cf15dd918d5a9f142179ffc0f2ff196",
+          "keyCenter": 63,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 13
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "63.mp3"
+        },
+        {
+          "member": "Ella G5/4D-mf15.ogg",
+          "sha256": "026c84d8bb2c52a6a84d224c4f740d8ecb112f5ddbc52f6b9a6ba78ee4d3ecc5",
+          "keyCenter": 65,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 15
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "65.mp3"
+        },
+        {
+          "member": "Ella G5/2B-mf07.ogg",
+          "sha256": "a512d06d9d53692ebe02f65a7de7247301316fbe4f421f608a65eb8b5f7739f8",
+          "keyCenter": 66,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 7
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "66.mp3"
+        },
+        {
+          "member": "Ella G5/2B-mf09.ogg",
+          "sha256": "566625f6a5ca4a597fa23b300de2a3ac8c6fd3e6c41eca0368327ec576a40fec",
+          "keyCenter": 68,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 9
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "68.mp3"
+        },
+        {
+          "member": "Ella G5/2B-mf11.ogg",
+          "sha256": "ba5c954bcc33991b8385ee3b56483ec58e500bce62e3e4ba58872f62495cf8cb",
+          "keyCenter": 70,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 11
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "70.mp3"
+        },
+        {
+          "member": "Ella G5/2B-mf13.ogg",
+          "sha256": "b6025ab798d9773b7792c42110e105211eefa0b18f7254ab2b422ced20768bb6",
+          "keyCenter": 72,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 13
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "72.mp3"
+        },
+        {
+          "member": "Ella G5/2B-mf15.ogg",
+          "sha256": "fcf323b3ca8107bf6eb7f65da70e8d157fd9dc9b2990a6aa91a78f451dcc115f",
+          "keyCenter": 74,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 15
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "74.mp3"
+        },
+        {
+          "member": "Ella G5/2B-mf17.ogg",
+          "sha256": "b23c40b41b42f8f83260f3a0a65d302c153aef6ef8c76b6f4ad1be3082f9dad8",
+          "keyCenter": 76,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 17
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "76.mp3"
+        },
+        {
+          "member": "Ella G5/2B-mf19.ogg",
+          "sha256": "095654873eae57c85b50e0bf7b8a2ed8b701d88a4cd8b57a22c4c5372af43f32",
+          "keyCenter": 78,
+          "restore": {
+            "sourceRate": 16000,
+            "fret": 19
+          },
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "78.mp3"
+        }
+      ]
+    },
+    "violin": {
+      "name": "VS Chamber Orchestra: Community Edition, Solo Violin, Arco Vib, forte",
+      "author": "Versilian Studios (Sam Gossner)",
+      "licence": "CC0-1.0",
+      "credit": "vsco",
+      "homepage": "https://github.com/sgossner/VSCO-2-CE",
+      "zones": [
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_G3_f.wav",
+          "sha256": "80bae3776b0ccd3d4774f47429e829c7764f5fe6061ff844a8affc6ac68b7899",
+          "keyCenter": 55,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "55.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_A3_f.wav",
+          "sha256": "76934f3a85e4ba3b6518132c2fe6effa340c33fbb02f94e88c60b00073dc722f",
+          "keyCenter": 57,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "57.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_C4_f.wav",
+          "sha256": "4169605b51a72454f11bc2c34efc66c1d9993fd2b7d5f097a025ef9d3a2dbdfa",
+          "keyCenter": 60,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "60.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_E4_f.wav",
+          "sha256": "418512905f3294a23cf999f0587bf8e04d60192fe317ea8c80c150a85670eda2",
+          "keyCenter": 64,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "64.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_G4_f.wav",
+          "sha256": "14e3ea3d5172722d4d2686bae5da3d603800a7a474fa295d98275a9410913822",
+          "keyCenter": 67,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "67.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_A4_f.wav",
+          "sha256": "19e5374658351508a9e2c929e871a43caff41e62d5e3363ead6f88428a9ab863",
+          "keyCenter": 69,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "69.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_C5_f.wav",
+          "sha256": "af72f852ef2892233699851dacf5f8d97d446822d8eb4ce9e0ec27d5a721b118",
+          "keyCenter": 72,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "72.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_E5_f.wav",
+          "sha256": "5c278e263fd59650190fc58294945cd291906eb1abd8293f728a96a878d1d478",
+          "keyCenter": 76,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "76.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_G5_f.wav",
+          "sha256": "b5bb27541d6187e6eeb20baf50625ca35fc9d44c7f113936a9369bc7ce490a68",
+          "keyCenter": 79,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "79.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_A5_f.wav",
+          "sha256": "0558d79d23db55c710e664e6283b62619f5a582ce261a5c082700a0d01536627",
+          "keyCenter": 81,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "81.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_C6_f.wav",
+          "sha256": "7ec8e0c2dde75282a4aaacccc713c84faa3e84daa9cf43df45ffc0e209964d46",
+          "keyCenter": 84,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "84.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_E6_f.wav",
+          "sha256": "8d1712f5659274a83aa90807132084559633e4817027c8a5b5f40826b3d9bc84",
+          "keyCenter": 88,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "88.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_G6_f.wav",
+          "sha256": "68c49e55565810ea822866e3d39e51c1a5ad53cfa1a67bc25836ca7feac3fe0c",
+          "keyCenter": 91,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "91.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_A6_f.wav",
+          "sha256": "37f6cc2f12b1b443a77d3ee370178da4a002a2ac3b6529663cc7ee002728ddcf",
+          "keyCenter": 93,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "93.mp3"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Violin/Arco%20Vib/LLVln_ArcoVib_C7_f.wav",
+          "sha256": "f8223aed62911ef3f6937111bf3cdcc36fc25a636d4f99480b97029c4d28f393",
+          "keyCenter": 96,
+          "durationS": 4,
+          "fadeS": 0.8,
+          "out": "96.mp3"
+        }
+      ]
+    },
+    "flute": {
+      "name": "VS Chamber Orchestra: Community Edition, Flute, sustain without vibrato (susNV)",
+      "author": "Versilian Studios (Sam Gossner)",
+      "licence": "CC0-1.0",
+      "credit": "vsco",
+      "homepage": "https://github.com/sgossner/VSCO-2-CE",
+      "zones": [
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_C3_v1_1.wav",
+          "sha256": "4f221909317e257e4d0bc49f10479643c80cb213a0486455c1bdc1d6ed13a450",
+          "keyCenter": 60,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "60.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_E3_v1_1.wav",
+          "sha256": "87c667c2af888ed86dff87f2452248de3e3d958fc93848a4426b7c16f85f09da",
+          "keyCenter": 64,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "64.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_A3_v1_1.wav",
+          "sha256": "6fc8d707afddfaaf3003551b95a83b52f514adbe488bfea1c8c5250080a07278",
+          "keyCenter": 69,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "69.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_C4_v1_1.wav",
+          "sha256": "105a6dbced98de7ae04a317bdd3ba1a5c6b90dc94034439b68cce6635e2781df",
+          "keyCenter": 72,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "72.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_E4_v1_1.wav",
+          "sha256": "b609d37fb577e2a0f64f20800fba4bed067151375349bf713c0d4e803f862580",
+          "keyCenter": 76,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "76.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_A4_v1_1.wav",
+          "sha256": "c8fd15bb561dbdac6d35ffd9c5e49413131d96f8948d5bdf03d4a03fa344c5c0",
+          "keyCenter": 81,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "81.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_C5_v1_1.wav",
+          "sha256": "46a335b804c9b2f081efa8e6c695f155d05b3700c69bf73950cc9cb40ed53d41",
+          "keyCenter": 84,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "84.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_E5_v1_1.wav",
+          "sha256": "660df172b551dfd7859dade283cb1e8dd6eac8095ccaabb5b19416caaacdef87",
+          "keyCenter": 88,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "88.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_A5_v1_1.wav",
+          "sha256": "d35c9b6cc3fa887cb93042b901ddaa6a05c72eb9040bd125d82a0940366f9022",
+          "keyCenter": 93,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "93.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        },
+        {
+          "src": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Woodwinds/Flute/susNV/LDFlute_susNV_C6_v1_1.wav",
+          "sha256": "0d1c902873564fac780ded78ce54788745bc81b0b3113b311169cfee9fdf9357",
+          "keyCenter": 96,
+          "durationS": 3.5,
+          "fadeS": 0.6,
+          "out": "96.mp3",
+          "note": "VSCO wind file names are an octave below the sounding pitch"
+        }
+      ]
+    }
+  }
+}

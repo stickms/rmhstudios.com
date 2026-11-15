@@ -8,6 +8,8 @@ model MusicLearnProfile {
   input      String   @default("screen")
   latencyMs  Int      @default(0)
   dailyGoal  Int      @default(1)
+  /// The sampled sound lessons play (`INSTRUMENT_IDS`); null follows `instrument`.
+  sound      String?  @db.VarChar(16)
   updatedAt  DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -52,4 +54,42 @@ model MusicLearnCard {
 
   @@unique([userId, cardId])
   @@map("music_learn_card")
+}
+
+/// Sight reading (Sprint) freeplay: the best per learner per level (`SPRINT_LEVELS`, validated in
+/// code, not a FK). Score and average reaction are bests independently (`record.ts` `nextBest`).
+model MusicSprintBest {
+  id        String   @id @default(cuid())
+  userId    String
+  level     String   @db.VarChar(16)
+  bestScore Int      @default(0)
+  bestAvgMs Int?
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, level])
+  @@map("music_sprint_best")
+}
+
+/// Sight reading daily challenge: one row per learner per UTC date (`YYYY-MM-DD`, the date the run
+/// was dealt on). The row is written when the scored run STARTS (`createdAt`, score null) and
+/// filled once when it finishes; a started row with no score is an abandoned run, so later runs
+/// that date are practice. `results` holds the server-recomputed per-prompt results.
+model MusicSprintDaily {
+  id        String    @id @default(cuid())
+  userId    String
+  date      String    @db.VarChar(10)
+  score     Int?
+  avgMs     Int?
+  played    Int?
+  skipped   Int?
+  results   Json?
+  scoredAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("music_sprint_daily")
 }

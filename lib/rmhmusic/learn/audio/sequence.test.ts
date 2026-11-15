@@ -75,6 +75,7 @@ vi.mock(
 
 import {
   CHORD_HOLD_MS,
+  chordRand,
   INTERVAL_GAP_MS,
   playChord,
   playSequence,
@@ -912,6 +913,105 @@ describe('playSequence: lifecycle', () => {
       started,
     ).toHaveLength(
       1,
+    );
+  });
+});
+
+describe("a strum's humanise", () => {
+  it('comes from a seeded rand: the same chord strums the same way, never Math.random', () => {
+    const a =
+      chordRand(
+        [
+          40,
+          47,
+          52,
+          55,
+          59,
+          64,
+        ],
+      );
+    const b =
+      chordRand(
+        [
+          40,
+          47,
+          52,
+          55,
+          59,
+          64,
+        ],
+      );
+    const c =
+      chordRand(
+        [
+          41,
+          48,
+          53,
+          57,
+          60,
+          65,
+        ],
+      );
+    const first =
+      [
+        a(),
+        a(),
+        a(),
+      ];
+    expect(
+      [
+        b(),
+        b(),
+        b(),
+      ],
+    ).toEqual(
+      first,
+    );
+    expect(
+      [
+        c(),
+        c(),
+        c(),
+      ],
+    ).not.toEqual(
+      first,
+    );
+    for (const x of first) {
+      expect(
+        x,
+      ).toBeGreaterThanOrEqual(
+        0,
+      );
+      expect(
+        x,
+      ).toBeLessThan(
+        1,
+      );
+    }
+  });
+
+  it('takes the rand a caller passes', () => {
+    const rand =
+      vi.fn(
+        () =>
+          0.5,
+      );
+    playChord(
+      [
+        40,
+        47,
+        52,
+      ],
+      {
+        instrument:
+          'guitar',
+        rand,
+      },
+    ).cancel();
+    expect(
+      rand,
+    ).toHaveBeenCalledTimes(
+      2,
     );
   });
 });

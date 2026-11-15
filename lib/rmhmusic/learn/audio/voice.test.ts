@@ -164,7 +164,7 @@ describe('playNote onStart', () => {
 });
 
 describe('the sound the synth makes', () => {
-  it('reads its release from soundReleaseMs, which is the synth RELEASE_MS for any options', () => {
+  it('reads its release from soundReleaseMs: the synth RELEASE_MS, or the longer of it and a named instrument', () => {
     expect(
       soundReleaseMs(),
     ).toBe(
@@ -178,6 +178,16 @@ describe('the sound the synth makes', () => {
         },
       ),
     ).toBe(
+      300,
+    );
+    expect(
+      soundReleaseMs(
+        {
+          instrument:
+            'flute',
+        },
+      ),
+    ).toBe(
       RELEASE_MS,
     );
     expect(
@@ -188,7 +198,7 @@ describe('the sound the synth makes', () => {
     expect(
       MAX_VOICES,
     ).toBe(
-      6,
+      12,
     );
   });
 

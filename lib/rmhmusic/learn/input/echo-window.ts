@@ -73,8 +73,20 @@ export interface EchoGuard {
 export function createEchoGuard(opts: {
   tailMs?: number;
   confirmMs?: number;
-  releaseMs: number;
+  /**
+   * How long a released key keeps sounding (ms). A function is asked at each release, so the guard
+   * follows the sound in use now (a lesson's samples, or the simple tone it fell back to).
+   */
+  releaseMs:
+    | number
+    | (() => number);
 }): EchoGuard {
+  const releaseMs =
+    () =>
+      typeof opts.releaseMs ===
+      'function'
+        ? opts.releaseMs()
+        : opts.releaseMs;
   const tail =
     opts.tailMs ??
     ECHO_TAIL_MS;
@@ -130,7 +142,7 @@ export function createEchoGuard(opts: {
             Math.max(
               keysUntil,
               e.time +
-                opts.releaseMs +
+                releaseMs() +
                 tail,
             );
         }

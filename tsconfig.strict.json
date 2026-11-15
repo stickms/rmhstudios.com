@@ -31,7 +31,8 @@
     "lib/sitewide-announcement.contract.ts",
     "server/shared/session-auth.ts",
     "server/shared/redis-adapter.ts",
-    "features/rmhos/engine/*.ts"
+    "features/rmhos/engine/*.ts",
+    "lib/rmhmusic/learn/sprint/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -85,6 +85,7 @@ import {
   useNoteEvents,
   useNoteSound,
 } from './useLearnInput';
+import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 
 /** Cards in one lesson. */
 export const SESSION_CARDS = 10;
@@ -146,10 +147,13 @@ export type Answered =
 export function FlashcardLesson({
   lessonId,
   paused = false,
+  sound,
 }: {
   lessonId: string;
   /** A dialog is open over the lesson: nothing answers. */
   paused?: boolean;
+  /** How the learner's notes are voiced (the lesson's sound); the synth when absent. */
+  sound?: PlayOptions;
 }) {
   const {
     t,
@@ -186,6 +190,9 @@ export function FlashcardLesson({
       }
       paused={
         paused
+      }
+      sound={
+        sound
       }
       save={(
         fx,
@@ -224,6 +231,7 @@ export function FlashcardSession({
   returnTo,
   stars:
     showStars = true,
+  sound,
 }: {
   cards: Card[];
   /** A dialog is open over the session: nothing answers. */
@@ -237,6 +245,8 @@ export function FlashcardSession({
   /** Where the sign-in link comes back to. */
   returnTo: string;
   stars?: boolean;
+  /** How the learner's notes are voiced (the lesson's sound); the synth when absent. */
+  sound?: PlayOptions;
 }) {
   const {
     t,
@@ -285,6 +295,7 @@ export function FlashcardSession({
     useInputPhases();
   useNoteSound(
     !paused,
+    sound,
   );
   useLessonInputStart();
 
