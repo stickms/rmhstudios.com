@@ -51,6 +51,11 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
     store `setSound`, `resolveSound` / `chordSoundFor` in `catalog.ts`; `SoundDialog` from LearnHome;
     `/rmhmusic/credits` (`SoundCredits`, full Ella MIT text, Salamander attribution); every pitched
     lesson (ear, chord, match, find/fretboard, flashcards, first note, Practice) gets `{ instrument }`.
+  - Smoke after merging the Sprint (2026-11-15, Chromium, 390/1280 × Day/Night): one ear lesson
+    per instrument played its samples (sampler spied, YIN on the master tap heard the asked
+    pitches), the Sound dialog by keyboard picks and stores a sound and links the credits, and the
+    merged LearnHome shows both the Sound button and the Sight reading link without crowding at
+    320/390/1280 (no overlap, no horizontal scroll, CLS 0).
 - **Not done / still open:** the owner's **audition** (nobody has listened to any sample; checks
   were YIN pitch, onset and peak on decoded/rendered audio only); Safari / iPhone (silent switch
   mutes Web Audio; decoding MP3 on iOS) never tried; ear questions are moved by octaves into the
@@ -61,23 +66,52 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   layer; no offline cache. The full `tsc -b` could not run in the agent container (OOM-killed);
   a scoped check of the changed files passed — run `pnpm typecheck` once on a bigger machine.
 
-### Sight reading game ("Sprint") — S1–S4 built, results not stored yet
+### Sight reading game ("Sprint") — S1–S5 built, S6 smoke run (Chromium)
 - Plan: `docs/superpowers/plans/2026-11-09-rmhmusic-note-sprint.md`. Timed MIDI reading game:
   levels one note → accidentals → chords → short bars; **Freeplay** (20-prompt runs, personal bests)
-  and a **Daily challenge** (one run per UTC day, 6 escalating levels, seeded by date, first
-  completed run scored, daily streak). Tasks S1–S6 in the plan. No leaderboard until the owner decides.
+  and a **Daily challenge** (one run per UTC day, 6 escalating levels, seeded by date, the first
+  started run scored, daily streak). No leaderboard until the owner decides.
 - Built: `lib/rmhmusic/learn/sprint/` (levels and pars, seeded generators, `dailyRun`/`utcDate`,
   scoring, the `{initial, step}` machine), `sheetLayout` + `SprintSheet` (accidentals, stacked
   chords, bars with a now mark), `components/rmhmusic/learn/sprint/` and `/rmhmusic/sprint`, and a
-  "Sight reading" link at the foot of the learn home. MIDI must play the written pitch; the
-  computer keys, on-screen keys and microphone count any octave (the hint says which). Guitar reads
-  the treble staff only (octave clef, low card); the daily run deals the same prompts to everyone
-  and draws a bass prompt an octave up on treble for guitar. The input is locked during a run.
-- Not yet: **S5 persistence.** The game saves through `SprintSaver` (`sprint/saver.ts`); the
-  in-memory saver answers `unsaved`, so every result says "Not saved" and only the current visit
-  remembers that today's challenge was played. Wiring S5 is a new saver in that one file. Bests,
-  the daily streak and level unlocking wait for it (every level is open). **S6** (browser matrix,
-  real MIDI) has not been run.
+  "Sight reading" link at the foot of the learn home. MIDI must play the written pitch for notes,
+  accidentals and bars; chords count their pitch classes in any octave on every input (by design);
+  the computer keys, on-screen keys and microphone count any octave (the hint says which). Guitar
+  reads the treble staff only (octave clef, low card); the daily run deals the same prompts to
+  everyone and draws a bass prompt an octave up on treble for guitar. The input is locked during a run.
+- **S5 persistence (built):** `MusicSprintBest` (per user per level: best score and, independently,
+  fastest average) and `MusicSprintDaily` (per user per UTC date: score, avgMs, played, skipped,
+  the recomputed per-prompt results), migration `20261115170000_music_sprint`. Endpoints are
+  contracts (`sprint/sprint.contract.ts`) bound with `implement()` in
+  `lib/rmhmusic/api/rmhmusic.sprint*.server.ts`: `GET /api/rmhmusic/sprint?date=` (bests, the
+  date's state `open`/`started`/`scored`, streak), `POST …/freeplay`, `POST …/daily`,
+  `POST …/daily-start`. The rules are pure in `sprint/record.ts`: the dealt date is accepted only
+  for today or for yesterday within 10 minutes of UTC midnight and never relabelled; every
+  prompt's points are recomputed from its time with the game's `promptPoints` (client points and
+  summary ignored; lengths, level order, kinds and skips checked); the daily row is filled once
+  (`UPDATE … WHERE score IS NULL`), a second run answers `already-scored`, an identical retried POST
+  answers `saved`. **Started tracking:** a scored daily run writes its row when Start is pressed,
+  so an abandoned run reads `started` and later runs that day are practice (the start is best
+  effort; the save makes the row itself). The server cannot know which notes were played, so this
+  keeps an honest client honest; it is not anti-cheat. `createApiSaver` is the screen's saver;
+  picker rows say each level's best as a plain sentence; the Daily challenge says where today
+  stands and the run of days played (streak from scored dates, today or yesterday back).
+- **S6 smoke (2026-11-15, Chromium only, dev server + throwaway Postgres):** picker skeleton equals
+  loaded height at 320/390/1280 in Day and Night (fixed: the placeholder now wraps like the hints);
+  a freeplay run on the computer keys reached and played by keyboard only (any octave), saved, best
+  shown on return, focus back on the row; MIDI through a fake hub: one note at the exact pitch (an
+  octave-off answer is wrong), triads graded when the window closes; the microphone lists the chord
+  levels as unplayable with one sentence; the daily run records its start, saves once, a second run
+  says practice, an abandoned start makes the next run practice; failed save → Try again → saved;
+  session ended mid-run → "Not saved: sign in again" with a Sign in link; no layout move between
+  ready, asking and the result; CLS 0 (fixed: the centred count/caption lines were re-centred text);
+  the prompt image is named by kind and staff only while asking; focus lands on the end action
+  (fixed: it was lost while saving). Screenshots looked at: notebook paper, no chips or badges.
+- Not yet: the rest of S6's matrix (Firefox/WebKit, 200% text, RTL, a real MIDI keyboard, iOS);
+  the mic learner's picker placeholder is still 20px shorter at 390 (the placeholder cannot know
+  the input before the profile loads, and the mic sentence wraps); a new best is not called out in
+  the result (it says "Saved."); level unlocking (every level is open); `pnpm typecheck` on a bigger
+  machine (the container OOM-kills `tsc -b`; scoped checks passed).
 
 ## 3. Future features (not started)
 
@@ -182,13 +216,10 @@ export type SprintState =
 ```
 
 ```prisma
-model MusicSprintBest { id String @id @default(cuid()); userId String; level String;
-  best Int; bestAvgMs Int; updatedAt DateTime @updatedAt; user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([userId, level]) @@map("music_sprint_best") }
-model MusicSprintDaily { id String @id @default(cuid()); userId String; date String @db.VarChar(10);
-  score Int; avgMs Int; createdAt DateTime @default(now()); user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([userId, date]) @@map("music_sprint_daily") }
-// Server recomputes the date, rejects a second scored daily result (a retried POST returns the stored one).
+// As built (prisma/schema/rmhmusic.prisma): MusicSprintBest { userId, level, bestScore, bestAvgMs?,
+// updatedAt; @@unique([userId, level]) } and MusicSprintDaily { userId, date VarChar(10), score?,
+// avgMs?, played?, skipped?, results Json?, scoredAt?, createdAt; @@unique([userId, date]) } — a
+// daily row with score NULL is a started run. Rules: lib/rmhmusic/learn/sprint/record.ts.
 ```
 
 UI: `components/rmhmusic/learn/sprint/*` + `app/routes/rmhmusic/sprint.tsx` (auth-gated like
