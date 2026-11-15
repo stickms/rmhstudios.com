@@ -15,7 +15,9 @@ import { Button } from'@/components/ui/button';
 import { useSession } from'@/components/Providers';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import { AnimatedCount } from'@/components/ui/AnimatedCount';
+import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/contract/client';
+import { invalidateMarginExplore } from '@/lib/discovery/margin-query';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { getProfileApi } from '@/lib/profile/profile.contract';
 import { useArrival } from '@/components/ui/arrive';
@@ -46,6 +48,7 @@ export function ProfileHoverCard({
  const { t } = useTranslation('feed');
  const navigate = useNavigate();
  const { data: session } = useSession();
+ const queryClient = useQueryClient();
  const [profile, setProfile] = useState<HoverProfile | null>(null);
  const { run: runFollow, pending: followBusy } = useOptimisticAction();
  // Steel M9: the profile replaces the card's placeholder blocks.
@@ -84,7 +87,11 @@ export function ProfileHoverCard({
  ? { ...p, isFollowing: wasFollowing, followerCount: p.followerCount + (wasFollowing ? 1 : -1) }
  : p
  ),
- commit: () => api(toggleFollowApi, { params: { id: followId } }),
+ commit: () =>
+ api(toggleFollowApi, { params: { id: followId } }).then((result) => {
+ void invalidateMarginExplore(queryClient);
+ return result;
+ }),
  });
  };
 

@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/contract/client';
 import { exploreApi } from '@/lib/discovery/explore.contract';
+import { marginExploreKey } from '@/lib/discovery/margin-query';
 import type { ExploreResult } from '@/lib/explore.server';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useFreshUser } from '@/stores/userDisplayStore';
@@ -33,6 +35,16 @@ export default function MarginLists() {
     );
   const idle =
     useIdleReady();
+  // The suggestions leave out whoever this viewer follows, so the cache entry belongs to them
+  // (lib/discovery/margin-query.ts); a follow elsewhere on the site marks it stale.
+  const {
+    data: session,
+    isPending: sessionPending,
+  } =
+    useSession();
+  const viewerId =
+    session?.user
+      ?.id;
   // Supplementary: a failure leaves the lists out. The cache is shared across pages, so a client navigation re-uses it.
   const {
     data,
@@ -40,9 +52,9 @@ export default function MarginLists() {
     useQuery(
       {
         queryKey:
-          [
-            'shell-margin-explore',
-          ],
+          marginExploreKey(
+            viewerId,
+          ),
         queryFn:
           ({
             signal,
@@ -53,8 +65,10 @@ export default function MarginLists() {
                 signal,
               },
             ),
+        // Not before the session has settled: the first fetch would be the signed-out list, keyed to nobody.
         enabled:
-          idle,
+          idle &&
+          !sessionPending,
         staleTime:
           TTL,
         retry: false,

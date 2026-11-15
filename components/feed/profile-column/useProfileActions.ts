@@ -9,7 +9,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import type { ProfileData } from '@/components/profile/profile-types';
+import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/contract/client';
+import { invalidateMarginExplore } from '@/lib/discovery/margin-query';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { serverError } from '@/lib/http';
 import { sendMessageApi } from '@/lib/messages/messages.contract';
@@ -56,6 +58,8 @@ export function useProfileActions(
     useSession();
   const navigate =
     useNavigate();
+  const queryClient =
+    useQueryClient();
   const {
     run: runFollow,
   } =
@@ -128,6 +132,16 @@ export function useProfileActions(
                     {
                       id: userId,
                     },
+                },
+              ).then(
+                (
+                  result,
+                ) => {
+                  // "Who to follow" in the margin must stop offering the person just followed.
+                  void invalidateMarginExplore(
+                    queryClient,
+                  );
+                  return result;
                 },
               ),
         },
