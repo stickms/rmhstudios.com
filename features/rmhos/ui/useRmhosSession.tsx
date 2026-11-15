@@ -49,6 +49,10 @@ export interface RmhosSessionValue {
   dirty: boolean;
   /** Call on input to the guest screen. */
   markDirty: () => void;
+  /** Keys go to the guest only while the screen has focus (v86 would otherwise take them page-wide). */
+  setKeyboardCapture: (on: boolean) => void;
+  /** Key-up for Ctrl, Alt and Shift: call when focus leaves the screen mid-chord. */
+  releaseModifiers: () => void;
   lastSave: { result: SaveResult; at: number } | null;
   saving: boolean;
   /** 'memory': this browser blocks storage, so nothing is kept after the page closes. */
@@ -113,6 +117,7 @@ export function useRmhosMachine(
   }, [phase]);
 
   const runnerRef = useRef<HomeSession | null>(null);
+  const vmRef = useRef<VmHandle | null>(null);
 
   // One store for the life of the page, so a restart keeps the in-memory fallback's contents and
   // no restart leaks an IndexedDB connection. Closed on unmount.
@@ -175,7 +180,11 @@ export function useRmhosMachine(
           vm.destroy();
           return;
         }
-        cleanups.push(() => vm.destroy());
+        vmRef.current = vm;
+        cleanups.push(() => {
+          if (vmRef.current === vm) vmRef.current = null;
+          vm.destroy();
+        });
         if (import.meta.env.DEV) {
           window.__rmhosVm = vm;
           cleanups.push(() => delete window.__rmhosVm);
@@ -264,6 +273,8 @@ export function useRmhosMachine(
     desktopReady: snap?.desktopReady ?? false,
     dirty: snap?.dirty ?? false,
     markDirty: useCallback(() => runnerRef.current?.markDirty(), []),
+    setKeyboardCapture: useCallback((on: boolean) => vmRef.current?.setKeyboardCapture(on), []),
+    releaseModifiers: useCallback(() => vmRef.current?.releaseModifiers(), []),
     lastSave: snap?.lastSave ?? null,
     saving: snap?.saving ?? false,
     storeKind: snap?.storeKind ?? 'indexeddb',

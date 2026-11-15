@@ -133,6 +133,10 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   const base = baseUrlOf(manifest);
   const { relayUrl, dohServer } = relayConfig(net, location.host, location.protocol === 'https:');
 
+  let captureOn = screen.ownerDocument.activeElement === screen;
+  const setCapture = (e: V86Instance, on: boolean) =>
+    (e as unknown as { keyboard_set_status?: (v: boolean) => void }).keyboard_set_status?.(on);
+
   const build = (withState: boolean): V86Instance => {
     dropRejectionListener?.();
     usedState = withState && !!manifest.state;
@@ -156,6 +160,12 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       ...(usedState && manifest.state ? { initial_state: { url: manifest.state.url } } : {}),
     } as unknown as V86Options;
     const e = new V86(options);
+    // Keys reach the guest only while the screen has focus (see VmHandle.setKeyboardCapture).
+    // v86 builds its keyboard adapter during its async init, after the constructor returns, so
+    // this is applied again when the emulator reports it is loaded and ready.
+    setCapture(e, captureOn);
+    e.add_listener('emulator-loaded', () => setCapture(e, captureOn));
+    e.add_listener('emulator-ready', () => setCapture(e, captureOn));
     wire(e);
     return e;
   };
@@ -273,6 +283,14 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       return () => serialListeners.delete(cb);
     },
     bootKind: () => (usedState ? 'snapshot' : 'cold'),
+    setKeyboardCapture(on) {
+      captureOn = on;
+      if (emulator) setCapture(emulator, on);
+    },
+    releaseModifiers() {
+      // Break codes: left Ctrl, left Alt, left Shift, right Shift.
+      emulator?.keyboard_send_scancodes([0x9d, 0xb8, 0xaa, 0xb6]);
+    },
     sendSerial1(text) {
       if (!ready) return;
       need().serial_send_bytes(1, new TextEncoder().encode(text));

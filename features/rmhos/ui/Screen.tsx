@@ -1,22 +1,67 @@
 /**
  * Screen: the `div > (div + canvas)` structure v86 requires, scaled to fit by CSS. A click gives
- * the box keyboard focus, which is when v86's keyboard and mouse adapters start sending input.
+ * the box keyboard focus; while it has focus, keys go to the guest (the page turns v86's keyboard
+ * on at focus and off at blur, because v86 listens on `window`). Ctrl+Alt+Shift+Escape gives the
+ * focus back to the page, so the screen is never a keyboard trap.
  */
 import { forwardRef } from 'react';
+import type { KeyboardEvent, PointerEvent } from 'react';
 
-const Screen = forwardRef<HTMLDivElement, { label: string }>(function Screen({ label }, ref) {
+interface Props {
+  label: string;
+  /** How to release the keyboard; read as the screen's description. */
+  hint: string;
+  hintId: string;
+  onCapture: (on: boolean) => void;
+  onRelease: () => void;
+  /** The guest was used: the home folder may have changed. */
+  onInput: () => void;
+}
+
+const Screen = forwardRef<HTMLDivElement, Props>(function Screen(
+  { label, hint, hintId, onCapture, onRelease, onInput },
+  ref,
+) {
+  const keyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.ctrlKey && e.altKey && e.shiftKey && e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      onRelease();
+      e.currentTarget.blur();
+      return;
+    }
+    onInput();
+  };
+  // A press focuses the screen. In fullscreen it also captures the pointer; Escape (the browser's
+  // own) releases it and leaves fullscreen. Outside fullscreen the pointer is never locked.
+  const press = (e: PointerEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.focus();
+    onInput();
+    if (document.fullscreenElement === el && !document.pointerLockElement)
+      void Promise.resolve(el.requestPointerLock?.()).catch(() => {});
+  };
   return (
-    <div
-      ref={ref}
-      className="rmhos-screen"
-      tabIndex={0}
-      role="application"
-      aria-label={label}
-      onPointerDown={(e) => e.currentTarget.focus()}
-    >
-      <div />
-      <canvas />
-    </div>
+    <>
+      <div
+        ref={ref}
+        className="rmhos-screen"
+        tabIndex={0}
+        role="application"
+        aria-label={label}
+        aria-describedby={hintId}
+        onFocus={() => onCapture(true)}
+        onBlur={() => onCapture(false)}
+        onKeyDownCapture={keyDown}
+        onPointerDown={press}
+      >
+        <div />
+        <canvas />
+      </div>
+      <span id={hintId} className="sr-only">
+        {hint}
+      </span>
+    </>
   );
 });
 

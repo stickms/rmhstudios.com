@@ -26,6 +26,34 @@
   --app-info: #60a5fa;
 }
 
+/* Light: the same roles on a pale ground. */
+.rmhos-app.app-light {
+  --app-bg: #f4f6f8;
+  --app-bg-subtle: #eaeef2;
+  --app-surface: #ffffff;
+  --app-surface-hover: #f0f3f6;
+  --app-surface-active: #e3e8ee;
+  --app-border: #cdd5de;
+  --app-border-bright: #aeb9c6;
+  --app-text: #1b2230;
+  --app-text-muted: #4d596b;
+  --app-text-dim: #6b7585;
+  --app-accent: #0b7a4b;
+  --app-accent-fg: #ffffff;
+  --app-accent-hover: #09663e;
+  --app-success: #0b7a4b;
+  --app-danger: #c62828;
+  --app-warning: #8a5a00;
+  --app-info: #1558b0;
+}
+
+/* The shared primitives (Button, Dialog) read --site-*; inside the app they wear the app palette. */
+.rmhos-app {
+  --site-accent: var(--app-accent);
+  --site-accent-fg: var(--app-accent-fg);
+  --site-accent-hover: var(--app-accent-hover);
+}
+
 .rmhos-app .rmhos-root {
   position: relative;
   width: 100%;
@@ -41,6 +69,42 @@
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
+}
+
+.rmhos-app .rmhos-toolbar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-bg-subtle);
+}
+
+.rmhos-app .rmhos-toolbar-status,
+.rmhos-app .rmhos-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  min-width: 0;
+}
+
+.rmhos-app .rmhos-toolbar-actions {
+  gap: 6px;
+}
+
+/* Icons alone on a phone: every button keeps its aria-label. */
+.rmhos-app .rmhos-toolbar-text {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .rmhos-app .rmhos-toolbar-text {
+    display: inline;
+  }
 }
 
 .rmhos-app .rmhos-notices {

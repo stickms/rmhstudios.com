@@ -1,0 +1,104 @@
+/** About: what rmhOS is built from, and where the files live. Facts: about-facts.ts. */
+import { useTranslation } from 'react-i18next';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  BUILD_SCRIPTS_URL,
+  KERNEL_TARBALL_URL,
+  KERNEL_VERSION,
+  packagesUrl,
+  V86_URL,
+} from './about-facts';
+import { resolveImageManifest } from '../engine/image-manifest';
+import { CDN_BASE } from '@/lib/storage/asset';
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  container: HTMLElement | null;
+}
+
+function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline underline-offset-2 text-(--app-accent) [overflow-wrap:anywhere]"
+    >
+      {children}
+    </a>
+  );
+}
+
+export default function AboutDialog({ open, onOpenChange, container }: Props) {
+  const { t } = useTranslation('c-rmhos');
+  const packages = packagesUrl(resolveImageManifest(CDN_BASE || undefined));
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent container={container} className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{t('about-title', { defaultValue: 'About rmhOS' })}</DialogTitle>
+          <DialogDescription>
+            {t('files-kept', { defaultValue: 'Files are kept in this browser on this device.' })}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 text-sm">
+          <p>
+            {t('about-kernel', {
+              defaultValue:
+                'rmhOS is built on the Linux kernel, licensed under the GNU General Public License, version 2 (GPL-2.0).',
+            })}
+          </p>
+          <ul className="flex flex-col gap-2 ps-5 list-disc">
+            <li>
+              {t('about-kernel-source', {
+                defaultValue: 'Kernel source, version {{version}}:',
+                version: KERNEL_VERSION,
+              })}{' '}
+              <ExternalLink href={KERNEL_TARBALL_URL}>
+                {`linux-${KERNEL_VERSION}.tar.xz`}
+              </ExternalLink>
+            </li>
+            <li>
+              {t('about-build', {
+                defaultValue:
+                  'The kernel configuration and patches are in scripts/rmhos/ in the repository:',
+              })}{' '}
+              <ExternalLink href={BUILD_SCRIPTS_URL}>scripts/rmhos/</ExternalLink>
+            </li>
+            <li>
+              {t('about-userland', {
+                defaultValue:
+                  'The rest of the system is Alpine Linux packages. Every package, with its version, is listed in',
+              })}{' '}
+              <ExternalLink href={packages}>packages.txt</ExternalLink>
+            </li>
+            <li>
+              {t('about-emulator', {
+                defaultValue: 'The emulator is v86 (BSD-2-Clause):',
+              })}{' '}
+              <ExternalLink href={V86_URL}>v86</ExternalLink>
+            </li>
+            <li>
+              {t('about-bios', {
+                defaultValue: 'The PC firmware is SeaBIOS (GNU LGPL, version 3).',
+              })}
+            </li>
+          </ul>
+          <p className="text-(--app-text-muted)">
+            {t('about-keyboard', {
+              defaultValue:
+                'Keys go to rmhOS while its screen has focus. Press Ctrl+Alt+Shift+Escape, or click outside the screen, to use the page again.',
+            })}
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
