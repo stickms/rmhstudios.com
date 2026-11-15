@@ -58,7 +58,8 @@ RUN set -eu; mkdir /out; \
     cp /usr/share/seabios/bios.bin /out/seabios.bin; \
     ls -l /usr/share/seavgabios; \
     cp /usr/share/seavgabios/vgabios-stdvga.bin /out/vgabios.bin; \
-    apk info -v seabios-bin seavgabios-bin | sort > /out/bios-packages.txt
+    apk info -v | grep -E '^(seabios-bin|seavgabios-bin)-[0-9]' | sort > /out/bios-packages.txt; \
+    [ "$(wc -l < /out/bios-packages.txt)" = 2 ]
 
 # -------------------------------------------------------------- rootfs
 FROM base AS rootfs
