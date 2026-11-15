@@ -1,0 +1,56 @@
+/**
+ * What /rmhos shows while no machine image has been published (resolveImageManifest returns
+ * null): a plain panel in the app shell and the About button. It starts nothing: no emulator, no
+ * session request, no tab lock, no home store (so About has no stored copies to list).
+ */
+import { Info } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import AboutDialog from './AboutDialog';
+
+const NO_COPIES = {
+  storedCopies: async () => null,
+  exportCopy: async () => null,
+  removeCopy: async () => {},
+};
+
+export default function ComingSoon() {
+  const { t } = useTranslation('c-rmhos');
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+  useEffect(() => setContainer(rootRef.current?.closest<HTMLElement>('.app-theme') ?? null), []);
+  const [about, setAbout] = useState(false);
+  return (
+    <div className="rmhos-root" ref={rootRef}>
+      <div className="rmhos-toolbar" role="group" aria-label={t('toolbar-label', { defaultValue: 'rmhOS controls' })}>
+        <div className="rmhos-toolbar-status" />
+        <div className="rmhos-toolbar-actions">
+          <Button size="sm" aria-label={t('about', { defaultValue: 'About' })} onClick={() => setAbout(true)}>
+            <Info aria-hidden="true" />
+            <span className="rmhos-toolbar-text">{t('about', { defaultValue: 'About' })}</span>
+          </Button>
+        </div>
+      </div>
+      <div className="rmhos-stage">
+        <div className="rmhos-boot">
+          <div className="rmhos-boot-panel">
+            <h1 className="text-lg font-semibold">
+              {t('coming-soon-title', { defaultValue: 'rmhOS is coming soon' })}
+            </h1>
+            <p className="text-sm text-(--app-text-muted)">
+              {t('coming-soon-body', { defaultValue: 'The machine image has not been published yet.' })}
+            </p>
+          </div>
+        </div>
+      </div>
+      <AboutDialog
+        open={about}
+        onOpenChange={setAbout}
+        container={container}
+        session={NO_COPIES}
+        currentDamaged={false}
+      />
+    </div>
+  );
+}

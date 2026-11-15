@@ -18,6 +18,8 @@
   "boot-starting": "Starting the machine",
   "cancel": "Cancel",
   "capture-hint": "Keys go to rmhOS. Press Ctrl+Alt+Shift+Esc to leave.",
+  "coming-soon-body": "The machine image has not been published yet.",
+  "coming-soon-title": "rmhOS is coming soon",
   "copies-title": "Stored copies",
   "copy-current": "Saved files",
   "copy-damaged": "Damaged copy",

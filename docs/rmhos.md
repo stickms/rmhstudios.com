@@ -10,9 +10,11 @@ section wins over the text under it); this page is the runbook.
 > **State of play.** Networking is **off in production** until two things exist: the egress firewall unit is
 > installed on the VPS (see [The sandbox](#the-sandbox)) **and** `RMHOS_NET_TICKET_SECRET` is set in the production env
 > file. The page itself **cannot boot** until an image has been published and its manifest committed (see
-> [Publish a new image version](#publish-a-new-image-version)). Until then the catalog card says "Coming soon":
-> `features/rmhos/catalog.ts` has `status: 'Coming soon'`, and it must go back to `'Beta'` in the same commit that pins
-> the first published image (regenerate the catalog snapshot with
+> [Publish a new image version](#publish-a-new-image-version)). Until then `PUBLISHED_IMAGE` in
+> `features/rmhos/engine/image-manifest.ts` is `null`, `/rmhos` shows a "rmhOS is coming soon" panel (with About) and
+> fetches nothing, and the catalog card says "Coming soon": `features/rmhos/catalog.ts` has `status: 'Coming soon'`, and
+> it must go to `'Beta'` in the same commit that sets `PUBLISHED_IMAGE`
+> (`features/rmhos/__tests__/publish-state.test.ts` fails if the two disagree; regenerate the catalog snapshot with
 > `pnpm exec vitest run lib/__tests__/catalog-contract.test.ts -u`, and `pnpm docs:site` for the site reference).
 
 ## The three moving parts
@@ -23,7 +25,7 @@ section wins over the text under it); this page is the runbook.
 | The image     | `scripts/rmhos/` (kernel config, patches, rootfs overlay, Dockerfile), published to R2/CDN         | A reproducible kernel + root filesystem + BIOS files + a post-boot snapshot (`state.zst`) so a session starts in about 3 s instead of about 15 to 30 s.                                                                   |
 | The relay hub | `server/rmhos-net/` (one Node process, port 7009, path `/rmhos-net/`), compose service `rmhos-net` | One WebSocket per user carrying Wisp streams to the internet under a policy; DNS over HTTPS (`POST /rmhos-net/dns-query`); `GET /rmhos-net/status`. The only thing in the feature that touches the network.               |
 
-The catalog entry is `features/rmhos/catalog.ts` (id `rmhos`, `authGate: true`, status Beta). The i18n namespace is
+The catalog entry is `features/rmhos/catalog.ts` (id `rmhos`, `authGate: true`, status `Coming soon` until the first image is published, then `Beta`). The i18n namespace is
 `c-rmhos`; its keys are added by hand to every `locales/<lng>/c-rmhos.json` (`pnpm i18n:extract` does not scan
 `features/`, and running it rewrites thousands of locale files; do not).
 
@@ -58,10 +60,12 @@ package list change.
    `rmhos/<version>/` (immutable). It needs the repository secrets `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`,
    `S3_SECRET_ACCESS_KEY` and `S3_BUCKET`; they are given to the publish step only.
 2. Paste the printed manifest values (version, and size and sha256 of `bzImage`, `rootfs.ext4`, `state.zst`,
-   `seabios.bin`, `vgabios.bin`) into `PINNED_IMAGE` in `features/rmhos/engine/image-manifest.ts`.
-3. Commit. Until this commit deploys, the site keeps booting the previous version.
+   `seabios.bin`, `vgabios.bin`) into `PUBLISHED_IMAGE` in `features/rmhos/engine/image-manifest.ts` (it is `null` until the first publish).
+3. In the same commit set `status: 'Beta'` in `features/rmhos/catalog.ts`, then run
+   `pnpm exec vitest run lib/__tests__/catalog-contract.test.ts -u` and `pnpm docs:site`.
+4. Commit. Until this commit deploys, the site keeps booting the previous version.
 
-The page cannot boot at all until an image version has been published and pinned.
+Until an image version has been published and pinned, the page shows "rmhOS is coming soon" and loads nothing from the CDN. The dev image (`DEV_IMAGE`, served from `/rmhos-dev/` when no CDN base is set) is separate and only for local work.
 
 ## Environment variables
 

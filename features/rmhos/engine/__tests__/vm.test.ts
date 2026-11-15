@@ -73,7 +73,7 @@ describe('createVm cancellation', () => {
     const gate = new Promise<void>((r) => (release = r));
     const p = createVm({
       screen: {} as HTMLDivElement,
-      manifest: resolveImageManifest(undefined),
+      manifest: resolveImageManifest(undefined)!,
       net: null,
       signal: ac.signal,
       loader: async () => {
@@ -95,7 +95,7 @@ describe('createVm ticket timing', () => {
     const ac = new AbortController();
     const p = createVm({
       screen: {} as HTMLDivElement,
-      manifest: resolveImageManifest(undefined),
+      manifest: resolveImageManifest(undefined)!,
       net: async () => {
         order.push('net');
         ac.abort();
