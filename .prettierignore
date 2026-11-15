@@ -2966,6 +2966,10 @@ lib/prepaint/generated.ts
 /lib/rmhmusic/api/rmhmusic.learn.cards.server.ts
 /lib/rmhmusic/api/rmhmusic.learn.lesson-complete.server.ts
 /lib/rmhmusic/api/rmhmusic.learn.profile.server.ts
+# Registered endpoint modules: lib/api/route-sources.ts reads `apiRoute('/api/…'` from the source
+# text, and prettier at printWidth 1 splits that call across lines.
+/lib/rmhmusic/api/rmhmusic.songs.server.ts
+/lib/rmhmusic/api/rmhmusic.songs.best.server.ts
 /lib/rmhmusic/learn/cards.server.ts
 /lib/rmhmusic/learn/content/path.ts
 /lib/rmhmusic/learn/mode.ts

@@ -11,7 +11,11 @@ import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
 import type { SongSaveOutcome } from './machine';
 import type { SongRunRecord } from './scoring';
-import { songBestApi, songBestsApi, type SongBest } from './songs.contract';
+import {
+  songBestApi,
+  songBestsApi,
+  type SongBest,
+} from './songs.contract';
 
 export type { SongBest };
 
@@ -22,35 +26,100 @@ export interface SongSaveResult {
 }
 
 export interface SongSaver {
-  save(songId: string, run: SongRunRecord): Promise<SongSaveResult>;
-  bests(): Promise<SongBest[]>;
+  save(
+    songId: string,
+    run: SongRunRecord,
+  ): Promise<SongSaveResult>;
+  bests(): Promise<
+    SongBest[]
+  >;
 }
 
-function failure(err: unknown): SongSaveResult {
-  if (err instanceof HttpError) {
-    if (err.status === 401) return { outcome: 'unauthorized' };
-    if (err.status === 400) return { outcome: 'invalid' };
+function failure(
+  err: unknown,
+): SongSaveResult {
+  if (
+    err instanceof
+    HttpError
+  ) {
+    if (
+      err.status ===
+      401
+    )
+      return {
+        outcome:
+          'unauthorized',
+      };
+    if (
+      err.status ===
+      400
+    )
+      return {
+        outcome:
+          'invalid',
+      };
   }
-  return { outcome: 'failed' };
+  return {
+    outcome:
+      'failed',
+  };
 }
 
 export function createApiSongSaver(): SongSaver {
   return {
-    save: async (songId, run) => {
+    save: async (
+      songId,
+      run,
+    ) => {
       try {
-        const res = await api(songBestApi, { body: { songId, run } });
-        return { outcome: 'saved', bestScore: res.best.bestScore };
+        const res =
+          await api(
+            songBestApi,
+            {
+              body: {
+                songId,
+                run,
+              },
+            },
+          );
+        return {
+          outcome:
+            'saved',
+          bestScore:
+            res
+              .best
+              .bestScore,
+        };
       } catch (err) {
-        return failure(err);
+        return failure(
+          err,
+        );
       }
     },
-    bests: async () => (await api(songBestsApi)).bests,
+    bests:
+      async () =>
+        (
+          await api(
+            songBestsApi,
+          )
+        )
+          .bests,
   };
 }
 
 export function createMemorySongSaver(): SongSaver {
   return {
-    save: () => Promise.resolve({ outcome: 'unsaved' }),
-    bests: () => Promise.resolve([]),
+    save: () =>
+      Promise.resolve(
+        {
+          outcome:
+            'unsaved',
+        },
+      ),
+    bests:
+      () =>
+        Promise.resolve(
+          [],
+        ),
   };
 }

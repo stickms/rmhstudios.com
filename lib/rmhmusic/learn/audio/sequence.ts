@@ -100,7 +100,9 @@ export function playSequence(
    * The gap between one note's start and the next (ms): one for every note, 0 for a chord; or a
    * melody's own gap after each note (`gapMs[i]` from note i to note i + 1), never a chord.
    */
-  gapMs: number | readonly number[],
+  gapMs:
+    | number
+    | readonly number[],
   opts: SequenceOptions = {},
 ): PlayingSequence {
   if (
