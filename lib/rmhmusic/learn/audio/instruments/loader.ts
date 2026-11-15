@@ -95,10 +95,13 @@ export async function loadZone(
   | {
       ok: false;
       reason: FailReason;
+      /** The zone ran past {@link ZONE_TIMEOUT_MS}: the server is taken to be hung. */
+      timedOut?: true;
     }
 > {
   let bytes: ArrayBuffer | null =
     null;
+  let timedOut = false;
   let reason: FailReason =
     'network';
   for (
@@ -175,6 +178,7 @@ export async function loadZone(
       ) {
         reason =
           'network';
+        timedOut = true;
         break;
       }
       reason =
@@ -212,10 +216,16 @@ export async function loadZone(
   if (
     !bytes
   )
-    return {
-      ok: false,
-      reason,
-    };
+    return timedOut
+      ? {
+          ok: false,
+          reason,
+          timedOut: true,
+        }
+      : {
+          ok: false,
+          reason,
+        };
   try {
     return {
       ok: true,
@@ -233,7 +243,14 @@ export async function loadZone(
   }
 }
 
-/** Every zone, {@link CONCURRENCY} at a time; `onZone` hears each as it settles. */
+/**
+ * Every zone, {@link CONCURRENCY} at a time; `onZone` hears each as it settles.
+ *
+ * Once one zone times out the server is taken to be hung: no further zone is started (each
+ * would only wait out its own deadline, so a 15-zone sound took four rounds, about 40 s, to
+ * fail), and every zone not yet started fails as `network`. Zones already in flight run to
+ * their own deadline, so a hung load settles within about one {@link ZONE_TIMEOUT_MS}.
+ */
 export async function loadZones(
   zones: readonly Zone[],
   urlOf: (
@@ -260,11 +277,30 @@ export async function loadZones(
         new Map(),
     };
   let next = 0;
+  let hung = false;
+  const fail =
+    (
+      zone: Zone,
+      reason: FailReason,
+    ) => {
+      result.failures.set(
+        zone.file,
+        reason,
+      );
+      onZone(
+        zone,
+        {
+          ok: false,
+          reason,
+        },
+      );
+    };
   const worker =
     async () => {
       while (
+        !hung &&
         next <
-        zones.length
+          zones.length
       ) {
         const zone =
           zones[
@@ -292,17 +328,13 @@ export async function loadZones(
             },
           );
         } else {
-          result.failures.set(
-            zone.file,
-            r.reason,
-          );
-          onZone(
+          if (
+            r.timedOut
+          )
+            hung = true;
+          fail(
             zone,
-            {
-              ok: false,
-              reason:
-                r.reason,
-            },
+            r.reason,
           );
         }
       }
@@ -319,5 +351,15 @@ export async function loadZones(
       worker,
     ),
   );
+  while (
+    next <
+    zones.length
+  )
+    fail(
+      zones[
+        next++
+      ],
+      'network',
+    );
   return result;
 }
