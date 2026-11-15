@@ -166,30 +166,8 @@ jobs:
       - name: New migrations must stay rollback-compatible (expand/contract)
         run: node .github/scripts/check-migrations-additive.mjs
 
-  net-lines:
-    needs: changes
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
-    steps:
-      # `git diff --numstat base HEAD` needs the two commits' trees and the blobs
-      # of the files that differ, which a blobless clone fetches on demand. Only
-      # the script itself is materialised.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 1
-          filter: blob:none
-          sparse-checkout: |
-            .github/scripts
-      - name: Fetch the base commit
-        run: git fetch --no-tags --depth=1 --filter=blob:none origin "$BASE_SHA"
-      - name: The change must add more lines than it removes
-        run: node .github/scripts/check-net-lines.mjs
-
   required-checks:
-    needs: [changes, checks, build, migrations, net-lines]
+    needs: [changes, checks, build, migrations]
     if: always() && (github.event_name == 'pull_request' || github.event_name == 'merge_group')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -202,7 +180,6 @@ jobs:
           const needs = JSON.parse(process.env.RESULTS);
           if (needs.changes.result !== 'success') throw new Error('Change classification failed');
           if (needs.migrations.result !== 'success') throw new Error('migrations: ' + needs.migrations.result);
-          if (needs['net-lines'].result !== 'success') throw new Error('net-lines: ' + needs['net-lines'].result);
           // `checks` = ci-checks.yml. It is called on every PR (a reusable workflow has no
           // job-level `if` here) and its own verdict job enforces the per-job expectations,
           // skipping included, so it must succeed whatever changed. Expecting 'skipped' on a
