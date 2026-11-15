@@ -1559,5 +1559,9 @@
   "leaderboard-near-you": "आपकी रैंक के आसपास",
   "leaderboard-near-you-hint": "आपकी रैंक से ठीक ऊपर और नीचे के खिलाड़ी।",
   "quest-to-go_other": "{{count}} बाकी",
-  "quest-to-go_one": "{{count}} बाकी"
+  "quest-to-go_one": "{{count}} बाकी",
+  "ai-working-feed": "आपके सवाल के लिए सार्वजनिक पोस्ट खोजे जा रहे हैं और उनमें से 60 तक पढ़े जा रहे हैं…",
+  "ai-read-posts_other": "{{count}} पोस्ट के आधार पर लिखा गया",
+  "leaderboard-find-people": "लोगों को खोजें",
+  "ai-read-posts_one": "{{count}} पोस्ट के आधार पर लिखा गया"
 }

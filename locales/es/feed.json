@@ -1605,5 +1605,10 @@
   "leaderboard-near-you-hint": "Los jugadores justo por encima y por debajo de tu puesto.",
   "quest-to-go_other": "Faltan {{count}}",
   "quest-to-go_many": "Faltan {{count}}",
-  "quest-to-go_one": "Faltan {{count}}"
+  "quest-to-go_one": "Faltan {{count}}",
+  "ai-working-feed": "Buscando publicaciones públicas sobre tu pregunta y leyendo hasta 60…",
+  "ai-read-posts_other": "Escrito a partir de {{count}} publicaciones",
+  "leaderboard-find-people": "Buscar personas",
+  "ai-read-posts_many": "Escrito a partir de {{count}} publicaciones",
+  "ai-read-posts_one": "Escrito a partir de {{count}} publicaciones"
 }

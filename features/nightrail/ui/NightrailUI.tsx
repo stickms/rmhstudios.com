@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
+import { SessionHighlight } from '@/components/games/SessionHighlight';
 import { useTranslation } from 'react-i18next';
 import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useQuitGame } from '@/hooks/useQuitGame';
@@ -468,6 +469,15 @@ export function NightrailUI({
     return (
       <div className={SCREEN}>
         <ResultMomentSlot moment={scoreMoment} gameName="Nightrail" onDismiss={clearScoreMoment} />
+        <SessionHighlight
+          className="w-full max-w-md text-white"
+          peak={
+            runStats.bestCombo > 0
+              ? { label: t('best-combo', { defaultValue: 'Best combo' }), value: Math.round(runStats.bestCombo).toLocaleString() }
+              : { label: t('best-multiplier', { defaultValue: 'Best multiplier' }), value: `×${runStats.bestMultiplier.toFixed(1)}` }
+          }
+          moment={scoreMoment}
+        />
         <div className="w-full max-w-md space-y-4">
           <div className="text-center">
             <h2 className="text-3xl font-black tracking-tight text-rose-500 sm:text-4xl">
@@ -546,6 +556,15 @@ export function NightrailUI({
     return (
       <div className={SCREEN}>
         <ResultMomentSlot moment={scoreMoment} gameName="Nightrail" onDismiss={clearScoreMoment} />
+        <SessionHighlight
+          className="w-full max-w-md text-white"
+          peak={
+            runStats.bestCombo > 0
+              ? { label: t('best-combo', { defaultValue: 'Best combo' }), value: Math.round(runStats.bestCombo).toLocaleString() }
+              : { label: t('best-multiplier', { defaultValue: 'Best multiplier' }), value: `×${runStats.bestMultiplier.toFixed(1)}` }
+          }
+          moment={scoreMoment}
+        />
         <div className="w-full max-w-md space-y-4">
           <div className="text-center">
             <div className={STAT_LABEL}>

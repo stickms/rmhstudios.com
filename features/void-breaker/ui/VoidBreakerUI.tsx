@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
+import { SessionHighlight } from '@/components/games/SessionHighlight';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -671,6 +672,16 @@ export function VoidBreakerUI({
               {t("game-over", { defaultValue: "GAME OVER" })}
             </h2>
           </div>
+
+          <SessionHighlight
+            className="text-[#e8e2c8]"
+            peak={
+              runStats.maxCombo > 1
+                ? { label: t("stat-best-combo", { defaultValue: "Best Combo" }), value: `${runStats.maxCombo}x` }
+                : { label: t("stat-peak-multi", { defaultValue: "Peak Multi" }), value: `${runStats.maxMultiplier}x` }
+            }
+            moment={scoreMoment}
+          />
 
           <div className="bg-[#1a1a24] border border-[#c9a227]/30 rounded-lg p-5 space-y-3">
             <div className="text-center">

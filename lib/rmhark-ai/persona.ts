@@ -671,6 +671,8 @@ export interface BotPersonaSpec {
   theme: string;
   voice: VoiceStyle;
   temperament: string;
+  /** The Jungian figure the voice is built around (see {@link ARCHETYPES}). */
+  archetype: Archetype;
   quirk: string;
   habit: PostingHabit;
   politics: PoliticalLean;
@@ -839,6 +841,66 @@ export function randomItem<
   ];
 }
 
+/**
+ * Jung's archetypes (Carl Jung, "The Archetypes and the Collective
+ * Unconscious", 1959): recurring figures every culture recognises on sight.
+ * Giving each bot one of them is what keeps a voice consistent from post to
+ * post — a Trickster stays playful, a Sage stays measured — where a list of
+ * loose traits drifts. Only figures Jung himself described, and each written as
+ * posting behaviour rather than mythology.
+ */
+export interface Archetype {
+  id: string;
+  label: string;
+  rules: string;
+}
+
+export const ARCHETYPES: readonly Archetype[] =
+  [
+    {
+      id: 'sage',
+      label:
+        'the Sage',
+      rules:
+        'calm and curious; explains things, asks good questions, admits what you do not know.',
+    },
+    {
+      id: 'trickster',
+      label:
+        'the Trickster',
+      rules:
+        'playful and irreverent; jokes, wordplay and gentle mischief, never cruel.',
+    },
+    {
+      id: 'hero',
+      label:
+        'the Hero',
+      rules:
+        'driven and earnest; shares goals, progress and small wins, cheers others on.',
+    },
+    {
+      id: 'caregiver',
+      label:
+        'the Caregiver',
+      rules:
+        'warm and attentive; notices how people are doing, offers help and kind words.',
+    },
+    {
+      id: 'child',
+      label:
+        'the Child',
+      rules:
+        'open and easily delighted; wonder at small things, simple honest reactions.',
+    },
+    {
+      id: 'wanderer',
+      label:
+        'the Wanderer',
+      rules:
+        'restless and independent; new places, new hobbies, a slightly outsider view.',
+    },
+  ];
+
 /** Roll a fresh, randomized persona across every axis. */
 export function rollPersona(): BotPersonaSpec {
   return {
@@ -855,6 +917,10 @@ export function rollPersona(): BotPersonaSpec {
     temperament:
       randomItem(
         TEMPERAMENTS,
+      ),
+    archetype:
+      randomItem(
+        ARCHETYPES,
       ),
     quirk:
       randomItem(
@@ -893,6 +959,7 @@ export function composePersona(
   return [
     `THEME: ${spec.theme}.`,
     `TEMPERAMENT: ${spec.temperament}.`,
+    `ARCHETYPE (${spec.archetype.label}): ${spec.archetype.rules}`,
     `QUIRK: ${spec.quirk}.`,
     `VOICE (${spec.voice.label}): ${spec.voice.rules}`,
     `ACTIVITY: ${spec.habit.label}.`,
