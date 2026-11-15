@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/contract/client';
+import { notifyFollowChanged } from '@/lib/discovery/margin-query';
 import { exploreApi, tipsLeaderboardApi } from '@/lib/discovery/explore.contract';
 import { RMHarkCard } from './RMHarkCard';
 import { WhyTrending } from '@/components/discovery/WhyTrending';
@@ -482,6 +483,7 @@ function FollowButton({ userId }: { userId: string }) {
         setBusy(true);
         try {
           await api(toggleFollowApi, { params: { id: userId } });
+          notifyFollowChanged();
         } catch {
           setFollowing(was);
         } finally {
