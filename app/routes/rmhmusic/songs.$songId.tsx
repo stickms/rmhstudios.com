@@ -14,17 +14,37 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { SongScreen } from '@/components/rmhmusic/learn/songs/SongScreen';
 import { ArrivalSuspense } from '@/components/ui/arrive';
 
-export const Route = createFileRoute('/rmhmusic/songs/$songId')({
-  head: () => noindexHead('RMHMusic Song'),
-  component: SongRoute,
-});
+export const Route =
+  createFileRoute(
+    '/rmhmusic/songs/$songId',
+  )(
+    {
+      head: () =>
+        noindexHead(
+          'RMHMusic Song',
+        ),
+      component:
+        SongRoute,
+    },
+  );
 
 function SongRoute() {
-  const { songId } = Route.useParams();
+  const {
+    songId,
+  } =
+    Route.useParams();
   return (
     <GameErrorBoundary gameName="RMH Music">
-      <ArrivalSuspense fallback={<GameLoadingFallback />}>
-        <SongScreen songId={songId} />
+      <ArrivalSuspense
+        fallback={
+          <GameLoadingFallback />
+        }
+      >
+        <SongScreen
+          songId={
+            songId
+          }
+        />
       </ArrivalSuspense>
     </GameErrorBoundary>
   );

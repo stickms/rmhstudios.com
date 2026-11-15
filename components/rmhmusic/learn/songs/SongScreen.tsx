@@ -24,26 +24,48 @@
  * (`.rmm-score`), the two text lines under it, the controls row, and the input region. A polite live
  * region says the note to play (Wait for me) or the bar (Play along), once per change.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useArrival } from '@/components/ui/arrive';
-import { createMetronome, type Metronome } from '@/lib/rmhmusic/learn/audio/metronome';
+import {
+  createMetronome,
+  type Metronome,
+} from '@/lib/rmhmusic/learn/audio/metronome';
 import { resumeAudio } from '@/lib/rmhmusic/learn/audio/resume';
-import { playSequence, type PlayingSequence } from '@/lib/rmhmusic/learn/audio/sequence';
-import { onSoundChange, soundStatus, wakeSound } from '@/lib/rmhmusic/learn/audio/voice';
+import {
+  playSequence,
+  type PlayingSequence,
+} from '@/lib/rmhmusic/learn/audio/sequence';
+import {
+  onSoundChange,
+  soundStatus,
+  wakeSound,
+} from '@/lib/rmhmusic/learn/audio/voice';
 import { beginSoundSession } from '@/lib/rmhmusic/learn/audio/instruments/engine';
 import { resolveSound } from '@/lib/rmhmusic/learn/audio/instruments/catalog';
 import type { InstrumentId } from '@/lib/rmhmusic/learn/audio/instruments/types';
-import { ECHO_TAIL_MS } from '@/lib/rmhmusic/learn/input/echo-window';
+import { setMicReattack } from '@/lib/rmhmusic/learn/input/mic';
 import { watchAway } from '@/lib/rmhmusic/learn/input/away-watch';
 import type { LearnInput } from '@/lib/rmhmusic/learn/schemas';
 import { effectiveLatencyMs } from '@/lib/rmhmusic/learn/scoring/timing';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { songById } from '@/lib/rmhmusic/learn/songs/catalog';
+import {
+  inputBlockedUntil,
+  takesNote,
+  type Hearing,
+} from '@/lib/rmhmusic/learn/songs/hear-gate';
 import {
   createSongMachine,
   cursorOf,
@@ -52,175 +74,655 @@ import {
   type SongEffect,
   type SongState,
 } from '@/lib/rmhmusic/learn/songs/machine';
-import { createApiSongSaver, type SongBest, type SongSaver } from '@/lib/rmhmusic/learn/songs/saver';
-import { notesOf, phraseAt, songBeats, soundingPitch, spelledName, type Song, type SongVersion } from '@/lib/rmhmusic/learn/songs/score';
+import {
+  createApiSongSaver,
+  type SongBest,
+  type SongSaver,
+} from '@/lib/rmhmusic/learn/songs/saver';
+import {
+  notesOf,
+  phraseAt,
+  songBeats,
+  soundingPitch,
+  spelledName,
+  type Song,
+  type SongVersion,
+} from '@/lib/rmhmusic/learn/songs/score';
 import type { SongMode } from '@/lib/rmhmusic/learn/songs/scoring';
 import { getAudioContext } from '@/lib/shared/platform';
-import { PRIMARY_BUTTON, SECONDARY_BUTTON, TEXT_BUTTON } from '../buttons';
+import {
+  PRIMARY_BUTTON,
+  SECONDARY_BUTTON,
+  TEXT_BUTTON,
+} from '../buttons';
 import { InputSetup } from '../InputSetup';
 import { DeviceRegion } from '../LessonParts';
 import { Shell } from '../LessonScreen';
 import { Notehead } from '../Notehead';
 import { OnScreenKeyboard } from '../OnScreenKeyboard';
 import { useMachine } from '../useMachine';
-import { useInputPhases, useInputRelease, useLessonInputStart, useNoteEvents, useNoteSound } from '../useLearnInput';
+import {
+  useInputPhases,
+  useInputRelease,
+  useLessonInputStart,
+  useNoteEvents,
+  useNoteSound,
+} from '../useLearnInput';
 import { ScoreView } from './ScoreView';
+import { composerName } from './song-text';
 
-const TABS_ID = 'rmm-song';
+const TABS_ID =
+  'rmm-song';
+const LOCKED_ID =
+  'rmm-song-locked';
+/** Wait for me offers "Skip this note" after this long on one note (ms). */
+export const SKIP_AFTER_MS = 6000;
 /** Slower plays at this share of the song's tempo. */
-export const SLOW_TEMPO = 2 / 3;
+export const SLOW_TEMPO =
+  2 /
+  3;
 
-type T = ReturnType<typeof useTranslation>['t'];
+type T =
+  ReturnType<
+    typeof useTranslation
+  >['t'];
 
-export function SongScreen({ songId }: { songId: string }) {
-  const { t } = useTranslation('c-rmhmusic');
-  const song = songById(songId);
-  const status = useLearnStore((s) => s.status);
-  const error = useLearnStore((s) => s.error);
-  const profile = useLearnStore((s) => s.profile);
-  const [mode, setMode] = useState<SongMode>('wait');
-  const [slow, setSlow] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [setupOpen, setSetupOpen] = useState(false);
-  const setupButton = useRef<HTMLButtonElement>(null);
-  const [bests, setBests] = useState<SongBest[] | null>(null);
-  const saver = useMemo<SongSaver>(() => createApiSongSaver(), []);
+export function SongScreen({
+  songId,
+}: {
+  songId: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhmusic',
+    );
+  const song =
+    songById(
+      songId,
+    );
+  const status =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s.status,
+    );
+  const error =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s.error,
+    );
+  const profile =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s.profile,
+    );
+  const [
+    mode,
+    setMode,
+  ] =
+    useState<SongMode>(
+      'wait',
+    );
+  const [
+    slow,
+    setSlow,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    running,
+    setRunning,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    setupOpen,
+    setSetupOpen,
+  ] =
+    useState(
+      false,
+    );
+  const setupButton =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const [
+    bests,
+    setBests,
+  ] =
+    useState<
+      | SongBest[]
+      | null
+    >(
+      null,
+    );
+  const saver =
+    useMemo<SongSaver>(
+      () =>
+        createApiSongSaver(),
+      [],
+    );
 
   useInputRelease();
-  useLessonInputStart({ mic: true });
+  useLessonInputStart(
+    {
+      mic: true,
+    },
+  );
+  // A song repeats notes: the microphone starts a held pitch again when it is struck again, on
+  // this screen only (the other lessons count a try per note-on).
+  useEffect(() => {
+    setMicReattack(
+      true,
+    );
+    return () =>
+      setMicReattack(
+        false,
+      );
+  }, []);
 
   useEffect(() => {
-    void useLearnStore.getState().load();
+    void useLearnStore
+      .getState()
+      .load();
   }, []);
   useEffect(() => {
     let live = true;
     saver
       .bests()
-      .then((b) => live && setBests(b))
-      .catch(() => live && setBests([]));
+      .then(
+        (
+          b,
+        ) =>
+          live &&
+          setBests(
+            b,
+          ),
+      )
+      .catch(
+        () =>
+          live &&
+          setBests(
+            [],
+          ),
+      );
     return () => {
       live = false;
     };
-  }, [saver]);
+  }, [
+    saver,
+  ]);
 
-  const ready = status === 'ready' && !!profile;
-  const loading = !ready && status !== 'error';
-  const arrival = useArrival(!loading);
-  const version: SongVersion = profile?.instrument === 'guitar' ? 'guitar' : 'piano';
-  const sound = profile ? resolveSound(profile) : null;
+  const ready =
+    status ===
+      'ready' &&
+    !!profile;
+  const loading =
+    !ready &&
+    status !==
+      'error';
+  const arrival =
+    useArrival(
+      !loading,
+    );
+  const version: SongVersion =
+    profile?.instrument ===
+    'guitar'
+      ? 'guitar'
+      : 'piano';
+  const sound =
+    profile
+      ? resolveSound(
+          profile,
+        )
+      : null;
 
   // One sound session for the page, before anything can sound (as in a lesson).
   useLayoutEffect(() => {
-    if (!sound) return;
-    return beginSoundSession(sound);
-  }, [sound]);
-  const voicing = useMemo(() => (sound ? { instrument: sound } : undefined), [sound]);
-  useNoteSound(!setupOpen, voicing);
+    if (
+      !sound
+    )
+      return;
+    return beginSoundSession(
+      sound,
+    );
+  }, [
+    sound,
+  ]);
+  const voicing =
+    useMemo(
+      () =>
+        sound
+          ? {
+              instrument:
+                sound,
+            }
+          : undefined,
+      [
+        sound,
+      ],
+    );
+  useNoteSound(
+    !setupOpen,
+    voicing,
+  );
 
-  if (!song) {
+  if (
+    !song
+  ) {
     return (
-      <Shell title={t('song-missing-title', { defaultValue: 'Song not found' })} back={{ to: '/rmhmusic/songs', label: t('song-back', { defaultValue: 'All songs' }) }}>
+      <Shell
+        title={t(
+          'song-missing-title',
+          {
+            defaultValue:
+              'Song not found',
+          },
+        )}
+        back={{
+          to: '/rmhmusic/songs',
+          label:
+            t(
+              'song-back',
+              {
+                defaultValue:
+                  'All songs',
+              },
+            ),
+        }}
+      >
         <p className="text-app-text">
-          {t('song-missing', { defaultValue: "This song isn't in the songbook." })}
+          {t(
+            'song-missing',
+            {
+              defaultValue:
+                "This song isn't in the songbook.",
+            },
+          )}
         </p>
-        <Link to="/rmhmusic/songs" className={TEXT_BUTTON}>
-          {t('song-choose', { defaultValue: 'Choose another song' })}
+        <Link
+          to="/rmhmusic/songs"
+          className={
+            TEXT_BUTTON
+          }
+        >
+          {t(
+            'song-choose',
+            {
+              defaultValue:
+                'Choose another song',
+            },
+          )}
         </Link>
       </Shell>
     );
   }
 
-  const bestOf = (m: SongMode) => bests?.find((b) => b.songId === song.id && b.mode === m)?.bestScore ?? null;
-  const best = bests === null ? undefined : bestOf(mode);
+  const bestOf =
+    (
+      m: SongMode,
+    ) =>
+      bests?.find(
+        (
+          b,
+        ) =>
+          b.songId ===
+            song.id &&
+          b.mode ===
+            m,
+      )
+        ?.bestScore ??
+      null;
+  const best =
+    bests ===
+    null
+      ? undefined
+      : bestOf(
+          mode,
+        );
 
   let body: ReactNode;
-  if (status === 'error') {
-    body = (
-      <div role="alert" className={`rmm-sheet space-y-3 p-4 ${arrival ?? ''}`}>
-        <p className="text-app-text">
-          {error === 'unauthorized'
-            ? t('error-signed-out', { defaultValue: 'Your session ended. Sign in again to continue.' })
-            : t('sprint-load-failed', { defaultValue: "Couldn't load your settings." })}
-        </p>
-        {error === 'unauthorized' ? (
-          <Link to="/login" search={{ callbackURL: `/rmhmusic/songs/${song.id}` }} className={PRIMARY_BUTTON}>
-            {t('sign-in', { defaultValue: 'Sign in' })}
-          </Link>
-        ) : (
-          <button type="button" onClick={() => void useLearnStore.getState().load()} className={PRIMARY_BUTTON}>
-            {t('retry', { defaultValue: 'Try again' })}
-          </button>
-        )}
-      </div>
-    );
-  } else {
-    body = (
-      <div className="space-y-4">
-        <p className="min-h-6 text-sm leading-6 text-app-text-muted">{song.composer}</p>
-        <Tabs
-          idBase={TABS_ID}
-          tabs={[
-            { id: 'wait', label: t('song-mode-wait', { defaultValue: 'Wait for me' }), disabled: running || loading },
-            { id: 'play', label: t('song-mode-play', { defaultValue: 'Play along' }), disabled: running || loading },
-          ]}
-          value={mode}
-          onChange={(id) => setMode(id === 'play' ? 'play' : 'wait')}
-          aria-label={t('song-modes', { defaultValue: 'How to play' })}
-        />
-        <div role="tabpanel" id={`${TABS_ID}-panel-${mode}`} aria-labelledby={`${TABS_ID}-tab-${mode}`} className={arrival}>
-          {ready && profile && sound ? (
-            <SongRun
-              key={`${mode}:${version}`}
-              song={song}
-              version={version}
-              mode={mode}
-              input={profile.input}
-              latencyMs={effectiveLatencyMs(profile.latencyMs)}
-              sound={sound}
-              slow={slow}
-              onSlow={setSlow}
-              paused={setupOpen}
-              onRunning={setRunning}
-              best={best}
-              saver={saver}
-              onBest={(score) =>
-                setBests((prev) => [
-                  ...(prev ?? []).filter((b) => !(b.songId === song.id && b.mode === mode)),
-                  { songId: song.id, mode, bestScore: score },
-                ])
+  if (
+    status ===
+    'error'
+  ) {
+    body =
+      (
+        <div
+          role="alert"
+          className={`rmm-sheet space-y-3 p-4 ${arrival ?? ''}`}
+        >
+          <p className="text-app-text">
+            {error ===
+            'unauthorized'
+              ? t(
+                  'error-signed-out',
+                  {
+                    defaultValue:
+                      'Your session ended. Sign in again to continue.',
+                  },
+                )
+              : t(
+                  'sprint-load-failed',
+                  {
+                    defaultValue:
+                      "Couldn't load your settings.",
+                  },
+                )}
+          </p>
+          {error ===
+          'unauthorized' ? (
+            <Link
+              to="/login"
+              search={{
+                callbackURL: `/rmhmusic/songs/${song.id}`,
+              }}
+              className={
+                PRIMARY_BUTTON
               }
-            />
+            >
+              {t(
+                'sign-in',
+                {
+                  defaultValue:
+                    'Sign in',
+                },
+              )}
+            </Link>
           ) : (
-            <RunSkeleton song={song} />
+            <button
+              type="button"
+              onClick={() =>
+                void useLearnStore
+                  .getState()
+                  .load()
+              }
+              className={
+                PRIMARY_BUTTON
+              }
+            >
+              {t(
+                'retry',
+                {
+                  defaultValue:
+                    'Try again',
+                },
+              )}
+            </button>
           )}
         </div>
-      </div>
-    );
+      );
+  } else {
+    body =
+      (
+        <div className="space-y-4">
+          <p className="min-h-6 text-sm leading-6 text-app-text-muted">
+            {composerName(
+              t,
+              song.composer,
+            )}
+          </p>
+          <p
+            id={
+              LOCKED_ID
+            }
+            className="sr-only"
+          >
+            {running
+              ? t(
+                  'song-locked',
+                  {
+                    defaultValue:
+                      'Stop the run to change how you play or your input.',
+                  },
+                )
+              : ''}
+          </p>
+          <Tabs
+            idBase={
+              TABS_ID
+            }
+            tabs={[
+              {
+                id: 'wait',
+                label:
+                  t(
+                    'song-mode-wait',
+                    {
+                      defaultValue:
+                        'Wait for me',
+                    },
+                  ),
+                disabled:
+                  running ||
+                  loading,
+              },
+              {
+                id: 'play',
+                label:
+                  t(
+                    'song-mode-play',
+                    {
+                      defaultValue:
+                        'Play along',
+                    },
+                  ),
+                disabled:
+                  running ||
+                  loading,
+              },
+            ]}
+            value={
+              mode
+            }
+            onChange={(
+              id,
+            ) =>
+              setMode(
+                id ===
+                  'play'
+                  ? 'play'
+                  : 'wait',
+              )
+            }
+            aria-label={t(
+              'song-modes',
+              {
+                defaultValue:
+                  'How to play',
+              },
+            )}
+          />
+          <div
+            role="tabpanel"
+            id={`${TABS_ID}-panel-${mode}`}
+            aria-labelledby={`${TABS_ID}-tab-${mode}`}
+            className={
+              arrival
+            }
+          >
+            {ready &&
+            profile &&
+            sound ? (
+              <SongRun
+                key={`${mode}:${version}`}
+                song={
+                  song
+                }
+                version={
+                  version
+                }
+                mode={
+                  mode
+                }
+                input={
+                  profile.input
+                }
+                latencyMs={effectiveLatencyMs(
+                  profile.latencyMs,
+                )}
+                calibrated={
+                  Number.isFinite(
+                    profile.latencyMs,
+                  ) &&
+                  profile.latencyMs !==
+                    0
+                }
+                sound={
+                  sound
+                }
+                slow={
+                  slow
+                }
+                onSlow={
+                  setSlow
+                }
+                paused={
+                  setupOpen
+                }
+                onRunning={
+                  setRunning
+                }
+                best={
+                  best
+                }
+                saver={
+                  saver
+                }
+                onBest={(
+                  score,
+                ) =>
+                  setBests(
+                    (
+                      prev,
+                    ) => [
+                      ...(
+                        prev ??
+                        []
+                      ).filter(
+                        (
+                          b,
+                        ) =>
+                          !(
+                            b.songId ===
+                              song.id &&
+                            b.mode ===
+                              mode
+                          ),
+                      ),
+                      {
+                        songId:
+                          song.id,
+                        mode,
+                        bestScore:
+                          score,
+                      },
+                    ],
+                  )
+                }
+              />
+            ) : (
+              <RunSkeleton
+                song={
+                  song
+                }
+              />
+            )}
+          </div>
+        </div>
+      );
   }
 
   return (
     <Shell
-      title={song.title}
-      busy={loading}
-      back={{ to: '/rmhmusic/songs', label: t('song-back', { defaultValue: 'All songs' }) }}
+      title={
+        song.title
+      }
+      busy={
+        loading
+      }
+      back={{
+        to: '/rmhmusic/songs',
+        label:
+          t(
+            'song-back',
+            {
+              defaultValue:
+                'All songs',
+            },
+          ),
+      }}
       action={
         <button
-          ref={setupButton}
+          ref={
+            setupButton
+          }
           type="button"
-          disabled={loading || running}
-          onClick={() => setSetupOpen(true)}
-          aria-label={t('change-input', { defaultValue: 'Change input' })}
+          disabled={
+            loading ||
+            running
+          }
+          aria-describedby={
+            running
+              ? LOCKED_ID
+              : undefined
+          }
+          onClick={() =>
+            setSetupOpen(
+              true,
+            )
+          }
+          aria-label={t(
+            'change-input',
+            {
+              defaultValue:
+                'Change input',
+            },
+          )}
           className={`${SECONDARY_BUTTON} min-w-11 max-[399px]:px-0`}
         >
-          <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span aria-hidden="true" className="max-[399px]:hidden">
-            {t('change-input', { defaultValue: 'Change input' })}
+          <SlidersHorizontal
+            className="h-4 w-4 shrink-0"
+            aria-hidden="true"
+          />
+          <span
+            aria-hidden="true"
+            className="max-[399px]:hidden"
+          >
+            {t(
+              'change-input',
+              {
+                defaultValue:
+                  'Change input',
+              },
+            )}
           </span>
         </button>
       }
     >
-      {body}
-      <InputSetup open={setupOpen} onOpenChange={setSetupOpen} returnFocus={setupButton} />
+      {
+        body
+      }
+      <InputSetup
+        open={
+          setupOpen
+        }
+        onOpenChange={
+          setSetupOpen
+        }
+        returnFocus={
+          setupButton
+        }
+      />
     </Shell>
   );
 }
@@ -236,7 +738,8 @@ function RunFrame({
 }: {
   score: ReactNode;
   line: string;
-  sub: string;
+  /** The second line: a sentence, or Wait for me's "Skip this note". */
+  sub: ReactNode;
   controls: ReactNode;
   answers: ReactNode;
   said: string;
@@ -244,37 +747,81 @@ function RunFrame({
   return (
     <div className="space-y-4">
       <section className="rmm-sheet space-y-2 p-3 sm:p-5">
-        {score}
+        {
+          score
+        }
         {/* Keyed by their text: a changed line is a new node, never the old one re-laid. */}
-        <p key={`line:${line}`} className="min-h-12 text-center text-sm leading-6 text-app-text">
-          {line}
+        <p
+          key={`line:${line}`}
+          className="min-h-12 text-center text-sm leading-6 text-app-text"
+        >
+          {
+            line
+          }
         </p>
-        <p key={`sub:${sub}`} className="min-h-12 text-center text-sm leading-6 text-app-text-muted sm:min-h-6">
-          {sub}
-        </p>
-        <div className="flex h-11 items-center justify-center gap-3">{controls}</div>
-        <p role="status" className="sr-only">
-          {said}
+        {/* Two lines tall at every width: room for a wrapped sentence or the 44px Skip button. */}
+        <div
+          key={
+            typeof sub ===
+            'string'
+              ? `sub:${sub}`
+              : 'sub:control'
+          }
+          className="flex min-h-12 items-center justify-center text-center text-sm leading-6 text-app-text-muted"
+        >
+          {
+            sub
+          }
+        </div>
+        <div className="flex h-11 items-center justify-center gap-3">
+          {
+            controls
+          }
+        </div>
+        <p
+          role="status"
+          className="sr-only"
+        >
+          {
+            said
+          }
         </p>
       </section>
-      <div className="rmm-input-region">{answers}</div>
+      <div className="rmm-input-region">
+        {
+          answers
+        }
+      </div>
     </div>
   );
 }
 
-function RunSkeleton({ song }: { song: Song }) {
+function RunSkeleton({
+  song,
+}: {
+  song: Song;
+}) {
   return (
     <div aria-hidden="true">
       <RunFrame
         score={
-          <div className="rmm-score" data-song={song.id}>
+          <div
+            className="rmm-score"
+            data-song={
+              song.id
+            }
+          >
             <div className="app-skeleton h-full w-full" />
           </div>
         }
         line=""
         sub=""
-        controls={<div className="app-skeleton h-11 w-48" />}
-        answers={<div className="app-skeleton h-full w-full" />}
+        controls={
+          <div className="app-skeleton h-11 w-48" />
+        }
+        answers={
+          <div className="app-skeleton h-full w-full" />
+        }
         said=""
       />
     </div>
@@ -287,6 +834,7 @@ function SongRun({
   mode,
   input,
   latencyMs,
+  calibrated,
   sound,
   slow,
   onSlow,
@@ -301,138 +849,589 @@ function SongRun({
   mode: SongMode;
   input: LearnInput;
   latencyMs: number;
+  /** The learner measured their latency (it holds that input's delay). */
+  calibrated: boolean;
   sound: InstrumentId;
   slow: boolean;
-  onSlow: (slow: boolean) => void;
+  onSlow: (
+    slow: boolean,
+  ) => void;
   paused: boolean;
-  onRunning: (running: boolean) => void;
+  onRunning: (
+    running: boolean,
+  ) => void;
   /** This mode's best: undefined while loading, null when there is none. */
-  best: number | null | undefined;
+  best:
+    | number
+    | null
+    | undefined;
   saver: SongSaver;
-  onBest: (score: number) => void;
+  onBest: (
+    score: number,
+  ) => void;
 }) {
-  const { t } = useTranslation('c-rmhmusic');
-  const [state, send, getState] = useMachine(createSongMachine({ song, version, mode }));
-  const phases = useInputPhases();
-  const notes = useMemo(() => notesOf(song), [song]);
-  const bpm = Math.round(song.bpm * (slow ? SLOW_TEMPO : 1));
-  const beatMs = 60_000 / bpm;
-  const metronome = useRef<Metronome | null>(null);
-  const hearing = useRef<{ seq: PlayingSequence; until: number; timer: ReturnType<typeof setTimeout> } | null>(null);
-  const [hearingNow, setHearingNow] = useState(false);
-  const [noSound, setNoSound] = useState(false);
-  const mounted = useRef(true);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhmusic',
+    );
+  const [
+    state,
+    send,
+    getState,
+  ] =
+    useMachine(
+      createSongMachine(
+        {
+          song,
+          version,
+          mode,
+        },
+      ),
+    );
+  const phases =
+    useInputPhases();
+  const notes =
+    useMemo(
+      () =>
+        notesOf(
+          song,
+        ),
+      [
+        song,
+      ],
+    );
+  const needsBlackKeys =
+    notes.some(
+      (
+        n,
+      ) =>
+        n.alter !==
+        0,
+    );
+  const bpm =
+    Math.round(
+      song.bpm *
+        (slow
+          ? SLOW_TEMPO
+          : 1),
+    );
+  const beatMs =
+    60_000 /
+    bpm;
+  const metronome =
+    useRef<Metronome | null>(
+      null,
+    );
+  const hearing =
+    useRef<{
+      seq: PlayingSequence;
+      timer: ReturnType<
+        typeof setTimeout
+      >;
+    } | null>(
+      null,
+    );
+  /** The last phrase heard, kept after it ends: the note gate and Start's wait read it. */
+  const heard =
+    useRef<Hearing | null>(
+      null,
+    );
+  const [
+    hearingNow,
+    setHearingNow,
+  ] =
+    useState(
+      false,
+    );
+  /** Start waits for the input's echo tail after a phrase (the microphone only). */
+  const [
+    startHeld,
+    setStartHeld,
+  ] =
+    useState(
+      false,
+    );
+  const holdTimer =
+    useRef<
+      | ReturnType<
+          typeof setTimeout
+        >
+      | undefined
+    >(
+      undefined,
+    );
+  const [
+    noSound,
+    setNoSound,
+  ] =
+    useState(
+      false,
+    );
+  const mounted =
+    useRef(
+      true,
+    );
 
-  const stopHearing = useCallback(() => {
-    const h = hearing.current;
-    if (!h) return;
-    h.seq.cancel();
-    clearTimeout(h.timer);
-    hearing.current = null;
-    setHearingNow(false);
-  }, []);
+  /** The phrase has stopped (cancelled, or at its end): Start waits out the mic's echo tail. */
+  const endHearing =
+    useCallback(
+      (
+        cancelled: boolean,
+      ) => {
+        const h =
+          hearing.current;
+        if (
+          !h
+        )
+          return;
+        if (
+          cancelled
+        )
+          h.seq.cancel();
+        clearTimeout(
+          h.timer,
+        );
+        hearing.current =
+          null;
+        setHearingNow(
+          false,
+        );
+        const now =
+          performance.now();
+        if (
+          cancelled &&
+          heard.current
+        )
+          heard.current =
+            {
+              ...heard.current,
+              cancelledAt:
+                now,
+            };
+        const wait =
+          inputBlockedUntil(
+            heard.current,
+            input ===
+              'mic'
+              ? 'mic'
+              : 'keys',
+          ) -
+          now;
+        clearTimeout(
+          holdTimer.current,
+        );
+        if (
+          wait >
+          0
+        ) {
+          setStartHeld(
+            true,
+          );
+          holdTimer.current =
+            setTimeout(
+              () =>
+                setStartHeld(
+                  false,
+                ),
+              wait,
+            );
+        } else
+          setStartHeld(
+            false,
+          );
+      },
+      [
+        input,
+      ],
+    );
+  const stopHearing =
+    useCallback(
+      () =>
+        endHearing(
+          true,
+        ),
+      [
+        endHearing,
+      ],
+    );
 
   // The effects, carried out with the current props.
-  const latest = useRef({ beatMs, bpm, latencyMs, saver, onBest });
-  useEffect(() => {
-    latest.current = { beatMs, bpm, latencyMs, saver, onBest };
-  });
-  const carry = useCallback(
-    (effects: SongEffect[]): void => {
-      for (const fx of effects) {
-        if (fx.type === 'halt') {
-          metronome.current?.stop();
-          metronome.current = null;
-        } else if (fx.type === 'save') {
-          void latest.current.saver
-            .save(song.id, fx.run)
-            .catch(() => ({ outcome: 'failed' as const }))
-            .then((res) => {
-              if (res.outcome === 'saved' && res.bestScore !== undefined) latest.current.onBest(res.bestScore);
-              if (mounted.current) carry(send({ type: 'answered', attempt: fx.attempt, outcome: res.outcome }));
-            });
-        } else if (fx.type === 'prepare') {
-          void prepare();
-        }
-      }
+  const latest =
+    useRef(
+      {
+        beatMs,
+        bpm,
+        latencyMs,
+        calibrated,
+        saver,
+        onBest,
+      },
+    );
+  useEffect(
+    () => {
+      latest.current =
+        {
+          beatMs,
+          bpm,
+          latencyMs,
+          calibrated,
+          saver,
+          onBest,
+        };
     },
-    // `send` is the runner's, stable for the screen's life; `prepare` reads refs only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [send, song.id],
   );
+  const carry =
+    useCallback(
+      (
+        effects: SongEffect[],
+      ): void => {
+        for (const fx of effects) {
+          if (
+            fx.type ===
+            'halt'
+          ) {
+            metronome.current?.stop();
+            metronome.current =
+              null;
+          } else if (
+            fx.type ===
+            'save'
+          ) {
+            void latest.current.saver
+              .save(
+                song.id,
+                fx.run,
+              )
+              .catch(
+                () => ({
+                  outcome:
+                    'failed' as const,
+                }),
+              )
+              .then(
+                (
+                  res,
+                ) => {
+                  if (
+                    res.outcome ===
+                      'saved' &&
+                    res.bestScore !==
+                      undefined
+                  )
+                    latest.current.onBest(
+                      res.bestScore,
+                    );
+                  if (
+                    mounted.current
+                  )
+                    carry(
+                      send(
+                        {
+                          type: 'answered',
+                          attempt:
+                            fx.attempt,
+                          outcome:
+                            res.outcome,
+                        },
+                      ),
+                    );
+                },
+              );
+          } else if (
+            fx.type ===
+            'prepare'
+          ) {
+            void prepare(
+              fx.token,
+            );
+          }
+        }
+      },
+      // `send` is the runner's, stable for the screen's life; `prepare` reads refs only.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [
+        send,
+        song.id,
+      ],
+    );
 
-  /** Play along: wake sound and start the count-in; the first click fixes the beat grid. */
-  async function prepare() {
-    const ctx = getAudioContext();
-    const awake = ctx ? await resumeAudio(ctx) : false;
-    if (!mounted.current || getState().kind !== 'counting') return;
-    if (!ctx || !awake || document.hidden) {
-      carry(send({ type: 'stop', why: document.hidden ? 'away' : 'sound' }));
+  /**
+   * Play along: wake sound and start the count-in; the first click fixes the beat grid. `token` is
+   * the run this is for: a run stopped and started again while sound woke has a newer token, and
+   * this one gives up, so there is never a second metronome.
+   */
+  async function prepare(
+    token: number,
+  ) {
+    const ctx =
+      getAudioContext();
+    const awake =
+      ctx
+        ? await resumeAudio(
+            ctx,
+          )
+        : false;
+    const now =
+      getState();
+    if (
+      !mounted.current ||
+      now.kind !==
+        'counting' ||
+      now.token !==
+        token
+    )
+      return;
+    if (
+      !ctx ||
+      !awake ||
+      document.hidden
+    ) {
+      carry(
+        send(
+          {
+            type: 'stop',
+            why: document.hidden
+              ? 'away'
+              : 'sound',
+          },
+        ),
+      );
       return;
     }
-    const { beatMs: ms, bpm: tempo, latencyMs: latency } = latest.current;
-    const countIn = song.beatsPerBar + (song.pickup > 0 ? song.beatsPerBar - song.pickup : 0);
-    let first = true;
-    const m = createMetronome(ctx, {
+    const {
+      beatMs:
+        ms,
       bpm: tempo,
-      beatsPerBar: song.beatsPerBar,
-      count: countIn + Math.ceil(songBeats(song)),
-      onBeat: (_beat, _bar, at) => {
-        if (!first) return;
-        first = false;
-        carry(send({ type: 'begin', t0: at + countIn * ms, beatMs: ms, latencyMs: latency }));
-      },
-    });
-    metronome.current = m;
+      latencyMs:
+        latency,
+      calibrated:
+        measured,
+    } = latest.current;
+    const countIn =
+      song.beatsPerBar +
+      (song.pickup >
+      0
+        ? song.beatsPerBar -
+          song.pickup
+        : 0);
+    let first = true;
+    const m =
+      createMetronome(
+        ctx,
+        {
+          bpm: tempo,
+          beatsPerBar:
+            song.beatsPerBar,
+          count:
+            countIn +
+            Math.ceil(
+              songBeats(
+                song,
+              ),
+            ),
+          onBeat:
+            (
+              _beat,
+              _bar,
+              at,
+            ) => {
+              if (
+                !first
+              )
+                return;
+              first = false;
+              carry(
+                send(
+                  {
+                    type: 'begin',
+                    token,
+                    t0:
+                      at +
+                      countIn *
+                        ms,
+                    beatMs:
+                      ms,
+                    latencyMs:
+                      latency,
+                    calibrated:
+                      measured,
+                  },
+                ),
+              );
+            },
+        },
+      );
+    metronome.current?.stop();
+    metronome.current =
+      m;
     m.start();
   }
 
   // Notes: every note-on goes to the machine with its own time, except while "Hear it" sounds
-  // (and its echo tail, which the microphone would hear).
-  const heardUntil = useRef(0);
-  useNoteEvents((e) => {
-    if (paused || hearing.current || e.time < heardUntil.current) return;
-    carry(send({ type: 'note', note: e }));
-  });
+  // (and, for the microphone, its echo tail: `hear-gate.ts`).
+  useNoteEvents(
+    (
+      e,
+    ) => {
+      if (
+        paused ||
+        !takesNote(
+          heard.current,
+          e,
+        )
+      )
+        return;
+      carry(
+        send(
+          {
+            type: 'note',
+            note: e,
+          },
+        ),
+      );
+    },
+  );
 
   // Play along: one tick at the next due time.
-  const due = nextDue(state);
+  const due =
+    nextDue(
+      state,
+    );
   useEffect(() => {
-    if (due === null) return;
+    if (
+      due ===
+      null
+    )
+      return;
     // A timer may fire a fraction of a millisecond before its time on this clock: the tick is for
     // `due` at least, or the cursor would stay put and nothing would ask again.
-    const id = setTimeout(
-      () => carry(send({ type: 'tick', at: Math.max(due, performance.now()) })),
-      Math.max(0, due - performance.now()),
-    );
-    return () => clearTimeout(id);
-  }, [due, carry, send]);
+    const id =
+      setTimeout(
+        () =>
+          carry(
+            send(
+              {
+                type: 'tick',
+                at: Math.max(
+                  due,
+                  performance.now(),
+                ),
+              },
+            ),
+          ),
+        Math.max(
+          0,
+          due -
+            performance.now(),
+        ),
+      );
+    return () =>
+      clearTimeout(
+        id,
+      );
+  }, [
+    due,
+    carry,
+    send,
+  ]);
 
-  const live = state.kind === 'counting' || state.kind === 'playing';
-  const inRun = live || state.kind === 'waiting';
+  const live =
+    state.kind ===
+      'counting' ||
+    state.kind ===
+      'playing';
+  const inRun =
+    live ||
+    state.kind ===
+      'waiting';
+  // Wait for me too: switching the mode or the input would discard the run.
   useEffect(() => {
-    onRunning(live);
-  }, [live, onRunning]);
+    onRunning(
+      inRun,
+    );
+  }, [
+    inRun,
+    onRunning,
+  ]);
 
   // Dropped: a dialog over a play-along run, the tab hidden or away, sound stopped.
   useEffect(() => {
-    if (paused && live) carry(send({ type: 'stop', why: 'dialog' }));
-  }, [paused, live, carry, send]);
+    if (
+      paused &&
+      live
+    )
+      carry(
+        send(
+          {
+            type: 'stop',
+            why: 'dialog',
+          },
+        ),
+      );
+  }, [
+    paused,
+    live,
+    carry,
+    send,
+  ]);
   useEffect(() => {
-    if (!live) return;
-    return watchAway({
-      doc: document,
-      win: window,
-      onAway: () => carry(send({ type: 'stop', why: 'away' })),
-    });
-  }, [live, carry, send]);
+    if (
+      !live
+    )
+      return;
+    return watchAway(
+      {
+        doc: document,
+        win: window,
+        onAway:
+          () =>
+            carry(
+              send(
+                {
+                  type: 'stop',
+                  why: 'away',
+                },
+              ),
+            ),
+      },
+    );
+  }, [
+    live,
+    carry,
+    send,
+  ]);
   useEffect(
     () =>
-      onSoundChange(() => {
-        const k = getState().kind;
-        if ((k === 'counting' || k === 'playing') && soundStatus() !== 'ready') carry(send({ type: 'stop', why: 'sound' }));
-      }),
-    [carry, send, getState],
+      onSoundChange(
+        () => {
+          const k =
+            getState()
+              .kind;
+          if (
+            (k ===
+              'counting' ||
+              k ===
+                'playing') &&
+            soundStatus() !==
+              'ready'
+          )
+            carry(
+              send(
+                {
+                  type: 'stop',
+                  why: 'sound',
+                },
+              ),
+            );
+        },
+      ),
+    [
+      carry,
+      send,
+      getState,
+    ],
   );
 
   // Leaving: the metronome and "Hear it" stop.
@@ -441,288 +1440,1109 @@ function SongRun({
     return () => {
       mounted.current = false;
       metronome.current?.stop();
-      metronome.current = null;
+      metronome.current =
+        null;
       stopHearing();
+      clearTimeout(
+        holdTimer.current,
+      );
     };
-  }, [stopHearing]);
+  }, [
+    stopHearing,
+  ]);
 
   async function hear() {
-    if (hearing.current) {
+    if (
+      hearing.current
+    ) {
       stopHearing();
       return;
     }
-    setNoSound(false);
-    if (soundStatus() !== 'ready' && !(await wakeSound())) {
-      setNoSound(true);
-      return;
-    }
-    const { from, to } = phraseAt(song, Math.max(0, cursorOf(getState())));
-    const phrase = notes.slice(from, to);
-    const ms = latest.current.beatMs;
-    const total = phrase.reduce((sum, n) => sum + n.beats * ms, 0);
-    const seq = playSequence(
-      phrase.map((n) => soundingPitch(n.written, version)),
-      phrase.slice(0, -1).map((n) => n.beats * ms),
-      { instrument: sound, holdsMs: phrase.map((n) => n.beats * ms * 0.92) },
+    setNoSound(
+      false,
     );
-    if (!seq.started) {
-      setNoSound(true);
+    if (
+      soundStatus() !==
+        'ready' &&
+      !(await wakeSound())
+    ) {
+      setNoSound(
+        true,
+      );
       return;
     }
-    const until = performance.now() + total + ECHO_TAIL_MS;
-    heardUntil.current = until;
-    const timer = setTimeout(() => {
-      hearing.current = null;
-      setHearingNow(false);
-    }, total + ECHO_TAIL_MS);
-    hearing.current = { seq, until, timer };
-    setHearingNow(true);
+    const {
+      from,
+      to,
+    } =
+      phraseAt(
+        song,
+        Math.max(
+          0,
+          cursorOf(
+            getState(),
+          ),
+        ),
+      );
+    const phrase =
+      notes.slice(
+        from,
+        to,
+      );
+    const ms =
+      latest
+        .current
+        .beatMs;
+    const total =
+      phrase.reduce(
+        (
+          sum,
+          n,
+        ) =>
+          sum +
+          n.beats *
+            ms,
+        0,
+      );
+    const seq =
+      playSequence(
+        phrase.map(
+          (
+            n,
+          ) =>
+            soundingPitch(
+              n.written,
+              version,
+            ),
+        ),
+        phrase
+          .slice(
+            0,
+            -1,
+          )
+          .map(
+            (
+              n,
+            ) =>
+              n.beats *
+              ms,
+          ),
+        {
+          instrument:
+            sound,
+          holdsMs:
+            phrase.map(
+              (
+                n,
+              ) =>
+                n.beats *
+                ms *
+                0.92,
+            ),
+        },
+      );
+    if (
+      !seq.started
+    ) {
+      setNoSound(
+        true,
+      );
+      return;
+    }
+    const now =
+      performance.now();
+    heard.current =
+      {
+        startedAt:
+          now,
+        endsAt:
+          now +
+          total,
+        cancelledAt:
+          null,
+      };
+    const timer =
+      setTimeout(
+        () =>
+          endHearing(
+            false,
+          ),
+        total,
+      );
+    hearing.current =
+      {
+        seq,
+        timer,
+      };
+    setHearingNow(
+      true,
+    );
   }
 
   // Focus: the sheet's first control stays put; at the end, Play again.
-  const againButton = useRef<HTMLButtonElement>(null);
-  const finished = 'record' in state;
+  const againButton =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const finished =
+    'record' in
+    state;
   // Once the save has settled (Start again is disabled while saving): the control that had focus
   // (Stop, or a key the learner played on screen) is gone.
-  const settled = finished && state.kind !== 'saving';
+  const settled =
+    finished &&
+    state.kind !==
+      'saving';
   useEffect(() => {
-    if (settled) againButton.current?.focus({ preventScroll: true });
-  }, [settled]);
+    if (
+      settled
+    )
+      againButton.current?.focus(
+        {
+          preventScroll: true,
+        },
+      );
+  }, [
+    settled,
+  ]);
 
-  const cursor = cursorOf(state);
-  const marks = marksOf(state);
-  const current = cursor >= 0 ? notes[cursor] : undefined;
-  const barOf = (i: number) => (notes[i]?.bar ?? 0) + (song.pickup > 0 ? 0 : 1);
-  const bars = song.bars.length - (song.pickup > 0 ? 1 : 0);
+  const cursor =
+    cursorOf(
+      state,
+    );
+  const marks =
+    marksOf(
+      state,
+    );
+  // "Skip this note" after a while on one note (Wait for me).
+  const waitingOn =
+    state.kind ===
+    'waiting'
+      ? state.index
+      : -1;
+  const [
+    skipFor,
+    setSkipFor,
+  ] =
+    useState(
+      -1,
+    );
+  useEffect(() => {
+    if (
+      waitingOn <
+      0
+    )
+      return;
+    const id =
+      setTimeout(
+        () =>
+          setSkipFor(
+            waitingOn,
+          ),
+        SKIP_AFTER_MS,
+      );
+    return () =>
+      clearTimeout(
+        id,
+      );
+  }, [
+    waitingOn,
+  ]);
+  const canSkip =
+    waitingOn >=
+      0 &&
+    skipFor ===
+      waitingOn;
+  const current =
+    cursor >=
+    0
+      ? notes[
+          cursor
+        ]
+      : undefined;
+  // Bar numbers count full bars; the opening partial bar of a song with a pickup is "Pickup" (0).
+  const barOf =
+    (
+      i: number,
+    ) =>
+      (notes[
+        i
+      ]
+        ?.bar ??
+        0) +
+      (song.pickup >
+      0
+        ? 0
+        : 1);
+  const bars =
+    song
+      .bars
+      .length -
+    (song.pickup >
+    0
+      ? 1
+      : 0);
+  const want =
+    state.kind ===
+    'waiting'
+      ? (state
+          .pitches[
+          state
+            .index
+        ] ??
+        -1)
+      : -1;
+  const lastWrong =
+    state.kind ===
+    'waiting'
+      ? state.lastWrong
+      : null;
 
-  const { line, said } = describe(t, state, {
-    current: current ? spelledName(current) : '',
-    bar: cursor >= 0 ? barOf(cursor) : 0,
-    bars,
-    wrongName: state.kind === 'waiting' && state.lastWrong !== null ? pitchName(state.lastWrong) : '',
-    octaveOff:
-      state.kind === 'waiting' &&
-      state.lastWrong !== null &&
-      pitchName(state.lastWrong) === pitchName(state.pitches[state.index] ?? -1),
-  });
-  const sub = noSound
-    ? t('song-no-sound', { defaultValue: "Sound isn't playing." })
-    : saveLine(t, state, best);
+  const {
+    line,
+    said,
+  } =
+    describe(
+      t,
+      state,
+      {
+        current:
+          current
+            ? spelledName(
+                current,
+              )
+            : '',
+        index:
+          cursor,
+        total:
+          notes.length,
+        bar:
+          cursor >=
+          0
+            ? barOf(
+                cursor,
+              )
+            : 0,
+        bars,
+        wrongName:
+          lastWrong !==
+          null
+            ? pitchName(
+                lastWrong,
+              )
+            : '',
+        octaveOff:
+          lastWrong !==
+            null &&
+          pitchName(
+            lastWrong,
+          ) ===
+            pitchName(
+              want,
+            ),
+        // Guitar sounds an octave under its staff: a MIDI learner who plays the written pitch is told so.
+        guitarWritten:
+          version ===
+            'guitar' &&
+          lastWrong !==
+            null &&
+          lastWrong ===
+            want +
+              12,
+      },
+    );
+  // The microphone hears a repeated pitch only once it stops or is struck clearly again.
+  const micRepeat =
+    input ===
+      'mic' &&
+    state.kind ===
+      'waiting' &&
+    state.index >
+      0 &&
+    state
+      .pitches[
+      state
+        .index
+    ] ===
+      state
+        .pitches[
+        state.index -
+          1
+      ];
+  const sub =
+    noSound
+      ? t(
+          'song-no-sound',
+          {
+            defaultValue:
+              "Sound isn't playing.",
+          },
+        )
+      : micRepeat
+        ? t(
+            'song-mic-repeat',
+            {
+              defaultValue:
+                'Stop the string or take a breath between repeated notes.',
+            },
+          )
+        : saveLine(
+            t,
+            state,
+            best,
+          );
 
-  const label = t('song-score-label', {
-    title: song.title,
-    bars,
-    beats: song.beatsPerBar,
-    defaultValue: 'The score of {{title}}: {{bars}} bars, {{beats}} beats to a bar.',
-  });
-
+  const label =
+    t(
+      'song-score-label',
+      {
+        title:
+          song.title,
+        bars,
+        beats:
+          song.beatsPerBar,
+        defaultValue:
+          'The score of {{title}}: {{bars}} bars, {{beats}} beats to a bar.',
+      },
+    );
 
   // Start and Stop take one width (min-w-24), so swapping them never moves the centred row.
-  const controls = (
-    <>
-      {inRun ? (
-        <button type="button" onClick={() => carry(send({ type: 'again' }))} className={`${SECONDARY_BUTTON} min-w-24`}>
-          {t('song-stop', { defaultValue: 'Stop' })}
-        </button>
-      ) : (
+  const controls =
+    (
+      <>
+        {inRun ? (
+          <button
+            type="button"
+            onClick={() =>
+              carry(
+                send(
+                  {
+                    type: 'again',
+                  },
+                ),
+              )
+            }
+            className={`${SECONDARY_BUTTON} min-w-24`}
+          >
+            {t(
+              'song-stop',
+              {
+                defaultValue:
+                  'Stop',
+              },
+            )}
+          </button>
+        ) : (
+          <button
+            ref={
+              againButton
+            }
+            type="button"
+            disabled={
+              hearingNow ||
+              startHeld ||
+              state.kind ===
+                'saving'
+            }
+            onClick={() => {
+              if (
+                state.kind !==
+                'ready'
+              )
+                carry(
+                  send(
+                    {
+                      type: 'again',
+                    },
+                  ),
+                );
+              carry(
+                send(
+                  {
+                    type: 'start',
+                    at: performance.now(),
+                  },
+                ),
+              );
+            }}
+            className={`${PRIMARY_BUTTON} min-w-24`}
+          >
+            {t(
+              'sprint-start',
+              {
+                defaultValue:
+                  'Start',
+              },
+            )}
+          </button>
+        )}
         <button
-          ref={againButton}
           type="button"
-          disabled={hearingNow || state.kind === 'saving'}
-          onClick={() => {
-            if (state.kind !== 'ready') carry(send({ type: 'again' }));
-            carry(send({ type: 'start', at: performance.now() }));
-          }}
-          className={`${PRIMARY_BUTTON} min-w-24`}
+          disabled={
+            live
+          }
+          onClick={() =>
+            void hear()
+          }
+          aria-pressed={
+            hearingNow
+          }
+          className={
+            SECONDARY_BUTTON
+          }
         >
-          {t('sprint-start', { defaultValue: 'Start' })}
+          {t(
+            'song-hear',
+            {
+              defaultValue:
+                'Hear it',
+            },
+          )}
         </button>
-      )}
-      <button
-        type="button"
-        disabled={live}
-        onClick={() => void hear()}
-        aria-pressed={hearingNow}
-        className={SECONDARY_BUTTON}
-      >
-        {t('song-hear', { defaultValue: 'Hear it' })}
-      </button>
-      <button
-        type="button"
-        disabled={live}
-        onClick={() => onSlow(!slow)}
-        aria-pressed={slow}
-        className={TEXT_BUTTON}
-      >
-        {t('song-slower', { defaultValue: 'Slower' })}
-      </button>
-    </>
-  );
+        <button
+          type="button"
+          disabled={
+            live
+          }
+          onClick={() =>
+            onSlow(
+              !slow,
+            )
+          }
+          aria-pressed={
+            slow
+          }
+          className={
+            TEXT_BUTTON
+          }
+        >
+          {t(
+            'song-slower',
+            {
+              defaultValue:
+                'Slower',
+            },
+          )}
+        </button>
+      </>
+    );
 
   let answers: ReactNode;
-  if (finished) {
-    answers = (
-      <div className="rmm-sheet flex h-full flex-col items-center-safe justify-center-safe gap-3 overflow-y-auto p-4 text-center">
-        <p
-          className="flex justify-center gap-1"
-          role="img"
-          aria-label={t('lesson-stars', {
-            count: state.summary.stars,
-            defaultValue_one: '{{count}} star',
-            defaultValue: '{{count}} stars',
-          })}
-        >
-          {[0, 1, 2].map((i) => (
-            <Notehead key={i} kind={i < state.summary.stars ? 'filled' : 'open'} className="h-5 w-7 text-app-accent" />
-          ))}
-        </p>
-        {state.kind === 'failed' ? (
-          <button type="button" onClick={() => carry(send({ type: 'retry' }))} className={SECONDARY_BUTTON}>
-            {t('retry', { defaultValue: 'Try again' })}
-          </button>
-        ) : state.kind === 'signed-out' ? (
-          <Link to="/login" search={{ callbackURL: `/rmhmusic/songs/${song.id}` }} className={SECONDARY_BUTTON}>
-            {t('sign-in', { defaultValue: 'Sign in' })}
-          </Link>
-        ) : (
-          <Link to="/rmhmusic/songs" className={TEXT_BUTTON}>
-            {t('song-choose', { defaultValue: 'Choose another song' })}
-          </Link>
-        )}
-      </div>
-    );
-  } else if (input === 'mic' || input === 'midi') {
-    answers = (
-      <div className="h-full">
-        <DeviceRegion input={input} on={phases[input] === 'active'} />
-      </div>
-    );
-  } else if (input === 'keys') {
-    answers = (
-      <div className="rmm-sheet flex h-full items-center justify-center p-4 text-center">
-        <p className="text-sm leading-6 text-app-text-muted">
-          {t('flash-keys-region', {
-            defaultValue: 'Your computer keys are a piano: A, S, D, F, G, H, J and K play C, D, E, F, G, A, B and C.',
-          })}
-        </p>
-      </div>
-    );
+  if (
+    finished
+  ) {
+    answers =
+      (
+        <div className="rmm-sheet flex h-full flex-col items-center-safe justify-center-safe gap-3 overflow-y-auto p-4 text-center">
+          <p
+            className="flex justify-center gap-1"
+            role="img"
+            aria-label={t(
+              'lesson-stars',
+              {
+                count:
+                  state
+                    .summary
+                    .stars,
+                defaultValue_one:
+                  '{{count}} star',
+                defaultValue:
+                  '{{count}} stars',
+              },
+            )}
+          >
+            {[
+              0,
+              1,
+              2,
+            ].map(
+              (
+                i,
+              ) => (
+                <Notehead
+                  key={
+                    i
+                  }
+                  kind={
+                    i <
+                    state
+                      .summary
+                      .stars
+                      ? 'filled'
+                      : 'open'
+                  }
+                  className="h-5 w-7 text-app-accent"
+                />
+              ),
+            )}
+          </p>
+          {state.kind ===
+          'failed' ? (
+            <button
+              type="button"
+              onClick={() =>
+                carry(
+                  send(
+                    {
+                      type: 'retry',
+                    },
+                  ),
+                )
+              }
+              className={
+                SECONDARY_BUTTON
+              }
+            >
+              {t(
+                'retry',
+                {
+                  defaultValue:
+                    'Try again',
+                },
+              )}
+            </button>
+          ) : state.kind ===
+            'signed-out' ? (
+            <Link
+              to="/login"
+              search={{
+                callbackURL: `/rmhmusic/songs/${song.id}`,
+              }}
+              className={
+                SECONDARY_BUTTON
+              }
+            >
+              {t(
+                'sign-in',
+                {
+                  defaultValue:
+                    'Sign in',
+                },
+              )}
+            </Link>
+          ) : (
+            <Link
+              to="/rmhmusic/songs"
+              className={
+                TEXT_BUTTON
+              }
+            >
+              {t(
+                'song-choose',
+                {
+                  defaultValue:
+                    'Choose another song',
+                },
+              )}
+            </Link>
+          )}
+        </div>
+      );
+  } else if (
+    input ===
+      'mic' ||
+    input ===
+      'midi'
+  ) {
+    answers =
+      (
+        <div className="h-full">
+          <DeviceRegion
+            input={
+              input
+            }
+            on={
+              phases[
+                input
+              ] ===
+              'active'
+            }
+          />
+        </div>
+      );
+  } else if (
+    input ===
+    'keys'
+  ) {
+    answers =
+      (
+        <div className="rmm-sheet flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
+          <p className="text-sm leading-6 text-app-text-muted">
+            {t(
+              'flash-keys-region',
+              {
+                defaultValue:
+                  'Your computer keys are a piano: A, S, D, F, G, H, J and K play C, D, E, F, G, A, B and C.',
+              },
+            )}
+          </p>
+          {needsBlackKeys ? (
+            <p className="text-sm leading-6 text-app-text-muted">
+              {t(
+                'song-keys-black',
+                {
+                  defaultValue:
+                    'For sharps: W, E, T, Y and U play C♯, D♯, F♯, G♯ and A♯.',
+                },
+              )}
+            </p>
+          ) : null}
+        </div>
+      );
   } else {
-    answers = <OnScreenKeyboard className="-mx-2 max-[332px]:-mx-3.5 sm:mx-0" />;
+    answers =
+      (
+        <OnScreenKeyboard className="-mx-2 max-[332px]:-mx-3.5 sm:mx-0" />
+      );
   }
+
+  const subSlot =
+    canSkip ? (
+      <button
+        type="button"
+        onClick={() =>
+          carry(
+            send(
+              {
+                type: 'skip',
+              },
+            ),
+          )
+        }
+        className={
+          TEXT_BUTTON
+        }
+      >
+        {t(
+          'song-skip',
+          {
+            defaultValue:
+              'Skip this note',
+          },
+        )}
+      </button>
+    ) : (
+      sub
+    );
 
   return (
     <RunFrame
-      score={<ScoreView song={song} version={version} cursor={cursor} marks={marks} label={label} />}
-      line={line}
-      sub={sub}
-      controls={controls}
-      answers={answers}
-      said={said}
+      score={
+        <ScoreView
+          song={
+            song
+          }
+          version={
+            version
+          }
+          cursor={
+            cursor
+          }
+          marks={
+            marks
+          }
+          label={
+            label
+          }
+        />
+      }
+      line={
+        line
+      }
+      sub={
+        subSlot
+      }
+      controls={
+        controls
+      }
+      answers={
+        answers
+      }
+      said={
+        said
+      }
     />
   );
 }
 
-const PITCH_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
-function pitchName(midi: number): string {
-  return PITCH_NAMES[((Math.round(midi) % 12) + 12) % 12] ?? '';
+const PITCH_NAMES =
+  [
+    'C',
+    'C♯',
+    'D',
+    'D♯',
+    'E',
+    'F',
+    'F♯',
+    'G',
+    'G♯',
+    'A',
+    'A♯',
+    'B',
+  ];
+function pitchName(
+  midi: number,
+): string {
+  return (
+    PITCH_NAMES[
+      ((Math.round(
+        midi,
+      ) %
+        12) +
+        12) %
+        12
+    ] ??
+    ''
+  );
 }
 
 /** The sheet's line and what the live region says. */
 function describe(
   t: T,
   state: SongState,
-  at: { current: string; bar: number; bars: number; wrongName: string; octaveOff: boolean },
-): { line: string; said: string } {
-  switch (state.kind) {
+  at: {
+    current: string;
+    index: number;
+    total: number;
+    bar: number;
+    bars: number;
+    wrongName: string;
+    octaveOff: boolean;
+    guitarWritten: boolean;
+  },
+): {
+  line: string;
+  said: string;
+} {
+  switch (
+    state.kind
+  ) {
     case 'ready': {
-      if (state.stopped !== null) {
+      if (
+        state.stopped !==
+        null
+      ) {
         const line =
-          state.stopped === 'sound'
-            ? t('song-stopped-sound', { defaultValue: 'Sound stopped, so this run was dropped. Start again.' })
-            : state.stopped === 'dialog'
-              ? t('song-stopped-dialog', { defaultValue: 'The run stopped while the settings were open. Start again.' })
-              : t('song-stopped-away', { defaultValue: 'You left the page, so this run was dropped. Start again.' });
-        return { line, said: line };
+          state.stopped ===
+          'sound'
+            ? t(
+                'song-stopped-sound',
+                {
+                  defaultValue:
+                    'Sound stopped, so this run was dropped. Start again.',
+                },
+              )
+            : state.stopped ===
+                'dialog'
+              ? t(
+                  'song-stopped-dialog',
+                  {
+                    defaultValue:
+                      'The run stopped while the settings were open. Start again.',
+                  },
+                )
+              : t(
+                  'song-stopped-away',
+                  {
+                    defaultValue:
+                      'You left the page, so this run was dropped. Start again.',
+                  },
+                );
+        return {
+          line,
+          said: line,
+        };
       }
       const line =
-        state.mode === 'wait'
-          ? t('song-intro-wait', { defaultValue: 'Play each note when you are ready. The cursor waits for you.' })
-          : t('song-intro-play', { defaultValue: 'One bar of clicks counts you in. Then play along in time.' });
-      return { line, said: '' };
+        state.mode ===
+        'wait'
+          ? t(
+              'song-intro-wait',
+              {
+                defaultValue:
+                  'Play each note when you are ready. The cursor waits for you.',
+              },
+            )
+          : t(
+              'song-intro-play',
+              {
+                defaultValue:
+                  'One bar of clicks counts you in. Then play along in time.',
+              },
+            );
+      return {
+        line,
+        said: '',
+      };
     }
     case 'waiting': {
-      const line = at.octaveOff
-        ? t('song-wait-octave', {
-            note: at.current,
-            defaultValue: 'That {{note}} is in another octave. Play the one written.',
-          })
-        : at.wrongName
-        ? t('song-wait-wrong', { played: at.wrongName, note: at.current, defaultValue: 'That was {{played}}. Play {{note}}.' })
-        : t('song-wait-play', { note: at.current, defaultValue: 'Play {{note}}.' });
-      const said = t('song-wait-said', {
-        bar: at.bar,
-        note: at.current,
-        defaultValue: 'Bar {{bar}}: {{note}}',
-      });
-      return { line, said };
+      const line =
+        at.guitarWritten
+          ? t(
+              'song-wait-guitar-octave',
+              {
+                note: at.current,
+                defaultValue:
+                  'Guitar sounds an octave below the staff: play the {{note}} one octave lower.',
+              },
+            )
+          : at.octaveOff
+            ? t(
+                'song-wait-octave',
+                {
+                  note: at.current,
+                  defaultValue:
+                    'That {{note}} is in another octave. Play the one written.',
+                },
+              )
+            : at.wrongName
+              ? t(
+                  'song-wait-wrong',
+                  {
+                    played:
+                      at.wrongName,
+                    note: at.current,
+                    defaultValue:
+                      'That was {{played}}. Play {{note}}.',
+                  },
+                )
+              : t(
+                  'song-wait-play',
+                  {
+                    note: at.current,
+                    defaultValue:
+                      'Play {{note}}.',
+                  },
+                );
+      // Each note is said with its number, so a repeated name is said again; a wrong note says the line.
+      const said =
+        at.wrongName
+          ? line
+          : at.bar ===
+              0
+            ? t(
+                'song-wait-said-pickup',
+                {
+                  n:
+                    at.index +
+                    1,
+                  total:
+                    at.total,
+                  note: at.current,
+                  defaultValue:
+                    'Note {{n}} of {{total}}, pickup: {{note}}',
+                },
+              )
+            : t(
+                'song-wait-said-note',
+                {
+                  n:
+                    at.index +
+                    1,
+                  total:
+                    at.total,
+                  bar: at.bar,
+                  note: at.current,
+                  defaultValue:
+                    'Note {{n}} of {{total}}, bar {{bar}}: {{note}}',
+                },
+              );
+      return {
+        line,
+        said,
+      };
     }
     case 'counting': {
-      const line = t('rhythm-tap-listen', { defaultValue: 'Listen to the count.' });
-      return { line, said: line };
+      const line =
+        t(
+          'rhythm-tap-listen',
+          {
+            defaultValue:
+              'Listen to the count.',
+          },
+        );
+      return {
+        line,
+        said: line,
+      };
     }
     case 'playing': {
-      if (state.cursor < 0) {
-        const line = t('rhythm-tap-listen', { defaultValue: 'Listen to the count.' });
-        return { line, said: line };
+      if (
+        state.cursor <
+        0
+      ) {
+        const line =
+          t(
+            'rhythm-tap-listen',
+            {
+              defaultValue:
+                'Listen to the count.',
+            },
+          );
+        return {
+          line,
+          said: line,
+        };
       }
-      const line = t('song-play-bar', { bar: at.bar, bars: at.bars, defaultValue: 'Bar {{bar}} of {{bars}}' });
-      return { line, said: line };
+      const line =
+        at.bar ===
+        0
+          ? t(
+              'song-play-pickup',
+              {
+                defaultValue:
+                  'Pickup',
+              },
+            )
+          : t(
+              'song-play-bar',
+              {
+                bar: at.bar,
+                bars: at.bars,
+                defaultValue:
+                  'Bar {{bar}} of {{bars}}',
+              },
+            );
+      return {
+        line,
+        said: line,
+      };
     }
     default: {
-      const s = state.summary;
+      const s =
+        state.summary;
       const line =
-        state.mode === 'wait'
-          ? t('song-result-wait', {
-              right: s.right,
-              total: s.total,
-              defaultValue: 'Right first time: {{right}} of {{total}} notes.',
-            })
-          : t('song-result-play', {
-              right: s.right,
-              total: s.total,
-              early: s.early,
-              late: s.late,
-              defaultValue: 'Notes right: {{right}} of {{total}}. Early: {{early}}. Late: {{late}}.',
-            });
-      return { line, said: line };
+        state.mode ===
+        'wait'
+          ? t(
+              'song-result-wait',
+              {
+                right:
+                  s.right,
+                total:
+                  s.total,
+                defaultValue:
+                  'Right first time: {{right}} of {{total}} notes.',
+              },
+            )
+          : t(
+              'song-result-play',
+              {
+                right:
+                  s.right,
+                total:
+                  s.total,
+                early:
+                  s.early,
+                late: s.late,
+                defaultValue:
+                  'Notes right: {{right}} of {{total}}. Early: {{early}}. Late: {{late}}.',
+              },
+            );
+      return {
+        line,
+        said: line,
+      };
     }
   }
 }
 
-function saveLine(t: T, state: SongState, best: number | null | undefined): string {
-  switch (state.kind) {
+function saveLine(
+  t: T,
+  state: SongState,
+  best:
+    | number
+    | null
+    | undefined,
+): string {
+  switch (
+    state.kind
+  ) {
     case 'saving':
-      return t('lesson-saving', { defaultValue: 'Saving…' });
+      return t(
+        'lesson-saving',
+        {
+          defaultValue:
+            'Saving…',
+        },
+      );
     case 'saved':
-      return best === null || best === undefined
-        ? t('song-saved', { score: state.summary.score, defaultValue: 'Saved. Score {{score}}.' })
-        : t('song-saved-best', {
-            score: state.summary.score,
-            best,
-            defaultValue: 'Saved. Score {{score}}, your best {{best}}.',
-          });
+      return best ===
+        null ||
+        best ===
+          undefined
+        ? t(
+            'song-saved',
+            {
+              score:
+                state
+                  .summary
+                  .score,
+              defaultValue:
+                'Saved. Score {{score}}.',
+            },
+          )
+        : t(
+            'song-saved-best',
+            {
+              score:
+                state
+                  .summary
+                  .score,
+              best,
+              defaultValue:
+                'Saved. Score {{score}}, your best {{best}}.',
+            },
+          );
     case 'failed':
-      return t('song-save-failed', { defaultValue: "Couldn't save this run." });
+      return t(
+        'song-save-failed',
+        {
+          defaultValue:
+            "Couldn't save this run.",
+        },
+      );
     case 'signed-out':
-      return t('sprint-signed-out', { defaultValue: 'Not saved: sign in again to keep your results.' });
+      return t(
+        'sprint-signed-out',
+        {
+          defaultValue:
+            'Not saved: sign in again to keep your results.',
+        },
+      );
     case 'unsaved':
-      return t('song-unsaved', { score: state.summary.score, defaultValue: 'Score {{score}}. Not saved.' });
+      return t(
+        'song-unsaved',
+        {
+          score:
+            state
+              .summary
+              .score,
+          defaultValue:
+            'Score {{score}}. Not saved.',
+        },
+      );
     default:
-      return best === undefined
+      return best ===
+        undefined
         ? ''
-        : best === null
-          ? t('song-best-none', { defaultValue: 'No best yet.' })
-          : t('song-best', { score: best, defaultValue: 'Your best: {{score}}' });
+        : best ===
+            null
+          ? t(
+              'song-best-none',
+              {
+                defaultValue:
+                  'No best yet.',
+              },
+            )
+          : t(
+              'song-best',
+              {
+                score:
+                  best,
+                defaultValue:
+                  'Your best: {{score}}',
+              },
+            );
   }
 }
