@@ -161,7 +161,10 @@ launch_desktop() {
 		# Say what became of the X server, for the serial0 log.
 		(
 			sleep 45
-			if pidof Xorg >/dev/null 2>&1; then log "X server is running"; else log "X server is not running"; fi
+			if pidof Xorg >/dev/null 2>&1; then log "X server is running"; else
+				log "X server is not running"
+				chvt 2 2>/dev/null
+			fi
 			{
 				grep -E '\((EE|WW)\)|Fatal' /var/log/Xorg.0.log 2>/dev/null | tail -n 20
 				tail -n 10 "$XLOG" 2>/dev/null

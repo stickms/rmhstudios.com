@@ -3,3 +3,6 @@ TaskBarShowClock=1
 TaskBarShowWindowListApps=1
 ShowProgramsMenu=1
 FocusMode=1
+# IceWM paints the root window itself, black by default, over the theme's ColorDesktop.
+DesktopBackgroundColor="#1b2330"
+DesktopBackgroundImage=""
