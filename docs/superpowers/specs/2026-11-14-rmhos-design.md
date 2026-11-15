@@ -2271,7 +2271,7 @@ us.
   the
   Apache
   vhost,
-  `go-services/cmd/status`,
+  `go-services/cmd/status` (NOT done: the status service does not watch the hub; see docs/rmhos.md),
   `.env.example`.
 - `pnpm check:consistency`
   passes
