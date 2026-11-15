@@ -137,6 +137,7 @@ describe('the image', () => {
       'COPY LocalSettings.php /var/www/html/LocalSettings.php',
       'COPY extensions/RMHStudiosLogin /var/www/html/extensions/RMHStudiosLogin',
       'COPY extensions/RMHStudiosAssist /var/www/html/extensions/RMHStudiosAssist',
+      'COPY extensions/RMHStudiosOpenGraph /var/www/html/extensions/RMHStudiosOpenGraph',
       'COPY pages /usr/local/share/rmhstudios-wiki/pages',
       'COPY Sidebar.wiki /usr/local/share/rmhstudios-wiki/Sidebar.wiki',
       'COPY bootstrap.sh /usr/local/bin/wiki-bootstrap',
@@ -271,6 +272,41 @@ describe('Edit with AI', () => {
     const used = manifest.ResourceModules['ext.rmhstudiosAssist']!.messages;
     for (const key of used) expect(messages, key).toHaveProperty([key]);
     for (const [, key] of script.matchAll(/mw\.msg\(\s*'([\w-]+)'/g)) expect(used).toContain(key);
+  });
+});
+
+describe('link previews', () => {
+  const ogDir = 'deploy/mediawiki/extensions/RMHStudiosOpenGraph';
+  const manifest = JSON.parse(read(`${ogDir}/extension.json`)) as { Hooks: Record<string, string> };
+  const hooks = read(`${ogDir}/includes/Hooks.php`);
+
+  it('are on, with TextExtracts, which the card reads the page through', () => {
+    expect(php(settings)).toContain("wfLoadExtension( 'TextExtracts' );");
+    expect(php(settings)).toContain("wfLoadExtension( 'RMHStudiosOpenGraph' );");
+    expect(php(settings)).toContain('$wgRMHStudiosOpenGraphSiteUrl = $wgRMHStudiosLoginSiteUrl;');
+    expect(Object.keys(manifest.Hooks).sort()).toEqual(['BeforePageDisplay', 'OutputPageParserOutput']);
+  });
+
+  it('name the card endpoint the site serves, at its card size', () => {
+    expect(hooks).toContain("$siteUrl . '/api/og/wiki'");
+    expect(read('lib/wiki/wiki.contract.ts')).toContain("path: '/api/og/wiki'");
+    expect(hooks).toContain("'og:image:width' => '1200'");
+    expect(hooks).toContain("'og:image:height' => '630'");
+    expect(hooks).toContain("'twitter:card' => 'summary_large_image'");
+  });
+
+  it('read like Wikipedia\'s: "Title - RMH Studios Wiki", and the main page as the wiki itself', () => {
+    expect(hooks).toContain("public const SITE_NAME = 'RMH Studios Wiki';");
+    expect(hooks).toContain("$isMain ? self::SITE_NAME : ( $shown ?: $title->getPrefixedText() ) . ' - ' . self::SITE_NAME");
+  });
+
+  it('give a page that does not exist no description, and no page card', () => {
+    expect(hooks).toContain('$title->exists() || $title->isSpecialPage()');
+    expect(hooks).toContain('$hasCard = !$isMain && !$title->isSpecialPage() && $title->exists();');
+  });
+
+  it('write tags with escaped attributes, never raw HTML', () => {
+    expect(hooks).toContain("Html::element( 'meta', [ $attribute => $key, 'content' => $content ] )");
   });
 });
 

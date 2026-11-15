@@ -4,7 +4,7 @@
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
-import type { wikiAssistBody, wikiSsoQuery } from '@/lib/wiki/wiki-schema';
+import type { wikiAssistBody, wikiOgQuery, wikiSsoQuery } from '@/lib/wiki/wiki-schema';
 
 /** Sign in: the wiki sends the browser here; the answer is always a redirect. */
 export const wikiSsoApi = endpoint<{
@@ -22,3 +22,12 @@ export const wikiAssistApi = endpoint<{
   body: z.infer<typeof wikiAssistBody>;
   res: never;
 }>()({ method: 'POST', path: '/api/wiki/assist' });
+
+/**
+ * The link-preview card for a wiki page: a 1200x630 PNG, named in each wiki
+ * page's `og:image` (deploy/mediawiki/extensions/RMHStudiosOpenGraph).
+ */
+export const wikiOgCardApi = endpoint<{
+  query: z.infer<typeof wikiOgQuery>;
+  res: never;
+}>()({ method: 'GET', path: '/api/og/wiki' });
