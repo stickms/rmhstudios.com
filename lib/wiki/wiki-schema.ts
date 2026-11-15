@@ -49,3 +49,20 @@ export const wikiAssistBody =
           ),
     },
   );
+
+/** The wiki's link-preview card (`GET /api/og/wiki`). No page: the wiki's own card. */
+export const wikiOgQuery =
+  z.object(
+    {
+      page: z
+        .string()
+        .trim()
+        .min(
+          1,
+        )
+        .max(
+          255,
+        )
+        .optional(),
+    },
+  );

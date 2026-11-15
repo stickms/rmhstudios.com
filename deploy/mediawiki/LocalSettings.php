@@ -54,6 +54,8 @@ wfLoadExtension( 'Cite' );
 wfLoadExtension( 'WikiEditor' );
 wfLoadExtension( 'RMHStudiosLogin' );
 wfLoadExtension( 'RMHStudiosAssist' );
+wfLoadExtension( 'TextExtracts' );
+wfLoadExtension( 'RMHStudiosOpenGraph' );
 
 ## Database: the site's own Postgres database. Every wiki table is in the
 ## `mediawiki` schema, apart from the site's tables in `public`, so the site's
@@ -91,6 +93,11 @@ $wgRMHStudiosLoginKey = rmhWikiKey( RMH_WIKI_LOGIN_LABEL );
 ## writes it, through the site (POST /api/wiki/assist, with the reader's site
 ## session). The wiki holds no AI key.
 $wgRMHStudiosAssistSiteUrl = $wgRMHStudiosLoginSiteUrl;
+
+## Link previews, as Wikipedia's: "Title - RMH Studios Wiki", the opening
+## sentences, and a card that rmhstudios.com draws (GET /api/og/wiki), which
+## reads the page through TextExtracts, the extension Wikipedia's previews use.
+$wgRMHStudiosOpenGraphSiteUrl = $wgRMHStudiosLoginSiteUrl;
 
 ## The container keeps no state: no uploads, no outgoing mail, no files
 ## fetched from Wikimedia Commons. Pictures are linked, not stored.
