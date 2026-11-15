@@ -48,9 +48,10 @@ function fakeEnv() {
   return { env, timers, state, count, fire };
 }
 
-function setup(opts: { restoreError?: Error; cold?: boolean; stored?: Uint8Array } = {}) {
+function setup(opts: { restoreError?: Error; cold?: boolean; stored?: Uint8Array; memory?: boolean } = {}) {
   const share = new Map<string, Uint8Array>();
-  const store = memoryHomeStore();
+  // The in-memory store reports kind 'memory' (storage blocked); tests act like IndexedDB unless asked.
+  const store = { ...memoryHomeStore(), kind: opts.memory ? ('memory' as const) : ('indexeddb' as const) };
   const vm = {
     writeShareFile: async (p: string, d: Uint8Array) => void share.set(p, d),
     readShareFile: async (p: string) => share.get(p)!,
@@ -323,8 +324,44 @@ describe('HomeSession teardown', () => {
       onChange: () => {},
     });
     await fresh.start();
-    expect(fresh.snapshot).toMatchObject({ stage: 'failed', failure: 'handshake', previousAvailable: true });
+    expect(fresh.snapshot).toMatchObject({
+      stage: 'failed',
+      failure: 'handshake',
+      previousAvailable: true,
+      previousSavedAt: 1,
+    });
     await fresh.putPreviousBack();
     expect(await t.store.get('u1')).toEqual(old);
+  });
+
+  it('put-back is not offered when a save has changed the main entry since the backup', async () => {
+    const t = setup({ restoreError: new AgentError('timeout') });
+    await t.store.put('u1', { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 });
+    await t.sync.importArchive(await gzip(fakeTar(8)));
+    await t.store.put('u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 7 }); // work saved after the restore
+    const fresh = new HomeSession({
+      agent: t.agent,
+      sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
+      bootKind: 'snapshot',
+      linuxUser: 'zed',
+      autosaveMs: 300_000,
+      env: t.e.env,
+      onChange: () => {},
+    });
+    await fresh.start();
+    expect(fresh.snapshot).toMatchObject({ stage: 'failed', previousAvailable: false, previousSavedAt: null });
+    expect(await t.store.get('u1:replaced')).toBeNull(); // dropped at start
+    await expect(fresh.putPreviousBack()).rejects.toMatchObject({ code: 'previous_stale' });
+  });
+
+  it('with storage blocked (in-memory store) the unload prompt asks whenever the desktop is ready', async () => {
+    const t = setup({ memory: true });
+    await t.session.start();
+    await t.session.save();
+    expect(t.session.snapshot.storeKind).toBe('memory');
+    expect(t.session.snapshot.dirty).toBe(false);
+    const ev = new Event('beforeunload', { cancelable: true });
+    t.e.fire('win:beforeunload', ev);
+    expect(ev.defaultPrevented).toBe(true);
   });
 });

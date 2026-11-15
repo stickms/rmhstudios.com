@@ -20,15 +20,27 @@ import { AgentClient } from '../engine/agent';
 import { RMHOS } from '../engine/constants';
 import { browserEnv, HomeSession, type SessionSnapshot } from '../engine/home-session';
 import { openHomeStore, type HomeStore } from '../engine/home-store';
-import { HomeSync, type SaveResult } from '../engine/home-sync';
+import {
+  HomeSync,
+  type CopyKind,
+  type SaveResult,
+  type StoredCopies,
+} from '../engine/home-sync';
 import { resolveImageManifest } from '../engine/image-manifest';
-import { fetchRelayTicket } from '../engine/relay-ticket';
+import { createTicketHolder } from '../engine/relay-ticket';
 import type { RmhosNet } from '../engine/rmhos.contract';
 import { holdHomeLock } from '../engine/tab-lock';
 import { createVm } from '../engine/vm';
 import type { VmHandle, VmPhase, VmPhaseDetail } from '../engine/vm-types';
 import { rmhosSessionQuery } from './rmhos.queries';
-import { initialTracker, POLL_MS, statusUrl, trackNet } from './net-status';
+import {
+  createPollGate,
+  initialTracker,
+  POLL_MS,
+  statusSample,
+  statusUrl,
+  trackNet,
+} from './net-status';
 
 /** The machine's phases, plus `session` while the guest is being told who is signing in. */
 export type RmhosPhase = VmPhase | 'session';
@@ -67,6 +79,12 @@ export interface RmhosSessionValue {
   exportStored: () => Promise<{ bytes: Uint8Array; savedAt: number } | null>;
   /** After a failed handshake: the home a restored backup replaced can be put back. */
   previousAvailable: boolean;
+  /** When the files that could be put back were saved (with `previousAvailable`). */
+  previousSavedAt: number | null;
+  /** What is stored for this account: the current archive and the two extra copies. */
+  storedCopies: () => Promise<StoredCopies | null>;
+  exportCopy: (kind: CopyKind) => Promise<Uint8Array | null>;
+  removeCopy: (kind: 'replaced' | 'damaged') => Promise<void>;
   /** Puts the replaced home back as the stored one; restart (without saving) afterwards. */
   putPreviousBack: () => Promise<void>;
   /** The desktop's home straight from the guest, writing nothing: a backup when saving is refused. */
@@ -84,6 +102,8 @@ export interface RmhosSessionValue {
   net: RmhosNet | null;
   /** From the hub's status endpoint (see net-status.ts); only meaningful when `net.enabled`. */
   netState: 'connecting' | 'on' | 'error';
+  /** The hub no longer accepts this session's ticket (12 h cap, idle, evicted): restart to reconnect. */
+  netEnded: boolean;
 }
 
 declare global {
@@ -128,8 +148,9 @@ export function useRmhosMachine(
   }, [phase]);
 
   /** The ticket the running machine was built with: the status poll uses the same credential. */
-  const netRef = useRef<{ url: string; ticket: string } | null>(null);
+  const tickets = useRef(createTicketHolder());
   const [netState, setNetState] = useState<'connecting' | 'on' | 'error'>('connecting');
+  const [netEnded, setNetEnded] = useState(false);
 
   const runnerRef = useRef<HomeSession | null>(null);
   const vmRef = useRef<VmHandle | null>(null);
@@ -187,11 +208,10 @@ export function useRmhosMachine(
         // The relay ticket is good for 60 s of first use and v86 bakes it in when the machine is
         // built, so it is fetched when createVm asks (after the emulator module has loaded), not
         // at page load. Whether the relay is on at all is the page-load answer.
-        const getNet = async () => {
-          if (!session.net.enabled) return null;
-          netRef.current = await fetchRelayTicket();
-          return netRef.current;
-        };
+        // The run keeps its ticket to itself and publishes it for the status poll only once its
+        // machine exists and it is still the newest run.
+        const run = tickets.current.begin();
+        const getNet = async () => (session.net.enabled ? run.fetch() : null);
         const vm = await createVm({
           screen,
           manifest: resolveImageManifest(CDN_BASE || undefined),
@@ -202,6 +222,8 @@ export function useRmhosMachine(
           vm.destroy();
           return;
         }
+        run.publish();
+        cleanups.push(() => run.release());
         vmRef.current = vm;
         cleanups.push(() => {
           if (vmRef.current === vm) vmRef.current = null;
@@ -282,30 +304,39 @@ export function useRmhosMachine(
   const desktopReady = snap?.desktopReady ?? false;
   useEffect(() => {
     setNetState('connecting');
-    if (!desktopReady || !netRef.current) return;
+    setNetEnded(false);
+    if (!desktopReady || !tickets.current.current) return;
     let tracker = initialTracker;
     let stopped = false;
     const poll = async () => {
-      const n = netRef.current;
+      const n = tickets.current.current;
       if (!n || stopped || document.visibilityState !== 'visible') return;
-      let result: { connected: boolean } | 'failed' = 'failed';
+      let result: ReturnType<typeof statusSample> = 'failed';
       try {
         const r = await fetch(statusUrl(n.url, n.ticket), { cache: 'no-store' });
-        if (r.ok) {
-          const body = (await r.json()) as { connected?: unknown };
-          result = { connected: body.connected === true };
-        }
+        const body = r.ok ? ((await r.json()) as { connected?: unknown }) : null;
+        // 401: the hub dropped this ticket. 429: no information, nothing changes.
+        result = statusSample(r.status, body);
       } catch {
         // counted as a failed poll
       }
-      if (stopped) return;
+      if (stopped || result === null) return;
       const next = trackNet(tracker, { at: Date.now(), result });
       tracker = next.tracker;
       setNetState(next.state);
+      if (next.ended) {
+        setNetEnded(true);
+        stopped = true;
+        clearInterval(timer);
+      }
     };
     void poll();
-    const timer = setInterval(() => void poll(), POLL_MS);
-    const onVisible = () => void poll();
+    const timer: ReturnType<typeof setInterval> = setInterval(() => void poll(), POLL_MS);
+    // Visibility changes can fire in bursts: at most one poll per 5 s from them.
+    const gate = createPollGate(5000);
+    const onVisible = () => {
+      if (gate(Date.now())) void poll();
+    };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
       stopped = true;
@@ -347,6 +378,12 @@ export function useRmhosMachine(
       return info ? { bytes: info.archive, savedAt: info.savedAt } : null;
     }, []),
     previousAvailable: snap?.previousAvailable ?? false,
+    previousSavedAt: snap?.previousSavedAt ?? null,
+    storedCopies: useCallback(async () => (await runnerRef.current?.storedCopies()) ?? null, []),
+    exportCopy: useCallback(async (kind: CopyKind) => runnerRef.current?.exportCopy(kind) ?? null, []),
+    removeCopy: useCallback(async (kind: 'replaced' | 'damaged') => {
+      await runnerRef.current?.removeCopy(kind);
+    }, []),
     putPreviousBack: useCallback(async () => {
       if (!runnerRef.current) throw new Error('rmhOS is not running');
       await runnerRef.current.putPreviousBack();
@@ -364,5 +401,6 @@ export function useRmhosMachine(
     linuxUser: sessionQ.data?.linuxUser ?? null,
     net: sessionQ.data?.net ?? null,
     netState,
+    netEnded,
   };
 }

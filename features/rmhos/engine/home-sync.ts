@@ -56,9 +56,34 @@ export async function checkBackup(gz: Uint8Array): Promise<Bytes> {
   return tar;
 }
 
+export type CopyKind = 'current' | 'replaced' | 'damaged';
+export interface StoredCopy {
+  /** Bytes of the stored gzip. */
+  size: number;
+  savedAt: number;
+}
+export interface StoredCopies {
+  current: StoredCopy | null;
+  replaced: StoredCopy | null;
+  damaged: StoredCopy | null;
+}
+
 /** Why a backup could not be stored. */
 export class BackupError extends Error {
-  constructor(readonly code: 'invalid' | 'storage-full' | 'storage_error') {
+  /**
+   * `invalid`: not a backup. `storage-full` / `storage_error`: the put failed, nothing changed.
+   * `damaged_exists`: an earlier damaged copy is stored and another would have to be kept: the
+   * operation was refused before anything was touched. `previous_stale`: the home that a backup
+   * replaced can no longer be put back (the restored backup has been saved over, or is gone).
+   */
+  constructor(
+    readonly code:
+      | 'invalid'
+      | 'storage-full'
+      | 'storage_error'
+      | 'damaged_exists'
+      | 'previous_stale',
+  ) {
     super(code);
     this.name = 'BackupError';
   }
@@ -97,6 +122,8 @@ export class HomeSync {
    */
   async prepare(): Promise<PrepareResult> {
     const cached = await this.deps.store.get(this.deps.userId);
+    // A leftover `:replaced` whose backup has been saved over (or removed) can never be put back.
+    await this.dropStaleReplaced(cached);
     if (!cached) {
       this.knownSha = null;
       return 'empty';
@@ -114,21 +141,22 @@ export class HomeSync {
 
   /**
    * After `prepare()` said `corrupt` and the person chose to go on: the unreadable entry is moved
-   * to `<userId>:damaged` (kept, not deleted) and the next start has an empty home.
+   * to `<userId>:damaged` (kept, not deleted) and the next start has an empty home. Refused with
+   * `damaged_exists`, touching nothing, when an earlier damaged copy is still stored: a damaged
+   * archive is never discarded to make room.
    */
   async discardDamaged(): Promise<void> {
     const { store, userId } = this.deps;
     const cached = await store.get(userId);
     if (!cached) return;
-    await this.keepDamaged(cached);
-    await store.delete(userId);
+    if (await store.get(`${userId}:damaged`)) throw new BackupError('damaged_exists');
+    try {
+      await store.put(`${userId}:damaged`, cached); // throws before anything is deleted
+      await store.delete(userId);
+    } catch (e) {
+      throw new BackupError(isQuota(e) ? 'storage-full' : 'storage_error');
+    }
     this.knownSha = null;
-  }
-
-  /** The first damaged copy is the one kept: a later one never replaces it. Throws before any delete. */
-  private async keepDamaged(cached: CachedHome): Promise<void> {
-    const { store, userId } = this.deps;
-    if (!(await store.get(`${userId}:damaged`))) await store.put(`${userId}:damaged`, cached);
   }
 
   /** Stops this instance writing for good (it is being replaced by a new machine's). */
@@ -194,6 +222,9 @@ export class HomeSync {
           : { status: 'failed', code: 'storage_error' };
       }
       this.knownSha = sha256;
+      // The home now differs from the restored backup: the home it replaced can no longer be put
+      // back, so it goes (no user action needed). Best effort: stale ones are also dropped at start.
+      await store.delete(`${userId}:replaced`).catch(() => {});
       if (!this.persisted) {
         this.persisted = true;
         void Promise.resolve(globalThis.navigator?.storage?.persist?.()).catch(() => {});
@@ -254,40 +285,96 @@ export class HomeSync {
         } catch {
           readable = false;
         }
-        if (readable) await store.put(`${userId}:replaced`, previous);
-        else await this.keepDamaged(previous);
+        if (readable) {
+          await store.put(`${userId}:replaced`, { ...previous, forSha: entry.sha256 });
+        } else {
+          // An unreadable current archive has to be kept, and there is room for one copy only.
+          if (await store.get(`${userId}:damaged`)) throw new BackupError('damaged_exists');
+          await store.put(`${userId}:damaged`, previous);
+        }
       }
       await store.put(userId, entry);
     } catch (e) {
       this.suspended = wasSuspended; // nothing was replaced: saving can go on
+      if (e instanceof BackupError) throw e;
       throw new BackupError(isQuota(e) ? 'storage-full' : 'storage_error');
     }
     this.knownSha = entry.sha256;
   }
 
-  /** Is there a home that a backup replaced, to put back? */
-  async hasReplaced(): Promise<boolean> {
-    return !!(await this.deps.store.get(`${this.deps.userId}:replaced`));
+  /**
+   * The home a restored backup replaced, if it can still be put back: only while the stored home
+   * is still exactly that backup (it has never been saved over). Otherwise null.
+   */
+  async previousOffer(): Promise<{ savedAt: number } | null> {
+    const { store, userId } = this.deps;
+    const replaced = await store.get(`${userId}:replaced`);
+    if (!replaced?.forSha) return null;
+    const main = await store.get(userId);
+    return main?.sha256 === replaced.forSha ? { savedAt: replaced.savedAt } : null;
   }
 
   /**
-   * Puts the home a backup replaced back as the stored one (the backup that failed is kept as the
-   * damaged copy if none is kept yet). Suspends this instance like an import: restart after.
+   * Puts the home a backup replaced back as the stored one. Refused (`previous_stale`) unless the
+   * stored home is still the backup it was replaced for, checked here again: that backup is the
+   * failed import the person supplied (they still have the file), so no copy of it is kept.
+   * Writes the main entry first, then removes `:replaced`. Suspends this instance like an import.
    */
   async putPreviousBack(): Promise<void> {
     const { store, userId } = this.deps;
-    const replaced = await store.get(`${userId}:replaced`);
-    if (!replaced) throw new BackupError('invalid');
     this.suspended = true;
     try {
       await this.inFlight?.catch(() => {});
-      const current = await store.get(userId);
-      if (current) await this.keepDamaged(current);
-      await store.put(userId, replaced);
+      const replaced = await store.get(`${userId}:replaced`);
+      const main = await store.get(userId);
+      if (!replaced?.forSha || main?.sha256 !== replaced.forSha) {
+        throw new BackupError('previous_stale');
+      }
+      await store.put(userId, {
+        archive: replaced.archive,
+        sha256: replaced.sha256,
+        savedAt: replaced.savedAt,
+      });
       await store.delete(`${userId}:replaced`);
+      this.knownSha = replaced.sha256;
     } catch (e) {
+      if (e instanceof BackupError) throw e;
       throw new BackupError(isQuota(e) ? 'storage-full' : 'storage_error');
     }
-    this.knownSha = replaced.sha256;
+  }
+
+  private async dropStaleReplaced(main: CachedHome | null): Promise<void> {
+    const { store, userId } = this.deps;
+    try {
+      const replaced = await store.get(`${userId}:replaced`);
+      if (replaced && (!replaced.forSha || main?.sha256 !== replaced.forSha)) {
+        await store.delete(`${userId}:replaced`);
+      }
+    } catch {
+      // a leftover stays until the next start
+    }
+  }
+
+  /** What is stored for this account, so none of it sits in the browser unseen. */
+  async storedCopies(): Promise<StoredCopies> {
+    const { store, userId } = this.deps;
+    const info = (c: CachedHome | null) =>
+      c ? { size: c.archive.length, savedAt: c.savedAt } : null;
+    return {
+      current: info(await store.get(userId)),
+      replaced: info(await store.get(`${userId}:replaced`)),
+      damaged: info(await store.get(`${userId}:damaged`)),
+    };
+  }
+
+  /** The stored gzip of one copy, byte for byte. */
+  async exportCopy(kind: CopyKind): Promise<Uint8Array | null> {
+    const key = kind === 'current' ? this.deps.userId : `${this.deps.userId}:${kind}`;
+    return (await this.deps.store.get(key))?.archive ?? null;
+  }
+
+  /** Deletes one of the two extra copies (never the current one). */
+  async removeCopy(kind: 'replaced' | 'damaged'): Promise<void> {
+    await this.deps.store.delete(`${this.deps.userId}:${kind}`);
   }
 }

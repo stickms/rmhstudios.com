@@ -352,36 +352,111 @@ describe('memory home store', () => {
       expect(await b.store.get('u1:replaced')).toBeNull();
     });
 
-    it('keeps the home it replaces, once, under :replaced, and can put it back', async () => {
-      const { sync, store } = setup();
-      const first = { archive: await gzip(fakeTar(1)), sha256: 'first', savedAt: 1 };
-      await store.put('u1', first);
-      await sync.prepare();
-      expect(await sync.hasReplaced()).toBe(false);
+    /** A store holding `first`, then a backup imported over it by a session that is then gone. */
+    async function restored() {
+      const t = setup({ tars: [fakeTar(5)] });
+      const first = { archive: await gzip(fakeTar(1)), sha256: 'first', savedAt: 1234 };
+      await t.store.put('u1', first);
+      await t.sync.prepare();
       const backup = await gzip(fakeTar(8));
-      await sync.importArchive(backup);
-      expect(await store.get('u1:replaced')).toEqual(first);
-      expect(await sync.hasReplaced()).toBe(true);
-      // The backup fails RESTORE in the guest: put the previous files back.
-      await sync.putPreviousBack();
-      expect(await store.get('u1')).toEqual(first);
-      expect(await sync.hasReplaced()).toBe(false);
-      // The backup that failed is kept as the damaged copy.
-      expect((await store.get('u1:damaged'))!.archive).toEqual(backup);
+      await t.sync.importArchive(backup);
+      return { ...t, first, backup };
+    }
+    /** What the page does next: a new machine, a new HomeSync over the same store. */
+    const nextSync = (t: { store: HomeStore; vm: never; agent: never }) =>
+      new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store });
+
+    it('stores the home it replaces under :replaced with the sha of the backup that replaced it', async () => {
+      const { store, first, backup } = await restored();
+      const replaced = (await store.get('u1:replaced'))!;
+      expect(replaced.archive).toEqual(first.archive);
+      expect(replaced.savedAt).toBe(1234);
+      expect(replaced.forSha).toBe((await store.get('u1'))!.sha256);
+      expect((await store.get('u1'))!.archive).toEqual(backup);
+    });
+
+    it('put-back is offered (with the time) only while the main entry is still the restored backup', async () => {
+      const t = await restored();
+      const next = nextSync(t as never);
+      await next.prepare(); // the new machine starts: main is still the backup
+      expect(await next.previousOffer()).toEqual({ savedAt: 1234 });
+    });
+
+    it('put-back swaps main for :replaced, removes :replaced, and keeps no copy of the backup', async () => {
+      const t = await restored();
+      const next = nextSync(t as never);
+      await next.prepare();
+      await next.putPreviousBack();
+      expect(await t.store.get('u1')).toEqual(t.first);
+      expect(await t.store.get('u1:replaced')).toBeNull();
+      expect(await t.store.get('u1:damaged')).toBeNull();
+      expect(await next.previousOffer()).toBeNull();
+    });
+
+    it('after a save changed the main entry put-back is not offered and is refused', async () => {
+      const t = await restored();
+      // Something else saved over the restored backup (e.g. another session of this account).
+      const newer = { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 9999 };
+      await t.store.put('u1', newer);
+      const next = nextSync(t as never);
+      expect(await next.previousOffer()).toBeNull();
+      await expect(next.putPreviousBack()).rejects.toMatchObject({ code: 'previous_stale' });
+      expect(await t.store.get('u1')).toEqual(newer); // newer work untouched
+    });
+
+    it('the first save that changes the main entry clears :replaced, with no user action', async () => {
+      const t = await restored(); // the guest will save fakeTar(5); the backup is fakeTar(8)
+      const next = nextSync(t as never);
+      await next.prepare();
+      expect(await t.store.get('u1:replaced')).not.toBeNull();
+      expect((await next.save()).status).toBe('saved');
+      expect(await t.store.get('u1:replaced')).toBeNull();
+      expect(await next.previousOffer()).toBeNull();
+    });
+
+    it('a save that leaves the main entry as the backup keeps :replaced', async () => {
+      const t = setup({ tars: [fakeTar(8)] }); // the guest saves exactly the backup's tar
+      await t.store.put('u1', { archive: await gzip(fakeTar(1)), sha256: 'first', savedAt: 1 });
+      await t.sync.prepare();
+      await t.sync.importArchive(await gzip(fakeTar(8)));
+      const next = new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent as never, store: t.store });
+      await next.prepare();
+      expect((await next.save()).status).toBe('unchanged');
+      expect(await t.store.get('u1:replaced')).not.toBeNull();
+    });
+
+    it('a stale :replaced (its backup no longer the main entry) is dropped at session start', async () => {
+      const t = await restored();
+      await t.store.put('u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 5 });
+      await nextSync(t as never).prepare();
+      expect(await t.store.get('u1:replaced')).toBeNull();
+    });
+
+    it('a current :replaced survives session start', async () => {
+      const t = await restored();
+      await nextSync(t as never).prepare();
+      expect(await t.store.get('u1:replaced')).not.toBeNull();
+    });
+
+    it('a :replaced without forSha is never offered and is dropped at start', async () => {
+      const { sync, store } = setup();
+      await store.put('u1', { archive: await gzip(fakeTar(1)), sha256: 'x', savedAt: 1 });
+      await store.put('u1:replaced', { archive: await gzip(fakeTar(2)), sha256: 'y', savedAt: 2 });
+      expect(await sync.previousOffer()).toBeNull();
+      await sync.prepare();
+      expect(await store.get('u1:replaced')).toBeNull();
     });
 
     it('a second import replaces the :replaced generation (one generation only)', async () => {
-      const { sync, store } = setup();
-      await sync.prepare();
-      const a = await gzip(fakeTar(2));
-      await sync.importArchive(a); // nothing before it: no :replaced
-      expect(await store.get('u1:replaced')).toBeNull();
-      const { sync: sync2 } = { sync: new HomeSync({ userId: 'u1', vm: {} as never, agent: {} as never, store }) };
-      await sync2.importArchive(await gzip(fakeTar(3)));
-      expect((await store.get('u1:replaced'))!.archive).toEqual(a);
+      const t = await restored();
+      const next = nextSync(t as never);
+      await next.prepare();
+      await next.importArchive(await gzip(fakeTar(3)));
+      expect((await t.store.get('u1:replaced'))!.archive).toEqual(t.backup);
+      expect((await t.store.get('u1:replaced'))!.forSha).toBe((await t.store.get('u1'))!.sha256);
     });
 
-    it('a damaged entry replaced by a backup goes to :damaged, not :replaced', async () => {
+    it('a damaged current entry is kept under :damaged when a backup replaces it', async () => {
       const { sync, store } = setup();
       const damaged = { archive: new Uint8Array([9, 9, 9]), sha256: 'bad', savedAt: 1 };
       await store.put('u1', damaged);
@@ -390,17 +465,85 @@ describe('memory home store', () => {
       expect(await store.get('u1:replaced')).toBeNull();
       expect(await store.get('u1:damaged')).toEqual(damaged);
     });
+  });
 
-    it(':damaged keeps the FIRST damaged copy', async () => {
+  describe('a damaged copy is never discarded', () => {
+    const first = { archive: new Uint8Array([9, 9, 9]), sha256: 'first', savedAt: 1 };
+    const second = { archive: new Uint8Array([8, 8, 8]), sha256: 'second', savedAt: 2 };
+
+    it('discardDamaged aborts, touching nothing, when an earlier damaged copy exists', async () => {
       const { sync, store } = setup();
-      const first = { archive: new Uint8Array([9, 9, 9]), sha256: 'first', savedAt: 1 };
-      const second = { archive: new Uint8Array([8, 8, 8]), sha256: 'second', savedAt: 2 };
+      await store.put('u1:damaged', first);
+      await store.put('u1', second);
+      await expect(sync.discardDamaged()).rejects.toMatchObject({ code: 'damaged_exists' });
+      expect(await store.get('u1')).toEqual(second);
+      expect(await store.get('u1:damaged')).toEqual(first);
+    });
+
+    it('importArchive over an unreadable main entry aborts the same way, and saving still works', async () => {
+      const { sync, store, agent } = setup({ tars: [fakeTar(2)] });
+      await store.put('u1:damaged', first);
+      await store.put('u1', second);
+      expect(await sync.prepare()).toBe('corrupt');
+      await expect(sync.importArchive(await gzip(fakeTar(4)))).rejects.toMatchObject({
+        code: 'damaged_exists',
+      });
+      expect(await store.get('u1')).toEqual(second);
+      expect(await store.get('u1:damaged')).toEqual(first);
+      expect(await store.get('u1:replaced')).toBeNull();
+      void agent; // not suspended: the instance may still save
+    });
+
+    it('after the earlier copy is downloaded and removed, both operations go through', async () => {
+      const { sync, store } = setup();
+      await store.put('u1:damaged', first);
+      await store.put('u1', second);
+      expect(Array.from((await sync.exportCopy('damaged'))!)).toEqual([9, 9, 9]);
+      await sync.removeCopy('damaged');
+      expect(await store.get('u1:damaged')).toBeNull();
+      await sync.discardDamaged();
+      expect(await store.get('u1:damaged')).toEqual(second);
+      expect(await store.get('u1')).toBeNull();
+    });
+
+    it('both copies are kept when a later one arrives only after the earlier was removed', async () => {
+      const { sync, store } = setup();
       await store.put('u1', first);
       await sync.discardDamaged();
       await store.put('u1', second);
-      await sync.discardDamaged();
+      await expect(sync.discardDamaged()).rejects.toMatchObject({ code: 'damaged_exists' });
       expect(await store.get('u1:damaged')).toEqual(first);
-      expect(await store.get('u1')).toBeNull();
+      expect(await store.get('u1')).toEqual(second);
+    });
+  });
+
+  describe('stored copies', () => {
+    it('lists the current archive and the two extras, and exports and removes them', async () => {
+      const { sync, store } = setup();
+      const cur = { archive: await gzip(fakeTar(1)), sha256: 'c', savedAt: 100 };
+      const rep = { archive: await gzip(fakeTar(2)), sha256: 'r', savedAt: 50, forSha: 'c' };
+      const dam = { archive: new Uint8Array([9, 9]), sha256: 'd', savedAt: 10 };
+      await store.put('u1', cur);
+      await store.put('u1:replaced', rep);
+      await store.put('u1:damaged', dam);
+      expect(await sync.storedCopies()).toEqual({
+        current: { size: cur.archive.length, savedAt: 100 },
+        replaced: { size: rep.archive.length, savedAt: 50 },
+        damaged: { size: 2, savedAt: 10 },
+      });
+      expect(await sync.exportCopy('current')).toEqual(cur.archive);
+      expect(await sync.exportCopy('replaced')).toEqual(rep.archive);
+      expect(await sync.exportCopy('damaged')).toEqual(dam.archive);
+      await sync.removeCopy('replaced');
+      await sync.removeCopy('damaged');
+      expect(await sync.storedCopies()).toMatchObject({ replaced: null, damaged: null });
+      expect((await sync.storedCopies()).current).not.toBeNull(); // the current one is never removable here
+    });
+
+    it('lists nothing for an account with nothing stored', async () => {
+      const { sync } = setup();
+      expect(await sync.storedCopies()).toEqual({ current: null, replaced: null, damaged: null });
+      expect(await sync.exportCopy('damaged')).toBeNull();
     });
   });
 
