@@ -649,6 +649,20 @@ export function LearnHome() {
                 },
               )}
             </Link>
+            <Link
+              to="/rmhmusic/songs"
+              className={
+                TEXT_BUTTON
+              }
+            >
+              {t(
+                'songs-home-link',
+                {
+                  defaultValue:
+                    'Songs',
+                },
+              )}
+            </Link>
           </div>
         </div>
       );

@@ -65,10 +65,16 @@ export function Shell({
   title,
   action,
   busy = false,
+  back,
   children,
 }: {
   title: string;
   action?: ReactNode;
+  /** Where the back link goes instead of the learn home (a song goes back to the songbook). */
+  back?: {
+    to: '/rmhmusic/songs';
+    label: string;
+  };
   /** The lesson is still loading: the main region says so to screen readers. */
   busy?: boolean;
   children: ReactNode;
@@ -86,7 +92,10 @@ export function Shell({
             end), and below each other if they must, rather than widen the page. */}
         <header className="flex flex-wrap items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
-            to="/rmhmusic"
+            to={
+              back?.to ??
+              '/rmhmusic'
+            }
             className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-app-sm px-3 py-2 text-sm font-medium text-app-text-muted transition-colors hover:text-app-text"
           >
             <ArrowLeft
@@ -94,13 +103,14 @@ export function Shell({
               aria-hidden="true"
             />
             <span>
-              {t(
-                'back-to-lessons',
-                {
-                  defaultValue:
-                    'Back to lessons',
-                },
-              )}
+              {back?.label ??
+                t(
+                  'back-to-lessons',
+                  {
+                    defaultValue:
+                      'Back to lessons',
+                  },
+                )}
             </span>
           </Link>
           <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">

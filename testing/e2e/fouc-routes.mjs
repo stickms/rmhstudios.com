@@ -258,6 +258,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'The first lesson; the app shell and lesson skeleton paint before the profile loads.',
   },
+  '/rmhmusic/songs/$songId': {
+    path: '/rmhmusic/songs/ode-to-joy',
+    fidelity: 'shell',
+    why: 'A song of the songbook; the app shell, the empty score window and the run skeleton paint before the profile loads.',
+  },
   '/rmhstudy/$roomId': {
     path: '/rmhstudy/fouc-audit',
     fidelity: 'shell',

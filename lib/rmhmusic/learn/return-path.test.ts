@@ -119,6 +119,15 @@ describe('rmhmusicReturnPath', () => {
     );
   });
 
+  it('returns to the songbook and to a song', () => {
+    expect(rmhmusicReturnPath('/rmhmusic/songs')).toBe('/rmhmusic/songs');
+    expect(rmhmusicReturnPath('/rmhmusic/songs/')).toBe('/rmhmusic/songs');
+    expect(rmhmusicReturnPath('/rmhmusic/songs/ode-to-joy')).toBe('/rmhmusic/songs/ode-to-joy');
+    expect(rmhmusicReturnPath('/rmhmusic/songs/Ode')).toBe('/rmhmusic');
+    expect(rmhmusicReturnPath('/rmhmusic/songs/a/b')).toBe('/rmhmusic');
+    expect(rmhmusicReturnPath('/rmhmusic/songsx')).toBe('/rmhmusic');
+  });
+
   it('sends everything else to the app home, never off the app', () => {
     for (const bad of [
       undefined,
