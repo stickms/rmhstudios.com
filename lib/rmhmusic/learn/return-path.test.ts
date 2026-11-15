@@ -95,6 +95,30 @@ describe('rmhmusicReturnPath', () => {
     );
   });
 
+  it('returns to the tuner', () => {
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/tuner',
+      ),
+    ).toBe(
+      '/rmhmusic/tuner',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/tuner/',
+      ),
+    ).toBe(
+      '/rmhmusic/tuner',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/tunerx',
+      ),
+    ).toBe(
+      '/rmhmusic',
+    );
+  });
+
   it('sends everything else to the app home, never off the app', () => {
     for (const bad of [
       undefined,

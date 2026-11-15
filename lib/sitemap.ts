@@ -723,6 +723,8 @@ export const EXCLUDED_ROUTES: Record<
       'auth-gated', // the sampled sounds' licence notices, inside the signed-in app
     '/rmhmusic/sprint':
       'personal', // the learner's own sight reading runs and scores, behind sign-in
+    '/rmhmusic/tuner':
+      'auth-gated', // the tuner and note reader, inside the signed-in app
     '/alexdebtcounter':
       'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
     '/sohumbum2':
