@@ -118,8 +118,10 @@ export async function handleDohQuery(
 
     // The upstream must be a public address, same rule as a relayed stream.
     const url = new URL(opts.upstream);
+    // The operator's own resolver is not a guest destination: the guest port policy (an allow-list
+    // of 80/443, say) must not be able to switch DNS off. Address rules still apply.
     const target = await checkConnect(
-      opts.policy,
+      { ...opts.policy, allowedPorts: null, deniedPorts: new Set() },
       {
         streamType: 'tcp',
         port: Number(url.port || 443),

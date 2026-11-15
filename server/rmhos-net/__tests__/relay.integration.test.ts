@@ -265,19 +265,31 @@ describe('relay hub', () => {
 
       c.send(encodeClose(7, CLOSE_REASON.voluntary));
       const line = await c.until(() =>
-        logs.find((l) => l.evt === 'rmhos-net.stream' && l.userId === 'u-echo'),
+        logs.find(
+          (l) => l.evt === 'rmhos-net.stream' && l.userId === 'u-echo' && l.state === 'close',
+        ),
       );
       expect(line).toMatchObject({
         evt: 'rmhos-net.stream',
+        state: 'close',
         userId: 'u-echo',
         host: 'public.test',
+        // The address actually dialled (the host was a name) and our source port on that socket.
+        address: PUBLIC_IP,
         port: 8080,
         up: 5,
         down: 5,
       });
-      expect(
-        logs.filter((l) => l.evt === 'rmhos-net.stream' && l.userId === 'u-echo'),
-      ).toHaveLength(1);
+      expect(typeof (line as { localPort: unknown }).localPort).toBe('number');
+      // One line at open and one at close, both carrying what an abuse report matches on.
+      const lines = logs.filter((l) => l.evt === 'rmhos-net.stream' && l.userId === 'u-echo');
+      expect(lines.map((l) => l.state)).toEqual(['open', 'close']);
+      expect(lines[0]).toMatchObject({
+        host: 'public.test',
+        address: PUBLIC_IP,
+        port: 8080,
+        localPort: (line as { localPort: number }).localPort,
+      });
       c.ws.close();
     });
 

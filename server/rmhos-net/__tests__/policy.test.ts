@@ -248,3 +248,35 @@ describe('loadPolicy limits', () => {
       ).toEqual([25, 465, 587, 2525]);
   });
 });
+
+describe('loadPolicy operator switches', () => {
+  it('defaults: no allow-list, scan brake 300, 200 sessions, 20 MiB/s and 100 GiB/day globally', () => {
+    expect(p.allowedPorts).toBeNull();
+    expect(p.maxDestinationsPer10Min).toBe(300);
+    expect(p.maxSessions).toBe(200);
+    expect(p.globalBytesPerSecond).toBe(20 * 1024 * 1024);
+    expect(p.globalBytesPerDay).toBe(100 * 1024 ** 3);
+  });
+  it('reads every override', () => {
+    const q = loadPolicy({
+      RMHOS_NET_ALLOWED_PORTS: '80, 443',
+      RMHOS_NET_MAX_DESTINATIONS_PER_10MIN: '5',
+      RMHOS_NET_MAX_SESSIONS: '3',
+      RMHOS_NET_GLOBAL_BYTES_PER_SECOND: '1000',
+      RMHOS_NET_GLOBAL_BYTES_PER_DAY: '2000',
+    });
+    expect(q.allowedPorts).toEqual(new Set([80, 443]));
+    expect([q.maxDestinationsPer10Min, q.maxSessions, q.globalBytesPerSecond, q.globalBytesPerDay]).toEqual([
+      5, 3, 1000, 2000,
+    ]);
+  });
+  it('an allow-list admits only its ports and ignores the deny-list; a junk one allows nothing', async () => {
+    const q = loadPolicy({ RMHOS_NET_ALLOWED_PORTS: '80,443', RMHOS_NET_DENIED_PORTS: '80' });
+    const at = (port: number) => checkConnect(q, { ...base, port }, pub);
+    expect((await at(443)).ok).toBe(true);
+    expect((await at(80)).ok).toBe(true);
+    expect(await at(22)).toEqual(blocked);
+    const junk = loadPolicy({ RMHOS_NET_ALLOWED_PORTS: 'abc' });
+    expect(await checkConnect(junk, base, pub)).toEqual(blocked);
+  });
+});

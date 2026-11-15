@@ -5,7 +5,9 @@ import { UsageMeter } from './meter';
 import { createRelayServer } from './relay';
 
 function log(line: object): void {
-  process.stdout.write(`${JSON.stringify({ ts: new Date().toISOString(), ...line })}\n`);
+  // `t` is epoch milliseconds (for arithmetic and journald queries), `ts` the same instant as ISO text.
+  const now = Date.now();
+  process.stdout.write(`${JSON.stringify({ t: now, ts: new Date(now).toISOString(), ...line })}\n`);
 }
 
 let cfg;
@@ -25,6 +27,7 @@ const server = createRelayServer({
   policy: cfg.policy,
   meter,
   log,
+  deny: cfg.deny,
   doh: {
     upstream: cfg.dohUpstream,
     corsOrigin: cfg.corsOrigin,
@@ -45,8 +48,29 @@ server.listen(cfg.port, () => {
     evt: 'rmhos-net.listening',
     port: cfg.port,
     enabled: cfg.policy.enabled,
+    denied: cfg.deny.size,
+    maxSessions: cfg.policy.maxSessions,
   });
 });
+
+// Deny-list file: re-read on SIGHUP and every 60 s; anyone newly denied loses their live session
+// at once. A self-rescheduling timeout (unref'd), not an interval: it is not periodic housekeeping
+// the scheduler ratchet should count, and a slow read cannot overlap itself.
+function reloadDeny(reason: string): void {
+  const added = cfg.deny.reload();
+  if (added.length > 0) {
+    log({ evt: 'rmhos-net.deny', reason, added: added.length, total: cfg.deny.size });
+    server.enforceDeny();
+  }
+}
+function scheduleDenyReload(): void {
+  setTimeout(() => {
+    reloadDeny('timer');
+    scheduleDenyReload();
+  }, 60_000).unref();
+}
+scheduleDenyReload();
+process.on('SIGHUP', () => reloadDeny('sighup'));
 
 // An unexpected error must not take the hub (and every user's session) down: log it and keep serving.
 process.on('uncaughtException', (err) => {

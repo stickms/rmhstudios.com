@@ -38,15 +38,23 @@ describe('probe-firewall.sh', () => {
   it('proves the firewall when the connection to the host times out', () => {
     const { result, log } = probe({ MOCK_RUN_EXIT: '10' });
     expect(result.status, result.stdout).toBe(0);
-    const run = log.split('\n').find((l) => l.startsWith('run '));
+    // the node script is several lines: take everything from `run ` on
+    const run = log.slice(log.indexOf('run '));
     expect(run).toContain('--network rmhfixture-rmhos-egress');
     expect(run).toContain('--cap-drop ALL');
     expect(run).toContain('172.31.86.1');
+    // both halves of the proof: the sentinel must be refused AND the gateway must time out
+    expect(run).toContain('192.0.2.1');
+    expect(log).toContain('up --no-start --no-recreate');
     expect(run).toContain('fixture-app:latest');
   });
 
   it.each([
     ['connected', '11'],
+    ['sentinel timed out (the egress chain is absent or not on the FORWARD path)', '20'],
+    ['sentinel connected', '21'],
+    ['sentinel other error', '22'],
+    ['control answered (something else answers for the whole range)', '23'],
     ['refused', '12'],
     ['other error', '13'],
     ['docker failure', '125'],

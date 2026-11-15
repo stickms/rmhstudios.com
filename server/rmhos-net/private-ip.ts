@@ -5,7 +5,7 @@
 // is parsed to bytes and judged by range, never by text prefix.
 import { isIP } from 'node:net';
 
-function isPrivateV4(a: number, b: number): boolean {
+function isPrivateV4(a: number, b: number, c: number): boolean {
   if (a === 0) return true; // 0.0.0.0/8
   if (a === 10) return true; // 10/8
   if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT 100.64/10
@@ -13,7 +13,11 @@ function isPrivateV4(a: number, b: number): boolean {
   if (a === 169 && b === 254) return true; // link-local + metadata
   if (a === 172 && b >= 16 && b <= 31) return true; // 172.16/12
   if (a === 192 && b === 168) return true; // 192.168/16
-  if (a === 192 && b === 0) return true; // 192.0.0/24, 192.0.2/24
+  // 192.0.0.0/24 (IETF protocol) and 192.0.2.0/24 (TEST-NET-1) only: the rest of 192.0/16 is public
+  // (192.0.64.0/18 is WordPress.com and Gravatar).
+  if (a === 192 && b === 0 && (c === 0 || c === 2)) return true;
+  if (a === 198 && b === 51 && c === 100) return true; // TEST-NET-2
+  if (a === 203 && b === 0 && c === 113) return true; // TEST-NET-3
   if (a === 198 && (b === 18 || b === 19)) return true; // benchmark 198.18/15
   if (a >= 224) return true; // multicast 224/4 + reserved 240/4 (incl. broadcast)
   return false;
@@ -78,7 +82,7 @@ function isPrivateV6(b: number[]): boolean {
   const zeroUpTo = (n: number) => b.slice(0, n).every((x) => x === 0);
   if (zeroUpTo(12)) return true; // ::/96 covers ::, ::1 and IPv4-compatible
   // IPv4-mapped ::ffff:0:0/96
-  if (zeroUpTo(10) && b[10] === 0xff && b[11] === 0xff) return isPrivateV4(b[12]!, b[13]!);
+  if (zeroUpTo(10) && b[10] === 0xff && b[11] === 0xff) return isPrivateV4(b[12]!, b[13]!, b[14]!);
   // NAT64 64:ff9b::/96
   if (
     b[0] === 0 &&
@@ -87,10 +91,10 @@ function isPrivateV6(b: number[]): boolean {
     b[3] === 0x9b &&
     b.slice(4, 12).every((x) => x === 0)
   ) {
-    return isPrivateV4(b[12]!, b[13]!);
+    return isPrivateV4(b[12]!, b[13]!, b[14]!);
   }
   // 6to4 2002::/16
-  if (b[0] === 0x20 && b[1] === 0x02) return isPrivateV4(b[2]!, b[3]!);
+  if (b[0] === 0x20 && b[1] === 0x02) return isPrivateV4(b[2]!, b[3]!, b[4]!);
   if ((b[0]! & 0xfe) === 0xfc) return true; // fc00::/7
   if (b[0] === 0xfe && (b[1]! & 0xc0) === 0x80) return true; // fe80::/10
   if (b[0] === 0xfe && (b[1]! & 0xc0) === 0xc0) return true; // fec0::/10
@@ -103,7 +107,7 @@ export function isPrivateIp(ip: string): boolean {
   const version = isIP(ip);
   if (version === 4) {
     const v4 = parseV4(ip);
-    return v4 === null ? true : isPrivateV4(v4[0]!, v4[1]!);
+    return v4 === null ? true : isPrivateV4(v4[0]!, v4[1]!, v4[2]!);
   }
   if (version === 6) {
     const bytes = parseV6(ip);
