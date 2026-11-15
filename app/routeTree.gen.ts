@@ -416,6 +416,8 @@ import { Route as GamesTradesIndexRouteImport } from './routes/games/trades.inde
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as RmhmusicLessonLessonIdRouteImport } from './routes/rmhmusic/lesson.$lessonId'
+import { Route as RmhmusicSongsIndexRouteImport } from './routes/rmhmusic/songs.index'
+import { Route as RmhmusicSongsSongIdRouteImport } from './routes/rmhmusic/songs.$songId'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as SliceItArtistKeyRouteImport } from './routes/slice-it/artist.$key'
 import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
@@ -2569,6 +2571,16 @@ const RmhmusicLessonLessonIdRoute = RmhmusicLessonLessonIdRouteImport.update({
   path: '/lesson/$lessonId',
   getParentRoute: () => RmhmusicRoute,
 } as any)
+const RmhmusicSongsIndexRoute = RmhmusicSongsIndexRouteImport.update({
+  id: '/songs/',
+  path: '/songs/',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicSongsSongIdRoute = RmhmusicSongsSongIdRouteImport.update({
+  id: '/songs/$songId',
+  path: '/songs/$songId',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
 const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -3478,6 +3490,7 @@ export interface FileRoutesByFullPath {
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
+  '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -3536,6 +3549,7 @@ export interface FileRoutesByFullPath {
   '/games/market/': typeof GamesMarketIndexRoute
   '/games/trades/': typeof GamesTradesIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
+  '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
@@ -3964,6 +3978,7 @@ export interface FileRoutesByTo {
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
+  '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -4021,6 +4036,7 @@ export interface FileRoutesByTo {
   '/games/market': typeof GamesMarketIndexRoute
   '/games/trades': typeof GamesTradesIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
+  '/rmhmusic/songs': typeof RmhmusicSongsIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/strategies/profile': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
@@ -4477,6 +4493,7 @@ export interface FileRoutesById {
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
+  '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -4535,6 +4552,7 @@ export interface FileRoutesById {
   '/games/market/': typeof GamesMarketIndexRoute
   '/games/trades/': typeof GamesTradesIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
+  '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
@@ -4990,6 +5008,7 @@ export interface FileRouteTypes {
     | '/games/profile/$id'
     | '/library/albums/$albumId'
     | '/rmhmusic/lesson/$lessonId'
+    | '/rmhmusic/songs/$songId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -5048,6 +5067,7 @@ export interface FileRouteTypes {
     | '/games/market/'
     | '/games/trades/'
     | '/rmhbox/minigames/'
+    | '/rmhmusic/songs/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
@@ -5476,6 +5496,7 @@ export interface FileRouteTypes {
     | '/games/profile/$id'
     | '/library/albums/$albumId'
     | '/rmhmusic/lesson/$lessonId'
+    | '/rmhmusic/songs/$songId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -5533,6 +5554,7 @@ export interface FileRouteTypes {
     | '/games/market'
     | '/games/trades'
     | '/rmhbox/minigames'
+    | '/rmhmusic/songs'
     | '/secret/cursed-logic'
     | '/strategies/profile'
     | '/strategies/puzzles'
@@ -5988,6 +6010,7 @@ export interface FileRouteTypes {
     | '/games/profile/$id'
     | '/library/albums/$albumId'
     | '/rmhmusic/lesson/$lessonId'
+    | '/rmhmusic/songs/$songId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -6046,6 +6069,7 @@ export interface FileRouteTypes {
     | '/games/market/'
     | '/games/trades/'
     | '/rmhbox/minigames/'
+    | '/rmhmusic/songs/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
@@ -9169,6 +9193,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhmusicLessonLessonIdRouteImport
       parentRoute: typeof RmhmusicRoute
     }
+    '/rmhmusic/songs/': {
+      id: '/rmhmusic/songs/'
+      path: '/songs'
+      fullPath: '/rmhmusic/songs/'
+      preLoaderRoute: typeof RmhmusicSongsIndexRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/songs/$songId': {
+      id: '/rmhmusic/songs/$songId'
+      path: '/songs/$songId'
+      fullPath: '/rmhmusic/songs/$songId'
+      preLoaderRoute: typeof RmhmusicSongsSongIdRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
     '/secret/cursed-logic/': {
       id: '/secret/cursed-logic/'
       path: '/'
@@ -10607,6 +10645,8 @@ interface RmhmusicRouteChildren {
   RmhmusicTunerRoute: typeof RmhmusicTunerRoute
   RmhmusicIndexRoute: typeof RmhmusicIndexRoute
   RmhmusicLessonLessonIdRoute: typeof RmhmusicLessonLessonIdRoute
+  RmhmusicSongsSongIdRoute: typeof RmhmusicSongsSongIdRoute
+  RmhmusicSongsIndexRoute: typeof RmhmusicSongsIndexRoute
 }
 
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
@@ -10616,6 +10656,8 @@ const RmhmusicRouteChildren: RmhmusicRouteChildren = {
   RmhmusicTunerRoute: RmhmusicTunerRoute,
   RmhmusicIndexRoute: RmhmusicIndexRoute,
   RmhmusicLessonLessonIdRoute: RmhmusicLessonLessonIdRoute,
+  RmhmusicSongsSongIdRoute: RmhmusicSongsSongIdRoute,
+  RmhmusicSongsIndexRoute: RmhmusicSongsIndexRoute,
 }
 
 const RmhmusicRouteWithChildren = RmhmusicRoute._addFileChildren(

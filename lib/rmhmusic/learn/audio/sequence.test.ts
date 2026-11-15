@@ -1015,3 +1015,193 @@ describe("a strum's humanise", () => {
     );
   });
 });
+
+describe('playSequence: a gap per note (a melody with its rhythm)', () => {
+  it('starts each note its own gap after the one before, and holds each for its own hold', () => {
+    playSequence(
+      [
+        60,
+        62,
+        64,
+      ],
+      [
+        250,
+        500,
+      ],
+      {
+        holdMs: 2000,
+        holdsMs:
+          [
+            200,
+            450,
+            900,
+          ],
+      },
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+      ],
+    );
+    vi.advanceTimersByTime(
+      200,
+    );
+    expect(
+      started[0]
+        ?.released,
+    ).toBe(
+      true,
+    );
+    vi.advanceTimersByTime(
+      49,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+      ],
+    );
+    vi.advanceTimersByTime(
+      1,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+        62,
+      ],
+    );
+    vi.advanceTimersByTime(
+      499,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+        62,
+      ],
+    );
+    expect(
+      started[1]
+        ?.released,
+    ).toBe(
+      true,
+    );
+    vi.advanceTimersByTime(
+      1,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+        62,
+        64,
+      ],
+    );
+    vi.advanceTimersByTime(
+      899,
+    );
+    expect(
+      started[2]
+        ?.released,
+    ).toBe(
+      false,
+    );
+    vi.advanceTimersByTime(
+      1,
+    );
+    expect(
+      started[2]
+        ?.released,
+    ).toBe(
+      true,
+    );
+  });
+
+  it('is never a chord, even when a gap is 0, and a missing hold falls back to holdMs', () => {
+    playSequence(
+      [
+        60,
+        64,
+      ],
+      [
+        0,
+      ],
+      {
+        holdMs: 300,
+      },
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+      ],
+    );
+    vi.advanceTimersByTime(
+      0,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+        64,
+      ],
+    );
+    vi.advanceTimersByTime(
+      300,
+    );
+    expect(
+      started.every(
+        (
+          n,
+        ) =>
+          n.released,
+      ),
+    ).toBe(
+      true,
+    );
+  });
+});

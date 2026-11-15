@@ -725,6 +725,8 @@ export const EXCLUDED_ROUTES: Record<
       'personal', // the learner's own sight reading runs and scores, behind sign-in
     '/rmhmusic/tuner':
       'auth-gated', // the tuner and note reader, inside the signed-in app
+    '/rmhmusic/songs':
+      'personal', // the songbook with the learner's own best scores, behind sign-in
     '/alexdebtcounter':
       'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
     '/sohumbum2':
@@ -1244,6 +1246,8 @@ export const DYNAMIC_ROUTES: Record<
       null,
     '/rmhmusic/lesson/$lessonId':
       null, // personal learning progress, behind auth
+    '/rmhmusic/songs/$songId':
+      null, // a song to play, with the learner's own scores, behind auth
     '/rmhstudy/$roomId':
       null,
     '/rmhtube/$roomId':

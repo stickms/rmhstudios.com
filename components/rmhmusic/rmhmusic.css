@@ -781,3 +781,25 @@ html[data-jelly-motion='still'] .rmm-beat__mark {
   line-height: 1;
   color: var(--app-text-dim);
 }
+
+/* ── Songs (songs/ScoreView.tsx, SongScreen.tsx) ──────────────────────────────────────────
+   The score window: one height for every width, version and state, the placeholder included —
+   324 layout units (`WINDOW_H` in lib/rmhmusic/learn/songs/layout.ts: three piano systems, two
+   guitar systems) at 1.1 px a unit (`UNIT_PX`). The systems inside wrap to its width; it scrolls
+   (itself, to the cursor's system, or by the learner) and never grows. */
+.rmm-score {
+  height: calc(324 * 1.1px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.rmhmusic-theme .rmm-score:focus-visible {
+  outline-offset: 2px;
+}
+/* A tab fret number sits ON its string line: a halo of the paper hides the line behind it. */
+.rmm-tab-fret text {
+  paint-order: stroke;
+  stroke: var(--app-surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}

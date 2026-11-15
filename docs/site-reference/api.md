@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1000 endpoints across 201 groups: 110 route files under `app/routes/api` and 890 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1002 endpoints across 201 groups: 110 route files under `app/routes/api` and 892 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1755,13 +1755,15 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/rmhmusic`
 
-7 routes.
+9 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/rmhmusic/learn/cards` | `GET` `POST` | `lib/rmhmusic/api/rmhmusic.learn.cards.server.ts` |
 | `/api/rmhmusic/learn/lesson-complete` | `POST` | `lib/rmhmusic/api/rmhmusic.learn.lesson-complete.server.ts` |
 | `/api/rmhmusic/learn/profile` | `GET` `PUT` | `lib/rmhmusic/api/rmhmusic.learn.profile.server.ts` |
+| `/api/rmhmusic/songs` | `GET` | `lib/rmhmusic/api/rmhmusic.songs.server.ts` |
+| `/api/rmhmusic/songs/best` | `POST` | `lib/rmhmusic/api/rmhmusic.songs.best.server.ts` |
 | `/api/rmhmusic/sprint` | `GET` | `lib/rmhmusic/api/rmhmusic.sprint.server.ts` |
 | `/api/rmhmusic/sprint/daily` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.daily.server.ts` |
 | `/api/rmhmusic/sprint/daily-start` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.daily-start.server.ts` |

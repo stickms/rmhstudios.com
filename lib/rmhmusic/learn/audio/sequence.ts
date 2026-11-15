@@ -68,6 +68,8 @@ export function chordRand(
 
 export interface SequenceOptions extends PlayOptions {
   holdMs?: number;
+  /** A melody's own hold for each note (ms); a note without one takes `holdMs`. */
+  holdsMs?: readonly number[];
   /** 0..1, for a strummed chord's humanise; default {@link chordRand} of the notes. */
   rand?: () => number;
   /** Note `index` (of the notes that are numbers) has started sounding. */
@@ -94,7 +96,13 @@ const NOT_STARTED: PlayingSequence =
 
 export function playSequence(
   midis: readonly number[],
-  gapMs: number,
+  /**
+   * The gap between one note's start and the next (ms): one for every note, 0 for a chord; or a
+   * melody's own gap after each note (`gapMs[i]` from note i to note i + 1), never a chord.
+   */
+  gapMs:
+    | number
+    | readonly number[],
   opts: SequenceOptions = {},
 ): PlayingSequence {
   if (
@@ -104,6 +112,7 @@ export function playSequence(
     return NOT_STARTED;
   const {
     holdMs = DEFAULT_HOLD_MS,
+    holdsMs,
     onNoteStart,
     onAllStarted,
     rand,
@@ -118,11 +127,29 @@ export function playSequence(
     0
   )
     return NOT_STARTED;
+  const melody =
+    typeof gapMs !==
+    'number';
+  const gapAfter =
+    (
+      i: number,
+    ): number =>
+      Math.max(
+        0,
+        (melody
+          ? gapMs[
+              i
+            ]
+          : gapMs) ??
+          0,
+      );
+  // A melody is never a chord, whatever its gaps; `gap` only decides chord or one-by-one.
   const gap =
-    Math.max(
-      0,
-      gapMs,
-    );
+    melody
+      ? 1
+      : gapAfter(
+          0,
+        );
   const timers =
     new Set<
       ReturnType<
@@ -240,7 +267,10 @@ export function playSequence(
                       );
                       letGo();
                     },
-                    holdMs,
+                    holdsMs?.[
+                      i
+                    ] ??
+                      holdMs,
                   );
                 timers.add(
                   hold,
@@ -274,7 +304,9 @@ export function playSequence(
                               1,
                           );
                       },
-                      gap,
+                      gapAfter(
+                        i,
+                      ),
                     );
                   timers.add(
                     next,

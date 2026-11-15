@@ -3,7 +3,7 @@
 > **For LLMs and auditors:** this is the single place for RMH Music (`/rmhmusic`, the beginner
 > piano and guitar learning programme) status, unfinished work, future features, known gaps and
 > hand-off steps. Written 2026-11-09 when work was paused for an audit; last updated 2026-11-15
-> (Phase 3, the tuner). If this file disagrees
+> (Phase 4, songs: sheet music and tab play-along). If this file disagrees
 > with the code, the code wins; fix this file. Plans live in `docs/superpowers/plans/`.
 
 ## 1. What shipped (in production on `main`)
@@ -16,8 +16,9 @@
 | #1525 (PR E) | Fretboard + keyboard note finder, pitch match (3 tries, cents-based points, mic echo guard), interval and chord ear training, play-a-chord. |
 | #1526 (PR F) | Metronome, rhythm lessons (note values, 4/4 vs 3/4, tap the beat), shared routed-modes module, catalog text and docs, large-text wrapping on the learn home. |
 | #1651 | Realistic instrument sounds (piano, steel-string guitar, violin, flute samples; Sound setting and dialog; `/rmhmusic/credits`) and the sight reading game "Sprint" (`/rmhmusic/sprint`: Freeplay and the Daily challenge, bests and daily rows `MusicSprintBest` / `MusicSprintDaily`). Details in §2.1 and §2.2. |
+| #1653 | Phase 3: the tuner and note reader (`/rmhmusic/tuner`). Details in §2.0. |
 
-Where things live: pure logic `lib/rmhmusic/learn/{theory,scoring,srs,content,machines,input,audio,sprint,tuner}`;
+Where things live: pure logic `lib/rmhmusic/learn/{theory,scoring,srs,content,machines,input,audio,sprint,tuner,songs}`;
 UI `components/rmhmusic/learn/`; lesson path and units `lib/rmhmusic/learn/content/path.ts`
 (every `available` lesson's `mode` must be in `content/routing.ts` `ROUTED_MODES`); styles
 `components/rmhmusic/rmhmusic.css`; catalog `lib/catalog/apps/rmhmusic.ts`; progress API
@@ -28,7 +29,84 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 
 ## 2. Recent work
 
-### 2.0 Tuner and note reader (Phase 3) — built on `claude/hopeful-bohr-99d1vw`, not yet merged
+### 2.00 Songs: sheet music and tab play-along (Phase 4) — built on `claude/hopeful-bohr-99d1vw`, not yet merged
+
+- Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase4-play-along.md`. Routes `/rmhmusic/songs`
+  (the songbook) and `/rmhmusic/songs/$songId` (play), inside the auth-gated layout, noindex,
+  sitemap-excluded (`'personal'` / the dynamic route), on the sign-in return-path allowlist, a FOUC
+  fixture for the song route; a quiet "Songs" link beside "Sight reading" and "Tuner" on the learn
+  home.
+- **Songbook** (`lib/rmhmusic/learn/songs/`, strict island): eight public-domain melodies transcribed
+  by hand (Mary Had a Little Lamb, Twinkle Twinkle, Lightly Row, Ode to Joy, Au clair de la lune,
+  Frère Jacques, Amazing Grace — the first line's opening run into the last line's close, Minuet in G — first eight bars) in a tiny
+  notation (`notation.ts`); titles and composers are data, not translated. One staff for both
+  versions: piano as written; guitar reads it with the octave clef, sounds an octave lower and gets
+  a tab staff whose frets come from `fingering.ts` (`fingerFor`: the lowest fret, so open position
+  whenever possible). The version follows the learner's instrument.
+- **Modes** (`machine.ts`, one `{initial, step}` machine): **Wait for me** (the cursor waits for the
+  right note; MIDI exact sounding pitch, the other inputs any octave, as in the Sprint; 100 / 50 / 0
+  points for 0 / 1 / more wrong notes) and **Play along** (a bar of count-in clicks, then each
+  note-on less the latency, and less `MIC_ONSET_MS` 60 ms for the mic, answers the nearest open
+  note within the tap lesson's windows: 100 within 70 ms, 0 at 200 ms; a wrong pitch marks the note
+  wrong, a note answering nothing costs half a note, an unanswered note is missed). Results are a
+  sentence and `starsFor` stars. The screen ticks only at the machine's `nextDue` (one `setTimeout`),
+  the metronome's first click fixes the beat grid; a hidden tab, the input dialog or lost sound
+  drops a play-along run.
+- **Score** (`layout.ts` + `components/rmhmusic/learn/songs/ScoreView.tsx`): systems wrap to the
+  measured width by whole bars and are justified; each system reuses the flashcard's hand-ruled
+  staff, clefs and accidentals; beams for eighth pairs, flags, dots, ledger lines, key and time
+  signatures, final bar; a fixed window three piano or two guitar systems tall (356 px), which
+  scrolls itself to the cursor's system. Pencil tick / red-pencil cross over each passed note, the
+  now mark and accent ink on the note to play. "Hear it" plays the cursor's four-bar phrase through
+  the learner's sound (`playSequence` now takes a gap and a hold per note); notes are ignored while
+  it and its echo tail sound. "Slower" plays at two thirds.
+- **Persistence:** `MusicSongBest` (user, song, mode, best score), migration
+  `20261115190000_music_song_best`; `GET /api/rmhmusic/songs`, `POST /api/rmhmusic/songs/best`
+  (contracts + `implement()`, zod, rate limit `write`); the server re-scores the run from its
+  per-note results (`scoring.ts` `checkSongRun`) and keeps the best with one atomic
+  `INSERT … ON CONFLICT DO UPDATE SET "bestScore" = GREATEST(…)`. Not anti-cheat: a fabricated run
+  can raise the learner's own best (accepted: it is their own row, no coins or XP depend on it).
+- **Review fixes (2026-11-15, after a read-only review):** a cancelled "Hear it" stops holding input
+  at the cancel (`hear-gate.ts`: only the mic waits its echo tail, and Start with it); the mic onset
+  (`MIC_ONSET_MS`) is taken off only while the latency is the uncalibrated default — a calibrated
+  latency holds the delay of the input it was measured with, so a learner who calibrated on the
+  keys and plays on the mic still reads about 60 ms late (accepted, documented); a note-on goes to
+  the open note of its own pitch first (overlapping eighths); a run token stops a second metronome;
+  the mic segmenter's opt-in re-attack (a 6 dB rise within 80 ms after a decay to half the peak, same
+  pitch) is on only on the songs screen, with a mic hint on repeated notes and "Skip this note"
+  after 6 s in Wait for me (counts as wrong); the mode tabs and Change input are locked during
+  either run; Amazing Grace no longer asks a tied D5 twice; every song's parsed score is pinned by
+  a snapshot; "Traditional" is translated; the keys help names the black keys; the live region
+  says each note with its number and a pickup as "Pickup". An unknown song id shows the friendly
+  "Song not found" page with HTTP 200 (a 404 status would need a route loader and `notFound()`,
+  which would swap in the site's own 404 page; left as is).
+- **Smoke (2026-11-15, Chromium only, dev server + throwaway Postgres, harness in the session
+  scratchpad `t35/songs.cjs`):** Wait for me on the computer keys (Mary Had a Little Lamb, one wrong
+  note → 25 of 26 first time, score 98, saved, row in `music_song_best`) and on fake MIDI (Ode to
+  Joy, an octave-off note counted wrong and named as another octave); Play along with fake MIDI at
+  exact beat times (+ the uncalibrated 40 ms latency) → 30 of 30, score 100, three stars, offsets
+  −1…6 ms; the same 150 ms late → 30 late, score 38, no stars; guitar Minuet in G shows the 8 and
+  tab frets D4 = B string 3, G3 open, A3 = G string 2, F♯4 = high E 2, F♯3 = D string 4; 320, 390 and
+  1280 in Day and Night: no horizontal scroll, CLS 0 (fixed during the smoke: Start and Stop took
+  different widths), skeleton boxes equal loaded boxes (score window, sheet, input region), 0
+  `requestAnimationFrame` at rest and after a run with Jelly motion Still (the only rAF on the page
+  is the shared `PaperBackdrop`, which runs while motion is not Still, as on every RMH Music page);
+  the learn home's three footer links sit on one row at 390; "Hear it" toggles and ends. Fixed during
+  the smoke: a fully answered play-along run never ended (no tick was due), a timer firing early
+  stalled the cursor, end focus, the octave-off sentence, flags touching the next note. Screenshots
+  looked at: notebook paper, no chips or badges.
+- **Not done:** Firefox / WebKit / iOS Safari, 200 % text, RTL with real strings (English until
+  `pnpm i18n:translate`), a real MIDI keyboard, the microphone in either mode (untested in the
+  browser; known limit: the mic segmenter only reports a repeated note after a short silence, so
+  repeated notes on a sustaining instrument may be missed, and `MIC_ONSET_MS` is reasoned, not
+  measured; the re-attack thresholds are tuned on synthetic levels only), audible check of "Hear it" (headless has no output; the sequence started and ended),
+  a calibrated latency other than the 40 ms default, the shared `<Tabs>` is 40 px tall without a
+  coarse pointer (the primitive's rule), choosing the other version on the page, more songs, rests
+  and ties in the notation, a song longer than the window shows bars already played only by
+  scrolling, `pnpm typecheck` on a bigger machine (a scoped `tsgo` over the changed files and the
+  route table, and `typecheck:strict`, passed).
+
+### 2.0 Tuner and note reader (Phase 3) — shipped in #1653
 
 - Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase3-tuner.md`. Route `/rmhmusic/tuner`
   (auth-gated, sitemap `'auth-gated'`, a sign-in return path), the sanctioned `<Tabs>` for **Tune**
@@ -168,9 +246,11 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 
 ## 3. Future features
 
-- **Phase 3:** tuner and note reader — **built** (§2.0); left: the browser/device matrix and a
+- **Phase 3:** tuner and note reader — **shipped** in #1653 (§2.0); left: the browser/device matrix and a
   real-microphone check listed there, alternate tunings and other instruments' presets.
-- **Phase 4:** sheet music / tab play-along.
+- **Phase 4:** sheet music / tab play-along — **built** (§2.00); left: the browser/device matrix and
+  the real-hardware checks listed there, the mic in play-along, more songs (and rests, ties, other
+  keys), a version switch on the page.
 - **Phase 5:** more instruments (cello, clarinet, oboe, ukulele, organ, `guitar-nylon`) and choir/voice.
 - **Phase 6:** social (friends, shared progress, possibly leaderboards for Sprint).
 - Rhythm *reading* beyond four note values; sharps/flats in flashcards (naturals only today);

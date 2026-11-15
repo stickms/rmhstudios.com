@@ -77,6 +77,20 @@ export interface MicFrame {
   rms: number;
 }
 
+/**
+ * Whether the microphone starts a held pitch again when it is struck again (the segmenter's
+ * re-attack, `mic-segmenter.ts`). Off unless a screen turns it on: only the songs screen does,
+ * while it is mounted (a song repeats notes; the other lessons count a try per note-on).
+ */
+let reattackOn = false;
+
+export function setMicReattack(
+  on: boolean,
+): void {
+  reattackOn =
+    on;
+}
+
 export function createMicInput(
   opts: {
     onLevel?: (
@@ -234,7 +248,13 @@ export function createMicInput(
           analyser,
         );
         segmenter =
-          createSegmenter();
+          createSegmenter(
+            {
+              reattack:
+                () =>
+                  reattackOn,
+            },
+          );
 
         const node =
           analyser;
@@ -251,6 +271,7 @@ export function createMicInput(
           {
             midi: 0,
             cents: 0,
+            rms: 0,
           };
         const heard: MicFrame =
           {
@@ -329,6 +350,8 @@ export function createMicInput(
                     (exact -
                       frame.midi) *
                     100;
+                  frame.rms =
+                    rms;
                   pitched = true;
                 }
               }
