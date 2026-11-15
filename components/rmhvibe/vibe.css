@@ -580,37 +580,6 @@
 
 /* Phones: the title takes its own line and the search gets the full width. */
 
-/* Admin-only: re-render every page thumbnail. Sits just right of the search. */
-.vibe-backfill {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 9999px;
-  corner-shape: round;
-  background: var(--site-surface);
-  border: 0.5px solid var(--site-border);
-  color: var(--site-text-muted);
-  cursor: pointer;
-  transition:
-    border-color 160ms ease,
-    color 160ms ease,
-    background 160ms ease;
-}
-
-.vibe-backfill:hover:not(:disabled) {
-  color: var(--site-text);
-  border-color: var(--site-text);
-  background: var(--site-surface);
-}
-
-.vibe-backfill:disabled {
-  opacity: 0.5;
-  cursor: progress;
-}
-
 @keyframes vibe-pulse {
   0%,
   100% {
