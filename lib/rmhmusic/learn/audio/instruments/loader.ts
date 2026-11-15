@@ -4,6 +4,8 @@
  *
  * - At most {@link CONCURRENCY} fetch + decode at a time.
  * - A network failure (a thrown fetch, a 5xx) is retried twice, after 400 ms then 1.2 s.
+ * - A zone that takes longer than {@link ZONE_TIMEOUT_MS} is aborted and fails as `network` (not
+ *   retried), so a hung server can never hold the instrument's single-flight load open.
  * - A decode failure is not retried (the bytes will not change), and neither is a CORS failure
  *   (deterministic): a cross-origin `fetch` that throws a TypeError while the browser is online is
  *   treated as CORS. The CDN only allows our own origins, so previews and localhost with a CDN
@@ -18,10 +20,22 @@ export const RETRY_DELAYS_MS: readonly number[] =
     400,
     1200,
   ];
+/**
+ * How long one zone's request may take, response and body together (ms). Past it the request is
+ * aborted and the zone fails as `network`, without a retry: a server that hangs once is likely to
+ * hang again, and the load must settle (`failed`) so the single flight ends and a later load by
+ * the learner can try again.
+ */
+export const ZONE_TIMEOUT_MS = 10_000;
+
+/** A zone request that ran past {@link ZONE_TIMEOUT_MS}. */
+class ZoneTimeout extends Error {}
 
 export interface LoaderDeps {
+  /** `signal` aborts the request when it runs past {@link ZONE_TIMEOUT_MS}. */
   fetch(
     url: string,
+    signal?: AbortSignal,
   ): Promise<{
     ok: boolean;
     status: number;
@@ -81,10 +95,13 @@ export async function loadZone(
   | {
       ok: false;
       reason: FailReason;
+      /** The zone ran past {@link ZONE_TIMEOUT_MS}: the server is taken to be hung. */
+      timedOut?: true;
     }
 > {
   let bytes: ArrayBuffer | null =
     null;
+  let timedOut = false;
   let reason: FailReason =
     'network';
   for (
@@ -93,10 +110,46 @@ export async function loadZone(
     RETRY_DELAYS_MS.length;
     attempt++
   ) {
+    // One deadline per attempt: the abort stops a real request, and the race settles even a fetch
+    // (or body) that ignores the signal and never answers.
+    const controller =
+      new AbortController();
+    let timer:
+      | ReturnType<
+          typeof setTimeout
+        >
+      | undefined;
+    const deadline =
+      new Promise<never>(
+        (
+          _,
+          reject,
+        ) => {
+          timer =
+            setTimeout(
+              () => {
+                controller.abort();
+                reject(
+                  new ZoneTimeout(),
+                );
+              },
+              ZONE_TIMEOUT_MS,
+            );
+        },
+      );
+    deadline.catch(
+      () => {},
+    );
     try {
       const res =
-        await deps.fetch(
-          url,
+        await Promise.race(
+          [
+            deps.fetch(
+              url,
+              controller.signal,
+            ),
+            deadline,
+          ],
         );
       if (
         !res.ok
@@ -110,10 +163,24 @@ export async function loadZone(
           break;
       } else {
         bytes =
-          await res.arrayBuffer();
+          await Promise.race(
+            [
+              res.arrayBuffer(),
+              deadline,
+            ],
+          );
         break;
       }
     } catch (err) {
+      if (
+        err instanceof
+        ZoneTimeout
+      ) {
+        reason =
+          'network';
+        timedOut = true;
+        break;
+      }
       reason =
         classifyFetchError(
           err,
@@ -131,6 +198,10 @@ export async function loadZone(
         'cors'
       )
         break;
+    } finally {
+      clearTimeout(
+        timer,
+      );
     }
     if (
       attempt <
@@ -145,10 +216,16 @@ export async function loadZone(
   if (
     !bytes
   )
-    return {
-      ok: false,
-      reason,
-    };
+    return timedOut
+      ? {
+          ok: false,
+          reason,
+          timedOut: true,
+        }
+      : {
+          ok: false,
+          reason,
+        };
   try {
     return {
       ok: true,
@@ -166,7 +243,14 @@ export async function loadZone(
   }
 }
 
-/** Every zone, {@link CONCURRENCY} at a time; `onZone` hears each as it settles. */
+/**
+ * Every zone, {@link CONCURRENCY} at a time; `onZone` hears each as it settles.
+ *
+ * Once one zone times out the server is taken to be hung: no further zone is started (each
+ * would only wait out its own deadline, so a 15-zone sound took four rounds, about 40 s, to
+ * fail), and every zone not yet started fails as `network`. Zones already in flight run to
+ * their own deadline, so a hung load settles within about one {@link ZONE_TIMEOUT_MS}.
+ */
 export async function loadZones(
   zones: readonly Zone[],
   urlOf: (
@@ -193,11 +277,30 @@ export async function loadZones(
         new Map(),
     };
   let next = 0;
+  let hung = false;
+  const fail =
+    (
+      zone: Zone,
+      reason: FailReason,
+    ) => {
+      result.failures.set(
+        zone.file,
+        reason,
+      );
+      onZone(
+        zone,
+        {
+          ok: false,
+          reason,
+        },
+      );
+    };
   const worker =
     async () => {
       while (
+        !hung &&
         next <
-        zones.length
+          zones.length
       ) {
         const zone =
           zones[
@@ -225,17 +328,13 @@ export async function loadZones(
             },
           );
         } else {
-          result.failures.set(
-            zone.file,
-            r.reason,
-          );
-          onZone(
+          if (
+            r.timedOut
+          )
+            hung = true;
+          fail(
             zone,
-            {
-              ok: false,
-              reason:
-                r.reason,
-            },
+            r.reason,
           );
         }
       }
@@ -252,5 +351,15 @@ export async function loadZones(
       worker,
     ),
   );
+  while (
+    next <
+    zones.length
+  )
+    fail(
+      zones[
+        next++
+      ],
+      'network',
+    );
   return result;
 }

@@ -17,6 +17,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
+import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 import {
   firstNoteMachine,
   type Effect,
@@ -41,9 +42,12 @@ import { useMachine } from './useMachine';
 export function FirstNoteLesson({
   lessonId,
   paused = false,
+  sound,
 }: {
   lessonId: string;
   paused?: boolean;
+  /** How the learner's notes are voiced (the lesson's sound); the synth when absent. */
+  sound?: PlayOptions;
 }) {
   const {
     t,
@@ -79,6 +83,7 @@ export function FirstNoteLesson({
     useInputPhases();
   useNoteSound(
     !paused,
+    sound,
   );
 
   const needsDevice =

@@ -77,7 +77,7 @@ export function PlayChordLesson({
   lessonId: string;
   /** A dialog is open over the lesson: nothing answers. */
   paused?: boolean;
-  /** How the learner's own notes are voiced (the instrument, once there are instruments). */
+  /** How the learner's own notes are voiced: the lesson's sampled instrument (the synth when absent). */
   sound?: PlayOptions;
   /** Open the input setup dialog (the lesson's "Change input"). */
   onChangeInput?: () => void;

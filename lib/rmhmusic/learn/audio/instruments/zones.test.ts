@@ -390,3 +390,180 @@ describe('coverage', () => {
     );
   });
 });
+
+describe('resolveSound and chordSoundFor', () => {
+  it('follow the instrument unless the learner chose, and keep chords on piano or guitar', async () => {
+    const {
+      resolveSound,
+      chordSoundFor,
+    } =
+      await import('./catalog');
+    expect(
+      resolveSound(
+        {
+          instrument:
+            'piano',
+          sound:
+            null,
+        },
+      ),
+    ).toBe(
+      'piano',
+    );
+    expect(
+      resolveSound(
+        {
+          instrument:
+            'guitar',
+          sound:
+            null,
+        },
+      ),
+    ).toBe(
+      'guitar',
+    );
+    expect(
+      resolveSound(
+        {
+          instrument:
+            'guitar',
+          sound:
+            'violin',
+        },
+      ),
+    ).toBe(
+      'violin',
+    );
+    expect(
+      chordSoundFor(
+        {
+          instrument:
+            'guitar',
+          sound:
+            'flute',
+        },
+      ),
+    ).toBe(
+      'guitar',
+    );
+    expect(
+      chordSoundFor(
+        {
+          instrument:
+            'piano',
+          sound:
+            'violin',
+        },
+      ),
+    ).toBe(
+      'piano',
+    );
+    expect(
+      chordSoundFor(
+        {
+          instrument:
+            'piano',
+          sound:
+            'guitar',
+        },
+      ),
+    ).toBe(
+      'guitar',
+    );
+  });
+});
+
+describe('fitToRange', () => {
+  it('moves a question by octaves into the sound’s range, keeping its intervals', async () => {
+    const {
+      fitToRange,
+    } =
+      await import('./catalog');
+    expect(
+      fitToRange(
+        [
+          52,
+          55,
+        ],
+        'flute',
+      ),
+    ).toEqual(
+      [
+        64,
+        67,
+      ],
+    );
+    expect(
+      fitToRange(
+        [
+          48,
+          52,
+          55,
+        ],
+        'violin',
+      ),
+    ).toEqual(
+      [
+        60,
+        64,
+        67,
+      ],
+    );
+    expect(
+      fitToRange(
+        [
+          52,
+          55,
+        ],
+        'piano',
+      ),
+    ).toEqual(
+      [
+        52,
+        55,
+      ],
+    );
+    expect(
+      fitToRange(
+        [
+          100,
+          104,
+        ],
+        'guitar',
+      ),
+    ).toEqual(
+      [
+        64,
+        68,
+      ],
+    );
+    expect(
+      fitToRange(
+        [
+          40,
+          90,
+        ],
+        'flute',
+      ),
+    ).toEqual(
+      [
+        40,
+        90,
+      ],
+    );
+    expect(
+      fitToRange(
+        [
+          52,
+          55,
+        ],
+        undefined,
+      ),
+    ).toEqual(
+      [
+        52,
+        55,
+      ],
+    );
+  });
+});

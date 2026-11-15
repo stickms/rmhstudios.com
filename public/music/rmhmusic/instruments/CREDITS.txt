@@ -1,0 +1,38 @@
+RMH Music instrument samples: credits and licences
+
+Generated from lib/rmhmusic/learn/audio/instruments/credits.ts by scripts/rmhmusic/build-instruments.ts. Do not edit.
+
+== Salamander Grand Piano V3 (Yamaha C5) ==
+"Salamander Grand Piano V3" by Alexander Holm, licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/). Original: https://archive.org/details/SalamanderGrandPianoV3, SFZ mapping by kinwie (sfzinstruments). Changes made: selected notes, tuning-corrected, trimmed, converted to mono MP3.
+
+Author: Alexander Holm
+Licence: Creative Commons Attribution 3.0 Unported (CC BY 3.0) (https://creativecommons.org/licenses/by/3.0/)
+Source: https://archive.org/details/SalamanderGrandPianoV3
+Fetched from: https://github.com/sfzinstruments/SalamanderGrandPiano
+SFZ mapping by kinwie (sfzinstruments).
+Changes: Converted by RMH Studios: one dynamic layer, trimmed, faded, mixed to mono, loudness matched and encoded as 64 kbps MP3. The build script and its pinned sources are in the RMH Studios repository (scripts/rmhmusic/). Each note is retuned with the upstream "Retuned" table.
+
+== Ella Gitauru 5.26.04, from "Blue Jeans and Moonbeams" (a Fender DG8S steel-string acoustic guitar) ==
+"Ella Gitauru" (version 5.26.04, a Fender DG8S steel-string acoustic guitar) from "Blue Jeans and Moonbeams" by Malaclypse the Younger, MIT License. Source: the sfzinstruments catalogue entry "Blue Jeans And Moonbeams" (https://sfzinstruments.github.io/guitars/). Altered by RMH Studios: selected notes, restored to their recorded pitch, trimmed, converted to mono MP3.
+
+Author: Malaclypse the Younger
+Licence: MIT License (with the author’s added sentence on attributing alterations)
+Source: https://sfzinstruments.github.io/guitars/
+Changes: Converted by RMH Studios: one dynamic layer, trimmed, faded, mixed to mono, loudness matched and encoded as 64 kbps MP3. The build script and its pinned sources are in the RMH Studios repository (scripts/rmhmusic/). Fretted notes are restored to their played pitch. These alterations are made by RMH Studios.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. Additionally, all alterations which are distributed are to be attributed to the person or organization making them.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+== VS Chamber Orchestra: Community Edition (solo violin, flute) ==
+"VS Chamber Orchestra: Community Edition" (VSCO 2 CE) by Versilian Studios LLC, CC0 1.0. Recorded by Sam Gossner and Simon Dalzell. https://github.com/sgossner/VSCO-2-CE. Trimmed and converted to mono MP3.
+
+Author: Versilian Studios LLC
+Licence: CC0 1.0 Universal (public domain dedication) (https://creativecommons.org/publicdomain/zero/1.0/)
+Source: https://github.com/sgossner/VSCO-2-CE
+Recorded by Sam Gossner and Simon Dalzell.
+Changes: Converted by RMH Studios: one dynamic layer, trimmed, faded, mixed to mono, loudness matched and encoded as 64 kbps MP3. The build script and its pinned sources are in the RMH Studios repository (scripts/rmhmusic/).
