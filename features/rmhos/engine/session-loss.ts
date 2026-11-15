@@ -49,3 +49,36 @@ async function attempt(runner: Leavable | null, timeoutMs: number): Promise<bool
     return false;
   }
 }
+
+/**
+ * What the machine effect does first, for the account it runs for.
+ *  - `idle`: no account, nothing runs and nothing stale stays on screen;
+ *  - `stopped`: halted on purpose (files deleted), until Restart;
+ *  - `wait`: not ready to start (gate not confirmed, no screen, or the account's session still
+ *    being asked). The state is reset to neutral, so after an account switch the new account
+ *    never sits behind the old one's frozen canvas and Save button;
+ *  - `run`: build the machine.
+ */
+export function machineStep(s: {
+  machineUser: string | null;
+  halted: boolean;
+  enabled: boolean;
+  sessionReady: boolean;
+  hasScreen: boolean;
+}): 'idle' | 'stopped' | 'wait' | 'run' {
+  if (!s.machineUser) return 'idle';
+  if (s.halted) return 'stopped';
+  if (!s.enabled || !s.sessionReady || !s.hasScreen) return 'wait';
+  return 'run';
+}
+
+const trimmed = (pathname: string) => pathname.replace(/\/+$/, '') || '/';
+
+/**
+ * Whether a router navigation leaves the rmhOS page (the machine unmounts with it). A search
+ * parameter change, a hash change or a navigation to the same path keeps the machine, so it
+ * saves nothing and asks nothing.
+ */
+export function leavesRoute(current: { pathname: string }, next: { pathname: string }): boolean {
+  return trimmed(current.pathname) !== trimmed(next.pathname);
+}

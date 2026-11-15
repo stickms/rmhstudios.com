@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { accountChange, leaveAccount } from '../session-loss';
+import { accountChange, leaveAccount, leavesRoute, machineStep } from '../session-loss';
 
 describe('accountChange', () => {
   it.each([
@@ -51,5 +51,31 @@ describe('leaveAccount', () => {
     const handOver = vi.fn();
     await leaveAccount({ saveBeforeLeaving: async () => true }, 1, () => true, handOver);
     expect(handOver).not.toHaveBeenCalled();
+  });
+});
+
+describe('machineStep', () => {
+  const ready = { machineUser: 'u1', halted: false, enabled: true, sessionReady: true, hasScreen: true };
+  it.each([
+    ['everything is ready', {}, 'run'],
+    ['no account', { machineUser: null }, 'idle'],
+    ['halted on purpose', { halted: true }, 'stopped'],
+    ['halted and no account: nothing runs', { halted: true, machineUser: null }, 'idle'],
+    ['account switch: the new account\'s session is still being asked', { sessionReady: false }, 'wait'],
+    ['the device gate is not confirmed', { enabled: false }, 'wait'],
+    ['the screen is not mounted', { hasScreen: false }, 'wait'],
+  ] as const)('%s', (_n, over, want) => {
+    expect(machineStep({ ...ready, ...over })).toBe(want);
+  });
+});
+
+describe('leavesRoute', () => {
+  it.each([
+    ['another page', '/rmhos', '/feed', true],
+    ['the same path', '/rmhos', '/rmhos', false],
+    ['the same path with a trailing slash', '/rmhos', '/rmhos/', false],
+    ['the site root', '/rmhos', '/', true],
+  ] as const)('%s', (_n, from, to, want) => {
+    expect(leavesRoute({ pathname: from }, { pathname: to })).toBe(want);
   });
 });

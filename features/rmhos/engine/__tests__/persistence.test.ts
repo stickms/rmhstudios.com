@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { evictionRisk, readPersisted, requestPersist } from '../persistence';
+import { askOnce, evictionRisk, readPersisted, requestPersist } from '../persistence';
 
 describe('persistence', () => {
   it('reads what the browser says, and null when it cannot say', async () => {
@@ -24,5 +24,23 @@ describe('persistence', () => {
     expect(await requestPersist({})).toBe(false);
     expect(await requestPersist({ persist: async () => false })).toBe(false);
     expect(await requestPersist({ persist: async () => Promise.reject(new Error('x')) })).toBe(false);
+  });
+});
+
+describe('askOnce', () => {
+  it('asks the browser on the first Save only, however often Save is pressed', async () => {
+    const persist = vi.fn(async () => false);
+    const keepOnce = askOnce(() => requestPersist({ persist }));
+    await keepOnce();
+    await keepOnce();
+    await keepOnce();
+    expect(persist).toHaveBeenCalledTimes(1);
+  });
+
+  it('the explicit button is not limited: it calls the request itself', async () => {
+    const persist = vi.fn(async () => false);
+    await requestPersist({ persist });
+    await requestPersist({ persist });
+    expect(persist).toHaveBeenCalledTimes(2);
   });
 });

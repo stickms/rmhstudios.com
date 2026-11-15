@@ -149,6 +149,9 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   const serialListeners = new Set<(c: string) => void>();
   let phase: VmPhase = 'idle';
   let destroyed = false;
+  /** The boot ended in failure: the emulator is gone and nothing it still says counts. */
+  let failed = false;
+  const dead = () => destroyed || failed;
   let emulator: V86Instance | null = null;
   let ready = false;
   let usedState = false;
@@ -165,7 +168,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   early.catch(() => {});
 
   const setPhase = (p: VmPhase, d?: VmPhaseDetail) => {
-    if (destroyed && p !== 'stopped') return;
+    if (dead() && p !== 'stopped') return;
     phase = p;
     for (const cb of phaseListeners) cb(p, d);
   };
@@ -174,12 +177,22 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   const failBoot = (reason: BootFailureReason, error: string) => {
     watchdog.stop();
     report(new Error(`rmhOS boot failed (${reason}): ${error}`));
-    if (!built) rejectEarly?.(new BootFailure(reason, error));
-    else setPhase('failed', { error, reason });
+    if (!built) {
+      rejectEarly?.(new BootFailure(reason, error));
+      return;
+    }
+    setPhase('failed', { error, reason });
+    // Then the emulator goes, and whatever it still reports (a late download step, a late READY
+    // that would start the runner behind the failure screen) is dropped.
+    failed = true;
+    dropRejectionListener?.();
+    void emulator?.destroy().catch(() => {});
+    emulator = null;
+    fallBackNow = null;
   };
 
   const watchdog = new BootWatchdog(opts.clock ?? browserClock, (reason, stage) => {
-    if (destroyed || signal?.aborted) return;
+    if (dead() || signal?.aborted) return;
     const why =
       reason === 'stalled'
         ? `no download progress for ${STALL_MS / 1000} s`
@@ -290,7 +303,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
   const wire = (e: V86Instance) => {
     let finished = false;
     const fallBack = (why: string) => {
-      if (finished || destroyed) return;
+      if (finished || dead()) return;
       finished = true;
       if (usedState) {
         report(new Error(`rmhOS falling back to a cold boot: ${why}`));
@@ -307,7 +320,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
               // keep the old one: a cold boot without a working network beats none
             }
           }
-          if (destroyed) return;
+          if (dead()) return;
           try {
             emulator = build(false);
           } catch {
@@ -329,7 +342,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     ];
     const total = expected.reduce((n, f) => n + f.size, 0);
     e.add_listener('download-progress', (ev) => {
-      if (finished || destroyed) return;
+      if (finished || dead()) return;
       watchdog.progress();
       stateDownloading =
         ev.file_name === manifest.state?.url && ev.loaded < (manifest.state?.size ?? 0);
@@ -356,13 +369,13 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
     });
     e.add_listener('emulator-loaded', () => {
       // v86 sends emulator-ready before emulator-loaded: do not step back from running.
-      if (!finished && !destroyed && phase !== 'running') {
+      if (!finished && !dead() && phase !== 'running') {
         setPhase('booting');
         watchdog.booting(usedState ? 'snapshot' : 'cold');
       }
     });
     e.add_listener('emulator-ready', () => {
-      if (destroyed) return;
+      if (dead()) return;
       ready = true;
       // A restored machine is past READY already; a cold one is running once the agent says so.
       if (usedState) {
@@ -371,7 +384,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       }
     });
     e.add_listener('emulator-stopped', () => {
-      if (!destroyed && phase === 'running') setPhase('stopped');
+      if (!dead() && phase === 'running') setPhase('stopped');
     });
     if (import.meta.env.DEV) {
       // Development only: the guest logs to serial0; a browser test reads it from here.
@@ -382,6 +395,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       });
     }
     e.add_listener('serial1-output-byte', (b: number) => {
+      if (dead()) return;
       const chunk = String.fromCharCode(b);
       serial1Seen = (serial1Seen + chunk).slice(-4096);
       if (!usedState && phase !== 'running' && serial1Seen.includes('RMHOS READY')) {

@@ -152,8 +152,8 @@ export default function StoredCopies({
             },
             () =>
               toast.error(
-                t('delete-files-failed', {
-                  defaultValue: 'Could not delete the files. Nothing was changed.',
+                t('delete-files-failed-stopped', {
+                  defaultValue: 'Could not delete the files. rmhOS was stopped; restart it to continue.',
                 }),
               ),
           );

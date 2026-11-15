@@ -102,6 +102,23 @@ describe('GET /api/rmhos/session', () => {
       ok: false,
     });
   });
+  it('?ticket=0 says networking is on without minting a ticket or naming the relay', async () => {
+    process.env.RMHOS_NET_TICKET_SECRET = SECRET;
+    const res = await call({}, 'https://rmhstudios.com/api/rmhos/session?ticket=0');
+    expect(res.status).toBe(200);
+    expect((await json(res)).net).toEqual({ enabled: true });
+  });
+  it('?ticket=0 still reports off and not-eligible', async () => {
+    const url = 'https://rmhstudios.com/api/rmhos/session?ticket=0';
+    expect((await json(await call({}, url))).net).toEqual({ enabled: false });
+    process.env.RMHOS_NET_TICKET_SECRET = SECRET;
+    process.env.RMHOS_NET_ACCESS = 'members';
+    expect((await json(await call({}, url))).net).toEqual({ enabled: false, reason: 'not-eligible' });
+  });
+  it('any other ticket value is a 400', async () => {
+    process.env.RMHOS_NET_TICKET_SECRET = SECRET;
+    expect((await call({}, 'https://rmhstudios.com/api/rmhos/session?ticket=1')).status).toBe(400);
+  });
   it('uses VITE_RMHOS_NET_URL when set', async () => {
     process.env.RMHOS_NET_TICKET_SECRET = SECRET;
     process.env.VITE_RMHOS_NET_URL = 'wss://relay.example/x/';

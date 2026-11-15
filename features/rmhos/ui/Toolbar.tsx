@@ -56,6 +56,7 @@ export default function Toolbar(p: Props) {
     'net.connecting': t('net-connecting', { defaultValue: 'Connecting' }),
     'net.online': t('net-online', { defaultValue: 'Online' }),
     'net.unavailable': t('net-unavailable', { defaultValue: 'Network unavailable' }),
+    'net.full': t('net-full', { defaultValue: 'The network is full right now. Try again later.' }),
   };
   // Never "Saved" while nothing outlives the page.
   const saveLabel =

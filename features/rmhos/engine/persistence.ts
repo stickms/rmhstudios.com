@@ -42,3 +42,17 @@ export async function requestPersist(storage: StorageLike | undefined = defaultS
 
 /** The standing line is shown when the browser says it may delete the files (and not when it cannot say). */
 export const evictionRisk = (persisted: boolean | null): boolean => persisted === false;
+
+/**
+ * Wraps a request so it runs at most once: Save asks the browser through this, so a click on Save
+ * never re-prompts (Firefox) after the first answer. The explicit "Keep my files in this
+ * browser" button calls the request itself and is not limited.
+ */
+export function askOnce<T>(ask: () => Promise<T>): () => Promise<T | undefined> {
+  let asked = false;
+  return async () => {
+    if (asked) return undefined;
+    asked = true;
+    return ask();
+  };
+}

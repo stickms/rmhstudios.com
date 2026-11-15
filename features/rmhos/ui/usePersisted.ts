@@ -2,8 +2,8 @@
  * Whether the browser promised to keep the stored files, for the notice and for About
  * (engine/persistence.ts has the rules). `keep()` must be called straight from a click handler.
  */
-import { useCallback, useEffect, useState } from 'react';
-import { evictionRisk, readPersisted, requestPersist } from '../engine/persistence';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { askOnce, evictionRisk, readPersisted, requestPersist } from '../engine/persistence';
 
 export function usePersisted(refreshOn: unknown = null) {
   const [persisted, setPersisted] = useState<boolean | null>(null);
@@ -21,5 +21,8 @@ export function usePersisted(refreshOn: unknown = null) {
     setPersisted(now);
     return granted;
   }, []);
-  return { persisted, risk: evictionRisk(persisted), keep };
+  /** The same, at most once per page load: for Save, which must not re-prompt on every click. */
+  const keepOnceRef = useRef<(() => Promise<boolean | undefined>) | null>(null);
+  const keepOnce = useCallback(() => (keepOnceRef.current ??= askOnce(keep))(), [keep]);
+  return { persisted, risk: evictionRisk(persisted), keep, keepOnce };
 }

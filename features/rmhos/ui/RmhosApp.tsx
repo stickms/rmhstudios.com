@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { checkBackup } from '../engine/home-sync';
 import { deviceGate, readDeviceFacts } from './device-gate';
 import { formatTime } from './format';
+import { leavesRoute } from '../engine/session-loss';
 import { machineUp } from '../engine/stored-home';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { CDN_BASE } from '@/lib/storage/asset';
@@ -60,7 +61,9 @@ function RmhosMachine() {
   // not land, ask. (A browser unload keeps HomeSession's own beforeunload prompt.)
   const sessionRef = useRef(session);
   sessionRef.current = session;
-  const shouldBlock = useCallback(async () => {
+  const shouldBlock = useCallback(async ({ current, next }: { current: { pathname: string }; next: { pathname: string } }) => {
+    // A search-parameter change or a same-page navigation keeps the machine: nothing to save.
+    if (!leavesRoute(current, next)) return false;
     const s = sessionRef.current;
     if (!s.isUnsaved()) return false;
     return !(await s.saveBeforeLeaving());
@@ -141,7 +144,7 @@ function RmhosMachine() {
 
   // Whether the browser promised to keep the files. Re-read after every save.
   const keeping = usePersisted(session.lastSave?.at);
-  const { persisted: persistedNow, keep } = keeping;
+  const { persisted: persistedNow, keep, keepOnce } = keeping;
 
   const interactive = screenInteractive({
     phase: session.phase,
@@ -257,8 +260,9 @@ function RmhosMachine() {
         fileInputRef={fileInputRef}
         onSave={() => {
           // The click is the user activation persist() may need (a prompt in some browsers):
-          // asked here, first, never silently at an autosave.
-          if (persistedNow === false) void keep();
+          // asked here, once per page load, never silently at an autosave. The "Keep my files"
+          // button asks again whenever the person presses it.
+          if (persistedNow === false) void keepOnce();
           void session.saveNow();
         }}
         onRestart={() => setConfirmRestart(true)}
@@ -353,6 +357,7 @@ function RmhosMachine() {
         currentDamaged={session.failure === 'corrupt'}
         readOnly={session.failure === 'locked'}
         machineUp={machineUp(session.phase)}
+        linuxUser={session.linuxUser}
         evictionRisk={keeping.risk}
         onKeep={() => void keep()}
       />

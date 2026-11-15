@@ -81,7 +81,7 @@ function setup(
   let held = false;
   const order: string[] = [];
   const agent = {
-    startSession: vi.fn(async (): Promise<{ name?: string }> => {
+    startSession: vi.fn(async (): Promise<{ user?: string }> => {
       order.push('session');
       return {};
     }),
@@ -582,7 +582,7 @@ describe('power-off and a machine that stops mid-handshake', () => {
 describe('saved-on-poweroff and the session name', () => {
   it('the name the guest reports is kept on the snapshot', async () => {
     const t = setup();
-    t.agent.startSession.mockResolvedValueOnce({ name: 'zed2' } as never);
+    t.agent.startSession.mockResolvedValueOnce({ user: 'zed2' });
     await t.session.start();
     expect(t.session.snapshot.linuxName).toBe('zed2');
     const none = setup();

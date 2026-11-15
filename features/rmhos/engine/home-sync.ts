@@ -428,3 +428,23 @@ export class HomeSync {
     return this.stored.removeCopy(kind);
   }
 }
+
+/**
+ * Stores a backup for the account with no machine running (halted, stopped or powered off): the
+ * same validation, previous-copy and damaged-copy rules as `HomeSync.importArchive`, which only
+ * ever touches the store. The caller restarts the machine afterwards, which loads the backup.
+ */
+export async function importWithoutMachine(
+  userId: string,
+  store: HomeStore,
+  gz: Uint8Array,
+): Promise<void> {
+  const noMachine = () => Promise.reject(new Error('no machine'));
+  const sync = new HomeSync({
+    userId,
+    store,
+    vm: { writeShareFile: noMachine, readShareFile: noMachine, deleteShareFile: noMachine },
+    agent: { save: noMachine },
+  });
+  await sync.importArchive(gz);
+}

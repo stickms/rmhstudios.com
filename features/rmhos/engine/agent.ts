@@ -18,8 +18,9 @@ export class AgentError extends Error {
 
 export const AGENT_TIMEOUTS = {
   session: 30_000,
-  restore: 120_000,
-  save: 120_000,
+  // Measured in Node: a 96 MiB home restores in 7.9 s and saves in 37.9 s; a browser tab is slower.
+  restore: 240_000,
+  save: 240_000,
 } as const;
 
 export interface AgentOptions {
@@ -72,11 +73,9 @@ export class AgentClient {
   private dispatch(e: GuestEvent): void {
     // READY is the VM wrapper's cue (it turns a cold boot into `running`); nothing here waits on it.
     if (e.type === 'ready') return;
-    // The guest has written its home to the share on its own, as it powers off. Read through a
-    // narrow local type, so this compiles and does nothing until the protocol parser emits it.
-    const late = e as { type: string; bytes?: unknown };
-    if (late.type === 'saved-on-poweroff') {
-      if (typeof late.bytes === 'number') for (const cb of [...this.savedOnPoweroff]) cb(late.bytes);
+    // The guest has written its home to the share on its own, as it powers off.
+    if (e.type === 'saved-on-poweroff') {
+      for (const cb of [...this.savedOnPoweroff]) cb(e.bytes);
       return;
     }
     if (e.type === 'poweroff') {
@@ -113,13 +112,13 @@ export class AgentClient {
 
   /**
    * Tells the guest who is signing in. The clock and entropy are generated here, never logged.
-   * Resolves to the Linux name the guest says it created, when it says one (an optional `name` on
-   * its SESSION_OK reply; the guest maps the site's name to a valid, unreserved one).
+   * Resolves to the Linux user the guest says it created, when it says one (`SESSION_OK <user>`;
+   * the guest maps the site's name to a valid, unreserved one, `<user>_rmh` on a collision).
    */
   async startSession(
     user: string,
     timeoutMs: number = AGENT_TIMEOUTS.session,
-  ): Promise<{ name?: string }> {
+  ): Promise<{ user?: string }> {
     const text = encodeCommand({
       type: 'session',
       user,
@@ -127,8 +126,7 @@ export class AgentClient {
       entropy: hex(this.randomBytes(64)),
     });
     const e = await this.command(text, (ev) => ev.type === 'session-ok', timeoutMs);
-    const name = (e as { name?: unknown }).name;
-    return typeof name === 'string' && name ? { name } : {};
+    return e.type === 'session-ok' && e.user ? { user: e.user } : {};
   }
 
   /** Extracts the home archive from the share (if any) and starts the desktop. */

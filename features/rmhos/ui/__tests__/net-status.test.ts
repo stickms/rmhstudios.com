@@ -16,6 +16,7 @@ function run(samples: NetSample[]) {
 }
 const up = (at: number): NetSample => ({ at, result: { connected: true } });
 const down = (at: number): NetSample => ({ at, result: { connected: false } });
+const full = (at: number): NetSample => ({ at, result: { connected: false, full: true } });
 const fail = (at: number): NetSample => ({ at, result: 'failed' });
 const ended = (at: number): NetSample => ({ at, result: 'ended' });
 
@@ -39,6 +40,18 @@ describe('trackNet', () => {
   });
   it('recovers from error when the socket is back', () => {
     expect(run([down(0), down(30_000), up(45_000)])).toBe('on');
+  });
+});
+
+describe('a full hub', () => {
+  it('says full at once, not unavailable, and recovers when a seat opens', () => {
+    expect(run([full(0)])).toBe('full');
+    expect(run([down(0), full(15_000), full(60_000)])).toBe('full');
+    expect(run([full(0), up(15_000)])).toBe('on');
+    expect(run([full(0), down(15_000)])).toBe('connecting');
+  });
+  it('reads full from the status body', () => {
+    expect(statusSample(200, { connected: false, full: true })).toEqual({ connected: false, full: true });
   });
 });
 
@@ -73,8 +86,8 @@ describe('statusSample', () => {
   });
 
   it('maps the other replies', () => {
-    expect(statusSample(200, { connected: true })).toEqual({ connected: true });
-    expect(statusSample(200, { connected: false })).toEqual({ connected: false });
+    expect(statusSample(200, { connected: true })).toEqual({ connected: true, full: false });
+    expect(statusSample(200, { connected: false })).toEqual({ connected: false, full: false });
     expect(statusSample(401, null)).toBe('ended');
     expect(statusSample(503, null)).toBe('failed');
     expect(statusSample(502, null)).toBe('failed');

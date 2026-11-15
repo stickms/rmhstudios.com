@@ -34,6 +34,14 @@ interface Props {
   evictionRisk?: boolean;
   /** Asks the browser to keep the files; call it from the click. */
   onKeep?: () => void;
+  /** The Linux user of the running desktop (the guest's own name for it); null with no machine. */
+  linuxUser?: string | null;
+}
+
+/** "You are signed in to rmhOS as <user>." */
+export function AboutUser({ user }: { user: string }) {
+  const { t } = useTranslation('c-rmhos');
+  return <p>{t('about-user', { defaultValue: 'You are signed in to rmhOS as {{user}}.', user })}</p>;
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -59,6 +67,7 @@ export default function AboutDialog({
   machineUp = false,
   evictionRisk = false,
   onKeep,
+  linuxUser = null,
 }: Props) {
   const { t } = useTranslation('c-rmhos');
   const manifest = resolveImageManifest(CDN_BASE || undefined);
@@ -73,6 +82,7 @@ export default function AboutDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 text-sm">
+          {machineUp && linuxUser && <AboutUser user={linuxUser} />}
           <p>
             {t('about-kernel', {
               defaultValue:
@@ -117,6 +127,12 @@ export default function AboutDialog({
               })}
             </li>
           </ul>
+          <p>
+            {t('about-source-offer', {
+              defaultValue:
+                "Source for the GPL and LGPL software in rmhOS, including the exact Linux kernel tarball and each package's licence record, is published beside every image, and is available on request for three years: see the written offer in NOTICE.md.",
+            })}
+          </p>
           {evictionRisk && (
             <div className="flex flex-col gap-2">
               <p className="text-(--app-warning)">

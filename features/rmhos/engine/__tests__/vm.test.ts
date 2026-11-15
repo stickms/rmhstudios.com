@@ -246,6 +246,28 @@ describe('the boot watchdog and the image probe in createVm', () => {
     expect(reports.join()).toContain('stalled');
   });
 
+  it('after a failure the emulator is destroyed and nothing it says later changes the state', async () => {
+    const { p, c } = start({ fetch: stateMissingFetch });
+    const vm = await p;
+    const seen = track(vm);
+    const serial: string[] = [];
+    vm.onSerial1((ch) => serial.push(ch));
+    await c.advance(STALL_MS + 1);
+    expect(seen.at(-1)![0]).toBe('failed');
+    const failedAt = seen.length;
+    const e = FakeV86.last!;
+    expect(e.destroyed).toBe(true);
+    // Late events from the destroyed emulator: a download step, loaded, ready, and a READY line.
+    e.emit('download-progress', { file_name: manifest.bzImage.url, loaded: 5 });
+    e.emit('emulator-loaded');
+    e.emit('emulator-ready');
+    for (const ch of 'RMHOS READY\n') e.emit('serial1-output-byte', ch.charCodeAt(0));
+    await c.advance(300_000);
+    expect(seen.length).toBe(failedAt);
+    expect(seen.at(-1)![0]).toBe('failed');
+    expect(serial).toEqual([]);
+  });
+
   it('download progress keeps the machine alive past 30 s', async () => {
     const { p, c } = start();
     const vm = await p;

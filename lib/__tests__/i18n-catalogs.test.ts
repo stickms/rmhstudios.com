@@ -201,13 +201,14 @@ const KNOWN_UNTRANSLATED: Record<
     // with no file has not started the namespace), so this only matters if they come back before the translate pipeline runs.
     'c-rmhos':
       [
+        'about-source-offer',
         'about-user',
         'boot-percent',
         'delete',
         'delete-files',
         'delete-files-confirm',
         'delete-files-confirm-stops',
-        'delete-files-failed',
+        'delete-files-failed-stopped',
         'eviction-line',
         'failed-boot-timeout',
         'failed-image-invalid',
@@ -219,6 +220,7 @@ const KNOWN_UNTRANSLATED: Record<
         'leave',
         'leave-confirm',
         'low-memory',
+        'net-full',
         'net-not-eligible',
         'sign-in',
         'signed-out-body',

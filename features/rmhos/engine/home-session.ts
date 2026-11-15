@@ -135,8 +135,8 @@ export class HomeSession {
         this.set({ stage: 'failed', failure: 'corrupt', error: 'stored home unreadable' });
         return;
       }
-      const { name } = await agent.startSession(this.d.linuxUser);
-      if (name && stillStarting()) this.set({ linuxName: name });
+      const { user } = await agent.startSession(this.d.linuxUser);
+      if (user && stillStarting()) this.set({ linuxName: user });
       await agent.restore();
     } catch (e) {
       if (!stillStarting()) return;

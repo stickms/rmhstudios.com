@@ -26,6 +26,14 @@ describe('About facts match NOTICE.md', () => {
     expect(BUILD_SCRIPTS_URL.endsWith('/scripts/rmhos')).toBe(true);
     expect(notice).toContain(`(${V86_URL})`);
   });
+  it('the source-offer sentence points at a written offer NOTICE.md really makes', () => {
+    const en = JSON.parse(readFileSync(join(process.cwd(), 'locales/en/c-rmhos.json'), 'utf8')) as Record<string, string>;
+    const sentence = en['about-source-offer'] ?? '';
+    expect(sentence).toContain('three years');
+    expect(sentence).toContain('NOTICE.md');
+    expect(notice).toContain('Written offer.');
+    expect(notice).toContain('For three years after the date a published image was built');
+  });
   it('packages.txt is beside the image the manifest resolves', () => {
     expect(notice).toContain('`packages.txt`');
     const published = { version: 'abc123def456', files: DEV_IMAGE.files };

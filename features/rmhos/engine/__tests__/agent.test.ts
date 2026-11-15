@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AgentClient, AgentError } from '../agent';
+import { AGENT_TIMEOUTS, AgentClient, AgentError } from '../agent';
 
 const ENTROPY = 'ab'.repeat(64);
 
@@ -133,30 +133,40 @@ describe('AgentClient', () => {
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
-  it('startSession reports the Linux name when the guest says one, and nothing otherwise', async () => {
+  it('startSession reports the Linux user the guest created, from the parsed SESSION_OK', async () => {
     const { vm, agent } = make();
     const plain = agent.startSession('alice');
     vm.emit('RMHOS SESSION_OK\n');
     await expect(plain).resolves.toEqual({});
-    // Wave A's guest may answer `SESSION_OK <name>`; the parser may or may not carry it yet, so a
-    // hand-fed event is used here to pin the host's reading of an optional `name`.
     const named = agent.startSession('alice');
-    (agent as unknown as { dispatch(e: unknown): void }).dispatch({ type: 'session-ok', name: 'alice2' });
-    await expect(named).resolves.toEqual({ name: 'alice2' });
+    vm.emit('RMHOS SESSION_OK alice_rmh\n');
+    await expect(named).resolves.toEqual({ user: 'alice_rmh' });
   });
 
   it('saved-on-poweroff hands the byte count to its subscribers and can be unsubscribed', () => {
-    const { agent } = make();
-    const dispatch = (e: unknown) => (agent as unknown as { dispatch(e: unknown): void }).dispatch(e);
+    const { vm, agent } = make();
     const cb = vi.fn();
     const off = agent.onSavedOnPoweroff(cb);
-    dispatch({ type: 'saved-on-poweroff', bytes: 1536 });
+    vm.emit('RMHOS SAVED_ON_POWEROFF 1536\n');
     expect(cb).toHaveBeenCalledWith(1536);
-    dispatch({ type: 'saved-on-poweroff', bytes: 'nope' }); // malformed: ignored
+    vm.emit('RMHOS SAVED_ON_POWEROFF nope\n'); // the parser turns this into a protocol error
     expect(cb).toHaveBeenCalledTimes(1);
     off();
-    dispatch({ type: 'saved-on-poweroff', bytes: 5 });
+    vm.emit('RMHOS SAVED_ON_POWEROFF 5\n');
     expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('RESTORE and SAVE wait up to 240 s (a big home in a slow browser tab), not 120 s', async () => {
+    expect(AGENT_TIMEOUTS.restore).toBe(240_000);
+    expect(AGENT_TIMEOUTS.save).toBe(240_000);
+    const { vm, agent } = make();
+    const restore = code(agent.restore());
+    await vi.advanceTimersByTimeAsync(120_001);
+    vm.emit('RMHOS RESTORED\n');
+    expect(await restore).toBe('resolved');
+    const save = code(agent.save());
+    await vi.advanceTimersByTimeAsync(240_001);
+    expect(await save).toBe('timeout');
   });
 
   it('never puts the entropy in an error message', async () => {

@@ -1,11 +1,12 @@
 // The image publish path: the R2 upload (against an injected client: R2 is not reachable from CI
 // tests), the manifest, and the block the owner pastes into image-manifest.ts afterwards.
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { publish, CACHE_CONTROL } from '../../../scripts/rmhos/publish-r2.mjs';
 import { computeManifest, BOOT } from '../../../scripts/rmhos/write-manifest.mjs';
+import ts from 'typescript';
 import { pinReport, renderPin, toPin } from '../../../scripts/rmhos/print-pin.mjs';
 
 const dirs: string[] = [];
@@ -191,10 +192,40 @@ describe('print-pin', () => {
   it('prints ready-to-paste TypeScript, and the commit it was built from', () => {
     const { manifest } = image();
     const src = renderPin(toPin(manifest));
-    expect(src.startsWith("export const PUBLISHED_IMAGE = {\n  version: '")).toBe(true);
+    expect(src.startsWith("export const PUBLISHED_IMAGE: PinnedImage | null = {\n  version: '")).toBe(true);
     expect(src).toContain('    rootfs: {\n      size: ');
     expect(src.endsWith('  },\n};')).toBe(true);
     expect(pinReport(manifest)).toContain('built from commit c0ffee');
+  });
+
+  it('the printed block pasted over the real constant typechecks against PinnedImage, and a wrong one does not', () => {
+    const { manifest } = image();
+    const source = readFileSync(join(process.cwd(), 'features/rmhos/engine/image-manifest.ts'), 'utf8');
+    const line = 'export const PUBLISHED_IMAGE: PinnedImage | null = null;';
+    expect(source).toContain(line);
+    const errors = (text: string) => {
+      const name = '/virtual/image-manifest.ts';
+      const options: ts.CompilerOptions = { strict: true, noEmit: true, target: ts.ScriptTarget.ES2022 };
+      const host = ts.createCompilerHost(options);
+      const real = host.getSourceFile.bind(host);
+      host.getSourceFile = (f, lang, ...rest) =>
+        f === name ? ts.createSourceFile(f, text, lang) : real(f, lang, ...rest);
+      const exists = host.fileExists.bind(host);
+      const read = host.readFile.bind(host);
+      host.fileExists = (f) => f === name || exists(f);
+      host.readFile = (f) => (f === name ? text : read(f));
+      const program = ts.createProgram([name], options, host);
+      return ts
+        .getPreEmitDiagnostics(program, program.getSourceFile(name))
+        .map((d) => ts.flattenDiagnosticMessageText(d.messageText, ' '));
+    };
+    const printed = renderPin(toPin(manifest));
+    expect(printed).toContain(': PinnedImage | null = {');
+    expect(errors(source.replace(line, printed))).toEqual([]);
+    // The check can fail: a pin missing a file is an error.
+    const noState = printed.replace(/ {4}state: \{[^}]*\},\n/, '');
+    expect(noState).not.toBe(printed);
+    expect(errors(source.replace(line, noState)).length).toBeGreaterThan(0);
   });
 
   it('refuses a manifest with a gap rather than printing a wrong pin', () => {

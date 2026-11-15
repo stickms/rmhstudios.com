@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AgentError } from '../agent';
 import { SHARE_ARCHIVE_PATH } from '../agent-protocol';
-import { BackupError, HomeSync } from '../home-sync';
+import { BackupError, HomeSync, importWithoutMachine } from '../home-sync';
 import { memoryHomeStore, type CachedHome, type HomeStore } from '../home-store';
 import { putEntry } from './store-helpers';
 
@@ -803,5 +803,27 @@ describe('what a save reads from the store', () => {
     await sync.discardDamaged();
     expect(await inner.get('u1')).toBeNull();
     expect(await inner.get('u1:meta')).toBeNull();
+  });
+});
+
+describe('importWithoutMachine', () => {
+  it('stores a valid backup over the current files and keeps them as the previous copy', async () => {
+    const store = memoryHomeStore();
+    const current = { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 5 };
+    await putEntry(store, 'u1', current);
+    const backup = await gzip(fakeTar(2));
+    await importWithoutMachine('u1', store, backup);
+    expect((await store.get('u1'))?.archive).toEqual(backup);
+    expect((await store.get('u1:replaced'))?.archive).toEqual(current.archive);
+  });
+
+  it('refuses something that is not a backup and changes nothing', async () => {
+    const store = memoryHomeStore();
+    const current = { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 5 };
+    await putEntry(store, 'u1', current);
+    await expect(importWithoutMachine('u1', store, new Uint8Array([1, 2, 3]))).rejects.toMatchObject({
+      code: 'invalid',
+    });
+    expect((await store.get('u1'))?.sha256).toBe('old');
   });
 });

@@ -68,6 +68,7 @@ describe('toolbarState', () => {
     ['connecting', 'net.connecting'],
     ['on', 'net.online'],
     ['error', 'net.unavailable'],
+    ['full', 'net.full'],
   ] as const)('net %s', (net, key) => {
     expect(run({ net }).netLabelKey).toBe(key);
   });
@@ -76,13 +77,12 @@ describe('toolbarState', () => {
 describe('netStateOf', () => {
   it.each([
     ['enabled follows the poll', { enabled: true, url: 'x', ticket: 't' }, 'on', 'on'],
-    ['enabled, still connecting', { enabled: true }, 'connecting', 'connecting'],
+    ['enabled without a ticket (?ticket=0), still connecting', { enabled: true }, 'connecting', 'connecting'],
+    ['enabled while the hub is down: the poll says unavailable', { enabled: true }, 'error', 'error'],
+    ['enabled, the hub is at its cap', { enabled: true }, 'full', 'full'],
     ['disabled with no reason', { enabled: false }, 'on', 'off'],
     ['disabled, not eligible', { enabled: false, reason: 'not-eligible' }, 'on', 'not-eligible'],
-    ['disabled, switched off', { enabled: false, reason: 'disabled' }, 'on', 'off'],
-    ['disabled, a reason this page does not know', { enabled: false, reason: 42 }, 'on', 'off'],
     ['no session yet', null, 'on', 'off'],
-    ['junk', 'x', 'on', 'off'],
   ] as const)('%s', (_n, net, polled, want) => {
     expect(netStateOf(net, polled)).toBe(want);
   });

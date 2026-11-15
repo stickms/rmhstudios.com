@@ -14,3 +14,11 @@ export const V86_URL = 'https://github.com/copy/v86';
 export function packagesUrl(manifest: ImageManifest): string {
   return `${manifest.rootfs.url.slice(0, manifest.rootfs.url.lastIndexOf('/') + 1)}packages.txt`;
 }
+
+/**
+ * The Linux user About names: the one the guest says it created (`RMHOS SESSION_OK <user>`, which
+ * may be `<name>_rmh` after a collision), else the one the site asked for.
+ */
+export function displayLinuxUser(guestUser: string | null, siteUser: string | null): string | null {
+  return guestUser || siteUser || null;
+}

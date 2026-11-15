@@ -2,8 +2,11 @@
 // Prints the TypeScript block to paste into features/rmhos/engine/image-manifest.ts after an image
 // has been published, in the shape that file's published-image constant has:
 //
-//   export const PUBLISHED_IMAGE = { version, files: { bzImage, rootfs, state, seabios, vgabios } }
+//   export const PUBLISHED_IMAGE: PinnedImage | null = { version, files: { bzImage, rootfs, state, seabios, vgabios } }
 //   // each { size, sha256 }
+//
+// It replaces the whole `export const PUBLISHED_IMAGE: PinnedImage | null = null;` line there, so
+// the annotation stays and the value is typed. image-publish.test.ts typechecks the printed block.
 //
 // manifest.json names its files by their file names (bzImage, rootfs.ext4, state.zst, seabios.bin,
 // vgabios.bin); the page names them by role. That mapping lives in ONE place, `toPin`, tested by
@@ -38,8 +41,8 @@ export function toPin(manifest) {
 }
 
 /** The TypeScript source for a pin (2-space indent, single quotes, trailing commas). */
-export function renderPin(pin, constName = 'PUBLISHED_IMAGE') {
-  const lines = [`export const ${constName} = {`, `  version: '${pin.version}',`, '  files: {'];
+export function renderPin(pin, constName = 'PUBLISHED_IMAGE', type = 'PinnedImage | null') {
+  const lines = [`export const ${constName}: ${type} = {`, `  version: '${pin.version}',`, '  files: {'];
   for (const [role, f] of Object.entries(pin.files)) {
     lines.push(
       `    ${role}: {`,

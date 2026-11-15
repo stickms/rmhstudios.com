@@ -25,23 +25,26 @@ import {
 } from '../engine/home-session';
 import {
   HomeSync,
+  importWithoutMachine,
   type CopyKind,
   type SaveResult,
   type StoredCopies,
 } from '../engine/home-sync';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { createTicketHolder } from '../engine/relay-ticket';
-import { accountChange, leaveAccount } from '../engine/session-loss';
-import type { RmhosNet } from '../engine/rmhos.contract';
+import { accountChange, leaveAccount, machineStep } from '../engine/session-loss';
+import type { RmhosSession as RmhosSessionAnswer } from '../engine/rmhos.contract';
 import { holdHomeLock } from '../engine/tab-lock';
 import { BootFailure, createVm } from '../engine/vm';
 import type { BootFailureReason, VmHandle, VmPhase, VmPhaseDetail } from '../engine/vm-types';
+import { displayLinuxUser } from './about-facts';
 import { rmhosSessionQuery } from './rmhos.queries';
 import { useStoredHome } from './useStoredHome';
 import {
   createPollGate,
   initialTracker,
   POLL_MS,
+  type PolledNet,
   statusSample,
   statusUrl,
   trackNet,
@@ -118,9 +121,9 @@ export interface RmhosSessionValue {
    */
   saveBeforeLeaving: () => Promise<boolean>;
   linuxUser: string | null;
-  net: RmhosNet | null;
+  net: RmhosSessionAnswer['net'] | null;
   /** From the hub's status endpoint (see net-status.ts); only meaningful when `net.enabled`. */
-  netState: 'connecting' | 'on' | 'error';
+  netState: PolledNet;
   /** The hub no longer accepts this session's ticket (12 h cap, idle, evicted): restart to reconnect. */
   netEnded: boolean;
 }
@@ -164,7 +167,7 @@ export function useRmhosMachine(
 
   /** The ticket the running machine was built with: the status poll uses the same credential. */
   const tickets = useRef(createTicketHolder());
-  const [netState, setNetState] = useState<'connecting' | 'on' | 'error'>('connecting');
+  const [netState, setNetState] = useState<PolledNet>('connecting');
   const [netEnded, setNetEnded] = useState(false);
 
   const runnerRef = useRef<HomeSession | null>(null);
@@ -195,7 +198,14 @@ export function useRmhosMachine(
   const signedOut = !accountPending && !userId && machineUser === null;
 
   useEffect(() => {
-    if (!machineUser) {
+    const step = machineStep({
+      machineUser,
+      halted,
+      enabled,
+      sessionReady,
+      hasScreen: !!screenRef.current,
+    });
+    if (step === 'idle') {
       // No account (signed out, or not known yet): nothing runs, and nothing stale stays on
       // screen. The previous machine was torn down by the cleanup of the run before this one.
       setPhase('idle');
@@ -204,16 +214,26 @@ export function useRmhosMachine(
       setSnap(null);
       return;
     }
-    if (halted) {
+    if (step === 'stopped') {
       setPhase('stopped');
       setDetail(undefined);
       setSnap(null);
       return;
     }
-    if (!enabled || !sessionReady || !screenRef.current) return;
+    if (step === 'wait') {
+      // Not started yet, and what is on screen is not this account's: after a switch A to B the
+      // phase and snapshot are still A's until B's session answers. Back to neutral at once.
+      setPhase('idle');
+      setDetail(undefined);
+      setFailure(null);
+      setSnap(null);
+      return;
+    }
+    const screen = screenRef.current;
+    // `machineStep` said `run`: both exist (this narrows them for the compiler).
+    if (!machineUser || !screen) return;
     const userId = machineUser;
     const session = sessionRef.current;
-    const screen = screenRef.current;
     const ac = new AbortController();
     const cleanups: Array<() => void> = [];
     let cancelled = false;
@@ -364,7 +384,7 @@ export function useRmhosMachine(
       let result: ReturnType<typeof statusSample> = 'failed';
       try {
         const r = await fetch(statusUrl(n.url, n.ticket), { cache: 'no-store' });
-        const body = r.ok ? ((await r.json()) as { connected?: unknown }) : null;
+        const body = r.ok ? ((await r.json()) as { connected?: unknown; full?: unknown }) : null;
         // 401: the hub dropped this ticket. 429: no information, nothing changes.
         result = statusSample(r.status, body);
       } catch {
@@ -436,10 +456,16 @@ export function useRmhosMachine(
       await runnerRef.current.putPreviousBack();
     }, []),
     exportLive: useCallback(async () => runnerRef.current?.exportLive() ?? null, []),
-    importArchive: useCallback(async (gz: Uint8Array) => {
-      if (!runnerRef.current) throw new Error('rmhOS is not running');
-      await runnerRef.current.importBackup(gz);
-    }, []),
+    importArchive: useCallback(
+      async (gz: Uint8Array) => {
+        if (runnerRef.current) return runnerRef.current.importBackup(gz);
+        // No machine (stopped on purpose, or powered off): the store alone takes the backup, and
+        // the caller's restart loads it.
+        if (!machineUser) throw new Error('not signed in');
+        await importWithoutMachine(machineUser, getStore(), gz);
+      },
+      [machineUser, getStore],
+    ),
     startEmpty: useCallback(async () => {
       if (!runnerRef.current) throw new Error('rmhOS is not running');
       await runnerRef.current.startEmpty();
@@ -459,7 +485,7 @@ export function useRmhosMachine(
       [],
     ),
     // What the guest says it created, else what the site asked for.
-    linuxUser: snap?.linuxName ?? sessionQ.data?.linuxUser ?? null,
+    linuxUser: displayLinuxUser(snap?.linuxName ?? null, sessionQ.data?.linuxUser ?? null),
     net: sessionQ.data?.net ?? null,
     netState,
     netEnded,

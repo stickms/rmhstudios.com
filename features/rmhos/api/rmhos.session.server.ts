@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { getUserTier } from '@/lib/entitlements';
@@ -5,7 +6,7 @@ import { prisma } from '@/lib/prisma.server';
 import { RMHOS } from '@features/rmhos/engine/constants';
 import { toLinuxUsername } from '@features/rmhos/engine/linux-username';
 import { signNetTicket } from '@features/rmhos/engine/net-ticket.server';
-import { rmhosSessionApi, type RmhosNet } from '@features/rmhos/engine/rmhos.contract';
+import { rmhosSessionApi, type RmhosSession } from '@features/rmhos/engine/rmhos.contract';
 
 /**
  * The relay's public WebSocket URL. `VITE_RMHOS_NET_URL` wins (a dev override, read at runtime);
@@ -61,7 +62,11 @@ async function eligibility(userId: string): Promise<'ok' | 'suspended' | 'not-el
   return 'ok';
 }
 
-async function buildNet(userId: string, request: Request): Promise<RmhosNet> {
+async function buildNet(
+  userId: string,
+  request: Request,
+  mint: boolean,
+): Promise<RmhosSession['net']> {
   const secret = process.env.RMHOS_NET_TICKET_SECRET;
   // A secret shorter than the hub accepts would only mint tickets the hub (which then refuses to
   // start) can never check: say "off" instead.
@@ -71,17 +76,25 @@ async function buildNet(userId: string, request: Request): Promise<RmhosNet> {
   const verdict = await eligibility(userId);
   if (verdict === 'suspended') return { enabled: false };
   if (verdict === 'not-eligible') return { enabled: false, reason: 'not-eligible' };
+  if (!mint) return { enabled: true };
   return { enabled: true, url: relayUrl(request), ticket: signNetTicket(userId, secret) };
 }
 
+/** `?ticket=0`: answer without minting a ticket. Anything else is a 400. */
+const querySchema = z.object({ ticket: z.literal('0').optional() });
+
 export const route = apiRoute('/api/rmhos/session', {
-  GET: implement(rmhosSessionApi, { rateLimit: 'read' }, async ({ user, userId, request }) => {
+  GET: implement(
+    rmhosSessionApi,
+    { rateLimit: 'read', query: querySchema },
+    async ({ user, userId, request, query }) => {
     const who = user as { handle?: string | null; username?: string | null };
     const body = {
       linuxUser: toLinuxUsername(who.handle ?? who.username),
-      net: await buildNet(userId, request),
+      net: await buildNet(userId, request, query?.ticket !== '0'),
     };
     // It carries a credential: never stored by a browser or shared cache.
     return Response.json(body, { headers: { 'cache-control': 'no-store' } });
-  }),
+    },
+  ),
 });

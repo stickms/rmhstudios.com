@@ -3,24 +3,22 @@
  * without rendering. The keys are logical names; Toolbar.tsx maps each to a literal t() call.
  */
 import type { SaveResult } from '../engine/home-sync';
+import type { RmhosSession } from '../engine/rmhos.contract';
 import type { VmPhase } from '../engine/vm-types';
+import type { PolledNet } from './net-status';
 
-export type NetState = 'off' | 'not-eligible' | 'connecting' | 'on' | 'error';
+export type NetState = 'off' | 'not-eligible' | 'connecting' | 'on' | 'error' | 'full';
 
 /**
- * The toolbar's network state from the session's `net` and the status poll. `reason` is optional
- * on a disabled `net` (the server may say `not-eligible`: this account is not allowed networking),
- * so it is read defensively: an unknown or absent reason is plain "off".
+ * The toolbar's network state from the session's `net` and the status poll. A disabled `net`
+ * carries `reason: 'not-eligible'` when this account is not allowed networking; no reason is
+ * plain "off". While the hub is down `net` still says `enabled: true` and the poll then says
+ * `error`: that is the "unavailable" state.
  */
-export function netStateOf(
-  net: unknown,
-  polled: 'connecting' | 'on' | 'error',
-): NetState {
-  if (!net || typeof net !== 'object') return 'off';
-  if ((net as { enabled?: unknown }).enabled === true) return polled;
-  return 'reason' in net && (net as { reason?: unknown }).reason === 'not-eligible'
-    ? 'not-eligible'
-    : 'off';
+export function netStateOf(net: RmhosSession['net'] | null, polled: PolledNet): NetState {
+  if (!net) return 'off';
+  if (net.enabled) return polled;
+  return net.reason === 'not-eligible' ? 'not-eligible' : 'off';
 }
 
 export interface ToolbarInput {
@@ -43,7 +41,7 @@ export interface ToolbarState {
   showRestart: boolean;
   /** Download backup: available in every phase (it reads the stored copy when no machine runs). */
   showBackup: boolean;
-  /** Restore backup needs a machine to hand the files to. */
+  /** Restore backup: with a machine the guest gets it on restart; with none it goes into the store. */
   showRestore: boolean;
 }
 
@@ -53,6 +51,7 @@ const NET_KEYS: Record<NetState, string> = {
   connecting: 'net.connecting',
   on: 'net.online',
   error: 'net.unavailable',
+  full: 'net.full',
 };
 
 export function toolbarState(input: ToolbarInput): ToolbarState {

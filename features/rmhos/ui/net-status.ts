@@ -4,25 +4,30 @@
  *  - `on` while the hub says this user's relay socket is connected;
  *  - `error` after 3 failed polls in a row, or `connected: false` for 30 s;
  *  - `error` at once, with `ended`, when the hub answers 401 (the ticket is gone for good);
+ *  - `full` at once while the hub says it is at its session cap and this user has no session
+ *    (`full: true`): waiting would not help, and "unavailable" would be untrue;
  *  - `connecting` otherwise (before the first answer, or a short drop v86 reconnects from).
  */
 export const FAILURES_TO_ERROR = 3;
 export const DISCONNECTED_MS_TO_ERROR = 30_000;
 export const POLL_MS = 15_000;
 
+/** What the poll can say about the relay. */
+export type PolledNet = 'connecting' | 'on' | 'error' | 'full';
+
 export interface NetTracker {
   failures: number;
   disconnectedSince: number | null;
 }
 
-export type NetSample = { at: number; result: { connected: boolean } | 'failed' | 'ended' };
+export type NetSample = { at: number; result: { connected: boolean; full?: boolean } | 'failed' | 'ended' };
 
 export const initialTracker: NetTracker = { failures: 0, disconnectedSince: null };
 
 export function trackNet(
   prev: NetTracker,
   sample: NetSample,
-): { tracker: NetTracker; state: 'connecting' | 'on' | 'error'; ended: boolean } {
+): { tracker: NetTracker; state: PolledNet; ended: boolean } {
   // 401: the hub no longer knows this ticket (12 h cap, idle, evicted). Nothing will reconnect.
   if (sample.result === 'ended') return { tracker: prev, state: 'error', ended: true };
   if (sample.result === 'failed') {
@@ -37,6 +42,9 @@ export function trackNet(
     return { tracker: { failures: 0, disconnectedSince: null }, state: 'on', ended: false };
   }
   const since = prev.disconnectedSince ?? sample.at;
+  if (sample.result.full) {
+    return { tracker: { failures: 0, disconnectedSince: since }, state: 'full', ended: false };
+  }
   return {
     tracker: { failures: 0, disconnectedSince: since },
     state: sample.at - since >= DISCONNECTED_MS_TO_ERROR ? 'error' : 'connecting',
@@ -60,11 +68,11 @@ export function statusUrl(relayUrl: string, ticket: string): string {
  */
 export function statusSample(
   status: number,
-  body: { connected?: unknown } | null,
-): { connected: boolean } | 'failed' | 'ended' | null {
+  body: { connected?: unknown; full?: unknown } | null,
+): { connected: boolean; full: boolean } | 'failed' | 'ended' | null {
   if (status === 429) return null;
   if (status === 401) return 'ended';
-  if (status >= 200 && status < 300) return { connected: body?.connected === true };
+  if (status >= 200 && status < 300) return { connected: body?.connected === true, full: body?.full === true };
   return 'failed';
 }
 
