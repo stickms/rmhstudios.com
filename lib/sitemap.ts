@@ -713,6 +713,8 @@ export const EXCLUDED_ROUTES: Record<
       'personal',
     '/rmhmusic/practice':
       'personal', // the learner's own card reviews, behind sign-in
+    '/rmhmusic/sprint':
+      'personal', // the learner's own sight reading runs and scores, behind sign-in
     '/alexdebtcounter':
       'redirect', // → /kaikaidebtcounter (the counter's subject is Kaikai)
     '/sohumbum2':

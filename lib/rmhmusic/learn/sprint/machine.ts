@@ -27,7 +27,8 @@
  * wrong, left out of the score), and a mic note on a chord prompt is ignored.
  *
  * Exactly one `complete` effect per run, after the last prompt's feedback. A scored run then saves
- * (`save`, carrying its attempt; a stale answer is ignored; Retry is a new attempt). An unscored
+ * (`save`, carrying its attempt; a stale answer is ignored; Retry is a new attempt; `unsaved`, when
+ * nothing can keep the result yet, ends at `complete` with `scored` still true). An unscored
  * run (a daily challenge replayed the same day: practice) ends at `complete`. `again` starts a new
  * run from any finished state; in daily mode it is never scored.
  */
@@ -55,6 +56,14 @@ import {
 export type SprintMode =
   | 'freeplay'
   | 'daily';
+
+/**
+ * How a save ended: a lesson's outcomes, plus `unsaved` — nothing keeps sprint results yet (the
+ * store has no table for them), so the run ends at `complete` and says plainly it was not saved.
+ */
+export type SprintSaveOutcome =
+  | CompleteOutcome
+  | 'unsaved';
 
 /** What every state carries: the run and what has been answered so far. */
 interface Run {
@@ -166,7 +175,7 @@ export type SprintEvent =
   | {
       type: 'answered';
       attempt: number;
-      outcome: CompleteOutcome;
+      outcome: SprintSaveOutcome;
     }
   | {
       type: 'retry';
@@ -951,6 +960,16 @@ export function step(
               {
                 ...base,
                 kind: 'saved',
+              },
+            effects:
+              [],
+          };
+        case 'unsaved':
+          return {
+            state:
+              {
+                ...base,
+                kind: 'complete',
               },
             effects:
               [],

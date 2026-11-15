@@ -48,11 +48,20 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   per-instrument release value for the mic echo guard (`RELEASE_MS` in `voice.ts`).
 - Nobody has **listened** to any sample. The plan ends with an owner audition step.
 
-### Sight reading game ("Sprint") — planned only, no code
+### Sight reading game ("Sprint") — S1–S4 built, results not stored yet
 - Plan: `docs/superpowers/plans/2026-11-09-rmhmusic-note-sprint.md`. Timed MIDI reading game:
   levels one note → accidentals → chords → short bars; **Freeplay** (20-prompt runs, personal bests)
   and a **Daily challenge** (one run per UTC day, 6 escalating levels, seeded by date, first
   completed run scored, daily streak). Tasks S1–S6 in the plan. No leaderboard until the owner decides.
+- Built: `lib/rmhmusic/learn/sprint/` (levels and pars, seeded generators, `dailyRun`/`utcDate`,
+  scoring, the `{initial, step}` machine), `sheetLayout` + `SprintSheet` (accidentals, stacked
+  chords, bars with a now mark), `components/rmhmusic/learn/sprint/` and `/rmhmusic/sprint`, and a
+  "Sight reading" link at the foot of the learn home.
+- Not yet: **S5 persistence.** The game saves through `SprintSaver` (`sprint/saver.ts`); the
+  in-memory saver answers `unsaved`, so every result says "Not saved" and only the current visit
+  remembers that today's challenge was played. Wiring S5 is a new saver in that one file. Bests,
+  the daily streak and level unlocking wait for it (every level is open). **S6** (browser matrix,
+  real MIDI) has not been run.
 
 ## 3. Future features (not started)
 
@@ -62,7 +71,6 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 - **Phase 6:** social (friends, shared progress, possibly leaderboards for Sprint).
 - Rhythm *reading* beyond four note values; sharps/flats in flashcards (naturals only today);
   descending intervals; minor seconds (the interval table has `second` = major second only).
-- Sprint needs `StaffCard` extended for accidentals, stacked chord noteheads and multi-note bars.
 
 ## 4. Known gaps, debt and things an audit should check
 

@@ -1499,6 +1499,41 @@ describe('sprint machine: completing and saving', () => {
     );
   });
 
+  it('nothing keeps the result yet: the run ends at complete, still scored', () => {
+    const {
+      state,
+    } =
+      finish(
+        started(
+          [
+            P.c4,
+          ],
+        ),
+      );
+    const s =
+      step(
+        state,
+        {
+          type: 'answered',
+          attempt: 1,
+          outcome:
+            'unsaved',
+        },
+      ).state;
+    expect(
+      s,
+    ).toMatchObject(
+      {
+        kind: 'complete',
+        scored: true,
+        summary:
+          {
+            score: 100,
+          },
+      },
+    );
+  });
+
   it('an unscored run (daily practice) completes without saving', () => {
     const {
       state,
