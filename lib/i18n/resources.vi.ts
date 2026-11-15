@@ -49,7 +49,6 @@ const viResources = {
   "c-rmhcode": () => import("@/locales/vi/c-rmhcode.json"),
   "c-rmhcoins": () => import("@/locales/vi/c-rmhcoins.json"),
   "c-rmhmusic": () => import("@/locales/vi/c-rmhmusic.json"),
-  "c-rmhos": () => import("@/locales/vi/c-rmhos.json"),
   "c-rmhstudy": () => import("@/locales/vi/c-rmhstudy.json"),
   "c-rmhtech": () => import("@/locales/vi/c-rmhtech.json"),
   "c-rmhtube": () => import("@/locales/vi/c-rmhtube.json"),

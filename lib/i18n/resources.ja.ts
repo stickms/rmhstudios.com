@@ -49,7 +49,6 @@ const jaResources = {
   "c-rmhcode": () => import("@/locales/ja/c-rmhcode.json"),
   "c-rmhcoins": () => import("@/locales/ja/c-rmhcoins.json"),
   "c-rmhmusic": () => import("@/locales/ja/c-rmhmusic.json"),
-  "c-rmhos": () => import("@/locales/ja/c-rmhos.json"),
   "c-rmhstudy": () => import("@/locales/ja/c-rmhstudy.json"),
   "c-rmhtech": () => import("@/locales/ja/c-rmhtech.json"),
   "c-rmhtube": () => import("@/locales/ja/c-rmhtube.json"),
