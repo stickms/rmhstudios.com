@@ -115,6 +115,13 @@ function HomeSkeleton() {
           ),
         )}
       </div>
+      <div
+        className={
+          INPUT_ROW
+        }
+      >
+        <span className="app-skeleton h-5 w-28 max-w-full" />
+      </div>
     </div>
   );
 }
@@ -608,6 +615,26 @@ export function LearnHome() {
                 />
               ),
             )}
+          </div>
+          <div
+            className={
+              INPUT_ROW
+            }
+          >
+            <Link
+              to="/rmhmusic/sprint"
+              className={
+                TEXT_BUTTON
+              }
+            >
+              {t(
+                'sprint-home-link',
+                {
+                  defaultValue:
+                    'Sight reading',
+                },
+              )}
+            </Link>
           </div>
         </div>
       );

@@ -740,3 +740,554 @@ export const CLEF_GLYPHS: Record<
       'bass',
     ),
   };
+
+// ── Sheets of more than one note (the sight reading game) ────────────────────
+//
+// The same box, staff and clefs as a card, with a prompt's notes on it: one note, or a chord
+// stacked on one stem (a second's upper note beside an up stem, its lower note beside a down
+// one), each with the sharp or flat printed before it (staggered where they would touch); or a
+// bar of notes left to right, each on its own stem, with a pencilled "now" mark over the next
+// note to play. One natural on its own lands exactly where `cardLayout` puts it.
+
+/** A written note: the natural it sits on (MIDI) and the accidental printed before it. */
+export interface SheetNote {
+  written: number;
+  accidental:
+    | -1
+    | 0
+    | 1;
+}
+
+export interface SheetHead {
+  x: number;
+  y: number;
+  step: number;
+}
+
+export interface SheetAccidental {
+  /** The glyph's centre. */
+  x: number;
+  y: number;
+  kind:
+    | 'sharp'
+    | 'flat';
+}
+
+export interface SheetLedger {
+  y: number;
+  x0: number;
+  x1: number;
+}
+
+export interface SheetLayout {
+  heads: SheetHead[];
+  accidentals: SheetAccidental[];
+  ledgers: SheetLedger[];
+  stems: CardLayout['stem'][];
+  /** The "now" mark's tip, over the note to play next (a bar only). */
+  now: {
+    x: number;
+    y: number;
+  } | null;
+}
+
+/** The x of each note of a bar. */
+export const BAR_X =
+  [
+    66,
+    100,
+    134,
+    168,
+  ] as const;
+/** How far a second's offset head sits from the column. */
+const SECOND_OFFSET =
+  2 *
+    HEAD_RX -
+  1.2;
+/** An accidental's centre, left of the leftmost head; further columns step left by this. */
+const ACC_GAP =
+  HEAD_RX +
+  7;
+/** A sharp is 9.2 units wide plus its stroke; a column more leaves a clear gap between two. */
+const ACC_COLUMN = 11.5;
+/** Accidentals closer than this many steps would touch, so they take another column. */
+const ACC_CLEAR_STEPS = 6;
+/** Half a ledger line's length past a head's centre. */
+const LEDGER_HALF = 12;
+/** The now mark's tip: above the staff, clear of every note a sprint asks (highest head y 22). */
+const NOW_Y = 10;
+
+function stemFor(
+  x: number,
+  steps: readonly number[],
+): CardLayout['stem'] {
+  const lo =
+    Math.min(
+      ...steps,
+    );
+  const hi =
+    Math.max(
+      ...steps,
+    );
+  const up =
+    (lo +
+      hi) /
+      2 <
+    4;
+  return up
+    ? {
+        x:
+          x +
+          HEAD_RX -
+          0.6,
+        y1:
+          cardY(
+            lo,
+          ) -
+          1,
+        y2:
+          cardY(
+            hi,
+          ) -
+          STEM,
+      }
+    : {
+        x:
+          x -
+          HEAD_RX +
+          0.6,
+        y1:
+          cardY(
+            hi,
+          ) +
+          1,
+        y2:
+          cardY(
+            lo,
+          ) +
+          STEM,
+      };
+}
+
+function placeAccidentals(
+  notes: readonly {
+    step: number;
+    accidental: number;
+    y: number;
+  }[],
+  x: number,
+): SheetAccidental[] {
+  const columns: number[][] =
+    [];
+  const out: SheetAccidental[] =
+    [];
+  const marked =
+    notes
+      .filter(
+        (
+          nt,
+        ) =>
+          nt.accidental !==
+          0,
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          b.step -
+          a.step,
+      );
+  for (const nt of marked) {
+    let col =
+      columns.findIndex(
+        (
+          c,
+        ) =>
+          c.every(
+            (
+              s,
+            ) =>
+              Math.abs(
+                s -
+                  nt.step,
+              ) >=
+              ACC_CLEAR_STEPS,
+          ),
+      );
+    if (
+      col ===
+      -1
+    ) {
+      columns.push(
+        [],
+      );
+      col =
+        columns.length -
+        1;
+    }
+    columns[
+      col
+    ]?.push(
+      nt.step,
+    );
+    out.push(
+      {
+        x:
+          x -
+          col *
+            ACC_COLUMN,
+        y: nt.y,
+        kind:
+          nt.accidental >
+          0
+            ? 'sharp'
+            : 'flat',
+      },
+    );
+  }
+  return out;
+}
+
+export function sheetLayout(
+  clef: Clef,
+  notes: readonly SheetNote[],
+  arrangement:
+    | 'chord'
+    | 'bar',
+  now?: number,
+  /** The lowest step drawn: `CARD_LOW_MIN_STEP` on the low card (guitar). */
+  minStep = CARD_MIN_STEP,
+): SheetLayout {
+  const placed =
+    notes.map(
+      (
+        nt,
+      ) => {
+        const step =
+          Math.min(
+            CARD_MAX_STEP,
+            Math.max(
+              minStep,
+              clefStep(
+                clef,
+                nt.written,
+              ),
+            ),
+          );
+        return {
+          step,
+          y: cardY(
+            step,
+          ),
+          accidental:
+            nt.accidental,
+        };
+      },
+    );
+  if (
+    arrangement ===
+    'bar'
+  ) {
+    const lastX =
+      BAR_X[
+        BAR_X.length -
+          1
+      ];
+    const heads =
+      placed.map(
+        (
+          p,
+          i,
+        ) => ({
+          x:
+            BAR_X[
+              i
+            ] ??
+            lastX,
+          y: p.y,
+          step: p.step,
+        }),
+      );
+    const nowHead =
+      now ===
+      undefined
+        ? undefined
+        : heads[
+            now
+          ];
+    return {
+      heads,
+      accidentals:
+        placed.flatMap(
+          (
+            p,
+            i,
+          ) =>
+            placeAccidentals(
+              [
+                p,
+              ],
+              (heads[
+                i
+              ]
+                ?.x ??
+                lastX) -
+                ACC_GAP,
+            ),
+        ),
+      ledgers:
+        heads.flatMap(
+          (
+            h,
+          ) =>
+            ledgerSteps(
+              h.step,
+            ).map(
+              (
+                s,
+              ) => ({
+                y: cardY(
+                  s,
+                ),
+                x0:
+                  h.x -
+                  LEDGER_HALF +
+                  1,
+                x1:
+                  h.x +
+                  LEDGER_HALF -
+                  1,
+              }),
+            ),
+        ),
+      stems:
+        heads.map(
+          (
+            h,
+          ) =>
+            stemFor(
+              h.x,
+              [
+                h.step,
+              ],
+            ),
+        ),
+      now: nowHead
+        ? {
+            x: nowHead.x,
+            y: NOW_Y,
+          }
+        : null,
+    };
+  }
+  if (
+    placed.length ===
+    0
+  )
+    return {
+      heads:
+        [],
+      accidentals:
+        [],
+      ledgers:
+        [],
+      stems:
+        [],
+      now: null,
+    };
+  const steps =
+    placed.map(
+      (
+        p,
+      ) =>
+        p.step,
+    );
+  const stem =
+    stemFor(
+      CARD_NOTE_X,
+      steps,
+    );
+  const up =
+    stem.x >
+    CARD_NOTE_X;
+  // Walk from the stem's root end; a note a second from the last unshifted one moves aside.
+  const order =
+    placed
+      .map(
+        (
+          p,
+          i,
+        ) => ({
+          i,
+          step: p.step,
+        }),
+      )
+      .sort(
+        (
+          a,
+          b,
+        ) =>
+          up
+            ? a.step -
+              b.step
+            : b.step -
+              a.step,
+      );
+  const shift =
+    new Map<
+      number,
+      number
+    >();
+  let lastStep:
+    | number
+    | null =
+    null;
+  for (const {
+    i,
+    step,
+  } of order) {
+    if (
+      lastStep !==
+        null &&
+      Math.abs(
+        step -
+          lastStep,
+      ) ===
+        1
+    ) {
+      shift.set(
+        i,
+        up
+          ? SECOND_OFFSET
+          : -SECOND_OFFSET,
+      );
+      lastStep =
+        null;
+    } else {
+      lastStep =
+        step;
+    }
+  }
+  const heads =
+    placed.map(
+      (
+        p,
+        i,
+      ) => ({
+        x:
+          CARD_NOTE_X +
+          (shift.get(
+            i,
+          ) ??
+            0),
+        y: p.y,
+        step: p.step,
+      }),
+    );
+  const xs =
+    heads.map(
+      (
+        h,
+      ) =>
+        h.x,
+    );
+  const ledgerSet =
+    new Set(
+      [
+        ...ledgerSteps(
+          Math.min(
+            ...steps,
+          ),
+        ),
+        ...ledgerSteps(
+          Math.max(
+            ...steps,
+          ),
+        ),
+      ],
+    );
+  return {
+    heads,
+    accidentals:
+      placeAccidentals(
+        placed,
+        Math.min(
+          ...xs,
+        ) -
+          ACC_GAP,
+      ),
+    ledgers:
+      [
+        ...ledgerSet,
+      ].map(
+        (
+          s,
+        ) => ({
+          y: cardY(
+            s,
+          ),
+          x0:
+            Math.min(
+              ...xs,
+            ) -
+            LEDGER_HALF,
+          x1:
+            Math.max(
+              ...xs,
+            ) +
+            LEDGER_HALF,
+        }),
+      ),
+    stems:
+      [
+        stem,
+      ],
+    now: null,
+  };
+}
+
+/** A sheet's ledger line, tilted like a card's. */
+export function sheetLedgerLine(
+  l: SheetLedger,
+  n: number,
+): string {
+  const t =
+    n %
+      2 ===
+    0
+      ? 0.35
+      : -0.3;
+  return `M ${f(l.x0)} ${f(l.y + t)} L ${f(l.x1)} ${f(l.y - t)}`;
+}
+
+/** A pencilled sharp centred on (x, y): two upright strokes and two heavier rising bars. */
+export function sharpPath(
+  x: number,
+  y: number,
+): string {
+  return [
+    `M ${f(x - 2)} ${f(y - 8.5)} L ${f(x - 2.2)} ${f(y + 9)}`,
+    `M ${f(x + 2.2)} ${f(y - 9.5)} L ${f(x + 2)} ${f(y + 8)}`,
+    `M ${f(x - 4.6)} ${f(y - 1.6)} L ${f(x + 4.6)} ${f(y - 4)}`,
+    `M ${f(x - 4.6)} ${f(y + 4)} L ${f(x + 4.6)} ${f(y + 1.6)}`,
+  ].join(
+    ' ',
+  );
+}
+
+/** A pencilled flat centred on (x, y): a tall stroke and its bowl closing on the note's line. */
+export function flatPath(
+  x: number,
+  y: number,
+): string {
+  return `M ${f(x - 2.5)} ${f(y - 12)} L ${f(x - 2.6)} ${f(y + 4.5)} C ${f(x + 5)} ${f(y + 0.5)} ${f(x + 4)} ${f(y - 5.5)} ${f(x - 2.55)} ${f(y - 0.8)}`;
+}
+
+/** The "now" mark: a small pencilled caret over the note, pointing down to it, tip at (x, y). */
+export function nowMarkPath(
+  x: number,
+  y: number,
+): string {
+  return `M ${f(x - 4)} ${f(y - 4)} L ${f(x)} ${f(y)} L ${f(x + 4.2)} ${f(y - 3.8)}`;
+}

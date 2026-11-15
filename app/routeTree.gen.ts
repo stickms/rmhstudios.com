@@ -181,6 +181,7 @@ import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhmusicCreditsRouteImport } from './routes/rmhmusic/credits'
 import { Route as RmhmusicPracticeRouteImport } from './routes/rmhmusic/practice'
+import { Route as RmhmusicSprintRouteImport } from './routes/rmhmusic/sprint'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
 import { Route as RmhstudyPlannerRouteImport } from './routes/rmhstudy/planner'
@@ -1376,6 +1377,11 @@ const RmhmusicCreditsRoute = RmhmusicCreditsRouteImport.update({
 const RmhmusicPracticeRoute = RmhmusicPracticeRouteImport.update({
   id: '/practice',
   path: '/practice',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicSprintRoute = RmhmusicSprintRouteImport.update({
+  id: '/sprint',
+  path: '/sprint',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhstudyIndexRoute = RmhstudyIndexRouteImport.update({
@@ -3257,6 +3263,7 @@ export interface FileRoutesByFullPath {
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
+  '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -3740,6 +3747,7 @@ export interface FileRoutesByTo {
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
+  '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -4249,6 +4257,7 @@ export interface FileRoutesById {
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
+  '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -4760,6 +4769,7 @@ export interface FileRouteTypes {
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
     | '/rmhmusic/practice'
+    | '/rmhmusic/sprint'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -5243,6 +5253,7 @@ export interface FileRouteTypes {
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
     | '/rmhmusic/practice'
+    | '/rmhmusic/sprint'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -5751,6 +5762,7 @@ export interface FileRouteTypes {
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
     | '/rmhmusic/practice'
+    | '/rmhmusic/sprint'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -7486,6 +7498,13 @@ declare module '@tanstack/react-router' {
       path: '/practice'
       fullPath: '/rmhmusic/practice'
       preLoaderRoute: typeof RmhmusicPracticeRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/sprint': {
+      id: '/rmhmusic/sprint'
+      path: '/sprint'
+      fullPath: '/rmhmusic/sprint'
+      preLoaderRoute: typeof RmhmusicSprintRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhstudy/': {
@@ -10544,6 +10563,7 @@ const RmhcodeRouteWithChildren =
 interface RmhmusicRouteChildren {
   RmhmusicCreditsRoute: typeof RmhmusicCreditsRoute
   RmhmusicPracticeRoute: typeof RmhmusicPracticeRoute
+  RmhmusicSprintRoute: typeof RmhmusicSprintRoute
   RmhmusicIndexRoute: typeof RmhmusicIndexRoute
   RmhmusicLessonLessonIdRoute: typeof RmhmusicLessonLessonIdRoute
 }
@@ -10551,6 +10571,7 @@ interface RmhmusicRouteChildren {
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
   RmhmusicCreditsRoute: RmhmusicCreditsRoute,
   RmhmusicPracticeRoute: RmhmusicPracticeRoute,
+  RmhmusicSprintRoute: RmhmusicSprintRoute,
   RmhmusicIndexRoute: RmhmusicIndexRoute,
   RmhmusicLessonLessonIdRoute: RmhmusicLessonLessonIdRoute,
 }

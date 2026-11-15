@@ -71,6 +71,30 @@ describe('rmhmusicReturnPath', () => {
     );
   });
 
+  it('returns to the sight reading game', () => {
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/sprint',
+      ),
+    ).toBe(
+      '/rmhmusic/sprint',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/sprint/',
+      ),
+    ).toBe(
+      '/rmhmusic/sprint',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/sprintx',
+      ),
+    ).toBe(
+      '/rmhmusic',
+    );
+  });
+
   it('sends everything else to the app home, never off the app', () => {
     for (const bad of [
       undefined,
