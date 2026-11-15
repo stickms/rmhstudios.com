@@ -1555,5 +1555,9 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "आपकी रैंक के आसपास",
+  "leaderboard-near-you-hint": "आपकी रैंक से ठीक ऊपर और नीचे के खिलाड़ी।",
+  "quest-to-go_other": "{{count}} बाकी",
+  "quest-to-go_one": "{{count}} बाकी"
 }

@@ -1555,5 +1555,9 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "Sıralamanın çevresi",
+  "leaderboard-near-you-hint": "Sıralamada hemen üstündeki ve altındaki oyuncular.",
+  "quest-to-go_other": "{{count}} kaldı",
+  "quest-to-go_one": "{{count}} kaldı"
 }

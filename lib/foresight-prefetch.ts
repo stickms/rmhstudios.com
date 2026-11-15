@@ -48,6 +48,7 @@ export interface ForesightManagerLike {
     callback: () => void | Promise<void>;
     name?: string;
     reactivateAfter?: number;
+    hitSlop?: number;
   }): {
     unregister: () => void;
   };
@@ -68,6 +69,17 @@ export const MAX_REGISTERED = 200;
  * the data it warmed has gone stale, and not before.
  */
 export const REACTIVATE_AFTER_MS = 30_000;
+
+/**
+ * Fitts's law (Paul Fitts, 1954): the time to reach a target grows with its
+ * distance and shrinks with its width. A small text link is a narrow target, so
+ * the pointer's approach is slow and late. Widening the *prediction* target by a
+ * few pixels on every side (not the visible link) lets a trajectory that is
+ * heading for the link count as a hit a little earlier. 8px is about half a
+ * line of `t-body` text: wide enough to help a 14px link, narrow enough that
+ * two stacked links do not both fire.
+ */
+export const HIT_SLOP_PX = 8;
 
 /**
  * After a client-side navigation, wait for the new page to commit and settle
@@ -275,6 +287,8 @@ export function startForesightPrefetch(
                   ),
               reactivateAfter:
                 REACTIVATE_AFTER_MS,
+              hitSlop:
+                HIT_SLOP_PX,
             },
           );
         registered.set(

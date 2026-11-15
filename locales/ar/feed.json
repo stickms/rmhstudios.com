@@ -1735,5 +1735,13 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "حول ترتيبك",
+  "leaderboard-near-you-hint": "اللاعبون الذين يسبقونك ويلونك مباشرة في الترتيب.",
+  "quest-to-go_other": "تبقى {{count}}",
+  "quest-to-go_few": "تبقى {{count}}",
+  "quest-to-go_many": "تبقى {{count}}",
+  "quest-to-go_one": "تبقى {{count}}",
+  "quest-to-go_two": "تبقى {{count}}",
+  "quest-to-go_zero": "تبقى {{count}}"
 }

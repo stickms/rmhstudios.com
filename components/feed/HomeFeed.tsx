@@ -19,6 +19,7 @@ import type { SitewideAnnouncementResponse } from '@/lib/sitewide-announcement';
 import { CaughtUpDivider } from './CaughtUpDivider';
 import { FeedRow } from './FeedRow';
 import { HomeComposer } from './HomeComposer';
+import { ResumeRail } from './ResumeRail';
 import { SitewideAnnouncementRow } from './SitewideAnnouncementRow';
 
 /** The server-streamed first page (For You / all), resolved via <Await>. */
@@ -220,6 +221,7 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
         <Spine>
           {pinned}
           <HomeComposer />
+          <ResumeRail />
         </Spine>
       );
     }
@@ -230,6 +232,7 @@ function FeedBody({ initial }: { initial: InitialFeed }) {
     <Spine>
       {pinned}
       <HomeComposer />
+      <ResumeRail />
       {/* A virtual item (the question card, the fortune, the caught-up row) renders its own spine item, or nothing. */}
       {/* The server's class stays through hydration, which renders without the streamed fallback. */}
       <div role="feed" aria-label={label} className={feedArrival} suppressHydrationWarning>

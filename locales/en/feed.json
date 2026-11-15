@@ -1761,5 +1761,9 @@
   "shop-kind-post-flair": "Flair",
   "shop-kind-banner": "Banners",
   "shop-kind-pet": "Pets",
-  "shop-kind-theme": "Themes"
+  "shop-kind-theme": "Themes",
+  "leaderboard-near-you": "Around your rank",
+  "leaderboard-near-you-hint": "The players just above and below your rank.",
+  "quest-to-go_one": "{{count}} to go",
+  "quest-to-go_other": "{{count}} to go"
 }
