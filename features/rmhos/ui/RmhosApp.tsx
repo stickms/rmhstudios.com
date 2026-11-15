@@ -57,6 +57,8 @@ export default function RmhosApp() {
   const [damagedBlock, setDamagedBlock] = useState(false);
   const [confirmRemoveDamaged, setConfirmRemoveDamaged] = useState(false);
   const [pendingBackup, setPendingBackup] = useState<Uint8Array | null>(null);
+  /** The backup the person already chose and confirmed, waiting for an earlier damaged copy to go. */
+  const [blockedBackup, setBlockedBackup] = useState<Uint8Array | null>(null);
   const [busy, setBusy] = useState(false);
   /** The last saved copy offered for download after the current files could not be saved. */
   const [staleOffer, setStaleOffer] = useState<{ bytes: Uint8Array; savedAt: number } | null>(
@@ -144,8 +146,8 @@ export default function RmhosApp() {
     }
   };
 
-  const replaceWithBackup = async () => {
-    const bytes = pendingBackup;
+  const replaceWithBackup = async (given?: Uint8Array) => {
+    const bytes = given ?? pendingBackup;
     setPendingBackup(null);
     if (!bytes) return;
     // Save, Download and Restore stay off from the confirm until the new machine is starting.
@@ -155,7 +157,10 @@ export default function RmhosApp() {
     } catch (e) {
       setBusy(false);
       const failure = reportRestoreError(e);
-      if (failure === 'damaged-exists') return setDamagedBlock(true);
+      if (failure === 'damaged-exists') {
+        setBlockedBackup(bytes); // carried on once the earlier copy is gone: no second file pick
+        return setDamagedBlock(true);
+      }
       return fail(restoreFailureCopy(t, failure));
     }
     // No save on the way out: it would replace the backup with the current home.
@@ -204,7 +209,6 @@ export default function RmhosApp() {
           storeKind={session.storeKind}
           busy={busy}
           ready={session.desktopReady}
-          captured={captured}
           fullscreen={fullscreen}
           fullscreenAvailable={fullscreenAvailable}
           fileInputRef={fileInputRef}
@@ -215,6 +219,19 @@ export default function RmhosApp() {
           onDownload={() => void download()}
           onPickBackup={(f) => void pickBackup(f)}
         />
+        {/* Always laid out, so the toolbar and the screen never move when focus changes. */}
+        <div className="rmhos-hintbar text-xs text-(--app-text)" aria-hidden={!captured}>
+          <span
+            className="rmhos-hintbar-text"
+            title={t('capture-hint', {
+              defaultValue: 'Keys go to rmhOS. Press Ctrl+Alt+Shift+Esc to leave.',
+            })}
+          >
+            {t('capture-hint', {
+              defaultValue: 'Keys go to rmhOS. Press Ctrl+Alt+Shift+Esc to leave.',
+            })}
+          </span>
+        </div>
         {noticeOpen && (
           <div className="rmhos-notices flex items-center justify-between gap-2" role="note">
             <p className="text-xs text-(--app-text-muted)">
@@ -266,7 +283,13 @@ export default function RmhosApp() {
             />
           )}
         </div>
-        <AboutDialog open={about} onOpenChange={setAbout} container={container} session={session} />
+        <AboutDialog
+          open={about}
+          onOpenChange={setAbout}
+          container={container}
+          session={session}
+          currentDamaged={session.failure === 'corrupt'}
+        />
         <ConfirmBox
           open={confirmPutBack}
           container={container}
@@ -281,10 +304,22 @@ export default function RmhosApp() {
         <DamagedExistsDialog
           open={damagedBlock && !confirmRemoveDamaged}
           container={container}
-          onClose={() => setDamagedBlock(false)}
+          onClose={() => {
+            setDamagedBlock(false);
+            setBlockedBackup(null);
+          }}
           onDownload={async () => {
-            const raw = await session.exportCopy('damaged');
-            if (raw) downloadBytes(DAMAGED_FILE, raw);
+            try {
+              const raw = await session.exportCopy('damaged');
+              if (raw) downloadBytes(DAMAGED_FILE, raw);
+              else throw new Error('missing');
+            } catch {
+              fail(
+                t('copy-download-failed', {
+                  defaultValue: 'Could not download the copy. Nothing was changed.',
+                }),
+              );
+            }
           }}
           onRemove={() => setConfirmRemoveDamaged(true)}
         />
@@ -296,10 +331,21 @@ export default function RmhosApp() {
           })}
           confirmLabel={t('remove', { defaultValue: 'Remove' })}
           onCancel={() => setConfirmRemoveDamaged(false)}
-          onConfirm={() => {
+          onConfirm={async () => {
             setConfirmRemoveDamaged(false);
+            try {
+              await session.removeCopy('damaged');
+            } catch {
+              return fail(
+                t('copy-remove-failed', {
+                  defaultValue: 'Could not remove the copy. Nothing was changed.',
+                }),
+              );
+            }
             setDamagedBlock(false);
-            void session.removeCopy('damaged');
+            const again = blockedBackup;
+            setBlockedBackup(null);
+            if (again) void replaceWithBackup(again);
           }}
         />
         <ConfirmBox
@@ -331,12 +377,13 @@ export default function RmhosApp() {
         <ConfirmBox
           open={pendingBackup !== null}
           container={container}
-          title={t('restore-confirm', {
-            defaultValue: 'Replace your files with this backup? The current files are lost.',
+          title={t('restore-confirm-keeps', {
+            defaultValue:
+              'Replace your files with this backup? Your current files are kept as one previous copy until you save.',
           })}
           confirmLabel={t('replace', { defaultValue: 'Replace' })}
           onCancel={() => setPendingBackup(null)}
-          onConfirm={() => void replaceWithBackup()}
+          onConfirm={() => void replaceWithBackup(undefined)}
         />
       </div>
     </RmhosSessionProvider>

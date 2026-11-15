@@ -26,8 +26,6 @@ interface Props {
   busy: boolean;
   /** The desktop is up: only then is a save status true. */
   ready: boolean;
-  /** The guest screen has focus: keys go to it, and the way out is said in plain sight. */
-  captured: boolean;
   fullscreen: boolean;
   fullscreenAvailable: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
@@ -90,13 +88,6 @@ export default function Toolbar(p: Props) {
         <span role="status" className="text-xs font-mono text-(--app-text-muted)">
           {p.ready ? saveLabel : ''}
         </span>
-        {p.captured && (
-          <span className="rmhos-capture-hint text-xs text-(--app-text)">
-            {t('capture-hint', {
-              defaultValue: 'Keys go to rmhOS. Press Ctrl+Alt+Shift+Esc to leave.',
-            })}
-          </span>
-        )}
         <span className="text-xs font-mono text-(--app-text-muted) inline-flex items-center gap-1">
           {netOn ? (
             <Wifi className="size-3" aria-hidden="true" />

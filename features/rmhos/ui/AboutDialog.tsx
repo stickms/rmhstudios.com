@@ -24,6 +24,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   container: HTMLElement | null;
   session: Pick<RmhosSessionValue, 'storedCopies' | 'exportCopy' | 'removeCopy'>;
+  /** The current archive could not be read (corrupt boot state): name its download that way. */
+  currentDamaged: boolean;
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -39,7 +41,13 @@ function ExternalLink({ href, children }: { href: string; children: React.ReactN
   );
 }
 
-export default function AboutDialog({ open, onOpenChange, container, session }: Props) {
+export default function AboutDialog({
+  open,
+  onOpenChange,
+  container,
+  session,
+  currentDamaged,
+}: Props) {
   const { t } = useTranslation('c-rmhos');
   const packages = packagesUrl(resolveImageManifest(CDN_BASE || undefined));
   return (
@@ -94,7 +102,13 @@ export default function AboutDialog({ open, onOpenChange, container, session }: 
               })}
             </li>
           </ul>
-          {open && <StoredCopies session={session} container={container} />}
+          {open && (
+            <StoredCopies
+              session={session}
+              container={container}
+              currentDamaged={currentDamaged}
+            />
+          )}
           <p className="text-(--app-text-muted)">
             {t('about-saving', {
               defaultValue:

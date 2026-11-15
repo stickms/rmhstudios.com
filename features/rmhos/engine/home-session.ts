@@ -272,8 +272,16 @@ export class HomeSession {
   }
 
   /** Put the home a restored backup replaced back (then restart). */
-  putPreviousBack(): Promise<void> {
-    return this.d.sync.putPreviousBack();
+  async putPreviousBack(): Promise<void> {
+    try {
+      await this.d.sync.putPreviousBack();
+    } catch (e) {
+      // Stale: it can never be put back now, so the button must not stay on screen.
+      if ((e as { code?: unknown }).code === 'previous_stale') {
+        this.set({ previousAvailable: false, previousSavedAt: null });
+      }
+      throw e;
+    }
   }
 
   dispose() {

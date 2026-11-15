@@ -5,7 +5,7 @@
  */
 import { AgentError, type AgentClient } from './agent';
 import { SHARE_ARCHIVE_PATH } from './agent-protocol';
-import type { CachedHome, HomeStore } from './home-store';
+import type { CachedHome, HomeStore, StoreOp } from './home-store';
 import type { VmHandle } from './vm-types';
 
 export type SaveResult =
@@ -122,8 +122,8 @@ export class HomeSync {
    */
   async prepare(): Promise<PrepareResult> {
     const cached = await this.deps.store.get(this.deps.userId);
-    // A leftover `:replaced` whose backup has been saved over (or removed) can never be put back.
-    await this.dropStaleReplaced(cached);
+    // No main entry, or an unreadable one: a `:replaced` stays, and what happens to it is the
+    // person's decision (Stored copies lists it with Download and Remove).
     if (!cached) {
       this.knownSha = null;
       return 'empty';
@@ -135,6 +135,9 @@ export class HomeSync {
     } catch {
       return 'corrupt';
     }
+    // The main entry is readable: a leftover `:replaced` whose backup it no longer is can never
+    // be put back.
+    await this.dropStaleReplaced(cached);
     await this.deps.vm.writeShareFile(SHARE_ARCHIVE_PATH, tar);
     return 'local';
   }
@@ -151,8 +154,11 @@ export class HomeSync {
     if (!cached) return;
     if (await store.get(`${userId}:damaged`)) throw new BackupError('damaged_exists');
     try {
-      await store.put(`${userId}:damaged`, cached); // throws before anything is deleted
-      await store.delete(userId);
+      // One transaction: the copy is kept and the main entry removed together, or neither.
+      await store.transact([
+        { key: `${userId}:damaged`, put: cached },
+        { key: userId, delete: true },
+      ]);
     } catch (e) {
       throw new BackupError(isQuota(e) ? 'storage-full' : 'storage_error');
     }
@@ -215,16 +221,18 @@ export class HomeSync {
       // Replaced or disposed while this save was running: nothing may land after that.
       if (this.suspended) return { status: 'failed', code: 'suspended' };
       try {
-        await store.put(userId, { archive, sha256, savedAt: Date.now() });
+        // The home now differs from the restored backup, so the home it replaced can no longer be
+        // put back and goes with this write: one transaction, so a failed save leaves both alone.
+        await store.transact([
+          { key: userId, put: { archive, sha256, savedAt: Date.now() } },
+          { key: `${userId}:replaced`, delete: true },
+        ]);
       } catch (e) {
         return isQuota(e)
           ? { status: 'storage-full' }
           : { status: 'failed', code: 'storage_error' };
       }
       this.knownSha = sha256;
-      // The home now differs from the restored backup: the home it replaced can no longer be put
-      // back, so it goes (no user action needed). Best effort: stale ones are also dropped at start.
-      await store.delete(`${userId}:replaced`).catch(() => {});
       if (!this.persisted) {
         this.persisted = true;
         void Promise.resolve(globalThis.navigator?.storage?.persist?.()).catch(() => {});
@@ -278,22 +286,33 @@ export class HomeSync {
     try {
       await this.inFlight?.catch(() => {});
       const previous = await store.get(userId);
-      if (previous) {
+      const ops: StoreOp[] = [];
+      if (previous && previous.sha256 !== entry.sha256) {
+        const kept = await store.get(`${userId}:replaced`);
+        // Is the stored home still an unmodified imported backup (the one `:replaced` is for)?
+        const stillBackup = !!kept?.forSha && previous.sha256 === kept.forSha;
         let readable = true;
         try {
           await checkBackup(previous.archive);
         } catch {
           readable = false;
         }
-        if (readable) {
-          await store.put(`${userId}:replaced`, { ...previous, forSha: entry.sha256 });
-        } else {
+        if (!readable) {
           // An unreadable current archive has to be kept, and there is room for one copy only.
           if (await store.get(`${userId}:damaged`)) throw new BackupError('damaged_exists');
-          await store.put(`${userId}:damaged`, previous);
+          ops.push({ key: `${userId}:damaged`, put: previous });
+        }
+        if (stillBackup) {
+          // The original home stays the one previous copy, now for this backup.
+          ops.push({ key: `${userId}:replaced`, put: { ...kept!, forSha: entry.sha256 } });
+        } else if (readable) {
+          ops.push({ key: `${userId}:replaced`, put: { ...previous, forSha: entry.sha256 } });
         }
       }
-      await store.put(userId, entry);
+      ops.push({ key: userId, put: entry });
+      // Every key moves together or none does: a failure leaves the old home, its previous
+      // copy and the offer to put it back exactly as they were.
+      await store.transact(ops);
     } catch (e) {
       this.suspended = wasSuspended; // nothing was replaced: saving can go on
       if (e instanceof BackupError) throw e;
@@ -330,12 +349,13 @@ export class HomeSync {
       if (!replaced?.forSha || main?.sha256 !== replaced.forSha) {
         throw new BackupError('previous_stale');
       }
-      await store.put(userId, {
-        archive: replaced.archive,
-        sha256: replaced.sha256,
-        savedAt: replaced.savedAt,
-      });
-      await store.delete(`${userId}:replaced`);
+      await store.transact([
+        {
+          key: userId,
+          put: { archive: replaced.archive, sha256: replaced.sha256, savedAt: replaced.savedAt },
+        },
+        { key: `${userId}:replaced`, delete: true },
+      ]);
       this.knownSha = replaced.sha256;
     } catch (e) {
       if (e instanceof BackupError) throw e;
@@ -375,6 +395,8 @@ export class HomeSync {
 
   /** Deletes one of the two extra copies (never the current one). */
   async removeCopy(kind: 'replaced' | 'damaged'): Promise<void> {
+    // Runtime guard: the type is no protection against a stray string, and 'current' must never go.
+    if (kind !== 'replaced' && kind !== 'damaged') throw new Error(`cannot remove copy: ${kind}`);
     await this.deps.store.delete(`${this.deps.userId}:${kind}`);
   }
 }

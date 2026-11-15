@@ -103,14 +103,16 @@ visitor (no valid ticket, no socket). For a signed-in user:
   holds readable (about one more 64 KiB per stream) + the WebSocket's send buffer (1 MiB mark: when
   `ws.bufferedAmount` is over it the connection's upstream sockets are paused and retried every 100 ms; that already
   existed). Kernel socket buffers are outside the count.
-  **Process-wide backstop:** every 250 ms (and on data in either direction, at most every 50 ms) the hub sums all of
-  that for every live connection, and while the total is over **64 MiB** it closes one connection with 4008: the
-  heaviest, but when several are within 10% of the heaviest, the one whose own total grew most recently (so an
-  innocent bulk transfer is not the default victim of many small attackers). Arithmetic: the container has 256 MiB
-  (`mem_limit`) and a 192 MiB V8 heap cap, but these buffers are Buffers, outside the heap, so they count against the
-  256 MiB directly; Node itself takes about 60 MiB, the cap takes 64, and the remaining ~130 MiB is kernel socket memory
-  charged to the cgroup, fragmentation and what can arrive between two checks (a user is metered at 2 MiB/s by
-  default). 64 MiB is also three worst-case connections.
+  **Process-wide backstop:** a 250 ms timer (only; data events merely mark the hub "dirty", so a quiet hub does not walk
+  its streams) sums all of that for every live connection, and while the total is over **48 MiB** it closes the
+  **strictly heaviest** connection with 4008. There is no cleverer victim rule on purpose: preferring a connection
+  by how it behaved (who grew last, who is quiet) can be steered by an attacker holding several connections just under a
+  legitimate one. An exact tie sheds the newest connection. Arithmetic, which does not assume the V8 heap stays small:
+  the container has 256 MiB (`mem_limit`); the compose command caps the heap at 128 MiB (`--max-old-space-size=128`);
+  the counted buffers are Buffers, outside the heap, and understate RSS (small frames pin pooled 8 KiB slabs, kernel
+  socket buffers are not counted); so 128 heap + 48 counted + about 30 for Node itself outside the heap leaves about
+  50 MiB for kernel socket memory, slab overhead and what arrives between two checks (a user is metered at 2 MiB/s by
+  default). 48 MiB is also two worst-case connections.
 - **Switching it off:** see [Switch the relay off now](#switch-the-relay-off-now).
 
 ## Switch the relay off now

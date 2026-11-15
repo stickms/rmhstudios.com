@@ -186,8 +186,29 @@
   outline-offset: calc(-1 * var(--app-focus-width, 3px));
 }
 
-.rmhos-app .rmhos-capture-hint {
+.rmhos-app .rmhos-hintbar {
+  flex: none;
+  box-sizing: border-box;
+  height: 24px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
   font-weight: 500;
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-bg-subtle);
+}
+
+/* A long translation is cut with an ellipsis (the full text is in the title), never wrapped. */
+.rmhos-app .rmhos-hintbar-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hidden, not removed: the row keeps its height whether or not the screen has focus. */
+.rmhos-app .rmhos-hintbar[aria-hidden='true'] {
+  visibility: hidden;
 }
 
 /* Toasts at the bottom: the shared stack is top-centre, over the toolbar's buttons. */

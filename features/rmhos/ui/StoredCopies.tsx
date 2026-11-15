@@ -7,19 +7,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/lib/shared/app-toast';
 import type { CopyKind, StoredCopies as Copies } from '../engine/home-sync';
 import ConfirmBox from './ConfirmBox';
-import { BACKUP_FILE, DAMAGED_FILE, downloadBytes, REPLACED_FILE } from './download';
+import { copyFileName, downloadBytes } from './download';
 import { copyTime } from './save-messages';
 import type { RmhosSessionValue } from './useRmhosSession';
 
 type Source = Pick<RmhosSessionValue, 'storedCopies' | 'exportCopy' | 'removeCopy'>;
 
-const FILE: Record<CopyKind, string> = {
-  current: BACKUP_FILE,
-  replaced: REPLACED_FILE,
-  damaged: DAMAGED_FILE,
-};
 
 function size(bytes: number): string {
   return bytes < 1024 * 1024
@@ -30,9 +26,12 @@ function size(bytes: number): string {
 export default function StoredCopies({
   session,
   container,
+  currentDamaged,
 }: {
   session: Source;
   container: HTMLElement | null;
+  /** The current archive is unreadable: its download carries the damaged name. */
+  currentDamaged: boolean;
 }) {
   const { t } = useTranslation('c-rmhos');
   const [copies, setCopies] = useState<Copies | null>(null);
@@ -47,8 +46,15 @@ export default function StoredCopies({
   if (!copies || (!copies.current && !copies.replaced && !copies.damaged)) return null;
 
   const download = async (kind: CopyKind) => {
-    const bytes = await exportCopy(kind);
-    if (bytes) downloadBytes(FILE[kind], bytes);
+    try {
+      const bytes = await exportCopy(kind);
+      if (!bytes) throw new Error('missing');
+      downloadBytes(copyFileName(kind, currentDamaged), bytes);
+    } catch {
+      toast.error(
+        t('copy-download-failed', { defaultValue: 'Could not download the copy. Nothing was changed.' }),
+      );
+    }
   };
 
   const rows: Array<{ kind: CopyKind; label: string; info: Copies['current'] }> = [
@@ -121,7 +127,15 @@ export default function StoredCopies({
         onConfirm={() => {
           const kind = removing;
           setRemoving(null);
-          if (kind) void removeCopy(kind).then(load);
+          if (kind) {
+            removeCopy(kind).then(load, () =>
+              toast.error(
+                t('copy-remove-failed', {
+                  defaultValue: 'Could not remove the copy. Nothing was changed.',
+                }),
+              ),
+            );
+          }
         }}
       />
     </section>

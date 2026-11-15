@@ -42,7 +42,7 @@ export interface RelayOptions {
   pingMs?: number;
   /** Test seam: size of the ticket book (default 10 000). */
   maxTickets?: number;
-  /** Test seam: process-wide cap on buffered bytes in both directions (default 64 MiB). */
+  /** Test seam: process-wide cap on buffered bytes in both directions (default 48 MiB). */
   maxTotalBuffered?: number;
   /** Status requests allowed per user per minute (default 12), DoH queries (default 600). */
   statusPerMinute?: number;
@@ -86,14 +86,15 @@ const MAX_FRAME_BYTES = 64 * 1024 + 16;
 //                      one chunk).
 // That is about 21 MiB per connection. Kernel socket buffers are outside the count.
 //
-// Process-wide backstop. The container has 256 MiB (mem_limit) and a 192 MiB V8 heap cap, but the
-// buffers above are Buffers, outside the heap, so they count against the 256 MiB directly. Budget:
-// about 60 MiB for Node itself (code, heap in normal use, ws, the stream objects), at most
-// MAX_TOTAL_BUFFERED = 64 MiB counted here, and the rest (about 130 MiB) for kernel socket
-// memory charged to the cgroup, allocator fragmentation and what can accumulate between two
-// 250 ms checks (a user is metered at 2 MiB/s by default, so a few MiB for a few dozen accounts).
-// 64 MiB is also three worst-case connections: one honest bulk transfer never gets near it.
-const MAX_TOTAL_BUFFERED = 64 * 1024 * 1024;
+// Process-wide backstop. The container has 256 MiB (mem_limit); the compose command caps the V8
+// heap at 128 MiB. The buffers above are Buffers, outside the heap, so they count against the
+// 256 MiB directly, and they understate RSS (small frames pin pooled 8 KiB slabs; kernel socket
+// buffers are not counted at all). So the sum is made to hold without assuming the heap stays
+// small: 128 MiB heap cap + MAX_TOTAL_BUFFERED = 48 MiB counted here + about 30 MiB of Node itself
+// outside the heap (code, ws, the native side of sockets) leaves about 50 MiB for kernel socket
+// memory charged to the cgroup, slab overhead and what can arrive between two 250 ms checks (a
+// user is metered at 2 MiB/s by default). 48 MiB is also two worst-case (~21 MiB) connections.
+const MAX_TOTAL_BUFFERED = 48 * 1024 * 1024;
 const BACKSTOP_MS = 250;
 const PING_MS = 30_000;
 const SUPERSEDED = 4000;
@@ -262,10 +263,10 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     {
       shutdown: (code: number) => void;
       streamCount: () => number;
-      /** Bytes this connection holds in both directions; also records whether it grew. */
-      measure: (t: number) => number;
-      /** When `measure` last saw this connection's total go up. */
-      lastGrowth: () => number;
+      /** Bytes this connection holds in both directions. */
+      measure: () => number;
+      /** Connection order: a later connection has a higher number. */
+      seq: number;
     }
   >();
   const lookups = new Map<string, number>();
@@ -370,34 +371,40 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
   });
 
   /**
-   * Process-wide backstop. Measures every live connection in both directions (see
-   * `measure` in session) and, while the total is over the cap, closes one connection with 4008.
-   * Victim rule: the heaviest by that measure; but when several are within 10% of the heaviest,
-   * the one whose own total grew most recently, so one innocent bulk uploader is not the default
-   * victim of many small attackers who keep growing. Cheap enough to run on every DATA event
-   * (rate-limited to once per 50 ms) and on a 250 ms timer, which also covers a flood nobody
-   * sends frames into.
+   * Process-wide backstop. Measures every live connection in both directions (see `measure` in
+   * session) and, while the total is over the cap, closes the strictly heaviest connection with
+   * 4008. There is deliberately no smarter victim rule: anything that prefers a connection by how
+   * it behaved (who grew last, who is quiet) can be steered by an attacker holding several
+   * connections just under a legitimate one. An exact tie sheds the newest connection (the oldest
+   * is the likelier to be a real session), which is deterministic.
+   * Only a 250 ms timer walks the streams. Data events just set `dirty`, so a quiet hub does not
+   * walk at all; the walk is skipped only when nothing changed since the last one and that last
+   * total was under half the cap (near the cap it always walks, since a paused socket's readable
+   * buffer can grow without a data event).
    */
-  let lastCheck = 0;
-  function checkBackstop(force = false): void {
-    const t = now();
-    if (!force && t - lastCheck < 50) return;
-    lastCheck = t;
-    const live = [...sessions.values()].map((h) => ({ h, n: h.measure(t) }));
+  let connectionSeq = 0;
+  let dirty = false;
+  let lastTotal = 0;
+  function checkBackstop(): void {
+    if (!dirty && lastTotal < maxTotal / 2) return;
+    dirty = false;
+    const live = [...sessions.values()].map((h) => ({ h, n: h.measure(), seq: h.seq }));
     let total = live.reduce((sum, x) => sum + x.n, 0);
+    lastTotal = total;
     while (total > maxTotal && live.length > 0) {
-      const most = Math.max(...live.map((x) => x.n));
-      const near = live.filter((x) => x.n >= most * 0.9);
-      near.sort((a, b) => b.h.lastGrowth() - a.h.lastGrowth() || b.n - a.n);
-      const victim = near[0] as (typeof live)[number];
+      live.sort((a, b) => b.n - a.n || b.seq - a.seq);
+      const victim = live.shift() as (typeof live)[number];
       victim.h.shutdown(OVER_QUEUE);
       total -= victim.n;
-      live.splice(live.indexOf(victim), 1);
     }
   }
-  // One timer per server, unref'd, stopped when the server closes.
-  const backstopTimer = setInterval(() => checkBackstop(true), BACKSTOP_MS);
-  backstopTimer.unref();
+  // One timer per server, unref'd; started when it listens (a server that never listens has no
+  // timer) and stopped when it closes.
+  let backstopTimer: NodeJS.Timeout | null = null;
+  server.on('listening', () => {
+    backstopTimer = setInterval(checkBackstop, BACKSTOP_MS);
+    backstopTimer.unref();
+  });
 
   function session(ws: WebSocket, userId: string): void {
     const streams = new Map<number, Stream>();
@@ -626,7 +633,7 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
         tickets.touch(userId);
         s.downQueue.push(chunk);
         pumpDown(s);
-        checkBackstop();
+        dirty = true;
       });
       sock.on('end', () => {
         s.remoteEnded = true;
@@ -666,8 +673,7 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
           if (connQueued + buf.length > MAX_CONN_QUEUE) return handle.shutdown(OVER_QUEUE);
           s.queuedBytes += buf.length;
           connQueued += buf.length;
-          checkBackstop();
-          if (over) return;
+          dirty = true;
           s.maxPacket = Math.max(s.maxPacket, buf.length);
           s.receivedSinceGrant += 1;
           if (s.queuedBytes > CREDIT_HOLD_HIGH) s.creditHeld = true;
@@ -702,11 +708,10 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
       closeAll(CLOSE_REASON.voluntary, false);
     }
 
-    let lastMeasured = 0;
-    let lastGrowthAt = 0;
     const handle = {
       streamCount: () => streams.size,
-      measure: (t: number) => {
+      seq: ++connectionSeq,
+      measure: () => {
         // up: the accounted queue + upstream write buffers; down: chunks held for the WebSocket,
         // what paused upstream sockets still hold readable, and the WebSocket's send buffer.
         let n = connQueued + ws.bufferedAmount;
@@ -714,11 +719,8 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
           n += (st.socket?.writableLength ?? 0) + (st.socket?.readableLength ?? 0);
           for (const c of st.downQueue) n += c.length;
         }
-        if (n > lastMeasured) lastGrowthAt = t;
-        lastMeasured = n;
         return n;
       },
-      lastGrowth: () => lastGrowthAt,
       shutdown(code: number): void {
         teardown();
         ws.close(code);
@@ -755,7 +757,7 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
   }
 
   server.on('close', () => {
-    clearInterval(backstopTimer);
+    if (backstopTimer) clearInterval(backstopTimer);
     for (const h of sessions.values()) h.shutdown(1001);
     wss.close();
   });
