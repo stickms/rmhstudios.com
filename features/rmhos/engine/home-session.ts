@@ -10,7 +10,7 @@
  * the person decides; nothing is overwritten.
  */
 import { AgentError, type AgentClient } from './agent';
-import type { CopyKind, HomeSync, SaveResult } from './home-sync';
+import type { HomeSync, SaveResult } from './home-sync';
 
 export type SessionStage = 'idle' | 'handshake' | 'running' | 'failed' | 'stopped';
 export type SessionFailure = 'handshake' | 'corrupt';
@@ -63,15 +63,10 @@ export interface SessionDeps {
     | 'save'
     | 'importArchive'
     | 'discardDamaged'
-    | 'exportArchive'
     | 'exportLive'
-    | 'storedInfo'
     | 'suspend'
     | 'previousOffer'
     | 'putPreviousBack'
-    | 'storedCopies'
-    | 'exportCopy'
-    | 'removeCopy'
     | 'storeKind'
   >;
   linuxUser: string;
@@ -229,15 +224,6 @@ export class HomeSession {
     if (!this.snap.dirty) this.set({ dirty: true });
   }
 
-  exportArchive(): Promise<Uint8Array | null> {
-    return this.d.sync.exportArchive();
-  }
-
-  /** The stored archive with its save time (for offering a stale copy by name). */
-  storedInfo(): Promise<{ archive: Uint8Array; savedAt: number } | null> {
-    return this.d.sync.storedInfo();
-  }
-
   /** The desktop's home straight from the guest (null when it is not running). Writes nothing. */
   async exportLive(): Promise<Uint8Array | null> {
     return this.running ? this.d.sync.exportLive() : null;
@@ -254,18 +240,6 @@ export class HomeSession {
   /** After `corrupt`: keep the unreadable entry aside; the next start has an empty home. */
   startEmpty(): Promise<void> {
     return this.d.sync.discardDamaged();
-  }
-
-  storedCopies() {
-    return this.d.sync.storedCopies();
-  }
-
-  exportCopy(kind: CopyKind) {
-    return this.d.sync.exportCopy(kind);
-  }
-
-  removeCopy(kind: 'replaced' | 'damaged') {
-    return this.d.sync.removeCopy(kind);
   }
 
   /** Put the home a restored backup replaced back (then restart). */

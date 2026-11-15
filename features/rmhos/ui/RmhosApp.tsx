@@ -292,6 +292,7 @@ function RmhosMachine() {
           container={container}
           session={session}
           currentDamaged={session.failure === 'corrupt'}
+          readOnly={session.failure === 'locked'}
         />
         <ConfirmBox
           open={confirmPutBack}

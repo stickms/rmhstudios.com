@@ -35,20 +35,22 @@ describe('toolbarState', () => {
   });
 
   it.each(['idle', 'downloading', 'booting'] as const)(
-    'phase %s hides restart and backup',
+    'phase %s: no restart or restore, but the stored files can still be downloaded',
     (phase) => {
       const s = run({ phase, desktopReady: false });
       expect(s.saveDisabled).toBe(true);
       expect(s.showRestart).toBe(false);
-      expect(s.showBackup).toBe(false);
+      expect(s.showRestore).toBe(false);
+      expect(s.showBackup).toBe(true);
     },
   );
 
-  it('shows restart and backup once running, and restart after a failure', () => {
-    expect(run({})).toMatchObject({ showRestart: true, showBackup: true });
+  it('shows restart, restore and backup once running; after a failure backup stays, restore goes', () => {
+    expect(run({})).toMatchObject({ showRestart: true, showBackup: true, showRestore: true });
     expect(run({ phase: 'failed', desktopReady: false })).toMatchObject({
       showRestart: true,
-      showBackup: false,
+      showBackup: true,
+      showRestore: false,
     });
   });
 

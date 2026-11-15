@@ -6,6 +6,7 @@
 import { AgentError, type AgentClient } from './agent';
 import { SHARE_ARCHIVE_PATH } from './agent-protocol';
 import type { CachedHome, HomeStore, StoreOp } from './home-store';
+import { StoredHome, type CopyKind, type StoredCopies } from './stored-home';
 import type { VmHandle } from './vm-types';
 
 export type SaveResult =
@@ -56,17 +57,7 @@ export async function checkBackup(gz: Uint8Array): Promise<Bytes> {
   return tar;
 }
 
-export type CopyKind = 'current' | 'replaced' | 'damaged';
-export interface StoredCopy {
-  /** Bytes of the stored gzip. */
-  size: number;
-  savedAt: number;
-}
-export interface StoredCopies {
-  current: StoredCopy | null;
-  replaced: StoredCopy | null;
-  damaged: StoredCopy | null;
-}
+export type { CopyKind, StoredCopies, StoredCopy } from './stored-home';
 
 /** Why a backup could not be stored. */
 export class BackupError extends Error {
@@ -100,6 +91,7 @@ export class HomeSync {
   private suspended = false;
   /** sha256 of the tar this session loaded, or last wrote; null = nothing stored. */
   private knownSha: string | null = null;
+  private readonly stored: StoredHome;
 
   constructor(
     private readonly deps: {
@@ -108,7 +100,9 @@ export class HomeSync {
       agent: Pick<AgentClient, 'save'>;
       store: HomeStore;
     },
-  ) {}
+  ) {
+    this.stored = new StoredHome(deps.store, deps.userId);
+  }
 
   /** Where the archives live (see HomeStore.kind). */
   get storeKind(): 'indexeddb' | 'memory' {
@@ -253,14 +247,13 @@ export class HomeSync {
   }
 
   /** The stored gzip and when it was saved, for naming a stale copy honestly. */
-  async storedInfo(): Promise<{ archive: Uint8Array; savedAt: number } | null> {
-    const c = await this.deps.store.get(this.deps.userId);
-    return c ? { archive: c.archive, savedAt: c.savedAt } : null;
+  storedInfo(): Promise<{ archive: Uint8Array; savedAt: number } | null> {
+    return this.stored.info();
   }
 
   /** The stored gzip, byte for byte (also when it is damaged), for a backup download. */
-  async exportArchive(): Promise<Uint8Array | null> {
-    return (await this.deps.store.get(this.deps.userId))?.archive ?? null;
+  exportArchive(): Promise<Uint8Array | null> {
+    return this.stored.exportCopy('current');
   }
 
   /**
@@ -376,27 +369,17 @@ export class HomeSync {
   }
 
   /** What is stored for this account, so none of it sits in the browser unseen. */
-  async storedCopies(): Promise<StoredCopies> {
-    const { store, userId } = this.deps;
-    const info = (c: CachedHome | null) =>
-      c ? { size: c.archive.length, savedAt: c.savedAt } : null;
-    return {
-      current: info(await store.get(userId)),
-      replaced: info(await store.get(`${userId}:replaced`)),
-      damaged: info(await store.get(`${userId}:damaged`)),
-    };
+  storedCopies(): Promise<StoredCopies> {
+    return this.stored.copies();
   }
 
   /** The stored gzip of one copy, byte for byte. */
-  async exportCopy(kind: CopyKind): Promise<Uint8Array | null> {
-    const key = kind === 'current' ? this.deps.userId : `${this.deps.userId}:${kind}`;
-    return (await this.deps.store.get(key))?.archive ?? null;
+  exportCopy(kind: CopyKind): Promise<Uint8Array | null> {
+    return this.stored.exportCopy(kind);
   }
 
   /** Deletes one of the two extra copies (never the current one). */
-  async removeCopy(kind: 'replaced' | 'damaged'): Promise<void> {
-    // Runtime guard: the type is no protection against a stray string, and 'current' must never go.
-    if (kind !== 'replaced' && kind !== 'damaged') throw new Error(`cannot remove copy: ${kind}`);
-    await this.deps.store.delete(`${this.deps.userId}:${kind}`);
+  removeCopy(kind: 'replaced' | 'damaged'): Promise<void> {
+    return this.stored.removeCopy(kind);
   }
 }

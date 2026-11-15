@@ -23,7 +23,10 @@ export interface ToolbarState {
   saveDisabled: boolean;
   netLabelKey: string;
   showRestart: boolean;
+  /** Download backup: available in every phase (it reads the stored copy when no machine runs). */
   showBackup: boolean;
+  /** Restore backup needs a machine to hand the files to. */
+  showRestore: boolean;
 }
 
 const NET_KEYS: Record<NetState, string> = {
@@ -46,6 +49,8 @@ export function toolbarState(input: ToolbarInput): ToolbarState {
     saveDisabled: !desktopReady || saving || phase !== 'running',
     netLabelKey: NET_KEYS[net],
     showRestart: live || phase === 'failed',
-    showBackup: live,
+    // The stored archive is read from the browser's store, so downloading it needs no machine.
+    showBackup: true,
+    showRestore: live,
   };
 }

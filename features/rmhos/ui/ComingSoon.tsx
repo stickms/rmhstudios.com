@@ -1,19 +1,16 @@
 /**
  * What /rmhos shows while no machine image has been published (resolveImageManifest returns
  * null): a plain panel in the app shell and the About button. It starts nothing: no emulator, no
- * session request, no tab lock, no home store (so About has no stored copies to list).
+ * session request, no tab lock. The home store is opened only when About is, to list the stored
+ * copies: a returning person can still download their files if the image is withdrawn later.
  */
 import { Info } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { useSession } from '@/components/session/session-context';
 import AboutDialog from './AboutDialog';
-
-const NO_COPIES = {
-  storedCopies: async () => null,
-  exportCopy: async () => null,
-  removeCopy: async () => {},
-};
+import { useStoredHome } from './useStoredHome';
 
 export default function ComingSoon() {
   const { t } = useTranslation('c-rmhos');
@@ -21,6 +18,8 @@ export default function ComingSoon() {
   const [container, setContainer] = useState<HTMLElement | null>(null);
   useEffect(() => setContainer(rootRef.current?.closest<HTMLElement>('.app-theme') ?? null), []);
   const [about, setAbout] = useState(false);
+  const { data: account } = useSession();
+  const { stored } = useStoredHome(account?.user?.id ?? null);
   return (
     <div className="rmhos-root" ref={rootRef}>
       <div className="rmhos-toolbar" role="group" aria-label={t('toolbar-label', { defaultValue: 'rmhOS controls' })}>
@@ -48,7 +47,11 @@ export default function ComingSoon() {
         open={about}
         onOpenChange={setAbout}
         container={container}
-        session={NO_COPIES}
+        session={{
+          storedCopies: stored.copies,
+          exportCopy: stored.exportCopy,
+          removeCopy: stored.removeCopy,
+        }}
         currentDamaged={false}
       />
     </div>

@@ -125,21 +125,21 @@ export default function Toolbar(p: Props) {
           </Button>
         )}
         {state.showBackup && (
-          <>
-            <Button size="sm" aria-label={labels.download} disabled={p.busy} onClick={p.onDownload}>
-              <Download aria-hidden="true" />
-              <span className="rmhos-toolbar-text">{labels.download}</span>
-            </Button>
-            <Button
-              size="sm"
-              aria-label={labels.restore}
-              disabled={p.busy}
-              onClick={() => p.fileInputRef.current?.click()}
-            >
-              <Upload aria-hidden="true" />
-              <span className="rmhos-toolbar-text">{labels.restore}</span>
-            </Button>
-          </>
+          <Button size="sm" aria-label={labels.download} disabled={p.busy} onClick={p.onDownload}>
+            <Download aria-hidden="true" />
+            <span className="rmhos-toolbar-text">{labels.download}</span>
+          </Button>
+        )}
+        {state.showRestore && (
+          <Button
+            size="sm"
+            aria-label={labels.restore}
+            disabled={p.busy}
+            onClick={() => p.fileInputRef.current?.click()}
+          >
+            <Upload aria-hidden="true" />
+            <span className="rmhos-toolbar-text">{labels.restore}</span>
+          </Button>
         )}
         <Button size="sm" aria-label={labels.about} onClick={p.onAbout}>
           <Info aria-hidden="true" />

@@ -19,7 +19,6 @@ import { CDN_BASE } from '@/lib/storage/asset';
 import { AgentClient } from '../engine/agent';
 import { RMHOS } from '../engine/constants';
 import { browserEnv, HomeSession, type SessionSnapshot } from '../engine/home-session';
-import { openHomeStore, type HomeStore } from '../engine/home-store';
 import {
   HomeSync,
   type CopyKind,
@@ -33,6 +32,7 @@ import { holdHomeLock } from '../engine/tab-lock';
 import { BootFailure, createVm } from '../engine/vm';
 import type { BootFailureReason, VmHandle, VmPhase, VmPhaseDetail } from '../engine/vm-types';
 import { rmhosSessionQuery } from './rmhos.queries';
+import { useStoredHome } from './useStoredHome';
 import {
   createPollGate,
   initialTracker,
@@ -73,7 +73,7 @@ export interface RmhosSessionValue {
   storeKind: 'indexeddb' | 'memory';
   /** `allowEmpty`: store an empty home over a non-empty one (only on the person's say-so). */
   saveNow: (opts?: { allowEmpty?: boolean }) => Promise<SaveResult>;
-  /** The stored archive, byte for byte (also when it is damaged). */
+  /** The stored archive, byte for byte (also when it is damaged). Needs no machine. */
   exportArchive: () => Promise<Uint8Array | null>;
   /** The stored archive with when it was saved. */
   exportStored: () => Promise<{ bytes: Uint8Array; savedAt: number } | null>;
@@ -156,16 +156,9 @@ export function useRmhosMachine(
   const vmRef = useRef<VmHandle | null>(null);
 
   // One store for the life of the page, so a restart keeps the in-memory fallback's contents and
-  // no restart leaks an IndexedDB connection. Closed on unmount.
-  const storeRef = useRef<HomeStore | null>(null);
-  const getStore = () => (storeRef.current ??= openHomeStore());
-  useEffect(
-    () => () => {
-      storeRef.current?.close();
-      storeRef.current = null;
-    },
-    [],
-  );
+  // no restart leaks an IndexedDB connection. The stored files are read from it directly, so they
+  // stay reachable whatever state the machine is in.
+  const { getStore, stored } = useStoredHome(userId);
 
   useEffect(() => {
     if (!enabled || !userId || !sessionReady || !screenRef.current) return;
@@ -304,7 +297,7 @@ export function useRmhosMachine(
       ac.abort();
       for (const c of cleanups.reverse()) c();
     };
-  }, [enabled, userId, sessionReady, attempt, screenRef]);
+  }, [enabled, userId, sessionReady, attempt, screenRef, getStore]);
 
   // Network state from the hub: once the desktop is up, then every 15 s while the tab is visible.
   const desktopReady = snap?.desktopReady ?? false;
@@ -378,18 +371,16 @@ export function useRmhosMachine(
         (await runnerRef.current?.save(opts ?? {})) ?? NOT_RUNNING,
       [],
     ),
-    exportArchive: useCallback(async () => runnerRef.current?.exportArchive() ?? null, []),
+    exportArchive: useCallback(() => stored.exportCopy('current'), [stored]),
     exportStored: useCallback(async () => {
-      const info = await runnerRef.current?.storedInfo();
+      const info = await stored.info();
       return info ? { bytes: info.archive, savedAt: info.savedAt } : null;
-    }, []),
+    }, [stored]),
     previousAvailable: snap?.previousAvailable ?? false,
     previousSavedAt: snap?.previousSavedAt ?? null,
-    storedCopies: useCallback(async () => (await runnerRef.current?.storedCopies()) ?? null, []),
-    exportCopy: useCallback(async (kind: CopyKind) => runnerRef.current?.exportCopy(kind) ?? null, []),
-    removeCopy: useCallback(async (kind: 'replaced' | 'damaged') => {
-      await runnerRef.current?.removeCopy(kind);
-    }, []),
+    storedCopies: stored.copies,
+    exportCopy: stored.exportCopy,
+    removeCopy: stored.removeCopy,
     putPreviousBack: useCallback(async () => {
       if (!runnerRef.current) throw new Error('rmhOS is not running');
       await runnerRef.current.putPreviousBack();

@@ -16,16 +16,17 @@ import {
 } from './about-facts';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { CDN_BASE } from '@/lib/storage/asset';
-import StoredCopies from './StoredCopies';
-import type { RmhosSessionValue } from './useRmhosSession';
+import StoredCopies, { type StoredCopiesSource } from './StoredCopies';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   container: HTMLElement | null;
-  session: Pick<RmhosSessionValue, 'storedCopies' | 'exportCopy' | 'removeCopy'>;
+  session: StoredCopiesSource;
   /** The current archive could not be read (corrupt boot state): name its download that way. */
   currentDamaged: boolean;
+  /** Another tab is running rmhOS for this account: stored copies can be downloaded, not removed. */
+  readOnly?: boolean;
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -47,6 +48,7 @@ export default function AboutDialog({
   container,
   session,
   currentDamaged,
+  readOnly = false,
 }: Props) {
   const { t } = useTranslation('c-rmhos');
   const manifest = resolveImageManifest(CDN_BASE || undefined);
@@ -110,6 +112,7 @@ export default function AboutDialog({
               session={session}
               container={container}
               currentDamaged={currentDamaged}
+              readOnly={readOnly}
             />
           )}
           <p className="text-(--app-text-muted)">

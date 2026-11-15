@@ -12,9 +12,13 @@ import type { CopyKind, StoredCopies as Copies } from '../engine/home-sync';
 import ConfirmBox from './ConfirmBox';
 import { copyFileName, downloadBytes } from './download';
 import { copyTime } from './save-messages';
-import type { RmhosSessionValue } from './useRmhosSession';
 
-type Source = Pick<RmhosSessionValue, 'storedCopies' | 'exportCopy' | 'removeCopy'>;
+/** Where the copies come from: the store itself (see engine/stored-home.ts), never the machine. */
+export interface StoredCopiesSource {
+  storedCopies: () => Promise<Copies | null>;
+  exportCopy: (kind: CopyKind) => Promise<Uint8Array | null>;
+  removeCopy: (kind: 'replaced' | 'damaged') => Promise<void>;
+}
 
 
 function size(bytes: number): string {
@@ -27,9 +31,12 @@ export default function StoredCopies({
   session,
   container,
   currentDamaged,
+  readOnly = false,
 }: {
-  session: Source;
+  session: StoredCopiesSource;
   container: HTMLElement | null;
+  /** Another tab is running rmhOS for this account: list and download only. */
+  readOnly?: boolean;
   /** The current archive is unreadable: its download carries the damaged name. */
   currentDamaged: boolean;
 }) {
@@ -100,7 +107,7 @@ export default function StoredCopies({
                 <Button size="sm" onClick={() => void download(r.kind)}>
                   {t('download', { defaultValue: 'Download' })}
                 </Button>
-                {r.kind !== 'current' && (
+                {r.kind !== 'current' && !readOnly && (
                   <Button size="sm" onClick={() => setRemoving(r.kind as 'replaced' | 'damaged')}>
                     {t('remove', { defaultValue: 'Remove' })}
                   </Button>
