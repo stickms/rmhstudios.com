@@ -865,6 +865,7 @@ function composePersonaForProfile(spec: BotPersonaSpec): string {
   return [
     `THEME: ${spec.theme}.`,
     `TEMPERAMENT: ${spec.temperament}.`,
+    `ARCHETYPE: ${spec.archetype.label} — ${spec.archetype.rules}`,
     `QUIRK: ${spec.quirk}.`,
     `VOICE: ${spec.voice.label} — ${spec.voice.rules}`,
     nameStyleLine(spec.nameStyle),

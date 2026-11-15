@@ -358,5 +358,9 @@
   "assist-tick": "Assist Tick",
   "assists-not-uploaded-hint": "Free, with no score penalty — but a run played with any of these is not uploaded.",
   "chart-on-play": "Chart on play",
-  "dnf": "DNF"
+  "dnf": "DNF",
+  "session-best-moment": "Mejor momento",
+  "session-first-score": "Tu primera puntuación en la tabla.",
+  "session-new-best": "Un nuevo récord personal, {{delta}} por encima del anterior.",
+  "session-new-best-plain": "Un nuevo récord personal."
 }

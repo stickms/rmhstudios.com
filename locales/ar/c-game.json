@@ -373,5 +373,9 @@
   "assist-tick": "Assist Tick",
   "assists-not-uploaded-hint": "Free, with no score penalty — but a run played with any of these is not uploaded.",
   "chart-on-play": "Chart on play",
-  "dnf": "DNF"
+  "dnf": "DNF",
+  "session-best-moment": "أفضل لحظة",
+  "session-first-score": "أول نتيجة لك على اللوحة.",
+  "session-new-best": "رقم شخصي جديد، يتجاوز السابق بمقدار {{delta}}.",
+  "session-new-best-plain": "رقم شخصي جديد."
 }

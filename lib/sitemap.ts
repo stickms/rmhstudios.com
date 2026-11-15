@@ -287,6 +287,12 @@ export const STATIC_ROUTES: SitemapEntry[] =
       priority: 0.6,
     },
     {
+      loc: '/psychology',
+      changefreq:
+        'monthly',
+      priority: 0.5,
+    },
+    {
       loc: '/predictions',
       changefreq:
         'daily',

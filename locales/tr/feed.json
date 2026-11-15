@@ -1559,5 +1559,9 @@
   "leaderboard-near-you": "Sıralamanın çevresi",
   "leaderboard-near-you-hint": "Sıralamada hemen üstündeki ve altındaki oyuncular.",
   "quest-to-go_other": "{{count}} kaldı",
-  "quest-to-go_one": "{{count}} kaldı"
+  "quest-to-go_one": "{{count}} kaldı",
+  "ai-working-feed": "Sorunla ilgili herkese açık gönderiler aranıyor ve en fazla 60 tanesi okunuyor…",
+  "ai-read-posts_other": "{{count}} gönderiden yazıldı",
+  "leaderboard-find-people": "Kişi bul",
+  "ai-read-posts_one": "{{count}} gönderiden yazıldı"
 }

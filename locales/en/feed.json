@@ -1765,5 +1765,9 @@
   "leaderboard-near-you": "Around your rank",
   "leaderboard-near-you-hint": "The players just above and below your rank.",
   "quest-to-go_one": "{{count}} to go",
-  "quest-to-go_other": "{{count}} to go"
+  "quest-to-go_other": "{{count}} to go",
+  "ai-working-feed": "Searching public posts for your question and reading up to 60 of them…",
+  "ai-read-posts_one": "Written from {{count}} post",
+  "ai-read-posts_other": "Written from {{count}} posts",
+  "leaderboard-find-people": "Find people"
 }

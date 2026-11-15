@@ -1559,5 +1559,9 @@
   "leaderboard-near-you": "Rund um deinen Rang",
   "leaderboard-near-you-hint": "Die Spieler direkt über und unter deinem Rang.",
   "quest-to-go_other": "Noch {{count}}",
-  "quest-to-go_one": "Noch {{count}}"
+  "quest-to-go_one": "Noch {{count}}",
+  "ai-working-feed": "Durchsuche öffentliche Beiträge zu deiner Frage und lese bis zu 60 davon…",
+  "ai-read-posts_other": "Aus {{count}} Beiträgen geschrieben",
+  "leaderboard-find-people": "Leute finden",
+  "ai-read-posts_one": "Aus {{count}} Beiträgen geschrieben"
 }

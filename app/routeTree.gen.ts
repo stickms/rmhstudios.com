@@ -104,6 +104,7 @@ import { Route as SitePlaylistsRouteImport } from './routes/_site/playlists'
 import { Route as SitePredictionsRouteImport } from './routes/_site/predictions'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteProgressRouteImport } from './routes/_site/progress'
+import { Route as SitePsychologyRouteImport } from './routes/_site/psychology'
 import { Route as SiteQotdRouteImport } from './routes/_site/qotd'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SiteRankedRouteImport } from './routes/_site/ranked'
@@ -991,6 +992,11 @@ const SitePricingRoute = SitePricingRouteImport.update({
 const SiteProgressRoute = SiteProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SitePsychologyRoute = SitePsychologyRouteImport.update({
+  id: '/psychology',
+  path: '/psychology',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteQotdRoute = SiteQotdRouteImport.update({
@@ -3184,6 +3190,7 @@ export interface FileRoutesByFullPath {
   '/predictions': typeof SitePredictionsRoute
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
+  '/psychology': typeof SitePsychologyRoute
   '/qotd': typeof SiteQotdRoute
   '/quotes': typeof SiteQuotesRoute
   '/ranked': typeof SiteRankedRoute
@@ -3669,6 +3676,7 @@ export interface FileRoutesByTo {
   '/predictions': typeof SitePredictionsRoute
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
+  '/psychology': typeof SitePsychologyRoute
   '/qotd': typeof SiteQotdRoute
   '/quotes': typeof SiteQuotesRoute
   '/ranked': typeof SiteRankedRoute
@@ -4173,6 +4181,7 @@ export interface FileRoutesById {
   '/_site/predictions': typeof SitePredictionsRoute
   '/_site/pricing': typeof SitePricingRoute
   '/_site/progress': typeof SiteProgressRoute
+  '/_site/psychology': typeof SitePsychologyRoute
   '/_site/qotd': typeof SiteQotdRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/ranked': typeof SiteRankedRoute
@@ -4684,6 +4693,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/pricing'
     | '/progress'
+    | '/psychology'
     | '/qotd'
     | '/quotes'
     | '/ranked'
@@ -5169,6 +5179,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/pricing'
     | '/progress'
+    | '/psychology'
     | '/qotd'
     | '/quotes'
     | '/ranked'
@@ -5672,6 +5683,7 @@ export interface FileRouteTypes {
     | '/_site/predictions'
     | '/_site/pricing'
     | '/_site/progress'
+    | '/_site/psychology'
     | '/_site/qotd'
     | '/_site/quotes'
     | '/_site/ranked'
@@ -6935,6 +6947,13 @@ declare module '@tanstack/react-router' {
       path: '/progress'
       fullPath: '/progress'
       preLoaderRoute: typeof SiteProgressRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/psychology': {
+      id: '/_site/psychology'
+      path: '/psychology'
+      fullPath: '/psychology'
+      preLoaderRoute: typeof SitePsychologyRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/qotd': {
@@ -10035,6 +10054,7 @@ interface SiteRouteChildren {
   SitePredictionsRoute: typeof SitePredictionsRoute
   SitePricingRoute: typeof SitePricingRoute
   SiteProgressRoute: typeof SiteProgressRoute
+  SitePsychologyRoute: typeof SitePsychologyRoute
   SiteQotdRoute: typeof SiteQotdRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRankedRoute: typeof SiteRankedRoute
@@ -10184,6 +10204,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SitePredictionsRoute: SitePredictionsRoute,
   SitePricingRoute: SitePricingRoute,
   SiteProgressRoute: SiteProgressRoute,
+  SitePsychologyRoute: SitePsychologyRoute,
   SiteQotdRoute: SiteQotdRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRankedRoute: SiteRankedRoute,

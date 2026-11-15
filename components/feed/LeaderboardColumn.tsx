@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/http';
 import { useTranslation } from 'react-i18next';
@@ -143,6 +145,17 @@ export function LeaderboardColumn({
                     defaultValue: 'Follow some people to see how you stack up.',
                   })
                 : t('leaderboard-empty', { defaultValue: 'No ranked players yet.' })
+            }
+            action={
+              // Winnicott's holding environment / Seligman's learned helplessness:
+              // an empty state always offers the next step, never just a dead end.
+              scope === 'friends' ? (
+                <Link to="/explore" search={{ q: '', tab: 'top' }}>
+                  <Button variant="default">
+                    {t('leaderboard-find-people', { defaultValue: 'Find people' })}
+                  </Button>
+                </Link>
+              ) : undefined
             }
           />
         ) : (

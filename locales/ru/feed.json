@@ -1651,5 +1651,11 @@
   "quest-to-go_other": "Осталось {{count}}",
   "quest-to-go_few": "Осталось {{count}}",
   "quest-to-go_many": "Осталось {{count}}",
-  "quest-to-go_one": "Осталось {{count}}"
+  "quest-to-go_one": "Осталось {{count}}",
+  "ai-working-feed": "Ищем публичные посты по вашему вопросу и читаем до 60 из них…",
+  "ai-read-posts_other": "Написано по {{count}} постам",
+  "leaderboard-find-people": "Найти людей",
+  "ai-read-posts_few": "Написано по {{count}} постам",
+  "ai-read-posts_many": "Написано по {{count}} постам",
+  "ai-read-posts_one": "Написано по {{count}} постам"
 }

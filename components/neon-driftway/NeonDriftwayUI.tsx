@@ -1,6 +1,7 @@
 import { LiveryEditorButton } from './LiveryEditor';
 import { useCallback, useEffect, useState } from 'react';
 import { parseScoreMoment, ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
+import { SessionHighlight } from '@/components/games/SessionHighlight';
 import { GHOST_MODES, type GhostMode, type GhostTrace } from '@/lib/neon-driftway/ghost';
 import { useTranslation } from 'react-i18next';
 import { neonDriftwayLeaderboardApi } from '@/lib/neon-driftway/neon-driftway.contract';
@@ -382,6 +383,15 @@ export function NeonDriftwayUI({
         <ResultMomentSlot moment={scoreMoment} gameName="Neon Driftway" onDismiss={clearScoreMoment} />
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
           <h2 className="text-3xl sm:text-4xl font-black text-red-500 text-center tracking-tight">{t("crashed", { defaultValue: "CRASHED" })}</h2>
+          <SessionHighlight
+            className="text-white"
+            peak={
+              runStats.closeCalls > 0
+                ? { label: t("close-calls", { defaultValue: "Close Calls" }), value: String(runStats.closeCalls) }
+                : { label: t("top-speed", { defaultValue: "Top Speed" }), value: `${Math.round(runStats.maxSpeed * 0.5)} km/h` }
+            }
+            moment={scoreMoment}
+          />
 
           <div className="bg-zinc-900/80 border border-zinc-700 rounded-lg p-5 space-y-3">
             <div className="text-center">

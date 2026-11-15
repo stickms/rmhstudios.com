@@ -1743,5 +1743,13 @@
   "quest-to-go_many": "تبقى {{count}}",
   "quest-to-go_one": "تبقى {{count}}",
   "quest-to-go_two": "تبقى {{count}}",
-  "quest-to-go_zero": "تبقى {{count}}"
+  "quest-to-go_zero": "تبقى {{count}}",
+  "ai-working-feed": "جارٍ البحث في المنشورات العامة عن سؤالك وقراءة ما يصل إلى 60 منها…",
+  "ai-read-posts_other": "كُتب استنادًا إلى {{count}} منشورًا",
+  "leaderboard-find-people": "اعثر على أشخاص",
+  "ai-read-posts_few": "كُتب استنادًا إلى {{count}} منشورًا",
+  "ai-read-posts_many": "كُتب استنادًا إلى {{count}} منشورًا",
+  "ai-read-posts_one": "كُتب استنادًا إلى {{count}} منشورًا",
+  "ai-read-posts_two": "كُتب استنادًا إلى {{count}} منشورًا",
+  "ai-read-posts_zero": "كُتب استنادًا إلى {{count}} منشورًا"
 }
