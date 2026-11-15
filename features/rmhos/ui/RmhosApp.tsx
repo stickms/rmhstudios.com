@@ -11,6 +11,9 @@ import { readString, writeString } from '@/lib/core/persist';
 import { toast } from '@/lib/shared/app-toast';
 import { Button } from '@/components/ui/button';
 import { checkBackup } from '../engine/home-sync';
+import { resolveImageManifest } from '../engine/image-manifest';
+import { CDN_BASE } from '@/lib/storage/asset';
+import ComingSoon from './ComingSoon';
 import AboutDialog from './AboutDialog';
 import DamagedExistsDialog from './DamagedExistsDialog';
 import { backupBytes } from './backup';
@@ -37,7 +40,7 @@ function isPhone(): boolean {
   return window.matchMedia('(pointer: coarse)').matches && window.innerWidth < 768;
 }
 
-export default function RmhosApp() {
+function RmhosMachine() {
   const { t } = useTranslation('c-rmhos');
   const hintId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -388,4 +391,12 @@ export default function RmhosApp() {
       </div>
     </RmhosSessionProvider>
   );
+}
+
+/**
+ * With a CDN base and no published image there is nothing to boot: the panel replaces the whole
+ * machine (its hooks never run), so no emulator, session ticket, tab lock or store is touched.
+ */
+export default function RmhosApp() {
+  return resolveImageManifest(CDN_BASE || undefined) === null ? <ComingSoon /> : <RmhosMachine />;
 }

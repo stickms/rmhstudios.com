@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { resolveImageManifest } from '../../engine/image-manifest';
+import { DEV_IMAGE, resolveImageManifest } from '../../engine/image-manifest';
 import {
   BUILD_SCRIPTS_URL,
   KERNEL_TARBALL_URL,
@@ -28,9 +28,10 @@ describe('About facts match NOTICE.md', () => {
   });
   it('packages.txt is beside the image the manifest resolves', () => {
     expect(notice).toContain('`packages.txt`');
-    expect(packagesUrl(resolveImageManifest('https://cdn.example/'))).toMatch(
+    const published = { version: 'abc123def456', files: DEV_IMAGE.files };
+    expect(packagesUrl(resolveImageManifest('https://cdn.example/', published)!)).toMatch(
       /^https:\/\/cdn\.example\/rmhos\/[0-9a-f]+\/packages\.txt$/,
     );
-    expect(packagesUrl(resolveImageManifest(undefined))).toBe('/rmhos-dev/packages.txt');
+    expect(packagesUrl(resolveImageManifest(undefined)!)).toBe('/rmhos-dev/packages.txt');
   });
 });

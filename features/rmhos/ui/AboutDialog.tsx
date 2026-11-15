@@ -49,7 +49,8 @@ export default function AboutDialog({
   currentDamaged,
 }: Props) {
   const { t } = useTranslation('c-rmhos');
-  const packages = packagesUrl(resolveImageManifest(CDN_BASE || undefined));
+  const manifest = resolveImageManifest(CDN_BASE || undefined);
+  const packages = manifest ? packagesUrl(manifest) : null;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent container={container} className="max-w-xl">
@@ -83,6 +84,7 @@ export default function AboutDialog({
               })}{' '}
               <ExternalLink href={BUILD_SCRIPTS_URL}>scripts/rmhos/</ExternalLink>
             </li>
+            {packages && (
             <li>
               {t('about-userland', {
                 defaultValue:
@@ -90,6 +92,7 @@ export default function AboutDialog({
               })}{' '}
               <ExternalLink href={packages}>packages.txt</ExternalLink>
             </li>
+            )}
             <li>
               {t('about-emulator', {
                 defaultValue: 'The emulator is v86 (BSD-2-Clause):',

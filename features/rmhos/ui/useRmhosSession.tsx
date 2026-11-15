@@ -190,6 +190,12 @@ export function useRmhosMachine(
       fail('could not load the session');
       return;
     }
+    // RmhosApp shows the coming-soon panel instead of this machine when nothing is published.
+    const manifest = resolveImageManifest(CDN_BASE || undefined);
+    if (!manifest) {
+      fail('no image published');
+      return;
+    }
     setPhase('downloading');
 
     void (async () => {
@@ -214,7 +220,7 @@ export function useRmhosMachine(
         const getNet = async () => (session.net.enabled ? run.fetch() : null);
         const vm = await createVm({
           screen,
-          manifest: resolveImageManifest(CDN_BASE || undefined),
+          manifest,
           net: getNet,
           signal: ac.signal,
         });
