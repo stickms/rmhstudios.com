@@ -54,6 +54,15 @@ describe('toolbarState', () => {
     });
   });
 
+  it('signed out: no restart, backup or restore (there is no account and no machine)', () => {
+    expect(run({ phase: 'idle', desktopReady: false, signedOut: true })).toMatchObject({
+      showRestart: false,
+      showBackup: false,
+      showRestore: false,
+      saveDisabled: true,
+    });
+  });
+
   it.each([
     ['off', 'net.off'],
     ['connecting', 'net.connecting'],

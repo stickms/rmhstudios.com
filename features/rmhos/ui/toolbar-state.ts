@@ -16,6 +16,8 @@ export interface ToolbarInput {
   /** The guest was used since the last good save. */
   dirty: boolean;
   net: NetState;
+  /** The session ended and no machine is left: nothing here applies any more. */
+  signedOut?: boolean;
 }
 
 export interface ToolbarState {
@@ -38,6 +40,7 @@ const NET_KEYS: Record<NetState, string> = {
 
 export function toolbarState(input: ToolbarInput): ToolbarState {
   const { phase, desktopReady, lastSave, saving, dirty, net } = input;
+  const signedOut = input.signedOut === true;
   let saveLabelKey = 'save.saved';
   if (saving) saveLabelKey = 'save.saving';
   else if (lastSave?.status === 'storage-full') saveLabelKey = 'save.storageFull';
@@ -48,9 +51,9 @@ export function toolbarState(input: ToolbarInput): ToolbarState {
     saveLabelKey,
     saveDisabled: !desktopReady || saving || phase !== 'running',
     netLabelKey: NET_KEYS[net],
-    showRestart: live || phase === 'failed',
+    showRestart: !signedOut && (live || phase === 'failed'),
     // The stored archive is read from the browser's store, so downloading it needs no machine.
-    showBackup: true,
-    showRestore: live,
+    showBackup: !signedOut,
+    showRestore: !signedOut && live,
   };
 }

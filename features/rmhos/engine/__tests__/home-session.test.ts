@@ -20,6 +20,8 @@ function fakeTar(fill: number): Uint8Array {
 function fakeEnv() {
   const timers = new Map<number, () => void>();
   let next = 1;
+  const timeouts = new Map<number, { cb: () => void; ms: number }>();
+  let nextTimeout = 5000;
   const listeners = new Map<string, Set<(ev: Event) => void>>();
   const target = (prefix: string) => ({
     addEventListener: (t: string, cb: (ev: Event) => void) => {
@@ -37,6 +39,11 @@ function fakeEnv() {
       return next++;
     },
     clearInterval: (h) => void timers.delete(h as number),
+    setTimeout: (cb, ms) => {
+      timeouts.set(nextTimeout, { cb, ms });
+      return nextTimeout++;
+    },
+    clearTimeout: (h) => void timeouts.delete(h as number),
     doc: Object.defineProperty(target('doc'), 'visibilityState', {
       get: () => state.visibility,
     }) as SessionEnv['doc'],
@@ -45,10 +52,21 @@ function fakeEnv() {
   const count = (k: string) => listeners.get(k)?.size ?? 0;
   const fire = (k: string, ev: Event = new Event('x')) =>
     [...(listeners.get(k) ?? [])].forEach((cb) => cb(ev));
-  return { env, timers, state, count, fire };
+  /** Lets every pending bound expire (the deadline of a bounded save). */
+  const expire = () => [...timeouts.values()].forEach((t) => t.cb());
+  return { env, timers, timeouts, expire, state, count, fire };
 }
 
-function setup(opts: { restoreError?: Error; stored?: Uint8Array; memory?: boolean } = {}) {
+function setup(
+  opts: {
+    restoreError?: Error;
+    stored?: Uint8Array;
+    memory?: boolean;
+    /** The first SAVE waits for this to resolve (a save in flight). */
+    holdSave?: Promise<void>;
+    saveError?: Error;
+  } = {},
+) {
   const share = new Map<string, Uint8Array>();
   // The in-memory store reports kind 'memory' (storage blocked); tests act like IndexedDB unless asked.
   const store = { ...memoryHomeStore(), kind: opts.memory ? ('memory' as const) : ('indexeddb' as const) };
@@ -58,6 +76,7 @@ function setup(opts: { restoreError?: Error; stored?: Uint8Array; memory?: boole
     deleteShareFile: async (p: string) => void share.delete(p),
   };
   let poweroff: (() => void) | null = null;
+  let held = false;
   const order: string[] = [];
   const agent = {
     startSession: vi.fn(async () => void order.push('session')),
@@ -66,6 +85,11 @@ function setup(opts: { restoreError?: Error; stored?: Uint8Array; memory?: boole
       if (opts.restoreError) throw opts.restoreError;
     }),
     save: vi.fn(async () => {
+      if (opts.saveError) throw opts.saveError;
+      if (opts.holdSave && !held) {
+        held = true;
+        await opts.holdSave;
+      }
       share.set(SHARE_ARCHIVE_PATH, fakeTar(9));
       return { bytes: 1536 };
     }),
@@ -373,5 +397,109 @@ describe('HomeSession teardown', () => {
     await t.store.put('u1', { archive: await gzip(fakeTar(9)), sha256: 'newer', savedAt: 7 });
     await expect(fresh.putPreviousBack()).rejects.toMatchObject({ code: 'previous_stale' });
     expect(fresh.snapshot).toMatchObject({ previousAvailable: false, previousSavedAt: null });
+  });
+});
+
+describe('leaving without a browser unload', () => {
+  it('nothing unsaved: leaves at once, without a save', async () => {
+    const t = setup();
+    await t.session.start();
+    expect(await t.session.saveBeforeLeaving()).toBe(true);
+    expect(t.agent.save).not.toHaveBeenCalled();
+  });
+
+  it('unsaved changes: one save lands in the store, then it is safe to leave', async () => {
+    const t = setup();
+    await t.session.start();
+    t.session.markDirty();
+    expect(await t.session.saveBeforeLeaving()).toBe(true);
+    expect(t.agent.save).toHaveBeenCalledTimes(1);
+    expect(await t.store.get('u1')).not.toBeNull();
+    expect(t.session.snapshot.dirty).toBe(false);
+  });
+
+  it('a save that fails means the person is asked', async () => {
+    const t = setup({ saveError: new AgentError('timeout') });
+    await t.session.start();
+    t.session.markDirty();
+    expect(await t.session.saveBeforeLeaving()).toBe(false);
+    expect(await t.store.get('u1')).toBeNull();
+  });
+
+  it('a save that never answers is given up on at the bound, and the person is asked', async () => {
+    let release!: () => void;
+    const t = setup({ holdSave: new Promise<void>((r) => (release = r)) });
+    await t.session.start();
+    t.session.markDirty();
+    const leaving = t.session.saveBeforeLeaving(15_000);
+    await Promise.resolve();
+    expect([...t.e.timeouts.values()].map((x) => x.ms)).toContain(15_000);
+    t.e.expire();
+    expect(await leaving).toBe(false);
+    release();
+  });
+
+  it('with storage blocked a save would die with the page: the person is asked, nothing is attempted', async () => {
+    const t = setup({ memory: true });
+    await t.session.start();
+    t.session.markDirty();
+    expect(await t.session.saveBeforeLeaving()).toBe(false);
+    expect(t.agent.save).not.toHaveBeenCalled();
+  });
+
+  it('a machine that is no longer running has nothing to lose', async () => {
+    const t = setup();
+    await t.session.start();
+    t.session.markDirty();
+    t.session.machineStopped('stopped');
+    expect(await t.session.saveBeforeLeaving()).toBe(true);
+  });
+});
+
+describe('power-off and a machine that stops mid-handshake', () => {
+  it('the power-off save has its own 10 s bound when it joins a save already in flight', async () => {
+    let release!: () => void;
+    const t = setup({ holdSave: new Promise<void>((r) => (release = r)) });
+    await t.session.start();
+    t.session.markDirty();
+    const autosave = t.session.save(); // in flight, never answering
+    await Promise.resolve();
+    t.firePoweroff();
+    await Promise.resolve();
+    expect([...t.e.timeouts.values()].map((x) => x.ms)).toContain(10_000);
+    t.e.expire();
+    await new Promise((r) => setImmediate(r));
+    expect(t.session.snapshot.stage).toBe('stopped');
+    // The superseded save finishes late: it reports nothing after "stopped".
+    const seen = t.snaps.length;
+    release();
+    await autosave;
+    expect(t.snaps.length).toBe(seen);
+    expect(t.session.snapshot.lastSave?.result).toMatchObject({ status: 'failed', code: 'timeout' });
+  });
+
+  it('a machine that stops while the handshake waits is not overwritten with "handshake"', async () => {
+    let fail!: (e: Error) => void;
+    const t = setup();
+    t.agent.restore.mockImplementation(() => new Promise<void>((_, rej) => (fail = rej)));
+    const started = t.session.start();
+    await new Promise((r) => setImmediate(r));
+    t.session.machineStopped('failed');
+    fail(new AgentError('closed'));
+    await started;
+    expect(t.session.snapshot).toMatchObject({ stage: 'failed', failure: null });
+  });
+
+  it('a restore that succeeds after the machine stopped does not start a session', async () => {
+    let ok!: () => void;
+    const t = setup();
+    t.agent.restore.mockImplementation(() => new Promise<void>((r) => (ok = r)));
+    const started = t.session.start();
+    await new Promise((r) => setImmediate(r));
+    t.session.machineStopped('stopped');
+    ok();
+    await started;
+    expect(t.session.snapshot.stage).toBe('stopped');
+    expect(t.e.timers.size).toBe(0);
   });
 });

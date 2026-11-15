@@ -18,7 +18,12 @@ import { useSession } from '@/components/session/session-context';
 import { CDN_BASE } from '@/lib/storage/asset';
 import { AgentClient } from '../engine/agent';
 import { RMHOS } from '../engine/constants';
-import { browserEnv, HomeSession, type SessionSnapshot } from '../engine/home-session';
+import {
+  browserEnv,
+  HomeSession,
+  LEAVE_SAVE_TIMEOUT_MS,
+  type SessionSnapshot,
+} from '../engine/home-session';
 import {
   HomeSync,
   type CopyKind,
@@ -27,6 +32,7 @@ import {
 } from '../engine/home-sync';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { createTicketHolder } from '../engine/relay-ticket';
+import { accountChange, leaveAccount } from '../engine/session-loss';
 import type { RmhosNet } from '../engine/rmhos.contract';
 import { holdHomeLock } from '../engine/tab-lock';
 import { BootFailure, createVm } from '../engine/vm';
@@ -98,6 +104,15 @@ export interface RmhosSessionValue {
    * would replace it with the current home), then a fresh machine and handshake.
    */
   restart: (opts?: { save?: boolean }) => Promise<void>;
+  /** The session ended (or there never was one) and no machine is left: show the sign-in panel. */
+  signedOut: boolean;
+  /** Unsaved changes would be lost by leaving now (the unload prompt's rule). */
+  isUnsaved: () => boolean;
+  /**
+   * One bounded save (15 s), for a navigation the browser will not warn about. True: safe to
+   * leave. False: the save did not land and the person should be asked.
+   */
+  saveBeforeLeaving: () => Promise<boolean>;
   linuxUser: string | null;
   net: RmhosNet | null;
   /** From the hub's status endpoint (see net-status.ts); only meaningful when `net.enabled`. */
@@ -130,9 +145,13 @@ export function useRmhosMachine(
   screenRef: RefObject<HTMLDivElement | null>,
   enabled: boolean,
 ): RmhosSessionValue {
-  const { data: account } = useSession();
+  const { data: account, isPending: accountPending } = useSession();
   const userId = account?.user?.id ?? null;
-  const sessionQ = useQuery(rmhosSessionQuery(userId));
+  // The account the machine runs for. It follows `userId` only after the old machine has had one
+  // bounded save (see the effect below), so a sign-out or account switch cannot tear a running
+  // machine down under its own unsaved files.
+  const [machineUser, setMachineUser] = useState<string | null>(userId);
+  const sessionQ = useQuery({ ...rmhosSessionQuery(machineUser), enabled: !!machineUser });
   const sessionRef = useRef(sessionQ.data);
   sessionRef.current = sessionQ.data;
   const sessionReady = !sessionQ.isPending;
@@ -160,8 +179,38 @@ export function useRmhosMachine(
   // stay reachable whatever state the machine is in.
   const { getStore, stored } = useStoredHome(userId);
 
+  // The session ended or the account changed (another tab signed out, the cookie expired, a
+  // different account signed in): one bounded save for the OLD account, then the machine goes.
+  // Without a browser unload nothing else would ask, and the effect below would dispose the
+  // machine on the spot.
   useEffect(() => {
-    if (!enabled || !userId || !sessionReady || !screenRef.current) return;
+    if (accountChange(userId, machineUser, accountPending) === 'none') return;
+    let cancelled = false;
+    void leaveAccount(
+      runnerRef.current,
+      LEAVE_SAVE_TIMEOUT_MS,
+      () => cancelled,
+      () => setMachineUser(userId),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, machineUser, accountPending]);
+  const signedOut = !accountPending && !userId && machineUser === null;
+
+  useEffect(() => {
+    if (!machineUser) {
+      // No account (signed out, or not known yet): nothing runs, and nothing stale stays on
+      // screen. The previous machine was torn down by the cleanup of the run before this one.
+      setPhase('idle');
+      setDetail(undefined);
+      setBootKind(null);
+      setFailure(null);
+      setSnap(null);
+      return;
+    }
+    if (!enabled || !sessionReady || !screenRef.current) return;
+    const userId = machineUser;
     const session = sessionRef.current;
     const screen = screenRef.current;
     const ac = new AbortController();
@@ -263,7 +312,10 @@ export function useRmhosMachine(
             runner?.dispose();
             if (runnerRef.current === runner) runnerRef.current = null;
           });
-          if (import.meta.env.DEV) window.__rmhosSave = () => runner!.save();
+          if (import.meta.env.DEV) {
+            window.__rmhosSave = () => runner!.save();
+            cleanups.push(() => delete window.__rmhosSave);
+          }
           void runner.start();
         };
 
@@ -297,7 +349,7 @@ export function useRmhosMachine(
       ac.abort();
       for (const c of cleanups.reverse()) c();
     };
-  }, [enabled, userId, sessionReady, attempt, screenRef, getStore]);
+  }, [enabled, machineUser, sessionReady, attempt, screenRef, getStore]);
 
   // Network state from the hub: once the desktop is up, then every 15 s while the tab is visible.
   const desktopReady = snap?.desktopReady ?? false;
@@ -395,6 +447,12 @@ export function useRmhosMachine(
       await runnerRef.current.startEmpty();
     }, []),
     restart,
+    signedOut,
+    isUnsaved: useCallback(() => runnerRef.current?.isUnsaved() ?? false, []),
+    saveBeforeLeaving: useCallback(
+      async () => (await runnerRef.current?.saveBeforeLeaving()) ?? true,
+      [],
+    ),
     linuxUser: sessionQ.data?.linuxUser ?? null,
     net: sessionQ.data?.net ?? null,
     netState,

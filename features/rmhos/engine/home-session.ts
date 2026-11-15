@@ -41,6 +41,8 @@ export interface SessionEnv {
   now(): number;
   setInterval(cb: () => void, ms: number): unknown;
   clearInterval(handle: unknown): void;
+  setTimeout(cb: () => void, ms: number): unknown;
+  clearTimeout(handle: unknown): void;
   doc: Listenable & { readonly visibilityState: string };
   win: Listenable;
 }
@@ -50,6 +52,8 @@ export function browserEnv(): SessionEnv {
     now: () => Date.now(),
     setInterval: (cb, ms) => setInterval(cb, ms),
     clearInterval: (h) => clearInterval(h as ReturnType<typeof setInterval>),
+    setTimeout: (cb, ms) => setTimeout(cb, ms),
+    clearTimeout: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
     doc: document,
     win: window,
   };
@@ -77,6 +81,8 @@ export interface SessionDeps {
 
 const NOT_RUNNING: SaveResult = { status: 'failed', code: 'not-running' };
 const POWEROFF_SAVE_TIMEOUT_MS = 10_000;
+/** Leaving the page (navigation, sign-out) waits this long for one last save. */
+export const LEAVE_SAVE_TIMEOUT_MS = 15_000;
 
 export class HomeSession {
   private snap: SessionSnapshot = {
@@ -94,6 +100,7 @@ export class HomeSession {
   private running = false;
   private disposed = false;
   private inputEpoch = 0;
+  private saveGeneration = 0;
   private readyAt = 0;
   private teardowns: Array<() => void> = [];
 
@@ -112,10 +119,13 @@ export class HomeSession {
   async start(): Promise<void> {
     const { sync, agent } = this.d;
     this.set({ stage: 'handshake' });
+    // The machine can stop while the handshake awaits (machineStopped sets `stopped`/`failed`):
+    // whatever then settles must not overwrite that, nor start a session on a dead machine.
+    const stillStarting = () => !this.disposed && this.snap.stage === 'handshake';
     try {
       const outcome = await sync.prepare();
       this.set({ storeKind: sync.storeKind });
-      if (this.disposed) return;
+      if (!stillStarting()) return;
       if (outcome === 'corrupt') {
         this.set({ stage: 'failed', failure: 'corrupt', error: 'stored home unreadable' });
         return;
@@ -123,7 +133,9 @@ export class HomeSession {
       await agent.startSession(this.d.linuxUser);
       await agent.restore();
     } catch (e) {
+      if (!stillStarting()) return;
       const offer = await sync.previousOffer().catch(() => null);
+      if (!stillStarting()) return;
       this.set({
         stage: 'failed',
         failure: 'handshake',
@@ -133,7 +145,7 @@ export class HomeSession {
       });
       return;
     }
-    if (this.disposed) return;
+    if (!stillStarting()) return;
     this.begin();
   }
 
@@ -167,6 +179,7 @@ export class HomeSession {
     // The guest is going down: one short, best-effort save while the agent may still answer.
     this.teardowns.push(
       agent.onPoweroff(() => {
+        // Its own 10 s bound, also when it joins a save already in flight.
         void this.save({ timeoutMs: POWEROFF_SAVE_TIMEOUT_MS }).finally(() => this.stop('stopped'));
       }),
     );
@@ -198,15 +211,27 @@ export class HomeSession {
     for (const t of this.teardowns.splice(0).reverse()) t();
   }
 
+  /**
+   * `timeoutMs` bounds the whole call, not only the guest's answer: a save that joins one already
+   * in flight (HomeSync runs one at a time) gets the same bound instead of inheriting that
+   * save's own 120 s. A save that outlives its bound keeps running, but its late answer is
+   * dropped here: it must not report anything once the caller has moved on.
+   */
   async save(opts: { timeoutMs?: number; allowEmpty?: boolean } = {}): Promise<SaveResult> {
     if (!this.running) return NOT_RUNNING;
     this.set({ saving: true });
     const epoch = this.inputEpoch;
+    const generation = ++this.saveGeneration;
     let result: SaveResult;
     try {
-      result = await this.d.sync.save(opts);
+      result = await this.bounded(this.d.sync.save(opts), opts.timeoutMs);
     } catch {
       result = { status: 'failed', code: 'share' };
+    }
+    // Stopped, disposed or superseded while it ran (power-off, a newer bounded save): say nothing.
+    if (!this.running || generation !== this.saveGeneration) {
+      if (generation === this.saveGeneration) this.set({ saving: false });
+      return result;
     }
     const good = result.status === 'saved' || result.status === 'unchanged';
     this.set({
@@ -216,6 +241,43 @@ export class HomeSession {
       ...(good && epoch === this.inputEpoch ? { dirty: false } : {}),
     });
     return result;
+  }
+
+  private bounded(p: Promise<SaveResult>, ms: number | undefined): Promise<SaveResult> {
+    if (ms === undefined) return p;
+    const { env } = this.d;
+    return new Promise<SaveResult>((resolve, reject) => {
+      const timer = env.setTimeout(() => resolve({ status: 'failed', code: 'timeout' }), ms);
+      p.then(
+        (r) => {
+          env.clearTimeout(timer);
+          resolve(r);
+        },
+        (e) => {
+          env.clearTimeout(timer);
+          reject(e);
+        },
+      );
+    });
+  }
+
+  /**
+   * The page is going away without a browser unload (a router navigation, a sign-out, an account
+   * switch), so `beforeunload` will not ask: one bounded save, then say whether leaving loses
+   * anything. True: nothing unsaved remains (or there was nothing to save). False: the person
+   * should be asked. With storage blocked a "save" lands in memory that dies with the page, so it
+   * never counts.
+   */
+  async saveBeforeLeaving(timeoutMs: number = LEAVE_SAVE_TIMEOUT_MS): Promise<boolean> {
+    if (!this.running || !this.isUnsaved()) return true;
+    if (this.snap.storeKind === 'memory') return false;
+    const r = await this.save({ timeoutMs });
+    // An empty home over a stored one is refused on purpose: nothing of value is lost by leaving.
+    return (
+      r.status === 'saved' ||
+      r.status === 'unchanged' ||
+      (r.status === 'failed' && r.code === 'empty_home')
+    );
   }
 
   markDirty() {

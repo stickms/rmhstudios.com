@@ -6,6 +6,7 @@
  * have no server render.
  */
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useBlocker } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { readString, writeString } from '@/lib/core/persist';
 import { toast } from '@/lib/shared/app-toast';
@@ -28,6 +29,7 @@ import {
   restoreFailureCopy,
 } from './save-messages';
 import Screen from './Screen';
+import SignedOut from './SignedOut';
 import Toolbar from './Toolbar';
 import { toolbarState, type NetState } from './toolbar-state';
 import { RmhosSessionProvider, useRmhosMachine } from './useRmhosSession';
@@ -48,6 +50,22 @@ function RmhosMachine() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [confirmed, setConfirmed] = useState(() => !isPhone());
   const session = useRmhosMachine(screenRef, confirmed);
+
+  // Leaving by a router navigation (Back, a swipe, any link) fires no beforeunload and unmounts
+  // the machine on the spot. With unsaved changes: one bounded save first, then go; if it did
+  // not land, ask. (A browser unload keeps HomeSession's own beforeunload prompt.)
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
+  const shouldBlock = useCallback(async () => {
+    const s = sessionRef.current;
+    if (!s.isUnsaved()) return false;
+    return !(await s.saveBeforeLeaving());
+  }, []);
+  const blocker = useBlocker({
+    shouldBlockFn: shouldBlock,
+    enableBeforeUnload: false,
+    withResolver: true,
+  });
 
   // Dialogs portal into the app root, which carries the --app-* tokens.
   const [container, setContainer] = useState<HTMLElement | null>(null);
@@ -114,6 +132,7 @@ function RmhosMachine() {
     saving: session.saving,
     dirty: session.dirty,
     net,
+    signedOut: session.signedOut,
   });
 
   const fail = useCallback((msg: string) => {
@@ -267,7 +286,8 @@ function RmhosMachine() {
             }}
             onInput={session.markDirty}
           />
-          {session.phase !== 'running' && (
+          {session.signedOut && <SignedOut />}
+          {!session.signedOut && session.phase !== 'running' && (
             <BootScreen
               phase={session.phase}
               detail={session.detail}
@@ -293,6 +313,15 @@ function RmhosMachine() {
           session={session}
           currentDamaged={session.failure === 'corrupt'}
           readOnly={session.failure === 'locked'}
+        />
+        <ConfirmBox
+          open={blocker.status === 'blocked'}
+          container={container}
+          title={t('leave-confirm', { defaultValue: 'Leave rmhOS? Unsaved changes are lost.' })}
+          confirmLabel={t('leave', { defaultValue: 'Leave' })}
+          cancelLabel={t('stay', { defaultValue: 'Stay' })}
+          onCancel={() => blocker.reset?.()}
+          onConfirm={() => blocker.proceed?.()}
         />
         <ConfirmBox
           open={confirmPutBack}
