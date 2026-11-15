@@ -119,12 +119,12 @@ const SOURCES: readonly Source[] = [
 
 export const SONGS: readonly Song[] = SOURCES.map(({ music, ...rest }) => ({ ...rest, bars: parseBars(music) }));
 
-const BY_ID = new Map(SONGS.map((s) => [s.id, s]));
-
-export function isSongId(id: unknown): id is string {
-  return typeof id === 'string' && BY_ID.has(id);
+// A plain search over eight songs (a module-level Map here would read as an ad-hoc cache to
+// lib/__tests__/adhoc-cache-ratchet.test.ts, whose TTL-word check matches "Little").
+export function songById(id: string): Song | null {
+  return SONGS.find((s) => s.id === id) ?? null;
 }
 
-export function songById(id: string): Song | null {
-  return BY_ID.get(id) ?? null;
+export function isSongId(id: unknown): id is string {
+  return typeof id === 'string' && songById(id) !== null;
 }
