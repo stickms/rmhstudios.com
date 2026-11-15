@@ -26,7 +26,11 @@ import {
   chordSoundFor,
   resolveSound,
 } from '@/lib/rmhmusic/learn/audio/instruments/catalog';
-import { beginSoundSession } from '@/lib/rmhmusic/learn/audio/instruments/engine';
+import {
+  beginSoundSession,
+  prefetchSound,
+} from '@/lib/rmhmusic/learn/audio/instruments/engine';
+import { whenIdle } from '@/lib/shared/platform';
 import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 import {
   PRIMARY_BUTTON,
@@ -528,6 +532,34 @@ export function LessonScreen({
     pitched,
     soundId,
     lessonId,
+  ]);
+  // Entering a pitched lesson route starts the learner's sound loading in the background (browser
+  // idle, skipped with Data Saver), as soon as the profile says which sound it is: the lesson's own
+  // session then usually finds it ready. Never on the home page (plan §3.5).
+  const known =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s.profile !=
+        null,
+    );
+  useEffect(() => {
+    if (
+      !pitched ||
+      !known
+    )
+      return;
+    return whenIdle(
+      () =>
+        void prefetchSound(
+          soundId,
+        ),
+    );
+  }, [
+    pitched,
+    known,
+    soundId,
   ]);
 
   // The store is empty until `load()` runs in the browser (a no-op when the home already loaded it).

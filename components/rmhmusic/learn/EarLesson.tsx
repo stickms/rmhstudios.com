@@ -97,6 +97,10 @@ import {
   EarSoundRow,
   soundProblem,
 } from './EarSoundRow';
+import {
+  fallbackLine,
+  useFallbackNotice,
+} from './useSoundNotice';
 import { LessonResult } from './LessonParts';
 import { qualityName } from './PlayChordLesson';
 import {
@@ -525,6 +529,12 @@ export function EarLesson({
       status,
       waking,
     );
+  const fellBack =
+    useFallbackNotice(
+      inSession
+        ? `${lesson.kind}-${lesson.index}`
+        : lesson.kind,
+    );
 
   const title =
     sessionTitle(
@@ -580,6 +590,19 @@ export function EarLesson({
     'hint';
   let wrong = false;
   if (
+    lesson.kind ===
+      'asking' &&
+    fellBack
+  ) {
+    // Said once, on the question where the lesson fell back to the simple tone.
+    lineKey =
+      'fallback';
+    line =
+      fallbackLine(
+        t,
+        fellBack,
+      );
+  } else if (
     lesson.kind ===
     'asking'
   ) {
@@ -686,6 +709,9 @@ export function EarLesson({
               ? title
               : '',
             problem,
+            fellBack
+              ? line
+              : '',
           ]
             .filter(
               Boolean,

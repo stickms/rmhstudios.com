@@ -21,9 +21,13 @@ vi.mock(
 import { INSTRUMENT_CATALOG } from './catalog';
 import {
   LOAD_WAIT_MS,
+  MAX_DECODED,
   __setInstrumentFactory,
   beginSoundSession,
   currentSession,
+  getInstrument,
+  instrumentFor,
+  sessionFallback,
 } from './engine';
 import type { LoadState } from './load-machine';
 import type {
@@ -171,7 +175,21 @@ function fakeInstrument(
       stopAll:
         vi.fn(),
       dispose:
-        vi.fn(),
+        vi.fn(
+          () => {
+            if (
+              state.kind ===
+                'ready' ||
+              state.kind ===
+                'failed'
+            )
+              set(
+                {
+                  kind: 'idle',
+                },
+              );
+          },
+        ),
       subscribe:
         (
           fn,
@@ -257,15 +275,27 @@ describe('a lesson sound session', () => {
     ).toBe(
       'loading',
     );
-    // Nothing a lesson asks for while loading is the sample: a tap gets the synth.
-    playNote(
-      60,
-    );
+    // While the session decides, a note of its sound is dropped: neither the samples nor the synth,
+    // and never reported as started. A note of no instrument is the synth as ever.
+    const synthBefore =
+      (
+        ctx as ReturnType<
+          typeof fakeContext
+        >
+      )
+        .createOscillator
+        .mock
+        .calls
+        .length;
+    const early =
+      vi.fn();
     playNote(
       60,
       {
         instrument:
           'piano',
+        onStart:
+          early,
       },
     );
     expect(
@@ -273,6 +303,54 @@ describe('a lesson sound session', () => {
         .inst
         .play,
     ).not.toHaveBeenCalled();
+    expect(
+      (
+        ctx as ReturnType<
+          typeof fakeContext
+        >
+      )
+        .createOscillator
+        .mock
+        .calls
+        .length,
+    ).toBe(
+      synthBefore,
+    );
+    expect(
+      early,
+    ).not.toHaveBeenCalled();
+    expect(
+      soundReleaseMs(
+        {
+          instrument:
+            'piano',
+        },
+      ),
+    ).toBe(
+      Math.max(
+        RELEASE_MS,
+        INSTRUMENT_CATALOG
+          .piano
+          .releaseMs,
+      ),
+    );
+    playNote(
+      60,
+    );
+    expect(
+      (
+        ctx as ReturnType<
+          typeof fakeContext
+        >
+      )
+        .createOscillator
+        .mock
+        .calls
+        .length,
+    ).toBe(
+      synthBefore +
+        1,
+    );
     piano.ready();
     expect(
       currentSession()
@@ -379,7 +457,7 @@ describe('a lesson sound session', () => {
         .inst
         .play,
     ).not.toHaveBeenCalled();
-    // The echo guard covers whichever voices the note: the longer of the two releases.
+    // The echo guard follows the sound in use now: the synth's release, not the samples'.
     expect(
       soundReleaseMs(
         {
@@ -388,12 +466,12 @@ describe('a lesson sound session', () => {
         },
       ),
     ).toBe(
-      Math.max(
-        RELEASE_MS,
-        INSTRUMENT_CATALOG
-          .piano
-          .releaseMs,
-      ),
+      RELEASE_MS,
+    );
+    expect(
+      sessionFallback(),
+    ).toBe(
+      'piano',
     );
     // The next session uses them.
     beginSoundSession(
@@ -600,6 +678,261 @@ describe('outside a session', () => {
       soundStatus(),
     ).toBe(
       'ready',
+    );
+  });
+});
+
+describe('instrumentFor: the pending path', () => {
+  it('is pending while the session decides, then holds the choice for the rest of the lesson', () => {
+    beginSoundSession(
+      'piano',
+    );
+    expect(
+      instrumentFor(
+        'piano',
+        60,
+      ),
+    ).toEqual(
+      {
+        kind: 'pending',
+      },
+    );
+    // Another sound, or none, is not the session's to decide.
+    expect(
+      instrumentFor(
+        undefined,
+        60,
+      ),
+    ).toEqual(
+      {
+        kind: 'synth',
+      },
+    );
+    piano.ready();
+    expect(
+      instrumentFor(
+        'piano',
+        60,
+      ),
+    ).toEqual(
+      {
+        kind: 'instrument',
+        inst: piano.inst,
+      },
+    );
+    // A note out of the samples' reach is the one exception: the synth, for that note only.
+    expect(
+      instrumentFor(
+        'piano',
+        20,
+      ),
+    ).toEqual(
+      {
+        kind: 'synth',
+      },
+    );
+  });
+
+  it('once the session fell back to the synth, ready samples never take over mid-lesson', () => {
+    beginSoundSession(
+      'piano',
+    );
+    piano.fail();
+    expect(
+      instrumentFor(
+        'piano',
+        60,
+      ),
+    ).toEqual(
+      {
+        kind: 'synth',
+      },
+    );
+    expect(
+      sessionFallback(),
+    ).toBe(
+      'piano',
+    );
+    piano.ready();
+    expect(
+      instrumentFor(
+        'piano',
+        60,
+      ),
+    ).toEqual(
+      {
+        kind: 'synth',
+      },
+    );
+    const onStart =
+      vi.fn();
+    playNote(
+      60,
+      {
+        instrument:
+          'piano',
+        onStart,
+      },
+    );
+    expect(
+      piano
+        .inst
+        .play,
+    ).not.toHaveBeenCalled();
+    expect(
+      onStart,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+  });
+
+  it('says nothing about a fallback while deciding or when the samples play', () => {
+    beginSoundSession(
+      'piano',
+    );
+    expect(
+      sessionFallback(),
+    ).toBeNull();
+    piano.ready();
+    expect(
+      sessionFallback(),
+    ).toBeNull();
+  });
+});
+
+describe('decoded instruments', () => {
+  let fakes: Record<
+    InstrumentId,
+    ReturnType<
+      typeof fakeInstrument
+    >
+  >;
+  beforeEach(
+    () => {
+      fakes =
+        {
+          piano:
+            fakeInstrument(
+              'piano',
+            ),
+          guitar:
+            fakeInstrument(
+              'guitar',
+            ),
+          violin:
+            fakeInstrument(
+              'violin',
+            ),
+          flute:
+            fakeInstrument(
+              'flute',
+            ),
+        };
+      __setInstrumentFactory(
+        (
+          id,
+        ) =>
+          fakes[
+            id
+          ]
+            .inst,
+      );
+    },
+  );
+
+  it(`keeps at most ${MAX_DECODED}: the least recently used is disposed when a third is ready`, () => {
+    getInstrument(
+      'piano',
+    );
+    fakes.piano.ready();
+    getInstrument(
+      'guitar',
+    );
+    fakes.guitar.ready();
+    expect(
+      fakes
+        .piano
+        .inst
+        .dispose,
+    ).not.toHaveBeenCalled();
+    // Piano used again: guitar is now the least recent.
+    getInstrument(
+      'piano',
+    );
+    getInstrument(
+      'violin',
+    );
+    fakes.violin.ready();
+    expect(
+      fakes
+        .guitar
+        .inst
+        .dispose,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      fakes
+        .piano
+        .inst
+        .dispose,
+    ).not.toHaveBeenCalled();
+    expect(
+      fakes
+        .violin
+        .inst
+        .dispose,
+    ).not.toHaveBeenCalled();
+    expect(
+      fakes
+        .guitar
+        .inst
+        .state
+        .kind,
+    ).toBe(
+      'idle',
+    );
+  });
+
+  it("never disposes the running lesson's instrument, however old", () => {
+    beginSoundSession(
+      'piano',
+    );
+    fakes.piano.ready();
+    getInstrument(
+      'guitar',
+    );
+    fakes.guitar.ready();
+    getInstrument(
+      'violin',
+    );
+    fakes.violin.ready();
+    expect(
+      fakes
+        .piano
+        .inst
+        .dispose,
+    ).not.toHaveBeenCalled();
+    expect(
+      fakes
+        .guitar
+        .inst
+        .dispose,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(
+      instrumentFor(
+        'piano',
+        60,
+      ),
+    ).toEqual(
+      {
+        kind: 'instrument',
+        inst: fakes
+          .piano
+          .inst,
+      },
     );
   });
 });
