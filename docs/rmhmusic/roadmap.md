@@ -37,35 +37,46 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   `silent → listening → locked(target, cents)`, level (RMS 0.01) and clarity (0.9) floors, the
   median of the last 9 voiced frames, hysteresis (another target must be 0.4 semitone nearer, for
   4 frames once locked), in tune = ±5 cents held 300 ms (left at 8 cents), silent after a 400 ms
-  gap. Presets: any note (chromatic) and guitar strings (`STANDARD_TUNING`, the nearest string is
-  the target; "Tune up / Tune down / In tune"). Frames come from the mic adapter's own 25 ms poll
+  gap. Presets: any note (chromatic) and guitar strings (`STANDARD_TUNING`; the reading is folded
+  by octaves onto each string, so an octave of a string is that string with the folded cents;
+  "Tune up / Tune down / In tune", and "Not near a string" naming the note heard when more than
+  100 cents from every string). The median is the lower one (never the mean of two notes); the
+  advice has hysteresis at the band edge (5 in, 8 out); a reference tone mutes the reading until
+  it ends plus `ECHO_TAIL_MS` (400 ms). Frames come from the mic adapter's own 25 ms poll
   (`createMicInput({ onFrame })` → store `subscribeMicFrames`): no `requestAnimationFrame`, nothing
   while the mic is off or the page hidden. The dial (`components/rmhmusic/learn/tuner/TunePanel.tsx`)
   is a static SVG with one needle written straight to the DOM; React renders on a new note, advice
-  or phase only; the live region speaks the locked note (and "in tune") once per change. Reference
+  or phase only; the live region says the note and the advice ("A2: Tune up") once per change
+  and keeps its last words through silence. Reference
   tones (A4, or each guitar string) play through the learner's sound. Without the microphone the
   tab says it needs it and offers to switch.
 - **Note reader** (`ReadPanel.tsx`, placement `tuner/read.ts`): any input's note-on is written on
   the low card (piano treble from C4 / bass below; guitar an octave up with the small 8) with its
-  name and octave, the mic's cents and the last five notes; notes off the card are named and said
-  to be too high or too low.
+  name and octave, the mic's cents and the last five notes (kept across the tabs); notes off the
+  card are named and said to be too high or too low on their own staff. Guitar notes above written
+  C6 (sounding C♯5 and up, the high E string's 10th fret on) show "Too high": the card has two
+  ledger lines over the staff.
 - **Smoke (2026-11-15, Chromium only, dev server + throwaway Postgres, fake mic: an oscillator in a
   fake `getUserMedia` stream through the real YIN pipeline):** 440 Hz locks A4 at 0 cents (the
   rounded readout, so within ±0.5) and says In tune, steady for 2 s (one name, one advice, one
   live-region change); 435 Hz says Tune up at −20 cents; 446 Hz Tune down +23; guitar preset (the
-  default for a guitar learner): 108.73 Hz → A2 Tune up −20, 110 Hz → A2 In tune, 435 Hz → E4 Tune
-  down; ±10 cents 5 Hz vibrato on 440 Hz: A4 / In tune in all 160 samples over 4 s; hiding the page
+  default for a guitar learner): 108.73 Hz → A2 Tune up −20, 110 Hz → A2 In tune, 435 Hz → A2 Tune
+  up −20 (A4 folded onto the A string), 176.6 Hz → "F3", Not near a string; pressing Play A2 says
+  Listening… until the tone and its echo tail end, then A2 In tune again; ±10 cents 5 Hz vibrato on 440 Hz: A4 / In tune in all 160 samples over 4 s; hiding the page
   stops the mic and the reading; the reader writes MIDI C4, C♯4 (sharp), G2 (bass staff), F♯6
   (too high) and computer-key notes, and the mic's E4 at +7 cents; 390 and 1280 in Day and Night:
   no horizontal scroll, CLS 0 (fixed during the smoke: re-centred text lines), skeleton height
   equals loaded height, 0 rAF callbacks at rest and 0 while the mic is live; at 320 the six string
   buttons are 44 px and the home's Sight reading / Tuner links sit on one row apart from the Sound
   button. Screenshots looked at: notebook paper, no chips or badges.
+- **Review fixes (2026-11-15, after a read-only review):** string folding and "Not near a string",
+  the reference-tone mute, spoken advice, lower median, advice hysteresis, the reader's clef for
+  notes off the card, the reader's history across tabs, and a mic frame fan-out that isolates a
+  throwing listener; re-checked in Chromium at 390 (CLS 0, skeleton = loaded height, 0 rAF at rest).
 - **Not done:** Firefox / WebKit / iOS Safari, 200 % text, RTL with real strings (strings are
   English until `pnpm i18n:translate`), a real microphone and instrument (thresholds are reasoned
   and tested on synthetic tones only), alternate guitar tunings or other instruments' presets, the
-  reference tone is heard by an open microphone (no echo guard: the tuner reads the speaker while
-  it plays), the shared `<Tabs>` is 40 px tall without a coarse pointer (the primitive's own rule;
+  shared `<Tabs>` is 40 px tall without a coarse pointer (the primitive's own rule;
   44 px on touch), `pnpm typecheck` on a bigger machine (scoped `tsc` passed).
 
 ### 2.1 Realistic instrument sounds — shipped in #1651
@@ -278,5 +289,5 @@ bar only; for chords say once that the microphone hears one note at a time and n
 The sketch that was here is now code; read the files: `lib/rmhmusic/learn/tuner/{machine,read}.ts`,
 `lib/rmhmusic/learn/input/mic.ts` (`onFrame`), `lib/rmhmusic/learn/store.ts` (`subscribeMicFrames`),
 `components/rmhmusic/learn/tuner/`, `app/routes/rmhmusic/tuner.tsx`. Possible next steps: tuning
-presets beyond guitar standard (drop D, ukulele, violin), a "tune by ear" mode that mutes the
-reading while the reference tone sounds, and a calibration offset (A4 = 442 Hz).
+presets beyond guitar standard (drop D, ukulele, violin), a "tune by ear" mode (reading while the
+reference tone sounds, which the mute now prevents; it would need echo cancellation), and a calibration offset (A4 = 442 Hz).
