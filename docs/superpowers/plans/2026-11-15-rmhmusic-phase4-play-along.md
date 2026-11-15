@@ -27,8 +27,10 @@ Date: 2026-11-15. Roadmap: `docs/rmhmusic/roadmap.md` §3 (Phase 4). Branch
   position (frets 0–4) whenever it can be (B3 is the open B string, not the G string's 4th fret),
   and a note above open position takes its lowest fret too (A4 → 1st string, 5th fret). A note
   below the low E has no fingering (the catalogue test forbids one).
-- **Spelling.** Sharps in C and G, flats in F; an accidental is printed when the note differs from
-  the key signature and from an earlier note of the same letter in the bar (`songs/score.ts`).
+- **Spelling** is the notation's own (F♯ and G♭ stay as written); an accidental is printed when
+  the note differs from the key signature and from an earlier note of the same letter and octave in
+  the bar (`songs/score.ts`). The version follows the learner's instrument (piano or guitar); there
+  is no switch on the page.
 - **Two modes, one pure module of machines** (`songs/machine.ts`, `{ initial, step }`, strict
   island):
   - **Wait for me:** the cursor waits on each note until the right one is played. A note-on is
@@ -65,8 +67,9 @@ Date: 2026-11-15. Roadmap: `docs/rmhmusic/roadmap.md` §3 (Phase 4). Branch
   (`staff-card-layout.ts`). A pencil tick or a red-pencil cross marks each note once it has passed.
   All SVG text is `direction="ltr"`.
 - **Hear it** plays the four-bar phrase the cursor is in through the learner's sound
-  (`audio/sequence.ts` `playSequence`, extended to take a gap per note), disabled while a run is
-  under way. **Tempo**: Normal or Slower (two thirds), as the sanctioned `<Tabs>`.
+  (`audio/sequence.ts` `playSequence`, extended to take a gap and a hold per note), disabled during
+  a play-along run; in Wait for me it may be used mid-run, and notes are ignored while it (and its
+  echo tail, for the mic) sounds. **Tempo**: a "Slower" toggle (two thirds) beside it. 
 - **Routes:** `/rmhmusic/songs` (the list) and `/rmhmusic/songs/$songId` (play), inside the
   auth-gated `rmhmusic` layout, excluded from the sitemap (`'personal'` and the `$songId` dynamic
   route), both on the sign-in return-path allowlist (a song id of the catalogue's shape). A quiet
