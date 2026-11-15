@@ -9,7 +9,7 @@ import { signNetTicket } from '@features/rmhos/engine/net-ticket.server';
 import { UsageMeter } from '../meter';
 import { loadPolicy } from '../policy';
 import { createRelayServer } from '../relay';
-import { encodeData } from '../wisp';
+import { decodePacket, encodeData } from '../wisp';
 
 const SECRET = 'memory-test-secret';
 const policy = loadPolicy({
@@ -158,4 +158,127 @@ describe('the process-wide backstop', () => {
     expect(light.code()).toBeNull();
     light.ws.close();
   }, 20_000);
+});
+
+/** A guest that stops reading: its TCP receive side fills and the hub's send buffer grows. */
+const stopReading = (c: { ws: WebSocket }) =>
+  (c.ws as unknown as { _socket: net.Socket })._socket.pause();
+
+describe('the down direction (remote to a guest that does not read)', () => {
+  const MIB = 1024 * 1024;
+  const flood = (d: Duplex, bytes: number) => {
+    for (let i = 0; i < bytes / FRAME; i++) d.push(Buffer.alloc(FRAME, 5));
+  };
+
+  it('pauses the remotes once the WebSocket backlog passes its mark: far less is pulled than offered', async () => {
+    const { sockets, connect } = stalledPeers();
+    const port = await start({ connect });
+    const c = await login(port, 'down-1');
+    const streams = 16;
+    for (let id = 1; id <= streams; id++) c.ws.send(connectFrame(id));
+    await until(() => sockets.length === streams);
+    stopReading(c);
+    const offered = streams * 2 * MIB;
+    for (const d of sockets) flood(d, 2 * MIB);
+    await new Promise((r) => setTimeout(r, 600));
+    const stillWaiting = sockets.reduce((n, d) => n + d.readableLength, 0);
+    const pulled = offered - stillWaiting;
+    // The hub pulls only what the kernel buffers absorb (outside the count) plus the 1 MiB
+    // WebSocket mark and one chunk per stream; it does not drain 32 MiB into memory.
+    expect(pulled).toBeLessThan(24 * MIB);
+    expect(stillWaiting).toBeGreaterThan(8 * MIB);
+    expect(c.code()).toBeNull();
+  }, 20_000);
+
+  it('trips the process backstop for floods to several non-reading guests and sheds some, not all', async () => {
+    const { sockets, connect } = stalledPeers();
+    const port = await start({ connect, maxTotalBuffered: 16 * MIB });
+    const clients = [];
+    for (const u of ['flood-a', 'flood-b', 'flood-c']) {
+      const c = await login(port, u);
+      c.ws.send(connectFrame(1));
+      clients.push(c);
+    }
+    await until(() => sockets.length === 3);
+    clients.forEach(stopReading);
+    for (const d of sockets) flood(d, 12 * MIB);
+    await until(() => sockets.some((d) => d.destroyed), 8000);
+    await new Promise((r) => setTimeout(r, 600));
+    const shed = sockets.filter((d) => d.destroyed).length;
+    expect(shed).toBeGreaterThanOrEqual(1);
+    expect(shed).toBeLessThan(3);
+  }, 30_000);
+});
+
+describe('a connection that has ended', () => {
+  it('opens nothing for a CONNECT that arrives during the close handshake', async () => {
+    const { sockets, connect } = stalledPeers();
+    const port = await start({ connect, maxTickets: 1 });
+    const a = await login(port, 'late-a');
+    stopReading(a); // a never sees the server's close frame, so it still thinks it is open
+    await login(port, 'late-b'); // takes the only ticket slot: a's ticket is evicted, a is shut down
+    await new Promise((r) => setTimeout(r, 100));
+    a.ws.send(connectFrame(1));
+    await new Promise((r) => setTimeout(r, 300));
+    expect(sockets.filter((d) => !d.destroyed)).toHaveLength(0);
+  });
+});
+
+describe('capped writes', () => {
+  it('reassemble in order, byte for byte, across many split writes to a slow upstream', async () => {
+    const received: Buffer[] = [];
+    const d = new Duplex({
+      read() {},
+      write(chunk: Buffer, _e, cb) {
+        received.push(Buffer.from(chunk));
+        setTimeout(cb, 1); // drains slowly
+      },
+    });
+    (d as unknown as { setTimeout: () => Duplex }).setTimeout = () => d;
+    const port = await start({ connect: (() => d) as unknown as typeof net.connect });
+    const ws = new WebSocket(
+      `ws://127.0.0.1:${port}/rmhos-net/?ticket=${encodeURIComponent(signNetTicket('exact', SECRET))}`,
+    );
+    clients.push(ws);
+    const packets: NonNullable<ReturnType<typeof decodePacket>>[] = [];
+    ws.on('message', (m: Buffer) => {
+      const p = decodePacket(new Uint8Array(m.buffer, m.byteOffset, m.length));
+      if (p) packets.push(p);
+    });
+    await new Promise<void>((r) => ws.once('open', () => r()));
+    ws.send(connectFrame(1));
+    // 4.2 MiB in 6000-byte frames (the first 128 stay under the 1 MiB stream cap), sent only while the hub has granted credit (as v86 does).
+    const size = 6000;
+    const frames = 700;
+    let credit = 128;
+    let seen = 0;
+    let sent = 0;
+    const byteAt = (i: number) => (i * 31 + 7) & 255;
+    const end = Date.now() + 25_000;
+    while (sent < frames) {
+      for (; seen < packets.length; seen++) {
+        const p = packets[seen] as { type: string; streamId: number; bufferRemaining?: number };
+        if (p.type === 'continue' && p.streamId === 1) credit = p.bufferRemaining ?? credit;
+        if (p.type === 'close' && p.streamId === 1) throw new Error('hub closed the stream');
+      }
+      if (Date.now() > end) throw new Error('transfer stalled');
+      if (credit <= 0) {
+        await new Promise((r) => setTimeout(r, 2));
+        continue;
+      }
+      const buf = Buffer.alloc(size);
+      for (let i = 0; i < size; i++) buf[i] = byteAt(sent * size + i);
+      ws.send(encodeData(1, buf));
+      credit -= 1;
+      sent += 1;
+    }
+    await until(() => received.reduce((n, c) => n + c.length, 0) >= frames * size, 20_000);
+    const all = Buffer.concat(received);
+    expect(all.length).toBe(frames * size);
+    for (let i = 0; i < all.length; i++) {
+      if (all[i] !== byteAt(i)) throw new Error(`byte ${i} differs`);
+    }
+    // the cap really did split frames across writes
+    expect(received.some((c) => c.length !== size)).toBe(true);
+  }, 40_000);
 });

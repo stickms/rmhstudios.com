@@ -335,9 +335,9 @@ const ALLOWED: Readonly<
       },
     'server/rmhos-net/relay.ts':
       {
-        count: 1,
+        count: 2,
         reason:
-          'per-connection WebSocket liveness ping on the sandboxed relay hub',
+          'per-connection WebSocket liveness ping, and the 250 ms process-wide memory backstop, on the sandboxed relay hub',
       },
     'server/rmhos-net/index.ts':
       {

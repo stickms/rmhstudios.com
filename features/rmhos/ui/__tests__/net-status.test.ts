@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { initialTracker, statusUrl, trackNet, type NetSample } from '../net-status';
+import {
+  createPollGate,
+  initialTracker,
+  statusSample,
+  statusUrl,
+  trackNet,
+  type NetSample,
+} from '../net-status';
 
 function run(samples: NetSample[]) {
   let tracker = initialTracker;
@@ -51,5 +58,38 @@ describe('statusUrl', () => {
     expect(statusUrl('ws://localhost:7009/rmhos-net/?ticket=old', 'x')).toBe(
       'http://localhost:7009/rmhos-net/status?ticket=x',
     );
+  });
+});
+
+describe('statusSample', () => {
+  it('treats 429 as no information, so three in a row never flip the toolbar', () => {
+    expect(statusSample(429, null)).toBeNull();
+    let state = trackNet(initialTracker, up(0));
+    for (let i = 0; i < 5; i++) {
+      const sample = statusSample(429, null);
+      if (sample) state = trackNet(state.tracker, { at: i, result: sample });
+    }
+    expect(state.state).toBe('on');
+  });
+
+  it('maps the other replies', () => {
+    expect(statusSample(200, { connected: true })).toEqual({ connected: true });
+    expect(statusSample(200, { connected: false })).toEqual({ connected: false });
+    expect(statusSample(401, null)).toBe('ended');
+    expect(statusSample(503, null)).toBe('failed');
+    expect(statusSample(502, null)).toBe('failed');
+  });
+});
+
+describe('createPollGate', () => {
+  it('lets one visibility poll through per 5 s', () => {
+    const gate = createPollGate(5000);
+    expect([gate(0), gate(1000), gate(4999), gate(5000), gate(5001)]).toEqual([
+      true,
+      false,
+      false,
+      true,
+      false,
+    ]);
   });
 });

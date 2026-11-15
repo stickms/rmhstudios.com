@@ -53,3 +53,27 @@ export function statusUrl(relayUrl: string, ticket: string): string {
   u.searchParams.set('ticket', ticket);
   return u.toString();
 }
+
+/**
+ * What a status reply means. `null` is "no information" and changes nothing: a 429 (the hub's
+ * per-user limit) says nothing about the connection, so it must not count as a failed poll.
+ */
+export function statusSample(
+  status: number,
+  body: { connected?: unknown } | null,
+): { connected: boolean } | 'failed' | 'ended' | null {
+  if (status === 429) return null;
+  if (status === 401) return 'ended';
+  if (status >= 200 && status < 300) return { connected: body?.connected === true };
+  return 'failed';
+}
+
+/** Lets a poll through at most once per `minGapMs` (the visibility-triggered ones). */
+export function createPollGate(minGapMs: number) {
+  let last = -Infinity;
+  return (now: number): boolean => {
+    if (now - last < minGapMs) return false;
+    last = now;
+    return true;
+  };
+}

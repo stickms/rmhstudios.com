@@ -33,7 +33,14 @@ import { holdHomeLock } from '../engine/tab-lock';
 import { createVm } from '../engine/vm';
 import type { VmHandle, VmPhase, VmPhaseDetail } from '../engine/vm-types';
 import { rmhosSessionQuery } from './rmhos.queries';
-import { initialTracker, POLL_MS, statusUrl, trackNet } from './net-status';
+import {
+  createPollGate,
+  initialTracker,
+  POLL_MS,
+  statusSample,
+  statusUrl,
+  trackNet,
+} from './net-status';
 
 /** The machine's phases, plus `session` while the guest is being told who is signing in. */
 export type RmhosPhase = VmPhase | 'session';
@@ -304,19 +311,16 @@ export function useRmhosMachine(
     const poll = async () => {
       const n = tickets.current.current;
       if (!n || stopped || document.visibilityState !== 'visible') return;
-      let result: { connected: boolean } | 'failed' | 'ended' = 'failed';
+      let result: ReturnType<typeof statusSample> = 'failed';
       try {
         const r = await fetch(statusUrl(n.url, n.ticket), { cache: 'no-store' });
-        if (r.ok) {
-          const body = (await r.json()) as { connected?: unknown };
-          result = { connected: body.connected === true };
-        } else if (r.status === 401) {
-          result = 'ended'; // the hub dropped this ticket; v86's reconnects will be refused too
-        }
+        const body = r.ok ? ((await r.json()) as { connected?: unknown }) : null;
+        // 401: the hub dropped this ticket. 429: no information, nothing changes.
+        result = statusSample(r.status, body);
       } catch {
         // counted as a failed poll
       }
-      if (stopped) return;
+      if (stopped || result === null) return;
       const next = trackNet(tracker, { at: Date.now(), result });
       tracker = next.tracker;
       setNetState(next.state);
@@ -328,7 +332,11 @@ export function useRmhosMachine(
     };
     void poll();
     const timer: ReturnType<typeof setInterval> = setInterval(() => void poll(), POLL_MS);
-    const onVisible = () => void poll();
+    // Visibility changes can fire in bursts: at most one poll per 5 s from them.
+    const gate = createPollGate(5000);
+    const onVisible = () => {
+      if (gate(Date.now())) void poll();
+    };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
       stopped = true;

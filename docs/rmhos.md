@@ -97,13 +97,21 @@ visitor (no valid ticket, no socket). For a signed-in user:
   respects it is paused).
 - **Memory bounds** (the container has 256 MB and restart policy `no`): the largest Wisp frame accepted is 64 KiB (v86
   sends frames of at most the guest MTU, 1500 bytes; larger ones close the socket with 1009). A connection holds at most
-  about **17 MiB**: the accounted guest-to-remote queue (1 MiB per stream, 8 MiB per connection, then the connection is
-  closed with 4008) + up to 64 KiB in each of 64 upstream socket buffers (a write never takes a buffer past that mark)
-  + one 64 KiB read per stream waiting for the WebSocket + the WebSocket's 1 MiB send buffer. A process-wide backstop
-  closes the heaviest connection (4008) when the accounted queues of all connections together pass 96 MiB.
-- **Switching it off** needs no deploy of code: set `RMHOS_NET_ENABLED=0` (or remove `RMHOS_NET_TICKET_SECRET`) in the
-  environment and restart the web tier and the hub. `docker compose --profile rmhos-net stop rmhos-net` stops only
-  the hub (the toolbar then shows "Network unavailable"; the machine keeps working).
+  about **21 MiB**. Guest to remote: the accounted queue (1 MiB per stream, 8 MiB per connection, then the connection is
+  closed with 4008) + up to 64 KiB in each of 64 upstream socket write buffers (a write never takes a buffer past that
+  mark). Remote to guest: one 64 KiB chunk per stream waiting for the WebSocket + what a paused upstream socket still
+  holds readable (about one more 64 KiB per stream) + the WebSocket's send buffer (1 MiB mark: when
+  `ws.bufferedAmount` is over it the connection's upstream sockets are paused and retried every 100 ms; that already
+  existed). Kernel socket buffers are outside the count.
+  **Process-wide backstop:** every 250 ms (and on data in either direction, at most every 50 ms) the hub sums all of
+  that for every live connection, and while the total is over **64 MiB** it closes one connection with 4008: the
+  heaviest, but when several are within 10% of the heaviest, the one whose own total grew most recently (so an
+  innocent bulk transfer is not the default victim of many small attackers). Arithmetic: the container has 256 MiB
+  (`mem_limit`) and a 192 MiB V8 heap cap, but these buffers are Buffers, outside the heap, so they count against the
+  256 MiB directly; Node itself takes about 60 MiB, the cap takes 64, and the remaining ~130 MiB is kernel socket memory
+  charged to the cgroup, fragmentation and what can arrive between two checks (a user is metered at 2 MiB/s by
+  default). 64 MiB is also three worst-case connections.
+- **Switching it off:** see [Switch the relay off now](#switch-the-relay-off-now).
 
 ## Switch the relay off now
 
@@ -111,15 +119,19 @@ Stop the hub (sockets close at once; the toolbar shows "Network unavailable"; ma
 recovery timer if you installed it, or it would start the hub again:
 
 ```bash
-cd /home/user/rmhstudios.com            # the checkout deploy.sh runs from
+cd /home/rmhstudios/rmhstudios.com      # the checkout deploy.sh runs from (where the unit files point)
 sudo systemctl disable --now rmhos-net-recover.timer 2>/dev/null || true
 docker compose -p rmhstudios-prod --env-file .env.production --profile rmhos-net stop rmhos-net
 ```
 
 To keep it off across deploys and make the page say "Network off" without ever opening a socket, also set
-`RMHOS_NET_ENABLED=0` (or delete `RMHOS_NET_TICKET_SECRET`) in `.env.production` and restart the web tier
-(`docker compose -p rmhstudios-prod --env-file .env.production up -d web`, or the next deploy). A deploy does not start
-the hub while `RMHOS_NET_TICKET_SECRET` is missing; with only `RMHOS_NET_ENABLED=0` the hub starts but refuses every
+`RMHOS_NET_ENABLED=0` (or delete `RMHOS_NET_TICKET_SECRET`) in `.env.production` and let the **next deploy** pick it up.
+Do not run `docker compose ... up -d web` for this: the web tier is deliberately outside compose (`deploy.sh` brings
+everything up with `--scale web=0` and deploys web blue/green through `deploy/hotswap-web.sh`), and `up -d web`
+recreates the container in place, the multi-second gap behind an earlier Cloudflare 520. Hand-running the hotswap
+script is not documented here because it needs the environment `deploy.sh` exports. Until that deploy, with the hub
+stopped the page still offers networking and the toolbar shows "Network unavailable". A deploy does not start the hub
+while `RMHOS_NET_TICKET_SECRET` is missing; with only `RMHOS_NET_ENABLED=0` it starts the hub, which refuses every
 connection with 503.
 
 ## Ticket lifecycle
@@ -166,7 +178,8 @@ fail DNS after a minute and could never reconnect. The hub therefore keeps a per
 - `GET /rmhos-net/status?ticket=…` returns `{ connected, streams }` for that ticket's own user (same ticket check as
   DoH, but it does not refresh the ticket) and is limited to 12 requests per user per minute (429). The page polls it
   once when the desktop is ready and every 15 s while the tab is visible to drive the toolbar: `on`, `connecting`, or
-  `error` (three failed polls in a row, 30 s disconnected, or an immediate 401). With networking disabled the toolbar
+  `error` (three failed polls in a row, 30 s disconnected, or an immediate 401). A 429 counts as no information and
+  visibility changes trigger at most one extra poll per 5 s. With networking disabled the toolbar
   says "Network off" and nothing is polled or opened.
 - DoH is limited by: the 16 queries in flight per user, a budget of 600 queries per user per minute (429), the same
   daily and per-second byte meter as relayed streams, 4 KiB per query, one fixed upstream.
@@ -224,7 +237,7 @@ The hub dials the internet for strangers, so it is isolated from the rest of the
 
 Traffic leaves from the VPS's own IP address, so abuse complaints and IP reputation land on us. The mitigations are the
 mail-port block, the byte and rate caps, the per-day budget and the stream log. The hub writes one JSON line on stdout
-per event (`docker logs <project>-rmhos-net`):
+per event (`docker compose -p rmhstudios-prod --env-file .env.production --profile rmhos-net logs rmhos-net`, run in the checkout):
 
 - `rmhos-net.session` `{ userId, state: "open" | "closed" }` for each relay socket.
 - `rmhos-net.stream` `{ userId, host, port, up, down, ms, reason }` for each stream when it ends. `host` is the address

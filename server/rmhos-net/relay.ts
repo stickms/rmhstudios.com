@@ -42,7 +42,7 @@ export interface RelayOptions {
   pingMs?: number;
   /** Test seam: size of the ticket book (default 10 000). */
   maxTickets?: number;
-  /** Test seam: process-wide cap on accounted queued bytes (default 96 MiB). */
+  /** Test seam: process-wide cap on buffered bytes in both directions (default 64 MiB). */
   maxTotalBuffered?: number;
   /** Status requests allowed per user per minute (default 12), DoH queries (default 600). */
   statusPerMinute?: number;
@@ -74,13 +74,27 @@ const MAX_CONN_QUEUE = 8 * 1024 * 1024;
 // MSS = MTU - 40), so a Wisp DATA frame is about 1.5 KB. 64 KiB of payload (plus the 5-byte
 // header) leaves room for a guest that raises its own MTU and is the largest frame accepted.
 const MAX_FRAME_BYTES = 64 * 1024 + 16;
-// Worst case held per connection, all bounded: the accounted guest-to-remote queue
-// (MAX_CONN_QUEUE, 8 MiB) + at most UPSTREAM_HIGH_WATER in each of 64 upstream socket buffers
-// (4 MiB; a write never takes the buffer past the mark) + remote-to-guest chunks waiting for
-// the WebSocket (at most one 64 KiB read per stream, 4 MiB) + the WebSocket's own send buffer
-// (MAX_WS_BUFFER, 1 MiB): about 17 MiB. The process-wide backstop below sheds the heaviest
-// connection when the accounted queues of all connections pass MAX_TOTAL_BUFFERED.
-const MAX_TOTAL_BUFFERED = 96 * 1024 * 1024;
+// What one connection can hold, every part bounded:
+//   guest to remote: the accounted queue (MAX_CONN_QUEUE, 8 MiB)
+//                    + at most UPSTREAM_HIGH_WATER in each of 64 upstream socket write buffers
+//                      (4 MiB; a write never takes a buffer past the mark);
+//   remote to guest: one 64 KiB chunk per stream waiting for the WebSocket (4 MiB)
+//                    + what a paused upstream socket still holds readable (about one more 64 KiB
+//                      per stream, 4 MiB; pumpDown pauses the socket when ws.bufferedAmount is
+//                      over MAX_WS_BUFFER)
+//                    + the WebSocket's own send buffer (MAX_WS_BUFFER, 1 MiB, overshot by at most
+//                      one chunk).
+// That is about 21 MiB per connection. Kernel socket buffers are outside the count.
+//
+// Process-wide backstop. The container has 256 MiB (mem_limit) and a 192 MiB V8 heap cap, but the
+// buffers above are Buffers, outside the heap, so they count against the 256 MiB directly. Budget:
+// about 60 MiB for Node itself (code, heap in normal use, ws, the stream objects), at most
+// MAX_TOTAL_BUFFERED = 64 MiB counted here, and the rest (about 130 MiB) for kernel socket
+// memory charged to the cgroup, allocator fragmentation and what can accumulate between two
+// 250 ms checks (a user is metered at 2 MiB/s by default, so a few MiB for a few dozen accounts).
+// 64 MiB is also three worst-case connections: one honest bulk transfer never gets near it.
+const MAX_TOTAL_BUFFERED = 64 * 1024 * 1024;
+const BACKSTOP_MS = 250;
 const PING_MS = 30_000;
 const SUPERSEDED = 4000;
 /** The ticket behind this socket is no longer valid (12 h, idle, evicted). */
@@ -195,14 +209,12 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
   };
   const pingMs = opts.pingMs ?? PING_MS;
   const maxTotal = opts.maxTotalBuffered ?? MAX_TOTAL_BUFFERED;
-  /** Accounted guest-to-remote bytes queued across every connection of this server. */
-  let totalQueued = 0;
   const tickets = new TicketBook(secret, now, {
     ...(opts.maxTickets !== undefined ? { maxTickets: opts.maxTickets } : {}),
     // A ticket that stops being valid takes the live socket it opened with it.
     onInvalid: (userId) => sessions.get(userId)?.shutdown(EXPIRED),
   });
-  /** Sliding one-minute window per user; counted whether or not the request is then served. */
+  /** Sliding one-minute window per user; only requests that were allowed are counted. */
   function minuteLimiter(max: number) {
     const hits = new Map<string, number[]>();
     return {
@@ -250,8 +262,10 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     {
       shutdown: (code: number) => void;
       streamCount: () => number;
-      /** Accounted queue plus what sits in upstream socket buffers, for choosing whom to shed. */
-      buffered: () => number;
+      /** Bytes this connection holds in both directions; also records whether it grew. */
+      measure: (t: number) => number;
+      /** When `measure` last saw this connection's total go up. */
+      lastGrowth: () => number;
     }
   >();
   const lookups = new Map<string, number>();
@@ -355,19 +369,35 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     wss.handleUpgrade(req, socket, head, (ws) => session(ws, verdict.userId));
   });
 
-  /** Process-wide backstop: over the cap, close the connection holding the most. */
-  function shedHeaviest(): void {
-    let heaviest: { shutdown: (code: number) => void } | null = null;
-    let most = -1;
-    for (const h of sessions.values()) {
-      const n = h.buffered();
-      if (n > most) {
-        most = n;
-        heaviest = h;
-      }
+  /**
+   * Process-wide backstop. Measures every live connection in both directions (see
+   * `measure` in session) and, while the total is over the cap, closes one connection with 4008.
+   * Victim rule: the heaviest by that measure; but when several are within 10% of the heaviest,
+   * the one whose own total grew most recently, so one innocent bulk uploader is not the default
+   * victim of many small attackers who keep growing. Cheap enough to run on every DATA event
+   * (rate-limited to once per 50 ms) and on a 250 ms timer, which also covers a flood nobody
+   * sends frames into.
+   */
+  let lastCheck = 0;
+  function checkBackstop(force = false): void {
+    const t = now();
+    if (!force && t - lastCheck < 50) return;
+    lastCheck = t;
+    const live = [...sessions.values()].map((h) => ({ h, n: h.measure(t) }));
+    let total = live.reduce((sum, x) => sum + x.n, 0);
+    while (total > maxTotal && live.length > 0) {
+      const most = Math.max(...live.map((x) => x.n));
+      const near = live.filter((x) => x.n >= most * 0.9);
+      near.sort((a, b) => b.h.lastGrowth() - a.h.lastGrowth() || b.n - a.n);
+      const victim = near[0] as (typeof live)[number];
+      victim.h.shutdown(OVER_QUEUE);
+      total -= victim.n;
+      live.splice(live.indexOf(victim), 1);
     }
-    heaviest?.shutdown(OVER_QUEUE);
   }
+  // One timer per server, unref'd, stopped when the server closes.
+  const backstopTimer = setInterval(() => checkBackstop(true), BACKSTOP_MS);
+  backstopTimer.unref();
 
   function session(ws: WebSocket, userId: string): void {
     const streams = new Map<number, Stream>();
@@ -382,7 +412,6 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     function dequeue(s: Stream, bytes: number): void {
       s.queuedBytes -= bytes;
       connQueued -= bytes;
-      totalQueued -= bytes;
     }
 
     /** Remove a stream; the guest is told only when `notify` is set. Never sends DATA afterwards. */
@@ -597,6 +626,7 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
         tickets.touch(userId);
         s.downQueue.push(chunk);
         pumpDown(s);
+        checkBackstop();
       });
       sock.on('end', () => {
         s.remoteEnded = true;
@@ -612,6 +642,8 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     }
 
     ws.on('message', (data, isBinary) => {
+      // A socket being shed or expired may still deliver frames during the close handshake.
+      if (over) return;
       tickets.touch(userId);
       if (!isBinary || !Buffer.isBuffer(data)) return;
       const pkt = decodePacket(new Uint8Array(data.buffer, data.byteOffset, data.length));
@@ -634,11 +666,8 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
           if (connQueued + buf.length > MAX_CONN_QUEUE) return handle.shutdown(OVER_QUEUE);
           s.queuedBytes += buf.length;
           connQueued += buf.length;
-          totalQueued += buf.length;
-          if (totalQueued > maxTotal) {
-            shedHeaviest();
-            if (over) return;
-          }
+          checkBackstop();
+          if (over) return;
           s.maxPacket = Math.max(s.maxPacket, buf.length);
           s.receivedSinceGrant += 1;
           if (s.queuedBytes > CREDIT_HOLD_HIGH) s.creditHeld = true;
@@ -662,21 +691,34 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
     /** The close code the peer sent (1006 when the socket just went away), for the session log. */
     let peerCode = 1006;
     function teardown(): void {
-      if (over) return;
-      over = true;
-      log({ evt: 'rmhos-net.session', userId, state: 'closed', code: peerCode });
-      clearInterval(ping);
+      if (!over) {
+        over = true;
+        log({ evt: 'rmhos-net.session', userId, state: 'closed', code: peerCode });
+        clearInterval(ping);
+        if (sessions.get(userId) === handle) sessions.delete(userId);
+      }
+      // Idempotent but complete: also closes anything opened late (an open() that was awaiting
+      // its lookup when the connection ended is dropped by its own streams.get check).
       closeAll(CLOSE_REASON.voluntary, false);
-      if (sessions.get(userId) === handle) sessions.delete(userId);
     }
 
+    let lastMeasured = 0;
+    let lastGrowthAt = 0;
     const handle = {
       streamCount: () => streams.size,
-      buffered: () => {
-        let n = connQueued;
-        for (const st of streams.values()) n += st.socket?.writableLength ?? 0;
+      measure: (t: number) => {
+        // up: the accounted queue + upstream write buffers; down: chunks held for the WebSocket,
+        // what paused upstream sockets still hold readable, and the WebSocket's send buffer.
+        let n = connQueued + ws.bufferedAmount;
+        for (const st of streams.values()) {
+          n += (st.socket?.writableLength ?? 0) + (st.socket?.readableLength ?? 0);
+          for (const c of st.downQueue) n += c.length;
+        }
+        if (n > lastMeasured) lastGrowthAt = t;
+        lastMeasured = n;
         return n;
       },
+      lastGrowth: () => lastGrowthAt,
       shutdown(code: number): void {
         teardown();
         ws.close(code);
@@ -713,6 +755,7 @@ export function createRelayServer(opts: RelayOptions): RelayServer {
   }
 
   server.on('close', () => {
+    clearInterval(backstopTimer);
     for (const h of sessions.values()) h.shutdown(1001);
     wss.close();
   });
