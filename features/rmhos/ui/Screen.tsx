@@ -38,7 +38,8 @@ const Screen = forwardRef<HTMLDivElement, Props>(function Screen(
     const el = e.currentTarget;
     el.focus();
     onInput();
-    if (document.fullscreenElement === el && !document.pointerLockElement)
+    // Fullscreen is on the app container (toolbar, dialogs and the screen together).
+    if (document.fullscreenElement?.contains(el) && !document.pointerLockElement)
       void Promise.resolve(el.requestPointerLock?.()).catch(() => {});
   };
   return (
@@ -51,7 +52,11 @@ const Screen = forwardRef<HTMLDivElement, Props>(function Screen(
         aria-label={label}
         aria-describedby={hintId}
         onFocus={() => onCapture(true)}
-        onBlur={() => onCapture(false)}
+        onBlur={(e) => {
+          // Leaving the screen gives the pointer back too.
+          if (document.pointerLockElement === e.currentTarget) document.exitPointerLock?.();
+          onCapture(false);
+        }}
         onKeyDownCapture={keyDown}
         onPointerDown={press}
       >

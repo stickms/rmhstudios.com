@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AgentError } from '../agent';
 import { SHARE_ARCHIVE_PATH } from '../agent-protocol';
-import { HomeSync } from '../home-sync';
+import { BackupError, HomeSync } from '../home-sync';
 import { memoryHomeStore, type CachedHome, type HomeStore } from '../home-store';
 
 async function gzip(data: Uint8Array): Promise<Uint8Array> {
@@ -298,6 +298,131 @@ describe('memory home store', () => {
       const live = await sync.exportLive();
       expect(Array.from(await gunzip(live))).toEqual(Array.from(fakeTar(6)));
       expect(await store.get('u1')).toEqual(theirs);
+    });
+  });
+
+  describe('replacing the home with a backup', () => {
+    it('a put that fails un-suspends, keeps the old archive and reports why', async () => {
+      const store = memoryHomeStore();
+      const quota = new Error('full');
+      quota.name = 'QuotaExceededError';
+      let failNext = false;
+      const failing: HomeStore = {
+        ...store,
+        put: async (id, h) => {
+          if (failNext && id === 'u1') throw quota;
+          return store.put(id, h);
+        },
+      };
+      const { sync, agent } = setup({ store: failing, tars: [fakeTar(2)] });
+      const old = { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 5 };
+      await store.put('u1', old);
+      await sync.prepare();
+      failNext = true;
+      await expect(sync.importArchive(await gzip(fakeTar(8)))).rejects.toMatchObject({
+        name: 'BackupError',
+        code: 'storage-full',
+      });
+      expect(await store.get('u1')).toEqual(old);
+      failNext = false;
+      // Saving works again: the import did not happen.
+      expect((await sync.save()).status).toBe('saved');
+      expect(agent.save).toHaveBeenCalled();
+    });
+
+    it('any other put failure is storage_error; a bad file is invalid and touches nothing', async () => {
+      const store = memoryHomeStore();
+      const broken: HomeStore = {
+        ...store,
+        put: async () => {
+          throw new Error('boom');
+        },
+      };
+      const a = setup({ store: broken });
+      await expect(a.sync.importArchive(await gzip(fakeTar(8)))).rejects.toMatchObject({
+        code: 'storage_error',
+      });
+      const b = setup();
+      await b.store.put('u1', { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 5 });
+      await expect(b.sync.importArchive(new Uint8Array([1, 2]))).rejects.toBeInstanceOf(BackupError);
+      await expect(b.sync.importArchive(new Uint8Array([1, 2]))).rejects.toMatchObject({
+        code: 'invalid',
+      });
+      expect((await b.store.get('u1'))!.sha256).toBe('old');
+      expect(await b.store.get('u1:replaced')).toBeNull();
+    });
+
+    it('keeps the home it replaces, once, under :replaced, and can put it back', async () => {
+      const { sync, store } = setup();
+      const first = { archive: await gzip(fakeTar(1)), sha256: 'first', savedAt: 1 };
+      await store.put('u1', first);
+      await sync.prepare();
+      expect(await sync.hasReplaced()).toBe(false);
+      const backup = await gzip(fakeTar(8));
+      await sync.importArchive(backup);
+      expect(await store.get('u1:replaced')).toEqual(first);
+      expect(await sync.hasReplaced()).toBe(true);
+      // The backup fails RESTORE in the guest: put the previous files back.
+      await sync.putPreviousBack();
+      expect(await store.get('u1')).toEqual(first);
+      expect(await sync.hasReplaced()).toBe(false);
+      // The backup that failed is kept as the damaged copy.
+      expect((await store.get('u1:damaged'))!.archive).toEqual(backup);
+    });
+
+    it('a second import replaces the :replaced generation (one generation only)', async () => {
+      const { sync, store } = setup();
+      await sync.prepare();
+      const a = await gzip(fakeTar(2));
+      await sync.importArchive(a); // nothing before it: no :replaced
+      expect(await store.get('u1:replaced')).toBeNull();
+      const { sync: sync2 } = { sync: new HomeSync({ userId: 'u1', vm: {} as never, agent: {} as never, store }) };
+      await sync2.importArchive(await gzip(fakeTar(3)));
+      expect((await store.get('u1:replaced'))!.archive).toEqual(a);
+    });
+
+    it('a damaged entry replaced by a backup goes to :damaged, not :replaced', async () => {
+      const { sync, store } = setup();
+      const damaged = { archive: new Uint8Array([9, 9, 9]), sha256: 'bad', savedAt: 1 };
+      await store.put('u1', damaged);
+      expect(await sync.prepare()).toBe('corrupt');
+      await sync.importArchive(await gzip(fakeTar(4)));
+      expect(await store.get('u1:replaced')).toBeNull();
+      expect(await store.get('u1:damaged')).toEqual(damaged);
+    });
+
+    it(':damaged keeps the FIRST damaged copy', async () => {
+      const { sync, store } = setup();
+      const first = { archive: new Uint8Array([9, 9, 9]), sha256: 'first', savedAt: 1 };
+      const second = { archive: new Uint8Array([8, 8, 8]), sha256: 'second', savedAt: 2 };
+      await store.put('u1', first);
+      await sync.discardDamaged();
+      await store.put('u1', second);
+      await sync.discardDamaged();
+      expect(await store.get('u1:damaged')).toEqual(first);
+      expect(await store.get('u1')).toBeNull();
+    });
+  });
+
+  describe('a suspended or disposed instance never writes', () => {
+    it('suspend() during a save: the save does not put', async () => {
+      const { sync, store, agent } = setup({ tars: [fakeTar(2)] });
+      await sync.prepare();
+      let release!: () => void;
+      agent.save.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            release = () => resolve({ bytes: 1536 });
+          }),
+      );
+      const saving = sync.save();
+      sync.suspend();
+      // The tar arrives in the share after the guest answers.
+      const share = (sync as unknown as { deps: { vm: { writeShareFile: (p: string, d: Uint8Array) => Promise<void> } } }).deps.vm;
+      await share.writeShareFile(SHARE_ARCHIVE_PATH, fakeTar(2));
+      release();
+      expect(await saving).toEqual({ status: 'failed', code: 'suspended' });
+      expect(await store.get('u1')).toBeNull();
     });
   });
 });

@@ -10,13 +10,14 @@ import { useTranslation } from 'react-i18next';
 import { readString, writeString } from '@/lib/core/persist';
 import { toast } from '@/lib/shared/app-toast';
 import { Button } from '@/components/ui/button';
-import { checkBackup } from '../engine/home-sync';
+import { BackupError, checkBackup } from '../engine/home-sync';
 import AboutDialog from './AboutDialog';
 import { backupBytes } from './backup';
 import BootScreen from './BootScreen';
 import ConfirmBox from './ConfirmBox';
-import { BACKUP_FILE, DAMAGED_FILE, downloadBytes } from './download';
+import { BACKUP_FILE, DAMAGED_FILE, downloadBytes, LAST_SAVED_FILE } from './download';
 import Notices from './Notices';
+import { reportSave } from './save-messages';
 import Screen from './Screen';
 import Toolbar from './Toolbar';
 import { toolbarState, type NetState } from './toolbar-state';
@@ -47,35 +48,47 @@ export default function RmhosApp() {
   const [confirmRestart, setConfirmRestart] = useState(false);
   const [pendingBackup, setPendingBackup] = useState<Uint8Array | null>(null);
   const [busy, setBusy] = useState(false);
+  /** The last saved copy offered for download after the current files could not be saved. */
+  const [staleOffer, setStaleOffer] = useState<{ bytes: Uint8Array; savedAt: number } | null>(
+    null,
+  );
+  /** The guest screen has focus: keys go to it. */
+  const [captured, setCaptured] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [fullscreenAvailable, setFullscreenAvailable] = useState(false);
   const [noticeOpen, setNoticeOpen] = useState(false);
 
+  // Fullscreen is the whole app (toolbar, screen, dialogs, toasts, boot screens), not just the
+  // screen: everything that must be shown lives inside the element that is fullscreen.
   useEffect(() => {
     setFullscreenAvailable(!!document.fullscreenEnabled);
-    const onChange = () => setFullscreen(document.fullscreenElement === screenRef.current);
+    const onChange = () => setFullscreen(!!container && document.fullscreenElement === container);
+    onChange();
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
-  }, []);
+  }, [container]);
 
   // The one-time "where the files are" notice, once the desktop is up.
   useEffect(() => {
     if (session.desktopReady && readString(NOTICE_KEY) !== '1') setNoticeOpen(true);
   }, [session.desktopReady]);
 
-  // A failed save is said out loud once per attempt; the toolbar keeps saying it.
+  // A failed save is said out loud once per attempt, in plain words (never the internal code); the
+  // toolbar keeps saying it, and Notices carries the ones that have an action.
   const shownSave = useRef(0);
   useEffect(() => {
     const last = session.lastSave;
     if (!last || last.at === shownSave.current) return;
     shownSave.current = last.at;
-    const r = last.result;
-    if (r.status === 'storage-full')
-      toast.error(
-        t('save-storage-full', { defaultValue: 'Browser storage is full. Changes are not saved.' }),
-      );
-    else if (r.status === 'failed' && r.code !== 'changed_elsewhere')
-      toast.error(t('save-failed', { defaultValue: 'Could not save ({{code}})', code: r.code }));
+    const report = reportSave(last.result);
+    if (report.kind !== 'toast') return;
+    toast.error(
+      report.key === 'storage-full'
+        ? t('save-storage-full', { defaultValue: 'Browser storage is full. Changes are not saved.' })
+        : t('save-not-saved', {
+            defaultValue: 'Could not save. Your stored files are unchanged.',
+          }),
+    );
   }, [session.lastSave, t]);
 
   const net: NetState = !session.net || !session.net.enabled ? 'off' : session.netState;
@@ -95,8 +108,9 @@ export default function RmhosApp() {
   const download = async () => {
     setBusy(true);
     try {
-      const bytes = await backupBytes(session);
-      if (bytes) downloadBytes(BACKUP_FILE, bytes);
+      const r = await backupBytes(session);
+      if (r.kind === 'current') downloadBytes(BACKUP_FILE, r.bytes);
+      else if (r.kind === 'stale') setStaleOffer({ bytes: r.bytes, savedAt: r.savedAt });
       else fail(t('backup-failed', { defaultValue: 'Could not create the backup.' }));
     } catch {
       fail(t('backup-failed', { defaultValue: 'Could not create the backup.' }));
@@ -124,20 +138,47 @@ export default function RmhosApp() {
     const bytes = pendingBackup;
     setPendingBackup(null);
     if (!bytes) return;
+    // Save, Download and Restore stay off from the confirm until the new machine is starting.
+    setBusy(true);
     try {
       await session.importArchive(bytes);
-    } catch {
-      return fail(t('backup-invalid', { defaultValue: 'That file is not an rmhOS backup.' }));
+    } catch (e) {
+      setBusy(false);
+      const code = e instanceof BackupError ? e.code : 'storage_error';
+      return fail(
+        code === 'invalid'
+          ? t('backup-invalid', { defaultValue: 'That file is not an rmhOS backup.' })
+          : code === 'storage-full'
+            ? t('save-storage-full', {
+                defaultValue: 'Browser storage is full. Changes are not saved.',
+              })
+            : t('backup-not-stored', {
+                defaultValue: 'Could not store the backup. Your files are unchanged.',
+              }),
+      );
     }
     // No save on the way out: it would replace the backup with the current home.
+    try {
+      await session.restart({ save: false });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const putPreviousBack = async () => {
+    try {
+      await session.putPreviousBack();
+    } catch {
+      return fail(
+        t('backup-not-stored', { defaultValue: 'Could not store the backup. Your files are unchanged.' }),
+      );
+    }
     await session.restart({ save: false });
   };
 
   const toggleFullscreen = () => {
-    const el = screenRef.current;
-    if (!el) return;
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
-    else void el.requestFullscreen?.().catch(() => {});
+    else void container?.requestFullscreen?.().catch(() => {});
   };
 
   const dismissNotice = () => {
@@ -153,6 +194,7 @@ export default function RmhosApp() {
           storeKind={session.storeKind}
           busy={busy}
           ready={session.desktopReady}
+          captured={captured}
           fullscreen={fullscreen}
           fullscreenAvailable={fullscreenAvailable}
           fileInputRef={fileInputRef}
@@ -173,7 +215,7 @@ export default function RmhosApp() {
             </Button>
           </div>
         )}
-        <Notices session={session} />
+        <Notices session={session} busy={busy} onDownload={() => void download()} />
         <div className="rmhos-stage">
           <Screen
             ref={screenRef}
@@ -183,9 +225,13 @@ export default function RmhosApp() {
                 'Keys go to rmhOS while this screen has focus. Press Ctrl+Alt+Shift+Escape to use the page again.',
             })}
             hintId={hintId}
-            onCapture={session.setKeyboardCapture}
+            onCapture={(on) => {
+              setCaptured(on);
+              session.setKeyboardCapture(on);
+              // Whatever was held mid-chord goes up with the focus.
+              if (!on) session.releaseModifiers();
+            }}
             onRelease={() => {
-              session.releaseModifiers();
               // Hand the keyboard back to the page: the first control of the toolbar.
               rootRef.current?.querySelector<HTMLElement>('.rmhos-toolbar button:enabled')?.focus();
             }}
@@ -207,10 +253,28 @@ export default function RmhosApp() {
                 await session.startEmpty();
                 await session.restart({ save: false });
               }}
+              onRestoreBackup={() => fileInputRef.current?.click()}
+              previousAvailable={session.previousAvailable}
+              onPutPreviousBack={putPreviousBack}
             />
           )}
         </div>
         <AboutDialog open={about} onOpenChange={setAbout} container={container} />
+        <ConfirmBox
+          open={staleOffer !== null}
+          container={container}
+          title={t('stale-confirm', {
+            defaultValue:
+              'The current files could not be saved. Download the last saved copy from {{time}} instead?',
+            time: staleOffer ? new Date(staleOffer.savedAt).toLocaleString() : '',
+          })}
+          confirmLabel={t('download', { defaultValue: 'Download' })}
+          onCancel={() => setStaleOffer(null)}
+          onConfirm={() => {
+            if (staleOffer) downloadBytes(LAST_SAVED_FILE, staleOffer.bytes);
+            setStaleOffer(null);
+          }}
+        />
         <ConfirmBox
           open={confirmRestart}
           container={container}

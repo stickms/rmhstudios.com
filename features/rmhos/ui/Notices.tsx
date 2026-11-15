@@ -2,32 +2,25 @@
  * Persistent notices about where the files are, shown while the desktop runs. They are not
  * toasts: the person has to be able to act on them, and they stay until the cause is gone.
  */
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/lib/shared/app-toast';
-import { backupBytes } from './backup';
-import { BACKUP_FILE, downloadBytes } from './download';
+import { reportSave } from './save-messages';
 import type { RmhosSessionValue } from './useRmhosSession';
 
-export default function Notices({ session }: { session: RmhosSessionValue }) {
-  const { t } = useTranslation('c-rmhos');
-  const [busy, setBusy] = useState(false);
-  const last = session.lastSave?.result;
-  const changedElsewhere = last?.status === 'failed' && last.code === 'changed_elsewhere';
-  const blocked = session.desktopReady && session.storeKind === 'memory';
-  if (!changedElsewhere && !blocked) return null;
+interface Props {
+  session: RmhosSessionValue;
+  busy: boolean;
+  onDownload: () => void;
+}
 
-  const download = async () => {
-    setBusy(true);
-    try {
-      const bytes = await backupBytes(session);
-      if (bytes) downloadBytes(BACKUP_FILE, bytes);
-      else toast.error(t('backup-failed', { defaultValue: 'Could not create the backup.' }));
-    } finally {
-      setBusy(false);
-    }
-  };
+export default function Notices({ session, busy, onDownload }: Props) {
+  const { t } = useTranslation('c-rmhos');
+  const last = session.lastSave?.result;
+  const report = last ? reportSave(last) : null;
+  const changedElsewhere = report?.kind === 'notice' && report.key === 'changed-elsewhere';
+  const emptyHome = report?.kind === 'notice' && report.key === 'empty-home';
+  const blocked = session.desktopReady && session.storeKind === 'memory';
+  if (!changedElsewhere && !emptyHome && !blocked) return null;
 
   return (
     <div className="rmhos-notices" role="status">
@@ -38,6 +31,22 @@ export default function Notices({ session }: { session: RmhosSessionValue }) {
           })}
         </p>
       )}
+      {emptyHome && (
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs text-(--app-warning)">
+            {t('notice-empty-home', {
+              defaultValue: 'Your home folder is empty. Nothing was saved over your stored files.',
+            })}
+          </p>
+          <Button
+            size="sm"
+            disabled={busy || session.saving}
+            onClick={() => void session.saveNow({ allowEmpty: true })}
+          >
+            {t('save-empty-anyway', { defaultValue: 'Save the empty folder anyway' })}
+          </Button>
+        </div>
+      )}
       {changedElsewhere && (
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-xs text-(--app-warning)">
@@ -46,7 +55,7 @@ export default function Notices({ session }: { session: RmhosSessionValue }) {
                 'Your files were changed in another tab. Reload to use them, or download a backup of this session first.',
             })}
           </p>
-          <Button size="sm" disabled={busy} onClick={() => void download()}>
+          <Button size="sm" disabled={busy} onClick={onDownload}>
             {t('download-backup', { defaultValue: 'Download backup' })}
           </Button>
           <Button size="sm" onClick={() => void session.restart({ save: false })}>

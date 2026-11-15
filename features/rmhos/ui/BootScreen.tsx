@@ -17,6 +17,11 @@ interface Props {
   onDownloadDamaged: () => void | Promise<void>;
   /** `corrupt` only: keep the unreadable entry aside and start with an empty home. */
   onStartEmpty: () => void | Promise<void>;
+  /** `corrupt` only: open the file picker for a backup. */
+  onRestoreBackup: () => void;
+  /** `handshake` only, when a restored backup replaced a home that can be put back. */
+  previousAvailable: boolean;
+  onPutPreviousBack: () => void | Promise<void>;
 }
 
 export default function BootScreen({
@@ -28,6 +33,9 @@ export default function BootScreen({
   onRetry,
   onDownloadDamaged,
   onStartEmpty,
+  onRestoreBackup,
+  previousAvailable,
+  onPutPreviousBack,
 }: Props) {
   const { t } = useTranslation('c-rmhos');
   const [busy, setBusy] = useState(false);
@@ -104,6 +112,9 @@ export default function BootScreen({
                 <Button variant="primary" disabled={busy} onClick={run(onDownloadDamaged)}>
                   {t('download-damaged', { defaultValue: 'Download the damaged backup' })}
                 </Button>
+                <Button disabled={busy} onClick={onRestoreBackup}>
+                  {t('restore-backup', { defaultValue: 'Restore backup' })}
+                </Button>
                 <Button disabled={busy} onClick={run(onStartEmpty)}>
                   {t('start-empty', { defaultValue: 'Start with an empty home' })}
                 </Button>
@@ -114,10 +125,15 @@ export default function BootScreen({
                 {error && failure !== 'locked' && (
                   <p className="text-xs font-mono text-(--app-text-muted)">{error}</p>
                 )}
-                <div>
+                <div className="flex flex-wrap gap-2">
                   <Button variant="primary" onClick={onRetry}>
                     {retryLabel}
                   </Button>
+                  {failure === 'handshake' && previousAvailable && (
+                    <Button disabled={busy} onClick={run(onPutPreviousBack)}>
+                      {t('put-previous-back', { defaultValue: 'Put the previous files back' })}
+                    </Button>
+                  )}
                 </div>
               </>
             )}

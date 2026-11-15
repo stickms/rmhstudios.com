@@ -61,3 +61,31 @@ export async function acquireHomeLock(
     await sleep(opts.retryDelayMs ?? 150);
   }
 }
+
+export interface HeldLock {
+  /** Resolves to the lock, or null when another tab holds it. */
+  ready: Promise<HomeLock | null>;
+  /**
+   * Gives the lock up now, or as soon as it is granted if the request is still pending. A page
+   * that is torn down while `acquireHomeLock` is still waiting would otherwise keep the lock for
+   * good, and the account would read as "already open in another tab" until a reload.
+   */
+  release(): void;
+}
+
+export function holdHomeLock(userId: string, opts: AcquireOptions = {}): HeldLock {
+  let released = false;
+  let got: HomeLock | null = null;
+  const ready = acquireHomeLock(userId, opts).then((lock) => {
+    got = lock;
+    if (released) lock?.release();
+    return lock;
+  });
+  return {
+    ready,
+    release() {
+      released = true;
+      got?.release();
+    },
+  };
+}

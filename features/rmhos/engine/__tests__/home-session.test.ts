@@ -88,7 +88,7 @@ function setup(opts: { restoreError?: Error; cold?: boolean; stored?: Uint8Array
     env: e.env,
     onChange: (s) => snaps.push(s),
   });
-  return { session, sync, store, agent, share, e, snaps, order, firePoweroff: () => poweroff?.() };
+  return { session, sync, store, agent, share, e, snaps, order, vm, firePoweroff: () => poweroff?.() };
 }
 
 describe('HomeSession handshake', () => {
@@ -224,16 +224,107 @@ describe('HomeSession teardown', () => {
     expect(t.session.snapshot.stage).not.toBe('running');
   });
 
-  it('the unload prompt asks only when the last save failed or is stale', async () => {
+  describe('the unload prompt', () => {
+    const ask = (t: ReturnType<typeof setup>) => {
+      const ev = new Event('beforeunload', { cancelable: true });
+      t.e.fire('win:beforeunload', ev);
+      return ev.defaultPrevented;
+    };
+
+    it('does not ask right after a good save', async () => {
+      const t = setup();
+      await t.session.start();
+      expect(ask(t)).toBe(false);
+      await t.session.save();
+      expect(ask(t)).toBe(false);
+    });
+
+    it('asks while the toolbar says Unsaved changes (dirty), however recent the last save', async () => {
+      const t = setup();
+      await t.session.start();
+      await t.session.save();
+      t.session.markDirty();
+      expect(ask(t)).toBe(true);
+      await t.session.save();
+      expect(ask(t)).toBe(false);
+    });
+
+    it('asks while a save is still running', async () => {
+      const t = setup();
+      await t.session.start();
+      let release!: () => void;
+      t.agent.save.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            release = () => {
+              t.share.set(SHARE_ARCHIVE_PATH, fakeTar(9));
+              resolve({ bytes: 1536 });
+            };
+          }),
+      );
+      const saving = t.session.save();
+      expect(t.session.snapshot.saving).toBe(true);
+      expect(ask(t)).toBe(true);
+      release();
+      await saving;
+      expect(ask(t)).toBe(false);
+    });
+
+    it('asks when the last save failed', async () => {
+      const t = setup();
+      await t.session.start();
+      t.agent.save.mockRejectedValueOnce(new AgentError('timeout'));
+      await t.session.save();
+      expect(t.session.snapshot.lastSave?.result.status).toBe('failed');
+      expect(ask(t)).toBe(true);
+    });
+
+    it('asks when the last good save is older than one autosave interval', async () => {
+      const t = setup();
+      await t.session.start();
+      expect(ask(t)).toBe(false);
+      t.e.state.now += 400_000;
+      expect(ask(t)).toBe(true);
+    });
+  });
+
+  it('dispose during a save: nothing is written afterwards', async () => {
     const t = setup();
     await t.session.start();
-    const ev = () => Object.assign(new Event('beforeunload', { cancelable: true }));
-    const fresh = ev();
-    t.e.fire('win:beforeunload', fresh);
-    expect(fresh.defaultPrevented).toBe(false);
-    t.e.state.now += 400_000;
-    const stale = ev();
-    t.e.fire('win:beforeunload', stale);
-    expect(stale.defaultPrevented).toBe(true);
+    let release!: () => void;
+    t.agent.save.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => {
+            t.share.set(SHARE_ARCHIVE_PATH, fakeTar(9));
+            resolve({ bytes: 1536 });
+          };
+        }),
+    );
+    const saving = t.session.save();
+    t.session.dispose();
+    release();
+    await saving;
+    expect(await t.store.get('u1')).toBeNull();
+  });
+
+  it('a failed handshake offers the previous files back when a backup replaced them', async () => {
+    const t = setup({ restoreError: new AgentError('timeout') });
+    const old = { archive: await gzip(fakeTar(1)), sha256: 'old', savedAt: 1 };
+    await t.store.put('u1', old);
+    await t.sync.importArchive(await gzip(fakeTar(8))); // as the page does before restarting
+    const fresh = new HomeSession({
+      agent: t.agent,
+      sync: new HomeSync({ userId: 'u1', vm: t.vm, agent: t.agent, store: t.store }),
+      bootKind: 'snapshot',
+      linuxUser: 'zed',
+      autosaveMs: 300_000,
+      env: t.e.env,
+      onChange: () => {},
+    });
+    await fresh.start();
+    expect(fresh.snapshot).toMatchObject({ stage: 'failed', failure: 'handshake', previousAvailable: true });
+    await fresh.putPreviousBack();
+    expect(await t.store.get('u1')).toEqual(old);
   });
 });

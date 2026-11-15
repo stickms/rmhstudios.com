@@ -26,6 +26,8 @@ export interface SessionSnapshot {
   dirty: boolean;
   lastSave: { result: SaveResult; at: number } | null;
   storeKind: 'indexeddb' | 'memory';
+  /** After a failed handshake: a home that a restored backup replaced is still there to put back. */
+  previousAvailable: boolean;
 }
 
 interface Listenable {
@@ -61,6 +63,10 @@ export interface SessionDeps {
     | 'discardDamaged'
     | 'exportArchive'
     | 'exportLive'
+    | 'storedInfo'
+    | 'suspend'
+    | 'hasReplaced'
+    | 'putPreviousBack'
     | 'storeKind'
   >;
   bootKind: 'snapshot' | 'cold';
@@ -84,6 +90,7 @@ export class HomeSession {
     dirty: false,
     lastSave: null,
     storeKind: 'indexeddb',
+    previousAvailable: false,
   };
   private running = false;
   private disposed = false;
@@ -118,10 +125,12 @@ export class HomeSession {
       await agent.startSession(this.d.linuxUser);
       await agent.restore();
     } catch (e) {
+      const previousAvailable = await sync.hasReplaced().catch(() => false);
       this.set({
         stage: 'failed',
         failure: 'handshake',
         error: e instanceof AgentError ? `agent: ${e.code}` : 'could not start the session',
+        previousAvailable,
       });
       return;
     }
@@ -144,13 +153,11 @@ export class HomeSession {
     env.doc.addEventListener('visibilitychange', onVisibility);
     this.teardowns.push(() => env.doc.removeEventListener('visibilitychange', onVisibility));
 
-    // Unsaved: the last save did not land, or the last good save (before any save: the desktop
-    // becoming ready) is older than one autosave interval.
+    // Unsaved: the toolbar says "Unsaved changes" (dirty) or a save is still running, the last
+    // save did not land, or the last good save (before any save: the desktop becoming ready) is
+    // older than one autosave interval.
     const onBeforeUnload = (ev: Event) => {
-      const last = this.snap.lastSave;
-      const ok = !last || last.result.status === 'saved' || last.result.status === 'unchanged';
-      const since = env.now() - (last && ok ? last.at : this.readyAt);
-      if (!ok || since > this.d.autosaveMs) {
+      if (this.isUnsaved()) {
         ev.preventDefault();
         (ev as BeforeUnloadEvent).returnValue = '';
       }
@@ -164,6 +171,14 @@ export class HomeSession {
         void this.save({ timeoutMs: POWEROFF_SAVE_TIMEOUT_MS }).finally(() => this.stop('stopped'));
       }),
     );
+  }
+
+  /** What the unload prompt asks about. */
+  isUnsaved(): boolean {
+    const last = this.snap.lastSave;
+    const ok = !last || last.result.status === 'saved' || last.result.status === 'unchanged';
+    const since = this.d.env.now() - (last && ok ? last.at : this.readyAt);
+    return this.snap.dirty || this.snap.saving || !ok || since > this.d.autosaveMs;
   }
 
   /** The machine is no longer running (stopped, failed, powered off): nothing may save or prompt. */
@@ -181,13 +196,13 @@ export class HomeSession {
     for (const t of this.teardowns.splice(0).reverse()) t();
   }
 
-  async save(opts: { timeoutMs?: number } = {}): Promise<SaveResult> {
+  async save(opts: { timeoutMs?: number; allowEmpty?: boolean } = {}): Promise<SaveResult> {
     if (!this.running) return NOT_RUNNING;
     this.set({ saving: true });
     const epoch = this.inputEpoch;
     let result: SaveResult;
     try {
-      result = await this.d.sync.save(opts.timeoutMs === undefined ? {} : opts);
+      result = await this.d.sync.save(opts);
     } catch {
       result = { status: 'failed', code: 'share' };
     }
@@ -211,6 +226,11 @@ export class HomeSession {
     return this.d.sync.exportArchive();
   }
 
+  /** The stored archive with its save time (for offering a stale copy by name). */
+  storedInfo(): Promise<{ archive: Uint8Array; savedAt: number } | null> {
+    return this.d.sync.storedInfo();
+  }
+
   /** The desktop's home straight from the guest (null when it is not running). Writes nothing. */
   async exportLive(): Promise<Uint8Array | null> {
     return this.running ? this.d.sync.exportLive() : null;
@@ -229,8 +249,15 @@ export class HomeSession {
     return this.d.sync.discardDamaged();
   }
 
+  /** Put the home a restored backup replaced back (then restart). */
+  putPreviousBack(): Promise<void> {
+    return this.d.sync.putPreviousBack();
+  }
+
   dispose() {
     if (this.disposed) return;
+    // A save still in flight must not write after the next machine has loaded its own state.
+    this.d.sync.suspend();
     this.running = false;
     this.runTeardowns();
     this.disposed = true;

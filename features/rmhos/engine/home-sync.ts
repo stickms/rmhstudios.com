@@ -56,6 +56,14 @@ export async function checkBackup(gz: Uint8Array): Promise<Bytes> {
   return tar;
 }
 
+/** Why a backup could not be stored. */
+export class BackupError extends Error {
+  constructor(readonly code: 'invalid' | 'storage-full' | 'storage_error') {
+    super(code);
+    this.name = 'BackupError';
+  }
+}
+
 const isQuota = (e: unknown) => e instanceof Error && e.name === 'QuotaExceededError';
 
 /** `prepare()` outcome. `corrupt`: a stored archive exists and cannot be read; nothing was touched. */
@@ -112,9 +120,20 @@ export class HomeSync {
     const { store, userId } = this.deps;
     const cached = await store.get(userId);
     if (!cached) return;
-    await store.put(`${userId}:damaged`, cached); // throws before anything is deleted
+    await this.keepDamaged(cached);
     await store.delete(userId);
     this.knownSha = null;
+  }
+
+  /** The first damaged copy is the one kept: a later one never replaces it. Throws before any delete. */
+  private async keepDamaged(cached: CachedHome): Promise<void> {
+    const { store, userId } = this.deps;
+    if (!(await store.get(`${userId}:damaged`))) await store.put(`${userId}:damaged`, cached);
+  }
+
+  /** Stops this instance writing for good (it is being replaced by a new machine's). */
+  suspend(): void {
+    this.suspended = true;
   }
 
   save(opts: { timeoutMs?: number; allowEmpty?: boolean } = {}): Promise<SaveResult> {
@@ -165,6 +184,8 @@ export class HomeSync {
         if (!storedEmpty) return { status: 'failed', code: 'empty_home' };
       }
       const archive = await gzip(tar);
+      // Replaced or disposed while this save was running: nothing may land after that.
+      if (this.suspended) return { status: 'failed', code: 'suspended' };
       try {
         await store.put(userId, { archive, sha256, savedAt: Date.now() });
       } catch (e) {
@@ -192,6 +213,12 @@ export class HomeSync {
     return gzip(await this.readGuestTar());
   }
 
+  /** The stored gzip and when it was saved, for naming a stale copy honestly. */
+  async storedInfo(): Promise<{ archive: Uint8Array; savedAt: number } | null> {
+    const c = await this.deps.store.get(this.deps.userId);
+    return c ? { archive: c.archive, savedAt: c.savedAt } : null;
+  }
+
   /** The stored gzip, byte for byte (also when it is damaged), for a backup download. */
   async exportArchive(): Promise<Uint8Array | null> {
     return (await this.deps.store.get(this.deps.userId))?.archive ?? null;
@@ -200,15 +227,67 @@ export class HomeSync {
   /**
    * Replaces the stored home with a backup, and suspends this instance: its guest still holds the
    * old home, and a later save from it would replace the backup. The only way out is a restart,
-   * which builds a new HomeSync that loads the backup.
+   * which builds a new HomeSync that loads the backup. The home it replaces is kept once, under
+   * `<userId>:replaced`, so a backup that passes validation but fails RESTORE in the guest does
+   * not cost the old files. Throws a BackupError: `invalid` (nothing touched), `storage-full` or
+   * `storage_error` (the old archive stays, saving works again).
    */
   async importArchive(gz: Uint8Array): Promise<void> {
-    const tar = await checkBackup(gz);
+    const { store, userId } = this.deps;
+    let tar: Bytes;
+    try {
+      tar = await checkBackup(gz);
+    } catch {
+      throw new BackupError('invalid');
+    }
     const entry: CachedHome = { archive: gz, sha256: await sha256Hex(tar), savedAt: Date.now() };
     // Suspend first: a save already past its own checks must not land after the import.
+    const wasSuspended = this.suspended;
     this.suspended = true;
-    await this.inFlight?.catch(() => {});
-    await this.deps.store.put(this.deps.userId, entry);
+    try {
+      await this.inFlight?.catch(() => {});
+      const previous = await store.get(userId);
+      if (previous) {
+        let readable = true;
+        try {
+          await checkBackup(previous.archive);
+        } catch {
+          readable = false;
+        }
+        if (readable) await store.put(`${userId}:replaced`, previous);
+        else await this.keepDamaged(previous);
+      }
+      await store.put(userId, entry);
+    } catch (e) {
+      this.suspended = wasSuspended; // nothing was replaced: saving can go on
+      throw new BackupError(isQuota(e) ? 'storage-full' : 'storage_error');
+    }
     this.knownSha = entry.sha256;
+  }
+
+  /** Is there a home that a backup replaced, to put back? */
+  async hasReplaced(): Promise<boolean> {
+    return !!(await this.deps.store.get(`${this.deps.userId}:replaced`));
+  }
+
+  /**
+   * Puts the home a backup replaced back as the stored one (the backup that failed is kept as the
+   * damaged copy if none is kept yet). Suspends this instance like an import: restart after.
+   */
+  async putPreviousBack(): Promise<void> {
+    const { store, userId } = this.deps;
+    const replaced = await store.get(`${userId}:replaced`);
+    if (!replaced) throw new BackupError('invalid');
+    this.suspended = true;
+    try {
+      await this.inFlight?.catch(() => {});
+      const current = await store.get(userId);
+      if (current) await this.keepDamaged(current);
+      await store.put(userId, replaced);
+      await store.delete(`${userId}:replaced`);
+    } catch (e) {
+      throw new BackupError(isQuota(e) ? 'storage-full' : 'storage_error');
+    }
+    this.knownSha = replaced.sha256;
   }
 }

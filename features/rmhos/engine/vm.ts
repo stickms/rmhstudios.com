@@ -16,6 +16,7 @@ import type { V86 as V86Class, V86 as V86Instance, V86Options } from 'v86';
 import wasmUrl from 'v86/build/v86.wasm?url';
 import { RMHOS } from './constants';
 import type { ImageManifest } from './image-manifest';
+import { MODIFIER_BREAK_CODES } from './scancodes';
 import { vmOptions } from './vm-options';
 import type { VmHandle, VmPhase, VmPhaseDetail } from './vm-types';
 
@@ -314,8 +315,7 @@ export async function createVm(opts: CreateVmOptions): Promise<VmHandle> {
       if (emulator) setCapture(emulator, on);
     },
     releaseModifiers() {
-      // Break codes: left Ctrl, left Alt, left Shift, right Shift.
-      emulator?.keyboard_send_scancodes([0x9d, 0xb8, 0xaa, 0xb6]);
+      emulator?.keyboard_send_scancodes([...MODIFIER_BREAK_CODES]);
     },
     sendSerial1(text) {
       if (!ready) return;

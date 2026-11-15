@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { acquireHomeLock, type LockManagerLike } from '../tab-lock';
+import { acquireHomeLock, holdHomeLock, type LockManagerLike } from '../tab-lock';
 
 /** Grants a name to one holder at a time, like navigator.locks with ifAvailable. */
 function fakeLocks(): LockManagerLike & { held: Set<string> } {
@@ -46,5 +46,48 @@ describe('acquireHomeLock', () => {
     const l = await acquireHomeLock('u1', { locks: undefined });
     expect(l).not.toBeNull();
     expect(() => l!.release()).not.toThrow();
+  });
+});
+
+describe('holdHomeLock', () => {
+  /** A lock manager that grants only after `delayMs`, like a busy main thread. */
+  function slowLocks(delayMs: number) {
+    const inner = fakeLocks();
+    return {
+      held: inner.held,
+      request: (async (name, o, cb) => {
+        await new Promise((r) => setTimeout(r, delayMs));
+        return inner.request(name, o, cb);
+      }) as LockManagerLike['request'],
+    };
+  }
+
+  it('released before the request resolves: the lock is freed as soon as it is granted', async () => {
+    const locks = slowLocks(30);
+    const held = holdHomeLock('u1', { locks, retries: 0 });
+    held.release(); // the page was torn down while the request was pending
+    const lock = await held.ready;
+    expect(lock).not.toBeNull();
+    await new Promise((r) => setTimeout(r, 10));
+    expect(locks.held.size).toBe(0);
+    // The next machine of this tab can take it straight away.
+    expect(await acquireHomeLock('u1', { locks, retries: 0 })).not.toBeNull();
+  });
+
+  it('released after the request resolved: freed too', async () => {
+    const locks = fakeLocks();
+    const held = holdHomeLock('u1', { locks, retries: 0 });
+    await held.ready;
+    expect(locks.held.has('rmhos:u1')).toBe(true);
+    held.release();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(locks.held.size).toBe(0);
+  });
+
+  it('not released: another tab is refused', async () => {
+    const locks = fakeLocks();
+    const held = holdHomeLock('u1', { locks, retries: 0 });
+    await held.ready;
+    expect(await holdHomeLock('u1', { locks, retries: 0 }).ready).toBeNull();
   });
 });

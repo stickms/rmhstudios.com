@@ -92,6 +92,12 @@ export default function AboutDialog({ open, onOpenChange, container }: Props) {
             </li>
           </ul>
           <p className="text-(--app-text-muted)">
+            {t('about-saving', {
+              defaultValue:
+                'Saved reflects the last save. Files changed by programs running in the background are saved at the next autosave, every 5 minutes, or when you press Save.',
+            })}
+          </p>
+          <p className="text-(--app-text-muted)">
             {t('about-keyboard', {
               defaultValue:
                 'Keys go to rmhOS while its screen has focus. Press Ctrl+Alt+Shift+Escape, or click outside the screen, to use the page again.',

@@ -178,3 +178,22 @@
   background: var(--app-accent);
   transition: width 120ms ease;
 }
+
+/* Keys go to the guest while the screen has focus: say so with a ring, not just a hint. It is
+   `:focus`, not `:focus-visible`, because a click captures the keyboard just the same. */
+.rmhos-app .rmhos-screen:focus {
+  outline: var(--app-focus-width, 3px) solid var(--app-focus-ring, var(--app-accent));
+  outline-offset: calc(-1 * var(--app-focus-width, 3px));
+}
+
+.rmhos-app .rmhos-capture-hint {
+  font-weight: 500;
+}
+
+/* Toasts at the bottom: the shared stack is top-centre, over the toolbar's buttons. */
+.rmhos-app .rmhos-toasts {
+  inset-block-start: auto;
+  inset-block-end: 0;
+  padding-block-start: 0;
+  padding-block-end: 16px;
+}

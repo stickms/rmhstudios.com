@@ -16,7 +16,7 @@ export interface VmHandle {
    * The page turns it on while the screen has focus and off otherwise.
    */
   setKeyboardCapture(on: boolean): void;
-  /** Sends key-up for Ctrl, Alt and Shift, so releasing the keyboard mid-chord leaves none held. */
+  /** Sends key-up for every modifier (both Ctrl, Alt, Shift and Meta keys), so releasing the keyboard mid-chord leaves none held. */
   releaseModifiers(): void;
   writeShareFile(path: string, data: Uint8Array): Promise<void>;
   readShareFile(path: string): Promise<Uint8Array>;

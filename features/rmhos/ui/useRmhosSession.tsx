@@ -24,7 +24,7 @@ import { HomeSync, type SaveResult } from '../engine/home-sync';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { fetchRelayTicket } from '../engine/relay-ticket';
 import type { RmhosNet } from '../engine/rmhos.contract';
-import { acquireHomeLock } from '../engine/tab-lock';
+import { holdHomeLock } from '../engine/tab-lock';
 import { createVm } from '../engine/vm';
 import type { VmHandle, VmPhase, VmPhaseDetail } from '../engine/vm-types';
 import { rmhosSessionQuery } from './rmhos.queries';
@@ -53,15 +53,22 @@ export interface RmhosSessionValue {
   markDirty: () => void;
   /** Keys go to the guest only while the screen has focus (v86 would otherwise take them page-wide). */
   setKeyboardCapture: (on: boolean) => void;
-  /** Key-up for Ctrl, Alt and Shift: call when focus leaves the screen mid-chord. */
+  /** Key-up for every modifier: call when focus leaves the screen mid-chord. */
   releaseModifiers: () => void;
   lastSave: { result: SaveResult; at: number } | null;
   saving: boolean;
   /** 'memory': this browser blocks storage, so nothing is kept after the page closes. */
   storeKind: 'indexeddb' | 'memory';
-  saveNow: () => Promise<SaveResult>;
+  /** `allowEmpty`: store an empty home over a non-empty one (only on the person's say-so). */
+  saveNow: (opts?: { allowEmpty?: boolean }) => Promise<SaveResult>;
   /** The stored archive, byte for byte (also when it is damaged). */
   exportArchive: () => Promise<Uint8Array | null>;
+  /** The stored archive with when it was saved. */
+  exportStored: () => Promise<{ bytes: Uint8Array; savedAt: number } | null>;
+  /** After a failed handshake: the home a restored backup replaced can be put back. */
+  previousAvailable: boolean;
+  /** Puts the replaced home back as the stored one; restart (without saving) afterwards. */
+  putPreviousBack: () => Promise<void>;
   /** The desktop's home straight from the guest, writing nothing: a backup when saving is refused. */
   exportLive: () => Promise<Uint8Array | null>;
   /** Validates and stores a backup. Saves are suspended afterwards: restart (without saving). */
@@ -167,12 +174,14 @@ export function useRmhosMachine(
     void (async () => {
       try {
         // One machine per account per browser, held for the life of this one.
-        const lock = await acquireHomeLock(userId);
+        // Released by the cleanup even when that runs while the request is still pending.
+        const held = holdHomeLock(userId);
+        cleanups.push(() => held.release());
+        const lock = await held.ready;
         if (!lock) {
           fail('another tab', 'locked');
           return;
         }
-        cleanups.push(() => lock.release());
         if (cancelled) return;
 
         // The relay ticket is good for 60 s of first use and v86 bakes it in when the machine is
@@ -327,8 +336,21 @@ export function useRmhosMachine(
     lastSave: snap?.lastSave ?? null,
     saving: snap?.saving ?? false,
     storeKind: snap?.storeKind ?? 'indexeddb',
-    saveNow: useCallback(async () => (await runnerRef.current?.save()) ?? NOT_RUNNING, []),
+    saveNow: useCallback(
+      async (opts?: { allowEmpty?: boolean }) =>
+        (await runnerRef.current?.save(opts ?? {})) ?? NOT_RUNNING,
+      [],
+    ),
     exportArchive: useCallback(async () => runnerRef.current?.exportArchive() ?? null, []),
+    exportStored: useCallback(async () => {
+      const info = await runnerRef.current?.storedInfo();
+      return info ? { bytes: info.archive, savedAt: info.savedAt } : null;
+    }, []),
+    previousAvailable: snap?.previousAvailable ?? false,
+    putPreviousBack: useCallback(async () => {
+      if (!runnerRef.current) throw new Error('rmhOS is not running');
+      await runnerRef.current.putPreviousBack();
+    }, []),
     exportLive: useCallback(async () => runnerRef.current?.exportLive() ?? null, []),
     importArchive: useCallback(async (gz: Uint8Array) => {
       if (!runnerRef.current) throw new Error('rmhOS is not running');

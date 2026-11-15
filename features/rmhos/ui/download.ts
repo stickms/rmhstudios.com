@@ -13,3 +13,4 @@ export function downloadBytes(name: string, bytes: Uint8Array, type = 'applicati
 
 export const BACKUP_FILE = 'rmhos-home.tar.gz';
 export const DAMAGED_FILE = 'rmhos-home-damaged.gz';
+export const LAST_SAVED_FILE = 'rmhos-home-last-saved.tar.gz';
