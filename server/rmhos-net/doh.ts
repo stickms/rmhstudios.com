@@ -1,7 +1,6 @@
 // DNS-over-HTTPS forwarder for the guest's resolver. Ticket-gated like the
 // relay socket; forwards only DNS wire-format bodies to one fixed upstream.
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { verifyNetTicket } from '@features/rmhos/engine/net-ticket.server';
 import type { UsageMeter } from './meter';
 import { checkConnect, type RelayPolicy } from './policy';
 import type { Resolver } from './relay';
@@ -14,7 +13,10 @@ const MAX_IN_FLIGHT_PER_USER = 16;
 const DNS_MESSAGE = 'application/dns-message';
 
 export interface DohOptions {
-  secret: string;
+  /** Ticket check shared with the WebSocket upgrade; records the use. */
+  authorize: (ticket: string) => { ok: true; userId: string } | { ok: false };
+  /** Per server instance: queries in flight per user. */
+  inFlight: Map<string, number>;
   enabled: boolean;
   policy: RelayPolicy;
   meter: UsageMeter;
@@ -86,8 +88,6 @@ function readBody(req: IncomingMessage): Promise<Buffer | null> {
   });
 }
 
-const inFlight = new Map<string, number>();
-
 export async function handleDohQuery(
   opts: DohOptions,
   req: IncomingMessage,
@@ -95,14 +95,14 @@ export async function handleDohQuery(
   ticket: string,
 ): Promise<void> {
   if (!opts.enabled) return reply(opts, res, 503, 'disabled');
-  const verdict = verifyNetTicket(ticket, opts.secret);
+  const verdict = opts.authorize(ticket);
   if (!verdict.ok) return reply(opts, res, 401, 'unauthorized');
   const type = (req.headers['content-type'] ?? '').split(';')[0]?.trim().toLowerCase();
   if (type !== DNS_MESSAGE) return reply(opts, res, 415, 'unsupported media type');
 
-  const active = inFlight.get(verdict.userId) ?? 0;
+  const active = opts.inFlight.get(verdict.userId) ?? 0;
   if (active >= MAX_IN_FLIGHT_PER_USER) return reply(opts, res, 429, 'too many queries');
-  inFlight.set(verdict.userId, active + 1);
+  opts.inFlight.set(verdict.userId, active + 1);
   try {
     const body = await readBody(req);
     if (body === null) return reply(opts, res, 413, 'payload too large');
@@ -148,8 +148,8 @@ export async function handleDohQuery(
   } catch {
     return reply(opts, res, 502, 'upstream error');
   } finally {
-    const left = (inFlight.get(verdict.userId) ?? 1) - 1;
-    if (left <= 0) inFlight.delete(verdict.userId);
-    else inFlight.set(verdict.userId, left);
+    const left = (opts.inFlight.get(verdict.userId) ?? 1) - 1;
+    if (left <= 0) opts.inFlight.delete(verdict.userId);
+    else opts.inFlight.set(verdict.userId, left);
   }
 }

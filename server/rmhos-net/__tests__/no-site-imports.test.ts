@@ -27,7 +27,7 @@ function specifiers(src: string): string[] {
 }
 
 it('the sandboxed relay hub imports nothing from the site', () => {
-  const banned = /^(?:@\/lib|lib\/|@\/components|@\/app|@\/server\/shared)/;
+  const banned = /^(?:@\/lib|lib\/|@\/components|@\/app|@\/server|@\/features)/;
   const all = files(root);
   expect(all.length).toBeGreaterThan(0);
   for (const f of all) {
@@ -38,6 +38,7 @@ it('the sandboxed relay hub imports nothing from the site', () => {
         const hit = SITE_DIRS.some((d) => rel === d || rel.startsWith(`${d}/`));
         expect(hit, `${f}: relative import into the site: ${spec}`).toBe(false);
       }
+      // `@/features/…` is the same tree as `@features/…`: only the two allowed modules, by the one alias.
       if (spec.startsWith('@features/'))
         expect(ALLOWED_FEATURES.has(spec), `${f}: ${spec}`).toBe(true);
     }

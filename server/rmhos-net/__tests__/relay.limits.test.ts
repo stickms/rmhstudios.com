@@ -152,8 +152,9 @@ describe('guest to remote queue bounds', () => {
     const c = await login(port, 'q-conn');
     for (let id = 1; id <= 9; id++) {
       c.connect(id);
-      // 17 packets fill the socket backlog; 15 more queue (~0.94 MiB, under the per-stream cap).
-      for (let i = 0; i < 32; i++) c.data(id, 64 * 1024);
+      // 2 packets fill the upstream socket's 64 KiB high-water mark; 15 more queue (~0.94 MiB,
+      // under the per-stream cap), so 9 streams pass the 8 MiB connection cap together.
+      for (let i = 0; i < 17; i++) c.data(id, 64 * 1024);
     }
     await c.until(() => (c.closeCode === null ? undefined : true), 8000);
     expect(c.closeCode).toBe(4008);
@@ -243,7 +244,7 @@ describe('guest to remote queue bounds', () => {
       c.ws.close();
     }, 40_000);
 
-    it('is paused, never closed, across a stall and resume with 16 KiB packets', async () => {
+    it('is paused, never closed, across a stall and resume with 4 KiB packets', async () => {
       const up = sink(0);
       up.stall();
       const { port } = await start({
@@ -252,15 +253,38 @@ describe('guest to remote queue bounds', () => {
       const c = await login(port, 'honest-stall');
       c.connect(1);
       setTimeout(() => up.release(), 400);
-      await transfer(c, 1, 200, 16 * 1024);
+      await transfer(c, 1, 200, 4 * 1024);
       await c.until(
-        () => (Buffer.concat(up.received).length >= 200 * 16 * 1024 ? true : undefined),
+        () => (Buffer.concat(up.received).length >= 200 * 4 * 1024 ? true : undefined),
         15_000,
       );
-      inOrder(up.received, 200, 16 * 1024);
+      inOrder(up.received, 200, 4 * 1024);
       expect(c.packets.some((p) => p.type === 'close' && p.streamId === 1)).toBe(false);
       c.ws.close();
     }, 40_000);
+
+    it('keeps the upstream socket buffer at 64 KiB so the accounted queue holds the data', async () => {
+      const up = sink(0);
+      up.stall();
+      let peak = 0;
+      const realWrite = up.socket.write.bind(up.socket);
+      up.socket.write = ((...a: Parameters<typeof realWrite>) => {
+        const r = realWrite(...a);
+        peak = Math.max(peak, up.socket.writableLength);
+        return r;
+      }) as typeof up.socket.write;
+      const { port } = await start({
+        connect: (() => up.socket) as unknown as typeof net.connect,
+      });
+      const c = await login(port, 'high-water');
+      c.connect(1);
+      for (let i = 0; i < 40; i++) c.data(1, 8 * 1024);
+      await new Promise((r) => setTimeout(r, 500));
+      expect(peak).toBeGreaterThan(0);
+      expect(peak).toBeLessThanOrEqual(64 * 1024 + 8 * 1024);
+      up.release();
+      c.ws.close();
+    });
   });
 });
 

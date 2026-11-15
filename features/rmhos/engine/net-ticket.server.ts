@@ -33,11 +33,20 @@ export function signNetTicket(userId: string, secret: string, now: number = Date
   ].join('.');
 }
 
-export function verifyNetTicket(
-  ticket: string,
-  secret: string,
-  now: number = Date.now(),
-): NetTicketResult {
+export type NetTicketSignature =
+  | {
+      ok: true;
+      userId: string;
+      /** Epoch ms after which the ticket may no longer be FIRST presented. */
+      expiry: number;
+    }
+  | {
+      ok: false;
+      reason: 'malformed' | 'bad_signature';
+    };
+
+/** Checks form and signature only, never the clock. The hub's ticket book decides what expiry means. */
+export function verifyNetTicketSignature(ticket: string, secret: string): NetTicketSignature {
   assertSecret(secret);
   const parts = ticket.split('.');
   if (parts.length !== 3)
@@ -65,13 +74,27 @@ export function verifyNetTicket(
       reason: 'bad_signature',
     };
   }
-  if (now > Number(expiry))
+  return {
+    ok: true,
+    userId,
+    expiry: Number(expiry),
+  };
+}
+
+export function verifyNetTicket(
+  ticket: string,
+  secret: string,
+  now: number = Date.now(),
+): NetTicketResult {
+  const sig = verifyNetTicketSignature(ticket, secret);
+  if (!sig.ok) return sig;
+  if (now > sig.expiry)
     return {
       ok: false,
       reason: 'expired',
     };
   return {
     ok: true,
-    userId,
+    userId: sig.userId,
   };
 }

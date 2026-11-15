@@ -31,7 +31,13 @@ const server = createRelayServer({
   },
 });
 
-const prune = setInterval(() => meter.prune(), 10 * 60 * 1000);
+const prune = setInterval(
+  () => {
+    meter.prune();
+    server.prune();
+  },
+  10 * 60 * 1000,
+);
 prune.unref();
 
 server.listen(cfg.port, () => {

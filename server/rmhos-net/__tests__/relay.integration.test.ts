@@ -264,7 +264,9 @@ describe('relay hub', () => {
       });
 
       c.send(encodeClose(7, CLOSE_REASON.voluntary));
-      const line = await c.until(() => logs.find((l) => l.userId === 'u-echo'));
+      const line = await c.until(() =>
+        logs.find((l) => l.evt === 'rmhos-net.stream' && l.userId === 'u-echo'),
+      );
       expect(line).toMatchObject({
         evt: 'rmhos-net.stream',
         userId: 'u-echo',
@@ -273,7 +275,9 @@ describe('relay hub', () => {
         up: 5,
         down: 5,
       });
-      expect(logs.filter((l) => l.userId === 'u-echo')).toHaveLength(1);
+      expect(
+        logs.filter((l) => l.evt === 'rmhos-net.stream' && l.userId === 'u-echo'),
+      ).toHaveLength(1);
       c.ws.close();
     });
 

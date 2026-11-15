@@ -7,10 +7,10 @@ import net from 'node:net';
 import type { Duplex } from 'node:stream';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { RMHOS } from '@features/rmhos/engine/constants';
-import { verifyNetTicket } from '@features/rmhos/engine/net-ticket.server';
 import { DOH_PATH, handleDohPreflight, handleDohQuery, type DohOptions } from './doh';
 import type { UsageMeter } from './meter';
 import { checkConnect, type RelayPolicy, type Verdict } from './policy';
+import { TicketBook } from './tickets';
 import { CLOSE_REASON, decodePacket, encodeClose, encodeContinue, encodeData } from './wisp';
 
 export type Resolver = (host: string) => Promise<
@@ -54,6 +54,9 @@ const CREDIT_HOLD_HIGH = 512 * 1024;
 const CREDIT_HOLD_LOW = 256 * 1024;
 const RETRY_MS = 100;
 const MAX_WS_BUFFER = 1024 * 1024;
+// The upstream socket's own buffer is not in the accounted queue, so it is kept small: data
+// waits in the counted queue instead.
+const UPSTREAM_HIGH_WATER = 64 * 1024;
 const MAX_STREAM_QUEUE = 1024 * 1024;
 // Before the upstream exists an honest client may still send its whole initial window (128 packets).
 const MAX_EARLY_QUEUE = 2 * 1024 * 1024;
@@ -61,6 +64,7 @@ const MAX_CONN_QUEUE = 8 * 1024 * 1024;
 const MAX_FRAME_BYTES = 1024 * 1024;
 const PING_MS = 30_000;
 const SUPERSEDED = 4000;
+const STATUS_PATH = `${RMHOS.netPath}status`;
 const OVER_QUEUE = 4008;
 
 // resolve4/resolve6 query the DNS servers directly with a bounded timeout and no libuv
@@ -154,7 +158,10 @@ function parseTarget(raw: string | undefined): URL | null {
   }
 }
 
-export function createRelayServer(opts: RelayOptions): http.Server {
+/** The HTTP server plus the sweep the entry point runs on its prune interval. */
+export type RelayServer = http.Server & { prune: () => void };
+
+export function createRelayServer(opts: RelayOptions): RelayServer {
   const { secret, policy, meter } = opts;
   const resolve = opts.resolve ?? defaultResolve;
   const connect = opts.connect ?? net.connect;
@@ -165,10 +172,12 @@ export function createRelayServer(opts: RelayOptions): http.Server {
     max: 30,
     windowMs: 10_000,
   };
+  const tickets = new TicketBook(secret, now);
   const timedResolve: Resolver = (host) => withTimeout(resolve(host), lookupTimeoutMs);
   const dohOpts: DohOptions | null = opts.doh
     ? {
-        secret,
+        authorize,
+        inFlight: new Map<string, number>(),
         enabled: policy.enabled,
         policy,
         meter,
@@ -187,6 +196,7 @@ export function createRelayServer(opts: RelayOptions): http.Server {
     string,
     {
       shutdown: (code: number) => void;
+      streamCount: () => number;
     }
   >();
   const lookups = new Map<string, number>();
@@ -215,6 +225,13 @@ export function createRelayServer(opts: RelayOptions): http.Server {
     return true;
   }
 
+  /** Authorises a ticket; a newer ticket for a user closes that user's live socket. */
+  function authorize(ticket: string): { ok: true; userId: string } | { ok: false } {
+    const who = tickets.authorize(ticket);
+    if (who.ok && who.replaced) sessions.get(who.userId)?.shutdown(SUPERSEDED);
+    return who;
+  }
+
   const server = http.createServer((req, res) => {
     const url = parseTarget(req.url);
     if (!url) {
@@ -236,6 +253,24 @@ export function createRelayServer(opts: RelayOptions): http.Server {
       res.end(body);
       return;
     }
+    if (url.pathname === STATUS_PATH && req.method === 'GET') {
+      // Same auth as DoH; answers only about the ticket's own user.
+      const status = (code: number, body: object): void => {
+        res.writeHead(code, {
+          'content-type': 'application/json',
+          'cache-control': 'no-store',
+          ...(opts.doh?.corsOrigin
+            ? { 'access-control-allow-origin': opts.doh.corsOrigin, vary: 'origin' }
+            : {}),
+        });
+        res.end(JSON.stringify(body));
+      };
+      if (!policy.enabled) return status(503, { error: 'disabled' });
+      const who = authorize(url.searchParams.get('ticket') ?? '');
+      if (!who.ok) return status(401, { error: 'unauthorized' });
+      const live = sessions.get(who.userId);
+      return status(200, { connected: live !== undefined, streams: live?.streamCount() ?? 0 });
+    }
     if (url.pathname === DOH_PATH && dohOpts) {
       if (req.method === 'OPTIONS') return handleDohPreflight(dohOpts, res);
       if (req.method === 'POST') {
@@ -255,7 +290,7 @@ export function createRelayServer(opts: RelayOptions): http.Server {
     const path = url.pathname.endsWith('/') ? url.pathname : `${url.pathname}/`;
     if (path !== RMHOS.netPath) return writeHttpError(socket, 404, 'Not Found');
     if (!policy.enabled) return writeHttpError(socket, 503, 'Service Unavailable');
-    const verdict = verifyNetTicket(url.searchParams.get('ticket') ?? '', secret);
+    const verdict = authorize(url.searchParams.get('ticket') ?? '');
     if (!verdict.ok) return writeHttpError(socket, 401, 'Unauthorized');
     wss.handleUpgrade(req, socket, head, (ws) => session(ws, verdict.userId));
   });
@@ -346,7 +381,7 @@ export function createRelayServer(opts: RelayOptions): http.Server {
       while (s.upQueue.length > 0) {
         if (meter.dayExhausted(userId)) return closeAll(CLOSE_REASON.throttled, true);
         const allow = meter.allowance(userId);
-        if (allow === 0 || sock.writableLength > MAX_WS_BUFFER) {
+        if (allow === 0 || sock.writableLength > UPSTREAM_HIGH_WATER) {
           return schedule(s, () => resume(s));
         }
         const chunk = s.upQueue[0] as Buffer;
@@ -478,6 +513,7 @@ export function createRelayServer(opts: RelayOptions): http.Server {
       });
       sock.on('data', (chunk: Buffer) => {
         if (streams.get(id) !== s) return;
+        tickets.touch(userId);
         s.downQueue.push(chunk);
         pumpDown(s);
       });
@@ -495,6 +531,7 @@ export function createRelayServer(opts: RelayOptions): http.Server {
     }
 
     ws.on('message', (data, isBinary) => {
+      tickets.touch(userId);
       if (!isBinary || !Buffer.isBuffer(data)) return;
       const pkt = decodePacket(new Uint8Array(data.buffer, data.byteOffset, data.length));
       if (!pkt || pkt.streamId === 0) return;
@@ -536,15 +573,19 @@ export function createRelayServer(opts: RelayOptions): http.Server {
       }
     });
 
+    /** The close code the peer sent (1006 when the socket just went away), for the session log. */
+    let peerCode = 1006;
     function teardown(): void {
       if (over) return;
       over = true;
+      log({ evt: 'rmhos-net.session', userId, state: 'closed', code: peerCode });
       clearInterval(ping);
       closeAll(CLOSE_REASON.voluntary, false);
       if (sessions.get(userId) === handle) sessions.delete(userId);
     }
 
     const handle = {
+      streamCount: () => streams.size,
       shutdown(code: number): void {
         teardown();
         ws.close(code);
@@ -556,6 +597,7 @@ export function createRelayServer(opts: RelayOptions): http.Server {
     let alive = true;
     ws.on('pong', () => {
       alive = true;
+      tickets.touch(userId); // a connected tab is in use
     });
     const ping = setInterval(() => {
       if (!alive) return ws.terminate();
@@ -564,12 +606,16 @@ export function createRelayServer(opts: RelayOptions): http.Server {
     }, PING_MS);
     ping.unref();
 
-    ws.on('close', teardown);
+    ws.on('close', (code) => {
+      peerCode = code;
+      teardown();
+    });
     ws.on('error', teardown);
 
     // One live session per user: the newer one wins.
     sessions.get(userId)?.shutdown(SUPERSEDED);
     sessions.set(userId, handle);
+    log({ evt: 'rmhos-net.session', userId, state: 'open' });
     send(encodeContinue(0, WINDOW));
   }
 
@@ -577,5 +623,5 @@ export function createRelayServer(opts: RelayOptions): http.Server {
     for (const h of sessions.values()) h.shutdown(1001);
     wss.close();
   });
-  return server;
+  return Object.assign(server, { prune: () => tickets.prune() });
 }

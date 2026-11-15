@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { signNetTicket, verifyNetTicket } from '../net-ticket.server';
+import { signNetTicket, verifyNetTicket, verifyNetTicketSignature } from '../net-ticket.server';
 
 describe('net ticket', () => {
   const t = signNetTicket('user_1', 's3cret', 1_000);
@@ -49,5 +49,14 @@ describe('net ticket', () => {
       ok: false,
       reason: 'malformed',
     });
+  });
+  it('checks the signature without the clock, and reports the expiry', () => {
+    expect(verifyNetTicketSignature(t, 's3cret')).toEqual({
+      ok: true,
+      userId: 'user_1',
+      expiry: 1_000 + 60_000,
+    });
+    expect(verifyNetTicketSignature(t, 'other')).toEqual({ ok: false, reason: 'bad_signature' });
+    expect(verifyNetTicketSignature('x.y', 's3cret')).toEqual({ ok: false, reason: 'malformed' });
   });
 });
