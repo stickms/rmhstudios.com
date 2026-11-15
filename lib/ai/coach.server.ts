@@ -50,7 +50,7 @@ export interface RunDeath {
  * produces the condescending output the prompt explicitly forbids.
  */
 export interface RunFacts {
-  /** Catalog id from `lib/games.ts`. Names the game for the model; never resolved. */
+  /** Catalog id from `lib/catalog`. Names the game for the model; never resolved. */
   gameId: string;
   score: number;
   durationMs: number;

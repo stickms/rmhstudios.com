@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
-import { readSongAudio, readSongAudioRange, songAudioSize } from '@/lib/slice-it/songs.server';
+import { readSongAudio, readSongAudioRange, songAudioSize } from '@features/slice-it/engine/songs.server';
 
 /**
  * Audio streaming, with byte ranges so the player can seek.

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 
 /**
  * Shared "you need an account for that" prompt.
@@ -19,22 +19,56 @@ import { toast } from 'sonner';
  * subscribe every action bar to router updates.
  */
 export function useSignInPrompt() {
-  const navigate = useNavigate();
-  const { t } = useTranslation('common');
+  const navigate =
+    useNavigate();
+  const {
+    t,
+  } =
+    useTranslation(
+      'common',
+    );
 
   return useCallback(
-    (message: string) => {
-      toast.error(message, {
-        action: {
-          label: t('sign-in', { defaultValue: 'Sign in' }),
-          onClick: () =>
-            navigate({
-              to: '/login',
-              search: { callbackURL: window.location.pathname + window.location.search },
-            }),
+    (
+      message: string,
+    ) => {
+      toast.error(
+        message,
+        {
+          action:
+            {
+              label:
+                t(
+                  'sign-in',
+                  {
+                    defaultValue:
+                      'Sign in',
+                  },
+                ),
+              onClick:
+                () =>
+                  navigate(
+                    {
+                      to: '/login',
+                      search:
+                        {
+                          callbackURL:
+                            window
+                              .location
+                              .pathname +
+                            window
+                              .location
+                              .search,
+                        },
+                    },
+                  ),
+            },
         },
-      });
+      );
     },
-    [navigate, t],
+    [
+      navigate,
+      t,
+    ],
   );
 }

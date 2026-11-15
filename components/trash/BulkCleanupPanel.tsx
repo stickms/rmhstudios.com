@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Bulk content management (plan I2).
  *
@@ -17,7 +15,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { ListChecks, Search, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,6 +26,9 @@ import { Select } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { bulkKindCopy, bulkStatusCopy } from '@/components/trash/copy';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { cancelBulkOperationApi, listBulkOperationsApi } from '@/lib/bulk/bulk.contract';
 import {
   BULK_KINDS,
   bulkProgress,
@@ -38,6 +39,8 @@ import {
   type BulkOperationView,
   type BulkPreview,
 } from '@/lib/bulk/types';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface UpgradeBody {
   error?: string;
@@ -89,10 +92,13 @@ export function BulkCleanupPanel() {
   const operations = useQuery({
     queryKey: ['bulk-operations'],
     queryFn: async (): Promise<{ operations: BulkOperationView[] }> => {
-      const res = await fetch('/api/bulk', { credentials: 'include' });
-      const body = (await res.json().catch(() => ({}))) as UpgradeBody;
-      if (!res.ok) throw new BulkError(res.status, body);
-      return body as unknown as { operations: BulkOperationView[] };
+      try {
+        return await api(listBulkOperationsApi);
+      } catch (e) {
+        // A 402 carries the membership upgrade envelope the UI upsells from.
+        if (e instanceof HttpError) throw new BulkError(e.status, (e.body ?? {}) as UpgradeBody);
+        throw e;
+      }
     },
     // Poll only while something is moving. An idle page makes no requests.
     refetchInterval: (q) =>
@@ -111,6 +117,7 @@ export function BulkCleanupPanel() {
       ? operations.error.body
       : null;
   const upsell = upgrade ?? listGate;
+  const arrival = useArrival(!operations.isPending);
 
   /** Only the fields this kind honours — the rest are never sent or shown. */
   const filter: BulkFilter = {
@@ -180,11 +187,7 @@ export function BulkCleanupPanel() {
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/bulk/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('cancel failed');
+      await api(cancelBulkOperationApi, { params: { id } });
     },
     onSuccess: () => {
       toast.success(t('bulk-cancelled-toast', { defaultValue: 'Stopping…' }));
@@ -239,7 +242,7 @@ export function BulkCleanupPanel() {
     return (
       <section aria-labelledby="bulk-heading" className="flex flex-col gap-4">
         {heading}
-        <div className="glass-pane rounded-site p-5">
+        <div className={cn('rounded-site p-5', arrival)}>
           <p className="text-sm text-site-text">
             {t('bulk-upgrade-body', {
               tier: listGate.requiredTierLabel ?? 'Pro',
@@ -247,7 +250,7 @@ export function BulkCleanupPanel() {
             })}
           </p>
           {listGate.upgradeHref ? (
-            <Button variant="accent" className="mt-3" asChild>
+            <Button variant="default" className="mt-3" asChild>
               <a href={listGate.upgradeHref}>
                 <Sparkles aria-hidden />
                 {t('bulk-upgrade-cta', { defaultValue: 'See membership' })}
@@ -264,7 +267,7 @@ export function BulkCleanupPanel() {
       {heading}
 
       {upsell ? (
-        <div className="glass-pane rounded-site p-5">
+        <div className="rounded-site p-5">
           <p className="text-sm text-site-text">
             {t('bulk-upgrade-body', {
               tier: upsell.requiredTierLabel ?? 'Pro',
@@ -272,7 +275,7 @@ export function BulkCleanupPanel() {
             })}
           </p>
           {upsell.upgradeHref ? (
-            <Button variant="accent" className="mt-3" asChild>
+            <Button variant="default" className="mt-3" asChild>
               <a href={upsell.upgradeHref}>
                 <Sparkles aria-hidden />
                 {t('bulk-upgrade-cta', { defaultValue: 'See membership' })}
@@ -282,7 +285,7 @@ export function BulkCleanupPanel() {
         </div>
       ) : null}
 
-      <div className="glass-pane flex flex-col gap-4 rounded-site p-5">
+      <div className="flex flex-col gap-4 rounded-site p-5">
         <div className="flex flex-col gap-2">
           <Label htmlFor="bulk-kind">
             {t('bulk-kind-label', { defaultValue: 'What to clean' })}
@@ -382,7 +385,7 @@ export function BulkCleanupPanel() {
         ) : null}
 
         <Button
-          variant="secondary"
+          variant="default"
           className="self-start"
           loading={previewMutation.isPending}
           disabled={!!active}
@@ -394,7 +397,7 @@ export function BulkCleanupPanel() {
       </div>
 
       {preview ? (
-        <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
+        <div className="flex flex-col gap-3 rounded-site p-5">
           <p className="text-sm font-semibold text-site-text">
             {t('bulk-preview-count', {
               count: preview.total,
@@ -413,9 +416,9 @@ export function BulkCleanupPanel() {
           {preview.sample.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {preview.sample.map((row) => (
-                <li key={row.id} className="glass-fill rounded-site-sm px-3 py-2">
+                <li key={row.id} className="rounded-site-sm px-3 py-2">
                   <p className="truncate text-sm text-site-text">{row.label}</p>
-                  {row.detail ? <p className="text-xs text-site-text-dim">{row.detail}</p> : null}
+                  {row.detail ? <p className="text-xs text-site-text-muted">{row.detail}</p> : null}
                 </li>
               ))}
             </ul>
@@ -434,10 +437,10 @@ export function BulkCleanupPanel() {
       ) : null}
 
       {active ? (
-        <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
+        <div className={cn('flex flex-col gap-3 rounded-site p-5', arrival)}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-site-text">{kinds[active.kind].label}</p>
-            <Badge size="sm" variant="accent">
+            <Badge variant="default">
               {statuses[active.status] ?? active.status}
             </Badge>
           </div>
@@ -464,7 +467,7 @@ export function BulkCleanupPanel() {
             })}
           </p>
           <Button
-            variant="secondary"
+            variant="default"
             className="self-start"
             loading={cancelMutation.isPending}
             onClick={() => cancelMutation.mutate(active.id)}
@@ -475,7 +478,7 @@ export function BulkCleanupPanel() {
       ) : null}
 
       {history.length > 0 ? (
-        <div className="flex flex-col gap-3">
+        <div className={cn('flex flex-col gap-3', arrival)}>
           <h3 className="site-section-label">
             {t('bulk-history-heading', { defaultValue: 'Recent cleanups' })}
           </h3>
@@ -483,18 +486,17 @@ export function BulkCleanupPanel() {
             {history.map((op) => (
               <li
                 key={op.id}
-                className="glass-fill flex flex-wrap items-center justify-between gap-2 rounded-site px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-site px-3 py-2"
               >
                 <span className="text-sm text-site-text">{kinds[op.kind].label}</span>
                 <span className="flex items-center gap-2">
-                  <span className="text-xs text-site-text-dim">
+                  <span className="text-xs text-site-text-muted">
                     {t('bulk-history-processed', {
                       count: op.processed,
                       defaultValue: '{{count}} processed',
                     })}
                   </span>
                   <Badge
-                    size="sm"
                     variant={
                       op.status === 'DONE'
                         ? 'success'
@@ -515,6 +517,7 @@ export function BulkCleanupPanel() {
       {operations.isError && !upsell ? (
         <EmptyState
           icon={ListChecks}
+          className={arrival}
           title={t('bulk-list-error-title', { defaultValue: 'Could not load your cleanups' })}
           description={t('bulk-list-error-body', {
             defaultValue: 'Refresh the page to try again.',

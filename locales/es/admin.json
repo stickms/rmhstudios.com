@@ -71,6 +71,7 @@
   "ban-author": "Banear autor",
   "ban-length-prompt": "Duración del baneo en días (en blanco = permanente):",
   "ban-reason-prompt": "Motivo del baneo:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "Escribir nuevos registros de desarrollador, o editar y eliminar publicaciones de blog existentes.",
   "blog-title": "Gestionar publicaciones del blog",
   "bot-no-email": "Automated account",

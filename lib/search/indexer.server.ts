@@ -167,8 +167,7 @@ async function loadBatch(
 export async function indexCatalog(): Promise<{ written: number; unchanged: number }> {
   if (!(await isEmbeddingStoreReady())) return { written: 0, unchanged: 0 };
 
-  const { games } = await import('@/lib/games');
-  const { apps } = await import('@/lib/apps');
+  const { games, apps } = await import('@/lib/catalog');
 
   let written = 0;
   let unchanged = 0;

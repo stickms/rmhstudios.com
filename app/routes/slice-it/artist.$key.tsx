@@ -3,10 +3,17 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Disc3, Loader2, Music, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SliceThemeWrapper } from '@/components/slice-it/SliceThemeWrapper';
-import { formatSongDuration, type LibrarySong } from '@/lib/slice-it/library-filters';
-import { packLibraryPath, type PackSummary } from '@/lib/slice-it/packs';
+import { SliceThemeWrapper } from '@features/slice-it/ui/SliceThemeWrapper';
+import { formatSongDuration } from '@features/slice-it/engine/library-filters';
+import { packLibraryPath } from '@features/slice-it/engine/packs';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { api } from '@/lib/contract/client';
+import {
+  getSliceArtistApi,
+  type ArtistPageResponse,
+} from '@features/slice-it/engine/slice-it.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * L15 — the artist page.
@@ -28,20 +35,6 @@ import { buildCanonical, buildMeta } from '@/lib/seo';
  * client and the server cannot disagree about what a key is.
  */
 
-interface ArtistResponse {
-  artist: {
-    key: string;
-    display: string;
-    songCount: number;
-    totalPlays: number;
-    avgBpm: number | null;
-    topRating: number | null;
-  };
-  songs: LibrarySong[];
-  albums: PackSummary[];
-  hasMore: boolean;
-}
-
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="neumorphic-inset min-w-24 px-4 py-3">
@@ -54,21 +47,18 @@ function Stat({ label, value }: { label: string; value: string }) {
 function ArtistPage() {
   const { t } = useTranslation('r-slice-it');
   const { key } = Route.useParams();
-  const [data, setData] = useState<ArtistResponse | null>(null);
+  const [data, setData] = useState<ArtistPageResponse | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
+  const arrival = useArrival(state !== 'loading');
 
   useEffect(() => {
     let cancelled = false;
     setState('loading');
     void (async () => {
       try {
-        const res = await fetch(`/api/slice-it/songs/artist/${encodeURIComponent(key)}`);
+        const body = await api(getSliceArtistApi, { params: { key } });
         if (cancelled) return;
-        if (!res.ok) {
-          setState('missing');
-          return;
-        }
-        setData((await res.json()) as ArtistResponse);
+        setData(body);
         setState('ready');
       } catch {
         if (!cancelled) setState('missing');
@@ -108,7 +98,7 @@ function ArtistPage() {
           )}
 
           {state === 'missing' && (
-            <div className="neumorphic p-8 text-center">
+            <div className={cn('neumorphic p-8 text-center', arrival)}>
               <Music className="mx-auto mb-3 size-10 text-slice-text-light" aria-hidden />
               <p className="font-bold text-slice-text">
                 {t('artist-missing', { defaultValue: 'No tracks by that artist yet.' })}
@@ -118,7 +108,9 @@ function ArtistPage() {
 
           {state === 'ready' && data && (
             <>
-              <header className="neumorphic flex flex-col items-start gap-4 p-4 sm:p-6">
+              <header
+                className={cn('neumorphic flex flex-col items-start gap-4 p-4 sm:p-6', arrival)}
+              >
                 <div>
                   <p className="text-xs font-bold text-slice-text-light">
                     {t('artist-label', { defaultValue: 'Artist' })}
@@ -163,7 +155,7 @@ function ArtistPage() {
               </header>
 
               {data.albums.length > 0 && (
-                <section className="flex flex-col gap-2">
+                <section className={cn('flex flex-col gap-2', arrival)}>
                   <h2 className="text-sm font-bold text-slice-text">
                     {t('artist-albums', { defaultValue: 'Albums' })}
                   </h2>
@@ -192,7 +184,7 @@ function ArtistPage() {
                 </section>
               )}
 
-              <section className="flex flex-col gap-2">
+              <section className={cn('flex flex-col gap-2', arrival)}>
                 <h2 className="text-sm font-bold text-slice-text">
                   {t('artist-track-list', { defaultValue: 'Tracks' })}
                 </h2>

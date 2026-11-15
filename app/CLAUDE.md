@@ -16,25 +16,21 @@ app/
     __root.tsx       root document (see below)
     _site.tsx        pathless layout: sidebar/nav shell for standard pages
     _site/           standard site pages (feed, profiles, wallet, admin, …)
-    api/             server routes (~415 files)
+    api/             server routes that are files, and `$.ts`, the dispatcher for the registered ones (counts: docs/_generated/facts.json)
     <game>.tsx       full-screen games/apps (top level, no shell)
     sitemap[.]xml.ts /sitemap.xml ([.]= escaped literal dot)
-  globals.css        theme tokens: base + curated themes as .style-* classes (see design-language.md)
-  liquid-glass.css   the glass role base (.glass-*) the jelly material builds on
-  jelly-material.css Plasmatic Jelly CSS material: role knobs, static haze floor and rim, woken haze, CSS-spring soft body, degradation
-  jelly-arcs.css     the electric-arc overlay layer (.jelly-arc-layer)
-  jelly-coverage.css selector-level adapters that bring Radix/sonner/[data-slot] surfaces onto the material
-                     (contract for all four: docs/plasmatic-jelly-system.md — no backdrop-filter, no
-                     `infinite` animation outside the woken haze, jelly paint layers at negative z-index)
+  globals.css        theme tokens: base + curated themes as .style-* classes (see design.md)
+  styles/            Steel sheets: steel-surfaces (flat role names), steel-type, steel-chrome, steel-overlay
   site-tier.css      entry sheet for _site pages: Tailwind + globals.css, minus game/app-only sources
   app-tier.css       entry sheet for full-screen routes: the superset (lib/style-tier.ts picks)
   router.tsx         router config: intent preloading, pending component timings
-  routeTree.gen.ts   GENERATED (~487 KB) — never edit by hand
+  routeTree.gen.ts   GENERATED — never edit by hand
   icon.svg
 ```
 
 There is **no `app/lib/`** — shared code is at repo root `lib/`, imported as
-`@/lib/...` (aliases: `@/lib`, `@/components`, `@/hooks`, `@/app`).
+`@/lib/...` (aliases: `@/lib`, `@/components`, `@/hooks`, `@/app`, and `@features/<id>/...` for
+the feature-sliced games in `features/`; a feature's route file stays here and stays thin).
 
 ## File-naming rules (get these exactly right)
 
@@ -86,9 +82,54 @@ path, image})` + `buildCanonical(path)` from `@/lib/seo` (see
 
 ## Adding an API route
 
-API routes are `.ts` files with `server.handlers` keyed by HTTP method
-(GET/POST/PUT/PATCH/DELETE/OPTIONS). Every handler goes through
-**`defineHandler`** from `@/lib/api/handler.server`, which runs the canonical
+**First decide where it lives (third-pass audit AR3).** An endpoint whose handlers
+all go through the wrapper is **not a file here**: it is a registered module in its
+domain's `api/` folder, served by the one dispatcher `app/routes/api/$.ts`. A new
+endpoint binds a typed contract with `implement()`:
+
+```ts
+// lib/widgets/api/widgets.$id.server.ts   (path /api/widgets/$id, slashes written as dots)
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import { getWidgetApi, updateWidgetApi } from '@/lib/widgets/widgets.contract';
+
+export const route = apiRoute('/api/widgets/$id', {
+  GET: implement(getWidgetApi, { auth: 'optional' }, async ({ params }) => loadWidget(params.id)),
+  PATCH: implement(updateWidgetApi, { rateLimit: 'write', body: widgetBody }, async ({ params, body }) => …),
+});
+```
+
+Then `pnpm api:routes` (regenerates `lib/api/route-table.server.ts`, the static list
+the dispatcher reads; `lib/api/__tests__/route-table.test.ts` fails if it is stale). No
+route tree change, nothing added to the client entry. A feature's handlers go in
+`features/<id>/api/`; an endpoint no domain owns uses `lib/api/routes/`.
+
+A registered handler may also be a bare `defineHandler(options, handler)` with no
+contract. Just over half of the table is: 453 route files moved that way in AR3 part 2, body
+and options unchanged, because writing their contracts is first-audit C1 work. Such a
+module sits in the `api/` folder of the feature or `lib/` domain its path names or
+its code calls. Do not add new ones; give a new endpoint a contract. A wrapped
+handler that reads a multipart body, or answers with a file, an image or a redirect,
+is registered like any other: the dispatcher passes the same `Request` and returns
+the handler's `Response` untouched.
+
+It **stays a route file** when a handler is written without the wrapper (a webhook
+that verifies a raw body, an internal hook, an image or file route with its own
+caching), and when it is a splat, a stream or SSE response, `/api/auth/$` or
+`/api/v1/**`. It also stays a file while a `$param` route file beside it would answer
+its path (`/api/spaces/live` beside the raw `/api/spaces/$id`): the router prefers
+any route file to the dispatcher's splat, so the two move together. The table test
+names the pair.
+
+The dispatcher keeps what a route file did: the handler gets `{ request, params }`;
+HEAD falls back to GET; a method the endpoint does not handle, and a path nothing
+answers, fall through to the app render exactly as before (an HTML shell, or the
+site 404).
+
+Route files are `.ts` files with `server.handlers` keyed by HTTP method
+(GET/POST/PUT/PATCH/DELETE/OPTIONS). Every handler, in a route file or a registered
+module, goes through **`defineHandler`** from `@/lib/api/handler.server` (`implement`
+is `defineHandler` bound to a contract), which runs the canonical
 auth → rate limit → validate → act order and catches anything that throws:
 
 ```ts
@@ -158,12 +199,15 @@ Conventions:
 ## __root.tsx / _site.tsx (don't duplicate what they already do)
 
 `__root.tsx`: resolves session + locale server-side (signed-in shell on first
-paint), injects the anti-FOUC inline theme/locale scripts, deferred font
+paint), emits the ONE generated pre-paint script (`lib/prepaint/`: theme, locale,
+access, delight, platform, consent, media-reveal — plus its `rmh-prepaint` JSON
+data block; never hand-edit `lib/prepaint/generated.ts`, run `pnpm prepaint:build`;
+see `docs/fouc.md`), deferred font
 loading, site-wide JSON-LD, error/404 boundaries, client-error reporting
 (`lib/client-errors.ts` → `/api/client-error`), Core Web Vitals RUM
 (`lib/rum.ts` → `/api/rum`), and service-worker registration. It special-cases
-`/discord/*` routes with a **minimal head** (Discord's CSP blocks inline
-scripts/external fonts) — replicate that if adding Discord Activity routes.
+`/discord/*` routes with a **minimal head** (no external fonts or preconnects, no JSON-LD; it still carries the
+pre-paint script with `discord: true`) — replicate that if adding Discord Activity routes.
 
 `_site.tsx`: left sidebar, mobile nav, skip link, `<main id="main-content">`
 landmark, `.page-root` enter animation, and its own error/404 components so
@@ -172,7 +216,7 @@ failures keep the shell.
 `router.tsx`: `defaultPreload: "intent"` (50ms delay, 30s preload stale
 time), `scrollRestoration`, `RoutePending` as the default pending component
 (400ms delay / 200ms min display — under 400ms the old page stays and the new
-one replaces it directly; see `docs/performance-audit-2026-10-21.md` §Instant
+one replaces it directly; see `docs/archive/2026/performance-audit-2026-10-21.md` §Instant
 navigation). A page whose main content is fetched by a component after mount
 can start that GET from its route's `beforeLoad` with `lib/route/intent-fetch`
 (see the post and profile routes) instead of waiting a round trip after mount.
@@ -186,13 +230,15 @@ route that never mentions `defineHandler`, a page with no `head()`, a stale
 generated docs/site reference, a hand-edited `routeTree.gen.ts`. Confirm the
 rest yourself:
 
-- [ ] **Placement decides chrome.** `_site/` for a standard page (radial shell,
+- [ ] **Placement decides chrome.** `_site/` for a standard page (the Steel shell,
       `PageLayout`), top level for a full-screen experience. Games, `/login`,
       `secret/*`, `discord/*` and the legal pages are intentionally top-level.
 - [ ] **`head()` on every page** — at minimum `meta: [{ title: "X | RMH
       Studios" }]`; public pages use `buildMeta()` + `buildCanonical()` and let
       `buildMeta` own the whole `og:*` block; content pages add JSON-LD via
       `jsonLdScript()`.
+- [ ] **A contract-only endpoint is a registered module**, not a new file under
+      `app/routes/api` (see "Adding an API route"), and `pnpm api:routes` was run.
 - [ ] **Every handler is a `defineHandler`** with the right `auth` and a
       `rateLimit` wherever it writes, uploads or costs money — and never echoes
       a caught error to the caller. `/api/v1/**` uses `withDeveloperApi`.

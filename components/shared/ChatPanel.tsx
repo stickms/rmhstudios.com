@@ -4,7 +4,6 @@
  * Used by RMHStudy, RMHType, and potentially others.
  * Themed via CSS custom property prefix (e.g., "rmhstudy", "rmhtype").
  */
-'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';

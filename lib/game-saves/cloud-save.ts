@@ -24,6 +24,7 @@
  * playing offline should generate no network traffic at all, and a 401 in the
  * console on every autosave is how you teach people to ignore their console.
  */
+import { readJson, removeKey, writeJson } from '@/lib/core/persist';
 import {
   chooseSave,
   type MonotonicCounters,
@@ -221,17 +222,12 @@ export function createCloudSave<T>(config: CloudSaveConfig<T>): CloudSave<T> {
   let identity: string | null = null;
 
   const readMeta = (): SaveMeta | null => {
-    try {
-      const raw = localStorage.getItem(metaKey);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw) as Partial<SaveMeta>;
-      return {
-        owner: typeof parsed.owner === 'string' ? parsed.owner : null,
-        at: typeof parsed.at === 'number' && Number.isFinite(parsed.at) ? parsed.at : 0,
-      };
-    } catch {
-      return null;
-    }
+    const parsed = readJson<Partial<SaveMeta> | null>(metaKey, null);
+    if (!parsed) return null;
+    return {
+      owner: typeof parsed.owner === 'string' ? parsed.owner : null,
+      at: typeof parsed.at === 'number' && Number.isFinite(parsed.at) ? parsed.at : 0,
+    };
   };
 
   const savedAt = (save: T): number => {
@@ -263,31 +259,25 @@ export function createCloudSave<T>(config: CloudSaveConfig<T>): CloudSave<T> {
         const meta = readMeta();
         if (meta?.owner && identity && meta.owner !== identity) return null;
 
-        const raw = localStorage.getItem(config.localKey);
-        if (!raw) return null;
-        return config.parse(JSON.parse(raw));
+        const raw = readJson<unknown>(config.localKey, undefined);
+        if (raw === undefined) return null;
+        return config.parse(raw);
       } catch {
-        // Private browsing, quota, a disabled storage API, unparseable JSON.
+        // `config.parse` rejected the stored value. (Private browsing, quota, a
+        // disabled storage API and unparseable JSON already read as undefined.)
         return null;
       }
     },
 
     writeLocal(save, at = Date.now()) {
-      try {
-        localStorage.setItem(config.localKey, JSON.stringify(save));
-        localStorage.setItem(metaKey, JSON.stringify({ owner: identity, at } satisfies SaveMeta));
-      } catch {
-        // Nothing here should interrupt a game that also saves to the server.
-      }
+      // Nothing here should interrupt a game that also saves to the server.
+      writeJson(config.localKey, save);
+      writeJson(metaKey, { owner: identity, at } satisfies SaveMeta);
     },
 
     clearLocal() {
-      try {
-        localStorage.removeItem(config.localKey);
-        localStorage.removeItem(metaKey);
-      } catch {
-        // As above.
-      }
+      removeKey(config.localKey);
+      removeKey(metaKey);
     },
 
     async readCloud() {

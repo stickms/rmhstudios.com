@@ -36,7 +36,10 @@
  * §5). The id is the join, and nothing is said twice.
  */
 
-import { spiralAnchor, type GlobeAnchor } from '@/lib/globe';
+import {
+  spiralAnchor,
+  type GlobeAnchor,
+} from '@/lib/globe';
 
 /** The hydrocolloid technique a course is built with. */
 export type Technique =
@@ -71,22 +74,95 @@ export interface Course {
 export const MIN_PEARL_MM = 2;
 export const MAX_PEARL_MM = 38;
 
-export const COURSES: readonly Course[] = [
-  { id: 'birch-caviar', no: 1, technique: 'direct', diameterMm: 2, tempC: 4 },
-  { id: 'rye-espuma', no: 2, technique: 'espuma', diameterMm: 26, tempC: 52 },
-  { id: 'oyster-reverse', no: 3, technique: 'reverse', diameterMm: 22, tempC: 10 },
-  { id: 'rutabaga-400', no: 4, technique: 'reverse', diameterMm: 38, tempC: 62, signature: true },
-  { id: 'cod-nitro', no: 5, technique: 'frozen-reverse', diameterMm: 30, tempC: 48 },
-  { id: 'marrow-pearls', no: 6, technique: 'fluid-gel', diameterMm: 6, tempC: 66 },
-  { id: 'reindeer-smoke', no: 7, technique: 'reverse', diameterMm: 34, tempC: 56 },
-  { id: 'cloudberry-frozen', no: 8, technique: 'frozen-reverse', diameterMm: 28, tempC: 2 },
-  { id: 'gravel', no: 9, technique: 'aerogel', diameterMm: 8, tempC: 18 },
-];
+export const COURSES: readonly Course[] =
+  [
+    {
+      id: 'birch-caviar',
+      no: 1,
+      technique:
+        'direct',
+      diameterMm: 2,
+      tempC: 4,
+    },
+    {
+      id: 'rye-espuma',
+      no: 2,
+      technique:
+        'espuma',
+      diameterMm: 26,
+      tempC: 52,
+    },
+    {
+      id: 'oyster-reverse',
+      no: 3,
+      technique:
+        'reverse',
+      diameterMm: 22,
+      tempC: 10,
+    },
+    {
+      id: 'rutabaga-400',
+      no: 4,
+      technique:
+        'reverse',
+      diameterMm: 38,
+      tempC: 62,
+      signature: true,
+    },
+    {
+      id: 'cod-nitro',
+      no: 5,
+      technique:
+        'frozen-reverse',
+      diameterMm: 30,
+      tempC: 48,
+    },
+    {
+      id: 'marrow-pearls',
+      no: 6,
+      technique:
+        'fluid-gel',
+      diameterMm: 6,
+      tempC: 66,
+    },
+    {
+      id: 'reindeer-smoke',
+      no: 7,
+      technique:
+        'reverse',
+      diameterMm: 34,
+      tempC: 56,
+    },
+    {
+      id: 'cloudberry-frozen',
+      no: 8,
+      technique:
+        'frozen-reverse',
+      diameterMm: 28,
+      tempC: 2,
+    },
+    {
+      id: 'gravel',
+      no: 9,
+      technique:
+        'aerogel',
+      diameterMm: 8,
+      tempC: 18,
+    },
+  ];
 
 /** Where each course sits on the sphere, in running order. Computed once. */
-export const COURSE_ANCHORS: readonly GlobeAnchor[] = COURSES.map((_, i) =>
-  spiralAnchor(i, COURSES.length),
-);
+export const COURSE_ANCHORS: readonly GlobeAnchor[] =
+  COURSES.map(
+    (
+      _,
+      i,
+    ) =>
+      spiralAnchor(
+        i,
+        COURSES.length,
+      ),
+  );
 
 /**
  * The drawn radius of a course's pearl, as a fraction of the globe's radius.
@@ -97,11 +173,27 @@ export const COURSE_ANCHORS: readonly GlobeAnchor[] = COURSES.map((_, i) =>
  * course. The floor keeps the smallest pearl a legible target — a hit area is
  * not the mark, but the mark still has to be findable.
  */
-export function pearlRadius(diameterMm: number): number {
-  const t = Math.sqrt(
-    Math.max(0, diameterMm - MIN_PEARL_MM) / Math.max(1, MAX_PEARL_MM - MIN_PEARL_MM),
+export function pearlRadius(
+  diameterMm: number,
+): number {
+  const t =
+    Math.sqrt(
+      Math.max(
+        0,
+        diameterMm -
+          MIN_PEARL_MM,
+      ) /
+        Math.max(
+          1,
+          MAX_PEARL_MM -
+            MIN_PEARL_MM,
+        ),
+    );
+  return (
+    0.035 +
+    t *
+      0.055
   );
-  return 0.035 + t * 0.055;
 }
 
 /** The house price, in SEK, per guest. Pairings are priced separately. */

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Public edit history (F23).
  *
@@ -25,11 +23,9 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { RelativeTime } from '@/components/ui/RelativeTime';
 import { diffWords, diffStat, type PostVersion } from '@/lib/feed/word-diff';
 import { cn, relativeTimeShort } from '@/lib/utils';
-
-interface HistoryResponse {
-  postId: string;
-  versions: PostVersion[];
-}
+import { postHistoryApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
+import { useArrival } from '@/components/ui/arrive';
 
 /**
  * One version rendered as its diff against the version before it. The oldest
@@ -53,7 +49,7 @@ function VersionDiff({
   const isCurrent = index === total - 1;
 
   return (
-    <li className="glass-inset rounded-site px-4 py-3">
+    <li className="surface-field rounded-site px-4 py-3">
       <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-site-text-muted">
         <span className="font-semibold text-site-text">
           {previous
@@ -74,7 +70,7 @@ function VersionDiff({
         ) : null}
       </div>
 
-      <p className="text-[15px] leading-relaxed break-words whitespace-pre-wrap text-site-text">
+      <p className="text-body leading-relaxed break-words whitespace-pre-wrap text-site-text">
         {previous ? (
           parts.map((part, i) => {
             if (part.op === 'equal') return <span key={i}>{part.value}</span>;
@@ -121,14 +117,17 @@ export function EditHistoryDialog({
   const [versions, setVersions] = useState<PostVersion[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Steel M9: the versions (or why there are none) replace the spinner. Not ready until the first answer, so the
+  // "unavailable" state never flashes before the fetch starts.
+  const ready = !loading && (!!versions || failed);
+  const arrival = useArrival(ready);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setLoading(true);
     setFailed(false);
-    fetch(`/api/rmharks/${postId}/history`, { credentials: 'include' })
-      .then((res) => (res.ok ? (res.json() as Promise<HistoryResponse>) : Promise.reject()))
+    api(postHistoryApi, { params: { id: postId } })
       .then((data) => {
         if (!cancelled) setVersions(data.versions);
       })
@@ -153,12 +152,13 @@ export function EditHistoryDialog({
           })}
         </DialogDescription>
 
-        {loading ? (
+        {!ready ? (
           <div className="flex justify-center py-8">
             <Spinner />
           </div>
         ) : failed || !versions ? (
           <EmptyState
+            className={arrival}
             icon={History}
             title={t('edit-history-unavailable', { defaultValue: 'History unavailable' })}
             description={t('edit-history-unavailable-detail', {
@@ -166,7 +166,7 @@ export function EditHistoryDialog({
             })}
           />
         ) : (
-          <ol className="space-y-2">
+          <ol className={cn('space-y-2', arrival)}>
             {versions.map((version, i) => (
               <VersionDiff
                 key={`${version.at}-${i}`}
@@ -199,7 +199,7 @@ export function EditHistoryButton({ postId, className }: { postId: string; class
       <button
         type="button"
         className={cn(
-          'shrink-0 rounded-site-sm text-site-text-dim transition-colors hover:text-site-text',
+          'shrink-0 rounded-site-sm text-site-text-muted transition-colors hover:text-site-text',
           className,
         )}
         onClick={(e) => {

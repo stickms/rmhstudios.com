@@ -384,7 +384,7 @@ export async function deleteObject(key: string): Promise<void> {
 /**
  * Every key under a prefix.
  *
- * For operational reads — the orphan scan in `lib/slice-it/ops.server.ts`
+ * For operational reads — the orphan scan in `features/slice-it/engine/ops.server.ts`
  * compares storage keys against database rows and needs no object bodies at
  * all. **Bounded**, and the bound is not a nicety: a bucket with a million
  * objects under one prefix would otherwise page forever inside a request.

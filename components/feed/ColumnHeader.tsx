@@ -1,5 +1,3 @@
-'use client';
-
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
@@ -65,7 +63,7 @@ export function ColumnHeader({
       <header data-slot="page-header" className={cn('page-heading', className)}>
         <div className="page-heading__content">
           <div className="min-w-0">
-            <h1 className="site-display-3">
+            <h1 className="t-title">
               <span className="block min-w-0 break-words">{title}</span>
             </h1>
           </div>
@@ -85,10 +83,10 @@ export function ColumnHeader({
         // line and pushes the actions to a second row when the space runs out —
         // better than either an unreadable title or unlabelled glyph buttons.
         'flex flex-wrap items-center gap-2 px-4 py-3',
-        // Sticky column headers float as L3 `.glass-chrome` capsules inset from the
+        // Sticky column headers float as L3 `.surface-chrome` capsules inset from the
         // column edges (§8.2); embedded (sticky={false}) headers stay inline with
-        // a hairline divider. The optics-ring glint comes free from `.glass-chrome`.
-        sticky ? 'glass-chrome site-sticky-chrome' : 'border-b border-site-border',
+        // a hairline divider. The optics-ring glint comes free from `.surface-chrome`.
+        sticky ? 'surface-chrome site-sticky-chrome' : 'border-b border-site-border',
         className,
       )}
     >
@@ -97,7 +95,7 @@ export function ColumnHeader({
  (a tag name, a creator's display name) that would otherwise push the
  actions off the row instead of ellipsing. */}
       {title && (
-        <Heading className="min-w-0 truncate font-display text-xl font-bold tracking-tight text-site-text sm:text-2xl">
+        <Heading className="min-w-0 truncate text-xl font-semibold tracking-tight text-site-text sm:text-2xl">
           {title}
         </Heading>
       )}

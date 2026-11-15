@@ -1,13 +1,13 @@
-'use client';
-
 /** N3 — mods write up to five onboarding questions; options can grant a label and flairs. */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { FlairChip } from '@/components/communities/FlairChip';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import {
@@ -40,6 +40,7 @@ export function ModOnboarding({
 }) {
   const { t } = useTranslation('f-communities-plus');
   const [draft, setDraft] = useState<DraftQuestion[] | null>(null);
+  const arrival = useArrival(draft !== null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -101,7 +102,7 @@ export function ModOnboarding({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={cn('flex flex-col gap-4', arrival)}>
       <p className="text-xs text-site-text-muted">
         {t('onb-intro', {
           defaultValue:
@@ -109,7 +110,7 @@ export function ModOnboarding({
         })}
       </p>
       {draft.map((q, i) => (
-        <fieldset key={i} className="glass-pane flex flex-col gap-3 p-4">
+        <fieldset key={i} className="flex flex-col gap-3 p-4">
           <div className="flex items-center gap-2">
             <Input
               value={q.prompt}
@@ -129,7 +130,7 @@ export function ModOnboarding({
             </Button>
           </div>
           {q.options.map((o, k) => (
-            <div key={k} className="glass-inset flex flex-col gap-2 rounded-site p-4">
+            <div key={k} className="surface-field flex flex-col gap-2 rounded-site p-4">
               <div className="flex items-center gap-2">
                 <Input
                   value={o.label}
@@ -187,7 +188,7 @@ export function ModOnboarding({
           <div>
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
               disabled={q.options.length >= ONBOARDING_MAX_OPTIONS}
               onClick={() => setQ(i, (x) => ({ ...x, options: [...x.options, blankOption()] }))}
@@ -200,7 +201,7 @@ export function ModOnboarding({
       <div className="flex items-center justify-between">
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size="sm"
           disabled={draft.length >= ONBOARDING_MAX_QUESTIONS}
           onClick={() =>
@@ -210,7 +211,7 @@ export function ModOnboarding({
           <Plus /> {t('onb-add-question', { defaultValue: 'Add question' })}
         </Button>
         <Button
-          variant="accent"
+          variant="default"
           size="sm"
           loading={saving}
           disabled={draft.some((q) => !q.prompt.trim() || q.options.some((o) => !o.label.trim()))}

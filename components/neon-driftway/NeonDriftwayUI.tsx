@@ -1,10 +1,9 @@
-'use client';
-
 import { LiveryEditorButton } from './LiveryEditor';
 import { useCallback, useEffect, useState } from 'react';
 import { parseScoreMoment, ResultMomentSlot, useScoreMoment } from '@/components/games/result-moment-slot';
 import { GHOST_MODES, type GhostMode, type GhostTrace } from '@/lib/neon-driftway/ghost';
 import { useTranslation } from 'react-i18next';
+import { neonDriftwayLeaderboardApi } from '@/lib/neon-driftway/neon-driftway.contract';
 import { Button } from '@/components/ui/button';
 import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users, Glasses, Compass, Eye, Ghost, LogOut } from 'lucide-react';
 import { useSession } from '@/components/Providers';
@@ -14,6 +13,12 @@ import { LEVELS } from '@/lib/neon-driftway/constants';
 import type { LevelId, RunStats } from '@/lib/neon-driftway/types';
 import type { GyroStatus } from '@/lib/neon-driftway/gyro';
 import type { ViewMode } from './NeonDriftwayGame';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { submitNeonDriftwayScoreApi } from '@/lib/game/score.contract';
+import { saveGhostApi } from '@/lib/game/replay.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type LeaderboardEntry = {
   username: string;
@@ -66,6 +71,7 @@ export function NeonDriftwayUI({
 } & VrProps) {
   const { t } = useTranslation("c-neon-driftway");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const lbArrival = useArrival(leaderboard.length > 0);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [scoreMoment, takeScoreMoment, clearScoreMoment] = useScoreMoment();
   const session = useSession();
@@ -74,9 +80,7 @@ export function NeonDriftwayUI({
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const res = await fetch('/api/neon-driftway/leaderboard');
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await api(neonDriftwayLeaderboardApi);
       setLeaderboard(Array.isArray(data) ? data : []);
     } catch { /* ignore */ }
   }, []);
@@ -92,33 +96,32 @@ export function NeonDriftwayUI({
     setScoreSubmitted(true);
     (async () => {
       try {
-        const res = await fetch('/api/neon-driftway/score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        // A refused submit (any non-2xx) used to read as "no moment"; keep that.
+        const body: unknown = await api(submitNeonDriftwayScoreApi, {
+          body: {
             username,
             score: runStats.score,
             distance: runStats.distance,
             timeMs: runStats.timeSurvivedMs,
             level: runStats.level,
-          }),
+          },
+        }).catch((e: unknown) => {
+          if (e instanceof HttpError) return null;
+          throw e;
         });
-        const body: unknown = res.ok ? await res.json().catch(() => null) : null;
         void takeScoreMoment(body);
         // A new personal best becomes this level's ghost (U9). Only on a best,
         // so a player stores one trace per level however often they play.
         const trace = parseScoreMoment(body) ? getGhostTrace() : null;
         if (trace) {
-          void fetch('/api/replays/ghost', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          void api(saveGhostApi, {
+            body: {
               game: 'neon-driftway',
               level: trace.level,
-              data: trace,
+              data: trace as unknown as Record<string, unknown>,
               score: Math.round(runStats.score),
               durationMs: Math.round(runStats.timeSurvivedMs),
-            }),
+            },
           }).catch(() => {});
         }
         fetchLeaderboard();
@@ -271,7 +274,7 @@ export function NeonDriftwayUI({
 
           {/* Mini leaderboard */}
           {leaderboard.length > 0 && (
-            <div className="bg-black/60 border border-zinc-700 rounded-lg p-4 mt-4">
+            <div className={cn('bg-black/60 border border-zinc-700 rounded-lg p-4 mt-4', lbArrival)}>
               <div className="flex items-center gap-2 mb-3">
                 <Trophy className="w-4 h-4 text-yellow-400" />
                 <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{t("top-scores", { defaultValue: "Top Scores" })}</span>
@@ -434,7 +437,7 @@ export function NeonDriftwayUI({
             </Button>
             <Button
               onClick={onGoToLevelSelect}
-              variant="outline"
+              variant="default"
               className="flex-1 border-zinc-600 text-zinc-300 hover:bg-zinc-800"
             >
               {t("level-select", { defaultValue: "Level Select" })}
@@ -443,7 +446,7 @@ export function NeonDriftwayUI({
 
           {/* Leaderboard */}
           {leaderboard.length > 0 && (
-            <div className="bg-black/60 border border-zinc-700 rounded-lg p-3">
+            <div className={cn('bg-black/60 border border-zinc-700 rounded-lg p-3', lbArrival)}>
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="w-3 h-3 text-yellow-400" />
                 <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{t("leaderboard", { defaultValue: "Leaderboard" })}</span>
@@ -521,7 +524,7 @@ export function NeonDriftwayUI({
             </Button>
             <Button
               onClick={onGoToLevelSelect}
-              variant="outline"
+              variant="default"
               className="flex-1 border-zinc-600 text-zinc-300 hover:bg-zinc-800"
             >
               {t("level-select", { defaultValue: "Level Select" })}

@@ -1,10 +1,11 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RMHarkCard } from './RMHarkCard';
-import { Reveal } from '@/components/motion';
+import { SpineStation } from '@/components/ui/spine';
+import { useArrival } from '@/components/ui/arrive';
 import type { FeedItem } from '@/lib/feed-types';
+import { similarPostsApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
 
 /** Topically similar posts ("more like this"), shown under a post. */
 export function RelatedPosts({ postId }: { postId: string }) {
@@ -13,8 +14,7 @@ export function RelatedPosts({ postId }: { postId: string }) {
 
   useEffect(() => {
     let active = true;
-    fetch(`/api/rmharks/${postId}/similar`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { items: [] }))
+    api(similarPostsApi, { params: { id: postId } })
       .then((d) => active && setItems(d.items ?? []))
       .catch(() => {});
     return () => {
@@ -22,22 +22,18 @@ export function RelatedPosts({ postId }: { postId: string }) {
     };
   }, [postId]);
 
+  // Steel M9: fetched after the post has painted, the section lands at the end of the thread and fades in.
+  const arrival = useArrival(items.length > 0);
   if (items.length === 0) return null;
 
-  // The section is a sibling of the post and its replies in `.post-page`, so the
-  // cards here sit on the same column and gutter as they do: no wrapper padding,
-  // and `.post-page .social-post` drops the feed's own side margin (feed.css).
-  // Section-level reveal: "more like this" fades up once when it scrolls into
-  // view (below the fold on the detail page). The cards inside are NOT each
-  // wrapped, which would violate the feed perf rules; only the section settles.
+  // A station on the thread's spine, then the posts as items on it. The caller owns the `Spine`; the group is
+  // `display: contents`, so the items still hang on it.
   return (
-    <Reveal as="section" className="post-page__related">
-      <h2 className="site-section-label">
-        {t('related-posts', { defaultValue: 'Related posts' })}
-      </h2>
+    <div className={arrival ? 'arrive-group' : undefined}>
+      <SpineStation>{t('related-posts', { defaultValue: 'Related posts' })}</SpineStation>
       {items.map((item) => (
         <RMHarkCard key={item.id} item={item} />
       ))}
-    </Reveal>
+    </div>
   );
 }

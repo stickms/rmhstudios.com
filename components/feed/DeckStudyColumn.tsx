@@ -1,7 +1,6 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useState, useCallback, useRef } from'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Link, useNavigate } from'@tanstack/react-router';
 import { Loader2, ArrowLeft, Plus, Trash2, RotateCcw, GraduationCap, Check } from'lucide-react';
 import { Spinner } from'@/components/ui/spinner';
@@ -9,8 +8,16 @@ import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { useTranslation } from'react-i18next';
-import { Reveal } from'@/components/motion';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import { reviewCardApi } from '@/lib/study/decks.contract';
+import {
+ addDeckCardApi,
+ deckReviewQueueApi,
+ deleteDeckApi,
+ getDeckApi,
+} from '@/lib/study/decks.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface Card {
  id: string;
@@ -80,21 +87,19 @@ export function DeckStudyColumn({
  const [front, setFront] = useState('');
  const [back, setBack] = useState('');
  const [adding, setAdding] = useState(false);
+ // Steel M9: a deck fetched here replaces the spinner; the loader's is there on first paint.
+ const arrival = useArrival(!loading);
 
  const load = useCallback(async () => {
- const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, {
- credentials:'include',
- });
- if (res.status === 404) {
- setNotFound(true);
- return;
- }
- if (res.ok) {
- const data = await res.json();
+ try {
+ const data = await api(getDeckApi, { params: { id: deckId } });
  setDeck(data.deck);
  setCards(data.cards ?? []);
  setDueCount(data.dueCount ?? 0);
  setSignedIn(!!data.signedIn);
+ } catch (err) {
+ // 404 is the not-found state; any other failure leaves the page as it was.
+ if (err instanceof HttpError && err.status === 404) setNotFound(true);
  }
  }, [deckId]);
 
@@ -118,21 +123,13 @@ export function DeckStudyColumn({
  const session = ++reviewSession.current;
  setStartingReview(true);
  try {
- const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}/review`, {
- credentials:'include',
- });
- if (session !== reviewSession.current) return;
- if (res.ok) {
- const data = await res.json();
+ const data = await api(deckReviewQueueApi, { params: { id: deckId } });
  if (session !== reviewSession.current) return;
  reviewBusyRef.current = false;
  setReviewBusy(false);
  setQueue(data.due ?? []);
  setIdx(0);
  setRevealed(false);
- } else {
- toast.error(t('deck-review-load-failed', { defaultValue:'Could not load cards'}));
- }
  } catch {
  if (session === reviewSession.current)
  toast.error(t('deck-review-load-failed', { defaultValue:'Could not load cards'}));
@@ -148,11 +145,9 @@ export function DeckStudyColumn({
  reviewBusyRef.current = true;
  setReviewBusy(true);
  try {
- await fetch(`/api/study/cards/${card.id}/review`, {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ grade: g }),
+ // A refused grade (non-2xx) never interrupted the session; keep that.
+ await api(reviewCardApi, { params: { id: card.id }, body: { grade: g } }).catch((e: unknown) => {
+ if (!(e instanceof HttpError)) throw e;
  });
  if (session !== reviewSession.current) return;
  if (idx + 1 >= queue.length) {
@@ -176,18 +171,15 @@ export function DeckStudyColumn({
  if (!front.trim() || !back.trim()) return;
  setAdding(true);
  try {
- const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ front: front.trim(), back: back.trim() }),
+ const data = await api(addDeckCardApi, {
+ params: { id: deckId },
+ body: { front: front.trim(), back: back.trim() },
  });
- if (res.ok) {
- const data = await res.json();
  setCards((c) => [...c, data.card]);
  setFront('');
  setBack('');
- }
+ } catch {
+ /* the draft stays in the fields so it can be resent */
  } finally {
  setAdding(false);
  }
@@ -201,11 +193,12 @@ export function DeckStudyColumn({
  }))
  )
  return;
- const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, {
- method:'DELETE',
- credentials:'include',
- });
- if (res.ok) navigate({ to:'/study'});
+ try {
+ await api(deleteDeckApi, { params: { id: deckId } });
+ } catch {
+ return;
+ }
+ navigate({ to:'/study'});
  }
 
  if (loading) {
@@ -218,10 +211,11 @@ export function DeckStudyColumn({
  if (notFound || !deck) {
  return (
  <EmptyState
+ className={arrival}
  title={t('deck-not-found', { defaultValue:'Deck not found'})}
  action={
  <Link to="/study">
- <Button variant="outline">{t('back-to-decks', { defaultValue:'Back to decks'})}</Button>
+ <Button variant="default">{t('back-to-decks', { defaultValue:'Back to decks'})}</Button>
  </Link>
  }
  />
@@ -233,20 +227,20 @@ export function DeckStudyColumn({
  const card = queue[idx];
  return (
  <div>
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <button
  onClick={exitReview}
- className="text-site-text-dim hover:text-site-text"
+ className="text-site-text-muted hover:text-site-text"
  >
  <ArrowLeft className="h-5 w-5"/>
  </button>
- <h1 className="text-sm font-bold text-site-text">{deck.title}</h1>
- <span className="ml-auto text-xs text-site-text-dim">
+ <h1 className="text-sm font-semibold text-site-text">{deck.title}</h1>
+ <span className="ml-auto text-xs text-site-text-muted">
  {idx + 1} / {queue.length}
  </span>
  </header>
  <div className="p-4">
- <div className="flex min-h-64 flex-col items-center justify-center rounded-site glass-fill p-8 text-center">
+ <div className="flex min-h-64 flex-col items-center justify-center rounded-site relative p-8 text-center">
  <p className="text-lg font-semibold text-site-text">{card.front}</p>
  {revealed && (
  <>
@@ -260,7 +254,7 @@ export function DeckStudyColumn({
  {GRADES.map((g) => (
  <Button
  key={g.grade}
- variant="outline"
+ variant="default"
  disabled={reviewBusy}
  onClick={() => grade(g.grade)}
  className={`flex-col ${g.cls}`}
@@ -270,7 +264,7 @@ export function DeckStudyColumn({
  ))}
  </div>
  ) : (
- <Button variant="accent"className="mt-4 w-full"onClick={() => setRevealed(true)}>
+ <Button variant="default"className="mt-4 w-full"onClick={() => setRevealed(true)}>
  {t('show-answer', { defaultValue:'Show answer'})}
  </Button>
  )}
@@ -280,21 +274,21 @@ export function DeckStudyColumn({
  }
 
  return (
- <div>
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
- <Link to="/study"className="text-site-text-dim hover:text-site-text">
+ <div className={arrival}>
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <Link to="/study"className="text-site-text-muted hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>
  </Link>
  <div className="min-w-0 flex-1">
- <h1 className="truncate text-lg font-bold text-site-text">{deck.title}</h1>
+ <h1 className="truncate text-lg font-semibold text-site-text">{deck.title}</h1>
  {deck.description && (
- <p className="truncate text-xs text-site-text-dim">{deck.description}</p>
+ <p className="truncate text-xs text-site-text-muted">{deck.description}</p>
  )}
  </div>
  {deck.isOwner && (
  <button
  onClick={deleteDeck}
- className="text-site-text-dim hover:text-site-danger"
+ className="text-site-text-muted hover:text-site-danger"
  title={t('delete-deck', { defaultValue:'Delete deck'})}
  aria-label={t('delete-deck', { defaultValue:'Delete deck'})}
  >
@@ -305,9 +299,9 @@ export function DeckStudyColumn({
 
  <div className="space-y-4 p-4">
  {signedIn && (
- <Reveal>
+ <div>
  <Button
- variant="accent"
+ variant="default"
  className="w-full gap-2"
  disabled={cards.length === 0}
  loading={startingReview}
@@ -321,13 +315,11 @@ export function DeckStudyColumn({
  })
  : t('review-deck', { defaultValue:'Review deck'})}
  </Button>
- </Reveal>
+ </div>
  )}
 
  {deck.isOwner && (
- <Reveal
- className={`rounded-site glass-fill p-4 ${LIFT_CARD}`}
- >
+ <div className={`rounded-site relative p-4`}>
  <p className="mb-2 flex items-center gap-1.5 site-section-label">
  <Plus className="h-3.5 w-3.5"/> {t('add-a-card', { defaultValue:'Add a card'})}
  </p>
@@ -337,7 +329,7 @@ export function DeckStudyColumn({
  onChange={(e) => setFront(e.target.value)}
  placeholder={t('front-placeholder', { defaultValue:'Front (question)'})}
  maxLength={500}
- className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <textarea
  value={back}
@@ -345,12 +337,12 @@ export function DeckStudyColumn({
  placeholder={t('back-placeholder', { defaultValue:'Back (answer)'})}
  maxLength={500}
  rows={2}
- className="glass-inset border w-full resize-none rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="surface-field border w-full resize-none rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <div className="flex justify-end">
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  disabled={adding || !front.trim() || !back.trim()}
  onClick={addCard}
  className="gap-1"
@@ -364,10 +356,10 @@ export function DeckStudyColumn({
  </Button>
  </div>
  </div>
- </Reveal>
+ </div>
  )}
 
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-2 flex items-center gap-1.5">
  <RotateCcw className="h-3.5 w-3.5"/>{''}
  {t('card-count', { count: cards.length, defaultValue_one:'{{count}} card', defaultValue:'{{count}} cards'})}
@@ -376,14 +368,14 @@ export function DeckStudyColumn({
  {cards.map((c) => (
  <div
  key={c.id}
- className={`rounded-site-sm glass-fill p-3 ${LIFT_CARD}`}
+ className={`rounded-site-sm relative p-3`}
  >
  <p className="text-sm font-medium text-site-text">{c.front}</p>
  <p className="mt-0.5 text-sm text-site-text-muted">{c.back}</p>
  </div>
  ))}
  </div>
- </Reveal>
+ </section>
  </div>
  </div>
  );

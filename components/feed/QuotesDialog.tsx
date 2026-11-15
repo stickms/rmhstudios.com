@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -9,10 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { RelativeTime } from '@/components/ui/RelativeTime';
-import { relativeTimeShort } from '@/lib/utils';
+import { relativeTimeShort, cn } from '@/lib/utils';
 import { UserAvatar } from './UserAvatar';
 import type { FeedItem } from '@/lib/feed-types';
 import type { QuotesPage } from '@/lib/feed/quotes';
+import { postQuotesApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
+import { useArrival } from '@/components/ui/arrive';
 
 /**
  * X10 — the "Quotes" view for a post: every quote-post of it, newest first,
@@ -42,9 +43,9 @@ function QuoteRow({
       <UserAvatar user={item.user} size={nested ? 'xs' : 'sm'} linkToProfile={false} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm">
-          <span className="font-bold text-site-text">{item.user?.name || item.user?.handle}</span>
-          {item.user?.handle && <span className="text-site-text-dim"> @{item.user.handle}</span>}
-          <span className="text-site-text-dim">
+          <span className="font-semibold text-site-text">{item.user?.name || item.user?.handle}</span>
+          {item.user?.handle && <span className="text-site-text-muted"> @{item.user.handle}</span>}
+          <span className="text-site-text-muted">
             {' · '}
             <RelativeTime date={item.createdAt} format={relativeTimeShort} />
           </span>
@@ -70,16 +71,18 @@ export function QuotesDialog({
   const [page, setPage] = useState<QuotesPage | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Steel M9: quotes replace the spinner; the class stays, so each later page's rows fade as they mount.
+  const arrival = useArrival(!loading);
 
   const load = useCallback(
     async (cursor: string | null) => {
       setLoading(true);
       setFailed(false);
       try {
-        const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
-        const res = await fetch(`/api/rmharks/${postId}/quotes${qs}`, { credentials: 'include' });
-        if (!res.ok) throw new Error(String(res.status));
-        const next = (await res.json()) as QuotesPage;
+        const next = await api(postQuotesApi, {
+          params: { id: postId },
+          query: cursor ? { cursor } : {},
+        });
         setPage((prev) =>
           cursor && prev
             ? { items: [...prev.items, ...next.items], nextCursor: next.nextCursor }
@@ -107,7 +110,7 @@ export function QuotesDialog({
     >
       <DialogContent className="flex max-h-[80dvh] max-w-lg flex-col gap-0 overflow-hidden p-0">
         <div className="shrink-0 border-b border-site-border px-5 py-4">
-          <DialogTitle className="font-display text-lg font-bold text-site-text">
+          <DialogTitle className="text-lg font-semibold text-site-text">
             {t('quotes-title', { defaultValue: 'Quotes' })}
           </DialogTitle>
         </div>
@@ -115,6 +118,7 @@ export function QuotesDialog({
         <div className="flex-1 overflow-y-auto">
           {page && page.items.length === 0 && !loading && (
             <EmptyState
+              className={arrival}
               icon={Quote}
               title={t('quotes-empty', { defaultValue: 'No quotes yet' })}
               description={t('quotes-empty-hint', {
@@ -125,7 +129,7 @@ export function QuotesDialog({
 
           <ul className="divide-y divide-site-border/50">
             {page?.items.map(({ item, quotes }) => (
-              <li key={item.id}>
+              <li key={item.id} className={arrival}>
                 <QuoteRow item={item} onNavigate={onClose} />
                 {quotes.length > 0 && (
                   <ul className="ml-10 border-l-2 border-site-border">
@@ -147,12 +151,12 @@ export function QuotesDialog({
           )}
 
           {failed && (
-            <div className="flex flex-col items-center gap-2 px-5 py-6 text-center">
+            <div className={cn('flex flex-col items-center gap-2 px-5 py-6 text-center', arrival)}>
               <p className="text-sm text-site-text-muted">
                 {t('quotes-error', { defaultValue: 'Could not load quotes.' })}
               </p>
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => void load(page?.nextCursor ?? null)}
               >
@@ -163,7 +167,7 @@ export function QuotesDialog({
 
           {page?.nextCursor && !loading && !failed && (
             <div className="flex justify-center px-5 py-4">
-              <Button variant="outline" size="sm" onClick={() => void load(page.nextCursor)}>
+              <Button variant="default" size="sm" onClick={() => void load(page.nextCursor)}>
                 {t('quotes-more', { defaultValue: 'Load more quotes' })}
               </Button>
             </div>

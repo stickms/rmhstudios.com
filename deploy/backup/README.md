@@ -1,7 +1,7 @@
 # Database backups (rmhstudios)
 
 The P0 operational floor from the rewrite design
-(`docs/full-rewrite-design-2026-07-18.md` §2.3, task R0-T1). Before this
+(`docs/archive/2026/full-rewrite-design-2026-07-18.md` §2.3, task R0-T1). Before this
 existed, a host/disk failure meant **total, unrecoverable loss of all user
 data** — there was no `pg_dump`, no WAL archiving, nothing.
 

@@ -45,8 +45,8 @@ presets, 32 locales) alongside real-time multiplayer.
 
 Production is a **hybrid runtime** (Docker Compose on a VPS behind
 Apache/Cloudflare). **Node** runs the web SSR tier, every user-facing realtime
-hub, and three background workers; **Go** runs the background-worker supervisor,
-the status dashboard, and the asset streamer. All container ports bind to
+hub, and every background worker (the `jobs` worker also hosts the Discord
+bot); **Go** runs the status dashboard and the asset streamer. All container ports bind to
 `127.0.0.1`; Apache is the only front door. See
 [`docs/architecture.md`](docs/architecture.md) for the full picture.
 
@@ -58,15 +58,14 @@ the status dashboard, and the asset streamer. All container ports bind to
 | `socket` | 7001 | Games realtime hub (Socket.IO) |
 | `rmhbox` | 7676 | Party-game lobby hub (Socket.IO) |
 | `rmhtube` | 7003 | Watch-together hub (Socket.IO) |
-| `ladder-worker` | — | RMHLadder job-discovery cron (`node-cron`) |
-| `homes-worker` | — | RMHHomes listings-scraper cron (`node-cron`) |
-| `jobs` | — | Durable async backbone (pg-boss): progression, event reminders, weekly digest |
+| `ladder-worker` | — | RMHLadder job-discovery cron (pg-boss queue `ladder.pipeline`) |
+| `homes-worker` | — | RMHHomes listings-scraper cron (pg-boss queue `homes.scrape`) |
+| `jobs` | — | Durable async backbone (pg-boss): progression, event reminders, weekly digest, the ported Go workers and the Discord bot |
 
 **Go services** (`go-services/`)
 
 | Service | Port | Role |
 |---|---|---|
-| `supervisor` | 9090 (metrics) | Runs six background workers as goroutines: discord-bot, recap, doctrine-worker, vibe-worker, bot-worker, streak-saver |
 | `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages |
 | `assets` | 7007 | Range-aware S3/R2 streaming for `/library` `/music` `/models` `/sprites` |
 
@@ -89,7 +88,7 @@ In production the Go binaries are compiled by the root `Dockerfile`'s
 image — Bazel is the CI unit-test gate, not the production build. `docker-compose.yml`
 runs everything from two images built off that one `Dockerfile` (`rmhstudios-app`
 slim for the Node services, `rmhstudios-app-full` for the Go services +
-Chromium/git). MinIO provides the S3-compatible bucket the `assets` service
+git; the slim image also carries Chromium for the jobs worker's vibe thumbnails). MinIO provides the S3-compatible bucket the `assets` service
 streams from locally.
 
 ## Project Structure
@@ -106,7 +105,7 @@ streams from locally.
 ├── components/           # React components organized by feature (~860 files)
 ├── lib/                  # Utility functions, schemas, and shared logic (~950 files; *.server.ts = server-only)
 ├── server/               # Node service tier (Nitro plugins, WebSocket hubs, cron/async workers)
-├── go-services/          # Go worker fleet: supervisor + status + assets (Bazel + gazelle)
+├── go-services/          # Go services: status + assets (Bazel + gazelle)
 ├── stores/               # Zustand state management
 ├── hooks/                # Custom React hooks
 ├── prisma/               # Database schema (234 models) and migrations

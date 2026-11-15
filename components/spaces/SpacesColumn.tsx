@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * SpacesColumn — the "Live Spaces" directory, extracted from the old
  * `/spaces` index route so it can be embedded as a tab inside `/communities`.
@@ -13,23 +11,38 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Radio, Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { Clock, Plus, Radio, Users } from 'lucide-react';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import {
+  DIRECTORY_LIST_CLASS,
+  DirectoryFact,
+  DirectoryItem,
+  DirectoryTag,
+} from '@/components/ui/directory-item';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createSpaceApi, listLiveSpacesApi } from '@/lib/spaces/spaces.contract';
 import type { LiveSpaceSummary } from '@/lib/spaces/types';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export function SpacesColumn() {
-  const { t } = useTranslation('site');
+  const { t, i18n } = useTranslation('site');
   const { data: session } = useSession();
   const navigate = useNavigate();
   const [spaces, setSpaces] = useState<LiveSpaceSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  // Steel M9: the live list replaces the spinner.
+  const arrival = useArrival(!loading);
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -37,8 +50,7 @@ export function SpacesColumn() {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    fetch('/api/spaces/live', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { spaces: [] }))
+    api(listLiveSpacesApi)
       .then((d) => {
         if (active) setSpaces(d.spaces ?? []);
       })
@@ -58,29 +70,26 @@ export function SpacesColumn() {
     if (!trimmed) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/spaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: trimmed }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('space-create-failed', { defaultValue: 'Could not start the Space.' }),
-        );
-        return;
-      }
+      const data = await api(createSpaceApi, { body: { title: trimmed } });
       navigate({ to: '/spaces/$id', params: { id: data.space.id } });
-    } catch {
-      toast.error(t('space-create-failed', { defaultValue: 'Could not start the Space.' }));
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('space-create-failed', { defaultValue: 'Could not start the Space.' }),
+      );
     } finally {
       setCreating(false);
     }
   };
 
+  const hostName = (s: LiveSpaceSummary) =>
+    s.host.name ?? s.host.handle ?? t('space-fallback-host', { defaultValue: 'Space' });
+
+  // Laid out like the Communities tab beside it: a line of controls on the list's gutter, then the list.
+  // The intro and the form used to sit in their own padded block, 20px inside the heading and the items
+  // below them, so nothing on the panel shared an edge.
   return (
-    <div className="space-y-[var(--site-section-gap)] pt-3 pb-12">
-      <section className="glass-pane space-y-3 rounded-site p-5">
+    <div>
+      <div className="space-y-3 px-4 pb-3">
         <p className="text-sm text-site-text-muted">
           {t('spaces-subtitle', {
             defaultValue: 'Live rooms to chat, listen together, and hang out in real time.',
@@ -105,7 +114,8 @@ export function SpacesColumn() {
               className="min-w-0 flex-1"
             />
             <Button
-              variant="accent"
+              variant="default"
+              className="h-10"
               onClick={() => void create()}
               loading={creating}
               disabled={!title.trim()}
@@ -115,17 +125,19 @@ export function SpacesColumn() {
             </Button>
           </div>
         ) : (
-          <p className="text-sm text-site-text-dim">
+          <p className="text-sm text-site-text-muted">
             {t('spaces-signin', { defaultValue: 'Sign in to start a Space.' })}
           </p>
         )}
-      </section>
+      </div>
 
-      <section className="space-y-3">
-        <h2 className="site-section-label flex items-center gap-2">
-          <span className="size-2 animate-pulse-settle rounded-full bg-site-danger" aria-hidden />
-          {t('live-now', { defaultValue: 'Live now' })}
-        </h2>
+      <section aria-labelledby="spaces-live-heading">
+        <div className="px-4 pt-3 pb-2">
+          <h2 id="spaces-live-heading" className="site-section-label flex items-center gap-2">
+            <span className="size-2 rounded-full bg-site-danger" aria-hidden />
+            {t('live-now', { defaultValue: 'Live now' })}
+          </h2>
+        </div>
 
         {loading ? (
           <div className="flex justify-center py-20">
@@ -133,28 +145,59 @@ export function SpacesColumn() {
           </div>
         ) : spaces.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Radio}
-            description={t('spaces-empty', {
-              defaultValue: 'No live Spaces right now. Start one!',
+            description={t('spaces-none-live', {
+              defaultValue: 'No live Spaces right now. Start one above.',
             })}
           />
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className={cn(DIRECTORY_LIST_CLASS, arrival)}>
             {spaces.map((s: LiveSpaceSummary) => (
               <li key={s.id}>
-                <Link
-                  to="/spaces/$id"
-                  params={{ id: s.id }}
-                  className="glass-fill glass-interactive flex flex-col gap-1 rounded-site px-4 py-3"
-                >
-                  <div className="flex items-center gap-2 text-xs text-site-text-dim">
-                    <Radio className="size-3.5 text-site-accent" aria-hidden />
-                    {s.community?.name ??
-                      s.host.name ??
-                      t('space-fallback-host', { defaultValue: 'Space' })}
-                  </div>
-                  <div className="line-clamp-2 text-sm font-semibold text-site-text">{s.title}</div>
-                </Link>
+                <DirectoryItem
+                  to={`/spaces/${s.id}`}
+                  media={
+                    <UserAvatar src={s.host.image} alt="" size={56} fallbackName={hostName(s)} />
+                  }
+                  title={s.title}
+                  tag={<DirectoryTag>{t('space-live-tag', { defaultValue: 'Live' })}</DirectoryTag>}
+                  description={
+                    s.community
+                      ? t('space-hosted-by-in', {
+                          defaultValue: 'Hosted by {{host}} in {{community}}',
+                          host: hostName(s),
+                          community: s.community.name,
+                        })
+                      : t('space-hosted-by', {
+                          defaultValue: 'Hosted by {{host}}',
+                          host: hostName(s),
+                        })
+                  }
+                  meta={
+                    <>
+                      {s.audienceCount != null && (
+                        <DirectoryFact>
+                          <Users className="h-3.5 w-3.5" aria-hidden />
+                          {t('space-listening', {
+                            count: s.audienceCount,
+                            defaultValue: '{{count}} listening',
+                          })}
+                        </DirectoryFact>
+                      )}
+                      {s.startedAt && (
+                        <DirectoryFact>
+                          <Clock className="h-3.5 w-3.5" aria-hidden />
+                          {t('space-started', {
+                            defaultValue: 'Started {{when}}',
+                            when: formatRelativeTime(s.startedAt, i18n.language),
+                          })}
+                        </DirectoryFact>
+                      )}
+                    </>
+                  }
+                  action={t('space-join', { defaultValue: 'Join' })}
+                />
               </li>
             ))}
           </ul>

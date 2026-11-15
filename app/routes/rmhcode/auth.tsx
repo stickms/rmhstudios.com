@@ -1,11 +1,18 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon: <Spinner> renders role="status" and would join the button accessible name */
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { Link } from '@tanstack/react-router';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { m as motion } from 'framer-motion';
 import { Terminal, Check, X, Loader2, Shield } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { initiateRmhCodeAuthApi } from '@/lib/rmhcode/tokens.contract';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /** True only for a valid URL whose host is localhost (the CLI callback allowlist). */
 function isLocalhostCallback(cb: string): boolean {
@@ -43,9 +50,13 @@ function AuthContent() {
     if (!callback || !sessionId) { setError(t("missing-params", { defaultValue: "Missing callback or session parameters." })); return; }
     setAuthorizing(true); setError(null);
     try {
-      const res = await fetch('/api/rmhcode/auth/initiate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) });
-      if (!res.ok) { const data = await res.json(); throw new Error(data.error || t("failed-to-generate-token", { defaultValue: "Failed to generate token" })); }
-      const { token, user } = await res.json();
+      let result;
+      try {
+        result = await api(initiateRmhCodeAuthApi, { body: { sessionId } });
+      } catch (err) {
+        throw new Error(serverError(err) || t("failed-to-generate-token", { defaultValue: "Failed to generate token" }), { cause: err });
+      }
+      const { token, user } = result;
       const callbackUrl = new URL(callback);
       callbackUrl.searchParams.set('token', token);
       callbackUrl.searchParams.set('session', sessionId);
@@ -69,18 +80,18 @@ function AuthContent() {
     }
   }
 
-  if (isPending) return <div className="app-ground bg-site-bg flex items-center justify-center"><Loader2 className="w-8 h-8 text-site-accent animate-spin" aria-hidden="true" /></div>;
+  if (isPending) return <div className="app-ground bg-site-bg flex items-center justify-center"><Spinner size={32} /></div>;
 
   if (!session) {
     const loginUrl = `/login?redirect=${encodeURIComponent(`/rmhcode/auth?callback=${encodeURIComponent(callback || '')}&session=${sessionId || ''}`)}`;
     return (
       <div className="app-ground bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-          <div className="glass-pane rounded-site p-6 text-center">
-            <div className="flex justify-center mb-4"><div className="p-4 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div></div>
+          <div className="surface-panel rounded-site p-6 text-center">
+            <div className="flex justify-center mb-4"><div className="p-4 rounded-site bg-site-bg-subtle border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div></div>
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("sign-in-to-authorize", { defaultValue: "Sign in to authorize rmhcode" })}</h1>
             <p className="text-sm text-site-text-muted mb-6">{t("sign-in-description", { defaultValue: "You need to sign in to your RMH account to authorize the CLI." })}</p>
-            <Link to={loginUrl}><Button variant="accent" className="w-full">{t("sign-in-to-continue", { defaultValue: "Sign In to Continue" })}</Button></Link>
+            <Link to={loginUrl}><Button variant="default" className="w-full">{t("sign-in-to-continue", { defaultValue: "Sign In to Continue" })}</Button></Link>
           </div>
         </motion.div>
       </div>
@@ -95,7 +106,7 @@ function AuthContent() {
             <X className="w-12 h-12 text-site-danger mx-auto mb-4" />
             <h1 className="text-xl font-semibold text-site-text mb-2">{t("invalid-auth-request", { defaultValue: "Invalid Authorization Request" })}</h1>
             <p className="text-sm text-site-text-muted mb-6">{t("invalid-auth-request-description", { defaultValue: "This page should be opened from the rmhcode CLI. Missing required parameters." })}</p>
-            <Link to="/rmhcode"><Button variant="secondary">{t("go-to-rmhcode", { defaultValue: "Go to rmhcode" })}</Button></Link>
+            <Link to="/rmhcode"><Button variant="default">{t("go-to-rmhcode", { defaultValue: "Go to rmhcode" })}</Button></Link>
           </div>
         </motion.div>
       </div>
@@ -119,14 +130,14 @@ function AuthContent() {
   return (
     <div className="app-ground bg-site-bg flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
-        <div className="glass-pane rounded-site p-6">
+        <div className="surface-panel rounded-site p-6">
           <div className="flex items-center gap-4 mb-6">
-            <div className="p-4 rounded-site bg-site-accent-dim border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div>
+            <div className="p-4 rounded-site bg-site-bg-subtle border border-site-border"><Terminal className="w-8 h-8 text-site-accent" /></div>
             <div><h1 className="text-xl font-semibold text-site-text">{t("authorize-rmhcode", { defaultValue: "Authorize rmhcode" })}</h1><p className="text-sm text-site-text-muted">{t("cli-requesting-access", { defaultValue: "CLI is requesting access to your account" })}</p></div>
           </div>
-          <div className="p-4 glass-inset rounded-site-sm mb-6">
+          <div className="p-4 surface-field rounded-site-sm mb-6">
             <div className="flex items-center gap-3">
-              {session.user.image ? <img src={session.user.image} alt={session.user.name || t("user", { defaultValue: "User" })} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 rounded-full bg-site-accent-dim flex items-center justify-center text-site-accent font-bold">{(session.user.name?.[0] || 'U').toUpperCase()}</div>}
+              {session.user.image ? <img src={session.user.image} alt={session.user.name || t("user", { defaultValue: "User" })} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 rounded-full bg-site-bg-subtle flex items-center justify-center text-site-accent font-bold">{(session.user.name?.[0] || 'U').toUpperCase()}</div>}
               <div><p className="font-medium text-site-text">{session.user.name}</p><p className="text-sm text-site-text-muted">{session.user.email}</p></div>
             </div>
           </div>
@@ -140,12 +151,12 @@ function AuthContent() {
           </div>
           {error && <div className="p-3 rounded-site-sm bg-site-danger/10 border border-site-danger/30 text-sm text-site-danger mb-6">{error}</div>}
           <div className="flex gap-3">
-            <Button onClick={handleDeny} variant="secondary" className="flex-1" disabled={authorizing}>{t("deny", { defaultValue: "Deny" })}</Button>
-            <Button onClick={handleAuthorize} variant="accent" className="flex-1" disabled={authorizing || !!error}>
+            <Button onClick={handleDeny} variant="default" className="flex-1" disabled={authorizing}>{t("deny", { defaultValue: "Deny" })}</Button>
+            <Button onClick={handleAuthorize} variant="default" className="flex-1" disabled={authorizing || !!error}>
               {authorizing ? <Loader2 className="w-4 h-4 animate-spin" /> : t("authorize", { defaultValue: "Authorize" })}
             </Button>
           </div>
-          <p className="text-xs text-site-text-dim text-center mt-4">{t("token-expiry-notice", { defaultValue: "Token expires in 30 days. You can revoke access anytime from your account settings." })}</p>
+          <p className="text-xs text-site-text-muted text-center mt-4">{t("token-expiry-notice", { defaultValue: "Token expires in 30 days. You can revoke access anytime from your account settings." })}</p>
         </div>
       </motion.div>
     </div>
@@ -154,13 +165,14 @@ function AuthContent() {
 
 function RmhCodeAuthPage() {
   return (
-    <Suspense fallback={<div className="app-ground bg-site-bg flex items-center justify-center"><Loader2 className="w-8 h-8 text-site-accent animate-spin" aria-hidden="true" /></div>}>
+    <ArrivalSuspense fallback={<div className="app-ground bg-site-bg flex items-center justify-center"><Spinner size={32} /></div>}>
       <AuthContent />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }
 
 export const Route = createFileRoute('/rmhcode/auth')({
+  head: () => noindexHead('RMHCode Sign-in'),
   validateSearch: (search: Record<string, unknown>) => ({
     callback: (search.callback as string) || '',
     session: (search.session as string) || '',

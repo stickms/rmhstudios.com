@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from'react';
 import { Link } from'@tanstack/react-router';
 import { Sparkles, Gamepad2, Search, UserCircle } from'lucide-react';
@@ -72,12 +70,12 @@ export function WelcomeModal() {
  <Dialog open={open} onOpenChange={(o) => { if (!o) dismiss(); }}>
  <DialogContent className="max-w-md gap-0">
  <div className="mb-4 flex justify-center">
- <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-4">
+ <div className="rounded-site border border-site-accent/30 bg-site-bg-subtle p-4">
  <Icon className="h-7 w-7 text-site-accent"/>
  </div>
  </div>
 
- <DialogTitle className="text-center text-xl font-bold text-site-text">
+ <DialogTitle className="text-center text-xl font-semibold text-site-text">
  {current.title}
  </DialogTitle>
  <p className="mx-auto mt-2 max-w-sm text-center text-sm text-site-text-muted">{current.body}</p>
@@ -99,13 +97,13 @@ export function WelcomeModal() {
  <div className="flex items-center gap-2">
  {current.to && (
  <Link to={current.to as string} onClick={dismiss}>
- <Button variant="accent-outline"size="sm">
+ <Button variant="default"size="sm">
  {current.cta}
  </Button>
  </Link>
  )}
  <Button
- variant="accent"
+ variant="default"
  size="sm"
  onClick={() => (isLast ? dismiss() : setStep((s) => s + 1))}
  >

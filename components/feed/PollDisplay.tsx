@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from'react';
 import { useTranslation } from'react-i18next';
 import { Check } from'lucide-react';
@@ -114,11 +112,11 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  const maxVotes = Math.max(...localPoll.options.map((o) => o.voteCount), 1);
 
  return (
- <div className="glass-fill mt-3 rounded-site px-4 py-3">
+ <div className="relative mt-3 rounded-site px-4 py-3">
  <p className="text-sm font-semibold text-site-text mb-2">{localPoll.question}</p>
 
  {localPoll.multiSelect && !showResults && (
- <p className="text-xs text-site-text-dim mb-2">{t("select-all-that-apply", { defaultValue:"Select all that apply"})}</p>
+ <p className="text-xs text-site-text-muted mb-2">{t("select-all-that-apply", { defaultValue:"Select all that apply"})}</p>
  )}
 
  <div className="space-y-2">
@@ -157,7 +155,7 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  {option.text}
  </span>
  <span className={`text-xs font-mono shrink-0 ${
- isSelected ?'text-site-accent font-semibold':'text-site-text-dim'
+ isSelected ?'text-site-accent font-semibold':'text-site-text-muted'
  }`}>
  {pct}%
  </span>
@@ -179,7 +177,7 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
  })}
  </div>
 
- <p className="text-xs text-site-text-dim mt-2">
+ <p className="text-xs text-site-text-muted mt-2">
  {t("vote-count", { count: localPoll.totalVotes, defaultValue:"{{count}} vote", defaultValue_one:"{{count}} vote", defaultValue_other:"{{count}} votes"})}
  {localPoll.multiSelect && `· ${t("multiple-choice", { defaultValue:"Multiple choice"})}`}
  {localPoll.closesAt && (

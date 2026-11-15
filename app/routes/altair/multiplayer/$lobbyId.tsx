@@ -6,24 +6,27 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
+import { noindexHead } from '@/lib/seo';
+import { useEffect, useState, useCallback, lazy } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { connectToAltair, emit } from '@/lib/altair/multiplayer/socket'
-import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store'
-import { C2S, S2C } from '@/lib/altair/multiplayer/events'
-import { useAltairToastStore } from '@/lib/altair/stores/toast-store'
-import AltairHeader from '@/components/altair/AltairHeader'
-import LobbyWaiting from '@/components/altair/multiplayer/LobbyWaiting'
+import { connectToAltair, emit } from '@features/altair/engine/multiplayer/socket'
+import { useAltairMultiplayerStore } from '@features/altair/engine/multiplayer/store'
+import { C2S, S2C } from '@features/altair/engine/multiplayer/events'
+import { useAltairToastStore } from '@features/altair/engine/stores/toast-store'
+import AltairHeader from '@features/altair/ui/AltairHeader'
+import LobbyWaiting from '@features/altair/ui/multiplayer/LobbyWaiting'
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive'
+import { cn } from '@/lib/utils'
 
 // Lazy import for the multiplayer game screen
 const MultiplayerGameScreen = lazy(
-  () => import('@/components/altair/multiplayer/MultiplayerGameScreen'),
+  () => import('@features/altair/ui/multiplayer/MultiplayerGameScreen'),
 )
 
 // Lazy import for results screen
 const MultiplayerResultsScreen = lazy(
-  () => import('@/components/altair/multiplayer/MultiplayerResultsScreen'),
+  () => import('@features/altair/ui/multiplayer/MultiplayerResultsScreen'),
 )
 
 /** Player-facing text for a hub rejection (falls back to the hub's own message). */
@@ -119,6 +122,8 @@ function AltairLobbyPage() {
   // unmounting it for a "Connecting..." screen would throw the whole run away. The match
   // screen shows its own reconnect banner instead.
   const inMatch = !!lobby && (lobby.state === 'PLAYING' || gameStarted)
+  const connecting = connectionStatus === 'connecting' || connectionStatus === 'disconnected' || connectionStatus === 'error'
+  const arrival = useArrival(!!lobby && (inMatch || !connecting))
 
   // Loading state
   if (!inMatch && (connectionStatus === 'connecting' || connectionStatus === 'disconnected')) {
@@ -175,7 +180,7 @@ function AltairLobbyPage() {
   // Game in progress
   if (lobby.state === 'PLAYING' || gameStarted) {
     return (
-      <Suspense fallback={
+      <ArrivalSuspense fallback={
         <div className="fixed inset-0 bg-(--altair-bg) flex items-center justify-center">
           <div className="text-(--altair-accent) font-mono tracking-widest animate-pulse text-sm">
             {t("loading-game", { defaultValue: "LOADING GAME..." })}
@@ -183,16 +188,16 @@ function AltairLobbyPage() {
         </div>
       }>
         <MultiplayerGameScreen lobbyId={lobbyId} onLeave={handleLeave} />
-      </Suspense>
+      </ArrivalSuspense>
     )
   }
 
   // Results
   if (lobby.state === 'RESULTS' && results) {
     return (
-      <Suspense fallback={null}>
+      <ArrivalSuspense fallback={null}>
         <MultiplayerResultsScreen results={results} onLeave={handleLeave} />
-      </Suspense>
+      </ArrivalSuspense>
     )
   }
 
@@ -220,11 +225,15 @@ function AltairLobbyPage() {
   return (
     <>
       <AltairHeader context="menu" title={t("lobby-title", { defaultValue: "Lobby {{lobbyId}}", lobbyId })} onBack={handleLeave} connectionStatus={connectionStatus} />
-      <LobbyWaiting lobbyId={lobbyId} onLeave={handleLeave} />
+      {/* No box (display: contents): the lobby fades in after the joining spinner (M9). */}
+      <div className={cn('contents', arrival && 'arrive-group')}>
+        <LobbyWaiting lobbyId={lobbyId} onLeave={handleLeave} />
+      </div>
     </>
   )
 }
 
 export const Route = createFileRoute('/altair/multiplayer/$lobbyId')({
+  head: () => noindexHead('Altair Lobby'),
   component: AltairLobbyPage,
 })

@@ -3,7 +3,7 @@
 #
 # Loaded by deploy.sh ONLY when DEPLOY_BUILDKIT_CACHE is set (see Step 2 build).
 # It adds registry-backed cache import/export to the web (slim `runner`) and
-# supervisor (full `runner-full`) image builds so a fresh — or disk-pressure
+# status (full `runner-full`) image builds so a fresh — or disk-pressure
 # cache-wiped — host repopulates the BuildKit layer cache from a registry
 # instead of rebuilding cold. That cold path is exactly what deploy.sh warns
 # about: a full cache wipe evicts the BuildKit layer cache AND the pnpm store
@@ -30,7 +30,7 @@ services:
         # in transfer; image-manifest+oci-mediatypes make it a portable OCI artifact
         # that plain registries (not just BuildKit-aware ones) can store.
         - type=registry,ref=${BUILDKIT_CACHE_WEB},mode=max,compression=zstd,image-manifest=true,oci-mediatypes=true
-  supervisor:
+  status:
     build:
       cache_from:
         - type=registry,ref=${BUILDKIT_CACHE_FULL}

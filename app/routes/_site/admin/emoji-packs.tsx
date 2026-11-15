@@ -8,9 +8,10 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Smile, Check, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -21,9 +22,17 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { moderateAdminEmojiPackApi } from '@/lib/admin/admin-ops.contract';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminEmojiPacksQuery } from '@/lib/admin/admin-ops.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/emoji-packs')({
   head: () => ({ meta: [{ title: 'Emoji Pack Review | RMH Studios' }] }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminEmojiPacksQuery()),
   component: AdminEmojiPacksPage,
 });
 
@@ -45,51 +54,40 @@ type Action = 'approve' | 'remove';
 
 function AdminEmojiPacksPage() {
   const { t, i18n } = useTranslation('admin');
-  const [rows, setRows] = useState<PendingPackRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const query = adminEmojiPacksQuery();
+  // A failed read shows an empty queue.
+  const { data, isPending: loading } = useQuery(query);
+  const rows: PendingPackRow[] = data?.packs ?? [];
+  const arrival = useArrival(!loading);
   // One decision at a time: while any request is in flight every action is
   // disabled, so a double click cannot fire approve and remove back to back.
   const [busy, setBusy] = useState<{ id: string; action: Action } | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/emoji-packs', { credentials: 'include' });
-      const data = await res.json().catch(() => ({ packs: [] }));
-      setRows(res.ok ? (data.packs ?? []) : []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
   const decide = async (pack: PendingPackRow, action: Action) => {
     if (busy) return;
     setBusy({ id: pack.id, action });
     try {
-      const res = await fetch(`/api/admin/emoji-packs/${pack.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          action,
-          reason: reasons[pack.id]?.trim() || undefined,
-          version: pack.updatedAt,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      try {
+        await api(moderateAdminEmojiPackApi, {
+          params: { id: pack.id },
+          body: {
+            action,
+            reason: reasons[pack.id]?.trim() || undefined,
+            version: pack.updatedAt,
+          },
+        });
+      } catch (e) {
         toast.error(
-          data.error ??
+          serverError(e) ??
             t('emoji-pack-action-failed', { defaultValue: 'Could not update that pack.' }),
         );
         // A 409 means the pack changed or was decided elsewhere: show the
         // queue as it is now rather than the stale copy.
-        if (res.status === 409) void load();
+        if (e instanceof HttpError && e.status === 409) void load();
         return;
       }
       toast.success(
@@ -97,7 +95,9 @@ function AdminEmojiPacksPage() {
           ? t('emoji-pack-approved', { defaultValue: 'Pack approved.' })
           : t('emoji-pack-removed', { defaultValue: 'Pack removed.' }),
       );
-      setRows((prev) => prev.filter((r) => r.id !== pack.id));
+      queryClient.setQueryData(query.queryKey, (old) =>
+        old ? { packs: old.packs.filter((r) => r.id !== pack.id) } : old,
+      );
     } catch {
       toast.error(t('emoji-pack-action-failed', { defaultValue: 'Could not update that pack.' }));
     } finally {
@@ -130,30 +130,31 @@ function AdminEmojiPacksPage() {
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Smile}
             title={t('emoji-packs-review-empty', {
               defaultValue: 'No packs are waiting for review.',
             })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {rows.map((p) => (
-              <li key={p.id} className="glass-fill space-y-3 rounded-site p-5">
+              <li key={p.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="min-w-0 truncate text-base font-medium text-site-text">
+                  <h2 className="t-heading min-w-0 break-words text-site-text">
                     {p.name}
                   </h2>
-                  <Badge variant="outline" size="sm">
+                  <Badge variant="default">
                     {kindLabel(p.kind)}
                   </Badge>
                   {p.visibility === 'unlisted' && (
-                    <Badge variant="outline" size="sm">
+                    <Badge variant="default">
                       {t('emoji-pack-unlisted', { defaultValue: 'Unlisted' })}
                     </Badge>
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-site-text-dim">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 t-body text-site-text-muted">
                   <span className="inline-flex items-center gap-1.5">
                     <UserAvatar
                       src={p.owner.image}
@@ -182,9 +183,9 @@ function AdminEmojiPacksPage() {
                   </span>
                 </div>
 
-                {p.description && <p className="text-sm text-site-text-muted">{p.description}</p>}
+                {p.description && <p className="t-body text-site-text-muted">{p.description}</p>}
 
-                <ul className="glass-inset flex flex-wrap gap-2 rounded-site-sm p-3">
+                <ul className="flex flex-wrap gap-2">
                   {p.items.map((item) => (
                     <li key={item.id} title={`:${item.name}:`}>
                       <img
@@ -198,7 +199,7 @@ function AdminEmojiPacksPage() {
                   ))}
                 </ul>
                 {p.itemCount > p.items.length && (
-                  <p className="text-xs text-site-text-dim">
+                  <p className="t-body text-site-text-muted">
                     {t('emoji-pack-more-items', {
                       defaultValue: 'Showing {{shown}} of {{count}} items.',
                       shown: p.items.length,

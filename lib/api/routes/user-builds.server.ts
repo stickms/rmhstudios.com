@@ -1,0 +1,360 @@
+import { pageSize } from '@/lib/pagination';
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/user-builds.contract';
+/**
+ * User Builds API
+ * GET /api/user-builds - List builds with filters
+ * POST /api/user-builds - Create a new build
+ *
+ * Supports both session auth and CLI token auth via X-RMHCode-Token header
+ */
+
+import { randomBytes } from 'crypto';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma.server';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { createBuildSchema } from '@/lib/user-builds-schema';
+import { buildCardSelect } from '@/lib/user-builds-list';
+import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
+import { isTrackableTitle } from '@/lib/games/route-match';
+import { buildEngagement } from '@/lib/ranking/best';
+import { inIdOrder, rankPage, RANK_CANDIDATE_CAP } from '@/lib/ranking/rank-page';
+
+function generateSlug(title: string): string {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 70);
+
+  const suffix = randomBytes(4).toString('hex');
+  return `${base}-${suffix}`;
+}
+
+async function ensureUniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
+  let slug = baseSlug;
+  let counter = 0;
+
+  while (true) {
+    const existing = await prisma.userBuild.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+
+    if (!existing || existing.id === excludeId) {
+      return slug;
+    }
+
+    counter++;
+    slug = `${baseSlug}-${counter}`;
+  }
+}
+
+/** The card the list endpoint returns for one build row read with `buildCardSelect`. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the select is built per viewer, as it was inline
+function cardOf(build: any, currentUserId: string | null) {
+  return {
+    id: build.id,
+    slug: build.slug,
+    title: build.title,
+    description: build.description,
+    thumbnailUrl: build.thumbnailUrl,
+    repoUrl: build.repoUrl,
+    demoUrl: build.demoUrl,
+    visibility: build.visibility,
+    featured: build.featured,
+    technologies: build.technologies,
+    likeCount: build.likeCount,
+    commentCount: build.commentCount,
+    viewCount: build.viewCount,
+    createdAt: build.createdAt.toISOString(),
+    publishedAt: build.publishedAt?.toISOString() ?? null,
+    user: resolveUser(build.user),
+    category: build.category,
+    tags: build.tags.map((t: { name: string }) => t.name),
+    liked: currentUserId ? build.likes?.length > 0 : false,
+  };
+}
+
+export const route = apiRoute('/api/user-builds', {
+  GET: implement(C.listUserBuildsApi, { auth: 'none' }, async ({ request }) => {
+    const { searchParams } = new URL(request.url);
+    const cursor = searchParams.get('cursor');
+    const limit = pageSize(searchParams.get('limit'), 20, 50);
+    const category = searchParams.get('category');
+    const technology = searchParams.get('technology');
+    const search = searchParams.get('search');
+    const sort = searchParams.get('sort') || 'recent';
+    const userId = searchParams.get('userId');
+    const curated = searchParams.get('curated') === 'true';
+
+    // Get current user — session OR CLI token
+    let currentUserId: string | null = null;
+    try {
+      const session = await auth.api.getSession({ headers: request.headers });
+      currentUserId = session?.user?.id ?? null;
+    } catch {
+      // Not logged in via session
+    }
+
+    // Fall back to CLI token auth
+    if (!currentUserId) {
+      const cliUser = await getAuthenticatedUser(request, null);
+      if (cliUser) currentUserId = cliUser.id;
+    }
+
+    const where: Record<string, unknown> = {
+      visibility: { in: ['PUBLIC', 'UNLISTED'] },
+      isCurated: false,
+    };
+
+    if (curated) {
+      where.featured = true;
+    }
+
+    // If fetching user's own builds, show all visibilities, but still hide curated if needed
+    if (userId && userId === currentUserId) {
+      delete where.visibility;
+      where.userId = userId;
+    } else if (userId) {
+      where.userId = userId;
+    }
+
+    if (category) {
+      where.categoryId = category;
+    }
+
+    if (technology) {
+      where.technologies = {
+        array_contains: [technology],
+      };
+    }
+
+    // Independent OR groups (search match, popularity/views cursor) are
+    // AND-ed: assigning both to `where.OR` made the cursor silently replace
+    // the search filter, so page 2 of a search returned unrelated builds.
+    const and: Record<string, unknown>[] = [];
+
+    if (search) {
+      and.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (and.length) where.AND = and;
+
+    // `best` (lib/ranking/best.ts) weighs likes, comments and views against age. Its score moves with the
+    // clock, so it pages by rank offset rather than by keyset: read the signals of everything the filters
+    // match, pick this page's ids, then read the cards for those ids.
+    if (sort === 'best') {
+      const slim = await prisma.userBuild.findMany({
+        where,
+        select: {
+          id: true,
+          likeCount: true,
+          commentCount: true,
+          viewCount: true,
+          publishedAt: true,
+          createdAt: true,
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: RANK_CANDIDATE_CAP,
+      });
+      const { ids, nextCursor } = rankPage(
+        slim.map((b) => ({
+          id: b.id,
+          engagement: buildEngagement(b),
+          createdAt: (b.publishedAt ?? b.createdAt).getTime(),
+        })),
+        'best',
+        cursor,
+        limit,
+      );
+      const rows = await prisma.userBuild.findMany({
+        where: { id: { in: ids } },
+        select: buildCardSelect(currentUserId),
+      });
+      return Response.json({
+        items: inIdOrder(ids, rows).map((build) => cardOf(build, currentUserId)),
+        nextCursor,
+        hasMore: nextCursor !== null,
+      });
+    }
+
+    // The keyset sorts. Each ends on `id`, and the cursor compares the same pair the order does: without
+    // the tiebreak, builds that share a like count, a view count or a publication instant came back in
+    // whatever order the planner chose, and a page boundary inside such a run skipped or repeated rows.
+    const keyset =
+      sort === 'popular'
+        ? ('likeCount' as const)
+        : sort === 'views'
+          ? ('viewCount' as const)
+          : ('createdAt' as const);
+    if (cursor) {
+      const cursorBuild = await prisma.userBuild.findUnique({
+        where: { id: cursor },
+        select: { createdAt: true, likeCount: true, viewCount: true },
+      });
+      if (cursorBuild) {
+        const at = cursorBuild[keyset];
+        and.push({ OR: [{ [keyset]: { lt: at } }, { [keyset]: at, id: { lt: cursor } }] });
+        where.AND = and;
+      }
+    }
+
+    const builds = await prisma.userBuild.findMany({
+      where,
+      orderBy: [{ [keyset]: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+      select: buildCardSelect(currentUserId),
+    });
+
+    const hasMore = builds.length > limit;
+    const items = builds.slice(0, limit);
+
+    const mappedItems = items.map((build) => cardOf(build, currentUserId));
+
+    return Response.json({
+      items: mappedItems,
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+      hasMore,
+    });
+  }),
+  POST: implement(C.createUserBuildApi, { auth: 'none' }, async ({ request }) => {
+    let userId: string | null = null;
+
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    if (session) {
+      userId = session.user.id;
+    } else {
+      // Try CLI token
+      const user = await getAuthenticatedUser(request, null);
+      if (user) {
+        userId = user.id;
+      }
+    }
+
+    if (!userId) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limit: 5 builds per hour
+    const ip = getClientIp(request);
+    const { allowed, retryAfter } = rateLimit(ip, {
+      limit: 5,
+      windowMs: 60 * 60 * 1000,
+      prefix: 'build-create',
+    });
+    if (!allowed) {
+      return Response.json(
+        { error: 'Too many builds created. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+      );
+    }
+
+    // Parse and validate
+    const body = await request.json();
+    const parsed = createBuildSchema.safeParse(body);
+    if (!parsed.success) {
+      return Response.json(
+        { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
+        { status: 400 },
+      );
+    }
+
+    const {
+      title,
+      description,
+      readme,
+      repoUrl,
+      demoUrl,
+      thumbnailUrl,
+      categoryId,
+      gameId,
+      technologies,
+      tags,
+      visibility,
+      price,
+    } = parsed.data;
+
+    // A build made for a title must name one the catalog has.
+    if (gameId && !isTrackableTitle(gameId)) {
+      return Response.json({ error: 'Unknown game' }, { status: 400 });
+    }
+
+    // Generate unique slug
+    const baseSlug = generateSlug(title);
+    const slug = await ensureUniqueSlug(baseSlug);
+
+    // Create build with tags
+    const build = await prisma.$transaction(async (tx) => {
+      const created = await tx.userBuild.create({
+        data: {
+          userId,
+          slug,
+          title,
+          description,
+          readme: readme || null,
+          repoUrl: repoUrl || null,
+          demoUrl: demoUrl || null,
+          thumbnailUrl: thumbnailUrl || null,
+          categoryId: categoryId || null,
+          gameId: gameId || null,
+          technologies: technologies || [],
+          visibility,
+          price: price && price > 0 ? price : null,
+          publishedAt: new Date(),
+        },
+        include: {
+          user: { select: userDisplaySelect },
+          category: {
+            select: { id: true, name: true, slug: true, color: true, iconName: true },
+          },
+        },
+      });
+
+      // Create tags
+      if (tags.length > 0) {
+        await tx.buildTag.createMany({
+          data: tags.map((name) => ({
+            buildId: created.id,
+            name: name.toLowerCase(),
+          })),
+        });
+      }
+
+      return created;
+    });
+
+    // Fetch tags
+    const buildTags = await prisma.buildTag.findMany({
+      where: { buildId: build.id },
+      select: { name: true },
+    });
+
+    return Response.json(
+      {
+        id: build.id,
+        slug: build.slug,
+        title: build.title,
+        description: build.description,
+        thumbnailUrl: build.thumbnailUrl,
+        repoUrl: build.repoUrl,
+        demoUrl: build.demoUrl,
+        visibility: build.visibility,
+        technologies: build.technologies,
+        createdAt: build.createdAt.toISOString(),
+        publishedAt: build.publishedAt?.toISOString() ?? null,
+        user: resolveUser(build.user),
+        category: build.category,
+        tags: buildTags.map((t) => t.name),
+      },
+      { status: 201 },
+    );
+  }),
+});

@@ -30,7 +30,6 @@
  *   (`docs/design-language.md` §5.1.1). A press is a discrete event; what moves
  *   afterwards moves on its own.
  */
-'use client';
 
 import {
   useCallback,
@@ -62,6 +61,7 @@ import {
 import type { SourceId } from '@/lib/temple-of-joy/types';
 import { useTempleSnapshot, useTempleValue } from './hooks';
 import { Glyph } from './ui';
+import { clamp, clamp01 } from '@/lib/core/math';
 
 const DEG = Math.PI / 180;
 
@@ -1271,12 +1271,4 @@ export function TempleGlobes({ onStrike, onTilt, children }: TempleGlobesProps) 
       </p>
     </div>
   );
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }

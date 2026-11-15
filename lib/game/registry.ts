@@ -1,10 +1,13 @@
 /**
  * The scoring registry — one declaration per scored game.
  *
- * `lib/games.ts` is the catalog of what exists (cards, art, copy). This is the
- * catalog of how a game SCORES, which nothing owned before: each game's score
- * endpoint invented its own bounds, its own rate limit, and its own idea of a
- * plausible result. The consequences were not cosmetic —
+ * A game's scoring rules are part of its catalog record (`scoring` on the entry
+ * in the catalog, see `lib/catalog/types.ts`), so there is one record per
+ * game, not a catalog plus a parallel registry. This module derives the rules
+ * from those records and adds the few boards that have no card of their own
+ * (`UNCATALOGED_SCORE_BOARDS`). Declaring scoring once matters because each score
+ * endpoint used to invent its own bounds, its own rate limit, and its own idea
+ * of a plausible result. The consequences were not cosmetic —
  *
  *  - Ceilings disagreed wildly (one game capped at 100,000,000, another did no
  *    upper-bound check at all), so "is this score real?" had a different answer
@@ -21,11 +24,15 @@
  * against.
  */
 
+import { games } from '@/lib/catalog';
+
 /** How a game's primary score is interpreted. */
-export type ScoreDirection = 'higher-is-better' | 'lower-is-better';
+export type ScoreDirection =
+  | 'higher-is-better'
+  | 'lower-is-better';
 
 export interface GameScoreRules {
-  /** Must match an `id` in `lib/games.ts`. */
+  /** Must match an `id` in the catalog (`lib/catalog`). */
   id: string;
   /** Human label for leaderboards and error copy (already in English). */
   label: string;
@@ -50,7 +57,7 @@ export interface GameScoreRules {
   direction: ScoreDirection;
   /**
    * True for games that are deliberately absent from the public catalog
-   * (`lib/games.ts`) — Signal Forge lives under `/secret/`. They still need
+   * (`lib/catalog`) — Signal Forge lives under `/secret/`. They still need
    * scoring rules; they just aren't listed anywhere a visitor browses.
    */
   unlisted?: boolean;
@@ -61,106 +68,118 @@ export interface GameScoreRules {
 }
 
 /**
- * Every game that accepts a score submission.
+ * Score boards that have no catalog card: a secondary board of a catalog game
+ * (Boss Rush, Temple of Joy efficiency) or a hidden game (Signal Forge). They
+ * need the same validation, so they are declared here; every catalog game
+ * declares its rules on its own entry instead.
  *
  * Ceilings are deliberately generous — the goal is to reject the impossible,
  * not to police the excellent. A limit that a strong player can hit is worse
  * than no limit, because it produces false accusations instead of caught
  * cheats.
  */
-export const GAME_SCORE_RULES: readonly GameScoreRules[] = [
-  {
-    id: 'void-breaker',
-    label: 'Void Breaker',
-    maxScore: 10_000_000,
-    maxScorePerSecond: 5_000,
-    minDurationMs: 3_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Wave',
-    maxProgress: 500,
-  },
-  {
-    // Boss Rush's own board (generic adapter, GameStat row keyed by this id) so
-    // a rush run can never touch the main Void Breaker board. Not a catalog game.
-    id: 'void-breaker-boss-rush',
-    label: 'Void Breaker Boss Rush',
-    unlisted: true,
-    maxScore: 10_000_000,
-    maxScorePerSecond: 5_000,
-    minDurationMs: 20_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Bosses',
-    maxProgress: 8,
-  },
-  {
-    // Temple of Joy's idle-efficiency board: floor(log10(joy per hour) * 100),
-    // derived server-side from the stored save (app/routes/api/temple-of-joy/efficiency.ts).
-    // A double tops out near 10^308, so 31,000 is the honest ceiling.
-    id: 'temple-of-joy-efficiency',
-    label: 'Temple of Joy efficiency',
-    unlisted: true,
-    maxScore: 31_000,
-    minDurationMs: 3_600_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Hours played',
-    maxProgress: 1_000_000,
-  },
-  {
-    id: 'neon-driftway',
-    label: 'Neon Driftway',
-    maxScore: 5_000_000,
-    maxScorePerSecond: 4_000,
-    minDurationMs: 3_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Distance',
-    maxProgress: 1_000_000,
-  },
-  {
-    id: 'nightrail',
-    label: 'Nightrail',
-    // A perfect skybridge run banks combos at a ×20 cap on top of the delivery
-    // and par-time bonuses, so the honest ceiling is high. These numbers reject
-    // the impossible rather than policing the excellent.
-    maxScore: 4_000_000,
-    maxScorePerSecond: 12_000,
-    minDurationMs: 5_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Distance',
-    maxProgress: 50_000,
-  },
-  {
-    id: 'signal-forge',
-    label: 'Signal Forge',
-    unlisted: true,
-    maxScore: 5_000_000,
-    maxScorePerSecond: 3_000,
-    minDurationMs: 3_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Floor',
-    maxProgress: 500,
-  },
-  {
-    id: 'synapse-storm',
-    label: 'Synapse Storm',
-    maxScore: 5_000_000,
-    maxScorePerSecond: 3_000,
-    minDurationMs: 3_000,
-    direction: 'higher-is-better',
-    progressLabel: 'Combo',
-    maxProgress: 10_000,
-  },
-] as const;
+const UNCATALOGED_SCORE_BOARDS: readonly GameScoreRules[] =
+  [
+    {
+      // Boss Rush's own board (generic adapter, GameStat row keyed by this id) so
+      // a rush run can never touch the main Void Breaker board. Not a catalog game.
+      id: 'void-breaker-boss-rush',
+      label:
+        'Void Breaker Boss Rush',
+      unlisted: true,
+      maxScore: 10_000_000,
+      maxScorePerSecond: 5_000,
+      minDurationMs: 20_000,
+      direction:
+        'higher-is-better',
+      progressLabel:
+        'Bosses',
+      maxProgress: 8,
+    },
+    {
+      // Temple of Joy's idle-efficiency board: floor(log10(joy per hour) * 100),
+      // derived server-side from the stored save (lib/temple-of-joy/api/temple-of-joy.efficiency.server.ts).
+      // A double tops out near 10^308, so 31,000 is the honest ceiling.
+      id: 'temple-of-joy-efficiency',
+      label:
+        'Temple of Joy efficiency',
+      unlisted: true,
+      maxScore: 31_000,
+      minDurationMs: 3_600_000,
+      direction:
+        'higher-is-better',
+      progressLabel:
+        'Hours played',
+      maxProgress: 1_000_000,
+    },
+    {
+      id: 'signal-forge',
+      label:
+        'Signal Forge',
+      unlisted: true,
+      maxScore: 5_000_000,
+      maxScorePerSecond: 3_000,
+      minDurationMs: 3_000,
+      direction:
+        'higher-is-better',
+      progressLabel:
+        'Floor',
+      maxProgress: 500,
+    },
+  ];
 
-const BY_ID = new Map(GAME_SCORE_RULES.map((g) => [g.id, g]));
+/** Every game that accepts a score submission: catalog games with `scoring`, then the uncataloged boards. */
+export const GAME_SCORE_RULES: readonly GameScoreRules[] =
+  [
+    ...games.flatMap(
+      (
+        g,
+      ) =>
+        g.scoring
+          ? [
+              {
+                id: g.id,
+                label:
+                  g.title,
+                ...g.scoring,
+              },
+            ]
+          : [],
+    ),
+    ...UNCATALOGED_SCORE_BOARDS,
+  ];
+
+const BY_ID =
+  new Map(
+    GAME_SCORE_RULES.map(
+      (
+        g,
+      ) => [
+        g.id,
+        g,
+      ],
+    ),
+  );
 
 /** Scoring rules for a game id, or undefined if it isn't a scored game. */
-export function getGameScoreRules(gameId: string): GameScoreRules | undefined {
-  return BY_ID.get(gameId);
+export function getGameScoreRules(
+  gameId: string,
+):
+  | GameScoreRules
+  | undefined {
+  return BY_ID.get(
+    gameId,
+  );
 }
 
 /** Every registered scored-game id. */
 export function scoredGameIds(): string[] {
-  return GAME_SCORE_RULES.map((g) => g.id);
+  return GAME_SCORE_RULES.map(
+    (
+      g,
+    ) =>
+      g.id,
+  );
 }
 
 /** Why a submitted score was rejected. */
@@ -192,44 +211,150 @@ export interface ScoreCandidate {
 export function validateScore(
   gameId: string,
   candidate: ScoreCandidate,
-): { ok: true; rules: GameScoreRules } | { ok: false; reason: ScoreRejection } {
-  const rules = BY_ID.get(gameId);
-  if (!rules) return { ok: false, reason: 'UNKNOWN_GAME' };
+):
+  | {
+      ok: true;
+      rules: GameScoreRules;
+    }
+  | {
+      ok: false;
+      reason: ScoreRejection;
+    } {
+  const rules =
+    BY_ID.get(
+      gameId,
+    );
+  if (
+    !rules
+  )
+    return {
+      ok: false,
+      reason:
+        'UNKNOWN_GAME',
+    };
 
-  const { score, durationMs, progress } = candidate;
+  const {
+    score,
+    durationMs,
+    progress,
+  } =
+    candidate;
 
-  if (!Number.isFinite(score) || !Number.isInteger(score) || score < 0) {
-    return { ok: false, reason: 'INVALID_SCORE' };
+  if (
+    !Number.isFinite(
+      score,
+    ) ||
+    !Number.isInteger(
+      score,
+    ) ||
+    score <
+      0
+  ) {
+    return {
+      ok: false,
+      reason:
+        'INVALID_SCORE',
+    };
   }
-  if (score > rules.maxScore) return { ok: false, reason: 'SCORE_TOO_HIGH' };
+  if (
+    score >
+    rules.maxScore
+  )
+    return {
+      ok: false,
+      reason:
+        'SCORE_TOO_HIGH',
+    };
 
-  if (progress !== undefined) {
-    if (!Number.isFinite(progress) || !Number.isInteger(progress) || progress < 0) {
-      return { ok: false, reason: 'INVALID_PROGRESS' };
+  if (
+    progress !==
+    undefined
+  ) {
+    if (
+      !Number.isFinite(
+        progress,
+      ) ||
+      !Number.isInteger(
+        progress,
+      ) ||
+      progress <
+        0
+    ) {
+      return {
+        ok: false,
+        reason:
+          'INVALID_PROGRESS',
+      };
     }
-    if (rules.maxProgress !== undefined && progress > rules.maxProgress) {
-      return { ok: false, reason: 'PROGRESS_TOO_HIGH' };
+    if (
+      rules.maxProgress !==
+        undefined &&
+      progress >
+        rules.maxProgress
+    ) {
+      return {
+        ok: false,
+        reason:
+          'PROGRESS_TOO_HIGH',
+      };
     }
   }
 
-  if (durationMs !== undefined && Number.isFinite(durationMs)) {
-    if (rules.minDurationMs !== undefined && durationMs < rules.minDurationMs) {
-      return { ok: false, reason: 'RUN_TOO_SHORT' };
+  if (
+    durationMs !==
+      undefined &&
+    Number.isFinite(
+      durationMs,
+    )
+  ) {
+    if (
+      rules.minDurationMs !==
+        undefined &&
+      durationMs <
+        rules.minDurationMs
+    ) {
+      return {
+        ok: false,
+        reason:
+          'RUN_TOO_SHORT',
+      };
     }
-    if (rules.maxScorePerSecond !== undefined && durationMs > 0) {
-      const perSecond = score / (durationMs / 1000);
-      if (perSecond > rules.maxScorePerSecond) {
-        return { ok: false, reason: 'SCORE_RATE_IMPLAUSIBLE' };
+    if (
+      rules.maxScorePerSecond !==
+        undefined &&
+      durationMs >
+        0
+    ) {
+      const perSecond =
+        score /
+        (durationMs /
+          1000);
+      if (
+        perSecond >
+        rules.maxScorePerSecond
+      ) {
+        return {
+          ok: false,
+          reason:
+            'SCORE_RATE_IMPLAUSIBLE',
+        };
       }
     }
   }
 
-  return { ok: true, rules };
+  return {
+    ok: true,
+    rules,
+  };
 }
 
 /** User-facing message for a rejection (English; callers translate). */
-export function rejectionMessage(reason: ScoreRejection): string {
-  switch (reason) {
+export function rejectionMessage(
+  reason: ScoreRejection,
+): string {
+  switch (
+    reason
+  ) {
     case 'UNKNOWN_GAME':
       return 'Unknown game.';
     case 'INVALID_SCORE':

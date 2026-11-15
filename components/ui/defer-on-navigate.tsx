@@ -1,5 +1,3 @@
-'use client';
-
 import { startTransition, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 
 /**
@@ -11,7 +9,7 @@ import { startTransition, useEffect, useState, useSyncExternalStore, type ReactN
  * page with a catalog, a storefront and an Arcade Pass panel under the fold was
  * rendered, inserted, styled and laid out in full before the first pixel of it
  * could paint — 600ms+ of one long task on a 4×-throttled CPU for `/games`
- * (docs/ui-perf-audit-2026-10-09.md, NAV-5). The click felt dead for that long.
+ * (docs/archive/2026/ui-perf-audit-2026-10-09.md, NAV-5). The click felt dead for that long.
  *
  * Wrapping the below-the-fold part of such a page in this component splits that
  * commit in two. On a page switch the wrapped subtree first renders as an empty
@@ -29,17 +27,7 @@ import { startTransition, useEffect, useState, useSyncExternalStore, type ReactN
  *    offset that is usually INSIDE the deferred part; that offset has to exist
  *    when it is applied. This reads the router history's own record of the last
  *    navigation (`trackHistoryActions`, subscribed from the root route).
- *
- *    It used to read `<html>.nav-pop`, which `BackNavAnimation` sets from its
- *    own `popstate` listener — and that listener runs AFTER the router's: the
- *    router's handler notifies synchronously, React renders the restored page
- *    in the microtask between the two listeners, and only then is the class
- *    set. So every back/forward arrival deferred anyway and the router restored
- *    the scroll offset against a page that was still a placeholder short
- *    (`/games` from 1800px came back at 1335px; docs/performance-audit-2026-10-21.md
- *    §Navigation commit). History subscribers are notified inside the router's
- *    handler, before that microtask.
- *
+ * *
  * Use it only for content that is below the fold on arrival. `minHeight` is a
  * reservation so the page does not visibly end and then grow while the subtree
  * builds; it never shifts anything the reader can see, because nothing above a
@@ -76,7 +64,7 @@ function shouldDeferNow(): boolean {
   ) {
     return false;
   }
-  return !document.documentElement.classList.contains('nav-pop');
+  return true;
 }
 
 /**
@@ -98,7 +86,7 @@ function shouldDeferNow(): boolean {
  * already flipped `documentHydrated`; reading only the flag, the wheel rendered
  * its first four cards against fifteen server-rendered ones, hydration failed
  * (#418), and React client-rendered the whole first feed over the server HTML
- * (docs/performance-audit-2026-10-21.md §Home LCP).
+ * (docs/archive/2026/performance-audit-2026-10-21.md §Home LCP).
  */
 const noopSubscribe = () => () => {};
 function useIsHydrating(): boolean {

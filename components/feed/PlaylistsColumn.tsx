@@ -1,9 +1,7 @@
-'use client';
-
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   ListVideo,
   Plus,
@@ -21,7 +19,22 @@ import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { ColumnHeader } from './ColumnHeader';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  addPlaylistCollaboratorApi,
+  createPlaylistApi,
+  deletePlaylistApi,
+  getPlaylistApi,
+  listPlaylistCollaboratorsApi,
+  listPlaylistsApi,
+  removePlaylistCollaboratorApi,
+  removePlaylistItemApi,
+  renamePlaylistApi,
+} from '@/lib/playlists/playlists.contract';
 import '@/components/library/library.css';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Summary {
   id: string;
@@ -68,6 +81,8 @@ export function PlaylistsColumn({
   const [openId, setOpenId] = useState<string | null>(null);
   const [items, setItems] = useState<Record<string, Item[]>>({});
   const [loadingItems, setLoadingItems] = useState(false);
+  // Steel M9: an opened playlist's items replace "Loading…".
+  const itemsArrival = useArrival(!loadingItems);
   const [collaborators, setCollaborators] = useState<Record<string, Collaborator[]>>({});
   const [collabHandle, setCollabHandle] = useState('');
   const [addingCollab, setAddingCollab] = useState(false);
@@ -81,8 +96,11 @@ export function PlaylistsColumn({
     : playlists;
 
   const refresh = useCallback(async () => {
-    const res = await fetch('/api/playlists', { credentials: 'include' });
-    if (res.ok) setPlaylists((await res.json()).playlists ?? []);
+    try {
+      setPlaylists((await api(listPlaylistsApi)).playlists ?? []);
+    } catch {
+      /* keep the current list */
+    }
   }, []);
 
   const create = async () => {
@@ -90,21 +108,14 @@ export function PlaylistsColumn({
     if (!name) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/playlists', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, kind: 'video' }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          data.error ?? t('playlist-create-failed', { defaultValue: 'Could not create playlist.' }),
-        );
-        return;
-      }
+      await api(createPlaylistApi, { body: { name, kind: 'video' } });
       setNewName('');
       await refresh();
+    } catch (err) {
+      toast.error(
+        serverError(err) ??
+          t('playlist-create-failed', { defaultValue: 'Could not create playlist.' }),
+      );
     } finally {
       setCreating(false);
     }
@@ -118,21 +129,19 @@ export function PlaylistsColumn({
     setOpenId(id);
     setCollabHandle('');
     if (playlists.find((p) => p.id === id)?.role === 'owner' && !collaborators[id]) {
-      fetch(`/api/playlists/${id}/collaborators`, { credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : null))
+      api(listPlaylistCollaboratorsApi, { params: { id } })
         .then((d) => {
-          if (d) setCollaborators((m) => ({ ...m, [id]: d.collaborators ?? [] }));
+          setCollaborators((m) => ({ ...m, [id]: d.collaborators ?? [] }));
         })
         .catch(() => {});
     }
     if (!items[id]) {
       setLoadingItems(true);
       try {
-        const res = await fetch(`/api/playlists/${id}`, { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          setItems((m) => ({ ...m, [id]: data.items ?? [] }));
-        }
+        const data = await api(getPlaylistApi, { params: { id } });
+        setItems((m) => ({ ...m, [id]: data.items ?? [] }));
+      } catch {
+        /* leave the item list unloaded */
       } finally {
         setLoadingItems(false);
       }
@@ -147,14 +156,12 @@ export function PlaylistsColumn({
     if (name == null) return;
     const trimmed = name.trim();
     if (!trimmed || trimmed === pl.name) return;
-    const res = await fetch(`/api/playlists/${pl.id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: trimmed }),
-    });
-    if (res.ok) setPlaylists((ps) => ps.map((p) => (p.id === pl.id ? { ...p, name: trimmed } : p)));
-    else toast.error(t('playlist-rename-failed', { defaultValue: 'Could not rename.' }));
+    try {
+      await api(renamePlaylistApi, { params: { id: pl.id }, body: { name: trimmed } });
+      setPlaylists((ps) => ps.map((p) => (p.id === pl.id ? { ...p, name: trimmed } : p)));
+    } catch {
+      toast.error(t('playlist-rename-failed', { defaultValue: 'Could not rename.' }));
+    }
   };
 
   const remove = async (pl: Summary) => {
@@ -164,14 +171,11 @@ export function PlaylistsColumn({
       danger: true,
     });
     if (!ok) return;
-    const res = await fetch(`/api/playlists/${pl.id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.ok) {
+    try {
+      await api(deletePlaylistApi, { params: { id: pl.id } });
       setPlaylists((ps) => ps.filter((p) => p.id !== pl.id));
       if (openId === pl.id) setOpenId(null);
-    } else {
+    } catch {
       toast.error(t('playlist-delete-failed', { defaultValue: 'Could not delete.' }));
     }
   };
@@ -181,27 +185,21 @@ export function PlaylistsColumn({
     if (!handle) return;
     setAddingCollab(true);
     try {
-      const res = await fetch(`/api/playlists/${playlistId}/collaborators`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ handle }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      try {
+        await api(addPlaylistCollaboratorApi, { params: { id: playlistId }, body: { handle } });
+      } catch (err) {
         toast.error(
-          data.error ??
+          serverError(err) ??
             t('playlist-collab-add-failed', { defaultValue: 'Could not add collaborator.' }),
         );
         return;
       }
       setCollabHandle('');
-      const list = await fetch(`/api/playlists/${playlistId}/collaborators`, {
-        credentials: 'include',
-      });
-      if (list.ok) {
-        const d = await list.json();
+      try {
+        const d = await api(listPlaylistCollaboratorsApi, { params: { id: playlistId } });
         setCollaborators((m) => ({ ...m, [playlistId]: d.collaborators ?? [] }));
+      } catch {
+        /* the list refreshes next time the playlist is opened */
       }
     } finally {
       setAddingCollab(false);
@@ -209,16 +207,13 @@ export function PlaylistsColumn({
   };
 
   const removeCollaborator = async (playlistId: string, userId: string) => {
-    const res = await fetch(`/api/playlists/${playlistId}/collaborators/${userId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.ok) {
+    try {
+      await api(removePlaylistCollaboratorApi, { params: { id: playlistId, userId } });
       setCollaborators((m) => ({
         ...m,
         [playlistId]: (m[playlistId] ?? []).filter((c) => c.userId !== userId),
       }));
-    } else {
+    } catch {
       toast.error(
         t('playlist-collab-remove-failed', { defaultValue: 'Could not remove collaborator.' }),
       );
@@ -226,11 +221,8 @@ export function PlaylistsColumn({
   };
 
   const removeItem = async (playlistId: string, itemId: string) => {
-    const res = await fetch(`/api/playlists/${playlistId}/items/${itemId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.ok) {
+    try {
+      await api(removePlaylistItemApi, { params: { id: playlistId, itemId } });
       setItems((m) => ({
         ...m,
         [playlistId]: (m[playlistId] ?? []).filter((i) => i.id !== itemId),
@@ -240,7 +232,7 @@ export function PlaylistsColumn({
           p.id === playlistId ? { ...p, itemCount: Math.max(0, p.itemCount - 1) } : p,
         ),
       );
-    } else {
+    } catch {
       toast.error(t('playlist-item-remove-failed', { defaultValue: 'Could not remove item.' }));
     }
   };
@@ -264,7 +256,7 @@ export function PlaylistsColumn({
             })}
             action={
               <Link to="/login" search={{ callbackURL: '/playlists' }}>
-                <Button variant="accent" size="sm">
+                <Button variant="default" size="sm">
                   {t('sign-in', { defaultValue: 'Sign in' })}
                 </Button>
               </Link>
@@ -290,7 +282,7 @@ export function PlaylistsColumn({
               className="flex-1"
             />
             <Button
-              variant="accent"
+              variant="default"
               size="sm"
               onClick={create}
               loading={creating}
@@ -330,7 +322,7 @@ export function PlaylistsColumn({
                     key={pl.id}
                     className={
                       embedded
-                        ? 'glass-fill glass-interactive lib-orbit-card'
+                        ?'surface-press lib-orbit-card'
                         : 'rounded-site border border-site-border bg-site-surface'
                     }
                     data-library-orbit={embedded ? '' : undefined}
@@ -344,12 +336,12 @@ export function PlaylistsColumn({
                       >
                         {open ? (
                           <ChevronDown
-                            className="h-4 w-4 shrink-0 text-site-text-dim"
+                            className="h-4 w-4 shrink-0 text-site-text-muted"
                             aria-hidden
                           />
                         ) : (
                           <ChevronRight
-                            className="h-4 w-4 shrink-0 text-site-text-dim"
+                            className="h-4 w-4 shrink-0 text-site-text-muted"
                             aria-hidden
                           />
                         )}
@@ -357,7 +349,7 @@ export function PlaylistsColumn({
                           <span className="block truncate text-sm font-semibold text-site-text">
                             {pl.name}
                           </span>
-                          <span className="block text-xs text-site-text-dim">
+                          <span className="block text-xs text-site-text-muted">
                             {t('playlist-item-count', {
                               defaultValue: '{{n}} items',
                               n: pl.itemCount,
@@ -374,7 +366,7 @@ export function PlaylistsColumn({
                             type="button"
                             onClick={() => rename(pl)}
                             aria-label={t('playlist-rename', { defaultValue: 'Rename' })}
-                            className="rounded-site-sm p-1.5 text-site-text-dim hover:bg-site-surface-hover hover:text-site-text"
+                            className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
                           >
                             <Pencil className="h-4 w-4" aria-hidden />
                           </button>
@@ -382,7 +374,7 @@ export function PlaylistsColumn({
                             type="button"
                             onClick={() => remove(pl)}
                             aria-label={t('playlist-delete', { defaultValue: 'Delete' })}
-                            className="rounded-site-sm p-1.5 text-site-text-dim hover:bg-site-surface-hover hover:text-site-danger"
+                            className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-danger"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden />
                           </button>
@@ -397,11 +389,16 @@ export function PlaylistsColumn({
                             {t('loading', { defaultValue: 'Loading…' })}
                           </p>
                         ) : (items[pl.id] ?? []).length === 0 ? (
-                          <p className="py-4 text-center text-sm text-site-text-dim">
+                          <p
+                            className={cn(
+                              'py-4 text-center text-sm text-site-text-muted',
+                              itemsArrival,
+                            )}
+                          >
                             {t('playlist-no-items', { defaultValue: 'Nothing here yet.' })}
                           </p>
                         ) : (
-                          <ul className="space-y-1">
+                          <ul className={cn('space-y-1', itemsArrival)}>
                             {(items[pl.id] ?? []).map((it) => (
                               <li
                                 key={it.id}
@@ -415,13 +412,13 @@ export function PlaylistsColumn({
                                   />
                                 ) : (
                                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-site-bg">
-                                    <Video className="h-4 w-4 text-site-text-dim" aria-hidden />
+                                    <Video className="h-4 w-4 text-site-text-muted" aria-hidden />
                                   </div>
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm text-site-text">{it.title}</p>
                                   {it.subtitle && (
-                                    <p className="truncate text-xs text-site-text-dim">
+                                    <p className="truncate text-xs text-site-text-muted">
                                       {it.subtitle}
                                     </p>
                                   )}
@@ -431,7 +428,7 @@ export function PlaylistsColumn({
                                     href={it.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="rounded-site-sm p-1.5 text-site-text-dim hover:text-site-accent"
+                                    className="rounded-site-sm p-1.5 text-site-text-muted hover:text-site-accent"
                                     aria-label={t('playlist-open-item', { defaultValue: 'Open' })}
                                   >
                                     <ExternalLink className="h-4 w-4" aria-hidden />
@@ -443,7 +440,7 @@ export function PlaylistsColumn({
                                   aria-label={t('playlist-remove-item', {
                                     defaultValue: 'Remove from playlist',
                                   })}
-                                  className="rounded-site-sm p-1.5 text-site-text-dim hover:text-site-danger"
+                                  className="rounded-site-sm p-1.5 text-site-text-muted hover:text-site-danger"
                                 >
                                   <Trash2 className="h-4 w-4" aria-hidden />
                                 </button>
@@ -470,7 +467,7 @@ export function PlaylistsColumn({
                                     aria-label={t('playlist-collab-remove', {
                                       defaultValue: 'Remove collaborator',
                                     })}
-                                    className="rounded-site-sm p-0.5 text-site-text-dim hover:text-site-danger"
+                                    className="rounded-site-sm p-0.5 text-site-text-muted hover:text-site-danger"
                                   >
                                     <X className="h-3.5 w-3.5" aria-hidden />
                                   </button>
@@ -497,7 +494,7 @@ export function PlaylistsColumn({
                                 className="flex-1"
                               />
                               <Button
-                                variant="accent"
+                                variant="default"
                                 size="sm"
                                 onClick={() => addCollaborator(pl.id)}
                                 loading={addingCollab}

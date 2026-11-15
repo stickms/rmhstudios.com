@@ -1,14 +1,12 @@
-'use client';
-
 /**
  * The Radix dialog the library's five modals share, portalled to `<body>`.
  *
  * All five (`UploadModal`, `LibraryEditControls`, and three inside
  * `LibraryCollections`) rendered `<div className="lib-upload__overlay">` in
  * place. `.lib-upload__overlay` is `position: fixed; inset: 0; z-index: 120`,
- * and `fixed` was fine — `.radial-frame` is `position: relative`, which is not a
+ * and `fixed` was fine — the page frame is `position: relative`, which is not a
  * containing block for fixed descendants — so the 72%-black scrim really did
- * cover the viewport. The **z-index** was the problem: `.radial-frame` is
+ * cover the viewport. The **z-index** was the problem: the page frame is
  * `z-index: var(--z-content)`, a stacking context pinned at 1, so 120 was
  * measured inside that 1 and the shell's chrome kept painting over the scrim.
  *
@@ -41,27 +39,65 @@ export interface LibraryDialogShellProps {
   children: ReactNode;
 }
 
-export function LibraryDialogShell({ onClose, label, children }: LibraryDialogShellProps) {
-  const { t } = useTranslation('library');
+export function LibraryDialogShell({
+  onClose,
+  label,
+  children,
+}: LibraryDialogShellProps) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'library',
+    );
   return (
-    <DialogPrimitive.Root open onOpenChange={(o) => !o && onClose()}>
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(
+        o,
+      ) =>
+        !o &&
+        onClose()
+      }
+    >
       <DialogPortal>
         {/* The content IS the scrim (`.lib-upload__overlay` is the viewport-covering layer the
             panels centre inside), so a press on it is an outside press; Radix adds Escape, the
             focus trap and focus return. */}
         <DialogPrimitive.Content
           className="lib-upload__overlay outline-none"
-          aria-describedby={undefined}
-          onInteractOutside={(e) => {
-            if ((e.target as HTMLElement | null)?.closest?.('[data-slot="anchored-menu"]'))
+          aria-describedby={
+            undefined
+          }
+          onInteractOutside={(
+            e,
+          ) => {
+            if (
+              (
+                e.target as HTMLElement | null
+              )?.closest?.(
+                '[data-slot="anchored-menu"]',
+              )
+            )
               e.preventDefault();
           }}
-          onMouseDown={onClose}
+          onMouseDown={
+            onClose
+          }
         >
           <DialogPrimitive.Title className="sr-only">
-            {label ?? t('library-heading', { defaultValue: 'Library' })}
+            {label ??
+              t(
+                'library-heading',
+                {
+                  defaultValue:
+                    'Library',
+                },
+              )}
           </DialogPrimitive.Title>
-          {children}
+          {
+            children
+          }
         </DialogPrimitive.Content>
       </DialogPortal>
     </DialogPrimitive.Root>

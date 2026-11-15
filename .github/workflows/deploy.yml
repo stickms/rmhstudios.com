@@ -1,4 +1,4 @@
-# Builds and required checks overlap. Cache maintenance runs in build-cache.yml.
+# Check jobs are defined once in ci-checks.yml. Builds and required checks overlap. Cache maintenance runs in build-cache.yml.
 name: deploy
 
 on:
@@ -19,61 +19,15 @@ env:
   IMAGE_FULL: ghcr.io/stickms/rmhstudios-app-full
 
 jobs:
+  # The check definitions live once, in ci-checks.yml (also used by web-ci).
+  # Fast gate: typecheck + lint + docs freshness, unit shards, prod audit.
   ci:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    uses: ./.github/workflows/ci-checks.yml
+    with:
+      checks: true
+      frontend: false
     permissions:
       contents: read
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: ./.github/actions/setup-deps
-
-      - name: Restore typecheck cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: .cache/tsc
-          key: tsc-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            tsc-${{ runner.os }}-
-      - name: Restore lint cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: .cache/eslint
-          key: eslint-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            eslint-${{ runner.os }}-
-
-      - name: Typecheck
-        run: |
-          mkdir -p .cache/tsc
-          pnpm run typecheck
-
-      - name: Lint
-        run: |
-          mkdir -p .cache/eslint
-          pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
-
-      - name: Production dependency audit
-        run: pnpm audit --prod --audit-level=high
-
-  test:
-    name: unit (${{ matrix.shard }}/2)
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2]
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup-deps
-      - name: Test
-        run: pnpm test --shard=${{ matrix.shard }}/2
 
   build:
     if: github.ref == 'refs/heads/main'
@@ -230,64 +184,14 @@ jobs:
             "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
 
+  # Slow suite, run after the fast gate ships (see post-deploy-verify).
   integration:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    uses: ./.github/workflows/ci-checks.yml
+    with:
+      checks: false
+      frontend: true
     permissions:
       contents: read
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
-      BETTER_AUTH_SECRET: ci-integration-not-a-real-secret-00000000000
-      BETTER_AUTH_URL: http://localhost:7005
-      PORT: '7005'
-      INTEGRATION_BASE_URL: http://localhost:7005
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Start Postgres (background)
-        run: |
-          nohup sh -c 'docker run -d --name pg -p 127.0.0.1:5432:5432 \
-            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=rmh \
-            pgvector/pgvector:pg16' > "$RUNNER_TEMP/pg-start.log" 2>&1 &
-      - uses: ./.github/actions/setup-deps
-      - name: Restore image variants
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: public/images/_variants
-          key: image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-${{ hashFiles('public/images/**') }}
-          restore-keys: |
-            image-variants-v3-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/gen-image-variants.ts', 'scripts/media/pnpm-lock.yaml') }}-
-      - name: Build
-        run: pnpm run build:frontend
-      - name: Wait for Postgres
-        run: |
-          for i in $(seq 1 60); do
-            if docker exec pg pg_isready -U postgres -h 127.0.0.1 >/dev/null 2>&1; then echo "postgres ready (${i}s into the wait)"; exit 0; fi
-            sleep 1
-          done
-          echo "postgres never became ready"; cat "$RUNNER_TEMP/pg-start.log"; docker logs pg 2>&1 | tail -40 || true
-          exit 1
-      - name: Migrate database
-        run: pnpm exec prisma migrate deploy
-      - name: Start the built server
-        run: |
-          nohup node .output/server/index.mjs > "$RUNNER_TEMP/server.log" 2>&1 &
-          echo $! > "$RUNNER_TEMP/server.pid"
-          for i in $(seq 1 60); do
-            if curl -fsS -o /dev/null "$INTEGRATION_BASE_URL/api/ready"; then echo "server ready after ${i}s"; exit 0; fi
-            sleep 1
-          done
-          echo "server did not become ready"
-          tail -80 "$RUNNER_TEMP/server.log"
-          exit 1
-      - name: Integration tests
-        run: pnpm test:integration
-      - name: Server log (on failure)
-        if: failure()
-        run: tail -200 "$RUNNER_TEMP/server.log" || true
-      - name: Stop the server
-        if: always()
-        run: kill "$(cat "$RUNNER_TEMP/server.pid")" 2>/dev/null || true
 
   go-test:
     runs-on: ubuntu-latest
@@ -333,7 +237,7 @@ jobs:
         run: bazelisk test --build_tests_only //go-services/...
 
   deploy-gate:
-    needs: [ci, test, build, go-test]
+    needs: [ci, build, go-test]
     if: always() && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -346,7 +250,7 @@ jobs:
           sparse-checkout: .github/scripts
 
       - name: Gate failed — CI/build or a stall blocked the deploy
-        if: needs.ci.result != 'success' || needs.test.result != 'success' || needs.build.result != 'success' || needs.go-test.result != 'success'
+        if: needs.ci.result != 'success' || needs.build.result != 'success' || needs.go-test.result != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -367,7 +271,7 @@ jobs:
           exit 1
 
       - name: Trigger VPS deploy (webhook listener)
-        if: needs.ci.result == 'success' && needs.test.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success'
+        if: needs.ci.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success'
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
@@ -379,7 +283,7 @@ jobs:
         run: node .github/scripts/release-webhook.mjs trigger
 
       - name: Discord — trigger failed (post-build handoff)
-        if: failure() && needs.ci.result == 'success' && needs.test.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success' && github.ref == 'refs/heads/main'
+        if: failure() && needs.ci.result == 'success' && needs.build.result == 'success' && needs.go-test.result == 'success' && github.ref == 'refs/heads/main'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}

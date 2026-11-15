@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Handshake, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,9 +11,11 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { Textarea } from '@/components/ui/textarea';
 import { REFERRAL_MAX_CAPACITY } from '@/lib/rmhladder/community';
 import { apiJson } from '@/lib/rmhladder/community-client';
+import { cn } from '@/lib/utils';
 
 interface Person {
   id: string;
@@ -74,6 +76,7 @@ export function ReferralBoard() {
         `/api/rmhladder/referrals${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`,
       ),
   });
+  const arrival = useArrival(!isLoading && !!data);
   const refresh = () => qc.invalidateQueries({ queryKey: KEY });
   const act = useMutation({
     mutationFn: (v: { id: string; action: 'accept' | 'pass' | 'withdraw' }) =>
@@ -108,7 +111,7 @@ export function ReferralBoard() {
         </p>
         <Button
           type="button"
-          variant={offerOpen ? 'outline' : 'accent'}
+          variant={offerOpen ? 'default' : 'default'}
           className="min-h-11"
           aria-expanded={offerOpen}
           onClick={() => setOfferOpen((v) => !v)}
@@ -130,19 +133,19 @@ export function ReferralBoard() {
       ) : (
         <>
           {data.mine.length > 0 && (
-            <section aria-labelledby="rb-mine" className="space-y-3">
+            <section aria-labelledby="rb-mine" className={cn('space-y-3', arrival)}>
               <h2 id="rb-mine" className="site-section-label">
                 {t('rb-mine', { defaultValue: 'Your offers' })}
               </h2>
               {data.mine.map((o) => (
-                <Card key={o.id} className="glass-fill gap-3 py-4">
+                <Card key={o.id} className="gap-3 py-4">
                   <CardHeader className="flex-row items-center justify-between gap-2 px-5">
                     <CardTitle className="text-base">
                       {o.companyName}{' '}
                       <span className="font-normal text-site-text-muted">· {o.roles}</span>
                     </CardTitle>
                     <div className="flex items-center gap-2">
-                      <Badge variant={o.status === 'open' ? 'success' : 'outline'} size="sm">
+                      <Badge variant={o.status === 'open' ? 'success' : 'default'}>
                         {o.status === 'open'
                           ? t('rb-open', { defaultValue: 'Open' })
                           : t('rb-closed', { defaultValue: 'Closed' })}
@@ -168,10 +171,10 @@ export function ReferralBoard() {
                       </p>
                     ) : (
                       o.requests.map((r) => (
-                        <div key={r.id} className="glass-inset rounded-site-sm p-3 text-sm">
+                        <div key={r.id} className="surface-field rounded-site-sm p-3 text-sm">
                           <div className="flex flex-wrap items-center gap-2">
                             <PersonLink p={r.applicant} />
-                            <Badge variant="outline" size="sm">
+                            <Badge variant="default">
                               {statusLabel[r.status] ?? r.status}
                             </Badge>
                             {r.status === 'pending' && (
@@ -179,7 +182,7 @@ export function ReferralBoard() {
                                 <Button
                                   type="button"
                                   size="sm"
-                                  variant="accent"
+                                  variant="default"
                                   className="min-h-11"
                                   disabled={act.isPending}
                                   onClick={() => act.mutate({ id: r.id, action: 'accept' })}
@@ -190,7 +193,7 @@ export function ReferralBoard() {
                                 <Button
                                   type="button"
                                   size="sm"
-                                  variant="outline"
+                                  variant="default"
                                   className="min-h-11"
                                   disabled={act.isPending}
                                   onClick={() => act.mutate({ id: r.id, action: 'pass' })}
@@ -212,7 +215,7 @@ export function ReferralBoard() {
           )}
 
           {data.sent.length > 0 && (
-            <section aria-labelledby="rb-sent" className="space-y-3">
+            <section aria-labelledby="rb-sent" className={cn('space-y-3', arrival)}>
               <h2 id="rb-sent" className="site-section-label">
                 {t('rb-sent', { defaultValue: 'Your requests' })}
               </h2>
@@ -220,11 +223,11 @@ export function ReferralBoard() {
                 {data.sent.map((r) => (
                   <li
                     key={r.id}
-                    className="glass-fill flex flex-wrap items-center gap-2 rounded-site-sm p-3 text-sm"
+                    className="flex flex-wrap items-center gap-2 rounded-site-sm p-3 text-sm"
                   >
                     <span className="font-medium text-site-text">{r.companyName}</span>
                     <span className="text-site-text-muted">{r.roles}</span>
-                    <Badge variant={r.status === 'accepted' ? 'success' : 'outline'} size="sm">
+                    <Badge variant={r.status === 'accepted' ? 'success' : 'default'}>
                       {statusLabel[r.status] ?? r.status}
                     </Badge>
                     {r.status === 'accepted' && (
@@ -251,7 +254,7 @@ export function ReferralBoard() {
             </section>
           )}
 
-          <section aria-labelledby="rb-board" className="space-y-3">
+          <section aria-labelledby="rb-board" className={cn('space-y-3', arrival)}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 id="rb-board" className="site-section-label">
                 {t('rb-board', { defaultValue: 'Open offers' })}
@@ -277,11 +280,11 @@ export function ReferralBoard() {
             ) : (
               <ul className="space-y-3">
                 {data.offers.map((o) => (
-                  <li key={o.id} className="glass-fill rounded-site p-5">
+                  <li key={o.id} className="rounded-site p-5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold text-site-text">{o.companyName}</span>
                       <span className="text-sm text-site-text-muted">{o.roles}</span>
-                      <Badge variant="outline" size="sm">
+                      <Badge variant="default">
                         {t('rb-spots', {
                           defaultValue: '{{count}} spots left',
                           count: o.spotsLeft,
@@ -298,7 +301,7 @@ export function ReferralBoard() {
                     )}
                     <div className="mt-3">
                       {o.myRequest ? (
-                        <Badge variant="outline">
+                        <Badge variant="default">
                           {t('rb-asked', {
                             defaultValue: 'You asked — {{status}}',
                             status: statusLabel[o.myRequest] ?? o.myRequest,
@@ -316,7 +319,7 @@ export function ReferralBoard() {
                         <Button
                           type="button"
                           size="sm"
-                          variant="outline"
+                          variant="default"
                           className="min-h-11"
                           onClick={() => setAskingId(o.id)}
                         >
@@ -355,7 +358,7 @@ function OfferForm({ onDone }: { onDone: () => void }) {
   });
   return (
     <form
-      className="glass-pane mt-3 space-y-3 rounded-site p-5"
+      className="mt-3 space-y-3 rounded-site p-5"
       onSubmit={(e) => {
         e.preventDefault();
         create.mutate();

@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -258,7 +256,7 @@ export function NDWMultiplayerLobby({ onBack, onGameStart }: NDWMultiplayerLobby
                 <div className="flex gap-2">
                     <Button
                         onClick={handleReady}
-                        variant="outline"
+                        variant="default"
                         className="flex-1 border-zinc-600 text-zinc-300 hover:bg-zinc-800 font-bold"
                     >
                         {t("toggle-ready", { defaultValue: "Toggle Ready" })}

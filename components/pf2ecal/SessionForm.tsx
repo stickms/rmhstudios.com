@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Create and edit a session.
  *

@@ -11,8 +11,16 @@ updates:
     open-pull-requests-limit: 8
     labels: ["dependencies"]
     groups:
+      # The SSR framework moves as ONE unit (redesign audit D7): Start, Router,
+      # the router plugin/devtools and Nitro are released in lockstep and pinned
+      # to exact versions in package.json (Nitro is still a 3.0 beta), so a bump
+      # of one without the others is the failure mode. The integration suite in
+      # web-ci (a real build + boot against Postgres) is the gate for this group.
+      framework:
+        patterns: ["@tanstack/*", "nitro"]
       minor-and-patch:
         update-types: ["minor", "patch"]
+        exclude-patterns: ["@tanstack/*", "nitro"]
       types:
         patterns: ["@types/*"]
     # Deliberate holds. Each names what lifts it; remove the entry when it does.

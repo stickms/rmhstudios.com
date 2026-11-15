@@ -16,7 +16,7 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { getBook } from '@/lib/library/library.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
@@ -39,8 +39,8 @@ const POPULAR_LIMIT = 200;
 const POPULAR_TTL_MS = 30_000;
 
 function invalidateDoc(kind: ReadingDocKind, key: string): void {
-  apiCache.invalidate(`reading:popular:${kind}:${key}`);
-  apiCache.invalidate(`reading:pubnotes:${kind}:${key}`);
+  void invalidateCached(`reading:popular:${kind}:${key}`);
+  void invalidateCached(`reading:pubnotes:${kind}:${key}`);
 }
 
 export async function docExists(kind: ReadingDocKind, key: string): Promise<boolean> {
@@ -102,16 +102,20 @@ const VIEW_SELECT = {
 /** Passages with at least MIN_READERS_TO_SHOW readers; briefly cached per document. */
 async function popularFor(kind: ReadingDocKind, key: string): Promise<PopularPassage[]> {
   const cacheKey = `reading:popular:${kind}:${key}`;
-  const hit = apiCache.get<PopularPassage[]>(cacheKey);
-  if (hit) return hit;
-  const rows = await prisma.readingPassageStat.findMany({
-    where: { docKind: kind, docKey: key, readers: { gte: MIN_READERS_TO_SHOW } },
-    orderBy: { readers: 'desc' },
-    take: POPULAR_LIMIT,
-    select: { unit: true, sample: true, start: true, readers: true },
-  });
-  apiCache.set(cacheKey, rows, POPULAR_TTL_MS);
-  return rows;
+  return cached(
+    cacheKey,
+    POPULAR_TTL_MS,
+    async () => {
+      const rows = await prisma.readingPassageStat.findMany({
+        where: { docKind: kind, docKey: key, readers: { gte: MIN_READERS_TO_SHOW } },
+        orderBy: { readers: 'desc' },
+        take: POPULAR_LIMIT,
+        select: { unit: true, sample: true, start: true, readers: true },
+      });
+      return rows;
+    },
+    { l2: false },
+  );
 }
 
 /**
@@ -125,28 +129,29 @@ async function publicNotesFor(
   hidden: string[],
 ): Promise<PublicNoteView[]> {
   const cacheKey = `reading:pubnotes:${kind}:${key}`;
-  if (!userId) {
-    const hit = apiCache.get<PublicNoteView[]>(cacheKey);
-    if (hit) return hit;
+  // Only the anonymous (viewer-independent) list is shared; a signed-in viewer's list excludes their own notes.
+  if (!userId) return cached(cacheKey, POPULAR_TTL_MS, () => loadPublicNotes(), { l2: false });
+  return loadPublicNotes();
+
+  async function loadPublicNotes(): Promise<PublicNoteView[]> {
+    const rows = await prisma.readingHighlight.findMany({
+      where: {
+        docKind: kind,
+        docKey: key,
+        isPublic: true,
+        note: { not: null },
+        ...(userId ? { userId: { notIn: [userId, ...hidden] } } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: PUBLIC_NOTES_LIMIT,
+      select: { ...VIEW_SELECT, user: { select: userDisplaySelect } },
+    });
+    const notes = rows.map((r) => {
+      const u = resolveUser(r.user);
+      return { ...toView(r), author: { id: u.id, name: u.name, image: u.image, handle: u.handle } };
+    });
+    return notes;
   }
-  const rows = await prisma.readingHighlight.findMany({
-    where: {
-      docKind: kind,
-      docKey: key,
-      isPublic: true,
-      note: { not: null },
-      ...(userId ? { userId: { notIn: [userId, ...hidden] } } : {}),
-    },
-    orderBy: { createdAt: 'desc' },
-    take: PUBLIC_NOTES_LIMIT,
-    select: { ...VIEW_SELECT, user: { select: userDisplaySelect } },
-  });
-  const notes = rows.map((r) => {
-    const u = resolveUser(r.user);
-    return { ...toView(r), author: { id: u.id, name: u.name, image: u.image, handle: u.handle } };
-  });
-  if (!userId) apiCache.set(cacheKey, notes, POPULAR_TTL_MS);
-  return notes;
 }
 
 /** One request's worth of reading data for a document. */

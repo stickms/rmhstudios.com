@@ -1,0 +1,502 @@
+/**
+ * Altair — Dedicated Theme Stylesheet ("Outpost 13")
+ *
+ * The visual identity of the Altair survivor roguelite, taken from its game
+ * card: a dead mining rig humming in the dark, teal duotone, amber emergency
+ * lamps, cyan/magenta glitch offset on titles, mono HUD labels, hard 2px
+ * corners. Source of truth for the palette and motifs is
+ * docs/game-design-schemes/altair.json; sprites are graded to the same palette
+ * by scripts/altair/grade-sprites.ts (cyan = ally, magenta = hostile,
+ * amber = loot and hazard).
+ *
+ * There is exactly one look: no light mode, no theme switch.
+ */
+
+@import '../../../components/shared/game-fonts/fonts.css';
+
+/* ─── The theme ─────────────────────────────────────────────────── */
+
+.altair-theme {
+  /* Backgrounds — the void, then the rig's bulkheads */
+  --altair-bg: #04080f;
+  --altair-bg-subtle: #071420;
+  --altair-surface: #0a1b2a;
+  --altair-surface-hover: #0f2a3e;
+  --altair-surface-active: #143650;
+
+  /* Borders — cold hull steel */
+  --altair-border: #0f3b52;
+  --altair-border-bright: #1c6482;
+
+  /* Text — instrument-panel white and fog */
+  --altair-text: #e6fbff;
+  --altair-text-muted: #8fb3bf;
+  --altair-text-dim: #5f8794;
+
+  /* Accent — console cyan; amber is the secondary (lamps, loot, warnings) */
+  --altair-accent: #19d3da;
+  --altair-accent-hover: #4fe3e8;
+  --altair-accent-dim: rgba(25, 211, 218, 0.15);
+  --altair-accent-fg: #04080f;
+  --altair-amber: #ffb44d;
+  --altair-amber-dim: rgba(255, 180, 77, 0.14);
+  /* The glitch offset pair used on titles */
+  --altair-glitch-a: #19d3da;
+  --altair-glitch-b: #ff3db8;
+  /* HUD ink + scrim: chrome that floats over the game world is always light-on-dark,
+     whatever the menu theme is. Used as `text-(--altair-hud-ink)/70`, `bg-(--altair-hud-scrim)/40`. */
+  --altair-hud-ink: #ffffff;
+  --altair-hud-scrim: #000000;
+
+  /* Semantic colors */
+  --altair-success: #3de8a0;
+  --altair-success-dim: rgba(61, 232, 160, 0.12);
+  --altair-danger: #ff3db8;
+  --altair-danger-dim: rgba(255, 61, 184, 0.12);
+  --altair-warning: #ffb44d;
+  --altair-warning-dim: rgba(255, 180, 77, 0.12);
+  --altair-info: #4aa8ff;
+  --altair-info-dim: rgba(74, 168, 255, 0.12);
+  --altair-rare: #b58cff;
+  --altair-rare-dim: rgba(181, 140, 255, 0.12);
+
+  /* Fonts — Michroma (wide, instrument-panel) for titles, Jost for reading,
+     IBM Plex Mono for data. All three are self-hosted by fonts.css above. */
+  --altair-font-display: 'Michroma', 'Orbitron', 'Jost', system-ui, sans-serif;
+  --altair-font-body: 'Jost', 'Geist Variable', system-ui, sans-serif;
+  --altair-font-mono: 'IBM Plex Mono', 'Geist Mono', monospace;
+
+  /* Layout — hard corners, no soft drop shadows */
+  --altair-shadow: 0 0 0 1px rgba(25, 211, 218, 0.08), 0 8px 28px rgba(0, 0, 0, 0.55);
+  --altair-radius: 2px;
+  --altair-radius-sm: 1px;
+  --altair-radius-lg: 4px;
+  --altair-toast-bg: #0a1b2a;
+}
+
+/* ─── Base Styles ───────────────────────────────────────────────── */
+
+.altair-theme {
+  background-color: var(--altair-bg);
+  color: var(--altair-text);
+  font-family: var(--altair-font-body);
+  /* Michroma ships one weight; never let `font-black` fake a bold on it.
+     Jost is variable, so real weights still work for body copy. */
+  font-synthesis-weight: none;
+  min-height: 100vh;
+  /* `100vh` on mobile is the LARGEST viewport, so this ground is taller than
+     the visible page whenever the browser toolbars are showing — the page
+     gains a phantom scroll. `svh` is the smallest viewport, so the ground
+     always fills without overshooting; the plain `vh` line above stays as
+     the fallback for engines that don't parse it. */
+  min-height: 100svh;
+}
+
+/* Headings are instrument-panel type: Michroma at its one weight, wide set. */
+.altair-theme :is(h1, h2, h3) {
+  font-family: var(--altair-font-display);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+
+/* Numbers and readouts are data. */
+.altair-theme .tabular-nums,
+.altair-theme .font-mono {
+  font-family: var(--altair-font-mono);
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────── */
+
+.altair-theme ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.altair-theme ::-webkit-scrollbar-track {
+  background: var(--altair-bg-subtle);
+}
+
+.altair-theme ::-webkit-scrollbar-thumb {
+  background: var(--altair-border-bright);
+  transition: background 0.2s;
+}
+
+.altair-theme ::-webkit-scrollbar-corner {
+  background: var(--altair-bg-subtle);
+}
+
+/* Standard-properties scrollbar (and the one Chromium actually renders — see the
+   engine note in app/globals.css §Scrollbars). `--sb-thumb-hover` is this tier's
+   hover colour for the global show-on-scroll reveal; that reveal's hover
+   exception is `!important`, so a `.altair-theme ::-webkit-scrollbar-thumb:hover`
+   rule here could never apply. */
+.altair-theme {
+  scrollbar-width: thin;
+  scrollbar-color: var(--altair-border-bright) var(--altair-bg-subtle);
+  --sb-thumb-hover: var(--altair-accent);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+.altair-theme ::selection {
+  background: var(--altair-accent);
+  color: var(--altair-accent-fg);
+}
+
+.altair-theme ::-moz-selection {
+  background: var(--altair-accent);
+  color: var(--altair-accent-fg);
+}
+
+/* ─── Focus: a cyan glow ring ───────────────────────────────────── */
+
+.altair-theme :focus-visible {
+  outline: 2px solid var(--altair-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px var(--altair-accent-dim);
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────── */
+
+.altair-theme button:not(:disabled) {
+  cursor: pointer;
+}
+
+.altair-theme button:disabled {
+  color: var(--altair-text-dim);
+}
+
+/* Primary: a flat cyan outline that fills 15% on hover. */
+.altair-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 1px solid var(--altair-accent);
+  border-radius: var(--altair-radius);
+  background: transparent;
+  color: var(--altair-accent);
+  font-family: var(--altair-font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.altair-btn:hover:not(:disabled),
+.altair-btn[data-focused='true'] {
+  background: var(--altair-accent-dim);
+  color: var(--altair-accent-hover);
+}
+
+/* Secondary: plain text with an amber bracket marker. */
+.altair-btn--ghost {
+  border-color: transparent;
+  color: var(--altair-text);
+  font-family: var(--altair-font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.altair-btn--ghost::before,
+.altair-btn--ghost::after {
+  color: var(--altair-amber);
+  font-family: var(--altair-font-mono);
+  opacity: 0.45;
+  transition: opacity 0.18s ease;
+}
+
+.altair-btn--ghost::before {
+  content: '[';
+  margin-right: 0.15rem;
+}
+
+.altair-btn--ghost::after {
+  content: ']';
+  margin-left: 0.15rem;
+}
+
+.altair-btn--ghost:hover:not(:disabled),
+.altair-btn--ghost[data-focused='true'] {
+  background: var(--altair-amber-dim);
+  color: var(--altair-text);
+}
+
+.altair-btn--ghost:hover:not(:disabled)::before,
+.altair-btn--ghost:hover:not(:disabled)::after,
+.altair-btn--ghost[data-focused='true']::before,
+.altair-btn--ghost[data-focused='true']::after {
+  opacity: 1;
+}
+
+/* ─── HUD label: tiny mono caps, the card's "OUTPOST 13" voice ──── */
+
+.altair-label {
+  font-family: var(--altair-font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--altair-text-muted);
+}
+
+/* ─── Glitch title ──────────────────────────────────────────────── */
+
+/* Cyan/magenta offset copies behind the title (set `data-text`). A slice of
+   them jitters sideways for a moment every ~10s; the ink itself never flashes. */
+.altair-glitch {
+  position: relative;
+  display: inline-block;
+  color: var(--altair-text);
+}
+
+.altair-glitch::before,
+.altair-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.altair-glitch::before {
+  color: var(--altair-glitch-a);
+  transform: translate(-0.04em, 0);
+}
+
+.altair-glitch::after {
+  color: var(--altair-glitch-b);
+  transform: translate(0.04em, 0);
+}
+
+@keyframes altair-glitch-slice {
+  0%,
+  92%,
+  100% {
+    clip-path: inset(0 0 0 0);
+    translate: 0 0;
+  }
+  93% {
+    clip-path: inset(18% 0 62% 0);
+    translate: -0.09em 0;
+  }
+  95% {
+    clip-path: inset(58% 0 22% 0);
+    translate: 0.1em 0;
+  }
+  97% {
+    clip-path: inset(36% 0 44% 0);
+    translate: -0.05em 0;
+  }
+}
+
+.altair-glitch::before {
+  animation: altair-glitch-slice 10s steps(1, end) infinite;
+}
+
+.altair-glitch::after {
+  animation: altair-glitch-slice 10s steps(1, end) infinite reverse;
+}
+
+/* ─── Backdrop: scanlines and the corridor ──────────────────────── */
+
+/* Faint static scanlines (was the parchment grain). Names kept short because
+   every screen root carries one. */
+.altair-scan,
+.altair-scan-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.altair-scan::after,
+.altair-scan-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  border-radius: inherit;
+  corner-shape: inherit;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(25, 211, 218, 0.05) 2px,
+    rgba(25, 211, 218, 0.05) 3px
+  );
+}
+
+.altair-scan::after {
+  opacity: 0.9;
+}
+
+.altair-scan-surface::after {
+  opacity: 0.6;
+}
+
+
+/* One-point corridor: nested cyan-edged rectangles receding to a dark door,
+   two amber lamps, a slow zoom. Place `.altair-corridor` first in a screen,
+   absolutely filling it. */
+.altair-corridor {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(ellipse at 50% 46%, #0a2236 0%, var(--altair-bg) 62%);
+}
+
+.altair-corridor__frames {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  /* Recede behind the menu: the frames frame the title, they never compete with a button. */
+  opacity: 0.5;
+  animation: altair-corridor-drift 48s ease-in-out infinite alternate;
+}
+
+.altair-corridor__frame {
+  position: absolute;
+  aspect-ratio: 16 / 10;
+  border: 1px solid rgba(25, 211, 218, 0.22);
+  box-shadow: inset 0 0 40px rgba(25, 211, 218, 0.05);
+}
+
+.altair-corridor__frame:nth-child(1) { width: 118%; opacity: 0.35; }
+.altair-corridor__frame:nth-child(2) { width: 84%;  opacity: 0.45; }
+.altair-corridor__frame:nth-child(3) { width: 58%;  opacity: 0.55; }
+.altair-corridor__frame:nth-child(4) { width: 38%;  opacity: 0.65; }
+.altair-corridor__frame:nth-child(5) { width: 23%;  opacity: 0.75; }
+.altair-corridor__frame:nth-child(6) {
+  width: 12%;
+  opacity: 0.7;
+  background: #03070d;
+  border-color: rgba(25, 211, 218, 0.3);
+}
+
+.altair-corridor__lamp {
+  position: absolute;
+  top: 24%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--altair-amber);
+  box-shadow: 0 0 22px 8px rgba(255, 180, 77, 0.45);
+  animation: altair-lamp 5s ease-in-out infinite alternate;
+}
+
+.altair-corridor__lamp--l { left: 28%; }
+.altair-corridor__lamp--r { right: 28%; animation-delay: -2.5s; }
+
+@keyframes altair-corridor-drift {
+  from { transform: scale(1); }
+  to { transform: scale(1.07); }
+}
+
+/* Slow breathing, well under 1 Hz and only in brightness of a small lamp. */
+@keyframes altair-lamp {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+/* The pixel-art scene (MenuBackdrop). The canvas is a low-res buffer scaled up, so it
+   must never be smoothed. It fades in over the CSS fallback once the first frame lands. */
+.altair-corridor__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-smooth, ease);
+}
+
+.altair-corridor__canvas[data-ready='true'] {
+  opacity: 1;
+}
+
+/* A scrim over the scene keeps menu text above 4.5:1 and gives the room a vignette:
+   darkest at the edges, a calm pool behind the buttons. */
+.altair-corridor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 52%,
+    rgba(4, 8, 15, 0.74) 0%,
+    rgba(4, 8, 15, 0.4) 50%,
+    rgba(4, 8, 15, 0.7) 100%
+  );
+}
+
+
+
+
+
+/* ─── Toast Animations ──────────────────────────────────────────── */
+
+@keyframes altair-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes altair-toast-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+}
+
+.altair-toast-enter {
+  animation: altair-toast-in 0.25s ease-out forwards;
+}
+
+.altair-toast-exit {
+  animation: altair-toast-out 0.2s ease-in forwards;
+}
+
+/* ─── Modal Overlay ─────────────────────────────────────────────── */
+
+@keyframes altair-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes altair-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.altair-overlay {
+  animation: altair-fade-in 0.2s ease-out;
+}
+
+.altair-modal {
+  animation: altair-slide-up 0.25s ease-out;
+}

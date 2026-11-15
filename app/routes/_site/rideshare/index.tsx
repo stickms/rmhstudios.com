@@ -27,7 +27,7 @@ import {
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { FareBreakdown } from '@/components/rideshare/FareBreakdown';
 import { RIDE_CLASSES, type RideClassId } from '@/lib/rideshare/classes';
 
@@ -94,12 +94,12 @@ function RideshareLanding() {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-pane flex flex-col items-start gap-4 rounded-site p-5 md:p-8"
+          className="flex flex-col items-start gap-4 rounded-site p-5 md:p-8"
         >
-          <Badge variant="accent" size="lg" icon={<Sparkles aria-hidden />}>
+          <Badge variant="default" icon={<Sparkles aria-hidden />}>
             {t('community-rideshare', { defaultValue: 'Community rideshare' })}
           </Badge>
-          <h2 className="font-display text-3xl font-bold tracking-tight text-site-text md:text-4xl">
+          <h2 className="t-heading">
             {t('hero-heading', { defaultValue: 'Getting around, together.' })}
           </h2>
           <p className="max-w-xl text-base text-site-text-muted">
@@ -114,7 +114,7 @@ function RideshareLanding() {
                 <MapPin aria-hidden /> {t('request-a-ride', { defaultValue: 'Request a ride' })}
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
+            <Button asChild size="lg" variant="default">
               <Link to="/rideshare/drive">
                 <Car aria-hidden /> {t('become-a-driver', { defaultValue: 'Become a driver' })}
               </Link>
@@ -142,7 +142,7 @@ function RideshareLanding() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05 }}
-                  className="glass-fill flex flex-col rounded-site p-5"
+                  className="flex flex-col rounded-site p-5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex h-11 w-11 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
@@ -156,7 +156,7 @@ function RideshareLanding() {
                   <h3 className="mt-3 text-base font-semibold text-site-text">{cls.name}</h3>
                   <p className="text-xs font-medium text-site-accent">{cls.tagline}</p>
                   <p className="mt-2 flex-1 text-sm text-site-text-muted">{cls.description}</p>
-                  <div className="mt-3 flex items-center gap-2 text-xs text-site-text-dim">
+                  <div className="mt-3 flex items-center gap-2 text-xs text-site-text-muted">
                     <Clock className="h-3.5 w-3.5" />{' '}
                     {t('eta-minutes-away', {
                       min: cls.etaMinutes[0],
@@ -180,11 +180,11 @@ function RideshareLanding() {
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {RIDER_STEPS_KEYS.map((step, i) => (
-              <div key={step.titleKey} className="glass-fill rounded-site p-5">
+              <div key={step.titleKey} className="rounded-site p-5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-site-sm bg-site-surface-hover text-site-accent">
                   <step.icon className="h-5 w-5" />
                 </div>
-                <div className="mt-3 text-xs font-semibold text-site-text-dim">
+                <div className="mt-3 text-xs font-semibold text-site-text-muted">
                   {t('step-number', { number: i + 1, defaultValue: 'Step {{number}}' })}
                 </div>
                 <h3 className="font-semibold text-site-text">
@@ -203,7 +203,7 @@ function RideshareLanding() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="glass-fill flex flex-col gap-4 rounded-site p-5 md:flex-row md:items-center md:justify-between md:gap-8 md:p-8"
+          className="flex flex-col gap-4 rounded-site p-5 md:flex-row md:items-center md:justify-between md:gap-8 md:p-8"
         >
           <div className="max-w-lg space-y-2">
             <div className="flex items-center gap-2 text-site-accent">
@@ -259,12 +259,12 @@ function PriceEstimator() {
       </p>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="glass-fill flex flex-col gap-4 rounded-site p-5">
+        <div className="flex flex-col gap-4 rounded-site p-5">
           <div className="flex items-center justify-between">
             <label htmlFor="estimator-distance" className="text-sm font-medium text-site-text">
               {t('trip-distance', { defaultValue: 'Trip distance' })}
             </label>
-            <span className="text-sm font-bold text-site-accent">{km} km</span>
+            <span className="text-sm font-semibold text-site-accent">{km} km</span>
           </div>
           <input
             id="estimator-distance"
@@ -275,12 +275,12 @@ function PriceEstimator() {
             onChange={(e) => setKm(Number(e.target.value))}
             className="w-full accent-(--site-accent)"
           />
-          <div className="-mt-2 flex justify-between text-xs text-site-text-dim">
+          <div className="-mt-2 flex justify-between text-xs text-site-text-muted">
             <span>1 km</span>
             <span>60 km</span>
           </div>
 
-          <LiquidTabs
+          <Tabs
             size="sm"
             tabs={RIDE_CLASSES.map((cls) => ({ id: cls.id, label: cls.name }))}
             value={classId}

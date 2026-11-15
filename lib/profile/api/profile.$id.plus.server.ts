@@ -1,0 +1,23 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/profile/profile-extras.contract';
+import { getPlusView } from '@/lib/profile/plus.server';
+
+/**
+ * GET /api/profile/$id/plus — a member's public identity extras (pronouns,
+ * opt-in timezone, /now text, counter switch). Everything here is something the
+ * member chose to publish; the same body for every caller, so it is shared-cache
+ * safe. Used by the /now and counter modules and by the DM header's local time.
+ * `$id` is the user id.
+ */
+export const route = apiRoute('/api/profile/$id/plus', {
+  GET: implement(
+    C.getProfilePlusApi,
+    {
+      auth: 'none',
+      rateLimit: 'read',
+      cache: { visibility: 'public', maxAge: 30, sMaxAge: 30, staleWhileRevalidate: 120 },
+    },
+    async ({ params }) => Response.json(await getPlusView(params.id)),
+  ),
+});

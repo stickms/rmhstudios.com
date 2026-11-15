@@ -6,30 +6,68 @@
  * distance between the two bottom lines. Sharps land on their natural's step (the Phase 2
  * drills use naturals only, so no enharmonic spelling is needed).
  */
-import { staffStep, TOP_LINE_STEP } from '../staff';
+import {
+  staffStep,
+  TOP_LINE_STEP,
+} from '../staff';
 
-export type Clef = 'treble' | 'bass';
+export type Clef =
+  | 'treble'
+  | 'bass';
 
 /** Each clef's bottom line: treble E4, bass G2. */
-const BOTTOM_LINE_MIDI: Record<Clef, number> = { treble: 64, bass: 43 };
+const BOTTOM_LINE_MIDI: Record<
+  Clef,
+  number
+> =
+  {
+    treble: 64,
+    bass: 43,
+  };
 
 /**
  * Added to a treble-relative step to get a clef-relative one: 0 for treble, +12 for bass (the bass
  * bottom line, G2, sits 12 steps below E4, so every note is 12 steps higher above it).
  */
-const CLEF_OFFSET: Record<Clef, number> = {
-  treble: -staffStep(BOTTOM_LINE_MIDI.treble),
-  bass: -staffStep(BOTTOM_LINE_MIDI.bass),
-};
+const CLEF_OFFSET: Record<
+  Clef,
+  number
+> =
+  {
+    treble:
+      -staffStep(
+        BOTTOM_LINE_MIDI.treble,
+      ),
+    bass: -staffStep(
+      BOTTOM_LINE_MIDI.bass,
+    ),
+  };
 
 /**
  * Diatonic steps above the clef's bottom line; negative below the staff. Throws RangeError for a
  * non-finite `midi` (it has no position, and NaN would otherwise leak into SVG attributes), like
  * `noteLetter`. Every deck pitch is finite, so the card path never reaches the throw.
  */
-export function clefStep(clef: Clef, midi: number): number {
-  if (!Number.isFinite(midi)) throw new RangeError(`midi must be a finite number, got ${midi}`);
-  return staffStep(midi) + CLEF_OFFSET[clef];
+export function clefStep(
+  clef: Clef,
+  midi: number,
+): number {
+  if (
+    !Number.isFinite(
+      midi,
+    )
+  )
+    throw new RangeError(
+      `midi must be a finite number, got ${midi}`,
+    );
+  return (
+    staffStep(
+      midi,
+    ) +
+    CLEF_OFFSET[
+      clef
+    ]
+  );
 }
 
 /**
@@ -42,23 +80,90 @@ export function clefStep(clef: Clef, midi: number): number {
  */
 export const MAX_LEDGER_STEPS = 20;
 
-export function ledgerSteps(step: number): number[] {
-  const lines: number[] = [];
-  if (!Number.isFinite(step)) return lines;
-  for (let s = -2; s >= step && lines.length < MAX_LEDGER_STEPS; s -= 2) lines.push(s);
-  for (let s = TOP_LINE_STEP + 2; s <= step && lines.length < MAX_LEDGER_STEPS; s += 2) {
-    lines.push(s);
+export function ledgerSteps(
+  step: number,
+): number[] {
+  const lines: number[] =
+    [];
+  if (
+    !Number.isFinite(
+      step,
+    )
+  )
+    return lines;
+  for (
+    let s =
+      -2;
+    s >=
+      step &&
+    lines.length <
+      MAX_LEDGER_STEPS;
+    s -= 2
+  )
+    lines.push(
+      s,
+    );
+  for (
+    let s =
+      TOP_LINE_STEP +
+      2;
+    s <=
+      step &&
+    lines.length <
+      MAX_LEDGER_STEPS;
+    s += 2
+  ) {
+    lines.push(
+      s,
+    );
   }
   return lines;
 }
 
-export type NoteLetter = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+export type NoteLetter =
+  | 'A'
+  | 'B'
+  | 'C'
+  | 'D'
+  | 'E'
+  | 'F'
+  | 'G';
 
 /** Letter of each pitch class, a sharp keeping the natural below it. */
-const LETTERS: readonly NoteLetter[] = ['C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B'];
+const LETTERS: readonly NoteLetter[] =
+  [
+    'C',
+    'C',
+    'D',
+    'D',
+    'E',
+    'F',
+    'F',
+    'G',
+    'G',
+    'A',
+    'A',
+    'B',
+  ];
 
 /** Letter name of a MIDI note. Throws RangeError for a non-finite `midi` (it has no letter). */
-export function noteLetter(midi: number): NoteLetter {
-  if (!Number.isFinite(midi)) throw new RangeError(`midi must be a finite number, got ${midi}`);
-  return LETTERS[((Math.round(midi) % 12) + 12) % 12];
+export function noteLetter(
+  midi: number,
+): NoteLetter {
+  if (
+    !Number.isFinite(
+      midi,
+    )
+  )
+    throw new RangeError(
+      `midi must be a finite number, got ${midi}`,
+    );
+  return LETTERS[
+    ((Math.round(
+      midi,
+    ) %
+      12) +
+      12) %
+      12
+  ];
 }

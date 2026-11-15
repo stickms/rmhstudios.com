@@ -1,13 +1,13 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from '@/lib/rmhtube/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { api, roomPosition, usePartyStore, type LoadedTrack } from '@/lib/rmhtube/party-store';
 import { mediaKey, type CommentaryLine } from '@/lib/rmhtube/party';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { btn, btnPrimary, input, muted } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface TrackRow {
   id: string;
@@ -21,6 +21,7 @@ export default function TrackTab() {
   const item = useRmhTubeStore((s) => s.room?.currentItem ?? null);
   const loaded = usePartyStore((s) => s.track);
   const [tracks, setTracks] = useState<TrackRow[] | null>(null);
+  const arrival = useArrival(tracks !== null);
   const [recording, setRecording] = useState(false);
   const [lines, setLines] = useState<CommentaryLine[]>([]);
   const [text, setText] = useState('');
@@ -77,17 +78,17 @@ export default function TrackTab() {
   return (
     <div className="space-y-4">
       <section className="space-y-1">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-(--app-text-dim)">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-app-text-dim">
           {t('track-play', { defaultValue: 'Play alongside' })}
         </h4>
         {tracks === null ? (
           <p className={muted}>{t('loading', { defaultValue: 'Loading…' })}</p>
         ) : tracks.length === 0 ? (
-          <p className={muted}>
+          <p className={cn(muted, arrival)}>
             {t('track-empty', { defaultValue: 'No commentary for this video yet.' })}
           </p>
         ) : (
-          <ul className="space-y-1" data-jelly-group>
+          <ul className={cn('space-y-1', arrival)}>
             {tracks.map((tr) => (
               <li key={tr.id} className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate">
@@ -113,7 +114,7 @@ export default function TrackTab() {
       </section>
 
       <section className="space-y-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-(--app-text-dim)">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-app-text-dim">
           {t('track-record', { defaultValue: 'Record yours' })}
         </h4>
         {!recording ? (
@@ -147,7 +148,7 @@ export default function TrackTab() {
             <ul className="max-h-32 space-y-0.5 overflow-y-auto">
               {lines.map((l, i) => (
                 <li key={i} className="flex gap-2">
-                  <span className="w-12 shrink-0 tabular-nums text-(--app-text-muted)">
+                  <span className="w-12 shrink-0 tabular-nums text-app-text-muted">
                     {formatDuration(l.t)}
                   </span>
                   <span className="truncate">{l.text}</span>

@@ -47,6 +47,8 @@ import { BookCanvas } from './BookCanvas';
 import { ReaderDetails } from './ReaderDetails';
 import { ReaderReadingTools, type ReaderTextSource } from '@/components/reading/ReaderReadingTools';
 import { pdfItemsToText, type PdfTextItem } from '@/lib/reading/pdf-text';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import '@/components/library/library.css';
 import '@/components/rmhvibe/vibe.css';
 
@@ -155,6 +157,8 @@ export function BookReader({ book }: { book: LibraryBook }) {
   const [numPages, setNumPages] = useState(0);
   const [aspect, setAspect] = useState(0.72); // page width / height (from page 1)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  // The book (or the error) replaces "Opening book…".
+  const arrival = useArrival(status !== 'loading');
   const [single, setSingle] = useState(false);
   const [pageLabel, setPageLabel] = useState('');
   const [curPage, setCurPage] = useState(1);
@@ -468,7 +472,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
           </div>
         )}
         {status === 'error' && (
-          <div className="lib-reader__status" role="alert">
+          <div className={cn('lib-reader__status', arrival)} role="alert">
             <span>{t("couldnt-open-pdf", { defaultValue: "Couldn't open this PDF." })}</span>
             <a href={book.url} className="lib-reader__fallback" target="_blank" rel="noreferrer">
               {t("open-directly", { defaultValue: "Open it directly →" })}
@@ -477,7 +481,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
         )}
         {status === 'ready' && (
           <>
-            <div className="lib-reader__viewport">
+            <div className={cn('lib-reader__viewport', arrival)}>
               <BookCanvas
                 aspect={aspect}
                 single={single}

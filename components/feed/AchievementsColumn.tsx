@@ -1,6 +1,5 @@
-'use client';
-
-import { useEffect, useState, useRef } from'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchJson } from '@/lib/http';
 import { Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from'lucide-react';
 import { useTranslation } from'react-i18next';
 import { Spinner } from'@/components/ui/spinner';
@@ -13,6 +12,7 @@ import {
 } from'@/lib/achievements/catalog';
 import { ColumnHeader } from'./ColumnHeader';
 import { AchievementTips } from'@/components/arcade/AchievementTips';
+import { useArrival } from '@/components/ui/arrive';
 
 // Library icons per achievement category (replaces emoji badges).
 const CATEGORY_ICON: Record<AchievementCategory, typeof Users> = {
@@ -56,28 +56,16 @@ export function AchievementsColumn({
  initialData?: Payload | null;
 }) {
  const { t } = useTranslation('feed');
- // Seed from the loader when provided so the grid paints immediately.
- const seeded = useRef(initialData != null);
- const [data, setData] = useState<Payload | null>(initialData ?? null);
- const [loading, setLoading] = useState(!initialData);
-
- useEffect(() => {
- if (seeded.current) return;
- let active = true;
- (async () => {
- try {
- const res = await fetch(`/api/achievements/${encodeURIComponent(userId)}`, {
- credentials:'include',
+ // The route loader's payload seeds the cache so the grid paints immediately; otherwise
+ // (another tab, another user) it is fetched like any query.
+ const { data, isPending: loading } = useQuery({
+ queryKey: ['achievements', userId],
+ queryFn: () => fetchJson<Payload>(`/api/achievements/${encodeURIComponent(userId)}`),
+ ...(initialData ? { initialData } : {}),
+ staleTime: 15_000,
  });
- if (res.ok && active) setData(await res.json());
- } finally {
- if (active) setLoading(false);
- }
- })();
- return () => {
- active = false;
- };
- }, [userId]);
+ // Steel M9: achievements fetched here replace the spinner; the loader's seed is there on first paint.
+ const arrival = useArrival(!loading);
 
  if (loading) {
  return (
@@ -89,6 +77,7 @@ export function AchievementsColumn({
  if (!data) {
  return (
  <EmptyState
+ className={arrival}
  description={t('could-not-load-achievements', {
  defaultValue:'Could not load achievements.',
  })}
@@ -126,7 +115,7 @@ export function AchievementsColumn({
  );
 
  return (
- <div>
+ <div className={arrival}>
  {/* hideHeader === embedded in JourneyColumn/ProfileColumn, which supply
  the page header (and the drawer button); only the stats survive. */}
  {hideHeader ? (
@@ -156,7 +145,7 @@ export function AchievementsColumn({
  return (
  <div
  key={a.id}
- className={`glass-fill flex items-start gap-3 rounded-site px-4 py-3 transition-colors ${
+ className={`flex items-start gap-3 rounded-site px-4 py-3 transition-colors ${
  a.unlocked ?'':'opacity-70'
  }`}
  >
@@ -174,7 +163,7 @@ export function AchievementsColumn({
  <Icon
  className="h-5 w-5"
  style={{
- color: a.unlocked ? TIER_COLORS[a.tier] :'var(--site-text-dim)',
+ color: a.unlocked ? TIER_COLORS[a.tier] :'var(--site-text-muted)',
  }}
  />
  </div>
@@ -189,7 +178,7 @@ export function AchievementsColumn({
  fill and border, where it carries the tier perfectly well; the word
  takes the surface's own ink so it is actually readable. */}
  <span
- className="rounded-site-sm border px-2 py-0.5 text-xs font-bold uppercase text-site-text"
+ className="rounded-site-sm border px-2 py-0.5 text-xs font-semibold text-site-text"
  style={{
  background: `${TIER_COLORS[a.tier]}2e`,
  borderColor: `${TIER_COLORS[a.tier]}99`,
@@ -209,14 +198,14 @@ export function AchievementsColumn({
  }}
  />
  </div>
- <p className="mt-1 text-xs text-site-text-dim">
+ <p className="mt-1 text-xs text-site-text-muted">
  {a.progress} / {a.target}
  </p>
  </div>
  )}
  {!(a.secret && !a.unlocked) && <AchievementTips achievementId={a.id} name={a.name} />}
  {a.unlocked && a.coinReward > 0 && (
- <p className="mt-1 inline-flex items-center gap-1 text-xs text-site-text-dim">
+ <p className="mt-1 inline-flex items-center gap-1 text-xs text-site-text-muted">
  <Coins className="h-3 w-3 text-site-warning"/> +{a.coinReward}
  </p>
  )}

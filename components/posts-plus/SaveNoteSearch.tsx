@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -10,22 +8,51 @@ export function SaveNoteSearch({
   onChange,
 }: {
   value: string;
-  onChange: (v: string) => void;
+  onChange: (
+    v: string,
+  ) => void;
 }) {
-  const { t } = useTranslation('f-posts-plus');
-  const label = t('notes-search', { defaultValue: 'Search your notes' });
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-posts-plus',
+    );
+  const label =
+    t(
+      'notes-search',
+      {
+        defaultValue:
+          'Search your notes',
+      },
+    );
   return (
     <div className="relative mb-4">
       <Search
-        className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim"
+        className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted"
         aria-hidden
       />
       <Input
         type="search"
-        value={value}
-        onChange={(e) => onChange(e.target.value.slice(0, 100))}
-        placeholder={label}
-        aria-label={label}
+        value={
+          value
+        }
+        onChange={(
+          e,
+        ) =>
+          onChange(
+            e.target.value.slice(
+              0,
+              100,
+            ),
+          )
+        }
+        placeholder={
+          label
+        }
+        aria-label={
+          label
+        }
         className="ps-9"
       />
     </div>

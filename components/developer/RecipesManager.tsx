@@ -1,8 +1,7 @@
-'use client';
-
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Pause, Play, Trash2, Workflow } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +13,16 @@ import {
   type RecipeAction,
   type RecipeView,
 } from '@/lib/devplatform/recipes';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  createRecipeApi,
+  deleteRecipeApi,
+  setRecipeEnabledApi,
+} from '@/lib/devplatform/recipes.contract';
+import { recipesQuery } from '@/lib/devplatform/developer.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Options {
   games: { id: string; title: string }[];
@@ -23,8 +32,13 @@ interface Options {
 /** D5 — "when X then Y" recipes, on the /developer page. */
 export function RecipesManager() {
   const { t } = useTranslation('f-devplatform');
-  const [recipes, setRecipes] = useState<RecipeView[] | null>(null);
-  const [options, setOptions] = useState<Options>({ games: [], items: [] });
+  const queryClient = useQueryClient();
+  const query = recipesQuery();
+  const { data, isError } = useQuery(query);
+  // A failed read shows an empty list rather than the spinner.
+  const recipes: RecipeView[] | null = data?.recipes ?? (isError ? [] : null);
+  const options: Options = data?.options ?? { games: [], items: [] };
+  const arrival = useArrival(recipes !== null);
   const [name, setName] = useState('');
   const [trigger, setTrigger] = useState<RecipeTrigger>('new_follower');
   const [gameId, setGameId] = useState('');
@@ -34,25 +48,13 @@ export function RecipesManager() {
   const [discordUrl, setDiscordUrl] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetch('/api/recipes', { credentials: 'include' });
-    if (!res.ok) return setRecipes([]);
-    const data = await res.json();
-    setRecipes(data.recipes);
-    setOptions(data.options);
-  }, []);
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
   async function create() {
     setBusy(true);
     try {
-      const res = await fetch('/api/recipes', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(createRecipeApi, {
+        body: {
           name,
           trigger,
           gameId: trigger === 'new_pb' ? gameId : undefined,
@@ -60,36 +62,30 @@ export function RecipesManager() {
           maxPrice: trigger === 'price_below' ? Number(maxPrice) : undefined,
           action,
           discordUrl: action === 'discord_webhook' ? discordUrl : undefined,
-        }),
+        },
       });
-      if (res.ok) {
-        setName('');
-        setDiscordUrl('');
-        await load();
-      } else {
-        const d = await res.json().catch(() => ({}));
-        toast.error(
-          d.error ||
-            t('recipes-createFailed', { defaultValue: 'Check the recipe fields and try again' }),
-        );
-      }
+      setName('');
+      setDiscordUrl('');
+      await load();
+    } catch (e) {
+      toast.error(
+        serverError(e) ||
+          t('recipes-createFailed', { defaultValue: 'Check the recipe fields and try again' }),
+      );
     } finally {
       setBusy(false);
     }
   }
 
   async function toggle(r: RecipeView) {
-    await fetch(`/api/recipes/${r.id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled: !r.enabled }),
-    });
+    await api(setRecipeEnabledApi, { params: { id: r.id }, body: { enabled: !r.enabled } }).catch(
+      () => {},
+    );
     await load();
   }
 
   async function remove(r: RecipeView) {
-    await fetch(`/api/recipes/${r.id}`, { method: 'DELETE', credentials: 'include' });
+    await api(deleteRecipeApi, { params: { id: r.id } }).catch(() => {});
     await load();
   }
 
@@ -113,7 +109,7 @@ export function RecipesManager() {
         })}
       </p>
 
-      <div className="glass-fill space-y-3 rounded-site px-4 py-3">
+      <div className="space-y-3 rounded-site px-4 py-3">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -201,7 +197,7 @@ export function RecipesManager() {
         )}
         <div className="flex justify-end">
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             disabled={busy || !ready || (recipes?.length ?? 0) >= MAX_RECIPES}
             onClick={create}
@@ -214,15 +210,15 @@ export function RecipesManager() {
       {recipes === null ? (
         <Spinner />
       ) : (
-        <ul className="space-y-3">
+        <ul className={cn('space-y-3', arrival)}>
           {recipes.map((r) => (
-            <li key={r.id} className="glass-fill flex items-center gap-3 rounded-site px-4 py-3">
+            <li key={r.id} className="flex items-center gap-3 rounded-site px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-site-text">{r.name}</p>
                 <p className="text-xs text-site-text-muted">
                   {r.triggerLabel} → {r.actionLabel}
                 </p>
-                <p className="text-xs text-site-text-dim">
+                <p className="text-xs text-site-text-muted">
                   {t('recipes-fired', {
                     defaultValue: 'Fired {{count}} times',
                     count: r.fireCount,

@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { jamsQuery } from '@/lib/competitive/jams.queries';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +13,11 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/components/Providers';
 import { Hammer } from 'lucide-react';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createJamApi } from '@/lib/competitive/jams.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface JamSummary {
   slug: string;
@@ -32,7 +39,7 @@ export function PhaseBadge({ phase }: { phase: JamSummary['phase'] }) {
     done: t('jam-done', { defaultValue: 'Results' }),
   }[phase];
   return (
-    <Badge variant={phase === 'open' ? 'accent' : phase === 'done' ? 'success' : 'outline'}>
+    <Badge variant={phase === 'open' ? 'default' : phase === 'done' ? 'success' : 'default'}>
       {label}
     </Badge>
   );
@@ -44,32 +51,31 @@ function AdminForm({ onCreated }: { onCreated: () => void }) {
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const iso = (k: string) => new Date(String(f.get(k))).toISOString();
+    const text = (k: string) => String(f.get(k) ?? '');
+    // An unparseable date throws here, into the catch below (as `.toISOString()` did).
+    const when = (k: string) => {
+      const d = new Date(text(k));
+      if (Number.isNaN(d.getTime())) throw new RangeError('Invalid time value');
+      return d;
+    };
     setBusy(true);
     try {
-      const res = await fetch('/api/jams', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: f.get('title'),
-          description: f.get('description'),
-          theme: f.get('theme'),
-          startsAt: iso('startsAt'),
-          submitEndsAt: iso('submitEndsAt'),
-          ratingEndsAt: iso('ratingEndsAt'),
-        }),
+      await api(createJamApi, {
+        body: {
+          title: text('title'),
+          description: text('description'),
+          theme: text('theme'),
+          startsAt: when('startsAt'),
+          submitEndsAt: when('submitEndsAt'),
+          ratingEndsAt: when('ratingEndsAt'),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok)
-        toast.error(
-          data.error ?? t('jam-create-failed', { defaultValue: 'Could not create the jam' }),
-        );
-      else {
-        toast.success(t('jam-created', { defaultValue: 'Jam created' }));
-        onCreated();
-      }
-    } catch {
-      toast.error(t('jam-create-failed', { defaultValue: 'Could not create the jam' }));
+      toast.success(t('jam-created', { defaultValue: 'Jam created' }));
+      onCreated();
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('jam-create-failed', { defaultValue: 'Could not create the jam' }),
+      );
     } finally {
       setBusy(false);
     }
@@ -113,23 +119,22 @@ export function JamsList() {
   const { t } = useTranslation('f-competitive');
   const { data: session } = useSession();
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
-  const [jams, setJams] = useState<JamSummary[] | null>(null);
   const [showForm, setShowForm] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetch('/api/jams');
-    const data = await res.json().catch(() => ({ jams: [] }));
-    setJams(res.ok ? data.jams : []);
-  }, []);
-  useEffect(() => {
-    void load();
-  }, [load]);
+  // Seeded by the /jams loader. A failed load shows the empty list, as before.
+  const list = useQuery({ ...jamsQuery(), retry: false });
+  const jams: JamSummary[] | null = list.isPending ? null : (list.data?.jams ?? []);
+  const arrival = useArrival(jams !== null);
+  const isNew = useArrivingKeys(jams?.map((j) => j.slug) ?? []);
+  const load = async () => {
+    await list.refetch();
+  };
 
   return (
     <div className="space-y-4 max-w-3xl">
       {isAdmin && (
         <div className="space-y-3">
-          <Button variant="secondary" onClick={() => setShowForm((v) => !v)}>
+          <Button variant="default" onClick={() => setShowForm((v) => !v)}>
             {t('jam-new', { defaultValue: 'New jam' })}
           </Button>
           {showForm && (
@@ -147,18 +152,24 @@ export function JamsList() {
       ) : jams.length === 0 ? (
         <EmptyState
           icon={Hammer}
+          className={arrival}
           title={t('jam-none', { defaultValue: 'No game jams yet. Check back soon.' })}
         />
       ) : (
         jams.map((j) => (
-          <Link key={j.slug} to="/jams/$slug" params={{ slug: j.slug }}>
+          <Link
+            key={j.slug}
+            to="/jams/$slug"
+            params={{ slug: j.slug }}
+            className={cn(arrival, isNew(j.slug) && ARRIVE)}
+          >
             <Card className="gap-2 px-4 py-4" interactive>
               <div className="flex items-center justify-between gap-2">
                 <h2 className="font-semibold truncate">{j.title}</h2>
                 <PhaseBadge phase={j.phase} />
               </div>
-              <p className="text-sm text-site-text-dim line-clamp-2">{j.description}</p>
-              <p className="text-xs text-site-text-dim">
+              <p className="text-sm text-site-text-muted line-clamp-2">{j.description}</p>
+              <p className="text-xs text-site-text-muted">
                 {new Date(j.startsAt).toLocaleString()} →{' '}
                 {new Date(j.submitEndsAt).toLocaleString()}
               </p>

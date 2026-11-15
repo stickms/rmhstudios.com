@@ -1,12 +1,12 @@
-'use client';
-
 /** Livery editor: base colour, two accents, a stripe pattern; saved per member, shared as a code. */
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Copy, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import { getLiveryApi, saveLiveryApi } from '@/lib/neon-driftway/neon-driftway.contract';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { useSession } from '@/components/Providers';
 import {
   decodeLivery,
@@ -31,12 +31,8 @@ import {
 
 async function saveRemote(l: Livery): Promise<boolean> {
   try {
-    const res = await fetch('/api/neon-driftway/livery', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: encodeLivery(l) }),
-    });
-    return res.ok;
+    await api(saveLiveryApi, { body: { code: encodeLivery(l) } });
+    return true;
   } catch {
     return false;
   }
@@ -61,9 +57,8 @@ export function LiveryEditorButton() {
   useEffect(() => {
     if (!session.data) return;
     let cancelled = false;
-    fetch('/api/neon-driftway/livery')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { code: string | null } | null) => {
+    api(getLiveryApi)
+      .then((data) => {
         const remote = data?.code ? decodeLivery(data.code) : null;
         if (remote && !cancelled) {
           setLivery(remote);
@@ -108,7 +103,7 @@ export function LiveryEditorButton() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <Button variant="default" className="w-full">
           <Palette aria-hidden /> {t('ndw-livery-open', { defaultValue: 'Livery' })}
         </Button>
       </DialogTrigger>
@@ -129,7 +124,7 @@ export function LiveryEditorButton() {
           {color(t('ndw-livery-base', { defaultValue: 'Base colour' }), 'base')}
           {color(t('ndw-livery-accent1', { defaultValue: 'Accent 1' }), 'accent1')}
           {color(t('ndw-livery-accent2', { defaultValue: 'Accent 2' }), 'accent2')}
-          <LiquidTabs
+          <Tabs
             aria-label={t('ndw-livery-stripe', { defaultValue: 'Stripe' })}
             value={l.stripe}
             onChange={(id) => update({ stripe: id as Stripe })}
@@ -137,11 +132,11 @@ export function LiveryEditorButton() {
             tabs={STRIPES.map((s) => ({ id: s, label: stripeLabel[s] }))}
           />
           <div className="flex items-center gap-2">
-            <code className="glass-inset flex-1 truncate rounded-site px-2 py-1.5 text-xs">
+            <code className="surface-field flex-1 truncate rounded-site px-2 py-1.5 text-xs">
               {encodeLivery(l)}
             </code>
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={() => {
                 navigator.clipboard?.writeText(encodeLivery(l)).then(

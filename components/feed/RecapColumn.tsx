@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useRef } from'react';
 import { Link } from'@tanstack/react-router';
 import { Sparkles, Heart, MessageCircle, UserPlus, Trophy, Flame, PenSquare } from'lucide-react';
@@ -8,8 +6,9 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
 import { useTranslation } from'react-i18next';
 import { PinnedHero } from'@/components/feed/PinnedHero';
-import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { api } from'@/lib/contract/client';
+import { getRecapApi } from'@/lib/wrapped/wrapped.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface Recap {
  posts: number;
@@ -42,13 +41,15 @@ export function RecapColumn({
  const seeded = useRef(initialData !== undefined && initialData !== null);
  const [recap, setRecap] = useState<Recap | null>(initialData ?? null);
  const [loading, setLoading] = useState(!initialData);
+ // Steel M9: a recap fetched here replaces the spinner; the loader's is there on first paint.
+ const arrival = useArrival(!loading);
 
  useEffect(() => {
  if (seeded.current) return;
  let active = true;
- fetch('/api/recap', { credentials:'include'})
- .then((r) => (r.ok ? r.json() : null))
+ api(getRecapApi)
  .then((d) => active && setRecap(d))
+ .catch(() => {})
  .finally(() => active && setLoading(false));
  return () => {
  active = false;
@@ -62,9 +63,9 @@ export function RecapColumn({
  <Spinner />
  </div>
  ) : !recap ? (
- <EmptyState description={t('recap-load-error', { defaultValue:'Could not load your recap.'})} />
+ <EmptyState className={arrival} description={t('recap-load-error', { defaultValue:'Could not load your recap.'})} />
  ) : (
- <>
+ <div className={arrival}>
  {/* Pinned scroll-narrative hero — marquee moment for the weekly review. */}
  <PinnedHero
  title={
@@ -78,58 +79,56 @@ export function RecapColumn({
  subtitle={recap.blurb}
  actions={
  <Link to="/wrapped">
- <Button variant="accent"size="sm">
+ <Button variant="default"size="sm">
  <Sparkles className="h-3.5 w-3.5"/>
  {t('recap-year-wrapped', { defaultValue:'Year Wrapped'})}
  </Button>
  </Link>
  }
- scrollCue={t('recap-scroll-cue', { defaultValue:'Scroll to explore'})}
- screens={2.6}
  />
 
  <div className="space-y-6 pt-4 pb-12">
  {/* Stat grid */}
- <Reveal>
+ <div>
  <h2 className="site-section-label mb-3">
  {t('recap-stats-heading', { defaultValue:'This week'})}
  </h2>
- <RevealGroup as="div"className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+ <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
  {STAT_META.map(({ key, labelKey, labelDefault, icon: Icon }) => (
- <RevealItem key={key}>
- <div className={`rounded-site glass-fill p-5 text-center ${LIFT_CARD}`}>
+ <div key={key}>
+ <div className={`rounded-site p-5 text-center`}>
  <Icon className="mx-auto h-5 w-5 text-site-accent"/>
- <p className="mt-2 text-2xl font-bold text-site-text">{recap[key] as number}</p>
+ <p className="mt-2 text-2xl font-semibold text-site-text">{recap[key] as number}</p>
  <p className="text-xs text-site-text-muted">{t(labelKey, { defaultValue: labelDefault })}</p>
  </div>
- </RevealItem>
+ </div>
  ))}
- </RevealGroup>
- </Reveal>
+ </div>
+ </div>
 
  {recap.topPost && (
- <Reveal>
- <div className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}>
- <p className="mb-2 text-xs font-semibold text-site-text-dim">{t('recap-top-post', { defaultValue:'Your top post'})}</p>
+ <div>
+ <div className={`rounded-site p-5`}>
+ <p className="mb-2 text-xs font-semibold text-site-text-muted">{t('recap-top-post', { defaultValue:'Your top post'})}</p>
  <p className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
  <p className="mt-2 text-xs text-site-text-muted">
  <Heart className="mr-1 inline h-3.5 w-3.5 text-site-accent"/>
  {recap.topPost.likeCount} {t('recap-likes', { defaultValue:'likes'})}
  </p>
  </div>
- </Reveal>
+ </div>
  )}
 
- <Reveal>
+ <div>
  <Link
  to="/achievements"
- className={`block rounded-site glass-fill px-4 py-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover ${LIFT_CARD}`}
+ className={`block rounded-site px-4 py-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover`}
  >
  {t('recap-view-achievements', { defaultValue:'View your achievements →'})}
  </Link>
- </Reveal>
  </div>
- </>
+ </div>
+ </div>
  )}
  </div>
  );

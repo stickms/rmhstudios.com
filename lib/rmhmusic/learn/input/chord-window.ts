@@ -24,9 +24,20 @@ import type { NoteEvent } from './events';
 /** From the first note: the time the others have to arrive. */
 export const CHORD_WINDOW_MS = 600;
 
-export type WindowNote = Pick<NoteEvent, 'type' | 'midi' | 'time' | 'source'>;
+export type WindowNote =
+  Pick<
+    NoteEvent,
+    | 'type'
+    | 'midi'
+    | 'time'
+    | 'source'
+  >;
 
-export type PushResult = 'opened' | 'added' | 'late' | 'ignored';
+export type PushResult =
+  | 'opened'
+  | 'added'
+  | 'late'
+  | 'ignored';
 
 export interface ChordWindow {
   /**
@@ -34,7 +45,10 @@ export interface ChordWindow {
    * open or the answer is showing), so held keys stay known. `opened`: start the timer; `late`:
    * after the window, not collected.
    */
-  push(e: WindowNote, collect?: boolean): PushResult;
+  push(
+    e: WindowNote,
+    collect?: boolean,
+  ): PushResult;
   /** The chord (carried-over holds still down, then the notes pressed), and close the window. */
   take(): number[];
   /** Forget the open window. Keys still held stay held. */
@@ -43,51 +57,147 @@ export interface ChordWindow {
   releaseAll(): void;
 }
 
-export function createChordWindow(windowMs = CHORD_WINDOW_MS): ChordWindow {
+export function createChordWindow(
+  windowMs = CHORD_WINDOW_MS,
+): ChordWindow {
   /** `source:midi` of every key down, in the order they went down. */
-  const held = new Map<string, number>();
-  let start: number | null = null;
+  const held =
+    new Map<
+      string,
+      number
+    >();
+  let start:
+    | number
+    | null =
+    null;
   /** Pitches that were already held when the window opened. */
-  let carried: number[] = [];
+  let carried: number[] =
+    [];
   /** Pitches pressed since it opened. */
-  let pressed: number[] = [];
+  let pressed: number[] =
+    [];
 
-  const isHeld = (midi: number) => [...held.values()].includes(midi);
-  const close = () => {
-    start = null;
-    carried = [];
-    pressed = [];
-  };
+  const isHeld =
+    (
+      midi: number,
+    ) =>
+      [
+        ...held.values(),
+      ].includes(
+        midi,
+      );
+  const close =
+    () => {
+      start =
+        null;
+      carried =
+        [];
+      pressed =
+        [];
+    };
 
   return {
-    push(e, collect = true) {
-      if (e.source === 'mic') return 'ignored';
-      if (!Number.isFinite(e.midi)) return 'ignored';
+    push(
+      e,
+      collect = true,
+    ) {
+      if (
+        e.source ===
+        'mic'
+      )
+        return 'ignored';
+      if (
+        !Number.isFinite(
+          e.midi,
+        )
+      )
+        return 'ignored';
       const key = `${e.source}:${e.midi}`;
-      if (e.type === 'off') {
-        held.delete(key);
+      if (
+        e.type ===
+        'off'
+      ) {
+        held.delete(
+          key,
+        );
         return 'ignored';
       }
-      if (e.type !== 'on' || !Number.isFinite(e.time)) return 'ignored';
-      const before = [...new Set(held.values())];
-      if (!held.has(key)) held.set(key, e.midi);
-      if (!collect) return 'ignored';
-      if (start === null) {
-        start = e.time;
-        carried = before.filter((m) => m !== e.midi);
-        pressed = [e.midi];
+      if (
+        e.type !==
+          'on' ||
+        !Number.isFinite(
+          e.time,
+        )
+      )
+        return 'ignored';
+      const before =
+        [
+          ...new Set(
+            held.values(),
+          ),
+        ];
+      if (
+        !held.has(
+          key,
+        )
+      )
+        held.set(
+          key,
+          e.midi,
+        );
+      if (
+        !collect
+      )
+        return 'ignored';
+      if (
+        start ===
+        null
+      ) {
+        start =
+          e.time;
+        carried =
+          before.filter(
+            (
+              m,
+            ) =>
+              m !==
+              e.midi,
+          );
+        pressed =
+          [
+            e.midi,
+          ];
         return 'opened';
       }
-      if (e.time - start >= windowMs) return 'late';
-      if (!pressed.includes(e.midi)) pressed.push(e.midi);
+      if (
+        e.time -
+          start >=
+        windowMs
+      )
+        return 'late';
+      if (
+        !pressed.includes(
+          e.midi,
+        )
+      )
+        pressed.push(
+          e.midi,
+        );
       return 'added';
     },
     take() {
-      const out = [...carried.filter(isHeld), ...pressed];
+      const out =
+        [
+          ...carried.filter(
+            isHeld,
+          ),
+          ...pressed,
+        ];
       close();
       return out;
     },
-    reset: close,
+    reset:
+      close,
     releaseAll() {
       held.clear();
       close();
@@ -97,7 +207,10 @@ export function createChordWindow(windowMs = CHORD_WINDOW_MS): ChordWindow {
 
 export interface ChordCollector {
   /** Feed every note event; `listening` is false while a dialog is open or the answer is showing. */
-  feed(e: WindowNote, listening: boolean): void;
+  feed(
+    e: WindowNote,
+    listening: boolean,
+  ): void;
   /** Drop the open window and its timer (a new chord, a dialog, leaving). Held keys stay held. */
   cancel(): void;
   /** Cancel, and forget the held keys. */
@@ -114,26 +227,70 @@ export function createChordCollector({
   onTooFew,
   windowMs = CHORD_WINDOW_MS,
 }: {
-  onAttempt: (midis: number[]) => void;
-  onTooFew: (midis: number[]) => void;
+  onAttempt: (
+    midis: number[],
+  ) => void;
+  onTooFew: (
+    midis: number[],
+  ) => void;
   windowMs?: number;
 }): ChordCollector {
-  const win = createChordWindow(windowMs);
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  const stop = () => {
-    if (timer !== null) clearTimeout(timer);
-    timer = null;
-  };
+  const win =
+    createChordWindow(
+      windowMs,
+    );
+  let timer: ReturnType<
+    typeof setTimeout
+  > | null =
+    null;
+  const stop =
+    () => {
+      if (
+        timer !==
+        null
+      )
+        clearTimeout(
+          timer,
+        );
+      timer =
+        null;
+    };
   return {
-    feed(e, listening) {
-      if (win.push(e, listening) !== 'opened') return;
+    feed(
+      e,
+      listening,
+    ) {
+      if (
+        win.push(
+          e,
+          listening,
+        ) !==
+        'opened'
+      )
+        return;
       stop();
-      timer = setTimeout(() => {
-        timer = null;
-        const midis = win.take();
-        if (isChordAttempt(midis)) onAttempt(midis);
-        else onTooFew(midis);
-      }, windowMs);
+      timer =
+        setTimeout(
+          () => {
+            timer =
+              null;
+            const midis =
+              win.take();
+            if (
+              isChordAttempt(
+                midis,
+              )
+            )
+              onAttempt(
+                midis,
+              );
+            else
+              onTooFew(
+                midis,
+              );
+          },
+          windowMs,
+        );
     },
     cancel() {
       stop();

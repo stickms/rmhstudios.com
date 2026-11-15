@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * L3 — the yearly reading challenge. Progress is derived from the member's
  * `read` shelf (finished-this-year books and their pages), so there is nothing
@@ -11,16 +9,18 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Target } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { daysLeftInYear, paceFor } from '@/lib/reading/goal';
 import { useGoal, useGoalMutations } from '@/lib/reading/client';
 import type { GoalProgress } from '@/lib/reading/schema';
+import { cn } from '@/lib/utils';
 
 export default function ChallengePanel({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation('f-reading');
@@ -31,6 +31,7 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
   const [editing, setEditing] = useState(false);
   const [unit, setUnit] = useState<'books' | 'pages'>('books');
   const [target, setTarget] = useState('');
+  const arrival = useArrival(!isPending);
 
   if (!session) {
     return compact ? null : (
@@ -64,9 +65,9 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
   return (
     <section
       aria-label={t('challenge-heading', { year, defaultValue: '{{year}} reading challenge' })}
-      className={compact ? 'glass-fill rounded-site p-5' : 'glass-pane rounded-site p-5'}
+      className={cn('rounded-site p-5', arrival)}
     >
-      <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-site-text">
+      <h2 className="flex items-center gap-2 text-lg font-semibold text-site-text">
         <Target className="size-4 text-site-accent" aria-hidden />
         {t('challenge-heading', { year, defaultValue: '{{year}} reading challenge' })}
       </h2>
@@ -104,7 +105,7 @@ export default function ChallengePanel({ compact = false }: { compact?: boolean 
             <option value="books">{t('unit-books', { defaultValue: 'books' })}</option>
             <option value="pages">{t('unit-pages', { defaultValue: 'pages' })}</option>
           </Select>
-          <Button type="submit" variant="accent" size="sm" loading={set.isPending}>
+          <Button type="submit" variant="default" size="sm" loading={set.isPending}>
             {goal
               ? t('challenge-update', { defaultValue: 'Update goal' })
               : t('challenge-start', { defaultValue: 'Start challenge' })}
@@ -192,7 +193,7 @@ function Progress({ goal, year }: { goal: GoalProgress; year: number }) {
           : t('pace-on-track', { defaultValue: 'Right on pace' });
   return (
     <div className="mt-3 space-y-2">
-      <p className="text-2xl font-bold text-site-text">
+      <p className="text-2xl font-semibold text-site-text">
         {t('challenge-progress', {
           done: goal.done,
           target: goal.target,
@@ -226,7 +227,7 @@ function Progress({ goal, year }: { goal: GoalProgress; year: number }) {
           defaultValue_other: '{{count}} days left',
         })}
       </p>
-      <p className="text-sm text-site-text-dim">
+      <p className="text-sm text-site-text-muted">
         {t('challenge-totals', {
           books: goal.books,
           pages: goal.pages,

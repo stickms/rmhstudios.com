@@ -1,11 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Users } from 'lucide-react';
+import { NoMargin } from '@/components/shell/NoMargin';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { GroupChatView } from '@/components/feed/GroupChatView';
 import { useSession } from '@/components/Providers';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/groups/$id')({
   head: () => ({ meta: [{ title: 'Group Chat | RMH Studios' }] }),
@@ -16,9 +18,11 @@ function GroupChatPage() {
   const { t } = useTranslation('groups');
   const { id } = Route.useParams();
   const { data: session, isPending } = useSession();
+  const arrival = useArrival(!isPending);
 
   return (
-    <PageFrame noDockPadding>
+    <PageFrame noDockPadding className={arrival}>
+      <NoMargin />
       {isPending ? (
         <div className="flex justify-center py-20">
           <Spinner />

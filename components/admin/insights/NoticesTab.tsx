@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { LOCALES } from '@/lib/i18n/config';
 import type { NoticeSegment } from '@/lib/ops/schema';
 import { send, useInsight } from './api';
@@ -28,6 +30,7 @@ export function NoticesTab() {
   const { data, loading, reload } = useInsight<{ notices: Notice[] }>(
     '/api/admin/insights/notices',
   );
+  const arrival = useArrival(!loading);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
@@ -73,7 +76,10 @@ export function NoticesTab() {
 
   return (
     <section className="space-y-[var(--site-section-gap)]">
-      <form onSubmit={publish} className="glass-pane space-y-3 rounded-site p-5">
+      <form
+        onSubmit={publish}
+        className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
+      >
         <div className="space-y-1">
           <Label htmlFor="notice-title">{t('notices-title', { defaultValue: 'Title' })}</Label>
           <Input
@@ -176,16 +182,13 @@ export function NoticesTab() {
       {loading ? (
         <Spinner />
       ) : (
-        <ul className="space-y-3">
+        <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
           {(data?.notices ?? []).map((n) => (
-            <li
-              key={n.id}
-              className="glass-fill flex flex-wrap items-start justify-between gap-3 rounded-site px-4 py-3"
-            >
+            <li key={n.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
               <div className="min-w-0 space-y-1">
-                <p className="text-sm font-semibold text-site-text">{n.title}</p>
-                <p className="break-words text-sm text-site-text-muted">{n.body}</p>
-                <p className="text-xs text-site-text-dim">
+                <p className="t-body font-semibold text-site-text">{n.title}</p>
+                <p className="break-words t-body text-site-text-muted">{n.body}</p>
+                <p className="t-body text-site-text-muted">
                   {segLabel(n)} {' - '}
                   {t('notices-dismissed', {
                     defaultValue: '{{count}} dismissed',
@@ -195,7 +198,7 @@ export function NoticesTab() {
                 </p>
               </div>
               {!n.archived && (
-                <Button size="xs" variant="outline" onClick={() => archive(n.id)}>
+                <Button size="xs" variant="default" onClick={() => archive(n.id)}>
                   {t('notices-archive', { defaultValue: 'Archive' })}
                 </Button>
               )}

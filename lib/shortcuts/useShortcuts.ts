@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * React bindings for the shortcut registry (plan B4).
  *

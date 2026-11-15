@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Arcade section — the player block at the top of `/games`.
  *
@@ -23,80 +21,180 @@
  * page.
  */
 
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Gamepad2, Trophy } from 'lucide-react';
+import {
+  Gamepad2,
+  Trophy,
+} from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { useArrival } from '@/components/ui/arrive';
+import {
+  Tabs,
+  type TabItem,
+} from '@/components/ui/tabs';
 import { ArcadeHub } from '@/components/arcade/ArcadeHub';
 import { LeaderboardColumn } from '@/components/feed/LeaderboardColumn';
+import { api } from '@/lib/contract/client';
+import { playerLeaderboardApi } from '@/lib/leaderboard.contract';
 
 import type { ArcadeSubTab } from './arcade-tabs';
 
 /** The board payload, taken from the column that renders it. */
-type LeaderboardData = React.ComponentProps<typeof LeaderboardColumn>['initialData'];
+type LeaderboardData =
+  React.ComponentProps<
+    typeof LeaderboardColumn
+  >['initialData'];
 
 export function ArcadeSection({
   sub,
   onSubChange,
 }: {
   sub: ArcadeSubTab;
-  onSubChange: (next: ArcadeSubTab) => void;
+  onSubChange: (
+    next: ArcadeSubTab,
+  ) => void;
 }) {
-  const { t } = useTranslation('site');
-  const { data: session, isPending } = useSession();
-  const signedIn = Boolean(session);
-  const [board, setBoard] = useState<LeaderboardData | null>(null);
-  const [boardFailed, setBoardFailed] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const {
+    data: session,
+    isPending,
+  } =
+    useSession();
+  const signedIn =
+    Boolean(
+      session,
+    );
+  const [
+    board,
+    setBoard,
+  ] =
+    useState<LeaderboardData | null>(
+      null,
+    );
+  const [
+    boardFailed,
+    setBoardFailed,
+  ] =
+    useState(
+      false,
+    );
+  const sessionArrival =
+    useArrival(
+      !isPending,
+    );
+  const boardArrival =
+    useArrival(
+      board !==
+        null ||
+        boardFailed,
+    );
 
   // Pulled once, the first time the Leaderboard sub-tab is opened.
   useEffect(() => {
-    if (sub !== 'leaderboard' || board || boardFailed) return;
+    if (
+      sub !==
+        'leaderboard' ||
+      board ||
+      boardFailed
+    )
+      return;
     let active = true;
     void (async () => {
       try {
-        const res = await fetch('/api/leaderboards/players?scope=global', {
-          credentials: 'include',
-        });
-        if (!active) return;
-        if (!res.ok) {
-          setBoardFailed(true);
+        const res =
+          await api(
+            playerLeaderboardApi,
+            {
+              query:
+                {
+                  scope:
+                    'global',
+                },
+            },
+          );
+        if (
+          !active
+        )
           return;
-        }
-        setBoard((await res.json()) as LeaderboardData);
+        setBoard(
+          res as LeaderboardData,
+        );
       } catch {
-        if (active) setBoardFailed(true);
+        if (
+          active
+        )
+          setBoardFailed(
+            true,
+          );
       }
     })();
     return () => {
       active = false;
     };
-  }, [sub, board, boardFailed]);
+  }, [
+    sub,
+    board,
+    boardFailed,
+  ]);
 
-  const title = t('arcade-title', { defaultValue: 'Arcade Pass' });
+  const title =
+    t(
+      'arcade-title',
+      {
+        defaultValue:
+          'Arcade Pass',
+      },
+    );
 
-  const tabs: LiquidTab[] = [
-    {
-      id: 'challenges',
-      label: t('arcade-tab-challenges', { defaultValue: 'Challenges' }),
-      icon: Gamepad2,
-    },
-    {
-      id: 'leaderboard',
-      label: t('arcade-tab-leaderboard', { defaultValue: 'Leaderboard' }),
-      icon: Trophy,
-    },
-  ];
+  const tabs: TabItem[] =
+    [
+      {
+        id: 'challenges',
+        label:
+          t(
+            'arcade-tab-challenges',
+            {
+              defaultValue:
+                'Challenges',
+            },
+          ),
+        icon: Gamepad2,
+      },
+      {
+        id: 'leaderboard',
+        label:
+          t(
+            'arcade-tab-leaderboard',
+            {
+              defaultValue:
+                'Leaderboard',
+            },
+          ),
+        icon: Trophy,
+      },
+    ];
 
   return (
-    <section className="glass-pane rounded-site" aria-labelledby="cstudio-arcade-title">
+    <section
+      className="rounded-site"
+      aria-labelledby="cstudio-arcade-title"
+    >
       <div className="flex items-center gap-3 px-4 py-3">
         <span
-          className="glass-inset flex size-9 shrink-0 items-center justify-center rounded-site-sm text-site-accent"
+          className="surface-field flex size-9 shrink-0 items-center justify-center rounded-site-sm text-site-accent"
           aria-hidden="true"
         >
           <Gamepad2 className="size-4" />
@@ -105,29 +203,51 @@ export function ArcadeSection({
           {/* The audit's AUD-326 complaint about the old /arcade page was that its
               only name lived in a tab strip's aria-label. Inside Create the
               section states its own name. */}
-          <h2 className="font-semibold text-site-text" id="cstudio-arcade-title">
-            {title}
+          <h2
+            className="font-semibold text-site-text"
+            id="cstudio-arcade-title"
+          >
+            {
+              title
+            }
           </h2>
           <p className="hidden truncate text-sm text-site-text-muted sm:block">
-            {t('arcade-summary', {
-              defaultValue: 'Daily game challenges, your streak, and the player leaderboard.',
-            })}
+            {t(
+              'arcade-summary',
+              {
+                defaultValue:
+                  'Daily game challenges, your streak, and the player leaderboard.',
+              },
+            )}
           </p>
         </div>
       </div>
 
       <div className="px-4 pb-3">
-        <LiquidTabs
+        <Tabs
           size="sm"
-          tabs={tabs}
-          value={sub}
-          onChange={(id) => onSubChange(id as ArcadeSubTab)}
+          tabs={
+            tabs
+          }
+          value={
+            sub
+          }
+          onChange={(
+            id,
+          ) =>
+            onSubChange(
+              id as ArcadeSubTab,
+            )
+          }
           idBase="cstudio-arcade"
-          aria-label={title}
+          aria-label={
+            title
+          }
         />
       </div>
 
-      {sub === 'challenges' && (
+      {sub ===
+        'challenges' && (
         <div
           className="border-t border-site-border"
           role="tabpanel"
@@ -135,21 +255,56 @@ export function ArcadeSection({
           aria-labelledby="cstudio-arcade-tab-challenges"
         >
           {signedIn ? (
-            <ArcadeHub initialState={null} hideHeader />
+            <div
+              className={
+                sessionArrival
+              }
+            >
+              <ArcadeHub
+                initialState={
+                  null
+                }
+                hideHeader
+              />
+            </div>
           ) : isPending ? (
             <div className="flex justify-center py-16">
               <Spinner />
             </div>
           ) : (
             <EmptyState
-              icon={Gamepad2}
-              title={t('arcade-sign-in', {
-                defaultValue: 'Sign in to play the daily arcade challenges',
-              })}
+              className={
+                sessionArrival
+              }
+              icon={
+                Gamepad2
+              }
+              title={t(
+                'arcade-sign-in',
+                {
+                  defaultValue:
+                    'Sign in to play the daily arcade challenges',
+                },
+              )}
               action={
-                <Button asChild variant="accent">
-                  <Link to="/login" search={{ callbackURL: '/games' }}>
-                    {t('sign-in', { defaultValue: 'Sign in' })}
+                <Button
+                  asChild
+                  variant="default"
+                >
+                  <Link
+                    to="/login"
+                    search={{
+                      callbackURL:
+                        '/games',
+                    }}
+                  >
+                    {t(
+                      'sign-in',
+                      {
+                        defaultValue:
+                          'Sign in',
+                      },
+                    )}
                   </Link>
                 </Button>
               }
@@ -158,7 +313,8 @@ export function ArcadeSection({
         </div>
       )}
 
-      {sub === 'leaderboard' && (
+      {sub ===
+        'leaderboard' && (
         <div
           className="border-t border-site-border"
           role="tabpanel"
@@ -166,13 +322,36 @@ export function ArcadeSection({
           aria-labelledby="cstudio-arcade-tab-leaderboard"
         >
           {board ? (
-            <LeaderboardColumn initialData={board} signedIn={signedIn} hideHeader />
+            <div
+              className={
+                boardArrival
+              }
+            >
+              <LeaderboardColumn
+                initialData={
+                  board
+                }
+                signedIn={
+                  signedIn
+                }
+                hideHeader
+              />
+            </div>
           ) : boardFailed ? (
             <EmptyState
-              icon={Trophy}
-              title={t('leaderboard-failed', {
-                defaultValue: 'Could not load the leaderboard just now.',
-              })}
+              className={
+                boardArrival
+              }
+              icon={
+                Trophy
+              }
+              title={t(
+                'leaderboard-failed',
+                {
+                  defaultValue:
+                    'Could not load the leaderboard just now.',
+                },
+              )}
             />
           ) : (
             <div className="flex justify-center py-16">

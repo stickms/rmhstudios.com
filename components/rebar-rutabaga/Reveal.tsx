@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The restaurant's motion vocabulary — three pieces, and deliberately no more.
  *
@@ -21,21 +19,24 @@
  * preference rather than a second code path that has to be kept in step.
  */
 
-import { m as motion, type Variants } from 'framer-motion';
+import {
+  m as motion,
+  type Variants,
+} from 'framer-motion';
 import type { ReactNode } from 'react';
+import { editorialTransition } from '@/lib/app-motion';
 import { cn } from '@/lib/utils';
 
 /**
  * The page's one curve and one duration, in framer-motion's units.
  *
- * These mirror `--rebar-ease` / `--rebar-dur` in `globals.css` rather than
- * importing `lib/motion.ts`: the site's `DURATION.base` is 0.16s, tuned for UI
+ * The curve is `EASE.outExpo` (via `editorialTransition`); the duration mirrors `--rebar-dur` in `globals.css`, rather than
+ * the site's `DURATION.base` (0.16s), tuned for UI
  * that answers a click, and a 0.16s reveal on a 900px-tall section reads as a
  * flicker. This page is read, not operated, so it gets a slower hand — and
  * keeping that decision beside the CSS token it matches is what stops the two
  * drifting apart.
  */
-const REBAR_EASE = [0.16, 1, 0.3, 1] as const;
 const REBAR_DUR = 0.62;
 
 /** How far a revealing surface starts below where it lands. */
@@ -59,18 +60,42 @@ export function Reveal({
   /** Seconds. Use `stagger()` below rather than hand-picking these. */
   delay?: number;
   className?: string;
-  as?: 'div' | 'section' | 'li' | 'tr';
+  as?:
+    | 'div'
+    | 'section'
+    | 'li'
+    | 'tr';
 }) {
-  const Tag = motion[as];
+  const Tag =
+    motion[
+      as
+    ];
   return (
     <Tag
-      initial={{ opacity: 0, y: RISE_PX }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '0px 0px -12% 0px' }}
-      transition={{ duration: REBAR_DUR, ease: REBAR_EASE, delay }}
-      className={className}
+      initial={{
+        opacity: 0,
+        y: RISE_PX,
+      }}
+      whileInView={{
+        opacity: 1,
+        y: 0,
+      }}
+      viewport={{
+        once: true,
+        margin:
+          '0px 0px -12% 0px',
+      }}
+      transition={editorialTransition(
+        REBAR_DUR,
+        delay,
+      )}
+      className={
+        className
+      }
     >
-      {children}
+      {
+        children
+      }
     </Tag>
   );
 }
@@ -83,8 +108,16 @@ export function Reveal({
  * speed watches rows arrive after they have already read past them. The cap
  * means a long list front-loads its rhythm and then catches up.
  */
-export function stagger(index: number, step = 0.055, max = 0.33): number {
-  return Math.min(index * step, max);
+export function stagger(
+  index: number,
+  step = 0.055,
+  max = 0.33,
+): number {
+  return Math.min(
+    index *
+      step,
+    max,
+  );
 }
 
 /**
@@ -95,15 +128,35 @@ export function stagger(index: number, step = 0.055, max = 0.33): number {
  * eye a direction to follow into the heading beneath it, and it is a `scaleX`
  * on a full-width element, never an animated `width`, so it never reflows.
  */
-export function DrawnRule({ className, delay = 0 }: { className?: string; delay?: number }) {
+export function DrawnRule({
+  className,
+  delay = 0,
+}: {
+  className?: string;
+  delay?: number;
+}) {
   return (
     <motion.div
       aria-hidden
-      initial={{ scaleX: 0 }}
-      whileInView={{ scaleX: 1 }}
-      viewport={{ once: true, margin: '0px 0px -10% 0px' }}
-      transition={{ duration: 0.8, ease: REBAR_EASE, delay }}
-      className={cn('h-px w-full origin-left bg-rebar-line-strong', className)}
+      initial={{
+        scaleX: 0,
+      }}
+      whileInView={{
+        scaleX: 1,
+      }}
+      viewport={{
+        once: true,
+        margin:
+          '0px 0px -10% 0px',
+      }}
+      transition={editorialTransition(
+        0.8,
+        delay,
+      )}
+      className={cn(
+        'h-px w-full origin-left bg-rebar-line-strong',
+        className,
+      )}
     />
   );
 }
@@ -115,8 +168,28 @@ export function DrawnRule({ className, delay = 0 }: { className?: string; delay?
  * own the `AnimatePresence` key — it is the course id, and only the menu knows
  * that.
  */
-export const swapVariants: Variants = {
-  enter: { opacity: 0, y: 12 },
-  center: { opacity: 1, y: 0, transition: { duration: 0.42, ease: REBAR_EASE } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.18, ease: REBAR_EASE } },
-};
+export const swapVariants: Variants =
+  {
+    enter:
+      {
+        opacity: 0,
+        y: 12,
+      },
+    center:
+      {
+        opacity: 1,
+        y: 0,
+        transition:
+          editorialTransition(
+            0.42,
+          ),
+      },
+    exit: {
+      opacity: 0,
+      y: -8,
+      transition:
+        editorialTransition(
+          0.18,
+        ),
+    },
+  };

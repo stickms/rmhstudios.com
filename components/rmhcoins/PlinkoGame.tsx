@@ -1,7 +1,8 @@
-'use client';
-
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { placePlinkoBetApi } from '@/lib/coins.contract';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import {
@@ -338,15 +339,12 @@ export function PlinkoGame({ coins, setCoins }: Props) {
     setResultMessage(null);
 
     try {
-      const res = await fetch('/api/coins/bet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bin: selectedBin, amount }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setResultMessage(data.error || t('error-generic', { defaultValue: 'Something went wrong' }));
+      let data;
+      try {
+        data = await api(placePlinkoBetApi, { body: { bin: selectedBin, amount } });
+      } catch (e) {
+        if (!(e instanceof HttpError)) throw e;
+        setResultMessage(serverError(e) ?? t('error-generic', { defaultValue: 'Something went wrong' }));
         setResultWon(false);
         setGameState('result');
         setTimeout(() => {
@@ -356,7 +354,6 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         return;
       }
 
-      const data = await res.json();
       animateBall(
         data.startX,
         data.landedBin,
@@ -380,7 +377,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-center gap-4 sm:gap-6 px-3 sm:px-4 py-4 sm:py-6">
-      <div className="w-full max-w-[390px] mx-auto lg:mx-0 aspect-390/420 relative shrink-0 rounded-site border border-site-border overflow-hidden shadow-(--site-shadow)">
+      <div className="w-full max-w-[390px] mx-auto lg:mx-0 aspect-390/420 relative shrink-0 rounded-site border border-site-border overflow-hidden">
         <canvas
           ref={canvasRef}
           width={CANVAS_W}
@@ -400,7 +397,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
                  `-fg` token, which tracks each theme's green and red. This used
                  to say `text-black`, which was invisible on the themes whose
                  success colour is a dark forest green. */
-              className={`px-4 py-2.5 rounded-site font-bold text-sm sm:text-lg shadow-site ${
+              className={`px-4 py-2.5 rounded-site font-semibold text-sm sm:text-lg ${
                 resultWon ? 'bg-site-success' : 'bg-site-danger'
               }`}
             >
@@ -412,17 +409,17 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
       <div className="w-full lg:max-w-md mx-auto lg:mx-0 flex flex-col gap-4">
       <div className="w-full">
-        <p className="text-sm text-site-text-dim mb-2">{t('select-a-bin', { defaultValue: 'Select a bin:' })}</p>
+        <p className="text-sm text-site-text-muted mb-2">{t('select-a-bin', { defaultValue: 'Select a bin:' })}</p>
         <div className="flex gap-1.5 sm:gap-2">
           {Array.from({ length: NUM_BINS }, (_, i) => (
             <button
               key={i}
               onClick={() => isIdle && setSelectedBin(i)}
               disabled={!isIdle}
-              className={`flex-1 min-h-10 py-2 rounded-site text-sm font-bold transition active:scale-95 ${
+              className={`flex-1 min-h-10 py-2 rounded-site text-sm font-semibold transition active:scale-95 ${
                 selectedBin === i
                   ? 'ring-2 ring-site-accent text-casino-ink scale-105'
-                  : 'text-site-text-dim hover:text-site-text'
+                  : 'text-site-text-muted hover:text-site-text'
               } disabled:opacity-50`}
               style={{
                 backgroundColor:
@@ -436,7 +433,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
       </div>
 
       <div className="w-full">
-        <p className="text-sm text-site-text-dim mb-2">{t('bet-amount', { defaultValue: 'Bet amount:' })}</p>
+        <p className="text-sm text-site-text-muted mb-2">{t('bet-amount', { defaultValue: 'Bet amount:' })}</p>
         <div className="flex flex-col gap-2">
           <div className="relative">
             <input
@@ -447,7 +444,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               onChange={(e) => setBetInput(e.target.value)}
               onBlur={handleBetBlur}
               disabled={!isIdle}
-              className="glass-inset border w-full px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40 disabled:opacity-50"
+              className="surface-field border w-full px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40 disabled:opacity-50"
             />
             <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
           </div>
@@ -455,19 +452,19 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             {[1, 5, 10].map((amt) => (
               <Button
                 key={amt}
-                variant="secondary"
+                variant="default"
                 onClick={() => isIdle && setQuickBet(amt)}
                 disabled={!isIdle}
-                className="h-auto min-h-10 px-0 text-xs font-bold text-site-text-dim hover:text-site-text"
+                className="h-auto min-h-10 px-0 text-xs font-semibold text-site-text-muted hover:text-site-text"
               >
                 {amt}
               </Button>
             ))}
             <Button
-              variant="secondary"
+              variant="default"
               onClick={() => isIdle && setQuickBet(coins)}
               disabled={!isIdle}
-              className="h-auto min-h-10 px-0 text-xs font-bold text-site-accent"
+              className="h-auto min-h-10 px-0 text-xs font-semibold text-site-accent"
             >
               {t('bet-all', { defaultValue: 'All' })}
             </Button>
@@ -479,8 +476,8 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         onClick={handleSubmit}
         loading={submitting}
         disabled={!isIdle || selectedBin === null}
-        variant="accent"
-        className="w-full min-h-11 font-bold rounded-site text-base"
+        variant="default"
+        className="w-full min-h-11 font-semibold rounded-site text-base"
       >
         {gameState === 'dropping'
           ? t('dropping', { defaultValue: 'Dropping...' })
@@ -488,7 +485,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
       </Button>
 
       {coins === 0 && isIdle && (
-        <p className="text-sm text-site-text-dim text-center">
+        <p className="text-sm text-site-text-muted text-center">
           {t('out-of-coins', { defaultValue: "You're out of coins! Visit the" })}{' '}
           <span className="text-site-accent">{t('shop-tab', { defaultValue: 'Shop' })}</span> {t('out-of-coins-suffix', { defaultValue: 'tab to get more.' })}
         </p>

@@ -10,7 +10,10 @@
  */
 
 import type { Vec3 } from '../core/vec';
-import type { CollisionWorld, TraceFilter } from '../core/types';
+import type {
+  CollisionWorld,
+  TraceFilter,
+} from '../core/types';
 import {
   FL_ONGROUND,
   MOVETYPE_WALK,
@@ -19,37 +22,68 @@ import {
   WL_NOTINWATER,
 } from '../core/constants';
 import { NO_ENTITY } from '../core/types';
-import { classEyeHeight, classMaxSpeed } from './class-speeds';
+import {
+  classEyeHeight,
+  classMaxSpeed,
+} from './class-speeds';
 
 // --- Movement-relevant conditions (TF_COND_* subset) as a bitmask -----------
 /** TF_COND_SHIELD_CHARGE — Demoman shield charge (ChargeMove). */
-export const MOVE_COND_SHIELD_CHARGE = 1 << 0;
+export const MOVE_COND_SHIELD_CHARGE =
+  1 <<
+  0;
 /** IsControlStunned — no movement input at all (StunMove). */
-export const MOVE_COND_CONTROL_STUNNED = 1 << 1;
+export const MOVE_COND_CONTROL_STUNNED =
+  1 <<
+  1;
 /** IsLoserStateStunned — humiliation stun: buttons cleared, movement kept. */
-export const MOVE_COND_LOSER_STUNNED = 1 << 2;
+export const MOVE_COND_LOSER_STUNNED =
+  1 <<
+  2;
 /** IsLoser — losing team in bonus time: no crouch-walking, silent ducked steps. */
-export const MOVE_COND_LOSER = 1 << 3;
+export const MOVE_COND_LOSER =
+  1 <<
+  3;
 /** TF_COND_TAUNTING — cannot jump (CTFPlayer::CanJump). Taunt movement itself is not ported. */
-export const MOVE_COND_TAUNTING = 1 << 4;
+export const MOVE_COND_TAUNTING =
+  1 <<
+  4;
 /** TF_COND_LOST_FOOTING — sliding with reduced ground friction. */
-export const MOVE_COND_LOST_FOOTING = 1 << 5;
+export const MOVE_COND_LOST_FOOTING =
+  1 <<
+  5;
 /** TF_COND_AIR_CURRENT — caught in an airblast: less air control, wall slide. */
-export const MOVE_COND_AIR_CURRENT = 1 << 6;
+export const MOVE_COND_AIR_CURRENT =
+  1 <<
+  6;
 /** TF_COND_PARACHUTE_ACTIVE — B.A.S.E. Jumper open. */
-export const MOVE_COND_PARACHUTE_ACTIVE = 1 << 7;
+export const MOVE_COND_PARACHUTE_ACTIVE =
+  1 <<
+  7;
 /** TF_COND_PARACHUTE_DEPLOYED — opened once this jump (the game clears it on landing). */
-export const MOVE_COND_PARACHUTE_DEPLOYED = 1 << 8;
+export const MOVE_COND_PARACHUTE_DEPLOYED =
+  1 <<
+  8;
 /** TF_COND_BURNING — only matters for the parachute's fall-speed cap. */
-export const MOVE_COND_BURNING = 1 << 9;
+export const MOVE_COND_BURNING =
+  1 <<
+  9;
 /** TF_COND_BLASTJUMPING — enables mod_air_control_blast_jump. */
-export const MOVE_COND_BLAST_JUMPING = 1 << 10;
+export const MOVE_COND_BLAST_JUMPING =
+  1 <<
+  10;
 /** TF_COND_SODAPOPPER_HYPE — up to five air jumps. */
-export const MOVE_COND_SODAPOPPER_HYPE = 1 << 11;
+export const MOVE_COND_SODAPOPPER_HYPE =
+  1 <<
+  11;
 /** TF_COND_HALLOWEEN_SPEED_BOOST — any class may air-dash. */
-export const MOVE_COND_HALLOWEEN_SPEED_BOOST = 1 << 12;
+export const MOVE_COND_HALLOWEEN_SPEED_BOOST =
+  1 <<
+  12;
 /** TF_COND_ROCKETPACK — halves the air speed cap. */
-export const MOVE_COND_ROCKETPACK = 1 << 13;
+export const MOVE_COND_ROCKETPACK =
+  1 <<
+  13;
 
 /** Observer modes (shareddefs.h ObserverMode_t). Only ROAMING moves the player. */
 export const OBS_MODE_NONE = 0;
@@ -99,23 +133,24 @@ export interface MoveAttributes {
   spinWhileStunned: boolean;
 }
 
-export const defaultMoveAttributes = (): MoveAttributes => ({
-  jumpHeightMod: 1,
-  airControlMod: 1,
-  blastJumpAirControlMod: 1,
-  airDashCount: 1,
-  airDashDisabled: false,
-  noJump: false,
-  noDuck: false,
-  cannotSwim: false,
-  swimmingMastery: false,
-  forwardPull: 0,
-  hypeResetsOnJump: 0,
-  parachute: false,
-  parachuteDisabled: false,
-  agilityRune: false,
-  spinWhileStunned: false,
-});
+export const defaultMoveAttributes =
+  (): MoveAttributes => ({
+    jumpHeightMod: 1,
+    airControlMod: 1,
+    blastJumpAirControlMod: 1,
+    airDashCount: 1,
+    airDashDisabled: false,
+    noJump: false,
+    noDuck: false,
+    cannotSwim: false,
+    swimmingMastery: false,
+    forwardPull: 0,
+    hypeResetsOnJump: 0,
+    parachute: false,
+    parachuteDisabled: false,
+    agilityRune: false,
+    spinWhileStunned: false,
+  });
 
 /** One player's movement state. Serialisable: numbers, booleans, strings, Vec3s. */
 export interface MoveState {
@@ -259,7 +294,9 @@ export interface MoveParams {
   duckHullMax: Readonly<Vec3>;
   duckViewZ: number;
   /** Standing eye height; null = the TF class's (classEyeHeight). */
-  viewZ: number | null;
+  viewZ:
+    | number
+    | null;
   /** TIME_TO_DUCK / TIME_TO_UNDUCK, seconds. */
   timeToDuck: number;
   timeToUnduck: number;
@@ -312,23 +349,43 @@ export interface MoveContext {
   /** Entity index of the mover; staggers the periodic stuck check like the SDK. */
   entityIndex?: number;
   /** True when an entity id is a player (stuck-in-enemy resolution, charge bump). */
-  isPlayer?(entityId: number): boolean;
+  isPlayer?(
+    entityId: number,
+  ): boolean;
   /** Writes an entity's velocity (moving ground such as trains); zero when omitted. */
-  getEntityVelocity?(entityId: number, out: Vec3): void;
+  getEntityVelocity?(
+    entityId: number,
+    out: Vec3,
+  ): void;
   /** Surface properties by material name; should return a cached object (no allocation). */
-  surfaceProps?(surfaceName: string): SurfaceProps;
+  surfaceProps?(
+    surfaceName: string,
+  ): SurfaceProps;
 
   // --- Events ------------------------------------------------------------------
   /** Touched ground after being airborne (CGameMovement::OnLand), with the landing speed. */
-  onLand?(fallSpeed: number): void;
+  onLand?(
+    fallSpeed: number,
+  ): void;
   /** Landing hard enough for MoveHelper()->PlayerFallingDamage (> 580); see `tfFallDamage`. */
-  onFallDamage?(fallSpeed: number): void;
+  onFallDamage?(
+    fallSpeed: number,
+  ): void;
   /** A ground jump (false) or an air dash (true). */
-  onJump?(isAirDash: boolean): void;
+  onJump?(
+    isAirDash: boolean,
+  ): void;
   /** Footstep, jump step or rough landing on a surface ('water'/'wade' when in water). */
-  onFootstep?(surfaceName: string, volume: number): void;
+  onFootstep?(
+    surfaceName: string,
+    volume: number,
+  ): void;
   /** Water level changed this tick; `splash` follows CTFGameMovement::PlayerMove. */
-  onWaterLevelChange?(oldLevel: number, newLevel: number, splash: boolean): void;
+  onWaterLevelChange?(
+    oldLevel: number,
+    newLevel: number,
+    splash: boolean,
+  ): void;
   /** Swimming upward stroke sound (PlaySwimSound). */
   onSwimSound?(): void;
   /** The shield charge ended because the player slowed below 300 or bumped a player. */
@@ -343,22 +400,57 @@ export function createMoveState(
   return {
     classIndex,
     team,
-    moveType: MOVETYPE_WALK,
-    observerMode: OBS_MODE_NONE,
+    moveType:
+      MOVETYPE_WALK,
+    observerMode:
+      OBS_MODE_NONE,
     dead: false,
-    origin: { x: 0, y: 0, z: 0 },
-    velocity: { x: 0, y: 0, z: 0 },
-    baseVelocity: { x: 0, y: 0, z: 0 },
-    viewOffsetZ: classEyeHeight(classIndex),
-    punchAngle: { x: 0, y: 0, z: 0 },
-    punchAngleVel: { x: 0, y: 0, z: 0 },
+    origin:
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+    velocity:
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+    baseVelocity:
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+    viewOffsetZ:
+      classEyeHeight(
+        classIndex,
+      ),
+    punchAngle:
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
+    punchAngleVel:
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
     flags: 0,
-    groundEntity: NO_ENTITY,
+    groundEntity:
+      NO_ENTITY,
     fallVelocity: 0,
     gravity: 0,
     surfaceFriction: 1,
-    surfaceName: '',
-    maxSpeed: classMaxSpeed(classIndex),
+    surfaceName:
+      '',
+    maxSpeed:
+      classMaxSpeed(
+        classIndex,
+      ),
     oldButtons: 0,
     oldForwardMove: 0,
     ducked: false,
@@ -369,10 +461,16 @@ export function createMoveState(
     airDash: 0,
     jumping: false,
     scoutHype: 0,
-    waterLevel: WL_NOTINWATER,
+    waterLevel:
+      WL_NOTINWATER,
     waterType: 0,
     waterJumpTime: 0,
-    waterJumpVel: { x: 0, y: 0, z: 0 },
+    waterJumpVel:
+      {
+        x: 0,
+        y: 0,
+        z: 0,
+      },
     swimSoundTime: 0,
     stepSoundTime: 0,
     stepSkip: 0,
@@ -385,9 +483,16 @@ export function createMoveState(
     stunLerpTarget: 0,
     lastMovementStunChange: 0,
     stunNeedsFadeOut: false,
-    attrs: defaultMoveAttributes(),
+    attrs:
+      defaultMoveAttributes(),
   };
 }
 
 /** True when the player is standing on something. */
-export const isOnGround = (s: MoveState): boolean => (s.flags & FL_ONGROUND) !== 0;
+export const isOnGround =
+  (
+    s: MoveState,
+  ): boolean =>
+    (s.flags &
+      FL_ONGROUND) !==
+    0;

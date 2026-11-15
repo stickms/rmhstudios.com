@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { invalidateCachedPrefix, peekL1, putL1 } from '@/lib/cached.server';
 import {
   NEW_DOMAIN_MS,
   URL_IN_TEXT,
@@ -23,7 +23,8 @@ export async function classifyHosts(rawHosts: string[]): Promise<Record<string, 
   for (const raw of new Set(rawHosts)) {
     const host = normalizeHost(raw);
     if (!host) continue;
-    const hit = apiCache.get<LinkRisk>(`linkrisk:${host}`);
+    // Batch lookup: peek/put on the shared L1 (cached() is one key per call); invalidateCachedPrefix reaches every process.
+    const hit = peekL1<LinkRisk>(`linkrisk:${host}`);
     if (hit) out[raw] = hit;
     else todo.push(host);
   }
@@ -52,7 +53,7 @@ export async function classifyHosts(rawHosts: string[]): Promise<Record<string, 
       const t = firstSeen.get(host);
       if (t !== undefined && now - t < NEW_DOMAIN_MS) risk = 'new';
     }
-    apiCache.set(`linkrisk:${host}`, risk, TTL_MS);
+    putL1(`linkrisk:${host}`, risk, TTL_MS);
     out[host] = risk;
   }
   // Map back any raw (un-normalised) input keys the caller used.
@@ -98,12 +99,12 @@ export async function upsertLinkRule(
     create: { domain: d, kind, note, addedById },
     update: { kind, note, addedById },
   });
-  apiCache.invalidatePrefix('linkrisk:');
+  void invalidateCachedPrefix('linkrisk:');
   return true;
 }
 
 export async function deleteLinkRule(domain: string): Promise<boolean> {
   const { count } = await prisma.linkDomainRule.deleteMany({ where: { domain } });
-  apiCache.invalidatePrefix('linkrisk:');
+  void invalidateCachedPrefix('linkrisk:');
   return count > 0;
 }

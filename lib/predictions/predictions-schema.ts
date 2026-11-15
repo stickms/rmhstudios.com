@@ -7,27 +7,109 @@ export const MAX_PREDICTION_DESCRIPTION = 1000;
 export const MIN_TRADE_AMOUNT = 1;
 export const MAX_TRADE_AMOUNT = 100_000;
 
-export const createPredictionSchema = z.object({
-  title: z.string().trim().min(8).max(MAX_PREDICTION_TITLE),
-  description: z.string().trim().max(MAX_PREDICTION_DESCRIPTION).optional(),
-  // Optional trading deadline (ISO). Must be in the future when set.
-  closesAt: z.string().datetime().nullable().optional(),
-});
+export const createPredictionSchema =
+  z.object(
+    {
+      title:
+        z
+          .string()
+          .trim()
+          .min(
+            8,
+          )
+          .max(
+            MAX_PREDICTION_TITLE,
+          ),
+      description:
+        z
+          .string()
+          .trim()
+          .max(
+            MAX_PREDICTION_DESCRIPTION,
+          )
+          .optional(),
+      // Optional trading deadline (ISO). Must be in the future when set.
+      closesAt:
+        z
+          .string()
+          .datetime()
+          .nullable()
+          .optional(),
+    },
+  );
 
-export const tradeSchema = z.object({
-  side: z.enum(['YES', 'NO']),
-  amount: z.number().int().min(MIN_TRADE_AMOUNT).max(MAX_TRADE_AMOUNT),
-});
+/** `GET /api/predictions?filter=` — `open` (default), `resolved` or `mine`. */
+export const predictionListQuery =
+  z.object(
+    {
+      filter:
+        z
+          .string()
+          .optional(),
+    },
+  );
 
-export const resolveSchema = z.object({
-  outcome: z.enum(['YES', 'NO']),
-});
+export const tradeSchema =
+  z.object(
+    {
+      side: z.enum(
+        [
+          'YES',
+          'NO',
+        ],
+      ),
+      amount:
+        z
+          .number()
+          .int()
+          .min(
+            MIN_TRADE_AMOUNT,
+          )
+          .max(
+            MAX_TRADE_AMOUNT,
+          ),
+    },
+  );
 
-export const moderateSchema = z.object({
-  action: z.enum(['approve', 'deny']),
-});
+export const resolveSchema =
+  z.object(
+    {
+      outcome:
+        z.enum(
+          [
+            'YES',
+            'NO',
+          ],
+        ),
+    },
+  );
 
-export type CreatePredictionInput = z.infer<typeof createPredictionSchema>;
-export type TradeInput = z.infer<typeof tradeSchema>;
-export type ResolveInput = z.infer<typeof resolveSchema>;
-export type ModerateInput = z.infer<typeof moderateSchema>;
+export const moderateSchema =
+  z.object(
+    {
+      action:
+        z.enum(
+          [
+            'approve',
+            'deny',
+          ],
+        ),
+    },
+  );
+
+export type CreatePredictionInput =
+  z.infer<
+    typeof createPredictionSchema
+  >;
+export type TradeInput =
+  z.infer<
+    typeof tradeSchema
+  >;
+export type ResolveInput =
+  z.infer<
+    typeof resolveSchema
+  >;
+export type ModerateInput =
+  z.infer<
+    typeof moderateSchema
+  >;

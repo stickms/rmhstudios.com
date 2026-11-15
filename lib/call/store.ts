@@ -12,11 +12,9 @@
  * belong to any particular screen.
  */
 
-'use client';
-
 import { create } from 'zustand';
 import type { Socket } from 'socket.io-client';
-import { authClient } from '@/lib/auth-client';
+import { readSession } from '@/lib/session/live-session';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import {
   CALL_C2S,
@@ -27,6 +25,8 @@ import {
 import { IDLE, isBusy, reduce, type CallEvent, type CallState } from '@/lib/call/state';
 import { CallPeer, callSupported } from '@/lib/call/peer';
 import type { IceServer } from '@/lib/call/ice';
+import { api } from '@/lib/contract/client';
+import { getCallIceApi } from '@/lib/call/calls.contract';
 import type { CallMuteDuration } from '@/lib/call/mute';
 
 interface CallStore extends CallState {
@@ -57,9 +57,7 @@ let iceServers: IceServer[] = [];
 /** Fetch relay credentials. Short-lived, so they are fetched per call. */
 async function loadIceServers(): Promise<IceServer[]> {
   try {
-    const res = await fetch('/api/calls/ice');
-    if (!res.ok) throw new Error(String(res.status));
-    const body = (await res.json()) as { iceServers?: IceServer[] };
+    const body = await api(getCallIceApi, { retries: 0 });
     return body.iceServers ?? [];
   } catch {
     // A STUN-only fallback still connects for most pairs, which is better than
@@ -120,8 +118,8 @@ export function initCalls(): void {
       // client-supplied id would be an impersonation hole, so the server
       // ignores one — leaving the socket anonymous, which silently disables
       // every call handler and the `user:<id>` room an incoming call rings.
-      const session = await authClient.getSession();
-      return { token: session?.data?.session?.token };
+      const session = await readSession();
+      return { token: session?.session.token };
     },
   });
 

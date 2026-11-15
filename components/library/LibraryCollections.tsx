@@ -11,6 +11,7 @@
  * already live in a collection) and calls `onChanged` after each change.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { BookLeaves } from './BookLeaves';
 import { LibraryDialogShell } from './LibraryDialogShell';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +24,16 @@ import { BlurImage } from '@/components/ui/BlurImage';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import '@/components/library/library.css';
 import '@/components/rmhvibe/vibe.css';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  addLibraryCollectionBookApi,
+  createLibraryCollectionApi,
+  deleteLibraryCollectionApi,
+  generateLibraryCollectionCoverApi,
+  removeLibraryCollectionBookApi,
+  updateLibraryCollectionApi,
+} from '@/lib/library/collections.contract';
 
 /** Cover image styled to fill the 3D book cover (absolute inset-0), with blur-up. */
 const COVER_WRAP = 'absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]';
@@ -65,13 +76,12 @@ export function LibraryCollections({
     );
 
   async function createCollection(title: string, description: string) {
-    const res = await fetch('/api/library/collections', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description }),
-    }).catch(() => null);
+    const ok = await api(createLibraryCollectionApi, { body: { title, description } }).then(
+      () => true,
+      () => false,
+    );
     setCreating(false);
-    if (res?.ok) {
+    if (ok) {
       await onChanged();
     }
   }
@@ -86,10 +96,11 @@ export function LibraryCollections({
       }))
     )
       return;
-    const res = await fetch(`/api/library/collection/${c.id}`, { method: 'DELETE' }).catch(
-      () => null,
+    const ok = await api(deleteLibraryCollectionApi, { params: { id: c.id } }).then(
+      () => true,
+      () => false,
     );
-    if (res?.ok) await onChanged();
+    if (ok) await onChanged();
   }
 
   async function renameCollection(c: CollectionView) {
@@ -98,44 +109,51 @@ export function LibraryCollections({
       c.title,
     );
     if (title === null) return;
-    const res = await fetch(`/api/library/collection/${c.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-    }).catch(() => null);
-    if (res?.ok) await onChanged();
+    const ok = await api(updateLibraryCollectionApi, { params: { id: c.id }, body: { title } }).then(
+      () => true,
+      () => false,
+    );
+    if (ok) await onChanged();
   }
 
   async function addBook(c: CollectionView, slug: string) {
-    const res = await fetch(`/api/library/collection/${c.id}/items`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookSlug: slug }),
-    }).catch(() => null);
-    if (res?.ok) await onChanged();
+    const ok = await api(addLibraryCollectionBookApi, {
+      params: { id: c.id },
+      body: { bookSlug: slug },
+    }).then(
+      () => true,
+      () => false,
+    );
+    if (ok) await onChanged();
   }
 
   async function removeBook(c: CollectionView, slug: string) {
-    const res = await fetch(`/api/library/collection/${c.id}/items`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookSlug: slug }),
-    }).catch(() => null);
-    if (res?.ok) await onChanged();
+    const ok = await api(removeLibraryCollectionBookApi, {
+      params: { id: c.id },
+      body: { bookSlug: slug },
+    }).then(
+      () => true,
+      () => false,
+    );
+    if (ok) await onChanged();
   }
 
   async function generateCover(c: CollectionView) {
     setGenerating(c.id);
-    const res = await fetch(`/api/library/collection/${c.id}/cover`, { method: 'POST' }).catch(
-      () => null,
+    let failure: unknown = null;
+    const ok = await api(generateLibraryCollectionCoverApi, { params: { id: c.id } }).then(
+      () => true,
+      (e: unknown) => {
+        failure = e;
+        return false;
+      },
     );
     setGenerating(null);
-    if (res?.ok) {
+    if (ok) {
       await onChanged();
     } else {
-      const err = await res?.json().catch(() => null);
       window.alert(
-        err?.error ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }),
+        serverError(failure) ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }),
       );
     }
   }
@@ -168,7 +186,7 @@ export function LibraryCollections({
   const openedLive = opened ? (collections.find((c) => c.id === opened.id) ?? opened) : null;
 
   return (
-    <section className="lib__section lib-collections glass-fill lib-section-shell">
+    <section className="lib__section lib-collections relative lib-section-shell">
       <div className="lib-collections__head">
         <h2 className="lib__section-title">
           {t('section-collections', { defaultValue: 'Collections' })}
@@ -301,7 +319,7 @@ function CollectionTile({
     >
       <button
         type="button"
-        className="lib-book lib-coll-tile__btn glass-fill glass-interactive lib-orbit-card"
+        className="lib-book lib-coll-tile__btn surface-press lib-orbit-card"
         data-library-orbit=""
         onClick={onOpen}
         aria-label={t('open-collection', { title: c.title, defaultValue: 'Open {{title}}' })}
@@ -377,7 +395,7 @@ function ViewModal({
 
   return (
     <LibraryDialogShell onClose={onClose}>
-      <div className="glass-overlay lib-upload lib-coll-modal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="surface-overlay lib-upload lib-coll-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <div className="lib-collections__group-titles">
             <h2 className="lib-upload__title">{c.title}</h2>
@@ -427,6 +445,7 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
       <div className="lib-book__3d">
         <div className={`lib-book__cover ${book.coverUrl ? 'has-cover' : ''}`}>
           <span className="lib-book__edge" aria-hidden="true" />
+          <BookLeaves />
           {book.coverUrl ? (
             <BlurImage
               src={book.coverUrl}
@@ -472,7 +491,7 @@ function CreateModal({
   return (
     <LibraryDialogShell onClose={onClose}>
       <div
-        className="glass-overlay lib-upload"
+        className="surface-overlay lib-upload"
         onMouseDown={(e) => e.stopPropagation()}
         style={{ maxWidth: 440 }}
       >
@@ -493,7 +512,7 @@ function CreateModal({
           <label className="lib-upload__label">
             {t('label-title', { defaultValue: 'Title' })}
             <input
-              className="glass-inset lib-upload__input"
+              className="surface-field lib-upload__input"
               value={title}
               maxLength={120}
               autoFocus
@@ -506,7 +525,7 @@ function CreateModal({
           <label className="lib-upload__label">
             {t('label-description', { defaultValue: 'Description' })}
             <textarea
-              className="glass-inset lib-upload__input lib-upload__textarea"
+              className="surface-field lib-upload__input lib-upload__textarea"
               value={description}
               maxLength={500}
               onChange={(e) => setDescription(e.target.value)}
@@ -572,7 +591,7 @@ function AddBooksModal({
 
   return (
     <LibraryDialogShell onClose={onClose}>
-      <div className="glass-overlay lib-upload" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="surface-overlay lib-upload" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
           <h2 className="lib-upload__title">
             {t('add-to-collection', { name: collection.title, defaultValue: 'Add to “{{name}}”' })}
@@ -587,7 +606,7 @@ function AddBooksModal({
           </button>
         </div>
         <input
-          className="glass-inset lib-upload__input"
+          className="surface-field lib-upload__input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('search-your-books', { defaultValue: 'Search your books…' })}

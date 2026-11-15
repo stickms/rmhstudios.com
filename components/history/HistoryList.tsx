@@ -1,11 +1,18 @@
-'use client';
-
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { History, Trash2, Play } from 'lucide-react';
+import { toast } from '@/lib/toast';
+import {
+  History,
+  Trash2,
+  Play,
+} from 'lucide-react';
 
-import { timeAgoShort } from '@/lib/utils';
+import { relativeTimeShort } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -20,89 +27,305 @@ import {
   type HistoryEntityType,
 } from '@/lib/history/constants';
 import type { HistoryView } from '@/lib/history/history.server';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
+import {
+  listHistoryApi,
+  setHistoryPausedApi,
+  clearHistoryApi,
+  removeHistoryEntryApi,
+} from '@/lib/shop/shop.contract';
+import { api } from '@/lib/contract/client';
+import {
+  ARRIVE,
+  useArrivingKeys,
+} from '@/components/ui/arrive';
 
 interface HistoryData {
   items: HistoryView[];
-  nextCursor: string | null;
+  nextCursor:
+    | string
+    | null;
   paused: boolean;
 }
 
-export function HistoryList({ initial }: { initial: HistoryData }) {
-  const { t } = useTranslation('c-history');
-  const confirm = useConfirm();
-  const [items, setItems] = useState<HistoryView[]>(initial.items);
-  const [cursor, setCursor] = useState<string | null>(initial.nextCursor);
-  const [paused, setPaused] = useState(initial.paused);
-  const [filter, setFilter] = useState<HistoryEntityType | 'all'>('all');
-  const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+export function HistoryList({
+  initial,
+}: {
+  initial: HistoryData;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-history',
+    );
+  const confirm =
+    useConfirm();
+  const [
+    items,
+    setItems,
+  ] =
+    useState<
+      HistoryView[]
+    >(
+      initial.items,
+    );
+  const [
+    cursor,
+    setCursor,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      initial.nextCursor,
+    );
+  const [
+    paused,
+    setPaused,
+  ] =
+    useState(
+      initial.paused,
+    );
+  const [
+    filter,
+    setFilter,
+  ] =
+    useState<
+      | HistoryEntityType
+      | 'all'
+    >(
+      'all',
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    mounted,
+    setMounted,
+  ] =
+    useState(
+      false,
+    );
+  const isNew =
+    useArrivingKeys(
+      items.map(
+        (
+          item,
+        ) =>
+          item.id,
+      ),
+    );
 
-  const load = useCallback(
-    async (f: HistoryEntityType | 'all', append = false, cur?: string | null) => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        if (f !== 'all') params.set('type', f);
-        if (append && cur) params.set('cursor', cur);
-        const res = await fetch(`/api/history?${params.toString()}`);
-        if (!res.ok) throw new Error('load failed');
-        const data = (await res.json()) as HistoryData;
-        setItems((prev) => (append ? [...prev, ...data.items] : data.items));
-        setCursor(data.nextCursor);
-      } catch {
-        toast.error(t('load-error', { defaultValue: "Couldn't load your history" }));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [t],
-  );
+  const load =
+    useCallback(
+      async (
+        f:
+          | HistoryEntityType
+          | 'all',
+        append = false,
+        cur?:
+          | string
+          | null,
+      ) => {
+        setLoading(
+          true,
+        );
+        try {
+          const data =
+            await api(
+              listHistoryApi,
+              {
+                query:
+                  {
+                    ...(f !==
+                    'all'
+                      ? {
+                          type: f,
+                        }
+                      : {}),
+                    ...(append &&
+                    cur
+                      ? {
+                          cursor:
+                            cur,
+                        }
+                      : {}),
+                  },
+              },
+            );
+          setItems(
+            (
+              prev,
+            ) =>
+              append
+                ? [
+                    ...prev,
+                    ...data.items,
+                  ]
+                : data.items,
+          );
+          setCursor(
+            data.nextCursor,
+          );
+        } catch {
+          toast.error(
+            t(
+              'load-error',
+              {
+                defaultValue:
+                  "Couldn't load your history",
+              },
+            ),
+          );
+        } finally {
+          setLoading(
+            false,
+          );
+        }
+      },
+      [
+        t,
+      ],
+    );
 
   useEffect(() => {
-    if (!mounted) {
-      setMounted(true);
+    if (
+      !mounted
+    ) {
+      setMounted(
+        true,
+      );
       return;
     }
-    void load(filter);
+    void load(
+      filter,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [
+    filter,
+  ]);
 
-  async function togglePause(next: boolean) {
-    setPaused(next);
+  async function togglePause(
+    next: boolean,
+  ) {
+    setPaused(
+      next,
+    );
     try {
-      await fetch('/api/history', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paused: next }),
-      });
+      await api(
+        setHistoryPausedApi,
+        {
+          body: {
+            paused:
+              next,
+          },
+        },
+      );
     } catch {
-      setPaused(!next);
-      toast.error(t('save-error', { defaultValue: "Couldn't update the setting" }));
+      setPaused(
+        !next,
+      );
+      toast.error(
+        t(
+          'save-error',
+          {
+            defaultValue:
+              "Couldn't update the setting",
+          },
+        ),
+      );
     }
   }
 
   async function clearAll() {
-    const ok = await confirm({
-      title: t('clear-title', { defaultValue: 'Clear all history?' }),
-      description: t('clear-desc', { defaultValue: 'This cannot be undone.' }),
-      danger: true,
-    });
-    if (!ok) return;
-    setItems([]);
-    setCursor(null);
+    const ok =
+      await confirm(
+        {
+          title:
+            t(
+              'clear-title',
+              {
+                defaultValue:
+                  'Clear all history?',
+              },
+            ),
+          description:
+            t(
+              'clear-desc',
+              {
+                defaultValue:
+                  'This cannot be undone.',
+              },
+            ),
+          danger: true,
+        },
+      );
+    if (
+      !ok
+    )
+      return;
+    setItems(
+      [],
+    );
+    setCursor(
+      null,
+    );
     try {
-      await fetch('/api/history', { method: 'DELETE' });
-      toast.success(t('cleared', { defaultValue: 'History cleared' }));
+      await api(
+        clearHistoryApi,
+      );
+      toast.success(
+        t(
+          'cleared',
+          {
+            defaultValue:
+              'History cleared',
+          },
+        ),
+      );
     } catch {
-      toast.error(t('save-error', { defaultValue: "Couldn't update the setting" }));
+      toast.error(
+        t(
+          'save-error',
+          {
+            defaultValue:
+              "Couldn't update the setting",
+          },
+        ),
+      );
     }
   }
 
-  async function removeOne(id: string) {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  async function removeOne(
+    id: string,
+  ) {
+    setItems(
+      (
+        prev,
+      ) =>
+        prev.filter(
+          (
+            i,
+          ) =>
+            i.id !==
+            id,
+        ),
+    );
     try {
-      await fetch(`/api/history/${id}`, { method: 'DELETE' });
+      await api(
+        removeHistoryEntryApi,
+        {
+          params:
+            {
+              id,
+            },
+        },
+      );
     } catch {
       /* best-effort */
     }
@@ -112,57 +335,177 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
     <div className="px-4 pt-4 pb-12">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-sm text-site-text-muted">
-          <Switch checked={paused} onCheckedChange={togglePause} />
-          {t('pause', { defaultValue: 'Pause history' })}
+          <Switch
+            checked={
+              paused
+            }
+            onCheckedChange={
+              togglePause
+            }
+          />
+          {t(
+            'pause',
+            {
+              defaultValue:
+                'Pause history',
+            },
+          )}
         </label>
-        <Button variant="ghost" size="sm" onClick={clearAll} className="text-site-danger">
-          <Trash2 aria-hidden />
-          {t('clear-all', { defaultValue: 'Clear all' })}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={
+            clearAll
+          }
+          className="text-site-danger"
+        >
+          <Trash2
+            aria-hidden
+          />
+          {t(
+            'clear-all',
+            {
+              defaultValue:
+                'Clear all',
+            },
+          )}
         </Button>
       </div>
 
       {/* A scrolling row of mutually-exclusive filter chips is a tab strip.
-          `LiquidTabs scroll` is the shared renderer AND the shared scroller, so
+          `Tabs scroll` is the shared renderer AND the shared scroller, so
           this drops both the `chip()` helper — which was byte-identical to the
           one in `SavesHub`, copy-pasted between two files — and the
           `HorizontalScroller` wrapping it. */}
-      <LiquidTabs
+      <Tabs
         tabs={[
-          { id: 'all', label: t('all', { defaultValue: 'All' }) },
-          ...HISTORY_ENTITY_TYPES.map((type) => ({
-            id: type,
-            label: t(`type-${type}`, { defaultValue: type }),
-          })),
+          {
+            id: 'all',
+            label:
+              t(
+                'all',
+                {
+                  defaultValue:
+                    'All',
+                },
+              ),
+          },
+          ...HISTORY_ENTITY_TYPES.map(
+            (
+              type,
+            ) => ({
+              id: type,
+              label:
+                t(
+                  `type-${type}`,
+                  {
+                    defaultValue:
+                      type,
+                  },
+                ),
+            }),
+          ),
         ]}
-        value={filter}
-        onChange={(id) => setFilter(id as HistoryEntityType | 'all')}
-        scroll
+        value={
+          filter
+        }
+        onChange={(
+          id,
+        ) =>
+          setFilter(
+            id as
+              | HistoryEntityType
+              | 'all',
+          )
+        }
         className="mb-4"
-        aria-label={t('filter-history', { defaultValue: 'Filter history' })}
+        aria-label={t(
+          'filter-history',
+          {
+            defaultValue:
+              'Filter history',
+          },
+        )}
       />
 
-      {items.length === 0 && !loading ? (
+      {items.length ===
+        0 &&
+      !loading ? (
         <EmptyState
-          icon={History}
-          title={t('empty-title', { defaultValue: 'No history yet' })}
-          description={t('empty-desc', {
-            defaultValue: 'Things you watch, play, and read show up here.',
-          })}
+          icon={
+            History
+          }
+          title={t(
+            'empty-title',
+            {
+              defaultValue:
+                'No history yet',
+            },
+          )}
+          description={t(
+            'empty-desc',
+            {
+              defaultValue:
+                'Things you watch, play, and read show up here.',
+            },
+          )}
         />
       ) : (
         <ul className="space-y-3">
-          {items.map((item) => (
-            <li key={item.id}>
-              <HistoryRow item={item} onRemove={() => removeOne(item.id)} />
-            </li>
-          ))}
+          {items.map(
+            (
+              item,
+            ) => (
+              <li
+                key={
+                  item.id
+                }
+                className={
+                  isNew(
+                    item.id,
+                  )
+                    ? ARRIVE
+                    : undefined
+                }
+              >
+                <HistoryRow
+                  item={
+                    item
+                  }
+                  onRemove={() =>
+                    removeOne(
+                      item.id,
+                    )
+                  }
+                />
+              </li>
+            ),
+          )}
         </ul>
       )}
 
       {cursor ? (
         <div className="mt-4 flex justify-center">
-          <Button variant="outline" onClick={() => load(filter, true, cursor)} loading={loading}>
-            {t('load-more', { defaultValue: 'Load more' })}
+          <Button
+            variant="default"
+            onClick={() =>
+              load(
+                filter,
+                true,
+                cursor,
+              )
+            }
+            loading={
+              loading
+            }
+          >
+            {t(
+              'load-more',
+              {
+                defaultValue:
+                  'Load more',
+              },
+            )}
           </Button>
         </div>
       ) : loading ? (
@@ -174,61 +517,135 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
   );
 }
 
-function HistoryRow({ item, onRemove }: { item: HistoryView; onRemove: () => void }) {
-  const { t } = useTranslation('c-history');
-  const ratio = progressRatio(item.position, item.duration);
-  const resumable = shouldResume(item.position, item.duration);
+function HistoryRow({
+  item,
+  onRemove,
+}: {
+  item: HistoryView;
+  onRemove: () => void;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-history',
+    );
+  const ratio =
+    progressRatio(
+      item.position,
+      item.duration,
+    );
+  const resumable =
+    shouldResume(
+      item.position,
+      item.duration,
+    );
 
-  const inner = (
-    <>
-      {item.thumbnail ? (
-        <img
-          src={item.thumbnail}
-          alt=""
-          className="h-12 w-16 shrink-0 rounded-site-sm object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <span className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs uppercase text-site-text-dim">
-          {item.entityType.slice(0, 4)}
-        </span>
-      )}
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          {resumable ? <Play className="size-3 shrink-0 text-site-accent" aria-hidden /> : null}
-          <span className="truncate text-sm font-medium text-site-text">{item.title}</span>
-        </span>
-        {item.subtitle ? (
-          <span className="block truncate text-xs text-site-text-muted">{item.subtitle}</span>
-        ) : null}
-        {ratio != null ? (
-          <span className="mt-1 block h-1 w-full overflow-hidden rounded-full bg-site-surface-active">
-            <span
-              className="block h-full rounded-full bg-site-accent"
-              style={{ width: `${Math.round(ratio * 100)}%` }}
-            />
+  const inner =
+    (
+      <>
+        {item.thumbnail ? (
+          <img
+            src={
+              item.thumbnail
+            }
+            alt=""
+            className="h-12 w-16 shrink-0 rounded-site-sm object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <span className="flex h-12 w-16 shrink-0 items-center justify-center rounded-site-sm bg-site-surface text-xs text-site-text-muted">
+            {item.entityType.slice(
+              0,
+              4,
+            )}
           </span>
-        ) : null}
-      </span>
-      <span className="shrink-0 text-xs text-site-text-dim">{timeAgoShort(item.updatedAt)}</span>
-    </>
-  );
+        )}
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-2">
+            {resumable ? (
+              <Play
+                className="size-3 shrink-0 text-site-accent"
+                aria-hidden
+              />
+            ) : null}
+            <span className="truncate text-sm font-medium text-site-text">
+              {
+                item.title
+              }
+            </span>
+          </span>
+          {item.subtitle ? (
+            <span className="block truncate text-xs text-site-text-muted">
+              {
+                item.subtitle
+              }
+            </span>
+          ) : null}
+          {ratio !=
+          null ? (
+            <span className="mt-1 block h-1 w-full overflow-hidden rounded-full bg-site-surface-active">
+              <span
+                className="block h-full rounded-full bg-site-accent"
+                style={{
+                  width: `${Math.round(ratio * 100)}%`,
+                }}
+              />
+            </span>
+          ) : null}
+        </span>
+        <span className="shrink-0 text-xs text-site-text-muted">
+          <RelativeTime
+            date={
+              item.updatedAt
+            }
+            format={
+              relativeTimeShort
+            }
+          />
+        </span>
+      </>
+    );
 
   return (
-    <Card interactive className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3">
+    <Card
+      interactive
+      className="flex-row items-center gap-3 px-4 py-3 sm:gap-3 sm:py-3"
+    >
       {item.href ? (
-        <a href={item.href} className="flex min-w-0 flex-1 items-center gap-3">
-          {inner}
+        <a
+          href={
+            item.href
+          }
+          className="flex min-w-0 flex-1 items-center gap-3"
+        >
+          {
+            inner
+          }
         </a>
       ) : (
-        <span className="flex min-w-0 flex-1 items-center gap-3">{inner}</span>
+        <span className="flex min-w-0 flex-1 items-center gap-3">
+          {
+            inner
+          }
+        </span>
       )}
       <IconButton
-        icon={Trash2}
+        icon={
+          Trash2
+        }
         variant="ghost"
         size="icon-sm"
-        onClick={onRemove}
-        label={t('remove', { defaultValue: 'Remove' })}
+        onClick={
+          onRemove
+        }
+        label={t(
+          'remove',
+          {
+            defaultValue:
+              'Remove',
+          },
+        )}
       />
     </Card>
   );

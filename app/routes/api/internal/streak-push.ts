@@ -11,8 +11,10 @@ const bodySchema = z.object({
 
 /**
  * POST /api/internal/streak-push — server-to-server web-push fan-out for streak
- * reminders. Called by the Go streak-saver worker (which writes the in-app
- * notification itself). No-ops when VAPID isn't configured. Authorized via the
+ * reminders. Formerly called by the Go streak-saver worker; that now runs in the Node
+ * jobs worker (lib/streak-reminders.server.ts) and calls sendPushToUser directly, so
+ * this route has no in-repo caller (delete it with the next routeTree regeneration).
+ * No-ops when VAPID isn't configured. Authorized via the
  * shared internal secret.
  */
 export const Route = createFileRoute('/api/internal/streak-push')({

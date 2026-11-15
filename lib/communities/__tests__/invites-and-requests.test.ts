@@ -5,6 +5,7 @@
  * concurrency is covered by `invites-concurrency.test.ts` (opt-in, needs a DB).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({
   invite: { count: vi.fn(), create: vi.fn(), findMany: vi.fn(), updateMany: vi.fn(), findFirst: vi.fn() },
@@ -252,9 +253,7 @@ describe('removal and cancellation are remembered', () => {
 describe('only the owner and moderators manage invites and requests', () => {
   type Handler = (ctx: Record<string, unknown>) => Promise<Response>;
   const route = async (mod: string, method: string): Promise<Handler> =>
-    ((await import(/* @vite-ignore */ mod)) as {
-      Route: { options: { server: { handlers: Record<string, Handler> } } };
-    }).Route.options.server.handlers[method];
+    handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method];
 
   beforeEach(() => {
     h.community.findUnique.mockResolvedValue({
@@ -276,12 +275,12 @@ describe('only the owner and moderators manage invites and requests', () => {
     });
 
   const calls: [string, string, Record<string, unknown>][] = [
-    ['@/app/routes/api/communities/$slug/invites', 'GET', {}],
-    ['@/app/routes/api/communities/$slug/invites', 'POST', { body: {} }],
-    ['@/app/routes/api/communities/$slug/invites/$id', 'DELETE', { params: { slug: 's', id: '1' } }],
-    ['@/app/routes/api/communities/$slug/join-requests', 'GET', {}],
+    ['@/lib/communities/api/communities.$slug.invites.server', 'GET', {}],
+    ['@/lib/communities/api/communities.$slug.invites.server', 'POST', { body: {} }],
+    ['@/lib/communities/api/communities.$slug.invites.$id.server', 'DELETE', { params: { slug: 's', id: '1' } }],
+    ['@/lib/communities/api/communities.$slug.join-requests.server', 'GET', {}],
     [
-      '@/app/routes/api/communities/$slug/join-requests/$id',
+      '@/lib/communities/api/communities.$slug.join-requests.$id.server',
       'POST',
       { params: { slug: 's', id: '1' }, body: { decision: 'approve' } },
     ],
@@ -344,7 +343,7 @@ describe('only the owner and moderators manage invites and requests', () => {
       isPrivate: false,
       members: [{ role: 'ADMIN' }],
     });
-    const fn = await route('@/app/routes/api/communities/$slug/invites', 'POST');
+    const fn = await route('@/lib/communities/api/communities.$slug.invites.server', 'POST');
     expect((await fn({ params: { slug: 's' }, userId: 'u', body: {} })).status).toBe(400);
   });
 });
@@ -352,9 +351,7 @@ describe('only the owner and moderators manage invites and requests', () => {
 describe('join route', () => {
   type Handler = (ctx: Record<string, unknown>) => Promise<Response>;
   it('a private community without a valid invite is a generic 404; with one it joins', async () => {
-    const POST = ((await import('@/app/routes/api/communities/$slug/join')) as unknown as {
-      Route: { options: { server: { handlers: { POST: Handler } } } };
-    }).Route.options.server.handlers.POST;
+    const POST = handlersOfModule<Handler>(await import('@/lib/communities/api/communities.$slug.join.server')).POST;
     h.community.findUnique.mockResolvedValue({ id: 'c1', createdById: 'owner', isPrivate: true });
     const ctx = { params: { slug: 's' }, session: { user: { id: 'stranger' } } };
 
@@ -374,9 +371,7 @@ describe('join route', () => {
   });
 
   it('an invite is join-only: repeating it as a member keeps the membership', async () => {
-    const POST = ((await import('@/app/routes/api/communities/$slug/join')) as unknown as {
-      Route: { options: { server: { handlers: { POST: Handler } } } };
-    }).Route.options.server.handlers.POST;
+    const POST = handlersOfModule<Handler>(await import('@/lib/communities/api/communities.$slug.join.server')).POST;
     h.community.findUnique.mockResolvedValue({ id: 'c1', createdById: 'owner', isPrivate: true });
     h.member.findUnique.mockResolvedValue({ id: 'm1' });
     const res = await POST({

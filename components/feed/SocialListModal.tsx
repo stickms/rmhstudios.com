@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { UserAvatar } from'@/components/ui/UserAvatar';
@@ -7,6 +5,10 @@ import { Spinner } from'@/components/ui/spinner';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { Link } from'@tanstack/react-router';
 import { useSession } from'@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { toggleFollowApi } from '@/lib/profile/follow.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface SocialUser {
  id: string;
@@ -35,6 +37,8 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  const initialFetched = useRef(false);
  const fetchingRef = useRef(false);
  const { data: session } = useSession();
+ // Steel M9: rows replace the spinner and fade in; the class stays, so each later page's rows fade as they mount.
+ const arrival = useArrival(users.length > 0 || !loading);
 
  const { t } = useTranslation('feed');
  const title = type ==='followers'? t('followers', { defaultValue:'Followers'}) : t('following', { defaultValue:'Following'});
@@ -112,17 +116,8 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  );
 
  try {
- const res = await fetch(`/api/profile/${encodeURIComponent(targetUser.id)}/follow`, {
- method:'POST',
- });
- if (!res.ok) {
- // Revert
- setUsers((prev) =>
- prev.map((u) =>
- u.id === targetUser.id ? { ...u, isFollowing: wasFollowing } : u
- )
- );
- }
+ // A non-2xx throws HttpError, so the catch below is the revert path.
+ await api(toggleFollowApi, { params: { id: targetUser.id } });
  } catch {
  setUsers((prev) =>
  prev.map((u) =>
@@ -143,7 +138,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  <DialogContent className="max-w-md p-0 gap-0 flex flex-col max-h-[80dvh] overflow-hidden">
  {/* Header */}
  <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
- <DialogTitle className="font-display font-bold text-lg text-site-text">
+ <DialogTitle className="font-semibold text-lg text-site-text">
  {title}
  </DialogTitle>
  </div>
@@ -151,7 +146,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  {/* List */}
  <div className="overflow-y-auto flex-1">
  {users.length === 0 && !loading && (
- <div className="flex flex-col items-center justify-center py-12 px-5 text-center">
+ <div className={cn('flex flex-col items-center justify-center py-12 px-5 text-center', arrival)}>
  <p className="text-site-text font-medium mb-1">{t('no-list-yet', { defaultValue:'No {{title}} yet', title: title.toLowerCase() })}</p>
  <p className="text-sm text-site-text-muted">
  {type ==='followers'
@@ -164,7 +159,10 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  {users.map((user) => (
  <div
  key={user.id}
- className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover transition-colors border-b border-site-border/50"
+ className={cn(
+ 'flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover transition-colors border-b border-site-border/50',
+ arrival,
+ )}
  >
  <Link
  to={`/u/${user.handle || user.id}`as string}
@@ -173,11 +171,11 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  >
  <UserAvatar src={user.image ?? undefined} alt={user.name || t('user-alt', { defaultValue:'User'})} size={40} fallbackName={user.name ?? undefined} />
  <div className="min-w-0">
- <p className="font-bold text-site-text text-sm truncate">
+ <p className="font-semibold text-site-text text-sm truncate">
  {user.name || user.username || t('unknown-user', { defaultValue:'Unknown'})}
  </p>
  {user.handle && (
- <p className="text-xs text-site-text-dim truncate">@{user.handle}</p>
+ <p className="text-xs text-site-text-muted truncate">@{user.handle}</p>
  )}
  </div>
  </Link>
@@ -186,7 +184,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  <button
  onClick={() => handleFollowToggle(user)}
  disabled={followingInProgress.has(user.id)}
- className={`shrink-0 px-4 py-2 rounded-site-sm text-xs font-bold transition-[color,background-color,border-color,scale] duration-site-fast active:scale-95 ${
+ className={`shrink-0 px-4 py-2 rounded-site-sm text-xs font-semibold transition-[color,background-color,border-color,scale] duration-site-fast active:scale-95 ${
  user.isFollowing
  ?'border border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10'
  :'bg-site-accent text-site-bg hover:bg-site-accent-hover'

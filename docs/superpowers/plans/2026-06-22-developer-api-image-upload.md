@@ -6,7 +6,7 @@
 
 **Architecture:** A new additive `Media` Prisma model tracks each upload (owner, storage key, resolved URL, status). The `media_id` is an API-surface abstraction only — posts still store resolved URLs in `RMHark.imageUrls`, so existing posts need zero migration. Core logic lives in small, dependency-injected `lib/media/*` modules (unit-testable without a DB); route handlers and a worker `setInterval` are thin glue. Cleanup is a reconciling sweep behind a `purgeFromCdn` storage abstraction so a future CDN is a one-file change.
 
-**Tech Stack:** TanStack Start file routes, Prisma 7 (+ `@prisma/adapter-pg`), Zod, Vitest, `nanoid`, existing S3-or-local storage (`lib/storage/s3.server.ts`) and magic-byte validation (`lib/slice-it/upload-validation.ts`).
+**Tech Stack:** TanStack Start file routes, Prisma 7 (+ `@prisma/adapter-pg`), Zod, Vitest, `nanoid`, existing S3-or-local storage (`lib/storage/s3.server.ts`) and magic-byte validation (`features/slice-it/engine/upload-validation.ts`).
 
 ## Global Constraints
 
@@ -211,7 +211,7 @@ git commit -m "feat(media): add media_id helpers"
 - Test: `lib/__tests__/media-policy.test.ts`
 
 **Interfaces:**
-- Consumes: `validateImageBuffer`, `detectImageExt` from `@/lib/slice-it/upload-validation`.
+- Consumes: `validateImageBuffer`, `detectImageExt` from `@features/slice-it/engine/upload-validation`.
 - Produces:
   - `MEDIA_MAX_BYTES = 5 * 1024 * 1024`
   - `MAX_MEDIA_PER_POST = 4`
@@ -283,7 +283,7 @@ Expected: FAIL — cannot find module `@/lib/media/policy`.
 `lib/media/policy.ts`:
 
 ```typescript
-import { validateImageBuffer, detectImageExt } from "@/lib/slice-it/upload-validation";
+import { validateImageBuffer, detectImageExt } from "@features/slice-it/engine/upload-validation";
 
 export const MEDIA_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_MEDIA_PER_POST = 4;

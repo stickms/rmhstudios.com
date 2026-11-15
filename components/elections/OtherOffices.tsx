@@ -5,6 +5,10 @@ import { filterOther, otherStats, type OtherRace } from '@/lib/elections/downbal
 import { STATE_CODES, stateName } from '@/lib/elections/states';
 import { fmtInt } from './hooks';
 import { useFollow } from './FollowContext';
+import { api } from '@/lib/contract/client';
+import { getElectionOfficesApi } from '@/lib/elections/elections.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const PAGE = 18;
 
@@ -12,9 +16,7 @@ export function useOffices(cycle: string, live: boolean) {
   return useQuery<{ races: OtherRace[]; updatedAt: string }>({
     queryKey: ['elections-offices', cycle],
     queryFn: async () => {
-      const r = await fetch(`/api/elections/offices?cycle=${encodeURIComponent(cycle)}`);
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionOfficesApi, { query: { cycle }, retries: 0 });
     },
     refetchInterval: live ? 30_000 : 10 * 60_000,
     staleTime: 15_000,
@@ -82,6 +84,7 @@ export function OtherOffices({ cycle, live }: { cycle: string; live: boolean }) 
   const [q, setQ] = useState('');
   const [mine, setMine] = useState(false);
   const [shown, setShown] = useState(PAGE);
+  const arrival = useArrival(!isLoading);
 
   const all = useMemo(() => data?.races ?? [], [data]);
   const stats = useMemo(() => otherStats(all), [all]);
@@ -94,7 +97,7 @@ export function OtherOffices({ cycle, live }: { cycle: string; live: boolean }) 
   if (isLoading) return <div className="el-box el-skel" aria-busy />;
   if (isError || !all.length) {
     return (
-      <p className="el-eyebrow">
+      <p className={cn('el-eyebrow', arrival)}>
         {isError ? t('office.error', { defaultValue: 'Other offices are unavailable right now.' }) : t('office.none', { defaultValue: 'No other offices are published for this election yet.' })}
       </p>
     );
@@ -102,7 +105,7 @@ export function OtherOffices({ cycle, live }: { cycle: string; live: boolean }) 
   const reset = () => setShown(PAGE);
 
   return (
-    <div className="el-stack">
+    <div className={cn('el-stack', arrival)}>
       <div className="el-measure__stats">
         <div className="el-box el-proj el-measure__stat" style={{ margin: 0 }}>
           <span className="el-stat__n" style={{ fontSize: 40 }}>{stats.total}</span>

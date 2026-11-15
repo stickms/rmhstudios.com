@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * RMHHomes — listing detail view.
  *
@@ -19,7 +17,6 @@ import {
   Eye,
   Globe,
   Home,
-  Loader2,
   MapPin,
   MessageCircle,
   PawPrint,
@@ -28,7 +25,7 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -54,6 +51,17 @@ import {
   statusLabel,
 } from '@/lib/homes/format';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
+import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { sendMessageApi } from '@/lib/messages/messages.contract';
+import {
+  deleteHomeListingApi,
+  getHomeListingApi,
+  setHomeListingStatusApi,
+} from '@/lib/homes/homes.contract';
 
 export function ListingDetailView({ id }: { id: string }) {
   const goBack = useBackOrFallback();
@@ -67,6 +75,7 @@ export function ListingDetailView({ id }: { id: string }) {
   const [activeImage, setActiveImage] = useState(0);
   const [messaging, setMessaging] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,11 +83,8 @@ export function ListingDetailView({ id }: { id: string }) {
     setNotFound(false);
     (async () => {
       try {
-        const res = await fetch(`/api/homes/listings/${encodeURIComponent(id)}`);
+        const data = await api(getHomeListingApi, { params: { id }, retries: 0 });
         if (cancelled) return;
-        if (res.status === 404) return setNotFound(true);
-        if (!res.ok) throw new Error('Failed to load listing');
-        const data = await res.json();
         setListing(data.listing);
         setActiveImage(0);
       } catch {
@@ -100,19 +106,20 @@ export function ListingDetailView({ id }: { id: string }) {
     }
     setMessaging(true);
     try {
-      const res = await fetch('/api/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipientId: listing.author.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Could not open conversation');
+      const data = await api(sendMessageApi, { body: { recipientId: listing.author.id } });
       navigate({
         to: '/messages/$conversationId',
         params: { conversationId: data.conversationId },
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not message the poster');
+      toast.error(
+        serverError(err) ??
+          (err instanceof HttpError
+            ? 'Could not open conversation'
+            : err instanceof Error
+              ? err.message
+              : 'Could not message the poster'),
+      );
     } finally {
       setMessaging(false);
     }
@@ -123,16 +130,11 @@ export function ListingDetailView({ id }: { id: string }) {
       if (!listing) return;
       setSavingStatus(true);
       try {
-        const res = await fetch(`/api/homes/listings/${listing.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status }),
-        });
-        if (!res.ok) throw new Error('Could not update status');
+        await api(setHomeListingStatusApi, { params: { id: listing.id }, body: { status } });
         setListing({ ...listing, status });
         toast.success(`Marked ${statusLabel(status).toLowerCase()}`);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Could not update status');
+        toast.error(serverError(err) ?? 'Could not update status');
       } finally {
         setSavingStatus(false);
       }
@@ -145,12 +147,17 @@ export function ListingDetailView({ id }: { id: string }) {
     if (!(await confirm({ title: 'Delete this listing? This cannot be undone.', danger: true })))
       return;
     try {
-      const res = await fetch(`/api/homes/listings/${listing.id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Could not delete');
+      await api(deleteHomeListingApi, { params: { id: listing.id } });
       toast.success('Listing deleted');
       navigate({ to: '/homes/manage' });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not delete listing');
+      toast.error(
+        err instanceof HttpError
+          ? 'Could not delete'
+          : err instanceof Error
+            ? err.message
+            : 'Could not delete listing',
+      );
     }
   }, [listing, navigate, confirm]);
 
@@ -158,7 +165,7 @@ export function ListingDetailView({ id }: { id: string }) {
     return (
       <PageLayout title="Listing" backTo="/homes" wide>
         <div className="grid place-items-center py-24 text-site-text-muted">
-          <Loader2 className="h-8 w-8 animate-spin" />
+          <Spinner size={32} className="text-site-text-muted" />
         </div>
       </PageLayout>
     );
@@ -168,10 +175,11 @@ export function ListingDetailView({ id }: { id: string }) {
     return (
       <PageLayout title="Listing" backTo="/homes" wide>
         <EmptyState
+          className={arrival}
           icon={Home}
           title="This listing is no longer available."
           action={
-            <Button asChild variant="outline">
+            <Button asChild variant="default">
               <Link to="/homes" onClick={goBack}>
                 <ArrowLeft className="h-4 w-4" aria-hidden /> Back to browse
               </Link>
@@ -192,16 +200,17 @@ export function ListingDetailView({ id }: { id: string }) {
 
   return (
     <PageLayout title={listing.title} backTo="/homes" backLabel="Back to browse" wide>
-      <div className="w-full max-w-4xl px-4 pt-4 pb-12">
+      <div data-slot="homes-detail" className={cn('w-full max-w-4xl', arrival)}>
         {/* Owner controls */}
         {listing.isOwner && (
-          <div className="mb-4 glass-fill flex flex-wrap items-center gap-2 rounded-site px-4 py-3">
-            <span className="text-sm text-site-text-dim">You posted this ·</span>
+          <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-site-border pb-3">
+            <span className="t-body text-site-text-muted">You posted this</span>
             <Select
               value={listing.status}
               disabled={savingStatus}
               onChange={(e) => changeStatus(e.target.value as ListingStatus)}
-              className="w-auto"
+              controlSize="sm"
+              containerClassName="w-36"
               aria-label="Listing status"
             >
               <option value="ACTIVE">Active</option>
@@ -209,13 +218,13 @@ export function ListingDetailView({ id }: { id: string }) {
               <option value="SOLD">Sold</option>
               <option value="REMOVED">Hidden</option>
             </Select>
-            <div className="ml-auto flex items-center gap-2">
-              <Button asChild variant="outline" size="sm" className="min-h-11">
+            <div className="ms-auto flex items-center gap-2">
+              <Button asChild variant="default">
                 <Link to="/homes/submit" search={{ edit: listing.id }}>
                   <Pencil className="h-4 w-4" /> Edit
                 </Link>
               </Button>
-              <Button variant="outline" size="sm" onClick={remove} className="min-h-11 text-site-danger">
+              <Button variant="default" onClick={remove} className="text-site-danger">
                 <Trash2 className="h-4 w-4" /> Delete
               </Button>
             </div>
@@ -225,22 +234,14 @@ export function ListingDetailView({ id }: { id: string }) {
         {/* Gallery */}
         {images.length > 0 && (
           <div className="mb-4">
-            <div className="glass-pane relative aspect-[16/9] w-full overflow-hidden">
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-site border border-site-border bg-site-bg-subtle">
               <img
                 src={images[activeImage]}
                 alt={listing.title}
                 className="h-full w-full object-cover"
               />
-              <div className="absolute left-3 top-3 flex gap-1">
-                <Badge variant={listing.listingType === 'RENT' ? 'accent' : 'solid'}>
-                  {listingTypeLabel(listing.listingType)}
-                </Badge>
-                {listing.status !== 'ACTIVE' && (
-                  <Badge variant="warning">{statusLabel(listing.status)}</Badge>
-                )}
-              </div>
               {listing.aiImages.includes(images[activeImage]) && (
-                <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-site-media-scrim-strong px-2.5 py-1 text-xs font-medium text-site-media-ink ">
+                <span className="absolute end-3 bottom-3 inline-flex items-center gap-1 rounded-site-sm bg-site-media-scrim-strong px-2 py-1 text-xs font-medium text-site-media-ink">
                   <Sparkles className="h-3.5 w-3.5" /> Generated by AI
                 </span>
               )}
@@ -252,10 +253,11 @@ export function ListingDetailView({ id }: { id: string }) {
                     key={img}
                     type="button"
                     onClick={() => setActiveImage(i)}
-                    className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-site-sm border transition-colors ${
+                    aria-pressed={i === activeImage}
+                    className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-site-sm border bg-site-bg-subtle transition-colors duration-(--m1) ${
                       i === activeImage
-                        ? 'border-site-accent'
-                        : 'border-site-border hover:border-site-text/40'
+                        ? 'border-site-text'
+                        : 'border-site-border hover:border-site-text'
                     }`}
                   >
                     <img src={img} alt="" className="h-full w-full object-cover" />
@@ -273,13 +275,21 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="text-3xl font-bold text-site-text font-display">
-              {formatPrice(listing.price, listing.listingType)}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="t-heading whitespace-nowrap">
+                {formatPrice(listing.price, listing.listingType)}
+              </span>
+              <span className="t-meta whitespace-nowrap">
+                {listingTypeLabel(listing.listingType)}
+              </span>
+              {listing.status !== 'ACTIVE' && (
+                <Badge variant="warning">{statusLabel(listing.status)}</Badge>
+              )}
             </div>
-            <div className="mt-2 flex items-center gap-2 text-site-text-dim">
-              <MapPin className="h-4 w-4" />
-              <span>{listing.address || location}</span>
+            <div className="t-body mt-1 flex items-center gap-1.5 text-site-text-muted">
+              <MapPin className="size-4 shrink-0" aria-hidden />
+              <span className="min-w-0 break-words">{listing.address || location}</span>
             </div>
           </div>
           {!listing.isOwner && (
@@ -292,7 +302,7 @@ export function ListingDetailView({ id }: { id: string }) {
         </div>
 
         {/* Specs */}
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-x-4 border-y border-site-border sm:grid-cols-4">
           <Spec icon={BedDouble} label={formatBeds(listing.beds)} sub="Bedrooms" />
           <Spec icon={Bath} label={formatBaths(listing.baths)} sub="Bathrooms" />
           <Spec icon={Ruler} label={sqft || '—'} sub="Size" />
@@ -300,7 +310,7 @@ export function ListingDetailView({ id }: { id: string }) {
         </div>
 
         {/* Meta row */}
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-site-text-muted">
+        <div className="t-body mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-site-text-muted">
           {posted && (
             <span className="inline-flex items-center gap-1">
               <CalendarClock className="h-4 w-4" /> Posted {posted}
@@ -319,8 +329,8 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Poster / source card */}
         {isExternal ? (
-          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-5">
-            <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-y border-site-border py-3.5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border border-site-border bg-site-bg-subtle text-site-text">
               <Globe className="h-5 w-5" />
             </span>
             <div className="min-w-0">
@@ -334,7 +344,7 @@ export function ListingDetailView({ id }: { id: string }) {
                 href={listing.externalUrl}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
-                className="ml-auto"
+                className="ms-auto"
               >
                 <Button>
                   <ExternalLink className="h-4 w-4" />
@@ -344,8 +354,8 @@ export function ListingDetailView({ id }: { id: string }) {
             )}
           </div>
         ) : (
-          <div className="mt-4 flex flex-wrap items-center gap-3 glass-fill rounded-site p-5">
-            <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-y border-site-border py-3.5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border border-site-border bg-site-bg-subtle text-site-text">
               {listing.author?.image ? (
                 <img src={listing.author.image} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -359,7 +369,12 @@ export function ListingDetailView({ id }: { id: string }) {
               <div className="truncate font-medium text-site-text">{authorName}</div>
             </div>
             {!listing.isOwner && (
-              <Button onClick={messagePoster} loading={messaging} className="ml-auto">
+              <Button
+                variant="primary"
+                onClick={messagePoster}
+                loading={messaging}
+                className="ms-auto"
+              >
                 {!messaging && <MessageCircle className="h-4 w-4" />}
                 Message
               </Button>
@@ -378,10 +393,10 @@ export function ListingDetailView({ id }: { id: string }) {
 
         {/* Description */}
         <div className="mt-4">
-          <h2 className="mb-2 site-section-label">
-            About this place
-          </h2>
-          <p className="whitespace-pre-wrap text-site-text-dim">{listing.description}</p>
+          <h2 className="mb-2 site-section-label">About this place</h2>
+          <p className="t-prose max-w-[640px] whitespace-pre-wrap break-words">
+            {listing.description}
+          </p>
         </div>
 
         {/* Amenities */}
@@ -390,7 +405,7 @@ export function ListingDetailView({ id }: { id: string }) {
             <h2 className="mb-2 site-section-label">Amenities</h2>
             <div className="flex flex-wrap gap-2">
               {listing.amenities.map((a) => (
-                <Badge key={a} variant="outline" size="lg">
+                <Badge key={a} variant="default">
                   {a}
                 </Badge>
               ))}
@@ -402,7 +417,9 @@ export function ListingDetailView({ id }: { id: string }) {
         {listing.listingType === 'RENT' &&
           listing.propertyType === 'ROOM' &&
           !listing.isOwner &&
-          !isExternal && <RoommateMatch listingId={listing.id} isSignedIn={Boolean(session?.user)} />}
+          !isExternal && (
+            <RoommateMatch listingId={listing.id} isSignedIn={Boolean(session?.user)} />
+          )}
 
         {/* Multi-bedroom rentals: split the rent fairly between rooms (F10). */}
         {listing.listingType === 'RENT' && listing.propertyType !== 'ROOM' && listing.beds >= 2 && (
@@ -427,10 +444,12 @@ export function ListingDetailView({ id }: { id: string }) {
 
 function Spec({ icon: Icon, label, sub }: { icon: typeof Home; label: string; sub: string }) {
   return (
-    <div className="glass-fill rounded-site px-4 py-3">
-      <Icon className="mb-2 h-5 w-5 text-site-accent" />
-      <div className="font-semibold text-site-text">{label}</div>
-      <div className="text-xs text-site-text-muted">{sub}</div>
+    <div className="flex items-center gap-2.5 py-3">
+      <Icon className="size-5 shrink-0 text-site-text-muted" aria-hidden />
+      <div className="min-w-0">
+        <div className="t-body font-medium whitespace-nowrap text-site-text">{label}</div>
+        <div className="t-meta">{sub}</div>
+      </div>
     </div>
   );
 }

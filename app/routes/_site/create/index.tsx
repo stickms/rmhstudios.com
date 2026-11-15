@@ -12,9 +12,10 @@ import { createServerFn } from '@tanstack/react-start';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { listVibePages } from '@/lib/rmhvibe/vibe.server';
 import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab';
+import type { CreationSort } from '@/lib/ranking/best';
 
 const fetchGallery = createServerFn({ method: 'GET' })
-  .validator((data: { q?: string; cursor?: string }) => data)
+  .validator((data: { q?: string; cursor?: string; sort?: CreationSort }) => data)
   .handler(({ data }): Promise<VibeGallery> => Promise.resolve(listVibePages(data)));
 
 export const Route = createFileRoute('/_site/create/')({
@@ -27,21 +28,17 @@ export const Route = createFileRoute('/_site/create/')({
     }),
     links: [buildCanonical('/create')],
   }),
-  loader: async () => ({
-    gallery: await fetchGallery({ data: {} }),
-    // Fresh per load → each refresh re-advertises a different featured mix while
-    // staying deterministic between server render and client hydration.
-    seed: Math.floor(Math.random() * 1_000_000) + 1,
-  }),
+  // The first page in the default sort (Best). The page draws it in this order and does not refetch it.
+  loader: async () => ({ gallery: await fetchGallery({ data: {} }) }),
   component: CreatePagesTab,
 });
 
 function CreatePagesTab() {
-  const { gallery, seed } = Route.useLoaderData();
+  const { gallery } = Route.useLoaderData();
 
   return (
     <div className="cstudio-body cstudio-body--pages">
-      <PagesTab initial={gallery} seed={seed} fetchGallery={fetchGallery} />
+      <PagesTab initial={gallery} fetchGallery={fetchGallery} />
     </div>
   );
 }

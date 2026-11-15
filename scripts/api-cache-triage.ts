@@ -3,7 +3,7 @@
  * as public-cacheable, private-cacheable or no-store.
  *
  * Why this exists: `auth: 'none'` is NOT proof that a response is anonymous-
- * invariant (docs/loading-audit-2026-08-11/03-api-caching.md §2: 46 of 69
+ * invariant (docs/archive/2026/loading-audit-2026-08-11/03-api-caching.md §2: 46 of 69
  * `auth: 'none'` handlers read the session themselves). A `public` cache on one
  * of those serves the first caller's body to everyone. So the verdict here is
  * computed from what the handler *and the functions it calls* actually touch,
@@ -31,6 +31,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import { CACHE_POLICY } from '../lib/api/cache-policies';
+import { registeredApiRoutes } from '../lib/api/route-sources';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const API_DIR = path.join(ROOT, 'app/routes/api');
@@ -488,7 +489,7 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-/** `app/routes/api/users/$id.wishlist.ts` -> `/api/users/$id/wishlist` */
+/** `app/routes/api/balatro/pack.$file.ts` -> `/api/balatro/pack/$file` */
 function routeUrl(file: string): string {
   let rel = path
     .relative(path.join(ROOT, 'app/routes'), file)
@@ -503,7 +504,7 @@ function routeUrl(file: string): string {
   return '/' + rel;
 }
 
-/** File ownership per docs/server-perf-2026-10-21/04-workstreams.md (WS5 owns no api routes). */
+/** File ownership per docs/archive/2026/server-perf-2026-10-21/04-workstreams.md (WS5 owns no api routes). */
 export function ownerOf(url: string): Row['owner'] {
   const ws6 = [
     /^\/api\/og(\/|$)/,
@@ -548,10 +549,9 @@ function compact(node: ts.Node, sf: ts.SourceFile): string {
   return node.getText(sf).replace(/\s+/g, ' ').replace(/,\s*}/g, ' }').slice(0, 160);
 }
 
-function scanRoute(file: string): Omit<Row, 'clientRefs'>[] {
+function scanRoute(file: string, url: string = routeUrl(file)): Omit<Row, 'clientRefs'>[] {
   const sf = loadSource(file)!;
   const rows: Omit<Row, 'clientRefs'>[] = [];
-  const url = routeUrl(file);
 
   const visitHandlers = (obj: ts.ObjectLiteralExpression) => {
     for (const prop of obj.properties) {
@@ -573,12 +573,15 @@ function scanRoute(file: string): Omit<Row, 'clientRefs'>[] {
         if (
           ts.isCallExpression(init) &&
           ts.isIdentifier(init.expression) &&
-          init.expression.text === 'defineHandler'
+          (init.expression.text === 'defineHandler' || init.expression.text === 'implement')
         ) {
+          // `implement(contract, options, fn)` (lib/api/implement.server.ts) IS defineHandler
+          // with the contract in front, so its options and handler sit one argument later.
           wrapper = 'defineHandler';
-          const a0 = init.arguments[0] && unwrap(init.arguments[0]);
+          const at = init.expression.text === 'implement' ? 1 : 0;
+          const a0 = init.arguments[at] && unwrap(init.arguments[at]);
           if (a0 && ts.isObjectLiteralExpression(a0)) options = a0;
-          const a1 = init.arguments[1] && unwrap(init.arguments[1]);
+          const a1 = init.arguments[at + 1] && unwrap(init.arguments[at + 1]);
           if (a1 && (ts.isArrowFunction(a1) || ts.isFunctionExpression(a1))) fn = a1;
         } else if (ts.isArrowFunction(init) || ts.isFunctionExpression(init)) {
           fn = init;
@@ -648,6 +651,16 @@ function scanRoute(file: string): Omit<Row, 'clientRefs'>[] {
       ts.isObjectLiteralExpression(node.initializer)
     ) {
       visitHandlers(node.initializer);
+    }
+    // A registered endpoint (lib/api/route.server.ts): `apiRoute('/api/…', { GET: … })`.
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'apiRoute' &&
+      node.arguments[1] &&
+      ts.isObjectLiteralExpression(node.arguments[1])
+    ) {
+      visitHandlers(node.arguments[1]);
     }
     ts.forEachChild(node, find);
   };
@@ -737,7 +750,7 @@ function classify(
 
 /** Count references to each `/api/...` URL in client + server source. */
 function countClientRefs(urls: string[]): Map<string, number> {
-  const dirs = ['app', 'components', 'hooks', 'lib', 'stores', 'server'].map((d) =>
+  const dirs = ['app', 'components', 'hooks', 'lib', 'stores', 'server', 'features'].map((d) =>
     path.join(ROOT, d),
   );
   const refs: string[] = [];
@@ -870,6 +883,9 @@ export function triage(): Row[] {
   const files = walk(API_DIR).filter((f) => !f.includes(`${path.sep}v1${path.sep}`));
   const base: Omit<Row, 'clientRefs'>[] = [];
   for (const f of files) base.push(...scanRoute(f));
+  // Endpoints registered behind the dispatcher `app/routes/api/$.ts` (third-pass audit AR3)
+  // are handlers like any route file; they declare their own path.
+  for (const r of registeredApiRoutes(ROOT)) base.push(...scanRoute(path.join(ROOT, r.file), r.template));
   const counts = countClientRefs([...new Set(base.map((r) => r.url))]);
   return base.map((r) => ({ ...r, clientRefs: counts.get(r.url) ?? 0 }));
 }

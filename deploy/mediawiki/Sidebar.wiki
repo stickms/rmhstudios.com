@@ -1,0 +1,17 @@
+* navigation
+** mainpage|mainpage-description
+** recentchanges-url|recentchanges
+** randompage-url|randompage
+* Articles
+** About RMH Studios|About RMH Studios
+** Games|Games
+** Apps|Apps
+** RMHarks|RMHarks
+** Coins and memberships|Coins and memberships
+** Developer API|Developer API
+** Editing this wiki|Editing this wiki
+* RMH Studios
+** https://rmhstudios.com|rmhstudios.com
+* SEARCH
+* TOOLBOX
+* LANGUAGES

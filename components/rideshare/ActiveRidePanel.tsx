@@ -1,20 +1,8 @@
-'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion } from 'framer-motion';
-import {
-  Loader2,
-  Car,
-  Star,
-  Navigation,
-  Flag,
-  CheckCircle2,
-  XCircle,
-  MapPin,
-  Crosshair,
-} from 'lucide-react';
-import { toast } from 'sonner';
+import { Car, Star, Navigation, Flag, CheckCircle2, XCircle, MapPin, Crosshair } from 'lucide-react';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { RideMap } from './RideMap';
 import { RideChat, type RideChatMessage } from './RideChat';
@@ -26,6 +14,15 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, type LatLng } from '@/lib/rideshare/geo';
 import { useDriverLocationShare } from '@/lib/rideshare/useDriverLocationShare';
+import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  rateRideApi,
+  rideActionApi,
+  sendRideMessageApi,
+  syncRideApi,
+} from '@/lib/rideshare/rideshare.contract';
 
 type RideStatus = 'REQUESTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
@@ -130,22 +127,20 @@ export function ActiveRidePanel({
   const sync = useCallback(async () => {
     const seq = ++syncSeq.current;
     try {
-      const res = await fetch(`/api/rideshare/rides/${rideId}/sync`);
+      const data = await api(syncRideApi, { params: { id: rideId }, retries: 0 });
       if (seq !== syncSeq.current) return;
-      if (res.ok) {
-        const data = await res.json();
-        if (seq !== syncSeq.current) return;
-        setRide(data.ride);
-        setRole(data.role);
-        if (lastStatus.current && lastStatus.current !== data.ride.status) {
-          onChange?.();
-        }
-        lastStatus.current = data.ride.status;
-        // Stop polling once the trip is over — nothing else will change.
-        if ((data.ride.status === 'COMPLETED' || data.ride.status === 'CANCELLED') && intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
+      // The panel only renders matched trips, so the SCHEDULED state the wire type
+      // allows never reaches it.
+      setRide(data.ride as SyncRide);
+      setRole(data.role);
+      if (lastStatus.current && lastStatus.current !== data.ride.status) {
+        onChange?.();
+      }
+      lastStatus.current = data.ride.status as RideStatus;
+      // Stop polling once the trip is over — nothing else will change.
+      if ((data.ride.status === 'COMPLETED' || data.ride.status === 'CANCELLED') && intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     } catch {
       /* transient — the next poll retries */
@@ -176,20 +171,11 @@ export function ActiveRidePanel({
     actingRef.current = true;
     setBusy(true);
     try {
-      const res = await fetch(`/api/rideshare/rides/${rideId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t("action-failed", { defaultValue: "Action failed." }));
-        return;
-      }
+      await api(rideActionApi, { params: { id: rideId }, body: { action } });
       await sync();
       onChange?.();
-    } catch {
-      toast.error(t("action-failed", { defaultValue: "Action failed." }));
+    } catch (e) {
+      toast.error(serverError(e) || t("action-failed", { defaultValue: "Action failed." }));
     } finally {
       actingRef.current = false;
       setBusy(false);
@@ -197,14 +183,10 @@ export function ActiveRidePanel({
   }
 
   async function sendMessage(content: string) {
-    const res = await fetch(`/api/rideshare/rides/${rideId}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
-    });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      toast.error(data.error || t("could-not-send-message", { defaultValue: "Could not send message." }));
+    try {
+      await api(sendRideMessageApi, { params: { id: rideId }, body: { content } });
+    } catch (e) {
+      toast.error(serverError(e) || t("could-not-send-message", { defaultValue: "Could not send message." }));
       return;
     }
     sync();
@@ -214,35 +196,21 @@ export function ActiveRidePanel({
     if (rating !== null) return;
     setRating(value);
     try {
-      const res = await fetch(`/api/rideshare/rides/${rideId}/rate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: value }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setRating(null);
-        toast.error(data.error || t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
-        return;
-      }
+      await api(rateRideApi, { params: { id: rideId }, body: { rating: value } });
       // Stays read-only at the submitted value until sync reports it.
       toast.success(t("thanks-for-rating", { defaultValue: "Thanks for your rating!" }));
       sync();
-    } catch {
+    } catch (e) {
       setRating(null);
-      toast.error(t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
+      toast.error(serverError(e) || t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
     }
   }
 
   async function tip(cents: number) {
-    const res = await fetch(`/api/rideshare/rides/${rideId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'tip', tipCents: cents }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      toast.error(data.error || t("could-not-add-tip", { defaultValue: "Could not add your tip." }));
+    try {
+      await api(rideActionApi, { params: { id: rideId }, body: { action: 'tip', tipCents: cents } });
+    } catch (e) {
+      toast.error(serverError(e) || t("could-not-add-tip", { defaultValue: "Could not add your tip." }));
       return;
     }
     toast.success(t("tip-sent", { defaultValue: "Tip sent — thank you!" }));
@@ -251,8 +219,8 @@ export function ActiveRidePanel({
 
   if (loading) {
     return (
-      <div className="flex justify-center glass-fill rounded-site py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-site-text-muted" />
+      <div className="flex justify-center rounded-site py-12">
+        <Spinner size={24} className="text-site-text-muted" />
       </div>
     );
   }
@@ -275,9 +243,9 @@ export function ActiveRidePanel({
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       {/* Status timeline */}
-      <div className="glass-fill rounded-site p-5">
+      <div className="rounded-site p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-site-text">{rideClassName(ride.rideClass)}</h2>
+          <h2 className="text-lg font-semibold text-site-text">{rideClassName(ride.rideClass)}</h2>
           {status === 'CANCELLED' ? (
             <span className="flex items-center gap-1 rounded-full bg-site-surface-hover px-2.5 py-1 text-xs font-medium text-site-text-muted">
               <XCircle className="h-3.5 w-3.5" /> {t("cancelled", { defaultValue: "Cancelled" })}
@@ -298,12 +266,12 @@ export function ActiveRidePanel({
                   <div className="flex flex-col items-center gap-1">
                     <div
                       className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-                        reached ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface-hover text-site-text-dim'
+                        reached ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface-hover text-site-text-muted'
                       }`}
                     >
                       <step.icon className="h-4 w-4" />
                     </div>
-                    <span className={`text-xs ${reached ? 'text-site-text' : 'text-site-text-dim'}`}>
+                    <span className={`text-xs ${reached ? 'text-site-text' : 'text-site-text-muted'}`}>
                       {step.key === 'REQUESTED' ? t("step-requested", { defaultValue: "Requested" })
                         : step.key === 'ACCEPTED' ? t("step-matched", { defaultValue: "Matched" })
                         : step.key === 'IN_PROGRESS' ? t("step-on-trip", { defaultValue: "On trip" })
@@ -326,7 +294,7 @@ export function ActiveRidePanel({
 
       {/* Other party */}
       {other && (
-        <div className="flex items-center gap-3 glass-fill rounded-site p-5">
+        <div className="flex items-center gap-3 rounded-site p-5">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-site-accent/15 text-site-accent">
             <Car className="h-5 w-5" />
           </div>
@@ -351,7 +319,7 @@ export function ActiveRidePanel({
 
       {/* Driver location-sharing hint */}
       {sharingActive && (
-        <div className="flex items-center gap-2 glass-fill rounded-site px-4 py-2.5 text-xs">
+        <div className="flex items-center gap-2 rounded-site px-4 py-2.5 text-xs">
           <Crosshair className={`h-4 w-4 ${locationState === 'sharing' ? 'text-site-success' : 'text-site-warning'}`} />
           <span className="text-site-text-muted">
             {locationState === 'sharing'
@@ -395,7 +363,7 @@ export function ActiveRidePanel({
 
       {/* Completed → rate */}
       {status === 'COMPLETED' && (
-        <div className="glass-fill rounded-site p-5 text-center">
+        <div className="rounded-site p-5 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-site-success" />
           <h3 className="mt-2 font-semibold text-site-text">
             {myRatingGiven ? t("thanks-for-riding", { defaultValue: "Thanks for riding with RMH!" }) : (isDriver ? t("rate-your-rider", { defaultValue: "Rate your rider" }) : t("rate-your-driver", { defaultValue: "Rate your driver" }))}
@@ -423,7 +391,7 @@ export function ActiveRidePanel({
 
       {/* Dismiss a finished trip */}
       {(status === 'COMPLETED' || status === 'CANCELLED') && onClose && (
-        <Button type="button" variant="outline" className="w-full" onClick={onClose}>
+        <Button type="button" variant="default" className="w-full" onClick={onClose}>
           {t("done", { defaultValue: "Done" })}
         </Button>
       )}
@@ -441,7 +409,7 @@ export function ActiveRidePanel({
               <Flag aria-hidden /> {t("complete-trip", { defaultValue: "Complete trip" })}
             </Button>
           )}
-          <Button variant="outline" className="text-site-danger" onClick={() => act('cancel')} disabled={busy}>
+          <Button variant="default" className="text-site-danger" onClick={() => act('cancel')} disabled={busy}>
             <XCircle aria-hidden /> {t("cancel", { defaultValue: "Cancel" })}
           </Button>
         </div>

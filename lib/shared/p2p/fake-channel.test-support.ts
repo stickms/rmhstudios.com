@@ -33,10 +33,23 @@ import type { ChannelLike } from './channel';
 class SeededStream {
   private idum = 0;
   private iy = 0;
-  private readonly iv = new Int32Array(32);
+  private readonly iv =
+    new Int32Array(
+      32,
+    );
 
-  constructor(seed: number) {
-    this.idum = seed < 0 ? seed | 0 : -(seed | 0);
+  constructor(
+    seed: number,
+  ) {
+    this.idum =
+      seed <
+      0
+        ? seed |
+          0
+        : -(
+            seed |
+            0
+          );
   }
 
   private generate(): number {
@@ -44,55 +57,216 @@ class SeededStream {
     const IM = 2147483647;
     const IQ = 127773;
     const IR = 2836;
-    const NDIV = 1 + Math.floor((IM - 1) / 32);
+    const NDIV =
+      1 +
+      Math.floor(
+        (IM -
+          1) /
+          32,
+      );
     let k: number;
-    if (this.idum <= 0 || this.iy === 0) {
-      this.idum = -this.idum < 1 ? 1 : -this.idum;
-      for (let j = 32 + 7; j >= 0; j--) {
-        k = Math.floor(this.idum / IQ);
-        this.idum = IA * (this.idum - k * IQ) - IR * k;
-        if (this.idum < 0) this.idum += IM;
-        if (j < 32) this.iv[j] = this.idum;
+    if (
+      this
+        .idum <=
+        0 ||
+      this
+        .iy ===
+        0
+    ) {
+      this.idum =
+        -this
+          .idum <
+        1
+          ? 1
+          : -this
+              .idum;
+      for (
+        let j =
+          32 +
+          7;
+        j >=
+        0;
+        j--
+      ) {
+        k =
+          Math.floor(
+            this
+              .idum /
+              IQ,
+          );
+        this.idum =
+          IA *
+            (this
+              .idum -
+              k *
+                IQ) -
+          IR *
+            k;
+        if (
+          this
+            .idum <
+          0
+        )
+          this.idum +=
+            IM;
+        if (
+          j <
+          32
+        )
+          this.iv[
+            j
+          ] =
+            this.idum;
       }
-      this.iy = this.iv[0];
+      this.iy =
+        this.iv[0];
     }
-    k = Math.floor(this.idum / IQ);
-    this.idum = IA * (this.idum - k * IQ) - IR * k;
-    if (this.idum < 0) this.idum += IM;
-    const j = Math.floor(this.iy / NDIV);
-    this.iy = this.iv[j];
-    this.iv[j] = this.idum;
-    return this.iy;
+    k =
+      Math.floor(
+        this
+          .idum /
+          IQ,
+      );
+    this.idum =
+      IA *
+        (this
+          .idum -
+          k *
+            IQ) -
+      IR *
+        k;
+    if (
+      this
+        .idum <
+      0
+    )
+      this.idum +=
+        IM;
+    const j =
+      Math.floor(
+        this
+          .iy /
+          NDIV,
+      );
+    this.iy =
+      this.iv[
+        j
+      ];
+    this.iv[
+      j
+    ] =
+      this.idum;
+    return this
+      .iy;
   }
 
   /** Uniform float in [lo, hi). */
-  randomFloat(lo = 0, hi = 1): number {
-    const fl = Math.min((1 / 2147483647) * this.generate(), 1 - 1.2e-7);
-    return fl * (hi - lo) + lo;
+  randomFloat(
+    lo = 0,
+    hi = 1,
+  ): number {
+    const fl =
+      Math.min(
+        (1 /
+          2147483647) *
+          this.generate(),
+        1 -
+          1.2e-7,
+      );
+    return (
+      fl *
+        (hi -
+          lo) +
+      lo
+    );
   }
 }
 
 export class FakeNet {
   now = 0;
-  private queue: Array<{ at: number; seq: number; fn: () => void }> = [];
+  private queue: Array<{
+    at: number;
+    seq: number;
+    fn: () => void;
+  }> =
+    [];
   private seq = 0;
 
-  at(at: number, fn: () => void): void {
-    const item = { at: Math.max(at, this.now), seq: this.seq++, fn };
+  at(
+    at: number,
+    fn: () => void,
+  ): void {
+    const item =
+      {
+        at: Math.max(
+          at,
+          this
+            .now,
+        ),
+        seq: this
+          .seq++,
+        fn,
+      };
     // Sorted insert (few items in flight).
-    let i = this.queue.length;
-    while (i > 0 && (this.queue[i - 1].at > item.at || (this.queue[i - 1].at === item.at && this.queue[i - 1].seq > item.seq))) i--;
-    this.queue.splice(i, 0, item);
+    let i =
+      this
+        .queue
+        .length;
+    while (
+      i >
+        0 &&
+      (this
+        .queue[
+        i -
+          1
+      ]
+        .at >
+        item.at ||
+        (this
+          .queue[
+          i -
+            1
+        ]
+          .at ===
+          item.at &&
+          this
+            .queue[
+            i -
+              1
+          ]
+            .seq >
+            item.seq))
+    )
+      i--;
+    this.queue.splice(
+      i,
+      0,
+      item,
+    );
   }
 
   /** Runs everything due up to `to` (ms), moving `now` along. */
-  advance(to: number): void {
-    while (this.queue.length > 0 && this.queue[0].at <= to) {
-      const item = this.queue.shift()!;
-      this.now = item.at;
+  advance(
+    to: number,
+  ): void {
+    while (
+      this
+        .queue
+        .length >
+        0 &&
+      this
+        .queue[0]
+        .at <=
+        to
+    ) {
+      const item =
+        this.queue.shift()!;
+      this.now =
+        item.at;
       item.fn();
     }
-    this.now = to;
+    this.now =
+      to;
   }
 }
 
@@ -129,13 +303,28 @@ export interface FakeChannel extends ChannelLike {
 }
 
 class Channel implements FakeChannel {
-  readyState: ChannelLike['readyState'] = 'connecting';
+  readyState: ChannelLike['readyState'] =
+    'connecting';
   bufferedAmount = 0;
   bufferedAmountLowThreshold = 0;
-  onmessage: ((data: Uint8Array) => void) | null = null;
-  onopen: (() => void) | null = null;
-  onclose: (() => void) | null = null;
-  onbufferedamountlow: (() => void) | null = null;
+  onmessage:
+    | ((
+        data: Uint8Array,
+      ) => void)
+    | null =
+    null;
+  onopen:
+    | (() => void)
+    | null =
+    null;
+  onclose:
+    | (() => void)
+    | null =
+    null;
+  onbufferedamountlow:
+    | (() => void)
+    | null =
+    null;
   overMtu = 0;
   sent = 0;
   lost = 0;
@@ -151,81 +340,241 @@ class Channel implements FakeChannel {
     private readonly ordered: boolean,
   ) {}
 
-  send(data: Uint8Array): void {
-    if (this.readyState !== 'open') throw new Error(`InvalidStateError: ${this.label} is ${this.readyState}`);
-    const cfg = this.dir.cfg;
-    if (data.byteLength > cfg.maxMessageSize) throw new Error('OperationError: message too large');
-    this.sent++;
-    if (!this.ordered && data.byteLength > cfg.mtu) {
-      this.overMtu++;
+  send(
+    data: Uint8Array,
+  ): void {
+    if (
+      this
+        .readyState !==
+      'open'
+    )
+      throw new Error(
+        `InvalidStateError: ${this.label} is ${this.readyState}`,
+      );
+    const cfg =
+      this
+        .dir
+        .cfg;
+    if (
+      data.byteLength >
+      cfg.maxMessageSize
+    )
+      throw new Error(
+        'OperationError: message too large',
+      );
+    this
+      .sent++;
+    if (
+      !this
+        .ordered &&
+      data.byteLength >
+        cfg.mtu
+    ) {
+      this
+        .overMtu++;
       return;
     }
-    const copy = data.slice();
-    const size = copy.byteLength;
-    this.bufferedAmount += size;
-    this.inFlight++;
-    const departAt = Math.max(this.net.now, this.dir.departFree) + (size / cfg.bandwidth) * 1000;
-    this.dir.departFree = departAt;
-    this.net.at(departAt, () => {
-      const before = this.bufferedAmount;
-      this.bufferedAmount -= size;
-      if (before > this.bufferedAmountLowThreshold && this.bufferedAmount <= this.bufferedAmountLowThreshold) {
-        this.onbufferedamountlow?.();
-      }
-      this.transmit(copy);
-    });
+    const copy =
+      data.slice();
+    const size =
+      copy.byteLength;
+    this.bufferedAmount +=
+      size;
+    this
+      .inFlight++;
+    const departAt =
+      Math.max(
+        this
+          .net
+          .now,
+        this
+          .dir
+          .departFree,
+      ) +
+      (size /
+        cfg.bandwidth) *
+        1000;
+    this.dir.departFree =
+      departAt;
+    this.net.at(
+      departAt,
+      () => {
+        const before =
+          this
+            .bufferedAmount;
+        this.bufferedAmount -=
+          size;
+        if (
+          before >
+            this
+              .bufferedAmountLowThreshold &&
+          this
+            .bufferedAmount <=
+            this
+              .bufferedAmountLowThreshold
+        ) {
+          this.onbufferedamountlow?.();
+        }
+        this.transmit(
+          copy,
+        );
+      },
+    );
   }
 
-  private transmit(data: Uint8Array): void {
-    const { cfg, rng } = this.dir;
-    const jitter = () => (cfg.jitterMs > 0 ? rng.randomFloat(-cfg.jitterMs, cfg.jitterMs) : 0);
-    let arrive = this.net.now + cfg.latencyMs + jitter();
-    if (this.ordered) {
+  private transmit(
+    data: Uint8Array,
+  ): void {
+    const {
+      cfg,
+      rng,
+    } =
+      this
+        .dir;
+    const jitter =
+      () =>
+        cfg.jitterMs >
+        0
+          ? rng.randomFloat(
+              -cfg.jitterMs,
+              cfg.jitterMs,
+            )
+          : 0;
+    let arrive =
+      this
+        .net
+        .now +
+      cfg.latencyMs +
+      jitter();
+    if (
+      this
+        .ordered
+    ) {
       // Retransmit until it gets through: each loss costs an RTO.
-      while (cfg.loss > 0 && rng.randomFloat() < cfg.loss) arrive += cfg.latencyMs * 2 + 20;
-      arrive = Math.max(arrive, this.dir.lastDelivery);
-      this.dir.lastDelivery = arrive;
+      while (
+        cfg.loss >
+          0 &&
+        rng.randomFloat() <
+          cfg.loss
+      )
+        arrive +=
+          cfg.latencyMs *
+            2 +
+          20;
+      arrive =
+        Math.max(
+          arrive,
+          this
+            .dir
+            .lastDelivery,
+        );
+      this.dir.lastDelivery =
+        arrive;
     } else {
-      if (cfg.loss > 0 && rng.randomFloat() < cfg.loss) {
-        this.lost++;
-        this.inFlight--;
+      if (
+        cfg.loss >
+          0 &&
+        rng.randomFloat() <
+          cfg.loss
+      ) {
+        this
+          .lost++;
+        this
+          .inFlight--;
         this.maybeFinishClose();
         return;
       }
-      if (cfg.reorder && rng.randomFloat() < 0.1) arrive += rng.randomFloat(0, cfg.latencyMs * 2);
+      if (
+        cfg.reorder &&
+        rng.randomFloat() <
+          0.1
+      )
+        arrive +=
+          rng.randomFloat(
+            0,
+            cfg.latencyMs *
+              2,
+          );
     }
-    this.net.at(arrive, () => {
-      this.inFlight--;
-      if (!this.partition && this.peer.readyState === 'open') {
-        this.delivered++;
-        this.peer.onmessage?.(data);
-      }
-      this.maybeFinishClose();
-    });
+    this.net.at(
+      arrive,
+      () => {
+        this
+          .inFlight--;
+        if (
+          !this
+            .partition &&
+          this
+            .peer
+            .readyState ===
+            'open'
+        ) {
+          this
+            .delivered++;
+          this.peer.onmessage?.(
+            data,
+          );
+        }
+        this.maybeFinishClose();
+      },
+    );
   }
 
   open(): void {
-    if (this.readyState !== 'connecting') return;
-    this.readyState = 'open';
+    if (
+      this
+        .readyState !==
+      'connecting'
+    )
+      return;
+    this.readyState =
+      'open';
     this.onopen?.();
   }
 
   close(): void {
-    if (this.readyState === 'closed' || this.readyState === 'closing') return;
-    this.readyState = 'closing';
+    if (
+      this
+        .readyState ===
+        'closed' ||
+      this
+        .readyState ===
+        'closing'
+    )
+      return;
+    this.readyState =
+      'closing';
     this.maybeFinishClose();
   }
 
   private maybeFinishClose(): void {
-    if (this.readyState !== 'closing' || this.inFlight > 0) return;
+    if (
+      this
+        .readyState !==
+        'closing' ||
+      this
+        .inFlight >
+        0
+    )
+      return;
     this.finish();
     // A partitioned network does not carry the close either.
-    if (!this.partition) this.peer.finish();
+    if (
+      !this
+        .partition
+    )
+      this.peer.finish();
   }
 
   finish(): void {
-    if (this.readyState === 'closed') return;
-    this.readyState = 'closed';
+    if (
+      this
+        .readyState ===
+      'closed'
+    )
+      return;
+    this.readyState =
+      'closed';
     this.onclose?.();
   }
 
@@ -235,19 +584,38 @@ class Channel implements FakeChannel {
   }
 }
 
-function direction(cfg: PathConfig, seed: number): Direction {
+function direction(
+  cfg: PathConfig,
+  seed: number,
+): Direction {
   return {
     cfg: {
-      latencyMs: cfg.latencyMs,
-      jitterMs: cfg.jitterMs ?? 0,
-      loss: cfg.loss ?? 0,
-      reorder: cfg.reorder ?? false,
-      bandwidth: cfg.bandwidth ?? 1e9,
-      mtu: cfg.mtu ?? 1_200,
-      maxMessageSize: cfg.maxMessageSize ?? 256 * 1024,
+      latencyMs:
+        cfg.latencyMs,
+      jitterMs:
+        cfg.jitterMs ??
+        0,
+      loss:
+        cfg.loss ??
+        0,
+      reorder:
+        cfg.reorder ??
+        false,
+      bandwidth:
+        cfg.bandwidth ??
+        1e9,
+      mtu:
+        cfg.mtu ??
+        1_200,
+      maxMessageSize:
+        cfg.maxMessageSize ??
+        256 *
+          1024,
       seed,
     },
-    rng: new SeededStream(seed),
+    rng: new SeededStream(
+      seed,
+    ),
     departFree: 0,
     lastDelivery: 0,
   };
@@ -260,17 +628,53 @@ export function fakeChannelPair(
   ordered: boolean,
   path: PathConfig,
   openMs = 50,
-): [FakeChannel, FakeChannel] {
-  const seed = path.seed ?? 1;
-  const a = new Channel(`${label}:a`, net, direction(path, seed * 2 + 1), ordered);
-  const b = new Channel(`${label}:b`, net, direction(path, seed * 2 + 2), ordered);
-  a.peer = b;
-  b.peer = a;
-  net.at(net.now + openMs, () => {
-    a.open();
-    b.open();
-  });
-  return [a, b];
+): [
+  FakeChannel,
+  FakeChannel,
+] {
+  const seed =
+    path.seed ??
+    1;
+  const a =
+    new Channel(
+      `${label}:a`,
+      net,
+      direction(
+        path,
+        seed *
+          2 +
+          1,
+      ),
+      ordered,
+    );
+  const b =
+    new Channel(
+      `${label}:b`,
+      net,
+      direction(
+        path,
+        seed *
+          2 +
+          2,
+      ),
+      ordered,
+    );
+  a.peer =
+    b;
+  b.peer =
+    a;
+  net.at(
+    net.now +
+      openMs,
+    () => {
+      a.open();
+      b.open();
+    },
+  );
+  return [
+    a,
+    b,
+  ];
 }
 
 /** The two channels of a peer connection: `[hostSide, memberSide]` for each. */
@@ -278,9 +682,66 @@ export function fakeConnection(
   net: FakeNet,
   path: PathConfig,
   openMs = 50,
-): { host: { unreliable: FakeChannel; reliable: FakeChannel }; member: { unreliable: FakeChannel; reliable: FakeChannel } } {
-  const seed = path.seed ?? 1;
-  const [hu, mu] = fakeChannelPair(net, 'unreliable', false, { ...path, seed: seed * 7 + 1 }, openMs);
-  const [hr, mr] = fakeChannelPair(net, 'reliable', true, { ...path, seed: seed * 7 + 2 }, openMs);
-  return { host: { unreliable: hu, reliable: hr }, member: { unreliable: mu, reliable: mr } };
+): {
+  host: {
+    unreliable: FakeChannel;
+    reliable: FakeChannel;
+  };
+  member: {
+    unreliable: FakeChannel;
+    reliable: FakeChannel;
+  };
+} {
+  const seed =
+    path.seed ??
+    1;
+  const [
+    hu,
+    mu,
+  ] =
+    fakeChannelPair(
+      net,
+      'unreliable',
+      false,
+      {
+        ...path,
+        seed:
+          seed *
+            7 +
+          1,
+      },
+      openMs,
+    );
+  const [
+    hr,
+    mr,
+  ] =
+    fakeChannelPair(
+      net,
+      'reliable',
+      true,
+      {
+        ...path,
+        seed:
+          seed *
+            7 +
+          2,
+      },
+      openMs,
+    );
+  return {
+    host: {
+      unreliable:
+        hu,
+      reliable:
+        hr,
+    },
+    member:
+      {
+        unreliable:
+          mu,
+        reliable:
+          mr,
+      },
+  };
 }

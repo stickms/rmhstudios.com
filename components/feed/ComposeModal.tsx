@@ -1,10 +1,7 @@
-'use client';
-
 import { useState, useRef, useEffect } from'react';
 import { useTranslation } from'react-i18next';
 import { X, Plus, BarChart3, ImagePlus } from'lucide-react';
-import { GifEmbed } from'./GifEmbed';
-import { GifPicker } from'./GifPicker';
+import { GifAttachment, GifPopover } from './compose/GifAttachment';
 import { AIGenerateButton } from'./AIGenerateButton';
 import { MentionTextarea } from'./MentionTextarea';
 import { EmojiPickerButton } from'@/components/shared/EmojiPickerButton';
@@ -15,6 +12,11 @@ import { Button } from'@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { MenuItem } from '@/components/ui/menu';
 import { usePopPresence } from '@/hooks/usePopPresence';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createRMHarkApi } from '@/lib/feed/compose-assist.contract';
+import type { CreateRMHarkInput } from '@/lib/rmhark-schema';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
 import { useFeedStore } from'@/stores/feedStore';
 import {
  MAX_RMHARK_LENGTH,
@@ -64,6 +66,9 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  multiSelect: false,
  });
  const [gifUrl, setGifUrl] = useState('');
+ // The GIF picker is a popover off the GIF button; the chosen GIF is the attachment.
+ const [gifOpen, setGifOpen] = useState(false);
+ const gifBtnRef = useRef<HTMLButtonElement>(null);
  const [imageUrls, setImageUrls] = useState<string[]>([]);
  // Per-image alt text (accessibility), aligned by index with imageUrls.
  const [imageAlts, setImageAlts] = useState<string[]>([]);
@@ -136,18 +141,11 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const epoch = uploadEpochRef.current;
  setUploadingCount((n) => n + 1);
  try {
- const res = await fetch('/api/rmharks/image', { method:'POST', body: form });
- if (epoch !== uploadEpochRef.current) return;
- if (!res.ok) {
- const { error } = await res.json().catch(() => ({ error:'Upload failed'}));
- setImageError(error ??'Upload failed');
- return;
- }
- const { urls } = await res.json();
+ const { urls } = await api(uploadImagesApi, { body: form });
  if (epoch !== uploadEpochRef.current) return;
  setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_IMAGES));
- } catch {
- if (epoch === uploadEpochRef.current) setImageError('Upload failed');
+ } catch (e) {
+ if (epoch === uploadEpochRef.current) setImageError(serverError(e) ??'Upload failed');
  } finally {
  setUploadingCount((n) => Math.max(0, n - 1));
  }
@@ -158,8 +156,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  setSubmitting(true);
  try {
- const body: Record<string, unknown> = {};
- if (content.trim()) body.content = content.trim();
+ // The server defaults an absent `content` to '', so sending '' is the same post.
+ const body: CreateRMHarkInput = { content: content.trim() };
  if (hasPoll) {
  body.poll = {
  question: poll.question.trim(),
@@ -176,19 +174,11 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  }
  if (quoteItem) body.originalId = quoteItem.id;
 
- const res = await fetch('/api/rmharks', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify(body),
+ const item = await api(createRMHarkApi, { body }).catch((e: unknown) => {
+ console.error('Post error:', serverError(e));
+ return null;
  });
-
- if (!res.ok) {
- const data = await res.json();
- console.error('Post error:', data.error);
- return;
- }
-
- const item = await res.json();
+ if (!item) return;
  uploadEpochRef.current += 1;
  prependItem(item);
  if (!quoteItem && !initialContent) clearComposeDraft();
@@ -257,29 +247,37 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  ? t('max-images', { defaultValue:'Maximum 4 images'})
  : t('attach-images', { defaultValue:'Attach images'})
  }
- className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+ className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
  >
  <ImagePlus className="w-4.5 h-4.5"/>
  </button>
 
  {/* GIF button */}
  <button
+ ref={gifBtnRef}
  type="button"
- onClick={() => {
- if (attachment === 'gif') setGifUrl('');
- setAttachment((a) => (a ==='gif'? null :'gif'));
- setPoll({ question:'', options: ['',''], multiSelect: false });
- }}
- aria-pressed={attachment ==='gif'}
+ onClick={() => setGifOpen((v) => !v)}
+ aria-haspopup="dialog"
+ aria-expanded={gifOpen}
  title={t('attach-gif-title', { defaultValue:'Add a GIF'})}
  className={`px-1.5 py-1 rounded-full text-xs font-bold leading-none border transition-colors ${
- attachment ==='gif'
+ hasGif
  ?'border-site-accent text-site-accent bg-site-accent/10'
- :'border-site-border text-site-text-dim hover:text-site-accent hover:bg-site-accent/10'
+ :'border-site-border text-site-text-muted hover:text-site-accent hover:bg-site-accent/10'
  }`}
  >
  {t('gif-heading', { defaultValue:'GIF'})}
  </button>
+ <GifPopover
+ open={gifOpen}
+ onClose={() => setGifOpen(false)}
+ anchorRef={gifBtnRef}
+ onSelect={(url) => {
+ setAttachment('gif');
+ setGifUrl(url);
+ setPoll({ question:'', options: ['',''], multiSelect: false });
+ }}
+ />
 
  {/* Emoji picker */}
  <EmojiPickerButton direction="down"onSelect={insertEmoji} />
@@ -292,7 +290,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
  aria-haspopup="menu"
  aria-expanded={menuOpen}
- className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+ className="p-1.5 rounded-full text-site-text-muted hover:text-site-accent hover:bg-site-accent/10 transition-colors"
  >
  <Plus className="w-4.5 h-4.5"/>
  </button>
@@ -311,7 +309,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  data-state={menuState}
  role="menu"
  aria-label={t('add-to-post-aria', { defaultValue:'Add to post'})}
- className="absolute top-full right-0 mt-1 w-52 origin-top-right glass-overlay overflow-hidden py-1.5 z-50"
+ className="absolute top-full right-0 mt-1 w-52 origin-top-right surface-overlay overflow-hidden py-1.5 z-50"
  >
  <MenuItem
  icon={BarChart3}
@@ -327,7 +325,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  )}
  </div>
 
- <Button variant="accent"size="sm"disabled={!canSubmit} onClick={handleSubmit}>
+ <Button variant="default"size="sm"disabled={!canSubmit} onClick={handleSubmit}>
  {submitting
  ? t('posting', { defaultValue:'Posting…'})
  : t('post', { defaultValue:'Post'})}
@@ -372,7 +370,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  placeholder={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
  rows={4}
  maxLength={MAX_RMHARK_LENGTH}
- className="w-full bg-transparent text-site-text placeholder:text-site-text-dim text-base resize-none border-none outline-none"
+ className="w-full bg-transparent text-site-text placeholder:text-site-text-muted text-base resize-none border-none outline-none"
  onKeyDown={(e) => {
  if (e.key ==='Enter'&& (e.metaKey || e.ctrlKey)) {
  handleSubmit();
@@ -382,7 +380,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* Quoted post preview */}
  {quoteItem && (
- <div className="glass-fill mt-2 rounded-site px-4 py-3">
+ <div className="surface-card mt-2 rounded-site px-4 py-3">
  <p className="text-xs font-semibold text-site-text">
  {quoteItem.user?.name || quoteItem.user?.handle ||'Someone'}
  </p>
@@ -394,7 +392,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
 
  {/* Poll creator */}
  {attachment ==='poll'&& (
- <div className="glass-fill mt-2 rounded-site px-4 py-3">
+ <div className="surface-card mt-2 rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
  <span className="site-section-label">
  Poll
@@ -404,7 +402,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setAttachment(null);
  setPoll({ question:'', options: ['',''], multiSelect: false });
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+ className="p-1 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -418,7 +416,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Ask a question…',
  })}
  maxLength={MAX_POLL_QUESTION_LENGTH}
- className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
+ className="w-full surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors mb-2"
  />
 
  <div className="space-y-2">
@@ -437,7 +435,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Option {{index}}',
  })}
  maxLength={MAX_POLL_OPTION_LENGTH}
- className="flex-1 glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
+ className="flex-1 surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm px-3 py-2 outline-none focus:border-site-accent transition-colors"
  />
  {poll.options.length > MIN_POLL_OPTIONS && (
  <button
@@ -445,7 +443,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const newOptions = poll.options.filter((_, j) => j !== i);
  setPoll((p) => ({ ...p, options: newOptions }));
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
+ className="p-1 rounded-full text-site-text-muted hover:text-site-danger hover:bg-site-danger/10 transition-colors"
  >
  <X className="w-3.5 h-3.5"/>
  </button>
@@ -470,7 +468,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
  className="rounded border-site-border text-site-accent focus:ring-site-accent"
  />
- <span className="text-xs text-site-text-dim">
+ <span className="text-xs text-site-text-muted">
  {t('allow-multiple-selections', {
  defaultValue:'Allow multiple selections',
  })}
@@ -479,41 +477,15 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  </div>
  )}
 
- {/* GIF picker */}
- {attachment ==='gif'&& (
- <div className="glass-fill mt-2 rounded-site px-4 py-3">
- <div className="flex items-center justify-between mb-2">
- <span className="site-section-label">
- {t('gif-heading', { defaultValue:'GIF'})}
- </span>
- <button
- type="button"
- onClick={() => {
+ {/* The chosen GIF. Choosing one is the popover off the GIF button. */}
+ {hasGif && (
+ <GifAttachment
+ gifUrl={gifUrl.trim()}
+ onRemove={() => {
  setAttachment(null);
  setGifUrl('');
  }}
- className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
- >
- <X className="w-3.5 h-3.5"/>
- </button>
- </div>
-
- {gifUrl.trim() ? (
- <div className="relative">
- <GifEmbed url={gifUrl.trim()} />
- <button
- type="button"
- onClick={() => setGifUrl('')}
- aria-label={t('remove-gif-aria', { defaultValue:'Remove GIF'})}
- className="absolute top-1 right-1 p-1 rounded-full bg-site-media-scrim-strong text-site-media-ink hover:bg-site-media-scrim-hover transition-colors"
- >
- <X className="w-3.5 h-3.5"/>
- </button>
- </div>
- ) : (
- <GifPicker onSelect={(u) => setGifUrl(u)} />
- )}
- </div>
+ />
  )}
 
  {/* Uploaded image preview strip */}
@@ -545,7 +517,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  defaultValue:'Describe this image for screen readers',
  })
  }
- className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none transition-colors ${
+ className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-micro font-bold uppercase leading-none transition-colors ${
  hasAlt
  ?'bg-site-accent text-site-accent-fg'
  :'bg-site-media-scrim-strong text-site-media-ink/90 hover:bg-site-media-scrim-hover'
@@ -592,7 +564,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  ?'text-site-danger'
  : remaining <= 20
  ?'text-site-warning'
- :'text-site-text-dim'
+ :'text-site-text-muted'
  }`}
  >
  {remaining}
@@ -640,13 +612,13 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  placeholder={t('alt-text-placeholder', {
  defaultValue:'e.g. A golden retriever running on a beach at sunset',
  })}
- className="w-full resize-none rounded-site-sm glass-inset px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
+ className="w-full resize-none rounded-site-sm surface-field px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted outline-none focus:border-site-accent transition-colors"
  />
  <div className="mt-3 flex items-center justify-between">
- <span className="text-xs font-mono text-site-text-dim">
+ <span className="text-xs font-mono text-site-text-muted">
  {MAX_IMAGE_ALT_LENGTH - (imageAlts[altEditIndex]?.length ?? 0)}
  </span>
- <Button variant="accent"size="sm"onClick={() => setAltEditIndex(null)}>
+ <Button variant="default"size="sm"onClick={() => setAltEditIndex(null)}>
  {t('done', { defaultValue:'Done'})}
  </Button>
  </div>

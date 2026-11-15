@@ -1,14 +1,17 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState, useRef, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { Library, Search, Plus, Check, Loader2 } from'lucide-react';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { StudyTabs } from'@/components/study/StudyTabs';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { cloneDeckApi } from '@/lib/study/decks.contract';
 
+import { deckMarketplaceApi } from '@/lib/feed/feed-reads.contract';
 interface MarketplaceDeck {
  id: string;
  title: string;
@@ -36,13 +39,10 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  const search = useCallback(async (q: string) => {
  setLoading(true);
  try {
- const res = await fetch(`/api/study/marketplace?q=${encodeURIComponent(q)}`, {
- credentials:'include',
- });
- if (res.ok) {
- const data = (await res.json()) as MarketplaceData;
+ const data = await api(deckMarketplaceApi, { query: { q } });
  setDecks(data.decks);
- }
+ } catch {
+ // A failed search keeps the decks on screen.
  } finally {
  setLoading(false);
  }
@@ -61,29 +61,16 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  }
  setStatus((s) => ({ ...s, [deck.id]:'cloning'}));
  try {
- const res = await fetch(`/api/study/decks/${deck.id}/clone`, {
- method:'POST',
- credentials:'include',
- });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- setStatus((s) => {
- const next = { ...s };
- delete next[deck.id];
- return next;
- });
- toast.error(data.error ?? t('deck-clone-failed', { defaultValue:'Could not add deck.'}));
- return;
- }
+ await api(cloneDeckApi, { params: { id: deck.id } });
  setStatus((s) => ({ ...s, [deck.id]:'done'}));
  toast.success(t('deck-clone-added', { defaultValue:'Added to your decks.'}));
- } catch {
+ } catch (err) {
  setStatus((s) => {
  const next = { ...s };
  delete next[deck.id];
  return next;
  });
- toast.error(t('deck-clone-failed', { defaultValue:'Could not add deck.'}));
+ toast.error(serverError(err) ?? t('deck-clone-failed', { defaultValue:'Could not add deck.'}));
  }
  };
 
@@ -93,9 +80,9 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
      of the StudyTabs strip below: the two study pages are siblings, not a
      parent and a detail, so the crossing between them is a tab strip rather
      than a link one way and a Back the other. */}
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Library className="h-5 w-5 text-site-accent"/>
- <h1 className="text-lg font-bold text-site-text">
+ <h1 className="text-lg font-semibold text-site-text">
  {t('deck-marketplace', { defaultValue:'Browse decks'})}
  </h1>
  </header>
@@ -104,13 +91,13 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
 
  <div className="space-y-4 p-4">
  <div className="relative">
- <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim"/>
+ <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted"/>
  <input
  value={query}
  onChange={(e) => onQueryChange(e.target.value)}
  placeholder={t('deck-search-placeholder', { defaultValue:'Search public decks…'})}
  aria-label={t('deck-search-label', { defaultValue:'Search public decks'})}
- className="w-full rounded-site-sm glass-inset py-2 pl-9 pr-3 text-sm text-site-text outline-none focus:border-site-accent"
+ className="w-full rounded-site-sm surface-field py-2 pl-9 pr-3 text-sm text-site-text outline-none focus:border-site-accent"
  />
  </div>
 
@@ -130,10 +117,10 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  return (
  <div
  key={deck.id}
- className="flex flex-col rounded-site glass-fill p-5"
+ className="flex flex-col rounded-site relative p-5"
  >
  <Link to="/study/$deckId"params={{ deckId: deck.id }} className="min-w-0">
- <h2 className="truncate text-sm font-bold text-site-text hover:text-site-accent">
+ <h2 className="truncate text-sm font-semibold text-site-text hover:text-site-accent">
  {deck.title}
  </h2>
  </Link>
@@ -142,7 +129,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  {deck.description}
  </p>
  )}
- <p className="mt-2 text-xs text-site-text-dim">
+ <p className="mt-2 text-xs text-site-text-muted">
  {t('deck-card-count', { defaultValue:'{{n}} cards', n: deck.cardCount })}
  {deck.user.name || deck.user.handle
  ? `· ${t('deck-by', { defaultValue:'by'})} ${deck.user.name ||'@'+ deck.user.handle}`
@@ -150,7 +137,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  </p>
  <div className="mt-3">
  {deck.isOwn ? (
- <span className="text-xs font-medium text-site-text-dim">
+ <span className="text-xs font-medium text-site-text-muted">
  {t('deck-your-deck', { defaultValue:'Your deck'})}
  </span>
  ) : added ? (
@@ -161,7 +148,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
  ) : (
  <Button
  type="button"
- variant="secondary"
+ variant="default"
  onClick={() => clone(deck)}
  disabled={st ==='cloning'}
  className="h-auto gap-1.5 px-3 py-1.5 text-xs font-semibold hover:border-site-accent hover:text-site-accent has-[>svg]:px-3 disabled:opacity-60"

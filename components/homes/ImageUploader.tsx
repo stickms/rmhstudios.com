@@ -1,11 +1,14 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2, Sparkles, Star, Wand2, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
+import { AI_IMAGE_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
+import { generateHomeAiImageApi, getHomeAiImageAvailabilityApi } from '@/lib/homes/homes.contract';
 interface ImageUploaderProps {
   value: string[];
   /** Subset of `value` that was AI-generated. */
@@ -34,8 +37,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/homes/ai-image')
-      .then((r) => (r.ok ? r.json() : { available: false }))
+    api(getHomeAiImageAvailabilityApi)
       .then((d) => {
         if (!cancelled) setAiAvailable(Boolean(d.available));
       })
@@ -61,12 +63,9 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
       for (let i = 0; i < files.length; i += CHUNK) {
         const form = new FormData();
         for (const f of files.slice(i, i + CHUNK)) form.append('images', f);
-        const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || 'Upload failed');
-        }
-        const data = await res.json();
+        const data = await api(uploadImagesApi, { body: form }).catch((e: unknown) => {
+          throw new Error(serverError(e) || 'Upload failed');
+        });
         collected.push(...(data.urls ?? []));
       }
       onChange([...value, ...collected].slice(0, max), aiImages);
@@ -90,13 +89,13 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
     }
     setGenerating(true);
     try {
-      const res = await fetch('/api/homes/ai-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+      const data = await api(generateHomeAiImageApi, {
+        body: { prompt },
+        timeoutMs: AI_IMAGE_TIMEOUT_MS,
+      }).catch((error: unknown) => {
+        throw new Error(serverError(error) || 'Could not generate an image.');
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.url) throw new Error(data.error || 'Could not generate an image.');
+      if (!data.url) throw new Error('Could not generate an image.');
       onChange([...value, data.url].slice(0, max), [...aiImages, data.url]);
       setAiPrompt('');
       toast.success('Image generated');
@@ -126,16 +125,16 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
           return (
             <div
               key={url}
-              className="glass-fill group relative aspect-square overflow-hidden rounded-site-sm"
+              className="group relative aspect-square overflow-hidden rounded-site-sm"
             >
               <img src={url} alt="" className="h-full w-full object-cover" />
               {i === 0 && (
-                <span className="absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-site-media-scrim-strong px-1.5 py-0.5 text-[10px] font-medium text-site-media-ink">
+                <span className="absolute left-1 top-1 inline-flex items-center gap-1 rounded-full bg-site-media-scrim-strong px-1.5 py-0.5 text-micro font-medium text-site-media-ink">
                   <Star className="h-3 w-3 fill-current" /> Cover
                 </span>
               )}
               {isAi && (
-                <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded-full bg-site-accent/90 px-1.5 py-0.5 text-[10px] font-semibold text-site-accent-fg">
+                <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded-full bg-site-accent/90 px-1.5 py-0.5 text-micro font-semibold text-site-accent-fg">
                   <Sparkles className="h-3 w-3" /> AI
                 </span>
               )}
@@ -208,7 +207,7 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
       </div>
 
       {aiAvailable && aiOpen && (
-        <div className="glass-fill mt-3 rounded-site p-5">
+        <div className="relative mt-3 rounded-site p-5">
           <label
             htmlFor="ai-prompt"
             className="mb-2 flex items-center gap-2 text-sm font-medium text-site-text"

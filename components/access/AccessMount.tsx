@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Global runtime for the access & comfort additions. Mounted by `Providers`
  * inside the silent boundary; renders nothing until a shake opens the feedback
@@ -7,7 +5,7 @@
  */
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useLocation } from '@tanstack/react-router';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { useAccessPrefs } from '@/lib/access/use-access-prefs';
 import {
   SHAKE_OK_KEY,

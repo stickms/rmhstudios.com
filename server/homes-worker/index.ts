@@ -1,11 +1,14 @@
 /* eslint-disable no-console */
 /**
- * Homes Worker — Background Cron Process
+ * Homes Worker — scraper consumer
  *
  * Long-lived Node.js process that runs the RMHHomes scraper on a configurable
  * schedule (default: every 6 hours). It aggregates public housing/apartment
  * feeds (Craigslist regional RSS, generic RSS) into EXTERNAL HomeListing rows so
  * the marketplace has real inventory beyond member posts.
+ *
+ * The schedule is a pg-boss cron (`homes.scrape`) fired by the `jobs` worker's
+ * timekeeper and consumed here (D4: one scheduler).
  *
  * Runs as a separate Docker service or dev process, alongside the ladder-worker.
  */
@@ -15,8 +18,10 @@ import { installProcessGuards } from '../../lib/perf/process-guards';
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { schedule } from 'node-cron';
-import type { ScheduledTask } from 'node-cron';
+import {
+  startScheduledConsumer,
+  type ScheduledConsumer,
+} from '../../lib/jobs/scheduled-consumer.server';
 import { runHomesScrape, type RunPrisma } from '../../lib/homes/scrape/run';
 import { seedHomeSources, type SeedPrisma } from '../../lib/homes/scrape/seed';
 import {
@@ -90,8 +95,9 @@ async function tick() {
 // after deploy: seed default sources if none exist, then run once if there are
 // no external listings yet. Every step is idempotent and skipped once done.
 
-async function bootstrap() {
-  if (!SCRAPE_ENABLED || running || stopping) return;
+/** Resolves true when the marketplace is empty and a first scrape should be queued now. */
+async function bootstrap(): Promise<boolean> {
+  if (!SCRAPE_ENABLED || running || stopping) return false;
   running = true;
   try {
     const sourceCount = await prisma.homeSource.count();
@@ -103,27 +109,61 @@ async function bootstrap() {
 
     const externalCount = await prisma.homeListing.count({ where: { source: 'EXTERNAL' } });
     if (externalCount === 0) {
-      console.log('[homes-worker] Bootstrap: no external listings — running scrape now');
-      running = false; // hand the overlap guard to tick()
-      await tick();
-      return;
+      console.log('[homes-worker] Bootstrap: no external listings — queueing a scrape now');
+      return true;
     }
   } catch (e) {
     console.error('[homes-worker] Bootstrap failed:', e);
   } finally {
     running = false;
   }
+  return false;
 }
 
 // ─── Scheduler ──────────────────────────────────────────────────
+// The cron lives in pg-boss (queue `homes.scrape`, evaluated in UTC; node-cron used the container's
+// local zone, which is UTC in the image); this process consumes it. `exclusive` keeps one scrape
+// queued or active, replacing the `running` overlap guard as the cross-process lock.
 
-const cronSchedule = process.env.HOMES_CRON_SCHEDULE ?? '0 */6 * * *';
+const cronSchedule = process.env.HOMES_CRON_SCHEDULE?.trim() || '0 */6 * * *';
+const HOMES_QUEUE = 'homes.scrape';
+let consumer: ScheduledConsumer | null = null;
 
-const task: ScheduledTask = schedule(cronSchedule, tick);
+async function main() {
+  const firstRunDue = await bootstrap();
+  if (stopping) return;
 
-console.log(`[homes-worker] Started — schedule="${cronSchedule}" enabled=${SCRAPE_ENABLED}`);
+  consumer = await startScheduledConsumer({
+    queue: HOMES_QUEUE,
+    cron: cronSchedule,
+    // Feeds are fetched with their own timeouts; a scrape that outlasts this is stuck.
+    expireInSeconds: 2 * 60 * 60,
+    // tick() catches everything, so a throw is a bug and a retry would only repeat it.
+    retryLimit: 0,
+    handler: tick,
+    shouldStop: () => stopping,
+    log: { warn: (line) => console.warn(line), error: (line) => console.error(line) },
+  });
+  if (!consumer) {
+    if (stopping) return;
+    console.error('[homes-worker] pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
+  if (stopping) {
+    await consumer.pause();
+    return;
+  }
 
-void bootstrap();
+  console.log(
+    `[homes-worker] Started — schedule="${cronSchedule}" queue="${HOMES_QUEUE}" enabled=${SCRAPE_ENABLED}`,
+  );
+  if (firstRunDue) await consumer.runNow();
+}
+
+main().catch((e) => {
+  console.error('[homes-worker] fatal:', e);
+  process.exit(1);
+});
 
 // ─── Graceful shutdown ──────────────────────────────────────────
 
@@ -133,7 +173,7 @@ async function shutdown(signal: string) {
   stopping = true;
   console.log(`[homes-worker] ${signal} received, shutting down...`);
 
-  await task.stop();
+  await consumer?.pause();
 
   if (running) {
     console.log('[homes-worker] Waiting for in-flight run to complete...');
@@ -157,6 +197,7 @@ async function shutdown(signal: string) {
     }
   }
 
+  await consumer?.stop();
   await prisma.$disconnect().catch(() => undefined);
   process.exit(0);
 }

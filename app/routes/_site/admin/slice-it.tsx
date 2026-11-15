@@ -28,7 +28,7 @@ import { AdminBody } from '@/components/admin/AdminBody';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   AlertTriangle,
   ArrowDownCircle,
@@ -47,38 +47,16 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 
-/** Mirrors `QualificationReport` in `lib/slice-it/ranking.server.ts`. */
-interface Evidence {
-  chartId: string;
-  eligible: boolean;
-  blockers: string[];
-  players: number;
-  plays: number;
-  clearRate: number | null;
-  lintErrors: number;
-  status: string;
-}
-
-interface RankingRow {
-  id: string;
-  songId: string;
-  songTitle: string;
-  songArtist: string;
-  name: string;
-  difficulty: string;
-  authorName: string | null;
-  authorHandle: string | null;
-  rating: number | null;
-  ratingVersion: number | null;
-  status: string;
-  rankStatus: string;
-  rankStatusAt: string | null;
-  updatedAt: string;
-  evidence: Evidence;
-}
-
-type RankStatus = 'unranked' | 'qualified' | 'ranked';
-
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  listRankingApi,
+  rankChartActionApi,
+  type RankingRow,
+  type RankStatus,
+} from '@features/slice-it/engine/admin.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 /**
  * The thresholds, duplicated for display only.
  *
@@ -104,16 +82,12 @@ function AdminSliceItRankingPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async (next: RankStatus) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/slice-it/charts/ranking?status=${next}&limit=25`);
-      if (!response.ok) throw new Error(String(response.status));
-      const data = (await response.json()) as {
-        charts: RankingRow[];
-        counts: Record<string, number>;
-      };
+      const data = await api(listRankingApi, { query: { status: next, limit: 25 } });
       setRows(data.charts ?? []);
       setCounts(data.counts ?? {});
     } catch {
@@ -130,15 +104,13 @@ function AdminSliceItRankingPage() {
   const act = async (chartId: string, action: 'promote' | 'demote') => {
     setPending(chartId);
     try {
-      const response = await fetch('/api/slice-it/charts/ranking', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chartId, action }),
-      });
-      const data = (await response.json()) as { error?: string; rankStatus?: string };
-      if (!response.ok) {
+      try {
+        await api(rankChartActionApi, { body: { chartId, action } });
+      } catch (error) {
+        if (!(error instanceof HttpError)) throw error;
         toast.error(
-          data.error ?? t('admin-rank-action-failed', { defaultValue: 'That did not go through.' }),
+          serverError(error) ??
+            t('admin-rank-action-failed', { defaultValue: 'That did not go through.' }),
         );
         // A 409 means this list is stale, which is exactly the case where
         // re-reading it is the useful thing to do.
@@ -204,11 +176,12 @@ function AdminSliceItRankingPage() {
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Gauge}
             title={t('admin-rank-empty', { defaultValue: 'No charts in this state.' })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {rows.map((row) => (
               <ChartRow
                 key={row.id}
@@ -238,15 +211,15 @@ function ChartRow({
   const clearRate = evidence.clearRate;
 
   return (
-    <li className="glass-fill rounded-site p-5">
+    <li className="py-4 first:pt-0 last:pb-0">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate text-base font-semibold text-site-text">{row.songTitle}</span>
-            <span className="text-sm text-site-text-dim">{row.songArtist}</span>
+            <span className="truncate t-heading text-site-text">{row.songTitle}</span>
+            <span className="t-body text-site-text-muted">{row.songArtist}</span>
             <StateBadge state={row.rankStatus} />
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-site-text-muted">
+          <div className="mt-1 flex flex-wrap items-center gap-2 t-body text-site-text-muted">
             <span className="font-medium text-site-text-muted">{row.name}</span>
             <span aria-hidden="true">&bull;</span>
             <span className="capitalize">{row.difficulty}</span>
@@ -279,7 +252,7 @@ function ChartRow({
             {t('admin-rank-promote', { defaultValue: 'Promote' })}
           </Button>
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             disabled={busy || row.rankStatus === 'unranked'}
             onClick={() => onAct('demote')}
@@ -290,7 +263,7 @@ function ChartRow({
         </div>
       </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 sm:grid-cols-3 sm:gap-x-6 xl:grid-cols-5">
         <Gate
           icon={Eye}
           label={t('admin-rank-gate-visibility', { defaultValue: 'Visibility' })}
@@ -342,7 +315,7 @@ function ChartRow({
       </dl>
 
       {evidence.blockers.length > 0 && (
-        <p className="mt-3 text-sm text-site-text-muted">
+        <p className="mt-3 t-body text-site-text-muted">
           <span className="font-semibold text-site-warning">
             {t('admin-rank-blockers', { defaultValue: 'Blocked by:' })}
           </span>{' '}
@@ -351,7 +324,7 @@ function ChartRow({
       )}
 
       {row.rankStatus === 'ranked' && !evidence.eligible && (
-        <p className="mt-3 text-sm text-site-warning">
+        <p className="t-body mt-3 text-site-warning">
           {t('admin-rank-slipped', {
             defaultValue:
               'This chart no longer meets the automatic gate. Nothing demotes it on its own — a rating built on it stays until a human decides.',
@@ -376,22 +349,16 @@ function Gate({
   passed: boolean;
 }) {
   return (
-    <div className="glass-inset rounded-site-sm p-3">
-      <dt className="flex items-center gap-2 text-xs text-site-text-muted">
-        <Icon className="size-3.5" aria-hidden="true" />
+    <div className="min-w-0 border-t border-site-border py-3">
+      <dt className="t-label flex items-center gap-2">
+        <Icon className="size-3.5 shrink-0" aria-hidden="true" />
         {label}
       </dt>
-      <dd className="mt-1 flex items-baseline gap-2">
-        <span
-          className={
-            passed
-              ? 'text-base font-semibold text-site-text'
-              : 'text-base font-semibold text-site-warning'
-          }
-        >
+      <dd className="mt-1 flex flex-wrap items-baseline gap-x-2">
+        <span className={passed ? 't-heading text-site-text' : 't-heading text-site-warning'}>
           {value}
         </span>
-        <span className="text-xs text-site-text-dim">{target}</span>
+        <span className="t-meta">{target}</span>
         {passed ? (
           <Check className="size-3.5 shrink-0 text-site-success" aria-hidden="true" />
         ) : (
@@ -404,7 +371,7 @@ function Gate({
 
 function StateBadge({ state }: { state: string }) {
   const { t } = useTranslation('r-slice-it');
-  const variant = state === 'ranked' ? 'success' : state === 'qualified' ? 'accent' : 'default';
+  const variant = state === 'ranked' ? 'success' : state === 'qualified' ? 'solid' : 'default';
   const label =
     state === 'ranked'
       ? t('admin-rank-state-ranked', { defaultValue: 'Ranked' })

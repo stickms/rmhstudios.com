@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,17 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Gamepad2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { lobbyLink, lobbyPathLink } from '@/lib/lobby-link';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  createGameNightApi,
+  listGameNightsApi,
+  patchGameNightApi,
+} from '@/lib/competitive/game-night.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Pick {
   gameId: string;
@@ -66,21 +75,19 @@ function AdminCreate({ onCreated }: { onCreated: () => void }) {
     const [h, m] = String(f.get('time')).split(':').map(Number);
     setBusy(true);
     try {
-      const res = await fetch('/api/game-night', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: f.get('title'),
+      await api(createGameNightApi, {
+        body: {
+          title: String(f.get('title') ?? ''),
           weekday: Number(f.get('weekday')),
           startMinute: h * 60 + m,
           durationMinutes: Number(f.get('duration')),
           minutesPerGame: Number(f.get('per')),
           games: picked,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) toast.error(data.error ?? t('gn-failed', { defaultValue: 'Could not save' }));
-      else onCreated();
+      onCreated();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('gn-failed', { defaultValue: 'Could not save' }));
     } finally {
       setBusy(false);
     }
@@ -167,16 +174,14 @@ function LobbyCodeForm({ night, onSaved }: { night: Night; onSaved: () => void }
   if (!night.nowPlaying) return null;
   const gameId = night.nowPlaying.gameId;
   const save = async () => {
-    const res = await fetch('/api/game-night', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: night.id, lobby: { gameId, code: code.trim() || null } }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) toast.error(data.error ?? t('gn-failed', { defaultValue: 'Could not save' }));
-    else {
+    try {
+      await api(patchGameNightApi, {
+        body: { id: night.id, lobby: { gameId, code: code.trim() || null } },
+      });
       setCode('');
       onSaved();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('gn-failed', { defaultValue: 'Could not save' }));
     }
   };
   return (
@@ -187,7 +192,7 @@ function LobbyCodeForm({ night, onSaved }: { night: Night; onSaved: () => void }
         placeholder={t('gn-code-ph', { defaultValue: 'Lobby code for the live game' })}
         aria-label={t('gn-code', { defaultValue: 'Lobby code' })}
       />
-      <Button variant="secondary" onClick={save}>
+      <Button variant="default" onClick={save}>
         {t('gn-post-code', { defaultValue: 'Post code' })}
       </Button>
     </div>
@@ -199,11 +204,15 @@ export function GameNightBoard() {
   const { data: session } = useSession();
   const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin ?? false;
   const [nights, setNights] = useState<Night[] | null>(null);
+  const arrival = useArrival(nights !== null);
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/game-night');
-    const data = await res.json().catch(() => ({ nights: [] }));
-    setNights(res.ok ? data.nights : []);
+    try {
+      const data = await api(listGameNightsApi, { retries: 0 });
+      setNights(data.nights);
+    } catch {
+      setNights([]);
+    }
   }, []);
   useEffect(() => {
     void load();
@@ -221,14 +230,15 @@ export function GameNightBoard() {
       ) : nights.length === 0 ? (
         <EmptyState
           icon={Gamepad2}
+          className={arrival}
           title={t('gn-none', { defaultValue: 'No game night is scheduled yet.' })}
         />
       ) : (
         nights.map((n) => (
-          <Card key={n.id} className="gap-3 px-4 py-4" pane>
+          <Card key={n.id} className={cn('gap-3 px-4 py-4', arrival)} pane>
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-semibold">{n.title}</h2>
-              <span className="text-xs text-site-text-dim">
+              <span className="text-xs text-site-text-muted">
                 {n.state === 'live'
                   ? t('gn-live-until', { defaultValue: 'Live until {{t}}', t: time(n.endsAt) })
                   : t('gn-next-at', {
@@ -260,7 +270,7 @@ export function GameNightBoard() {
               </div>
             )}
             {n.upNext && (
-              <p className="text-sm text-site-text-dim">
+              <p className="text-sm text-site-text-muted">
                 {t('gn-up-next', {
                   defaultValue: 'Up next: {{game}} at {{t}}',
                   game: n.upNext.title,
@@ -268,7 +278,7 @@ export function GameNightBoard() {
                 })}
               </p>
             )}
-            <p className="text-xs text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('gn-rotation', {
                 defaultValue: 'Rotation, {{n}} min each: {{games}}',
                 n: n.minutesPerGame,

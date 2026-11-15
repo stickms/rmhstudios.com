@@ -16,6 +16,7 @@ import { getReplay } from '@/lib/replays.server';
 import { REPLAY_GAME_TITLES } from '@/lib/game/replay-meta';
 import { buildMeta, buildCanonical, ogCardPath } from '@/lib/seo';
 import { GameReplayPlayer } from '@/components/replays/GameReplayPlayer';
+import { formatDurationMs } from '@/lib/core/format';
 
 const fetchReplay = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -33,13 +34,6 @@ const fetchReplay = createServerFn({ method: 'GET' })
 
 function gameTitle(game: string): string {
   return REPLAY_GAME_TITLES[game] ?? game;
-}
-
-function formatDuration(ms: number): string {
-  const totalSec = Math.round(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
 export const Route = createFileRoute('/replays/$id')({
@@ -111,7 +105,7 @@ function ReplayPage() {
                 </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Clock className="size-4" aria-hidden />
-                  {formatDuration(replay.durationMs)}
+                  {formatDurationMs(replay.durationMs)}
                 </span>
                 <span>
                   {t('replay-by', { defaultValue: 'by' })}{' '}

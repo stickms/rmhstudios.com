@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { RadialLoader } from '@/components/ui/radial-loader';
 
 export interface GameLoadingFallbackProps {
   /**
@@ -32,13 +33,7 @@ export function GameLoadingFallback({
       role="status"
     >
       <div className="flex flex-col items-center gap-4">
-        <div
-          className="h-8 w-8 animate-spin rounded-full border-2"
-          style={{
-            borderColor: 'color-mix(in srgb, currentColor 20%, transparent)',
-            borderTopColor: 'currentColor',
-          }}
-        />
+        <RadialLoader size={32} decorative />
         <p
           className="text-sm"
           style={{ color: 'color-mix(in srgb, currentColor 70%, transparent)' }}

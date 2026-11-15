@@ -26,17 +26,40 @@
  * needs to reject a pack for choosing a popular name.
  */
 
-export const PACK_KINDS = ['emoji', 'sticker', 'mixed'] as const;
-export type PackKind = (typeof PACK_KINDS)[number];
+export const PACK_KINDS =
+  [
+    'emoji',
+    'sticker',
+    'mixed',
+  ] as const;
+export type PackKind =
+  (typeof PACK_KINDS)[number];
 
-export const ITEM_KINDS = ['emoji', 'sticker'] as const;
-export type ItemKind = (typeof ITEM_KINDS)[number];
+export const ITEM_KINDS =
+  [
+    'emoji',
+    'sticker',
+  ] as const;
+export type ItemKind =
+  (typeof ITEM_KINDS)[number];
 
-export const PACK_VISIBILITIES = ['public', 'unlisted', 'private'] as const;
-export type PackVisibility = (typeof PACK_VISIBILITIES)[number];
+export const PACK_VISIBILITIES =
+  [
+    'public',
+    'unlisted',
+    'private',
+  ] as const;
+export type PackVisibility =
+  (typeof PACK_VISIBILITIES)[number];
 
-export const PACK_STATUSES = ['PENDING', 'APPROVED', 'REMOVED'] as const;
-export type PackStatus = (typeof PACK_STATUSES)[number];
+export const PACK_STATUSES =
+  [
+    'PENDING',
+    'APPROVED',
+    'REMOVED',
+  ] as const;
+export type PackStatus =
+  (typeof PACK_STATUSES)[number];
 
 /** Ceilings. Generous enough to be useful, bounded enough to stay moderatable. */
 export const MAX_ITEMS_PER_PACK = 100;
@@ -45,14 +68,17 @@ export const MAX_SUBSCRIPTIONS = 200;
 /** Inline emoji render at ~20px; stickers at ~160px. Both are capped at upload. */
 export const EMOJI_MAX_DIMENSION = 128;
 export const STICKER_MAX_DIMENSION = 512;
-export const ITEM_MAX_BYTES = 256 * 1024;
+export const ITEM_MAX_BYTES =
+  256 *
+  1024;
 
 /**
  * Shortcode grammar. Lowercase, alphanumeric plus `_+-`, 2–32 characters.
  * Matches the existing Unicode shortcode grammar in `shortcode-matcher.ts` so
  * a custom code is typeable through exactly the same `:` trigger.
  */
-export const SHORTCODE_RE = /^[a-z0-9][a-z0-9_+-]{1,31}$/;
+export const SHORTCODE_RE =
+  /^[a-z0-9][a-z0-9_+-]{1,31}$/;
 
 export interface PackItem {
   id: string;
@@ -67,12 +93,24 @@ export interface PackSummary {
   id: string;
   slug: string;
   name: string;
-  description: string | null;
+  description:
+    | string
+    | null;
   kind: PackKind;
-  coverUrl: string | null;
+  coverUrl:
+    | string
+    | null;
   itemCount: number;
   subscriberCount: number;
-  owner: { id: string; name: string | null; handle: string | null };
+  owner: {
+    id: string;
+    name:
+      | string
+      | null;
+    handle:
+      | string
+      | null;
+  };
   /** Whether the viewer has this pack installed. */
   subscribed?: boolean;
 }
@@ -87,12 +125,30 @@ export interface InstalledPack extends PackSummary {
  * Earlier packs win, per the precedence rule above. Returns a plain object so
  * it serialises into a loader payload without ceremony.
  */
-export function resolveCustomShortcodes(packs: readonly InstalledPack[]): Record<string, PackItem> {
-  const out: Record<string, PackItem> = {};
+export function resolveCustomShortcodes(
+  packs: readonly InstalledPack[],
+): Record<
+  string,
+  PackItem
+> {
+  const out: Record<
+    string,
+    PackItem
+  > =
+    {};
   for (const pack of packs) {
     for (const item of pack.items) {
       // First writer wins: packs arrive in subscription order.
-      if (!(item.name in out)) out[item.name] = item;
+      if (
+        !(
+          item.name in
+          out
+        )
+      )
+        out[
+          item.name
+        ] =
+          item;
     }
   }
   return out;
@@ -100,7 +156,10 @@ export function resolveCustomShortcodes(packs: readonly InstalledPack[]): Record
 
 /** Everything the composer needs to turn `:name:` into something renderable. */
 export interface ShortcodeResolution {
-  kind: 'custom' | 'unicode' | 'none';
+  kind:
+    | 'custom'
+    | 'unicode'
+    | 'none';
   /** For 'unicode', the emoji character. */
   char?: string;
   /** For 'custom', the item. */
@@ -109,15 +168,42 @@ export interface ShortcodeResolution {
 
 export function resolveShortcode(
   name: string,
-  custom: Record<string, PackItem>,
-  unicode: Record<string, string>,
+  custom: Record<
+    string,
+    PackItem
+  >,
+  unicode: Record<
+    string,
+    string
+  >,
 ): ShortcodeResolution {
-  const key = name.toLowerCase();
-  const item = custom[key];
-  if (item) return { kind: 'custom', item };
-  const char = unicode[key];
-  if (char) return { kind: 'unicode', char };
-  return { kind: 'none' };
+  const key =
+    name.toLowerCase();
+  const item =
+    custom[
+      key
+    ];
+  if (
+    item
+  )
+    return {
+      kind: 'custom',
+      item,
+    };
+  const char =
+    unicode[
+      key
+    ];
+  if (
+    char
+  )
+    return {
+      kind: 'unicode',
+      char,
+    };
+  return {
+    kind: 'none',
+  };
 }
 
 /**
@@ -128,32 +214,91 @@ export function resolveShortcode(
  * made it without exposing it to anyone else.
  */
 export function packUsableBy(
-  pack: { ownerId: string; status: string; visibility: string },
-  viewerId: string | null,
+  pack: {
+    ownerId: string;
+    status: string;
+    visibility: string;
+  },
+  viewerId:
+    | string
+    | null,
 ): boolean {
-  if (viewerId && pack.ownerId === viewerId) return true;
-  if (pack.status !== 'APPROVED') return false;
-  return pack.visibility !== 'private';
+  if (
+    viewerId &&
+    pack.ownerId ===
+      viewerId
+  )
+    return true;
+  if (
+    pack.status !==
+    'APPROVED'
+  )
+    return false;
+  return (
+    pack.visibility !==
+    'private'
+  );
 }
 
 /** Whether a pack should appear in browse/search listings. */
-export function packListable(pack: { status: string; visibility: string }): boolean {
-  return pack.status === 'APPROVED' && pack.visibility === 'public';
+export function packListable(pack: {
+  status: string;
+  visibility: string;
+}): boolean {
+  return (
+    pack.status ===
+      'APPROVED' &&
+    pack.visibility ===
+      'public'
+  );
 }
 
 /** Slug candidate from a display name. Callers must still check uniqueness. */
-export function slugifyPackName(name: string): string {
-  const base = name
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 48);
-  return base.length >= 2 ? base : `pack-${Math.abs(hashString(name)) % 100000}`;
+export function slugifyPackName(
+  name: string,
+): string {
+  const base =
+    name
+      .toLowerCase()
+      .normalize(
+        'NFKD',
+      )
+      .replace(
+        /[^a-z0-9]+/g,
+        '-',
+      )
+      .replace(
+        /^-+|-+$/g,
+        '',
+      )
+      .slice(
+        0,
+        48,
+      );
+  return base.length >=
+    2
+    ? base
+    : `pack-${Math.abs(hashString(name)) % 100000}`;
 }
 
-function hashString(s: string): number {
+function hashString(
+  s: string,
+): number {
   let h = 0;
-  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  for (
+    let i = 0;
+    i <
+    s.length;
+    i++
+  )
+    h =
+      (Math.imul(
+        31,
+        h,
+      ) +
+        s.charCodeAt(
+          i,
+        )) |
+      0;
   return h;
 }

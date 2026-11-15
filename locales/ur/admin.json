@@ -70,6 +70,7 @@
   "ban-author": "مصنف پر پابندی لگائیں",
   "ban-length-prompt": "پابندی کی مدت دنوں میں (خالی = مستقل):",
   "ban-reason-prompt": "پابندی کی وجہ:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "نئے ڈویلپر لاگز لکھیں، یا موجودہ بلاگ پوسٹس میں ترمیم اور حذف کریں۔",
   "blog-title": "بلاگ پوسٹس کا نظم کریں",
   "bot-no-email": "Automated account",

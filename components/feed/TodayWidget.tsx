@@ -1,5 +1,3 @@
-'use client';
-
 /**
  *"Today"widget — the daily loop at a glance. Concentrates the scattered daily
  * surfaces (check-in streak, coin wheel, six daily puzzles, daily quests) into
@@ -11,18 +9,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Flame, Puzzle, CircleDot, Target, Snowflake, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { buyStreakFreezeApi, getTodayApi, type TodaySummary } from '@/lib/today.contract';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
-interface TodaySummary {
-  streak: { current: number; checkedInToday: boolean; freezeTokens: number };
-  wheel: { spunToday: boolean };
-  puzzles: Array<{ mode: string; done: boolean }>;
-  quests: { total: number; completed: number; claimable: number };
-}
 
 const PUZZLE_LABEL: Record<string, string> = {
   'lights-out': 'Lights Out',
@@ -55,7 +50,7 @@ function TaskRow({
       <span className="rad-live__slot">
         <span
           className={`flex h-6 w-6 items-center justify-center rounded-full ${
-            done ? 'bg-site-success/15 text-site-success' : 'bg-site-surface-hover text-site-text-dim'
+            done ? 'bg-site-success/15 text-site-success' : 'bg-site-surface-hover text-site-text-muted'
           }`}
         >
           {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : icon}
@@ -66,7 +61,7 @@ function TaskRow({
       >
         {label}
       </span>
-      {hint && <span className="shrink-0 text-xs text-site-text-dim">{hint}</span>}
+      {hint && <span className="shrink-0 text-xs text-site-text-muted">{hint}</span>}
     </Link>
   );
 }
@@ -87,8 +82,7 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/today', { credentials: 'include' });
-      if (res.ok) setData(await res.json());
+      setData(await api(getTodayApi));
     } catch {
       // decorative — leave empty
     } finally {
@@ -115,37 +109,30 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
   const buyFreeze = async () => {
     setBuying(true);
     try {
-      const res = await fetch('/api/streak/freeze', { method: 'POST', credentials: 'include' });
-      const body = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(
-          t('freeze-bought', {
-            defaultValue: 'Streak freeze bought! You now hold {{count}}.',
-            count: body.freezeTokens,
-          }),
-        );
-        setData((d) =>
-          d ? { ...d, streak: { ...d.streak, freezeTokens: body.freezeTokens } } : d,
-        );
-      } else {
-        toast.error(body.error ?? t('freeze-failed', { defaultValue: 'Could not buy a freeze.' }));
-      }
-    } catch {
-      toast.error(t('freeze-failed', { defaultValue: 'Could not buy a freeze.' }));
+      const body = await api(buyStreakFreezeApi);
+      toast.success(
+        t('freeze-bought', {
+          defaultValue: 'Streak freeze bought! You now hold {{count}}.',
+          count: body.freezeTokens,
+        }),
+      );
+      setData((d) => (d ? { ...d, streak: { ...d.streak, freezeTokens: body.freezeTokens } } : d));
+    } catch (e) {
+      toast.error(serverError(e) ?? t('freeze-failed', { defaultValue: 'Could not buy a freeze.' }));
     } finally {
       setBuying(false);
     }
   };
 
   return (
-    <section className="rad-live__card glass-fill">
+    <section className="rad-live__card surface-card">
       <div className="rad-live__head">
         <h2>
           <Flame aria-hidden />
           {t('today-title', { defaultValue: 'Today' })}
         </h2>
         {data.streak.current > 0 && (
-          <span className="rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-semibold text-site-accent">
+          <span className="rounded-full bg-site-bg-subtle px-2 py-0.5 text-xs font-semibold text-site-accent">
             {t('today-streak', { defaultValue: '{{count}}🔥', count: data.streak.current })}
           </span>
         )}
@@ -204,7 +191,7 @@ export function TodayWidget({ onSettled }: { onSettled?: () => void } = {}) {
           </p>
           <Button
             type="button"
-            variant="accent-ghost"
+            variant="ghost"
             size="xs"
             onClick={buyFreeze}
             disabled={buying || data.streak.freezeTokens >= 3}

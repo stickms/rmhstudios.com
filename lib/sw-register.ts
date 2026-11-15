@@ -6,8 +6,8 @@
  * scope rules don't allow it) and on browsers without support.
  */
 
-// NOT from '@/lib/discord-sdk' — see that module's re-export note; importing it
-// here would drag the Activity SDK onto every page's critical path.
+// From here, never '@/lib/discord-sdk': that module would drag the Activity SDK
+// onto every page's critical path (see lib/discord-activity.ts).
 import { isDiscordActivity } from '@/lib/discord-activity';
 import { initOfflineOutbox } from '@/lib/offline/outbox';
 

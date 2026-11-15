@@ -1,0 +1,24 @@
+/* Steel M5 for third-party overlays (docs/plans/2026-11-11-steel-design-implementation.md section 11): an overlay
+   changes in 160 ms. sonner owns its own stacking transform, so the toast's travel cannot be removed without breaking
+   stacked toasts; its duration and curve are the M5 ones. Doubled attribute selectors beat sonner's own rule without
+   !important. */
+[data-sonner-toaster][data-sonner-toaster] [data-sonner-toast][data-sonner-toast] {
+  transition-duration: var(--m5);
+  transition-timing-function: ease;
+}
+
+/* Where a toast sits above the bottom edge (components/ui/site-toaster.tsx). Under 1024px the globe is docked at the
+   bottom of the page and a toast must clear it; from 1024px the globe is in the sidebar and the bottom right corner is
+   free. */
+:root {
+  --toast-bottom: var(--site-floating-reserve);
+}
+@media (min-width: 1024px) {
+  :root {
+    --toast-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+/* sonner colours the description from its light or dark palette and gives it no custom property. */
+[data-sonner-toaster][data-sonner-toaster] [data-sonner-toast][data-sonner-toast] [data-description] {
+  color: var(--site-text-muted);
+}

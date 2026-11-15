@@ -1,7 +1,7 @@
 /**
  * One real player in a match e2e (PLAN §6.3): a signed-in browser context on the
  * test build's /balatro (VITE_BALATRO_MP_TEST=1), with multiplayer opened and the
- * autopilot reachable through `window.__balatroMp` (lib/balatro/mp/test-hooks.ts).
+ * autopilot reachable through `window.__balatroMp` (features/balatro/engine/mp/test-hooks.ts).
  *
  *   const p = await openMpPlayer(player, stack.baseUrl);
  *   await p.ui('create', { queueMode: 'pvp_nemesis' });     // MP.test.ui{op='create'}
@@ -25,7 +25,7 @@ export const CMD_TIMEOUT_MS = 120_000;
 
 /**
  * Commands whose own Lua waits add up to more than CMD_TIMEOUT_MS
- * (lib/balatro/lua/mp_test/autopilot.lua, AP.default_wait = 120 s per wait). The page must
+ * (features/balatro/engine/lua/mp_test/autopilot.lua, AP.default_wait = 120 s per wait). The page must
  * outwait the Lua side: the Lua timeout names what it waited for ("timeout: state SHOP (now
  * SHOP)"), while a page timeout only says the command took too long, and a slow but correct
  * command would fail. leave_shop waits for the shop (120 s), the next-round button (120 s)
@@ -35,7 +35,7 @@ export const CMD_BUDGET_MS: Readonly<Record<string, number>> = {
   leave_shop: 3 * 120_000 + 20_000,
 };
 
-/** The session runtime's snapshot (lib/balatro/mp/lobby/runtime.ts RuntimeSnapshot). */
+/** The session runtime's snapshot (features/balatro/engine/mp/lobby/runtime.ts RuntimeSnapshot). */
 export interface MpSnap {
   me: string | null;
   role: 'host' | 'member' | 'spectator' | 'practice' | null;
@@ -119,7 +119,7 @@ export const FATAL_LINE =
 export interface OpenOptions {
   /** Path + query (default `/balatro`). */
   path?: string;
-  /** Test overrides read by lib/balatro/mp/index.ts (`window.__rmhBalatroTest`). */
+  /** Test overrides read by features/balatro/engine/mp/index.ts (`window.__rmhBalatroTest`). */
   overrides?: Record<string, unknown>;
   /** Open MP from the menu (default true). A `?lobby=` path opens it by itself. */
   open?: boolean;

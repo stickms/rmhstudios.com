@@ -8,6 +8,7 @@
  * missing community (404 / null / not listed), so existence does not leak.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { handlersOfModule } from '@/lib/__tests__/api-handlers-of';
 
 const h = vi.hoisted(() => ({
   community: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
@@ -94,10 +95,7 @@ const session = (id: string) => ({ session: { user: { id } }, userId: id });
 
 type Handler = (ctx: Record<string, unknown>) => Promise<Response>;
 async function routeHandlers(mod: string, method: string): Promise<Handler> {
-  const m = (await import(/* @vite-ignore */ mod)) as {
-    Route: { options: { server: { handlers: Record<string, Handler> } } };
-  };
-  return m.Route.options.server.handlers[method];
+  return handlersOfModule<Handler>(await import(/* @vite-ignore */ mod))[method];
 }
 
 beforeEach(() => {
@@ -206,7 +204,7 @@ describe('members / announcements / join / pages routes', () => {
   });
 
   it('members: 404 for a non-member, roster for a member', async () => {
-    const GET = await routeHandlers('@/app/routes/api/communities/$slug/members', 'GET');
+    const GET = await routeHandlers('@/lib/communities/api/communities.$slug.members.server', 'GET');
     expect((await GET({ params: { slug: 's' }, ...session('stranger') })).status).toBe(404);
     expect((await GET({ params: { slug: 's' }, session: null })).status).toBe(404);
     h.member.findUnique.mockResolvedValue({ role: 'MEMBER' });
@@ -215,7 +213,7 @@ describe('members / announcements / join / pages routes', () => {
   });
 
   it('announcements: 404 for a non-member, list for a member', async () => {
-    const GET = await routeHandlers('@/app/routes/api/communities/$slug/announcements', 'GET');
+    const GET = await routeHandlers('@/lib/communities/api/communities.$slug.announcements.server', 'GET');
     expect((await GET({ params: { slug: 's' }, ...session('stranger') })).status).toBe(404);
     expect((await GET({ params: { slug: 's' }, session: null })).status).toBe(404);
     expect(h.announcement.findMany).not.toHaveBeenCalled();
@@ -224,7 +222,7 @@ describe('members / announcements / join / pages routes', () => {
   });
 
   it('join: no invite means 404; a member can still leave', async () => {
-    const POST = await routeHandlers('@/app/routes/api/communities/$slug/join', 'POST');
+    const POST = await routeHandlers('@/lib/communities/api/communities.$slug.join.server', 'POST');
     h.transaction.mockResolvedValue([]);
     expect((await POST({ params: { slug: 's' }, ...session('stranger') })).status).toBe(404);
     expect(h.transaction).not.toHaveBeenCalled();
@@ -235,7 +233,7 @@ describe('members / announcements / join / pages routes', () => {
   });
 
   it('pages index + revisions: 404 for a non-member of a private community', async () => {
-    const LIST = await routeHandlers('@/app/routes/api/community-pages/index', 'GET');
+    const LIST = await routeHandlers('@/lib/communities/api/community-pages.server', 'GET');
     expect(
       (await LIST({ query: { communitySlug: 's' }, userId: 'stranger', isAdmin: false })).status,
     ).toBe(404);
@@ -249,7 +247,7 @@ describe('members / announcements / join / pages routes', () => {
 
     h.member.findUnique.mockResolvedValue(null);
     h.page.findUnique.mockResolvedValue({ communityId: 'c1', community: { isPrivate: true } });
-    const REV = await routeHandlers('@/app/routes/api/community-pages/$id.revisions', 'GET');
+    const REV = await routeHandlers('@/lib/communities/api/community-pages.$id.revisions.server', 'GET');
     expect((await REV({ params: { id: 'p1' }, userId: 'stranger' })).status).toBe(404);
   });
 });
@@ -329,7 +327,7 @@ describe('events of a private community are members-only', () => {
 
   it('GET /api/events?scope=community: no event data for an anonymous viewer', async () => {
     privateCommunity(false);
-    const GET = await routeHandlers('@/app/routes/api/events/index', 'GET');
+    const GET = await routeHandlers('@/lib/calendar/api/events.server', 'GET');
     const res = await GET({
       request: new Request('http://x/api/events?scope=community&communityId=c1'),
       session: null,

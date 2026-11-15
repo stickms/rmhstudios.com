@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
@@ -11,6 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  createUserBuildApi,
+  updateUserBuildApi,
+  userBuildCategoriesApi,
+} from '@/lib/user-builds.contract';
 
 const FIELD_LABEL = 'block text-sm font-medium text-site-text';
 
@@ -78,8 +83,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
   // Fetch categories
   useEffect(() => {
-    fetch('/api/user-builds/categories')
-      .then((res) => res.json())
+    api(userBuildCategoriesApi)
       .then((data) => setCategories(data.categories || []))
       .catch(console.error);
   }, []);
@@ -106,20 +110,17 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         price: price ? Math.max(0, parseInt(price, 10) || 0) : 0,
       };
 
-      const res = await fetch(isEditing ? `/api/user-builds/${build.id}` : '/api/user-builds', {
-        method: isEditing ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
+      let savedBuild: Build;
+      try {
+        savedBuild = isEditing
+          ? await api(updateUserBuildApi, { params: { id: build.id }, body })
+          : await api(createUserBuildApi, { body });
+      } catch (err) {
         throw new Error(
-          data.error || t('failed-to-save', { defaultValue: 'Failed to save build' }),
+          serverError(err) || t('failed-to-save', { defaultValue: 'Failed to save build' }),
+          { cause: err },
         );
       }
-
-      const savedBuild = await res.json();
 
       if (onSuccess) {
         onSuccess(savedBuild);
@@ -191,7 +192,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           maxLength={100}
           required
         />
-        <p className="text-xs text-site-text-dim">{title.length}/100</p>
+        <p className="text-xs text-site-text-muted">{title.length}/100</p>
       </div>
 
       {/* Description */}
@@ -211,7 +212,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           maxLength={500}
           required
         />
-        <p className="text-xs text-site-text-dim">{description.length}/500</p>
+        <p className="text-xs text-site-text-muted">{description.length}/500</p>
       </div>
 
       {/* The title this build was made for (its Workshop) */}
@@ -229,7 +230,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
               </option>
             ))}
         </Select>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('made-for-hint', { defaultValue: 'Public builds appear in that game’s Workshop.' })}
         </p>
       </div>
@@ -264,7 +265,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
               key={tech}
               type="button"
               size="xs"
-              variant={technologies.includes(tech) ? 'accent' : 'outline'}
+              variant={technologies.includes(tech) ? 'default' : 'default'}
               aria-pressed={technologies.includes(tech)}
               onClick={() => toggleTechnology(tech)}
               className="rounded-full"
@@ -286,7 +287,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           <Button
             type="button"
             onClick={addCustomTech}
-            variant="secondary"
+            variant="default"
             size="icon"
             aria-label={t('add-technology', { defaultValue: 'Add technology' })}
           >
@@ -296,7 +297,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         {technologies.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {technologies.map((tech) => (
-              <Badge key={tech} variant="accent" size="lg" className="gap-2 pr-1.5">
+              <Badge key={tech} variant="default" className="gap-2 pr-1.5">
                 {tech}
                 <button
                   type="button"
@@ -331,7 +332,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           <Button
             type="button"
             onClick={addTag}
-            variant="secondary"
+            variant="default"
             size="icon"
             aria-label={t('add-tag', { defaultValue: 'Add tag' })}
           >
@@ -341,7 +342,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
-              <Badge key={tag} variant="default" size="lg" className="gap-2 pr-1.5">
+              <Badge key={tag} variant="default" className="gap-2 pr-1.5">
                 #{tag}
                 <button
                   type="button"
@@ -355,7 +356,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             ))}
           </div>
         )}
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('tags-count', { defaultValue: '{{count}}/10 tags', count: tags.length })}
         </p>
       </div>
@@ -401,7 +402,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           placeholder="https://..."
         />
         {thumbnailUrl && (
-          <div className="glass-fill max-w-xs overflow-hidden rounded-site-sm">
+          <div className="max-w-xs overflow-hidden rounded-site-sm">
             <img
               src={thumbnailUrl}
               alt={t('thumbnail-preview', { defaultValue: 'Thumbnail preview' })}
@@ -439,7 +440,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           onChange={(e) => setPrice(e.target.value)}
           placeholder={t('placeholder-price', { defaultValue: '0 (free)' })}
         />
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('price-description', {
             defaultValue:
               'Charge coins to unlock the README, source, and demo. Leave 0 to keep it free. A 10% platform fee applies to sales.',
@@ -471,7 +472,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
       {/* Actions */}
       <div className="flex gap-2 border-t border-site-border pt-4">
-        <Button type="submit" variant="accent" className="w-full md:w-auto" loading={loading}>
+        <Button type="submit" variant="default" className="w-full md:w-auto" loading={loading}>
           {isEditing
             ? t('update-build', { defaultValue: 'Update Build' })
             : t('save-build', { defaultValue: 'Save Build' })}

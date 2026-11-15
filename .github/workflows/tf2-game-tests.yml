@@ -1,13 +1,23 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# The browser game suite (TF2, Half-Life 2 demo, Portal: First Slice).
+# The Source-engine port's suite (TF2, Half-Life 2 demo, Portal: First Slice,
+# CS:GO, the HUD editor's model and the loadout model).
 #
 # `pnpm test:tf2` (vitest.tf2.config.ts) covers lib/tf2-game, lib/sp-game,
-# scripts/tf2-game and the hub's TF2 handler. It is its own suite because the
-# main suite is scoped to mission-critical code (docs/testing.md) and these
-# tests are about how the games play. Tests that need real game files read a
-# Steam install from TF2_ROOT / HL2_ROOT / PORTAL_ROOT and skip here, where no
-# install exists; the asset sync job (tf2-assets-sync.yml) runs the pipeline
-# against real installs. Path-filtered so unrelated PRs don't pay for it.
+# lib/csgo-game, scripts/tf2-game, the hub's TF2 handler, and the tests of
+# lib/tf2-hud and lib/tf2-loadout that belong to the engine TypeScript project
+# (tsconfig.engine.json; vitest.engine-tests.mjs lists them). It is its own
+# suite because the main suite is scoped to mission-critical code
+# (docs/testing.md) and these tests are about how the games play. Tests that
+# need real game files read a Steam install from TF2_ROOT / HL2_ROOT /
+# PORTAL_ROOT and skip here, where no install exists; the asset sync job
+# (tf2-assets-sync.yml) runs the pipeline against real installs.
+#
+# Path-filtered so unrelated PRs don't pay for it. The filter is the engine
+# project's inputs: its own directories, the core project it imports
+# (tsconfig.core.json), the fixtures its tests read, and the dependency
+# lockfile. `tsc` proves the engine imports nothing else of the site, which is
+# what makes the filter sound; keep the two lists below identical, and in step
+# with the `include` of tsconfig.engine.json and tsconfig.core.json.
 # ─────────────────────────────────────────────────────────────────────────────
 name: tf2-game-tests
 
@@ -16,21 +26,63 @@ on:
     paths:
       - 'lib/tf2-game/**'
       - 'lib/sp-game/**'
+      - 'lib/csgo-game/**'
+      - 'lib/tf2-hud/**'
       - 'lib/tf2-loadout/**'
+      - 'components/tf2-game/hud-layout.ts'
+      - 'components/tf2-game/preview/sample-states.ts'
+      - 'components/tf2-hud/loadout/model-utils.ts'
+      - 'lib/core/**'
+      - 'lib/contract/**'
+      - 'lib/shared/**'
+      - 'lib/http.ts'
+      - 'lib/url.ts'
+      - 'lib/network-quality.ts'
+      - 'lib/display-scale.ts'
+      - 'public/tf2-hud/**'
       - 'scripts/tf2-game/**'
       - 'scripts/tf2-assets/**'
       - 'server/socket-server/tf2/**'
       - 'server/socket-server/handlers/tf2-game.ts'
       - 'vitest.tf2.config.ts'
+      - 'vitest.engine-tests.mjs'
+      - 'tsconfig.json'
+      - 'tsconfig.core.json'
+      - 'tsconfig.engine.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/tf2-game-tests.yml'
   push:
     branches: [main]
     paths:
       - 'lib/tf2-game/**'
       - 'lib/sp-game/**'
+      - 'lib/csgo-game/**'
+      - 'lib/tf2-hud/**'
+      - 'lib/tf2-loadout/**'
+      - 'components/tf2-game/hud-layout.ts'
+      - 'components/tf2-game/preview/sample-states.ts'
+      - 'components/tf2-hud/loadout/model-utils.ts'
+      - 'lib/core/**'
+      - 'lib/contract/**'
+      - 'lib/shared/**'
+      - 'lib/http.ts'
+      - 'lib/url.ts'
+      - 'lib/network-quality.ts'
+      - 'lib/display-scale.ts'
+      - 'public/tf2-hud/**'
       - 'scripts/tf2-game/**'
+      - 'scripts/tf2-assets/**'
       - 'server/socket-server/tf2/**'
+      - 'server/socket-server/handlers/tf2-game.ts'
       - 'vitest.tf2.config.ts'
+      - 'vitest.engine-tests.mjs'
+      - 'tsconfig.json'
+      - 'tsconfig.core.json'
+      - 'tsconfig.engine.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/tf2-game-tests.yml'
   workflow_dispatch: {}
 
 concurrency:

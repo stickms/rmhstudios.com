@@ -20,23 +20,55 @@
 
 import type { HudGame } from '../client/hud-state';
 import type { HudStore } from '../client/hud-store';
-import { GameConsole, type ConsoleHost, type GameConsoleOptions } from './game-console';
+import {
+  GameConsole,
+  type ConsoleHost,
+  type GameConsoleOptions,
+} from './game-console';
 
-const consoles = new WeakMap<HudStore, GameConsole>();
+const consoles =
+  new WeakMap<
+    HudStore,
+    GameConsole
+  >();
 
 /** The console of a store's game (created on first use). */
-export function gameConsoleFor(store: HudStore, game: HudGame, opts?: GameConsoleOptions): GameConsole {
-  let c = consoles.get(store);
-  if (!c) {
-    c = new GameConsole(store, game, opts);
-    consoles.set(store, c);
+export function gameConsoleFor(
+  store: HudStore,
+  game: HudGame,
+  opts?: GameConsoleOptions,
+): GameConsole {
+  let c =
+    consoles.get(
+      store,
+    );
+  if (
+    !c
+  ) {
+    c =
+      new GameConsole(
+        store,
+        game,
+        opts,
+      );
+    consoles.set(
+      store,
+      c,
+    );
   }
   return c;
 }
 
 /** The console of a store, if one was made. */
-export function peekGameConsole(store: HudStore): GameConsole | null {
-  return consoles.get(store) ?? null;
+export function peekGameConsole(
+  store: HudStore,
+): GameConsole | null {
+  return (
+    consoles.get(
+      store,
+    ) ??
+    null
+  );
 }
 
 /** The client's handle on its console. */
@@ -45,21 +77,64 @@ export interface ConsoleLink {
   /** After each rendered frame: runs `wait`ed commands, takes a pending screenshot. */
   frame(): void;
   /** True when `ev` was the console's (a reply or a replicated cvar): the client drops it. */
-  serverEvent(ev: { type: string }): boolean;
+  serverEvent(ev: {
+    type: string;
+  }): boolean;
   /** An input packet went out (net_graph). */
-  netOut(bytes: number): void;
+  netOut(
+    bytes: number,
+  ): void;
   detach(): void;
 }
 
 /** The game client mounts its side of the console. */
-export function attachConsoleHost(store: HudStore, game: HudGame, host: ConsoleHost): ConsoleLink {
-  const con = gameConsoleFor(store, game);
-  con.setHost(host);
+export function attachConsoleHost(
+  store: HudStore,
+  game: HudGame,
+  host: ConsoleHost,
+): ConsoleLink {
+  const con =
+    gameConsoleFor(
+      store,
+      game,
+    );
+  con.setHost(
+    host,
+  );
   return {
-    console: con,
-    frame: () => con.frame(),
-    serverEvent: (ev) => (ev.type === 'console' || ev.type === 'cvar' ? con.serverEvent(ev as { type: string } & Record<string, unknown>) : false),
-    netOut: (bytes) => con.net.recordOut(bytes),
-    detach: () => con.setHost(null),
+    console:
+      con,
+    frame:
+      () =>
+        con.frame(),
+    serverEvent:
+      (
+        ev,
+      ) =>
+        ev.type ===
+          'console' ||
+        ev.type ===
+          'cvar'
+          ? con.serverEvent(
+              ev as {
+                type: string;
+              } & Record<
+                string,
+                unknown
+              >,
+            )
+          : false,
+    netOut:
+      (
+        bytes,
+      ) =>
+        con.net.recordOut(
+          bytes,
+        ),
+    detach:
+      () =>
+        con.setHost(
+          null,
+        ),
   };
 }

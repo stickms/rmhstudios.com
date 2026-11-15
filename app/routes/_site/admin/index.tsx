@@ -46,7 +46,7 @@ function AdminDashboardPage() {
       backTo="/"
     >
       <AdminBody>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 border-t border-site-border md:grid-cols-2 md:gap-x-8">
           <AdminHubCard
             to="/admin/users"
             title={t('users-title', { defaultValue: 'Users' })}
@@ -82,7 +82,7 @@ function AdminDashboardPage() {
             })}
             badge={
               counts.reports > 0 ? (
-                <Badge variant="danger" size="sm" icon={false}>
+                <Badge variant="danger" icon={false}>
                   {counts.reports}
                 </Badge>
               ) : undefined
@@ -99,6 +99,15 @@ function AdminDashboardPage() {
           />
 
           <AdminHubCard
+            to="/admin/census"
+            title={t('census-title', { defaultValue: 'Census' })}
+            description={t('census-card-description', {
+              defaultValue:
+                'Every table with its rows and signs of writes, and every game and app with its 30-day actives. Live, plus one stored snapshot a month.',
+            })}
+          />
+
+          <AdminHubCard
             to="/admin/appeals"
             title={t('appeals-title', { defaultValue: 'Strike Appeals' })}
             description={t('appeals-description', {
@@ -107,7 +116,7 @@ function AdminDashboardPage() {
             })}
             badge={
               counts.appeals > 0 ? (
-                <Badge variant="danger" size="sm" icon={false}>
+                <Badge variant="danger" icon={false}>
                   {counts.appeals}
                 </Badge>
               ) : undefined
@@ -123,7 +132,7 @@ function AdminDashboardPage() {
             })}
             badge={
               counts.emojiPacks > 0 ? (
-                <Badge variant="danger" size="sm" icon={false}>
+                <Badge variant="danger" icon={false}>
                   {counts.emojiPacks}
                 </Badge>
               ) : undefined
@@ -139,7 +148,7 @@ function AdminDashboardPage() {
             })}
             badge={
               counts.market > 0 ? (
-                <Badge variant="danger" size="sm" icon={false}>
+                <Badge variant="danger" icon={false}>
                   {counts.market}
                 </Badge>
               ) : undefined

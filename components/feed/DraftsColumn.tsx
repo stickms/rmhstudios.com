@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
 import {
@@ -18,8 +16,13 @@ import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Button } from'@/components/ui/button';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
-import { Reveal } from'@/components/motion';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { api } from'@/lib/contract/client';
+import {
+ discardScheduledApi,
+ listScheduledApi,
+ publishScheduledApi,
+} from'@/lib/scheduled/scheduled.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface ScheduledRow {
  id: string;
@@ -58,13 +61,16 @@ export function DraftsColumn({
  const [scheduled, setScheduled] = useState<ScheduledRow[]>(initialData?.scheduled ?? []);
  const [loading, setLoading] = useState(!initialData);
  const [busy, setBusy] = useState<string | null>(null);
+ // Steel M9: lists fetched here replace the spinner; the loader's are there on first paint.
+ const arrival = useArrival(!loading);
 
  const load = useCallback(async () => {
- const res = await fetch('/api/scheduled', { credentials:'include'});
- if (res.ok) {
- const data = await res.json();
- setDrafts(data.drafts ?? []);
- setScheduled(data.scheduled ?? []);
+ try {
+ const data = await api(listScheduledApi);
+ setDrafts(data.drafts);
+ setScheduled(data.scheduled);
+ } catch {
+ // A failed refresh leaves the current lists in place.
  }
  }, []);
 
@@ -88,11 +94,10 @@ export function DraftsColumn({
  async function publishNow(id: string) {
  setBusy(`p:${id}`);
  try {
- const res = await fetch(`/api/scheduled/${encodeURIComponent(id)}/publish`, {
- method:'POST',
- credentials:'include',
- });
- if (res.ok) await load();
+ await api(publishScheduledApi, { params: { id } });
+ await load();
+ } catch {
+ // Not published: leave the lists as they are.
  } finally {
  setBusy(null);
  }
@@ -101,11 +106,10 @@ export function DraftsColumn({
  async function discard(id: string) {
  setBusy(`d:${id}`);
  try {
- const res = await fetch(`/api/scheduled/${encodeURIComponent(id)}`, {
- method:'DELETE',
- credentials:'include',
- });
- if (res.ok) await load();
+ await api(discardScheduledApi, { params: { id } });
+ await load();
+ } catch {
+ // Not discarded: leave the lists as they are.
  } finally {
  setBusy(null);
  }
@@ -122,21 +126,21 @@ export function DraftsColumn({
  const empty = drafts.length === 0 && scheduled.length === 0;
 
  return (
- <div>
+ <div className={arrival}>
  <ColumnHeader
  icon={FileText}
  title={t('drafts-and-scheduled', { defaultValue:'Drafts & Scheduled'})}
  />
 
  {empty ? (
- <Reveal>
+ <div>
  <EmptyState
  description={t('no-drafts-yet', {
  defaultValue:
 'No drafts yet. Use the"Save as draft"or"Schedule"options in the composer.',
  })}
  />
- </Reveal>
+ </div>
  ) : (
  <div className="space-y-6 pt-4 pb-12">
  <Section
@@ -179,7 +183,7 @@ function Section({
  const { t } = useTranslation('feed');
  if (rows.length === 0) return null;
  return (
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-3 flex items-center gap-2">
  <Icon className="h-3.5 w-3.5"/> {title}
  </h2>
@@ -189,16 +193,16 @@ function Section({
  return (
  <div
  key={r.id}
- className={`rounded-site glass-fill px-4 py-3 ${LIFT_CARD}`}
+ className={`rounded-site px-4 py-3`}
  >
  <p className="whitespace-pre-wrap break-words text-sm text-site-text">
  {r.content || (
- <span className="text-site-text-dim">
+ <span className="text-site-text-muted">
  {t('no-text', { defaultValue:'(no text)'})}
  </span>
  )}
  </p>
- <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-site-text-dim">
+ <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-site-text-muted">
  {r.scheduledAt && (
  <span className="inline-flex items-center gap-1 text-site-accent">
  <CalendarClock className="h-3 w-3"/> {formatWhen(r.scheduledAt)}
@@ -226,7 +230,7 @@ function Section({
  <div className="mt-3 flex items-center gap-2">
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  loading={busy === `p:${r.id}`}
  onClick={() => onPublish(r.id)}
  >
@@ -248,6 +252,6 @@ function Section({
  );
  })}
  </div>
- </Reveal>
+ </section>
  );
 }

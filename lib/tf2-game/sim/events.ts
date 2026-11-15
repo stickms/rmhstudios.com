@@ -106,7 +106,10 @@ export interface DeathEvent {
   weapon: string;
   weaponDefIndex: number;
   /** 0 normal, 1 mini-crit, 2 crit. */
-  crit: 0 | 1 | 2;
+  crit:
+    | 0
+    | 1
+    | 2;
   /** TF_DMG_CUSTOM_* (backstab, headshot, burning…). */
   customKill: number;
   damageType: number;
@@ -125,7 +128,10 @@ export interface DamageEvent extends Recipients {
   amount: number;
   /** Health left after the hit. */
   health: number;
-  crit: 0 | 1 | 2;
+  crit:
+    | 0
+    | 1
+    | 2;
   customKill: number;
   pos: Vec3;
 }
@@ -139,7 +145,12 @@ export interface HealEvent {
 
 export interface HudEvent extends Recipients {
   type: 'hud';
-  kind: 'text' | 'announce' | 'center' | 'alert' | 'training';
+  kind:
+    | 'text'
+    | 'announce'
+    | 'center'
+    | 'alert'
+    | 'training';
   /** Localisation key or literal message. */
   key: string;
   params?: readonly string[];
@@ -155,7 +166,14 @@ export interface ChatEvent extends Recipients {
 
 export interface CaptureEvent {
   type: 'capture';
-  kind: 'start' | 'progress' | 'blocked' | 'captured' | 'broken' | 'locked' | 'unlocked';
+  kind:
+    | 'start'
+    | 'progress'
+    | 'blocked'
+    | 'captured'
+    | 'broken'
+    | 'locked'
+    | 'unlocked';
   point: number;
   pointName: string;
   team: number;
@@ -164,7 +182,12 @@ export interface CaptureEvent {
 
 export interface FlagEvent {
   type: 'flag';
-  kind: 'pickup' | 'captured' | 'defended' | 'dropped' | 'returned';
+  kind:
+    | 'pickup'
+    | 'captured'
+    | 'defended'
+    | 'dropped'
+    | 'returned';
   player: number;
   /** Team that owns the flag. */
   team: number;
@@ -218,7 +241,13 @@ export interface TeamEvent {
 
 export interface ObjectEvent {
   type: 'object';
-  kind: 'built' | 'destroyed' | 'sapped' | 'upgraded' | 'removed' | 'detonated';
+  kind:
+    | 'built'
+    | 'destroyed'
+    | 'sapped'
+    | 'upgraded'
+    | 'removed'
+    | 'detonated';
   object: number;
   objectType: number;
   owner: number;
@@ -249,7 +278,10 @@ export interface LoadoutEvent extends Recipients {
   player: number;
   /** TF_CLASS_* the loadout is for. */
   cls: number;
-  status: 'applied' | 'pending' | 'refused';
+  status:
+    | 'applied'
+    | 'pending'
+    | 'refused';
   reason?: string;
 }
 
@@ -294,7 +326,8 @@ export type SimEvent =
   | TeleportEvent
   | PickupEvent;
 
-export type SimEventType = SimEvent['type'];
+export type SimEventType =
+  SimEvent['type'];
 
 // TF_DEATH_* (tf_shareddefs.h) — bits of DeathEvent.deathFlags.
 export const TF_DEATH_DOMINATION = 0x0001;

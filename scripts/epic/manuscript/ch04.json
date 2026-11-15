@@ -6,8 +6,14 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": ["折旗蠻嶺英魂烈", "問死篝燈兄語長"],
-    "en": ["A banner breaks on savage ridges — the hero's soul blazes", "By firelight brothers speak of death — those words outlast the night"]
+    "zh": [
+      "折旗蠻嶺英魂烈",
+      "問死篝燈兄語長"
+    ],
+    "en": [
+      "A banner breaks on savage ridges — the hero's soul blazes",
+      "By firelight brothers speak of death — those words outlast the night"
+    ]
   },
   "passages": [
     {
@@ -17,8 +23,18 @@
     },
     {
       "type": "verse",
-      "zh": ["蠻山萬仞鎖雲煙", "敵壘層層鐵甲連", "五千戈矛映寒日", "誰敢孤騎入陣前"],
-      "en": ["Ten thousand fathoms of savage mountain locked in cloud and smoke", "Enemy ramparts tier on tier, iron armor linked in rows", "Five thousand spears and halberds mirror the cold winter sun", "Who dares ride alone into the face of that formation?"]
+      "zh": [
+        "蠻山萬仞鎖雲煙",
+        "敵壘層層鐵甲連",
+        "五千戈矛映寒日",
+        "誰敢孤騎入陣前"
+      ],
+      "en": [
+        "Ten thousand fathoms of savage mountain locked in cloud and smoke",
+        "Enemy ramparts tier on tier, iron armor linked in rows",
+        "Five thousand spears and halberds mirror the cold winter sun",
+        "Who dares ride alone into the face of that formation?"
+      ]
     },
     {
       "type": "prose",
@@ -39,8 +55,18 @@
     },
     {
       "type": "verse",
-      "zh": ["孤騎衝煙指大纛", "刀光一道裂霜寒", "五千甲士屏息立", "只聽蠻嶺風聲歎"],
-      "en": ["A lone rider charges through smoke and points at the great war-banner", "One arc of blade-light splits the freezing air", "Five thousand armored soldiers hold their breath and stand still", "Listening only to the wind lamenting on the savage ridge"]
+      "zh": [
+        "孤騎衝煙指大纛",
+        "刀光一道裂霜寒",
+        "五千甲士屏息立",
+        "只聽蠻嶺風聲歎"
+      ],
+      "en": [
+        "A lone rider charges through smoke and points at the great war-banner",
+        "One arc of blade-light splits the freezing air",
+        "Five thousand armored soldiers hold their breath and stand still",
+        "Listening only to the wind lamenting on the savage ridge"
+      ]
     },
     {
       "type": "prose",
@@ -71,13 +97,49 @@
     },
     {
       "type": "verse",
-      "zh": ["蠻嶺秋霜骨氣寒", "孤旌折處血光殘", "提刀問陣誰能敵", "縱馬臨風自笑歡", "勝負古來皆一夢", "功名此際付輕彈", "篝燈對酌須盡醉", "明日山河又險關"],
-      "en": ["Savage ridge — autumn frost — the spirit in one's bones runs cold", "Where the lone banner breaks, the light of blood lingers still", "Who can stand against a man who rides into formation asking for rivals?", "Galloping into the wind he laughs at his own gladness", "Victory and defeat have always been a single dream", "Glory and achievement at this moment are worth a snap of the fingers", "By firelight, drinking together, we must drain the cup to the dregs", "Tomorrow the rivers and mountains will offer their dangers again"]
+      "zh": [
+        "蠻嶺秋霜骨氣寒",
+        "孤旌折處血光殘",
+        "提刀問陣誰能敵",
+        "縱馬臨風自笑歡",
+        "勝負古來皆一夢",
+        "功名此際付輕彈",
+        "篝燈對酌須盡醉",
+        "明日山河又險關"
+      ],
+      "en": [
+        "Savage ridge — autumn frost — the spirit in one's bones runs cold",
+        "Where the lone banner breaks, the light of blood lingers still",
+        "Who can stand against a man who rides into formation asking for rivals?",
+        "Galloping into the wind he laughs at his own gladness",
+        "Victory and defeat have always been a single dream",
+        "Glory and achievement at this moment are worth a snap of the fingers",
+        "By firelight, drinking together, we must drain the cup to the dregs",
+        "Tomorrow the rivers and mountains will offer their dangers again"
+      ]
     },
     {
       "type": "verse",
-      "zh": ["一騎衝雲入萬戈", "纛旗墜地鼓聲多", "英雄不問生前事", "兄弟相看意氣河", "夜火照山山色古", "寒星映水水聲歌", "此身若與天地老", "醉臥蠻山也蹉跎"],
-      "en": ["One rider charges through the clouds into ten thousand halberds", "The great banner falls — the drumbeats multiply", "A hero does not ask about what came before his life", "Brothers look at each other: between them flows a river of spirit", "Nightfire lights the mountain — the mountain's color is ancient", "Cold stars reflect in water — the water's sound is a song", "If this body could grow old together with heaven and earth", "Lying drunk on the Savage Hills — even that would be time well wasted"]
+      "zh": [
+        "一騎衝雲入萬戈",
+        "纛旗墜地鼓聲多",
+        "英雄不問生前事",
+        "兄弟相看意氣河",
+        "夜火照山山色古",
+        "寒星映水水聲歌",
+        "此身若與天地老",
+        "醉臥蠻山也蹉跎"
+      ],
+      "en": [
+        "One rider charges through the clouds into ten thousand halberds",
+        "The great banner falls — the drumbeats multiply",
+        "A hero does not ask about what came before his life",
+        "Brothers look at each other: between them flows a river of spirit",
+        "Nightfire lights the mountain — the mountain's color is ancient",
+        "Cold stars reflect in water — the water's sound is a song",
+        "If this body could grow old together with heaven and earth",
+        "Lying drunk on the Savage Hills — even that would be time well wasted"
+      ]
     },
     {
       "type": "prose",
@@ -98,8 +160,18 @@
     },
     {
       "type": "verse",
-      "zh": ["烽火熄時山色老", "英雄醉後夢魂輕", "不知篝影搖搖處", "已有西風識此情"],
-      "en": ["When beacon fires go out, the mountain's color ages", "When heroes fall asleep drunk, their dreaming souls grow weightless", "They do not know that there where the bonfire-shadows waver", "The west wind has already come to know this feeling"]
+      "zh": [
+        "烽火熄時山色老",
+        "英雄醉後夢魂輕",
+        "不知篝影搖搖處",
+        "已有西風識此情"
+      ],
+      "en": [
+        "When beacon fires go out, the mountain's color ages",
+        "When heroes fall asleep drunk, their dreaming souls grow weightless",
+        "They do not know that there where the bonfire-shadows waver",
+        "The west wind has already come to know this feeling"
+      ]
     },
     {
       "type": "prose",

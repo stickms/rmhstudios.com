@@ -105,7 +105,7 @@ const POST_FCP_CLS_LIMIT = 0.1;
  * Empty since 2026-10-07. Its one entry was `/laundry-sort` at 0.443 — a 16:9
  * stage that was 0x0 in the server HTML until a ResizeObserver measured it. The
  * stage is now sized by CSS from first paint (container-query units, see
- * `components/laundry-sort/AspectStage.tsx`) and measures 0 in every profile.
+ * `features/laundry-sort/ui/AspectStage.tsx`) and measures 0 in every profile.
  * Keep the list: the next entry needs the same evidence that one carried.
  */
 const KNOWN_SHIFTS = [];

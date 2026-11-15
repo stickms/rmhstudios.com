@@ -4,7 +4,7 @@
  * post/comment in a community; mutations bust the local entry.
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import {
   isVerificationLevel,
   normalizeVerificationRule,
@@ -21,26 +21,30 @@ const TTL_MS = 30_000;
 const key = (communityId: string) => `community:settings:${communityId}`;
 
 export async function getCommunitySettings(communityId: string): Promise<CommunitySettings | null> {
-  const hit = apiCache.get<CommunitySettings>(key(communityId));
-  if (hit) return hit;
-  const row = await prisma.community.findUnique({
-    where: { id: communityId },
-    select: {
-      verificationLevel: true,
-      verificationValue: true,
-      flairRequired: true,
-      starThreshold: true,
+  return cached(
+    key(communityId),
+    TTL_MS,
+    async () => {
+      const row = await prisma.community.findUnique({
+        where: { id: communityId },
+        select: {
+          verificationLevel: true,
+          verificationValue: true,
+          flairRequired: true,
+          starThreshold: true,
+        },
+      });
+      if (!row) return null;
+      const level = isVerificationLevel(row.verificationLevel) ? row.verificationLevel : 'none';
+      const settings: CommunitySettings = {
+        verification: normalizeVerificationRule(level, row.verificationValue),
+        flairRequired: row.flairRequired,
+        starThreshold: row.starThreshold,
+      };
+      return settings;
     },
-  });
-  if (!row) return null;
-  const level = isVerificationLevel(row.verificationLevel) ? row.verificationLevel : 'none';
-  const settings: CommunitySettings = {
-    verification: normalizeVerificationRule(level, row.verificationValue),
-    flairRequired: row.flairRequired,
-    starThreshold: row.starThreshold,
-  };
-  apiCache.set(key(communityId), settings, TTL_MS);
-  return settings;
+    { l2: false, shouldCache: (v) => v != null },
+  );
 }
 
 export async function updateCommunitySettings(
@@ -72,6 +76,6 @@ export async function updateCommunitySettings(
   if (Object.keys(data).length > 0) {
     await prisma.community.update({ where: { id: communityId }, data });
   }
-  apiCache.invalidate(key(communityId));
+  void invalidateCached(key(communityId));
   return getCommunitySettings(communityId);
 }

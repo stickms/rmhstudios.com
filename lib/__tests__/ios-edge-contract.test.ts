@@ -9,9 +9,8 @@
  * lived only in comments; this file is where it is enforced.
  *
  *  1. INVARIANTS: the pieces the contract is made of still exist (viewport-fit=cover, no theme-color on iOS in any of its
- *     three writers, the fixed decoration hidden on iOS, the root carrying the canvas, the top capsule floating — and, below
- *     640px, the one deliberate exception: a full-bleed, inset-aware top bar; plus the root tint that carries the open
- *     globe menu's colour behind the bars).
+ *     three writers, the fixed decoration hidden on iOS, the root carrying the canvas, the shell with no top bar, the docked
+ *     globe floated off the bottom edge with its page fade hidden on iOS, and a veil that is the ground colour).
  *  2. RATCHET: a site-tier rule or class that pins a fixed/sticky layer flush to the top or bottom edge is counted per
  *     file and frozen in `ios-edge.baseline.json`. A new one fails ("float it off the edge, or hide it on
  *     `html.ios-webkit`, then…"); a file UNDER its frozen count also fails ("lower it"), so the list only goes down.
@@ -21,14 +20,17 @@
  *
  * The runtime counterpart, which finds what static scanning cannot see, is `pnpm audit:pages --edges`.
  */
+import { FULLSCREEN_TIER_DIRS } from '../../eslint-local-rules/design-scope.js';
 import { readFileSync, readdirSync, statSync, writeFileSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { runPrepaint } from './prepaint-harness';
 import postcss from 'postcss';
 import selectorParser from 'postcss-selector-parser';
+import { readCss } from './css-source';
 
 const ROOT = join(__dirname, '..', '..');
-const read = (p: string) => readFileSync(join(ROOT, p), 'utf8');
+const read = (p: string) => readCss(join(ROOT, p));
 const BASELINE_PATH = join(__dirname, 'ios-edge.baseline.json');
 
 // ── 1. Invariants ──────────────────────────────────────────────────────────────────────────────────────────────
@@ -36,69 +38,84 @@ const BASELINE_PATH = join(__dirname, 'ios-edge.baseline.json');
 describe('iOS edge contract: invariants', () => {
   const root = read('app/routes/__root.tsx');
   const globals = read('app/globals.css');
-  const radial = read('components/radial/radial.css');
   const theme = read('stores/themeStore.ts');
 
   it('the page paints edge to edge (viewport-fit=cover), so the bars show the page, not a gutter', () => {
-    expect(root.match(/viewport-fit=cover/g)?.length).toBeGreaterThanOrEqual(2);
+    // The Discord head in __root.tsx, and the site-wide head every other document takes
+    // (lib/root-head.ts: __root.tsx and the island document, redesign B1).
+    expect(root.match(/viewport-fit=cover/g)?.length).toBeGreaterThanOrEqual(1);
+    expect(root).toMatch(/meta: ROOT_META/);
+    expect(read('lib/root-head.ts')).toMatch(/viewport-fit=cover/);
   });
 
   it('theme-color is never written on iOS: the pre-paint script and the runtime both skip ios-webkit', () => {
-    // A theme-color is one flat colour, which is exactly the band. Pre-paint:
-    expect(root).toContain(
-      `if(!document.documentElement.classList.contains("ios-webkit")){var t=document.querySelector('meta[name="theme-color"][data-rmh-theme]')`,
-    );
+    // A theme-color is one flat colour, which is exactly the band. Pre-paint (the GENERATED script run in a fake DOM):
+    const ios = runPrepaint({
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    });
+    expect(ios.classes.has('ios-webkit')).toBe(true);
+    expect(ios.metaCreated(), 'no theme-color tag on iOS WebKit').toBe(false);
+    const other = runPrepaint({
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36',
+    });
+    expect(other.classes.has('ios-webkit')).toBe(false);
+    expect(other.metaCreated(), 'every other browser still gets one').toBe(true);
+    // Steel section 2: Night's page is #0b0d10 (the new-visitor default).
+    expect(other.meta.content).toBe('#0b0d10');
     // Runtime (paintDocumentGround): on iOS it removes our tag instead of mirroring the background into it.
     expect(theme).toMatch(
       /if \(html\.classList\.contains\('ios-webkit'\)\) \{\s*marked\?\.remove\(\);/,
     );
   });
 
-  it('the full-viewport fixed decoration is not rendered on iOS WebKit', () => {
-    expect(globals).toMatch(
-      /html\.ios-webkit :is\(\.site-aurora, \.radial-backdrop, \.jelly-arc-layer\) \{\s*display: none;/,
-    );
+  it('the ROOT carries the page ground on iOS (the bars tint from it), not a fixed layer', () => {
+    // Steel has no canvas (R1: a flat ground), so the root's own `--site-bg` is the whole story: there is no aurora to
+    // mirror onto it and no fixed decoration.
+    expect(globals).toMatch(/html \{[^}]*background-color: var\(--site-bg\);/);
+    expect(globals).not.toContain('--site-canvas');
+    expect(globals).not.toMatch(/html\.ios-webkit:not\(\.app-route\) \{\s*background-image/);
   });
 
-  it('the ROOT carries the page canvas on iOS (the bars tint from it), not a fixed layer', () => {
-    expect(globals).toMatch(
-      /html\.ios-webkit:not\(\.app-route\) \{\s*background-image: var\(--site-canvas\);/,
-    );
+  // Steel phase 3 (docs/plans/2026-11-11-steel-design-implementation.md section 9 L1, 8.1 G1): the top bar, the capsule and
+  // the old hub orb are gone. The phone shell has NO fixed header at all (the page title scrolls) and the docked globe is
+  // the only fixed layer, floated 18px off the bottom edge. These pin that, so none of them quietly comes back.
+  const shell = read('components/shell/site-shell.css');
+  const globe = read('components/shell/globe-nav.css');
+
+  it('the shell has no top bar: nothing in it is fixed or sticky flush to the top, and it renders no <header>', () => {
+    expect(shell).not.toMatch(/position:\s*fixed/);
+    expect(cssFindings(shell)).toEqual([]);
+    expect(read('components/shell/SiteShell.tsx')).not.toMatch(/<header|radial-topbar/);
+    expect(read('components/shell/Sidebar.tsx')).not.toMatch(/<header/);
   });
 
-  it('the top capsule floats clear of the edge on screens wide enough to hold a capsule', () => {
-    const m = /\.radial-topbar \{[^}]*?\btop:\s*([\d.]+)rem/.exec(radial);
-    expect(m, '.radial-topbar declares a rem offset from the top').toBeTruthy();
-    expect(Number(m![1])).toBeGreaterThanOrEqual(0.5);
+  it('the desktop sidebar sticks 16px off the top edge, not at it', () => {
+    expect(shell).toMatch(/\.site-sidebar__inner \{[^}]*position:\s*sticky;[^}]*inset-block-start:\s*16px/);
   });
 
-  // The one deliberate exception (2026-10-29, owner's call): below 640px the capsule gives way to a full-bleed bar that
-  // IS the strip behind the status bar, tinted by the same glass as the page, instead of a pill whose margins and curve
-  // spend a phone's width. It carries the status-bar inset in its own height so its content clears the clock whether
-  // Safari keeps its bar outside the page (inset 0) or the page runs under it. What this pins is that the exception
-  // stays exactly that: one bar, narrow screens only, inset-aware — not a licence for other flush layers (the ratchet
-  // below still counts those).
-  it('below 640px the top bar is a full-bleed, inset-aware bar (the one flush top layer, by design)', () => {
-    const m = /@media \(max-width: 639\.98px\) \{\s*:root \{[^}]*--rad-topbar-h:[^;]*safe-area-inset-top[^;]*;[^}]*\}\s*\.radial-topbar\.glass-chrome \{([^}]*)\}/.exec(
-      radial,
+  it('the docked globe floats 18px above the bottom plus the inset, and follows Safari\'s toolbar in CSS', () => {
+    expect(globe).toMatch(
+      /--globe-bottom:\s*calc\(18px \+ env\(safe-area-inset-bottom, 0px\) \+ var\(--vv-follow, 0px\)\)/,
     );
-    expect(m, 'a narrow-screen block that adds the inset to --rad-topbar-h and restyles the bar').toBeTruthy();
-    const rule = m![1];
-    expect(rule).toMatch(/\btop:\s*0\b/);
-    expect(rule).toMatch(/\bmargin:\s*0\b/);
-    expect(rule).toMatch(/\bborder-radius:\s*0\b/);
-    expect(rule).toMatch(/padding-top:\s*env\(safe-area-inset-top/);
+    expect(globe).toMatch(/\.globe-nav__dock \{[^}]*inset-block-end:\s*var\(--globe-bottom\)/);
+    expect(cssFindings(globe, hiddenOnIos(globe))).toEqual([]);
   });
 
-  it('while the globe menu is open the ROOT carries the veil tint, so the strips behind the bars take its colour', () => {
-    // Not a fixed layer at the edge (that is the band): the same root canvas Safari already tints from, under the veil's
-    // own colour. Two rules: opaque `--site-bg` where the veil is opaque, 24% on phones where the page shows through.
-    expect(radial).toMatch(
-      /html\.ios-webkit:not\(\.app-route\):has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) \{\s*background-image:\s*linear-gradient\(var\(--site-bg\), var\(--site-bg\)\),\s*var\(--site-canvas\);/,
-    );
-    expect(radial).toMatch(
-      /@media \(max-width: 767\.98px\) \{\s*html\.ios-webkit:not\(\.app-route\):has\(\.radial-hub:is\(\[data-phase='open'\], \[data-phase='everting'\]\)\) \{[^}]*color-mix\(in srgb, var\(--site-bg\) 24%, transparent\)/,
-    );
+  it('the page fade under the globe is hidden on iOS: a flat layer at the bottom edge is what Safari tints its strip from', () => {
+    expect(globe).toMatch(/html\.ios-webkit \.globe-nav__fade \{\s*display:\s*none;/);
+    expect(hiddenOnIos(globe).has('globe-nav__fade')).toBe(true);
+  });
+
+  it('the veil paints past every edge (negative inset), takes nothing while closed, and is the ground colour', () => {
+    expect(globe).toMatch(/\.globe-nav__veil \{[^}]*inset:\s*-2rem;[^}]*background:\s*var\(--site-bg\);[^}]*visibility:\s*hidden;[^}]*pointer-events:\s*none/);
+  });
+
+  it('while the globe is open the root needs no tint: the veil and the ground are the same flat colour', () => {
+    // The old design mirrored the veil's tint onto the root's canvas so the strips behind the bars matched the menu.
+    // With a flat `--site-bg` ground and a `--site-bg` veil there is nothing to mirror, and no rule may bring a root
+    // background-image back (it is the band).
+    for (const css of [shell, globe]) expect(css).not.toMatch(/html\.ios-webkit[^{]*:has\(|--site-canvas/);
   });
 });
 
@@ -128,15 +145,7 @@ describe('iOS edge contract: the scanner', () => {
 
 // ── 2. The ratchet ─────────────────────────────────────────────────────────────────────────────────────────────
 
-const fullscreenDirs = (() => {
-  const src = read('lib/__tests__/design-consistency.test.ts');
-  const start = src.indexOf('const FULLSCREEN_TIER_DIRS = new Set([');
-  return new Set(
-    [...src.slice(start, src.indexOf(']);', start)).matchAll(/^\s*'([a-z0-9-]+)'/gm)].map(
-      (m) => m[1],
-    ),
-  );
-})();
+const fullscreenDirs = FULLSCREEN_TIER_DIRS;
 
 /** Site tier = not a full-screen game/app directory, not the app-tier shared kit, not a test. */
 const inSiteTier = (rel: string) => {
@@ -244,7 +253,10 @@ function measure(): Record<string, number> {
     if (n > 0) counts[rel] = n;
   };
   for (const abs of cssFiles) {
-    add(relative(ROOT, abs).replaceAll('\\', '/'), cssFindings(readFileSync(abs, 'utf8'), hidden).length);
+    add(
+      relative(ROOT, abs).replaceAll('\\', '/'),
+      cssFindings(readFileSync(abs, 'utf8'), hidden).length,
+    );
   }
   for (const abs of [
     ...walk(join(ROOT, 'components'), /\.tsx$/),

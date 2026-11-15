@@ -1,7 +1,6 @@
-'use client';
-
-import { Suspense, lazy, useEffect, useState } from'react';
+import { lazy, useEffect, useState } from'react';
 import { Link } from'@tanstack/react-router';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 import { Button } from'@/components/ui/button';
 import { useTranslation } from'react-i18next';
 import { useSession, useResolvedUser } from'@/components/Providers';
@@ -54,9 +53,11 @@ export function ComposeBoxLazy(props: ComposeBoxLazyProps) {
 
  if (activated || idle) {
  return (
- <Suspense fallback={<ComposePlaceholder />}>
+ // No fade (`wrap={false}`): the placeholder IS the composer at rest, so the swap is not a visible arrival (M9)
+ // and fading an identical box in from nothing would blink it.
+ <ArrivalSuspense fallback={<ComposePlaceholder />} wrap={false}>
  <ComposeBox {...props} />
- </Suspense>
+ </ArrivalSuspense>
  );
  }
  return <ComposePlaceholder onActivate={() => setActivated(true)} />;
@@ -84,7 +85,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  // visitor never flashes a sign-in prompt either.
  if (!session && !isPending) {
  return (
- <div className="glass-fill rounded-site mx-3 px-4 py-6 text-center">
+ <div className="rounded-site mx-3 px-4 py-6 text-center">
  <p className="text-sm text-site-text-muted mb-2">
  {t('sign-in-prompt', { defaultValue:'Sign in to post RMHarks'})}
  </p>
@@ -94,7 +95,7 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  lands) renders `size="sm"`, and omitting it here meant the button
  painted at the default size and visibly shrank a moment later.
  The two cards are otherwise identical — keep them that way. */}
- <Button variant="accent"size="sm">
+ <Button variant="default"size="sm">
  {t('sign-in', { defaultValue:'Sign in'})}
  </Button>
  </Link>
@@ -103,12 +104,12 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  }
 
  return (
- <div className="glass-pane social-composer relative px-4 py-3">
+ <div className="relative px-4 py-3">
  <div className="flex gap-3">
  {/* Avatar — the same box and classes as ComposeBox's, so the swap cannot
  move or re-ring it. `eager`: it is above the fold, and `lazy` here
  painted an empty circle for a frame between the initial and the image. */}
- <div className="w-10 h-10 rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
+ <div className="w-10 h-10 rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-semibold text-sm ring-2 ring-site-bg shrink-0">
  {image ? (
  <img
  src={buildOptimizedUrl(image, 80, 80)}
@@ -138,11 +139,11 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
  onFocus={activate}
  placeholder={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
  aria-label={t('compose-placeholder', { defaultValue:"What's on your mind?"})}
- className="block w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none cursor-text"
+ className="block w-full surface-field text-site-text placeholder:text-site-text-muted text-base resize-none px-3 py-2 outline-none cursor-text"
  />
  <div className="flex items-center justify-between mt-2"aria-hidden>
- <span className="text-xs font-mono text-site-text-dim">{MAX_RMHARK_LENGTH}</span>
- <Button variant="accent"size="sm"disabled tabIndex={-1}>
+ <span className="text-xs font-mono text-site-text-muted">{MAX_RMHARK_LENGTH}</span>
+ <Button variant="default"size="sm"disabled tabIndex={-1}>
  {t('post-button', { defaultValue:'Post'})}
  </Button>
  </div>

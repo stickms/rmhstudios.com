@@ -6,7 +6,6 @@
  * Decoration only: it takes no pointer events (the canvas underneath stays the thing you click), and a
  * handful of live WebGL views are shown at a time, the rest being item icons, because each is a GL context.
  */
-'use client';
 
 import { useMemo } from 'react';
 import { backpackGrid } from '@/lib/tf2-hud/scene/inventory';
@@ -131,7 +130,7 @@ function ModelContent({
                 : {}),
             }}
             className={cn(
-              'overflow-hidden rounded-(--app-radius-sm) border-2 border-(--app-border) bg-(--app-bg)/60 p-0.5',
+              'overflow-hidden rounded-app-sm border-2 border-app-border bg-app-bg/60 p-0.5',
             )}
           >
             {item ? <ItemIcon item={item} /> : null}

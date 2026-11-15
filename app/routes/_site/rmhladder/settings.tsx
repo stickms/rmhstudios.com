@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import {
@@ -29,6 +30,12 @@ import {
   type ActionsPrisma,
   type PrefsPatch,
 } from '@/lib/rmhladder/server/actions';
+import { api } from '@/lib/contract/client';
+import {
+  deleteSavedSearchApi,
+  saveSearchApi,
+  type SavedSearchFilters,
+} from '@/lib/rmhladder/searches.contract';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -91,6 +98,7 @@ const doKeyword = createServerFn({ method: 'POST' })
   });
 
 export const Route = createFileRoute('/_site/rmhladder/settings')({
+  head: () => noindexHead('Settings | RMH Ladder'),
   loader: () => fetchSettings(),
   component: SettingsPage,
 });
@@ -172,17 +180,16 @@ function SettingsPage() {
   }
 
   async function updateSavedSearch(search: AnyRow, alertsOn: boolean) {
-    const response = await fetch('/api/rmhladder/searches', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: search.id,
-        name: search.name,
-        filters: search.filters,
-        alertsOn,
-      }),
-    });
-    if (!response.ok) {
+    try {
+      await api(saveSearchApi, {
+        body: {
+          id: search.id as string,
+          name: search.name as string,
+          filters: search.filters as SavedSearchFilters,
+          alertsOn,
+        },
+      });
+    } catch {
       setError(t('ladder.settings.updateSearchFailed', { defaultValue: 'Could not update saved search' }));
       return;
     }
@@ -192,10 +199,9 @@ function SettingsPage() {
   }
 
   async function deleteSavedSearch(id: string) {
-    const response = await fetch(`/api/rmhladder/searches?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
+    try {
+      await api(deleteSavedSearchApi, { query: { id } });
+    } catch {
       setError(t('ladder.settings.deleteSearchFailed', { defaultValue: 'Could not delete saved search' }));
       return;
     }
@@ -206,7 +212,7 @@ function SettingsPage() {
   const cities = ((prefs.preferredCities as string[]) ?? []).join(', ');
   const programTypes = (prefs.preferredProgramTypes as string[]) ?? [];
 
-  const sectionCls = 'glass-fill flex flex-col gap-4 rounded-site p-5 sm:p-5';
+  const sectionCls ='flex flex-col gap-4 rounded-site p-5 sm:p-5';
   const fieldCls = 'flex flex-col gap-2 border-0 p-0 m-0';
   const labelCls = 'text-sm font-medium text-site-text';
   const hintCls = 'text-sm text-site-text-muted';
@@ -280,7 +286,7 @@ function SettingsPage() {
                     key={pt}
                     type="button"
                     size="sm"
-                    variant={on ? 'accent' : 'outline'}
+                    variant={on ? 'default' : 'default'}
                     className="min-h-11"
                     aria-pressed={on}
                     onClick={() =>
@@ -399,7 +405,7 @@ function SettingsPage() {
                   key={d}
                   type="button"
                   size="sm"
-                  variant={prefs.digestFrequency === d ? 'accent' : 'outline'}
+                  variant={prefs.digestFrequency === d ? 'default' : 'default'}
                   className="min-h-11"
                   aria-pressed={prefs.digestFrequency === d}
                   onClick={() => void patchPrefs({ digestFrequency: d })}
@@ -428,7 +434,7 @@ function SettingsPage() {
                     key={key}
                     type="button"
                     size="sm"
-                    variant={on ? 'accent' : 'outline'}
+                    variant={on ? 'default' : 'default'}
                     className="min-h-11"
                     aria-pressed={on}
                     onClick={() => void patchPrefs({ [key]: !on } as PrefsPatch)}
@@ -494,7 +500,7 @@ function SettingsPage() {
               disabled={newKeyword.type === 'block'}
               onChange={(e) => setNewKeyword((k) => ({ ...k, weight: Number(e.target.value) }))}
             />
-            <Button type="button" variant="outline" onClick={() => void addKeyword()}>
+            <Button type="button" variant="default" onClick={() => void addKeyword()}>
               {t('ladder.settings.add', { defaultValue: 'Add' })}
             </Button>
           </div>
@@ -506,7 +512,7 @@ function SettingsPage() {
                 className={`inline-flex items-center gap-2 rounded-site-sm border py-1 pr-1 pl-3 text-sm ${
                   k.type === 'block'
                     ? 'border-site-danger/30 bg-site-danger/10'
-                    : 'border-site-accent/30 bg-site-accent-dim'
+                    : 'border-site-accent/30 bg-site-bg-subtle'
                 }`}
               >
                 {k.keyword as string}
@@ -566,7 +572,7 @@ function SettingsPage() {
             </Select>
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               disabled={!watchlistChoice}
               onClick={() => void setWatchlist(watchlistChoice, true)}
             >
@@ -580,7 +586,7 @@ function SettingsPage() {
               return (
                 <span
                   key={companyId}
-                  className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-accent-dim py-1 pr-1 pl-3 text-sm"
+                  className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-bg-subtle py-1 pr-1 pl-3 text-sm"
                 >
                   {name}
                   <button
@@ -615,13 +621,13 @@ function SettingsPage() {
               {savedSearches.map((search) => (
                 <li
                   key={search.id as string}
-                  className="glass-inset flex min-h-14 flex-wrap items-center gap-2 rounded-site-sm px-3 py-2"
+                  className="surface-field flex min-h-14 flex-wrap items-center gap-2 rounded-site-sm px-3 py-2"
                 >
                   <span className="mr-auto font-medium">{search.name as string}</span>
                   <Button
                     type="button"
                     size="sm"
-                    variant={search.alertsOn ? 'accent' : 'outline'}
+                    variant={search.alertsOn ? 'default' : 'default'}
                     className="min-h-11"
                     aria-pressed={Boolean(search.alertsOn)}
                     onClick={() => void updateSavedSearch(search, !search.alertsOn)}
@@ -633,7 +639,7 @@ function SettingsPage() {
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
+                    variant="default"
                     className="min-h-11"
                     onClick={() => void deleteSavedSearch(search.id as string)}
                   >

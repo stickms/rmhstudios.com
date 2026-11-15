@@ -7,7 +7,6 @@
  * nothing at all, and a player who has not worked that out will wonder why
  * their first ascension made them poorer.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';

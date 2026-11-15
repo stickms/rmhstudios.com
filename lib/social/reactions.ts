@@ -19,13 +19,24 @@ export const MAX_REACTION_EMOJI_LENGTH = 32;
 // Constructed lazily via new RegExp so bundlers/older engines that can't
 // parse a v-flag literal don't fail at module load; falls back to a looser
 // pictographic check where the v flag is unsupported.
-let rgiEmojiRegex: RegExp | null | undefined;
+let rgiEmojiRegex:
+  | RegExp
+  | null
+  | undefined;
 function getRgiEmojiRegex(): RegExp | null {
-  if (rgiEmojiRegex === undefined) {
+  if (
+    rgiEmojiRegex ===
+    undefined
+  ) {
     try {
-      rgiEmojiRegex = new RegExp(String.raw`^\p{RGI_Emoji}$`, 'v');
+      rgiEmojiRegex =
+        new RegExp(
+          String.raw`^\p{RGI_Emoji}$`,
+          'v',
+        );
     } catch {
-      rgiEmojiRegex = null;
+      rgiEmojiRegex =
+        null;
     }
   }
   return rgiEmojiRegex;
@@ -34,27 +45,83 @@ function getRgiEmojiRegex(): RegExp | null {
 const FALLBACK_EMOJI_REGEX =
   /^[\p{Extended_Pictographic}\p{Emoji_Component}\u{FE0F}\u{200D}]+$/u;
 
-export function isValidReactionEmoji(emoji: string): boolean {
-  if (!emoji || emoji.length > MAX_REACTION_EMOJI_LENGTH) return false;
-  const rgi = getRgiEmojiRegex();
-  if (rgi) return rgi.test(emoji);
-  return FALLBACK_EMOJI_REGEX.test(emoji);
+export function isValidReactionEmoji(
+  emoji: string,
+): boolean {
+  if (
+    !emoji ||
+    emoji.length >
+      MAX_REACTION_EMOJI_LENGTH
+  )
+    return false;
+  const rgi =
+    getRgiEmojiRegex();
+  if (
+    rgi
+  )
+    return rgi.test(
+      emoji,
+    );
+  return FALLBACK_EMOJI_REGEX.test(
+    emoji,
+  );
 }
 
 export function groupReactions(
   rows: ReactionRow[],
-  viewerId: string | null,
+  viewerId:
+    | string
+    | null,
 ): ReactionSummary[] {
-  const byEmoji = new Map<string, { count: number; reactedByMe: boolean }>();
+  const byEmoji =
+    new Map<
+      string,
+      {
+        count: number;
+        reactedByMe: boolean;
+      }
+    >();
   for (const row of rows) {
-    const entry = byEmoji.get(row.emoji) ?? { count: 0, reactedByMe: false };
+    const entry =
+      byEmoji.get(
+        row.emoji,
+      ) ?? {
+        count: 0,
+        reactedByMe: false,
+      };
     entry.count += 1;
-    if (viewerId !== null && row.userId === viewerId) entry.reactedByMe = true;
-    byEmoji.set(row.emoji, entry);
+    if (
+      viewerId !==
+        null &&
+      row.userId ===
+        viewerId
+    )
+      entry.reactedByMe = true;
+    byEmoji.set(
+      row.emoji,
+      entry,
+    );
   }
-  return [...byEmoji.entries()]
-    .map(([emoji, entry]) => ({ emoji, ...entry }))
-    .sort((a, b) => b.count - a.count);
+  return [
+    ...byEmoji.entries(),
+  ]
+    .map(
+      ([
+        emoji,
+        entry,
+      ]) => ({
+        emoji,
+        ...entry,
+      }),
+    )
+    .sort(
+      (
+        a,
+        b,
+      ) =>
+        b.count -
+        a.count,
+    );
 }
 
 /** Optimistically toggle the viewer's reaction in a grouped summary list. */
@@ -62,16 +129,58 @@ export function applyReactionToggle(
   reactions: ReactionSummary[],
   emoji: string,
 ): ReactionSummary[] {
-  const existing = reactions.find((r) => r.emoji === emoji);
-  if (!existing) {
-    return [...reactions, { emoji, count: 1, reactedByMe: true }];
+  const existing =
+    reactions.find(
+      (
+        r,
+      ) =>
+        r.emoji ===
+        emoji,
+    );
+  if (
+    !existing
+  ) {
+    return [
+      ...reactions,
+      {
+        emoji,
+        count: 1,
+        reactedByMe: true,
+      },
+    ];
   }
   return reactions
-    .map((r) => {
-      if (r.emoji !== emoji) return r;
-      return r.reactedByMe
-        ? { ...r, count: r.count - 1, reactedByMe: false }
-        : { ...r, count: r.count + 1, reactedByMe: true };
-    })
-    .filter((r) => r.count > 0);
+    .map(
+      (
+        r,
+      ) => {
+        if (
+          r.emoji !==
+          emoji
+        )
+          return r;
+        return r.reactedByMe
+          ? {
+              ...r,
+              count:
+                r.count -
+                1,
+              reactedByMe: false,
+            }
+          : {
+              ...r,
+              count:
+                r.count +
+                1,
+              reactedByMe: true,
+            };
+      },
+    )
+    .filter(
+      (
+        r,
+      ) =>
+        r.count >
+        0,
+    );
 }

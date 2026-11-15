@@ -70,6 +70,7 @@
   "ban-author": "लेखक पर प्रतिबंध लगाएँ",
   "ban-length-prompt": "प्रतिबंध की अवधि दिनों में (खाली = स्थायी):",
   "ban-reason-prompt": "प्रतिबंध का कारण:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "नए डेवलपर लॉग लिखें, या मौजूदा ब्लॉग पोस्ट संपादित और हटाएं।",
   "blog-title": "ब्लॉग पोस्ट प्रबंधित करें",
   "bot-no-email": "Automated account",

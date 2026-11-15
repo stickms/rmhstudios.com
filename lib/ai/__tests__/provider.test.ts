@@ -39,6 +39,7 @@ const ALL_TASKS = [
   'moderate',
   'concierge',
   'narrative',
+  'document',
 ] as const satisfies readonly (keyof typeof AI_ROUTES)[];
 
 describe('AI_ROUTES', () => {

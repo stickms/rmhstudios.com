@@ -1,0 +1,18 @@
+RMHarks is the social feed at the centre of [https://rmhstudios.com rmhstudios.com]. A post on the feed is called an RMHark.
+
+== What you can do ==
+
+* '''Post.''' Write a short post, attach media, or schedule it for later.
+* '''Reply and react.''' Reply to a post to start a thread, or add a reaction.
+* '''Follow.''' Follow people to shape your timeline, and use Explore to find new posts and tags.
+* '''Join communities.''' Communities are spaces with their own posts and members.
+* '''Message.''' Send direct messages or talk in a group chat.
+* '''Save.''' Bookmark posts to find them again, and organise people into lists.
+
+== Writing help ==
+
+The composer includes optional AI tools that can rewrite a draft, translate a post, or suggest hashtags. They are suggestions: nothing is posted until you post it.
+
+== Staying safe ==
+
+You can block or mute an account and report a post. Reports are reviewed by the RMH Studios moderators.

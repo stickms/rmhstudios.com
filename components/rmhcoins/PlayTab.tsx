@@ -1,12 +1,11 @@
-'use client';
-
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearch } from '@tanstack/react-router';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { SignedOutLobby } from './SignedOutLobby';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
  * Five tables, and the switcher below can only ever show ONE of them. Importing
@@ -20,17 +19,66 @@ import { SignedOutLobby } from './SignedOutLobby';
  * to reason about. If that gate is ever removed so the page SSRs its real
  * content, revisit these boundaries at the same time.
  */
-const PlinkoGame = lazy(() => import('./PlinkoGame').then((m) => ({ default: m.PlinkoGame })));
-const BlackjackGame = lazy(() =>
-  import('./BlackjackGame').then((m) => ({ default: m.BlackjackGame })),
-);
-const HoldemGame = lazy(() => import('./HoldemGame').then((m) => ({ default: m.HoldemGame })));
-const BaccaratGame = lazy(() =>
-  import('./BaccaratGame').then((m) => ({ default: m.BaccaratGame })),
-);
-const RouletteGame = lazy(() =>
-  import('./RouletteGame').then((m) => ({ default: m.RouletteGame })),
-);
+const PlinkoGame =
+  lazy(
+    () =>
+      import('./PlinkoGame').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.PlinkoGame,
+        }),
+      ),
+  );
+const BlackjackGame =
+  lazy(
+    () =>
+      import('@features/casino/ui/BlackjackGame').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.BlackjackGame,
+        }),
+      ),
+  );
+const HoldemGame =
+  lazy(
+    () =>
+      import('@features/casino/ui/HoldemGame').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.HoldemGame,
+        }),
+      ),
+  );
+const BaccaratGame =
+  lazy(
+    () =>
+      import('@features/casino/ui/BaccaratGame').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.BaccaratGame,
+        }),
+      ),
+  );
+const RouletteGame =
+  lazy(
+    () =>
+      import('@features/casino/ui/RouletteGame').then(
+        (
+          m,
+        ) => ({
+          default:
+            m.RouletteGame,
+        }),
+      ),
+  );
 
 /**
  * Holds the table's footprint while its chunk arrives.
@@ -40,22 +88,41 @@ const RouletteGame = lazy(() =>
  * the table lands — a layout shift on every switch between tables.
  */
 function TablePending() {
-  const { t } = useTranslation('c-rmhcoins');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhcoins',
+    );
   return (
-    <div className="px-4" role="status" aria-live="polite">
-      <Skeleton shimmer className="h-[28rem] w-full rounded-site" />
+    <div
+      className="px-4"
+      role="status"
+      aria-live="polite"
+    >
+      <Skeleton className="h-[28rem] w-full rounded-site" />
       {/* The namespace's existing `loading` key rather than a table-specific one:
           it is already translated into all 16 shipped locales, and a new string
           here would serve every locale the English default until the translation
           pipeline caught up. */}
-      <span className="sr-only">{t('loading', { defaultValue: 'Loading...' })}</span>
+      <span className="sr-only">
+        {t(
+          'loading',
+          {
+            defaultValue:
+              'Loading...',
+          },
+        )}
+      </span>
     </div>
   );
 }
 
 interface Props {
   coins: number;
-  setCoins: (coins: number) => void;
+  setCoins: (
+    coins: number,
+  ) => void;
   /**
    * Signed-out visitors browse the same game switcher, but each game shows the
    * read-only lobby preview instead of a table: every one of these connects a
@@ -64,30 +131,147 @@ interface Props {
   signedIn: boolean;
 }
 
-type GameChoice = 'plinko' | 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
+type GameChoice =
+  | 'plinko'
+  | 'blackjack'
+  | 'holdem'
+  | 'baccarat'
+  | 'roulette';
 
-const GAME_CHOICES: readonly GameChoice[] = ['plinko', 'blackjack', 'holdem', 'baccarat', 'roulette'];
+const GAME_CHOICES: readonly GameChoice[] =
+  [
+    'plinko',
+    'blackjack',
+    'holdem',
+    'baccarat',
+    'roulette',
+  ];
 
-function isGameChoice(value: unknown): value is GameChoice {
-  return typeof value === 'string' && (GAME_CHOICES as readonly string[]).includes(value);
+function isGameChoice(
+  value: unknown,
+): value is GameChoice {
+  return (
+    typeof value ===
+      'string' &&
+    (
+      GAME_CHOICES as readonly string[]
+    ).includes(
+      value,
+    )
+  );
 }
 
-export function PlayTab({ coins, setCoins, signedIn }: Props) {
-  const { t } = useTranslation("c-rmhcoins");
+export function PlayTab({
+  coins,
+  setCoins,
+  signedIn,
+}: Props) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhcoins',
+    );
   // A table invite link names its game (`?game=holdem`) because the four tables
   // share this one page — see `TableInvite`.
-  const search = useSearch({ strict: false }) as Record<string, unknown>;
-  const [selected, setSelected] = useState<GameChoice>(
-    isGameChoice(search.game) ? search.game : 'plinko',
-  );
+  const search =
+    useSearch(
+      {
+        strict: false,
+      },
+    ) as Record<
+      string,
+      unknown
+    >;
+  const [
+    selected,
+    setSelected,
+  ] =
+    useState<GameChoice>(
+      isGameChoice(
+        search.game,
+      )
+        ? search.game
+        : 'plinko',
+    );
 
-  const games: { label: string; value: GameChoice; description: string }[] = [
-    { label: 'Plinko', value: 'plinko', description: t("plinko-description", { defaultValue: "Drop the ball, pick a bin" }) },
-    { label: 'Blackjack', value: 'blackjack', description: t("blackjack-description", { defaultValue: "Multiplayer card game" }) },
-    { label: "Hold'em", value: 'holdem', description: t("holdem-description", { defaultValue: "No Limit Texas Poker" }) },
-    { label: 'Baccarat', value: 'baccarat', description: t("baccarat-description", { defaultValue: "Casino card game" }) },
-    { label: 'Roulette', value: 'roulette', description: t("roulette-description", { defaultValue: "Spin the wheel" }) },
-  ];
+  const games: {
+    label: string;
+    value: GameChoice;
+    description: string;
+  }[] =
+    [
+      {
+        label:
+          'Plinko',
+        value:
+          'plinko',
+        description:
+          t(
+            'plinko-description',
+            {
+              defaultValue:
+                'Drop the ball, pick a bin',
+            },
+          ),
+      },
+      {
+        label:
+          'Blackjack',
+        value:
+          'blackjack',
+        description:
+          t(
+            'blackjack-description',
+            {
+              defaultValue:
+                'Multiplayer card game',
+            },
+          ),
+      },
+      {
+        label:
+          "Hold'em",
+        value:
+          'holdem',
+        description:
+          t(
+            'holdem-description',
+            {
+              defaultValue:
+                'No Limit Texas Poker',
+            },
+          ),
+      },
+      {
+        label:
+          'Baccarat',
+        value:
+          'baccarat',
+        description:
+          t(
+            'baccarat-description',
+            {
+              defaultValue:
+                'Casino card game',
+            },
+          ),
+      },
+      {
+        label:
+          'Roulette',
+        value:
+          'roulette',
+        description:
+          t(
+            'roulette-description',
+            {
+              defaultValue:
+                'Spin the wheel',
+            },
+          ),
+      },
+    ];
 
   return (
     <div className="flex flex-col gap-4">
@@ -95,30 +279,118 @@ export function PlayTab({ coins, setCoins, signedIn }: Props) {
           buttons with no tab semantics). The selected game's one-line
           description sits under it, where each button used to carry its own. */}
       <div className="flex flex-col gap-2 px-4">
-        <LiquidTabs
-          tabs={games.map((g) => ({ id: g.value, label: g.label }))}
-          value={selected}
-          onChange={(id) => setSelected(id as GameChoice)}
+        <Tabs
+          tabs={games.map(
+            (
+              g,
+            ) => ({
+              id: g.value,
+              label:
+                g.label,
+            }),
+          )}
+          value={
+            selected
+          }
+          onChange={(
+            id,
+          ) =>
+            setSelected(
+              id as GameChoice,
+            )
+          }
           idBase="rmhcoins-play"
-          scroll
-          aria-label={t('play-games-aria', { defaultValue: 'Casino games' })}
+          aria-label={t(
+            'play-games-aria',
+            {
+              defaultValue:
+                'Casino games',
+            },
+          )}
         />
-        <p className="text-xs text-site-text-dim">
-          {games.find((g) => g.value === selected)?.description}
+        <p className="text-xs text-site-text-muted">
+          {
+            games.find(
+              (
+                g,
+              ) =>
+                g.value ===
+                selected,
+            )
+              ?.description
+          }
         </p>
       </div>
 
       {/* Game content */}
       {!signedIn ? (
-        <SignedOutLobby game={selected} />
+        <SignedOutLobby
+          game={
+            selected
+          }
+        />
       ) : (
-        <Suspense fallback={<TablePending />}>
-          {selected === 'plinko' && <PlinkoGame coins={coins} setCoins={setCoins} />}
-          {selected === 'blackjack' && <BlackjackGame coins={coins} setCoins={setCoins} />}
-          {selected === 'holdem' && <HoldemGame coins={coins} setCoins={setCoins} />}
-          {selected === 'baccarat' && <BaccaratGame coins={coins} setCoins={setCoins} />}
-          {selected === 'roulette' && <RouletteGame coins={coins} setCoins={setCoins} />}
-        </Suspense>
+        <ArrivalSuspense
+          fallback={
+            <TablePending />
+          }
+        >
+          {selected ===
+            'plinko' && (
+            <PlinkoGame
+              coins={
+                coins
+              }
+              setCoins={
+                setCoins
+              }
+            />
+          )}
+          {selected ===
+            'blackjack' && (
+            <BlackjackGame
+              coins={
+                coins
+              }
+              setCoins={
+                setCoins
+              }
+            />
+          )}
+          {selected ===
+            'holdem' && (
+            <HoldemGame
+              coins={
+                coins
+              }
+              setCoins={
+                setCoins
+              }
+            />
+          )}
+          {selected ===
+            'baccarat' && (
+            <BaccaratGame
+              coins={
+                coins
+              }
+              setCoins={
+                setCoins
+              }
+            />
+          )}
+          {selected ===
+            'roulette' && (
+            <RouletteGame
+              coins={
+                coins
+              }
+              setCoins={
+                setCoins
+              }
+            />
+          )}
+        </ArrivalSuspense>
       )}
     </div>
   );

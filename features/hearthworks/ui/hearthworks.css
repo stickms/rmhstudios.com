@@ -1,0 +1,647 @@
+/*
+ * Hearthworks — the interface.
+ *
+ * The game's scheme is light and pastel, with light blues and teals leading (owner,
+ * 2026-11-04): frosted pale panels over the diorama, deep-teal ink, one soft accent. Every colour
+ * here is one of the palette keys in features/hearthworks/engine/art/palette.ts (mirrored as custom
+ * properties below). Scoped under `.hw` so nothing leaks into the site shell.
+ */
+
+.hw {
+  --hw-sky: #dff3f8;
+  --hw-powder: #bfe3f2;
+  --hw-aqua: #9adbd6;
+  --hw-teal: #5fb8b2;
+  --hw-ink: #1f6a74;
+  --hw-ink-soft: #2e7f86;
+  --hw-butter: #ffe7a8;
+  --hw-blush: #ffc9c0;
+  --hw-panel: rgb(247 251 252 / 88%);
+  --hw-rule: rgb(46 127 134 / 22%);
+  --hw-radius: 20px;
+  --hw-radius-sm: 14px;
+  --hw-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  position: absolute;
+  inset: 0;
+  color: var(--hw-ink);
+  font-family: var(--app-font-body, system-ui, sans-serif);
+  background: var(--hw-sky);
+}
+
+.hw canvas {
+  display: block;
+}
+
+.hw-top {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.hw-logo {
+  height: 40px;
+  width: auto;
+  margin-right: auto;
+  filter: drop-shadow(0 2px 0 rgb(255 255 255 / 70%));
+}
+
+.hw-chip {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius);
+  background: var(--hw-panel);
+  color: var(--hw-ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hw-chip--button {
+  cursor: pointer;
+  transition: background-color 160ms var(--hw-ease);
+}
+
+.hw-chip--button:hover,
+.hw-chip--button[aria-expanded='true'] {
+  background: var(--hw-powder);
+}
+
+.hw-panel {
+  position: absolute;
+  top: calc(max(12px, env(safe-area-inset-top, 0px)) + 52px);
+  right: 12px;
+  width: min(340px, calc(100% - 24px));
+  max-height: 55%;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius);
+  background: var(--hw-panel);
+}
+
+.hw-panel__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.hw-panel__sub {
+  margin: 14px 0 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.hw-muted {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--hw-ink-soft);
+}
+
+.hw-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hw-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.875rem;
+}
+
+.hw-preview {
+  height: 168px;
+  margin: 0 0 4px;
+  overflow: hidden;
+  border-radius: var(--hw-radius-sm);
+  background: var(--hw-sky);
+}
+
+.hw-name {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.hw-name[aria-pressed='true'] {
+  font-weight: 700;
+}
+
+.hw-small {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius-sm);
+  background: var(--hw-aqua);
+  color: var(--hw-ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hw-small:hover {
+  background: var(--hw-teal);
+  color: #fff;
+}
+
+.hw-dock {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  max-width: calc(100% - 20px);
+  padding: 8px;
+  overflow-x: auto;
+  border: 1px solid var(--hw-rule);
+  border-radius: calc(var(--hw-radius) + 6px);
+  background: var(--hw-panel);
+  scrollbar-width: none;
+}
+
+.hw-tool {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 62px;
+  padding: 8px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--hw-radius-sm);
+  background: transparent;
+  color: var(--hw-ink);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 160ms var(--hw-ease),
+    border-color 160ms var(--hw-ease);
+}
+
+.hw-tool:hover {
+  background: var(--hw-sky);
+}
+
+.hw-tool[aria-pressed='true'] {
+  background: var(--hw-aqua);
+  border-color: var(--hw-teal);
+}
+
+.hw-tool__hint {
+  color: var(--hw-ink-soft);
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .hw-logo {
+    height: 32px;
+  }
+}
+
+.hw-top {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.hw-panel--tall {
+  max-height: 70%;
+}
+
+.hw-tier--common {
+  color: var(--hw-ink-soft);
+}
+.hw-tier--uncommon {
+  color: #2f7d5e;
+}
+.hw-tier--rare {
+  color: #2b6fb5;
+}
+.hw-tier--epic {
+  color: #7a4fb5;
+}
+.hw-tier--legendary {
+  color: #b5701a;
+}
+
+.hw-small:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hw-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 92px);
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: var(--hw-radius-sm);
+  background: var(--hw-panel);
+  color: var(--hw-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hw-stick,
+.hw-use,
+.hw-fire {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .hw-hint {
+    display: none;
+  }
+  .hw-stick {
+    position: absolute;
+    left: max(22px, env(safe-area-inset-left, 0px));
+    bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 96px);
+    display: block;
+    width: 128px;
+    height: 128px;
+    border: 1px solid var(--hw-rule);
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--hw-panel);
+    touch-action: none;
+  }
+  .hw-stick__knob {
+    position: absolute;
+    inset: 36px;
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--hw-teal);
+    transition: transform 90ms var(--hw-ease);
+  }
+  .hw-use {
+    position: absolute;
+    right: max(22px, env(safe-area-inset-right, 0px));
+    bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 110px);
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--hw-rule);
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--hw-aqua);
+    color: var(--hw-ink);
+    cursor: pointer;
+  }
+}
+
+.hw-badge {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--hw-teal);
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 20px;
+  text-align: center;
+}
+
+/* The crime route: vitals (health, heat, ammo) and the back-alley / armoury panel. */
+.hw-vitals {
+  position: absolute;
+  left: 12px;
+  top: calc(max(12px, env(safe-area-inset-top, 0px)) + 56px);
+  display: grid;
+  gap: 6px;
+  width: min(220px, calc(100% - 24px));
+  padding: 10px 12px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius);
+  background: var(--hw-panel);
+  pointer-events: none;
+}
+
+.hw-meter {
+  display: grid;
+  grid-template-columns: 52px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hw-panel > .hw-meter {
+  margin-bottom: 6px;
+}
+
+.hw-meter__track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--hw-sky);
+  border: 1px solid var(--hw-rule);
+}
+
+.hw-meter__fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--hw-teal);
+  transition: width 200ms var(--hw-ease);
+}
+
+.hw-meter--heat .hw-meter__fill {
+  background: var(--hw-butter);
+}
+
+.hw-meter--heat[data-hot='true'] .hw-meter__fill {
+  background: var(--hw-blush);
+}
+
+.hw-meter--heat[data-hot='true'] .hw-meter__track {
+  border-color: var(--hw-ink-soft);
+}
+
+.hw-meter__value {
+  text-align: right;
+}
+
+.hw-vitals__ammo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--hw-ink-soft);
+}
+
+.hw-gun {
+  display: grid;
+  gap: 4px;
+  padding: 8px 0;
+  border-top: 1px solid var(--hw-rule);
+}
+
+.hw-gun__stats {
+  font-size: 0.75rem;
+}
+
+.hw-gun__actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.hw-small[aria-pressed='true'] {
+  background: var(--hw-teal);
+  color: #fff;
+}
+
+@media (pointer: coarse) {
+  .hw-fire {
+    position: absolute;
+    right: max(22px, env(safe-area-inset-right, 0px));
+    bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 190px);
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--hw-rule);
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--hw-blush);
+    color: var(--hw-ink);
+    cursor: pointer;
+  }
+}
+
+/* Multiplayer panel (MultiplayerPanel.tsx): fields, the room code and the player list. */
+.hw-field {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.hw-field--inline {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.hw-input {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius-sm);
+  background: #fff;
+  color: var(--hw-ink);
+  font: inherit;
+}
+
+.hw-input:focus-visible,
+.hw-small:focus-visible,
+.hw-chip--button:focus-visible {
+  outline: 2px solid var(--hw-ink);
+  outline-offset: 2px;
+}
+
+.hw-input--code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hw-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 0.875rem;
+}
+
+.hw-code {
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hw-row--gap {
+  margin: 6px 0;
+}
+
+.hw-player {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hw-tag {
+  padding: 0 8px;
+  border-radius: 10px;
+  background: var(--hw-powder);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.hw-error {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: var(--hw-radius-sm);
+  background: #fde8e4;
+  color: #8a2f22;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.hw-small--link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.hw-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The town layer: the dock's tool-set switch, the vital-signs line above it, and the milestones list. */
+.hw-dock__modes {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  border-right: 1px solid var(--hw-rule);
+}
+
+.hw-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--hw-radius-sm);
+  background: transparent;
+  color: var(--hw-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms var(--hw-ease);
+}
+
+.hw-mode:hover {
+  background: var(--hw-sky);
+}
+
+.hw-mode[aria-pressed='true'] {
+  background: var(--hw-aqua);
+  border-color: var(--hw-teal);
+}
+
+.hw-tool:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hw-city-readout {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 88px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius-sm);
+  background: var(--hw-panel);
+  color: var(--hw-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hw-city-readout > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hw-city-readout > span[data-low='true'] {
+  color: #8a2f22;
+}
+
+.hw-milestone {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid var(--hw-rule);
+}
+
+.hw-milestone p {
+  margin: 0;
+}
+
+.hw-milestone[data-state='claimed'] {
+  opacity: 0.6;
+}
+
+.hw-milestone[data-state='reached'] .hw-small {
+  background: var(--hw-butter);
+}
+
+.hw-meter--wide {
+  grid-template-columns: 52px 1fr 48px;
+}
+
+/* The tax-rate slider and the town event banner (Town panel). */
+.hw-tax {
+  display: grid;
+  gap: 10px;
+}
+
+.hw-tax [data-slot='slider'] {
+  margin-block: 4px;
+}
+
+.hw-event {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--hw-rule);
+  border-radius: var(--hw-radius-sm);
+  background: var(--hw-butter);
+  color: var(--hw-ink);
+}
+
+.hw-event .hw-muted {
+  color: var(--hw-ink);
+}
+
+.hw-event[data-event='storm'],
+.hw-event[data-event='drySpell'] {
+  background: var(--hw-blush);
+}

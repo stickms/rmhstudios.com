@@ -15,9 +15,11 @@
  *   selectedGameName?: string | null — Display name of the picked game
  *   hasGamePicked?: boolean — Whether a game (or vote) has been picked
  */
-'use client';
 
-import { useState, useEffect } from 'react';
+import {
+  useState,
+  useEffect,
+} from 'react';
 import { Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,7 +29,9 @@ interface ReadyButtonProps {
   isHost?: boolean;
   allPlayersReady?: boolean;
   onStartGame?: () => void;
-  selectedGameName?: string | null;
+  selectedGameName?:
+    | string
+    | null;
   hasGamePicked?: boolean;
 }
 
@@ -40,100 +44,212 @@ export default function ReadyButton({
   selectedGameName,
   hasGamePicked = false,
 }: ReadyButtonProps) {
-  const { t } = useTranslation("c-rmhbox");
-  const [forceStartPrimed, setForceStartPrimed] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rmhbox',
+    );
+  const [
+    forceStartPrimed,
+    setForceStartPrimed,
+  ] =
+    useState(
+      false,
+    );
 
   // Reset force start prime when all players become ready or when game pick changes
   useEffect(() => {
-    if (allPlayersReady) setForceStartPrimed(false);
-  }, [allPlayersReady]);
+    if (
+      allPlayersReady
+    )
+      setForceStartPrimed(
+        false,
+      );
+  }, [
+    allPlayersReady,
+  ]);
 
   useEffect(() => {
-    setForceStartPrimed(false);
-  }, [selectedGameName]);
+    setForceStartPrimed(
+      false,
+    );
+  }, [
+    selectedGameName,
+  ]);
 
   // Host always sees the Start Game button (they are permanently ready)
-  if (isHost) {
-    const canStart = allPlayersReady && hasGamePicked;
+  if (
+    isHost
+  ) {
+    const canStart =
+      allPlayersReady &&
+      hasGamePicked;
 
-    const handleStartClick = () => {
-      if (!hasGamePicked) return;
-      if (canStart) {
-        onStartGame?.();
-      } else if (forceStartPrimed) {
-        onStartGame?.();
-        setForceStartPrimed(false);
-      } else {
-        setForceStartPrimed(true);
-      }
-    };
+    const handleStartClick =
+      () => {
+        if (
+          !hasGamePicked
+        )
+          return;
+        if (
+          canStart
+        ) {
+          onStartGame?.();
+        } else if (
+          forceStartPrimed
+        ) {
+          onStartGame?.();
+          setForceStartPrimed(
+            false,
+          );
+        } else {
+          setForceStartPrimed(
+            true,
+          );
+        }
+      };
 
     return (
       <div className="flex flex-col items-center gap-2">
         <button
-          onClick={handleStartClick}
-          disabled={!hasGamePicked}
-          className={`relative flex flex-col items-center rounded-(--app-radius) px-8 py-3 font-bold transition duration-200 ${
+          onClick={
+            handleStartClick
+          }
+          disabled={
             !hasGamePicked
-              ? 'bg-(--app-surface) text-(--app-text-muted) opacity-50 cursor-not-allowed'
+          }
+          className={`relative flex flex-col items-center rounded-app px-8 py-3 font-bold transition duration-200 ${
+            !hasGamePicked
+              ? 'bg-app-surface text-app-text-muted opacity-50 cursor-not-allowed'
               : canStart
-                ? 'bg-(--app-success) text-(--app-bg) hover:brightness-110'
+                ? 'bg-app-success text-app-bg hover:brightness-110'
                 : forceStartPrimed
-                  ? 'bg-(--app-warning) text-(--app-bg) hover:brightness-110'
-                  : 'bg-(--app-success) text-(--app-bg) opacity-40'
+                  ? 'bg-app-warning text-app-bg hover:brightness-110'
+                  : 'bg-app-success text-app-bg opacity-40'
           }`}
         >
           {canStart && (
-            <span className="pointer-events-none absolute inset-0 animate-ping rounded-(--app-radius) bg-(--app-success) opacity-30" />
+            <span className="pointer-events-none absolute inset-0 animate-ping rounded-app bg-app-success opacity-30" />
           )}
           <span className="relative z-10 flex items-center gap-2 text-lg">
             <Play className="h-5 w-5" />
-            {t("start-game", { defaultValue: "Start Game" })}
+            {t(
+              'start-game',
+              {
+                defaultValue:
+                  'Start Game',
+              },
+            )}
           </span>
           {selectedGameName && (
-            <span className="relative z-10 text-xs opacity-80 mt-0.5">{selectedGameName}</span>
+            <span className="relative z-10 text-xs opacity-80 mt-0.5">
+              {
+                selectedGameName
+              }
+            </span>
           )}
         </button>
         {!hasGamePicked && (
-          <span className="text-center text-xs text-(--app-text-muted)">
-            {t("pick-a-game-first", { defaultValue: "Pick a game first" })}
+          <span className="text-center text-xs text-app-text-muted">
+            {t(
+              'pick-a-game-first',
+              {
+                defaultValue:
+                  'Pick a game first',
+              },
+            )}
           </span>
         )}
-        {hasGamePicked && !canStart && (
-          <span className="text-center text-xs text-(--app-text-muted)">
-            {forceStartPrimed
-              ? t("force-start-prompt", { defaultValue: "Not all players are ready. Press again to force start." })
-              : t("waiting-for-players", { defaultValue: "Waiting for all players to ready up…" })}
-          </span>
-        )}
+        {hasGamePicked &&
+          !canStart && (
+            <span className="text-center text-xs text-app-text-muted">
+              {forceStartPrimed
+                ? t(
+                    'force-start-prompt',
+                    {
+                      defaultValue:
+                        'Not all players are ready. Press again to force start.',
+                    },
+                  )
+                : t(
+                    'waiting-for-players',
+                    {
+                      defaultValue:
+                        'Waiting for all players to ready up…',
+                    },
+                  )}
+            </span>
+          )}
       </div>
     );
   }
 
   // Non-host player
-  const disabled = !hasGamePicked;
+  const disabled =
+    !hasGamePicked;
 
   return (
     <button
-      onClick={disabled ? undefined : onToggle}
-      disabled={disabled}
-      className={`relative flex flex-col items-center rounded-(--app-radius) px-8 py-3 font-bold transition duration-200 ${
+      onClick={
         disabled
-          ? 'bg-(--app-surface) text-(--app-text-muted) opacity-50 cursor-not-allowed'
+          ? undefined
+          : onToggle
+      }
+      disabled={
+        disabled
+      }
+      className={`relative flex flex-col items-center rounded-app px-8 py-3 font-bold transition duration-200 ${
+        disabled
+          ? 'bg-app-surface text-app-text-muted opacity-50 cursor-not-allowed'
           : isReady
-            ? 'bg-(--app-success) text-(--app-bg) hover:brightness-110'
-            : 'bg-(--app-accent) text-(--app-accent-fg) hover:bg-(--app-accent-hover)'
+            ? 'bg-app-success text-app-bg hover:brightness-110'
+            : 'bg-app-accent text-app-accent-fg hover:bg-app-accent-hover'
       }`}
     >
       {/* Pulse ring when not ready but game is picked */}
-      {!isReady && !disabled && (
-        <span className="pointer-events-none absolute inset-0 animate-ping rounded-(--app-radius) bg-(--app-accent) opacity-30" />
-      )}
-      <span className="relative z-10 text-lg">{isReady ? t("ready", { defaultValue: "✓ Ready!" }) : t("ready-up", { defaultValue: "Ready Up" })}</span>
+      {!isReady &&
+        !disabled && (
+          <span className="pointer-events-none absolute inset-0 animate-ping rounded-app bg-app-accent opacity-30" />
+        )}
+      <span className="relative z-10 text-lg">
+        {isReady
+          ? t(
+              'ready',
+              {
+                defaultValue:
+                  '✓ Ready!',
+              },
+            )
+          : t(
+              'ready-up',
+              {
+                defaultValue:
+                  'Ready Up',
+              },
+            )}
+      </span>
       {selectedGameName ? (
-        <span className="relative z-10 text-xs opacity-80 mt-0.5">{t("for-game", { defaultValue: "for {{game}}", game: selectedGameName })}</span>
+        <span className="relative z-10 text-xs opacity-80 mt-0.5">
+          {t(
+            'for-game',
+            {
+              defaultValue:
+                'for {{game}}',
+              game: selectedGameName,
+            },
+          )}
+        </span>
       ) : (
-        <span className="relative z-10 text-xs opacity-60 mt-0.5">{t("waiting-for-host", { defaultValue: "Waiting for host to pick…" })}</span>
+        <span className="relative z-10 text-xs opacity-60 mt-0.5">
+          {t(
+            'waiting-for-host',
+            {
+              defaultValue:
+                'Waiting for host to pick…',
+            },
+          )}
+        </span>
       )}
     </button>
   );

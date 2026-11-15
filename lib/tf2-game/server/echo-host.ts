@@ -44,105 +44,267 @@ interface EchoPlayer {
 }
 
 export class EchoMatchHost implements MatchHost {
-  private readonly players = new Map<number, EchoPlayer>();
-  private outgoing: OutgoingPacket[] = [];
+  private readonly players =
+    new Map<
+      number,
+      EchoPlayer
+    >();
+  private outgoing: OutgoingPacket[] =
+    [];
   private ticks = 0;
   private disposed = false;
   /** Every command received, for tests. */
-  readonly commands: Array<{ id: number; cmd: MatchCommand }> = [];
+  readonly commands: Array<{
+    id: number;
+    cmd: MatchCommand;
+  }> =
+    [];
 
-  constructor(readonly options: MatchOptions) {}
+  constructor(
+    readonly options: MatchOptions,
+  ) {}
 
-  addPlayer(id: number, info: PlayerInfo): void {
-    this.players.set(id, { name: info.name, team: TEAM_UNASSIGNED, cls: TF_CLASS_UNDEFINED });
+  addPlayer(
+    id: number,
+    info: PlayerInfo,
+  ): void {
+    this.players.set(
+      id,
+      {
+        name: info.name,
+        team: TEAM_UNASSIGNED,
+        cls: TF_CLASS_UNDEFINED,
+      },
+    );
   }
 
-  removePlayer(id: number): void {
-    this.players.delete(id);
+  removePlayer(
+    id: number,
+  ): void {
+    this.players.delete(
+      id,
+    );
   }
 
-  onInput(id: number, packet: Uint8Array): void {
-    if (!this.players.has(id)) return;
-    const data = new Uint8Array(packet.byteLength + 1);
-    data[0] = ECHO_TAG_INPUT;
-    data.set(packet, 1);
-    this.outgoing.push({ to: id, reliable: true, data });
+  onInput(
+    id: number,
+    packet: Uint8Array,
+  ): void {
+    if (
+      !this.players.has(
+        id,
+      )
+    )
+      return;
+    const data =
+      new Uint8Array(
+        packet.byteLength +
+          1,
+      );
+    data[0] =
+      ECHO_TAG_INPUT;
+    data.set(
+      packet,
+      1,
+    );
+    this.outgoing.push(
+      {
+        to: id,
+        reliable: true,
+        data,
+      },
+    );
   }
 
-  onCommand(id: number, cmd: MatchCommand): void {
-    const player = this.players.get(id);
-    if (!player) return;
-    this.commands.push({ id, cmd });
-    if (cmd.kind === 'team') {
+  onCommand(
+    id: number,
+    cmd: MatchCommand,
+  ): void {
+    const player =
+      this.players.get(
+        id,
+      );
+    if (
+      !player
+    )
+      return;
+    this.commands.push(
+      {
+        id,
+        cmd,
+      },
+    );
+    if (
+      cmd.kind ===
+      'team'
+    ) {
       player.team =
-        cmd.team === 'red'
+        cmd.team ===
+        'red'
           ? TF_TEAM_RED
-          : cmd.team === 'blue'
+          : cmd.team ===
+              'blue'
             ? TF_TEAM_BLUE
-            : cmd.team === 'spectator'
+            : cmd.team ===
+                'spectator'
               ? TEAM_SPECTATOR
               : this.smallerTeam();
-    } else if (cmd.kind === 'class') {
-      const index = (CLASS_NAMES as readonly string[]).indexOf(cmd.cls);
-      player.cls = index > 0 ? index : 1 + (this.ticks % 9);
+    } else if (
+      cmd.kind ===
+      'class'
+    ) {
+      const index =
+        (
+          CLASS_NAMES as readonly string[]
+        ).indexOf(
+          cmd.cls,
+        );
+      player.cls =
+        index >
+        0
+          ? index
+          : 1 +
+            (this
+              .ticks %
+              9);
     }
   }
 
   tick(): void {
-    if (this.disposed) return;
+    if (
+      this
+        .disposed
+    )
+      return;
     this.ticks += 1;
-    if (this.players.size === 0) return;
-    const data = new Uint8Array(ECHO_SNAPSHOT_BYTES);
-    const view = new DataView(data.buffer);
-    view.setUint8(0, ECHO_TAG_SNAPSHOT);
-    view.setUint8(1, this.players.size);
-    view.setUint32(4, this.ticks >>> 0, true);
-    this.outgoing.push({ to: 'all', reliable: false, data });
+    if (
+      this
+        .players
+        .size ===
+      0
+    )
+      return;
+    const data =
+      new Uint8Array(
+        ECHO_SNAPSHOT_BYTES,
+      );
+    const view =
+      new DataView(
+        data.buffer,
+      );
+    view.setUint8(
+      0,
+      ECHO_TAG_SNAPSHOT,
+    );
+    view.setUint8(
+      1,
+      this
+        .players
+        .size,
+    );
+    view.setUint32(
+      4,
+      this
+        .ticks >>>
+        0,
+      true,
+    );
+    this.outgoing.push(
+      {
+        to: 'all',
+        reliable: false,
+        data,
+      },
+    );
   }
 
   drainOutgoing(): OutgoingPacket[] {
-    const out = this.outgoing;
-    this.outgoing = [];
+    const out =
+      this
+        .outgoing;
+    this.outgoing =
+      [];
     return out;
   }
 
   isEmpty(): boolean {
-    return this.players.size === 0;
+    return (
+      this
+        .players
+        .size ===
+      0
+    );
   }
 
   summary(): RoomSummary {
-    const players: PlayerSummary[] = [...this.players].map(([id, p]) => ({
-      id,
-      name: p.name,
-      team: p.team,
-      cls: p.cls,
-      score: 0,
-      bot: false,
-    }));
+    const players: PlayerSummary[] =
+      [
+        ...this
+          .players,
+      ].map(
+        ([
+          id,
+          p,
+        ]) => ({
+          id,
+          name: p.name,
+          team: p.team,
+          cls: p.cls,
+          score: 0,
+          bot: false,
+        }),
+      );
     return {
-      map: this.options.map,
-      mode: this.options.mode,
-      tick: this.ticks,
+      map: this
+        .options
+        .map,
+      mode: this
+        .options
+        .mode,
+      tick: this
+        .ticks,
       players,
-      teamScores: [0, 0],
+      teamScores:
+        [
+          0,
+          0,
+        ],
     };
   }
 
   dispose(): void {
     this.disposed = true;
     this.players.clear();
-    this.outgoing = [];
+    this.outgoing =
+      [];
   }
 
   private smallerTeam(): number {
     let red = 0;
     let blue = 0;
     for (const p of this.players.values()) {
-      if (p.team === TF_TEAM_RED) red += 1;
-      else if (p.team === TF_TEAM_BLUE) blue += 1;
+      if (
+        p.team ===
+        TF_TEAM_RED
+      )
+        red += 1;
+      else if (
+        p.team ===
+        TF_TEAM_BLUE
+      )
+        blue += 1;
     }
-    return red <= blue ? TF_TEAM_RED : TF_TEAM_BLUE;
+    return red <=
+      blue
+      ? TF_TEAM_RED
+      : TF_TEAM_BLUE;
   }
 }
 
-export const createEchoMatch = async (opts: MatchOptions): Promise<MatchHost> => new EchoMatchHost(opts);
+export const createEchoMatch =
+  async (
+    opts: MatchOptions,
+  ): Promise<MatchHost> =>
+    new EchoMatchHost(
+      opts,
+    );

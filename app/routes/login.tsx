@@ -1,3 +1,4 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 /**
  * Login Page Route — a full-screen Liquid Glass sign-in card floating on the
  * theme aurora. Sign-in leads with the fastest paths (passkey + a compact
@@ -20,6 +21,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { api } from '@/lib/contract/client';
+import { uploadAvatarApi } from '@/lib/profile.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -80,6 +84,7 @@ function LoginPage() {
   }, [rawCallback]);
 
   const { data: session, isPending } = useSession();
+  const arrival = useArrival(!(isPending || session?.user));
 
   useEffect(() => {
     if (!isPending && session?.user) {
@@ -247,7 +252,7 @@ function LoginPage() {
                 try {
                   const formData = new FormData();
                   formData.append('avatar', avatarFile);
-                  await fetch('/api/profile/avatar', { method: 'POST', body: formData });
+                  await api(uploadAvatarApi, { body: formData });
                 } catch {
                   // Account creation succeeded; avatar upload is best-effort.
                 }
@@ -303,7 +308,7 @@ function LoginPage() {
 
   // Field glyph shared by the email/password/display-name wells.
   const fieldIcon =
-    'pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-site-text-dim z-10';
+    'pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-site-text-muted z-10';
 
   const emailForm = (
     <form onSubmit={handleCredentialsSubmit} noValidate className="space-y-3">
@@ -314,7 +319,7 @@ function LoginPage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               aria-label={t('choose-avatar', { defaultValue: 'Choose a profile picture' })}
-              className="glass-inset relative flex size-20 items-center justify-center rounded-full border-dashed hover:border-site-border-bright transition-colors"
+              className="surface-field relative flex size-20 items-center justify-center rounded-full border-dashed hover:border-site-text transition-colors"
             >
               <img
                 src={avatarPreview || '/images/social/default_avatar.png'}
@@ -324,7 +329,7 @@ function LoginPage() {
                   (e.target as HTMLImageElement).src = '/images/social/default_avatar.png';
                 }}
               />
-              <span className="absolute -bottom-0.5 -right-0.5 flex size-7 items-center justify-center rounded-full bg-site-accent text-site-accent-fg shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
+              <span className="absolute -bottom-0.5 -right-0.5 flex size-7 items-center justify-center rounded-full bg-site-accent text-site-accent-fg">
                 <Camera className="size-3.5" aria-hidden />
               </span>
             </button>
@@ -401,7 +406,7 @@ function LoginPage() {
 
       <Button
         type="submit"
-        variant="accent"
+        variant="default"
         size="lg"
         loading={pending === 'email'}
         disabled={busy}
@@ -420,27 +425,22 @@ function LoginPage() {
     // long sign-up content can scroll naturally without clipped controls.
     // <main> because /login renders outside the _site shell, which is where the
     // site's landmark and skip link live; a deep-linked visit had neither.
-    <main className="flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8">
-      {/* Flagship: a singular L2 pane with hero edge-refraction + prism rim
-          (1 of ≤2/page). data-glass-lens opts it into the per-element lens
-          filter; .glass-liquid adds the ambient sheen (1 of ≤3/page). Only the
-          card width takes the slab: on a phone the same markup would be a
-          full-viewport glass body, its rim drawn at the screen edges. */}
+    <main
+      className={cn('flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8', arrival)}
+    >
+      {/* The sign-in form: a plain block, full-viewport on a phone and a narrow column from the sm breakpoint. */}
       <div
-        data-glass-lens={isCard ? '' : undefined}
         className={cn(
           'relative flex min-h-dvh w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:min-h-0 sm:max-w-sm sm:rounded-site sm:p-8',
-          isCard && 'glass-pane glass-liquid glass-refract glass-refract--prism',
+          isCard && 'surface-panel',
         )}
       >
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-site">
-            <span className="font-serif text-lg font-bold tracking-tight text-site-text">R</span>
+          <div className="surface-field mb-3 flex size-12 items-center justify-center rounded-site">
+            <span className="font-display text-lg font-bold tracking-tight text-site-text">R</span>
           </div>
-          <p className="site-kicker">
-            RMH Studios
-          </p>
+          <p className="site-kicker">RMH Studios</p>
           <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-site-text">
             {isSignUp
               ? t('create-account-heading', { defaultValue: 'Create your account' })
@@ -459,7 +459,7 @@ function LoginPage() {
           {!isSignUp && (
             <Button
               type="button"
-              variant="accent"
+              variant="default"
               size="lg"
               onClick={handlePasskeySignIn}
               loading={pending === 'passkey'}
@@ -479,7 +479,7 @@ function LoginPage() {
               <Button
                 key={p.id}
                 type="button"
-                variant="secondary"
+                variant="default"
                 size="lg"
                 onClick={handleSocial(p.id)}
                 disabled={busy}
@@ -510,7 +510,7 @@ function LoginPage() {
           ) : (
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="lg"
               onClick={() => setShowEmail(true)}
               disabled={busy}

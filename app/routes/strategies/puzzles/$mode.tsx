@@ -8,16 +8,22 @@
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { ArrowLeft, RotateCcw, ArrowUpDown, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PuzzleShell } from '@/components/doctrine/puzzles/puzzle-shell';
-import { ResultCard } from '@/components/doctrine/puzzles/result-card';
-import { useDoctrinePuzzleState } from '@/hooks/useDoctrinePuzzleState';
-import { useDoctrineSound } from '@/hooks/useDoctrineSound';
+import { PuzzleShell } from '@features/doctrine/ui/puzzles/puzzle-shell';
+import { ResultCard } from '@features/doctrine/ui/puzzles/result-card';
+import { useDoctrinePuzzleState } from '@features/doctrine/ui/hooks/useDoctrinePuzzleState';
+import { useDoctrineSound } from '@features/doctrine/ui/hooks/useDoctrineSound';
+import { api } from '@/lib/contract/client';
+import { getDoctrineReplayPuzzleApi, getDoctrineTodayPuzzlesApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/puzzles/$mode')({
+  head: () => noindexHead('Strategies Puzzle'),
   component: PuzzleModePage,
 });
 
@@ -37,21 +43,17 @@ function PuzzleModePage() {
 
   const { data: puzzles } = useQuery({
     queryKey: ['doctrine', 'puzzles', 'today'],
-    queryFn: async () => {
-      const res = await fetch('/api/doctrine/puzzles/today');
-      return res.json();
-    },
+    queryFn: () => api(getDoctrineTodayPuzzlesApi, { retries: 0 }),
     staleTime: 60_000,
   });
 
   const dailyPuzzle = puzzles?.find((p: { mode: string }) => p.mode.toLowerCase() === mode);
   const activePuzzle = replayPuzzle ?? dailyPuzzle;
+  const arrival = useArrival(!!activePuzzle);
 
   const handlePlayAgain = useCallback(async () => {
     try {
-      const res = await fetch(`/api/doctrine/puzzles/replay?mode=${mode}`);
-      if (!res.ok) throw new Error('Failed to load replay');
-      const data = await res.json();
+      const data = await api(getDoctrineReplayPuzzleApi, { query: { mode }, retries: 0 });
       setReplayPuzzle(data);
       setReplayKey(k => k + 1);
     } catch {
@@ -69,14 +71,17 @@ function PuzzleModePage() {
     );
   }
 
+  // No box (display: contents): the puzzle fades in after "Loading puzzle..." (M9).
   return (
-    <PuzzlePlayer
-      key={`${activePuzzle.id}-${replayKey}`}
-      puzzle={activePuzzle}
-      mode={mode}
-      isReplay={!!replayPuzzle}
-      onPlayAgain={handlePlayAgain}
-    />
+    <div className={cn('contents', arrival && 'arrive-group')}>
+      <PuzzlePlayer
+        key={`${activePuzzle.id}-${replayKey}`}
+        puzzle={activePuzzle}
+        mode={mode}
+        isReplay={!!replayPuzzle}
+        onPlayAgain={handlePlayAgain}
+      />
+    </div>
   );
 }
 

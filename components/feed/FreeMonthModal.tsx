@@ -1,11 +1,12 @@
-'use client';
-
 import { useEffect, useState } from'react';
 import { Gift, Check, Sparkles } from'lucide-react';
 import { useTranslation } from'react-i18next';
+import { api } from '@/lib/contract/client';
+import { claimFreeMonthApi, getFreeMonthApi } from '@/lib/promo.contract';
 import { useSession } from'@/components/Providers';
 import { Button } from'@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
+import { useSitewideAnnouncementStore } from'@/stores/sitewideAnnouncementStore';
 
 const COOLDOWN_KEY ='rmh-freemonth-snooze';
 const COOLDOWN_MS = 4 * 24 * 60 * 60 * 1000; // re-offer roughly every few days
@@ -36,10 +37,9 @@ export function FreeMonthModal() {
  const snooze = Number(localStorage.getItem(COOLDOWN_KEY) ||'0');
  if (snooze && Date.now() < snooze) return;
 
- const res = await fetch('/api/promo/free-month', { credentials:'include'});
- if (!res.ok) return;
- const data = await res.json();
- if (!cancelled && data.eligible) setOpen(true);
+ const data = await api(getFreeMonthApi);
+ // Never over the sitewide announcement popup; the snooze is untouched, so it is offered next visit.
+ if (!cancelled && data.eligible && !useSitewideAnnouncementStore.getState().open) setOpen(true);
  } catch {
  // ignore
  }
@@ -61,8 +61,8 @@ export function FreeMonthModal() {
  const claim = async () => {
  setClaiming(true);
  try {
- const res = await fetch('/api/promo/free-month', { method:'POST', credentials:'include'});
- if (res.ok) {
+ const claimedOk = await api(claimFreeMonthApi).then(() => true, () => false);
+ if (claimedOk) {
  setClaimed(true);
  try {
  // Never offer again once claimed.
@@ -82,31 +82,31 @@ export function FreeMonthModal() {
  <Dialog open={open} onOpenChange={(o) => { if (!o) snooze(); }}>
  <DialogContent className="max-w-sm gap-0 text-center">
  <div className="mb-4 flex justify-center">
- <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-4">
+ <div className="rounded-site border border-site-accent/30 bg-site-bg-subtle p-4">
  {claimed ? <Check className="h-7 w-7 text-site-success"/> : <Gift className="h-7 w-7 text-site-accent"/>}
  </div>
  </div>
 
  {claimed ? (
  <>
- <DialogTitle className="text-xl font-bold text-site-text">{t("claimed-title", { defaultValue:"You’re on Pro! 🎉"})}</DialogTitle>
+ <DialogTitle className="text-xl font-semibold text-site-text">{t("claimed-title", { defaultValue:"You’re on Pro! 🎉"})}</DialogTitle>
  <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
  {t("claimed-body", { defaultValue:"Your free month of Pro is active. Enjoy the perks — including the developer API."})}
  </p>
- <Button variant="accent"className="mt-6 w-full"onClick={() => setOpen(false)}>
+ <Button variant="default"className="mt-6 w-full"onClick={() => setOpen(false)}>
  {t("lets-go", { defaultValue:"Let’s go"})}
  </Button>
  </>
  ) : (
  <>
- <DialogTitle className="inline-flex items-center gap-2 text-xl font-bold text-site-text">
+ <DialogTitle className="inline-flex items-center gap-2 text-xl font-semibold text-site-text">
  <Sparkles className="h-5 w-5 text-site-accent"/> {t("offer-title", { defaultValue:"A month of Pro, on us"})}
  </DialogTitle>
  <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
  {t("offer-body", { defaultValue:"Try RMH Pro free for one month — no payment, no card. Unlock the developer API, the profile badge, and more."})}
  </p>
  <div className="mt-6 flex flex-col gap-2">
- <Button variant="accent"loading={claiming} onClick={claim} className="w-full">
+ <Button variant="default"loading={claiming} onClick={claim} className="w-full">
  {!claiming && <Gift className="h-4 w-4"/>}
  {t("claim-free-month", { defaultValue:"Claim free month"})}
  </Button>

@@ -8,79 +8,45 @@
  */
 
 import 'dotenv/config';
-import { guardPool, installProcessGuards } from '../../lib/perf/process-guards';
+import { installProcessGuards } from '../../lib/perf/process-guards';
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { Server } from 'socket.io';
 import { config } from './config';
 import { logger } from './logger';
+import { protocolGuard, protocolLogger } from '../shared/protocol';
 import { disconnectPrisma, getPrismaClient } from './prisma-client';
 import { warmPrismaClient } from '../shared/prisma-client';
 import { cleanupRateLimits } from './rate-limit';
+import { attachRedisAdapter } from '../shared/redis-adapter';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // ─── Game Handlers ──────────────────────────────────────────────
-import { registerSliceItHandlers, handleSliceItDisconnect } from './handlers/slice-it';
 import {
   registerNeonDriftwayHandlers,
   handleNeonDriftwayDisconnect,
 } from './handlers/neon-driftway';
-import {
-  registerSynapseStormHandlers,
-  handleSynapseStormDisconnect,
-} from './handlers/synapse-storm';
 import { registerRmhTypeHandlers, handleRmhTypeDisconnect } from './handlers/rmhtype';
 import { registerRmhStudyHandlers, handleRmhStudyDisconnect } from './handlers/rmhstudy';
-import { registerAltairHandlers, handleAltairDisconnect } from './handlers/altair';
 import {
   registerKowloonKnockoutHandlers,
   handleKowloonKnockoutDisconnect,
 } from './handlers/kowloon-knockout';
 import { registerStudioJamHandlers } from './handlers/studio-jam';
 import {
-  registerBlackjackHandlers,
-  handleBlackjackDisconnect,
-  initializeBlackjackPublicTable,
-  listPublicRooms as listBlackjackRooms,
-  refundBlackjackOnShutdown,
-} from './handlers/blackjack';
-import {
-  registerHoldemHandlers,
-  handleHoldemDisconnect,
-  initializeHoldem,
-  listPublicRooms as listHoldemRooms,
-  cashOutHoldemOnShutdown,
-} from './handlers/holdem';
-import {
-  registerBaccaratHandlers,
-  handleBaccaratDisconnect,
-  initializeBaccarat,
-  listPublicRooms as listBaccaratRooms,
-  refundBaccaratOnShutdown,
-} from './handlers/baccarat';
-import {
-  registerRouletteHandlers,
-  handleRouletteDisconnect,
-  initializeRoulette,
-  listPublicRooms as listRouletteRooms,
-  refundRouletteOnShutdown,
-} from './handlers/roulette';
-import { CASINO_SHUTDOWN_DEADLINE_MS } from './handlers/casino-shutdown';
+  initializeCasino,
+  listCasinoRooms,
+  restoreCasinoTables,
+  closeCasinoTableStore,
+  CASINO_SHUTDOWN_REFUNDS,
+  CASINO_SHUTDOWN_DEADLINE_MS,
+} from '../../features/casino/server';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
-import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
-import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
-import { registerLaundrySortHandlers, handleLaundrySortDisconnect } from './handlers/laundry-sort';
-import {
-  registerGabrielsHornHandlers,
-  handleGabrielsHornDisconnect,
-} from './handlers/gabriels-horn';
 import { registerGlobeSetHandlers, handleGlobeSetDisconnect } from './handlers/globeset';
 import { registerTf2GameHandlers, handleTf2GameDisconnect } from './handlers/tf2-game';
 import { registerTf2P2pHandlers, handleTf2P2pDisconnect } from './handlers/tf2-p2p';
-import { registerBalatroP2pHandlers, handleBalatroP2pDisconnect } from './handlers/balatro-p2p';
-import { registerBalatroQueueHandlers, handleBalatroQueueDisconnect } from './handlers/balatro-queue';
-import { registerHearthworksP2pHandlers, handleHearthworksP2pDisconnect } from './handlers/hearthworks-p2p';
+import { registerFeatureHandlers, handleFeatureDisconnects } from './features';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 import { registerMatchmakingHandlers, handleMatchmakingDisconnect } from './handlers/matchmaking';
@@ -108,130 +74,40 @@ if (!config.CORS_ORIGIN) {
 
 // ─── Auth middleware (soft — authenticates if token present) ─────
 
-import { Pool } from 'pg';
+import { createAuthCache, createSessionAuth } from '../shared/session-auth';
 
-let authPool: Pool | null = null;
+// The Better Auth session check (token -> session JOIN user, expiry, bounded
+// 60 s positive cache, pool) is shared by every hub: server/shared/session-auth.ts.
+// Soft-auth semantics stay here, so every non-`ok` outcome leaves the socket anonymous.
+const sessionAuth = createSessionAuth({
+  service: 'socket-server',
+  databaseUrl: config.DATABASE_URL,
+  defaultName: 'Player',
+});
 
-function getAuthPool(): Pool | null {
-  if (!config.DATABASE_URL) return null;
-  if (!authPool) {
-    // guardPool: an idle client dropped by a Postgres restart must not crash the hub.
-    authPool = guardPool(
-      new Pool({
-        connectionString: config.DATABASE_URL,
-        // perf: one session lookup per connect, 4 is plenty; override with AUTH_DB_POOL_SIZE.
-        max: Number(process.env.AUTH_DB_POOL_SIZE) || 4,
-        idleTimeoutMillis: 30_000,
-        connectionTimeoutMillis: 5_000,
-      }),
-      { service: 'socket-server', pool: 'auth' },
-    );
-  }
-  return authPool;
+/** The shared auth pool (null without DATABASE_URL); also serves the Discord account lookup. */
+function getAuthPool() {
+  return sessionAuth.getPool();
 }
 
-// ─── Session-token auth cache ────────────────────────────────────
-//
-// softAuthMiddleware validates the Better Auth session token against Postgres
-// on every connection. A reconnection storm (deploy, network blip, tab wake)
-// would otherwise fire one `SELECT ... FROM session` per socket on the max-10
-// auth pool. Cache validated tokens for a short TTL in a bounded Map (same
-// bounded-map discipline as server/shared/rate-limit.ts) so repeated reconnects
-// from the same clients don't hammer the pool. Only positive validations are
-// cached; tokenless connections skip the cache entirely, so soft-auth semantics
-// (anonymous connections still allowed) are unchanged. A revoked session is
-// honoured for at most AUTH_CACHE_TTL_MS.
+// Discord Activity identity cache (positive results only, same TTL/bound as sessions).
 interface CachedAuth {
   userId: string;
   userName: string;
   avatarUrl: string | null;
-  sessionExpiresAt: number; // ms epoch — the session row's own expiry
-  cachedAt: number; // ms epoch — when we validated it
 }
-
-const AUTH_CACHE_TTL_MS = 60_000;
-const AUTH_CACHE_MAX_ENTRIES = 10_000;
-const authCache = new Map<string, CachedAuth>();
-
-const authCacheGc = setInterval(() => {
-  const now = Date.now();
-  for (const [token, entry] of authCache) {
-    if (now - entry.cachedAt >= AUTH_CACHE_TTL_MS || entry.sessionExpiresAt <= now) {
-      authCache.delete(token);
-    }
-  }
-}, 30_000);
-authCacheGc.unref();
-
-function cacheAuth(key: string, entry: CachedAuth): void {
-  // Bounded, same discipline as server/shared/rate-limit.ts: evict oldest at
-  // capacity rather than letting a token space nobody controls grow forever.
-  if (authCache.size >= AUTH_CACHE_MAX_ENTRIES) {
-    const oldest = authCache.keys().next().value;
-    if (oldest !== undefined) authCache.delete(oldest);
-  }
-  authCache.set(key, entry);
-}
-
-function readCachedAuth(key: string): CachedAuth | null {
-  const now = Date.now();
-  const cached = authCache.get(key);
-  if (cached && now - cached.cachedAt < AUTH_CACHE_TTL_MS && cached.sessionExpiresAt > now) {
-    return cached;
-  }
-  return null;
-}
+const discordAuthCache = createAuthCache<CachedAuth>();
 
 /**
  * Better Auth session token → `socket.data`. Returns true when it authenticated.
- *
- * Unchanged behaviour, lifted out of the middleware so the Discord path below
- * can be a peer rather than a special case bolted onto it.
  */
-async function applySessionToken(
-  socket: import('socket.io').Socket,
-  token: string,
-): Promise<boolean> {
-  const cached = readCachedAuth(`s:${token}`);
-  if (cached) {
-    socket.data.userId = cached.userId;
-    socket.data.userName = cached.userName;
-    socket.data.avatarUrl = cached.avatarUrl;
-    socket.data.sessionToken = token;
-    return true;
-  }
-
-  const pool = getAuthPool();
-  if (!pool) return false;
-
-  const result = await pool.query(
-    `SELECT s."userId", s."expiresAt", u."name", u."image"
-     FROM "session" s
-     JOIN "user" u ON u."id" = s."userId"
-     WHERE s."token" = $1
-     LIMIT 1`,
-    [token],
-  );
-
-  if (result.rows.length === 0) return false;
-
-  const row = result.rows[0];
-  const expiresAt = new Date(row.expiresAt);
-  if (expiresAt <= new Date()) return false;
-
-  const userName = row.name || 'Player';
-  const avatarUrl = row.image || null;
-  socket.data.userId = row.userId;
-  socket.data.userName = userName;
-  socket.data.avatarUrl = avatarUrl;
-  socket.data.sessionToken = token;
-  cacheAuth(`s:${token}`, {
-    userId: row.userId,
-    userName,
-    avatarUrl,
-    sessionExpiresAt: expiresAt.getTime(),
-    cachedAt: Date.now(),
-  });
+async function applySessionToken(socket: import('socket.io').Socket): Promise<boolean> {
+  const result = await sessionAuth.resolveSocketSession(socket.handshake);
+  if (result.status !== 'ok') return false;
+  socket.data.userId = result.session.userId;
+  socket.data.userName = result.session.name;
+  socket.data.avatarUrl = result.session.image;
+  socket.data.sessionToken = result.session.token;
   return true;
 }
 
@@ -256,7 +132,7 @@ const DISCORD_VERIFY_TIMEOUT_MS = 5_000;
  * `userId` is a real site user id when the Discord account is linked, and
  * `null` for a guest — which is the whole distinction `X10` draws. A guest's
  * name and avatar URL live in this object, in memory, for at most
- * {@link AUTH_CACHE_TTL_MS} plus the life of the socket. They are never written
+ * the shared auth-cache TTL (60 s) plus the life of the socket. They are never written
  * to a table, and the avatar is referenced at Discord's CDN rather than copied
  * into our storage.
  */
@@ -291,7 +167,7 @@ function discordAvatarUrl(id: string, avatar: string | null, discriminator: stri
  * in the same round trip, so this is one outbound call, not two.
  *
  * No client secret is involved: the code→token exchange (the only operation
- * that needs one) stays in `app/routes/api/discord/token.ts` on the web tier.
+ * that needs one) stays in `lib/api/routes/discord.token.server.ts` on the web tier.
  * This is the verify half, and verification is Bearer-only.
  */
 async function verifyDiscordActivityToken(token: string): Promise<DiscordIdentity | null> {
@@ -363,7 +239,7 @@ async function applyDiscordActivityToken(
   socket: import('socket.io').Socket,
   token: string,
 ): Promise<boolean> {
-  const cached = readCachedAuth(`d:${token}`);
+  const cached = discordAuthCache.get(`d:${token}`);
   if (cached) {
     if (cached.userId) {
       socket.data.userId = cached.userId;
@@ -389,17 +265,13 @@ async function applyDiscordActivityToken(
     socket.data.discordGuest = { name: identity.name, avatarUrl: identity.avatarUrl };
   }
 
-  cacheAuth(`d:${token}`, {
-    // A cache row for a guest carries a null userId; `readCachedAuth` above
-    // replays it as a guest rather than as an account.
-    userId: identity.userId as string,
-    userName: identity.name,
-    avatarUrl: identity.avatarUrl,
-    // The token's own expiry, absolute — the cache never outlives the
-    // credential it was derived from.
-    sessionExpiresAt: identity.expiresAt,
-    cachedAt: Date.now(),
-  });
+  // A guest carries a null userId; the cache replays it as a guest rather than
+  // as an account. The cache never outlives the Discord token's own expiry.
+  discordAuthCache.set(
+    `d:${token}`,
+    { userId: identity.userId as string, userName: identity.name, avatarUrl: identity.avatarUrl },
+    identity.expiresAt,
+  );
   return true;
 }
 
@@ -419,13 +291,10 @@ async function softAuthMiddleware(
   socket: import('socket.io').Socket,
   next: (err?: import('socket.io').ExtendedError) => void,
 ): Promise<void> {
-  const token = socket.handshake.auth?.token;
   const discordToken = socket.handshake.auth?.discordToken;
 
   try {
-    if (typeof token === 'string' && token) {
-      await applySessionToken(socket, token);
-    }
+    await applySessionToken(socket);
     if (!socket.data.userId && typeof discordToken === 'string' && discordToken) {
       await applyDiscordActivityToken(socket, discordToken);
     }
@@ -465,12 +334,7 @@ function requestHandler(_req: IncomingMessage, res: ServerResponse): void {
       'Cache-Control': 'no-store',
     });
     res.end(
-      JSON.stringify({
-        blackjack: listBlackjackRooms(),
-        holdem: listHoldemRooms(),
-        baccarat: listBaccaratRooms(),
-        roulette: listRouletteRooms(),
-      }),
+      JSON.stringify(listCasinoRooms()),
     );
     return;
   }
@@ -502,11 +366,18 @@ const io = new Server(httpServer, {
   connectionStateRecovery: {},
 });
 
+// Opt-in Redis backplane (REDIS_URL); in-memory adapter otherwise. Awaited before listen().
+const adapterReady = attachRedisAdapter(io, logger);
+
 // Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
 instrumentHub(io, 'socket');
 
 // ─── Auth middleware ────────────────────────────────────────────
 
+// Protocol version first (no DB round-trip): an outdated tab is told so instead of
+// silently no-op'ing mid-match (server/shared/protocol.ts, E2). Lenient: a client that
+// sends no version still gets in.
+io.use(protocolGuard(protocolLogger(logger)));
 io.use(softAuthMiddleware);
 
 // ─── Connection handler ─────────────────────────────────────────
@@ -517,35 +388,30 @@ io.on('connection', (socket) => {
   logger.info({ event: 'connection', userId, userName, socketId: socket.id });
 
   // Register all game handlers
-  registerSliceItHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'slice-it');
   registerNeonDriftwayHandlers(io, socket);
-  registerSynapseStormHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'synapse-storm');
   registerRmhTypeHandlers(io, socket);
   registerRmhStudyHandlers(io, socket);
-  registerAltairHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'altair');
   registerKowloonKnockoutHandlers(io, socket);
   registerStudioJamHandlers(io, socket); // F13: self-cleans on disconnect
-  registerBlackjackHandlers(io, socket);
-  registerHoldemHandlers(io, socket);
-  registerBaccaratHandlers(io, socket);
-  registerRouletteHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'casino'); // blackjack, holdem, baccarat, roulette (features/casino/server)
   registerLightsOutHandlers(io, socket);
-  registerDoctrineHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'doctrine');
   registerVelumHandlers(io, socket);
-  registerDreamRiftHandlers(io, socket);
-  registerLaundrySortHandlers(io, socket);
-  registerGabrielsHornHandlers(io, socket);
+  registerFeatureHandlers(io, socket, 'dream-rift');
+  registerFeatureHandlers(io, socket, 'laundry-sort');
+  registerFeatureHandlers(io, socket, 'gabriels-horn');
   registerGlobeSetHandlers(io, socket);
   // TF2: the server browser and P2P signaling — every match runs in a player's browser.
   registerTf2GameHandlers(io, socket);
   // TF2 peer-to-peer rooms: signaling (and a capped relay fallback) only — the match runs in the host's browser.
   registerTf2P2pHandlers(io, socket);
-  // Balatro multiplayer: signalling, relay fallback and the seat directory — the lobby runs in the host's browser.
-  registerBalatroP2pHandlers(io, socket);
-  // Balatro matchmaking / party / invites / spectate list.
-  registerBalatroQueueHandlers(io, socket);
-  // Hearthworks multiplayer: room list, signalling, relay fallback and host migration — the world runs in the host's browser.
-  registerHearthworksP2pHandlers(io, socket);
+  // Feature-sliced handlers (redesign A1 step 3; features/<id>/server/, listed in ./features.ts):
+  // Balatro multiplayer — signalling, relay fallback, the seat directory, matchmaking/party/invites;
+  // Hearthworks multiplayer — room list, signalling, relay fallback, host migration (the world runs in the host's browser).
+  registerFeatureHandlers(io, socket);
 
   // Platform expansion (§4, §5): live Spaces + cross-game party.
   registerSpacesHandlers(io, socket);
@@ -566,34 +432,30 @@ io.on('connection', (socket) => {
     // queue seats, lobby cleanup timers) are skipped — the process is going
     // away. Everything that persists state (calls, resumable games) still runs.
     // The casino handlers still run too, but find nothing: shutdown() refunded
-    // their stakes and emptied their tables before calling io.close().
+    // their stakes (or, for durable blackjack tables, saved them) and emptied
+    // their tables before calling io.close().
     if (!shuttingDown) handleMatchmakingDisconnect(socket);
     void handleCallDisconnect(io, socket);
     void handleGroupCallDisconnect(io, socket);
     handleControllerDisconnect(io, socket);
-    if (!shuttingDown) handleSynapseStormDisconnect(io, socket);
-    handleSliceItDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'synapse-storm', shuttingDown);
+    handleFeatureDisconnects(io, socket, 'slice-it');
     if (!shuttingDown) handleNeonDriftwayDisconnect(io, socket);
     if (!shuttingDown) handleRmhTypeDisconnect(io, socket);
     handleRmhStudyDisconnect(io, socket);
-    handleAltairDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'altair');
     handleKowloonKnockoutDisconnect(io, socket);
-    handleBlackjackDisconnect(io, socket);
-    handleHoldemDisconnect(io, socket);
-    handleBaccaratDisconnect(io, socket);
-    handleRouletteDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'casino');
     handleLightsOutDisconnect(io, socket);
-    handleDoctrineDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'doctrine');
     handleVelumDisconnect(io, socket);
-    handleDreamRiftDisconnect(io, socket);
-    handleLaundrySortDisconnect(io, socket);
-    handleGabrielsHornDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket, 'dream-rift');
+    handleFeatureDisconnects(io, socket, 'laundry-sort');
+    handleFeatureDisconnects(io, socket, 'gabriels-horn');
     handleGlobeSetDisconnect(io, socket);
     handleTf2GameDisconnect(io, socket);
     handleTf2P2pDisconnect(io, socket);
-    handleBalatroP2pDisconnect(io, socket);
-    handleBalatroQueueDisconnect(io, socket);
-    handleHearthworksP2pDisconnect(io, socket);
+    handleFeatureDisconnects(io, socket);
 
     cleanupRateLimits(socket.id);
   });
@@ -633,12 +495,11 @@ function shutdown(signal: string): void {
       return Promise.resolve();
     }
   };
-  const casinoRefunds = Promise.allSettled([
-    refundCasino('blackjack', refundBlackjackOnShutdown),
-    refundCasino('roulette', refundRouletteOnShutdown),
-    refundCasino('baccarat', refundBaccaratOnShutdown),
-    refundCasino('holdem', cashOutHoldemOnShutdown),
-  ]);
+  // With CASINO_DURABLE_TABLES=1 blackjack's entry saves its tables to the store instead of refunding
+  // them; the store's connection closes once every entry has settled.
+  const casinoRefunds = Promise.allSettled(
+    CASINO_SHUTDOWN_REFUNDS.map(([game, run]) => refundCasino(game, run)),
+  ).then(() => closeCasinoTableStore());
 
   io.close(() => {
     logger.info({ event: 'sockets_closed' });
@@ -654,7 +515,7 @@ function shutdown(signal: string): void {
   // Prisma closes only after the refunds have landed (or hit their deadline).
   void Promise.all([casinoRefunds, httpClosed])
     .then(() =>
-      Promise.all([disconnectPrisma(), authPool ? authPool.end() : Promise.resolve()]),
+      Promise.all([disconnectPrisma(), sessionAuth.close()]),
     )
     .catch((err: unknown) => logger.error({ event: 'shutdown_cleanup_error', error: String(err) }))
     .finally(() => process.exit(0));
@@ -669,14 +530,13 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 // left behind from rooms this one opens while the sweep is still running.
 const bootedAt = new Date();
 
-httpServer.listen(config.PORT, () => {
+// Durable casino tables (CASINO_DURABLE_TABLES=1) come back before the hub accepts a connection, so a
+// reconnecting player finds the seat already there. Off (the default) this resolves at once.
+void adapterReady.then(() => restoreCasinoTables(io)).then(() => httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
   if (config.DATABASE_URL) void warmPrismaClient(getPrismaClient(), logger);
-  initializeBlackjackPublicTable(io);
-  initializeHoldem(io);
-  initializeBaccarat(io);
-  initializeRoulette(io);
-});
+  initializeCasino(io);
+}));
 
 // Close group-call rows a previous process died holding. History hygiene only:
 // it runs after `listen` and never fails the boot, because every other feature

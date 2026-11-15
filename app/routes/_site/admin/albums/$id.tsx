@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Play, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -18,6 +18,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  adminAlbumDelete,
+  adminAlbumPatch,
+  adminAlbumReorder,
+  adminAlbumsList,
+} from '@/lib/admin/albums.contract';
+import { deleteAdminAlbumSlideApi } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/admin/albums/$id')({
   head: () => ({ meta: [{ title: 'Manage Album | Admin' }] }),
@@ -41,16 +51,16 @@ function ManageAlbumPage() {
 
   const [album, setAlbum] = useState<AdminAlbum | null>(null);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   async function load() {
-    const res = await fetch('/api/admin/albums').catch(() => null);
-    if (res?.ok) {
-      const data = await res.json().catch(() => null);
-      const found = (data?.albums as AdminAlbum[] | undefined)?.find((a) => a.id === id) ?? null;
+    const data = await api(adminAlbumsList).catch(() => null);
+    if (data) {
+      const found = (data.albums as AdminAlbum[] | undefined)?.find((a) => a.id === id) ?? null;
       setAlbum(found);
       if (found) {
         setTitle(found.title);
@@ -75,14 +85,12 @@ function ManageAlbumPage() {
     if (!album || !title.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/albums/${album.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), description }),
+      const data = await api(adminAlbumPatch, {
+        params: { id: album.id },
+        body: { title: title.trim(), description },
+      }).catch((e: unknown) => {
+        throw new Error(serverError(e) || t('album-save-failed', { defaultValue: 'Save failed' }));
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok)
-        throw new Error(data?.error || t('album-save-failed', { defaultValue: 'Save failed' }));
       setAlbum((prev) =>
         prev ? { ...prev, title: data.album.title, description: data.album.description } : prev,
       );
@@ -107,10 +115,11 @@ function ManageAlbumPage() {
     if (!album) return;
     const prev = album.slides;
     setAlbum({ ...album, slides: prev.filter((s) => s.id !== slideId) });
-    const res = await fetch(`/api/admin/albums/${album.id}/slides/${slideId}`, {
-      method: 'DELETE',
-    }).catch(() => null);
-    if (!res?.ok) {
+    const ok = await api(deleteAdminAlbumSlideApi, { params: { id: album.id, slideId } }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) {
       setAlbum((a) => (a ? { ...a, slides: prev } : a));
       toast.error(t('slide-delete-failed', { defaultValue: 'Failed to delete slide.' }));
     }
@@ -119,12 +128,14 @@ function ManageAlbumPage() {
   async function persistOrder(next: AdminSlide[]) {
     if (!album) return;
     setAlbum({ ...album, slides: next });
-    const res = await fetch(`/api/admin/albums/${album.id}/reorder`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: next.map((s) => s.id) }),
-    }).catch(() => null);
-    if (!res?.ok) {
+    const ok = await api(adminAlbumReorder, {
+      params: { id: album.id },
+      body: { ids: next.map((s) => s.id) },
+    }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) {
       toast.error(t('order-save-failed', { defaultValue: 'Failed to save order.' }));
       void load();
     }
@@ -156,10 +167,11 @@ function ManageAlbumPage() {
       }))
     )
       return;
-    const res = await fetch(`/api/admin/albums/${album.id}`, { method: 'DELETE' }).catch(
-      () => null,
+    const ok = await api(adminAlbumDelete, { params: { id: album.id } }).then(
+      () => true,
+      () => false,
     );
-    if (res?.ok) {
+    if (ok) {
       toast.success(t('album-deleted', { defaultValue: 'Album deleted.' }));
       navigate({ to: '/admin/albums' });
     } else {
@@ -191,7 +203,7 @@ function ManageAlbumPage() {
         backLabel={t('back-to-albums', { defaultValue: 'All albums' })}
         wide
       >
-        <AdminBody width="narrow">
+        <AdminBody width="narrow" className={arrival}>
           <EmptyState title={t('album-not-found', { defaultValue: 'Album not found.' })} />
         </AdminBody>
       </PageLayout>
@@ -205,16 +217,16 @@ function ManageAlbumPage() {
       backLabel={t('back-to-albums', { defaultValue: 'All albums' })}
       wide
     >
-      <AdminBody width="narrow">
-        {/* Album details — a singular editing panel gets the L2 glass pane. */}
-        <div className="glass-pane flex flex-col gap-3 rounded-site p-5">
+      <AdminBody width="narrow" className={arrival}>
+        {/* Album details: fields on the page gutter. */}
+        <div className="relative flex flex-col gap-3">
           <Input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={120}
             placeholder={t('album-title-label', { defaultValue: 'Album title' })}
-            className="h-11 text-base font-semibold"
+            className="font-semibold"
           />
           <Textarea
             value={description}
@@ -234,9 +246,7 @@ function ManageAlbumPage() {
             >
               {t('save-details', { defaultValue: 'Save details' })}
             </Button>
-            <span className="truncate font-mono text-xs text-site-text-dim">
-              /library/albums/{album.slug}
-            </span>
+            <span className="t-meta min-w-0 break-all">/library/albums/{album.slug}</span>
           </div>
         </div>
 
@@ -244,7 +254,7 @@ function ManageAlbumPage() {
 
         {slides.length > 0 && (
           <div className="flex flex-col gap-3">
-            <p className="text-xs text-site-text-muted">
+            <p className="t-body text-site-text-muted">
               {t('slides-count-reorder', {
                 count: slides.length,
                 defaultValue_one: '{{count}} item · drag to reorder',
@@ -255,7 +265,7 @@ function ManageAlbumPage() {
               {slides.map((slide, index) => (
                 <div
                   key={slide.id}
-                  className={`group glass-fill relative aspect-square overflow-hidden rounded-site-sm ${
+                  className={`group relative aspect-square overflow-hidden rounded-site-sm ${
                     dragIndex === index ? 'opacity-50 ring-2 ring-site-accent' : ''
                   }`}
                   draggable
@@ -296,7 +306,7 @@ function ManageAlbumPage() {
         )}
 
         {/* Danger zone */}
-        <div className="flex justify-end border-t border-site-border pt-4">
+        <div className="flex justify-end border-t border-site-border pt-4 first:border-t-0 first:pt-0">
           <Button variant="danger" onClick={deleteAlbum}>
             <Trash2 aria-hidden="true" /> {t('delete-album', { defaultValue: 'Delete album' })}
           </Button>

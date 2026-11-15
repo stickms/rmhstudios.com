@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -25,11 +23,13 @@ import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
+import { useArrival } from '@/components/ui/arrive';
 
 type StatementResult = 'real' | 'fake-found' | 'fake-missed' | 'wrong-guess';
 
 function ImpostorGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
     const [puzzle, setPuzzle] = useState<ImpostorPuzzle | null>(null);
+    const arrival = useArrival(puzzle !== null);
 
     useEffect(() => {
         let cancelled = false;
@@ -43,7 +43,9 @@ function ImpostorGameLoader({ dateKey, isToday }: { dateKey: string; isToday: bo
     }, [dateKey]);
 
     if (!puzzle) return <PuzzleLoading title="Impostor" emoji="🤥" />;
-    return <ImpostorGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    const content = <ImpostorGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    // The puzzle replaces the loading panel: it fades in through a box-less wrapper (M9).
+    return arrival ? <div className="arrive-group">{content}</div> : content;
 }
 
 function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuzzle; dateKey: string; isToday: boolean }) {
@@ -197,8 +199,8 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
         }
         if (foundFakes.includes(puzzle.statements[index].text)) return `${TONE_TINT.danger} opacity-70 cursor-not-allowed`;
         if (confirmedReal.has(index)) return 'border-site-border opacity-50 cursor-not-allowed';
-        if (selectedStatements.has(index)) return 'border-site-accent bg-site-accent-dim';
-        return 'glass-interactive cursor-pointer border-transparent';
+        if (selectedStatements.has(index)) return 'border-site-accent bg-site-bg-subtle';
+        return 'surface-press cursor-pointer border-transparent';
     };
 
     return (
@@ -253,7 +255,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                             onClick={() => toggleStatement(i)}
                             disabled={completed || confirmedReal.has(i) || foundFakes.includes(puzzle.statements[i].text)}
                             aria-pressed={!completed ? selectedStatements.has(i) : undefined}
-                            className={`glass-fill flex w-full items-start gap-3 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast ${getCardClasses(i)}`}
+                            className={`surface-card flex w-full items-start gap-3 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast ${getCardClasses(i)}`}
                         >
                             <span className="mt-0.5 shrink-0 font-mono text-xs text-site-text-muted">{i + 1}.</span>
                             <div className="min-w-0 flex-1">
@@ -265,7 +267,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                                         animate={{ opacity: 1, height: 'auto' }}
                                         transition={{ delay: 0.2 + i * 0.08 }}
                                     >
-                                        <Badge variant={solution.isFake ? 'danger' : 'success'} size="sm">
+                                        <Badge variant={solution.isFake ? 'danger' : 'success'}>
                                             {solution.isFake ? t("label-fake", { defaultValue: "FAKE" }) : t("label-true", { defaultValue: "TRUE" })}
                                         </Badge>
                                         <p className="text-xs leading-relaxed text-site-text-muted">{solution.explanation}</p>
@@ -290,7 +292,7 @@ function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuz
                     <div className="mt-3 flex justify-center">
                         <Button
                             type="button"
-                            variant="accent"
+                            variant="default"
                             size="lg"
                             onClick={handleLockIn}
                             disabled={selectedStatements.size !== remainingToFind}

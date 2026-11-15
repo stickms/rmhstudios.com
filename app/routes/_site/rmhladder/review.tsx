@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import {
@@ -26,7 +27,7 @@ import { ShieldCheck } from 'lucide-react';
 import { timeAgo } from '@/components/rmhladder/time';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -62,6 +63,7 @@ interface ReviewSearch {
 }
 
 export const Route = createFileRoute('/_site/rmhladder/review')({
+  head: () => noindexHead('Review queue | RMH Ladder'),
   validateSearch: (search: Record<string, unknown>): ReviewSearch => ({
     tab: search.tab === 'resolved' ? 'resolved' : undefined,
   }),
@@ -167,7 +169,7 @@ function ReviewPage() {
 
   return (
     <div className="space-y-4">
-      <LiquidTabs
+      <Tabs
         tabs={[
           { id: 'open', label: t('ladder.review.open', { defaultValue: 'Open' }) },
           { id: 'resolved', label: t('ladder.review.resolved', { defaultValue: 'Resolved' }) },
@@ -193,7 +195,7 @@ function ReviewPage() {
           }
         />
       ) : tab === 'resolved' ? (
-        <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site">
+        <ul className="divide-y divide-site-border overflow-hidden rounded-site">
           {visible.map((task) => (
             <li key={task.id as string} className="flex flex-col gap-1 px-4 py-3">
               <span className="font-semibold text-site-text">{taskTitle(task)}</span>
@@ -214,7 +216,7 @@ function ReviewPage() {
             <h2 className="site-section-label">
               {REASON_LABELS[reason] ?? reason} · {groupTasks.length}
             </h2>
-            <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site">
+            <ul className="divide-y divide-site-border overflow-hidden rounded-site">
               {groupTasks.map((task) => {
                 const isSourceTask = !task.jobId;
                 const resolutions = isSourceTask ? SOURCE_RESOLUTIONS : JOB_RESOLUTIONS;
@@ -226,7 +228,7 @@ function ReviewPage() {
                     <div className="flex min-w-0 flex-col gap-1">
                       <span className="font-semibold text-site-text">{taskTitle(task)}</span>
                       <span className="text-sm text-site-text-muted">{taskContext(task)}</span>
-                      <span className="rl-mono text-site-text-dim">
+                      <span className="rl-mono text-site-text-muted">
                         {t('ladder.review.opened', {
                           defaultValue: 'opened {{ago}}',
                           ago: timeAgo(task.createdAt as Date),
@@ -243,7 +245,7 @@ function ReviewPage() {
                           key={r.value}
                           type="button"
                           size="sm"
-                          variant="outline"
+                          variant="default"
                           className="min-h-11"
                           onClick={() => void handleResolve(task, r.value)}
                         >

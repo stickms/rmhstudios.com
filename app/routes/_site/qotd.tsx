@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { qotdArchiveQuery } from '@/lib/posts-plus/qotd.queries';
 import { QotdPage } from '@/components/posts-plus/QotdPage';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { validateQotdSearch } from '@/lib/posts-plus/search';
@@ -14,6 +16,7 @@ export const Route = createFileRoute('/_site/qotd')({
     links: [buildCanonical('/qotd')],
   }),
   validateSearch: validateQotdSearch,
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, qotdArchiveQuery()),
   component: QotdRoute,
 });
 

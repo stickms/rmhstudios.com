@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { formatValue, type EffectiveRule } from '@/lib/ops/alarm-rules';
+import { api } from '@/lib/contract/client';
+import { getAdminOncallRulesApi, patchAdminOncallRuleApi } from '@/lib/admin/admin-ops.contract';
 
 interface RuleView extends EffectiveRule {
   evaluations: { dim: string; current: number | null; samples: number; active: boolean }[];
@@ -24,13 +28,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
   const save = async (change: { threshold: number | null; muted: boolean }) => {
     setSaving(true);
     try {
-      const res = await fetch('/api/admin/oncall-rules', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ key: rule.key, ...change }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
+      await api(patchAdminOncallRuleApi, { body: { key: rule.key, ...change } });
       toast.success(t('rule-saved', { defaultValue: 'Alarm rule saved.' }));
       onSaved();
     } catch {
@@ -52,11 +50,11 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
   const firing = rule.evaluations.some((e) => e.active);
 
   return (
-    <li className="glass-fill min-w-0 rounded-site p-5">
+    <li className="min-w-0 py-4">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h3 className="font-semibold text-site-text">{rule.title}</h3>
-          <p className="mt-0.5 break-words font-mono text-xs text-site-text-dim">
+          <p className="mt-0.5 break-words font-mono t-meta">
             {rule.id} · {rule.metric}
             {rule.dim
               ? ` (${rule.dim === '*' ? t('rule-each', { defaultValue: 'each' }) : rule.dim})`
@@ -77,23 +75,23 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
         </div>
       </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-site-text-muted sm:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 t-meta sm:grid-cols-3">
         <div>
-          <dt className="text-site-text-dim">{t('rule-current', { defaultValue: 'Now' })}</dt>
+          <dt className="text-site-text-muted">{t('rule-current', { defaultValue: 'Now' })}</dt>
           <dd className="tabular-nums">{formatValue(worst, rule.unit)}</dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">{t('rule-window', { defaultValue: 'Window' })}</dt>
+          <dt className="text-site-text-muted">{t('rule-window', { defaultValue: 'Window' })}</dt>
           <dd>{t('rule-minutes', { defaultValue: '{{n}} min', n: rule.forMinutes })}</dd>
         </div>
         <div>
-          <dt className="text-site-text-dim">{t('rule-code', { defaultValue: 'In code' })}</dt>
+          <dt className="text-site-text-muted">{t('rule-code', { defaultValue: 'In code' })}</dt>
           <dd className="tabular-nums">{formatValue(rule.codeThreshold, rule.unit)}</dd>
         </div>
       </dl>
 
       <div className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="flex min-w-0 flex-col gap-1 text-xs text-site-text-muted">
+        <label className="flex min-w-0 flex-col gap-1 t-meta">
           {t('rule-threshold', {
             defaultValue: 'Alarm above ({{unit}})',
             unit: unitLabel(rule.unit),
@@ -113,7 +111,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
         >
           {t('rule-save', { defaultValue: 'Save threshold' })}
         </Button>
-        <label className="flex items-center gap-2 text-sm text-site-text-muted">
+        <label className="flex items-center gap-2 t-body text-site-text-muted">
           <Switch
             checked={rule.muted}
             disabled={saving}
@@ -130,7 +128,7 @@ function RuleRow({ rule, onSaved }: { rule: RuleView; onSaved: () => void }) {
         {rule.overridden && (
           <Button
             size="sm"
-            variant="outline"
+            variant="default"
             disabled={saving}
             onClick={() => void save({ threshold: null, muted: false })}
           >
@@ -146,15 +144,11 @@ export function AlarmRules() {
   const { t } = useTranslation('f-oncall');
   const [rules, setRules] = useState<RuleView[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const arrival = useArrival(failed || rules !== null);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/oncall-rules', {
-        credentials: 'include',
-        cache: 'no-store',
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      setRules(((await res.json()) as { rules: RuleView[] }).rules);
+      setRules((await api(getAdminOncallRulesApi, { retries: 0 })).rules);
       setFailed(false);
     } catch {
       setFailed(true);
@@ -164,17 +158,17 @@ export function AlarmRules() {
 
   return (
     <section>
-      <h2 className="site-section-label">
+      <h2 className="t-heading text-site-text">
         {t('rules-title', { defaultValue: 'Alarm rules' })}
       </h2>
-      <p className="mt-1 text-sm text-site-text-muted">
+      <p className="mt-1 t-body text-site-text-muted">
         {t('rules-body', {
           defaultValue:
             'Thresholds over the one-minute metrics history. Defaults live in lib/ops/alarm-rules.ts; a change here overrides the code until you reset it.',
         })}
       </p>
       {failed ? (
-        <p className="glass-fill mt-3 rounded-site p-5 text-sm text-site-text-muted">
+        <p className={cn('mt-3 t-body text-site-text-muted', arrival)}>
           {t('rules-failed', {
             defaultValue: 'Could not load the alarm rules. Refresh to try again.',
           })}
@@ -184,7 +178,7 @@ export function AlarmRules() {
           <Spinner />
         </div>
       ) : (
-        <ul className="mt-3 space-y-3">
+        <ul className={cn('mt-3 divide-y divide-site-border border-t border-site-border', arrival)}>
           {rules.map((r) => (
             <RuleRow key={r.key} rule={r} onSaved={() => void load()} />
           ))}

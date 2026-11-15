@@ -1,11 +1,9 @@
-'use client';
-
 /** K1 — `/when`: your polls, plus the form to start one. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { CalendarCheck, Lock, Plus } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -20,6 +18,8 @@ import type { CalPerson, PollListItem } from '@/lib/calendar/types';
 import type { WhenSearch } from '@/lib/calendar/search';
 import { api, viewerTimeZone } from './api';
 import { PersonPicker } from './PersonPicker';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function todayString(): string {
   const d = new Date();
@@ -33,6 +33,8 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
   const [polls, setPolls] = useState<PollListItem[] | null>(null);
   const [creating, setCreating] = useState(!!(attach.communityId || attach.groupChatId));
   const signedIn = !!session?.user;
+  const sessionArrival = useArrival(!isPending);
+  const arrival = useArrival(polls !== null);
 
   useEffect(() => {
     if (isPending || !signedIn) return;
@@ -44,6 +46,7 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
     return (
       <SignedOutPrompt
         icon={CalendarCheck}
+        className={sessionArrival}
         title={t('home-signed-out', { defaultValue: 'Sign in to find a time that works' })}
         description={t('home-signed-out-body', {
           defaultValue: 'Create a poll, share the link, and see when everyone is free.',
@@ -54,7 +57,7 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
   }
 
   return (
-    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+    <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', sessionArrival)}>
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-site-text-muted">
           {t('home-intro', {
@@ -63,7 +66,7 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
           })}
         </p>
         {!creating && (
-          <Button variant="accent" size="sm" onClick={() => setCreating(true)}>
+          <Button variant="default" size="sm" onClick={() => setCreating(true)}>
             <Plus /> {t('home-new', { defaultValue: 'New poll' })}
           </Button>
         )}
@@ -80,18 +83,19 @@ export default function PollsHome({ attach }: { attach: WhenSearch }) {
         ) : polls.length === 0 ? (
           <EmptyState
             icon={CalendarCheck}
+            className={arrival}
             description={t('home-empty', {
               defaultValue: 'No polls yet. Start one and share the link.',
             })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('space-y-3', arrival)}>
             {polls.map((p) => (
               <li key={p.id}>
                 <Link
                   to="/when/$id"
                   params={{ id: p.id }}
-                  className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+                  className="flex items-center justify-between gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-site-text">
@@ -182,8 +186,8 @@ function CreatePollForm({ attach, onCancel }: { attach: WhenSearch; onCancel: ()
   };
 
   return (
-    <form onSubmit={submit} className="glass-pane space-y-4 rounded-site p-5">
-      <h2 className="font-display text-lg font-medium text-site-text">
+    <form onSubmit={submit} className="space-y-4 rounded-site p-5">
+      <h2 className="text-lg font-medium text-site-text">
         {t('form-title', { defaultValue: 'New availability poll' })}
       </h2>
       {(attach.communityId || attach.groupChatId) && (
@@ -268,7 +272,7 @@ function CreatePollForm({ attach, onCancel }: { attach: WhenSearch; onCancel: ()
           </Select>
         </label>
       </div>
-      <p className="text-xs text-site-text-dim">
+      <p className="text-xs text-site-text-muted">
         {t('form-tz', {
           defaultValue: 'Hours are in your timezone ({{tz}}). Everyone else sees them converted.',
           tz,
@@ -283,10 +287,10 @@ function CreatePollForm({ attach, onCancel }: { attach: WhenSearch; onCancel: ()
         })}
       />
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="default" onClick={onCancel}>
           {t('cancel', { defaultValue: 'Cancel' })}
         </Button>
-        <Button type="submit" variant="accent" disabled={busy}>
+        <Button type="submit" variant="default" disabled={busy}>
           {t('form-create', { defaultValue: 'Create poll' })}
         </Button>
       </div>

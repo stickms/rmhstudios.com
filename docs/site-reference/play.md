@@ -4,7 +4,7 @@ The catalogs themselves are generated — [Games](./games.md) and [Apps](./apps.
 
 ## The catalog is the source of truth
 
-`lib/games.ts` and `lib/apps.ts` are the single source of truth for what appears on the site. The homepage sections and the `/games` and `/apps` browse pages all read from them; nothing hardcodes a card. An entry carries its route, description, tags, status, whether it needs sign-in (`authGate`), and whether it is `unlisted`.
+`lib/catalog` (its `games` and `apps` lists) is the single source of truth for what appears on the site: a game or app that lives in a `features/<id>/` folder owns its entry in `features/<id>/catalog.ts`, and the rest are entry files under `lib/catalog/`. The homepage sections and the `/games` and `/apps` browse pages all read from it; nothing hardcodes a card. An entry carries its route, description, tags, status, whether it needs sign-in (`authGate`), and whether it is `unlisted`.
 
 Adding a game means adding a catalog entry **and** a route. Adding only the route produces a game that exists but that nothing links to.
 

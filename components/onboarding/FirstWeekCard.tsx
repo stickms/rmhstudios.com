@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Onboarding v2 (§12) — the "First Week" card.
  *
@@ -16,7 +14,10 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { claimFirstWeekApi } from '@/lib/onboarding.contract';
 import { CheckCircle2, Circle, GraduationCap, Lock, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
@@ -63,12 +64,8 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
   const graduate = async () => {
     setClaiming(true);
     try {
-      const res = await fetch('/api/onboarding/first-week', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.graduated) {
+      const data = await api(claimFirstWeekApi);
+      if (data.graduated) {
         void celebrate({ kind: 'confetti' });
         toast.success(
           t('first-week-graduated', {
@@ -79,10 +76,12 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
         setGraduated(true);
         onDismiss?.();
       } else {
-        toast.error(
-          data.error || t('first-week-graduate-error', { defaultValue: 'Could not claim yet' }),
-        );
+        toast.error(t('first-week-graduate-error', { defaultValue: 'Could not claim yet' }));
       }
+    } catch (e) {
+      toast.error(
+        serverError(e) || t('first-week-graduate-error', { defaultValue: 'Could not claim yet' }),
+      );
     } finally {
       setClaiming(false);
     }
@@ -90,7 +89,7 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
 
   return (
     <section
-      className={`rounded-site border border-site-border bg-site-accent-dim/20 p-5 ${className ?? ''}`}
+      className={`rounded-site border border-site-border bg-site-bg-subtle/20 p-5 ${className ?? ''}`}
       aria-label={t('first-week-title', { defaultValue: 'Your first week' })}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -102,7 +101,7 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
           type="button"
           onClick={onDismiss}
           aria-label={t('first-week-dismiss', { defaultValue: 'Dismiss for now' })}
-          className="rounded-site-sm p-1 text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
+          className="rounded-site-sm p-1 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
@@ -126,14 +125,14 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
                   aria-hidden
                 />
               ) : locked ? (
-                <Lock className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-text-dim" aria-hidden />
+                <Lock className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-text-muted" aria-hidden />
               ) : (
-                <Circle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-text-dim" aria-hidden />
+                <Circle className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-text-muted" aria-hidden />
               )}
               <span className="min-w-0 flex-1">
                 <span
                   className={
-                    step.done ? 'text-site-text-dim line-through' : 'font-medium text-site-text'
+                    step.done ? 'text-site-text-muted line-through' : 'font-medium text-site-text'
                   }
                 >
                   {step.title}
@@ -180,7 +179,7 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
         </span>
         <Button
           size="sm"
-          variant="accent"
+          variant="default"
           onClick={graduate}
           disabled={!status.allDone || claiming}
         >

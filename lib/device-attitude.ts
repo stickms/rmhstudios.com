@@ -29,31 +29,64 @@
  */
 
 /** A rotation as `[x, y, z, w]` — three.js's component order. */
-export type Quat = readonly [number, number, number, number];
+export type Quat =
+  readonly [
+    number,
+    number,
+    number,
+    number,
+  ];
 
-export const IDENTITY: Quat = [0, 0, 0, 1];
+export const IDENTITY: Quat =
+  [
+    0,
+    0,
+    0,
+    1,
+  ];
 
 /** Shared with `components/settings/TiltEffectsRow` — one motion consent, site-wide. */
-export const MOTION_CONSENT_KEY = 'rmh-motion-ok';
+export const MOTION_CONSENT_KEY =
+  'rmh-motion-ok';
 
 /** Fired on `window` when consent changes, so already-mounted listeners re-arm live. */
-export const MOTION_CONSENT_EVENT = 'rmh:tilt-consent';
+export const MOTION_CONSENT_EVENT =
+  'rmh:tilt-consent';
 
-type OrientationCtor = typeof DeviceOrientationEvent & {
-  requestPermission?: () => Promise<'granted' | 'denied' | 'default'>;
-};
+type OrientationCtor =
+  typeof DeviceOrientationEvent & {
+    requestPermission?: () => Promise<
+      | 'granted'
+      | 'denied'
+      | 'default'
+    >;
+  };
 
 // ─── Capability, permission, consent ────────────────────────────────────────
 
 /** True where the event type exists at all (says nothing about real hardware). */
 export function orientationEventSupported(): boolean {
-  return typeof window !== 'undefined' && 'DeviceOrientationEvent' in window;
+  return (
+    typeof window !==
+      'undefined' &&
+    'DeviceOrientationEvent' in
+      window
+  );
 }
 
 /** True only where the browser gates orientation behind a permission call (iOS). */
 export function motionPermissionGateExists(): boolean {
-  if (!orientationEventSupported()) return false;
-  return typeof (window.DeviceOrientationEvent as OrientationCtor).requestPermission === 'function';
+  if (
+    !orientationEventSupported()
+  )
+    return false;
+  return (
+    typeof (
+      window.DeviceOrientationEvent as OrientationCtor
+    )
+      .requestPermission ===
+    'function'
+  );
 }
 
 /**
@@ -63,9 +96,19 @@ export function motionPermissionGateExists(): boolean {
  * dragging, so they are ruled out here rather than left to the watchdog.
  */
 export function motionCapableDevice(): boolean {
-  if (!orientationEventSupported()) return false;
-  if (typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(pointer: coarse)').matches;
+  if (
+    !orientationEventSupported()
+  )
+    return false;
+  if (
+    typeof window.matchMedia !==
+    'function'
+  )
+    return false;
+  return window.matchMedia(
+    '(pointer: coarse)',
+  )
+    .matches;
 }
 
 /**
@@ -73,11 +116,24 @@ export function motionCapableDevice(): boolean {
  * off, `null` never asked. The three states matter — platforms without a
  * permission gate default to on, and only an explicit `false` turns them off.
  */
-export function readMotionConsent(): boolean | null {
+export function readMotionConsent():
+  | boolean
+  | null {
   try {
-    const raw = localStorage.getItem(MOTION_CONSENT_KEY);
-    if (raw === '1') return true;
-    if (raw === '0') return false;
+    const raw =
+      localStorage.getItem(
+        MOTION_CONSENT_KEY,
+      );
+    if (
+      raw ===
+      '1'
+    )
+      return true;
+    if (
+      raw ===
+      '0'
+    )
+      return false;
     return null;
   } catch {
     return null;
@@ -85,14 +141,32 @@ export function readMotionConsent(): boolean | null {
 }
 
 /** Persist consent and tell every mounted motion listener to re-arm. */
-export function writeMotionConsent(granted: boolean): void {
+export function writeMotionConsent(
+  granted: boolean,
+): void {
   try {
-    localStorage.setItem(MOTION_CONSENT_KEY, granted ? '1' : '0');
+    localStorage.setItem(
+      MOTION_CONSENT_KEY,
+      granted
+        ? '1'
+        : '0',
+    );
   } catch {
     /* storage disabled — consent just doesn't persist */
   }
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent<boolean>(MOTION_CONSENT_EVENT, { detail: granted }));
+  if (
+    typeof window !==
+    'undefined'
+  ) {
+    window.dispatchEvent(
+      new CustomEvent<boolean>(
+        MOTION_CONSENT_EVENT,
+        {
+          detail:
+            granted,
+        },
+      ),
+    );
   }
 }
 
@@ -102,11 +176,24 @@ export function writeMotionConsent(granted: boolean): void {
  * on a platform with no gate that is immediately `true`.
  */
 export async function requestMotionAccess(): Promise<boolean> {
-  if (!orientationEventSupported()) return false;
-  if (!motionPermissionGateExists()) return true;
+  if (
+    !orientationEventSupported()
+  )
+    return false;
+  if (
+    !motionPermissionGateExists()
+  )
+    return true;
   try {
-    const request = (window.DeviceOrientationEvent as OrientationCtor).requestPermission!;
-    return (await request()) === 'granted';
+    const request =
+      (
+        window.DeviceOrientationEvent as OrientationCtor
+      )
+        .requestPermission!;
+    return (
+      (await request()) ===
+      'granted'
+    );
   } catch {
     // Thrown when called outside a gesture, or inside a cross-origin frame.
     return false;
@@ -128,12 +215,31 @@ export async function requestMotionAccess(): Promise<boolean> {
  * gesture Safari is checking for.
  */
 export async function requestDeviceMotionAccess(): Promise<boolean> {
-  if (typeof window === 'undefined' || !('DeviceMotionEvent' in window)) return false;
-  const request = (window.DeviceMotionEvent as unknown as MotionCtor).requestPermission;
+  if (
+    typeof window ===
+      'undefined' ||
+    !(
+      'DeviceMotionEvent' in
+      window
+    )
+  )
+    return false;
+  const request =
+    (
+      window.DeviceMotionEvent as unknown as MotionCtor
+    )
+      .requestPermission;
   // No gate on this platform: the event fires freely.
-  if (typeof request !== 'function') return true;
+  if (
+    typeof request !==
+    'function'
+  )
+    return true;
   try {
-    return (await request()) === 'granted';
+    return (
+      (await request()) ===
+      'granted'
+    );
   } catch {
     // Thrown when called outside a gesture, or inside a cross-origin frame.
     return false;
@@ -141,76 +247,268 @@ export async function requestDeviceMotionAccess(): Promise<boolean> {
 }
 
 interface MotionCtor {
-  requestPermission?: () => Promise<PermissionState | 'granted' | 'denied'>;
+  requestPermission?: () => Promise<
+    | PermissionState
+    | 'granted'
+    | 'denied'
+  >;
 }
 
 /** Current screen rotation in degrees (0/90/180/270), with the legacy fallback. */
 export function screenAngle(): number {
-  if (typeof window === 'undefined') return 0;
-  const angle = window.screen?.orientation?.angle;
-  if (typeof angle === 'number') return angle;
-  const legacy = (window as unknown as { orientation?: number }).orientation;
-  return typeof legacy === 'number' ? legacy : 0;
+  if (
+    typeof window ===
+    'undefined'
+  )
+    return 0;
+  const angle =
+    window
+      .screen
+      ?.orientation
+      ?.angle;
+  if (
+    typeof angle ===
+    'number'
+  )
+    return angle;
+  const legacy =
+    (
+      window as unknown as {
+        orientation?: number;
+      }
+    )
+      .orientation;
+  return typeof legacy ===
+    'number'
+    ? legacy
+    : 0;
 }
 
 // ─── Quaternion maths ───────────────────────────────────────────────────────
 
-const DEG = Math.PI / 180;
+const DEG =
+  Math.PI /
+  180;
 
 /** Hamilton product `a · b` — apply `b` first, then `a`. */
-export function multiply(a: Quat, b: Quat): Quat {
-  const [ax, ay, az, aw] = a;
-  const [bx, by, bz, bw] = b;
+export function multiply(
+  a: Quat,
+  b: Quat,
+): Quat {
+  const [
+    ax,
+    ay,
+    az,
+    aw,
+  ] =
+    a;
+  const [
+    bx,
+    by,
+    bz,
+    bw,
+  ] =
+    b;
   return [
-    ax * bw + aw * bx + ay * bz - az * by,
-    ay * bw + aw * by + az * bx - ax * bz,
-    az * bw + aw * bz + ax * by - ay * bx,
-    aw * bw - ax * bx - ay * by - az * bz,
+    ax *
+      bw +
+      aw *
+        bx +
+      ay *
+        bz -
+      az *
+        by,
+    ay *
+      bw +
+      aw *
+        by +
+      az *
+        bx -
+      ax *
+        bz,
+    az *
+      bw +
+      aw *
+        bz +
+      ax *
+        by -
+      ay *
+        bx,
+    aw *
+      bw -
+      ax *
+        bx -
+      ay *
+        by -
+      az *
+        bz,
   ];
 }
 
 /** Inverse of a unit quaternion. */
-export function conjugate(q: Quat): Quat {
-  return [-q[0], -q[1], -q[2], q[3]];
+export function conjugate(
+  q: Quat,
+): Quat {
+  return [
+    -q[0],
+    -q[1],
+    -q[2],
+    q[3],
+  ];
 }
 
-export function normalize(q: Quat): Quat {
-  const len = Math.hypot(q[0], q[1], q[2], q[3]);
-  if (len === 0) return IDENTITY;
-  return [q[0] / len, q[1] / len, q[2] / len, q[3] / len];
+export function normalize(
+  q: Quat,
+): Quat {
+  const len =
+    Math.hypot(
+      q[0],
+      q[1],
+      q[2],
+      q[3],
+    );
+  if (
+    len ===
+    0
+  )
+    return IDENTITY;
+  return [
+    q[0] /
+      len,
+    q[1] /
+      len,
+    q[2] /
+      len,
+    q[3] /
+      len,
+  ];
 }
 
 /** Rotation about a unit axis, in radians. */
-export function fromAxisAngle(axis: readonly [number, number, number], angle: number): Quat {
-  const s = Math.sin(angle / 2);
-  return [axis[0] * s, axis[1] * s, axis[2] * s, Math.cos(angle / 2)];
+export function fromAxisAngle(
+  axis: readonly [
+    number,
+    number,
+    number,
+  ],
+  angle: number,
+): Quat {
+  const s =
+    Math.sin(
+      angle /
+        2,
+    );
+  return [
+    axis[0] *
+      s,
+    axis[1] *
+      s,
+    axis[2] *
+      s,
+    Math.cos(
+      angle /
+        2,
+    ),
+  ];
 }
 
 /** The total rotation angle of a quaternion, in radians (0…π). */
-export function angleOf(q: Quat): number {
-  return 2 * Math.acos(Math.min(1, Math.abs(normalize(q)[3])));
+export function angleOf(
+  q: Quat,
+): number {
+  return (
+    2 *
+    Math.acos(
+      Math.min(
+        1,
+        Math.abs(
+          normalize(
+            q,
+          )[3],
+        ),
+      ),
+    )
+  );
 }
 
 /** Rotate a vector by a quaternion. */
 export function rotateVector(
   q: Quat,
-  v: readonly [number, number, number],
-): [number, number, number] {
-  const [x, y, z, w] = q;
+  v: readonly [
+    number,
+    number,
+    number,
+  ],
+): [
+  number,
+  number,
+  number,
+] {
+  const [
+    x,
+    y,
+    z,
+    w,
+  ] =
+    q;
   // t = 2 * (q.xyz × v); v' = v + w*t + q.xyz × t
-  const tx = 2 * (y * v[2] - z * v[1]);
-  const ty = 2 * (z * v[0] - x * v[2]);
-  const tz = 2 * (x * v[1] - y * v[0]);
+  const tx =
+    2 *
+    (y *
+      v[2] -
+      z *
+        v[1]);
+  const ty =
+    2 *
+    (z *
+      v[0] -
+      x *
+        v[2]);
+  const tz =
+    2 *
+    (x *
+      v[1] -
+      y *
+        v[0]);
   return [
-    v[0] + w * tx + y * tz - z * ty,
-    v[1] + w * ty + z * tx - x * tz,
-    v[2] + w * tz + x * ty - y * tx,
+    v[0] +
+      w *
+        tx +
+      y *
+        tz -
+      z *
+        ty,
+    v[1] +
+      w *
+        ty +
+      z *
+        tx -
+      x *
+        tz,
+    v[2] +
+      w *
+        tz +
+      x *
+        ty -
+      y *
+        tx,
   ];
 }
 
 /** Fold an angle into −π…π, so a turn past the wrap point is still a small one. */
-export function wrapAngle(a: number): number {
-  return a - 2 * Math.PI * Math.round(a / (2 * Math.PI));
+export function wrapAngle(
+  a: number,
+): number {
+  return (
+    a -
+    2 *
+      Math.PI *
+      Math.round(
+        a /
+          (2 *
+            Math.PI),
+      )
+  );
 }
 
 /**
@@ -218,21 +516,76 @@ export function wrapAngle(a: number): number {
  * the per-frame step sizes used for smoothing; the sign flip takes the short
  * way round, without which a rotation past the half-turn springs backwards.
  */
-export function nlerp(a: Quat, b: Quat, t: number): Quat {
-  const dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
-  const s = dot < 0 ? -1 : 1;
-  return normalize([
-    a[0] + (b[0] * s - a[0]) * t,
-    a[1] + (b[1] * s - a[1]) * t,
-    a[2] + (b[2] * s - a[2]) * t,
-    a[3] + (b[3] * s - a[3]) * t,
-  ]);
+export function nlerp(
+  a: Quat,
+  b: Quat,
+  t: number,
+): Quat {
+  const dot =
+    a[0] *
+      b[0] +
+    a[1] *
+      b[1] +
+    a[2] *
+      b[2] +
+    a[3] *
+      b[3];
+  const s =
+    dot <
+    0
+      ? -1
+      : 1;
+  return normalize(
+    [
+      a[0] +
+        (b[0] *
+          s -
+          a[0]) *
+          t,
+      a[1] +
+        (b[1] *
+          s -
+          a[1]) *
+          t,
+      a[2] +
+        (b[2] *
+          s -
+          a[2]) *
+          t,
+      a[3] +
+        (b[3] *
+          s -
+          a[3]) *
+          t,
+    ],
+  );
 }
 
 /** How far apart two rotations are, in radians — the smoothing's settle test. */
-export function angleBetween(a: Quat, b: Quat): number {
-  const dot = Math.abs(a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3]);
-  return 2 * Math.acos(Math.min(1, dot));
+export function angleBetween(
+  a: Quat,
+  b: Quat,
+): number {
+  const dot =
+    Math.abs(
+      a[0] *
+        b[0] +
+        a[1] *
+          b[1] +
+        a[2] *
+          b[2] +
+        a[3] *
+          b[3],
+    );
+  return (
+    2 *
+    Math.acos(
+      Math.min(
+        1,
+        dot,
+      ),
+    )
+  );
 }
 
 /**
@@ -244,26 +597,102 @@ export function angleBetween(a: Quat, b: Quat): number {
  * euler from (beta, alpha, −gamma), rotated into the screen-facing frame, then
  * un-rotated by the screen angle so landscape and portrait agree on "forward".
  */
-export function deviceQuaternion(alpha: number, beta: number, gamma: number, screen: number): Quat {
-  const x = beta * DEG;
-  const y = alpha * DEG;
-  const z = -gamma * DEG;
-  const c1 = Math.cos(x / 2);
-  const s1 = Math.sin(x / 2);
-  const c2 = Math.cos(y / 2);
-  const s2 = Math.sin(y / 2);
-  const c3 = Math.cos(z / 2);
-  const s3 = Math.sin(z / 2);
-  const euler: Quat = [
-    s1 * c2 * c3 + c1 * s2 * s3,
-    c1 * s2 * c3 - s1 * c2 * s3,
-    c1 * c2 * s3 - s1 * s2 * c3,
-    c1 * c2 * c3 + s1 * s2 * s3,
-  ];
+export function deviceQuaternion(
+  alpha: number,
+  beta: number,
+  gamma: number,
+  screen: number,
+): Quat {
+  const x =
+    beta *
+    DEG;
+  const y =
+    alpha *
+    DEG;
+  const z =
+    -gamma *
+    DEG;
+  const c1 =
+    Math.cos(
+      x /
+        2,
+    );
+  const s1 =
+    Math.sin(
+      x /
+        2,
+    );
+  const c2 =
+    Math.cos(
+      y /
+        2,
+    );
+  const s2 =
+    Math.sin(
+      y /
+        2,
+    );
+  const c3 =
+    Math.cos(
+      z /
+        2,
+    );
+  const s3 =
+    Math.sin(
+      z /
+        2,
+    );
+  const euler: Quat =
+    [
+      s1 *
+        c2 *
+        c3 +
+        c1 *
+          s2 *
+          s3,
+      c1 *
+        s2 *
+        c3 -
+        s1 *
+          c2 *
+          s3,
+      c1 *
+        c2 *
+        s3 -
+        s1 *
+          s2 *
+          c3,
+      c1 *
+        c2 *
+        c3 +
+        s1 *
+          s2 *
+          s3,
+    ];
   // −90° about X: the device frame looks along +Z out of the screen, the world
   // frame along −Z.
-  const screenTransform: Quat = [-Math.SQRT1_2, 0, 0, Math.SQRT1_2];
-  return multiply(multiply(euler, screenTransform), fromAxisAngle([0, 0, 1], -screen * DEG));
+  const screenTransform: Quat =
+    [
+      -Math.SQRT1_2,
+      0,
+      0,
+      Math.SQRT1_2,
+    ];
+  return multiply(
+    multiply(
+      euler,
+      screenTransform,
+    ),
+    fromAxisAngle(
+      [
+        0,
+        0,
+        1,
+      ],
+      -screen *
+        DEG,
+    ),
+  );
 }
 
 /**
@@ -273,20 +702,64 @@ export function deviceQuaternion(alpha: number, beta: number, gamma: number, scr
  * decomposition flips by 180° exactly when the device is aimed steeply up or
  * down, which is precisely when someone is looking at an object below them.
  */
-export function headingOf(q: Quat): number {
-  const f = rotateVector(q, [0, 0, -1]);
-  if (Math.abs(f[0]) < 1e-9 && Math.abs(f[2]) < 1e-9) return 0; // straight up/down
-  return Math.atan2(-f[0], -f[2]);
+export function headingOf(
+  q: Quat,
+): number {
+  const f =
+    rotateVector(
+      q,
+      [
+        0,
+        0,
+        -1,
+      ],
+    );
+  if (
+    Math.abs(
+      f[0],
+    ) <
+      1e-9 &&
+    Math.abs(
+      f[2],
+    ) <
+      1e-9
+  )
+    return 0; // straight up/down
+  return Math.atan2(
+    -f[0],
+    -f[2],
+  );
 }
 
 /** How far above (+) or below (−) the horizon the device is aimed, in radians. */
-export function elevationOf(q: Quat): number {
-  const f = rotateVector(q, [0, 0, -1]);
-  return Math.asin(Math.max(-1, Math.min(1, f[1])));
+export function elevationOf(
+  q: Quat,
+): number {
+  const f =
+    rotateVector(
+      q,
+      [
+        0,
+        0,
+        -1,
+      ],
+    );
+  return Math.asin(
+    Math.max(
+      -1,
+      Math.min(
+        1,
+        f[1],
+      ),
+    ),
+  );
 }
 
 /** Elevation stops just short of the poles, where an orbit has nowhere to go. */
-const MAX_PITCH = 88 * (Math.PI / 180);
+const MAX_PITCH =
+  88 *
+  (Math.PI /
+    180);
 
 /**
  * The rotation to render an object with: an **orbit**, not the device's raw
@@ -310,15 +783,59 @@ const MAX_PITCH = 88 * (Math.PI / 180);
  * strict 1:1 mapping, so the back cover is available without walking round the
  * room.
  */
-export function orbitRotation(device: Quat, neutral: Quat, gain = 1): Quat {
-  const yaw = wrapAngle(headingOf(device) - headingOf(neutral)) * gain;
-  const rawPitch = (elevationOf(device) - elevationOf(neutral)) * gain;
-  const pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, rawPitch));
+export function orbitRotation(
+  device: Quat,
+  neutral: Quat,
+  gain = 1,
+): Quat {
+  const yaw =
+    wrapAngle(
+      headingOf(
+        device,
+      ) -
+        headingOf(
+          neutral,
+        ),
+    ) *
+    gain;
+  const rawPitch =
+    (elevationOf(
+      device,
+    ) -
+      elevationOf(
+        neutral,
+      )) *
+    gain;
+  const pitch =
+    Math.max(
+      -MAX_PITCH,
+      Math.min(
+        MAX_PITCH,
+        rawPitch,
+      ),
+    );
   // Order is load-bearing: yaw INSIDE, about the object's own vertical, then
   // pitch about the screen's horizontal. The other way round leaves the
   // object's up axis leaning across the screen whenever both are non-zero,
   // which is the tumbling this decomposition exists to avoid.
-  return multiply(fromAxisAngle([1, 0, 0], -pitch), fromAxisAngle([0, 1, 0], -yaw));
+  return multiply(
+    fromAxisAngle(
+      [
+        1,
+        0,
+        0,
+      ],
+      -pitch,
+    ),
+    fromAxisAngle(
+      [
+        0,
+        1,
+        0,
+      ],
+      -yaw,
+    ),
+  );
 }
 
 /**
@@ -330,24 +847,61 @@ export function orbitRotation(device: Quat, neutral: Quat, gain = 1): Quat {
  * axis components lying in the reflected plane, which for `[x, y, z, w]` is
  * `[-x, y, -z, w]`. Without it every turn comes out backwards on one axis.
  */
-export function toCssMatrix3d(q: Quat): string {
-  const [ux, uy, uz, w] = normalize(q);
-  const x = -ux;
-  const y = uy;
-  const z = -uz;
+export function toCssMatrix3d(
+  q: Quat,
+): string {
+  const [
+    ux,
+    uy,
+    uz,
+    w,
+  ] =
+    normalize(
+      q,
+    );
+  const x =
+    -ux;
+  const y =
+    uy;
+  const z =
+    -uz;
 
-  const x2 = x + x;
-  const y2 = y + y;
-  const z2 = z + z;
-  const xx = x * x2;
-  const xy = x * y2;
-  const xz = x * z2;
-  const yy = y * y2;
-  const yz = y * z2;
-  const zz = z * z2;
-  const wx = w * x2;
-  const wy = w * y2;
-  const wz = w * z2;
+  const x2 =
+    x +
+    x;
+  const y2 =
+    y +
+    y;
+  const z2 =
+    z +
+    z;
+  const xx =
+    x *
+    x2;
+  const xy =
+    x *
+    y2;
+  const xz =
+    x *
+    z2;
+  const yy =
+    y *
+    y2;
+  const yz =
+    y *
+    z2;
+  const zz =
+    z *
+    z2;
+  const wx =
+    w *
+    x2;
+  const wy =
+    w *
+    y2;
+  const wz =
+    w *
+    z2;
 
   // matrix3d takes its sixteen values column-major.
   // prettier-ignore

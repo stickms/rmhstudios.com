@@ -81,7 +81,7 @@ function navigationTraceId(): string | undefined {
  * cost is overwhelmingly main-thread JavaScript and GPU compositing, both of
  * which a phone pays 4–6× for. A mobile-only regression of that size shows up
  * in a pooled p75 as mild drift, which is why six consecutive audits
- * (`docs/performance-audit-*.md`, `docs/loading-audit-2026-08-11/`) measured
+ * (`docs/performance-audit-*.md`, `docs/archive/2026/loading-audit-2026-08-11/`) measured
  * only unthrottled desktop Chromium and none of them could see it.
  *
  * ## Every field here is deliberately low-cardinality
@@ -394,7 +394,7 @@ function reportBfcache(): void {
  * before it can hydrate — i.e. the monitoring was taxing the very metric it
  * reports. The attribution build is ~2 KB larger again, which makes keeping the
  * import dynamic more load-bearing than it was, not less: **this import must
- * stay dynamic** (`docs/performance-audit-2026-08-04.md` §4, OPT-35 gotcha 1).
+ * stay dynamic** (`docs/archive/2026/performance-audit-2026-08-04.md` §4, OPT-35 gotcha 1).
  *
  * Arriving a tick late costs no data: every metric here is collected through a
  * `buffered: true` PerformanceObserver, so entries that occurred before this

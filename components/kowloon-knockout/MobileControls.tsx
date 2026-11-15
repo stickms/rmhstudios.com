@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LocalInputSource } from '@/lib/kowloon-knockout/game/input';
@@ -131,8 +129,6 @@ export default function MobileControls({ input }: { input: LocalInputSource }) {
         // first pixel the hardware leaves alone. The layer never takes a gesture itself.
         <div
             className={`app-hud kk-controls${hand === 'left' ? ' kk-controls--lefty' : ''}`}
-            data-jelly-zone="hud"
-            data-jelly-scope="off"
             ref={root}
         >
             <div

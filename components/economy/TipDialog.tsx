@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -7,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { tipApi } from '@/lib/economy/tip.contract';
 import { TIP_MAX, TIP_MIN, TIP_NOTE_MAX, tipSchema, type TipEntityType } from '@/lib/economy/tip-schema';
 import { parseTipAmount } from '@/lib/economy/tip-amount';
 
@@ -46,24 +47,16 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
     if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/coins/tip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(parsed.data),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(t("tip-success", { defaultValue: "Tipped {{amount}} coins{{recipient}}!", amount, recipient: recipientName ? ` to ${recipientName}` : '' }));
-        onOpenChange(false);
-        setNote('');
-      } else if (res.status === 401) {
+      await api(tipApi, { body: parsed.data });
+      toast.success(t("tip-success", { defaultValue: "Tipped {{amount}} coins{{recipient}}!", amount, recipient: recipientName ? ` to ${recipientName}` : '' }));
+      onOpenChange(false);
+      setNote('');
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 401) {
         toast.error(t("tip-sign-in", { defaultValue: "Please sign in to tip." }));
       } else {
-        toast.error(data.error || t("tip-error", { defaultValue: "Could not send tip" }));
+        toast.error(serverError(e) || t("tip-error", { defaultValue: "Could not send tip" }));
       }
-    } catch {
-      toast.error(t("tip-error", { defaultValue: "Could not send tip" }));
     } finally {
       setSubmitting(false);
     }
@@ -86,9 +79,8 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
               key={a}
               onClick={() => setAmount(a)}
               aria-pressed={amount === a}
-              data-jelly
               className={`rounded-site-sm border px-1 py-2 text-sm font-semibold transition-colors ${
-                amount === a ? 'border-site-accent bg-site-accent-dim text-site-text' : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
+                amount === a ? 'border-site-accent bg-site-bg-subtle text-site-text' : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
               }`}
             >
               <CoinIcon className="inline h-3.5 w-3.5" /> {a}
@@ -106,7 +98,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
             onChange={(e) => setAmount(parseTipAmount(e.target.value))}
             className="mt-1 h-auto px-3 py-2"
           />
-          <span className="mt-1 block text-site-text-dim">
+          <span className="mt-1 block text-site-text-muted">
             {t("tip-max-hint", { defaultValue: "Maximum per tip: {{max}}", max: TIP_MAX.toLocaleString(i18n.language) })}
           </span>
         </label>
@@ -122,7 +114,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>{t("cancel", { defaultValue: "Cancel" })}</Button>
-          <Button variant="accent" onClick={submit} disabled={submitting || amount < TIP_MIN}>
+          <Button variant="default" onClick={submit} disabled={submitting || amount < TIP_MIN}>
             {submitting ? t("sending", { defaultValue: "Sending…" }) : (<span className="inline-flex items-center gap-1">{t("tip-btn", { defaultValue: "Tip" })} <CoinIcon className="h-4 w-4" /> {amount}</span>)}
           </Button>
         </DialogFooter>

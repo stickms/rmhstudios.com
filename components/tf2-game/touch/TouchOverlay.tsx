@@ -17,7 +17,6 @@
  * scrolling, pinch zoom and overscroll; every control sits inside the safe
  * area and off the screen edges. Presses tick the haptics motor when allowed.
  */
-'use client';
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';

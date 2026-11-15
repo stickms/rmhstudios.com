@@ -73,7 +73,7 @@ function EmbedPost() {
   if (!post) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-site-bg p-4">
-        <div className="glass-fill px-5 py-4 text-sm text-site-text-muted">
+        <div className="surface-card px-5 py-4 text-sm text-site-text-muted">
           {t("post-not-embeddable", { defaultValue: "This post isn’t available to embed." })}
         </div>
       </main>
@@ -82,7 +82,7 @@ function EmbedPost() {
 
   return (
     <main className="bg-site-bg p-3">
-      <article className="glass-fill mx-auto max-w-xl p-4">
+      <article className="surface-card mx-auto max-w-xl p-4">
         <div className="flex items-center gap-3">
           {post.user.image ? (
             <img src={post.user.image} alt="" className="size-11 rounded-full object-cover" />
@@ -93,7 +93,7 @@ function EmbedPost() {
           )}
           <a href={profileHref} target="_blank" rel="noopener noreferrer" className="min-w-0">
             <p className="truncate text-sm font-bold text-site-text">{post.user.name || t("anonymous-user", { defaultValue: "Someone" })}</p>
-            {post.user.handle && <p className="truncate text-xs text-site-text-dim">@{post.user.handle}</p>}
+            {post.user.handle && <p className="truncate text-xs text-site-text-muted">@{post.user.handle}</p>}
           </a>
         </div>
 
@@ -104,7 +104,7 @@ function EmbedPost() {
           <img src={post.imageUrl} alt={post.imageAlt ?? ''} className="mt-3 max-h-80 w-full rounded-site-sm object-cover" />
         )}
 
-        <div className="mt-3 flex items-center gap-4 text-xs text-site-text-dim">
+        <div className="mt-3 flex items-center gap-4 text-xs text-site-text-muted">
           <span className="inline-flex items-center gap-1.5">
             <Heart className="size-3.5" aria-hidden /> {post.likeCount}
           </span>

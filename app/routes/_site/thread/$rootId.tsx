@@ -1,5 +1,4 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
 import { ThreadView } from '@/components/feed/ThreadView';
 import { getRequestSession } from '@/lib/auth-session.server';
@@ -88,9 +87,5 @@ export const Route = createFileRoute('/_site/thread/$rootId')({
 
 function ThreadPage() {
   const { items } = Route.useLoaderData();
-  return (
-    <PageFrame>
-      <ThreadView items={items} />
-    </PageFrame>
-  );
+  return <ThreadView items={items} />;
 }

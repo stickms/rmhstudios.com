@@ -14,6 +14,10 @@ import { Badge } from '@/components/ui/badge';
 import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { updateUserBuildApi } from '@/lib/user-builds.contract';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Build {
   id: string;
@@ -42,6 +46,8 @@ function AdminUserBuildsPage() {
   const [search, setSearch] = useState('');
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const arrival = useArrival(!(loading && builds.length === 0));
+  const isNewBuild = useArrivingKeys(builds.map((b) => b.id));
 
   const observer = useRef<IntersectionObserver | null>(null);
   const lastElementRef = useCallback((node: HTMLDivElement) => {
@@ -85,12 +91,7 @@ function AdminUserBuildsPage() {
     if (!build) return;
     setBuilds(prev => prev.map(b => b.id === buildId ? { ...b, featured: !b.featured } : b));
     try {
-      const res = await fetch(`/api/user-builds/${buildId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ featured: !build.featured }),
-      });
-      if (!res.ok) throw new Error('Failed to toggle curated badge');
+      await api(updateUserBuildApi, { params: { id: buildId }, body: { featured: !build.featured } });
     } catch {
       setBuilds(prev => prev.map(b => b.id === buildId ? { ...b, featured: build.featured } : b));
     }
@@ -112,26 +113,26 @@ function AdminUserBuildsPage() {
           aria-label={t("search-builds-label", { defaultValue: "Search builds" })}
         />
 
-        <div className="glass-fill overflow-hidden rounded-site">
+        <div>
           {loading && builds.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-16 text-site-text-muted">
               <Spinner />
               <span>{t("loading-builds", { defaultValue: "Loading builds..." })}</span>
             </div>
           ) : !loading && builds.length === 0 ? (
-            <EmptyState icon={Search} title={t("no-builds-found", { defaultValue: "No builds found matching your search." })} />
+            <EmptyState className={arrival} icon={Search} title={t("no-builds-found", { defaultValue: "No builds found matching your search." })} />
           ) : (
             <div
-              className={`divide-y divide-site-border transition-opacity duration-site-fast ${loading ? 'opacity-60' : ''}`}
+              className={cn('divide-y divide-site-border transition-opacity duration-site-fast', loading && 'opacity-60', arrival)}
               aria-busy={loading}
             >
               {builds.map((build, index) => {
                 const isLast = index === builds.length - 1;
                 return (
-                  <div key={build.id} ref={isLast ? lastElementRef : null} className="flex flex-col gap-3 px-4 py-3 transition-colors hover:bg-site-surface-hover sm:flex-row sm:items-center sm:gap-4">
+                  <div key={build.id} ref={isLast ? lastElementRef : null} className={cn('flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:gap-4', isNewBuild(build.id) && ARRIVE)}>
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Link to={`/user-builds/${build.slug}` as string} className="truncate text-base font-semibold text-site-text hover:text-site-accent">{build.title}</Link>
+                        <Link to={`/user-builds/${build.slug}` as string} className="t-heading min-w-0 break-words text-site-text hover:underline">{build.title}</Link>
                         <Badge
                           variant={build.visibility === 'PUBLIC' ? 'success' : build.visibility === 'UNLISTED' ? 'warning' : 'default'}
                           icon={build.visibility === 'PRIVATE' ? <Lock aria-hidden /> : undefined}
@@ -143,7 +144,7 @@ function AdminUserBuildsPage() {
                           <Badge variant="warning" icon={<Award aria-hidden />}>{t("curated-badge", { defaultValue: "Curated" })}</Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 truncate text-sm text-site-text-dim">
+                      <div className="t-body flex items-center gap-2 truncate text-site-text-muted">
                         <Link to={`/u/${build.user.handle || build.user.username}` as string} className="transition-colors hover:text-site-text">@{build.user.handle || build.user.username}</Link>
                         <span aria-hidden>&bull;</span>
                         <span>{build.category?.name || t("uncategorized", { defaultValue: "Uncategorized" })}</span>
@@ -152,16 +153,16 @@ function AdminUserBuildsPage() {
                     <div className="flex items-center gap-2">
                       <IconButton
                         icon={Award}
-                        variant="outline"
-                        className={build.featured ? 'border-site-warning/40 text-site-warning' : undefined}
+                        variant="default"
+                        className={build.featured ? 'border-site-text' : undefined}
                         aria-pressed={build.featured}
                         onClick={() => handleToggleCurated(build.id)}
                         label={build.featured ? t("remove-curated-badge", { defaultValue: "Remove Curated badge" }) : t("add-curated-badge", { defaultValue: "Add Curated badge" })}
                       />
-                      <IconButton asChild variant="outline" label={t("view-build", { defaultValue: "View Build" })}>
+                      <IconButton asChild variant="default" label={t("view-build", { defaultValue: "View Build" })}>
                         <Link to={`/user-builds/${build.slug}` as string}><ExternalLink aria-hidden /></Link>
                       </IconButton>
-                      <IconButton asChild variant="outline" label={t("edit-build-as-admin", { defaultValue: "Edit Build as Admin" })}>
+                      <IconButton asChild variant="default" label={t("edit-build-as-admin", { defaultValue: "Edit Build as Admin" })}>
                         <Link to="/user-builds/submit" search={{ edit: build.id }}><Edit aria-hidden /></Link>
                       </IconButton>
                     </div>
@@ -172,7 +173,7 @@ function AdminUserBuildsPage() {
           )}
 
           {loadingMore && (
-            <div className="flex justify-center p-4 text-site-text-dim"><Spinner /></div>
+            <div className="flex justify-center py-4 text-site-text-muted"><Spinner /></div>
           )}
         </div>
       </AdminBody>

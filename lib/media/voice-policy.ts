@@ -49,59 +49,107 @@ export interface VoiceLimits {
  * (`expectedBytes` below), which absorbs the WebM/Ogg container, an encoder
  * that overshoots on transients, and a browser that rounds bitrate up.
  */
-export const VOICE_LIMITS: Record<Tier, VoiceLimits> = {
-  free: {
-    maxDurationMs: 60_000, // 1 minute
-    bitrate: 24_000,
-    maxBytes: 256 * 1024, // 256 KB
-  },
-  starter: {
-    maxDurationMs: 180_000, // 3 minutes
-    bitrate: 32_000,
-    maxBytes: 1024 * 1024, // 1 MB
-  },
-  pro: {
-    maxDurationMs: 300_000, // 5 minutes
-    bitrate: 40_000,
-    maxBytes: 2 * 1024 * 1024, // 2 MB
-  },
-  enterprise: {
-    maxDurationMs: 600_000, // 10 minutes
-    bitrate: 48_000,
-    // 10 min at 48 kbps is ~3.6 MB before the container, so 4 MB left an honest
-    // full-length recording within a rounding error of rejection. The headroom
-    // assertion in the test file caught it.
-    maxBytes: 6 * 1024 * 1024, // 6 MB
-  },
-};
+export const VOICE_LIMITS: Record<
+  Tier,
+  VoiceLimits
+> =
+  {
+    free: {
+      maxDurationMs: 60_000, // 1 minute
+      bitrate: 24_000,
+      maxBytes:
+        256 *
+        1024, // 256 KB
+    },
+    starter:
+      {
+        maxDurationMs: 180_000, // 3 minutes
+        bitrate: 32_000,
+        maxBytes:
+          1024 *
+          1024, // 1 MB
+      },
+    pro: {
+      maxDurationMs: 300_000, // 5 minutes
+      bitrate: 40_000,
+      maxBytes:
+        2 *
+        1024 *
+        1024, // 2 MB
+    },
+    enterprise:
+      {
+        maxDurationMs: 600_000, // 10 minutes
+        bitrate: 48_000,
+        // 10 min at 48 kbps is ~3.6 MB before the container, so 4 MB left an honest
+        // full-length recording within a rounding error of rejection. The headroom
+        // assertion in the test file caught it.
+        maxBytes:
+          6 *
+          1024 *
+          1024, // 6 MB
+      },
+  };
 
 /** The ceiling any tier could hit — the pre-auth guard on request body size. */
-export const VOICE_ABSOLUTE_MAX_BYTES = Math.max(
-  ...Object.values(VOICE_LIMITS).map((l) => l.maxBytes),
-);
+export const VOICE_ABSOLUTE_MAX_BYTES =
+  Math.max(
+    ...Object.values(
+      VOICE_LIMITS,
+    ).map(
+      (
+        l,
+      ) =>
+        l.maxBytes,
+    ),
+  );
 
-export const VOICE_ABSOLUTE_MAX_DURATION_MS = Math.max(
-  ...Object.values(VOICE_LIMITS).map((l) => l.maxDurationMs),
-);
+export const VOICE_ABSOLUTE_MAX_DURATION_MS =
+  Math.max(
+    ...Object.values(
+      VOICE_LIMITS,
+    ).map(
+      (
+        l,
+      ) =>
+        l.maxDurationMs,
+    ),
+  );
 
 /** Container types a browser `MediaRecorder` can produce for Opus/AAC audio. */
-export const VOICE_CONTENT_TYPES = [
-  'audio/webm',
-  'audio/webm;codecs=opus',
-  'audio/ogg',
-  'audio/ogg;codecs=opus',
-  // Safari, which will not give us Opus.
-  'audio/mp4',
-  'audio/aac',
-] as const;
+export const VOICE_CONTENT_TYPES =
+  [
+    'audio/webm',
+    'audio/webm;codecs=opus',
+    'audio/ogg',
+    'audio/ogg;codecs=opus',
+    // Safari, which will not give us Opus.
+    'audio/mp4',
+    'audio/aac',
+  ] as const;
 
-export function limitsFor(tier: Tier): VoiceLimits {
-  return VOICE_LIMITS[tier] ?? VOICE_LIMITS.free;
+export function limitsFor(
+  tier: Tier,
+): VoiceLimits {
+  return (
+    VOICE_LIMITS[
+      tier
+    ] ??
+    VOICE_LIMITS.free
+  );
 }
 
 /** What a well-behaved encoder should produce for a clip of this length. */
-export function expectedBytes(durationMs: number, bitrate: number): number {
-  return Math.ceil((durationMs / 1000) * (bitrate / 8));
+export function expectedBytes(
+  durationMs: number,
+  bitrate: number,
+): number {
+  return Math.ceil(
+    (durationMs /
+      1000) *
+      (bitrate /
+        8),
+  );
 }
 
 export type VoiceRejection =
@@ -135,34 +183,119 @@ export function validateVoiceUpload(args: {
   contentType: string;
   tier: Tier;
 }): VoiceValidation {
-  const limits = limitsFor(args.tier);
+  const limits =
+    limitsFor(
+      args.tier,
+    );
 
-  if (args.bytes <= 0 || args.durationMs <= 0) return { ok: false, reason: 'empty', limits };
+  if (
+    args.bytes <=
+      0 ||
+    args.durationMs <=
+      0
+  )
+    return {
+      ok: false,
+      reason:
+        'empty',
+      limits,
+    };
 
-  const baseType = args.contentType.toLowerCase().split(';')[0].trim();
-  const allowed = VOICE_CONTENT_TYPES.some((t) => t.split(';')[0] === baseType);
-  if (!allowed) return { ok: false, reason: 'unsupported-type', limits };
+  const baseType =
+    args.contentType
+      .toLowerCase()
+      .split(
+        ';',
+      )[0]
+      .trim();
+  const allowed =
+    VOICE_CONTENT_TYPES.some(
+      (
+        t,
+      ) =>
+        t.split(
+          ';',
+        )[0] ===
+        baseType,
+    );
+  if (
+    !allowed
+  )
+    return {
+      ok: false,
+      reason:
+        'unsupported-type',
+      limits,
+    };
 
-  if (args.durationMs > limits.maxDurationMs) return { ok: false, reason: 'too-long', limits };
-  if (args.bytes > limits.maxBytes) return { ok: false, reason: 'too-large', limits };
+  if (
+    args.durationMs >
+    limits.maxDurationMs
+  )
+    return {
+      ok: false,
+      reason:
+        'too-long',
+      limits,
+    };
+  if (
+    args.bytes >
+    limits.maxBytes
+  )
+    return {
+      ok: false,
+      reason:
+        'too-large',
+      limits,
+    };
 
   // Short clips are mostly container; don't hold them to a bitrate.
-  if (args.durationMs >= 3000) {
-    const budget = expectedBytes(args.durationMs, limits.bitrate) * 4;
-    if (args.bytes > budget) return { ok: false, reason: 'implausible-bitrate', limits };
+  if (
+    args.durationMs >=
+    3000
+  ) {
+    const budget =
+      expectedBytes(
+        args.durationMs,
+        limits.bitrate,
+      ) *
+      4;
+    if (
+      args.bytes >
+      budget
+    )
+      return {
+        ok: false,
+        reason:
+          'implausible-bitrate',
+        limits,
+      };
   }
 
-  return { ok: true, limits };
+  return {
+    ok: true,
+    limits,
+  };
 }
 
 /**
  * `MediaRecorder` options for a tier. Kept here so the recorder cannot pick a
  * bitrate the server would then reject.
  */
-export function recorderOptionsFor(tier: Tier): {
+export function recorderOptionsFor(
+  tier: Tier,
+): {
   audioBitsPerSecond: number;
   maxDurationMs: number;
 } {
-  const limits = limitsFor(tier);
-  return { audioBitsPerSecond: limits.bitrate, maxDurationMs: limits.maxDurationMs };
+  const limits =
+    limitsFor(
+      tier,
+    );
+  return {
+    audioBitsPerSecond:
+      limits.bitrate,
+    maxDurationMs:
+      limits.maxDurationMs,
+  };
 }

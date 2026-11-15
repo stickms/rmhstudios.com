@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * EventsColumn — the Events surface, extracted from the old `/events` route so it
  * can be embedded as a tab inside `/communities`. Unlike the former route (which
@@ -27,10 +25,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { EventCard } from '@/components/events/EventCard';
 import { EventComposer } from '@/components/events/EventComposer';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import { Tabs, type TabItem } from '@/components/ui/tabs';
 import { auth } from '@/lib/auth';
 import { listEvents, listMemberCommunityEvents, type EventDTO } from '@/lib/events.server';
-import { AsyncReveal } from '@/components/motion';
+import { useArrival } from '@/components/ui/arrive';
 import { useStableListMotion } from '@/hooks/useStableListMotion';
 
 type EventTab = 'upcoming' | 'communities' | 'mine';
@@ -66,6 +64,8 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
     events.map((event) => event.id),
     { skipFirstAddition: true },
   );
+  // Steel M9: each tab's events replace the spinner with a fade.
+  const arrival = useArrival(!loading);
 
   // No route loader seeds this column anymore, so we fetch on mount and again
   // whenever the sub-tab changes.
@@ -84,7 +84,7 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
     };
   }, [tab]);
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: 'upcoming',
       label: t('events-tab-upcoming', { defaultValue: 'Upcoming' }),
@@ -112,7 +112,7 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
         sticky={!embedded}
         actions={
           signedIn && (
-            <Button size="sm" variant="accent" onClick={() => setComposerOpen(true)}>
+            <Button size="sm" variant="default" onClick={() => setComposerOpen(true)}>
               <Plus aria-hidden /> {t('new-button', { defaultValue: 'New' })}
             </Button>
           )
@@ -120,13 +120,11 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
       />
 
       <div className="px-3 py-3">
-        <LiquidTabs
+        <Tabs
           tabs={tabs}
           value={tab}
           onChange={(id) => setTab(id as EventTab)}
           idBase="events"
-          fullWidth
-          scroll
           aria-label={t('events-filters', { defaultValue: 'Event filters' })}
         />
       </div>
@@ -137,43 +135,45 @@ export function EventsColumn({ embedded = false }: { embedded?: boolean }) {
             <Spinner />
           </div>
         )}
-        <AsyncReveal show={!loading}>
-          {needsSignIn ? (
-            <SignedOutPrompt
-              icon={CalendarDays}
-              callbackURL="/communities?tab=events"
-              title={t('sign-in-to-see-events', { defaultValue: 'Sign in to see your events' })}
-              actionLabel={t('sign-in', { defaultValue: 'Sign in' })}
-            />
-          ) : events.length === 0 ? (
-            <EmptyState
-              icon={CalendarDays}
-              description={
-                tab === 'mine'
-                  ? t('no-rsvp-events', {
-                      defaultValue: "You haven't RSVP'd to any upcoming events yet.",
-                    })
-                  : tab === 'communities'
-                    ? t('no-community-events', {
-                        defaultValue: 'No upcoming events in your communities.',
+        {!loading && (
+          <div className={arrival}>
+            {needsSignIn ? (
+              <SignedOutPrompt
+                icon={CalendarDays}
+                callbackURL="/communities?tab=events"
+                title={t('sign-in-to-see-events', { defaultValue: 'Sign in to see your events' })}
+                actionLabel={t('sign-in', { defaultValue: 'Sign in' })}
+              />
+            ) : events.length === 0 ? (
+              <EmptyState
+                icon={CalendarDays}
+                description={
+                  tab === 'mine'
+                    ? t('no-rsvp-events', {
+                        defaultValue: "You haven't RSVP'd to any upcoming events yet.",
                       })
-                    : t('no-upcoming-events', {
-                        defaultValue: 'No upcoming events yet — create the first one!',
-                      })
-              }
-            />
-          ) : (
-            <ul className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2">
-              {events.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  className={enteringEvents.has(event.id) ? 'content-item-enter' : undefined}
-                />
-              ))}
-            </ul>
-          )}
-        </AsyncReveal>
+                    : tab === 'communities'
+                      ? t('no-community-events', {
+                          defaultValue: 'No upcoming events in your communities.',
+                        })
+                      : t('no-upcoming-events', {
+                          defaultValue: 'No upcoming events yet — create the first one!',
+                        })
+                }
+              />
+            ) : (
+              <ul className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2">
+                {events.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    className={enteringEvents.has(event.id) ? 'arrive' : undefined}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
       {signedIn && (

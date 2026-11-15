@@ -7,24 +7,23 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
 import { Check, X, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  adminModeratePredictionApi,
+  adminPredictionQueueApi,
+  adminResolvePredictionApi,
+} from '@/lib/predictions/predictions.contract';
+import type { SerializedMarket } from '@/lib/predictions/predictions.server';
+import { useArrival } from '@/components/ui/arrive';
 
-interface AdminMarket {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-  isAiGenerated: boolean;
-  yesPercent: number;
-  volume: number;
-  closesAt: string | null;
-  creator: { id: string; name: string | null; handle: string | null } | null;
-}
+type AdminMarket = SerializedMarket;
 
 export const Route = createFileRoute('/_site/admin/predictions')({
   head: () => ({ meta: [{ title: 'Prediction Markets | Admin' }] }),
@@ -38,11 +37,11 @@ function AdminPredictionsPage() {
   const [open, setOpen] = useState<AdminMarket[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(() => {
     setLoading(true);
-    fetch('/api/admin/predictions')
-      .then((r) => r.json())
+    api(adminPredictionQueueApi)
       .then((data) => {
         setPending(data.pending ?? []);
         setOpen(data.open ?? []);
@@ -58,14 +57,10 @@ function AdminPredictionsPage() {
   async function moderate(id: string, action: 'approve' | 'deny') {
     setBusy(id);
     try {
-      const res = await fetch(`/api/admin/predictions/${id}/moderate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || t('action-failed', { defaultValue: 'Action failed.' }));
+      try {
+        await api(adminModeratePredictionApi, { params: { id }, body: { action } });
+      } catch (e) {
+        toast.error(serverError(e) || t('action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
       toast.success(
@@ -85,14 +80,11 @@ function AdminPredictionsPage() {
     }
     setBusy(id);
     try {
-      const res = await fetch(`/api/admin/predictions/${id}/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ outcome }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || t('action-failed', { defaultValue: 'Action failed.' }));
+      let data;
+      try {
+        data = await api(adminResolvePredictionApi, { params: { id }, body: { outcome } });
+      } catch (e) {
+        toast.error(serverError(e) || t('action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
       toast.success(t('resolved-paid', { defaultValue: 'Resolved {{outcome}} — paid {{payouts}} coins', outcome, payouts: data.payouts }));
@@ -117,25 +109,25 @@ function AdminPredictionsPage() {
         ) : (
           <>
             {/* Pending approval */}
-            <section className="space-y-3">
-              <h2 className="site-section-label">
+            <section className={arrival}>
+              <h2 className="t-heading pb-3 text-site-text">
                 {t('pending-approval', { defaultValue: 'Pending approval' })} ({pending.length})
               </h2>
               {pending.length === 0 ? (
                 <EmptyState title={t('none-pending', { defaultValue: 'Nothing waiting for review.' })} />
               ) : (
                 pending.map((m) => (
-                  <div key={m.id} className="glass-fill flex flex-col gap-3 rounded-site p-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div key={m.id} className="flex flex-col gap-3 border-t border-site-border py-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <h3 className="text-base font-semibold text-site-text">{m.title}</h3>
-                      {m.description && <p className="mt-1 text-sm text-site-text-muted">{m.description}</p>}
-                      <p className="mt-2 text-xs text-site-text-dim">
+                      <h3 className="t-heading text-site-text">{m.title}</h3>
+                      {m.description && <p className="mt-1 t-body text-site-text-muted">{m.description}</p>}
+                      <p className="mt-2 t-body text-site-text-muted">
                         {m.creator ? `@${m.creator.handle ?? m.creator.name ?? t('user-fallback', { defaultValue: 'user' })}` : t('system', { defaultValue: 'system' })}
                         {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:shrink-0">
-                      <Button size="sm" variant="secondary" loading={busy === m.id} onClick={() => moderate(m.id, 'approve')}>
+                      <Button size="sm" variant="default" loading={busy === m.id} onClick={() => moderate(m.id, 'approve')}>
                         <Check aria-hidden /> {t('approve', { defaultValue: 'Approve' })}
                       </Button>
                       <Button size="sm" variant="danger" loading={busy === m.id} onClick={() => moderate(m.id, 'deny')}>
@@ -148,27 +140,27 @@ function AdminPredictionsPage() {
             </section>
 
             {/* Open markets — resolve */}
-            <section className="space-y-3">
-              <h2 className="site-section-label">
+            <section className={arrival}>
+              <h2 className="t-heading pb-3 text-site-text">
                 {t('open-markets', { defaultValue: 'Open markets' })} ({open.length})
               </h2>
               {open.length === 0 ? (
                 <EmptyState title={t('none-open', { defaultValue: 'No open markets.' })} />
               ) : (
                 open.map((m) => (
-                  <div key={m.id} className="glass-fill flex flex-col gap-3 rounded-site p-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div key={m.id} className="flex flex-col gap-3 border-t border-site-border py-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <h3 className="flex items-center gap-2 text-base font-semibold text-site-text">
+                      <h3 className="flex items-center gap-2 t-heading text-site-text">
                         {m.title}
                         {m.isAiGenerated && <Sparkles className="size-4 shrink-0 text-site-accent" aria-label={t('ai-generated', { defaultValue: 'AI generated' })} role="img" />}
                       </h3>
-                      <p className="mt-1 text-xs text-site-text-dim">
+                      <p className="mt-1 t-body text-site-text-muted">
                         {t('market-stats', { defaultValue: '{{percent}}% YES · {{volume}} vol', percent: m.yesPercent, volume: m.volume })}
                         {m.closesAt ? ` · ${t('closes-at', { defaultValue: 'closes {{time}}', time: new Date(m.closesAt).toLocaleString() })}` : ''}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2 sm:shrink-0">
-                      <Button size="sm" variant="secondary" loading={busy === m.id} onClick={() => resolve(m.id, 'YES')}>
+                      <Button size="sm" variant="default" loading={busy === m.id} onClick={() => resolve(m.id, 'YES')}>
                         {t('resolve-yes', { defaultValue: 'Resolve YES' })}
                       </Button>
                       <Button size="sm" variant="danger" loading={busy === m.id} onClick={() => resolve(m.id, 'NO')}>

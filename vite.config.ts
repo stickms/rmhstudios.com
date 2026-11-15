@@ -1,112 +1,23 @@
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { createLogger, defineConfig, type Plugin } from 'vite';
+import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
-import { materialHover } from './lib/liquid/hover-css';
-import { buildWasm } from './scripts/build-wasm.mjs';
-import { parseAssetVersions, staticAssetVersions } from './scripts/static-asset-versions.mjs';
+import { hoverPolicy } from './lib/hover-css';
+import { rmhosDevImage } from './vite.rmhos-dev';
+// `.server` stubbing, the compile-time constants, the quiet logger and the rolldown
+// checks are shared with the island build (vite.islands.config.ts, redesign audit B1).
+import {
+  ISLANDS_BASE_URL,
+  ISLANDS_OUT_DIR,
+  quietLogger,
+  rolldownChecks,
+  sharedDefine,
+  stubServerFiles,
+} from './vite.shared';
 
-/**
- * Vite plugin that replaces *.server.{ts,tsx,js,jsx} imports with empty
- * stub modules on the client side. It reads the original file to discover
- * its export names and generates matching `export const x = undefined`
- * declarations so that named imports resolve without a browser ESM error,
- * while the heavy Node-only dependency tree (pg, Buffer, etc.) is never loaded.
- */
-function stubServerFiles(): Plugin {
-  const SERVER_RE = /\.server\.[jt]sx?$/;
-  const STUB_PREFIX = '\0server-stub:';
-
-  function extractExports(source: string) {
-    const names: string[] = [];
-    let hasDefault = false;
-    // export const/let/var/function/class/async function NAME
-    for (const m of source.matchAll(
-      /export\s+(?:const|let|var|function\*?|class|async\s+function\*?)\s+(\w+)/g,
-    )) {
-      names.push(m[1]);
-    }
-    // export { a, b as c }
-    for (const m of source.matchAll(/export\s*\{([^}]+)\}/g)) {
-      // skip re-exports that reference other .server files (already stubbed)
-      for (const token of m[1].split(',')) {
-        const alias = token
-          .trim()
-          .split(/\s+as\s+/)
-          .pop()
-          ?.trim();
-        if (alias && alias !== 'default') names.push(alias);
-        if (alias === 'default') hasDefault = true;
-      }
-    }
-    if (/export\s+default\b/.test(source)) hasDefault = true;
-    return { names: [...new Set(names)], hasDefault };
-  }
-
-  return {
-    name: 'stub-server-files',
-    enforce: 'pre',
-    async resolveId(source, importer, options) {
-      if (options?.ssr) return null;
-
-      // Fast path: a file matching SERVER_RE (*.server.{ts,tsx,js,jsx}) can only
-      // be reached through an import specifier that literally contains ".server"
-      // (verified: every server-file import site uses such a specifier, and there
-      // are no `index.server.*` barrels that could hide one). So skip the
-      // expensive this.resolve() — which re-runs the whole resolver pipeline — for
-      // the ~99% of imports that cannot be server files. Without this guard the
-      // plugin ran this.resolve() on every module in the graph and was the single
-      // largest consumer of build plugin time (~52%).
-      if (!source.includes('.server')) return null;
-
-      // Let Vite resolve the source first so we can check the real file path
-      const resolved = await this.resolve(source, importer, {
-        ...options,
-        skipSelf: true,
-      });
-      if (resolved && SERVER_RE.test(resolved.id)) {
-        return STUB_PREFIX + resolved.id;
-      }
-      return null;
-    },
-    load(id) {
-      if (!id.startsWith(STUB_PREFIX)) return null;
-      const realPath = id.slice(STUB_PREFIX.length);
-      try {
-        const source = readFileSync(realPath, 'utf-8');
-        const { names, hasDefault } = extractExports(source);
-        const lines = names.map((n) => `export const ${n} = undefined;`);
-        if (hasDefault) lines.push('export default undefined;');
-        return lines.join('\n') || 'export default undefined;';
-      } catch {
-        return 'export default undefined;';
-      }
-    },
-  };
-}
-
-const logger = createLogger();
-const originalWarn = logger.warn.bind(logger);
-logger.warn = (msg, options) => {
-  if (msg.includes('has been externalized for browser compatibility')) return;
-  if (msg.includes('Error when using sourcemap for reporting an error')) return;
-  if (msg.includes('.prisma/client/default')) return;
-  originalWarn(msg, options);
-};
-
-// `"use client"` (on ~1,200 modules, a holdover from the Next.js era) means
-// nothing to TanStack Start, which has no React Server Components, so Rolldown's
-// "module level directive may not be preserved" check is pure noise here. It is
-// switched OFF at the source rather than filtered in `onwarn`: filtering still
-// builds every diagnostic (a code frame per file, ~2,500 of them across the client
-// and Nitro builds — 90% of the build's log volume) only to throw it away, and in
-// the Docker build all of that is streamed through BuildKit's progress output.
-// Shared by every Rolldown invocation below, including Nitro's server build,
-// which does not inherit `build.rolldownOptions`.
-const rolldownChecks = { moduleLevelDirective: false };
+const logger = quietLogger();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function onwarn(warning: any, warn: any) {
@@ -154,33 +65,65 @@ const ssrOnlyExternals = [
   'esbuild',
 ];
 
-function manualChunks(id: string) {
-  // React core first — it MUST be one shared chunk. Everything the app renders
-  // imports React, so isolating it keeps the heavy route-only vendors
-  // (three/tone/…) from bridging into the entry via shared React runtime.
-  // (When React had no chunk of its own, rolldown co-located it inside vendor-three;
-  // the entry then imported that 1.3 MB chunk on every page just to get React.)
-  if (
-    id.includes('node_modules/react/') ||
-    id.includes('node_modules/react-dom/') ||
-    id.includes('node_modules/scheduler/') ||
-    id.includes('node_modules/react-is/') ||
-    id.includes('node_modules/use-sync-external-store/')
-  ) {
-    return 'vendor-react';
-  }
-  // Everything else (three, tone, pixi, framer-motion,
-  // …) is intentionally left to rolldown's automatic chunking. Every heavy library
-  // is reached only through a React.lazy(() => import(...)) route boundary, so
-  // rolldown emits it as an async chunk that loads on its own route — NOT in the
-  // entry graph. Force-chunking them into named vendor chunks (the previous
-  // approach) made rolldown scatter shared runtime into those chunks and drag the
-  // whole 1.3 MB three payload onto every page, including the
-  // homepage. Only React is pinned above, because it is genuinely shared by the
-  // entry and must not be duplicated.
-}
+// Client chunk shaping (2026-11-14). Rolldown's automatic chunking gives every distinct
+// "set of chunks that share this module" its own file. On this app that meant a page
+// needed 60 to 180 JS files before it could hydrate, most under 2 KB: 52 on the entry's
+// static graph, the rest one lucide icon or one small hook each. Nothing can run until the
+// last of them lands, so on a phone the count was the cost, not the bytes. Three groups:
+//
+//   vendor-react  React core, one shared chunk. It MUST stay its own group: when React had
+//                 no chunk of its own, rolldown co-located it inside a route-only vendor
+//                 chunk and the entry imported 1.3 MB of three.js on every page to get it.
+//   shell         `$initial` is every module the client entry imports statically, which is
+//                 exactly the every-page critical path. Rolldown folds the group into the
+//                 entry file, so that path is 3 files instead of 52. Nothing route-only can
+//                 match the tag, which is the difference from the size floor rejected below.
+//   icons         lucide-react. `entriesAware` keeps an icon with the pages that use it;
+//                 the merge threshold folds groups under 8 KB into their nearest neighbour,
+//                 so a page fetches a few icon files instead of one request per icon. The
+//                 cost of a merge is a handful of unused ~300 B icons.
+//
+// Measured on a plain `vite build`, files and brotli bytes a route needs to hydrate
+// (the entry closure plus the route's own preloads):
+//
+//   /          140 files 318.7 KB  ->  68 files 309.6 KB
+//   /explore   180 files 360.6 KB  ->  90 files 347.5 KB
+//   /games      60 files 258.2 KB  ->   8 files 239.1 KB
+//   /login      76 files 302.6 KB  ->  26 files 290.7 KB
+//
+// Everything else (three, tone, pixi, framer-motion, …) is still left to automatic
+// chunking: each is reached only through a lazy route boundary and loads on its own route.
+//
+// MEASURED AND REJECTED the same day, do not re-run expecting a different answer:
+//   - icons at a 24 KB merge threshold: 62 files on `/`, but 319.4 KB (the unused icons
+//     ate the saving). 4 KB: 73 files, 306.5 KB. 8 KB is the knee.
+//   - a group for every small first-party module (`maxModuleSize: 2 KB`, entriesAware):
+//     a captured module brings its dependencies with it, so `/` went to 485 KB brotli.
+//     The remaining small files (contracts, stores, hooks) need route-level imports
+//     changed, not a group.
+//   - naming the deferred shell overlays (modals, command palette) as one group: no
+//     effect, because each is a dynamic-import entry and keeps its own file.
+//   - a group fed by a plugin with the static closure of `app/routes/_site.tsx` (and of
+//     the deferred overlays), to fold the shell's remaining small files: the closure runs
+//     through the route tree and is 2,755 modules. As one chunk `/` went to 405.7 KB
+//     brotli and `/login` to 406.8; entries-aware with an 8 KB merge, `/` was 47 files
+//     but 342.6 KB and `/explore` 436.7.
+const REACT_CORE =
+  /node_modules[\\/](?:react|react-dom|scheduler|react-is|use-sync-external-store)[\\/]/;
 
-// MEASURED AND REJECTED: `output.codeSplitting.minSize` (2026-08-11).
+const clientChunkGroups = [
+  { name: 'vendor-react', test: REACT_CORE, priority: 30 },
+  { name: 'shell', tags: ['$initial' as const], priority: 20 },
+  {
+    name: 'icons',
+    test: /node_modules[\\/]lucide-react[\\/]/,
+    priority: 10,
+    entriesAware: true,
+    entriesAwareMergeThreshold: 8 * 1024,
+  },
+];
+
+// MEASURED AND REJECTED EARLIER: `output.codeSplitting.minSize` (2026-08-11).
 //
 // Three audits in a row flagged it as "worth measuring, not worth guessing at" —
 // the theory being that 90 of the 111 critical-path chunks are under 6 KB, and a
@@ -198,7 +141,7 @@ function manualChunks(id: string) {
 // chunks and their modulepreloads, not members of the shared graph — so the lever
 // is aimed at the wrong population. Don't re-run it expecting a different answer;
 // the request-count problem needs route-level chunk shaping, not a size floor.
-// Full numbers: docs/loading-audit-2026-08-11/06-backlog.md §7.
+// Full numbers: docs/archive/2026/loading-audit-2026-08-11/06-backlog.md §7.
 
 export default defineConfig({
   customLogger: logger,
@@ -208,30 +151,11 @@ export default defineConfig({
   server: {
     port: 7005,
   },
-  // Inject the CDN base as a compile-time constant for the Vite client + SSR
-  // builds. lib/storage/asset.ts reads `__CDN_BASE__` instead of
-  // `import.meta.env.VITE_CDN_BASE_URL` so it stays type-checkable under the
-  // CommonJS server tsconfig (import.meta is illegal there); the standalone
-  // esbuild server bundle leaves the global undefined → those workers use
-  // relative paths (no CDN), which is correct. VITE_CDN_BASE_URL is a real
-  // build-time env var (Dockerfile ARG→ENV), so process.env carries it here.
-  define: {
-    __CDN_BASE__: JSON.stringify(process.env.VITE_CDN_BASE_URL ?? ''),
-    __STATIC_ASSET_VERSIONS__: JSON.stringify(
-      process.env.STATIC_ASSET_VERSIONS
-        ? parseAssetVersions(process.env.STATIC_ASSET_VERSIONS)
-        : staticAssetVersions(fileURLToPath(new URL('./public', import.meta.url))),
-    ),
-  },
-  css: { postcss: { plugins: [materialHover()] } },
+  // `__CDN_BASE__` / `__STATIC_ASSET_VERSIONS__` — see sharedDefine() in vite.shared.ts.
+  define: sharedDefine(),
+  css: { postcss: { plugins: [hoverPolicy()] } },
   plugins: [
-    {
-      name: 'build-numeric-wasm',
-      // Also covers direct `vite dev/build` and Docker's pnpm exec invocation.
-      async config() {
-        await buildWasm();
-      },
-    },
+    rmhosDevImage(process.cwd()),
     stubServerFiles(),
     tailwindcss(),
     tanstackStart({
@@ -250,7 +174,7 @@ export default defineConfig({
       // modules statically and Start's splitter only lifts out route
       // COMPONENTS: anything else a route module touches at top level lands in
       // the shared entry that every page loads. See
-      // docs/performance-audit-2026-08-04.md.
+      // docs/archive/2026/performance-audit-2026-08-04.md.
     }),
     react(),
     nitro({
@@ -264,6 +188,20 @@ export default defineConfig({
       // the rare direct-to-origin request. gzip keeps that path compressed at a
       // fraction of the cost. Images are already compressed and skipped.
       compressPublicAssets: { gzip: true, brotli: false },
+      // The island build's output (redesign audit B1, vite.islands.config.ts), which
+      // `pnpm build` produces BEFORE this build: copied into .output/public/islands/
+      // and served from /islands/ with a year's immutable cache-control (every file
+      // in it is content-hashed). Not a fallthrough: a missing island file is a 404,
+      // never an SSR render. The Vite manifest beside it is read at build time
+      // (lib/islands/document.server.ts) and has no reason to be public.
+      publicAssets: [
+        {
+          dir: ISLANDS_OUT_DIR,
+          baseURL: ISLANDS_BASE_URL.replace(/\/$/, ''),
+          maxAge: 31_536_000,
+          ignore: ['**/.vite/**'],
+        },
+      ],
       // Cache headers for static files served out of public/. Nitro already marks
       // the content-hashed /assets/** build output immutable (1y), but /images/**
       // (game art, icons, social images — not content-hashed) had no rule, so the
@@ -450,11 +388,17 @@ export default defineConfig({
         // critical path inside their budgets. The server (Node 24) bundles keep
         // `esnext`: one known runtime, so lowering them is pure cost.
         target: 'baseline-widely-available',
+        // Never inline a font into a stylesheet. Vite's default 4 KB limit turned
+        // one small font subset into a 2.7 KB base64 `data:` URI inside
+        // the render-blocking site sheet (~2.2 KB brotli: base64 does not
+        // compress), for a face almost no page paints. As a file it is fetched
+        // only when its `unicode-range` is needed. B5 / docs/plans/2026-11-09.
+        assetsInlineLimit: (file) => (/\.woff2?$/.test(file) ? false : undefined),
         rolldownOptions: {
           onwarn,
           checks: rolldownChecks,
           output: {
-            manualChunks,
+            codeSplitting: { groups: clientChunkGroups },
           },
         },
       },

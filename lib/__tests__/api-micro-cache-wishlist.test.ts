@@ -3,6 +3,7 @@
  * list private, the next read must be a 404, not the micro-cached 200.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 const { findUnique, findMany } = vi.hoisted(() => ({ findUnique: vi.fn(), findMany: vi.fn() }));
 vi.mock('@/lib/auth', () => ({ auth: { api: { getSession: vi.fn() } } }));
@@ -16,13 +17,9 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 import { clearResponseCache } from '@/lib/api/response-cache.server';
-import { Route } from '../../app/routes/api/users/$id.wishlist';
+import { route as Route } from '@/lib/wishlist/api/users.$id.wishlist.server';
 
-const GET = (
-  Route as unknown as {
-    options: { server: { handlers: { GET: (a: unknown) => Promise<Response> } } };
-  }
-).options.server.handlers.GET;
+const GET = handlersOf<(a: unknown) => Promise<Response>>(Route).GET;
 let n = 0;
 const call = () =>
   GET({

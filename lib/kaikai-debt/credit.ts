@@ -56,6 +56,7 @@
  */
 
 import { accrualFactor } from './debt';
+import { clamp01 } from '@/lib/core/math';
 
 /* -------------------------------------------------------------------------- */
 /* The scale                                                                  */
@@ -290,8 +291,6 @@ const WEIGHTS: Record<CreditFactor['id'], number> = {
   mix: 0.1,
   inquiries: 0.1,
 };
-
-const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
  * The five factors, evaluated against the books at `atMs`.

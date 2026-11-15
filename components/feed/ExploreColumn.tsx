@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -7,6 +5,7 @@ import { useSession } from '@/components/Providers';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { SearchHitSection, useKindHeading } from '@/components/search/SearchHitRow';
 import { ExploreAsk } from './ExploreAsk';
 import {
@@ -18,6 +17,7 @@ import {
   type ExploreTab,
 } from './ExploreRecommendations';
 import { PageTabs } from './PageTabs';
+import { Spine } from '@/components/ui/spine';
 import { SearchField } from '@/components/ui/search-field';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import {
@@ -28,6 +28,8 @@ import {
   type SearchTab,
 } from '@/lib/search/types';
 
+import { api } from '@/lib/contract/client';
+import { universalSearchApi } from '@/lib/feed/compose-assist.contract';
 /**
  * Tabs the discovery panel understands; the rest fall back to its `top` mix.
  *
@@ -147,7 +149,7 @@ export function ExploreColumn({
    * After the arriving page has painted, not in the effect itself: `focus()`
    * needs up-to-date style and layout, so calling it straight after a page
    * switch's commit laid out the whole incoming page synchronously — ~55ms of
-   * the switch's one long task at 4× CPU (docs/performance-audit-2026-10-21.md
+   * the switch's one long task at 4× CPU (docs/archive/2026/performance-audit-2026-10-21.md
    * §Navigation commit). One frame later that layout already exists and the
    * call is free. `preventScroll`, because the field is at the top of the page
    * and a back/forward arrival has just had its scroll position restored.
@@ -196,11 +198,9 @@ export function ExploreColumn({
     const id = ++requestId.current;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ q, tab: type });
-      if (assist) params.set('assist', '1');
-      const res = await fetch(`/api/search?${params}`, { credentials: 'include' });
-      if (!res.ok) return;
-      const data: SearchResponse = await res.json();
+      const data = await api(universalSearchApi, {
+        query: { q, tab: type, ...(assist ? { assist: '1' as const } : {}) },
+      });
       // A slower earlier request must not overwrite a newer one's results.
       if (id === requestId.current) setResults(data);
     } catch {
@@ -259,6 +259,8 @@ export function ExploreColumn({
 
   const hasResults = tab === 'top' ? top.length > 0 : sections.length > 0;
   const exploreTab: ExploreTab = (EXPLORE_TABS.has(tab) ? tab : 'top') as ExploreTab;
+  // Steel M9: results that replace the skeleton fade in.
+  const arrival = useArrival(!hasQuery || !(loading && !hasResults));
 
   return (
     <div>
@@ -281,7 +283,7 @@ export function ExploreColumn({
             placeholder={t('search-placeholder-universal', {
               defaultValue: 'Search anything — people, posts, games, writing…',
             })}
-            trailing={loading ? <Spinner size={16} className="text-site-text-dim" /> : undefined}
+            trailing={loading ? <Spinner size={16} className="text-site-text-muted" /> : undefined}
           />
         }
       />
@@ -293,15 +295,11 @@ export function ExploreColumn({
           apps, pages). Say so, rather than letting the People tab read as "no
           one by that name exists". */}
       {hasQuery && !session && (
-        <p className="px-4 pb-3 text-sm text-site-text-muted">
+        <p className="t-body pb-3 text-site-text-muted">
           {t('search-signed-out-scope', {
             defaultValue: 'Showing games, apps and pages.',
           })}{' '}
-          <Link
-            to="/login"
-            search={{ callbackURL: '/explore' }}
-            className="font-semibold text-site-accent hover:underline"
-          >
+          <Link to="/login" search={{ callbackURL: '/explore' }} className="underline">
             {t('search-signed-out-cta', { defaultValue: 'Sign in to search people and posts' })}
           </Link>
         </p>
@@ -311,12 +309,9 @@ export function ExploreColumn({
           a near-miss (a typo, or the wrong name for a game) is one tap from the
           right query instead of a dead end. */}
       {hasQuery && meta.suggestion && (
-        <div className="px-4 pb-3 text-sm text-site-text-muted">
+        <div className="t-body pb-3 text-site-text-muted">
           {t('search-did-you-mean', { defaultValue: 'Did you mean' })}{' '}
-          <button
-            onClick={() => setQuery(meta.suggestion!)}
-            className="font-semibold text-site-accent hover:underline"
-          >
+          <button onClick={() => setQuery(meta.suggestion!)} className="underline">
             {meta.suggestion}
           </button>
         </div>
@@ -334,13 +329,14 @@ export function ExploreColumn({
         <PostListSkeleton count={6} />
       ) : !hasResults && !loading ? (
         <EmptyState
+          className={arrival}
           description={t('no-results', {
             query: trimmed,
             defaultValue: 'No results for "{{query}}".',
           })}
         />
       ) : (
-        <div className="divide-y divide-site-border">
+        <Spine className={arrival}>
           {tab === 'top' ? (
             <>
               <SearchHitSection hits={strong} />
@@ -362,7 +358,7 @@ export function ExploreColumn({
               />
             ))
           )}
-        </div>
+        </Spine>
       )}
     </div>
   );

@@ -13,7 +13,7 @@ import { getLibraryBook, type LibraryBook } from './library';
 import { mapDocToBook, type LibraryDocRow } from './merge';
 import { slugifyTitle, libraryCoverKey, libraryCoverUrl } from './keys';
 import { putObject } from '@/lib/storage/s3.server';
-import { validateImageBuffer, detectImageExt } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer, detectImageExt } from '@features/slice-it/engine/upload-validation';
 import {
   validateCollectionFields,
   COLLECTION_USER_QUOTA,

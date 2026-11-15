@@ -25,12 +25,10 @@
  */
 
 .stk {
-  /* Discord ships "gg sans", which is not licensed for redistribution. Inter is
-     the closest thing this repo already self-hosts (`@fontsource-variable/inter`
-     in app/globals.css), and it carries the metric-matched 'Inter Fallback'
-     face behind it — the same stack `--site-font-body` uses. */
+  /* Discord ships "gg sans", which is not licensed for redistribution. Geist is
+     the site's sans (app/globals.css), with its metric-matched fallback. */
   --stk-font:
-    var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+    var(--font-geist), system-ui, sans-serif;
   --stk-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
   /* ── Dark: Discord's own surface ladder ───────────────────────────────────
@@ -593,7 +591,7 @@
 /* ── Segmented control ────────────────────────────────────────────────────
    Buttons in a `role="group"` with `aria-pressed`, NOT `role="tablist"`: these
    switch a rendered range rather than revealing pre-existing tab panels, and
-   the site's <LiquidTabs> carries `--site-*` chrome that would look imported
+   the site's <Tabs> carries `--site-*` chrome that would look imported
    on this palette. Same call, and the same shape, as `/pf2ecal`'s control. */
 
 .stk-segmented {

@@ -1,76 +1,189 @@
 /**
- * Ambient motion has an owner, or it does not run (gates N3 and N12, docs/plans/plasmatic-jelly/05-gates-docs-naming.md
- * §2; generalises `static-backdrop.test.ts`).
+ * Ambient motion has no owner left, and the list of what still loops only shrinks (gate N3; generalises
+ * `static-backdrop.test.ts`; Steel R5: nothing moves at rest).
  *
- * ## N3 — no new perpetual CSS animation on the site tier
- *
- * Plasmatic Jelly is ALWAYS moving (master plan R7), which makes "just add an `infinite` keyframe for the haze" the
- * most tempting shortcut in the codebase. A free-standing `infinite` keyframe has none of the switches the jelly
- * services carry — not hidden-tab, not offscreen, not `jellyMotion = still`, not the degraded tiers, not the budget —
- * and it is exactly what `testing/e2e/frame-budget.mjs --gate` exists to catch, one release too late. So:
- *
- *  - every `infinite` animation in the site-tier stylesheets (`app/*.css`, `components/{ui,radial,feed,site}/**`)
- *    is either on the frozen, justified {@link BASELINE} (loaders, skeletons, live dots — all on transient or tiny
- *    elements), or
- *  - it is the SANCTIONED haze keyframe, `jelly-drift`, declared only on the woken-haze
- *    layer (the glass roles' own `::after`, app/jelly-material.css §3b, CSS-first jelly PR 2) — attached ONLY under
- *    `:hover` / `:has(:focus-visible)`, with no animation at all at rest (lib/__tests__/jelly-woken-haze.test.ts pins it);
- *  - the layer is killed (`display: none`) under the app high-contrast theme and print (there is no low-end root class any more), PAUSED (`animation-play-state: paused`) while
- *    scrolling and while a game is in play, and has no animation at all under `still`.
+ * Every `infinite` animation in the site-tier stylesheets (`app/*.css`, `components/{ui,radial,feed,site}/**`) is on the
+ * frozen, justified {@link BASELINE} (loaders, skeletons, live dots, all on transient or tiny elements) or the test
+ * fails. The one sanctioned keyframe the Plasmatic Jelly material owned (`jelly-drift`, the woken haze), and its
+ * pause, print, high-contrast and `still` cases (N3 haze half), and gate N12 (the haze sits under the text), went
+ * with the material in Steel phase 1: nothing of it is left to pin.
  *
  * The baseline only shrinks: an entry that no longer matches fails "the baseline stays honest".
- *
- * ## N12 — the haze is under the text, always
- *
- * 01 §6 item 1. The jelly paint layer inside a host (the woken-haze `::after`) declares a NEGATIVE z-index, and the host
- * that carries it is isolated (`isolation: isolate`), so the negative layer resolves inside the host — above its tint,
- * below every child. Nothing jelly paints at z ≥ 0 inside a host. The one body-level exception is the arc layer (03 D1), which is
- * `pointer-events: none` and stacks on the named `--z-arcs` token.
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import {
+  existsSync,
+  readdirSync,
+} from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import {
+  describe,
+  expect,
+  it,
+} from 'vitest';
+import { readCss } from './css-source';
 
-const ROOT = process.cwd();
-const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
-const read = (file: string) => strip(readFileSync(join(ROOT, file), 'utf8'));
+const ROOT =
+  process.cwd();
+const strip =
+  (
+    css: string,
+  ) =>
+    css.replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    );
+const read =
+  (
+    file: string,
+  ) =>
+    strip(
+      readCss(
+        join(
+          ROOT,
+          file,
+        ),
+      ),
+    );
 
-function collectCss(dir: string, out: string[] = []): string[] {
+function collectCss(
+  dir: string,
+  out: string[] = [],
+): string[] {
   let entries;
   try {
-    entries = readdirSync(join(ROOT, dir), { withFileTypes: true });
+    entries =
+      readdirSync(
+        join(
+          ROOT,
+          dir,
+        ),
+        {
+          withFileTypes: true,
+        },
+      );
   } catch {
     return out;
   }
   for (const e of entries) {
     const rel = `${dir}/${e.name}`;
-    if (e.isDirectory()) {
-      if (e.name !== 'node_modules') collectCss(rel, out);
-    } else if (e.name.endsWith('.css')) out.push(rel);
+    if (
+      e.isDirectory()
+    ) {
+      if (
+        e.name !==
+        'node_modules'
+      )
+        collectCss(
+          rel,
+          out,
+        );
+    } else if (
+      e.name.endsWith(
+        '.css',
+      )
+    )
+      out.push(
+        rel,
+      );
   }
   return out;
 }
 
 /** The site-tier stylesheets (05 N3 scope). `app/` is top-level only: `app/fonts/` is generated @font-face. */
-const SHEETS = [
-  ...readdirSync(join(ROOT, 'app'))
-    .filter((f) => f.endsWith('.css'))
-    .map((f) => `app/${f}`),
-  ...['ui', 'radial', 'feed', 'site'].flatMap((d) => collectCss(`components/${d}`)),
-].sort();
+const SHEETS =
+  [
+    ...readdirSync(
+      join(
+        ROOT,
+        'app',
+      ),
+    )
+      .filter(
+        (
+          f,
+        ) =>
+          f.endsWith(
+            '.css',
+          ),
+      )
+      .map(
+        (
+          f,
+        ) =>
+          `app/${f}`,
+      ),
+    ...[
+      'ui',
+      'feed',
+      'site',
+      'shell',
+    ].flatMap(
+      (
+        d,
+      ) =>
+        collectCss(
+          `components/${d}`,
+        ),
+    ),
+  ]
+    // A split entry sheet (`radial.css` + `radial/*.css`, redesign E4) is scanned once, through its entry: `read`
+    // inlines the partials, so listing them too would count every rule twice under a second file name.
+    .filter(
+      (
+        f,
+      ) =>
+        !existsSync(
+          join(
+            ROOT,
+            `${f.slice(0, f.lastIndexOf('/'))}.css`,
+          ),
+        ),
+    )
+    .sort();
 
 /** Innermost `selector { declarations }` pairs — nested @media/@layer bodies match at their leaves. */
-function rules(css: string): Array<{ selector: string; body: string }> {
-  return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({
-    selector: m[1].trim(),
-    body: m[2],
-  }));
+function rules(
+  css: string,
+): Array<{
+  selector: string;
+  body: string;
+}> {
+  return [
+    ...css.matchAll(
+      /([^{}]+)\{([^{}]*)\}/g,
+    ),
+  ].map(
+    (
+      m,
+    ) => ({
+      selector:
+        m[1].trim(),
+      body: m[2],
+    }),
+  );
 }
 
 /** Every @keyframes name declared in the scanned sheets. */
-const KEYFRAMES = new Set(
-  SHEETS.flatMap((f) => [...read(f).matchAll(/@keyframes\s+([\w-]+)/g)].map((m) => m[1])),
-);
+const KEYFRAMES =
+  new Set(
+    SHEETS.flatMap(
+      (
+        f,
+      ) =>
+        [
+          ...read(
+            f,
+          ).matchAll(
+            /@keyframes\s+([\w-]+)/g,
+          ),
+        ].map(
+          (
+            m,
+          ) =>
+            m[1],
+        ),
+    ),
+  );
 
 interface Perpetual {
   file: string;
@@ -79,21 +192,85 @@ interface Perpetual {
 }
 
 /** `infinite` animations: the shorthand, an iteration-count longhand, or a Tailwind `--animate-*` theme value. */
-function perpetual(file: string): Perpetual[] {
-  const out: Perpetual[] = [];
-  for (const { selector, body } of rules(read(file))) {
-    const decls = body.split(';');
-    const named = decls.map((d) => /^\s*animation-name\s*:\s*([\w-]+)/.exec(d)?.[1]).find(Boolean);
+function perpetual(
+  file: string,
+): Perpetual[] {
+  const out: Perpetual[] =
+    [];
+  for (const {
+    selector,
+    body,
+  } of rules(
+    read(
+      file,
+    ),
+  )) {
+    const decls =
+      body.split(
+        ';',
+      );
+    const named =
+      decls
+        .map(
+          (
+            d,
+          ) =>
+            /^\s*animation-name\s*:\s*([\w-]+)/.exec(
+              d,
+            )?.[1],
+        )
+        .find(
+          Boolean,
+        );
     for (const d of decls) {
-      const shorthand = /^\s*(?:animation|--animate-[\w-]+)\s*:\s*([\s\S]+)$/.exec(d);
-      if (shorthand && /\binfinite\b/.test(shorthand[1])) {
+      const shorthand =
+        /^\s*(?:animation|--animate-[\w-]+)\s*:\s*([\s\S]+)$/.exec(
+          d,
+        );
+      if (
+        shorthand &&
+        /\binfinite\b/.test(
+          shorthand[1],
+        )
+      ) {
         const name =
-          shorthand[1].match(/[\w-]+/g)?.find((t) => KEYFRAMES.has(t)) ??
-          shorthand[1].match(/[a-z][\w-]*/i)?.[0] ??
+          shorthand[1]
+            .match(
+              /[\w-]+/g,
+            )
+            ?.find(
+              (
+                t,
+              ) =>
+                KEYFRAMES.has(
+                  t,
+                ),
+            ) ??
+          shorthand[1].match(
+            /[a-z][\w-]*/i,
+          )?.[0] ??
           '?';
-        out.push({ file, name, selector });
-      } else if (/^\s*animation-iteration-count\s*:\s*infinite\b/.test(d)) {
-        out.push({ file, name: named ?? '?', selector });
+        out.push(
+          {
+            file,
+            name,
+            selector,
+          },
+        );
+      } else if (
+        /^\s*animation-iteration-count\s*:\s*infinite\b/.test(
+          d,
+        )
+      ) {
+        out.push(
+          {
+            file,
+            name:
+              named ??
+              '?',
+            selector,
+          },
+        );
       }
     }
   }
@@ -109,207 +286,114 @@ function perpetual(file: string): Perpetual[] {
  * Removed 2026-10-23 (H1): `dock-globe-shimmer` and `dock-globe-glint` (now one sweep per hover) and
  * `globe-current-halo` (now three breaths when a pin becomes current). The entries had called them "icon-sized" and
  * "open hub only", but all three ran on the DOCKED globe — every desktop page, at rest, under `still` too — and held
- * the page at ≈58 frames/s (`testing/e2e/frame-budget.mjs --gate`).
+ * the page at ≈58 frames/s.
  */
-const BASELINE = new Map<string, string>([
-  [
-    'app/globals.css :: pulse',
-    'Tailwind `animate-pulse-slow` theme token: loading placeholders only',
-  ],
-  [
-    'app/globals.css :: rainbow-shift',
-    'cosmetic name-colour effect on a purchased username, text-sized',
-  ],
-  ['app/globals.css :: glitch', 'cosmetic name effect on a purchased username, text-sized'],
-  ['app/globals.css :: shake', 'cosmetic name effect on a purchased username, text-sized'],
-  [
-    'app/globals.css :: dr-float',
-    'Dream Rift landing title float (its game landing, not a surface)',
-  ],
-  [
-    'app/globals.css :: dr-title-glow',
-    'Dream Rift landing title glow (its game landing, not a surface)',
-  ],
-  ['app/globals.css :: shimmer', 'skeleton shimmer — exists only until content arrives'],
-  [
-    'app/globals.css :: liquid-skeleton-drift',
-    'skeleton drift — exists only until content arrives',
-  ],
-  ['app/globals.css :: rad-loader-pulse', 'route loader — exists only while a route loads'],
-  ['app/globals.css :: rad-loader-orbit', 'route loader — exists only while a route loads'],
-  ['components/radial/radial.css :: radial-pulse-soft', 'unread / live dots, a few px'],
-  [
-    'components/radial/radial.css :: globe-armed',
-    'the reticle while a hold is armed (hub or docked globe) — only while the pointer is down on a full ring',
-  ],
-  [
-    'components/radial/eversion/eversion.css :: evert-popup-turn',
-    'eversion popup spinner, while a navigation runs',
-  ],
-  ['components/feed/feed.css :: feed-live-pulse', 'the live indicator dot on a live item'],
-]);
-
-/** The two haze keyframes the jelly material owns (01 §3.2), and the only selectors they may run under. */
-const SANCTIONED = new Set(['jelly-drift']);
-const MATERIAL = 'app/jelly-material.css';
-const flat = (s: string) =>
-  s.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')').trim();
-/**
- * The woken-haze layer (jelly-material.css §3b): the glass roles' own `::after`, off native-material routes.
- * Exactly this selector head, nothing broader.
- */
-const HAZE_LAYER_HEAD =
-  "html:not(.native-material) :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, [data-slot='button']:not([data-variant='ghost'], [data-variant='link'])):not(";
-const isHazeLayer = (selector: string) => {
-  const s = flat(selector);
-  return s.endsWith('::after') && s.startsWith(HAZE_LAYER_HEAD);
-};
-/** The one rule that may run the drift: the haze layer's wake, `…:hover::after, …:has(:focus-visible)::after`. */
-const isHazeWake = (selector: string) => {
-  const s = flat(selector);
-  return (
-    isHazeLayer(selector) &&
-    s.endsWith('):has(:focus-visible)::after') &&
-    s.includes(`):hover::after, ${HAZE_LAYER_HEAD}`)
+const BASELINE =
+  new Map<
+    string,
+    string
+  >(
+    [
+      [
+        'app/globals.css :: pulse',
+        'Tailwind `animate-pulse-slow` theme token: loading placeholders only',
+      ],
+      [
+        'app/globals.css :: rainbow-shift',
+        'cosmetic name-colour effect on a purchased username, text-sized',
+      ],
+      [
+        'app/globals.css :: glitch',
+        'cosmetic name effect on a purchased username, text-sized',
+      ],
+      [
+        'app/globals.css :: dr-float',
+        'Dream Rift landing title float (its game landing, not a surface)',
+      ],
+      [
+        'app/globals.css :: dr-title-glow',
+        'Dream Rift landing title glow (its game landing, not a surface)',
+      ],
+    ],
   );
-};
-/** A rule that targets the haze layer (any state of it): a role host's `::after` in the material sheet. */
-const onHazeLayer = (selector: string) =>
-  /\.glass-fill/.test(selector) && /::after$/.test(flat(selector));
 
 describe('N3 — no perpetual CSS animation on the site tier without an owner', () => {
-  const found = SHEETS.flatMap(perpetual);
+  const found =
+    SHEETS.flatMap(
+      perpetual,
+    );
 
-  it('scans the site-tier sheets, including the jelly material', () => {
-    expect(SHEETS.length).toBeGreaterThan(8);
-    for (const f of [
+  it('scans the site-tier sheets', () => {
+    expect(
+      SHEETS.length,
+    ).toBeGreaterThan(
+      5,
+    );
+    expect(
+      SHEETS,
+    ).toContain(
       'app/globals.css',
-      MATERIAL,
-      'app/jelly-arcs.css',
-      'components/radial/radial.css',
-    ]) {
-      expect(SHEETS).toContain(f);
-    }
-    expect(found.length).toBeGreaterThan(10);
+    );
+    expect(
+      found.length,
+    ).toBeGreaterThan(
+      3,
+    );
   });
 
-  it('every infinite animation is on the frozen baseline or is a sanctioned haze keyframe', () => {
-    const offenders = found
-      .filter((p) => !(SANCTIONED.has(p.name) && p.file === MATERIAL))
-      .filter((p) => !BASELINE.has(`${p.file} :: ${p.name}`))
-      .map((p) => `${p.file}: ${p.selector} { animation: ${p.name} … infinite }`);
+  it('every infinite animation is on the frozen baseline', () => {
+    const offenders =
+      found
+        .filter(
+          (
+            p,
+          ) =>
+            !BASELINE.has(
+              `${p.file} :: ${p.name}`,
+            ),
+        )
+        .map(
+          (
+            p,
+          ) =>
+            `${p.file}: ${p.selector} { animation: ${p.name} … infinite }`,
+        );
     expect(
       offenders,
       'A free-standing `infinite` keyframe never stops: not for a hidden tab, not offscreen, not under ' +
-        '`jellyMotion = still`, not on a degraded tier — the page re-renders on every vsync (frame-budget --gate). ' +
-        'Ambient motion belongs to the jelly services (lib/jelly, docs/plasmatic-jelly-system.md). If this is a ' +
+        '`jellyMotion = still` — the page re-renders on every vsync. Steel R5: nothing moves at rest. If this is a ' +
         'loader, end it with the load; if it is decoration, make it a one-shot.',
-    ).toEqual([]);
-  });
-
-  it('the haze keyframes run only on the woken-haze layer', () => {
-    const carriers = found.filter((p) => SANCTIONED.has(p.name));
-    for (const p of carriers) {
-      expect(p.file).toBe(MATERIAL);
-      expect(
-        isHazeWake(p.selector),
-        `${p.name} is declared outside the haze layer: ${flat(p.selector)}`,
-      ).toBe(true);
-    }
-    // One wake rule (hover / keyboard focus inside): nothing at rest, nothing scroll-driven, nothing broader.
-    expect(carriers.filter((p) => isHazeLayer(p.selector))).toHaveLength(1);
+    ).toEqual(
+      [],
+    );
   });
 
   it('the baseline stays honest (it only shrinks)', () => {
-    const live = new Set(found.map((p) => `${p.file} :: ${p.name}`));
-    const stale = [...BASELINE.keys()].filter((k) => !live.has(k));
-    expect(stale, 'These no longer loop — remove them from BASELINE.').toEqual([]);
-  });
-
-  describe('the haze layer stops wherever the material does', () => {
-    const css = read(MATERIAL);
-    const all = rules(css);
-    /** `display: none` on the haze layer from a rule whose selector mentions `root`. */
-    const hides = (root: RegExp) =>
-      all.some(
-        ({ selector, body }) =>
-          root.test(selector) && onHazeLayer(selector) && /display\s*:\s*none/.test(body),
+    const live =
+      new Set(
+        found.map(
+          (
+            p,
+          ) =>
+            `${p.file} :: ${p.name}`,
+        ),
       );
-
-    it.each(['.app-high-contrast'])(
-      'killed under %s',
-      (root) => {
-        expect(hides(new RegExp(root.replace(/[.[\]]/g, '\\$&')))).toBe(true);
-      },
-    );
-
-    it('killed under print', () => {
-      for (const q of ['print']) {
-        const block = [...css.matchAll(/@media([^{]+)\{((?:[^{}]*\{[^{}]*\})+)\s*\}/g)].find(
-          (m) =>
-            m[1].includes(q) &&
-            /\.glass-fill[\s\S]*?\)::after\s*\{\s*display\s*:\s*none/.test(m[2]),
-        );
-        expect(block, q).toBeDefined();
-      }
-    });
-
-    it.each([
-      ['scrolling', 'html[data-scrolling]'],
-      ['a game in play (R16)', "html[data-game-state='playing']"],
-    ])('paused while %s', (_label, root) => {
-      const paused = all.some(
-        ({ selector, body }) =>
-          flat(selector).includes(`${root} :is(`) &&
-          onHazeLayer(selector) &&
-          /animation-play-state\s*:\s*paused/.test(body),
+    const stale =
+      [
+        ...BASELINE.keys(),
+      ].filter(
+        (
+          k,
+        ) =>
+          !live.has(
+            k,
+          ),
       );
-      expect(paused).toBe(true);
-    });
-
-    it('has no animation at all under jellyMotion = still (WCAG 2.2.2)', () => {
-      const none = all.some(
-        ({ selector, body }) =>
-          flat(selector).startsWith("html[data-jelly-motion='still'] :is(") &&
-          onHazeLayer(selector) &&
-          /(?:^|;)\s*animation\s*:\s*none/.test(body),
-      );
-      expect(none).toBe(true);
-    });
-  });
-});
-
-describe('N12 — nothing jelly paints at z ≥ 0 inside a host', () => {
-  const sheets = ['app/liquid-glass.css', MATERIAL].map((f) => ({ f, all: rules(read(f)) }));
-
-  it('the woken-haze layer declares a negative z-index', () => {
-    const decls = sheets
-      .flatMap(({ all }) => all)
-      .filter(({ selector }) => isHazeLayer(selector))
-      .map((r) => /(?:^|;)\s*z-index\s*:\s*([^;]+)/.exec(r.body)?.[1]?.trim())
-      .filter(Boolean) as string[];
-    expect(decls.length, 'the haze layer must declare its z-index').toBeGreaterThan(0);
-    for (const z of decls) expect(Number(z), `haze layer z-index ${z}`).toBeLessThan(0);
-  });
-
-  it('the host that carries the haze layer is isolated', () => {
-    const iso = sheets.flatMap(({ all }) =>
-      all.filter(({ body }) => /isolation\s*:\s*isolate/.test(body)).map((r) => r.selector),
-    );
-    // The woken-haze host isolates itself (CSS-first jelly PR 2).
     expect(
-      iso.some((s) => !s.includes('::') && flat(s).startsWith(HAZE_LAYER_HEAD)),
-      'the woken-haze host must be isolated',
-    ).toBe(true);
-  });
-
-  it('the arc layer is the one body-level exception: click-through, on the named token', () => {
-    const arc = rules(read('app/jelly-arcs.css')).find(
-      ({ selector }) => selector === '.jelly-arc-layer',
+      stale,
+      'These no longer loop — remove them from BASELINE.',
+    ).toEqual(
+      [],
     );
-    expect(arc).toBeDefined();
-    expect(arc!.body).toMatch(/pointer-events\s*:\s*none/);
-    expect(arc!.body).toMatch(/z-index\s*:\s*var\(--z-arcs\)/);
-    expect(arc!.body).toMatch(/position\s*:\s*fixed/);
   });
 });

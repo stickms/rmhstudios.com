@@ -16,7 +16,7 @@
 - All provider/SDK knowledge stays inside `lib/storage/s3.server.ts`. No other file imports `@aws-sdk/*`.
 - Server-only modules use the `.server.ts` suffix and `@/lib/prisma.server` / `@/lib/auth` conventions.
 - Routes are TanStack `createFileRoute('/exact/path')({ server: { handlers: { GET/POST } } })`. Handlers receive `{ request, params }` and return a `Response`.
-- Image validation is by magic bytes via `validateImageBuffer` from `@/lib/slice-it/upload-validation` (it has its own 10 MB ceiling; enforce the 5 MB feed cap BEFORE calling it, exactly like `app/routes/api/profile/avatar.ts`).
+- Image validation is by magic bytes via `validateImageBuffer` from `@features/slice-it/engine/upload-validation` (it has its own 10 MB ceiling; enforce the 5 MB feed cap BEFORE calling it, exactly like `app/routes/api/profile/avatar.ts`).
 - Feed limits: **max 4 images per post**, **max 5 MB per image**. Allowed types: PNG, JPEG, GIF, WebP.
 - Soft-deleted posts (`RMHark.deletedAt`) keep their objects; cleanup is a deferred future sweeper, NOT in this plan.
 
@@ -672,7 +672,7 @@ git commit -m "feat(feed): add imageUrls to RMHark model, schema, and FeedItem"
 
 **Files:**
 - Create: `app/routes/api/rmharks/image.ts`
-- Modify: `lib/slice-it/upload-validation.ts` (export `detectImageExt`)
+- Modify: `features/slice-it/engine/upload-validation.ts` (export `detectImageExt`)
 - Test: `lib/__tests__/detect-image-ext.test.ts`
 
 **Interfaces:**
@@ -685,7 +685,7 @@ git commit -m "feat(feed): add imageUrls to RMHark model, schema, and FeedItem"
 ```ts
 // lib/__tests__/detect-image-ext.test.ts
 import { describe, it, expect } from "vitest";
-import { detectImageExt } from "@/lib/slice-it/upload-validation";
+import { detectImageExt } from "@features/slice-it/engine/upload-validation";
 
 describe("detectImageExt", () => {
   it("detects PNG by magic bytes", () => {
@@ -709,7 +709,7 @@ describe("detectImageExt", () => {
 Run: `node_modules/.bin/vitest run lib/__tests__/detect-image-ext.test.ts`
 Expected: FAIL — `detectImageExt` is not exported.
 
-- [ ] **Step 3: Add `detectImageExt` to `lib/slice-it/upload-validation.ts`**
+- [ ] **Step 3: Add `detectImageExt` to `features/slice-it/engine/upload-validation.ts`**
 
 Append this export (it reuses the same signatures already defined in the file):
 
@@ -741,7 +741,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import {
   validateImageBuffer,
   detectImageExt,
-} from "@/lib/slice-it/upload-validation";
+} from "@features/slice-it/engine/upload-validation";
 import { putObject } from "@/lib/storage/s3.server";
 import { feedImageKey, feedImageUrl, contentTypeForFilename } from "@/lib/storage/keys";
 
@@ -825,7 +825,7 @@ Expected: prints `no type errors in new files`.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add app/routes/api/rmharks/image.ts lib/slice-it/upload-validation.ts lib/__tests__/detect-image-ext.test.ts
+git add app/routes/api/rmharks/image.ts features/slice-it/engine/upload-validation.ts lib/__tests__/detect-image-ext.test.ts
 git commit -m "feat(feed): POST /api/rmharks/image upload route -> MinIO"
 ```
 

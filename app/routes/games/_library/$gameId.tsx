@@ -1,8 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { hueFromString } from '@/lib/builds/curated';
 import { getLibraryExtras } from '@/lib/games/detail.server';
 import { getAlsoPlayed } from '@/lib/games/store.server';

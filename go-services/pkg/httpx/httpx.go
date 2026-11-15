@@ -1,8 +1,7 @@
 // Package httpx holds the small HTTP building blocks every service shares:
 // a /health handler (the Compose + Helm probes from PR #121 hit this), a
 // graceful-shutdown runner wired to SIGINT/SIGTERM (matching the Node
-// services' shutdown hooks), and helpers to pull the Better Auth token out of
-// a request (cookie or Authorization header).
+// services' shutdown hooks) and a JSON writer.
 package httpx
 
 import (
@@ -12,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -44,26 +42,6 @@ func WriteJSON(w http.ResponseWriter, status int, body any) {
 	_ = json.NewEncoder(w).Encode(body)
 }
 
-// SessionToken extracts a Better Auth session token from a request. It checks,
-// in order: the Authorization: Bearer header, then the Better Auth cookie
-// (better-auth.session_token, optionally __Secure- prefixed). The cookie value
-// is URL-style "<token>.<signature>"; Better Auth validates against the part
-// before the dot, which is what the "session".token column stores.
-func SessionToken(r *http.Request) string {
-	if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
-		return strings.TrimSpace(strings.TrimPrefix(h, "Bearer "))
-	}
-	for _, name := range []string{"better-auth.session_token", "__Secure-better-auth.session_token"} {
-		if c, err := r.Cookie(name); err == nil && c.Value != "" {
-			if i := strings.IndexByte(c.Value, '.'); i > 0 {
-				return c.Value[:i]
-			}
-			return c.Value
-		}
-	}
-	return ""
-}
-
 // Server wraps http.Server with a graceful Run helper.
 type Server struct {
 	*http.Server
@@ -84,7 +62,7 @@ func NewServer(addr string, h http.Handler, logger *log.Logger) *Server {
 
 // Run starts the server and blocks until SIGINT/SIGTERM, then drains
 // connections within the grace period. This is the Go analog of the Node
-// services' SIGTERM handlers (e.g. the discord-bot's 90s grace).
+// services' SIGTERM handlers (e.g. the jobs worker's 90s grace).
 func (s *Server) Run(grace time.Duration) error {
 	errc := make(chan error, 1)
 	go func() {
@@ -119,17 +97,4 @@ func WaitForSignal() os.Signal {
 // wrapper equivalent of the WaitForSignal pattern.
 func SignalContext() (context.Context, context.CancelFunc) {
 	return signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-}
-
-// ServeMetrics starts a background /health + /metrics server for a standalone
-// worker. A bind failure is fatal (an unprobeable pod is never restarted).
-func ServeMetrics(addr, service string, h http.Handler, logger *log.Logger) {
-	go func() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/health", Health(service, nil))
-		mux.Handle("/metrics", h)
-		if err := http.ListenAndServe(addr, mux); err != nil {
-			logger.Fatal("metrics server", "error", err)
-		}
-	}()
 }

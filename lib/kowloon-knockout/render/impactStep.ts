@@ -6,8 +6,23 @@
 // against a bus that does not take it yet.
 import type { ImpactBus } from './impact';
 
-type SteppableBus = { step(dt: number, now?: number): void };
+type SteppableBus =
+  {
+    step(
+      dt: number,
+      now?: number,
+    ): void;
+  };
 
-export function stepBus(bus: ImpactBus, dt: number, now: number): void {
-    (bus as unknown as SteppableBus).step(dt, now);
+export function stepBus(
+  bus: ImpactBus,
+  dt: number,
+  now: number,
+): void {
+  (
+    bus as unknown as SteppableBus
+  ).step(
+    dt,
+    now,
+  );
 }

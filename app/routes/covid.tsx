@@ -4,7 +4,7 @@ import covidCss from '@/components/covid/covid.css?url';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 // Playfair Display (uprights site-wide, italics here) and Great Vibes, self-hosted
 // with `font-display: optional` (app/fonts/); the upright Latin file — the
-// headlines — preloaded. Inter is the site's own. See lib/fonts/self-hosted.ts.
+// headlines — preloaded. Geist is the site's own. See lib/fonts/self-hosted.ts.
 import covidFontsCss from '@/app/fonts/covid.css?url';
 import playfairLatin from '@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2?url';
 import { preloadFont } from '@/lib/fonts/self-hosted';

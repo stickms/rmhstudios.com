@@ -30,6 +30,7 @@ export const seriesCreateSchema = z.object({
 });
 export const seriesUpdateSchema = seriesCreateSchema.partial();
 export const seriesAddPostSchema = z.object({ postId: z.string().min(1).max(64) });
+export const seriesReorderBody = z.object({ direction: z.enum(['up', 'down']) });
 export const seriesMoveSchema = z.object({
   postId: z.string().min(1).max(64),
   direction: z.enum(['up', 'down']),

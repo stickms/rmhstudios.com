@@ -21,7 +21,6 @@ import {
   CloudUpload,
   Disc3,
   FileText,
-  Layers,
   LayoutGrid,
   ListVideo,
   Newspaper,
@@ -29,7 +28,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type LiquidTab } from '@/components/ui/liquid-tabs';
+import { type TabItem } from '@/components/ui/tabs';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { SearchField } from '@/components/ui/search-field';
 import { Button } from '@/components/ui/button';
@@ -43,6 +42,7 @@ import { getRequestSession } from '@/lib/auth-session.server';
 import { getAllPosts, type Post } from '@/lib/blog';
 import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
+import { BookLeaves } from '@/components/library/BookLeaves';
 import { LibraryReadingMount } from '@/components/reading/LibraryReadingMount';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -60,6 +60,13 @@ import { BlurImage } from '@/components/ui/BlurImage';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { LibraryStyles } from '@/components/library/LibraryStyles';
 import type { CollectionView } from '@/lib/library/collections';
+import { api } from '@/lib/contract/client';
+import { listLibraryCollectionsApi } from '@/lib/library/collections.contract';
+import {
+  adminLibraryListApi,
+  adminLibraryMigrateApi,
+  adminLibraryReorderApi,
+} from '@/lib/library/admin-library.contract';
 
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
   books: await listAllBooks(),
@@ -98,12 +105,12 @@ const fetchPlaylists = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 // The library grew past a comfortable single scroll (reads + albums +
-// collections + books + playlists). A sticky category navigator filters to one
+// books with their collections + playlists). A sticky category navigator filters to one
 // section; the active category is mirrored into `?view=` so deep links (e.g.
 // the /playlists redirect → /library?view=playlists) land on the right section.
 // The section used to be "Music" (`?view=music`), named for the retired
 // listening-party app; that old link still lands on the playlists.
-const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'collections', 'books', 'playlists'] as const;
+const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'books', 'playlists'] as const;
 type LibraryView = (typeof LIBRARY_VIEWS)[number];
 
 // useLayoutEffect warns during SSR; the scroll settle below only ever has work
@@ -121,7 +128,13 @@ export const Route = createFileRoute('/_site/library/')({
     links: [buildCanonical('/library')],
   }),
   validateSearch: (search: Record<string, unknown>): { view?: LibraryView } => {
-    const view = search.view === 'music' ? 'playlists' : search.view;
+    // Retired names: `music` became the playlists; `collections` now lives at the top of Books.
+    const view =
+      search.view === 'music'
+        ? 'playlists'
+        : search.view === 'collections'
+          ? 'books'
+          : search.view;
     return LIBRARY_VIEWS.includes(view as LibraryView) ? { view: view as LibraryView } : {};
   },
   // perf audit §4.2: the server fns were awaited sequentially — serial HTTP
@@ -301,13 +314,10 @@ function Library() {
   const refresh = useMemo(
     () => async () => {
       if (isAdmin) {
-        const res = await fetch('/api/admin/library').catch(() => null);
-        if (res?.ok) {
-          const data = await res.json().catch(() => null);
-          if (data?.books) {
-            setBooks(data.books as LibraryBook[]);
-            return;
-          }
+        const data = await api(adminLibraryListApi).catch(() => null);
+        if (data?.books) {
+          setBooks(data.books);
+          return;
         }
       }
       const data = await fetchBooks().catch(() => null);
@@ -326,10 +336,8 @@ function Library() {
   // can hide books that already live in a collection, and stay in sync after edits.
   const refreshCollections = useMemo(
     () => async () => {
-      const res = await fetch('/api/library/collections').catch(() => null);
-      if (!res?.ok) return;
-      const data = await res.json().catch(() => null);
-      if (data?.collections) setCollections(data.collections as CollectionView[]);
+      const data = await api(listLibraryCollectionsApi, { retries: 0 }).catch(() => null);
+      if (data?.collections) setCollections(data.collections);
     },
     [],
   );
@@ -363,12 +371,11 @@ function Library() {
     setBooks((prev) =>
       prev.map((b) => (b.id && pos.has(b.id) ? { ...b, position: pos.get(b.id) } : b)),
     );
-    const res = await fetch('/api/admin/library/reorder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: orderedIds }),
-    }).catch(() => null);
-    if (!res?.ok) void refresh(); // resync on failure
+    const ok = await api(adminLibraryReorderApi, { body: { ids: orderedIds } }).then(
+      () => true,
+      () => false,
+    );
+    if (!ok) void refresh(); // resync on failure
   }
 
   // Build the combined id order after replacing `section` with `nextManaged`.
@@ -406,23 +413,20 @@ function Library() {
 
   async function runMigration() {
     setMigrating(true);
-    const res = await fetch('/api/admin/library/migrate', { method: 'POST' }).catch(() => null);
+    const summary = await api(adminLibraryMigrateApi).catch(() => null);
     setMigrating(false);
-    if (res?.ok) {
-      const summary = await res.json().catch(() => null);
-      if (summary) {
-        const base = t('migrate-done', {
-          migrated: summary.migrated,
-          skipped: summary.skipped,
-          failed: summary.failed,
-          defaultValue: 'Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.',
-        });
-        const reasons =
-          Array.isArray(summary.errors) && summary.errors.length
-            ? `\n\n${summary.errors.join('\n')}`
-            : '';
-        window.alert(base + reasons);
-      }
+    if (summary) {
+      const base = t('migrate-done', {
+        migrated: summary.migrated,
+        skipped: summary.skipped,
+        failed: summary.failed,
+        defaultValue: 'Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.',
+      });
+      const reasons =
+        Array.isArray(summary.errors) && summary.errors.length
+          ? `\n\n${summary.errors.join('\n')}`
+          : '';
+      window.alert(base + reasons);
       void refresh();
     }
   }
@@ -452,7 +456,7 @@ function Library() {
           // `.lib-upload__open` pill whose label collapsed below 640px, which left
           // an unlabelled upload glyph alone on its own row under the lede.
           session.data ? (
-            <Button variant="outline" size="sm" onClick={() => setUploadOpen(true)}>
+            <Button variant="default" size="sm" onClick={() => setUploadOpen(true)}>
               <Upload className="size-4" aria-hidden="true" />
               {t('upload-button', { defaultValue: 'Add a book' })}
             </Button>
@@ -495,16 +499,11 @@ function Library() {
                   icon: ListVideo,
                 },
                 {
-                  id: 'collections',
-                  label: t('cat-collections', { defaultValue: 'Collections' }),
-                  icon: Layers,
-                },
-                {
                   id: 'reads',
                   label: t('cat-reads', { defaultValue: 'Reads' }),
                   icon: Newspaper,
                 },
-              ] as LiquidTab[]
+              ] as TabItem[]
             }
             value={view}
             onChange={(next) => setView(next as LibraryView)}
@@ -551,7 +550,7 @@ function Library() {
 
               {shows('albums') && <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />}
 
-              {shows('collections') && (
+              {shows('books') && (
                 <LibraryCollections
                   books={books}
                   collections={collections}
@@ -564,7 +563,7 @@ function Library() {
               )}
 
               {shows('playlists') && (
-                <section className="lib__section lib__section--catalog lib__section--playlists glass-fill lib-section-shell">
+                <section className="lib__section lib__section--catalog lib__section--playlists relative lib-section-shell">
                   <div className="lib__section-head">
                     <h2 className="lib__section-title">
                       {t('section-playlists', { defaultValue: 'Playlists' })}
@@ -606,7 +605,7 @@ function Library() {
                     }
                     action={
                       query ? (
-                        <Button variant="outline" onClick={() => setQuery('')}>
+                        <Button variant="default" onClick={() => setQuery('')}>
                           {t('clear-search', { defaultValue: 'Clear search' })}
                         </Button>
                       ) : undefined
@@ -728,7 +727,7 @@ function Section({
       : undefined;
 
   return (
-    <section className="lib__section lib__section--catalog glass-fill lib-section-shell">
+    <section className="lib__section lib__section--catalog relative lib-section-shell">
       <div className="lib__section-head">
         <h2 className="lib__section-title">{title}</h2>
         <span className="lib__section-count">
@@ -824,7 +823,7 @@ function BookSpine({
       <Link
         to="/library/$slug"
         params={{ slug: book.slug }}
-        className="lib-book glass-fill glass-interactive lib-orbit-card"
+        className="lib-book surface-press lib-orbit-card"
         data-library-orbit=""
         style={style}
         draggable={dnd?.draggable ? false : undefined}
@@ -843,6 +842,7 @@ function BookSpine({
         <div className="lib-book__3d">
           <div className={`lib-book__cover ${book.coverUrl ? 'has-cover' : ''}`}>
             <span className="lib-book__edge" aria-hidden="true" />
+            <BookLeaves />
             {book.coverUrl ? (
               <BlurImage
                 src={book.coverUrl}

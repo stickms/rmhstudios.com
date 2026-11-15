@@ -8,36 +8,129 @@
  *
  * Loaded on first open (three.js and the catalog are not part of the game bundle's first load).
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { useCatalog } from '@/lib/tf2-loadout/use-catalog';
-import { useHudContext, useHudState } from '../use-hud';
+import {
+  useHudContext,
+  useHudState,
+} from '../use-hud';
 import LoadoutScreen from '../menus/LoadoutScreen';
 import { useMenuSource } from '../menus/use-menu-source';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
-export default function LoadoutPauseView({ onClose }: { onClose: () => void }) {
-  const { t } = useTranslation('c-tf2-game');
-  const cat = useCatalog();
-  const { store } = useHudContext();
-  const state = useHudState();
-  const source = useMenuSource('tf2');
-  if (cat.status === 'loading') {
+export default function LoadoutPauseView({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-tf2-game',
+    );
+  const cat =
+    useCatalog();
+  const {
+    store,
+  } =
+    useHudContext();
+  const state =
+    useHudState();
+  const source =
+    useMenuSource(
+      'tf2',
+    );
+  const arrival =
+    useArrival(
+      cat.status !==
+        'loading',
+    );
+  if (
+    cat.status ===
+    'loading'
+  ) {
     return (
-      <p role="status" className="tf2m-loadout-note">
-        {t('loadout_catalog_loading', { defaultValue: 'Loading the item catalog…' })}
+      <p
+        role="status"
+        className="tf2m-loadout-note"
+      >
+        {t(
+          'loadout_catalog_loading',
+          {
+            defaultValue:
+              'Loading the item catalog…',
+          },
+        )}
       </p>
     );
   }
-  if (cat.status === 'error') {
+  if (
+    cat.status ===
+    'error'
+  ) {
     return (
-      <p role="alert" className="tf2m-loadout-note">
-        {t('loadout_catalog_error', { defaultValue: 'Could not load the item catalog.' })}{' '}
-        <button type="button" className="inline-flex items-center underline pointer-coarse:min-h-11 pointer-coarse:min-w-11" onClick={cat.retry}>
-          {t('loadout_retry', { defaultValue: 'Retry' })}
+      <p
+        role="alert"
+        className={cn(
+          'tf2m-loadout-note',
+          arrival,
+        )}
+      >
+        {t(
+          'loadout_catalog_error',
+          {
+            defaultValue:
+              'Could not load the item catalog.',
+          },
+        )}{' '}
+        <button
+          type="button"
+          className="inline-flex items-center underline pointer-coarse:min-h-11 pointer-coarse:min-w-11"
+          onClick={
+            cat.retry
+          }
+        >
+          {t(
+            'loadout_retry',
+            {
+              defaultValue:
+                'Retry',
+            },
+          )}
         </button>
       </p>
     );
   }
-  return <LoadoutScreen idx={cat.index} match={{ store, state }} source={source} onClose={onClose} layer />;
+  const screen =
+    (
+      <LoadoutScreen
+        idx={
+          cat.index
+        }
+        match={{
+          store,
+          state,
+        }}
+        source={
+          source
+        }
+        onClose={
+          onClose
+        }
+        layer
+      />
+    );
+  // It replaces the catalog wait: a box-less wrapper fades it in (M9).
+  return arrival ? (
+    <div className="arrive-group">
+      {
+        screen
+      }
+    </div>
+  ) : (
+    screen
+  );
 }

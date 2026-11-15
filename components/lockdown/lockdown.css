@@ -4,7 +4,7 @@
    utility cannot say: the skip link and the typography of the document body.
 
    Everything is a --site-* token, so every theme — including High contrast and
-   the reduced-transparency fallback, where `.glass-pane` collapses to the
+   the reduced-transparency fallback, where `.surface-panel` collapses to the
    opaque surface — keeps the ink/surface pairing. Nothing here is hard-coded.
 
    Body rules live in `@layer components` (below Tailwind's `utilities` layer)

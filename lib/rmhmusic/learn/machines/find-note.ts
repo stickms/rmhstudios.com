@@ -55,53 +55,173 @@ export interface Target {
 }
 
 export type Answer =
-  | { kind: 'position'; string: number; fret: number }
+  | {
+      kind: 'position';
+      string: number;
+      fret: number;
+    }
   /** `tapped`: from the on-screen piano rather than played (only the wording differs). */
-  | { kind: 'midi'; midi: number; tapped?: boolean };
+  | {
+      kind: 'midi';
+      midi: number;
+      tapped?: boolean;
+    };
 
-export type State = SessionState<Target, Answer>;
-export type Event = SessionEvent<Answer>;
-export type Effect = SessionEffect;
+export type State =
+  SessionState<
+    Target,
+    Answer
+  >;
+export type Event =
+  SessionEvent<Answer>;
+export type Effect =
+  SessionEffect;
 
 /** The lessons the note finder runs (their `LessonMode`). */
-export type FindNoteMode = 'keyboard-map' | 'fretboard';
+export type FindNoteMode =
+  | 'keyboard-map'
+  | 'fretboard';
 
 /** The pitch an answer sounds, or null for a place that is not on the board. */
-export function answerMidi(answer: Answer): number | null {
-  if (answer.kind === 'midi') return Number.isFinite(answer.midi) ? answer.midi : null;
-  return isPosition(answer.string, answer.fret) ? fretMidi(answer.string, answer.fret) : null;
+export function answerMidi(
+  answer: Answer,
+):
+  | number
+  | null {
+  if (
+    answer.kind ===
+    'midi'
+  )
+    return Number.isFinite(
+      answer.midi,
+    )
+      ? answer.midi
+      : null;
+  return isPosition(
+    answer.string,
+    answer.fret,
+  )
+    ? fretMidi(
+        answer.string,
+        answer.fret,
+      )
+    : null;
 }
 
 /** Whether `answer` sounds `target`. */
-export function isRight(target: Target, answer: Answer): boolean {
-  const midi = answerMidi(answer);
-  return midi !== null && midi === target.midi;
+export function isRight(
+  target: Target,
+  answer: Answer,
+): boolean {
+  const midi =
+    answerMidi(
+      answer,
+    );
+  return (
+    midi !==
+      null &&
+    midi ===
+      target.midi
+  );
 }
 
-export const step = sessionStep<Target, Answer>(isRight);
+export const step =
+  sessionStep<
+    Target,
+    Answer
+  >(
+    isRight,
+  );
 
-export function initial(targets: Target[]): State {
-  return sessionInitial(targets);
+export function initial(
+  targets: Target[],
+): State {
+  return sessionInitial(
+    targets,
+  );
 }
 
-export const findNoteMachine = { initial, step };
+export const findNoteMachine =
+  {
+    initial,
+    step,
+  };
 
-export function createFindNoteMachine(targets: Target[]): Machine<State, Event, Effect> {
-  return createSessionMachine(targets, step);
+export function createFindNoteMachine(
+  targets: Target[],
+): Machine<
+  State,
+  Event,
+  Effect
+> {
+  return createSessionMachine(
+    targets,
+    step,
+  );
 }
 
-const naturalsBetween = (low: number, high: number): number[] => {
-  const out: number[] = [];
-  for (let m = low; m <= high; m++) if ([0, 2, 4, 5, 7, 9, 11].includes(m % 12)) out.push(m);
-  return out;
-};
+const naturalsBetween =
+  (
+    low: number,
+    high: number,
+  ): number[] => {
+    const out: number[] =
+      [];
+    for (
+      let m =
+        low;
+      m <=
+      high;
+      m++
+    )
+      if (
+        [
+          0,
+          2,
+          4,
+          5,
+          7,
+          9,
+          11,
+        ].includes(
+          m %
+            12,
+        )
+      )
+        out.push(
+          m,
+        );
+    return out;
+  };
 
 /** The sounding pitches a lesson asks for, for the learner's instrument (see the header). */
-export function findNotePool(mode: FindNoteMode, instrument: Instrument): number[] {
-  if (instrument === 'guitar') {
-    return mode === 'keyboard-map' ? [...STANDARD_TUNING] : naturalsInFrets(FIRST_FRETS);
+export function findNotePool(
+  mode: FindNoteMode,
+  instrument: Instrument,
+): number[] {
+  if (
+    instrument ===
+    'guitar'
+  ) {
+    return mode ===
+      'keyboard-map'
+      ? [
+          ...STANDARD_TUNING,
+        ]
+      : naturalsInFrets(
+          FIRST_FRETS,
+        );
   }
-  return mode === 'keyboard-map' ? naturalsBetween(60, 71) : naturalsBetween(48, 71);
+  return mode ===
+    'keyboard-map'
+    ? naturalsBetween(
+        60,
+        71,
+      )
+    : naturalsBetween(
+        48,
+        71,
+      );
 }
 
 /**
@@ -109,14 +229,50 @@ export function findNotePool(mode: FindNoteMode, instrument: Instrument): number
  * (the open low E, sounding E2, sits on E3 under three ledger lines); piano at pitch, on the treble
  * staff from middle C up and on the bass staff below it.
  */
-export function targetStaff(midi: number, instrument: Instrument): { clef: Clef; midi: number } {
-  if (instrument === 'guitar') return { clef: 'treble', midi: writtenMidi(midi) };
-  return { clef: midi < 60 ? 'bass' : 'treble', midi };
+export function targetStaff(
+  midi: number,
+  instrument: Instrument,
+): {
+  clef: Clef;
+  midi: number;
+} {
+  if (
+    instrument ===
+    'guitar'
+  )
+    return {
+      clef: 'treble',
+      midi: writtenMidi(
+        midi,
+      ),
+    };
+  return {
+    clef:
+      midi <
+      60
+        ? 'bass'
+        : 'treble',
+    midi,
+  };
 }
 
 /** Deal `count` targets from `pool`: the whole pool before any repeat, never one twice in a row. */
-export function dealTargets(pool: readonly number[], count: number, rand: () => number): Target[] {
-  return dealRounds(pool, count, rand).map((midi) => ({ midi }));
+export function dealTargets(
+  pool: readonly number[],
+  count: number,
+  rand: () => number,
+): Target[] {
+  return dealRounds(
+    pool,
+    count,
+    rand,
+  ).map(
+    (
+      midi,
+    ) => ({
+      midi,
+    }),
+  );
 }
 
 /**
@@ -124,7 +280,23 @@ export function dealTargets(pool: readonly number[], count: number, rand: () => 
  * play anything, the computer keys only reach C4 to C5, and the on-screen input has nothing to
  * play (the board is the input).
  */
-export function playHintFits(input: 'screen' | 'keys' | 'mic' | 'midi', midi: number): boolean {
-  if (input === 'screen') return false;
-  return input === 'keys' ? inKeysRange(midi) : true;
+export function playHintFits(
+  input:
+    | 'screen'
+    | 'keys'
+    | 'mic'
+    | 'midi',
+  midi: number,
+): boolean {
+  if (
+    input ===
+    'screen'
+  )
+    return false;
+  return input ===
+    'keys'
+    ? inKeysRange(
+        midi,
+      )
+    : true;
 }

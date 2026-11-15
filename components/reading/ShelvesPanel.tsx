@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * L7 — a member's want-to-read / reading / read shelves, each public or private
  * (private by default). Moving a book to Read stamps its finish date, which is
@@ -9,12 +7,14 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { BookMarked, Globe, Lock } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Switch } from '@/components/ui/switch';
 import { useShelfLabels } from './useShelfLabels';
@@ -39,6 +39,7 @@ export default function ShelvesPanel() {
   const labels = useShelfLabels();
   const { data, isPending } = useMyShelves(!!session);
   const { set, remove, prefs } = useShelfMutations();
+  const arrival = useArrival(!isPending);
 
   if (!session) {
     return (
@@ -55,6 +56,7 @@ export default function ShelvesPanel() {
   if (entries.length === 0) {
     return (
       <EmptyState
+        className={arrival}
         icon={BookMarked}
         title={t('shelves-empty', { defaultValue: 'Your shelves are empty' })}
         description={t('shelves-empty-hint', {
@@ -62,7 +64,7 @@ export default function ShelvesPanel() {
         })}
         action={
           <Link to="/library">
-            <Button variant="accent" size="sm">
+            <Button variant="default" size="sm">
               {t('open-library', { defaultValue: 'Open the library' })}
             </Button>
           </Link>
@@ -80,7 +82,7 @@ export default function ShelvesPanel() {
   }
 
   return (
-    <div className="space-y-[var(--site-section-gap)]">
+    <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
       {SHELVES.map((shelf) => {
         const items = entries.filter((e) => e.shelf === shelf);
         const isPublic = data?.prefs[PREF_KEY[shelf]] ?? false;
@@ -88,15 +90,15 @@ export default function ShelvesPanel() {
         return (
           <section
             key={shelf}
-            className="glass-fill rounded-site p-5"
+            className="rounded-site p-5"
             aria-labelledby={`rf-shelf-${shelf}`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2
                 id={`rf-shelf-${shelf}`}
-                className="font-display text-lg font-semibold text-site-text"
+                className="text-lg font-semibold text-site-text"
               >
-                {labels[shelf]} <span className="text-site-text-dim">({items.length})</span>
+                {labels[shelf]} <span className="text-site-text-muted">({items.length})</span>
               </h2>
               <label
                 htmlFor={switchId}
@@ -137,7 +139,7 @@ export default function ShelvesPanel() {
                       {e.title}
                     </Link>
                     {e.finishedAt ? (
-                      <time dateTime={e.finishedAt} className="text-sm text-site-text-dim">
+                      <time dateTime={e.finishedAt} className="text-sm text-site-text-muted">
                         {new Date(e.finishedAt).toLocaleDateString()}
                       </time>
                     ) : null}

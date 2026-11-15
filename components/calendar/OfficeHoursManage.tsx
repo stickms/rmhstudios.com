@@ -1,11 +1,9 @@
-'use client';
-
 /** K2 — `/office-hours`: publish weekly windows and manage bookings. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { CalendarClock, Plus, Trash2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -22,6 +20,8 @@ import { SITE_URL } from '@/lib/seo';
 import type { OfficeHoursBookingView, OfficeHoursConfigView } from '@/lib/calendar/types';
 import { api, viewerTimeZone } from './api';
 import { BookingRow } from './BookingRow';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Draft extends OfficeHoursConfigView {
   /** Window times as HH:MM strings for the inputs. */
@@ -45,6 +45,7 @@ export default function OfficeHoursManage() {
   const [asGuest, setAsGuest] = useState<OfficeHoursBookingView[]>([]);
   const [saving, setSaving] = useState(false);
   const userId = session?.user?.id;
+  const arrival = useArrival(!isPending && !(userId && !draft));
 
   const load = async () => {
     const res = await api<{
@@ -86,6 +87,7 @@ export default function OfficeHoursManage() {
     return (
       <SignedOutPrompt
         icon={CalendarClock}
+        className={arrival}
         title={t('oh-manage-signed-out', { defaultValue: 'Sign in to offer office hours' })}
         callbackURL="/office-hours"
       />
@@ -136,10 +138,10 @@ export default function OfficeHoursManage() {
   const publicUrl = `${SITE_URL}/office-hours/${userId}`;
 
   return (
-    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
-      <form onSubmit={save} className="glass-pane space-y-4 rounded-site p-5">
+    <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', arrival)}>
+      <form onSubmit={save} className="space-y-4 rounded-site p-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-lg font-medium text-site-text">
+          <h2 className="text-lg font-medium text-site-text">
             {t('oh-manage-title', { defaultValue: 'Your office hours' })}
           </h2>
           <label className="flex items-center gap-2 text-sm text-site-text-muted">
@@ -200,7 +202,7 @@ export default function OfficeHoursManage() {
           <legend className="text-sm font-medium text-site-text">
             {t('oh-windows', { defaultValue: 'Weekly windows' })}
           </legend>
-          <p className="text-xs text-site-text-dim">
+          <p className="text-xs text-site-text-muted">
             {t('oh-windows-help', {
               defaultValue: 'Times are in your timezone ({{tz}}) and repeat every week.',
               tz: draft.tz,
@@ -257,7 +259,7 @@ export default function OfficeHoursManage() {
               </label>
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 size="icon"
                 aria-label={t('oh-remove-window', { defaultValue: 'Remove window' })}
                 onClick={() => set({ rows: draft.rows.filter((_, j) => j !== i) })}
@@ -269,7 +271,7 @@ export default function OfficeHoursManage() {
           {draft.rows.length < 14 && (
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={() =>
                 set({ rows: [...draft.rows, { weekday: 2, start: '18:00', end: '20:00' }] })
@@ -283,7 +285,7 @@ export default function OfficeHoursManage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CopyButton
             value={publicUrl}
-            variant="outline"
+            variant="default"
             size="sm"
             label={t('oh-copy-link', { defaultValue: 'Copy booking link' })}
           >
@@ -291,11 +293,11 @@ export default function OfficeHoursManage() {
           </CopyButton>
           <div className="flex gap-2">
             <Link to="/office-hours/$userId" params={{ userId }}>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="default">
                 {t('oh-preview', { defaultValue: 'View page' })}
               </Button>
             </Link>
-            <Button type="submit" variant="accent" disabled={saving}>
+            <Button type="submit" variant="default" disabled={saving}>
               {t('oh-save', { defaultValue: 'Save' })}
             </Button>
           </div>

@@ -1,3 +1,4 @@
+import { readJson, readString, removeKey, writeString } from '@/lib/core/persist';
 import {
   ReactNode,
   createContext,
@@ -6,14 +7,17 @@ import {
   useRef,
   useState,
   useCallback,
-  useMemo,
 } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { setSharedQueryClient } from '@/lib/query-client-ref';
-import { useLocation, useRouterState } from '@tanstack/react-router';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { useLocation, useRouter, useRouterState } from '@tanstack/react-router';
 import { MotionConfig, LazyMotion } from 'framer-motion';
-import { Toaster } from 'sonner';
-import { authClient } from '@/lib/auth-client';
+import { ToastHost } from '@/components/ui/toast-host';
+import {
+  SessionCtx,
+  useEffectiveSession,
+  useLiveSession,
+  type CachedSessionUser,
+} from '@/components/session/session-context';
 import {
   useThemeStore,
   SITE_STYLES,
@@ -35,34 +39,20 @@ import {
   READABLE_FONT_KEY,
   CUSTOM_ACCENT_KEY,
   COLOR_VISION_KEY,
-  NAV_TRANSITION_KEY,
-  DEFAULT_NAV_TRANSITION,
-  ALWAYS_EVERT_GLOBE_KEY,
-  EVERSION_LEVEL_KEY,
-  DEFAULT_EVERSION_LEVEL,
-  isEversionLevel,
-  isNavTransition,
   isColorVisionMode,
   applyColorVision,
   JELLY_MOTION_KEY,
   DEFAULT_JELLY_MOTION,
   isJellyMotion,
   applyJellyMotion,
-  ELECTRIC_ARCS_KEY,
-  DEFAULT_ELECTRIC_ARCS,
-  isElectricArcs,
-  applyElectricArcs,
 } from '@/lib/appearance/prefs';
 import { useSpatialParallax } from '@/hooks/useSpatialParallax';
-import { useLiquidInteractions } from '@/hooks/useLiquidInteractions';
 import { useSoftRenderSettle } from '@/hooks/useSoftRenderSettle';
-import { isNativeMaterialRoute, syncNativeMaterialClass } from '@/lib/native-material-routes';
-import { useLiquidBackground } from '@/hooks/useLiquidBackground';
+import { syncNativeMaterialClass } from '@/lib/native-material-routes';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
 import { applyHtmlLangDir } from '@/lib/i18n/dom';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { isAppThemeRoute } from '@/lib/prepaint/theme-routes';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
 import { CallMount } from '@/components/call/CallMount';
@@ -81,133 +71,18 @@ import { recoverViewTransition } from '@/lib/view-transition';
 import { AppTierContext } from '@/components/ui/app-tier-context';
 import { installScrollbarReveal } from '@/lib/scrollbar-reveal';
 import { installSwapReveal } from '@/lib/swap-reveal';
-import { isRetryable, maxRetries, retryDelayMs } from '@/lib/http';
+import { HttpError } from '@/lib/http';
+import {
+  getAppearancePrefsApi,
+  setAppearancePrefsApi,
+} from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
+import { claimReferralApi } from '@/lib/referrals.contract';
+import { getMyProfileDisplayApi } from '@/lib/profile/profile-extras.contract';
 
-// perf audit §4.3: build the QueryClient PER component instance (via useState
-// below), not once at module scope. A module-scope client is shared by every
-// concurrent SSR request on the server — it accumulates entries (gcTime holds
-// them 10 min) across all users and is a latent cross-request cache-bleed
-// hazard. useState(() => makeQueryClient()) gives a fresh client per server
-// request while staying stable across client re-renders (the standard TanStack
-// SSR pattern).
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60_000, // 1 minute — serve cached data before refetching
-        gcTime: 10 * 60_000, // keep unused data 10 min so back-nav doesn't refetch
-        // Retry only what retrying can fix — a dropped connection, a timeout, a
-        // 429 or a 5xx — never a 4xx the user needs to see now. One more attempt
-        // on a 2G-class link, exponential backoff with jitter, and a server's
-        // Retry-After honoured (lib/http). Offline, React Query's default
-        // `networkMode: 'online'` pauses queries and resumes them on reconnect.
-        retry: (failureCount, error) => failureCount < maxRetries() && isRetryable(error),
-        retryDelay: (attempt, error) => retryDelayMs(attempt, error),
-        // Slow-WiFi friendly: don't re-hit the network just because the user
-        // tab-switched. Reconnects still revalidate stale data.
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: true,
-      },
-    },
-  });
-}
-
-/* ------------------------------------------------------------------ */
-/*  Session context – single useSession() call shared across the app  */
-/* ------------------------------------------------------------------ */
-type SessionCtxValue = ReturnType<typeof authClient.useSession>;
-
-const SessionCtx = createContext<SessionCtxValue | null>(null);
-
-/* ------------------------------------------------------------------ */
-/*  Persisted session cache                                            */
-/*                                                                     */
-/*  better-auth's useSession() starts out { data: null, isPending:    */
-/*  true } on every fresh load and only resolves after a network      */
-/*  round-trip — which makes the shell flash "signed out" for a       */
-/*  moment. We persist the last-known user to localStorage and seed    */
-/*  the context with it so the signed-in UI shows immediately, then    */
-/*  let the live session take over (and self-heal if it's stale).     */
-/*                                                                     */
-/*  Only display fields are stored — never a token. This cache is a   */
-/*  hint for rendering the shell, never proof of anything: every       */
-/*  privileged read is authorized server-side against the session      */
-/*  cookie, so a hand-edited entry buys nothing but a wrong avatar     */
-/*  until the live session corrects it.                                */
-/*                                                                     */
-/*  It has nothing to offer a SIGNED-OUT visitor — there is no user    */
-/*  to remember — which is why their pending state is answered from    */
-/*  the server's own lookup instead (see `effectiveSession`).          */
-/* ------------------------------------------------------------------ */
-const CACHED_USER_KEY = 'rmh-auth-user';
-
-type CachedSessionUser = {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-  handle?: string | null;
-  username?: string | null;
-  isAdmin?: boolean;
-  isVerified?: boolean;
-  tier?: string | null;
-};
-
-function readCachedUser(): CachedSessionUser | null {
-  try {
-    const raw = localStorage.getItem(CACHED_USER_KEY);
-    return raw ? (JSON.parse(raw) as CachedSessionUser) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCachedUser(user: CachedSessionUser | null) {
-  try {
-    if (user) localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
-    else localStorage.removeItem(CACHED_USER_KEY);
-  } catch {
-    // ignore (private mode / storage disabled)
-  }
-}
-
-/**
- * `localStorage` for the theme hydrate/persist effects below, which must never throw: storage
- * that is full, disabled, or blocked outright (Safari with "Block all cookies" throws on any
- * access) once crashed the whole provider tree into the error page on every route. A failed
- * read is `null` (the pre-paint script's defaults stand); a failed write is dropped and the
- * DOM still updates, so a choice holds for the visit.
- */
-export const safeStorage = {
-  getItem(key: string): string | null {
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  },
-  setItem(key: string, value: string): void {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      /* dropped: see above */
-    }
-  },
-  removeItem(key: string): void {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* dropped: see above */
-    }
-  },
-};
-
-/** Use this instead of authClient.useSession() in navigation/shell components. */
-export function useSession() {
-  const ctx = useContext(SessionCtx);
-  if (!ctx) return { data: null as null, isPending: true };
-  return { data: ctx.data, isPending: ctx.isPending };
-}
+// The session context, its persisted last-known user and the seeding logic live in
+// a leaf so a separately built island can provide the same context (redesign B1).
+export { useSession } from '@/components/session/session-context';
 
 /* ------------------------------------------------------------------ */
 /*  Resolved user display – fetches custom image/name from profile    */
@@ -276,68 +151,11 @@ const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => m
 // derived from SITE_STYLES, so the runtime and the no-flash inline script share
 // one source.
 
-/**
- * Routes where the site-wide theme must NOT be applied (apps/games own their
- * styling). Exported so the no-flash inline themeScript in app/routes/__root.tsx
- * can apply the same gate before hydration — necessary because the default
- * style (Midnight, `style-graphite`) is a non-":root" theme applied as a class.
- */
-export const THEME_EXCLUDED_ROUTES = [
-  ...games.map((g) => g.href),
-  ...apps.filter((a) => !a.usesSiteTheme).map((a) => a.href),
-  // Unlisted full-screen pages that own their palette but are deliberately in
-  // no catalog, so nothing above can derive them. `/pf2ecal` is the PF2e
-  // board: monochrome, its own light/dark, registered in
-  // FULLSCREEN_ROUTE_SEGMENTS for the design gate — and, until it was listed
-  // here, painted a Daylight-white <html> underneath itself.
-  '/pf2ecal',
-  // The live activity dossier: Discord's palette, its own dark/light, and
-  // registered in FULLSCREEN_ROUTE_SEGMENTS for the design gate. Listed here
-  // for the same reason `/pf2ecal` is — without it the document paints a
-  // Daylight-white <html> under a page that has gone dark, which a desktop
-  // hides and every phone overscroll reveals.
-  '/sohumtracker',
-  // The games library: a literal Steam palette (flat, `--stm-*` in
-  // `components/steam/steam.css`), full page with its own top bar. Every path under
-  // it — `/games`, `/games/$gameId`, the community and profile pages — is the
-  // library, so one prefix covers the tree; a page left under `_site` with a
-  // `/games…` URL would need an entry in THEME_EXCLUDED_EXCEPTIONS.
-  '/games',
-  // Discord Activities — the gateway picker, RMHbox and Lights Out, each in
-  // Discord's own palette. Full-screen games like every other entry here, but in
-  // no catalog because they only make sense inside Discord's iframe. Unlisted,
-  // they were the one game tier that received the SITE theme: a Graphite or
-  // accent pick restyled the root after hydration, and `html:not(.app-route)`
-  // reserved a scrollbar gutter beside a page that never scrolls.
-  '/discord',
-].filter((href) => href.startsWith('/'));
-
-/**
- * `_site` pages whose URL happens to sit under an app's prefix, and which must
- * therefore keep the site theme.
- *
- * `/studio` is the DAW and owns its `--app-*` chrome; `/studio/themes` is an
- * ordinary `PageLayout` page that merely lives under that path. A bare
- * `startsWith` claimed it for the app tier, so the document painted the app's
- * near-black background while the suppressed style class left `--site-text` at
- * Daylight's `#000000` — a 1.07:1 `<h1>`, measured. The page was unreadable.
- */
-export const THEME_EXCLUDED_EXCEPTIONS = ['/studio/themes'];
-
-/**
- * Whether a pathname belongs to the app/game tier (no site theme, app chrome
- * background). Matched on **segment boundaries** so `/rmhcodex` could never be
- * claimed by `/rmhcode`, with the exceptions above winning outright.
- *
- * The no-flash `themeScript` in `app/routes/__root.tsx` reimplements this in ES5
- * because it runs before any bundle does; the two must agree, so change both.
- */
-export function isAppThemeRoute(pathname: string | undefined | null): boolean {
-  if (!pathname) return false;
-  const under = (base: string) => pathname === base || pathname.startsWith(`${base}/`);
-  if (THEME_EXCLUDED_EXCEPTIONS.some(under)) return false;
-  return THEME_EXCLUDED_ROUTES.some(under);
-}
+export {
+  THEME_EXCLUDED_ROUTES,
+  THEME_EXCLUDED_EXCEPTIONS,
+  isAppThemeRoute,
+} from '@/lib/prepaint/theme-routes';
 
 export function Providers({
   children,
@@ -346,15 +164,10 @@ export function Providers({
   locale = 'en',
   i18nResources = null,
 }: ProvidersProps) {
-  // Per-request/per-mount QueryClient (perf audit §4.3) — see makeQueryClient.
-  const [queryClient] = useState(makeQueryClient);
-  // Lets the globe eversion's AFTER readiness gate ask whether the destination still has queries
-  // loading (lib/query-client-ref.ts: a variable and a type, nothing to bundle).
-  useEffect(() => {
-    setSharedQueryClient(queryClient);
-    return () => setSharedQueryClient(null);
-  }, [queryClient]);
-  const session = authClient.useSession();
+  // The router's QueryClient (lib/query/make-query-client.ts): built once per SSR request and once
+  // per page load in getRouter(), so route loaders seed the same cache the components read.
+  const queryClient = useRouter().options.context.queryClient;
+  const session = useLiveSession();
   const style = useThemeStore((s) => s.style);
   const preview = useThemeStore((s) => s.preview);
   const accent = useThemeStore((s) => s.accent);
@@ -363,11 +176,7 @@ export function Providers({
   const readableFont = useThemeStore((s) => s.readableFont);
   const customAccent = useThemeStore((s) => s.customAccent);
   const colorVision = useThemeStore((s) => s.colorVision);
-  const navTransition = useThemeStore((s) => s.navTransition);
-  const alwaysEvertGlobe = useThemeStore((s) => s.alwaysEvertGlobe);
-  const eversionLevel = useThemeStore((s) => s.eversionLevel);
   const jellyMotion = useThemeStore((s) => s.jellyMotion);
-  const electricArcs = useThemeStore((s) => s.electricArcs);
   const userTheme = useThemeStore((s) => s.userTheme);
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
@@ -389,21 +198,13 @@ export function Providers({
   // at all on a page with no consumer for it. `pathname` re-runs that check.
   useSpatialParallax(pathname);
 
-  // The backdrop stays still; bounded material responses live on surfaces.
-  useLiquidBackground();
-  // Mounts the pointer variable (`--px` / `--py` for the CSS soft body and woken haze) and the lazy click arcs — see
-  // hooks/useLiquidInteractions.ts. The rest of the material is CSS.
-  // The TF2 HUD Editor is deliberately plain Team Fortress 2 — it installs none of the jelly.
-  useLiquidInteractions(!isNativeMaterialRoute(pathname));
   // The CSS-only material (the woken haze) has no install step to skip, so a native-material route is marked on <html>
   // instead and the material's rules are scoped off it. Stamped pre-paint by __root.tsx on a hard load; this keeps it
   // in step on client navigation and clears it on the way out.
   useEffect(() => syncNativeMaterialClass(document.documentElement, pathname), [pathname]);
-  // Remember whether this browser draws in software (the globe's CSS fallback, the games' glow); the material ignores it.
-  useSoftRenderSettle();
-
-  // The eversion state layer's input (globals.css §7.3): where each `data-evert` control turns inside out from
-  // (the pointer's entry, the finger, the exit) and when a press is down. Delegated, passive, no frame loop.
+  // Remember whether this browser draws in software (the games' canvas glow reads it). Not on a site-shell page: that
+  // page's one WebGL context is the chrome renderer's (Steel B3).
+  useSoftRenderSettle(pathname);
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
@@ -416,90 +217,9 @@ export function Providers({
     useLocaleStore.setState({ locale });
   }, [locale]);
 
-  // Seed the known user from the server-resolved session so the shell renders
-  // signed-in on the first paint (SSR) and the first client render — matching
-  // markup, no hydration mismatch, no flash. `initialUser` is authoritative
-  // for that first frame because the server read the actual session cookie; we
-  // only fall back to the persisted localStorage copy when the server didn't
-  // provide one (e.g. a client-only render path).
-  const [cachedUser, setCachedUser] = useState<CachedSessionUser | null>(initialUser);
-  useEffect(() => {
-    if (initialUser) return;
-    // The server resolving to NOBODY is an answer, not a gap. A stale copy in
-    // localStorage must not override it — that is a signed-out visitor watching
-    // the shell paint signed-in and then snap back a frame later. Drop the copy
-    // instead; the server just told us it is wrong.
-    if (sessionResolved) {
-      writeCachedUser(null);
-      return;
-    }
-    // Only when the server could NOT resolve (failed or timed out) is the
-    // persisted user the best guess available.
-    const stored = readCachedUser();
-    if (stored) setCachedUser(stored);
-  }, [initialUser, sessionResolved]);
-
-  // Persist the live session whenever it resolves (and clear it on sign-out).
-  const liveUser = session.data?.user;
-  useEffect(() => {
-    if (session.isPending) return;
-    if (liveUser) {
-      const snapshot: CachedSessionUser = {
-        id: liveUser.id,
-        name: liveUser.name,
-        email: liveUser.email,
-        image: liveUser.image,
-        handle: (liveUser as { handle?: string | null }).handle,
-        username: (liveUser as { username?: string | null }).username,
-        isAdmin: (liveUser as { isAdmin?: boolean }).isAdmin,
-        isVerified: (liveUser as { isVerified?: boolean }).isVerified,
-        tier: (liveUser as { tier?: string | null }).tier,
-      };
-      writeCachedUser(snapshot);
-      setCachedUser(snapshot);
-    } else {
-      writeCachedUser(null);
-      setCachedUser(null);
-    }
-  }, [session.isPending, liveUser]);
-
-  // Effective session handed to the rest of the app: while the live session is
-  // still loading, fall back to the persisted user so nothing flashes as
-  // signed-out. Once the real session resolves it always wins.
-  const effectiveSession = useMemo<SessionCtxValue>(() => {
-    if (session.isPending && cachedUser) {
-      return {
-        ...session,
-        isPending: false,
-        data: { user: cachedUser, session: null },
-      } as unknown as SessionCtxValue;
-    }
-    // The server read the cookie and found nobody, and we have never seen a
-    // live session. Signed-out is KNOWN from the first frame, so say so.
-    //
-    // Falling through to better-auth's raw state here is what made every
-    // signed-out visit start on a spinner: its `useSession()` begins
-    // `{ data: null, isPending: true }` and only settles after a network
-    // round-trip, so `isPending` stayed true for a visitor the SERVER had
-    // already answered for. Everything gated on it rendered its loading branch
-    // and then re-rendered — the feed composer painted its full-height
-    // signed-in placeholder and snapped to the short sign-in card a frame later.
-    //
-    // `!session.data` keeps this to the cold signed-out case: once a session
-    // has ever landed, a later refetch goes through `cachedUser` above instead
-    // of being reported as signed out.
-    if (sessionResolved && !initialUser && session.isPending && !session.data) {
-      return { ...session, isPending: false, data: null } as unknown as SessionCtxValue;
-    }
-    // Server couldn't resolve the session and we have no cached user: the
-    // answer is UNKNOWN. Report pending (not signed out) until the client
-    // session lands, so the shell shows a neutral placeholder instead of
-    // telling a signed-in visitor to sign in.
-    if (!sessionResolved && session.isPending && !cachedUser) {
-      return { ...session, isPending: true, data: null } as unknown as SessionCtxValue;
-    }
-    return session;
-  }, [session, cachedUser, sessionResolved, initialUser]);
+  // Seeded from the server-resolved user and the persisted last-known user, so nothing
+  // flashes signed-out (components/session/session-context.tsx).
+  const effectiveSession = useEffectiveSession(session, initialUser, sessionResolved);
 
   // Resolved user display data (custom image/name). Seed from the SSR-resolved
   // user so the current user's own avatar/name paint immediately from the loader
@@ -516,10 +236,9 @@ export function Providers({
       : null,
   );
   const fetchResolvedUser = useCallback(() => {
-    fetch('/api/profile/me')
-      .then((r) => (r.ok ? r.json() : null))
+    api(getMyProfileDisplayApi, { retries: 0 })
       .then((data) => {
-        if (data) setResolvedUser(data);
+        setResolvedUser(data);
       })
       .catch(() => {});
   }, []);
@@ -543,23 +262,17 @@ export function Providers({
   // so a flaky connection can retry on the next load.
   useEffect(() => {
     if (!userId) return;
-    let code: string | null;
-    try {
-      code = localStorage.getItem('rmh-ref');
-    } catch {
-      return;
-    }
+    const code = readString('rmh-ref');
     if (!code) return;
-    fetch('/api/referrals/claim', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ code }),
-    })
-      .then((res) => {
-        if (res.status !== 429) localStorage.removeItem('rmh-ref');
-      })
-      .catch(() => {});
+    api(claimReferralApi, { body: { code } })
+      .then(() => removeKey('rmh-ref'))
+      .catch((err: unknown) => {
+        // Any answer but 429 settles the code (claimed, already claimed, invalid);
+        // a dropped connection or a 429 keeps it for the next load.
+        if (err instanceof HttpError && err.status !== 429) {
+          removeKey('rmh-ref');
+        }
+      });
   }, [userId]);
 
   // A 404 the ROOT renders is a site page whatever its URL: `NotFound` is drawn
@@ -601,60 +314,46 @@ export function Providers({
   // falls back to the site default (DEFAULT_STYLE) and is rewritten so it
   // doesn't linger.
   useEffect(() => {
-    const stored = safeStorage.getItem('rmh-style');
+    const stored = readString('rmh-style');
     if (stored && SITE_STYLES.some((s) => s.id === stored)) {
       useThemeStore.getState().setStyle(stored as SiteStyle);
     } else if (stored) {
-      safeStorage.setItem('rmh-style', DEFAULT_STYLE);
+      writeString('rmh-style', DEFAULT_STYLE);
       useThemeStore.getState().setStyle(DEFAULT_STYLE);
     }
-    const storedAccent = safeStorage.getItem(ACCENT_STORAGE_KEY);
+    const storedAccent = readString(ACCENT_STORAGE_KEY);
     if (isAccentId(storedAccent)) {
       useThemeStore.getState().setAccent(storedAccent);
     }
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
-    const fs = Number(safeStorage.getItem(FONT_SCALE_KEY));
+    const fs = Number(readString(FONT_SCALE_KEY));
     if ([875, 1000, 1125, 1250].includes(fs)) st.setFontScale(fs);
-    if (safeStorage.getItem(DENSITY_KEY) === 'compact') st.setDensity('compact');
-    if (safeStorage.getItem(READABLE_FONT_KEY) === '1') st.setReadableFont(true);
-    const ca = safeStorage.getItem(CUSTOM_ACCENT_KEY);
+    if (readString(DENSITY_KEY) === 'compact') st.setDensity('compact');
+    if (readString(READABLE_FONT_KEY) === '1') st.setReadableFont(true);
+    const ca = readString(CUSTOM_ACCENT_KEY);
     if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
-    const cv = safeStorage.getItem(COLOR_VISION_KEY);
+    const cv = readString(COLOR_VISION_KEY);
     if (isColorVisionMode(cv)) st.setColorVision(cv);
-    const nt = safeStorage.getItem(NAV_TRANSITION_KEY);
-    if (isNavTransition(nt)) st.setNavTransition(nt);
-    if (safeStorage.getItem(ALWAYS_EVERT_GLOBE_KEY) === '1') st.setAlwaysEvertGlobe(true);
-    const el = safeStorage.getItem(EVERSION_LEVEL_KEY);
-    if (isEversionLevel(el)) st.setEversionLevel(el);
-    const jm = safeStorage.getItem(JELLY_MOTION_KEY);
+    const jm = readString(JELLY_MOTION_KEY);
     if (isJellyMotion(jm)) st.setJellyMotion(jm);
-    const ea = safeStorage.getItem(ELECTRIC_ARCS_KEY);
-    if (isElectricArcs(ea)) st.setElectricArcs(ea);
     // The globe cursor and its per-device settings were removed (2026-11-08): drop the stale key so devices do not keep
     // dead data. Nothing reads it any more. Safe to delete once every device that ever stored it has loaded the site.
-    try {
-      localStorage.removeItem('rmh-globe-cursor');
-    } catch {
-      /* storage blocked — nothing to clean */
-    }
+    removeKey('rmh-globe-cursor');
+    // The settings Steel retired (page eversion, always-evert, eversion level, electric arcs): drop their cached values.
+    for (const key of [
+      'rmh-nav-transition',
+      'rmh-eversion-level',
+      'rmh-always-evert-globe',
+      'rmh-electric-arcs',
+    ])
+      removeKey(key);
     // Marketplace user theme (§14): the no-flash script already painted it; hydrate
     // the store so the runtime effect keeps it applied and can clear it on removal.
-    try {
-      const raw = safeStorage.getItem(USER_THEME_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as AppliedUserTheme;
-        if (
-          parsed &&
-          typeof parsed.id === 'string' &&
-          parsed.vars &&
-          typeof parsed.bg === 'string'
-        ) {
-          st.setUserTheme(parsed);
-        }
-      }
-    } catch {
-      /* corrupt cache — ignore, the built-in theme shows through */
+    // A corrupt cache reads as null: the built-in theme shows through.
+    const parsed = readJson<AppliedUserTheme | null>(USER_THEME_KEY, null);
+    if (parsed && typeof parsed.id === 'string' && parsed.vars && typeof parsed.bg === 'string') {
+      st.setUserTheme(parsed);
     }
   }, []);
 
@@ -682,7 +381,7 @@ export function Providers({
       html.classList.add(`style-${activeStyle}`);
     }
     // Persist the COMMITTED style (not a transient preview).
-    safeStorage.setItem('rmh-style', style);
+    writeString('rmh-style', style);
 
     // Marketplace user theme (§14): a full v2 retint set inline over the built-in
     // cascade (a transient preview beats the committed one). Skipped on app/game
@@ -696,78 +395,64 @@ export function Providers({
       clearThemeTokens(html);
     }
     // Persist only the COMMITTED theme (not a transient preview) for the no-flash script.
-    if (userTheme) safeStorage.setItem(USER_THEME_KEY, JSON.stringify(userTheme));
-    else safeStorage.removeItem(USER_THEME_KEY);
+    if (userTheme) writeString(USER_THEME_KEY, JSON.stringify(userTheme));
+    else removeKey(USER_THEME_KEY);
 
     // Glass clarity is retired. Clear old device overrides, including during HMR;
     // OS transparency preferences and high contrast still apply in the material layer.
     html.classList.remove('reduce-transparency');
     html.style.removeProperty('--glass-user-blur');
     html.style.removeProperty('--glass-user-tint');
-    safeStorage.removeItem('rmh-glass-level');
-    safeStorage.removeItem('rmh-reduce-transparency');
-    safeStorage.removeItem('rmh-reduce-motion');
+    removeKey('rmh-glass-level');
+    removeKey('rmh-reduce-transparency');
+    removeKey('rmh-reduce-motion');
 
     // Accent override: apply on content pages; clear on app/game routes (they own
     // their palette) and when no accent is chosen. applyAccent no-ops safely for a
     // null/unknown id by clearing the tokens.
     applyAccent(html, isAppRoute ? null : accent);
-    if (isAccentId(accent)) safeStorage.setItem(ACCENT_STORAGE_KEY, accent);
-    else safeStorage.removeItem(ACCENT_STORAGE_KEY);
+    if (isAccentId(accent)) writeString(ACCENT_STORAGE_KEY, accent);
+    else removeKey(ACCENT_STORAGE_KEY);
 
     // ── Comfort suite (§13) ──────────────────────────────────────────────
     if (fontScale && fontScale !== 1000) {
       html.style.fontSize = `${fontScale / 10}%`;
-      safeStorage.setItem(FONT_SCALE_KEY, String(fontScale));
+      writeString(FONT_SCALE_KEY, String(fontScale));
     } else {
       html.style.removeProperty('font-size');
-      safeStorage.removeItem(FONT_SCALE_KEY);
+      removeKey(FONT_SCALE_KEY);
     }
     if (density === 'compact') {
       html.setAttribute('data-density', 'compact');
-      safeStorage.setItem(DENSITY_KEY, 'compact');
+      writeString(DENSITY_KEY, 'compact');
     } else {
       html.removeAttribute('data-density');
-      safeStorage.removeItem(DENSITY_KEY);
+      removeKey(DENSITY_KEY);
     }
     html.classList.toggle('readable-font', readableFont);
-    if (readableFont) safeStorage.setItem(READABLE_FONT_KEY, '1');
-    else safeStorage.removeItem(READABLE_FONT_KEY);
+    if (readableFont) writeString(READABLE_FONT_KEY, '1');
+    else removeKey(READABLE_FONT_KEY);
     // Colour-vision mode retints the semantic tokens via a data attribute the
     // theme cascade reads (see globals.css). Cached in localStorage so the
     // no-flash script in __root.tsx can apply it before first paint — without
     // that, a viewer who can't distinguish the default palette would see the
     // wrong status colours for a frame on every navigation.
     applyColorVision(html, colorVision);
-    if (colorVision !== 'none') safeStorage.setItem(COLOR_VISION_KEY, colorVision);
-    else safeStorage.removeItem(COLOR_VISION_KEY);
-    // Eversion transition choice: cache only (no DOM effect) so the controller can
-    // read it synchronously; the default is expressed by absence.
-    if (navTransition !== DEFAULT_NAV_TRANSITION)
-      safeStorage.setItem(NAV_TRANSITION_KEY, navTransition);
-    else safeStorage.removeItem(NAV_TRANSITION_KEY);
-    if (alwaysEvertGlobe) safeStorage.setItem(ALWAYS_EVERT_GLOBE_KEY, '1');
-    else safeStorage.removeItem(ALWAYS_EVERT_GLOBE_KEY);
-    if (eversionLevel !== DEFAULT_EVERSION_LEVEL)
-      safeStorage.setItem(EVERSION_LEVEL_KEY, eversionLevel);
-    else safeStorage.removeItem(EVERSION_LEVEL_KEY);
-    // Plasmatic Jelly (R8/R9): stamped on <html> for the jelly/arc runtimes and
-    // cached for the pre-paint script; both express the default by absence.
+    if (colorVision !== 'none') writeString(COLOR_VISION_KEY, colorVision);
+    else removeKey(COLOR_VISION_KEY);
+    // Globe motion: stamped on <html> for the globe and the games' ambient canvases and cached for the pre-paint
+    // script; the default is expressed by absence.
     applyJellyMotion(html, jellyMotion);
-    if (jellyMotion !== DEFAULT_JELLY_MOTION) safeStorage.setItem(JELLY_MOTION_KEY, jellyMotion);
-    else safeStorage.removeItem(JELLY_MOTION_KEY);
-    applyElectricArcs(html, electricArcs);
-    if (electricArcs !== DEFAULT_ELECTRIC_ARCS)
-      safeStorage.setItem(ELECTRIC_ARCS_KEY, electricArcs);
-    else safeStorage.removeItem(ELECTRIC_ARCS_KEY);
+    if (jellyMotion !== DEFAULT_JELLY_MOTION) writeString(JELLY_MOTION_KEY, jellyMotion);
+    else removeKey(JELLY_MOTION_KEY);
     // Custom accent (raw hex) overrides the preset accent applied just above.
     if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
       const { hex, fg } = ensureReadableAccent(customAccent);
       for (const [name, val] of Object.entries(accentCssVars(hex, fg)))
         html.style.setProperty(name, val);
-      safeStorage.setItem(CUSTOM_ACCENT_KEY, customAccent);
+      writeString(CUSTOM_ACCENT_KEY, customAccent);
     } else {
-      safeStorage.removeItem(CUSTOM_ACCENT_KEY);
+      removeKey(CUSTOM_ACCENT_KEY);
     }
 
     // Excluded app/game routes keep their own document background so the browser
@@ -809,11 +494,7 @@ export function Providers({
     readableFont,
     customAccent,
     colorVision,
-    navTransition,
-    alwaysEvertGlobe,
-    eversionLevel,
     jellyMotion,
-    electricArcs,
     userTheme,
     userThemePreview,
   ]);
@@ -832,12 +513,7 @@ export function Providers({
   // last-saved value so the change-watcher below never echoes it straight back.
   const saveAppearance = useCallback((next: { style: string; accent: string | null }) => {
     lastSavedAppearanceRef.current = next;
-    fetch('/api/preferences/appearance', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(next),
-    }).catch((err) => {
+    api(setAppearancePrefsApi, { body: next }).catch((err) => {
       console.error('Appearance save failed:', err);
     });
   }, []);
@@ -852,81 +528,62 @@ export function Providers({
     // the account sync only reconciles across devices, so it can wait for idle.
     if (!idleReady) return;
     let cancelled = false;
-    fetch('/api/preferences/appearance', { credentials: 'include' })
-      .then((r) => {
+    api(getAppearancePrefsApi)
+      .catch((err: unknown) => {
         // A failed GET is not "no saved preferences" — it means the account's
         // appearance is unknown. Swallowing it silently is how a 500 on every
         // signed-in page load (a missing column, see the appearance migration)
         // went unnoticed while cross-device settings quietly stopped syncing.
-        if (!r.ok) {
-          if (r.status !== 401) {
-            console.error(`Appearance sync failed: ${r.status} ${r.statusText}`);
-          }
-          return null;
+        if (err instanceof HttpError && err.status !== 401) {
+          console.error(`Appearance sync failed: ${err.status}`);
         }
-        return r.json();
+        return null;
       })
-      .then(
-        (
-          remote: {
-            style: string | null;
-            accent: string | null;
-          } | null,
-        ) => {
-          if (cancelled || !remote) return;
-          const store = useThemeStore.getState();
-          // The account wins where it has a saved value; otherwise this device's
-          // current value is kept.
-          const nextStyle =
-            remote.style && SITE_STYLES.some((s) => s.id === remote.style)
-              ? (remote.style as SiteStyle)
-              : store.style;
-          const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
-          if (remote.style !== nextStyle || remote.accent !== nextAccent) {
-            // Server was missing a value this device has → seed the account with the
-            // merged result (also records it as last-saved).
-            saveAppearance({
-              style: nextStyle,
-              accent: nextAccent,
-            });
-          } else {
-            lastSavedAppearanceRef.current = {
-              style: nextStyle,
-              accent: nextAccent,
-            };
-          }
-          store.setStyle(nextStyle);
-          store.setAccent(nextAccent);
-          // Comfort suite (§13): apply account values on this device (account
-          // wins where set; the settings panel persists device changes).
-          const r = remote as typeof remote & {
-            fontScale?: number | null;
-            density?: string | null;
-            readableFont?: boolean | null;
-            customAccent?: string | null;
-            colorVision?: string | null;
-            navTransition?: string | null;
-            alwaysEvertGlobe?: boolean | null;
-            eversionLevel?: string | null;
-            jellyMotion?: string | null;
-            electricArcs?: string | null;
+      .then((remote) => {
+        if (cancelled || !remote) return;
+        const store = useThemeStore.getState();
+        // The account wins where it has a saved value; otherwise this device's
+        // current value is kept.
+        const nextStyle =
+          remote.style && SITE_STYLES.some((s) => s.id === remote.style)
+            ? (remote.style as SiteStyle)
+            : store.style;
+        const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
+        if (remote.style !== nextStyle || remote.accent !== nextAccent) {
+          // Server was missing a value this device has → seed the account with the
+          // merged result (also records it as last-saved).
+          saveAppearance({
+            style: nextStyle,
+            accent: nextAccent,
+          });
+        } else {
+          lastSavedAppearanceRef.current = {
+            style: nextStyle,
+            accent: nextAccent,
           };
-          if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
-            store.setFontScale(Number(r.fontScale));
-          if (r.density === 'compact' || r.density === 'cozy') store.setDensity(r.density);
-          if (typeof r.readableFont === 'boolean') store.setReadableFont(r.readableFont);
-          if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
-            store.setCustomAccent(r.customAccent);
-          if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
-          if (isNavTransition(r.navTransition)) store.setNavTransition(r.navTransition);
-          if (typeof r.alwaysEvertGlobe === 'boolean')
-            store.setAlwaysEvertGlobe(r.alwaysEvertGlobe);
-          if (isEversionLevel(r.eversionLevel)) store.setEversionLevel(r.eversionLevel);
-          if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);
-          if (isElectricArcs(r.electricArcs)) store.setElectricArcs(r.electricArcs);
-          appearanceSyncedRef.current = true;
-        },
-      )
+        }
+        store.setStyle(nextStyle);
+        store.setAccent(nextAccent);
+        // Comfort suite (§13): apply account values on this device (account
+        // wins where set; the settings panel persists device changes).
+        const r = remote as typeof remote & {
+          fontScale?: number | null;
+          density?: string | null;
+          readableFont?: boolean | null;
+          customAccent?: string | null;
+          colorVision?: string | null;
+          jellyMotion?: string | null;
+        };
+        if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
+          store.setFontScale(Number(r.fontScale));
+        if (r.density === 'compact' || r.density === 'cozy') store.setDensity(r.density);
+        if (typeof r.readableFont === 'boolean') store.setReadableFont(r.readableFont);
+        if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
+          store.setCustomAccent(r.customAccent);
+        if (isColorVisionMode(r.colorVision)) store.setColorVision(r.colorVision);
+        if (isJellyMotion(r.jellyMotion)) store.setJellyMotion(r.jellyMotion);
+        appearanceSyncedRef.current = true;
+      })
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -981,51 +638,7 @@ export function Providers({
                     </SilentErrorBoundary>
                   </ConfirmProvider>
                 </ResolvedUserCtx.Provider>
-                <Toaster
-                  theme={style === 'graphite' ? 'dark' : 'light'}
-                  position="bottom-left"
-                  // The bottom lane is SHARED, and sonner does not know that.
-                  //
-                  // Left to its defaults, sonner sits 16px off the bottom edge at
-                  // `z-index: 999999999` — above everything — and below 600px it
-                  // rewrites `bottom-left` to span the WHOLE bottom edge. That is
-                  // the hub orb's lane: the orb is
-                  // `bottom: calc(env(safe-area-inset-bottom) + var(--site-hub-orb-inset))`
-                  // and 60px tall, so on a 390px phone a toast covered it almost
-                  // entirely for its four-second life — and the orb is the site's
-                  // only navigation control on mobile. The same 16px also lands
-                  // inside the iOS home-indicator strip, so swipe-to-dismiss
-                  // fought the system home gesture, and a toast raised from inside
-                  // a bottom sheet covered the sheet's own confirm/cancel row.
-                  //
-                  // `--site-floating-reserve` is derived from the orb's own
-                  // geometry tokens (globals.css §5.5x), so this clears the orb by
-                  // construction and cannot drift if the orb is resized. It
-                  // already includes the safe-area inset — do not add it twice.
-                  offset={{ bottom: 'var(--site-floating-reserve)' }}
-                  mobileOffset={{
-                    bottom: 'var(--site-floating-reserve)',
-                    left: '0.75rem',
-                    right: '0.75rem',
-                  }}
-                  toastOptions={{
-                    // Toasts are L4 floating UI and get the matching fill inline. It is written out here rather than by
-                    // adding `.glass-overlay` because that class also sets position, max sizes and overflow — all of
-                    // which sonner owns for its own stacking. The jelly material (haze floor, CSS rim, carrier) comes
-                    // from `[data-sonner-toast]` in app/jelly-coverage.css, so only longhands are set here: a
-                    // `background` / `box-shadow` inline would erase the floor and the rim. No backdrop-filter — no
-                    // glass role has one (docs/liquid-glass-system.md); the overlay fill is the legibility floor.
-                    style: {
-                      // The SAME expression `.glass-overlay` uses (globals.css §L4), not a third answer.
-                      backgroundColor: 'var(--site-glass-overlay-fill)',
-                      border: '1px solid var(--site-border)',
-                      // A toast is a panel, not a control: `--site-radius`, the
-                      // same curve every other floating panel takes.
-                      borderRadius: 'var(--site-radius)',
-                      color: 'var(--site-text)',
-                    },
-                  }}
-                />
+                <ToastHost theme={style === 'graphite' ? 'dark' : 'light'} />
               </AppTierContext.Provider>
             </SessionCtx.Provider>
           </MotionConfig>

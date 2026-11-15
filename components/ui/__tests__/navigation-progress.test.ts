@@ -1,12 +1,12 @@
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readCss } from '../../../lib/__tests__/css-source';
 
 /**
  * The route-progress bar creeps toward 90% on one CSS transition. It used to be a `setInterval` that set React state
  * every 160ms for as long as a navigation was pending.
  */
-const read = (p: string) => readFileSync(join(__dirname, '../../..', p), 'utf8');
+const read = (p: string) => readCss(join(__dirname, '../../..', p));
 
 describe('NavigationProgress', () => {
   const src = read('components/ui/NavigationProgress.tsx');
@@ -26,7 +26,8 @@ describe('NavigationProgress', () => {
     const css = read('app/globals.css');
     const running = css.slice(css.indexOf("[data-nav-progress][data-phase='running'] {"));
     expect(running).toContain('transform: scaleX(0.9)');
-    expect(running).toMatch(/transition: transform 3\.2s cubic-bezier/);
+    // The crawl curve is the --ease-crawl token since E7 (one motion source).
+    expect(running).toMatch(/transition: transform 3\.2s var\(--ease-crawl\)/);
     expect(css).toMatch(/@starting-style \{\s*\[data-nav-progress\]\[data-phase='running'\] \{\s*transform: scaleX\(0\.08\)/);
     expect(css).toMatch(/\[data-nav-progress\]\[data-phase='done'\] \{\s*transform: scaleX\(1\)/);
   });

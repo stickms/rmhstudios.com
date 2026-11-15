@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { CheckCircle2, Download, FileText, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  analyzeLadderResumeApi,
+  confirmLadderResumeApi,
+  deleteLadderResumeApi,
+} from '@/lib/rmhladder/resume/resume.contract';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listUserResumes, type ResumePrisma } from '@/lib/rmhladder/resume/service.server';
@@ -24,6 +32,7 @@ const loadResumeCenter = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/rmhladder/resume')({
+  head: () => noindexHead('Resume | RMH Ladder'),
   loader: () => loadResumeCenter(),
   component: ResumePage,
 });
@@ -70,11 +79,9 @@ function ResumePage() {
   async function analyze(resume: ResumeRow, version: VersionRow) {
     setBusyId(`analyze-${version.id}`);
     try {
-      const response = await fetch(`/api/rmhladder/resume/${resume.id}/analyze`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ versionId: version.id }),
+      await api(analyzeLadderResumeApi, { params: { id: resume.id }, body: { versionId: version.id } }).catch((e: unknown) => {
+        throw new Error(serverError(e) || 'Review failed');
       });
-      const data = await response.json().catch(() => ({})) as { error?: string };
-      if (!response.ok) throw new Error(data.error || 'Review failed');
       toast.success(t('ladder.resume.reviewReady', { defaultValue: 'AI review is ready. Confirm the extracted profile to generate matches.' }));
       await refresh();
     } catch (error) {
@@ -88,9 +95,9 @@ function ResumePage() {
     if (!window.confirm(t('ladder.resume.confirmDelete', { defaultValue: 'Delete this resume and every private version?' }))) return;
     setBusyId(`delete-${resume.id}`);
     try {
-      const response = await fetch(`/api/rmhladder/resume/${resume.id}`, { method: 'DELETE' });
-      const data = await response.json().catch(() => ({})) as { error?: string };
-      if (!response.ok) throw new Error(data.error || 'Delete failed');
+      await api(deleteLadderResumeApi, { params: { id: resume.id } }).catch((e: unknown) => {
+        throw new Error(serverError(e) || 'Delete failed');
+      });
       setResumes((rows) => rows.filter((row) => row.id !== resume.id));
       toast.success(t('ladder.resume.deleted', { defaultValue: 'Resume deleted' }));
       await refresh();
@@ -176,7 +183,7 @@ function ResumeCard({
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="outline">{version.parseStatus.replace(/_/g, ' ')}</Badge>
+          <Badge variant="default">{version.parseStatus.replace(/_/g, ' ')}</Badge>
           <Button disabled={!aiConsent} loading={busyId === `analyze-${version.id}`} loadingText={t('ladder.resume.reviewing', { defaultValue: 'Reviewing…' })} onClick={() => void onAnalyze(resume, version)}>
             <Sparkles aria-hidden />{review?.status === 'complete' ? t('ladder.resume.reviewAgain', { defaultValue: 'Review again' }) : t('ladder.resume.review', { defaultValue: 'Review with AI' })}
           </Button>
@@ -191,7 +198,7 @@ function ResumeCard({
             <h3 className="site-section-label">{t('ladder.resume.matches', { defaultValue: 'Best role matches' })}</h3>
             <div className="grid gap-3 md:grid-cols-2">
               {version.matches.slice(0, 12).map((match) => (
-                <Link key={match.id} to="/rmhladder/jobs/$jobId" params={{ jobId: match.jobId }} className="glass-fill rounded-site-sm p-4 transition-colors hover:bg-site-surface-hover">
+                <Link key={match.id} to="/rmhladder/jobs/$jobId"params={{ jobId: match.jobId }} className="rounded-site-sm p-4 transition-colors hover:bg-site-surface-hover">
                   <div className="flex items-start justify-between gap-3">
                     <div><p className="font-medium">{match.job?.title ?? t('ladder.resume.role', { defaultValue: 'Role' })}</p><p className="text-sm text-site-text-muted">{match.job?.company?.name}</p></div>
                     <span className="font-mono text-lg text-site-accent">{match.score}</span>
@@ -211,7 +218,7 @@ function ReviewPanel({ review }: { review: Record<string, unknown> }) {
   const strengths = Array.isArray(review.strengths) ? review.strengths as string[] : [];
   const issues = Array.isArray(review.issues) ? review.issues as Array<{ severity: string; message: string; suggestion: string }> : [];
   return (
-    <section className="grid gap-4 glass-inset rounded-site-sm p-4 md:grid-cols-[auto_1fr]">
+    <section className="grid gap-4 surface-field rounded-site-sm p-4 md:grid-cols-[auto_1fr]">
       <div className="flex size-20 items-center justify-center rounded-full border-4 border-site-accent font-mono text-2xl">{Number(review.overallScore ?? 0)}</div>
       <div className="space-y-3"><p>{String(review.summary ?? '')}</p>{strengths.length > 0 && <ul className="list-disc space-y-1 pl-5 text-sm text-site-text-muted">{strengths.map((item) => <li key={item}>{item}</li>)}</ul>}{issues.slice(0, 5).map((issue, index) => <div key={`${issue.message}-${index}`} className="border-l-2 border-site-warning pl-3 text-sm"><p className="font-medium">{issue.message}</p><p className="text-site-text-muted">{issue.suggestion}</p></div>)}</div>
     </section>
@@ -226,16 +233,16 @@ function ProfileConfirmation({ resume, version, initial, onRefresh }: { resume: 
   async function confirm() {
     setSaving(true);
     try {
-      const response = await fetch(`/api/rmhladder/resume/${resume.id}/confirm`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ versionId: version.id, profile }) });
-      const data = await response.json().catch(() => ({})) as { error?: string };
-      if (!response.ok) throw new Error(data.error || 'Confirmation failed');
+      await api(confirmLadderResumeApi, { params: { id: resume.id }, body: { versionId: version.id, profile } }).catch((e: unknown) => {
+        throw new Error(serverError(e) || 'Confirmation failed');
+      });
       toast.success(t('ladder.resume.matchesReady', { defaultValue: 'Profile confirmed and matches refreshed' }));
       await onRefresh();
     } catch (error) { toast.error(error instanceof Error ? error.message : 'Confirmation failed'); }
     finally { setSaving(false); }
   }
   return (
-    <section className="glass-inset space-y-4 rounded-site-sm border border-site-accent/40 p-4">
+    <section className="surface-field space-y-4 rounded-site-sm border border-site-accent/40 p-4">
       <div><h3 className="site-section-label">{t('ladder.resume.confirmTitle', { defaultValue: 'Confirm the extracted profile' })}</h3><p className="text-sm text-site-text-muted">{t('ladder.resume.confirmDescription', { defaultValue: 'Correct anything the model got wrong. Matching stays off until you confirm.' })}</p></div>
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-2 text-sm"><span>{t('ladder.resume.headline', { defaultValue: 'Headline' })}</span><Input value={profile.headline} onChange={(event) => setProfile((value) => ({ ...value, headline: event.target.value }))} /></label>

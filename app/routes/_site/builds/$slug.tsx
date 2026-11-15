@@ -19,8 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BuildDetail } from '@/components/user-builds';
 import { BlurImage, blurImagePreload } from '@/components/ui/BlurImage';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { getPublicBuildDetail } from '@/lib/user-builds-detail.server';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 
@@ -125,7 +124,7 @@ function BuildPage() {
       <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         {(build.status || build.tags.length > 0) && (
           <div className="flex flex-wrap items-center gap-2">
-            {build.status && <Badge variant="accent">{build.status}</Badge>}
+            {build.status && <Badge variant="default">{build.status}</Badge>}
             {build.tags.map((tag) => (
               <Badge key={tag}>#{tag}</Badge>
             ))}
@@ -133,7 +132,7 @@ function BuildPage() {
         )}
 
         <div>
-          <Button asChild variant="accent" size="lg">
+          <Button asChild variant="default" size="lg">
             <Link to={build.href}>
               {build.cta}
               <ExternalLink aria-hidden />
@@ -142,7 +141,7 @@ function BuildPage() {
         </div>
 
         {build.imagePath && (
-          <div className="glass-pane overflow-hidden">
+          <div className="overflow-hidden">
             <BlurImage
               src={build.imagePath}
               alt={build.title}

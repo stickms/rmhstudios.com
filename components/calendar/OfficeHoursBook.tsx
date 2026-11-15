@@ -1,11 +1,9 @@
-'use client';
-
 /** K2 — `/office-hours/$userId`: a host's open slots, and the booking flow. */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { CalendarClock, X } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -25,6 +23,8 @@ import {
 import type { OfficeHoursPublicView, OfficeHoursSlotView } from '@/lib/calendar/types';
 import { api, viewerTimeZone } from './api';
 import { BookingRow } from './BookingRow';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function OfficeHoursBook({ hostId }: { hostId: string }) {
   const { t, i18n } = useTranslation('f-calendar');
@@ -32,6 +32,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
   const confirm = useConfirm();
   const [view, setView] = useState<OfficeHoursPublicView | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading');
+  const arrival = useArrival(state !== 'loading');
   const [picked, setPicked] = useState<OfficeHoursSlotView | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -82,6 +83,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
     return (
       <EmptyState
         icon={CalendarClock}
+        className={arrival}
         title={t('oh-missing-title', { defaultValue: 'No office hours here' })}
         description={t('oh-missing-body', {
           defaultValue: 'This member has not published any bookable times.',
@@ -128,11 +130,11 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
   };
 
   return (
-    <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
+    <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', arrival)}>
       <header className="flex items-start gap-3">
         <UserAvatar src={view.host.image} alt="" size={48} />
         <div className="min-w-0">
-          <h2 className="font-display text-xl font-medium text-site-text">
+          <h2 className="text-xl font-medium text-site-text">
             {view.title || t('oh-default-title', { defaultValue: 'Office hours' })}
           </h2>
           <p className="text-sm text-site-text-muted">
@@ -144,7 +146,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
           {view.blurb && (
             <p className="mt-1 whitespace-pre-wrap text-sm text-site-text-muted">{view.blurb}</p>
           )}
-          <p className="mt-1 text-xs text-site-text-dim">
+          <p className="mt-1 text-xs text-site-text-muted">
             {t('oh-slot-info', {
               defaultValue: '{{count}}-minute sessions. Times are shown in your timezone ({{tz}}).',
               count: view.slotMin,
@@ -200,7 +202,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
                     <li key={s.startsAt}>
                       <Button
                         size="sm"
-                        variant={s.mine ? 'accent' : 'outline'}
+                        variant={s.mine ? 'default' : 'default'}
                         disabled={s.mine}
                         onClick={() => (signedIn ? setPicked(s) : undefined)}
                         aria-label={`${day} ${timeFmt.format(new Date(s.startsAt))}`}
@@ -221,7 +223,7 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
             ))
           )}
           {!signedIn && (
-            <p className="text-xs text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('oh-sign-in-hint', { defaultValue: 'Sign in to book a time.' })}
             </p>
           )}
@@ -248,10 +250,10 @@ export default function OfficeHoursBook({ hostId }: { hostId: string }) {
             />
           </label>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPicked(null)}>
+            <Button variant="default" onClick={() => setPicked(null)}>
               <X /> {t('cancel', { defaultValue: 'Cancel' })}
             </Button>
-            <Button variant="accent" onClick={book} disabled={busy}>
+            <Button variant="default" onClick={book} disabled={busy}>
               {t('oh-confirm', { defaultValue: 'Book it' })}
             </Button>
           </DialogFooter>

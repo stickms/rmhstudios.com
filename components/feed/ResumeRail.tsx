@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The resume rail (B2) — "pick up where you left off".
  *
@@ -37,10 +35,13 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
-import { AsyncReveal } from '@/components/motion';
+import { useArrival } from '@/components/ui/arrive';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { cn } from '@/lib/utils';
 import type { ResumeCard, ResumeKind, ResumeState } from '@/lib/history/resume.server';
+import { clamp01 } from '@/lib/core/math';
+import { api } from '@/lib/contract/client';
+import { resumeCardsApi } from '@/lib/site-reads.contract';
 
 const KIND_ICONS: Record<ResumeKind, LucideIcon> = {
   game: Gamepad2,
@@ -68,9 +69,8 @@ export function ResumeRail({ initial }: ResumeRailProps) {
   useEffect(() => {
     if (initial || !session?.user) return;
     const controller = new AbortController();
-    fetch('/api/history/resume', { signal: controller.signal, credentials: 'same-origin' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { cards?: ResumeCard[] } | null) => setCards(data?.cards ?? []))
+    api(resumeCardsApi, { signal: controller.signal })
+      .then((data) => setCards(data.cards ?? []))
       .catch(() => {
         // Aborted, offline, or signed out between render and fetch. The rail is
         // an accelerator, never the only path to any of this content.
@@ -79,15 +79,15 @@ export function ResumeRail({ initial }: ResumeRailProps) {
   }, [initial, session?.user]);
 
   const list = cards ?? [];
+  // Steel M9: a rail fetched here appears in a gap, so it fades in; server-seeded cards do not.
+  const arrival = useArrival(list.length > 0);
   // Rule 1 above: nothing to resume, nothing to render — not an empty state.
   if (list.length === 0) return null;
 
   return (
-    <AsyncReveal
-      show
-      as="section"
+    <section
       aria-label={t('resume-title', { defaultValue: 'Pick up where you left off' })}
-      className="glass-fill mx-3 mt-3 px-4 py-3"
+      className={cn('surface-card mx-3 mt-3 px-4 py-3', arrival)}
     >
       <div className="mb-2 flex items-center gap-2">
         <History className="size-4 text-site-accent" aria-hidden />
@@ -116,7 +116,7 @@ export function ResumeRail({ initial }: ResumeRailProps) {
               search={link.search}
               hash={link.hash}
               title={card.title}
-              className="glass-fill glass-interactive flex w-48 shrink-0 flex-col gap-2 px-4 py-3 sm:w-56"
+              className="surface-card surface-press flex w-48 shrink-0 flex-col gap-2 px-4 py-3 sm:w-56"
             >
               <span className="flex min-w-0 items-center gap-2">
                 <Icon className="size-3.5 shrink-0 text-site-accent" aria-hidden />
@@ -153,12 +153,8 @@ export function ResumeRail({ initial }: ResumeRailProps) {
           );
         })}
       </HorizontalScroller>
-    </AsyncReveal>
+    </section>
   );
-}
-
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }
 
 interface ResumeLink {

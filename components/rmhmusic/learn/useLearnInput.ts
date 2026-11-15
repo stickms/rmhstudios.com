@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Hooks and actions over the learn store's input hub, shared by the input
  * setup dialog, the on-screen keyboard, calibration and the first lesson.

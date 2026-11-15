@@ -1,0 +1,339 @@
+// Line protocol between the host and the in-guest agent over a serial port.
+// Host -> guest: SESSION <user> <epochSeconds> <entropyHex> | RESTORE | SAVE <nonce> | SHUTDOWN
+// (a session restored from the shared boot snapshot starts with the snapshot's clock
+// and kernel RNG state, so the host sends the time and fresh entropy with it)
+// Guest -> host: lines prefixed "RMHOS "; anything else is kernel noise.
+//   RMHOS SESSION_OK [<name>]      <name> is the Linux user actually created: the requested one, or
+//                                  <name>_rmh when the image already has an account of that name
+//   RMHOS SAVED_ON_POWEROFF <n>    a poweroff/reboot/halt inside the guest has put the home (n
+//                                  bytes) into the share at SHARE_ARCHIVE_PATH; POWEROFF follows
+
+export type HostCommand =
+  | {
+      type: 'session';
+      user: string;
+      /** Unix seconds, the guest clock is set to it. */
+      epoch: number;
+      /** 64 random bytes as 128 lowercase hex characters, mixed into the guest RNG. */
+      entropy: string;
+    }
+  | {
+      type: 'restore';
+    }
+  | {
+      type: 'save';
+      nonce: string;
+    }
+  | {
+      type: 'shutdown';
+    };
+
+export type GuestEvent =
+  | {
+      type: 'ready';
+    }
+  | {
+      type: 'session-ok';
+      /** The Linux user name the guest created; absent from an older guest image. */
+      user?: string;
+    }
+  | {
+      type: 'restored';
+    }
+  | {
+      type: 'saved';
+      nonce: string;
+      bytes: number;
+    }
+  | {
+      type: 'saved-on-poweroff';
+      /** Size of the archive the guest left in the share just before it announced POWEROFF. */
+      bytes: number;
+    }
+  | {
+      type: 'poweroff';
+    }
+  | {
+      type: 'error';
+      code: string;
+    };
+
+/** Path of the home archive inside the 9p share. */
+export const SHARE_ARCHIVE_PATH =
+  '/sync/home.tar';
+
+const TOKEN =
+  /^[a-z0-9_-]{1,31}$/i;
+
+/** Plausible session clocks: 2020-01-01T00:00:00Z .. 2100-01-01T00:00:00Z (the guest checks the same). */
+const EPOCH_MIN = 1577836800;
+const EPOCH_MAX = 4102444800;
+const ENTROPY =
+  /^[0-9a-f]{128}$/;
+
+function token(
+  value: string,
+  what: string,
+): string {
+  if (
+    !TOKEN.test(
+      value,
+    )
+  )
+    throw new Error(
+      `invalid ${what}`,
+    );
+  return value;
+}
+
+export function encodeCommand(
+  c: HostCommand,
+): string {
+  switch (
+    c.type
+  ) {
+    case 'session': {
+      if (
+        !Number.isSafeInteger(
+          c.epoch,
+        ) ||
+        c.epoch <
+          EPOCH_MIN ||
+        c.epoch >
+          EPOCH_MAX
+      )
+        throw new Error(
+          'invalid epoch',
+        );
+      if (
+        !ENTROPY.test(
+          c.entropy,
+        )
+      )
+        throw new Error(
+          'invalid entropy',
+        );
+      return `SESSION ${token(c.user, 'user')} ${c.epoch} ${c.entropy}\n`;
+    }
+    case 'restore':
+      return 'RESTORE\n';
+    case 'save':
+      return `SAVE ${token(c.nonce, 'nonce')}\n`;
+    case 'shutdown':
+      return 'SHUTDOWN\n';
+  }
+}
+
+const PREFIX =
+  'RMHOS ';
+const PROTOCOL_ERROR: GuestEvent =
+  {
+    type: 'error',
+    code: 'protocol',
+  };
+
+function parseLine(
+  line: string,
+): GuestEvent | null {
+  if (
+    !line.startsWith(
+      PREFIX,
+    )
+  )
+    return null;
+  const [
+    verb,
+    a,
+    b,
+    ...rest
+  ] =
+    line
+      .slice(
+        PREFIX.length,
+      )
+      .split(
+        ' ',
+      );
+  switch (
+    verb
+  ) {
+    case 'READY':
+      return {
+        type: 'ready',
+      };
+    case 'SESSION_OK':
+      if (
+        a ===
+        undefined
+      )
+        return {
+          type: 'session-ok',
+        };
+      return b ===
+        undefined &&
+        TOKEN.test(
+          a,
+        )
+        ? {
+            type: 'session-ok',
+            user: a,
+          }
+        : {
+            ...PROTOCOL_ERROR,
+          };
+    case 'RESTORED':
+      return {
+        type: 'restored',
+      };
+    case 'SAVED_ON_POWEROFF': {
+      if (
+        a ===
+          undefined ||
+        b !==
+          undefined ||
+        !/^\d+$/.test(
+          a,
+        )
+      )
+        return {
+          ...PROTOCOL_ERROR,
+        };
+      const bytes =
+        Number(
+          a,
+        );
+      return Number.isSafeInteger(
+        bytes,
+      )
+        ? {
+            type: 'saved-on-poweroff',
+            bytes,
+          }
+        : {
+            ...PROTOCOL_ERROR,
+          };
+    }
+    case 'POWEROFF':
+      return {
+        type: 'poweroff',
+      };
+    case 'ERR':
+      return a !==
+        undefined &&
+        b ===
+          undefined &&
+        TOKEN.test(
+          a,
+        )
+        ? {
+            type: 'error',
+            code: a,
+          }
+        : {
+            ...PROTOCOL_ERROR,
+          };
+    case 'SAVED': {
+      if (
+        a ===
+          undefined ||
+        b ===
+          undefined ||
+        rest.length >
+          0 ||
+        !TOKEN.test(
+          a,
+        ) ||
+        !/^\d+$/.test(
+          b,
+        )
+      )
+        return {
+          ...PROTOCOL_ERROR,
+        };
+      const bytes =
+        Number(
+          b,
+        );
+      if (
+        !Number.isSafeInteger(
+          bytes,
+        ) ||
+        bytes <
+          0
+      )
+        return {
+          ...PROTOCOL_ERROR,
+        };
+      return {
+        type: 'saved',
+        nonce:
+          a,
+        bytes,
+      };
+    }
+    default:
+      return {
+        ...PROTOCOL_ERROR,
+      };
+  }
+}
+
+/** Longest unterminated line kept; the guest never legitimately sends more. */
+const MAX_BUFFER = 4096;
+
+/** Incremental parser: feed it raw serial chunks, get complete events back. */
+export class GuestLineParser {
+  private buffer =
+    '';
+
+  push(
+    chunk: string,
+  ): GuestEvent[] {
+    this.buffer +=
+      chunk;
+    const lines =
+      this.buffer.split(
+        '\n',
+      );
+    this.buffer =
+      lines.pop() ??
+      '';
+    const events: GuestEvent[] =
+      [];
+    for (const raw of lines) {
+      const event =
+        parseLine(
+          raw.replace(
+            /\r$/,
+            '',
+          ),
+        );
+      if (
+        event
+      )
+        events.push(
+          event,
+        );
+    }
+    if (
+      this
+        .buffer
+        .length >
+      MAX_BUFFER
+    ) {
+      if (
+        this.buffer.startsWith(
+          PREFIX,
+        )
+      )
+        events.push(
+          {
+            ...PROTOCOL_ERROR,
+          },
+        );
+      this.buffer =
+        '';
+    }
+    return events;
+  }
+}

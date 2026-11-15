@@ -1,0 +1,42 @@
+{
+  // Strict islands (redesign audit A7). New top-level modules JOIN this list;
+  // entries never leave. tsc also checks anything these files import, so keep
+  // islands' import graphs small and owned.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".cache/tsc/strict.tsbuildinfo"
+  },
+  "include": [
+    "lib/core/**/*.ts",
+    "lib/contract/**/*.ts",
+    "lib/toast.ts",
+    "lib/admin/census.ts",
+    "lib/session/**/*.ts",
+    "lib/api/implement.server.ts",
+    "lib/api/route.server.ts",
+    "lib/api/route-match.ts",
+    "lib/api/route-template.ts",
+    "lib/api/route-sources.ts",
+    "lib/ranking/**/*.ts",
+    "lib/streak-reminders.server.ts",
+    "lib/businesses.ts",
+    "lib/blog-media.ts",
+    "lib/sitewide-announcement.ts",
+    "lib/sitewide-announcement-schema.ts",
+    "lib/sitewide-announcement.contract.ts",
+    "server/shared/session-auth.ts",
+    "server/shared/redis-adapter.ts",
+    "features/rmhos/engine/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "features/rmhos/engine/vm.ts",
+    "**/__tests__/**",
+    "**/*.test.ts"
+  ]
+}

@@ -1,7 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute('/strategies/puzzles/archive')({
+  head: () => ({
+    meta: buildMeta({ title: 'Puzzle Archive | RMH Strategies | RMH Studios', description: 'Replay past RMH Strategies puzzles.', path: '/strategies/puzzles/archive' }),
+    links: [buildCanonical('/strategies/puzzles/archive')],
+  }),
   component: ArchivePage,
 });
 

@@ -1,13 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDoctrineStore } from '@/stores/doctrineStore';
-import { ContentCard } from '@/components/doctrine/safehouse/content-card';
-import { AccessGate } from '@/components/doctrine/safehouse/access-gate';
+import { useDoctrineStore } from '@features/doctrine/ui/doctrineStore';
+import { ContentCard } from '@features/doctrine/ui/safehouse/content-card';
+import { AccessGate } from '@features/doctrine/ui/safehouse/access-gate';
 import { Shield } from 'lucide-react';
+import { api } from '@/lib/contract/client';
+import { getSafehouseContentApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/safehouse/')({
+  head: () => noindexHead('Safehouse'),
   component: SafehouseFeed,
 });
 
@@ -23,12 +29,11 @@ function SafehouseFeed() {
   const { data, isLoading } = useQuery({
     queryKey: ['doctrine', 'safehouse', 'content'],
     queryFn: async () => {
-      const res = await fetch('/api/doctrine/safehouse/content');
-      if (!res.ok) throw new Error('Failed to load');
-      return res.json();
+      return api(getSafehouseContentApi);
     },
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -51,15 +56,15 @@ function SafehouseFeed() {
       )}
 
       {data?.items?.length === 0 && (
-        <div className="text-center py-16">
+        <div className={cn('text-center py-16', arrival)}>
           <Shield size={32} className="mx-auto mb-3 opacity-20" />
           <p className="text-sm text-white/60">{t("no-intelligence", { defaultValue: "No intelligence available at your clearance level." })}</p>
           <p className="text-xs text-white/50 mt-1">{t("upgrade-tier", { defaultValue: "Upgrade your tier to access classified content." })}</p>
         </div>
       )}
 
-      <div className="space-y-3">
-        {data?.items?.map((item: { id: string; type: string; title: string; body: string; minTier: string; publishedAt: string | null; reactions: { fire: number; based: number; mid: number; cringe: number; trash: number; tung: number } }) => (
+      <div className={cn('space-y-3', arrival)}>
+        {data?.items?.map((item) => (
           <ContentCard key={item.id} {...item} />
         ))}
       </div>

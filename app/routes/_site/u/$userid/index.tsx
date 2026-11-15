@@ -6,9 +6,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageFrame } from '@/components/feed/PageLayout';
 import { createServerFn } from '@tanstack/react-start';
-import { RightSidebar } from '@/components/feed/RightSidebar';
 import { ProfileColumn } from '@/components/feed/ProfileColumn';
-import { getSidebarData } from '@/lib/sidebar-data';
 import { personSchema, jsonLdScript } from '@/lib/schema';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, ogCardPath, SITE_URL } from '@/lib/seo';
 import { getRequestSession } from '@/lib/auth-session.server';
@@ -22,7 +20,7 @@ const fetchProfileData = createServerFn({ method: 'GET' })
   .handler(async ({ data: rawId }) => {
     const id = rawId.replace(/^@/, '');
     // Resolve the session once, then fetch the complete viewer-aware profile
-    // alongside the sidebar. The same payload seeds the first paint and SEO,
+    // together. The same payload seeds the first paint and SEO,
     // avoiding the old duplicate user lookup + client refetch.
     const session = await getRequestSession().catch(() => null);
     const viewer = {
@@ -30,14 +28,17 @@ const fetchProfileData = createServerFn({ method: 'GET' })
       isAdmin: Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin),
     };
 
-    const [sidebar, found] = await Promise.all([getSidebarData(), getProfile(id, viewer)]);
+    const found = await getProfile(id, viewer);
     // The header's achievement strip rides with the page rather than arriving
     // after hydration and growing the header under the reader (see
     // lib/achievements/strip.ts). A failure here just means the strip falls
     // back to its own client fetch.
     const achievements = found ? await listAchievements(found.id).catch(() => null) : null;
     const profile = found
-      ? { ...found, achievementStrip: achievements ? pickAchievementStrip(achievements) : undefined }
+      ? {
+          ...found,
+          achievementStrip: achievements ? pickAchievementStrip(achievements) : undefined,
+        }
       : null;
 
     let meta = {
@@ -68,7 +69,7 @@ const fetchProfileData = createServerFn({ method: 'GET' })
       };
     }
 
-    return { sidebar, meta, profile };
+    return { meta, profile };
   });
 
 export const Route = createFileRoute('/_site/u/$userid/')({
@@ -139,21 +140,12 @@ export const Route = createFileRoute('/_site/u/$userid/')({
 });
 
 function ProfilePage() {
-  const { sidebar, profile } = Route.useLoaderData();
+  const { profile } = Route.useLoaderData();
   const { userid } = Route.useParams();
   const userId = userid.replace(/^@/, '');
 
   return (
-    <PageFrame
-      rightSidebar={
-        <RightSidebar
-          officialBuilds={sidebar.officialBuilds}
-          userBuilds={sidebar.userBuilds}
-          recommendedUsers={sidebar.recommendedUsers}
-          blogPosts={sidebar.blogPosts}
-        />
-      }
-    >
+    <PageFrame>
       <ProfileColumn key={userId} userId={userId} initialProfile={profile} />
     </PageFrame>
   );

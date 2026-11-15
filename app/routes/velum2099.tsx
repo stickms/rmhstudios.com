@@ -1,8 +1,9 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const Velum2099Game = lazy(() =>
   import('@/components/velum2099/Velum2099Game').then((m) => ({ default: m.Velum2099Game })),
@@ -15,9 +16,9 @@ function Velum2099Page() {
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       <GameErrorBoundary gameName="VELUM 2099">
-        <Suspense fallback={<GameLoadingFallback />}>
+        <ArrivalSuspense fallback={<GameLoadingFallback />}>
           <Velum2099Game />
-        </Suspense>
+        </ArrivalSuspense>
       </GameErrorBoundary>
     </main>
   );

@@ -1,5 +1,5 @@
 /**
- * Bundle budget checker (rewrite R0-T3, docs/full-rewrite-design-2026-07-18.md §2).
+ * Bundle budget checker (rewrite R0-T3, docs/archive/2026/full-rewrite-design-2026-07-18.md §2).
  *
  * Measures the BROTLI size of the built client assets and compares the eager
  * entry payload against scripts/ci/perf-budgets.json. Warn-only mode remains

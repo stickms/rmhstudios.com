@@ -1,7 +1,12 @@
+import { api } from '@/lib/contract/client';
+import { deleteAdminFlagApi, upsertAdminFlagApi } from '@/lib/admin/admin-ops.contract';
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminFlagsQuery } from '@/lib/admin/admin-ops.queries';
 import { Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdminBody } from '@/components/admin/AdminBody';
@@ -12,9 +17,12 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { clampRollout, isValidFlagKey } from '@/lib/flags/key';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/flags')({
   head: () => ({ meta: [{ title: 'Feature Flags | RMH Studios' }] }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminFlagsQuery()),
   component: FlagsPage,
 });
 
@@ -26,41 +34,43 @@ interface Flag {
 }
 
 async function saveFlag(flag: Flag): Promise<Flag | null> {
-  const res = await fetch('/api/admin/flags', {
-    method: 'PUT',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      key: flag.key,
-      enabled: flag.enabled,
-      rolloutPercent: flag.rolloutPercent,
-      description: flag.description,
-    }),
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { flag: Flag };
-  return data.flag;
+  try {
+    const data = await api(upsertAdminFlagApi, {
+      body: {
+        key: flag.key,
+        enabled: flag.enabled,
+        rolloutPercent: flag.rolloutPercent,
+        description: flag.description,
+      },
+    });
+    return data.flag;
+  } catch {
+    return null;
+  }
 }
 
 function FlagsPage() {
   const { t } = useTranslation('admin');
   const confirm = useConfirm();
-  const [flags, setFlags] = useState<Flag[] | null>(null);
+  const queryClient = useQueryClient();
+  const query = adminFlagsQuery();
+  const { data, isError } = useQuery(query);
+  // A failed read shows an empty list rather than the spinner.
+  const flags: Flag[] | null = data?.flags ?? (isError ? [] : null);
+  const arrival = useArrival(flags !== null);
+  const setFlags = (update: (cur: Flag[] | null) => Flag[]) =>
+    queryClient.setQueryData(query.queryKey, (old) => ({
+      ...old,
+      flags: update(old?.flags ?? null),
+    }));
   const [newKey, setNewKey] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    const res = await fetch('/api/admin/flags', { credentials: 'include' });
-    const data = res.ok ? ((await res.json()) as { flags: Flag[] }) : { flags: [] };
-    setFlags(data.flags);
-  }, []);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const failed = () => toast.error(t('flags-save-failed', { defaultValue: 'Could not save the flag.' }));
+  const failed = () =>
+    toast.error(t('flags-save-failed', { defaultValue: 'Could not save the flag.' }));
 
   async function update(next: Flag) {
     setBusy(true);
@@ -103,13 +113,11 @@ function FlagsPage() {
     if (!ok) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/admin/flags', {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: flag.key }),
-      });
-      if (!res.ok) return failed();
+      try {
+        await api(deleteAdminFlagApi, { body: { key: flag.key } });
+      } catch {
+        return failed();
+      }
       setFlags((cur) => (cur ?? []).filter((f) => f.key !== flag.key));
     } finally {
       setBusy(false);
@@ -122,7 +130,7 @@ function FlagsPage() {
   return (
     <PageLayout title={t('flags-title', { defaultValue: 'Feature flags' })} wide backTo="/admin">
       <AdminBody width="narrow">
-        <div className="glass-fill mb-6 grid gap-2 rounded-site p-4 sm:grid-cols-[1fr_1fr_auto]">
+        <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
           <div>
             <Input
               value={newKey}
@@ -132,7 +140,7 @@ function FlagsPage() {
               aria-invalid={newKey !== '' && !keyValid}
             />
             {newKey !== '' && !keyValid ? (
-              <p className="mt-1 text-xs text-site-danger">
+              <p className="t-body mt-1 text-site-danger">
                 {t('flags-key-invalid', {
                   defaultValue:
                     'Lowercase letters, digits, dots, dashes or underscores, starting with a letter.',
@@ -147,7 +155,7 @@ function FlagsPage() {
             placeholder={t('flags-description-placeholder', { defaultValue: 'What does it gate?' })}
             aria-label={t('flags-description-placeholder', { defaultValue: 'What does it gate?' })}
           />
-          <Button variant="accent" onClick={create} disabled={busy || !keyValid || keyTaken}>
+          <Button variant="default" onClick={create} disabled={busy || !keyValid || keyTaken}>
             {t('flags-create', { defaultValue: 'Create flag' })}
           </Button>
         </div>
@@ -157,11 +165,20 @@ function FlagsPage() {
             <Spinner />
           </div>
         ) : flags.length === 0 ? (
-          <EmptyState description={t('flags-empty', { defaultValue: 'No flags yet.' })} />
+          <EmptyState
+            className={arrival}
+            description={t('flags-empty', { defaultValue: 'No flags yet.' })}
+          />
         ) : (
-          <ul className="glass-fill divide-y divide-site-border overflow-hidden rounded-site">
+          <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
             {flags.map((f) => (
-              <FlagRow key={f.key} flag={f} busy={busy} onChange={update} onDelete={() => remove(f)} />
+              <FlagRow
+                key={f.key}
+                flag={f}
+                busy={busy}
+                onChange={update}
+                onDelete={() => remove(f)}
+              />
             ))}
           </ul>
         )}
@@ -192,14 +209,16 @@ function FlagRow({
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3">
       <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">
-        <code className="break-all font-mono text-sm text-site-accent">{flag.key}</code>
+        <code className="t-body block break-all font-mono font-medium text-site-text">
+          {flag.key}
+        </code>
         {flag.description ? (
-          <p className="truncate text-xs text-site-text-muted">{flag.description}</p>
+          <p className="t-body mt-1 text-site-text-muted">{flag.description}</p>
         ) : null}
       </div>
-      <label className="flex items-center gap-2 text-xs text-site-text-muted">
+      <label className="t-body me-auto flex items-center gap-2 text-site-text-muted sm:me-0">
         {t('flags-rollout', { defaultValue: 'Rollout %' })}
         <Input
           type="number"
@@ -212,7 +231,7 @@ function FlagRow({
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
           disabled={busy}
-          className="h-9 w-20 px-2 py-1"
+          className="w-20"
         />
       </label>
       <Switch

@@ -1,43 +1,33 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Users, FileText, Flag, Coins, BarChart3 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { AdminBody } from '@/components/admin/AdminBody';
-import { StatTile } from '@/components/admin/StatTile';
+import { StatGrid, StatTile } from '@/components/admin/StatTile';
+import { AdminSection } from '@/components/admin/AdminRows';
 import { useTranslation } from 'react-i18next';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminAnalyticsQuery } from '@/lib/admin/admin-ops.queries';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/admin/analytics')({
   head: () => ({ meta: [{ title: 'Analytics | RMH Studios' }] }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminAnalyticsQuery()),
   component: AnalyticsPage,
 });
 
-interface Analytics {
-  users: { total: number; new7: number; new30: number; active7: number };
-  content: { posts: number; posts7: number; comments: number; builds: number };
-  moderation: { pendingReports: number };
-  economy: { coinsInCirculation: number };
-  postsPerDay: { day: string; count: number }[];
-}
-
 function AnalyticsPage() {
   const { t } = useTranslation('admin');
-  const [data, setData] = useState<Analytics | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/admin/analytics', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then(setData)
-      .finally(() => setLoading(false));
-  }, []);
+  const { data = null, isPending: loading } = useQuery(adminAnalyticsQuery());
+  const arrival = useArrival(!loading);
 
   const maxCount = data ? Math.max(1, ...data.postsPerDay.map((d) => d.count)) : 1;
 
   return (
     <PageLayout title={t('analytics', { defaultValue: 'Analytics' })} wide backTo="/admin">
-      <AdminBody>
+      <AdminBody className={arrival}>
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner />
@@ -49,7 +39,7 @@ function AnalyticsPage() {
           />
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <StatGrid>
               <StatTile
                 icon={Users}
                 label={t('stat-users', { defaultValue: 'Users' })}
@@ -99,31 +89,33 @@ function AnalyticsPage() {
                 label={t('stat-coins-in-circulation', { defaultValue: 'Coins in circulation' })}
                 value={data.economy.coinsInCirculation}
               />
-            </div>
+            </StatGrid>
 
-            <div className="glass-pane rounded-site p-5">
-              <h2 className="site-section-label mb-3">
-                {t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}
-              </h2>
-              <div className="flex h-40 items-end gap-1">
+            <AdminSection
+              title={t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}
+            >
+              <div className="flex h-40 items-end gap-1 border-b border-site-border">
                 {data.postsPerDay.map((d) => (
                   <div
                     key={d.day}
-                    className="flex flex-1 flex-col items-center gap-1"
+                    className="flex h-full flex-1 flex-col justify-end"
                     title={`${d.day}: ${d.count}`}
                   >
                     <div
-                      className="w-full rounded-t-site-sm bg-site-accent"
+                      className="w-full bg-site-accent"
                       style={{
                         height: `${(d.count / maxCount) * 100}%`,
                         minHeight: d.count > 0 ? 2 : 0,
                       }}
                     />
-                    <span className="text-[10px] text-site-text-dim">{d.day.slice(5)}</span>
                   </div>
                 ))}
               </div>
-            </div>
+              <div className="t-meta flex justify-between">
+                <span>{data.postsPerDay[0]?.day.slice(5)}</span>
+                <span>{data.postsPerDay[data.postsPerDay.length - 1]?.day.slice(5)}</span>
+              </div>
+            </AdminSection>
           </>
         )}
       </AdminBody>

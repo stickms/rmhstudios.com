@@ -1,11 +1,11 @@
-'use client';
-
-import { useContext, useEffect, useLayoutEffect } from 'react';
+import {
+  useContext,
+  useLayoutEffect,
+} from 'react';
 import { useTranslation } from 'react-i18next';
+import { markRouteArrival } from '@/components/ui/arrive';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShellLayoutContext } from '@/components/feed/shell-context';
-import { markPageEnterComplete } from '@/lib/motion';
-import { finishEntranceAnimations } from '@/lib/page-transition';
 
 /**
  * Default `pendingComponent` for the router (see `app/router.tsx`).
@@ -28,61 +28,99 @@ export function RoutePending() {
   // `SiteLayout` provides this context around its `<Outlet>`, so it's `true`
   // whenever we're rendering a pending shell page and `false` on full-screen
   // routes (which own their whole viewport).
-  const inShell = useContext(ShellLayoutContext);
-
-  // The skeleton is a mount too: finish the one-shot entrances it brings (its heading's rise) before they paint, so a
-  // slow navigation does not blink twice (once for the skeleton, once for the page).
-  useLayoutEffect(() => {
-    const column = document.querySelector('.page-root');
-    if (column) finishEntranceAnimations(column);
-  }, []);
-
-  useEffect(
-    () => () => {
-      // Suspense/pending UI already communicated that navigation is underway.
-      // Passive unmount cleanup runs after React commits the destination DOM, so
-      // it can be marked immediately before the global page entrance can replay.
-      markPageEnterComplete();
-    },
-    [],
+  const inShell =
+    useContext(
+      ShellLayoutContext,
+    );
+  // Steel M9: when this gives way to the page it was standing in for, the page fades in rather than popping.
+  useLayoutEffect(
+    () =>
+      () =>
+        markRouteArrival(
+          inShell
+            ? 'site'
+            : 'app',
+        ),
+    [
+      inShell,
+    ],
   );
 
-  return inShell ? <SitePagePending /> : <GenericPending />;
+  return inShell ? (
+    <SitePagePending />
+  ) : (
+    <GenericPending />
+  );
 }
 
 /** Shell-page skeleton: mirrors the shell-owned column
  * geometry so `_site` routes don't reflow when their content arrives. */
 function SitePagePending() {
-  const { t } = useTranslation('c-ui');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-ui',
+    );
   return (
-    <div data-route-pending="" className="contents">
+    <div
+      data-route-pending=""
+      className="contents"
+    >
       {/* Center column — uses the same shell measure as `AnimatedMain` (a plain
  div, not another <main>, since the `_site` layout already owns the
  #main-content landmark). */}
       <div
         role="status"
-        aria-label={t('loading', { defaultValue: 'Loading…' })}
+        aria-label={t(
+          'loading',
+          {
+            defaultValue:
+              'Loading…',
+          },
+        )}
         data-slot="site-main-column"
         className="w-full min-w-0 pb-dock"
       >
         {/* Sticky-header-height placeholder so content below doesn't jump. */}
-        <div className="mx-2 mb-2 mt-2 flex h-14 items-center glass-fill rounded-site px-3 md:mx-3 md:mb-3 md:mt-3">
-          <Skeleton shimmer className="h-5 w-36" />
+        <div className="mx-2 mb-2 mt-2 flex h-14 items-center surface-card rounded-site px-3 md:mx-3 md:mb-3 md:mt-3">
+          <Skeleton className="h-5 w-36" />
         </div>
         <div className="space-y-2 px-2">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="glass-fill flex gap-3 rounded-site p-4">
-              <Skeleton shimmer className="size-10 shrink-0 rounded-full" />
-              <div className="min-w-0 flex-1 space-y-3">
-                <Skeleton shimmer className="h-3.5 w-40" />
-                <Skeleton shimmer className="h-3.5 w-full" />
-                <Skeleton shimmer className="h-3.5 w-11/12" />
-                <Skeleton shimmer className="h-3.5 w-3/4" />
+          {[
+            0,
+            1,
+            2,
+          ].map(
+            (
+              i,
+            ) => (
+              <div
+                key={
+                  i
+                }
+                className="surface-card flex gap-3 rounded-site p-4"
+              >
+                <Skeleton className="size-10 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-3">
+                  <Skeleton className="h-3.5 w-40" />
+                  <Skeleton className="h-3.5 w-full" />
+                  <Skeleton className="h-3.5 w-11/12" />
+                  <Skeleton className="h-3.5 w-3/4" />
+                </div>
               </div>
-            </div>
-          ))}
+            ),
+          )}
         </div>
-        <span className="sr-only">{t('loading', { defaultValue: 'Loading…' })}</span>
+        <span className="sr-only">
+          {t(
+            'loading',
+            {
+              defaultValue:
+                'Loading…',
+            },
+          )}
+        </span>
       </div>
     </div>
   );
@@ -90,30 +128,49 @@ function SitePagePending() {
 
 /** Generic centered shimmer for full-screen routes that own their viewport. */
 function GenericPending() {
-  const { t } = useTranslation('c-ui');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-ui',
+    );
   return (
     <div
       role="status"
-      aria-label={t('loading', { defaultValue: 'Loading…' })}
+      aria-label={t(
+        'loading',
+        {
+          defaultValue:
+            'Loading…',
+        },
+      )}
       data-route-pending=""
       className="mx-auto w-full max-w-2xl px-4 py-8"
     >
       <div className="flex gap-3">
-        <Skeleton shimmer className="size-10 shrink-0 rounded-full" />
+        <Skeleton className="size-10 shrink-0 rounded-full" />
         <div className="min-w-0 flex-1 space-y-3">
-          <Skeleton shimmer className="h-4 w-40" />
-          <Skeleton shimmer className="h-3.5 w-24" />
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-3.5 w-24" />
         </div>
       </div>
       <div className="mt-6 space-y-3">
-        <Skeleton shimmer className="h-3.5 w-full" />
-        <Skeleton shimmer className="h-3.5 w-11/12" />
-        <Skeleton shimmer className="h-3.5 w-4/5" />
-        <Skeleton shimmer className="h-40 w-full rounded-site" />
-        <Skeleton shimmer className="h-3.5 w-3/4" />
-        <Skeleton shimmer className="h-3.5 w-2/3" />
+        <Skeleton className="h-3.5 w-full" />
+        <Skeleton className="h-3.5 w-11/12" />
+        <Skeleton className="h-3.5 w-4/5" />
+        <Skeleton className="h-40 w-full rounded-site" />
+        <Skeleton className="h-3.5 w-3/4" />
+        <Skeleton className="h-3.5 w-2/3" />
       </div>
-      <span className="sr-only">{t('loading', { defaultValue: 'Loading…' })}</span>
+      <span className="sr-only">
+        {t(
+          'loading',
+          {
+            defaultValue:
+              'Loading…',
+          },
+        )}
+      </span>
     </div>
   );
 }

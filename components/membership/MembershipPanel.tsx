@@ -1,33 +1,35 @@
 /**
- * Membership panel — the editorial subscription-tier UI.
+ * Membership panel: the subscription tiers and what they unlock, as the Membership tab of /store.
  *
- * Extracted from the former standalone /pricing route so it can be embedded
- * both there and at the top of the combined /store page. HARD-R & Pro start
- * Stripe-hosted checkout via the better-auth stripe client; Enterprise is a
- * sales-led "Contact team" flow. The Pro tier is visually featured (gold
- * accents echo the amber profile badge it unlocks).
+ * Anatomy (Steel): no hero. The plans are four columns divided by vertical rules where the column
+ * is wide enough and a stack divided by horizontal rules on a phone; each is a name, a price, one
+ * line, its features as rows on rules, and its action. Exactly one action on the tab is the ink
+ * primary (R4): Subscribe on the recommended plan while the viewer is below it, otherwise Manage
+ * billing. A plan the viewer already has says so in words instead of showing a disabled button.
+ * Under the plans, every gated feature is a row on a rule (`MemberFeatureGrid`).
  *
- * Note on tier ids: the $20 tier is DISPLAYED as "HARD-R" but its id is still
- * `starter` everywhere under the hood — that string is the Stripe plan name,
- * the `Subscription.plan` column value and the gift/grant API enum, so it is
- * deliberately not renamed with the label.
+ * HARD-R and Pro start Stripe-hosted checkout through the better-auth stripe client; Enterprise is
+ * a mail link. Nothing here changes a price, a plan or what Stripe is asked for.
  *
- * Self-contained (atmosphere + scoped styles live inside the section), so it
- * drops into any positioned container. `returnPath` controls where Stripe
- * sends the viewer back to (and where the status banner is read from).
+ * Note on tier ids: the $20 tier is DISPLAYED as "HARD-R" but its id is still `starter` everywhere
+ * under the hood. That string is the Stripe plan name, the `Subscription.plan` column value and
+ * the gift/grant API enum, so it is deliberately not renamed with the label.
+ *
+ * `returnPath` controls where Stripe sends the viewer back to (and where the status line is read
+ * from).
  */
 import { useTranslation } from 'react-i18next';
-import { Check, ArrowUpRight, ArrowRight, X } from 'lucide-react';
+import {
+  Check,
+  X,
+} from 'lucide-react';
 import type { Tier } from '@/lib/entitlements';
 import { useMembershipActions } from '@/components/membership/useMembershipActions';
-import { PinnedHero } from '@/components/feed/PinnedHero';
-import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { IconButton } from '@/components/ui/icon-button';
 import { MemberFeatureGrid } from '@/components/membership/MemberFeatureGrid';
 import { TIER_RANK as RANK } from '@/lib/entitlements/tiers';
-import { DeferOnNavigate } from '@/components/ui/defer-on-navigate';
 import type { MemberFeature } from '@/lib/entitlements/features';
 
 // `TIER_RANK` used to be re-declared here with a note not to import the shared
@@ -40,19 +42,45 @@ import type { MemberFeature } from '@/lib/entitlements/features';
  * a currency amount is not a translatable string, but the period suffix
  * ("/mo") is.
  */
-export type Plan = {
-  tier: Tier;
-  price: string;
-  cta: 'current' | 'subscribe' | 'contact';
-  featured?: boolean;
-};
+export type Plan =
+  {
+    tier: Tier;
+    price: string;
+    cta:
+      | 'current'
+      | 'subscribe'
+      | 'contact';
+    featured?: boolean;
+  };
 
-export const PLANS: Plan[] = [
-  { tier: 'free', price: '$0', cta: 'current' },
-  { tier: 'starter', price: '$20', cta: 'subscribe' },
-  { tier: 'pro', price: '$100', cta: 'subscribe', featured: true },
-  { tier: 'enterprise', price: 'Custom', cta: 'contact' },
-];
+export const PLANS: Plan[] =
+  [
+    {
+      tier: 'free',
+      price:
+        '$0',
+      cta: 'current',
+    },
+    {
+      tier: 'starter',
+      price:
+        '$20',
+      cta: 'subscribe',
+    },
+    {
+      tier: 'pro',
+      price:
+        '$100',
+      cta: 'subscribe',
+      featured: true,
+    },
+    {
+      tier: 'enterprise',
+      price:
+        'Custom',
+      cta: 'contact',
+    },
+  ];
 
 /**
  * Plan copy, per tier.
@@ -64,411 +92,654 @@ export const PLANS: Plan[] = [
  * statically, so a computed key like `plan-${tier}-name` is invisible to it and
  * would never reach a translator.
  */
-export function planCopy(t: (key: string, opts: { defaultValue: string }) => string) {
+export function planCopy(
+  t: (
+    key: string,
+    opts: {
+      defaultValue: string;
+    },
+  ) => string,
+) {
   return {
     free: {
-      name: t('plan-free-name', { defaultValue: 'Free' }),
-      period: t('plan-free-period', { defaultValue: '/forever' }),
-      tagline: t('plan-free-tagline', { defaultValue: 'A feel for the studio.' }),
-      features: [
-        t('plan-free-feature-1', { defaultValue: 'Community feed & profiles' }),
-        t('plan-free-feature-2', { defaultValue: 'Public Pages, Builds & Library' }),
-        t('plan-free-feature-3', { defaultValue: 'Standard support' }),
-      ],
+      name: t(
+        'plan-free-name',
+        {
+          defaultValue:
+            'Free',
+        },
+      ),
+      period:
+        t(
+          'plan-free-period',
+          {
+            defaultValue:
+              '/forever',
+          },
+        ),
+      tagline:
+        t(
+          'plan-free-tagline',
+          {
+            defaultValue:
+              'A feel for the studio.',
+          },
+        ),
+      features:
+        [
+          t(
+            'plan-free-feature-1',
+            {
+              defaultValue:
+                'Community feed & profiles',
+            },
+          ),
+          t(
+            'plan-free-feature-2',
+            {
+              defaultValue:
+                'Public Pages, Builds & Library',
+            },
+          ),
+          t(
+            'plan-free-feature-3',
+            {
+              defaultValue:
+                'Standard support',
+            },
+          ),
+        ],
     },
-    starter: {
-      name: t('plan-starter-name', { defaultValue: 'HARD-R' }),
-      period: t('plan-starter-period', { defaultValue: '/mo' }),
-      tagline: t('plan-starter-tagline', {
-        defaultValue: 'Everything unlocked — and the keys.',
-      }),
-      features: [
-        t('plan-starter-feature-1', { defaultValue: 'Everything in Free' }),
-        t('plan-starter-feature-2', { defaultValue: 'All premium features' }),
-        t('plan-starter-feature-3', { defaultValue: 'RMH API access' }),
-        t('plan-starter-feature-4', { defaultValue: 'Priority support' }),
-      ],
-    },
+    starter:
+      {
+        name: t(
+          'plan-starter-name',
+          {
+            defaultValue:
+              'HARD-R',
+          },
+        ),
+        period:
+          t(
+            'plan-starter-period',
+            {
+              defaultValue:
+                '/mo',
+            },
+          ),
+        tagline:
+          t(
+            'plan-starter-tagline',
+            {
+              defaultValue:
+                'Everything unlocked — and the keys.',
+            },
+          ),
+        features:
+          [
+            t(
+              'plan-starter-feature-1',
+              {
+                defaultValue:
+                  'Everything in Free',
+              },
+            ),
+            t(
+              'plan-starter-feature-2',
+              {
+                defaultValue:
+                  'All premium features',
+              },
+            ),
+            t(
+              'plan-starter-feature-3',
+              {
+                defaultValue:
+                  'RMH API access',
+              },
+            ),
+            t(
+              'plan-starter-feature-4',
+              {
+                defaultValue:
+                  'Priority support',
+              },
+            ),
+          ],
+      },
     pro: {
-      name: t('plan-pro-name', { defaultValue: 'Pro' }),
-      period: t('plan-pro-period', { defaultValue: '/mo' }),
-      tagline: t('plan-pro-tagline', { defaultValue: 'For power users who want the badge.' }),
-      features: [
-        t('plan-pro-feature-1', { defaultValue: 'Everything in HARD-R' }),
-        t('plan-pro-feature-2', { defaultValue: 'Verified profile badge' }),
-        t('plan-pro-feature-3', { defaultValue: 'Early access to new tools' }),
-        t('plan-pro-feature-4', { defaultValue: 'Dedicated support' }),
-      ],
+      name: t(
+        'plan-pro-name',
+        {
+          defaultValue:
+            'Pro',
+        },
+      ),
+      period:
+        t(
+          'plan-pro-period',
+          {
+            defaultValue:
+              '/mo',
+          },
+        ),
+      tagline:
+        t(
+          'plan-pro-tagline',
+          {
+            defaultValue:
+              'For power users who want the badge.',
+          },
+        ),
+      features:
+        [
+          t(
+            'plan-pro-feature-1',
+            {
+              defaultValue:
+                'Everything in HARD-R',
+            },
+          ),
+          t(
+            'plan-pro-feature-2',
+            {
+              defaultValue:
+                'Verified profile badge',
+            },
+          ),
+          t(
+            'plan-pro-feature-3',
+            {
+              defaultValue:
+                'Early access to new tools',
+            },
+          ),
+          t(
+            'plan-pro-feature-4',
+            {
+              defaultValue:
+                'Dedicated support',
+            },
+          ),
+        ],
     },
-    enterprise: {
-      name: t('plan-enterprise-name', { defaultValue: 'Enterprise' }),
-      period: '',
-      tagline: t('plan-enterprise-tagline', {
-        defaultValue: 'Pro, scaled to your whole company.',
-      }),
-      features: [
-        t('plan-enterprise-feature-1', { defaultValue: 'Everything in Pro' }),
-        t('plan-enterprise-feature-2', { defaultValue: 'Seats for your team' }),
-        t('plan-enterprise-feature-3', { defaultValue: 'Custom contract & invoicing' }),
-        t('plan-enterprise-feature-4', { defaultValue: 'SLA & onboarding' }),
-      ],
-    },
-  } satisfies Record<Tier, { name: string; period: string; tagline: string; features: string[] }>;
+    enterprise:
+      {
+        name: t(
+          'plan-enterprise-name',
+          {
+            defaultValue:
+              'Enterprise',
+          },
+        ),
+        period:
+          '',
+        tagline:
+          t(
+            'plan-enterprise-tagline',
+            {
+              defaultValue:
+                'Pro, scaled to your whole company.',
+            },
+          ),
+        features:
+          [
+            t(
+              'plan-enterprise-feature-1',
+              {
+                defaultValue:
+                  'Everything in Pro',
+              },
+            ),
+            t(
+              'plan-enterprise-feature-2',
+              {
+                defaultValue:
+                  'Seats for your team',
+              },
+            ),
+            t(
+              'plan-enterprise-feature-3',
+              {
+                defaultValue:
+                  'Custom contract & invoicing',
+              },
+            ),
+            t(
+              'plan-enterprise-feature-4',
+              {
+                defaultValue:
+                  'SLA & onboarding',
+              },
+            ),
+          ],
+      },
+  } satisfies Record<
+    Tier,
+    {
+      name: string;
+      period: string;
+      tagline: string;
+      features: string[];
+    }
+  >;
 }
 
 export function MembershipPanel({
   currentTier,
   returnPath = '/store',
-  onCoinShop,
-  headingLevel = 'h1',
   highlightFeature = null,
 }: {
   /** `null` = signed out. Distinct from 'free', which is a real membership. */
   currentTier: Tier | null;
   returnPath?: string;
-  /** When set, shows a ghost button in the hero that opens the RMH Coins shop
-   *  (on /store, the sibling "Shop" tab). Omit it where there is no shop to
-   *  send the visitor to — /pricing renders this panel standalone. */
-  onCoinShop?: () => void;
-  /** Pass 'h2' when the embedding page already renders its own h1 (/store). */
-  headingLevel?: 'h1' | 'h2';
   /**
    * The feature that sent the viewer here, from `?feature=` (see `upgradeHref`).
-   * Its card sorts first and is ringed, so someone refused mid-action lands
+   * Its row sorts first and is marked, so someone refused mid-action lands
    * looking at the thing they wanted rather than at a price table.
    */
   highlightFeature?: MemberFeature | null;
 }) {
-  const { t } = useTranslation('site');
-  const signedOut = currentTier === null;
-  const tier: Tier = currentTier ?? 'free';
-  const { busy, status, setStatus, subscribe, manageBilling } = useMembershipActions(returnPath);
-  const COPY = planCopy(t);
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const signedOut =
+    currentTier ===
+    null;
+  const tier: Tier =
+    currentTier ??
+    'free';
+  const {
+    busy,
+    status,
+    setStatus,
+    subscribe,
+    manageBilling,
+  } =
+    useMembershipActions(
+      returnPath,
+    );
+  const COPY =
+    planCopy(
+      t,
+    );
+  // The one primary: the recommended plan while the viewer is below it, else the billing portal.
+  const recommended =
+    PLANS.find(
+      (
+        p,
+      ) =>
+        p.featured &&
+        p.cta ===
+          'subscribe',
+    );
+  const primaryTier =
+    recommended &&
+    RANK[
+      tier
+    ] <
+      RANK[
+        recommended
+          .tier
+      ]
+      ? recommended.tier
+      : null;
+  const paid =
+    !signedOut &&
+    tier !==
+      'free';
 
   return (
-    // No `overflow-hidden` on this section: it would establish a scroll
-    // container and break the pinned hero's position:sticky. The hero clips
-    // its own glow internally.
-    <section className="relative isolate">
-      <PricingStyles />
+    <section className="flex flex-col gap-8 pt-4">
+      {status ? (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 border-y border-site-border py-2"
+        >
+          <p className="t-body flex items-center gap-2 text-site-text">
+            {status ===
+            'success' ? (
+              <Check
+                className="size-4 shrink-0 text-site-success"
+                aria-hidden
+              />
+            ) : null}
+            {status ===
+            'success'
+              ? t(
+                  'membership-status-success',
+                  {
+                    defaultValue:
+                      'Payment received. Your membership is being activated.',
+                  },
+                )
+              : t(
+                  'status-cancelled',
+                  {
+                    defaultValue:
+                      'Checkout cancelled. No charge was made.',
+                  },
+                )}
+          </p>
+          <IconButton
+            icon={
+              X
+            }
+            variant="ghost"
+            label={t(
+              'status-dismiss',
+              {
+                defaultValue:
+                  'Dismiss',
+              },
+            )}
+            onClick={() =>
+              setStatus(
+                null,
+              )
+            }
+          />
+        </div>
+      ) : null}
 
-      {/* ── Signature pinned hero ────────────────────────────── */}
-      <PinnedHero
-        as={headingLevel}
-        title={
-          <>
-            {t('hero-heading-line1', { defaultValue: 'Choose your' })} <br />
-            <span className="text-site-accent">
-              {t('hero-heading-line2', { defaultValue: 'altitude.' })}
-            </span>
-          </>
+      {paid ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="t-body text-site-text">
+            {t(
+              'membership-current-line',
+              {
+                plan: COPY[
+                  tier
+                ]
+                  .name,
+                defaultValue:
+                  'You are on {{plan}}.',
+              },
+            )}
+          </p>
+          <Button
+            type="button"
+            variant={
+              primaryTier
+                ? 'default'
+                : 'primary'
+            }
+            onClick={
+              manageBilling
+            }
+            loading={
+              busy ===
+              'portal'
+            }
+            disabled={
+              busy !==
+              null
+            }
+          >
+            {t(
+              'manage-billing',
+              {
+                defaultValue:
+                  'Manage billing',
+              },
+            )}
+          </Button>
+        </div>
+      ) : null}
+
+      {/* Sized off the CONTAINER, not the viewport: four columns only where each gets about
+          180px, otherwise one stack. */}
+      <div className="@container">
+        <div className="grid @3xl:grid-cols-4">
+          {PLANS.map(
+            (
+              plan,
+            ) => {
+              const isCurrent =
+                !signedOut &&
+                tier ===
+                  plan.tier;
+              const owned =
+                !signedOut &&
+                RANK[
+                  tier
+                ] >
+                  RANK[
+                    plan
+                      .tier
+                  ];
+              const copy =
+                COPY[
+                  plan
+                    .tier
+                ];
+              const isPrimary =
+                primaryTier ===
+                plan.tier;
+              return (
+                <article
+                  key={
+                    plan.tier
+                  }
+                  data-slot="plan"
+                  className="flex min-w-0 flex-col gap-4 border-t border-site-border py-5 @3xl:border-s @3xl:border-t-0 @3xl:px-5 @3xl:py-0 @3xl:first:border-s-0 @3xl:first:ps-0 @3xl:last:pe-0"
+                >
+                  <div className="flex flex-col gap-1">
+                    <div className="flex min-h-6 flex-wrap items-center gap-2">
+                      <h2 className="t-heading">
+                        {
+                          copy.name
+                        }
+                      </h2>
+                      {isCurrent ? (
+                        <Badge variant="solid">
+                          {t(
+                            'current-badge',
+                            {
+                              defaultValue:
+                                'Current',
+                            },
+                          )}
+                        </Badge>
+                      ) : plan.featured ? (
+                        <Badge>
+                          {t(
+                            'most-popular',
+                            {
+                              defaultValue:
+                                'Most popular',
+                            },
+                          )}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <p className="flex flex-wrap items-baseline gap-x-1">
+                      <span className="t-heading tabular-nums">
+                        {
+                          plan.price
+                        }
+                      </span>
+                      {copy.period ? (
+                        <span className="t-meta">
+                          {
+                            copy.period
+                          }
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="t-body text-site-text-muted @3xl:min-h-[2.9em]">
+                      {
+                        copy.tagline
+                      }
+                    </p>
+                  </div>
+
+                  <ul className="flex-1 border-t border-site-border">
+                    {copy.features.map(
+                      (
+                        f,
+                      ) => (
+                        <li
+                          key={
+                            f
+                          }
+                          className="t-body flex items-start gap-2 border-b border-site-border py-2 text-site-text"
+                        >
+                          <Check
+                            className="mt-0.5 size-4 shrink-0 text-site-text-muted"
+                            aria-hidden
+                          />
+                          <span className="min-w-0">
+                            {
+                              f
+                            }
+                          </span>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+
+                  <div className="flex min-h-9 items-center pointer-coarse:min-h-11">
+                    {isCurrent ||
+                    owned ||
+                    (plan.cta ===
+                      'current' &&
+                      !signedOut) ? (
+                      <p className="t-body text-site-text-muted">
+                        {isCurrent
+                          ? t(
+                              'your-current-plan',
+                              {
+                                defaultValue:
+                                  'Your current plan',
+                              },
+                            )
+                          : owned
+                            ? t(
+                                'plan-included',
+                                {
+                                  defaultValue:
+                                    'Included in your plan',
+                                },
+                              )
+                            : t(
+                                'free-forever',
+                                {
+                                  defaultValue:
+                                    'Free forever',
+                                },
+                              )}
+                      </p>
+                    ) : plan.cta ===
+                      'current' ? (
+                      <Button
+                        asChild
+                        variant="default"
+                        className="w-full"
+                      >
+                        <a href="/login">
+                          {t(
+                            'plan-create-account',
+                            {
+                              defaultValue:
+                                'Create an account',
+                            },
+                          )}
+                        </a>
+                      </Button>
+                    ) : plan.cta ===
+                      'subscribe' ? (
+                      <Button
+                        type="button"
+                        onClick={() =>
+                          subscribe(
+                            plan.tier as
+                              | 'starter'
+                              | 'pro',
+                          )
+                        }
+                        loading={
+                          busy ===
+                          plan.tier
+                        }
+                        disabled={
+                          busy !==
+                          null
+                        }
+                        variant={
+                          isPrimary
+                            ? 'primary'
+                            : 'default'
+                        }
+                        className="w-full"
+                      >
+                        {paid
+                          ? t(
+                              'upgrade',
+                              {
+                                defaultValue:
+                                  'Upgrade',
+                              },
+                            )
+                          : t(
+                              'subscribe',
+                              {
+                                defaultValue:
+                                  'Subscribe',
+                              },
+                            )}
+                      </Button>
+                    ) : (
+                      <Button
+                        asChild
+                        variant="default"
+                        className="w-full"
+                      >
+                        <a href="mailto:team@rmhstudios.com?subject=Enterprise%20plan">
+                          {t(
+                            'contact-team',
+                            {
+                              defaultValue:
+                                'Contact team',
+                            },
+                          )}
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </article>
+              );
+            },
+          )}
+        </div>
+        <p className="t-meta mt-4">
+          {t(
+            'billing-footnote',
+            {
+              defaultValue:
+                'Billed monthly · cancel anytime · secure checkout by Stripe',
+            },
+          )}
+        </p>
+      </div>
+
+      {/* Rendered from the same registry the API routes gate on, so this list cannot drift from
+          what is actually enforced. */}
+      <MemberFeatureGrid
+        tier={
+          tier
         }
-        subtitle={t('hero-subheading', {
-          defaultValue:
-            'Four tiers, one studio. Unlock the full toolset, the RMH API, and a verified badge — or scale the whole thing to your company.',
-        })}
-        scrollCue={t('scroll-to-compare', { defaultValue: 'Compare tiers' })}
-        actions={
-          <>
-            {!signedOut && tier !== 'free' && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={manageBilling}
-                loading={busy === 'portal'}
-                disabled={busy !== null}
-              >
-                <ArrowUpRight aria-hidden />
-                {t('manage-billing', { defaultValue: 'Manage billing' })}
-              </Button>
-            )}
-            {onCoinShop && (
-              <Button type="button" variant="outline" onClick={onCoinShop}>
-                {t('coins-shop-jump', { defaultValue: 'RMH Coins shop' })}
-                <ArrowRight aria-hidden />
-              </Button>
-            )}
-          </>
+        highlight={
+          highlightFeature ??
+          null
+        }
+        signedOut={
+          signedOut
         }
       />
-
-      {/* Content padding only — the center-column width is governed by the
-          surrounding AnimatedMain so the gutters match blog/library. The old
-          section divider is gone (§8.4): the plans float over the aurora. */}
-      {/* Everything under the pinned hero is below the fold on arrival — the
-          hero fills the first screen — so on a page switch it is built after
-          the hero has painted. A feature deep link scrolls into this part, so
-          that arrival renders it at once. */}
-      <DeferOnNavigate enabled={!highlightFeature} minHeight="100vh">
-        <div className="relative pb-12 pt-8 sm:pt-12 md:px-4">
-          {/* ── Status banner ──────────────────────────────────── */}
-          {status && (
-            <Reveal
-              className={`mb-6 flex items-center justify-between gap-3 rounded-site border px-4 py-3 text-sm ${
-                status === 'success'
-                  ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
-                  : 'glass-pane text-site-text-muted'
-              }`}
-            >
-              <span>
-                {status === 'success'
-                  ? t('status-success', {
-                      defaultValue: 'Welcome aboard — your membership is being activated.',
-                    })
-                  : t('status-cancelled', {
-                      defaultValue: 'Checkout cancelled. No charge was made.',
-                    })}
-              </span>
-              <button
-                type="button"
-                onClick={() => setStatus(null)}
-                aria-label={t('status-dismiss', { defaultValue: 'Dismiss' })}
-                className="flex size-11 shrink-0 items-center justify-center opacity-60 hover:opacity-100"
-              >
-                <X className="h-4 w-4" aria-hidden />
-              </button>
-            </Reveal>
-          )}
-
-          {/* ── Plan grid ──────────────────────────────────────────
-            Sized off the CONTAINER, not the viewport. This panel renders inside
-            the site's centre column, which stays ~640px however wide the screen
-            gets, so the old `xl:grid-cols-4` viewport breakpoint put four cards
-            in 640px — 148px each, which wrapped every tagline into three ragged
-            lines and pushed "Custom" and the CTA labels past their own borders.
-            Container queries make the card count answer to the space that
-            actually exists: two up in the centre column, four only when a host
-            genuinely has room for them. */}
-          <div className="@container">
-            <RevealGroup className="grid items-stretch gap-4 @md:grid-cols-2 @5xl:grid-cols-4">
-              {PLANS.map((plan) => {
-                const isCurrent = !signedOut && tier === plan.tier;
-                const owned = !signedOut && RANK[tier] > RANK[plan.tier];
-                const copy = COPY[plan.tier];
-                const cta =
-                  RANK[tier] < RANK[plan.tier] && tier !== 'free'
-                    ? t('upgrade', { defaultValue: 'Upgrade' })
-                    : t('subscribe', { defaultValue: 'Subscribe' });
-                return (
-                  <RevealItem key={plan.tier} className="flex">
-                    {/* Card is a plain <article> so its CSS hover/featured
-                      transforms aren't clobbered by the RevealItem motion node's
-                      inline transform. */}
-                    <article
-                      // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
-                      // border/ring; the featured tier additionally takes the page's
-                      // one prism refract slot + ambient sheen + per-element lens.
-                      data-glass-lens={plan.featured ? '' : undefined}
-                      className={cn(
-                        'pricing-card group relative flex w-full flex-col glass-pane rounded-site p-5',
-                        // Clearance for the ribbon that straddles the top edge.
-                        plan.featured &&
-                          'pricing-card--featured glass-refract glass-refract--prism glass-liquid pt-7',
-                      )}
-                    >
-                      {plan.featured && (
-                        <span className="pricing-ribbon">
-                          {t('most-popular', { defaultValue: 'Most popular' })}
-                        </span>
-                      )}
-
-                      {/* Name and status sit in ONE flow row. The "Current" chip
-                        used to be absolutely positioned over the top-right
-                        corner, where it landed on top of the tier name. */}
-                      <div className="flex items-start justify-between gap-2">
-                        <h3
-                          className={cn(
-                            'font-display text-2xl font-bold leading-tight tracking-tight',
-                            plan.featured ? 'text-site-warning' : 'text-site-text',
-                          )}
-                        >
-                          {copy.name}
-                        </h3>
-                        {isCurrent && (
-                          <Badge
-                            variant="accent"
-                            size="sm"
-                            className="mt-1"
-                          >
-                            {t('current-badge', { defaultValue: 'Current' })}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <p className="mt-1.5 min-h-10 text-sm leading-snug text-site-text-muted">
-                        {copy.tagline}
-                      </p>
-
-                      {/* `flex-wrap` + `break-words`: a long localised price or a
-                        word like "Custom" now wraps inside the card instead of
-                        running out through its right border. */}
-                      <p className="mt-4 flex flex-wrap items-baseline gap-x-1.5">
-                        <span className="font-mono text-3xl font-semibold tracking-tight text-site-text tabular-nums break-words">
-                          {plan.price}
-                        </span>
-                        {copy.period && (
-                          <span className="font-mono text-xs text-site-text-muted">
-                            {copy.period}
-                          </span>
-                        )}
-                      </p>
-
-                      <div className="my-5 h-px w-full bg-gradient-to-r from-site-border to-transparent" />
-
-                      <ul className="flex flex-1 flex-col gap-2.5">
-                        {copy.features.map((f) => (
-                          <li key={f} className="flex items-start gap-2.5 text-sm text-site-text">
-                            {/* Token utilities — this was an inline `style` with a
-                              hand-written color-mix, invisible to the themes. */}
-                            <span
-                              className={cn(
-                                'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
-                                plan.featured ? 'bg-site-warning/20' : 'bg-site-accent-dim',
-                              )}
-                            >
-                              <Check
-                                className={cn(
-                                  'h-2.5 w-2.5',
-                                  plan.featured ? 'text-site-warning' : 'text-site-accent',
-                                )}
-                                aria-hidden
-                              />
-                            </span>
-                            <span className="leading-snug">{f}</span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      {/* CTAs are the shared `Button` primitive (§5.2) rather than
-                        three hand-rolled pills with inline background styles.
-                        `h-auto min-h-11` + `whitespace-normal` override the
-                        primitive's fixed height and nowrap so a two-word label —
-                        or a longer translation of one — grows the button instead
-                        of spilling over its own border. */}
-                      <div className="mt-6">
-                        {/* A tier you already hold has nothing to click, so it gets
-                          the quiet dashed status pill rather than a disabled
-                          fill. A greyed-out `bg-site-accent` button reads as a
-                          heavy slab that still looks pressable, and it competed
-                          with the one real call to action on the page. */}
-                        {isCurrent || owned || (plan.cta === 'current' && !signedOut) ? (
-                          <p className="flex min-h-11 items-center justify-center rounded-[var(--site-control-radius)] border border-dashed border-site-border px-3 py-2 text-center text-sm font-medium text-site-text-muted">
-                            {isCurrent
-                              ? t('your-current-plan', { defaultValue: 'Your current plan' })
-                              : owned
-                                ? t('included', { defaultValue: 'Included' })
-                                : t('free-forever', { defaultValue: 'Free forever' })}
-                          </p>
-                        ) : plan.cta === 'current' ? (
-                          <Button
-                            asChild
-                            variant="accent"
-                            className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
-                          >
-                            <a href="/login">
-                              {t('get-started-free', { defaultValue: 'Get started — free' })}
-                              <ArrowUpRight aria-hidden />
-                            </a>
-                          </Button>
-                        ) : plan.cta === 'subscribe' ? (
-                          <Button
-                            type="button"
-                            onClick={() => subscribe(plan.tier as 'starter' | 'pro')}
-                            loading={busy === plan.tier}
-                            disabled={busy !== null}
-                            // Ink tracks its surface: each variant carries its own
-                            // paired foreground token, so neither fill can end up
-                            // painting its label in the other's colour.
-                            variant={plan.featured ? 'warning' : 'accent'}
-                            className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
-                          >
-                            {cta}
-                            <ArrowUpRight aria-hidden />
-                          </Button>
-                        ) : (
-                          <Button
-                            asChild
-                            variant="outline"
-                            className="h-auto min-h-11 w-full whitespace-normal py-2.5 text-center"
-                          >
-                            <a href="mailto:team@rmhstudios.com?subject=Enterprise%20plan">
-                              {t('contact-team', { defaultValue: 'Contact team' })}
-                              <ArrowUpRight aria-hidden />
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </article>
-                  </RevealItem>
-                );
-              })}
-            </RevealGroup>
-          </div>
-
-          {/* ── What a membership unlocks ──────────────────────── */}
-          {/* Rendered from the same registry the API routes gate on, so this
-            list cannot drift from what is actually enforced. */}
-          <MemberFeatureGrid
-            tier={tier}
-            highlight={highlightFeature ?? null}
-            signedOut={signedOut}
-          />
-
-          {/* ── Footnote ───────────────────────────────────────── */}
-          <Reveal as="p" className="mt-8 text-center font-mono text-xs text-site-text-muted">
-            {t('billing-footnote', {
-              defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe',
-            })}
-          </Reveal>
-        </div>
-      </DeferOnNavigate>
     </section>
-  );
-}
-
-/** Scoped styles + keyframes for the membership panel. */
-function PricingStyles() {
-  return (
-    <style>{`
-      /* The pricing panel sits directly on the aurora canvas — no opaque slab
-         (the old panel background was deleted with the glass redesign).
-
-         Type comes from the token contract now (--site-font-display /
-         --site-font-mono via the font utilities), not from local
-         .pricing-display/.pricing-price rules that named --font-playfair and
-         --font-jetbrains-mono directly and so ignored any theme that re-points
-         those tokens. Card hover is likewise the shared .glass-* behaviour.
-         What is left here is the one thing the system has no token for: the
-         featured tier's gold ring and glow. */
-
-      .pricing-card--featured {
-        box-shadow:
-          0 0 0 1px color-mix(in srgb, var(--site-warning) 45%, transparent),
-          0 24px 60px -20px color-mix(in srgb, var(--site-warning) 35%, transparent);
-      }
-
-
-      /* Straddles the card's top edge. The max-width keeps a long translation
-         inside the card rather than out over its neighbour.
-
-         Because it deliberately overflows, the featured card has to opt out of
-         the sheen layer's hard clip (.glass-liquid sets overflow:clip, so the
-         travelling band cannot be seen outside the pane). --glass-sheen-bleed is
-         that opt-out: it buys the ribbon room to hang over the edge, and the only
-         cost is that the sheen's soft tail is allowed the same room — which on an
-         alpha ramp is not visible. Keep it just big enough for half the ribbon. */
-      .pricing-card--featured {
-        --glass-sheen-bleed: 16px;
-      }
-      .pricing-ribbon {
-        position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
-        border-radius: 9999px; padding: 4px 12px; max-width: calc(100% - 1.5rem);
-        font-size: 0.75rem; font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden; text-overflow: ellipsis;
-        color: var(--site-warning-fg); background: var(--site-warning);
-        box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--site-warning) 60%, transparent);
-      }
-    `}</style>
   );
 }

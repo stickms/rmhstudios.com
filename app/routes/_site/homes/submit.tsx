@@ -10,6 +10,10 @@ import type { Listing } from '@/lib/homes/types';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { api } from '@/lib/contract/client';
+import { getHomeListingApi } from '@/lib/homes/homes.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/homes/submit')({
   head: () => ({ meta: [{ title: 'RMHHomes — Post a listing' }] }),
@@ -23,17 +27,18 @@ function HomesSubmitPage() {
   const { edit: editId } = Route.useSearch();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(false);
+  const arrival = useArrival(!isPending);
+  const listingArrival = useArrival(!(Boolean(editId) && loading));
 
   useEffect(() => {
     if (!editId || !session) return;
     setLoading(true);
     (async () => {
       try {
-        const res = await fetch(`/api/homes/listings/${encodeURIComponent(editId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.listing?.isOwner) setListing(data.listing);
-        }
+        const data = await api(getHomeListingApi, { params: { id: editId }, retries: 0 });
+        if (data.listing?.isOwner) setListing(data.listing);
+      } catch {
+        /* a listing that cannot be read simply is not editable here */
       } finally {
         setLoading(false);
       }
@@ -62,22 +67,26 @@ function HomesSubmitPage() {
             pre-existing debt rather than half-translated: what changes here is
             the SHAPE (it was a `max-w-md py-20` block with a default-variant
             Button where every sibling prompt uses accent), not the copy. */}
-        <SignedOutPrompt callbackURL="/homes/submit" title="Sign in to post a home on RMHHomes." />
+        <SignedOutPrompt
+          className={arrival}
+          callbackURL="/homes/submit"
+          title="Sign in to post a home on RMHHomes."
+        />
       </PageLayout>
     );
   }
 
   return (
     <PageLayout title={title} backTo="/homes" backLabel="Back to browse" wide>
-      <div className="w-full max-w-2xl px-4 pt-4 pb-12">
+      <div className={cn('w-full max-w-2xl', arrival)}>
         {isEditing && loading ? (
           <div className="grid place-items-center py-20 text-site-text-muted">
             <Spinner />
           </div>
         ) : isEditing && !listing ? (
-          <EmptyState title="You can only edit your own listings." />
+          <EmptyState className={listingArrival} title="You can only edit your own listings." />
         ) : (
-          <div className="glass-fill rounded-site p-5 sm:p-5">
+          <div className={listingArrival}>
             <ListingForm listing={listing ?? undefined} />
           </div>
         )}

@@ -1,9 +1,8 @@
-'use client';
-
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   KeyRound,
   Plus,
@@ -26,6 +25,16 @@ import { SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
 import { DEVELOPER_DOCS_URL } from '@/lib/docs-site';
 import { KeyUsage } from '@/components/developer/KeyUsage';
 import { TestKeyCreator } from '@/components/developer/TestKeyCreator';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  createDeveloperKeyApi,
+  revokeDeveloperKeyApi,
+  updateDeveloperKeyApi,
+} from '@/lib/devplatform/keys.contract';
+import { developerKeysQuery } from '@/lib/devplatform/developer.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface ApiKey {
   id: string;
@@ -48,9 +57,13 @@ const EXPIRY_OPTIONS = [
 export function KeysManager() {
   const { t } = useTranslation('f-devplatform');
   const confirm = useConfirm();
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [hasAccess, setHasAccess] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const query = developerKeysQuery();
+  // A failed read leaves the previous list in place (or an empty one).
+  const { data, isPending: loading } = useQuery(query);
+  const keys: ApiKey[] = data?.keys ?? [];
+  const hasAccess = !!data?.hasApiAccess;
+  const arrival = useArrival(!loading);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [scopes, setScopes] = useState<string[]>([...DEFAULT_SCOPES]);
@@ -59,28 +72,7 @@ export function KeysManager() {
   const [expiryDays, setExpiryDays] = useState(0);
   const [newKey, setNewKey] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    const res = await fetch('/api/developer/keys', { credentials: 'include' });
-    if (res.ok) {
-      const data = await res.json();
-      setKeys(data.keys ?? []);
-      setHasAccess(!!data.hasApiAccess);
-    }
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        await load();
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [load]);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
   function toggleScope(id: string) {
     setScopes((cur) => (cur.includes(id) ? cur.filter((s) => s !== id) : [...cur, id]));
@@ -90,21 +82,16 @@ export function KeysManager() {
     if (!name.trim()) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/developer/keys', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), scopes, expiresInDays: expiryDays || undefined }),
+      const data = await api(createDeveloperKeyApi, {
+        body: { name: name.trim(), scopes, expiresInDays: expiryDays || undefined },
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setNewKey(data.key);
-        setName('');
-        await load();
-      } else
-        toast.error(
-          data.error || t('keys-create-failed', { defaultValue: 'Could not create key' }),
-        );
+      setNewKey(data.key);
+      setName('');
+      await load();
+    } catch (e) {
+      toast.error(
+        serverError(e) || t('keys-create-failed', { defaultValue: 'Could not create key' }),
+      );
     } finally {
       setCreating(false);
     }
@@ -119,14 +106,10 @@ export function KeysManager() {
       confirmLabel: t('keys-rotate-confirm', { defaultValue: 'Rotate' }),
     });
     if (!confirmed) return;
-    const res = await fetch(`/api/developer/keys/${id}`, {
-      method: 'PATCH',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rotate: true }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.key) {
+    const data = await api(updateDeveloperKeyApi, { params: { id }, body: { rotate: true } }).catch(
+      () => null,
+    );
+    if (data?.key) {
       setNewKey(data.key);
       await load();
     }
@@ -142,11 +125,15 @@ export function KeysManager() {
       danger: true,
     });
     if (!confirmed) return;
-    const res = await fetch(`/api/developer/keys/${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    });
-    if (res.ok) setKeys((k) => k.filter((x) => x.id !== id));
+    const revoked = await api(revokeDeveloperKeyApi, { params: { id } }).then(
+      () => true,
+      () => false,
+    );
+    if (revoked) {
+      queryClient.setQueryData(query.queryKey, (old) =>
+        old ? { ...old, keys: old.keys.filter((x) => x.id !== id) } : old,
+      );
+    }
   }
 
   if (loading)
@@ -158,7 +145,7 @@ export function KeysManager() {
 
   if (!hasAccess) {
     return (
-      <section className="glass-pane rounded-site px-4 py-6 text-center">
+      <section className={cn('rounded-site px-4 py-6 text-center', arrival)}>
         <ShieldCheck className="mx-auto mb-2 size-7 text-site-accent" aria-hidden />
         <p className="font-semibold text-site-text">
           {t('keys-subscription-title', { defaultValue: 'A subscription is required' })}
@@ -169,7 +156,7 @@ export function KeysManager() {
               'The developer API needs an active HARD-R plan or higher. Your access is checked on every request, so it stays in sync with your subscription.',
           })}
         </p>
-        <Button asChild variant="accent" size="sm" className="mt-3">
+        <Button asChild variant="default" size="sm" className="mt-3">
           <Link to="/store" search={{ tab: 'membership' }}>
             {t('keys-view-plans', { defaultValue: 'View plans' })}
           </Link>
@@ -179,7 +166,7 @@ export function KeysManager() {
   }
 
   return (
-    <section className="space-y-3">
+    <section className={cn('space-y-3', arrival)}>
       <h2 className="site-section-label flex items-center gap-2">
         <KeyRound className="size-4 text-site-accent" aria-hidden />
         {t('keys-title', { defaultValue: 'Your API keys' })}
@@ -199,12 +186,12 @@ export function KeysManager() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <code className="glass-inset min-w-0 flex-1 truncate rounded-site-sm px-3 py-2 text-xs text-site-text">
+            <code className="surface-field min-w-0 flex-1 truncate rounded-site-sm px-3 py-2 text-xs text-site-text">
               {newKey}
             </code>
             <CopyButton
               value={newKey}
-              variant="accent"
+              variant="default"
               size="icon-sm"
               label={t('keys-copy-key', { defaultValue: 'Copy API key' })}
             />
@@ -213,7 +200,7 @@ export function KeysManager() {
       )}
 
       {/* Create form */}
-      <div className="glass-fill space-y-3 rounded-site px-4 py-3">
+      <div className="space-y-3 rounded-site px-4 py-3">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -229,7 +216,7 @@ export function KeysManager() {
           <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
             {scopesByGroup().map((g) => (
               <div key={g.group}>
-                <p className="text-xs font-semibold text-site-text-dim">{g.group}</p>
+                <p className="text-xs font-semibold text-site-text-muted">{g.group}</p>
                 {g.scopes.map((s) => (
                   <label
                     key={s.id}
@@ -291,7 +278,7 @@ export function KeysManager() {
           <div className="flex-1" />
           <Button
             size="sm"
-            variant="accent"
+            variant="default"
             loading={creating}
             disabled={!name.trim()}
             onClick={create}
@@ -317,12 +304,12 @@ export function KeysManager() {
           {keys.map((k) => {
             const expired = k.expiresAt && new Date(k.expiresAt).getTime() < Date.now();
             return (
-              <div key={k.id} className="glass-fill rounded-site px-4 py-3">
+              <div key={k.id} className="rounded-site px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <KeyRound className="size-4 shrink-0 text-site-text-dim" aria-hidden />
+                  <KeyRound className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-site-text">{k.name}</p>
-                    <p className="font-mono text-xs text-site-text-dim">
+                    <p className="font-mono text-xs text-site-text-muted">
                       {k.prefix}…{k.lastFour ?? ''} ·{' '}
                       {k.lastUsedAt
                         ? t('keys-last-used', {
@@ -372,7 +359,7 @@ export function KeysManager() {
                 {k.scopes.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {k.scopes.map((s) => (
-                      <Badge key={s} variant="outline" size="sm" className="font-mono font-normal">
+                      <Badge key={s} variant="default" className="font-mono font-normal">
                         {s}
                       </Badge>
                     ))}
@@ -384,7 +371,7 @@ export function KeysManager() {
         </div>
       )}
 
-      <p className="flex items-center gap-2 text-xs text-site-text-dim">
+      <p className="flex items-center gap-2 text-xs text-site-text-muted">
         <BookOpen className="size-3.5" aria-hidden />
         <span>
           {t('keys-docs-lead', { defaultValue: 'New here?' })}{' '}

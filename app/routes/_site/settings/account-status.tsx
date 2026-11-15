@@ -6,6 +6,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { accountStandingQuery } from '@/lib/moderation/standing.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AccountStandingPanel } from '@/components/moderation/AccountStandingPanel';
 import { useSession } from '@/components/Providers';
@@ -16,6 +18,7 @@ export const Route = createFileRoute('/_site/settings/account-status')({
   head: () => ({
     meta: [{ title: 'Account status | RMH Studios' }],
   }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, accountStandingQuery()),
   component: AccountStatusPage,
 });
 

@@ -2,7 +2,6 @@
  * The browser side of the war paint compositor: one shared worker, latest request wins. Resolves with
  * null when the kit has not been synced, the composite failed or the request was superseded.
  */
-'use client';
 
 import type { PaintRequest, PaintResponse } from './warpaint.worker';
 

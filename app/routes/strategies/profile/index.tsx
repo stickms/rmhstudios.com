@@ -1,20 +1,25 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useDoctrineReputation } from '@/hooks/useDoctrineReputation';
-import { XpBar } from '@/components/doctrine/reputation/xp-bar';
-import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
-import { StreakDisplay } from '@/components/doctrine/puzzles/streak-display';
-import { ActivityHeatmap } from '@/components/doctrine/reputation/activity-heatmap';
+import { noindexHead } from '@/lib/seo';
+import { useDoctrineReputation } from '@features/doctrine/ui/hooks/useDoctrineReputation';
+import { XpBar } from '@features/doctrine/ui/reputation/xp-bar';
+import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
+import { StreakDisplay } from '@features/doctrine/ui/puzzles/streak-display';
+import { ActivityHeatmap } from '@features/doctrine/ui/reputation/activity-heatmap';
 import { User, Settings } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/profile/')({
+  head: () => noindexHead('Strategies Profile'),
   component: ProfilePage,
 });
 
 function ProfilePage() {
   const { t } = useTranslation("r-strategies");
   const { data: rep, isLoading } = useDoctrineReputation();
+  const arrival = useArrival(!isLoading);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -37,7 +42,7 @@ function ProfilePage() {
           ))}
         </div>
       ) : rep && (
-        <>
+        <div className={cn('space-y-6', arrival)}>
           {/* Rank + XP */}
           <div className="rounded-xl p-4 md:p-5 space-y-4" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center justify-between">
@@ -66,7 +71,7 @@ function ProfilePage() {
               {t("full-xp-breakdown", { defaultValue: "Full XP Breakdown →" })}
             </Link>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

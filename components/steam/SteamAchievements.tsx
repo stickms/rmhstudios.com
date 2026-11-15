@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import type { DetailAchievement } from '@/lib/games/detail-types';
 import { AchievementIcon } from './AchievementIcon';

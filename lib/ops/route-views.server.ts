@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { STATIC_ROUTES, catalogRoutes } from '@/lib/sitemap';
 
 /**
@@ -47,11 +47,15 @@ export async function flushRouteViews(): Promise<void> {
 
 /** Known route labels (sitemap static routes + game/app catalog) with their 90-day views. */
 export async function getRouteViews() {
-  const hit = apiCache.get<Awaited<ReturnType<typeof compute>>>('ops:route-views');
-  if (hit) return hit;
-  const out = await compute();
-  apiCache.set('ops:route-views', out, 5 * 60_000);
-  return out;
+  return cached(
+    'ops:route-views',
+    5 * 60_000,
+    async () => {
+      const out = await compute();
+      return out;
+    },
+    { l2: false },
+  );
 }
 
 async function compute() {

@@ -1,5 +1,6 @@
 import { Bell, CheckCheck } from 'lucide-react';
 import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { markReadSchema } from '@/lib/rmhladder/server-fn-schemas.server';
@@ -34,6 +35,7 @@ const doMarkRead = createServerFn({ method: 'POST' })
   });
 
 export const Route = createFileRoute('/_site/rmhladder/alerts')({
+  head: () => noindexHead('Alerts | RMH Ladder'),
   loader: () => fetchAlerts(),
   component: AlertsPage,
 });
@@ -61,7 +63,7 @@ function AlertsPage() {
     <div className="space-y-4">
       {unread > 0 && (
         <div className="flex justify-end">
-          <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => void markAllRead()}>
+          <Button type="button" size="sm" variant="default" className="min-h-11" onClick={() => void markAllRead()}>
             <CheckCheck aria-hidden />
             {t('ladder.markAllRead', { defaultValue: 'Mark all as read' })}
           </Button>
@@ -75,7 +77,7 @@ function AlertsPage() {
           description={t('ladder.noAlertsDescription', { defaultValue: 'New matches and application reminders will appear here.' })}
         />
       ) : (
-        <ul className="divide-y divide-site-border overflow-hidden rounded-site glass-fill">
+        <ul className="divide-y divide-site-border overflow-hidden rounded-site">
           {rows.map((alert) => {
             const job = alert.job as AnyRow | undefined;
             const payload = (alert.payload as AnyRow | undefined) ?? {};
@@ -89,19 +91,19 @@ function AlertsPage() {
               <>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={alert.readAt ? 'outline' : 'accent'} size="sm">
+                    <Badge variant={alert.readAt ? 'default' : 'default'}>
                       {TYPE_LABELS[alert.type as string] ?? (alert.type as string)}
                     </Badge>
                     {!alert.readAt && <span className="sr-only">{t('ladder.unread', { defaultValue: 'Unread' })}</span>}
                   </div>
                   <span className="font-semibold text-site-text">{title}{company ? ` — ${company}` : ''}</span>
                   {alertText && <span className="text-sm text-site-text-muted">{alertText}</span>}
-                  <span className="text-xs text-site-text-dim">{timeAgo(alert.createdAt as Date)}</span>
+                  <span className="text-xs text-site-text-muted">{timeAgo(alert.createdAt as Date)}</span>
                 </div>
               </>
             );
             return (
-              <li key={alert.id as string} className={alert.readAt ? '' : 'bg-site-accent-dim'}>
+              <li key={alert.id as string} className={alert.readAt ? '' : 'bg-site-bg-subtle'}>
                 {alert.jobId ? (
                   <Link
                     to="/rmhladder/jobs/$jobId"

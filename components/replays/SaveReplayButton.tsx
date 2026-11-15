@@ -14,18 +14,28 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { Save, Check } from 'lucide-react';
+import { toast } from '@/lib/toast';
+import {
+  Save,
+  Check,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import type { ReplayData } from '@/lib/game/replay';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { submitReplayApi } from '@/lib/game/replay.contract';
 
 export interface SaveReplayButtonProps {
   game: string;
   data: ReplayData;
-  score?: number | null;
+  score?:
+    | number
+    | null;
   durationMs: number;
-  visibility?: 'public' | 'unlisted';
+  visibility?:
+    | 'public'
+    | 'unlisted';
   disabled?: boolean;
   className?: string;
 }
@@ -39,71 +49,225 @@ export function SaveReplayButton({
   disabled,
   className,
 }: SaveReplayButtonProps) {
-  const { t } = useTranslation('site');
-  const navigate = useNavigate();
-  const { data: session } = useSession();
-  const [saving, setSaving] = useState(false);
-  const [savedId, setSavedId] = useState<string | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const navigate =
+    useNavigate();
+  const {
+    data: session,
+  } =
+    useSession();
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    savedId,
+    setSavedId,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
 
-  async function shareToFeed(id: string) {
+  async function shareToFeed(
+    id: string,
+  ) {
     const url = `https://rmhstudios.com/replays/${id}`;
     try {
-      await navigator.clipboard?.writeText(url);
+      await navigator.clipboard?.writeText(
+        url,
+      );
       toast.success(
-        t('replay-link-copied', { defaultValue: 'Replay link copied — paste it into a new post.' }),
+        t(
+          'replay-link-copied',
+          {
+            defaultValue:
+              'Replay link copied — paste it into a new post.',
+          },
+        ),
       );
     } catch {
       /* clipboard may be unavailable; still navigate to the feed */
     }
-    navigate({ to: '/' });
+    navigate(
+      {
+        to: '/',
+      },
+    );
   }
 
   async function handleSave() {
-    if (!session) {
-      toast.error(t('replay-sign-in-to-save', { defaultValue: 'Sign in to save replays.' }));
+    if (
+      !session
+    ) {
+      toast.error(
+        t(
+          'replay-sign-in-to-save',
+          {
+            defaultValue:
+              'Sign in to save replays.',
+          },
+        ),
+      );
       return;
     }
-    setSaving(true);
+    setSaving(
+      true,
+    );
     try {
-      const res = await fetch('/api/replays', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ game, data, score: score ?? undefined, durationMs, visibility }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(
-          json?.error ?? t('replay-save-failed', { defaultValue: 'Could not save replay.' }),
+      const json =
+        await api(
+          submitReplayApi,
+          {
+            body: {
+              game,
+              data: data as unknown as Record<
+                string,
+                unknown
+              >,
+              score:
+                score ??
+                undefined,
+              durationMs,
+              visibility,
+            },
+          },
+        ).catch(
+          (
+            e: unknown,
+          ) => {
+            toast.error(
+              serverError(
+                e,
+              ) ??
+                t(
+                  'replay-save-failed',
+                  {
+                    defaultValue:
+                      'Could not save replay.',
+                  },
+                ),
+            );
+            return null;
+          },
         );
+      if (
+        !json
+      )
         return;
-      }
-      setSavedId(json.id);
-      toast.success(t('replay-saved', { defaultValue: 'Replay saved!' }), {
-        action: {
-          label: t('replay-view', { defaultValue: 'View' }),
-          onClick: () => navigate({ to: '/replays/$id', params: { id: json.id } }),
+      setSavedId(
+        json.id,
+      );
+      toast.success(
+        t(
+          'replay-saved',
+          {
+            defaultValue:
+              'Replay saved!',
+          },
+        ),
+        {
+          action:
+            {
+              label:
+                t(
+                  'replay-view',
+                  {
+                    defaultValue:
+                      'View',
+                  },
+                ),
+              onClick:
+                () =>
+                  navigate(
+                    {
+                      to: '/replays/$id',
+                      params:
+                        {
+                          id: json.id,
+                        },
+                    },
+                  ),
+            },
         },
-      });
+      );
     } catch {
-      toast.error(t('replay-save-failed', { defaultValue: 'Could not save replay.' }));
+      toast.error(
+        t(
+          'replay-save-failed',
+          {
+            defaultValue:
+              'Could not save replay.',
+          },
+        ),
+      );
     } finally {
-      setSaving(false);
+      setSaving(
+        false,
+      );
     }
   }
 
-  if (savedId) {
+  if (
+    savedId
+  ) {
     return (
-      <div className={className}>
+      <div
+        className={
+          className
+        }
+      >
         <div className="flex flex-wrap items-center gap-2">
           <Button
-            variant="secondary"
-            onClick={() => navigate({ to: '/replays/$id', params: { id: savedId } })}
+            variant="default"
+            onClick={() =>
+              navigate(
+                {
+                  to: '/replays/$id',
+                  params:
+                    {
+                      id: savedId,
+                    },
+                },
+              )
+            }
           >
-            <Check aria-hidden />
-            {t('replay-view-replay', { defaultValue: 'View replay' })}
+            <Check
+              aria-hidden
+            />
+            {t(
+              'replay-view-replay',
+              {
+                defaultValue:
+                  'View replay',
+              },
+            )}
           </Button>
-          <Button variant="accent-outline" onClick={() => shareToFeed(savedId)}>
-            {t('replay-share-to-feed', { defaultValue: 'Share to feed' })}
+          <Button
+            variant="default"
+            onClick={() =>
+              shareToFeed(
+                savedId,
+              )
+            }
+          >
+            {t(
+              'replay-share-to-feed',
+              {
+                defaultValue:
+                  'Share to feed',
+              },
+            )}
           </Button>
         </div>
       </div>
@@ -112,14 +276,31 @@ export function SaveReplayButton({
 
   return (
     <Button
-      variant="secondary"
-      onClick={handleSave}
-      loading={saving}
-      disabled={disabled || saving}
-      className={className}
+      variant="default"
+      onClick={
+        handleSave
+      }
+      loading={
+        saving
+      }
+      disabled={
+        disabled ||
+        saving
+      }
+      className={
+        className
+      }
     >
-      <Save aria-hidden />
-      {t('replay-save', { defaultValue: 'Save replay' })}
+      <Save
+        aria-hidden
+      />
+      {t(
+        'replay-save',
+        {
+          defaultValue:
+            'Save replay',
+        },
+      )}
     </Button>
   );
 }

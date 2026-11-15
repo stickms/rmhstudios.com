@@ -5,6 +5,8 @@ import { TrashPanel } from '@/components/trash/TrashPanel';
 import { BulkCleanupPanel } from '@/components/trash/BulkCleanupPanel';
 import { useSession } from '@/components/Providers';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * `/trash` — the recycle bin plus the bulk cleanup tools (plan I1 + I2).
@@ -25,6 +27,7 @@ export const Route = createFileRoute('/_site/trash')({
 function TrashPage() {
   const { t } = useTranslation('settings-content');
   const { data: session, isPending } = useSession();
+  const arrival = useArrival(!isPending);
 
   return (
     <PageLayout
@@ -37,7 +40,7 @@ function TrashPage() {
         { label: t('trash-page-title', { defaultValue: 'Trash' }) },
       ]}
     >
-      <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-4 pb-12">
+      <div className={cn('mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-4 pb-12', arrival)}>
         {isPending ? null : session ? (
           <>
             <TrashPanel />

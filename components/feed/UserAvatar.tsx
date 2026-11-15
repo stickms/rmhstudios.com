@@ -1,5 +1,3 @@
-'use client';
-
 import { memo, useState } from'react';
 import { Link } from'@tanstack/react-router';
 import { useTranslation } from'react-i18next';
@@ -15,7 +13,7 @@ interface UserAvatarProps {
 }
 
 const sizeClasses = {
- xs:'w-7 h-7 text-[10px]',
+ xs:'w-7 h-7 text-micro',
  sm:'w-8 h-8 text-xs',
  md:'w-10 h-10 text-sm',
  lg:'w-12 h-12 text-sm',
@@ -43,7 +41,7 @@ function UserAvatarImpl({ user, size ='md', linkToProfile = true }: UserAvatarPr
  const frame = user.cosmetics?.avatarFrame;
 
  const inner = (
- <div className={`${sizeClasses[size]} rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-bold shrink-0`}>
+ <div className={`${sizeClasses[size]} rounded-full bg-site-surface-hover flex items-center justify-center text-site-text font-semibold shrink-0`}>
  {showImg ? (
  <img
  src={imgSrc}

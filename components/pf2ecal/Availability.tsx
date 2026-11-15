@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Can you make it?" — the page's most-used control, and its roster.
  *

@@ -45,7 +45,7 @@
 // has. Medians of `--runs`
 // (default 3) are reported; the box is shared, so single runs vary ±30%.
 // Absolute numbers are a lab's; compare builds against each other. Findings of
-// the pass that introduced this tool: docs/performance-audit-2026-10-21.md
+// the pass that introduced this tool: docs/archive/2026/performance-audit-2026-10-21.md
 // §Navigation commit.
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -17,129 +17,302 @@ export interface SizedBuffer {
   numberOfChannels: number;
 }
 
-export interface BufferCacheOptions<B extends SizedBuffer> {
+export interface BufferCacheOptions<
+  B extends
+    SizedBuffer,
+> {
   /** Budget for decoded audio, in bytes. */
   maxBytes: number;
   /** Fetches and decodes one sound; null when it does not exist. */
-  load: (sha: string) => Promise<B | null>;
+  load: (
+    sha: string,
+  ) => Promise<B | null>;
 }
 
-interface Slot<B> {
+interface Slot<
+  B,
+> {
   buffer: B;
   bytes: number;
   pins: number;
 }
 
 /** Bytes of decoded PCM (Web Audio stores 32-bit float samples). */
-export function decodedBytes(buffer: SizedBuffer): number {
-  return buffer.length * buffer.numberOfChannels * 4;
+export function decodedBytes(
+  buffer: SizedBuffer,
+): number {
+  return (
+    buffer.length *
+    buffer.numberOfChannels *
+    4
+  );
 }
 
-export class BufferCache<B extends SizedBuffer> {
+export class BufferCache<
+  B extends
+    SizedBuffer,
+> {
   readonly maxBytes: number;
-  private readonly load: (sha: string) => Promise<B | null>;
+  private readonly load: (
+    sha: string,
+  ) => Promise<B | null>;
   /** Insertion order is recency order: the first key is the least recently used. */
-  private readonly slots = new Map<string, Slot<B>>();
-  private readonly pending = new Map<string, Promise<B | null>>();
+  private readonly slots =
+    new Map<
+      string,
+      Slot<B>
+    >();
+  private readonly pending =
+    new Map<
+      string,
+      Promise<B | null>
+    >();
   private total = 0;
 
-  constructor(options: BufferCacheOptions<B>) {
-    this.maxBytes = options.maxBytes;
-    this.load = options.load;
+  constructor(
+    options: BufferCacheOptions<B>,
+  ) {
+    this.maxBytes =
+      options.maxBytes;
+    this.load =
+      options.load;
   }
 
   /** Bytes of decoded audio held now. */
   get bytes(): number {
-    return this.total;
+    return this
+      .total;
   }
 
   get size(): number {
-    return this.slots.size;
+    return this
+      .slots
+      .size;
   }
 
-  has(sha: string): boolean {
-    return this.slots.has(sha);
+  has(
+    sha: string,
+  ): boolean {
+    return this.slots.has(
+      sha,
+    );
   }
 
   /** The buffer if it is decoded already (marks it recently used), else null. */
-  peek(sha: string): B | null {
-    const slot = this.slots.get(sha);
-    if (!slot) return null;
-    this.touch(sha, slot);
+  peek(
+    sha: string,
+  ): B | null {
+    const slot =
+      this.slots.get(
+        sha,
+      );
+    if (
+      !slot
+    )
+      return null;
+    this.touch(
+      sha,
+      slot,
+    );
     return slot.buffer;
   }
 
   /** The decoded buffer, fetching and decoding it once if needed. */
-  get(sha: string): Promise<B | null> {
-    const hit = this.peek(sha);
-    if (hit) return Promise.resolve(hit);
-    let p = this.pending.get(sha);
-    if (!p) {
-      p = this.load(sha).then(
-        (buffer) => {
-          this.pending.delete(sha);
-          if (buffer) this.insert(sha, buffer);
-          return buffer;
-        },
-        (err: unknown) => {
-          this.pending.delete(sha);
-          throw err;
-        },
+  get(
+    sha: string,
+  ): Promise<B | null> {
+    const hit =
+      this.peek(
+        sha,
       );
-      this.pending.set(sha, p);
+    if (
+      hit
+    )
+      return Promise.resolve(
+        hit,
+      );
+    let p =
+      this.pending.get(
+        sha,
+      );
+    if (
+      !p
+    ) {
+      p =
+        this.load(
+          sha,
+        ).then(
+          (
+            buffer,
+          ) => {
+            this.pending.delete(
+              sha,
+            );
+            if (
+              buffer
+            )
+              this.insert(
+                sha,
+                buffer,
+              );
+            return buffer;
+          },
+          (
+            err: unknown,
+          ) => {
+            this.pending.delete(
+              sha,
+            );
+            throw err;
+          },
+        );
+      this.pending.set(
+        sha,
+        p,
+      );
     }
     return p;
   }
 
   /** Pin a buffer while a voice plays it. */
-  retain(sha: string): void {
-    const slot = this.slots.get(sha);
-    if (slot) slot.pins++;
+  retain(
+    sha: string,
+  ): void {
+    const slot =
+      this.slots.get(
+        sha,
+      );
+    if (
+      slot
+    )
+      slot.pins++;
   }
 
   /** Unpin it; the cache may evict it again once nothing plays it. */
-  release(sha: string): void {
-    const slot = this.slots.get(sha);
-    if (slot && slot.pins > 0) {
+  release(
+    sha: string,
+  ): void {
+    const slot =
+      this.slots.get(
+        sha,
+      );
+    if (
+      slot &&
+      slot.pins >
+        0
+    ) {
       slot.pins--;
-      if (slot.pins === 0) this.evict();
+      if (
+        slot.pins ===
+        0
+      )
+        this.evict();
     }
   }
 
   clear(): void {
-    for (const [sha, slot] of this.slots) {
-      if (slot.pins === 0) {
-        this.slots.delete(sha);
-        this.total -= slot.bytes;
+    for (const [
+      sha,
+      slot,
+    ] of this
+      .slots) {
+      if (
+        slot.pins ===
+        0
+      ) {
+        this.slots.delete(
+          sha,
+        );
+        this.total -=
+          slot.bytes;
       }
     }
   }
 
-  private touch(sha: string, slot: Slot<B>): void {
-    this.slots.delete(sha);
-    this.slots.set(sha, slot);
+  private touch(
+    sha: string,
+    slot: Slot<B>,
+  ): void {
+    this.slots.delete(
+      sha,
+    );
+    this.slots.set(
+      sha,
+      slot,
+    );
   }
 
-  private insert(sha: string, buffer: B): void {
-    const existing = this.slots.get(sha);
-    if (existing) {
-      this.touch(sha, existing);
+  private insert(
+    sha: string,
+    buffer: B,
+  ): void {
+    const existing =
+      this.slots.get(
+        sha,
+      );
+    if (
+      existing
+    ) {
+      this.touch(
+        sha,
+        existing,
+      );
       return;
     }
-    const bytes = decodedBytes(buffer);
-    this.slots.set(sha, { buffer, bytes, pins: 0 });
-    this.total += bytes;
-    this.evict(sha);
+    const bytes =
+      decodedBytes(
+        buffer,
+      );
+    this.slots.set(
+      sha,
+      {
+        buffer,
+        bytes,
+        pins: 0,
+      },
+    );
+    this.total +=
+      bytes;
+    this.evict(
+      sha,
+    );
   }
 
   /** Drop least recently used, unpinned buffers until under budget (never `keep`). */
-  private evict(keep?: string): void {
-    if (this.total <= this.maxBytes) return;
-    for (const [sha, slot] of this.slots) {
-      if (this.total <= this.maxBytes) break;
-      if (slot.pins > 0 || sha === keep) continue;
-      this.slots.delete(sha);
-      this.total -= slot.bytes;
+  private evict(
+    keep?: string,
+  ): void {
+    if (
+      this
+        .total <=
+      this
+        .maxBytes
+    )
+      return;
+    for (const [
+      sha,
+      slot,
+    ] of this
+      .slots) {
+      if (
+        this
+          .total <=
+        this
+          .maxBytes
+      )
+        break;
+      if (
+        slot.pins >
+          0 ||
+        sha ===
+          keep
+      )
+        continue;
+      this.slots.delete(
+        sha,
+      );
+      this.total -=
+        slot.bytes;
     }
   }
 }

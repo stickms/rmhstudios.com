@@ -1,14 +1,16 @@
-'use client';
-
 /** Curate up to 10 tracks for a mixtape exchange (F2), using the site's Spotify track search. */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
+import { useArrival, useSuspenseArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { apiJson } from '@/components/economy-plus/api';
+import { api } from '@/lib/contract/client';
+import { searchSpotifyApi } from '@/lib/spotify.contract';
 import { MIXTAPE_MAX_TRACKS, type MixtapeTrack } from '@/lib/gifting/exchange';
 
 interface SearchHit {
@@ -32,18 +34,16 @@ export default function MixtapeEditor({
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
+  // The editor is a lazy chunk behind ExchangeDetail's boundary; search results land later still.
+  const chunkArrival = useSuspenseArrival();
+  const hitsArrival = useArrival(hits.length > 0);
 
   async function search() {
     if (!q.trim()) return;
     setSearching(true);
-    const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q.trim())}`).catch(
-      () => null,
-    );
-    const data = res?.ok
-      ? ((await res.json()) as { tracks?: SearchHit[]; configured?: boolean })
-      : null;
+    const data = await api(searchSpotifyApi, { query: { q: q.trim() } }).catch(() => null);
     setSearching(false);
-    if (!data || data.configured === false) {
+    if (!data) {
       toast.error(
         t('mixtape-search-off', { defaultValue: 'Track search is not available right now' }),
       );
@@ -79,7 +79,11 @@ export default function MixtapeEditor({
   }
 
   return (
-    <section aria-labelledby="mx-h" className="glass-pane space-y-3 p-4">
+    <section
+      aria-labelledby="mx-h"
+      className={cn('space-y-3 p-4', chunkArrival)}
+      suppressHydrationWarning
+    >
       <h2 id="mx-h" className="site-section-label">
         {t('mixtape-title', {
           defaultValue: 'Your mixtape ({{count}}/{{max}})',
@@ -91,7 +95,7 @@ export default function MixtapeEditor({
         {tracks.map((tr) => (
           <li
             key={tr.id}
-            className="glass-inset flex items-center justify-between gap-2 rounded-site-sm px-3 py-2 text-sm"
+            className="surface-field flex items-center justify-between gap-2 rounded-site-sm px-3 py-2 text-sm"
           >
             <span className="min-w-0 truncate">
               {tr.title} <span className="text-site-text-muted">· {tr.artist}</span>
@@ -125,7 +129,7 @@ export default function MixtapeEditor({
         </Button>
       </form>
       {hits.length > 0 ? (
-        <ul className="space-y-2">
+        <ul className={cn('space-y-2', hitsArrival)}>
           {hits.slice(0, 8).map((h) => (
             <li key={h.id} className="flex items-center justify-between gap-2 text-sm">
               <span className="min-w-0 truncate">
@@ -149,7 +153,7 @@ export default function MixtapeEditor({
             defaultValue: 'You need at least one track to be drawn. Edits close at the draw.',
           })}
         </p>
-        <Button variant="accent" size="sm" loading={saving} onClick={save}>
+        <Button variant="default" size="sm" loading={saving} onClick={save}>
           {t('mixtape-save', { defaultValue: 'Save mixtape' })}
         </Button>
       </div>

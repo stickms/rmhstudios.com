@@ -1,4 +1,5 @@
 import { useEffect, useImperativeHandle, useRef } from 'react';
+import { clamp } from '@/lib/core/math';
 
 /**
  * The liquid globe in real 3D. A glass sphere holds two liquids split by a plane that sits where the expected
@@ -36,7 +37,6 @@ type V3 = [number, number, number];
 
 const ACTIVE_MS = 7000;
 const MAX_NEEDLE = (78 * Math.PI) / 180;
-const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 const mix = (a: V3, b: V3, t: number): V3 => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
 function gradient(stops: V3[], t: number): V3 {

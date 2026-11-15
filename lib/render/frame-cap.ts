@@ -16,7 +16,7 @@
  *  - R3F scenes mount `components/render/FrameCap` and let it drive
  *    `frameloop="demand"`.
  *
- * Measured before/after: docs/performance-audit-2026-10-21.md §3D idle.
+ * Measured before/after: docs/archive/2026/performance-audit-2026-10-21.md §3D idle.
  */
 
 /** Rate for a live scene shown behind a translucent or blurred menu. */

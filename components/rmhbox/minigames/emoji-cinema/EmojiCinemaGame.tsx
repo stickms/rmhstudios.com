@@ -6,7 +6,6 @@
  *
  * Subscribes to EC_* and TIMER_TICK events via socket GAME_ACTION.
  */
-'use client';
 
 import { useState, useCallback } from 'react';
 // `m as motion`, not `motion`: `Providers` wraps the app in `LazyMotion`, and `m`
@@ -14,7 +13,7 @@ import { useState, useCallback } from 'react';
 // implementation, which lands in the SHARED ENTRY CHUNK when the module is
 // reachable from a route's top level.
 import { m as motion } from 'framer-motion';
-import { fade } from '@/lib/motion';
+import { fade } from '@/lib/app-motion';
 import { useTranslation } from 'react-i18next';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
@@ -303,10 +302,10 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           animate="animate"
         >
           <span className="text-5xl">🎬</span>
-          <h2 className="text-2xl font-bold text-(--app-text)">
+          <h2 className="text-2xl font-bold text-app-text">
             {isProducer ? t("youre-the-producer", { defaultValue: "You're the Producer!" }) : t("someone-is-the-producer", { defaultValue: "{{name}} is the Producer", name: producerName || 'Someone' })}
           </h2>
-          <p className="text-sm text-(--app-text-muted)">
+          <p className="text-sm text-app-text-muted">
             {isProducer
               ? t("producer-instruction", { defaultValue: "You will pick a movie to describe with emojis" })
               : t("audience-instruction-assignment", { defaultValue: "Get ready to guess the movie from emojis" })}
@@ -324,8 +323,8 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           {isProducer ? (
             <>
               <span className="text-4xl">🎥</span>
-              <h2 className="text-xl font-bold text-(--app-text)">{t("choose-your-movie", { defaultValue: "Choose Your Movie" })}</h2>
-              <p className="text-sm text-(--app-text-muted) mb-2">
+              <h2 className="text-xl font-bold text-app-text">{t("choose-your-movie", { defaultValue: "Choose Your Movie" })}</h2>
+              <p className="text-sm text-app-text-muted mb-2">
                 {t("pick-movie-instruction", { defaultValue: "Pick the movie you want to describe with emojis" })}
               </p>
               <div className="flex flex-col gap-3 w-full max-w-sm">
@@ -333,26 +332,26 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
                   <button
                     key={movie.title}
                     onClick={() => handleSelectMovie(movie.title)}
-                    className="glass-fill p-4 rounded-(--app-radius) hover:border-(--app-accent) hover:bg-(--app-border) transition-colors text-left"
+                    className="surface-card p-4 rounded-app hover:border-app-accent hover:bg-app-border transition-colors text-left"
                   >
-                    <div className="font-semibold text-(--app-text)">{movie.title} ({movie.year})</div>
-                    <div className="text-xs text-(--app-text-muted) mt-1">
+                    <div className="font-semibold text-app-text">{movie.title} ({movie.year})</div>
+                    <div className="text-xs text-app-text-muted mt-1">
                       {movie.genre.join(', ')} • {movie.difficulty}
                     </div>
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-(--app-text-muted)">
+              <p className="text-xs text-app-text-muted">
                 {t("time-remaining", { defaultValue: "{{seconds}}s remaining", seconds: timeRemaining })}
               </p>
             </>
           ) : (
             <>
               <span className="text-4xl">🤔</span>
-              <h2 className="text-xl font-bold text-(--app-text)">
+              <h2 className="text-xl font-bold text-app-text">
                 {t("producer-choosing-movie", { defaultValue: "{{name}} is choosing a movie…", name: producerName })}
               </h2>
-              <p className="text-sm text-(--app-text-muted)">{t("get-ready-to-guess", { defaultValue: "Get ready to guess!" })}</p>
+              <p className="text-sm text-app-text-muted">{t("get-ready-to-guess", { defaultValue: "Get ready to guess!" })}</p>
             </>
           )}
         </motion.div>
@@ -377,9 +376,9 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
             <>
               {/* Spectators see the movie title as a privileged info banner */}
               {isSpectator && movieTitle && (
-                <div className="mx-auto mb-3 flex w-full max-w-md items-center gap-2 rounded-(--app-radius-sm) border border-(--app-accent)/30 bg-(--app-accent)/10 px-4 py-2 text-center">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-(--app-accent)">🎬 {t("answer-label", { defaultValue: "Answer:" })}</span>
-                  <span className="font-bold text-(--app-text)">{movieTitle}</span>
+                <div className="mx-auto mb-3 flex w-full max-w-md items-center gap-2 rounded-app-sm border border-app-accent/30 bg-app-accent/10 px-4 py-2 text-center">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-app-accent">🎬 {t("answer-label", { defaultValue: "Answer:" })}</span>
+                  <span className="font-bold text-app-text">{movieTitle}</span>
                 </div>
               )}
               <AudienceView
@@ -409,11 +408,11 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           animate="animate"
         >
           <span className="text-5xl">⏭️</span>
-          <h2 className="text-xl font-bold text-(--app-text)">{t("round-skipped-emoji-cinema-game", { defaultValue: "Round Skipped" })}</h2>
-          <p className="text-sm text-(--app-text-muted)">
+          <h2 className="text-xl font-bold text-app-text">{t("round-skipped-emoji-cinema-game", { defaultValue: "Round Skipped" })}</h2>
+          <p className="text-sm text-app-text-muted">
             {t("round-skipped-reason", { defaultValue: "The producer didn't submit any emojis — the round has been skipped." })}
           </p>
-          <p className="text-lg font-semibold text-(--app-accent)">
+          <p className="text-lg font-semibold text-app-accent">
             🎬 {resultsMovieTitle}
           </p>
         </motion.div>
@@ -436,7 +435,7 @@ export default function EmojiCinemaGame({ playerId }: MinigameProps) {
           animate="animate"
         >
           <span className="text-4xl animate-bounce">🎬</span>
-          <p className="text-sm text-(--app-text-muted)">{t("next-round-starting", { defaultValue: "Next round starting…" })}</p>
+          <p className="text-sm text-app-text-muted">{t("next-round-starting", { defaultValue: "Next round starting…" })}</p>
         </motion.div>
       );
 

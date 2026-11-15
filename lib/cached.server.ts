@@ -1,30 +1,38 @@
 /**
- * Shared L1 (in-process) + L2 (Redis) cache helper with cross-instance
- * invalidation — server-only.
+ * THE cache helper — server-only. One module, one vocabulary:
  *
- * The in-process `apiCache` (lib/cache.ts) is fast but per-process: with more
- * than one web instance its entries drift and `invalidate()` only clears the
- * local copy. This module layers Redis underneath so that:
+ *   cached(key, ttl, loader, { tags, l2 })   async read-through: L1 (in-process) -> L2 (Redis) -> loader,
+ *                                            single-flight on misses, invalidation broadcast to every process
+ *   cachedNullable / cachedMiss / cachedMany / cachedSWR   the same, for absent rows, batches, stale-while-revalidate
+ *   invalidateCached(key) / invalidateCachedPrefix(p) / invalidateTag(tag)   drop here AND in every other process
+ *   lruL1(name, opts)                        an explicitly in-process, SYNC, bounded TTL cache (see below)
+ *
+ * This module replaced `lib/cache.ts` (`apiCache`, deleted). Entries in the shared L1 are plain JS values; entries
+ * that also reach Redis (L2) are JSON round-tripped, so a value holding a Date / Map / class instance / function
+ * must pass `l2: false` (it still gets the L1, the single-flight and the cross-process invalidation).
+ *
+ * With more than one web instance a per-process cache drifts and a local `delete` only clears the local copy. This
+ * module therefore layers Redis underneath so that:
  *   - a value warmed on instance A is visible to instance B (L2 hit), and
- *   - an invalidation on any instance is broadcast to all instances (pub/sub),
- *     so every L1 copy is dropped.
- *
- * When `REDIS_URL` is unset everything degrades to plain in-process behaviour
- * (identical to using `apiCache` directly), so single-instance / local dev is
+ *   - an invalidation on any instance is broadcast to all instances (pub/sub), so every L1 copy is dropped.
+ * When `REDIS_URL` is unset everything degrades to plain in-process behaviour, so single-instance / local dev is
  * unaffected.
  *
+ * ### When to use `lruL1` instead of `cached`
+ * `lruL1(name)` is the escape hatch for state that must stay in THIS process: a per-process throttle / probe flag, a
+ * value the caller needs synchronously, or something not worth (or not able to survive) a JSON + Redis round trip.
+ * It never touches Redis and never broadcasts. Every use is named and says why in a comment at the call site.
+ *
  * Usage:
- *   const tier = await cached(`entitlements:tier:${userId}`, 60_000, () =>
- *     resolveTierFromDb(userId));
+ *   const tier = await cached(`entitlements:tier:${userId}`, 60_000, () => resolveTierFromDb(userId));
  *   // after a change:
  *   await invalidateCached(`entitlements:tier:${userId}`);
- *
- * This is the generalisation of the L1+L2 pattern already used by
- * lib/feed/personalize.server.ts — migrate coherence-sensitive caches onto it.
+ *   // a family of keys:
+ *   await cached(`feed:${id}`, 30_000, load, { tags: ['feed'], l2: false });
+ *   void invalidateTag('feed');
  */
 
 import { registerCacheBridgeStarter, requestCacheBridge } from '@/lib/cache-bridge-start';
-import { apiCache, CACHE_PROCESS_ID } from '@/lib/cache';
 import { measure } from '@/lib/otel/timing';
 import { cacheNamespace, recordCache } from '@/lib/perf/process-metrics';
 import {
@@ -37,6 +45,348 @@ import {
   redisSubscribe,
 } from '@/lib/redis.server';
 
+/* ─── In-process store (the L1 engine) ──────────────────────────────────────── */
+
+/** Identifies this process in invalidation messages so it can ignore its own echo. */
+export const CACHE_PROCESS_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+  bytes: number;
+}
+
+/**
+ * Nodes visited by the size estimator before it stops and extrapolates. A signed-in feed page (20 posts with their
+ * authors and media) is ~900 nodes; the old budget of 400 stopped half-way and extrapolated only over the entries
+ * still on the stack, not their subtrees, so feed pages were undercounted ~1.8× (measured 2026-10-21: 29 KB real,
+ * 16 KB estimated). 5000 walks every realistic cached value in full; the walk runs on a cache MISS only.
+ */
+const ESTIMATE_NODE_BUDGET = 5000;
+
+/*
+ * V8's layout on 64-bit Node (no pointer compression), the costs the estimate is built from. Calibrated against
+ * `process.memoryUsage().heapUsed` with --expose-gc on representative values (a feed page, a user list, one user):
+ * the estimate lands within ~20% of the retained heap for each.
+ *   - an object: a header (map, properties, elements) plus one 8-byte slot per own property. Keys live in the
+ *     hidden class and are shared by every object of the same shape, so they cost nothing per instance;
+ *   - an array: a header plus one slot per element;
+ *   - a string: a header plus one byte per char (V8 stores Latin-1 text one byte wide);
+ *   - a number: free in its slot when it is a small integer (Smi), else a 16-byte heap number;
+ *   - a Date: a small object of its own.
+ */
+const OBJECT_HEADER = 40;
+const ARRAY_HEADER = 40;
+const SLOT = 8;
+const STRING_HEADER = 20;
+const HEAP_NUMBER = 16;
+const DATE_BYTES = 48;
+const SMI_MAX = 2 ** 30;
+
+/**
+ * perf: approximate retained heap size of a cached value WITHOUT JSON.stringify (which would serialize every page
+ * on the hot `set` path). Walks up to ESTIMATE_NODE_BUDGET nodes; past that the remainder is extrapolated from the
+ * average cost per node so far, scaled by how much of the value is still unvisited. It guards the HEAP (the caches'
+ * budgets are a share of the worker's heap limit, see `heapShare`), so it is calibrated to retained bytes, not to
+ * serialized size. Callers that already hold a serialized length can pass it to `set`.
+ */
+export function estimateBytes(value: unknown): number {
+  let bytes = 0;
+  let visited = 0;
+  const stack: unknown[] = [value];
+  const seen = new WeakSet<object>();
+  while (stack.length > 0) {
+    const v = stack.pop();
+    visited++;
+    if (typeof v === 'string') {
+      bytes += STRING_HEADER + v.length;
+    } else if (typeof v === 'number') {
+      if (!Number.isInteger(v) || Math.abs(v) >= SMI_MAX) bytes += HEAP_NUMBER;
+    } else if (v !== null && typeof v === 'object') {
+      if (seen.has(v)) continue;
+      seen.add(v);
+      if (visited >= ESTIMATE_NODE_BUDGET) {
+        // Each node still on the stack heads a subtree we have not seen; assume they are like the ones we have.
+        bytes += (bytes / visited) * stack.length * 2;
+        break;
+      }
+      if (v instanceof Date) {
+        bytes += DATE_BYTES;
+      } else if (ArrayBuffer.isView(v)) {
+        bytes += OBJECT_HEADER;
+        // Views can share a backing allocation; count it once, including bytes
+        // retained outside the visible slice of a Buffer or typed array.
+        stack.push(v.buffer);
+      } else if (
+        v instanceof ArrayBuffer ||
+        (typeof SharedArrayBuffer !== 'undefined' && v instanceof SharedArrayBuffer)
+      ) {
+        bytes += OBJECT_HEADER + v.byteLength;
+      } else if (Array.isArray(v)) {
+        bytes += ARRAY_HEADER + SLOT * v.length;
+        for (let i = 0; i < v.length; i++) stack.push(v[i]);
+      } else {
+        bytes += OBJECT_HEADER;
+        for (const k of Object.keys(v)) {
+          bytes += SLOT;
+          stack.push((v as Record<string, unknown>)[k]);
+        }
+      }
+    }
+  }
+  return Math.ceil(bytes);
+}
+
+export interface LruL1Options {
+  maxEntries?: number;
+  /** Approximate byte budget; least-recently-used entries are evicted past it. */
+  maxBytes?: number;
+}
+
+/**
+ * TTL + true-LRU cache bounded by entry count AND approximate bytes.
+ * `Map` iterates in insertion order, so "delete + re-insert on hit" keeps the
+ * least-recently-used key first; eviction pops from the front.
+ */
+export class LruL1 {
+  private store = new Map<string, CacheEntry<unknown>>();
+  private readonly maxEntries: number;
+  private readonly maxBytes: number;
+  private totalBytes = 0;
+  private gcTimer: ReturnType<typeof setInterval> | null = null;
+  /** Label for `lruL1(name)`; documentation / debugging only. */
+  name = 'lru';
+
+  constructor(opts: LruL1Options | number = {}) {
+    const o = typeof opts === 'number' ? { maxEntries: opts } : opts;
+    this.maxEntries = o.maxEntries ?? 5000;
+    this.maxBytes = o.maxBytes ?? 64 * 1024 * 1024;
+    if (
+      !Number.isSafeInteger(this.maxEntries) ||
+      this.maxEntries < 0 ||
+      !Number.isFinite(this.maxBytes) ||
+      this.maxBytes < 0
+    ) {
+      throw new RangeError(
+        'Cache budgets must be finite and non-negative; maxEntries must be an integer',
+      );
+    }
+    // Sweep expired entries every 60s
+    this.gcTimer = setInterval(() => this.sweep(), 60_000);
+    // Don't block process shutdown
+    if (this.gcTimer && typeof this.gcTimer === 'object' && 'unref' in this.gcTimer) {
+      this.gcTimer.unref();
+    }
+  }
+
+  get<T>(key: string): T | undefined {
+    const entry = this.store.get(key);
+    if (!entry) return undefined;
+    if (Date.now() >= entry.expiresAt) {
+      this.remove(key, entry);
+      return undefined;
+    }
+    // LRU: refresh recency.
+    this.store.delete(key);
+    this.store.set(key, entry);
+    return entry.value as T;
+  }
+
+  /** `sizeBytes`: optional caller-known size (e.g. a serialized length). */
+  set<T>(key: string, value: T, ttlMs: number, sizeBytes?: number): void {
+    const bytes = sizeBytes ?? estimateBytes(value);
+    const existing = this.store.get(key);
+    if (existing) {
+      // Overwrite: drop the old entry so the new one lands at the MRU end and
+      // an overwrite never evicts an unrelated key.
+      this.remove(key, existing);
+    }
+    // A single value larger than the whole budget is not worth caching.
+    if (
+      this.maxEntries === 0 ||
+      this.maxBytes === 0 ||
+      !Number.isFinite(ttlMs) ||
+      ttlMs <= 0 ||
+      !Number.isFinite(bytes) ||
+      bytes < 0 ||
+      bytes > this.maxBytes
+    )
+      return;
+    this.store.set(key, { value, expiresAt: Date.now() + ttlMs, bytes });
+    this.totalBytes += bytes;
+    // Evict least-recently-used until within both caps (never the new key).
+    while (
+      this.store.size > 1 &&
+      (this.store.size > this.maxEntries || this.totalBytes > this.maxBytes)
+    ) {
+      const oldest = this.store.keys().next().value;
+      if (oldest === undefined || oldest === key) break;
+      this.remove(oldest, this.store.get(oldest));
+    }
+  }
+
+  private remove(key: string, entry: CacheEntry<unknown> | undefined): void {
+    if (this.store.delete(key) && entry) this.totalBytes -= entry.bytes;
+  }
+
+  /** Is a live (unexpired) entry stored? Does not refresh recency. */
+  has(key: string): boolean {
+    const entry = this.store.get(key);
+    if (!entry) return false;
+    if (Date.now() >= entry.expiresAt) {
+      this.remove(key, entry);
+      return false;
+    }
+    return true;
+  }
+
+  /** Delete a specific key (e.g. after a mutation) in THIS process only. */
+  delete(key: string): void {
+    this.remove(key, this.store.get(key));
+  }
+
+  /** Delete all keys matching a prefix (e.g. "leaderboard:") in THIS process only. */
+  deletePrefix(prefix: string): void {
+    for (const [key, entry] of this.store) {
+      if (key.startsWith(prefix)) this.remove(key, entry);
+    }
+  }
+
+  /** Remove all expired entries. */
+  private sweep(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.store) {
+      if (now >= entry.expiresAt) this.remove(key, entry);
+    }
+  }
+
+  /** Drop everything (tests). */
+  clear(): void {
+    this.store.clear();
+    this.totalBytes = 0;
+  }
+
+  /** Total entries currently stored (useful for monitoring). */
+  get size(): number {
+    return this.store.size;
+  }
+
+  /** Approximate bytes retained (monitoring / tests). */
+  get bytes(): number {
+    return this.totalBytes;
+  }
+}
+
+/**
+ * The worker's V8 heap limit (`--max-old-space-size` plus the young generation), or `null` outside Node.
+ * `getBuiltinModule` rather than an import, so this module stays importable anywhere.
+ */
+function heapLimitBytes(): number | null {
+  try {
+    const proc = (globalThis as { process?: { getBuiltinModule?: (id: string) => unknown } })
+      .process;
+    const v8 = proc?.getBuiltinModule?.('node:v8') as
+      { getHeapStatistics(): { heap_size_limit: number } } | undefined;
+    return v8?.getHeapStatistics().heap_size_limit ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A cache budget as a SHARE of the worker's heap, capped at `capBytes` (the budget a large heap gets).
+ *
+ * Why (2026-10-21): the caches had fixed budgets of 64 MB + 24 MB, sized without reference to the heap they live
+ * in. Production runs each Nitro worker with --max-old-space-size=384, and the estimator undercounted feed pages
+ * ~1.8×, so the two caches could legitimately retain ~160 MB of a 384 MB heap. Workers died with "FATAL ERROR:
+ * Reached heap limit Allocation failed - JavaScript heap out of memory" (19 container restarts in ~1.5 h, heap at
+ * 78% on /admin/performance). A share scales with whatever heap the deploy gives a worker.
+ */
+export function heapShare(fraction: number, capBytes: number, limit = heapLimitBytes()): number {
+  if (!limit) return capBytes;
+  return Math.max(2 * 1024 * 1024, Math.min(capBytes, Math.floor(limit * fraction)));
+}
+
+/** Shares of the heap the two shared L1 stores may fill; together 12%, leaving the rest to rendering and requests. */
+export const MAIN_CACHE_HEAP_SHARE = 0.08;
+export const VIEWER_FEED_CACHE_HEAP_SHARE = 0.04;
+
+/**
+ * An explicitly in-process, synchronous, bounded TTL + LRU cache. NOT shared across processes, NOT in Redis, and its
+ * entries are never broadcast-invalidated — use it only where that is the point (see the module header), and say why
+ * at the call site. `name` is documentation / debugging only (it keeps two caches from being confused in a heap
+ * snapshot); keys are private to the returned instance.
+ */
+export function lruL1(name: string, opts: LruL1Options | number = {}): LruL1 {
+  // Modest default budget (the shared L1 is the big one); a caller that really holds a lot says so.
+  const o = typeof opts === 'number' ? { maxEntries: opts } : opts;
+  const cache = new LruL1({
+    maxEntries: 1000,
+    maxBytes: heapShare(0.01, 8 * 1024 * 1024),
+    ...o,
+  });
+  cache.name = name;
+  return cache;
+}
+
+/**
+ * perf: per-viewer signed-in feed pages (`feed:v3:*`, one per user x surface x filter, tens of KB each) get their own
+ * small store so a burst of distinct viewers can never evict the global hot keys (anon SWR feed, sidebar:*) from the
+ * main one. Routed by key prefix inside the shared L1, so `cached` callers use one API.
+ */
+export const viewerFeedL1 = new LruL1({
+  maxEntries: 1000,
+  maxBytes: heapShare(VIEWER_FEED_CACHE_HEAP_SHARE, 24 * 1024 * 1024),
+});
+/**
+ * The key prefix that routes into `viewerFeedL1`. `lib/feed/timeline.ts` builds its signed-in page keys from this
+ * constant, so the router and the producer cannot drift apart (they did: the producer moved to `v3`, the router
+ * stayed on `v2`, and every viewer page landed in the main LRU). Bump it here only; a test asserts a real timeline
+ * page lands in `viewerFeedL1`.
+ */
+export const VIEWER_FEED_PREFIX = 'feed:v3:';
+
+/** Main shared L1 (global keys + everything else): 5000 entries, 8% of the heap (at most 64 MB). */
+export const mainL1 = new LruL1({
+  maxEntries: 5000,
+  maxBytes: heapShare(MAIN_CACHE_HEAP_SHARE, 64 * 1024 * 1024),
+});
+
+const pick = (key: string) => (key.startsWith(VIEWER_FEED_PREFIX) ? viewerFeedL1 : mainL1);
+
+/** The shared L1 `cached*()` read and write; facade over `mainL1` + `viewerFeedL1`. */
+const l1 = {
+  get: <T>(key: string): T | undefined => pick(key).get<T>(key),
+  set: <T>(key: string, value: T, ttlMs: number, sizeBytes?: number): void =>
+    pick(key).set(key, value, ttlMs, sizeBytes),
+  has: (key: string): boolean => pick(key).has(key),
+  drop: (key: string): void => pick(key).delete(key),
+  dropPrefix: (prefix: string): void => {
+    mainL1.deletePrefix(prefix);
+    viewerFeedL1.deletePrefix(prefix);
+  },
+};
+
+/**
+ * Synchronous read of the shared L1 ONLY (no Redis, no loader, no single-flight).
+ * For a caller that owns its own second layer (e.g. a bespoke Redis key with its own serialisation) and just wants
+ * the shared, bounded, TTL-swept in-process store. Everything else should call `cached()`.
+ */
+export function peekL1<T>(key: string): T | undefined {
+  return l1.get<T>(key);
+}
+
+/** Synchronous write to the shared L1 ONLY. Pair with `peekL1`; `invalidateCached(key)` drops it everywhere. */
+export function putL1<T>(key: string, value: T, ttlMs: number, tags?: readonly string[]): void {
+  l1.set(key, value, ttlMs);
+  if (tags && tags.length > 0) fileUnderTags(key, tags);
+}
+
+/** Total entries in the shared L1 (monitoring / tests). */
+export function sharedL1Size(): number {
+  return mainL1.size + viewerFeedL1.size;
+}
+
 /** Pub/sub channel carrying "drop this key / prefix everywhere" messages. */
 const INVALIDATION_CHANNEL = 'cache:invalidate';
 
@@ -46,13 +396,17 @@ const INVALIDATION_CHANNEL = 'cache:invalidate';
  * reloaded in between). Messages without one (older deploys during a blue/green
  * swap) are applied by everyone.
  */
-type InvalidationMessage = ({ type: 'key'; key: string } | { type: 'prefix'; prefix: string }) & {
+type InvalidationMessage = (
+  { type: 'key'; key: string } | { type: 'prefix'; prefix: string } | { type: 'tag'; tag: string }
+) & {
   origin?: string;
 };
 
 type InflightRecord = {
   promise: Promise<unknown> | null;
   invalidated: boolean;
+  /** Tags the load will be stored under, so `invalidateTag` can detach it. */
+  tags?: readonly string[];
 };
 
 const inflight = new Map<string, InflightRecord>();
@@ -91,13 +445,53 @@ function invalidateLocalKey(key: string): void {
   detachFlight(swrInflight, key);
   // dropLocal, not invalidate: this runs both on the writer and on a remote
   // receipt, and `invalidate` would re-publish (an echo loop between processes).
-  apiCache.dropLocal(key);
+  l1.drop(key);
 }
 
 function invalidateLocalPrefix(prefix: string): void {
   detachFlightsWithPrefix(inflight, prefix);
   detachFlightsWithPrefix(swrInflight, prefix);
-  apiCache.dropLocalPrefix(prefix);
+  l1.dropPrefix(prefix);
+}
+
+/* ─── Tags ───────────────────────────────────────────────────────────────────
+ *
+ * `cached(key, ttl, load, { tags })` files the key under each tag in a local index; `invalidateTag(tag)` drops every
+ * key filed under it, in every process (the message is `{ type: 'tag' }` on the same channel). It replaces
+ * prefix-matching for key families whose members do not share a literal prefix, and for "this write affects these
+ * reads" relationships that were implicit in naming.
+ *
+ * Tagged entries are L1-only (L2 is skipped): Redis has no cheap "delete by tag", and an L2 copy left behind would be
+ * re-read straight after the invalidation. L1 + the broadcast is exact; the cost is that a tagged value is not shared
+ * across processes, only coherent between them.
+ */
+const tagIndex = new Map<string, Set<string>>();
+const TAG_PRUNE_AT = 2048;
+
+function fileUnderTags(key: string, tags: readonly string[]): void {
+  for (const tag of tags) {
+    let keys = tagIndex.get(tag);
+    if (!keys) tagIndex.set(tag, (keys = new Set()));
+    keys.add(key);
+    if (keys.size > TAG_PRUNE_AT) {
+      // Keys evicted or expired from L1 stay in the index until now; forget them so the index is bounded by L1.
+      for (const k of keys) if (!l1.has(k)) keys.delete(k);
+    }
+  }
+}
+
+function invalidateLocalTag(tag: string): void {
+  const keys = tagIndex.get(tag);
+  tagIndex.delete(tag);
+  if (keys) for (const key of keys) invalidateLocalKey(key);
+  // A load still in flight that has not stored yet (so is not in the index).
+  for (const flights of [inflight, swrInflight]) {
+    for (const [key, flight] of flights) {
+      if (!flight.tags?.includes(tag)) continue;
+      flight.invalidated = true;
+      flights.delete(key);
+    }
+  }
 }
 
 let subscribed = false;
@@ -110,24 +504,6 @@ function ensureSubscribed(): void {
   if (subscribed) return;
   subscribed = true;
   if (!redisEnabled()) return;
-  // Bridge for the ~25 call sites that use `apiCache.invalidate*` directly: a
-  // local invalidation is also published, so the other web worker (and the second
-  // container during a blue/green swap) drops its copy instead of serving it until
-  // the TTL. Installed only when Redis is configured; otherwise local-only.
-  apiCache.setInvalidationHook({
-    key: (key) =>
-      void redisPublish(INVALIDATION_CHANNEL, {
-        type: 'key',
-        key,
-        origin: CACHE_PROCESS_ID,
-      } satisfies InvalidationMessage),
-    prefix: (prefix) =>
-      void redisPublish(INVALIDATION_CHANNEL, {
-        type: 'prefix',
-        prefix,
-        origin: CACHE_PROCESS_ID,
-      } satisfies InvalidationMessage),
-  });
   redisSubscribe(INVALIDATION_CHANNEL, (data) => {
     const msg = data as InvalidationMessage;
     if (!msg || typeof msg !== 'object') return;
@@ -136,6 +512,8 @@ function ensureSubscribed(): void {
       invalidateLocalKey(msg.key);
     } else if (msg.type === 'prefix' && typeof msg.prefix === 'string') {
       invalidateLocalPrefix(msg.prefix);
+    } else if (msg.type === 'tag' && typeof msg.tag === 'string') {
+      invalidateLocalTag(msg.tag);
     }
   });
 }
@@ -213,6 +591,11 @@ export interface CachedOptions {
    * (or after L2 hands the value back).
    */
   ttlFor?: (value: unknown) => number;
+  /**
+   * Invalidation tags for this key (`invalidateTag`). Tagged entries are L1-only: `l2` is ignored (see the Tags
+   * section) so an invalidation is exact in every process.
+   */
+  tags?: readonly string[];
 }
 
 /**
@@ -240,11 +623,12 @@ async function cachedUntimed<T>(
   opts: CachedOptions,
 ): Promise<T> {
   ensureSubscribed();
-  const useL2 = opts.l2 !== false;
+  const tags = opts.tags && opts.tags.length > 0 ? opts.tags : undefined;
+  const useL2 = opts.l2 !== false && !tags;
   const ttlOf = (value: unknown): number => opts.ttlFor?.(value) ?? ttlMs;
 
   // L1
-  const local = apiCache.get<T>(key);
+  const local = l1.get<T>(key);
   if (local !== undefined) {
     recordCache('l1_hit', cacheNamespace(key));
     return local;
@@ -254,7 +638,7 @@ async function cachedUntimed<T>(
   const existing = inflight.get(key)?.promise;
   if (existing) return existing as Promise<T>;
 
-  const flight: InflightRecord = { promise: null, invalidated: false };
+  const flight: InflightRecord = { promise: null, invalidated: false, tags };
   const promise = (async () => {
     try {
       // L2
@@ -265,7 +649,7 @@ async function cachedUntimed<T>(
           if (isCurrentFlight(inflight, key, flight)) {
             // `ttlOf` and not `ttlMs`: seeding L1 from L2 must not promote a
             // cached miss to the (much longer) positive TTL.
-            apiCache.set(key, remote, ttlOf(remote));
+            l1.set(key, remote, ttlOf(remote));
           }
           return remote;
         }
@@ -275,7 +659,8 @@ async function cachedUntimed<T>(
       const value = await loader();
       const store = opts.shouldCache ? opts.shouldCache(value) : true;
       if (store && isCurrentFlight(inflight, key, flight)) {
-        apiCache.set(key, value, ttlOf(value));
+        l1.set(key, value, ttlOf(value));
+        if (tags) fileUnderTags(key, tags);
         if (useL2 && redisEnabled()) {
           // Best-effort; don't block on the write.
           void redisSetJSON(key, value, ttlOf(value));
@@ -297,6 +682,8 @@ async function cachedUntimed<T>(
 export interface CachedNullableOptions {
   /** Also consult/populate the shared Redis L2. Default true. */
   l2?: boolean;
+  /** Invalidation tags (see `CachedOptions.tags`; implies L1-only). */
+  tags?: readonly string[];
   /**
    * How long a miss is remembered. Defaults to `NEGATIVE_TTL_MS` and is clamped
    * to `ttlMs`, so a caller cannot accidentally remember an absence for longer
@@ -336,6 +723,7 @@ export async function cachedNullable<T>(
     async () => (await loader()) ?? NEGATIVE,
     {
       l2: opts.l2,
+      tags: opts.tags,
       ttlFor: (value) => (isNegative(value) ? negativeTtlMs : ttlMs),
     },
   );
@@ -381,7 +769,7 @@ async function cachedMissUntimed<T>(
   const useL2 = opts.l2 !== false;
   const ttlMs = opts.negativeTtlMs ?? NEGATIVE_TTL_MS;
 
-  if (isNegative(apiCache.get(key))) {
+  if (isNegative(l1.get(key))) {
     recordCache('l1_hit', cacheNamespace(key));
     return null;
   }
@@ -389,7 +777,7 @@ async function cachedMissUntimed<T>(
     const remote = await redisGetJSON<unknown>(key);
     if (isNegative(remote)) {
       recordCache('l2_hit', cacheNamespace(key));
-      apiCache.set(key, remote, ttlMs);
+      l1.set(key, remote, ttlMs);
       return null;
     }
   }
@@ -398,7 +786,7 @@ async function cachedMissUntimed<T>(
   const value = await loader();
   if (value !== null && value !== undefined) return value;
 
-  apiCache.set(key, NEGATIVE, ttlMs);
+  l1.set(key, NEGATIVE, ttlMs);
   if (useL2 && redisEnabled()) void redisSetJSON(key, NEGATIVE, ttlMs);
   return null;
 }
@@ -462,7 +850,7 @@ async function cachedManyUntimed<T>(
   // L1 — free, and usually most of the batch.
   let missing: string[] = [];
   for (const key of unique) {
-    const local = apiCache.get<unknown>(key);
+    const local = l1.get<unknown>(key);
     if (local === undefined) missing.push(key);
     else {
       recordCache('l1_hit', cacheNamespace(key));
@@ -482,7 +870,7 @@ async function cachedManyUntimed<T>(
         continue;
       }
       recordCache('l2_hit', cacheNamespace(key));
-      apiCache.set(key, value, ttlOf(value));
+      l1.set(key, value, ttlOf(value));
       if (!isNegative(value)) found.set(key, value as T);
     }
     missing = stillMissing;
@@ -512,7 +900,7 @@ async function cachedManyUntimed<T>(
 
       const flight = claimed.get(key);
       if (!flight || !isCurrentFlight(inflight, key, flight)) continue;
-      apiCache.set(key, stored, ttlOf(stored));
+      l1.set(key, stored, ttlOf(stored));
       if (useL2 && redisEnabled()) void redisSetJSON(key, stored, ttlOf(stored));
     }
   } finally {
@@ -537,7 +925,7 @@ async function cachedManyUntimed<T>(
  *
  * This is the fix for the "feed skeleton hangs" tail: the per-viewer feed cache
  * previously blocked the first caller after every short TTL on a full ~32-query
- * assemble, and the anon path (raw apiCache) had no single-flight at all, so a
+ * assemble, and the anon path (a raw in-process cache) had no single-flight at all, so a
  * burst of visitors on TTL expiry each ran the assemble at once. With SWR the
  * skeleton resolves from cache in ~1ms and the assemble runs off the hot path.
  *
@@ -579,7 +967,7 @@ function swrRefresh<T>(
       const value = await loader();
       const entry: SWREntry<T> = { v: value, freshUntil: Date.now() + opts.ttlMs };
       if (isCurrentFlight(swrInflight, key, flight)) {
-        apiCache.set(key, entry, hardTtl);
+        l1.set(key, entry, hardTtl);
         if (useL2 && redisEnabled()) void redisSetJSON(key, entry, hardTtl);
       }
       return value;
@@ -613,7 +1001,7 @@ async function cachedSWRUntimed<T>(
   const hardTtl = opts.ttlMs + opts.swrMs;
 
   // L1 — fresh returns immediately; stale returns immediately + refreshes.
-  const local = apiCache.get<SWREntry<T>>(key);
+  const local = l1.get<SWREntry<T>>(key);
   if (local && typeof local === 'object' && 'freshUntil' in local) {
     if (Date.now() >= local.freshUntil) {
       recordCache('stale', cacheNamespace(key));
@@ -638,7 +1026,7 @@ async function cachedSWRUntimed<T>(
         if (remote && typeof remote === 'object' && 'freshUntil' in remote) {
           recordCache(Date.now() >= remote.freshUntil ? 'stale' : 'l2_hit', cacheNamespace(key));
           if (isCurrentFlight(swrInflight, key, flight)) {
-            apiCache.set(key, remote, hardTtl);
+            l1.set(key, remote, hardTtl);
             if (Date.now() >= remote.freshUntil) void swrRefresh(key, opts, loader);
           }
           return remote.v;
@@ -649,7 +1037,7 @@ async function cachedSWRUntimed<T>(
       const value = await loader();
       const entry: SWREntry<T> = { v: value, freshUntil: Date.now() + opts.ttlMs };
       if (isCurrentFlight(swrInflight, key, flight)) {
-        apiCache.set(key, entry, hardTtl);
+        l1.set(key, entry, hardTtl);
         if (useL2 && redisEnabled()) void redisSetJSON(key, entry, hardTtl);
       }
       return value;
@@ -672,6 +1060,7 @@ async function cachedSWRUntimed<T>(
  * path is a mutation for this purpose too.
  */
 export async function invalidateCached(key: string): Promise<void> {
+  ensureSubscribed();
   invalidateLocalKey(key);
   if (redisEnabled()) {
     await redisDel(key);
@@ -686,10 +1075,13 @@ export async function invalidateCached(key: string): Promise<void> {
 /**
  * Drop every key under a prefix from L1 (+ broadcast). NOTE: L2 keys under the
  * prefix are left to expire by TTL (Redis has no cheap prefix delete); the
- * broadcast still clears every instance's L1 immediately. Use short L2 TTLs on
- * prefix-invalidated families.
+ * broadcast still clears every instance's L1 immediately. A prefix-invalidated
+ * family must therefore be cached with `l2: false` (or short L2 TTLs), or the next
+ * read re-seeds L1 from the stale L2 copy. Prefer tags for new families.
+ * The local drop is synchronous, so a sync caller may `void` the promise.
  */
 export async function invalidateCachedPrefix(prefix: string): Promise<void> {
+  ensureSubscribed();
   invalidateLocalPrefix(prefix);
   if (redisEnabled()) {
     redisPublish(INVALIDATION_CHANNEL, {
@@ -701,20 +1093,35 @@ export async function invalidateCachedPrefix(prefix: string): Promise<void> {
 }
 
 /**
- * Subscribe to the invalidation channel and install the `apiCache` publish bridge. Idempotent.
+ * Drop every key filed under `tag` (see `CachedOptions.tags`) here and in every other process. The local drop is
+ * synchronous; the promise exists for symmetry with the other invalidators (a sync caller may `void` it).
+ */
+export async function invalidateTag(tag: string): Promise<void> {
+  ensureSubscribed();
+  invalidateLocalTag(tag);
+  if (redisEnabled()) {
+    redisPublish(INVALIDATION_CHANNEL, {
+      type: 'tag',
+      tag,
+      origin: CACHE_PROCESS_ID,
+    } satisfies InvalidationMessage);
+  }
+}
+
+/**
+ * Subscribe to the invalidation channel. Idempotent.
  *
  * Importing this module opens NO Redis connection (a short-lived script that imports it must exit).
- * The bridge is installed lazily on the first `cached*()` / `invalidateCached*()` call or the first
- * `apiCache.invalidate*`. A process that only ever READS `apiCache` would never trigger that, so
- * long-running servers start it at boot: the web tier through `requestCacheBridge` in
- * `server/nitro/cache-bridge.ts`, which reaches this module's copy in the app bundle.
+ * The subscription starts lazily on the first `cached*()` / `invalidate*()` call. A process that only ever
+ * READS an L1 entry before any such call would never trigger that, so long-running servers start it at boot:
+ * the web tier through `requestCacheBridge` in `server/nitro/cache-bridge.ts`, which reaches this module's copy
+ * in the app bundle.
  */
 export function startCacheBridge(): void {
   requestCacheBridge();
   ensureSubscribed();
 }
 
-apiCache.setBridgeInstaller(ensureSubscribed);
 // Every bundled copy of this module registers, so start-up reaches the copy the
 // requests actually use (lib/cache-bridge-start.ts).
 registerCacheBridgeStarter(ensureSubscribed);

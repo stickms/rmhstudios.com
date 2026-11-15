@@ -1,3 +1,4 @@
+import { readJson, readString, writeJson } from '@/lib/core/persist';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
@@ -58,6 +59,10 @@ import {
   DEFAULT_LOOK,
   type Look,
 } from '@/lib/elections/split';
+import { api } from '@/lib/contract/client';
+import { reactElectionChatApi } from '@/lib/elections/elections.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const LAYOUT_ICON: Record<Layout, typeof Square> = {
   '1': Square,
@@ -95,11 +100,7 @@ const KIND_LABEL: Record<PaneKind, [string, string]> = {
  */
 /** Read the saved bar choice synchronously (the open-focus decision happens before state has loaded it). */
 function localStorageBarIsAuto(): boolean {
-  try {
-    return localStorage.getItem('rmh-elections-roombar') === 'auto';
-  } catch {
-    return false;
-  }
+  return readString('rmh-elections-roombar') === 'auto';
 }
 
 export function RoomOverlay({
@@ -125,6 +126,7 @@ export function RoomOverlay({
   const code = source.kind === 'hosted' ? source.code : null;
   const { config, setConfig, meta, status, canEdit, applyRemote } = useRoomState(cycle, source);
   const chat = useRoomStream(cycle, code, applyRemote);
+  const arrival = useArrival(status !== 'loading');
   const [selectedState, setSelectedState] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -133,42 +135,26 @@ export function RoomOverlay({
   // How the panes sit: spacing and border size (None … Roomy / Thick), per viewer, kept in this browser.
   const [look, setLookState] = useState<Look>(DEFAULT_LOOK);
   useEffect(() => {
-    try {
-      setLookState(parseLook(localStorage.getItem('rmh-elections-roomlook')));
-    } catch {
-      /* defaults */
-    }
+    setLookState(parseLook(readString('rmh-elections-roomlook')));
   }, []);
   const setLook = (next: Look) => {
     setLookState(next);
-    try {
-      localStorage.setItem('rmh-elections-roomlook', JSON.stringify(next));
-    } catch {
-      /* ignore */
-    }
+    writeJson('rmh-elections-roomlook', next);
   };
   // Pane order is also per viewer: drag a pane's grip onto another to swap them.
   const [orders, setOrders] = useState<Record<string, string[]>>({});
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   useEffect(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem('rmh-elections-roomorder') ?? '{}') as Record<string, unknown>;
-      const clean: Record<string, string[]> = {};
-      for (const [k, v] of Object.entries(raw)) if (Array.isArray(v)) clean[k] = v.filter((x): x is string => typeof x === 'string').slice(0, 8);
-      setOrders(clean);
-    } catch {
-      /* default order */
-    }
+    const raw = readJson<Record<string, unknown>>('rmh-elections-roomorder', {});
+    const clean: Record<string, string[]> = {};
+    for (const [k, v] of Object.entries(raw)) if (Array.isArray(v)) clean[k] = v.filter((x): x is string => typeof x === 'string').slice(0, 8);
+    setOrders(clean);
   }, []);
   const saveOrder = (layout: string, ids: string[]) =>
     setOrders((cur) => {
       const next = { ...cur, [layout]: ids };
-      try {
-        localStorage.setItem('rmh-elections-roomorder', JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
+      writeJson('rmh-elections-roomorder', next);
       return next;
     });
   const { split, grid, dragging, handlers } = useSplit(config.layout, SPACE_PX[look.space] ?? 4, SPACE_PX[look.space] ?? 4);
@@ -240,11 +226,8 @@ export function RoomOverlay({
   }, []);
 
   const react = (emoji: string) =>
-    fetch('/api/elections/chat/react', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ cycle, emoji, ...(code ? { room: code } : {}) }),
+    api(reactElectionChatApi, {
+      body: code ? { cycle, emoji, room: code } : { cycle, emoji },
     }).catch(() => undefined);
 
   const inviteUrl = code ? `${SITE_URL}${roomPath(code)}` : null;
@@ -475,19 +458,19 @@ export function RoomOverlay({
               {t('room.joining', { defaultValue: 'Joining…' })}
             </p>
           ) : status === 'not-found' ? (
-            <div className="el-room__note">
+            <div className={cn('el-room__note', arrival)}>
               <p>{t('room.gone', { defaultValue: 'That room does not exist or has ended.' })}</p>
               <button type="button" className="el-btn" onClick={onUseSolo}>
                 {t('room.startSolo', { defaultValue: 'Start a solo room instead' })}
               </button>
             </div>
           ) : status === 'error' ? (
-            <p className="el-room__note" role="alert">
+            <p className={cn('el-room__note', arrival)} role="alert">
               {t('room.error', { defaultValue: 'Could not load the room. Try again.' })}
             </p>
           ) : (
             <>
-            <div className="el-room__switch" role="group" aria-label={t('room.panes', { defaultValue: 'Panes' })}>
+            <div className={cn('el-room__switch', arrival)} role="group" aria-label={t('room.panes', { defaultValue: 'Panes' })}>
               {panes.map((pane, i) => (
                 <button
                   key={pane.id}
@@ -502,7 +485,7 @@ export function RoomOverlay({
             </div>
             <div
               ref={grid}
-              className="el-room__grid"
+              className={cn('el-room__grid', arrival)}
               data-layout={config.layout}
               data-dragging={dragging ?? (dragId ? 'pane' : undefined)}
               style={{ ...splitVars(split), ...lookVars(look) } as React.CSSProperties}

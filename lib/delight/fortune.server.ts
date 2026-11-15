@@ -1,6 +1,6 @@
 /** Z4 — fortune cookie: approved one-liners, one per UTC day, claimed lazily. */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { utcDay } from '@/lib/delight/schema';
 
 const PENDING_CAP = 3;
@@ -16,32 +16,36 @@ export async function submitFortune(userId: string, text: string): Promise<'ok' 
 export async function todaysFortune(now = new Date()): Promise<{ text: string } | null> {
   const day = utcDay(now);
   const key = `delight:fortune:${day}`;
-  const hit = apiCache.get<{ text: string } | null>(key);
-  if (hit !== undefined) return hit;
-
-  let row = await prisma.fortuneCookie.findUnique({
-    where: { runDate: day },
-    select: { text: true },
-  });
-  if (!row) {
-    const next = await prisma.fortuneCookie.findFirst({
-      where: { status: 'approved', runDate: null },
-      orderBy: { createdAt: 'asc' },
-      select: { id: true },
-    });
-    if (next) {
-      // runDate is unique: if another process claimed the day first, ours is a no-op.
-      await prisma.fortuneCookie
-        .updateMany({ where: { id: next.id, runDate: null }, data: { runDate: day } })
-        .catch(() => undefined);
-      row = await prisma.fortuneCookie.findUnique({
+  // A null (nothing approved yet) is cached too, as before.
+  return cached(
+    key,
+    60_000,
+    async () => {
+      let row = await prisma.fortuneCookie.findUnique({
         where: { runDate: day },
         select: { text: true },
       });
-    }
-  }
-  apiCache.set(key, row, 60_000);
-  return row;
+      if (!row) {
+        const next = await prisma.fortuneCookie.findFirst({
+          where: { status: 'approved', runDate: null },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true },
+        });
+        if (next) {
+          // runDate is unique: if another process claimed the day first, ours is a no-op.
+          await prisma.fortuneCookie
+            .updateMany({ where: { id: next.id, runDate: null }, data: { runDate: day } })
+            .catch(() => undefined);
+          row = await prisma.fortuneCookie.findUnique({
+            where: { runDate: day },
+            select: { text: true },
+          });
+        }
+      }
+      return row;
+    },
+    { l2: false },
+  );
 }
 
 export async function pendingFortunes() {

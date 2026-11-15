@@ -1,0 +1,53 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import { createStorefrontProductApi } from '@/lib/storefront/storefront.contract';
+import { prisma } from '@/lib/prisma.server';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { z } from 'zod';
+import { grantAchievement } from '@/lib/achievements/engine.server';
+
+const schema = z.object({
+  title: z.string().min(2).max(80),
+  description: z.string().max(500).optional(),
+  price: z.number().int().min(1).max(1_000_000),
+  deliverable: z.string().max(2000).optional(),
+});
+
+const MAX_PRODUCTS = 30;
+
+/** POST /api/storefront/products — create a product on your storefront. */
+export const route = apiRoute('/api/storefront/products', {
+  POST: implement(
+    createStorefrontProductApi,
+    { body: schema, allowEmptyBody: true, verboseValidationErrors: true },
+    async ({ request, session, body }) => {
+      const userId = session.user.id;
+
+      const ip = getClientIp(request);
+      const { allowed } = rateLimit(ip, {
+        limit: 20,
+        windowMs: 60_000,
+        prefix: 'storefront-create',
+      });
+      if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+
+      const count = await prisma.storefrontProduct.count({ where: { creatorId: userId } });
+      if (count >= MAX_PRODUCTS) {
+        return Response.json({ error: `At most ${MAX_PRODUCTS} products` }, { status: 400 });
+      }
+
+      const product = await prisma.storefrontProduct.create({
+        data: {
+          creatorId: userId,
+          title: body.title.trim(),
+          description: body.description?.trim() || null,
+          price: body.price,
+          deliverable: body.deliverable?.trim() || null,
+        },
+      });
+
+      await grantAchievement(userId, 'creator.first_product').catch(() => {});
+      return Response.json(product, { status: 201 });
+    },
+  ),
+});

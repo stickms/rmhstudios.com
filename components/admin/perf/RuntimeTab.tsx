@@ -2,6 +2,8 @@ import { RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import type { HeapReport, PerfOverview, RedisPlaneReport } from '@/lib/perf/admin-types';
 import { allSnapshots } from '@/lib/perf/derive';
 import { useLazyJson } from './api';
@@ -9,13 +11,11 @@ import { fmtBytes, fmtInt, fmtMs, fmtNum, fmtPct, fmtUptime } from './format';
 
 function Pairs({ rows }: { rows: Array<[string, string]> }) {
   return (
-    <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-1 t-body sm:grid-cols-2">
       {rows.map(([k, v]) => (
         <div key={k} className="flex justify-between gap-3 border-t border-site-border py-2">
           <dt className="text-site-text-muted">{k}</dt>
-          <dd className="text-right font-mono text-xs break-all tabular-nums text-site-text">
-            {v}
-          </dd>
+          <dd className="text-end t-meta text-site-text break-all tabular-nums">{v}</dd>
         </div>
       ))}
     </dl>
@@ -29,10 +29,10 @@ function RedisCard({ title, report }: { title: string; report: RedisPlaneReport 
   const hits = Number(get('keyspace_hits') ?? 0);
   const misses = Number(get('keyspace_misses') ?? 0);
   return (
-    <article className="glass-fill space-y-3 rounded-site p-5">
-      <h3 className="text-base font-bold text-site-text">{title}</h3>
+    <article className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
+      <h3 className="t-heading text-site-text">{title}</h3>
       {!report || !i ? (
-        <p className="text-sm text-site-text-muted">
+        <p className="t-body text-site-text-muted">
           {t('redis-unreachable', { defaultValue: 'Redis is not configured or did not answer.' })}
         </p>
       ) : (
@@ -90,13 +90,14 @@ function RedisCard({ title, report }: { title: string; report: RedisPlaneReport 
 function HeapSection() {
   const { t } = useTranslation('f-perf');
   const { data, loading, failed, reload } = useLazyJson<HeapReport>('/api/admin/perf/heap');
+  const arrival = useArrival(!(loading && !data));
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="site-section-label">
+        <h2 className="t-heading text-site-text">
           {t('heap-title', { defaultValue: 'V8 heap spaces' })}
         </h2>
-        <Button size="xs" variant="outline" onClick={() => void reload()} disabled={loading}>
+        <Button size="xs" variant="default" onClick={() => void reload()} disabled={loading}>
           <RefreshCw aria-hidden />
           {t('diag-reload', { defaultValue: 'Reload' })}
         </Button>
@@ -104,12 +105,12 @@ function HeapSection() {
       {loading && !data ? (
         <Spinner />
       ) : failed || !data ? (
-        <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
+        <p className={cn('t-body text-site-text-muted', arrival)}>
           {t('heap-failed', { defaultValue: 'Could not load heap statistics.' })}
         </p>
       ) : (
         <>
-          <p className="text-xs text-site-text-dim">
+          <p className={cn('t-body text-site-text-muted', arrival)}>
             {t('heap-scope', {
               defaultValue:
                 'Worker pid {{pid}} (the one that answered). Detached contexts: {{detached}}.',
@@ -117,32 +118,25 @@ function HeapSection() {
               detached: fmtInt(data.heap.number_of_detached_contexts),
             })}
           </p>
-          <div className="glass-fill overflow-x-auto rounded-site">
-            <table className="w-full min-w-max text-sm">
+          <div
+            className={cn(
+              '-mx-[var(--site-page-gutter)] overflow-x-auto px-[var(--site-page-gutter)]',
+              arrival,
+            )}
+          >
+            <table className="t-body w-full min-w-max">
               <thead>
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-3 py-2 text-left text-xs font-semibold text-site-text-muted"
-                  >
+                  <th scope="col" className="py-2 pe-4 last:pe-0 text-start t-label">
                     {t('col-space', { defaultValue: 'Space' })}
                   </th>
-                  <th
-                    scope="col"
-                    className="px-3 py-2 text-right text-xs font-semibold text-site-text-muted"
-                  >
+                  <th scope="col" className="py-2 pe-4 last:pe-0 text-end t-label">
                     {t('col-used', { defaultValue: 'Used' })}
                   </th>
-                  <th
-                    scope="col"
-                    className="px-3 py-2 text-right text-xs font-semibold text-site-text-muted"
-                  >
+                  <th scope="col" className="py-2 pe-4 last:pe-0 text-end t-label">
                     {t('col-size', { defaultValue: 'Size' })}
                   </th>
-                  <th
-                    scope="col"
-                    className="px-3 py-2 text-right text-xs font-semibold text-site-text-muted"
-                  >
+                  <th scope="col" className="py-2 pe-4 last:pe-0 text-end t-label">
                     {t('col-available', { defaultValue: 'Available' })}
                   </th>
                 </tr>
@@ -150,14 +144,14 @@ function HeapSection() {
               <tbody>
                 {data.spaces.map((s) => (
                   <tr key={s.space_name} className="border-t border-site-border">
-                    <td className="px-3 py-2 font-mono text-xs text-site-text">{s.space_name}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-site-text">
+                    <td className="py-2 pe-4 last:pe-0 t-meta text-site-text">{s.space_name}</td>
+                    <td className="py-2 pe-4 last:pe-0 text-end tabular-nums text-site-text">
                       {fmtBytes(s.space_used_size)}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-site-text">
+                    <td className="py-2 pe-4 last:pe-0 text-end tabular-nums text-site-text">
                       {fmtBytes(s.space_size)}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-site-text">
+                    <td className="py-2 pe-4 last:pe-0 text-end tabular-nums text-site-text">
                       {fmtBytes(s.space_available_size)}
                     </td>
                   </tr>
@@ -185,9 +179,9 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
   return (
     <div className="space-y-6">
       <section className="space-y-3">
-        <h2 className="site-section-label">{t('redis-title', { defaultValue: 'Redis' })}</h2>
+        <h2 className="t-heading text-site-text">{t('redis-title', { defaultValue: 'Redis' })}</h2>
         {!overview.redis.enabled ? (
-          <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
+          <p className="t-body text-site-text-muted">
             {t('redis-off', {
               defaultValue:
                 'Redis is not configured (REDIS_URL unset); caches and rate limits are per-process.',
@@ -214,11 +208,11 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="site-section-label">
+        <h2 className="t-heading text-site-text">
           {t('cgroup-title', { defaultValue: 'Container limits (cgroup)' })}
         </h2>
         {cgroups.length === 0 ? (
-          <p className="glass-fill rounded-site p-5 text-sm text-site-text-muted">
+          <p className="t-body text-site-text-muted">
             {t('cgroup-none', {
               defaultValue: 'No cgroup information (not running in a Linux container).',
             })}
@@ -228,8 +222,11 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
             {cgroups.map((s) => {
               const c = s.cgroup!;
               return (
-                <article key={s.service} className="glass-fill space-y-3 rounded-site p-5">
-                  <h3 className="text-base font-bold text-site-text">
+                <article
+                  key={s.service}
+                  className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0"
+                >
+                  <h3 className="t-heading text-site-text">
                     {s.service} · cgroup v{c.version}
                   </h3>
                   <Pairs
@@ -283,11 +280,11 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="site-section-label">
+        <h2 className="t-heading text-site-text">
           {t('gc-title', { defaultValue: 'Garbage collection' })}
         </h2>
-        <div className="glass-fill overflow-x-auto rounded-site">
-          <table className="w-full min-w-max text-sm">
+        <div className="-mx-[var(--site-page-gutter)] overflow-x-auto px-[var(--site-page-gutter)]">
+          <table className="t-body w-full min-w-max">
             <thead>
               <tr>
                 {[
@@ -301,7 +298,7 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
                   <th
                     key={h}
                     scope="col"
-                    className={`px-3 py-2 text-xs font-semibold text-site-text-muted ${i === 0 ? 'text-left' : 'text-right'}`}
+                    className={`py-2 pe-4 last:pe-0 t-label ${i === 0 ? 'text-start' : 'text-end'}`}
                   >
                     {h}
                   </th>
@@ -317,22 +314,22 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
                 const last = s.gc.lastMinute;
                 return (
                   <tr key={`${s.service}:${s.pid}`} className="border-t border-site-border">
-                    <td className="px-3 py-2 font-mono text-xs text-site-text">
+                    <td className="py-2 pe-4 last:pe-0 t-meta text-site-text">
                       {s.service}:{s.pid}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-site-text">
+                    <td className="py-2 pe-4 last:pe-0 text-end tabular-nums text-site-text">
                       {kind('minor')}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-site-text">
+                    <td className="py-2 pe-4 last:pe-0 text-end tabular-nums text-site-text">
                       {kind('major')}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-site-text">
+                    <td className="py-2 pe-4 last:pe-0 text-end tabular-nums text-site-text">
                       {kind('incremental')}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-site-text">
+                    <td className="py-2 pe-4 last:pe-0 text-end tabular-nums text-site-text">
                       {kind('weakcb')}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-site-text">
+                    <td className="py-2 pe-4 last:pe-0 text-end tabular-nums text-site-text">
                       {last ? `${fmtInt(last.count)} · ${fmtMs(last.pauseMs)}` : '—'}
                     </td>
                   </tr>
@@ -347,8 +344,8 @@ export function RuntimeTab({ overview }: { overview: PerfOverview }) {
 
       {os && (
         <section className="space-y-3">
-          <h2 className="site-section-label">{t('os-title', { defaultValue: 'Host' })}</h2>
-          <div className="glass-fill rounded-site p-5">
+          <h2 className="t-heading text-site-text">{t('os-title', { defaultValue: 'Host' })}</h2>
+          <div className="min-w-0">
             <Pairs
               rows={[
                 [

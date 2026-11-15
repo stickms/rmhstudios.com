@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The punch card: every hour of every weekday, folded into one 7 × 24 grid.
  *

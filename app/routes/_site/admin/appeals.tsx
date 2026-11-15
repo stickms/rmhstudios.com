@@ -11,10 +11,11 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Gavel, ShieldCheck, ShieldX, Clock } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import type { TabItem } from '@/components/ui/tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -22,6 +23,11 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { decideAdminAppealApi, getAdminAppealsApi } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/appeals')({
   head: () => ({ meta: [{ title: 'Strike Appeals | RMH Studios' }] }),
@@ -61,17 +67,17 @@ function AdminAppealsPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   const load = useCallback(async (v: View) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/appeals?status=${v}`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data.items ?? []);
-        setCounts(data.counts ?? {});
-      }
+      const data = await api(getAdminAppealsApi, { query: { status: v }, retries: 0 });
+      setItems(data.items ?? []);
+      setCounts(data.counts ?? {});
+    } catch {
+      // A failed load leaves the queue as it was (the old code ignored non-2xx).
     } finally {
       setLoading(false);
     }
@@ -84,15 +90,14 @@ function AdminAppealsPage() {
   const decide = async (id: string, action: 'uphold' | 'overturn') => {
     setBusyId(id);
     try {
-      const res = await fetch(`/api/admin/appeals/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ action, note: notes[id]?.trim() || undefined }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
+      let data;
+      try {
+        data = await api(decideAdminAppealApi, {
+          params: { id },
+          body: { action, note: notes[id]?.trim() || undefined },
+        });
+      } catch (e) {
+        toast.error(serverError(e) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
         return;
       }
       toast.success(
@@ -111,7 +116,7 @@ function AdminAppealsPage() {
     }
   };
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: 'PENDING',
       label: t('appeals-pending', { defaultValue: 'Pending' }),
@@ -142,13 +147,13 @@ function AdminAppealsPage() {
       wide
       backTo="/admin"
     >
-      <AdminBody>
-        <LiquidTabs
+      <PageTabs
           tabs={tabs}
           value={view}
           onChange={(id) => setView(id as View)}
           aria-label={t('appeals-queue', { defaultValue: 'Strike Appeals' })}
         />
+      <AdminBody>
 
         {loading ? (
           <div className="flex justify-center py-20">
@@ -156,30 +161,31 @@ function AdminAppealsPage() {
           </div>
         ) : items.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Gavel}
             title={t('appeals-empty', { defaultValue: 'No appeals here. The queue is clear.' })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {items.map((a) => (
-              <li key={a.id} className="glass-fill rounded-site px-4 py-3">
+              <li key={a.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="danger" size="sm">
+                  <Badge variant="danger">
                     {t('strike', { defaultValue: 'Strike' })}
                   </Badge>
                   {a.entityType && (
-                    <Badge variant="outline" size="sm">
+                    <Badge variant="default">
                       {a.entityType}
                     </Badge>
                   )}
-                  <span className="text-xs text-site-text-dim">
+                  <span className="t-meta">
                     {t('issued-ago', {
                       defaultValue: 'issued {{when}}',
                       when: formatDistanceToNow(new Date(a.createdAt), { addSuffix: true }),
                     })}
                   </span>
                   {a.appealedAt && (
-                    <span className="text-xs text-site-text-dim">
+                    <span className="t-meta">
                       ·{' '}
                       {t('appealed-ago', {
                         defaultValue: 'appealed {{when}}',
@@ -189,9 +195,9 @@ function AdminAppealsPage() {
                   )}
                 </div>
 
-                <p className="mt-2 text-sm text-site-text">{a.reason}</p>
+                <p className="mt-2 t-body text-site-text">{a.reason}</p>
 
-                <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-site-text-muted">
+                <div className="t-body mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-site-text-muted">
                   <span className="inline-flex items-center gap-1.5">
                     <UserAvatar
                       src={a.user.image}
@@ -199,18 +205,18 @@ function AdminAppealsPage() {
                       size={20}
                       fallbackName={a.user.name || 'U'}
                     />
-                    <strong className="text-site-text">{a.user.name || a.user.handle}</strong>
+                    <strong className="font-semibold text-site-text">{a.user.name || a.user.handle}</strong>
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     {t('issued-by', { defaultValue: 'issued by' })}
-                    <strong className="text-site-text">
+                    <strong className="font-semibold text-site-text">
                       {a.issuedBy.name || a.issuedBy.handle}
                     </strong>
                   </span>
                   {a.decidedBy && (
                     <span className="inline-flex items-center gap-1.5">
                       {t('decided-by', { defaultValue: 'decided by' })}
-                      <strong className="text-site-text">
+                      <strong className="font-semibold text-site-text">
                         {a.decidedBy.name || a.decidedBy.handle}
                       </strong>
                     </span>
@@ -218,22 +224,22 @@ function AdminAppealsPage() {
                 </div>
 
                 {a.appealText && (
-                  <div className="mt-3 glass-inset rounded-site-sm px-3 py-2">
-                    <p className="text-xs font-semibold text-site-text-muted">
+                  <div className="mt-3 border-s-2 border-site-border ps-3">
+                    <p className="t-label">
                       {t('user-appeal', { defaultValue: "User's appeal" })}
                     </p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-site-text">
+                    <p className="mt-1 whitespace-pre-wrap t-body text-site-text">
                       {a.appealText}
                     </p>
                   </div>
                 )}
 
                 {a.appealNote && view !== 'PENDING' && (
-                  <div className="mt-3 glass-inset rounded-site-sm px-3 py-2">
-                    <p className="text-xs font-semibold text-site-text-muted">
+                  <div className="mt-3 border-s-2 border-site-border ps-3">
+                    <p className="t-label">
                       {t('decision-note', { defaultValue: 'Decision note' })}
                     </p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-site-text">
+                    <p className="mt-1 whitespace-pre-wrap t-body text-site-text">
                       {a.appealNote}
                     </p>
                   </div>
@@ -253,7 +259,7 @@ function AdminAppealsPage() {
                     />
                     <div className="flex flex-wrap gap-2">
                       <Button
-                        variant="outline"
+                        variant="default"
                         disabled={busyId === a.id}
                         onClick={() => decide(a.id, 'overturn')}
                       >

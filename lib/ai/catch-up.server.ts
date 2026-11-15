@@ -30,7 +30,7 @@
 
 import { liveMessages } from '@/lib/chat-plus/expiry.server';
 import { createHash } from 'node:crypto';
-import { apiCache } from '@/lib/cache';
+import { peekL1, putL1 } from '@/lib/cached.server';
 import { assertAiBudget } from '@/lib/ai/budget.server';
 import { isAiConfigured, runTask } from '@/lib/ai/provider.server';
 import { asData, systemFor, CATCH_UP } from '@/lib/ai/prompts';
@@ -55,7 +55,7 @@ export interface CatchUpResult {
   reason?: CatchUpReason;
   /** Messages considered. Lets the UI say "caught you up on 23 messages". */
   items: number;
-  /** True when `apiCache` answered, so callers can reason about cost. */
+  /** True when the shared cache answered, so callers can reason about cost. */
   cached: boolean;
 }
 
@@ -222,8 +222,10 @@ export async function catchUp(args: CatchUpArgs): Promise<CatchUpResult> {
   const hash = createHash('sha256').update(transcript).digest('hex').slice(0, 32);
   const key = `ai:catch-up:${args.kind}:${args.id}:${hash}`;
 
-  const cached = apiCache.get<string>(key);
-  if (cached) return { summary: cached, items: lines.length, cached: true };
+  // peek/put rather than cached(): a hit must report `cached: true`, and the unavailable / over-budget branches
+  // below must not be stored.
+  const hit = peekL1<string>(key);
+  if (hit) return { summary: hit, items: lines.length, cached: true };
 
   // Checked after the cache so a hit costs nothing and is never refused, and
   // before the call so an exhausted budget stops the spend rather than
@@ -242,6 +244,6 @@ export async function catchUp(args: CatchUpArgs): Promise<CatchUpResult> {
   const summary = raw.trim().slice(0, CATCH_UP.maxChars);
   if (!summary) return { summary: null, reason: 'unavailable', items: lines.length, cached: false };
 
-  apiCache.set(key, summary, TTL_MS);
+  putL1(key, summary, TTL_MS);
   return { summary, items: lines.length, cached: false };
 }

@@ -61,7 +61,7 @@ export const NAMESPACES = [
   "c-news", "c-nightrail", "c-predictions", "c-profile-modules", "c-rideshare",
   "c-rmh-capital", "c-rmh-datacenter", "c-rmh-pmc", "c-rmhbox", "c-rmhcalculator",
   "c-rmhcode",
-  "c-rebar-rutabaga", "c-rmhcoins", "c-rmhfashion", "c-rmhmusic", "c-rmhstudy",
+  "c-rebar-rutabaga", "c-rmhcoins", "c-rmhfashion", "c-rmhmusic", "c-rmhos", "c-rmhstudy",
   "c-rmhtech", "c-rmhtube",
   "c-rmhtype", "c-rmhvibe", "c-roadmap", "c-saves", "c-signal-forge",
   "c-status", "c-studio", "c-synapse-storm", "c-temple-of-joy", "c-tf2-game", "c-tf2-hud",
@@ -204,5 +204,12 @@ export function buildInitOptions(
     resources,
     interpolation: { escapeValue: false },
     returnNull: false,
+    // Namespaces load on demand on the client (lib/i18n/instances.ts), so a
+    // component can render before its namespace has arrived. Never suspend:
+    // `t()` returns each call's defaultValue meanwhile (identical to the SSR
+    // markup, so hydration matches) and useTranslation re-renders when the load
+    // lands (`loaded` re-renders consumers
+    // of a namespace that arrived without their own hook asking for it).
+    react: { useSuspense: false, bindI18n: 'languageChanged loaded' },
   };
 }

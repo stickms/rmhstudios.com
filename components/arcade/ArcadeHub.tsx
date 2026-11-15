@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Arcade Pass hub — the daily-challenge board.
  *
@@ -18,15 +16,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { m as motion } from 'framer-motion';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Check, Clock, Flame, Gamepad2, Gift, Play, Trophy, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { games } from '@/lib/games';
-import { APPLE_SPRING } from '@/lib/motion';
+import { games } from '@/lib/catalog';
+import { APPLE_SPRING } from '@/lib/app-motion';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { claimArcadeChallengeApi, getArcadeStateApi } from '@/lib/arcade/arcade.contract';
 import type { ArcadeState, ArcadeChallengeView } from '@/lib/quests/arcade';
+import { useArrival } from '@/components/ui/arrive';
 
 /** Milliseconds until the next UTC midnight (when challenges rotate). */
 function msToUtcReset(): number {
@@ -68,9 +70,7 @@ export function ArcadeHub({
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch('/api/arcade/', { credentials: 'include' });
-      if (!res.ok) return;
-      setState((await res.json()) as ArcadeState);
+      setState(await api(getArcadeStateApi));
     } catch {
       /* best-effort refresh */
     }
@@ -86,20 +86,12 @@ export function ArcadeHub({
   async function claim(challengeId: string) {
     setClaiming(challengeId);
     try {
-      const res = await fetch('/api/arcade/claim', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ challengeId }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        xp?: number;
-        coins?: number;
-      };
-      if (!res.ok) {
+      let data: { xp?: number; coins?: number };
+      try {
+        data = await api(claimArcadeChallengeApi, { body: { challengeId } });
+      } catch (e) {
         toast.error(
-          data.error ?? t('arcade-claim-failed', { defaultValue: 'Could not claim reward' }),
+          serverError(e) ?? t('arcade-claim-failed', { defaultValue: 'Could not claim reward' }),
         );
         return;
       }
@@ -118,6 +110,8 @@ export function ArcadeHub({
     }
   }
 
+  const arrival = useArrival(state !== null);
+
   if (!state) {
     return (
       <div className="flex justify-center py-20">
@@ -129,12 +123,12 @@ export function ArcadeHub({
   const { streak, challenges } = state;
 
   return (
-    <div>
+    <div className={arrival}>
       {/* Desktop header row (on mobile the page's tab strip is the chrome). */}
       {!hideHeader && (
         <div className="flex items-center gap-2 border-b border-site-border px-5 py-4 max-md:sr-only max-md:border-b-0">
           <Gamepad2 className="h-5 w-5 text-site-accent" aria-hidden />
-          <h1 className="font-display text-2xl font-semibold tracking-[-0.022em] text-site-text">
+          <h1 className="text-2xl font-semibold tracking-[-0.022em] text-site-text">
             {t('arcade-title', { defaultValue: 'Arcade Pass' })}
           </h1>
         </div>
@@ -142,26 +136,26 @@ export function ArcadeHub({
 
       <div className="space-y-4 px-4 py-4">
         {/* Streak + reset countdown */}
-        <div className="flex flex-wrap items-center justify-between gap-4 glass-fill rounded-site px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-site px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
               <Flame className="h-6 w-6" aria-hidden />
             </div>
             <div>
-              <p className="text-2xl font-bold leading-none text-site-text">
+              <p className="text-2xl font-semibold leading-none text-site-text">
                 {streak.current}
                 <span className="ml-2 text-sm font-medium text-site-text-muted">
                   {t('arcade-day-streak', { defaultValue: 'day streak' })}
                 </span>
               </p>
-              <p className="mt-2 flex items-center gap-2 text-xs text-site-text-dim">
+              <p className="mt-2 flex items-center gap-2 text-xs text-site-text-muted">
                 <Trophy className="h-3 w-3" aria-hidden />
                 {t('arcade-best-streak', { best: streak.best, defaultValue: 'Best: {{best}}' })}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm text-site-text-muted" aria-live="off">
-            <Clock className="h-4 w-4 text-site-text-dim" aria-hidden />
+            <Clock className="h-4 w-4 text-site-text-muted" aria-hidden />
             <span>
               {t('arcade-resets-in', { defaultValue: 'Resets in' })}{' '}
               <span className="font-mono tabular-nums text-site-text">
@@ -184,7 +178,7 @@ export function ArcadeHub({
         </div>
 
         {/* How it works */}
-        <div className="glass-fill rounded-site px-4 py-3">
+        <div className="rounded-site px-4 py-3">
           <h2 className="site-section-label mb-2">
             {t('arcade-how-title', { defaultValue: 'How it works' })}
           </h2>
@@ -223,7 +217,7 @@ function ChallengeCard({
     // reactivity is retired site-wide (see the §5.1 note in app/globals.css);
     // what stays is the part that answers a real gesture, the press spring.
     <motion.div
-      className="flex flex-col items-stretch gap-3 glass-fill glass-interactive rounded-site px-4 py-3 sm:flex-row"
+      className="flex flex-col items-stretch gap-3 surface-press rounded-site px-4 py-3 sm:flex-row"
       whileHover={{ scale: 1.008 }}
       whileTap={{ scale: 0.994 }}
       transition={APPLE_SPRING.press}
@@ -240,7 +234,7 @@ function ChallengeCard({
             className="h-full w-full scale-110 object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-site-text-dim">
+          <div className="flex h-full w-full items-center justify-center text-site-text-muted">
             <Gamepad2 className="h-6 w-6" aria-hidden />
           </div>
         )}
@@ -281,7 +275,7 @@ function ChallengeCard({
           </span>
         ) : claimable ? (
           <Button
-            variant="accent"
+            variant="default"
             loading={busy}
             onClick={onClaim}
             className="w-full sm:w-auto"
@@ -292,7 +286,7 @@ function ChallengeCard({
         ) : game ? (
           // asChild: a <button> inside an <a> is invalid HTML and gives keyboard
           // users two focus stops for one action.
-          <Button asChild variant="outline" className="w-full sm:w-auto">
+          <Button asChild variant="default" className="w-full sm:w-auto">
             <Link to={game.href}>
               <Play className="h-3.5 w-3.5" aria-hidden />
               {t('arcade-play-now', { defaultValue: 'Play now' })}

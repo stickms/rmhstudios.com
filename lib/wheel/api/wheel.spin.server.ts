@@ -1,0 +1,52 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/wheel/wheel.contract';
+import { prisma } from '@/lib/prisma.server';
+import { creditCoins, getBalance } from '@/lib/economy/ledger.server';
+import { WHEEL_SEGMENTS, pickSegment, wheelDateKey } from '@/lib/wheel/wheel';
+import { awardXp } from '@/lib/xp/engine.server';
+import { grantAchievement } from '@/lib/achievements/engine.server';
+
+/** POST /api/wheel/spin — take today's free spin (idempotent per UTC day). */
+export const route = apiRoute('/api/wheel/spin', {
+  POST: implement(
+    C.spinWheelApi,
+    { rateLimit: { limit: 10, windowMs: 60_000, prefix: 'wheel-spin' } },
+    async ({ session }) => {
+      const userId = session.user.id;
+      const dateKey = wheelDateKey();
+      const segment = pickSegment();
+      const reward = WHEEL_SEGMENTS[segment].reward;
+
+      // The unique [userId, dateKey] guarantees one spin/day even under a
+      // double-submit; a duplicate insert throws P2002 and we 409.
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          await tx.dailyWheelSpin.create({ data: { userId, dateKey, reward, segment } });
+          // The unique [userId, dateKey] insert above is the once-per-day
+          // guard; the dateKey doubles as the ledger idempotency key so a
+          // retried spin cannot pay out twice.
+          await creditCoins(userId, reward, {
+            tx,
+            type: 'REWARD',
+            entityType: 'wheel',
+            entityId: dateKey,
+            note: 'Daily wheel',
+            idempotencyKey: `wheel:${userId}:${dateKey}`,
+          });
+          return getBalance(userId, tx);
+        });
+
+        await awardXp(userId, 10);
+        await grantAchievement(userId, 'economy.first_wheel').catch(() => {});
+
+        return Response.json({ segment, reward, newBalance: result });
+      } catch (e) {
+        if (e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2002') {
+          return Response.json({ error: 'Already spun today' }, { status: 409 });
+        }
+        throw e;
+      }
+    },
+  ),
+});

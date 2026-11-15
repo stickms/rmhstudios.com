@@ -1,0 +1,24 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { defineHandler } from '@/lib/api/handler.server';
+import { z } from 'zod';
+import { reorderAlbums } from '@/lib/albums.admin.server';
+
+/**
+ * POST /api/admin/albums/reorder — persist a new album order on the library
+ * page. Body: { ids: string[] } (album ids in desired order). Admin only.
+ */
+const schema = z.object({ ids: z.array(z.string()).max(1000) });
+
+export const route = apiRoute('/api/admin/albums/reorder', {
+  POST: defineHandler(
+    { auth: 'admin', rateLimit: { policy: 'write', scope: 'user' } },
+    async ({ request }) => {
+      const body = await request.json().catch(() => null);
+      const parsed = schema.safeParse(body);
+      if (!parsed.success) return Response.json({ error: 'Invalid order.' }, { status: 400 });
+
+      await reorderAlbums(parsed.data.ids);
+      return Response.json({ success: true });
+    },
+  ),
+});

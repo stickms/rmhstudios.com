@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The liquid debt globe — the ledger plotted on the site's own sphere.
  *

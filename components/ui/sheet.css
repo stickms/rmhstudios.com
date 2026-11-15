@@ -1,73 +1,19 @@
-/* Sheet enter/exit, driven by Radix's data-state on the shared `--motion-*`
- * clock (globals.css §7.1, mirroring lib/motion.ts) — the same pattern as
- * dialog.css: TRANSITIONS, not keyframes, so the motion is interruptible.
- * Close a sheet while it is still rising (or reopen it while it is leaving) and
- * it turns around from the frame it is on instead of jumping to the end of one
- * animation and starting the other. `@starting-style` gives the open its first
- * frame; the closed state IS that frame, so open and close are one path run
- * both ways. Radix keeps the node mounted while `ui-sheet-presence` runs (it
- * waits for `animationend`), which is what lets the exit transition play.
- *
- * Mobile (< md): a bottom sheet that slides up from the bottom edge, whole — no
- * fade, as on iOS. Desktop (>= md): a centred dialog that scales in, like
- * Dialog, composing with the -50%/-50% `translate` longhand Tailwind sets.
- * Transform/opacity only; the glass is never animated.
- *
- * The present rides the sheet spring (`--spring-sheet`, globals.css §7.1 —
- * APPLE_SPRING.sheet sampled), the way a UIKit sheet comes up; a desktop sheet
- * rides the smooth spring. A phone dismiss crosses the whole screen height, so
- * it takes the travel exit (`--motion-out-travel`) instead of the quick clock. */
-[data-slot="sheet-overlay"] {
+/* Steel M5: a sheet and its scrim change opacity in 160 ms (the `--motion-*` clock, app/globals/page-motion.css §7.1).
+   No slide, no scale: the sheet is where it will be, and it fades. TRANSITIONS, not keyframes, so the motion is
+   interruptible: close a sheet while it is still fading in and it turns around from the frame it is on. Radix keeps the
+   node mounted while `ui-sheet-presence` runs (it waits for `animationend`), which is what lets the exit play. */
+:is([data-slot='sheet-overlay'], [data-slot='sheet-content']) {
   opacity: 1;
-  transition: opacity var(--motion-in) var(--motion-ease-in);
+  transition: opacity var(--motion-out) ease;
 }
-[data-slot="sheet-overlay"][data-state="closed"] {
+:is([data-slot='sheet-overlay'], [data-slot='sheet-content'])[data-state='closed'] {
   opacity: 0;
-  transition: opacity var(--motion-out) var(--motion-ease-out);
+  pointer-events: none;
   animation: ui-sheet-presence var(--motion-out) linear;
 }
-[data-slot="sheet-content"] {
-  transform: none;
-}
-[data-slot="sheet-content"][data-state="open"] {
-  transition:
-    opacity var(--motion-in) var(--motion-ease-in),
-    transform var(--spring-sheet-duration) var(--spring-sheet);
-}
-[data-slot="sheet-content"][data-state="closed"] {
-  transform: translateY(100%);
-  pointer-events: none;
-  transition: transform var(--motion-out-travel) var(--motion-ease-out-travel);
-  animation: ui-sheet-presence var(--motion-out-travel) linear;
-}
 @starting-style {
-  [data-slot="sheet-overlay"][data-state="open"] {
+  :is([data-slot='sheet-overlay'], [data-slot='sheet-content'])[data-state='open'] {
     opacity: 0;
-  }
-  [data-slot="sheet-content"][data-state="open"] {
-    transform: translateY(100%);
-  }
-}
-
-@media (min-width: 768px) {
-  [data-slot="sheet-content"][data-state="open"] {
-    transition:
-      opacity var(--motion-in) var(--motion-ease-in),
-      transform var(--spring-smooth-duration) var(--spring-smooth);
-  }
-  [data-slot="sheet-content"][data-state="closed"] {
-    opacity: 0;
-    transform: translateY(12px) scale(0.96);
-    transition:
-      opacity var(--motion-out) var(--motion-ease-out),
-      transform var(--motion-out) var(--motion-ease-out);
-    animation: ui-sheet-presence var(--motion-out) linear;
-  }
-  @starting-style {
-    [data-slot="sheet-content"][data-state="open"] {
-      opacity: 0;
-      transform: translateY(12px) scale(0.96);
-    }
   }
 }
 

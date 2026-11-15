@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * GlobeSet — the daily run.
  *
@@ -26,7 +24,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, m as motion } from 'framer-motion';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   Box,
   Camera,
@@ -76,7 +74,7 @@ import { useCelebration } from '@/hooks/useCelebration';
 import { useDeviceAttitude } from '@/hooks/useDeviceAttitude';
 import type { Quat } from '@/lib/device-attitude';
 import { useSession } from '@/components/Providers';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { PuzzlePage, PuzzleHeader } from '@/components/daily-puzzles/PuzzleShell';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -649,11 +647,11 @@ export function GlobeSetGame() {
       </PuzzleHeader>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Boxed rather than left to fill the row: LiquidTabs' sheet is `w-full`,
+        {/* Boxed rather than left to fill the row: Tabs' sheet is `w-full`,
             so on a desktop width two tabs stretch into a pair of half-page
             slabs and push the controls beside them onto their own line. */}
         <div className="w-full max-w-[16rem]">
-          <LiquidTabs
+          <Tabs
             tabs={[
               { id: 'daily', label: t('globeset-tab-daily', { defaultValue: 'Daily' }) },
               { id: 'race', label: t('globeset-tab-race', { defaultValue: 'Race' }), icon: Swords },
@@ -671,7 +669,7 @@ export function GlobeSetGame() {
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
-            variant={view === 'globe' ? 'accent-outline' : 'ghost'}
+            variant={view === 'globe' ? 'default' : 'ghost'}
             size="sm"
             onClick={toggleView}
             aria-pressed={view === 'globe'}
@@ -690,7 +688,7 @@ export function GlobeSetGame() {
           {view === 'globe' && tilt.supported && (
             <Button
               type="button"
-              variant={tilt.enabled ? 'accent-outline' : 'ghost'}
+              variant={tilt.enabled ? 'default' : 'ghost'}
               size="sm"
               onClick={() => {
                 if (tilt.enabled) {
@@ -734,7 +732,7 @@ export function GlobeSetGame() {
           )}
           <Button
             type="button"
-            variant={shapes ? 'accent-outline' : 'ghost'}
+            variant={shapes ? 'default' : 'ghost'}
             size="sm"
             onClick={toggleShapes}
             aria-pressed={shapes}

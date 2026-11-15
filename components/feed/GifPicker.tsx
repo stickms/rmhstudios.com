@@ -1,10 +1,10 @@
-'use client';
-
 import { useEffect, useRef, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Search, X, ImageOff } from'lucide-react';
 import type { KlipyGif } from'@/lib/klipy.server';
 import { buildGifSearchPath } from'@/lib/gif-search';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface GifPickerProps {
  onSelect: (url: string) => void;
@@ -12,9 +12,19 @@ interface GifPickerProps {
  className?: string;
  /** Pre-filled search (the `/gif cats` slash command). */
  initialQuery?: string;
+ /**
+ * What to show when GIF search is switched off on this server. An inline picker shows nothing (the default), which
+ * hides the feature; a popover has already opened, so it says so rather than open empty.
+ */
+ unavailable?: React.ReactNode;
+ /**
+ * Height of the scrolling grid. Inline pickers grow with their results up to a cap (the default). A popover passes a
+ * fixed height: it is placed and capped from its size as it opens, so it must not grow when the results arrive.
+ */
+ listClassName?: string;
 }
 
-export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }: GifPickerProps) {
+export function GifPicker({ onSelect, onClose, className ='', initialQuery ='', unavailable = null, listClassName ='max-h-72' }: GifPickerProps) {
  const { t } = useTranslation('feed');
  const [query, setQuery] = useState(initialQuery);
  const [results, setResults] = useState<KlipyGif[]>([]);
@@ -22,6 +32,9 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  const [loading, setLoading] = useState(true);
  const [error, setError] = useState<'unavailable'|'failed'| null>(null);
  const sentinelRef = useRef<HTMLDivElement>(null);
+ // Steel M9: the first results replace the placeholder tiles; later pages and new searches fade in tile by tile.
+ const arrival = useArrival(!loading || results.length > 0);
+ const isNew = useArrivingKeys(results.map((g) => g.id));
 
  // Fetch a page. pos === null starts a fresh result set.
  // Stable: reads no outer state; only calls setState setters (stable identities).
@@ -59,48 +72,51 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  return () => io.disconnect();
  }, [next, loading, query, fetchPage]);
 
- if (error ==='unavailable') return null; // feature off → hide entirely
+ if (error ==='unavailable') return unavailable; // feature off → hide entirely, or say so
 
  return (
- <div className={`glass-fill rounded-site p-4 ${className}`}>
+ <div className={`surface-card rounded-site p-4 ${className}`}>
  <div className="flex items-center justify-between gap-2 mb-2">
  <div className="relative flex-1">
- <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim"/>
+ <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-muted"/>
  <input
  autoFocus
  value={query}
  onChange={(e) => setQuery(e.target.value)}
  placeholder={t('gif-search-placeholder', { defaultValue:'Search GIFs...'})}
- className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm pl-9 pr-3 py-2 outline-none focus:border-site-accent transition-colors"
+ className="w-full surface-field text-site-text placeholder:text-site-text-muted text-sm rounded-site-sm pl-9 pr-3 py-2 outline-none focus:border-site-accent transition-colors"
  />
  </div>
  {onClose && (
  <button type="button"onClick={onClose} aria-label={t('close', { defaultValue:'Close'})}
- className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors">
+ className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors">
  <X className="w-4 h-4"/>
  </button>
  )}
  </div>
 
- <div className="max-h-72 overflow-y-auto">
+ <div className={`${listClassName} overflow-y-auto`}>
  {error ==='failed'&& (
- <div className="flex items-center justify-center gap-2 py-6 text-site-text-dim text-xs">
+ <div className="flex items-center justify-center gap-2 py-6 text-site-text-muted text-xs">
  <ImageOff className="w-4 h-4"/>
  {t('gif-search-failed', { defaultValue:'Could not load GIFs. Try again.'})}
  </div>
  )}
  {!error && results.length === 0 && !loading && (
- <div className="py-6 text-center text-xs text-site-text-dim">
+ <div className="py-6 text-center text-xs text-site-text-muted">
  {t('gif-search-empty', { defaultValue:'No GIFs found'})}
  </div>
  )}
- <div className="grid grid-cols-2 gap-1">
+ <div className={cn('grid grid-cols-2 gap-1', arrival)}>
  {results.map((g) => (
  <button
  key={g.id}
  type="button"
  onClick={() => { onSelect(g.url); onClose?.(); }}
- className="block rounded-site-sm overflow-hidden border border-site-border hover:border-site-accent transition-colors"
+ className={cn(
+ 'block rounded-site-sm overflow-hidden border border-site-border hover:border-site-accent transition-colors',
+ isNew(g.id) && ARRIVE,
+ )}
  >
  <img src={g.preview} alt={g.description || t('gif-alt', { defaultValue:'GIF'})} loading="lazy"className="w-full h-auto"/>
  </button>
@@ -115,7 +131,7 @@ export function GifPicker({ onSelect, onClose, className ='', initialQuery ='' }
  <div ref={sentinelRef} className="h-2"/>
  </div>
 
- <div className="pt-1.5 text-[10px] text-site-text-dim text-right">
+ <div className="pt-1.5 text-micro text-site-text-muted text-right">
  {t('powered-by-klipy', { defaultValue:'Powered by KLIPY'})}
  </div>
  </div>

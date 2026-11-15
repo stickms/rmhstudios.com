@@ -6,7 +6,6 @@
  * gamble, it is a trap — and the last outcome stays on the page so a prayer
  * that failed while you were reading something else is not silently lost.
  */
-'use client';
 
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';

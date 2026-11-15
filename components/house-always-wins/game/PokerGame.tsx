@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
 import { SfxManager } from "@/lib/house-always-wins/sfx";

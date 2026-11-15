@@ -17,14 +17,14 @@ import {
   CalendarClock,
   Route as RouteLucide,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { useSession } from '@/components/Providers';
@@ -33,6 +33,17 @@ import { DriverEarnings } from '@/components/rideshare/DriverEarnings';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, formatUsd, payoutBreakdown } from '@/lib/rideshare/geo';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  applyToDriveApi,
+  getDriverApi,
+  listRidesApi,
+  rideActionApi,
+  setDriverOnlineApi,
+} from '@/lib/rideshare/rideshare.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/rideshare/drive')({
   head: () => ({ meta: [{ title: 'Drive with RMH Rideshare' }] }),
@@ -79,14 +90,14 @@ function DrivePage() {
   const { data: session, isPending } = useSession();
   const [driver, setDriver] = useState<DriverRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!(isPending || loading));
 
   const loadDriver = useCallback(async () => {
     try {
-      const res = await fetch('/api/rideshare/driver');
-      if (res.ok) {
-        const data = await res.json();
-        setDriver(data.driver);
-      }
+      const data = await api(getDriverApi, { retries: 0 });
+      setDriver(data.driver);
+    } catch {
+      /* a failed load leaves the driver record as it was */
     } finally {
       setLoading(false);
     }
@@ -111,6 +122,7 @@ function DrivePage() {
     return (
       <PageLayout title={t('drive-page-title', { defaultValue: 'Drive with RMH' })} wide>
         <SignedOutPrompt
+          className={arrival}
           icon={Car}
           callbackURL="/rideshare/drive"
           title={t('sign-in-to-drive', { defaultValue: 'Sign in to drive' })}
@@ -124,7 +136,7 @@ function DrivePage() {
 
   return (
     <PageLayout title={t('drive-page-title', { defaultValue: 'Drive with RMH' })} wide>
-      <div className="w-full max-w-4xl px-4 pt-4 pb-12">
+      <div className={cn('w-full max-w-4xl px-4 pt-4 pb-12', arrival)}>
         {driver?.status === 'APPROVED' ? (
           <DriverDashboard driver={driver} currentUserId={session.user.id} onDriverChange={loadDriver} />
         ) : driver?.status === 'PENDING' ? (
@@ -146,7 +158,7 @@ function PendingState() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-fill rounded-site"
+      className="rounded-site"
     >
       <EmptyState
         icon={Clock}
@@ -194,20 +206,15 @@ function ApplicationForm({
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/rideshare/driver', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, vehicleClass }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || t('error-submit-application', { defaultValue: 'Could not submit your application.' }));
-        return;
-      }
+      await api(applyToDriveApi, { body: { ...form, vehicleClass } });
       toast.success(t('application-submitted', { defaultValue: "Application submitted! We'll review it shortly." }));
       onApplied();
-    } catch {
-      toast.error(t('error-generic-retry', { defaultValue: 'Something went wrong. Please try again.' }));
+    } catch (e) {
+      if (e instanceof HttpError) {
+        toast.error(serverError(e) || t('error-submit-application', { defaultValue: 'Could not submit your application.' }));
+      } else {
+        toast.error(t('error-generic-retry', { defaultValue: 'Something went wrong. Please try again.' }));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -251,7 +258,7 @@ function ApplicationForm({
         </div>
       )}
 
-      <div className="glass-fill rounded-site p-5">
+      <div className="rounded-site p-5">
         <h3 className="site-section-label mb-3">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {field('drv-make', t('label-make', { defaultValue: 'Make' }),
@@ -271,12 +278,12 @@ function ApplicationForm({
         </div>
       </div>
 
-      <div className="glass-fill space-y-3 rounded-site p-5">
+      <div className="space-y-3 rounded-site p-5">
         <div>
           <h3 className="site-section-label">{t('which-class-drive', { defaultValue: 'Which class will you drive?' })}</h3>
           <p className="mt-2 text-xs text-site-text-muted">{t('class-hint', { defaultValue: 'Pick the option that best matches your vehicle.' })}</p>
         </div>
-        <LiquidTabs
+        <Tabs
           size="sm"
           tabs={RIDE_CLASSES.map((cls) => ({ id: cls.id, label: cls.name }))}
           value={vehicleClass}
@@ -310,12 +317,14 @@ function DriverDashboard({
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [focusRideId, setFocusRideId] = useState<string | null>(null);
   const { t } = useTranslation('rideshare');
+  // The ride rows animate themselves (RideCard); only the empty state needs the M9 fade.
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     try {
       const [a, d] = await Promise.all([
-        fetch('/api/rideshare/rides?scope=available').then((r) => (r.ok ? r.json() : { rides: [] })),
-        fetch('/api/rideshare/rides?scope=driving').then((r) => (r.ok ? r.json() : { rides: [] })),
+        api(listRidesApi, { query: { scope: 'available' }, retries: 0 }).catch(() => ({ rides: [] })),
+        api(listRidesApi, { query: { scope: 'driving' }, retries: 0 }).catch(() => ({ rides: [] })),
       ]);
       setAvailable(a.rides ?? []);
       setDriving(d.rides ?? []);
@@ -342,19 +351,13 @@ function DriverDashboard({
     setTogglingOnline(true);
     setOnline(next); // optimistic
     try {
-      const res = await fetch('/api/rideshare/driver', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isOnline: next }),
-      });
-      if (!res.ok) {
-        setOnline(!next);
-        toast.error(t('error-update-availability', { defaultValue: 'Could not update availability.' }));
-      } else {
-        onDriverChange();
-      }
-    } catch {
+      await api(setDriverOnlineApi, { body: { isOnline: next } });
+      onDriverChange();
+    } catch (e) {
       setOnline(!next);
+      if (e instanceof HttpError) {
+        toast.error(t('error-update-availability', { defaultValue: 'Could not update availability.' }));
+      }
     } finally {
       setTogglingOnline(false);
     }
@@ -363,20 +366,15 @@ function DriverDashboard({
   async function accept(rideId: string) {
     setBusy(rideId);
     try {
-      const res = await fetch(`/api/rideshare/rides/${rideId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'accept' }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t('error-action-failed', { defaultValue: 'Action failed.' }));
-        return;
-      }
+      await api(rideActionApi, { params: { id: rideId }, body: { action: 'accept' } });
       toast.success(t('ride-accepted', { defaultValue: 'Ride accepted — head to the pickup!' }));
       load();
-    } catch {
-      toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
+    } catch (e) {
+      if (e instanceof HttpError) {
+        toast.error(serverError(e) || t('error-action-failed', { defaultValue: 'Action failed.' }));
+      } else {
+        toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
+      }
     } finally {
       setBusy(null);
     }
@@ -421,7 +419,7 @@ function DriverDashboard({
       </div>
 
       {!online && (
-        <p className="glass-inset rounded-site px-4 py-3 text-center text-sm text-site-text-muted">
+        <p className="surface-field rounded-site px-4 py-3 text-center text-sm text-site-text-muted">
           {t('offline-hint', { defaultValue: "You're offline. Go online to receive new ride requests." })}
         </p>
       )}
@@ -455,6 +453,7 @@ function DriverDashboard({
           <div className="flex justify-center py-8"><Spinner size={20} className="text-site-text-muted" /></div>
         ) : available.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Car}
             title={t('no-open-requests', { defaultValue: 'No open requests right now. Check back soon!' })}
           />
@@ -494,13 +493,13 @@ function RideCard({
     <motion.li
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`glass-fill rounded-site p-5 ${busy ? 'opacity-70' : ''}`}
+      className={`rounded-site p-5 ${busy ?'opacity-70':''}`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
           {rideClassName(ride.rideClass)}
           {ride.status === 'SCHEDULED' && ride.scheduledFor && (
-            <Badge variant="accent" icon={<CalendarClock aria-hidden />}>
+            <Badge variant="default" icon={<CalendarClock aria-hidden />}>
               {format(new Date(ride.scheduledFor), 'EEE h:mm a')}
             </Badge>
           )}
@@ -520,17 +519,17 @@ function RideCard({
         </div>
       </div>
       {ride.notes && (
-        <p className="glass-inset mt-3 rounded-site-sm px-3 py-2 text-xs text-site-text-muted">"{ride.notes}"</p>
+        <p className="surface-field mt-3 rounded-site-sm px-3 py-2 text-xs text-site-text-muted">"{ride.notes}"</p>
       )}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-site-border pt-3">
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-bold text-site-success">
+            <span className="text-sm font-semibold text-site-success">
               {formatUsd(payoutBreakdown(ride.estimatedFareCents).driverEarningsCents)}
             </span>
-            <span className="text-xs text-site-text-dim">{t('est-pay', { defaultValue: 'est. pay' })}</span>
+            <span className="text-xs text-site-text-muted">{t('est-pay', { defaultValue: 'est. pay' })}</span>
           </div>
-          <span className="mt-1 flex items-center gap-3 text-xs text-site-text-dim">
+          <span className="mt-1 flex items-center gap-3 text-xs text-site-text-muted">
             {ride.distanceMeters != null && (
               <span className="flex items-center gap-1">
                 <RouteLucide className="h-3 w-3" /> {formatDistance(ride.distanceMeters)}

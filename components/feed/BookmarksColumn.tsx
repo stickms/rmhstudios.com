@@ -1,11 +1,10 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
 import { Bookmark, Loader2 } from'lucide-react';
 import { VirtualPostList } from'./VirtualPostList';
 import { ColumnHeader } from'./ColumnHeader';
-import { AsyncReveal } from'@/components/motion';
+import { useArrival } from '@/components/ui/arrive';
 import { Button } from'@/components/ui/button';
 import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
@@ -23,6 +22,8 @@ export function BookmarksColumn({
  const [hasMore, setHasMore] = useState(!!initialData?.hasMore);
  const [loading, setLoading] = useState(!initialData);
  const [loadingMore, setLoadingMore] = useState(false);
+ // Steel M9: bookmarks fetched here replace the spinner; the loader's first page is there on first paint.
+ const arrival = useArrival(!loading);
  const { t } = useTranslation('feed');
 
  const load = useCallback(async (cur?: string) => {
@@ -62,9 +63,10 @@ export function BookmarksColumn({
  <Spinner />
  </div>
  )}
- <AsyncReveal show={!loading}>
- {items.length === 0 ? (
+ {!loading &&
+ (items.length === 0 ? (
  <EmptyState
+ className={arrival}
  icon={Bookmark}
  title={t('no-bookmarks-yet', { defaultValue:'No bookmarks yet'})}
  description={t('no-bookmarks-hint', {
@@ -72,13 +74,12 @@ export function BookmarksColumn({
  })}
  />
  ) : (
- <VirtualPostList items={items} />
- )}
- </AsyncReveal>
+ <VirtualPostList items={items} className={arrival} />
+ ))}
 
  {hasMore && (
  <div className="flex justify-center py-4">
- <Button variant="secondary"size="sm"onClick={loadMore} disabled={loadingMore}>
+ <Button variant="default"size="sm"onClick={loadMore} disabled={loadingMore}>
  {loadingMore ? (
  <Loader2 className="h-4 w-4 animate-spin"/>
  ) : (

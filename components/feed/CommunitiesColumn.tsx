@@ -1,14 +1,18 @@
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchField } from '@/components/ui/search-field';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Users, Plus, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { RevealGroup, RevealItem } from '@/components/motion';
 import { CommunityListSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useArrival } from '@/components/ui/arrive';
+import {
+  DIRECTORY_LIST_CLASS,
+  DirectoryFact,
+  DirectoryItem,
+  DirectoryTag,
+} from '@/components/ui/directory-item';
 import {
   Dialog,
   DialogContent,
@@ -19,7 +23,11 @@ import {
 import { useSession } from '@/components/Providers';
 import { LockedCommunityHeader, RequestToJoin } from '@/components/communities/LockedCommunity';
 import { ColumnHeader } from './ColumnHeader';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { cn } from '@/lib/utils';
+import { createCommunityApi, listCommunitiesApi } from '@/lib/communities/communities.contract';
 
 interface Community {
   id: string;
@@ -65,6 +73,8 @@ export function CommunitiesColumn({
   const [loading, setLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState('');
+  // Steel M9: a list fetched here replaces the skeleton; the loader's first page is there on first paint.
+  const arrival = useArrival(!(loading && items.length === 0));
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -74,10 +84,10 @@ export function CommunitiesColumn({
   const load = useCallback(async (q?: string) => {
     setLoading(true);
     try {
-      const url =
-        q && q.trim() ? `/api/communities?q=${encodeURIComponent(q.trim())}` : '/api/communities';
-      const res = await fetch(url, { credentials: 'include' });
-      if (res.ok) setItems((await res.json()).communities);
+      const trimmed = q?.trim();
+      setItems((await api(listCommunitiesApi, { query: { q: trimmed || undefined } })).communities);
+    } catch {
+      // Keep the list that is shown.
     } finally {
       setLoading(false);
     }
@@ -105,33 +115,27 @@ export function CommunitiesColumn({
     if (name.trim().length < 2) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/communities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
+      const data = await api(createCommunityApi, {
+        body: {
           name: name.trim(),
           description: description.trim() || undefined,
           icon: icon || undefined,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(t('community-created', { defaultValue: 'Community created!' }));
-        setCreateOpen(false);
-        navigate({ to: `/c/${data.slug}` as string });
-      } else {
-        toast.error(
-          data.error || t('community-create-error', { defaultValue: 'Could not create community' }),
-        );
-      }
+      toast.success(t('community-created', { defaultValue: 'Community created!' }));
+      setCreateOpen(false);
+      navigate({ to: `/c/${data.slug}` as string });
+    } catch (err) {
+      toast.error(
+        serverError(err) || t('community-create-error', { defaultValue: 'Could not create community' }),
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   const inputCls =
-    'glass-inset w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
+    'surface-field w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none';
 
   return (
     <div>
@@ -150,7 +154,7 @@ export function CommunitiesColumn({
             aria-label={t('search-communities', { defaultValue: 'Search communities' })}
           />
           {session && (
-            <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
+            <Button size="sm" variant="default" onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
             </Button>
           )}
@@ -162,7 +166,7 @@ export function CommunitiesColumn({
             title={t('communities-heading', { defaultValue: 'Communities' })}
             actions={
               session && (
-                <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
+                <Button size="sm" variant="default" onClick={() => setCreateOpen(true)}>
                   <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
                 </Button>
               )
@@ -186,6 +190,7 @@ export function CommunitiesColumn({
  "create the first one!" without offering any way to do it; the button
  that does lives in the header, off the top of a scrolled column. */
         <EmptyState
+          className={arrival}
           icon={Users}
           title={
             query.trim()
@@ -204,7 +209,7 @@ export function CommunitiesColumn({
           }
           action={
             session ? (
-              <Button variant="accent" onClick={() => setCreateOpen(true)}>
+              <Button variant="default" onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4" aria-hidden />{' '}
                 {t('create-community-title', { defaultValue: 'Create a community' })}
               </Button>
@@ -212,13 +217,13 @@ export function CommunitiesColumn({
           }
         />
       ) : (
-        <RevealGroup as="ul" className="flex flex-col gap-3 px-4 pb-12">
+        <ul className={cn(DIRECTORY_LIST_CLASS, arrival)}>
           {items.map((c) => {
             if (c.locked) {
               // Listed + locked: metadata and the way in, nothing of the content.
               return (
-                <RevealItem as="li" key={c.id}>
-                  <div className="flex flex-col gap-3 rounded-site glass-fill p-5">
+                <li key={c.id}>
+                  <div className="flex flex-col gap-3 rounded-site relative p-5">
                     <Link
                       to={`/c/${c.slug}` as string}
                       className="rounded-site-sm transition-colors duration-site hover:bg-site-surface-hover"
@@ -231,7 +236,7 @@ export function CommunitiesColumn({
                       className="justify-end"
                     />
                   </div>
-                </RevealItem>
+                </li>
               );
             }
             const roleLabel =
@@ -243,55 +248,39 @@ export function CommunitiesColumn({
                     ? t('joined-badge', { defaultValue: 'Joined' })
                     : null;
             return (
-              <RevealItem as="li" key={c.id}>
-                <Link
-                  to={`/c/${c.slug}` as string}
-                  className="flex items-start gap-4 rounded-site glass-fill p-5 transition-[translate,border-color,background-color] duration-site hover:-translate-y-0.5 hover:border-site-accent/50 hover:bg-site-surface-hover"
-                >
-                  <div
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-3xl"
-                    style={{ background: (c.color || 'var(--site-accent)') + '22' }}
-                  >
-                    {c.icon || '👥'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-base font-bold text-site-text">{c.name}</p>
-                      {roleLabel && (
-                        <span className="shrink-0 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-medium text-site-accent">
-                          {roleLabel}
-                        </span>
-                      )}
-                    </div>
-                    {c.description && (
-                      <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">
-                        {c.description}
-                      </p>
-                    )}
-                    <div className="mt-2 flex items-center gap-4 text-xs text-site-text-dim">
-                      <span className="inline-flex items-center gap-1">
+              <li key={c.id}>
+                <DirectoryItem
+                  to={`/c/${c.slug}`}
+                  media={c.icon || '👥'}
+                  mediaStyle={{ background: (c.color || 'var(--site-accent)') + '22' }}
+                  title={c.name}
+                  tag={roleLabel && <DirectoryTag>{roleLabel}</DirectoryTag>}
+                  description={c.description}
+                  meta={
+                    <>
+                      <DirectoryFact>
                         <Users className="h-3.5 w-3.5" />
                         {t('members-stat', {
                           count: c.memberCount,
                           formatted: formatCount(c.memberCount),
                           defaultValue: '{{formatted}} members',
                         })}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
+                      </DirectoryFact>
+                      <DirectoryFact>
                         <MessageSquare className="h-3.5 w-3.5" />
                         {t('posts-stat', {
                           count: c.postCount,
                           formatted: formatCount(c.postCount),
                           defaultValue: '{{formatted}} posts',
                         })}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              </RevealItem>
+                      </DirectoryFact>
+                    </>
+                  }
+                />
+              </li>
             );
           })}
-        </RevealGroup>
+        </ul>
       )}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -328,7 +317,7 @@ export function CommunitiesColumn({
               {t('cancel-button', { defaultValue: 'Cancel' })}
             </Button>
             <Button
-              variant="accent"
+              variant="default"
               onClick={create}
               disabled={submitting || name.trim().length < 2}
             >

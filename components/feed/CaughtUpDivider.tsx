@@ -1,24 +1,19 @@
 import { useTranslation } from 'react-i18next';
-import { CheckCheck } from 'lucide-react';
+import { SpineItem } from '@/components/ui/spine';
 
 /**
- * X7 — drawn in the home timeline where the previous visit's posts begin.
- * Scrolling past it means everything new has been seen.
+ * X7: drawn in the home timeline where the previous visit's posts begin. Scrolling past it means everything new has been
+ * seen. A dotless spine item (P3: it is not a post) with one line of `t-label`, no icon and no colour.
  */
 export function CaughtUpDivider() {
   const { t } = useTranslation('f-feed-plus');
   return (
-    <div
+    <SpineItem
+      dot={false}
       role="separator"
       aria-label={t('caught-up-aria', { defaultValue: 'You are caught up. Older posts follow.' })}
-      className="flex w-full items-center gap-3 px-[var(--rad-card-pad)] py-4 text-site-text-muted"
     >
-      <span className="h-px flex-1 bg-site-border" aria-hidden />
-      <span className="inline-flex items-center gap-2 site-section-label">
-        <CheckCheck className="h-3.5 w-3.5 text-site-success" aria-hidden />
-        {t('caught-up', { defaultValue: "You're all caught up" })}
-      </span>
-      <span className="h-px flex-1 bg-site-border" aria-hidden />
-    </div>
+      <span className="t-label">{t('caught-up', { defaultValue: "You're all caught up" })}</span>
+    </SpineItem>
   );
 }

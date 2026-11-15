@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Dunesday Media Player — tonight's lineup, Windows Media Player 12 style.
  *

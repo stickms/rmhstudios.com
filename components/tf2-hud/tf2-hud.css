@@ -208,7 +208,7 @@
   --app-font-display: 'TF2 Build', Impact, 'Arial Narrow', sans-serif;
   --app-font-body: 'TF2 Secondary', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
   --tf2-font-flourish: 'TF2 Professor', 'TF2 Secondary', Georgia, serif;
-  --app-font-mono: 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
+  --app-font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* TF2's panels are blocky: tight corners everywhere. */
   --app-radius: 6px;

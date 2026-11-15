@@ -1,9 +1,11 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { smartRepliesApi } from '@/lib/feed/compose-assist.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 /**
  * One-tap reply chips above a DM composer.
  *
@@ -40,6 +42,8 @@ export function SmartReplies({
   const fetchedFor = useRef<string | null>(null);
 
   const idle = draft.trim().length === 0;
+  // Steel M9: the chips are fetched after a message lands and appear above the composer, so they fade in.
+  const arrival = useArrival(idle && replies.length > 0);
 
   useEffect(() => {
     if (!idle || !replyToMessageId) {
@@ -54,15 +58,12 @@ export function SmartReplies({
       fetchedFor.current = replyToMessageId;
       setLoading(true);
       try {
-        const res = await fetch('/api/ai/smart-replies', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ conversationId }),
+        const data = await api(smartRepliesApi, {
+          body: { conversationId },
+          timeoutMs: AI_TIMEOUT_MS,
         });
         if (cancelled) return;
-        const data = await res.json().catch(() => ({}));
-        setReplies(res.ok && Array.isArray(data.replies) ? data.replies : []);
+        setReplies(Array.isArray(data.replies) ? data.replies : []);
       } catch {
         // Fail silent: no chips is a perfectly good chat composer.
         if (!cancelled) setReplies([]);
@@ -81,7 +82,7 @@ export function SmartReplies({
 
   return (
     <div
-      className="mb-2 flex flex-wrap items-center gap-2"
+      className={cn('mb-2 flex flex-wrap items-center gap-2', arrival)}
       role="group"
       aria-label={t('smart-replies-label', { defaultValue: 'Suggested replies' })}
       aria-busy={loading}

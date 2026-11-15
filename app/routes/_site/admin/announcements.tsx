@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { IconButton } from '@/components/ui/icon-button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
@@ -22,29 +22,26 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
   MAX_ANNOUNCEMENT_IMAGES,
+  type CreateAnnouncementInput,
 } from '@/lib/announcement-schema';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { uploadImagesApi } from '@/lib/media/upload.contract';
+import {
+  adminAnnouncementCreate,
+  adminAnnouncementDelete,
+  adminAnnouncementUpdate,
+  adminAnnouncementsList,
+  type AdminAnnouncement as Announcement,
+} from '@/lib/admin/announcements.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/announcements')({
   head: () => ({ meta: [{ title: 'Announcements | RMH Studios' }] }),
   component: AdminAnnouncementsPage,
 });
-
-interface Announcement {
-  id: string;
-  title: string;
-  body: string;
-  linkUrl: string | null;
-  linkLabel: string | null;
-  variant: string;
-  active: boolean;
-  pinned: boolean;
-  createdAt: string;
-  expiresAt: string | null;
-  imageUrls?: string[];
-  gifUrl?: string | null;
-  poll?: { id: string; question: string } | null;
-}
 
 const VARIANTS = ['info', 'success', 'warning', 'event'] as const;
 
@@ -74,6 +71,7 @@ function AdminAnnouncementsPage() {
   const confirm = useConfirm();
   const [list, setList] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
@@ -101,8 +99,9 @@ function AdminAnnouncementsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/announcements', { credentials: 'include' });
-      if (res.ok) setList((await res.json()).announcements);
+      setList((await api(adminAnnouncementsList)).announcements);
+    } catch {
+      // keep the list we have
     } finally {
       setLoading(false);
     }
@@ -144,22 +143,11 @@ function AdminAnnouncementsPage() {
     const epoch = uploadEpochRef.current;
     setUploadingCount((n) => n + 1);
     try {
-      const res = await fetch('/api/rmharks/image', {
-        method: 'POST',
-        body: form,
-        credentials: 'include',
-      });
-      if (epoch !== uploadEpochRef.current) return;
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: 'Upload failed' }));
-        setImageError(error ?? 'Upload failed');
-        return;
-      }
-      const { urls } = await res.json();
+      const { urls } = await api(uploadImagesApi, { body: form });
       if (epoch !== uploadEpochRef.current) return;
       setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_ANNOUNCEMENT_IMAGES));
-    } catch {
-      if (epoch === uploadEpochRef.current) setImageError('Upload failed');
+    } catch (e) {
+      if (epoch === uploadEpochRef.current) setImageError(serverError(e) ?? 'Upload failed');
     } finally {
       setUploadingCount((n) => Math.max(0, n - 1));
     }
@@ -169,12 +157,14 @@ function AdminAnnouncementsPage() {
     if (!title.trim() || !body.trim() || submitting || uploadingCount > 0) return;
     setSubmitting(true);
     try {
-      const payload: Record<string, unknown> = {
+      const payload: CreateAnnouncementInput = {
         title: title.trim(),
         body: body.trim(),
         linkUrl: linkUrl.trim() || undefined,
         linkLabel: linkLabel.trim() || undefined,
         variant,
+        // the server default, spelled out because the contract carries the parsed body
+        pinned: true,
       };
       if (imageUrls.length > 0) payload.imageUrls = imageUrls;
       if (hasGif) payload.gifUrl = gifUrl.trim();
@@ -186,34 +176,21 @@ function AdminAnnouncementsPage() {
           ...(pollDuration > 0 ? { durationHours: pollDuration } : {}),
         };
       }
-      const res = await fetch('/api/admin/announcements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        toast.success(t('announcement-published', { defaultValue: 'Announcement published' }));
-        resetForm();
-        load();
-      } else {
-        const d = await res.json().catch(() => ({}));
-        toast.error(d.error || t('failed-to-publish', { defaultValue: 'Failed to publish' }));
-      }
-    } catch {
-      toast.error(t('failed-to-publish', { defaultValue: 'Failed to publish' }));
+      await api(adminAnnouncementCreate, { body: payload });
+      toast.success(t('announcement-published', { defaultValue: 'Announcement published' }));
+      resetForm();
+      load();
+    } catch (e) {
+      toast.error(serverError(e) || t('failed-to-publish', { defaultValue: 'Failed to publish' }));
     } finally {
       setSubmitting(false);
     }
   };
 
   const toggleActive = async (a: Announcement) => {
-    await fetch(`/api/admin/announcements/${a.id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ active: !a.active }),
-    });
+    await api(adminAnnouncementUpdate, { params: { id: a.id }, body: { active: !a.active } }).catch(
+      () => {},
+    );
     load();
   };
 
@@ -225,7 +202,7 @@ function AdminAnnouncementsPage() {
       }))
     )
       return;
-    await fetch(`/api/admin/announcements/${a.id}`, { method: 'DELETE', credentials: 'include' });
+    await api(adminAnnouncementDelete, { params: { id: a.id } }).catch(() => {});
     load();
   };
 
@@ -239,7 +216,7 @@ function AdminAnnouncementsPage() {
   // MentionTextarea is the only raw field left; it takes the same inset material
   // as `Input`/`Textarea` through its className.
   const textareaCls =
-    'glass-inset w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim';
+    'surface-field w-full rounded-site-sm px-3 py-2 t-body text-site-text placeholder:text-site-text-muted';
 
   return (
     <PageLayout
@@ -252,8 +229,8 @@ function AdminAnnouncementsPage() {
       wide
     >
       <AdminBody width="narrow">
-        {/* Create form — a singular composer panel gets the L2 pane. */}
-        <div className="glass-pane space-y-3 rounded-site p-5">
+        {/* Create form: fields on the page gutter, no pane around them. */}
+        <div className="space-y-3">
           <div className="relative">
             <Input
               className="pr-12"
@@ -292,7 +269,7 @@ function AdminAnnouncementsPage() {
               />
             </div>
           </div>
-          <p className="text-xs text-site-text-dim">
+          <p className="t-body text-site-text-muted">
             {t('mention-tip-prefix', { defaultValue: 'Tip: type' })}{' '}
             <span className="font-mono">@</span>{' '}
             {t('mention-tip-middle', { defaultValue: 'to mention a user or' })}{' '}
@@ -302,9 +279,9 @@ function AdminAnnouncementsPage() {
 
           {/* Poll creator */}
           {attachment === 'poll' && (
-            <div className="glass-fill space-y-2 rounded-site p-4">
+            <div className="relative space-y-2 border-y border-site-border py-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="site-section-label">
+                <span className="t-heading text-site-text">
                   {t('poll-button', { defaultValue: 'Poll' })}
                 </span>
                 <IconButton
@@ -366,7 +343,7 @@ function AdminAnnouncementsPage() {
                 <Button
                   type="button"
                   size="xs"
-                  variant="accent-ghost"
+                  variant="ghost"
                   onClick={() => setPoll((p) => ({ ...p, options: [...p.options, ''] }))}
                 >
                   {t('add-option', { defaultValue: '+ Add option' })}
@@ -379,12 +356,12 @@ function AdminAnnouncementsPage() {
                   onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
                   className="rounded border-site-border text-site-accent focus:ring-site-accent"
                 />
-                <span className="text-xs text-site-text-dim">
+                <span className="t-meta">
                   {t('allow-multiple-selections', { defaultValue: 'Allow multiple selections' })}
                 </span>
               </label>
               <label className="flex items-center gap-2">
-                <span className="text-xs text-site-text-dim">
+                <span className="t-meta">
                   {t('poll-length', { defaultValue: 'Poll length' })}
                 </span>
                 <Select
@@ -405,9 +382,9 @@ function AdminAnnouncementsPage() {
 
           {/* GIF input */}
           {attachment === 'gif' && (
-            <div className="glass-fill space-y-2 rounded-site p-4">
+            <div className="relative space-y-2 border-y border-site-border py-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="site-section-label">
+                <span className="t-heading text-site-text">
                   {t('image-gif-label', { defaultValue: 'Image / GIF' })}
                 </span>
                 <IconButton
@@ -433,7 +410,7 @@ function AdminAnnouncementsPage() {
               />
               {gifUrl.trim() && isValidMediaUrl(gifUrl.trim()) && <GifEmbed url={gifUrl.trim()} />}
               {gifUrl.trim() && !isValidMediaUrl(gifUrl.trim()) && (
-                <p className="text-xs text-site-danger">
+                <p className="t-body text-site-danger">
                   {t('gif-url-invalid', {
                     defaultValue: 'Must be a direct image URL or Tenor/Giphy link',
                   })}
@@ -465,7 +442,7 @@ function AdminAnnouncementsPage() {
               ))}
             </div>
           )}
-          {imageError && <p className="text-xs text-site-danger">{imageError}</p>}
+          {imageError && <p className="t-body text-site-danger">{imageError}</p>}
 
           <input
             ref={imageInputRef}
@@ -497,7 +474,7 @@ function AdminAnnouncementsPage() {
             <Button
               type="button"
               size="sm"
-              variant="outline"
+              variant="default"
               onClick={() => imageInputRef.current?.click()}
               disabled={imageUrls.length >= MAX_ANNOUNCEMENT_IMAGES}
               title={
@@ -514,7 +491,7 @@ function AdminAnnouncementsPage() {
             <Button
               type="button"
               size="sm"
-              variant={attachment === 'gif' ? 'accent' : 'outline'}
+              variant={attachment === 'gif' ? 'default' : 'default'}
               aria-pressed={attachment === 'gif'}
               onClick={() => {
                 setAttachment('gif');
@@ -526,7 +503,7 @@ function AdminAnnouncementsPage() {
             <Button
               type="button"
               size="sm"
-              variant={attachment === 'poll' ? 'accent' : 'outline'}
+              variant={attachment === 'poll' ? 'default' : 'default'}
               aria-pressed={attachment === 'poll'}
               onClick={() => {
                 setAttachment('poll');
@@ -538,7 +515,7 @@ function AdminAnnouncementsPage() {
           </div>
 
           {/* Variant is a one-of-four switch, so it is a tab strip like every other. */}
-          <LiquidTabs
+          <Tabs
             aria-label={t('variant-label', { defaultValue: 'Banner style' })}
             value={variant}
             onChange={(id) => setVariant(id as (typeof VARIANTS)[number])}
@@ -547,7 +524,7 @@ function AdminAnnouncementsPage() {
 
           <div className="flex justify-end">
             <Button
-              variant="accent"
+              variant="primary"
               onClick={create}
               loading={submitting}
               disabled={!title.trim() || !body.trim() || uploadingCount > 0}
@@ -566,30 +543,31 @@ function AdminAnnouncementsPage() {
           </div>
         ) : list.length === 0 ? (
           <EmptyState
+            className={arrival}
             description={t('no-announcements', { defaultValue: 'No announcements yet.' })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
             {list.map((a) => (
-              <li key={a.id} className="glass-fill rounded-site px-4 py-3">
+              <li key={a.id} className="relative py-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 basis-48 space-y-1">
+                  <div className="min-w-0 flex-1 basis-64 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge size="sm" variant="default" className="capitalize">
+                      <Badge variant="default" className="capitalize">
                         {variantLabel[a.variant as (typeof VARIANTS)[number]] ?? a.variant}
                       </Badge>
                       {!a.active && (
-                        <Badge size="sm" variant="danger">
+                        <Badge variant="danger">
                           {t('status-inactive', { defaultValue: 'Inactive' })}
                         </Badge>
                       )}
                       {a.poll && (
-                        <Badge size="sm" variant="accent">
+                        <Badge variant="default">
                           {t('poll-button', { defaultValue: 'Poll' })}
                         </Badge>
                       )}
                       {(a.imageUrls?.length ?? 0) > 0 && (
-                        <Badge size="sm" variant="accent">
+                        <Badge variant="default">
                           {t('badge-images', {
                             count: a.imageUrls!.length,
                             defaultValue: '{{count}} img',
@@ -597,16 +575,16 @@ function AdminAnnouncementsPage() {
                         </Badge>
                       )}
                       {a.gifUrl && (
-                        <Badge size="sm" variant="accent">
+                        <Badge variant="default">
                           {t('gif-button', { defaultValue: 'GIF' })}
                         </Badge>
                       )}
                     </div>
-                    <p className="truncate font-semibold text-site-text">{a.title}</p>
-                    <p className="line-clamp-2 text-sm text-site-text-muted">{a.body}</p>
+                    <p className="t-heading break-words text-site-text">{a.title}</p>
+                    <p className="line-clamp-2 t-body text-site-text-muted">{a.body}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => toggleActive(a)}>
+                    <Button size="sm" variant="default" onClick={() => toggleActive(a)}>
                       {a.active
                         ? t('deactivate', { defaultValue: 'Deactivate' })
                         : t('activate', { defaultValue: 'Activate' })}

@@ -1,12 +1,13 @@
-'use client';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { askFeedApi, aiSearchApi } from '@/lib/feed/compose-assist.contract';
 /**
  * The Explore page's AI slot — one place, directly under the search field, in
  * two forms.
@@ -29,7 +30,7 @@ export function ExploreAsk({ query }: { query: string }) {
 
 /** Shared shell so the two forms are visibly one feature in one place. */
 function AskShell({ children }: { children: React.ReactNode }) {
-  return <div className="border-b border-site-border px-4 py-3">{children}</div>;
+  return <div className="pb-4">{children}</div>;
 }
 
 /** Shared answer body: the heading, the spinner, the error and the prose. */
@@ -47,29 +48,28 @@ function Answer({
   onRetry: () => void;
 }) {
   const { t } = useTranslation('feed');
+  // Steel M9: the answer (or the error) replaces "Reading the results…".
+  const arrival = useArrival(!loading);
 
   return (
-    <div className="glass-fill rounded-site px-4 py-3">
-      <div className="site-section-label mb-2 flex items-center gap-2">
-        <Sparkles className="h-3.5 w-3.5 text-site-accent" aria-hidden />
-        {t('ai-answer', { defaultValue: 'AI answer' })}
-      </div>
+    <div className="border-t border-site-border pt-3">
+      <div className="t-label mb-2">{t('ai-answer', { defaultValue: 'AI answer' })}</div>
       {loading ? (
         <div className="flex items-center gap-2 py-1 text-sm text-site-text-muted">
           <Spinner size={14} /> {t('ai-thinking', { defaultValue: 'Reading the results…' })}
         </div>
       ) : error ? (
-        <p className="text-sm text-site-text-muted">
+        <p className={cn('text-sm text-site-text-muted', arrival)}>
           {t('ai-error', { defaultValue: 'Could not generate an answer. Try again.' })}{' '}
           <button onClick={onRetry} className="text-site-accent hover:underline">
             {t('retry', { defaultValue: 'Try again' })}
           </button>
         </p>
       ) : (
-        <>
+        <div className={arrival}>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-site-text">{answer}</p>
           {footer}
-        </>
+        </div>
       )}
     </div>
   );
@@ -95,14 +95,7 @@ function AskTheFeed() {
     setError(false);
     setAnswer(null);
     try {
-      const res = await fetch('/api/ai/ask-feed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ question: q }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(String(res.status));
+      const data = await api(askFeedApi, { body: { question: q }, timeoutMs: AI_TIMEOUT_MS });
       setAnswer(typeof data.answer === 'string' ? data.answer : '');
     } catch {
       setError(true);
@@ -115,11 +108,7 @@ function AskTheFeed() {
 
   return (
     <AskShell>
-      <label
-        htmlFor="ask-feed"
-        className="site-section-label mb-3 flex items-center gap-2"
-      >
-        <Sparkles className="h-3.5 w-3.5 text-site-accent" aria-hidden />
+      <label htmlFor="ask-feed" className="t-label mb-2 block">
         {t('ask-the-feed', { defaultValue: 'Ask the feed' })}
       </label>
       {/* `min-w-0` on the input and `shrink-0` on the button: a flex child's
@@ -134,14 +123,15 @@ function AskTheFeed() {
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && ask()}
           placeholder={t('ask-placeholder', { defaultValue: "What's everyone talking about?" })}
-          className="glass-inset w-full min-w-0 flex-1 rounded-full px-4 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50"
+          className="surface-field w-full min-w-0 flex-1 rounded-site px-3 text-sm text-site-text placeholder:text-site-text-muted"
+          style={{ minHeight: 40 }}
         />
         <Button
-          variant="accent"
+          variant="default"
           onClick={ask}
           loading={loading}
           disabled={question.trim().length < 3}
-          className="shrink-0 rounded-full px-5"
+          className="shrink-0"
         >
           {t('ask-button', { defaultValue: 'Ask' })}
         </Button>
@@ -188,15 +178,11 @@ function AskAboutQuery({ query }: { query: string }) {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch('/api/ai/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ q: query }),
+      const data = await api(aiSearchApi, {
+        body: { q: query },
         signal: abort.signal,
+        timeoutMs: AI_TIMEOUT_MS,
       });
-      if (!res.ok) throw new Error(String(res.status));
-      const data = await res.json();
       if (abort.signal.aborted) return;
       setAnswer(typeof data.answer === 'string' ? data.answer : '');
       setSourceCount(typeof data.sourceCount === 'number' ? data.sourceCount : 0);
@@ -217,9 +203,8 @@ function AskAboutQuery({ query }: { query: string }) {
       {answer === null && !loading && !error ? (
         <button
           onClick={ask}
-          className="glass-fill flex w-full items-center gap-2 rounded-site px-3 py-2 text-left text-sm font-medium text-site-text transition-colors duration-site hover:bg-site-surface-hover"
+          className="t-body flex w-full items-center gap-2 py-1 text-start font-medium underline"
         >
-          <Sparkles className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
           <span className="truncate">
             {t('ask-ai-about', { query, defaultValue: 'Ask AI about “{{query}}”' })}
           </span>
@@ -232,7 +217,7 @@ function AskAboutQuery({ query }: { query: string }) {
           onRetry={ask}
           footer={
             sourceCount > 0 ? (
-              <p className="mt-2 text-xs text-site-text-dim">
+              <p className="mt-2 text-xs text-site-text-muted">
                 {t('ai-based-on', {
                   count: sourceCount,
                   defaultValue: 'Based on {{count}} results below',

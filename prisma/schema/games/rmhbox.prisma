@@ -1,0 +1,101 @@
+// --- RMHbox Models ---
+
+model RMHboxProfile {
+  id               String              @id @default(cuid())
+  userId           String              @unique
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalGamesPlayed Int                 @default(0)
+  totalWins        Int                 @default(0)
+  totalScore       Int                 @default(0)
+  totalPlayTimeMs  Int                 @default(0)
+  minigameStats    Json                @default("{}")
+  currentWinStreak Int                 @default(0)
+  bestWinStreak    Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  matches          RMHboxMatchPlayer[]
+
+  @@index([totalWins(sort: Desc)])
+  @@index([totalScore(sort: Desc)])
+  @@map("rmhbox_profile")
+}
+
+model RMHboxMatch {
+  id           String              @id @default(cuid())
+  minigameId   String
+  lobbyId      String
+  startedAt    DateTime            @default(now())
+  endedAt      DateTime?
+  durationMs   Int?
+  winnerUserId String?
+  playerCount  Int
+  gameLog      Json?
+  results      Json
+  players      RMHboxMatchPlayer[]
+
+  @@index([minigameId])
+  @@index([startedAt(sort: Desc)])
+  @@index([lobbyId])
+  @@map("rmhbox_match")
+}
+
+model RMHboxMatchPlayer {
+  id        String        @id @default(cuid())
+  matchId   String
+  match     RMHboxMatch   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   RMHboxProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String
+  userName  String
+  rank      Int
+  score     Int
+  wasWinner Boolean       @default(false)
+  stats     Json          @default("{}")
+  createdAt DateTime      @default(now())
+
+  @@unique([matchId, userId])
+  @@index([profileId])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("rmhbox_match_player")
+}
+
+// ── P24 party: R2 rmhbox packs, R15 connections grids ──
+
+// Member-authored prompt pack for a prompt-based RMHbox minigame (wit-war).
+// Played by entering `code` in the lobby's game settings.
+model RmhboxPack {
+  id          String   @id @default(cuid())
+  code        String   @unique @db.VarChar(6)
+  ownerId     String
+  name        String   @db.VarChar(60)
+  game        String   @default("wit-war") @db.VarChar(24)
+  prompts     Json
+  promptCount Int
+  featured    Boolean  @default(false)
+  hidden      Boolean  @default(false)
+  reportCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  owner   User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  reports RmhboxPackReport[]
+
+  @@index([ownerId, createdAt])
+  @@index([hidden, featured, createdAt])
+  @@map("rmhbox_pack")
+}
+
+model RmhboxPackReport {
+  id         String   @id @default(cuid())
+  packId     String
+  reporterId String
+  reason     String   @db.VarChar(200)
+  createdAt  DateTime @default(now())
+
+  pack     RmhboxPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  reporter User       @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([packId, reporterId])
+  @@index([reporterId])
+  @@map("rmhbox_pack_report")
+}

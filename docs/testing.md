@@ -1,29 +1,129 @@
 # Testing
 
-How tests are organized, how to run them, and how CI gates them. For the build
-and deploy pipeline see [`architecture.md`](./architecture.md) §2–3 and
-[`../deploy/README.md`](../deploy/README.md); this doc is about tests.
+How
+tests
+are
+organized,
+how
+to
+run
+them,
+and
+how
+CI
+gates
+them.
+For
+the
+build
+and
+deploy
+pipeline
+see
+[`architecture.md`](./architecture.md)
+§2–3
+and
+[`../deploy/README.md`](../deploy/README.md);
+this
+doc
+is
+about
+tests.
 
-> Sources of truth: `vitest.config.ts`, `vitest.epic.config.ts`, the `testing/`
-> tree, `go-services/**/*_test.go`, and the `.github/workflows/*` files. When a
-> doc disagrees with those, the files win.
+> Sources
+> of
+> truth:
+> `vitest.config.ts`,
+> `vitest.epic.config.ts`,
+> the
+> `testing/`
+> tree,
+> `go-services/**/*_test.go`,
+> and
+> the
+> `.github/workflows/*`
+> files.
+> When
+> a
+> doc
+> disagrees
+> with
+> those,
+> the
+> files
+> win.
 >
-> Last verified against the tree on **2026-08-08** (the testing audit): 258
-> `*.test.ts(x)` files — 247 in the main suite, 11 in the epic suite. ~6.0k
-> tests; a full main run is ~20s on 4 cores.
-> `lib/__tests__/test-discovery.test.ts` keeps that accounting honest.
+> File
+> counts
+> are
+> generated,
+> not
+> hand-written:
+> see
+> `testFiles`
+> in
+> [`_generated/facts.json`](./_generated/facts.json)
+> (`pnpm facts:check`
+> keeps
+> it
+> honest).
+> Timings
+> are
+> not
+> recorded
+> here;
+> measure
+> with
+> `time pnpm test`.
+> `lib/__tests__/test-discovery.test.ts`
+> keeps
+> that
+> accounting
+> honest.
 >
-> The suite is deliberately **narrow**: it covers what costs money, data, or
-> access if it breaks, and does not cover how the games play. Read
-> [What is not tested](#what-is-not-tested) before assuming a green run means
-> a working feature.
+> The
+> suite
+> is
+> deliberately
+> **narrow**:
+> it
+> covers
+> what
+> costs
+> money,
+> data,
+> or
+> access
+> if
+> it
+> breaks,
+> and
+> does
+> not
+> cover
+> how
+> the
+> games
+> play.
+> Read
+> [What is not tested](#what-is-not-tested)
+> before
+> assuming
+> a
+> green
+> run
+> means
+> a
+> working
+> feature.
 
 ## TL;DR — run tests locally
 
 ```bash
 pnpm check:consistency        # the commit gate (guard tests + lint + tsc + docs freshness)
-pnpm test                     # main suite (vitest.config.ts) — ~20s
-pnpm test lib/slice-it        # one file or directory
+pnpm check:consistency --fast # what the hooks run: no tsc, no docs freshness (about 10 s, under 1 GB)
+pnpm test                     # main suite (vitest.config.ts); measure with `time pnpm test`
+pnpm test features/slice-it/engine        # one file or directory
 pnpm test:watch               # watch mode
 pnpm test:coverage            # V8 coverage → text + coverage/index.html + lcov
 pnpm test:epic                # epic content-build suite (needs Chromium)
@@ -31,90 +131,1354 @@ pnpm test:integration         # real flows against a running app + throwaway Pos
 make test                     # Go (Bazel) + the frontend vitest suite
 ```
 
-`pnpm test <path>` takes any file or directory. It did not always: discovery
-used to be a hand-written list of globs and a path outside it answered _"No test
-files found."_ See [Discovery](#discovery) — that is now a gate.
+`pnpm test <path>`
+takes
+any
+file
+or
+directory.
+It
+did
+not
+always:
+discovery
+used
+to
+be
+a
+hand-written
+list
+of
+globs
+and
+a
+path
+outside
+it
+answered
+_"No
+test
+files
+found."_
+See
+[Discovery](#discovery)
+—
+that
+is
+now
+a
+gate.
 
-**Frontend numerical kernels.** `pnpm test`, `pnpm test:watch` and
-`pnpm test:coverage` compile the AssemblyScript modules before starting Vitest.
-The real-binary tests in `lib/wasm/__tests__/` check JavaScript/Wasm numerical
-parity, live-state migration, memory isolation and loading failures without a
-running server. Direct `pnpm exec vitest` runs need an explicit `pnpm wasm:build`
-first when they import these modules.
+**Per-commit:**
+`pnpm check:consistency`
+(`scripts/check-consistency.sh`)
+runs
+the
+subset
+of
+the
+suite
+that
+encodes
+the
+site's
+conventions
+—
+the
+design/tab
+gate,
+the
+game-viewport
+contract,
+the
+filter-cost
+budget,
+the
+theme-token
+and
+colour-vision
+contracts,
+the
+API-handler
+adoption
+backlog,
+the
+i18n
+catalog
+and
+namespace
+integrity,
+the
+rAF-loop
+allowlist,
+the
+server-bundle
+copy
+check,
+the
+FOUC
+contract
+and
+the
+test-discovery
+gate
+—
+plus
+eslint
+on
+the
+changed
+files,
+`tsc`,
+and
+the
+generated-docs
+freshness
+checks.
+The
+class-string
+conventions
+(raw
+palette
+colours,
+hardcoded
+radii,
+`transition-all`,
+dead
+`tailwindcss-animate`
+classes)
+are
+not
+tests:
+they
+are
+eslint
+`local/no-raw-palette-color`,
+`local/no-hardcoded-radius`,
+`local/no-transition-all`
+and
+`local/no-dead-animate-classes`,
+scoped
+by
+`eslint-local-rules/design-scope.js`.
+That
+subset
+is
+deliberately
+the
+fast
+one
+(measure
+with
+`time pnpm check:consistency --fast`).
+It
+is
+wired
+into
+`git commit`
+by
+`.githooks/pre-commit`
+(`pnpm hooks:install`)
+and
+by
+`.claude/hooks/commit-gate.sh`
+in
+agent
+sessions.
+A
+new
+guard
+test
+belongs
+in
+the
+`GATE_TESTS`
+list
+in
+`scripts/check-consistency.sh`.
 
-```bash
-pnpm test lib/wasm/__tests__ lib/__tests__/dough.test.ts lib/eversion/__tests__/projection-lut.test.ts
-pnpm wasm:bench               # warm CPU comparison, including the LUT output copy
-```
+### The commit gate's budget
 
-The frontend CI build also validates both emitted Wasm assets. See
-[frontend WebAssembly](./frontend-webassembly.md) for production asset checks,
-browser/CSP verification and benchmark limits.
+The
+fast
+gate
+(`pnpm check:consistency --fast`,
+what
+both
+hooks
+run)
+has
+a
+budget:
+**under
+60
+s
+and
+under
+3
+GB
+peak**
+on
+a
+4-core
+/
+15
+GB
+cloud
+container.
+It
+was
+already
+inside
+it
+before
+audit
+OP1
+touched
+it,
+which
+is
+the
+finding:
+the
+fast
+gate
+was
+never
+the
+step
+that
+ran
+out
+of
+memory.
+Measured
+2026-11-12
+on
+that
+box,
+wall
+time
+and
+peak
+resident
+memory
+summed
+over
+the
+step's
+whole
+process
+tree:
 
-**Per-commit:** `pnpm check:consistency` (`scripts/check-consistency.sh`) runs
-the subset of the suite that encodes the site's conventions — the design/tab
-gate, the game-viewport contract, the filter-cost budget, the theme-token and
-colour-vision contracts, the API-handler adoption backlog, the i18n catalog and
-namespace integrity, the rAF-loop allowlist, the server-bundle copy check, the
-FOUC contract and the test-discovery gate — plus eslint on the changed files,
-`tsc`, and the generated-docs freshness checks. That subset runs in ~3s. It is wired into
-`git commit` by `.githooks/pre-commit` (`pnpm hooks:install`) and by
-`.claude/hooks/commit-gate.sh` in agent sessions. A new guard test belongs in
-the `GATE_TESTS` list in `scripts/check-consistency.sh`.
+| Staged change               | Step                  | Before (time · peak) | After (time · peak) |
+| --------------------------- | --------------------- | -------------------- | ------------------- |
+| 3 components (`.tsx`)       | whole gate            | 10.2 s · 907 MB      | 10.2 s · 643 MB     |
+|                             | vitest, 28 gate files | 7.9 s · 1010 MB      | 8.1 s · 656 MB      |
+|                             | eslint, cold cache    | 2.1 s · 464 MB       | 1.7 s · 395 MB      |
+|                             | eslint, warm cache    | 1.4 s · 334 MB       | 1.1 s · 227 MB      |
+| 1 stylesheet                | whole gate            | 9.9 s · 916 MB       | 8.8 s · 742 MB      |
+|                             | vitest, 28 gate files | 10.9 s · 985 MB      | 7.6 s · 664 MB      |
+|                             | eslint                | not started          | not started         |
+| 40 files (`.tsx` and `.ts`) | whole gate            | 13.1 s · 962 MB      | 11.4 s · 676 MB     |
+|                             | vitest, 28 gate files | 7.1 s · 913 MB       | 7.1 s · 647 MB      |
+|                             | eslint, cold cache    | 3.8 s · 602 MB       | 3.4 s · 499 MB      |
+|                             | eslint, warm cache    | 1.5 s · 342 MB       | 1.1 s · 227 MB      |
+| 1 Markdown file             | whole gate            | 9.8 s · 1031 MB      | 8.2 s · 659 MB      |
+|                             | vitest, 28 gate files | 8.9 s · 893 MB       | 8.6 s · 723 MB      |
+|                             | eslint                | not started          | not started         |
+| any `.ts` (not in `--fast`) | `tsc`, cold           | over 10 GB at 33 s   | unchanged           |
+|                             | `tsc`, warm buildinfo | 9.9 s · 2942 MB      | unchanged           |
+
+"Before"
+is
+the
+gate
+as
+it
+stood
+at
+`a2892d634`,
+run
+back
+to
+back
+with
+"after"
+on
+the
+same
+staged
+change
+with
+no
+other
+heavy
+job
+on
+the
+box.
+The
+added-line
+scans
+(steps
+1
+to 3)
+are
+under
+half
+a
+second
+and
+are
+inside
+the
+whole-gate
+rows.
+Time
+did
+not
+need
+fixing
+and
+barely
+moved;
+the
+cap
+on
+workers
+took
+about
+300
+MB
+off
+the
+peak.
+
+Three
+things
+follow
+from
+the
+numbers.
+
+**Every
+gate
+runs
+on
+every
+commit;
+nothing
+is
+scoped
+to
+the
+staged
+paths.**
+The
+28
+gate
+files
+cost
+the
+same
+7–9
+s
+whatever
+is
+staged,
+so
+a
+path-to-gate
+map
+would
+save
+a
+few
+seconds
+and
+add
+a
+hand-maintained
+list
+that
+must
+be
+right
+for
+every
+gate
+that
+reads
+the
+tree
+by
+glob.
+The
+fast
+path
+caps
+vitest
+at
+3
+workers
+(`FAST_GATE_WORKERS`)
+so
+the
+step's
+memory
+does
+not
+grow
+with
+the
+core
+count,
+and
+starts
+`node <bin>`
+instead
+of
+`pnpm exec <bin>`.
+
+**The
+step
+that
+does
+not
+fit
+is
+a
+cold
+`tsc`,
+and
+the
+fast
+gate
+never
+starts
+it.**
+The
+whole-repo
+typecheck
+is
+incremental,
+and
+what
+it
+costs
+depends
+on
+whether
+its
+`.tsbuildinfo`
+exists.
+Cold
+(a
+fresh
+clone,
+a
+new
+worktree,
+a
+new
+container),
+`pnpm run typecheck`
+was
+past
+10
+GB
+after
+33
+s
+when
+the
+measurement
+stopped
+it;
+single-threaded
+with
+`GOMEMLIMIT=4GiB GOGC=25`
+it
+finishes
+at
+a
+10.0
+GB
+peak,
+which
+only
+fits
+if
+nothing
+else
+heavy
+is
+running.
+Warm,
+the
+same
+check
+is
+10
+to
+13
+s
+and
+2.9
+GB.
+So
+the
+full
+`pnpm check:consistency`
+is
+a
+pre-PR
+run
+on
+a
+box
+with
+nothing
+else
+going
+on,
+and
+its
+first
+run
+in
+a
+checkout
+is
+the
+expensive
+one;
+it
+is
+not
+a
+per-commit
+step
+here
+(audit
+AR1
+is
+the
+fix).
+
+**The
+typecheck
+is
+three
+projects
+(audit
+AR1
+steps
+1
+and
+2,
+AR4;
+measured
+2026-11-12
+on
+the
+same
+box,
+alone).**
+`pnpm typecheck`
+is
+`tsc -b`
+over
+`tsconfig.core.json`,
+`tsconfig.engine.json`
+and
+`tsconfig.site.json`;
+a
+project
+whose
+inputs
+did
+not
+change
+is
+not
+loaded.
+"Before"
+is
+the
+single
+project
+at
+`cf699d712`.
+Peak
+is
+resident
+memory
+summed
+over
+the
+process
+tree.
+
+| Run                                                     | Before                     | After                   |
+| ------------------------------------------------------- | -------------------------- | ----------------------- |
+| cold, `GOMEMLIMIT=4GiB GOGC=25 --singleThreaded`        | 151–159 s · 9.60 GiB       | 150 s · 9.22 GiB        |
+| cold, no flags                                          | killed at 13.29 GiB, twice | 61–65 s · 12.6–12.9 GiB |
+| no source change                                        | 7.8 s · 2.83 GiB           | 0.3–0.4 s · 0.06 GiB    |
+| one site file (`components/feed/PageLayout.tsx`)        | 24.6 s · 6.83 GiB          | 23.0 s · 6.69 GiB       |
+| one engine file, body only (`lib/tf2-game/core/vec.ts`) | 23.6 s · 6.96 GiB          | 1.3 s · 0.40 GiB        |
+| one engine file, a new export                           | 24.6 s · 7.00 GiB          | 26.7 s · 6.69 GiB       |
+| one core file, body only (`lib/core/math.ts`)           | 64.6 s · 12.95 GiB         | 0.5 s · 0.11 GiB        |
+| one core file, a new export                             | killed at 13.29 GiB        | 66.8 s · 13.25 GiB      |
+| the engine and core projects alone, cold                | not possible               | 2.5 s · 0.83 GiB        |
+
+What
+moved:
+a
+run
+with
+nothing
+to
+do,
+and
+a
+change
+that
+stays
+inside
+the
+core
+or
+the
+engine
+project.
+What
+did
+not:
+the
+site
+project
+is
+still
+about
+1.2
+million
+lines
+in
+one
+program,
+so
+a
+cold
+run
+and
+any
+site
+change
+cost
+what
+they
+did,
+and
+a
+change
+to
+a
+declaration
+the
+site
+imports
+rechecks
+the
+site.
+The
+cold
+run
+does
+not
+fit
+in
+4
+GB;
+that
+needs
+the
+site
+project
+split
+(AR1
+steps
+3
+and
+4).
+A
+site
+change
+loads
+neither
+other
+project's
+source,
+which
+`tsc -b --verbose`
+shows.
+
+A
+bare
+`tsc --noEmit`
+at
+the
+root
+checks
+nothing
+and
+exits
+0,
+because
+the
+root
+`tsconfig.json`
+has
+no
+files
+of
+its
+own.
+`lib/__tests__/tsconfig-projects.test.ts`
+fails
+if
+a
+script,
+workflow
+or
+contributor
+document
+tells
+anyone
+to
+run
+it.
+
+**A
+killed
+step
+says
+so.**
+`scripts/gate-step.sh`
+runs
+every
+tool
+and
+tells
+a
+rule
+failure
+from
+a
+step
+that
+never
+finished:
+exit
+129–192
+(`137`
+SIGKILL,
+`143`
+SIGTERM,
+`134`
+SIGABRT),
+the
+`Command was killed with SIG…`
+line
+`pnpm exec`
+prints
+while
+exiting
+1,
+and
+a
+JavaScript
+heap-limit
+abort.
+The
+step
+gets
+a
+`☠`
+line
+with
+its
+name
+and
+the
+signal,
+and
+the
+gate
+exits
+**3**
+("incomplete"),
+not
+1
+—
+a
+killed
+step
+proves
+nothing
+about
+the
+change.
+Before
+this,
+an
+out-of-memory-killed
+`tsc`
+printed
+`✗ tsc --noEmit`,
+which
+read
+as
+"the
+gate
+cannot
+run
+here"
+and
+was
+skipped
+on
+every
+commit
+of
+five
+phases.
+
+The
+agent
+hook
+had
+its
+own
+reason
+for
+not
+gating:
+it
+ran
+the
+gate
+in
+`$CLAUDE_PROJECT_DIR`
+whatever
+the
+command
+said,
+so
+a
+commit
+made
+in
+a
+git
+worktree
+was
+checked
+against
+the
+main
+checkout's
+tree
+(usually
+clean:
+an
+instant
+pass)
+and
+`git -C <dir> commit`
+was
+not
+seen
+at
+all.
+`.claude/hooks/commit-gate-parse.mjs`
+now
+reads
+the
+command
+for
+where
+each
+commit
+happens,
+whether
+the
+command
+stages
+for
+itself
+(then
+the
+working
+tree
+is
+gated,
+untracked
+files
+included),
+and
+whether
+it
+carries
+`RMH_SKIP_COMMIT_GATE=1`.
+`lib/__tests__/commit-gate-hook.test.ts`
+pins
+the
+hook,
+the
+parser
+and
+the
+kill
+classification
+against
+a
+stub
+gate.
+
+To
+re-measure,
+stage
+a
+change
+and
+run
+`time pnpm check:consistency --fast`;
+each
+`✓`
+line
+carries
+its
+step's
+wall
+time.
 
 ## The suites
 
 ### 1. Main Vitest suite (`vitest.config.ts`)
 
-`pnpm test`. Node environment, `globals: true`, `@` aliased to the repo root,
+`pnpm test`.
+Node
+environment,
+`globals: true`,
+`@`
+aliased
+to
+the
+repo
+root,
 `pool: 'threads'`.
 
-**These tests are environment-agnostic** — no real Postgres, network, Wikipedia
-API, or filesystem writes outside a temp dir. External dependencies are mocked;
-shared mock helpers live in per-phase `setup.ts` files
-(`testing/rmhbox/phase-N/setup.ts`), each building on the previous phase's
-helpers (`MOCK_USERS`, `createPlayer`, default settings, …).
+**These
+tests
+are
+environment-agnostic**
+—
+no
+real
+Postgres,
+network,
+Wikipedia
+API,
+or
+filesystem
+writes
+outside
+a
+temp
+dir.
+External
+dependencies
+are
+mocked;
+shared
+mock
+helpers
+live
+in
+per-phase
+`setup.ts`
+files
+(`testing/rmhbox/phase-N/setup.ts`),
+each
+building
+on
+the
+previous
+phase's
+helpers
+(`MOCK_USERS`,
+`createPlayer`,
+default
+settings,
+…).
 
-What's in it:
+What's
+in
+it:
 
-- **`lib/__tests__/`** (149 files) — the bulk of the suite and the executable
-  conventions: auth and the API-handler contract, the coin economy and the
-  ledger, entitlements and membership tiers, media upload/quota/sweep, storage
-  keys and compression, SSRF, rate limits, sessions, migration safety, the
-  server-bundle copy check, i18n catalog integrity, sitemap/SEO, and the
-  design/theme/colour-vision gates. See `lib/CLAUDE.md` §Testing; these are the
-  authority for `docs/design-language.md` §13 and 16 of them are in the commit
-  gate.
-- **`lib/rmhladder/` + `lib/homes/`** (52 files) — the job/listing discovery
-  pipelines. Kept whole: they fetch third-party sites (robots compliance, URL
-  allowlists) and write to the database, and `lib/CLAUDE.md` calls this suite
-  the contract for the pipeline.
-- **A short list of game-tier files that guard something real** — Slice It's
-  coin cap and idempotency, its anti-cheat and run-token forgery checks, its
-  ranked-pool state machine, the guest-submission "persists nothing" property;
-  RMHBox's cross-player state masking (all six phases), match persistence and
-  REST surface; game-save conflict resolution; market creator earnings; the
-  prediction-market pricing math. These survive the trim below because a bug in
-  them costs coins, data or privacy.
+- **`lib/__tests__/`**
+  (`ls lib/__tests__ | wc -l`;
+  total
+  test
+  files
+  in
+  `testFiles`
+  of
+  `_generated/facts.json`)
+  —
+  the
+  bulk
+  of
+  the
+  suite
+  and
+  the
+  executable
+  conventions:
+  auth
+  and
+  the
+  API-handler
+  contract,
+  the
+  coin
+  economy
+  and
+  the
+  ledger,
+  entitlements
+  and
+  membership
+  tiers,
+  media
+  upload/quota/sweep,
+  storage
+  keys
+  and
+  compression,
+  SSRF,
+  rate
+  limits,
+  sessions,
+  migration
+  safety,
+  the
+  server-bundle
+  copy
+  check,
+  i18n
+  catalog
+  integrity,
+  sitemap/SEO,
+  and
+  the
+  design/theme/colour-vision
+  gates.
+  See
+  `lib/CLAUDE.md`
+  §Testing;
+  these
+  are
+  the
+  authority
+  for
+  `docs/design-language.md`
+  §13
+  and
+  a
+  subset
+  of
+  them
+  are
+  in
+  the
+  commit
+  gate
+  (the
+  list
+  in
+  `scripts/check-consistency.sh`
+  is
+  authoritative).
+- **`lib/rmhladder/` +
+  `lib/homes/`**
+  —
+  the
+  job/listing
+  discovery
+  pipelines.
+  Kept
+  whole:
+  they
+  fetch
+  third-party
+  sites
+  (robots
+  compliance,
+  URL
+  allowlists)
+  and
+  write
+  to
+  the
+  database,
+  and
+  `lib/CLAUDE.md`
+  calls
+  this
+  suite
+  the
+  contract
+  for
+  the
+  pipeline.
+- **A
+  short
+  list
+  of
+  game-tier
+  files
+  that
+  guard
+  something
+  real**
+  —
+  Slice
+  It's
+  coin
+  cap
+  and
+  idempotency,
+  its
+  anti-cheat
+  and
+  run-token
+  forgery
+  checks,
+  its
+  ranked-pool
+  state
+  machine,
+  the
+  guest-submission
+  "persists
+  nothing"
+  property;
+  RMHBox's
+  cross-player
+  state
+  masking
+  (all
+  six
+  phases),
+  match
+  persistence
+  and
+  REST
+  surface;
+  game-save
+  conflict
+  resolution;
+  market
+  creator
+  earnings;
+  the
+  prediction-market
+  pricing
+  math.
+  These
+  survive
+  the
+  trim
+  below
+  because
+  a
+  bug
+  in
+  them
+  costs
+  coins,
+  data
+  or
+  privacy.
 
 #### Discovery
 
-`include` is `**/*.test.{ts,tsx}` — everything, minus a short, commented
-`exclude`. A new test file runs the moment it exists; there is nothing to
+`include`
+is
+`**/*.test.{ts,tsx}`
+—
+everything,
+minus
+a
+short,
+commented
+`exclude`.
+A
+new
+test
+file
+runs
+the
+moment
+it
+exists;
+there
+is
+nothing
+to
 register.
 
-It used to be a curated list, one glob per feature directory, and it failed the
-way curated lists fail. `lib/liquid-gl/` was renamed `lib/liquid/` and its glob
-silently matched nothing; `lib/http-body.server.test.ts` was written at the top
-of `lib/` where no glob reached. Both files passed, both were committed, and
-neither had ever run. `lib/__tests__/test-discovery.test.ts` now asks vitest
-itself which files each config collects and fails if any `*.test.ts(x)` on disk
-is in no suite. Its opt-out list is empty and two of its assertions keep it that
-way: a file that should not run should not be named `*.test.ts`.
+It
+used
+to
+be
+a
+curated
+list,
+one
+glob
+per
+feature
+directory,
+and
+it
+failed
+the
+way
+curated
+lists
+fail.
+`lib/liquid-gl/`
+was
+renamed
+`lib/liquid/`
+and
+its
+glob
+silently
+matched
+nothing;
+`lib/http-body.server.test.ts`
+was
+written
+at
+the
+top
+of
+`lib/`
+where
+no
+glob
+reached.
+Both
+files
+passed,
+both
+were
+committed,
+and
+neither
+had
+ever
+run.
+`lib/__tests__/test-discovery.test.ts`
+now
+asks
+vitest
+itself
+which
+files
+each
+config
+collects
+and
+fails
+if
+any
+`*.test.ts(x)`
+on
+disk
+is
+in
+no
+suite.
+Its
+opt-out
+list
+is
+empty
+and
+two
+of
+its
+assertions
+keep
+it
+that
+way:
+a
+file
+that
+should
+not
+run
+should
+not
+be
+named
+`*.test.ts`.
 
 #### Speed
 
-~20s for 247 files / ~6.0k tests on 4 cores, down from ~50s. What moved it, in
+Historically
+(2026-08-08
+audit:
+247
+files
+/
+~6.0k
+tests
+on
+4
+cores)
+this
+came
+down
+from
+~50s
+to
+~20s;
+the
+suite
+has
+since
+grown
+several-fold
+and
+the
+figure
+is
+not
+re-measured
+here
+(`time pnpm test`).
+What
+moved
+it,
+in
 order:
 
 | Change                                         | Why                                                                                                                                                               |
@@ -126,69 +1490,465 @@ order:
 | Compiling scripts under test once, not per-run | `migration-safety` booted `tsx` 15 times (~350ms each) to check 428 lines. esbuild compiles it once; each run is bare node. 5.5s → 1.4s.                          |
 | Asserting once, not 20M times                  | `slice-it/visible-window` called `expect()` inside a triple loop. Recording the first counter-example and asserting once: 2.2s → 0.2s, identical failure message. |
 
-Per-file overhead (transform + module graph) dominates, which is why deleting
-whole files moved the needle and micro-optimising the slowest ones did not:
-after the six fastest-file fixes the suite was still 37s, and it was file
-_count_ that took it to 20s.
+Per-file
+overhead
+(transform +
+module
+graph)
+dominates,
+which
+is
+why
+deleting
+whole
+files
+moved
+the
+needle
+and
+micro-optimising
+the
+slowest
+ones
+did
+not:
+after
+the
+six
+fastest-file
+fixes
+the
+suite
+was
+still
+37s,
+and
+it
+was
+file
+_count_
+that
+took
+it
+to
+20s.
 
-**Isolation stays on**, and that is deliberate. Measured on the pre-trim suite,
-`--no-isolate` took it from ~37s to ~20s — and nine files failed outright
-(shared `vi.mock` registry), while `lib/rmhladder/pipeline/{run,process-source}.test.ts`
-failed _on a different set of seeds every_ `--sequence.shuffle`, because their
-in-memory Prisma doubles are module state. Order-dependent red is worse than
-slow green, and the trim bought that time without the flakes. Don't
-re-litigate this without re-running the shuffle.
+**Isolation
+stays
+on**,
+and
+that
+is
+deliberate.
+Measured
+on
+the
+pre-trim
+suite,
+`--no-isolate`
+took
+it
+from
+~37s
+to
+~20s
+—
+and
+nine
+files
+failed
+outright
+(shared
+`vi.mock`
+registry),
+while
+`lib/rmhladder/pipeline/{run,process-source}.test.ts`
+failed
+_on
+a
+different
+set
+of
+seeds
+every_
+`--sequence.shuffle`,
+because
+their
+in-memory
+Prisma
+doubles
+are
+module
+state.
+Order-dependent
+red
+is
+worse
+than
+slow
+green,
+and
+the
+trim
+bought
+that
+time
+without
+the
+flakes.
+Don't
+re-litigate
+this
+without
+re-running
+the
+shuffle.
 
-To get logs back while debugging: `LOG_LEVEL=debug pnpm test <path>`.
+To
+get
+logs
+back
+while
+debugging:
+`LOG_LEVEL=debug pnpm test <path>`.
 
 #### What is not tested
 
-On **2026-08-08** the suite was deliberately narrowed to what is mission
-critical, to cut the run from ~37s to ~20s. 180 test files were deleted. This
-section is the record of what that bought and what it cost; a green run does
-**not** mean the games work.
+On
+**2026-08-08**
+the
+suite
+was
+deliberately
+narrowed
+to
+what
+is
+mission
+critical,
+to
+cut
+the
+run
+from
+~37s
+to
+~20s.
+180
+test
+files
+were
+deleted.
+This
+section
+is
+the
+record
+of
+what
+that
+bought
+and
+what
+it
+cost;
+a
+green
+run
+does
+**not**
+mean
+the
+games
+work.
 
-The line, applied file by file. A test was kept if the bug it catches would:
+The
+line,
+applied
+file
+by
+file.
+A
+test
+was
+kept
+if
+the
+bug
+it
+catches
+would:
 
-1. move coins, real money or entitlements;
-2. lose or corrupt a user's saved data;
-3. leak one user's private state to another;
-4. break auth/authz, or let a forged score reach a public leaderboard;
-5. take a service down, or break a deploy or migration.
+1. move
+   coins,
+   real
+   money
+   or
+   entitlements;
+2. lose
+   or
+   corrupt
+   a
+   user's
+   saved
+   data;
+3. leak
+   one
+   user's
+   private
+   state
+   to
+   another;
+4. break
+   auth/authz,
+   or
+   let
+   a
+   forged
+   score
+   reach
+   a
+   public
+   leaderboard;
+5. take
+   a
+   service
+   down,
+   or
+   break
+   a
+   deploy
+   or
+   migration.
 
-Everything whose worst case is **"the game plays wrong"** went. In full:
+Everything
+whose
+worst
+case
+is
+**"the
+game
+plays
+wrong"**
+went.
+In
+full:
 
-| Gone                                                                                                                                                                                                                   | Was                                                                          |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `lib/slice-it/**` (49 of 58) and `lib/slice-it/editor/**`                                                                                                                                                              | judgement windows, note vocabulary, beatmaps, FFT, chart-editor tools        |
-| `testing/rmhbox/phase-1…6` (49 of 57)                                                                                                                                                                                  | lobby FSM, voting, per-minigame rules, chat, spectator flow                  |
-| `lib/cookgame`, `lib/kowloon-knockout`, `lib/dream-rift`, `lib/temple-of-joy`, `lib/versecraft/gen`, `lib/kaikai-debt`, `lib/laundry-sort`, `lib/massive-march`, `lib/isleworks`, `lib/nightrail`, `lib/daily-puzzles` | whole gameplay suites — simulation, scoring curves, world/content generation |
-| `lib/__tests__/void-breaker-*` (7), `altair-enemy-navigation`, `desk-*` (3), `speedrun`                                                                                                                                | per-game logic that happened to live in the shared directory                 |
-| `lib/__tests__/whats-new`                                                                                                                                                                                              | the release-announcement modal's copy and grid layout                        |
-| `testing/factories.ts`                                                                                                                                                                                                 | deterministic model fixtures — **already had zero importers** at HEAD        |
+| Gone                                                                                                                                                                                                                                                       | Was                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `features/slice-it/engine/**` (49 of 58) and `features/slice-it/engine/editor/**`                                                                                                                                                                          | judgement windows, note vocabulary, beatmaps, FFT, chart-editor tools        |
+| `testing/rmhbox/phase-1…6` (49 of 57)                                                                                                                                                                                                                      | lobby FSM, voting, per-minigame rules, chat, spectator flow                  |
+| `lib/cookgame`, `lib/kowloon-knockout`, `features/dream-rift/engine`, `lib/temple-of-joy`, `lib/versecraft/gen`, `lib/kaikai-debt`, `features/laundry-sort/engine`, `lib/massive-march`, `lib/isleworks`, `features/nightrail/engine`, `lib/daily-puzzles` | whole gameplay suites — simulation, scoring curves, world/content generation |
+| `lib/__tests__/void-breaker-*` (7), `altair-enemy-navigation`, `desk-*` (3), `speedrun`                                                                                                                                                                    | per-game logic that happened to live in the shared directory                 |
+| `lib/__tests__/whats-new`                                                                                                                                                                                                                                  | the release-announcement modal's copy and grid layout                        |
+| `testing/factories.ts`                                                                                                                                                                                                                                     | deterministic model fixtures — **already had zero importers** at HEAD        |
 
-**What this means in practice.** A regression in how any of the 18 games plays
-— wrong score, broken physics, a minigame that never advances a round — now
-reaches production unless a human plays it. Games are the majority of this
-site's surface area, so that is not a small exposure; it is a deliberate trade
-of coverage for a suite fast enough to run on every commit.
+**What
+this
+means
+in
+practice.**
+A
+regression
+in
+how
+any
+of
+the
+18
+games
+plays
+—
+wrong
+score,
+broken
+physics,
+a
+minigame
+that
+never
+advances
+a
+round
+—
+now
+reaches
+production
+unless
+a
+human
+plays
+it.
+Games
+are
+the
+majority
+of
+this
+site's
+surface
+area,
+so
+that
+is
+not
+a
+small
+exposure;
+it
+is
+a
+deliberate
+trade
+of
+coverage
+for
+a
+suite
+fast
+enough
+to
+run
+on
+every
+commit.
 
-Everything deleted is one `git revert` away (see the commit that references this
-section), and a file can come back on its own if it earns one of the five
-criteria. If a game grows a coin payout, a leaderboard, or anything that reads
-another player's state, it needs a test again.
+Everything
+deleted
+is
+one
+`git revert`
+away
+(see
+the
+commit
+that
+references
+this
+section),
+and
+a
+file
+can
+come
+back
+on
+its
+own
+if
+it
+earns
+one
+of
+the
+five
+criteria.
+If
+a
+game
+grows
+a
+coin
+payout,
+a
+leaderboard,
+or
+anything
+that
+reads
+another
+player's
+state,
+it
+needs
+a
+test
+again.
 
 ### 2. Epic suite (`vitest.epic.config.ts`)
 
-`pnpm test:epic`. Scoped to `scripts/epic/**/*.test.ts` — the epic
-(book/textbook) content-build pipeline: manuscript validation, ornament
-rendering, typesetting, and the paginator.
+`pnpm test:epic`.
+Scoped
+to
+`scripts/epic/**/*.test.ts`
+—
+the
+epic
+(book/textbook)
+content-build
+pipeline:
+manuscript
+validation,
+ornament
+rendering,
+typesetting,
+and
+the
+paginator.
 
-Separate from the main suite for one reason: `scripts/epic/paginate.ts` measures
-real layout by launching Chromium through Playwright, so three of its tests need
-a browser and a 60s timeout while every test in the main suite is deliberately
-environment-agnostic. Without a browser those three fail at launch rather than
-skipping, on purpose — a silent skip is how a content pipeline rots unnoticed.
+Separate
+from
+the
+main
+suite
+for
+one
+reason:
+`scripts/epic/paginate.ts`
+measures
+real
+layout
+by
+launching
+Chromium
+through
+Playwright,
+so
+three
+of
+its
+tests
+need
+a
+browser
+and
+a
+60s
+timeout
+while
+every
+test
+in
+the
+main
+suite
+is
+deliberately
+environment-agnostic.
+Without
+a
+browser
+those
+three
+fail
+at
+launch
+rather
+than
+skipping,
+on
+purpose
+—
+a
+silent
+skip
+is
+how
+a
+content
+pipeline
+rots
+unnoticed.
 
 ```bash
 pnpm exec playwright install chromium && pnpm test:epic
@@ -196,34 +1956,213 @@ pnpm exec playwright install chromium && pnpm test:epic
 CHROME_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome pnpm test:epic
 ```
 
-`CHROME_PATH` exists because a provisioned container Chromium usually carries a
-different build number than the pinned Playwright version, and
-`chromium.launch()` then fails hunting for a build that will never be there. It
-is the same variable `scripts/perf/canvas2d-probe.mjs` reads; both epic launch
-sites go through `scripts/epic/browser.ts`.
+`CHROME_PATH`
+exists
+because
+a
+provisioned
+container
+Chromium
+usually
+carries
+a
+different
+build
+number
+than
+the
+pinned
+Playwright
+version,
+and
+`chromium.launch()`
+then
+fails
+hunting
+for
+a
+build
+that
+will
+never
+be
+there.
+It
+is
+the
+same
+variable
+`scripts/perf/canvas2d-probe.mjs`
+reads;
+both
+epic
+launch
+sites
+go
+through
+`scripts/epic/browser.ts`.
 
 #### Game suites (`vitest.tf2.config.ts`, `vitest.balatro.config.ts`)
 
-Gameplay tests for the browser games run in their own suites, which the main
-config excludes glob for glob: `pnpm test:tf2` (TF2, HL2, Portal) and
-`pnpm test:balatro` (multiplayer Balatro, including its Lua specs, which need
-`lua5.1` and fail without it). `pnpm test:balatro:e2e` is the Balatro browser
-suite. Their workflows (`tf2-game-tests.yml`, `balatro-mp-tests.yml`) are
+Gameplay
+tests
+for
+the
+browser
+games
+run
+in
+their
+own
+suites,
+which
+the
+main
+config
+excludes
+glob
+for
+glob:
+`pnpm test:tf2`
+(the
+Source-engine
+port:
+TF2,
+HL2,
+Portal,
+CS:GO,
+and
+the
+tests
+of
+`lib/tf2-hud`
+and
+`lib/tf2-loadout`
+that
+belong
+to
+the
+engine
+TypeScript
+project;
+`vitest.engine-tests.mjs`
+reads
+that
+list
+from
+`tsconfig.engine.json`,
+so
+the
+two
+configs
+cannot
+disagree)
+and
+`pnpm test:balatro`
+(multiplayer
+Balatro,
+including
+its
+Lua
+specs,
+which
+need
+`lua5.1`
+and
+fail
+without
+it).
+`pnpm test:balatro:e2e`
+is
+the
+Balatro
+browser
+suite.
+Their
+workflows
+(`tf2-game-tests.yml`,
+`balatro-mp-tests.yml`)
+are
 path-filtered.
 
 ### 3. Go tests (Bazel)
 
-`make test` from the repo root runs `bazelisk test --build_tests_only
-//go-services/...` **and** the frontend vitest suite. 27 `*_test.go` files live
-next to their packages (`go-services/cmd/status/main_test.go`,
-`internal/doctrine/*_test.go`, …). Add or move `.go` files → run `make gazelle`
-first so BUILD files pick them up.
+`make test`
+from
+the
+repo
+root
+runs
+`bazelisk test --build_tests_only //go-services/...`
+**and**
+the
+frontend
+vitest
+suite.
+27
+`*_test.go`
+files
+live
+next
+to
+their
+packages
+(`go-services/cmd/status/main_test.go`,
+`internal/doctrine/*_test.go`,
+…).
+Add
+or
+move
+`.go`
+files
+→
+run
+`make gazelle`
+first
+so
+BUILD
+files
+pick
+them
+up.
 
 ### 4. Browser smoke (not in CI)
 
-`testing/e2e/smoke.mjs` drives the **built** app with the pre-installed Chromium
-and asserts public routes render with a `<title>` and an `<html lang>`. It is
-not wired into any workflow; run it by hand against a built app:
+`testing/e2e/smoke.mjs`
+drives
+the
+**built**
+app
+with
+the
+pre-installed
+Chromium
+and
+asserts
+public
+routes
+render
+with
+a
+`<title>`
+and
+an
+`<html lang>`.
+It
+is
+not
+wired
+into
+any
+workflow;
+run
+it
+by
+hand
+against
+a
+built
+app:
 
 ```bash
 pnpm build && node .output/server/index.mjs &
@@ -232,11 +2171,69 @@ BASE_URL=http://localhost:3000 node testing/e2e/smoke.mjs
 
 ### 5. FOUC audit (not in CI)
 
-`testing/e2e/fouc.mjs` drives the **built** app and measures what every page
-looked like frame by frame, across nine stored-preference profiles, to prove no
-page flashes. It is the only check in this repo that can answer that question —
-every mechanism that prevents a flash is correct in isolation and only provably
-correct together, in a browser, in the order the browser does things.
+`testing/e2e/fouc.mjs`
+drives
+the
+**built**
+app
+and
+measures
+what
+every
+page
+looked
+like
+frame
+by
+frame,
+across
+nine
+stored-preference
+profiles,
+to
+prove
+no
+page
+flashes.
+It
+is
+the
+only
+check
+in
+this
+repo
+that
+can
+answer
+that
+question
+—
+every
+mechanism
+that
+prevents
+a
+flash
+is
+correct
+in
+isolation
+and
+only
+provably
+correct
+together,
+in
+a
+browser,
+in
+the
+order
+the
+browser
+does
+things.
 
 ```bash
 pnpm build && node .output/server/index.mjs &
@@ -245,230 +2242,399 @@ node testing/e2e/fouc.mjs                # every page, every profile (~60 min)
 node testing/e2e/fouc.mjs --quick        # two profiles, the CI shape
 ```
 
-Dev mode injects CSS through JS and always flashes, so the audit is meaningless
-against `pnpm dev` — it must run against `.output`. Its commit-time half,
-`lib/__tests__/fouc-contract.test.ts`, is in `GATE_TESTS` and needs no browser.
-Full detail, including why each detector asks its question when it does:
+Dev
+mode
+injects
+CSS
+through
+JS
+and
+always
+flashes,
+so
+the
+audit
+is
+meaningless
+against
+`pnpm dev`
+—
+it
+must
+run
+against
+`.output`.
+Its
+commit-time
+half,
+`lib/__tests__/fouc-contract.test.ts`,
+is
+in
+`GATE_TESTS`
+and
+needs
+no
+browser.
+Full
+detail,
+including
+why
+each
+detector
+asks
+its
+question
+when
+it
+does:
 [`fouc.md`](./fouc.md).
 
-### 6. Frame-budget audit (CI: `jelly-e2e`, non-blocking)
+### 6. Steel rest and globe check (CI: `steel-rest`, nightly and manual)
 
-`testing/e2e/frame-budget.mjs` drives the **built** app and asks the question a
-high-refresh display asks of a page: does it drop to its **resting cadence** at
-rest, and how much headroom does it have while scrolling? Per route it counts
-compositor frames produced with nobody touching the page, browser-wide CPU at
-rest (every Chromium process, so compositor/GPU cost is visible — main-thread
-metrics never see it), perpetual animations by selector, and rAF cadence idle
-and scrolling.
-
-"At rest" means the Plasmatic Jelly idle floor, not zero: once the page has gone
-`IDLE_AFTER_MS` (20 s) without input, the material's ambient clock keeps ticking
-at `idleClockHz` (15 Hz desktop) and never freezes while someone could be
-looking (master plan R7). The `--gate` limit is that floor + 1 (16 fps) — a
-deliberate reversal of the 2026-10-08 audit's 2 fps rest limit, recorded in
-[`plasmatic-jelly-system.md`](./plasmatic-jelly-system.md) §2. `--engaged` sweeps
-a pointer for the whole window and holds pages to the engaged clock (60 Hz) + 5.
-Both limits are read from `JELLY_BUDGETS` in `lib/jelly/tiers.ts`, never
-restated in the script. CPU at rest on `/` is reported against the ≤ 250 ms/s
-target but not gated.
-
-Each route also says **what drew** its rest frames: during the same trace,
-hooks on Canvas2D/WebGL draw calls and a MutationObserver record which frames
-each source touched — `haze`, `rim`, `arcs`, `globe` (the dock globe's canvases
-and pin DOM), `offscreen` (the shared WebGL canvas), `canvas`, `dom`
-(with its top three targets) — and `any`, the frames at least one touched, e.g.
-`drew in: globe 16.5, haze 8.5, offscreen 8.5 (any 23)`. Hooks only, never a
-frame request. When `any` exceeds the busiest single source, two sources are
-drawing on different frames.
-
-```bash
-pnpm build && PORT=7005 node .output/server/index.mjs &
-BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs                   # default route set
-BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs --all --gate      # every page; fail above the idle floor
-BASE_URL=http://localhost:7005 node testing/e2e/frame-budget.mjs --gate --engaged  # fail above the engaged clock
-```
-
-Absolute fps here is SwiftShader's, so compare builds and routes, not devices.
-Its commit-time half is `lib/__tests__/static-backdrop.test.ts` (in
-`GATE_TESTS`: the backdrop stays completely still — jelly moves, the room does
-not). Findings and the measured before/after:
-[`performance-audit-2026-10-08.md`](./performance-audit-2026-10-08.md) (its 2 fps
-rest limit is superseded as above).
-
-**Page switches.** Its sibling `testing/e2e/page-switch.mjs` times the other
-half of "does it feel fast": a click in the shell's nav rail, from a settled
-page, to the destination painted — plus the longest frame, summed blocking
-time, style+layout and layout shift over the switch (Long Animation Frames
-API), under CPU throttling and added latency. `--mode hover` lets the router's
-intent preload run first; `--mode press` is a touch tap (`pointerdown`, 90ms,
-click — timed from the finger going down); `a>b:c` starts from a page reached
-within the visit; `~card` as the destination taps the first post card (a `div`,
-not a link) and waits for the post page. Each row also says how often the
-router's pending skeleton or an in-page spinner showed, and what the click and
-the settled page view fetched. `--cold` uses a fresh browser context per sample
-(`Network.clearBrowserCache` leaves the memory cache warm), `--kbps` throttles
-bandwidth, `--settle` sets the dwell before the click.
-
-```bash
-BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs                # default switches, 4× CPU, tap
-BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs --mode hover --cpu 1 --rtt 0
-BASE_URL=http://localhost:7005 node testing/e2e/page-switch.mjs --pair /explore:~card --mode press --cold --rtt 150 --kbps 1600
-```
-
-The paint marker is a destination element that did not exist before the click:
-the outgoing page's own `main h1` is still mounted when the URL flips, and
-counting it made every h1 destination look ready a frame after the click.
-
-Findings and the measured before/after:
-[`performance-audit-2026-10-21.md`](./performance-audit-2026-10-21.md) §Navigation commit and
-§Instant navigation.
-
-### 7. Globe eversion suites (`lib/eversion/`, `testing/e2e/eversion-*.mjs`)
-
-The hub navigation effect (spec: [`plans/2026-10-17-globe-eversion.md`](./plans/2026-10-17-globe-eversion.md)
-§11) is tested in three layers. The first is part of `pnpm test`; the other two
-need Chromium and are NOT in the main suite.
-
-**a. Unit (in `pnpm test`).** `lib/eversion/__tests__/` covers spec gates 1-24
-(projections, LUT, Thurston oracle, orientation, morph, timeline properties, the
-runner's sequence against scripted ports, the BEFORE scheduler, eligibility,
-flags) plus `bundle-leaks.test.ts`, which gives the static-closure leak scan in
-`scripts/check-bundle-budget.ts` a positive and a negative control and keeps every
-module fingerprint true. `pnpm exec vitest run lib/eversion` runs just these
-(~30 s).
-
-`settle.test.ts` holds the AFTER readiness gate's decision logic (skeletons, queries, images, fonts, quiet window,
-soft/hard bounds, no latency when settled) and `unwrap-end.test.ts` the overlapping crossfade ending.
-`testing/e2e/eversion-late-content.mjs` (dev server, Chromium; not in CI) delays the destination's `/api`,
-server-fn and image requests by 400-1500 ms, runs the real effect and requires SSIM(AFTER bitmap, settled live page)
-
-> = 0.92 (it scored 0.62 with the gate bypassed, and 0.97-1.00 with it).
-
-**b. Fixture e2e (no server, no build).** Each script bundles its own fixture
-page with esbuild around the real modules and serves it from a fake origin, with
-WebGL2 from SwiftShader:
-
-```bash
-node testing/e2e/eversion-metrics-selftest.mjs   # the measurement helpers, first
-node testing/e2e/eversion-host.mjs               # worker/main host, frame pacing
-node testing/e2e/eversion-renderer.mjs           # renderer lifecycle
-node testing/e2e/eversion-gl.mjs                 # shaders: parity (S#27), two-sidedness (S#28)
-node testing/e2e/eversion-wedge.mjs              # the last UNWRAP frame is the flat page; the azimuthal wedge mask is smooth
-node testing/e2e/eversion-controller.mjs         # run orchestration against a fake router (~25 s)
-```
-
-`CHROMIUM_PATH=/path/to/chrome` overrides the browser. `eversion-gl.mjs` skips
-Firefox/WebKit when absent (explicit `SKIP` lines) but asserts a floor on the
-number of checks that ran, so a run that skipped its way to green fails.
-
-**c. App e2e (against a running server).** These drive the real app with the
-effect forced on by `?eversion`:
-
-```bash
-# built app (what CI runs): needs DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL
-pnpm run build:frontend:sourcemap && PORT=7005 node .output/server/index.mjs &
-export BASE_URL=http://localhost:7005
-
-node testing/e2e/eversion-load.mjs               # S#40: nothing before load; LCP/TBT; delayed-load control
-PROFILE=desktop THEME=dark node testing/e2e/eversion-hub.mjs   # S#25/26: entry points, dismissals, fallbacks
-node testing/e2e/eversion-edge.mjs               # S#34/35: fallbacks, fault injection, router edge cases
-node testing/e2e/eversion-capture.mjs            # S#29/46: capture fidelity (SSIM), right-edge parity and lifecycle
-```
-
-**Smoothness (S#31/S#32) needs a dev server, not the build.** It does not record the
-screen: it scrubs the timeline in the lab (the core's `scrub` debug op, driven through
-`window.__eversionLab`, present only with `?eversion-debug`) at a fixed step - every 16 ms,
-8 ms within 48 ms of each stage boundary and scripted event - screenshots each still and
-runs the jerk detector over consecutive stills. The verdict therefore does not depend on how
-fast the rig draws (the old screencast sampled ~1.5 fps on software GL and could neither
-pass a clean run nor find an injected cut). The lab route is dev-only, so:
+`testing/e2e/steel-rest.mjs`
+drives
+the
+**built**
+app
+in
+Chromium
+and
+pins
+the
+Steel
+rules
+a
+unit
+test
+cannot
+see
+(plan
+section
+17,
+B3
+and
+V9).
+For
+`/`,
+`/terms`
+and
+`/settings`,
+over
+a
+1.5
+s
+window
+once
+the
+page
+has
+settled:
+no
+`requestAnimationFrame`
+callback
+is
+pending
+and
+none
+is
+requested
+(with
+motion
+reduced;
+the
+globe's
+idle
+drift
+is
+the
+one
+ambient
+motion
+and
+is
+bounded
+separately),
+at
+most
+one
+WebGL
+context
+is
+created,
+and
+no
+`Worker`
+is
+constructed.
+Then,
+at
+390
+x
+844
+on
+`/`:
+the
+docked
+globe
+is
+a
+button
+with
+`aria-expanded=false`
+that
+controls
+a
+nav,
+a
+tap
+opens
+it
+(pins
+visible
+and
+inside
+the
+viewport),
+Escape
+closes
+it
+and
+returns
+focus,
+and
+frames
+stop
+once
+the
+360
+ms
+move
+is
+over.
 
 ```bash
-EVERSION_LAB_OPEN=1 XAI_API_KEY=x OPENAI_API_KEY=x pnpm exec vite dev --port 7371 --strictPort --host 127.0.0.1
-BASE_URL=http://127.0.0.1:7371 node testing/e2e/eversion-smoothness.mjs --quick   # ~11 min on a loaded 4-core software-GL box
-node testing/e2e/eversion-smoothness.mjs                                          # all themes, 20 seeded fast-forwards
-node testing/e2e/eversion-smoothness.mjs --screencast                             # ALSO the optional real-hub screencast variant (needs >= ~10 fps)
+pnpm build && PORT=7005 node .output/server/index.mjs
+BASE_URL=http://localhost:7005 node testing/e2e/steel-rest.mjs
+CHROMIUM_PATH=/path/to/chrome ...     # optional: a specific browser
 ```
 
-Scenarios: uninterrupted per theme, seeded fast-forwards, AFTER ready at 4 s, a failing (500)
-destination, and a self-proof. A hard cut is a step larger than BOTH its neighbours by 2x (C2
-continuity makes every legitimate speed-up a ramp); the run's median is deliberately not the
-yardstick, because the change per step varies ~100x across one correct run. The self-proof
-injects a 30 % radius step (the `inject-hard-cut` debug op) at 2000 ms and requires the
-detector to flag exactly that step while the unmodified run reports none. Luminance (S#32) is
-read off the same stills. The stills are of the lab's synthetic pages in the theme's own
-background, so what is judged is the effect's motion; the CSS hub and orb fades are not in
-them. CI runs `--quick` against a throwaway dev server in its own step (the glob skips it).
-
-For iteration, a dev server works for everything except the load gate's chunk
-identification: `EVERSION_LAB_OPEN=1 XAI_API_KEY=x OPENAI_API_KEY=x pnpm exec vite dev --port 7331`
-(a git worktree needs its own `pnpm install`; the dummy keys exist because the
-homes image module constructs a client at import time).
-`eversion-lab.mjs` (the admin-only `/eversion-lab` scrub page) needs the dev-only
-`EVERSION_LAB_OPEN` and so is **excluded from CI** - a production build ignores it.
-
-`eversion-load.mjs` (S#40) and `eversion-perf.mjs` (S#43) compare against the
-committed `testing/e2e/baselines/eversion-load.json` and `eversion-frames.json`.
-**A missing baseline fails both gates on CI** (`CI` set; `eversion-perf` only
-informs locally). Neither script ever writes one as a side effect of a run:
-a baseline taken from the run under test would make the gate compare a build with
-itself and pass for ever. Thresholds and the late-`load` negative control are in
-the spec's S#40 amendment. The late-`load` control holds `load` open for 8 s and
-fails if ANY eversion request (the prefetch chunk included, not just the bridge)
-is seen before it; `lib/eversion/__tests__/hub-load-gating.test.ts` pins the same
-rule at source level so a regression fails in `pnpm test` before a browser runs.
-
-**Producing baselines.** They must come from a CI runner on a production build -
-SwiftShader numbers from a laptop would fail every run on CI. Start the `web-ci`
-workflow with `workflow_dispatch` and `update-baselines` ticked: the
-`eversion-e2e` job then runs only `eversion-load.mjs` and `eversion-perf.mjs`
-with `--update-baselines` and uploads `testing/e2e/baselines/` as the
-`eversion-baselines` artifact (14 days). Download it, commit the two JSON files
-in a PR of their own, and say which run produced them. Refresh the same way when a
-deliberate change moves the numbers (a Chromium bump, a slower-but-better effect).
-
-**CI.** The `eversion-e2e` job in `web-ci.yml` builds WITH sourcemaps (the
-attribution checks read them), serves `.output`, and runs every
-`testing/e2e/eversion-*.mjs` except `eversion-lab.mjs` and `eversion-smoothness*.mjs` (own step, above); `eversion-hub.mjs` runs
-once per profile x theme (desktop/mobile x dark/light/high-contrast). It does
-**not run on PRs** for now: the suite does not finish inside its timeout (22 of 23
-PR runs were cancelled in `eversion-behaviour.mjs`), so on PRs it held a runner
-for ~40 min and reported nothing. Run it on a branch with
-`gh workflow run web-ci.yml --ref <branch>`. When re-enabled on PRs, the job is
-path-filtered by `eversion-changes` to what the effect depends on: `lib/eversion`,
-`components/radial`, the settings row and its preference API/schema, the theme
-store, `lib/low-end*` and `lib/render`, the glass layer, the two English
-namespaces it uses, `package.json`, the lockfile, the Vite config, the bundle
-budget script, the baselines and this workflow - not every route, store or English
-string. It runs nightly on `main`. It is `continue-on-error` until T37 makes it
-blocking, which hides a red job from the PR's checks, so each script's verdict is
-also written to the job summary (`GITHUB_STEP_SUMMARY`) and every failure is an
-`::error::` annotation. Open the job summary after a nightly.
+The
+`steel-rest`
+job
+in
+`web-ci.yml`
+runs
+it
+against
+the
+checked
+build
+on
+the
+nightly
+and
+manual
+runs
+(it
+needs
+the
+`checked-frontend`
+artifact,
+which
+pull
+requests
+do
+not
+retain),
+with
+a
+Postgres
+service
+and
+`playwright install chromium`.
+The
+frame-budget
+audit,
+the
+eversion
+suites
+and
+their
+baselines
+were
+deleted
+with
+the
+material
+they
+measured
+(Steel
+phase
+6).
 
 ### 8. Integration suite (`vitest.integration.config.ts`, `testing/integration/`)
 
-`pnpm test:integration`. Black-box tests of real user flows against a **running,
-built** app and a **real** Postgres — the layer the main suite deliberately never
-touches. Blocking on every PR (the `integration` job in `web-ci.yml`).
+`pnpm test:integration`.
+Black-box
+tests
+of
+real
+user
+flows
+against
+a
+**running,
+built**
+app
+and
+a
+**real**
+Postgres
+—
+the
+layer
+the
+main
+suite
+deliberately
+never
+touches.
+Blocking
+on
+every
+PR
+(the
+`integration`
+job
+in
+`web-ci.yml`).
 
-| File                    | Covers                                                                                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `auth.test.ts`          | email sign-up → session → handle assigned; sign-out revokes the session; wrong password sets no session; writes need a session                               |
-| `posts.test.ts`         | create + read back; invalid body → 400 and nothing written; another user's like (toggle) and comment; only the author can delete (soft delete → tombstone)   |
-| `coins.test.ts`         | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged                                    |
-| `developer-api.test.ts` | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can) |
-| `public.test.ts`        | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge                                                      |
+| File                     | Covers                                                                                                                                                                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth.test.ts`           | email sign-up → session → handle assigned; sign-out revokes the session; wrong password sets no session; writes need a session                                                                                                                                                                                                        |
+| `posts.test.ts`          | create + read back; invalid body → 400 and nothing written; another user's like (toggle) and comment; only the author can delete (soft delete → tombstone)                                                                                                                                                                            |
+| `coins.test.ts`          | a tip moves exactly the amount and writes one ledger row; overdraft and self-tip are refused with every balance unchanged                                                                                                                                                                                                             |
+| `developer-api.test.ts`  | free accounts cannot mint keys; a paid key authenticates `/api/v1/me`; revoked and made-up keys → 401; scopes (read-only key cannot post, `write:posts` can)                                                                                                                                                                          |
+| `stripe-webhook.test.ts` | signed `customer.subscription.created/updated/deleted` events POSTed to `/api/auth/stripe/webhook`: bad/forged/missing signature gives 4xx and no row; created grants the tier (visible in the session's `tier`); replays are idempotent (one row); updated changes plan; deleted downgrades to free; unknown customer grants nothing |
+| `public.test.ts`         | `/api/ready`, the OpenAPI 3.1 spec, `/` SSR and the sitemap — the deploy smoke probes, run before merge                                                                                                                                                                                                                               |
+| `casino-restart.test.ts` | a deploy during an open blackjack round and during a baccarat deal (third-pass audit OP3): each settles to the same players with the cards, results, balances and ledger rows of the same round with no restart; an absent player is still paid. Baccarat takes about 45 s (real clocks). Not through the web app: see below          |
 
-How it works: `global-setup.ts` waits for `/api/ready`, then signs up the shared
-cast (`alice`, `bob`, `carol`) once and hands their cookies to the files via
-`inject()`. `lib/client.ts` is a cookie-jar `fetch` client (it sends the
-`Origin` Better Auth's CSRF check wants) plus a `pg` pool on the **same**
-database, used only to seed what no endpoint can (a paid subscription, a starting
-coin balance) and to assert on what a response cannot prove (the ledger row, the
-`deletedAt` stamp). Files run one at a time and the app's per-IP rate limits stay
-on (10 sign-ups / posts per minute); the suite budgets its requests under them.
+How
+it
+works:
+`global-setup.ts`
+waits
+for
+`/api/ready`,
+then
+signs
+up
+the
+shared
+cast
+(`alice`,
+`bob`,
+`carol`)
+once
+and
+hands
+their
+cookies
+to
+the
+files
+via
+`inject()`.
+`lib/client.ts`
+is
+a
+cookie-jar
+`fetch`
+client
+(it
+sends
+the
+`Origin`
+Better
+Auth's
+CSRF
+check
+wants)
+plus
+a
+`pg`
+pool
+on
+the
+**same**
+database,
+used
+only
+to
+seed
+what
+no
+endpoint
+can
+(a
+paid
+subscription,
+a
+starting
+coin
+balance)
+and
+to
+assert
+on
+what
+a
+response
+cannot
+prove
+(the
+ledger
+row,
+the
+`deletedAt`
+stamp).
+Files
+run
+one
+at
+a
+time
+and
+the
+app's
+per-IP
+rate
+limits
+stay
+on
+(10
+sign-ups
+/
+posts
+per
+minute);
+the
+suite
+budgets
+its
+requests
+under
+them.
 
-Locally — never against a database you care about:
+Locally
+—
+never
+against
+a
+database
+you
+care
+about:
 
 ```bash
 pnpm build:frontend
@@ -478,37 +2644,538 @@ DATABASE_URL=… BETTER_AUTH_SECRET=local-secret-at-least-32-chars-long BETTER_A
 INTEGRATION_BASE_URL=http://localhost:7005 DATABASE_URL=… pnpm test:integration
 ```
 
-(`INTEGRATION_BASE_URL`, not `BASE_URL`: Vite reserves that name and vitest
-overwrites it.) Restart the server between back-to-back runs — the rate-limit
-counters are in memory.
+(`INTEGRATION_BASE_URL`,
+not
+`BASE_URL`:
+Vite
+reserves
+that
+name
+and
+vitest
+overwrites
+it.)
+Restart
+the
+server
+between
+back-to-back
+runs
+—
+the
+rate-limit
+counters
+are
+in
+memory.
 
-**Found by this suite:** a session's cookies copied before sign-out kept writing
-for up to 5 minutes, because `session.cookieCache` let `getSession` trust the
-signed cookie without reading the (deleted) session row. Fixed by forcing
-`disableCookieCache` on non-GET requests (the wrapper at the bottom of
-`lib/auth.ts`); `auth.test.ts` › _a revoked session cookie cannot write_ pins it.
+**Found
+by
+this
+suite:**
+a
+session's
+cookies
+copied
+before
+sign-out
+kept
+writing
+for
+up
+to
+5
+minutes,
+because
+`session.cookieCache`
+let
+`getSession`
+trust
+the
+signed
+cookie
+without
+reading
+the
+(deleted)
+session
+row.
+Fixed
+by
+forcing
+`disableCookieCache`
+on
+non-GET
+requests
+(the
+wrapper
+at
+the
+bottom
+of
+`lib/auth.ts`);
+`auth.test.ts`
+›
+_a
+revoked
+session
+cookie
+cannot
+write_
+pins
+it.
 
-Out of scope (each needs external services): Stripe checkout/webhooks, OAuth
-providers, the Socket.IO hubs, email delivery.
+**Stripe
+is
+simulated,
+not
+mocked.**
+The
+CI
+`integration`
+job
+sets
+placeholder
+`STRIPE_WEBHOOK_SECRET`,
+`STRIPE_STARTER_PRICE_ID`
+and
+`STRIPE_PRO_PRICE_ID`
+(no
+`STRIPE_SECRET_KEY`,
+so
+nothing
+can
+reach
+api.stripe.com).
+The
+test
+signs
+payloads
+with
+`stripe.webhooks.generateTestHeaderString`
+and
+the
+server
+verifies
+them
+as
+in
+production.
+Only
+events
+the
+Better
+Auth
+plugin
+handles
+from
+the
+payload
+alone
+are
+covered;
+`checkout.session.completed`
+(the
+plugin
+calls
+`subscriptions.retrieve`)
+and
+checkout-session
+creation
+need
+a
+live
+or
+mocked
+Stripe
+API
+and
+are
+not.
+Locally,
+export
+the
+same
+three
+variables
+for
+both
+the
+server
+and
+the
+test
+run.
+The
+tip
+endpoint
+has
+no
+`Idempotency-Key`
+support,
+so
+replay
+protection
+is
+covered
+for
+the
+webhook
+only.
+
+**The
+casino
+restart
+test
+runs
+the
+hub
+tier
+in
+the
+test
+process.**
+It
+is
+the
+one
+file
+that
+does
+not
+talk
+to
+the
+web
+app.
+It
+starts
+a
+real
+Socket.IO
+server
+with
+the
+casino
+handlers
+(`features/casino/server`),
+connects
+`socket.io-client`
+players,
+and
+uses
+the
+hub's
+own
+Prisma
+client
+and
+`ledger-core`
+on
+the
+suite's
+Postgres.
+A
+restart
+is
+the
+casino
+part
+of
+the
+hub's
+shutdown
+sequence
+(`CASINO_SHUTDOWN_REFUNDS`,
+`io.close()`,
+close
+the
+store
+and
+Prisma)
+followed
+by
+`vi.resetModules()`
+and
+a
+second
+server
+that
+restores
+before
+it
+listens.
+It
+is
+not
+a
+second
+OS
+process,
+the
+hub's
+session
+middleware
+is
+replaced
+by
+one
+that
+reads
+the
+user
+id
+from
+the
+handshake,
+and
+the
+shoe
+is
+stacked
+so
+the
+two
+rounds
+can
+be
+compared
+card
+for
+card.
+The
+table
+store
+is
+Redis
+when
+`INTEGRATION_REDIS_STATE_URL`
+is
+set
+(the
+CI
+job
+starts
+a
+`redis:7.4-alpine`
+container
+and
+sets
+it;
+each
+simulated
+process
+opens
+its
+own
+connection)
+and
+one
+in-memory
+store
+carried
+across
+otherwise;
+the
+describe
+title
+names
+the
+one
+that
+ran.
+If
+the
+variable
+is
+set
+and
+Redis
+is
+unreachable
+the
+test
+fails.
+Use
+a
+throwaway
+Redis:
+the
+test
+writes
+`casino:table:blackjack:*`
+and
+`casino:table:baccarat:*`.
+It
+seeds
+its
+own
+users
+directly,
+so
+it
+can
+be
+run
+without
+the
+web
+app
+by
+giving
+vitest
+a
+config
+with
+the
+same
+aliases
+and
+no
+`globalSetup`.
+
+Out
+of
+scope
+(each
+needs
+external
+services):
+live
+Stripe
+checkout,
+OAuth
+providers,
+the
+Socket.IO
+hubs
+other
+than
+the
+casino
+restart
+above,
+email
+delivery.
 
 ### 9. Hearthworks real-WebRTC e2e (not in CI)
 
-`testing/hearthworks-e2e/` runs real Chromium pages with real `RTCPeerConnection`s against a Node socket.io
-harness that hosts the production Hearthworks hub handler (fake session lookup, no DB). Host crash/freeze,
-migration, late join, flood, password and hub-restart scenarios. Opt-in:
+`testing/hearthworks-e2e/`
+runs
+real
+Chromium
+pages
+with
+real
+`RTCPeerConnection`s
+against
+a
+Node
+socket.io
+harness
+that
+hosts
+the
+production
+Hearthworks
+hub
+handler
+(fake
+session
+lookup,
+no
+DB).
+Host
+crash/freeze,
+migration,
+late
+join,
+flood,
+password
+and
+hub-restart
+scenarios.
+Opt-in:
 
 ```bash
 pnpm test:hearthworks:e2e                  # default scenarios
 pnpm exec tsx testing/hearthworks-e2e/run.ts --list
 ```
 
-Details, what it proved and what loopback cannot prove: [`hearthworks-multiplayer.md`](./hearthworks-multiplayer.md).
+Details,
+what
+it
+proved
+and
+what
+loopback
+cannot
+prove:
+[`hearthworks-multiplayer.md`](./hearthworks-multiplayer.md).
 
 ### Server perf harness (not in CI)
 
-The server-side performance program ([`docs/server-perf-2026-10-21/`](server-perf-2026-10-21/index.md))
-measures the production build against a seeded dataset. Like the integration suite above it boots the built app (`.output/server/index.mjs`) against a real Postgres, but it measures latency and query counts rather than asserting behaviour, and it is never run in CI. Method, budgets and the
-agent procedure are in that folder; the instruments live in `scripts/perf/`:
+The
+server-side
+performance
+program
+([`docs/archive/2026/server-perf-2026-10-21/`](./archive/2026/server-perf-2026-10-21/index.md))
+measures
+the
+production
+build
+against
+a
+seeded
+dataset.
+Like
+the
+integration
+suite
+above
+it
+boots
+the
+built
+app
+(`.output/server/index.mjs`)
+against
+a
+real
+Postgres,
+but
+it
+measures
+latency
+and
+query
+counts
+rather
+than
+asserting
+behaviour,
+and
+it
+is
+never
+run
+in
+CI.
+Method,
+budgets
+and
+the
+agent
+procedure
+are
+in
+that
+folder;
+the
+instruments
+live
+in
+`scripts/perf/`:
 
 ```bash
 pnpm tsx scripts/perf/seed-perf-db.ts --db rmh_perf_build   # ~2 min: 20k users, 200k posts, 1.2M likes, ...
@@ -521,15 +3188,101 @@ node scripts/perf/server-bench.mjs --summary baseline.json             # the P0 
 node scripts/perf/cold-start.mjs --port 71<N>5                          # restart + first request to /
 ```
 
-Raw bench output (`--out *.json`, ~9k lines per run) stays out of the repo: `--compare` and `--summary` take any paths, so
-no checked-in baseline is needed. Commit the derived table (`--compare … > compare.md`) and the report instead. The program's
-own raw runs are in git history at `1b437552d` (`docs/server-perf-2026-10-21/results/{baseline,after,after-run2}.json`).
+Raw
+bench
+output
+(`--out *.json`,
+~9k
+lines
+per
+run)
+stays
+out
+of
+the
+repo:
+`--compare`
+and
+`--summary`
+take
+any
+paths,
+so
+no
+checked-in
+baseline
+is
+needed.
+Commit
+the
+derived
+table
+(`--compare … > compare.md`)
+and
+the
+report
+instead.
+The
+program's
+own
+raw
+runs
+are
+in
+git
+history
+at
+`1b437552d`
+(`docs/archive/2026/server-perf-2026-10-21/results/{baseline,after,after-run2}.json`).
 
-`RMH_PERF_HEADERS=1` adds `x-rmh-queries: <n>` to every response (off by
-default; `lib/__tests__/perf-headers.test.ts` pins that). `Server-Timing` is
-always on and carries `dur`-only `sess` / `cache` / `db` / `total` phases. The
-tests for the instrumentation itself are `lib/__tests__/otel-server-timing.test.ts`
-and `perf-headers.test.ts`, and they run in the main suite; the harness does not.
+`RMH_PERF_HEADERS=1`
+adds
+`x-rmh-queries: <n>`
+to
+every
+response
+(off
+by
+default;
+`lib/__tests__/perf-headers.test.ts`
+pins
+that).
+`Server-Timing`
+is
+always
+on
+and
+carries
+`dur`-only
+`sess`
+/
+`cache`
+/
+`db`
+/
+`total`
+phases.
+The
+tests
+for
+the
+instrumentation
+itself
+are
+`lib/__tests__/otel-server-timing.test.ts`
+and
+`perf-headers.test.ts`,
+and
+they
+run
+in
+the
+main
+suite;
+the
+harness
+does
+not.
 
 ### Coverage
 
@@ -537,123 +3290,863 @@ and `perf-headers.test.ts`, and they run in the main suite; the harness does not
 pnpm test:coverage          # text summary + coverage/index.html + lcov.info
 ```
 
-`@vitest/coverage-v8` is a devDependency, so this just works — it used to
-require an ad-hoc `npm install --no-save`. Scoped to `lib/`, `server/`,
-`components/`, `hooks/`, `stores/` (extensions pinned: an extensionless glob
-hands the provider every `CLAUDE.md` in the tree and it tries to parse them as
-source). It is **informational, not a gate**, and it is not run in CI. The
-number today is ~18% of statements; treat it as a map of what is untested, not
-a target to farm.
+`@vitest/coverage-v8`
+is
+a
+devDependency,
+so
+this
+just
+works
+—
+it
+used
+to
+require
+an
+ad-hoc
+`npm install --no-save`.
+Scoped
+to
+`lib/`,
+`server/`,
+`components/`,
+`hooks/`,
+`stores/`
+(extensions
+pinned:
+an
+extensionless
+glob
+hands
+the
+provider
+every
+`CLAUDE.md`
+in
+the
+tree
+and
+it
+tries
+to
+parse
+them
+as
+source).
+It
+is
+**informational,
+not
+a
+gate**,
+and
+it
+is
+not
+run
+in
+CI.
+The
+number
+today
+is
+~18%
+of
+statements;
+treat
+it
+as
+a
+map
+of
+what
+is
+untested,
+not
+a
+target
+to
+farm.
 
 ## CI
 
-Quality workflows live in `.github/workflows/`. The release graph and operator activation are documented in [deployment-speed-implementation-2026-10-24.md](./deployment-speed-implementation-2026-10-24.md). The ones that touch tests/quality (every web job sets up through `.github/actions/setup-deps`, which restores `node_modules` from a cache keyed on the lockfile + Prisma schema and only installs on a miss):
+Quality
+workflows
+live
+in
+`.github/workflows/`.
+The
+release
+graph
+and
+operator
+activation
+are
+documented
+in
+[deployment-speed-implementation-2026-10-24.md](./archive/2026/deployment-speed-implementation-2026-10-24.md).
+The
+ones
+that
+touch
+tests/quality
+(every
+web
+job
+sets
+up
+through
+`.github/actions/setup-deps`,
+which
+restores
+`node_modules`
+from
+a
+cache
+keyed
+on
+the
+lockfile +
+Prisma
+schema
+and
+only
+installs
+on
+a
+miss):
 
-| Workflow                                  | Runs                                                                                    | Gate?                                                                           |
-| ----------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `web-ci.yml` (`typecheck`)                | `tsc --noEmit` → `eslint` → docs freshness                                              | **all block**                                                                   |
-| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs                 | **blocks**, tests included (as of 2026-08-08)                                   |
-| `web-ci.yml` (`build` job)                | `build:frontend:sourcemap` → bundle budget → entry composition                          | build + both size gates block                                                   |
-| `web-ci.yml` (`audit` job)                | `pnpm audit --prod --audit-level=high`                                                  | blocks on high-severity prod advisories                                         |
-| `web-ci.yml` (`integration`)              | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`    | **blocks**; see §8                                                              |
-| `epic-tests.yml`                          | `playwright install chromium` → `pnpm test:epic`                                        | blocks; **path-filtered** to `scripts/epic/**`                                  |
-| `deploy.yml` (`ci` job)                   | typecheck → lint → production dependency audit                                          | all block the deployment                                                        |
-| `deploy.yml` (`integration`)              | same as web-ci's `integration`, on the **merged** commit                                | **verifies after the deploy**: a failure triggers `post-deploy-verify`, which rolls production back via the webhook `rollback` action |
-| `web-ci.yml` (`eversion-e2e`)             | build with sourcemaps → serve → every `eversion-*.mjs` (hub per profile x theme)        | non-blocking until T37; **nightly + manual dispatch only** (not on PRs); see §7 |
-| `web-ci.yml` (`jelly-e2e`)                | `jelly-interaction.mjs` fixture, without a database or frontend build                   | blocks on relevant PRs and scheduled/manual runs                                |
-| `go-microservices.yml`                    | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**` | blocks                                                                          |
+| Workflow                                  | Runs                                                                                                         | Gate?                                                                                                                                 |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `web-ci.yml` (`typecheck`)                | `tsc -b` (`pnpm typecheck`) → `eslint` → docs freshness                                                      | **all block**                                                                                                                         |
+| `web-ci.yml` (`test (1/2)`, `test (2/2)`) | `pnpm test --shard=N/2` — the unit suite split across two parallel jobs                                      | **blocks**, tests included (as of 2026-08-08)                                                                                         |
+| `web-ci.yml` (`build` job)                | `build:frontend:sourcemap` → bundle budget → entry composition                                               | build + both size gates block                                                                                                         |
+| `web-ci.yml` (`audit` job)                | `pnpm audit --prod --audit-level=high`                                                                       | blocks on high-severity prod advisories                                                                                               |
+| `web-ci.yml` (`integration`)              | build → Postgres service → migrate → boot `.output/server` → `pnpm test:integration`                         | **blocks**; see §8                                                                                                                    |
+| `epic-tests.yml`                          | `playwright install chromium` → `pnpm test:epic`                                                             | blocks; **path-filtered** to `scripts/epic/**`                                                                                        |
+| `deploy.yml` (`ci` job)                   | typecheck → lint → production dependency audit                                                               | all block the deployment                                                                                                              |
+| `deploy.yml` (`integration`)              | same as web-ci's `integration`, on the **merged** commit                                                     | **verifies after the deploy**: a failure triggers `post-deploy-verify`, which rolls production back via the webhook `rollback` action |
+| `web-ci.yml` (`steel-rest`)               | checked build → serve → `testing/e2e/steel-rest.mjs` (zero frames at rest, one GL context, the globe)        | non-blocking; **nightly + manual dispatch only** (not on PRs); see §6                                                                 |
+| `go-microservices.yml`                    | `bazelisk test --build_tests_only //go-services/...`, path-filtered to `go-services/**`                      | blocks                                                                                                                                |
 
-The deploy `test` job runs two isolated unit-suite shards in parallel with `ci`. The ARM64 `build` job enforces critical JS/CSS budgets and smoke-tests both production image digests. `candidate-image.yml` checks production-shaped containers on PRs; `required-checks` aggregates every applicable web check. `build-cache.yml` maintains reusable stages outside the trigger prerequisites.
+The
+deploy
+`test`
+job
+runs
+two
+isolated
+unit-suite
+shards
+in
+parallel
+with
+`ci`.
+The
+ARM64
+`build`
+job
+enforces
+critical
+JS/CSS
+budgets
+and
+smoke-tests
+both
+production
+image
+digests.
+`candidate-image.yml`
+checks
+production-shaped
+containers
+on
+PRs;
+`required-checks`
+aggregates
+every
+applicable
+web
+check.
+`build-cache.yml`
+maintains
+reusable
+stages
+outside
+the
+trigger
+prerequisites.
 
-**The `jelly-e2e` job** (Plasmatic Jelly in a real browser) is its own job,
-not a step of `eversion-e2e`: as that job's last step it never ran, because the
-eversion scripts alone outlast its 75-minute timeout. It runs on every nightly
-and manual dispatch, and on a pull request only when the change touches the
-material — a filter step matches `lib/jelly/`, `lib/liquid/`,
-`app/jelly-*.css`, `app/liquid-glass.css`, `app/globals.css`,
-`components/ui/button.tsx`, `hooks/useLiquidInteractions.ts`,
-`hooks/useFluidDrag.ts`, `lib/fluid.ts`, the three jelly e2e scripts
-(`frame-budget`, `jelly-interaction`, `fouc-routes`), `testing/e2e/lib/gpu.mjs`,
-`package.json`, `pnpm-lock.yaml`, `vite.config.*` and `web-ci.yml` itself
-(otherwise it writes "jelly e2e skipped" to the job summary and passes).
+**Where
+enforcement
+lives.**
+web-ci's
+Test
+step
+is
+a
+hard
+gate
+on
+the
+PR,
+and
+the
+deploy's
+own
+`test`
+matrix
+re-runs
+the
+suite
+on
+the
+merge
+result
+as
+a
+hard
+gate
+too.
+It
+used
+to
+be
+advisory
+on
+the
+premise
+that
+`main`
+is
+reached
+only
+through
+a
+PR
+—
+but
+nothing
+enforced
+that
+(no
+branch
+protection),
+so
+a
+direct
+push
+or
+a
+merge
+over
+a
+red
+PR
+could
+ship
+untested
+code.
+It
+costs
+no
+wall-clock:
+`ci`
+runs
+in
+parallel
+with
+the
+image
+build.
 
-- **Blocking: `testing/e2e/jelly-interaction.mjs`** — the click arcs in a real browser,
-  a fixture that needs no server (~40 s). The rest of the material is CSS, judged by the
-  unit gates and by `frame-budget.mjs`. It fails for real on every deterministic check:
-  click charge and hops, the flash ledger under a click storm, the arc layer following
-  `electricArcs` / `still` live, zero frames at rest, teardown.
-- **Non-blocking: `testing/e2e/frame-budget.mjs --gate`** against the built app
-  (step-level `continue-on-error`: the step still shows its exit code, a red
-  summary row and an `::error::` annotation, but the job's conclusion ignores
-  it — the deterministic `jelly-e2e` result is independent). It drives
-  ~50 routes and gates the rest cadence (the globe's idle floor + 1 frame) and any
-  unsanctioned perpetual animation. Pages that render `PinnedHero` (e.g. /pricing) also
-  carry its scroll cue, a framer-motion `repeat: Infinity` animation that writes inline
-  styles from JS, which `getAnimations()` cannot see. It becomes blocking once those are
-  fixed and a few nightlies are green.
-- **GPU-only checks SKIP, never silently pass.** The runner has no GPU;
-  `testing/e2e/lib/gpu.mjs` detects SwiftShader from the WebGL renderer string,
-  and a check that needs real GPU frames is reported as `SKIP` in the log, as a
-  `::notice`, and in the job summary (with the GL string). frame-budget's R7 "a
-  hazy page never draws 0 frames at rest" belonged to the retired canvas haze and is
-  never judged now (no haze canvas exists to judge it on).
+The
+web-ci
+test
+step
+was
+advisory
+for
+a
+long
+stretch,
+for
+a
+reason
+that
+no
+longer
+holds:
+`i18n-catalogs`
+was
+permanently
+red,
+and
+the
+Test
+step
+used
+to
+sit
+_before_
+the
+build
+in
+a
+single
+job,
+so
+a
+red
+test
+meant
+the
+build
+never
+ran
+on
+PRs
+and
+build
+breakage
+was
+discovered
+during
+production
+deploys
+(`docs/archive/2026/ci-speed-audit-2026-07-17.md`
+§2).
+The
+build
+is
+its
+own
+job
+now
+and
+the
+suite
+is
+green,
+so
+an
+advisory
+test
+step
+bought
+nothing
+except
+a
+suite
+nobody
+had
+to
+keep
+green
+—
+which
+is
+how
+a
+permanently-red
+test
+got
+to
+stay
+that
+way.
 
-**Where enforcement lives.** web-ci's Test step is a hard gate on the PR, and
-the deploy's own `test` matrix re-runs the suite on the merge result as a hard gate
-too. It used to be advisory on the premise that `main` is reached only through a
-PR — but nothing enforced that (no branch protection), so a direct push or a
-merge over a red PR could ship untested code. It costs no wall-clock: `ci` runs
-in parallel with the image build.
-
-The web-ci test step was advisory for a long stretch, for a reason that no
-longer holds: `i18n-catalogs` was permanently red, and the Test step used to sit
-_before_ the build in a single job, so a red test meant the build never ran on
-PRs and build breakage was discovered during production deploys
-(`docs/ci-speed-audit-2026-07-17.md` §2). The build is its own job now and the
-suite is green, so an advisory test step bought nothing except a suite nobody
-had to keep green — which is how a permanently-red test got to stay that way.
-
-Plus SAST/quality gates that aren't tests but run on PRs: `senior-review.yml`
-(an LLM review gate), `synthetic-perf.yml`, `compose-validate`,
-`prisma-validate`, `prisma-migrate-status`, and `build-vibe-packages`.
+Plus
+SAST/quality
+gates
+that
+aren't
+tests
+but
+run
+on
+PRs:
+`senior-review.yml`
+(an
+LLM
+review
+gate),
+`synthetic-perf.yml`,
+`compose-validate`,
+`prisma`
+(validate +
+migrate-status
+jobs),
+and
+`build-vibe-packages`.
 
 ## Writing a test
 
-- **First: does it need to exist?** Since 2026-08-08 this suite is scoped to the
-  five criteria in [What is not tested](#what-is-not-tested). A test of how a
-  game plays will be correct, will pass, and will still be the wrong thing to
-  add — that coverage was deliberately traded for a suite fast enough to run on
-  every commit. Adding one back means arguing that it meets a criterion.
-- **Main suite:** put it in a feature `__tests__/` dir (or next to the module,
-  or under `testing/`) and it runs. Keep it environment-agnostic: mock
-  DB/network/FS, reuse the `setup.ts` helpers for RMHBox.
-- **Assert what the code must do, not that it exists.** A test that checks a
-  file is present and has a default export is a slower restatement of
-  `tsc --noEmit`; one of those (28 assertions over 14 rmhbox components, ~1s of
-  every run) was deleted in the audit. If deleting the module would break the
-  typecheck, the typechecker already covers it.
-- **`expect()` is not free.** It builds an assertion context per call. Inside a
-  property-style sweep, record the first counter-example and assert once.
-- **Assert what you mean.** `expect(true).toBe(true)` after calling a function
-  passes whether or not the function did anything. `expect(fn).not.toThrow()`
-  plus a check on the observable effect says the same thing honestly.
-- **Driving a script under test?** Compile it once with esbuild in `beforeAll`
-  and run the bundle with plain `node` — `tsx` costs ~350ms of loader boot per
-  spawn, and under CPU contention those spawns are also where the suite's
-  timeout flakes came from. `lib/__tests__/migration-safety.test.ts` is the
+- **First:
+  does
+  it
+  need
+  to
+  exist?**
+  Since
+  2026-08-08
+  this
+  suite
+  is
+  scoped
+  to
+  the
+  five
+  criteria
+  in
+  [What is not tested](#what-is-not-tested).
+  A
+  test
+  of
+  how
+  a
+  game
+  plays
+  will
+  be
+  correct,
+  will
+  pass,
+  and
+  will
+  still
+  be
+  the
+  wrong
+  thing
+  to
+  add
+  —
+  that
+  coverage
+  was
+  deliberately
+  traded
+  for
+  a
+  suite
+  fast
+  enough
+  to
+  run
+  on
+  every
+  commit.
+  Adding
+  one
+  back
+  means
+  arguing
+  that
+  it
+  meets
+  a
+  criterion.
+- **Main
+  suite:**
+  put
+  it
+  in
+  a
+  feature
+  `__tests__/`
+  dir
+  (or
+  next
+  to
+  the
+  module,
+  or
+  under
+  `testing/`)
+  and
+  it
+  runs.
+  Keep
+  it
+  environment-agnostic:
+  mock
+  DB/network/FS,
+  reuse
+  the
+  `setup.ts`
+  helpers
+  for
+  RMHBox.
+- **Assert
+  what
+  the
+  code
+  must
+  do,
+  not
+  that
+  it
+  exists.**
+  A
+  test
+  that
+  checks
+  a
+  file
+  is
+  present
+  and
+  has
+  a
+  default
+  export
+  is
+  a
+  slower
+  restatement
+  of
+  `tsc --noEmit`;
+  one
+  of
+  those
+  (28
+  assertions
+  over
+  14
+  rmhbox
+  components,
+  ~1s
+  of
+  every
+  run)
+  was
+  deleted
+  in
+  the
+  audit.
+  If
+  deleting
+  the
+  module
+  would
+  break
+  the
+  typecheck,
+  the
+  typechecker
+  already
+  covers
+  it.
+- **`expect()`
+  is
+  not
+  free.**
+  It
+  builds
+  an
+  assertion
+  context
+  per
+  call.
+  Inside
+  a
+  property-style
+  sweep,
+  record
+  the
+  first
+  counter-example
+  and
+  assert
+  once.
+- **Assert
+  what
+  you
+  mean.**
+  `expect(true).toBe(true)`
+  after
+  calling
+  a
+  function
+  passes
+  whether
+  or
+  not
+  the
+  function
+  did
+  anything.
+  `expect(fn).not.toThrow()`
+  plus
+  a
+  check
+  on
+  the
+  observable
+  effect
+  says
+  the
+  same
+  thing
+  honestly.
+- **Driving
+  a
+  script
+  under
+  test?**
+  Compile
+  it
+  once
+  with
+  esbuild
+  in
+  `beforeAll`
+  and
+  run
+  the
+  bundle
+  with
+  plain
+  `node`
+  —
+  `tsx`
+  costs
+  ~350ms
+  of
+  loader
+  boot
+  per
+  spawn,
+  and
+  under
+  CPU
+  contention
+  those
+  spawns
+  are
+  also
+  where
+  the
+  suite's
+  timeout
+  flakes
+  came
+  from.
+  `lib/__tests__/migration-safety.test.ts`
+  is
+  the
   pattern.
-- **`vi.mock` is hoisted**, always, even written inside a test body. Put it at
-  the top of the file where it actually runs; vitest warns about the nested form
-  today and will make it an error. Shared factories belong in a sibling module
-  imported _inside_ the factory (`testing/rmhbox/phase-5/wiki-race-mocks.ts`).
-- **Go:** add `*_test.go` beside the code and `make gazelle` before `make test`.
+- **`vi.mock`
+  is
+  hoisted**,
+  always,
+  even
+  written
+  inside
+  a
+  test
+  body.
+  Put
+  it
+  at
+  the
+  top
+  of
+  the
+  file
+  where
+  it
+  actually
+  runs;
+  vitest
+  warns
+  about
+  the
+  nested
+  form
+  today
+  and
+  will
+  make
+  it
+  an
+  error.
+  Shared
+  factories
+  belong
+  in
+  a
+  sibling
+  module
+  imported
+  _inside_
+  the
+  factory
+  (`testing/rmhbox/phase-5/wiki-race-mocks.ts`).
+- **Go:**
+  add
+  `*_test.go`
+  beside
+  the
+  code
+  and
+  `make gazelle`
+  before
+  `make test`.
 
 ### Migration rollback-compatibility gate
 
-`web-ci.yml` job `migrations` runs `.github/scripts/check-migrations-additive.mjs` over migrations **added** in the PR. Production rollbacks (post-deploy guard, `post-deploy-verify`) redeploy the previous image on the already-migrated database, so a new migration must not drop, rename, retype or tighten (`SET NOT NULL`, `NOT NULL` without `DEFAULT`, `DROP DEFAULT`) anything the previous release uses. Do it as expand → ship → contract. A deliberate contract step opts in with `-- rmh:contract-ok <why it is safe>` in the migration file.
+`web-ci.yml`
+job
+`migrations`
+runs
+`.github/scripts/check-migrations-additive.mjs`
+over
+migrations
+**added**
+in
+the
+PR.
+Production
+rollbacks
+(post-deploy
+guard,
+`post-deploy-verify`)
+redeploy
+the
+previous
+image
+on
+the
+already-migrated
+database,
+so
+a
+new
+migration
+must
+not
+drop,
+rename,
+retype
+or
+tighten
+(`SET NOT NULL`,
+`NOT NULL`
+without
+`DEFAULT`,
+`DROP DEFAULT`)
+anything
+the
+previous
+release
+uses.
+Do
+it
+as
+expand
+→
+ship
+→
+contract.
+A
+deliberate
+contract
+step
+opts
+in
+with
+`-- rmh:contract-ok <why it is safe>`
+in
+the
+migration
+file.
 
 ### Merge queue and delivery metrics
 
-`web-ci.yml` also runs on `merge_group`, treated exactly like a PR (same classifier, same `required-checks`, no nightly-only jobs), so GitHub's merge queue tests the real merge result before it reaches `main`. **Turning it on is a repo setting** (Settings → Rules → branch protection for `main` → "Require merge queue"); the workflow is ready either way.
+`web-ci.yml`
+also
+runs
+on
+`merge_group`,
+treated
+exactly
+like
+a
+PR
+(same
+classifier,
+same
+`required-checks`,
+no
+nightly-only
+jobs),
+so
+GitHub's
+merge
+queue
+tests
+the
+real
+merge
+result
+before
+it
+reaches
+`main`.
+**Turning
+it
+on
+is
+a
+repo
+setting**
+(Settings
+→
+Rules
+→
+branch
+protection
+for
+`main`
+→
+"Require
+merge
+queue");
+the
+workflow
+is
+ready
+either
+way.
 
-`dora-metrics.yml` posts deploy frequency, merge→deployed lead time, change-failure rate and time-to-restore to the run summary every Monday (and on demand), computed from the deploy workflow's own run history.
+`dora-metrics.yml`
+posts
+deploy
+frequency,
+merge→deployed
+lead
+time,
+change-failure
+rate
+and
+time-to-restore
+to
+the
+run
+summary
+every
+Monday
+(and
+on
+demand),
+computed
+from
+the
+deploy
+workflow's
+own
+run
+history.

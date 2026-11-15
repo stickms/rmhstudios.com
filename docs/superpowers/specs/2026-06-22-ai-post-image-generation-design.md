@@ -41,7 +41,7 @@ Mirrors the existing `lib/rmhark-ai/generate.server.ts` (DeepSeek via OpenAI SDK
      prompt, n: 1 })` via an OpenAI client configured with `baseURL: 'https://api.x.ai/v1'`
      and `apiKey: XAI_API_KEY`. Read the JPG URL from `response.data[0].url`.
   4. **Re-host:** download the JPG, validate the buffer with the existing
-     `validateImageBuffer` (`lib/slice-it/upload-validation.ts`), store via
+     `validateImageBuffer` (`features/slice-it/engine/upload-validation.ts`), store via
      `putObject(feedImageKey(\`${userId}-${ts}-${rand}.jpg\`), buffer, 'image/jpeg')`,
      return `feedImageUrl(filename)`.
   5. **Increment** the daily counter on success.

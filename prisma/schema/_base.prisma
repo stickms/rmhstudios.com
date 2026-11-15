@@ -1,0 +1,9 @@
+generator client {
+  provider        = "prisma-client-js"
+  // Skip engine binary — the pg adapter uses the JS-based query engine
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+}

@@ -4,8 +4,9 @@
  * Checks auth status server-side and passes it to the client component.
  */
 
-import { Suspense } from 'react'
+
 import { createFileRoute } from '@tanstack/react-router'
+import { gameRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start'
 import { getRequestSession } from '@/lib/auth-session.server'
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
@@ -14,8 +15,9 @@ import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
 // Static, not `lazy()`: Start already splits this route's component into its own
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
 // hydration, and an update reaching the boundary then swaps the server-rendered
-// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
+// page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
 import { VersecraftClient } from '@/components/versecraft/VersecraftClient'
+import { ArrivalSuspense } from '@/components/ui/arrive'
 
 const checkLoginStatus = createServerFn({ method: 'GET' }).handler(async () => {
   try {
@@ -32,15 +34,16 @@ function VersecraftPage() {
   return (
     <div className="app-ground" style={{ backgroundColor: '#1a1520' }}>
       <GameErrorBoundary gameName="Versecraft">
-        <Suspense fallback={<GameLoadingFallback />}>
+        <ArrivalSuspense fallback={<GameLoadingFallback />}>
           <VersecraftClient isLoggedIn={isLoggedIn} />
-        </Suspense>
+        </ArrivalSuspense>
       </GameErrorBoundary>
     </div>
   )
 }
 
 export const Route = createFileRoute('/versecraft/')({
+  head: () => gameRouteHead('versecraft'),
   loader: () => checkLoginStatus(),
   component: VersecraftPage,
 })

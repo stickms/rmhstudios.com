@@ -1,19 +1,23 @@
 import { SwissLabel } from '@/components/competitive/SwissStandings';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { buildCanonical, buildMeta } from '@/lib/seo';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Trophy, Plus, Coins, Users } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSession } from '@/components/Providers';
 import { CreateTournamentDialog } from '@/components/tournaments/CreateTournamentDialog';
-import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { tournamentsQuery, type TournamentStatus } from '@/lib/tournaments/tournaments.queries';
 
 export const Route = createFileRoute('/_site/tournaments/')({
   head: () => ({
@@ -24,34 +28,21 @@ export const Route = createFileRoute('/_site/tournaments/')({
     }),
     links: [buildCanonical('/tournaments')],
   }),
+  // The first tab is fetched here (SSR + intent preload); the other tabs load on demand.
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, tournamentsQuery('REGISTRATION')),
   component: TournamentsPage,
 });
-
-type TournamentStatus = 'REGISTRATION' | 'LIVE' | 'COMPLETE';
 
 function TournamentsPage() {
   const { t } = useTranslation('c-tournaments');
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
   const [status, setStatus] = useState<TournamentStatus>('REGISTRATION');
-  const [items, setItems] = useState<SerializedTournament[]>([]);
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/tournaments?status=${status}`);
-      const data = await res.json().catch(() => ({ tournaments: [] }));
-      setItems(res.ok ? (data.tournaments ?? []) : []);
-    } finally {
-      setLoading(false);
-    }
-  }, [status]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const list = useQuery({ ...tournamentsQuery(status), retry: false });
+  const loading = list.isPending;
+  const items = list.data?.tournaments ?? [];
+  const arrival = useArrival(!loading);
 
   return (
     <PageLayout
@@ -71,7 +62,7 @@ function TournamentsPage() {
     >
       {/* §15.1: unified sheet + flowing-capsule tab strip below the page title. */}
       <div>
-        <LiquidTabs
+        <Tabs
           aria-label={t('title', { defaultValue: 'Tournaments' })}
           value={status}
           onChange={(id) => setStatus(id as TournamentStatus)}
@@ -80,8 +71,6 @@ function TournamentsPage() {
             { id: 'LIVE', label: t('tab-live', { defaultValue: 'Live' }) },
             { id: 'COMPLETE', label: t('tab-done', { defaultValue: 'Finished' }) },
           ]}
-          fullWidth
-          scroll
         />
       </div>
 
@@ -93,6 +82,7 @@ function TournamentsPage() {
         </div>
       ) : items.length === 0 ? (
         <EmptyState
+          className={arrival}
           icon={Trophy}
           title={t('empty', { defaultValue: 'No tournaments here yet. Host one and set the prize!' })}
           action={
@@ -104,14 +94,14 @@ function TournamentsPage() {
           }
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={cn('grid gap-3 sm:grid-cols-2', arrival)}>
           {items.map((tourney) => (
             <Link key={tourney.id} to="/tournaments/$id" params={{ id: tourney.id }}>
               <Card className="h-full gap-3 px-4 py-4" interactive>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h2 className="font-semibold truncate">{tourney.name}</h2>
-                    <p className="text-sm text-site-text-dim truncate">
+                    <p className="text-sm text-site-text-muted truncate">
                       {tourney.gameTitle ?? tourney.gameId}
                       {' · '}
                       {tourney.format === 'SWISS'
@@ -122,13 +112,13 @@ function TournamentsPage() {
                     </p>
                   </div>
                   {tourney.status === 'LIVE' && (
-                    <Badge variant="accent">{t('live', { defaultValue: 'Live' })}</Badge>
+                    <Badge variant="default">{t('live', { defaultValue: 'Live' })}</Badge>
                   )}
                   {tourney.status === 'COMPLETE' && (
                     <Badge variant="success">{t('done', { defaultValue: 'Done' })}</Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-site-text-dim">
+                <div className="flex items-center gap-4 text-sm text-site-text-muted">
                   <span className="flex items-center gap-2">
                     <Coins className="size-4 text-site-warning" aria-hidden />
                     {t('prize', { defaultValue: '{{n}} prize', n: tourney.prizePoolCoins })}

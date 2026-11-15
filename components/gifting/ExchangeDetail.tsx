@@ -1,17 +1,17 @@
-'use client';
-
 /** One gift / mixtape exchange: join, set exclusions, the draw result, gifting, the reveal. */
-import { lazy, Suspense, useState } from 'react';
+import { lazy, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ExternalLink, Gift } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { apiJson, errorCode } from '@/components/economy-plus/api';
 import {
   EXCHANGE_MIN_MEMBERS,
@@ -34,7 +34,7 @@ function MixtapePlayer({ tracks }: { tracks: MixtapeTrack[] }) {
   return (
     <ol className="space-y-2">
       {tracks.map((tr, i) => (
-        <li key={tr.id} className="glass-fill space-y-2 rounded-site px-4 py-3">
+        <li key={tr.id} className="space-y-2 rounded-site px-4 py-3">
           <div className="flex items-center justify-between gap-2 text-sm">
             <span className="min-w-0 truncate">
               {i + 1}. {tr.title} <span className="text-site-text-muted">· {tr.artist}</span>
@@ -72,6 +72,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
   });
   const [excludes, setExcludes] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
+  const arrival = useArrival(!isLoading);
 
   const act = useMutation({
     mutationFn: (a: { path?: string; method: string; body?: unknown }) =>
@@ -83,7 +84,11 @@ export default function ExchangeDetail({ id }: { id: string }) {
   if (isLoading) return <Skeleton className="mx-4 mt-4 h-64" />;
   if (isError || !ex) {
     return (
-      <EmptyState icon={Gift} title={t('detail-missing', { defaultValue: 'Exchange not found' })} />
+      <EmptyState
+        className={arrival}
+        icon={Gift}
+        title={t('detail-missing', { defaultValue: 'Exchange not found' })}
+      />
     );
   }
 
@@ -98,10 +103,10 @@ export default function ExchangeDetail({ id }: { id: string }) {
   }[ex.status];
 
   return (
-    <div className="space-y-4 px-4 pt-4 pb-12">
-      <header className="glass-pane space-y-3 p-4">
+    <div className={cn('space-y-4 px-4 pt-4 pb-12', arrival)}>
+      <header className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-lg font-semibold">{ex.title}</h2>
+          <h2 className="text-lg font-semibold">{ex.title}</h2>
           <Badge variant={ex.status === 'DRAWN' ? 'success' : 'default'}>{statusLabel}</Badge>
         </div>
         <p className="text-sm text-site-text-muted">
@@ -124,7 +129,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
         </p>
         {ex.canJoin ? (
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             loading={act.isPending}
             onClick={() => act.mutate({ path: '/join', method: 'POST' })}
@@ -144,7 +149,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
         {ex.isOrganizer && open ? (
           <div className="flex flex-wrap gap-2">
             <Button
-              variant="accent"
+              variant="default"
               size="sm"
               disabled={ex.members.length < EXCHANGE_MIN_MEMBERS}
               onClick={() => act.mutate({ path: '/draw', method: 'POST' })}
@@ -159,7 +164,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
       </header>
 
       {ex.me && open ? (
-        <section className="glass-pane space-y-3 p-4">
+        <section className="space-y-3 p-4">
           <label htmlFor="ex-excl" className="site-section-label block">
             {t('detail-exclude', { defaultValue: 'Rather not be paired with (handles, private)' })}
           </label>
@@ -193,13 +198,14 @@ export default function ExchangeDetail({ id }: { id: string }) {
       ) : null}
 
       {ex.me && open && isMixtape ? (
-        <Suspense fallback={<Skeleton className="h-40" />}>
+        // wrap={false}: the parent spaces its children; MixtapeEditor fades itself.
+        <ArrivalSuspense fallback={<Skeleton className="h-40" />} wrap={false}>
           <MixtapeEditor exchangeId={ex.id} initial={ex.me.tracks} />
-        </Suspense>
+        </ArrivalSuspense>
       ) : null}
 
       {ex.status === 'DRAWN' && ex.me?.recipient ? (
-        <section className="glass-pane space-y-3 p-4">
+        <section className="space-y-3 p-4">
           <h2 className="site-section-label">
             {isMixtape
               ? t('result-mixtape', {
@@ -237,7 +243,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
               />
               <Button
                 type="submit"
-                variant="accent"
+                variant="default"
                 size="sm"
                 loading={act.isPending}
                 disabled={Number(amount) < 10 || Number(amount) > (ex.budget ?? 10000)}
@@ -267,7 +273,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
       ) : null}
 
       {ex.pairings ? (
-        <section className="glass-pane space-y-3 p-4">
+        <section className="space-y-3 p-4">
           <h2 className="site-section-label">
             {t('reveal-title', { defaultValue: 'The reveal' })}
           </h2>
@@ -291,7 +297,7 @@ export default function ExchangeDetail({ id }: { id: string }) {
         </h2>
         <ul className="flex flex-wrap gap-2">
           {ex.members.map((m) => (
-            <li key={m.id} className="glass-fill rounded-site-sm px-3 py-2 text-sm">
+            <li key={m.id} className="rounded-site-sm px-3 py-2 text-sm">
               {m.handle ? (
                 <Link to="/u/$userid" params={{ userid: m.handle }} className="hover:underline">
                   {who(m)}

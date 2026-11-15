@@ -1,10 +1,10 @@
-'use client';
-
 import { useEffect, useRef, useState, useCallback, type KeyboardEvent } from'react';
 import { useTranslation } from'react-i18next';
 import { BadgeCheck } from'lucide-react';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 
+import { api } from '@/lib/contract/client';
+import { mentionSearchApi } from '@/lib/feed/feed-reads.contract';
 interface UserSuggestion {
  id: string;
  name: string | null;
@@ -90,9 +90,8 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  setOpen(true);
  const timer = setTimeout(async () => {
  try {
- const res = await fetch(`/api/feed/mention-search?q=${encodeURIComponent(token)}`, { credentials:'include'});
+ const data = await api(mentionSearchApi, { query: { q: token } });
  if (seq !== requestSeq.current) return;
- const data = await res.json();
  setSuggestions(data.users ?? []);
  setActiveIndex(0);
  } catch {
@@ -183,7 +182,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  className="w-[var(--anchored-menu-anchor-w)] max-h-60"
  >
  {loading && suggestions.length === 0 ? (
- <div className="px-3 py-2 text-xs text-site-text-dim">{t("searching", { defaultValue:"Searching..."})}</div>
+ <div className="px-3 py-2 text-xs text-site-text-muted">{t("searching", { defaultValue:"Searching..."})}</div>
  ) : (
  suggestions.map((u, i) => (
  <button
@@ -201,7 +200,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  onMouseDown={(e) => e.preventDefault()}
  onClick={() => apply(u)}
  >
- <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-site-surface-hover text-xs font-bold text-site-text">
+ <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-site-surface-hover text-xs font-semibold text-site-text">
  {u.image ? (
  <img
  src={u.image}
@@ -220,7 +219,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
  {highlight(u.name || u.handle, token)}
  {u.isVerified && <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-site-accent"/>}
  </span>
- <span className="block truncate text-xs text-site-text-dim">@{highlight(u.handle ?? u.username, token)}</span>
+ <span className="block truncate text-xs text-site-text-muted">@{highlight(u.handle ?? u.username, token)}</span>
  </span>
  </button>
  ))

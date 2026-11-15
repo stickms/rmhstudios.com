@@ -9,19 +9,28 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
-import { Coins, TrendingUp, TrendingDown, Users, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Coins, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
+import type { TabItem } from '@/components/ui/tabs';
+import { PageTabs } from '@/components/feed/PageTabs';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { AdminBody } from '@/components/admin/AdminBody';
-import { StatTile } from '@/components/admin/StatTile';
+import { StatGrid, StatTile } from '@/components/admin/StatTile';
+import { AdminScroll, AdminSection } from '@/components/admin/AdminRows';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminEconomyQuery } from '@/lib/admin/admin-ops.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/economy')({
   head: () => ({ meta: [{ title: 'Coin Economy | RMH Studios' }] }),
+  // The default window; another tab fetches its own on the client.
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminEconomyQuery('30')),
   component: AdminEconomyPage,
 });
 
@@ -54,24 +63,12 @@ const nf = new Intl.NumberFormat('en-US');
 function AdminEconomyPage() {
   const { t } = useTranslation('admin');
   const [days, setDays] = useState<string>('30');
-  const [data, setData] = useState<Snapshot | null>(null);
-  const [loading, setLoading] = useState(true);
+  // The response is `{ snapshot, flows, shape }`; the page reads the snapshot.
+  const { data: res, isPending: loading } = useQuery(adminEconomyQuery(days));
+  const data: Snapshot | null = res?.snapshot ?? null;
+  const arrival = useArrival(!loading);
 
-  const load = useCallback(async (d: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/admin/economy?days=${d}`, { credentials: 'include' });
-      if (res.ok) setData(await res.json());
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load(days);
-  }, [days, load]);
-
-  const tabs: LiquidTab[] = WINDOWS.map((w) => ({
+  const tabs: TabItem[] = WINDOWS.map((w) => ({
     id: w,
     label: t('economy-window-days', { defaultValue: '{{count}} days', count: Number(w) }),
   }));
@@ -91,13 +88,13 @@ function AdminEconomyPage() {
       wide
       backTo="/admin"
     >
+      <PageTabs
+        tabs={tabs}
+        value={days}
+        onChange={setDays}
+        aria-label={t('economy-window', { defaultValue: 'Time window' })}
+      />
       <AdminBody>
-        <LiquidTabs
-          tabs={tabs}
-          value={days}
-          onChange={setDays}
-          aria-label={t('economy-window', { defaultValue: 'Time window' })}
-        />
 
         {loading ? (
           <div className="flex justify-center py-20">
@@ -105,25 +102,26 @@ function AdminEconomyPage() {
           </div>
         ) : !data ? (
           <EmptyState
+            className={arrival}
             icon={Coins}
             title={t('economy-unavailable', { defaultValue: 'Could not load economy data.' })}
           />
         ) : (
-          <>
+          <div className={cn('space-y-[var(--site-section-gap)]', arrival)}>
             {data.negativeBalances > 0 && (
               <div
                 role="alert"
-                className="flex items-start gap-3 rounded-site border border-site-danger/20 bg-site-danger/10 px-4 py-3"
+                className="flex items-start gap-3 border-y border-site-danger py-3"
               >
                 <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-site-danger" aria-hidden />
                 <div>
-                  <p className="text-sm font-semibold text-site-danger">
+                  <p className="t-body font-semibold text-site-danger">
                     {t('economy-negative-title', {
                       defaultValue: '{{count}} accounts have a negative balance',
                       count: data.negativeBalances,
                     })}
                   </p>
-                  <p className="mt-1 text-sm text-site-text">
+                  <p className="mt-1 t-body text-site-text">
                     {t('economy-negative-body', {
                       defaultValue:
                         'This should be impossible — a debit path is bypassing the ledger. Every spend must go through lib/economy/ledger.server.ts.',
@@ -133,7 +131,7 @@ function AdminEconomyPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatGrid>
               <StatTile
                 label={t('economy-faucet', { defaultValue: 'Created' })}
                 value={nf.format(data.faucet)}
@@ -156,9 +154,6 @@ function AdminEconomyPage() {
                 tone={ratioTone}
                 hint={t('economy-ratio-hint', { defaultValue: 'destroyed ÷ created' })}
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <StatTile
                 label={t('economy-float', { defaultValue: 'Total float' })}
                 value={nf.format(data.totalFloat)}
@@ -175,34 +170,28 @@ function AdminEconomyPage() {
                 label={t('economy-top1', { defaultValue: 'Top 1% share' })}
                 value={`${Math.round(data.top1PctShare * 100)}%`}
               />
-            </div>
+            </StatGrid>
 
-            <section className="glass-pane rounded-site p-5">
-              <div className="mb-3 flex items-center gap-2">
-                <Users className="h-5 w-5 text-site-accent" aria-hidden />
-                <h2 className="site-section-label">
-                  {t('economy-by-type', { defaultValue: 'Flow by transaction type' })}
-                </h2>
-              </div>
+            <AdminSection title={t('economy-by-type', { defaultValue: 'Flow by transaction type' })}>
               {data.byType.length === 0 ? (
-                <p className="text-sm text-site-text-muted">
+                <p className="t-body text-site-text-muted">
                   {t('economy-no-flow', { defaultValue: 'No coin movement in this window.' })}
                 </p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-112 text-sm">
+                <AdminScroll>
+                  <table className="t-body w-full">
                     <thead>
-                      <tr className="text-left text-xs text-site-text-muted">
-                        <th scope="col" className="pb-2 font-medium">
+                      <tr className="t-label text-start">
+                        <th scope="col" className="pb-2 text-start">
                           {t('economy-col-type', { defaultValue: 'Type' })}
                         </th>
-                        <th scope="col" className="pb-2 text-right font-medium">
+                        <th scope="col" className="pb-2 text-end">
                           {t('economy-col-created', { defaultValue: 'Created' })}
                         </th>
-                        <th scope="col" className="pb-2 text-right font-medium">
+                        <th scope="col" className="pb-2 text-end">
                           {t('economy-col-destroyed', { defaultValue: 'Destroyed' })}
                         </th>
-                        <th scope="col" className="pb-2 text-right font-medium">
+                        <th scope="col" className="pb-2 text-end">
                           {t('economy-col-moved', { defaultValue: 'Moved' })}
                         </th>
                       </tr>
@@ -211,11 +200,11 @@ function AdminEconomyPage() {
                       {data.byType.map((row) => (
                         <tr key={row.type} className="border-t border-site-border">
                           <td className="py-3">
-                            <Badge variant="outline" size="sm">
+                            <Badge variant="default">
                               {row.type}
                             </Badge>
                           </td>
-                          <td className="py-3 text-right tabular-nums text-site-text">
+                          <td className="py-3 text-end tabular-nums text-site-text">
                             {row.faucet > 0 && (
                               <TrendingUp
                                 className="mr-1 inline size-3 text-site-warning"
@@ -224,7 +213,7 @@ function AdminEconomyPage() {
                             )}
                             {nf.format(row.faucet)}
                           </td>
-                          <td className="py-3 text-right tabular-nums text-site-text">
+                          <td className="py-3 text-end tabular-nums text-site-text">
                             {row.sink > 0 && (
                               <TrendingDown
                                 className="mr-1 inline size-3 text-site-success"
@@ -233,17 +222,17 @@ function AdminEconomyPage() {
                             )}
                             {nf.format(row.sink)}
                           </td>
-                          <td className="py-3 text-right tabular-nums text-site-text-muted">
+                          <td className="py-3 text-end tabular-nums text-site-text-muted">
                             {nf.format(row.transfer)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </AdminScroll>
               )}
-            </section>
-          </>
+            </AdminSection>
+          </div>
         )}
       </AdminBody>
     </PageLayout>

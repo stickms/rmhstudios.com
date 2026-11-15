@@ -1,22 +1,59 @@
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
+import { createIsomorphicFn } from '@tanstack/react-start';
+import { dehydrate, hydrate, type DehydratedState } from '@tanstack/react-query';
+import { makeQueryClient } from '@/lib/query/make-query-client';
 import { routeTree } from './routeTree.gen';
 import { RoutePending } from '@/components/ui/RoutePending';
 import { installNotFoundHeadGuard } from '@/lib/router/not-found-head';
 import { installStyleTierPreload } from '@/lib/style-tier';
-import { installPageTransitions } from '@/lib/page-transition';
 import { installHistoryTrail } from '@/lib/router/history-trail';
+import { installChrome } from '@/lib/chrome/install';
 import appTierCss from '@/app/app-tier.css?url';
+import { mintRequestCspNonce } from '@/lib/csp/nonce.server';
+
+// The CSP nonce (redesign audit F5, docs/csp.md). On the server it is minted here,
+// inside Start's request scope, by mintRequestCspNonce (which also sets the
+// report-only header naming it, so header and markup agree); in the browser it is
+// read back from the `<meta property="csp-nonce">` the router emits, so client-side
+// tags carry the same value the server rendered. Browsers hide a script's nonce
+// attribute after parsing, which is why the meta is the source of truth there.
+//
+// createIsomorphicFn, not a `typeof document` branch: Start's compiler drops the
+// `.server()` half (and with it the `.server` import) from the client graph. A plain
+// import of nonce.server here is denied by Start's import protection in `vite dev`,
+// whose stub then fails to resolve, so the client router never loaded in dev (the
+// production build masked it through stubServerFiles).
+const cspNonce = createIsomorphicFn()
+  .server((): string | undefined => mintRequestCspNonce())
+  .client(
+    (): string | undefined =>
+      document.querySelector<HTMLMetaElement>('meta[property="csp-nonce"]')?.content || undefined,
+  );
 
 // `getRouter()` runs once per client page load and once per SSR request. The
 // style-tier preload is a browser-only, page-lifetime singleton, so it is
 // installed here behind a latch rather than from a component effect.
 let styleTierPreloadInstalled = false;
-let pageTransitionsInstalled = false;
 let historyTrailInstalled = false;
+let chromeInstalled = false;
 
 export function getRouter() {
+  const nonce = cspNonce();
+  // One QueryClient per router: getRouter() runs per SSR request (so a request never
+  // sees another's cache) and once per page load in the browser. Loaders seed it; the
+  // router carries it across the wire (dehydrate/hydrate below).
+  const queryClient = makeQueryClient();
   const router = createTanStackRouter({
     routeTree,
+    context: { queryClient },
+    // `as never`: Start's serializability check reads `mutationKey: unknown[]` as possibly
+    // unserializable. Query and mutation keys here are plain JSON arrays, and only queries are
+    // dehydrated (paused mutations never exist during SSR), so the wire value is plain data.
+    dehydrate: () => ({ queryState: dehydrate(queryClient) as never }),
+    hydrate: (dehydrated: { queryState: DehydratedState }) => {
+      hydrate(queryClient, dehydrated.queryState);
+    },
+    ...(nonce ? { ssr: { nonce } } : {}),
     scrollRestoration: true,
     // Jump, don't animate. globals.css sets `html { scroll-behavior: smooth }`
     // for in-page anchors, and with this option unset the router's reset
@@ -34,7 +71,7 @@ export function getRouter() {
     // `.preload()`, which is the dynamic import — so Vite's own `__vitePreload`
     // emits the `<link rel="modulepreload">` for the chunk and its deps. A
     // hand-rolled modulepreload on the same intent signal (OPT-03 in
-    // docs/optimization-ideas-2026-08-05.md) would duplicate this, so don't add
+    // docs/archive/2026/optimization-ideas-2026-08-05.md) would duplicate this, so don't add
     // one without first re-checking that the compiled route options still use
     // `lazyRouteComponent`.
     defaultPreload: 'intent',
@@ -57,7 +94,7 @@ export function getRouter() {
     // 400ms the click is already acknowledged — the press state, and
     // `NavigationProgress`'s bar from 90ms — so the old page stays put and the
     // new one replaces it directly, which is how a native app navigates; only a
-    // genuinely slow load shows the skeleton (docs/performance-audit-2026-10-21.md
+    // genuinely slow load shows the skeleton (docs/archive/2026/performance-audit-2026-10-21.md
     // §Instant navigation).
     defaultPendingComponent: RoutePending,
     defaultPendingMs: 400,
@@ -80,16 +117,10 @@ export function getRouter() {
   // a slow phone, and a preload issued before the server's matches are adopted
   // has nothing to reuse — it re-ran the root loader over the network, and
   // hydrate waited on those shared matches (+2.2s to interactive on slow 4G;
-  // docs/performance-audit-2026-10-21.md §Home LCP).
+  // docs/archive/2026/performance-audit-2026-10-21.md §Home LCP).
   if (typeof document !== 'undefined' && !styleTierPreloadInstalled) {
     styleTierPreloadInstalled = true;
     installStyleTierPreload(router, appTierCss);
-  }
-
-  // The quick page swap's navigation markers (html[data-nav-kind], html[data-page-leaving]): browser-only, once.
-  if (typeof document !== 'undefined' && !pageTransitionsInstalled) {
-    pageTransitionsInstalled = true;
-    installPageTransitions(router);
   }
 
   // Which page each history entry holds, so a labelled back control can tell whether
@@ -97,6 +128,12 @@ export function getRouter() {
   if (typeof document !== 'undefined' && !historyTrailInstalled) {
     historyTrailInstalled = true;
     installHistoryTrail(router);
+  }
+
+  // Steel 4.3: chrome reflections load at idle, on pages that have a chrome element.
+  if (typeof document !== 'undefined' && !chromeInstalled) {
+    chromeInstalled = true;
+    installChrome(router);
   }
 
   return router;

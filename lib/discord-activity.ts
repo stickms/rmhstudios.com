@@ -13,8 +13,8 @@
  * Rolldown cannot tree-shake it away: the SDK's module scope has side effects, so
  * importing any binding from `lib/discord-sdk.ts` retains all of it.
  *
- * So: anything on a shared path imports the detector from HERE. `lib/discord-sdk`
- * re-exports it for the `/discord/*` call sites, which have the SDK loaded anyway.
+ * So: every caller imports the detector from HERE; `lib/discord-sdk` does not
+ * re-export it.
  */
 
 /**
@@ -24,7 +24,23 @@
  * their presence is the documented signal. Always false during SSR.
  */
 export function isDiscordActivity(): boolean {
-  if (typeof window === 'undefined') return false;
-  const params = new URLSearchParams(window.location.search);
-  return params.has('frame_id') && params.has('instance_id');
+  if (
+    typeof window ===
+    'undefined'
+  )
+    return false;
+  const params =
+    new URLSearchParams(
+      window
+        .location
+        .search,
+    );
+  return (
+    params.has(
+      'frame_id',
+    ) &&
+    params.has(
+      'instance_id',
+    )
+  );
 }

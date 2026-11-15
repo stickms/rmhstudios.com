@@ -18,8 +18,15 @@
  * Environment-agnostic.
  */
 
-import { CLASS_NAMES, TF_CLASS_COUNT, type ClassName } from '../../core/constants';
-import { CLASS_DATA, type LoadoutSlot } from '../../data/classes';
+import {
+  CLASS_NAMES,
+  TF_CLASS_COUNT,
+  type ClassName,
+} from '../../core/constants';
+import {
+  CLASS_DATA,
+  type LoadoutSlot,
+} from '../../data/classes';
 import { STOCK_WEAPONS } from '../../data/weapons';
 import {
   slotFor,
@@ -30,50 +37,141 @@ import {
 import type { WeaponSpec } from '../weapon-api';
 import { AttributeSet } from './attributes';
 import { catalogItem } from './registry';
-import { implementingScript, isOwnClassScript, isUnlockScript, weaponScript } from './scripts';
-import { IMPLEMENTED_OWN_CLASSES, ITEM_CLASS_ATTRIBUTES, ITEM_CLASS_MECHANICS, PARTIAL_ATTRIBUTES, SUPPORTED_ATTRIBUTES } from './support';
+import {
+  implementingScript,
+  isOwnClassScript,
+  isUnlockScript,
+  weaponScript,
+} from './scripts';
+import {
+  IMPLEMENTED_OWN_CLASSES,
+  ITEM_CLASS_ATTRIBUTES,
+  ITEM_CLASS_MECHANICS,
+  PARTIAL_ATTRIBUTES,
+  SUPPORTED_ATTRIBUTES,
+} from './support';
 
 /** SDK: tf_shareddefs.cpp pszWpnEntTranslationList (TranslateWeaponEntForClass). */
-const TRANSLATIONS: Readonly<Record<string, Partial<Record<ClassName, string>>>> = {
-  tf_weapon_shotgun: {
-    soldier: 'tf_weapon_shotgun_soldier',
-    heavy: 'tf_weapon_shotgun_hwg',
-    pyro: 'tf_weapon_shotgun_pyro',
-    engineer: 'tf_weapon_shotgun_primary',
-  },
-  tf_weapon_pistol: { scout: 'tf_weapon_pistol_scout', engineer: 'tf_weapon_pistol' },
-  tf_weapon_shovel: { soldier: 'tf_weapon_shovel', demoman: 'tf_weapon_bottle' },
-  tf_weapon_bottle: { soldier: 'tf_weapon_shovel', demoman: 'tf_weapon_bottle' },
-  saxxy: {
-    scout: 'tf_weapon_bat',
-    sniper: 'tf_weapon_club',
-    soldier: 'tf_weapon_shovel',
-    demoman: 'tf_weapon_bottle',
-    medic: 'tf_weapon_bonesaw',
-    heavy: 'tf_weapon_fireaxe',
-    pyro: 'tf_weapon_fireaxe',
-    spy: 'tf_weapon_knife',
-    engineer: 'tf_weapon_wrench',
-  },
-  // The Engineer's revolver entity (tf_weapon_revolver_secondary) is a CTFRevolver.
-  tf_weapon_revolver: { spy: 'tf_weapon_revolver', engineer: 'tf_weapon_revolver' },
-  // The B.A.S.E. Jumper: a secondary for the Soldier, a primary for the Demoman.
-  tf_weapon_parachute: { soldier: 'tf_weapon_parachute_secondary', demoman: 'tf_weapon_parachute_primary' },
-};
+const TRANSLATIONS: Readonly<
+  Record<
+    string,
+    Partial<
+      Record<
+        ClassName,
+        string
+      >
+    >
+  >
+> =
+  {
+    tf_weapon_shotgun:
+      {
+        soldier:
+          'tf_weapon_shotgun_soldier',
+        heavy:
+          'tf_weapon_shotgun_hwg',
+        pyro: 'tf_weapon_shotgun_pyro',
+        engineer:
+          'tf_weapon_shotgun_primary',
+      },
+    tf_weapon_pistol:
+      {
+        scout:
+          'tf_weapon_pistol_scout',
+        engineer:
+          'tf_weapon_pistol',
+      },
+    tf_weapon_shovel:
+      {
+        soldier:
+          'tf_weapon_shovel',
+        demoman:
+          'tf_weapon_bottle',
+      },
+    tf_weapon_bottle:
+      {
+        soldier:
+          'tf_weapon_shovel',
+        demoman:
+          'tf_weapon_bottle',
+      },
+    saxxy:
+      {
+        scout:
+          'tf_weapon_bat',
+        sniper:
+          'tf_weapon_club',
+        soldier:
+          'tf_weapon_shovel',
+        demoman:
+          'tf_weapon_bottle',
+        medic:
+          'tf_weapon_bonesaw',
+        heavy:
+          'tf_weapon_fireaxe',
+        pyro: 'tf_weapon_fireaxe',
+        spy: 'tf_weapon_knife',
+        engineer:
+          'tf_weapon_wrench',
+      },
+    // The Engineer's revolver entity (tf_weapon_revolver_secondary) is a CTFRevolver.
+    tf_weapon_revolver:
+      {
+        spy: 'tf_weapon_revolver',
+        engineer:
+          'tf_weapon_revolver',
+      },
+    // The B.A.S.E. Jumper: a secondary for the Soldier, a primary for the Demoman.
+    tf_weapon_parachute:
+      {
+        soldier:
+          'tf_weapon_parachute_secondary',
+        demoman:
+          'tf_weapon_parachute_primary',
+      },
+  };
 
 /** Item classes the buildings module implements without a weapon script here. */
-const BUILDING_ITEM_CLASSES = new Set(['tf_weapon_builder', 'tf_weapon_sapper']);
+const BUILDING_ITEM_CLASSES =
+  new Set(
+    [
+      'tf_weapon_builder',
+      'tf_weapon_sapper',
+    ],
+  );
 
 /** The entity class an item creates for a class (TranslateWeaponEntForClass). */
-export function translateItemClass(itemClass: string, cls: ClassName): string {
-  return TRANSLATIONS[itemClass]?.[cls] ?? itemClass;
+export function translateItemClass(
+  itemClass: string,
+  cls: ClassName,
+): string {
+  return (
+    TRANSLATIONS[
+      itemClass
+    ]?.[
+      cls
+    ] ??
+    itemClass
+  );
 }
 
 /** A worn weapon-slot item (tf_wearable, tf_wearable_demoshield, tf_wearable_razorback …). */
-export const isWearableClass = (itemClass: string | undefined): boolean =>
-  !!itemClass && itemClass.startsWith('tf_wearable');
+export const isWearableClass =
+  (
+    itemClass:
+      | string
+      | undefined,
+  ): boolean =>
+    !!itemClass &&
+    itemClass.startsWith(
+      'tf_wearable',
+    );
 
-export type ItemPlayKind = 'weapon' | 'wearable' | 'fallback' | 'cosmetic';
+export type ItemPlayKind =
+  | 'weapon'
+  | 'wearable'
+  | 'fallback'
+  | 'cosmetic';
 
 export interface ItemPlay {
   kind: ItemPlayKind;
@@ -94,75 +192,249 @@ export interface ItemPlay {
   unsupported: string[];
 }
 
-const WEAPON_SLOTS: ReadonlySet<ItemSlot> = new Set([
-  'primary',
-  'secondary',
-  'melee',
-  'building',
-  'pda',
-  'pda2',
-]);
+const WEAPON_SLOTS: ReadonlySet<ItemSlot> =
+  new Set(
+    [
+      'primary',
+      'secondary',
+      'melee',
+      'building',
+      'pda',
+      'pda2',
+    ],
+  );
 
 /** Attribute classes on an item the simulation does not apply (`itemClass`: its schema item_class). */
-export function unsupportedAttributes(attrs: readonly CatalogAttribute[], itemClass = ''): string[] {
-  const out: string[] = [];
-  const scoped = ITEM_CLASS_ATTRIBUTES[itemClass];
-  for (const [cls, value] of attrs) {
-    if (SUPPORTED_ATTRIBUTES.has(cls)) continue;
-    if (scoped && scoped.has(cls)) continue;
-    const partial = PARTIAL_ATTRIBUTES[cls];
-    if (partial && typeof value === 'number' && partial(value)) continue;
-    if (!out.includes(cls)) out.push(cls);
+export function unsupportedAttributes(
+  attrs: readonly CatalogAttribute[],
+  itemClass = '',
+): string[] {
+  const out: string[] =
+    [];
+  const scoped =
+    ITEM_CLASS_ATTRIBUTES[
+      itemClass
+    ];
+  for (const [
+    cls,
+    value,
+  ] of attrs) {
+    if (
+      SUPPORTED_ATTRIBUTES.has(
+        cls,
+      )
+    )
+      continue;
+    if (
+      scoped &&
+      scoped.has(
+        cls,
+      )
+    )
+      continue;
+    const partial =
+      PARTIAL_ATTRIBUTES[
+        cls
+      ];
+    if (
+      partial &&
+      typeof value ===
+        'number' &&
+      partial(
+        value,
+      )
+    )
+      continue;
+    if (
+      !out.includes(
+        cls,
+      )
+    )
+      out.push(
+        cls,
+      );
   }
   return out;
 }
 
 /** The class's stock item for a weapon slot (CTFInventoryManager::GetBaseItemForClass). */
-export function stockItemFor(classIndex: number, slot: ItemSlot): number | undefined {
-  const loadout = CLASS_DATA[classIndex]?.defaultLoadout as
-    Partial<Record<LoadoutSlot, number>> | undefined;
-  return loadout?.[slot as LoadoutSlot];
+export function stockItemFor(
+  classIndex: number,
+  slot: ItemSlot,
+):
+  | number
+  | undefined {
+  const loadout =
+    CLASS_DATA[
+      classIndex
+    ]
+      ?.defaultLoadout as
+      | Partial<
+          Record<
+            LoadoutSlot,
+            number
+          >
+        >
+      | undefined;
+  return loadout?.[
+    slot as LoadoutSlot
+  ];
 }
 
 /** What `defindex` is for a class, or null when the class cannot use it (or it is unknown). */
-export function resolveItem(defindex: number, classIndex: number): ItemPlay | null {
-  if (classIndex <= 0 || classIndex >= TF_CLASS_COUNT) return null;
-  const cls = CLASS_NAMES[classIndex] as ClassName;
-  const item: CatalogItem | null = catalogItem(defindex);
-  if (!item) return null;
-  const slot = slotFor(item, cls);
-  if (!slot) return null;
-  const attributes = item.at ?? [];
-  if (!WEAPON_SLOTS.has(slot)) {
-    return { kind: 'cosmetic', defindex, slot, attributes: [], unsupported: [] };
+export function resolveItem(
+  defindex: number,
+  classIndex: number,
+): ItemPlay | null {
+  if (
+    classIndex <=
+      0 ||
+    classIndex >=
+      TF_CLASS_COUNT
+  )
+    return null;
+  const cls =
+    CLASS_NAMES[
+      classIndex
+    ] as ClassName;
+  const item: CatalogItem | null =
+    catalogItem(
+      defindex,
+    );
+  if (
+    !item
+  )
+    return null;
+  const slot =
+    slotFor(
+      item,
+      cls,
+    );
+  if (
+    !slot
+  )
+    return null;
+  const attributes =
+    item.at ??
+    [];
+  if (
+    !WEAPON_SLOTS.has(
+      slot,
+    )
+  ) {
+    return {
+      kind: 'cosmetic',
+      defindex,
+      slot,
+      attributes:
+        [],
+      unsupported:
+        [],
+    };
   }
-  const itemClass = item.ic ?? STOCK_WEAPONS[defindex]?.itemClass ?? '';
-  if (isWearableClass(itemClass)) {
-    const unsupported = unsupportedAttributes(attributes, itemClass);
-    const mech = ITEM_CLASS_MECHANICS[itemClass];
-    if (mech) unsupported.unshift(`mechanic:${mech}`);
-    return { kind: 'wearable', defindex, slot, itemClass, attributes, unsupported };
+  const itemClass =
+    item.ic ??
+    STOCK_WEAPONS[
+      defindex
+    ]
+      ?.itemClass ??
+    '';
+  if (
+    isWearableClass(
+      itemClass,
+    )
+  ) {
+    const unsupported =
+      unsupportedAttributes(
+        attributes,
+        itemClass,
+      );
+    const mech =
+      ITEM_CLASS_MECHANICS[
+        itemClass
+      ];
+    if (
+      mech
+    )
+      unsupported.unshift(
+        `mechanic:${mech}`,
+      );
+    return {
+      kind: 'wearable',
+      defindex,
+      slot,
+      itemClass,
+      attributes,
+      unsupported,
+    };
   }
-  const scriptName = translateItemClass(itemClass, cls);
+  const scriptName =
+    translateItemClass(
+      itemClass,
+      cls,
+    );
   const implemented =
-    BUILDING_ITEM_CLASSES.has(scriptName) ||
-    (implementingScript(scriptName) !== undefined &&
-      !!weaponScript(scriptName) &&
-      (!isOwnClassScript(scriptName) || IMPLEMENTED_OWN_CLASSES.has(scriptName)));
-  if (!implemented) {
+    BUILDING_ITEM_CLASSES.has(
+      scriptName,
+    ) ||
+    (implementingScript(
+      scriptName,
+    ) !==
+      undefined &&
+      !!weaponScript(
+        scriptName,
+      ) &&
+      (!isOwnClassScript(
+        scriptName,
+      ) ||
+        IMPLEMENTED_OWN_CLASSES.has(
+          scriptName,
+        )));
+  if (
+    !implemented
+  ) {
     return {
       kind: 'fallback',
       defindex,
       slot,
-      stockDefindex: stockItemFor(classIndex, slot),
+      stockDefindex:
+        stockItemFor(
+          classIndex,
+          slot,
+        ),
       attributes,
-      unsupported: ['item-class'],
+      unsupported:
+        [
+          'item-class',
+        ],
     };
   }
-  const unsupported = unsupportedAttributes(attributes, itemClass);
-  const mech = ITEM_CLASS_MECHANICS[itemClass] ?? ITEM_CLASS_MECHANICS[scriptName];
-  if (mech) unsupported.unshift(`mechanic:${mech}`);
-  return { kind: 'weapon', defindex, slot, scriptName, attributes, unsupported };
+  const unsupported =
+    unsupportedAttributes(
+      attributes,
+      itemClass,
+    );
+  const mech =
+    ITEM_CLASS_MECHANICS[
+      itemClass
+    ] ??
+    ITEM_CLASS_MECHANICS[
+      scriptName
+    ];
+  if (
+    mech
+  )
+    unsupported.unshift(
+      `mechanic:${mech}`,
+    );
+  return {
+    kind: 'weapon',
+    defindex,
+    slot,
+    scriptName,
+    attributes,
+    unsupported,
+  };
 }
 
 /**
@@ -171,65 +443,183 @@ export function resolveItem(defindex: number, classIndex: number): ItemPlay | nu
  * SetReloadTimer, GetProjectileDamage, FX_FireBullets, GetWeaponSpread, Deploy), plus the
  * attributes for every other hook. Null when the item is not a held weapon for the class.
  */
-export function weaponSpecForItem(defindex: number, classIndex: number): WeaponSpec | null {
-  const play = resolveItem(defindex, classIndex);
-  if (!play || play.kind !== 'weapon' || !play.scriptName) return null;
-  const attrs = new AttributeSet(play.attributes);
-  const script = weaponScript(play.scriptName);
-  if (!script) {
+export function weaponSpecForItem(
+  defindex: number,
+  classIndex: number,
+): WeaponSpec | null {
+  const play =
+    resolveItem(
+      defindex,
+      classIndex,
+    );
+  if (
+    !play ||
+    play.kind !==
+      'weapon' ||
+    !play.scriptName
+  )
+    return null;
+  const attrs =
+    new AttributeSet(
+      play.attributes,
+    );
+  const script =
+    weaponScript(
+      play.scriptName,
+    );
+  if (
+    !script
+  ) {
     // A building-module weapon (builder, sapper): its own class supplies the numbers.
     return {
       defindex,
-      classname: play.scriptName,
-      slot: slotIndexOf(play.slot),
-      attributes: play.attributes,
+      classname:
+        play.scriptName,
+      slot: slotIndexOf(
+        play.slot,
+      ),
+      attributes:
+        play.attributes,
     };
   }
-  const mode = script.primary;
+  const mode =
+    script.primary;
   // SDK: CBaseCombatWeapon::GetMaxClip1 (mod_max_primary_clip_override) → CTFWeaponBase::GetMaxClip1 (mult_clipsize, CALL_ATTRIB_HOOK_INT).
-  let maxClip = script.clipSize;
-  const override = Math.round(attrs.apply('mod_max_primary_clip_override', 0));
-  if (override !== 0) maxClip = override;
-  if (maxClip >= 0) maxClip = Math.round(attrs.apply('mult_clipsize', maxClip));
+  let maxClip =
+    script.clipSize;
+  const override =
+    Math.round(
+      attrs.apply(
+        'mod_max_primary_clip_override',
+        0,
+      ),
+    );
+  if (
+    override !==
+    0
+  )
+    maxClip =
+      override;
+  if (
+    maxClip >=
+    0
+  )
+    maxClip =
+      Math.round(
+        attrs.apply(
+          'mult_clipsize',
+          maxClip,
+        ),
+      );
   // SDK: CTFWeaponBase::SetReloadTimer — every reload time (start and per shell) is scaled.
-  const reloadMult = attrs.apply('mult_reload_time_hidden', attrs.apply('mult_reload_time', 1));
+  const reloadMult =
+    attrs.apply(
+      'mult_reload_time_hidden',
+      attrs.apply(
+        'mult_reload_time',
+        1,
+      ),
+    );
   // SDK: FX_FireBullets — nBulletsPerShot is an int, so the hooked float is truncated.
   const bullets =
-    mode.bulletsPerShot >= 1
-      ? Math.max(1, Math.trunc(attrs.apply('mult_bullets_per_shot', mode.bulletsPerShot)))
+    mode.bulletsPerShot >=
+    1
+      ? Math.max(
+          1,
+          Math.trunc(
+            attrs.apply(
+              'mult_bullets_per_shot',
+              mode.bulletsPerShot,
+            ),
+          ),
+        )
       : mode.bulletsPerShot;
   // SDK: CTFWeaponBase::Deploy — this weapon's own deploy multiplier, and swords' 75 % slower draw.
-  const sword = attrs.apply('is_a_sword', 0) !== 0;
-  const deployTimeMult = attrs.apply('mult_single_wep_deploy_time', 1) * (sword ? 1.75 : 1);
+  const sword =
+    attrs.apply(
+      'is_a_sword',
+      0,
+    ) !==
+    0;
+  const deployTimeMult =
+    attrs.apply(
+      'mult_single_wep_deploy_time',
+      1,
+    ) *
+    (sword
+      ? 1.75
+      : 1);
   // SDK: CTFScatterGun::Reload — set_scattergun_no_reload_single turns the shell-by-shell reload off.
-  const noSingle = attrs.apply('set_scattergun_no_reload_single', 0) === 1;
-  const isUnlock = isUnlockScript(play.scriptName);
+  const noSingle =
+    attrs.apply(
+      'set_scattergun_no_reload_single',
+      0,
+    ) ===
+    1;
+  const isUnlock =
+    isUnlockScript(
+      play.scriptName,
+    );
   return {
     defindex,
-    classname: play.scriptName,
+    classname:
+      play.scriptName,
     slot: script.bucket,
-    attributes: play.attributes,
-    stats: {
-      maxClip,
-      damage: attrs.apply('mult_dmg', mode.damage),
-      bulletsPerShot: bullets,
-      spread: attrs.apply('mult_spread_scale', mode.spread),
-      fireDelay: mode.timeFireDelay * attrs.apply('mult_postfiredelay', 1),
-      reloadTime: mode.timeReload * reloadMult,
-      reloadStartTime: mode.timeReloadStart * reloadMult,
-      reloadsSingly: script.reloadsSingly && !noSingle,
-      deployTimeMult,
-      // An unlock's own world model is drawn from the loadout models by defindex (render/entities).
-      ...(isUnlock
-        ? { worldModel: script.scriptPlayerModel ?? '', viewModel: script.scriptViewModel ?? '' }
-        : {}),
-    },
+    attributes:
+      play.attributes,
+    stats:
+      {
+        maxClip,
+        damage:
+          attrs.apply(
+            'mult_dmg',
+            mode.damage,
+          ),
+        bulletsPerShot:
+          bullets,
+        spread:
+          attrs.apply(
+            'mult_spread_scale',
+            mode.spread,
+          ),
+        fireDelay:
+          mode.timeFireDelay *
+          attrs.apply(
+            'mult_postfiredelay',
+            1,
+          ),
+        reloadTime:
+          mode.timeReload *
+          reloadMult,
+        reloadStartTime:
+          mode.timeReloadStart *
+          reloadMult,
+        reloadsSingly:
+          script.reloadsSingly &&
+          !noSingle,
+        deployTimeMult,
+        // An unlock's own world model is drawn from the loadout models by defindex (render/entities).
+        ...(isUnlock
+          ? {
+              worldModel:
+                script.scriptPlayerModel ??
+                '',
+              viewModel:
+                script.scriptViewModel ??
+                '',
+            }
+          : {}),
+      },
   };
 }
 
 /** SLOT_* for a loadout slot (the weapon bucket order). */
-export function slotIndexOf(slot: ItemSlot): number {
-  switch (slot) {
+export function slotIndexOf(
+  slot: ItemSlot,
+): number {
+  switch (
+    slot
+  ) {
     case 'primary':
       return 0;
     case 'secondary':

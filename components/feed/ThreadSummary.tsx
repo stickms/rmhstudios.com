@@ -1,8 +1,13 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { SpineItem } from '@/components/ui/spine';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
+import { postSummaryApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
 
 /**
  *"Summarize thread"affordance shown above a busy comment section. Lazy — only
@@ -14,6 +19,8 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
   const [error, setError] = useState<string | null>(null);
   const [requested, setRequested] = useState(false);
   const { t } = useTranslation('feed');
+  // Steel M9: the summary (or why there is none) replaces "Summarizing…".
+  const arrival = useArrival(!loading);
 
   // Only worth offering on threads with enough discussion.
   if (commentCount < 4) return null;
@@ -23,49 +30,44 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
     setError(null);
     setRequested(true);
     try {
-      const res = await fetch(`/api/rmharks/${postId}/summary`, { credentials: 'include' });
-      if (res.status === 503) {
+      const data = await api(postSummaryApi, { params: { id: postId } });
+      if (data.summary) setSummary(data.summary);
+      else setError(t('not-enough-to-summarize', { defaultValue: 'Not enough to summarize yet.' }));
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 503) {
         setError(
           t('summaries-unavailable', { defaultValue: 'Summaries are unavailable right now.' }),
         );
-        return;
+      } else if (e instanceof HttpError) {
+        // Same as before: any other error answer carried no summary.
+        setError(t('not-enough-to-summarize', { defaultValue: 'Not enough to summarize yet.' }));
+      } else {
+        setError(t('summarize-error', { defaultValue: 'Could not summarize this thread.' }));
       }
-      const data = await res.json();
-      if (data.summary) setSummary(data.summary);
-      else setError(t('not-enough-to-summarize', { defaultValue: 'Not enough to summarize yet.' }));
-    } catch {
-      setError(t('summarize-error', { defaultValue: 'Could not summarize this thread.' }));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="rounded-site glass-fill px-5 py-4">
+    <SpineItem dot={false}>
       {!requested ? (
-        <button
-          onClick={run}
-          className="flex items-center gap-2 text-sm font-medium text-site-accent hover:underline"
-        >
-          <Sparkles className="h-4 w-4" />
+        <button onClick={run} className="feed-action">
           {t('summarize-thread', { defaultValue: 'Summarize this thread' })}
         </button>
       ) : loading ? (
-        <div className="flex items-center gap-2 text-sm text-site-text-muted">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <p className="t-body flex items-center gap-2 text-site-text-muted">
+          <Loader2 className="size-4 animate-spin" />
           {t('summarizing', { defaultValue: 'Summarizing…' })}
-        </div>
+        </p>
       ) : error ? (
-        <p className="text-sm text-site-text-muted">{error}</p>
+        <p className={cn('t-body text-site-text-muted', arrival)}>{error}</p>
       ) : (
-        <div>
-          <p className="mb-1 flex items-center gap-2 site-section-label">
-            <Sparkles className="h-3.5 w-3.5 text-site-accent" />{' '}
-            {t('ai-summary', { defaultValue: 'AI summary' })}
-          </p>
-          <p className="whitespace-pre-line text-sm text-site-text">{summary}</p>
+        <div className={arrival}>
+          <p className="t-label">{t('ai-summary', { defaultValue: 'AI summary' })}</p>
+          <p className="t-body mt-1 whitespace-pre-line">{summary}</p>
         </div>
       )}
-    </div>
+    </SpineItem>
   );
 }

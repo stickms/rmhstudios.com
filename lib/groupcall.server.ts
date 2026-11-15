@@ -303,7 +303,7 @@ export interface ActiveRoomSummary {
  *
  * **Membership is not checked here.** Deciding who may know a room exists is the
  * caller's job, and the API route does it before calling this (see
- * `app/routes/api/groupcalls/active.ts`); putting it here as well would mean two
+ * `lib/api/routes/groupcalls.active.server.ts`); putting it here as well would mean two
  * places that must agree about what a community member is.
  */
 export async function getActiveCommunityRoom(

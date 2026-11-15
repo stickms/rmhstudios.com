@@ -10,7 +10,7 @@ import Stripe from 'stripe';
 import { stripe } from '@better-auth/stripe';
 import { customSession } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
-import { getUserTier } from '@/lib/entitlements';
+import { getUserTier, invalidateUserTier } from '@/lib/entitlements';
 import { sendEmail } from '@/lib/email/send.server';
 
 // The `!` here used to be load-bearing in the worst way. `new Stripe(undefined)`
@@ -27,6 +27,23 @@ import { sendEmail } from '@/lib/email/send.server';
 // unavailable when it is unconfigured is correct; the homepage being unavailable
 // is not.
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_unconfigured');
+
+// Unconfigured billing must be LOUD in production even though it must not take
+// the site down (above). One structured line at boot, so a deploy that lost the
+// key is visible in the logs instead of surfacing as "checkout fails" later.
+// Not a throw: .env.example lists the key as optional and nothing in the repo
+// proves every environment (staging, previews) sets it.
+if (process.env.NODE_ENV === 'production') {
+  const missing = [
+    'STRIPE_SECRET_KEY',
+    'STRIPE_WEBHOOK_SECRET',
+    'STRIPE_STARTER_PRICE_ID',
+    'STRIPE_PRO_PRICE_ID',
+  ].filter((k) => !process.env[k]);
+  if (missing.length) {
+    console.error(JSON.stringify({ level: 'error', event: 'stripe.unconfigured', missing }));
+  }
+}
 
 // Email verification / password reset only make sense when a transport is
 // actually configured. `sendEmail` no-ops (logs) without RESEND_API_KEY, so
@@ -278,6 +295,18 @@ export const auth = betterAuth({
         authorizeReference: async ({ user, referenceId }) => {
           return referenceId === user.id;
         },
+        // `getUserTier` is cached for 60s and the plugin writes the Subscription
+        // row without telling it, so a member would stay "free" for up to a
+        // minute after paying (and stay paid after cancelling). Drop the cached
+        // tier whenever a webhook changes the row.
+        onSubscriptionComplete: async ({ subscription }) =>
+          invalidateUserTier(subscription.referenceId),
+        onSubscriptionCreated: async ({ subscription }) =>
+          invalidateUserTier(subscription.referenceId),
+        onSubscriptionUpdate: async ({ subscription }) =>
+          invalidateUserTier(subscription.referenceId),
+        onSubscriptionDeleted: async ({ subscription }) =>
+          invalidateUserTier(subscription.referenceId),
       },
     }),
     customSession(async ({ user, session }) => {

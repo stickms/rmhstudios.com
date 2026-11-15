@@ -1,8 +1,5 @@
-'use client';
-
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { m as motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Newspaper, X } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
@@ -10,8 +7,6 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SearchField } from '@/components/ui/search-field';
 import { Select } from '@/components/ui/select';
-import { Reveal } from '@/components/motion';
-import { APPLE_SPRING } from '@/lib/motion';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
 import { NewsCategoryTabs } from './NewsCategoryTabs';
@@ -162,9 +157,9 @@ export function NewsList({
     <div className="px-4 pt-4 pb-12">
       {/* Featured Hero */}
       {!hasActiveFilters && featuredArticles.length > 0 && (
-        <Reveal className="mb-[var(--site-section-gap)]">
+        <div className="mb-[var(--site-section-gap)]">
           <NewsHero articles={featuredArticles} />
-        </Reveal>
+        </div>
       )}
 
       {/* Filter Controls - collapsible */}
@@ -183,7 +178,7 @@ export function NewsList({
           />
 
           {/* Search + Sort Row */}
-          <div className="glass-fill flex flex-col gap-3 rounded-site p-4">
+          <div className="flex flex-col gap-3 rounded-site p-4">
             <SearchField
               value={searchInput}
               onValueChange={setSearchInput}
@@ -192,7 +187,7 @@ export function NewsList({
             />
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <label htmlFor="news-sort" className="text-sm text-site-text-dim">
+              <label htmlFor="news-sort" className="text-sm text-site-text-muted">
                 {t('sort-label', { defaultValue: 'Sort:' })}
               </label>
               <Select
@@ -209,7 +204,7 @@ export function NewsList({
                   <X aria-hidden /> {t('clear', { defaultValue: 'Clear' })}
                 </Button>
               )}
-              <span className="ms-auto font-mono text-sm text-site-text-dim">
+              <span className="ms-auto font-mono text-sm text-site-text-muted">
                 {t('article-count', {
                   count: filteredArticles.length,
                   defaultValue: '{{count}} article',
@@ -230,34 +225,19 @@ export function NewsList({
               defaultValue: '{{count}} results',
             })}
           </span>
-          <Button type="button" variant="accent-ghost" size="sm" onClick={clearAllFilters}>
+          <Button type="button" variant="ghost" size="sm" onClick={clearAllFilters}>
             {t('clear-filters', { defaultValue: 'Clear filters' })}
           </Button>
         </div>
       )}
 
       {/* Grid */}
-      <div
-        ref={gridRef}
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-[var(--site-section-gap)] scroll-mt-8"
-      >
-        <AnimatePresence mode="popLayout">
-          {paginatedArticles.map((article, i) => (
-            <motion.div
-              key={article.slug}
-              layout
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              // A spring, not a 0.25s tween: `layout` reflows the grid on every
-              // filter change, and a card caught mid-move retargets from where it
-              // is instead of restarting.
-              transition={APPLE_SPRING.smooth}
-            >
-              <NewsCard article={article} index={i} />
-            </motion.div>
-          ))}
-        </AnimatePresence>
+      <div ref={gridRef} className="grid grid-cols-1 scroll-mt-8">
+        {paginatedArticles.map((article) => (
+          <div key={article.slug} className="border-b border-site-border">
+            <NewsCard article={article} />
+          </div>
+        ))}
 
         {/* Canonical EmptyState, and it tells the truth about why the
                     grid is empty. It used to blame "your filters" and offer
@@ -283,7 +263,7 @@ export function NewsList({
               }
               action={
                 hasActiveFilters ? (
-                  <Button variant="outline" onClick={clearAllFilters}>
+                  <Button variant="default" onClick={clearAllFilters}>
                     {t('clear-all-filters', { defaultValue: 'Clear all filters' })}
                   </Button>
                 ) : undefined
@@ -295,14 +275,9 @@ export function NewsList({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <motion.div
-          className="mt-[var(--site-section-gap)]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
+        <div className="mt-[var(--site-section-gap)]">
           <Pagination page={safePage} totalPages={totalPages} onPageChange={goToPage} />
-        </motion.div>
+        </div>
       )}
     </div>
   );

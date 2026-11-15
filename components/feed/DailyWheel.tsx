@@ -1,18 +1,16 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useState } from'react';
 import { useTranslation } from'react-i18next';
 import { Loader2, Sparkles } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { Spinner } from'@/components/ui/spinner';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
+import { api } from '@/lib/contract/client';
+import { getWheelApi, spinWheelApi, type WheelStateView } from '@/lib/wheel/wheel.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
-interface WheelState {
- segments: number[];
- signedIn: boolean;
- canSpin: boolean;
- today: { reward: number; segment: number } | null;
-}
+type WheelState = WheelStateView;
 
 const COLORS = ['#f5a623','#3b82f6','#10b981','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f59e0b'];
 
@@ -22,13 +20,14 @@ export function DailyWheel() {
  const [angle, setAngle] = useState(0);
  const [spinning, setSpinning] = useState(false);
  const [won, setWon] = useState<number | null>(null);
+ // Steel M9: the wheel replaces the spinner.
+ const arrival = useArrival(!!state);
 
  useEffect(() => {
- fetch('/api/wheel', { credentials:'include'})
- .then((r) => (r.ok ? r.json() : null))
- .then((data: WheelState | null) => {
+ api(getWheelApi, { retries: 0 })
+ .then((data) => {
  setState(data);
- if (data?.today) {
+ if (data.today) {
  setWon(data.today.reward);
  setAngle(restAngleFor(data.today.segment, data.segments.length));
  }
@@ -59,12 +58,7 @@ export function DailyWheel() {
  setSpinning(true);
  setWon(null);
  try {
- const res = await fetch('/api/wheel/spin', { method:'POST', credentials:'include'});
- if (!res.ok) {
- setSpinning(false);
- return;
- }
- const data: { segment: number; reward: number; newBalance: number } = await res.json();
+ const data = await api(spinWheelApi);
  // Several full turns, then settle on the winning segment.
  const rest = restAngleFor(data.segment, n);
  const target = 360 * 5 + rest;
@@ -85,10 +79,10 @@ export function DailyWheel() {
  .join(',');
 
  return (
- <section className="rounded-site glass-fill p-5">
+ <section className={cn('rounded-site relative p-5', arrival)}>
  <div className="mb-3 flex items-center gap-2">
  <Sparkles className="h-4 w-4 text-site-accent"/>
- <h2 className="text-sm font-bold text-site-text">{t('daily-wheel', { defaultValue:'Daily wheel'})}</h2>
+ <h2 className="text-sm font-semibold text-site-text">{t('daily-wheel', { defaultValue:'Daily wheel'})}</h2>
  </div>
 
  <div className="flex flex-col items-center gap-4">
@@ -97,7 +91,7 @@ export function DailyWheel() {
  <div className="absolute left-1/2 top-0 z-10 h-0 w-0 -translate-x-1/2 -translate-y-1 border-x-8 border-t-[14px] border-x-transparent border-t-site-accent"/>
  {/* Wheel face */}
  <div
- className="h-56 w-56 rounded-full border-4 border-site-border shadow-site-sm"
+ className="h-56 w-56 rounded-full border-4 border-site-border "
  style={{
  background: `conic-gradient(${gradient})`,
  transform: `rotate(${angle}deg)`,
@@ -109,7 +103,7 @@ export function DailyWheel() {
  return (
  <div
  key={i}
- className="text-on-media absolute left-1/2 top-1/2 flex items-center gap-0.5 text-xs font-bold"
+ className="text-on-media absolute left-1/2 top-1/2 flex items-center gap-0.5 text-xs font-semibold"
  style={{
  transform: `rotate(${a}deg) translate(0, -88px) rotate(${-a - angle}deg)`,
  transformOrigin:'center',
@@ -129,13 +123,13 @@ export function DailyWheel() {
  {t('you-won-prefix', { defaultValue:'You won'})} <CoinIcon className="h-4 w-4"/> {won}{t('you-won-suffix', { defaultValue:'today!'})}
  </p>
  ) : (
- <Button variant="accent"disabled={!state.canSpin || spinning || !state.signedIn} onClick={spin}>
+ <Button variant="default"disabled={!state.canSpin || spinning || !state.signedIn} onClick={spin}>
  {spinning ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4"/>}
  {state.signedIn ? (spinning ? t('spinning', { defaultValue:'Spinning…'}) : t('spin', { defaultValue:'Spin'})) : t('sign-in-to-spin', { defaultValue:'Sign in to spin'})}
  </Button>
  )}
  {!state.canSpin && won === null && state.today && (
- <p className="text-xs text-site-text-dim">{t('come-back-tomorrow', { defaultValue:'Come back tomorrow for another spin.'})}</p>
+ <p className="text-xs text-site-text-muted">{t('come-back-tomorrow', { defaultValue:'Come back tomorrow for another spin.'})}</p>
  )}
  </div>
  </section>

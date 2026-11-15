@@ -1,0 +1,16 @@
+__NOTOC__
+Welcome to the RMH Studios wiki. This is the reference for [https://rmhstudios.com rmhstudios.com]: what is on the site, how its parts work, and how to get the most out of them.
+
+== Start here ==
+
+* [[About RMH Studios]]: what the site is and how it is put together.
+* [[Games]]: every browser game on the site.
+* [[Apps]]: the full apps, from RMHTube to RMHLadder.
+* [[RMHarks]]: the social feed.
+* [[Coins and memberships]]: the site economy.
+* [[Developer API]]: building on top of the site.
+* [[Editing this wiki]]: how pages are written and kept up to date.
+
+== About this wiki ==
+
+Everyone can read the wiki, and anyone with an rmhstudios.com account can edit it: press '''Log in''', then '''Edit''' on any page. If something here is wrong or out of date, fix it, or say so on the page's Discussion tab.

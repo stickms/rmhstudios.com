@@ -1,8 +1,16 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import {
+  AI_TIMEOUT_MS,
+  api,
+} from '@/lib/contract/client';
+import { getArticleTakeawaysApi } from '@/lib/ai/ai.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * "Key takeaways" for a devlog post — 3–5 bullets a reader can scan before
@@ -15,20 +23,57 @@ import { useTranslation } from 'react-i18next';
  * As a client fetch, a slow or dead generation costs that reader nothing: the
  * strip simply never appears, and the post is already on screen.
  */
-export function ArticleTakeaways({ slug }: { slug: string }) {
-  const { t } = useTranslation('c-blog');
-  const [takeaways, setTakeaways] = useState<string[]>([]);
+export function ArticleTakeaways({
+  slug,
+}: {
+  slug: string;
+}) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-blog',
+    );
+  const [
+    takeaways,
+    setTakeaways,
+  ] =
+    useState<
+      string[]
+    >(
+      [],
+    );
+  const arrival =
+    useArrival(
+      takeaways.length >
+        0,
+    );
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/ai/takeaways?slug=${encodeURIComponent(slug)}`, {
-          credentials: 'include',
-        });
-        if (cancelled || !res.ok) return;
-        const data = await res.json().catch(() => ({}));
-        if (!cancelled && Array.isArray(data.takeaways)) setTakeaways(data.takeaways);
+        const data =
+          await api(
+            getArticleTakeawaysApi,
+            {
+              query:
+                {
+                  slug,
+                },
+              timeoutMs:
+                AI_TIMEOUT_MS,
+            },
+          );
+        if (
+          !cancelled &&
+          Array.isArray(
+            data.takeaways,
+          )
+        )
+          setTakeaways(
+            data.takeaways,
+          );
       } catch {
         // Progressive enhancement: no strip, same article.
       }
@@ -36,31 +81,77 @@ export function ArticleTakeaways({ slug }: { slug: string }) {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [
+    slug,
+  ]);
 
-  if (takeaways.length === 0) return null;
+  if (
+    takeaways.length ===
+    0
+  )
+    return null;
 
   return (
     <aside
-      className="glass-pane max-w-2xl rounded-site p-5 sm:p-5"
-      aria-label={t('takeaways-title', { defaultValue: 'Key takeaways' })}
+      className={cn(
+        'max-w-2xl rounded-site p-5 sm:p-5',
+        arrival,
+      )}
+      aria-label={t(
+        'takeaways-title',
+        {
+          defaultValue:
+            'Key takeaways',
+        },
+      )}
     >
       <h2 className="site-section-label mb-3 flex items-center gap-2">
-        <Sparkles className="size-4 text-site-accent" aria-hidden />
-        {t('takeaways-title', { defaultValue: 'Key takeaways' })}
+        <Sparkles
+          className="size-4 text-site-accent"
+          aria-hidden
+        />
+        {t(
+          'takeaways-title',
+          {
+            defaultValue:
+              'Key takeaways',
+          },
+        )}
       </h2>
       <ul className="space-y-3">
-        {takeaways.map((line) => (
-          <li key={line} className="flex gap-2 text-sm text-site-text-muted">
-            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-site-accent" aria-hidden />
-            <span>{line}</span>
-          </li>
-        ))}
+        {takeaways.map(
+          (
+            line,
+          ) => (
+            <li
+              key={
+                line
+              }
+              className="flex gap-2 text-sm text-site-text-muted"
+            >
+              <span
+                className="mt-2 size-1.5 shrink-0 rounded-full bg-site-accent"
+                aria-hidden
+              />
+              <span>
+                {
+                  line
+                }
+              </span>
+            </li>
+          ),
+        )}
       </ul>
       {/* Said plainly, once. A summary a reader mistakes for the author's own
           words is a summary they can't calibrate. */}
-      <p className="mt-3 text-xs text-site-text-dim">
-        {t('takeaways-disclaimer', { defaultValue: 'Summarized by AI from this post.' })}
+      <p className="mt-3 text-xs text-site-text-muted">
+        {t(
+          'takeaways-disclaimer',
+          {
+            defaultValue:
+              'Summarized by AI from this post.',
+          },
+        )}
       </p>
     </aside>
   );

@@ -1,9 +1,9 @@
-'use client';
-
 import { useState } from'react';
 import { useTranslation } from'react-i18next';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { Smile, X } from'lucide-react';
+import { api } from '@/lib/contract/client';
+import { clearProfileStatusApi, setProfileStatusApi } from '@/lib/profile/profile-extras.contract';
 
 import { cn } from'@/lib/utils';
 import { Button } from'@/components/ui/button';
@@ -15,6 +15,7 @@ import {
  SheetTitle,
  SheetFooter,
 } from'@/components/ui/sheet';
+import { EmojiText } from '@/components/ui/emoji';
 import { StatusBadge } from'./StatusBadge';
 import {
  STATUS_PRESETS,
@@ -59,17 +60,13 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  async function save() {
  setBusy(true);
  try {
- const res = await fetch('/api/profile/status', {
- method:'PUT',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({
+ const data = await api(setProfileStatusApi, {
+ body: {
  emoji: emoji || null,
  text: text || null,
  expiresIn: expiresIn ==='none'? null : expiresIn,
- }),
+ },
  });
- if (!res.ok) throw new Error('save failed');
- const data = (await res.json()) as { status: UserStatus | null };
  setStatus(data.status);
  setOpen(false);
  toast.success(t('saved', { defaultValue:'Status updated'}));
@@ -83,8 +80,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  async function clear() {
  setBusy(true);
  try {
- const res = await fetch('/api/profile/status', { method:'DELETE'});
- if (!res.ok) throw new Error('clear failed');
+ await api(clearProfileStatusApi);
  setStatus(null);
  setOpen(false);
  toast.success(t('cleared', { defaultValue:'Status cleared'}));
@@ -143,7 +139,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  className="flex-1"
  />
  </div>
- <p className="text-end text-xs text-site-text-dim">
+ <p className="text-end text-xs text-site-text-muted">
  {text.length}/{STATUS_MAX_TEXT}
  </p>
 
@@ -156,9 +152,11 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  setEmoji(p.emoji);
  setText(t(p.key, { defaultValue: p.text }));
  }}
- className="glass-fill inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-site-text hover:border-site-text/40"
+ className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-site-text hover:border-site-text/40"
  >
- <span aria-hidden>{p.emoji}</span>
+ <span aria-hidden>
+ <EmojiText>{p.emoji}</EmojiText>
+ </span>
  {t(p.key, { defaultValue: p.text })}
  </button>
  ))}
@@ -179,7 +177,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
 'rounded-full px-3 py-2 text-sm transition-colors',
  expiresIn === o.value
  ?'bg-site-accent text-site-accent-fg'
- :'glass-fill text-site-text-muted hover:border-site-text/40',
+ :'text-site-text-muted hover:border-site-text/40',
  )}
  >
  {t(o.key, { defaultValue: o.label })}
@@ -202,7 +200,7 @@ export function StatusEditor({ initial }: { initial: UserStatus | null }) {
  {t('clear', { defaultValue:'Clear status'})}
  </Button>
  ) : null}
- <Button type="button"variant="accent"onClick={save} loading={busy}>
+ <Button type="button"variant="default"onClick={save} loading={busy}>
  {t('save', { defaultValue:'Save'})}
  </Button>
  </SheetFooter>

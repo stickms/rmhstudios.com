@@ -4,7 +4,7 @@
  * ── Why this file exists ────────────────────────────────────────────────────
  * RMHbox, RMHType, RMHStudy, RMHTube and RMHMusic are all the same design:
  * a dark (optionally light) app surface, a hairline border ramp, one accent
- * hue, a set of status colours, 12px/8px radii, Inter + JetBrains Mono, and
+ * hue, a set of status colours, 12px/8px radii, Geist + Geist Mono, and
  * the same toast/modal/glass/skeleton behaviours. Each app used to ship its
  * own ~200-line copy of that, differing only in the hex values — so a fix to
  * the scrollbar, the focus ring, or the reduced-motion handling had to be
@@ -75,11 +75,9 @@
   --app-rare: #b58ad9;
 
   /* Type */
-  --app-font-display:
-    -apple-system, BlinkMacSystemFont, var(--font-inter), 'Segoe UI', system-ui, sans-serif;
-  --app-font-body:
-    -apple-system, BlinkMacSystemFont, var(--font-inter), 'Segoe UI', system-ui, sans-serif;
-  --app-font-mono: 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
+  --app-font-display: var(--font-geist), system-ui, sans-serif;
+  --app-font-body: var(--font-geist), system-ui, sans-serif;
+  --app-font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Shape */
   --app-radius: 24px;
@@ -94,7 +92,7 @@
   --app-duration-fast: 120ms;
   --app-duration: 160ms;
   --app-duration-slow: 220ms;
-  --app-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --app-ease: var(--ease-morph);
 
   /* Density — `.app-compact` / `.app-spacious` shift these */
   --app-density-gap: 0.5rem;
@@ -145,7 +143,7 @@
 }
 
 /* ── Plasmatic Jelly palette (docs/plans/plasmatic-jelly/01-material.md §4.3) ──
-   The app tier's mirror of the site's `--site-jelly-*` tokens, derived from the
+   The app tier's own haze and plasma tokens, derived from the
    one accent an app declares. `.app-glass` (§7) maps these onto the host knobs
    the shader engine and the CSS carrier read (`--jelly-*`), so one material
    contract serves both tiers. Dark default here; `.app-light` and
@@ -154,15 +152,14 @@
 .app-theme {
   --app-jelly-haze: color-mix(in srgb, var(--app-text) 18%, white);
   --app-jelly-haze-pane: 0.09;
-  /* Repeated cards (the `bg-(--app-surface)` adapter, §7): ~0.7 of the pane, as on the site tier. */
+  /* Repeated cards (the `bg-app-surface` adapter, §7): ~0.7 of the pane, as on the site tier. */
   --app-jelly-haze-fill: 0.065;
   --app-jelly-plasma-a: var(--app-accent);
   --app-jelly-plasma-b: color-mix(in oklch, var(--app-accent), #9b6bff 45%);
   --app-jelly-plasma: 0.8;
   --app-jelly-flow-speed: 1;
-  /* #989 gel colours, mirroring the site's `--gel-*` (app/globals.css :root explains each): a translucent body that
-     darkens toward its base, the ink-gel primary action, the RGB-led edge tints and the 1px Fresnel line. The px
-     geometry (`--gel-bevel`, `--gel-disperse-*`) is theme-independent and read from the site tokens. */
+  /* Gel colours: a translucent body that darkens toward its base, the ink-fill primary action, the RGB-led edge tints
+     and the 1px Fresnel line. */
   --app-gel-body: rgb(255 255 255 / 0.012);
   --app-gel-depth: rgb(0 0 0 / 0.16);
   --app-gel-ink: var(--app-accent);
@@ -173,18 +170,17 @@
   --app-gel-edge-g: rgb(80 220 150 / 0.1);
   --app-gel-edge-b: rgb(90 140 255 / 0.24);
   --app-focus-ring: var(--app-accent);
-  /* Point the site's gel contract at the app palette, so a shared primitive inside an app (the jelly roles,
-     `<Button variant="signal">`, the global focus ring) wears the app's gel, not the site theme's. */
-  --gel-body: var(--app-gel-body);
-  --gel-depth: var(--app-gel-depth);
+  /* Point the ink-fill action and the focus ring at the app palette, so a shared primitive inside an app
+     (`<Button variant="signal">`, the global focus ring) wears the app's accent, not the site's ink. */
   --gel-ink: var(--app-gel-ink);
   --on-ink: var(--app-on-ink);
-  --gel-fresnel: var(--app-gel-fresnel);
-  --gel-specular: var(--app-gel-specular);
-  --gel-edge-r: var(--app-gel-edge-r);
-  --gel-edge-g: var(--app-gel-edge-g);
-  --gel-edge-b: var(--app-gel-edge-b);
   --focus-ring: var(--app-focus-ring);
+  /* The gel geometry the `bg-app-surface` / `.app-glass` rim below reads. The site tokens that used to carry it were
+     deleted with the old material (Steel T3), so the app tier owns the literal values it resolved to. */
+  --gel-bevel: 4px;
+  --gel-disperse-r: -0.75px;
+  --gel-disperse-g: 0px;
+  --gel-disperse-b: 0.75px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -286,7 +282,6 @@
   --gel-disperse-r: 0px;
   --gel-disperse-g: 0px;
   --gel-disperse-b: 0px;
-  --plasma-wake: 0;
 }
 
 @supports (color: color-mix(in srgb, red 50%, blue)) {
@@ -298,6 +293,120 @@
     --app-info-dim: color-mix(in srgb, var(--app-info) 22%, transparent);
     --app-rare-dim: color-mix(in srgb, var(--app-rare) 22%, transparent);
     --app-glass-bg: #1a1a1a;
+  }
+}
+
+/* ── The AppShell tier owns its palette (Steel L8) ──────────────────────────
+   `AppShell` stamps `data-tier="app"` on its root. Until Steel this tier read the site's token sets (Midnight for the
+   dark shell, Daylight for the light one) through `--site-*`. Steel replaced those values and deleted the tokens it
+   read (the opaque surface, the glass and shadow tokens), and L8 says full-screen apps keep their own look, so the
+   tier now carries the LITERAL values it resolved to before, as `--app-tier-ground` and `--app-tier-ink` (the ramp's
+   two ends) plus the site tokens a shared primitive inside an app still reads. Nothing here follows the site edition.
+
+   - the DARK and high-contrast appearances: Midnight as it was (OLED black ground, #1c1c1e surfaces, the #2997ff accent);
+   - the LIGHT appearance: Daylight as it was (white ground, ink #000, ink accent).
+
+   The neutral ramp is the tier modifier: `--app-tier-ground` stepped toward `--app-tier-ink` by a fixed share per step
+   (the shares were fitted so the old hex ramps above come back within a few levels). What does NOT move: per-app
+   palettes (`.rmhtube-theme`, `.rmhtype-theme`, ...) still override `--app-*` at this specificity and later in the
+   cascade; high contrast (`.app-theme.app-high-contrast`, 0,2,0) keeps its literal opaque ramp and solid edge; the
+   status hues stay the tier's own; and a bare `.app-theme` without `data-tier` keeps the literal ramp above. Engines
+   without `color-mix()` keep the literal ramp too (the derived steps are inside @supports). */
+:where(.app-theme[data-tier='app']) {
+  /* Dark (Midnight) */
+  --app-tier-ground: #1c1c1e;
+  --app-tier-ink: #e7e9ef;
+  color-scheme: dark;
+  --site-bg: #000000;
+  --site-bg-subtle: rgba(255, 255, 255, 0.05);
+  --site-surface: #1c1c1e;
+  --site-surface-hover: color-mix(in srgb, #e7e9ef 6%, #1c1c1e);
+  --site-surface-active: color-mix(in srgb, #e7e9ef 12%, #1c1c1e);
+  --site-border: rgba(255, 255, 255, 0.12);
+  --site-text: #e7e9ef;
+  --site-text-muted: #b6bdca;
+  --site-accent: #2997ff;
+  --site-accent-fg: #001227;
+  --site-accent-hover: #47a5ff;
+  --site-success: #30d158;
+  --site-success-fg: #08120c;
+  --site-danger: #ff453a;
+  --site-danger-fg: #ffffff;
+  --site-warning: #ff9f0a;
+  --site-warning-fg: #100b00;
+  --site-radius: 32px;
+  --site-radius-sm: 24px;
+  --site-control-radius: 24px;
+}
+:where(.app-theme.app-light[data-tier='app']) {
+  /* Light (Daylight) */
+  --app-tier-ground: #ffffff;
+  --app-tier-ink: #000000;
+  color-scheme: light;
+  --site-bg: #ffffff;
+  --site-bg-subtle: rgba(0, 0, 0, 0.045);
+  --site-surface: #ffffff;
+  --site-surface-hover: color-mix(in srgb, #000000 6%, #ffffff);
+  --site-surface-active: color-mix(in srgb, #000000 12%, #ffffff);
+  --site-border: rgba(0, 0, 0, 0.16);
+  --site-text: #000000;
+  --site-text-muted: #565656;
+  --site-accent: #000000;
+  --site-accent-fg: #ffffff;
+  --site-accent-hover: #1a1a1a;
+  --site-success: #167d3a;
+  --site-success-fg: #ffffff;
+  --site-danger: #c40016;
+  --site-danger-fg: #ffffff;
+  --site-warning: #7a4a00;
+  --site-warning-fg: #ffffff;
+}
+.app-theme:where([data-tier='app']) {
+  --app-text: var(--app-tier-ink);
+  --app-accent: var(--site-accent);
+  --app-accent-fg: var(--site-accent-fg);
+  --app-accent-hover: var(--site-accent-hover);
+  --app-font-display: var(--site-font-display);
+  --app-font-body: var(--site-font-body);
+  --app-font-mono: var(--site-font-mono);
+  /* The tier sits one step down the old concentric scale: an app card is 24px, a control 18px. */
+  --app-radius-lg: 32px;
+  --app-radius: 24px;
+  --app-radius-sm: 18px;
+  --app-shadow: 0 0 0 0 transparent;
+  --app-shadow-sm: 0 0 0 0 transparent;
+  --app-duration-fast: calc(var(--site-transition-speed) * 0.75);
+  --app-duration: var(--site-transition-speed);
+  --app-duration-slow: calc(var(--site-transition-speed) * 1.375);
+  --app-ease: var(--ease-morph);
+}
+
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  /* Dark: the ground IS the tier's surface; each step above it takes more ink. */
+  .app-theme:where([data-tier='app']) {
+    --app-bg: var(--app-tier-ground);
+    --app-bg-subtle: color-mix(in srgb, var(--app-tier-ink) 2.5%, var(--app-tier-ground));
+    --app-surface: color-mix(in srgb, var(--app-tier-ink) 6%, var(--app-tier-ground));
+    --app-surface-hover: color-mix(in srgb, var(--app-tier-ink) 11%, var(--app-tier-ground));
+    --app-surface-active: color-mix(in srgb, var(--app-tier-ink) 15%, var(--app-tier-ground));
+    --app-border: color-mix(in srgb, var(--app-tier-ink) 15%, var(--app-tier-ground));
+    --app-border-bright: color-mix(in srgb, var(--app-tier-ink) 23%, var(--app-tier-ground));
+    --app-text-muted: color-mix(in srgb, var(--app-tier-ink) 62%, var(--app-tier-ground));
+    --app-text-dim: color-mix(in srgb, var(--app-tier-ink) 38.5%, var(--app-tier-ground));
+  }
+
+  /* Light: the card IS the tier's ground colour; the ground and lines sit below it. */
+  .app-theme.app-light:where([data-tier='app']) {
+    --app-bg: color-mix(in srgb, var(--app-tier-ink) 4%, var(--app-tier-ground));
+    --app-bg-subtle: color-mix(in srgb, var(--app-tier-ink) 7%, var(--app-tier-ground));
+    --app-surface: var(--app-tier-ground);
+    --app-surface-hover: color-mix(in srgb, var(--app-tier-ink) 6%, var(--app-tier-ground));
+    --app-surface-active: color-mix(in srgb, var(--app-tier-ink) 10%, var(--app-tier-ground));
+    --app-border: color-mix(in srgb, var(--app-tier-ink) 17%, var(--app-tier-ground));
+    --app-border-bright: color-mix(in srgb, var(--app-tier-ink) 25%, var(--app-tier-ground));
+    --app-text: color-mix(in srgb, var(--app-tier-ink) 83.5%, var(--app-tier-ground));
+    --app-text-muted: color-mix(in srgb, var(--app-tier-ink) 58.5%, var(--app-tier-ground));
+    --app-text-dim: color-mix(in srgb, var(--app-tier-ink) 39.5%, var(--app-tier-ground));
   }
 }
 
@@ -565,11 +674,11 @@
    7. Material utilities
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* Translucent panel. No backdrop-filter, on purpose (see `app/liquid-glass.css`): the tier is dense enough to read on
+/* Translucent panel. No backdrop-filter, on purpose (see `app/glass-roles.css`): the tier is dense enough to read on
    its own (`--app-glass-bg` is ~85% opaque). */
 .app-glass {
   /* Jelly host knobs (app/jelly-material.css §1): the pane role, in the app palette. The palette knobs redirect
-     every jelly consumer (woken haze, floor, CSS rim) from `--site-jelly-*` to `--app-jelly-*`. */
+     every jelly consumer (woken haze, floor, CSS rim) to the app palette. */
   --jelly-haze-a: var(--app-jelly-haze-pane);
   --jelly-plasma-k: 0.06;
   --jelly-flow-speed: 1;
@@ -607,11 +716,11 @@
    use data-liquid-surface directly. Zero added backdrop samplers on lists.
 
    Plasmatic Jelly (04 §1, "App tier cards"): these are the app tier's repeated
-   content, so they take the CARD role — the `.glass-fill` knobs of
+   content, so they take the CARD role — the `.surface-card` knobs of
    app/jelly-material.css §1, in the app palette — with the static haze floor
    in their background stack and a static CSS rim. No per-file edit: every
-   `bg-(--app-surface)` card in an app or game picks this up. */
-.app-theme :is([class~='bg-(--app-surface)'], [data-liquid-surface]) {
+   `bg-app-surface` card in an app or game picks this up. */
+.app-theme :is([class~='bg-app-surface'], [data-liquid-surface]) {
   --jelly-haze-a: var(--app-jelly-haze-fill);
   --jelly-plasma-k: 0.05;
   --jelly-flow-speed: 1;
@@ -654,78 +763,64 @@
 }
 /* Play-fields never wear the material (R16): a board cell or a stage that
    happens to use the surface token keeps a plain fill. */
-.app-theme [data-jelly-zone='playfield'] :is([class~='bg-(--app-surface)'], [data-liquid-surface]),
-.app-theme :is([class~='bg-(--app-surface)'], [data-liquid-surface])[data-jelly-zone='playfield'] {
+.app-theme [data-jelly-zone='playfield'] :is([class~='bg-app-surface'], [data-liquid-surface]),
+.app-theme :is([class~='bg-app-surface'], [data-liquid-surface])[data-jelly-zone='playfield'] {
   --jelly-floor: none, none;
   box-shadow: none;
 }
 /* Utilities must retain positioning ownership (fixed dialogs, sticky headers). */
 @layer components {
   .app-glass,
-  .app-theme :where([class~='bg-(--app-surface)'], [data-liquid-surface]) {
+  .app-theme :where([class~='bg-app-surface'], [data-liquid-surface]) {
     position: relative;
   }
 }
-/* Site roles in the app palette. `.glass-fill` / `-pane` / `-chrome` / `-overlay` / `-inset` and the `Switch`
-   primitive are written against the `--site-*` contract (app/liquid-glass.css, app/jelly-material.css,
-   app/jelly-coverage.css). An app route carries no site theme class, and `html.app-route` resolves the site glass
-   tint to the opaque Daylight surface (app/globals.css), so a bare `.glass-fill` in an app painted a WHITE card under
-   the app's ink, and a `Switch` took the site's accent. This points that contract at the app palette on the role host
-   itself (the way §1 points `--gel-*` at `--app-gel-*`), ink included, because the app tiers use `text-site-*`
-   inside their roles; every role rule then resolves to the app's colours with none restated.
+/* Site roles in the app palette. `.surface-card` / `-pane` / `-chrome` / `-overlay` / `-inset` and the `Switch`
+   primitive are written against the `--site-*` contract. On the site tier Steel remaps the role classes to flat
+   surfaces (app/styles/steel-surfaces.css: no background, no border). An app is a full-screen tier that keeps its own
+   look (L8) and its panels are those roles, so here they stay panels in the app palette: the tier's translucent
+   `--app-glass-bg`, a 1px `--app-border` edge and the tier's own radius, flat, with no haze, rim or press physics
+   (those belonged to the deleted material). First written for RMHbox (components/rmhbox/rmhbox.css, c5ca7bf);
+   shared here so every app tier gets it. The `ResizableHandle` primitive (hairline + grip) is a site-token control
+   like `Switch`, first needed by RMH Studio.
 
-   In `@layer components` on purpose: unlike the unlayered `.app-glass`, a state utility on the same element
-   (`bg-(--app-accent)/5`, `border-(--app-success)/60`) still wins, so selection and result highlights keep their
-   state. First written for RMHbox (components/rmhbox/rmhbox.css, c5ca7bf); shared here so every app tier gets it.
-   The `ResizableHandle` primitive (hairline + grip) is a site-token control like `Switch`, first needed by RMH Studio. */
+   In `@layer components` on purpose, so a state utility on the same element (`bg-app-accent/5`,
+   `border-app-success/60`) still wins and selection and result highlights keep their state. */
 @layer components {
   .app-theme
     :is(
-      .glass-fill,
-      .glass-pane,
-      .glass-chrome,
-      .glass-overlay,
-      .glass-inset,
+      .surface-card,
+      .surface-panel,
+      .surface-chrome,
+      .surface-overlay,
+      .surface-field,
       [data-slot='switch'],
       [data-slot='resizable-handle']
     ) {
     --site-bg: var(--app-bg);
     --site-surface: var(--app-surface);
-    --site-surface-opaque: var(--app-surface);
     --site-surface-hover: var(--app-surface-hover);
     --site-surface-active: var(--app-surface-active);
-    --site-glass-tint: var(--app-glass-bg);
-    --site-glass-light: color-mix(in srgb, var(--app-text) 12%, transparent);
     --site-border: var(--app-border);
     --site-text: var(--app-text);
     --site-text-muted: var(--app-text-muted);
-    --site-text-dim: var(--app-text-dim);
     --site-accent: var(--app-accent);
     --site-accent-fg: var(--app-accent-fg);
-    /* The palette knobs, as `.app-glass` sets them: haze and plasma in the app's colours. */
-    --jelly-haze-color: var(--app-jelly-haze);
-    --jelly-plasma-a: var(--app-jelly-plasma-a);
-    --jelly-plasma-b: var(--app-jelly-plasma-b);
-    --jelly-plasma-gain: var(--app-jelly-plasma);
-    --jelly-flow-gain: var(--app-jelly-flow-speed);
   }
-  .app-theme.app-high-contrast
-    :is(
-      .glass-fill,
-      .glass-pane,
-      .glass-chrome,
-      .glass-overlay,
-      .glass-inset,
-      [data-slot='switch']
-    ) {
-    --site-glass-tint: var(--app-surface);
-    --site-glass-light: transparent;
-    --site-border: var(--app-border-bright);
+  .app-theme :is(.surface-card, .surface-panel, .surface-chrome, .surface-overlay) {
+    background-color: var(--app-glass-bg);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-lg);
+    box-shadow: none;
   }
-  @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
-    .app-theme :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset) {
-      --site-glass-tint: var(--app-surface);
-    }
+  .app-theme :is(.surface-field, [data-slot='input'], [data-slot='textarea']) {
+    background-color: color-mix(in srgb, var(--app-text) 3%, transparent);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+  }
+  .app-theme .surface-chrome--aside {
+    background: color-mix(in srgb, var(--app-bg) 30%, transparent);
+    border-color: var(--app-border);
   }
 }
 .app-high-contrast .app-glass {
@@ -733,15 +828,28 @@
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-.app-high-contrast :is([class~='bg-(--app-surface)'], [data-liquid-surface], button) {
+.app-high-contrast :is([class~='bg-app-surface'], [data-liquid-surface], button) {
   --jelly-floor: none, none;
   background-color: var(--app-surface);
   background-image: none;
   box-shadow: none;
 }
+/* Every button is repainted onto the opaque surface above, so its own ink has to follow: a
+   primary button kept its accent-fg (dark) text on the now-dark surface and read as blank
+   (RMHTube's Create Room / Join). Text takes the high-contrast ink, and the button gets an
+   inset solid edge so it still reads as a control; inset, so layout never moves. Specificity:
+   the second selector mirrors the liquid-material button rule (.app-theme :is(button,
+   [role=button]):not([data-liquid-material=off]), 0,3,0, which zeroes box-shadow) plus the
+   high-contrast class, so it outranks it at 0,4,0; the first covers buttons with the material
+   off, where only the :is() rule above (0,2,0) competes. */
+.app-theme.app-high-contrast button,
+.app-theme.app-high-contrast :is(button, [role='button']):not([data-liquid-material='off']) {
+  color: var(--app-text);
+  box-shadow: inset 0 0 0 1px var(--app-border-bright);
+}
 @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
   .app-glass,
-  .app-theme :is([class~='bg-(--app-surface)'], [data-liquid-surface]) {
+  .app-theme :is([class~='bg-app-surface'], [data-liquid-surface]) {
     --jelly-floor: none, none;
     background: var(--app-surface);
     box-shadow: none;
@@ -759,24 +867,6 @@
   animation: app-skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-.app-skeleton-text {
-  height: 0.875rem;
-  margin-bottom: 0.375rem;
-  border-radius: 4px;
-}
-
-.app-skeleton-avatar {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 9999px;
-  corner-shape: round;
-}
-
-.app-skeleton-thumbnail {
-  width: 4rem;
-  height: 2.25rem;
-  border-radius: 4px;
-}
 
 /* ══════════════════════════════════════════════════════════════════════════
    8. Layout helpers
@@ -838,11 +928,13 @@
   }
 }
 
-/* Print — apps aren't print targets, but a stray Ctrl+P shouldn't burn ink. */
+/* Print — apps aren't print targets, but a stray Ctrl+P shouldn't burn ink. The app drops its own ground and ink
+   and takes the page's print ink (white paper, black text: the print block in app/globals/loader-print-access.css,
+   which every sheet that loads this one also loads). */
 @media print {
   .app-theme {
-    background: #ffffff;
-    color: #000000;
+    background: none;
+    color: inherit;
   }
 
   .app-theme .app-glass {
@@ -851,13 +943,13 @@
   }
 }
 
-/* ── LiquidTabs inside the app tier ───────────────────────────────────────
+/* ── Tabs inside the app tier ───────────────────────────────────────
    The strip's paint is three custom properties (globals.css,
    `[data-slot='liquid-tabs']`) defaulting to `--site-*`, which the full-screen
    apps do not theme — so a difficulty or length switcher in RMHType / RMHStudy /
    RMHTube rendered a site-coloured thumb on an app ground. Re-point the same
    three properties (and the track) at the `--app-*` contract; specificity 0,2,0
-   beats the unlayered base rule. Label ink follows in `liquid-tabs.tsx` via an
+   beats the unlayered base rule. Label ink follows in `tabs.tsx` via an
    `--app-text` → `--site-text` fallback. */
 .app-theme [data-slot='liquid-tabs'] {
   --tab-thumb-bg: var(--app-surface-hover);
@@ -875,14 +967,14 @@
 
 /* ── The shared Dialog inside the app tier ────────────────────────────────
    A `DialogContent` given the app root as its `container` lands inside
-   `.app-theme`. Its surface is a `.glass-overlay`, so the site-roles adapter
+   `.app-theme`. Its surface is a `.surface-overlay`, so the site-roles adapter
    above already gives it (and its close button) the app's ink, accent and
    hover. Two pieces stay outside that adapter:
    - the scrim is `.glass-scrim`, not a role, so it kept the Daylight
      `--site-bg` wash: a white 60% veil over a dark app;
    - the radius: the primitive's `rounded-site` (and the close button's
      `--site-control-radius`) read site tokens, and a caller's
-     `rounded-(--app-radius)` cannot replace them (tailwind-merge keeps both
+     `rounded-app` cannot replace them (tailwind-merge keeps both
      and the site utility wins on source order).
    Unlayered, specificity 0,2,0: beats the layered `.glass-scrim`. */
 .app-theme [data-slot='dialog-overlay'] {

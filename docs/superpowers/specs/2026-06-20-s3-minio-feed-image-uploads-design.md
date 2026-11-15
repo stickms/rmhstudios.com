@@ -68,7 +68,7 @@ Added to `.env.example`, `docker-compose.yml`, and `deploy/k8s/secret.example.en
 2. `rateLimit` keyed by client IP (reuse `lib/rate-limit`).
 3. Parse multipart form; accept up to **4 images per post**.
 4. Per-image cap **5 MB**; reject empty/oversized.
-5. `validateImageBuffer` (reuse `@/lib/slice-it/upload-validation`) — magic-byte/type check.
+5. `validateImageBuffer` (reuse `@features/slice-it/engine/upload-validation`) — magic-byte/type check.
 6. Generate key `rmharks/<userId>-<timestamp>-<rand>.<ext>`.
 7. `putObject` to the bucket.
 8. Return `{ urls: ["/api/feed/image/<key>", ...] }`.

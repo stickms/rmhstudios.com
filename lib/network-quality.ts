@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Network quality — the one place the client decides how good the connection is
  * and how much the visitor wants us to spend of it.

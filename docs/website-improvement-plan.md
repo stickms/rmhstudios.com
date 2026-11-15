@@ -211,7 +211,7 @@ Effort key: **XS** ≤ ½ day · **S** ≈ 1–2 days · **M** ≈ 3–5 days ·
 
 ### Already strong
 - **Full SSR** — crawlers receive complete HTML; per-route `head()` + server loaders fetch data before paint.
-- **Dynamic OG images** via `satori` + `@resvg/resvg-js` for social posts (`app/routes/api/og/post/$id.ts`, `lib/og/post-image.server.tsx`), privacy-aware and cached.
+- **Dynamic OG images** via `satori` + `@resvg/resvg-js` for social posts (`lib/og/api/og.post.$id.server.ts`, `lib/og/post-image.server.tsx`), privacy-aware and cached.
 - **Reusable SEO helpers** `buildMeta()` / `buildCanonical()` (`lib/seo.ts`).
 - **Dynamic sitemap** covering static routes + up to ~7k blog/news/build URLs with `lastmod`/`priority` and graceful DB-failure fallback (`app/routes/sitemap[.]xml.ts`).
 - **Clean, semantic URLs** and a correct `viewport`/manifest baseline.

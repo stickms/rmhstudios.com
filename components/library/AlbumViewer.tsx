@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * AlbumViewer — fullscreen carousel viewer for a library album.
  *
@@ -39,6 +37,7 @@ import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 import { usePopPresence } from '@/hooks/usePopPresence';
 import { CaptionFileButton } from '@/components/access/CaptionFileButton';
 import './album-viewer.css';
+import { clamp } from '@/lib/core/math';
 
 const MAX_SCALE = 6;
 const SWIPE_THRESHOLD = 60; // px before a horizontal drag counts as a swipe
@@ -52,8 +51,6 @@ function shuffledOrder(n: number): number[] {
   }
   return order;
 }
-
-const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max);
 
 export function AlbumViewer({ album }: { album: Album }) {
   const { t } = useTranslation('library');
@@ -388,7 +385,7 @@ export function AlbumViewer({ album }: { album: Album }) {
 
   // PORTALLED. `.av` is `position: fixed; inset: 0; z-index: 60`, and 60 was
   // chosen to sit just above the shell's top bar — but it was measured inside
-  // `.radial-frame`'s stacking context (pinned at 1), so it never got there. A
+  // the page frame's stacking context (pinned at 1), so it never got there. A
   // full-screen album viewer with the site's top bar and hub orb painted over it
   // is not a viewer, and z-60 is precisely the number that makes it look like
   // someone already thought about this.

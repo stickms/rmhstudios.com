@@ -8,7 +8,7 @@
  */
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { SITE_URL } from '@/lib/seo';
 import { createNotification } from '@/lib/notifications.server';
 import { eventToICS } from '@/lib/events-ics';
@@ -113,7 +113,7 @@ export async function saveConfig(
       });
     }
   });
-  apiCache.invalidate(summaryKey(userId));
+  void invalidateCached(summaryKey(userId));
   const saved = await getMyConfig(userId);
   return saved ? { ok: true, value: saved } : fail(500, 'Could not save');
 }
@@ -123,18 +123,22 @@ export async function officeHoursSummary(
   hostId: string,
 ): Promise<{ available: boolean; title: string }> {
   const key = summaryKey(hostId);
-  const hit = apiCache.get<{ available: boolean; title: string }>(key);
-  if (hit) return hit;
-  const row = await prisma.officeHoursConfig.findUnique({
-    where: { userId: hostId },
-    select: { enabled: true, title: true, _count: { select: { windows: true } } },
-  });
-  const value = {
-    available: !!row && row.enabled && row._count.windows > 0,
-    title: row?.title ?? '',
-  };
-  apiCache.set(key, value, 60_000);
-  return value;
+  return cached(
+    key,
+    60_000,
+    async () => {
+      const row = await prisma.officeHoursConfig.findUnique({
+        where: { userId: hostId },
+        select: { enabled: true, title: true, _count: { select: { windows: true } } },
+      });
+      const value = {
+        available: !!row && row.enabled && row._count.windows > 0,
+        title: row?.title ?? '',
+      };
+      return value;
+    },
+    { l2: false },
+  );
 }
 
 const bookingSelect = {

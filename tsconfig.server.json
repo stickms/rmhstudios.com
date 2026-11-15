@@ -1,27 +1,33 @@
 {
-    "extends": "./tsconfig.json",
-    "compilerOptions": {
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "outDir": "dist-server",
-        "rootDir": ".",
-        "noEmit": false,
-        "isolatedModules": false,
-        "paths": {
-        "@/*": [
-            "./*"
-        ]
-        }
-    },
-    "include": [
-        "server/shared/**/*.ts",
-        "server/socket-server/**/*.ts",
-        "server/rmhbox/**/*.ts",
-        "server/rmhtube/**/*.ts",
-        "server/recap/**/*.ts",
-        "lib/rmhbox/**/*.ts",
-        "lib/blackjack/logic.ts",
-        "lib/lights-out/**/*.ts",
-        "lib/dream-rift/net/events.ts"
-    ]
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "dist-server",
+    "rootDir": ".",
+    "noEmit": false,
+    "isolatedModules": false,
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@features/*": [
+        "./features/*"
+      ]
+    }
+  },
+  "include": [
+    "server/shared/**/*.ts",
+    "server/socket-server/**/*.ts",
+    "server/rmhbox/**/*.ts",
+    "server/rmhtube/**/*.ts",
+    "lib/rmhbox/**/*.ts",
+    "features/casino/engine/blackjack/logic.ts",
+    "lib/lights-out/**/*.ts",
+    "features/dream-rift/engine/net/events.ts",
+    "features/*/server/**/*.ts",
+    "server/rmhos-net/**/*.ts",
+    "features/rmhos/engine/constants.ts",
+    "features/rmhos/engine/net-ticket.server.ts"
+  ]
 }

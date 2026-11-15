@@ -1,19 +1,12 @@
+import { readJson } from '@/lib/core/persist';
 import { create } from 'zustand';
 import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tokens';
 import {
   DEFAULT_COLOR_VISION,
-  DEFAULT_NAV_TRANSITION,
   type ColorVisionMode,
-  type NavTransition,
-  type EversionLevel,
-  DEFAULT_EVERSION_LEVEL,
-  resolveEversionLevel,
   DEFAULT_JELLY_MOTION,
-  DEFAULT_ELECTRIC_ARCS,
   resolveJellyMotion,
-  resolveElectricArcs,
   type JellyMotion,
-  type ElectricArcs,
 } from '@/lib/appearance/prefs';
 import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 
@@ -27,25 +20,25 @@ import { colorSchemeForBackground } from '@/lib/appearance/contrast';
 // modes. Retired decorative themes self-heal to DEFAULT_STYLE during hydration.
 // Listed in picker order: the default first.
 //
-// The id `default` is historical: it names Daylight (the bare `:root` tokens),
+// The id `default` is historical: it names Day (the bare `:root` tokens),
 // which is no longer the default. It keeps its id because that is the value
 // already persisted in `rmh-style` and in `AppearancePreference.style` for
-// everyone who has Daylight — renaming it would silently move those people.
+// everyone who has Day — renaming it would silently move those people.
 export const SITE_STYLES = [
-  { id: 'graphite', label: 'Midnight', icon: '◐', group: 'RMH', bg: '#000000' },
-  { id: 'default', label: 'Daylight', icon: '☀', group: 'RMH', bg: '#ffffff' },
+  { id: 'graphite', label: 'Night', icon: '◐', group: 'RMH', bg: '#0b0d10' },
+  { id: 'default', label: 'Day', icon: '☀', group: 'RMH', bg: '#fafafa' },
 ] as const;
 
 /**
- * Theme applied when the visitor has no stored/saved preference: Midnight
- * (`graphite`), the near-black void of the Plasmatic Jelly identity (owner
- * decision, 2026-10-23 — it was Daylight).
+ * Theme applied when the visitor has no stored/saved preference: Night
+ * (`graphite`), the near-black edition of Steel (owner
+ * decision, 2026-10-23 — it was Day).
  *
  * Migration semantics, which follow from what is persisted rather than from any
  * migration code:
  * - `rmh-style` ABSENT (a new visitor, or a browser that never stored one) →
  *   this default, so dark. Nothing is written until something re-persists.
- * - `rmh-style` = `default` → Daylight, kept. A stored `default` is treated as a
+ * - `rmh-style` = `default` → Day, kept. A stored `default` is treated as a
  *   choice of Daylight, never as "whatever the default is now".
  * - `rmh-style` = an unknown/retired id → rewritten to this default.
  * - Signed in: a saved `AppearancePreference.style` wins (seeded pre-paint by
@@ -119,7 +112,7 @@ export const APP_ROUTE_THEME_BG: Record<
     dark: '#171d25',
     light: '#171d25',
   },
-  // Slice It has one theme (`--slice-bg` in `components/slice-it/slice-it.css`),
+  // Slice It has one theme (`--slice-bg` in `features/slice-it/ui/slice-it.css`),
   // so both grounds are the same navy whatever an older save says. The key and
   // flag stay only because an entry must name them.
   '/slice-it': {
@@ -230,9 +223,10 @@ export function appRouteGround(pathname: string): { bg: string; dark: boolean } 
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(prefers-color-scheme: dark)').matches
       : entry.defaultDark !== false;
-    try {
-      const raw = localStorage.getItem(entry.key);
-      const parsed = raw ? (JSON.parse(raw) as Record<string, unknown> | null) : null;
+    // Unreadable or non-JSON storage falls through to the default above
+    // (readJson never throws: a pre-paint path may not).
+    {
+      const parsed = readJson<Record<string, unknown> | null>(entry.key, null);
       const state = (parsed?.state ?? parsed) as Record<string, unknown> | null;
       const flag = state?.[entry.darkFlag];
       if (entry.darkWhen !== undefined) {
@@ -240,10 +234,6 @@ export function appRouteGround(pathname: string): { bg: string; dark: boolean } 
       } else if (typeof flag === 'boolean') {
         dark = flag;
       }
-    } catch {
-      // Unreadable or non-JSON storage falls through to the default above,
-      // which is the whole reason this is wrapped: a pre-paint path may not
-      // throw.
     }
     return { bg: dark ? entry.dark : entry.light, dark };
   }
@@ -359,41 +349,12 @@ interface ThemeStore {
   colorVision: ColorVisionMode;
   setColorVision: (value: ColorVisionMode) => void;
   /**
-   * Globe-eversion navigation transition (spec §9.3). `DEFAULT_NAV_TRANSITION`
-   * (Mercator) is the default and what an absent account row means. Cached in localStorage like
-   * `readableFont` and synced to the account.
-   */
-  navTransition: NavTransition;
-  setNavTransition: (value: NavTransition) => void;
-  /**
-   * "Always evert globe": run the eversion even on devices where it is skipped
-   * to keep navigation fast. Default off.
-   * Cached in localStorage and synced to the account like `navTransition`.
-   */
-  alwaysEvertGlobe: boolean;
-  setAlwaysEvertGlobe: (value: boolean) => void;
-  /**
-   * Eversion level (2026-10-21): `all` (default) everts every page transition; `globe` only the ones confirmed
-   * through the liquid-globe hub. Read at navigation time by the interceptor, so a change takes effect on the
-   * next navigation. Cached in localStorage and synced to the account like `navTransition`.
-   */
-  eversionLevel: EversionLevel;
-  setEversionLevel: (value: EversionLevel) => void;
-  /**
-   * Jelly motion (Plasmatic Jelly R8, WCAG 2.2.2): `lively` (default) | `calm` |
-   * `still`. Stamped on `html[data-jelly-motion]` (absent when `lively`) by the
-   * pre-paint script and Providers; cached in localStorage (`rmh-jelly-motion`)
-   * and synced to the account like `navTransition`.
+   * Globe motion (WCAG 2.2.2): `lively` (default) | `still`. Stamped on
+   * `html[data-jelly-motion]` (absent when `lively`) by the pre-paint script and
+   * Providers; cached in localStorage (`rmh-jelly-motion`) and synced to the account.
    */
   jellyMotion: JellyMotion;
   setJellyMotion: (value: JellyMotion) => void;
-  /**
-   * Electric arcs (Plasmatic Jelly R9): `full` (default) | `clicks` | `off`.
-   * Stamped on `html[data-electric-arcs]` (absent when `full`); cached in
-   * localStorage (`rmh-electric-arcs`) and synced to the account.
-   */
-  electricArcs: ElectricArcs;
-  setElectricArcs: (value: ElectricArcs) => void;
 
   // ── Marketplace user themes (§14) ────────────────────────────────────────
   /**
@@ -432,16 +393,8 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setCustomAccent: (customAccent) => set({ customAccent }),
   colorVision: DEFAULT_COLOR_VISION,
   setColorVision: (colorVision) => set({ colorVision }),
-  navTransition: DEFAULT_NAV_TRANSITION,
-  setNavTransition: (navTransition) => set({ navTransition }),
-  alwaysEvertGlobe: false,
-  setAlwaysEvertGlobe: (alwaysEvertGlobe) => set({ alwaysEvertGlobe }),
-  eversionLevel: DEFAULT_EVERSION_LEVEL,
-  setEversionLevel: (eversionLevel) => set({ eversionLevel: resolveEversionLevel(eversionLevel) }),
   jellyMotion: DEFAULT_JELLY_MOTION,
   setJellyMotion: (jellyMotion) => set({ jellyMotion: resolveJellyMotion(jellyMotion) }),
-  electricArcs: DEFAULT_ELECTRIC_ARCS,
-  setElectricArcs: (electricArcs) => set({ electricArcs: resolveElectricArcs(electricArcs) }),
   userTheme: null,
   // Applying/removing an owned theme also clears any transient preview.
   setUserTheme: (userTheme) => set({ userTheme, userThemePreview: null }),

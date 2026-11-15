@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The tasting menu — the globe, the course it is holding, and the carte.
  *
@@ -55,7 +53,7 @@ export function TastingMenu() {
     >
       <div className="mx-auto max-w-[86rem] px-6 py-24 sm:px-10 sm:py-32">
         <Reveal>
-          <p className="font-mono text-[0.7rem] uppercase tracking-[0.26em] text-rebar-ink-faint">
+          <p className="font-mono text-rem-70 uppercase tracking-[0.26em] text-rebar-ink-faint">
             {t('menu.eyebrow', { defaultValue: 'The carte · nine courses' })}
           </p>
         </Reveal>
@@ -72,10 +70,10 @@ export function TastingMenu() {
         <div className="mt-16 grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-20">
           {/* The one raised plane on the page, and the only liquid glass. */}
           <Reveal delay={0.12}>
-            <div className="glass-pane rounded-none p-5 sm:p-7">
+            <div className="surface-panel rounded-none p-5 sm:p-7">
               <MenuGlobe selected={selected} onSelect={setSelected} />
             </div>
-            <p className="mt-4 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-rebar-ink-faint">
+            <p className="mt-4 font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
               {t('globe.hint', {
                 defaultValue: 'Drag to turn it · pearls are drawn to size',
               })}
@@ -95,11 +93,11 @@ export function TastingMenu() {
                 className="min-w-0"
               >
                 <div className="flex items-baseline justify-between gap-4">
-                  <p className="font-mono text-[0.72rem] uppercase tracking-[0.2em] text-rebar-ink-soft">
+                  <p className="font-mono text-rem-72 uppercase tracking-[0.2em] text-rebar-ink-soft">
                     {courseNo(course.no)} / {courseNo(COURSES.length)}
                   </p>
                   {course.signature ? (
-                    <p className="bg-rebar-sulphur px-2 py-1 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-rebar-sulphur-ink">
+                    <p className="bg-rebar-sulphur px-2 py-1 font-mono text-rem-62 uppercase tracking-[0.16em] text-rebar-sulphur-ink">
                       {t('course.signature', { defaultValue: 'The one on the sign' })}
                     </p>
                   ) : null}
@@ -136,7 +134,7 @@ export function TastingMenu() {
         {/* ── The carte ──────────────────────────────────────────────────── */}
         <div className="mt-24 sm:mt-32">
           <Reveal>
-            <h3 className="font-mono text-[0.7rem] uppercase tracking-[0.26em] text-rebar-ink-faint">
+            <h3 className="font-mono text-rem-70 uppercase tracking-[0.26em] text-rebar-ink-faint">
               {t('card.title', { defaultValue: 'The menu, as printed' })}
             </h3>
           </Reveal>
@@ -203,7 +201,7 @@ export function TastingMenu() {
 function Spec({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-baseline gap-4 border-b border-rebar-line py-3.5">
-      <dt className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-rebar-ink-faint">
+      <dt className="font-mono text-rem-68 uppercase tracking-[0.16em] text-rebar-ink-faint">
         {label}
       </dt>
       <dd className="text-sm text-rebar-ink">{value}</dd>

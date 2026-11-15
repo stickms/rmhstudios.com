@@ -1,5 +1,6 @@
-'use client';
-
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { editPostApi } from '@/lib/feed/compose-assist.contract';
 import { useRef, useState } from'react';
 import { useTranslation } from'react-i18next';
 import { X } from'lucide-react';
@@ -12,7 +13,7 @@ import {
 } from'@/components/ui/dialog';
 import { Button } from'@/components/ui/button';
 import { Textarea } from'@/components/ui/textarea';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { MAX_RMHARK_LENGTH } from'@/lib/rmhark-limits';
 import { GifPicker } from'./GifPicker';
 import { GifEmbed } from'./GifEmbed';
@@ -51,22 +52,15 @@ export function EditPostModal({
  if ((!trimmed && !gifUrl.trim()) || trimmed.length > MAX_RMHARK_LENGTH) return;
  setSaving(true);
  try {
- const res = await fetch(`/api/rmharks/${postId}`, {
- method:'PATCH',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ content: trimmed, gifUrl: gifUrl.trim() || null }),
+ await api(editPostApi, {
+ params: { id: postId },
+ body: { content: trimmed, gifUrl: gifUrl.trim() || null },
  });
- const data = await res.json().catch(() => ({}));
- if (res.ok) {
  onSaved(trimmed, gifUrl.trim() || null);
  onOpenChange(false);
  toast.success(t('post-updated', { defaultValue:'Post updated'}));
- } else {
- toast.error(
- data.error || t('could-not-update-post', { defaultValue:'Could not update post'}),
- );
- }
+ } catch (e) {
+ toast.error(serverError(e) || t('could-not-update-post', { defaultValue:'Could not update post'}));
  } finally {
  setSaving(false);
  }
@@ -88,9 +82,9 @@ export function EditPostModal({
  className="resize-none"
  />
  {/* GIF section */}
- <div className="mt-3 glass-fill rounded-site px-4 py-3">
+ <div className="mt-3 relative rounded-site px-4 py-3">
  <div className="flex items-center justify-between mb-2">
- <span className="text-xs font-semibold text-site-text-dim">
+ <span className="text-xs font-semibold text-site-text-muted">
  {t('gif-heading', { defaultValue:'GIF'})}
  </span>
  {gifUrl.trim() && (
@@ -100,7 +94,7 @@ export function EditPostModal({
  setGifUrl('');
  setShowGifPicker(false);
  }}
- className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+ className="p-2 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
  aria-label={t('remove-gif-aria', { defaultValue:'Remove GIF'})}
  >
  <X className="w-3.5 h-3.5"/>
@@ -142,7 +136,7 @@ export function EditPostModal({
  </div>
 
  <div className="flex items-center justify-between">
- <span className={`text-xs ${remaining < 0 ?'text-site-danger':'text-site-text-dim'}`}>
+ <span className={`text-xs ${remaining < 0 ?'text-site-danger':'text-site-text-muted'}`}>
  {remaining}
  </span>
  </div>
@@ -152,7 +146,7 @@ export function EditPostModal({
  {t('cancel', { defaultValue:'Cancel'})}
  </Button>
  <Button
- variant="accent"
+ variant="default"
  onClick={save}
  disabled={saving || (!content.trim() && !gifUrl.trim()) || remaining < 0}
  >

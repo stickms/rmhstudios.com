@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The ledger in four dimensions.
  *

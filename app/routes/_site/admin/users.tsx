@@ -6,7 +6,7 @@ import { AdminBody } from '@/components/admin/AdminBody';
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Search, CheckCircle, Shield, Pencil, Check, X, Crown, Coins, Bot, User as UserIcon, Users } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
@@ -19,6 +19,15 @@ import { PageTabs } from '@/components/feed/PageTabs';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  grantAdminMembershipApi,
+  setAdminUserCoinsApi,
+  updateAdminUserApi,
+} from '@/lib/admin/admin-ops.contract';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type AccountFilter = 'all' | 'people' | 'bots';
 
@@ -61,6 +70,8 @@ function AdminUsersPage() {
   // Bot accounts are ordinary user rows, so they're impossible to pick out of a
   // flat list — this narrows the table to one population or the other.
   const [accounts, setAccounts] = useState<AccountFilter>('all');
+  const arrival = useArrival(!(loading && users.length === 0));
+  const isNewUser = useArrivingKeys(users.map((u) => u.id));
 
   const listUrl = useCallback((cursor?: string | null) => {
     const params = new URLSearchParams();
@@ -121,17 +132,19 @@ function AdminUsersPage() {
     if (updating !== null) return;
     setUpdating(userId);
     try {
-      const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, [field]: !currentValue }) });
-      if (res.ok) { const updated = await res.json(); setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u)); }
-      else { const err = await res.text(); toast.error(t("alert-update-user-failed", { err, defaultValue: "Failed to update user: {{err}}" })); }
-    } catch (error) { console.error("Failed to update user", error); toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
+      const updated = await api(updateAdminUserApi, { body: { userId, [field]: !currentValue } });
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u));
+    } catch (error) {
+      if (error instanceof HttpError) { const err = error.text ?? serverError(error) ?? ''; toast.error(t("alert-update-user-failed", { err, defaultValue: "Failed to update user: {{err}}" })); }
+      else { console.error("Failed to update user", error); toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); }
+    } finally { setUpdating(null); }
   };
 
   const grantMembership = async (userId: string) => {
     const choice = prompt(t("prompt-grant-membership", { defaultValue: 'Grant membership — enter "starter" or "pro" (or "revoke" to remove):' }), 'pro');
     if (!choice) return;
     const action = choice.trim().toLowerCase();
-    let body: Record<string, unknown>;
+    let body: { revoke: true } | { tier: 'starter' | 'pro'; months: number };
     if (action === 'revoke') {
       body = { revoke: true };
     } else if (action === 'starter' || action === 'pro') {
@@ -145,13 +158,14 @@ function AdminUsersPage() {
     if (updating !== null) return;
     setUpdating(userId);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/grant-membership`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) toast.success(action === 'revoke' ? t("alert-grants-revoked", { defaultValue: 'Active grants revoked.' }) : t("alert-membership-granted", { action, defaultValue: 'Granted {{action}}.' }));
-      else { const d = await res.json().catch(() => ({})); toast.error(t("alert-membership-failed", { error: d.error || 'error', defaultValue: 'Failed: {{error}}' })); }
+      try {
+        await api(grantAdminMembershipApi, { params: { id: userId }, body });
+        toast.success(action === 'revoke' ? t("alert-grants-revoked", { defaultValue: 'Active grants revoked.' }) : t("alert-membership-granted", { action, defaultValue: 'Granted {{action}}.' }));
+      } catch (e) {
+        // An HTTP refusal reports the server's message; anything else is "can't connect".
+        if (e instanceof HttpError) toast.error(t("alert-membership-failed", { error: serverError(e) || 'error', defaultValue: 'Failed: {{error}}' }));
+        else throw e;
+      }
     } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 
@@ -167,18 +181,13 @@ function AdminUsersPage() {
     if (updating !== null) return;
     setUpdating(user.id);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}/set-coins`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coins }),
-      });
-      if (res.ok) {
-        const data = await res.json();
+      try {
+        const data = await api(setAdminUserCoinsApi, { params: { id: user.id }, body: { coins } });
         setUsers(prev => prev.map(u => u.id === user.id ? { ...u, profile: { coins: data.coins } } : u));
         toast.success(t("alert-coins-updated", { defaultValue: "Coin balance updated." }));
-      } else {
-        const d = await res.json().catch(() => ({}));
-        toast.error(t("alert-set-coins-failed", { error: d.error || 'error', defaultValue: 'Failed: {{error}}' }));
+      } catch (e) {
+        if (e instanceof HttpError) toast.error(t("alert-set-coins-failed", { error: serverError(e) || 'error', defaultValue: 'Failed: {{error}}' }));
+        else throw e;
       }
     } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
@@ -192,9 +201,13 @@ function AdminUsersPage() {
     setUpdating(userId);
     setHandleError(null);
     try {
-      const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, handle: handleInput.trim().toLowerCase() }) });
-      if (res.ok) { const updated = await res.json(); setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u)); setEditingHandle(null); setHandleInput(''); }
-      else { const data = await res.json().catch(() => ({})); setHandleError(data.error || t("error-update-handle", { defaultValue: 'Failed to update handle' })); }
+      try {
+        const updated = await api(updateAdminUserApi, { body: { userId, handle: handleInput.trim().toLowerCase() } });
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u)); setEditingHandle(null); setHandleInput('');
+      } catch (e) {
+        if (e instanceof HttpError) setHandleError(serverError(e) || t("error-update-handle", { defaultValue: 'Failed to update handle' }));
+        else throw e;
+      }
     } catch { setHandleError(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 
@@ -229,16 +242,17 @@ function AdminUsersPage() {
           aria-label={t("search-label", { defaultValue: "Search users" })}
         />
 
-        <div className="glass-fill overflow-hidden rounded-site">
-          {/* From `sm` this is a 4-column table; below `sm` each row wraps into a
-              stacked card, so there is no column header (and no min-width that
-              would hide most of a row behind a sideways swipe). */}
-          <div className="hidden border-b border-site-border px-4 py-3 sm:block">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-xs font-semibold text-site-text-muted">
+        <div>
+          {/* From `sm` this is a 4-column table; below `sm` each row is two
+              lines (who, then the counts and the actions), so there is no
+              column header and no min-width that would hide most of a row
+              behind a sideways swipe. */}
+          <div className="hidden border-b border-site-border py-2 sm:block">
+            <div className="t-label grid grid-cols-[1fr_auto_auto_auto] gap-4">
               <div>{t("col-user", { defaultValue: "User" })}</div>
               <div className="w-20 text-center">{t("col-verified", { defaultValue: "Verified" })}</div>
               <div className="w-32 text-center">{t("col-actions", { defaultValue: "Actions" })}</div>
-              <div className="w-24 text-right">{t("col-activity", { defaultValue: "Activity" })}</div>
+              <div className="w-24 text-end">{t("col-activity", { defaultValue: "Activity" })}</div>
             </div>
           </div>
 
@@ -248,10 +262,10 @@ function AdminUsersPage() {
               <span>{t("loading-users", { defaultValue: "Loading users..." })}</span>
             </div>
           ) : !loading && users.length === 0 ? (
-            <EmptyState icon={Search} title={t("no-users-found", { defaultValue: "No users found matching your search." })} />
+            <EmptyState className={arrival} icon={Search} title={t("no-users-found", { defaultValue: "No users found matching your search." })} />
           ) : (
             <div
-              className={`divide-y divide-site-border transition-opacity duration-site-fast ${loading ? 'opacity-60' : ''}`}
+              className={cn('divide-y divide-site-border transition-opacity duration-site-fast', loading && 'opacity-60', arrival)}
               aria-busy={loading}
             >
               {users.map((user, index) => {
@@ -263,21 +277,21 @@ function AdminUsersPage() {
                 const secondaryLine =
                   user.email ?? (user.isBot ? t("bot-no-email", { defaultValue: "Automated account" }) : null);
                 return (
-                  <div key={user.id} ref={isLast ? lastUserElementRef : null} className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-3 transition-colors hover:bg-site-surface-hover">
-                    <div className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-auto">
+                  <div key={user.id} ref={isLast ? lastUserElementRef : null} className={cn('flex flex-wrap items-center gap-x-4 gap-y-2 py-3', isNewUser(user.id) && ARRIVE)}>
+                    <div className="flex min-w-0 flex-1 basis-full items-center gap-3 sm:basis-0">
                       <UserAvatar src={user.image} alt={user.name || user.handle || user.username} size={40} fallbackName={user.name || user.handle || 'U'} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <Link to={`/u/${user.handle || user.id}` as string} className="truncate font-semibold text-site-text hover:text-site-accent">{user.name || user.handle || user.username}</Link>
+                          <Link to={`/u/${user.handle || user.id}` as string} className="t-body truncate font-semibold text-site-text hover:underline">{user.name || user.handle || user.username}</Link>
                           {user.isVerified && <CheckCircle className="size-4 shrink-0 text-site-accent" role="img" aria-label={t("title-verified", { defaultValue: "Verified" })} />}
                           {user.isAdmin && <Shield className="size-4 shrink-0 text-site-danger" role="img" aria-label={t("title-admin", { defaultValue: "Admin" })} />}
                           {user.isBot && (
-                            <Badge variant="accent" size="sm" icon={<Bot aria-hidden />}>
+                            <Badge variant="default" icon={<Bot aria-hidden />}>
                               {t("badge-bot", { defaultValue: "Bot" })}
                             </Badge>
                           )}
                         </div>
-                        <div className="flex flex-col text-sm text-site-text-dim sm:flex-row sm:items-center sm:gap-2">
+                        <div className="t-body flex flex-col text-site-text-muted sm:flex-row sm:items-center sm:gap-2">
                           {isEditingThis ? (
                             <div className="flex flex-wrap items-center gap-2">
                               <span>@</span>
@@ -291,9 +305,9 @@ function AdminUsersPage() {
                                 maxLength={20}
                                 onKeyDown={(e) => { if (e.key === 'Enter') saveHandle(user.id); if (e.key === 'Escape') cancelEditHandle(); }}
                               />
-                              <IconButton icon={Check} size="icon-xs" variant="outline" label={t("save-handle", { defaultValue: "Save handle" })} onClick={() => saveHandle(user.id)} disabled={busy} />
+                              <IconButton icon={Check} size="icon-xs" variant="default" label={t("save-handle", { defaultValue: "Save handle" })} onClick={() => saveHandle(user.id)} disabled={busy} />
                               <IconButton icon={X} size="icon-xs" variant="ghost" label={t("cancel-handle", { defaultValue: "Cancel" })} onClick={cancelEditHandle} />
-                              {handleError && <span className="text-xs text-site-danger">{handleError}</span>}
+                              {handleError && <span className="t-meta text-site-danger">{handleError}</span>}
                             </div>
                           ) : (
                             <span className="flex items-center gap-2 truncate">
@@ -312,35 +326,35 @@ function AdminUsersPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex w-20 shrink-0 justify-center">
+                    <div className="t-meta flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1 sm:order-last sm:w-24 sm:flex-none sm:flex-col sm:items-end">
+                      <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
+                      <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
+                      <span className="flex items-center gap-1"><Coins className="size-3" aria-hidden />{(user.profile?.coins ?? 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex shrink-0 justify-center sm:w-20">
                       <IconButton
                         icon={CheckCircle}
                         size="icon-sm"
-                        variant={user.isVerified ? 'accent-outline' : 'outline'}
+                        variant={user.isVerified ? 'default' : 'default'}
                         disabled={busy}
                         onClick={() => toggleStatus(user.id, 'isVerified', user.isVerified)}
                         aria-pressed={user.isVerified}
                         label={user.isVerified ? t("title-remove-verification", { defaultValue: "Remove Verification" }) : t("title-verify-user", { defaultValue: "Verify User" })}
                       />
                     </div>
-                    <div className="flex w-32 shrink-0 justify-center gap-2">
-                      <IconButton icon={Coins} size="icon-sm" variant="outline" disabled={busy} onClick={() => setCoins(user)} label={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })} />
-                      <IconButton icon={Crown} size="icon-sm" variant="outline" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
+                    <div className="flex shrink-0 justify-center gap-2 sm:w-32">
+                      <IconButton icon={Coins} size="icon-sm" variant="default" disabled={busy} onClick={() => setCoins(user)} label={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })} />
+                      <IconButton icon={Crown} size="icon-sm" variant="default" disabled={busy} onClick={() => grantMembership(user.id)} label={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })} />
                       <IconButton
                         icon={Shield}
                         size="icon-sm"
-                        variant="outline"
-                        className={user.isAdmin ? 'border-site-danger/40 text-site-danger' : undefined}
+                        variant="default"
+                        className={user.isAdmin ? 'border-site-danger text-site-danger' : undefined}
                         disabled={busy}
                         onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)}
                         aria-pressed={user.isAdmin}
                         label={user.isAdmin ? t("title-remove-admin", { defaultValue: "Remove Admin" }) : t("title-make-admin", { defaultValue: "Make Admin" })}
                       />
-                    </div>
-                    <div className="flex w-24 shrink-0 flex-col items-end text-xs text-site-text-dim">
-                      <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
-                      <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
-                      <span className="flex items-center gap-1 text-site-warning"><Coins className="size-3" aria-hidden />{(user.profile?.coins ?? 0).toLocaleString()}</span>
                     </div>
                   </div>
                 );
@@ -349,7 +363,7 @@ function AdminUsersPage() {
           )}
 
           {loadingMore && (
-            <div className="flex justify-center p-4 text-site-text-dim"><Spinner /></div>
+            <div className="flex justify-center py-4 text-site-text-muted"><Spinner /></div>
           )}
         </div>
       </AdminBody>

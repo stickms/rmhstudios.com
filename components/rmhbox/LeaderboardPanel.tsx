@@ -6,7 +6,6 @@
  *
  * Props: none (fetches data itself)
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,21 +13,25 @@ import { Trophy } from 'lucide-react';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { C2S, S2C } from '@/lib/rmhbox/events';
 import type { LeaderboardEntry } from '@/lib/rmhbox/types';
+import { api } from '@/lib/contract/client';
+import { getRmhboxLeaderboardApi } from '@/lib/rmhbox/rmhbox-reads.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function LeaderboardPanel() {
   const { t } = useTranslation("c-rmhbox");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
 
   // Fetch initial data via HTTP API
   useEffect(() => {
     async function fetchLeaderboard() {
       try {
-        const response = await fetch('/api/rmhbox/leaderboard?period=all-time&metric=score&limit=10');
-        if (response.ok) {
-          const data = await response.json();
-          setEntries(data.entries || []);
-        }
+        const data = await api(getRmhboxLeaderboardApi, {
+          query: { period: 'all-time', metric: 'score', limit: 10 },
+        });
+        setEntries(data.entries || []);
       } catch (err) {
         console.error('[LeaderboardPanel] Failed to fetch leaderboard:', err);
       } finally {
@@ -58,19 +61,19 @@ export default function LeaderboardPanel() {
   }, []);
 
   return (
-    <section className="flex flex-col gap-3 rounded-(--app-radius) app-glass px-4 py-4 md:px-6 md:py-5">
+    <section className="flex flex-col gap-3 rounded-app app-glass px-4 py-4 md:px-6 md:py-5">
       <h2 className="flex items-center gap-2 text-xl font-semibold">
-        <Trophy className="h-5 w-5 text-(--app-accent)" aria-hidden /> {t("leaderboard", { defaultValue: "Leaderboard" })}
+        <Trophy className="h-5 w-5 text-app-accent" aria-hidden /> {t("leaderboard", { defaultValue: "Leaderboard" })}
       </h2>
 
       {loading ? (
-        <p className="text-sm text-(--app-text-muted)">{t("loading", { defaultValue: "Loading…" })}</p>
+        <p className="text-sm text-app-text-muted">{t("loading", { defaultValue: "Loading…" })}</p>
       ) : entries.length === 0 ? (
-        <p className="text-sm text-(--app-text-muted)">{t("no-entries", { defaultValue: "No entries yet." })}</p>
+        <p className={cn('text-sm text-app-text-muted', arrival)}>{t("no-entries", { defaultValue: "No entries yet." })}</p>
       ) : (
-        <table className="w-full text-sm">
+        <table className={cn('w-full text-sm', arrival)}>
           <thead>
-            <tr className="text-left text-(--app-text-muted)">
+            <tr className="text-left text-app-text-muted">
               <th className="pb-2 pr-2 font-medium">#</th>
               <th className="pb-2 pr-2 font-medium">{t("player", { defaultValue: "Player" })}</th>
               <th className="pb-2 text-right font-medium">{t("score", { defaultValue: "Score" })}</th>
@@ -78,9 +81,9 @@ export default function LeaderboardPanel() {
           </thead>
           <tbody>
             {entries.map((entry) => (
-              <tr key={entry.userId} className="border-t border-(--app-border)">
-                <td className="py-2 pr-2 font-bold text-(--app-accent)">{entry.rank}</td>
-                <td className="py-2 pr-2 text-(--app-text)">
+              <tr key={entry.userId} className="border-t border-app-border">
+                <td className="py-2 pr-2 font-bold text-app-accent">{entry.rank}</td>
+                <td className="py-2 pr-2 text-app-text">
                   <div className="flex items-center gap-2">
                     {entry.avatarUrl ? (
                       <img
@@ -97,7 +100,7 @@ export default function LeaderboardPanel() {
                       />
                     ) : null}
                     <div
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--app-accent) text-xs font-bold text-(--app-accent-fg)"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-app-accent text-xs font-bold text-app-accent-fg"
                       style={entry.avatarUrl ? { display: 'none' } : undefined}
                     >
                       {entry.userName.charAt(0).toUpperCase()}
@@ -105,7 +108,7 @@ export default function LeaderboardPanel() {
                     <span className="truncate">{entry.userName}</span>
                   </div>
                 </td>
-                <td className="py-2 text-right font-mono text-(--app-text)">{entry.value}</td>
+                <td className="py-2 text-right font-mono text-app-text">{entry.value}</td>
               </tr>
             ))}
           </tbody>

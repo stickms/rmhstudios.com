@@ -10,7 +10,7 @@
  * post/comment; any edit busts the entry in this process.
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { createComment } from '@/lib/social/engagement.server';
 import { linkPostHashtags, unlinkPostHashtags } from '@/lib/tags-extract.server';
@@ -32,7 +32,7 @@ const RULES_TTL_MS = 5 * 60_000;
 const rulesKey = (communityId: string) => `community:automod:${communityId}`;
 
 export function bustAutomod(communityId: string): void {
-  apiCache.invalidate(rulesKey(communityId));
+  void invalidateCached(rulesKey(communityId));
 }
 
 export class AutomodError extends Error {
@@ -49,29 +49,33 @@ export interface StoredRule extends AutomodRule {
 }
 
 export async function getAutomodRules(communityId: string): Promise<StoredRule[]> {
-  const hit = apiCache.get<StoredRule[]>(rulesKey(communityId));
-  if (hit) return hit;
-  const rows = await prisma.communityAutomodRule.findMany({
-    where: { communityId },
-    orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
-    take: AUTOMOD_MAX_RULES,
-  });
-  const rules: StoredRule[] = [];
-  for (const r of rows) {
-    const parsed = automodConditionsSchema.safeParse(r.conditions);
-    if (!parsed.success) continue; // a corrupt row must not take posting down
-    rules.push({
-      id: r.id,
-      name: r.name,
-      enabled: r.enabled,
-      appliesTo: r.appliesTo as AutomodAppliesTo,
-      action: r.action as AutomodAction,
-      conditions: parsed.data,
-      position: r.position,
-    });
-  }
-  apiCache.set(rulesKey(communityId), rules, RULES_TTL_MS);
-  return rules;
+  return cached(
+    rulesKey(communityId),
+    RULES_TTL_MS,
+    async () => {
+      const rows = await prisma.communityAutomodRule.findMany({
+        where: { communityId },
+        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+        take: AUTOMOD_MAX_RULES,
+      });
+      const rules: StoredRule[] = [];
+      for (const r of rows) {
+        const parsed = automodConditionsSchema.safeParse(r.conditions);
+        if (!parsed.success) continue; // a corrupt row must not take posting down
+        rules.push({
+          id: r.id,
+          name: r.name,
+          enabled: r.enabled,
+          appliesTo: r.appliesTo as AutomodAppliesTo,
+          action: r.action as AutomodAction,
+          conditions: parsed.data,
+          position: r.position,
+        });
+      }
+      return rules;
+    },
+    { l2: false },
+  );
 }
 
 export async function createAutomodRule(

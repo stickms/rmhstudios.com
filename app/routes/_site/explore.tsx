@@ -45,7 +45,7 @@ export const Route = createFileRoute('/_site/explore')({
   // The defaults never reach the URL. Without this the canonical form of a
   // bare `/explore` — the nav's own link — was `/explore?q=&tab=top`, so every
   // direct visit, reload and shared link answered with a 307 and paid a second
-  // round trip before the first byte of the page (docs/ui-perf-audit-2026-10-09.md,
+  // round trip before the first byte of the page (docs/archive/2026/ui-perf-audit-2026-10-09.md,
   // LOAD-1). Stripping them makes `/explore` its own canonical address.
   search: { middlewares: [stripSearchParams({ q: '', tab: 'top' as SearchTab })] },
   loader: () => fetchExplore(),
@@ -71,7 +71,7 @@ function ExplorePage() {
   const { officialBuilds, userBuilds, blogPosts } = sidebar;
 
   // No `rightSidebar`. `PageLayout` portals one into the shell's live rail
-  // (components/radial/rail-slot.tsx), and the rail is not empty to begin with —
+  // (components/shell/margin-slot.tsx), and the rail is not empty to begin with —
   // it already carries Trending and "Who to follow". Handing it `RightSidebar`
   // put a second, differently-titled copy of the same recommendations
   // ("Recommended Users") in a panel nested inside the rail, above an "Explore
@@ -86,7 +86,7 @@ function ExplorePage() {
         defaultValue: 'Search people, posts, builds and writing across RMH Studios.',
       })}
     >
-      <div className="flex justify-end px-4 pt-4">
+      <div className="flex justify-end pb-3">
         <SurpriseButton />
       </div>
       <SavedSearches currentQuery={q} />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { ArrowDown, ArrowUp, Link2, Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -132,7 +132,7 @@ export default function MarathonPlanner() {
             </option>
           ))}
         </Select>
-        <Button variant="outline" size="sm" onClick={() => setDraft(blank())}>
+        <Button variant="default" size="sm" onClick={() => setDraft(blank())}>
           <Plus /> {t('marathon-new', { defaultValue: 'New list' })}
         </Button>
         {draft.id && (
@@ -147,7 +147,7 @@ export default function MarathonPlanner() {
         )}
       </div>
 
-      <section className="glass-pane space-y-4 rounded-site p-5">
+      <section className="space-y-4 rounded-site p-5">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-2 text-sm">
             <span className="text-site-text-muted">
@@ -232,7 +232,7 @@ export default function MarathonPlanner() {
               value={newMin}
               onChange={(e) => setNewMin(Number(e.target.value))}
             />
-            <Button variant="outline" size="sm" onClick={add}>
+            <Button variant="default" size="sm" onClick={add}>
               <Plus /> {t('marathon-add', { defaultValue: 'Add' })}
             </Button>
           </div>
@@ -243,7 +243,7 @@ export default function MarathonPlanner() {
             <Save /> {t('marathon-save', { defaultValue: 'Save list' })}
           </Button>
           {draft.shareId && (
-            <Button variant="outline" onClick={copyLink}>
+            <Button variant="default" onClick={copyLink}>
               <Link2 /> {t('marathon-share', { defaultValue: 'Copy share link' })}
             </Button>
           )}

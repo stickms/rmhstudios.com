@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { PageTabs } from '@/components/feed/PageTabs';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -25,6 +25,8 @@ import {
   securityCategoryLabel,
   type SecurityReportStatus,
 } from '@/lib/security-report-schema';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/security-reports')({
   head: () => ({ meta: [{ title: 'Security Reports | RMH Studios' }] }),
@@ -41,6 +43,7 @@ function AdminSecurityReportsPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async (s: SecurityReportStatus) => {
     setLoading(true);
@@ -132,7 +135,7 @@ function AdminSecurityReportsPage() {
     >
         {/* The byte-identical twin of the switcher in admin/reports.tsx — same
             hand-rolled accent pill, same missing `aria-pressed`. Both are
-            `LiquidTabs` now, which is what stops them drifting apart again. */}
+            `Tabs` now, which is what stops them drifting apart again. */}
       <PageTabs
           tabs={SECURITY_REPORT_STATUSES.map((s) => ({
             id: s,
@@ -151,11 +154,12 @@ function AdminSecurityReportsPage() {
           </div>
         ) : items.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={ShieldAlert}
             title={t('security-queue-empty', { defaultValue: 'Nothing here. This queue is clear.' })}
           />
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {items.map((r) => (
               <ReportCard
                 key={r.id}
@@ -190,43 +194,43 @@ function ReportCard({
   const [notes, setNotes] = useState(report.adminNotes ?? '');
 
   return (
-    <li className="glass-fill space-y-3 rounded-site p-5">
+    <li className="space-y-3 py-4 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Badge variant="danger" className="capitalize">
               {report.severity}
             </Badge>
-            <Badge variant="outline">{securityCategoryLabel(report.category)}</Badge>
+            <Badge variant="default">{securityCategoryLabel(report.category)}</Badge>
           </div>
-          <h3 className="text-base font-semibold text-site-text break-words">{report.title}</h3>
+          <h3 className="t-heading text-site-text break-words">{report.title}</h3>
         </div>
-        <span className="text-xs text-site-text-dim whitespace-nowrap">
+        <span className="t-meta whitespace-nowrap">
           {formatDistanceToNow(new Date(report.createdAt), { addSuffix: true })}
         </span>
       </div>
 
       {report.affectedArea ? (
-        <p className="text-xs text-site-text-muted break-words">
-          <span className="text-site-text-dim">{t('affected-label', { defaultValue: 'Affected:' })}</span> {report.affectedArea}
+        <p className="t-body break-words text-site-text">
+          <span className="text-site-text-muted">{t('affected-label', { defaultValue: 'Affected:' })}</span> {report.affectedArea}
         </p>
       ) : null}
 
-      <p className="whitespace-pre-wrap break-words text-sm text-site-text">{report.description}</p>
+      <p className="whitespace-pre-wrap break-words t-body text-site-text">{report.description}</p>
 
       {report.reporterName || report.reporterEmail || report.userId ? (
-        <p className="text-xs text-site-text-muted">
-          <span className="text-site-text-dim">{t('reporter-label', { defaultValue: 'Reporter:' })}</span>{' '}
+        <p className="t-body break-words text-site-text">
+          <span className="text-site-text-muted">{t('reporter-label', { defaultValue: 'Reporter:' })}</span>{' '}
           {report.reporterName || t('anonymous', { defaultValue: 'Anonymous' })}
           {report.reporterEmail ? (
             <>
               {' · '}
-              <a className="text-site-accent hover:underline" href={`mailto:${report.reporterEmail}`}>
+              <a className="underline" href={`mailto:${report.reporterEmail}`}>
                 {report.reporterEmail}
               </a>
             </>
           ) : null}
-          {report.userId ? <span className="text-site-text-dim"> · {t('signed-in-user', { defaultValue: 'signed-in user' })}</span> : null}
+          {report.userId ? <span className="text-site-text-muted"> · {t('signed-in-user', { defaultValue: 'signed-in user' })}</span> : null}
         </p>
       ) : null}
 
@@ -254,7 +258,7 @@ function ReportCard({
             </option>
           ))}
         </Select>
-        <Button variant="accent" size="sm" onClick={() => onNotes(report.id, notes)} loading={busy}>
+        <Button variant="default" size="sm" onClick={() => onNotes(report.id, notes)} loading={busy}>
           {t('save-notes', { defaultValue: 'Save notes' })}
         </Button>
         <Button
@@ -262,7 +266,7 @@ function ReportCard({
           size="icon-sm"
           onClick={() => onDelete(report.id)}
           disabled={busy}
-          className="ml-auto text-site-danger hover:bg-site-danger/10"
+          className="ms-auto text-site-danger"
           aria-label={t('delete-report', { defaultValue: 'Delete report' })}
         >
           <Trash2 aria-hidden />

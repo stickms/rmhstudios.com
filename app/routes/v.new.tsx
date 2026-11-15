@@ -12,6 +12,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
@@ -21,6 +22,7 @@ import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 const GENERIC_ERROR = 'Something went wrong while generating. Give it another go.';
 
 export const Route = createFileRoute('/v/new')({
+  head: () => noindexHead('New Vibe'),
   validateSearch: (search: Record<string, unknown>) => ({
     prompt: typeof search.prompt === 'string' ? search.prompt : '',
     model: asVibeModel(search.model),

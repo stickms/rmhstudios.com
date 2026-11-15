@@ -1039,8 +1039,8 @@ def build_body(fs, src, store, want_clips):
 def build_anim_pack(fs, src):
     """The skeleton of `src` plus every picked sequence's clips (no mesh)."""
     bones, skel = skeleton_of(src.mdl)
-    clips, seq_meta, activities, weightlists, errors = build_animation(
-        fs, src.vm, src.picks, skel, root_fix(src.mdl, bones))
+    fix = root_fix(src.mdl, bones)
+    clips, seq_meta, activities, weightlists, errors = build_animation(fs, src.vm, src.picks, skel, fix)
     if not clips:
         raise srcmodel.ModelError("no decodable sequences")
     extras = {"tf2game": SCHEMA, "mdl": src.path, "scale": SCALE, "animPack": True,
@@ -1050,6 +1050,11 @@ def build_anim_pack(fs, src):
               "sequences": seq_meta, "activities": activities}
     if weightlists:
         extras["weightlists"] = weightlists
+    if src.frame_anims:
+        # The clips' basis, as build_model records it for a model that carries its own clips: a model whose
+        # sequences all come from an include (CS:GO's knives) has no clips to record it beside, and no hull
+        # the client could recover it from.
+        extras["source"] = {"clipFrame": [round(float(x), 6) for x in np.asarray(fix).reshape(9)]}
     if errors:
         extras["animErrors"] = errors[:50]
     for c in clips:

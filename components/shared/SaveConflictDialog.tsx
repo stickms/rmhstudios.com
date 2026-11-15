@@ -21,7 +21,6 @@
  * `.app-theme` app and equally inside a game with its own palette and no app
  * chrome (Temple of Joy renders it over its own ground).
  */
-'use client';
 
 import { useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -132,7 +131,7 @@ export function SaveConflictDialog({ local, cloud, onChoose, gameName }: SaveCon
             className={
               wide
                 ? 'mt-2 text-xs leading-relaxed sm:text-sm'
-                : 'mt-1 text-[0.7rem] leading-snug'
+                : 'mt-1 text-rem-70 leading-snug'
             }
             style={{ color: 'var(--app-text-muted, #9a9ba4)' }}
           >

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * F5 — body-doubling match, on the RMH Study landing. Pick a subject, 25 or 50
  * minutes and a time (now, or a half-hour slot); the server pairs you with
@@ -12,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Users } from 'lucide-react';
-import { toast } from '@/lib/rmhstudy/toast-store';
+import { toast } from '@/lib/shared/app-toast';
 import { api } from '@/components/calendar/api';
 import {
   STUDY_LENGTHS,
@@ -22,9 +20,11 @@ import {
   type StudyPreset,
 } from '@/lib/calendar/study-buddy';
 import type { StudyBuddyStatus } from '@/lib/calendar/types';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const chip =
-  'rounded-full border px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-accent)';
+  'rounded-full border px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent';
 
 export default function BodyDoublePanel() {
   const { t, i18n } = useTranslation('f-calendar');
@@ -36,6 +36,13 @@ export default function BodyDoublePanel() {
   const [status, setStatus] = useState<StudyBuddyStatus>({ waiting: [], matches: [] });
   const [tick, setTick] = useState(() => Date.now());
   const knownMatches = useRef<Set<string> | null>(null);
+  // M9: requests and matches arrive from the server after the panel shows, and new ones join while it is open.
+  const hasStatus = status.waiting.length > 0 || status.matches.length > 0;
+  const statusArrival = useArrival(hasStatus);
+  const isNewRow = useArrivingKeys([
+    ...status.matches.map((m) => m.id),
+    ...status.waiting.map((w) => w.requestId),
+  ]);
 
   const presetLabels: Record<StudyPreset, string> = {
     math: t('subject-math', { defaultValue: 'Math' }),
@@ -137,13 +144,14 @@ export default function BodyDoublePanel() {
   return (
     <section
       aria-labelledby="body-double-title"
-      className="rounded-(--app-radius) app-glass p-6"
+      // Mounted only after idle (the landing), into a gap that was empty: it always arrives (M9).
+      className={cn('rounded-app app-glass p-6', ARRIVE)}
     >
       <h2 id="body-double-title" className="mb-1 flex items-center gap-2 text-xl font-semibold">
-        <Users className="h-5 w-5 text-(--app-accent)" aria-hidden />
+        <Users className="h-5 w-5 text-app-accent" aria-hidden />
         {t('bd-title', { defaultValue: 'Study with a buddy' })}
       </h2>
-      <p className="mb-4 text-sm text-(--app-text-muted)">
+      <p className="mb-4 text-sm text-app-text-muted">
         {t('bd-subtitle', {
           defaultValue:
             'Get matched with someone studying the same subject at the same time. You each work on your own thing, together.',
@@ -152,7 +160,7 @@ export default function BodyDoublePanel() {
 
       <div className="space-y-4">
         <div>
-          <p className="mb-2 text-xs font-medium text-(--app-text-muted)">
+          <p className="mb-2 text-xs font-medium text-app-text-muted">
             {t('bd-subject', { defaultValue: 'Subject' })}
           </p>
           <div
@@ -168,8 +176,8 @@ export default function BodyDoublePanel() {
                 onClick={() => setPreset(p)}
                 className={`${chip} ${
                   preset === p
-                    ? 'border-(--app-accent) bg-(--app-accent) text-(--app-accent-fg)'
-                    : 'border-(--app-border) hover:border-(--app-accent)'
+                    ? 'border-app-accent bg-app-accent text-app-accent-fg'
+                    : 'border-app-border hover:border-app-accent'
                 }`}
               >
                 {presetLabels[p]}
@@ -177,7 +185,7 @@ export default function BodyDoublePanel() {
             ))}
           </div>
           <label
-            className="mt-3 block text-xs font-medium text-(--app-text-muted)"
+            className="mt-3 block text-xs font-medium text-app-text-muted"
             htmlFor="bd-custom"
           >
             {t('bd-custom', { defaultValue: 'Or something else' })}
@@ -191,13 +199,13 @@ export default function BodyDoublePanel() {
               setPreset(e.target.value.trim() ? null : 'math');
             }}
             placeholder={t('bd-custom-ph', { defaultValue: 'Organic chemistry' })}
-            className="mt-1 w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-app-sm border border-app-border bg-app-bg px-3 py-2 text-sm"
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2" data-jelly-group>
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="mb-2 text-xs font-medium text-(--app-text-muted)">
+            <p className="mb-2 text-xs font-medium text-app-text-muted">
               {t('bd-length', { defaultValue: 'Length' })}
             </p>
             <div
@@ -213,8 +221,8 @@ export default function BodyDoublePanel() {
                   onClick={() => setLength(n)}
                   className={`${chip} ${
                     length === n
-                      ? 'border-(--app-accent) bg-(--app-accent) text-(--app-accent-fg)'
-                      : 'border-(--app-border) hover:border-(--app-accent)'
+                      ? 'border-app-accent bg-app-accent text-app-accent-fg'
+                      : 'border-app-border hover:border-app-accent'
                   }`}
                 >
                   {t('bd-minutes', { defaultValue: '{{count}} min', count: n })}
@@ -224,7 +232,7 @@ export default function BodyDoublePanel() {
           </div>
           <div>
             <label
-              className="mb-2 block text-xs font-medium text-(--app-text-muted)"
+              className="mb-2 block text-xs font-medium text-app-text-muted"
               htmlFor="bd-when"
             >
               {t('bd-when', { defaultValue: 'When' })}
@@ -233,7 +241,7 @@ export default function BodyDoublePanel() {
               id="bd-when"
               value={when}
               onChange={(e) => setWhen(e.target.value)}
-              className="w-full rounded-(--app-radius-sm) border border-(--app-border) bg-(--app-bg) px-3 py-2 text-sm"
+              className="w-full rounded-app-sm border border-app-border bg-app-bg px-3 py-2 text-sm"
             >
               <option value="now">{t('bd-now', { defaultValue: 'Right now' })}</option>
               {slots.map((s) => (
@@ -249,14 +257,14 @@ export default function BodyDoublePanel() {
           type="button"
           onClick={submit}
           disabled={!canSubmit}
-          className="w-full rounded-(--app-radius-sm) bg-(--app-accent) py-3 font-semibold text-(--app-accent-fg) transition-colors hover:bg-(--app-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-app-sm bg-app-accent py-3 font-semibold text-app-accent-fg transition-colors hover:bg-app-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t('bd-find', { defaultValue: 'Find a study buddy' })}
         </button>
       </div>
 
-      {(status.waiting.length > 0 || status.matches.length > 0) && (
-        <div className="mt-6 space-y-3" aria-live="polite">
+      {hasStatus && (
+        <div className={cn('mt-6 space-y-3', statusArrival)} aria-live="polite">
           {status.matches.map((m) => {
             const open = roomOpenFor(
               { startsAt: new Date(m.startsAt), endsAt: new Date(m.endsAt) },
@@ -265,14 +273,17 @@ export default function BodyDoublePanel() {
             return (
               <div
                 key={m.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-(--app-radius-sm) border border-(--app-accent) p-3"
+                className={cn(
+                  'flex flex-wrap items-center justify-between gap-3 rounded-app-sm border border-app-accent p-3',
+                  isNewRow(m.id) && ARRIVE,
+                )}
               >
                 <div className="min-w-0">
                   <p className="font-semibold">
                     {m.subject} ·{' '}
                     {t('bd-minutes', { defaultValue: '{{count}} min', count: m.lengthMin })}
                   </p>
-                  <p className="text-sm text-(--app-text-muted)">
+                  <p className="text-sm text-app-text-muted">
                     {t('bd-with', {
                       defaultValue: 'With {{name}}',
                       name: m.partner.name ?? m.partner.handle ?? '',
@@ -284,12 +295,12 @@ export default function BodyDoublePanel() {
                 {open ? (
                   <a
                     href={`/rmhstudy/${m.roomCode}?bd=${m.id}`}
-                    className="rounded-(--app-radius-sm) bg-(--app-accent) px-4 py-2 text-sm font-semibold text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+                    className="rounded-app-sm bg-app-accent px-4 py-2 text-sm font-semibold text-app-accent-fg hover:bg-app-accent-hover"
                   >
                     {t('bd-open-room', { defaultValue: 'Open the room' })}
                   </a>
                 ) : (
-                  <span className="text-sm text-(--app-text-muted)">
+                  <span className="text-sm text-app-text-muted">
                     {t('bd-opens-soon', { defaultValue: 'Opens 5 minutes before' })}
                   </span>
                 )}
@@ -299,7 +310,10 @@ export default function BodyDoublePanel() {
           {status.waiting.map((w) => (
             <div
               key={w.requestId}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-(--app-radius-sm) border border-(--app-border) p-3"
+              className={cn(
+                'flex flex-wrap items-center justify-between gap-3 rounded-app-sm border border-app-border p-3',
+                isNewRow(w.requestId) && ARRIVE,
+              )}
             >
               <p className="text-sm">
                 {w.mode === 'now'
@@ -319,7 +333,7 @@ export default function BodyDoublePanel() {
               <button
                 type="button"
                 onClick={() => void cancel(w.requestId)}
-                className="rounded-(--app-radius-sm) border border-(--app-border) px-3 py-1.5 text-sm hover:border-(--app-accent)"
+                className="rounded-app-sm border border-app-border px-3 py-1.5 text-sm hover:border-app-accent"
               >
                 {t('bd-cancel', { defaultValue: 'Cancel' })}
               </button>

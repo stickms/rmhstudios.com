@@ -1,10 +1,16 @@
-'use client';
-
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EFFICIENCY_GAME_ID, exponentOf } from '@/lib/temple-of-joy/efficiency';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { getGameLeaderboardApi } from '@/lib/game/leaderboard.contract';
+import {
+  getTempleEfficiencyApi,
+  rankTempleEfficiencyApi,
+} from '@/lib/temple-of-joy/efficiency.contract';
 import { TempleButton, TempleSection } from './ui';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Row {
   rank: number;
@@ -20,21 +26,19 @@ export function EfficiencyBoard() {
   const [mine, setMine] = useState<number | null | undefined>(undefined);
   const [note, setNote] = useState<string | null>(null);
   const signedIn = Boolean(useSession().data?.user);
+  const arrival = useArrival(rows !== null);
 
   const load = useCallback(async () => {
     const [board, me] = await Promise.all([
-      fetch(`/api/games/${EFFICIENCY_GAME_ID}/leaderboard?limit=10`)
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
+      api(getGameLeaderboardApi, {
+        params: { id: EFFICIENCY_GAME_ID },
+        query: { limit: 10 },
+      }).catch(() => null),
       // Signed out there is no row to read; asking would only log a 401.
-      signedIn
-        ? fetch('/api/temple-of-joy/efficiency')
-            .then((r) => (r.ok ? r.json() : null))
-            .catch(() => null)
-        : Promise.resolve(null),
+      signedIn ? api(getTempleEfficiencyApi).catch(() => null) : Promise.resolve(null),
     ]);
-    setRows((board as { entries: Row[] } | null)?.entries ?? []);
-    setMine((me as { efficiency: { score: number } | null } | null)?.efficiency?.score ?? null);
+    setRows(board?.entries ?? []);
+    setMine(me?.efficiency?.score ?? null);
   }, [signedIn]);
 
   useEffect(() => {
@@ -42,9 +46,12 @@ export function EfficiencyBoard() {
   }, [load]);
 
   async function submit() {
-    const res = await fetch('/api/temple-of-joy/efficiency', { method: 'POST' });
+    const ok = await api(rankTempleEfficiencyApi).then(
+      () => true,
+      () => false,
+    );
     setNote(
-      res.ok
+      ok
         ? t('eff-ranked', { defaultValue: 'Ranked.' })
         : t('eff-failed', { defaultValue: 'Could not rank this yet.' }),
     );
@@ -61,7 +68,7 @@ export function EfficiencyBoard() {
         })}
       </p>
       {typeof mine === 'number' && (
-        <p className="toj-panel-note">
+        <p className={cn('toj-panel-note', arrival)}>
           {t('eff-mine', {
             defaultValue: 'You are making about 10^{{exp}} gladness an hour.',
             exp: exponentOf(mine),
@@ -75,7 +82,7 @@ export function EfficiencyBoard() {
       )}
       {note && <p className="toj-panel-note">{note}</p>}
       {rows?.map((r) => (
-        <p key={`${r.rank}-${r.userId ?? r.username}`} className="toj-panel-note">
+        <p key={`${r.rank}-${r.userId ?? r.username}`} className={cn('toj-panel-note', arrival)}>
           {r.rank}. {r.username} - 10^{exponentOf(r.score)}/h
         </p>
       ))}

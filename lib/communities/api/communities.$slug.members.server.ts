@@ -1,0 +1,44 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import * as C from '@/lib/communities/communities.contract';
+import { prisma } from '@/lib/prisma.server';
+import { getCommunityBySlug, getRole } from '@/lib/communities/access.server';
+
+/** GET /api/communities/$slug/members — list members with roles (admins/mods first). */
+export const route = apiRoute('/api/communities/$slug/members', {
+  GET: implement(C.communityMembersApi, { auth: 'optional' }, async ({ params, session }) => {
+    const community = await getCommunityBySlug(params.slug);
+    if (!community) return Response.json({ error: 'Not found' }, { status: 404 });
+
+    // Members-only: a private community's roster is invisible to non-members
+    // (404, as for a missing community).
+    const viewerRole = session ? await getRole(community.id, session.user.id) : null;
+    if (community.isPrivate && !viewerRole) {
+      return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const members = await prisma.communityMember.findMany({
+      where: { communityId: community.id },
+      orderBy: [{ role: 'desc' }, { joinedAt: 'asc' }],
+      take: 500,
+      select: {
+        role: true,
+        joinedAt: true,
+        user: { select: { id: true, name: true, handle: true, image: true } },
+      },
+    });
+
+    return Response.json({
+      viewerRole,
+      createdById: community.createdById,
+      members: members.map((m) => ({
+        id: m.user.id,
+        name: m.user.name,
+        handle: m.user.handle,
+        image: m.user.image,
+        role: m.role,
+        joinedAt: m.joinedAt.toISOString(),
+      })),
+    });
+  }),
+});

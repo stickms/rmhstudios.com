@@ -35,7 +35,7 @@ describe('classifyChunks', () => {
             { path: 'o/mp.js', kind: 'dynamic-import' },
             { path: 'react', kind: 'import-statement', external: true },
           ],
-          'components/balatro/BalatroPage.tsx',
+          'features/balatro/ui/BalatroPage.tsx',
         ),
         'o/shared.js': out([{ path: 'o/deep.js', kind: 'import-statement' }]),
         'o/deep.js': out([]),
@@ -51,7 +51,7 @@ describe('classifyChunks', () => {
     };
     const { entry, staticSet, dynamicSet } = classifyChunks(
       meta,
-      'components/balatro/BalatroPage.tsx',
+      'features/balatro/ui/BalatroPage.tsx',
     );
     expect(entry).toBe('o/Page.js');
     expect([...staticSet].sort()).toEqual(['o/Page.js', 'o/deep.js', 'o/shared.js']);
@@ -69,12 +69,12 @@ describe('classifyChunks with input data', () => {
   it('follows only the dynamic imports a Balatro module makes', () => {
     const meta: Metafile = {
       inputs: {
-        'components/balatro/BalatroPage.tsx': { bytes: 1, imports: [
-          { path: 'lib/balatro/mp/pack-loader.ts', kind: 'dynamic-import', original: '' },
+        'features/balatro/ui/BalatroPage.tsx': { bytes: 1, imports: [
+          { path: 'features/balatro/engine/mp/pack-loader.ts', kind: 'dynamic-import', original: '' },
           { path: 'lib/i18n/config.ts', kind: 'import-statement', original: '' },
         ] },
         'lib/i18n/config.ts': { bytes: 1, imports: [{ path: 'lib/i18n/resources.fr.ts', kind: 'dynamic-import', original: '' }] },
-        'lib/balatro/mp/pack-loader.ts': { bytes: 1, imports: [] },
+        'features/balatro/engine/mp/pack-loader.ts': { bytes: 1, imports: [] },
         'lib/i18n/resources.fr.ts': { bytes: 1, imports: [] },
       },
       outputs: {
@@ -83,13 +83,13 @@ describe('classifyChunks with input data', () => {
             { path: 'o/loader.js', kind: 'dynamic-import' },
             { path: 'o/fr.js', kind: 'dynamic-import' },
           ],
-          'components/balatro/BalatroPage.tsx',
+          'features/balatro/ui/BalatroPage.tsx',
         ),
-        'o/loader.js': out([], 'lib/balatro/mp/pack-loader.ts'),
+        'o/loader.js': out([], 'features/balatro/engine/mp/pack-loader.ts'),
         'o/fr.js': out([], 'lib/i18n/resources.fr.ts'),
       },
     };
-    const { dynamicSet } = classifyChunks(meta, 'components/balatro/BalatroPage.tsx');
+    const { dynamicSet } = classifyChunks(meta, 'features/balatro/ui/BalatroPage.tsx');
     expect([...dynamicSet]).toEqual(['o/loader.js']);
   });
 });
@@ -111,7 +111,7 @@ describe('build shims', () => {
     expect(expandGlobs("import.meta.glob('./x/*.ts')")).toBe("import.meta.glob('./x/*.ts')");
   });
 
-  it('expands the array form lib/balatro/mp/index.ts uses for its extensions', () => {
+  it('expands the array form features/balatro/engine/mp/index.ts uses for its extensions', () => {
     expect(
       expandGlobs("const x = import.meta.glob<Ext>(['./queue/attach.ts', './replay/attach.ts']);"),
     ).toBe(

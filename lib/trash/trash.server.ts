@@ -404,7 +404,7 @@ async function restorePost(
  * Put the two denormalized post counts back.
  *
  * A recount, not an increment, because the two soft-delete paths in the codebase
- * disagree: `app/routes/api/rmharks/$id.ts` decrements both counters, while
+ * disagree: `lib/feed/api/rmharks.$id.server.ts` decrements both counters, while
  * `deleteOwnPost` in `lib/social/engagement.server.ts` (the developer API's
  * path) only stamps `deletedAt`. An unconditional `+1` would therefore drift
  * upward by one for every post deleted through the second path and restored
@@ -571,7 +571,7 @@ export type SoftDeleteOutcome = 'deleted' | 'already-deleted' | 'not-found';
  * Soft-delete one of the caller's own posts, stamped `deletedBy: 'author'` so it
  * lands in the bin as restorable.
  *
- * A faithful copy of the side effects in `app/routes/api/rmharks/$id.ts`'s
+ * A faithful copy of the side effects in `lib/feed/api/rmharks.$id.server.ts`'s
  * DELETE — hashtag unlink, author `postCount`, community `postCount`, the SSE
  * tombstone — because a bulk delete that skipped them would leave the trending
  * tags and both profile counters wrong across thousands of rows at once. The

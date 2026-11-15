@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { gameName, RANKED_GAMES } from '@/lib/ranked/elo';
 import { HANDICAP_HOOKS } from '@/lib/ranked/handicap';
+import { api } from '@/lib/contract/client';
+import { listFriendlyApi } from '@/lib/competitive/friendly.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Row {
   id: string;
@@ -25,10 +29,12 @@ export default function FriendlyChallenges() {
   const [opponent, setOpponent] = useState('');
   const [handicap, setHandicap] = useState(true);
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(rows.length > 0);
+  const isNew = useArrivingKeys(rows.map((r) => r.id));
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/friendly');
-    if (res.ok) setRows((await res.json()).challenges ?? []);
+    const res = await api(listFriendlyApi).catch(() => null);
+    if (res) setRows((res.challenges ?? []) as Row[]);
   }, []);
   useEffect(() => {
     void load();
@@ -61,12 +67,12 @@ export default function FriendlyChallenges() {
     );
 
   return (
-    <section className="glass-pane rounded-site p-5 space-y-3" aria-labelledby="friendly-heading">
+    <section className="rounded-site p-5 space-y-3"aria-labelledby="friendly-heading">
       <div>
         <h2 id="friendly-heading" className="site-section-label">
           {t('fr-title', { defaultValue: 'Friendly challenge' })}
         </h2>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {t('fr-blurb', {
             defaultValue:
               'Unranked: no rating changes. Where a game supports it, the lower-rated player gets a head start.',
@@ -125,21 +131,24 @@ export default function FriendlyChallenges() {
         </Button>
       </div>
       {rows.length > 0 && (
-        <ul className="space-y-2">
+        <ul className={cn('space-y-2', arrival)}>
           {rows.map((r) => (
-            <li key={r.id} className="glass-fill rounded-site px-4 py-3 space-y-2 text-sm">
+            <li
+              key={r.id}
+              className={cn('rounded-site px-4 py-3 space-y-2 text-sm', isNew(r.id) && ARRIVE)}
+            >
               <div className="flex items-center justify-between gap-2">
                 <span>
                   <strong>{gameName(r.game)}</strong> · {r.other.name}
                 </span>
-                <span className="text-xs text-site-text-dim">
+                <span className="text-xs text-site-text-muted">
                   {r.status === 'pending'
                     ? t('fr-pending', { defaultValue: 'Pending' })
                     : t('fr-accepted', { defaultValue: 'In play' })}
                 </span>
               </div>
               {r.handicap && (
-                <p className="text-xs text-site-text-dim">
+                <p className="text-xs text-site-text-muted">
                   {r.handicap.mine
                     ? t('fr-hp-you', {
                         defaultValue:
@@ -167,7 +176,7 @@ export default function FriendlyChallenges() {
                     </Button>
                     <Button
                       size="xs"
-                      variant="outline"
+                      variant="default"
                       onClick={() => act(r.id, { action: 'decline' })}
                       disabled={busy}
                     >
@@ -186,7 +195,7 @@ export default function FriendlyChallenges() {
                     )}
                     <Button
                       size="xs"
-                      variant="outline"
+                      variant="default"
                       onClick={() => act(r.id, { action: 'report', result: 'win' })}
                       disabled={busy}
                     >
@@ -194,7 +203,7 @@ export default function FriendlyChallenges() {
                     </Button>
                     <Button
                       size="xs"
-                      variant="outline"
+                      variant="default"
                       onClick={() => act(r.id, { action: 'report', result: 'loss' })}
                       disabled={busy}
                     >

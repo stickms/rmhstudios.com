@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
  * The Slice It chart editor.
@@ -18,7 +19,7 @@ import { useTranslation } from 'react-i18next';
  * `/discord/*` keeps the Discord SDK out of the shared bundle.
  */
 const ChartEditor = lazy(() =>
-  import('@/components/slice-it/editor/ChartEditor').then((m) => ({ default: m.ChartEditor })),
+  import('@features/slice-it/ui/editor/ChartEditor').then((m) => ({ default: m.ChartEditor })),
 );
 
 export const Route = createFileRoute('/slice-it/edit/$songId')({
@@ -63,8 +64,8 @@ function EditorSkeleton() {
 function EditorPage() {
   const { songId } = Route.useParams();
   return (
-    <Suspense fallback={<EditorSkeleton />}>
+    <ArrivalSuspense fallback={<EditorSkeleton />}>
       <ChartEditor songId={songId} />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

@@ -3,18 +3,21 @@
  */
 
 import { createFileRoute, Link, useLocation } from '@tanstack/react-router';
-import { Suspense, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Terminal, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { BuildForm } from '@/components/user-builds';
 import { Button } from '@/components/ui/button';
 import type { Build } from '@/lib/user-builds-types';
-import { Reveal } from '@/components/motion';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Spinner } from '@/components/ui/spinner';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { EmptyState } from '@/components/ui/empty-state';
+import { api } from '@/lib/contract/client';
+import { getUserBuildApi } from '@/lib/user-builds.contract';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/user-builds/submit')({
   // `noindex`: an authoring form, and `Disallow`ed in robots.txt.
@@ -34,15 +37,15 @@ function SubmitBuildContent() {
   const [build, setBuild] = useState<Build | null>(null);
   const [loadingBuild, setLoadingBuild] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const arrival = useArrival(!(isPending || loadingBuild || (editId && !build && !fetchError)));
 
   useEffect(() => {
     if (!editId || !session) return;
     setLoadingBuild(true);
     setFetchError(null);
-    fetch(`/api/user-builds/${editId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Build not found');
-        return res.json();
+    api(getUserBuildApi, { params: { id: editId } })
+      .catch(() => {
+        throw new Error('Build not found');
       })
       .then((data) => {
         if (!data.isOwner) throw new Error('You do not have permission to edit this build');
@@ -74,6 +77,7 @@ function SubmitBuildContent() {
         wide
       >
         <SignedOutPrompt
+          className={arrival}
           icon={Terminal}
           callbackURL="/user-builds/submit"
           title={t('sign-in-required', { defaultValue: 'Sign In Required' })}
@@ -94,12 +98,13 @@ function SubmitBuildContent() {
         wide
       >
         <EmptyState
+          className={arrival}
           icon={AlertCircle}
           title={t('error-loading-build', { defaultValue: 'Error Loading Build' })}
           description={fetchError}
           action={
             <Link to="/user-builds/manage">
-              <Button variant="secondary">
+              <Button variant="default">
                 {t('back-to-my-builds', { defaultValue: 'Back to My Builds' })}
               </Button>
             </Link>
@@ -139,12 +144,12 @@ function SubmitBuildContent() {
       }
       wide
     >
-      <div className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
-        <Reveal className="glass-pane rounded-site p-5 sm:p-6">
+      <div className={cn('space-y-[var(--site-section-gap)] px-4 pt-4 pb-12', arrival)}>
+        <div className="rounded-site p-5 sm:p-6">
           <BuildForm key={build?.id} build={build ?? undefined} />
-        </Reveal>
+        </div>
         {!isEditing && (
-          <div className="glass-fill space-y-2 rounded-site px-4 py-3">
+          <div className="space-y-2 rounded-site px-4 py-3">
             <h2 className="site-section-label">
               {t('prefer-the-cli', { defaultValue: 'Prefer the CLI?' })}
             </h2>
@@ -154,7 +159,7 @@ function SubmitBuildContent() {
                   'You can also publish builds directly from the terminal with rmhcode.',
               })}
             </p>
-            <code className="glass-inset block rounded-site-sm px-3 py-2 font-mono text-sm text-site-accent">
+            <code className="surface-field block rounded-site-sm px-3 py-2 font-mono text-sm text-site-accent">
               rmhcode push-build
             </code>
           </div>
@@ -166,7 +171,7 @@ function SubmitBuildContent() {
 
 function SubmitBuildPage() {
   return (
-    <Suspense
+    <ArrivalSuspense
       fallback={
         <div className="flex min-h-[60dvh] items-center justify-center">
           <Spinner />
@@ -174,6 +179,6 @@ function SubmitBuildPage() {
       }
     >
       <SubmitBuildContent />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

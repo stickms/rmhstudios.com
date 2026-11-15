@@ -1,13 +1,14 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star, Plus, Trash2, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LocationSearch, type SavedPlaceOption } from './LocationSearch';
 import type { RidePlace } from '@/lib/rideshare/geo';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createSavedPlaceApi, deleteSavedPlaceApi } from '@/lib/rideshare/rideshare.contract';
 
 interface SavedPlacesProps {
   places: SavedPlaceOption[];
@@ -28,37 +29,32 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
     }
     setSaving(true);
     try {
-      const res = await fetch('/api/rideshare/places', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label: label.trim(), address: place.label, lat: place.lat, lng: place.lng }),
+      await api(createSavedPlaceApi, {
+        body: { label: label.trim(), address: place.label, lat: place.lat, lng: place.lng },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t("could-not-save-place", { defaultValue: "Could not save place." }));
-        return;
-      }
       toast.success(t("place-saved", { defaultValue: "Place saved." }));
       setAdding(false);
       setLabel('');
       setPlace(null);
       onChanged();
+    } catch (e) {
+      toast.error(serverError(e) || t("could-not-save-place", { defaultValue: "Could not save place." }));
     } finally {
       setSaving(false);
     }
   }
 
   async function remove(id: string) {
-    const res = await fetch(`/api/rideshare/places/${id}`, { method: 'DELETE' });
-    if (res.ok) {
+    try {
+      await api(deleteSavedPlaceApi, { params: { id } });
       onChanged();
-    } else {
+    } catch {
       toast.error(t("could-not-remove-place", { defaultValue: "Could not remove place." }));
     }
   }
 
   return (
-    <div className="glass-fill rounded-site p-5">
+    <div className="rounded-site p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="site-section-label flex items-center gap-2">
           <Star className="h-4 w-4 text-site-warning" /> {t("saved-places", { defaultValue: "Saved places" })}
@@ -79,7 +75,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
       {places.length > 0 && (
         <ul className="space-y-2">
           {places.map((p) => (
-            <li key={p.id} className="glass-inset flex items-center gap-2 rounded-site-sm px-3 py-2">
+            <li key={p.id} className="surface-field flex items-center gap-2 rounded-site-sm px-3 py-2">
               <Star className="h-3.5 w-3.5 shrink-0 text-site-warning" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-site-text">{p.savedLabel}</div>
@@ -101,7 +97,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
       )}
 
       {adding && (
-        <div className="glass-inset mt-3 space-y-3 rounded-site-sm p-3">
+        <div className="surface-field mt-3 space-y-3 rounded-site-sm p-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-site-text">{t("new-place", { defaultValue: "New place" })}</span>
             <Button

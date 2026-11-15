@@ -1,18 +1,27 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { Coins, Gift, Package, Banknote } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { adminRedemptionsQuery } from '@/lib/admin/admin-ops.queries';
 
+import { serverError } from '@/lib/http';
+import { reviewRedemptionApi } from '@/lib/admin/admin-tools.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 export const Route = createFileRoute('/_site/admin/redemptions')({
   head: () => ({ meta: [{ title: 'Redemption Queue | RMH Studios' }] }),
+  loader: ({ context }) => prefetchRouteQuery(context.queryClient, adminRedemptionsQuery()),
   component: AdminRedemptionsPage,
 });
 
@@ -31,37 +40,23 @@ const KIND_ICON = { SUB_CREDIT: Gift, MERCH: Package, PAYOUT: Banknote } as cons
 
 function AdminRedemptionsPage() {
   const { t } = useTranslation('admin');
-  const [rows, setRows] = useState<RedemptionRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const query = adminRedemptionsQuery();
+  // A failed read shows an empty queue.
+  const { data, isPending: loading } = useQuery(query);
+  const rows: RedemptionRow[] = data?.requests ?? [];
+  const arrival = useArrival(!loading);
   const [busyId, setBusyId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/redemptions', { credentials: 'include' });
-      const data = await res.json().catch(() => ({ requests: [] }));
-      setRows(res.ok ? (data.requests ?? []) : []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const act = async (id: string, action: 'approve' | 'reject' | 'fulfill') => {
     setBusyId(id);
     try {
-      const res = await fetch(`/api/admin/redemptions/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
+      try {
+        await api(reviewRedemptionApi, { params: { id }, body: { action } });
+      } catch (error) {
+        toast.error(
+          serverError(error) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }),
+        );
         return;
       }
       toast.success(
@@ -69,7 +64,9 @@ function AdminRedemptionsPage() {
           ? t('rejected', { defaultValue: 'Declined and refunded' })
           : t('done', { defaultValue: 'Done' }),
       );
-      setRows((prev) => prev.filter((r) => r.id !== id));
+      queryClient.setQueryData(query.queryKey, (old) =>
+        old ? { requests: old.requests.filter((r) => r.id !== id) } : old,
+      );
     } finally {
       setBusyId(null);
     }
@@ -89,20 +86,21 @@ function AdminRedemptionsPage() {
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Coins}
             title={t('redemptions-empty', { defaultValue: 'No pending redemption requests.' })}
           />
         ) : (
-          <div className="space-y-3">
+          <div className={cn('divide-y divide-site-border', arrival)}>
             {rows.map((r) => {
               const Icon = KIND_ICON[r.kind];
               return (
-                <div key={r.id} className="glass-fill space-y-3 rounded-site p-5">
+                <div key={r.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <Icon className="size-5 shrink-0 text-site-accent" aria-hidden />
                       <div className="min-w-0">
-                        <div className="truncate text-base font-medium text-site-text">
+                        <div className="truncate t-heading text-site-text">
                           {r.kind === 'SUB_CREDIT'
                             ? t('sub-summary', {
                                 defaultValue: '{{months}} months of {{tier}}',
@@ -113,7 +111,7 @@ function AdminRedemptionsPage() {
                               ? t('merch', { defaultValue: 'Merch redemption' })
                               : t('payout', { defaultValue: 'Cash payout' })}
                         </div>
-                        <div className="text-sm text-site-text-dim">
+                        <div className="t-body text-site-text-muted">
                           @{r.user.handle ?? r.user.name ?? r.user.id.slice(0, 6)}
                           {' · '}
                           {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
@@ -121,14 +119,14 @@ function AdminRedemptionsPage() {
                       </div>
                     </div>
                     <Badge
-                      variant="outline"
+                      variant="default"
                       icon={<Coins className="text-site-warning" aria-hidden />}
                     >
                       {r.amountCoins}
                     </Badge>
                   </div>
                   {r.note && (
-                    <p className="border-l-2 border-site-border pl-3 text-sm text-site-text-muted">
+                    <p className="border-l-2 border-site-border pl-3 t-body text-site-text-muted">
                       {r.note}
                     </p>
                   )}

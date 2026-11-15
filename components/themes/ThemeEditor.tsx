@@ -1,13 +1,17 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Eye } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
+import { api } from '@/lib/contract/client';
+import {
+  createThemeApi,
+  publishThemeApi,
+  updateThemeApi,
+} from '@/lib/themes/themes.contract';
 import { relativeLuminance } from '@/lib/appearance/contrast';
 import {
   DEFAULT_THEME_TOKENS,
@@ -67,7 +71,6 @@ export function ThemeEditor({
   onDone: () => void;
 }) {
   const { t } = useTranslation('theme-studio');
-  const isNew = initial === null;
   const [name, setName] = useState(initial?.name ?? 'My theme');
   const [tokens, setTokens] = useState<ThemeTokens>(initial?.tokens ?? DEFAULT_THEME_TOKENS);
   const [price, setPrice] = useState(initial?.priceCoins ?? 500);
@@ -95,22 +98,14 @@ export function ThemeEditor({
   async function save() {
     setBusy(true);
     try {
-      if (isNew && !themeId) {
-        const res = await fetch('/api/themes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, tokens }),
-        });
-        if (!res.ok) throw new Error(await errorCode(res));
-        const { id } = (await res.json()) as { id: string };
+      if (!themeId) {
+        const { id } = await api(createThemeApi, { body: { name, tokens } });
         setThemeId(id);
       } else {
-        const res = await fetch(`/api/themes/${themeId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editable ? { name, tokens } : { name }),
+        await api(updateThemeApi, {
+          params: { id: themeId },
+          body: editable ? { name, tokens } : { name },
         });
-        if (!res.ok) throw new Error(await errorCode(res));
       }
       toast.success(t('saved', { defaultValue: 'Saved' }));
     } catch (e) {
@@ -131,12 +126,7 @@ export function ThemeEditor({
     }
     setBusy(true);
     try {
-      const res = await fetch(`/api/themes/${themeId}/publish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceCoins: price }),
-      });
-      if (!res.ok) throw new Error(await errorCode(res));
+      await api(publishThemeApi, { params: { id: themeId }, body: { priceCoins: price } });
       toast.success(t('published', { defaultValue: 'Published to the shop' }));
       onDone();
     } catch (e) {
@@ -187,7 +177,7 @@ export function ThemeEditor({
             </p>
           )}
 
-          <Button variant="outline" size="sm" onClick={previewOnSite} className="w-full">
+          <Button variant="default" size="sm" onClick={previewOnSite} className="w-full">
             <Eye className="h-4 w-4" aria-hidden />
             {t('preview-on-site', { defaultValue: 'Preview on the whole site' })}
           </Button>
@@ -282,7 +272,7 @@ export function ThemeEditor({
         )}
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <Button variant="accent" size="sm" onClick={save} loading={busy}>
+          <Button variant="default" size="sm" onClick={save} loading={busy}>
             {t('save', { defaultValue: 'Save draft' })}
           </Button>
           {!published ? (
@@ -298,7 +288,7 @@ export function ThemeEditor({
                 className="w-24"
               />
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={publish}
                 disabled={busy || issues.length > 0}
@@ -316,11 +306,6 @@ export function ThemeEditor({
   );
 }
 
-async function errorCode(res: Response): Promise<string> {
-  const d = (await res.json().catch(() => null)) as { error?: string } | null;
-  return d?.error ?? 'ERROR';
-}
-
 function saveError(e: unknown, t: (k: string, o?: { defaultValue: string }) => string): string {
   return e instanceof Error && e.message === 'MEMBERS_ONLY'
     ? t('members-only', { defaultValue: 'Creating themes needs a membership' })
@@ -329,7 +314,7 @@ function saveError(e: unknown, t: (k: string, o?: { defaultValue: string }) => s
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <details open className="glass-fill rounded-site">
+    <details open className="relative rounded-site">
       <summary className="flex min-h-11 cursor-pointer list-none items-center px-4 py-3 text-sm font-semibold text-site-text select-none">
         {title}
       </summary>

@@ -1,10 +1,12 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShoppingBasket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { armBasket } from '@/lib/arcade/run-client';
+import { api } from '@/lib/contract/client';
+import { getBasketApi } from '@/lib/arcade/arcade.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface BasketData {
   basket: { day: string };
@@ -21,9 +23,9 @@ interface BasketData {
 export function BasketCard({ signedIn, onPlay }: { signedIn: boolean; onPlay: () => void }) {
   const { t } = useTranslation('f-party');
   const [data, setData] = useState<BasketData | null>(null);
+  const arrival = useArrival(data !== null);
   useEffect(() => {
-    fetch('/api/arcade/basket')
-      .then((r) => (r.ok ? r.json() : null))
+    api(getBasketApi)
       .then(setData)
       .catch(() => null);
   }, [signedIn]);
@@ -40,7 +42,7 @@ export function BasketCard({ signedIn, onPlay }: { signedIn: boolean; onPlay: ()
         })}
       </p>
       {data?.board.length ? (
-        <ol className="space-y-0.5 text-xs">
+        <ol className={cn('space-y-0.5 text-xs', arrival)}>
           {data.board.slice(0, 5).map((r) => (
             <li key={r.rank} className={r.isMe ? 'font-bold' : undefined}>
               {r.rank}. {r.user.name ?? r.user.handle ?? '?'}{' '}

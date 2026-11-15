@@ -1,8 +1,6 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { List as ListIcon, Plus, Pin } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 
@@ -11,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { ListView } from '@/lib/lists/constants';
+import { api } from '@/lib/contract/client';
+import { createListApi } from '@/lib/lists/lists.contract';
 
 export function ListsManager({ initial }: { initial: ListView[] }) {
   const { t } = useTranslation('c-lists');
@@ -22,13 +22,7 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
     const trimmed = name.trim();
     if (!trimmed) return;
     try {
-      const res = await fetch('/api/lists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmed }),
-      });
-      if (!res.ok) throw new Error('create failed');
-      const { list } = (await res.json()) as { list: ListView };
+      const { list } = await api(createListApi, { body: { name: trimmed } });
       setLists((prev) => [list, ...prev]);
       setName('');
       setCreating(false);
@@ -54,12 +48,12 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
               aria-label={t('name-placeholder', { defaultValue: 'List name' })}
               autoFocus
             />
-            <Button variant="accent" onClick={create}>
+            <Button variant="default" onClick={create}>
               {t('create', { defaultValue: 'Create' })}
             </Button>
           </div>
         ) : (
-          <Button variant="accent" size="sm" onClick={() => setCreating(true)}>
+          <Button variant="default" size="sm" onClick={() => setCreating(true)}>
             <Plus aria-hidden />
             {t('new-list', { defaultValue: 'New list' })}
           </Button>
@@ -89,7 +83,7 @@ export function ListsManager({ initial }: { initial: ListView[] }) {
                     <span className="flex items-center gap-2">
                       <span className="truncate text-sm font-medium text-site-text">{l.name}</span>
                       {l.pinned ? (
-                        <Pin className="h-3 w-3 shrink-0 text-site-text-dim" aria-hidden />
+                        <Pin className="h-3 w-3 shrink-0 text-site-text-muted" aria-hidden />
                       ) : null}
                     </span>
                     <span className="block text-xs text-site-text-muted">

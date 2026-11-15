@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
@@ -13,6 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * The profile card (P10): a preview of the QR business-card image and a
@@ -25,41 +25,111 @@ export default function ProfileCardDialog({
   handleOrId,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (
+    open: boolean,
+  ) => void;
   handleOrId: string;
 }) {
-  const { t } = useTranslation('f-profile-plus');
-  const [loaded, setLoaded] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-profile-plus',
+    );
+  const [
+    loaded,
+    setLoaded,
+  ] =
+    useState(
+      false,
+    );
+  const arrival =
+    useArrival(
+      loaded,
+    );
   const src = `/api/profile/${encodeURIComponent(handleOrId)}/card`;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={
+        open
+      }
+      onOpenChange={
+        onOpenChange
+      }
+    >
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('card-title', { defaultValue: 'Your profile card' })}</DialogTitle>
+          <DialogTitle>
+            {t(
+              'card-title',
+              {
+                defaultValue:
+                  'Your profile card',
+              },
+            )}
+          </DialogTitle>
           <DialogDescription>
-            {t('card-description', {
-              defaultValue:
-                'A shareable image with a QR code that opens your profile. Print it, post it, or keep it on your phone.',
-            })}
+            {t(
+              'card-description',
+              {
+                defaultValue:
+                  'A shareable image with a QR code that opens your profile. Print it, post it, or keep it on your phone.',
+              },
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="relative aspect-[1200/630] w-full overflow-hidden rounded-site-sm">
-          {!loaded ? <Skeleton className="absolute inset-0" /> : null}
+          {!loaded ? (
+            <Skeleton className="absolute inset-0" />
+          ) : null}
           <img
-            src={src}
-            alt={t('card-alt', { defaultValue: 'Your profile card with a QR code' })}
-            width={1200}
-            height={630}
-            className="size-full object-cover"
-            onLoad={() => setLoaded(true)}
+            src={
+              src
+            }
+            alt={t(
+              'card-alt',
+              {
+                defaultValue:
+                  'Your profile card with a QR code',
+              },
+            )}
+            width={
+              1200
+            }
+            height={
+              630
+            }
+            className={cn(
+              'size-full object-cover',
+              arrival,
+            )}
+            onLoad={() =>
+              setLoaded(
+                true,
+              )
+            }
           />
         </div>
         <DialogFooter>
-          <Button asChild variant="accent">
-            <a href={`${src}?download=1`} download>
-              <Download aria-hidden />
-              {t('card-download', { defaultValue: 'Download PNG' })}
+          <Button
+            asChild
+            variant="default"
+          >
+            <a
+              href={`${src}?download=1`}
+              download
+            >
+              <Download
+                aria-hidden
+              />
+              {t(
+                'card-download',
+                {
+                  defaultValue:
+                    'Download PNG',
+                },
+              )}
             </a>
           </Button>
         </DialogFooter>

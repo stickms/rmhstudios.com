@@ -1,14 +1,16 @@
-'use client';
-
 /**
  * "Sell" dialog — lists the caller's tradable, unequipped, owned cosmetics with
  * a price input so they can post a marketplace listing. Loads the user's
  * inventory from `/api/shop` (owned flag) and filters to tradable items.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   Dialog,
   DialogContent,
@@ -20,18 +22,34 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Tag } from 'lucide-react';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { RARITY_COLORS, type Rarity, type ShopItemKind } from '@/lib/shop/catalog';
-import { isTradable, minPriceFor, MAX_PRICE } from '@/lib/market/tradable';
-import { MarketItemPreview } from './ListingCard';
+import type {
+  Rarity,
+  ShopItemKind,
+} from '@/lib/shop/catalog';
+import {
+  isTradable,
+  minPriceFor,
+  MAX_PRICE,
+} from '@/lib/market/tradable';
+import { ItemPicture } from '@/components/shop/ItemPicture';
+import { RarityMark } from '@/components/shop/RarityMark';
+import { getShopApi } from '@/lib/shop/shop.contract';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createListingApi } from '@/lib/market/market.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface OwnedItem {
   id: string;
   kind: ShopItemKind;
   name: string;
   rarity: Rarity;
-  data: { color?: string; gradient?: string; emoji?: string };
+  data: {
+    color?: string;
+    gradient?: string;
+    emoji?: string;
+  };
   owned: boolean;
   equipped: boolean;
 }
@@ -42,155 +60,434 @@ export function SellSheet({
   onListed,
 }: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (
+    open: boolean,
+  ) => void;
   /** Called after a successful listing so the parent can refresh the grid. */
   onListed?: () => void;
 }) {
-  const { t } = useTranslation('site');
-  const [items, setItems] = useState<OwnedItem[] | null>(null);
-  const [prices, setPrices] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState<string | null>(null);
+  const {
+    t,
+  } =
+    useTranslation(
+      'site',
+    );
+  const [
+    items,
+    setItems,
+  ] =
+    useState<
+      | OwnedItem[]
+      | null
+    >(
+      null,
+    );
+  const [
+    prices,
+    setPrices,
+  ] =
+    useState<
+      Record<
+        string,
+        string
+      >
+    >(
+      {},
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const arrival =
+    useArrival(
+      items !==
+        null,
+    );
 
   useEffect(() => {
-    if (!open) return;
+    if (
+      !open
+    )
+      return;
     let cancelled = false;
-    setItems(null);
+    setItems(
+      null,
+    );
     (async () => {
       try {
-        const res = await fetch('/api/shop', { credentials: 'include' });
-        const data = await res.json().catch(() => ({ items: [] }));
-        if (cancelled) return;
-        const owned: OwnedItem[] = (data.items ?? []).filter(
-          (i: OwnedItem) => i.owned && !i.equipped && isTradable(i.id),
+        const data =
+          await api(
+            getShopApi,
+          );
+        if (
+          cancelled
+        )
+          return;
+        const owned: OwnedItem[] =
+          (
+            data.items ??
+            []
+          ).filter(
+            (
+              i: OwnedItem,
+            ) =>
+              i.owned &&
+              !i.equipped &&
+              isTradable(
+                i.id,
+              ),
+          );
+        setItems(
+          owned,
         );
-        setItems(owned);
       } catch {
-        if (!cancelled) setItems([]);
+        if (
+          !cancelled
+        )
+          setItems(
+            [],
+          );
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [
+    open,
+  ]);
 
-  const sorted = useMemo(
-    () => (items ?? []).slice().sort((a, b) => a.name.localeCompare(b.name)),
-    [items],
-  );
+  const sorted =
+    useMemo(
+      () =>
+        (
+          items ??
+          []
+        )
+          .slice()
+          .sort(
+            (
+              a,
+              b,
+            ) =>
+              a.name.localeCompare(
+                b.name,
+              ),
+          ),
+      [
+        items,
+      ],
+    );
 
-  const list = async (item: OwnedItem) => {
-    const floor = minPriceFor(item.id);
-    const raw = prices[item.id];
-    const price = Number(raw);
-    if (!Number.isInteger(price) || price < floor || price > MAX_PRICE) {
-      toast.error(
-        t('market-price-bounds', {
-          min: floor,
-          max: MAX_PRICE.toLocaleString(),
-          defaultValue: 'Enter a whole number between {{min}} and {{max}} coins',
-        }),
-      );
-      return;
-    }
-    if (busy !== null) return;
-    setBusy(item.id);
-    try {
-      const res = await fetch('/api/market/listings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ itemId: item.id, priceCoins: price }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(t('market-listed', { name: item.name, defaultValue: 'Listed {{name}}!' }));
-        setItems((prev) => (prev ? prev.filter((i) => i.id !== item.id) : prev));
-        onListed?.();
-      } else {
+  const list =
+    async (
+      item: OwnedItem,
+    ) => {
+      const floor =
+        minPriceFor(
+          item.id,
+        );
+      const raw =
+        prices[
+          item
+            .id
+        ];
+      const price =
+        Number(
+          raw,
+        );
+      if (
+        !Number.isInteger(
+          price,
+        ) ||
+        price <
+          floor ||
+        price >
+          MAX_PRICE
+      ) {
         toast.error(
-          data.error || t('market-list-failed', { defaultValue: "Couldn't list that item" }),
+          t(
+            'market-price-bounds',
+            {
+              min: floor,
+              max: MAX_PRICE.toLocaleString(),
+              defaultValue:
+                'Enter a whole number between {{min}} and {{max}} coins',
+            },
+          ),
+        );
+        return;
+      }
+      if (
+        busy !==
+        null
+      )
+        return;
+      setBusy(
+        item.id,
+      );
+      try {
+        await api(
+          createListingApi,
+          {
+            body: {
+              itemId:
+                item.id,
+              priceCoins:
+                price,
+            },
+          },
+        );
+        toast.success(
+          t(
+            'market-listed-item',
+            {
+              name: item.name,
+              defaultValue:
+                'Listed {{name}}',
+            },
+          ),
+        );
+        setItems(
+          (
+            prev,
+          ) =>
+            prev
+              ? prev.filter(
+                  (
+                    i,
+                  ) =>
+                    i.id !==
+                    item.id,
+                )
+              : prev,
+        );
+        onListed?.();
+      } catch (e) {
+        toast.error(
+          serverError(
+            e,
+          ) ||
+            t(
+              'market-list-failed',
+              {
+                defaultValue:
+                  "Couldn't list that item",
+              },
+            ),
+        );
+      } finally {
+        setBusy(
+          null,
         );
       }
-    } finally {
-      setBusy(null);
-    }
-  };
+    };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent mobileFullscreen className="sm:max-w-lg">
+    <Dialog
+      open={
+        open
+      }
+      onOpenChange={
+        onOpenChange
+      }
+    >
+      <DialogContent
+        mobileFullscreen
+        className="sm:max-w-lg"
+      >
         <DialogHeader>
-          <DialogTitle>{t('market-sell-title', { defaultValue: 'Sell an item' })}</DialogTitle>
+          <DialogTitle>
+            {t(
+              'market-sell-title',
+              {
+                defaultValue:
+                  'Sell an item',
+              },
+            )}
+          </DialogTitle>
           <DialogDescription>
-            {t('market-sell-desc', {
-              defaultValue:
-                'List a tradable cosmetic you own for coins. A 10% fee is burned on every sale.',
-            })}
+            {t(
+              'market-sell-desc',
+              {
+                defaultValue:
+                  'List a tradable cosmetic you own for coins. A 10% fee is burned on every sale.',
+              },
+            )}
           </DialogDescription>
         </DialogHeader>
 
-        {items === null ? (
+        {items ===
+        null ? (
           <div className="flex justify-center py-12">
             <Spinner />
           </div>
-        ) : sorted.length === 0 ? (
+        ) : sorted.length ===
+          0 ? (
           <EmptyState
-            icon={Tag}
-            title={t('market-sell-empty-title', { defaultValue: 'Nothing to sell' })}
-            description={t('market-sell-empty-desc', {
-              defaultValue:
-                'You have no unequipped, tradable cosmetics. Buy name colors, frames, badges or flair in the shop, then list them here.',
-            })}
+            className={
+              arrival
+            }
+            title={t(
+              'market-sell-empty-title',
+              {
+                defaultValue:
+                  'Nothing to sell',
+              },
+            )}
+            description={t(
+              'market-sell-empty-desc',
+              {
+                defaultValue:
+                  'You have no unequipped, tradable cosmetics. Buy name colors, frames, badges or flair in the shop, then list them here.',
+              },
+            )}
           />
         ) : (
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto pe-1">
-            {sorted.map((item) => (
-              <div
-                key={item.id}
-                className="glass-fill flex items-center gap-3 rounded-site p-4"
-              >
-                <MarketItemPreview kind={item.kind} data={item.data} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
-                  <span
-                    className="text-xs font-semibold uppercase"
-                    style={{ color: RARITY_COLORS[item.rarity] }}
+          <ul
+            className={cn(
+              'border-t border-site-border',
+              arrival,
+            )}
+          >
+            {sorted.map(
+              (
+                item,
+              ) => (
+                <li
+                  key={
+                    item.id
+                  }
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-site-border py-3"
+                >
+                  <ItemPicture
+                    kind={
+                      item.kind
+                    }
+                    art={
+                      item.data
+                    }
+                    size="thumb"
+                    className="w-16"
+                  />
+                  <div className="min-w-32 flex-1">
+                    <p className="t-body truncate font-medium text-site-text">
+                      {
+                        item.name
+                      }
+                    </p>
+                    <p className="t-meta flex items-center gap-2">
+                      <RarityMark
+                        rarity={
+                          item.rarity
+                        }
+                      />
+                      <span>
+                        {t(
+                          'market-price-floor',
+                          {
+                            min: minPriceFor(
+                              item.id,
+                            ).toLocaleString(),
+                            defaultValue:
+                              'from {{min}}',
+                          },
+                        )}
+                      </span>
+                    </p>
+                  </div>
+                  <form
+                    className="flex w-full items-center gap-2 sm:w-auto"
+                    onSubmit={(
+                      e,
+                    ) => {
+                      e.preventDefault();
+                      void list(
+                        item,
+                      );
+                    }}
                   >
-                    {item.rarity}
-                  </span>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <div className="relative">
-                    <CoinIcon className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <Input
                       type="number"
                       inputMode="numeric"
-                      min={minPriceFor(item.id)}
-                      max={MAX_PRICE}
-                      step={1}
-                      placeholder={String(minPriceFor(item.id))}
-                      aria-label={t('market-price-label', {
-                        name: item.name,
-                        defaultValue: 'Price for {{name}}',
-                      })}
-                      value={prices[item.id] ?? ''}
-                      onChange={(e) => setPrices((p) => ({ ...p, [item.id]: e.target.value }))}
-                      className="h-9 w-28 pl-8"
+                      min={minPriceFor(
+                        item.id,
+                      )}
+                      max={
+                        MAX_PRICE
+                      }
+                      step={
+                        1
+                      }
+                      placeholder={t(
+                        'market-price-placeholder',
+                        {
+                          defaultValue:
+                            'Coins',
+                        },
+                      )}
+                      aria-label={t(
+                        'market-price-label',
+                        {
+                          name: item.name,
+                          defaultValue:
+                            'Price for {{name}}',
+                        },
+                      )}
+                      value={
+                        prices[
+                          item
+                            .id
+                        ] ??
+                        ''
+                      }
+                      onChange={(
+                        e,
+                      ) =>
+                        setPrices(
+                          (
+                            p,
+                          ) => ({
+                            ...p,
+                            [item.id]:
+                              e
+                                .target
+                                .value,
+                          }),
+                        )
+                      }
+                      className="min-w-0 flex-1 sm:w-28 sm:flex-none"
                     />
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="accent"
-                    loading={busy === item.id}
-                    disabled={busy !== null}
-                    onClick={() => list(item)}
-                  >
-                    {t('market-list-action', { defaultValue: 'List' })}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+                    <Button
+                      type="submit"
+                      variant="default"
+                      loading={
+                        busy ===
+                        item.id
+                      }
+                      disabled={
+                        busy !==
+                        null
+                      }
+                    >
+                      {t(
+                        'market-list-action',
+                        {
+                          defaultValue:
+                            'List',
+                        },
+                      )}
+                    </Button>
+                  </form>
+                </li>
+              ),
+            )}
+          </ul>
         )}
       </DialogContent>
     </Dialog>

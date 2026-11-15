@@ -2,15 +2,17 @@
  * `html.native-material`: the CSS-only material (the woken haze, app/jelly-material.css §3b) has no install step a
  * native-material route can skip, so those routes are marked on <html> and the material's rules are scoped off them.
  */
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { runPrepaint } from './prepaint-harness';
 import {
+  NATIVE_MATERIAL_BASES,
   NATIVE_MATERIAL_CLASS,
   isNativeMaterialRoute,
   syncNativeMaterialClass,
 } from '@/lib/native-material-routes';
+import { readCss } from './css-source';
 
 function fakeRoot() {
   const set = new Set<string>();
@@ -65,22 +67,23 @@ describe('syncNativeMaterialClass', () => {
 });
 
 describe('wiring', () => {
-  const read = (f: string) => readFileSync(join(process.cwd(), f), 'utf8');
+  const read = (f: string) => readCss(join(process.cwd(), f));
 
-  it('Providers keeps the class in step with the pathname, next to useLiquidInteractions', () => {
+  it('Providers keeps the class in step with the pathname (Steel phase 3: it no longer mounts the jelly pointer)', () => {
     const src = read('components/Providers.tsx');
     expect(src).toMatch(
-      /useLiquidInteractions\(!isNativeMaterialRoute\(pathname\)\);[\s\S]{0,400}useEffect\(\(\) => syncNativeMaterialClass\(document\.documentElement, pathname\), \[pathname\]\);/,
+      /useEffect\(\(\) => syncNativeMaterialClass\(document\.documentElement, pathname\), \[pathname\]\);/,
     );
+    expect(src).not.toContain('useJellyPointer');
   });
 
   it('the theme script stamps it before first paint, from the same route list', () => {
-    const src = read('app/routes/__root.tsx');
-    expect(src).toContain('var NM=${JSON.stringify(NATIVE_MATERIAL_BASES)}');
-    expect(src).toMatch(/classList\.add\("native-material"\)/);
-  });
-
-  it('the woken haze is scoped off it', () => {
-    expect(read('app/jelly-material.css')).toContain(`html:not(.${NATIVE_MATERIAL_CLASS})`);
+    // The GENERATED pre-paint code, run against every native-material base and its neighbours.
+    for (const base of NATIVE_MATERIAL_BASES) {
+      expect(runPrepaint({ path: base }).classes.has(NATIVE_MATERIAL_CLASS)).toBe(true);
+      expect(runPrepaint({ path: `${base}/x/y` }).classes.has(NATIVE_MATERIAL_CLASS)).toBe(true);
+      expect(runPrepaint({ path: `${base}x` }).classes.has(NATIVE_MATERIAL_CLASS)).toBe(false);
+    }
+    expect(runPrepaint({ path: '/' }).classes.has(NATIVE_MATERIAL_CLASS)).toBe(false);
   });
 });

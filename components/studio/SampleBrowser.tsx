@@ -1,10 +1,12 @@
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderOpen, Upload, Play, Trash2, Search, Music } from 'lucide-react';
 import { SampleManager } from '@/lib/studio/samples/SampleManager';
 import { SAMPLE_PACKS } from '@/lib/studio/samples/sample-packs';
 import type { SampleMeta } from '@/lib/studio/types';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export function SampleBrowser() {
   const { t } = useTranslation("c-studio");
@@ -13,6 +15,9 @@ export function SampleBrowser() {
   const [activeTab, setActiveTab] = useState<'user' | 'packs'>('user');
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // M9: the stored samples are read after mount, and an upload adds rows to a list already showing.
+  const listArrival = useArrival(samples.length > 0);
+  const isNew = useArrivingKeys(samples.map((s) => s.id));
 
   // Load samples list
   useEffect(() => {
@@ -60,13 +65,13 @@ export function SampleBrowser() {
   };
 
   return (
-    <div className="flex h-full flex-col border-r border-(--app-border) bg-(--app-surface)">
+    <div className="flex h-full flex-col border-r border-app-border bg-app-surface">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-(--app-border) px-3 py-2">
-        <span className="text-xs font-semibold uppercase text-(--app-text-muted)">{t("samples-heading", { defaultValue: "Samples" })}</span>
+      <div className="flex items-center justify-between border-b border-app-border px-3 py-2">
+        <span className="text-xs font-semibold uppercase text-app-text-muted">{t("samples-heading", { defaultValue: "Samples" })}</span>
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="rounded-(--app-radius-sm) p-1 text-(--app-text-muted) hover:bg-(--app-surface-hover) hover:text-(--app-text)"
+          className="rounded-app-sm p-1 text-app-text-muted hover:bg-app-surface-hover hover:text-app-text"
           title={t("upload-samples", { defaultValue: "Upload samples" })}
         >
           <Upload className="h-3.5 w-3.5" />
@@ -82,21 +87,21 @@ export function SampleBrowser() {
       </div>
 
       {/* Search */}
-      <div className="border-b border-(--app-border) px-2 py-1.5">
-        <div className="flex items-center gap-1.5 rounded-(--app-radius-sm) bg-(--app-bg-subtle) px-2 py-1">
-          <Search className="h-3 w-3 text-(--app-text-muted)" />
+      <div className="border-b border-app-border px-2 py-1.5">
+        <div className="flex items-center gap-1.5 rounded-app-sm bg-app-bg-subtle px-2 py-1">
+          <Search className="h-3 w-3 text-app-text-muted" />
           <input
             type="text"
             placeholder={t("search-placeholder", { defaultValue: "Search..." })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-transparent text-xs text-(--app-text) outline-none placeholder:text-(--app-text-muted)"
+            className="flex-1 bg-transparent text-xs text-app-text outline-none placeholder:text-app-text-muted"
           />
         </div>
       </div>
 
       {/* Tabs */}
-      <LiquidTabs
+      <Tabs
         size="sm"
         className="m-2"
         aria-label={t("sample-source", { defaultValue: "Sample source" })}
@@ -111,7 +116,7 @@ export function SampleBrowser() {
       {/* Content */}
       <div
         className={`flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-(--app-border) ${
-          isDragOver ? 'bg-(--app-accent-dim)' : ''
+          isDragOver ? 'bg-app-accent-dim' : ''
         }`}
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
@@ -119,34 +124,37 @@ export function SampleBrowser() {
       >
         {activeTab === 'user' ? (
           filteredSamples.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 p-4 text-center text-(--app-text-muted)">
+            <div className="flex flex-col items-center justify-center gap-2 p-4 text-center text-app-text-muted">
               <FolderOpen className="h-8 w-8 opacity-30" />
               <p className="text-xs">
                 {isDragOver ? t("drop-files-here", { defaultValue: "Drop files here" }) : t("drag-drop-hint", { defaultValue: "Drag & drop audio files or click upload" })}
               </p>
             </div>
           ) : (
-            <div className="space-y-0.5 p-1">
+            <div className={cn('space-y-0.5 p-1', listArrival)}>
               {filteredSamples.map((sample) => (
                 <div
                   key={sample.id}
-                  className="group flex items-center gap-2 rounded-(--app-radius-sm) px-2 py-1.5 hover:bg-(--app-surface-hover)"
+                  className={cn(
+                    'group flex items-center gap-2 rounded-app-sm px-2 py-1.5 hover:bg-app-surface-hover',
+                    isNew(sample.id) && ARRIVE,
+                  )}
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.setData('application/x-studio-sample', sample.id);
                     e.dataTransfer.effectAllowed = 'copy';
                   }}
                 >
-                  <Music className="h-3 w-3 shrink-0 text-(--app-text-muted)" />
+                  <Music className="h-3 w-3 shrink-0 text-app-text-muted" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs text-(--app-text)">{sample.name}</p>
-                    <p className="text-xs text-(--app-text-muted)">
+                    <p className="truncate text-xs text-app-text">{sample.name}</p>
+                    <p className="text-xs text-app-text-muted">
                       {formatDuration(sample.duration)} · {formatSize(sample.size)}
                     </p>
                   </div>
                   <button
                     onClick={() => handleDelete(sample.id)}
-                    className="hidden rounded-(--app-radius-sm) p-0.5 text-(--app-text-muted) hover:text-(--app-danger) group-hover:block"
+                    className="hidden rounded-app-sm p-0.5 text-app-text-muted hover:text-app-danger group-hover:block"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -157,14 +165,14 @@ export function SampleBrowser() {
         ) : (
           <div className="space-y-2 p-2">
             {SAMPLE_PACKS.map((pack) => (
-              <div key={pack.id} className="glass-fill rounded-(--app-radius-sm) p-2">
-                <p className="text-xs font-medium text-(--app-text)">{pack.name}</p>
-                <p className="mt-0.5 text-xs text-(--app-text-muted)">{pack.description}</p>
+              <div key={pack.id} className="surface-card rounded-app-sm p-2">
+                <p className="text-xs font-medium text-app-text">{pack.name}</p>
+                <p className="mt-0.5 text-xs text-app-text-muted">{pack.description}</p>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="rounded-(--app-radius-sm) bg-(--app-accent-dim) px-1.5 py-0.5 text-xs text-(--app-accent)">
+                  <span className="rounded-app-sm bg-app-accent-dim px-1.5 py-0.5 text-xs text-app-accent">
                     {t("samples-count", { defaultValue: "{{count}} samples", count: pack.samples.length })}
                   </span>
-                  <span className="text-xs text-(--app-text-muted)">{pack.license}</span>
+                  <span className="text-xs text-app-text-muted">{pack.license}</span>
                 </div>
               </div>
             ))}

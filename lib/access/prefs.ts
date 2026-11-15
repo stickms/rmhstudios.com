@@ -1,3 +1,4 @@
+import { readJson, readString, removeKey, writeJson, writeString } from '@/lib/core/persist';
 /**
  * Access & comfort preferences that sit beside the §13 appearance suite: text
  * spacing, format preferences, caption style, shake-to-report, bedtime mode and
@@ -5,8 +6,8 @@
  * root route can import the pre-paint script without pulling anything heavy.
  *
  * One JSON blob under `rmh-access`; `applyAccessPrefs` is the only DOM writer and
- * `ACCESS_PREPAINT_SCRIPT` is its ES5 twin for before first paint — change both
- * together. Everything lands as a custom property / attribute on <html> once,
+ * `accessStep` (lib/prepaint/access.ts) is its twin for before first paint, bundled
+ * into the generated pre-paint script — change both together. Everything lands as a custom property / attribute on <html> once,
  * never per frame.
  */
 
@@ -80,25 +81,17 @@ export function parseAccessPrefs(raw: unknown): AccessPrefs {
 
 /** Quiet window [start, end) in minutes-from-midnight, mirrored from notification settings. */
 export function readQuietHours(): { start: number; end: number } | null {
-  try {
-    const raw = localStorage.getItem(QUIET_HOURS_KEY);
-    if (!raw) return null;
-    const [s, e] = raw.split(',').map(Number);
-    if (!Number.isFinite(s) || !Number.isFinite(e) || s === e) return null;
-    return { start: s, end: e };
-  } catch {
-    return null;
-  }
+  const raw = readString(QUIET_HOURS_KEY);
+  if (!raw) return null;
+  const [s, e] = raw.split(',').map(Number);
+  if (!Number.isFinite(s) || !Number.isFinite(e) || s === e) return null;
+  return { start: s, end: e };
 }
 
 export function mirrorQuietHours(start: number | null, end: number | null) {
-  try {
-    if (start == null || end == null || start === end) localStorage.removeItem(QUIET_HOURS_KEY);
-    else localStorage.setItem(QUIET_HOURS_KEY, `${start},${end}`);
-    window.dispatchEvent(new Event(ACCESS_EVENT));
-  } catch {
-    /* storage unavailable */
-  }
+  if (start == null || end == null || start === end) removeKey(QUIET_HOURS_KEY);
+  else writeString(QUIET_HOURS_KEY, `${start},${end}`);
+  window.dispatchEvent(new Event(ACCESS_EVENT));
 }
 
 /** True when the local clock is inside the mirrored quiet window. */
@@ -134,22 +127,14 @@ let cache: AccessPrefs | null = null;
 export function getAccessPrefs(): AccessPrefs {
   if (cache) return cache;
   if (typeof localStorage === 'undefined') return DEFAULT_ACCESS_PREFS;
-  try {
-    cache = parseAccessPrefs(JSON.parse(localStorage.getItem(ACCESS_KEY) || 'null'));
-  } catch {
-    cache = DEFAULT_ACCESS_PREFS;
-  }
+  cache = parseAccessPrefs(readJson<unknown>(ACCESS_KEY, null));
   return cache;
 }
 
 export function setAccessPrefs(patch: Partial<AccessPrefs>) {
   const next = parseAccessPrefs({ ...getAccessPrefs(), ...patch });
   cache = next;
-  try {
-    localStorage.setItem(ACCESS_KEY, JSON.stringify(next));
-  } catch {
-    /* storage unavailable — the change still applies for this tab */
-  }
+  writeJson(ACCESS_KEY, next); // blocked storage: the change still applies for this tab
   applyAccessPrefs(document.documentElement, next);
   window.dispatchEvent(new Event(ACCESS_EVENT));
 }
@@ -177,9 +162,3 @@ export function subscribeAccessPrefs(cb: () => void): () => void {
     window.removeEventListener('storage', onStorage);
   };
 }
-
-/**
- * Pre-paint twin of `applyAccessPrefs` (ES5, try/catch — it runs before any bundle
- * does). Serialized from the same constants so it cannot drift from them.
- */
-export const ACCESS_PREPAINT_SCRIPT = `(function(){try{var r=localStorage.getItem(${JSON.stringify(ACCESS_KEY)});if(!r)return;var p=JSON.parse(r)||{};var h=document.documentElement,s=h.style;var SV=${JSON.stringify(SPACING_VARS)};var CS=${JSON.stringify(CAPTION_SCALE)};var CB=${JSON.stringify(CAPTION_BG_CSS)};if(SV.hasOwnProperty(p.spacing)){var v=SV[p.spacing];h.setAttribute("data-text-spacing",p.spacing);s.setProperty("--rmh-ts-lh",v.lh);s.setProperty("--rmh-ts-ls",v.ls);s.setProperty("--rmh-ts-ws",v.ws)}if(CS.hasOwnProperty(p.captionSize))s.setProperty("--rmh-cue-scale",CS[p.captionSize]);if(CB.hasOwnProperty(p.captionBg))s.setProperty("--rmh-cue-bg",CB[p.captionBg]);if(p.bedtime===true){var q=(localStorage.getItem(${JSON.stringify(QUIET_HOURS_KEY)})||"").split(",");var a=+q[0],b=+q[1];if(q.length===2&&a!==b){var d=new Date(),m=d.getHours()*60+d.getMinutes();if(a<b?(m>=a&&m<b):(m>=a||m<b))h.setAttribute("data-bedtime","1")}}}catch(e){}})()`;

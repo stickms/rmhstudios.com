@@ -7,7 +7,6 @@
  * "back" should put you.
  */
 
-import { Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
@@ -16,16 +15,17 @@ import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
 // Static, not `lazy()`: Start already splits this route's component into its own
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
 // hydration, and an update reaching the boundary then swaps the server-rendered
-// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
-import { GabrielsHornGame } from '@/components/gabriels-horn/GabrielsHornGame';
+// page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
+import { GabrielsHornGame } from '@features/gabriels-horn/ui/GabrielsHornGame';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 function GabrielsHornPage() {
   return (
     <main className="app-ground bg-black">
       <GameErrorBoundary gameName="Gabriel's Horn">
-        <Suspense fallback={<GameLoadingFallback />}>
+        <ArrivalSuspense fallback={<GameLoadingFallback />}>
           <GabrielsHornGame />
-        </Suspense>
+        </ArrivalSuspense>
       </GameErrorBoundary>
     </main>
   );

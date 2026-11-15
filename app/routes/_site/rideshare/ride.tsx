@@ -1,3 +1,4 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 /**
  * RMH Rideshare — request a ride (/rideshare/ride)
  */
@@ -15,7 +16,7 @@ import {
   Clock,
   XCircle,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,17 @@ import { SavedPlaces } from '@/components/rideshare/SavedPlaces';
 import { estimateFareCents, formatDistance, formatUsd, type RidePlace } from '@/lib/rideshare/geo';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  createRideApi,
+  listRidesApi,
+  listSavedPlacesApi,
+  rideActionApi,
+  rideDirectionsApi,
+} from '@/lib/rideshare/rideshare.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/rideshare/ride')({
   head: () => ({ meta: [{ title: 'Request a ride — RMH Rideshare' }] }),
@@ -70,14 +82,14 @@ interface Ride {
 
 const STATUS_META: Record<
   Ride['status'],
-  { label: string; variant: 'accent' | 'warning' | 'success' | 'outline' }
+  { label: string; variant: 'default' | 'warning' | 'success' }
 > = {
-  SCHEDULED: { label: 'Scheduled', variant: 'accent' },
+  SCHEDULED: { label: 'Scheduled', variant: 'default' },
   REQUESTED: { label: 'Finding a driver', variant: 'warning' },
-  ACCEPTED: { label: 'Driver on the way', variant: 'accent' },
-  IN_PROGRESS: { label: 'On your trip', variant: 'accent' },
+  ACCEPTED: { label: 'Driver on the way', variant: 'default' },
+  IN_PROGRESS: { label: 'On your trip', variant: 'default' },
   COMPLETED: { label: 'Completed', variant: 'success' },
-  CANCELLED: { label: 'Cancelled', variant: 'outline' },
+  CANCELLED: { label: 'Cancelled', variant: 'default' },
 };
 
 const ACTIVE = new Set<Ride['status']>(['REQUESTED', 'ACCEPTED', 'IN_PROGRESS']);
@@ -109,34 +121,35 @@ function RequestRidePage() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loadingRides, setLoadingRides] = useState(true);
   const [savedPlaces, setSavedPlaces] = useState<SavedPlaceOption[]>([]);
+  const arrival = useArrival(!isPending);
+  // The ride rows animate themselves; only the empty history needs the M9 fade.
+  const ridesArrival = useArrival(!loadingRides);
 
   const loadRides = useCallback(async () => {
     try {
-      const res = await fetch('/api/rideshare/rides?scope=mine');
-      if (res.ok) {
-        const data = await res.json();
-        setRides(data.rides ?? []);
-      }
+      const data = await api(listRidesApi, { query: { scope: 'mine' }, retries: 0 });
+      setRides(data.rides ?? []);
+    } catch {
+      /* a failed load leaves the list as it was */
     } finally {
       setLoadingRides(false);
     }
   }, []);
 
   const loadPlaces = useCallback(async () => {
-    const res = await fetch('/api/rideshare/places');
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await api(listSavedPlacesApi, { retries: 0 });
       setSavedPlaces(
-        (data.places ?? []).map(
-          (p: { id: string; label: string; address: string; lat: number; lng: number }) => ({
-            id: p.id,
-            savedLabel: p.label,
-            label: p.address,
-            lat: p.lat,
-            lng: p.lng,
-          }),
-        ),
+        (data.places ?? []).map((p) => ({
+          id: p.id,
+          savedLabel: p.label,
+          label: p.address,
+          lat: p.lat,
+          lng: p.lng,
+        })),
       );
+    } catch {
+      /* a failed read leaves the list as it was */
     }
   }, []);
 
@@ -166,8 +179,11 @@ function RequestRidePage() {
       toLat: String(dropoff.lat),
       toLng: String(dropoff.lng),
     });
-    fetch(`/api/rideshare/directions?${params}`, { signal: abort.signal })
-      .then((r) => r.json())
+    api(rideDirectionsApi, {
+      query: Object.fromEntries(params),
+      signal: abort.signal,
+      retries: 0,
+    })
       .then((data) => {
         if (cancelled) return;
         if (typeof data.distanceMeters === 'number') {
@@ -223,10 +239,8 @@ function RequestRidePage() {
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/rideshare/rides', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(createRideApi, {
+        body: {
           rideClass,
           pickupLabel: pickup.label,
           pickupLat: pickup.lat,
@@ -237,15 +251,8 @@ function RequestRidePage() {
           notes: notes.trim() || undefined,
           scheduledFor:
             scheduleMode && scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
-        }),
+        },
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(
-          data.error || t('error-request-failed', { defaultValue: 'Could not request your ride.' }),
-        );
-        return;
-      }
       toast.success(
         scheduleMode
           ? t('success-ride-scheduled', {
@@ -262,25 +269,26 @@ function RequestRidePage() {
       setScheduleMode(false);
       setScheduledFor('');
       loadRides();
-    } catch {
-      toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
+    } catch (e) {
+      if (e instanceof HttpError) {
+        toast.error(
+          serverError(e) || t('error-request-failed', { defaultValue: 'Could not request your ride.' }),
+        );
+      } else {
+        toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
   async function cancelScheduled(id: string) {
-    const res = await fetch(`/api/rideshare/rides/${id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'cancel' }),
-    });
-    if (res.ok) {
+    try {
+      await api(rideActionApi, { params: { id }, body: { action: 'cancel' } });
       toast.success(t('success-ride-cancelled', { defaultValue: 'Scheduled ride cancelled.' }));
       loadRides();
-    } else {
-      const data = await res.json().catch(() => ({}));
-      toast.error(data.error || t('error-cancel-failed', { defaultValue: 'Could not cancel.' }));
+    } catch (e) {
+      toast.error(serverError(e) || t('error-cancel-failed', { defaultValue: 'Could not cancel.' }));
     }
   }
 
@@ -298,6 +306,7 @@ function RequestRidePage() {
     return (
       <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
         <SignedOutPrompt
+          className={arrival}
           icon={Navigation}
           callbackURL="/rideshare/ride"
           title={t('sign-in-heading', { defaultValue: 'Sign in to request a ride' })}
@@ -315,7 +324,7 @@ function RequestRidePage() {
 
   return (
     <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
-      <div className="w-full max-w-4xl space-y-6 px-4 pt-4 pb-12">
+      <div className={cn('w-full max-w-4xl space-y-6 px-4 pt-4 pb-12', arrival)}>
         {focusRideId ? (
           /* Live trip takes over the page while a ride is in flight. */
           <ActiveRidePanel
@@ -331,7 +340,7 @@ function RequestRidePage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Left: form */}
             <div className="space-y-4">
-              <div className="glass-fill rounded-site p-5">
+              <div className="relative rounded-site p-5">
                 <h2 className="site-section-label mb-3">
                   {t('where-to-heading', { defaultValue: 'Where to?' })}
                 </h2>
@@ -357,14 +366,14 @@ function RequestRidePage() {
                 </div>
 
                 {routing && !routeInfo && (
-                  <div className="glass-inset mt-3 flex items-center gap-2 rounded-site-sm px-4 py-3 text-sm text-site-text-muted">
+                  <div className="surface-field mt-3 flex items-center gap-2 rounded-site-sm px-4 py-3 text-sm text-site-text-muted">
                     <Loader2 className="h-4 w-4 animate-spin" />{' '}
                     {t('calculating-route', { defaultValue: 'Calculating route…' })}
                   </div>
                 )}
               </div>
 
-              <div className="glass-fill rounded-site p-5">
+              <div className="relative rounded-site p-5">
                 <h2 className="site-section-label mb-3">
                   {t('pick-your-ride-heading', { defaultValue: 'Pick your ride' })}
                 </h2>
@@ -383,7 +392,7 @@ function RequestRidePage() {
                 />
               )}
 
-              <div className="glass-fill rounded-site p-5">
+              <div className="relative rounded-site p-5">
                 <label htmlFor="ride-notes" className="mb-2 block text-sm font-medium text-site-text">
                   {t('notes-label', { defaultValue: 'Notes for your driver (optional)' })}
                 </label>
@@ -401,7 +410,7 @@ function RequestRidePage() {
               </div>
 
               {/* Schedule for later */}
-              <div className="glass-fill rounded-site p-5">
+              <div className="relative rounded-site p-5">
                 <div className="flex items-center justify-between gap-3">
                   <span
                     id="ride-schedule-label"
@@ -469,7 +478,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between gap-3 glass-fill rounded-site p-5"
+                  className="flex items-center justify-between gap-3 relative rounded-site p-5"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
@@ -520,6 +529,7 @@ function RequestRidePage() {
             </div>
           ) : pastRides.length === 0 ? (
             <EmptyState
+              className={ridesArrival}
               icon={Car}
               title={
                 focusRideId || upcomingRides.length > 0
@@ -536,7 +546,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="glass-fill rounded-site p-5"
+                  className="relative rounded-site p-5"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-site-text">
@@ -560,7 +570,7 @@ function RequestRidePage() {
                       </span>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-3 text-xs text-site-text-dim">
+                  <div className="mt-3 flex items-center gap-3 text-xs text-site-text-muted">
                     {ride.distanceMeters != null && (
                       <span className="flex items-center gap-1">
                         <RouteIcon className="h-3 w-3" /> {formatDistance(ride.distanceMeters)}

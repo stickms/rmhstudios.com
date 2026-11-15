@@ -1,9 +1,7 @@
-'use client';
-
 import { AdminBody } from '@/components/admin/AdminBody';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Sparkles, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { NoteBody } from '@/components/devplatform/NoteBody';
 import type { ReleaseNoteView } from '@/lib/devplatform/release-notes';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 async function api(url: string, method: string, body?: unknown) {
   const res = await fetch(url, {
@@ -32,6 +32,8 @@ export function AdminReleaseNotes() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(notes.length > 0);
+  const isNew = useArrivingKeys(notes.map((n) => n.id));
 
   const load = useCallback(async () => {
     const { ok, data } = await api('/api/admin/release-notes', 'GET');
@@ -82,8 +84,8 @@ export function AdminReleaseNotes() {
 
   return (
     <AdminBody width="narrow">
-      <section className="glass-fill space-y-3 rounded-site p-5">
-        <h2 className="site-section-label">
+      <section className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
+        <h2 className="t-heading text-site-text">
           {t('admin-pasteTitle', { defaultValue: 'Merged pull requests' })}
         </h2>
         <Textarea
@@ -97,7 +99,7 @@ export function AdminReleaseNotes() {
           })}
         />
         <Button
-          variant="accent"
+          variant="default"
           size="sm"
           disabled={busy || prs.trim().length < 10}
           onClick={draft}
@@ -107,8 +109,8 @@ export function AdminReleaseNotes() {
         </Button>
       </section>
 
-      <section className="glass-fill space-y-3 rounded-site p-5">
-        <h2 className="site-section-label">
+      <section className="space-y-3 border-t border-site-border pt-4 first:border-t-0 first:pt-0">
+        <h2 className="t-heading text-site-text">
           {t('admin-editTitle', { defaultValue: 'Release note' })}
         </h2>
         <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
@@ -147,7 +149,7 @@ export function AdminReleaseNotes() {
             {t('admin-saveDraft', { defaultValue: 'Save draft' })}
           </Button>
           <Button
-            variant="accent"
+            variant="default"
             size="sm"
             disabled={busy || !version.trim() || !title.trim() || !body.trim()}
             onClick={() => save(true)}
@@ -157,11 +159,11 @@ export function AdminReleaseNotes() {
         </div>
       </section>
 
-      <ul className="space-y-3">
+      <ul className={cn('divide-y divide-site-border border-t border-site-border', arrival)}>
         {notes.map((n) => (
-          <li key={n.id} className="glass-fill space-y-3 rounded-site p-5">
-            <div className="flex items-center gap-2">
-              <p className="min-w-0 flex-1 truncate text-sm font-semibold text-site-text">
+          <li key={n.id} className={cn('space-y-3 py-4', isNew(n.id) && ARRIVE)}>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="t-heading min-w-0 flex-1 basis-full break-words text-site-text sm:basis-0">
                 {n.version} · {n.title}
               </p>
               <Badge variant={n.publishedAt ? 'success' : 'default'}>
@@ -169,7 +171,7 @@ export function AdminReleaseNotes() {
                   ? t('admin-live', { defaultValue: 'Live' })
                   : t('admin-draftLabel', { defaultValue: 'Draft' })}
               </Badge>
-              <Button variant="ghost" size="sm" onClick={() => toggle(n)}>
+              <Button variant="default" size="sm" className="ms-auto" onClick={() => toggle(n)}>
                 {n.publishedAt
                   ? t('admin-unpublish', { defaultValue: 'Unpublish' })
                   : t('admin-publish', { defaultValue: 'Publish' })}

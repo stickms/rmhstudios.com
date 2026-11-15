@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "Sign in to see this" — the one shape, for the one state.
  *
@@ -16,7 +14,7 @@
  *   4. `max-w-md py-20` + a DEFAULT-variant Button, untranslated
  *      (homes/manage, homes/submit)
  *   5. an icon + `<h2>` + a raw `<a>` styled as a button, with a
- *      `transition-transform hover:scale-105` nothing else on the site does
+ *      `transition-transform` nothing else on the site does
  *      (rideshare/drive, rideshare/ride)
  *   6. a full-bleed `min-h-screen bg-site-bg` bordered card
  *      (user-builds/submit, user-builds/manage)
@@ -86,17 +84,44 @@ export function SignedOutPrompt({
   actionLabel,
   className,
 }: SignedOutPromptProps) {
-  const { t } = useTranslation('common');
+  const {
+    t,
+  } =
+    useTranslation(
+      'common',
+    );
 
   return (
     <EmptyState
-      className={className}
-      icon={icon}
-      title={title}
-      description={description}
+      className={
+        className
+      }
+      icon={
+        icon
+      }
+      title={
+        title
+      }
+      description={
+        description
+      }
       action={
-        <Link to="/login" search={{ callbackURL }}>
-          <Button variant="accent">{actionLabel ?? t('sign-in', { defaultValue: 'Sign in' })}</Button>
+        <Link
+          to="/login"
+          search={{
+            callbackURL,
+          }}
+        >
+          <Button variant="default">
+            {actionLabel ??
+              t(
+                'sign-in',
+                {
+                  defaultValue:
+                    'Sign in',
+                },
+              )}
+          </Button>
         </Link>
       }
     />

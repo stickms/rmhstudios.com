@@ -1,5 +1,3 @@
-'use client';
-
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Clock, Gamepad2, Link as LinkIcon, MapPin, Radio, Trophy, Users } from 'lucide-react';
@@ -55,7 +53,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
   return (
     <li
       className={cn(
-        'glass-fill flex flex-col gap-3 rounded-site px-4 py-4',
+'flex flex-col gap-3 rounded-site px-4 py-4',
         canceled && 'opacity-60',
         className,
       )}
@@ -63,7 +61,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="accent">
+            <Badge variant="default">
               <VenueIcon aria-hidden />
               {t(venue.labelKey, { defaultValue: venue.label })}
             </Badge>
@@ -79,7 +77,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
               <Badge variant="danger">{t('event-canceled', { defaultValue: 'Canceled' })}</Badge>
             )}
           </div>
-          <h3 className="mt-2 truncate text-base font-bold text-site-text">{event.title}</h3>
+          <h3 className="mt-2 truncate text-base font-semibold text-site-text">{event.title}</h3>
           {/* Always the viewer's zone, always labelled — plus the organiser's
               in parentheses when the two clocks differ (B24). */}
           <p className="mt-1 flex items-center gap-2 text-sm text-site-text-muted">
@@ -135,7 +133,7 @@ export function EventCard({ event, className }: { event: EventDTO; className?: s
               ))}
             </div>
           )}
-          <span className="inline-flex items-center gap-1 text-xs text-site-text-dim">
+          <span className="inline-flex items-center gap-1 text-xs text-site-text-muted">
             <Users className="h-3.5 w-3.5" aria-hidden />
             {t('event-going-count', {
               count: going,

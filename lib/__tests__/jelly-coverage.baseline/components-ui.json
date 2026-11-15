@@ -1,8 +1,0 @@
-{
-  "surfaces": {
-    "components/ui/resizable.tsx": 1,
-    "components/ui/slider.tsx": 1
-  },
-  "dialogs": {},
-  "switches": {}
-}

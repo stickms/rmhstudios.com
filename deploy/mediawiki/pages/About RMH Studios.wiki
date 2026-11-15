@@ -1,0 +1,31 @@
+RMH Studios is a single web platform at [https://rmhstudios.com rmhstudios.com]. One account gives you a social feed, a library of browser games, a set of full apps, and a shared coin economy that runs through all of them.
+
+== What is on the site ==
+
+{| class="wikitable"
+! Part !! What it is
+|-
+| [[RMHarks]] || The social feed: short posts, replies, reactions, communities and direct messages.
+|-
+| [[Games]] || 20 browser games, several of them multiplayer or 3D.
+|-
+| [[Apps]] || 12 full apps for video, music, typing, study, code and more.
+|-
+| Blog, news and library || Long-form writing, site news and a media library.
+|-
+| [[Coins and memberships]] || A site-wide currency, a shop, and paid memberships.
+|-
+| [[Developer API]] || A scoped API for building your own tools on the site.
+|}
+
+== Accounts ==
+
+You can sign in with Discord, GitHub, or an email and password, and add a passkey afterwards. One account covers the feed, every game and every app, so progress, coins and your profile travel with you.
+
+== Languages ==
+
+The site is available in 16 languages, including right-to-left layouts for Arabic and Urdu.
+
+== How the site is built ==
+
+The site is a React application rendered on the server, with realtime servers behind it for multiplayer games, chat and shared rooms. It runs in the browser on phones and desktops; there is nothing to install.

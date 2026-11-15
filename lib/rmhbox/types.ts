@@ -30,7 +30,9 @@ export type LobbyState =
  * - 'competitive-individual': All players compete on equal footing; spectators
  *   pick a player to follow and see that player's state.
  */
-export type SpectatorMode = 'shared-privileged' | 'competitive-individual';
+export type SpectatorMode =
+  | 'shared-privileged'
+  | 'competitive-individual';
 
 // ─── Lobby Settings ──────────────────────────────────────────────
 
@@ -40,8 +42,12 @@ export interface LobbySettings {
   maxSpectators: number;
   allowMidGameJoin: boolean;
   allowSpectatorPromotion: boolean;
-  autoStartThreshold: number | null;
-  gameDurationOverride: number | null;
+  autoStartThreshold:
+    | number
+    | null;
+  gameDurationOverride:
+    | number
+    | null;
 }
 
 // ─── Client-Side State ───────────────────────────────────────────
@@ -55,10 +61,15 @@ export interface ClientLobbyState {
   spectators: ClientSpectatorInfo[];
   currentGame: ClientGameInfo | null;
   /** Game the host has picked but not yet started. '__vote__' = vote mode. */
-  selectedGame: { minigameId: string; displayName: string } | null;
+  selectedGame: {
+    minigameId: string;
+    displayName: string;
+  } | null;
   roundNumber: number;
   chat: ChatMessage[];
-  myRole: 'player' | 'spectator';
+  myRole:
+    | 'player'
+    | 'spectator';
   myUserId: string;
   seq: number;
   matchHistory: MatchSummary[];
@@ -67,7 +78,9 @@ export interface ClientLobbyState {
 export interface ClientPlayerInfo {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   isConnected: boolean;
   isReady: boolean;
   isAway: boolean;
@@ -79,17 +92,32 @@ export interface ClientPlayerInfo {
 export interface ClientSpectatorInfo {
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   isConnected: boolean;
 }
 
 export interface ClientGameInfo {
   minigameId: string;
   displayName: string;
-  phase: 'instructions' | 'preloading' | 'countdown' | 'playing' | 'results';
-  timeRemaining: number | null;
-  publicState: Record<string, unknown>;
-  privateState: Record<string, unknown>;
+  phase:
+    | 'instructions'
+    | 'preloading'
+    | 'countdown'
+    | 'playing'
+    | 'results';
+  timeRemaining:
+    | number
+    | null;
+  publicState: Record<
+    string,
+    unknown
+  >;
+  privateState: Record<
+    string,
+    unknown
+  >;
   /** How spectators view this game's state. Null when no handler is active. */
   spectatorMode: SpectatorMode | null;
 }
@@ -101,7 +129,10 @@ export interface SpectatorTargetInfo {
   /** Display name of the target player */
   targetPlayerName: string;
   /** All players available for spectating */
-  availablePlayers: Array<{ userId: string; userName: string }>;
+  availablePlayers: Array<{
+    userId: string;
+    userName: string;
+  }>;
 }
 
 // ─── Public Lobby Info (for lobby browser) ───────────────────────
@@ -113,9 +144,13 @@ export interface PublicLobbyInfo {
   maxPlayers: number;
   spectatorCount: number;
   state: LobbyState;
-  currentGame: string | null;
+  currentGame:
+    | string
+    | null;
   /** Display name of the game the host has picked (null if none). '__vote__' = vote mode. */
-  selectedGame: string | null;
+  selectedGame:
+    | string
+    | null;
   roundNumber: number;
 }
 
@@ -127,7 +162,9 @@ export interface ChatMessage {
   userName: string;
   content: string;
   timestamp: number;
-  type: 'user' | 'system';
+  type:
+    | 'user'
+    | 'system';
 }
 
 // ─── Game Actions ────────────────────────────────────────────────
@@ -146,7 +183,10 @@ export interface PlayerRanking {
   userName: string;
   score: number;
   rank: number;
-  deltas: Record<string, number>;
+  deltas: Record<
+    string,
+    number
+  >;
 }
 
 export interface Award {
@@ -177,22 +217,37 @@ export interface MatchSummary {
   minigameId: string;
   minigameDisplayName: string;
   playerCount: number;
-  winnerUserName: string | null;
-  rankings: Array<{ userId: string; userName: string; rank: number; score: number }>;
+  winnerUserName:
+    | string
+    | null;
+  rankings: Array<{
+    userId: string;
+    userName: string;
+    rank: number;
+    score: number;
+  }>;
   durationMs: number;
   playedAt: number;
 }
 
 // ─── Game Settings (§12A) ────────────────────────────────────────
 
-export type GameSettingType = 'boolean' | 'integer' | 'float' | 'select' | 'text';
+export type GameSettingType =
+  | 'boolean'
+  | 'integer'
+  | 'float'
+  | 'select'
+  | 'text';
 
 export interface GameSettingDef {
   key: string;
   type: GameSettingType;
   label: string;
   description: string;
-  default: boolean | number | string;
+  default:
+    | boolean
+    | number
+    | string;
   /** For integer/float: { min, max, step } */
   min?: number;
   max?: number;
@@ -203,12 +258,23 @@ export interface GameSettingDef {
   maxLength?: number;
 }
 
-export type GameSettingsSchema = GameSettingDef[];
-export type GameSettingValues = Record<string, boolean | number | string>;
+export type GameSettingsSchema =
+  GameSettingDef[];
+export type GameSettingValues =
+  Record<
+    string,
+    | boolean
+    | number
+    | string
+  >;
 
 // ─── Minigame Registry ───────────────────────────────────────────
 
-export type MinigameCategory = 'word' | 'trivia' | 'action' | 'creative';
+export type MinigameCategory =
+  | 'word'
+  | 'trivia'
+  | 'action'
+  | 'creative';
 
 export type JoinInProgressPolicy =
   | 'spectate_only'
@@ -223,7 +289,10 @@ export interface PreloadManifest {
 }
 
 export interface ControlHint {
-  platform: 'mobile' | 'desktop' | 'all';
+  platform:
+    | 'mobile'
+    | 'desktop'
+    | 'all';
   action: string;
   description: string;
 }
@@ -265,7 +334,10 @@ export interface VoteStartedPayload {
 
 export interface VoteCastPayload {
   userId: string;
-  tallies: Record<string, number>;
+  tallies: Record<
+    string,
+    number
+  >;
   totalVoters: number;
   totalPlayers: number;
   /** Updated deadline when all players have voted (grace period) */
@@ -275,7 +347,10 @@ export interface VoteCastPayload {
 export interface VoteResultPayload {
   winnerId: string;
   winnerName: string;
-  tallies: Record<string, number>;
+  tallies: Record<
+    string,
+    number
+  >;
   wasUnanimous: boolean;
 }
 
@@ -285,7 +360,9 @@ export interface LeaderboardEntry {
   rank: number;
   userId: string;
   userName: string;
-  avatarUrl: string | null;
+  avatarUrl:
+    | string
+    | null;
   value: number;
   gamesPlayed: number;
   wins: number;
@@ -313,5 +390,8 @@ export type RMHboxErrorCode =
 export interface RMHboxError {
   code: RMHboxErrorCode;
   message: string;
-  details?: Record<string, unknown>;
+  details?: Record<
+    string,
+    unknown
+  >;
 }

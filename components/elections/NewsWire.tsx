@@ -5,6 +5,10 @@ import { ExternalLink } from 'lucide-react';
 import type { NewsItem } from '@/lib/elections/news';
 import { stateName } from '@/lib/elections/states';
 import { timeAgo, useNow } from './hooks';
+import { api } from '@/lib/contract/client';
+import { getElectionNewsApi } from '@/lib/elections/elections.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface NewsResponse {
   items: NewsItem[];
@@ -24,14 +28,14 @@ export function NewsWire({ state, live }: { state: string | null; live: boolean 
   const { data, isError } = useQuery<NewsResponse>({
     queryKey: ['elections-news', scoped ? state : '*'],
     queryFn: async () => {
-      const r = await fetch(`/api/elections/news${scoped ? `?state=${state}` : ''}`);
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionNewsApi, { query: scoped && state ? { state } : {}, retries: 0 });
     },
     refetchInterval: live ? 45_000 : 5 * 60_000,
     staleTime: 20_000,
     retry: 1,
   });
+  const arrival = useArrival(isError || !!data);
+  const isNew = useArrivingKeys(data?.items.slice(0, 14).map((n) => n.id) ?? []);
 
   return (
     <div>
@@ -47,15 +51,15 @@ export function NewsWire({ state, live }: { state: string | null; live: boolean 
       ) : null}
 
       {isError ? (
-        <p className="el-eyebrow">{t('wire.error', { defaultValue: 'Headlines are unavailable right now.' })}</p>
+        <p className={cn('el-eyebrow', arrival)}>{t('wire.error', { defaultValue: 'Headlines are unavailable right now.' })}</p>
       ) : !data ? (
         <div className="el-box el-skel" aria-busy />
       ) : data.items.length === 0 ? (
-        <p className="el-eyebrow">{t('wire.empty', { defaultValue: 'No election headlines yet.' })}</p>
+        <p className={cn('el-eyebrow', arrival)}>{t('wire.empty', { defaultValue: 'No election headlines yet.' })}</p>
       ) : (
-        <ul className="el-desk__list el-box el-proj" style={{ margin: 0 }} aria-label={t('wire.label', { defaultValue: 'Election headlines' })}>
+        <ul className={cn('el-desk__list el-box el-proj', arrival)} style={{ margin: 0 }} aria-label={t('wire.label', { defaultValue: 'Election headlines' })}>
           {data.items.slice(0, 14).map((n) => (
-            <li key={n.id}>
+            <li key={n.id} className={isNew(n.id) ? ARRIVE : undefined}>
               <a href={n.url} target="_blank" rel="noopener noreferrer nofollow" style={{ textDecoration: 'none' }}>
                 <span className="el-eyebrow" style={{ display: 'block', marginBottom: 2 }}>
                   {n.source} · {timeAgo(n.publishedAt, now)}

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * ThemeMiniShell (§14.3) — a reusable, non-interactive miniature of the site
  * shell rendered UNDER a theme's scoped `--site-*` vars over that theme's own
@@ -8,9 +6,9 @@
  * single-sheet glint), so the preview reads for real — not a swatch.
  *
  * Two variants:
- *  - `size="sm"` (marketplace cards): L1 `.glass-fill` material ONLY — NO
+ *  -`size="sm"`(marketplace cards): L1`.`material ONLY — NO
  *    backdrop-filter tiers, so a grid of many cards stays inside the §9 budget.
- *  - `size="lg"` (the editor's single live preview): full material (`.glass-pane`)
+ *  -`size="lg"`(the editor's single live preview): full material (`.`)
  *    on the feature surfaces so blur + micro-noise read.
  *
  * Decorative: `aria-hidden`, pointer-events off. It never mutates document-level
@@ -19,7 +17,10 @@
 
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { themeCssVars, type ThemeTokens } from '@/lib/themes/tokens';
+import {
+  themeCssVars,
+  type ThemeTokens,
+} from '@/lib/themes/tokens';
 
 export function ThemeMiniShell({
   tokens,
@@ -27,28 +28,61 @@ export function ThemeMiniShell({
   className,
 }: {
   tokens: ThemeTokens;
-  size?: 'sm' | 'lg';
+  size?:
+    | 'sm'
+    | 'lg';
   className?: string;
 }) {
-  const vars = useMemo(() => themeCssVars(tokens), [tokens]);
-  const heavy = size === 'lg';
+  const vars =
+    useMemo(
+      () =>
+        themeCssVars(
+          tokens,
+        ),
+      [
+        tokens,
+      ],
+    );
+  const heavy =
+    size ===
+    'lg';
   // Feature surfaces get real material in the large variant; the small variant
   // stays L1 (no backdrop-filter) so a card grid is cheap.
-  const feature = heavy ? 'glass-pane' : 'glass-fill';
+  const feature =
+    heavy
+      ? ''
+      : '';
 
-  const t = size === 'lg' ? 'text-[11px]' : 'text-[8px]';
-  const tSm = size === 'lg' ? 'text-[9px]' : 'text-[7px]';
+  const t =
+    size ===
+    'lg'
+      ? 'text-caption'
+      : 'text-nano';
+  const tSm =
+    size ===
+    'lg'
+      ? 'text-tiny'
+      : 'text-pico';
 
   return (
     <div
       aria-hidden
-      style={{ ...vars, background: 'var(--site-canvas)' } as React.CSSProperties}
+      style={
+        {
+          ...vars,
+          background:
+            'var(--site-bg)',
+        } as React.CSSProperties
+      }
       className={cn(
         // §17.3: `contain: layout paint` isolates each mini shell's recalc/repaint
         // so a grid of them (or a root theme-preview swap) can't cascade a
         // full-document style/layout storm through every glass surface inside them.
         'pointer-events-none relative isolate overflow-hidden rounded-site select-none [contain:layout_paint]',
-        size === 'lg' ? 'min-h-[320px] p-4' : 'h-[132px] p-2',
+        size ===
+          'lg'
+          ? 'min-h-[320px] p-4'
+          : 'h-[132px] p-2',
         className,
       )}
     >
@@ -56,25 +90,45 @@ export function ThemeMiniShell({
         {/* Sidebar rail sliver */}
         <div
           className={cn(
-            'glass-fill flex shrink-0 flex-col items-center gap-1.5 rounded-site',
-            size === 'lg' ? 'w-10 py-2' : 'w-5 py-1.5',
+            'flex shrink-0 flex-col items-center gap-1.5 rounded-site',
+            size ===
+              'lg'
+              ? 'w-10 py-2'
+              : 'w-5 py-1.5',
           )}
         >
           <span
             className={cn(
               'rounded-full bg-site-accent',
-              size === 'lg' ? 'h-4 w-4' : 'h-2 w-2',
+              size ===
+                'lg'
+                ? 'h-4 w-4'
+                : 'h-2 w-2',
             )}
           />
-          {Array.from({ length: 3 }).map((_, i) => (
-            <span
-              key={i}
-              className={cn(
-                'rounded-full bg-site-text-muted/50',
-                size === 'lg' ? 'h-2.5 w-2.5' : 'h-1.5 w-1.5',
-              )}
-            />
-          ))}
+          {Array.from(
+            {
+              length: 3,
+            },
+          ).map(
+            (
+              _,
+              i,
+            ) => (
+              <span
+                key={
+                  i
+                }
+                className={cn(
+                  'rounded-full bg-site-text-muted/50',
+                  size ===
+                    'lg'
+                    ? 'h-2.5 w-2.5'
+                    : 'h-1.5 w-1.5',
+                )}
+              />
+            ),
+          )}
         </div>
 
         {/* Main column */}
@@ -84,15 +138,28 @@ export function ThemeMiniShell({
             className={cn(
               feature,
               'flex items-center justify-between rounded-full',
-              size === 'lg' ? 'px-3 py-2' : 'px-2 py-1',
+              size ===
+                'lg'
+                ? 'px-3 py-2'
+                : 'px-2 py-1',
             )}
           >
-            <span className={cn('font-semibold text-site-text', t)}>Aa</span>
+            <span
+              className={cn(
+                'font-semibold text-site-text',
+                t,
+              )}
+            >
+              Aa
+            </span>
             <span
               className={cn(
                 'rounded-full bg-site-accent px-2 font-medium text-site-accent-fg',
                 tSm,
-                size === 'lg' ? 'py-1' : 'py-0.5',
+                size ===
+                  'lg'
+                  ? 'py-1'
+                  : 'py-0.5',
               )}
             >
               ●
@@ -100,38 +167,88 @@ export function ThemeMiniShell({
           </div>
 
           {/* One feed card */}
-          <div className={cn(feature, 'rounded-site', size === 'lg' ? 'p-3' : 'p-2')}>
+          <div
+            className={cn(
+              feature,
+              'rounded-site',
+              size ===
+                'lg'
+                ? 'p-3'
+                : 'p-2',
+            )}
+          >
             <div className="flex items-center gap-1.5">
               <span
                 className={cn(
-                  'rounded-full bg-site-accent-dim',
-                  size === 'lg' ? 'h-5 w-5' : 'h-3 w-3',
+                  'rounded-full bg-site-bg-subtle',
+                  size ===
+                    'lg'
+                    ? 'h-5 w-5'
+                    : 'h-3 w-3',
                 )}
               />
-              <span className={cn('font-semibold text-site-text', tSm)}>Card title</span>
+              <span
+                className={cn(
+                  'font-semibold text-site-text',
+                  tSm,
+                )}
+              >
+                Card
+                title
+              </span>
             </div>
-            <p className={cn('mt-1 leading-snug text-site-text-muted', tSm)}>
-              A line of body copy sitting on the glass.
+            <p
+              className={cn(
+                'mt-1 leading-snug text-site-text-muted',
+                tSm,
+              )}
+            >
+              A
+              line
+              of
+              body
+              copy
+              sitting
+              on
+              the
+              glass.
             </p>
           </div>
 
-          {/* Static LiquidTabs-like pill strip */}
-          <div className="glass-fill flex w-fit items-center gap-0.5 rounded-full p-0.5">
-            {['One', 'Two', 'Three'].map((label, i) => (
-              <span
-                key={label}
-                className={cn(
-                  'rounded-full px-2 font-medium',
-                  tSm,
-                  size === 'lg' ? 'py-1' : 'py-0.5',
-                  i === 0
-                    ? 'bg-site-accent-dim text-site-accent'
-                    : 'text-site-text-muted',
-                )}
-              >
-                {label}
-              </span>
-            ))}
+          {/* Static Tabs-like pill strip */}
+          <div className="flex w-fit items-center gap-0.5 rounded-full p-0.5">
+            {[
+              'One',
+              'Two',
+              'Three',
+            ].map(
+              (
+                label,
+                i,
+              ) => (
+                <span
+                  key={
+                    label
+                  }
+                  className={cn(
+                    'rounded-full px-2 font-medium',
+                    tSm,
+                    size ===
+                      'lg'
+                      ? 'py-1'
+                      : 'py-0.5',
+                    i ===
+                      0
+                      ? 'bg-site-bg-subtle text-site-accent'
+                      : 'text-site-text-muted',
+                  )}
+                >
+                  {
+                    label
+                  }
+                </span>
+              ),
+            )}
           </div>
 
           {/* Button pair + input well */}
@@ -140,7 +257,10 @@ export function ThemeMiniShell({
               className={cn(
                 'rounded-site bg-site-accent px-2 font-medium text-site-accent-fg',
                 tSm,
-                size === 'lg' ? 'py-1' : 'py-0.5',
+                size ===
+                  'lg'
+                  ? 'py-1'
+                  : 'py-0.5',
               )}
             >
               Action
@@ -149,19 +269,27 @@ export function ThemeMiniShell({
               className={cn(
                 'rounded-site border border-site-border px-2 font-medium text-site-text',
                 tSm,
-                size === 'lg' ? 'py-1' : 'py-0.5',
+                size ===
+                  'lg'
+                  ? 'py-1'
+                  : 'py-0.5',
               )}
             >
               Alt
             </span>
             <span
               className={cn(
-                'glass-inset ms-auto flex flex-1 items-center rounded-site-sm',
+                'surface-field ms-auto flex flex-1 items-center rounded-site-sm',
                 tSm,
-                size === 'lg' ? 'px-2 py-1.5' : 'px-1.5 py-1',
+                size ===
+                  'lg'
+                  ? 'px-2 py-1.5'
+                  : 'px-1.5 py-1',
               )}
             >
-              <span className="text-site-text-dim">Search…</span>
+              <span className="text-site-text-muted">
+                Search…
+              </span>
             </span>
           </div>
         </div>

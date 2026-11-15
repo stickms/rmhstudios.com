@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Kudos on a profile (G4): free thank-you notes with a reason. Lazy-loaded by
  * ProfileColumn the first time the tab opens.
@@ -8,13 +6,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Heart, Trash2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Spinner } from '@/components/ui/spinner';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { apiJson } from '@/components/economy-plus/api';
@@ -36,6 +36,9 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
       ),
     [base],
   );
+
+  const arrival = useArrival(page !== null);
+  const isNew = useArrivingKeys((page?.kudos ?? []).map((k) => k.id));
 
   useEffect(() => {
     let cancelled = false;
@@ -86,9 +89,9 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
   }
 
   return (
-    <div className="space-y-3 p-4">
+    <div className={cn('space-y-3 p-4', arrival)}>
       {page.canGive ? (
-        <div className="glass-pane space-y-2 p-3">
+        <div className="space-y-2 p-3">
           <Textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value.slice(0, KUDOS_REASON_MAX))}
@@ -105,7 +108,7 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
               {t('kudos-note', { defaultValue: 'Free, one per person per day.' })}
             </p>
             <Button
-              variant="accent"
+              variant="default"
               size="sm"
               loading={busy}
               disabled={draft.trim().length < 3}
@@ -123,7 +126,10 @@ export default function KudosPanel({ ownerId, isOwner }: { ownerId: string; isOw
       ) : (
         <ul className="space-y-2">
           {page.kudos.map((k) => (
-            <li key={k.id} className="glass-fill flex items-start gap-3 rounded-site-sm p-3">
+            <li
+              key={k.id}
+              className={cn('flex items-start gap-3 rounded-site-sm p-3', isNew(k.id) && ARRIVE)}
+            >
               <UserAvatar
                 src={k.from.image}
                 alt={k.from.name ?? k.from.handle ?? ''}

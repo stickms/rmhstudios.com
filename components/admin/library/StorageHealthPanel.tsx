@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Library storage health, formerly the whole of `/admin/library-storage`.
  * Now the second tab of `/admin/library` — see that route's docblock.
@@ -9,7 +7,11 @@
  * panel is what knows whether a request is in flight.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -19,18 +21,31 @@ import {
   Library,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { StatTile } from '@/components/admin/StatTile';
-import { Card } from '@/components/ui/card';
+import { api } from '@/lib/contract/client';
+import { adminStorageHealthApi } from '@/lib/library/admin-library.contract';
+import {
+  StatGrid,
+  StatTile,
+} from '@/components/admin/StatTile';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
-type Health = {
-  durable: boolean;
-  backend: string;
-  bucket: string | null;
-  total: number;
-  missing: { slug: string; title: string; key: string }[];
-};
+type Health =
+  {
+    durable: boolean;
+    backend: string;
+    bucket:
+      | string
+      | null;
+    total: number;
+    missing: {
+      slug: string;
+      title: string;
+      key: string;
+    }[];
+  };
 
 export function StorageHealthPanel({
   reloadToken = 0,
@@ -38,136 +53,335 @@ export function StorageHealthPanel({
 }: {
   /** Bump to re-fetch — the page header's Refresh button increments it. */
   reloadToken?: number;
-  onRefreshStateChange?: (loading: boolean) => void;
+  onRefreshStateChange?: (
+    loading: boolean,
+  ) => void;
 }) {
-  const { t } = useTranslation('admin');
-  const [health, setHealth] = useState<Health | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    t,
+  } =
+    useTranslation(
+      'admin',
+    );
+  const [
+    health,
+    setHealth,
+  ] =
+    useState<Health | null>(
+      null,
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      true,
+    );
+  const arrival =
+    useArrival(
+      !loading ||
+        !!health,
+    );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    onRefreshStateChange?.(true);
-    const res = await fetch('/api/admin/library/storage-health').catch(() => null);
-    if (res?.ok) setHealth((await res.json().catch(() => null)) as Health | null);
-    setLoading(false);
-    onRefreshStateChange?.(false);
-  }, [onRefreshStateChange]);
+  const load =
+    useCallback(async () => {
+      setLoading(
+        true,
+      );
+      onRefreshStateChange?.(
+        true,
+      );
+      try {
+        setHealth(
+          await api(
+            adminStorageHealthApi,
+          ),
+        );
+      } catch {
+        // keep the previous reading
+      }
+      setLoading(
+        false,
+      );
+      onRefreshStateChange?.(
+        false,
+      );
+    }, [
+      onRefreshStateChange,
+    ]);
 
   useEffect(() => {
     void load();
-  }, [load, reloadToken]);
+  }, [
+    load,
+    reloadToken,
+  ]);
 
-  if (loading && !health) {
+  if (
+    loading &&
+    !health
+  ) {
     // Skeleton mirrors the final layout so nothing pops in out of order.
     return (
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 rounded-site" />
-          ))}
+          {[
+            0,
+            1,
+            2,
+            3,
+          ].map(
+            (
+              i,
+            ) => (
+              <Skeleton
+                key={
+                  i
+                }
+                className="h-16 rounded-site"
+              />
+            ),
+          )}
         </div>
         <Skeleton className="h-40 rounded-site" />
       </div>
     );
   }
 
-  if (!health) {
+  if (
+    !health
+  ) {
     return (
       <EmptyState
-        icon={AlertTriangle}
-        title={t('load-failed', { defaultValue: 'Could not load storage health.' })}
+        icon={
+          AlertTriangle
+        }
+        title={t(
+          'load-failed',
+          {
+            defaultValue:
+              'Could not load storage health.',
+          },
+        )}
+        className={
+          arrival
+        }
       />
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div
+      className={cn(
+        'flex flex-col gap-6',
+        arrival,
+      )}
+    >
       {/* Stat grid — reads at a glance on desktop, wraps to 2-up on phones. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <StatGrid>
         <StatTile
-          icon={health.durable ? CheckCircle2 : AlertTriangle}
-          label={t('stat-durability', { defaultValue: 'Durability' })}
+          icon={
+            health.durable
+              ? CheckCircle2
+              : AlertTriangle
+          }
+          label={t(
+            'stat-durability',
+            {
+              defaultValue:
+                'Durability',
+            },
+          )}
           value={
             health.durable
-              ? t('stat-durable', { defaultValue: 'Durable' })
-              : t('stat-ephemeral', { defaultValue: 'Ephemeral' })
+              ? t(
+                  'stat-durable',
+                  {
+                    defaultValue:
+                      'Durable',
+                  },
+                )
+              : t(
+                  'stat-ephemeral',
+                  {
+                    defaultValue:
+                      'Ephemeral',
+                  },
+                )
           }
-          tone={health.durable ? 'good' : 'bad'}
+          tone={
+            health.durable
+              ? 'good'
+              : 'bad'
+          }
         />
         <StatTile
-          icon={Database}
-          label={t('stat-backend', { defaultValue: 'Backend' })}
-          value={health.backend}
+          icon={
+            Database
+          }
+          label={t(
+            'stat-backend',
+            {
+              defaultValue:
+                'Backend',
+            },
+          )}
+          value={
+            health.backend
+          }
         />
         <StatTile
-          icon={Library}
-          label={t('stat-books', { defaultValue: 'Books' })}
+          icon={
+            Library
+          }
+          label={t(
+            'stat-books',
+            {
+              defaultValue:
+                'Books',
+            },
+          )}
           value={health.total.toLocaleString()}
         />
         <StatTile
-          icon={FileWarning}
-          label={t('stat-missing', { defaultValue: 'Missing files' })}
+          icon={
+            FileWarning
+          }
+          label={t(
+            'stat-missing',
+            {
+              defaultValue:
+                'Missing files',
+            },
+          )}
           value={health.missing.length.toLocaleString()}
-          tone={health.missing.length > 0 ? 'bad' : 'good'}
+          tone={
+            health
+              .missing
+              .length >
+            0
+              ? 'bad'
+              : 'good'
+          }
         />
-      </div>
+      </StatGrid>
 
       {health.bucket && (
-        <div className="flex items-center gap-2 text-sm text-site-text-muted">
-          <HardDrive className="size-4 shrink-0 text-site-text-dim" aria-hidden />
-          <span>{t('bucket-label-inline', { defaultValue: 'Bucket' })}</span>
-          <code className="glass-inset rounded-site-sm px-2 py-0.5 font-mono text-xs text-site-text">
-            {health.bucket}
+        <div className="flex items-center gap-2 t-body text-site-text-muted">
+          <HardDrive
+            className="size-4 shrink-0 text-site-text-muted"
+            aria-hidden
+          />
+          <span>
+            {t(
+              'bucket-label-inline',
+              {
+                defaultValue:
+                  'Bucket',
+              },
+            )}
+          </span>
+          <code className="t-meta text-site-text">
+            {
+              health.bucket
+            }
           </code>
         </div>
       )}
 
-      {/* Durability warning — a danger-rimmed pane when storage is ephemeral. */}
+      {/* Durability warning — between two danger rules when storage is ephemeral. */}
       {!health.durable && (
-        <Card
-          pane
-          className="gap-2 border-site-danger/40 p-4 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--site-danger)_35%,transparent)]"
-        >
-          <div className="flex items-center gap-2 font-semibold text-site-text">
-            <AlertTriangle className="size-4 shrink-0 text-site-danger" aria-hidden />
-            {t('storage-ephemeral-title', { defaultValue: 'Uploads are not durable' })}
+        <div className="space-y-2 border-y border-site-danger py-3">
+          <div className="t-body flex items-center gap-2 font-semibold text-site-text">
+            <AlertTriangle
+              className="size-4 shrink-0 text-site-danger"
+              aria-hidden
+            />
+            {t(
+              'storage-ephemeral-title',
+              {
+                defaultValue:
+                  'Uploads are not durable',
+              },
+            )}
           </div>
-          <p className="text-sm text-site-danger">
-            {t('storage-fix', {
-              defaultValue:
-                'Set S3_ENDPOINT / S3_REGION / S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY / S3_BUCKET (Cloudflare R2) in the production runtime. Until then, uploads land on disposable local disk and disappear when the container recycles.',
-            })}
+          <p className="t-body break-words text-site-danger">
+            {t(
+              'storage-fix',
+              {
+                defaultValue:
+                  'Set S3_ENDPOINT / S3_REGION / S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY / S3_BUCKET (Cloudflare R2) in the production runtime. Until then, uploads land on disposable local disk and disappear when the container recycles.',
+              },
+            )}
           </p>
-        </Card>
+        </div>
       )}
 
       {/* Missing objects */}
       <section className="flex flex-col gap-3">
-        <h2 className="site-section-label">
-          {t('missing-objects', {
-            missing: health.missing.length,
-            total: health.total,
-            defaultValue: '{{missing}} of {{total}} books are missing their file in storage',
-          })}
+        <h2 className="t-heading text-site-text">
+          {t(
+            'missing-objects',
+            {
+              missing:
+                health
+                  .missing
+                  .length,
+              total:
+                health.total,
+              defaultValue:
+                '{{missing}} of {{total}} books are missing their file in storage',
+            },
+          )}
         </h2>
-        {health.missing.length === 0 ? (
+        {health
+          .missing
+          .length ===
+        0 ? (
           <EmptyState
-            icon={CheckCircle2}
-            title={t('all-present', {
-              defaultValue: 'Every library file is present in storage.',
-            })}
-            description={t('all-present-hint', {
-              defaultValue: 'Nothing to reconcile — the catalog and object store are in sync.',
-            })}
+            icon={
+              CheckCircle2
+            }
+            title={t(
+              'all-present',
+              {
+                defaultValue:
+                  'Every library file is present in storage.',
+              },
+            )}
+            description={t(
+              'all-present-hint',
+              {
+                defaultValue:
+                  'Nothing to reconcile — the catalog and object store are in sync.',
+              },
+            )}
           />
         ) : (
-          <ul className="flex flex-col gap-2">
-            {health.missing.map((m) => (
-              <li key={m.slug} className="glass-fill flex flex-col gap-1 rounded-site px-4 py-3">
-                <p className="text-sm font-medium text-site-text">{m.title}</p>
-                <p className="truncate font-mono text-xs text-site-text-muted">{m.key}</p>
-              </li>
-            ))}
+          <ul className="divide-y divide-site-border border-t border-site-border">
+            {health.missing.map(
+              (
+                m,
+              ) => (
+                <li
+                  key={
+                    m.slug
+                  }
+                  className="flex flex-col gap-1 py-3"
+                >
+                  <p className="t-body font-semibold text-site-text">
+                    {
+                      m.title
+                    }
+                  </p>
+                  <p className="t-meta break-all">
+                    {
+                      m.key
+                    }
+                  </p>
+                </li>
+              ),
+            )}
           </ul>
         )}
       </section>

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console -- CLI bench intentionally writes its report to stdout */
 /**
- * socket-bench — hub load harness (docs/server-perf-2026-10-21/01-method.md §1.6).
+ * socket-bench — hub load harness (docs/archive/2026/server-perf-2026-10-21/01-method.md §1.6).
  *
  * Opens N Socket.IO clients against the Node realtime hubs, drives a scripted
  * event mix per hub, and records
@@ -13,12 +13,12 @@
  *
  * No new dependencies: socket.io-client and pg are already in package.json.
  *
- *   # 1. start the hubs (see docs/server-perf-2026-10-21/results/ws-5.md "Commands")
+ *   # 1. start the hubs (see docs/archive/2026/server-perf-2026-10-21/results/ws-5.md "Commands")
  *   # 2. seed users + sessions into the hub DB once:
  *   node scripts/perf/socket-bench.mjs --seed 400
  *   # 3. run a load mix
  *   node scripts/perf/socket-bench.mjs --hubs tube,box,casino --duration 20 \
- *       --out docs/server-perf-2026-10-21/results/ws5-before.json
+ *       --out docs/archive/2026/server-perf-2026-10-21/results/ws5-before.json
  *   # 4. compare two runs
  *   node scripts/perf/socket-bench.mjs --compare before.json after.json
  *
@@ -505,7 +505,7 @@ async function runStorm(users) {
 // ── micro: fan-out strategy. In-process socket.io server + real clients; times
 // the server CPU of emitting one payload to R recipients N times, per-socket
 // `socket.emit` loop vs one `io.to(ids).emit`. Used by WS5 to justify replacing
-// per-recipient emit loops (docs/server-perf-2026-10-21/results/ws-5.md).
+// per-recipient emit loops (docs/archive/2026/server-perf-2026-10-21/results/ws-5.md).
 //   node scripts/perf/socket-bench.mjs --micro-emit --recipients 6 --iters 20000
 async function microEmit() {
   const { Server } = await import('socket.io');

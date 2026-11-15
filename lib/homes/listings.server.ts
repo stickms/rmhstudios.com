@@ -8,7 +8,8 @@
 
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { resolveCenter, haversineKm } from './geo.server';
+import { resolveCenter } from './geo.server';
+import { haversineKm } from './distance';
 import { notifyWatchersOfNewListing } from './watches.server';
 import type {
   Listing,

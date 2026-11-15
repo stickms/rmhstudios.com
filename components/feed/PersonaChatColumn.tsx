@@ -1,5 +1,4 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useRef, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
 import { Link } from'@tanstack/react-router';
@@ -9,6 +8,11 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { liquidVTName } from'@/lib/view-transition';
+import { AI_TIMEOUT_MS, api } from'@/lib/contract/client';
+import { HttpError, serverError } from'@/lib/http';
+import { chatWithPersonaApi, deletePersonaApi, getPersonaApi } from'@/lib/personas/personas.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Msg {
  role: string;
@@ -51,18 +55,18 @@ export function PersonaChatColumn({
  const [input, setInput] = useState('');
  const [sending, setSending] = useState(false);
  const scrollRef = useRef<HTMLDivElement>(null);
+ // Steel M9: a persona fetched here replaces the spinner; a reply replaces "typing…" and fades in.
+ const arrival = useArrival(!loading);
+ const isNewReply = useArrivingKeys(messages.map((_, i) => i));
 
  const load = useCallback(async () => {
- const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, { credentials:'include'});
- if (res.status === 404) {
- setNotFound(true);
- return;
- }
- if (res.ok) {
- const data = await res.json();
+ try {
+ const data = await api(getPersonaApi, { params: { id } });
  setPersona(data.persona);
- setMessages(data.messages ?? []);
- setSignedIn(!!data.signedIn);
+ setMessages(data.messages);
+ setSignedIn(data.signedIn);
+ } catch (e) {
+ if (e instanceof HttpError && e.status === 404) setNotFound(true);
  }
  }, [id]);
 
@@ -93,21 +97,19 @@ export function PersonaChatColumn({
  setMessages((m) => [...m, { role:'user', content: text }]);
  setSending(true);
  try {
- const res = await fetch(`/api/personas/${encodeURIComponent(id)}/chat`, {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ message: text }),
+ try {
+ const data = await api(chatWithPersonaApi, {
+ params: { id },
+ body: { message: text },
+ timeoutMs: AI_TIMEOUT_MS,
  });
- const data = await res.json().catch(() => ({}));
- if (res.ok) {
  setMessages((m) => [...m, { role:'assistant', content: data.reply }]);
- } else {
+ } catch (e) {
  setMessages((m) => [
  ...m,
  {
  role:'assistant',
- content: `(${data.error ?? t('chat-error', { defaultValue:'Something went wrong'})})`,
+ content: `(${serverError(e) ?? t('chat-error', { defaultValue:'Something went wrong'})})`,
  },
  ]);
  }
@@ -124,11 +126,12 @@ export function PersonaChatColumn({
  }))
  )
  return;
- const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, {
- method:'DELETE',
- credentials:'include',
- });
- if (res.ok) window.location.href ='/personas';
+ try {
+ await api(deletePersonaApi, { params: { id } });
+ window.location.href ='/personas';
+ } catch {
+ // Not deleted: stay on the persona.
+ }
  }
 
  if (loading) {
@@ -141,10 +144,11 @@ export function PersonaChatColumn({
  if (notFound || !persona) {
  return (
  <EmptyState
+ className={arrival}
  title={t('persona-not-found', { defaultValue:'Persona not found'})}
  action={
  <Link to="/personas">
- <Button variant="outline">
+ <Button variant="default">
  {t('browse-personas', { defaultValue:'Browse personas'})}
  </Button>
  </Link>
@@ -156,9 +160,9 @@ export function PersonaChatColumn({
  const greetingShown = messages.length === 0 && persona.greeting;
 
  return (
- <div className="flex h-screen flex-col">
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
- <Link to="/personas"className="text-site-text-dim hover:text-site-text">
+ <div className={cn('flex h-screen flex-col', arrival)}>
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <Link to="/personas"className="text-site-text-muted hover:text-site-text">
  <ArrowLeft className="h-5 w-5"/>
  </Link>
  {/* §5.48 liquid-open hero — the persona tile avatar morphs into this. */}
@@ -173,15 +177,15 @@ export function PersonaChatColumn({
  )}
  </div>
  <div className="min-w-0 flex-1">
- <p className="truncate text-sm font-bold text-site-text">{persona.name}</p>
+ <p className="truncate text-sm font-semibold text-site-text">{persona.name}</p>
  {persona.tagline && (
- <p className="truncate text-xs text-site-text-dim">{persona.tagline}</p>
+ <p className="truncate text-xs text-site-text-muted">{persona.tagline}</p>
  )}
  </div>
  {persona.isOwner && (
  <button
  onClick={del}
- className="text-site-text-dim hover:text-site-danger"
+ className="text-site-text-muted hover:text-site-danger"
  title={t('delete-persona', { defaultValue:'Delete persona'})}
  aria-label={t('delete-persona', { defaultValue:'Delete persona'})}
  >
@@ -197,13 +201,19 @@ export function PersonaChatColumn({
  </Bubble>
  )}
  {messages.map((m, i) => (
- <Bubble key={i} role={m.role} emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
+ <Bubble
+ key={i}
+ role={m.role}
+ emoji={persona.emoji}
+ avatarUrl={persona.avatarUrl}
+ className={m.role === 'assistant' && isNewReply(i) ? ARRIVE : undefined}
+ >
  {m.content}
  </Bubble>
  ))}
  {sending && (
  <Bubble role="assistant"emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
- <span className="inline-flex items-center gap-1 text-site-text-dim">
+ <span className="inline-flex items-center gap-1 text-site-text-muted">
  <Loader2 className="h-3.5 w-3.5 animate-spin"/>{''}
  {t('typing', { defaultValue:'typing…'})}
  </span>
@@ -229,10 +239,10 @@ export function PersonaChatColumn({
  })}
  rows={1}
  maxLength={1000}
- className="max-h-32 flex-1 resize-none rounded-site glass-inset px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+ className="max-h-32 flex-1 resize-none rounded-site surface-field px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <Button
- variant="accent"
+ variant="default"
  size="sm"
  disabled={!input.trim() || sending}
  onClick={send}
@@ -262,16 +272,18 @@ function Bubble({
  role,
  emoji,
  avatarUrl,
+ className,
  children,
 }: {
  role: string;
  emoji: string | null;
  avatarUrl?: string | null;
+ className?: string | undefined;
  children: React.ReactNode;
 }) {
  const isUser = role ==='user';
  return (
- <div className={`flex gap-2 ${isUser ?'flex-row-reverse':''}`}>
+ <div className={cn('flex gap-2', isUser && 'flex-row-reverse', className)}>
  {!isUser && (
  <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-sm">
  {avatarUrl ? (

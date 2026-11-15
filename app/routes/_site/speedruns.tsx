@@ -20,11 +20,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Timer } from 'lucide-react';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,12 @@ import { SpeedrunBoard, SpeedrunQueue } from '@/components/speedrun/SpeedrunBoar
 import { SubmitRunPanel } from '@/components/speedrun/SubmitRunPanel';
 import { TierNote } from '@/components/speedrun/VerificationBadge';
 import { versionsOf } from '@/lib/speedrun/versions';
+import { api } from '@/lib/contract/client';
+import {
+  getSpeedrunLeaderboardApi,
+  listSpeedrunCategoriesApi,
+  upsertSpeedrunCategoryApi,
+} from '@/lib/speedrun/speedrun.contract';
 // Titles for the games that can record a replay. A board can only exist for one
 // of those, so this map covers every option the picker can show; the id is the
 // fallback rather than a second hardcoded list that would drift from the first.
@@ -45,6 +51,8 @@ import {
   type SpeedrunEntryView,
   type SpeedrunMetric,
 } from '@/lib/speedrun/types';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/speedruns')({
   head: () => ({
@@ -79,15 +87,16 @@ function SpeedrunsPage() {
   const [board, setBoard] = useState<BoardResponse | null>(null);
   const [loadingBoard, setLoadingBoard] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const arrival = useArrival(!loadingCategories);
+  const boardArrival = useArrival(!(loadingBoard || !board));
 
   const loadCategories = useCallback(async () => {
     setLoadingCategories(true);
     try {
-      const res = await fetch('/api/speedrun/categories');
-      const data = (await res.json().catch(() => ({ categories: [] }))) as {
-        categories?: SpeedrunCategoryView[];
-      };
-      setCategories(res.ok ? (data.categories ?? []) : []);
+      const data = await api(listSpeedrunCategoriesApi, { retries: 0 });
+      setCategories(data.categories ?? []);
+    } catch {
+      setCategories([]);
     } finally {
       setLoadingCategories(false);
     }
@@ -124,10 +133,16 @@ function SpeedrunsPage() {
     if (!game || !slug) return;
     setLoadingBoard(true);
     try {
-      const params = new URLSearchParams({ game, slug, version });
-      const res = await fetch(`/api/speedrun/leaderboard?${params.toString()}`);
-      const data = (await res.json().catch(() => null)) as BoardResponse | null;
-      setBoard(res.ok ? data : null);
+      // `limit` is the route's own default (50), spelled out because the contract's
+      // query type is the schema's output.
+      setBoard(
+        await api(getSpeedrunLeaderboardApi, {
+          query: { game, slug, version, limit: 50 },
+          retries: 0,
+        }),
+      );
+    } catch {
+      setBoard(null);
     } finally {
       setLoadingBoard(false);
     }
@@ -146,19 +161,11 @@ function SpeedrunsPage() {
   async function seedDefaults() {
     setSeeding(true);
     try {
-      const res = await fetch('/api/speedrun/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: true }),
-      });
-      if (!res.ok) {
-        toast.error(
-          t('speedrun-seed-failed', { defaultValue: 'Could not open the starter boards' }),
-        );
-        return;
-      }
+      await api(upsertSpeedrunCategoryApi, { body: { seed: true } });
       toast.success(t('speedrun-seed-done', { defaultValue: 'Starter boards opened' }));
       await loadCategories();
+    } catch {
+      toast.error(t('speedrun-seed-failed', { defaultValue: 'Could not open the starter boards' }));
     } finally {
       setSeeding(false);
     }
@@ -179,6 +186,7 @@ function SpeedrunsPage() {
         </div>
       ) : categories.length === 0 ? (
         <EmptyState
+          className={arrival}
           icon={Timer}
           title={t('speedrun-no-boards-title', { defaultValue: 'No boards are open yet' })}
           description={t('speedrun-no-boards-body', {
@@ -194,7 +202,7 @@ function SpeedrunsPage() {
           }
         />
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className={cn('flex flex-col gap-4', arrival)}>
           <div className="flex flex-wrap items-center gap-3">
             <Select
               value={game ?? ''}
@@ -227,7 +235,7 @@ function SpeedrunsPage() {
           </div>
 
           {slugs.length > 1 && (
-            <LiquidTabs
+            <Tabs
               aria-label={t('speedrun-category-label', { defaultValue: 'Category' })}
               value={slug ?? ''}
               onChange={setSlug}
@@ -238,7 +246,7 @@ function SpeedrunsPage() {
           {selected && (
             <Card pane className="px-5 sm:px-6">
               <div className="flex flex-col gap-2">
-                <h2 className="font-display text-lg font-medium text-site-text">{selected.name}</h2>
+                <h2 className="text-lg font-medium text-site-text">{selected.name}</h2>
                 <p className="text-sm text-site-text-muted">{selected.rules}</p>
                 <TierNote tier={selected.tier} />
               </div>
@@ -250,7 +258,7 @@ function SpeedrunsPage() {
               <Spinner />
             </div>
           ) : (
-            <>
+            <div className={cn('flex flex-col gap-4', boardArrival)}>
               <SpeedrunBoard
                 entries={board.entries}
                 metric={board.metric}
@@ -259,7 +267,7 @@ function SpeedrunsPage() {
                 viewerId={viewer?.id ?? null}
               />
               <SpeedrunQueue entries={board.entries} tier={selected?.tier ?? 'manual'} />
-            </>
+            </div>
           )}
 
           {viewer && game && slug && (

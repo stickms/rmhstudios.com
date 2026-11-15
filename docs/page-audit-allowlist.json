@@ -1,15 +1,17 @@
 {
   "_why": "Reviewed findings of `pnpm audit:pages`. One-directional: entries come out as pages are fixed, they do not go in without the owner's review (docs/page-consistency.md, 'How consistency is enforced'). The script reports stale entries so they get deleted.",
   "edges": {
-    "*": [
-      "STICKY header.radial-topbar.glass-chrome"
+    "/apps/": [
+      "STICKY header.stm-topbar"
+    ],
+    "/builds/": [
+      "STICKY header.stm-topbar"
+    ],
+    "/user-builds/": [
+      "STICKY header.stm-topbar"
     ]
   },
-  "near": {
-    "/": [
-      "NEAR div.radial-feed__compose"
-    ]
-  },
+  "near": {},
   "anatomy": {},
-  "_edges_why": "`*` = every route. The top bar is a full-bleed chrome bar below 640px by the owner's decision (2026-10-29): it IS the strip behind the status bar, in the page's own glass. Pinned by lib/__tests__/ios-edge-contract.test.ts; not a licence for any other flush layer."
+  "_edges_why": "The three listed routes are the Steam-palette /games library (L8: a native app inside the _site route tree, pending an owner decision, plan section 18 and the phase 5 report); its sticky top bar is that app's own. Phase 7 (2026-11-12) removed the entries for the deleted radial top bar and compose button. Any other edge-pinned layer is a design decision, not a styling detail: float it off the edge, make it in-flow, or hide it on html.ios-webkit."
 }

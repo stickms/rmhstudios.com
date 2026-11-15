@@ -2,7 +2,7 @@
  * RMH Datacenter — the overview.
  *
  * On the site's own design language: `PageLayout`, the shared tab strip, and
- * glass by role (`Card` for repeated content, `.glass-pane` for the singular
+ * glass by role (`Card`for repeated content,`.`for the singular
  * panels). The section shipped first as a microsite with its own palette,
  * typography and chrome; that was a second design system inside one product,
  * and every figure on it had to be re-styled to say what a figure says
@@ -89,10 +89,10 @@ export default function HomePage() {
       <DatacenterTabs active="/rmh-datacenter" />
 
       <div className="space-y-6 px-4 pt-4 pb-12">
-        <section className="glass-pane rounded-site p-5 sm:p-6">
+        <section className="rounded-site p-5 sm:p-6">
           <div className="grid items-center gap-6 lg:grid-cols-[1.1fr_1fr]">
             <div className="min-w-0">
-              <h2 className="font-display text-3xl leading-tight font-semibold tracking-tight text-site-text sm:text-4xl">
+              <h2 className="t-heading">
                 {t('hero-heading', {
                   defaultValue: 'Floor space, power and a network that is already there.',
                 })}
@@ -104,13 +104,13 @@ export default function HomePage() {
                 })}
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
-                <Button asChild variant="accent">
+                <Button asChild variant="default">
                   <Link to="/rmh-datacenter/platform">
                     {t('see-the-platform', { defaultValue: 'See the platform' })}
                     <ArrowRight className="size-4" aria-hidden />
                   </Link>
                 </Button>
-                <Button asChild variant="outline">
+                <Button asChild variant="default">
                   <Link to="/rmh-datacenter/contact">
                     {t('request-capacity', { defaultValue: 'Request capacity' })}
                   </Link>
@@ -126,7 +126,7 @@ export default function HomePage() {
                     'A wireframe of an RMH hall: one closed surface, ribbed by bay and drawn from a fixed three-quarter view.',
                 })}
               />
-              <p className="mt-3 text-center text-xs text-site-text-dim">
+              <p className="mt-3 text-center text-xs text-site-text-muted">
                 {t('hero-hall-caption', {
                   defaultValue: '{{code}} · {{length}} m × {{width}} m × {{height}} m',
                   code: anchor.code,
@@ -163,7 +163,7 @@ export default function HomePage() {
           />
         </div>
 
-        <section className="glass-pane rounded-site p-5 sm:p-6">
+        <section className="rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('s01-kicker', { defaultValue: 'The floor' })}
             heading={t('s01-heading', {
@@ -183,7 +183,7 @@ export default function HomePage() {
               ['s01-f3', 'Maintenance windows published a quarter ahead'],
               ['s01-f4', 'The same change calendar we schedule our own migrations against'],
             ].map(([key, dflt]) => (
-              <li key={key} className="u-reveal-soft flex items-start gap-2 text-sm text-site-text">
+              <li key={key} className="flex items-start gap-2 text-sm text-site-text">
                 <Check className="mt-1 size-4 shrink-0 text-site-accent" aria-hidden />
                 <span>{t(key, { defaultValue: dflt })}</span>
               </li>
@@ -210,12 +210,12 @@ export default function HomePage() {
                     {p.code}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block font-display text-lg font-semibold text-site-text">
+                    <span className="block text-lg font-semibold text-site-text">
                       {p.name}
                     </span>
                     <span className="mt-1 block text-sm text-site-text-muted">{p.desc}</span>
                   </span>
-                  <ArrowRight className="size-4 shrink-0 text-site-text-dim" aria-hidden />
+                  <ArrowRight className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                 </Link>
               </Card>
             ))}
@@ -243,7 +243,7 @@ export default function HomePage() {
                   <span className="text-xs font-medium text-site-accent">
                     {c.code} · {c.region}
                   </span>
-                  <span className="font-display text-lg font-semibold text-site-text">
+                  <span className="text-lg font-semibold text-site-text">
                     {names[c.id]}
                   </span>
                   <CapacityMeter
@@ -257,7 +257,7 @@ export default function HomePage() {
             ))}
           </div>
           <div className="mt-4">
-            <Button asChild variant="accent-outline">
+            <Button asChild variant="default">
               <Link to="/rmh-datacenter/facilities">
                 {t('all-six-campuses', { defaultValue: 'All six campuses' })}
                 <ArrowRight className="size-4" aria-hidden />
@@ -266,7 +266,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="glass-pane rounded-site p-5 sm:p-6">
+        <section className="rounded-site p-5 sm:p-6">
           <SectionHeading
             kicker={t('cta-kicker', { defaultValue: 'Next step' })}
             heading={t('cta-heading', { defaultValue: 'Tell us the load, not the product name' })}
@@ -278,7 +278,7 @@ export default function HomePage() {
             })}
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Button asChild variant="accent">
+            <Button asChild variant="default">
               <Link to="/rmh-datacenter/contact">
                 {t('request-capacity', { defaultValue: 'Request capacity' })}
                 <ArrowRight className="size-4" aria-hidden />

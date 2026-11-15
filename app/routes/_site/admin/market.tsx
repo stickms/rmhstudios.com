@@ -7,9 +7,14 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { formatRelativeTime } from '@/lib/i18n/relative-time';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { listAdminHeldListingsApi, resolveAdminHeldListingApi } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/market')({
   head: () => ({ meta: [{ title: 'Marketplace Review | RMH Studios' }] }),
@@ -40,6 +45,7 @@ function AdminMarketPage() {
   const { t, i18n } = useTranslation('admin');
   const [rows, setRows] = useState<HeldListingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   // One request at a time across the whole queue: every action button is
   // disabled while any is in flight.
   const [busy, setBusy] = useState<{ id: string; action: Action } | null>(null);
@@ -47,17 +53,15 @@ function AdminMarketPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/market', { credentials: 'include' });
-      const data = await res.json().catch(() => ({ listings: [] }));
-      if (!res.ok) {
-        toast.error(
-          data.error ??
-            t('market-review-load-failed', { defaultValue: "Couldn't load held listings" }),
-        );
-      }
-      setRows(res.ok ? (data.listings ?? []) : []);
-    } catch {
-      toast.error(t('market-review-load-failed', { defaultValue: "Couldn't load held listings" }));
+      const data = await api(listAdminHeldListingsApi, { retries: 0 });
+      setRows(data.listings ?? []);
+    } catch (e) {
+      toast.error(
+        serverError(e) ??
+          t('market-review-load-failed', { defaultValue: "Couldn't load held listings" }),
+      );
+      // An HTTP refusal empties the list; a network failure leaves it as it was.
+      if (e instanceof HttpError) setRows([]);
     } finally {
       setLoading(false);
     }
@@ -71,17 +75,14 @@ function AdminMarketPage() {
     if (busy) return;
     setBusy({ id, action });
     try {
-      const res = await fetch(`/api/admin/market/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
+      try {
+        await api(resolveAdminHeldListingApi, { params: { id }, body: { action } });
+      } catch (e) {
+        toast.error(serverError(e) ?? t('action-failed-appeals', { defaultValue: 'Action failed' }));
         // 409: someone else resolved it (or the seller cancelled) — drop it.
-        if (res.status === 409) setRows((prev) => prev.filter((r) => r.id !== id));
+        if (e instanceof HttpError && e.status === 409) {
+          setRows((prev) => prev.filter((r) => r.id !== id));
+        }
         return;
       }
       toast.success(
@@ -115,19 +116,20 @@ function AdminMarketPage() {
           </div>
         ) : rows.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Store}
             title={t('market-review-empty', { defaultValue: 'No listings are held for review.' })}
           />
         ) : (
-          <div className="space-y-3">
+          <div className={cn('divide-y divide-site-border', arrival)}>
             {rows.map((r) => {
               const name = r.item?.name ?? r.itemId;
               return (
-                <div key={r.id} className="glass-fill space-y-3 rounded-site p-5">
+                <div key={r.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate text-base font-medium text-site-text">{name}</div>
-                      <div className="text-sm text-site-text-dim">
+                      <div className="t-heading break-words text-site-text">{name}</div>
+                      <div className="t-body text-site-text-muted">
                         @{r.seller.handle ?? r.seller.name ?? r.seller.id.slice(0, 6)}
                         {' · '}
                         {t('market-review-listed', {
@@ -137,13 +139,13 @@ function AdminMarketPage() {
                       </div>
                     </div>
                     <Badge
-                      variant="outline"
+                      variant="default"
                       icon={<Coins className="text-site-warning" aria-hidden />}
                     >
                       {r.priceCoins.toLocaleString()}
                     </Badge>
                   </div>
-                  <p className="font-mono text-sm text-site-text-muted">
+                  <p className="t-body text-site-text-muted break-words">
                     {r.medianCoins == null
                       ? t('market-review-no-median', {
                           defaultValue: 'No sales of this item in the last 30 days',

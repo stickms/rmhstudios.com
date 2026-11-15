@@ -1,16 +1,13 @@
-'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useReconsider } from '@/components/safety/use-reconsider';
+import { PostMenuTrigger } from './PostMenuTrigger';
 import {
-  MessageCircle,
-  Repeat2,
   Heart,
-  Eye,
   Trash2,
-  MoreHorizontal,
   Repeat,
+  Repeat2,
+  MessageCircle,
   BadgeCheck,
   ShieldCheck,
   Languages,
@@ -34,20 +31,34 @@ import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { AnchoredMenu } from '@/components/ui/anchored-menu';
 import { MenuItem } from '@/components/ui/menu';
 import { useFreshUser } from '@/stores/userDisplayStore';
-import { timeAgoShort } from '@/lib/utils';
+import { cn, relativeTimeShort } from '@/lib/utils';
+import { RelativeTime } from '@/components/ui/RelativeTime';
 import { useTranslation } from 'react-i18next';
 import { useLocaleStore } from '@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
-import { EngagementCount, engagementPill } from './EngagementCount';
+import { formatCount } from './format-count';
+import { Spine, SpineItem } from '@/components/ui/spine';
+import { flattenReplies, type FlatReply } from './post-detail/post-detail-state';
 import type { ReactionSummary } from '@/lib/social/reactions';
+import { reactToCommentApi } from '@/lib/social/comment-reaction.contract';
 import { applyReactionToggle } from '@/lib/social/reactions';
 import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
 import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { HideReplyMenuItem, HiddenRepliesGroup } from './HiddenReplies';
+import {
+  viewCommentApi,
+  likeCommentApi,
+  repostCommentApi,
+  deleteCommentApi,
+} from '@/lib/feed/rmhark-actions.contract';
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { translateCommentApi } from '@/lib/ai/ai.contract';
 
+import { createCommentApi } from '@/lib/feed/rmhark-actions.contract';
+import { ARRIVE } from '@/components/ui/arrive';
 export interface Comment {
   id: string;
   content: string;
@@ -84,31 +95,19 @@ interface SessionUser {
   image?: string | null;
 }
 
-// How many levels of replies to indent before collapsing the rest behind a
-//"Show more replies"button. Keeps deep chains from running off-screen.
-const MAX_NESTED_DEPTH = 4;
-
-// A reply's thread hangs under its parent's text column, 44px (avatar + gap) in
-// from the parent's left edge; the thread container pulls that back (`-ml-11`) and
-// indents by one step (`pl-4`) instead, so a nested reply costs 16px, not 60.
-// Replies indent for the first levels only, then continue at the same left edge:
-// at 390px every further indent step takes a column of text away from the reply,
-// and four steps used to leave one character per line.
-const INDENT_DEPTH = 3;
-
-function countDescendants(replies: Comment[] | undefined): number {
-  if (!replies?.length) return 0;
-  return replies.reduce((total, r) => total + 1 + countDescendants(r.replies), 0);
-}
-
 interface CommentItemProps {
   comment: Comment;
   postId: string;
   sessionUser?: SessionUser | null;
   onReplyAdded?: (parentId: string, reply: Comment) => void;
   onCommentRemoved?: (commentId: string) => void;
-  /** Nesting level — used to cap indentation on long reply chains. */
+  /**
+   * 0 for a reply to the post, which owns the one nested spine of everything under it; 1 for a row on that spine
+   * (Steel P2: replies to a reply are one level, indented 8px, never deeper).
+   */
   depth?: number;
+  /** Set on a row below the first level of that nested spine: whom it answers (it is not indented a third time). */
+  replyingTo?: string | null;
   /** The post author's id — only they get the hide/unhide reply control (X2). */
   postAuthorId?: string;
   /** Called after the author hides/unhides a reply so the page can regroup it. */
@@ -122,6 +121,7 @@ export function CommentItem({
   onReplyAdded,
   onCommentRemoved,
   depth = 0,
+  replyingTo = null,
   postAuthorId,
   onHiddenChange,
 }: CommentItemProps) {
@@ -152,7 +152,6 @@ export function CommentItem({
   const viewTracked = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
-  const [threadExpanded, setThreadExpanded] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [showTranslated, setShowTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
@@ -174,33 +173,32 @@ export function CommentItem({
     const to = LOCALE_TO_LANGUAGE_NAME[locale];
     setTranslating(true);
     try {
-      const res = await fetch(
-        `/api/comments/${comment.id}/translate?to=${encodeURIComponent(to)}`,
-        { credentials: 'include' },
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.text) {
-          setTranslatedText(data.text);
-          setShowTranslated(true);
-        }
+      const data = await api(translateCommentApi, {
+        params: { commentId: comment.id },
+        query: { to },
+        timeoutMs: AI_TIMEOUT_MS,
+      });
+      if (data.text) {
+        setTranslatedText(data.text);
+        setShowTranslated(true);
       }
+    } catch {
+      // A failed translation leaves the comment as it was; there is nothing to report.
     } finally {
       setTranslating(false);
     }
   };
 
-  const hasReplies = !!comment.replies?.length;
-  // At the depth cap, collapse the remaining chain behind a button instead of
-  // indenting further (which would push content out of bounds).
-  const collapseThread = depth >= MAX_NESTED_DEPTH && hasReplies && !threadExpanded;
+  // The row owning the nested spine flattens everything under it onto that one spine.
+  const { visible: visibleReplies, hidden: hiddenReplies } = flattenReplies(comment);
+  const hasReplies = visibleReplies.length + hiddenReplies.length > 0;
 
   const isAuthor = sessionUser?.id === comment.userId;
 
   // Outside-press dismissal, Escape, focus return, the roving arrow keys and the
   // close animation all live in AnchoredMenu now. This file used to carry its own
   // outside-click listener — and, because the panel was an in-place
-  // `absolute top-full … z-50`, it was measured inside `.radial-frame`'s stacking
+  // `absolute top-full … z-50`, it was measured inside the page frame's stacking
   // context (pinned at z-index 1), so a comment near the top of the column had its
   // menu painted UNDER the top bar. AnchoredMenu portals to <body>.
 
@@ -208,7 +206,7 @@ export function CommentItem({
   useEffect(() => {
     if (viewTracked.current) return;
     viewTracked.current = true;
-    fetch(`/api/rmharks/${postId}/comment/${comment.id}/view`, { method: 'POST' })
+    api(viewCommentApi, { params: { id: postId, commentId: comment.id } })
       .then(() => setViewCount((v) => v + 1))
       .catch(() => {});
   }, [postId, comment.id]);
@@ -229,7 +227,7 @@ export function CommentItem({
         setLiked(wasLiked);
         setLikeCount(prevCount);
       },
-      commit: () => fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method: 'POST' }),
+      commit: () => api(likeCommentApi, { params: { id: postId, commentId: comment.id } }),
     });
   };
 
@@ -249,8 +247,7 @@ export function CommentItem({
         setReposted(wasReposted);
         setRepostCount(prevCount);
       },
-      commit: () =>
-        fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method: 'POST' }),
+      commit: () => api(repostCommentApi, { params: { id: postId, commentId: comment.id } }),
     });
   };
 
@@ -263,12 +260,7 @@ export function CommentItem({
     await runReaction({
       apply: () => setReactions(applyReactionToggle(prev, emoji)),
       rollback: () => setReactions(prev),
-      commit: () =>
-        fetch(`/api/comments/${comment.id}/react`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ emoji }),
-        }),
+      commit: () => api(reactToCommentApi, { params: { commentId: comment.id }, body: { emoji } }),
     });
   };
 
@@ -281,17 +273,14 @@ export function CommentItem({
     )
       return;
     try {
-      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        onCommentRemoved?.(comment.id);
-      }
+      await api(deleteCommentApi, { params: { id: postId, commentId: comment.id } });
+      onCommentRemoved?.(comment.id);
     } catch (error) {
       console.error('Delete comment error:', error);
     }
   };
 
-  const hiddenReplies = (comment.replies ?? []).filter((reply) => reply.hidden);
-  const renderReply = (reply: Comment) => (
+  const renderReply = ({ comment: reply, replyingTo: to }: FlatReply) => (
     <CommentItem
       key={reply.id}
       comment={reply}
@@ -301,9 +290,8 @@ export function CommentItem({
       onCommentRemoved={onCommentRemoved}
       postAuthorId={postAuthorId}
       onHiddenChange={onHiddenChange}
-      // Reset depth after an expanded thread so indentation
-      // restarts shallow instead of running off-screen.
-      depth={threadExpanded ? 1 : depth + 1}
+      depth={1}
+      replyingTo={to}
     />
   );
 
@@ -312,24 +300,20 @@ export function CommentItem({
     if (!replyContent.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const res = await reconsider((confirmReconsider) =>
-        fetch(`/api/rmharks/${postId}/comment`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      const newReply = await reconsider((confirmReconsider) =>
+        api(createCommentApi, {
+          params: { id: postId },
+          body: {
             content: replyContent.trim(),
             parentId: comment.id,
             confirmReconsider,
-          }),
+          },
         }),
       );
-      if (!res) return;
-      if (res.ok) {
-        const newReply = await res.json();
-        onReplyAdded?.(comment.id, newReply);
-        setReplyContent('');
-        setReplyOpen(false);
-      }
+      if (!newReply) return;
+      onReplyAdded?.(comment.id, newReply as Comment);
+      setReplyContent('');
+      setReplyOpen(false);
     } catch (error) {
       console.error('Reply error:', error);
     } finally {
@@ -337,336 +321,299 @@ export function CommentItem({
     }
   };
 
+  const displayName = freshCommentUser.name || t('unknown-user', { defaultValue: 'Unknown' });
+
   return (
-    <div
-      // A top-level reply is a card of the same material as the feed's posts
-      // (`.glass-fill`, L1) with its whole thread inside it; a nested reply is a
-      // row on that card, so the column never gets a second card width.
-      className={depth === 0 ? 'glass-fill rounded-site p-4' : 'pt-3'}
-      {...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}
-    >
-      <div className="flex gap-3">
-        {/* Avatar */}
+    // A reply is a spine item (Steel section 10, Post and replies): one dot, no card. The replies under it are ONE nested
+    // spine inside this row, indented 8px (P2), flattened however deep they were written.
+    <SpineItem as="article" {...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}>
+      <div className="flex items-center gap-2.5">
         <UserAvatar user={freshCommentUser} size="sm" />
-
-        <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex items-center gap-2 text-sm">
-            <Link
-              to={`/u/${freshCommentUser.handle || freshCommentUser.id}` as string}
-              className="flex items-center gap-2 min-w-0 hover:underline"
-            >
-              <span className="font-bold text-site-text truncate">
-                {freshCommentUser.name || 'Unknown'}
-              </span>
-              {freshCommentUser.isVerified && (
-                <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />
-              )}
-              {freshCommentUser.isAdmin && (
-                <span
-                  title={t('admin-title', { defaultValue: 'Admin' })}
-                  className="inline-flex items-center shrink-0"
-                >
-                  <ShieldCheck className="w-4 h-4 text-site-accent" />
-                </span>
-              )}
-              {freshCommentUser.handle && (
-                <span className="text-site-text-dim truncate">@{freshCommentUser.handle}</span>
-              )}
-            </Link>
-            {/* Relative time drifts by a tick between SSR and hydration; suppress
- the expected mismatch so it isn't reported as a hydration error. */}
-            <span className="text-site-text-dim shrink-0" suppressHydrationWarning>
-              · {timeAgoShort(comment.createdAt)}
-            </span>
-
-            {/* More menu */}
-            {!comment.deletedAt && (
-              <div className="relative ml-auto shrink-0">
-                <button
-                  ref={menuBtnRef}
-                  onClick={() => setMenuOpen((v) => !v)}
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  className="p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
-                >
-                  <MoreHorizontal className="w-3.5 h-3.5" />
-                </button>
-                <AnchoredMenu
-                  open={menuOpen}
-                  onClose={() => setMenuOpen(false)}
-                  anchorRef={menuBtnRef}
-                  label={t('more-options', { defaultValue: 'More options' })}
-                  className="w-52"
-                >
-                  <MenuItem
-                    icon={Heart}
-                    onSelect={() => {
-                      setMenuOpen(false);
-                      setEngagementModal('likes');
-                    }}
-                  >
-                    {t('liked-by', { defaultValue: 'Liked by' })}
-                  </MenuItem>
-                  <MenuItem
-                    icon={Repeat}
-                    onSelect={() => {
-                      setMenuOpen(false);
-                      setEngagementModal('reposts');
-                    }}
-                  >
-                    {t('rermarkd-by', { defaultValue: "reRMHark'd by" })}
-                  </MenuItem>
-                  {comment.content.length > 8 && (
-                    <MenuItem icon={Languages} disabled={translating} onSelect={handleTranslate}>
-                      {translating
-                        ? t('translating', { defaultValue: 'Translating…' })
-                        : translatedText
-                          ? showTranslated
-                            ? t('show-original', { defaultValue: 'Show original' })
-                            : t('show-translation', { defaultValue: 'Show translation' })
-                          : t('translate', { defaultValue: 'Translate' })}
-                    </MenuItem>
-                  )}
-                  {!!sessionUser?.id && sessionUser.id === postAuthorId && !comment.pending && (
-                    <HideReplyMenuItem
-                      postId={postId}
-                      commentId={comment.id}
-                      hidden={!!comment.hidden}
-                      onChanged={(h) => onHiddenChange?.(comment.id, h)}
-                      onDone={() => setMenuOpen(false)}
-                    />
-                  )}
-                  {isAuthor && (
-                    <MenuItem
-                      icon={Trash2}
-                      tone="danger"
-                      onSelect={() => {
-                        setMenuOpen(false);
-                        handleDelete();
-                      }}
-                    >
-                      {t('delete', { defaultValue: 'Delete' })}
-                    </MenuItem>
-                  )}
-                </AnchoredMenu>
-              </div>
+        <div className="min-w-0">
+          <Link
+            to={`/u/${freshCommentUser.handle || freshCommentUser.id}` as string}
+            className="t-body flex items-center gap-1 font-semibold text-site-text hover:underline"
+          >
+            <span className="truncate">{displayName}</span>
+            {freshCommentUser.isVerified && (
+              <>
+                <BadgeCheck className="size-3.5 shrink-0" aria-hidden />
+                <span className="sr-only">{t('verified', { defaultValue: 'Verified' })}</span>
+              </>
             )}
-          </div>
-
-          {/* Content */}
-          <RMHarkContent
-            text={stripEmbedUrls(comment.content)}
-            className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words"
-          />
-          {extractMediaEmbeds(comment.content).length > 0 && (
-            <ChatMediaEmbed content={comment.content} themePrefix="site" />
-          )}
-          {showTranslated && translatedText && (
-            <p className="mt-2 whitespace-pre-wrap break-words rounded-site glass-fill px-4 py-3 text-sm text-site-text">
-              {translatedText}
-            </p>
-          )}
-
-          {!comment.deletedAt && !comment.pending && (
-            <ReactionChips reactions={reactions} onToggle={toggleReaction} className="mt-2" />
-          )}
-
-          {/* Actions row */}
-          {!comment.deletedAt && (
-            <div className="flex items-center gap-5 mt-2 -ml-1.5">
-              {/* Reply */}
-              {sessionUser && (
-                <button
-                  onClick={() => setReplyOpen((v) => !v)}
-                  className="group flex items-center rounded-full text-site-text-dim hover:text-site-accent transition-colors duration-site-fast"
-                >
-                  <span
-                    className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-accent-dim/50 group-active:scale-95`}
-                  >
-                    <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  </span>
-                </button>
-              )}
-
-              {/* reRMHark — icon AND count are one button, so the count is part of the
- hit area instead of dead space next to it. */}
-              <button
-                onClick={toggleRepost}
-                aria-pressed={reposted}
-                className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
-                  reposted ? 'text-site-success' : 'text-site-text-dim'
-                }`}
-                title={
-                  reposted ? t('undo-rermhark', { defaultValue: 'Undo reRMHark' }) : 'reRMHark'
-                }
-              >
-                <span
-                  className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-success/10 group-active:scale-95`}
-                >
-                  <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  <EngagementCount value={repostCount} />
-                </span>
-              </button>
-
-              {/* Like */}
-              <button
-                onClick={toggleLike}
-                aria-pressed={liked}
-                className={`group flex min-w-11 items-center rounded-full transition-colors duration-site-fast ${
-                  liked ? 'text-site-danger' : 'text-site-text-dim'
-                }`}
-                title={
-                  liked
-                    ? t('unlike', { defaultValue: 'Unlike' })
-                    : t('like', { defaultValue: 'Like' })
-                }
-              >
-                <span
-                  className={`${engagementPill} h-6 gap-1 px-1 group-hover:bg-site-danger/10 group-active:scale-95`}
-                >
-                  <Heart
-                    className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`}
-                  />
-                  <EngagementCount value={likeCount} />
-                </span>
-              </button>
-
-              {/* Views */}
-              <div className="flex min-w-11 items-center text-site-text-dim">
-                <span className={`${engagementPill} h-6 gap-1 px-1`}>
-                  <Eye className="w-4 h-4" />
-                  <EngagementCount value={viewCount} />
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Inline reply box */}
-          {replyOpen && sessionUser && (
-            <div className="mt-2 flex gap-2">
-              <UserAvatar
-                user={{
-                  id: sessionUser.id || '',
-                  name: sessionUser.name || null,
-                  image: sessionUser.image || null,
-                }}
-                size="xs"
-                linkToProfile={false}
-              />
-              <div className="flex-1 min-w-0">
-                <MentionTextarea
-                  ref={replyRef}
-                  autoFocus
-                  value={replyContent}
-                  onChange={setReplyContent}
-                  placeholder={t('reply-placeholder', {
-                    handle: freshCommentUser.handle || freshCommentUser.name || 'Unknown',
-                    defaultValue: 'Post your reply...',
-                  })}
-                  rows={2}
-                  maxLength={MAX_COMMENT_LENGTH}
-                  className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm px-3 py-2 resize-none outline-none focus:border-site-accent transition-colors"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                      handleSubmitReply();
-                    }
-                    if (e.key === 'Escape') {
-                      setReplyOpen(false);
-                      setReplyContent('');
-                      setShowGifPicker(false);
-                    }
-                  }}
-                />
-                <div className="flex items-center justify-between mt-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}
-                    >
-                      {remaining}
-                    </span>
-                    <button
-                      onClick={() => {
-                        setReplyOpen(false);
-                        setReplyContent('');
-                        setShowGifPicker(false);
-                      }}
-                      className="text-xs text-site-text-dim hover:text-site-text transition-colors"
-                    >
-                      {t('cancel', { defaultValue: 'Cancel' })}
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <AIGenerateButton
-                      request={{
-                        mode: 'reply',
-                        rmharkId: postId,
-                        parentId: comment.id,
-                        draft: replyContent,
-                      }}
-                      onGenerated={(text) => setReplyContent(text)}
-                      size="sm"
-                      title="Generate a reply with AI"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowGifPicker((v) => !v)}
-                      aria-label={t('add-gif-aria', { defaultValue: 'Add a GIF' })}
-                      className="p-2 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
-                    >
-                      <ImageIcon className="w-4 h-4" />
-                    </button>
-                    <EmojiPickerButton direction="up" onSelect={insertEmoji} />
-                    <Button
-                      variant="accent"
-                      size="sm"
-                      disabled={!replyContent.trim() || remaining < 0 || submitting}
-                      onClick={handleSubmitReply}
-                    >
-                      {submitting
-                        ? t('posting', { defaultValue: 'Posting…' })
-                        : t('reply', { defaultValue: 'Reply' })}
-                    </Button>
-                  </div>
-                </div>
-                {showGifPicker && (
-                  <GifPicker
-                    className="mt-2"
-                    onClose={() => setShowGifPicker(false)}
-                    onSelect={(u) => {
-                      setReplyContent((c) => (c ? `${c} ${u}` : u));
-                      setShowGifPicker(false);
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Threaded replies */}
-          {hasReplies &&
-            (collapseThread ? (
-              <button
-                onClick={() => setThreadExpanded(true)}
-                className="mt-2 ml-2 flex items-center gap-2 text-xs font-medium text-site-accent hover:underline"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                {t('show-more-replies', {
-                  count: countDescendants(comment.replies),
-                  defaultValue_one: 'Show {{count}} more reply',
-                  defaultValue: 'Show {{count}} more replies',
-                })}
-              </button>
-            ) : (
-              <div className={`mt-1 -ml-11 space-y-1 ${depth < INDENT_DEPTH ? 'pl-4' : ''}`}>
-                {comment.replies!.filter((reply) => !reply.hidden).map(renderReply)}
-                <HiddenRepliesGroup count={hiddenReplies.length}>
-                  {hiddenReplies.map(renderReply)}
-                </HiddenRepliesGroup>
-              </div>
-            ))}
+            {freshCommentUser.isAdmin && (
+              <>
+                <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
+                <span className="sr-only">{t('admin-title', { defaultValue: 'Admin' })}</span>
+              </>
+            )}
+          </Link>
+          <span className="t-meta block truncate">
+            {freshCommentUser.handle ? <bdi>{`@${freshCommentUser.handle}`}</bdi> : null}
+            {freshCommentUser.handle ? ' · ' : ''}
+            <RelativeTime date={comment.createdAt} format={relativeTimeShort} />
+          </span>
         </div>
       </div>
+
+      {replyingTo && (
+        <p className="t-meta mt-2">
+          {t('replying-to', { handle: replyingTo, defaultValue: 'Replying to {{handle}}' })}
+        </p>
+      )}
+
+      {/* Content */}
+      <RMHarkContent
+        text={stripEmbedUrls(comment.content)}
+        className="t-post mt-2 whitespace-pre-wrap break-words"
+      />
+      {extractMediaEmbeds(comment.content).length > 0 && (
+        <ChatMediaEmbed content={comment.content} themePrefix="site" />
+      )}
+      {showTranslated && translatedText && (
+        <p
+          className={cn(
+            't-body mt-2 border-s-2 border-site-border ps-3 whitespace-pre-wrap break-words',
+            ARRIVE,
+          )}
+        >
+          {translatedText}
+        </p>
+      )}
+
+      {!comment.deletedAt && !comment.pending && (
+        <ReactionChips reactions={reactions} onToggle={toggleReaction} className="mt-2" />
+      )}
+
+      {/* K8 (as amended 2026-11-13): an icon and its count; the three dots open the menu. "On" is ink, never a colour. */}
+      {!comment.deletedAt && (
+        <div className="feed-actions">
+          <button
+            type="button"
+            onClick={toggleLike}
+            aria-pressed={liked}
+            data-on={liked ? '' : undefined}
+            className="feed-action"
+            title={t('like', { defaultValue: 'Like' })}
+          >
+            <Heart className="feed-action__icon" data-fill="" aria-hidden />
+            <span className="sr-only">{t('like', { defaultValue: 'Like' })}</span>
+            {formatCount(likeCount) && (
+              <span className="feed-action__count">{formatCount(likeCount)}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={toggleRepost}
+            aria-pressed={reposted}
+            data-on={reposted ? '' : undefined}
+            className="feed-action"
+            title={t('action-repost', { defaultValue: 'Repost' })}
+          >
+            <Repeat2 className="feed-action__icon" aria-hidden />
+            <span className="sr-only">{t('action-repost', { defaultValue: 'Repost' })}</span>
+            {formatCount(repostCount) && (
+              <span className="feed-action__count">{formatCount(repostCount)}</span>
+            )}
+          </button>
+          {sessionUser && (
+            <button
+              type="button"
+              onClick={() => setReplyOpen((v) => !v)}
+              aria-expanded={replyOpen}
+              className="feed-action"
+              title={t('reply', { defaultValue: 'Reply' })}
+            >
+              <MessageCircle className="feed-action__icon" aria-hidden />
+              <span className="sr-only">{t('reply', { defaultValue: 'Reply' })}</span>
+            </button>
+          )}
+          <div className="relative">
+            <PostMenuTrigger
+              ref={menuBtnRef}
+              label={t('more-options', { defaultValue: 'More options' })}
+              open={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+            />
+            <AnchoredMenu
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              anchorRef={menuBtnRef}
+              label={t('more-options', { defaultValue: 'More options' })}
+              className="w-52"
+            >
+              <MenuItem
+                icon={Heart}
+                onSelect={() => {
+                  setMenuOpen(false);
+                  setEngagementModal('likes');
+                }}
+              >
+                {t('liked-by', { defaultValue: 'Liked by' })}
+              </MenuItem>
+              <MenuItem
+                icon={Repeat}
+                onSelect={() => {
+                  setMenuOpen(false);
+                  setEngagementModal('reposts');
+                }}
+              >
+                {t('rermarkd-by', { defaultValue: "reRMHark'd by" })}
+              </MenuItem>
+              {comment.content.length > 8 && (
+                <MenuItem icon={Languages} disabled={translating} onSelect={handleTranslate}>
+                  {translating
+                    ? t('translating', { defaultValue: 'Translating…' })
+                    : translatedText
+                      ? showTranslated
+                        ? t('show-original', { defaultValue: 'Show original' })
+                        : t('show-translation', { defaultValue: 'Show translation' })
+                      : t('translate', { defaultValue: 'Translate' })}
+                </MenuItem>
+              )}
+              {!!sessionUser?.id && sessionUser.id === postAuthorId && !comment.pending && (
+                <HideReplyMenuItem
+                  postId={postId}
+                  commentId={comment.id}
+                  hidden={!!comment.hidden}
+                  onChanged={(h) => onHiddenChange?.(comment.id, h)}
+                  onDone={() => setMenuOpen(false)}
+                />
+              )}
+              {isAuthor && (
+                <MenuItem
+                  icon={Trash2}
+                  tone="danger"
+                  onSelect={() => {
+                    setMenuOpen(false);
+                    handleDelete();
+                  }}
+                >
+                  {t('delete', { defaultValue: 'Delete' })}
+                </MenuItem>
+              )}
+            </AnchoredMenu>
+          </div>
+          {viewCount > 0 && (
+            <span className="feed-actions__views t-meta">
+              {t('post-views', { n: formatCount(viewCount), defaultValue: '{{n}} views' })}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Inline reply box */}
+      {replyOpen && sessionUser && (
+        <div className="mt-3 flex gap-2">
+          <UserAvatar
+            user={{
+              id: sessionUser.id || '',
+              name: sessionUser.name || null,
+              image: sessionUser.image || null,
+            }}
+            size="xs"
+            linkToProfile={false}
+          />
+          <div className="min-w-0 flex-1">
+            <MentionTextarea
+              ref={replyRef}
+              autoFocus
+              value={replyContent}
+              onChange={setReplyContent}
+              placeholder={t('reply-placeholder', {
+                handle: freshCommentUser.handle || freshCommentUser.name || 'Unknown',
+                defaultValue: 'Post your reply...',
+              })}
+              rows={2}
+              maxLength={MAX_COMMENT_LENGTH}
+              className="surface-field t-body w-full resize-none px-3 py-2 text-site-text outline-none placeholder:text-site-text-muted"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  handleSubmitReply();
+                }
+                if (e.key === 'Escape') {
+                  setReplyOpen(false);
+                  setReplyContent('');
+                  setShowGifPicker(false);
+                }
+              }}
+            />
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`t-meta ${remaining <= 20 ? 'font-semibold text-site-danger' : ''}`}
+                >
+                  {remaining}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReplyOpen(false);
+                    setReplyContent('');
+                    setShowGifPicker(false);
+                  }}
+                  className="feed-action"
+                >
+                  {t('cancel', { defaultValue: 'Cancel' })}
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <AIGenerateButton
+                  request={{
+                    mode: 'reply',
+                    rmharkId: postId,
+                    parentId: comment.id,
+                    draft: replyContent,
+                  }}
+                  onGenerated={(text) => setReplyContent(text)}
+                  size="sm"
+                  title="Generate a reply with AI"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setShowGifPicker((v) => !v)}
+                  aria-label={t('add-gif-aria', { defaultValue: 'Add a GIF' })}
+                >
+                  <ImageIcon className="size-4" aria-hidden />
+                </Button>
+                <EmojiPickerButton direction="up" onSelect={insertEmoji} />
+                <Button
+                  variant="default"
+                  size="sm"
+                  disabled={!replyContent.trim() || remaining < 0 || submitting}
+                  onClick={handleSubmitReply}
+                >
+                  {submitting
+                    ? t('posting', { defaultValue: 'Posting…' })
+                    : t('reply', { defaultValue: 'Reply' })}
+                </Button>
+              </div>
+            </div>
+            {showGifPicker && (
+              <GifPicker
+                className="mt-2"
+                onClose={() => setShowGifPicker(false)}
+                onSelect={(u) => {
+                  setReplyContent((c) => (c ? `${c} ${u}` : u));
+                  setShowGifPicker(false);
+                }}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* The one nested spine: every reply under this one, in order (P2). */}
+      {depth === 0 && hasReplies && (
+        <Spine>
+          {visibleReplies.map(renderReply)}
+          <HiddenRepliesGroup count={hiddenReplies.length}>
+            {hiddenReplies.map(renderReply)}
+          </HiddenRepliesGroup>
+        </Spine>
+      )}
 
       {engagementModal && (
         <EngagementListModal
@@ -686,6 +633,6 @@ export function CommentItem({
           onClose={() => setReactionMenu(null)}
         />
       )}
-    </div>
+    </SpineItem>
   );
 }

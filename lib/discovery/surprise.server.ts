@@ -9,8 +9,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { cached } from '@/lib/cached.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 
 export type SurpriseKind = 'game' | 'app' | 'library' | 'build' | 'post';
 export interface Surprise {

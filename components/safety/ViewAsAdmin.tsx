@@ -3,6 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { adminViewAsApi } from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Brief {
   id: string;
@@ -33,38 +38,38 @@ export function ViewAsAdmin() {
   const [data, setData] = useState<ViewAs | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const arrival = useArrival(!loading);
 
   const run = async () => {
     setLoading(true);
     setError(null);
     setData(null);
-    const r = await fetch(`/api/admin/view-as?user=${encodeURIComponent(query.trim())}`, {
-      credentials: 'include',
-    });
-    setLoading(false);
-    if (!r.ok) {
-      const d = (await r.json().catch(() => ({}))) as { error?: string };
-      return setError(d.error || t('viewas-failed', { defaultValue: 'Lookup failed' }));
+    try {
+      const result = await api(adminViewAsApi, { query: { user: query.trim() }, retries: 0 });
+      setLoading(false);
+      setData(result);
+    } catch (e) {
+      setLoading(false);
+      setError(serverError(e) || t('viewas-failed', { defaultValue: 'Lookup failed' }));
     }
-    setData((await r.json()) as ViewAs);
   };
 
   const list = (title: string, users: Brief[]) => (
-    <section className="glass-fill rounded-site p-5">
-      <h3 className="mb-2 text-sm font-semibold text-site-text">
+    <section className="min-w-0">
+      <h3 className="mb-2 t-body font-semibold text-site-text">
         {title} ({users.length})
       </h3>
       {users.length === 0 ? (
-        <p className="text-xs text-site-text-muted">{t('viewas-none', { defaultValue: 'None' })}</p>
+        <p className="t-body text-site-text-muted">{t('viewas-none', { defaultValue: 'None' })}</p>
       ) : (
-        <p className="break-words text-xs text-site-text-muted">{users.map(label).join(', ')}</p>
+        <p className="break-words t-body text-site-text-muted">{users.map(label).join(', ')}</p>
       )}
     </section>
   );
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-site-text-muted">
+      <p className="t-body text-site-text-muted">
         {t('viewas-intro', {
           defaultValue:
             'See a member’s mutes, blocks, plan and the top of their For You feed. Read-only, and every lookup is recorded in the audit log.',
@@ -83,7 +88,7 @@ export function ViewAsAdmin() {
           placeholder={t('viewas-placeholder', { defaultValue: 'Handle or user id' })}
           aria-label={t('viewas-placeholder', { defaultValue: 'Handle or user id' })}
         />
-        <Button type="submit" variant="accent" disabled={!query.trim() || loading}>
+        <Button type="submit" variant="default" disabled={!query.trim() || loading}>
           {t('viewas-go', { defaultValue: 'View' })}
         </Button>
       </form>
@@ -92,12 +97,12 @@ export function ViewAsAdmin() {
           <Spinner />
         </div>
       )}
-      {error && <p className="text-sm text-site-danger">{error}</p>}
+      {error && <p className={cn('t-body text-site-danger', arrival)}>{error}</p>}
       {data && (
-        <div className="flex flex-col gap-3">
-          <section className="glass-pane rounded-site p-5">
-            <h3 className="text-base font-semibold text-site-text">{label(data.member)}</h3>
-            <p className="text-xs text-site-text-muted">
+        <div className={cn('flex flex-col gap-3', arrival)}>
+          <section className="min-w-0">
+            <h3 className="t-heading text-site-text">{label(data.member)}</h3>
+            <p className="t-body text-site-text-muted">
               {t('viewas-meta', {
                 defaultValue: 'Plan: {{tier}} · joined {{date}}',
                 tier: data.entitlements.tier,
@@ -110,21 +115,21 @@ export function ViewAsAdmin() {
           {list(t('viewas-mutes', { defaultValue: 'Muted accounts' }), data.mutes)}
           {list(t('viewas-blocks', { defaultValue: 'Blocked accounts' }), data.blocks)}
           {list(t('viewas-blocked-by', { defaultValue: 'Blocked by' }), data.blockedBy)}
-          <section className="glass-fill rounded-site p-5">
-            <h3 className="mb-2 text-sm font-semibold text-site-text">
+          <section className="min-w-0">
+            <h3 className="mb-2 t-body font-semibold text-site-text">
               {t('viewas-words', { defaultValue: 'Muted words' })} ({data.mutedWords.length})
             </h3>
-            <p className="break-words text-xs text-site-text-muted">
+            <p className="break-words t-body text-site-text-muted">
               {data.mutedWords.join(', ') || '—'}
             </p>
           </section>
-          <section className="glass-fill rounded-site p-5">
-            <h3 className="mb-2 text-sm font-semibold text-site-text">
+          <section className="min-w-0">
+            <h3 className="mb-2 t-body font-semibold text-site-text">
               {t('viewas-feed', { defaultValue: 'Top of their For You feed' })}
             </h3>
             <ol className="flex flex-col gap-2">
               {data.feed.map((i) => (
-                <li key={i.id} className="text-xs text-site-text-muted">
+                <li key={i.id} className="t-meta">
                   <span className="font-semibold text-site-text">{i.author ?? i.type}</span>{' '}
                   {i.text || `(${i.type})`}
                 </li>

@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { CalendarX } from 'lucide-react';
 import { MarathonSchedule } from '@/components/marathon/MarathonSchedule';
 import { toolsApi } from '@/lib/tools/client';
 import { noindexHead } from '@/lib/seo';
+import { cn } from '@/lib/utils';
 import type { MarathonItem } from '@/lib/dunesday/marathon';
 
 export const Route = createFileRoute('/_site/marathon/$shareId')({
@@ -26,6 +28,7 @@ function SharedMarathon() {
       .then((d) => setList(d.list))
       .catch(() => setList(null));
   }, [shareId]);
+  const arrival = useArrival(list !== undefined);
   return (
     <PageLayout
       title={list?.title ?? t('marathon-heading', { defaultValue: 'Marathon planner' })}
@@ -36,11 +39,12 @@ function SharedMarathon() {
         <Skeleton className="mx-4 h-40" />
       ) : list === null ? (
         <EmptyState
+          className={arrival}
           icon={CalendarX}
           title={t('marathon-missing', { defaultValue: 'This marathon link is not valid.' })}
         />
       ) : (
-        <div className="space-y-3 px-4 pt-4 pb-12">
+        <div className={cn('space-y-3 px-4 pt-4 pb-12', arrival)}>
           <p className="text-sm text-site-text-muted">
             {t('marathon-shared-intro', {
               defaultValue: '{{count}} titles, to finish by {{date}}. Planned from today.',

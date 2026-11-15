@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Savings goals (C1) — the wallet's "Goals" tab. Lazy-loaded when the tab opens.
  *
@@ -10,12 +8,14 @@ import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, Target, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import type { SavingsGoalsPayload, SavingsGoalView } from '@/lib/economy/savings-goal-schema';
 import { SAVINGS_CUSTOM_MAX } from '@/lib/economy/savings-goal-schema';
@@ -40,6 +40,7 @@ export default function SavingsGoalsPanel() {
     queryFn: () => apiJson<SavingsGoalsPayload>('/api/economy/savings-goals'),
     staleTime: 30_000,
   });
+  const arrival = useArrival(!isLoading && !!data);
 
   const create = useMutation({
     mutationFn: () =>
@@ -122,7 +123,7 @@ export default function SavingsGoalsPanel() {
   }
 
   return (
-    <div className="space-y-3 px-3 pb-12">
+    <div className={cn('space-y-3 px-3 pb-12', arrival)}>
       <p className="px-1 text-sm text-site-text-muted">
         {t('goals-intro', {
           defaultValue:
@@ -138,7 +139,7 @@ export default function SavingsGoalsPanel() {
             defaultValue: 'Set a goal for a store item, a market item, or any amount.',
           })}
           action={
-            <Button variant="accent" size="sm" onClick={() => setAdding(true)}>
+            <Button variant="default" size="sm" onClick={() => setAdding(true)}>
               <Plus /> {t('goals-add', { defaultValue: 'Add a goal' })}
             </Button>
           }
@@ -146,7 +147,7 @@ export default function SavingsGoalsPanel() {
       ) : (
         <ul className="space-y-3">
           {data.goals.map((g) => (
-            <li key={g.id} className="glass-fill flex items-center gap-4 p-4">
+            <li key={g.id} className="flex items-center gap-4 p-4">
               <ProgressRing value={g.progress} label={`${Math.floor(g.progress * 100)}%`} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-site-text">{g.title}</p>
@@ -185,7 +186,7 @@ export default function SavingsGoalsPanel() {
 
       {adding ? (
         <form
-          className="glass-pane space-y-3 p-4"
+          className="space-y-3 p-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (canSave) create.mutate();
@@ -253,7 +254,7 @@ export default function SavingsGoalsPanel() {
             </Button>
             <Button
               type="submit"
-              variant="accent"
+              variant="default"
               size="sm"
               disabled={!canSave}
               loading={create.isPending}
@@ -263,7 +264,7 @@ export default function SavingsGoalsPanel() {
           </div>
         </form>
       ) : data.goals.length > 0 && data.goals.length < data.max ? (
-        <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
+        <Button variant="default" size="sm" onClick={() => setAdding(true)}>
           <Plus /> {t('goals-add', { defaultValue: 'Add a goal' })}
         </Button>
       ) : null}

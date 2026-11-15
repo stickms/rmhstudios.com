@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * "When is the next one" — answered before anything else on a phone.
  *

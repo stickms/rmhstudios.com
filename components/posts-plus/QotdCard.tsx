@@ -1,12 +1,19 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { Link } from '@tanstack/react-router';
+import {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  Link,
+  useNavigate,
+} from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { MessageCircleQuestion, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { IconButton } from '@/components/ui/icon-button';
+import { SpineItem } from '@/components/ui/spine';
+import { useArrival } from '@/components/ui/arrive';
+import { api } from '@/lib/contract/client';
+import { getQotdTodayApi } from '@/lib/posts-plus/qotd.contract';
 import { useQotdAnswering } from '@/lib/posts-plus/qotd-store';
+import { HOME_COMPOSER_INPUT_ID } from '@/components/feed/home-composer-id';
 
 interface Today {
   dayKey: string;
@@ -15,11 +22,24 @@ interface Today {
   myAnswers: number;
 }
 
-const dismissKey = (dayKey: string) => `qotd-dismissed:${dayKey}`;
+const dismissKey =
+  (
+    dayKey: string,
+  ) =>
+    `qotd-dismissed:${dayKey}`;
 
-function wasDismissed(dayKey: string): boolean {
+function wasDismissed(
+  dayKey: string,
+): boolean {
   try {
-    return window.localStorage.getItem(dismissKey(dayKey)) === '1';
+    return (
+      window.localStorage.getItem(
+        dismissKey(
+          dayKey,
+        ),
+      ) ===
+      '1'
+    );
   } catch {
     return false;
   }
@@ -32,85 +52,236 @@ function wasDismissed(dayKey: string): boolean {
  * second one): the answer is an ordinary post.
  */
 export default function QotdCard() {
-  const { t } = useTranslation('f-posts-plus');
-  const [today, setToday] = useState<Today | null>(null);
-  const [hidden, setHidden] = useState(false);
-  const start = useQotdAnswering((s) => s.start);
+  const {
+    t,
+  } =
+    useTranslation(
+      'f-posts-plus',
+    );
+  const [
+    today,
+    setToday,
+  ] =
+    useState<Today | null>(
+      null,
+    );
+  const [
+    hidden,
+    setHidden,
+  ] =
+    useState(
+      false,
+    );
+  const start =
+    useQotdAnswering(
+      (
+        s,
+      ) =>
+        s.start,
+    );
+  const navigate =
+    useNavigate();
+  // Steel M9: the card is fetched after idle and lands among posts already showing, so it fades in.
+  const arrival =
+    useArrival(
+      !!today &&
+        !hidden,
+    );
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/qotd/today', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: Today | null) => {
-        if (cancelled || !d) return;
-        setToday(d);
-        setHidden(wasDismissed(d.dayKey));
-      })
-      .catch(() => {});
+    api(
+      getQotdTodayApi,
+      {
+        retries: 0,
+      },
+    )
+      .then(
+        (
+          d,
+        ) => {
+          if (
+            cancelled
+          )
+            return;
+          setToday(
+            d,
+          );
+          setHidden(
+            wasDismissed(
+              d.dayKey,
+            ),
+          );
+        },
+      )
+      .catch(
+        () => {},
+      );
     return () => {
       cancelled = true;
     };
   }, []);
 
-  if (!today || hidden) return null;
+  if (
+    !today ||
+    hidden
+  )
+    return null;
 
-  const dismiss = () => {
-    setHidden(true);
-    try {
-      window.localStorage.setItem(dismissKey(today.dayKey), '1');
-    } catch {
-      /* private mode: it just comes back next load */
-    }
-  };
+  const dismiss =
+    () => {
+      setHidden(
+        true,
+      );
+      try {
+        window.localStorage.setItem(
+          dismissKey(
+            today.dayKey,
+          ),
+          '1',
+        );
+      } catch {
+        /* private mode: it just comes back next load */
+      }
+    };
 
-  const answer = () => {
-    start({ dayKey: today.dayKey, text: today.text });
-    // The composer sits right below; focusing it also wakes the lazy placeholder.
-    const box = document.querySelector<HTMLTextAreaElement>('.social-composer textarea');
-    box?.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    box?.focus({ preventScroll: true });
-  };
+  const answer =
+    () => {
+      start(
+        {
+          dayKey:
+            today.dayKey,
+          text: today.text,
+        },
+      );
+      // The home composer is a desktop row; where it is not displayed (a phone) the answer is written on the question's own page.
+      const box =
+        document.getElementById(
+          HOME_COMPOSER_INPUT_ID,
+        );
+      if (
+        !box ||
+        box.offsetParent ===
+          null
+      ) {
+        void navigate(
+          {
+            to: '/qotd',
+          },
+        );
+        return;
+      }
+      box.scrollIntoView(
+        {
+          block:
+            'center',
+        },
+      );
+      box.focus(
+        {
+          preventScroll: true,
+        },
+      );
+    };
 
+  // A dotless spine item (P3): a prompt, not a post. Plain words and a text link; nothing is boxed, tinted or coloured.
   return (
-    <section
-      className="glass-fill rounded-site flex items-start gap-3 p-[var(--rad-card-pad)]"
-      aria-label={t('qotd-card-label', { defaultValue: 'Question of the day' })}
+    <SpineItem
+      as="section"
+      dot={
+        false
+      }
+      className={
+        arrival
+      }
+      aria-label={t(
+        'qotd-card-label',
+        {
+          defaultValue:
+            'Question of the day',
+        },
+      )}
     >
-      <MessageCircleQuestion className="mt-0.5 h-5 w-5 shrink-0 text-site-accent" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className="site-section-label">
-          {t('qotd-card-label', { defaultValue: 'Question of the day' })}
-        </p>
-        <p className="mt-0.5 text-sm font-medium text-site-text">{today.text}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="accent" onClick={answer}>
-            {t('qotd-answer', { defaultValue: 'Answer' })}
-          </Button>
-          <Link
-            to="/qotd"
-            className="text-xs text-site-text-muted underline-offset-2 hover:text-site-text hover:underline"
-          >
-            {today.answerCount > 0
-              ? t('qotd-see-answers', {
-                  defaultValue: 'See all {{n}} answers',
-                  n: today.answerCount,
-                })
-              : t('qotd-be-first', { defaultValue: 'Be the first to answer' })}
-          </Link>
-          {today.myAnswers > 0 && (
-            <span className="text-xs text-site-success">
-              {t('qotd-answered', { defaultValue: 'You answered today' })}
-            </span>
+      <p className="t-label">
+        {t(
+          'qotd-card-label',
+          {
+            defaultValue:
+              'Question of the day',
+          },
+        )}
+      </p>
+      <p className="t-post mt-1 font-medium">
+        {
+          today.text
+        }
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <Button
+          size="sm"
+          variant="default"
+          onClick={
+            answer
+          }
+        >
+          {t(
+            'qotd-answer',
+            {
+              defaultValue:
+                'Answer',
+            },
           )}
-        </div>
+        </Button>
+        <Link
+          to="/qotd"
+          className="t-body text-site-text-muted underline hover:text-site-text"
+        >
+          {today.answerCount >
+          0
+            ? t(
+                'qotd-see-answers',
+                {
+                  defaultValue:
+                    'See all {{n}} answers',
+                  n: today.answerCount,
+                },
+              )
+            : t(
+                'qotd-be-first',
+                {
+                  defaultValue:
+                    'Be the first to answer',
+                },
+              )}
+        </Link>
+        {today.myAnswers >
+          0 && (
+          <span className="t-body font-semibold">
+            {t(
+              'qotd-answered',
+              {
+                defaultValue:
+                  'You answered today',
+              },
+            )}
+          </span>
+        )}
+        <button
+          type="button"
+          className="feed-action"
+          onClick={
+            dismiss
+          }
+        >
+          {t(
+            'qotd-dismiss',
+            {
+              defaultValue:
+                "Hide today's question",
+            },
+          )}
+        </button>
       </div>
-      <IconButton
-        icon={X}
-        variant="ghost"
-        size="icon-xs"
-        onClick={dismiss}
-        label={t('qotd-dismiss', { defaultValue: "Hide today's question" })}
-      />
-    </section>
+    </SpineItem>
   );
 }

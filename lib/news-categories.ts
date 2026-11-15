@@ -5,19 +5,88 @@
 // `dark:` variant). So each chip uses an OPAQUE, mid-dark background with white
 // text: contrast is then independent of the surface underneath, and every shade
 // below clears WCAG AA (4.5:1) against white.
-export const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-    "AI/ML": { bg: "bg-violet-600", text: "text-white", border: "border-transparent" },
-    "Gaming": { bg: "bg-emerald-700", text: "text-white", border: "border-transparent" },
-    "Neuroscience": { bg: "bg-pink-700", text: "text-white", border: "border-transparent" },
-    "Cognitive Science": { bg: "bg-amber-700", text: "text-white", border: "border-transparent" },
-    "Tech Industry": { bg: "bg-blue-600", text: "text-white", border: "border-transparent" },
-    "Science": { bg: "bg-cyan-700", text: "text-white", border: "border-transparent" },
-    "Culture": { bg: "bg-rose-700", text: "text-white", border: "border-transparent" },
-    "Arts": { bg: "bg-orange-700", text: "text-white", border: "border-transparent" },
-};
+export const CATEGORY_COLORS: Record<
+  string,
+  {
+    bg: string;
+    text: string;
+    border: string;
+  }
+> =
+  {
+    'AI/ML':
+      {
+        bg: 'bg-violet-600',
+        text: 'text-white',
+        border:
+          'border-transparent',
+      },
+    Gaming:
+      {
+        bg: 'bg-emerald-700',
+        text: 'text-white',
+        border:
+          'border-transparent',
+      },
+    Neuroscience:
+      {
+        bg: 'bg-pink-700',
+        text: 'text-white',
+        border:
+          'border-transparent',
+      },
+    'Cognitive Science':
+      {
+        bg: 'bg-amber-700',
+        text: 'text-white',
+        border:
+          'border-transparent',
+      },
+    'Tech Industry':
+      {
+        bg: 'bg-blue-600',
+        text: 'text-white',
+        border:
+          'border-transparent',
+      },
+    Science:
+      {
+        bg: 'bg-cyan-700',
+        text: 'text-white',
+        border:
+          'border-transparent',
+      },
+    Culture:
+      {
+        bg: 'bg-rose-700',
+        text: 'text-white',
+        border:
+          'border-transparent',
+      },
+    Arts: {
+      bg: 'bg-orange-700',
+      text: 'text-white',
+      border:
+        'border-transparent',
+    },
+  };
 
-export const ALL_CATEGORIES = Object.keys(CATEGORY_COLORS);
+export const ALL_CATEGORIES =
+  Object.keys(
+    CATEGORY_COLORS,
+  );
 
-export function getCategoryColor(category: string) {
-    return CATEGORY_COLORS[category] ?? { bg: "bg-gray-600", text: "text-white", border: "border-transparent" };
+export function getCategoryColor(
+  category: string,
+) {
+  return (
+    CATEGORY_COLORS[
+      category
+    ] ?? {
+      bg: 'bg-gray-600',
+      text: 'text-white',
+      border:
+        'border-transparent',
+    }
+  );
 }

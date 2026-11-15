@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { layoutLines, type SeriesPoint } from '@/lib/elections/history';
 import type { Party, Race } from '@/lib/elections/types';
+import { api } from '@/lib/contract/client';
+import { getElectionHistoryApi } from '@/lib/elections/elections.contract';
 
 const COLOR: Record<Party, string> = {
   DEM: 'var(--el-dem)',
@@ -22,11 +24,7 @@ export function VoteChart({ race, cycle, live }: { race: Race; cycle: string; li
   const { data } = useQuery<{ points: SeriesPoint[] }>({
     queryKey: ['elections-history', cycle, race.id],
     queryFn: async () => {
-      const r = await fetch(
-        `/api/elections/history?cycle=${encodeURIComponent(cycle)}&race=${encodeURIComponent(race.id)}`,
-      );
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json();
+      return api(getElectionHistoryApi, { query: { cycle, race: race.id }, retries: 0 });
     },
     refetchInterval: live ? 15_000 : false,
     staleTime: 5_000,

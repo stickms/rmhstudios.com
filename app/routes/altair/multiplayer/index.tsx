@@ -6,15 +6,18 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { noindexHead } from '@/lib/seo';
 import { useEffect, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Users, Zap, UserPlus, RefreshCw, Globe, Lock, Eye } from 'lucide-react'
-import { connectToAltair, getSocket, disconnectFromAltair, emit } from '@/lib/altair/multiplayer/socket'
-import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store'
-import { S2C, C2S } from '@/lib/altair/multiplayer/events'
-import { useAltairToastStore } from '@/lib/altair/stores/toast-store'
-import AltairHeader from '@/components/altair/AltairHeader'
-import type { PublicLobbyInfo, AltairLobbySettings } from '@/lib/altair/multiplayer/types'
+import { connectToAltair, getSocket, disconnectFromAltair, emit } from '@features/altair/engine/multiplayer/socket'
+import { useAltairMultiplayerStore } from '@features/altair/engine/multiplayer/store'
+import { S2C, C2S } from '@features/altair/engine/multiplayer/events'
+import { useAltairToastStore } from '@features/altair/engine/stores/toast-store'
+import AltairHeader from '@features/altair/ui/AltairHeader'
+import type { PublicLobbyInfo, AltairLobbySettings } from '@features/altair/engine/multiplayer/types'
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive'
+import { cn } from '@/lib/utils'
 
 const VISIBILITY_LABELS: Record<AltairLobbySettings['visibility'], string> = {
   public: 'Public',
@@ -42,6 +45,9 @@ function AltairMultiplayerLanding() {
 
   const [joinCode, setJoinCode] = useState('')
   const [publicLobbies, setPublicLobbies] = useState<PublicLobbyInfo[]>([])
+  // Lobbies come over the socket after paint: the list fades in, then each new lobby does (M9).
+  const lobbiesArrival = useArrival(publicLobbies.length > 0)
+  const isNewLobby = useArrivingKeys(publicLobbies.map((l) => l.lobbyId))
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Lobby creation settings
@@ -307,11 +313,14 @@ function AltairMultiplayerLanding() {
                 {t("no-public-lobbies", { defaultValue: "No public lobbies available. Create one!" })}
               </p>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className={cn('flex flex-col gap-2', lobbiesArrival)}>
                 {publicLobbies.map((lobby) => (
                   <button
                     key={lobby.lobbyId}
-                    className="w-full flex items-center justify-between p-3 rounded-(--altair-radius) transition-colors border border-(--altair-border) bg-(--altair-bg) hover:bg-(--altair-surface-hover) text-left"
+                    className={cn(
+                      'w-full flex items-center justify-between p-3 rounded-(--altair-radius) transition-colors border border-(--altair-border) bg-(--altair-bg) hover:bg-(--altair-surface-hover) text-left',
+                      isNewLobby(lobby.lobbyId) && ARRIVE,
+                    )}
                     onClick={() => {
                       setJoinCode(lobby.lobbyId)
                       emit(C2S.LOBBY_JOIN, { lobbyId: lobby.lobbyId })
@@ -346,5 +355,6 @@ function AltairMultiplayerLanding() {
 }
 
 export const Route = createFileRoute('/altair/multiplayer/')({
+  head: () => noindexHead('Altair Multiplayer'),
   component: AltairMultiplayerLanding,
 })

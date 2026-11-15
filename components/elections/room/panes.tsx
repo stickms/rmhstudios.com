@@ -21,6 +21,8 @@ import { VoteChart } from './VoteChart';
 import { useFollow } from './useFollow';
 import type { ChatMessage } from '@/lib/elections/chat';
 import type { ReactionBurst, StreamStatus } from '../useRoomStream';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface PaneContext {
   /** The `?cycle=` value for API calls. */
@@ -291,6 +293,7 @@ export function RaceBody({
   const races = ctx.snapshot?.races ?? [];
   const followed = useFollow(pane, races, ctx.events, ctx.selectedState);
   const { race } = followed;
+  const arrival = useArrival(!!ctx.snapshot);
 
   return (
     <div style={{ height: '100%', overflowY: 'auto' }}>
@@ -307,18 +310,20 @@ export function RaceBody({
       {!ctx.snapshot ? (
         <div className="el-box el-skel" aria-busy />
       ) : !race ? (
-        <p className="el-eyebrow">
+        <p className={cn('el-eyebrow', arrival)}>
           {t('race.none', { defaultValue: 'No race to show here yet.' })}
         </p>
       ) : graph ? (
-        <>
+        <div className={arrival}>
           <h3 className="el-race__label" style={{ marginBottom: 8 }}>
             {race.label}
           </h3>
           <VoteChart race={race} cycle={ctx.cycle} live={ctx.live} />
-        </>
+        </div>
       ) : (
-        <RaceCard race={race} />
+        <div className={arrival}>
+          <RaceCard race={race} />
+        </div>
       )}
     </div>
   );

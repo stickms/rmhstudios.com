@@ -2,13 +2,12 @@
  * A shared loadout: every slot read-only, with like, copy-link, and "edit a
  * copy" (which forks it into your account and opens it in the builder).
  */
-'use client';
 
 import { Link, useNavigate } from '@tanstack/react-router';
 import { AlertTriangle, Copy, GitFork, Heart, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import Tf2Header from '@/components/tf2-hud/Tf2Header';
 import { SignInRequiredDialog } from '@/components/shared/SignInRequiredDialog';
 import { useSession } from '@/components/Providers';
@@ -27,6 +26,8 @@ import ItemTile from './ItemTile';
 import PlayerViewer from './PlayerViewer';
 import { tauntEffectOf, tauntItemOf, wornItems } from './worn';
 import { CLASS_DEFAULT } from './labels';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
   const { t } = useTranslation('c-tf2-hud');
@@ -118,9 +119,10 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
       : [];
 
   const warnings = detail && idx ? loadoutWarnings(idx.catalog, detail.tfClass, detail.slots) : [];
+  const arrival = useArrival(detail !== null || error !== null);
 
   return (
-    <div className="app-page min-h-dvh bg-(--app-bg) text-(--app-text)">
+    <div className="app-page min-h-dvh bg-app-bg text-app-text">
       <Tf2Header
         title={detail?.title ?? t('loadout', { defaultValue: 'Loadout' })}
         backLabel={t('workshop-back', { defaultValue: 'Workshop' })}
@@ -128,15 +130,16 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
       />
       <main className="mx-auto w-full max-w-4xl space-y-6 px-4 py-8">
         {error ? (
-          <p role="alert" className="py-12 text-center text-sm text-(--app-danger)">
+          <p role="alert" className={cn('py-12 text-center text-sm text-app-danger', arrival)}>
             {error}
           </p>
         ) : !detail ? (
-          <p role="status" className="py-12 text-center text-sm text-(--app-text-muted)">
+          <p role="status" className="py-12 text-center text-sm text-app-text-muted">
             {t('loading', { defaultValue: 'Loading…' })}
           </p>
         ) : (
-          <>
+          // One box with the main's own rhythm, so the loadout fades in as a whole (M9).
+          <div className={cn('space-y-6', arrival)}>
             <header className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="tf2hud-title text-4xl">{detail.title}</h2>
@@ -144,7 +147,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                   {t(`class-${detail.tfClass}`, { defaultValue: CLASS_DEFAULT[detail.tfClass] })}
                 </Pill>
               </div>
-              <p className="text-sm text-(--app-text-dim)">
+              <p className="text-sm text-app-text-dim">
                 {detail.author
                   ? t('by', { defaultValue: 'by {{name}}', name: detail.author.name })
                   : null}
@@ -163,7 +166,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                 ) : null}
               </p>
               {detail.description ? (
-                <p className="max-w-prose text-sm text-(--app-text-muted)">{detail.description}</p>
+                <p className="max-w-prose text-sm text-app-text-muted">{detail.description}</p>
               ) : null}
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <Btn size="md" icon={Heart} onClick={() => void like()} aria-pressed={liked}>
@@ -176,7 +179,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                   <Link
                     to="/tf2/loadout"
                     search={{ id: detail.id }}
-                    className="inline-flex h-10 items-center gap-1.5 rounded-(--app-radius-sm) bg-(--app-accent) px-4 text-sm font-semibold text-(--app-accent-fg) hover:bg-(--app-accent-hover)"
+                    className="inline-flex h-10 items-center gap-1.5 rounded-app-sm bg-app-accent px-4 text-sm font-semibold text-app-accent-fg hover:bg-app-accent-hover"
                   >
                     <Pencil className="size-4" aria-hidden />
                     {t('edit', { defaultValue: 'Edit' })}
@@ -218,9 +221,9 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
             {warnings.length && idx ? (
               <div
                 role="status"
-                className="rounded-(--app-radius-sm) border border-(--app-warning)/50 bg-(--app-warning)/10 p-2.5"
+                className="rounded-app-sm border border-app-warning/50 bg-app-warning/10 p-2.5"
               >
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-(--app-warning)">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-app-warning">
                   <AlertTriangle className="size-4 shrink-0" aria-hidden />
                   {t('not-possible', { defaultValue: 'Not possible in the game' })}
                 </p>
@@ -260,7 +263,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                           {item ? (
                             <ItemTile item={item} paint={paint} />
                           ) : (
-                            <span className="flex aspect-[5/4] items-center justify-center rounded-(--app-radius-sm) border-2 border-dashed border-(--app-border-bright) text-xs text-(--app-text-dim)">
+                            <span className="flex aspect-[5/4] items-center justify-center rounded-app-sm border-2 border-dashed border-app-border-bright text-xs text-app-text-dim">
                               #{e.item}
                             </span>
                           )}
@@ -269,7 +272,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                               t('unknown-item', { defaultValue: 'Item no longer in the game' })}
                           </span>
                           {paint || effect || style || kit ? (
-                            <span className="truncate text-[11px] text-(--app-text-dim)">
+                            <span className="truncate text-[11px] text-app-text-dim">
                               {[paint?.n, style, effect?.n, kit].filter(Boolean).join(' · ')}
                             </span>
                           ) : null}
@@ -280,7 +283,7 @@ export default function Tf2LoadoutDetail({ slug }: { slug: string }) {
                 </section>
               );
             })}
-          </>
+          </div>
         )}
       </main>
       {signIn ? (

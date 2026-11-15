@@ -28,28 +28,11 @@
   padding-bottom: var(--site-page-bottom-space);
 }
 
-/* Global navigation */
-
-.site-nav {
-  position: sticky;
-  z-index: 45;
-  top: 0;
-  width: 100%;
-  border-bottom: 1px solid color-mix(in srgb, var(--site-border) 70%, transparent);
-  background: color-mix(in srgb, var(--site-bg) 86%, transparent);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--site-text) 2%, transparent);
-}
-
-/* Page headers */
-
-/* ONE page-header language (audit SPA-002). This used to paint a bordered,
-   shadowed surface card, and `radial.css` then unpainted it again on every
-   `_site` route while capping the title at 3.4rem — two rules fighting, with the
-   smaller type winning. The flat treatment was the right call (a title belongs on
-   the backdrop, not in a box), so it is now the BASE rule and the override is
-   gone. Type comes from the shared display scale via `.site-display-3`. */
+/* Page headers (Steel L1, L7, t-title). The title is the page's name, one per page, 28px at 600 (`t-title` on the h1).
+   Above it, only when the page has somewhere to go back to, one muted 13px word. Below it, one line of explanation in
+   muted body text. Nothing is boxed and nothing is sticky: the header scrolls with the page. */
 .page-heading {
-  margin: 0 0 var(--site-section-gap);
+  margin: 0 0 14px;
 }
 
 .page-heading__meta,
@@ -59,592 +42,165 @@
   align-items: center;
 }
 
-/* The meta row above the title. It used to be an uppercase eyebrow on every
-   page ("RMH STUDIOS PRESENTS"); it now renders only when there is a back link
-   to hold, in plain sentence case (UI minimalism audit, 2026-10-09). */
 .page-heading__meta {
-  min-height: 1.5rem;
-  font-size: 0.875rem;
+  margin-block-end: 6px;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .page-heading__back {
-  gap: 0.5rem;
+  gap: 6px;
   color: var(--site-text-muted);
-  /* Padding-based hit area: the box grows, the baseline doesn't move (the row
-     centres its items), so the header's rhythm is unchanged. */
-  min-height: var(--site-touch-target);
-  margin-inline-start: -0.5rem;
-  padding-inline: 0.5rem;
-  border-radius: var(--site-radius-sm, 10px);
+  min-block-size: 24px;
+  text-decoration: none;
 }
-
 .page-heading__back:hover {
   color: var(--site-text);
-  background: var(--site-surface-hover);
 }
-
 .page-heading__back svg {
-  width: 0.95rem;
-  height: 0.95rem;
+  inline-size: 13px;
+  block-size: 13px;
+}
+[dir='rtl'] .page-heading__back svg {
+  transform: scaleX(-1);
 }
 
 .page-heading__breadcrumbs {
-  margin-top: 0.75rem;
+  margin-block-start: 8px;
 }
 
 .page-heading__content {
   justify-content: space-between;
-  gap: 1rem;
-  align-items: center;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-/* Space above the title only when something sits above it — with no meta row
-   the title is the first thing in the header and owns the top edge. */
-.page-heading__content:not(:first-child) {
-  margin-top: 0.75rem;
-}
-
-/* Size/weight/leading/tracking come from `.site-display-3` on the element. Only
-   the wrapping preference is header-specific. */
 .page-heading h1 {
   text-wrap: balance;
 }
 
-/* `.site-lede` carries size/leading/colour; this widens its measure to the
-   header's, which is wider than a standalone lede's 34rem. */
 .page-heading [data-slot='page-description'] {
-  max-width: 42rem;
-  margin-top: 0.75rem;
+  max-inline-size: 60ch;
+  margin-block-start: 6px;
+  color: var(--site-text-muted);
 }
 
-/* Feed */
-
-.feed-column {
-  gap: 0.75rem;
-}
-
-/* Post page (`PostDetail`). ONE column: the post, the reply surface, every reply
-   thread and the related posts are direct children of `.post-page` (or of a
-   section that is), so they share the shell's gutter and width, and sit
-   --space-4 apart (the jelly's minimum gap between bodies). Nothing here is a
-   rule or a border: surfaces are `.glass-pane` / `.glass-fill` by role, and the
-   space between them is the only separator. */
-.post-page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
+/* Post page (`PostDetail`): one column, one spine. The post, the reply field, every reply and the related posts are items
+   on a single `Spine` (components/ui/spine.css); nothing here is a box. */
 .post-page__back {
   display: flex;
-  /* The back control is quiet text; the column's gap already clears it. */
-  margin-block-end: calc(var(--space-4) * -0.5);
+  margin-block-end: 8px;
 }
 
-.post-page__post {
-  padding: var(--rad-card-pad, 1.25rem);
+/* The post's own text is 19px (section 10, Post and replies). */
+.post-page__text {
+  font-size: 19px;
+  line-height: 1.45;
 }
 
-.post-page__compose {
-  padding: var(--space-4);
-}
-
-.post-page__replies,
-.post-page__related {
+/* K8, post actions (owner, 2026-11-13: icons in place of the words): a 16px icon in muted ink with its count beside it,
+   28px apart. On is ink (A2), never a colour: a filled heart, a heavier stroke, the count at weight 600. No counter
+   animation. Each control keeps a 44px hit area (A3) through ::after, which reaches 14px past the icon on every side:
+   half the 28px gap, so neighbouring areas meet and never overlap. A control that is still a word (a reply's "Show
+   replies", "Hide today's question") uses the same class and is unchanged. */
+.feed-actions {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 28px;
+  margin-block-start: 10px;
+  color: var(--site-text-muted);
+  font-size: 13px;
+  line-height: 1.3;
 }
-
-/* A section label sits with the cards it names, not a full gap above them. */
-.post-page__related > .site-section-label {
-  margin-block-end: calc(var(--space-4) * -0.5);
-}
-
-/* The feed card keeps a side margin of its own on phones (the feed column has no
-   gutter); inside the post page the column already supplies it. */
-.post-page .social-post {
-  margin-inline: 0;
-}
-
-/* Homepage hero — an Apple-style editorial header: big SF display type, a lead
-   line, a live pulse, and two drifting monochrome auras for parallax depth. */
-.feed-hero {
+.feed-action {
   position: relative;
-  overflow: clip;
-  margin: 0.25rem 0.75rem;
-  padding: 1.75rem 1.5rem;
-  border-radius: var(--site-radius);
-  isolation: isolate;
-}
-
-.feed-hero__aura {
-  position: absolute;
-  z-index: -1;
-  border-radius: 50%;
-  corner-shape: round;
-  pointer-events: none;
-  filter: blur(28px);
-}
-
-.feed-hero__aura--a {
-  top: -3rem;
-  right: -2rem;
-  width: 13rem;
-  height: 13rem;
-  --u-parallax: 26px;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--site-text) 8%, transparent),
-    transparent 70%
-  );
-}
-
-.feed-hero__aura--b {
-  bottom: -4rem;
-  left: -3rem;
-  width: 11rem;
-  height: 11rem;
-  --u-parallax: 64px;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--site-accent) 12%, transparent),
-    transparent 70%
-  );
-}
-
-.feed-hero__inner {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.feed-hero__eyebrow {
-  display: inline-block;
-  color: var(--site-text-muted);
-  font-size: var(--site-kicker-size);
-  font-weight: var(--site-kicker-weight);
-}
-
-.feed-hero__title {
-  margin-top: 0.55rem;
-  font-family: var(--site-font-display);
-  font-size: clamp(2rem, 8.5vw, 3.1rem);
-  font-weight: 700;
-  line-height: 1.02;
-  letter-spacing: -0.038em;
-  text-wrap: balance;
-}
-
-.feed-hero__sub {
-  max-width: 34rem;
-  margin-top: 0.7rem;
-  color: var(--site-text-muted);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  text-wrap: pretty;
-}
-
-.feed-hero__live {
   display: inline-flex;
-  flex: 0 0 auto;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 999px;
-  corner-shape: round;
-  color: var(--site-text-muted);
-  font-size: 0.66rem;
-  font-weight: 600;
-}
-
-.feed-hero__live > span {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  corner-shape: round;
-  background: var(--site-success);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--site-success) 45%, transparent);
-  animation: feed-live-pulse 2.4s ease-out infinite;
-}
-
-@keyframes feed-live-pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--site-success) 45%, transparent);
-  }
-  70%,
-  100% {
-    box-shadow: 0 0 0 0.4rem color-mix(in srgb, var(--site-success) 0%, transparent);
-  }
-}
-
-.feed-search {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  min-height: 3.25rem;
-  align-items: center;
-  margin-inline: 0.75rem;
-  padding-inline: 1rem 0.5rem;
-  border-radius: var(--site-control-radius);
-}
-
-.feed-search > svg {
-  width: 1rem;
-  height: 1rem;
-  color: var(--site-text-dim);
-}
-
-.feed-search input {
-  width: 100%;
-  min-width: 0;
-  height: 3.15rem;
-  padding-inline: 0.75rem;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--site-text);
-  /* Floored on touch so focusing it can't zoom the page — see
-     `--site-field-font-floor` in globals.css. */
-  font-size: max(0.9rem, var(--site-field-font-floor));
-}
-
-.feed-search button {
-  display: grid;
-  width: 2.5rem;
-  height: 2.5rem;
-  place-items: center;
-  border-radius: var(--site-control-radius);
-  background: var(--site-bg-subtle);
-  color: var(--site-text-muted);
-}
-
-.feed-search button svg {
-  width: 0.95rem;
-  height: 0.95rem;
-}
-
-.feed-tabs-wrap {
-  margin-inline: 0.75rem;
-}
-
-.feed-tabs {
-  overflow: hidden;
-  border-radius: var(--site-control-radius);
-}
-
-.feed-tabs__timeline,
-.feed-tabs__filters {
-  display: flex;
-  align-items: center;
-}
-
-.feed-tabs__timeline {
-  gap: 0.25rem;
-  padding: 0.25rem;
-}
-
-.feed-tabs__timeline button {
-  min-height: 2.75rem;
-  flex: 1;
-  border-radius: var(--site-control-radius);
-  color: var(--site-text-muted);
-  font-size: 0.8rem;
-  font-weight: 740;
-}
-
-.feed-tabs__timeline button[data-active] {
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
-}
-
-.feed-tabs__filters {
-  gap: 0.25rem;
-  overflow-x: auto;
-  padding: 0.5rem;
-  border-top: 1px solid var(--site-border);
-  scrollbar-width: none;
-  scroll-padding-inline: 0.5rem;
-}
-
-.feed-tabs__filters::-webkit-scrollbar {
-  display: none;
-}
-
-.feed-tabs__filters button {
-  min-height: 2.5rem;
-  flex: 0 0 auto;
-  padding-inline: 0.75rem;
-  border-radius: var(--site-control-radius);
-  color: var(--site-text-dim);
-  font-size: 0.72rem;
-  font-weight: 680;
-  white-space: nowrap;
-}
-
-.feed-tabs__filters button[data-active] {
-  background: var(--site-accent-dim);
-  color: var(--site-accent);
-}
-
-/* The two most-seen surfaces on the whole site, and the two that were still
-   hand-rolling the material as a flat tint + hairline: the composer is a
-   singular L2 slab (§8.3) and a post is the repeated L1 fill. Both carry their
-   TIER CLASS in the markup now (`.glass-pane` / `.glass-fill`), so the border,
-   radius, tint, rim and — the part that was missing — the glint all come from
-   the one place that knows how to degrade them. What is left here is the only
-   thing the tier does not own: the aurora gutter these float in. */
-.social-composer,
-.social-post {
-  margin-inline: 0.75rem;
-}
-
-.social-composer {
-  transition:
-    border-color 160ms var(--ease-out),
-    box-shadow 160ms var(--ease-out);
-}
-
-.social-composer:focus-within {
-  border-color: color-mix(in srgb, var(--site-accent) 55%, var(--site-border));
-  box-shadow: 0 0 0 3px var(--site-accent-dim);
-}
-
-.social-post {
-  overflow: hidden;
-  /* The glass role owns the resting coat and directional rim. */
-  transition:
-    border-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
-    background-color calc(var(--site-transition-speed) * 0.75) var(--ease-out),
-    /* `scale`, not `transform`: the press cue is the independent property now
-       (`.glass-interactive:active`, globals.css) so it composes with whatever
-       transform the card carries instead of erasing it. */
-    scale calc(var(--site-transition-speed) * 0.75) var(--ease-out);
-}
-
-.social-feed-row {
-  padding-top: 0.75rem;
-}
-
-.social-announcement {
-  display: block;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .social-post:hover {
-    /* background-COLOR, not the shorthand: a post is `.glass-fill` now, and the
-       shorthand would drop its noise + glint layers for as long as the pointer
-       was on it — the one moment the surface should look MORE like glass. */
-    background-color: var(--site-surface-hover);
-  }
-}
-
-/* `.social-post` is deliberately NOT in this list: it is `.glass-interactive`
-   now, and that rule presses it with the independent `scale` property. Leaving
-   it here would apply BOTH, and a `transform: scale()` multiplied by a `scale`
-   is a 0.94 double-squish (globals.css §glass-interactive:active). */
-.feed-tabs button:active {
-  transform: scale(0.97);
-}
-
-/* Release modal, kept compact on phones. */
-
-.spatial-whats-new {
-  gap: 0;
-  /* Was `overflow: hidden`, and that is the whole bug this rule now fixes: the
-     announcement is taller than a phone (a full-bleed intro, then a card per
-     item, then the footer), the Dialog primitive caps every overlay at the
-     visible viewport (`.glass-overlay` max-block-size), and `hidden` meant the
-     part that did not fit was simply gone — cards and the "Got it" button both,
-     with nothing to scroll. `auto` clips to the rounded corners exactly the same
-     way (a scroll container is still a clipping context) and gives the overflow
-     somewhere to go. The x axis stays clipped so the intro's decorative circle,
-     which is deliberately positioned outside the box, never mints a horizontal
-     scrollbar. */
-  overflow-x: hidden;
-  overflow-y: auto;
-  /* A flick that reaches the end of the sheet must not hand the scroll to the
-     page behind the scrim. */
-  overscroll-behavior: contain;
+  gap: 5px;
   padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: color var(--m1) ease;
 }
-
-.spatial-whats-new__intro {
-  position: relative;
-  /* Fixed at 18rem this ate a phone's entire screen before the first card, so
-     the sheet opened on a title and nothing else. It is a proportion of the
-     viewport now, and only grows to the intended height where there is room —
-     which also covers a landscape phone, where 18rem IS the whole screen. */
-  min-height: min(18rem, 38dvh);
+.feed-action::after {
+  content: '';
+  position: absolute;
+  inset-block: -14px;
+  inset-inline: -9px;
+}
+.feed-actions .feed-action::after,
+.feed-action--icon::after {
+  inset: -14px;
+}
+.feed-action:hover {
+  color: var(--site-text);
+}
+.feed-action[aria-pressed='true'],
+.feed-action[data-on] {
+  color: var(--site-text);
+  font-weight: 600;
+}
+.feed-action__icon {
+  flex: none;
+  inline-size: 16px;
+  block-size: 16px;
+  stroke-width: 1.75;
+}
+.feed-action[aria-pressed='true'] .feed-action__icon,
+.feed-action[data-on] .feed-action__icon {
+  stroke-width: 2.5;
+}
+.feed-action[aria-pressed='true'] .feed-action__icon[data-fill],
+.feed-action[data-on] .feed-action__icon[data-fill] {
+  fill: currentColor;
+  stroke-width: 1.75;
+}
+.feed-action__count {
+  font-variant-numeric: tabular-nums;
+}
+/* The three dots at the top end of a home feed row. The row's author line leaves room for them (FeedRow: `pe-9`). */
+.feed-row__menu {
+  position: absolute;
+  inset-block-start: calc(var(--spine-pad) + 6px);
+  inset-inline-end: 0;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 1.5rem;
-  background: var(--site-accent);
-  color: var(--site-accent-fg);
+  color: var(--site-text-muted);
+}
+.feed-actions__views {
+  margin-inline-start: auto;
 }
 
-.spatial-whats-new__meta,
-.spatial-whats-new__footer {
+/* The home composer row: avatar, a borderless field, Post. It holds the same height signed in, signed out and while the
+   session is unknown, so nothing shifts when the session resolves. */
+.home-composer__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
+  min-block-size: 40px;
+}
+/* With the field in it, the row hangs from its first line: the field grows downward as text wraps and the avatar stays
+   beside the first line (28px avatar centred on the field's 36px line). */
+.home-composer__row--field {
+  align-items: flex-start;
+  padding-block: 2px;
+}
+.home-composer__row--field > :first-child {
+  margin-block-start: 4px;
+}
+/* The field: one 36px line with no border or fill, growing with its text and scrolling past 40% of the viewport.
+   `field-sizing` does the growing in the layout pass; `useComposerFieldGrow` covers engines without it. */
+.home-composer__field {
+  field-sizing: content;
+  min-block-size: 36px;
+  max-block-size: 40vh;
+  resize: none;
 }
 
-.spatial-whats-new__meta {
-  font-size: 0.75rem;
-  font-weight: 600;
-  opacity: 0.85;
-  /* Clear the Dialog primitive's absolutely-positioned close button, which
-     lands in this same top-right corner and was overlapping the date. */
-  padding-right: 3rem;
-}
 
-.spatial-whats-new__title {
-  max-width: 10ch;
-  font-family: var(--site-font-display);
-  font-size: clamp(2.5rem, 13vw, 4.5rem);
-  font-weight: 780;
-  line-height: 0.92;
-  letter-spacing: -0.06em;
-}
 
-.spatial-whats-new__description {
-  max-width: 30rem;
-  margin-top: 1rem;
-  color: inherit;
-  line-height: 1.5;
-  opacity: 0.78;
-}
-
-.spatial-whats-new__art {
-  position: absolute;
-  right: -3rem;
-  bottom: -4rem;
-  width: 13rem;
-  aspect-ratio: 1;
-  border: 2.5rem solid color-mix(in srgb, var(--site-accent-fg) 12%, transparent);
-  border-radius: 50%;
-  corner-shape: round;
-}
-
-.spatial-whats-new__art span {
-  display: none;
-}
-
-.spatial-whats-new__changes {
-  padding: 0.5rem 1.25rem;
-  /* Wider than the column padding, so the outer frame still reads as the
-     larger gutter (it was the other way round). */
-  column-gap: 2rem;
-}
-
-.spatial-whats-new__changes article {
-  padding: 1.25rem 0;
-  border-bottom: 1px solid var(--site-border);
-}
-
-.spatial-whats-new__changes article:last-child {
-  border-bottom: 0;
-}
-
-.spatial-whats-new__changes article > span {
-  color: var(--site-accent);
-  font-size: 0.6875rem;
-  font-weight: 800;
-}
-
-.spatial-whats-new__changes h3 {
-  margin-top: 0.35rem;
-  font-size: 0.95rem;
-  font-weight: 750;
-}
-
-.spatial-whats-new__changes p {
-  margin-top: 0.35rem;
-  color: var(--site-text-muted);
-  font-size: 0.8rem;
-  line-height: 1.5;
-}
-
-.spatial-whats-new__footer {
-  /* Stacked below sm: as a space-between row the caption was crushed into a
-     three-line sliver beside a w-full button that drew over it and bled past
-     the card's rounded corner. */
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.75rem;
-  padding: 0 1.25rem 1.25rem;
-  color: var(--site-text-muted);
-  font-size: 0.75rem;
-  font-weight: 650;
-}
-
-@media (min-width: 640px) {
-  .spatial-whats-new__footer {
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .page-heading,
-  .feed-search,
-  .feed-tabs-wrap,
-  .social-composer,
-  .social-post {
-    margin-inline: 0;
-  }
-
-  .page-heading {
-    margin-bottom: 1rem;
-  }
-
-  .feed-heading {
-    padding-inline: 0.25rem;
-  }
-
-  .feed-column {
-    gap: 1rem;
-  }
-
-  .social-feed-row {
-    padding-top: 1rem;
-  }
-
-  .spatial-whats-new__intro {
-    min-height: min(22rem, 42dvh);
-    padding: 2.25rem;
-  }
-
-  .spatial-whats-new__changes {
-    padding: 0.75rem 2rem;
-  }
-
-  .spatial-whats-new__footer {
-    padding: 0 2rem 2rem;
-  }
-}
-
-@media (max-width: 419px) {
-  .feed-heading__live {
-    padding-inline: 0.55rem;
-  }
-
-  .page-heading__content {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .site-nav {
-    background: var(--site-surface);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}

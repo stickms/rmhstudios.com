@@ -59,7 +59,7 @@ git commit -m "chore: add pixi.js and UNO-MCP dependencies for Dream Rift"
 - Each stage needs: intro dialogue, mid-boss encounter dialogue, boss pre-fight dialogue, boss defeat dialogue
 - Stage 6 Rift Core must feel stunningly beautiful — describe visuals in stage directions
 - The Dreamer's motivation differs per route
-- Output to: `lib/dream-rift/data/script.ts` as typed constants
+- Output to: `features/dream-rift/engine/data/script.ts` as typed constants
 - Use Touhou-style tone: dramatic but with moments of levity, character personality shines through
 
 **Output format:**
@@ -90,12 +90,12 @@ export const SCRIPT: Record<number, StageScript> = { /* ... */ };
 ### Task 1: Type Definitions
 
 **Files:**
-- Create: `lib/dream-rift/types.ts`
+- Create: `features/dream-rift/engine/types.ts`
 
 **Step 1: Write type definitions**
 
 ```typescript
-// lib/dream-rift/types.ts
+// features/dream-rift/engine/types.ts
 
 // --- Game States ---
 export type GameScreen = 'title' | 'charSelect' | 'difficultySelect' | 'playing' | 'paused' | 'dialogue' | 'stageResult' | 'gameOver' | 'continue';
@@ -268,7 +268,7 @@ export interface InputState {
 **Step 2: Commit**
 
 ```bash
-git add lib/dream-rift/types.ts
+git add features/dream-rift/engine/types.ts
 git commit -m "feat(dream-rift): add core type definitions"
 ```
 
@@ -277,12 +277,12 @@ git commit -m "feat(dream-rift): add core type definitions"
 ### Task 2: Constants
 
 **Files:**
-- Create: `lib/dream-rift/constants.ts`
+- Create: `features/dream-rift/engine/constants.ts`
 
 **Step 1: Write constants**
 
 ```typescript
-// lib/dream-rift/constants.ts
+// features/dream-rift/engine/constants.ts
 import type { DifficultyMultipliers, Difficulty, Character } from './types';
 
 // --- Playfield ---
@@ -370,7 +370,7 @@ export const CHARACTER_STATS: Record<Character, {
 **Step 2: Commit**
 
 ```bash
-git add lib/dream-rift/constants.ts
+git add features/dream-rift/engine/constants.ts
 git commit -m "feat(dream-rift): add game constants and difficulty multipliers"
 ```
 
@@ -379,13 +379,13 @@ git commit -m "feat(dream-rift): add game constants and difficulty multipliers"
 ### Task 3: Input System
 
 **Files:**
-- Create: `lib/dream-rift/input.ts`
-- Create: `lib/dream-rift/__tests__/input.test.ts`
+- Create: `features/dream-rift/engine/input.ts`
+- Create: `features/dream-rift/engine/__tests__/input.test.ts`
 
 **Step 1: Write the failing test**
 
 ```typescript
-// lib/dream-rift/__tests__/input.test.ts
+// features/dream-rift/engine/__tests__/input.test.ts
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { InputManager } from '../input';
 
@@ -449,7 +449,7 @@ describe('InputManager', () => {
 **Step 2: Run test to verify it fails**
 
 ```bash
-pnpm vitest run lib/dream-rift/__tests__/input.test.ts
+pnpm vitest run features/dream-rift/engine/__tests__/input.test.ts
 ```
 
 Expected: FAIL — `InputManager` not found
@@ -457,7 +457,7 @@ Expected: FAIL — `InputManager` not found
 **Step 3: Write minimal implementation**
 
 ```typescript
-// lib/dream-rift/input.ts
+// features/dream-rift/engine/input.ts
 import type { InputState } from './types';
 
 const KEY_MAP: Record<string, keyof InputState> = {
@@ -534,7 +534,7 @@ export class InputManager {
 **Step 4: Run test to verify it passes**
 
 ```bash
-pnpm vitest run lib/dream-rift/__tests__/input.test.ts
+pnpm vitest run features/dream-rift/engine/__tests__/input.test.ts
 ```
 
 Expected: PASS
@@ -542,7 +542,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add lib/dream-rift/input.ts lib/dream-rift/__tests__/input.test.ts
+git add features/dream-rift/engine/input.ts features/dream-rift/engine/__tests__/input.test.ts
 git commit -m "feat(dream-rift): add input manager with key mapping and edge detection"
 ```
 
@@ -551,13 +551,13 @@ git commit -m "feat(dream-rift): add input manager with key mapping and edge det
 ### Task 4: Object Pool
 
 **Files:**
-- Create: `lib/dream-rift/pool.ts`
-- Create: `lib/dream-rift/__tests__/pool.test.ts`
+- Create: `features/dream-rift/engine/pool.ts`
+- Create: `features/dream-rift/engine/__tests__/pool.test.ts`
 
 **Step 1: Write the failing test**
 
 ```typescript
-// lib/dream-rift/__tests__/pool.test.ts
+// features/dream-rift/engine/__tests__/pool.test.ts
 import { describe, it, expect } from 'vitest';
 import { ObjectPool } from '../pool';
 
@@ -620,7 +620,7 @@ describe('ObjectPool', () => {
 **Step 2: Run test to verify it fails**
 
 ```bash
-pnpm vitest run lib/dream-rift/__tests__/pool.test.ts
+pnpm vitest run features/dream-rift/engine/__tests__/pool.test.ts
 ```
 
 Expected: FAIL
@@ -628,7 +628,7 @@ Expected: FAIL
 **Step 3: Write minimal implementation**
 
 ```typescript
-// lib/dream-rift/pool.ts
+// features/dream-rift/engine/pool.ts
 
 export class ObjectPool<T extends { active: boolean }> {
   private objects: T[];
@@ -681,7 +681,7 @@ export class ObjectPool<T extends { active: boolean }> {
 **Step 4: Run test to verify it passes**
 
 ```bash
-pnpm vitest run lib/dream-rift/__tests__/pool.test.ts
+pnpm vitest run features/dream-rift/engine/__tests__/pool.test.ts
 ```
 
 Expected: PASS
@@ -689,7 +689,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add lib/dream-rift/pool.ts lib/dream-rift/__tests__/pool.test.ts
+git add features/dream-rift/engine/pool.ts features/dream-rift/engine/__tests__/pool.test.ts
 git commit -m "feat(dream-rift): add generic object pool for bullet/entity pooling"
 ```
 
@@ -698,13 +698,13 @@ git commit -m "feat(dream-rift): add generic object pool for bullet/entity pooli
 ### Task 5: Collision System
 
 **Files:**
-- Create: `lib/dream-rift/collision.ts`
-- Create: `lib/dream-rift/__tests__/collision.test.ts`
+- Create: `features/dream-rift/engine/collision.ts`
+- Create: `features/dream-rift/engine/__tests__/collision.test.ts`
 
 **Step 1: Write the failing test**
 
 ```typescript
-// lib/dream-rift/__tests__/collision.test.ts
+// features/dream-rift/engine/__tests__/collision.test.ts
 import { describe, it, expect } from 'vitest';
 import { circleCircle, pointInRect, circleRect } from '../collision';
 
@@ -733,13 +733,13 @@ describe('collision', () => {
 **Step 2: Run test to verify it fails**
 
 ```bash
-pnpm vitest run lib/dream-rift/__tests__/collision.test.ts
+pnpm vitest run features/dream-rift/engine/__tests__/collision.test.ts
 ```
 
 **Step 3: Write minimal implementation**
 
 ```typescript
-// lib/dream-rift/collision.ts
+// features/dream-rift/engine/collision.ts
 
 export function circleCircle(
   x1: number, y1: number, r1: number,
@@ -773,13 +773,13 @@ export function circleRect(
 **Step 4: Run test, verify PASS**
 
 ```bash
-pnpm vitest run lib/dream-rift/__tests__/collision.test.ts
+pnpm vitest run features/dream-rift/engine/__tests__/collision.test.ts
 ```
 
 **Step 5: Commit**
 
 ```bash
-git add lib/dream-rift/collision.ts lib/dream-rift/__tests__/collision.test.ts
+git add features/dream-rift/engine/collision.ts features/dream-rift/engine/__tests__/collision.test.ts
 git commit -m "feat(dream-rift): add collision detection (circle-circle, point-rect, circle-rect)"
 ```
 
@@ -788,13 +788,13 @@ git commit -m "feat(dream-rift): add collision detection (circle-circle, point-r
 ### Task 6: Bullet Pattern Spawner
 
 **Files:**
-- Create: `lib/dream-rift/patterns.ts`
-- Create: `lib/dream-rift/__tests__/patterns.test.ts`
+- Create: `features/dream-rift/engine/patterns.ts`
+- Create: `features/dream-rift/engine/__tests__/patterns.test.ts`
 
 **Step 1: Write the failing test**
 
 ```typescript
-// lib/dream-rift/__tests__/patterns.test.ts
+// features/dream-rift/engine/__tests__/patterns.test.ts
 import { describe, it, expect } from 'vitest';
 import { spawnRadial, spawnAimed, applyDifficultyToPattern } from '../patterns';
 import type { BulletPatternDef, DifficultyMultipliers } from '../types';
@@ -855,13 +855,13 @@ describe('applyDifficultyToPattern', () => {
 **Step 2: Run test to verify it fails**
 
 ```bash
-pnpm vitest run lib/dream-rift/__tests__/patterns.test.ts
+pnpm vitest run features/dream-rift/engine/__tests__/patterns.test.ts
 ```
 
 **Step 3: Write minimal implementation**
 
 ```typescript
-// lib/dream-rift/patterns.ts
+// features/dream-rift/engine/patterns.ts
 import type { BulletPatternDef, DifficultyMultipliers } from './types';
 
 export interface SpawnedBullet {
@@ -935,13 +935,13 @@ export function applyDifficultyToPattern(
 **Step 4: Run test, verify PASS**
 
 ```bash
-pnpm vitest run lib/dream-rift/__tests__/patterns.test.ts
+pnpm vitest run features/dream-rift/engine/__tests__/patterns.test.ts
 ```
 
 **Step 5: Commit**
 
 ```bash
-git add lib/dream-rift/patterns.ts lib/dream-rift/__tests__/patterns.test.ts
+git add features/dream-rift/engine/patterns.ts features/dream-rift/engine/__tests__/patterns.test.ts
 git commit -m "feat(dream-rift): add bullet pattern spawner with radial, aimed, and difficulty scaling"
 ```
 
@@ -952,12 +952,12 @@ git commit -m "feat(dream-rift): add bullet pattern spawner with radial, aimed, 
 ### Task 7: Game State Store (Zustand)
 
 **Files:**
-- Create: `lib/dream-rift/store.ts`
+- Create: `features/dream-rift/engine/store.ts`
 
 **Step 1: Write the store**
 
 ```typescript
-// lib/dream-rift/store.ts
+// features/dream-rift/engine/store.ts
 import { create } from 'zustand';
 import type { GameScreen, Difficulty, Character, PlayerState } from './types';
 import {
@@ -1109,7 +1109,7 @@ export const useDreamRiftStore = create<DreamRiftState>((set, get) => ({
 **Step 2: Commit**
 
 ```bash
-git add lib/dream-rift/store.ts
+git add features/dream-rift/engine/store.ts
 git commit -m "feat(dream-rift): add Zustand game state store"
 ```
 
@@ -1118,14 +1118,14 @@ git commit -m "feat(dream-rift): add Zustand game state store"
 ### Task 8: PixiJS Game Engine Core
 
 **Files:**
-- Create: `lib/dream-rift/engine.ts`
+- Create: `features/dream-rift/engine/engine.ts`
 
 **Step 1: Write the game engine**
 
 This is the core game loop and entity management. It orchestrates PixiJS rendering, the input system, bullet pools, collision, and stage progression.
 
 ```typescript
-// lib/dream-rift/engine.ts
+// features/dream-rift/engine/engine.ts
 import { Application, Container, Sprite, Graphics, Texture, Text, TextStyle } from 'pixi.js';
 import { InputManager } from './input';
 import { ObjectPool } from './pool';
@@ -1589,7 +1589,7 @@ export class DreamRiftEngine {
 **Step 2: Commit**
 
 ```bash
-git add lib/dream-rift/engine.ts
+git add features/dream-rift/engine/engine.ts
 git commit -m "feat(dream-rift): add PixiJS game engine with fixed timestep loop, pools, and collision"
 ```
 
@@ -1797,7 +1797,7 @@ git commit -m "feat(dream-rift): add leaderboard and score submission API routes
 
 **Files:**
 - Create: `app/dream-rift/page.tsx`
-- Create: `components/dream-rift/DreamRiftGame.tsx`
+- Create: `features/dream-rift/ui/DreamRiftGame.tsx`
 
 **Step 1: Create the page**
 
@@ -1807,7 +1807,7 @@ import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { DreamRiftGame } from '@/components/dream-rift/DreamRiftGame';
+import { DreamRiftGame } from '@features/dream-rift/ui/DreamRiftGame';
 
 export const metadata: Metadata = {
   title: 'Dream Rift — RMH Studios',
@@ -1840,13 +1840,13 @@ export default function DreamRiftPage() {
 **Step 2: Create the game component**
 
 ```typescript
-// components/dream-rift/DreamRiftGame.tsx
+// features/dream-rift/ui/DreamRiftGame.tsx
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
-import { useDreamRiftStore } from '@/lib/dream-rift/store';
-import { DreamRiftEngine } from '@/lib/dream-rift/engine';
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
+import { useDreamRiftStore } from '@features/dream-rift/engine/store';
+import { DreamRiftEngine } from '@features/dream-rift/engine/engine';
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@features/dream-rift/engine/constants';
 import { DreamRiftHUD } from './DreamRiftHUD';
 import { DreamRiftTitle } from './DreamRiftTitle';
 import { DreamRiftCharSelect } from './DreamRiftCharSelect';
@@ -1895,9 +1895,9 @@ export function DreamRiftGame() {
 **Step 3: Create placeholder UI components**
 
 ```typescript
-// components/dream-rift/DreamRiftTitle.tsx
+// features/dream-rift/ui/DreamRiftTitle.tsx
 'use client';
-import { useDreamRiftStore } from '@/lib/dream-rift/store';
+import { useDreamRiftStore } from '@features/dream-rift/engine/store';
 
 export function DreamRiftTitle() {
   const setScreen = useDreamRiftStore((s) => s.setScreen);
@@ -1926,10 +1926,10 @@ export function DreamRiftTitle() {
 ```
 
 ```typescript
-// components/dream-rift/DreamRiftCharSelect.tsx
+// features/dream-rift/ui/DreamRiftCharSelect.tsx
 'use client';
-import { useDreamRiftStore } from '@/lib/dream-rift/store';
-import type { Character } from '@/lib/dream-rift/types';
+import { useDreamRiftStore } from '@features/dream-rift/engine/store';
+import type { Character } from '@features/dream-rift/engine/types';
 
 export function DreamRiftCharSelect() {
   const { selectCharacter, selectDifficulty, setScreen, startGame } = useDreamRiftStore();
@@ -1966,10 +1966,10 @@ export function DreamRiftCharSelect() {
 ```
 
 ```typescript
-// components/dream-rift/DreamRiftHUD.tsx
+// features/dream-rift/ui/DreamRiftHUD.tsx
 'use client';
-import { useDreamRiftStore } from '@/lib/dream-rift/store';
-import { PLAYFIELD_WIDTH, SIDEBAR_WIDTH, CANVAS_HEIGHT, POWER_MAX } from '@/lib/dream-rift/constants';
+import { useDreamRiftStore } from '@features/dream-rift/engine/store';
+import { PLAYFIELD_WIDTH, SIDEBAR_WIDTH, CANVAS_HEIGHT, POWER_MAX } from '@features/dream-rift/engine/constants';
 
 export function DreamRiftHUD() {
   const player = useDreamRiftStore((s) => s.player);
@@ -2035,7 +2035,7 @@ export function DreamRiftHUD() {
 **Step 4: Commit**
 
 ```bash
-git add app/dream-rift/ components/dream-rift/
+git add app/dream-rift/ features/dream-rift/ui/
 git commit -m "feat(dream-rift): add Next.js route, game component, title, char select, and HUD"
 ```
 
@@ -2046,13 +2046,13 @@ git commit -m "feat(dream-rift): add Next.js route, game component, title, char 
 ### Task 12: Stage 1 Data (Lucid Meadow)
 
 **Files:**
-- Create: `lib/dream-rift/data/stages/stage1.ts`
-- Create: `lib/dream-rift/data/enemies.ts`
+- Create: `features/dream-rift/engine/data/stages/stage1.ts`
+- Create: `features/dream-rift/engine/data/enemies.ts`
 
 **Step 1: Create enemy definitions**
 
 ```typescript
-// lib/dream-rift/data/enemies.ts
+// features/dream-rift/engine/data/enemies.ts
 import type { BulletPatternDef, ItemDrop, Vec2 } from '../types';
 
 export interface EnemyTemplate {
@@ -2120,7 +2120,7 @@ export const FAIRY_SPIRAL: EnemyTemplate = {
 **Step 2: Create Stage 1 definition**
 
 ```typescript
-// lib/dream-rift/data/stages/stage1.ts
+// features/dream-rift/engine/data/stages/stage1.ts
 import type { StageDef, WaveDef, SpellCard, Boss } from '../../types';
 import { FAIRY_BASIC, FAIRY_RADIAL, FAIRY_SPIRAL } from '../enemies';
 import { PLAYFIELD_WIDTH } from '../../constants';
@@ -2342,7 +2342,7 @@ export const STAGE_1: StageDef = {
 **Step 3: Commit**
 
 ```bash
-git add lib/dream-rift/data/
+git add features/dream-rift/engine/data/
 git commit -m "feat(dream-rift): add Stage 1 (Lucid Meadow) data with enemies and boss spell cards"
 ```
 
@@ -2351,14 +2351,14 @@ git commit -m "feat(dream-rift): add Stage 1 (Lucid Meadow) data with enemies an
 ### Task 13: Stage Manager
 
 **Files:**
-- Create: `lib/dream-rift/stage-manager.ts`
+- Create: `features/dream-rift/engine/stage-manager.ts`
 
 **Step 1: Write stage manager**
 
 The stage manager drives stage progression: waves, mid-boss, boss, dialogue triggers.
 
 ```typescript
-// lib/dream-rift/stage-manager.ts
+// features/dream-rift/engine/stage-manager.ts
 import type { StageDef, WaveDef, Boss, Enemy, Vec2 } from './types';
 import { DreamRiftEngine } from './engine';
 import { useDreamRiftStore } from './store';
@@ -2525,7 +2525,7 @@ export class StageManager {
 **Step 2: Commit**
 
 ```bash
-git add lib/dream-rift/stage-manager.ts
+git add features/dream-rift/engine/stage-manager.ts
 git commit -m "feat(dream-rift): add stage manager with wave spawning and boss phase progression"
 ```
 
@@ -2536,13 +2536,13 @@ git commit -m "feat(dream-rift): add stage manager with wave spawning and boss p
 ### Task 14: Dialogue System
 
 **Files:**
-- Create: `lib/dream-rift/dialogue.ts`
-- Create: `components/dream-rift/DreamRiftDialogue.tsx`
+- Create: `features/dream-rift/engine/dialogue.ts`
+- Create: `features/dream-rift/ui/DreamRiftDialogue.tsx`
 
 **Step 1: Write dialogue engine**
 
 ```typescript
-// lib/dream-rift/dialogue.ts
+// features/dream-rift/engine/dialogue.ts
 import type { DialogueLine } from './types';
 
 export class DialogueManager {
@@ -2586,10 +2586,10 @@ export class DialogueManager {
 **Step 2: Write dialogue UI component**
 
 ```typescript
-// components/dream-rift/DreamRiftDialogue.tsx
+// features/dream-rift/ui/DreamRiftDialogue.tsx
 'use client';
 import { useEffect, useState } from 'react';
-import type { DialogueLine } from '@/lib/dream-rift/types';
+import type { DialogueLine } from '@features/dream-rift/engine/types';
 
 interface Props {
   line: DialogueLine;
@@ -2666,7 +2666,7 @@ export function DreamRiftDialogue({ line, onAdvance, onSkip }: Props) {
 **Step 3: Commit**
 
 ```bash
-git add lib/dream-rift/dialogue.ts components/dream-rift/DreamRiftDialogue.tsx
+git add features/dream-rift/engine/dialogue.ts features/dream-rift/ui/DreamRiftDialogue.tsx
 git commit -m "feat(dream-rift): add dialogue manager and typewriter dialogue UI component"
 ```
 
@@ -2675,14 +2675,14 @@ git commit -m "feat(dream-rift): add dialogue manager and typewriter dialogue UI
 ### Task 15: Placeholder Script Data
 
 **Files:**
-- Create: `lib/dream-rift/data/script.ts`
+- Create: `features/dream-rift/engine/data/script.ts`
 
 This is a placeholder that will be replaced/enhanced by the story writing agent using UNO-MCP.
 
 **Step 1: Write placeholder script**
 
 ```typescript
-// lib/dream-rift/data/script.ts
+// features/dream-rift/engine/data/script.ts
 import type { DialogueLine } from '../types';
 
 export interface StageScript {
@@ -2747,7 +2747,7 @@ export const SCRIPT: Record<number, StageScript> = {
 **Step 2: Commit**
 
 ```bash
-git add lib/dream-rift/data/script.ts
+git add features/dream-rift/engine/data/script.ts
 git commit -m "feat(dream-rift): add placeholder Stage 1 script (to be enhanced by story agent)"
 ```
 
@@ -2758,12 +2758,12 @@ git commit -m "feat(dream-rift): add placeholder Stage 1 script (to be enhanced 
 ### Task 16: Audio Manager
 
 **Files:**
-- Create: `lib/dream-rift/audio.ts`
+- Create: `features/dream-rift/engine/audio.ts`
 
 **Step 1: Write audio manager**
 
 ```typescript
-// lib/dream-rift/audio.ts
+// features/dream-rift/engine/audio.ts
 import { Howl, Howler } from 'howler';
 
 interface SoundDef {
@@ -2834,7 +2834,7 @@ export class AudioManager {
 **Step 2: Commit**
 
 ```bash
-git add lib/dream-rift/audio.ts
+git add features/dream-rift/engine/audio.ts
 git commit -m "feat(dream-rift): add audio manager with SFX and BGM support"
 ```
 
@@ -2843,12 +2843,12 @@ git commit -m "feat(dream-rift): add audio manager with SFX and BGM support"
 ### Task 17: Create Remaining Stage Data (Stages 2-6)
 
 **Files:**
-- Create: `lib/dream-rift/data/stages/stage2.ts` (Drowning Library)
-- Create: `lib/dream-rift/data/stages/stage3.ts` (Clockwork Abyss)
-- Create: `lib/dream-rift/data/stages/stage4.ts` (Mirror Palace)
-- Create: `lib/dream-rift/data/stages/stage5.ts` (Burning Carnival)
-- Create: `lib/dream-rift/data/stages/stage6.ts` (The Rift Core)
-- Create: `lib/dream-rift/data/stages/index.ts` (barrel export)
+- Create: `features/dream-rift/engine/data/stages/stage2.ts` (Drowning Library)
+- Create: `features/dream-rift/engine/data/stages/stage3.ts` (Clockwork Abyss)
+- Create: `features/dream-rift/engine/data/stages/stage4.ts` (Mirror Palace)
+- Create: `features/dream-rift/engine/data/stages/stage5.ts` (Burning Carnival)
+- Create: `features/dream-rift/engine/data/stages/stage6.ts` (The Rift Core)
+- Create: `features/dream-rift/engine/data/stages/index.ts` (barrel export)
 
 Each stage follows the same `StageDef` structure as Stage 1 with escalating difficulty, unique enemy types, and themed spell cards. Stage 6's Rift Core should have stunningly beautiful visual descriptions in its theme data.
 
@@ -2860,7 +2860,7 @@ Each stage follows the same `StageDef` structure as Stage 1 with escalating diff
 **Step 2:** Create barrel export
 
 ```typescript
-// lib/dream-rift/data/stages/index.ts
+// features/dream-rift/engine/data/stages/index.ts
 import { STAGE_1 } from './stage1';
 import { STAGE_2 } from './stage2';
 import { STAGE_3 } from './stage3';
@@ -2882,7 +2882,7 @@ export const STAGES: Record<number, StageDef> = {
 **Step 3: Commit**
 
 ```bash
-git add lib/dream-rift/data/stages/
+git add features/dream-rift/engine/data/stages/
 git commit -m "feat(dream-rift): add all 6 stage definitions with enemies and boss data"
 ```
 
@@ -2891,10 +2891,10 @@ git commit -m "feat(dream-rift): add all 6 stage definitions with enemies and bo
 ### Task 18: Game Over, Continue, and Results Screens
 
 **Files:**
-- Create: `components/dream-rift/DreamRiftGameOver.tsx`
-- Create: `components/dream-rift/DreamRiftStageResult.tsx`
-- Create: `components/dream-rift/DreamRiftPause.tsx`
-- Modify: `components/dream-rift/DreamRiftGame.tsx` (add new screen overlays)
+- Create: `features/dream-rift/ui/DreamRiftGameOver.tsx`
+- Create: `features/dream-rift/ui/DreamRiftStageResult.tsx`
+- Create: `features/dream-rift/ui/DreamRiftPause.tsx`
+- Modify: `features/dream-rift/ui/DreamRiftGame.tsx` (add new screen overlays)
 
 **Step 1:** Create game over screen with continue prompt, results screen with score breakdown (spell captures, graze total, stage bonus), and pause menu. Follow the pattern established in DreamRiftTitle.tsx — absolute positioned overlays with bg-black/80.
 
@@ -2903,7 +2903,7 @@ git commit -m "feat(dream-rift): add all 6 stage definitions with enemies and bo
 **Step 3: Commit**
 
 ```bash
-git add components/dream-rift/
+git add features/dream-rift/ui/
 git commit -m "feat(dream-rift): add game over, stage result, and pause screen components"
 ```
 
@@ -2912,8 +2912,8 @@ git commit -m "feat(dream-rift): add game over, stage result, and pause screen c
 ### Task 19: Difficulty Select Screen
 
 **Files:**
-- Create: `components/dream-rift/DreamRiftDifficultySelect.tsx`
-- Modify: `components/dream-rift/DreamRiftGame.tsx`
+- Create: `features/dream-rift/ui/DreamRiftDifficultySelect.tsx`
+- Modify: `features/dream-rift/ui/DreamRiftGame.tsx`
 
 **Step 1:** Create difficulty select screen shown after character select. 4 options: Easy, Normal, Hard, Lunatic. Each shows a brief description. Selecting one calls `selectDifficulty()` then `startGame()`.
 
@@ -2922,7 +2922,7 @@ git commit -m "feat(dream-rift): add game over, stage result, and pause screen c
 **Step 3: Commit**
 
 ```bash
-git add components/dream-rift/
+git add features/dream-rift/ui/
 git commit -m "feat(dream-rift): add difficulty selection screen"
 ```
 
@@ -2931,15 +2931,15 @@ git commit -m "feat(dream-rift): add difficulty selection screen"
 ### Task 20: Score Submission & Leaderboard UI
 
 **Files:**
-- Create: `components/dream-rift/DreamRiftLeaderboard.tsx`
-- Modify: `components/dream-rift/DreamRiftStageResult.tsx` (add submit button)
+- Create: `features/dream-rift/ui/DreamRiftLeaderboard.tsx`
+- Modify: `features/dream-rift/ui/DreamRiftStageResult.tsx` (add submit button)
 
 **Step 1:** Create leaderboard component that fetches from `/api/dream-rift/leaderboard?difficulty=X` and displays top 20 scores. Add score submission to the results screen using the existing auth pattern from the codebase.
 
 **Step 2: Commit**
 
 ```bash
-git add components/dream-rift/
+git add features/dream-rift/ui/
 git commit -m "feat(dream-rift): add leaderboard display and score submission"
 ```
 
@@ -2999,7 +2999,7 @@ git commit -m "fix(dream-rift): integration test fixes and polish"
 ## File Structure Summary
 
 ```
-lib/dream-rift/
+features/dream-rift/engine/
 ├── types.ts              # Task 1
 ├── constants.ts          # Task 2
 ├── input.ts              # Task 3
@@ -3035,7 +3035,7 @@ app/api/dream-rift/
 ├── leaderboard/route.ts  # Task 10
 └── score/route.ts        # Task 10
 
-components/dream-rift/
+features/dream-rift/ui/
 ├── DreamRiftGame.tsx           # Task 11
 ├── DreamRiftTitle.tsx          # Task 11
 ├── DreamRiftCharSelect.tsx     # Task 11

@@ -1,0 +1,593 @@
+/**
+ * LobbyWaiting — Lobby screen shown during WAITING state.
+ *
+ * Displays player list with class selections, room code, lobby settings
+ * (editable by host), chat panel using shared ChatPanel, and host controls
+ * (kick, transfer host, start game).
+ */
+
+import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLobbyLink } from '@/hooks/useLobbyLink';
+import {
+  Crown,
+  Copy,
+  UserMinus,
+  Play,
+  Users,
+  Zap,
+  MessageSquare,
+  Check,
+  Settings,
+  ArrowRightLeft,
+  ChevronDown,
+  Swords,
+} from 'lucide-react';
+import { useAltairMultiplayerStore } from '@features/altair/engine/multiplayer/store';
+import { useAltairMetaStore } from '@features/altair/engine/stores/meta-store';
+import { emit } from '@features/altair/engine/multiplayer/socket';
+import { C2S } from '@features/altair/engine/multiplayer/events';
+import { PLAYER_SLOT_COLORS } from '@features/altair/engine/engine/types';
+import { CLASSES } from '@features/altair/engine/data/classes';
+import ChatPanel, { type ChatPanelMessage } from '@/components/shared/ChatPanel';
+import SpriteIcon from '@features/altair/ui/hud/SpriteIcon';
+import { asset } from '@/lib/storage/asset';
+import type {
+  AltairClientPlayer,
+  ChatMessage,
+  AltairLobbySettings,
+} from '@features/altair/engine/multiplayer/types';
+
+const CLASS_MAP = new Map(CLASSES.map((c) => [c.id, c]));
+
+interface LobbyWaitingProps {
+  lobbyId: string;
+  onLeave: () => void;
+}
+
+export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
+  const { t } = useTranslation('c-altair');
+  const lobby = useAltairMultiplayerStore((s) => s.lobby);
+  const classSelections = useAltairMultiplayerStore((s) => s.classSelections);
+  const [editingSettings, setEditingSettings] = useState(false);
+  const { copied: codeCopied, copyLink } = useLobbyLink({
+    path: `/altair/multiplayer/${lobbyId}`,
+  });
+
+  // Adapt lobby chat messages to shared ChatPanel format. Computed before the
+  // early return below so the hooks run in a stable order (rules-of-hooks).
+  const chat = lobby?.chat ?? [];
+  const chatMessages: ChatPanelMessage[] = useMemo(
+    () =>
+      chat.map((msg) => ({
+        id: msg.id,
+        userId: msg.userId,
+        userName: msg.isSystem ? 'System' : msg.userName,
+        message: msg.text,
+        timestamp: msg.timestamp,
+        reactions: {},
+      })),
+    [chat],
+  );
+
+  if (!lobby) return null;
+
+  const isHost = lobby.hostUserId === lobby.myUserId;
+  const players = lobby.players;
+
+  // The lobby is already its own route, so the invite link is simply that route.
+  // (It used to hand out `/altair/multiplayer?join=<id>`, which no screen ever
+  // read — the link copied fine and then did nothing on the other end.)
+  const handleCopyCode = () => {
+    void copyLink();
+  };
+
+  const handleKick = (targetUserId: string) => {
+    emit(C2S.LOBBY_KICK, { lobbyId, targetUserId });
+  };
+
+  const handleTransferHost = (targetUserId: string) => {
+    emit(C2S.LOBBY_TRANSFER_HOST, { lobbyId, targetUserId });
+  };
+
+  const handleStartGame = () => {
+    emit(C2S.GAME_START, { lobbyId });
+  };
+
+  const handleSendChat = (text: string) => {
+    emit(C2S.LOBBY_CHAT, { lobbyId, text });
+  };
+
+  const handleUpdateSettings = (settings: Partial<AltairLobbySettings>) => {
+    emit(C2S.LOBBY_UPDATE_SETTINGS, { lobbyId, settings });
+  };
+
+  const handleSelectClass = (classId: string) => {
+    emit(C2S.CLASS_SELECT, { lobbyId, classId });
+  };
+
+  // Class choice and ready-up both live on this screen. The hub un-readies a
+  // player whenever they change class, and only accepts Start once everyone
+  // connected has a class and is ready.
+  const me = players.find((p) => p.userId === lobby.myUserId);
+  const myReady = me?.isReady ?? false;
+  const myClassId = classSelections[lobby.myUserId] ?? me?.classId ?? null;
+  const allReady = players.length >= 2 && players.every((p) => p.isReady && p.isConnected);
+  const handleToggleReady = () => {
+    emit(C2S.CLASS_READY, { lobbyId, ready: !myReady });
+  };
+
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-4 pb-12 md:gap-6 md:px-6">
+      {/* Room Code Banner */}
+      <div className="flex items-center justify-between p-4 rounded-(--altair-radius-lg) bg-(--altair-surface) border border-(--altair-border)">
+        <div>
+          <div className="mb-1 text-xs text-(--altair-text-muted)">
+            {t('room-code', { defaultValue: 'Room Code' })}
+          </div>
+          <div className="text-3xl font-mono font-black tracking-[0.2em] text-(--altair-accent)">
+            {lobbyId}
+          </div>
+        </div>
+        <button
+          onClick={handleCopyCode}
+          className="flex items-center gap-2 px-4 py-2 rounded-(--altair-radius) bg-(--altair-bg) text-(--altair-text-muted) hover:text-(--altair-text) transition-colors border border-(--altair-border)"
+        >
+          {codeCopied ? (
+            <Check size={16} className="text-(--altair-success)" />
+          ) : (
+            <Copy size={16} />
+          )}
+          {codeCopied
+            ? t('copied', { defaultValue: 'Copied!' })
+            : t('copy-invite', { defaultValue: 'Copy Invite' })}
+        </button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-[1fr_300px] md:gap-6">
+        {/* Left column: Players + Controls */}
+        <div className="space-y-4">
+          {/* Player List */}
+          <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) p-4">
+            <h3 className="text-sm font-semibold text-(--altair-text) mb-3 flex items-center gap-2">
+              <Users size={16} />
+              {t('players-count', {
+                defaultValue: 'Players ({{current}}/{{max}})',
+                current: players.length,
+                max: lobby.settings.maxPlayers,
+              })}
+            </h3>
+            <div className="space-y-2">
+              {players.map((player) => (
+                <PlayerRow
+                  key={player.userId}
+                  player={player}
+                  resolvedClassId={classSelections[player.userId] ?? player.classId}
+                  isLocalPlayer={player.userId === lobby.myUserId}
+                  isHost={isHost}
+                  onKick={() => handleKick(player.userId)}
+                  onTransferHost={() => handleTransferHost(player.userId)}
+                />
+              ))}
+              {/* Empty slots */}
+              {Array.from({ length: lobby.settings.maxPlayers - players.length }).map((_, i) => (
+                <div
+                  key={`empty-${i}`}
+                  className="flex items-center gap-3 p-3 rounded-(--altair-radius) border border-dashed border-(--altair-border) opacity-40"
+                >
+                  <div className="w-8 h-8 rounded-full bg-(--altair-surface-hover)" />
+                  <span className="text-sm text-(--altair-text-dim) italic">
+                    {t('waiting-for-player', { defaultValue: 'Waiting for player...' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Class Selection */}
+          <ClassPicker
+            lobbyId={lobbyId}
+            currentClassId={
+              classSelections[lobby.myUserId] ??
+              players.find((p) => p.userId === lobby.myUserId)?.classId ??
+              null
+            }
+            onSelect={handleSelectClass}
+          />
+
+          {/* Lobby Settings */}
+          <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-(--altair-text)">
+                {t('settings', { defaultValue: 'Settings' })}
+              </h3>
+              {isHost && (
+                <button
+                  onClick={() => setEditingSettings(!editingSettings)}
+                  className="flex items-center gap-1 text-xs text-(--altair-text-dim) hover:text-(--altair-text) transition-colors"
+                >
+                  <Settings size={14} />
+                  {editingSettings
+                    ? t('done', { defaultValue: 'Done' })
+                    : t('edit', { defaultValue: 'Edit' })}
+                </button>
+              )}
+            </div>
+
+            {editingSettings && isHost ? (
+              <div className="space-y-3">
+                {/* Max Players */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-(--altair-text-muted)">
+                    {t('max-players', { defaultValue: 'Max Players' })}
+                  </span>
+                  <div className="flex gap-1">
+                    {[2, 3, 4].map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => handleUpdateSettings({ maxPlayers: n as 2 | 3 | 4 })}
+                        className={`px-3 py-1 rounded-(--altair-radius-sm) text-xs font-bold transition-colors ${
+                          lobby.settings.maxPlayers === n
+                            ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
+                            : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Visibility */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-(--altair-text-muted)">
+                    {t('visibility', { defaultValue: 'Visibility' })}
+                  </span>
+                  <div className="flex gap-1">
+                    {(['public', 'private'] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => handleUpdateSettings({ visibility: v })}
+                        className={`px-3 py-1 rounded-(--altair-radius-sm) text-xs font-bold capitalize transition-colors ${
+                          lobby.settings.visibility === v
+                            ? 'bg-(--altair-accent) text-(--altair-accent-fg)'
+                            : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Double Time */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-(--altair-text-muted) flex items-center gap-1">
+                    <Zap size={12} /> {t('double-time-lobby-waiting', { defaultValue: 'Double Time' })}
+                  </span>
+                  <button
+                    onClick={() => handleUpdateSettings({ doubleTime: !lobby.settings.doubleTime })}
+                    className={`px-3 py-1 rounded-(--altair-radius-sm) text-xs font-bold transition-colors ${
+                      lobby.settings.doubleTime
+                        ? 'bg-(--altair-warning) text-(--altair-bg)'
+                        : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
+                    }`}
+                  >
+                    {lobby.settings.doubleTime
+                      ? t('on', { defaultValue: 'ON' })
+                      : t('off', { defaultValue: 'OFF' })}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="px-2 py-1 rounded-(--altair-radius-sm) bg-(--altair-bg) text-(--altair-text-muted)">
+                  {lobby.settings.maxPlayers} Players
+                </span>
+                <span className="px-2 py-1 rounded-(--altair-radius-sm) bg-(--altair-bg) text-(--altair-text-muted) capitalize">
+                  {lobby.settings.visibility.replace('_', ' ')}
+                </span>
+                {lobby.settings.doubleTime && (
+                  <span className="px-2 py-1 rounded-(--altair-radius-sm) bg-(--altair-warning-dim) text-(--altair-warning) flex items-center gap-1">
+                    <Zap size={12} /> {t('double-time-lobby-waiting', { defaultValue: 'Double Time' })}
+                  </span>
+                )}
+                {lobby.settings.dropInAllowed && (
+                  <span className="px-2 py-1 rounded-(--altair-radius-sm) bg-(--altair-bg) text-(--altair-text-muted)">
+                    Drop-in:{' '}
+                    {lobby.settings.dropInWindow.replace('first_', '').replace('min', ' min')}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Ready toggle (everyone, host included) */}
+          <button
+            onClick={handleToggleReady}
+            disabled={!myClassId}
+            aria-pressed={myReady}
+            className={`w-full py-3 rounded-(--altair-radius-lg) font-bold text-lg transition-colors flex items-center justify-center gap-2 ${
+              myReady
+                ? 'bg-(--altair-success) text-(--altair-bg) hover:bg-(--altair-success)/80'
+                : myClassId
+                  ? 'bg-(--altair-surface) text-(--altair-text) border border-(--altair-border) hover:bg-(--altair-surface-hover)'
+                  : 'bg-(--altair-surface) text-(--altair-text-dim) cursor-not-allowed opacity-50'
+            }`}
+          >
+            {myReady ? (
+              <>
+                <Check size={20} aria-hidden />
+                {t('ready', { defaultValue: 'Ready!' })}
+              </>
+            ) : (
+              t('ready-up', { defaultValue: 'Ready Up' })
+            )}
+          </button>
+
+          {/* Host Controls */}
+          {isHost && (
+            <button
+              onClick={handleStartGame}
+              disabled={!allReady}
+              className="w-full py-4 rounded-(--altair-radius-lg) font-bold text-(--altair-accent-fg) text-lg tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover) shadow-(--altair-shadow) flex items-center justify-center gap-2"
+            >
+              <Play size={22} />
+              {t('start-game', { defaultValue: 'Start Game' })}
+            </button>
+          )}
+
+          {!isHost && (
+            <div className="text-center text-sm text-(--altair-text-muted) py-4">
+              {t('waiting-for-host', { defaultValue: 'Waiting for host to start the game...' })}
+            </div>
+          )}
+          {isHost && !allReady && (
+            <div className="text-center text-xs text-(--altair-text-muted)">
+              {players.length < 2
+                ? t('need-two-players', { defaultValue: 'Co-op needs at least 2 players.' })
+                : t('waiting-for-ready', { defaultValue: 'Waiting for everyone to pick a class and ready up.' })}
+            </div>
+          )}
+        </div>
+
+        {/* Right column: Shared Chat */}
+        <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) flex flex-col h-80 md:h-auto overflow-hidden">
+          <div className="px-4 py-3 border-b border-(--altair-border) flex items-center gap-2">
+            <MessageSquare size={16} className="text-(--altair-text-muted)" />
+            <h3 className="text-sm font-semibold text-(--altair-text)">
+              {t('chat', { defaultValue: 'Chat' })}
+            </h3>
+          </div>
+          <ChatPanel
+            messages={chatMessages}
+            onSendMessage={handleSendChat}
+            myUserId={lobby.myUserId}
+            hostUserId={lobby.hostUserId}
+            themePrefix="altair"
+            showReactions={false}
+            showMediaEmbeds={false}
+            placeholder={t('type-a-message', { defaultValue: 'Type a message...' })}
+            className="flex-1 min-h-0"
+          />
+        </div>
+      </div>
+
+      {/* Leave button */}
+      <button
+        onClick={onLeave}
+        className="w-full py-3 rounded-(--altair-radius-lg) font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) hover:text-(--altair-danger) transition-colors"
+      >
+        {t('leave-lobby', { defaultValue: 'Leave Lobby' })}
+      </button>
+    </div>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────────────
+
+function PlayerRow({
+  player,
+  resolvedClassId,
+  isLocalPlayer,
+  isHost,
+  onKick,
+  onTransferHost,
+}: {
+  player: AltairClientPlayer;
+  resolvedClassId: string | null;
+  isLocalPlayer: boolean;
+  isHost: boolean;
+  onKick: () => void;
+  onTransferHost: () => void;
+}) {
+  const { t } = useTranslation('c-altair');
+  const classDef = resolvedClassId ? CLASS_MAP.get(resolvedClassId) : null;
+
+  return (
+    <div
+      className={`flex items-center gap-3 p-3 rounded-(--altair-radius) transition-colors ${
+        isLocalPlayer
+          ? 'bg-(--altair-accent)/10 border border-(--altair-accent)/30'
+          : 'bg-(--altair-bg)'
+      }`}
+    >
+      {/* Color dot */}
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-(--altair-hud-ink)"
+        style={{ backgroundColor: player.color || PLAYER_SLOT_COLORS[player.slot] || '#666' }}
+      >
+        {player.userName.charAt(0).toUpperCase()}
+      </div>
+
+      {/* Name + class */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-sm font-semibold truncate ${isLocalPlayer ? 'text-(--altair-accent)' : 'text-(--altair-text)'}`}
+          >
+            {player.userName}
+          </span>
+          {player.isHost && <Crown size={14} className="text-(--altair-warning) shrink-0" />}
+          {isLocalPlayer && (
+            <span className="text-xs text-(--altair-text-dim)">
+              {t('you', { defaultValue: '(you)' })}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {classDef ? (
+            <>
+              <SpriteIcon
+                sheetSrc={asset(`/sprites/altair/characters/${classDef.id.replace('_', '-')}.png`)}
+                frameIndex={0}
+                size={14}
+              />
+              <span className="text-xs font-semibold" style={{ color: classDef.color }}>
+                {classDef.name}
+              </span>
+            </>
+          ) : (
+            <span className="text-xs text-(--altair-text-dim) italic">
+              {t('no-class-selected', { defaultValue: 'No class selected' })}
+            </span>
+          )}
+          {player.isReady && (
+            <span className="flex items-center gap-1 text-xs text-(--altair-success) ml-1">
+              <Check size={12} aria-hidden />
+              {t('ready', { defaultValue: 'Ready!' })}
+            </span>
+          )}
+          {!player.isConnected && (
+            <span className="text-xs text-(--altair-danger) ml-1">
+              {t('disconnected', { defaultValue: 'Disconnected' })}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Host actions (kick + transfer) */}
+      {isHost && !isLocalPlayer && (
+        <div className="flex gap-1">
+          <button
+            onClick={onTransferHost}
+            className="p-1.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-warning) hover:bg-(--altair-surface-hover) transition-colors"
+            title={t('transfer-host', { defaultValue: 'Transfer host' })}
+          >
+            <ArrowRightLeft size={14} />
+          </button>
+          <button
+            onClick={onKick}
+            className="p-1.5 rounded-(--altair-radius-sm) text-(--altair-text-dim) hover:text-(--altair-danger) hover:bg-(--altair-surface-hover) transition-colors"
+            title={t('kick-player', { defaultValue: 'Kick player' })}
+          >
+            <UserMinus size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Class Picker ────────────────────────────────────────────────────
+
+function ClassPicker({
+  lobbyId,
+  currentClassId,
+  onSelect,
+}: {
+  lobbyId: string;
+  currentClassId: string | null;
+  onSelect: (classId: string) => void;
+}) {
+  const { t } = useTranslation('c-altair');
+  const [expanded, setExpanded] = useState(false);
+  const unlockedClasses = useAltairMetaStore((s) => s.unlockedClasses);
+  const currentClass = currentClassId ? CLASS_MAP.get(currentClassId) : null;
+
+  return (
+    <div className="rounded-(--altair-radius-lg) border border-(--altair-border) bg-(--altair-surface) p-4">
+      <h3 className="text-sm font-semibold text-(--altair-text) mb-3 flex items-center gap-2">
+        <Swords size={16} />
+        {t('your-class', { defaultValue: 'Your Class' })}
+      </h3>
+
+      {/* Current selection / toggle */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-3 p-3 rounded-(--altair-radius) bg-(--altair-bg) hover:bg-(--altair-surface-hover) transition-colors border border-(--altair-border)"
+      >
+        {currentClass ? (
+          <>
+            <SpriteIcon
+              sheetSrc={asset(
+                `/sprites/altair/characters/${currentClass.id.replace('_', '-')}.png`,
+              )}
+              frameIndex={0}
+              size={28}
+            />
+            <span
+              className="text-sm font-bold flex-1 text-left"
+              style={{ color: currentClass.color }}
+            >
+              {currentClass.name}
+            </span>
+          </>
+        ) : (
+          <span className="text-sm text-(--altair-text-dim) italic flex-1 text-left">
+            {t('select-a-class', { defaultValue: 'Select a class...' })}
+          </span>
+        )}
+        <ChevronDown
+          size={16}
+          className={`text-(--altair-text-dim) transition-transform ${expanded ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {/* Class grid */}
+      {expanded && (
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          {CLASSES.map((cls) => {
+            const isUnlocked = unlockedClasses.includes(cls.id);
+            const isActive = cls.id === currentClassId;
+            return (
+              <button
+                key={cls.id}
+                disabled={!isUnlocked}
+                onClick={() => {
+                  onSelect(cls.id);
+                  setExpanded(false);
+                }}
+                className={`flex items-center gap-2 p-2.5 rounded-(--altair-radius) text-left transition-colors border ${
+                  isActive
+                    ? 'border-2 shadow-(--altair-shadow)'
+                    : isUnlocked
+                      ? 'border-(--altair-border) hover:bg-(--altair-surface-hover)'
+                      : 'border-(--altair-border) opacity-35 cursor-not-allowed'
+                } bg-(--altair-bg)`}
+                style={
+                  isActive ? { borderColor: cls.color, boxShadow: `0 0 12px ${cls.color}25` } : {}
+                }
+              >
+                <SpriteIcon
+                  sheetSrc={asset(`/sprites/altair/characters/${cls.id.replace('_', '-')}.png`)}
+                  frameIndex={0}
+                  size={24}
+                />
+                <div className="min-w-0 flex-1">
+                  <div
+                    className="text-xs font-bold truncate"
+                    style={{ color: isUnlocked ? cls.color : undefined }}
+                  >
+                    {cls.name}
+                  </div>
+                  <div className="text-xs text-(--altair-text-dim)">{cls.difficulty}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

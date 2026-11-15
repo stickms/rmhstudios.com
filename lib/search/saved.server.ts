@@ -4,7 +4,7 @@
  * fields lastRunAt/alerts are in place).
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { MAX_SAVED_SEARCHES, type SavedSearchView } from '@/lib/search/saved';
 
 export class SavedSearchError extends Error {}
@@ -21,23 +21,26 @@ const savedCacheKey = (userId: string) => `saved-search:list:${userId}`;
 
 export async function listSaved(userId: string): Promise<SavedSearchView[]> {
   const key = savedCacheKey(userId);
-  const cached = apiCache.get<SavedSearchView[]>(key);
-  if (cached) return cached;
-
-  const rows = await prisma.savedSearch.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-    select: { id: true, query: true, types: true, alerts: true, createdAt: true },
-  });
-  const views = rows.map((r) => ({
-    id: r.id,
-    query: r.query,
-    types: Array.isArray(r.types) ? (r.types as string[]) : [],
-    alerts: r.alerts,
-    createdAt: r.createdAt.toISOString(),
-  }));
-  apiCache.set(key, views, SAVED_TTL_MS);
-  return views;
+  return cached(
+    key,
+    SAVED_TTL_MS,
+    async () => {
+      const rows = await prisma.savedSearch.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, query: true, types: true, alerts: true, createdAt: true },
+      });
+      const views = rows.map((r) => ({
+        id: r.id,
+        query: r.query,
+        types: Array.isArray(r.types) ? (r.types as string[]) : [],
+        alerts: r.alerts,
+        createdAt: r.createdAt.toISOString(),
+      }));
+      return views;
+    },
+    { l2: false },
+  );
 }
 
 export async function createSaved(
@@ -52,7 +55,7 @@ export async function createSaved(
     data: { userId, query, types, alerts },
     select: { id: true, query: true, types: true, alerts: true, createdAt: true },
   });
-  apiCache.invalidate(savedCacheKey(userId));
+  void invalidateCached(savedCacheKey(userId));
   return {
     id: row.id,
     query: row.query,
@@ -65,10 +68,10 @@ export async function createSaved(
 export async function updateSaved(userId: string, id: string, alerts: boolean): Promise<void> {
   const res = await prisma.savedSearch.updateMany({ where: { id, userId }, data: { alerts } });
   if (res.count === 0) throw new SavedSearchError('NOT_FOUND');
-  apiCache.invalidate(savedCacheKey(userId));
+  void invalidateCached(savedCacheKey(userId));
 }
 
 export async function deleteSaved(userId: string, id: string): Promise<void> {
   await prisma.savedSearch.deleteMany({ where: { id, userId } });
-  apiCache.invalidate(savedCacheKey(userId));
+  void invalidateCached(savedCacheKey(userId));
 }

@@ -9,6 +9,8 @@ node_modules
 .vinxi
 .tanstack
 dist-server
+# Built inside the image (Dockerfile vite-builder), never copied from a local checkout.
+dist-islands
 .pnpm-store
 # CI incremental caches (tsc/eslint) — never part of the image, and keeping a
 # stray local copy out of the context avoids busting the vite COPY layer.
@@ -24,7 +26,7 @@ dist-server
 # Deploy state written on the HOST by deploy.sh (the content-hash file + the
 # build-timing progress log). Not part of the image — and critically, the
 # progress log is appended DURING the build via `tee`, so leaving .deploy/ in the
-# context makes the sequential supervisor→web builds see DIFFERENT contexts,
+# context makes the sequential full→web image builds see DIFFERENT contexts,
 # busting the `COPY --exclude=go-services . .` cache and rebuilding the expensive
 # vite stage a second time. (`deploy` further down excludes the deploy/ SOURCE
 # dir — a different name; this dot-prefixed state dir needs its own entry.)
@@ -88,7 +90,7 @@ public/sprites
 
 # ─── Host-only content seed material (not in the image) ─────────────────────
 # content/blog/*.mdx + content/news/*.mdx are untracked, host-only inputs to the
-# one-off seed/migrate scripts (scripts/seed-news.ts, scripts/migrate-blogs.ts).
+# one-off seed/migrate scripts (scripts/seed-news.ts, and the since-removed scripts/migrate-blogs.ts).
 # Blog + news are served from the database at runtime, so nothing in the image
 # reads content/ — and it isn't in the CI checkout, so baking it would fail the
 # build. Bind-mount the host content/ into a one-shot container to run a seed
@@ -120,8 +122,8 @@ docs
 !README.md
 
 # ─── Go microservices fleet + new infra ──────────────────────────────
-# go-services is included so the go-builder stage can compile supervisor,
-# status, and bot-worker into /app/bin. Only deploy/ and .github/ are
+# go-services is included so the go-builder stage can compile status and
+# assets into /app/bin. Only deploy/ and .github/ are
 # excluded from the context (they are never needed inside the image).
 deploy
 .github
@@ -145,9 +147,6 @@ vitest.config.ts
 **/__tests__
 **/__mocks__
 
-# Rebuilt with the pinned compiler inside the image.
-lib/wasm/generated
-wasm/.generated
 
 # ─── Balatro source (scripts/balatro/build-game-pack.py reads it; the image
 # only needs the built packs in data/balatro-pack/) ───
@@ -155,3 +154,6 @@ data/balatro/
 # Multiplayer pack sources (scripts/balatro/build-game-pack.py builds them into
 # data/balatro-pack/mp-<sha>.zip, which is all the image needs).
 data/balatro-mp/
+# rmhOS dev image (scripts/rmhos/build.sh output, hundreds of MB). Production
+# serves it from the CDN, never from the app image.
+public/rmhos-dev

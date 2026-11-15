@@ -1,9 +1,7 @@
-'use client';
-
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Swords, Coins, ShieldCheck, Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,16 +75,16 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
   const statusBadge = () => {
     switch (wager.status) {
       case 'OPEN':
-        return <Badge variant="outline">{t('status-open', { defaultValue: 'Open' })}</Badge>;
+        return <Badge variant="default">{t('status-open', { defaultValue: 'Open' })}</Badge>;
       case 'ACCEPTED':
       case 'LIVE':
-        return <Badge variant="accent">{t('status-live', { defaultValue: 'In progress' })}</Badge>;
+        return <Badge variant="default">{t('status-live', { defaultValue: 'In progress' })}</Badge>;
       case 'DISPUTED':
         return <Badge variant="danger">{t('status-disputed', { defaultValue: 'Disputed' })}</Badge>;
       case 'SETTLED':
         return <Badge variant="success">{t('status-settled', { defaultValue: 'Settled' })}</Badge>;
       default:
-        return <Badge variant="outline">{wager.status}</Badge>;
+        return <Badge variant="default">{wager.status}</Badge>;
     }
   };
 
@@ -116,7 +114,7 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
           <UserAvatar src={wager.challenger?.image ?? null} alt={wager.challenger?.name ?? ''} size={24} fallbackName={wager.challenger?.name ?? '?'} />
           <span className="truncate">{wager.challenger?.name ?? t('someone', { defaultValue: 'Someone' })}</span>
         </div>
-        <span className="text-site-text-dim px-2">{t('vs', { defaultValue: 'vs' })}</span>
+        <span className="text-site-text-muted px-2">{t('vs', { defaultValue: 'vs' })}</span>
         <div className="flex items-center gap-2 min-w-0 justify-end">
           {wager.opponent ? (
             <>
@@ -124,13 +122,13 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
               <UserAvatar src={wager.opponent.image ?? null} alt={wager.opponent.name ?? ''} size={24} fallbackName={wager.opponent.name ?? '?'} />
             </>
           ) : (
-            <span className="text-site-text-dim italic">{t('open-seat', { defaultValue: 'Open seat' })}</span>
+            <span className="text-site-text-muted italic">{t('open-seat', { defaultValue: 'Open seat' })}</span>
           )}
         </div>
       </div>
 
       <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2 text-site-text-dim">
+        <div className="flex items-center gap-2 text-site-text-muted">
           <Coins className="size-4 text-site-warning" aria-hidden />
           <span>
             {t('pot', { defaultValue: '{{pot}} coin pot', pot: wager.potCoins || wager.stakeCoins * 2 })}
@@ -155,32 +153,32 @@ export function WagerCard({ wager, viewerId, onChange }: Props) {
           </Button>
         )}
         {wager.status === 'OPEN' && isChallenger && (
-          <Button size="sm" variant="outline" onClick={cancel} loading={busy}>
+          <Button size="sm" variant="default" onClick={cancel} loading={busy}>
             {t('cancel-refund', { defaultValue: 'Cancel & refund' })}
           </Button>
         )}
         {(wager.status === 'ACCEPTED' || wager.status === 'LIVE') && isParticipant && (
           <>
             {wager.gameHref && (
-              <Button size="sm" variant="secondary" asChild>
+              <Button size="sm" variant="default" asChild>
                 <a href={wager.gameHref}>{t('play', { defaultValue: 'Play' })}</a>
               </Button>
             )}
             {!wager.viewerReported && (
               <>
-                <span className="text-xs text-site-text-dim self-center">
+                <span className="text-xs text-site-text-muted self-center">
                   {t('who-won', { defaultValue: 'Who won?' })}
                 </span>
-                <Button size="sm" variant="outline" onClick={() => report(wager.challenger!.id)} loading={busy}>
+                <Button size="sm" variant="default" onClick={() => report(wager.challenger!.id)} loading={busy}>
                   {wager.challenger?.name}
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => report(wager.opponent!.id)} loading={busy}>
+                <Button size="sm" variant="default" onClick={() => report(wager.opponent!.id)} loading={busy}>
                   {wager.opponent?.name}
                 </Button>
               </>
             )}
             {wager.viewerReported && (
-              <span className="text-xs text-site-text-dim self-center">
+              <span className="text-xs text-site-text-muted self-center">
                 {t('awaiting-opponent', { defaultValue: 'Waiting on the other player to confirm…' })}
               </span>
             )}

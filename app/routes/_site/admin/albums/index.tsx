@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Images, Plus, Video } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -14,6 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { adminAlbumCreate, adminAlbumsList } from '@/lib/admin/albums.contract';
 
 export const Route = createFileRoute('/_site/admin/albums/')({
   head: () => ({ meta: [{ title: 'Library Albums | Admin' }] }),
@@ -37,15 +42,13 @@ function AdminAlbumsPage() {
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
+  const arrival = useArrival(!loading);
 
   useEffect(() => {
     let active = true;
     (async () => {
-      const res = await fetch('/api/admin/albums').catch(() => null);
-      if (active && res?.ok) {
-        const data = await res.json().catch(() => null);
-        if (data?.albums) setAlbums(data.albums as AdminAlbum[]);
-      }
+      const data = await api(adminAlbumsList).catch(() => null);
+      if (active && data?.albums) setAlbums(data.albums as AdminAlbum[]);
       if (active) setLoading(false);
     })();
     return () => {
@@ -59,16 +62,11 @@ function AdminAlbumsPage() {
     if (!trimmed) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/admin/albums', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: trimmed }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok)
+      const data = await api(adminAlbumCreate, { body: { title: trimmed } }).catch((e: unknown) => {
         throw new Error(
-          data?.error || t('album-create-failed', { defaultValue: 'Failed to create album' }),
+          serverError(e) || t('album-create-failed', { defaultValue: 'Failed to create album' }),
         );
+      });
       toast.success(
         t('album-created', {
           title: data.album.title,
@@ -101,17 +99,14 @@ function AdminAlbumsPage() {
     >
       <AdminBody>
         {/* Create — a singular action panel gets the L2 glass pane. */}
-        <form
-          onSubmit={createAlbum}
-          className="glass-pane flex flex-col gap-2 rounded-site p-5 sm:flex-row sm:items-center"
-        >
+        <form onSubmit={createAlbum} className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('album-title-placeholder', { defaultValue: 'New album title…' })}
             maxLength={120}
-            className="flex-1"
+            className="sm:flex-1"
           />
           <Button type="submit" loading={creating} disabled={!title.trim()} className="shrink-0">
             <Plus aria-hidden="true" /> {t('create-album', { defaultValue: 'Create album' })}
@@ -126,6 +121,7 @@ function AdminAlbumsPage() {
           </div>
         ) : albums.length === 0 ? (
           <EmptyState
+            className={arrival}
             icon={Images}
             title={t('albums-empty', { defaultValue: 'No albums yet' })}
             description={t('albums-empty-hint', {
@@ -133,7 +129,7 @@ function AdminAlbumsPage() {
             })}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className={cn('grid grid-cols-2 gap-3 sm:grid-cols-3', arrival)}>
             {albums.map((album) => {
               const cover = album.slides[0]?.thumb;
               const images = album.slides.filter((s) => s.type === 'image').length;
@@ -143,28 +139,28 @@ function AdminAlbumsPage() {
                   key={album.id}
                   to="/admin/albums/$id"
                   params={{ id: album.id }}
-                  className="glass-fill glass-interactive group flex flex-col overflow-hidden rounded-site"
+                  className="group flex min-w-0 flex-col"
                 >
-                  <div className="aspect-4/3 w-full overflow-hidden bg-site-bg">
+                  <div className="aspect-4/3 w-full overflow-hidden rounded-site border border-site-border bg-site-bg-subtle">
                     {cover ? (
                       <img
                         src={cover}
                         alt=""
                         loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-site-slow group-hover:scale-[1.03]"
+                        className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-site-text-dim">
+                      <div className="flex h-full w-full items-center justify-center text-site-text-muted">
                         <Images className="size-8" aria-hidden="true" />
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1 px-4 py-3">
-                    <span className="truncate font-semibold text-site-text">{album.title}</span>
-                    <span className="truncate font-mono text-xs text-site-text-dim">
-                      /library/albums/{album.slug}
+                  <div className="flex flex-col gap-1 py-2">
+                    <span className="t-body truncate font-semibold text-site-text group-hover:underline">
+                      {album.title}
                     </span>
-                    <span className="flex items-center gap-3 text-xs text-site-text-muted">
+                    <span className="truncate font-mono t-meta">/library/albums/{album.slug}</span>
+                    <span className="flex items-center gap-3 t-meta">
                       <span className="inline-flex items-center gap-1.5">
                         <Images className="size-3" aria-hidden="true" /> {images}
                       </span>

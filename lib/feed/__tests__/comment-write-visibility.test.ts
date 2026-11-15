@@ -8,6 +8,7 @@
  * removed after the post became private; the un-react answer carries no roster.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handlersOf } from '@/lib/__tests__/api-handlers-of';
 
 type PostRow = { userId: string; audience: string; deletedAt: Date | null };
 
@@ -109,18 +110,18 @@ vi.mock('@/lib/prisma.server', () => {
   return { prisma };
 });
 
-import { Route as LikeRoute } from '../../../app/routes/api/rmharks/$id/comment/$commentId/like';
-import { Route as RepostRoute } from '../../../app/routes/api/rmharks/$id/comment/$commentId/repost';
-import { Route as ViewRoute } from '../../../app/routes/api/rmharks/$id/comment/$commentId/view';
-import { Route as ReactRoute } from '../../../app/routes/api/comments/$commentId/react';
-import { Route as PostLikersRoute } from '../../../app/routes/api/rmharks/$id/like';
-import { Route as PostRepostersRoute } from '../../../app/routes/api/rmharks/$id/repost';
+import { route as LikeRoute } from '@/lib/feed/api/rmharks.$id.comment.$commentId.like.server';
+import { route as RepostRoute } from '@/lib/feed/api/rmharks.$id.comment.$commentId.repost.server';
+import { route as ViewRoute } from '@/lib/feed/api/rmharks.$id.comment.$commentId.view.server';
+import { route as ReactRoute } from '@/lib/social/api/comments.$commentId.react.server';
+import { route as PostLikersRoute } from '@/lib/feed/api/rmharks.$id.like.server';
+import { route as PostRepostersRoute } from '@/lib/feed/api/rmharks.$id.repost.server';
 import { Route as V1Comments } from '../../../app/routes/api/v1/posts/$id/comments';
 import { createComment } from '../../social/engagement.server';
 
 type Handler = (a: { request: Request; params: Record<string, string> }) => Promise<Response>;
 const call = (route: unknown, method: 'GET' | 'POST', params: Record<string, string>, body?: unknown) =>
-  (route as { options: { server: { handlers: Record<string, Handler> } } }).options.server.handlers[
+  handlersOf<Handler>(route)[
     method
   ]({
     request: new Request('https://x.test/x', {

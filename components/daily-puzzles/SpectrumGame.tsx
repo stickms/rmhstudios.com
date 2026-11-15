@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +24,7 @@ import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLe
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
+import { useArrival } from '@/components/ui/arrive';
 
 function scoreEmoji(score: number): string {
     if (score === 2) return '🟩';
@@ -47,6 +46,7 @@ function accuracyTone(accuracy: number): PuzzleTone {
 
 function SpectrumGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
     const [puzzle, setPuzzle] = useState<SpectrumPuzzle | null>(null);
+    const arrival = useArrival(puzzle !== null);
 
     useEffect(() => {
         let cancelled = false;
@@ -60,7 +60,9 @@ function SpectrumGameLoader({ dateKey, isToday }: { dateKey: string; isToday: bo
     }, [dateKey]);
 
     if (!puzzle) return <PuzzleLoading title="Spectrum" emoji="🌈" />;
-    return <SpectrumGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    const content = <SpectrumGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    // The puzzle replaces the loading panel: it fades in through a box-less wrapper (M9).
+    return arrival ? <div className="arrive-group">{content}</div> : content;
 }
 
 function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuzzle; dateKey: string; isToday: boolean }) {
@@ -210,7 +212,7 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                                     initial={{ opacity: 0, x: -12 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                                    className={`glass-fill flex items-center gap-3 rounded-site border px-3 py-2 transition-colors duration-site-fast ${
+                                    className={`surface-card flex items-center gap-3 rounded-site border px-3 py-2 transition-colors duration-site-fast ${
                                         showResults && itemScore
                                             ? itemScore.score === 2
                                                 ? TONE_TINT.success
@@ -294,7 +296,7 @@ function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuz
                 {/* Lock In button */}
                 {!locked && (
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                        <Button type="button" variant="accent" size="lg" className="w-full" onClick={handleLockIn}>
+                        <Button type="button" variant="default" size="lg" className="w-full" onClick={handleLockIn}>
                             <Lock aria-hidden />
                             {t("lock-in", { defaultValue: "Lock In" })}
                         </Button>

@@ -51,7 +51,7 @@
 }
 
 .builds-submit:hover {
-  border-color: var(--site-border-bright);
+  border-color: var(--site-text);
   color: var(--site-text);
 }
 

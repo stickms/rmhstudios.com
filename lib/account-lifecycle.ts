@@ -9,12 +9,23 @@
  */
 
 /** `user.banReason` written when an account is deleted in place. */
-export const DELETED_ACCOUNT_BAN_REASON = 'account_deleted';
+export const DELETED_ACCOUNT_BAN_REASON =
+  'account_deleted';
 
 /** `user.bannedUntil` for a deleted account — effectively permanent. */
-export const DELETED_ACCOUNT_LOCK_UNTIL = new Date('9999-12-31T00:00:00.000Z');
+export const DELETED_ACCOUNT_LOCK_UNTIL =
+  new Date(
+    '9999-12-31T00:00:00.000Z',
+  );
 
 /** True when the row is a deletion tombstone rather than a live account. */
-export function isDeletedAccount(user: { banReason?: string | null }): boolean {
-  return user.banReason === DELETED_ACCOUNT_BAN_REASON;
+export function isDeletedAccount(user: {
+  banReason?:
+    | string
+    | null;
+}): boolean {
+  return (
+    user.banReason ===
+    DELETED_ACCOUNT_BAN_REASON
+  );
 }

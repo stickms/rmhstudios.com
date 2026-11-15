@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * OnScreenKeyboard — a piano played by touch, mouse or keyboard focus. Each pointer is tracked on
  * its own, so several fingers can hold a chord, and sliding a finger along the keys plays each one
@@ -51,7 +49,7 @@ import { useSoundingNotes } from './useLearnInput';
  * `disabled`, so the button the learner is pressing keeps focus instead of dropping it to <body>
  * (`shift` already does nothing past the range).
  */
-const OCTAVE_BUTTON = 'w-11 shrink-0 border-(--app-border-bright) px-0 aria-disabled:opacity-50';
+const OCTAVE_BUTTON = 'w-11 shrink-0 border-app-border-bright px-0 aria-disabled:opacity-50';
 
 /** How long after the keyboard goes away a stray click is still the lifted finger's. */
 const GHOST_CLICK_MS = 700;
@@ -208,7 +206,7 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
           lit ? 'bg-(--rmm-key-lit)' : 'bg-(--rmm-key-black)',
         )
       : cn(
-          'rmm-keys__white relative flex h-full items-end justify-center border border-(--app-border-bright) pb-2 text-xs font-medium transition-colors',
+          'rmm-keys__white relative flex h-full items-end justify-center border border-app-border-bright pb-2 text-xs font-medium transition-colors',
           lit
             ? 'bg-(--rmm-key-lit) text-(--rmm-key-lit-ink)'
             : 'bg-(--rmm-key-white) text-(--rmm-key-white-ink)',
@@ -251,7 +249,7 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
             swipe.current = null;
           }}
         >
-          <span className="rmm-display rounded-(--app-radius-sm) bg-(--app-bg) px-2 text-base text-(--app-text-muted)">
+          <span className="rmm-display rounded-app-sm bg-app-bg px-2 text-base text-app-text-muted">
             {from}
           </span>
         </div>
@@ -277,7 +275,7 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
           defaultValue: 'Piano keyboard from {{note}}',
         })}
         className={cn(
-          'rmm-keys__bed relative flex rounded-(--app-radius-sm) select-none',
+          'rmm-keys__bed relative flex rounded-app-sm select-none',
           tall ? 'rmm-keys__bed--tall' : 'h-40 sm:h-48',
         )}
         onPointerUp={(e) => {
@@ -332,10 +330,10 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
                     'pointer-events-none absolute left-1/2 h-4 w-5 -translate-x-1/2',
                     key.black ? 'bottom-3' : 'bottom-8',
                     rightKey === key.midi
-                      ? 'text-(--app-accent)'
+                      ? 'text-app-accent'
                       : key.black
                         ? 'text-(--rmm-key-white)'
-                        : 'text-(--app-danger)',
+                        : 'text-app-danger',
                   )}
                 />
               )}

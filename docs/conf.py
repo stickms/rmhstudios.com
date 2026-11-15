@@ -106,6 +106,11 @@ exclude_patterns = [
     "_build",
     ".DS_Store",
     "Thumbs.db",
+    # Dated audits/designs moved out of the living tree (see archive/README.md):
+    # historical snapshots, kept in git, not published.
+    "archive/**",
+    # Machine-readable facts (docs/_generated/facts.json): consumed by scripts.
+    "_generated/**",
     # Generated book projects: content artifacts, not code docs. They are
     # hundreds of chapter files with their own build tooling.
     "indonesia-history/**",

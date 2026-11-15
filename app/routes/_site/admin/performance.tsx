@@ -27,6 +27,8 @@ import { ProcessesTab } from '@/components/admin/perf/ProcessesTab';
 import { ProfilerTab } from '@/components/admin/perf/ProfilerTab';
 import { RoutesTab } from '@/components/admin/perf/RoutesTab';
 import { RuntimeTab } from '@/components/admin/perf/RuntimeTab';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/performance')({
   head: () => ({ meta: [{ title: 'Performance | RMH Studios' }] }),
@@ -40,6 +42,7 @@ function PerformancePage() {
   const [tab, setTab] = useState<TabId>('overview');
   const [auto, setAuto] = useState(true);
   const { data, loading, failed, updatedAt, reload } = usePerfOverview(auto);
+  const arrival = useArrival(!(loading && !data));
 
   return (
     <PageLayout title={t('page-title', { defaultValue: 'Performance' })} wide backTo="/admin">
@@ -67,7 +70,7 @@ function PerformancePage() {
       />
       <AdminBody width="wide">
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-site-text-muted">
+          <label className="flex items-center gap-2 t-body text-site-text-muted">
             <Switch
               checked={auto}
               onCheckedChange={setAuto}
@@ -75,15 +78,15 @@ function PerformancePage() {
             />
             {t('auto-refresh-short', { defaultValue: 'Auto-refresh' })}
           </label>
-          <Button size="xs" variant="outline" onClick={() => void reload()}>
+          <Button size="xs" variant="default" onClick={() => void reload()}>
             <RefreshCw aria-hidden />
             {t('refresh', { defaultValue: 'Refresh' })}
           </Button>
-          <span className="text-xs text-site-text-dim">
+          <span className="t-meta">
             {t('updated-at', { defaultValue: 'Updated {{time}}', time: fmtClock(updatedAt) })}
           </span>
           {failed && (
-            <span role="alert" className="text-xs text-site-danger">
+            <span role="alert" className="t-meta text-site-danger">
               {t('refresh-failed', { defaultValue: 'Last refresh failed; showing older data.' })}
             </span>
           )}
@@ -94,20 +97,20 @@ function PerformancePage() {
         ) : loading && !data ? (
           <Spinner />
         ) : !data ? (
-          <div className="glass-fill rounded-site">
+          <div className={cn('rounded-site', arrival)}>
             <EmptyState
               title={t('load-failed', { defaultValue: 'Could not load performance data.' })}
             />
           </div>
         ) : (
-          <>
+          <div className={arrival}>
             {tab === 'overview' && <OverviewTab overview={data} />}
             {tab === 'routes' && <RoutesTab routes={data.cluster.routes} />}
             {tab === 'database' && <DatabaseTab overview={data} />}
             {tab === 'processes' && <ProcessesTab overview={data} />}
             {tab === 'errors' && <ErrorsTab overview={data} />}
             {tab === 'runtime' && <RuntimeTab overview={data} />}
-          </>
+          </div>
         )}
       </AdminBody>
     </PageLayout>

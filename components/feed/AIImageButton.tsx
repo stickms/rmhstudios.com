@@ -1,5 +1,7 @@
-'use client';
-
+import { AI_IMAGE_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { aiGenerateImageApi } from '@/lib/feed/compose-assist.contract';
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from'react';
 import { Wand2, Loader2, Sparkles, Lock } from'lucide-react';
 import { useTranslation } from'react-i18next';
@@ -23,6 +25,37 @@ interface AIImageButtonProps {
 }
 
 /**
+ * Ask the image model for a picture themed on the draft. `generate` hands the feed URL to `onGenerated`, and resolves
+ * to the error message when the request fails (also kept in `error`), or to null. The server checks the tier.
+ */
+export function useAiImage(draft: string, onGenerated: (url: string) => void) {
+ const { t } = useTranslation('feed');
+ const [loading, setLoading] = useState(false);
+ const [error, setError] = useState<string | null>(null);
+
+ const generate = async (): Promise<string | null> => {
+ if (loading) return null;
+ setLoading(true);
+ setError(null);
+ try {
+ const data = await api(aiGenerateImageApi, { body: { draft }, timeoutMs: AI_IMAGE_TIMEOUT_MS });
+ if (typeof data?.url ==='string'&& data.url) {
+ onGenerated(data.url);
+ }
+ return null;
+ } catch (e) {
+ const message = serverError(e) || t('ai-image-failed', { defaultValue:'Failed to generate image'});
+ setError(message);
+ return message;
+ } finally {
+ setLoading(false);
+ }
+ };
+
+ return { loading, error, generate };
+}
+
+/**
  * A wand button that asks xAI to generate an image for the post and hands the
  * resulting feed URL back to the composer. HARD-R+ only — the composer passes
  * `locked`for lower tiers so they see the feature (greyed out) and an upgrade
@@ -39,37 +72,16 @@ export function AIImageButton({
  const resolvedTitle = locked
  ? t('ai-image-locked-title', { defaultValue:'Generate images with AI — upgrade to unlock'})
  : title ?? t('ai-image-generate', { defaultValue:'Generate an image with AI'});
- const [loading, setLoading] = useState(false);
- const [error, setError] = useState<string | null>(null);
+ const { loading, error, generate } = useAiImage(draft, onGenerated);
  const [showUpgrade, setShowUpgrade] = useState(false);
 
- const handleClick = async () => {
+ const handleClick = () => {
  if (locked) {
  setShowUpgrade(true);
  return;
  }
- if (loading || disabled) return;
- setLoading(true);
- setError(null);
- try {
- const res = await fetch('/api/rmharks/ai-image', {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ draft }),
- });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- setError(data?.error || t('ai-image-failed', { defaultValue:'Failed to generate image'}));
- return;
- }
- if (typeof data?.url ==='string'&& data.url) {
- onGenerated(data.url);
- }
- } catch {
- setError(t('ai-image-failed', { defaultValue:'Failed to generate image'}));
- } finally {
- setLoading(false);
- }
+ if (disabled) return;
+ void generate();
  };
 
  return (
@@ -84,10 +96,10 @@ export function AIImageButton({
  aria-label={resolvedTitle}
  className={`relative p-1.5 rounded-full transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
  locked
- ?'text-site-text-dim/50 hover:text-site-text-dim hover:bg-site-surface-hover'
+ ?'text-site-text-muted/50 hover:text-site-text-muted hover:bg-site-surface-hover'
  : error
  ?'text-site-danger hover:bg-site-danger/10'
- :'text-site-text-dim hover:text-site-accent hover:bg-site-accent/10'
+ :'text-site-text-muted hover:text-site-accent hover:bg-site-accent/10'
  }`}
  >
  {loading ? (
@@ -102,18 +114,26 @@ export function AIImageButton({
  )}
  </button>
 
- {locked && showUpgrade && (
- <Dialog open onOpenChange={(o) => !o && setShowUpgrade(false)}>
+ {locked && showUpgrade && <AIImageUpgradeDialog onClose={() => setShowUpgrade(false)} />}
+ </>
+ );
+}
+
+/** The upgrade nudge a locked AI image control opens: what the feature is, and the way to the membership store. */
+export function AIImageUpgradeDialog({ onClose }: { onClose: () => void }) {
+ const { t } = useTranslation('feed');
+ return (
+ <Dialog open onOpenChange={(o) => !o && onClose()}>
  <DialogContent className="w-full max-w-sm gap-0 p-0 text-center sm:p-0">
-{/* Decorative gradient header */}
- <div className="relative bg-linear-to-br from-site-accent/30 via-site-accent/10 to-transparent px-6 pb-6 pt-8">
-  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site border border-site-accent/30 bg-site-accent-dim">
+{/* The dialog's header: the icon on a plain ground */}
+ <div className="relative px-6 pb-6 pt-8">
+  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site border border-site-accent/30 bg-site-bg-subtle">
  <Wand2 className="h-7 w-7 text-site-accent"/>
  </div>
  </div>
 
  <div className="px-6 pb-6">
- <DialogTitle className="inline-flex items-center gap-2 text-xl font-bold text-site-text">
+ <DialogTitle className="inline-flex items-center gap-2 text-xl font-semibold text-site-text">
  <Sparkles className="h-5 w-5 text-site-accent"/>
  {t('ai-image-upgrade-title', { defaultValue:'Unlock AI image generation'})}
  </DialogTitle>
@@ -127,9 +147,9 @@ export function AIImageButton({
  <Link
               to="/store"
               search={{ tab: 'membership' }}
-              onClick={() => setShowUpgrade(false)}
+              onClick={() => onClose()}
             >
- <Button variant="accent"className="w-full">
+ <Button variant="default"className="w-full">
  <Sparkles className="h-4 w-4"/>
  {t('ai-image-upgrade-cta', { defaultValue:'Upgrade to unlock'})}
  </Button>
@@ -137,7 +157,7 @@ export function AIImageButton({
  <Button
  variant="ghost"
  size="sm"
- onClick={() => setShowUpgrade(false)}
+ onClick={() => onClose()}
  className="w-full text-site-text-muted"
  >
  {t('maybe-later', { defaultValue:'Maybe later'})}
@@ -146,7 +166,5 @@ export function AIImageButton({
  </div>
  </DialogContent>
  </Dialog>
- )}
- </>
  );
 }

@@ -1,5 +1,3 @@
-'use client';
-
 import { m as motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { spriteUrl } from '@/lib/versecraft/sprites/registry';

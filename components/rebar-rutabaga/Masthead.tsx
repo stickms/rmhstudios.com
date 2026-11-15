@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The restaurant's own chrome.
  *
@@ -21,20 +19,31 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 
 export function Masthead() {
-  const { t } = useTranslation('c-rebar-rutabaga');
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-rebar-rutabaga',
+    );
 
   return (
     <header className="sticky top-3 z-30 mx-3 rounded-site border border-rebar-line bg-rebar-paper supports-[backdrop-filter]:bg-rebar-paper/78 supports-[backdrop-filter]:backdrop-blur-xl">
       <div className="mx-auto flex max-w-[86rem] items-center justify-between gap-6 px-6 py-4 sm:px-10">
         <Link
           to="/services"
-          className="group inline-flex min-h-11 items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.18em] text-rebar-ink-faint transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink focus-visible:text-rebar-ink"
+          className="group inline-flex min-h-11 items-center gap-2 font-mono text-rem-68 uppercase tracking-[0.18em] text-rebar-ink-faint transition-colors duration-[var(--rebar-dur-quick)] hover:text-rebar-ink focus-visible:text-rebar-ink"
         >
           <ArrowLeft
             className="size-3.5 transition-transform duration-[var(--rebar-dur-quick)] group-hover:-translate-x-0.5"
             aria-hidden
           />
-          {t('page.back', { defaultValue: 'Services' })}
+          {t(
+            'page.back',
+            {
+              defaultValue:
+                'Services',
+            },
+          )}
         </Link>
 
         {/* The name is the only thing set in the display face up here; everything
@@ -43,15 +52,30 @@ export function Masthead() {
             lines and pushed the bar to double height, which on a sticky element
             means it eats the top of every section you scroll to. The tracking
             comes down with the size so it stays a lintel, not a logo. */}
-        <p className="whitespace-nowrap font-display text-[0.72rem] font-medium uppercase tracking-[0.14em] text-rebar-ink sm:text-sm sm:tracking-[0.2em]">
-          {t('mast.short', { defaultValue: 'Rebar & Rutabaga' })}
+        <p className="whitespace-nowrap font-display text-rem-72 font-medium uppercase tracking-[0.14em] text-rebar-ink sm:text-sm sm:tracking-[0.2em]">
+          {t(
+            'mast.short',
+            {
+              defaultValue:
+                'Rebar & Rutabaga',
+            },
+          )}
         </p>
 
-        <p className="hidden font-mono text-[0.68rem] uppercase tracking-[0.18em] text-rebar-ink-faint sm:block">
-          {t('mast.place', { defaultValue: 'Göteborg' })}
+        <p className="hidden font-mono text-rem-68 uppercase tracking-[0.18em] text-rebar-ink-faint sm:block">
+          {t(
+            'mast.place',
+            {
+              defaultValue:
+                'Göteborg',
+            },
+          )}
         </p>
         {/* Keeps the name optically centred on phones, where the place is hidden. */}
-        <span aria-hidden className="w-[4.5rem] sm:hidden" />
+        <span
+          aria-hidden
+          className="w-[4.5rem] sm:hidden"
+        />
       </div>
     </header>
   );

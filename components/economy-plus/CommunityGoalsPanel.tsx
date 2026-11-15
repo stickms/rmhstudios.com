@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Community goal pots (C5) — the wallet's "Community" tab. Lazy-loaded when the
  * tab opens. Admins also see the controls to open, cancel and fulfil goals.
@@ -8,7 +6,7 @@ import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Flag, HandCoins, Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -23,6 +21,8 @@ import {
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import {
@@ -50,6 +50,7 @@ export default function CommunityGoalsPanel() {
     queryFn: () => apiJson<GoalsPayload>('/api/community-goals'),
     staleTime: 15_000,
   });
+  const arrival = useArrival(!isLoading && !!data);
 
   if (isLoading || !data) {
     return (
@@ -65,7 +66,7 @@ export default function CommunityGoalsPanel() {
   };
 
   return (
-    <div className="space-y-3 px-3 pb-12">
+    <div className={cn('space-y-3 px-3 pb-12', arrival)}>
       <p className="px-1 text-sm text-site-text-muted">
         {t('cg-intro', {
           defaultValue:
@@ -75,7 +76,7 @@ export default function CommunityGoalsPanel() {
 
       {data.viewerIsAdmin ? (
         <div>
-          <Button variant="outline" size="sm" onClick={() => setCreating(true)}>
+          <Button variant="default" size="sm" onClick={() => setCreating(true)}>
             <Plus /> {t('cg-new', { defaultValue: 'New community goal' })}
           </Button>
         </div>
@@ -113,7 +114,7 @@ export default function CommunityGoalsPanel() {
 function statusBadge(g: CommunityGoalView, t: (k: string, o: { defaultValue: string }) => string) {
   switch (g.status) {
     case 'OPEN':
-      return <Badge variant="accent">{t('cg-status-open', { defaultValue: 'Open' })}</Badge>;
+      return <Badge variant="default">{t('cg-status-open', { defaultValue: 'Open' })}</Badge>;
     case 'FUNDED':
       return <Badge variant="success">{t('cg-status-funded', { defaultValue: 'Funded' })}</Badge>;
     case 'FULFILLED':
@@ -207,7 +208,7 @@ function GoalCard({
   const valid = Number.isInteger(amount) && amount >= 1 && amount <= remaining;
 
   return (
-    <li className="glass-fill space-y-3 p-4">
+    <li className="space-y-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-site-text">{g.title}</h3>
@@ -227,7 +228,7 @@ function GoalCard({
           aria-valuemax={g.targetCoins}
           aria-valuenow={Math.min(g.raisedCoins, g.targetCoins)}
           aria-label={g.title}
-          className="glass-inset h-2.5 overflow-hidden rounded-full"
+          className="surface-field h-2.5 overflow-hidden rounded-full"
         >
           <div className="h-full rounded-full bg-site-accent" style={{ width: `${pct}%` }} />
         </div>
@@ -306,7 +307,7 @@ function GoalCard({
               <Button
                 key={v}
                 type="button"
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={() => setCoins(String(v))}
               >
@@ -315,7 +316,7 @@ function GoalCard({
             ))}
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={() => setCoins(String(remaining))}
           >
@@ -323,7 +324,7 @@ function GoalCard({
           </Button>
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             size="sm"
             disabled={!valid}
             loading={pledge.isPending}
@@ -337,7 +338,7 @@ function GoalCard({
         <div className="flex flex-wrap gap-2 border-t border-site-border pt-3">
           {g.status === 'FUNDED' ? (
             <Button
-              variant="secondary"
+              variant="default"
               size="sm"
               loading={admin.isPending}
               onClick={async () => {
@@ -355,7 +356,7 @@ function GoalCard({
             </Button>
           ) : null}
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             loading={admin.isPending}
             onClick={async () => {
@@ -485,7 +486,7 @@ function CreateGoalDialog({ onClose, onCreated }: { onClose: () => void; onCreat
             <Button type="button" variant="ghost" onClick={onClose}>
               {t('cancel', { defaultValue: 'Cancel' })}
             </Button>
-            <Button type="submit" variant="accent" disabled={!valid} loading={create.isPending}>
+            <Button type="submit" variant="default" disabled={!valid} loading={create.isPending}>
               {t('cg-open', { defaultValue: 'Open goal' })}
             </Button>
           </DialogFooter>

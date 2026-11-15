@@ -1,19 +1,19 @@
-'use client';
-
 /**
  * ThemePreviewBar (§14.2/§14.3) — the floating glass confirm capsule shown while
  * a theme is previewed site-wide (try-before-buy or the editor's preview-on-site).
  * Mounted globally in Providers so it persists as the user navigates the real
- * site under the previewed theme. A small fixed `.glass-overlay` capsule with
+ * site under the previewed theme. A small fixed `.surface-overlay` capsule with
  * Buy (when the previewed theme is purchasable) and Exit.
  */
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useThemeStore } from '@/stores/themeStore';
+import { api } from '@/lib/contract/client';
+import { buyThemeApi } from '@/lib/themes/themes.contract';
 
 export function ThemePreviewBar() {
   const { t } = useTranslation('theme-studio');
@@ -28,11 +28,7 @@ export function ThemePreviewBar() {
     if (!preview) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/themes/${preview.id}/buy`, { method: 'POST' });
-      if (!res.ok) {
-        const d = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(d?.error);
-      }
+      await api(buyThemeApi, { params: { id: preview.id } });
       // Commit the previewed theme as the applied one (drops the transient preview).
       setUserTheme({ id: preview.id, bg: preview.bg, vars: preview.vars });
       toast.success(t('bought', { defaultValue: 'Theme purchased — it is in your inventory' }));
@@ -77,14 +73,14 @@ export function ThemePreviewBar() {
       // (BackToTop, CookieConsent), so a modal now covers it. 60 is `Select`'s
       // band precisely because a select must clear a dialog it was opened
       // INSIDE; this bar is not in that category.
-      className="glass-overlay origin-bottom fixed inset-x-0 bottom-[calc(var(--safe-bottom)+var(--site-hub-orb-size)+var(--site-hub-orb-inset)+0.75rem_+_var(--vv-follow,0px))] z-40 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] items-center gap-3 rounded-full px-4 py-2 shadow-site"
+      className="surface-overlay origin-bottom fixed inset-x-0 bottom-[calc(var(--safe-bottom)+var(--site-hub-orb-size)+var(--site-hub-orb-inset)+0.75rem_+_var(--vv-follow,0px))] z-40 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] items-center gap-3 rounded-full px-4 py-2 "
     >
       <span className="min-w-0 truncate text-sm text-site-text">
         {t('previewing', { defaultValue: 'Previewing' })}
         {preview.name ? <span className="font-semibold"> {preview.name}</span> : null}
       </span>
       {preview.purchasable && preview.priceCoins != null ? (
-        <Button variant="accent" size="sm" onClick={buy} loading={busy}>
+        <Button variant="default" size="sm" onClick={buy} loading={busy}>
           {t('buy-for', { defaultValue: 'Buy' })} · {preview.priceCoins}
         </Button>
       ) : null}

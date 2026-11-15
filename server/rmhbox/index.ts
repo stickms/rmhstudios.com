@@ -27,6 +27,10 @@ import { StateSyncService } from './state-sync';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { protocolGuard, protocolLogger } from '../shared/protocol';
+import { attachRedisAdapter } from '../shared/redis-adapter';
+import { openLobbyStore } from './lobby-store';
+import { LobbyPersistence } from './lobby-persistence';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
@@ -72,11 +76,18 @@ const io = new Server(httpServer, {
   },
 });
 
+// Opt-in Redis backplane (REDIS_URL); in-memory adapter otherwise. Awaited before listen().
+const adapterReady = attachRedisAdapter(io, logger);
+
 // Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
 instrumentHub(io, 'rmhbox');
 
 // ─── Auth middleware (applied server-wide — no namespace) ────────
 
+// Protocol version first (no DB round-trip): an outdated tab is told so instead of
+// silently no-op'ing mid-match (server/shared/protocol.ts, E2). Lenient: a client that
+// sends no version still gets in.
+io.use(protocolGuard(protocolLogger(logger)));
 io.use(authMiddleware);
 
 // ─── Service layer bootstrap ────────────────────────────────────
@@ -91,6 +102,21 @@ const reconnection    = new ReconnectionHandler(
   io, lobbyManager, stateSyncService,
   (lobbyId, spectatorUserId) => gameCoordinator.getSpectatorTarget(lobbyId, spectatorUserId),
 );
+
+// ─── Durable lobbies (opt-in) ───────────────────────────────────
+// Off unless RMHBOX_DURABLE_LOBBIES=1 and REDIS_STATE_URL is reachable at boot
+// (lobby-store.ts). When on, stored lobbies are restored before listen() and
+// every lobby is written back in shutdown(). Unset: lobbyPersistence stays
+// null, no hook is installed and the hub behaves exactly as before.
+
+let lobbyPersistence: LobbyPersistence | null = null;
+const durableReady = openLobbyStore(logger).then(async (store) => {
+  if (!store) return;
+  const persistence = new LobbyPersistence(store, lobbyManager, logger);
+  lobbyPersistence = persistence;
+  persistence.attach();
+  await persistence.restore();
+});
 
 // ─── Connection handler ─────────────────────────────────────────
 
@@ -139,12 +165,17 @@ function shutdown(signal: string): void {
 
   // Closing the server disconnects every socket: those disconnects must not
   // start grace windows, and running games' timers must not keep firing
-  // (lobbies are in-memory and die with the process anyway).
+  // (lobbies are in-memory and die with the process, unless durable lobbies
+  // are on — then they are written to the store just below).
   lobbyManager.shuttingDown = true;
   for (const lobbyId of Array.from(lobbyManager.getLobbies().keys())) {
     gameCoordinator.teardownLobby(lobbyId);
     voteManager.cancelVote(lobbyId);
   }
+
+  // Durable lobbies: write every lobby now; exit waits for it (bounded by the
+  // forced-shutdown timer below). Null when the feature is off.
+  const lobbiesSaved = lobbyPersistence?.shutdown() ?? null;
 
   // Stop accepting new connections
   io.close(() => {
@@ -159,9 +190,13 @@ function shutdown(signal: string): void {
   httpServer.close(() => {
     logger.info({ event: 'http_server_closed' });
     // Disconnect Prisma client before exiting
-    disconnectPrisma().finally(() => {
-      process.exit(0);
-    });
+    const exit = () => {
+      disconnectPrisma().finally(() => {
+        process.exit(0);
+      });
+    };
+    if (lobbiesSaved) void lobbiesSaved.finally(exit);
+    else exit();
   });
 
   // Force-kill after timeout
@@ -176,6 +211,11 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ─── Start listening ────────────────────────────────────────────
 
-httpServer.listen(config.PORT, () => {
-  logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
-});
+void Promise.all([adapterReady, durableReady.catch((err: unknown) => {
+  // openLobbyStore and restore never throw; this is belt and braces — the hub must always start.
+  logger.warn({ event: 'durable_lobbies_boot_failed', error: String(err) });
+})]).then(() =>
+  httpServer.listen(config.PORT, () => {
+    logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
+  }),
+);

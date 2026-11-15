@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -38,12 +36,14 @@ import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLe
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
+import { useArrival } from '@/components/ui/arrive';
 
 type GamePhase = 'rules' | 'reading' | 'result';
 type AlibiPuzzleFull = ReturnType<typeof generateAlibiPuzzle>;
 
 function AlibiGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
     const [puzzle, setPuzzle] = useState<AlibiPuzzleFull | null>(null);
+    const arrival = useArrival(puzzle !== null);
 
     useEffect(() => {
         let cancelled = false;
@@ -57,7 +57,9 @@ function AlibiGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boole
     }, [dateKey]);
 
     if (!puzzle) return <PuzzleLoading title="Alibi" emoji="🔍" />;
-    return <AlibiGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    const content = <AlibiGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    // The puzzle replaces the loading panel: it fades in through a box-less wrapper (M9).
+    return arrival ? <div className="arrive-group">{content}</div> : content;
 }
 
 function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFull; dateKey: string; isToday: boolean }) {
@@ -246,7 +248,7 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                             </p>
                         </div>
                     </PuzzleSection>
-                    <Button type="button" variant="accent" size="lg" className="w-full" onClick={startReading}>
+                    <Button type="button" variant="default" size="lg" className="w-full" onClick={startReading}>
                         <Eye aria-hidden />
                         {t("start-puzzle", { defaultValue: "Start Puzzle" })}
                     </Button>
@@ -272,7 +274,7 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                     <motion.section
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="glass-pane flex flex-col gap-3 rounded-site px-4 py-4"
+                        className="surface-panel flex flex-col gap-3 rounded-site px-4 py-4"
                     >
                         <h2 className="site-section-label flex items-center gap-2">
                             <AlertTriangle className="size-4 shrink-0 text-site-danger" aria-hidden />
@@ -297,13 +299,13 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                                     transition={{ delay: i * 0.06 }}
                                     onClick={() => clickable && handleAccuse(suspect.name)}
                                     disabled={!clickable}
-                                    className={`glass-fill relative flex flex-col gap-2 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast disabled:cursor-default ${
+                                    className={`surface-card relative flex flex-col gap-2 rounded-site border px-4 py-3 text-left transition-colors duration-site-fast disabled:cursor-default ${
                                         cleared
                                             ? 'border-site-border opacity-60'
                                             : accused
                                               ? 'border-site-danger/50 bg-site-danger/10'
                                               : clickable
-                                                ? 'glass-interactive cursor-pointer border-transparent'
+                                                ? 'surface-press cursor-pointer border-transparent'
                                                 : 'border-transparent'
                                     }`}
                                 >
@@ -313,12 +315,12 @@ function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFul
                                             <span className="truncate font-semibold text-site-text">{suspect.name}</span>
                                         </span>
                                         {cleared && (
-                                            <Badge variant="success" size="sm">
+                                            <Badge variant="success">
                                                 {t("cleared", { defaultValue: "Cleared" })}
                                             </Badge>
                                         )}
                                         {accused && (
-                                            <Badge variant="danger" size="sm">
+                                            <Badge variant="danger">
                                                 {t("guilty", { defaultValue: "Guilty" })}
                                             </Badge>
                                         )}

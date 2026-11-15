@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Plus, Check, Upload, Sparkles } from 'lucide-react';
 import { buildCanonical, buildMeta } from '@/lib/seo';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -22,6 +22,18 @@ import type { PackSummary, InstalledPack } from '@/lib/emoji/packs';
 import { MAX_ITEMS_PER_PACK, SHORTCODE_RE } from '@/lib/emoji/packs';
 import { upgradeHref } from '@/lib/entitlements/features';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { HttpError } from '@/lib/http';
+import {
+  addPackItemApi,
+  browsePacksApi,
+  createPackApi,
+  installedPacksApi,
+  subscribePackApi,
+  unsubscribePackApi,
+  uploadPackItemImageApi,
+} from '@/lib/emoji/packs.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/emoji-packs')({
   head: () => ({
@@ -47,8 +59,8 @@ function PackCard({
 }) {
   const { t } = useTranslation('feed');
   return (
-    // `.glass-fill` — repeated content. No blur on list items.
-    <article className="glass-fill flex flex-col gap-3 rounded-site px-4 py-3">
+    //`.`— repeated content. No blur on list items.
+    <article className="flex flex-col gap-3 rounded-site px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-base font-semibold text-site-text">{pack.name}</h3>
@@ -59,7 +71,7 @@ function PackCard({
         <Button
           type="button"
           size="sm"
-          variant={pack.subscribed ? 'outline' : 'accent'}
+          variant={pack.subscribed ? 'default' : 'default'}
           loading={busy}
           onClick={() => onToggle(pack)}
           className="shrink-0"
@@ -79,7 +91,7 @@ function PackCard({
         <p className="line-clamp-2 text-sm text-site-text-muted">{pack.description}</p>
       )}
 
-      <p className="text-xs text-site-text-dim">
+      <p className="text-xs text-site-text-muted">
         {t('pack-counts', {
           defaultValue: '{{items}} items · {{subs}} installs',
           items: pack.itemCount,
@@ -100,11 +112,12 @@ function EmojiPacksPage() {
   const [canCreate, setCanCreate] = useState<boolean | null>(null);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     const [browseRes, mineRes] = await Promise.all([
-      fetch('/api/emoji-packs').then((r) => (r.ok ? r.json() : { packs: [] })),
-      fetch('/api/emoji-packs/installed').then((r) => (r.ok ? r.json() : null)),
+      api(browsePacksApi).catch((): { packs: PackSummary[] } => ({ packs: [] })),
+      api(installedPacksApi).catch((): null => null),
     ]);
     setBrowse(browseRes.packs ?? []);
     if (mineRes) {
@@ -122,10 +135,9 @@ function EmojiPacksPage() {
     async (pack: PackSummary) => {
       setBusySlug(pack.slug);
       try {
-        const res = await fetch(`/api/emoji-packs/${pack.slug}/subscribe`, {
-          method: pack.subscribed ? 'DELETE' : 'POST',
+        await api(pack.subscribed ? unsubscribePackApi : subscribePackApi, {
+          params: { slug: pack.slug },
         });
-        if (!res.ok) throw new Error(String(res.status));
         setBrowse((prev) =>
           prev.map((p) => (p.id === pack.id ? { ...p, subscribed: !p.subscribed } : p)),
         );
@@ -148,28 +160,23 @@ function EmojiPacksPage() {
     if (!name) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/emoji-packs', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
+      await api(createPackApi, { body: { name, kind: 'emoji', visibility: 'public' } });
+      setNewName('');
+      setCanCreate(true);
+      await load();
+      toast.success(t('pack-created', { defaultValue: 'Pack created — add some items' }));
+    } catch (e) {
       // 402 is the membership refusal; it carries an upgrade envelope.
-      if (res.status === 402) {
+      if (e instanceof HttpError && e.status === 402) {
         setCanCreate(false);
         toast.error(
           t('pack-needs-membership', {
             defaultValue: 'Building packs needs a membership.',
           }),
         );
-        return;
+      } else {
+        toast.error(t('pack-create-failed', { defaultValue: 'Could not create that pack.' }));
       }
-      if (!res.ok) throw new Error(String(res.status));
-      setNewName('');
-      setCanCreate(true);
-      await load();
-      toast.success(t('pack-created', { defaultValue: 'Pack created — add some items' }));
-    } catch {
-      toast.error(t('pack-create-failed', { defaultValue: 'Could not create that pack.' }));
     } finally {
       setCreating(false);
     }
@@ -187,12 +194,10 @@ function EmojiPacksPage() {
 
         {/* ── Your packs ───────────────────────────────────────────── */}
         <section className="mt-[var(--site-section-gap)]">
-          <h2 className="site-section-label">
-            {t('your-packs', { defaultValue: 'Your packs' })}
-          </h2>
+          <h2 className="site-section-label">{t('your-packs', { defaultValue: 'Your packs' })}</h2>
 
-          {/* `.glass-pane` — a singular panel, not a repeated card. */}
-          <div className="glass-pane mt-3 flex flex-col gap-3 rounded-site px-4 py-3 sm:flex-row sm:items-center">
+          {/*`.`— a singular panel, not a repeated card. */}
+          <div className="mt-3 flex flex-col gap-3 rounded-site px-4 py-3 sm:flex-row sm:items-center">
             <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -206,7 +211,7 @@ function EmojiPacksPage() {
             />
             <Button
               type="button"
-              variant="accent"
+              variant="default"
               loading={creating}
               disabled={!newName.trim()}
               onClick={() => void createPack()}
@@ -220,7 +225,7 @@ function EmojiPacksPage() {
           {canCreate === false && (
             <a
               href={upgradeHref('sticker-packs')}
-              className="glass-fill mt-3 flex items-center gap-3 rounded-site px-4 py-3 text-sm text-site-text"
+              className="mt-3 flex items-center gap-3 rounded-site px-4 py-3 text-sm text-site-text"
             >
               <Sparkles className="size-4 shrink-0 text-site-accent" aria-hidden />
               <span>
@@ -233,7 +238,7 @@ function EmojiPacksPage() {
           )}
 
           {owned.length > 0 && (
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className={cn('mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2', arrival)}>
               {owned.map((pack) => (
                 <OwnedPackCard key={pack.id} pack={pack} onChanged={load} />
               ))}
@@ -253,14 +258,14 @@ function EmojiPacksPage() {
             </div>
           ) : browse.length === 0 ? (
             <EmptyState
-              className="mt-4"
+              className={cn('mt-4', arrival)}
               title={t('no-packs-title', { defaultValue: 'No packs yet' })}
               description={t('no-packs-hint', {
                 defaultValue: 'Be the first to publish one — members can build packs above.',
               })}
             />
           ) : (
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className={cn('mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2', arrival)}>
               {browse.map((pack) => (
                 <PackCard
                   key={pack.id}
@@ -302,35 +307,32 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
         const form = new FormData();
         form.append('image', file);
         form.append('kind', pack.kind === 'sticker' ? 'sticker' : 'emoji');
-        const up = await fetch(`/api/emoji-packs/${pack.slug}/upload`, {
-          method: 'POST',
+        const { mediaId } = await api(uploadPackItemImageApi, {
+          params: { slug: pack.slug },
           body: form,
+        }).catch((e: unknown) => {
+          if (e instanceof HttpError && e.status === 402) {
+            toast.error(
+              t('pack-needs-membership', { defaultValue: 'Building packs needs a membership.' }),
+            );
+            return { mediaId: null };
+          }
+          if (e instanceof HttpError) throw new Error(String(e.status));
+          throw e;
         });
-        if (up.status === 402) {
-          toast.error(
-            t('pack-needs-membership', { defaultValue: 'Building packs needs a membership.' }),
-          );
-          return;
-        }
-        if (!up.ok) throw new Error(String(up.status));
-        const { mediaId } = (await up.json()) as { mediaId: string };
+        if (mediaId === null) return;
 
-        const res = await fetch(`/api/emoji-packs/${pack.slug}/items`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
+        await api(addPackItemApi, {
+          params: { slug: pack.slug },
+          body: {
             name: code,
             mediaId,
             // Alt text is mandatory at every tier. Seeded from the shortcode so
             // the field is never empty, and editable afterwards.
             alt: code.replace(/[-_+]/g, ' '),
             kind: pack.kind === 'sticker' ? 'sticker' : 'emoji',
-          }),
+          },
         });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(body?.error ?? String(res.status));
-        }
         setName('');
         onChanged();
         toast.success(t('pack-item-added', { defaultValue: 'Added' }));
@@ -350,7 +352,7 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
   const full = pack.itemCount >= MAX_ITEMS_PER_PACK;
 
   return (
-    <article className="glass-fill flex flex-col gap-3 rounded-site px-4 py-3">
+    <article className="flex flex-col gap-3 rounded-site px-4 py-3">
       <div>
         <h3 className="truncate text-base font-semibold text-site-text">{pack.name}</h3>
         <p className="mt-1 text-xs text-site-text-muted">
@@ -393,7 +395,7 @@ function OwnedPackCard({ pack, onChanged }: { pack: PackSummary; onChanged: () =
         </label>
       </div>
 
-      <p className="text-xs text-site-text-dim">
+      <p className="text-xs text-site-text-muted">
         {t('pack-pending-note', {
           defaultValue: 'New and edited packs are reviewed before other people can install them.',
         })}

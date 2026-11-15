@@ -110,7 +110,8 @@ target "web" {
     "${IMAGE_WEB}:${GIT_SHA}",
     "${IMAGE_WEB}:latest",
   ]
-  args = frontend_args()
+  # CHROMIUM_REFRESH: the slim image carries Chromium for the jobs worker (runtime-chromium stage).
+  args = merge(frontend_args(), { CHROMIUM_REFRESH = CHROMIUM_REFRESH })
   output = [
     "type=image,compression=${IMAGE_COMPRESSION},force-compression=${IMAGE_COMPRESSION != "gzip"}",
   ]
@@ -128,9 +129,6 @@ target "full" {
     "${IMAGE_FULL}:${GIT_SHA}",
     "${IMAGE_FULL}:latest",
   ]
-  args = {
-    CHROMIUM_REFRESH = CHROMIUM_REFRESH
-  }
   output = [
     "type=image,compression=${IMAGE_COMPRESSION},force-compression=${IMAGE_COMPRESSION != "gzip"}",
   ]

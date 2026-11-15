@@ -1,0 +1,19 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { implement } from '@/lib/api/implement.server';
+import { rateConnectionGridApi } from '@/lib/party/connections.contract';
+import { rateSchema } from '@/lib/party/connections-schema';
+import { rateGrid } from '@/lib/party/connections.server';
+
+/** POST /api/connections/grids/:id/rate — 1-5 stars, only after finishing the grid. */
+export const route = apiRoute('/api/connections/grids/$id/rate', {
+  POST: implement(
+    rateConnectionGridApi,
+    { rateLimit: 'write', body: rateSchema },
+    async ({ userId, params, body }) => {
+      const r = await rateGrid(userId, params.id, body.rating);
+      if (r === 'unfinished')
+        return Response.json({ error: 'Finish the grid first' }, { status: 409 });
+      return Response.json({ ok: true });
+    },
+  ),
+});

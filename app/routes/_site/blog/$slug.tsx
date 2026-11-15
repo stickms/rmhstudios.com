@@ -5,17 +5,16 @@
  * `PageLayout` owning the title, lede and back link — the same move
  * `/builds/$slug` and `/user-builds/$slug` made. It used to be a top-level
  * full-screen route that re-typed its own `pt-20 pb-20 min-h-screen` frame, a
- * hand-rolled back link and a `text-4xl md:text-5xl font-black` title clamp
+ * hand-rolled back link and a `text-4xl md:text-5xl font-semibold` title clamp
  * beside the shared display scale.
  *
  * The public URL is unchanged — only the layout nesting moved.
  */
 
-import { createFileRoute, notFound } from '@tanstack/react-router';
+import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { readingTimeMinutes } from '@/lib/reading-time';
-import { Calendar, Clock } from 'lucide-react';
 
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdSlot } from '@/components/ads/AdSlot';
@@ -25,6 +24,8 @@ import { ShareButton } from '@/components/blog/ShareButton';
 import { ArticleTakeaways } from '@/components/blog/ArticleTakeaways';
 import { ArticleBody } from '@/components/reading/ArticleBody';
 import { getPostBySlug } from '@/lib/blog';
+import { prisma } from '@/lib/prisma.server';
+import { getBusiness } from '@/lib/businesses';
 import { buildCanonical, buildMeta, ogCardPath, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
 import { liquidVTName } from '@/lib/view-transition';
@@ -36,14 +37,25 @@ const fetchPost = createServerFn({ method: 'GET' })
     // 404 so the shell renders `components/errors/NotFound` instead of the
     // error boundary (page-consistency.md §3 "States").
     try {
-      return await getPostBySlug(slug, [
+      const post = await getPostBySlug(slug, [
         'title',
         'date',
         'description',
         'content',
         'image',
         'tags',
+        'announcement',
+        'business',
+        'announcementPostId',
       ]);
+      // Only link a discussion post that still exists.
+      const linked = typeof post.announcementPostId === 'string' ? post.announcementPostId : null;
+      const live = post.announcement === true && linked
+        ? await prisma.rMHark.findFirst({ where: { id: linked, deletedAt: null }, select: { id: true } })
+        : null;
+      // Assign in place: spreading would drop the index signature the page reads its other fields through.
+      post.announcementPostId = live?.id ?? null;
+      return post;
     } catch {
       throw notFound();
     }
@@ -80,7 +92,9 @@ export const Route = createFileRoute('/_site/blog/$slug')({
         // same helpers `BlurImage` uses, so the preload and the <img> resolve to
         // the same candidate and the image is downloaded once. The props below
         // must stay in sync with the <BlurImage> in the body.
-        ...(image ? [blurImagePreload({ src: image, width: 1280, quality: 85, sizes: '100vw' })] : []),
+        ...(image
+          ? [blurImagePreload({ src: image, width: 1280, quality: 85, sizes: '100vw' })]
+          : []),
         {
           rel: 'alternate',
           type: 'application/rss+xml',
@@ -113,6 +127,8 @@ function BlogPost() {
 
   const tags = (post.tags as string[] | undefined) ?? [];
   const image = post.image as string | undefined;
+  const isAnnouncement = post.announcement === true;
+  const business = getBusiness(typeof post.business === 'string' ? post.business : null);
   const minutes = readingTimeMinutes(post.content as string);
 
   return (
@@ -124,21 +140,29 @@ function BlogPost() {
       // A post title is a sentence, not a page name — it has to wrap.
       wrapTitle
     >
-      <article className="space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
-        {/* §5.48 liquid-open hero. PageLayout owns the title now, so the name
-            the library card morphs into sits on this meta strip — the same
-            placement BuildDetail uses for its thumbnail. */}
+      <article className="space-y-6 pb-12">
+        {/* The byline: date, reading time and tags in `t-meta`, with Share at the end. */}
         <div
-          className="flex flex-wrap items-center gap-x-3 gap-y-2"
+          className="flex flex-wrap items-center gap-x-4 gap-y-2"
           style={{ viewTransitionName: liquidVTName('blog', slug) }}
         >
-          <span className="inline-flex items-center gap-2 font-mono text-sm text-site-accent">
-            <Calendar className="size-4" aria-hidden />
-            {post.date as string}
-          </span>
+          {isAnnouncement ? (
+            <span className="t-meta">
+              {business.name} · {t('blog-announcement-label', { defaultValue: 'Announcement' })}
+            </span>
+          ) : null}
+          {isAnnouncement && typeof post.announcementPostId === 'string' ? (
+            <Link
+              to="/u/$userid/post/$postid"
+              params={{ userid: 'me', postid: post.announcementPostId }}
+              className="t-meta underline underline-offset-4 hover:text-site-text"
+            >
+              {t('blog-join-discussion', { defaultValue: 'Join the discussion' })}
+            </Link>
+          ) : null}
+          <span className="t-meta">{post.date as string}</span>
           {minutes > 0 ? (
-            <span className="inline-flex items-center gap-2 font-mono text-sm text-site-text-muted">
-              <Clock className="size-4" aria-hidden />
+            <span className="t-meta">
               {t('blog-reading-time', { defaultValue: '{{minutes}} min read', minutes })}
             </span>
           ) : null}
@@ -149,7 +173,7 @@ function BlogPost() {
         </div>
 
         {image && (
-          <div className="overflow-hidden rounded-site border border-site-border shadow-site">
+          <div className="overflow-hidden rounded-site border border-site-border bg-site-bg-subtle">
             <BlurImage
               src={image}
               alt={post.title as string}
@@ -171,14 +195,9 @@ function BlogPost() {
             takeaways arrive. */}
         <ArticleTakeaways slug={slug} />
 
-        {/* `markdownComponents` (applied inside ArticleBody) carries all of this
-            body's styling — the old `prose prose-invert …` wrapper was inert (no
-            typography plugin) and `prose-invert` would have forced dark-theme ink
-            on the light themes if it ever became live. ArticleBody adds footnote
-            sidenotes, glossary links, highlights and the reading ruler. */}
+        {/* The body is the article's spine (ArticleBody): each section heading is a station, the paragraphs hang under it
+            as `t-prose`. `markdownComponents` carries all of the body's styling. */}
         <ArticleBody kind="blog" slug={slug} content={post.content as string} />
-
-        <hr className="max-w-2xl border-site-border" />
 
         {/* Below the body, after the reader has the post. `AdSlot` renders
             nothing for members, for anyone who hasn't answered the cookie
@@ -186,7 +205,7 @@ function BlogPost() {
             lib/ads/adsense.ts. */}
         <AdSlot placement="article-end" />
 
-        <p className="max-w-2xl text-center text-sm text-site-text-dim italic">
+        <p className="t-meta max-w-2xl border-t border-site-border pt-4">
           {t('end-of-log', { defaultValue: 'End of Log' })}
         </p>
       </article>

@@ -1,3 +1,4 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon: <Spinner> renders role="status" and would join the button accessible name */
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Key, Check, RefreshCw, Trash2, Clock, AlertCircle } from 'lucide-react';
@@ -5,6 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CopyButton } from '@/components/ui/copy-button';
 import { tokenExpiry } from '@/lib/rmhcode/token-expiry';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import {
+  generateRmhCodeTokenApi,
+  listRmhCodeTokensApi,
+  revokeRmhCodeTokenApi,
+} from '@/lib/rmhcode/tokens.contract';
+import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Token {
   id: string;
@@ -22,6 +32,9 @@ export default function TokenGenerator() {
   const [newToken, setNewToken] = useState<string | null>(null);
   const [tokenName, setTokenName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // M9: the list replaces its placeholder rows; a token generated later fades into it.
+  const arrival = useArrival(!loading);
+  const isNew = useArrivingKeys(tokens.map((tk) => tk.id));
 
   useEffect(() => {
     fetchTokens();
@@ -29,11 +42,8 @@ export default function TokenGenerator() {
 
   async function fetchTokens() {
     try {
-      const res = await fetch('/api/rmhcode/auth/list');
-      if (res.ok) {
-        const data = await res.json();
-        setTokens(data.tokens);
-      }
+      const data = await api(listRmhCodeTokensApi, { retries: 0 });
+      setTokens(data.tokens);
     } catch (e) {
       console.error('Failed to fetch tokens:', e);
     } finally {
@@ -45,23 +55,17 @@ export default function TokenGenerator() {
     setGenerating(true);
     setError(null);
     try {
-      const res = await fetch('/api/rmhcode/auth/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: tokenName || undefined }),
+      const data = await api(generateRmhCodeTokenApi, {
+        body: { name: tokenName || undefined },
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to generate token');
-      }
-
-      const data = await res.json();
       setNewToken(data.token);
       setTokenName('');
       fetchTokens();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate token');
+      setError(
+        serverError(e) ??
+          (e instanceof Error && !(e instanceof HttpError) ? e.message : 'Failed to generate token'),
+      );
     } finally {
       setGenerating(false);
     }
@@ -69,15 +73,8 @@ export default function TokenGenerator() {
 
   async function revokeToken(tokenId: string) {
     try {
-      const res = await fetch('/api/rmhcode/auth/revoke', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tokenId }),
-      });
-
-      if (res.ok) {
-        setTokens((prev) => prev.filter((t) => t.id !== tokenId));
-      }
+      await api(revokeRmhCodeTokenApi, { body: { tokenId } });
+      setTokens((prev) => prev.filter((t) => t.id !== tokenId));
     } catch (e) {
       console.error('Failed to revoke token:', e);
     }
@@ -105,13 +102,13 @@ export default function TokenGenerator() {
             placeholder={t("token-name-placeholder", { defaultValue: "Token name (optional)" })}
             value={tokenName}
             onChange={(e) => setTokenName(e.target.value)}
-            className="min-w-0 flex-1 basis-48 px-3 py-2 glass-inset rounded-site-sm text-site-text text-base sm:text-sm outline-none focus:border-site-border-bright transition-colors"
+            className="min-w-0 flex-1 basis-48 px-3 py-2 surface-field rounded-site-sm text-site-text text-base sm:text-sm outline-none focus:border-site-text transition-colors"
             maxLength={100}
           />
           <Button
             onClick={generateToken}
             disabled={generating}
-            variant="accent"
+            variant="default"
             className=""
           >
             {generating ? (
@@ -135,18 +132,18 @@ export default function TokenGenerator() {
 
       {/* New Token Display */}
       {newToken && (
-        <div className="p-4 rounded-site-sm bg-site-accent-dim border border-site-border">
+        <div className="p-4 rounded-site-sm bg-site-bg-subtle border border-site-border">
           <div className="flex items-center gap-2 text-sm text-site-accent mb-2">
             <Check className="w-4 h-4" />
             {t("token-generated-notice", { defaultValue: "Token generated! Copy it now - it won't be shown again." })}
           </div>
           <div className="flex items-center gap-2">
-            <code className="glass-inset flex-1 rounded-site-sm p-2 text-sm font-mono text-site-text break-all">
+            <code className="surface-field flex-1 rounded-site-sm p-2 text-sm font-mono text-site-text break-all">
               {newToken}
             </code>
-            <CopyButton value={newToken} label={t("copy-token-label", { defaultValue: "Copy token" })} variant="outline" className="shrink-0" />
+            <CopyButton value={newToken} label={t("copy-token-label", { defaultValue: "Copy token" })} variant="default" className="shrink-0" />
           </div>
-          <p className="text-xs text-site-text-dim mt-2">
+          <p className="text-xs text-site-text-muted mt-2">
             {t("token-auth-instruction-pre", { defaultValue: "Run" })} <code className="break-all text-site-accent">rmhcode login --token YOUR_TOKEN</code> {t("token-auth-instruction-post", { defaultValue: "to authenticate." })}
           </p>
         </div>
@@ -162,23 +159,23 @@ export default function TokenGenerator() {
             ))}
           </div>
         ) : tokens.length === 0 ? (
-          <p className="text-sm text-site-text-dim py-4 text-center border border-dashed border-site-border rounded-site-sm">
+          <p className={cn('text-sm text-site-text-muted py-4 text-center border border-dashed border-site-border rounded-site-sm', arrival)}>
             {t("no-active-tokens", { defaultValue: "No active tokens. Generate one to get started." })}
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className={cn('space-y-2', arrival)}>
             {tokens.map((token) => (
               <div
                 key={token.id}
-                className={`glass-fill flex items-center justify-between p-3 rounded-site-sm ${
-                  isExpired(token.expiresAt)
-                    ? 'bg-site-danger/10 border-site-danger/30'
-                    : ''
-                }`}
+                className={cn(
+                  'surface-card flex items-center justify-between p-3 rounded-site-sm',
+                  isExpired(token.expiresAt) && 'bg-site-danger/10 border-site-danger/30',
+                  isNew(token.id) && ARRIVE,
+                )}
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <Key className="w-4 h-4 text-site-text-dim shrink-0" />
+                    <Key className="w-4 h-4 text-site-text-muted shrink-0" />
                     <span className="text-sm font-medium text-site-text truncate">
                       {token.name || t("unnamed-token", { defaultValue: "Unnamed token" })}
                     </span>
@@ -188,12 +185,12 @@ export default function TokenGenerator() {
                       </span>
                     )}
                     {tokenExpiry(token.expiresAt) === 'soon' && (
-                      <Badge variant="warning" size="sm">
+                      <Badge variant="warning">
                         {t("expires-soon", { defaultValue: "Expires soon" })}
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-site-text-dim">
+                  <div className="flex items-center gap-3 mt-1 text-xs text-site-text-muted">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {t("created-date", { defaultValue: "Created {{date}}", date: formatDate(token.createdAt) })}
@@ -208,7 +205,7 @@ export default function TokenGenerator() {
                 </div>
                 <button
                   onClick={() => revokeToken(token.id)}
-                  className="p-2 rounded-site-sm hover:bg-site-danger/10 text-site-text-dim hover:text-site-danger transition-colors shrink-0"
+                  className="p-2 rounded-site-sm hover:bg-site-danger/10 text-site-text-muted hover:text-site-danger transition-colors shrink-0"
                   aria-label={t("revoke-token-label", { defaultValue: "Revoke token" })}
                 >
                   <Trash2 className="w-4 h-4" />

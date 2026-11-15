@@ -2,7 +2,7 @@
 import {
   Outlet,
   Scripts,
-  createRootRoute,
+  createRootRouteWithContext,
   useRouter,
   useRouterState,
   useNavigate,
@@ -13,44 +13,29 @@ import { getRequest } from '@tanstack/react-start/server';
 // NOT from '@/lib/discord-sdk' — that module imports @discord/embedded-app-sdk,
 // which would put 135 KB of Activity SDK into the entry chunk of every page.
 import { isDiscordActivity } from '@/lib/discord-activity';
-import { NATIVE_MATERIAL_BASES } from '@/lib/native-material-routes';
-import {
-  Providers,
-  THEME_EXCLUDED_ROUTES,
-  THEME_EXCLUDED_EXCEPTIONS,
-} from '@/components/Providers';
-import { GlassFilter } from '@/components/ui/liquid-glass';
+import type { QueryClient } from '@tanstack/react-query';
+import { Providers } from '@/components/Providers';
+import { PREPAINT_BODY_SCRIPT, prepaintHeadScripts } from '@/lib/prepaint/config';
 import { SiteHeadContent } from '@/components/SiteHeadContent';
 import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
 import { NavigationProgress } from '@/components/ui/NavigationProgress';
-import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
-import { EversionRoot } from '@/components/radial/eversion/EversionRoot';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { markDocumentHydrated, trackHistoryActions } from '@/components/ui/defer-on-navigate';
-import { markPageEnterComplete } from '@/lib/motion';
 import { startViewportPrefetch } from '@/lib/viewport-prefetch';
+import { startForesightPrefetch } from '@/lib/foresight-prefetch';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { installGlobalErrorHandlers } from '@/lib/client-errors';
 import { initWebVitals } from '@/lib/rum';
 import { registerServiceWorker } from '@/lib/sw-register';
 import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
-import { DEFAULT_OG_IMAGE, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, absoluteUrl } from '@/lib/seo';
+// The site-wide document defaults, shared with the island document (redesign B1).
+import { ROOT_LINKS, ROOT_META } from '@/lib/root-head';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { prisma } from '@/lib/prisma.server';
 import { cachedNullable } from '@/lib/cached.server';
 import { appearanceSeedKey } from '@/lib/appearance/seed-cache.server';
-import {
-  accountAppearanceSeed,
-  accountSeedScript,
-  type AppearanceSeed,
-} from '@/lib/appearance/account-seed';
-import { APP_ROUTE_THEME_BG, APP_THEME_BG, THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
-import { ACCENT_MAP } from '@/lib/appearance';
-import { ACCESS_PREPAINT_SCRIPT } from '@/lib/access/prefs';
-import { DELIGHT_PREPAINT_SCRIPT } from '@/lib/delight/season';
-import { MEDIA_REVEAL_SCRIPT } from '@/lib/media-reveal';
-import { COOKIE_CONSENT_SCRIPT } from '@/lib/cookie-consent';
+import { accountAppearanceSeed, type AppearanceSeed } from '@/lib/appearance/account-seed';
 // Two entry sheets over the one `globals.css` body — app/site-tier.css explains
 // the split, lib/style-tier.ts picks per route.
 import siteTierCss from '@/app/site-tier.css?url';
@@ -60,7 +45,7 @@ import { hasStylesheet, styleTierFor } from '@/lib/style-tier';
 // the document can PRELOAD it — see the `links` block in `head()` below.
 import geistLatinWoff2 from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
 import { resolveLocale, parseLocaleCookie } from '@/lib/i18n/resolve';
-import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from '@/lib/i18n/config';
+import { dirFor, DEFAULT_LOCALE, LOCALES, type Locale } from '@/lib/i18n/config';
 import { localeCoreResources, preloadLocale } from '@/lib/i18n/resources.server';
 
 /**
@@ -122,13 +107,13 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
     // `resolved: true` = we asked and got an answer, whatever it was.
     if (!u) return { user: null, resolved: true, appearanceSeed: null };
     // The account's saved appearance, merged with the account-sync's own rules
-    // and expressed as the localStorage writes `themeScript` reads — see
+    // and expressed as the localStorage writes the theme step reads — see
     // lib/appearance/account-seed.ts. One indexed lookup on a session we have
     // already resolved; a failure here degrades to the idle sync rather than
     // taking the user lookup down with it.
     // perf: this ran an uncached query on every signed-in render. Cache the row
     // for 5 min (invalidated by the appearance PUT in
-    // app/routes/api/preferences/appearance.ts, so a save is never stale), and
+    // lib/preferences/api/preferences.appearance.server.ts, so a save is never stale), and
     // give it its OWN short timeout: a slow query drops only the seed, never the
     // user (the loader keeps running and still warms the cache). The loader
     // throws on DB failure so an error is not cached as "no row".
@@ -145,7 +130,6 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
             customAccent: true,
             colorVision: true,
             jellyMotion: true,
-            electricArcs: true,
           },
         }),
       ).catch(() => null),
@@ -185,213 +169,39 @@ const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
   }
 });
 
-/**
- * Inline script that applies the persisted theme class + accent override to
- * <html> before React hydrates, preventing a flash-of-unstyled-content (FOUC).
- * The theme→background map and the accent palette are serialized here from their
- * single source (stores/themeStore.ts, lib/appearance.ts) so this script never
- * drifts from the runtime that mirrors it.
+/*
+ * Pre-paint: ONE generated script (lib/prepaint, built by scripts/build-prepaint.ts).
  *
- * ## Why `theme-color` is not set on iOS
- *
- * `<meta name="theme-color">` is how a page tells the browser what colour to
- * paint its own chrome, and iOS Safari takes it literally: the strip behind and
- * around the floating bottom tab bar (and the one behind the status bar) is
- * filled with that FLAT colour. The site's chrome is not flat — the page paints
- * an aurora canvas edge to edge under `viewport-fit=cover`, and `globals.css`
- * goes out of its way to mirror that canvas onto the root element on mobile iOS
- * precisely so those strips carry it. A `theme-color` covers all of that with
- * one solid `--site-bg`, which is the coloured band that shows up under the tab
- * bar and does not match the page above it.
- *
- * So on iOS the tag is simply not written, and Safari is left to tint its bars
- * from the page itself. Everywhere else it still is: an Android address bar
- * that matches the theme is exactly what the tag is for.
- *
- * A route may still set its own `theme-color` through `head()` (rmh-capital,
- * rmh-pmc and covid do, and those pages ARE a flat colour, so a matching bar is
- * right there). Ours carries `data-rmh-theme` so the two are never confused —
- * the runtime mirror in `Providers.tsx` only ever touches the marked one.
- *
- * ## `data-app-dark`
- *
- * For a page in `APP_ROUTE_THEME_BG` the script already parses that page's own
- * persisted light/dark preference to pick the pre-paint background. It publishes
- * the answer on <html> as `data-app-dark="1"|"0"` as well, because painting the
- * root the right colour is only half the problem: the page's own token block is
- * selected by a class the SERVER has to guess at (the store default) and only
- * gets right after hydration. The attribute is the one piece of that state that
- * exists before first paint, so the page's stylesheet keys its tokens off it and
- * both halves agree from frame 0 — see `pf2ecal.css`. Each
- * scopes it to its own descendants, so neither can touch the site theme.
- *
- * The entry's shape is documented where it lives (`APP_ROUTE_THEME_BG` in
- * `stores/themeStore.ts`); the three options this script has to honour are
- * `system` (start from `prefers-color-scheme` rather than from a fixed default,
- * for a page that follows the OS and persists nothing), `defaultDark` (what to
- * assume when nothing is stored — true unless the page opens light, as Temple of
- * Joy does) and `darkWhen` (for a page that stores a NAMED theme instead of a
- * boolean). `appRouteGround` in `stores/themeStore.ts` is the same resolution in
- * TypeScript, for the runtime after hydration — change the two together.
- *
- * ## `app-route`
- *
- * The same `app` boolean that picks the ground also stamps `html.app-route`,
- * because that class is not decoration either — `app/globals.css` keys three
- * things off it that are visible from the first frame:
- *
- *  - `--site-surface` and friends resolve to their OPAQUE twins (the aurora is
- *    gated off on these routes, so a translucent surface has no shared scene to
- *    sample and just greys out — the block's own comment says light-theme apps
- *    composited to ≈#8a8a8a and "lost all their contrast").
- *  - `scrollbar-gutter: stable` is withheld, because an app route does not scroll
- *    the document.
- *  - the `.site-aurora` layers paint nothing.
- *
- * It used to be applied ONLY by the `useEffect` in `components/Providers.tsx`,
- * i.e. after hydration, so every game and full-screen app loaded with the site's
- * translucent surfaces, a reserved scrollbar gutter and a live aurora, and then
- * snapped out of all three at once — a full-width horizontal jog plus a contrast
- * pop, measured at ~1.9s after first contentful paint on `/hearthworks` by
- * `testing/e2e/fouc.mjs`. The effect STAYS: it is the client-navigation path (a
- * soft nav from a site page into a game never re-runs this script) and the
- * recovery path if this one throws. What changed is that it is now a no-op on a hard load, which is
- * where the flash was.
+ * This file used to carry nine hand-written ES5 template strings (platform, theme,
+ * 404 theme, access, delight, locale, media-reveal, cookie-consent, account seed).
+ * They are now ordinary TypeScript steps under `lib/prepaint/` bundled into the one
+ * string `PREPAINT_CODE`; `head()` emits it after the `rmh-prepaint` JSON data block
+ * that carries what varies (global-404 flag, Discord head, the account seed, the
+ * theme tables). The docs for each step, including why theme-color is not written
+ * on iOS and what `data-app-dark` / `app-route` are for, live on the step
+ * (lib/prepaint/theme.ts). The one piece that cannot fold in is the <body>-top
+ * script (`PREPAINT_BODY_SCRIPT`): it needs `document.body`.
  */
-function buildThemeScript(siteTier: boolean): string {
-  return `(function(){try{var m=${JSON.stringify(THEME_BG)};var B=${JSON.stringify(APP_THEME_BG)};var RB=${JSON.stringify(APP_ROUTE_THEME_BG)};var D=${JSON.stringify(DEFAULT_STYLE)};var EX=${JSON.stringify(THEME_EXCLUDED_ROUTES)};var XC=${JSON.stringify(THEME_EXCLUDED_EXCEPTIONS)};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style",D);s=D}var app=false;var NF=${siteTier ? 1 : 0};var p=location.pathname;var _u=function(b){return p===b||p.indexOf(b+"/")===0};var _x=false;for(var j=0;j<XC.length;j++){if(_u(XC[j])){_x=true;break}}if(!_x&&!NF){for(var i=0;i<EX.length;i++){if(_u(EX[i])){app=true;break}}}if(s!=="default"&&!app){document.documentElement.classList.add("style-"+s)}if(app){document.documentElement.classList.add("app-route")}var NM=${JSON.stringify(NATIVE_MATERIAL_BASES)};for(var nk=0;nk<NM.length;nk++){if(_u(NM[nk])){document.documentElement.classList.add("native-material");break}}localStorage.removeItem("rmh-glass-level");localStorage.removeItem("rmh-reduce-transparency");var bg=app?B:m[s];if(app){for(var rk in RB){if(_u(rk)){var ro=RB[rk];var rd=ro.system?(!!window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches):(ro.defaultDark!==false);try{var rj=JSON.parse(localStorage.getItem(ro.key)||"null");var rs=(rj&&rj.state)?rj.state:rj;var rf=rs?rs[ro.darkFlag]:undefined;if(ro.darkWhen!==undefined){if(typeof rf==="string")rd=(rf===ro.darkWhen)}else if(typeof rf==="boolean")rd=rf}catch(e){}bg=rd?ro.dark:ro.light;document.documentElement.setAttribute("data-app-dark",rd?"1":"0");break}}}var UT=localStorage.getItem("rmh-user-theme");if(UT&&!app){try{var utj=JSON.parse(UT);if(utj&&utj.vars){var uts=document.documentElement.style;for(var uk in utj.vars){uts.setProperty(uk,utj.vars[uk])}if(typeof utj.bg==="string")bg=utj.bg}}catch(e){}}window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var _hx=(""+bg).replace(/^#/,"");if(_hx.length===3){_hx=_hx.charAt(0)+_hx.charAt(0)+_hx.charAt(1)+_hx.charAt(1)+_hx.charAt(2)+_hx.charAt(2)}if(/^[0-9a-fA-F]{6}$/.test(_hx)){var _cv=function(x){x/=255;return x<=0.03928?x/12.92:Math.pow((x+0.055)/1.055,2.4)};var _lm=0.2126*_cv(parseInt(_hx.substr(0,2),16))+0.7152*_cv(parseInt(_hx.substr(2,2),16))+0.0722*_cv(parseInt(_hx.substr(4,2),16));document.documentElement.style.colorScheme=_lm<0.5?"dark":"light"}if(!document.documentElement.classList.contains("ios-webkit")){var t=document.querySelector('meta[name="theme-color"][data-rmh-theme]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;t.setAttribute("data-rmh-theme","");document.head.appendChild(t)}}var A=${JSON.stringify(ACCENT_MAP)};var ac=localStorage.getItem("rmh-accent");if(ac&&A[ac]&&!app){var d=document.documentElement.style;d.setProperty("--site-accent",A[ac].value);d.setProperty("--site-accent-fg",A[ac].fg);d.setProperty("--site-accent-hover","color-mix(in oklab,"+A[ac].value+" 82%, #000)");d.setProperty("--site-accent-dim","color-mix(in oklab,"+A[ac].value+" 15%, transparent)");d.setProperty("--site-glass-light","color-mix(in srgb,"+A[ac].value+" 20%, rgba(255,255,255,0.14))")}var fs=localStorage.getItem("rmh-font-scale");if(fs&&/^(875|1125|1250)$/.test(fs)){document.documentElement.style.fontSize=(parseInt(fs,10)/10)+"%"}if(localStorage.getItem("rmh-density")==="compact"){document.documentElement.setAttribute("data-density","compact")}if(localStorage.getItem("rmh-desktop-nav")==="rail"){document.documentElement.setAttribute("data-desktop-nav","rail")}if(localStorage.getItem("rmh-readable-font")==="1"){document.documentElement.classList.add("readable-font")}localStorage.removeItem("rmh-reduce-motion");var cvm=localStorage.getItem("rmh-color-vision");if(cvm==="deuteranopia"||cvm==="protanopia"||cvm==="tritanopia"){document.documentElement.setAttribute("data-color-vision",cvm)}var jm=localStorage.getItem("rmh-jelly-motion");if(jm==="calm"||jm==="still"){document.documentElement.setAttribute("data-jelly-motion",jm)}var ea=localStorage.getItem("rmh-electric-arcs");if(ea==="clicks"||ea==="off"){document.documentElement.setAttribute("data-electric-arcs",ea)}var ca=localStorage.getItem("rmh-custom-accent");if(ca&&/^#[0-9a-fA-F]{6}$/.test(ca)&&!app){var cr=parseInt(ca.substr(1,2),16),cg=parseInt(ca.substr(3,2),16),cb=parseInt(ca.substr(5,2),16);var cl=(0.2126*cr+0.7152*cg+0.0722*cb)/255;var cf=cl>0.55?"#111111":"#ffffff";var dc=document.documentElement.style;dc.setProperty("--site-accent",ca);dc.setProperty("--site-accent-fg",cf);dc.setProperty("--site-accent-hover","color-mix(in oklab,"+ca+" 82%, #000)");dc.setProperty("--site-accent-dim","color-mix(in oklab,"+ca+" 15%, transparent)");dc.setProperty("--site-glass-light","color-mix(in srgb,"+ca+" 20%, rgba(255,255,255,0.14))")}}catch(e){}})()`;
-}
 
-const themeScript = buildThemeScript(false);
-
-/**
- * `themeScript` for a GLOBAL 404 — one the root's `notFoundComponent` renders.
+/*
+ * No Speculation Rules (removed 2026-11-09, redesign audit B3).
  *
- * The script picks the tier from the URL, so `/slice-it/player/<nobody>` used to
- * pre-paint Slice It's dark app ground under the site's Daylight `NotFound` card;
- * whatever the URL, a root-level 404 is a SITE page. The root `head()` runs after
- * the loaders on the server, so it already knows, and `Providers` reads the same
- * `_notFound` flag to agree after hydration.
+ * The document used to carry a `speculationrules` script asking the browser to
+ * prefetch the whole SSR document of any same-origin link on hover (OPT-04).
+ * Every one of those links is a router `<Link>`: a click is a client-side
+ * navigation that never requests the document, so each hover cost a full SSR
+ * render (session lookup + the page's queries) whose bytes were thrown away.
+ * The router's own intent preload (`defaultPreload: 'intent'` in
+ * `app/router.tsx`) already fetches what a client navigation actually uses —
+ * the route chunks and loader data. Everything that prefetches goes through
+ * `router.preloadRoute`: intent preload, the touch viewport prefetcher, and the
+ * ForesightJS predictor (lib/foresight-prefetch.ts), which only starts it earlier.
+ *
+ * The old exclusion list also documented eight GET handlers that WRITE on a
+ * plain GET (unsubscribe, mark-as-read, doctrine rows, AI spend). Those are
+ * tracked as redesign audit item C2 (safe methods are safe) rather than hidden
+ * behind a prefetch exclusion list.
  */
-const notFoundThemeScript = buildThemeScript(true);
-
-/**
- * Mark iOS WebKit before first paint so its compositor-safe glass tier applies
- * before any fixed aurora, SVG lens, or backdrop-filter animation is created.
- * iPadOS may present a desktop Macintosh UA, hence the touch-point fallback.
- */
-const platformScript = `(function(){try{var u=navigator.userAgent||"";var ios=/iPhone|iPad|iPod/.test(u)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);var wk=u.indexOf("AppleWebKit")!==-1&&u.indexOf("Chrome/")===-1&&u.indexOf("Chromium")===-1&&u.indexOf("Edg/")===-1&&u.indexOf("OPR/")===-1;if(ios&&wk)document.documentElement.classList.add("ios-webkit")}catch(e){}})()`;
-
-/**
- * Inline guard that reads the locale cookie and sets lang/dir on <html> before
- * the body paints. This runs in <head> so there is no flash of wrong direction
- * (important for Arabic RTL). Works as a fallback for the SSR-set lang/dir
- * attribute and also for client navigations.
- */
-const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-lang=([^;]+)/);var l=m?decodeURIComponent(m[1]):"en";var S=${JSON.stringify([...LOCALES])};var R=${JSON.stringify([...RTL_LOCALES])};if(S.indexOf(l)<0)l="en";document.documentElement.lang=l;document.documentElement.setAttribute("dir",R.indexOf(l)>=0?"rtl":"ltr")}catch(e){}})()`;
-
-/** Pre-paint text spacing, caption style and bedtime mode (lib/access/prefs). */
-const accessScript = ACCESS_PREPAINT_SCRIPT;
-
-// Only app/game routes paint the body: on the site tier the ground is `<html>`'s, and the body stays transparent so the
-// fixed aurora layer (z-index -1) behind the glass is visible (globals.css, "The page ground is the ROOT's").
-const bodyThemeScript = `if(window.__themeBg&&document.documentElement.classList.contains("app-route"))document.body.style.backgroundColor=window.__themeBg`;
-
-/**
- * Paths that must never be speculatively prefetched (OPT-04).
- *
- * A prefetched document is fetched WITHOUT any user interaction and WITH the
- * user's cookies, so anything whose GET has a side effect would fire on hover
- * for a page the visitor may never open. `href_matches` takes URLPattern
- * syntax, where `*` spans path separators — `/api/*` covers `/api/a/b/c`, and a
- * trailing `*` with no slash (`/admin*`) covers both `/admin` and `/admin/…`.
- *
- * ## Why `/api/*` is wholesale, not decorative
- *
- * An audit of every GET handler under `app/routes/api/**` found eight that
- * write or cost money on a plain GET:
- *
- *  - `api/email/unsubscribe.ts` — consumes a signed token and upserts
- *    `NotificationPreference.emailDigest = false`. A prefetch unsubscribes you.
- *  - `api/group-chats/$id/index.ts` and `api/group-chats/$id/messages.ts` —
- *    both write `groupChatMember.lastReadAt` (mark-as-read) inside the GET.
- *  - `api/messages/$conversationId.ts` — `updateMany` marking DMs read.
- *  - `api/doctrine/safehouse/content.ts` — `doctrineAccessLog.createMany`.
- *  - `api/doctrine/puzzles/today.ts` — creates the day's puzzle rows on demand.
- *  - `api/doctrine/puzzles/replay.ts` — creates a `DoctrinePuzzleReplay` row.
- *  - `api/ai/takeaways.ts` — `rateLimit: 'ai'`; on a cache miss it spends model
- *    tokens. `api/rmhladder/prep.ts` documents the same hazard from the other
- *    side: it is a POST *because* a read that costs money must not be
- *    prefetchable.
- *
- * Page routes were audited too — no route loader or `beforeLoad` under
- * `app/routes/**` writes, so the document tier is safe on its own merits. The
- * remaining entries below are the auth/payment/admin classes the spec calls
- * for, plus two pages excluded on cost rather than correctness (noted inline).
- */
-const SPECULATION_EXCLUDED_PATHS = [
-  // Every JSON endpoint, auth flow and upload target — see the audit above.
-  '/api/*',
-  // Auth flows: session and token minting. `/logout*` has no route today; it is
-  // listed so adding one later can't silently become prefetchable.
-  '/login*',
-  '/logout*',
-  '/rmhcode/auth*',
-  // Payment. No `/checkout` route exists today (Stripe redirects off-site);
-  // listed for the same defensive reason as `/logout*`.
-  '/checkout*',
-  // Admin console.
-  '/admin*',
-  // Referral landing: a tracking link that stores an attribution code and
-  // immediately redirects. `noindex`, and disallowed in robots.txt.
-  '/ref/*',
-  // Not a correctness fix — a prefetch does not run scripts, so the mark-read
-  // that `ConversationView` fires on mount does not go off. These are excluded
-  // because they are per-viewer pages that miss the anonymous HTML cache: every
-  // hover would cost a session resolution plus the page's own queries for a
-  // view that is often never opened.
-  '/messages*',
-  '/settings*',
-] as const;
-
-/**
- * Speculation Rules: let the *browser* prefetch whole documents on its own
- * heuristics (OPT-04).
- *
- * `eagerness: "moderate"` is hover — the same intent signal the router already
- * uses — but run off the main thread, with automatic backoff on Save-Data, low
- * battery and constrained connections that the JS preload path cannot match.
- * Deliberately prefetch only: `prerender` (OPT-05) additionally *runs* the next
- * page's effects, which needs a `whenActivated` guard around every analytics,
- * RUM and socket call first.
- *
- * `where.not` is the load-bearing half — see SPECULATION_EXCLUDED_PATHS.
- * `[data-no-speculate]` is the per-link escape hatch: put it on an anchor (or
- * any ancestor the selector matches) to opt that link out without touching this
- * list.
- *
- * CSP: `script-src` in `deploy/apache/rmhstudios.conf` includes
- * `'unsafe-inline'`, so this inline script is permitted as-is. Every speculated
- * URL is same-origin, which `default-src 'self'` already allows. If script-src
- * is ever tightened to nonces, this script needs the nonce too.
- */
-const speculationRules = JSON.stringify({
-  prefetch: [
-    {
-      source: 'document',
-      where: {
-        and: [
-          { href_matches: '/*' },
-          ...SPECULATION_EXCLUDED_PATHS.map((path) => ({ not: { href_matches: path } })),
-          // Per-link opt-out, and respect an author's existing `nofollow`.
-          { not: { selector_matches: '[data-no-speculate]' } },
-          { not: { selector_matches: '[rel~="nofollow"]' } },
-        ],
-      },
-      eagerness: 'moderate',
-    },
-  ],
-});
 
 /**
  * Resolve the locale from the session cookie (explicit user preference) or
@@ -409,8 +219,8 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   // payload — not the full ~66-namespace catalog (~250-300KB) — so the client
   // hydrates synchronously in the right language for the shell/feed. preloadLocale()
   // must finish before the synchronous getServerI18n render path reads the bundle,
-  // so we await it here. The rest of the locale is backfilled client-side after
-  // hydration (perf audit §4.1; see lib/i18n/instances.ts). SSR renders from the
+  // so we await it here. The other namespaces load client-side on demand
+  // (perf audit B6; see lib/i18n/instances.ts). SSR renders from the
   // same core set, so hydration still matches.
   if (locale === DEFAULT_LOCALE) return { locale, resources: null };
   try {
@@ -419,7 +229,7 @@ const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   } catch {
     // A failed locale chunk load must not take the whole document down with a
     // 500 / "Something went wrong": render English (the always-available
-    // defaultValues) and let the client backfill the real locale.
+    // defaultValues) and let the client load the real locale's namespaces on demand.
     return { locale: DEFAULT_LOCALE, resources: null };
   }
 });
@@ -444,7 +254,7 @@ function isDiscordRoute(pathname: string): boolean {
   return pathname.startsWith('/discord/') || pathname === '/discord';
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // perf audit §4.1: without this the root loader default-stales at 0ms and
   // refires on EVERY client navigation — two server-fn round trips (a full
   // Better Auth session resolution + re-serializing the locale payload) per
@@ -479,9 +289,9 @@ export const Route = createRootRoute({
     const discord = ctx.matches?.some((m) => m.fullPath?.startsWith('/discord'));
     const seed = (ctx.loaderData as { appearanceSeed?: AppearanceSeed | null } | undefined)
       ?.appearanceSeed;
-    const accountSeed = seed ? accountSeedScript(seed) : null;
-    // Set on the root match when the root's notFoundComponent renders (see
-    // `notFoundThemeScript`). Read from `ctx.match` — this route's own match,
+    // Set on the root match when the root's notFoundComponent renders: a root-level
+    // 404 is a SITE page whatever the URL, so the pre-paint config carries `nf` and
+    // the theme step never picks the app tier (lib/prepaint/config.ts). Read from `ctx.match` — this route's own match,
     // which the server fetches fresh for head() — not `ctx.matches`, which there
     // is the snapshot taken before the loaders ran. The client's hydrate()
     // restores the flag before running this head, so both sides emit the same
@@ -491,13 +301,14 @@ export const Route = createRootRoute({
       styleTierFor(
         (ctx.matches ?? []).map((m) => m.routeId),
         hasStylesheet(appTierCss),
+        globalNotFound,
       ) === 'app'
         ? appTierCss
         : siteTierCss;
 
     if (discord) {
       // Minimal head for a Discord Activity: no external fonts, no preconnects,
-      // no speculation rules or JSON-LD — nothing that leaves the origin, because
+      // no JSON-LD — nothing that leaves the origin, because
       // inside the Activity iframe every request has to go through Discord's
       // URL-mapping proxy and a third-party font host is not mapped.
       //
@@ -510,7 +321,7 @@ export const Route = createRootRoute({
       // applied before first paint, so the whole appearance landed after
       // hydration: the ground went white → black, and under a 125% font scale
       // every rem-sized thing on the page grew by a quarter
-      // (docs/fouc-audit-2026-10-06.md §6).
+      // (docs/archive/2026/fouc-audit-2026-10-06.md §6).
       return {
         meta: [
           { charSet: 'utf-8' },
@@ -518,63 +329,14 @@ export const Route = createRootRoute({
           { title: 'RMHBox' },
         ],
         links: [{ rel: 'stylesheet', href: appCss }],
-        scripts: [
-          { children: platformScript },
-          ...(accountSeed ? [{ children: accountSeed }] : []),
-          { children: globalNotFound ? notFoundThemeScript : themeScript },
-          { children: accessScript },
-          { children: DELIGHT_PREPAINT_SCRIPT },
-          { children: localeScript },
-        ],
+        scripts: prepaintHeadScripts({ discord: true, notFound: globalNotFound, seed }),
       };
     }
 
     return {
-      meta: [
-        { charSet: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { title: 'RMH Studios — The community for making, playing, and sharing.' },
-        {
-          name: 'description',
-          content:
-            'A social-first home for original games, creative tools, music, learning, and the people making them.',
-        },
-        { property: 'og:site_name', content: 'RMH Studios' },
-        {
-          property: 'og:title',
-          content: 'RMH Studios — The community for making, playing, and sharing.',
-        },
-        {
-          property: 'og:description',
-          content:
-            'A social-first home for original games, creative tools, music, learning, and the people making them.',
-        },
-        { property: 'og:type', content: 'website' },
-        // The site-wide fallback card. Shared with `buildMeta`'s default so a
-        // route that sets no image of its own unfurls the same way whichever
-        // head ends up winning.
-        { property: 'og:image', content: absoluteUrl(DEFAULT_OG_IMAGE) },
-        { property: 'og:image:width', content: String(OG_IMAGE_WIDTH) },
-        { property: 'og:image:height', content: String(OG_IMAGE_HEIGHT) },
-        {
-          property: 'og:image:alt',
-          content: 'The RMH Studios navigation globe, on the site’s glass canvas.',
-        },
-        { property: 'og:locale', content: 'en_US' },
-        { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:image', content: absoluteUrl(DEFAULT_OG_IMAGE) },
-      ],
+      meta: ROOT_META,
       links: [
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-        { rel: 'manifest', href: '/manifest.webmanifest' },
-        // Registers the site as an address-bar search engine (type the domain,
-        // press Tab, search). The document is static in public/opensearch.xml.
-        {
-          rel: 'search',
-          type: 'application/opensearchdescription+xml',
-          title: 'RMH Studios',
-          href: '/opensearch.xml',
-        },
+        ...ROOT_LINKS,
         // Geist's Latin subset, requested in parallel with the stylesheet rather
         // than after it. A font declared inside a stylesheet is not discoverable
         // until that sheet has been downloaded AND parsed, and the entry sheet
@@ -593,45 +355,14 @@ export const Route = createRootRoute({
           href: geistLatinWoff2,
           crossOrigin: 'anonymous',
         },
-        // The jelly haze tile (--jelly-tile in jelly-material.css) is painted into
-        // every glass slab's background stack. It is a CSS-referenced image, so
-        // Chrome fetches it at Low priority — behind the ~160 low-priority module
-        // preloads. On a throttled phone it landed at ~5 s, and because the
-        // signed-out compose card is the first slab with real area, its first paint
-        // became the page's LCP (0.96 s -> 5.3 s). 4 KB at high priority removes
-        // that tail. Same-origin image: no crossOrigin.
-        {
-          rel: 'preload',
-          as: 'image',
-          type: 'image/webp',
-          href: '/jelly/haze-tile.webp',
-          fetchPriority: 'high',
-        },
         { rel: 'stylesheet', href: appCss },
       ],
       scripts: [
-        { children: platformScript },
-        // Must precede every <img>: marks images as their bytes land so they
-        // fade in instead of popping in on a slow connection (lib/media-reveal).
-        { children: MEDIA_REVEAL_SCRIPT },
-        // A signed-in visitor's ACCOUNT appearance, written into localStorage so
-        // that `themeScript` — the next line, and unchanged — paints the
-        // account's theme on the first frame instead of this device's. Without
-        // it the account sync in Providers reconciled the two at idle and the
-        // whole document flipped themes seconds after load for anyone whose
-        // devices disagreed. Absent for signed-out visitors and for an account
-        // with nothing saved. lib/appearance/account-seed.ts has the rules.
-        ...(accountSeed ? [{ children: accountSeed }] : []),
-        { children: globalNotFound ? notFoundThemeScript : themeScript },
-        { children: accessScript },
-        { children: DELIGHT_PREPAINT_SCRIPT },
-        { children: localeScript },
-        // Hides the server-rendered cookie notice before first paint for a
-        // visitor who has already answered it — lib/cookie-consent.ts.
-        { children: COOKIE_CONSENT_SCRIPT },
-        // Browser-driven document prefetch on hover. Ignored by engines that
-        // don't implement it; see SPECULATION_EXCLUDED_PATHS for the safety list.
-        { type: 'speculationrules', children: speculationRules },
+        // The whole pre-paint stack: the `rmh-prepaint` data block (global-404 flag,
+        // the signed-in account's appearance seed, theme tables) and the one generated
+        // script that reads it — lib/prepaint. The account seed is applied before the
+        // theme step reads localStorage, inside that script.
+        ...prepaintHeadScripts({ notFound: globalNotFound, seed }),
         // Site-wide structured data (Organization + WebSite w/ SearchAction).
         jsonLdScript([organizationSchema(), websiteSchema()]),
       ],
@@ -646,10 +377,13 @@ export const Route = createRootRoute({
 function RootDocument({ children }: { children: ReactNode }) {
   // RootDocument is the shellComponent — Route.useLoaderData() may not be
   // available here in all TanStack Start versions. We defensively try to read it
-  // and fall back to "en"/"ltr" so the server HTML is valid. The localeScript
-  // inline guard (runs in <head> before body paint) will correct lang/dir
+  // and fall back to "en"/"ltr" so the server HTML is valid. The prepaint locale
+  // step (runs in <head> before body paint) will correct lang/dir
   // client-side for any mismatch, and RootComponent always passes the real
   // resolved locale down to AppI18nProvider.
+  // The CSP nonce (docs/csp.md): every inline executable script in this document
+  // carries it, or is covered by a static hash of the generated pre-paint code.
+  const nonce = useRouter().options.ssr?.nonce;
   let locale: Locale = 'en';
   try {
     const data = Route.useLoaderData();
@@ -670,7 +404,7 @@ function RootDocument({ children }: { children: ReactNode }) {
             `opacity: 0` under `[data-reveal]`/`.reveal` and undoes it in script.
             (`components/motion/useRevealWatchdog` — the 1.5s deadline that used
             to rescue a stuck IntersectionObserver — is gone with the observer;
-            see docs/performance-audit-2026-08-12.md §1.1.) */}
+            see docs/archive/2026/performance-audit-2026-08-12.md §1.1.) */}
         {/* `.store-art__img` is on the same footing: the storefront cards fade
             their art in from opacity 0 once it loads, and the class that does
             it is set by an event handler. No scripting, no handler, no art —
@@ -680,26 +414,12 @@ function RootDocument({ children }: { children: ReactNode }) {
         </noscript>
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
-        <script dangerouslySetInnerHTML={{ __html: bodyThemeScript }} />
-        {/* The aurora canvas — the shared backdrop every glass surface samples.
-            The two layers are this element's ::before (near field) and ::after
-            (far field); see the §5.1 block in app/globals.css.
-
-            It is a real element rather than `body::before`/`body::after`, which
-            is what it used to be, for ONE reason: `hooks/useLiquidBackground`
-            steers its parallax through `--aurora-mx/--aurora-my`, and a custom
-            property written on `<html>` or `<body>` dirties the computed style of
-            every element in the document. On this site that measured ~70ms per
-            write at 4x CPU throttle (~30ms unthrottled) — paid on every animation
-            frame the pointer moved, which made it the largest single cost on the
-            whole site. Written on THIS element, whose only descendants are its
-            two pseudo-elements, the same update measures 0ms.
-
-            So it must stay a leaf: never render children into it. */}
-        <div className="site-aurora" aria-hidden />
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: PREPAINT_BODY_SCRIPT }}
+        />
         {children}
-        {/* The tab capsule's #glass-goo host. Glass optics do not use SVG lenses. */}
-        <GlassFilter />
         <Scripts />
       </body>
     </html>
@@ -739,20 +459,10 @@ function RootComponent() {
   // and holds hydration up behind it (app/router.tsx). It still waits for `load`.
   useEffect(() => startViewportPrefetch(router), [router]);
 
-  // The `page-enter` fade is for arriving by a navigation, so globals.css holds
-  // it off until the first one: on a fresh load it hid the server-rendered page
-  // at first paint and kept the home feed out of LCP. History subscribers run
-  // before the router renders the next page, so the flag is in place for it;
-  // the page on screen now is marked complete first, so flipping the flag never
-  // replays the fade on it (a same-page REPLACE such as a tab change).
-  useEffect(() => {
-    const unsubscribe = router.history.subscribe(() => {
-      unsubscribe();
-      markPageEnterComplete();
-      document.documentElement.setAttribute('data-navigated', '');
-    });
-    return unsubscribe;
-  }, [router]);
+  // Predictive prefetch (ForesightJS): pointer trajectory, Tab stops, scroll and
+  // touchstart start the same router preload earlier than a hover would. Loaded
+  // at idle after `load`, for the same hydration reason as the line above.
+  useEffect(() => startForesightPrefetch(router), [router]);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
@@ -775,9 +485,7 @@ function RootComponent() {
       i18nResources={i18nResources}
     >
       <NavigationProgress />
-      <BackNavAnimation />
-      <EversionRoot />
-      <TwemojiProvider>
+      <TwemojiProvider portals>
         <Outlet />
       </TwemojiProvider>
     </Providers>

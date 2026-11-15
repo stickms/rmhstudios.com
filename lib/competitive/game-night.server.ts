@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { rotation, type GameNightDef } from './game-night';
 
 export const GAME_IDS: ReadonlySet<string> = new Set(games.map((g) => g.id));

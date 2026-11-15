@@ -1,0 +1,23 @@
+import { apiRoute } from '@/lib/api/route.server';
+import { defineHandler } from '@/lib/api/handler.server';
+import { z } from 'zod';
+import { claimArcadeChallenge } from '@/lib/game/results.server';
+
+const schema = z.object({ challengeId: z.string().min(1).max(64) });
+
+/** POST /api/arcade/claim — claim a completed arcade challenge's reward. */
+export const route = apiRoute('/api/arcade/claim', {
+  POST: defineHandler(
+    {
+      rateLimit: { limit: 30, windowMs: 60_000, prefix: 'arcade-claim' },
+      body: schema,
+      allowEmptyBody: true,
+    },
+    async ({ session, body }) => {
+      const reward = await claimArcadeChallenge(session.user.id, body.challengeId);
+      if (!reward) return Response.json({ error: 'Challenge not claimable' }, { status: 400 });
+
+      return Response.json({ success: true, ...reward });
+    },
+  ),
+});

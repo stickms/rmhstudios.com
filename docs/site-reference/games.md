@@ -1,6 +1,6 @@
 <!--
   GENERATED FILE — do not edit by hand.
-  Source: app/routes/, lib/games.ts, lib/apps.ts.
+  Source: app/routes/, lib/catalog.
   Regenerate with `pnpm docs:site`.
 -->
 
@@ -8,7 +8,7 @@
 
 Every game on the platform — browser games of every shape: real-time multiplayer, 3D, puzzle, casino, idle and narrative.
 
-Generated from `lib/games.ts`, the single source of truth every card on the site reads from.
+Generated from `lib/catalog`, the single source of truth every card on the site reads from.
 
 | | Route | Status | Auth | Tags |
 | --- | ----- | ------ | ---- | ---- |

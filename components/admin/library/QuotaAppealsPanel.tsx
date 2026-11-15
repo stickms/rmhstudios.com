@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The upload-appeal queue, formerly the whole of `/admin/library-quota`.
  *
@@ -12,11 +10,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Check, Inbox, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  adminQuotaDecideApi,
+  adminQuotaRequestsApi,
+} from '@/lib/library/admin-library.contract';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type QuotaRequest = {
   id: string;
@@ -37,13 +43,15 @@ export function QuotaAppealsPanel() {
   const [requests, setRequests] = useState<QuotaRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch('/api/admin/library/quota-requests').catch(() => null);
-    if (res?.ok) {
-      const data = await res.json().catch(() => null);
-      if (data?.requests) setRequests(data.requests as QuotaRequest[]);
+    try {
+      const data = await api(adminQuotaRequestsApi);
+      if (data.requests) setRequests(data.requests);
+    } catch {
+      // keep the previous queue
     }
     setLoading(false);
   }, []);
@@ -69,13 +77,14 @@ export function QuotaAppealsPanel() {
         grantedTotal = Math.floor(n);
       }
       setBusy(req.id);
-      const res = await fetch('/api/admin/library/quota-requests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: req.id, approve, grantedTotal }),
-      }).catch(() => null);
+      let failure: unknown = null;
+      try {
+        await api(adminQuotaDecideApi, { body: { id: req.id, approve, grantedTotal } });
+      } catch (e) {
+        failure = e ?? new Error('failed');
+      }
       setBusy(null);
-      if (res?.ok) {
+      if (!failure) {
         toast.success(
           approve
             ? t('quota-approved', {
@@ -86,9 +95,8 @@ export function QuotaAppealsPanel() {
         );
         setRequests((prev) => prev.filter((r) => r.id !== req.id));
       } else {
-        const err = await res?.json().catch(() => null);
         toast.error(
-          err?.error ?? t('quota-decide-failed', { defaultValue: 'Could not update the request.' }),
+          serverError(failure) ?? t('quota-decide-failed', { defaultValue: 'Could not update the request.' }),
         );
       }
     },
@@ -105,20 +113,24 @@ export function QuotaAppealsPanel() {
 
   if (requests.length === 0) {
     return (
-      <EmptyState icon={Inbox} title={t('quota-none', { defaultValue: 'No pending upload appeals.' })} />
+      <EmptyState
+        className={arrival}
+        icon={Inbox}
+        title={t('quota-none', { defaultValue: 'No pending upload appeals.' })}
+      />
     );
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className={cn('divide-y divide-site-border', arrival)}>
       {requests.map((req) => {
         const who = req.user.handle ? `@${req.user.handle}` : (req.user.name ?? req.user.id);
         return (
-          <li key={req.id} className="glass-fill rounded-site p-5">
+          <li key={req.id} className="py-4 first:pt-0 last:pb-0">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-semibold text-site-text">{who}</p>
-                <p className="mt-1 text-sm text-site-text-muted">
+                <p className="t-heading text-site-text">{who}</p>
+                <p className="mt-1 t-body text-site-text-muted">
                   {t('quota-summary', {
                     used: req.user.used,
                     current: req.user.currentQuota,
@@ -128,16 +140,16 @@ export function QuotaAppealsPanel() {
                   })}
                 </p>
                 {req.reason && (
-                  <p className="mt-2 text-sm whitespace-pre-wrap text-site-text">{req.reason}</p>
+                  <p className="t-body mt-2 whitespace-pre-wrap text-site-text">{req.reason}</p>
                 )}
-                <p className="mt-2 text-xs text-site-text-muted">
+                <p className="mt-2 t-body text-site-text-muted">
                   {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="default"
                   disabled={busy === req.id}
                   onClick={() => decide(req, false)}
                 >

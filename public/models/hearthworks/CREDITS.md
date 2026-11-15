@@ -1,7 +1,7 @@
 # Hearthworks character models: credits and provenance
 
 **Nothing Valve-owned is committed in this repository.** This folder holds only this file; the manifest (which model, which skin,
-which animation sequences, as text) is `lib/hearthworks/skins/models.manifest.json`, bundled into the app. The characters themselves are loaded **at run time** from the
+which animation sequences, as text) is `features/hearthworks/engine/skins/models.manifest.json`, bundled into the app. The characters themselves are loaded **at run time** from the
 project's own asset channels in Cloudflare R2, the same ones the Source-engine games on this site use
 (`docs/tf2-game.md`, "Game assets" and "Models").
 
@@ -54,7 +54,7 @@ standing pose. TF2 team skins: family 0 is RED, family 1 BLU (set `skin` in the 
 
 `combine-soldier`, `combine-elite` and `breen` have **no source in any asset channel** (`models/combine_soldier.mdl`,
 `models/combine_super_soldier.mdl` and `models/breen.mdl` are not in the `hl2` channel's `mdl/index.json`). They keep
-their **procedural stand-in** figure (`lib/hearthworks/art`), and the manifest lists them as `provenance: "stand-in"`.
+their **procedural stand-in** figure (`features/hearthworks/engine/art`), and the manifest lists them as `provenance: "stand-in"`.
 No other model stands in for them. They will get a model the day the channel carries one.
 
 ## What is not used

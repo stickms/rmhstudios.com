@@ -71,6 +71,7 @@
   "ban-author": "Banir autor",
   "ban-length-prompt": "Duração do banimento em dias (em branco = permanente):",
   "ban-reason-prompt": "Motivo do banimento:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "Escreva novos logs de desenvolvimento, ou edite e exclua postagens de blog existentes.",
   "blog-title": "Gerenciar Postagens do Blog",
   "bot-no-email": "Automated account",

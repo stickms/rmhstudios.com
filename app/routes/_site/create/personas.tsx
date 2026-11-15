@@ -18,16 +18,13 @@ export const Route = createFileRoute('/_site/create/personas')({
     }),
     links: [buildCanonical('/create/personas')],
   }),
-  loader: () => ({ seed: Math.floor(Math.random() * 1_000_000) + 1 }),
   component: CreatePersonasTab,
 });
 
 function CreatePersonasTab() {
-  const { seed } = Route.useLoaderData();
-
   return (
     <div className="cstudio-body">
-      <PersonasTab seed={seed} />
+      <PersonasTab />
     </div>
   );
 }

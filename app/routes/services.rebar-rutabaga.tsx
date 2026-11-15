@@ -167,7 +167,7 @@ function RebarRutabagaPage() {
       <Reservations />
 
       <footer className="border-t border-rebar-line bg-rebar-paper">
-        <div className="mx-auto flex max-w-[86rem] flex-col gap-3 px-6 py-14 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-rebar-ink-faint sm:flex-row sm:items-center sm:justify-between sm:px-10">
+        <div className="mx-auto flex max-w-[86rem] flex-col gap-3 px-6 py-14 font-mono text-rem-70 uppercase tracking-[0.16em] text-rebar-ink-faint sm:flex-row sm:items-center sm:justify-between sm:px-10">
           <p>
             {t('footer.address', {
               defaultValue: 'Verkstadsgatan 4, 417 07 Göteborg, Sverige · +46 31 18 14 63',

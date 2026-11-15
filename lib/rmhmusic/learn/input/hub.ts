@@ -11,117 +11,259 @@
  * unsubscribe) and keeps the active order and the phase snapshot.
  */
 import type * as life from '../machines/device-lifecycle';
-import { createDeviceRunner, type DeviceRunner } from './device-runner';
-import type { InputAdapter, InputSource, NoteEvent, NoteListener } from './events';
+import {
+  createDeviceRunner,
+  type DeviceRunner,
+} from './device-runner';
+import type {
+  InputAdapter,
+  InputSource,
+  NoteEvent,
+  NoteListener,
+} from './events';
 
-export type InputPhase = life.Phase;
+export type InputPhase =
+  life.Phase;
 
 /** Every source's phase, replaced (never mutated) whenever one changes. */
-export type InputPhases = Readonly<Record<InputSource, InputPhase>>;
+export type InputPhases =
+  Readonly<
+    Record<
+      InputSource,
+      InputPhase
+    >
+  >;
 
 export interface InputHub {
   /** Listen to every started adapter; returns a function that removes it. */
-  subscribe(l: NoteListener): () => void;
+  subscribe(
+    l: NoteListener,
+  ): () => void;
   /** Start a source. Failure is recorded in `lastError` and rethrown. */
-  start(source: InputSource): Promise<void>;
+  start(
+    source: InputSource,
+  ): Promise<void>;
   /** Stop a source; a no-op if it was never started. */
-  stop(source: InputSource): void;
+  stop(
+    source: InputSource,
+  ): void;
   /** Sources currently started, in the order they were started. */
   active(): InputSource[];
-  lastError(source: InputSource): Error | null;
+  lastError(
+    source: InputSource,
+  ): Error | null;
   /** Where a source is in its lifecycle (a start waiting on a permission prompt is `starting`). */
-  phase(source: InputSource): InputPhase;
+  phase(
+    source: InputSource,
+  ): InputPhase;
   /** The phases of every source; the same object until one changes (for `useSyncExternalStore`). */
   phases(): InputPhases;
   /** Hear every phase change; returns a function that removes the listener. */
-  onChange(l: () => void): () => void;
+  onChange(
+    l: () => void,
+  ): () => void;
 }
 
-const SOURCES: readonly InputSource[] = ['mic', 'midi', 'keys', 'screen'];
+const SOURCES: readonly InputSource[] =
+  [
+    'mic',
+    'midi',
+    'keys',
+    'screen',
+  ];
 
-export function createInputHub(adapters: InputAdapter[]): InputHub {
-  const listeners = new Set<NoteListener>();
-  const changeListeners = new Set<() => void>();
+export function createInputHub(
+  adapters: InputAdapter[],
+): InputHub {
+  const listeners =
+    new Set<NoteListener>();
+  const changeListeners =
+    new Set<
+      () => void
+    >();
   /** Started sources in the order they became active. */
-  let order: InputSource[] = [];
+  let order: InputSource[] =
+    [];
 
-  const forward = (e: NoteEvent) => {
-    for (const l of [...listeners]) l(e);
-  };
+  const forward =
+    (
+      e: NoteEvent,
+    ) => {
+      for (const l of [
+        ...listeners,
+      ])
+        l(
+          e,
+        );
+    };
 
-  const runners = new Map<InputSource, DeviceRunner>();
+  const runners =
+    new Map<
+      InputSource,
+      DeviceRunner
+    >();
   for (const adapter of adapters) {
-    const source = adapter.source;
-    let unsubscribe: (() => void) | null = null;
+    const source =
+      adapter.source;
+    let unsubscribe:
+      | (() => void)
+      | null =
+      null;
     runners.set(
       source,
-      createDeviceRunner({
-        launch() {
-          // Subscribe first so a note emitted while start() resolves is not lost.
-          unsubscribe?.();
-          unsubscribe = adapter.subscribe(forward);
-          return adapter.start();
+      createDeviceRunner(
+        {
+          launch() {
+            // Subscribe first so a note emitted while start() resolves is not lost.
+            unsubscribe?.();
+            unsubscribe =
+              adapter.subscribe(
+                forward,
+              );
+            return adapter.start();
+          },
+          stopDevice:
+            () =>
+              adapter.stop(),
+          unsubscribe() {
+            unsubscribe?.();
+            unsubscribe =
+              null;
+          },
+          onPhase(
+            phase,
+          ) {
+            order =
+              order.filter(
+                (
+                  s,
+                ) =>
+                  s !==
+                  source,
+              );
+            if (
+              phase ===
+              'active'
+            )
+              order.push(
+                source,
+              );
+            snapshot =
+              phasesNow();
+            for (const l of [
+              ...changeListeners,
+            ])
+              l();
+          },
         },
-        stopDevice: () => adapter.stop(),
-        unsubscribe() {
-          unsubscribe?.();
-          unsubscribe = null;
-        },
-        onPhase(phase) {
-          order = order.filter((s) => s !== source);
-          if (phase === 'active') order.push(source);
-          snapshot = phasesNow();
-          for (const l of [...changeListeners]) l();
-        },
-      }),
+      ),
     );
   }
 
   function phasesNow(): InputPhases {
-    const out = {} as Record<InputSource, InputPhase>;
-    for (const s of SOURCES) out[s] = runners.get(s)?.phase() ?? 'idle';
+    const out =
+      {} as Record<
+        InputSource,
+        InputPhase
+      >;
+    for (const s of SOURCES)
+      out[
+        s
+      ] =
+        runners
+          .get(
+            s,
+          )
+          ?.phase() ??
+        'idle';
     return out;
   }
-  let snapshot: InputPhases = phasesNow();
+  let snapshot: InputPhases =
+    phasesNow();
 
   return {
-    subscribe(l) {
-      listeners.add(l);
+    subscribe(
+      l,
+    ) {
+      listeners.add(
+        l,
+      );
       return () => {
-        listeners.delete(l);
+        listeners.delete(
+          l,
+        );
       };
     },
 
-    start(source) {
-      const runner = runners.get(source);
-      if (!runner) return Promise.reject(new Error(`No input adapter for "${source}"`));
+    start(
+      source,
+    ) {
+      const runner =
+        runners.get(
+          source,
+        );
+      if (
+        !runner
+      )
+        return Promise.reject(
+          new Error(
+            `No input adapter for "${source}"`,
+          ),
+        );
       return runner.start();
     },
 
-    stop(source) {
-      runners.get(source)?.stop();
+    stop(
+      source,
+    ) {
+      runners
+        .get(
+          source,
+        )
+        ?.stop();
     },
 
     active() {
-      return [...order];
+      return [
+        ...order,
+      ];
     },
 
-    lastError(source) {
-      return runners.get(source)?.lastError() ?? null;
+    lastError(
+      source,
+    ) {
+      return (
+        runners
+          .get(
+            source,
+          )
+          ?.lastError() ??
+        null
+      );
     },
 
-    phase(source) {
-      return snapshot[source];
+    phase(
+      source,
+    ) {
+      return snapshot[
+        source
+      ];
     },
 
     phases() {
       return snapshot;
     },
 
-    onChange(l) {
-      changeListeners.add(l);
+    onChange(
+      l,
+    ) {
+      changeListeners.add(
+        l,
+      );
       return () => {
-        changeListeners.delete(l);
+        changeListeners.delete(
+          l,
+        );
       };
     },
   };

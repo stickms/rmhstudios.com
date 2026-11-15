@@ -1,12 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { DivisivenessBadge } from '@/components/doctrine/divisiveness-badge';
-import { ReactionBar } from '@/components/doctrine/reaction-bar';
-import { EMPTY_REACTIONS } from '@/lib/doctrine/types';
+import { DivisivenessBadge } from '@features/doctrine/ui/divisiveness-badge';
+import { ReactionBar } from '@features/doctrine/ui/reaction-bar';
+import { EMPTY_REACTIONS } from '@features/doctrine/engine/types';
+import { api } from '@/lib/contract/client';
+import { getSafehouseDisclosuresApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/safehouse/drops')({
+  head: () => noindexHead('Safehouse Drops'),
   component: DropsPage,
 });
 
@@ -15,12 +21,11 @@ function DropsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['doctrine', 'disclosures'],
     queryFn: async () => {
-      const res = await fetch('/api/doctrine/safehouse/disclosures');
-      if (!res.ok) throw new Error('Failed');
-      return res.json();
+      return api(getSafehouseDisclosuresApi);
     },
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -41,8 +46,8 @@ function DropsPage() {
         </div>
       )}
 
-      <div className="space-y-3">
-        {data?.map((d: { id: string; codename: string; publicTitle: string; content: string | null; narrative: string | null; status: string; disclosedAt: string | null; reactions: { fire: number; based: number; mid: number; cringe: number; trash: number; tung: number } }) => (
+      <div className={cn('space-y-3', arrival)}>
+        {data?.map((d) => (
           <article
             key={d.id}
             className="rounded-lg p-4 space-y-2"

@@ -3173,7 +3173,7 @@ This expanded design document now contains **460+ distinct proposals** across 9 
 
 ### Tempo Mechanical Effect (Proposal #10)
 
-**File:** `components/signal-forge/SignalForgeGame.tsx`
+**File:** `features/signal-forge/ui/SignalForgeGame.tsx`
 **Location:** Inside `endTurn()`, in the damage calculation section (around line ~700)
 **Change:** After calculating `matchBonus`, add:
 
@@ -3187,7 +3187,7 @@ const tempoDmg = this.playerTempo; // 0-6
 
 ### Tempo Gear Wiring (Proposal #9)
 
-**File:** `components/signal-forge/SignalForgeGame.tsx`
+**File:** `features/signal-forge/ui/SignalForgeGame.tsx`
 **Location:** Inside `endTurn()`, after Forge Burst check
 **Change:** Find the `tempo_gear` relic in `playerRelics` and apply its effect:
 
@@ -3202,7 +3202,7 @@ if (matched && tempoGearCount > 0) {
 
 ### Deck Reshuffle (Proposal #4)
 
-**File:** `components/signal-forge/SignalForgeGame.tsx`
+**File:** `features/signal-forge/ui/SignalForgeGame.tsx`
 **Location:** Inside `drawCard()` or wherever cards are drawn from `deckCards`
 **Change:** When deck is empty and discard is not, shuffle discard into deck:
 
@@ -3228,7 +3228,7 @@ private drawCard(): Card | null {
 
 ### Score Fix (Proposal #59)
 
-**File:** `components/signal-forge/SignalForgeGame.tsx`
+**File:** `features/signal-forge/ui/SignalForgeGame.tsx`
 **Location:** Inside `playCard()` where `this.score += card.damage * 5` is set
 **Change:** Move score award from `playCard()` to `endTurn()` where damage is actually dealt:
 
@@ -3241,7 +3241,7 @@ this.score += actualDamageDealt * 5; // instead of card.damage * 5 on play
 
 ### Enemy Intent Display (Proposal #397)
 
-**File:** `components/signal-forge/SignalForgeGame.tsx`
+**File:** `features/signal-forge/ui/SignalForgeGame.tsx`
 **Location:** In the canvas render loop where enemies are drawn (around line ~500-600)
 **Change:** For each enemy, calculate and display next action above their health bar:
 
@@ -3261,7 +3261,7 @@ ctx.fillText(`${intentIcons[e.intent]} ${e.intentValue}`, enemyX, enemyY - 20);
 
 ### Post-Combat Card Reward (Proposal #165)
 
-**File:** `components/signal-forge/SignalForgeUI.tsx`
+**File:** `features/signal-forge/ui/SignalForgeUI.tsx`
 **Location:** In the reward phase rendering
 **Change:** Add a card selection modal between victory and shop:
 

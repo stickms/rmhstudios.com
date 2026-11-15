@@ -5,6 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { markPresence } from '@/lib/hot-counters.server';
 import { getUnreadNotificationCount } from '@/lib/notifications.server';
 import { getActiveFriends, getOnlineFriends } from '@/lib/presence.server';
+import type { PulseResponse } from '@/lib/pulse.contract';
 
 /**
  * POST /api/pulse — the one repeating request a signed-in tab makes.
@@ -40,13 +41,6 @@ const schema = z.object({
   /** Sections to include. Omitted/empty means heartbeat only. */
   want: z.array(z.enum(SECTIONS)).max(SECTIONS.length).optional(),
 });
-
-export interface PulseResponse {
-  ok: boolean;
-  notifications?: number;
-  friends?: Awaited<ReturnType<typeof getOnlineFriends>>;
-  activeFriends?: Awaited<ReturnType<typeof getActiveFriends>>;
-}
 
 export const Route = createFileRoute('/api/pulse')({
   server: {

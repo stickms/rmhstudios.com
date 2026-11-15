@@ -171,7 +171,7 @@ image="${IMAGE_NAME}:${IMAGE_TAG}"
 log "Live port: ${current_port}. Bringing up ${target_color} on ${target_port} from ${image}."
 
 # ── Fast path: skip the swap if the live container already runs this image ───
-# The slim web image is invariant to go-services / supervisor-only changes, so
+# The slim web image is invariant to go-services-only changes (status, assets), so
 # those deploys produce a byte-for-byte identical image (same content-addressed
 # ID). Spinning up a second container, waiting for health, and reloading Apache
 # would all be pure overhead with nothing new to serve. We skip ONLY when the

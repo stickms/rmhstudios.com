@@ -4,7 +4,7 @@
 #
 # We ship the "compat" build: no pthreads, so it needs no SharedArrayBuffer and
 # no cross-origin isolation headers. Balatro's threads are run as coroutines by
-# lib/balatro/rmh_web.lua instead.
+# features/balatro/engine/rmh_web.lua instead.
 #
 # Three patches, each anchored on an exact string and checked:
 # 1. Emscripten's FS object is not exported on the module, and the loader needs
@@ -15,9 +15,9 @@
 #    visible); SDL, which only ever sees a windowed LÖVE window, otherwise exits
 #    it the moment LÖVE resizes the window to the new size.
 # 3. emscripten_get_device_pixel_ratio asks Module.rmhPixelRatio() when present,
-#    so the page can clamp the drawing-buffer resolution (lib/balatro/runtime.ts).
+#    so the page can clamp the drawing-buffer resolution (features/balatro/engine/runtime.ts).
 #
-# It also writes lib/balatro/engine.json, the size and SHA-256 of both files. The
+# It also writes features/balatro/engine/engine.json, the size and SHA-256 of both files. The
 # page requests them as love.js?v=<sha> (runtime.ts): the paths are not hashed and
 # Cloudflare keeps them for hours, so without the version a re-vendored engine
 # reaches players only after the old one expires from every cache.
@@ -57,7 +57,7 @@ for old, new in patches:
 open(out, 'w', encoding='utf-8').write(js)
 PY
 cp "$WORK/package/LICENSE" "$OUT/LICENSE.txt"
-python3 -I - "$OUT" "$ROOT/lib/balatro/engine.json" <<'PY'
+python3 -I - "$OUT" "$ROOT/features/balatro/engine/engine.json" <<'PY'
 import hashlib, json, os, sys
 out, manifest = sys.argv[1], sys.argv[2]
 info = {}

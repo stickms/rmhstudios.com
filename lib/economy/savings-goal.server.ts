@@ -9,7 +9,7 @@
  * only write to money-adjacent state is `reachedAt` on the goal's own row.
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { getShopItem } from '@/lib/shop/catalog';
 import { isTradable } from '@/lib/market/tradable';
 import { project, progress, type DailyNet } from '@/lib/economy/savings-goal';
@@ -42,11 +42,12 @@ export class SavingsGoalError extends Error {
  */
 export async function getNetHistory(userId: string, now: Date = new Date()): Promise<DailyNet[]> {
   const key = historyKey(userId);
-  const hit = apiCache.get<DailyNet[]>(key);
-  if (hit) return hit;
-
-  const since = new Date((Math.floor(now.getTime() / DAY_MS) - HISTORY_DAYS) * DAY_MS);
-  const rows = await prisma.$queryRaw<{ day: number; net: bigint }[]>`
+  return cached(
+    key,
+    HISTORY_TTL_MS,
+    async () => {
+      const since = new Date((Math.floor(now.getTime() / DAY_MS) - HISTORY_DAYS) * DAY_MS);
+      const rows = await prisma.$queryRaw<{ day: number; net: bigint }[]>`
     SELECT floor(extract(epoch FROM "createdAt") / 86400)::int AS day,
            COALESCE(SUM(CASE WHEN "recipientId" = ${userId} THEN amount ELSE 0 END), 0)
          - COALESCE(SUM(CASE WHEN "senderId" = ${userId} THEN amount ELSE 0 END), 0) AS net
@@ -55,9 +56,11 @@ export async function getNetHistory(userId: string, now: Date = new Date()): Pro
       AND "createdAt" >= ${since}
     GROUP BY 1
   `;
-  const history = rows.map((r) => ({ day: Number(r.day), net: Number(r.net) }));
-  apiCache.set(key, history, HISTORY_TTL_MS);
-  return history;
+      const history = rows.map((r) => ({ day: Number(r.day), net: Number(r.net) }));
+      return history;
+    },
+    { l2: false },
+  );
 }
 
 export async function listSavingsGoals(

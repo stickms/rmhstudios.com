@@ -6,8 +6,14 @@
   },
   "couplet": {
     "type": "couplet",
-    "zh": ["朱華傾頹人未盡", "天命輓歌夢難終"],
-    "en": ["The Vermilion Garden falls yet none are finished", "The Elegy of the Mandate — the dream will not end"]
+    "zh": [
+      "朱華傾頹人未盡",
+      "天命輓歌夢難終"
+    ],
+    "en": [
+      "The Vermilion Garden falls yet none are finished",
+      "The Elegy of the Mandate — the dream will not end"
+    ]
   },
   "passages": [
     {

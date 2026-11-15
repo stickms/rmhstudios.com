@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Active session (device) management — lists the signed-in user's sessions and
  * lets them revoke any single one or log out of all other devices. Rendered on
@@ -7,10 +5,19 @@
  * authClient.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { Laptop, LogOut, Monitor, Smartphone, Tablet } from 'lucide-react';
+import { toast } from '@/lib/toast';
+import {
+  Laptop,
+  LogOut,
+  Smartphone,
+  Tablet,
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
@@ -19,124 +26,368 @@ import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface SessionRow {
   id: string;
   token: string;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  createdAt?: string | Date | null;
-  updatedAt?: string | Date | null;
+  ipAddress?:
+    | string
+    | null;
+  userAgent?:
+    | string
+    | null;
+  createdAt?:
+    | string
+    | Date
+    | null;
+  updatedAt?:
+    | string
+    | Date
+    | null;
 }
 
 /** Best-effort friendly device label from a User-Agent string. */
-function describeDevice(ua?: string | null): {
+function describeDevice(
+  ua?:
+    | string
+    | null,
+): {
   label: string;
-  kind: 'mobile' | 'tablet' | 'desktop';
+  kind:
+    | 'mobile'
+    | 'tablet'
+    | 'desktop';
 } {
-  if (!ua) return { label: 'Unknown device', kind: 'desktop' };
-  const isTablet = /iPad|Tablet/i.test(ua);
-  const isMobile = !isTablet && /Mobi|Android|iPhone/i.test(ua);
-  const os = /Windows/i.test(ua)
-    ? 'Windows'
-    : /Mac OS X|Macintosh/i.test(ua)
-      ? 'macOS'
-      : /Android/i.test(ua)
-        ? 'Android'
-        : /iPhone|iPad|iOS/i.test(ua)
-          ? 'iOS'
-          : /Linux/i.test(ua)
-            ? 'Linux'
-            : '';
-  const browser = /Edg\//i.test(ua)
-    ? 'Edge'
-    : /OPR\/|Opera/i.test(ua)
-      ? 'Opera'
-      : /Chrome\//i.test(ua)
-        ? 'Chrome'
-        : /Firefox\//i.test(ua)
-          ? 'Firefox'
-          : /Safari\//i.test(ua)
-            ? 'Safari'
-            : 'Browser';
-  const label = [browser, os].filter(Boolean).join(' · ') || 'Unknown device';
-  return { label, kind: isTablet ? 'tablet' : isMobile ? 'mobile' : 'desktop' };
+  if (
+    !ua
+  )
+    return {
+      label:
+        'Unknown device',
+      kind: 'desktop',
+    };
+  const isTablet =
+    /iPad|Tablet/i.test(
+      ua,
+    );
+  const isMobile =
+    !isTablet &&
+    /Mobi|Android|iPhone/i.test(
+      ua,
+    );
+  const os =
+    /Windows/i.test(
+      ua,
+    )
+      ? 'Windows'
+      : /Mac OS X|Macintosh/i.test(
+            ua,
+          )
+        ? 'macOS'
+        : /Android/i.test(
+              ua,
+            )
+          ? 'Android'
+          : /iPhone|iPad|iOS/i.test(
+                ua,
+              )
+            ? 'iOS'
+            : /Linux/i.test(
+                  ua,
+                )
+              ? 'Linux'
+              : '';
+  const browser =
+    /Edg\//i.test(
+      ua,
+    )
+      ? 'Edge'
+      : /OPR\/|Opera/i.test(
+            ua,
+          )
+        ? 'Opera'
+        : /Chrome\//i.test(
+              ua,
+            )
+          ? 'Chrome'
+          : /Firefox\//i.test(
+                ua,
+              )
+            ? 'Firefox'
+            : /Safari\//i.test(
+                  ua,
+                )
+              ? 'Safari'
+              : 'Browser';
+  const label =
+    [
+      browser,
+      os,
+    ]
+      .filter(
+        Boolean,
+      )
+      .join(
+        ' · ',
+      ) ||
+    'Unknown device';
+  return {
+    label,
+    kind: isTablet
+      ? 'tablet'
+      : isMobile
+        ? 'mobile'
+        : 'desktop',
+  };
 }
 
 export function SessionManager() {
-  const { t } = useTranslation('feed');
-  const confirm = useConfirm();
-  const { data: session } = useSession();
-  const currentToken = (session as { session?: { token?: string } } | null)?.session?.token;
-  const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'feed',
+    );
+  const confirm =
+    useConfirm();
+  const {
+    data: session,
+  } =
+    useSession();
+  const currentToken =
+    (
+      session as {
+        session?: {
+          token?: string;
+        };
+      } | null
+    )
+      ?.session
+      ?.token;
+  const [
+    sessions,
+    setSessions,
+  ] =
+    useState<
+      SessionRow[]
+    >(
+      [],
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      true,
+    );
+  // Steel M9: the device list replaces the spinner.
+  const arrival =
+    useArrival(
+      !loading,
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await authClient.listSessions();
-      if (res.data) setSessions(res.data as unknown as SessionRow[]);
-    } catch {
-      // Signed out or network error — leave the list empty.
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const load =
+    useCallback(async () => {
+      setLoading(
+        true,
+      );
+      try {
+        const res =
+          await authClient.listSessions();
+        if (
+          res.data
+        )
+          setSessions(
+            res.data as unknown as SessionRow[],
+          );
+      } catch {
+        // Signed out or network error — leave the list empty.
+      } finally {
+        setLoading(
+          false,
+        );
+      }
+    }, []);
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [
+    load,
+  ]);
 
-  const revokeOne = async (row: SessionRow) => {
-    const confirmed = await confirm({
-      title: t('session-revoke-title', { defaultValue: 'Sign this device out?' }),
-      description: t('session-revoke-confirm', {
-        defaultValue: 'It will need to log in again.',
-      }),
-      confirmLabel: t('session-revoke', { defaultValue: 'Sign out device' }),
-      danger: true,
-    });
-    if (!confirmed) return;
-    setBusy(true);
-    try {
-      await authClient.revokeSession({ token: row.token });
-      setSessions((prev) => prev.filter((s) => s.token !== row.token));
-      toast.success(t('session-revoked', { defaultValue: 'Device signed out.' }));
-    } catch {
-      toast.error(t('session-revoke-failed', { defaultValue: 'Could not sign that device out.' }));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const revokeOthers = async () => {
-    const confirmed = await confirm({
-      title: t('session-revoke-others-title', { defaultValue: 'Sign out of every other device?' }),
-      description: t('session-revoke-others-confirm', {
-        defaultValue: 'You will stay signed in here.',
-      }),
-      confirmLabel: t('sessions-revoke-others', { defaultValue: 'Log out of all other devices' }),
-      danger: true,
-    });
-    if (!confirmed) return;
-    setBusy(true);
-    try {
-      await authClient.revokeOtherSessions();
-      toast.success(t('session-revoked-others', { defaultValue: 'All other devices signed out.' }));
-      await load();
-    } catch {
-      toast.error(
-        t('session-revoke-others-failed', { defaultValue: 'Could not sign out other devices.' }),
+  const revokeOne =
+    async (
+      row: SessionRow,
+    ) => {
+      const confirmed =
+        await confirm(
+          {
+            title:
+              t(
+                'session-revoke-title',
+                {
+                  defaultValue:
+                    'Sign this device out?',
+                },
+              ),
+            description:
+              t(
+                'session-revoke-confirm',
+                {
+                  defaultValue:
+                    'It will need to log in again.',
+                },
+              ),
+            confirmLabel:
+              t(
+                'session-revoke',
+                {
+                  defaultValue:
+                    'Sign out device',
+                },
+              ),
+            danger: true,
+          },
+        );
+      if (
+        !confirmed
+      )
+        return;
+      setBusy(
+        true,
       );
-    } finally {
-      setBusy(false);
-    }
-  };
+      try {
+        await authClient.revokeSession(
+          {
+            token:
+              row.token,
+          },
+        );
+        setSessions(
+          (
+            prev,
+          ) =>
+            prev.filter(
+              (
+                s,
+              ) =>
+                s.token !==
+                row.token,
+            ),
+        );
+        toast.success(
+          t(
+            'session-revoked',
+            {
+              defaultValue:
+                'Device signed out.',
+            },
+          ),
+        );
+      } catch {
+        toast.error(
+          t(
+            'session-revoke-failed',
+            {
+              defaultValue:
+                'Could not sign that device out.',
+            },
+          ),
+        );
+      } finally {
+        setBusy(
+          false,
+        );
+      }
+    };
 
-  const otherCount = sessions.filter((s) => s.token !== currentToken).length;
+  const revokeOthers =
+    async () => {
+      const confirmed =
+        await confirm(
+          {
+            title:
+              t(
+                'session-revoke-others-title',
+                {
+                  defaultValue:
+                    'Sign out of every other device?',
+                },
+              ),
+            description:
+              t(
+                'session-revoke-others-confirm',
+                {
+                  defaultValue:
+                    'You will stay signed in here.',
+                },
+              ),
+            confirmLabel:
+              t(
+                'sessions-revoke-others',
+                {
+                  defaultValue:
+                    'Log out of all other devices',
+                },
+              ),
+            danger: true,
+          },
+        );
+      if (
+        !confirmed
+      )
+        return;
+      setBusy(
+        true,
+      );
+      try {
+        await authClient.revokeOtherSessions();
+        toast.success(
+          t(
+            'session-revoked-others',
+            {
+              defaultValue:
+                'All other devices signed out.',
+            },
+          ),
+        );
+        await load();
+      } catch {
+        toast.error(
+          t(
+            'session-revoke-others-failed',
+            {
+              defaultValue:
+                'Could not sign out other devices.',
+            },
+          ),
+        );
+      } finally {
+        setBusy(
+          false,
+        );
+      }
+    };
 
-  // `.glass-pane` — the singular-panel tier, and what the three siblings
+  const otherCount =
+    sessions.filter(
+      (
+        s,
+      ) =>
+        s.token !==
+        currentToken,
+    ).length;
+
+  //`.`— the singular-panel tier, and what the three siblings
   // stacked directly under this one in /settings/security already use. This
   // was `bg-site-surface/40`, which is also the alpha-stacking bug:
   // `--site-surface` is already rgba (0.065 on ultra) and Tailwind v4's
@@ -144,70 +395,176 @@ export function SessionManager() {
   // column, two materials, and two of them nearly invisible.
   return (
     <SettingsSection
-      icon={Monitor}
-      title={t('sessions-title', { defaultValue: 'Active sessions' })}
-      description={t('sessions-description', {
-        defaultValue:
-          'Devices currently signed in to your account. Revoke any you don’t recognize.',
-      })}
+      title={t(
+        'sessions-title',
+        {
+          defaultValue:
+            'Active sessions',
+        },
+      )}
+      description={t(
+        'sessions-description',
+        {
+          defaultValue:
+            'Devices currently signed in to your account. Revoke any you don’t recognize.',
+        },
+      )}
     >
       {loading ? (
         <div className="flex justify-center py-6">
           <Spinner />
         </div>
-      ) : sessions.length === 0 ? (
-        <p className="text-sm text-site-text-dim">
-          {t('sessions-empty', { defaultValue: 'No active sessions found.' })}
+      ) : sessions.length ===
+        0 ? (
+        <p
+          className={cn(
+            'text-sm text-site-text-muted',
+            arrival,
+          )}
+        >
+          {t(
+            'sessions-empty',
+            {
+              defaultValue:
+                'No active sessions found.',
+            },
+          )}
         </p>
       ) : (
-        <div className="glass-fill rounded-site-sm">
+        <div
+          className={cn(
+            'rounded-site-sm',
+            arrival,
+          )}
+        >
           <ul className="divide-y divide-site-border">
-            {sessions.map((s) => {
-              const { label, kind } = describeDevice(s.userAgent);
-              const Icon = kind === 'mobile' ? Smartphone : kind === 'tablet' ? Tablet : Laptop;
-              const isCurrent = s.token === currentToken;
-              return (
-                <li key={s.id} className="flex items-center gap-3 px-3 py-2">
-                  <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-site-text">
-                      {label}
-                      {isCurrent && (
-                        <span className="ms-2 rounded-full bg-site-accent/15 px-2 py-0.5 text-xs font-medium text-site-accent">
-                          {t('session-current', { defaultValue: 'This device' })}
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-site-text-dim">
-                      {s.ipAddress ? `${s.ipAddress} · ` : ''}
-                      {s.updatedAt
-                        ? t('session-active', {
-                            defaultValue: 'Active {{when}}',
-                            when: formatDistanceToNow(new Date(s.updatedAt), { addSuffix: true }),
-                          })
-                        : null}
-                    </p>
-                  </div>
-                  {!isCurrent && (
-                    <IconButton
-                      icon={LogOut}
-                      label={t('session-revoke', { defaultValue: 'Sign out device' })}
-                      onClick={() => revokeOne(s)}
-                      disabled={busy}
-                      className="hover:text-site-danger"
+            {sessions.map(
+              (
+                s,
+              ) => {
+                const {
+                  label,
+                  kind,
+                } =
+                  describeDevice(
+                    s.userAgent,
+                  );
+                const Icon =
+                  kind ===
+                  'mobile'
+                    ? Smartphone
+                    : kind ===
+                        'tablet'
+                      ? Tablet
+                      : Laptop;
+                const isCurrent =
+                  s.token ===
+                  currentToken;
+                return (
+                  <li
+                    key={
+                      s.id
+                    }
+                    className="flex items-center gap-3 px-3 py-2"
+                  >
+                    <Icon
+                      className="h-4 w-4 shrink-0 text-site-text-muted"
+                      aria-hidden
                     />
-                  )}
-                </li>
-              );
-            })}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-site-text">
+                        {
+                          label
+                        }
+                        {isCurrent && (
+                          <span className="ms-2 rounded-full bg-site-accent/15 px-2 py-0.5 text-xs font-medium text-site-accent">
+                            {t(
+                              'session-current',
+                              {
+                                defaultValue:
+                                  'This device',
+                              },
+                            )}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-site-text-muted">
+                        {s.ipAddress
+                          ? `${s.ipAddress} · `
+                          : ''}
+                        {s.updatedAt
+                          ? t(
+                              'session-active',
+                              {
+                                defaultValue:
+                                  'Active {{when}}',
+                                when: formatDistanceToNow(
+                                  new Date(
+                                    s.updatedAt,
+                                  ),
+                                  {
+                                    addSuffix: true,
+                                  },
+                                ),
+                              },
+                            )
+                          : null}
+                      </p>
+                    </div>
+                    {!isCurrent && (
+                      <IconButton
+                        icon={
+                          LogOut
+                        }
+                        label={t(
+                          'session-revoke',
+                          {
+                            defaultValue:
+                              'Sign out device',
+                          },
+                        )}
+                        onClick={() =>
+                          revokeOne(
+                            s,
+                          )
+                        }
+                        disabled={
+                          busy
+                        }
+                        className="hover:text-site-danger"
+                      />
+                    )}
+                  </li>
+                );
+              },
+            )}
           </ul>
         </div>
       )}
 
-      {otherCount > 0 && (
-        <Button variant="outline" onClick={revokeOthers} disabled={busy} className="gap-2">
-          <LogOut className="h-4 w-4" aria-hidden />
-          {t('sessions-revoke-others', { defaultValue: 'Log out of all other devices' })}
+      {otherCount >
+        0 && (
+        <Button
+          variant="default"
+          onClick={
+            revokeOthers
+          }
+          disabled={
+            busy
+          }
+          className="gap-2"
+        >
+          <LogOut
+            className="h-4 w-4"
+            aria-hidden
+          />
+          {t(
+            'sessions-revoke-others',
+            {
+              defaultValue:
+                'Log out of all other devices',
+            },
+          )}
         </Button>
       )}
     </SettingsSection>

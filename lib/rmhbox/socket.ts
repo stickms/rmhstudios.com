@@ -9,15 +9,13 @@
  * Implementation: docs/rmhbox/implementation/phase-4.md §5
  */
 
-'use client';
-
 import type { Socket } from 'socket.io-client';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import type { PeerWaitState } from '@/lib/shared/realtime/types';
 import { useRMHboxStore } from './store';
 import { S2C } from './events';
-import { toast } from './toast-store';
+import { toast } from '@/lib/shared/app-toast';
 
 let client: RealtimeClient | null = null;
 

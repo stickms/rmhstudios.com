@@ -16,7 +16,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
    * ```
    *
    * — the canonical layout-thrash shape, run on every keystroke. See
-   * docs/performance-audit-2026-08-12.md §1.7.
+   * docs/archive/2026/performance-audit-2026-08-12.md §1.7.
    *
    * Engines without `field-sizing` are unaffected: the `@supports` block in
    * globals.css simply does not apply, and the field behaves exactly as a
@@ -26,22 +26,38 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   autosize?: boolean;
 }
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, autosize = false, ...props }, ref) => {
-    return (
-      <textarea
-        data-slot="textarea"
-        className={cn(
-          'glass-inset flex min-h-28 w-full rounded-site-sm text-site-text px-4 py-3 text-base sm:text-sm leading-relaxed transition-[color,border-color,background-color] duration-site-fast placeholder:text-site-text-muted hover:border-site-border-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/30 focus-visible:border-site-accent aria-invalid:border-site-danger disabled:cursor-not-allowed disabled:opacity-50',
-          autosize && 'textarea-autosize',
-          className,
-        )}
-        ref={ref}
-        {...props}
-      />
-    );
-  },
-);
-Textarea.displayName = 'Textarea';
+const Textarea =
+  React.forwardRef<
+    HTMLTextAreaElement,
+    TextareaProps
+  >(
+    (
+      {
+        className,
+        autosize = false,
+        ...props
+      },
+      ref,
+    ) => {
+      return (
+        <textarea
+          data-slot="textarea"
+          className={cn(
+            // Steel K4 on a multi-line field: the same surface, border and 12px side padding.
+            'flex min-h-28 w-full rounded-site border border-site-border bg-site-surface px-3 py-2.5 text-base sm:text-sm leading-relaxed text-site-text transition-[border-color] duration-(--m1) ease-[ease] placeholder:text-site-text-muted aria-invalid:border-site-danger disabled:cursor-not-allowed disabled:opacity-50',
+            autosize &&
+              'textarea-autosize',
+            className,
+          )}
+          ref={
+            ref
+          }
+          {...props}
+        />
+      );
+    },
+  );
+Textarea.displayName =
+  'Textarea';
 
 export { Textarea };

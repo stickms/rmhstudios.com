@@ -1,11 +1,13 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from'react';
 import { Lock, Loader2 } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
+import { unlockPostApi } from '@/lib/feed/rmhark-actions.contract';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
 
 /** Paywall card shown in place of a locked post's content. */
 export function PostLockedCard({
@@ -23,15 +25,14 @@ export function PostLockedCard({
  const unlock = async () => {
  setLoading(true);
  try {
- const res = await fetch(`/api/rmharks/${postId}/unlock`, { method:'POST', credentials:'include'});
- const data = await res.json().catch(() => ({}));
- if (res.ok) {
+ const data = await api(unlockPostApi, { params: { id: postId } });
  onUnlocked(data.content ??'');
  toast.success(t('unlocked', { defaultValue:'Unlocked!'}));
- } else if (res.status === 401) {
+ } catch (e) {
+ if (e instanceof HttpError && e.status === 401) {
  toast.error(t('sign-in-to-unlock', { defaultValue:'Sign in to unlock this post.'}));
  } else {
- toast.error(data.error || t('could-not-unlock', { defaultValue:'Could not unlock'}));
+ toast.error(serverError(e) || t('could-not-unlock', { defaultValue:'Could not unlock'}));
  }
  } finally {
  setLoading(false);
@@ -39,13 +40,13 @@ export function PostLockedCard({
  };
 
  return (
- <div className="mt-2 flex flex-col items-center gap-2 rounded-site border border-dashed border-site-border glass-fill px-4 py-6 text-center">
- <div className="glass-fill rounded-full p-2">
+ <div className="mt-2 flex flex-col items-center gap-2 rounded-site border border-dashed border-site-border px-4 py-6 text-center">
+ <div className="rounded-full p-2">
  <Lock className="h-5 w-5 text-site-accent"/>
  </div>
  <p className="text-sm font-medium text-site-text">{t('post-locked', { defaultValue:'This post is locked'})}</p>
  <Button
- variant="accent"
+ variant="default"
  size="sm"
  disabled={loading}
  onClick={(e) => {

@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
@@ -36,9 +34,7 @@ const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => {
-  // `.glass-scrim` is a viewport-covering `backdrop-filter`, so keep animation
-  // off it — Chromium re-blurs the whole layer every frame that anything above
-  // it moves, whatever the damage's size or position.
+  // Steel S5: the scrim is `--site-bg` at 80% (`.glass-scrim`): no blur. It fades in 160 ms with the dialog (M5).
   return (
     <DialogPrimitive.Overlay
       ref={ref}
@@ -65,6 +61,19 @@ const SHEET_QUERY = '(max-width: 639px) and (pointer: coarse)';
  * GIF) had every one of those buttons covered at its centre on a phone.
  */
 const SHEET_HANDLE_H = 'calc(max(0.5rem, env(safe-area-inset-top)) + 1.75rem)';
+
+/**
+ * Records what had focus when the dialog opened. It renders (nothing) as a child of the content,
+ * so its first render runs after the dialog is told to open and before Radix moves focus inside.
+ */
+function OpenerCapture({ into }: { into: React.MutableRefObject<HTMLElement | null> }) {
+  React.useState(() => {
+    const active = typeof document === 'undefined' ? null : document.activeElement;
+    into.current = active instanceof HTMLElement && active !== document.body ? active : null;
+    return null;
+  });
+  return null;
+}
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
@@ -96,10 +105,12 @@ const DialogContent = React.forwardRef<
       container,
       hideClose = false,
       style,
+      onCloseAutoFocus,
       ...props
     },
     ref,
   ) => {
+  const openerRef = React.useRef<HTMLElement | null>(null);
   const { t } = useTranslation('c-ui');
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const overlayRef = React.useRef<HTMLDivElement | null>(null);
@@ -131,8 +142,6 @@ const DialogContent = React.forwardRef<
       const height = el.offsetHeight || 1;
       if (overlay) overlay.style.opacity = Math.max(0, 1 - (y / height) * 1.1).toFixed(3);
     },
-    // The sheet reports its drag to the jelly bus (lib/jelly/drag-report.ts).
-    jellyTarget: () => contentRef.current,
     onDismiss: () => closeRef.current?.click(),
     onSettle: () => {
       // Sprung back: hand both elements to the stylesheet again.
@@ -149,15 +158,27 @@ const DialogContent = React.forwardRef<
         data-slot="dialog-content"
         data-mobile-fullscreen={mobileFullscreen || undefined}
         className={cn(
-          'glass-overlay fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-var(--site-page-gutter)-var(--site-page-gutter))] w-[calc(100dvw-var(--site-page-gutter)-var(--site-page-gutter))] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-5 overflow-y-auto rounded-site p-5 text-site-text sm:w-full sm:gap-6 sm:p-6',
+          'surface-overlay fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-var(--site-page-gutter)-var(--site-page-gutter))] w-[calc(100dvw-var(--site-page-gutter)-var(--site-page-gutter))] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-5 overflow-y-auto rounded-site p-5 text-site-text sm:w-full sm:gap-6 sm:p-6',
           mobileFullscreen &&
             'inset-0 left-0 top-0 h-dvh max-h-none w-dvw max-w-none translate-x-0 translate-y-0 content-start rounded-none px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[85dvh] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:content-normal sm:rounded-site sm:p-6',
           className,
         )}
         // Inline, so it wins over a caller's `p-0` as well as the default padding.
         style={sheet ? { ...style, paddingTop: SHEET_HANDLE_H } : style}
+        // Radix returns focus to its `DialogTrigger`. Most dialogs here are opened by state
+        // (`open={...}`) and have none, so closing one dropped focus on <body> and a keyboard
+        // user started again from the top of the page. Focus goes back to whatever opened it.
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          const opener = openerRef.current;
+          if (!event.defaultPrevented && opener?.isConnected) {
+            event.preventDefault();
+            opener.focus();
+          }
+        }}
         {...props}
       >
+        <OpenerCapture into={openerRef} />
         {sheet && (
           // The grab handle. Decorative and pointer-only — the close button below
           // is the accessible, keyboard-operable way out, and this never becomes
@@ -180,13 +201,12 @@ const DialogContent = React.forwardRef<
           className={cn(
             // 44px target centred on the title's first line: p-5 (sm:p-6) + half an 18px
             // line = 29px (33px), so top-2.5 (sm:top-3) puts the centre at 32px (34px).
-            'absolute right-3 inline-flex size-11 items-center justify-center rounded-[var(--site-control-radius)] text-site-text-muted opacity-80 transition-opacity hover:opacity-100 hover:bg-site-surface-hover outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none',
+            'absolute right-3 inline-flex size-11 items-center justify-center rounded-site text-site-text-muted transition-colors duration-(--m1) ease-[ease] hover:bg-site-bg-subtle hover:text-site-text disabled:pointer-events-none',
             mobileFullscreen
               ? 'top-[max(0.5rem,env(safe-area-inset-top))] sm:top-3'
               : 'top-2.5 sm:top-3',
             hideClose && 'hidden',
           )}
-          data-fluid-press=""
         >
           <X className="h-4 w-4" aria-hidden />
           <span className="sr-only">{t('close', { defaultValue: 'Close' })}</span>
@@ -216,7 +236,7 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn('font-display text-xl font-semibold leading-snug tracking-tight', className)}
+    className={cn('t-heading', className)}
     {...props}
   />
 ));

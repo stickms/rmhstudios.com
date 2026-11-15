@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Compact achievement showcase for profile headers: the user's three best
  * unlocked badges (highest tier, then most recent) plus an unlocked count.
@@ -10,11 +8,15 @@ import { useEffect, useState } from'react';
 import { useTranslation } from'react-i18next';
 import { Trophy } from'lucide-react';
 import { TIER_COLORS } from'@/lib/achievements/catalog';
+import { api } from'@/lib/contract/client';
+import { getUserAchievementsApi } from'@/lib/achievements/achievements.contract';
 import {
  pickAchievementStrip,
  type AchievementStripData,
  type StripAchievement,
 } from'@/lib/achievements/strip';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export function AchievementBadgeStrip({
  userId,
@@ -32,20 +34,15 @@ export function AchievementBadgeStrip({
  // Read once: a later client refetch of the profile carries no strip, and that
  // must not trigger a fetch for data the page already painted.
  const [seeded] = useState(Boolean(initial));
+ // Steel M9: a strip fetched here appears in a gap; a server-rendered one does not fade.
+ const arrival = useArrival(top.length > 0);
 
  useEffect(() => {
  if (seeded) return;
  let cancelled = false;
  (async () => {
  try {
- const res = await fetch(`/api/achievements/${encodeURIComponent(userId)}`, {
- credentials:'include',
- });
- if (!res.ok) return;
- const data = (await res.json()) as {
- stats: { unlocked: number };
- achievements: StripAchievement[];
- };
+ const data = await api(getUserAchievementsApi, { params: { userId } });
  if (cancelled) return;
  const strip = pickAchievementStrip(data);
  setTop(strip.top);
@@ -64,7 +61,10 @@ export function AchievementBadgeStrip({
  return (
  <button
  onClick={onShowAll}
- className="mb-3 flex items-center gap-2 rounded-full glass-fill py-1 pl-2 pr-3 text-sm transition-colors hover:bg-site-surface-hover"
+ className={cn(
+ 'mb-3 flex items-center gap-2 rounded-full py-1 pl-2 pr-3 text-sm transition-colors hover:bg-site-surface-hover',
+ arrival,
+ )}
  title={t('achievements-showcase', { defaultValue:'View all achievements'})}
  >
  <span className="flex items-center">
@@ -80,7 +80,7 @@ export function AchievementBadgeStrip({
  </span>
  ))}
  </span>
- <span className="flex items-center gap-1 text-site-text-dim">
+ <span className="flex items-center gap-1 text-site-text-muted">
  <Trophy className="h-3.5 w-3.5 text-site-warning"aria-hidden />
  {t('achievements-count', { count: unlockedCount, defaultValue:'{{count}} achievements'})}
  </span>

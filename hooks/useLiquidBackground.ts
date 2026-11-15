@@ -1,6 +1,5 @@
-'use client';
-
 import { useEffect } from 'react';
+import { clamp } from '@/lib/core/math';
 
 /**
  * Makes the aurora canvas reactive to movement — the only motion the site's
@@ -92,10 +91,6 @@ const AURORA_HOST = '.site-aurora';
 /** localStorage consent flag for the iOS motion-permission gate (§5.5x C.3). */
 const MOTION_OK_KEY = 'rmh-motion-ok';
 
-function clamp(n: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, n));
-}
-
 export function useLiquidBackground(): void {
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -125,6 +120,9 @@ export function useLiquidBackground(): void {
      * the shell, in which case the aurora simply stays at its resting offset.
      */
     const aurora = document.querySelector<HTMLElement>(AURORA_HOST);
+    // Steel removed the aurora (R1: no gradient on the ground), so the host is not rendered any more and there is nothing
+    // for a pointer or tilt listener to steer. Stay detached; the hook itself is deleted with the rest of the material.
+    if (!aurora) return;
     // Last offset actually written, so a pointer that jitters inside a pixel
     // writes nothing. Seeded off-grid so the first frame always lands.
     let lastMx = Number.NaN;

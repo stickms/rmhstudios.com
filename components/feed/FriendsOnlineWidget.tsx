@@ -1,5 +1,3 @@
-'use client';
-
 /**
  *"Friends online"widget — surfaces followed users who are online now and
  * what joinable room they're in, so the multiplayer apps stop depending on
@@ -57,7 +55,7 @@ export function FriendsOnlineWidget({ onSettled }: { onSettled?: () => void } = 
  if (!session?.user || !friends || friends.length === 0) return null;
 
  return (
- <section className="rad-live__card glass-fill">
+ <section className="rad-live__card surface-card">
  <h2>
  <Users aria-hidden />
  {t('friends-online', { defaultValue:'Friends online'})}
@@ -81,14 +79,14 @@ export function FriendsOnlineWidget({ onSettled }: { onSettled?: () => void } = 
  </span>
  <span className="min-w-0 flex-1">
  <span className="block truncate text-sm font-medium text-site-text">{name}</span>
- <span className="block truncate text-xs text-site-text-dim">
+ <span className="block truncate text-xs text-site-text-muted">
  {activity
  ? t(`activity-${activity.kind}`, { defaultValue: activity.label })
  : t('activity-online', { defaultValue:'Online'})}
  </span>
  </span>
  {activity && (
- <span className="shrink-0 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-semibold text-site-accent">
+ <span className="shrink-0 rounded-full bg-site-bg-subtle px-2 py-0.5 text-xs font-semibold text-site-accent">
  {t('activity-join', { defaultValue:'Join'})}
  </span>
  )}

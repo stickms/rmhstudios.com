@@ -2,7 +2,7 @@
  * N1 — community post flair (server-only).
  */
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import {
   CHALLENGE_WINNER_FLAIR,
   FLAIR_MAX_PER_COMMUNITY,
@@ -19,21 +19,25 @@ function toDTO(f: { id: string; name: string; color: string }): FlairDTO {
 }
 
 export async function listFlairs(communityId: string): Promise<FlairDTO[]> {
-  const hit = apiCache.get<FlairDTO[]>(key(communityId));
-  if (hit) return hit;
-  const rows = await prisma.communityFlair.findMany({
-    where: { communityId },
-    orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
-    take: FLAIR_MAX_PER_COMMUNITY + 1,
-    select: { id: true, name: true, color: true },
-  });
-  const flairs = rows.map(toDTO);
-  apiCache.set(key(communityId), flairs, TTL_MS);
-  return flairs;
+  return cached(
+    key(communityId),
+    TTL_MS,
+    async () => {
+      const rows = await prisma.communityFlair.findMany({
+        where: { communityId },
+        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+        take: FLAIR_MAX_PER_COMMUNITY + 1,
+        select: { id: true, name: true, color: true },
+      });
+      const flairs = rows.map(toDTO);
+      return flairs;
+    },
+    { l2: false },
+  );
 }
 
 export function bustFlairs(communityId: string): void {
-  apiCache.invalidate(key(communityId));
+  void invalidateCached(key(communityId));
 }
 
 export class FlairError extends Error {

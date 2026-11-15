@@ -1,14 +1,14 @@
-'use client';
-
 /** N4 — the AutoMod rules builder. */
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
@@ -39,6 +39,7 @@ const splitList = (raw: string) =>
 export function ModAutomod({ slug }: { slug: string }) {
   const { t } = useTranslation('f-communities-plus');
   const [rules, setRules] = useState<RuleRow[] | null>(null);
+  const arrival = useArrival(rules !== null);
   const [name, setName] = useState('');
   const [action, setAction] = useState<AutomodAction>('hold');
   const [appliesTo, setAppliesTo] = useState<AutomodAppliesTo>('both');
@@ -159,7 +160,7 @@ export function ModAutomod({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={cn('flex flex-col gap-4', arrival)}>
       <p className="text-xs text-site-text-muted">
         {t('automod-intro', {
           defaultValue:
@@ -168,7 +169,7 @@ export function ModAutomod({ slug }: { slug: string }) {
       </p>
       <ul className="flex flex-col gap-2">
         {rules.map((r) => (
-          <li key={r.id} className="glass-fill flex items-start gap-3 p-3">
+          <li key={r.id} className="flex items-start gap-3 p-3">
             <Switch
               checked={r.enabled}
               onCheckedChange={(v) => void toggle(r, v)}
@@ -199,7 +200,7 @@ export function ModAutomod({ slug }: { slug: string }) {
       </ul>
 
       <form
-        className="glass-pane flex flex-col gap-3 p-4"
+        className="flex flex-col gap-3 p-4"
         onSubmit={(e) => {
           e.preventDefault();
           void add();
@@ -307,7 +308,7 @@ export function ModAutomod({ slug }: { slug: string }) {
         <div className="flex justify-end">
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             size="sm"
             loading={saving}
             disabled={!name.trim() || !hasCondition || rules.length >= AUTOMOD_MAX_RULES}

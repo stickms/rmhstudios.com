@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * N6 — community census. Members answer once; results are aggregate-only and are
  * published when a mod closes the census (or its end date passes) AND at least
@@ -8,12 +6,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BarChart3, Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { communityApi, plusFetch } from '@/components/communities/plus-api';
 import { CENSUS_MAX_QUESTIONS } from '@/lib/communities/census';
@@ -25,7 +25,15 @@ interface DraftQuestion {
   options: string;
 }
 
-function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void }) {
+function CreateCensus({
+  slug,
+  onCreated,
+  className,
+}: {
+  slug: string;
+  onCreated: () => void;
+  className?: string | undefined;
+}) {
   const { t } = useTranslation('f-communities-plus');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -65,7 +73,7 @@ function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void
 
   return (
     <form
-      className="glass-pane m-3 flex flex-col gap-3 p-4"
+      className={cn('m-3 flex flex-col gap-3 p-4', className)}
       onSubmit={(e) => {
         e.preventDefault();
         void save();
@@ -98,7 +106,7 @@ function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void
         />
       </label>
       {questions.map((q, i) => (
-        <fieldset key={i} className="glass-inset flex flex-col gap-2 rounded-site p-4">
+        <fieldset key={i} className="surface-field flex flex-col gap-2 rounded-site p-4">
           <div className="flex items-center gap-2">
             <Input
               value={q.prompt}
@@ -145,14 +153,14 @@ function CreateCensus({ slug, onCreated }: { slug: string; onCreated: () => void
       <div className="flex items-center justify-between">
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size="sm"
           disabled={questions.length >= CENSUS_MAX_QUESTIONS}
           onClick={() => setQuestions((qs) => [...qs, { prompt: '', kind: 'single', options: '' }])}
         >
           <Plus /> {t('census-add-question', { defaultValue: 'Add question' })}
         </Button>
-        <Button type="submit" variant="accent" size="sm" loading={saving} disabled={!title.trim()}>
+        <Button type="submit" variant="default" size="sm" loading={saving} disabled={!title.trim()}>
           {t('census-create', { defaultValue: 'Open census' })}
         </Button>
       </div>
@@ -213,7 +221,7 @@ function AnswerForm({
             {q.options.map((o) => (
               <label
                 key={o.id}
-                className="glass-fill flex cursor-pointer items-center gap-3 rounded-site px-3 py-2 text-sm text-site-text has-[:checked]:ring-2 has-[:checked]:ring-site-accent"
+                className="flex cursor-pointer items-center gap-3 rounded-site px-3 py-2 text-sm text-site-text has-[:checked]:ring-2 has-[:checked]:ring-site-accent"
               >
                 <input
                   type={q.kind === 'multi' ? 'checkbox' : 'radio'}
@@ -235,7 +243,7 @@ function AnswerForm({
         })}
       </p>
       <div className="flex justify-end">
-        <Button type="submit" variant="accent" loading={saving} disabled={!complete}>
+        <Button type="submit" variant="default" loading={saving} disabled={!complete}>
           {t('census-submit', { defaultValue: 'Submit answers' })}
         </Button>
       </div>
@@ -264,6 +272,8 @@ export default function CensusPanel({
     void load();
   }, [load]);
 
+  const arrival = useArrival(census !== undefined);
+
   if (census === undefined) {
     return (
       <div className="flex justify-center py-12">
@@ -273,9 +283,10 @@ export default function CensusPanel({
   }
   if (census === null) {
     return isMod ? (
-      <CreateCensus slug={slug} onCreated={load} />
+      <CreateCensus slug={slug} onCreated={load} className={arrival} />
     ) : (
       <EmptyState
+        className={arrival}
         icon={BarChart3}
         title={t('census-none', { defaultValue: 'No census yet' })}
         description={t('census-none-desc', {
@@ -297,9 +308,9 @@ export default function CensusPanel({
   };
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-3">
-      <section className="glass-pane p-4">
-        <h3 className="text-base font-bold text-site-text">{census.title}</h3>
+    <div className={cn('flex flex-col gap-3 px-3 py-3', arrival)}>
+      <section className="p-4">
+        <h3 className="text-base font-semibold text-site-text">{census.title}</h3>
         {census.description && (
           <p className="mt-1 whitespace-pre-wrap break-words text-sm text-site-text-muted">
             {census.description}
@@ -318,14 +329,14 @@ export default function CensusPanel({
             : ''}
         </p>
         {isMod && !census.closed && (
-          <Button className="mt-3" size="sm" variant="outline" onClick={close}>
+          <Button className="mt-3" size="sm" variant="default" onClick={close}>
             {t('census-close', { defaultValue: 'Close and publish results' })}
           </Button>
         )}
       </section>
 
       {census.questions && joined && (
-        <section className="glass-pane p-4">
+        <section className="p-4">
           <AnswerForm slug={slug} census={census} onDone={load} />
         </section>
       )}
@@ -342,7 +353,7 @@ export default function CensusPanel({
         </p>
       )}
       {census.withheld && (
-        <p className="glass-fill p-4 text-sm text-site-text-muted">
+        <p className="p-4 text-sm text-site-text-muted">
           {t('census-withheld', {
             n: census.minResponses,
             defaultValue:
@@ -353,7 +364,7 @@ export default function CensusPanel({
       {census.results && (
         <div className="flex flex-col gap-4">
           {census.results.map((q) => (
-            <section key={q.id} className="glass-fill p-4">
+            <section key={q.id} className="p-4">
               <h4 className="mb-2 text-sm font-semibold text-site-text">{q.prompt}</h4>
               <ul className="flex flex-col gap-2">
                 {q.options.map((o) => (
@@ -395,7 +406,7 @@ function CreateCensusToggle({ slug, onCreated }: { slug: string; onCreated: () =
   const [open, setOpen] = useState(false);
   if (open) return <CreateCensus slug={slug} onCreated={onCreated} />;
   return (
-    <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+    <Button size="sm" variant="default" onClick={() => setOpen(true)}>
       {t('census-new', { defaultValue: 'Open a new census' })}
     </Button>
   );

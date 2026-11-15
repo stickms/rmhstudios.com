@@ -3,7 +3,7 @@
  *
  * One function — `getTimeline()` — is the single read path for both feed
  * surfaces. Previously the "all"/global and "friends" branches in
- * app/routes/api/rmharks.ts duplicated ~150 lines of mapping logic; folding
+ * lib/feed/api/rmharks.server.ts duplicated ~150 lines of mapping logic; folding
  * them here gives one place to add caching, ranking, and fan-out later.
  *
  * Twitter-shaped naming:
@@ -33,8 +33,14 @@ import { mutedTagWhere } from './signals';
 import { applyLock } from './map-feed-item.server';
 import { deduplicateReposts } from './dedupe';
 import type { ReactionSummary } from '../social/reactions';
-import { apiCache, VIEWER_FEED_PREFIX } from '../cache';
-import { cachedSWR, invalidateCached } from '../cached.server';
+import {
+  cached,
+  cachedSWR,
+  invalidateCached,
+  peekL1,
+  putL1,
+  VIEWER_FEED_PREFIX,
+} from '../cached.server';
 import { reconcileCachedPage } from './page-reconcile.server';
 import { isExpired } from '../posts-plus/constants';
 
@@ -97,7 +103,7 @@ const SEARCH_ID_CAP = 1000;
  * recency-ordered id set; the caller folds it into its Prisma `where` as
  * `id: { in: [...] }`, so every audience / deleted / following / community
  * filter and the keyset cursor still apply on top — behaviour matches the old
- * `contains` filter, just index-backed. Mirrors app/routes/api/search.ts's
+ * `contains` filter, just index-backed. Mirrors lib/search/api/search.server.ts's
  * `searchPosts`; `content_tsv` is a raw-SQL migration column (not in
  * schema.prisma), hence `$queryRaw`. Fully parameterised — no interpolation.
  */
@@ -312,7 +318,9 @@ function mapOriginal(
   qv: QuoteViewer,
 ): FeedItem | undefined {
   // One rule for what a quote card may show - see quoted-original.ts.
-  return o ? mapQuotedOriginal(o, displayUser(displayMap, o.userId), qv.viewerId, qv.blocked) : undefined;
+  return o
+    ? mapQuotedOriginal(o, displayUser(displayMap, o.userId), qv.viewerId, qv.blocked)
+    : undefined;
 }
 
 function mapOwn(
@@ -431,11 +439,11 @@ async function getStaticAnnouncementItems(filter: FeedFilter): Promise<FeedItem[
   // a minute so the feed's hot path stops re-querying blog posts each time; a
   // freshly published blog post surfaces within the TTL.
   const cacheKey = `feed:announcements:${filter}`;
-  const cached = apiCache.get<FeedItem[]>(cacheKey);
-  if (cached) return cached;
+  return cached(cacheKey, 60_000, () => buildStaticAnnouncementItems(filter), { l2: false });
+}
 
-  const { games } = await import('../games');
-  const { apps } = await import('../apps');
+async function buildStaticAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
+  const { games, apps } = await import('../catalog');
   const items: FeedItem[] = [];
 
   if (filter === 'all' || filter === 'app' || filter === 'game') {
@@ -490,7 +498,6 @@ async function getStaticAnnouncementItems(filter: FeedFilter): Promise<FeedItem[
     }
   }
 
-  apiCache.set(cacheKey, items, 60_000);
   return items;
 }
 
@@ -634,13 +641,14 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
   // start. Everything else is NOT an input to the query — the interest profile
   // only reorders the returned page, and announcements are interleaved afterward
   // — so those stay off this batch and run alongside the query instead.
-  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals, blockedIds] = await Promise.all([
-    getHiddenAuthorIds(userId),
-    userId ? getFollowingIds(userId) : Promise.resolve([] as string[]),
-    circleOwnerIds(userId),
-    getSignals(userId),
-    getBlockedAuthorIds(userId),
-  ]);
+  const [hiddenIds, viewerFollowingIds, viewerCircleOwnerIds, viewerSignals, blockedIds] =
+    await Promise.all([
+      getHiddenAuthorIds(userId),
+      userId ? getFollowingIds(userId) : Promise.resolve([] as string[]),
+      circleOwnerIds(userId),
+      getSignals(userId),
+      getBlockedAuthorIds(userId),
+    ]);
   const qv: QuoteViewer = { viewerId: userId, blocked: blockedIds };
 
   // In-flight alongside the main query below (neither gates it).
@@ -811,8 +819,9 @@ const mutedWordsKey = (userId: string) => `muted-words:${userId}`;
  *  Cached ~60s and invalidated when the list is saved, so it stops re-querying
  *  the profile row on every feed read. */
 export async function getMutedWords(userId: string): Promise<string[]> {
-  const cached = apiCache.get<string[]>(mutedWordsKey(userId));
-  if (cached) return cached;
+  // peek/put: the TTL depends on the loaded value (a timed mute must lift on time), which cached() cannot express.
+  const hit = peekL1<string[]>(mutedWordsKey(userId));
+  if (hit) return hit;
   const profile = await prisma.userProfile.findUnique({
     where: { userId },
     select: { mutedWords: true, mutedWordExpiries: true },
@@ -822,14 +831,15 @@ export async function getMutedWords(userId: string): Promise<string[]> {
   const words = activeMutedWords(profile?.mutedWords ?? [], expiries, now);
   // Never cache past the next deadline, so a timed mute lifts on time.
   const next = nextExpiry(words, expiries);
-  const ttl = next === null ? MUTED_WORDS_TTL_MS : Math.max(1_000, Math.min(MUTED_WORDS_TTL_MS, next - now));
-  apiCache.set(mutedWordsKey(userId), words, ttl);
+  const ttl =
+    next === null ? MUTED_WORDS_TTL_MS : Math.max(1_000, Math.min(MUTED_WORDS_TTL_MS, next - now));
+  putL1(mutedWordsKey(userId), words, ttl);
   return words;
 }
 
 /** Drop the cached muted-words list for a user (call after they save the list). */
 export function invalidateMutedWords(userId: string): void {
-  apiCache.invalidate(mutedWordsKey(userId));
+  void invalidateCached(mutedWordsKey(userId));
 }
 
 /** True when `text` contains any muted word (case-insensitive substring). */
@@ -899,8 +909,10 @@ async function assembleTimeline(params: GetTimelineParams): Promise<TimelineResu
 
 /** Cache key of a viewer's first page. `v3`: the value is the page BEFORE the
  *  muted-word filter (applied at serve time), unlike `v2`. */
-const feedPageKey = (p: { surface: FeedSurface; filter: FeedFilter; limit: number }, userId: string) =>
-  `${VIEWER_FEED_PREFIX}${p.surface}:${p.filter}:${userId}:${p.limit}`;
+const feedPageKey = (
+  p: { surface: FeedSurface; filter: FeedFilter; limit: number },
+  userId: string,
+) => `${VIEWER_FEED_PREFIX}${p.surface}:${p.filter}:${userId}:${p.limit}`;
 
 /** Drop a viewer's cached first pages for the sizes the app requests (homepage 15,
  *  feed column 20). Only needed for UX freshness (e.g. just added to a circle):

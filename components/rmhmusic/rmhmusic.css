@@ -93,14 +93,14 @@
   --app-toast-bg: var(--app-surface);
   --app-scrim: rgb(26 39 71 / 0.45);
   /* Paper is flat. RMH Music is a native-material route (lib/native-material-routes.ts): no jelly, no
-     glass, no lightning. The shared roles it still uses (Button, Dialog, LiquidTabs, the keys' buttons)
+     glass, no lightning. The shared roles it still uses (Button, Dialog, Tabs, the keys' buttons)
      read these knobs for a gel coat, a haze and a grain floor; none of them is wanted on paper, so
      each is off, in both modes (the dark blocks below inherit it). */
   --app-gel-body: transparent;
   --app-gel-depth: transparent;
   --app-jelly-haze: transparent;
   --jelly-tile: none;
-  /* The coat the site's roles and every button paint is declared once on :root (app/liquid-glass.css),
+  /* The coat the site's roles and every button paint is declared once on :root (app/glass-roles.css),
      from the site's own gel colours, so the app knobs above do not reach it. */
   --liquid-coat: none;
   --liquid-fill-coat: none;

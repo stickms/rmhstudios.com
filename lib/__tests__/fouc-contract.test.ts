@@ -2,10 +2,17 @@ import { beforeAll, describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runInNewContext } from 'node:vm';
 import { collectRoutes, parseRouteTree } from '../../testing/e2e/fouc-routes.mjs';
 import { DEFAULT_STYLE, SITE_STYLES, THEME_BG } from '../../stores/themeStore';
-import { NATIVE_MATERIAL_BASES } from '../../lib/native-material-routes';
+import { buildPrepaintConfig } from '../prepaint/config';
+import { PREPAINT_BODY_CODE, PREPAINT_CODE } from '../prepaint/generated';
+import {
+  THEME_EXCLUDED_EXCEPTIONS,
+  THEME_EXCLUDED_ROUTES,
+  isAppThemeRoute,
+} from '../prepaint/theme-routes';
+import type { PrepaintConfig } from '../prepaint/types';
+import { runPrepaint } from './prepaint-harness';
 
 /**
  * The FOUC contract — the half of `testing/e2e/fouc.mjs` that does not need a
@@ -20,7 +27,7 @@ import { NATIVE_MATERIAL_BASES } from '../../lib/native-material-routes';
  * found:
  *
  *  1. A root-level visual decision applied only AFTER hydration. The whole
- *     pre-paint script stack in `app/routes/__root.tsx` exists because a class or
+ *     pre-paint script (lib/prepaint, emitted by `app/routes/__root.tsx`) exists because a class or
  *     token written on `<html>` from a `useEffect` restyles a document the reader
  *     is already looking at. `html.app-route` was written that way and every game
  *     and full-screen app loaded with the site's translucent surfaces, a reserved
@@ -38,113 +45,63 @@ const read = (p: string) => readFileSync(join(REPO, p), 'utf8');
 
 describe('retired glass preferences before first paint', () => {
   it.each([0, 1, 2, 3, 4])('uses default glass with legacy clarity %i stored', (level) => {
-    // Execute the actual inline script, including its template interpolation.
-    // Importing the root route would also initialize server/database modules.
-    const source = read('app/routes/__root.tsx');
-    const body = source.match(
-      /function buildThemeScript\(siteTier: boolean\): string \{([\s\S]*?)\n\}/,
-    )![1];
-    const script = runInNewContext(`(function(siteTier) {${body}})(false)`, {
-      THEME_BG: { default: '#ffffff' },
-      APP_THEME_BG: '#000000',
-      APP_ROUTE_THEME_BG: {},
-      DEFAULT_STYLE: 'default',
-      THEME_EXCLUDED_ROUTES: [],
-      THEME_EXCLUDED_EXCEPTIONS: [],
-      NATIVE_MATERIAL_BASES,
-      ACCENT_MAP: {},
-    });
-    const stored = new Map([
-      ['rmh-glass-level', String(level)],
-      ['rmh-reduce-transparency', '1'],
-    ]);
-    const classes = new Set<string>();
-    const properties = new Map<string, string>();
-    const html = {
-      classList: { add: (v: string) => classes.add(v), contains: (v: string) => classes.has(v) },
-      style: {
-        backgroundColor: '',
-        setProperty: (key: string, value: string) => properties.set(key, value),
+    // Execute the GENERATED pre-paint code (lib/prepaint/generated.ts) in a fake
+    // DOM, with a one-theme table so the assertions are exact.
+    const config: PrepaintConfig = {
+      theme: {
+        bg: { default: '#ffffff' },
+        appBg: '#000000',
+        routeBg: {},
+        defaultStyle: 'default',
+        excluded: [],
+        exceptions: [],
       },
     };
-    runInNewContext(script, {
-      localStorage: {
-        getItem: (key: string) => stored.get(key) ?? null,
-        removeItem: (key: string) => stored.delete(key),
-      },
-      document: { documentElement: html, querySelector: () => ({ content: '' }) },
-      location: { pathname: '/' },
-      window: {},
+    const run = runPrepaint({
+      config,
+      storage: { 'rmh-glass-level': String(level), 'rmh-reduce-transparency': '1' },
     });
-    expect(html.style.backgroundColor).toBe('#ffffff');
-    expect(classes.has('reduce-transparency')).toBe(false);
-    expect(properties.has('--glass-user-blur')).toBe(false);
-    expect(properties.has('--glass-user-tint')).toBe(false);
-    expect(stored.has('rmh-glass-level')).toBe(false);
-    expect(stored.has('rmh-reduce-transparency')).toBe(false);
+    expect(run.html.style.backgroundColor).toBe('#ffffff');
+    expect(run.classes.has('reduce-transparency')).toBe(false);
+    expect(run.props.has('--glass-user-blur')).toBe(false);
+    expect(run.props.has('--glass-user-tint')).toBe(false);
+    expect(run.stored.has('rmh-glass-level')).toBe(false);
+    expect(run.stored.has('rmh-reduce-transparency')).toBe(false);
   });
 });
 
 /**
  * Dark by default (owner decision 2026-10-23): a visitor with nothing stored gets
  * Midnight before first paint, while a stored `default` keeps Daylight. Runs the
- * real `themeScript` body against the real `THEME_BG` / `DEFAULT_STYLE`, so the
+ * generated pre-paint code against the real `THEME_BG` / `DEFAULT_STYLE`, so the
  * default cannot drift between the store and the pre-paint script.
  */
 describe('default theme before first paint', () => {
   function runThemeScript(initial: Record<string, string>) {
-    const source = read('app/routes/__root.tsx');
-    const body = source.match(
-      /function buildThemeScript\(siteTier: boolean\): string \{([\s\S]*?)\n\}/,
-    )![1];
-    const script = runInNewContext(`(function(siteTier) {${body}})(false)`, {
-      THEME_BG,
-      APP_THEME_BG: '#0b0b0b',
-      APP_ROUTE_THEME_BG: {},
-      DEFAULT_STYLE,
-      THEME_EXCLUDED_ROUTES: [],
-      THEME_EXCLUDED_EXCEPTIONS: [],
-      NATIVE_MATERIAL_BASES,
-      ACCENT_MAP: {},
-    });
-    const stored = new Map(Object.entries(initial));
-    const setItemCalls: Array<[string, string]> = [];
-    const classes = new Set<string>();
-    const meta = { content: '' };
-    const html = {
-      classList: { add: (v: string) => classes.add(v), contains: (v: string) => classes.has(v) },
-      style: { backgroundColor: '', colorScheme: '', setProperty: () => {} },
-      setAttribute: () => {},
+    const run = runPrepaint({ storage: initial });
+    return {
+      classes: run.classes,
+      html: run.html,
+      meta: run.meta,
+      stored: run.stored,
+      setItemCalls: run.setItemCalls,
     };
-    runInNewContext(script, {
-      localStorage: {
-        getItem: (key: string) => stored.get(key) ?? null,
-        setItem: (key: string, value: string) => {
-          setItemCalls.push([key, value]);
-          stored.set(key, value);
-        },
-        removeItem: (key: string) => stored.delete(key),
-      },
-      document: { documentElement: html, querySelector: () => meta },
-      location: { pathname: '/' },
-      window: {},
-    });
-    return { classes, html, meta, stored, setItemCalls };
   }
 
   it('the default is Midnight, listed first in the picker, and Daylight is still offered', () => {
     expect(DEFAULT_STYLE).toBe('graphite');
     expect(SITE_STYLES[0].id).toBe(DEFAULT_STYLE);
     expect(SITE_STYLES.some((s) => s.id === 'default')).toBe(true);
-    expect(THEME_BG[DEFAULT_STYLE]).toBe('#000000');
+    // Steel section 2: the Night page is #0b0d10, the Day page #fafafa (app/globals/tokens-themes.css).
+    expect(THEME_BG[DEFAULT_STYLE]).toBe('#0b0d10');
   });
 
   it('a new visitor paints the dark ground, class, colour scheme and theme-color pre-paint', () => {
     const { classes, html, meta, stored, setItemCalls } = runThemeScript({});
     expect(classes.has('style-graphite')).toBe(true);
-    expect(html.style.backgroundColor).toBe('#000000');
+    expect(html.style.backgroundColor).toBe('#0b0d10');
     expect(html.style.colorScheme).toBe('dark');
-    expect(meta.content).toBe('#000000');
+    expect(meta.content).toBe('#0b0d10');
     // Nothing is persisted for a visitor who never chose.
     expect(stored.has('rmh-style')).toBe(false);
     expect(setItemCalls).toHaveLength(0);
@@ -153,9 +110,9 @@ describe('default theme before first paint', () => {
   it('a stored `default` keeps Daylight (an explicit choice is never flipped)', () => {
     const { classes, html, meta, stored } = runThemeScript({ 'rmh-style': 'default' });
     expect([...classes].some((c) => c.startsWith('style-'))).toBe(false);
-    expect(html.style.backgroundColor).toBe('#ffffff');
+    expect(html.style.backgroundColor).toBe('#fafafa');
     expect(html.style.colorScheme).toBe('light');
-    expect(meta.content).toBe('#ffffff');
+    expect(meta.content).toBe('#fafafa');
     expect(stored.get('rmh-style')).toBe('default');
   });
 
@@ -167,24 +124,22 @@ describe('default theme before first paint', () => {
   });
 
   it('a retired id self-heals to the default', () => {
-    const { classes, stored } = runThemeScript({ 'rmh-style': 'nocturne' });
+    const { classes, stored } = runThemeScript({ 'rmh-style': 'sepia' });
     expect(classes.has('style-graphite')).toBe(true);
     expect(stored.get('rmh-style')).toBe(DEFAULT_STYLE);
   });
 });
 
 /**
- * The inline scripts in `__root.tsx` that run before first paint, as one string.
- *
- * Everything between `const themeScript = \`` and the end of the `head()` scripts
- * array is pre-paint: `platformScript`, `themeScript`,
- * `localeScript` and `bodyThemeScript`. The gate below asks whether a given class
- * or attribute name appears anywhere in that text, which is deliberately loose —
- * it proves the pre-paint stack KNOWS about the token, and leaves whether it
- * resolves it correctly to the runtime audit, which can actually see the pixels.
+ * The pre-paint code that runs before first paint, as one string: the generated
+ * head script plus the <body>-top companion (lib/prepaint/generated.ts).
+ * The gate below asks whether a given class or attribute name appears anywhere in
+ * that text, which is deliberately loose — it proves the pre-paint stack KNOWS
+ * about the token, and leaves whether it resolves it correctly to the runtime
+ * audit, which can actually see the pixels.
  */
 function prePaintScriptText(): string {
-  return read('app/routes/__root.tsx');
+  return PREPAINT_CODE + PREPAINT_BODY_CODE;
 }
 
 describe('FOUC contract: pre-paint parity', () => {
@@ -258,7 +213,7 @@ describe('FOUC contract: pre-paint parity', () => {
         if (TRANSIENT.has(write.token)) continue;
         if (prePaint.includes(write.token)) continue;
         offenders.push(
-          `${write.file}: ${write.kind} "${write.token}" is applied to <html> from client code but never by the pre-paint scripts in app/routes/__root.tsx — a hard load paints without it and then restyles.`,
+          `${write.file}: ${write.kind} "${write.token}" is applied to <html> from client code but never by the pre-paint script (lib/prepaint) — a hard load paints without it and then restyles.`,
         );
       }
     }
@@ -267,30 +222,52 @@ describe('FOUC contract: pre-paint parity', () => {
   });
 
   /**
-   * The pre-paint script and its TypeScript mirror have to agree about which
-   * routes are app-tier, because the script picks the ground from that answer and
-   * `Providers` picks the surfaces from it. They are two implementations of one
-   * rule (ES5 in the script because it runs before any bundle), so the gate checks
-   * that neither grew an input the other does not have.
+   * The pre-paint script and `isAppThemeRoute` must agree about which routes are
+   * app-tier, because the script picks the ground from that answer and `Providers`
+   * picks the surfaces from it. They used to be two implementations of one rule
+   * (ES5 in the script because it runs before any bundle); now both call the one
+   * `isAppRoute` in lib/prepaint/route.ts, and this proves the shipped bytes still
+   * agree with the runtime on every excluded route, every exception and the
+   * boundary cases around them.
    */
-  it('the pre-paint script and isAppThemeRoute read the same inputs', () => {
+  it('the pre-paint script and isAppThemeRoute agree on every route', () => {
     const root = read('app/routes/__root.tsx');
     const providers = read('components/Providers.tsx');
+    const themeRoutes = read('lib/prepaint/theme-routes.ts');
+    const theme = read('lib/prepaint/theme.ts');
 
-    // Both must consult the exclusion list AND the exception list; a script that
-    // forgot the exceptions claimed `/studio/themes` for the app tier.
-    expect(root).toContain('THEME_EXCLUDED_ROUTES');
-    expect(root).toContain('THEME_EXCLUDED_EXCEPTIONS');
+    // One predicate, imported by both halves.
+    expect(theme).toMatch(/import \{[^}]*isAppRoute[^}]*\} from '\.\/route'/);
+    expect(themeRoutes).toMatch(/import \{ isAppRoute \} from '\.\/route'/);
     expect(providers).toContain('THEME_EXCLUDED_EXCEPTIONS');
+    // The root no longer carries a script of its own.
+    expect(root).not.toMatch(/function buildThemeScript|const themeScript/);
 
     // And both must produce `app-route`: the script before paint, the effect for
     // client navigations.
-    expect(root, 'themeScript must stamp html.app-route before first paint').toMatch(
-      /classList\.add\("app-route"\)/,
+    expect(PREPAINT_CODE, 'the pre-paint script must stamp html.app-route').toContain(
+      '"app-route"',
     );
     expect(providers, 'Providers must keep toggling app-route for client navigations').toMatch(
       /classList\.toggle\('app-route'/,
     );
+
+    const paths = new Set<string>(['/', '/feed', '/studio', '/studio/themes', '/studio/themes/x']);
+    for (const base of [...THEME_EXCLUDED_ROUTES, ...THEME_EXCLUDED_EXCEPTIONS]) {
+      paths.add(base);
+      paths.add(`${base}/sub/page`);
+      paths.add(`${base}x`); // a longer sibling segment must NOT match
+    }
+    for (const path of paths) {
+      const run = runPrepaint({ path });
+      expect(run.classes.has('app-route'), `app-route for ${path}`).toBe(isAppThemeRoute(path));
+    }
+    // A global 404 is a site page whatever the URL.
+    const nf = runPrepaint({
+      path: '/slice-it/player/nobody',
+      config: buildPrepaintConfig({ notFound: true }),
+    });
+    expect(nf.classes.has('app-route')).toBe(false);
   });
 
   /**
@@ -318,13 +295,14 @@ describe('FOUC contract: pre-paint parity', () => {
     /**
      * The sanctioned writers.
      *
-     * - `app/routes/__root.tsx` — the pre-paint `themeScript` itself, plus
-     *   `bodyThemeScript`. This is (a).
+     * - `lib/prepaint/theme.ts` — the pre-paint theme step (bundled into the
+     *   generated script; its <body>-top companion paints `document.body`, not the
+     *   root). This is (a).
      * - `stores/themeStore.ts` — `applyGround`, the single helper both the
      *   post-hydration runtime and a page's own light/dark switch call, so the two
      *   cannot drift. This is (b).
      */
-    const SANCTIONED = new Set(['app/routes/__root.tsx', 'stores/themeStore.ts']);
+    const SANCTIONED = new Set(['lib/prepaint/theme.ts', 'stores/themeStore.ts']);
 
     /** Route prefixes the pre-paint script already paints correctly. */
     const registered = (() => {
@@ -347,7 +325,7 @@ describe('FOUC contract: pre-paint parity', () => {
       const slug = file.split('/')[1];
       if (slug && registered.includes(`/${slug}`)) continue;
       offenders.push(
-        `${file} writes the document background but no APP_ROUTE_THEME_BG entry covers it — a hard load paints APP_THEME_BG first and then flips to this colour in front of the reader. Add the route to APP_ROUTE_THEME_BG in stores/themeStore.ts (and remember the ES5 mirror in app/routes/__root.tsx).`,
+        `${file} writes the document background but no APP_ROUTE_THEME_BG entry covers it — a hard load paints APP_THEME_BG first and then flips to this colour in front of the reader. Add the route to APP_ROUTE_THEME_BG in stores/themeStore.ts (the pre-paint theme step, lib/prepaint/theme.ts, reads it from the config block).`,
       );
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
@@ -388,7 +366,7 @@ describe('FOUC contract: pre-paint parity', () => {
       offenders.push(
         `${file} calls paintDocumentGround${
           literal ? ` with a colour literal (${literal[0].slice(-7)})` : ''
-        } without reading APP_ROUTE_THEME_BG. The pre-paint script in app/routes/__root.tsx paints from that map before this code runs, so a second copy of the colour here is a flash waiting for the two to disagree. Read the entry instead — see components/pf2ecal/theme.ts.`,
+        } without reading APP_ROUTE_THEME_BG. The pre-paint script (lib/prepaint/theme.ts) paints from that map before this code runs, so a second copy of the colour here is a flash waiting for the two to disagree. Read the entry instead — see components/pf2ecal/theme.ts.`,
       );
     }
     expect(offenders, offenders.join('\n')).toEqual([]);
@@ -461,10 +439,10 @@ describe('FOUC contract: pre-paint parity', () => {
     const systemOnly = new Set(
       [...block.matchAll(/'(\/[^']+)': \{[^}]*system: true/gs)].map((m) => m[1]),
     );
-    const sources = ['lib', 'components', 'app', 'stores']
+    const sources = ['lib', 'components', 'app', 'stores', 'features']
       .map((dir) => join(REPO, dir))
       .filter((p) => existsSync(p));
-    expect(sources.length).toBe(4);
+    expect(sources.length).toBeGreaterThanOrEqual(4);
 
     const unreferenced: string[] = [];
     for (const key of keys) {
@@ -499,8 +477,12 @@ describe('FOUC contract: hydration', () => {
    * and a spinner on the client's first pass, so React #418'd on every signed-out
    * redirect to it. `useSession()` from `components/Providers` is seeded from the
    * server's session lookup on both sides.
+   *
+   * Since the third-pass audit's RT1 the provider does not call it either: the
+   * shell's live session is `lib/session/live-session.ts`, which keeps the auth
+   * client out of the entry. So the hook has no caller at all.
    */
-  it('nothing renders from authClient.useSession() except the provider that wraps it', () => {
+  it('nothing renders from authClient.useSession()', () => {
     const callers = grepRepoMatching(/authClient\.useSession\(\)/).filter((f) => {
       const src = readFileSync(join(REPO, f), 'utf8');
       // Mentions in comments are fine; a call is a `= authClient.useSession()`.
@@ -509,7 +491,7 @@ describe('FOUC contract: hydration', () => {
     expect(
       callers,
       'use `useSession()` from @/components/Providers — the raw hook disagrees with the server on the first client render',
-    ).toEqual(['components/Providers.tsx']);
+    ).toEqual([]);
   });
 
   /**
@@ -530,7 +512,7 @@ describe('FOUC contract: hydration', () => {
    * in that window — a session resolving, a context value changing — makes React
    * discard the server-rendered page and show the fallback until the chunk
    * lands. Measured on 30 routes: finished pages blanked to "Loading…" for
-   * 90–1800ms and came back (docs/fouc-audit-2026-10-06.md §13).
+   * 90–1800ms and came back (docs/archive/2026/fouc-audit-2026-10-06.md §13).
    *
    * So a route module imports its page statically. The entries below are the
    * `lazy()`s that cannot do that harm, each for the reason given; the list is
@@ -747,7 +729,7 @@ function repoSources(): { path: string; text: string }[] {
       }
     }
   };
-  for (const root of ['lib', 'components', 'app', 'stores', 'hooks']) {
+  for (const root of ['lib', 'components', 'app', 'stores', 'hooks', 'features']) {
     const dir = join(REPO, root);
     if (existsSync(dir)) walk(dir);
   }

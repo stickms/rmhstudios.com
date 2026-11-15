@@ -19,7 +19,7 @@
 #
 # PREREQUISITE: run the avatar backfill first so existing avatars are in R2:
 #     pnpm exec tsx scripts/migrate-avatars-to-r2.ts
-# Vibe thumbnails re-render to R2 automatically (vibe-worker) or via:
+# Vibe thumbnails re-render to R2 automatically (jobs thumbnail worker) or via:
 #     pnpm exec tsx scripts/backfill-vibe-thumbs.ts
 #
 # Usage:

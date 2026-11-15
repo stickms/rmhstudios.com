@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Studio live jam client (F13). Mirrors the shared project to the local Studio
  * store, and sends this member's edits as whole-track replacements.
@@ -10,7 +8,7 @@
  * rolled back to the mirror, so the room never diverges.
  */
 import type { Socket } from 'socket.io-client';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { authClient } from '@/lib/auth-client';
 import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import { useStudioStore } from '@/lib/studio/store';

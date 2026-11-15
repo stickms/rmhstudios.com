@@ -12,7 +12,7 @@
 import OpenAI from 'openai';
 import { generateImagePrompt } from './generate.server';
 import { tryConsumeImageBudget } from './image-budget.server';
-import { validateImageBuffer, detectImageExt } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer, detectImageExt } from '@features/slice-it/engine/upload-validation';
 import { putObject } from '@/lib/storage/s3.server';
 import {
   feedImageKey,
@@ -49,11 +49,13 @@ export function isImageGenConfigured(): boolean {
 export async function generatePostImage(opts: {
   text: string;
   userId: string;
+  /** Chat model for the visual prompt (the bot-worker passes BOT_AI_MODEL). */
+  model?: string;
 }): Promise<string | null> {
   if (!isImageGenConfigured()) return null;
 
   try {
-    const prompt = await generateImagePrompt(opts.text);
+    const prompt = await generateImagePrompt(opts.text, { model: opts.model });
     if (!prompt.trim()) return null;
 
     // Reserve budget right before the paid call. If we're at the cap, stop.

@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { PICK_ROLES, type PickRole } from '@/lib/competitive/pickem';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { getPickemApi, setPickemApi, type PickemView as PickemData } from '@/lib/competitive/pickem.contract';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
-
-interface PickemData {
-  open: boolean;
-  complete: boolean;
-  pickerCount: number;
-  mine: { role: PickRole; entrantId: string }[];
-  leaderboard: { user: { name?: string | null } | null; points: number }[];
-}
+import { useArrival } from '@/components/ui/arrive';
 
 const SLOTS: { key: string; role: PickRole }[] = [
   { key: 'CHAMPION', role: 'CHAMPION' },
@@ -33,12 +29,16 @@ export function PickemPanel({
   const [data, setData] = useState<PickemData | null>(null);
   const [card, setCard] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(data !== null);
   const id = tournament.id;
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/tournaments/${id}/pickem`);
-    if (!res.ok) return;
-    const d = (await res.json()) as PickemData;
+    let d: PickemData;
+    try {
+      d = await api(getPickemApi, { params: { id }, retries: 0 });
+    } catch {
+      return;
+    }
     setData(d);
     const next: Record<string, string> = {};
     let semi = 0;
@@ -61,18 +61,14 @@ export function PickemPanel({
         role: s.role,
         entrantId: card[s.key],
       }));
-      const res = await fetch(`/api/tournaments/${id}/pickem`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ picks }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok)
-        toast.error(body.error ?? t('pk-failed', { defaultValue: 'Could not save picks' }));
-      else {
-        toast.success(t('pk-saved', { defaultValue: 'Picks saved' }));
-        await load();
+      try {
+        await api(setPickemApi, { params: { id }, body: { picks } });
+      } catch (err) {
+        toast.error(serverError(err) ?? t('pk-failed', { defaultValue: 'Could not save picks' }));
+        return;
       }
+      toast.success(t('pk-saved', { defaultValue: 'Picks saved' }));
+      await load();
     } finally {
       setBusy(false);
     }
@@ -86,10 +82,10 @@ export function PickemPanel({
         : t('pk-semi', { defaultValue: 'Semifinalist' }) + (key.endsWith('1') ? ' 2' : ' 1');
 
   return (
-    <div>
+    <div className={arrival}>
       <h2 className="site-section-label mb-2">{t('pk-title', { defaultValue: 'Pick’em' })}</h2>
-      <div className="glass-fill rounded-site p-5 space-y-3">
-        <p className="text-sm text-site-text-dim">
+      <div className="rounded-site p-5 space-y-3">
+        <p className="text-sm text-site-text-muted">
           {t('pk-blurb', {
             defaultValue:
               'Predict how this bracket ends before it starts. Champion 8 pts, finalist 4, each semifinalist 2. No coins at stake.',
@@ -102,7 +98,7 @@ export function PickemPanel({
             <div className="grid gap-2 sm:grid-cols-2">
               {SLOTS.map((s) => (
                 <label key={s.key} className="flex flex-col gap-2 text-sm">
-                  <span className="text-xs text-site-text-dim">
+                  <span className="text-xs text-site-text-muted">
                     {label(s.role, s.key)} · {PICK_ROLES[s.role].points}
                   </span>
                   <Select
@@ -128,7 +124,7 @@ export function PickemPanel({
             <ul className="text-sm space-y-2">
               {data.mine.map((p, i) => (
                 <li key={i}>
-                  <span className="text-site-text-dim">{label(p.role, String(i))}: </span>
+                  <span className="text-site-text-muted">{label(p.role, String(i))}: </span>
                   {nameOf(p.entrantId)}
                 </li>
               ))}

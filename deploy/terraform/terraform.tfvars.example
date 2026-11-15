@@ -5,4 +5,5 @@ app_host             = "rmhstudios.com"
 socket_host          = "socket.rmhstudios.com"
 rmhbox_host          = "box.rmhstudios.com"
 rmhtube_host         = "tube.rmhstudios.com"
+wiki_host            = "wiki.rmhstudios.com"
 proxied              = false

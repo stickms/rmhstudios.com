@@ -1,5 +1,3 @@
-'use client';
-
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { CalendarCheck } from 'lucide-react';
@@ -25,7 +23,7 @@ export function FindATimeLink({
   if (variant === 'button') {
     return (
       <Link to="/when" search={search}>
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="default">
           <CalendarCheck /> {label}
         </Button>
       </Link>
@@ -37,7 +35,7 @@ export function FindATimeLink({
       search={search}
       aria-label={label}
       title={label}
-      className="flex size-11 items-center justify-center rounded-full text-site-text-dim hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
+      className="flex size-11 items-center justify-center rounded-full text-site-text-muted hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
     >
       <CalendarCheck className="size-5" aria-hidden />
     </Link>

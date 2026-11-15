@@ -1,13 +1,22 @@
-'use client';
-
+import { IconButton } from '@/components/ui/icon-button';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Bell, BellOff, Loader2, MapPin, Search, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { Bell, BellOff, MapPin, Search, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { propertyTypeLabel } from '@/lib/homes/format';
 import type { Watch } from '@/lib/homes/types';
+import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import {
+  deleteHomeWatchApi,
+  listHomeWatchesApi,
+  setHomeWatchActiveApi,
+} from '@/lib/homes/homes.contract';
 
 /** One-line summary of a watch's criteria. */
 function summarize(w: Watch): string {
@@ -23,14 +32,17 @@ function summarize(w: Watch): string {
 }
 
 export function WatchManager() {
+  const { t } = useTranslation('site');
   const [watches, setWatches] = useState<Watch[]>([]);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/homes/watches');
-      const data = res.ok ? await res.json() : { watches: [] };
+      const data = await api(listHomeWatchesApi, { retries: 0 }).catch(() => ({
+        watches: [] as Watch[],
+      }));
       setWatches(data.watches ?? []);
     } finally {
       setLoading(false);
@@ -44,25 +56,20 @@ export function WatchManager() {
   async function toggle(w: Watch) {
     const next = !w.active;
     setWatches((prev) => prev.map((x) => (x.id === w.id ? { ...x, active: next } : x)));
-    const res = await fetch('/api/homes/watches', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: w.id, active: next }),
-    });
-    if (!res.ok) {
+    try {
+      await api(setHomeWatchActiveApi, { body: { id: w.id, active: next } });
+      toast.success(next ? 'Alert on' : 'Alert paused');
+    } catch {
       toast.error('Could not update alert');
       load();
-    } else {
-      toast.success(next ? 'Alert on' : 'Alert paused');
     }
   }
 
   async function remove(id: string) {
     setWatches((prev) => prev.filter((x) => x.id !== id));
-    const res = await fetch(`/api/homes/watches?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
-    if (!res.ok) {
+    try {
+      await api(deleteHomeWatchApi, { query: { id } });
+    } catch {
       toast.error('Could not delete alert');
       load();
     }
@@ -71,7 +78,7 @@ export function WatchManager() {
   if (loading) {
     return (
       <div className="grid place-items-center py-20 text-site-text-muted">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Spinner size={32} className="text-site-text-muted" />
       </div>
     );
   }
@@ -79,11 +86,12 @@ export function WatchManager() {
   if (watches.length === 0) {
     return (
       <EmptyState
+        className={arrival}
         icon={Bell}
         title="No alerts yet"
         description="Run a search on Browse and tap “Watch” to get notified when a new matching listing is posted."
         action={
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="default" size="sm">
             <Link to="/homes">
               <Search className="h-4 w-4" /> Browse listings
             </Link>
@@ -94,20 +102,25 @@ export function WatchManager() {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className={cn('border-t border-site-border', arrival)}>
       {watches.map((w) => (
         <div
           key={w.id}
-          className={`flex items-center justify-between gap-3 glass-fill rounded-site p-3 transition-colors ${
-            w.active ? '' : 'opacity-60'
-          }`}
+          className="flex items-center justify-between gap-3 border-b border-site-border py-3.5"
         >
           <div className="min-w-0">
-            <div className="truncate font-medium text-site-text">{w.label}</div>
-            <div className="truncate text-xs text-site-text-muted">{summarize(w)}</div>
+            <div className="t-body truncate font-medium text-site-text">
+              {w.label}
+              {!w.active && (
+                <span className="t-meta ms-2">
+                  {t('homes-alert-paused', { defaultValue: 'Paused' })}
+                </span>
+              )}
+            </div>
+            <div className="t-body truncate text-site-text-muted">{summarize(w)}</div>
             {w.locationLabel && (
-              <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-site-text-dim">
-                <MapPin className="h-3 w-3" />
+              <div className="t-meta mt-0.5 flex min-w-0 items-center gap-1">
+                <MapPin className="size-3 shrink-0" aria-hidden />
                 <span className="truncate">
                   {w.locationLabel.split(',')[0]}
                   {w.radiusKm ? ` · ${w.radiusKm} km` : ''}
@@ -116,24 +129,13 @@ export function WatchManager() {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
+            <IconButton
+              icon={w.active ? Bell : BellOff}
+              label={w.active ? 'Pause alert' : 'Resume alert'}
+              aria-pressed={w.active}
               onClick={() => toggle(w)}
-              aria-label={w.active ? 'Pause alert' : 'Resume alert'}
-              className={`grid h-9 w-9 place-items-center rounded-site-sm transition-colors ${
-                w.active ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text'
-              }`}
-            >
-              {w.active ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => remove(w.id)}
-              aria-label="Delete alert"
-              className="grid h-9 w-9 place-items-center rounded-site-sm text-site-text-muted transition-colors hover:text-site-danger"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            />
+            <IconButton icon={Trash2} label="Delete alert" onClick={() => remove(w.id)} />
           </div>
         </div>
       ))}

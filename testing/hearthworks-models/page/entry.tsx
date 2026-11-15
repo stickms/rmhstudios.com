@@ -13,13 +13,13 @@
 import { StrictMode, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas, useThree } from '@react-three/fiber';
-import { SkinFigure } from '../../../components/hearthworks/scene/SkinFigure';
-import { GunProp } from '../../../components/hearthworks/scene/GunProp';
-import { useSkinModel } from '../../../components/hearthworks/scene/useSkinModel';
-import { newDrive, pushTrigger, type AirState, type FigureDrive } from '../../../lib/hearthworks/skins/animator';
-import { figureWorldHeight } from '../../../lib/hearthworks/skins/figure-scale';
-import { SKIN_IDS, isSkinId, type SkinId } from '../../../lib/hearthworks/skins/catalog';
-import { getManifest, resetManifestForTests, type Manifest, type OneShotSlot } from '../../../lib/hearthworks/skins/model-manifest';
+import { SkinFigure } from '../../../features/hearthworks/ui/scene/SkinFigure';
+import { GunProp } from '../../../features/hearthworks/ui/scene/GunProp';
+import { useSkinModel } from '../../../features/hearthworks/ui/scene/useSkinModel';
+import { newDrive, pushTrigger, type AirState, type FigureDrive } from '../../../features/hearthworks/engine/skins/animator';
+import { figureWorldHeight } from '../../../features/hearthworks/engine/skins/figure-scale';
+import { SKIN_IDS, isSkinId, type SkinId } from '../../../features/hearthworks/engine/skins/catalog';
+import { getManifest, resetManifestForTests, type Manifest, type OneShotSlot } from '../../../features/hearthworks/engine/skins/model-manifest';
 
 interface HwProbe {
   status(): { status: string; skin: string; mdl: string | null; triangles: number | null; height: number | null; clips: string[] };

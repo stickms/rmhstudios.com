@@ -24,7 +24,9 @@ import { ReconnectionHandler } from './reconnection';
 import { cleanupRateLimits } from './rate-limit';
 import { disconnectPrisma } from './prisma-client';
 import { logger } from './logger';
+import { protocolGuard, protocolLogger } from '../shared/protocol';
 import { boundedFlush } from './shutdown';
+import { attachRedisAdapter } from '../shared/redis-adapter';
 import { instrumentHub, handleInternalMetrics } from '../../lib/perf/hub';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
@@ -70,11 +72,18 @@ const io = new Server(httpServer, {
   },
 });
 
+// Opt-in Redis backplane (REDIS_URL); in-memory adapter otherwise. Awaited before listen().
+const adapterReady = attachRedisAdapter(io, logger);
+
 // Metrics: connection/room gauges + inbound-event counters (lib/perf/hub.ts).
 instrumentHub(io, 'rmhtube');
 
 // ─── Auth middleware ──────────────────────────────────────────────
 
+// Protocol version first (no DB round-trip): an outdated tab is told so instead of
+// silently no-op'ing mid-match (server/shared/protocol.ts, E2). Lenient: a client that
+// sends no version still gets in.
+io.use(protocolGuard(protocolLogger(logger)));
 io.use(authMiddleware);
 
 // ─── Service layer bootstrap ─────────────────────────────────────
@@ -171,7 +180,8 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ─── Restore rooms from DB, then start listening ─────────────────
 
-roomManager.restoreRoomsFromDb()
+adapterReady
+  .then(() => roomManager.restoreRoomsFromDb())
   .then(() => {
     httpServer.listen(config.PORT, () => {
       logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });

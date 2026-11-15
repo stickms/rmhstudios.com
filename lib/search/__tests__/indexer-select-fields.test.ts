@@ -2,15 +2,20 @@
  * The embedding sweep's `select` blocks must name fields that exist. `news` selected `summary` on NewsArticle (which has
  * `description`), so with EMBEDDING_API_KEY set the sweep threw at the news kind every run; the nested `select` is not
  * checked by tsc through the `...page` spread. Contract: every key in each findMany `select` of the indexer is a field of
- * the model it queries (lib/search/indexer.server.ts <-> prisma/schema.prisma).
+ * the model it queries (lib/search/indexer.server.ts <-> prisma/schema/).
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const indexer = readFileSync(join(ROOT, 'lib/search/indexer.server.ts'), 'utf8');
-const schema = readFileSync(join(ROOT, 'prisma/schema.prisma'), 'utf8');
+// The schema is a folder of per-domain files (prisma/schema/**/*.prisma).
+const schema = (readdirSync(join(ROOT, 'prisma/schema'), { recursive: true }) as string[])
+  .filter((f) => f.endsWith('.prisma'))
+  .sort()
+  .map((f) => readFileSync(join(ROOT, 'prisma/schema', f), 'utf8'))
+  .join('\n');
 
 /** model name (lowercased) -> the field names declared in its block. */
 function modelFields(): Map<string, Set<string>> {

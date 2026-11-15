@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, MessageCircle, ChevronDown } from 'lucide-react';
@@ -9,6 +7,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import type { BuildComment } from '@/lib/user-builds-types';
+import { api } from '@/lib/contract/client';
+import { createBuildCommentApi, listBuildCommentsApi } from '@/lib/user-builds.contract';
+import { ARRIVE, useArrival, useArrivingKeys } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface BuildCommentsProps {
   buildId: string;
@@ -33,16 +35,18 @@ function CommentItem({
   comment,
   onReply,
   depth = 0,
+  className,
 }: {
   comment: BuildComment;
   onReply: (parentId: string) => void;
   depth?: number;
+  className?: string;
 }) {
   const { t } = useTranslation('c-user-builds');
   const [showReplies, setShowReplies] = useState(depth === 0);
 
   return (
-    <div className={depth > 0 ? 'ml-6 border-l border-site-border pl-4' : ''}>
+    <div className={cn(depth > 0 && 'ml-6 border-l border-site-border pl-4', className)}>
       <div className="py-3">
         <div className="flex items-start gap-3">
           <UserAvatar
@@ -56,7 +60,7 @@ function CommentItem({
               <span className="text-sm font-medium text-site-text">
                 {comment.user.name || t('anonymous', { defaultValue: 'Anonymous' })}
               </span>
-              <span className="text-xs text-site-text-dim">{timeAgo(comment.createdAt)}</span>
+              <span className="text-xs text-site-text-muted">{timeAgo(comment.createdAt)}</span>
             </div>
             <p className="text-sm text-site-text-muted whitespace-pre-wrap break-words">
               {comment.content}
@@ -65,7 +69,7 @@ function CommentItem({
               variant="ghost"
               size="xs"
               onClick={() => onReply(comment.id)}
-              className="-ml-2.5 mt-1 text-site-text-dim"
+              className="-ml-2.5 mt-1 text-site-text-muted"
             >
               {t('reply', { defaultValue: 'Reply' })}
             </Button>
@@ -116,18 +120,16 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const arrival = useArrival(!loading);
+  const isNew = useArrivingKeys(comments.map((c) => c.id));
 
   const fetchComments = useCallback(
     async (cursorParam?: string) => {
       try {
-        const params = new URLSearchParams();
-        params.set('limit', '20');
-        if (cursorParam) params.set('cursor', cursorParam);
-
-        const res = await fetch(`/api/user-builds/${buildId}/comments?${params.toString()}`);
-        if (!res.ok) throw new Error('Failed to fetch comments');
-
-        const data = await res.json();
+        const data = await api(listBuildCommentsApi, {
+          params: { id: buildId },
+          query: { limit: 20, cursor: cursorParam },
+        });
 
         if (cursorParam) {
           setComments((prev) => [...prev, ...data.items]);
@@ -155,18 +157,13 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/user-builds/${buildId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const newComment = await api(createBuildCommentApi, {
+        params: { id: buildId },
+        body: {
           content: content.trim(),
           parentId: replyTo || undefined,
-        }),
+        },
       });
-
-      if (!res.ok) throw new Error('Failed to post comment');
-
-      const newComment = await res.json();
 
       if (replyTo) {
         // Add reply to parent comment
@@ -243,7 +240,7 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
             />
             <Button
               type="submit"
-              variant="accent"
+              variant="default"
               size="icon"
               loading={submitting}
               loadingText={<></>}
@@ -269,13 +266,18 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
           <Spinner />
         </div>
       ) : comments.length === 0 ? (
-        <p className="py-12 text-center text-sm text-site-text-dim">
+        <p className={cn('py-12 text-center text-sm text-site-text-muted', arrival)}>
           {t('no-comments', { defaultValue: 'No comments yet. Be the first!' })}
         </p>
       ) : (
-        <div className="divide-y divide-site-border">
+        <div className={cn('divide-y divide-site-border', arrival)}>
           {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} onReply={handleReply} />
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              onReply={handleReply}
+              className={isNew(comment.id) ? ARRIVE : undefined}
+            />
           ))}
         </div>
       )}

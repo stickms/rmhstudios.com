@@ -1,8 +1,8 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { api } from '@/lib/contract/client';
+import { removeWishApi } from '@/lib/wishlist/wishlist.contract';
+import { toast } from '@/lib/toast';
 import { Heart, Trash2, Gift } from 'lucide-react';
 
 import { Card } from '@/components/ui/card';
@@ -17,11 +17,7 @@ export function WishlistView({ initial }: { initial: WishlistItemView[] }) {
   async function remove(item: WishlistItemView) {
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     try {
-      await fetch('/api/wishlist', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entityType: item.entityType, entityId: item.entityId }),
-      });
+      await api(removeWishApi, { body: { entityType: item.entityType, entityId: item.entityId } });
     } catch {
       toast.error(t('error', { defaultValue: "Couldn't update your wishlist" }));
     }

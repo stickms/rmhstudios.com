@@ -1,29 +1,18 @@
-/* One reversible path for dialogs and their scrim. Longhand scale leaves the
-   positioning transform intact. A reopen during exit continues from its current
-   opacity and scale; Radix retains the node for the presence animation. */
+/* Steel M5: a dialog and its scrim change opacity in 160 ms. No scale, no slide. One reversible path: a reopen during
+   exit continues from its current opacity; Radix retains the node for the presence animation. */
 :is([data-slot='dialog-overlay'], [data-slot='dialog-content']) {
-    opacity: 1;
-    scale: 1;
-    transition:
-      opacity var(--motion-out) var(--motion-ease-out),
-      scale var(--motion-in) var(--motion-ease-in);
-  }
+  opacity: 1;
+  transition: opacity var(--motion-out) ease;
+}
 :is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='closed'] {
-    opacity: 0;
-    transition-duration: var(--motion-out);
-    animation: ui-dialog-presence var(--motion-out) linear;
-  }
-[data-slot='dialog-content'][data-state='closed'] {
-    scale: 0.98;
-  }
+  opacity: 0;
+  animation: ui-dialog-presence var(--motion-out) linear;
+}
 @starting-style {
-    :is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='open'] {
-      opacity: 0;
-    }
-    [data-slot='dialog-content'][data-state='open'] {
-      scale: 0.98;
-    }
+  :is([data-slot='dialog-overlay'], [data-slot='dialog-content'])[data-state='open'] {
+    opacity: 0;
   }
+}
 @keyframes ui-dialog-presence {
   from {
     visibility: visible;

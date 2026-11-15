@@ -1,14 +1,13 @@
-'use client';
-
 import { useEffect, useState } from'react';
 import { Flame, Trophy, CalendarCheck, Check } from'lucide-react';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
 import { useTranslation } from'react-i18next';
-import { Reveal, RevealGroup, RevealItem } from'@/components/motion';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
+import { api } from '@/lib/contract/client';
+import { getStreakApi } from '@/lib/streak.contract';
 import { ColumnHeader } from'./ColumnHeader';
+import { useArrival } from '@/components/ui/arrive';
 
 interface StreakState {
  current: number;
@@ -29,13 +28,17 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  const { t } = useTranslation('feed');
  const [streak, setStreak] = useState<StreakState | null>(null);
  const [loading, setLoading] = useState(true);
+ // Steel M9: the streak replaces the spinner.
+ const arrival = useArrival(!loading);
 
  useEffect(() => {
  let active = true;
  (async () => {
  try {
- const res = await fetch('/api/streak', { credentials:'include'});
- if (res.ok && active) setStreak(await res.json());
+ const data = await api(getStreakApi);
+ if (active) setStreak(data);
+ } catch {
+ // A failed read leaves the empty state below.
  } finally {
  if (active) setLoading(false);
  }
@@ -55,6 +58,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  if (!streak) {
  return (
  <EmptyState
+ className={arrival}
  description={t('streak-load-error', { defaultValue:'Could not load your streak.'})}
  />
  );
@@ -64,14 +68,14 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  const nextPct = next ? Math.min(100, Math.round((streak.current / next.day) * 100)) : 100;
 
  return (
- <div>
+ <div className={arrival}>
  {/* hideHeader === embedded in JourneyColumn, which supplies the page
  header (and the drawer button) itself. */}
  {!hideHeader && (
  <ColumnHeader>
  <div className="flex items-center gap-2">
  <Flame className="h-5 w-5 text-site-warning"/>
- <h1 className="text-lg font-bold text-site-text">
+ <h1 className="text-lg font-semibold text-site-text">
  {t('streak-title', { defaultValue:'Streak'})}
  </h1>
  </div>
@@ -80,13 +84,13 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
 
  <div className="space-y-8 p-4">
  {/* Current streak hero */}
- <Reveal>
- <section className="flex flex-col items-center gap-3 rounded-site glass-fill p-6 text-center">
+ <div>
+ <section className="flex flex-col items-center gap-3 rounded-site p-6 text-center">
  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-site-warning/15">
  <Flame className="h-10 w-10 fill-site-warning/30 text-site-warning"/>
  </div>
  <div>
- <p className="text-4xl font-extrabold text-site-text">{streak.current}</p>
+ <p className="text-4xl font-semibold text-site-text">{streak.current}</p>
  <p className="text-sm text-site-text-muted">
  {streak.current === 1
  ? t('streak-day-in-a-row', { defaultValue:'day in a row'})
@@ -105,48 +109,48 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  </span>
  )}
  </section>
- </Reveal>
+ </div>
 
  {/* Stats */}
- <Reveal>
- <RevealGroup as="div"className="grid grid-cols-2 gap-3">
- <RevealItem>
+ <div>
+ <div className="grid grid-cols-2 gap-3">
+ <div>
  <div
- className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
+ className={`rounded-site p-5`}
  >
  <div className="flex items-center gap-1.5 site-section-label">
  <Trophy className="h-3.5 w-3.5"/>{''}
  {t('longest-label', { defaultValue:'Longest'})}
  </div>
- <p className="mt-1 text-2xl font-bold text-site-text">{streak.longest}</p>
+ <p className="mt-1 text-2xl font-semibold text-site-text">{streak.longest}</p>
  <p className="text-xs text-site-text-muted">
  {streak.longest === 1
  ? t('day-unit', { defaultValue:'day'})
  : t('days-unit', { defaultValue:'days'})}
  </p>
  </div>
- </RevealItem>
- <RevealItem>
+ </div>
+ <div>
  <div
- className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
+ className={`rounded-site p-5`}
  >
  <div className="flex items-center gap-1.5 site-section-label">
  <CalendarCheck className="h-3.5 w-3.5"/>{''}
  {t('total-check-ins-label', { defaultValue:'Total check-ins'})}
  </div>
- <p className="mt-1 text-2xl font-bold text-site-text">{streak.totalCheckIns}</p>
+ <p className="mt-1 text-2xl font-semibold text-site-text">{streak.totalCheckIns}</p>
  <p className="text-xs text-site-text-muted">
  {t('all-time', { defaultValue:'all time'})}
  </p>
  </div>
- </RevealItem>
- </RevealGroup>
- </Reveal>
+ </div>
+ </div>
+ </div>
 
  {/* Next milestone */}
  {next && (
- <Reveal>
- <section className="rounded-site glass-fill p-5">
+ <div>
+ <section className="rounded-site p-5">
  <div className="mb-2 flex items-center justify-between">
  <h2 className="text-sm font-semibold text-site-text">
  {t('next-milestone', { defaultValue:'Next milestone'})}
@@ -161,7 +165,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  style={{ transform: `scaleX(${nextPct / 100})`}}
  />
  </div>
- <p className="mt-1.5 text-xs text-site-text-dim">
+ <p className="mt-1.5 text-xs text-site-text-muted">
  {next.day - streak.current === 1
  ? t('more-day-to-milestone', {
  label: next.label,
@@ -175,11 +179,11 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  })}
  </p>
  </section>
- </Reveal>
+ </div>
  )}
 
  {/* Milestones list */}
- <Reveal>
+ <div>
  <section>
  <h2 className="site-section-label mb-2">
  {t('milestones-heading', { defaultValue:'Milestones'})}
@@ -190,7 +194,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  return (
  <div
  key={m.day}
- className={`glass-fill flex items-center gap-3 p-3 transition-[border-color] duration-site ${
+ className={`flex items-center gap-3 p-3 transition-[border-color] duration-site ${
  reached
  ?''
  :'border-site-border/60 opacity-70'
@@ -200,7 +204,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm ${
  reached
  ?'bg-site-warning/15 text-site-warning'
- :'bg-site-surface text-site-text-dim'
+ :'bg-site-surface text-site-text-muted'
  }`}
  >
  <Flame className={`h-4 w-4 ${reached ?'fill-site-warning/30':''}`} />
@@ -220,9 +224,9 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
  })}
  </div>
  </section>
- </Reveal>
+ </div>
 
- <p className="flex items-center justify-center gap-1.5 text-center text-xs text-site-text-dim">
+ <p className="flex items-center justify-center gap-1.5 text-center text-xs text-site-text-muted">
  <CoinIcon className="h-3.5 w-3.5"/>{''}
  {t('check-in-daily-earn-coins', {
  defaultValue:'Check in daily to earn coins — rewards grow as your streak does.',

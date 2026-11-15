@@ -16,7 +16,7 @@
 - **Bot probability:** `BOT_IMAGE_PROBABILITY` (default `0.05`).
 - **Tier gate:** human image generation requires tier ≥ `starter` (`lib/entitlements.ts` `TIER_RANK`). Enforced server-side in the route; the button is hidden client-side as UX only.
 - **Storage convention:** stored filenames are `<userId>-<ts>-<rand>.<ext>` via `feedImageKey`/`feedImageUrl`, identical to the in-app uploader, so results pass `ownsFeedImageUrl`.
-- **Tests:** Vitest only auto-discovers `lib/__tests__/**`, `lib/rmhark-ai/__tests__/**`, `lib/dream-rift/__tests__/**`, `testing/**`. Put new unit tests under `lib/rmhark-ai/__tests__/`. Routes, components, and the worker have no automated tests in this repo (verify manually), matching existing conventions.
+- **Tests:** Vitest only auto-discovers `lib/__tests__/**`, `lib/rmhark-ai/__tests__/**`, `features/dream-rift/engine/__tests__/**`, `testing/**`. Put new unit tests under `lib/rmhark-ai/__tests__/`. Routes, components, and the worker have no automated tests in this repo (verify manually), matching existing conventions.
 - Run a single test file with: `npx vitest run <path> -v`.
 
 ---
@@ -330,7 +330,7 @@ git commit -m "feat: derive text-to-image prompts from post text via DeepSeek"
 - Modify: `.env.example` (document `XAI_API_KEY`, `XAI_IMAGE_MODEL`, `XAI_IMAGE_ENABLED`)
 
 **Interfaces:**
-- Consumes: `generateImagePrompt` (Task 2), `tryConsumeImageBudget` (Task 1), `validateImageBuffer`/`detectImageExt` (`@/lib/slice-it/upload-validation`), `putObject` (`@/lib/storage/s3.server`), `feedImageKey`/`feedImageUrl`/`contentTypeForFilename` (`@/lib/storage/keys`).
+- Consumes: `generateImagePrompt` (Task 2), `tryConsumeImageBudget` (Task 1), `validateImageBuffer`/`detectImageExt` (`@features/slice-it/engine/upload-validation`), `putObject` (`@/lib/storage/s3.server`), `feedImageKey`/`feedImageUrl`/`contentTypeForFilename` (`@/lib/storage/keys`).
 - Produces:
   - `isImageGenConfigured(): boolean` — `XAI_API_KEY` set AND `XAI_IMAGE_ENABLED !== 'false'`.
   - `generatePostImage(opts: { text: string; userId: string }): Promise<string | null>` — a `feedImageUrl` on success, `null` on any failure. Never throws.
@@ -459,7 +459,7 @@ Create `lib/rmhark-ai/image.server.ts`:
 import OpenAI from 'openai';
 import { generateImagePrompt } from './generate.server';
 import { tryConsumeImageBudget } from './image-budget.server';
-import { validateImageBuffer, detectImageExt } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer, detectImageExt } from '@features/slice-it/engine/upload-validation';
 import { putObject } from '@/lib/storage/s3.server';
 import { feedImageKey, feedImageUrl, contentTypeForFilename } from '@/lib/storage/keys';
 

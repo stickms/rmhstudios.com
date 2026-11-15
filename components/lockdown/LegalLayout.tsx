@@ -23,7 +23,7 @@ const LEGAL_LINKS = [
  * Every legal page shares: the back/breadcrumb row, the title block, the
  * reading column (`max-w-3xl`, ≈ 75 characters of body copy once the pane's
  * padding is taken off) and the footer. `children` is either prose that sits on
- * one `.glass-pane` (the default) or, with `bare`, a stack of sections that
+ * one `.surface-panel` (the default) or, with `bare`, a stack of sections that
  * bring their own panels (the security page) — in both cases inside the same
  * column, at the same measure.
  */
@@ -60,7 +60,7 @@ export function LegalLayout({
           <ChevronLeft className="size-4" strokeWidth={2.2} aria-hidden="true" />
           RMHStudios
         </a>
-        <span className="text-site-text-dim" aria-hidden="true">
+        <span className="text-site-text-muted" aria-hidden="true">
           /
         </span>
         <span className="min-w-0 truncate font-medium text-site-text">{title}</span>
@@ -82,7 +82,7 @@ export function LegalLayout({
         {bare ? (
           <div className="legal-content__body flex flex-col gap-8">{children}</div>
         ) : (
-          <article className={cn('legal-content__body glass-pane px-5 py-6 sm:px-10 sm:py-10')}>
+          <article className={cn('legal-content__body surface-panel px-5 py-6 sm:px-10 sm:py-10')}>
             {children}
           </article>
         )}
@@ -106,7 +106,7 @@ export function LegalLayout({
               {t(l.key, { defaultValue: l.defaultLabel })}
             </a>
           ))}
-          <span className="inline-flex min-h-11 items-center px-3 text-xs text-site-text-dim">
+          <span className="inline-flex min-h-11 items-center px-3 text-xs text-site-text-muted">
             &copy; {new Date().getFullYear()} RMHStudios
           </span>
         </nav>

@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
@@ -67,6 +68,7 @@ const fetchHealth = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/rmhladder/health')({
+  head: () => noindexHead('Health | RMH Ladder'),
   loader: () => fetchHealth(),
   component: HealthPage,
 });
@@ -84,14 +86,14 @@ function HealthPage() {
   const { stale, runs, openReviewTasks, resumeReadiness, alerts } = Route.useLoaderData();
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
-  const panel = 'glass-fill space-y-3 rounded-site p-5 sm:p-5';
+  const panel ='space-y-3 rounded-site p-5 sm:p-5';
   const rowCls = 'flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm';
   const hint = 'text-sm text-site-text-muted';
 
   return (
     <div className="space-y-4">
       <div>
-        <Button asChild variant="outline" size="sm" className="min-h-11">
+        <Button asChild variant="default" size="sm" className="min-h-11">
           <Link to="/rmhladder/review">
             {t('ladder.health.reviewQueue', {
               defaultValue: 'Review queue · {{count}} open',
@@ -113,7 +115,7 @@ function HealthPage() {
           <ul className="divide-y divide-site-border">
             {alerts.map((a) => (
               <li key={a.code} className={rowCls}>
-                <Badge variant={a.severity === 'high' ? 'danger' : 'warning'} size="sm">
+                <Badge variant={a.severity === 'high' ? 'danger' : 'warning'}>
                   {a.severity}
                 </Badge>
                 <span className="rl-mono">{a.code}</span>
@@ -165,7 +167,7 @@ function HealthPage() {
                 <span className="min-w-44 font-semibold">
                   {((s.company as AnyRow | undefined)?.name as string) ?? (s.companyId as string)}
                 </span>
-                <Badge variant="outline" size="sm">{s.platform as string}</Badge>
+                <Badge variant="default">{s.platform as string}</Badge>
                 <span className="rl-mono">
                   {s.lastSuccessAt
                     ? t('ladder.health.lastOk', {
@@ -200,7 +202,7 @@ function HealthPage() {
         <h2 id="rl-health-runs" className="site-section-label">
           {t('ladder.health.runs', { defaultValue: 'Scrape runs' })}
         </h2>
-        <table className="rl-jobs-table rl-runs-table glass-fill rounded-site">
+        <table className="rl-jobs-table rl-runs-table rounded-site">
           <thead>
             <tr>
               <th scope="col">{t('ladder.health.started', { defaultValue: 'Started' })}</th>
@@ -232,13 +234,13 @@ function HealthPage() {
                   <td className="rl-mono">{run.expiredCount as number}</td>
                   <td className="rl-mono">{run.errorCount as number}</td>
                   <td>
-                    <Badge variant="outline" size="sm">{run.trigger as string}</Badge>
+                    <Badge variant="default">{run.trigger as string}</Badge>
                   </td>
                   <td>
                     {errors.length > 0 && (
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="default"
                         size="sm"
                         aria-expanded={expanded}
                         onClick={() => setExpandedRun(expanded ? null : (run.id as string))}

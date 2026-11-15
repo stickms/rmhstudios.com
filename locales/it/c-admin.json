@@ -1,5 +1,9 @@
 {
   "an-error-occurred": "Si è verificato un errore",
+  "announcement-business-label": "From business",
+  "announcement-expires-help": "Optional. When empty, it stops showing {{days}} days after it is announced.",
+  "announcement-expires-label": "Stop showing after",
+  "announcement-reannounce-note": "Already announced. Switching this off and on again re-announces it to everyone.",
   "back-to-admin": "Torna all'amministrazione",
   "back-to-admin-label": "Torna all'Amministrazione",
   "changes-now-live": "Le tue modifiche sono ora attive.",
@@ -22,6 +26,8 @@
   "live-preview": "Anteprima Live",
   "markdown-import-failed": "Could not read that file",
   "markdown-imported": "Imported {{name}}",
+  "media-hint": "A YouTube link also works: ![caption](https://youtu.be/…)",
+  "media-upload-failed": "Could not upload that file",
   "metadata": "Metadati",
   "new-blog-post": "Nuovo Post del Blog",
   "post-created-successfully": "Post creato con successo!",
@@ -31,6 +37,9 @@
   "save-post": "Salva Post",
   "saving": "Salvataggio in corso...",
   "show-preview": "Mostra Anteprima",
+  "sitewide-announcement-help": "Pops up once for every visitor and is pinned at the top of the feed.",
+  "sitewide-announcement-label": "Announce this post",
+  "sitewide-announcement-legend": "Sitewide announcement",
   "slug-label": "Slug",
   "slug-title": "Solo lettere minuscole, numeri e trattini",
   "tags-label": "Tag (separati da virgole)",
@@ -39,5 +48,7 @@
   "title-placeholder": "Il Mio Post Fantastico",
   "untitled-post": "Post Senza Titolo",
   "update-post": "Aggiorna Post",
-  "upload-markdown": "Upload .md"
+  "upload-markdown": "Upload .md",
+  "upload-media": "Upload image or video",
+  "uploading-media": "Uploading..."
 }

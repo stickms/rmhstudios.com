@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
@@ -9,8 +10,14 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Hammer } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { enterJamApi, rateJamEntryApi } from '@/lib/competitive/jams.contract';
+import { jamQuery } from '@/lib/competitive/jams.queries';
 import { JAM_CATEGORIES, type JamCategory } from '@/lib/competitive/jam';
 import { PhaseBadge } from './JamsList';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 type Scores = Record<JamCategory, number>;
 interface Entry {
@@ -62,18 +69,16 @@ function RateForm({
   const save = async () => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/jams/${slug}/rate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryId: entry.id, ...scores }),
+      await api(rateJamEntryApi, {
+        params: { slug },
+        body: { entryId: entry.id, ...(scores as Scores) },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok)
-        toast.error(data.error ?? t('jam-rate-failed', { defaultValue: 'Could not save rating' }));
-      else {
-        toast.success(t('jam-rated', { defaultValue: 'Rating saved' }));
-        onSaved();
-      }
+      toast.success(t('jam-rated', { defaultValue: 'Rating saved' }));
+      onSaved();
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('jam-rate-failed', { defaultValue: 'Could not save rating' }),
+      );
     } finally {
       setBusy(false);
     }
@@ -81,7 +86,7 @@ function RateForm({
   return (
     <div className="grid grid-cols-2 gap-2">
       {JAM_CATEGORIES.map((c) => (
-        <label key={c} className="flex flex-col gap-2 text-xs text-site-text-dim">
+        <label key={c} className="flex flex-col gap-2 text-xs text-site-text-muted">
           {names[c]}
           <Select
             value={scores[c] ?? ''}
@@ -107,24 +112,23 @@ export function JamDetail({ slug }: { slug: string }) {
   const { t } = useTranslation('f-competitive');
   const { data: session } = useSession();
   const signedIn = !!session?.user?.id;
-  const [jam, setJam] = useState<Jam | null | undefined>(undefined);
+  const queryClient = useQueryClient();
+  const query = jamQuery(slug);
+  const { data, isError } = useQuery(query);
+  // undefined while loading; null when the jam does not exist.
+  const jam: Jam | null | undefined = data?.jam ?? (isError ? null : undefined);
   const [buildId, setBuildId] = useState('');
   const [busy, setBusy] = useState(false);
+  const arrival = useArrival(jam !== undefined);
 
-  const load = useCallback(async () => {
-    const res = await fetch(`/api/jams/${slug}`);
-    const data = await res.json().catch(() => ({}));
-    setJam(res.ok ? data.jam : null);
-  }, [slug]);
-  useEffect(() => {
-    void load();
-  }, [load, signedIn]);
+  const load = () => queryClient.invalidateQueries({ queryKey: query.queryKey });
 
   if (jam === undefined) return <Skeleton className="h-48 rounded-site" />;
   if (jam === null) {
     return (
       <EmptyState
         icon={Hammer}
+        className={arrival}
         title={t('jam-missing', { defaultValue: 'This jam does not exist.' })}
       />
     );
@@ -133,18 +137,11 @@ export function JamDetail({ slug }: { slug: string }) {
   const enter = async () => {
     setBusy(true);
     try {
-      const res = await fetch(`/api/jams/${slug}/entry`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buildId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok)
-        toast.error(data.error ?? t('jam-enter-failed', { defaultValue: 'Could not enter' }));
-      else {
-        toast.success(t('jam-entered', { defaultValue: 'Entry saved' }));
-        await load();
-      }
+      await api(enterJamApi, { params: { slug }, body: { buildId } });
+      toast.success(t('jam-entered', { defaultValue: 'Entry saved' }));
+      await load();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('jam-enter-failed', { defaultValue: 'Could not enter' }));
     } finally {
       setBusy(false);
     }
@@ -152,19 +149,19 @@ export function JamDetail({ slug }: { slug: string }) {
 
   const canRate = jam.phase === 'open' || jam.phase === 'rating';
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className={cn('space-y-4 max-w-3xl', arrival)}>
       <Card className="gap-3 px-4 py-4" pane>
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm">{jam.description}</p>
           <PhaseBadge phase={jam.phase} />
         </div>
         <p className="text-sm">
-          <span className="text-site-text-dim">{t('jam-theme', { defaultValue: 'Theme' })}: </span>
+          <span className="text-site-text-muted">{t('jam-theme', { defaultValue: 'Theme' })}: </span>
           <strong>
             {jam.theme ?? t('jam-theme-hidden', { defaultValue: 'Revealed when the jam starts' })}
           </strong>
         </p>
-        <p className="text-xs text-site-text-dim">
+        <p className="text-xs text-site-text-muted">
           {new Date(jam.startsAt).toLocaleString()} → {new Date(jam.submitEndsAt).toLocaleString()}{' '}
           ·{' '}
           {t('jam-rating-until', {
@@ -180,7 +177,7 @@ export function JamDetail({ slug }: { slug: string }) {
             {t('jam-submit', { defaultValue: 'Submit a build' })}
           </h2>
           {jam.myBuilds.length === 0 ? (
-            <p className="text-sm text-site-text-dim">
+            <p className="text-sm text-site-text-muted">
               {t('jam-no-builds', {
                 defaultValue:
                   'Publish a public User Build during the jam, then come back to enter it.',
@@ -221,7 +218,7 @@ export function JamDetail({ slug }: { slug: string }) {
               : t('jam-entries', { defaultValue: 'Entries' })}
           </h2>
           {jam.entries.length === 0 && (
-            <p className="text-sm text-site-text-dim">
+            <p className="text-sm text-site-text-muted">
               {t('jam-no-entries', { defaultValue: 'No entries yet.' })}
             </p>
           )}
@@ -238,13 +235,13 @@ export function JamDetail({ slug }: { slug: string }) {
                 </Link>
                 {jam.results && <span className="font-medium">{e.score.toFixed(2)}</span>}
               </div>
-              <p className="text-xs text-site-text-dim">
+              <p className="text-xs text-site-text-muted">
                 {e.user.name}
                 {jam.results &&
                   ` · ${t('jam-ratings', { defaultValue: '{{n}} ratings', n: e.ratingCount })}`}
               </p>
               {jam.results && e.averages && (
-                <p className="text-xs text-site-text-dim">
+                <p className="text-xs text-site-text-muted">
                   {JAM_CATEGORIES.map((c) => `${c} ${e.averages![c].toFixed(1)}`).join(' · ')}
                 </p>
               )}

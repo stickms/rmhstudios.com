@@ -7,7 +7,7 @@
 # they are safe to cache at the edge. But the proxy path carries no file
 # extension, so Cloudflare does not cache it by default; this rule makes it
 # eligible (respecting the origin's long Cache-Control) and keys on the query
-# string. Combined with the origin LRU already in app/routes/api/image-proxy.ts,
+# string. Combined with the origin LRU already in lib/api/routes/image-proxy.server.ts,
 # this offloads both the transcode AND the delivery.
 #
 # This creates/replaces the entrypoint ruleset of the http_request_cache_settings

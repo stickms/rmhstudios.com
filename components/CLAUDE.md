@@ -4,7 +4,7 @@
 > [`/CLAUDE.md`](../CLAUDE.md). Visual rules:
 > [`docs/design-language.md`](../docs/design-language.md).
 
-~860 files organized **by feature, one directory per game/app/domain**, plus a
+Hundreds of files (`componentTsxFiles` in `docs/_generated/facts.json`) organized **by feature, one directory per game/app/domain**, plus a
 few shared directories. Rule of thumb: a component used by exactly one
 feature lives in that feature's directory; genuinely shared primitives live in
 `ui/`.
@@ -13,15 +13,15 @@ feature lives in that feature's directory; genuinely shared primitives live in
 
 | Directory       | Contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ui/`           | **Shared primitives** — Button, Badge, Card, Dialog, Input, Textarea, Select, Label, EmptyState, Skeleton, Spinner/RadialLoader, Tooltip, IconButton, CopyButton, ConfirmDialog, Breadcrumbs, BackToTop, NotificationBadge, UserAvatar, OptimizedImage/BlurImage, AnimatedCount, ViewTransitionLink, NavigationProgress, RoutePending, pagination, slider, resizable, skeletons/. Also the glass layer: `liquid-glass` (GlassPane + the global GlassFilter host), `liquid-tabs` (the **only** sanctioned tab strip), `liquid-morph`. Always check here before writing new UI. Full API notes in `docs/design-language.md` §5. |
-| `feed/`         | Feed/timeline plus the **layout system**: `SiteShell.tsx` (site-wide chrome, delegates to `radial/RadialShell`), `PageLayout.tsx` (canonical page wrapper), `ContextRail.tsx` (portals a page's `rightSidebar` into the shell's desktop live rail), `AnimatedMain.tsx`, `ColumnHeader.tsx`, post cards, composer. Also `feed.css`. Navigation lives in `radial/RadialHub` plus the desktop `radial/RadialNavRail`; the old left rail and mobile push-drawer are gone.                                                                                                                                                         |
+| `ui/`           | **Shared primitives** — Button, Badge, Card, Dialog, Input, Textarea, Select, Label, EmptyState, Skeleton, Spinner/RadialLoader, Tooltip, IconButton, CopyButton, ConfirmDialog, Breadcrumbs, BackToTop, NotificationBadge, UserAvatar, OptimizedImage/BlurImage, AnimatedCount, ViewTransitionLink, NavigationProgress, RoutePending, pagination, slider, resizable, skeletons/. Also `tabs` (`<Tabs>`, the **only** sanctioned tab strip) and `glass-filter` (the global `GlassFilter` SVG host). Always check here before writing new UI. Full API notes in `docs/design-language.md` §5. |
+| `feed/`         | Feed/timeline plus the **layout system**: `SiteShell.tsx` (the shell lives in `components/shell/`), `PageLayout.tsx` (canonical page wrapper), `ContextRail.tsx` (portals a page's `rightSidebar` into the shell's desktop live rail), `AnimatedMain.tsx`, `ColumnHeader.tsx`, post cards, composer. Also `feed.css`. Navigation lives in `components/shell/` (the sidebar, the globe).                                                                                                                                                         |
 | `site/`         | Site-level chrome: `CommandPalette` (mounted globally), `LanguageSwitcher`, `PasskeyManager`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `shared/`       | Cross-feature building blocks. **The full-screen app tier lives here**: `app-theme.css` (the `--app-*` token contract + chrome shared by RMHbox/RMHType/RMHStudy/RMHTube/RMHMusic), `AppShell`, `AppHeader`, `AppToaster`, `ConnectionStatus` (reconnect banner + peer-wait overlay), `useQuitGame` (hooks/) is the shared "leave this game" handler games wire to their menu Quit button. Also `GameLoadingFallback`, `GameErrorBoundary`, ChatPanel, EmojiPicker, ReactionMenu.                                                                                                                                                                                           |
 | `errors/`       | `RouteErrorFallback`, `NotFound` — wired as route error/404 components.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `Providers.tsx` | Global provider stack: React Query, session (`useSession`), theme application (style-* class swap + `THEME_BG` map + `THEME_EXCLUDED_ROUTES`), i18n provider, `MotionConfig reducedMotion="user"`, sonner `<Toaster>`, CommandPalette.                                                                                                                                                                                                                                                                                                                                                                                        |
 | `i18n/`         | `AppI18nProvider`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Per-game dirs   | `altair/`, `rmhbox/`, `slice-it/`, `velum2099/`, `void-breaker/`, `synapse-storm/`, `kowloon-knockout/`, `temple-of-joy/`, `neon-driftway/`, `lights-out/`, `cursed-logic/`, `house-always-wins/`, `laundry-sort/`, `dream-rift/`, `hearthworks/`, `signal-forge/`, `vega/`, `versecraft/`, `daily-puzzles/`, …                                                                                                                                                                                                                                                                          |
-| Per-app dirs    | `rmhtube/`, `rmhmusic/`, `rmhtype/`, `rmhstudy/`, `rmhcode/`, `rmhvibe/`, `rmhladder/`, `rmhbox/`, `rmhcoins/`, `library/`, `studio/`, `creator-studio/`, `blog/`, `news/`, `predictions/`, `rideshare/`, `homes/`, `membership/`, `economy/`, `doctrine/`, …                                                                                                                                                                                                                                                                                                                                                                 |
+| Per-game dirs   | (`balatro/` and `void-breaker/` moved to `features/<id>/ui/`, A1) `altair/`, `rmhbox/`, `slice-it/`, `velum2099/`, `void-breaker/`, `synapse-storm/`, `kowloon-knockout/`, `temple-of-joy/`, `neon-driftway/`, `lights-out/`, `cursed-logic/`, `house-always-wins/`, `laundry-sort/`, `dream-rift/`, `hearthworks/`, `signal-forge/`, `vega/`, `versecraft/`, `daily-puzzles/`, …                                                                                                                                                                                                                                                                          |
+| Per-app dirs    | `rmhtube/`, `rmhmusic/`, `rmhtype/`, `rmhstudy/`, `rmhcode/`, `rmhvibe/`, `rmhladder/`, `rmhbox/`, `rmhcoins/`, `library/`, `studio/`, `creator-studio/`, `blog/`, `news/`, `predictions/`, `rideshare/`, `homes/`, `membership/`, `economy/`, `doctrine/`, `shop/` (the store's shared pieces: `ItemPicture`, `ProductTile` + `PRODUCT_GRID`, `RarityMark`, `CoinAmount`, `ItemDialog`/`ItemStage`; the market, the daily shop and the cosmetics settings draw items with them), …                                                                                                                                                                                                                                                                                                                                                                 |
 | Admin/ops       | `admin/`, `moderation/`, `developer/`, `security/`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ## Conventions
@@ -31,42 +31,18 @@ feature lives in that feature's directory; genuinely shared primitives live in
   with `cn()` from `@/lib/utils`. No hardcoded colors, radii, or fonts —
   the theme system depends on it, and raw palette classes plus
   `rounded-lg`/`-xl`/`-2xl` fail CI on the site tier.
-- **Surfaces take a glass elevation class by role**, not an equivalent box:
-  `.glass-fill` for repeated content (cards, rows, tiles), `.glass-pane` for singular
-  panels, `.glass-chrome` for sticky chrome, `.glass-overlay` for anything floating
-  (dialogs, popovers, menus, toasts — CI-enforced: floating UI below L4 ghosts),
-  `.glass-inset` for fields. `bg-site-surface border border-site-border
-rounded-site shadow-site-sm` renders the same _box_ and none of the
-  _material_ — no haze, no rim, no soft body, and nothing for
-  print or the app tier's high contrast to switch off. **No box-shadow on any UI surface** — shadow tokens are
-  zero; the soft molded rim is the depth.
-- **Plasmatic Jelly material.** Every role is a hazy translucent slab with a static
-  molded rim, a haze that drifts when woken, a soft body made of CSS springs, and an
-  electric arc on click — all in `app/jelly-material.css` (plus the click-arc service),
-  never in a component. The rim is one inset glow on the host (`--gel-glow`); the haze is
-  one transform-only layer on the host's own `::after` that has no box at rest and drifts
-  only while the host is hovered or keyboard-focused; hover plumps and press squashes by a
-  transition on `scale` through the `--jelly-spring-t` hook, with the pointer position as
-  `--px` / `--py` (`lib/jelly/pointer-vars.ts`); `lib/jelly/arcs/` draws the click arc on
-  one body-level canvas, created on the first press. Nothing is injected into a host, so a
-  component's children are exactly its own. **There is no `backdrop-filter` in any glass
-  role, and you must not add one.** Floating glass reads the page behind it plainly; there
-  is no live refraction on site surfaces (the liquid globe has its own shader and refracts
-  a page snapshot).
-  Opt an element out with `data-jelly="off"` (aliases `data-liquid-material="off"`,
-  `data-fluid-press="none"`); opt a gesture subtree out with
-  `data-jelly-scope="off"` (alias `data-liquid-motion="off"`) and a game
-  play-field with `data-jelly-zone="playfield"`. **Nothing `position: fixed` inside a jelly
-  host** — a host that can carry a transform is its containing block; portal it. Never add
-  per-card pointer listeners, CSS hover lifts, framer `whileHover`/`whileTap` scale, your
-  own `transition` on `scale`/`translate`/`transform` of a host, `infinite` keyframes, arc
-  drawing, gradient-position animation, or inherited root variable writes in frames.
-  `app/liquid-glass.css` + `app/jelly-material.css` are the whole material. Layout never
-  changes: hosts squash within 4px/3% and an arc nudges the struck hosts ≤1.5px. Keep 16px
-  (`--jelly-margin`) of free room round a slab inside any `overflow` container so the squash
-  and the focus ring are not cut. Buttons are flat until touched (`data-jelly-rest="flat"`);
-  only `variant="signal"` and the semantic fills are always slabs. See
-  [`docs/plasmatic-jelly-system.md`](../docs/plasmatic-jelly-system.md).
+- **Content has no surface; only floating UI and fields do.** On a `_site` page content sits
+  on the page and a list is rows on 1px rules (S1, S2, R3): no card, no box, no
+  `surface-card`. The roles in `app/styles/steel-surfaces.css` are `.surface-overlay` for
+  anything floating (dialogs, popovers, menus, toasts: CI-enforced, floating UI below the
+  overlay tier fails), `.surface-field` for fields, `.surface-chrome` for a bar and
+  `.surface-press` for a pressable host. `surface-card` and `surface-panel` exist only for
+  full-screen games and apps (L8), where `app-theme.css` draws them. **No box-shadow on any UI
+  surface** except an overlay's (T4).
+- **Steel, not Plasmatic Jelly.** The glass, jelly and arc material was deleted in Steel phase 6
+  and its leftover names in phase 7 (`data-jelly*` other than `data-jelly-motion`, the `Reveal`
+  wrappers, the `glass-*` classes). Polished chrome is the globe and the toggle and slider
+  thumbs only (R2); see [`design.md`](../design.md) and the Steel plan.
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
   attribute on new primitives — themes restyle components through
@@ -79,10 +55,15 @@ rounded-site shadow-site-sm` renders the same _box_ and none of the
 - **Motion:** framer-motion inline props and shared motion tokens; global
   `MotionConfig` uses the same scheme for every account and device. Do not add
   reduced-motion preference branches. Use `hooks/useCelebration` for confetti.
-- **Toasts:** `import { toast } from "sonner"` — the themed `<Toaster>` is
-  already mounted in `Providers.tsx`.
+- **Toasts:** `import { toast } from "@/lib/toast"` — never from `sonner`
+  (eslint fails on it). The first toast loads sonner and its themed `<Toaster>`
+  through `<ToastHost>` in `Providers.tsx`; toasts raised meanwhile are queued.
 - **Session:** client components read auth via `useSession()` from
-  `@/components/Providers` — don't fetch `/api/auth` manually.
+  `@/components/Providers` — don't fetch `/api/auth` manually. Shell and
+  globally mounted components never import `@/lib/auth-client` statically
+  (it would put Better Auth's client back on every page): load it with
+  `await import('@/lib/auth-client')` at the click, and use `readSession()`
+  from `@/lib/session/live-session` for a socket token.
 - **Multiplayer lobbies hand out a link, not just a code.** Every lobby has a
   copy-the-invite-link control built on `hooks/useLobbyLink`, and every
   multiplayer entry point consumes `?lobby=CODE` through `useLobbyInviteJoin`
@@ -137,17 +118,15 @@ cannot see, and it is the half that decides whether the change looks native:
 - [ ] **A primitive, not a second copy of one.** A duplicated button, modal,
       spinner, empty state or copy button is this repo's most common defect
       (design-language.md §0.3). Check `ui/` before writing anything.
-- [ ] **Elevation by role, not by eye** — `.glass-fill` repeated content ·
-      `.glass-pane` singular panels · `.glass-chrome` sticky chrome ·
-      `.glass-overlay` anything floating · `.glass-inset` fields. Never a
-      hand-rolled `bg-site-surface border rounded-site` box: it paints the box
-      and none of the material, and the degradation tiers have nothing to
-      switch off.
+- [ ] **Rows on rules, not boxes** — a group of content is rows with a 1px rule between
+      them, hung on the spine where the recipe says so. `.surface-overlay` is for anything
+      floating, `.surface-field` for fields. Never a hand-rolled
+      `bg-site-surface border rounded-site` box around content (R3).
 - [ ] **Ink tracks its surface** (`bg-site-accent` → `text-site-accent-fg`),
       never `text-white`/`text-black` on a themed surface.
 - [ ] **A switcher is a tab strip** even without `role="tablist"` — an accent
       pill, a segmented control, a `flex-1` button row with an active tint all
-      belong on `<LiquidTabs>`. The gate only catches the obvious shapes; this
+      belong on `<Tabs>`. The gate only catches the obvious shapes; this
       one is on you.
 - [ ] **Motion from `lib/motion.ts`** (`DURATION`/`EASE`/`SPRING`/
       `APPLE_SPRING`, the named variants), not ad-hoc numbers; anything the
@@ -156,7 +135,7 @@ cannot see, and it is the half that decides whether the change looks native:
       namespace, `pnpm i18n:extract` run, key present in `locales/en/`. New
       namespace ⇒ also register it in `NAMESPACES` (`lib/i18n/config.ts`).
 - [ ] **Looked at in both themes × two widths** — Daylight and `.style-graphite`,
-      phone and desktop, once with jelly motion `still`.
+      phone and desktop, once with Globe motion `still`.
       Nothing in CI can do this for you (design-language.md §0.9).
 - [ ] **iOS bars stay clear**: nothing new is `fixed`/`sticky` flush to the top or bottom
       edge, and no new full-viewport fixed layer (hide it on `html.ios-webkit`).
@@ -166,9 +145,7 @@ cannot see, and it is the half that decides whether the change looks native:
       (app/globals.css, "Bottom-anchored fixed UI that follows Safari's toolbar, in CSS only"), never a bare
       `bottom: <offset>`. `--vv-follow` is `100% - 100dvh` on iOS WebKit and `0px` elsewhere, so the element stays on the
       visible area while the toolbar resizes, resolved by layout with no script. Don't add a script that measures and
-      writes the position: it runs on the main thread and trails the toolbar. There is no exception: the hub orb,
-      the open menu's overlay (and its foot pill) and the docked globe follow the same way
-      (`components/radial/radial.css`), the globe's pose being a CSS length of `dvh` rather than a measured one;
+      writes the position: it runs on the main thread and trails the toolbar. There is no exception: the docked globe follows the same way (`components/shell/globe-nav.css`);
       `--vv-shift` and its probe are gone (`lib/__tests__/viewport-follow-css.test.ts`).
 - [ ] **Keyboard + screen reader**: icon-only controls named, decorative icons
       `aria-hidden`, focus ring visible against the surface it lands on, no new

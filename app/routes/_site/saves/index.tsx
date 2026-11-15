@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { Bookmark, ListOrdered, Gift } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
-import { type LiquidTab } from '@/components/ui/liquid-tabs';
+import { type TabItem } from '@/components/ui/tabs';
 import { SavesHub } from '@/components/saves/SavesHub';
 import { ListsManager } from '@/components/lists/ListsManager';
 import { WishlistView } from '@/components/wishlist/WishlistView';
@@ -85,7 +85,7 @@ function SavesPage() {
     [navigate],
   );
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: 'saved', label: t('saves-tab-saved', { defaultValue: 'Saved' }), icon: Bookmark },
     { id: 'lists', label: t('saves-tab-lists', { defaultValue: 'Lists' }), icon: ListOrdered },
     { id: 'wishlist', label: t('saves-tab-wishlist', { defaultValue: 'Wishlist' }), icon: Gift },

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * GlobeSet head-to-head.
  *
@@ -38,7 +36,7 @@ import {
 } from '@/lib/globeset/socket';
 import { xorAll, type Card } from '@/lib/globeset/cards';
 import { formatDuration } from '@/lib/globeset/game';
-import { APPLE_SPRING } from '@/lib/motion';
+import { APPLE_SPRING } from '@/lib/app-motion';
 import {
   MIN_RACE_PLAYERS,
   SPRINT_TARGETS,
@@ -52,6 +50,10 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { GlobeSetCard } from './GlobeSetCard';
 import { GlobeSetGlobe } from './GlobeSetGlobe';
 import type { CardView } from './GlobeSetGame';
+import { api } from '@/lib/contract/client';
+import { globeSetRecordApi, type GlobeSetVersusRecord } from '@/lib/site-reads.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export interface GlobeSetRaceProps {
   shapes: boolean;
@@ -64,6 +66,8 @@ export interface GlobeSetRaceProps {
 export function GlobeSetRace({ shapes, view, attitudeRef, gyroActive }: GlobeSetRaceProps) {
   const { t } = useTranslation('c-daily-puzzles');
   const status = useGlobeSetRaceStore((s) => s.status);
+  // The room picker replaces the "Connecting…" panel: it fades in (M9).
+  const connectedArrival = useArrival(status === 'connected');
   const lobby = useGlobeSetRaceStore((s) => s.lobby);
   const selfId = useGlobeSetRaceStore((s) => s.selfId);
   const start = useGlobeSetRaceStore((s) => s.start);
@@ -99,7 +103,7 @@ export function GlobeSetRace({ shapes, view, attitudeRef, gyroActive }: GlobeSet
           </p>
           <Button
             type="button"
-            variant="secondary"
+            variant="default"
             size="sm"
             onClick={() => connectToGlobeSetRace()}
           >
@@ -117,13 +121,19 @@ export function GlobeSetRace({ shapes, view, attitudeRef, gyroActive }: GlobeSet
     );
   }
   if (lobby) return <Lobby selfId={selfId} />;
-  return <RoomPicker />;
+  return connectedArrival ? (
+    <div className="arrive-group">
+      <RoomPicker />
+    </div>
+  ) : (
+    <RoomPicker />
+  );
 }
 
 /* ── Shell ─────────────────────────────────────────────────────────────────── */
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="mt-4 glass-pane rounded-site p-5">{children}</div>;
+  return <div className="mt-4 surface-panel rounded-site p-5">{children}</div>;
 }
 
 /* ── Before a room ─────────────────────────────────────────────────────────── */
@@ -154,7 +164,7 @@ function RoomPicker() {
         <Button type="button" onClick={() => quickplay()}>
           {t('globeset-race-quickplay', { defaultValue: 'Quick match' })}
         </Button>
-        <Button type="button" variant="secondary" onClick={() => createRoom({})}>
+        <Button type="button" variant="default" onClick={() => createRoom({})}>
           {t('globeset-race-create', { defaultValue: 'Create a room' })}
         </Button>
       </div>
@@ -180,7 +190,7 @@ function RoomPicker() {
             className="font-mono tracking-widest"
           />
         </label>
-        <Button type="submit" variant="secondary" disabled={code.trim().length < 4}>
+        <Button type="submit" variant="default" disabled={code.trim().length < 4}>
           {t('globeset-race-join', { defaultValue: 'Join' })}
         </Button>
       </form>
@@ -211,7 +221,7 @@ function RoomPicker() {
                 <button
                   type="button"
                   onClick={() => joinRoom(room.code)}
-                  className="glass-fill flex w-full items-center justify-between rounded-site px-3 py-2 text-left transition-colors hover:border-site-accent"
+                  className="surface-card flex w-full items-center justify-between rounded-site px-3 py-2 text-left transition-colors hover:border-site-accent"
                 >
                   <span className="font-mono text-sm font-semibold tracking-widest text-site-text">
                     {room.code}
@@ -265,7 +275,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
           <CopyButton
             value={inviteUrl}
             icon={Copy}
-            variant="secondary"
+            variant="default"
             size="sm"
             label={t('copy-invite-link', { defaultValue: 'Copy invite link' })}
           >
@@ -284,7 +294,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
         {lobby.players.map((player) => (
           <li
             key={player.socketId}
-            className="glass-fill flex items-center justify-between rounded-site px-3 py-2"
+            className="surface-card flex items-center justify-between rounded-site px-3 py-2"
           >
             <span className="flex items-center gap-2 text-sm font-medium text-site-text">
               {player.isHost && <Crown className="h-4 w-4 text-site-warning" aria-hidden />}
@@ -312,7 +322,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
                 key={goal}
                 type="button"
                 size="sm"
-                variant={lobby.goal === goal ? 'accent-outline' : 'ghost'}
+                variant={lobby.goal === goal ? 'default' : 'ghost'}
                 aria-pressed={lobby.goal === goal}
                 onClick={() => updateSettings({ goal })}
               >
@@ -327,7 +337,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
                   key={target}
                   type="button"
                   size="sm"
-                  variant={lobby.sprintTarget === target ? 'accent-outline' : 'ghost'}
+                  variant={lobby.sprintTarget === target ? 'default' : 'ghost'}
                   aria-pressed={lobby.sprintTarget === target}
                   onClick={() => updateSettings({ sprintTarget: target as SprintTarget })}
                 >
@@ -337,7 +347,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
             <Button
               type="button"
               size="sm"
-              variant={lobby.isPublic ? 'accent-outline' : 'ghost'}
+              variant={lobby.isPublic ? 'default' : 'ghost'}
               aria-pressed={lobby.isPublic}
               onClick={() => updateSettings({ isPublic: !lobby.isPublic })}
             >
@@ -358,7 +368,7 @@ function Lobby({ selfId }: { selfId: string | null }) {
         ) : (
           <Button
             type="button"
-            variant={me?.ready ? 'secondary' : 'default'}
+            variant={me?.ready ? 'default' : 'default'}
             onClick={() => setReady(!me?.ready)}
           >
             {me?.ready
@@ -447,7 +457,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
 
   return (
     <div className="mt-5 space-y-4">
-      <div className="glass-pane flex flex-wrap items-center justify-between gap-4 rounded-site p-5">
+      <div className="surface-panel flex flex-wrap items-center justify-between gap-4 rounded-site p-5">
         <div>
           <p className="text-xs font-medium text-site-text-muted">
             {counting
@@ -481,7 +491,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
         {standings.map((row) => (
           <li
             key={row.socketId}
-            className={`glass-fill flex items-center justify-between rounded-site px-3 py-2 text-sm ${
+            className={`surface-card flex items-center justify-between rounded-site px-3 py-2 text-sm ${
               row.socketId === selfId ? 'border-site-accent' : ''
             }`}
           >
@@ -500,7 +510,7 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
       </ul>
 
       {finishedAt !== null ? (
-        <div className="glass-pane rounded-site p-6 text-center">
+        <div className="surface-panel rounded-site p-6 text-center">
           <p className="text-sm text-site-text-muted">
             {t('globeset-race-waiting-others', {
               defaultValue: 'Finished — waiting for the rest of the room.',
@@ -554,27 +564,22 @@ function RaceBoard({ shapes, view, attitudeRef, gyroActive }: Omit<GlobeSetRaceP
 
 /* ── After ─────────────────────────────────────────────────────────────────── */
 
-interface VersusRecord {
-  racesPlayed: number;
-  racesWon: number;
-  bestRaceMs: number | null;
-  setsFound: number;
-}
+type VersusRecord = GlobeSetVersusRecord;
 
 function RaceResults() {
   const { t } = useTranslation('c-daily-puzzles');
   const results = useGlobeSetRaceStore((s) => s.results)!;
   const [record, setRecord] = useState<VersusRecord | null>(null);
+  const recordArrival = useArrival(record !== null);
 
   // The hub writes the record as the results go out, so this is read once the
   // standings are already on screen rather than raced against them. A failure
   // is silent: the standings are the result, and the career line is a bonus.
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/globeset/record')
-      .then((res) => (res.ok ? res.json() : null))
+    api(globeSetRecordApi)
       .then((data) => {
-        if (!cancelled && data?.record) setRecord(data.record as VersusRecord);
+        if (!cancelled && data.record) setRecord(data.record);
       })
       .catch(() => {});
     return () => {
@@ -594,7 +599,7 @@ function RaceResults() {
         {results.map((row) => (
           <li
             key={row.socketId}
-            className={`glass-fill flex items-center justify-between rounded-site px-3 py-2 ${
+            className={`surface-card flex items-center justify-between rounded-site px-3 py-2 ${
               row.socketId === selfId ? 'border-site-accent' : ''
             }`}
           >
@@ -617,7 +622,7 @@ function RaceResults() {
         ))}
       </ol>
       {record && record.racesPlayed > 0 && (
-        <dl className="glass-fill mt-4 grid grid-cols-3 gap-3 rounded-site p-4 text-center">
+        <dl className={cn('surface-card mt-4 grid grid-cols-3 gap-3 rounded-site p-4 text-center', recordArrival)}>
           <RecordFigure
             label={t('globeset-record-races', { defaultValue: 'Races' })}
             value={String(record.racesPlayed)}

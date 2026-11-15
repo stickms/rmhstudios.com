@@ -70,6 +70,7 @@
   "ban-author": "Yazarı yasakla",
   "ban-length-prompt": "Yasak süresi gün cinsinden (boş = kalıcı):",
   "ban-reason-prompt": "Yasak sebebi:",
+  "blog-announcement-label": "Announcement",
   "blog-description": "Yeni geliştirici günlükleri yazın veya mevcut blog gönderilerini düzenleyip silin.",
   "blog-title": "Blog Gönderilerini Yönet",
   "bot-no-email": "Automated account",

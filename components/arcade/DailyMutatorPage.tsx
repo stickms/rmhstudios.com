@@ -1,6 +1,4 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Flame, Play } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -9,18 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
-import { SEEDED_GAMES, type DailyMutator } from '@/lib/arcade/seeded';
-
-interface DailyData {
-  mutator: DailyMutator;
-  board: {
-    rank: number;
-    score: number;
-    isMe: boolean;
-    user: { name?: string | null; handle?: string | null };
-  }[];
-  mine: { score: number | null; finishedAt: string | null } | null;
-}
+import { SEEDED_GAMES } from '@/lib/arcade/seeded';
+import { dailyMutatorQuery } from '@/lib/arcade/daily.queries';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 function untilReset(): string {
   const ms = 86_400_000 - (Date.now() % 86_400_000);
@@ -32,22 +22,15 @@ export function DailyMutatorPage() {
   const { t } = useTranslation('f-arcade');
   const session = useSession();
   const signedIn = !!session.data?.user;
-  const [data, setData] = useState<DailyData | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let live = true;
-    fetch('/api/arcade/daily')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d: DailyData) => live && setData(d))
-      .catch(() => live && setFailed(true));
-    return () => {
-      live = false;
-    };
-  }, [signedIn]);
+  // Seeded by the route loader (the same key, so no second fetch on hydrate).
+  const daily = useQuery(dailyMutatorQuery());
+  const data = daily.data ?? null;
+  const failed = daily.isError;
 
   const game = data ? SEEDED_GAMES[data.mutator.gameId] : null;
   const used = !!data?.mine;
+  // Usually seeded by the loader (no wait, no fade); fetched here, it fades in over the spinner (M9).
+  const arrival = useArrival(failed || (!!data && !!game));
 
   return (
     <PageLayout
@@ -60,6 +43,7 @@ export function DailyMutatorPage() {
       <div className="space-y-4 px-4 pt-4 pb-12">
         {failed ? (
           <EmptyState
+            className={arrival}
             description={t('load-failed', { defaultValue: 'Could not load today’s challenge.' })}
           />
         ) : !data || !game ? (
@@ -67,22 +51,23 @@ export function DailyMutatorPage() {
             <Spinner />
           </div>
         ) : (
-          <>
+          // One box with the column's own rhythm, so the challenge fades in as a whole.
+          <div className={cn('space-y-4', arrival)}>
             <Card pane className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 text-xs font-semibold text-site-text-muted">
                   <Flame className="h-4 w-4 text-site-accent" aria-hidden />
                   {data.mutator.day}
                 </p>
-                <h2 className="mt-1 font-display text-xl font-bold text-site-text">{game.label}</h2>
+                <h2 className="mt-1 text-xl font-semibold text-site-text">{game.label}</h2>
                 <p className="text-sm text-site-text-muted">{data.mutator.modifier.label}</p>
-                <p className="mt-1 text-xs text-site-text-dim">
+                <p className="mt-1 text-xs text-site-text-muted">
                   {t('resets-in', { defaultValue: 'Resets in {{time}}', time: untilReset() })}
                 </p>
               </div>
               <div className="flex flex-col items-start gap-2 sm:items-end">
                 {signedIn ? (
-                  <Button asChild variant="accent">
+                  <Button asChild variant="default">
                     <a href={`${game.path}?daily=1`}>
                       <Play className="h-4 w-4" aria-hidden />
                       {used
@@ -91,7 +76,7 @@ export function DailyMutatorPage() {
                     </a>
                   </Button>
                 ) : (
-                  <Button asChild variant="accent">
+                  <Button asChild variant="default">
                     <a href="/login">{t('sign-in', { defaultValue: 'Sign in to play' })}</a>
                   </Button>
                 )}
@@ -143,7 +128,7 @@ export function DailyMutatorPage() {
                 </ol>
               )}
             </section>
-          </>
+          </div>
         )}
       </div>
     </PageLayout>

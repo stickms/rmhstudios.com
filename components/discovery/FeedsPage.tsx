@@ -1,23 +1,22 @@
-'use client';
-
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Plus } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import type { FeedSummary } from '@/lib/discovery/feeds.server';
+import { feedsQuery } from '@/lib/discovery/feeds.queries';
 import { EMPTY_FEED_FORM, FeedForm, feedBody } from './FeedForm';
-
-interface Lists {
-  mine: FeedSummary[];
-  subscribed: FeedSummary[];
-  popular: FeedSummary[];
-}
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { cn } from '@/lib/utils';
+import { createCustomFeedApi } from '@/lib/discovery/discovery.contract';
 
 function FeedRow({ f }: { f: FeedSummary }) {
   const { t } = useTranslation('f-discovery');
@@ -27,7 +26,7 @@ function FeedRow({ f }: { f: FeedSummary }) {
       <Link
         to="/feeds/$id"
         params={{ id: f.id }}
-        className="glass-fill block rounded-site px-4 py-3 hover:bg-site-surface-hover"
+        className="block rounded-site px-4 py-3 hover:bg-site-surface-hover"
       >
         <p className="text-sm font-semibold text-site-text">{f.name}</p>
         <p className="mt-0.5 truncate text-xs text-site-text-muted">
@@ -37,7 +36,7 @@ function FeedRow({ f }: { f: FeedSummary }) {
             : ''}
         </p>
         {f.isPublic && (
-          <p className="mt-0.5 text-xs text-site-text-dim">
+          <p className="mt-0.5 text-xs text-site-text-muted">
             {t('feeds-subscribers', {
               count: f.subscriberCount,
               defaultValue: '{{count}} subscribers',
@@ -68,44 +67,28 @@ export function FeedsPage() {
   const { t } = useTranslation('f-discovery');
   const { data: session } = useSession();
   const navigate = useNavigate();
-  const [lists, setLists] = useState<Lists | null>(null);
   const [creating, setCreating] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch('/api/feeds', { credentials: 'include' });
-      if (!res.ok) throw new Error(String(res.status));
-      setLists((await res.json()) as Lists);
-    } catch {
-      toast.error(t('feeds-load-failed', { defaultValue: 'Could not load feeds' }));
-    }
-  }, [t]);
-
+  // Seeded by the /feeds loader; fetched here only when the loader had no session to use.
+  const list = useQuery({ ...feedsQuery(), enabled: !!session, retry: false });
+  const lists = list.data ?? null;
+  const loadFailed = list.isError;
+  // Steel M9: the lists replace the skeleton when fetched here; seeded by the loader they are there on first paint.
+  const arrival = useArrival(!!lists);
   useEffect(() => {
-    if (session) void load();
-  }, [session, load]);
+    if (loadFailed) toast.error(t('feeds-load-failed', { defaultValue: 'Could not load feeds' }));
+  }, [loadFailed, t]);
 
   const create = async (v: Parameters<typeof feedBody>[0]) => {
     setBusy(true);
     try {
-      const res = await fetch('/api/feeds', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(feedBody(v)),
-      });
-      const data = (await res.json().catch(() => null)) as {
-        feed?: { id: string };
-        error?: string;
-      } | null;
-      if (!res.ok || !data?.feed) {
-        toast.error(
-          data?.error ?? t('feeds-create-failed', { defaultValue: 'Could not create the feed' }),
-        );
-        return;
-      }
+      const data = await api(createCustomFeedApi, { body: feedBody(v) });
       void navigate({ to: '/feeds/$id', params: { id: data.feed.id } });
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('feeds-create-failed', { defaultValue: 'Could not create the feed' }),
+      );
     } finally {
       setBusy(false);
     }
@@ -125,7 +108,7 @@ export function FeedsPage() {
             title={t('feeds-signin', { defaultValue: 'Sign in to build and follow feeds' })}
             action={
               <Link to="/login" search={{ callbackURL: '/feeds' }}>
-                <Button variant="accent">
+                <Button variant="default">
                   {t('feeds-signin-cta', { defaultValue: 'Sign in' })}
                 </Button>
               </Link>
@@ -134,7 +117,7 @@ export function FeedsPage() {
         ) : !lists ? (
           <Skeleton className="h-40 w-full" />
         ) : (
-          <>
+          <div className={cn('space-y-6', arrival)}>
             {creating ? (
               <FeedForm
                 initial={EMPTY_FEED_FORM}
@@ -144,7 +127,7 @@ export function FeedsPage() {
                 onCancel={() => setCreating(false)}
               />
             ) : (
-              <Button variant="accent" size="sm" onClick={() => setCreating(true)}>
+              <Button variant="default" size="sm" onClick={() => setCreating(true)}>
                 <Plus aria-hidden /> {t('feeds-new', { defaultValue: 'New feed' })}
               </Button>
             )}
@@ -157,7 +140,7 @@ export function FeedsPage() {
               title={t('feeds-popular', { defaultValue: 'Popular feeds' })}
               items={lists.popular}
             />
-          </>
+          </div>
         )}
       </div>
     </PageLayout>

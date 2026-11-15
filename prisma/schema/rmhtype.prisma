@@ -1,0 +1,91 @@
+// ─── RMH Type Models ───────────────────────────────────────
+
+model RmhTypeProfile {
+  id               String               @id @default(cuid())
+  userId           String
+  difficulty       String               @default("medium")
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalGamesPlayed Int                  @default(0)
+  totalWins        Int                  @default(0)
+  bestWpm          Float                @default(0)
+  bestWpmAccuracy  Float                @default(0)
+  avgWpm           Float                @default(0)
+  bestAccuracy     Float                @default(0)
+  avgAccuracy      Float                @default(0)
+  totalCharsTyped  Int                  @default(0)
+  totalTimeMs      Int                  @default(0)
+  currentStreak    Int                  @default(0)
+  bestStreak       Int                  @default(0)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  matches          RmhTypeMatchPlayer[]
+
+  @@unique([userId, difficulty])
+  @@index([difficulty, bestWpm(sort: Desc)])
+  @@index([totalWins(sort: Desc)])
+  @@map("rmhtype_profile")
+}
+
+model RmhTypeMatch {
+  id            String               @id @default(cuid())
+  roomId        String
+  difficulty    String
+  passageId     String
+  passageLength String
+  rounds        Int
+  startedAt     DateTime             @default(now())
+  endedAt       DateTime?
+  durationMs    Int?
+  winnerUserId  String?
+  playerCount   Int
+  isSolo        Boolean              @default(false)
+  results       Json
+  players       RmhTypeMatchPlayer[]
+
+  @@index([startedAt(sort: Desc)])
+  @@index([winnerUserId])
+  @@map("rmhtype_match")
+}
+
+model RmhTypeMatchPlayer {
+  id        String         @id @default(cuid())
+  matchId   String
+  match     RmhTypeMatch   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  profileId String
+  profile   RmhTypeProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String
+  userName  String
+  rank      Int
+  wpm       Float
+  accuracy  Float
+  timeMs    Int
+  score     Int
+  wasWinner Boolean        @default(false)
+  createdAt DateTime       @default(now())
+
+  @@unique([matchId, userId])
+  @@index([profileId])
+  @@index([userId])
+  @@index([wpm(sort: Desc)])
+  @@map("rmhtype_match_player")
+}
+
+/// Per-key typing aggregates.
+///
+/// Aggregate ONLY, per single character, never ordered — so this table cannot
+/// reconstruct anything that was typed. A bigram or sequence table could, and
+/// no typing statistic is worth shipping a keylogger for.
+model RmhTypeKeyStat {
+  userId    String
+  key       String   @db.VarChar(4)
+  layout    String   @default("qwerty") @db.VarChar(16)
+  attempts  Int      @default(0)
+  errors    Int      @default(0)
+  totalMs   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, key, layout])
+  @@map("rmhtype_key_stat")
+}

@@ -25,9 +25,9 @@
  * **Where the result lives.** There is no `WrappedNarrative` table — adding one
  * is a schema change this work does not need. The paragraph is written to Redis
  * (shared by the jobs worker and the web tier) with a long TTL, mirrored into
- * the in-process `apiCache` so a hot page does not hit Redis per request. When
+ * the shared in-process L1 (`peekL1`/`putL1`; this module owns the Redis layer itself) so a hot page does not hit Redis per request. When
  * `REDIS_URL` is unset the Redis helpers no-op, so a single-process dev setup
- * still works through `apiCache` alone, and a multi-process deployment without
+ * still works through the L1 alone, and a multi-process deployment without
  * Redis simply keeps serving the templated blurb. Both degradations are
  * silent-and-correct: the page always renders.
  *
@@ -36,7 +36,7 @@
  */
 
 import type { PgBoss } from 'pg-boss';
-import { apiCache } from '@/lib/cache';
+import { peekL1, putL1 } from '@/lib/cached.server';
 import { prisma } from '@/lib/prisma.server';
 import { redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 import { assertAiBudget } from '@/lib/ai/budget.server';
@@ -101,13 +101,13 @@ const cacheKey = (userId: string, year: number) => `wrapped:narrative:${year}:${
 export async function readWrappedNarrative(userId: string, year: number): Promise<string | null> {
   const key = cacheKey(userId, year);
 
-  const local = apiCache.get<string>(key);
+  const local = peekL1<string>(key);
   if (local) return local;
 
   try {
     const shared = await redisGetJSON<string>(key);
     if (typeof shared === 'string' && shared) {
-      apiCache.set(key, shared, LOCAL_TTL_MS);
+      putL1(key, shared, LOCAL_TTL_MS);
       return shared;
     }
   } catch (err) {
@@ -120,7 +120,7 @@ export async function readWrappedNarrative(userId: string, year: number): Promis
 
 async function storeNarrative(userId: string, year: number, text: string): Promise<void> {
   const key = cacheKey(userId, year);
-  apiCache.set(key, text, LOCAL_TTL_MS);
+  putL1(key, text, LOCAL_TTL_MS);
   try {
     await redisSetJSON(key, text, NARRATIVE_TTL_MS);
   } catch (err) {
@@ -319,11 +319,11 @@ export async function fanOutWrappedNarratives(
   for (const { userId } of authors) {
     // Singleton key: pg-boss drops a duplicate while one is still queued, so a
     // second tick inside the same day cannot double-enqueue a member.
-    await boss.send(
-      WRAPPED_NARRATIVE_QUEUE,
-      { userId, year } satisfies WrappedNarrativeJob,
-      { singletonKey: `${year}:${userId}`, retryLimit: 2, retryDelay: 60 },
-    );
+    await boss.send(WRAPPED_NARRATIVE_QUEUE, { userId, year } satisfies WrappedNarrativeJob, {
+      singletonKey: `${year}:${userId}`,
+      retryLimit: 2,
+      retryDelay: 60,
+    });
     enqueued++;
   }
 

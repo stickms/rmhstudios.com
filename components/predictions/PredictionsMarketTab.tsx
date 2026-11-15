@@ -1,62 +1,217 @@
-'use client';
-
-import { useEffect, useState, useCallback } from 'react';
+import {
+  useEffect,
+  useState,
+  useCallback,
+} from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, TrendingUp } from 'lucide-react';
+import {
+  Plus,
+  TrendingUp,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { PredictionCard } from './PredictionCard';
 import { useSignInPrompt } from '@/hooks/useSignInPrompt';
 import { CreatePredictionModal } from './CreatePredictionModal';
 import type { Market } from './types';
-import { Reveal } from '@/components/motion';
+import { api } from '@/lib/contract/client';
+import { listPredictionsApi } from '@/lib/predictions/predictions.contract';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Props {
   coins: number;
-  setCoins: (coins: number) => void;
+  setCoins: (
+    coins: number,
+  ) => void;
   /** Signed-out visitors read the markets; trading and creating ask first. */
   signedIn: boolean;
 }
 
-type Filter = 'open' | 'resolved' | 'mine';
+type Filter =
+  | 'open'
+  | 'resolved'
+  | 'mine';
 
-export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
-  const { t } = useTranslation('c-predictions');
-  const promptSignIn = useSignInPrompt();
-  const [filter, setFilter] = useState<Filter>('open');
-  const [markets, setMarkets] = useState<Market[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [createOpen, setCreateOpen] = useState(false);
+export function PredictionsMarketTab({
+  coins,
+  setCoins,
+  signedIn,
+}: Props) {
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-predictions',
+    );
+  const promptSignIn =
+    useSignInPrompt();
+  const [
+    filter,
+    setFilter,
+  ] =
+    useState<Filter>(
+      'open',
+    );
+  const [
+    markets,
+    setMarkets,
+  ] =
+    useState<
+      Market[]
+    >(
+      [],
+    );
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(
+      true,
+    );
+  const [
+    createOpen,
+    setCreateOpen,
+  ] =
+    useState(
+      false,
+    );
+  const arrival =
+    useArrival(
+      !loading,
+    );
 
-  const load = useCallback((f: Filter) => {
-    setLoading(true);
-    fetch(`/api/predictions?filter=${f}`)
-      .then((r) => r.json())
-      .then((data) => setMarkets(data.markets ?? []))
-      .catch(() => setMarkets([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const load =
+    useCallback(
+      (
+        f: Filter,
+      ) => {
+        setLoading(
+          true,
+        );
+        api(
+          listPredictionsApi,
+          {
+            query:
+              {
+                filter:
+                  f,
+              },
+          },
+        )
+          .then(
+            (
+              data,
+            ) =>
+              setMarkets(
+                data.markets,
+              ),
+          )
+          .catch(
+            () =>
+              setMarkets(
+                [],
+              ),
+          )
+          .finally(
+            () =>
+              setLoading(
+                false,
+              ),
+          );
+      },
+      [],
+    );
 
   useEffect(() => {
-    load(filter);
-  }, [filter, load]);
+    load(
+      filter,
+    );
+  }, [
+    filter,
+    load,
+  ]);
 
-  const handleUpdated = (m: Market) => {
-    setMarkets((prev) => prev.map((x) => (x.id === m.id ? m : x)));
-  };
+  const handleUpdated =
+    (
+      m: Market,
+    ) => {
+      setMarkets(
+        (
+          prev,
+        ) =>
+          prev.map(
+            (
+              x,
+            ) =>
+              x.id ===
+              m.id
+                ? m
+                : x,
+          ),
+      );
+    };
 
-  const handleCreated = (m: Market) => {
-    // New submissions are PENDING; surface them under the "mine" filter.
-    if (filter === 'mine') setMarkets((prev) => [m, ...prev]);
-  };
+  const handleCreated =
+    (
+      m: Market,
+    ) => {
+      // New submissions are PENDING; surface them under the "mine" filter.
+      if (
+        filter ===
+        'mine'
+      )
+        setMarkets(
+          (
+            prev,
+          ) => [
+            m,
+            ...prev,
+          ],
+        );
+    };
 
-  const filters: { id: Filter; label: string }[] = [
-    { id: 'open', label: t('filter-open', { defaultValue: 'Open' }) },
-    { id: 'resolved', label: t('filter-resolved', { defaultValue: 'Resolved' }) },
-    { id: 'mine', label: t('filter-mine', { defaultValue: 'Mine' }) },
-  ];
+  const filters: {
+    id: Filter;
+    label: string;
+  }[] =
+    [
+      {
+        id: 'open',
+        label:
+          t(
+            'filter-open',
+            {
+              defaultValue:
+                'Open',
+            },
+          ),
+      },
+      {
+        id: 'resolved',
+        label:
+          t(
+            'filter-resolved',
+            {
+              defaultValue:
+                'Resolved',
+            },
+          ),
+      },
+      {
+        id: 'mine',
+        label:
+          t(
+            'filter-mine',
+            {
+              defaultValue:
+                'Mine',
+            },
+          ),
+      },
+    ];
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-12">
@@ -66,26 +221,61 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
           They are the shared strip now, small, at the width three short labels
           need. */}
       <div className="flex items-center gap-2">
-        <LiquidTabs
+        <Tabs
           size="sm"
           className="w-auto min-w-0 max-w-xs flex-1"
-          tabs={filters}
-          value={filter}
-          onChange={(id) => setFilter(id as Filter)}
-          aria-label={t('filter-aria-label', { defaultValue: 'Filter markets' })}
+          tabs={
+            filters
+          }
+          value={
+            filter
+          }
+          onChange={(
+            id,
+          ) =>
+            setFilter(
+              id as Filter,
+            )
+          }
+          aria-label={t(
+            'filter-aria-label',
+            {
+              defaultValue:
+                'Filter markets',
+            },
+          )}
         />
         <Button
-          variant="accent"
+          variant="default"
           size="sm"
           className="ml-auto"
           onClick={() =>
             signedIn
-              ? setCreateOpen(true)
-              : promptSignIn(t('create-sign-in', { defaultValue: 'Sign in to open a market.' }))
+              ? setCreateOpen(
+                  true,
+                )
+              : promptSignIn(
+                  t(
+                    'create-sign-in',
+                    {
+                      defaultValue:
+                        'Sign in to open a market.',
+                    },
+                  ),
+                )
           }
         >
-          <Plus className="size-4" aria-hidden />
-          {t('create', { defaultValue: 'Create' })}
+          <Plus
+            className="size-4"
+            aria-hidden
+          />
+          {t(
+            'create',
+            {
+              defaultValue:
+                'Create',
+            },
+          )}
         </Button>
       </div>
 
@@ -94,38 +284,94 @@ export function PredictionsMarketTab({ coins, setCoins, signedIn }: Props) {
         <div className="flex items-center justify-center py-16">
           <Spinner />
         </div>
-      ) : markets.length === 0 ? (
-        <Reveal>
+      ) : markets.length ===
+        0 ? (
+        <div
+          className={
+            arrival
+          }
+        >
           <EmptyState
-            icon={TrendingUp}
+            icon={
+              TrendingUp
+            }
             title={
-              filter === 'mine'
-                ? t('empty-mine', { defaultValue: "You haven't created or traded any predictions yet." })
-                : filter === 'resolved'
-                  ? t('empty-resolved', { defaultValue: 'No resolved markets yet.' })
-                  : t('empty-open', { defaultValue: 'No open markets right now. Create the first one!' })
+              filter ===
+              'mine'
+                ? t(
+                    'empty-mine',
+                    {
+                      defaultValue:
+                        "You haven't created or traded any predictions yet.",
+                    },
+                  )
+                : filter ===
+                    'resolved'
+                  ? t(
+                      'empty-resolved',
+                      {
+                        defaultValue:
+                          'No resolved markets yet.',
+                      },
+                    )
+                  : t(
+                      'empty-open',
+                      {
+                        defaultValue:
+                          'No open markets right now. Create the first one!',
+                      },
+                    )
             }
           />
-        </Reveal>
+        </div>
       ) : (
-        <Reveal className="grid gap-3 sm:grid-cols-2">
-          {markets.map((m) => (
-            <PredictionCard
-              key={m.id}
-              market={m}
-              coins={coins}
-              setCoins={setCoins}
-              onUpdated={handleUpdated}
-              signedIn={signedIn}
-            />
-          ))}
-        </Reveal>
+        <div
+          className={cn(
+            'grid gap-3 sm:grid-cols-2',
+            arrival,
+          )}
+        >
+          {markets.map(
+            (
+              m,
+            ) => (
+              <PredictionCard
+                key={
+                  m.id
+                }
+                market={
+                  m
+                }
+                coins={
+                  coins
+                }
+                setCoins={
+                  setCoins
+                }
+                onUpdated={
+                  handleUpdated
+                }
+                signedIn={
+                  signedIn
+                }
+              />
+            ),
+          )}
+        </div>
       )}
 
       <CreatePredictionModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={handleCreated}
+        open={
+          createOpen
+        }
+        onClose={() =>
+          setCreateOpen(
+            false,
+          )
+        }
+        onCreated={
+          handleCreated
+        }
       />
     </div>
   );

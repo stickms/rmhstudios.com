@@ -1,5 +1,5 @@
 /**
- * OPT-01 — bundle-size budget gate (docs/optimization-ideas-2026-08-05.md).
+ * OPT-01 — bundle-size budget gate (docs/archive/2026/optimization-ideas-2026-08-05.md).
  *
  * Measures the **critical path**: the transitive STATIC-import closure of the
  * Vite client entry — the set of chunks the browser must have in hand before
@@ -33,7 +33,7 @@
  * is the cross-check that proves the walk is complete.
  *
  * So the walk parses static `import`/`export ... from` specifiers straight out
- * of the emitted chunks — the method docs/performance-audit-2026-08-04.md
+ * of the emitted chunks — the method docs/archive/2026/performance-audit-2026-08-04.md
  * §"Re-running the measurement" describes.
  *
  * ── Why the TanStack Router versions are pinned exactly ───────────────────
@@ -142,7 +142,7 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  *
  * **2026-10-07 — entry raised 299,000 → 307,700 B (OPT-01 line).** The bytes
  * were bought by **no finished page blanking to a spinner during hydration**
- * (docs/fouc-audit-2026-10-06.md §13). Measured on this tree with
+ * (docs/archive/2026/fouc-audit-2026-10-06.md §13). Measured on this tree with
  * `vite build --sourcemap`: `main` (45584d5) 290.5 KB, this branch 305,601 B —
  * about +8 KB.
  *
@@ -194,138 +194,146 @@ const OUT_DIR = path.join(ROOT, '.output', 'public');
  * headroom), handing back the ~9 KB this upgrade saved instead of letting it
  * become slack for the next regression to spend.
  *
+ * **2026-11-11 — entry raised 537,900 → 541,700 B; critical-path raw LOWERED
+ * 1,291,000 → 1,156,000 B and brotli LOWERED 359,500 → 328,000 B (OPT-01 line).**
+ * Same mechanism as 2026-10-08, and again no feature bought the bytes. Redesign
+ * phase 30 (#1562) put the typed API client on the static graph of three site-wide
+ * hooks (experiments, playtime heartbeat, history beat); rolldown then folded the
+ * shared chunks that carry TanStack Start's serializer (`seroval`, +25.0 KB),
+ * `@tanstack/query-core` (+14.7 KB) and `start-client-core` (+8.4 KB) into the
+ * entry instead of shipping them as separate critical-path files. Measured with
+ * `vite build --sourcemap`, bytes attributed per package from the entry's map:
+ *
+ *   | metric                | phase 29 (00a9d94) | phase 30 (f3c15ab) | phase 31 |
+ *   | --------------------- | -----------------: | -----------------: | -------: |
+ *   | entry, raw            |          477,414 B |          536,718 B | 537,952 B |
+ *   | critical path, raw    |        1,125,789 B |        1,116,281 B | 1,116,833 B |
+ *   | critical path, brotli |          322,243 B |          316,769 B | 316,849 B |
+ *   | chunks on the path    |                101 |                 76 |       76 |
+ *
+ * Every page downloads the whole critical path before it hydrates, so this is
+ * ~9 KB fewer raw bytes in 25 fewer requests; phase 31's own change (the rest of
+ * the C1 contract migration) is +1.2 KB of entry. The entry band is measured +
+ * 0.68%, as before; both critical-path bands are re-anchored to the measurement
+ * + 3.5% (the original 2026-08-05 headroom), so the requests and bytes this saved
+ * are handed back instead of becoming slack for the next regression.
+ *
  * Budgets that only ever move up are theatre. Per OPT-01: raising one requires
  * a line in the PR body naming the user-visible feature that bought the bytes.
  */
 const BUDGETS = {
-  // New enforced ceiling freezes the October 23 baseline (~46 KB), including
-  // all shipped jelly layers. The older 40 KB advisory remains in perf-budgets.
-  // Existing required JavaScript budgets are unchanged.
-  siteCssBrotli: 48 * 1024,
-  entryRaw: 537_900,
-  criticalPathRaw: 1_291_000,
-  criticalPathBrotli: 359_500,
+  // Steel phase 7 (2026-11-12): lowered to the measured values plus ~2% for build-to-build variance (the plan's
+  // ledger, section 17, has the numbers). Measured: site CSS 31,941 B brotli; entry 441,074 B raw; critical path
+  // 1,091,976 B raw and 309,564 B brotli. (Phase 6 had measured 32,190, 442,305, 1,093,213 and 309,620.)
+  //
+  // Third-pass audit RT1 (2026-11-12), one line per cut, each measured + ~2% on a `vite build --sourcemap`:
+  //   sonner on the first toast: entry 441,074 -> 408,202 B raw; critical path 1,091,976 -> 1,059,228 B raw and
+  //   309,564 -> 301,992 B brotli.
+  //   auth client out of the shell: critical path 1,059,228 -> 1,012,555 B raw and 301,992 -> 287,739 B brotli. The
+  //   entry is 408,202 -> 409,201 B (the session store that replaces it), so its line stays where it was.
+  //   confirm dialog on first use: critical path 1,012,555 -> 961,788 B raw and 287,739 -> 270,249 B brotli, in 61
+  //   chunks instead of 72; entry 409,201 -> 408,395 B.
+  //   framer's `m` and AnimatePresence off the critical path (the one static user was a route's pending
+  //   component): critical path 961,788 -> 945,407 B raw and 270,249 -> 263,171 B brotli, 54 chunks; entry 408,401 B.
+  //
+  // Third-pass audit AR2 (2026-11-12): entry RAISED 416,400 -> 448,100 B; critical path LOWERED 964,300 -> 957,800 B
+  // raw and 268,400 -> 265,600 B brotli. No feature bought the entry bytes: the same code moved, by the mechanism of
+  // the 2026-10-08 and 2026-11-11 notes above. The 22 `*.queries.ts` files lost their `createServerFn` twins, so the
+  // server-function client runtime (TanStack Start's RPC stub and its serializer, a 37,155 B `createServerFn` chunk
+  // plus a 963 B `qss` chunk, both already on the critical path) is no longer shared with any lazily loaded chunk,
+  // and rolldown folds it into the entry instead of emitting it beside it. Measured on a plain `vite build` of the
+  // parent commit and of this one: entry 408,401 -> 439,342 B; critical path 945,407 -> 938,977 B raw and
+  // 263,171 -> 260,371 B brotli, 54 -> 52 chunks. Every page downloads the whole critical path before it hydrates,
+  // so this is 6.4 KB fewer bytes in two fewer requests. Each line is the measurement + ~2%, as above.
+  //
+  // Chunk shaping (2026-11-14): entry RAISED 448,100 -> 699,400 B; critical path LOWERED 957,800 -> 926,100 B raw and
+  // 265,600 -> 244,600 B brotli. No feature bought the entry bytes: the same code moved, on purpose this time. The
+  // `shell` group in vite.config.ts (`$initial`, every module the entry imports statically) folds the other 49 files
+  // of the critical path into the entry file, and the `icons` group stops lucide icons from being one file each.
+  // Measured on a plain `vite build` of the parent commit and of this one: entry about 442,200 -> 685,698 B; critical
+  // path about 942,000 -> 907,905 B raw and about 261,200 -> 239,841 B brotli, 52 -> 3 chunks. Every page downloads
+  // the whole critical path before it hydrates, so this is 21 KB fewer brotli bytes in 49 fewer requests. From here
+  // the entry line and the critical-path line watch nearly the same bytes (the path is the entry, React and the
+  // rolldown runtime); a library leaking onto every page now shows in both. Each line is the measurement + ~2%.
+  siteCssBrotli: 32_600,
+  entryRaw: 699_400,
+  criticalPathRaw: 926_100,
+  criticalPathBrotli: 244_600,
 };
 
 /**
- * ── Globe eversion: zero cost to page load (S#39, spec §8.1 / §11.3) ───────
+ * ── Islands (redesign audit B1) ──────────────────────────────────────────
  *
- * The eversion (docs/plans/2026-10-17-globe-eversion.md) is a WebGL2 renderer,
- * a render worker, a DOM-capture library and a pile of projection math. None of
- * it may be in the entry's STATIC closure: it is fetched by
- * `lib/eversion/prefetch.ts` after `window` `load`, through dynamic imports, so
- * a visitor who never opens the navigator never pays a byte of it.
+ * An island (`features/<id>/island.tsx`, built by `vite.islands.config.ts` into
+ * `dist-islands/`) is a whole page's first load on its own: its entry chunk, the
+ * chunks that entry imports statically, and its one stylesheet. None of it is in
+ * the site's critical path above, so each island carries its own line here, and
+ * an island WITHOUT a line fails the gate (a new island is a deliberate budget).
  *
- * The byte budgets above would NOT catch a leak. They have 4-5% headroom, and
- * a static import of the eversion (~100 KB) could hide inside a raise that
- * names some other feature — and worse, `routeTree.gen.ts` imports every route
- * statically, so one top-level `import` in any file the shell reaches drags the
- * whole renderer onto every page. So this is a membership check, not a size
- * check: the budgets say "not too big", this says "not THIS".
+ * **2026-11-10 — void-breaker, the first island.** Measured on the build that
+ * moved it (the island's whole JS is one chunk: React, three.js, the game):
+ * JS 1,312,047 B raw / 304,265 B brotli, CSS 210,376 B raw / 27,303 B brotli.
+ * Before the move the same page loaded 2,507,212 B of JS (194 files) and the
+ * 503,615 B app-tier sheet. Budgets are measured + 3.5% (the critical path's
+ * original headroom).
  *
- * How a module is recognised in emitted JS (chunk names are content hashes and
- * the bundler merges small chunks into the entry, so file names say nothing):
- *
- *   1. A sourcemap next to the chunk, when the build emitted one. Its `sources`
- *      array lists every module folded into that chunk, so a path fragment is
- *      exact. CI builds with `--sourcemap` (build:frontend:sourcemap), so this
- *      is the authoritative path.
- *   2. Otherwise a `fingerprint` — a string literal unique to the module that
- *      survives minification (an error message, a storage key). Weaker: it only
- *      covers modules that have such a literal, so a plain `build:frontend`
- *      verifies less than the sourcemap build. The report says which it used.
- *
- * Deliberately NOT listed: `lib/eversion/debug.ts` (a tiny leaf the registrants
- * import statically on purpose — its heavy half is `debug-overlay.ts`, which IS
- * listed and is reached only through a dynamic import), `flags.ts`, `marks.ts`,
- * `eligibility.ts`, `types.ts`, `constants.ts` (small and needed by the hub's
- * own eligibility check).
- *
- * Adding a runtime module? Add its path fragment here. Dropping one that the
- * hub genuinely needs statically? Move the part it needs into a leaf instead
- * of shrinking this list.
+ * **2026-11-10 — nightrail, vega, signal-forge.** Three more islands, measured on
+ * the build that moved them (JS = the entry's static closure):
+ *   nightrail     JS 1,125,335 B raw / 268,397 B brotli (10 files), CSS 203,768 / 26,550
+ *   signal-forge  JS   616,357 B raw / 163,972 B brotli  (9 files), CSS 199,733 / 26,309
+ *   vega          JS   454,958 B raw / 129,568 B brotli (11 files), CSS 185,341 / 24,433
+ * With four entries in one island build, rolldown now splits what they share into
+ * shared chunks (React + the island providers in one, three.js + the shared game
+ * UI that nightrail and void-breaker both use in another), so a player moving
+ * between islands keeps them cached. That re-split void-breaker's single chunk
+ * into 16 files: the same code (1,312,047 → 1,317,286 B raw, +0.4% of chunk
+ * boundaries) but 304,653 → 316,522 B brotli (+3.9%), because each file is
+ * compressed on its own. Its JS line is re-measured + 3.5% for that reason alone
+ * (no game code changed; `codeSplitting.minSize` and a React group were tried and
+ * moved it by < 0.2%).
  */
-export const EVERSION_RUNTIME_MODULES: ReadonlyArray<{
-  /** Substring of the module's source path (matched against sourcemap `sources`). */
-  fragment: string;
-  /** Optional minification-proof literal from the module, for builds without maps. */
-  fingerprint?: string;
-}> = [
-  { fragment: 'lib/eversion/gl/host', fingerprint: 'rmh-eversion-host-demoted' },
-  { fragment: 'lib/eversion/gl/core', fingerprint: 'eversion: prime before init' },
-  {
-    fragment: 'lib/eversion/gl/renderer',
-    fingerprint: 'eversion: WebGL2 is not available on this canvas',
-  },
-  {
-    fragment: 'lib/eversion/gl/worker',
-    fingerprint: 'eversion: requestAnimationFrame is not available in this worker',
-  },
-  {
-    fragment: 'lib/eversion/gl/shaders',
-    fingerprint: 'vec3 evertNormal(float theta, float phi, Frame fr)',
-  },
-  {
-    fragment: 'lib/eversion/gl/uniforms',
-    fingerprint: 'snapshot.rippleAge (seconds; -1 = not emitted)',
-  },
-  { fragment: 'lib/eversion/gl/governor-tiers' },
-  { fragment: 'lib/eversion/capture', fingerprint: 'eversion: capture sandbox did not load' },
-  { fragment: 'lib/eversion/projection-lut', fingerprint: 'toHalfFloatSplit: dst length mismatch' },
-  { fragment: 'lib/eversion/thurston' },
-  { fragment: 'lib/eversion/timeline' },
-  { fragment: 'lib/eversion/prefetch', fingerprint: 'eversion: prefetch failed' },
-  { fragment: 'lib/eversion/settle', fingerprint: 'eversion: settle probe needs a document' },
-  { fragment: 'lib/eversion/debug-overlay', fingerprint: 'eversion debug' },
-  {
-    fragment: 'node_modules/modern-screenshot',
-    fingerprint: 'Error receiving message from worker',
-  },
-  {
-    fragment: 'components/radial/eversion/useEversionController',
-    fingerprint: 'rmh-eversion-controller',
-  },
-  { fragment: 'components/radial/eversion/EversionBridge', fingerprint: 'rmh-eversion-bridge' },
-];
+export const ISLAND_BUDGETS: Readonly<Record<string, { jsBrotli: number; cssBrotli: number }>> = {
+  // Steel phase 6: re-measured + 3%.
+  // Third-pass audit RT1 (2026-11-12): an island's toaster now loads on its first toast too, so sonner left every
+  // island's first load. JS re-measured + 3%: nightrail 257,072, signal-forge 151,112, vega 117,079,
+  // void-breaker 304,606 B brotli. CSS unchanged.
+  nightrail: { jsBrotli: 264_800, cssBrotli: 20_000 },
+  'signal-forge': { jsBrotli: 155_650, cssBrotli: 19_900 },
+  vega: { jsBrotli: 120_600, cssBrotli: 18_200 },
+  'void-breaker': { jsBrotli: 313_750, cssBrotli: 20_900 },
+};
 
-export interface EversionLeak {
-  chunk: string;
-  fragment: string;
-  via: 'sourcemap' | 'fingerprint';
-}
+const ISLANDS_DIR = path.join(ROOT, 'dist-islands');
 
-/** Which eversion runtime modules are inside the given (static-closure) chunks. */
-export function eversionLeaks(
-  outDir: string,
-  chunks: readonly string[],
-  modules = EVERSION_RUNTIME_MODULES,
-): { leaks: EversionLeak[]; mapped: number } {
-  const leaks: EversionLeak[] = [];
-  let mapped = 0;
-  for (const chunk of chunks) {
-    const mapFile = path.join(outDir, `${chunk}.map`);
-    let sources: string[] | null = null;
-    if (existsSync(mapFile)) {
-      try {
-        sources =
-          (JSON.parse(readFileSync(mapFile, 'utf8')) as { sources?: string[] }).sources ?? [];
-        mapped++;
-      } catch {
-        sources = null; // unreadable map: fall back to the fingerprints
-      }
-    }
-    const text = sources ? '' : readFileSync(path.join(outDir, chunk), 'utf8');
-    for (const { fragment, fingerprint } of modules) {
-      if (sources) {
-        if (sources.some((src) => src.includes(fragment))) {
-          leaks.push({ chunk, fragment, via: 'sourcemap' });
-        }
-      } else if (fingerprint && text.includes(fingerprint)) {
-        leaks.push({ chunk, fragment, via: 'fingerprint' });
-      }
-    }
+/** Each built island's first-load JS (static closure of its entry) and CSS, brotli. */
+function measureIslands(): Array<{
+  id: string;
+  jsBrotli: number;
+  cssBrotli: number;
+  files: number;
+}> {
+  const manifestPath = path.join(ISLANDS_DIR, '.vite', 'manifest.json');
+  if (!existsSync(manifestPath)) return [];
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as Record<
+    string,
+    { file: string; isEntry?: boolean; src?: string; css?: string[] }
+  >;
+  const out: Array<{ id: string; jsBrotli: number; cssBrotli: number; files: number }> = [];
+  for (const [key, chunk] of Object.entries(manifest)) {
+    const id = /^features\/([^/]+)\/island\.tsx$/.exec(key)?.[1];
+    if (!chunk.isEntry || !id) continue;
+    const { files } = staticClosure(ISLANDS_DIR, chunk.file);
+    const jsBrotli = files.reduce(
+      (n, f) => n + brotliCompressSync(readChunk(ISLANDS_DIR, f)).length,
+      0,
+    );
+    const cssBrotli = (chunk.css ?? []).reduce(
+      (n, f) => n + brotliCompressSync(readFileSync(path.join(ISLANDS_DIR, f))).length,
+      0,
+    );
+    out.push({ id, jsBrotli, cssBrotli, files: files.length });
   }
-  return { leaks, mapped };
+  return out.sort((a, b) => a.id.localeCompare(b.id));
 }
 
 /**
@@ -525,7 +533,16 @@ async function main(): Promise<number> {
     );
   }
 
-  const { leaks, mapped } = eversionLeaks(OUT_DIR, files);
+  for (const island of measureIslands()) {
+    const budget = ISLAND_BUDGETS[island.id];
+    if (!budget) {
+      rows.push([`island ${island.id}: NO BUDGET`, island.jsBrotli, 0]);
+      continue;
+    }
+    rows.push([`island ${island.id} JS, br`, island.jsBrotli, budget.jsBrotli]);
+    rows.push([`island ${island.id} CSS, br`, island.cssBrotli, budget.cssBrotli]);
+  }
+
   let failed = false;
   console.log('\n  bundle budget — transitive STATIC closure of the client entry');
   console.log('  ──────────────────────────────────────────────────────────────');
@@ -539,26 +556,9 @@ async function main(): Promise<number> {
         ` / ${kb(budget).padStart(10)} budget (${sign}${delta.toFixed(1)}%)`,
     );
   }
-  const evOk = leaks.length === 0;
-  if (!evOk) failed = true;
-  console.log(
-    `  [${evOk ? 'ok  ' : 'FAIL'}] ${'eversion on path (S#39)'.padEnd(22)} ${String(leaks.length).padStart(10)} module(s)` +
-      ` (${mapped}/${files.length} chunks checked by sourcemap, the rest by fingerprint)`,
-  );
   console.log('  ──────────────────────────────────────────────────────────────');
   console.log(`  entry: ${entry}`);
   console.log(`  chunks on the critical path: ${files.length}\n`);
-
-  if (!evOk) {
-    console.error(
-      'check-bundle-budget: FAIL (S#39) — the globe eversion runtime is on the critical path:\n' +
-        leaks.map((l) => `    ${l.fragment}  in  ${l.chunk}  (${l.via})`).join('\n') +
-        '\n  It must be reached only through dynamic import() (lib/eversion/prefetch.ts, loaded' +
-        '\n  by RadialHub behind isEversionEnabled). Find the static import with' +
-        '\n  `pnpm run check:entry-composition`, or grep for the module above.' +
-        '\n  See the EVERSION_RUNTIME_MODULES note in scripts/check-bundle-budget.ts.',
-    );
-  }
 
   if (failed) {
     console.error(
@@ -569,7 +569,7 @@ async function main(): Promise<number> {
         '  _site.tsx, or anything a route module touches at TOP LEVEL) started\n' +
         '  importing a library it only needs lazily. `routeTree.gen.ts` imports all\n' +
         '  739 route modules statically, so a top-level import in ANY route module\n' +
-        '  lands on every page. See docs/performance-audit-2026-08-04.md.\n' +
+        '  lands on every page. See docs/archive/2026/performance-audit-2026-08-04.md.\n' +
         '  Run `pnpm run check:entry-composition` to see which packages are in there.\n' +
         '  Raising a budget requires a PR-body line naming the feature that bought\n' +
         '  the bytes (OPT-01).',

@@ -1,12 +1,15 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useState, useCallback } from'react';
 import { useTranslation } from'react-i18next';
+import { api } from '@/lib/contract/client';
+import { getStakeApi } from '@/lib/staking/staking.contract';
 import { Loader2, PiggyBank, TrendingUp } from'lucide-react';
 import { Button } from'@/components/ui/button';
 import { Switch } from'@/components/ui/switch';
 import { Spinner } from'@/components/ui/spinner';
 import { CoinIcon } from'@/components/rmhcoins/CoinIcon';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Stake {
  principal: number;
@@ -24,10 +27,15 @@ export function StakingCard() {
  const [loading, setLoading] = useState(true);
  const [amount, setAmount] = useState('');
  const [busy, setBusy] = useState<string | null>(null);
+ // Steel M9: the stake replaces the spinner.
+ const arrival = useArrival(!loading);
 
  const load = useCallback(async () => {
- const res = await fetch('/api/staking', { credentials:'include'});
- if (res.ok) setData(await res.json());
+ try {
+ setData(await api(getStakeApi));
+ } catch {
+ // leave the card hidden
+ }
  }, []);
 
  useEffect(() => {
@@ -67,7 +75,7 @@ export function StakingCard() {
 
  if (loading) {
  return (
- <section className="rounded-site glass-fill p-5">
+ <section className="rounded-site p-5">
  <div className="flex justify-center py-4">
  <Spinner size={20} />
  </div>
@@ -80,11 +88,11 @@ export function StakingCard() {
  const validAmt = Number.isFinite(amt) && amt > 0;
 
  return (
- <section className="rounded-site glass-fill p-5">
+ <section className={cn('rounded-site p-5', arrival)}>
  <div className="mb-3 flex items-center justify-between">
  <div className="flex items-center gap-2">
  <PiggyBank className="h-4 w-4 text-site-accent"/>
- <h2 className="text-sm font-bold text-site-text">{t("coin-vault", { defaultValue:"Coin vault"})}</h2>
+ <h2 className="text-sm font-semibold text-site-text">{t("coin-vault", { defaultValue:"Coin vault"})}</h2>
  </div>
  <span className="inline-flex items-center gap-1 rounded-full bg-site-accent/15 px-2 py-0.5 text-xs font-semibold text-site-accent">
  <TrendingUp className="h-3 w-3"/> {(data.apr * 100).toFixed(0)}% APR
@@ -93,22 +101,22 @@ export function StakingCard() {
 
  <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3">
  <div className="rounded-site-sm bg-site-bg p-2">
- <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-text">
+ <p className="inline-flex items-center gap-0.5 text-sm font-semibold text-site-text">
  <CoinIcon className="h-3.5 w-3.5"/> {fmt(data.principal)}
  </p>
- <p className="text-[10px] text-site-text-dim">{t("staked", { defaultValue:"Staked"})}</p>
+ <p className="text-micro text-site-text-muted">{t("staked", { defaultValue:"Staked"})}</p>
  </div>
  <div className="rounded-site-sm bg-site-bg p-2">
- <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-accent">
+ <p className="inline-flex items-center gap-0.5 text-sm font-semibold text-site-accent">
  <CoinIcon className="h-3.5 w-3.5"/> {fmt(data.accrued)}
  </p>
- <p className="text-[10px] text-site-text-dim">{t("interest", { defaultValue:"Interest"})}</p>
+ <p className="text-micro text-site-text-muted">{t("interest", { defaultValue:"Interest"})}</p>
  </div>
  <div className="rounded-site-sm bg-site-bg p-2">
- <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-text">
+ <p className="inline-flex items-center gap-0.5 text-sm font-semibold text-site-text">
  <CoinIcon className="h-3.5 w-3.5"/> {fmt(data.balance)}
  </p>
- <p className="text-[10px] text-site-text-dim">{t("wallet", { defaultValue:"Wallet"})}</p>
+ <p className="text-micro text-site-text-muted">{t("wallet", { defaultValue:"Wallet"})}</p>
  </div>
  </div>
 
@@ -120,11 +128,11 @@ export function StakingCard() {
  onChange={(e) => setAmount(e.target.value)}
  placeholder={t("amount-placeholder", { defaultValue:"Amount"})}
  aria-label={t("coins-aria-label", { defaultValue:"Coins to stake or unstake"})}
- className="glass-inset border w-full rounded-site-sm px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
+ className="surface-field border w-full rounded-site-sm px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
  />
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  loading={busy ==='deposit'}
  disabled={!validAmt || busy !== null}
  onClick={() => act('/api/staking/deposit', { amount: amt },'deposit')}
@@ -133,7 +141,7 @@ export function StakingCard() {
  </Button>
  <Button
  size="sm"
- variant="outline"
+ variant="default"
  loading={busy ==='unstake'}
  disabled={!validAmt || busy !== null || amt > data.principal}
  onClick={() => act('/api/staking/withdraw', { amount: amt },'unstake')}
@@ -144,7 +152,7 @@ export function StakingCard() {
  <div className="mt-3 flex items-center justify-between gap-2">
  <div className="min-w-0">
  <p id="stake-auto-reinvest" className="text-xs font-semibold text-site-text">{t("auto-reinvest", { defaultValue:"Auto-reinvest"})}</p>
- <p className="text-[10px] text-site-text-dim">{t("auto-reinvest-hint", { defaultValue:"Interest compounds into your stake daily"})}</p>
+ <p className="text-micro text-site-text-muted">{t("auto-reinvest-hint", { defaultValue:"Interest compounds into your stake daily"})}</p>
  </div>
  <Switch
  checked={data.autoReinvest}

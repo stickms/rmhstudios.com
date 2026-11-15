@@ -1,10 +1,8 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Image as ImageIcon, Pin, PinOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import {
   Sheet,
   SheetContent,
@@ -14,7 +12,11 @@ import {
 } from '@/components/ui/sheet';
 import type { ChatRef } from '@/lib/chat-plus/types';
 import type { PinView } from '@/lib/chat-plus/settings.client';
+import { api } from '@/lib/contract/client';
+import { setChatPinApi } from '@/lib/chat-plus/chat.contract';
 import { chatMetaKey, useChatMeta } from './hooks';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 /**
  * M6 — the pinned-messages bar under the chat header. Shows the most recent pin
@@ -39,6 +41,8 @@ export function ChatPinnedBar({
   const { data } = useChatMeta(chat);
   const [open, setOpen] = useState(false);
   const pins = data?.pins ?? [];
+  // The chat's meta loads after the thread; the bar lands on top of it when there are pins.
+  const arrival = useArrival(!!data);
   if (pins.length === 0) return null;
   const latest = pins[0];
 
@@ -47,7 +51,10 @@ export function ChatPinnedBar({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="glass-chrome flex w-full shrink-0 items-center gap-2 px-4 py-2 text-left focus-visible:ring-2 focus-visible:ring-site-accent"
+        className={cn(
+          'surface-chrome flex w-full shrink-0 items-center gap-2 px-4 py-2 text-left focus-visible:ring-2 focus-visible:ring-site-accent',
+          arrival,
+        )}
         aria-haspopup="dialog"
       >
         <Pin className="size-4 shrink-0 text-site-accent" aria-hidden />
@@ -86,13 +93,10 @@ function PinsSheet({
 
   const unpin = async (messageId: string) => {
     try {
-      const res = await fetch(`/api/chats/${chat.kind}/${encodeURIComponent(chat.id)}/pin`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageId, pinned: false }),
+      await api(setChatPinApi, {
+        params: { kind: chat.kind, id: chat.id },
+        body: { messageId, pinned: false },
       });
-      if (!res.ok) throw new Error('unpin failed');
       await qc.invalidateQueries({ queryKey: chatMetaKey(chat) });
     } catch {
       toast.error(t('pin-failed', { defaultValue: 'Could not update the pin' }));
@@ -109,7 +113,7 @@ function PinsSheet({
           </SheetDescription>
         </SheetHeader>
         {pins.length === 0 ? (
-          <p className="py-6 text-center text-sm text-site-text-dim">
+          <p className="py-6 text-center text-sm text-site-text-muted">
             {t('pins-empty', { defaultValue: 'Nothing is pinned.' })}
           </p>
         ) : (
@@ -117,13 +121,13 @@ function PinsSheet({
             {pins.map((p) => (
               <li key={p.messageId} className="flex items-start gap-3 py-2.5">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-site-text-dim">
+                  <p className="text-xs text-site-text-muted">
                     {nameOf(p.senderId, p.senderName)} ·{' '}
                     {new Date(p.createdAt).toLocaleDateString()}
                   </p>
                   <p className="mt-0.5 flex items-center gap-1.5 break-words text-sm text-site-text">
                     {p.hasMedia && (
-                      <ImageIcon className="size-4 shrink-0 text-site-text-dim" aria-hidden />
+                      <ImageIcon className="size-4 shrink-0 text-site-text-muted" aria-hidden />
                     )}
                     {p.text || t('pinned-media', { defaultValue: 'Photo or media' })}
                   </p>
@@ -132,7 +136,7 @@ function PinsSheet({
                   type="button"
                   onClick={() => void unpin(p.messageId)}
                   aria-label={t('unpin-message', { defaultValue: 'Unpin message' })}
-                  className="flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-dim hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-full text-site-text-muted hover:bg-site-surface-hover hover:text-site-text focus-visible:ring-2 focus-visible:ring-site-accent"
                 >
                   <PinOff className="size-4" />
                 </button>

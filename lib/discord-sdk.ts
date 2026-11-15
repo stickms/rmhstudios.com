@@ -1,13 +1,7 @@
-'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { DiscordSDK, patchUrlMappings } from '@discord/embedded-app-sdk';
-
-// Re-exported for the /discord/* call sites, which load the SDK anyway. Code on
-// a SHARED path (__root.tsx, lib/sw-register.ts, …) must import it from
-// '@/lib/discord-activity' directly — importing it from here would pull the
-// 135 KB SDK into the client entry chunk. See that file's docblock.
-export { isDiscordActivity } from '@/lib/discord-activity';
+import { api } from '@/lib/contract/client';
+import { discordTokenApi } from '@/lib/discord.contract';
 
 export interface DiscordUser {
   id: string;
@@ -181,17 +175,11 @@ export function useDiscordSdk(): DiscordState {
         });
 
         // 3. Exchange code for access token via our server
-        const tokenRes = await fetch('/api/discord/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code }),
-        });
-
-        if (!tokenRes.ok) {
-          throw new Error('Token exchange failed');
-        }
-
-        const { access_token, linkedUserId } = await tokenRes.json();
+        const { access_token, linkedUserId } = await api(discordTokenApi, { body: { code } }).catch(
+          () => {
+            throw new Error('Token exchange failed');
+          },
+        );
 
         // 4. Authenticate with Discord
         const authResult = await sdk.commands.authenticate({

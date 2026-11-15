@@ -29,12 +29,11 @@ Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next
   layout, conventions, and where to look first.
 - {doc}`architecture` — runtime topology and the deploy pipeline: what runs
   where in production, images, CI, ports, auth across tiers.
-- {doc}`design-language` — the visual system (**Radial Plasmatic Jelly**):
-  the `--site-*` token contract, themes, primitives, motion, accessibility.
+- {doc}`design-language` — the visual system (**Steel**): the definition of
+  done for a UI change, the `--site-*` tokens, surfaces, the spine, motion,
+  accessibility and the gates that enforce them.
 - {doc}`testing` — the test suites (Vitest main + epic, Go Bazel) and which
   CI workflows gate them.
-- {doc}`frontend-webassembly` — globe numerical kernels, build and benchmark
-  commands, JavaScript fallbacks, and the Apache policy required for deployment.
 - {doc}`README` — the full annotated map of `docs/`, including freshness
   flags for every directory.
 
@@ -56,18 +55,20 @@ site-reference/index
 developer-api/index
 codebase-overview
 architecture
+csp
 testing
 hearthworks-multiplayer
-frontend-webassembly
 performance-slo
 status-page
 design-language
+plasmatic-jelly-design-language
 plasmatic-jelly-system
 page-consistency
 people
 adsense
 albums-storage
 coins
+rmhos
 translations
 ```
 
@@ -89,41 +90,6 @@ opti/**
 :maxdepth: 1
 :hidden:
 
-server-perf-2026-10-21/index
-server-perf-2026-10-21/01-method
-server-perf-2026-10-21/02-budgets
-server-perf-2026-10-21/03-rules
-server-perf-2026-10-21/04-workstreams
-server-perf-2026-10-21/06-report
-server-perf-2026-10-21/results/ws-0
-server-perf-2026-10-21/results/ws-1
-server-perf-2026-10-21/results/ws-2
-server-perf-2026-10-21/results/ws-3
-server-perf-2026-10-21/results/ws-4
-server-perf-2026-10-21/results/ws-5
-server-perf-2026-10-21/results/ws-6
-server-perf-2026-10-21/results/ws-7
-server-perf-2026-10-21/results/ws-8
-server-perf-2026-10-21/results/ws-9
-server-perf-2026-10-21/results/compare
-loading-audit-2026-08-11/index
-loading-audit-2026-08-11/01-measurements
-loading-audit-2026-08-11/02-critical-path
-loading-audit-2026-08-11/03-api-caching
-loading-audit-2026-08-11/04-database
-loading-audit-2026-08-11/05-server-edge-fonts
-loading-audit-2026-08-11/06-backlog
-performance-audit-2026-10-21
-css-js-audit-2026-10-09
-ui-perf-audit-2026-10-09
-ui-audit-2026-10-09
-ui-audit-2026-08-01
-ui-audit-2026-07-28
-performance-audit-2026-07-17
-scalability-audit-2026-07-17
-ci-speed-audit-2026-07-17
-security-audit-2026-07-13
-security-audit-2026-07-12
 mobile-friendliness-audit
 ```
 
@@ -133,8 +99,6 @@ mobile-friendliness-audit
 :hidden:
 :glob:
 
-full-rewrite-design-2026-07-18
-optimization-ideas-2026-08-05
 website-improvement-plan
 plans/**
 feed/**
@@ -148,6 +112,7 @@ superpowers/**
 :glob:
 
 rmhbox/**
+rmhmusic/**
 altair/**
 rmhtube/**
 rmhvibe/**

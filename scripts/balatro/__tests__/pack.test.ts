@@ -14,8 +14,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import pack from '@/lib/balatro/game-pack.json';
-import { extractEntry, readZip } from '@/lib/balatro/zip';
+import pack from '@features/balatro/engine/game-pack.json';
+import { extractEntry, readZip } from '@features/balatro/engine/zip';
 
 const ROOT = join(import.meta.dirname, '../../..');
 const MP = join(ROOT, 'data', 'balatro-mp');

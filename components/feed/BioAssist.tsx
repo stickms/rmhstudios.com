@@ -1,10 +1,12 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useState } from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 
+import { AI_TIMEOUT_MS, api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { draftBioApi } from '@/lib/feed/compose-assist.contract';
 type Tone = 'friendly' | 'professional' | 'funny';
 
 const TONES: Tone[] = ['friendly', 'professional', 'funny'];
@@ -42,21 +44,7 @@ export function BioAssist({
   const run = async (tone: Tone) => {
     setBusy(tone);
     try {
-      const res = await fetch('/api/ai/bio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ tone, maxChars }),
-      });
-      if (res.status === 503) {
-        toast.error(t('ai-unavailable', { defaultValue: 'AI assist is unavailable right now.' }));
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || t('bio-failed', { defaultValue: 'Could not write a bio' }));
-        return;
-      }
+      const data = await api(draftBioApi, { body: { tone, maxChars }, timeoutMs: AI_TIMEOUT_MS });
       if (!data.bio) {
         // Nothing to write from — an honest empty result, not a failure.
         toast.info(
@@ -68,8 +56,12 @@ export function BioAssist({
       }
       setPrevious(value);
       onChange(data.bio);
-    } catch {
-      toast.error(t('bio-failed', { defaultValue: 'Could not write a bio' }));
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 503) {
+        toast.error(t('ai-unavailable', { defaultValue: 'AI assist is unavailable right now.' }));
+      } else {
+        toast.error(serverError(e) || t('bio-failed', { defaultValue: 'Could not write a bio' }));
+      }
     } finally {
       setBusy(null);
     }
@@ -81,7 +73,7 @@ export function BioAssist({
       role="group"
       aria-label={t('bio-assist-label', { defaultValue: 'Write my bio with AI' })}
     >
-      <span className="flex items-center gap-1 text-xs text-site-text-dim">
+      <span className="flex items-center gap-1 text-xs text-site-text-muted">
         <Sparkles className="h-3.5 w-3.5 text-site-accent" aria-hidden />
         {t('bio-assist-title', { defaultValue: 'Write one for me' })}
       </span>
@@ -104,7 +96,7 @@ export function BioAssist({
             onChange(previous);
             setPrevious(null);
           }}
-          className="rounded-full px-3 py-1 text-xs text-site-text-dim underline transition-colors hover:text-site-text"
+          className="rounded-full px-3 py-1 text-xs text-site-text-muted underline transition-colors hover:text-site-text"
         >
           {t('bio-undo', { defaultValue: 'Undo' })}
         </button>

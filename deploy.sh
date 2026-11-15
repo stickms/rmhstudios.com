@@ -13,7 +13,7 @@
 # Image strategy (build now runs in CI):
 #   - The heavy build (vibe-packages → vite build → esbuild server bundles → Go
 #     binaries → Chromium) happens in GitHub Actions on native ARM64 runners and
-#     is pushed to GHCR as two images (slim web + full supervisor/status), each
+#     is pushed to GHCR as two images (slim web + full status/assets), each
 #     tagged with the full commit SHA. See .github/workflows/deploy.yml.
 #   - This script PULLS those images and retags them to the local names
 #     docker-compose.yml expects, so the compose file + blue/green hotswap are
@@ -56,6 +56,7 @@ case "$ENVIRONMENT" in
         PORT_SOCKET=7001
         PORT_RMHBOX=7676
         PORT_RMHTUBE=7003
+        PORT_RMHOS_NET=7009
         PORT_STATUS=7008
         COMPOSE_PROFILES=""
         ;;
@@ -71,6 +72,7 @@ case "$ENVIRONMENT" in
         # PORT_SOCKET=8001
         # PORT_RMHBOX=8676
         # PORT_RMHTUBE=8003
+        # PORT_RMHOS_NET=8009
         # COMPOSE_PROFILES=""
         ;;
     *)
@@ -98,7 +100,7 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 GITHUB_REPO="stickms/rmhstudios.com"
 
 # ── GHCR pull config ─────────────────────────────────────────────────────────
-# The web (slim) + full (supervisor/status) images built by GitHub Actions.
+# The web (slim) + full (status/assets) images built by GitHub Actions.
 # GHCR_TOKEN needs `read:packages`; it defaults to GITHUB_TOKEN so a single PAT
 # with `repo` (commit status) + `read:packages` (image pull) covers both. If the
 # packages are public, no token is needed (the pull works unauthenticated).
@@ -393,7 +395,7 @@ dc() {
 
 # ── Helper: prune stale SHA-tagged rollback images ──────────────────────────
 # Each deploy tags ${IMAGE_NAME}:${GIT_SHA} for instant rollback. These images
-# are large (full node_modules + .output + Chromium, multiple GB each) and
+# are large (full node_modules + .output + Chromium on the slim image, multiple GB each) and
 # `docker image prune` never touches them because they're tagged. Keep the 2
 # newest (current + one rollback target), remove the rest — the older SHAs are
 # almost never used and are the single biggest avoidable disk cost.
@@ -402,7 +404,7 @@ dc() {
 # to a full build-cache wipe that would evict the warm pnpm-store/.vinxi mounts.
 prune_rollback_images() {
     # Default keep=1 (one rollback target per image). These images are LARGE
-    # (this monorepo's node_modules + ~1.5GB .output + Chromium on the full image),
+    # (this monorepo's node_modules + ~1.5GB .output + Chromium on the slim image),
     # and on the small root disk each retained SHA is several GB of unique layers.
     # Keeping 1 instead of 2 frees a full image set and is the cheapest way to stop
     # the disk-pressure cache wipes. Callers pass an explicit count to override.
@@ -596,7 +598,7 @@ stage_note() {
 #     builtin and needs no package.
 #
 # The budget only costs wall-clock on a genuine failure (a healthy port returns
-# on the first probe) and runs inside the supervisor gate's parallel 120s, so it
+# on the first probe) and runs inside the parallel health wave's 120s, so it
 # is free to be generous here. Override with PORT_HEALTH_TIMEOUT if needed.
 check_port() {
     local port=$1 count=0 max_retries="${PORT_HEALTH_TIMEOUT:-60}" probe=ss
@@ -761,9 +763,9 @@ fi
 # to R2"), so Apache no longer touches them and no chmod dance is needed.
 
 IMAGE_NAME="${PROJECT_NAME}-app"
-# Full image (Go supervisor/status: + Go bins, Chromium, git). Built from the
+# Full image (Go status/assets: + Go bins). Built from the
 # same Dockerfile as the slim web image, target runner-full. Must match the
-# `image:` for the supervisor/status services in docker-compose.yml.
+# `image:` for the status/assets services in docker-compose.yml.
 FULL_IMAGE_NAME="${IMAGE_NAME}-full"
 GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 # Full (untruncated) commit SHA — the immutable tag CI pushes to GHCR. After the
@@ -821,7 +823,7 @@ step_done
 #  image — see below.)
 
 # ── Step 2: Pull pre-built images from GHCR ──────────────────────────────────
-# The two images (slim web → runner, full supervisor/status → runner-full) are
+# The two images (slim web → runner, full status/assets → runner-full) are
 # built + pushed by .github/workflows/deploy.yml on GitHub's native ARM64
 # runners, each tagged with the full commit SHA. We pull THIS deploy's SHA and
 # retag it to the local names docker-compose.yml expects (${IMAGE_NAME}:latest /
@@ -848,7 +850,7 @@ else
 fi
 
 # Pull both images CONCURRENTLY. They are separate repos but share most base
-# layers; the full image's unique layers (Chromium ~300 MB, Go bins) can transfer
+# layers; the full image's unique layers (Go bins) can transfer
 # while the web image's layers extract, instead of strictly after. Docker's
 # per-layer locking makes shared-layer pulls safe to overlap. Each pull's log is
 # captured to its own file so a failure still reports WHICH image and why, exactly
@@ -1194,25 +1196,45 @@ if [ -n "$BG_R2_PID" ]; then
     BG_R2_PID=''
     release_event assets-published
 fi
+# Retire the Go supervisor BEFORE `up` (D3). It ran the Discord bot, and the bot now runs in the
+# `jobs` worker whenever a token is set, so a supervisor container left running from an earlier
+# release would hold a second gateway session on the same token: two bots answering every /chat.
+# Deleting the service from docker-compose.yml does not stop its container. `--remove-orphans`
+# below would remove it too, but that is compose's ordering to keep, not ours; this makes the
+# order explicit and fails the deploy if the old container cannot be removed. Found by the compose
+# labels (and by its container_name, for one started by hand), so it is a no-op once it is gone.
+# `docker stop -t 90` gives the Go bot the stop_grace_period it had to drain in-flight replies.
+retire_supervisor() {
+    local ids
+    ids=$( { "$DOCKER_BIN" ps -aq \
+                 --filter "label=com.docker.compose.project=${PROJECT_NAME}" \
+                 --filter "label=com.docker.compose.service=supervisor"
+             "$DOCKER_BIN" ps -aq --filter "name=^/${PROJECT_NAME}-supervisor\$"
+           } 2>/dev/null | sort -u | xargs) || true
+    [ -n "$ids" ] || return 0
+    log "Retiring the Go supervisor container(s) ${ids} (the Discord bot runs in jobs now)..."
+    # shellcheck disable=SC2086
+    "$DOCKER_BIN" stop -t 90 $ids >/dev/null 2>&1 || true
+    # shellcheck disable=SC2086
+    "$DOCKER_BIN" rm -f $ids >/dev/null 2>&1 || true
+    # Still there (rm refused, or a restart policy raced it back): refuse to start a second bot.
+    if [ -n "$("$DOCKER_BIN" ps -aq --filter "name=^/${PROJECT_NAME}-supervisor\$" 2>/dev/null)" ] \
+        || [ -n "$("$DOCKER_BIN" ps -aq --filter "label=com.docker.compose.project=${PROJECT_NAME}" --filter "label=com.docker.compose.service=supervisor" 2>/dev/null)" ]; then
+        return 1
+    fi
+}
 step_start "Starting containers (all services except web)..."
+if ! retire_supervisor; then
+    log "ERROR: could not remove the old supervisor container; starting jobs now would run two Discord bots."
+    update_deploy_status fail "old supervisor container could not be removed"
+    exit 1
+fi
 if ! dc up -d --no-build --remove-orphans --scale web=0; then
     log "ERROR: docker compose up failed."
     update_deploy_status fail "docker compose up failed"
     exit 1
 fi
 step_done
-
-SUPERVISOR_METRICS_PORT="${PORT_SUPERVISOR_METRICS:-9090}"
-check_supervisor() {
-    for _ in $(seq 1 24); do
-        if dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/health" >/dev/null 2>&1; then
-            return 0
-        fi
-        sleep 5
-    done
-    return 1
-}
-
 
 # HTTP /health on each hub + status (a listening port alone said nothing about a
 # hub that accepted connections but could not serve them).
@@ -1274,9 +1296,8 @@ run_health_checks() {
     check_http "$PORT_RMHBOX"  & local p_rmhbox=$!
     check_http "$PORT_RMHTUBE" & local p_rmhtube=$!
     check_http "$PORT_STATUS"  & local p_status=$!
-    check_supervisor           & local p_sup=$!
     wf=$(mktemp); check_workers "${1:-${WORKER_SETTLE_SECONDS:-30}}" > "$wf" & local p_workers=$!
-    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status" "supervisor:$p_sup"; do
+    for job in "socket:$p_socket" "rmhbox:$p_rmhbox" "rmhtube:$p_rmhtube" "status:$p_status"; do
         wait "${job#*:}" || failed="$failed ${job%%:*}"
     done
     wait "$p_workers" || failed="$failed $(cat "$wf")"
@@ -1388,15 +1409,10 @@ step_done
 # NOTE: web is intentionally NOT checked here — the hotswap in Step 4b already
 # proved the new web container serves traffic before flipping Apache to it, and
 # web now listens on the blue/green port, not the fixed $PORT_WEB.
-# The supervisor /health gate (the five Go background workers) can take up to
-# ~120s (it covers the DB WaitForReachable before the metrics server binds). It
-# used to run AFTER the port checks, serializing the two waits. Run it as one
-# more background job in the same wave so its long poll OVERLAPS the port checks —
-# total health time becomes max(port, supervisor), not their sum.
-# discord-bot / recap / doctrine-worker / vibe-worker / bot-worker run as
-# goroutines inside the single `supervisor` process; it serves a MERGED
-# /health + /metrics on METRICS_ADDR (:9090), NOT host-published, so we probe it
-# from INSIDE the container with `dc exec`.
+# The cron/queue workers (jobs — which also holds the Discord bot — ladder-worker,
+# homes-worker) have no port: check_workers watches them for a crash-loop over the
+# same window. (The Go supervisor's in-container /health + /metrics gate went
+# with the supervisor, D3.)
 stage health
 step_start "Joining service health checks (observed during web bake)..."
 wait "$BG_HEALTH_PID"
@@ -1419,17 +1435,139 @@ if [ -n "$failed_services" ]; then
     exit 1
 fi
 
-# Confirm the merged metrics registry exposes all five workers. A missing label
-# means one worker silently failed to register inside the shared process (not
-# that the process is down) — log it for the post-deploy watch rather than
-# blocking the deploy.
-SUP_METRICS=$(dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/metrics" 2>/dev/null || echo "")
-for w in discord-bot recap doctrine-worker vibe-worker bot-worker; do
-    printf '%s' "$SUP_METRICS" | grep -q "service=\"$w\"" || \
-        log "WARNING: supervisor /metrics missing service=\"$w\" label — check that worker."
-done
-
 step_done
+
+# ── Step 5b: Wiki (best-effort, production) ─────────────────────────────────
+# wiki.rmhstudios.com is MediaWiki (docs/wiki.md). Its image is built here on
+# the host from deploy/mediawiki/, not pulled from GHCR, and the service sits
+# behind the `wiki` compose profile so the pulls and the `dc up` above skip it
+# (a running profiled service is not an orphan to --remove-orphans). This brings
+# it up to date after the site is healthy: a rebuild from cache, and no restart
+# at all unless deploy/mediawiki/ or the MediaWiki 1.43 base image changed. The first deploy installs it
+# into the `mediawiki` schema of the site's database. It needs nothing beyond
+# .env.production. BEST-EFFORT: a wiki that fails to build or start is logged
+# and never fails or rolls back the site's deploy.
+if [ "$ENVIRONMENT" = "production" ]; then
+    {
+        step_start "Building and starting the wiki (best-effort)..."
+        _wiki_log=$(mktemp /tmp/deploy-wiki.XXXXXX)
+        # --pull checks Docker Hub for a newer mediawiki:1.43 point release (they
+        # are mostly security fixes); without it the cached base would never move.
+        # A failed build leaves the running wiki as it was.
+        if timeout 900 "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+            --profile wiki build --pull mediawiki > "$_wiki_log" 2>&1 \
+            && timeout 300 "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+            --profile wiki up -d mediawiki >> "$_wiki_log" 2>&1; then
+            # A first start installs the wiki before Apache serves (compose
+            # start_period 120s); an unchanged container is already healthy.
+            # DEPLOY_WIKI_WAIT_SECONDS bounds the wait (default 3 minutes).
+            _wiki_id=$("$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+                --profile wiki ps -q mediawiki 2>/dev/null | head -n1)
+            _wiki_health=missing
+            for _ in $(seq 1 $(( ${DEPLOY_WIKI_WAIT_SECONDS:-180} / 5 ))); do
+                [ -n "$_wiki_id" ] || break
+                _wiki_health=$("$DOCKER_BIN" inspect -f '{{.State.Health.Status}}' "$_wiki_id" 2>/dev/null || echo missing)
+                [ "$_wiki_health" = "healthy" ] && break
+                sleep 5
+            done
+            if [ "$_wiki_health" = "healthy" ]; then
+                log "Wiki is up (mediawiki, loopback port ${PORT_WIKI:-7010})."
+            else
+                log "WARNING: the wiki container is '${_wiki_health}' after ${DEPLOY_WIKI_WAIT_SECONDS:-180}s; the site deploy is unaffected. Its log:"
+                "$DOCKER_BIN" logs --tail=30 "$_wiki_id" 2>&1 | sed 's/^/    /' || true
+            fi
+        else
+            log "WARNING: the wiki did not build or start; the site deploy is unaffected. Last lines:"
+            tail -n 30 "$_wiki_log" | sed 's/^/    /' || true
+        fi
+        rm -f "$_wiki_log"
+        # The vhost is the one host step this sandboxed deploy cannot take.
+        if command -v apache2ctl >/dev/null 2>&1 || command -v apachectl >/dev/null 2>&1; then
+            if [ ! -e /etc/apache2/sites-enabled/wiki.rmhstudios.com.conf ]; then
+                log "  ┌── wiki.rmhstudios.com is not served yet ─────────────────────────"
+                log "  │ The wiki runs, but Apache has no vhost for it. Once, as root:"
+                log "  │   sudo cp deploy/apache/wiki.rmhstudios.com.conf /etc/apache2/sites-available/"
+                log "  │   sudo a2ensite wiki.rmhstudios.com && sudo apachectl configtest && sudo systemctl reload apache2"
+                log "  └───────────────────────────────────────────────────────────────────"
+            fi
+        fi
+        step_done
+    } 2>/dev/null || log "WARNING: the wiki step failed; the site deploy is unaffected."
+fi
+
+# ── rmhOS relay hub ──────────────────────────────────────────────────────────
+# The hub dials the internet for strangers, so it only starts once its egress firewall is PROVEN
+# (deploy/rmhos-net/probe-firewall.sh: from a throwaway container on its network the unroutable
+# sentinel must be refused by our chain and the host must time out). The firewall itself is a root
+# systemd unit this sandboxed deploy cannot install (deploy/systemd/rmhos-net-firewall.service).
+# The service sits behind a compose profile, so the fleet `up` above never starts it. Nothing here
+# needs privilege, and nothing here can fail the site deploy: an unproven firewall, a missing secret
+# or a failed start leaves the hub stopped.
+#
+# A hub restart ends every user's network session (tickets and meters live in its memory), and the
+# image tag moves on every deploy, so compose would recreate the hub on every push. It is therefore
+# recreated only when something it RUNS changed: the fingerprint below (its bundle and the ws it
+# loads, in the NEW image, plus its resolved compose configuration, which includes every RMHOS_NET_*
+# value) is stamped on the container as the label rmhos.hub-fingerprint; an equal fingerprint, a
+# running hub, a passing probe and a healthy /health leave the container alone.
+rmhos_net_stop() { dc --profile rmhos-net stop rmhos-net >/dev/null 2>&1 || true; }
+# The secret must be set to something the hub accepts: 32+ characters, quoted or not.
+rmhos_secret_ok() {
+    local v
+    v=$(sed -n 's/^RMHOS_NET_TICKET_SECRET=//p' "$ENV_FILE" 2>/dev/null | tail -n1)
+    v=${v%\"}; v=${v#\"}; v=${v%\'}; v=${v#\'}
+    [ "${#v}" -ge 32 ]
+}
+rmhos_hub_fingerprint() {
+    local img bundle cfg
+    img=$(dc --profile rmhos-net config --images rmhos-net 2>/dev/null | head -n1) || return 1
+    [ -n "$img" ] || return 1
+    bundle=$("$DOCKER_BIN" run --rm --entrypoint sh "$img" -c 'sha256sum dist-server/server/rmhos-net/index.cjs node_modules/ws/package.json && node --version' 2>/dev/null) || return 1
+    [ -n "$bundle" ] || return 1
+    # The label itself is part of the configuration: hash it empty.
+    cfg=$(RMHOS_HUB_FINGERPRINT='' dc --profile rmhos-net config rmhos-net 2>/dev/null) || return 1
+    [ -n "$cfg" ] || return 1
+    printf '%s\n%s\n' "$bundle" "$cfg" | sha256sum | cut -d' ' -f1
+}
+{
+    if ! rmhos_secret_ok; then
+        log "rmhOS relay hub: RMHOS_NET_TICKET_SECRET is not set (or is under 32 characters); the hub is not started."
+        rmhos_net_stop
+    elif DOCKER_BIN="$DOCKER_BIN" PROJECT_NAME="$PROJECT_NAME" ENV_FILE="$ENV_FILE" \
+            bash "$REPO_DIR/deploy/rmhos-net/probe-firewall.sh"; then
+        _hub_fp=$(rmhos_hub_fingerprint 2>/dev/null || true)
+        _hub_cid=$(dc --profile rmhos-net ps -q rmhos-net 2>/dev/null | head -n1)
+        _hub_state=''
+        [ -z "$_hub_cid" ] || _hub_state=$("$DOCKER_BIN" inspect -f '{{.State.Running}} {{index .Config.Labels "rmhos.hub-fingerprint"}}' "$_hub_cid" 2>/dev/null || true)
+        if [ -n "$_hub_fp" ] && [ "$_hub_state" = "true $_hub_fp" ] \
+            && curl -fsS --max-time 4 "http://127.0.0.1:${PORT_RMHOS_NET:-7009}/health" >/dev/null 2>&1; then
+            log "rmhOS relay hub unchanged (fingerprint ${_hub_fp:0:12}); left running, network sessions are not interrupted. Egress firewall proven."
+        else
+            export RMHOS_HUB_FINGERPRINT="$_hub_fp"
+            # `up`'s output is kept (not discarded) so that a hub that does not start leaves its reason in the log.
+            _hub_up_rc=0
+            _hub_up_out=$(dc --profile rmhos-net up -d --no-build rmhos-net 2>&1) || _hub_up_rc=$?
+            if [ "$_hub_up_rc" -eq 0 ] && check_http "${PORT_RMHOS_NET:-7009}"; then
+                log "rmhOS relay hub (re)started (loopback port ${PORT_RMHOS_NET:-7009}), egress firewall proven. Users' network sessions ended; they restart rmhOS to reconnect."
+            else
+                log "WARNING: the rmhOS relay hub did not start healthy (compose up status ${_hub_up_rc}); stopping it. The site deploy is unaffected."
+                log "  last 20 lines of the hub's compose up output:"
+                printf '%s\n' "$_hub_up_out" | tail -n 20 | while IFS= read -r _hub_line; do log "  | ${_hub_line}"; done
+                rmhos_net_stop
+            fi
+            unset RMHOS_HUB_FINGERPRINT
+        fi
+    else
+        rmhos_net_stop
+        log "  ┌── rmhOS network relay NOT started: egress firewall not proven ───────"
+        log "  │ The hub reaches the internet for strangers and must not run without its"
+        log "  │ iptables drops. This deploy cannot install them (no root). Once, as root:"
+        log "  │   sudo cp deploy/systemd/rmhos-net-firewall.service /etc/systemd/system/"
+        log "  │   sudo systemctl daemon-reload && sudo systemctl enable --now rmhos-net-firewall.service"
+        log "  │ (fix ExecStart's repo path first). The next deploy starts the hub. The site is unaffected."
+        log "  └───────────────────────────────────────────────────────────────────────"
+    fi
+} || log "WARNING: the rmhOS relay hub step failed; the site deploy is unaffected."
 
 # ── Step 6: Prune stale images ───────────────────────────────────────────────
 log "Pruning dangling images..."

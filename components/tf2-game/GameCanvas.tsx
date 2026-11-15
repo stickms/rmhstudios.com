@@ -14,7 +14,6 @@
  *
  * The parent positions it (a full-viewport layer); it fills its parent.
  */
-'use client';
 
 import {
   useCallback,
@@ -77,6 +76,12 @@ export interface LoadingView {
 
 const subscribeNoop = () => () => {};
 
+/**
+ * The page an invite link opens, per game with rooms: the one whose `?lobby=CODE` joins with that
+ * game's client. (A CS:GO host's link used to open /tf2/play, which cannot load a CS:GO map.)
+ */
+const INVITE_PATH: Partial<Record<HudGame, string>> = { tf2: '/tf2/play', csgo: '/csgo' };
+
 /** A phone held upright (a tablet in portrait is wide enough to play: no rotate hint there). */
 const PHONE_PORTRAIT = '(orientation: portrait) and (max-width: 600px)';
 
@@ -130,6 +135,10 @@ function useErrorText(): (e: ClientError) => string {
         return t('play_error_p2p_connect', {
           defaultValue: 'Could not reach the host, directly or through our relay. Their network may block it, or the relay is full.',
         });
+      case 'wrong-game':
+        return t('play_error_wrong_game', {
+          defaultValue: 'This room belongs to a different game on this site. Open it from that game’s own page.',
+        });
       case 'context-lost':
         return t('play_error_context', { defaultValue: 'The graphics device was reset. Reload the game to continue.' });
       default:
@@ -163,7 +172,7 @@ export default function GameCanvas({
   const [settings, setSettings] = useState<GameSettings>(() => loadSettings(game));
   const [hintDismissed, setHintDismissed] = useState(false);
   const [roomCode, setRoomCode] = useState<string | null>(null);
-  const invite = useLobbyLink({ code: roomCode, path: '/tf2/play' });
+  const invite = useLobbyLink({ code: roomCode, path: INVITE_PATH[game] });
   const touchFirst = useSyncExternalStore(subscribeNoop, detectTouchFirst, () => false);
   const portrait = usePhonePortrait();
   const settingsRef = useRef(settings);
@@ -308,9 +317,8 @@ export default function GameCanvas({
   return (
     <div
       ref={rootRef}
-      className="tf2g-stage relative h-full w-full overflow-hidden bg-black text-(--app-text)"
+      className="tf2g-stage relative h-full w-full overflow-hidden bg-black text-app-text"
       data-jelly-zone="playfield"
-      data-jelly="off"
       data-touch={touchFirst ? 'true' : undefined}
       data-game={game}
       data-phase={phase}
@@ -392,11 +400,11 @@ export default function GameCanvas({
 
       {showRotate ? (
         <section className="tf2g-play-screen" aria-labelledby="tf2g-rotate-title">
-          <Smartphone className="size-10 rotate-90 text-(--app-accent-text)" aria-hidden />
+          <Smartphone className="size-10 rotate-90 text-app-accent-text" aria-hidden />
           <h2 id="tf2g-rotate-title" className="tf2hud-title text-2xl">
             {t('play_rotate_title', { defaultValue: 'Turn your device' })}
           </h2>
-          <p className="max-w-xs text-center text-sm text-(--app-text-muted)">
+          <p className="max-w-xs text-center text-sm text-app-text-muted">
             {t('play_rotate_body', { defaultValue: 'The game is laid out for landscape. Hold your phone sideways to play.' })}
           </p>
           <button type="button" className="tf2g-play-button" onClick={() => setHintDismissed(true)}>
@@ -411,7 +419,7 @@ export default function GameCanvas({
         </div>
       ) : phase === 'loading' ? (
         <div className="tf2g-play-screen" role="status" aria-live="polite">
-          <p className="text-xs font-semibold uppercase tracking-widest text-(--app-text-dim)">
+          <p className="text-xs font-semibold uppercase tracking-widest text-app-text-dim">
             {t('play_loading', { defaultValue: 'Loading' })}
           </p>
           <h2 className="tf2hud-title text-center text-3xl sm:text-4xl">{progress?.title || title || ''}</h2>
@@ -424,13 +432,13 @@ export default function GameCanvas({
               const pct = stagePct(s);
               return (
                 <li key={s} className="flex items-center gap-2" data-state={st?.state ?? 'pending'}>
-                  <span className={cn('w-20 shrink-0', st?.state === 'done' ? 'text-(--app-text)' : 'text-(--app-text-muted)')}>
+                  <span className={cn('w-20 shrink-0', st?.state === 'done' ? 'text-app-text' : 'text-app-text-muted')}>
                     {stageLabels[s]}
                   </span>
                   <span className="tf2g-play-bar tf2g-play-bar-thin min-w-0 flex-1" aria-hidden>
                     <span style={{ width: `${pct}%` }} />
                   </span>
-                  <span className="w-9 text-end tabular-nums text-(--app-text-dim)">
+                  <span className="w-9 text-end tabular-nums text-app-text-dim">
                     {t('play_percent', { defaultValue: '{{n}}%', n: pct })}
                   </span>
                 </li>
@@ -446,14 +454,14 @@ export default function GameCanvas({
 
       {phase === 'error' && error ? (
         <div className="tf2g-play-screen" role="alertdialog" aria-labelledby="tf2g-error-title" aria-describedby="tf2g-error-body">
-          <AlertTriangle className="size-10 text-(--app-accent-text)" aria-hidden />
+          <AlertTriangle className="size-10 text-app-accent-text" aria-hidden />
           <h2 id="tf2g-error-title" className="tf2hud-title text-3xl">
             {t('play_error_title', { defaultValue: 'The game stopped' })}
           </h2>
-          <p id="tf2g-error-body" className="max-w-sm text-center text-sm text-(--app-text-muted)">
+          <p id="tf2g-error-body" className="max-w-sm text-center text-sm text-app-text-muted">
             {errorText(error)}
           </p>
-          <p className="max-w-sm break-all text-center font-mono text-[11px] text-(--app-text-dim)">{error.detail}</p>
+          <p className="max-w-sm break-all text-center font-mono text-[11px] text-app-text-dim">{error.detail}</p>
           <div className="flex flex-wrap justify-center gap-2">
             {error.retryable ? (
               <button type="button" className="tf2g-play-button" onClick={retry}>
@@ -474,7 +482,7 @@ export default function GameCanvas({
           <h2 id="tf2g-end-title" className="tf2hud-title text-3xl">
             {t('play_end_title', { defaultValue: 'End of the demo' })}
           </h2>
-          <p className="max-w-sm text-center text-sm text-(--app-text-muted)">
+          <p className="max-w-sm text-center text-sm text-app-text-muted">
             {t('play_end_body', { defaultValue: 'That is everything this demo includes. Thanks for playing.' })}
           </p>
           <button type="button" className="tf2g-play-button" onClick={onEnded ?? onExit}>

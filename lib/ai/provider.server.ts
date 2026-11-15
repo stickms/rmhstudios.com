@@ -55,7 +55,12 @@ export type AiTask =
   /** Conversational, may carry a tool contract. */
   | 'concierge'
   /** Long-form generation (recaps, narrative Wrapped). */
-  | 'narrative';
+  | 'narrative'
+  /**
+   * Whole documents in Markdown (wiki pages). Thousands of tokens, always
+   * streamed: the reader watches it arrive, so latency is spent, not waited.
+   */
+  | 'document';
 
 interface Route {
   provider: ProviderName;
@@ -108,6 +113,12 @@ const ROUTES: Record<AiTask, Route> = {
     model: DEEPSEEK_CHAT,
     maxTokens: 700,
     temperature: 0.8,
+  },
+  document: {
+    provider: 'deepseek',
+    model: DEEPSEEK_CHAT,
+    maxTokens: 4_000,
+    temperature: 0.5,
   },
 };
 

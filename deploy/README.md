@@ -22,7 +22,7 @@ Terraform DNS config.
 | `docker/`                        | Docker daemon config / helpers                                      |
 | `postgres/`                      | Postgres tuning + host setup (DB runs on the host, reached via `host.docker.internal`) |
 | `backup/`                        | DB backup scripts (driven by the systemd timer)                    |
-| `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmh-disk-cleanup.{service,timer}`, `rmh-host-check.{service,timer}`, `rmhstudios-perf-tuning.service` |
+| `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmh-disk-cleanup.{service,timer}`, `rmh-host-check.{service,timer}`, `rmhstudios-perf-tuning.service`, `rmhos-net-firewall.service`, `rmhos-net-recover.{service,timer}` (optional) |
 | `terraform/`                     | Cloudflare **DNS** as code — see [`terraform/README.md`](./terraform/README.md) |
 | `apply-cloudflare-cache-rules.sh`, `apply-perf-tuning.sh` | idempotent host/CDN tuning helpers with `VERIFY_ONLY=1` drift checks |
 | `disk-report.sh`, `move-docker-storage.sh` | disk diagnostics + moving Docker's data-root onto a separate volume |
@@ -147,6 +147,23 @@ docker system df                          # Docker's own split: images vs cache
 ./deploy/disk-report.sh                   # read-only summary
 ```
 
+**rmhOS relay hub firewall (required before the hub starts).** The `rmhos-net` container
+is only started when `deploy/rmhos-net/probe-firewall.sh` proves its egress drops exist; the
+root unit installs them (and re-installs after a reboot, before Docker starts):
+
+```bash
+sudo cp deploy/systemd/rmhos-net-firewall.service /etc/systemd/system/   # fix the repo path first
+sudo systemctl daemon-reload && sudo systemctl enable --now rmhos-net-firewall.service
+```
+
+Without it the deploy still succeeds; the hub stays stopped and the log says so. The probe needs
+two things from the rules, not one: a sentinel `REJECT` in `RMHOS-EGRESS` that answers (refuses) a
+connection to `192.0.2.1:9`, and a timeout to the host's gateway. Once installed, run
+`sudo systemctl start rmhos-net-recover.service` once by hand (see
+`deploy/systemd/rmhos-net-recover.service`): the optional `rmhos-net-recover.timer` re-proves the
+firewall every two minutes and stops a running hub when the proof fails. Day-to-day operation
+(secret, cutting off a user, logs, rollback) is in [`docs/rmhos.md`](../docs/rmhos.md).
+
 **Automatic cleanup between deploys.** `deploy.sh` can only clean Docker's data (the
 webhook is sandboxed) and only runs on a push, so a root timer covers the rest:
 
@@ -190,4 +207,4 @@ single-instance. `web` runs multiple Nitro cluster workers in one container; the
 `redis`/`redis-state` planes back caching and durable rate-limit/presence state.
 Horizontal scaling of the realtime hubs would need sticky sessions plus a shared
 backplane first — see the scalability audit in
-[`../docs/scalability-audit-2026-07-17.md`](../docs/scalability-audit-2026-07-17.md).
+[`../docs/archive/2026/scalability-audit-2026-07-17.md`](../docs/archive/2026/scalability-audit-2026-07-17.md).

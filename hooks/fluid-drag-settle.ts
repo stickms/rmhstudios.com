@@ -1,10 +1,8 @@
 import { SPRINGS, springSettled, springStep, type Spring, type SpringState } from '@/lib/fluid';
-import { drive as sharedDrive, type FrameDriver, type FrameDriverFn } from '@/lib/jelly/frame';
 
 /**
- * The settle spring behind `useFluidDrag`, as a plain object so it can be tested without React. It runs on the shared
- * jelly frame driver (`lib/jelly/frame.ts`) rather than a private `requestAnimationFrame`: awake only between a
- * release and the spring arriving, asleep (no frame requested) otherwise. Each settle owns its own driver, so two drag
+ * The settle spring behind `useFluidDrag`, as a plain object so it can be tested without React. It requests a frame
+ * only between a release and the spring arriving, and none otherwise (R5). Each settle owns its own loop, so two drag
  * surfaces never cancel each other.
  */
 export interface Settle {
@@ -23,23 +21,18 @@ export interface Settle {
   dispose(): void;
 }
 
-/**
- * Frame order of the settle driver: before physics (10), engine (20), runtime (25) and arcs (30), so a drag owner's
- * position for a frame is written before the soft body reads it (the order table in `lib/jelly/frame.ts`).
- */
-export const FLUID_DRAG_FRAME_ORDER = 5;
-
 export interface SettleOptions {
-  /** Frame order; defaults to `FLUID_DRAG_FRAME_ORDER` (before physics). */
-  order?: number;
-  drive?: (fn: FrameDriverFn, opts?: { order?: number }) => FrameDriver;
+  /** Frame scheduling; defaults to the window's. */
+  raf?: (cb: FrameRequestCallback) => number;
+  caf?: (id: number) => void;
 }
 
 export function createSettle(options: SettleOptions = {}): Settle {
-  const order = options.order ?? FLUID_DRAG_FRAME_ORDER;
-  const drive = options.drive ?? ((fn, opts) => sharedDrive(fn, opts));
+  const raf = options.raf ?? ((cb) => window.requestAnimationFrame(cb));
+  const caf = options.caf ?? ((id) => window.cancelAnimationFrame(id));
 
-  let driver: FrameDriver | null = null;
+  let handle: number | null = null;
+  let last = 0;
   let active = false;
   let state: SpringState = { value: 0, velocity: 0 };
   let target = 0;
@@ -47,8 +40,17 @@ export function createSettle(options: SettleOptions = {}): Settle {
   let onStep: (x: number, velocity: number) => void = () => {};
   let onDone: () => void = () => {};
 
-  const frame: FrameDriverFn = (_now, dtMs) => {
-    if (!active) return false;
+  const halt = () => {
+    active = false;
+    if (handle !== null) caf(handle);
+    handle = null;
+  };
+
+  const frame = (now: number) => {
+    handle = null;
+    if (!active) return;
+    const dtMs = last === 0 ? 16 : now - last;
+    last = now;
     // A 64ms cap: a long frame (tab switch) must not integrate the spring past stability.
     state = springStep(state, target, spring, Math.min(0.064, Math.max(0, dtMs) / 1000));
     onStep(state.value, state.velocity);
@@ -57,9 +59,9 @@ export function createSettle(options: SettleOptions = {}): Settle {
       state = { value: target, velocity: 0 };
       onStep(target, 0);
       onDone();
-      return false;
+      return;
     }
-    return true;
+    handle = raf(frame);
   };
 
   return {
@@ -70,16 +72,12 @@ export function createSettle(options: SettleOptions = {}): Settle {
       onStep = step;
       onDone = done;
       active = true;
-      driver ??= drive(frame, { order });
-      driver.wake();
+      if (handle === null) {
+        last = 0;
+        handle = raf(frame);
+      }
     },
-    cancel() {
-      active = false;
-    },
-    dispose() {
-      active = false;
-      driver?.stop();
-      driver = null;
-    },
+    cancel: halt,
+    dispose: halt,
   };
 }

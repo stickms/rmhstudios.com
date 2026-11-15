@@ -1,26 +1,26 @@
-'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Palette, Plus, Coins, Check, Sparkles, Eye } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { ViewTransitionLink } from '@/components/ui/ViewTransitionLink';
 import { useThemeStore } from '@/stores/themeStore';
 import { deriveAppliedTheme, type ThemeTokens, type UserThemeView } from '@/lib/themes/tokens';
 import { ThemeEditor } from './ThemeEditor';
 import { ThemeMiniShell } from './ThemeMiniShell';
 import { SettingsPageBody, SettingsSection } from '@/components/settings/SettingsSection';
+import { api } from '@/lib/contract/client';
+import { buyThemeApi, listMyThemesApi, themeShopApi } from '@/lib/themes/themes.contract';
 
 function PriceChip({ coins }: { coins: number | null }) {
   if (coins == null) return null;
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-semibold text-site-accent tabular-nums">
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-site-bg-subtle px-2 py-0.5 text-xs font-semibold text-site-accent tabular-nums">
       <Coins className="h-3 w-3" aria-hidden />
       {coins}
     </span>
@@ -53,16 +53,20 @@ export function ThemeStudio({
   const setUserThemePreview = useThemeStore((s) => s.setUserThemePreview);
 
   async function refreshMine() {
-    const res = await fetch('/api/themes');
-    if (res.ok) setMine(((await res.json()) as { themes: UserThemeView[] }).themes);
+    try {
+      setMine((await api(listMyThemesApi)).themes);
+    } catch {
+      // Keep the current list when the refresh fails.
+    }
   }
 
   async function changeSort(next: 'top' | 'new') {
     setSort(next);
     setSorting(true);
     try {
-      const res = await fetch(`/api/themes/shop?sort=${next}`);
-      if (res.ok) setShop(((await res.json()) as { themes: UserThemeView[] }).themes);
+      setShop((await api(themeShopApi, { query: { sort: next } })).themes);
+    } catch {
+      // Keep the current list when the re-sort fails.
     } finally {
       setSorting(false);
     }
@@ -70,11 +74,7 @@ export function ThemeStudio({
 
   async function buy(theme: UserThemeView) {
     try {
-      const res = await fetch(`/api/themes/${theme.id}/buy`, { method: 'POST' });
-      if (!res.ok) {
-        const d = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(d?.error);
-      }
+      await api(buyThemeApi, { params: { id: theme.id } });
       setShop((prev) =>
         prev.map((s) => (s.id === theme.id ? { ...s, owned: true, sales: s.sales + 1 } : s)),
       );
@@ -133,7 +133,7 @@ export function ThemeStudio({
           <SettingsSection
             title={t('my-themes', { defaultValue: 'My themes' })}
             action={
-              <Button variant="accent" size="sm" onClick={() => setEditing('new')}>
+              <Button variant="default" size="sm" onClick={() => setEditing('new')}>
                 <Plus className="h-4 w-4" aria-hidden />
                 {t('new-theme', { defaultValue: 'New theme' })}
               </Button>
@@ -203,7 +203,7 @@ export function ThemeStudio({
                 </p>
               </div>
             </div>
-            <Button asChild variant="accent" size="sm" className="w-full sm:ms-auto sm:w-auto">
+            <Button asChild variant="default" size="sm" className="w-full sm:ms-auto sm:w-auto">
               <ViewTransitionLink to="/store">
                 {t('member-gate-cta', { defaultValue: 'Become a member' })}
               </ViewTransitionLink>
@@ -249,7 +249,7 @@ export function ThemeStudio({
 
       {/* ── Marketplace browse ── */}
       <SettingsSection title={t('community-themes', { defaultValue: 'Community themes' })}>
-        <LiquidTabs
+        <Tabs
           size="sm"
           aria-label={t('sort-label', { defaultValue: 'Sort themes' })}
           value={sort}
@@ -301,7 +301,7 @@ export function ThemeStudio({
                       />
                     ) : (
                       <Button
-                        variant="accent"
+                        variant="default"
                         size="sm"
                         onClick={() => buy(theme)}
                         disabled={!signedIn}
@@ -334,14 +334,14 @@ function ApplyControl({
 }) {
   if (active) {
     return (
-      <Button variant="outline" size="sm" onClick={onRemove}>
+      <Button variant="default" size="sm" onClick={onRemove}>
         <Check className="h-4 w-4 text-site-success" aria-hidden />
         {t('remove', { defaultValue: 'Remove' })}
       </Button>
     );
   }
   return (
-    <Button variant="outline" size="sm" onClick={onApply}>
+    <Button variant="default" size="sm" onClick={onApply}>
       {t('apply', { defaultValue: 'Apply' })}
     </Button>
   );

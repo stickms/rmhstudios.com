@@ -193,7 +193,7 @@ export class IngestError extends Error {
  *
  * `File.type` is whatever the browser (or a script) put in the multipart
  * header. Every accept decision in this module reads this instead, which is the
- * same rule `lib/slice-it/upload-validation.ts` established for the feed.
+ * same rule `features/slice-it/engine/upload-validation.ts` established for the feed.
  */
 export function sniffImageType(buffer: Buffer): string | null {
   if (buffer.length >= 8 && buffer.readUInt32BE(0) === 0x89504e47) return 'image/png';

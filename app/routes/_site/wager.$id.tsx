@@ -1,16 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Swords } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { WagerCard } from '@/components/wager/WagerCard';
-import type { SerializedWager } from '@/lib/wager/wager.server';
+import { prefetchRouteQuery } from '@/lib/route/route-query';
+import { wagerQuery } from '@/lib/wager/wager.queries';
 
 export const Route = createFileRoute('/_site/wager/$id')({
   head: () => ({ meta: [{ title: 'Wager Match | RMH Studios' }] }),
+  loader: ({ context, params }) => prefetchRouteQuery(context.queryClient, wagerQuery(params.id)),
   component: WagerDetailPage,
 });
 
@@ -19,23 +23,12 @@ function WagerDetailPage() {
   const { id } = Route.useParams();
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
-  const [wager, setWager] = useState<SerializedWager | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    fetch(`/api/wager/${id}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (active) setWager(d.wager ?? null);
-      })
-      .catch(() => {})
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, [id]);
+  const queryClient = useQueryClient();
+  const query = wagerQuery(id);
+  // An unknown (or unreadable) match is the "no longer exists" state.
+  const { data, isPending: loading } = useQuery(query);
+  const wager = data?.wager ?? null;
+  const arrival = useArrival(!loading);
 
   return (
     <PageLayout
@@ -43,11 +36,15 @@ function WagerDetailPage() {
       backTo="/wager"
       backLabel={t('back', { defaultValue: 'Back to wagers' })}
     >
-      <div className="max-w-xl">
+      <div className={cn('max-w-xl', arrival)}>
         {loading ? (
           <Skeleton className="h-48 rounded-site" />
         ) : wager ? (
-          <WagerCard wager={wager} viewerId={viewerId} onChange={(w) => w && setWager(w)} />
+          <WagerCard
+            wager={wager}
+            viewerId={viewerId}
+            onChange={(w) => w && queryClient.setQueryData(query.queryKey, { wager: w })}
+          />
         ) : (
           <EmptyState
             icon={Swords}

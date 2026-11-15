@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * RMHType analytics: the summary, the heatmap, your worst keys, and the two
  * tests built out of them (design G1).
@@ -22,7 +20,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Keyboard, Target, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -42,7 +40,14 @@ import {
   type TypingSummary,
 } from '@/lib/rmhtype/keystats';
 import { buildCustomTest, type GeneratedTest } from '@/lib/rmhtype/custom-test';
+import { api } from '@/lib/contract/client';
+import {
+  buildRmhTypePracticeTestApi,
+  clearRmhTypeKeyStatsApi,
+  getRmhTypeKeyStatsApi,
+} from '@/lib/rmhtype/keystats.contract';
 import { KeyHeatmap } from './KeyHeatmap';
+import { useArrival } from '@/components/ui/arrive';
 
 interface KeyStatsResponse {
   layout: TypingLayout;
@@ -62,6 +67,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
   const [layout, setLayout] = useState<TypingLayout>(DEFAULT_LAYOUT);
   const [stats, setStats] = useState<KeyStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
   const [generating, setGenerating] = useState(false);
   const [pasted, setPasted] = useState('');
   const [punctuation, setPunctuation] = useState(false);
@@ -70,9 +76,10 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/rmhtype/keystats?layout=${layout}`);
-      const data = (await res.json().catch(() => null)) as { stats?: KeyStatsResponse } | null;
-      setStats(res.ok ? (data?.stats ?? null) : null);
+      const data = await api(getRmhTypeKeyStatsApi, { query: { layout }, retries: 0 });
+      setStats(data.stats ?? null);
+    } catch {
+      setStats(null);
     } finally {
       setLoading(false);
     }
@@ -85,13 +92,13 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
   async function practiceWorstKeys() {
     setGenerating(true);
     try {
-      const res = await fetch('/api/rmhtype/practice-test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ layout, punctuation, numbers }),
-      });
-      const data = (await res.json().catch(() => null)) as { test?: GeneratedTest } | null;
-      if (!res.ok || !data?.test) {
+      let data;
+      try {
+        data = await api(buildRmhTypePracticeTestApi, { body: { layout, punctuation, numbers } });
+      } catch {
+        data = null;
+      }
+      if (!data?.test) {
         toast.error(t('practice-failed', { defaultValue: 'Could not build a practice test' }));
         return;
       }
@@ -113,8 +120,9 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
   }
 
   async function clearStats() {
-    const res = await fetch(`/api/rmhtype/keystats?layout=${layout}`, { method: 'DELETE' });
-    if (!res.ok) {
+    try {
+      await api(clearRmhTypeKeyStatsApi, { query: { layout } });
+    } catch {
       toast.error(t('clear-failed', { defaultValue: 'Could not clear your key stats' }));
       return;
     }
@@ -154,6 +162,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
             </div>
           ) : !hasData ? (
             <EmptyState
+              className={arrival}
               icon={Keyboard}
               title={t('keys-empty-title', { defaultValue: 'No key data yet' })}
               description={t('keys-empty-body', {
@@ -162,7 +171,8 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
               })}
             />
           ) : (
-            <>
+            // Box-less, so the stats stay items of the column's flex layout; they fade in (M9).
+            <div className={arrival ? 'arrive-group' : 'contents'}>
               <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatTile
                   label={t('stat-wpm', { defaultValue: 'Implied WPM' })}
@@ -193,7 +203,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
                     {stats?.worst.map((metric) => (
                       <li
                         key={metric.key}
-                        className="glass-fill flex items-center gap-2 rounded-site px-3 py-1.5"
+                        className="surface-card flex items-center gap-2 rounded-site px-3 py-1.5"
                       >
                         <span className="font-mono text-sm text-site-text">{metric.key}</span>
                         <span className="font-mono text-xs tabular-nums text-site-text-muted">
@@ -215,7 +225,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
                   {t('clear-action', { defaultValue: 'Clear key stats' })}
                 </Button>
               </div>
-            </>
+            </div>
           )}
         </div>
       </Card>
@@ -226,7 +236,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
             <h2 className="font-display text-lg font-medium text-site-text">
               {t('custom-title', { defaultValue: 'Custom test' })}
             </h2>
-            <Badge variant="outline" size="sm">
+            <Badge variant="default">
               {t('not-ranked', { defaultValue: 'Not ranked' })}
             </Badge>
           </div>
@@ -270,7 +280,7 @@ export function TypingStats({ onStartTest, className }: TypingStatsProps) {
 
 function StatTile({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="glass-fill rounded-site px-3 py-2">
+    <div className="surface-card rounded-site px-3 py-2">
       <dt className="text-xs text-site-text-muted">{label}</dt>
       <dd className="font-mono text-lg tabular-nums text-site-text">{value}</dd>
     </div>

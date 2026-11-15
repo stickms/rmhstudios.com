@@ -1,4 +1,8 @@
-import { GRID_COLS, GRID_ROWS, TILE_POS } from '@/lib/elections/tilegrid';
+import {
+  GRID_COLS,
+  GRID_ROWS,
+  TILE_POS,
+} from '@/lib/elections/tilegrid';
 import type { Tone } from '@/lib/elections/map-model';
 
 export interface TileCell {
@@ -20,39 +24,103 @@ export function TileGrid({
   onSelect,
   ariaLabel,
 }: {
-  cells: Map<string, TileCell>;
-  selected: string | null;
-  onSelect: (postal: string) => void;
+  cells: Map<
+    string,
+    TileCell
+  >;
+  selected:
+    | string
+    | null;
+  onSelect: (
+    postal: string,
+  ) => void;
   ariaLabel: string;
 }) {
   return (
     <div
       className="el-grid el-box"
       role="group"
-      aria-label={ariaLabel}
-      style={{ ['--cols' as string]: GRID_COLS }}
+      aria-label={
+        ariaLabel
+      }
+      style={{
+        ['--cols' as string]:
+          GRID_COLS,
+      }}
     >
-      {Object.entries(TILE_POS).map(([postal, [row, col]]) => {
-        const cell = cells.get(postal);
-        const tone = cell?.tone ?? 'none';
-        return (
-          <button
-            key={postal}
-            type="button"
-            className={`el-tile el-tile--${tone}`}
-            style={{ gridRow: row + 1, gridColumn: col + 1 }}
-            aria-pressed={selected === postal}
-            aria-label={cell?.label ?? postal}
-            onClick={() => onSelect(postal)}
-          >
-            <span className="el-tile__code">{postal}</span>
-            {cell?.caption ? <span className="el-tile__cap">{cell.caption}</span> : null}
-            {cell?.flipped ? <span className="el-tile__flip">FLIP</span> : null}
-          </button>
-        );
-      })}
+      {Object.entries(
+        TILE_POS,
+      ).map(
+        ([
+          postal,
+          [
+            row,
+            col,
+          ],
+        ]) => {
+          const cell =
+            cells.get(
+              postal,
+            );
+          const tone =
+            cell?.tone ??
+            'none';
+          return (
+            <button
+              key={
+                postal
+              }
+              type="button"
+              className={`el-tile el-tile--${tone}`}
+              style={{
+                gridRow:
+                  row +
+                  1,
+                gridColumn:
+                  col +
+                  1,
+              }}
+              aria-pressed={
+                selected ===
+                postal
+              }
+              aria-label={
+                cell?.label ??
+                postal
+              }
+              onClick={() =>
+                onSelect(
+                  postal,
+                )
+              }
+            >
+              <span className="el-tile__code">
+                {
+                  postal
+                }
+              </span>
+              {cell?.caption ? (
+                <span className="el-tile__cap">
+                  {
+                    cell.caption
+                  }
+                </span>
+              ) : null}
+              {cell?.flipped ? (
+                <span className="el-tile__flip">
+                  FLIP
+                </span>
+              ) : null}
+            </button>
+          );
+        },
+      )}
     </div>
   );
 }
 
-export const GRID_DIMENSIONS = { cols: GRID_COLS, rows: GRID_ROWS };
+export const GRID_DIMENSIONS =
+  {
+    cols: GRID_COLS,
+    rows: GRID_ROWS,
+  };

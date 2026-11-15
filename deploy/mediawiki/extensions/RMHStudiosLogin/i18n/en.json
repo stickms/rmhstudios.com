@@ -1,0 +1,14 @@
+{
+	"@metadata": {
+		"authors": [ "RMH Studios" ]
+	},
+	"rmhstudioslogin": "Log in with rmhstudios.com",
+	"rmhstudioslogin-desc": "Signs readers in to the wiki with their rmhstudios.com account.",
+	"rmhstudioslogin-error-title": "Could not log you in",
+	"rmhstudioslogin-error-expired": "The sign-in took too long or was started in another tab. [[Special:RMHStudiosLogin|Try again]].",
+	"rmhstudioslogin-error-invalid": "The sign-in pass from rmhstudios.com was not valid. [[Special:RMHStudiosLogin|Try again]].",
+	"rmhstudioslogin-error-banned": "Your rmhstudios.com account is suspended, so it cannot edit the wiki. You can still read every page.",
+	"rmhstudioslogin-error-noname": "Your rmhstudios.com account has no handle yet. Choose one in your account settings on rmhstudios.com, then [[Special:RMHStudiosLogin|try again]].",
+	"rmhstudioslogin-error-create": "Your wiki account could not be created: $1",
+	"rmhstudioslogin-error-unconfigured": "Sign-in is not set up on this wiki."
+}

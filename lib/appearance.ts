@@ -30,76 +30,194 @@ export interface AccentPreset {
  * Social-first accent palette. Each foreground is chosen for legible contrast
  * on its value. `null` means "use the theme's own accent".
  */
-export const ACCENT_PRESETS = [
-  { id: 'indigo', label: 'Indigo', value: '#5759d9', fg: '#ffffff' },
-  { id: 'violet', label: 'Violet', value: '#7657d6', fg: '#ffffff' },
-  { id: 'ocean', label: 'Ocean', value: '#087ca7', fg: '#ffffff' },
-  { id: 'forest', label: 'Forest', value: '#147a50', fg: '#ffffff' },
-  { id: 'ember', label: 'Ember', value: '#c6533f', fg: '#ffffff' },
-  { id: 'ink', label: 'Ink', value: '#151624', fg: '#ffffff' },
-] as const satisfies readonly AccentPreset[];
+export const ACCENT_PRESETS =
+  [
+    {
+      id: 'indigo',
+      label:
+        'Indigo',
+      value:
+        '#5759d9',
+      fg: '#ffffff',
+    },
+    {
+      id: 'violet',
+      label:
+        'Violet',
+      value:
+        '#7657d6',
+      fg: '#ffffff',
+    },
+    {
+      id: 'ocean',
+      label:
+        'Ocean',
+      value:
+        '#087ca7',
+      fg: '#ffffff',
+    },
+    {
+      id: 'forest',
+      label:
+        'Forest',
+      value:
+        '#147a50',
+      fg: '#ffffff',
+    },
+    {
+      id: 'ember',
+      label:
+        'Ember',
+      value:
+        '#c6533f',
+      fg: '#ffffff',
+    },
+    {
+      id: 'ink',
+      label:
+        'Ink',
+      value:
+        '#151624',
+      fg: '#ffffff',
+    },
+  ] as const satisfies readonly AccentPreset[];
 
-export type AccentId = (typeof ACCENT_PRESETS)[number]['id'];
+export type AccentId =
+  (typeof ACCENT_PRESETS)[number]['id'];
 
 /** id → preset lookup, also the compact map serialized into the no-flash script. */
-export const ACCENT_MAP: Record<string, { value: string; fg: string }> = Object.fromEntries(
-  ACCENT_PRESETS.map((a) => [a.id, { value: a.value, fg: a.fg }]),
-);
+export const ACCENT_MAP: Record<
+  string,
+  {
+    value: string;
+    fg: string;
+  }
+> =
+  Object.fromEntries(
+    ACCENT_PRESETS.map(
+      (
+        a,
+      ) => [
+        a.id,
+        {
+          value:
+            a.value,
+          fg: a.fg,
+        },
+      ],
+    ),
+  );
 
 /** Narrow an arbitrary string (from storage / the API) to a known accent id. */
-export function isAccentId(id: string | null | undefined): id is AccentId {
-  return !!id && id in ACCENT_MAP;
+export function isAccentId(
+  id:
+    | string
+    | null
+    | undefined,
+): id is AccentId {
+  return (
+    !!id &&
+    id in
+      ACCENT_MAP
+  );
 }
 
-export function getAccentPreset(id: string | null | undefined): AccentPreset | null {
-  if (!isAccentId(id)) return null;
-  return ACCENT_PRESETS.find((a) => a.id === id) ?? null;
+export function getAccentPreset(
+  id:
+    | string
+    | null
+    | undefined,
+): AccentPreset | null {
+  if (
+    !isAccentId(
+      id,
+    )
+  )
+    return null;
+  return (
+    ACCENT_PRESETS.find(
+      (
+        a,
+      ) =>
+        a.id ===
+        id,
+    ) ??
+    null
+  );
 }
 
 /** The `--site-*` CSS variables an accent override sets, given a base color. */
-export function accentCssVars(value: string, fg: string): Record<string, string> {
+export function accentCssVars(
+  value: string,
+  fg: string,
+): Record<
+  string,
+  string
+> {
   return {
-    '--site-accent': value,
-    '--site-accent-fg': fg,
-    // Derived so a single picked color restyles hover + translucent states too,
-    // matching how the built-in themes define these tokens.
+    '--site-accent':
+      value,
+    '--site-accent-fg':
+      fg,
+    // Derived so a single picked color restyles the hover state too.
     '--site-accent-hover': `color-mix(in oklab, ${value} 82%, #000)`,
-    '--site-accent-dim': `color-mix(in oklab, ${value} 15%, transparent)`,
-    // The glass pointer light multiplies with the accent so an accent choice
-    // subtly warms the specular highlight (§3.4). Mixed against a neutral white
-    // base rather than var(--site-glass-light) to avoid a self-referential cycle.
-    '--site-glass-light': `color-mix(in srgb, ${value} 20%, rgba(255, 255, 255, 0.14))`,
-    // The viewport-anchored rim glint (v2 §4.2) warms the same way the pointer
-    // light does: mostly the theme's rim with a touch of accent. Default (no
-    // preset) resolves to the plain rim via the token declared in globals.css.
-    '--site-glass-glint': `color-mix(in srgb, ${value} 18%, var(--site-glass-rim))`,
   };
 }
 
-const ACCENT_VAR_NAMES = [
-  '--site-accent',
-  '--site-accent-fg',
-  '--site-accent-hover',
-  '--site-accent-dim',
-  '--site-glass-light',
-  '--site-glass-glint',
-];
+const ACCENT_VAR_NAMES =
+  [
+    '--site-accent',
+    '--site-accent-fg',
+    '--site-accent-hover',
+  ];
 
 /** Apply an accent id's tokens to an element (usually <html>), or clear them. */
-export function applyAccent(el: HTMLElement, id: string | null | undefined): void {
-  const preset = getAccentPreset(id);
-  if (!preset) {
-    clearAccent(el);
+export function applyAccent(
+  el: HTMLElement,
+  id:
+    | string
+    | null
+    | undefined,
+): void {
+  const preset =
+    getAccentPreset(
+      id,
+    );
+  if (
+    !preset
+  ) {
+    clearAccent(
+      el,
+    );
     return;
   }
-  const vars = accentCssVars(preset.value, preset.fg);
-  for (const [name, val] of Object.entries(vars)) el.style.setProperty(name, val);
+  const vars =
+    accentCssVars(
+      preset.value,
+      preset.fg,
+    );
+  for (const [
+    name,
+    val,
+  ] of Object.entries(
+    vars,
+  ))
+    el.style.setProperty(
+      name,
+      val,
+    );
 }
 
 /** Remove any accent override so the active theme's own accent shows through. */
-export function clearAccent(el: HTMLElement): void {
-  for (const name of ACCENT_VAR_NAMES) el.style.removeProperty(name);
+export function clearAccent(
+  el: HTMLElement,
+): void {
+  for (const name of ACCENT_VAR_NAMES)
+    el.style.removeProperty(
+      name,
+    );
 }
 
 /** localStorage key holding the chosen accent id (the no-flash cache). */
-export const ACCENT_STORAGE_KEY = 'rmh-accent';
+export const ACCENT_STORAGE_KEY =
+  'rmh-accent';

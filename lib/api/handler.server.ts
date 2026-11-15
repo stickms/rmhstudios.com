@@ -41,6 +41,7 @@
  * ```
  */
 
+import { isInternalRequest } from '@/lib/api/internal-request.server';
 import { createHash } from 'node:crypto';
 import type { z } from 'zod';
 import { auth } from '@/lib/auth';
@@ -400,6 +401,13 @@ export interface HandlerOptions<
    */
   verboseValidationErrors?: boolean;
   /**
+   * Build the 400 yourself when body/query validation fails, so a route moved
+   * onto `defineHandler` keeps the exact message/shape its clients already read.
+   * Takes precedence over `verboseValidationErrors`. Defaults to the standard
+   * `{ error: 'Invalid input' | 'Invalid query' }` envelope.
+   */
+  invalid?: (error: z.ZodError, kind: 'body' | 'query') => Response;
+  /**
    * Label used in the 500-path server log so a failure is still traceable to a
    * route. Defaults to `"<METHOD> <pathname>"`.
    */
@@ -469,7 +477,7 @@ export interface HandlerOptions<
    * micro-cache (`response-cache.server.ts`, up to 30 s, keyed by URL only). Required
    * when the route's data has a write path that clears an in-process cache or flips
    * visibility (private wishlist, admin config edit): the micro-cache cannot see
-   * `apiCache.invalidate*`, so it would keep serving the pre-write body.
+   * `invalidateCached*`, so it would keep serving the pre-write body.
    */
   microCache?: boolean;
 }
@@ -636,7 +644,9 @@ export function defineHandler<
       }
 
       /* 2. Rate limit ---------------------------------------------------- */
-      if (options.rateLimit) {
+      // A loader's in-process read of this route (lib/api/internal-dispatch.server.ts) is
+      // part of a page view that was already admitted; it is not charged again.
+      if (options.rateLimit && !isInternalRequest(request)) {
         const limited = await resolveRateLimit(request, options.rateLimit, userId);
         if (limited) {
           recordCounter('ratelimit.rejected');
@@ -672,7 +682,11 @@ export function defineHandler<
           raw = {};
         }
         const parsed = options.body.safeParse(raw);
-        if (!parsed.success) return badRequest(reason(parsed.error, 'Invalid input'));
+        if (!parsed.success) {
+          return options.invalid
+            ? options.invalid(parsed.error, 'body')
+            : badRequest(reason(parsed.error, 'Invalid input'));
+        }
         body = parsed.data;
       }
 
@@ -680,7 +694,11 @@ export function defineHandler<
       if (options.query) {
         const raw = Object.fromEntries(new URL(request.url).searchParams);
         const parsed = options.query.safeParse(raw);
-        if (!parsed.success) return badRequest(reason(parsed.error, 'Invalid query'));
+        if (!parsed.success) {
+          return options.invalid
+            ? options.invalid(parsed.error, 'query')
+            : badRequest(reason(parsed.error, 'Invalid query'));
+        }
         query = parsed.data;
       }
 

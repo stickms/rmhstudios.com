@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { Download, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,7 +24,7 @@ export function BookingRow({
     minute: '2-digit',
   }).format(new Date(booking.startsAt));
   return (
-    <li className="glass-fill flex flex-wrap items-center justify-between gap-3 rounded-site px-4 py-3">
+    <li className="flex flex-wrap items-center justify-between gap-3 rounded-site px-4 py-3">
       <div className="flex min-w-0 items-center gap-2">
         <UserAvatar src={other.image} alt="" size={32} />
         <div className="min-w-0">
@@ -39,11 +37,11 @@ export function BookingRow({
       </div>
       <div className="flex gap-2">
         <a href={`/api/office-hours/bookings/${booking.id}/ics`} download>
-          <Button size="sm" variant="outline">
+          <Button size="sm" variant="default">
             <Download /> {t('oh-ics', { defaultValue: 'Calendar file' })}
           </Button>
         </a>
-        <Button size="sm" variant="outline" onClick={onCancel}>
+        <Button size="sm" variant="default" onClick={onCancel}>
           <X /> {t('oh-cancel', { defaultValue: 'Cancel' })}
         </Button>
       </div>

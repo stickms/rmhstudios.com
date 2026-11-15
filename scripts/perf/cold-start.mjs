@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 /**
- * Cold-start measurement (docs/server-perf-2026-10-21/01-method.md §2):
+ * Cold-start measurement (docs/archive/2026/server-perf-2026-10-21/01-method.md §2):
  * restart the production server and time the FIRST request to `/`, three times
  * per auth mode.
  *

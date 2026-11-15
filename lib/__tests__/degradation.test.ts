@@ -281,7 +281,7 @@ const DEGRADATION_MATRIX: readonly DegradationEntry[] = [
   },
   {
     dependency: 'REDIS_URL (cache plane)',
-    affects: 'lib/cache.ts apiCache L2, ranking cache, user-display map',
+    affects: 'lib/cached.server.ts L2, ranking cache, user-display map',
     expectation:
       'Reads miss and fall through to Postgres. enableOfflineQueue:false on the ' +
       'command connections is load-bearing here: with ioredis buffering instead, a ' +

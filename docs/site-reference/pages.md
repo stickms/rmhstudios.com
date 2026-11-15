@@ -1,12 +1,12 @@
 <!--
   GENERATED FILE — do not edit by hand.
-  Source: app/routes/, lib/games.ts, lib/apps.ts.
+  Source: app/routes/, lib/catalog.
   Regenerate with `pnpm docs:site`.
 -->
 
 # Page routes
 
-Every page the site serves — 364 routes. 197 render inside the standard site shell (sidebar, nav, context rail); 167 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 365 routes. 200 render inside the standard site shell (sidebar, nav, context rail); 165 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -33,6 +33,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/admin/blog/new` | Create Blog Post \| Admin | admin | `app/routes/_site/admin/blog/new.tsx` |
 | `/admin/bots` | AI Bots \| Admin | admin | `app/routes/_site/admin/bots.tsx` |
 | `/admin/canvas` | Canvas \| Admin | admin | `app/routes/_site/admin/canvas.tsx` |
+| `/admin/census` | Census | admin | `app/routes/_site/admin/census.tsx` |
 | `/admin/deepseek` | DeepSeek Balance | admin | `app/routes/_site/admin/deepseek.tsx` |
 | `/admin/delight` | Delight tools \| Admin | admin | `app/routes/_site/admin/delight.tsx` |
 | `/admin/economy` | Coin Economy | admin | `app/routes/_site/admin/economy.tsx` |
@@ -120,6 +121,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/moments/:id` | — | public | `app/routes/_site/moments.$id.tsx` |
 | `/museum` | Site museum | public | `app/routes/_site/museum.tsx` |
 | `/news` | News | public | `app/routes/_site/news/index.tsx` |
+| `/news/:slug` | — | public | `app/routes/_site/news/$slug.tsx` |
 | `/news/stories/:slug` | — | public | `app/routes/_site/news/stories/$slug.tsx` |
 | `/notifications` | redirects to `/messages?tab=notifications` | public | `app/routes/_site/notifications.tsx` |
 | `/office-hours` | Office hours | public | `app/routes/_site/office-hours/index.tsx` |
@@ -165,6 +167,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/saves` | Saved | public | `app/routes/_site/saves/index.tsx` |
 | `/schedule` | Schedule | public | `app/routes/_site/schedule.tsx` |
 | `/search` | redirects to `/explore` | public | `app/routes/_site/search.tsx` |
+| `/sections` | Sections | public | `app/routes/_site/sections.tsx` |
 | `/series` | Series | public | `app/routes/_site/series.index.tsx` |
 | `/series/:id` | Series | public | `app/routes/_site/series.$id.tsx` |
 | `/services` | redirects to `/services/cars` | public | `app/routes/_site/services/index.tsx` |
@@ -238,13 +241,13 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/covid` | — | public | `app/routes/covid.tsx` |
 | `/csgo` | — | public | `app/routes/csgo.tsx` |
 | `/daily` | Daily Puzzles | public | `app/routes/daily/index.tsx` |
-| `/daily/alibi` | — | public | `app/routes/daily/alibi.tsx` |
-| `/daily/chainlink` | — | public | `app/routes/daily/chainlink.tsx` |
+| `/daily/alibi` | Alibi \| Daily Puzzles | public | `app/routes/daily/alibi.tsx` |
+| `/daily/chainlink` | Chainlink \| Daily Puzzles | public | `app/routes/daily/chainlink.tsx` |
 | `/daily/globeset` | GlobeSet | public | `app/routes/daily/globeset.tsx` |
-| `/daily/impostor` | — | public | `app/routes/daily/impostor.tsx` |
-| `/daily/lights-out` | — | public | `app/routes/daily/lights-out.tsx` |
-| `/daily/outcast` | — | public | `app/routes/daily/outcast.tsx` |
-| `/daily/spectrum` | — | public | `app/routes/daily/spectrum.tsx` |
+| `/daily/impostor` | Impostor \| Daily Puzzles | public | `app/routes/daily/impostor.tsx` |
+| `/daily/lights-out` | Lights Out \| Daily Puzzles | public | `app/routes/daily/lights-out.tsx` |
+| `/daily/outcast` | Outcast \| Daily Puzzles | public | `app/routes/daily/outcast.tsx` |
+| `/daily/spectrum` | Spectrum \| Daily Puzzles | public | `app/routes/daily/spectrum.tsx` |
 | `/deeplink` | — | public | `app/routes/deeplink.ts` |
 | `/deeplink/:page` | — | public | `app/routes/deeplink.$page.ts` |
 | `/design` | Spatial Minimalism | public | `app/routes/design.tsx` |
@@ -256,7 +259,6 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/elections` | — | public | `app/routes/elections.tsx` |
 | `/embed/post/:id` | — | public | `app/routes/embed.post.$id.tsx` |
 | `/embed/replay/:id` | — | public | `app/routes/embed.replay.$id.tsx` |
-| `/eversion-lab` | — | admin | `app/routes/eversion-lab.tsx` |
 | `/gabriels-horn` | Gabriel | public | `app/routes/gabriels-horn.tsx` |
 | `/games` | redirects to `/arcade` | public | `app/routes/games/_library/index.tsx` |
 | `/games/:gameId` | — | public | `app/routes/games/_library/$gameId.tsx` |
@@ -282,17 +284,14 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/handle` | — | public | `app/routes/handle.ts` |
 | `/hearthworks` | Hearthworks — build a cozy town, farm, cook and trade | public | `app/routes/hearthworks.tsx` |
 | `/house-always-wins` | — | public | `app/routes/house-always-wins.tsx` |
-| `/jelly` | — | public | `app/routes/jelly.tsx` |
 | `/kaikaidebtcounter` | The Kaikai Debt Counter | public | `app/routes/kaikaidebtcounter.tsx` |
 | `/kowloon-knockout` | — | public | `app/routes/kowloon-knockout/index.tsx` |
 | `/laundry-sort` | Laundry Sort | public | `app/routes/laundry-sort.tsx` |
 | `/library/:slug` | — | public | `app/routes/library.$slug.tsx` |
 | `/library/albums/:albumId` | — | public | `app/routes/library.albums.$albumId.tsx` |
 | `/lights-out` | redirects to `/daily/lights-out` | public | `app/routes/lights-out.tsx` |
-| `/liquid-glass` | redirects to `/jelly` | public | `app/routes/liquid-glass.tsx` |
 | `/login` | Login \| RMH | public | `app/routes/login.tsx` |
 | `/neon-driftway` | — | public | `app/routes/neon-driftway.tsx` |
-| `/news/:slug` | — | public | `app/routes/news.$slug.tsx` |
 | `/news/rss.xml` | RMH Studios — News | public | `app/routes/news.rss[.]xml.ts` |
 | `/nightrail` | — | public | `app/routes/nightrail.tsx` |
 | `/offline` | Offline | public | `app/routes/offline.tsx` |
@@ -306,6 +305,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmh-capital/businesses` | — | public | `app/routes/rmh-capital/businesses.tsx` |
 | `/rmh-capital/careers` | — | public | `app/routes/rmh-capital/careers.tsx` |
 | `/rmh-capital/contact` | — | public | `app/routes/rmh-capital/contact.tsx` |
+| `/rmh-capital/deals` | — | public | `app/routes/rmh-capital/deals.tsx` |
 | `/rmh-capital/firm` | — | public | `app/routes/rmh-capital/firm.tsx` |
 | `/rmh-capital/insights` | — | public | `app/routes/rmh-capital/insights.tsx` |
 | `/rmh-internal-affairs` | — | public | `app/routes/rmh-internal-affairs.ts` |
@@ -326,6 +326,7 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhmusic` | — | sign-in | `app/routes/rmhmusic/index.tsx` |
 | `/rmhmusic/lesson/:lessonId` | — | sign-in | `app/routes/rmhmusic/lesson.$lessonId.tsx` |
 | `/rmhmusic/practice` | — | sign-in | `app/routes/rmhmusic/practice.tsx` |
+| `/rmhos` | — | sign-in | `app/routes/rmhos.tsx` |
 | `/rmhstudy` | — | sign-in | `app/routes/rmhstudy/index.tsx` |
 | `/rmhstudy/:roomId` | — | sign-in | `app/routes/rmhstudy/$roomId.tsx` |
 | `/rmhstudy/planner` | — | sign-in | `app/routes/rmhstudy/planner.tsx` |
@@ -355,18 +356,18 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/sohumtracker/month/:month` | — | public | `app/routes/sohumtracker/month.$month.tsx` |
 | `/sohumtracker/week/:week` | — | public | `app/routes/sohumtracker/week.$week.tsx` |
 | `/strategies` | — | public | `app/routes/strategies/index.tsx` |
-| `/strategies/incidents` | — | public | `app/routes/strategies/incidents.tsx` |
+| `/strategies/incidents` | Incidents \| RMH Strategies | public | `app/routes/strategies/incidents.tsx` |
 | `/strategies/profile` | — | public | `app/routes/strategies/profile/index.tsx` |
 | `/strategies/profile/reputation` | — | public | `app/routes/strategies/profile/reputation.tsx` |
 | `/strategies/profile/settings` | — | public | `app/routes/strategies/profile/settings.tsx` |
-| `/strategies/puzzles` | — | public | `app/routes/strategies/puzzles/index.tsx` |
+| `/strategies/puzzles` | Puzzles \| RMH Strategies | public | `app/routes/strategies/puzzles/index.tsx` |
 | `/strategies/puzzles/:mode` | — | public | `app/routes/strategies/puzzles/$mode.tsx` |
-| `/strategies/puzzles/archive` | — | public | `app/routes/strategies/puzzles/archive.tsx` |
-| `/strategies/puzzles/leaderboard` | — | public | `app/routes/strategies/puzzles/leaderboard.tsx` |
+| `/strategies/puzzles/archive` | Puzzle Archive \| RMH Strategies | public | `app/routes/strategies/puzzles/archive.tsx` |
+| `/strategies/puzzles/leaderboard` | Puzzle Leaderboard \| RMH Strategies | public | `app/routes/strategies/puzzles/leaderboard.tsx` |
 | `/strategies/safehouse` | — | public | `app/routes/strategies/safehouse/index.tsx` |
 | `/strategies/safehouse/drops` | — | public | `app/routes/strategies/safehouse/drops.tsx` |
 | `/strategies/safehouse/recruit` | — | public | `app/routes/strategies/safehouse/recruit.tsx` |
-| `/strategies/sahur` | — | public | `app/routes/strategies/sahur.tsx` |
+| `/strategies/sahur` | Sahur \| RMH Strategies | public | `app/routes/strategies/sahur.tsx` |
 | `/studio` | — | sign-in | `app/routes/studio/index.tsx` |
 | `/synapse-storm` | — | public | `app/routes/synapse-storm.tsx` |
 | `/tag/:tag/rss.xml` | — | public | `app/routes/tag.$tag.rss[.]xml.ts` |

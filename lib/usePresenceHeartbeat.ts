@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect } from 'react';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { subscribePulse } from '@/lib/pulse';
@@ -17,10 +15,23 @@ import { subscribePulse } from '@/lib/pulse';
  * drawer) and still idle-deferred so the first ping doesn't compete with the feed
  * at hydration.
  */
-export function usePresenceHeartbeat(isLoggedIn: boolean) {
-  const idleReady = useIdleReady();
+export function usePresenceHeartbeat(
+  isLoggedIn: boolean,
+) {
+  const idleReady =
+    useIdleReady();
   useEffect(() => {
-    if (!isLoggedIn || !idleReady) return;
-    return subscribePulse([], () => {});
-  }, [isLoggedIn, idleReady]);
+    if (
+      !isLoggedIn ||
+      !idleReady
+    )
+      return;
+    return subscribePulse(
+      [],
+      () => {},
+    );
+  }, [
+    isLoggedIn,
+    idleReady,
+  ]);
 }

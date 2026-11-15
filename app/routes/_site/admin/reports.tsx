@@ -10,9 +10,18 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { MacroField } from '@/components/safety/MacroField';
+import { api } from '@/lib/contract/client';
+import {
+  actOnAdminReportApi,
+  banAdminUserApi,
+  getAdminReportsApi,
+  strikeAdminUserApi,
+} from '@/lib/admin/admin-ops.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/_site/admin/reports')({
   head: () => ({ meta: [{ title: 'Moderation Queue | RMH Studios' }] }),
@@ -61,18 +70,18 @@ function AdminReportsPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
   // S4: per-report message to the author, filled from a macro.
   const [messages, setMessages] = useState<Record<string, string>>({});
 
   const load = useCallback(async (s: Status) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/reports?status=${s}`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setReports(data.items);
-        setCounts(data.counts ?? {});
-      }
+      const data = await api(getAdminReportsApi, { query: { status: s }, retries: 0 });
+      setReports(data.items);
+      setCounts(data.counts ?? {});
+    } catch {
+      // A failed load leaves the queue as it was (the old code ignored non-2xx).
     } finally {
       setLoading(false);
     }
@@ -85,17 +94,15 @@ function AdminReportsPage() {
   const act = async (id: string, action: 'review' | 'resolve' | 'dismiss', deleteContent = false) => {
     setBusyId(id);
     try {
-      const res = await fetch(`/api/admin/reports/${id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ action, deleteContent, message: messages[id]?.trim() || undefined }),
+      await api(actOnAdminReportApi, {
+        params: { id },
+        body: { action, deleteContent, message: messages[id]?.trim() || undefined },
       });
-      if (res.ok) {
-        // Remove from the current view when it leaves this status bucket.
-        setReports((prev) => prev.filter((r) => r.id !== id));
-        load(status);
-      }
+      // Remove from the current view when it leaves this status bucket.
+      setReports((prev) => prev.filter((r) => r.id !== id));
+      load(status);
+    } catch {
+      // A refused action (409, 500) leaves the row where it is.
     } finally {
       setBusyId(null);
     }
@@ -104,19 +111,18 @@ function AdminReportsPage() {
   const moderateUser = async (userId: string, kind: 'strike' | 'ban') => {
     const reason = prompt(kind === 'ban' ? t('ban-reason-prompt', { defaultValue: 'Ban reason:' }) : t('strike-reason-prompt', { defaultValue: 'Strike reason:' }));
     if (!reason) return;
-    const url = `/api/admin/users/${userId}/${kind}`;
-    const body =
-      kind === 'ban'
-        ? { reason, durationDays: parseInt(prompt(t('ban-length-prompt', { defaultValue: 'Ban length in days (blank = permanent):' })) || '', 10) || null }
-        : { reason };
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    });
-    if (res.ok) toast.success(kind === 'ban' ? t('user-banned', { defaultValue: 'User banned' }) : t('strike-issued', { defaultValue: 'Strike issued' }));
-    else toast.error(t('action-failed-appeals', { defaultValue: 'Action failed' }));
+    try {
+      if (kind === 'ban') {
+        const durationDays = parseInt(prompt(t('ban-length-prompt', { defaultValue: 'Ban length in days (blank = permanent):' })) || '', 10) || null;
+        await api(banAdminUserApi, { params: { id: userId }, body: { reason, durationDays } });
+        toast.success(t('user-banned', { defaultValue: 'User banned' }));
+      } else {
+        await api(strikeAdminUserApi, { params: { id: userId }, body: { reason } });
+        toast.success(t('strike-issued', { defaultValue: 'Strike issued' }));
+      }
+    } catch {
+      toast.error(t('action-failed-appeals', { defaultValue: 'Action failed' }));
+    }
   };
 
   return (
@@ -130,7 +136,7 @@ function AdminReportsPage() {
         {/* An exclusive switcher IS a tab strip, whatever it is built from — an
             accent pill row with no `role` is still one, and this one had no
             `aria-pressed` either, so a screen reader could not tell which status
-            was showing. `LiquidTabs` brings the roving focus, the selected
+            was showing. `Tabs` brings the roving focus, the selected
             state and the shared capsule; `count` is the badge this was drawing
             by hand. */}
         <PageTabs
@@ -150,17 +156,17 @@ function AdminReportsPage() {
             <Spinner />
           </div>
         ) : reports.length === 0 ? (
-          <EmptyState icon={Flag} title={t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })} />
+          <EmptyState className={arrival} icon={Flag} title={t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })} />
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('divide-y divide-site-border', arrival)}>
             {reports.map((r) => {
               const link = entityLink(r);
               return (
-                <li key={r.id} className="glass-fill space-y-3 rounded-site p-5">
+                <li key={r.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="danger">{r.reason.replace('_', ' ')}</Badge>
-                    <Badge variant="outline">{r.entityType}</Badge>
-                    <span className="text-xs text-site-text-dim">
+                    <Badge variant="default">{r.entityType}</Badge>
+                    <span className="t-meta">
                       {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
                     </span>
                     {link && (
@@ -168,24 +174,24 @@ function AdminReportsPage() {
                         href={link}
                         target="_blank"
                         rel="noreferrer"
-                        className="ml-auto inline-flex items-center gap-1 text-xs text-site-accent hover:underline"
+                        className="t-body ms-auto inline-flex items-center gap-1 text-site-text underline"
                       >
                         {t('view-content', { defaultValue: 'View content' })} <ExternalLink className="size-3" aria-hidden />
                       </a>
                     )}
                   </div>
 
-                  {r.details && <p className="text-sm text-site-text">{r.details}</p>}
+                  {r.details && <p className="t-body text-site-text">{r.details}</p>}
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-site-text-muted">
+                  <div className="t-body flex flex-wrap items-center gap-x-4 gap-y-2 text-site-text-muted">
                     <span className="inline-flex items-center gap-2">
                       <UserAvatar src={r.reporter.image} alt={r.reporter.name || t('reporter', { defaultValue: 'Reporter' })} size={20} fallbackName={r.reporter.name || 'R'} />
-                      {t('reported-by', { defaultValue: 'reported by' })} <strong className="text-site-text">{r.reporter.name || r.reporter.handle}</strong>
+                      {t('reported-by', { defaultValue: 'reported by' })} <strong className="font-semibold text-site-text">{r.reporter.name || r.reporter.handle}</strong>
                     </span>
                     {r.targetUser && (
                       <span className="inline-flex items-center gap-2">
                         <UserAvatar src={r.targetUser.image} alt={r.targetUser.name || t('user', { defaultValue: 'User' })} size={20} fallbackName={r.targetUser.name || 'U'} />
-                        {t('against', { defaultValue: 'against' })} <strong className="text-site-text">{r.targetUser.name || r.targetUser.handle}</strong>
+                        {t('against', { defaultValue: 'against' })} <strong className="font-semibold text-site-text">{r.targetUser.name || r.targetUser.handle}</strong>
                       </span>
                     )}
                   </div>
@@ -204,27 +210,27 @@ function AdminReportsPage() {
                   {(status === 'PENDING' || status === 'REVIEWING') && (
                     <div className="flex flex-wrap gap-2">
                       {status === 'PENDING' && (
-                        <Button size="sm" variant="secondary" disabled={busyId === r.id} onClick={() => act(r.id, 'review')}>
+                        <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'review')}>
                           {t('mark-reviewing', { defaultValue: 'Mark reviewing' })}
                         </Button>
                       )}
-                      <Button size="sm" variant="accent" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve')}>
+                      <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve')}>
                         {t('resolve', { defaultValue: 'Resolve' })}
                       </Button>
                       {(r.entityType === 'rmhark' || r.entityType === 'comment' || r.entityType === 'stamp' || r.entityType === 'webring' || r.entityType === 'ladder-interview') && (
-                        <Button size="sm" variant="destructive" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve', true)}>
+                        <Button size="sm" variant="danger" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve', true)}>
                           {t('resolve-and-remove-content', { defaultValue: 'Resolve & remove content' })}
                         </Button>
                       )}
-                      <Button size="sm" variant="ghost" disabled={busyId === r.id} onClick={() => act(r.id, 'dismiss')}>
+                      <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'dismiss')}>
                         {t('dismiss', { defaultValue: 'Dismiss' })}
                       </Button>
                       {r.targetUser && (
                         <>
-                          <Button size="sm" variant="ghost" onClick={() => moderateUser(r.targetUser!.id, 'strike')}>
+                          <Button size="sm" variant="default" onClick={() => moderateUser(r.targetUser!.id, 'strike')}>
                             {t('strike-author', { defaultValue: 'Strike author' })}
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-site-danger" onClick={() => moderateUser(r.targetUser!.id, 'ban')}>
+                          <Button size="sm" variant="danger" onClick={() => moderateUser(r.targetUser!.id, 'ban')}>
                             {t('ban-author', { defaultValue: 'Ban author' })}
                           </Button>
                         </>

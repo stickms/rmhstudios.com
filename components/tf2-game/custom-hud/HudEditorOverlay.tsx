@@ -11,12 +11,11 @@
  * (its dialogs too: `portalRoot`), so opening it no longer leaves full screen;
  * it borrows the pointer lock and gives it back on the way out.
  */
-'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { flushLocalDraft, useEditor } from '@/lib/tf2-hud/store';
 import { selectionKey, type HudSelection } from '@/lib/tf2-game/client/custom-hud/selection';
 import { toTestState } from '@/lib/tf2-game/client/custom-hud/adapter';
@@ -104,8 +103,7 @@ export default function HudEditorOverlay({ store }: { store: HudStore }) {
           aria-describedby={undefined}
           onEscapeKeyDown={(e) => e.preventDefault()}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="tf2g-hud-editor fixed inset-0 z-50 bg-(--app-bg) outline-none"
-          data-jelly="off"
+          className="tf2g-hud-editor fixed inset-0 z-50 bg-app-bg outline-none"
         >
           <DialogPrimitive.Title className="sr-only">
             {t('hud_editor', { defaultValue: 'HUD editor' })}
@@ -117,7 +115,7 @@ export default function HudEditorOverlay({ store }: { store: HudStore }) {
           ) : (
             <p
               role="status"
-              className="flex h-full items-center justify-center text-sm text-(--app-text-muted)"
+              className="flex h-full items-center justify-center text-sm text-app-text-muted"
             >
               {t('hud_editor_loading', { defaultValue: 'Opening the HUD editor…' })}
             </p>

@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Scheduled gifts (C7) — the wallet's "Gifts" tab. Lazy-loaded when the tab
  * opens: gifts waiting to be unwrapped, a form to send one, and gifts you have
@@ -10,16 +8,18 @@ import { m as motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Gift, PackageOpen, Send } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { SPRING } from '@/lib/motion';
+import { transition } from '@/lib/motion';
 import type {
   ReceivedGiftView,
   ScheduledGiftsPayload,
@@ -39,6 +39,7 @@ export default function ScheduledGiftsPanel() {
     queryFn: () => apiJson<ScheduledGiftsPayload>('/api/gifts/scheduled'),
     staleTime: 30_000,
   });
+  const arrival = useArrival(!isLoading && !!data);
 
   if (isLoading || !data) {
     return (
@@ -53,7 +54,7 @@ export default function ScheduledGiftsPanel() {
   const opened = data.received.filter((g) => g.unwrapped);
 
   return (
-    <div className="space-y-4 px-3 pb-12">
+    <div className={cn('space-y-4 px-3 pb-12', arrival)}>
       <section aria-labelledby="gifts-for-you" className="space-y-3">
         <h2 id="gifts-for-you" className="site-section-label px-1">
           {t('gifts-for-you', { defaultValue: 'Gifts for you' })}
@@ -72,8 +73,8 @@ export default function ScheduledGiftsPanel() {
               <WrappedGift key={g.id} gift={g} />
             ))}
             {opened.map((g) => (
-              <li key={g.id} className="glass-fill flex items-center gap-3 p-4">
-                <PackageOpen className="size-5 shrink-0 text-site-text-dim" aria-hidden />
+              <li key={g.id} className="flex items-center gap-3 p-4">
+                <PackageOpen className="size-5 shrink-0 text-site-text-muted" aria-hidden />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-site-text">{g.itemName}</p>
                   <p className="truncate text-xs text-site-text-muted">
@@ -141,12 +142,12 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
       <motion.li
         initial={reduce ? false : { scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={SPRING.snappy}
-        className="glass-pane space-y-1 p-5 text-center"
+        transition={transition}
+        className="space-y-1 p-5 text-center"
         aria-live="polite"
       >
         <PackageOpen className="mx-auto size-8 text-site-accent" aria-hidden />
-        <p className="font-display text-xl font-medium text-site-text">{revealed.itemName}</p>
+        <p className="text-xl font-medium text-site-text">{revealed.itemName}</p>
         <p className="text-sm text-site-text-muted">
           {t('gifts-from', { defaultValue: 'From {{name}}', name: partyName(gift.from) })}
         </p>
@@ -159,15 +160,13 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
   }
 
   return (
-    <li className="glass-pane flex items-center gap-4 p-4">
-      <motion.div
-        animate={reduce ? undefined : { rotate: [0, -4, 4, -3, 0] }}
-        transition={{ duration: 1.2, repeat: 2, repeatDelay: 2.5 }}
-        className="glass-fill flex size-14 shrink-0 items-center justify-center rounded-site"
+    <li className="flex items-center gap-4 p-4">
+      <div
+        className="flex size-14 shrink-0 items-center justify-center rounded-site border border-site-border"
         aria-hidden
       >
         <Gift className="size-7 text-site-accent" />
-      </motion.div>
+      </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-site-text">
           {t('gifts-wrapped', {
@@ -179,7 +178,7 @@ function WrappedGift({ gift }: { gift: ReceivedGiftView }) {
           {t('gifts-wrapped-hint', { defaultValue: 'Open it to see what is inside.' })}
         </p>
       </div>
-      <Button variant="accent" size="sm" loading={unwrap.isPending} onClick={() => unwrap.mutate()}>
+      <Button variant="default" size="sm" loading={unwrap.isPending} onClick={() => unwrap.mutate()}>
         {t('gifts-unwrap', { defaultValue: 'Unwrap' })}
       </Button>
     </li>
@@ -209,7 +208,7 @@ function SentRow({ gift }: { gift: SentGiftView }) {
 
   const badge =
     gift.status === 'SCHEDULED' ? (
-      <Badge variant="accent">{t('gifts-st-scheduled', { defaultValue: 'Scheduled' })}</Badge>
+      <Badge variant="default">{t('gifts-st-scheduled', { defaultValue: 'Scheduled' })}</Badge>
     ) : gift.status === 'DELIVERED' ? (
       <Badge variant="success">
         {gift.unwrapped
@@ -225,7 +224,7 @@ function SentRow({ gift }: { gift: SentGiftView }) {
     );
 
   return (
-    <li className="glass-fill flex flex-wrap items-center gap-3 p-4">
+    <li className="flex flex-wrap items-center gap-3 p-4">
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-site-text">
           {gift.itemName} → {partyName(gift.recipient)}
@@ -237,7 +236,7 @@ function SentRow({ gift }: { gift: SentGiftView }) {
       {badge}
       {gift.status === 'SCHEDULED' ? (
         <Button
-          variant="outline"
+          variant="default"
           size="sm"
           loading={cancel.isPending}
           onClick={() => cancel.mutate()}
@@ -315,7 +314,7 @@ function SendGiftForm() {
         {t('gifts-send', { defaultValue: 'Send a gift' })}
       </h2>
       <form
-        className="glass-pane space-y-3 p-4"
+        className="space-y-3 p-4"
         onSubmit={(e) => {
           e.preventDefault();
           if (valid) send.mutate();
@@ -363,7 +362,7 @@ function SendGiftForm() {
           </p>
           <Button
             type="submit"
-            variant="accent"
+            variant="default"
             size="sm"
             disabled={!valid}
             loading={send.isPending}

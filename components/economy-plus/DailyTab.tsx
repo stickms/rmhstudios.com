@@ -1,25 +1,36 @@
-'use client';
-
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // The daily shop, bundles and loadouts are a separate chunk, fetched only when
 // the store's Daily tab opens. The split lives here rather than in the route
 // module because routes import their page statically (docs/performance, FOUC
 // contract) — this wrapper is what the route imports.
-const DailyShopPanel = lazy(() => import('./DailyShopPanel'));
+const DailyShopPanel =
+  lazy(
+    () =>
+      import('./DailyShopPanel'),
+  );
 
-export function DailyTab({ signedIn }: { signedIn: boolean }) {
+export function DailyTab({
+  signedIn,
+}: {
+  signedIn: boolean;
+}) {
   return (
-    <Suspense
+    <ArrivalSuspense
       fallback={
-        <div className="grid grid-cols-1 gap-3 px-3 pb-12 sm:grid-cols-2">
-          <Skeleton className="h-36 w-full" />
-          <Skeleton className="h-36 w-full" />
+        <div className="flex flex-col gap-3 pt-4">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
         </div>
       }
     >
-      <DailyShopPanel signedIn={signedIn} />
-    </Suspense>
+      <DailyShopPanel
+        signedIn={
+          signedIn
+        }
+      />
+    </ArrivalSuspense>
   );
 }

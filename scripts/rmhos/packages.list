@@ -1,0 +1,29 @@
+# Alpine packages added to the minirootfs (one per line). The resolved
+# versions, dependencies included, land in packages.txt beside the image.
+alpine-base
+tar
+openrc
+busybox-openrc
+doas
+eudev
+eudev-openrc
+xorg-server
+xf86-video-fbdev
+xf86-input-libinput
+xinit
+xauth
+xsetroot
+icewm
+pcmanfm
+xterm
+mousepad
+netsurf
+feh
+font-dejavu
+ca-certificates
+curl
+socat
+nano
+htop
+git
+openssh-client

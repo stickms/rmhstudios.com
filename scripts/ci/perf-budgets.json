@@ -1,5 +1,5 @@
 {
-  "$comment": "Advisory payload bands from docs/full-rewrite-design-2026-07-18.md §2.1, measured in Brotli KB by scripts/ci/bundle-budget.ts. GitHub workflows report these values but do not gate merges or deployments.",
+  "$comment": "Advisory payload bands from docs/archive/2026/full-rewrite-design-2026-07-18.md §2.1, measured in Brotli KB by scripts/ci/bundle-budget.ts. GitHub workflows report these values but do not gate merges or deployments.",
   "brotli_kb": {
     "platform_shell_eager_js": 300,
     "platform_eager_css": 40,

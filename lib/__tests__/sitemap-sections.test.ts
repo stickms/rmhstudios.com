@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SITEMAP_CHUNK_SIZE } from '@/lib/sitemap';
-import { apiCache } from '@/lib/cache';
+import { invalidateCachedPrefix } from '@/lib/cached.server';
 
 /**
  * The section machinery, with Prisma stood in for.
@@ -38,7 +38,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 /** Every model answers 0 / [] unless a test says otherwise. */
 function resetToEmpty() {
-  apiCache.dropLocalPrefix('sitemap:count:');
+  void invalidateCachedPrefix('sitemap:count:');
   for (const model of Object.values(prismaMock)) {
     model.count.mockReset().mockResolvedValue(0);
     model.findMany.mockReset().mockResolvedValue([]);

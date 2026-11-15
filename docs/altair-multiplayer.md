@@ -1,9 +1,9 @@
 # Altair co-op multiplayer — design and status
 
 Scope: `/altair/multiplayer`, `/altair/multiplayer/$lobbyId`,
-`components/altair/multiplayer/*`, `lib/altair/multiplayer/*`,
-`server/socket-server/handlers/altair.ts`. Single-player Altair
-(`/altair`, `lib/altair/engine/*`) must never regress; multiplayer extends the
+`features/altair/ui/multiplayer/*`, `features/altair/engine/multiplayer/*`,
+`features/altair/server/handlers.ts`. Single-player Altair
+(`/altair`, `features/altair/engine/engine/*`) must never regress; multiplayer extends the
 engine, it does not fork it.
 
 ## Status
@@ -20,7 +20,7 @@ engine, it does not fork it.
 
 ### Phase 3A as built
 
-- **Host page** (`MultiplayerGameScreen`): `HostDriver` (`lib/altair/multiplayer/host-driver.ts`) wraps
+- **Host page** (`MultiplayerGameScreen`): `HostDriver` (`features/altair/engine/multiplayer/host-driver.ts`) wraps
   `HostSim`: an accumulator turns wall time into 60 Hz steps (at most 15 per call; a longer stall drops
   the backlog instead of replaying it), a snapshot goes out every 3rd step, guests that go quiet for 1 s
   are told to stand still. It is driven by a **worker metronome** (`tick-worker.ts`): background-tab
@@ -86,7 +86,7 @@ PLAYING --host gone past the 10s grace--> RESULTS (endedReason: 'host_left')
 - Only the host may Start; a second Start while counting is refused (`WRONG_STATE`).
 - Hub rejections carry codes (`NOT_HOST`, `NOT_READY`, `NEED_MORE_PLAYERS`,
   `WRONG_STATE`, `INVALID_PAYLOAD`) and the lobby route toasts them.
-- Tests: `server/socket-server/handlers/__tests__/altair-lobby.test.ts`.
+- Tests: `features/altair/server/__tests__/altair-lobby.test.ts`.
 
 ## Simulation model (phases 2–3, decided)
 
@@ -98,7 +98,7 @@ players. The hub never simulates; it relays.
   the sender's `userId` (already implemented) — the host ignores input from users
   not in the lobby.
 - The host steps the fixed 60 Hz sim, and every 3rd step (20 Hz) sends a
-  `GameStateSnapshot` (`lib/altair/multiplayer/types.ts`) through the hub, which
+  `GameStateSnapshot` (`features/altair/engine/multiplayer/types.ts`) through the hub, which
   fans it out to guests and keeps `lastSnapshot`/`sharedKills`.
 - Guests render the two latest snapshots, interpolated ~100 ms behind (one
   snapshot of buffer), extrapolating at most one interval. Local prediction of the
@@ -245,7 +245,7 @@ Co-op is replay-verified (above). Single-player is **not yet**: it is a React-dr
 application, pause/resume and the periodic store sync are `useEffect`s, the camera and tile streaming run
 per animation frame, and a run can be finalised by closing the tab), so a headless replay of what the
 client did would need those moved into a synchronous driver first. Until then
-`/api/altair/meta` (`lib/altair/meta-guard.ts`) bounds the coin balance instead of trusting it:
+`/api/altair/meta` (`features/altair/engine/meta-guard.ts`) bounds the coin balance instead of trusting it:
 purchases are priced and paid server-side, earned coins are limited by a refilling allowance
 (8 coins/s, 8000 cap) and clamped, a first save may import at most 50k. A cheater can still claim up
 to ~8 coins per second of wall clock without playing; `/api/altair/score` (leaderboard totals) is still
@@ -253,7 +253,7 @@ client-reported.
 
 ### The solo driver (built, anti-cheat 4/6)
 
-`lib/altair/solo/solo-run.ts` (`SoloRun`) is the one synchronous driver for a single-player run, used by
+`features/altair/engine/solo/solo-run.ts` (`SoloRun`) is the one synchronous driver for a single-player run, used by
 `GameScreen` (the browser) and by the headless verifier (`solo/verify-solo.ts`). It owns what used to be
 spread over `GameScreen` callbacks and `useEffect`s: the sim step (`engine/sim-step.ts`), the rules (XP,
 level-ups, coins, revives, evolution, reroll, banish), a seeded random stream (`engine/rng.ts`, scoped

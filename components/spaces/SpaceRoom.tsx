@@ -1,9 +1,6 @@
-'use client';
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { io, type Socket } from 'socket.io-client';
 import { Radio, Send, Pin, PinOff, Users } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { Badge } from '@/components/ui/badge';
@@ -12,12 +9,17 @@ import { Input } from '@/components/ui/input';
 import { useSession } from '@/components/Providers';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { authClient } from '@/lib/auth-client';
-import { ensureTrailingSlash } from '@/lib/url';
+import { createRealtimeClient, type RealtimeClient } from '@/lib/shared/realtime/client';
 import { SPACE_C2S, SPACE_S2C } from '@/lib/spaces/events';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { startSpaceApi } from '@/lib/spaces/spaces.contract';
 import type { SpacePinned, SpaceStatus, SpaceView } from '@/lib/spaces/types';
 import { SlowModeBar, useSlowModeBlock } from '@/components/safety/SlowModeBar';
 import { bindSlowModeEvents } from '@/lib/safety/slow-mode-store';
 import { slowModeEvents } from '@/lib/safety/slow-mode-events';
+import { ARRIVE } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface LiveMessage {
   id: string;
@@ -88,7 +90,7 @@ function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
         ? t('space-pinned-post', { defaultValue: 'Pinned post' })
         : t('space-pinned-tube', { defaultValue: 'Watch party' });
   return (
-    <div className="glass-fill mx-4 mt-3 rounded-site px-4 py-3">
+    <div className="relative mx-4 mt-3 rounded-site px-4 py-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-site-accent">
         <Pin className="size-3.5" aria-hidden />
         {label}
@@ -130,7 +132,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   const [startingLive, setStartingLive] = useState(false);
   const [ending, setEnding] = useState(false);
 
-  const socketRef = useRef<Socket | null>(null);
+  const clientRef = useRef<RealtimeClient | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const pushBurst = useCallback(
@@ -152,69 +154,62 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
     const base = import.meta.env.VITE_SOCKET_URL;
     if (!base) return;
 
-    const socket = io(ensureTrailingSlash(base), {
+    const client = createRealtimeClient({
+      name: 'Spaces',
+      url: base,
       path: '/socket/',
-      auth: (cb) => {
-        authClient
-          .getSession()
-          .then((s) => cb({ token: s?.data?.session?.token }))
-          .catch(() => cb({}));
+      auth: async () => {
+        const session = await authClient.getSession();
+        return { token: session?.data?.session?.token };
       },
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 10000,
-      timeout: 10000,
-    });
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      setConnected(true);
-      socket.emit(SPACE_C2S.JOIN, { spaceId: initialSpace.id });
-    });
-    socket.on('disconnect', () => {
-      setConnected(false);
-      setEnding(false);
-    });
-    socket.on(
-      SPACE_S2C.STATE,
-      (s: {
-        audience?: AudienceMember[];
-        audienceCount?: number;
-        pinned?: SpacePinned | null;
-        status?: SpaceStatus;
-      }) => {
-        if (Array.isArray(s.audience)) setAudience(s.audience);
-        if (typeof s.audienceCount === 'number') setAudienceCount(s.audienceCount);
-        setPinned(s.pinned ?? null);
-        if (s.status) setStatus(s.status);
+      onStatus: (status) => {
+        setConnected(status === 'connected');
+        if (status !== 'connected') setEnding(false);
       },
-    );
-    socket.on(SPACE_S2C.MESSAGE, (m: LiveMessage) => {
-      setMessages((prev) => [...prev.slice(-199), m]);
+      // Every connect, reconnects included: the hub forgot this socket's room.
+      onConnect: (socket) => socket.emit(SPACE_C2S.JOIN, { spaceId: initialSpace.id }),
+      bind: (socket) => {
+        socket.on(
+          SPACE_S2C.STATE,
+          (s: {
+            audience?: AudienceMember[];
+            audienceCount?: number;
+            pinned?: SpacePinned | null;
+            status?: SpaceStatus;
+          }) => {
+            if (Array.isArray(s.audience)) setAudience(s.audience);
+            if (typeof s.audienceCount === 'number') setAudienceCount(s.audienceCount);
+            setPinned(s.pinned ?? null);
+            if (s.status) setStatus(s.status);
+          },
+        );
+        socket.on(SPACE_S2C.MESSAGE, (m: LiveMessage) => {
+          setMessages((prev) => [...prev.slice(-199), m]);
+        });
+        socket.on(SPACE_S2C.REACTION, (r: { emoji?: string }) => {
+          if (r?.emoji) pushBurst(r.emoji);
+        });
+        socket.on(SPACE_S2C.PINNED, (p: { pinned?: SpacePinned | null }) =>
+          setPinned(p?.pinned ?? null),
+        );
+        socket.on(SPACE_S2C.ENDED, () => {
+          setEnding(false);
+          setStatus('ENDED');
+          toast(t('space-ended', { defaultValue: 'This Space has ended' }));
+        });
+        bindSlowModeEvents(socket, 'space');
+        socket.on(SPACE_S2C.ERROR, (e: { message?: string }) => {
+          setEnding(false);
+          if (e?.message) toast.error(e.message);
+        });
+      },
     });
-    socket.on(SPACE_S2C.REACTION, (r: { emoji?: string }) => {
-      if (r?.emoji) pushBurst(r.emoji);
-    });
-    socket.on(SPACE_S2C.PINNED, (p: { pinned?: SpacePinned | null }) =>
-      setPinned(p?.pinned ?? null),
-    );
-    socket.on(SPACE_S2C.ENDED, () => {
-      setEnding(false);
-      setStatus('ENDED');
-      toast(t('space-ended', { defaultValue: 'This Space has ended' }));
-    });
-    bindSlowModeEvents(socket, 'space');
-    socket.on(SPACE_S2C.ERROR, (e: { message?: string }) => {
-      setEnding(false);
-      if (e?.message) toast.error(e.message);
-    });
+    clientRef.current = client;
 
     return () => {
-      socket.emit(SPACE_C2S.LEAVE, { spaceId: initialSpace.id });
-      socket.removeAllListeners();
-      socket.disconnect();
-      socketRef.current = null;
+      client.emit(SPACE_C2S.LEAVE, { spaceId: initialSpace.id });
+      client.destroy();
+      clientRef.current = null;
     };
   }, [initialSpace.id, ended, pushBurst, t]);
 
@@ -232,14 +227,14 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       toast.error(t('space-sign-in-to-chat', { defaultValue: 'Sign in to chat' }));
       return;
     }
-    socketRef.current?.emit(SPACE_C2S.CHAT, { spaceId: initialSpace.id, body });
+    clientRef.current?.emit(SPACE_C2S.CHAT, { spaceId: initialSpace.id, body }, { queue: true });
     setDraft('');
   }, [draft, viewerId, initialSpace.id, t, slowBlock.secondsLeft]);
 
   const react = useCallback(
     (emoji: string) => {
       if (!viewerId) return;
-      socketRef.current?.emit(SPACE_C2S.REACT, { spaceId: initialSpace.id, emoji });
+      clientRef.current?.emit(SPACE_C2S.REACT, { spaceId: initialSpace.id, emoji });
       pushBurst(emoji);
     },
     [viewerId, initialSpace.id, pushBurst],
@@ -249,15 +244,11 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
     if (startingLive) return;
     setStartingLive(true);
     try {
-      const res = await fetch(`/api/spaces/${initialSpace.id}/start`, { method: 'POST' });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? 'Failed to start');
-      }
+      await api(startSpaceApi, { params: { id: initialSpace.id } });
       setStatus('LIVE');
       toast.success(t('space-now-live', { defaultValue: 'You are live' }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to start');
+      toast.error(serverError(err) ?? 'Failed to start');
     } finally {
       setStartingLive(false);
     }
@@ -268,21 +259,21 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   // flips the status. Until then the socket stays up so an error can arrive.
   const endSpace = useCallback(() => {
     if (ending) return;
-    const socket = socketRef.current;
-    if (!socket?.connected) {
+    const client = clientRef.current;
+    if (client?.status !== 'connected') {
       toast.error(
         t('space-end-offline', { defaultValue: 'Not connected. Try again in a moment.' }),
       );
       return;
     }
     setEnding(true);
-    socket.emit(SPACE_C2S.END, { spaceId: initialSpace.id });
+    client.emit(SPACE_C2S.END, { spaceId: initialSpace.id });
   }, [ending, initialSpace.id, t]);
 
   const submitPin = useCallback(() => {
     const ref = pinDraft.trim();
     if (!ref) return;
-    socketRef.current?.emit(SPACE_C2S.PIN, {
+    clientRef.current?.emit(SPACE_C2S.PIN, {
       spaceId: initialSpace.id,
       pinned: { kind: 'url', ref },
     });
@@ -290,7 +281,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   }, [pinDraft, initialSpace.id]);
 
   const unpin = useCallback(() => {
-    socketRef.current?.emit(SPACE_C2S.PIN, { spaceId: initialSpace.id, pinned: null });
+    clientRef.current?.emit(SPACE_C2S.PIN, { spaceId: initialSpace.id, pinned: null });
   }, [initialSpace.id]);
 
   const transcript = useMemo(
@@ -306,7 +297,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
   const statusBadge = (
     <Badge
-      variant={status === 'LIVE' ? 'danger' : status === 'SCHEDULED' ? 'default' : 'outline'}
+      variant={status === 'LIVE' ? 'danger' : status === 'SCHEDULED' ? 'default' : 'default'}
       icon={false}
       className="gap-2"
     >
@@ -324,12 +315,12 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   const hostActions = isHost ? (
     <>
       {status === 'SCHEDULED' && (
-        <Button size="sm" variant="accent" onClick={goLive} loading={startingLive}>
+        <Button size="sm" variant="default" onClick={goLive} loading={startingLive}>
           {t('space-go-live', { defaultValue: 'Go live' })}
         </Button>
       )}
       {status === 'LIVE' && (
-        <Button size="sm" variant="outline" onClick={endSpace} loading={ending}>
+        <Button size="sm" variant="default" onClick={endSpace} loading={ending}>
           {t('space-end', { defaultValue: 'End' })}
         </Button>
       )}
@@ -410,19 +401,22 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
                 <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} />
               ))
             ) : (
-              <p className="py-12 text-center text-sm text-site-text-dim">
+              <p className="py-12 text-center text-sm text-site-text-muted">
                 {t('space-no-transcript', { defaultValue: 'No messages were recorded.' })}
               </p>
             )
           ) : (
-            <p className="py-12 text-center text-sm text-site-text-dim">
+            <p className="py-12 text-center text-sm text-site-text-muted">
               {t('space-chat-not-recorded', { defaultValue: "This Space's chat wasn't recorded." })}
             </p>
           )
         ) : messages.length > 0 ? (
-          messages.map((m) => <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} />)
+          // Steel M9: live messages only ever arrive over the socket, after paint, so each fades in as it mounts.
+          messages.map((m) => (
+            <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} className={ARRIVE} />
+          ))
         ) : (
-          <p className="py-12 text-center text-sm text-site-text-dim">
+          <p className="py-12 text-center text-sm text-site-text-muted">
             {status === 'SCHEDULED'
               ? t('space-not-started', { defaultValue: 'This Space has not started yet.' })
               : t('space-say-hi', { defaultValue: 'Be the first to say something.' })}
@@ -450,13 +444,13 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
       {/* Composer + reactions (live only) */}
       {status === 'LIVE' && (
-        <div className="glass-pane mx-4 mb-4 space-y-3 rounded-site px-4 py-3">
+        <div className="relative mx-4 mb-4 space-y-3 rounded-site px-4 py-3">
           <div className="flex flex-wrap gap-2">
             {REACTIONS.map((emoji) => (
               <Button
                 key={emoji}
                 type="button"
-                variant="outline"
+                variant="default"
                 size="icon-sm"
                 onClick={() => react(emoji)}
                 className="rounded-full text-base"
@@ -470,7 +464,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
             scope="space"
             isHost={isHost}
             onSet={(seconds) =>
-              socketRef.current?.emit(slowModeEvents('space').SET, {
+              clientRef.current?.emit(slowModeEvents('space').SET, {
                 spaceId: initialSpace.id,
                 seconds,
               })
@@ -499,7 +493,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
             <Button
               type="submit"
               size="sm"
-              variant="accent"
+              variant="default"
               disabled={!draft.trim() || !viewerId || slowBlock.secondsLeft > 0}
               aria-label={t('space-send', { defaultValue: 'Send' })}
             >
@@ -528,14 +522,16 @@ function MessageRow({
   name,
   image,
   body,
+  className,
 }: {
   name: string | null;
   image: string | null;
   body: string;
+  className?: string | undefined;
 }) {
   const { t } = useTranslation('site');
   return (
-    <div className="flex items-start gap-2">
+    <div className={cn('flex items-start gap-2', className)}>
       <Avatar name={name} image={image} />
       <div className="min-w-0">
         <span className="mr-2 text-sm font-semibold text-site-text">

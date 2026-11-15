@@ -1,11 +1,9 @@
-'use client';
-
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { createKowloonRenderer, extendKowloonThree } from '@/lib/kowloon-knockout/render/webgpu';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
-import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import {
     currentBackendIsWebGPU, decideRecovery, markForceWebGL, renderHealthSnapshot, resetRenderHealth, shouldForceWebGL,
 } from '@/lib/kowloon-knockout/render/health';

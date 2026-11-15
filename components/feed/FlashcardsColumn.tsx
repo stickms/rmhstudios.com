@@ -1,5 +1,4 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -7,10 +6,12 @@ import { Loader2, BookOpen, Plus, Sparkles, X, Globe, Lock, Layers } from 'lucid
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Reveal } from '@/components/motion';
-import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import { ColumnHeader } from './ColumnHeader';
 import { StudyTabs } from '@/components/study/StudyTabs';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createDeckApi, listDecksApi } from '@/lib/study/decks.contract';
+import { useArrival } from '@/components/ui/arrive';
 
 interface Deck {
   id: string;
@@ -38,6 +39,8 @@ export function FlashcardsColumn({
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Steel M9: decks fetched here replace the spinner; the loader's are there on first paint.
+  const arrival = useArrival(!loading);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -46,12 +49,13 @@ export function FlashcardsColumn({
   });
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/study/decks', { credentials: 'include' });
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await api(listDecksApi);
       setMine(data.mine ?? []);
       setPopular(data.popular ?? []);
       setSignedIn(!!data.signedIn);
+    } catch {
+      /* a failed load leaves the lists as they were */
     }
   }, []);
 
@@ -74,23 +78,17 @@ export function FlashcardsColumn({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/study/decks', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await api(createDeckApi, {
+        body: {
           title: form.title.trim(),
           description: form.description.trim() || undefined,
           isPublic: form.isPublic,
           generateTopic: form.generateTopic.trim() || undefined,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error ?? t('could-not-create', { defaultValue: 'Could not create' }));
-        return;
-      }
       navigate({ to: `/study/${data.id}` as string });
+    } catch (err) {
+      setError(serverError(err) ?? t('could-not-create', { defaultValue: 'Could not create' }));
     } finally {
       setBusy(false);
     }
@@ -108,7 +106,7 @@ export function FlashcardsColumn({
     <Link
       key={d.id}
       to={`/study/${d.id}` as string}
-      className={`flex items-center gap-3 rounded-site glass-fill p-4 ${LIFT_CARD}`}
+      className={`flex items-center gap-3 rounded-site p-4`}
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
         <Layers className="h-5 w-5" />
@@ -116,7 +114,7 @@ export function FlashcardsColumn({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-site-text">{d.title}</p>
         {d.description && <p className="truncate text-xs text-site-text-muted">{d.description}</p>}
-        <p className="mt-0.5 text-xs text-site-text-dim">
+        <p className="mt-0.5 text-xs text-site-text-muted">
           {t('card-count', {
             count: d.cardCount,
             defaultValue: '{{count}} card',
@@ -135,7 +133,7 @@ export function FlashcardsColumn({
   );
 
   return (
-    <div>
+    <div className={arrival}>
       <ColumnHeader
         icon={BookOpen}
         title={t('flashcards-title', { defaultValue: 'Flashcards' })}
@@ -148,7 +146,7 @@ export function FlashcardsColumn({
             {signedIn && (
               <Button
                 size="sm"
-                variant="accent"
+                variant="default"
                 className="gap-1"
                 onClick={() => setShowForm((v) => !v)}
               >
@@ -181,14 +179,14 @@ export function FlashcardsColumn({
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder={t('deck-title-placeholder', { defaultValue: 'Deck title' })}
               maxLength={100}
-              className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <input
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })}
               maxLength={500}
-              className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <div className="rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2">
               <label className="mb-1 flex items-center gap-1 text-xs font-semibold text-site-accent">
@@ -203,7 +201,7 @@ export function FlashcardsColumn({
                   defaultValue: "Topic, e.g.'French Revolution causes'(optional)",
                 })}
                 maxLength={200}
-                className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
             </div>
             <div className="flex items-center justify-between">
@@ -224,7 +222,7 @@ export function FlashcardsColumn({
               {error && <p className="text-xs text-site-danger">{error}</p>}
               <Button
                 size="sm"
-                variant="accent"
+                variant="default"
                 disabled={busy || form.title.trim().length < 1}
                 onClick={create}
               >
@@ -241,14 +239,14 @@ export function FlashcardsColumn({
 
       <div className="space-y-6 py-4">
         {mine.length > 0 && (
-          <Reveal as="section">
+          <section>
             <h2 className="site-section-label mb-2">
               {t('your-decks', { defaultValue: 'Your decks' })}
             </h2>
             <div className="space-y-2">{mine.map((d) => DeckCard(d))}</div>
-          </Reveal>
+          </section>
         )}
-        <Reveal as="section">
+        <section>
           <h2 className="site-section-label mb-2">
             {t('public-decks', { defaultValue: 'Public decks' })}
           </h2>
@@ -262,7 +260,7 @@ export function FlashcardsColumn({
               })}
               action={
                 signedIn ? (
-                  <Button variant="accent" className="gap-1" onClick={() => setShowForm(true)}>
+                  <Button variant="default" className="gap-1" onClick={() => setShowForm(true)}>
                     <Plus className="h-4 w-4" aria-hidden />{' '}
                     {t('new-deck', { defaultValue: 'New deck' })}
                   </Button>
@@ -272,7 +270,7 @@ export function FlashcardsColumn({
           ) : (
             <div className="space-y-2">{popular.map((d) => DeckCard(d, true))}</div>
           )}
-        </Reveal>
+        </section>
       </div>
     </div>
   );

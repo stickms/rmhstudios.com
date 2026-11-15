@@ -106,8 +106,7 @@ async function generate(
  * catalog files do not have to carry.
  */
 async function catalogCandidates(slot: 'games' | 'apps', opts: RecommendOptions): Promise<Candidate[]> {
-  const { games } = await import('@/lib/games');
-  const { apps } = await import('@/lib/apps');
+  const { games, apps } = await import('@/lib/catalog');
   const entries = slot === 'games' ? games : apps;
 
   const plays = await prisma.activity.groupBy({

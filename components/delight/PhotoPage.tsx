@@ -1,9 +1,7 @@
-'use client';
-
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Camera, ThumbsUp, Trash2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -12,8 +10,10 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
 import { fetchJson } from '@/lib/http';
 import { addDays } from '@/lib/delight/shared';
+import { cn } from '@/lib/utils';
 
 interface Entry {
   id: string;
@@ -40,6 +40,7 @@ export function PhotoPage() {
     queryKey: ['delight', 'potd'],
     queryFn: () => fetchJson<PageData>('/api/photo-of-the-day'),
   });
+  const arrival = useArrival(!q.isPending);
   const fileRef = useRef<HTMLInputElement>(null);
   const [caption, setCaption] = useState('');
   const [busy, setBusy] = useState(false);
@@ -88,7 +89,10 @@ export function PhotoPage() {
     >
       <div className="max-w-3xl space-y-[var(--site-section-gap)] px-4 pt-4 pb-12">
         {yesterday && (
-          <section className="glass-pane space-y-3 rounded-site px-4 py-3" aria-labelledby="potd-winner">
+          <section
+            className={cn('space-y-3 rounded-site px-4 py-3', arrival)}
+            aria-labelledby="potd-winner"
+          >
             <h2 id="potd-winner" className="site-section-label">
               {t('potd-winner', { defaultValue: 'Yesterday’s winner' })}
             </h2>
@@ -102,7 +106,7 @@ export function PhotoPage() {
 
         {session && d && !d.nominations.some((n) => n.mine) && (
           <form
-            className="glass-pane space-y-3 rounded-site px-4 py-3"
+            className={cn('space-y-3 rounded-site px-4 py-3', arrival)}
             onSubmit={(e) => {
               e.preventDefault();
               upload();
@@ -127,7 +131,7 @@ export function PhotoPage() {
               aria-label={t('potd-caption', { defaultValue: 'Caption (optional)' })}
               placeholder={t('potd-caption', { defaultValue: 'Caption (optional)' })}
             />
-            <Button type="submit" variant="accent" loading={busy}>
+            <Button type="submit" variant="default" loading={busy}>
               <Camera className="size-4" aria-hidden />
               {t('potd-nominate', { defaultValue: 'Nominate' })}
             </Button>
@@ -142,13 +146,14 @@ export function PhotoPage() {
             <Skeleton className="h-48 w-full" />
           ) : !d?.nominations.length ? (
             <EmptyState
+              className={arrival}
               icon={Camera}
               title={t('potd-none', { defaultValue: 'No nominations yet. Be the first!' })}
             />
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2">
+            <ul className={cn('grid gap-3 sm:grid-cols-2', arrival)}>
               {d.nominations.map((n) => (
-                <li key={n.id} className="glass-fill space-y-3 rounded-site p-4">
+                <li key={n.id} className="space-y-3 rounded-site p-4">
                   <img
                     src={n.imageUrl}
                     alt={n.caption}
@@ -157,13 +162,13 @@ export function PhotoPage() {
                   />
                   <p className="truncate text-sm text-site-text">
                     {n.caption || t('potd-untitled', { defaultValue: 'Untitled' })}
-                    <span className="text-site-text-dim"> - {n.by.name}</span>
+                    <span className="text-site-text-muted"> - {n.by.name}</span>
                   </p>
                   <div className="flex items-center gap-2">
                     {session && !n.mine && (
                       <Button
                         size="sm"
-                        variant={d.votedFor === n.id ? 'accent' : 'ghost'}
+                        variant={d.votedFor === n.id ? 'default' : 'ghost'}
                         disabled={busy || d.votedFor !== null}
                         onClick={() =>
                           void act(() =>
@@ -204,13 +209,13 @@ export function PhotoPage() {
         </section>
 
         {older.length > 0 && (
-          <section aria-labelledby="potd-past">
+          <section aria-labelledby="potd-past" className={arrival}>
             <h2 id="potd-past" className="site-section-label mb-3">
               {t('potd-past', { defaultValue: 'Recent winners' })}
             </h2>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {older.map((w) => (
-                <li key={w.id} className="glass-fill space-y-2 rounded-site p-4">
+                <li key={w.id} className="space-y-2 rounded-site p-4">
                   <img
                     src={w.imageUrl}
                     alt={w.caption}

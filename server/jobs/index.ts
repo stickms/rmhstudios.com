@@ -33,25 +33,40 @@ import { registerCommunityCrons } from '@/lib/communities/jobs.server';
 import { registerGiftingCrons } from '@/lib/gifting/jobs.server';
 import { CHAT_EXPIRY_QUEUE, registerChatExpiryCron } from '@/lib/chat-plus/expiry.server';
 import { STUDY_BUDDY_QUEUE, registerStudyBuddyCron } from '@/lib/calendar/study-buddy-jobs.server';
-import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@/lib/slice-it/analysis-queue.server';
-import { REGEN_QUEUE, registerRegenCron } from '@/lib/slice-it/regen.server';
-import { PF2E_REMINDER_QUEUE, registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
+import { ANALYSIS_QUEUE, registerAnalysisWorker } from '@features/slice-it/engine/analysis-queue.server';
+import { REGEN_QUEUE, registerRegenCron } from '@features/slice-it/engine/regen.server';
+import { registerPf2eReminderCron } from '@/lib/pf2ecal/reminders.server';
+import { PF2E_REMINDER_QUEUE } from '@/lib/pf2ecal/reminders';
 import { DUNESDAY_DAILY_QUEUE, registerDunesdayDailyCron } from '@/lib/dunesday/sync.server';
 import {
   SOHUMTRACKER_ALERT_QUEUE,
   registerSohumTrackerAlertCron,
 } from '@/lib/sohumtracker/alerts.server';
-import { registerAltairVerifyWorker } from '@/lib/altair/verify/queue.server';
-import { registerAltairSoloWorker } from '@/lib/altair/solo/queue.server';
-import { VERIFY_SOLO_QUEUE } from '@/lib/altair/solo/job';
-import { VERIFY_COOP_QUEUE } from '@/lib/altair/verify/job';
+import { registerAltairVerifyWorker } from '@features/altair/engine/verify/queue.server';
+import { registerAltairSoloWorker } from '@features/altair/engine/solo/queue.server';
+import { VERIFY_SOLO_QUEUE } from '@features/altair/engine/solo/job';
+import { VERIFY_COOP_QUEUE } from '@features/altair/engine/verify/job';
 import { registerPostsPlusCrons } from '@/lib/posts-plus/jobs.server';
 import { registerDiscoveryJobs } from '@/lib/discovery/jobs.server';
 import { registerRecipeJobs } from '@/lib/devplatform/recipes.server';
+import { WEBHOOK_RETRY_QUEUE, registerWebhookRetryCron } from '@/lib/webhooks/jobs.server';
+import { PROFILE_LINK_REVERIFY_QUEUE, registerProfileLinkReverifyCron } from '@/lib/profile-links/jobs.server';
+import { STREAK_REMINDER_QUEUE, registerStreakReminderCron } from '@/lib/streak-reminders.server';
+import { RECAP_QUEUE, registerRecapCron } from '@/lib/lights-out/recap.server';
+import { registerDoctrineJobs } from '@features/doctrine/engine/jobs.server';
+import { CLEANUP_QUEUE, registerCleanupCron } from '@/lib/cleanup-job.server';
+import { CENSUS_QUEUE, registerCensusCron } from '@/lib/admin/census.server';
+import { registerBotWorkerJobs } from '@/lib/rmhark-ai/bot-worker.server';
+import {
+  VIBE_THUMB_QUEUE,
+  closeVibeThumbnailBrowser,
+  registerVibeThumbnailCron,
+} from '@/lib/rmhvibe/thumbnail-worker.server';
 import {
   PROFILE_VISIT_SWEEP_QUEUE,
   registerProfileVisitSweepCron,
 } from '@/lib/profile/visit-sweep.server';
+import { registerDiscordBot, stopDiscordBot } from '../discord-bot/jobs';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
 installProcessGuards({ service: 'jobs' });
@@ -80,13 +95,13 @@ async function shutdown(sig: string): Promise<void> {
       /* best-effort */
     }
   }
-  if (bossRef) {
-    try {
-      await bossRef.stop({ graceful: true, timeout: 30_000 });
-    } catch {
-      /* best-effort */
-    }
-  }
+  // In parallel: the Discord bot closes its gateway and lets in-flight replies finish (up to
+  // DISCORD_BOT_DRAIN_GRACE, 60 s) while pg-boss drains its handlers (30 s), both inside the
+  // container's 90 s stop_grace_period.
+  await Promise.all([
+    stopDiscordBot().catch(() => undefined),
+    bossRef ? bossRef.stop({ graceful: true, timeout: 30_000 }).catch(() => undefined) : undefined,
+  ]);
   process.exit(0);
 }
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
@@ -133,6 +148,31 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: 'communities', register: registerCommunityCrons },
   // P9: nightly sweep of the profile visitor-counter dedupe ledger.
   { queue: PROFILE_VISIT_SWEEP_QUEUE, register: registerProfileVisitSweepCron },
+  // D3: streak-saver (ported from the Go worker). Hourly "keep your streak" notification + web push;
+  // STREAK_REMINDER_ENABLED=false skips it. The status service watches its last success (B06).
+  { queue: STREAK_REMINDER_QUEUE, register: registerStreakReminderCron },
+  // D3: Lights Out → Discord daily recap (ported from the Go worker), every 5 min. The status service
+  // watches its last success (B06 `recap`).
+  { queue: RECAP_QUEUE, register: registerRecapCron },
+  // D3: Doctrine Engine (ported from the Go worker): tomorrow's puzzles at 00:00 UTC (A19 watches the
+  // table), Sahur activation every minute (B06 `sahur_activation`), Monday reputation decay.
+  { queue: 'doctrine', register: registerDoctrineJobs },
+  // D3: RMHark bot-worker (ported from the Go worker): pool top-up (every minute, interval-gated), post / reply /
+  // DM ticks (BOT_*_TICK_MS). Idles without DEEPSEEK_API_KEY.
+  { queue: 'bot-worker', register: registerBotWorkerJobs },
+  // D3: RMHVibe gallery thumbnails (ported from the Go worker): every minute, render up to 5 stale pages
+  // in headless Chromium (PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, in this image) and upload to object storage.
+  { queue: VIBE_THUMB_QUEUE, register: registerVibeThumbnailCron },
+  // D3: the Discord bot (the Go supervisor and its copy are deleted), whenever a bot token is set: the gateway
+  // connection lives in this process and its periodic work (care tick, tracker flush, identity poll, summarizer,
+  // the B07 gateway heartbeat) are crons here. No token: it logs `discord_bot.disabled` and unschedules them.
+  { queue: 'discord-bot', register: registerDiscordBot },
+  // D4: data-lifecycle cleanup (sessions, verifications, notifications, comment views), daily at 04:00 UTC.
+  // Moved from a node-cron + worker-lease in the ladder worker; the `exclusive` policy is the lock now.
+  { queue: CLEANUP_QUEUE, register: registerCleanupCron },
+  // Third-pass audit DT1: the monthly table and product census for /admin/census. Ticks nightly at
+  // 03:40 UTC and writes a month's row only when that month has none.
+  { queue: CENSUS_QUEUE, register: registerCensusCron },
   // M3 disappearing messages: expiry is enforced at read time; this only deletes the rows.
   { queue: CHAT_EXPIRY_QUEUE, register: registerChatExpiryCron },
   // F5: expire unmatched study-buddy requests and tell their owners.
@@ -143,6 +183,10 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: 'discovery', register: registerDiscoveryJobs },
   // P16 D5: "when X then Y" recipes: polled triggers + personal-best events.
   { queue: 'devplatform.recipes', register: registerRecipeJobs },
+  // Developer webhooks: retry failed deliveries on their backoff (the first attempt is inline at emit).
+  { queue: WEBHOOK_RETRY_QUEUE, register: registerWebhookRetryCron },
+  // J1 §5: re-check verified profile links that have gone stale; a page that stopped linking back loses its mark.
+  { queue: PROFILE_LINK_REVERIFY_QUEUE, register: registerProfileLinkReverifyCron },
 ];
 
 async function main() {
@@ -200,6 +244,8 @@ async function main() {
   // /admin/alarms graphs (lib/ops/metrics-store.server.ts). Runs regardless of
   // on-call being configured.
   stoppers.push(startMetricsRollup());
+  // Close the shared thumbnail browser (a no-op if nothing was rendered) so Chromium does not outlive us.
+  stoppers.push(() => void closeVibeThumbnailBrowser().catch(() => undefined));
 }
 
 main().catch((e) => {

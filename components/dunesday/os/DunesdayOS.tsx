@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Dunesday 7 — the marathon planner as a Windows 7-style desktop.
  *

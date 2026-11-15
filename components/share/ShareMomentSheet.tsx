@@ -1,5 +1,4 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 /**
  * Shareable stat cards (§13) — the reusable share sheet.
  *
@@ -11,9 +10,12 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useSiteNavigate } from '@/hooks/useSiteNavigate';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { createMomentApi } from '@/lib/moments.contract';
 import { Check, Copy, Download, Link2, Loader2, Send, Share2 } from 'lucide-react';
 import {
   Dialog,
@@ -26,11 +28,11 @@ import {
 export type ShareMomentKind =
   'achievement' | 'rank' | 'streak' | 'pass_tier' | 'arcade' | 'wrapped_stat' | 'market';
 
-export interface ShareMomentPayload {
+export type ShareMomentPayload = {
   title?: string;
   value: string;
   subtitle?: string;
-}
+};
 
 interface ShareMomentSheetProps {
   open: boolean;
@@ -41,7 +43,8 @@ interface ShareMomentSheetProps {
 
 export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMomentSheetProps) {
   const { t } = useTranslation('site');
-  const navigate = useNavigate();
+  // Not useNavigate(): the sheet also opens inside game islands, which have no router (redesign B1).
+  const navigate = useSiteNavigate();
   const [creating, setCreating] = useState(false);
   const [moment, setMoment] = useState<{ id: string; url: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -55,26 +58,22 @@ export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMom
   const create = useCallback(async () => {
     setCreating(true);
     try {
-      const res = await fetch('/api/moments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ kind, payload }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.id && data.url) {
+      const data = await api(createMomentApi, { body: { kind, payload } });
+      if (data.id && data.url) {
         setMoment({ id: data.id, url: data.url });
-      } else if (res.status === 401) {
-        toast.error(t('share-moment-sign-in', { defaultValue: 'Please sign in to share.' }));
-        onOpenChange(false);
       } else {
-        toast.error(
-          data.error || t('share-moment-error', { defaultValue: 'Could not create share link' }),
-        );
+        toast.error(t('share-moment-error', { defaultValue: 'Could not create share link' }));
         onOpenChange(false);
       }
-    } catch {
-      toast.error(t('share-moment-error', { defaultValue: 'Could not create share link' }));
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 401) {
+        toast.error(t('share-moment-sign-in', { defaultValue: 'Please sign in to share.' }));
+      } else {
+        toast.error(
+          serverError(e) ||
+            t('share-moment-error', { defaultValue: 'Could not create share link' }),
+        );
+      }
       onOpenChange(false);
     } finally {
       setCreating(false);
@@ -105,7 +104,7 @@ export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMom
     onOpenChange(false);
     // The /share route stitches the fields into a composer draft (it unfurls
     // via the OG image on the feed's own link-preview path).
-    void navigate({ to: '/share', search: { title: '', text: payload.value, url: moment.url } });
+    navigate({ to: '/share', search: { title: '', text: payload.value, url: moment.url } });
   };
 
   const nativeShare = async () => {

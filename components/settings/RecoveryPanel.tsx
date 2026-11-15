@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Account recovery (I3) — recovery codes, requests opened against this account,
  * and the redemption form the emailed link lands on.
@@ -13,17 +11,32 @@
  *    real owner can press it.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { AlertTriangle, KeyRound, ShieldCheck } from 'lucide-react';
+import { toast } from '@/lib/toast';
+import { AlertTriangle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+  cancelRecoveryRequestApi,
+  completeRecoveryApi,
+  generateRecoveryCodesApi,
+} from '@/lib/recovery/recovery.contract';
+import {
+  recoveryCodeStatusQuery,
+  recoveryHoldQuery,
+  recoveryRequestsQuery,
+} from '@/lib/recovery/recovery.queries';
 
 interface CodeStatus {
   remaining: number;
@@ -60,10 +73,28 @@ function formatDate(iso: string): string {
 export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProps) {
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
-  const [status, setStatus] = useState<CodeStatus | null>(null);
-  const [hold, setHold] = useState<HoldState | null>(null);
-  const [requests, setRequests] = useState<RequestRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const statusQuery = recoveryCodeStatusQuery();
+  const holdQuery = recoveryHoldQuery();
+  const requestsQuery = recoveryRequestsQuery();
+  // Each part fails on its own: a failed read leaves that part empty. Signed out, nothing is read.
+  const { data: statusData, isPending: statusPending } = useQuery({
+    ...statusQuery,
+    enabled: signedIn,
+  });
+  const { data: holdData, isPending: holdPending } = useQuery({ ...holdQuery, enabled: signedIn });
+  const { data: requestData, isPending: requestsPending } = useQuery({
+    ...requestsQuery,
+    enabled: signedIn,
+  });
+  const loading = signedIn && (statusPending || holdPending || requestsPending);
+  // The body spaces its children (settings.css `> * + *`), so each one takes the fade.
+  const arrival = useArrival(!loading);
+  const status: CodeStatus | null = statusData ?? null;
+  const hold: HoldState | null = holdData ?? null;
+  const requests: RequestRow[] = (requestData?.mine ?? []).filter(
+    (row) => row.phase !== 'expired' && row.phase !== 'rejected',
+  );
   const [freshCodes, setFreshCodes] = useState<string[] | null>(null);
   const [generating, setGenerating] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -71,42 +102,6 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
   const [completionEmail, setCompletionEmail] = useState('');
   const [completing, setCompleting] = useState(false);
   const [completed, setCompleted] = useState(false);
-
-  // `quiet` refreshes in place: after generating, the one-time codes are on
-  // screen and must not vanish behind the loading spinner while it reloads.
-  const load = useCallback(
-    async (quiet = false) => {
-      if (!signedIn) {
-        setLoading(false);
-        return;
-      }
-      if (!quiet) setLoading(true);
-      try {
-        const [codesRes, holdRes, requestsRes] = await Promise.all([
-          fetch('/api/account/recovery/codes'),
-          fetch('/api/account/recovery/hold'),
-          fetch('/api/account/recovery/requests'),
-        ]);
-        if (codesRes.ok) setStatus((await codesRes.json()) as CodeStatus);
-        if (holdRes.ok) setHold((await holdRes.json()) as HoldState);
-        if (requestsRes.ok) {
-          const data = (await requestsRes.json()) as { mine: RequestRow[] };
-          setRequests(
-            data.mine.filter((row) => row.phase !== 'expired' && row.phase !== 'rejected'),
-          );
-        }
-      } catch {
-        // Leave the panel in its empty state rather than throwing at the user.
-      } finally {
-        setLoading(false);
-      }
-    },
-    [signedIn],
-  );
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const generate = async () => {
     const confirmed = await confirm({
@@ -121,18 +116,14 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
     if (!confirmed) return;
     setGenerating(true);
     try {
-      const res = await fetch('/api/account/recovery/codes', { method: 'POST' });
-      const data = (await res.json().catch(() => ({}))) as { codes?: string[]; error?: string };
-      if (!res.ok || !data.codes) {
-        toast.error(
-          data.error ?? t('recovery-codes-failed', { defaultValue: 'Could not generate codes.' }),
-        );
-        return;
-      }
+      const data = await api(generateRecoveryCodesApi);
       setFreshCodes(data.codes);
-      await load(true);
-    } catch {
-      toast.error(t('recovery-codes-failed', { defaultValue: 'Could not generate codes.' }));
+      // Refresh in place: the one-time codes stay on screen while the status reloads.
+      await queryClient.invalidateQueries({ queryKey: ['account', 'recovery'] });
+    } catch (e) {
+      toast.error(
+        serverError(e) ?? t('recovery-codes-failed', { defaultValue: 'Could not generate codes.' }),
+      );
     } finally {
       setGenerating(false);
     }
@@ -151,16 +142,10 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
     if (!confirmed) return;
     setCancellingId(row.id);
     try {
-      const res = await fetch(`/api/account/recovery/requests/${encodeURIComponent(row.id)}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) {
-        toast.error(
-          t('recovery-cancel-failed', { defaultValue: 'Could not cancel that request.' }),
-        );
-        return;
-      }
-      setRequests((prev) => prev.filter((item) => item.id !== row.id));
+      await api(cancelRecoveryRequestApi, { params: { id: row.id } });
+      queryClient.setQueryData(requestsQuery.queryKey, (old) =>
+        old ? { ...old, mine: old.mine.filter((item) => item.id !== row.id) } : old,
+      );
       toast.success(t('recovery-cancelled', { defaultValue: 'Recovery request cancelled.' }));
     } catch {
       toast.error(t('recovery-cancel-failed', { defaultValue: 'Could not cancel that request.' }));
@@ -174,24 +159,19 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
     if (!completion) return;
     setCompleting(true);
     try {
-      const res = await fetch('/api/account/recovery/complete', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
+      await api(completeRecoveryApi, {
+        body: {
           requestId: completion.requestId,
           token: completion.token,
           email: completionEmail.trim(),
-        }),
+        },
       });
-      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-      if (!res.ok || !data.ok) {
-        toast.error(
-          data.error ??
-            t('recovery-complete-failed', { defaultValue: 'That recovery link did not work.' }),
-        );
-        return;
-      }
       setCompleted(true);
+    } catch (e) {
+      toast.error(
+        serverError(e) ??
+          t('recovery-complete-failed', { defaultValue: 'That recovery link did not work.' }),
+      );
     } finally {
       setCompleting(false);
     }
@@ -199,7 +179,6 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
 
   return (
     <SettingsSection
-      icon={KeyRound}
       title={t('recovery-title', { defaultValue: 'Account recovery' })}
       description={t('recovery-description', {
         defaultValue:
@@ -208,7 +187,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
       bodyClassName="space-y-0"
     >
       {completion ? (
-        <div className="glass-inset mb-4 rounded-site-sm p-3">
+        <div className="surface-field mb-4 rounded-site-sm p-3">
           <h3 className="text-sm font-semibold text-site-text">
             {t('recovery-complete-title', { defaultValue: 'Finish account recovery' })}
           </h3>
@@ -261,7 +240,12 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
       ) : (
         <>
           {hold?.active ? (
-            <p className="glass-fill mb-4 flex items-start gap-2 rounded-site-sm p-3 text-sm text-site-warning">
+            <p
+              className={cn(
+                'mb-4 flex items-start gap-2 rounded-site-sm p-3 text-sm text-site-warning',
+                arrival,
+              )}
+            >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <span>
                 {t('recovery-hold-active', {
@@ -274,9 +258,9 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
           ) : null}
 
           {requests.length > 0 ? (
-            <ul className="mb-4 space-y-2">
+            <ul className={cn('mb-4 space-y-2', arrival)}>
               {requests.map((row) => (
-                <li key={row.id} className="glass-fill rounded-site-sm p-3">
+                <li key={row.id} className="rounded-site-sm p-3">
                   <p className="flex items-start gap-2 text-sm font-semibold text-site-danger">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                     <span>
@@ -306,7 +290,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
             </ul>
           ) : null}
 
-          <div className="glass-fill rounded-site-sm p-3">
+          <div className={cn('rounded-site-sm p-3', arrival)}>
             <div className="flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-site-accent" aria-hidden />
               <h3 className="text-sm font-semibold text-site-text">
@@ -325,7 +309,7 @@ export function RecoveryPanel({ completion, signedIn = true }: RecoveryPanelProp
             </p>
             <Button
               type="button"
-              variant="outline"
+              variant="default"
               size="sm"
               className="mt-2"
               loading={generating}

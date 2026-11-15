@@ -21,13 +21,27 @@ export type RealtimeStatus =
   | 'error';
 
 /** True while the app should treat its cached session state as still valid. */
-export function isRecoverable(status: RealtimeStatus): boolean {
-  return status === 'connecting' || status === 'reconnecting' || status === 'connected';
+export function isRecoverable(
+  status: RealtimeStatus,
+): boolean {
+  return (
+    status ===
+      'connecting' ||
+    status ===
+      'reconnecting' ||
+    status ===
+      'connected'
+  );
 }
 
 /** True while the app cannot send anything to the server. */
-export function isOffline(status: RealtimeStatus): boolean {
-  return status !== 'connected';
+export function isOffline(
+  status: RealtimeStatus,
+): boolean {
+  return (
+    status !==
+    'connected'
+  );
 }
 
 /**
@@ -43,7 +57,10 @@ export const PEER_GRACE_MS = 15_000;
 /** Payload for the pause banner shown while a peer is in their grace window. */
 export interface PeerWaitState {
   /** Users the room is currently waiting on. */
-  peers: { userId: string; userName: string }[];
+  peers: {
+    userId: string;
+    userName: string;
+  }[];
   /** Epoch ms at which the earliest grace window expires. */
   kickAt: number;
 }

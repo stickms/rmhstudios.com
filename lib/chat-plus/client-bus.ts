@@ -9,16 +9,31 @@
 
 import type { ChatUpdate } from '@/lib/chat-plus/types';
 
-type Handler = (update: ChatUpdate) => void;
-const handlers = new Set<Handler>();
+type Handler =
+  (
+    update: ChatUpdate,
+  ) => void;
+const handlers =
+  new Set<Handler>();
 
-export function emitChatUpdate(update: ChatUpdate): void {
-  for (const h of handlers) h(update);
+export function emitChatUpdate(
+  update: ChatUpdate,
+): void {
+  for (const h of handlers)
+    h(
+      update,
+    );
 }
 
-export function subscribeChatUpdates(handler: Handler): () => void {
-  handlers.add(handler);
+export function subscribeChatUpdates(
+  handler: Handler,
+): () => void {
+  handlers.add(
+    handler,
+  );
   return () => {
-    handlers.delete(handler);
+    handlers.delete(
+      handler,
+    );
   };
 }

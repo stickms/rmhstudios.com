@@ -1,10 +1,10 @@
-'use client';
-
 /** L7 on profiles — lazy-loaded when the Shelves tab opens. */
 
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { SHELVES } from '@/lib/reading/schema';
 import { useShelfLabels } from './useShelfLabels';
 import { useProfileShelves } from './useShelvesTab';
@@ -13,11 +13,12 @@ export default function ProfileShelvesPanel({ ownerId }: { ownerId: string }) {
   const { t } = useTranslation('f-reading');
   const labels = useShelfLabels();
   const { data, isPending } = useProfileShelves(ownerId, true);
+  const arrival = useArrival(!isPending);
   if (isPending) return <Skeleton className="m-4 h-32" />;
   const entries = data?.entries ?? [];
   if (entries.length === 0) {
     return (
-      <p className="p-6 text-center text-sm text-site-text-muted">
+      <p className={cn('p-6 text-center text-sm text-site-text-muted', arrival)}>
         {data?.isOwner ? (
           <>
             {t('profile-shelves-owner-empty', { defaultValue: 'Nothing on your shelves yet.' })}{' '}
@@ -36,7 +37,7 @@ export default function ProfileShelvesPanel({ ownerId }: { ownerId: string }) {
     );
   }
   return (
-    <div className="space-y-4 p-4">
+    <div className={cn('space-y-4 p-4', arrival)}>
       {SHELVES.map((shelf) => {
         const items = entries.filter((e) => e.shelf === shelf);
         if (items.length === 0) return null;
@@ -45,11 +46,11 @@ export default function ProfileShelvesPanel({ ownerId }: { ownerId: string }) {
             shelf === 'want' ? 'wantPublic' : shelf === 'reading' ? 'readingPublic' : 'readPublic'
           ];
         return (
-          <section key={shelf} className="glass-fill rounded-site p-5">
-            <h3 className="font-display font-semibold text-site-text">
-              {labels[shelf]} <span className="text-site-text-dim">({items.length})</span>
+          <section key={shelf} className="rounded-site p-5">
+            <h3 className="font-semibold text-site-text">
+              {labels[shelf]} <span className="text-site-text-muted">({items.length})</span>
               {data?.isOwner && !pub ? (
-                <span className="ms-2 text-xs font-normal text-site-text-dim">
+                <span className="ms-2 text-xs font-normal text-site-text-muted">
                   {t('only-you', { defaultValue: 'Only you can see this shelf' })}
                 </span>
               ) : null}

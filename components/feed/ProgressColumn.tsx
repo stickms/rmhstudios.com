@@ -1,6 +1,7 @@
-'use client';
-
-import { useEffect, useState, useCallback } from'react';
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
+import { useState, useCallback } from'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { battlepassQuery, progressSummaryQuery } from '@/lib/progress.queries';
 import { useTranslation } from'react-i18next';
 import {
  Loader2,
@@ -22,104 +23,42 @@ import { EmptyState } from'@/components/ui/empty-state';
 import { DailyWheel } from'./DailyWheel';
 import { StakingCard } from'./StakingCard';
 import { ColumnHeader } from'./ColumnHeader';
-
-interface QuestView {
- id: string;
- period:'daily'|'weekly';
- name: string;
- description: string;
- target: number;
- xp: number;
- coins: number;
- progress: number;
- completed: boolean;
- claimed: boolean;
-}
-
-interface LevelInfo {
- level: number;
- xp: number;
- xpIntoLevel: number;
- xpForNextLevel: number;
- progress: number;
-}
-
-interface ProgressPayload {
- level: LevelInfo;
- coins: number;
- quests: QuestView[];
- season: {
- id: string;
- name: string;
- endsAt: string;
- seasonXp: number;
- tier: number;
- maxTier: number;
- premium: boolean;
- };
-}
-
-interface PassReward {
- type:'coins'|'item'|'xp'|'badge';
- amount?: number;
- itemId?: string;
- label: string;
-}
-interface PassTier {
- tier: number;
- xpRequired: number;
- free: PassReward | null;
- premium: PassReward | null;
-}
-interface BattlePassPayload {
- season: { id: string; name: string; endsAt: string; premiumPrice: number; xpPerTier: number };
- tiers: PassTier[];
- seasonXp: number;
- currentTier: number;
- premium: boolean;
- claimedFree: number[];
- claimedPaid: number[];
- signedIn: boolean;
-}
+import { api } from'@/lib/contract/client';
+import { serverError } from'@/lib/http';
+import {
+ claimBattlePassTierApi,
+ claimQuestApi,
+ unlockBattlePassApi,
+ type QuestView,
+} from'@/lib/battlepass/battlepass.contract';
+import type { PassReward, PassTier } from '@/lib/battlepass/season';
+import { useArrival } from '@/components/ui/arrive';
 
 export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
  const { t } = useTranslation('feed');
- const [data, setData] = useState<ProgressPayload | null>(null);
- const [pass, setPass] = useState<BattlePassPayload | null>(null);
- const [loading, setLoading] = useState(true);
+ const queryClient = useQueryClient();
+ const progressQ = useQuery(progressSummaryQuery());
+ const passQ = useQuery(battlepassQuery());
+ const data = progressQ.data ?? null;
+ const pass = passQ.data ?? null;
+ const loading = progressQ.isPending || passQ.isPending;
  const [busy, setBusy] = useState<string | null>(null);
+ // Steel M9: progress fetched here replaces the spinner.
+ const arrival = useArrival(!loading);
 
- const load = useCallback(async () => {
- const [pRes, bRes] = await Promise.all([
- fetch('/api/progress', { credentials:'include'}),
- fetch('/api/battlepass', { credentials:'include'}),
- ]);
- if (pRes.ok) setData(await pRes.json());
- if (bRes.ok) setPass(await bRes.json());
- }, []);
-
- useEffect(() => {
- let active = true;
- (async () => {
- try {
- await load();
- } finally {
- if (active) setLoading(false);
- }
- })();
- return () => {
- active = false;
- };
- }, [load]);
+ // After a claim: refetch both from the API.
+ const load = useCallback(
+ () => queryClient.invalidateQueries({ queryKey: ['progress'] }),
+ [queryClient],
+ );
 
  async function claimQuest(id: string) {
  setBusy(`q:${id}`);
  try {
- const res = await fetch(`/api/quests/${encodeURIComponent(id)}/claim`, {
- method:'POST',
- credentials:'include',
- });
- if (res.ok) await load();
+ await api(claimQuestApi, { params: { id } });
+ await load();
+ } catch {
+ // A refused claim leaves the list as it is.
  } finally {
  setBusy(null);
  }
@@ -128,13 +67,10 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  async function claimTier(tier: number, track:'free'|'paid') {
  setBusy(`t:${tier}:${track}`);
  try {
- const res = await fetch('/api/battlepass/claim', {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ tier, track }),
- });
- if (res.ok) await load();
+ await api(claimBattlePassTierApi, { body: { tier, track } });
+ await load();
+ } catch {
+ // A refused claim leaves the track as it is.
  } finally {
  setBusy(null);
  }
@@ -143,12 +79,11 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  async function unlockPremium() {
  setBusy('unlock');
  try {
- const res = await fetch('/api/battlepass/unlock', { method:'POST', credentials:'include'});
- if (res.ok) await load();
- else {
- const body = await res.json().catch(() => ({}));
- if (body?.error) alert(body.error);
- }
+ await api(unlockBattlePassApi);
+ await load();
+ } catch (e) {
+ const message = serverError(e);
+ if (message) alert(message);
  } finally {
  setBusy(null);
  }
@@ -164,6 +99,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  if (!data) {
  return (
  <EmptyState
+ className={arrival}
  description={t('could-not-load-progress', { defaultValue:'Could not load progress.'})}
  />
  );
@@ -175,7 +111,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  const weekly = data.quests.filter((q) => q.period ==='weekly');
 
  return (
- <div>
+ <div className={arrival}>
  {/* hideHeader === embedded in JourneyColumn, which supplies the page
  header (and the drawer button) itself. */}
  {!hideHeader && (
@@ -184,11 +120,11 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
  <div className="space-y-6 pt-4 pb-12">
  {/* Level card */}
- <section className="rounded-site glass-fill p-5">
+ <section className="rounded-site p-5">
  <div className="flex items-center justify-between gap-3">
  <div className="flex items-center gap-3">
  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
- <span className="text-lg font-extrabold">{lvl.level}</span>
+ <span className="text-lg font-semibold">{lvl.level}</span>
  </div>
  <div>
  <p className="text-sm font-semibold text-site-text">
@@ -211,7 +147,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  style={{ transform: `scaleX(${lvlPct / 100})`}}
  />
  </div>
- <p className="mt-2 text-xs text-site-text-dim">
+ <p className="mt-2 text-xs text-site-text-muted">
  {t('xp-to-next-level', {
  xpIntoLevel: lvl.xpIntoLevel.toLocaleString(),
  xpForNextLevel: lvl.xpForNextLevel.toLocaleString(),
@@ -250,7 +186,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
  <div className="flex items-center gap-2">
  <Trophy className="h-4 w-4 text-site-accent"/>
- <h2 className="text-sm font-bold text-site-text">{pass.season.name}</h2>
+ <h2 className="text-sm font-semibold text-site-text">{pass.season.name}</h2>
  </div>
  {pass.premium ? (
  <span className="inline-flex items-center gap-1 rounded-full bg-site-warning/15 px-3 py-1 text-xs font-semibold text-site-warning">
@@ -260,7 +196,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
  ) : (
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  disabled={busy ==='unlock'}
  onClick={unlockPremium}
  >
@@ -333,7 +269,7 @@ function QuestSection({
  return (
  <div
  key={q.id}
- className="flex items-start gap-3 rounded-site glass-fill px-4 py-3"
+ className="flex items-start gap-3 rounded-site px-4 py-3"
  >
  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm bg-site-accent/12 text-site-accent">
  <Target className="h-4 w-4"/>
@@ -347,7 +283,7 @@ function QuestSection({
  style={{ width: `${pct}%`}}
  />
  </div>
- <div className="mt-2 flex items-center gap-2 text-xs text-site-text-dim">
+ <div className="mt-2 flex items-center gap-2 text-xs text-site-text-muted">
  <span>
  {Math.min(q.progress, q.target)} / {q.target}
  </span>
@@ -364,13 +300,13 @@ function QuestSection({
  </div>
  <div className="shrink-0 self-center">
  {q.claimed ? (
- <span className="inline-flex items-center gap-1 text-xs font-semibold text-site-text-dim">
+ <span className="inline-flex items-center gap-1 text-xs font-semibold text-site-text-muted">
  <Check className="h-3.5 w-3.5"/> {t('claimed', { defaultValue:'Claimed'})}
  </span>
  ) : (
  <Button
  size="sm"
- variant={q.completed ?'accent':'outline'}
+ variant={q.completed ?'default':'default'}
  disabled={!q.completed || busy === `q:${q.id}`}
  onClick={() => onClaim(q.id)}
  >
@@ -393,7 +329,7 @@ function QuestSection({
 
 function RewardChip({ reward }: { reward: PassReward | null }) {
  if (!reward) {
- return <span className="text-xs text-site-text-dim">—</span>;
+ return <span className="text-xs text-site-text-muted">—</span>;
  }
  const Icon = reward.type ==='coins'? CoinIcon : reward.type ==='xp'? Zap : Sparkles;
  return (
@@ -424,13 +360,13 @@ function TierRow({
  const { t } = useTranslation('feed');
  return (
  <div
- className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-site glass-fill px-4 py-3 ${
+ className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-site px-4 py-3 ${
  reached ?'':'opacity-70'
  }`}
  >
  <div
- className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm text-sm font-bold ${
- reached ?'bg-site-accent/15 text-site-accent':'bg-site-surface text-site-text-dim'
+ className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm text-sm font-semibold ${
+ reached ?'bg-site-accent/15 text-site-accent':'bg-site-surface text-site-text-muted'
  }`}
  >
  {tier.tier}
@@ -491,7 +427,7 @@ function TierCell({
  <div className="min-w-0">
  <p
  className={`mb-1 inline-flex items-center gap-1 text-xs font-semibold ${
- premium ?'text-site-warning':'text-site-text-dim'
+ premium ?'text-site-warning':'text-site-text-muted'
  }`}
  >
  {premium && <Crown className="h-3 w-3"/>}
@@ -501,13 +437,13 @@ function TierCell({
  <RewardChip reward={reward} />
  {reward &&
  (claimed ? (
- <Check className="h-4 w-4 shrink-0 text-site-text-dim"/>
+ <Check className="h-4 w-4 shrink-0 text-site-text-muted"/>
  ) : locked ? (
- <Lock className="h-4 w-4 shrink-0 text-site-text-dim"/>
+ <Lock className="h-4 w-4 shrink-0 text-site-text-muted"/>
  ) : canClaim ? (
  <Button
  size="sm"
- variant={premium ?'accent':'outline'}
+ variant={premium ?'default':'default'}
  disabled={busy === busyKey}
  onClick={onClaim}
  className="h-7 gap-1 px-2 text-xs"

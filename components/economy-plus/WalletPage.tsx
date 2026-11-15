@@ -1,11 +1,9 @@
-'use client';
-
 /**
  * /wallet — the member's coin home (C1 goals, C4 statement, C5 community goals,
  * C7 gifts). The balance header is the only thing that renders eagerly; every
  * tab body is a lazy chunk fetched when that tab is opened.
  */
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -17,8 +15,9 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Button } from '@/components/ui/button';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { LiquidTab } from '@/components/ui/liquid-tabs';
-import { apiJson } from './api';
+import { ArrivalSuspense, useArrival } from '@/components/ui/arrive';
+import type { TabItem } from '@/components/ui/tabs';
+import { walletBalanceQuery } from '@/lib/economy/wallet.queries';
 
 import { WALLET_TABS, type WalletTab } from '@/lib/economy/wallet-tabs';
 export { WALLET_TABS, type WalletTab };
@@ -47,15 +46,13 @@ export function WalletPage({
   const { t, i18n } = useTranslation('f-economy-plus');
   const { data: session, isPending } = useSession();
   const signedIn = !!session && !isPending;
+  // The session can still be resolving on the first paint (PanelFallback below).
+  const arrival = useArrival(!isPending);
 
-  const { data: balance } = useQuery({
-    queryKey: ['economy-plus', 'balance'],
-    queryFn: () => apiJson<{ coins: number }>('/api/coins'),
-    enabled: signedIn,
-    staleTime: 15_000,
-  });
+  // Seeded by the /wallet loader, so the balance is in the first paint.
+  const { data: balance } = useQuery({ ...walletBalanceQuery(), enabled: signedIn });
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     { id: 'goals', label: t('wallet-tab-goals', { defaultValue: 'Goals' }), icon: Target },
     {
       id: 'statement',
@@ -82,14 +79,15 @@ export function WalletPage({
           <PanelFallback />
         ) : (
           <SignedOutPrompt
+            className={arrival}
             icon={Wallet}
             title={t('wallet-signed-out', { defaultValue: 'Sign in to open your wallet' })}
             callbackURL="/wallet"
           />
         )
       ) : (
-        <>
-          <div className="glass-pane flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className={arrival}>
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
               <p className="text-xs text-site-text-muted">
                 {t('wallet-balance', { defaultValue: 'Balance' })}
@@ -100,12 +98,12 @@ export function WalletPage({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="default" size="sm">
                 <Link to="/store" search={{ tab: 'daily' }}>
                   <Store /> {t('wallet-link-store', { defaultValue: 'Store' })}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="default" size="sm">
                 <Link to="/predictions">
                   <TrendingUp /> {t('wallet-link-play', { defaultValue: 'Play & predict' })}
                 </Link>
@@ -122,14 +120,14 @@ export function WalletPage({
           />
 
           <div role="tabpanel" id={`wallet-panel-${tab}`} aria-labelledby={`wallet-tab-${tab}`}>
-            <Suspense fallback={<PanelFallback />}>
+            <ArrivalSuspense fallback={<PanelFallback />}>
               {tab === 'goals' && <SavingsGoalsPanel />}
               {tab === 'statement' && <StatementPanel />}
               {tab === 'community' && <CommunityGoalsPanel />}
               {tab === 'gifts' && <ScheduledGiftsPanel />}
-            </Suspense>
+            </ArrivalSuspense>
           </div>
-        </>
+        </div>
       )}
     </PageLayout>
   );

@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { doUpdateApplicationSchema } from '@/lib/rmhladder/server-fn-schemas.server';
@@ -85,6 +86,7 @@ const doUpdateApplication = createServerFn({ method: 'POST' })
   });
 
 export const Route = createFileRoute('/_site/rmhladder/pipeline')({
+  head: () => noindexHead('Pipeline | RMH Ladder'),
   loader: () => fetchApplications(),
   component: PipelinePage,
 });
@@ -152,13 +154,13 @@ function PipelinePage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap justify-end gap-2">
-        <Button asChild size="sm" variant="outline" className="min-h-11">
+        <Button asChild size="sm" variant="default" className="min-h-11">
           <a href="/api/rmhladder/export?kind=applications" download>
             <Download aria-hidden />{' '}
             {t('ladder.pipeline.exportApplications', { defaultValue: 'Export applications' })}
           </a>
         </Button>
-        <Button asChild size="sm" variant="outline" className="min-h-11">
+        <Button asChild size="sm" variant="default" className="min-h-11">
           <a href="/api/rmhladder/calendar" download>
             <CalendarDays aria-hidden />{' '}
             {t('ladder.pipeline.exportCalendar', { defaultValue: 'Export calendar' })}
@@ -263,7 +265,7 @@ function ApplicationEditor({
 
   return (
     <aside
-      className="rl-app-editor glass-pane rounded-site"
+      className="rl-app-editor rounded-site"
       aria-label={t('ladder.pipeline.details', { defaultValue: 'Application details' })}
     >
       <div className="rl-app-editor__head">
@@ -362,7 +364,7 @@ function ApplicationEditor({
           />
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             disabled={!interviewDraft || interviewDates.length >= 25}
             onClick={() => {
               const next = new Date(interviewDraft);
@@ -378,7 +380,7 @@ function ApplicationEditor({
           {interviewDates.map((date, index) => (
             <span
               key={`${date.toISOString()}-${index}`}
-              className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-accent-dim py-1 pr-1 pl-3 text-sm"
+              className="inline-flex items-center gap-2 rounded-site-sm border border-site-accent/30 bg-site-bg-subtle py-1 pr-1 pl-3 text-sm"
             >
               {date.toLocaleString()}
               <button

@@ -1,9 +1,11 @@
-'use client';
-
 import { useState, useEffect } from'react';
 import { ExternalLink } from'lucide-react';
 import { useNearViewport } from'@/hooks/useNearViewport';
 import { ArchivedCopyLabel } from'@/components/posts-plus/ArchivedCopyLabel';
+import { api } from '@/lib/contract/client';
+import { ogOembedApi } from '@/lib/unfurl/oembed.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface OgData {
  title: string | null;
@@ -31,6 +33,8 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  const [data, setData] = useState<OgData | null>(() => ogCache.get(url) ?? null);
  const [loading, setLoading] = useState(() => !ogCache.has(url));
  const [imgError, setImgError] = useState(false);
+ // Steel M9: the card replaces its placeholder block; a cached URL is there on first paint.
+ const arrival = useArrival(!loading);
 
  useEffect(() => {
  if (!visible) return;
@@ -43,8 +47,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  setLoading(true);
  let cancelled = false;
 
- fetch(`/api/oembed?type=og&url=${encodeURIComponent(url)}`)
- .then((res) => (res.ok ? res.json() : null))
+ api(ogOembedApi, { query: { type: 'og', url } })
  .then((result) => {
  if (cancelled) return;
  ogCache.set(url, result);
@@ -69,7 +72,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  // the preview is still deferred; the skeleton also reserves layout (no CLS).
  return (
  <div ref={ref} className={`rounded-site overflow-hidden ${className}`}>
- <div className="w-full h-24 bg-site-surface animate-pulse"/>
+ <div className="w-full h-24 bg-site-surface"/>
  </div>
  );
  }
@@ -82,7 +85,11 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  target="_blank"
  rel="noopener noreferrer"
  onClick={(e) => e.stopPropagation()}
- className={`block rounded-site overflow-hidden hover:bg-site-surface/40 transition-colors ${className}`}
+ className={cn(
+ 'block rounded-site overflow-hidden hover:bg-site-surface/40 transition-colors',
+ className,
+ arrival,
+ )}
  >
  {data.image && !imgError && (
  <div className="w-full h-36 bg-site-surface overflow-hidden">
@@ -97,7 +104,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  )}
  <div className="px-4 py-3">
  {data.archivedUrl && <ArchivedCopyLabel archivedAt={data.archivedAt} />}
- <p className="text-xs text-site-text-dim mb-1 flex items-center gap-1">
+ <p className="text-xs text-site-text-muted mb-1 flex items-center gap-1">
  <ExternalLink className="w-3 h-3"/>
  {data.siteName}
  </p>
@@ -105,7 +112,7 @@ export function LinkPreview({ url, className =''}: LinkPreviewProps) {
  <p className="text-sm font-semibold text-site-text line-clamp-2">{data.title}</p>
  )}
  {data.description && (
- <p className="text-xs text-site-text-dim mt-1 line-clamp-2">{data.description}</p>
+ <p className="text-xs text-site-text-muted mt-1 line-clamp-2">{data.description}</p>
  )}
  </div>
  </a>

@@ -306,7 +306,7 @@ export const config = {
     'tf2:p2p:relay': { max: 30_000, windowMs: 60_000 },
     // Host migration: the host names its successor when the best candidate changes (a few a minute).
     'tf2:p2p:successor': { max: 30, windowMs: 60_000 },
-    // Balatro multiplayer (docs/balatro-mp.md; contract lib/balatro/net/events.ts):
+    // Balatro multiplayer (docs/balatro-mp.md; contract features/balatro/engine/net/events.ts):
     // the hub signals, relays as a fallback and keeps the seat directory.
     // `host` includes resumes after a socket blip. `admit`, `signal` and
     // `state` scale with a 16-seat lobby (a host answers 15 players and 8
@@ -329,7 +329,7 @@ export const config = {
     // HUD-24 late results: one report per finished run (host), one ask per page connect.
     'balatro:match:result': { max: 10, windowMs: 60_000 },
     'balatro:match:pending': { max: 20, windowMs: 60_000 },
-    // Matchmaking, party, invites, spectate list (WS12; handlers/balatro-queue.ts).
+    // Matchmaking, party, invites, spectate list (WS12; server/queue.ts).
     'balatro:queue:join': { max: 20, windowMs: 60_000 },
     'balatro:queue:leave': { max: 30, windowMs: 60_000 },
     'balatro:party:queue': { max: 10, windowMs: 60_000 },
@@ -337,7 +337,7 @@ export const config = {
     'balatro:spectate:list': { max: 30, windowMs: 60_000 },
     // Find Game's live counts (A12): Lua polls every 5 s while the page is open (12/min).
     'balatro:queue:counts': { max: 30, windowMs: 60_000 },
-    // Hearthworks multiplayer (lib/hearthworks/net/events.ts): the hub signals, lists rooms, relays as a
+    // Hearthworks multiplayer (features/hearthworks/engine/net/events.ts): the hub signals, lists rooms, relays as a
     // fallback and promotes a successor; the world itself runs in the host's browser. `admit` and `signal`
     // scale with an 8-player room (a host answers 7 joins, each a trickle of ICE candidates, and
     // re-admits everyone on a migration). `relay` is the fallback hot path — the byte budget per relayed
@@ -389,7 +389,7 @@ export const config = {
 
   // ─── Discord Activity auth ───
   //
-  // The *same* application id `app/routes/api/discord/token.ts` exchanges codes
+  // The *same* application id `lib/api/routes/discord.token.server.ts` exchanges codes
   // for. The hub needs only the id, never the secret: the code→token exchange
   // (the one operation that requires the secret) happens on the web tier, and
   // the hub only ever *verifies* an already-issued token. Leaving this unset

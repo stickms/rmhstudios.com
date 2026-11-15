@@ -1,5 +1,5 @@
 /**
- * What each game in `lib/games.ts` actually *is*, as opposed to how it is sold.
+ * What each game in `lib/catalog` actually *is*, as opposed to how it is sold.
  *
  * `GameInfo` is a marketing card — title, blurb, gradient, icon, free-text
  * `tags`. Nothing in it answers the questions a player asks before spending a
@@ -130,9 +130,9 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   hearthworks: {
     genre: ['simulation', 'strategy'],
     // Co-op over WebRTC: the host's browser runs the world (host-authoritative, signalled by the games hub, which
-    // never carries game state) and hands it to another player when it leaves. lib/hearthworks/net.
+    // never carries game state) and hands it to another player when it leaves. features/hearthworks/engine/net.
     players: ['single', 'online-coop'],
-    maxPlayers: 8, // lib/hearthworks/net/events.ts: HW_LIMITS.MAX_PLAYERS
+    maxPlayers: 8, // features/hearthworks/engine/net/events.ts: HW_LIMITS.MAX_PLAYERS
     input: { supported: ['mouse', 'touch'], required: [] },
     sessionMinutes: [20, 90],
     engine: 'webgl',
@@ -159,7 +159,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     sessionMinutes: [20, 60],
     engine: 'webgl',
     demanding: true,
-    // AltairMetaProgress, written by app/routes/api/altair/meta.ts.
+    // AltairMetaProgress, written by features/altair/api/altair.meta.server.ts.
     save: 'own-table',
     accessibility: [],
   },
@@ -193,7 +193,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     engine: '2d-canvas',
     demanding: false,
     save: 'none',
-    // The only game wired to a gamepad today (components/slice-it/GameCanvas.tsx).
+    // The only game wired to a gamepad today (features/slice-it/ui/GameCanvas.tsx).
     //
     // A1-A9: assist mode and no-fail (both unranked, both worth no score
     // bonus), colour-blind-safe lane palettes, a photosensitivity mode that is
@@ -218,8 +218,8 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     genre: ['action', 'puzzle'],
     // `online-versus` added 2026-09-19 (P1). The entry claimed single-player
     // plus a leaderboard, which understated the game: it ships a lobby client
-    // (components/synapse-storm/Lobby.tsx, MultiplayerMenu.tsx, MultiplayerGame.tsx
-    // over lib/synapse-storm/multiplayerClient.ts) against an 8-seat server
+    // (features/synapse-storm/ui/Lobby.tsx, MultiplayerMenu.tsx, MultiplayerGame.tsx
+    // over features/synapse-storm/engine/multiplayerClient.ts) against an 8-seat server
     // handler with its own SSLobby/SSMatch models. The existing realtime check
     // is one-directional — it catches a game CLAIMING online play without a
     // module, not one hiding the module it has — so this sat unflagged.
@@ -246,7 +246,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
     accessibility: ['no-timed-input'],
   },
   // Half-Life 2 demo / Portal: First Slice on the browser engine (lib/sp-game, lib/tf2-game/client).
-  // Saves are level starts in localStorage (lib/tf2-game/client/sp-save.ts); captions are the
+  // Saves are level starts in localStorage (lib/sp-game/client/sp-save.ts); captions are the
   // games' own closed captions; keys are rebindable (lib/tf2-game/client/settings.ts).
   'half-life-2': {
     genre: ['shooter', 'narrative'],
@@ -298,7 +298,7 @@ export const GAME_CAPABILITIES: Record<string, GameCapabilities> = {
   'laundry-sort': {
     genre: ['arcade', 'puzzle'],
     players: ['single', 'online-versus'],
-    maxPlayers: 8, // lib/laundry-sort/constants.ts: MAX_LOBBY_PLAYERS
+    maxPlayers: 8, // features/laundry-sort/engine/constants.ts: MAX_LOBBY_PLAYERS
     input: { supported: ['mouse', 'touch'], required: [] },
     sessionMinutes: [3, 10],
     engine: 'webgl',

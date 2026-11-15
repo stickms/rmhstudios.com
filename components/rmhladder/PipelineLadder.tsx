@@ -74,7 +74,7 @@ function ApplicationCard({
   return (
     <button
       type="button"
-      className={`rl-app-card glass-fill rounded-site-sm${selected ? ' rl-app-card--selected' : ''}`}
+      className={`rl-app-card rounded-site-sm${selected ?'rl-app-card--selected':''}`}
       data-app-id={app.id as string}
       onClick={() => onSelect(app)}
       onKeyDown={handleKey}

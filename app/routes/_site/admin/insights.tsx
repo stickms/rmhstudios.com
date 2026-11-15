@@ -4,7 +4,7 @@ import { BarChart3, Bell, FlaskConical, Bug, Route as RouteIcon } from 'lucide-r
 import { useTranslation } from 'react-i18next';
 import { AdminBody } from '@/components/admin/AdminBody';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { CohortsTab } from '@/components/admin/insights/CohortsTab';
 import { DeadRoutesTab } from '@/components/admin/insights/DeadRoutesTab';
 import { ErrorsTab } from '@/components/admin/insights/ErrorsTab';
@@ -24,7 +24,7 @@ function InsightsPage() {
   return (
     <PageLayout title={t('page-title', { defaultValue: 'Insights' })} wide backTo="/admin">
       <AdminBody>
-        <LiquidTabs
+        <Tabs
           aria-label={t('page-tabs', { defaultValue: 'Insight tools' })}
           value={tab}
           onChange={(id) => setTab(id as TabId)}

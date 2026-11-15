@@ -3,7 +3,7 @@
  *
  * A mod posts a prompt with a submission window and a voting window. Members
  * submit a community post as their entry (one each; the composer sends
- * `challengeId` with the post, see app/routes/api/rmharks.ts), then vote once
+ * `challengeId` with the post, see lib/feed/api/rmharks.server.ts), then vote once
  * during the voting window. When the voting window ends, finalization picks the
  * winner, gives the winning post the "Challenge winner" flair and notifies the
  * author. It runs from the worker (see jobs.server.ts) and, idempotently, from

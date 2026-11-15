@@ -8,30 +8,55 @@
  * returns and the search/filter contract shared between the API and the UI.
  */
 
-export type ListingType = 'RENT' | 'SALE';
-export const LISTING_TYPES: ListingType[] = ['RENT', 'SALE'];
+export type ListingType =
+  | 'RENT'
+  | 'SALE';
+export const LISTING_TYPES: ListingType[] =
+  [
+    'RENT',
+    'SALE',
+  ];
 
 /** Where a listing came from. */
-export type ListingSource = 'COMMUNITY' | 'EXTERNAL';
+export type ListingSource =
+  | 'COMMUNITY'
+  | 'EXTERNAL';
 
-export type PropertyType = 'APARTMENT' | 'HOUSE' | 'CONDO' | 'TOWNHOUSE' | 'ROOM' | 'OTHER';
-export const PROPERTY_TYPES: PropertyType[] = [
-  'APARTMENT',
-  'HOUSE',
-  'CONDO',
-  'TOWNHOUSE',
-  'ROOM',
-  'OTHER',
-];
+export type PropertyType =
+  | 'APARTMENT'
+  | 'HOUSE'
+  | 'CONDO'
+  | 'TOWNHOUSE'
+  | 'ROOM'
+  | 'OTHER';
+export const PROPERTY_TYPES: PropertyType[] =
+  [
+    'APARTMENT',
+    'HOUSE',
+    'CONDO',
+    'TOWNHOUSE',
+    'ROOM',
+    'OTHER',
+  ];
 
-export type ListingStatus = 'ACTIVE' | 'RENTED' | 'SOLD' | 'REMOVED';
+export type ListingStatus =
+  | 'ACTIVE'
+  | 'RENTED'
+  | 'SOLD'
+  | 'REMOVED';
 
 /** Minimal author info shown on a listing. */
 export interface ListingAuthor {
   id: string;
-  name: string | null;
-  handle: string | null;
-  image: string | null;
+  name:
+    | string
+    | null;
+  handle:
+    | string
+    | null;
+  image:
+    | string
+    | null;
 }
 
 /**
@@ -51,18 +76,26 @@ export interface Listing {
 
   beds: number;
   baths: number;
-  sqft: number | null;
+  sqft:
+    | number
+    | null;
 
-  address: string | null;
+  address:
+    | string
+    | null;
   city: string;
   state: string;
-  postalCode: string | null;
+  postalCode:
+    | string
+    | null;
   lat: number;
   lng: number;
 
   amenities: string[];
   petsAllowed: boolean;
-  availableFrom: string | null;
+  availableFrom:
+    | string
+    | null;
 
   images: string[];
   /** Subset of `images` that were AI-generated (show the disclaimer on these). */
@@ -75,17 +108,29 @@ export interface Listing {
   /** The RMH member who posted it (COMMUNITY), or null for EXTERNAL listings. */
   author: ListingAuthor | null;
   /** For EXTERNAL listings: the original posting URL ("View original"). */
-  externalUrl: string | null;
+  externalUrl:
+    | string
+    | null;
   /** For EXTERNAL listings: the source label, e.g. "Craigslist — Rochester". */
-  sourceName: string | null;
+  sourceName:
+    | string
+    | null;
   /** Whether the requesting user has favorited this listing. */
   favorited: boolean;
   /** Whether the requesting user is the author (can edit/delete). */
   isOwner: boolean;
 }
 
-export type SortOrder = 'newest' | 'price_asc' | 'price_desc';
-export const SORT_ORDERS: SortOrder[] = ['newest', 'price_asc', 'price_desc'];
+export type SortOrder =
+  | 'newest'
+  | 'price_asc'
+  | 'price_desc';
+export const SORT_ORDERS: SortOrder[] =
+  [
+    'newest',
+    'price_asc',
+    'price_desc',
+  ];
 
 /**
  * Browse/search filters. `location` is free text geocoded server-side into a
@@ -98,10 +143,15 @@ export interface SearchFilters {
   lng?: number;
   radiusKm: number;
 
-  listingType: ListingType | 'any';
+  listingType:
+    | ListingType
+    | 'any';
   propertyTypes: PropertyType[];
   /** Filter by origin: everything, member posts only, or aggregated only. */
-  source: 'any' | 'community' | 'external';
+  source:
+    | 'any'
+    | 'community'
+    | 'external';
 
   minPrice?: number;
   maxPrice?: number;
@@ -114,16 +164,21 @@ export interface SearchFilters {
   pageSize: number;
 }
 
-export const DEFAULT_FILTERS: SearchFilters = {
-  location: '',
-  radiusKm: 40,
-  listingType: 'any',
-  propertyTypes: [],
-  source: 'any',
-  sort: 'newest',
-  page: 1,
-  pageSize: 24,
-};
+export const DEFAULT_FILTERS: SearchFilters =
+  {
+    location:
+      '',
+    radiusKm: 40,
+    listingType:
+      'any',
+    propertyTypes:
+      [],
+    source:
+      'any',
+    sort: 'newest',
+    page: 1,
+    pageSize: 24,
+  };
 
 export interface SearchCenter {
   lat: number;
@@ -148,16 +203,24 @@ export interface ListingInput {
   price: number;
   beds: number;
   baths: number;
-  sqft?: number | null;
-  address?: string | null;
+  sqft?:
+    | number
+    | null;
+  address?:
+    | string
+    | null;
   city: string;
   state: string;
-  postalCode?: string | null;
+  postalCode?:
+    | string
+    | null;
   lat: number;
   lng: number;
   amenities: string[];
   petsAllowed: boolean;
-  availableFrom?: string | null;
+  availableFrom?:
+    | string
+    | null;
   images: string[];
   /** URLs in `images` that were AI-generated. */
   aiImages: string[];
@@ -169,15 +232,31 @@ export interface Watch {
   label: string;
   listingType: ListingType | null;
   propertyTypes: PropertyType[];
-  locationLabel: string | null;
-  lat: number | null;
-  lng: number | null;
-  radiusKm: number | null;
+  locationLabel:
+    | string
+    | null;
+  lat:
+    | number
+    | null;
+  lng:
+    | number
+    | null;
+  radiusKm:
+    | number
+    | null;
   /** Whole USD dollars (DB stores cents). */
-  minPrice: number | null;
-  maxPrice: number | null;
-  minBeds: number | null;
-  minBaths: number | null;
+  minPrice:
+    | number
+    | null;
+  maxPrice:
+    | number
+    | null;
+  minBeds:
+    | number
+    | null;
+  minBaths:
+    | number
+    | null;
   petsRequired: boolean;
   active: boolean;
   createdAt: string;
@@ -188,13 +267,29 @@ export interface WatchInput {
   label: string;
   listingType?: ListingType | null;
   propertyTypes: PropertyType[];
-  locationLabel?: string | null;
-  lat?: number | null;
-  lng?: number | null;
-  radiusKm?: number | null;
-  minPrice?: number | null;
-  maxPrice?: number | null;
-  minBeds?: number | null;
-  minBaths?: number | null;
+  locationLabel?:
+    | string
+    | null;
+  lat?:
+    | number
+    | null;
+  lng?:
+    | number
+    | null;
+  radiusKm?:
+    | number
+    | null;
+  minPrice?:
+    | number
+    | null;
+  maxPrice?:
+    | number
+    | null;
+  minBeds?:
+    | number
+    | null;
+  minBaths?:
+    | number
+    | null;
   petsRequired: boolean;
 }

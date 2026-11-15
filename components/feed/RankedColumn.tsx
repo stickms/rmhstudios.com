@@ -1,18 +1,26 @@
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
 import { Swords, Trophy, Check, X, Flag } from'lucide-react';
 import { Button } from'@/components/ui/button';
+import { EmptyState } from'@/components/ui/empty-state';
 import { Spinner } from'@/components/ui/spinner';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { Select } from'@/components/ui/select';
 import { UserAvatar } from'./UserAvatar';
 import { HandleInput } from'./HandleInput';
 import { ColumnHeader } from'./ColumnHeader';
-import { Reveal } from'@/components/motion';
-import { LIFT_CARD } from'@/components/feed/motionHelpers';
 import type { RankTier } from'@/lib/ranked/tiers';
+import { api } from'@/lib/contract/client';
+import { serverError } from'@/lib/http';
+import {
+ actOnRankedChallengeApi,
+ createRankedChallengeApi,
+ getRankedLadderApi,
+ getRankedOverviewApi,
+ type RankedChallengeAction,
+} from'@/lib/ranked/ranked.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Rating {
  game: string;
@@ -94,11 +102,13 @@ export function RankedColumn({
  const [lbGame, setLbGame] = useState(initialData?.games?.[0]?.id ??'');
  const [lb, setLb] = useState<LbRow[]>([]);
  const [lbLoading, setLbLoading] = useState(false);
+ // Steel M9: the overview (when fetched here) and each game's ladder replace their spinners.
+ const arrival = useArrival(!loading);
+ const lbArrival = useArrival(!lbLoading);
 
  const load = useCallback(async () => {
- const res = await fetch('/api/ranked', { credentials:'include'});
- if (res.ok) {
- const data = await res.json();
+ try {
+ const data = await api(getRankedOverviewApi, { retries: 0 });
  setGames(data.games ?? []);
  setRatings(data.ratings ?? []);
  setIncoming(data.incoming ?? []);
@@ -106,6 +116,8 @@ export function RankedColumn({
  setSignedIn(!!data.signedIn);
  if (!game && data.games?.[0]) setGame(data.games[0].id);
  if (!lbGame && data.games?.[0]) setLbGame(data.games[0].id);
+ } catch {
+ // A failed read keeps what was on screen.
  }
  }, [game, lbGame]);
 
@@ -129,13 +141,15 @@ export function RankedColumn({
  if (!g) return;
  setLbLoading(true);
  try {
- const res = await fetch(`/api/ranked/${encodeURIComponent(g)}/leaderboard`, {
- credentials:'include',
+ // `scope: 'season'` is the route's own default, spelled out for the contract.
+ const data = await api(getRankedLadderApi, {
+ params: { game: g },
+ query: { scope:'season'},
+ retries: 0,
  });
- if (res.ok) {
- const data = await res.json();
  setLb(data.leaderboard ?? []);
- }
+ } catch {
+ // A failed read keeps the previous ladder.
  } finally {
  setLbLoading(false);
  }
@@ -151,15 +165,12 @@ export function RankedColumn({
  setBusy('send');
  setFormMsg(null);
  try {
- const res = await fetch('/api/ranked', {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify({ game, opponent: opponent.trim().replace(/^@/,'') }),
+ try {
+ await api(createRankedChallengeApi, {
+ body: { game, opponent: opponent.trim().replace(/^@/,'') },
  });
- const data = await res.json().catch(() => ({}));
- if (!res.ok) {
- setFormMsg(data.error ?? t('could-not-send', { defaultValue:'Could not send'}));
+ } catch (e) {
+ setFormMsg(serverError(e) ?? t('could-not-send', { defaultValue:'Could not send'}));
  return;
  }
  setOpponent('');
@@ -170,21 +181,18 @@ export function RankedColumn({
  }
  }
 
- async function act(id: string, body: object, key: string) {
+ async function act(id: string, body: RankedChallengeAction, key: string) {
  if (busy !== null) return;
  setBusy(key);
  try {
- const res = await fetch(`/api/ranked/challenge/${id}`, {
- method:'POST',
- credentials:'include',
- headers: {'Content-Type':'application/json'},
- body: JSON.stringify(body),
- });
- if (res.ok) await load();
- else {
- const b = await res.json().catch(() => ({}));
- if (b?.error) toast.error(b.error);
+ try {
+ await api(actOnRankedChallengeApi, { params: { id }, body });
+ } catch (e) {
+ const message = serverError(e);
+ if (message) toast.error(message);
+ return;
  }
+ await load();
  } finally {
  setBusy(null);
  }
@@ -201,17 +209,14 @@ export function RankedColumn({
  }
 
  return (
- <div>
+ <div className={arrival}>
  <ColumnHeader icon={Swords} title={t('ranked', { defaultValue:'Ranked'})} />
 
  <div className="space-y-6 py-4">
  {signedIn && (
  <>
  {/* Issue a challenge */}
- <Reveal
- as="section"
- className={`rounded-site glass-fill p-5 ${LIFT_CARD}`}
- >
+ <section className={`rounded-site p-5`}>
  <h2 id="ranked-challenge-heading"className="site-section-label mb-3">
  {t('challenge-a-player', { defaultValue:'Challenge a player'})}
  </h2>
@@ -233,12 +238,12 @@ export function RankedColumn({
  value={opponent}
  onChange={setOpponent}
  placeholder={t('handle-placeholder', { defaultValue:'@handle'})}
- className="glass-inset h-11 w-full rounded-[var(--site-control-radius)] px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus-visible:border-site-accent focus-visible:outline-none"
+ className="surface-field h-11 w-full rounded-[var(--site-control-radius)] px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus-visible:border-site-accent focus-visible:outline-none"
  />
  </div>
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  loading={busy ==='send'}
  disabled={!opponent.trim() || busy !== null}
  onClick={sendChallenge}
@@ -247,11 +252,11 @@ export function RankedColumn({
  </Button>
  </div>
  {formMsg && <p className="mt-3 text-xs text-site-text-muted">{formMsg}</p>}
- </Reveal>
+ </section>
 
  {/* Incoming challenges */}
  {incoming.length > 0 && (
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-3">
  {t('challenges-for-you', { defaultValue:'Challenges for you'})}
  </h2>
@@ -259,7 +264,7 @@ export function RankedColumn({
  {incoming.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site px-3 py-3`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -268,7 +273,7 @@ export function RankedColumn({
  c.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="text-xs text-site-text-dim">
+ <p className="text-xs text-site-text-muted">
  {nameOf(c.game)} · {c.status}
  </p>
  </div>
@@ -276,7 +281,7 @@ export function RankedColumn({
  <div className="flex gap-2">
  <Button
  size="sm"
- variant="accent"
+ variant="default"
  disabled={busy !== null}
  onClick={() => act(c.id, { action:'accept'}, `a:${c.id}`)}
  >
@@ -300,12 +305,12 @@ export function RankedColumn({
  </div>
  ))}
  </div>
- </Reveal>
+ </section>
  )}
 
  {/* Outgoing challenges */}
  {outgoing.length > 0 && (
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-3">
  {t('your-challenges', { defaultValue:'Your challenges'})}
  </h2>
@@ -313,7 +318,7 @@ export function RankedColumn({
  {outgoing.map((c) => (
  <div
  key={c.id}
- className={`flex items-center gap-2 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center gap-2 rounded-site px-3 py-3`}
  >
  <UserAvatar user={c.user} />
  <div className="min-w-0 flex-1">
@@ -322,7 +327,7 @@ export function RankedColumn({
  c.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="text-xs text-site-text-dim">
+ <p className="text-xs text-site-text-muted">
  {nameOf(c.game)} · {c.status}
  </p>
  </div>
@@ -330,12 +335,12 @@ export function RankedColumn({
  </div>
  ))}
  </div>
- </Reveal>
+ </section>
  )}
 
  {/* Your ratings */}
  {ratings.length > 0 && (
- <Reveal as="section">
+ <section>
  <h2 className="site-section-label mb-3">
  {t('your-ratings', { defaultValue:'Your ratings'})}
  </h2>
@@ -343,7 +348,7 @@ export function RankedColumn({
  {ratings.map((r) => (
  <div
  key={r.game}
- className={`flex items-center justify-between gap-2 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center justify-between gap-2 rounded-site px-3 py-3`}
  >
  <span className="flex min-w-0 items-center gap-2">
  <span className="truncate text-sm font-medium text-site-text">
@@ -351,20 +356,20 @@ export function RankedColumn({
  </span>
  <TierBadge tier={r.tier} />
  </span>
- <span className="shrink-0 text-sm text-site-text-dim">
+ <span className="shrink-0 text-sm text-site-text-muted">
  <strong className="text-site-text">{fmt(r.rating)}</strong> · {r.wins}W{' '}
  {r.losses}L {r.draws}D
  </span>
  </div>
  ))}
  </div>
- </Reveal>
+ </section>
  )}
  </>
  )}
 
  {/* Leaderboard */}
- <Reveal as="section">
+ <section>
  <div className="mb-3 flex items-center justify-between gap-2">
  <h2 id="ranked-leaderboard-heading"className="site-section-label flex items-center gap-2">
  <Trophy className="h-3.5 w-3.5"aria-hidden /> {t('leaderboard', { defaultValue:'Leaderboard'})}
@@ -387,17 +392,15 @@ export function RankedColumn({
  <Spinner size={20} />
  </div>
  ) : lb.length === 0 ? (
- <p className="py-8 text-center text-sm text-site-text-muted">
- {t('no-ranked-players', { defaultValue:'No ranked players yet.'})}
- </p>
+ <EmptyState className={lbArrival} icon={Trophy} title={t('no-ranked-players', { defaultValue:'No ranked players yet.'})} />
  ) : (
- <div className="space-y-2">
+ <div className={cn('space-y-2', lbArrival)}>
  {lb.map((row) => (
  <div
  key={row.user.id}
- className={`flex items-center gap-3 rounded-site glass-fill px-3 py-3 ${LIFT_CARD}`}
+ className={`flex items-center gap-3 rounded-site px-3 py-3`}
  >
- <span className="w-5 text-center text-xs font-bold text-site-text-dim">
+ <span className="w-5 text-center text-xs font-semibold text-site-text-muted">
  {row.rank}
  </span>
  <UserAvatar user={row.user} />
@@ -407,17 +410,17 @@ export function RankedColumn({
  row.user.handle ||
  t('player-fallback', { defaultValue:'Player'})}
  </p>
- <p className="flex items-center gap-2 text-xs text-site-text-dim">
+ <p className="flex items-center gap-2 text-xs text-site-text-muted">
  <TierBadge tier={row.tier} />
  {row.wins}W {row.losses}L {row.draws}D
  </p>
  </div>
- <span className="text-sm font-bold text-site-text">{fmt(row.rating)}</span>
+ <span className="text-sm font-semibold text-site-text">{fmt(row.rating)}</span>
  </div>
  ))}
  </div>
  )}
- </Reveal>
+ </section>
  </div>
  </div>
  );
@@ -430,17 +433,17 @@ function ReportButtons({
 }: {
  id: string;
  busy: string | null;
- act: (id: string, body: object, key: string) => void;
+ act: (id: string, body: RankedChallengeAction, key: string) => void;
 }) {
  const { t } = useTranslation('feed');
  return (
  <div className="flex items-center gap-2">
- <span className="inline-flex items-center gap-2 text-xs text-site-text-dim">
+ <span className="inline-flex items-center gap-2 text-xs text-site-text-muted">
  <Flag className="h-3 w-3"aria-hidden /> {t('report-label', { defaultValue:'report:'})}
  </span>
  <Button
  size="xs"
- variant="outline"
+ variant="default"
  disabled={busy !== null}
  onClick={() => act(id, { action:'report', result:'win'}, `r:${id}`)}
  >
@@ -448,7 +451,7 @@ function ReportButtons({
  </Button>
  <Button
  size="xs"
- variant="outline"
+ variant="default"
  disabled={busy !== null}
  onClick={() => act(id, { action:'report', result:'loss'}, `r:${id}`)}
  >

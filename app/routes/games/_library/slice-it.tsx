@@ -1,21 +1,22 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { Suspense } from 'react';
+
 
 import { GameHero, GamePlayBar } from '@/components/steam/GameHero';
 import { SteamPane } from '@/components/steam/SteamPane';
-import { games } from '@/lib/games';
+import { games } from '@/lib/catalog';
 import { hueFromString } from '@/lib/builds/curated';
 import { GAMES_INDEX_PATH } from '@/lib/seo-catalog';
 import { breadcrumbSchema, jsonLdScript, videoGameSchema } from '@/lib/schema';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
-import { sliceItHub, type HubPayload } from '@/lib/slice-it/hub.server';
+import { sliceItHub, type HubPayload } from '@features/slice-it/engine/hub.server';
 
 // Static, not `lazy()`: Start already splits this route's component into its own
 // chunk and loads it BEFORE hydrating. An inner `lazy()` can still be pending at
 // hydration, and an update reaching the boundary then swaps the server-rendered
-// page for the fallback (docs/fouc-audit-2026-10-06.md §13).
-import { SliceItHub } from '@/components/slice-it/SliceItHub';
+// page for the fallback (docs/archive/2026/fouc-audit-2026-10-06.md §13).
+import { SliceItHub } from '@features/slice-it/ui/SliceItHub';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 /**
  * V12 — Slice It!'s own indexable surface.
@@ -94,9 +95,9 @@ function SliceItHubPage() {
         ) : undefined
       }
     >
-      <Suspense fallback={null}>
+      <ArrivalSuspense fallback={null}>
         <SliceItHub data={data} />
-      </Suspense>
+      </ArrivalSuspense>
     </SteamPane>
   );
 }

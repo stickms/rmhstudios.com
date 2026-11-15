@@ -2,10 +2,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Coins, Users, Play, Trophy, Medal } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -16,9 +18,13 @@ import { BracketView } from '@/components/tournaments/BracketView';
 import { SwissStandings } from '@/components/competitive/SwissStandings';
 import { PickemPanel } from '@/components/competitive/PickemPanel';
 import type { SerializedTournament } from '@/lib/tournaments/tournament.server';
+import { api } from '@/lib/contract/client';
+import { getTournamentApi } from '@/lib/tournaments/tournaments.contract';
 import { prisma } from '@/lib/prisma.server';
 import { getWagerGame } from '@/lib/wager/eligible-games';
 import { buildCanonical, buildMeta } from '@/lib/seo';
+import { serverError } from '@/lib/http';
+import { reportTournamentMatchApi } from '@/lib/tournaments/tournaments.contract';
 
 /**
  * A meta-only loader.
@@ -95,11 +101,15 @@ function TournamentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [reportingId, setReportingId] = useState<string | null>(null);
+  const arrival = useArrival(!loading);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/tournaments/${id}`);
-    const data = await res.json().catch(() => ({}));
-    setTourney(res.ok ? (data.tournament ?? null) : null);
+    try {
+      const data = await api(getTournamentApi, { params: { id }, retries: 0 });
+      setTourney(data.tournament ?? null);
+    } catch {
+      setTourney(null);
+    }
     setLoading(false);
   }, [id]);
 
@@ -126,20 +136,16 @@ function TournamentDetailPage() {
   const report = async (matchId: string, winnerEntrantId: string) => {
     setReportingId(matchId);
     try {
-      const res = await fetch(`/api/tournaments/${id}/matches/${matchId}/report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ winnerEntrantId }),
+      const data = await api(reportTournamentMatchApi, {
+        params: { id, matchId },
+        body: { winnerEntrantId },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error ?? t('failed', { defaultValue: 'Something went wrong' }));
-        return;
-      }
       if (data.tournamentComplete)
         toast.success(t('complete', { defaultValue: 'Tournament complete — prizes paid out!' }));
       else toast.success(t('result-recorded', { defaultValue: 'Result recorded' }));
       await load();
+    } catch (e) {
+      toast.error(serverError(e) ?? t('failed', { defaultValue: 'Something went wrong' }));
     } finally {
       setReportingId(null);
     }
@@ -156,6 +162,7 @@ function TournamentDetailPage() {
     return (
       <PageLayout title={t('title-tournaments-id', { defaultValue: 'Tournament' })} backTo="/tournaments" wide>
         <EmptyState
+          className={arrival}
           icon={Trophy}
           title={t('not-found', { defaultValue: 'This tournament no longer exists.' })}
         />
@@ -179,10 +186,10 @@ function TournamentDetailPage() {
         <Badge
           variant={
             tourney.status === 'LIVE'
-              ? 'accent'
+              ? 'default'
               : tourney.status === 'COMPLETE'
                 ? 'success'
-                : 'outline'
+                : 'default'
           }
         >
           {tourney.status === 'REGISTRATION'
@@ -195,7 +202,7 @@ function TournamentDetailPage() {
         </Badge>
       }
     >
-      <div className="max-w-4xl space-y-4">
+      <div className={cn('max-w-4xl space-y-4', arrival)}>
         {/* Summary */}
         <Card className="flex-row flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4" pane>
           <div>
@@ -269,7 +276,7 @@ function TournamentDetailPage() {
           )}
           {tourney.status === 'REGISTRATION' && tourney.viewerEntered && (
             <Button
-              variant="outline"
+              variant="default"
               onClick={() =>
                 act(
                   `/api/tournaments/${id}/withdraw`,
@@ -283,7 +290,7 @@ function TournamentDetailPage() {
           )}
           {tourney.status === 'REGISTRATION' && canManage && (
             <Button
-              variant="secondary"
+              variant="default"
               onClick={() =>
                 act(
                   `/api/tournaments/${id}/start`,
@@ -328,7 +335,7 @@ function TournamentDetailPage() {
               onReport={report}
             />
             {canReport && (
-              <p className="mt-3 text-xs text-site-text-dim">
+              <p className="mt-3 text-xs text-site-text-muted">
                 {t('report-hint', {
                   defaultValue: 'Tap the winner of each match to advance the bracket.',
                 })}
@@ -352,20 +359,20 @@ function TournamentDetailPage() {
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {(tourney.entrants ?? []).map((e) => (
-              <div key={e.id} className="glass-fill flex items-center gap-2 rounded-site px-4 py-3">
+              <div key={e.id} className="flex items-center gap-2 rounded-site px-4 py-3">
                 {e.placement ? (
-                  <span className="w-5 text-center text-sm font-semibold text-site-text-dim">
+                  <span className="w-5 text-center text-sm font-semibold text-site-text-muted">
                     {e.placement === 1 ? (
                       <Trophy role="img" className="inline size-4 text-site-warning" aria-label={t('champion', { defaultValue: 'Champion' })} />
                     ) : e.placement <= 3 ? (
-                      <Medal className="inline size-4 text-site-text-dim" aria-hidden />
+                      <Medal className="inline size-4 text-site-text-muted" aria-hidden />
                     ) : (
                       `#${e.placement}`
                     )}
                   </span>
                 ) : (
                   e.seed != null && (
-                    <span className="w-5 text-center text-xs text-site-text-dim">{e.seed}</span>
+                    <span className="w-5 text-center text-xs text-site-text-muted">{e.seed}</span>
                   )
                 )}
                 <UserAvatar
@@ -376,7 +383,7 @@ function TournamentDetailPage() {
                 />
                 <span className="truncate text-sm">{e.user?.name}</span>
                 {(tourney.status === 'LIVE' || tourney.status === 'COMPLETE') && (
-                  <span className="ml-auto text-xs text-site-text-dim">
+                  <span className="ml-auto text-xs text-site-text-muted">
                     {e.wins}–{e.losses}
                   </span>
                 )}

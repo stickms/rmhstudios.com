@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { assignVariant, significance, type Variant } from './schema';
 
 const RUNNING_KEY = 'ops:experiments:running';
@@ -12,15 +12,19 @@ interface Running {
 
 /** The one cached read: every running experiment, refreshed at most every 60s. */
 async function running(): Promise<Running[]> {
-  const hit = apiCache.get<Running[]>(RUNNING_KEY);
-  if (hit) return hit;
-  const rows = await prisma.experiment.findMany({
-    where: { status: 'RUNNING' },
-    select: { id: true, key: true, testPct: true },
-    take: 50,
-  });
-  apiCache.set(RUNNING_KEY, rows, 60_000);
-  return rows;
+  return cached(
+    RUNNING_KEY,
+    60_000,
+    async () => {
+      const rows = await prisma.experiment.findMany({
+        where: { status: 'RUNNING' },
+        select: { id: true, key: true, testPct: true },
+        take: 50,
+      });
+      return rows;
+    },
+    { l2: false },
+  );
 }
 
 /** key -> variant for this member across all running experiments (pure hash, no per-user read). */
@@ -110,6 +114,6 @@ export async function updateExperiment(
   } else {
     res = await prisma.experiment.updateMany({ where, data: patch });
   }
-  apiCache.invalidate(RUNNING_KEY);
+  void invalidateCached(RUNNING_KEY);
   return res.count > 0;
 }

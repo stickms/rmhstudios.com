@@ -55,7 +55,7 @@
   /* The bottom bar's height, which it keeps pinned (below) and the sticky sidebar leaves room for. */
   --stm-bottom-h: calc(40px + env(safe-area-inset-bottom));
 
-  font-family: var(--font-inter), 'Inter Fallback', 'Motiva Sans', Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist), 'Motiva Sans', Arial, Helvetica, sans-serif;
   font-size: 14px;
   line-height: 1.4;
   color: var(--stm-text);
@@ -1312,14 +1312,11 @@ button.stm-star {
   --site-bg: var(--stm-pane);
   --site-bg-subtle: var(--stm-pane-deep);
   --site-surface: var(--stm-pane-deep);
-  --site-surface-opaque: var(--stm-pane-deep);
   --site-surface-hover: var(--stm-raised);
   --site-surface-active: var(--stm-hover);
   --site-border: var(--stm-line);
-  --site-border-bright: rgba(255, 255, 255, 0.18);
   --site-text: var(--stm-text);
   --site-text-muted: var(--stm-muted);
-  --site-text-dim: var(--stm-dim);
   --site-accent: var(--stm-blue);
   --site-accent-hover: #47b0ff;
   --site-accent-fg: #ffffff;
@@ -1329,9 +1326,9 @@ button.stm-star {
   margin: 0 0 16px;
   color: var(--stm-text);
 }
-.stm-legacy .glass-fill,
-.stm-legacy .glass-pane,
-.stm-legacy .glass-inset,
+.stm-legacy .surface-card,
+.stm-legacy .surface-panel,
+.stm-legacy .surface-field,
 .stm-legacy [data-slot='card'] {
   background: var(--stm-pane-deep) !important;
   border: 1px solid var(--stm-line) !important;

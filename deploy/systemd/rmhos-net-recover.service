@@ -1,0 +1,29 @@
+# rmhOS relay hub: bring it back after a crash, only through the firewall probe (one-shot,
+# driven by rmhos-net-recover.timer). OPTIONAL. The hub's restart policy is "no" so that it can
+# never run without its egress drops; this unit runs deploy/rmhos-net/recover.sh, which starts
+# the hub only when deploy/rmhos-net/probe-firewall.sh proves the firewall. It RE-PROVES the firewall
+# on every run, and STOPS a running hub when the proof fails (rules flushed by a firewalld or
+# netfilter-persistent reload, a manual iptables -F); it leaves a healthy, proven hub alone and does
+# nothing while RMHOS_NET_TICKET_SECRET is unset or shorter than 32 characters. Needs
+# rmhos-net-firewall.service installed.
+#
+# ── Install (once, as root) ──────────────────────────────────────────────────
+#   1. Edit WorkingDirectory/ExecStart/User so they match the VPS checkout and the user that runs
+#      deploy.sh (it must be allowed to use docker; no root is needed).
+#   2. sudo cp deploy/systemd/rmhos-net-recover.{service,timer} /etc/systemd/system/
+#      sudo systemctl daemon-reload
+#      sudo systemctl enable --now rmhos-net-recover.timer
+#   Test now:  sudo systemctl start rmhos-net-recover.service ; journalctl -u rmhos-net-recover -n 20
+# ─────────────────────────────────────────────────────────────────────────────
+[Unit]
+Description=rmhOS relay hub recovery (starts it only behind a proven firewall)
+After=network-online.target docker.service rmhos-net-firewall.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=rmhstudios
+WorkingDirectory=/home/rmhstudios/rmhstudios.com
+ExecStart=/usr/bin/env bash deploy/rmhos-net/recover.sh
+TimeoutStartSec=120
+Nice=10

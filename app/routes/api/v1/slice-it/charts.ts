@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import { apiOptions, withDeveloperApi } from '@/lib/api/with-developer-api.server';
 import { prisma } from '@/lib/prisma.server';
-import { SONG_GENRES } from '@/lib/slice-it/taxonomy';
+import { SONG_GENRES } from '@features/slice-it/engine/taxonomy';
 
 /**
  * GET /api/v1/slice-it/charts — public chart metadata (`X13`).

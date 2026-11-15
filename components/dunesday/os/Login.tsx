@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The Dunesday 7 logon screen — a homage to the Windows 7 welcome screen.
  *

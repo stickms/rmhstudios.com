@@ -5,8 +5,8 @@
  *
  * ## Why this exists
  *
- * Appearance is stored twice: per device in `localStorage` (what `themeScript` in
- * `app/routes/__root.tsx` paints from, before any bundle runs) and per account in
+ * Appearance is stored twice: per device in `localStorage` (what the theme step in
+ * `lib/prepaint/theme.ts` paints from, before any bundle runs) and per account in
  * `AppearancePreference` (what follows you between devices). The two were
  * reconciled by the account sync in `components/Providers.tsx`, which runs at
  * IDLE — seconds after first paint — and lets the account win.
@@ -38,38 +38,54 @@
  * Retired glass clarity, reduce-transparency and motion preferences are never
  * seeded: every account uses the shared material and animation scheme.
  */
-import { ACCENT_STORAGE_KEY, isAccentId } from '@/lib/appearance';
+import {
+  ACCENT_STORAGE_KEY,
+  isAccentId,
+} from '@/lib/appearance';
 import {
   COLOR_VISION_KEY,
   CUSTOM_ACCENT_KEY,
-  DEFAULT_ELECTRIC_ARCS,
   DEFAULT_JELLY_MOTION,
   DENSITY_KEY,
-  ELECTRIC_ARCS_KEY,
   FONT_SCALE_KEY,
   HEX_RE,
   JELLY_MOTION_KEY,
   READABLE_FONT_KEY,
   isColorVisionMode,
-  isElectricArcs,
   isJellyMotion,
 } from '@/lib/appearance/prefs';
 import { SITE_STYLES } from '@/stores/themeStore';
 
 /** The `rmh-style` key, as `themeScript` and `Providers` both read it. */
-export const STYLE_STORAGE_KEY = 'rmh-style';
+export const STYLE_STORAGE_KEY =
+  'rmh-style';
 
 /** The columns of `AppearancePreference` this needs, all optional and nullable. */
 export interface AccountAppearanceRow {
-  style?: string | null;
-  accent?: string | null;
-  fontScale?: number | null;
-  density?: string | null;
-  readableFont?: boolean | null;
-  customAccent?: string | null;
-  colorVision?: string | null;
-  jellyMotion?: string | null;
-  electricArcs?: string | null;
+  style?:
+    | string
+    | null;
+  accent?:
+    | string
+    | null;
+  fontScale?:
+    | number
+    | null;
+  density?:
+    | string
+    | null;
+  readableFont?:
+    | boolean
+    | null;
+  customAccent?:
+    | string
+    | null;
+  colorVision?:
+    | string
+    | null;
+  jellyMotion?:
+    | string
+    | null;
 }
 
 /**
@@ -78,9 +94,22 @@ export interface AccountAppearanceRow {
  * device's own value stands — the same thing the runtime does when it falls back
  * to `store.style` or skips a setter.
  */
-export type AppearanceSeed = Record<string, string | null>;
+export type AppearanceSeed =
+  Record<
+    string,
+    | string
+    | null
+  >;
 
-const STYLE_IDS = new Set<string>(SITE_STYLES.map((s) => s.id));
+const STYLE_IDS =
+  new Set<string>(
+    SITE_STYLES.map(
+      (
+        s,
+      ) =>
+        s.id,
+    ),
+  );
 
 /**
  * The account-sync merge from `components/Providers.tsx`, as storage writes.
@@ -91,70 +120,144 @@ const STYLE_IDS = new Set<string>(SITE_STYLES.map((s) => s.id));
  * the script expresses a default by the key being absent.
  */
 export function accountAppearanceSeed(
-  row: AccountAppearanceRow | null | undefined,
+  row:
+    | AccountAppearanceRow
+    | null
+    | undefined,
 ): AppearanceSeed {
-  const seed: AppearanceSeed = {};
-  if (!row) return seed;
+  const seed: AppearanceSeed =
+    {};
+  if (
+    !row
+  )
+    return seed;
 
   // `remote.style && SITE_STYLES.some(...) ? remote.style : store.style`
-  if (row.style && STYLE_IDS.has(row.style)) seed[STYLE_STORAGE_KEY] = row.style;
+  if (
+    row.style &&
+    STYLE_IDS.has(
+      row.style,
+    )
+  )
+    seed[
+      STYLE_STORAGE_KEY
+    ] =
+      row.style;
 
   // `isAccentId(remote.accent) ? remote.accent : store.accent`
-  if (isAccentId(row.accent)) seed[ACCENT_STORAGE_KEY] = row.accent;
+  if (
+    isAccentId(
+      row.accent,
+    )
+  )
+    seed[
+      ACCENT_STORAGE_KEY
+    ] =
+      row.accent;
 
   // `if ([875, 1000, 1125, 1250].includes(Number(r.fontScale))) setFontScale(...)`
-  const fontScale = Number(row.fontScale);
-  if ([875, 1000, 1125, 1250].includes(fontScale)) {
-    seed[FONT_SCALE_KEY] = fontScale === 1000 ? null : String(fontScale);
+  const fontScale =
+    Number(
+      row.fontScale,
+    );
+  if (
+    [
+      875,
+      1000,
+      1125,
+      1250,
+    ].includes(
+      fontScale,
+    )
+  ) {
+    seed[
+      FONT_SCALE_KEY
+    ] =
+      fontScale ===
+      1000
+        ? null
+        : String(
+            fontScale,
+          );
   }
 
   // `if (r.density === 'compact' || r.density === 'cozy') setDensity(r.density)`
-  if (row.density === 'compact') seed[DENSITY_KEY] = 'compact';
-  else if (row.density === 'cozy') seed[DENSITY_KEY] = null;
+  if (
+    row.density ===
+    'compact'
+  )
+    seed[
+      DENSITY_KEY
+    ] =
+      'compact';
+  else if (
+    row.density ===
+    'cozy'
+  )
+    seed[
+      DENSITY_KEY
+    ] =
+      null;
 
   // `if (typeof r.readableFont === 'boolean') setReadableFont(...)` — see the
   // header: the API sends `false` for unset, so this always applies.
-  if (typeof row.readableFont === 'boolean')
-    seed[READABLE_FONT_KEY] = row.readableFont ? '1' : null;
+  if (
+    typeof row.readableFont ===
+    'boolean'
+  )
+    seed[
+      READABLE_FONT_KEY
+    ] =
+      row.readableFont
+        ? '1'
+        : null;
 
   // `if (typeof r.customAccent === 'string' && HEX_RE.test(...)) setCustomAccent(...)`
-  if (typeof row.customAccent === 'string' && HEX_RE.test(row.customAccent)) {
-    seed[CUSTOM_ACCENT_KEY] = row.customAccent;
+  if (
+    typeof row.customAccent ===
+      'string' &&
+    HEX_RE.test(
+      row.customAccent,
+    )
+  ) {
+    seed[
+      CUSTOM_ACCENT_KEY
+    ] =
+      row.customAccent;
   }
 
   // `if (isColorVisionMode(r.colorVision)) setColorVision(...)` — `none` is the
   // default, which the script expresses by absence.
-  if (isColorVisionMode(row.colorVision)) {
-    seed[COLOR_VISION_KEY] = row.colorVision === 'none' ? null : row.colorVision;
+  if (
+    isColorVisionMode(
+      row.colorVision,
+    )
+  ) {
+    seed[
+      COLOR_VISION_KEY
+    ] =
+      row.colorVision ===
+      'none'
+        ? null
+        : row.colorVision;
   }
 
   // `if (isJellyMotion(r.jellyMotion)) setJellyMotion(...)` — `lively` is the
   // default, which the script expresses by absence. A null column means the
   // account never chose, so the device's value stands.
-  if (isJellyMotion(row.jellyMotion)) {
-    seed[JELLY_MOTION_KEY] = row.jellyMotion === DEFAULT_JELLY_MOTION ? null : row.jellyMotion;
-  }
-
-  // `if (isElectricArcs(r.electricArcs)) setElectricArcs(...)` — `full` is the
-  // default, expressed by absence.
-  if (isElectricArcs(row.electricArcs)) {
-    seed[ELECTRIC_ARCS_KEY] = row.electricArcs === DEFAULT_ELECTRIC_ARCS ? null : row.electricArcs;
+  if (
+    isJellyMotion(
+      row.jellyMotion,
+    )
+  ) {
+    seed[
+      JELLY_MOTION_KEY
+    ] =
+      row.jellyMotion ===
+      DEFAULT_JELLY_MOTION
+        ? null
+        : row.jellyMotion;
   }
 
   return seed;
-}
-
-/**
- * The inline script that applies a seed, for `head()`.
- *
- * It must run BEFORE `themeScript`, which is the whole point, and it must not be
- * able to break the page: every write is inside one `try`, because a full or
- * disabled `localStorage` must degrade to today's behaviour (the idle sync), not
- * to an exception in `<head>`. The payload is validated ids, numbers and a
- * checked hex colour, and `<` is escaped anyway so no value can close the tag.
- */
-export function accountSeedScript(seed: AppearanceSeed): string | null {
-  if (!Object.keys(seed).length) return null;
-  const json = JSON.stringify(seed).replace(/</g, '\\u003c');
-  return `(function(){try{var s=${json};for(var k in s){if(s[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,s[k])}}catch(e){}})()`;
 }

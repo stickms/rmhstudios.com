@@ -4,7 +4,7 @@
  * The AI-persona gallery, rendered as a Steam-style storefront (rotating hero +
  * spotlight rail + varied mosaic) via the shared `Storefront`, with the inline
  * "create a persona" form on top. "Your personas" stay pinned in their own strip
- * above the public showcase, which re-advertises a different mix on each load.
+ * above the public showcase, which is ranked (Best by default; lib/ranking/best.ts).
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -16,8 +16,16 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/spinner';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
+import { SortSelect, useCreationSortOptions } from '@/components/creator-studio/SortSelect';
+import { DEFAULT_CREATION_SORT, type CreationSort } from '@/lib/ranking/best';
+import '@/components/builds/builds.css';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import { createPersonaApi, listPersonasApi } from '@/lib/personas/personas.contract';
 import '@/components/creator-studio/storefront.css';
 
 interface Persona {
@@ -33,19 +41,16 @@ interface Persona {
 
 const fmt = (n: number) => n.toLocaleString();
 
-function hueFor(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
-  return h;
-}
-
-export function PersonasTab({ seed }: { seed: number }) {
+export function PersonasTab() {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [mine, setMine] = useState<Persona[]>([]);
   const [signedIn, setSignedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const arrival = useArrival(!loading);
+  const [sort, setSort] = useState<CreationSort>(DEFAULT_CREATION_SORT);
+  const sortOptions = useCreationSortOptions();
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,14 +64,15 @@ export function PersonasTab({ seed }: { seed: number }) {
   });
 
   const load = useCallback(async () => {
-    const res = await fetch('/api/personas', { credentials: 'include' });
-    if (res.ok) {
-      const data = await res.json();
-      setPersonas(data.personas ?? []);
-      setMine(data.mine ?? []);
-      setSignedIn(!!data.signedIn);
+    try {
+      const data = await api(listPersonasApi, { query: { sort } });
+      setPersonas(data.personas);
+      setMine(data.mine);
+      setSignedIn(data.signedIn);
+    } catch {
+      // Keep the current gallery when the refresh fails.
     }
-  }, []);
+  }, [sort]);
 
   useEffect(() => {
     let active = true;
@@ -86,27 +92,21 @@ export function PersonasTab({ seed }: { seed: number }) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/personas', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(createPersonaApi, {
+        body: {
           name: form.name.trim(),
           tagline: form.tagline.trim() || undefined,
           emoji: form.emoji.trim() || undefined,
           greeting: form.greeting.trim() || undefined,
           systemPrompt: form.systemPrompt.trim(),
           isPublic: form.isPublic,
-        }),
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error ?? t('could-not-create', { defaultValue: 'Could not create' }));
-        return;
-      }
       setForm({ name: '', tagline: '', emoji: '', greeting: '', systemPrompt: '', isPublic: true });
       setShowForm(false);
       await load();
+    } catch (e) {
+      setError(serverError(e) ?? t('could-not-create', { defaultValue: 'Could not create' }));
     } finally {
       setBusy(false);
     }
@@ -115,16 +115,22 @@ export function PersonasTab({ seed }: { seed: number }) {
   const personaMeta = useCallback(
     (p: Persona, showOwner: boolean) => (
       <span className="store-persona-meta">
-        <MessageSquare className="size-3" aria-hidden /> {fmt(p.chatCount)}
+        <span className="store-persona-meta__item">
+          <MessageSquare className="size-3" aria-hidden />
+          {fmt(p.chatCount)}
+        </span>
         {p.isPublic === false && (
           <>
-            <span aria-hidden> · </span>
-            <Lock className="size-3" aria-hidden /> {t('private', { defaultValue: 'Private' })}
+            <span aria-hidden>·</span>
+            <span className="store-persona-meta__item">
+              <Lock className="size-3" aria-hidden />
+              {t('private', { defaultValue: 'Private' })}
+            </span>
           </>
         )}
         {showOwner && p.owner && (
           <>
-            <span aria-hidden> · </span>
+            <span aria-hidden>·</span>
             {t('by-owner', {
               owner: p.owner.name || p.owner.handle || t('someone', { defaultValue: 'Someone' }),
               defaultValue: 'by {{owner}}',
@@ -144,7 +150,6 @@ export function PersonasTab({ seed }: { seed: number }) {
         description: p.tagline ?? undefined,
         coverUrl: p.avatarUrl ?? null,
         emoji: p.emoji,
-        hue: hueFor(p.id),
         cta: t('chat', { defaultValue: 'Chat' }),
         to: `/personas/${p.id}`,
         meta: personaMeta(p, true),
@@ -163,12 +168,12 @@ export function PersonasTab({ seed }: { seed: number }) {
   const validForm = form.name.trim().length >= 2 && form.systemPrompt.trim().length >= 10;
 
   return (
-    <div className="store-personas">
+    <div className={cn('store-personas', arrival)}>
       {signedIn && (
         <div className="store-personas__bar">
           <Button
             size="sm"
-            variant="accent"
+            variant="default"
             aria-expanded={showForm}
             onClick={() => setShowForm((v) => !v)}
           >
@@ -178,7 +183,7 @@ export function PersonasTab({ seed }: { seed: number }) {
       )}
 
       {showForm && (
-        <div className="glass-pane mb-6 space-y-3 rounded-site p-5">
+        <div className="mb-6 space-y-3 rounded-site p-5">
           <div className="flex items-center justify-between gap-2">
             <h2 className="site-section-label">
               {t('new-persona', { defaultValue: 'New persona' })}
@@ -243,7 +248,7 @@ export function PersonasTab({ seed }: { seed: number }) {
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
+                variant="default"
                 aria-pressed={form.isPublic}
                 onClick={() => setForm((f) => ({ ...f, isPublic: !f.isPublic }))}
               >
@@ -259,7 +264,7 @@ export function PersonasTab({ seed }: { seed: number }) {
               )}
               <Button
                 size="sm"
-                variant="accent"
+                variant="default"
                 loading={busy}
                 disabled={!validForm}
                 onClick={create}
@@ -293,11 +298,11 @@ export function PersonasTab({ seed }: { seed: number }) {
                     navigate({ to: `/personas/${p.id}` } as never),
                   );
                 }}
-                className="glass-fill glass-interactive flex items-start gap-3 rounded-site px-3 py-3"
+                className="surface-press flex items-center gap-3 rounded-site border border-site-border p-3 hover:bg-site-bg-subtle"
               >
                 <div
                   data-persona-avatar
-                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-accent-dim text-xl"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-bg-subtle text-xl"
                 >
                   {p.avatarUrl ? (
                     <img
@@ -315,7 +320,7 @@ export function PersonasTab({ seed }: { seed: number }) {
                   {p.tagline && (
                     <p className="truncate text-xs text-site-text-muted">{p.tagline}</p>
                   )}
-                  <p className="mt-0.5 text-xs text-site-text-dim">{personaMeta(p, false)}</p>
+                  <p className="mt-0.5 text-xs text-site-text-muted">{personaMeta(p, false)}</p>
                 </div>
               </Link>
             ))}
@@ -325,7 +330,14 @@ export function PersonasTab({ seed }: { seed: number }) {
 
       <Storefront
         items={items}
-        seed={seed}
+        featured={sort === DEFAULT_CREATION_SORT}
+        toolbar={
+          <div data-slot="page-controls" className="builds-toolbar">
+            <div className="builds-toolbar__right">
+              <SortSelect value={sort} onChange={setSort} options={sortOptions} />
+            </div>
+          </div>
+        }
         emptyLabel={t('no-personas-yet', { defaultValue: 'No personas yet — create the first!' })}
       />
     </div>

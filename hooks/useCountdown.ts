@@ -1,17 +1,19 @@
-'use client';
-
 /**
  * A countdown to a fixed instant, broken into whole days / hours / minutes /
  * seconds.
  *
  * `useDoctrineCountdown` already exists and does almost this, but it reports
- * *total* hours and has no `days` field — `components/doctrine/countdown-timer`
+ * *total* hours and has no `days` field — `features/doctrine/ui/countdown-timer`
  * renders `hours:minutes:seconds` and depends on that meaning. Adding `days`
  * there would have silently changed what `hours` means for Doctrine, so this is
  * a second hook rather than a widened one.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
 export interface Countdown {
   days: number;
@@ -29,46 +31,119 @@ export interface Countdown {
   ready: boolean;
 }
 
-const ZERO: Countdown = {
-  days: 0,
-  hours: 0,
-  minutes: 0,
-  seconds: 0,
-  total: 0,
-  expired: false,
-  ready: false,
-};
+const ZERO: Countdown =
+  {
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    total: 0,
+    expired: false,
+    ready: false,
+  };
 
-export function useCountdown(target: Date | number | null): Countdown {
-  const targetMs = target === null ? null : target instanceof Date ? target.getTime() : target;
+export function useCountdown(
+  target:
+    | Date
+    | number
+    | null,
+): Countdown {
+  const targetMs =
+    target ===
+    null
+      ? null
+      : target instanceof
+          Date
+        ? target.getTime()
+        : target;
 
-  const calculate = useCallback((): Countdown => {
-    if (targetMs === null) return { ...ZERO, expired: true, ready: true };
+  const calculate =
+    useCallback((): Countdown => {
+      if (
+        targetMs ===
+        null
+      )
+        return {
+          ...ZERO,
+          expired: true,
+          ready: true,
+        };
 
-    const diff = targetMs - Date.now();
-    if (diff <= 0) return { ...ZERO, expired: true, ready: true };
+      const diff =
+        targetMs -
+        Date.now();
+      if (
+        diff <=
+        0
+      )
+        return {
+          ...ZERO,
+          expired: true,
+          ready: true,
+        };
 
-    const total = Math.floor(diff / 1000);
-    return {
-      days: Math.floor(total / 86_400),
-      hours: Math.floor((total % 86_400) / 3600),
-      minutes: Math.floor((total % 3600) / 60),
-      seconds: total % 60,
-      total,
-      expired: false,
-      ready: true,
-    };
-  }, [targetMs]);
+      const total =
+        Math.floor(
+          diff /
+            1000,
+        );
+      return {
+        days: Math.floor(
+          total /
+            86_400,
+        ),
+        hours:
+          Math.floor(
+            (total %
+              86_400) /
+              3600,
+          ),
+        minutes:
+          Math.floor(
+            (total %
+              3600) /
+              60,
+          ),
+        seconds:
+          total %
+          60,
+        total,
+        expired: false,
+        ready: true,
+      };
+    }, [
+      targetMs,
+    ]);
 
   // Deliberately NOT seeded from `calculate()` — the initial state is what SSR
   // renders and what the client hydrates against, so it has to be a constant.
-  const [countdown, setCountdown] = useState<Countdown>(ZERO);
+  const [
+    countdown,
+    setCountdown,
+  ] =
+    useState<Countdown>(
+      ZERO,
+    );
 
   useEffect(() => {
-    setCountdown(calculate());
-    const interval = setInterval(() => setCountdown(calculate()), 1000);
-    return () => clearInterval(interval);
-  }, [calculate]);
+    setCountdown(
+      calculate(),
+    );
+    const interval =
+      setInterval(
+        () =>
+          setCountdown(
+            calculate(),
+          ),
+        1000,
+      );
+    return () =>
+      clearInterval(
+        interval,
+      );
+  }, [
+    calculate,
+  ]);
 
   return countdown;
 }

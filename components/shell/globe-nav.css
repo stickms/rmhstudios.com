@@ -1,0 +1,552 @@
+/* The phone navigator (docs/plans/2026-11-11-steel-design-implementation.md section 8.1, G1 to G8).
+
+   The globe's dots and cage before the body draws are an inline SVG (GlobeFirstPaint.tsx). The globe's chrome comes from app/styles/steel-chrome.css (.chrome-globe, 4.2) and, once
+   it has drawn, from the shared renderer (lib/chrome). Nothing here animates anything but `transform` and `opacity`
+   (G6): the globe is SCALED, never resized, so nothing lays out during the move.
+
+   STATE is the `data-open` attribute on .globe-nav. Nothing reads it but this file.
+
+   GEOMETRY. The dock is 64px, 18px above the bottom edge plus the safe-area inset, and rides `--vv-follow` (app/globals.css)
+   so it follows iOS Safari's toolbar in CSS with no script, as the old dock did. Open, the same element travels to the
+   middle of the VISIBLE area and scales 4.5x to 288px. The centre of the visible area is `50dvh` from the container's
+   top; the dock's centre is 18px + 32px + inset up from the bottom, and `--vv-follow` cancels, so the travel is
+   `50dvh - 50px - inset`. Pins are offsets from that centre (G3 gives them for a 390 x 844 viewport; the globe is 288px at
+   every size, so they are fixed lengths).
+
+   iOS (CLAUDE.md "iOS Safari bars"): the docked globe floats 18px off the edge; the page-fade under it is hidden on
+   html.ios-webkit (a flat layer at the bottom edge is what Safari fills its tab bar strip from); the veil paints out
+   past the edges with a NEGATIVE inset and is `visibility: hidden` at rest. */
+
+.globe-nav {
+  --globe-d: 64px;
+  --globe-open-d: 288px;
+  --globe-bottom: calc(18px + env(safe-area-inset-bottom, 0px) + var(--vv-follow, 0px));
+  --globe-travel: calc(50dvh - 50px - env(safe-area-inset-bottom, 0px));
+  /* M4: 360 ms on cubic-bezier(.2,0,0,1), the one curve token (steel-chrome.css). */
+  --globe-ease: var(--m4-curve);
+}
+
+/* DESKTOP (owner, 2026-11-12: the globe is the liquid globe on desktop too, larger, and it expands when clicked).
+   Docked it is a 124px ball at the foot of the sidebar: the frame is capped at 1240px and centred, the sidebar's
+   padding is 24px, so its left edge is that far in. Open it travels to the middle of the window and grows to 440px.
+   The sidebar's words still navigate (G9); the globe carries every destination.
+
+   THE DOCK IS NOT FIXED HERE (owner, 2026-11-13: "globe doesn't seem to follow page overscrolling properly and floats
+   above everything"). A fixed ball stays where it is while the page rubber-bands (a trackpad on macOS, a finger on an
+   iPad), and the sidebar it belongs to is sticky, so the sidebar's button and handle slid out from under it and back.
+   So .globe-nav is a grid item laid over the sidebar's cell with exactly the sticky geometry of .site-sidebar__inner
+   (site-shell.css: 16px off the top, `100dvh - 32px` tall), and the dock and the pin anchor are placed inside it. The
+   two boxes are the same box, so whatever the sidebar does (stick, scroll, bounce) the globe does with it. At rest the
+   ball is where it always was: `--globe-bottom` is still its distance from the bottom of the window, which the
+   opening move is computed from. The box takes no pointer; the ball does. The veil stays fixed: it covers the window. */
+@media (min-width: 1024px) {
+  .globe-nav {
+    --globe-d: 124px;
+    --globe-open-d: 440px;
+    --globe-start: calc(max(0px, (100vw - 1240px) / 2) + 24px);
+    /* 26px off the edge, plus the sidebar's foot under it: the primary, the handle and their gaps (site-shell.css). */
+    --globe-bottom: 130px;
+    --globe-shift: calc(50vw - var(--globe-start) - var(--globe-d) / 2);
+    --globe-travel: calc(50dvh - var(--globe-bottom) - var(--globe-d) / 2);
+    --globe-scale: 3.548;
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    position: sticky;
+    inset-block-start: 16px;
+    margin-block-start: 16px;
+    block-size: calc(100dvh - 32px);
+    z-index: var(--z-floating);
+    pointer-events: none;
+  }
+  .globe-nav[data-open] {
+    z-index: var(--z-hub-orb-open);
+  }
+  .globe-nav .globe-nav__dock {
+    position: absolute;
+    inset-inline-start: 24px;
+    /* The box ends 16px above the bottom of the window. */
+    inset-block-end: calc(var(--globe-bottom) - 16px);
+    translate: none;
+    pointer-events: auto;
+  }
+  [dir='rtl'] .globe-nav .globe-nav__dock {
+    translate: none;
+  }
+  .globe-nav .globe-nav__fade {
+    display: none;
+  }
+  .globe-nav .globe-nav__pins {
+    position: absolute;
+    inset-inline-start: calc(24px + var(--globe-d) / 2);
+    inset-block-end: calc(var(--globe-bottom) - 16px + var(--globe-d) / 2);
+  }
+}
+
+/* G1: the page fades into the ground over the last 130px so content never meets the globe. */
+.globe-nav__fade {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: calc(130px + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-rail);
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--site-bg));
+}
+html.ios-webkit .globe-nav__fade {
+  display: none;
+}
+
+/* The veil: --site-bg at 80%, flat, no blur (G2; owner, 2026-11-12: the page behind an open globe was dimmed too far). */
+.globe-nav__veil {
+  position: fixed;
+  inset: -2rem;
+  z-index: var(--z-hub-overlay);
+  background: var(--site-bg);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    visibility 0s linear 0.2s;
+}
+.globe-nav[data-open] .globe-nav__veil {
+  opacity: 0.8;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.2s ease,
+    visibility 0s;
+}
+
+/* The dock: a fixed 64px box that never transforms. The globe inside it does. */
+.globe-nav__dock {
+  position: fixed;
+  inset-inline-start: 50%;
+  inset-block-end: var(--globe-bottom);
+  inline-size: var(--globe-d);
+  block-size: var(--globe-d);
+  translate: -50% 0;
+  z-index: var(--z-floating);
+}
+[dir='rtl'] .globe-nav__dock {
+  translate: 50% 0;
+}
+.globe-nav[data-open] .globe-nav__dock {
+  z-index: var(--z-hub-orb-open);
+}
+
+/* A control, so the doubled class: the base layer's button rules and the unlayered `:is(button, [role=button]) { border-radius }`
+   in the site sheet come later in the cascade and would otherwise square the ball. */
+.globe-nav .globe-nav__globe {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  cursor: pointer;
+  overflow: hidden;
+  /* The contact shadow beneath. The molded rim and the hairline belong to the first paint below. */
+  box-shadow: 0 14px 14px -8px rgba(0, 0, 0, 0.35);
+  transform-origin: 50% 50%;
+  transition: transform 0.36s var(--globe-ease);
+}
+/* THE FIRST PAINT: the static chrome and its rim (.chrome-globe, 4.2) with the cage and the dots drawn on it. It is its own element so it can stay under the canvas while the drawn body fades in over it, and leave after. */
+.globe-nav .globe-nav__first {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  pointer-events: none;
+  transition: opacity 0.08s linear 0.28s;
+}
+/* G1: the destinations as dots on the cage, drawn where the body will draw them (GlobeFirstPaint.tsx). Open, the
+   icons stand for them, so the dots fade out in 200 ms (G2). */
+.globe-nav .globe-nav__first > svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+.globe-nav[data-open] .globe-nav__globe {
+  transform: translate(var(--globe-shift, 0px), calc(-1 * var(--globe-travel))) scale(var(--globe-scale, 4.5));
+}
+[dir='rtl'] .globe-nav[data-open] .globe-nav__globe {
+  transform: translate(calc(-1 * var(--globe-shift, 0px)), calc(-1 * var(--globe-travel))) scale(var(--globe-scale, 4.5));
+}
+.globe-nav[data-open] .globe-nav__first > svg {
+  opacity: 0;
+}
+
+/* THE BODY (lib/globe). Once the renderer draws the ball as a body it sets `data-chrome-live`: the canvas then hangs
+   outside the disc so a pushed limb can bulge past it, so the disc stops clipping. A finger on the globe turns it, so
+   it must not also scroll the page.
+
+   The body ARRIVES AS A CROSSFADE, not a swap (owner, 2026-11-12). The canvas is transparent until the body's first
+   frame, so the flat program the renderer draws before the body lands is never seen. Then the canvas fades in over the
+   first paint in 280 ms (the chrome activation time, section 11), and only after that does the first paint leave, in
+   80 ms: 360 ms in all. The first paint cannot stay, because a dent in the body would show it through. */
+.globe-nav .globe-nav__globe {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.globe-nav .globe-nav__globe > canvas {
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+.globe-nav .globe-nav__globe[data-chrome-live] {
+  overflow: visible;
+}
+.globe-nav .globe-nav__globe[data-chrome-live] > canvas {
+  opacity: 1;
+}
+.globe-nav .globe-nav__globe[data-chrome-live] .globe-nav__first {
+  opacity: 0;
+}
+.globe-nav[data-open] .globe-nav__veil,
+.globe-nav[data-open] .globe-nav__pins {
+  touch-action: none;
+}
+
+/* G8: 8px danger dot at the docked globe's upper right; the number lives on the pin once open. */
+.globe-nav__dot {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 2px;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--site-danger);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.globe-nav[data-open] .globe-nav__dot {
+  opacity: 0;
+}
+
+/* G7: with scripting off the globe is a link to /sections. The anchor lies over the button. */
+.globe-nav__fallback {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  corner-shape: round;
+  overflow: hidden;
+  text-indent: -999px;
+  white-space: nowrap;
+}
+
+/* The pins: a 0 x 0 anchor at the CENTRE OF THE GLOBE, wherever the globe is. Each pin is placed from it at the open
+   globe's radius (lib/globe/view.ts), and the anchor is scaled by the inverse of the globe's own scale while docked and
+   makes the globe's own move when it opens, so the icons stay on the ball through the move. They are SHOWN ONLY OPEN
+   (owner, 2026-11-12): docked, the destinations are the dots the body draws on the sphere, and the icons fade in over
+   them as the globe opens while the dots fade out (lib/globe/view.ts, DOTS). */
+.globe-nav__pins {
+  position: fixed;
+  inset-inline-start: 50%;
+  inset-block-end: calc(var(--globe-bottom) + var(--globe-d) / 2);
+  inline-size: 0;
+  block-size: 0;
+  z-index: var(--z-floating);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(calc(1 / var(--globe-scale, 4.5)));
+  transition:
+    transform 0.36s var(--globe-ease),
+    opacity 0.28s ease;
+}
+.globe-nav[data-open] .globe-nav__pins {
+  z-index: calc(var(--z-hub-orb-open) + 1);
+  transform: translate(var(--globe-shift, 0px), calc(-1 * var(--globe-travel)));
+}
+[dir='rtl'] .globe-nav[data-open] .globe-nav__pins {
+  transform: translate(calc(-1 * var(--globe-shift, 0px)), calc(-1 * var(--globe-travel)));
+}
+.globe-nav[data-open][data-globe-live] .globe-nav__pins {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* Every pin is placed from the 0 x 0 anchor at the centre. */
+.globe-nav__pin {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  translate: -50% -50%;
+  white-space: nowrap;
+}
+[dir='rtl'] .globe-nav__pin {
+  translate: 50% -50%;
+}
+
+/* A PIN: a destination fixed on the sphere, placed by `transform` each frame the globe moves (lib/globe/view.ts). It is
+   a 0 x 0 point; its dot is centred on it and its name hangs beneath, so the dot sits exactly where the sphere says. */
+.globe-nav__pin {
+  inline-size: 0;
+  block-size: 0;
+  color: var(--site-text);
+  text-decoration: none;
+  transform-origin: 0 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.globe-nav__pin-dot {
+  position: absolute;
+  inset-inline-start: -18px;
+  inset-block-start: -18px;
+  display: grid;
+  place-items: center;
+  inline-size: 36px;
+  block-size: 36px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+.globe-nav__pin-dot > svg:first-child {
+  inline-size: 18px;
+  block-size: 18px;
+}
+/* The dwell ring: `--fill` (0 to 1, set on the nav by the view) is how far a hold on the locked pin has got. */
+.globe-nav__pin-ring {
+  position: absolute;
+  inset: -4px;
+  inline-size: 44px;
+  block-size: 44px;
+  rotate: -90deg;
+  fill: none;
+  stroke: var(--site-text);
+  stroke-width: 2.5;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+}
+.globe-nav__pin-name {
+  position: absolute;
+  inset-block-start: 24px;
+  inset-inline-start: 0;
+  translate: -50% 0;
+  padding: 1px 7px;
+  border-radius: var(--site-radius-sm);
+  background: var(--site-bg);
+  color: var(--site-text);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  /* `--near` (0 to 1) is how squarely the pin faces the viewer; the view writes it on this element. */
+  opacity: var(--near, 0);
+  pointer-events: none;
+}
+[dir='rtl'] .globe-nav__pin-name {
+  translate: 50% 0;
+}
+/* Focus: the pin itself has no box, so the ring goes on its dot. */
+.globe-nav__pin:focus-visible {
+  outline: none;
+}
+.globe-nav__pin:focus-visible .globe-nav__pin-dot {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+/* The page you are on: a ring round its dot. */
+.globe-nav__pin[data-pin='current'] .globe-nav__pin-dot {
+  box-shadow:
+    0 0 0 2px var(--site-bg),
+    0 0 0 3.5px var(--site-text);
+}
+/* THE LOCK: the pin inside the reticle. It inverts, its name is always shown, and its ring shows the hold. */
+.globe-nav__pin[data-locked] .globe-nav__pin-dot {
+  background: var(--site-bg);
+  color: var(--site-text);
+}
+.globe-nav__pin[data-locked] .globe-nav__pin-name {
+  opacity: 1;
+  font-weight: 600;
+}
+.globe-nav__pin[data-locked] .globe-nav__pin-ring {
+  opacity: 1;
+  stroke-dashoffset: calc(1 - var(--fill, 0));
+}
+/* On a phone the globe is 288px and a dozen names would pile up: only the locked pin names itself. */
+@media (max-width: 1023.98px) {
+  .globe-nav__pin:not([data-locked]) .globe-nav__pin-name {
+    display: none;
+  }
+}
+
+.globe-nav__count {
+  position: absolute;
+  inset-block-start: -24px;
+  inset-inline-start: 8px;
+  font-family: var(--site-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--site-danger);
+  background: var(--site-bg);
+  border-radius: var(--site-radius-sm);
+  padding: 0 4px;
+}
+
+/* THE BAR (G3a; owner, 2026-11-13: "when the liquid globe is open re-add something like our old bottom bar with log
+   in/settings/etc"). One flat row under the open globe: the account, search, settings, the edition, every section, sign
+   out (GlobeBar.tsx). No surface and no rule: icons with short labels on the veil. It is displayed only while the menu
+   is open and fades with it (opacity; `visibility` only takes it out of hit-testing afterwards), and it is `inert`
+   while closed.
+
+   iOS (CLAUDE.md "iOS Safari bars"): it is never flush to the bottom edge. It floats above the safe area by the docked
+   globe's own inset rule, it is as wide as its items and no wider, and it floats 18px clear of the edge as the docked globe does.
+
+   The items sit on one pill (owner, 2026-11-13: "add a pill background behind the icons and buttons on the bottom bar
+   when the globe is open"): the overlay surface and its 1px border, flat, with no shadow and no blur, so the words read
+   over whatever page shows through the veil.
+
+   It is fixed in the window on phone and desktop alike: the desktop .globe-nav box is sticky, which is not a containing
+   block for a fixed child. */
+.globe-nav__bar {
+  position: fixed;
+  inset-inline-start: 50%;
+  inset-block-end: calc(18px + env(safe-area-inset-bottom, 0px) + var(--vv-follow, 0px));
+  z-index: calc(var(--z-hub-orb-open) + 1);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 6px;
+  max-inline-size: calc(100vw - 16px);
+  padding: 4px 8px;
+  border: 1px solid var(--site-border);
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--site-surface);
+  translate: -50% 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    visibility 0s linear 0.18s;
+}
+[dir='rtl'] .globe-nav__bar {
+  translate: 50% 0;
+}
+.globe-nav[data-open] .globe-nav__bar {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.18s ease,
+    visibility 0s;
+}
+/* Only the items take the pointer: between and beside them a press still reaches the veil, to turn or close the globe. */
+.globe-nav[data-open] .globe-nav__bar-item {
+  pointer-events: auto;
+}
+/* An item: a 20px icon over a 12px word, in a target at least 44px each way (A3). A control, so the doubled class (see
+   .globe-nav__globe above). */
+.globe-nav .globe-nav__bar-item {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: none;
+  color: var(--site-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--m1) ease;
+}
+/* Under a pointer that hovers only: a finger leaves `:hover` set on the item it last pressed. */
+@media (hover: hover) {
+  .globe-nav .globe-nav__bar-item:hover {
+    background: var(--site-bg-subtle);
+  }
+}
+.globe-nav .globe-nav__bar-item > svg {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  stroke-width: 1.75;
+}
+/* The avatar is 22px; it takes the icon's 20px row so the labels share one baseline. */
+.globe-nav .globe-nav__bar-item > img {
+  margin-block: -1px;
+}
+/* A WINDOW TOO SHORT to hold the row under the globe (a phone on its side is 340px to 430px tall and the globe is
+   288px; a small desktop window against the 440px globe): the bar is a column of icons at the inline end, clear of the
+   globe and its pins. The words stay as each control's name. */
+@media (max-height: 480px), (min-width: 1024px) and (max-height: 660px) {
+  .globe-nav__bar,
+  [dir='rtl'] .globe-nav__bar {
+    inset-inline-start: auto;
+    inset-inline-end: calc(12px + env(safe-area-inset-right, 0px));
+    inset-block: 50% auto;
+    flex-direction: column;
+    align-items: center;
+    max-inline-size: none;
+    padding: 8px 4px;
+    translate: 0 -50%;
+  }
+}
+/* The words are each control's name and its tooltip, not drawn (owner, 2026-11-13: "you can remove the text below the
+   icons on the bottom bar"). */
+.globe-nav__bar-label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The reticle: the circle a destination must be inside to lock, drawn at its true size (RETICLE_FRACTION of the open
+   globe, 31% of 288px) and only while the globe is held. */
+.globe-nav__reticle {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  inline-size: calc(var(--globe-open-d) * 0.31);
+  block-size: calc(var(--globe-open-d) * 0.31);
+  translate: -50% -50%;
+  border: 1px solid var(--site-text);
+  border-radius: 50%;
+  corner-shape: round;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+[dir='rtl'] .globe-nav__reticle {
+  translate: 50% -50%;
+}
+.globe-nav[data-globe-live]:has(.globe-nav__globe[data-grabbing]) .globe-nav__reticle {
+  opacity: 0.35;
+}
+
+/* M7: reduced motion turns the move into an instant change. The globe still opens. */
+@media (prefers-reduced-motion: reduce) {
+  .globe-nav .globe-nav__globe,
+  .globe-nav .globe-nav__globe > canvas,
+  .globe-nav .globe-nav__first,
+  .globe-nav .globe-nav__first > svg,
+  .globe-nav__veil,
+  .globe-nav__pins,
+  .globe-nav__bar,
+  .globe-nav__dot {
+    transition: none;
+  }
+}

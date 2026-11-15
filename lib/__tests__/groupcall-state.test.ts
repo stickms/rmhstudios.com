@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   IDLE_GROUP_CALL,
@@ -791,16 +791,18 @@ describe('who may walk into an open room', () => {
  * the mapping matches a list in this file, which is not the thing that can
  * break. Reading the schema means a member renamed in the database fails here.
  */
-const SCHEMA = readFileSync(
-  path.join(path.resolve(__dirname, '..', '..'), 'prisma', 'schema.prisma'),
-  'utf8',
-);
+const SCHEMA_DIR = path.join(path.resolve(__dirname, '..', '..'), 'prisma', 'schema');
+const SCHEMA = (readdirSync(SCHEMA_DIR, { recursive: true }) as string[])
+  .filter((f) => f.endsWith('.prisma'))
+  .sort()
+  .map((f) => readFileSync(path.join(SCHEMA_DIR, f), 'utf8'))
+  .join('\n');
 
 function prismaEnumMembers(name: string): string[] {
   const block = new RegExp(`\\benum ${name} \\{\\n([\\s\\S]*?)\\n\\}`).exec(
     SCHEMA.replaceAll('\r\n', '\n'),
   );
-  if (!block) throw new Error(`enum ${name} not found in prisma/schema.prisma`);
+  if (!block) throw new Error(`enum ${name} not found in prisma/schema/`);
   return block[1]
     .split('\n')
     .map((line) => line.trim())

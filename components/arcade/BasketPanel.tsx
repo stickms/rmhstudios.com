@@ -1,12 +1,14 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Share2, ShoppingBasket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useArcadeRun } from '@/lib/arcade/run-client';
 import { basketShareText } from '@/lib/arcade/basket';
+import { api } from '@/lib/contract/client';
+import { finishBasketApi, getBasketApi } from '@/lib/arcade/arcade.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Stats {
   sorted: number;
@@ -34,6 +36,8 @@ export function BasketPanel({
   const { t } = useTranslation('f-party');
   const run = useArcadeRun((s) => s.run);
   const [board, setBoard] = useState<Row[] | null>(null);
+  // The board is fetched after the result shows: it fades in when it lands (M9).
+  const boardArrival = useArrival(board !== null);
   const [note, setNote] = useState<string | null>(null);
   const sent = useRef(false);
 
@@ -42,13 +46,14 @@ export function BasketPanel({
     sent.current = true;
     void (async () => {
       if (run.counted) {
-        const res = await fetch('/api/arcade/basket/finish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ score: Math.round(score), detail: stats }),
-        }).catch(() => null);
+        const saved = await api(finishBasketApi, {
+          body: { score: Math.round(score), detail: stats },
+        }).then(
+          () => true,
+          () => false,
+        );
         setNote(
-          res?.ok
+          saved
             ? t('basket-saved', { defaultValue: 'Saved to today’s basket leaderboard.' })
             : t('basket-failed', { defaultValue: 'Couldn’t save the basket result.' }),
         );
@@ -57,8 +62,8 @@ export function BasketPanel({
           t('basket-used', { defaultValue: 'Practice run: today’s attempt was already used.' }),
         );
       }
-      const b = await fetch('/api/arcade/basket').catch(() => null);
-      if (b?.ok) setBoard(((await b.json()) as { board: Row[] }).board);
+      const b = await api(getBasketApi).catch(() => null);
+      if (b) setBoard(b.board);
     })();
   }, [run, signedIn, score, stats, t]);
 
@@ -80,20 +85,20 @@ export function BasketPanel({
   }
 
   return (
-    <div className="glass-fill space-y-2 rounded-site p-4 text-sm text-site-text">
+    <div className="surface-card space-y-2 rounded-site p-4 text-sm text-site-text">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-site-text-muted">
           <ShoppingBasket className="h-4 w-4" aria-hidden />
           {t('basket-heading', { defaultValue: 'Daily basket {{day}}', day: run.variant })}
         </span>
-        <Button size="xs" variant="outline" onClick={() => void share()}>
+        <Button size="xs" variant="default" onClick={() => void share()}>
           <Share2 aria-hidden />
           {t('basket-share', { defaultValue: 'Copy result grid' })}
         </Button>
       </div>
       {note ? <p className="text-xs text-site-text-muted">{note}</p> : null}
       {board?.length ? (
-        <ol className="space-y-0.5 text-xs">
+        <ol className={cn('space-y-0.5 text-xs', boardArrival)}>
           {board.slice(0, 5).map((r) => (
             <li key={r.rank} className={r.isMe ? 'font-semibold' : undefined}>
               {r.rank}. {r.user.name ?? r.user.handle ?? '?'} · {r.score}

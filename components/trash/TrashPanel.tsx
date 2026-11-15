@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * The recycle bin (plan I1).
  *
@@ -13,203 +11,600 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { toast } from '@/lib/toast';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
+import { Tabs } from '@/components/ui/tabs';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { TrashRow } from '@/components/trash/TrashRow';
 import { refusalCopy } from '@/components/trash/copy';
-import type { RestoreRefusal, TrashItem, TrashPage } from '@/lib/trash/types';
+import { api } from '@/lib/contract/client';
+import {
+  errorField,
+  serverError,
+} from '@/lib/http';
+import {
+  listTrashApi,
+  purgeTrashApi,
+  restoreTrashApi,
+} from '@/lib/trash/trash.contract';
+import type {
+  RestoreRefusal,
+  TrashItem,
+  TrashPage,
+} from '@/lib/trash/types';
+import {
+  ARRIVE,
+  useArrival,
+  useArrivingKeys,
+} from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
-type Filter = 'all' | 'post' | 'comment';
+type Filter =
+  | 'all'
+  | 'post'
+  | 'comment';
 
 interface RefusalError extends Error {
   reason?: RestoreRefusal;
 }
 
-async function readError(res: Response): Promise<RefusalError> {
-  const body = (await res.json().catch(() => ({}))) as { error?: string; reason?: RestoreRefusal };
-  const error: RefusalError = new Error(body.error ?? 'Request failed');
-  error.reason = body.reason;
+/** The server's `{ error, reason }` refusal as the error the mutations' handlers read. */
+function refusal(
+  e: unknown,
+): RefusalError {
+  const error: RefusalError =
+    new Error(
+      serverError(
+        e,
+      ) ??
+        'Request failed',
+    );
+  error.reason =
+    errorField<RestoreRefusal>(
+      e,
+      'reason',
+    );
   return error;
 }
 
 export function TrashPanel() {
-  const { t } = useTranslation('settings-content');
-  const confirm = useConfirm();
-  const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<Filter>('all');
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const reasons = refusalCopy(t);
+  const {
+    t,
+  } =
+    useTranslation(
+      'settings-content',
+    );
+  const confirm =
+    useConfirm();
+  const queryClient =
+    useQueryClient();
+  const [
+    filter,
+    setFilter,
+  ] =
+    useState<Filter>(
+      'all',
+    );
+  const [
+    busyId,
+    setBusyId,
+  ] =
+    useState<
+      | string
+      | null
+    >(
+      null,
+    );
+  const reasons =
+    refusalCopy(
+      t,
+    );
 
-  const query = useInfiniteQuery({
-    queryKey: ['trash', filter],
-    initialPageParam: null as string | null,
-    queryFn: async ({ pageParam }): Promise<TrashPage> => {
-      const params = new URLSearchParams();
-      if (filter !== 'all') params.set('kind', filter);
-      if (pageParam) params.set('cursor', pageParam);
-      const res = await fetch(`/api/trash?${params.toString()}`, { credentials: 'include' });
-      if (!res.ok) throw await readError(res);
-      return res.json();
-    },
-    getNextPageParam: (last) => last.nextCursor,
-    staleTime: 15_000,
-  });
+  const query =
+    useInfiniteQuery(
+      {
+        queryKey:
+          [
+            'trash',
+            filter,
+          ],
+        initialPageParam:
+          null as
+            | string
+            | null,
+        queryFn:
+          async ({
+            pageParam,
+          }): Promise<TrashPage> => {
+            try {
+              return await api(
+                listTrashApi,
+                {
+                  query:
+                    {
+                      ...(filter !==
+                      'all'
+                        ? {
+                            kind: filter,
+                          }
+                        : {}),
+                      ...(pageParam
+                        ? {
+                            cursor:
+                              pageParam,
+                          }
+                        : {}),
+                    },
+                },
+              );
+            } catch (e) {
+              throw refusal(
+                e,
+              );
+            }
+          },
+        getNextPageParam:
+          (
+            last,
+          ) =>
+            last.nextCursor,
+        staleTime: 15_000,
+      },
+    );
 
-  const items = query.data?.pages.flatMap((page) => page.items) ?? [];
-  const windowDays = query.data?.pages[0]?.windowDays ?? 30;
+  const items =
+    query.data?.pages.flatMap(
+      (
+        page,
+      ) =>
+        page.items,
+    ) ??
+    [];
+  const windowDays =
+    query
+      .data
+      ?.pages[0]
+      ?.windowDays ??
+    30;
+  const arrival =
+    useArrival(
+      !query.isPending,
+    );
+  const isNew =
+    useArrivingKeys(
+      items.map(
+        (
+          item,
+        ) =>
+          `${item.kind}:${item.id}`,
+      ),
+    );
 
-  const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: ['trash'] });
-  };
-
-  const restore = useMutation({
-    mutationFn: async (item: TrashItem) => {
-      const res = await fetch('/api/trash/restore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ kind: item.kind, id: item.id }),
-      });
-      if (!res.ok) throw await readError(res);
-    },
-    onSuccess: () => {
-      toast.success(t('trash-restored-toast', { defaultValue: 'Restored' }));
-      invalidate();
-    },
-    onError: (error: RefusalError) => {
-      toast.error(
-        error.reason
-          ? reasons[error.reason]
-          : t('trash-restore-failed', { defaultValue: 'Could not restore that.' }),
+  const invalidate =
+    () => {
+      void queryClient.invalidateQueries(
+        {
+          queryKey:
+            [
+              'trash',
+            ],
+        },
       );
-      invalidate();
-    },
-    onSettled: () => setBusyId(null),
-  });
+    };
 
-  const purge = useMutation({
-    mutationFn: async (item: TrashItem) => {
-      const res = await fetch(`/api/trash/${item.kind}/${encodeURIComponent(item.id)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) throw await readError(res);
-    },
-    onSuccess: () => {
-      toast.success(t('trash-purged-toast', { defaultValue: 'Deleted permanently' }));
-      invalidate();
-    },
-    onError: (error: RefusalError) => {
-      toast.error(
-        error.reason
-          ? reasons[error.reason]
-          : t('trash-purge-failed', { defaultValue: 'Could not delete that.' }),
+  const restore =
+    useMutation(
+      {
+        mutationFn:
+          async (
+            item: TrashItem,
+          ) => {
+            try {
+              await api(
+                restoreTrashApi,
+                {
+                  body: {
+                    kind: item.kind,
+                    id: item.id,
+                  },
+                },
+              );
+            } catch (e) {
+              throw refusal(
+                e,
+              );
+            }
+          },
+        onSuccess:
+          () => {
+            toast.success(
+              t(
+                'trash-restored-toast',
+                {
+                  defaultValue:
+                    'Restored',
+                },
+              ),
+            );
+            invalidate();
+          },
+        onError:
+          (
+            error: RefusalError,
+          ) => {
+            toast.error(
+              error.reason
+                ? reasons[
+                    error
+                      .reason
+                  ]
+                : t(
+                    'trash-restore-failed',
+                    {
+                      defaultValue:
+                        'Could not restore that.',
+                    },
+                  ),
+            );
+            invalidate();
+          },
+        onSettled:
+          () =>
+            setBusyId(
+              null,
+            ),
+      },
+    );
+
+  const purge =
+    useMutation(
+      {
+        mutationFn:
+          async (
+            item: TrashItem,
+          ) => {
+            try {
+              await api(
+                purgeTrashApi,
+                {
+                  params:
+                    {
+                      kind: item.kind,
+                      id: item.id,
+                    },
+                },
+              );
+            } catch (e) {
+              throw refusal(
+                e,
+              );
+            }
+          },
+        onSuccess:
+          () => {
+            toast.success(
+              t(
+                'trash-purged-toast',
+                {
+                  defaultValue:
+                    'Deleted permanently',
+                },
+              ),
+            );
+            invalidate();
+          },
+        onError:
+          (
+            error: RefusalError,
+          ) => {
+            toast.error(
+              error.reason
+                ? reasons[
+                    error
+                      .reason
+                  ]
+                : t(
+                    'trash-purge-failed',
+                    {
+                      defaultValue:
+                        'Could not delete that.',
+                    },
+                  ),
+            );
+            invalidate();
+          },
+        onSettled:
+          () =>
+            setBusyId(
+              null,
+            ),
+      },
+    );
+
+  const handleRestore =
+    (
+      item: TrashItem,
+    ) => {
+      setBusyId(
+        item.id,
       );
-      invalidate();
-    },
-    onSettled: () => setBusyId(null),
-  });
+      restore.mutate(
+        item,
+      );
+    };
 
-  const handleRestore = (item: TrashItem) => {
-    setBusyId(item.id);
-    restore.mutate(item);
-  };
-
-  const handlePurge = async (item: TrashItem) => {
-    const ok = await confirm({
-      title: t('trash-purge-confirm-title', { defaultValue: 'Delete this forever?' }),
-      description: t('trash-purge-confirm-body', {
-        defaultValue:
-          'This removes it from the database along with any attached images. It cannot be undone.',
-      }),
-      confirmLabel: t('trash-purge', { defaultValue: 'Delete forever' }),
-      danger: true,
-    });
-    if (!ok) return;
-    setBusyId(item.id);
-    purge.mutate(item);
-  };
+  const handlePurge =
+    async (
+      item: TrashItem,
+    ) => {
+      const ok =
+        await confirm(
+          {
+            title:
+              t(
+                'trash-purge-confirm-title',
+                {
+                  defaultValue:
+                    'Delete this forever?',
+                },
+              ),
+            description:
+              t(
+                'trash-purge-confirm-body',
+                {
+                  defaultValue:
+                    'This removes it from the database along with any attached images. It cannot be undone.',
+                },
+              ),
+            confirmLabel:
+              t(
+                'trash-purge',
+                {
+                  defaultValue:
+                    'Delete forever',
+                },
+              ),
+            danger: true,
+          },
+        );
+      if (
+        !ok
+      )
+        return;
+      setBusyId(
+        item.id,
+      );
+      purge.mutate(
+        item,
+      );
+    };
 
   return (
-    <section aria-labelledby="trash-heading" className="flex flex-col gap-4">
+    <section
+      aria-labelledby="trash-heading"
+      className="flex flex-col gap-4"
+    >
       <div>
-        <h2 id="trash-heading" className="site-section-label">
-          {t('trash-heading', { defaultValue: 'Recently deleted' })}
+        <h2
+          id="trash-heading"
+          className="site-section-label"
+        >
+          {t(
+            'trash-heading',
+            {
+              defaultValue:
+                'Recently deleted',
+            },
+          )}
         </h2>
         <p className="mt-1 text-sm text-site-text-muted">
-          {t('trash-window-note', {
-            count: windowDays,
-            defaultValue:
-              'Posts and comments you delete stay here for {{count}} days, then go for good.',
-          })}
+          {t(
+            'trash-window-note',
+            {
+              count:
+                windowDays,
+              defaultValue:
+                'Posts and comments you delete stay here for {{count}} days, then go for good.',
+            },
+          )}
         </p>
       </div>
 
-      <LiquidTabs
-        aria-label={t('trash-filter-label', { defaultValue: 'Filter deleted content' })}
-        value={filter}
-        onChange={(id) => setFilter(id as Filter)}
+      <Tabs
+        aria-label={t(
+          'trash-filter-label',
+          {
+            defaultValue:
+              'Filter deleted content',
+          },
+        )}
+        value={
+          filter
+        }
+        onChange={(
+          id,
+        ) =>
+          setFilter(
+            id as Filter,
+          )
+        }
         tabs={[
-          { id: 'all', label: t('trash-filter-all', { defaultValue: 'All' }) },
-          { id: 'post', label: t('trash-filter-posts', { defaultValue: 'Posts' }) },
-          { id: 'comment', label: t('trash-filter-comments', { defaultValue: 'Comments' }) },
+          {
+            id: 'all',
+            label:
+              t(
+                'trash-filter-all',
+                {
+                  defaultValue:
+                    'All',
+                },
+              ),
+          },
+          {
+            id: 'post',
+            label:
+              t(
+                'trash-filter-posts',
+                {
+                  defaultValue:
+                    'Posts',
+                },
+              ),
+          },
+          {
+            id: 'comment',
+            label:
+              t(
+                'trash-filter-comments',
+                {
+                  defaultValue:
+                    'Comments',
+                },
+              ),
+          },
         ]}
       />
 
       {query.isPending ? (
-        <div className="flex flex-col gap-3" aria-hidden>
+        <div
+          className="flex flex-col gap-3"
+          aria-hidden
+        >
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
         </div>
       ) : query.isError ? (
         <EmptyState
-          icon={Trash2}
-          title={t('trash-error-title', { defaultValue: 'Could not load the bin' })}
-          description={t('trash-error-body', {
-            defaultValue: 'Something went wrong on our side. Try again in a moment.',
-          })}
+          icon={
+            Trash2
+          }
+          className={
+            arrival
+          }
+          title={t(
+            'trash-error-title',
+            {
+              defaultValue:
+                'Could not load the bin',
+            },
+          )}
+          description={t(
+            'trash-error-body',
+            {
+              defaultValue:
+                'Something went wrong on our side. Try again in a moment.',
+            },
+          )}
           action={
-            <Button variant="secondary" onClick={() => void query.refetch()}>
-              {t('trash-retry', { defaultValue: 'Try again' })}
+            <Button
+              variant="default"
+              onClick={() =>
+                void query.refetch()
+              }
+            >
+              {t(
+                'trash-retry',
+                {
+                  defaultValue:
+                    'Try again',
+                },
+              )}
             </Button>
           }
         />
-      ) : items.length === 0 ? (
+      ) : items.length ===
+        0 ? (
         <EmptyState
-          icon={Trash2}
-          title={t('trash-empty-title', { defaultValue: 'Nothing deleted' })}
-          description={t('trash-empty-body', {
-            defaultValue: 'Posts and comments you delete will show up here so you can undo it.',
-          })}
+          icon={
+            Trash2
+          }
+          className={
+            arrival
+          }
+          title={t(
+            'trash-empty-title',
+            {
+              defaultValue:
+                'Nothing deleted',
+            },
+          )}
+          description={t(
+            'trash-empty-body',
+            {
+              defaultValue:
+                'Posts and comments you delete will show up here so you can undo it.',
+            },
+          )}
         />
       ) : (
         <>
-          <ul className="flex flex-col gap-3">
-            {items.map((item) => (
-              <TrashRow
-                key={`${item.kind}:${item.id}`}
-                item={item}
-                busy={busyId === item.id}
-                onRestore={handleRestore}
-                onPurge={(row) => void handlePurge(row)}
-              />
-            ))}
+          <ul
+            className={cn(
+              'flex flex-col gap-3',
+              arrival,
+            )}
+          >
+            {items.map(
+              (
+                item,
+              ) => (
+                <TrashRow
+                  key={`${item.kind}:${item.id}`}
+                  className={
+                    isNew(
+                      `${item.kind}:${item.id}`,
+                    )
+                      ? ARRIVE
+                      : undefined
+                  }
+                  item={
+                    item
+                  }
+                  busy={
+                    busyId ===
+                    item.id
+                  }
+                  onRestore={
+                    handleRestore
+                  }
+                  onPurge={(
+                    row,
+                  ) =>
+                    void handlePurge(
+                      row,
+                    )
+                  }
+                />
+              ),
+            )}
           </ul>
           {query.hasNextPage ? (
             <Button
-              variant="secondary"
+              variant="default"
               className="self-center"
-              loading={query.isFetchingNextPage}
-              onClick={() => void query.fetchNextPage()}
+              loading={
+                query.isFetchingNextPage
+              }
+              onClick={() =>
+                void query.fetchNextPage()
+              }
             >
-              {t('trash-load-more', { defaultValue: 'Load more' })}
+              {t(
+                'trash-load-more',
+                {
+                  defaultValue:
+                    'Load more',
+                },
+              )}
             </Button>
           ) : null}
         </>

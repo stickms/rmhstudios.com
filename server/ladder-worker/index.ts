@@ -1,9 +1,15 @@
 /* eslint-disable no-console */
 /**
- * Ladder Worker — Background Cron Process
+ * Ladder Worker — job-discovery pipeline consumer
  *
- * Long-lived Node.js process that runs the job-discovery pipeline
- * on a configurable schedule (default: every 4 hours).
+ * Long-lived Node.js process that runs the job-discovery pipeline on a
+ * configurable schedule (default: every 12 hours, LADDER_CRON_SCHEDULE).
+ *
+ * The schedule is a pg-boss cron (`ladder.pipeline`), fired by the `jobs`
+ * worker's timekeeper and consumed here (D4: one scheduler). The pipeline stays
+ * in its own process for its own DB pool and failure domain. The data-lifecycle
+ * cleanup that used to ride along now runs in the `jobs` worker
+ * (`lib/cleanup-job.server.ts`).
  *
  * Runs as a separate Docker service or dev process.
  */
@@ -14,8 +20,6 @@ import { installProcessGuards } from '../../lib/perf/process-guards';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { randomUUID } from 'node:crypto';
-import { schedule } from 'node-cron';
-import type { ScheduledTask } from 'node-cron';
 import { runPipeline, type RunPrisma } from '../../lib/rmhladder/pipeline/run';
 import {
   probeUnconfiguredSources,
@@ -47,7 +51,13 @@ import {
   releaseWorkerLease,
   type WorkerLeasePrisma,
 } from '../../lib/rmhladder/worker-lease';
-import { runCleanup, cleanupOptionsFromEnv, type CleanupPrisma } from '../../lib/cleanup.server';
+import {
+  startScheduledConsumer,
+  type ScheduledConsumer,
+} from '../../lib/jobs/scheduled-consumer.server';
+
+/** The pg-boss queue (and schedule) the `jobs` worker's timekeeper fires into. */
+const LADDER_QUEUE = 'ladder.pipeline';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
 installProcessGuards({ service: 'ladder-worker' });
@@ -87,22 +97,8 @@ const workerLease = {
 const leasePrisma = prisma as unknown as WorkerLeasePrisma;
 const enrichmentPrisma = prisma as unknown as JobEnrichmentPrisma;
 const resumePrisma = prisma as unknown as ResumePrisma;
-const cleanupPrisma = prisma as unknown as CleanupPrisma;
 
-// ─── Data-lifecycle cleanup (audit §1.5) ─────────────────────────
-// A separate, slower cron (default daily) hosted in this worker because it
-// already has node-cron + the DB worker-lease. Uses its OWN lease name so it
-// never blocks (or is blocked by) the job-discovery pipeline lease, and its own
-// overlap guard. See lib/cleanup.server.ts for the batched delete queries.
-const cleanupSchedule = process.env.CLEANUP_CRON_SCHEDULE ?? '0 4 * * *';
-const cleanupLease = {
-  name: 'rmhstudios-cleanup',
-  ownerId: `${process.pid}-${randomUUID()}`,
-  ttlMs: leaseTtlMs,
-};
-let cleanupRunning = false;
-
-/** Set once shutdown begins: no new tick (cron, bootstrap or cleanup) starts. */
+/** Set once shutdown begins: no new tick (queue run or bootstrap) starts. */
 let stopping = false;
 
 /** Docker's default stop grace is 10s; give up waiting on a run well inside it. */
@@ -112,39 +108,6 @@ const shutdownDeadlineMs = positiveInteger(process.env.LADDER_SHUTDOWN_DEADLINE_
 class LeaseLostError extends Error {
   constructor() {
     super('database lease lost');
-  }
-}
-
-async function cleanupTick() {
-  if (stopping) return;
-  if (cleanupRunning) {
-    console.log('[ladder-worker] Cleanup skipped — previous run still in flight');
-    return;
-  }
-  cleanupRunning = true;
-  let leaseAcquired = false;
-  try {
-    leaseAcquired = await acquireWorkerLease(leasePrisma, cleanupLease);
-    if (!leaseAcquired) {
-      console.log('[ladder-worker] Cleanup skipped — another worker owns the cleanup lease');
-      return;
-    }
-    const result = await runCleanup(
-      cleanupPrisma,
-      cleanupOptionsFromEnv((line) => console.log(`[ladder-worker] ${line}`)),
-    );
-    console.log(
-      `[ladder-worker] Cleanup complete — sessions=${result.expiredSessions} verifications=${result.expiredVerifications} notifications=${result.oldNotifications} notificationsCapped=${result.cappedNotifications} commentViews=${result.oldCommentViews} softDeletedPosts=${result.hardDeletedPosts} durationMs=${result.durationMs}`,
-    );
-  } catch (error) {
-    console.error('[ladder-worker] Cleanup run failed:', error);
-  } finally {
-    if (leaseAcquired) {
-      await releaseWorkerLease(leasePrisma, cleanupLease).catch((error) =>
-        console.error('[ladder-worker] Cleanup lease release failed:', error),
-      );
-    }
-    cleanupRunning = false;
   }
 }
 
@@ -323,8 +286,8 @@ async function tick() {
 // pipeline immediately when there is no completed run or the latest completed
 // run is at least four hours old. Every step is idempotent.
 
-async function bootstrap() {
-  if (running || stopping) return;
+async function bootstrap(): Promise<boolean> {
+  if (running || stopping) return false;
   running = true;
   let runImmediately = false;
   try {
@@ -359,29 +322,50 @@ async function bootstrap() {
   } finally {
     running = false;
   }
-
-  // tick() itself refuses once shutdown has begun (the cron is stopped by then).
-  if (runImmediately) await tick();
+  return runImmediately;
 }
 
 // ─── Scheduler ──────────────────────────────────────────────────
+// The cron lives in pg-boss (queue `ladder.pipeline`, fired by the jobs worker's
+// timekeeper, evaluated in UTC); this process consumes it. `exclusive` keeps one
+// run queued or active, the DB lease still guards against pg-boss handing a run
+// out again after `expireInSeconds` while the first is somehow still going.
 
 const cronSchedule = resolveLadderCron(process.env.LADDER_CRON_SCHEDULE);
+let consumer: ScheduledConsumer | null = null;
 
-const task: ScheduledTask = schedule(cronSchedule, tick, {
-  timezone: 'UTC',
-  noOverlap: true,
-});
+async function main() {
+  const runImmediately = await bootstrap();
+  if (stopping) return;
 
-// Separate, slower schedule for the data-lifecycle cleanup sweep (audit §1.5).
-const cleanupTask: ScheduledTask = schedule(cleanupSchedule, cleanupTick, {
-  timezone: 'UTC',
-  noOverlap: true,
-});
+  consumer = await startScheduledConsumer({
+    queue: LADDER_QUEUE,
+    cron: cronSchedule,
+    // The pipeline has no wall-clock bound of its own; the lease heartbeat is what proves it is alive.
+    expireInSeconds: 6 * 60 * 60,
+    // tick() catches everything, so a throw is a bug and a retry would only repeat it.
+    retryLimit: 0,
+    handler: tick,
+    shouldStop: () => stopping,
+    log: { warn: (line) => console.warn(line), error: (line) => console.error(line) },
+  });
+  if (!consumer) {
+    if (stopping) return;
+    console.error('[ladder-worker] pg-boss unavailable — exiting so the container restarts');
+    process.exit(1);
+  }
+  if (stopping) {
+    await consumer.pause();
+    return;
+  }
 
-console.log(
-  `[ladder-worker] Started — schedule="${cronSchedule}" cleanupSchedule="${cleanupSchedule}" timezone="UTC" probeBatchSize=${probeBatchSize} aiEnrichmentBatchSize=${aiEnrichmentBatchSize} matchRefreshBatchSize=${matchRefreshBatchSize} leaseTtlMs=${leaseTtlMs}`,
-);
+  console.log(
+    `[ladder-worker] Started — schedule="${cronSchedule}" queue="${LADDER_QUEUE}" timezone="UTC" probeBatchSize=${probeBatchSize} aiEnrichmentBatchSize=${aiEnrichmentBatchSize} matchRefreshBatchSize=${matchRefreshBatchSize} leaseTtlMs=${leaseTtlMs}`,
+  );
+  // The bootstrap decided a run is due now (empty or stale): enqueue it like a cron tick.
+  if (runImmediately) await consumer.runNow();
+}
+
 const resumeReady = resumeSubsystemReadiness();
 if (resumeReady.ready) {
   console.log(
@@ -391,20 +375,22 @@ if (resumeReady.ready) {
   console.error(`[ladder-worker] ${resumeReadinessError(resumeReady)}`);
 }
 
-void bootstrap();
+main().catch((e) => {
+  console.error('[ladder-worker] fatal:', e);
+  process.exit(1);
+});
 
 // ─── Graceful shutdown ──────────────────────────────────────────
 
 async function shutdown(signal: string) {
-  // Re-entrant: a second signal must not stop the tasks / start a second wait.
+  // Re-entrant: a second signal must not stop the consumer / start a second wait.
   if (stopping) return;
   stopping = true;
   console.log(`[ladder-worker] ${signal} received, shutting down...`);
 
-  await task.stop();
-  await cleanupTask.stop();
+  await consumer?.pause();
 
-  if (running || cleanupRunning) {
+  if (running) {
     console.log('[ladder-worker] Waiting for in-flight run to complete...');
     const drained = await new Promise<boolean>((resolve) => {
       const deadline = setTimeout(() => {
@@ -412,7 +398,7 @@ async function shutdown(signal: string) {
         resolve(false);
       }, shutdownDeadlineMs);
       const interval = setInterval(() => {
-        if (!running && !cleanupRunning) {
+        if (!running) {
           clearInterval(interval);
           clearTimeout(deadline);
           resolve(true);
@@ -420,18 +406,16 @@ async function shutdown(signal: string) {
       }, 500);
     });
     if (!drained) {
-      // The run dies with the process; hand the leases back now so the next
+      // The run dies with the process; hand the lease back now so the next
       // worker does not sit out the whole TTL. Owner-scoped, so safe.
       console.error(
         `[ladder-worker] In-flight run did not finish within ${shutdownDeadlineMs}ms — exiting anyway`,
       );
-      await Promise.allSettled([
-        releaseWorkerLease(leasePrisma, workerLease),
-        releaseWorkerLease(leasePrisma, cleanupLease),
-      ]);
+      await releaseWorkerLease(leasePrisma, workerLease).catch(() => undefined);
     }
   }
 
+  await consumer?.stop();
   await prisma.$disconnect().catch(() => undefined);
   process.exit(0);
 }

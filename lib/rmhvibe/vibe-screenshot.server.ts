@@ -6,7 +6,7 @@
  * To show them in the gallery we render the saved HTML once, server-side, in a
  * headless Chromium, screenshot it, downscale with sharp, and save a PNG to disk.
  *
- * This module is imported ONLY by the vibe-worker (and the backfill script) — never
+ * This module is imported ONLY by the jobs thumbnail worker (and the backfill script) — never
  * by the web app — so Playwright/Chromium stay out of the web bundle and image's
  * hot path. It renders and returns the public URL; persisting it to the DB (and
  * clearing the `thumbnailStale` flag) is the caller's job.

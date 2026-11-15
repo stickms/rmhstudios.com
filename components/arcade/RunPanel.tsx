@@ -1,12 +1,14 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { Link2, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useArcadeRun, seedKeyOf } from '@/lib/arcade/run-client';
 import { seedLink } from '@/lib/arcade/seeded';
+import { api } from '@/lib/contract/client';
+import { getSeedBoardApi, submitArcadeRunApi } from '@/lib/arcade/arcade.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Row {
   rank: number;
@@ -31,6 +33,8 @@ export function RunPanel({
   const { t } = useTranslation('f-arcade');
   const run = useArcadeRun((s) => s.run);
   const [board, setBoard] = useState<Row[] | null>(null);
+  // The board is fetched after the result shows: it fades in when it lands (M9).
+  const boardArrival = useArrival(board !== null);
   const [note, setNote] = useState<string | null>(null);
   const sent = useRef<string | null>(null);
 
@@ -38,26 +42,26 @@ export function RunPanel({
 
   async function submit(kind: 'daily' | 'seed') {
     if (!run) return false;
-    const res = await fetch('/api/arcade/runs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    return api(submitArcadeRunApi, {
+      body: {
         kind,
         gameId: run.gameId,
-        seedKey: kind === 'daily' ? new Date().toISOString().slice(0, 10) : seedKey,
+        seedKey: kind === 'daily' ? new Date().toISOString().slice(0, 10) : seedKey!,
         score: Math.round(score),
         detail,
-      }),
-    }).catch(() => null);
-    return !!res?.ok;
+      },
+    }).then(
+      () => true,
+      () => false,
+    );
   }
 
   async function loadBoard() {
     if (!run || !seedKey) return;
-    const res = await fetch(
-      `/api/arcade/runs?gameId=${run.gameId}&seedKey=${encodeURIComponent(seedKey)}`,
-    ).catch(() => null);
-    if (res?.ok) setBoard(((await res.json()) as { board: Row[] }).board);
+    const res = await api(getSeedBoardApi, { query: { gameId: run.gameId, seedKey } }).catch(
+      () => null,
+    );
+    if (res) setBoard(res.board);
   }
 
   useEffect(() => {
@@ -105,7 +109,7 @@ export function RunPanel({
   }
 
   return (
-    <div className="glass-fill space-y-2 rounded-site p-4 text-sm text-site-text">
+    <div className="surface-card space-y-2 rounded-site p-4 text-sm text-site-text">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-site-text-muted">
           <Trophy className="h-4 w-4" aria-hidden />
@@ -114,7 +118,7 @@ export function RunPanel({
             : t('run-seed', { defaultValue: 'Seed {{seed}}', seed: run.seed })}
         </span>
         {run.kind !== 'daily' ? (
-          <Button size="xs" variant="outline" onClick={() => void share()}>
+          <Button size="xs" variant="default" onClick={() => void share()}>
             <Link2 aria-hidden />
             {t('share-seed', { defaultValue: 'Share this seed' })}
           </Button>
@@ -127,7 +131,7 @@ export function RunPanel({
         </p>
       ) : null}
       {board && board.length > 0 ? (
-        <ol className="space-y-0.5 text-xs">
+        <ol className={cn('space-y-0.5 text-xs', boardArrival)}>
           {board.map((r) => (
             <li
               key={r.rank}

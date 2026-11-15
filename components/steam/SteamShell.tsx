@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useMatch } from '@tanstack/react-router';
 import { Menu, MessageSquare, Plus, Settings, X } from 'lucide-react';

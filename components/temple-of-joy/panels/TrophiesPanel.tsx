@@ -6,7 +6,6 @@
  * — it is that every row is worth 4% on everything you own, and a player who
  * has not made that connection is leaving the late game on the table.
  */
-'use client';
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';

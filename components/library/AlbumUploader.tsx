@@ -1,3 +1,4 @@
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 /**
  * Admin album bulk uploader.
  *
@@ -275,13 +276,13 @@ export function AlbumUploader({
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   return (
-    <div className="glass-pane space-y-3 rounded-site p-5">
+    <div className="relative space-y-3 rounded-site p-5">
       <div
         className={cn(
           'flex w-full cursor-pointer flex-col items-center gap-2 rounded-site border-2 border-dashed px-5 py-8 text-center text-site-text-muted transition-colors duration-site-fast',
           dragging
-            ? 'border-site-accent bg-site-accent-dim text-site-text'
-            : 'border-site-border-bright hover:border-site-accent hover:text-site-text',
+            ? 'border-site-accent bg-site-bg-subtle text-site-text'
+            : 'border-site-text hover:border-site-accent hover:text-site-text',
         )}
         role="button"
         tabIndex={0}
@@ -374,7 +375,7 @@ function UploadRow({
   const pct = Math.round(it.progress * 100);
 
   return (
-    <li className="glass-fill flex items-center gap-3 rounded-site px-3 py-3">
+    <li className="flex items-center gap-3 rounded-site px-3 py-3">
       <div className="relative size-12 shrink-0 overflow-hidden rounded-site-sm bg-site-surface-active">
         {it.preview ? (
           <img src={it.preview} alt="" className="size-full object-cover" />
@@ -399,7 +400,7 @@ function UploadRow({
       </div>
 
       {it.status === 'error' && !it.permanent && (
-        <Button type="button" variant="accent-outline" size="xs" onClick={() => onRetry(it.id)}>
+        <Button type="button" variant="default" size="xs" onClick={() => onRetry(it.id)}>
           <RotateCw aria-hidden="true" /> Retry
         </Button>
       )}

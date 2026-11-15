@@ -6,11 +6,15 @@
  * sentence line, its tooltip, the live region), which cannot hold markup. Pure; client-safe.
  */
 
-const LRI = '⁦';
-const PDI = '⁩';
+const LRI =
+  '⁦';
+const PDI =
+  '⁩';
 
 /** `name` as its own left-to-right run. */
-export function isolateLtr(name: string): string {
+export function isolateLtr(
+  name: string,
+): string {
   return `${LRI}${name}${PDI}`;
 }
 
@@ -18,11 +22,28 @@ export function isolateLtr(name: string): string {
  * The names joined as `language` joins a list ("C, E and G"), each set as its own left-to-right
  * run. The connecting words stay in the sentence's own direction.
  */
-export function noteList(language: string, names: readonly string[]): string {
-  const items = names.map(isolateLtr);
+export function noteList(
+  language: string,
+  names: readonly string[],
+): string {
+  const items =
+    names.map(
+      isolateLtr,
+    );
   try {
-    return new Intl.ListFormat(language, { style: 'long', type: 'conjunction' }).format(items);
+    return new Intl.ListFormat(
+      language,
+      {
+        style:
+          'long',
+        type: 'conjunction',
+      },
+    ).format(
+      items,
+    );
   } catch {
-    return items.join(', ');
+    return items.join(
+      ', ',
+    );
   }
 }

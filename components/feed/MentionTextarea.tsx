@@ -1,5 +1,3 @@
-'use client';
-
 import {
  forwardRef,
  useCallback,
@@ -301,8 +299,8 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  />
  )}
  {/* PORTALLED. As an in-place `absolute z-50` this was measured inside
- `.radial-frame`'s stacking context (pinned at 1) — and the composer's root
- is `.glass-pane`, whose `backdrop-filter` opens a stacking context of its
+ the page frame's stacking context (pinned at 1) — and the composer's root
+ is `.surface-panel`, whose `backdrop-filter` opens a stacking context of its
  own, so the suggestion list painted behind the first feed card. It also had
  no collision flip: typing an @mention near the bottom of the screen ran the
  list off the viewport. `focusOnOpen={false}` — focus must stay in the
@@ -320,7 +318,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  >
  <div>
  {loading && suggestions.length === 0 ? (
- <div className="px-3 py-2 text-xs text-site-text-dim">{tl("searching", { defaultValue:"Searching..."})}</div>
+ <div className="px-3 py-2 text-xs text-site-text-muted">{tl("searching", { defaultValue:"Searching..."})}</div>
  ) : (
  suggestions.map((suggestion, i) => {
  const active = i === activeIndex;
@@ -358,7 +356,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  {highlightMatch(u.name || u.handle, query)}
  {u.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-site-accent shrink-0"/>}
  </span>
- <span className="block text-xs text-site-text-dim truncate">
+ <span className="block text-xs text-site-text-muted truncate">
  @{highlightMatch(u.handle ?? u.username, query)}
  </span>
  </span>
@@ -405,7 +403,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
  <span className="block text-sm text-site-text truncate">
  #{highlightMatch(t.tag, query)}
  </span>
- <span className="block text-xs text-site-text-dim">
+ <span className="block text-xs text-site-text-muted">
  {tl("tag-post-count", { count: t.count, defaultValue:"{{count}} posts"})}
  </span>
  </span>

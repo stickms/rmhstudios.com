@@ -1,11 +1,12 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { gameRouteHead } from '@/lib/seo-catalog';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 const SynapseStormGate = lazy(() =>
-  import('@/components/synapse-storm/SynapseStormGate').then((m) => ({
+  import('@features/synapse-storm/ui/SynapseStormGate').then((m) => ({
     default: m.SynapseStormGate,
   })),
 );
@@ -13,9 +14,9 @@ const SynapseStormGate = lazy(() =>
 function SynapseStormPage() {
   return (
     <GameErrorBoundary gameName="Synapse Storm">
-      <Suspense fallback={<GameLoadingFallback />}>
+      <ArrivalSuspense fallback={<GameLoadingFallback />}>
         <SynapseStormGate />
-      </Suspense>
+      </ArrivalSuspense>
     </GameErrorBoundary>
   );
 }

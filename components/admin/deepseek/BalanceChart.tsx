@@ -24,7 +24,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
 
   if (points.length < 2) {
     return (
-      <p className="glass-fill rounded-site px-4 py-6 text-center text-sm text-site-text-muted">
+      <p className="py-4 t-body text-site-text-muted">
         {t('chart-empty', {
           defaultValue: 'Not enough samples in this window yet. One is recorded every hour.',
         })}
@@ -75,8 +75,8 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
   });
 
   return (
-    <div className="glass-fill rounded-site p-5">
-      <div className="mb-2 flex min-h-5 flex-wrap items-center justify-between gap-2 text-xs text-site-text-muted">
+    <div className="min-w-0">
+      <div className="mb-2 flex min-h-5 flex-wrap items-center justify-between gap-2 t-meta">
         <span>{t('chart-title', { defaultValue: 'Total balance per hour' })}</span>
         {cur && (
           <span className="tabular-nums text-site-text">
@@ -109,7 +109,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
               y={y(v) + 3}
               textAnchor="end"
               fontSize={10}
-              className="text-site-text-dim"
+              className="text-site-text-muted"
               fill="currentColor"
             >
               {v.toLocaleString(undefined, { maximumFractionDigits: 2 })}
@@ -120,7 +120,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
           x={PAD.left}
           y={H - 6}
           fontSize={10}
-          className="text-site-text-dim"
+          className="text-site-text-muted"
           fill="currentColor"
         >
           {fmtHour(points[0].hour)}
@@ -130,7 +130,7 @@ export function BalanceChart({ points, currency }: BalanceChartProps) {
           y={H - 6}
           textAnchor="end"
           fontSize={10}
-          className="text-site-text-dim"
+          className="text-site-text-muted"
           fill="currentColor"
         >
           {fmtHour(points[points.length - 1].hour)}

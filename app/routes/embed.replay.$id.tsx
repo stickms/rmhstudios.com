@@ -41,7 +41,7 @@ function EmbedReplay() {
   if (!replay) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-site-bg p-4">
-        <div className="glass-fill px-5 py-4 text-sm text-site-text-muted">
+        <div className="surface-card px-5 py-4 text-sm text-site-text-muted">
           {t('replay-not-embeddable', { defaultValue: 'This replay isn’t available to embed.' })}
         </div>
       </main>
@@ -50,11 +50,11 @@ function EmbedReplay() {
 
   return (
     <main className="bg-site-bg p-3">
-      <div className="glass-fill mx-auto max-w-xl p-4">
+      <div className="surface-card mx-auto max-w-xl p-4">
         <div className="mb-3 flex items-center justify-between">
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-site-text">{gameTitle(replay.game)}</p>
-            <p className="truncate text-xs text-site-text-dim">
+            <p className="truncate text-xs text-site-text-muted">
               {t('replay-by', { defaultValue: 'by' })} {replay.author.name ?? 'Someone'}
               {replay.score != null &&
                 ` · ${t('replay-score', { defaultValue: 'Score' })} ${replay.score}`}

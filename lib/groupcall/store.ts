@@ -27,11 +27,9 @@
  *    calls we have left are the steady state, not the edge case.
  */
 
-'use client';
-
 import { create } from 'zustand';
 import type { Socket } from 'socket.io-client';
-import { authClient } from '@/lib/auth-client';
+import { readSession } from '@/lib/session/live-session';
 import {
   createRealtimeClient,
   type RealtimeClient,
@@ -39,6 +37,8 @@ import {
 } from '@/lib/shared/realtime/client';
 import type { RealtimeStatus } from '@/lib/shared/realtime/types';
 import type { IceServer } from '@/lib/call/ice';
+import { api } from '@/lib/contract/client';
+import { getCallIceApi } from '@/lib/call/calls.contract';
 import {
   GCALL_C2S,
   GCALL_S2C,
@@ -347,9 +347,7 @@ let selfUserId: string | null = null;
 /** Fresh ICE servers, or `null` when the endpoint could not be reached. */
 async function fetchIceServers(): Promise<IceServer[] | null> {
   try {
-    const res = await fetch('/api/calls/ice');
-    if (!res.ok) throw new Error(String(res.status));
-    const body = (await res.json()) as { iceServers?: IceServer[] };
+    const body = await api(getCallIceApi, { retries: 0 });
     return body.iceServers ?? [];
   } catch {
     return null;
@@ -391,8 +389,8 @@ function startIceRefresh(bound: GroupCallMesh): void {
 
 async function resolveSelfId(): Promise<string | null> {
   if (selfUserId) return selfUserId;
-  const session = await authClient.getSession();
-  selfUserId = session?.data?.user?.id ?? null;
+  const session = await readSession();
+  selfUserId = session?.user.id ?? null;
   return selfUserId;
 }
 
@@ -600,9 +598,9 @@ export function initGroupCalls(): void {
       // client-supplied id would be an impersonation hole, so the server
       // ignores one — leaving the socket anonymous, which silently disables
       // every group-call handler and the `user:<id>` room a ring arrives on.
-      const session = await authClient.getSession();
-      selfUserId = session?.data?.user?.id ?? selfUserId;
-      return { token: session?.data?.session?.token };
+      const session = await readSession();
+      selfUserId = session?.user.id ?? selfUserId;
+      return { token: session?.session.token };
     },
     onStatus: (status) => store().setConnection(status),
     onConnect: (_socket, { isReconnect }) => {

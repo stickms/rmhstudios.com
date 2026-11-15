@@ -1,12 +1,18 @@
-'use client';
-
 import { useState } from 'react';
-import { Bookmark, BookmarkCheck } from 'lucide-react';
-import { toast } from 'sonner';
+import {
+  Bookmark,
+  BookmarkCheck,
+} from 'lucide-react';
+import { toast } from '@/lib/toast';
 import { useTranslation } from 'react-i18next';
 
 import { IconButton } from '@/components/ui/icon-button';
 import type { SaveEntityType } from '@/lib/saves/types';
+import { api } from '@/lib/contract/client';
+import {
+  saveItemApi,
+  unsaveItemApi,
+} from '@/lib/saves/saves.contract';
 
 /**
  * SaveButton (§4) — a reusable save toggle for any content. Optimistic; the
@@ -23,44 +29,137 @@ export function SaveButton({
   entityType: SaveEntityType;
   entityId: string;
   initialSaved?: boolean;
-  size?: 'icon-xs' | 'icon-sm' | 'icon' | 'icon-lg';
-  variant?: 'ghost' | 'outline' | 'secondary';
+  size?:
+    | 'icon-xs'
+    | 'icon-sm'
+    | 'icon'
+    | 'icon-lg';
+  variant?:
+    | 'ghost'
+    | 'default';
 }) {
-  const { t } = useTranslation('c-saves');
-  const [saved, setSaved] = useState(initialSaved);
-  const [busy, setBusy] = useState(false);
+  const {
+    t,
+  } =
+    useTranslation(
+      'c-saves',
+    );
+  const [
+    saved,
+    setSaved,
+  ] =
+    useState(
+      initialSaved,
+    );
+  const [
+    busy,
+    setBusy,
+  ] =
+    useState(
+      false,
+    );
 
   async function toggle() {
-    if (busy) return;
-    const next = !saved;
-    setBusy(true);
-    setSaved(next);
+    if (
+      busy
+    )
+      return;
+    const next =
+      !saved;
+    setBusy(
+      true,
+    );
+    setSaved(
+      next,
+    );
     try {
-      const res = await fetch('/api/saves', {
-        method: next ? 'POST' : 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entityType, entityId }),
-      });
-      if (!res.ok) throw new Error('save failed');
-      if (next) toast.success(t('saved', { defaultValue: 'Saved' }));
+      await api(
+        next
+          ? saveItemApi
+          : unsaveItemApi,
+        {
+          body: {
+            entityType,
+            entityId,
+          },
+        },
+      );
+      if (
+        next
+      )
+        toast.success(
+          t(
+            'saved',
+            {
+              defaultValue:
+                'Saved',
+            },
+          ),
+        );
     } catch {
-      setSaved(!next);
-      toast.error(t('error', { defaultValue: "Couldn't update saves" }));
+      setSaved(
+        !next,
+      );
+      toast.error(
+        t(
+          'error',
+          {
+            defaultValue:
+              "Couldn't update saves",
+          },
+        ),
+      );
     } finally {
-      setBusy(false);
+      setBusy(
+        false,
+      );
     }
   }
 
   return (
     <IconButton
-      icon={saved ? BookmarkCheck : Bookmark}
-      onClick={toggle}
-      disabled={busy}
-      aria-pressed={saved}
-      size={size}
-      variant={variant}
-      className={saved ? 'text-site-accent' : undefined}
-      label={saved ? t('unsave', { defaultValue: 'Remove from saves' }) : t('save', { defaultValue: 'Save' })}
+      icon={
+        saved
+          ? BookmarkCheck
+          : Bookmark
+      }
+      onClick={
+        toggle
+      }
+      disabled={
+        busy
+      }
+      aria-pressed={
+        saved
+      }
+      size={
+        size
+      }
+      variant={
+        variant
+      }
+      className={
+        saved
+          ? 'text-site-accent'
+          : undefined
+      }
+      label={
+        saved
+          ? t(
+              'unsave',
+              {
+                defaultValue:
+                  'Remove from saves',
+              },
+            )
+          : t(
+              'save',
+              {
+                defaultValue:
+                  'Save',
+              },
+            )
+      }
     />
   );
 }

@@ -1,5 +1,5 @@
 /**
- * OPT-02 — entry-chunk composition guard (docs/optimization-ideas-2026-08-05.md).
+ * OPT-02 — entry-chunk composition guard (docs/archive/2026/optimization-ideas-2026-08-05.md).
  *
  * OPT-01 (scripts/check-bundle-budget.ts) catches the SYMPTOM — bytes. This
  * catches the CAUSE: a package that must never sit in the entry chunk's static
@@ -22,7 +22,7 @@
  *
  * Byte attribution decodes each chunk's `mappings` and charges the bytes
  * between consecutive segments to `sources[sourceIndex]` — the same method
- * docs/performance-audit-2026-08-04.md used by hand to find the Discord SDK.
+ * docs/archive/2026/performance-audit-2026-08-04.md used by hand to find the Discord SDK.
  */
 /* eslint-disable no-console -- CI reporter intentionally writes a human-readable report */
 import { existsSync, readFileSync } from 'node:fs';
@@ -65,6 +65,18 @@ const FORBIDDEN: Record<string, string> = {
   zod: 'validators belong in *-schema.ts split points, not the shell',
   'emoji-picker-react': 'composer-only',
   'maplibre-gl': 'map routes only',
+  // Third-pass audit RT1 (2026-11-12): each of these left the entry closure in the commit that listed it.
+  sonner: 'loads on the first toast: import `toast` from @/lib/toast, never from sonner',
+  'better-auth':
+    'the shell reads the session from lib/session/live-session.ts; import @/lib/auth-client only from a page that signs in or manages an account, or dynamically at the action',
+  '@simplewebauthn/browser': 'passkeys: comes in with @/lib/auth-client, see better-auth',
+  '@radix-ui/react-dialog':
+    'a dialog opens behind an interaction: mount it lazily, as components/ui/confirm-dialog.tsx does its view',
+  'react-remove-scroll':
+    'the scroll lock under every Radix dialog and sheet: see @radix-ui/react-dialog',
+  'framer-motion':
+    'pages that animate import it; nothing the router loads with the route tree (a pendingComponent, a route head) may. See KNOWN_VIOLATIONS for what is left',
+  'motion-dom': "framer-motion's engine: see framer-motion",
 };
 
 /**
@@ -81,10 +93,24 @@ const FORBIDDEN: Record<string, string> = {
  * 2026-10-09 took it out: the last carriers were `lib/game/replay.ts` (read by
  * three route `head()`s for a title map — now `lib/game/replay-meta.ts`) and the
  * `/slice-it/` `validateSearch` schema (now the hand-rolled, zod-free
- * `lib/slice-it/library-search.ts`). Its baseline was deleted; `zod` in the
+ * `features/slice-it/engine/library-search.ts`). Its baseline was deleted; `zod` in the
  * entry is a plain FAIL again.
  */
-const KNOWN_VIOLATIONS: Record<string, { maxBytes: number; note: string }> = {};
+const KNOWN_VIOLATIONS: Record<string, { maxBytes: number; note: string }> = {
+  // Third-pass audit RT1, 2026-11-12. What is left of framer-motion in the closure is `<LazyMotion>` and
+  // `<MotionConfig>` in components/Providers.tsx: the provider every `m` component on the site reads its renderer
+  // from. It is 1,442 B of framer-motion, but `loadFeatures` imports `setFeatureDefinitions`, which motion-dom
+  // defines in the same module as the VisualElement class (25,832 B). Caps are those measurements + 2%. They come
+  // out when the provider leaves the shell, which needs every `m` user to sit under a provider of its own.
+  'framer-motion': {
+    maxBytes: 1_480,
+    note: '2026-11-12: <LazyMotion> + <MotionConfig> in components/Providers.tsx',
+  },
+  'motion-dom': {
+    maxBytes: 26_400,
+    note: '2026-11-12: VisualElement.mjs, pulled by <LazyMotion> through setFeatureDefinitions',
+  },
+};
 
 type SourceMap = {
   sources: string[];
@@ -331,7 +357,7 @@ async function main(): Promise<number> {
         '  because app/routeTree.gen.ts imports all 739 route modules statically and\n' +
         "  Start's splitter only lifts out route COMPONENTS. Anything else a route\n" +
         '  module touches at top level is a site-wide cost.\n' +
-        '  See docs/performance-audit-2026-08-04.md §"The rule this leaves behind".',
+        '  See docs/archive/2026/performance-audit-2026-08-04.md §"The rule this leaves behind".',
     );
     return 1;
   }

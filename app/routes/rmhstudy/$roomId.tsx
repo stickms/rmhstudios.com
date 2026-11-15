@@ -3,9 +3,11 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { noindexHead } from '@/lib/seo';
 import RmhStudyRoomPage from '@/components/rmhstudy/RmhStudyRoomPage';
 
 export const Route = createFileRoute('/rmhstudy/$roomId')({
+  head: () => noindexHead('Study Room'),
   component: function RmhStudyRoom() {
     const { roomId } = Route.useParams();
     // The original component uses useParams() from next/navigation internally.

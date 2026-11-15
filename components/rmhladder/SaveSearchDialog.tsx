@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BellRing, BookmarkPlus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { ListJobsFilters } from '@/lib/rmhladder/server/queries';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { api } from '@/lib/contract/client';
+import { saveSearchApi, type SavedSearchFilters } from '@/lib/rmhladder/searches.contract';
 
 export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
   const [open, setOpen] = useState(false);
@@ -26,22 +28,20 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
     if (!trimmed) return;
     setSaving(true);
     try {
-      const response = await fetch('/api/rmhladder/searches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await api(saveSearchApi, {
+        body: {
           name: trimmed,
           alertsOn,
+          // The server validates the preset / sort / program-type values and 400s on a stray one.
           filters: {
             preset: filters.preset,
             q: filters.q,
             cities: filters.cities,
             programTypes: filters.programTypes,
             sort: filters.sort,
-          },
-        }),
+          } as SavedSearchFilters,
+        },
       });
-      if (!response.ok) throw new Error('Could not save this search');
       toast.success('Search saved');
       setName('');
       setOpen(false);
@@ -55,7 +55,7 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button type="button" size="sm" variant="outline" className="min-h-11">
+        <Button type="button" size="sm" variant="default" className="min-h-11">
           <BookmarkPlus aria-hidden /> Save this search
         </Button>
       </DialogTrigger>
@@ -80,7 +80,7 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
               }}
             />
           </div>
-          <label className="glass-fill flex min-h-11 items-center gap-3 rounded-site-sm p-3 text-sm text-site-text">
+          <label className="flex min-h-11 items-center gap-3 rounded-site-sm p-3 text-sm text-site-text">
             <input
               type="checkbox"
               checked={alertsOn}
@@ -91,7 +91,7 @@ export function SaveSearchDialog({ filters }: { filters: ListJobsFilters }) {
           </label>
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <Button type="button" variant="default" onClick={() => setOpen(false)}>
             Cancel
           </Button>
           <Button

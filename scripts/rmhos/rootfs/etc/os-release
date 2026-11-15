@@ -1,0 +1,5 @@
+NAME="rmhOS"
+ID=rmhos
+ID_LIKE=alpine
+PRETTY_NAME="rmhOS"
+HOME_URL="https://rmhstudios.com/rmhos"

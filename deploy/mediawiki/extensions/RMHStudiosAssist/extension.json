@@ -1,0 +1,76 @@
+{
+	"name": "RMHStudiosAssist",
+	"version": "1.0.0",
+	"author": "RMH Studios",
+	"url": "https://rmhstudios.com",
+	"descriptionmsg": "rmhstudiosassist-desc",
+	"license-name": "MIT",
+	"type": "editor",
+	"requires": {
+		"MediaWiki": ">= 1.43.0"
+	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\RMHStudiosAssist\\": "includes/"
+	},
+	"Hooks": {
+		"EditPage::showEditForm:initial": "main"
+	},
+	"HookHandlers": {
+		"main": {
+			"class": "MediaWiki\\Extension\\RMHStudiosAssist\\Hooks"
+		}
+	},
+	"MessagesDirs": {
+		"RMHStudiosAssist": [
+			"i18n"
+		]
+	},
+	"ResourceFileModulePaths": {
+		"localBasePath": "resources",
+		"remoteExtPath": "RMHStudiosAssist/resources"
+	},
+	"ResourceModules": {
+		"ext.rmhstudiosAssist": {
+			"packageFiles": [
+				"assist.js"
+			],
+			"styles": [
+				"assist.css"
+			],
+			"dependencies": [
+				"jquery.textSelection",
+				"codex-styles"
+			],
+			"messages": [
+				"rmhstudiosassist-open",
+				"rmhstudiosassist-close",
+				"rmhstudiosassist-label",
+				"rmhstudiosassist-placeholder-new",
+				"rmhstudiosassist-placeholder-edit",
+				"rmhstudiosassist-write",
+				"rmhstudiosassist-revise",
+				"rmhstudiosassist-stop",
+				"rmhstudiosassist-undo",
+				"rmhstudiosassist-writing",
+				"rmhstudiosassist-note",
+				"rmhstudiosassist-done",
+				"rmhstudiosassist-summary",
+				"rmhstudiosassist-error-signin",
+				"rmhstudiosassist-error-signin-link",
+				"rmhstudiosassist-error-budget",
+				"rmhstudiosassist-error-forbidden",
+				"rmhstudiosassist-error-rate",
+				"rmhstudiosassist-error-offline",
+				"rmhstudiosassist-error-empty",
+				"rmhstudiosassist-error-failed"
+			]
+		}
+	},
+	"config": {
+		"RMHStudiosAssistSiteUrl": {
+			"value": "https://rmhstudios.com",
+			"description": "Origin of rmhstudios.com, which runs the assistant (POST /api/wiki/assist)."
+		}
+	},
+	"manifest_version": 2
+}

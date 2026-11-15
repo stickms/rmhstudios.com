@@ -45,8 +45,7 @@
  */
 
 import { z } from 'zod';
-import { games } from '@/lib/games';
-import { apps } from '@/lib/apps';
+import { games, apps } from '@/lib/catalog';
 import { getStreak } from '@/lib/streak.server';
 import { getBalance } from '@/lib/economy/ledger.server';
 import { levelInfo } from '@/lib/xp/levels';

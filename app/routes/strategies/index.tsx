@@ -6,46 +6,48 @@
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { appRouteHead } from '@/lib/seo-catalog';
 import { Puzzle, Shield, AlertTriangle, Moon, Trophy, Flame } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { useDoctrineReputation } from '@/hooks/useDoctrineReputation';
-import { useDoctrineSahur } from '@/hooks/useDoctrineSahur';
-import { XpBar } from '@/components/doctrine/reputation/xp-bar';
-import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
-import { StreakDisplay } from '@/components/doctrine/puzzles/streak-display';
-import { CrisisBanner } from '@/components/doctrine/coalition/crisis-banner';
-import { ProjectCard } from '@/components/doctrine/coalition/project-card';
-import { CountdownTimer } from '@/components/doctrine/countdown-timer';
+import { useDoctrineReputation } from '@features/doctrine/ui/hooks/useDoctrineReputation';
+import { useDoctrineSahur } from '@features/doctrine/ui/hooks/useDoctrineSahur';
+import { XpBar } from '@features/doctrine/ui/reputation/xp-bar';
+import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
+import { StreakDisplay } from '@features/doctrine/ui/puzzles/streak-display';
+import { CrisisBanner } from '@features/doctrine/ui/coalition/crisis-banner';
+import { ProjectCard } from '@features/doctrine/ui/coalition/project-card';
+import { CountdownTimer } from '@features/doctrine/ui/countdown-timer';
+import { api } from '@/lib/contract/client';
+import { getDoctrineTodayPuzzlesApi, listDoctrineIncidentsApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/')({
+  head: () => appRouteHead('rmh-strategies'),
   component: DashboardPage,
 });
 
 function DashboardPage() {
   const { t } = useTranslation("r-strategies");
-  const { data: rep } = useDoctrineReputation();
+  const { data: rep, isLoading: repLoading } = useDoctrineReputation();
   const { sahurActive, sahurCountdown } = useDoctrineSahur();
 
-  const { data: incidents } = useQuery({
+  const { data: incidents, isLoading: incidentsLoading } = useQuery({
     queryKey: ['doctrine', 'incidents'],
-    queryFn: async () => {
-      const res = await fetch('/api/doctrine/incidents?limit=3');
-      return res.json();
-    },
+    queryFn: () => api(listDoctrineIncidentsApi, { query: { limit: '3' }, retries: 0 }),
     staleTime: 30_000,
   });
 
   const { data: puzzles } = useQuery({
     queryKey: ['doctrine', 'puzzles', 'today'],
-    queryFn: async () => {
-      const res = await fetch('/api/doctrine/puzzles/today');
-      return res.json();
-    },
+    queryFn: () => api(getDoctrineTodayPuzzlesApi, { retries: 0 }),
     staleTime: 60_000,
   });
 
   const activeIncidents = incidents?.filter?.((i: { status: string }) => i.status === 'ACTIVE') ?? [];
+  const repArrival = useArrival(!repLoading);
+  const incidentsArrival = useArrival(!incidentsLoading);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -61,7 +63,7 @@ function DashboardPage() {
 
       {/* Reputation Overview */}
       {rep && (
-        <div className="rounded-xl p-5 space-y-4" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className={cn('rounded-xl p-5 space-y-4', repArrival)} style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center justify-between">
             <RankBadge xp={rep.totalXp} />
             <StreakDisplay streak={rep.currentStreak} longestStreak={rep.longestStreak} />
@@ -77,7 +79,7 @@ function DashboardPage() {
 
       {/* Active Incidents */}
       {activeIncidents.length > 0 && (
-        <div className="space-y-2">
+        <div className={cn('space-y-2', incidentsArrival)}>
           <h2 className="text-sm md:text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--doctrine-error)' }}>
             {t("active-incidents", { defaultValue: "Active Incidents" })}
           </h2>

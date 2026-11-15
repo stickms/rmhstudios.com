@@ -1,16 +1,12 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { toast } from 'sonner';
+import { Check } from 'lucide-react';
+import { toast } from '@/lib/toast';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Select } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { isEversionEnabled } from '@/lib/eversion/flags';
 import { useThemeStore } from '@/stores/themeStore';
 import {
   FONT_SCALES,
@@ -20,29 +16,22 @@ import {
   COLOR_VISION_HINTS,
   type FontScale,
   type ColorVisionMode,
-  type NavTransition,
-  NAV_TRANSITIONS,
-  isNavTransition,
   JELLY_MOTION_LEVELS,
-  ELECTRIC_ARC_MODES,
   isJellyMotion,
-  isElectricArcs,
   type JellyMotion,
-  type ElectricArcs,
 } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
-import { LiquidTabs } from '@/components/ui/liquid-tabs';
-import { JellyGroup } from '@/components/ui/jelly-group';
+import { Tabs } from '@/components/ui/tabs';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import {
+  setAppearancePrefsApi,
+  type AppearancePrefsInput,
+} from '@/lib/preferences/preferences.contract';
+import { api } from '@/lib/contract/client';
 
-async function persist(body: Record<string, unknown>) {
-  await fetch('/api/preferences/appearance', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(body),
-  }).catch(() => {});
+async function persist(body: AppearancePrefsInput) {
+  await api(setAppearancePrefsApi, { body }).catch(() => {});
 }
 
 const FONT_LABELS: Record<FontScale, string> = {
@@ -79,28 +68,14 @@ export function AppearancePanel() {
     store.setColorVision(value);
     void persist({ colorVision: value });
   }
-  function setNavTransition(value: NavTransition) {
-    store.setNavTransition(value);
-    void persist({ navTransition: value });
-  }
   function setJellyMotion(value: JellyMotion) {
     store.setJellyMotion(value);
     void persist({ jellyMotion: value });
   }
-  function setElectricArcs(value: ElectricArcs) {
-    store.setElectricArcs(value);
-    void persist({ electricArcs: value });
-  }
 
-  const jellyMotionLabels: Record<JellyMotion, string> = {
-    lively: t('jelly-motion-lively', { defaultValue: 'Lively' }),
-    calm: t('jelly-motion-calm', { defaultValue: 'Calm' }),
-    still: t('jelly-motion-still', { defaultValue: 'Still' }),
-  };
-  const electricArcLabels: Record<ElectricArcs, string> = {
-    full: t('electric-arcs-full', { defaultValue: 'Full' }),
-    clicks: t('electric-arcs-clicks', { defaultValue: 'Clicks only' }),
-    off: t('electric-arcs-off', { defaultValue: 'Off' }),
+  const globeMotionLabels: Record<JellyMotion, string> = {
+    lively: t('globe-motion-on', { defaultValue: 'On' }),
+    still: t('globe-motion-still', { defaultValue: 'Still' }),
   };
 
   function applyCustomAccent(hex: string) {
@@ -128,7 +103,7 @@ export function AppearancePanel() {
         title={t('text-size', { defaultValue: 'Text size' })}
         description={t('text-size-desc', { defaultValue: 'Scale the whole interface.' })}
       >
-        <LiquidTabs
+        <Tabs
           aria-label={t('text-size', { defaultValue: 'Text size' })}
           tabs={FONT_SCALES.map((scale) => ({ id: String(scale), label: FONT_LABELS[scale] }))}
           value={String(activeFontScale)}
@@ -141,7 +116,7 @@ export function AppearancePanel() {
         title={t('density', { defaultValue: 'Density' })}
         description={t('density-desc', { defaultValue: 'Compact tightens spacing.' })}
       >
-        <LiquidTabs
+        <Tabs
           aria-label={t('density', { defaultValue: 'Density' })}
           tabs={(['cozy', 'compact'] as const).map((d) => ({
             id: d,
@@ -203,44 +178,41 @@ export function AppearancePanel() {
             'Retint success, warning and danger colours so they stay distinguishable. Status labels also carry their own icon, so nothing depends on colour alone.',
         })}
       >
-        <JellyGroup
-          role="radiogroup"
-          aria-label={t('color-vision', { defaultValue: 'Colour vision' })}
-          orientation="vertical"
-          className="w-full"
-        >
+        <div role="radiogroup" aria-label={t('color-vision', { defaultValue: 'Colour vision' })}>
           {COLOR_VISION_MODES.map((mode) => (
-            <JellyGroup.Item
+            <button
               key={mode}
+              type="button"
               role="radio"
               aria-checked={store.colorVision === mode}
-              // A radio, not a toggle: its state is `aria-checked`.
-              aria-pressed={undefined}
-              selected={store.colorVision === mode}
               onClick={() => setColorVision(mode)}
+              className="settings-row settings-choice"
             >
-              <span className="flex flex-col whitespace-normal text-start">
-                <span className="text-sm font-medium text-site-text">
+              <span className="settings-row__text">
+                <span className="settings-row__name block">
                   {t(`color-vision-${mode}`, { defaultValue: COLOR_VISION_LABELS[mode] })}
                 </span>
-                <span className="text-xs text-site-text-muted">
+                <span className="settings-row__hint block">
                   {t(`color-vision-${mode}-hint`, { defaultValue: COLOR_VISION_HINTS[mode] })}
                 </span>
               </span>
-            </JellyGroup.Item>
+              {store.colorVision === mode ? (
+                <Check className="settings-choice__mark" aria-hidden />
+              ) : null}
+            </button>
           ))}
-        </JellyGroup>
+        </div>
 
         {/* A live swatch row: the three semantic colours as they will actually
             render, so the choice can be judged instead of guessed. */}
-        <div className="flex flex-wrap gap-2" aria-hidden>
-          <span className="rounded-site-sm border border-site-success/20 bg-site-success/10 px-3 py-1 text-xs font-semibold text-site-success">
+        <div className="flex flex-wrap gap-4" aria-hidden>
+          <span className="text-xs font-semibold text-site-success">
             ✓ {t('color-vision-sample-success', { defaultValue: 'Success' })}
           </span>
-          <span className="rounded-site-sm border border-site-warning/20 bg-site-warning/10 px-3 py-1 text-xs font-semibold text-site-warning">
+          <span className="text-xs font-semibold text-site-warning">
             ⚠ {t('color-vision-sample-warning', { defaultValue: 'Warning' })}
           </span>
-          <span className="rounded-site-sm border border-site-danger/20 bg-site-danger/10 px-3 py-1 text-xs font-semibold text-site-danger">
+          <span className="text-xs font-semibold text-site-danger">
             ✕ {t('color-vision-sample-danger', { defaultValue: 'Danger' })}
           </span>
         </div>
@@ -256,80 +228,39 @@ export function AppearancePanel() {
           checked={store.readableFont}
           onChange={setReadableFont}
         />
-        <NavTransitionRow value={store.navTransition} onChange={setNavTransition} />
-        <p className="py-3 text-sm leading-relaxed text-site-text-muted">
-          {t('globe-navigation-only-hint', {
-            defaultValue:
-              'The liquid globe flattens and turns inside out when you choose a destination. Other links open immediately.',
-          })}
-        </p>
         {/* Tilt effects (§5.5x C.3): only renders on platforms that gate device
             orientation behind a permission prompt (iOS). Self-contained consent. */}
         <TiltEffectsRow />
       </Section>
 
       <Section
-        title={t('jelly-motion', { defaultValue: 'Jelly motion' })}
-        description={t('jelly-motion-desc', {
+        title={t('globe-motion', { defaultValue: 'Globe motion' })}
+        description={t('globe-motion-desc', {
           defaultValue:
-            'How much the jelly surfaces move on their own. Still pauses all ambient motion and turns electric arcs off.',
+            'The globe drifts slowly when idle. Still stops the drift. Dragging it always works.',
         })}
       >
-        <LiquidTabs
-          aria-label={t('jelly-motion', { defaultValue: 'Jelly motion' })}
-          tabs={JELLY_MOTION_LEVELS.map((id) => ({ id, label: jellyMotionLabels[id] }))}
+        <Tabs
+          aria-label={t('globe-motion', { defaultValue: 'Globe motion' })}
+          tabs={JELLY_MOTION_LEVELS.map((id) => ({ id, label: globeMotionLabels[id] }))}
           value={store.jellyMotion}
           onChange={(id) => {
             if (isJellyMotion(id)) setJellyMotion(id);
           }}
         />
-        {/* Live preview: an ordinary glass card, so it shows exactly what the
-            chosen level does to every surface. Hover or press it. */}
-        <div className="glass-fill rounded-site p-4 text-center" data-testid="jelly-motion-preview">
-          <p className="text-sm text-site-text">
-            {t('jelly-motion-preview', {
-              defaultValue: 'Preview: hover or press this card to see how it moves.',
-            })}
-          </p>
-          <p className="mt-1 font-mono text-xs text-site-text-muted">{jellyMotionLabels[store.jellyMotion]}</p>
-        </div>
-      </Section>
-
-      <Section
-        title={t('electric-arcs', { defaultValue: 'Electric arcs' })}
-        description={t('electric-arcs-desc', {
-          defaultValue:
-            'Small sparks between surfaces and where you click. Turn them off if flicker bothers you.',
-        })}
-      >
-        <LiquidTabs
-          aria-label={t('electric-arcs', { defaultValue: 'Electric arcs' })}
-          tabs={ELECTRIC_ARC_MODES.map((id) => ({ id, label: electricArcLabels[id] }))}
-          value={store.electricArcs}
-          onChange={(id) => {
-            if (isElectricArcs(id)) setElectricArcs(id);
-          }}
-        />
-        {store.jellyMotion === 'still' && store.electricArcs !== 'off' ? (
-          <p className="text-xs text-site-text-muted">
-            {t('electric-arcs-still-note', {
-              defaultValue: 'Jelly motion is set to Still, so arcs stay off for now.',
-            })}
-          </p>
-        ) : null}
       </Section>
 
       {/* The theme gallery lives on the settings index, so the page named
           "Appearance" contained no way to change the theme. Point at it. */}
       <Section
         title={t('theme', { defaultValue: 'Theme' })}
-        description={t('theme-desc-two-themes', {
-          defaultValue: 'Midnight (the default) and Daylight.',
+        description={t('theme-desc-two-editions', {
+          defaultValue: 'Night (the default) and Day.',
         })}
       >
-        <Button asChild variant="outline">
+        <Button asChild variant="default">
           <Link to="/settings" hash="appearance">
-            {t('browse-themes', { defaultValue: 'Browse themes' })}
+            {t('choose-edition', { defaultValue: 'Choose an edition' })}
           </Link>
         </Button>
       </Section>
@@ -371,118 +302,12 @@ export function ToggleRow({
   disabled?: boolean;
 }) {
   return (
-    <label className="flex items-center justify-between gap-4 py-2.5">
-      <span className="min-w-0">
-        <span className="block text-sm text-site-text">{label}</span>
-        {description ? (
-          <span className="block text-xs text-site-text-muted">{description}</span>
-        ) : null}
+    <label className="chrome-row settings-row">
+      <span className="settings-row__text">
+        <span className="settings-row__name block">{label}</span>
+        {description ? <span className="settings-row__hint block">{description}</span> : null}
       </span>
       <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} />
     </label>
-  );
-}
-
-/**
- * The event the Preview button dispatches on `window` (spec §9.3). The eversion
- * controller does not exist yet (T31/T32), and this panel must not import the
- * heavy effect graph just to start a preview, so the contract is an event: T32
- * listens for it in the hub and calls `EversionController.preview()`. Until a
- * listener exists, dispatching it is a harmless no-op.
- */
-const EVERSION_PREVIEW_EVENT = 'rmh:eversion-preview';
-
-/**
- * "Navigation transition" (spec §9.3): which projection the globe eversion uses
- * between pages, or `random`. Every account and device uses the shared motion
- * scheme, so this choice and its preview are always available during rollout.
- *
- * Descriptions sit under the select for the CURRENT choice instead of inside
- * the option rows: the closed control must stay one line on a phone, and the
- * description is what a user is deciding by.
- */
-function NavTransitionRow({
-  value,
-  onChange,
-}: {
-  value: NavTransition;
-  onChange: (v: NavTransition) => void;
-}) {
-  const { t } = useTranslation('settings-appearance');
-  // The flag reads `location`, which does not exist during SSR; resolve after
-  // mount so the server and first client render agree (no row, no Preview). While
-  // the rollout flag is off the whole row is hidden: a control that changes
-  // nothing the visitor can see is worse than no control.
-  const [enabled, setEnabled] = useState(false);
-  useEffect(() => setEnabled(isEversionEnabled()), []);
-
-  const names: Record<NavTransition, string> = {
-    random: t('nav-transition-random', { defaultValue: 'Random' }),
-    mercator: t('nav-transition-mercator', { defaultValue: 'Mercator' }),
-    peirce: t('nav-transition-peirce', { defaultValue: 'Peirce quincuncial' }),
-    stereographic: t('nav-transition-stereographic', { defaultValue: 'Stereographic' }),
-    lambert: t('nav-transition-lambert', { defaultValue: 'Lambert azimuthal' }),
-    equirect: t('nav-transition-equirect', { defaultValue: 'Equirectangular' }),
-  };
-  const descriptions: Record<NavTransition, string> = {
-    random: t('nav-transition-random-desc', {
-      defaultValue: 'A different map each time, never the same twice in a row.',
-    }),
-    mercator: t('nav-transition-mercator-desc', {
-      defaultValue: 'The familiar wall-map unrolling, stretched toward the poles.',
-    }),
-    peirce: t('nav-transition-peirce-desc', {
-      defaultValue: 'The globe folds out into a square that tiles.',
-    }),
-    stereographic: t('nav-transition-stereographic-desc', {
-      defaultValue: 'The globe flattens from one pole outward into a disc.',
-    }),
-    lambert: t('nav-transition-lambert-desc', {
-      defaultValue: 'An equal-area disc centred on the page you are leaving.',
-    }),
-    equirect: t('nav-transition-equirect-desc', {
-      defaultValue: 'A plain grid of latitude and longitude, the simplest unrolling.',
-    }),
-  };
-
-  if (!enabled) return null;
-
-  return (
-    <div className="py-2.5">
-      <div className="flex items-center justify-between gap-4">
-        <Label htmlFor="nav-transition" className="min-w-0 text-sm text-site-text">
-          {t('nav-transition', { defaultValue: 'Navigation transition' })}
-        </Label>
-        <Select
-          id="nav-transition"
-          containerClassName="w-48 shrink-0"
-          value={value}
-          aria-describedby="nav-transition-hint"
-          onChange={(e) => {
-            if (isNavTransition(e.target.value)) onChange(e.target.value);
-          }}
-        >
-          {NAV_TRANSITIONS.map((id) => (
-            <option key={id} value={id}>
-              {names[id]}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <p id="nav-transition-hint" className="mt-1 text-xs text-site-text-muted">
-        {descriptions[value]}
-      </p>
-      {enabled ? (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="mt-2"
-          onClick={() => window.dispatchEvent(new CustomEvent(EVERSION_PREVIEW_EVENT))}
-        >
-          {t('nav-transition-preview', { defaultValue: 'Preview' })}
-        </Button>
-      ) : null}
-    </div>
   );
 }

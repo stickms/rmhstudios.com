@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached } from '@/lib/cached.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import { previousWeekKey, type TrickView } from './trick-week';
 
@@ -40,14 +40,18 @@ export { authorInclude };
 export async function getTrickOfTheWeek(): Promise<TrickView | null> {
   const week = previousWeekKey();
   const key = `nightrail:trick-of-week:${week}`;
-  const hit = apiCache.get<TrickView | null>(key);
-  if (hit !== undefined) return hit;
-  const row = await prisma.nightrailTrick.findFirst({
-    where: { week, votes: { gt: 0 } },
-    orderBy: [{ votes: 'desc' }, { score: 'desc' }],
-    include: authorInclude,
-  });
-  const view = row ? toTrickView(row, null) : null;
-  apiCache.set(key, view, 10 * 60_000);
-  return view;
+  // A null (nobody voted) is cached too, as before.
+  return cached(
+    key,
+    10 * 60_000,
+    async () => {
+      const row = await prisma.nightrailTrick.findFirst({
+        where: { week, votes: { gt: 0 } },
+        orderBy: [{ votes: 'desc' }, { score: 'desc' }],
+        include: authorInclude,
+      });
+      return row ? toTrickView(row, null) : null;
+    },
+    { l2: false },
+  );
 }

@@ -1,11 +1,9 @@
-'use client';
-
 /** K3 — `/settings/calendar`: the private calendar feed, plus shortcuts to polls and office hours. */
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import { CalendarCheck, CalendarClock, RefreshCw } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -13,6 +11,8 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { Input } from '@/components/ui/input';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { CalendarFeedView } from '@/lib/calendar/types';
@@ -26,6 +26,7 @@ export default function CalendarSettings() {
   const [feed, setFeed] = useState<CalendarFeedView | null>(null);
   const [busy, setBusy] = useState(false);
   const signedIn = !!session?.user;
+  const arrival = useArrival(feed !== null);
 
   useEffect(() => {
     if (isPending || !signedIn) return;
@@ -38,7 +39,6 @@ export default function CalendarSettings() {
   if (!signedIn) {
     return (
       <SignedOutPrompt
-        icon={CalendarCheck}
         title={t('feed-signed-out', { defaultValue: 'Sign in to get your calendar feed' })}
         callbackURL="/settings/calendar"
       />
@@ -86,7 +86,6 @@ export default function CalendarSettings() {
   return (
     <>
       <SettingsSection
-        icon={CalendarCheck}
         title={t('feed-title', { defaultValue: 'Calendar feed' })}
         description={t('feed-intro', {
           defaultValue:
@@ -107,30 +106,35 @@ export default function CalendarSettings() {
         {feed === null ? (
           <Skeleton className="h-11" />
         ) : feed.url ? (
-          <div className="space-y-2">
+          <div className={cn('space-y-2', arrival)}>
             <label className="block space-y-1 text-sm text-site-text">
               {t('feed-url', { defaultValue: 'Subscribe link' })}
               <div className="flex gap-2">
                 <Input readOnly value={feed.url} onFocus={(e) => e.currentTarget.select()} />
                 <CopyButton
                   value={feed.url}
-                  variant="outline"
+                  variant="default"
                   label={t('feed-copy', { defaultValue: 'Copy link' })}
                 />
               </div>
             </label>
-            <p className="text-xs text-site-text-dim">
+            <p className="text-xs text-site-text-muted">
               {t('feed-private', {
                 defaultValue:
                   'Anyone with this link can see your schedule. Keep it private, and make a new one if it leaks.',
               })}
             </p>
-            <Button variant="outline" size="sm" onClick={rotate} disabled={busy}>
+            <Button variant="default" size="sm" onClick={rotate} disabled={busy}>
               <RefreshCw /> {t('feed-rotate', { defaultValue: 'Make a new link' })}
             </Button>
           </div>
         ) : (
-          <Button variant="accent" onClick={() => void patch({ enabled: true })} disabled={busy}>
+          <Button
+            variant="default"
+            className={arrival}
+            onClick={() => void patch({ enabled: true })}
+            disabled={busy}
+          >
             {t('feed-create', { defaultValue: 'Create my calendar link' })}
           </Button>
         )}
@@ -143,15 +147,15 @@ export default function CalendarSettings() {
         })}
       >
         {feed && feed.slots.length === 0 ? (
-          <p className="text-sm text-site-text-muted">
+          <p className={cn('text-sm text-site-text-muted', arrival)}>
             {t('feed-slots-none', { defaultValue: 'Nothing is scheduled right now.' })}
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className={cn('space-y-3', arrival)}>
             {feed?.slots.map((s) => (
               <li
                 key={s.id}
-                className="glass-fill flex items-center justify-between gap-3 rounded-site px-4 py-3"
+                className="flex items-center justify-between gap-3 rounded-site px-4 py-3"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-site-text">
@@ -188,7 +192,7 @@ export default function CalendarSettings() {
       >
         <Link
           to="/when"
-          className="glass-fill flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+          className="flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
         >
           <CalendarCheck className="size-5 text-site-accent" aria-hidden />
           <span className="text-sm font-semibold text-site-text">
@@ -197,7 +201,7 @@ export default function CalendarSettings() {
         </Link>
         <Link
           to="/office-hours"
-          className="glass-fill flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
+          className="flex items-center gap-3 rounded-site px-4 py-3 hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
         >
           <CalendarClock className="size-5 text-site-accent" aria-hidden />
           <span className="text-sm font-semibold text-site-text">

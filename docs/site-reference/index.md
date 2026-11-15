@@ -59,14 +59,14 @@ How a game or app is wired into the site, plus leaderboards, saves and replays.
 :link: games
 :link-type: doc
 
-**Generated** from `lib/games.ts` — every game, including the unlisted ones.
+**Generated** from `lib/catalog` — every game, including the unlisted ones.
 :::
 
 :::{grid-item-card} App catalog
 :link: apps
 :link-type: doc
 
-**Generated** from `lib/apps.ts` — every application.
+**Generated** from `lib/catalog` — every application.
 :::
 
 ::::

@@ -1,7 +1,7 @@
 /**
  * O8 — `/admin/slice-it-content`.
  *
- * The page body is `components/slice-it/admin/ContentDashboard.tsx` and is
+ * The page body is `features/slice-it/ui/admin/ContentDashboard.tsx` and is
  * loaded lazily: `routeTree.gen.ts` imports every route module statically, so
  * anything this file touches at top level ships in the entry chunk that every
  * page on the site downloads (`scripts/check-bundle-budget.ts`, OPT-01). An
@@ -9,7 +9,8 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/_site/admin/slice-it-content')({
   // Title only, and no canonical: `lib/sitemap.ts` classifies this `admin`, so
@@ -20,15 +21,15 @@ export const Route = createFileRoute('/_site/admin/slice-it-content')({
 });
 
 const ContentDashboard = lazy(() =>
-  import('@/components/slice-it/admin/ContentDashboard').then((m) => ({
+  import('@features/slice-it/ui/admin/ContentDashboard').then((m) => ({
     default: m.ContentDashboard,
   })),
 );
 
 function ContentDashboardRoute() {
   return (
-    <Suspense fallback={null}>
+    <ArrivalSuspense fallback={null}>
       <ContentDashboard />
-    </Suspense>
+    </ArrivalSuspense>
   );
 }

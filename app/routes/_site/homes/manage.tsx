@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { Bell, Bookmark, Plus, Home as HomeIcon } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PageTabs } from '@/components/feed/PageTabs';
-import { type LiquidTab } from '@/components/ui/liquid-tabs';
+import { type TabItem } from '@/components/ui/tabs';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { SignedOutPrompt } from '@/components/ui/signed-out-prompt';
@@ -32,6 +32,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { ListingGrid } from '@/components/homes/ListingGrid';
 import { WatchManager } from '@/components/homes/WatchManager';
 import type { Listing } from '@/lib/homes/types';
+import { api } from '@/lib/contract/client';
+import { listMyHomeListingsApi } from '@/lib/homes/homes.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 const HOMES_TABS = ['listings', 'saved', 'alerts'] as const;
 type HomesTab = (typeof HOMES_TABS)[number];
@@ -69,9 +73,8 @@ function ListingShelf({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/homes/listings?scope=${scope}`)
-      .then((res) => (res.ok ? res.json() : { listings: [] }))
-      .catch(() => ({ listings: [] }))
+    api(listMyHomeListingsApi, { query: { scope } })
+      .catch(() => ({ listings: [] as Listing[] }))
       .then((data) => {
         if (cancelled) return;
         setListings(data.listings ?? []);
@@ -109,6 +112,7 @@ function HomesManagePage() {
   const { data: session, isPending } = useSession();
   const { tab = 'listings' } = Route.useSearch();
   const navigate = useNavigate();
+  const arrival = useArrival(!isPending);
 
   const setTab = useCallback(
     (next: string) => {
@@ -135,6 +139,7 @@ function HomesManagePage() {
     return (
       <PageLayout title={title} backTo="/homes" wide>
         <SignedOutPrompt
+          className={arrival}
           callbackURL="/homes/manage"
           title={t('homes-manage-signin', {
             defaultValue: 'Sign in to see your listings, saved homes and alerts.',
@@ -144,7 +149,7 @@ function HomesManagePage() {
     );
   }
 
-  const tabs: LiquidTab[] = [
+  const tabs: TabItem[] = [
     {
       id: 'listings',
       label: t('homes-tab-listings', { defaultValue: 'My listings' }),
@@ -161,7 +166,7 @@ function HomesManagePage() {
       backLabel={t('homes-back-to-browse', { defaultValue: 'Back to browse' })}
       wide
       headerRight={
-        <Button asChild size="sm" className="min-h-11">
+        <Button asChild>
           <Link
             to="/homes/submit"
             aria-label={t('homes-new-listing', { defaultValue: 'New listing' })}
@@ -182,7 +187,7 @@ function HomesManagePage() {
         aria-label={title}
       />
 
-      <div className="w-full px-4 pt-4 pb-12">
+      <div className={cn('w-full pt-2', arrival)}>
         {tab === 'listings' && (
           <div
             role="tabpanel"

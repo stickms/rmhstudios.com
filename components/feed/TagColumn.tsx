@@ -1,11 +1,10 @@
-'use client';
-
+/* eslint-disable local/no-adhoc-spinner -- in-button busy icon or inline status: <Spinner> renders role="status" and would join the control accessible name */
 import { useEffect, useState, useCallback, useRef } from'react';
 import { useTranslation } from'react-i18next';
 import { Hash, Loader2 } from'lucide-react';
 import { VirtualPostList } from'./VirtualPostList';
 import { ColumnHeader } from'./ColumnHeader';
-import { AsyncReveal } from'@/components/motion';
+import { useArrival } from '@/components/ui/arrive';
 import { Button } from'@/components/ui/button';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -28,6 +27,8 @@ export function TagColumn({
  const [hasMore, setHasMore] = useState(!!initialData?.hasMore);
  const [loading, setLoading] = useState(!seeded.current);
  const [loadingMore, setLoadingMore] = useState(false);
+ // Steel M9: posts fetched here replace the spinner; the loader's first page is there on first paint.
+ const arrival = useArrival(!loading);
 
  const load = useCallback(
  async (cur?: string) => {
@@ -75,22 +76,22 @@ export function TagColumn({
  <Spinner />
  </div>
  )}
- <AsyncReveal show={!loading}>
- {items.length === 0 ? (
+ {!loading &&
+ (items.length === 0 ? (
  <EmptyState
+ className={arrival}
  description={t('no-posts-with-tag', {
  tag,
  defaultValue:'No posts with #{{tag}} yet.',
  })}
  />
  ) : (
- <VirtualPostList items={items} />
- )}
- </AsyncReveal>
+ <VirtualPostList items={items} className={arrival} />
+ ))}
 
  {hasMore && (
  <div className="flex justify-center px-4 pt-4 pb-12">
- <Button variant="secondary"size="sm"onClick={loadMore} disabled={loadingMore}>
+ <Button variant="default"size="sm"onClick={loadMore} disabled={loadingMore}>
  {loadingMore ? (
  <Loader2 className="h-4 w-4 animate-spin"/>
  ) : (

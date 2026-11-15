@@ -10,7 +10,7 @@
 
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCachedPrefix } from '@/lib/cached.server';
 import { createNotification } from '@/lib/notifications.server';
 import {
   userChipSelect,
@@ -41,7 +41,7 @@ function liveItemWhere(now: Date) {
 }
 
 function bustNav(seriesId: string): void {
-  apiCache.invalidatePrefix(`series:nav:${seriesId}`);
+  void invalidateCachedPrefix(`series:nav:${seriesId}`);
 }
 
 /* --------------------------------- CRUD ---------------------------------- */
@@ -395,25 +395,29 @@ type LiveItem = { postId: string; position: number; handle: string | null };
 
 async function liveItems(seriesId: string): Promise<LiveItem[]> {
   const key = `series:nav:${seriesId}`;
-  const cached = apiCache.get<LiveItem[]>(key);
-  if (cached) return cached;
-  const rows = await prisma.postSeriesItem.findMany({
-    where: { seriesId, ...liveItemWhere(new Date()) },
-    orderBy: { position: 'asc' },
-    take: MAX_SERIES_POSTS,
-    select: {
-      postId: true,
-      position: true,
-      post: { select: { user: { select: { handle: true } } } },
+  return cached(
+    key,
+    NAV_CACHE_MS,
+    async () => {
+      const rows = await prisma.postSeriesItem.findMany({
+        where: { seriesId, ...liveItemWhere(new Date()) },
+        orderBy: { position: 'asc' },
+        take: MAX_SERIES_POSTS,
+        select: {
+          postId: true,
+          position: true,
+          post: { select: { user: { select: { handle: true } } } },
+        },
+      });
+      const items = rows.map((r) => ({
+        postId: r.postId,
+        position: r.position,
+        handle: r.post.user?.handle ?? null,
+      }));
+      return items;
     },
-  });
-  const items = rows.map((r) => ({
-    postId: r.postId,
-    position: r.position,
-    handle: r.post.user?.handle ?? null,
-  }));
-  apiCache.set(key, items, NAV_CACHE_MS);
-  return items;
+    { l2: false },
+  );
 }
 
 /** The "Part k of N" payload for one post, or null when it is not in a (live) series. */

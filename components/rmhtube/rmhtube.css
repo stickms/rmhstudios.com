@@ -17,7 +17,6 @@
   /* Ink paired to the accent fill (white on this red measures 3.28:1). */
   --app-accent-fg: #1c0808;
   --app-accent-hover: #c85b5b;
-  --app-font-display: 'Nunito', 'Segoe UI', system-ui, sans-serif;
 
   /* Video chrome wants a slimmer, quieter scrollbar than the app default. */
   --app-scrollbar-size: 6px;

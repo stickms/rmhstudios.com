@@ -27,8 +27,13 @@ export interface CagePaint {
   major: number;
 }
 
-export type CageTier = 'minor' | 'parallel' | 'major';
-export type InkTier = 'glass' | CageTier;
+export type CageTier =
+  | 'minor'
+  | 'parallel'
+  | 'major';
+export type InkTier =
+  | 'glass'
+  | CageTier;
 
 export interface InkTarget {
   material: THREE.ShaderMaterial;
@@ -38,7 +43,12 @@ export interface InkTarget {
 }
 
 /** The static scene sun, in view space. One direction, everywhere. */
-const SUN = new THREE.Vector3(-0.42, 0.78, 0.46).normalize();
+const SUN =
+  new THREE.Vector3(
+    -0.42,
+    0.78,
+    0.46,
+  ).normalize();
 
 /**
  * A pane of the glass.
@@ -52,49 +62,138 @@ export function glassMaterial(
   side: THREE.Side,
   strength: number,
 ): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    uniforms: {
-      uInk: { value: new THREE.Color() },
-      uAccent: { value: new THREE.Color() },
-      uAccentMix: { value: accentMix },
-      uStrength: { value: strength },
-      uSun: { value: SUN.clone() },
+  return new THREE.ShaderMaterial(
+    {
+      uniforms:
+        {
+          uInk: {
+            value:
+              new THREE.Color(),
+          },
+          uAccent:
+            {
+              value:
+                new THREE.Color(),
+            },
+          uAccentMix:
+            {
+              value:
+                accentMix,
+            },
+          uStrength:
+            {
+              value:
+                strength,
+            },
+          uSun: {
+            value:
+              SUN.clone(),
+          },
+        },
+      vertexShader:
+        GLASS_VERTEX,
+      fragmentShader:
+        GLASS_FRAGMENT,
+      transparent: true,
+      depthWrite: false,
+      side,
     },
-    vertexShader: GLASS_VERTEX,
-    fragmentShader: GLASS_FRAGMENT,
-    transparent: true,
-    depthWrite: false,
-    side,
-  });
+  );
 }
 
 /** One tier of the wireframe. */
 export function cageMaterial(): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    uniforms: {
-      uColor: { value: new THREE.Color() },
-      uCrest: { value: new THREE.Color() },
-      uAlpha: { value: 0.2 },
+  return new THREE.ShaderMaterial(
+    {
+      uniforms:
+        {
+          uColor:
+            {
+              value:
+                new THREE.Color(),
+            },
+          uCrest:
+            {
+              value:
+                new THREE.Color(),
+            },
+          uAlpha:
+            {
+              value: 0.2,
+            },
+        },
+      vertexShader:
+        CAGE_VERTEX,
+      fragmentShader:
+        CAGE_FRAGMENT,
+      transparent: true,
+      depthWrite: false,
     },
-    vertexShader: CAGE_VERTEX,
-    fragmentShader: CAGE_FRAGMENT,
-    transparent: true,
-    depthWrite: false,
-  });
+  );
 }
 
 /** Re-ink every material from the page's tokens. Cheap enough for a theme flip. */
-export function applyPaint(targets: readonly InkTarget[], paint: CagePaint): void {
-  const ink = new THREE.Color().setStyle(paint.ink);
-  const accent = new THREE.Color().setStyle(paint.accent);
-  for (const { material, tier, colour } of targets) {
-    if (tier === 'glass') {
-      (material.uniforms.uInk.value as THREE.Color).copy(colour ?? ink);
-      (material.uniforms.uAccent.value as THREE.Color).copy(colour ?? accent);
+export function applyPaint(
+  targets: readonly InkTarget[],
+  paint: CagePaint,
+): void {
+  const ink =
+    new THREE.Color().setStyle(
+      paint.ink,
+    );
+  const accent =
+    new THREE.Color().setStyle(
+      paint.accent,
+    );
+  for (const {
+    material,
+    tier,
+    colour,
+  } of targets) {
+    if (
+      tier ===
+      'glass'
+    ) {
+      (
+        material
+          .uniforms
+          .uInk
+          .value as THREE.Color
+      ).copy(
+        colour ??
+          ink,
+      );
+      (
+        material
+          .uniforms
+          .uAccent
+          .value as THREE.Color
+      ).copy(
+        colour ??
+          accent,
+      );
     } else {
-      (material.uniforms.uColor.value as THREE.Color).copy(colour ?? ink);
-      (material.uniforms.uCrest.value as THREE.Color).copy(accent);
-      material.uniforms.uAlpha.value = paint[tier];
+      (
+        material
+          .uniforms
+          .uColor
+          .value as THREE.Color
+      ).copy(
+        colour ??
+          ink,
+      );
+      (
+        material
+          .uniforms
+          .uCrest
+          .value as THREE.Color
+      ).copy(
+        accent,
+      );
+      material.uniforms.uAlpha.value =
+        paint[
+          tier
+        ];
     }
   }
 }
@@ -109,22 +208,57 @@ export function applyPaint(targets: readonly InkTarget[], paint: CagePaint): voi
    normalised value, and rejects what it cannot by leaving the previous one in
    place — which is also how a value that must not be passed on is detected. */
 
-let probe: CanvasRenderingContext2D | null | undefined;
+let probe:
+  | CanvasRenderingContext2D
+  | null
+  | undefined;
 
 /** A CSS colour three.js can take, or `null` if the engine cannot parse it. */
-export function resolveColor(value: string): string | null {
-  const raw = value.trim();
-  if (!raw) return null;
-  if (probe === undefined) probe = document.createElement('canvas').getContext('2d');
-  if (!probe) return null;
+export function resolveColor(
+  value: string,
+):
+  | string
+  | null {
+  const raw =
+    value.trim();
+  if (
+    !raw
+  )
+    return null;
+  if (
+    probe ===
+    undefined
+  )
+    probe =
+      document
+        .createElement(
+          'canvas',
+        )
+        .getContext(
+          '2d',
+        );
+  if (
+    !probe
+  )
+    return null;
   // Set from two different starting points: an unparseable value leaves each one
   // where it was, so the two answers disagree and the value is rejected.
-  probe.fillStyle = '#000000';
-  probe.fillStyle = raw;
-  const fromBlack = probe.fillStyle;
-  probe.fillStyle = '#ffffff';
-  probe.fillStyle = raw;
-  return probe.fillStyle === fromBlack ? String(fromBlack) : null;
+  probe.fillStyle =
+    '#000000';
+  probe.fillStyle =
+    raw;
+  const fromBlack =
+    probe.fillStyle;
+  probe.fillStyle =
+    '#ffffff';
+  probe.fillStyle =
+    raw;
+  return probe.fillStyle ===
+    fromBlack
+    ? String(
+        fromBlack,
+      )
+    : null;
 }
 
 /**
@@ -132,13 +266,37 @@ export function resolveColor(value: string): string | null {
  * element's own resolved `color` — which is `--site-text` by inheritance on
  * every theme, already normalised, and can never be missing.
  */
-export function readToken(cs: CSSStyleDeclaration, name: string, fallback: string): string {
-  return resolveColor(cs.getPropertyValue(name)) ?? fallback;
+export function readToken(
+  cs: CSSStyleDeclaration,
+  name: string,
+  fallback: string,
+): string {
+  return (
+    resolveColor(
+      cs.getPropertyValue(
+        name,
+      ),
+    ) ??
+    fallback
+  );
 }
 
-export function readAlpha(cs: CSSStyleDeclaration, name: string, dflt: number): number {
-  const parsed = parseFloat(cs.getPropertyValue(name));
-  return Number.isFinite(parsed) ? parsed : dflt;
+export function readAlpha(
+  cs: CSSStyleDeclaration,
+  name: string,
+  dflt: number,
+): number {
+  const parsed =
+    parseFloat(
+      cs.getPropertyValue(
+        name,
+      ),
+    );
+  return Number.isFinite(
+    parsed,
+  )
+    ? parsed
+    : dflt;
 }
 
 /* ── Shaders ─────────────────────────────────────────────────────────────── */

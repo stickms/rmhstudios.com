@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Monthly coin statement (C4) — the wallet's "Statement" tab. Lazy-loaded when
  * the tab opens. Read-only: it summarises the ledger and links the CSV download.
@@ -11,6 +9,8 @@ import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import {
   STATEMENT_CSV_MAX_ROWS,
@@ -30,6 +30,7 @@ export default function StatementPanel() {
     queryFn: () => apiJson<StatementSummary>(`/api/coins/statement?month=${month}`),
     staleTime: 60_000,
   });
+  const arrival = useArrival(!isLoading);
 
   const fmtMonth = new Intl.DateTimeFormat(i18n.language, {
     month: 'long',
@@ -61,7 +62,7 @@ export default function StatementPanel() {
 
   return (
     <div className="space-y-3 px-3 pb-12">
-      <div className="glass-pane flex flex-wrap items-end justify-between gap-3 p-4">
+      <div className="flex flex-wrap items-end justify-between gap-3 p-4">
         <div className="min-w-0 space-y-1">
           <label htmlFor="stmt-month" className="site-section-label block">
             {t('stmt-month', { defaultValue: 'Statement month' })}
@@ -79,7 +80,7 @@ export default function StatementPanel() {
             ))}
           </Select>
         </div>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="default" size="sm">
           <a href={`/api/coins/statement?month=${month}&format=csv`} download>
             <Download /> {t('stmt-download', { defaultValue: 'Download CSV' })}
           </a>
@@ -89,13 +90,13 @@ export default function StatementPanel() {
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
       ) : isError || !data ? (
-        <p className="px-1 text-sm text-site-danger">
+        <p className={cn('px-1 text-sm text-site-danger', arrival)}>
           {t('stmt-error', { defaultValue: "Couldn't load that statement." })}
         </p>
       ) : (
         <>
-          <dl className="grid grid-cols-2 gap-3">
-            <div className="glass-fill p-4">
+          <dl className={cn('grid grid-cols-2 gap-3', arrival)}>
+            <div className="p-4">
               <dt className="text-xs text-site-text-muted">
                 {t('stmt-opening', { defaultValue: 'Opening balance' })}
               </dt>
@@ -103,7 +104,7 @@ export default function StatementPanel() {
                 <CoinIcon className="size-4" /> {n(data.openingBalance)}
               </dd>
             </div>
-            <div className="glass-fill p-4">
+            <div className="p-4">
               <dt className="text-xs text-site-text-muted">
                 {t('stmt-closing', { defaultValue: 'Closing balance' })}
               </dt>
@@ -113,7 +114,7 @@ export default function StatementPanel() {
             </div>
           </dl>
 
-          <div className="glass-fill overflow-x-auto">
+          <div className={cn('overflow-x-auto', arrival)}>
             <table className="w-full min-w-[22rem] text-sm">
               <caption className="sr-only">
                 {t('stmt-table-caption', { defaultValue: 'Coin movement by category' })}
@@ -178,7 +179,7 @@ export default function StatementPanel() {
           </div>
 
           {data.rowCount > STATEMENT_CSV_MAX_ROWS ? (
-            <p className="px-1 text-xs text-site-text-muted">
+            <p className={cn('px-1 text-xs text-site-text-muted', arrival)}>
               {t('stmt-truncated', {
                 defaultValue:
                   'This month has more than {{max}} entries; the CSV contains the first {{max}}.',
@@ -186,7 +187,7 @@ export default function StatementPanel() {
               })}
             </p>
           ) : null}
-          <p className="px-1 text-xs text-site-text-muted">
+          <p className={cn('px-1 text-xs text-site-text-muted', arrival)}>
             {t('stmt-note', {
               defaultValue:
                 'Months run from the 1st at 00:00 UTC. The opening balance is the closing balance less the month’s net change.',

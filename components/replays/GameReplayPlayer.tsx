@@ -77,17 +77,17 @@ export function GameReplayPlayer({
   return (
     <div className="flex w-full flex-col items-center gap-6">
       {!versionMatch && (
-        <div className="glass-fill w-full max-w-md px-4 py-3 text-center text-sm text-site-text-muted">
+        <div className="surface-card w-full max-w-md px-4 py-3 text-center text-sm text-site-text-muted">
           {t('replay-version-mismatch', {
             defaultValue:
               'This replay was recorded on an older version of the game. Showing a simplified timeline.',
           })}{' '}
-          <span className="text-site-text-dim">({version})</span>
+          <span className="text-site-text-muted">({version})</span>
         </div>
       )}
 
       {/* Stage */}
-      <div className="glass-pane flex min-h-[280px] w-full items-center justify-center p-6">
+      <div className="surface-panel flex min-h-[280px] w-full items-center justify-center p-6">
         {total === 0 ? (
           <p className="text-sm text-site-text-muted">
             {t('replay-empty', { defaultValue: 'This replay has no recorded moves.' })}
@@ -114,7 +114,7 @@ export function GameReplayPlayer({
           className="h-2 w-full cursor-pointer appearance-none rounded-full bg-site-bg accent-site-accent"
           disabled={total === 0}
         />
-        <div className="mt-1 flex justify-between text-xs text-site-text-dim">
+        <div className="mt-1 flex justify-between text-xs text-site-text-muted">
           <span>
             {t('replay-move', { defaultValue: 'Move' })} {step} / {total}
           </span>
@@ -129,7 +129,7 @@ export function GameReplayPlayer({
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button
-          variant="secondary"
+          variant="default"
           size="icon"
           onClick={() => {
             setPlaying(false);
@@ -141,7 +141,7 @@ export function GameReplayPlayer({
         </Button>
 
         <Button
-          variant="accent"
+          variant="default"
           onClick={() => {
             if (atEnd) setStep(0);
             setPlaying((p) => !p);
@@ -157,7 +157,7 @@ export function GameReplayPlayer({
         </Button>
 
         <Button
-          variant="secondary"
+          variant="default"
           size="icon"
           onClick={() => {
             setPlaying(false);
@@ -168,7 +168,7 @@ export function GameReplayPlayer({
           <SkipForward aria-hidden />
         </Button>
 
-        <div className="glass-inset flex items-center gap-1 rounded-full p-1">
+        <div className="surface-field flex items-center gap-1 rounded-full p-1">
           {SPEEDS.map((s) => (
             <button
               key={s}
@@ -274,7 +274,7 @@ function GenericTimeline({ inputs, step }: { inputs: unknown[]; step: number }) 
 
   return (
     <div className="flex w-full max-w-md flex-col gap-2">
-      <p className="text-center text-xs uppercase tracking-wide text-site-text-dim">
+      <p className="text-center text-xs uppercase tracking-wide text-site-text-muted">
         {t('replay-timeline', { defaultValue: 'Event timeline' })}
       </p>
       <ol className="flex flex-col gap-1">
@@ -286,15 +286,15 @@ function GenericTimeline({ inputs, step }: { inputs: unknown[]; step: number }) 
             <li
               key={index}
               className={cn(
-                'glass-fill flex items-center gap-2 px-3 py-1.5 font-mono text-xs',
+                'surface-card flex items-center gap-2 px-3 py-1.5 font-mono text-xs',
                 active
                   ? 'border-site-accent bg-site-accent/10 text-site-text'
                   : played
                     ? 'text-site-text-muted'
-                    : 'border-site-border/50 bg-transparent text-site-text-dim',
+                    : 'border-site-border/50 bg-transparent text-site-text-muted',
               )}
             >
-              <span className="w-8 shrink-0 text-site-text-dim">#{index + 1}</span>
+              <span className="w-8 shrink-0 text-site-text-muted">#{index + 1}</span>
               <span className="truncate">{describeEvent(event)}</span>
             </li>
           );

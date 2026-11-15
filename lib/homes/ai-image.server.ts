@@ -15,7 +15,7 @@
 
 import OpenAI from 'openai';
 import { tryConsumeImageBudget } from '@/lib/rmhark-ai/image-budget.server';
-import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
+import { validateImageBuffer } from '@features/slice-it/engine/upload-validation';
 import { optimizeImage } from '@/lib/image-optimize';
 import { putObject } from '@/lib/storage/s3.server';
 import { feedImageKey, feedImageUrl, withImageDimensions } from '@/lib/storage/keys';

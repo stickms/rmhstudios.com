@@ -1,7 +1,7 @@
 /**
  * Nudge a recipient's denormalised DM-unread counter (Redis) when P04 writes a
  * message on their behalf. Mirrors `adjustDmUnread` in
- * `app/routes/api/messages/$conversationId.ts` — keep the key and TTL in sync
+ * `lib/messages/api/messages.$conversationId.server.ts` — keep the key and TTL in sync
  * with it and with the reader in `api/messages/stream.ts`.
  */
 

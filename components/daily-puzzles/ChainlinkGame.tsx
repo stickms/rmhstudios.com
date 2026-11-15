@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -40,11 +38,13 @@ import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { useSession } from '@/components/Providers';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
+import { useArrival } from '@/components/ui/arrive';
 
 const MAX_MIDDLE_LINKS = 6;
 
 function ChainlinkGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
     const [puzzle, setPuzzle] = useState<ChainlinkPuzzle | null>(null);
+    const arrival = useArrival(puzzle !== null);
 
     useEffect(() => {
         let cancelled = false;
@@ -58,7 +58,9 @@ function ChainlinkGameLoader({ dateKey, isToday }: { dateKey: string; isToday: b
     }, [dateKey]);
 
     if (!puzzle) return <PuzzleLoading title="Chainlink" emoji="🔗" />;
-    return <ChainlinkGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    const content = <ChainlinkGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+    // The puzzle replaces the loading panel: it fades in through a box-less wrapper (M9).
+    return arrival ? <div className="arrive-group">{content}</div> : content;
 }
 
 function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkPuzzle; dateKey: string; isToday: boolean }) {
@@ -239,10 +241,10 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
 
     const endpoint = (n: number, word: string, label: string) => (
         <div className="flex items-center gap-3">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-accent-dim text-xs font-bold text-site-accent">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-site-bg-subtle text-xs font-bold text-site-accent">
                 {n}
             </span>
-            <div className="glass-fill flex flex-1 items-baseline gap-2 rounded-site-sm border border-site-accent/40 px-4 py-3">
+            <div className="surface-card flex flex-1 items-baseline gap-2 rounded-site-sm border border-site-accent/40 px-4 py-3">
                 <span className="text-lg font-bold tracking-wide text-site-text">{word}</span>
                 <span className="text-xs text-site-text-muted">{label}</span>
             </div>
@@ -339,16 +341,16 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                 <div className="mt-6 flex flex-col gap-3">
                     <div className="flex flex-wrap items-center justify-center gap-2">
                         {chain.length < MAX_MIDDLE_LINKS && (
-                            <Button type="button" variant="secondary" onClick={handleAddLink}>
+                            <Button type="button" variant="default" onClick={handleAddLink}>
                                 <Plus aria-hidden />
                                 {t("add-link", { defaultValue: "Add Link" })}
                             </Button>
                         )}
-                        <Button type="button" variant="accent" onClick={handleSubmit}>
+                        <Button type="button" variant="default" onClick={handleSubmit}>
                             <Send aria-hidden />
                             {t("submit-chain", { defaultValue: "Submit Chain" })}
                         </Button>
-                        <Button type="button" variant="outline" onClick={handleGiveUp}>
+                        <Button type="button" variant="default" onClick={handleGiveUp}>
                             <X aria-hidden />
                             {t("give-up", { defaultValue: "Give Up" })}
                         </Button>
@@ -405,7 +407,7 @@ function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkP
                                             <span
                                                 className={`self-start rounded-site-sm border px-3 py-1 text-sm font-medium text-site-text ${
                                                     i === 0 || i === puzzle._exampleChain.length - 1
-                                                        ? 'border-site-accent/40 bg-site-accent-dim'
+                                                        ? 'border-site-accent/40 bg-site-bg-subtle'
                                                         : 'border-site-border bg-site-bg-subtle'
                                                 }`}
                                             >

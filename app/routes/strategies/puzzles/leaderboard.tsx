@@ -1,11 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RankBadge } from '@/components/doctrine/reputation/rank-badge';
+import { RankBadge } from '@features/doctrine/ui/reputation/rank-badge';
+import { api } from '@/lib/contract/client';
+import { getDoctrinePuzzleLeaderboardApi } from '@features/doctrine/engine/doctrine.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/strategies/puzzles/leaderboard')({
+  head: () => ({
+    meta: buildMeta({ title: 'Puzzle Leaderboard | RMH Strategies | RMH Studios', description: 'Top solvers across RMH Strategies puzzles.', path: '/strategies/puzzles/leaderboard' }),
+    links: [buildCanonical('/strategies/puzzles/leaderboard')],
+  }),
   component: LeaderboardPage,
 });
 
@@ -18,12 +27,10 @@ function LeaderboardPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['doctrine', 'leaderboard', mode, today],
-    queryFn: async () => {
-      const res = await fetch(`/api/doctrine/puzzles/leaderboard?mode=${mode}&date=${today}&limit=50`);
-      return res.json();
-    },
+    queryFn: () => api(getDoctrinePuzzleLeaderboardApi, { query: { mode, date: today, limit: '50' }, retries: 0 }),
     staleTime: 30_000,
   });
+  const arrival = useArrival(!isLoading);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
@@ -56,7 +63,7 @@ function LeaderboardPage() {
         {isLoading ? (
           <div className="p-8 text-center text-sm text-white/50">{t("loading", { defaultValue: "Loading..." })}</div>
         ) : (
-          <table className="w-full text-sm">
+          <table className={cn('w-full text-sm', arrival)}>
             <thead>
               <tr style={{ background: 'var(--doctrine-bg-secondary)' }}>
                 <th scope="col" className="text-left px-2.5 md:px-4 py-2 text-xs font-mono text-white/50">#</th>
@@ -66,7 +73,7 @@ function LeaderboardPage() {
               </tr>
             </thead>
             <tbody>
-              {data?.map?.((entry: { rank: number; user: { name: string; handle: string }; score: number; timeMs: number }, i: number) => (
+              {data?.map?.((entry, i) => (
                 <tr key={i} className="border-t border-white/[0.04] hover:bg-white/[0.02]">
                   <td className="px-2.5 md:px-4 py-2.5 md:py-2 font-mono text-white/60">{entry.rank}</td>
                   <td className="px-2.5 md:px-4 py-2.5 md:py-2 text-white/80">

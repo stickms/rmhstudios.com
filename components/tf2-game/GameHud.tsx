@@ -26,7 +26,6 @@
  * its hudlayout.res, and the full HUD editor can be opened over the match
  * (custom-hud/HudEditorOverlay; it has the keys, and offline play pauses).
  */
-'use client';
 
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -60,6 +59,7 @@ import { useMenuSource } from './menus/use-menu-source';
 import type { MenuCommand, MenuEntry } from '@/lib/tf2-game/client/menus/game-menu';
 import NetNotices from './NetNotices';
 import './tf2-game.css';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
 // The HUD picker and the HUD editor load when first opened.
 const HudPauseView = lazy(() => import('./custom-hud/HudPauseView'));
@@ -308,7 +308,7 @@ function HudBody({
       label: t('hud', { defaultValue: 'HUD' }),
       wide: true,
       render: ({ back }) => (
-        <Suspense fallback={<p className="text-sm text-(--app-text-muted)">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
+        <ArrivalSuspense fallback={<p className="text-sm text-app-text-muted">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
           <HudPauseView
             onBack={back}
             onEdit={() => {
@@ -316,7 +316,7 @@ function HudBody({
               setEditorOpen(true);
             }}
           />
-        </Suspense>
+        </ArrivalSuspense>
       ),
     });
     // Server: the room's administration (players — kick, make host / owner — the map, the settings, the
@@ -518,9 +518,9 @@ function HudBody({
         />
       ) : null}
       {loadoutOpen ? (
-        <Suspense fallback={<p className="tf2m-loadout-note">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
+        <ArrivalSuspense fallback={<p className="tf2m-loadout-note">{t('hud_loading', { defaultValue: 'Loading…' })}</p>}>
           <LoadoutPauseView onClose={toEscMenu} />
-        </Suspense>
+        </ArrivalSuspense>
       ) : null}
       <PauseMenu
         key={shown.kind === 'pause' ? shown.view : 'closed'}
@@ -626,7 +626,6 @@ export default function GameHud(props: GameHudProps) {
       data-game={game}
       data-calm={settings.reducedFlashing}
       data-touch={touch ? 'true' : undefined}
-      data-jelly="off"
       data-jelly-zone="playfield"
     >
       <div ref={probe} className="tf2g-safe-probe" aria-hidden="true" />

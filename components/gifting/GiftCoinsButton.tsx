@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Gifting v2 (§9) — "Gift coins" action: a token-styled button that opens a
  * small dialog (amount, optional note, "make it public" toggle) and POSTs to
@@ -9,7 +7,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Gift } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
+import { api } from '@/lib/contract/client';
+import { HttpError, serverError } from '@/lib/http';
+import { coinGiftApi } from '@/lib/gifting/gift.contract';
 import {
   Dialog,
   DialogContent,
@@ -35,7 +36,7 @@ interface GiftCoinsButtonProps {
   compact?: boolean;
   /** Extra classes for the trigger button. */
   className?: string;
-  variant?: 'accent' | 'outline' | 'ghost' | 'secondary' | 'accent-outline';
+  variant?: 'default' | 'ghost' | 'primary';
   onSent?: (amount: number) => void;
 }
 
@@ -44,7 +45,7 @@ export function GiftCoinsButton({
   recipientName,
   compact,
   className,
-  variant = 'accent-outline',
+  variant = 'default',
   onSent,
 }: GiftCoinsButtonProps) {
   const { t } = useTranslation('site');
@@ -60,19 +61,26 @@ export function GiftCoinsButton({
     if (amount < MIN || amount > MAX) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/coins/gift', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
+      const data = await api(coinGiftApi, {
+        body: {
           recipient,
           amount,
           note: note.trim() || undefined,
           public: isPublic,
-        }),
+        },
+      }).catch((e: unknown) => {
+        if (!(e instanceof HttpError)) throw e;
+        if (e.status === 401) {
+          toast.error(t('gift-coins-sign-in', { defaultValue: 'Please sign in to gift coins.' }));
+        } else {
+          toast.error(
+            serverError(e) || t('gift-coins-error', { defaultValue: 'Could not send gift' }),
+          );
+        }
+        return null;
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.ok) {
+      if (!data) return;
+      if (data.ok) {
         toast.success(
           t('gift-coins-success', {
             defaultValue: 'Sent {{amount}} coins{{recipient}} 🎁',
@@ -84,10 +92,8 @@ export function GiftCoinsButton({
         setNote('');
         setIsPublic(false);
         onSent?.(amount);
-      } else if (res.status === 401) {
-        toast.error(t('gift-coins-sign-in', { defaultValue: 'Please sign in to gift coins.' }));
       } else {
-        toast.error(data.error || t('gift-coins-error', { defaultValue: 'Could not send gift' }));
+        toast.error(t('gift-coins-error', { defaultValue: 'Could not send gift' }));
       }
     } finally {
       setSubmitting(false);
@@ -133,10 +139,9 @@ export function GiftCoinsButton({
                 type="button"
                 onClick={() => setAmount(a)}
                 aria-pressed={amount === a}
-                data-jelly
                 className={`rounded-site-sm border px-3 py-1.5 text-sm font-semibold transition-colors ${
                   amount === a
-                    ? 'border-site-accent bg-site-accent-dim text-site-text'
+                    ? 'border-site-accent bg-site-bg-subtle text-site-text'
                     : 'border-site-border text-site-text-muted hover:bg-site-surface-hover'
                 }`}
               >
@@ -187,7 +192,7 @@ export function GiftCoinsButton({
               {t('cancel', { defaultValue: 'Cancel' })}
             </Button>
             <Button
-              variant="accent"
+              variant="default"
               onClick={submit}
               disabled={submitting || amount < MIN || amount > MAX}
             >

@@ -18,11 +18,15 @@
 
 let offsetMs = 0;
 let hasSynced = false;
-let bestRtt = Infinity;
+let bestRtt =
+  Infinity;
 
 /** Server-clock "now" in ms, as best the client can estimate it. */
 export function getServerNow(): number {
-  return Date.now() + offsetMs;
+  return (
+    Date.now() +
+    offsetMs
+  );
 }
 
 /** Current estimated offset (serverTime - localTime), in ms. */
@@ -31,8 +35,14 @@ export function getClockOffset(): number {
 }
 
 /** Round trip of the sample the offset came from, in ms (null before one). */
-export function getBestRtt(): number | null {
-  return Number.isFinite(bestRtt) ? bestRtt : null;
+export function getBestRtt():
+  | number
+  | null {
+  return Number.isFinite(
+    bestRtt,
+  )
+    ? bestRtt
+    : null;
 }
 
 export function hasClockSync(): boolean {
@@ -43,13 +53,31 @@ export function hasClockSync(): boolean {
  * Record a pong. `clientTime` is what we sent; `serverTime` is the server's
  * clock at reply. Lower-RTT samples overwrite higher-RTT ones.
  */
-export function recordPong(clientTime: number, serverTime: number): void {
-  const nowLocal = Date.now();
-  const rtt = nowLocal - clientTime;
-  if (rtt < 0) return; // clock went backwards mid-flight; ignore
-  if (rtt <= bestRtt) {
-    bestRtt = rtt;
-    offsetMs = serverTime + rtt / 2 - nowLocal;
+export function recordPong(
+  clientTime: number,
+  serverTime: number,
+): void {
+  const nowLocal =
+    Date.now();
+  const rtt =
+    nowLocal -
+    clientTime;
+  if (
+    rtt <
+    0
+  )
+    return; // clock went backwards mid-flight; ignore
+  if (
+    rtt <=
+    bestRtt
+  ) {
+    bestRtt =
+      rtt;
+    offsetMs =
+      serverTime +
+      rtt /
+        2 -
+      nowLocal;
     hasSynced = true;
   }
 }
@@ -59,12 +87,14 @@ export function recordPong(clientTime: number, serverTime: number): void {
  * can settle on the current network conditions (e.g. after a tab-return).
  */
 export function beginClockSyncBurst(): void {
-  bestRtt = Infinity;
+  bestRtt =
+    Infinity;
 }
 
 /** Reset everything (on disconnect). */
 export function resetClock(): void {
   offsetMs = 0;
   hasSynced = false;
-  bestRtt = Infinity;
+  bestRtt =
+    Infinity;
 }

@@ -1,5 +1,3 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -47,6 +45,7 @@ import {
     PuzzleShareRow,
     PuzzleFootnote,
 } from '@/components/daily-puzzles/PuzzleShell';
+import { useArrival } from '@/components/ui/arrive';
 
 export function LightsOutGame() {
     const { t } = useTranslation("c-lights-out");
@@ -254,10 +253,11 @@ export function LightsOutGame() {
     // "Loading..." box; React reused that div as the board's column when the
     // effect above built the grid, so a 100x33 box became a 640x769 column and its
     // padding landed a frame later: 0.10 of layout shift under the 125% font
-    // scale, measured by testing/e2e/fouc.mjs (docs/fouc-audit-2026-10-06.md §9).
+    // scale, measured by testing/e2e/fouc.mjs (docs/archive/2026/fouc-audit-2026-10-06.md §9).
     // The grid is built in an effect rather than server-rendered because today's
     // puzzle depends on the visitor's LOCAL date, which the server cannot know.
     // (The `.app-page` document itself now lives in the /daily layout route.)
+    const arrival = useArrival(!!grid);
     if (!grid) {
         return (
             <PuzzlePage>
@@ -289,8 +289,9 @@ export function LightsOutGame() {
         on ? 'bg-site-warning text-site-warning-fg' : 'border border-site-border bg-site-bg-subtle';
     const hintRing = 'ring-2 ring-site-accent ring-offset-2 ring-offset-site-surface animate-pulse';
 
+    // The board arrives into the loading frame: the column fades in once it is built (M9).
     return (
-        <PuzzlePage>
+        <PuzzlePage className={arrival}>
             <PuzzleHeader
                 icon={<Sparkles />}
                 title={t("lights-out-title", { defaultValue: "Lights Out" })}
@@ -299,7 +300,7 @@ export function LightsOutGame() {
                 </>}
             >
                 {!isToday && (
-                    <Button type="button" variant="outline" size="sm" onClick={() => handleSelectDate(todayKey)}>
+                    <Button type="button" variant="default" size="sm" onClick={() => handleSelectDate(todayKey)}>
                         <ArrowLeft aria-hidden />
                         {t("back-to-todays-puzzle", { defaultValue: "Back to today's puzzle" })}
                     </Button>
@@ -330,7 +331,7 @@ export function LightsOutGame() {
                 </div>
 
                 {/* Grid */}
-                <div className="glass-pane mx-auto w-full max-w-xs rounded-site p-5">
+                <div className="surface-panel mx-auto w-full max-w-xs rounded-site p-5">
                     {isTriangle ? (
                         <div className="flex flex-col items-center gap-2 py-2">
                             {grid.map((row, r) => (
@@ -424,7 +425,7 @@ export function LightsOutGame() {
                 <div className="flex flex-wrap items-center justify-center gap-2">
                     <Button
                         type="button"
-                        variant="secondary"
+                        variant="default"
                         onClick={handleHint}
                         disabled={solved || hintsUsed >= 3}
                         title={t("hint-title", { defaultValue: "Highlight next move (3 per day)" })}
@@ -435,7 +436,7 @@ export function LightsOutGame() {
                     {hintsUsed >= 3 && !solved && (
                         <Button
                             type="button"
-                            variant="outline"
+                            variant="default"
                             className="border-site-danger/50 text-site-danger"
                             onClick={handleGiveUp}
                             title={t("give-up-title", { defaultValue: "End puzzle with DNF" })}
@@ -446,7 +447,7 @@ export function LightsOutGame() {
                     )}
                     <Button
                         type="button"
-                        variant="secondary"
+                        variant="default"
                         onClick={handleUndo}
                         disabled={solved || moveHistory.length === 0}
                         title={t("undo-title", { defaultValue: "Take back your last move" })}
@@ -456,7 +457,7 @@ export function LightsOutGame() {
                     </Button>
                     <Button
                         type="button"
-                        variant="secondary"
+                        variant="default"
                         onClick={initPuzzle}
                         disabled={solved}
                         title={t("restart-title", { defaultValue: "Restart this puzzle" })}
@@ -519,7 +520,7 @@ export function LightsOutGame() {
                                                 key={tier.label}
                                                 className={`flex items-center gap-3 rounded-site-sm px-3 py-1 text-xs ${
                                                     rating?.label === tier.label
-                                                        ? 'bg-site-accent-dim font-semibold text-site-text'
+                                                        ? 'bg-site-bg-subtle font-semibold text-site-text'
                                                         : 'text-site-text-muted'
                                                 }`}
                                             >
@@ -560,7 +561,7 @@ export function LightsOutGame() {
             <div className="mt-6 flex flex-col gap-3">
                 <Button
                     type="button"
-                    variant="secondary"
+                    variant="default"
                     className="w-full"
                     onClick={() => setShowHistory((prev) => !prev)}
                     aria-expanded={showHistory}
@@ -578,17 +579,17 @@ export function LightsOutGame() {
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                         >
-                            <ul className="glass-fill flex flex-col gap-2 rounded-site p-4">
+                            <ul className="surface-card flex flex-col gap-2 rounded-site p-4">
                                 {pastPuzzles.map((p) => (
                                     <li
                                         key={p.dateKey}
                                         className={`flex items-center justify-between gap-3 rounded-site-sm px-3 py-2 ${
-                                            p.dateKey === selectedDateKey ? 'bg-site-accent-dim' : 'bg-site-bg-subtle'
+                                            p.dateKey === selectedDateKey ? 'bg-site-bg-subtle' : 'bg-site-bg-subtle'
                                         }`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <span className="font-mono text-sm text-site-text-muted">{p.dateKey}</span>
-                                            <span className="text-xs text-site-text-dim">{p.shapeLabel}</span>
+                                            <span className="text-xs text-site-text-muted">{p.shapeLabel}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {p.save?.solved ? (
@@ -607,7 +608,7 @@ export function LightsOutGame() {
                                                     </span>
                                                 </>
                                             ) : (
-                                                <Button type="button" variant="outline" size="sm" onClick={() => handleSelectDate(p.dateKey)}>
+                                                <Button type="button" variant="default" size="sm" onClick={() => handleSelectDate(p.dateKey)}>
                                                     <Play aria-hidden />
                                                     {t("play-btn", { defaultValue: "Play" })}
                                                 </Button>

@@ -8,25 +8,70 @@
 import { z } from 'zod';
 import { httpUrl } from '@/lib/url-schema';
 
-import { MAX_LINK_LABEL_LENGTH, MAX_LINK_URL_LENGTH, MAX_PROFILE_LINKS } from './shared';
+import {
+  MAX_LINK_LABEL_LENGTH,
+  MAX_LINK_URL_LENGTH,
+  MAX_PROFILE_LINKS,
+} from './shared';
 
 export * from './shared';
 
-export const profileLinkCreateSchema = z.object({
-  url: httpUrl(MAX_LINK_URL_LENGTH),
-  label: z.string().trim().min(1).max(MAX_LINK_LABEL_LENGTH).optional().nullable(),
-});
+export const profileLinkCreateSchema =
+  z.object(
+    {
+      url: httpUrl(
+        MAX_LINK_URL_LENGTH,
+      ),
+      label:
+        z
+          .string()
+          .trim()
+          .min(
+            1,
+          )
+          .max(
+            MAX_LINK_LABEL_LENGTH,
+          )
+          .optional()
+          .nullable(),
+    },
+  );
 
-export const profileLinkUpdateSchema = z.object({
-  url: httpUrl(MAX_LINK_URL_LENGTH).optional(),
-  label: z.string().trim().max(MAX_LINK_LABEL_LENGTH).optional().nullable(),
-  position: z
-    .number()
-    .int()
-    .min(0)
-    .max(MAX_PROFILE_LINKS - 1)
-    .optional(),
-});
+export const profileLinkUpdateSchema =
+  z.object(
+    {
+      url: httpUrl(
+        MAX_LINK_URL_LENGTH,
+      ).optional(),
+      label:
+        z
+          .string()
+          .trim()
+          .max(
+            MAX_LINK_LABEL_LENGTH,
+          )
+          .optional()
+          .nullable(),
+      position:
+        z
+          .number()
+          .int()
+          .min(
+            0,
+          )
+          .max(
+            MAX_PROFILE_LINKS -
+              1,
+          )
+          .optional(),
+    },
+  );
 
-export type ProfileLinkCreateInput = z.infer<typeof profileLinkCreateSchema>;
-export type ProfileLinkUpdateInput = z.infer<typeof profileLinkUpdateSchema>;
+export type ProfileLinkCreateInput =
+  z.infer<
+    typeof profileLinkCreateSchema
+  >;
+export type ProfileLinkUpdateInput =
+  z.infer<
+    typeof profileLinkUpdateSchema
+  >;

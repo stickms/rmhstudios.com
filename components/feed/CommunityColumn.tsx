@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from'react';
 import { Link } from'@tanstack/react-router';
 import {
@@ -15,7 +13,6 @@ import {
 } from'lucide-react';
 import { formatDistanceToNow } from'date-fns';
 import { CommunityPlusBody } from'@/components/communities/CommunityPlusBody';
-import { Reveal } from'@/components/motion';
 import { VoiceRoomBanner } from'@/components/groupcall/VoiceRoomBanner';
 import { Spinner } from'@/components/ui/spinner';
 import { EmptyState } from'@/components/ui/empty-state';
@@ -24,12 +21,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from'@/components/ui
 import { useConfirm } from'@/components/ui/confirm-dialog';
 import { UserAvatar } from'@/components/ui/UserAvatar';
 import { useSession } from'@/components/Providers';
-import { toast } from'sonner';
+import { toast } from '@/lib/toast';
 import { useTranslation } from'react-i18next';
 import { useOptimisticAction } from'@/hooks/useOptimisticAction';
 import type { FeedItem } from'@/lib/feed-types';
 import { WatchControl } from'@/components/discovery/WatchControl';
 import { FindATimeLink } from'@/components/calendar/FindATimeLink';
+import { api } from '@/lib/contract/client';
+import { serverError } from '@/lib/http';
+import {
+ communityFeedApi,
+ communityMembersApi,
+ createCommunityAnnouncementApi,
+ deleteCommunityAnnouncementApi,
+ getCommunityApi,
+ joinCommunityApi,
+ removeCommunityMemberApi,
+ setCommunityMemberRoleApi,
+} from '@/lib/communities/communities.contract';
+import { useArrival } from '@/components/ui/arrive';
+import { cn } from '@/lib/utils';
 
 interface Announcement {
  id: string;
@@ -86,15 +97,23 @@ export function CommunityColumn({
  const { run: runJoin, pending: joining } = useOptimisticAction();
  const [announceOpen, setAnnounceOpen] = useState(false);
  const [membersOpen, setMembersOpen] = useState(false);
+ // Steel M9: a community fetched here replaces the spinner; the loader's is there on first paint.
+ const arrival = useArrival(!loading);
 
  const loadCommunity = useCallback(async () => {
- const res = await fetch(`/api/communities/${slug}`, { credentials:'include'});
- if (res.ok) setCommunity(await res.json());
+ try {
+ setCommunity(await api(getCommunityApi, { params: { slug } }));
+ } catch {
+ // Keep what is shown; a failed refresh is not user-visible.
+ }
  }, [slug]);
 
  const loadFeed = useCallback(async () => {
- const res = await fetch(`/api/communities/${slug}/feed`, { credentials:'include'});
- if (res.ok) setItems((await res.json()).items);
+ try {
+ setItems((await api(communityFeedApi, { params: { slug } })).items);
+ } catch {
+ // Keep what is shown; a failed refresh is not user-visible.
+ }
  }, [slug]);
 
  useEffect(() => {
@@ -115,37 +134,26 @@ export function CommunityColumn({
  setCommunity(
  (c) => c && { ...c, joined: !willJoin, memberCount: c.memberCount + (willJoin ? -1 : 1) },
  ),
- commit: () =>
- fetch(`/api/communities/${slug}/join`, { method:'POST', credentials:'include'}),
- reconcile: async (res) => {
- const data = await res.json().catch(() => ({}));
+ commit: async () => {
+ const data = await api(joinCommunityApi, { params: { slug }, body: {} });
  // Trust the server's authoritative membership flag.
  if (typeof data.joined ==='boolean')
  setCommunity((c) => c && { ...c, joined: data.joined });
  },
- onError: (_err, res) => {
- const fail = () =>
+ onError: (err) => {
  toast.error(
+ serverError(err) ??
  t('could-not-update-membership', { defaultValue:'Could not update membership'}),
  );
- if (res)
- res
- .json()
- .catch(() => ({}))
- .then((d: { error?: string }) => (d.error ? toast.error(d.error) : fail()));
- else fail();
  },
  });
  };
 
  const removeAnnouncement = async (id: string) => {
- const res = await fetch(`/api/communities/${slug}/announcements/${id}`, {
- method:'DELETE',
- credentials:'include',
- });
- if (res.ok) {
+ try {
+ await api(deleteCommunityAnnouncementApi, { params: { slug, id } });
  setCommunity((c) => c && { ...c, announcements: c.announcements.filter((a) => a.id !== id) });
- } else {
+ } catch {
  toast.error(t('could-not-delete', { defaultValue:'Could not delete'}));
  }
  };
@@ -164,6 +172,7 @@ export function CommunityColumn({
  if (!community) {
  return (
  <EmptyState
+ className={arrival}
  description={t('community-not-found', { defaultValue:'Community not found.'})}
  />
  );
@@ -172,8 +181,8 @@ export function CommunityColumn({
  const isMod = canModerate(community.role);
 
  return (
- <div>
- <header className="glass-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
+ <div className={arrival}>
+ <header className="surface-chrome site-sticky-chrome flex items-center gap-3 px-4 py-3">
  <Link
  to="/communities"
  className="text-site-text-muted hover:text-site-text"
@@ -181,10 +190,10 @@ export function CommunityColumn({
  >
  <ArrowLeft className="h-5 w-5"/>
  </Link>
- <h1 className="truncate text-lg font-bold text-site-text">{community.name}</h1>
+ <h1 className="truncate text-lg font-semibold text-site-text">{community.name}</h1>
  </header>
 
- <Reveal className="border-b border-site-border p-4">
+ <div className="border-b border-site-border p-4">
  <div className="flex items-start gap-3">
  <div
  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-2xl"
@@ -193,7 +202,7 @@ export function CommunityColumn({
  {community.icon ||'👥'}
  </div>
  <div className="min-w-0 flex-1">
- <h2 className="text-xl font-bold text-site-text">{community.name}</h2>
+ <h2 className="text-xl font-semibold text-site-text">{community.name}</h2>
  <div className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-site-text-muted">
  <span className="inline-flex items-center gap-1">
  <Users className="h-3.5 w-3.5"/>{''}
@@ -219,14 +228,14 @@ export function CommunityColumn({
  )}
  {session && community.joined && <WatchControl kind="community"targetId={community.id}/>}
  {session && (
- <Button size="sm"variant="outline"onClick={() => setMembersOpen(true)}>
+ <Button size="sm"variant="default"onClick={() => setMembersOpen(true)}>
  {t('members-button', { defaultValue:'Members'})}
  </Button>
  )}
  {session && (
  <Button
  size="sm"
- variant={community.joined ?'outline':'accent'}
+ variant={community.joined ?'default':'default'}
  disabled={joining}
  onClick={toggleJoin}
  >
@@ -240,7 +249,7 @@ export function CommunityColumn({
  {community.description && (
  <p className="mt-2 text-sm text-site-text-muted">{community.description}</p>
  )}
- </Reveal>
+ </div>
 
  {community.joined && (
  <VoiceRoomBanner
@@ -252,7 +261,7 @@ export function CommunityColumn({
 
  {/* Pinned announcements */}
  {(community.announcements.length > 0 || isMod) && (
- <Reveal delay={0.06} className="border-b border-site-border bg-site-accent-dim/30 p-4">
+ <div className="border-b border-site-border bg-site-bg-subtle/30 p-4">
  <div className="mb-2 flex items-center justify-between">
  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
  <Megaphone className="h-4 w-4 text-site-accent"/>{''}
@@ -265,7 +274,7 @@ export function CommunityColumn({
  )}
  </div>
  {community.announcements.length === 0 ? (
- <p className="text-xs text-site-text-dim">
+ <p className="text-xs text-site-text-muted">
  {t('no-announcements', { defaultValue:'No announcements yet.'})}
  </p>
  ) : (
@@ -273,7 +282,7 @@ export function CommunityColumn({
  {community.announcements.map((a) => (
  <li
  key={a.id}
- className="rounded-site glass-fill p-4"
+ className="rounded-site relative p-4"
  >
  <div className="flex items-start gap-2">
  <UserAvatar
@@ -304,7 +313,7 @@ export function CommunityColumn({
  <button
  type="button"
  onClick={() => removeAnnouncement(a.id)}
- className="shrink-0 rounded-site-sm p-1 text-site-text-dim hover:bg-site-surface-hover hover:text-site-text"
+ className="shrink-0 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
  aria-label={t('delete', { defaultValue:'Delete'})}
  >
  <X className="h-4 w-4"/>
@@ -315,7 +324,7 @@ export function CommunityColumn({
  ))}
  </ul>
  )}
- </Reveal>
+ </div>
  )}
 
  {/* Composer, tabs (posts · hall of fame · challenge · census · top · mod tools) */}
@@ -352,19 +361,18 @@ function AnnounceDialog({
  if (!body.trim()) return;
  setSubmitting(true);
  try {
- const res = await fetch(`/api/communities/${slug}/announcements`, {
- method:'POST',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ body: body.trim() }),
+ const data = await api(createCommunityAnnouncementApi, {
+ params: { slug },
+ body: { body: body.trim() },
  });
- const data = await res.json().catch(() => ({}));
- if (res.ok && data.announcement) {
+ if (data.announcement) {
  onPosted(data.announcement);
  onClose();
  } else {
- toast.error(data.error || t('could-not-post', { defaultValue:'Could not post'}));
+ toast.error(t('could-not-post', { defaultValue:'Could not post'}));
  }
+ } catch (err) {
+ toast.error(serverError(err) || t('could-not-post', { defaultValue:'Could not post'}));
  } finally {
  setSubmitting(false);
  }
@@ -387,13 +395,13 @@ function AnnounceDialog({
  placeholder={t('announcement-placeholder', {
  defaultValue:'Share an update with the community…',
  })}
- className="glass-inset border w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+ className="surface-field border w-full rounded-site-sm px-3 py-2 text-sm text-site-text placeholder:text-site-text-muted focus:border-site-accent focus:outline-none"
  />
  <div className="flex justify-end gap-2">
  <Button variant="ghost"onClick={onClose} disabled={submitting}>
  {t('cancel-button', { defaultValue:'Cancel'})}
  </Button>
- <Button variant="accent"onClick={submit} disabled={submitting || !body.trim()}>
+ <Button variant="default"onClick={submit} disabled={submitting || !body.trim()}>
  <Send className="h-4 w-4"/>{''}
  {submitting
  ? t('posting', { defaultValue:'Posting…'})
@@ -421,14 +429,17 @@ function MembersDialog({
  const [createdById, setCreatedById] = useState<string | null>(null);
  const [loading, setLoading] = useState(true);
  const [busy, setBusy] = useState<string | null>(null);
+ // Steel M9: the roster replaces the spinner inside the open dialog.
+ const membersArrival = useArrival(!loading);
 
  const load = useCallback(async () => {
- const res = await fetch(`/api/communities/${slug}/members`, { credentials:'include'});
- if (res.ok) {
- const data = await res.json();
+ try {
+ const data = await api(communityMembersApi, { params: { slug } });
  setMembers(data.members);
  setViewerRole(data.viewerRole);
  setCreatedById(data.createdById);
+ } catch {
+ // Leave the roster empty; the empty state explains it.
  }
  setLoading(false);
  }, [slug]);
@@ -440,15 +451,12 @@ function MembersDialog({
  const setRole = async (m: Member, role:'MEMBER'|'MOD') => {
  setBusy(m.id);
  try {
- const res = await fetch(`/api/communities/${slug}/members/${m.id}`, {
- method:'PATCH',
- headers: {'Content-Type':'application/json'},
- credentials:'include',
- body: JSON.stringify({ role }),
- });
- const data = await res.json().catch(() => ({}));
- if (res.ok) setMembers((prev) => prev.map((x) => (x.id === m.id ? { ...x, role } : x)));
- else toast.error(data.error || t('action-failed', { defaultValue:'Action failed'}));
+ try {
+ await api(setCommunityMemberRoleApi, { params: { slug, userId: m.id }, body: { role } });
+ setMembers((prev) => prev.map((x) => (x.id === m.id ? { ...x, role } : x)));
+ } catch (err) {
+ toast.error(serverError(err) || t('action-failed', { defaultValue:'Action failed'}));
+ }
  } finally {
  setBusy(null);
  }
@@ -467,13 +475,12 @@ function MembersDialog({
  return;
  setBusy(m.id);
  try {
- const res = await fetch(`/api/communities/${slug}/members/${m.id}`, {
- method:'DELETE',
- credentials:'include',
- });
- const data = await res.json().catch(() => ({}));
- if (res.ok) setMembers((prev) => prev.filter((x) => x.id !== m.id));
- else toast.error(data.error || t('action-failed', { defaultValue:'Action failed'}));
+ try {
+ await api(removeCommunityMemberApi, { params: { slug, userId: m.id } });
+ setMembers((prev) => prev.filter((x) => x.id !== m.id));
+ } catch (err) {
+ toast.error(serverError(err) || t('action-failed', { defaultValue:'Action failed'}));
+ }
  } finally {
  setBusy(null);
  }
@@ -500,7 +507,12 @@ function MembersDialog({
  <Spinner size={20} />
  </div>
  ) : (
- <ul className="max-h-[60vh] divide-y divide-site-border overflow-y-auto">
+ <ul
+ className={cn(
+ 'max-h-[60vh] divide-y divide-site-border overflow-y-auto',
+ membersArrival,
+ )}
+ >
  {members.map((m) => {
  const isOwner = m.id === createdById;
  const canTouch = isMod && !isOwner && m.id !== viewerId && m.role !=='ADMIN';
@@ -520,7 +532,7 @@ function MembersDialog({
  {m.name ??
  (m.handle ? `@${m.handle}`: t('someone', { defaultValue:'Someone'}))}
  </p>
- <p className="text-xs text-site-text-dim">{roleLabel(m.role)}</p>
+ <p className="text-xs text-site-text-muted">{roleLabel(m.role)}</p>
  </div>
  {canAlterMod && (
  <button

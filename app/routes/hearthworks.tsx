@@ -1,10 +1,11 @@
-import { lazy, Suspense } from 'react';
+import { lazy } from 'react';
 import { ClientOnly, createFileRoute } from '@tanstack/react-router';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
 import { buildCanonical, buildMeta, ogCardPath } from '@/lib/seo';
+import { ArrivalSuspense } from '@/components/ui/arrive';
 
-const HearthworksGame = lazy(() => import('@/components/hearthworks/HearthworksGame'));
+const HearthworksGame = lazy(() => import('@features/hearthworks/ui/HearthworksGame'));
 
 const SKY = '#dff3f8';
 const INK = '#1f6a74';
@@ -19,9 +20,9 @@ function HearthworksPage() {
         <GameErrorBoundary gameName="Hearthworks">
           {/* <Canvas> cannot render on the server, so SSR emits the fallback and the world mounts after hydration. */}
           <ClientOnly fallback={<GameLoadingFallback background={SKY} foreground={INK} />}>
-            <Suspense fallback={<GameLoadingFallback background={SKY} foreground={INK} />}>
+            <ArrivalSuspense fallback={<GameLoadingFallback background={SKY} foreground={INK} />}>
               <HearthworksGame />
-            </Suspense>
+            </ArrivalSuspense>
           </ClientOnly>
         </GameErrorBoundary>
       </div>

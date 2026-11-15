@@ -3,7 +3,7 @@ import RmhtechLanding from '@/components/rmhtech/RmhtechLanding'
 import rmhtechCss from '@/components/rmhtech/rmhtech.css?url'
 import { buildMeta, buildCanonical } from '@/lib/seo'
 // Fraunces, self-hosted with `font-display: optional` (app/fonts/), its upright
-// Latin file — the headlines — preloaded. JetBrains Mono is the site's own. See
+// Latin file — the headlines — preloaded. Geist Mono is the site's own. See
 // lib/fonts/self-hosted.ts.
 import frauncesCss from '@/app/fonts/fraunces.css?url'
 import frauncesLatin from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url'
