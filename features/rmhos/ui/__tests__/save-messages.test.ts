@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { reportSave } from '../save-messages';
+import { BackupError } from '../../engine/home-sync';
+import {
+  copyTime,
+  putBackCopy,
+  reportRestoreError,
+  reportSave,
+  restoreFailureCopy,
+} from '../save-messages';
 
 describe('reportSave', () => {
   it.each([
@@ -16,5 +23,37 @@ describe('reportSave', () => {
     [{ status: 'failed', code: 'whatever' }, { kind: 'toast', key: 'not-saved' }],
   ] as const)('%j', (result, expected) => {
     expect(reportSave(result as never)).toEqual(expected);
+  });
+});
+
+/** A stand-in for t(): the defaultValue with {{x}} filled in, like i18next does for English. */
+const t = (_key: string, o: { defaultValue: string; [k: string]: unknown }) =>
+  o.defaultValue.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => String(o[k]));
+
+describe('reportRestoreError', () => {
+  it.each([
+    [new BackupError('invalid'), 'invalid'],
+    [new BackupError('storage-full'), 'storage-full'],
+    [new BackupError('storage_error'), 'not-stored'],
+    [new BackupError('damaged_exists'), 'damaged-exists'],
+    [new BackupError('previous_stale'), 'stale'],
+    [new Error('anything else'), 'not-stored'],
+  ] as const)('%s', (e, expected) => expect(reportRestoreError(e)).toBe(expected));
+});
+
+describe('the copy of a restore', () => {
+  it('a full browser says the backup was not restored and the current files are unchanged', () => {
+    const text = restoreFailureCopy(t, 'storage-full');
+    expect(text).toBe(
+      'Browser storage is full. The backup was not restored. Your current files are unchanged.',
+    );
+    expect(text).not.toMatch(/Changes are not saved/);
+  });
+
+  it('the put-back confirm carries the time of the files it restores', () => {
+    const at = Date.UTC(2026, 10, 14, 9, 30);
+    const text = putBackCopy(t, at);
+    expect(text).toContain(copyTime(at));
+    expect(text).toMatch(/^Put back the files from .+\? The restored backup is removed\.$/);
   });
 });

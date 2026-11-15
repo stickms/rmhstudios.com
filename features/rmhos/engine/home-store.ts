@@ -11,6 +11,11 @@ export interface CachedHome {
   /** sha256 (hex) of the tar before gzip. */
   sha256: string;
   savedAt: number;
+  /**
+   * Only on the `<userId>:replaced` entry: the sha256 of the backup that replaced this home. The
+   * entry can be put back only while the stored home is still exactly that backup.
+   */
+  forSha?: string;
 }
 
 export interface HomeStore {

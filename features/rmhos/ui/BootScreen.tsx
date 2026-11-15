@@ -123,7 +123,12 @@ export default function BootScreen({
             {ended && failure !== 'corrupt' && (
               <>
                 {error && failure !== 'locked' && (
-                  <p className="text-xs font-mono text-(--app-text-muted)">{error}</p>
+                  <details className="text-xs text-(--app-text-muted)">
+                    <summary className="cursor-pointer">
+                      {t('details', { defaultValue: 'Details' })}
+                    </summary>
+                    <p className="font-mono mt-1">{error}</p>
+                  </details>
                 )}
                 <div className="flex flex-wrap gap-2">
                   <Button variant="primary" onClick={onRetry}>

@@ -20,7 +20,12 @@ import { AgentClient } from '../engine/agent';
 import { RMHOS } from '../engine/constants';
 import { browserEnv, HomeSession, type SessionSnapshot } from '../engine/home-session';
 import { openHomeStore, type HomeStore } from '../engine/home-store';
-import { HomeSync, type SaveResult } from '../engine/home-sync';
+import {
+  HomeSync,
+  type CopyKind,
+  type SaveResult,
+  type StoredCopies,
+} from '../engine/home-sync';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { createTicketHolder } from '../engine/relay-ticket';
 import type { RmhosNet } from '../engine/rmhos.contract';
@@ -67,6 +72,12 @@ export interface RmhosSessionValue {
   exportStored: () => Promise<{ bytes: Uint8Array; savedAt: number } | null>;
   /** After a failed handshake: the home a restored backup replaced can be put back. */
   previousAvailable: boolean;
+  /** When the files that could be put back were saved (with `previousAvailable`). */
+  previousSavedAt: number | null;
+  /** What is stored for this account: the current archive and the two extra copies. */
+  storedCopies: () => Promise<StoredCopies | null>;
+  exportCopy: (kind: CopyKind) => Promise<Uint8Array | null>;
+  removeCopy: (kind: 'replaced' | 'damaged') => Promise<void>;
   /** Puts the replaced home back as the stored one; restart (without saving) afterwards. */
   putPreviousBack: () => Promise<void>;
   /** The desktop's home straight from the guest, writing nothing: a backup when saving is refused. */
@@ -359,6 +370,12 @@ export function useRmhosMachine(
       return info ? { bytes: info.archive, savedAt: info.savedAt } : null;
     }, []),
     previousAvailable: snap?.previousAvailable ?? false,
+    previousSavedAt: snap?.previousSavedAt ?? null,
+    storedCopies: useCallback(async () => (await runnerRef.current?.storedCopies()) ?? null, []),
+    exportCopy: useCallback(async (kind: CopyKind) => runnerRef.current?.exportCopy(kind) ?? null, []),
+    removeCopy: useCallback(async (kind: 'replaced' | 'damaged') => {
+      await runnerRef.current?.removeCopy(kind);
+    }, []),
     putPreviousBack: useCallback(async () => {
       if (!runnerRef.current) throw new Error('rmhOS is not running');
       await runnerRef.current.putPreviousBack();

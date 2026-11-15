@@ -16,11 +16,14 @@ import {
 } from './about-facts';
 import { resolveImageManifest } from '../engine/image-manifest';
 import { CDN_BASE } from '@/lib/storage/asset';
+import StoredCopies from './StoredCopies';
+import type { RmhosSessionValue } from './useRmhosSession';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   container: HTMLElement | null;
+  session: Pick<RmhosSessionValue, 'storedCopies' | 'exportCopy' | 'removeCopy'>;
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -36,7 +39,7 @@ function ExternalLink({ href, children }: { href: string; children: React.ReactN
   );
 }
 
-export default function AboutDialog({ open, onOpenChange, container }: Props) {
+export default function AboutDialog({ open, onOpenChange, container, session }: Props) {
   const { t } = useTranslation('c-rmhos');
   const packages = packagesUrl(resolveImageManifest(CDN_BASE || undefined));
   return (
@@ -91,6 +94,7 @@ export default function AboutDialog({ open, onOpenChange, container }: Props) {
               })}
             </li>
           </ul>
+          {open && <StoredCopies session={session} container={container} />}
           <p className="text-(--app-text-muted)">
             {t('about-saving', {
               defaultValue:

@@ -10,14 +10,20 @@ import { useTranslation } from 'react-i18next';
 import { readString, writeString } from '@/lib/core/persist';
 import { toast } from '@/lib/shared/app-toast';
 import { Button } from '@/components/ui/button';
-import { BackupError, checkBackup } from '../engine/home-sync';
+import { checkBackup } from '../engine/home-sync';
 import AboutDialog from './AboutDialog';
+import DamagedExistsDialog from './DamagedExistsDialog';
 import { backupBytes } from './backup';
 import BootScreen from './BootScreen';
 import ConfirmBox from './ConfirmBox';
 import { BACKUP_FILE, DAMAGED_FILE, downloadBytes, LAST_SAVED_FILE } from './download';
 import Notices from './Notices';
-import { reportSave } from './save-messages';
+import {
+  putBackCopy,
+  reportRestoreError,
+  reportSave,
+  restoreFailureCopy,
+} from './save-messages';
 import Screen from './Screen';
 import Toolbar from './Toolbar';
 import { toolbarState, type NetState } from './toolbar-state';
@@ -46,6 +52,10 @@ export default function RmhosApp() {
 
   const [about, setAbout] = useState(false);
   const [confirmRestart, setConfirmRestart] = useState(false);
+  const [confirmPutBack, setConfirmPutBack] = useState(false);
+  /** An earlier damaged copy blocks the operation: download or remove it first. */
+  const [damagedBlock, setDamagedBlock] = useState(false);
+  const [confirmRemoveDamaged, setConfirmRemoveDamaged] = useState(false);
   const [pendingBackup, setPendingBackup] = useState<Uint8Array | null>(null);
   const [busy, setBusy] = useState(false);
   /** The last saved copy offered for download after the current files could not be saved. */
@@ -144,18 +154,9 @@ export default function RmhosApp() {
       await session.importArchive(bytes);
     } catch (e) {
       setBusy(false);
-      const code = e instanceof BackupError ? e.code : 'storage_error';
-      return fail(
-        code === 'invalid'
-          ? t('backup-invalid', { defaultValue: 'That file is not an rmhOS backup.' })
-          : code === 'storage-full'
-            ? t('save-storage-full', {
-                defaultValue: 'Browser storage is full. Changes are not saved.',
-              })
-            : t('backup-not-stored', {
-                defaultValue: 'Could not store the backup. Your files are unchanged.',
-              }),
-      );
+      const failure = reportRestoreError(e);
+      if (failure === 'damaged-exists') return setDamagedBlock(true);
+      return fail(restoreFailureCopy(t, failure));
     }
     // No save on the way out: it would replace the backup with the current home.
     try {
@@ -168,10 +169,19 @@ export default function RmhosApp() {
   const putPreviousBack = async () => {
     try {
       await session.putPreviousBack();
-    } catch {
-      return fail(
-        t('backup-not-stored', { defaultValue: 'Could not store the backup. Your files are unchanged.' }),
-      );
+    } catch (e) {
+      return fail(restoreFailureCopy(t, reportRestoreError(e)));
+    }
+    await session.restart({ save: false });
+  };
+
+  const startEmpty = async () => {
+    try {
+      await session.startEmpty();
+    } catch (e) {
+      const failure = reportRestoreError(e);
+      if (failure === 'damaged-exists') return setDamagedBlock(true);
+      return fail(restoreFailureCopy(t, failure));
     }
     await session.restart({ save: false });
   };
@@ -249,17 +259,49 @@ export default function RmhosApp() {
                 const raw = await session.exportArchive();
                 if (raw) downloadBytes(DAMAGED_FILE, raw);
               }}
-              onStartEmpty={async () => {
-                await session.startEmpty();
-                await session.restart({ save: false });
-              }}
+              onStartEmpty={startEmpty}
               onRestoreBackup={() => fileInputRef.current?.click()}
               previousAvailable={session.previousAvailable}
-              onPutPreviousBack={putPreviousBack}
+              onPutPreviousBack={() => setConfirmPutBack(true)}
             />
           )}
         </div>
-        <AboutDialog open={about} onOpenChange={setAbout} container={container} />
+        <AboutDialog open={about} onOpenChange={setAbout} container={container} session={session} />
+        <ConfirmBox
+          open={confirmPutBack}
+          container={container}
+          title={putBackCopy(t, session.previousSavedAt ?? 0)}
+          confirmLabel={t('put-back', { defaultValue: 'Put back' })}
+          onCancel={() => setConfirmPutBack(false)}
+          onConfirm={() => {
+            setConfirmPutBack(false);
+            void putPreviousBack();
+          }}
+        />
+        <DamagedExistsDialog
+          open={damagedBlock && !confirmRemoveDamaged}
+          container={container}
+          onClose={() => setDamagedBlock(false)}
+          onDownload={async () => {
+            const raw = await session.exportCopy('damaged');
+            if (raw) downloadBytes(DAMAGED_FILE, raw);
+          }}
+          onRemove={() => setConfirmRemoveDamaged(true)}
+        />
+        <ConfirmBox
+          open={confirmRemoveDamaged}
+          container={container}
+          title={t('remove-damaged-confirm', {
+            defaultValue: 'Remove the earlier damaged copy? It cannot be recovered.',
+          })}
+          confirmLabel={t('remove', { defaultValue: 'Remove' })}
+          onCancel={() => setConfirmRemoveDamaged(false)}
+          onConfirm={() => {
+            setConfirmRemoveDamaged(false);
+            setDamagedBlock(false);
+            void session.removeCopy('damaged');
+          }}
+        />
         <ConfirmBox
           open={staleOffer !== null}
           container={container}

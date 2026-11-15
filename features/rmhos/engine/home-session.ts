@@ -10,7 +10,7 @@
  * the person decides; nothing is overwritten.
  */
 import { AgentError, type AgentClient } from './agent';
-import type { HomeSync, SaveResult } from './home-sync';
+import type { CopyKind, HomeSync, SaveResult } from './home-sync';
 
 export type SessionStage = 'idle' | 'handshake' | 'running' | 'failed' | 'stopped';
 export type SessionFailure = 'handshake' | 'corrupt';
@@ -28,6 +28,8 @@ export interface SessionSnapshot {
   storeKind: 'indexeddb' | 'memory';
   /** After a failed handshake: a home that a restored backup replaced is still there to put back. */
   previousAvailable: boolean;
+  /** When the files that could be put back were saved (set with `previousAvailable`). */
+  previousSavedAt: number | null;
 }
 
 interface Listenable {
@@ -65,8 +67,11 @@ export interface SessionDeps {
     | 'exportLive'
     | 'storedInfo'
     | 'suspend'
-    | 'hasReplaced'
+    | 'previousOffer'
     | 'putPreviousBack'
+    | 'storedCopies'
+    | 'exportCopy'
+    | 'removeCopy'
     | 'storeKind'
   >;
   bootKind: 'snapshot' | 'cold';
@@ -91,6 +96,7 @@ export class HomeSession {
     lastSave: null,
     storeKind: 'indexeddb',
     previousAvailable: false,
+    previousSavedAt: null,
   };
   private running = false;
   private disposed = false;
@@ -125,12 +131,13 @@ export class HomeSession {
       await agent.startSession(this.d.linuxUser);
       await agent.restore();
     } catch (e) {
-      const previousAvailable = await sync.hasReplaced().catch(() => false);
+      const offer = await sync.previousOffer().catch(() => null);
       this.set({
         stage: 'failed',
         failure: 'handshake',
         error: e instanceof AgentError ? `agent: ${e.code}` : 'could not start the session',
-        previousAvailable,
+        previousAvailable: !!offer,
+        previousSavedAt: offer?.savedAt ?? null,
       });
       return;
     }
@@ -178,7 +185,10 @@ export class HomeSession {
     const last = this.snap.lastSave;
     const ok = !last || last.result.status === 'saved' || last.result.status === 'unchanged';
     const since = this.d.env.now() - (last && ok ? last.at : this.readyAt);
-    return this.snap.dirty || this.snap.saving || !ok || since > this.d.autosaveMs;
+    // With storage blocked (the in-memory fallback) closing the tab discards the home whatever
+    // `dirty` says.
+    const volatile = this.snap.storeKind === 'memory' && this.snap.desktopReady;
+    return volatile || this.snap.dirty || this.snap.saving || !ok || since > this.d.autosaveMs;
   }
 
   /** The machine is no longer running (stopped, failed, powered off): nothing may save or prompt. */
@@ -247,6 +257,18 @@ export class HomeSession {
   /** After `corrupt`: keep the unreadable entry aside; the next start has an empty home. */
   startEmpty(): Promise<void> {
     return this.d.sync.discardDamaged();
+  }
+
+  storedCopies() {
+    return this.d.sync.storedCopies();
+  }
+
+  exportCopy(kind: CopyKind) {
+    return this.d.sync.exportCopy(kind);
+  }
+
+  removeCopy(kind: 'replaced' | 'damaged') {
+    return this.d.sync.removeCopy(kind);
   }
 
   /** Put the home a restored backup replaced back (then restart). */
