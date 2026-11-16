@@ -148,34 +148,28 @@ export function PageHead({
 }
 
 /**
- * An integer that counts up as it scrolls into view. `pre` and `suf` are
- * printed around it ("$", "B"). A screen reader gets the final figure.
+ * A figure, printed as text: "$955" and, when there is one, its unit in a
+ * smaller size ("billion"). It is never drawn by a CSS counter, so every
+ * browser shows the real number.
  */
-export function Count({
-  to,
-  pre = '',
-  suf = '',
+export function Amount({
+  value,
+  unit,
   className,
 }: {
-  to: number;
-  pre?: string;
-  suf?: string;
+  value: string;
+  unit?: string;
   className?: string;
 }) {
   return (
     <span className={className}>
-      <span className="sr">
-        {pre}
-        {to}
-        {suf}
-      </span>
-      <span
-        className="count-n"
-        aria-hidden="true"
-        data-pre={pre}
-        data-suf={suf}
-        style={cssVars({ '--to': to })}
-      />
+      {value}
+      {unit ? (
+        <>
+          {' '}
+          <span className="amount-unit">{unit}</span>
+        </>
+      ) : null}
     </span>
   );
 }
@@ -216,8 +210,7 @@ export function DealTombstones() {
             {t('tomb-nvidiamd-parties', { defaultValue: 'AMD and Nvidia' })}
           </h3>
           <p className="tomb-amount steel">
-            <Count to={955} pre="$" />{' '}
-            <span className="tomb-unit">{t('tomb-unit-billion', { defaultValue: 'billion' })}</span>
+            <Amount value="$955" unit={t('tomb-unit-billion', { defaultValue: 'billion' })} />
           </p>
           <p className="tomb-what">
             {t('tomb-nvidiamd-terms', {
@@ -256,8 +249,7 @@ export function DealTombstones() {
             })}
           </h3>
           <p className="tomb-amount steel">
-            <Count to={35} pre="$" />{' '}
-            <span className="tomb-unit">{t('tomb-unit-million', { defaultValue: 'million' })}</span>
+            <Amount value="$35" unit={t('tomb-unit-million', { defaultValue: 'million' })} />
           </p>
           <p className="tomb-what">
             {t('tomb-buddhism-terms', {

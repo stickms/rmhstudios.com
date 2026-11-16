@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowIcon,
   CornerArrow,
-  Count,
+  Amount,
   DealTombstones,
   Plate,
   SatireNotice,
@@ -97,13 +97,13 @@ export default function HomePage() {
         <div className="wrap">
           <div className="figs" style={cssVars({ '--n': 4 })}>
             <div className="fig rv">
-              <Count to={6} className="fig-n steel" />
+              <Amount value="6" className="fig-n steel" />
               <span className="fig-k">
                 {t('stat-1', { defaultValue: 'Integrated businesses under one platform' })}
               </span>
             </div>
             <div className="fig rv d1">
-              <Count to={20} suf="+" className="fig-n steel" />
+              <Amount value="20+" className="fig-n steel" />
               <span className="fig-k">
                 {t('stat-3', {
                   defaultValue: 'Markets served across the Americas, Europe, and Asia',
@@ -111,7 +111,11 @@ export default function HomePage() {
               </span>
             </div>
             <div className="fig rv d2">
-              <Count to={955} pre="$" suf="B" className="fig-n steel" />
+              <Amount
+                value="$955"
+                unit={t('tomb-unit-billion', { defaultValue: 'billion' })}
+                className="fig-n steel"
+              />
               <span className="fig-k">
                 {t('home-fig-nvidiamd', {
                   defaultValue: 'AMD and Nvidia, combined to form NvidiAMD',
@@ -119,7 +123,11 @@ export default function HomePage() {
               </span>
             </div>
             <div className="fig rv d3">
-              <Count to={35} pre="$" suf="M" className="fig-n steel" />
+              <Amount
+                value="$35"
+                unit={t('tomb-unit-million', { defaultValue: 'million' })}
+                className="fig-n steel"
+              />
               <span className="fig-k">
                 {t('home-fig-acquisition', {
                   defaultValue: "Facility for Bain Capital's acquisition of Tibetan Buddhism",
