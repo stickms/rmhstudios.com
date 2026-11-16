@@ -74,7 +74,19 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
       signal: AbortSignal.timeout(10_000),
     });
     if (!response.ok) {
-      console.error(`[email] Resend HTTP ${response.status} for ${input.to}`);
+      // Resend says why in the body ("domain is not verified", "you can only
+      // send testing emails to your own address", a bad from-address). Without
+      // it a refused email is just a status code, which is how a production
+      // sender that only delivered to its owner's inbox went unnoticed.
+      const reason = await response
+        .json()
+        .then((body: { name?: string; message?: string }) =>
+          [body.name, body.message].filter(Boolean).join(': ').slice(0, 300),
+        )
+        .catch(() => '');
+      console.error(
+        `[email] Resend HTTP ${response.status} for ${input.to}${reason ? ` (${reason})` : ''}`,
+      );
       return false;
     }
     return true;
