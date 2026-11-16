@@ -287,12 +287,18 @@ describe('board-text', () => {
     const spy =
       ((
         key: string,
-        opts: object,
+        opts: unknown,
       ) => {
         keys.push(
           key,
         );
-        return t(
+        // Forward unchanged: the spy only records which key was asked for.
+        return (
+          t as (
+            k: string,
+            o?: unknown,
+          ) => string
+        )(
           key,
           opts,
         );
