@@ -18,6 +18,7 @@ import { socialProviderConfig, steamApiKey } from '@/lib/auth/provider-config.se
 import { steam } from '@/lib/auth/steam.server';
 import { consolidation } from '@/lib/auth/consolidation.server';
 import { notifySignInChange } from '@/lib/auth/security-notice.server';
+import { sendExistingAccountNotice } from '@/lib/auth/existing-account-notice.server';
 import { CREDENTIAL_PROVIDER_ID } from '@/lib/auth/providers';
 
 // The `!` here used to be load-bearing in the worst way. `new Stripe(undefined)`
@@ -145,10 +146,21 @@ export const auth = betterAuth({
     // the seeded account stays unverified and unable to sign in. Enforced only
     // when a live email transport exists (see `emailConfigured`).
     requireEmailVerification: emailConfigured,
+    // A sign-up with an address that already has an account gets the same
+    // "Check your inbox" answer as a new one (no enumeration), so tell the
+    // address's owner how they actually sign in. Not awaited: an email send
+    // must not make an existing address answer slower than a new one.
+    onExistingUserSignUp: async ({ user }) => {
+      void sendExistingAccountNotice(user);
+    },
     // Make self-service password reset operable (the `/forget-password` and
     // `/reset-password` rate rules above previously had no transport behind them).
+    // Not awaited (nor the verification email below): Better Auth answers a
+    // reset for an unknown address without sending, so waiting on the send
+    // would make a real address answer slower and give it away. sendEmail
+    // never throws, so nothing is lost by not waiting.
     sendResetPassword: async ({ user, url }) => {
-      await sendEmail({
+      void sendEmail({
         to: user.email,
         subject: 'Reset your RMH Studios password',
         html: emailShell(
@@ -166,8 +178,11 @@ export const auth = betterAuth({
     // expired), and the login page says so. Rate-limited with /sign-in/email.
     sendOnSignIn: emailConfigured,
     autoSignInAfterVerification: true,
+    // Not awaited: a new address must answer sign-up as fast as an existing one
+    // (which sends nothing, or the background notice above), or the delay of
+    // this send would reveal which addresses are new.
     sendVerificationEmail: async ({ user, url }) => {
-      await sendEmail({
+      void sendEmail({
         to: user.email,
         subject: 'Verify your RMH Studios email',
         html: emailShell(
