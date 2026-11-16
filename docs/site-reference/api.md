@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1002 endpoints across 201 groups: 110 route files under `app/routes/api` and 892 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1009 endpoints across 201 groups: 110 route files under `app/routes/api` and 899 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1293,7 +1293,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/og`
 
-17 routes.
+18 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1305,6 +1305,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/og/game/:gameId` | `GET` | `lib/og/api/og.game.$gameId.server.ts` |
 | `/api/og/job/:jobId` | `GET` | `lib/og/api/og.job.$jobId.server.ts` |
 | `/api/og/moment/:id` | `GET` | `lib/og/api/og.moment.$id.server.ts` |
+| `/api/og/music/:token` | `GET` | `lib/og/api/og.music.$token.server.ts` |
 | `/api/og/pf2ecal` | `GET` | `lib/og/api/og.pf2ecal.server.ts` |
 | `/api/og/post/:id` | `GET` | `lib/og/api/og.post.$id.server.ts` |
 | `/api/og/post/:id/story` | `GET` | `lib/og/api/og.post.$id.story.server.ts` |
@@ -1755,16 +1756,22 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/rmhmusic`
 
-9 routes.
+15 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/rmhmusic/friends` | `GET` | `lib/rmhmusic/api/rmhmusic.friends.server.ts` |
 | `/api/rmhmusic/learn/cards` | `GET` `POST` | `lib/rmhmusic/api/rmhmusic.learn.cards.server.ts` |
 | `/api/rmhmusic/learn/lesson-complete` | `POST` | `lib/rmhmusic/api/rmhmusic.learn.lesson-complete.server.ts` |
 | `/api/rmhmusic/learn/profile` | `GET` `PUT` | `lib/rmhmusic/api/rmhmusic.learn.profile.server.ts` |
+| `/api/rmhmusic/r/:token` | `GET` | `lib/rmhmusic/api/rmhmusic.r.$token.server.ts` |
+| `/api/rmhmusic/share` | `DELETE` `GET` `POST` | `lib/rmhmusic/api/rmhmusic.share.server.ts` |
+| `/api/rmhmusic/share/:id` | `DELETE` | `lib/rmhmusic/api/rmhmusic.share.$id.server.ts` |
+| `/api/rmhmusic/social` | `GET` `PUT` | `lib/rmhmusic/api/rmhmusic.social.server.ts` |
 | `/api/rmhmusic/songs` | `GET` | `lib/rmhmusic/api/rmhmusic.songs.server.ts` |
 | `/api/rmhmusic/songs/best` | `POST` | `lib/rmhmusic/api/rmhmusic.songs.best.server.ts` |
 | `/api/rmhmusic/sprint` | `GET` | `lib/rmhmusic/api/rmhmusic.sprint.server.ts` |
+| `/api/rmhmusic/sprint/board` | `GET` | `lib/rmhmusic/api/rmhmusic.sprint.board.server.ts` |
 | `/api/rmhmusic/sprint/daily` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.daily.server.ts` |
 | `/api/rmhmusic/sprint/daily-start` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.daily-start.server.ts` |
 | `/api/rmhmusic/sprint/freeplay` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.freeplay.server.ts` |

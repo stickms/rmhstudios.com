@@ -14,6 +14,7 @@ import type {
   NoteEvent,
   NoteListener,
 } from './events';
+import { eventTime } from './event-time';
 import { keyToMidi } from './keyboard-map';
 
 const KEY_VELOCITY = 0.8;
@@ -77,6 +78,7 @@ export function createKeyboardInput(
   const release =
     (
       code: string,
+      time = performance.now(),
     ) => {
       const midi =
         pressed.get(
@@ -95,7 +97,7 @@ export function createKeyboardInput(
           type: 'off',
           midi,
           velocity: 0,
-          time: performance.now(),
+          time,
           source:
             'keys',
         },
@@ -155,7 +157,10 @@ export function createKeyboardInput(
           midi,
           velocity:
             KEY_VELOCITY,
-          time: performance.now(),
+          time: eventTime(
+            e.timeStamp,
+            performance.now(),
+          ),
           source:
             'keys',
         },
@@ -169,6 +174,10 @@ export function createKeyboardInput(
     ) =>
       release(
         e.code,
+        eventTime(
+          e.timeStamp,
+          performance.now(),
+        ),
       );
 
   return {

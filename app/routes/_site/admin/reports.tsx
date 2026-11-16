@@ -22,6 +22,7 @@ import {
 } from '@/lib/admin/admin-ops.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { REMOVABLE_REPORT_ENTITY_TYPES } from '@/lib/moderation/report-schema';
 
 export const Route = createFileRoute('/_site/admin/reports')({
   head: () => ({ meta: [{ title: 'Moderation Queue | RMH Studios' }] }),
@@ -217,7 +218,7 @@ function AdminReportsPage() {
                       <Button size="sm" variant="default" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve')}>
                         {t('resolve', { defaultValue: 'Resolve' })}
                       </Button>
-                      {(r.entityType === 'rmhark' || r.entityType === 'comment' || r.entityType === 'stamp' || r.entityType === 'webring' || r.entityType === 'ladder-interview') && (
+                      {(REMOVABLE_REPORT_ENTITY_TYPES as readonly string[]).includes(r.entityType) && (
                         <Button size="sm" variant="danger" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve', true)}>
                           {t('resolve-and-remove-content', { defaultValue: 'Resolve & remove content' })}
                         </Button>

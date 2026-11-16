@@ -25,6 +25,7 @@
  */
 import { api } from '@/lib/contract/client';
 import { HttpError } from '@/lib/http';
+import type { DailyBoardMe } from '@/lib/music-social/social.contract';
 import type { SprintSaveOutcome } from './machine';
 import type { SprintLevelId } from './levels';
 import type {
@@ -61,6 +62,10 @@ export interface SprintSaver {
   saveDaily(
     input: SprintSaveInput & {
       date: string;
+      /** Where the saved run stands on the Daily board, when the server says (Phase 6). */
+      onBoard?: (
+        board: DailyBoardMe,
+      ) => void;
     },
   ): Promise<SprintSaveOutcome>;
   /** The scored daily run of `date` has started (best effort; never rejects). */
@@ -143,9 +148,10 @@ export function createApiSaver(): SprintSaver {
       async ({
         date,
         results,
+        onBoard,
       }) => {
         try {
-          return (
+          const res =
             await api(
               sprintDailyApi,
               {
@@ -154,9 +160,15 @@ export function createApiSaver(): SprintSaver {
                   results,
                 },
               },
-            )
+            );
+          if (
+            res.board &&
+            onBoard
           )
-            .outcome;
+            onBoard(
+              res.board,
+            );
+          return res.outcome;
         } catch (err) {
           return failure(
             err,

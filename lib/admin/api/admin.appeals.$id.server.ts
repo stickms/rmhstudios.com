@@ -13,6 +13,7 @@
 
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
+import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
 import * as C from '@/lib/admin/admin-ops.contract';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
@@ -83,6 +84,7 @@ export const route = apiRoute('/api/admin/appeals/$id', {
             data: { bannedUntil: null, banReason: null },
           });
           banLifted = lifted.count > 0;
+          if (banLifted) await dropLearnerBoardCaches(strike.userId, Date.now());
         }
       }
 

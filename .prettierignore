@@ -2645,6 +2645,7 @@ lib/prepaint/generated.ts
 /lib/og/api/og.game.$gameId.server.ts
 /lib/og/api/og.job.$jobId.server.ts
 /lib/og/api/og.moment.$id.server.ts
+/lib/og/api/og.music.$token.server.ts
 /lib/og/api/og.pf2ecal.server.ts
 /lib/og/api/og.post.$id.server.ts
 /lib/og/api/og.post.$id.story.server.ts
@@ -2975,6 +2976,13 @@ lib/prepaint/generated.ts
 # text, and prettier at printWidth 1 splits that call across lines.
 /lib/rmhmusic/api/rmhmusic.songs.server.ts
 /lib/rmhmusic/api/rmhmusic.songs.best.server.ts
+/lib/rmhmusic/api/rmhmusic.social.server.ts
+/lib/rmhmusic/api/rmhmusic.friends.server.ts
+/lib/rmhmusic/api/rmhmusic.share.server.ts
+/lib/rmhmusic/api/rmhmusic.share.$id.server.ts
+/lib/rmhmusic/api/rmhmusic.r.$token.server.ts
+/lib/rmhmusic/api/rmhmusic.sprint.board.server.ts
+/lib/rmhmusic/api/rmhmusic.sprint.daily.server.ts
 /lib/rmhmusic/learn/cards.server.ts
 /lib/rmhmusic/learn/content/path.ts
 /lib/rmhmusic/learn/mode.ts

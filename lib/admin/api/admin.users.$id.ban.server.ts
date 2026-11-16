@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { DELETED_ACCOUNT_BAN_REASON, isDeletedAccount } from '@/lib/account-lifecycle';
+import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
 
 /**
  * Never touch a deletion tombstone: its sentinel ban IS the "this row is not a
@@ -57,6 +58,8 @@ export const route = apiRoute('/api/admin/users/$id/ban', {
         if (count === 0) {
           return Response.json({ error: 'This account has been deleted' }, { status: 409 });
         }
+        // Back on the RMH Music Daily boards now, not when their cached lists expire.
+        await dropLearnerBoardCaches(params.id, Date.now());
         await logAdminAction(session.user.id, 'user.unban', {
           targetType: 'user',
           targetId: params.id,
@@ -78,6 +81,8 @@ export const route = apiRoute('/api/admin/users/$id/ban', {
       }
       // End active sessions so the ban takes effect immediately.
       await prisma.session.deleteMany({ where: { userId: params.id } }).catch(() => {});
+      // Off the RMH Music Daily boards now, not when their cached lists expire.
+      await dropLearnerBoardCaches(params.id, Date.now());
       await logAdminAction(session.user.id, 'user.ban', {
         targetType: 'user',
         targetId: params.id,

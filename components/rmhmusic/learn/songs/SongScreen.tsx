@@ -100,6 +100,11 @@ import {
   SECONDARY_BUTTON,
   TEXT_BUTTON,
 } from '../buttons';
+import { ShareButton } from '../social/ShareDialog';
+import {
+  songPayload,
+  type SharePayload,
+} from '@/lib/rmhmusic/learn/social/share';
 import { InputSetup } from '../InputSetup';
 import { DeviceRegion } from '../LessonParts';
 import { Shell } from '../LessonScreen';
@@ -2073,20 +2078,52 @@ function SongRun({
               )}
             </Link>
           ) : (
-            <Link
-              to="/rmhmusic/songs"
-              className={
-                TEXT_BUTTON
-              }
-            >
-              {t(
-                'song-choose',
-                {
-                  defaultValue:
-                    'Choose another song',
-                },
-              )}
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+              <Link
+                to="/rmhmusic/songs"
+                className={
+                  TEXT_BUTTON
+                }
+              >
+                {t(
+                  'song-choose',
+                  {
+                    defaultValue:
+                      'Choose another song',
+                  },
+                )}
+              </Link>
+              {typeof best ===
+                'number' &&
+              sharePreview(
+                song.id,
+                mode,
+                best,
+                version,
+              ) ? (
+                <ShareButton
+                  target={{
+                    kind: 'song',
+                    songId:
+                      song.id,
+                    mode,
+                  }}
+                  preview={sharePreview(
+                    song.id,
+                    mode,
+                    best,
+                    version,
+                  )!}
+                  label={t(
+                    'share-best',
+                    {
+                      defaultValue:
+                        'Share best',
+                    },
+                  )}
+                />
+              ) : null}
+            </div>
           )}
         </div>
       );
@@ -2597,4 +2634,29 @@ function saveLine(
               },
             );
   }
+}
+
+/** A song best's lines for the Share dialog (the link shows the server's stored copy). */
+function sharePreview(
+  songId: string,
+  mode: SongMode,
+  best: number,
+  version: SongVersion,
+): SharePayload | null {
+  return songPayload(
+    {
+      songId,
+      mode,
+      bestScore:
+        best,
+    },
+    version.startsWith(
+      'voice',
+    )
+      ? 'voice'
+      : version ===
+          'guitar'
+        ? 'guitar'
+        : 'piano',
+  );
 }

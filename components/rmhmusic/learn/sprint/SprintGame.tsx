@@ -55,7 +55,14 @@ import {
 import {
   PRIMARY_BUTTON,
   SECONDARY_BUTTON,
+  TEXT_BUTTON,
 } from '../buttons';
+import type { DailyBoardMe } from '@/lib/music-social/social.contract';
+import {
+  dailyPayload,
+  type SharePayload,
+} from '@/lib/rmhmusic/learn/social/share';
+import { DailyBoardLine } from '../social/DailyBoardLine';
 import { InputSetup } from '../InputSetup';
 import { Shell } from '../LessonScreen';
 import { useInputRelease } from '../useLearnInput';
@@ -158,6 +165,19 @@ export function SprintGame({
     setPlaying,
   ] =
     useState<Playing | null>(
+      null,
+    );
+  /** The scored Daily run's board line, from its save's answer (no second request). */
+  const [
+    dailyBoard,
+    setDailyBoard,
+  ] =
+    useState<{
+      date: string;
+      me: DailyBoardMe;
+      /** The saved run's lines, for the Share dialog's preview (the link shows the server's copy). */
+      preview: SharePayload | null;
+    } | null>(
       null,
     );
   const [
@@ -499,6 +519,28 @@ export function SprintGame({
                   range,
                 )
           }
+          saved={
+            playing.mode ===
+              'daily' &&
+            playing.scored &&
+            dailyBoard?.date ===
+              playing.date ? (
+              <DailyBoardLine
+                date={
+                  playing.date
+                }
+                today={utcDate(
+                  Date.now(),
+                )}
+                initial={
+                  dailyBoard.me
+                }
+                preview={
+                  dailyBoard.preview
+                }
+              />
+            ) : undefined
+          }
           save={(
             summary,
             results,
@@ -518,6 +560,31 @@ export function SprintGame({
                     date: playing.date,
                     summary,
                     results,
+                    onBoard:
+                      (
+                        me,
+                      ) =>
+                        setDailyBoard(
+                          {
+                            date: playing.date,
+                            me,
+                            preview:
+                              dailyPayload(
+                                {
+                                  date: playing.date,
+                                  score:
+                                    summary.score,
+                                  avgMs:
+                                    summary.avgMs,
+                                  played:
+                                    summary.played,
+                                  skipped:
+                                    summary.skipped,
+                                  results,
+                                },
+                              ),
+                          },
+                        ),
                   },
                 )
           }
@@ -920,6 +987,20 @@ function DailyIntro({
           },
         )}
       </button>
+      <Link
+        to="/rmhmusic/daily"
+        className={
+          TEXT_BUTTON
+        }
+      >
+        {t(
+          'board-link-today',
+          {
+            defaultValue:
+              "Today's board",
+          },
+        )}
+      </Link>
       <p
         role="status"
         className="min-h-5 text-sm leading-5 text-app-danger"

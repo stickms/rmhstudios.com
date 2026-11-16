@@ -46,9 +46,30 @@ export const REPORT_ENTITY_TYPES =
     'webring',
     // P22: RMHLadder community interview reports (F8).
     'ladder-interview',
+    // RMH Music Phase 6: a Daily board score (the `MusicSprintDaily` id) and a
+    // shared result link (`lib/rmhmusic/learn/moderation.server.ts`).
+    'music-score',
+    'music-share',
   ] as const;
 export type ReportEntityType =
   (typeof REPORT_ENTITY_TYPES)[number];
+
+/**
+ * The types the admin page offers "Resolve & remove content" for. Each one has a
+ * branch in `takedownReportedContent` (`lib/admin/api/admin.reports.$id.server.ts`);
+ * `lib/moderation/__tests__/music-reports.test.ts` holds that, so the button can
+ * never resolve a report while leaving the content up.
+ */
+export const REMOVABLE_REPORT_ENTITY_TYPES: readonly ReportEntityType[] =
+  [
+    'rmhark',
+    'comment',
+    'stamp',
+    'webring',
+    'ladder-interview',
+    'music-score',
+    'music-share',
+  ];
 
 /**
  * The reason taxonomy. Ordered as the dialog presents it: the categories that

@@ -189,4 +189,60 @@ describe('rmhmusicReturnPath', () => {
       );
     }
   });
+
+  it('returns to the Daily board (Phase 6)', () => {
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/daily',
+      ),
+    ).toBe(
+      '/rmhmusic/daily',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/daily/',
+      ),
+    ).toBe(
+      '/rmhmusic/daily',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/dailyx',
+      ),
+    ).toBe(
+      '/rmhmusic',
+    );
+    // A shared result is public: there is nothing to sign in and return to.
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/r/abc',
+      ),
+    ).toBe(
+      '/rmhmusic',
+    );
+  });
+
+  it('returns to Friends and sharing (Phase 6)', () => {
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/friends',
+      ),
+    ).toBe(
+      '/rmhmusic/friends',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/friends/',
+      ),
+    ).toBe(
+      '/rmhmusic/friends',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/friendsx',
+      ),
+    ).toBe(
+      '/rmhmusic',
+    );
+  });
 });

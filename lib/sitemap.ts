@@ -721,6 +721,10 @@ export const EXCLUDED_ROUTES: Record<
       'personal', // the learner's own card reviews, behind sign-in
     '/rmhmusic/credits':
       'auth-gated', // the sampled sounds' licence notices, inside the signed-in app
+    '/rmhmusic/daily':
+      'personal', // the Daily challenge board: the learner's own place and other members' scores, behind sign-in
+    '/rmhmusic/friends':
+      'personal', // the learner's social switches, friends' progress and shared links, behind sign-in
     '/rmhmusic/sprint':
       'personal', // the learner's own sight reading runs and scores, behind sign-in
     '/rmhmusic/tuner':
@@ -1248,6 +1252,8 @@ export const DYNAMIC_ROUTES: Record<
       null, // personal learning progress, behind auth
     '/rmhmusic/songs/$songId':
       null, // a song to play, with the learner's own scores, behind auth
+    '/rmhmusic/r/$token':
+      null, // a shared result: a capability link, noindex, never listed (it unfurls through its own card)
     '/rmhstudy/$roomId':
       null,
     '/rmhtube/$roomId':

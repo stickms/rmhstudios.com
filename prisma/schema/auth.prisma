@@ -243,6 +243,8 @@ model User {
   musicSprintBests  MusicSprintBest[]
   musicSprintDaily  MusicSprintDaily[]
   musicSongBests    MusicSongBest[]
+  musicSocial       MusicSocial?
+  musicShares       MusicShare[]
 
   // Direct Messages
   conversationsAsOne     Conversation[]          @relation("ConversationParticipantOne")

@@ -114,10 +114,12 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
   // Who holds which key (pointers, keyboard focus) is the pure machine in `machines/key-holds.ts`.
   // Nothing renders from it (keys light from the hub's notes), so it is held, not subscribed to.
   const [holds] = useState(() => createRunner(keyHoldsMachine));
-  const send = (e: HoldEvent) => {
+  // `at`: the DOM event's own timeStamp, so a note keeps the time it was played even when the
+  // handler runs late (the adapter falls back to now for a stamp off the performance clock).
+  const send = (e: HoldEvent, at?: number) => {
     for (const fx of holds.send(e)) {
-      if (fx.type === 'press') screen?.press(fx.midi);
-      else screen?.release(fx.midi);
+      if (fx.type === 'press') screen?.press(fx.midi, undefined, at);
+      else screen?.release(fx.midi, at);
     }
   };
   const releaseAll = () => {
@@ -184,19 +186,22 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
     // sliding onto the next key fires its enter (and this key's leave).
     const el = e.currentTarget;
     if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
-    send({ type: 'pointer-down', pointer: e.pointerId, midi, primary });
+    send({ type: 'pointer-down', pointer: e.pointerId, midi, primary }, e.timeStamp);
   };
 
   const onPointerEnter = (e: PointerEvent<HTMLButtonElement>, midi: number) =>
-    send({ type: 'pointer-enter', pointer: e.pointerId, midi, pressed: (e.buttons & 1) === 1 });
+    send(
+      { type: 'pointer-enter', pointer: e.pointerId, midi, pressed: (e.buttons & 1) === 1 },
+      e.timeStamp,
+    );
 
   const pointerOff = (e: PointerEvent<HTMLButtonElement>, midi: number) =>
-    send({ type: 'pointer-off', pointer: e.pointerId, midi });
+    send({ type: 'pointer-off', pointer: e.pointerId, midi }, e.timeStamp);
 
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, midi: number) => {
     if (e.key !== ' ' && e.key !== 'Enter') return;
     e.preventDefault();
-    send({ type: 'key-down', midi, key: e.key, repeat: e.repeat });
+    send({ type: 'key-down', midi, key: e.key, repeat: e.repeat }, e.timeStamp);
   };
 
   const keyClass = (key: PianoKey, lit: boolean) =>
@@ -280,11 +285,11 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
         )}
         onPointerUp={(e) => {
           touching.current = false;
-          send({ type: 'pointer-lift', pointer: e.pointerId });
+          send({ type: 'pointer-lift', pointer: e.pointerId }, e.timeStamp);
         }}
         onPointerCancel={(e) => {
           touching.current = false;
-          send({ type: 'pointer-lift', pointer: e.pointerId });
+          send({ type: 'pointer-lift', pointer: e.pointerId }, e.timeStamp);
         }}
         onPointerLeave={(e) => send({ type: 'pointer-exit', pointer: e.pointerId })}
       >
@@ -318,7 +323,7 @@ export const OnScreenKeyboard = memo(function OnScreenKeyboard({
               onPointerCancel={(e) => pointerOff(e, key.midi)}
               onPointerLeave={(e) => pointerOff(e, key.midi)}
               onKeyDown={(e) => onKeyDown(e, key.midi)}
-              onKeyUp={(e) => send({ type: 'key-up', midi: key.midi, key: e.key })}
+              onKeyUp={(e) => send({ type: 'key-up', midi: key.midi, key: e.key }, e.timeStamp)}
               onBlur={() => send({ type: 'blur', midi: key.midi })}
               onContextMenu={(e) => e.preventDefault()}
             >

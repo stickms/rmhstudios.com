@@ -8,6 +8,7 @@ import { logAdminAction } from '@/lib/admin-audit.server';
 import { takedownStamp } from '@/lib/profile/stamps.server';
 import { createNotification } from '@/lib/notifications.server';
 import { takedownRing } from '@/lib/profile/webrings.server';
+import { hideMusicContent } from '@/lib/rmhmusic/learn/moderation.server';
 
 /**
  * POST /api/admin/reports/$id — act on a report. Admin only.
@@ -81,6 +82,10 @@ async function takedownReportedContent(entityType: string, entityId: string): Pr
       where: { id: entityId },
       data: { status: 'hidden' },
     });
+  } else if (entityType === 'music-score' || entityType === 'music-share') {
+    // RMH Music: a Daily score leaves every board (kept as the learner's result); a shared
+    // result link and its card go dark.
+    await hideMusicContent(entityType, entityId, now);
   }
 }
 

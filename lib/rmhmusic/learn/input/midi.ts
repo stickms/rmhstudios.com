@@ -12,6 +12,7 @@ import type {
   NoteListener,
 } from './events';
 import { parseMidiMessage } from './midi-parse';
+import { eventTime } from './event-time';
 
 export function isMidiSupported(): boolean {
   return (
@@ -73,7 +74,10 @@ export function createMidiInput(): MidiInputAdapter {
       const ev =
         parseMidiMessage(
           e.data,
-          performance.now(),
+          eventTime(
+            e.timeStamp,
+            performance.now(),
+          ),
         );
       if (
         !ev
