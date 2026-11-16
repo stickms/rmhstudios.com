@@ -4,17 +4,63 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from 'vitest';
 import {
   REMOVABLE_REPORT_ENTITY_TYPES,
   REPORT_ENTITY_TYPES,
 } from '@/lib/moderation/report-schema';
 
+const h =
+  vi.hoisted(
+    () => ({
+      updateMany:
+        vi.fn(
+          async () => ({
+            count: 1,
+          }),
+        ),
+    }),
+  );
+vi.mock(
+  '@/lib/prisma.server',
+  () => ({
+    prisma:
+      {
+        musicSprintDaily:
+          {
+            findUnique:
+              vi.fn(
+                async () => ({
+                  date: '2026-11-16',
+                  userId:
+                    'u1',
+                }),
+              ),
+            updateMany:
+              h.updateMany,
+          },
+      },
+  }),
+);
+vi.mock(
+  '@/lib/rmhmusic/learn/social/board-cache.server',
+  () => ({
+    invalidateBoard:
+      vi.fn(
+        async () => {},
+      ),
+  }),
+);
+
+import { hideMusicContent } from '@/lib/rmhmusic/learn/moderation.server';
+
 /**
  * RMH Music's Daily board (Phase 6) adds two reportable things: a Daily score (`music-score`, the
  * `MusicSprintDaily` id) and, later, a shared result (`music-share`). A report type that the admin
  * page offers "Resolve & remove content" for must have a takedown branch, or the button resolves
- * the report and leaves the content up. Source-level, because the route modules pull in Prisma.
+ * the report and leaves the content up. The admin route is read at source level (it pulls in
+ * Prisma and the session); `hideMusicContent` runs against a fake database, once per music type.
  */
 const root =
   join(
@@ -69,13 +115,7 @@ describe('RMH Music in the moderation queue', () => {
       const handled =
         body.includes(
           `'${type}'`,
-        ) ||
-        (type.startsWith(
-          'music-',
-        ) &&
-          body.includes(
-            'hideMusicContent',
-          ));
+        );
       expect(
         handled,
         `${type} has no takedown branch`,
@@ -104,6 +144,41 @@ describe('RMH Music in the moderation queue', () => {
       ),
     ).toContain(
       'musicReportOwner',
+    );
+  });
+
+  it('hideMusicContent takes down every removable music type (a share is not removable before it can be)', async () => {
+    const music =
+      REMOVABLE_REPORT_ENTITY_TYPES.filter(
+        (
+          type,
+        ) =>
+          type.startsWith(
+            'music-',
+          ),
+      );
+    expect(
+      music,
+    ).toContain(
+      'music-score',
+    );
+    for (const type of music) {
+      h.updateMany.mockClear();
+      await hideMusicContent(
+        type,
+        'row-1',
+      );
+      expect(
+        h.updateMany,
+        `${type} has no takedown in hideMusicContent`,
+      ).toHaveBeenCalledTimes(
+        1,
+      );
+    }
+    expect(
+      REMOVABLE_REPORT_ENTITY_TYPES,
+    ).not.toContain(
+      'music-share',
     );
   });
 });
