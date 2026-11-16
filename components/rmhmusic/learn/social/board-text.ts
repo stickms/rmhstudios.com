@@ -12,7 +12,7 @@ import type {
   BoardScope,
   DailyBoardMe,
   DailyBoardRow,
-} from '@/lib/rmhmusic/learn/social/social.contract';
+} from '@/lib/music-social/social.contract';
 
 type T =
   TFunction<'c-rmhmusic'>;

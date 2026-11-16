@@ -57,7 +57,7 @@ import {
   SECONDARY_BUTTON,
   TEXT_BUTTON,
 } from '../buttons';
-import type { DailyBoardMe } from '@/lib/rmhmusic/learn/social/social.contract';
+import type { DailyBoardMe } from '@/lib/music-social/social.contract';
 import { DailyBoardLine } from '../social/DailyBoardLine';
 import { InputSetup } from '../InputSetup';
 import { Shell } from '../LessonScreen';

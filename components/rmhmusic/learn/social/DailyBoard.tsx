@@ -32,7 +32,7 @@ import {
   type DailyBoard as Board,
   type DailyBoardRow,
   type MusicSocial,
-} from '@/lib/rmhmusic/learn/social/social.contract';
+} from '@/lib/music-social/social.contract';
 import { TEXT_BUTTON } from '../buttons';
 import { Shell } from '../LessonScreen';
 import {
