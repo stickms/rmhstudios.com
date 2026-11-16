@@ -21,6 +21,7 @@ import {
 } from '@/lib/recovery/recovery.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { PasskeyManager } from '@/components/site/PasskeyManager';
+import { SignInMethodsPanel } from '@/components/settings/SignInMethodsPanel';
 import { SessionManager } from '@/components/site/SessionManager';
 import { ProfileLinksPanel } from '@/components/settings/ProfileLinksPanel';
 import { RecoveryPanel } from '@/components/settings/RecoveryPanel';
@@ -34,12 +35,15 @@ interface SecuritySearch {
   recovery?: string;
   /** Single-use recovery token, from the same link. */
   token?: string;
+  /** Set by Better Auth when connecting a sign-in method failed (`error` code). */
+  error?: string;
 }
 
 export const Route = createFileRoute('/_site/settings/security')({
   validateSearch: (search: Record<string, unknown>): SecuritySearch => ({
     recovery: typeof search.recovery === 'string' ? search.recovery : undefined,
     token: typeof search.token === 'string' ? search.token : undefined,
+    error: typeof search.error === 'string' ? search.error.slice(0, 80) : undefined,
   }),
   head: () => ({
     meta: [{ title: 'Security | RMH Studios' }],
@@ -60,7 +64,7 @@ export const Route = createFileRoute('/_site/settings/security')({
 function SecuritySettingsPage() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
-  const { recovery, token } = Route.useSearch();
+  const { recovery, token, error: linkError } = Route.useSearch();
   const user = session?.user as { id: string; handle?: string | null } | undefined;
   const settingsLabel = t('settings', { defaultValue: 'Settings' });
   const title = t('security-title', { defaultValue: 'Security' });
@@ -93,6 +97,7 @@ function SecuritySettingsPage() {
           />
         ) : (
           <>
+            <SignInMethodsPanel linkError={linkError} />
             <PasskeyManager />
             <SessionManager />
             {completion ? null : <RecoveryPanel />}

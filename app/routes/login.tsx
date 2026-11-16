@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/brand-icons';
 import type { SignInProviderId } from '@/lib/auth/providers';
 import { getSignInProviders } from '@/lib/auth/sign-in-providers.functions';
+import { safeInternalPath } from '@/lib/auth/redirect';
 import { Mail, Lock, User, Camera, Fingerprint, Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
@@ -36,12 +37,14 @@ import { uploadAvatarApi } from '@/lib/profile.contract';
 import { useArrival } from '@/components/ui/arrive';
 
 export const Route = createFileRoute('/login')({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { callbackURL?: string; error?: string } => ({
     callbackURL:
       (search.callbackURL as string) ||
       (search.callbackUrl as string) ||
       (search.next as string) ||
       undefined,
+    // Set by Better Auth when a sign-in or an email link did not finish.
+    error: typeof search.error === 'string' ? search.error.slice(0, 80) : undefined,
   }),
   head: () => ({
     meta: [{ title: 'Login | RMH' }],
@@ -52,34 +55,13 @@ export const Route = createFileRoute('/login')({
   component: LoginPage,
 });
 
-/**
- * Only allow a same-site absolute path as a post-login redirect target.
- * Browsers strip control characters and normalize "\" to "/", so a naive
- * `startsWith('/') && !startsWith('//')` guard is bypassed by "/\evil.com" or
- * "/\t//evil.com" — both resolve to an off-site protocol-relative URL when
- * assigned to `window.location.href`. Require a leading "/" NOT followed by "/"
- * or "\", and reject control characters. (SSR-safe: no `window` access.)
- */
-function safeInternalPath(raw?: string): string {
-  if (!raw) return '/';
-  // Reject any control character (U+0000–U+001F or U+007F): browsers strip them
-  // before navigating, which would otherwise let "/\t//evil.com" slip past the
-  // leading-slash guard below. A char-code scan avoids embedding raw control
-  // bytes (or a control-char regex) in source.
-  for (let i = 0; i < raw.length; i += 1) {
-    const code = raw.charCodeAt(i);
-    if (code <= 0x1f || code === 0x7f) return '/';
-  }
-  return /^\/(?![/\\])/.test(raw) ? raw : '/';
-}
-
 /** Which action is currently in flight (drives per-button spinners + disabling). */
 type Pending = 'passkey' | SignInProviderId | 'email' | null;
 
 function LoginPage() {
   const isCard = useMediaQuery('(min-width: 640px)');
   const { t } = useTranslation('pages');
-  const { callbackURL: rawCallback } = Route.useSearch();
+  const { callbackURL: rawCallback, error: linkError } = Route.useSearch();
   const enabledProviders = Route.useLoaderData();
 
   const [callbackURL, setCallbackURL] = useState(() => safeInternalPath(rawCallback));
@@ -116,6 +98,12 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Email/password accounts confirm their address before they can sign in
+  // (when the site can send email). Set once we know a link is on its way.
+  const [awaitingEmail, setAwaitingEmail] = useState<{ email: string; after: 'sign-up' | 'sign-in' } | null>(
+    null,
+  );
+  const [resending, setResending] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -207,6 +195,25 @@ function LoginPage() {
     }
   };
 
+  // Email links and provider errors come back to this page (which forwards a
+  // signed-in visitor to `callbackURL`, or explains what went wrong).
+  const returnHere = `/login?callbackURL=${encodeURIComponent(callbackURL)}`;
+  // A sign-in that creates a brand-new account goes through /account/connect,
+  // which offers to join it to an existing account instead.
+  const newUserCallbackURL = `/account/connect?next=${encodeURIComponent(callbackURL)}`;
+
+  const resendVerification = async () => {
+    if (!awaitingEmail) return;
+    setResending(true);
+    try {
+      const res = await authClient.sendVerificationEmail({ email: awaitingEmail.email, callbackURL: returnHere });
+      if (res.error) setError(res.error.message ?? t('generic-error', { defaultValue: 'Something went wrong. Please try again.' }));
+      else setError(null);
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleSocial = (provider: SignInProviderId) => async () => {
     setPending(provider);
     setError(null);
@@ -222,13 +229,18 @@ function LoginPage() {
         // (lib/auth/steam.server.ts) rather than `signIn.social`.
         const res = await authClient.$fetch<{ url: string }>('/sign-in/steam', {
           method: 'POST',
-          body: { callbackURL },
+          body: { callbackURL, newUserCallbackURL, errorCallbackURL: returnHere },
         });
         if (res.error || !res.data?.url) return failed(res.error?.message);
         window.location.href = res.data.url;
         return;
       }
-      const res = await authClient.signIn.social({ provider, callbackURL });
+      const res = await authClient.signIn.social({
+        provider,
+        callbackURL,
+        newUserCallbackURL,
+        errorCallbackURL: returnHere,
+      });
       // On success the client is already navigating to the provider; stay
       // pending so the page doesn't unlock in the moment before it unloads.
       if (res?.error) failed(res.error.message);
@@ -269,10 +281,17 @@ function LoginPage() {
             password,
             name: displayName,
             image: avatarFile ? undefined : '/images/social/default_avatar.png',
-            callbackURL,
+            // Where the confirmation link lands (this page, then on to callbackURL).
+            callbackURL: returnHere,
           },
           {
-            onSuccess: async () => {
+            onSuccess: async (ctx) => {
+              // No session yet means the address has to be confirmed first.
+              if (!(ctx.data as { token?: string | null } | null)?.token) {
+                setPending(null);
+                setAwaitingEmail({ email: email.trim(), after: 'sign-up' });
+                return;
+              }
               if (avatarFile) {
                 try {
                   const formData = new FormData();
@@ -292,13 +311,18 @@ function LoginPage() {
         );
       } else {
         await authClient.signIn.email(
-          { email, password, callbackURL },
+          { email, password, callbackURL: returnHere },
           {
             onSuccess: () => {
               window.location.href = callbackURL;
             },
             onError: (ctx) => {
               setPending(null);
+              if (ctx.error.code === 'EMAIL_NOT_VERIFIED') {
+                // The server has just sent a fresh link (sendOnSignIn).
+                setAwaitingEmail({ email: email.trim(), after: 'sign-in' });
+                return;
+              }
               setError(ctx.error.message);
             },
           },
@@ -352,6 +376,22 @@ function LoginPage() {
   // Two or three in one row; from four up, rows of four.
   const providerGrid =
     providers.length <= 2 ? 'grid-cols-2' : providers.length === 3 ? 'grid-cols-3' : 'grid-cols-4';
+
+  // A sign-in or an email link that came back here without finishing.
+  const linkNotice = !linkError
+    ? null
+    : linkError === 'account_not_linked'
+      ? t('notice-account-not-linked', {
+          defaultValue:
+            'An RMH account already uses that email, but it was not connected automatically because the email is not confirmed on both sides. Sign in the way you did before, then connect it in Settings, Security.',
+        })
+      : linkError === 'TOKEN_EXPIRED' || linkError === 'INVALID_TOKEN'
+        ? t('notice-link-expired', {
+            defaultValue: 'That link has expired or was already used. Sign in to get a new one.',
+          })
+        : linkError === 'access_denied'
+          ? t('notice-cancelled', { defaultValue: 'Sign-in was cancelled.' })
+          : t('notice-sign-in-failed', { defaultValue: 'Sign-in did not finish. Try again.' });
 
   // Field glyph shared by the email/password/display-name wells.
   const fieldIcon =
@@ -500,6 +540,46 @@ function LoginPage() {
           </p>
         </div>
 
+        {linkNotice ? (
+          <p role="status" className="mb-4 text-center text-sm text-site-text">
+            {linkNotice}
+          </p>
+        ) : null}
+
+        {awaitingEmail ? (
+          <div className="space-y-3 text-center">
+            <h2 className="t-heading">{t('check-inbox-title', { defaultValue: 'Check your inbox' })}</h2>
+            <p className="text-sm text-site-text-muted">
+              {awaitingEmail.after === 'sign-up'
+                ? t('check-inbox-sign-up', {
+                    defaultValue: 'We sent a link to {{email}}. Open it to confirm your email and finish signing up.',
+                    email: awaitingEmail.email,
+                  })
+                : t('check-inbox-sign-in', {
+                    defaultValue: 'Confirm your email before you sign in. We sent a new link to {{email}}.',
+                    email: awaitingEmail.email,
+                  })}
+            </p>
+            {error && (
+              <p role="alert" className="text-sm text-site-danger">
+                {error}
+              </p>
+            )}
+            <Button type="button" size="lg" onClick={resendVerification} loading={resending} className="w-full">
+              {t('check-inbox-resend', { defaultValue: 'Send the link again' })}
+            </Button>
+            <button
+              type="button"
+              onClick={() => {
+                setAwaitingEmail(null);
+                setError(null);
+              }}
+              className="inline-flex min-h-11 items-center justify-center px-3 text-sm text-site-text-muted transition-colors hover:text-site-text"
+            >
+              {t('check-inbox-back', { defaultValue: 'Back to sign in' })}
+            </button>
+          </div>
+        ) : (
         <div className="space-y-3">
           {/* Passkey is the promoted primary path: fastest + phishing-resistant.
               (Conditional-UI autofill also offers it in the email field.) */}
@@ -592,6 +672,7 @@ function LoginPage() {
             </button>
           </div>
         </div>
+        )}
         {/* Back to the site — kept inside the mobile full-screen surface so it
             participates in the same spacing and never creates a second viewport. */}
         <Link

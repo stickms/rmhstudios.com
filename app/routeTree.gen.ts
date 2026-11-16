@@ -217,6 +217,7 @@ import { Route as Tf2WorkshopRouteImport } from './routes/tf2/workshop'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as VNewRouteImport } from './routes/v.new'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
+import { Route as SiteAccountConnectRouteImport } from './routes/_site/account/connect'
 import { Route as SiteAdminIndexRouteImport } from './routes/_site/admin/index'
 import { Route as SiteAdminAlarmsRouteImport } from './routes/_site/admin/alarms'
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
@@ -1565,6 +1566,11 @@ const VersecraftIndexRoute = VersecraftIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => VersecraftRoute,
+} as any)
+const SiteAccountConnectRoute = SiteAccountConnectRouteImport.update({
+  id: '/account/connect',
+  path: '/account/connect',
+  getParentRoute: () => SiteRoute,
 } as any)
 const SiteAdminIndexRoute = SiteAdminIndexRouteImport.update({
   id: '/',
@@ -3350,6 +3356,7 @@ export interface FileRoutesByFullPath {
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/tf2/': typeof Tf2IndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/account/connect': typeof SiteAccountConnectRoute
   '/admin/alarms': typeof SiteAdminAlarmsRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
@@ -3841,6 +3848,7 @@ export interface FileRoutesByTo {
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
   '/tf2': typeof Tf2IndexRoute
   '/versecraft': typeof VersecraftIndexRoute
+  '/account/connect': typeof SiteAccountConnectRoute
   '/admin/alarms': typeof SiteAdminAlarmsRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
@@ -4359,6 +4367,7 @@ export interface FileRoutesById {
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/tf2/': typeof Tf2IndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/_site/account/connect': typeof SiteAccountConnectRoute
   '/_site/admin/alarms': typeof SiteAdminAlarmsRoute
   '/_site/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
@@ -4877,6 +4886,7 @@ export interface FileRouteTypes {
     | '/temple-of-joy/'
     | '/tf2/'
     | '/versecraft/'
+    | '/account/connect'
     | '/admin/alarms'
     | '/admin/analytics'
     | '/admin/announcements'
@@ -5368,6 +5378,7 @@ export interface FileRouteTypes {
     | '/temple-of-joy'
     | '/tf2'
     | '/versecraft'
+    | '/account/connect'
     | '/admin/alarms'
     | '/admin/analytics'
     | '/admin/announcements'
@@ -5885,6 +5896,7 @@ export interface FileRouteTypes {
     | '/temple-of-joy/'
     | '/tf2/'
     | '/versecraft/'
+    | '/_site/account/connect'
     | '/_site/admin/alarms'
     | '/_site/admin/analytics'
     | '/_site/admin/announcements'
@@ -7836,6 +7848,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/versecraft/'
       preLoaderRoute: typeof VersecraftIndexRouteImport
       parentRoute: typeof VersecraftRoute
+    }
+    '/_site/account/connect': {
+      id: '/_site/account/connect'
+      path: '/account/connect'
+      fullPath: '/account/connect'
+      preLoaderRoute: typeof SiteAccountConnectRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/_site/admin/': {
       id: '/_site/admin/'
@@ -10230,6 +10249,7 @@ interface SiteRouteChildren {
   SiteWishlistRoute: typeof SiteWishlistRoute
   SiteWrappedRoute: typeof SiteWrappedRoute
   SiteIndexRoute: typeof SiteIndexRoute
+  SiteAccountConnectRoute: typeof SiteAccountConnectRoute
   SiteBlogSlugRoute: typeof SiteBlogSlugRoute
   SiteBuildsSlugRoute: typeof SiteBuildsSlugRoute
   SiteCSlugRoute: typeof SiteCSlugRoute
@@ -10380,6 +10400,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteWishlistRoute: SiteWishlistRoute,
   SiteWrappedRoute: SiteWrappedRoute,
   SiteIndexRoute: SiteIndexRoute,
+  SiteAccountConnectRoute: SiteAccountConnectRoute,
   SiteBlogSlugRoute: SiteBlogSlugRoute,
   SiteBuildsSlugRoute: SiteBuildsSlugRoute,
   SiteCSlugRoute: SiteCSlugRoute,

@@ -21,6 +21,8 @@
  * `currentColor` because it is drawn in the surface's ink, exactly as before.
  */
 
+import type { SignInProviderId } from '@/lib/auth/providers';
+
 interface BrandIconProps {
   className?: string;
 }
@@ -160,4 +162,20 @@ export function XIcon({ className }: BrandIconProps) {
       <path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z" />
     </svg>
   );
+}
+
+const PROVIDER_ICONS: Record<SignInProviderId, (props: BrandIconProps) => React.JSX.Element> = {
+  discord: DiscordIcon,
+  github: GithubIcon,
+  steam: SteamIcon,
+  twitch: TwitchIcon,
+  microsoft: MicrosoftIcon,
+  gitlab: GitlabIcon,
+  twitter: XIcon,
+};
+
+/** The brand mark for a sign-in provider (login page, Settings → Sign-in methods). */
+export function ProviderIcon({ id, className }: BrandIconProps & { id: SignInProviderId }) {
+  const Icon = PROVIDER_ICONS[id];
+  return <Icon className={className} />;
 }

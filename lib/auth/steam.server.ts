@@ -9,6 +9,7 @@
  * Stripe customer) and issued a session exactly like a Discord or GitHub one:
  *
  *   POST /api/auth/sign-in/steam   { callbackURL } -> { url, redirect: true }
+ *   POST /api/auth/link/steam      (signed in) connect Steam to this account
  *   GET  /api/auth/steam/callback  (Steam redirects the browser here)
  *
  * The flow's state is Better Auth's own `generateState`/`parseState`: a
@@ -29,7 +30,7 @@
  * need the key; the key is what makes the account look like its owner.
  */
 import type { BetterAuthPlugin } from 'better-auth';
-import { APIError, createAuthEndpoint } from 'better-auth/api';
+import { APIError, createAuthEndpoint, getSessionFromCtx } from 'better-auth/api';
 import { generateState, handleOAuthUserInfo, parseState } from 'better-auth/oauth2';
 import { setSessionCookie } from 'better-auth/cookies';
 import { z } from 'zod';
@@ -115,6 +116,30 @@ export function steam({ apiKey }: { apiKey: string | undefined }) {
         },
       ),
 
+      // Connect Steam to the signed-in account (Settings → Sign-in methods).
+      // The recent-sign-in rule for this path lives in consolidation.server.ts.
+      linkSteam: createAuthEndpoint(
+        '/link/steam',
+        {
+          method: 'POST',
+          body: z.object({
+            callbackURL: z.string().optional(),
+            errorCallbackURL: z.string().optional(),
+          }),
+        },
+        async (ctx) => {
+          if (!apiKey) throw off();
+          const session = await getSessionFromCtx(ctx, { disableCookieCache: true });
+          if (!session) throw new APIError('UNAUTHORIZED');
+          const { state } = await generateState(ctx, {
+            link: { userId: session.user.id, email: session.user.email },
+          });
+          const returnTo = `${ctx.context.baseURL}/steam/callback?state=${encodeURIComponent(state)}`;
+          const url = buildSteamLoginUrl({ returnTo, realm: new URL(ctx.context.baseURL).origin });
+          return ctx.json({ url, redirect: true });
+        },
+      ),
+
       steamCallback: createAuthEndpoint(
         '/steam/callback',
         {
@@ -125,7 +150,7 @@ export function steam({ apiKey }: { apiKey: string | undefined }) {
           if (!apiKey) throw off();
           // Throws a redirect to the error page itself when the state is
           // missing, expired, already used or from another browser.
-          const { callbackURL, errorURL, newUserURL } = await parseState(ctx);
+          const { callbackURL, errorURL, newUserURL, link } = await parseState(ctx);
 
           const fail = (code: string): never => {
             const target = new URL(errorURL ?? `${ctx.context.baseURL}/error`, ctx.context.baseURL);
@@ -147,6 +172,27 @@ export function steam({ apiKey }: { apiKey: string | undefined }) {
           }
 
           const { steamId } = assertion;
+
+          if (link) {
+            // A connect from Settings: attach this Steam ID to the account that
+            // started the flow (the state is bound to that browser), unless it
+            // already belongs to another account.
+            const existing = await ctx.context.internalAdapter.findAccountByKey({
+              providerId: STEAM_PROVIDER_ID,
+              accountId: steamId,
+            });
+            if (existing && existing.userId !== link.userId) {
+              return fail('account_already_linked_to_different_user');
+            }
+            if (!existing) {
+              await ctx.context.internalAdapter.createAccount({
+                userId: link.userId,
+                providerId: STEAM_PROVIDER_ID,
+                accountId: steamId,
+              });
+            }
+            throw ctx.redirect(callbackURL);
+          }
           const profile = await fetchSteamProfile(apiKey, steamId);
 
           const result = await handleOAuthUserInfo(ctx, {

@@ -17,6 +17,8 @@
     "lib/toast.ts",
     "lib/auth/providers.ts",
     "lib/auth/steam-openid.ts",
+    "lib/auth/merge-rules.ts",
+    "lib/auth/redirect.ts",
     "lib/admin/census.ts",
     "lib/session/**/*.ts",
     "lib/api/implement.server.ts",
