@@ -1617,6 +1617,7 @@ const KNOWN_UNTRANSLATED: Record<
         // Deal values and the acquisition framing (2026-11-14, same overhaul).
         'tomb-unit-billion',
         'tomb-unit-million',
+        'amount-unit-trillion',
         'tomb-nvidiamd-terms',
         'tomb-buddhism-title',
         'tomb-buddhism-terms',

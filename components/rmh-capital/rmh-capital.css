@@ -26,7 +26,6 @@
 
 @property --rc-sx { syntax: '<number>'; inherits: true; initial-value: 0; }
 @property --rc-mx { syntax: '<number>'; inherits: true; initial-value: 0; }
-@property --rc-n { syntax: '<integer>'; inherits: false; initial-value: 0; }
 
 .rmhc-root {
   --paper: var(--site-bg, #fafafa);
@@ -435,15 +434,18 @@
   display: block; font-size: clamp(40px, 5.4vw, 84px); font-weight: 300; line-height: 1;
   letter-spacing: -0.045em; font-variant-numeric: tabular-nums;
 }
+/* Four across leaves a column too narrow for "$955 billion" at full size. */
+.rmhc-root .figs:has(> :nth-child(4)) .fig-n { font-size: clamp(36px, 4.4vw, 68px); }
 .rmhc-root .fig-k { display: block; margin-top: 12px; font-size: 14.5px; line-height: 1.45; max-width: 26ch; }
 @media (max-width: 820px) {
   .rmhc-root .figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rmhc-root .fig:nth-child(odd) { border-inline-start: 0; padding-inline-start: 0; }
   .rmhc-root .fig:nth-child(n + 3) { border-top: 1px solid var(--rule); }
 }
-/* A number that counts up as it scrolls in. `--to` is the integer it lands on. */
-.rmhc-root .count-n { counter-reset: rcn var(--to); }
-.rmhc-root .count-n::before { content: attr(data-pre) counter(rcn) attr(data-suf); }
+/* Figures are printed as text, never drawn by a CSS counter: a counter driven
+   by a scroll animation stayed at its 0 start frame in browsers that run the
+   timeline but do not repaint the counter. A figure arrives with its `.fig`'s
+   rise, and the number it shows is always the real one. */
 
 /* ════ QUOTE ════ */
 .rmhc-root .quote { font-size: clamp(26px, 3.4vw, 50px); font-weight: 300; line-height: 1.14; letter-spacing: -0.03em; color: var(--ink); max-width: 24ch; text-wrap: balance; }
@@ -477,8 +479,8 @@
   font-family: var(--sans); font-size: clamp(44px, 6vw, 88px); font-weight: 300; line-height: 1;
   letter-spacing: -0.045em; margin-block: 6px; font-variant-numeric: tabular-nums;
 }
-/* The unit is part of the amount: "$955 billion", not "$955". */
-.rmhc-root .tomb-unit { font-size: 0.42em; letter-spacing: -0.02em; }
+/* The unit is part of the amount: "$955 billion", not "$955" or "$955B". */
+.rmhc-root .amount-unit { font-size: 0.42em; letter-spacing: -0.02em; }
 .rmhc-root .tomb-what { font-size: 17px; line-height: 1.45; max-width: 30ch; }
 .rmhc-root .tomb-rule { width: 44px; height: 1px; background: var(--ink); margin-block: 6px; }
 .rmhc-root .tomb-role { font-size: 15px; line-height: 1.4; }
@@ -561,7 +563,6 @@
 @keyframes rc-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
 @keyframes rc-wipe-rtl { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
 @keyframes rc-drift { from { --rc-sx: -1; } to { --rc-sx: 1; } }
-@keyframes rc-count { from { --rc-n: 0; } to { --rc-n: var(--to); } }
 @keyframes rc-sheen { from { transform: translateX(-130%) skewX(-18deg); } to { transform: translateX(330%) skewX(-18deg); } }
 
 /* The words of a headline sit in masks whether or not they move. */
@@ -627,13 +628,6 @@
     html:not([data-jelly-motion='still']) .rmhc-root .hero-step .plate.chrome {
       animation: rc-plate-in 1.3s var(--ease) 0.12s both, rc-drift linear both;
       animation-timeline: auto, view(); animation-range: normal, cover 0% cover 100%;
-    }
-    html:not([data-jelly-motion='still']) .rmhc-root .count-n {
-      counter-reset: rcn var(--rc-n);
-      animation: rc-count linear both; animation-timeline: view();
-      /* Done by the time the figure is wholly on screen: a number that is at
-         rest in view is always the real number. */
-      animation-range: entry 0% entry 100%;
     }
     html:not([data-jelly-motion='still']) .rmhc-root .topnav::after {
       animation: rc-draw linear both; animation-timeline: scroll(root block);
