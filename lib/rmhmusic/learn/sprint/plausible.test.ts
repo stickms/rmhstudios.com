@@ -333,47 +333,74 @@ describe('judgeDailyRun — the board checks', () => {
     );
   });
 
-  it('tolerates one too-fast answer and fails two', () => {
-    const one =
+  it('tolerates two too-fast answers and fails three (one glitch is not a run)', () => {
+    const run =
       humanRun();
-    one[0] =
-      {
-        ...one[0]!,
-        ms: 120,
-        noteMs:
-          [
-            120,
-          ],
-      };
+    const notes =
+      run.flatMap(
+        (
+          r,
+          i,
+        ) =>
+          r.kind ===
+            'note' &&
+          r.correct
+            ? [
+                i,
+              ]
+            : [],
+      );
+    const fast =
+      (
+        n: number,
+      ) =>
+        run.map(
+          (
+            r,
+            i,
+          ) =>
+            notes
+              .slice(
+                0,
+                n,
+              )
+              .includes(
+                i,
+              )
+              ? {
+                  ...r,
+                  ms: 120,
+                  noteMs:
+                    [
+                      120,
+                    ],
+                }
+              : r,
+        );
     expect(
       judgeDailyRun(
-        one,
+        fast(
+          2,
+        ),
         roomy(
-          one,
+          fast(
+            2,
+          ),
         ),
       )
         .ranked,
     ).toBe(
       true,
     );
-    const two =
-      [
-        ...one,
-      ];
-    two[1] =
-      {
-        ...two[1]!,
-        ms: 200,
-        noteMs:
-          [
-            200,
-          ],
-      };
     expect(
       judgeDailyRun(
-        two,
+        fast(
+          3,
+        ),
         roomy(
-          two,
+          fast(
+            3,
+          ),
         ),
       ),
     ).toEqual(
@@ -419,47 +446,256 @@ describe('judgeDailyRun — the board checks', () => {
     );
   });
 
-  it('a bar note 50 ms after the one before counts as too fast', () => {
-    const run =
-      humanRun();
-    const bars =
-      run.flatMap(
-        (
-          r,
-          i,
-        ) =>
-          r.kind ===
+  /** The run's bars, with `noteMs` replaced by `f(noteMs)` for every bar. */
+  function withBars(
+    run: PromptResult[],
+    f: (
+      noteMs: readonly number[],
+      n: number,
+    ) => number[],
+  ): PromptResult[] {
+    let n = 0;
+    return run.map(
+      (
+        r,
+      ) => {
+        if (
+          r.kind !==
           'bar'
-            ? [
-                i,
-              ]
-            : [],
-      );
-    for (const i of bars.slice(
-      0,
-      2,
-    )) {
-      const r =
-        run[
-          i
-        ]!;
-      run[
-        i
-      ] =
-        {
+        )
+          return r;
+        const noteMs =
+          f(
+            r.noteMs,
+            n++,
+          );
+        return {
           ...r,
-          noteMs:
-            [
-              r
-                .noteMs[0]!,
-              50,
-              r
-                .noteMs[2]!,
-              r
-                .noteMs[3]!,
-            ],
+          noteMs,
+          ms: noteMs.reduce(
+            (
+              x,
+              y,
+            ) =>
+              x +
+              y,
+            0,
+          ),
         };
-    }
+      },
+    );
+  }
+
+  it('two notes merged by a main-thread stall (a 1 ms gap) on every bar stay ranked', () => {
+    // The stall delivers a queued note-on a millisecond after the one before it; the next gap
+    // carries the time the merged note lost.
+    const run =
+      withBars(
+        humanRun(),
+        (
+          ms,
+        ) => [
+          ms[0]!,
+          1,
+          ms[1]! +
+            ms[2]!,
+          ms[3]!,
+        ],
+      );
+    expect(
+      judgeDailyRun(
+        run,
+        roomy(
+          run,
+        ),
+      ),
+    ).toEqual(
+      {
+        ranked: true,
+        reason:
+          null,
+      },
+    );
+  });
+
+  it('fast, honest bars (stepwise at 12 to 16 notes a second) stay ranked', () => {
+    const run =
+      withBars(
+        humanRun(),
+        (
+          ms,
+          n,
+        ) => [
+          ms[0]!,
+          62 +
+            n,
+          70 +
+            2 *
+              n,
+          83 -
+            n,
+        ],
+      );
+    expect(
+      judgeDailyRun(
+        run,
+        roomy(
+          run,
+        ),
+      ),
+    ).toEqual(
+      {
+        ranked: true,
+        reason:
+          null,
+      },
+    );
+  });
+
+  it('microphone times quantised to its 25 ms poll stay ranked', () => {
+    const q =
+      (
+        ms: number,
+      ) =>
+        Math.round(
+          ms /
+            25,
+        ) *
+        25;
+    const run =
+      withBars(
+        humanRun(
+          {
+            skipChords: true,
+          },
+        ).map(
+          (
+            r,
+          ) =>
+            r.kind ===
+              'bar' ||
+            r.ms ===
+              null
+              ? r
+              : {
+                  ...r,
+                  ms: q(
+                    r.ms,
+                  ),
+                  noteMs:
+                    [
+                      q(
+                        r.ms,
+                      ),
+                    ],
+                },
+        ),
+        // A quick stepwise bar heard by the mic: one gap lands a single poll after the last.
+        (
+          ms,
+        ) => [
+          q(
+            ms[0]!,
+          ),
+          75,
+          25,
+          100,
+        ],
+      );
+    expect(
+      judgeDailyRun(
+        run,
+        roomy(
+          run,
+        ),
+      ),
+    ).toEqual(
+      {
+        ranked: true,
+        reason:
+          null,
+      },
+    );
+  });
+
+  it('bars whose gaps are mostly under the floor fail, on several prompts only', () => {
+    const scripted =
+      (
+        count: number,
+      ) =>
+        withBars(
+          humanRun(),
+          (
+            ms,
+            n,
+          ) =>
+            n <
+            count
+              ? [
+                  ms[0]!,
+                  10,
+                  12,
+                  ms[3]!,
+                ]
+              : [
+                  ...ms,
+                ],
+        );
+    expect(
+      judgeDailyRun(
+        scripted(
+          2,
+        ),
+        roomy(
+          scripted(
+            2,
+          ),
+        ),
+      )
+        .ranked,
+    ).toBe(
+      true,
+    );
+    expect(
+      judgeDailyRun(
+        scripted(
+          3,
+        ),
+        roomy(
+          scripted(
+            3,
+          ),
+        ),
+      ),
+    ).toEqual(
+      {
+        ranked: false,
+        reason:
+          'too-fast',
+      },
+    );
+  });
+
+  it("a bar's first note keeps its reaction floor", () => {
+    const run =
+      withBars(
+        humanRun(),
+        (
+          ms,
+          n,
+        ) =>
+          n <
+          3
+            ? [
+                120,
+                ...ms.slice(
+                  1,
+                ),
+              ]
+            : [
+                ...ms,
+              ],
+      );
     expect(
       judgeDailyRun(
         run,

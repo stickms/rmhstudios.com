@@ -288,4 +288,100 @@ describe('createMidiInput', () => {
       2,
     );
   });
+
+  it("stamps a note with the message's own timeStamp, so a stall does not merge two notes", async () => {
+    const midi =
+      createMidiInput();
+    const got: NoteEvent[] =
+      [];
+    midi.subscribe(
+      (
+        e,
+      ) =>
+        got.push(
+          e,
+        ),
+    );
+    const started =
+      midi.start();
+    const {
+      access,
+      input,
+    } =
+      fakeAccess();
+    resolveAccess(
+      access,
+    );
+    await started;
+    const now =
+      performance.now();
+    const send =
+      input.onmidimessage as unknown as (e: {
+        data: Uint8Array;
+        timeStamp: number;
+      }) => void;
+    // Two notes 150 ms apart, both handled after a stall.
+    send(
+      {
+        data: new Uint8Array(
+          [
+            0x90,
+            60,
+            100,
+          ],
+        ),
+        timeStamp:
+          now -
+          300,
+      },
+    );
+    send(
+      {
+        data: new Uint8Array(
+          [
+            0x90,
+            62,
+            100,
+          ],
+        ),
+        timeStamp:
+          now -
+          150,
+      },
+    );
+    // No stamp (0): the handler's time.
+    send(
+      {
+        data: new Uint8Array(
+          [
+            0x90,
+            64,
+            100,
+          ],
+        ),
+        timeStamp: 0,
+      },
+    );
+    expect(
+      got[0]
+        ?.time,
+    ).toBe(
+      now -
+        300,
+    );
+    expect(
+      got[1]
+        ?.time,
+    ).toBe(
+      now -
+        150,
+    );
+    expect(
+      got[2]
+        ?.time,
+    ).toBeGreaterThanOrEqual(
+      now,
+    );
+    midi.stop();
+  });
 });

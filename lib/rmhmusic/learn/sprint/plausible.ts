@@ -3,15 +3,21 @@
  * thresholds live in. `sprint.server.ts` applies them when it scores a run.
  *
  * The server still cannot know which notes were played. These checks make a fabricated board run
- * cost real time and look human; moderation is the backstop for what slips through. A run that
+ * take at least the wall time it claims and look human; moderation is the backstop for what slips
+ * through. A run that
  * fails a check is KEPT (it counts for the learner's own streak) and is not ranked; the learner is
  * told in a plain sentence that never names a threshold.
  *
  * - **no-start:** the run's start never reached the server, so nothing bounds how long it took.
  * - **clock:** the played prompts' times add up to more than the time between the start and the
- *   save (plus `CLOCK_SLACK_MS` for the app's and the database's clocks).
- * - **too-fast:** two or more right answers under a human floor (one is a glitch, e.g. a doubled
- *   key event). A wrong answer is never too fast.
+ *   save (plus `CLOCK_SLACK_MS` for the app's and the database's clocks). This caps the claimed
+ *   answer times by wall time, and nothing more: a scripted run that records its start, waits out
+ *   the clock and then posts fast-looking times passes it (the other checks and the review are for
+ *   that).
+ * - **too-fast:** `TOO_FAST_LIMIT` or more right answers under a human floor (fewer are glitches,
+ *   e.g. a doubled key event). A bar's floor is its first note's reaction time, plus "most of its
+ *   gaps under `MIN_BAR_GAP_MS`" (one short gap is a stall or a mic poll, not a cheat). A wrong
+ *   answer is never too fast.
  * - **too-even:** with `EVEN_MIN_RIGHT` or more right answers, the spread (coefficient of
  *   variation) of `ms / par` is under `MIN_TIME_SPREAD`; human reading times vary far more.
  *
@@ -44,11 +50,15 @@ export const MIN_ANSWER_MS: Readonly<
     bar: 250,
   };
 
-/** The fastest a bar's later note can follow the one before. */
-export const MIN_BAR_GAP_MS = 80;
+/**
+ * A gap between a bar's notes shorter than this is implausible (25 notes a second). One such gap
+ * is not: a main-thread stall can deliver two queued note-ons a millisecond apart, and a microphone
+ * hears notes on its 25 ms poll. A bar is too fast only when most of its gaps are implausible.
+ */
+export const MIN_BAR_GAP_MS = 40;
 
-/** Too-fast prompts that fail a run (one is tolerated). */
-export const TOO_FAST_LIMIT = 2;
+/** Too-fast prompts that fail a run (fewer are tolerated: a glitch, a doubled key event). */
+export const TOO_FAST_LIMIT = 3;
 
 /** Right answers the evenness check needs before it says anything. */
 export const EVEN_MIN_RIGHT = 15;
@@ -156,17 +166,25 @@ export function tooFastPrompt(
       MIN_ANSWER_MS.bar
     )
       return true;
-    return r.noteMs
-      .slice(
+    const gaps =
+      r.noteMs.slice(
         1,
-      )
-      .some(
+      );
+    const implausible =
+      gaps.filter(
         (
           gap,
         ) =>
           gap <
           MIN_BAR_GAP_MS,
-      );
+      ).length;
+    return (
+      gaps.length >
+        0 &&
+      implausible *
+        2 >
+        gaps.length
+    );
   }
   return (
     r.ms <

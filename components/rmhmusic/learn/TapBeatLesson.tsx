@@ -1146,13 +1146,18 @@ function TapPad({
   const tapping =
     mode ===
     'tap';
+  // `at`: the pointer or key event's own timeStamp, so a tap keeps its time through a stall.
   const down =
-    () => {
+    (
+      at: number,
+    ) => {
       guard.press();
       useLearnStore
         .getState()
         .screen?.press(
           PAD_NOTE,
+          undefined,
+          at,
         );
     };
   const up =
@@ -1210,7 +1215,9 @@ function TapPad({
               e,
             ) => {
               e.preventDefault();
-              down();
+              down(
+                e.timeStamp,
+              );
             }
           : undefined
       }
@@ -1241,7 +1248,9 @@ function TapPad({
               if (
                 !e.repeat
               )
-                down();
+                down(
+                  e.timeStamp,
+                );
             }
           : undefined
       }
