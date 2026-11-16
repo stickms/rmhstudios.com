@@ -420,6 +420,7 @@ import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/miniga
 import { Route as RmhmusicLessonLessonIdRouteImport } from './routes/rmhmusic/lesson.$lessonId'
 import { Route as RmhmusicSongsIndexRouteImport } from './routes/rmhmusic/songs.index'
 import { Route as RmhmusicSongsSongIdRouteImport } from './routes/rmhmusic/songs.$songId'
+import { Route as RmhmusicRTokenRouteImport } from './routes/rmhmusic_.r.$token'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as SliceItArtistKeyRouteImport } from './routes/slice-it/artist.$key'
 import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
@@ -2593,6 +2594,11 @@ const RmhmusicSongsSongIdRoute = RmhmusicSongsSongIdRouteImport.update({
   path: '/songs/$songId',
   getParentRoute: () => RmhmusicRoute,
 } as any)
+const RmhmusicRTokenRoute = RmhmusicRTokenRouteImport.update({
+  id: '/rmhmusic_/r/$token',
+  path: '/rmhmusic/r/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -3505,6 +3511,7 @@ export interface FileRoutesByFullPath {
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
+  '/rmhmusic/r/$token': typeof RmhmusicRTokenRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -3995,6 +4002,7 @@ export interface FileRoutesByTo {
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
+  '/rmhmusic/r/$token': typeof RmhmusicRTokenRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -4512,6 +4520,7 @@ export interface FileRoutesById {
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
   '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
+  '/rmhmusic_/r/$token': typeof RmhmusicRTokenRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -5029,6 +5038,7 @@ export interface FileRouteTypes {
     | '/library/albums/$albumId'
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
+    | '/rmhmusic/r/$token'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -5519,6 +5529,7 @@ export interface FileRouteTypes {
     | '/library/albums/$albumId'
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
+    | '/rmhmusic/r/$token'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -6035,6 +6046,7 @@ export interface FileRouteTypes {
     | '/library/albums/$albumId'
     | '/rmhmusic/lesson/$lessonId'
     | '/rmhmusic/songs/$songId'
+    | '/rmhmusic_/r/$token'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -6318,6 +6330,7 @@ export interface RootRouteChildren {
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   EmbedReplayIdRoute: typeof EmbedReplayIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
+  RmhmusicRTokenRoute: typeof RmhmusicRTokenRoute
   SohumtrackerMonthMonthRoute: typeof SohumtrackerMonthMonthRoute
   SohumtrackerWeekWeekRoute: typeof SohumtrackerWeekWeekRoute
   TagTagRssDotxmlRoute: typeof TagTagRssDotxmlRoute
@@ -9245,6 +9258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhmusicSongsSongIdRouteImport
       parentRoute: typeof RmhmusicRoute
     }
+    '/rmhmusic_/r/$token': {
+      id: '/rmhmusic_/r/$token'
+      path: '/rmhmusic/r/$token'
+      fullPath: '/rmhmusic/r/$token'
+      preLoaderRoute: typeof RmhmusicRTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/secret/cursed-logic/': {
       id: '/secret/cursed-logic/'
       path: '/'
@@ -11157,6 +11177,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmbedPostIdRoute: EmbedPostIdRoute,
   EmbedReplayIdRoute: EmbedReplayIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
+  RmhmusicRTokenRoute: RmhmusicRTokenRoute,
   SohumtrackerMonthMonthRoute: SohumtrackerMonthMonthRoute,
   SohumtrackerWeekWeekRoute: SohumtrackerWeekWeekRoute,
   TagTagRssDotxmlRoute: TagTagRssDotxmlRoute,

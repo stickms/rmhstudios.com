@@ -8,6 +8,7 @@ import { endpoint } from '@/lib/contract/endpoint';
 import type {
   createShareBody,
   shareListRes,
+  sharedResultRes,
   shareSummarySchema,
   stopShareRes,
 } from '@/lib/rmhmusic/learn/social/share-schema';
@@ -78,5 +79,25 @@ export const stopShareApi =
       method:
         'DELETE',
       path: '/api/rmhmusic/share/$id',
+    },
+  );
+
+export type SharedResultView =
+  z.infer<
+    typeof sharedResultRes
+  >;
+
+/** A shared result by its token, for its public page: signed-out viewers included. */
+export const sharedResultApi =
+  endpoint<{
+    params: {
+      token: string;
+    };
+    res: SharedResultView;
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/rmhmusic/r/$token',
     },
   );

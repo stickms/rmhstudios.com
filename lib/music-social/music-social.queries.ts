@@ -7,6 +7,10 @@
 import { contractQuery } from '@/lib/route/route-query';
 import type { FriendsLimit } from '@/lib/rmhmusic/learn/social/friends';
 import { friendsApi } from './friends.contract';
+import {
+  listSharesApi,
+  sharedResultApi,
+} from './share.contract';
 import { musicSocialApi } from './social.contract';
 
 export const MUSIC_SOCIAL_KEY =
@@ -45,5 +49,43 @@ export const musicFriendsQuery =
       },
       {
         staleTime: 30_000,
+      },
+    );
+
+/** The learner's live shared links (Friends and sharing). */
+export const musicSharesQuery =
+  () =>
+    contractQuery(
+      [
+        'rmhmusic',
+        'shares',
+      ],
+      listSharesApi,
+      undefined,
+      {
+        staleTime: 15_000,
+      },
+    );
+
+/** A shared result's public page. */
+export const musicSharedResultQuery =
+  (
+    token: string,
+  ) =>
+    contractQuery(
+      [
+        'rmhmusic',
+        'shared',
+        token,
+      ],
+      sharedResultApi,
+      {
+        params:
+          {
+            token,
+          },
+      },
+      {
+        staleTime: 60_000,
       },
     );

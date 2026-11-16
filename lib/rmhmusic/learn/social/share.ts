@@ -411,6 +411,16 @@ const CARD_DATE =
     },
   );
 
+/** One decimal, rounded as `Intl` rounds, so the card and the page agree (1.45 is 1.5). */
+const CARD_SECONDS =
+  new Intl.NumberFormat(
+    'en-GB',
+    {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    },
+  );
+
 const MODE_NAME: Record<
   SongMode,
   string
@@ -444,7 +454,7 @@ export function cardLines(
       null
     )
       parts.push(
-        `${(p.avgMs / 1000).toFixed(1)} s a note`,
+        `${CARD_SECONDS.format(p.avgMs / 1000)} s a note`,
       );
     if (
       p.skipped >

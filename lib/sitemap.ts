@@ -1252,6 +1252,8 @@ export const DYNAMIC_ROUTES: Record<
       null, // personal learning progress, behind auth
     '/rmhmusic/songs/$songId':
       null, // a song to play, with the learner's own scores, behind auth
+    '/rmhmusic/r/$token':
+      null, // a shared result: a capability link, noindex, never listed (it unfurls through its own card)
     '/rmhstudy/$roomId':
       null,
     '/rmhtube/$roomId':

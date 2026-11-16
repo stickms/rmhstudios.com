@@ -193,3 +193,45 @@ export const stopShareRes =
           ),
     },
   );
+
+/**
+ * A shared result as its public page shows it (`GET /api/rmhmusic/r/$token`). One "gone" for every
+ * reason a link cannot be seen; a live one carries the stored snapshot, the name and picture only
+ * when the link shows them, and nothing else about the learner.
+ */
+export const sharedResultRes =
+  z.discriminatedUnion(
+    'state',
+    [
+      z.object(
+        {
+          state:
+            z.literal(
+              'gone',
+            ),
+        },
+      ),
+      z.object(
+        {
+          state:
+            z.literal(
+              'live',
+            ),
+          /** The share's id: what "Report" names (never the token). */
+          id: z.string(),
+          payload:
+            sharePayloadSchema,
+          name: z
+            .string()
+            .nullable(),
+          image:
+            z
+              .string()
+              .nullable(),
+          /** A Daily result of today (UTC): a signed-in viewer is offered today's challenge. */
+          today:
+            z.boolean(),
+        },
+      ),
+    ],
+  );
