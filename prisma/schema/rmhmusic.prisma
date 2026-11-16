@@ -90,10 +90,18 @@ model MusicSprintDaily {
   results   Json?
   scoredAt  DateTime?
   createdAt DateTime  @default(now())
+  /// Passed the Daily board's checks (`sprint/plausible.ts`) when it was scored; false for rows
+  /// scored before Phase 6 and for runs that failed a check (kept for the learner's own streak).
+  ranked         Boolean   @default(false)
+  /// Why a scored run is not ranked: no-start | clock | too-fast | too-even. Null when ranked.
+  unrankedReason String?   @db.VarChar(16)
+  /// Set by a moderator ("Resolve & remove content" on a `music-score` report): off every board.
+  hiddenAt       DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+  @@index([date, ranked, score(sort: Desc), avgMs])
   @@map("music_sprint_daily")
 }
 
