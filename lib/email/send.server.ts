@@ -41,7 +41,7 @@ function fromAddress(): string {
  * dev), `false` on a delivery failure. Never throws.
  */
 export async function sendEmail(input: SendEmailInput): Promise<boolean> {
-  // Accounts from providers that share no email (Steam, Reddit, sometimes X)
+  // Accounts from providers that share no email (Steam, sometimes X)
   // carry a non-routable `*.placeholder.invalid` address. Every sender goes
   // through here (sign-up verification, session alerts, digests), so this is
   // the one place that keeps them from mailing a bounce to nowhere.

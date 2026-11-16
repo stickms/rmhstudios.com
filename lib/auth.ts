@@ -202,7 +202,7 @@ export const auth = betterAuth({
   },
   hooks: {
     // The placeholder domain belongs to accounts from providers that share no
-    // email (Steam, Reddit, sometimes X). Nobody may claim one of those
+    // email (Steam, sometimes X). Nobody may claim one of those
     // addresses by typing it: an email/password sign-up as
     // `<steamid>@steam.placeholder.invalid` would sit on that Steam user's
     // address, and their first Steam sign-in would then be refused as an

@@ -136,7 +136,7 @@ describe('isValidVerificationResponse', () => {
 describe('placeholder emails', () => {
   it("matches Better Auth's format and is recognised", () => {
     expect(placeholderEmail('steam', STEAM_ID)).toBe(`${STEAM_ID}@steam.placeholder.invalid`);
-    expect(isPlaceholderEmail('t2_abc@reddit.placeholder.invalid')).toBe(true);
+    expect(isPlaceholderEmail('12345@twitter.placeholder.invalid')).toBe(true);
     expect(isPlaceholderEmail(' 123@TWITTER.PLACEHOLDER.INVALID ')).toBe(true);
   });
 

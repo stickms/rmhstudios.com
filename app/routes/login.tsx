@@ -16,7 +16,6 @@ import {
   GithubIcon,
   GitlabIcon,
   MicrosoftIcon,
-  RedditIcon,
   SteamIcon,
   TwitchIcon,
   XIcon,
@@ -347,10 +346,6 @@ function LoginPage() {
     twitter: {
       label: t('continue-with-x', { defaultValue: 'Continue with X' }),
       icon: <XIcon className="size-5" />,
-    },
-    reddit: {
-      label: t('continue-with-reddit', { defaultValue: 'Continue with Reddit' }),
-      icon: <RedditIcon className="size-5" />,
     },
   };
   const providers = enabledProviders.map((id) => ({ id, ...providerButtons[id] }));

@@ -77,7 +77,7 @@ async function sendEmail(input: { to: string; subject: string; text: string; lin
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
   if (!apiKey || !from) return { status: 'skipped' as const, error: 'Resend is not configured' };
-  // A Steam/Reddit/X account's stand-in address (lib/auth/providers.ts) has no inbox.
+  // A Steam or X account's stand-in address (lib/auth/providers.ts) has no inbox.
   if (isPlaceholderEmail(input.to)) return { status: 'skipped' as const, error: 'No email address on file' };
 
   const response = await fetch('https://api.resend.com/emails', {
