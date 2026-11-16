@@ -255,8 +255,15 @@ const BUDGETS = {
   // the whole critical path before it hydrates, so this is 21 KB fewer brotli bytes in 49 fewer requests. From here
   // the entry line and the critical-path line watch nearly the same bytes (the path is the entry, React and the
   // rolldown runtime); a library leaking onto every page now shows in both. Each line is the measurement + ~2%.
+  //
+  // Account consolidation (2026-11-16): entry RAISED 699,400 -> 700,800 B (OPT-01 line). The feature that bought the
+  // bytes is the new /account/connect page (join a new, empty account to an existing one) and the `error` search
+  // param on /login and /settings/security that carries a sign-in failure back to them: the router registers every
+  // route in the entry, so a new page costs its route record whatever its component weighs. Measured on a plain
+  // `vite build`: entry about 699,190 B on main -> 699,983 B. main was already 210 B under the old line, so this keeps
+  // the ~800 B the feature added plus ~800 B of headroom, not the ~2% re-anchor.
   siteCssBrotli: 32_600,
-  entryRaw: 699_400,
+  entryRaw: 700_800,
   criticalPathRaw: 926_100,
   criticalPathBrotli: 244_600,
 };
