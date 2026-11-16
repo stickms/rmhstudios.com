@@ -2,19 +2,23 @@
  * The Daily result's board line (RMH Music Phase 6, plan 1.2 and 1.8): once the scored run is
  * saved, one plain sentence says where it stands on the board (place, would place, not on the
  * board and why, hidden), with "Show it on the board" when the learner's board switch is off and
- * "See today's board". It sits at the end of the result page and fades in (M9), so nothing above it
- * moves. Nothing is asked unprompted: the switch changes only on the learner's tap.
+ * "See today's board". The line is the daily save's own `board` field (`initial`); nothing else is
+ * requested. It mounts at the end of the result page once the save answers and fades in (M9), so
+ * nothing above it moves.
+ *
+ * Nothing is asked unprompted: the switch changes only on the learner's tap, and the button says
+ * beside it what the switch does (every Daily board, not only this one) and where it lives (the
+ * board page and the Privacy page), so turning it on is never a surprise.
  */
 import {
-  useEffect,
+  useId,
   useState,
 } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { useArrival } from '@/components/ui/arrive';
+import { ARRIVE } from '@/components/ui/arrive';
 import { api } from '@/lib/contract/client';
 import {
-  dailyBoardApi,
   setMusicSocialApi,
   type DailyBoardMe,
 } from '@/lib/rmhmusic/learn/social/social.contract';
@@ -24,9 +28,12 @@ import { boardStatusSentence } from './board-text';
 export function DailyBoardLine({
   date,
   today,
+  initial,
 }: {
   date: string;
   today: string;
+  /** The daily save's `board` field. */
+  initial: DailyBoardMe;
 }) {
   const {
     t,
@@ -38,15 +45,8 @@ export function DailyBoardLine({
     me,
     setMe,
   ] =
-    useState<DailyBoardMe | null>(
-      null,
-    );
-  const [
-    nonce,
-    setNonce,
-  ] =
-    useState(
-      0,
+    useState<DailyBoardMe>(
+      initial,
     );
   const [
     busy,
@@ -55,57 +55,76 @@ export function DailyBoardLine({
     useState(
       false,
     );
-  const arrival =
-    useArrival(
-      me !==
-        null,
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(
+      false,
     );
+  const helpId =
+    useId();
+  const isToday =
+    date ===
+    today;
 
-  useEffect(() => {
-    let live = true;
+  function showOnBoard() {
+    setBusy(
+      true,
+    );
+    setFailed(
+      false,
+    );
     api(
-      dailyBoardApi,
+      setMusicSocialApi,
       {
-        query:
-          {
-            date,
-            scope:
-              'everyone',
-          },
+        body: {
+          board: true,
+        },
       },
     )
       .then(
         (
-          b,
+          social,
         ) => {
+          // A private line already carries where the run places with the learner counted: turning
+          // the switch on puts it there.
           if (
-            live
+            social.board &&
+            me.state ===
+              'private'
           )
             setMe(
-              b.me,
+              {
+                state:
+                  'ranked',
+                rank: me.rank,
+                total:
+                  me.total,
+                score:
+                  me.score,
+              },
             );
         },
       )
       .catch(
-        () => {
-          // The result stands without the line; the board page says the rest.
-        },
+        () =>
+          setFailed(
+            true,
+          ),
+      )
+      .finally(
+        () =>
+          setBusy(
+            false,
+          ),
       );
-    return () => {
-      live = false;
-    };
-  }, [
-    date,
-    nonce,
-  ]);
+  }
 
-  if (
-    !me
-  )
-    return null;
   return (
+    // Mounted once the save has answered, after the result painted: it arrives (M9).
     <div
-      className={`space-y-1 ${arrival ?? ''}`}
+      className={`space-y-1 ${ARRIVE}`}
     >
       <p
         role="status"
@@ -114,55 +133,29 @@ export function DailyBoardLine({
         {boardStatusSentence(
           t,
           me,
+          {
+            day: isToday
+              ? 'today'
+              : 'yesterday',
+            scope:
+              'everyone',
+          },
         )}
       </p>
-      <div className="flex flex-wrap gap-x-5">
-        {me.state ===
-        'private' ? (
+      {me.state ===
+      'private' ? (
+        <div className="space-y-1">
           <button
             type="button"
             disabled={
               busy
             }
-            onClick={() => {
-              setBusy(
-                true,
-              );
-              api(
-                setMusicSocialApi,
-                {
-                  body: {
-                    board: true,
-                  },
-                },
-              )
-                .then(
-                  () =>
-                    setNonce(
-                      (
-                        n,
-                      ) =>
-                        n +
-                        1,
-                    ),
-                )
-                .catch(
-                  () =>
-                    setNonce(
-                      (
-                        n,
-                      ) =>
-                        n +
-                        1,
-                    ),
-                )
-                .finally(
-                  () =>
-                    setBusy(
-                      false,
-                    ),
-                );
-            }}
+            aria-describedby={
+              helpId
+            }
+            onClick={
+              showOnBoard
+            }
             className={
               TEXT_BUTTON
             }
@@ -175,12 +168,53 @@ export function DailyBoardLine({
               },
             )}
           </button>
-        ) : null}
+          <p
+            id={
+              helpId
+            }
+            className="text-sm leading-5 text-app-text-muted"
+          >
+            {t(
+              'board-show-mine-help',
+              {
+                defaultValue:
+                  'Shows your name, picture and score on every Daily board. Turn it off any time.',
+              },
+            )}{' '}
+            <Link
+              to="/settings/privacy"
+              className="underline"
+            >
+              {t(
+                'board-show-mine-where',
+                {
+                  defaultValue:
+                    'Privacy settings',
+                },
+              )}
+            </Link>
+          </p>
+          {failed ? (
+            <p
+              role="status"
+              className="text-sm leading-5 text-app-danger"
+            >
+              {t(
+                'board-switch-failed',
+                {
+                  defaultValue:
+                    "Couldn't save. Try again.",
+                },
+              )}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      <div className="flex flex-wrap gap-x-5">
         <Link
           to="/rmhmusic/daily"
           search={
-            date ===
-            today
+            isToday
               ? {}
               : {
                   day: 'yesterday',
@@ -190,8 +224,7 @@ export function DailyBoardLine({
             TEXT_BUTTON
           }
         >
-          {date ===
-          today
+          {isToday
             ? t(
                 'board-see-today',
                 {

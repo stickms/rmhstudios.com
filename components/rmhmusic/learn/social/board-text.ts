@@ -9,6 +9,7 @@
 import type { TFunction } from 'i18next';
 import { nextBoardAt } from '@/lib/rmhmusic/learn/social/board';
 import type {
+  BoardScope,
   DailyBoardMe,
   DailyBoardRow,
 } from '@/lib/rmhmusic/learn/social/social.contract';
@@ -66,68 +67,111 @@ export function boardRowSentence(
         .user
         .name,
     );
-  const base =
+  const vars =
+    {
+      rank: row.rank,
+      name,
+      score:
+        row.score,
+    };
+  // One complete string per case (never "{{row}}, without chords"): word order is the language's.
+  if (
     row.avgMs ===
     null
+  )
+    return row.withoutChords
       ? t(
-          'board-row',
+          'board-row-chordless',
           {
             ns: 'c-rmhmusic',
-            rank: row.rank,
-            name,
-            score:
-              row.score,
+            ...vars,
             defaultValue:
-              'Place {{rank}}, {{name}}, {{score}} points',
+              'Place {{rank}}, {{name}}, {{score}} points, without chords',
           },
         )
       : t(
-          'board-row-time',
+          'board-row',
           {
             ns: 'c-rmhmusic',
-            rank: row.rank,
-            name,
-            score:
-              row.score,
-            seconds:
-              secondsANote(
-                language,
-                row.avgMs,
-              ),
+            ...vars,
             defaultValue:
-              'Place {{rank}}, {{name}}, {{score}} points, {{seconds}} seconds a note',
+              'Place {{rank}}, {{name}}, {{score}} points',
           },
         );
+  const seconds =
+    secondsANote(
+      language,
+      row.avgMs,
+    );
   return row.withoutChords
     ? t(
-        'board-row-without-chords',
+        'board-row-time-chordless',
         {
           ns: 'c-rmhmusic',
-          row: base,
+          ...vars,
+          seconds,
           defaultValue:
-            '{{row}}, without chords',
+            'Place {{rank}}, {{name}}, {{score}} points, {{seconds}} seconds a note, without chords',
         },
       )
-    : base;
+    : t(
+        'board-row-time',
+        {
+          ns: 'c-rmhmusic',
+          ...vars,
+          seconds,
+          defaultValue:
+            'Place {{rank}}, {{name}}, {{score}} points, {{seconds}} seconds a note',
+        },
+      );
 }
 
-/** Where the viewer's own run of the day stands. */
+/** Which board the line is about: the day shown, and Everyone or Friends. */
+export interface BoardWhere {
+  day:
+    | 'today'
+    | 'yesterday';
+  scope: BoardScope;
+}
+
+const TODAY_EVERYONE: BoardWhere =
+  {
+    day: 'today',
+    scope:
+      'everyone',
+  };
+
+/**
+ * Where the viewer's own run of the day stands, on the board shown: on the Friends tab the place
+ * is among friends (`board.server.ts` ranks it there).
+ */
 export function boardStatusSentence(
   t: T,
   me: DailyBoardMe,
+  where: BoardWhere = TODAY_EVERYONE,
 ): string {
   switch (
     me.state
   ) {
     case 'not-played':
-      return t(
-        'board-me-not-played',
-        {
-          ns: 'c-rmhmusic',
-          defaultValue:
-            "You haven't played today's challenge yet.",
-        },
-      );
+      return where.day ===
+        'yesterday'
+        ? t(
+            'board-me-not-played-yesterday',
+            {
+              ns: 'c-rmhmusic',
+              defaultValue:
+                "You didn't play yesterday's challenge.",
+            },
+          )
+        : t(
+            'board-me-not-played',
+            {
+              ns: 'c-rmhmusic',
+              defaultValue:
+                "You haven't played today's challenge yet.",
+            },
+          );
     case 'started':
       return t(
         'board-me-started',
@@ -138,17 +182,30 @@ export function boardStatusSentence(
         },
       );
     case 'ranked':
-      return t(
-        'board-me-ranked',
-        {
-          ns: 'c-rmhmusic',
-          rank: me.rank,
-          total:
-            me.total,
-          defaultValue:
-            'Place {{rank}} of {{total}}',
-        },
-      );
+      return where.scope ===
+        'friends'
+        ? t(
+            'board-me-ranked-friends',
+            {
+              ns: 'c-rmhmusic',
+              rank: me.rank,
+              total:
+                me.total,
+              defaultValue:
+                'Place {{rank}} of {{total}} among your friends',
+            },
+          )
+        : t(
+            'board-me-ranked',
+            {
+              ns: 'c-rmhmusic',
+              rank: me.rank,
+              total:
+                me.total,
+              defaultValue:
+                'Place {{rank}} of {{total}}',
+            },
+          );
     case 'private':
       return t(
         'board-me-private',
@@ -164,6 +221,18 @@ export function boardStatusSentence(
         },
       );
     case 'unranked':
+      if (
+        me.reason ===
+        null
+      )
+        return t(
+          'board-me-before-board',
+          {
+            ns: 'c-rmhmusic',
+            defaultValue:
+              'This run was before the board started.',
+          },
+        );
       return me.reason ===
         'no-start'
         ? t(

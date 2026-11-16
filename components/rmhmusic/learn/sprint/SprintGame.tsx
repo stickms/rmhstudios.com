@@ -57,6 +57,7 @@ import {
   SECONDARY_BUTTON,
   TEXT_BUTTON,
 } from '../buttons';
+import type { DailyBoardMe } from '@/lib/rmhmusic/learn/social/social.contract';
 import { DailyBoardLine } from '../social/DailyBoardLine';
 import { InputSetup } from '../InputSetup';
 import { Shell } from '../LessonScreen';
@@ -160,6 +161,17 @@ export function SprintGame({
     setPlaying,
   ] =
     useState<Playing | null>(
+      null,
+    );
+  /** The scored Daily run's board line, from its save's answer (no second request). */
+  const [
+    dailyBoard,
+    setDailyBoard,
+  ] =
+    useState<{
+      date: string;
+      me: DailyBoardMe;
+    } | null>(
       null,
     );
   const [
@@ -504,7 +516,9 @@ export function SprintGame({
           saved={
             playing.mode ===
               'daily' &&
-            playing.scored ? (
+            playing.scored &&
+            dailyBoard?.date ===
+              playing.date ? (
               <DailyBoardLine
                 date={
                   playing.date
@@ -512,6 +526,9 @@ export function SprintGame({
                 today={utcDate(
                   Date.now(),
                 )}
+                initial={
+                  dailyBoard.me
+                }
               />
             ) : undefined
           }
@@ -534,6 +551,16 @@ export function SprintGame({
                     date: playing.date,
                     summary,
                     results,
+                    onBoard:
+                      (
+                        me,
+                      ) =>
+                        setDailyBoard(
+                          {
+                            date: playing.date,
+                            me,
+                          },
+                        ),
                   },
                 )
           }

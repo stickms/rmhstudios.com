@@ -28,7 +28,6 @@
   "board-report": "Report the score of {{name}}",
   "board-row": "Place {{rank}}, {{name}}, {{score}} points",
   "board-row-time": "Place {{rank}}, {{name}}, {{score}} points, {{seconds}} seconds a note",
-  "board-row-without-chords": "{{row}}, without chords",
   "board-scope": "Whose scores",
   "board-seconds": "{{seconds}} s",
   "board-see-today": "See today's board",
@@ -501,5 +500,13 @@
   "voice-range-soprano": "Soprano",
   "voice-range-tenor": "Tenor",
   "voice-range-title": "Your voice",
-  "voice-setup-mic": "Singers answer with the microphone. The keys still work where a lesson shows them."
+  "voice-setup-mic": "Singers answer with the microphone. The keys still work where a lesson shows them.",
+  "board-me-before-board": "This run was before the board started.",
+  "board-me-not-played-yesterday": "You didn't play yesterday's challenge.",
+  "board-me-ranked-friends": "Place {{rank}} of {{total}} among your friends",
+  "board-row-chordless": "Place {{rank}}, {{name}}, {{score}} points, without chords",
+  "board-row-time-chordless": "Place {{rank}}, {{name}}, {{score}} points, {{seconds}} seconds a note, without chords",
+  "board-show-mine-help": "Shows your name, picture and score on every Daily board. Turn it off any time.",
+  "board-show-mine-where": "Privacy settings",
+  "board-switch-failed": "Couldn't save. Try again."
 }

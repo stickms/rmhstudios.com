@@ -1,11 +1,14 @@
-import { useId } from 'react';
+import {
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { toast } from '@/lib/toast';
 import { Switch } from '@/components/ui/switch';
 import { SettingsSection } from '@/components/settings/SettingsSection';
 import { api } from '@/lib/contract/client';
@@ -14,6 +17,10 @@ import {
   setMusicSocialApi,
   type MusicSocial,
 } from '@/lib/rmhmusic/learn/social/social.contract';
+
+type SwitchKey =
+  | 'board'
+  | 'friends';
 
 const QUERY_KEY =
   [
@@ -65,53 +72,116 @@ export function MusicPrivacyControls() {
     useId();
   const friendsHelp =
     useId();
-
-  function persist(body: {
-    board?: boolean;
-    friends?: boolean;
-  }) {
-    // Shown at once; a failed save puts the switch back and says so.
-    const previous =
-      value;
-    queryClient.setQueryData(
-      QUERY_KEY,
+  // Which switch has a save in flight (it is disabled until the answer), whether the last one
+  // failed, and the queue that keeps saves in the order they were tapped (the last tap wins).
+  const [
+    pending,
+    setPending,
+  ] =
+    useState<
+      Record<
+        SwitchKey,
+        boolean
+      >
+    >(
       {
-        ...value,
-        ...body,
+        board: false,
+        friends: false,
       },
     );
-    api(
-      setMusicSocialApi,
-      {
-        body,
-      },
-    )
-      .then(
-        (
-          next,
-        ) =>
-          queryClient.setQueryData(
-            QUERY_KEY,
-            next,
-          ),
-      )
-      .catch(
-        () => {
-          queryClient.setQueryData(
-            QUERY_KEY,
-            previous,
-          );
-          toast.error(
-            t(
-              'music-privacy-save-error',
+  const [
+    failed,
+    setFailed,
+  ] =
+    useState(
+      false,
+    );
+  const queue =
+    useRef<
+      Promise<void>
+    >(
+      Promise.resolve(),
+    );
+
+  function persist(
+    key: SwitchKey,
+    on: boolean,
+  ) {
+    setFailed(
+      false,
+    );
+    setPending(
+      (
+        p,
+      ) => ({
+        ...p,
+        [key]: true,
+      }),
+    );
+    // Shown at once; a failed save puts the switch back and says so.
+    const set =
+      (
+        v: boolean,
+      ) =>
+        queryClient.setQueryData<MusicSocial>(
+          QUERY_KEY,
+          (
+            old,
+          ) => ({
+            ...(old ??
+              value),
+            [key]:
+              v,
+          }),
+        );
+    set(
+      on,
+    );
+    queue.current =
+      queue.current
+        .then(
+          () =>
+            api(
+              setMusicSocialApi,
               {
-                defaultValue:
-                  'Could not save',
+                body: {
+                  [key]:
+                    on,
+                },
               },
             ),
-          );
-        },
-      );
+        )
+        .then(
+          (
+            next,
+          ) => {
+            queryClient.setQueryData(
+              QUERY_KEY,
+              next,
+            );
+          },
+        )
+        .catch(
+          () => {
+            set(
+              !on,
+            );
+            setFailed(
+              true,
+            );
+          },
+        )
+        .finally(
+          () =>
+            setPending(
+              (
+                p,
+              ) => ({
+                ...p,
+                [key]: false,
+              }),
+            ),
+        );
   }
 
   return (
@@ -133,7 +203,7 @@ export function MusicPrivacyControls() {
     >
       <div className="chrome-row flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-site-text">
+          <p className="t-label text-site-text">
             {t(
               'music-privacy-board',
               {
@@ -146,7 +216,7 @@ export function MusicPrivacyControls() {
             id={
               boardHelp
             }
-            className="text-xs text-site-text-muted"
+            className="t-meta"
           >
             {t(
               'music-privacy-board-hint',
@@ -162,16 +232,15 @@ export function MusicPrivacyControls() {
             value.board
           }
           disabled={
-            !loaded
+            !loaded ||
+            pending.board
           }
           onCheckedChange={(
             on,
           ) =>
             persist(
-              {
-                board:
-                  on,
-              },
+              'board',
+              on,
             )
           }
           aria-label={t(
@@ -188,7 +257,7 @@ export function MusicPrivacyControls() {
       </div>
       <div className="chrome-row flex items-center justify-between gap-3 border-t border-site-border pt-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-site-text">
+          <p className="t-label text-site-text">
             {t(
               'music-privacy-friends',
               {
@@ -201,13 +270,13 @@ export function MusicPrivacyControls() {
             id={
               friendsHelp
             }
-            className="text-xs text-site-text-muted"
+            className="t-meta"
           >
             {t(
-              'music-privacy-friends-hint',
+              'music-privacy-friends-hint-now',
               {
                 defaultValue:
-                  'People you follow who follow you back see your Daily streak, finished units and song bests. Friends stop seeing it within a minute of turning it off.',
+                  "People you follow who follow you back see your Daily scores on the board's Friends tab. Later it will also share your Daily streak, finished units and song bests. Friends stop seeing it within a minute of turning it off.",
               },
             )}
           </p>
@@ -217,16 +286,15 @@ export function MusicPrivacyControls() {
             value.friends
           }
           disabled={
-            !loaded
+            !loaded ||
+            pending.friends
           }
           onCheckedChange={(
             on,
           ) =>
             persist(
-              {
-                friends:
-                  on,
-              },
+              'friends',
+              on,
             )
           }
           aria-label={t(
@@ -241,6 +309,20 @@ export function MusicPrivacyControls() {
           }
         />
       </div>
+      {failed ? (
+        <p
+          role="status"
+          className="t-meta text-site-danger"
+        >
+          {t(
+            'music-privacy-save-failed',
+            {
+              defaultValue:
+                "Couldn't save. Try again.",
+            },
+          )}
+        </p>
+      ) : null}
     </SettingsSection>
   );
 }

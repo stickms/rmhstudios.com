@@ -265,4 +265,127 @@ describe('board-text', () => {
       'The board starts again at 07:00 PM your time.',
     );
   });
+
+  it('a row without chords is one whole sentence in either form', () => {
+    expect(
+      boardRowSentence(
+        t,
+        'en',
+        {
+          ...row,
+          avgMs:
+            null,
+          withoutChords: true,
+        },
+      ),
+    ).toBe(
+      'Place 14, Alex, 92 points, without chords',
+    );
+    // One complete string per case: translators never see a sentence inside a sentence.
+    const keys: string[] =
+      [];
+    const spy =
+      ((
+        key: string,
+        opts: object,
+      ) => {
+        keys.push(
+          key,
+        );
+        return t(
+          key,
+          opts,
+        );
+      }) as unknown as typeof t;
+    boardRowSentence(
+      spy,
+      'en',
+      {
+        ...row,
+        withoutChords: true,
+      },
+    );
+    expect(
+      keys,
+    ).toEqual(
+      [
+        'board-row-time-chordless',
+      ],
+    );
+  });
+
+  it("names yesterday's board on yesterday's page", () => {
+    const yesterday =
+      {
+        day: 'yesterday',
+        scope:
+          'everyone',
+      } as const;
+    expect(
+      boardStatusSentence(
+        t,
+        {
+          state:
+            'not-played',
+        },
+        yesterday,
+      ),
+    ).toBe(
+      "You didn't play yesterday's challenge.",
+    );
+    expect(
+      boardStatusSentence(
+        t,
+        {
+          state:
+            'ranked',
+          rank: 3,
+          total: 9,
+          score: 92,
+        },
+        yesterday,
+      ),
+    ).toBe(
+      'Place 3 of 9',
+    );
+  });
+
+  it('on the Friends tab the place is among friends', () => {
+    expect(
+      boardStatusSentence(
+        t,
+        {
+          state:
+            'ranked',
+          rank: 2,
+          total: 5,
+          score: 92,
+        },
+        {
+          day: 'today',
+          scope:
+            'friends',
+        },
+      ),
+    ).toBe(
+      'Place 2 of 5 among your friends',
+    );
+  });
+
+  it('a run scored before the board started says so, not that its start was lost', () => {
+    expect(
+      boardStatusSentence(
+        t,
+        {
+          state:
+            'unranked',
+          reason:
+            null,
+          score: 92,
+        },
+      ),
+    ).toBe(
+      'This run was before the board started.',
+    );
+  });
 });

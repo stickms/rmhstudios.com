@@ -135,6 +135,14 @@ export function DailyBoard({
     useState(
       false,
     );
+  /** The last switch save failed (the switch shows the server's value again). */
+  const [
+    switchFailed,
+    setSwitchFailed,
+  ] =
+    useState(
+      false,
+    );
   const [
     reporting,
     setReporting,
@@ -232,6 +240,9 @@ export function DailyBoard({
     setSaving(
       true,
     );
+    setSwitchFailed(
+      false,
+    );
     api(
       setMusicSocialApi,
       {
@@ -255,14 +266,18 @@ export function DailyBoard({
         },
       )
       .catch(
-        () =>
+        () => {
+          setSwitchFailed(
+            true,
+          );
           setNonce(
             (
               n,
             ) =>
               n +
               1,
-          ),
+          );
+        },
       )
       .finally(
         () =>
@@ -392,6 +407,14 @@ export function DailyBoard({
                 ? boardStatusSentence(
                     t,
                     board.me,
+                    {
+                      day,
+                      // With the friends switch off the line is the Everyone board's.
+                      scope:
+                        board.friendsOff
+                          ? 'everyone'
+                          : scope,
+                    },
                   )
                 : ''}
             </p>
@@ -443,6 +466,20 @@ export function DailyBoard({
                 },
               )}
             </p>
+            {switchFailed ? (
+              <p
+                role="status"
+                className="text-sm leading-5 text-app-danger"
+              >
+                {t(
+                  'board-switch-failed',
+                  {
+                    defaultValue:
+                      "Couldn't save. Try again.",
+                  },
+                )}
+              </p>
+            ) : null}
           </div>
           <Switch
             id={`${helpId}-switch`}
