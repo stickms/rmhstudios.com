@@ -28,6 +28,7 @@ export async function exportMusicData(
     sprintBests,
     sprintDaily,
     songBests,
+    social,
   ] =
     await Promise.all(
       [
@@ -88,6 +89,14 @@ export async function exportMusicData(
             take: CAP,
           },
         ),
+        prisma.musicSocial.findUnique(
+          {
+            where:
+              {
+                userId,
+              },
+          },
+        ),
       ],
     );
   return {
@@ -97,6 +106,7 @@ export async function exportMusicData(
     sprintBests,
     sprintDaily,
     songBests,
+    social,
   };
 }
 
@@ -146,6 +156,14 @@ export function musicErasureOps(
       },
     ),
     prisma.musicSongBest.deleteMany(
+      {
+        where:
+          {
+            userId,
+          },
+      },
+    ),
+    prisma.musicSocial.deleteMany(
       {
         where:
           {

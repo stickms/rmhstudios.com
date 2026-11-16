@@ -122,3 +122,20 @@ model MusicSongBest {
   @@unique([userId, songId, mode])
   @@map("music_song_best")
 }
+
+/// A learner's social consent (Phase 6, `lib/rmhmusic/learn/social/prefs.ts`). No row = both off:
+/// nothing about the learner is visible to anyone until they turn a switch on. Read at query time,
+/// so turning a switch off removes every past and present appearance at once; it never deletes a
+/// result.
+model MusicSocial {
+  userId    String   @id
+  /// Show my Daily challenge scores on the board (any signed-in learner).
+  board     Boolean  @default(false)
+  /// Share my progress (Daily streak, finished units, song bests) with mutual follows.
+  friends   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("music_social")
+}
