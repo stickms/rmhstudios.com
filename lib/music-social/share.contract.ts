@@ -22,7 +22,7 @@ export type ShareList =
     typeof shareListRes
   >;
 export type CreateShareInput =
-  z.input<
+  z.infer<
     typeof createShareBody
   >;
 

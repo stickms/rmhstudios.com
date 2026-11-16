@@ -38,24 +38,19 @@ import {
 } from '../buttons';
 import { shareText } from './share-text';
 
-type What =
-  | Extract<
-      CreateShareInput,
-      {
-        kind: 'daily';
-      }
-    >
-  | Extract<
-      CreateShareInput,
-      {
-        kind: 'song';
-      }
-    >;
+/** What to share: a Daily date, or a song and mode. The server builds the rest. */
 type Target =
-  Omit<
-    What,
-    'showName'
-  >;
+  | {
+      kind: 'daily';
+      date: string;
+    }
+  | {
+      kind: 'song';
+      songId: string;
+      mode:
+        | 'wait'
+        | 'play';
+    };
 
 export function ShareButton({
   target,
