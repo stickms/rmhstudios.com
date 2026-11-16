@@ -3,7 +3,7 @@ import { badRequest } from '@/lib/api/handler.server';
 import { implement } from '@/lib/api/implement.server';
 import { boardDateOk } from '@/lib/rmhmusic/learn/social/board';
 import { loadBoard } from '@/lib/rmhmusic/learn/social/board.server';
-import { dailyBoardApi } from '@/lib/rmhmusic/learn/social/social.contract';
+import { dailyBoardApi } from '@/lib/music-social/social.contract';
 import { boardQuery, boardRes } from '@/lib/rmhmusic/learn/social/social-schema';
 
 /**

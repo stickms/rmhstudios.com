@@ -1,6 +1,10 @@
 /**
  * Contracts for RMH Music's social endpoints (Phase 6). Client-safe: types come from the zod
  * schemas by `import type`, so this file ships no zod.
+ *
+ * Outside `lib/rmhmusic` on purpose: the site Privacy page (`MusicPrivacyControls`) imports it,
+ * and `app/site-tier.css` skips `lib/rmhmusic` (`@source not`), so a site page must not reach code
+ * in there (`lib/__tests__/style-tiers.test.ts`).
  */
 import type { z } from 'zod';
 import { endpoint } from '@/lib/contract/endpoint';
@@ -11,7 +15,7 @@ import type {
   boardRowSchema,
   musicSocialBody,
   musicSocialRes,
-} from './social-schema';
+} from '@/lib/rmhmusic/learn/social/social-schema';
 
 export type MusicSocial =
   z.infer<

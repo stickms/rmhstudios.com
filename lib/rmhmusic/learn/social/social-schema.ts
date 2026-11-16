@@ -1,7 +1,7 @@
 /**
- * Zod schemas for RMH Music's social endpoints (Phase 6, `social.contract.ts`). The rules the
- * server applies live in `prefs.server.ts` and `board.server.ts`; the pure ones in `prefs.ts` and
- * `board.ts`.
+ * Zod schemas for RMH Music's social endpoints (Phase 6, `lib/music-social/social.contract.ts`).
+ * The rules the server applies live in `prefs.server.ts` and `board.server.ts`; the pure ones in
+ * `prefs.ts` and `board.ts`.
  */
 import { z } from 'zod';
 import { isUtcDate } from '../sprint/generate';
