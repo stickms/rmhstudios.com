@@ -127,7 +127,7 @@ it.
 | UI                  | React 19, Tailwind CSS v4, Framer Motion, Radix primitives                                      |
 | State / data        | Zustand, TanStack React Query                                                                   |
 | DB / ORM            | PostgreSQL + Prisma 7 (`@prisma/adapter-pg`)                                                    |
-| Auth                | Better Auth (email/password + Discord/GitHub/Google), Stripe via `@better-auth/stripe`          |
+| Auth                | Better Auth (email/password + Discord/GitHub, plus Steam/Twitch/Microsoft/GitLab/X/Reddit when configured; Google off), Stripe via `@better-auth/stripe` |
 | Realtime            | Socket.io (Node) hubs; a Go worker fleet (Bazel) for background jobs / status / assets          |
 | 3D / audio / canvas | React Three Fiber + Rapier, Pixi.js, Howler, Tone.js                                            |
 | i18n                | i18next / react-i18next — 32 locales, RTL for ar/ur/fa                                          |

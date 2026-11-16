@@ -12,6 +12,10 @@ import { customSession } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
 import { getUserTier, invalidateUserTier } from '@/lib/entitlements';
 import { sendEmail } from '@/lib/email/send.server';
+import { createAuthMiddleware, APIError } from 'better-auth/api';
+import { isPlaceholderEmail } from '@/lib/auth/providers';
+import { socialProviderConfig, steamApiKey } from '@/lib/auth/provider-config.server';
+import { steam } from '@/lib/auth/steam.server';
 
 // The `!` here used to be load-bearing in the worst way. `new Stripe(undefined)`
 // throws "Neither apiKey nor config.authenticator provided" at CONSTRUCTION, and
@@ -116,19 +120,9 @@ export const auth = betterAuth({
   },
   // Google sign-in is switched off (repeated problems with it, 2026-10). Nothing was deleted: existing `account` rows with
   // providerId 'google' stay in the database untouched, so it can come back by restoring a `google: { clientId, clientSecret,
-  // overrideUserInfoOnSignIn: true }` entry here, its button in app/routes/login.tsx, and the GOOGLE_CLIENT_* env vars.
-  socialProviders: {
-    discord: {
-      clientId: process.env.DISCORD_CLIENT_ID!,
-      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
-      overrideUserInfoOnSignIn: true,
-    },
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-      overrideUserInfoOnSignIn: true,
-    },
-  },
+  // overrideUserInfoOnSignIn: true }` entry in lib/auth/provider-config.server.ts, its id in lib/auth/providers.ts, and the
+  // GOOGLE_CLIENT_* env vars. Discord and GitHub are always on; every other provider is on only when its env vars are set.
+  socialProviders: socialProviderConfig(),
   emailAndPassword: {
     enabled: true,
     // Prove ownership of the address before a credential account becomes usable.
@@ -206,6 +200,22 @@ export const auth = betterAuth({
       },
     },
   },
+  hooks: {
+    // The placeholder domain belongs to accounts from providers that share no
+    // email (Steam, Reddit, sometimes X). Nobody may claim one of those
+    // addresses by typing it: an email/password sign-up as
+    // `<steamid>@steam.placeholder.invalid` would sit on that Steam user's
+    // address, and their first Steam sign-in would then be refused as an
+    // unlinked existing account.
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== '/sign-up/email' && ctx.path !== '/change-email') return;
+      const body = ctx.body as { email?: unknown; newEmail?: unknown } | undefined;
+      const claimed = ctx.path === '/sign-up/email' ? body?.email : body?.newEmail;
+      if (typeof claimed === 'string' && isPlaceholderEmail(claimed)) {
+        throw new APIError('BAD_REQUEST', { message: 'Enter a valid email address.' });
+      }
+    }),
+  },
   databaseHooks: {
     user: {
       create: {
@@ -268,6 +278,10 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    // Steam sign-in (OpenID 2.0, so a plugin rather than a socialProviders
+    // entry). Always registered so the plugin tuple keeps its type; its
+    // endpoints answer 404 unless STEAM_API_KEY is set.
+    steam({ apiKey: steamApiKey }),
     // WebAuthn/passkey sign-in. rpID/origin default from baseURL; override
     // via env when serving from multiple hostnames (e.g. www + apex).
     passkey({

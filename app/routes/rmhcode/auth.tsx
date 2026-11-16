@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { m as motion } from 'framer-motion';
 import { Terminal, Check, X, Loader2, Shield } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { isPlaceholderEmail } from '@/lib/auth/providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
@@ -138,7 +139,7 @@ function AuthContent() {
           <div className="p-4 surface-field rounded-site-sm mb-6">
             <div className="flex items-center gap-3">
               {session.user.image ? <img src={session.user.image} alt={session.user.name || t("user", { defaultValue: "User" })} className="w-10 h-10 rounded-full" /> : <div className="w-10 h-10 rounded-full bg-site-bg-subtle flex items-center justify-center text-site-accent font-bold">{(session.user.name?.[0] || 'U').toUpperCase()}</div>}
-              <div><p className="font-medium text-site-text">{session.user.name}</p><p className="text-sm text-site-text-muted">{session.user.email}</p></div>
+              <div><p className="font-medium text-site-text">{session.user.name}</p>{!isPlaceholderEmail(session.user.email) && <p className="text-sm text-site-text-muted">{session.user.email}</p>}</div>
             </div>
           </div>
           <div className="mb-6">
