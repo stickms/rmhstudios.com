@@ -81,7 +81,9 @@ export function Shell({
   action?: ReactNode;
   /** Where the back link goes instead of the learn home (a song goes back to the songbook). */
   back?: {
-    to: '/rmhmusic/songs';
+    to:
+      | '/rmhmusic/songs'
+      | '/rmhmusic/sprint';
     label: string;
   };
   /** The lesson is still loading: the main region says so to screen readers. */
