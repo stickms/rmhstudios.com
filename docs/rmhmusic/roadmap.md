@@ -60,15 +60,19 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   `CREDITS.txt` and `/rmhmusic/credits` carry the three new credits. Nobody has listened to any of it.
 - **Voice** (`instrument: 'voice'`, `MusicLearnProfile.voiceRange`, migration
   `20261115200000_music_learn_voice_range`, additive): ranges in `lib/rmhmusic/learn/voice/range.ts`
-  (strict island) — soprano C4–G5 and alto A3–D5 on the treble staff, tenor C3–G4 on the treble
-  staff with the small 8 (written an octave up), baritone/bass G2–C4 on the bass staff; a null range
-  reads as alto. Choosing the Voice tab ("Learn to sing") opens Set up input, which for a singer starts
+  (strict island) — soprano C4–G5 and alto G3–D5 on the treble staff (an alto reads on the low
+  card, `staffCardRange`, since G3 is below the deck card's two ledger lines), tenor C3–G4 on the
+  treble staff with the small 8 (written an octave up), baritone/bass G2–C4 on the bass staff. The
+  Voice tab ("Learn to sing") opens no dialog (the tabs activate on arrow keys); while a singer has
+  no range, the input row has a "Choose your voice" link to Set up input, which for a singer starts
   with "Your voice" (a radio group with each range's compass) and says singers answer with the
-  microphone. `VOICE_PATH` (`pathFor`): Read your staff (`voice-staff-notes`: the range's deck;
+  microphone, and a lesson in the range asks for one first (`needsVoiceRange`) rather than assume
+  alto. `VOICE_PATH` (`pathFor`): Read your staff (`voice-staff-notes`: the range's deck;
   `voice-first-note`), Sing it back (`voice-match-five`, `voice-match-range`: match-note in the range,
   graded in cents at the sounding pitch), Sing intervals (new mode `sing-interval` on the match
-  screen: the staff shows the first note, the line names the interval, Hear it plays both notes,
-  the second is sung; `voice-interval-steps` second/third, `voice-interval-leaps`
+  screen, echo matching: the first note sounds by itself as each target starts, through the guarded
+  hint so the mic ignores it; nothing sung counts until it has sounded; Hear it replays it alone;
+  "Hear the answer" plays both after a miss; the line names the interval and the second is sung; `voice-interval-steps` second/third, `voice-interval-leaps`
   third/fifth/octave, natural notes only), and the shared rhythm unit. No chord, keyboard or
   fretboard lesson. Sprint: single-note levels only, prompts moved by octaves onto the range's staff
   (`forVoice`), chord prompts skipped in the daily run. Songs: `songs/transpose.ts` keeps a song as
@@ -89,13 +93,19 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   the four single-note levels.
 - **Not done:** a real voice and microphone (the oscillator is a pure tone; vibrato, breath and
   octave errors of real singers untested), Firefox / WebKit / iOS, 200 % text, RTL with real
-  strings, listening to the new sounds, the learn home's skeleton is drawn from the piano/guitar
-  path (15 lessons), so a singer's loaded sheet is shorter (2,189 → 1,519 px at 390; CLS stays 0
-  because the skeleton is replaced and nothing sits below it — skeleton parity NOT met for
-  singers; same for the Sprint picker, which drops the chord rows once the profile loads); a tenor
+  strings, listening to the new sounds; a tenor
   answering a staff card on the on-screen keys must press the written pitch (as a guitarist does);
   lesson titles of the voice path are English catalogue strings like the others; `pnpm typecheck`
   (OOM here; a scoped `tsc` over every RMH Music file and `typecheck:strict` passed).
+- **Review fixes (2026-11-16):** the organ credit names the quiet stop shipped (a credits test
+  checks every work line against `sources.json`); interval singing as above; Practice deals a
+  singer their range's deck (tenor with the 8, alto on the low card); the `/rmhmusic` layout
+  route's auth check also selects the profile's instrument and range (`getLearnerShape`, route
+  context, `useLearnerShape`), so the home placeholder is built from the learner's own path and
+  the Sprint placeholder lists a singer's levels: skeleton = loaded height in Chromium at 390 and
+  1280 for piano, guitar, an alto and a singer with no range (home, Sprint picker, the alto's
+  flashcard and match lessons); the first-note staff reads bass and treble-8; a song moved into
+  another key says so.
 
 ### 2.00 Songs: sheet music and tab play-along (Phase 4) — shipped in #1654
 
@@ -322,7 +332,8 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 - **Phase 5:** more instruments and voice — **built** (§2.000): cello, clarinet, oboe, nylon guitar,
   ukulele and organ sounds; voice as a learner instrument with four ranges. Left: the owner's
   audition of the sounds, counsel on the CC0 claims (VSCO, VCSL organ `Info.txt`, FreePats), a real
-  singer and microphone, skeleton parity for singers, choir (several parts) and harmony singing,
+  singer and microphone, a range prompt in Sprint and Songs (a singer with no range is still read
+  as alto there), choir (several parts) and harmony singing,
   per-range presets in the tuner, a second sound layer, lesson titles in the locales.
 - **Phase 6:** social (friends, shared progress, possibly leaderboards for Sprint).
 - Rhythm *reading* beyond four note values; sharps/flats in flashcards (naturals only today);
