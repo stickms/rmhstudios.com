@@ -75,8 +75,8 @@ describe('the RMH Music group on the Privacy page', () => {
   it('is a site-tier group in the Privacy page namespace, on the site Switch', () => {
     expect(
       controls,
-    ).toContain(
-      "useTranslation('feed')",
+    ).toMatch(
+      /useTranslation\(\s*'feed'/,
     );
     expect(
       controls,
