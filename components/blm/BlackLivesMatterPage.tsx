@@ -335,7 +335,7 @@ const BLM_FAQ: Faq[] = [
 
 const FOOTER_LINKS: { href: string; label: string }[] = [
   { href: '/security', label: 'Security' },
-  { href: '/optimization', label: 'Speed' },
+  { href: '/rmh-research/reports/optimization', label: 'Speed' },
   { href: '/privacy', label: 'Privacy' },
   { href: '/terms', label: 'Terms' },
 ];

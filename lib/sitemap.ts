@@ -287,12 +287,6 @@ export const STATIC_ROUTES: SitemapEntry[] =
       priority: 0.6,
     },
     {
-      loc: '/psychology',
-      changefreq:
-        'monthly',
-      priority: 0.5,
-    },
-    {
       loc: '/predictions',
       changefreq:
         'daily',
@@ -476,8 +470,11 @@ export const STATIC_ROUTES: SitemapEntry[] =
         'yearly',
       priority: 0.3,
     },
+    // The two RMH Research reports that render outside the microsite's layout (the
+    // microsite's own pages come from VERTICALS, its papers, authors and fields from
+    // `researchSitemapRoutes()` in the pages section).
     {
-      loc: '/covid',
+      loc: '/rmh-research/reports/feature-leak',
       changefreq:
         'yearly',
       priority: 0.3,
@@ -494,7 +491,7 @@ export const STATIC_ROUTES: SitemapEntry[] =
       priority: 0.5,
     },
     {
-      loc: '/optimization',
+      loc: '/rmh-research/reports/optimization',
       changefreq:
         'monthly',
       priority: 0.4,
@@ -957,6 +954,12 @@ export const EXCLUDED_ROUTES: Record<
       'redirect', // → /store?tab=market
     '/shop':
       'redirect', // → /store?tab=shop
+    '/psychology':
+      'redirect', // → /rmh-research/psychology
+    '/optimization':
+      'redirect', // → /rmh-research/reports/optimization
+    '/covid':
+      'redirect', // → /rmh-research/reports/feature-leak
     '/pricing':
       'redirect', // → /store?tab=membership
     '/personas':
@@ -1116,6 +1119,12 @@ export const DYNAMIC_ROUTES: Record<
       'content',
     '/games/$gameId':
       'pages', // from the catalog, not the DB
+    '/rmh-research/fields/$fieldId':
+      'pages', // the RMH Research catalogue (lib/rmh-research/sitemap.ts), not the DB
+    '/rmh-research/authors/$authorId':
+      'pages',
+    '/rmh-research/paper/$paperId':
+      'pages',
     '/games/$gameId/guides/$guideId':
       'content',
     '/games/profile/$id':

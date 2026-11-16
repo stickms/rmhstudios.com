@@ -3768,3 +3768,9 @@ lib/prepaint/generated.ts
 /features/rmhos/engine/image-manifest.ts
 # A route file (app/routes is read as text by the route tests and the generator).
 /app/routes/rmhos.tsx
+/app/routes/rmh-research.tsx
+/app/routes/rmh-research/
+/components/rmh-research/
+/components/shared/scroll-scene.tsx
+/hooks/useSceneFocus.ts
+/lib/rmh-research/

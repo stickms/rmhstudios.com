@@ -42,6 +42,21 @@ const ROUTE_TREE = join(REPO_ROOT, 'app/routeTree.gen.ts');
  * to the same thing while still claiming `'content'`.
  */
 export const DYNAMIC_ROUTE_FIXTURES = {
+  '/rmh-research/fields/$fieldId': {
+    path: '/rmh-research/fields/physics',
+    fidelity: 'full',
+    why: 'The RMH Research catalogue is checked-in data, so any field id renders the real page with no database.',
+  },
+  '/rmh-research/authors/$authorId': {
+    path: '/rmh-research/authors/kofi-mensah-boateng',
+    fidelity: 'full',
+    why: 'A catalogue author (lib/rmh-research/data/physical.ts): the real page, no database.',
+  },
+  '/rmh-research/paper/$paperId': {
+    path: '/rmh-research/paper/two-phase-immersion-cooling-transport',
+    fidelity: 'full',
+    why: 'A catalogue paper (lib/rmh-research/data/physical.ts): the real page, no database.',
+  },
   '/marathon/$shareId': {
     path: '/marathon/fouc-audit',
     fidelity: 'shell',

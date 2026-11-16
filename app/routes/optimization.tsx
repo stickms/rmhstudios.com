@@ -1,26 +1,14 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { OptimizationPage } from '@/components/optimization/OptimizationPage';
+/**
+ * /optimization — legacy redirect.
+ *
+ * "Speed & Optimization" is an RMH Research report now, at
+ * /rmh-research/reports/optimization (app/routes/rmh-research_.reports.optimization.tsx),
+ * listed in the research archive. This keeps old links landing on it.
+ */
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/optimization')({
-  head: () => ({
-    meta: [
-      { title: 'Speed & Optimization | RMH Studios' },
-      {
-        name: 'description',
-        content:
-          'How RMH Studios stays fast — from a server-seeded first paint, intent prefetching, and optimistic writes at runtime to a parallel, cache-warm build and deploy pipeline. With the measured before/after numbers.',
-      },
-      { property: 'og:title', content: 'Speed & Optimization | RMH Studios' },
-      {
-        property: 'og:description',
-        content:
-          'The runtime and build-time optimizations that make RMH Studios feel instant — with real, measured stats.',
-      },
-      { property: 'og:type', content: 'website' },
-      { property: 'og:url', content: 'https://rmhstudios.com/optimization' },
-      { name: 'twitter:card', content: 'summary_large_image' },
-    ],
-    links: [{ rel: 'canonical', href: 'https://rmhstudios.com/optimization' }],
-  }),
-  component: OptimizationPage,
+  beforeLoad: () => {
+    throw redirect({ href: '/rmh-research/reports/optimization', statusCode: 301 });
+  },
 });

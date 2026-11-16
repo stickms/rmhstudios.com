@@ -101,6 +101,11 @@ export const FULLSCREEN_TIER_DIRS =
       'doctrine',
       'rmh-capital',
       'rmh-pmc',
+      // RMH Research is listed for its PINNED SCROLL SCENES (a sticky full-viewport frame and
+      // scroll-driven keyframes, which the site-tier CSS gates rightly refuse), not for its look:
+      // it is drawn in the site's own `--site-*` tokens, flat, and
+      // `lib/rmh-research/__tests__/flat.test.ts` holds it to R1 in place of the gates it leaves.
+      'rmh-research',
       // A single-purpose page that pastiches another site's fixed palette. It has
       // no theme to be consistent with — that is the whole point of it.
       'sohumbum',

@@ -285,7 +285,7 @@ export const SITE_DESTINATIONS: SiteDestination[] =
       id: 'psychology',
       title:
         'Psychology',
-      href: '/psychology',
+      href: '/rmh-research/psychology',
       iconName:
         'BookOpen',
       keywords:
