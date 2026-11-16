@@ -1,1 +1,153 @@
-/* RMH PMC — operators page sheet. Every selector starts `.rmhp-root .pg-operators`. */
+/* ════════════════════════════════════════════════════════════════════════
+   RMH PMC — operators. Every selector starts `.rmhp-root .pg-operators`.
+
+   Flow mode first (top level): every scene is an ordinary readable section.
+   Everything that pins, stacks or hides sits in ONE gate block at the bottom.
+   Stage:  page head (a hex badge plate), selection scene, closing CtaBand.
+   Paper:  pedigree rails, roles (glass over chrome), terms (rows on rules).
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── page head: a hex badge plate rising inside a turned ring ── */
+.rmhp-root .pg-operators .oh-obj {
+  --hs: min(78vw, 560px);
+  position: relative; width: var(--hs); height: calc(var(--hs) * 0.62); overflow: visible; flex: none;
+}
+.rmhp-root .pg-operators .oh-ring {
+  --size: calc(var(--hs) * 1.18); --w: 2.2%; --rot: 0deg;
+  position: absolute; inset-inline-start: 50%; top: 4%; translate: -50% 0; max-width: none;
+}
+[dir='rtl'] .rmhp-root .pg-operators .oh-ring { inset-inline-start: auto; inset-inline-end: 50%; translate: 50% 0; }
+.rmhp-root .pg-operators .oh-hex {
+  --size: var(--hs); --rot: 0deg;
+  position: absolute; inset-inline-start: 50%; top: 18%; translate: -50% 0; max-width: none;
+}
+[dir='rtl'] .rmhp-root .pg-operators .oh-hex { inset-inline-start: auto; inset-inline-end: 50%; translate: 50% 0; }
+.rmhp-root .pg-operators .pagehead-obj { align-items: flex-end; }
+.rmhp-root .pg-operators .pagehead .wrap { padding-bottom: clamp(120px, 18vw, 250px); }
+.rmhp-root .pg-operators .pagehead .metaline .field b { color: var(--stage-mute); }
+
+/* ── §01 pedigree: rails of glass pills on chrome ingots ── */
+.rmhp-root .pg-operators .ped-stage { display: flex; flex-direction: column; gap: 16px; }
+.rmhp-root .pg-operators .ped-row { margin-inline: var(--navinset); padding-block: 18px; border-radius: 46px; display: flex; align-items: center; }
+.rmhp-root .pg-operators .ped-row .sx-track { gap: 12px; padding-inline: 16px; align-items: center; }
+.rmhp-root .pg-operators .ped-pill {
+  display: inline-flex; align-items: center; min-height: 56px; padding: 0 clamp(26px, 3vw, 44px); white-space: nowrap;
+  font-size: clamp(18px, 1.8vw, 24px); font-weight: 600; letter-spacing: -0.02em; color: var(--ink);
+}
+
+/* ── §02 selection: flow mode is four rows on rules, inside one glass card ── */
+.rmhp-root .pg-operators .sel-pin { padding: clamp(72px, 9vw, 140px) var(--pad); }
+.rmhp-root .pg-operators :is(.sel-head, .sel-body) { max-width: var(--maxw); margin-inline: auto; }
+.rmhp-root .pg-operators :is(.sel-index, .sel-object, .sel-foot) { display: none; }
+.rmhp-root .pg-operators .sel-card { padding: 8px clamp(18px, 3vw, 36px); border-radius: 34px; }
+.rmhp-root .pg-operators .sel-item { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 7fr); gap: 8px var(--gap); padding-block: 28px; border-top: 1px solid var(--rule); color: var(--ink); }
+.rmhp-root .pg-operators .sel-step:first-child .sel-item { border-top: 0; }
+.rmhp-root .pg-operators .sel-ph { grid-row: 1 / span 2; font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--mute); }
+.rmhp-root .pg-operators .sel-t { font-size: clamp(24px, 2.6vw, 34px); letter-spacing: -0.03em; }
+.rmhp-root .pg-operators .sel-p { font-size: 15.5px; line-height: 1.55; max-width: 62ch; color: var(--ink); }
+@media (max-width: 700px) {
+  .rmhp-root .pg-operators .sel-item { grid-template-columns: minmax(0, 1fr); }
+  .rmhp-root .pg-operators .sel-ph { grid-row: auto; }
+}
+
+/* ── §03 roles: glass cards over chrome instruments ── */
+.rmhp-root .pg-operators .roles-well { padding: clamp(18px, 3vw, 44px); }
+.rmhp-root .pg-operators .roles-ring { --size: min(70vw, 620px); --w: 2.4%; position: absolute; inset-inline-end: -8%; top: 8%; max-width: none; }
+.rmhp-root .pg-operators .roles-orb { position: absolute; max-width: none; }
+.rmhp-root .pg-operators .roles-orb--a { --size: clamp(120px, 16vw, 210px); inset-inline-start: 2%; top: 30%; }
+.rmhp-root .pg-operators .roles-orb--b { --size: clamp(90px, 11vw, 150px); inset-inline-start: 36%; bottom: 4%; }
+.rmhp-root .pg-operators .roles-orb--c { --size: clamp(70px, 8vw, 110px); inset-inline-end: 10%; top: -2%; }
+.rmhp-root .pg-operators .roles-grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+.rmhp-root .pg-operators .role { display: flex; }
+.rmhp-root .pg-operators .role-card { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: clamp(22px, 2.4vw, 32px); }
+.rmhp-root .pg-operators .role-tag { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; }
+.rmhp-root .pg-operators .role-tag::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.rmhp-root .pg-operators .role-card .h3 { font-size: clamp(20px, 1.7vw, 24px); }
+.rmhp-root .pg-operators .role-card p { font-size: 15px; line-height: 1.55; color: var(--ink); }
+@media (max-width: 960px) { .rmhp-root .pg-operators .roles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .rmhp-root .pg-operators .roles-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── §04 terms: rows on hairlines, centred narrow measure ── */
+.rmhp-root .pg-operators .terms-rows { max-width: 1060px; margin-inline: auto; }
+.rmhp-root .pg-operators .terms .row { grid-template-columns: minmax(0, 2fr) minmax(0, 4fr) minmax(0, 5fr); }
+.rmhp-root .pg-operators .terms .row-k { color: var(--ink); font-weight: 500; }
+@media (max-width: 760px) {
+  .rmhp-root .pg-operators .terms .row { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE GATE — pinned layout. Nothing here exists with motion off.
+   ════════════════════════════════════════════════════════════════════════ */
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    @supports (animation-timeline: view()) {
+      /* the badge plate rises into place as the page loads and parallaxes off */
+      .rmhp-root .pg-operators .oh-obj { animation: pg-op-rise 1.1s var(--ease) both; }
+      .rmhp-root .pg-operators .oh-hex { --rot: calc(var(--p, 0) * 40deg); }
+
+      /* selection: the index, the reticle, one glass card per phase */
+      .rmhp-root .pg-operators .sel-pin {
+        --lk: clamp(0, calc(var(--p) / 0.72), 1);
+        --lke: calc(var(--lk) * var(--lk) * (3 - 2 * var(--lk)));
+        --un: calc(1 - var(--lke));
+        display: grid; grid-template-rows: auto minmax(0, 1fr); padding: calc(var(--nav-h) + env(safe-area-inset-top,0px) + 14px) var(--pad) 92px;
+      }
+      .rmhp-root .pg-operators .sel-head { width: 100%; position: relative; z-index: 4; }
+      .rmhp-root .pg-operators .sel-head .sechead { margin-bottom: 0; gap: 10px; }
+      .rmhp-root .pg-operators .sel-head .h2 { max-width: none; font-size: clamp(28px, 3.4vw, 50px); }
+      .rmhp-root .pg-operators .sel-head .lede { font-size: clamp(15.5px, 1.2vw, 18px); max-width: 66ch; }
+      .rmhp-root .pg-operators .sel-body {
+        width: 100%; min-height: 0; display: grid; grid-template-columns: 230px minmax(0, 1fr) 440px; align-items: center; position: relative;
+      }
+      .rmhp-root .pg-operators .sel-index { display: block; position: relative; padding-inline-start: 18px; z-index: 2; }
+      .rmhp-root .pg-operators .sel-index li {
+        display: flex; gap: 12px; padding-block: 11px; font-family: var(--mono); font-size: 12px; color: var(--ink);
+        border-bottom: 1px solid var(--rule); white-space: nowrap;
+      }
+      .rmhp-root .pg-operators .sel-ix { color: var(--mute); }
+      .rmhp-root .pg-operators .sel-rail { position: absolute; inset-inline-start: 0; inset-block: 0; width: 2px; height: auto; border-radius: 2px; }
+      .rmhp-root .pg-operators .sel-rail::after { transform-origin: top; transform: scaleY(var(--p, 0)); background: linear-gradient(180deg, var(--c3), var(--c1), var(--c3)); }
+      .rmhp-root .pg-operators .sel-object { --rs: min(50svh, 420px); display: grid; place-items: center; position: relative; height: 100%; min-height: 0; }
+      /* misaligned rings: each sits off-centre and turned, and they converge on the hub as the phases pass */
+      .rmhp-root .pg-operators .sel-reticle {
+        --size: var(--rs); --hub: 16%;
+        --rot1: calc(var(--un) * 150deg); --rot2: calc(var(--un) * -210deg); --rot3: calc(var(--un) * 260deg); --rot4: calc(var(--un) * -50deg);
+      }
+      .rmhp-root .pg-operators .sel-reticle .rt-r1 { translate: calc(var(--un) * -11%) calc(var(--un) * 7%); }
+      .rmhp-root .pg-operators .sel-reticle .rt-r2 { translate: calc(var(--un) * 9%) calc(var(--un) * -10%); }
+      .rmhp-root .pg-operators .sel-reticle .rt-r3 { translate: calc(var(--un) * -6%) calc(var(--un) * -11%); }
+      .rmhp-root .pg-operators .sel-object::after {
+        content: ''; position: absolute; inset-inline-start: 50%; top: calc(50% - var(--rs) * 0.5 - 18px); width: 2px; height: 14px; background: var(--ink); z-index: 2;
+        opacity: var(--lke);
+      }
+      .rmhp-root .pg-operators .sel-card { position: relative; z-index: 3; margin-inline-start: -150px; padding: 30px 32px 26px; }
+      .rmhp-root .pg-operators .sel-item { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 0; border: 0; }
+      .rmhp-root .pg-operators .sel-ph { grid-row: auto; }
+      .rmhp-root .pg-operators .sel-t { font-size: clamp(24px, 2.3vw, 32px); }
+      .rmhp-root .pg-operators .sel-p { font-size: 15px; line-height: 1.52; }
+      .rmhp-root .pg-operators .sel-foot { display: flex; flex-direction: column; align-items: center; gap: 12px; position: absolute; inset-inline: 0; bottom: 70px; z-index: 5; }
+      .rmhp-root .pg-operators .sel-foot .scene-rail { width: min(480px, 56%); }
+      .rmhp-root .pg-operators .sel .hud-readout:is(.tl, .tr) { display: none; }
+      @media (max-width: 900px) {
+        .rmhp-root .pg-operators .sel-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; justify-items: center; align-content: center; gap: 0; }
+        .rmhp-root .pg-operators .sel-index, .rmhp-root .pg-operators .sel-object::after { display: none; }
+        .rmhp-root .pg-operators .sel-object { --rs: min(21svh, 190px); height: calc(var(--rs) * 1.08); width: 100%; }
+        .rmhp-root .pg-operators .sel-card { margin: -22px 0 0; width: min(100%, 460px); padding: 20px 20px 18px; }
+        .rmhp-root .pg-operators .sel-head .lede { font-size: 14px; line-height: 1.4; }
+        .rmhp-root .pg-operators .sel-head .h2 { font-size: clamp(26px, 7.4vw, 36px); }
+        .rmhp-root .pg-operators .sel-p { font-size: 14px; line-height: 1.48; }
+        .rmhp-root .pg-operators .sel-item { gap: 7px; }
+        .rmhp-root .pg-operators .sel-t { font-size: 21px; }
+      }
+
+      /* roles: the cards arrive in a stagger (scale only, so the glass can still blur the chrome) */
+      .rmhp-root .pg-operators .role:nth-child(3n + 2) { animation-range: entry 6% entry 100%; }
+      .rmhp-root .pg-operators .role:nth-child(3n) { animation-range: entry 12% entry 100%; }
+      .rmhp-root .pg-operators .roles-ring { --rot: calc(var(--rp-sx, 0) * 120deg); }
+      @media (max-width: 960px) {
+        .rmhp-root .pg-operators .role:nth-child(n) { animation-range: entry 0% entry 100%; }
+      }
+    }
+  }
+}
+@keyframes pg-op-rise { from { opacity: 0; translate: 0 6%; } to { opacity: 1; translate: 0 0; } }

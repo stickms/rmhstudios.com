@@ -1,1 +1,83 @@
-/* RMH PMC — contact page sheet. Every selector starts `.rmhp-root .pg-contact`. */
+/* ════════════════════════════════════════════════════════════════════════
+   RMH PMC — contact. Every selector starts `.rmhp-root .pg-contact`.
+   Page head on the stage (orb inside two rings, rising from the foot), then a
+   paper section: stations as rows on rules, and the form as a lens of glass
+   over a well of chrome so the glass visibly refracts it. The form stays on
+   paper because the Select popover is a site-tier primitive (--site-* tokens).
+   Flow mode first; the only motion (rv / rv-scale / drift) is the foundation's gate.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── page head object ── */
+.rmhp-root .pg-contact .pagehead { padding-bottom: clamp(180px, 24vw, 300px); }
+.rmhp-root .pg-contact .ct-obj { position: relative; width: min(130vw, 820px); aspect-ratio: 1; translate: 0 66%; flex: none; }
+.rmhp-root .pg-contact .ct-obj-ring { --size: 100%; --w: 3.2%; position: absolute; inset: 0; max-width: none; --rot: 20deg; }
+.rmhp-root .pg-contact .ct-obj-ring--in { inset: 13%; width: auto; --w: 5%; --rot: 200deg; }
+.rmhp-root .pg-contact .ct-obj-orb { --size: 40%; position: absolute; inset: 0; margin: auto; }
+[dir='rtl'] .rmhp-root .pg-contact .ct-obj-ring { --rot: 0deg; }
+
+/* ── stations + form ── */
+.rmhp-root .pg-contact .ct-sec { padding-top: clamp(56px, 7vw, 104px); }
+.rmhp-root .pg-contact .ct-grid {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 5vw, 88px); align-items: start;
+}
+.rmhp-root .pg-contact .ct-stations, .rmhp-root .pg-contact .ct-formcol { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; min-width: 0; }
+.rmhp-root .pg-contact .ct-stations { position: sticky; top: calc(var(--nav-h) + 34px); }
+.rmhp-root .pg-contact .ct-rows { width: 100%; }
+.rmhp-root .pg-contact .ct-row { grid-template-columns: minmax(0, 1fr); row-gap: 10px; padding-block: clamp(18px, 2vw, 26px); }
+.rmhp-root .pg-contact .ct-row .row-t { margin: 0; font-size: clamp(19px, 1.7vw, 24px); }
+.rmhp-root .pg-contact .ct-row .row-d { margin: 0; line-height: 1.65; }
+.rmhp-root .pg-contact .ct-mail { font-family: var(--mono); font-size: 13.5px; color: var(--ink); }
+.rmhp-root .pg-contact .ct-stations .form-note { margin-top: 0; }
+
+.rmhp-root .pg-contact .ct-stage { width: 100%; }
+.rmhp-root .pg-contact .ct-well { position: relative; padding: clamp(22px, 4vw, 52px) clamp(14px, 3.4vw, 48px); }
+.rmhp-root .pg-contact .ct-orb { position: absolute; max-width: none; }
+.rmhp-root .pg-contact .ct-orb--l { --size: clamp(220px, 34vw, 440px); inset-inline-end: 2%; top: 30%; }
+.rmhp-root .pg-contact .ct-orb--s { --size: clamp(72px, 9vw, 120px); inset-inline-start: clamp(6px, 1.4vw, 22px); bottom: 12%; }
+.rmhp-root .pg-contact .ct-ring { --size: clamp(420px, 62vw, 760px); --w: 2.2%; position: absolute; max-width: none; inset-inline-start: -22%; top: 6%; --rot: 40deg; }
+[dir='rtl'] .rmhp-root .pg-contact .ct-ring { --rot: 0deg; }
+
+.rmhp-root .pg-contact .ct-panel {
+  position: relative; z-index: 2; padding: clamp(20px, 3vw, 40px); border-radius: 34px;
+  --glass-a: color-mix(in srgb, var(--panel) 76%, transparent); --glass-b: color-mix(in srgb, var(--panel) 58%, transparent);
+}
+.rmhp-root .pg-contact .ct-plate { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: clamp(18px, 2.4vw, 28px); }
+.rmhp-root .pg-contact .ct-plate b { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); }
+.rmhp-root .pg-contact .ct-panel .stamp { background: color-mix(in srgb, var(--panel) 60%, transparent); }
+.rmhp-root .pg-contact .ct-panel .form-field label { font-size: 14px; }
+/* Fields: glass-quiet, a solid-enough tint that text holds 4.5:1 over the brightest chrome. */
+.rmhp-root .pg-contact .ct-panel .form-field :is(input, textarea) {
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  border-color: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.rmhp-root .pg-contact .ct-panel .form-field :is(input, textarea)::placeholder { color: var(--mute); opacity: 1; }
+.rmhp-root .pg-contact .ct-panel .form-field :is(input, textarea):focus-visible,
+.rmhp-root .pg-contact .ct-panel .form-field button:focus-visible {
+  outline: 2px solid var(--ink); outline-offset: 2px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--panel) 85%, transparent);
+}
+.rmhp-root .pg-contact .ct-panel .form-field button[role='combobox'] { min-height: 48px; width: 100%; }
+.rmhp-root .pg-contact .ct-panel .form-success {
+  background: color-mix(in srgb, var(--panel) 80%, transparent); border-color: var(--ink); font-weight: 500;
+}
+.rmhp-root .pg-contact .ct-submit { margin-top: 4px; }
+.rmhp-root .pg-contact .ct-submit .btn { min-height: 52px; padding-inline: 30px; }
+.rmhp-root .pg-contact .ct-panel .form-note { color: var(--ink); opacity: 0.8; }
+.rmhp-root .pg-contact .ct-note2 { margin-top: 8px; }
+.rmhp-root .pg-contact .ct-link { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-weight: 500; }
+
+@media (max-width: 1000px) {
+  .rmhp-root .pg-contact .ct-grid { grid-template-columns: minmax(0, 1fr); }
+  .rmhp-root .pg-contact .ct-stations { position: static; }
+}
+@media (max-width: 560px) {
+  .rmhp-root .pg-contact .ct-well { padding: 16px 10px; border-radius: 30px; }
+  .rmhp-root .pg-contact .ct-panel { border-radius: 26px; padding: 20px 16px; }
+  .rmhp-root .pg-contact .ct-submit .btn { width: 100%; }
+}
+@media (pointer: coarse) {
+  .rmhp-root .pg-contact .ct-panel .form-field :is(input, textarea, button[role='combobox']) { min-height: 48px; }
+}
+
+/* Night: the well takes Day's lit chrome ramp (as a stage does) so the lens has something bright to refract. */
+.style-graphite .rmhp-root .pg-contact .ct-well { --c1: #fff; --c2: #dfe5ea; --c3: #8e99a6; --c5: #59636f; --c6: #bcc5ce; }

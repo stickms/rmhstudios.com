@@ -1,1 +1,152 @@
-/* RMH PMC — command page sheet. Every selector starts `.rmhp-root .pg-command`. */
+/* ════════════════════════════════════════════════════════════════════════
+   RMH PMC — command. Every selector starts `.rmhp-root .pg-command`.
+
+   Flow mode first at the top level; everything that pins, stacks or hides
+   lives in the one gate at the bottom.
+   Head:     a rank of chrome bars on the page-head stage (one chain of command)
+   Paper:    mission, command structure, ethics
+   Stages:   the pull quote (words light up with --p), the operating
+             principles (glass doctrines travel on a chrome band), the CTA
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── page head: the rank ── */
+.rmhp-root .pg-command .cmd-head { padding-bottom: calc(clamp(150px, 21vw, 260px) + clamp(40px, 6vw, 80px)); }
+.rmhp-root .pg-command .cmd-rank { width: min(1040px, 92vw); }
+.rmhp-root .pg-command .cmd-bars { gap: clamp(5px, 1vw, 14px); }
+.rmhp-root .pg-command .cmd-bars > i { max-width: 64px; transform-origin: 50% 100%; }
+.rmhp-root .pg-command .cmd-desig { color: var(--mute); }
+
+@media (max-width: 700px) { .rmhp-root .pg-command .cmd-head .hud-readout:is(.bl, .br) { display: none; } }
+
+/* ── §01 mission ── */
+.rmhp-root .pg-command .mission-prose { text-align: start; }
+.rmhp-root .pg-command .mission-prose .body { max-width: 60ch; }
+
+/* ── pull quote ── */
+.rmhp-root .pg-command .qt-pin {
+  display: flex; align-items: center; justify-content: center; min-height: 100svh;
+  padding: calc(var(--nav-h) + env(safe-area-inset-top,0px) + 56px) var(--pad) 96px;
+}
+.rmhp-root .pg-command .qt-rings { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; opacity: 0.55; }
+.rmhp-root .pg-command .qt-ring { grid-area: 1 / 1; --size: min(150svh, 130vw); --w: 1.5%; max-width: none; }
+.rmhp-root .pg-command .qt-ring--b { --size: min(112svh, 98vw); --w: 0.9%; }
+.rmhp-root .pg-command .qt-veil {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(ellipse 62% 54% at 50% 52%, var(--c4) 0 46%, transparent 100%);
+}
+.rmhp-root .pg-command .qt-body { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: clamp(20px, 3.4vh, 36px); text-align: center; max-width: 1180px; }
+.rmhp-root .pg-command .qt-quote {
+  margin: 0; font-size: clamp(30px, min(5.6vw, 8.4svh), 86px); font-weight: 600; line-height: 1.04; letter-spacing: -0.045em;
+  color: var(--ink); text-wrap: balance;
+}
+.rmhp-root .pg-command .qt-lc .qw {
+  background: linear-gradient(180deg, var(--st-1) 0%, var(--st-2) 50%, var(--st-3) 52%, var(--st-4) 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.rmhp-root .pg-command .qt-by { font-family: var(--mono); font-size: 12.5px; color: var(--stage-ink); }
+
+/* ── §02 operating principles: flow mode is a grid of glass cards ── */
+.rmhp-root .pg-command .pr-pin { padding: clamp(72px, 9vw, 130px) 0; }
+.rmhp-root .pg-command .pr-head { padding-inline: var(--pad); }
+.rmhp-root .pg-command .pr-band, .rmhp-root .pg-command .pr-foot { display: none; }
+.rmhp-root .pg-command .pr-stage { position: relative; }
+.rmhp-root .pg-command .pr-sx { padding-block: 14px; }
+.rmhp-root .pg-command .pr-track {
+  max-width: var(--maxw); margin-inline: auto; padding-inline: var(--pad);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap);
+}
+@media (max-width: 900px) { .rmhp-root .pg-command .pr-track { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .rmhp-root .pg-command .pr-track { grid-template-columns: minmax(0, 1fr); } }
+.rmhp-root .pg-command .pr-card {
+  display: flex; flex-direction: column; gap: 14px; padding: clamp(22px, 2.4vw, 34px); border-radius: 34px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--panel) 94%, transparent), color-mix(in srgb, var(--panel) 84%, transparent));
+}
+.rmhp-root .pg-command .pr-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rmhp-root .pg-command .pr-label { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--ink); }
+.rmhp-root .pg-command .pr-num { font-size: clamp(44px, 4.4vw, 64px); font-weight: 600; line-height: 0.9; letter-spacing: -0.06em; font-variant-numeric: tabular-nums; padding-bottom: 0.06em; }
+.rmhp-root .pg-command .pr-title { font-size: clamp(24px, 2.3vw, 32px); letter-spacing: -0.03em; }
+.rmhp-root .pg-command .pr-body { font-size: 15.5px; line-height: 1.55; color: var(--ink); }
+
+/* ── §03 command structure ── */
+.rmhp-root .pg-command .cs-split {
+  display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(28px, 5vw, 80px); align-items: center;
+}
+@media (max-width: 860px) { .rmhp-root .pg-command .cs-split { grid-template-columns: minmax(0, 1fr); } }
+.rmhp-root .pg-command .cs-instr { position: relative; }
+.rmhp-root .pg-command .cs-well { min-height: clamp(420px, 44vw, 560px); display: grid; place-items: center; padding-bottom: 80px; }
+.rmhp-root .pg-command .cs-globe { --orb: min(54vw, 300px); position: relative; width: var(--orb); aspect-ratio: 1; }
+.rmhp-root .pg-command .cs-orb { --size: var(--orb); position: absolute; inset-inline-start: 50%; top: 50%; translate: -50% -50%; }
+.rmhp-root .pg-command .cs-ring { --size: calc(var(--orb) * 1.5); --w: 1.6%; position: absolute; inset-inline-start: 50%; top: 50%; translate: -50% -50%; max-width: none; }
+[dir='rtl'] .rmhp-root .pg-command :is(.cs-orb, .cs-ring) { translate: 50% -50%; }
+.rmhp-root .pg-command .cs-node {
+  --size: clamp(16px, 2.2vw, 24px); position: absolute; inset-inline-start: 50%; top: 50%;
+  translate: calc(cos(var(--ang)) * var(--orb) * 0.75 - 50%) calc(sin(var(--ang)) * var(--orb) * 0.75 - 50%);
+}
+.rmhp-root .pg-command .cs-plate {
+  position: absolute; z-index: 2; inset-inline-start: 50%; translate: -50% 0; bottom: clamp(16px, 3vw, 34px);
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px clamp(22px, 3vw, 40px); border-radius: 30px; text-align: center; white-space: nowrap;
+}
+[dir='rtl'] .rmhp-root .pg-command .cs-plate { translate: 50% 0; }
+.rmhp-root .pg-command .cs-plate-k { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--mute); }
+.rmhp-root .pg-command .cs-plate-v { display: inline-flex; align-items: center; gap: 10px; font-size: clamp(22px, 2.2vw, 30px); font-weight: 600; letter-spacing: -0.03em; color: var(--ink); }
+.rmhp-root .pg-command .cs-prose { display: flex; flex-direction: column; gap: 0; }
+.rmhp-root .pg-command .cs-link { margin-top: 24px; }
+@media (max-width: 560px) { .rmhp-root .pg-command .cs-plate { white-space: normal; width: calc(100% - 28px); } }
+
+/* ── §04 ethics: nothing here but space ── */
+.rmhp-root .pg-command .eth { padding-block: clamp(120px, 18vw, 280px); }
+.rmhp-root .pg-command .eth .sechead { margin-bottom: 0; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE GATE — pinned layout and hidden states. Nothing here exists with
+   motion off, so every scene above stays a plain document.
+   ════════════════════════════════════════════════════════════════════════ */
+@keyframes pg-cmd-rise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes pg-cmd-away { from { translate: 0 0; opacity: 0.9; } to { translate: 0 34%; opacity: 0.25; } }
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    /* load: the rank rises, bar by bar */
+    .rmhp-root .pg-command .cmd-bars > i { animation: pg-cmd-rise 1s var(--ease) both; animation-delay: calc(0.3s + var(--i, 0) * 0.055s); }
+
+    @supports (animation-timeline: view()) {
+      /* the rank slides down and fades as the page scrolls away from it */
+      .rmhp-root .pg-command .cmd-rank { animation: pg-cmd-away linear both; animation-timeline: scroll(root block); animation-range: 0 100svh; }
+
+      /* pull quote: each word lights as the scene reaches it, the rings turn behind */
+      .rmhp-root .pg-command .qt-quote .qw { --lit: clamp(0, calc(var(--p) / 0.74 * var(--n) - var(--i)), 1); opacity: calc(0.34 + 0.66 * var(--lit)); }
+      .rmhp-root .pg-command .qt-ring--a { --rot: calc(var(--p) * 90deg); }
+      .rmhp-root .pg-command .qt-ring--b { --rot: calc(var(--p) * -140deg); }
+      .rmhp-root .pg-command .qt-rings { scale: calc(0.9 + var(--p) * 0.22); }
+      .rmhp-root .pg-command .qt-by { animation-name: rp-in; }
+      @media (max-width: 700px) {
+        .rmhp-root .pg-command .qt .hud-readout:is(.tl, .tr) { display: none; }
+        .rmhp-root .pg-command .qt-quote { font-size: min(9.4vw, 6.4svh); }
+        .rmhp-root .pg-command .qt-pin { padding-inline: 22px; }
+      }
+
+      /* principles: the doctrines travel along a chrome band */
+      .rmhp-root .pg-command .pr-pin {
+        display: grid; grid-template-rows: auto minmax(0, 1fr); padding: calc(var(--nav-h) + env(safe-area-inset-top,0px) + 12px) 0 88px;
+      }
+      .rmhp-root .pg-command .pr-head { position: relative; z-index: 4; }
+      .rmhp-root .pg-command .pr-head .sechead { margin-bottom: 0; gap: 10px; }
+      .rmhp-root .pg-command .pr-head .h2 { max-width: none; font-size: clamp(26px, 3.4vw, 50px); }
+      .rmhp-root .pg-command .pr-stage { display: grid; align-items: center; min-height: 0; }
+      .rmhp-root .pg-command .pr-band { display: flex; flex-direction: column; justify-content: center; gap: 10px; position: absolute; inset-inline: 0; top: 50%; translate: 0 -50%; z-index: 0; }
+      .rmhp-root .pg-command .pr-rail { --bh: min(44svh, 360px); border-radius: 0; opacity: 0.82; }
+      .rmhp-root .pg-command .pr-rail--thin { --bh: 10px; }
+      .rmhp-root .pg-command .pr-sx { position: relative; z-index: 1; padding-block: 0; }
+      .rmhp-root .pg-command .pr-track { display: flex; gap: var(--gap); max-width: none; margin-inline: 0; padding-inline: var(--pad); align-items: stretch; }
+      .rmhp-root .pg-command .pr-card { flex: none; width: min(390px, 80vw); justify-content: flex-start; }
+      .rmhp-root .pg-command .pr-foot { display: flex; justify-content: center; position: absolute; inset-inline: 0; bottom: 70px; z-index: 5; }
+      .rmhp-root .pg-command .pr-foot .scene-rail { width: min(480px, 56%); }
+      .rmhp-root .pg-command .pr .hud-readout:is(.tl, .tr) { display: none; }
+      @media (max-width: 700px) {
+        .rmhp-root .pg-command .pr-card { padding: 20px; gap: 10px; }
+        .rmhp-root .pg-command .pr-body { font-size: 14.5px; line-height: 1.5; }
+        .rmhp-root .pg-command .pr-num { font-size: 40px; }
+      }
+    }
+  }
+}

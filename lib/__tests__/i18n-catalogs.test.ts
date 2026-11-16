@@ -1655,6 +1655,9 @@ const KNOWN_UNTRANSLATED: Record<
         'hud-grid',
         'hud-rng',
         'hud-step',
+        'manifest-count',
+        'manifest-desig',
+        'manifest-heading',
       ],
     'c-rmhstudy':
       [
