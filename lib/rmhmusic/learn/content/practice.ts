@@ -10,17 +10,24 @@
  * card has been seen a session holds only what is due, and may be empty.
  */
 import {
-  PATH,
+  VOICE_RANGE_DECK,
   getLesson,
+  pathFor,
 } from './path';
 import {
   DECKS,
   cardId,
   parseCardId,
   shuffle,
+  voiceDeck,
   type Card,
   type Deck,
 } from './decks';
+import type {
+  Instrument,
+  VoiceRange,
+} from '../schemas';
+import { isVoiceRange } from '../voice/range';
 import {
   dueCards,
   type CardState,
@@ -76,11 +83,20 @@ export function stateFromRow(
   };
 }
 
-/** The decks of the flashcard lessons that have shipped: where new Practice cards come from. */
-export function practiceDecks(): Deck[] {
+/**
+ * The decks of the flashcard lessons that have shipped on the learner's path: where new Practice
+ * cards come from. A singer's path (`pathFor('voice')`) has one, their range's deck; with no range
+ * chosen yet there is none (a range is never assumed). Piano and guitar share the main path.
+ */
+export function practiceDecks(
+  instrument: Instrument = 'piano',
+  range?: VoiceRange | null,
+): Deck[] {
   const ids =
     new Set<string>();
-  for (const unit of PATH) {
+  for (const unit of pathFor(
+    instrument,
+  )) {
     for (const lesson of unit.lessons) {
       if (
         lesson.available &&
@@ -99,16 +115,30 @@ export function practiceDecks(): Deck[] {
   ].flatMap(
     (
       id,
-    ) =>
-      DECKS[
-        id
-      ]
+    ) => {
+      if (
+        id ===
+        VOICE_RANGE_DECK
+      )
+        return isVoiceRange(
+          range,
+        )
+          ? [
+              voiceDeck(
+                range,
+              ),
+            ]
+          : [];
+      const deck =
+        DECKS[
+          id
+        ];
+      return deck
         ? [
-            DECKS[
-              id
-            ],
+            deck,
           ]
-        : [],
+        : [];
+    },
   );
 }
 
@@ -289,6 +319,8 @@ export function practiceAvailable(
       | null;
   }[],
   now: number,
+  instrument: Instrument = 'piano',
+  range?: VoiceRange | null,
 ): boolean {
   if (
     hasDueReviewedCard(
@@ -330,7 +362,10 @@ export function practiceAvailable(
   return (
     buildPracticeSession(
       remembered,
-      practiceDecks(),
+      practiceDecks(
+        instrument,
+        range,
+      ),
       now,
       () =>
         0,

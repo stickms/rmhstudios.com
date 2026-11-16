@@ -15,6 +15,7 @@ import { isVoiceRange } from './voice/range';
 import { isInstrumentId } from './audio/instruments/catalog';
 import type { InstrumentId } from './audio/instruments/types';
 import { mergeLessonResult } from './xp';
+import { toLearnerShape, type LearnerShape } from './learner-shape';
 
 export interface Profile {
   instrument: Instrument;
@@ -23,7 +24,7 @@ export interface Profile {
   dailyGoal: number;
   /** The chosen sound, or null to follow `instrument` (`resolveSound`). */
   sound: InstrumentId | null;
-  /** A voice learner's range, or null until chosen (`resolveVoiceRange` reads null as alto). */
+  /** A voice learner's range, or null until chosen (lessons in the range ask for it first). */
   voiceRange: VoiceRange | null;
 }
 
@@ -72,6 +73,18 @@ function toProfile(row: {
     sound: isInstrumentId(row.sound) ? row.sound : null,
     voiceRange: isVoiceRange(row.voiceRange) ? row.voiceRange : null,
   };
+}
+
+/**
+ * The learner's instrument and range for the placeholders (`learner-shape.ts`): two columns by the
+ * unique `userId`, read by the `/rmhmusic` layout route with its auth check. Never writes.
+ */
+export async function getLearnerShape(userId: string): Promise<LearnerShape> {
+  const row = await prisma.musicLearnProfile.findUnique({
+    where: { userId },
+    select: { instrument: true, voiceRange: true },
+  });
+  return toLearnerShape(row);
 }
 
 /** The learner's profile, or the defaults when they have not saved one. Never writes. */

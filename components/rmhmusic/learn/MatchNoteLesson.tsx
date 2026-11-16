@@ -19,8 +19,11 @@
  *   the third, the target's outcome stays with Next.
  * - Singers (Phase 5): targets come from their range (`voice-match-five`, `voice-match-range`),
  *   drawn on the range's staff (`targetStaff` with the range: tenor an octave up with the 8, bass on
- *   the bass staff). Interval singing (`sing-interval`) reuses this screen: the staff shows the
- *   first note, the line names the interval, Hear it plays both notes, and the second is matched.
+ *   the bass staff). Interval singing (`sing-interval`) reuses this screen as echo matching: the staff shows the
+ *   first note, which sounds by itself when the target starts (through the guarded hint, so the
+ *   microphone ignores it; "Hear it" replays it alone), the line names the interval, nothing sung
+ *   counts until that first note has sounded, and the second is matched. After a miss, "Hear the
+ *   answer" plays both notes.
  * - Guitar learners: the hub reports sounding pitch, which is what is matched and named; the staff
  *   shows guitar music's written pitch an octave up, with the treble clef's small 8 (as in the
  *   note finder, `targetStaff`).
@@ -43,7 +46,10 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { getLesson } from '@/lib/rmhmusic/learn/content/path';
 import type { IntervalName } from '@/lib/rmhmusic/learn/theory/intervals';
-import { resolveVoiceRange } from '@/lib/rmhmusic/learn/voice/range';
+import {
+  resolveVoiceRange,
+  staffCardRange,
+} from '@/lib/rmhmusic/learn/voice/range';
 import {
   playNote,
   soundReleaseMs,
@@ -64,6 +70,7 @@ import {
   MATCH_TARGETS,
   MATCH_TRIES,
   createMatchNoteMachine,
+  hintSchedule,
   matchNotePool,
   singIntervalTargets,
   type Effect,
@@ -97,6 +104,7 @@ import {
 } from './QuestionSession';
 import {
   STAFF_BOX,
+  STAFF_LOW_ASPECT,
   StaffCard,
 } from './StaffCard';
 import {
@@ -114,11 +122,6 @@ import {
   matchSoundLine,
   soundLineKey,
 } from './sound-line';
-
-/** How long the hint sounds. */
-const HEAR_MS = 900;
-/** An interval's hint: the first note sounds this long, then the second for `HEAR_MS`. */
-const INTERVAL_GAP_MS = 700;
 
 /** Interval singing's instruction: one sentence per interval, so a translation can word each. */
 function singIntervalLine(
@@ -179,6 +182,14 @@ function singIntervalLine(
   }
 }
 
+/** The hints the learner asks for: the target (an interval's first note), or an interval's answer. */
+type HintEvent =
+  | {
+      type: 'hear';
+    }
+  | {
+      type: 'hear-answer';
+    };
 type Sound =
   | 'ok'
   | 'waking'
@@ -228,7 +239,7 @@ export function MatchNoteLesson({
   const guitar =
     instrument ===
     'guitar';
-  // A singer's range, read once like the instrument (null: alto until chosen).
+  // A singer's range, read once like the instrument (LessonScreen asks a singer to choose one first).
   const [
     range,
   ] =
@@ -243,12 +254,19 @@ export function MatchNoteLesson({
   const singer =
     instrument ===
     'voice';
+  // An alto's range reaches G3, below the deck card: their targets go on the low card.
+  const lowCard =
+    singer &&
+    staffCardRange(
+      range,
+    ) ===
+      'low';
   const lessonInfo =
     getLesson(
       lessonId,
     );
-  // Interval singing (`sing-interval`): the staff shows the first note, Hear it plays both, and the
-  // learner sings the second.
+  // Interval singing (`sing-interval`): the staff shows the first note, Hear it plays it alone, and
+  // the learner sings the second.
   const intervals =
     lessonInfo?.mode ===
     'sing-interval';
@@ -334,9 +352,7 @@ export function MatchNoteLesson({
       Target,
       Played,
       State,
-      {
-        type: 'hear';
-      },
+      HintEvent,
       Effect
     >(
       {
@@ -384,69 +400,61 @@ export function MatchNoteLesson({
               'play'
             )
               return;
-            // An interval: the first note, then the second (the one to sing) as it ends.
-            const first =
-              fx.from;
-            const length =
-              first ===
-              undefined
-                ? HEAR_MS
-                : HEAR_MS +
-                  INTERVAL_GAP_MS;
+            // A note alone (a target, or an interval's first note), or an interval's answer: the
+            // first note, then the second as it ends. The microphone is deaf for the whole hint.
+            const plan =
+              hintSchedule(
+                fx,
+              );
             guard.hint(
               performance.now(),
-              length,
+              plan.lengthMs,
             );
             const releases: (() => void)[] =
               [];
-            let second: ReturnType<
+            const later: ReturnType<
               typeof setTimeout
-            > | null =
-              null;
-            if (
-              first ===
-              undefined
-            )
-              releases.push(
-                playNote(
-                  fx.midi,
-                  soundRef.current,
-                ),
-              );
-            else {
-              releases.push(
-                playNote(
-                  first,
-                  soundRef.current,
-                ),
-              );
-              second =
+            >[] =
+              [];
+            for (const n of plan.notes) {
+              if (
+                n.atMs ===
+                0
+              ) {
+                releases.push(
+                  playNote(
+                    n.midi,
+                    soundRef.current,
+                  ),
+                );
+                continue;
+              }
+              later.push(
                 setTimeout(
                   () => {
-                    second =
-                      null;
-                    releases[0]?.();
+                    for (const r of releases.splice(
+                      0,
+                    ))
+                      r();
                     releases.push(
                       playNote(
-                        fx.midi,
+                        n.midi,
                         soundRef.current,
                       ),
                     );
                   },
-                  INTERVAL_GAP_MS,
-                );
+                  n.atMs,
+                ),
+              );
             }
             const release =
               () => {
-                if (
-                  second !==
-                  null
-                )
+                for (const l of later.splice(
+                  0,
+                ))
                   clearTimeout(
-                    second,
+                    l,
                   );
-                second =
-                  null;
                 for (const r of releases.splice(
                   0,
                 ))
@@ -460,7 +468,7 @@ export function MatchNoteLesson({
                   );
                   release();
                 },
-                length,
+                plan.lengthMs,
               );
             hints.current.set(
               timer,
@@ -647,7 +655,11 @@ export function MatchNoteLesson({
   // Hear it: sound the target, waking the audio context first (inside this tap) if it sleeps. One
   // tap waits at a time, and a hint that was waiting sounds only for the target it was asked for.
   const hear =
-    () => {
+    (
+      ask: HintEvent = {
+        type: 'hear',
+      },
+    ) => {
       if (
         hearing.current
       )
@@ -693,9 +705,7 @@ export function MatchNoteLesson({
           },
         );
         session.send(
-          {
-            type: 'hear',
-          },
+          ask,
         );
         return;
       }
@@ -737,9 +747,7 @@ export function MatchNoteLesson({
             ok
           )
             session.send(
-              {
-                type: 'hear',
-              },
+              ask,
             );
         },
       );
@@ -950,38 +958,47 @@ export function MatchNoteLesson({
       !last
     ) {
       line =
-        intervals &&
-        target?.from !==
-          undefined
-          ? singIntervalLine(
-              t,
-              target.interval,
-              name,
+        lesson.heard ===
+        false
+          ? t(
+              'sing-interval-hear-first',
+              {
+                defaultValue:
+                  'Tap Hear it for the first note, then sing.',
+              },
             )
-          : singer
-            ? t(
-                'match-hint-sing',
-                {
-                  defaultValue:
-                    'Sing the note you see.',
-                },
+          : intervals &&
+              target?.from !==
+                undefined
+            ? singIntervalLine(
+                t,
+                target.interval,
+                name,
               )
-            : input ===
-                'screen'
+            : singer
               ? t(
-                  'match-hint-screen',
+                  'match-hint-sing',
                   {
                     defaultValue:
-                      'Play the note you see on the keys below.',
+                      'Sing the note you see.',
                   },
                 )
-              : t(
-                  'match-hint',
-                  {
-                    defaultValue:
-                      'Play the note you see.',
-                  },
-                );
+              : input ===
+                  'screen'
+                ? t(
+                    'match-hint-screen',
+                    {
+                      defaultValue:
+                        'Play the note you see on the keys below.',
+                    },
+                  )
+                : t(
+                    'match-hint',
+                    {
+                      defaultValue:
+                        'Play the note you see.',
+                    },
+                  );
     } else {
       lineKey = `try-${lesson.index}-${lesson.tries.length}`;
       line =
@@ -1051,6 +1068,58 @@ export function MatchNoteLesson({
   // the lesson first saw it.
   const liveSound =
     useSoundStatus();
+  // Interval singing is echo matching: each target's first note sounds by itself, through the same
+  // guarded hint as Hear it (so the microphone ignores it), once per target and only when sound is
+  // ready (no tap needed); otherwise the line asks for Hear it. A timer, so StrictMode's
+  // mount-cleanup-mount starts it once.
+  const askingUnheard =
+    lesson.kind ===
+      'asking' &&
+    lesson.heard ===
+      false;
+  const hearRef =
+    useRef(
+      hear,
+    );
+  useEffect(
+    () => {
+      hearRef.current =
+        hear;
+    },
+  );
+  const autoFor =
+    useRef(
+      -1,
+    );
+  useEffect(() => {
+    if (
+      !askingUnheard ||
+      paused ||
+      liveSound !==
+        'ready' ||
+      autoFor.current ===
+        index
+    )
+      return;
+    const timer =
+      setTimeout(
+        () => {
+          autoFor.current =
+            index;
+          hearRef.current();
+        },
+        0,
+      );
+    return () =>
+      clearTimeout(
+        timer,
+      );
+  }, [
+    askingUnheard,
+    index,
+    paused,
+    liveSound,
+  ]);
   const fellBack =
     useFallbackNotice(
       position,
@@ -1158,7 +1227,11 @@ export function MatchNoteLesson({
 
   let question: ReactNode =
     (
-      <MatchStaffBox />
+      <MatchStaffBox
+        low={
+          lowCard
+        }
+      />
     );
   if (
     target
@@ -1222,6 +1295,11 @@ export function MatchNoteLesson({
           octaveClef={
             octaveClef
           }
+          range={
+            lowCard
+              ? 'low'
+              : 'deck'
+          }
           caption={
             name
           }
@@ -1232,6 +1310,18 @@ export function MatchNoteLesson({
       );
   }
 
+  // Interval singing, after a miss: both notes, the interval sung right.
+  const missed =
+    intervals &&
+    ((lesson.kind ===
+      'asking' &&
+      lesson
+        .tries
+        .length >
+        0) ||
+      (lesson.kind ===
+        'feedback' &&
+        !lesson.right));
   let answers: ReactNode;
   if (
     !inSession
@@ -1321,7 +1411,7 @@ export function MatchNoteLesson({
             {/* Hidden (and inert) once the session is over, so the sheet keeps its height. */}
             <div
               className={cn(
-                'flex h-11 items-center justify-center',
+                'flex h-11 items-center justify-center gap-6',
                 !inSession &&
                   'invisible',
               )}
@@ -1332,8 +1422,8 @@ export function MatchNoteLesson({
             >
               <button
                 type="button"
-                onClick={
-                  hear
+                onClick={() =>
+                  hear()
                 }
                 className={
                   TEXT_BUTTON
@@ -1347,6 +1437,29 @@ export function MatchNoteLesson({
                   },
                 )}
               </button>
+              {missed && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    hear(
+                      {
+                        type: 'hear-answer',
+                      },
+                    )
+                  }
+                  className={
+                    TEXT_BUTTON
+                  }
+                >
+                  {t(
+                    'sing-interval-hear-answer',
+                    {
+                      defaultValue:
+                        'Hear the answer',
+                    },
+                  )}
+                </button>
+              )}
             </div>
           </>
         }
@@ -1377,8 +1490,11 @@ export function MatchNoteLesson({
 /** The staff card's box with nothing in it: the decks' card aspect (its name is drawn inside it). */
 export function MatchStaffBox({
   skeleton = false,
+  low = false,
 }: {
   skeleton?: boolean;
+  /** The low card's box (an alto's targets reach G3). */
+  low?: boolean;
 }) {
   return (
     <div
@@ -1391,7 +1507,10 @@ export function MatchStaffBox({
         className={cn(
           skeleton &&
             'app-skeleton',
-          'aspect-[200/102] w-full',
+          low
+            ? STAFF_LOW_ASPECT
+            : 'aspect-[200/102]',
+          'w-full',
         )}
       />
     </div>

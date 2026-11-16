@@ -37,10 +37,26 @@ const coords =
     );
 
 describe('flashcard staff layout', () => {
-  it('fits every card of every deck inside the fixed box, unclamped', () => {
+  it('fits every card of every deck inside its fixed box, unclamped (an alto deck on the low card)', () => {
+    expect(
+      DECKS[
+        'voice-alto'
+      ]
+        ?.lowCard,
+    ).toBe(
+      true,
+    );
     for (const deck of Object.values(
       DECKS,
     )) {
+      const min =
+        deck.lowCard
+          ? CARD_LOW_MIN_STEP
+          : CARD_MIN_STEP;
+      const height =
+        deck.lowCard
+          ? CARD_LOW_H
+          : CARD_H;
       for (const midi of deck.midis) {
         const raw =
           clefStep(
@@ -51,7 +67,7 @@ describe('flashcard staff layout', () => {
           raw,
           `${deck.id}:${midi}`,
         ).toBeGreaterThanOrEqual(
-          CARD_MIN_STEP,
+          min,
         );
         expect(
           raw,
@@ -63,6 +79,7 @@ describe('flashcard staff layout', () => {
           cardLayout(
             deck.clef,
             midi,
+            min,
           );
         expect(
           l.step,
@@ -90,7 +107,7 @@ describe('flashcard staff layout', () => {
           expect(
             y,
           ).toBeLessThan(
-            CARD_H,
+            height,
           );
         }
       }

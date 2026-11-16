@@ -192,6 +192,17 @@ export function SongScreen({
         singerRange,
       ],
     );
+  // A song moved into another key for a singer says so, in one plain line with the composer.
+  const movedKey =
+    written &&
+    song &&
+    song.key !==
+      written.key
+      ? song.key.replace(
+          'b',
+          '♭',
+        )
+      : null;
   const [
     mode,
     setMode,
@@ -501,6 +512,16 @@ export function SongScreen({
               t,
               song.composer,
             )}
+            {movedKey
+              ? ` · ${t(
+                  'song-moved-key',
+                  {
+                    name: movedKey,
+                    defaultValue:
+                      'Moved to {{name}} major for your voice.',
+                  },
+                )}`
+              : null}
           </p>
           <p
             id={

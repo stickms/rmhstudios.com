@@ -90,7 +90,11 @@ export function SprintRun({
   onDone,
   nextPrompts,
   save,
+  lowCard:
+    lowRange = false,
 }: {
+  /** A singer whose range reaches below the deck card (an alto's G3): the low card. */
+  lowCard?: boolean;
   prompts: SprintPrompt[];
   mode: SprintMode;
   scored: boolean;
@@ -504,7 +508,8 @@ export function SprintRun({
       .prompts
       .length;
   const lowCard =
-    guitar;
+    guitar ||
+    lowRange;
   /** The sheet's box, caption line included: the "Ready" and result boxes take the same. */
   const sheetSize =
     lowCard

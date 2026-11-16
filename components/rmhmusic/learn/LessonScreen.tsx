@@ -19,8 +19,13 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getLesson } from '@/lib/rmhmusic/learn/content/path';
+import {
+  getLesson,
+  needsVoiceRange,
+} from '@/lib/rmhmusic/learn/content/path';
 import { isPlayable } from '@/lib/rmhmusic/learn/content/routing';
+import { staffCardRange } from '@/lib/rmhmusic/learn/voice/range';
+import { cn } from '@/lib/utils';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import {
   chordSoundFor,
@@ -57,7 +62,11 @@ import {
   PlayChordLesson,
 } from './PlayChordLesson';
 import { RhythmLesson } from './RhythmLesson';
-import { STAFF_BOX } from './StaffCard';
+import {
+  STAFF_BOX,
+  STAFF_LOW_ASPECT,
+} from './StaffCard';
+import { useLearnerShape } from './useLearnerShape';
 import { useInputRelease } from './useLearnInput';
 import { useArrival } from '@/components/ui/arrive';
 
@@ -190,7 +199,12 @@ function LessonSkeleton() {
  * and the answer line under it, the sentence line) and below it the letters and the input region
  * (`.rmm-flash__answers`, whose heights the stylesheet fixes for every width).
  */
-export function FlashcardSkeleton() {
+export function FlashcardSkeleton({
+  low = false,
+}: {
+  /** An alto's deck: the low card's box (`STAFF_LOW_ASPECT`). */
+  low?: boolean;
+}) {
   return (
     <div
       aria-hidden="true"
@@ -205,7 +219,14 @@ export function FlashcardSkeleton() {
             STAFF_BOX
           }
         >
-          <div className="app-skeleton aspect-[200/102] w-full" />
+          <div
+            className={cn(
+              'app-skeleton w-full',
+              low
+                ? STAFF_LOW_ASPECT
+                : 'aspect-[200/102]',
+            )}
+          />
           <div className="h-9" />
         </div>
         <div className="flex h-11 items-center">
@@ -280,7 +301,12 @@ function FindNoteSkeleton() {
  * the Hear-it row, the sentence line), then the keys and the input line
  * (`.rmm-match__answers`).
  */
-function MatchNoteSkeleton() {
+function MatchNoteSkeleton({
+  low = false,
+}: {
+  /** An alto's targets: the low card's box. */
+  low?: boolean;
+}) {
   return (
     <div
       aria-hidden="true"
@@ -292,6 +318,9 @@ function MatchNoteSkeleton() {
         </div>
         <MatchStaffBox
           skeleton
+          low={
+            low
+          }
         />
         <div className="h-11" />
         <div className="flex h-11 items-center">
@@ -456,9 +485,40 @@ export function LessonScreen({
   // Leaving the screen (any route change) or hiding the tab stops the mic; the screen sees it
   // through the hub's phases (useInputPhases), so nothing here needs to re-render.
   useInputRelease();
+  // A singer with no range yet (the dialog was dismissed, or never opened) is asked to choose one
+  // before a lesson in the range starts: a range is never assumed.
+  const noRange =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.instrument ===
+          'voice' &&
+        !s
+          .profile
+          .voiceRange,
+    );
   const lesson =
     getLesson(
       lessonId,
+    );
+  // An alto's lessons in the range draw on the low card; the placeholder takes its height too,
+  // from the layout route's read of the profile before the store has loaded.
+  const shape =
+    useLearnerShape();
+  const lowCard =
+    shape.instrument ===
+      'voice' &&
+    shape.voiceRange !==
+      null &&
+    staffCardRange(
+      shape.voiceRange,
+    ) ===
+      'low' &&
+    needsVoiceRange(
+      lesson,
     );
   const playable =
     isPlayable(
@@ -629,6 +689,46 @@ export function LessonScreen({
 
   let body: ReactNode;
   if (
+    started &&
+    noRange &&
+    needsVoiceRange(
+      lesson,
+    )
+  ) {
+    body =
+      (
+        <div className="rmm-sheet space-y-3 p-5">
+          <p className="text-app-text-muted">
+            {t(
+              'voice-choose-first',
+              {
+                defaultValue:
+                  'Choose your voice first: this lesson uses the notes you can sing.',
+              },
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              setSetupOpen(
+                true,
+              )
+            }
+            className={
+              PRIMARY_BUTTON
+            }
+          >
+            {t(
+              'voice-choose-link',
+              {
+                defaultValue:
+                  'Choose your voice',
+              },
+            )}
+          </button>
+        </div>
+      );
+  } else if (
     started
   ) {
     body =
@@ -838,7 +938,11 @@ export function LessonScreen({
     body =
       lesson.mode ===
       'staff-flashcards' ? (
-        <FlashcardSkeleton />
+        <FlashcardSkeleton
+          low={
+            lowCard
+          }
+        />
       ) : lesson.mode ===
           'keyboard-map' ||
         lesson.mode ===
@@ -848,7 +952,11 @@ export function LessonScreen({
           'match-note' ||
         lesson.mode ===
           'sing-interval' ? (
-        <MatchNoteSkeleton />
+        <MatchNoteSkeleton
+          low={
+            lowCard
+          }
+        />
       ) : lesson.mode ===
           'ear-interval' ||
         lesson.mode ===

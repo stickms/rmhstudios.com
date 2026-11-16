@@ -705,6 +705,15 @@ export function SoundDialog({
                                 aria-checked={
                                   chosen
                                 }
+                                // The family groups split the rows, so say where each sits in
+                                // the one radio group: all ten, across the families.
+                                aria-posinset={
+                                  index +
+                                  1
+                                }
+                                aria-setsize={
+                                  sounds.length
+                                }
                                 aria-describedby={
                                   statusId
                                 }

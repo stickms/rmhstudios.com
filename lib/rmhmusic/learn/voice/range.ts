@@ -5,7 +5,11 @@
  * sounds, as guitar music is); baritone and bass the bass staff. Lessons ask only notes inside the
  * range, at their sounding pitch; what the staff shows is `voiceStaff`.
  */
-import type { Clef } from '../theory/clef';
+import {
+  clefStep,
+  type Clef,
+} from '../theory/clef';
+import { CARD_MIN_STEP } from '../staff-card-layout';
 import {
   VOICE_RANGES,
   type VoiceRange,
@@ -42,10 +46,10 @@ export const VOICE_RANGE: Readonly<
         octaveClef: false,
         writtenShift: 0,
       },
-    /** A3 to D5 (A3 is the lowest note the staff card draws, two ledger lines below the treble staff). */
+    /** G3 to D5: G3 is below the deck card's two ledger lines, so an alto reads on the low card. */
     alto: {
       id: 'alto',
-      low: 57,
+      low: 55,
       high: 74,
       clef: 'treble',
       octaveClef: false,
@@ -250,4 +254,35 @@ export function fitsRange(
       n <=
         r.high,
   );
+}
+
+/**
+ * The staff card a range's notes are drawn on: the low card (`range="low"`, three ledger lines
+ * below the treble staff, `CARD_LOW_MIN_STEP`) when the range writes below the deck card's floor
+ * (an alto's G3), else the deck card. A placeholder takes the same card's height.
+ */
+export function staffCardRange(
+  range: VoiceRange,
+):
+  | 'deck'
+  | 'low' {
+  const {
+    clef,
+  } =
+    VOICE_RANGE[
+      range
+    ];
+  const [
+    lo,
+  ] =
+    writtenRange(
+      range,
+    );
+  return clefStep(
+    clef,
+    lo,
+  ) <
+    CARD_MIN_STEP
+    ? 'low'
+    : 'deck';
 }

@@ -404,3 +404,94 @@ describe('songs for a singer', () => {
     );
   });
 });
+
+describe('songForRange edges (Phase 5 review)', () => {
+  it('keeps Frère Jacques and Au clair de la lune in C, as written, for an alto (G3 to D5)', () => {
+    for (const id of [
+      'frere-jacques',
+      'au-clair-de-la-lune',
+    ]) {
+      const song =
+        songById(
+          id,
+        )!;
+      const out =
+        songForRange(
+          song,
+          'alto',
+        );
+      expect(
+        out.semitones,
+        id,
+      ).toBe(
+        0,
+      );
+      expect(
+        out
+          .song
+          .key,
+        id,
+      ).toBe(
+        'C',
+      );
+    }
+  });
+
+  it('gives a song back unchanged when no octave or key puts it in the range', () => {
+    const base =
+      songById(
+        'mary-had-a-little-lamb',
+      )!;
+    const [
+      first,
+      ...rest
+    ] =
+      base.bars;
+    const note =
+      first![0]!;
+    // Three octaves apart: wider than any range.
+    const wide =
+      {
+        ...base,
+        bars: [
+          [
+            {
+              ...note,
+              pitch:
+                note.pitch -
+                24,
+            },
+            ...first!.slice(
+              1,
+            ),
+            {
+              ...note,
+              pitch:
+                note.pitch +
+                12,
+            },
+          ],
+          ...rest,
+        ],
+      };
+    for (const range of VOICE_RANGES) {
+      const out =
+        songForRange(
+          wide,
+          range,
+        );
+      expect(
+        out.semitones,
+        range,
+      ).toBe(
+        0,
+      );
+      expect(
+        out.song,
+        range,
+      ).toBe(
+        wide,
+      );
+    }
+  });
+});

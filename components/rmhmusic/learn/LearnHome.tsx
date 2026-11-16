@@ -29,8 +29,8 @@ import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
 import {
-  PATH,
   pathFor,
+  type Unit,
 } from '@/lib/rmhmusic/learn/content/path';
 import { practiceAvailable } from '@/lib/rmhmusic/learn/content/practice';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
@@ -52,6 +52,7 @@ import { ModeToggle } from './ModeToggle';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
 import { useInputRelease } from './useLearnInput';
+import { useLearnerShape } from './useLearnerShape';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
@@ -75,14 +76,22 @@ const INPUT_BUTTON =
 const INPUT_ROW =
   'flex min-h-11 min-w-0 items-center gap-4';
 
-/** Loading placeholder, built from the static path so it is as tall as the loaded page. */
-function HomeSkeleton() {
+/**
+ * Loading placeholder, built from the learner's path (`pathFor` the instrument the layout route
+ * read with its auth check) so it is as tall as the loaded page for a singer as for a pianist.
+ */
+function HomeSkeleton({
+  path,
+}: {
+  path: readonly Unit[];
+}) {
   return (
     <div
       aria-hidden="true"
       className="space-y-4"
     >
-      <div className="app-skeleton h-12 w-full pointer-coarse:h-13" />
+      {/* The tab strip: a tab (2.5rem, 2.75rem on touch) in its p-1 frame and 1px border. */}
+      <div className="app-skeleton h-[calc(3rem+2px)] w-full pointer-coarse:h-[calc(3.25rem+2px)]" />
       <div>
         <div
           className={
@@ -100,7 +109,7 @@ function HomeSkeleton() {
         </div>
       </div>
       <div className="rmm-sheet">
-        {PATH.map(
+        {path.map(
           (
             unit,
           ) => (
@@ -208,6 +217,8 @@ export function LearnHome() {
       ) =>
         s.profile,
     );
+  const shape =
+    useLearnerShape();
   const progress =
     useLearnStore(
       (
@@ -262,10 +273,14 @@ export function LearnHome() {
           cards,
           progress,
           Date.now(),
+          profile?.instrument,
+          profile?.voiceRange,
         ),
       [
         cards,
         progress,
+        profile?.instrument,
+        profile?.voiceRange,
       ],
     );
 
@@ -309,8 +324,9 @@ export function LearnHome() {
     pathFor(
       instrument,
     );
-  // Choosing Voice opens "Set up input" until the singer has a range and the microphone: the range
-  // is asked there first, and the microphone starts only from a tap on its row.
+  // The tabs activate on arrow keys, so choosing an instrument never opens a dialog: a singer with
+  // no range yet gets a "Choose your voice" link in the input row instead (it opens "Set up input",
+  // which asks the range first; the microphone starts only from a tap on its row).
   const chooseInstrument =
     (
       next: Instrument,
@@ -320,17 +336,11 @@ export function LearnHome() {
         .setInstrument(
           next,
         );
-      if (
-        next ===
-          'voice' &&
-        (!profile?.voiceRange ||
-          profile.input !==
-            'mic')
-      )
-        onSetupChange(
-          true,
-        );
     };
+  const needsRange =
+    instrument ===
+      'voice' &&
+    !profile?.voiceRange;
   const tabs =
     [
       {
@@ -499,7 +509,11 @@ export function LearnHome() {
   ) {
     body =
       (
-        <HomeSkeleton />
+        <HomeSkeleton
+          path={pathFor(
+            shape.instrument,
+          )}
+        />
       );
   } else {
     body =
@@ -571,6 +585,27 @@ export function LearnHome() {
                   )}
                 </span>
               </button>
+              {needsRange && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onSetupChange(
+                      true,
+                    )
+                  }
+                  className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
+                >
+                  <span>
+                    {t(
+                      'voice-choose-link',
+                      {
+                        defaultValue:
+                          'Choose your voice',
+                      },
+                    )}
+                  </span>
+                </button>
+              )}
               <button
                 ref={
                   soundButton

@@ -288,6 +288,20 @@ export function pathFor(instrument: Instrument): Unit[] {
   return instrument === 'voice' ? VOICE_PATH : PATH;
 }
 
+const RANGE_LESSONS = new Set(
+  VOICE_PATH.filter((u) => u !== RHYTHM_UNIT)
+    .flatMap((u) => u.lessons)
+    .map((l) => l.id),
+);
+
+/**
+ * Whether a lesson reads or sings in the learner's voice range (every singer lesson but rhythm):
+ * such a lesson asks a singer with no range to choose one first, rather than assume one.
+ */
+export function needsVoiceRange(lesson: Lesson | undefined): boolean {
+  return lesson !== undefined && RANGE_LESSONS.has(lesson.id);
+}
+
 const BY_ID = new Map<string, Lesson>(
   [...PATH, ...VOICE_PATH].flatMap((u) => u.lessons).map((l) => [l.id, l]),
 );

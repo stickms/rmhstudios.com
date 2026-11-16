@@ -10,6 +10,7 @@ import type { Clef } from '../theory/clef';
 import type { VoiceRange } from '../schemas';
 import {
   rangeNaturals,
+  staffCardRange,
   voiceReading,
 } from '../voice/range';
 
@@ -27,6 +28,8 @@ export interface Deck {
   midis: number[];
   /** Read with the treble clef's small 8 (tenor voice): the cards are written an octave up. */
   octaveClef?: boolean;
+  /** Drawn on the low card (`range="low"`): an alto's G3 is below the deck card's floor. */
+  lowCard?: boolean;
 }
 
 export function cardId(
@@ -100,6 +103,14 @@ function voiceRangeDeck(
     ...(octaveClef
       ? {
           octaveClef,
+        }
+      : {}),
+    ...(staffCardRange(
+      range,
+    ) ===
+    'low'
+      ? {
+          lowCard: true,
         }
       : {}),
   };

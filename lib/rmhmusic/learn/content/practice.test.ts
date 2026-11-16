@@ -12,6 +12,7 @@ import {
 import {
   DECKS,
   cardId,
+  voiceDeck,
 } from './decks';
 import {
   PRACTICE_CARDS,
@@ -816,6 +817,139 @@ describe('practiceAvailable (the home link)', () => {
         rows,
         done,
         NOW,
+      ),
+    ).toBe(
+      true,
+    );
+  });
+});
+
+describe('Practice for singers (the voice path)', () => {
+  it('deals a singer new cards from their range’s deck, not the piano and guitar decks', () => {
+    expect(
+      practiceDecks(
+        'voice',
+        'tenor',
+      ),
+    ).toEqual(
+      [
+        voiceDeck(
+          'tenor',
+        ),
+      ],
+    );
+    expect(
+      practiceDecks(
+        'voice',
+        'bass',
+      ),
+    ).toEqual(
+      [
+        voiceDeck(
+          'bass',
+        ),
+      ],
+    );
+    // Piano and guitar keep the shipped decks of their path.
+    expect(
+      practiceDecks(
+        'piano',
+      ),
+    ).toEqual(
+      practiceDecks(),
+    );
+    expect(
+      practiceDecks(
+        'guitar',
+        null,
+      ),
+    ).toEqual(
+      practiceDecks(),
+    );
+  });
+
+  it('has no new cards for a singer who has not chosen a range (never assumed alto)', () => {
+    expect(
+      practiceDecks(
+        'voice',
+        null,
+      ),
+    ).toEqual(
+      [],
+    );
+  });
+
+  it('the home link follows the same decks: a singer with every range card remembered sees none', () => {
+    const done =
+      [
+        {
+          lessonId:
+            'voice-staff-notes',
+          completedAt:
+            new Date(
+              NOW,
+            ).toISOString(),
+        },
+      ];
+    expect(
+      practiceAvailable(
+        [],
+        done,
+        NOW,
+        'voice',
+        'soprano',
+      ),
+    ).toBe(
+      true,
+    );
+    const soprano =
+      voiceDeck(
+        'soprano',
+      );
+    const remembered: CardRow[] =
+      soprano.midis.map(
+        (
+          midi,
+        ) => ({
+          cardId:
+            cardId(
+              soprano.clef,
+              midi,
+            ),
+          due: new Date(
+            NOW +
+              30 *
+                DAY_MS,
+          ).toISOString(),
+          lastReviewAt:
+            new Date(
+              NOW,
+            ).toISOString(),
+          stability: 30,
+          difficulty: 5,
+          reps: 3,
+          lapses: 0,
+        }),
+      );
+    // Every soprano card is remembered and none is due: nothing to deal for a soprano, though the
+    // piano decks still hold unseen cards.
+    expect(
+      practiceAvailable(
+        remembered,
+        done,
+        NOW,
+        'voice',
+        'soprano',
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      practiceAvailable(
+        remembered,
+        done,
+        NOW,
+        'piano',
       ),
     ).toBe(
       true,

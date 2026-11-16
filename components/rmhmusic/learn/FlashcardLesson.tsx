@@ -81,6 +81,7 @@ import {
 } from './QuestionSession';
 import {
   STAFF_BOX,
+  STAFF_LOW_ASPECT,
   StaffCard,
   type StaffCardState,
 } from './StaffCard';
@@ -215,6 +216,10 @@ export function FlashcardLesson({
         deck?.octaveClef ??
         false
       }
+      lowCard={
+        deck?.lowCard ??
+        false
+      }
       paused={
         paused
       }
@@ -260,10 +265,13 @@ export function FlashcardSession({
     showStars = true,
   sound,
   octaveClef = false,
+  lowCard = false,
 }: {
   cards: Card[];
   /** The deck reads with the treble clef's small 8 (a tenor's range). */
   octaveClef?: boolean;
+  /** The deck is drawn on the low card (an alto's range reaches G3). */
+  lowCard?: boolean;
   /** A dialog is open over the session: nothing answers. */
   paused?: boolean;
   save: (
@@ -813,6 +821,11 @@ export function FlashcardSession({
               octaveClef={
                 octaveClef
               }
+              range={
+                lowCard
+                  ? 'low'
+                  : 'deck'
+              }
               state={
                 cardState
               }
@@ -824,7 +837,14 @@ export function FlashcardSession({
                 STAFF_BOX
               }
             >
-              <div className="aspect-[200/102] w-full" />
+              <div
+                className={cn(
+                  lowCard
+                    ? STAFF_LOW_ASPECT
+                    : 'aspect-[200/102]',
+                  'w-full',
+                )}
+              />
               <div className="h-9" />
             </div>
           )

@@ -11,8 +11,15 @@ import { clefStep } from '../theory/clef';
 import { createRunner } from './runner';
 import { targetStaff } from './find-note';
 import {
+  ECHO_TAIL_MS,
+  createEchoGuard,
+} from '../input/echo-window';
+import {
+  HEAR_MS,
+  INTERVAL_GAP_MS,
   MATCH_TARGETS,
   MATCH_TRIES,
+  hintSchedule,
   createMatchNoteMachine,
   matchNoteMachine,
   matchNotePool,
@@ -1459,5 +1466,490 @@ describe('matchNotePool', () => {
         }
       }
     }
+  });
+});
+
+describe('match-note machine: interval singing is echo matching', () => {
+  // C4 then E4 (a third), G4 then C5 (a fourth up: any pair works for the machine).
+  const pairs: Target[] =
+    [
+      {
+        from: 60,
+        midi: 64,
+        interval:
+          'third',
+      },
+      {
+        from: 67,
+        midi: 72,
+        interval:
+          'fifth',
+      },
+    ];
+  const hearAnswer: Event =
+    {
+      type: 'hear-answer',
+    };
+
+  it('a target starts unheard, and answers are ignored until its first note has sounded', () => {
+    const s0 =
+      matchNoteMachine.initial(
+        pairs,
+      );
+    expect(
+      s0.kind ===
+        'asking' &&
+        s0.heard,
+    ).toBe(
+      false,
+    );
+    // Sung before the first note was heard: not a try.
+    expect(
+      step(
+        s0,
+        on(
+          64,
+        ),
+      ),
+    ).toEqual(
+      {
+        state:
+          s0,
+        effects:
+          [],
+      },
+    );
+    const heard =
+      step(
+        s0,
+        hear,
+      );
+    expect(
+      heard
+        .state
+        .kind ===
+        'asking' &&
+        heard
+          .state
+          .heard,
+    ).toBe(
+      true,
+    );
+    const sung =
+      step(
+        heard.state,
+        on(
+          64,
+        ),
+      );
+    expect(
+      sung
+        .state
+        .kind,
+    ).toBe(
+      'feedback',
+    );
+  });
+
+  it('hear plays the first note alone, every time', () => {
+    const s0 =
+      matchNoteMachine.initial(
+        pairs,
+      );
+    const once =
+      step(
+        s0,
+        hear,
+      );
+    expect(
+      once.effects,
+    ).toEqual(
+      [
+        {
+          type: 'play',
+          midi: 60,
+        },
+      ],
+    );
+    expect(
+      step(
+        once.state,
+        hear,
+      ),
+    ).toEqual(
+      {
+        state:
+          once.state,
+        effects:
+          [
+            {
+              type: 'play',
+              midi: 60,
+            },
+          ],
+      },
+    );
+  });
+
+  it('the next target starts unheard again, and hear plays its own first note', () => {
+    const {
+      state,
+    } =
+      run(
+        [
+          hear,
+          on(
+            64,
+          ),
+          next,
+        ],
+        matchNoteMachine.initial(
+          pairs,
+        ),
+      );
+    expect(
+      state.kind ===
+        'asking' &&
+        state.index ===
+          1 &&
+        state.heard,
+    ).toBe(
+      false,
+    );
+    expect(
+      step(
+        state,
+        on(
+          72,
+        ),
+      )
+        .state,
+    ).toBe(
+      state,
+    );
+    expect(
+      step(
+        state,
+        hear,
+      )
+        .effects,
+    ).toEqual(
+      [
+        {
+          type: 'play',
+          midi: 67,
+        },
+      ],
+    );
+  });
+
+  it('hear-answer plays both notes, and only after a miss', () => {
+    const s0 =
+      matchNoteMachine.initial(
+        pairs,
+      );
+    const heard =
+      step(
+        s0,
+        hear,
+      ).state;
+    // Before any try: not offered, nothing plays.
+    expect(
+      step(
+        heard,
+        hearAnswer,
+      ),
+    ).toEqual(
+      {
+        state:
+          heard,
+        effects:
+          [],
+      },
+    );
+    expect(
+      step(
+        s0,
+        hearAnswer,
+      ),
+    ).toEqual(
+      {
+        state:
+          s0,
+        effects:
+          [],
+      },
+    );
+    const missed =
+      step(
+        heard,
+        on(
+          65,
+        ),
+      ).state;
+    expect(
+      step(
+        missed,
+        hearAnswer,
+      ),
+    ).toEqual(
+      {
+        state:
+          missed,
+        effects:
+          [
+            {
+              type: 'play',
+              from: 60,
+              midi: 64,
+            },
+          ],
+      },
+    );
+    // Out of tries (feedback, not right): still there.
+    const out =
+      run(
+        [
+          on(
+            66,
+          ),
+          on(
+            67,
+          ),
+        ],
+        missed,
+      ).state;
+    expect(
+      out.kind ===
+        'feedback' &&
+        !out.right,
+    ).toBe(
+      true,
+    );
+    expect(
+      step(
+        out,
+        hearAnswer,
+      )
+        .effects,
+    ).toEqual(
+      [
+        {
+          type: 'play',
+          from: 60,
+          midi: 64,
+        },
+      ],
+    );
+    // Spot on: there was no miss to hear the answer for.
+    const right =
+      run(
+        [
+          on(
+            64,
+          ),
+        ],
+        heard,
+      ).state;
+    expect(
+      right.kind ===
+        'feedback' &&
+        right.right,
+    ).toBe(
+      true,
+    );
+    expect(
+      step(
+        right,
+        hearAnswer,
+      )
+        .effects,
+    ).toEqual(
+      [],
+    );
+  });
+
+  it('a plain target needs no hearing and has no answer to hear', () => {
+    const s0 =
+      matchNoteMachine.initial(
+        ten,
+      );
+    expect(
+      s0.kind ===
+        'asking' &&
+        s0.heard,
+    ).toBeUndefined();
+    expect(
+      step(
+        s0,
+        on(
+          60,
+        ),
+      )
+        .state
+        .kind,
+    ).toBe(
+      'feedback',
+    );
+    const missed =
+      step(
+        s0,
+        on(
+          61,
+        ),
+      ).state;
+    expect(
+      step(
+        missed,
+        hearAnswer,
+      )
+        .effects,
+    ).toEqual(
+      [],
+    );
+  });
+});
+
+describe('the hint and the echo window', () => {
+  it('a single note sounds for HEAR_MS; the window is that long', () => {
+    expect(
+      hintSchedule(
+        {
+          midi: 60,
+        },
+      ),
+    ).toEqual(
+      {
+        notes:
+          [
+            {
+              midi: 60,
+              atMs: 0,
+            },
+          ],
+        lengthMs:
+          HEAR_MS,
+      },
+    );
+  });
+
+  it('the answer (two notes) is the first, the gap, then the second: the window covers both', () => {
+    expect(
+      hintSchedule(
+        {
+          from: 60,
+          midi: 64,
+        },
+      ),
+    ).toEqual(
+      {
+        notes:
+          [
+            {
+              midi: 60,
+              atMs: 0,
+            },
+            {
+              midi: 64,
+              atMs: INTERVAL_GAP_MS,
+            },
+          ],
+        lengthMs:
+          INTERVAL_GAP_MS +
+          HEAR_MS,
+      },
+    );
+  });
+
+  it('the microphone is deaf for the hint length plus the tail, and a target change cuts it to the tail', () => {
+    const mic =
+      (
+        time: number,
+      ) => ({
+        type: 'on' as const,
+        midi: 64,
+        time,
+        source:
+          'mic' as const,
+      });
+    const {
+      lengthMs,
+    } =
+      hintSchedule(
+        {
+          from: 60,
+          midi: 64,
+        },
+      );
+    const g =
+      createEchoGuard(
+        {
+          releaseMs: 0,
+        },
+      );
+    g.hint(
+      1000,
+      lengthMs,
+    );
+    expect(
+      g.admit(
+        mic(
+          1000 +
+            lengthMs -
+            1,
+        ),
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      g.admit(
+        mic(
+          1000 +
+            lengthMs +
+            ECHO_TAIL_MS +
+            1,
+        ),
+      ),
+    ).toBe(
+      true,
+    );
+    // A new target 200 ms into a fresh hint: only the tail is left.
+    const h =
+      createEchoGuard(
+        {
+          releaseMs: 0,
+        },
+      );
+    h.hint(
+      5000,
+      lengthMs,
+    );
+    h.hintStopped(
+      5200,
+    );
+    h.forgetPending();
+    expect(
+      h.admit(
+        mic(
+          5200 +
+            ECHO_TAIL_MS -
+            1,
+        ),
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      h.admit(
+        mic(
+          5200 +
+            ECHO_TAIL_MS +
+            1,
+        ),
+      ),
+    ).toBe(
+      true,
+    );
   });
 });

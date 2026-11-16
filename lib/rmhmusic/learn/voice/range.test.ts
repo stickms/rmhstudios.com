@@ -9,11 +9,18 @@ import {
   foldIntoRange,
   rangeNaturals,
   resolveVoiceRange,
+  staffCardRange,
   voiceReading,
   voiceStaff,
   writtenRange,
 } from './range';
 import { VOICE_RANGES } from '../schemas';
+import { clefStep } from '../theory/clef';
+import {
+  CARD_LOW_MIN_STEP,
+  CARD_MAX_STEP,
+  CARD_MIN_STEP,
+} from '../staff-card-layout';
 
 describe('voice ranges', () => {
   it('cover soprano, alto, tenor and bass with sensible beginner compasses', () => {
@@ -41,7 +48,7 @@ describe('voice ranges', () => {
       VOICE_RANGE.alto,
     ).toMatchObject(
       {
-        low: 57,
+        low: 55,
         high: 74,
       },
     );
@@ -189,6 +196,7 @@ describe('voice ranges', () => {
       ),
     ).toEqual(
       [
+        55,
         57,
         59,
         60,
@@ -318,5 +326,81 @@ describe('voice ranges', () => {
     ).toBe(
       'alto',
     );
+  });
+});
+
+describe('the staff card a range reads on', () => {
+  it('an alto (down to G3, below the deck card’s two ledger lines) reads on the low card; the rest on the deck card', () => {
+    expect(
+      staffCardRange(
+        'alto',
+      ),
+    ).toBe(
+      'low',
+    );
+    expect(
+      staffCardRange(
+        'soprano',
+      ),
+    ).toBe(
+      'deck',
+    );
+    expect(
+      staffCardRange(
+        'tenor',
+      ),
+    ).toBe(
+      'deck',
+    );
+    expect(
+      staffCardRange(
+        'bass',
+      ),
+    ).toBe(
+      'deck',
+    );
+  });
+
+  it('every note of every range is drawn inside its card', () => {
+    for (const range of VOICE_RANGES) {
+      const {
+        clef,
+      } =
+        voiceReading(
+          range,
+        );
+      const [
+        lo,
+        hi,
+      ] =
+        writtenRange(
+          range,
+        );
+      const min =
+        staffCardRange(
+          range,
+        ) ===
+        'low'
+          ? CARD_LOW_MIN_STEP
+          : CARD_MIN_STEP;
+      expect(
+        clefStep(
+          clef,
+          lo,
+        ),
+        range,
+      ).toBeGreaterThanOrEqual(
+        min,
+      );
+      expect(
+        clefStep(
+          clef,
+          hi,
+        ),
+        range,
+      ).toBeLessThanOrEqual(
+        CARD_MAX_STEP,
+      );
+    }
   });
 });

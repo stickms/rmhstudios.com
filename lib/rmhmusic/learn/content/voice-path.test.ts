@@ -11,6 +11,7 @@ import {
   getLesson,
   isKnownLesson,
   pathFor,
+  needsVoiceRange,
 } from './path';
 import {
   DECKS,
@@ -253,6 +254,7 @@ describe('voice path', () => {
       ),
     ).toEqual(
       [
+        55,
         57,
         59,
         60,
@@ -360,7 +362,7 @@ describe('voice path', () => {
     }
   });
 
-  it('plays the first note then the second when a singer asks to hear an interval', () => {
+  it('plays the first note alone when a singer asks to hear an interval (echo matching)', () => {
     const m =
       createMatchNoteMachine(
         [
@@ -372,25 +374,71 @@ describe('voice path', () => {
           },
         ],
       );
-    const {
-      effects,
-    } =
+    expect(
       m.step(
         m.initial,
         {
           type: 'hear',
         },
-      );
-    expect(
-      effects,
+      )
+        .effects,
     ).toEqual(
       [
         {
           type: 'play',
-          midi: 64,
-          from: 60,
+          midi: 60,
         },
       ],
+    );
+  });
+});
+
+describe('needsVoiceRange', () => {
+  it('is every singer lesson that reads or sings in the range, and not rhythm or the piano path', () => {
+    const voiceLessons =
+      VOICE_PATH.flatMap(
+        (
+          u,
+        ) =>
+          u.lessons,
+      );
+    for (const l of voiceLessons)
+      expect(
+        needsVoiceRange(
+          l,
+        ),
+        l.id,
+      ).toBe(
+        !l.unit.startsWith(
+          'rhythm',
+        ) &&
+          l.mode !==
+            'rhythm-basics',
+      );
+    expect(
+      needsVoiceRange(
+        getLesson(
+          'voice-interval-steps',
+        ),
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      needsVoiceRange(
+        getLesson(
+          'staff-what-is-a-staff',
+        ),
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      needsVoiceRange(
+        undefined,
+      ),
+    ).toBe(
+      false,
     );
   });
 });

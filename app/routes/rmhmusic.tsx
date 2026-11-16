@@ -3,7 +3,9 @@
  *
  * Wraps all /rmhmusic routes with authentication. A signed-out visitor is redirected on the
  * SERVER (`beforeLoad` → an HTTP redirect, so no app chrome ever paints for them) to /login,
- * with a callback that returns to the page they asked for (`rmhmusicReturnPath`).
+ * with a callback that returns to the page they asked for (`rmhmusicReturnPath`). The same call
+ * reads the learner's instrument and range (`learner` in the route context, `useLearnerShape`), so
+ * the loading placeholders match the page that loads.
  */
 
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
@@ -11,6 +13,7 @@ import { appRouteHead } from '@/lib/seo-catalog';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { rmhmusicReturnPath } from '@/lib/rmhmusic/learn/return-path';
+import { getLearnerShape } from '@/lib/rmhmusic/learn/progress.server';
 import { RmhMusicStyles } from '@/components/rmhmusic/RmhMusicStyles';
 import { PaperBackdrop } from '@/components/rmhmusic/learn/PaperBackdrop';
 import { useRmhMusicModeRoot } from '@/components/rmhmusic/useRmhMusicMode';
@@ -22,7 +25,10 @@ const checkAuth = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const session = await getRequestSession();
     if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: data.returnTo } });
-    return { user: session.user };
+    // The placeholders' shape (instrument, a singer's range): one select by the unique userId, so
+    // a skeleton is drawn from the learner's own path and staff (learner-shape.ts).
+    const learner = await getLearnerShape(session.user.id);
+    return { user: session.user, learner };
   });
 
 /**

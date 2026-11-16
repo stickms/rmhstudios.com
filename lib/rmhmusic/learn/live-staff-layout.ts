@@ -9,7 +9,16 @@
  * drawn steps.
  */
 
-import { fitToStaff } from './staff';
+import {
+  STAFF_MAX_STEP,
+  STAFF_MIN_STEP,
+  fitToStaff,
+} from './staff';
+import {
+  clefStep,
+  ledgerSteps,
+  type Clef,
+} from './theory/clef';
 
 export const VIEW_W = 200;
 export const VIEW_H = 132;
@@ -84,15 +93,105 @@ export interface LiveStaffLayout {
   label: OttavaLabel | null;
 }
 
+/** The black keys' pitch classes: a sharp on the live staff. */
+const BLACK =
+  new Set(
+    [
+      1,
+      3,
+      6,
+      8,
+      10,
+    ],
+  );
+
+/**
+ * The note's place on the staff of `clef` (treble by default; bass for a bass singer): a note
+ * beyond the drawn steps moved by octaves, as on the treble staff.
+ */
+function fitToClef(
+  midi: number,
+  clef: Clef,
+): {
+  position: {
+    step: number;
+    ledgerLines: number[];
+    accidental:
+      | string
+      | null;
+  };
+  ottava: number;
+} {
+  if (
+    clef ===
+    'treble'
+  )
+    return fitToStaff(
+      midi,
+    );
+  let m =
+    Math.round(
+      midi,
+    );
+  let ottava = 0;
+  while (
+    clefStep(
+      clef,
+      m,
+    ) <
+    STAFF_MIN_STEP
+  ) {
+    m += 12;
+    ottava -= 1;
+  }
+  while (
+    clefStep(
+      clef,
+      m,
+    ) >
+    STAFF_MAX_STEP
+  ) {
+    m -= 12;
+    ottava += 1;
+  }
+  const step =
+    clefStep(
+      clef,
+      m,
+    );
+  return {
+    position:
+      {
+        step,
+        ledgerLines:
+          ledgerSteps(
+            step,
+          ),
+        accidental:
+          BLACK.has(
+            ((m %
+              12) +
+              12) %
+              12,
+          )
+            ? 'sharp'
+            : null,
+      },
+    ottava,
+  };
+}
+
 export function liveStaffLayout(
   midi: number,
+  clef: Clef = 'treble',
 ): LiveStaffLayout {
   const {
     position,
     ottava,
   } =
-    fitToStaff(
+    fitToClef(
       midi,
+      clef,
     );
   const noteY =
     yOf(
