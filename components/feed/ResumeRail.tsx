@@ -29,16 +29,26 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { BookOpen, FileText, Gamepad2, History, Layers, PlayCircle } from 'lucide-react';
+import { BookOpen, FileText, Gamepad2, History, Layers, PlayCircle, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { SpineItem } from '@/components/ui/spine';
+import { IconButton } from '@/components/ui/icon-button';
+import { readJson, writeJson } from '@/lib/core/persist';
+import { toast } from '@/lib/toast';
 import { useArrival } from '@/components/ui/arrive';
 import type { ResumeCard, ResumeKind, ResumeState } from '@/lib/history/resume.server';
 import { clamp01 } from '@/lib/core/math';
 import { api } from '@/lib/contract/client';
 import { resumeCardsApi } from '@/lib/site-reads.contract';
+
+/**
+ * Set when the viewer hides the section from its own header. Per device, like
+ * the other dismissals on the home feed; the toast offers Undo, and clearing it
+ * brings the section back.
+ */
+const HIDDEN_KEY = 'rmh-resume-hidden';
 
 /** Rows shown at once; the rest stay one visit away on their own pages. */
 const MAX_ROWS = 3;
@@ -64,9 +74,32 @@ export function ResumeRail({ initial }: ResumeRailProps) {
   const { t, i18n } = useTranslation('feed');
   const { data: session } = useSession();
   const [cards, setCards] = useState<ResumeCard[] | null>(initial ?? null);
+  // Read on the client only: the server renders nothing here either way (no
+  // cards until the fetch below), so the first client render matches it.
+  const [hidden, setHidden] = useState(false);
+  // False until the stored choice has been read, so a hidden section never fetches.
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    setHidden(readJson(HIDDEN_KEY, false, { validate: (v) => (typeof v === 'boolean' ? v : undefined) }));
+    setReady(true);
+  }, []);
+
+  const hide = () => {
+    setHidden(true);
+    writeJson(HIDDEN_KEY, true);
+    toast(t('resume-hidden', { defaultValue: 'Hidden on this device' }), {
+      action: {
+        label: t('undo', { defaultValue: 'Undo' }),
+        onClick: () => {
+          setHidden(false);
+          writeJson(HIDDEN_KEY, false);
+        },
+      },
+    });
+  };
 
   useEffect(() => {
-    if (initial || !session?.user) return;
+    if (!ready || hidden || initial || !session?.user) return;
     const controller = new AbortController();
     api(resumeCardsApi, { signal: controller.signal })
       .then((data) => setCards(data.cards ?? []))
@@ -75,13 +108,14 @@ export function ResumeRail({ initial }: ResumeRailProps) {
         // an accelerator, never the only path to any of this content.
       });
     return () => controller.abort();
-  }, [initial, session?.user]);
+  }, [ready, hidden, initial, session?.user]);
 
   const list = cards ?? [];
   // Steel M9: a rail fetched here appears in a gap, so it fades in; server-seeded cards do not.
   const arrival = useArrival(list.length > 0);
   // Rule 1 above: nothing to resume, nothing to render — not an empty state.
-  if (list.length === 0) return null;
+  // A section the viewer hid renders nothing too.
+  if (hidden || list.length === 0) return null;
 
   // Zeigarnik effect (Bluma Zeigarnik, 1927): unfinished tasks stay in mind, so
   // the most useful thing to show is the one already started. Hick's law argues
@@ -94,12 +128,20 @@ export function ResumeRail({ initial }: ResumeRailProps) {
         aria-labelledby="resume-title"
         className={arrival}
       >
-        <h2
-          id="resume-title"
-          className="t-label pb-1"
-        >
-          {t('resume-title', { defaultValue: 'Pick up where you left off' })}
-        </h2>
+        <div className="flex items-center justify-between gap-2 pb-1">
+          <h2
+            id="resume-title"
+            className="t-label"
+          >
+            {t('resume-title', { defaultValue: 'Pick up where you left off' })}
+          </h2>
+          <IconButton
+            icon={X}
+            label={t('resume-hide', { defaultValue: 'Hide this section' })}
+            variant="ghost"
+            onClick={hide}
+          />
+        </div>
         <ul aria-label={t('resume-rail-label', { defaultValue: 'Unfinished games, books and drafts' })}>
           {rows.map((card) => {
             const Icon = KIND_ICONS[card.kind] ?? History;

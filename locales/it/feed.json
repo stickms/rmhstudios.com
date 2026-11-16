@@ -1611,6 +1611,8 @@
   "leaderboard-find-people": "Trova persone",
   "ai-read-posts_many": "Scritto da {{count}} post",
   "ai-read-posts_one": "Scritto da {{count}} post",
+  "resume-hide": "Nascondi questa sezione",
+  "resume-hidden": "Nascosto su questo dispositivo",
   "music-privacy-board": "Show my Daily challenge scores on the board",
   "music-privacy-board-hint": "Signed-in learners see your name, picture and score. Off hides every day at once.",
   "music-privacy-friends": "Share my progress with friends",

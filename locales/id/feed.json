@@ -1517,6 +1517,8 @@
   "ai-working-feed": "Mencari postingan publik tentang pertanyaanmu dan membaca hingga 60 di antaranya…",
   "ai-read-posts_other": "Ditulis dari {{count}} postingan",
   "leaderboard-find-people": "Cari orang",
+  "resume-hide": "Sembunyikan bagian ini",
+  "resume-hidden": "Disembunyikan di perangkat ini",
   "music-privacy-board": "Show my Daily challenge scores on the board",
   "music-privacy-board-hint": "Signed-in learners see your name, picture and score. Off hides every day at once.",
   "music-privacy-friends": "Share my progress with friends",

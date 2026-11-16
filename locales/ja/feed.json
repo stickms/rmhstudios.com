@@ -1517,6 +1517,8 @@
   "ai-working-feed": "質問に関する公開投稿を検索し、最大 60 件を読んでいます…",
   "ai-read-posts_other": "{{count}} 件の投稿をもとに作成",
   "leaderboard-find-people": "人を探す",
+  "resume-hide": "このセクションを非表示",
+  "resume-hidden": "このデバイスで非表示にしました",
   "music-privacy-board": "Show my Daily challenge scores on the board",
   "music-privacy-board-hint": "Signed-in learners see your name, picture and score. Off hides every day at once.",
   "music-privacy-friends": "Share my progress with friends",

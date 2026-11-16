@@ -1658,6 +1658,8 @@
   "ai-read-posts_few": "Написано по {{count}} постам",
   "ai-read-posts_many": "Написано по {{count}} постам",
   "ai-read-posts_one": "Написано по {{count}} постам",
+  "resume-hide": "Скрыть этот раздел",
+  "resume-hidden": "Скрыто на этом устройстве",
   "music-privacy-board": "Show my Daily challenge scores on the board",
   "music-privacy-board-hint": "Signed-in learners see your name, picture and score. Off hides every day at once.",
   "music-privacy-friends": "Share my progress with friends",

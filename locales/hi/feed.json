@@ -1564,6 +1564,8 @@
   "ai-read-posts_other": "{{count}} पोस्ट के आधार पर लिखा गया",
   "leaderboard-find-people": "लोगों को खोजें",
   "ai-read-posts_one": "{{count}} पोस्ट के आधार पर लिखा गया",
+  "resume-hide": "यह भाग छिपाएँ",
+  "resume-hidden": "इस डिवाइस पर छिपाया गया",
   "music-privacy-board": "Show my Daily challenge scores on the board",
   "music-privacy-board-hint": "Signed-in learners see your name, picture and score. Off hides every day at once.",
   "music-privacy-friends": "Share my progress with friends",
