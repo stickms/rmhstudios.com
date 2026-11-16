@@ -11,8 +11,8 @@
 .rmhp-root .pg-intelligence .dc-body { position: relative; z-index: 2; max-width: var(--maxw); margin-inline: auto; display: grid; gap: var(--gap); }
 .rmhp-root .pg-intelligence .dc-card { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding: clamp(24px, 3vw, 44px); border-radius: 34px; }
 .rmhp-root .pg-intelligence .dc-h { font-size: clamp(26px, 3vw, 44px); line-height: 1.06; letter-spacing: -0.035em; max-width: 22ch; }
-.rmhp-root .pg-intelligence .dc-text { position: relative; display: block; }
-.rmhp-root .pg-intelligence .dc-p { font-size: 16px; line-height: 1.6; color: var(--ink); max-width: 58ch; }
+.rmhp-root .pg-intelligence .dc-text { --dp-fs: 16px; --dp-lh: 1.6; position: relative; display: block; }
+.rmhp-root .pg-intelligence .dc-p { font-size: var(--dp-fs); line-height: var(--dp-lh); color: var(--ink); max-width: 58ch; }
 .rmhp-root .pg-intelligence .dc-bars { display: none; }
 .rmhp-root .pg-intelligence .dc-open { margin-top: 6px; }
 .rmhp-root .pg-intelligence .logrow { align-items: center; }
@@ -63,7 +63,7 @@
         --shift: 214px; --dir: 1;
         display: grid; place-items: center; padding: calc(var(--nav-h) + env(safe-area-inset-top,0px) + 34px) var(--pad) 70px;
       }
-      [dir='rtl'] .rmhp-root .pg-intelligence .dc-pin { --dir: -1; }
+      &[dir='rtl'] .rmhp-root .pg-intelligence .dc-pin { --dir: -1; }
       .rmhp-root .pg-intelligence .dc-obj { opacity: 0.9; place-items: center; top: 6%; }
       .rmhp-root .pg-intelligence .dc-reticle {
         --size: min(124svh, 112vw);
@@ -74,10 +74,16 @@
       .rmhp-root .pg-intelligence .dc-side { grid-template-columns: minmax(0, 1fr); gap: 14px; }
       .rmhp-root .pg-intelligence .dc-sc { padding: 18px 22px; border-radius: 26px; gap: 6px; }
 
-      /* the redaction: chrome bars lie over the body, one per line, and slide off */
-      .rmhp-root .pg-intelligence .dc-bars { position: absolute; inset: -3px 0; display: flex; flex-direction: column; gap: 5px; overflow: clip; border-radius: 10px; }
-      .rmhp-root .pg-intelligence .dc-bar { flex: 1 1 0; width: var(--w); border-radius: 5px; translate: calc(var(--te) * var(--m, 1.08) * 100% * var(--dir)) 0; }
-      .rmhp-root .pg-intelligence .dc-open { opacity: 1; }
+      /* the redaction: one chrome bar per line box. The overlay is exactly the paragraph's box and
+         carries the paragraph's type, so 1lh is one real line at any width; spare bars are clipped. */
+      .rmhp-root .pg-intelligence .dc-bars {
+        position: absolute; inset: 0; display: block; overflow: clip; font-size: var(--dp-fs); line-height: var(--dp-lh);
+      }
+      .rmhp-root .pg-intelligence .dc-bar {
+        display: block; width: 100%; height: 1lh; border-block: 1px solid transparent; background-clip: padding-box; border-radius: 4px;
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c4) 55%, transparent);
+        translate: calc(var(--te) * 104% * var(--dir)) 0;
+      }
 
       @media (max-width: 900px) {
         .rmhp-root .pg-intelligence .dc-pin { align-items: start; padding-top: calc(var(--nav-h) + env(safe-area-inset-top,0px) + 30px); padding-bottom: 40px; }
@@ -85,7 +91,7 @@
         .rmhp-root .pg-intelligence .dc-lead { translate: 0 calc((1 - var(--te)) * 18svh); }
         .rmhp-root .pg-intelligence .dc-card { padding: 20px 20px 18px; gap: 10px; border-radius: 28px; }
         .rmhp-root .pg-intelligence .dc-h { font-size: clamp(22px, 6.2vw, 28px); }
-        .rmhp-root .pg-intelligence .dc-p { font-size: 14.5px; line-height: 1.5; }
+        .rmhp-root .pg-intelligence .dc-text { --dp-fs: 14.5px; --dp-lh: 1.5; }
         .rmhp-root .pg-intelligence .dc-sp { display: none; }
         .rmhp-root .pg-intelligence .dc-sc { padding: 12px 18px; gap: 4px; border-radius: 22px; }
         .rmhp-root .pg-intelligence .dc-sh { font-size: 16px; }

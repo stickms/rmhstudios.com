@@ -96,7 +96,7 @@ export default function IntelligencePage() {
   const shown = DISPATCHES.filter((d) => active === 'all' || d.cat === active).length;
 
   // The lead dispatch's body sits under a rank of redaction bars that slide off line by line.
-  const BARS = 5;
+  const BARS = 10;
   const sides = [
     { c: t("side1-category", { defaultValue: "Maritime" }), h: t("side1-title", { defaultValue: "The next chokepoint, before it closes" }), p: t("side1-blurb", { defaultValue: "Red Sea and Gulf of Aden risk, week by week." }) },
     { c: t("side2-category", { defaultValue: "Stabilization" }), h: t("side2-title", { defaultValue: "Why some transitions hold and others don't" }), p: t("side2-blurb", { defaultValue: "Patterns from our sovereign engagements." }) },
@@ -145,8 +145,8 @@ export default function IntelligencePage() {
                 </p>
                 <span className="dc-bars" aria-hidden="true">
                   {Array.from({ length: BARS }, (_, i) => {
-                    const a = 18 + i * 6;
-                    return <i key={i} className="dc-bar chrome chrome-ingot sc-t" style={cssVars({ '--a': a, '--b': a + 16, '--w': i === BARS - 1 ? '62%' : '100%', '--m': i === BARS - 1 ? 1.75 : 1.08 })} />;
+                    const a = 22 + i * 4;
+                    return <i key={i} className="dc-bar chrome chrome-ingot sc-t" style={cssVars({ '--a': a, '--b': a + 12 })} />;
                   })}
                 </span>
               </span>

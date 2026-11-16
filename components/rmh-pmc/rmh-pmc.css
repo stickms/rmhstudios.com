@@ -98,24 +98,25 @@
    hidden state live inside the motion gate; with the gate off the scene is a normal
    readable document.
 
-     <section class="scene stage" style="--len:3; --n:3; --s:23; --w2:15.3">   <!-- <Scene len={3} steps={3}> -->
+     <section class="scene stage" style="--len:3; --n:3; --s:33.3; --w2:16.7">   <!-- <Scene len={3} steps={3}> -->
        <div class="scene-pin">                       <!-- sticky, 100svh, runs --p 0→1 -->
          <Hud/>                                      <!-- optional frame -->
          <div class="stage-body">
            <div class="sc-stack">                    <!-- grid: steps share one cell -->
-             <div class="sc-step is-first" data-step style="--a:0;--b:30.8">…</div>
-             <div class="sc-step"          data-step style="--a:23;--b:53.8">…</div>
-             <div class="sc-step is-last"  data-step style="--a:46.2;--b:77">…</div>   <!-- <Step index count> -->
+             <div class="sc-step is-first" data-step style="--a:0;--b:33.3">…</div>
+             <div class="sc-step"          data-step style="--a:33.3;--b:66.7">…</div>
+             <div class="sc-step is-last"  data-step style="--a:66.7;--b:100">…</div>   <!-- <Step index count> -->
            </div>
          </div>
-         <div class="scene-dots"><i class="sc-dot" style="--a:0;--b:30.8"/>…</div>      <!-- <SceneDots count> -->
+         <div class="scene-dots"><i class="sc-dot" style="--a:0;--b:33.3"/>…</div>      <!-- <SceneDots count> -->
          <div class="scene-rail"/>                   <!-- chrome rail filled with --p -->
        </div>
      </section>
 
    --len is the scroll length in viewports (0.5–0.7 per step). --a/--b are percent of
-   the pinned span. Steps are laid out so step i's fade-out is step i+1's fade-in
-   (window width 4s/3, spacing s = 100/(n+1/3)); <Step> computes this for you.
+   the pinned span. Steps are sequential: windows tile the span (width = spacing = 100/n);
+   each fades in over 4–24% of its window, holds, and is gone by 96%, so at most ONE step
+   is visible at any scroll position (a brief empty beat between steps). <Step> computes it.
    Window utilities (compositor; set --a/--b, class on the element):
      .sc-in   fades+rises in across a→b          .sc-out   fades+rises out across a→b
      .sc-step in over the first quarter, holds, out over the last quarter; also animates
@@ -525,7 +526,7 @@
   content: ''; position: absolute; inset-inline-start: 50%; inset-block-start: 0; width: 1px; height: 100%; background: currentColor;
 }
 .rmhp-root .hud-readout {
-  position: absolute; display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 14px;
+  direction: ltr; unicode-bidi: isolate; position: absolute; display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 14px;
   border-radius: var(--r-pill); white-space: nowrap; color: var(--stage-ink); font-variant-numeric: tabular-nums;
 }
 .rmhp-root .hud-readout b { font-weight: 500; color: var(--stage-ink); opacity: 0.72; }
@@ -703,7 +704,7 @@
 /* ════ INTERIOR-PAGE PRIMITIVES ════ */
 .rmhp-root .metaline { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
 .rmhp-root .metaline .field b { font-weight: 500; color: var(--mute); }
-.rmhp-root .metaline .field .v { color: var(--ink); font-weight: 500; }
+.rmhp-root .metaline .field .v { direction: ltr; unicode-bidi: isolate; display: inline-block; color: var(--ink); font-weight: 500; }
 .rmhp-root .logrow { display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
 .rmhp-root .logrow b { font-weight: 500; color: var(--ink); }
 /* A page opens on a stage: centred headline, a machined object, the sight's frame. */
@@ -831,29 +832,28 @@
   100% { opacity: 0; translate: 0 calc(var(--sc-y, 32px) * -1); pointer-events: none; }
 }
 @keyframes rp-step {
-  0% { opacity: 0; translate: 0 var(--sc-y, 28px); pointer-events: none; z-index: 0; }
-  25% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
-  75% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
-  100% { opacity: 0; translate: 0 calc(var(--sc-y, 28px) * -1); pointer-events: none; z-index: 0; }
+  0%, 4% { opacity: 0; translate: 0 var(--sc-y, 28px); pointer-events: none; z-index: 0; }
+  24%, 76% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  96%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 28px) * -1); pointer-events: none; z-index: 0; }
 }
 @keyframes rp-step-first {
-  0%, 75% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
-  100% { opacity: 0; translate: 0 calc(var(--sc-y, 28px) * -1); pointer-events: none; z-index: 0; }
+  0%, 76% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  96%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 28px) * -1); pointer-events: none; z-index: 0; }
 }
 @keyframes rp-step-last {
-  0% { opacity: 0; translate: 0 var(--sc-y, 28px); pointer-events: none; z-index: 0; }
-  25%, 100% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  0%, 4% { opacity: 0; translate: 0 var(--sc-y, 28px); pointer-events: none; z-index: 0; }
+  24%, 100% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
 }
 @keyframes rp-scale-up { from { scale: var(--s0, 1); } to { scale: var(--s1, 1.4); } }
 @keyframes rp-dot {
-  0%, 100% { background: var(--rule); scale: 1; }
-  25%, 75% { background: var(--ink); scale: 1.5; }
+  0%, 10%, 90%, 100% { background: var(--rule); scale: 1; }
+  24%, 76% { background: var(--ink); scale: 1.5; }
 }
-@keyframes rp-dot-first { 0%, 75% { background: var(--ink); scale: 1.5; } 100% { background: var(--rule); scale: 1; } }
-@keyframes rp-dot-last { 0% { background: var(--rule); scale: 1; } 25%, 100% { background: var(--ink); scale: 1.5; } }
-@keyframes rp-live { 0%, 100% { opacity: 0.42; } 25%, 75% { opacity: 1; } }
-@keyframes rp-live-first { 0%, 75% { opacity: 1; } 100% { opacity: 0.42; } }
-@keyframes rp-live-last { 0% { opacity: 0.42; } 25%, 100% { opacity: 1; } }
+@keyframes rp-dot-first { 0%, 76% { background: var(--ink); scale: 1.5; } 90%, 100% { background: var(--rule); scale: 1; } }
+@keyframes rp-dot-last { 0%, 10% { background: var(--rule); scale: 1; } 24%, 100% { background: var(--ink); scale: 1.5; } }
+@keyframes rp-live { 0%, 10%, 90%, 100% { opacity: 0.42; } 24%, 76% { opacity: 1; } }
+@keyframes rp-live-first { 0%, 76% { opacity: 1; } 90%, 100% { opacity: 0.42; } }
+@keyframes rp-live-last { 0%, 10% { opacity: 0.42; } 24%, 100% { opacity: 1; } }
 
 /* The words of a headline sit in masks whether or not they move. */
 .rmhp-root .words .w { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: 0.16em; margin-bottom: -0.16em; padding-inline: 0.04em; margin-inline: -0.04em; }

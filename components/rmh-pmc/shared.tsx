@@ -251,10 +251,10 @@ export function Hud({ steps, cross = false }: { steps?: number; cross?: boolean 
 
 /* ── scenes ──────────────────────────────────────────────────────────────── */
 
-/** Spacing `s` of n steps over the pinned span, and the fade window `w` (= 4s/3). */
+/** Steps tile the pinned span: spacing and window `s`/`w` are 100/n, `w2` is half a window (a step's centre). */
 export function sceneGeometry(n: number) {
-  const s = 100 / (n + 1 / 3);
-  return { s, w: (s * 4) / 3, w2: (s * 2) / 3 };
+  const s = 100 / n;
+  return { s, w: s, w2: s / 2 };
 }
 const r2 = (x: number) => Math.round(x * 100) / 100;
 /** `--a`/`--b` (percent of the pin) for step `i` of `n`. */
