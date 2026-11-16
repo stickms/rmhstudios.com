@@ -215,6 +215,17 @@ describe('GET /api/og/music/$token', () => {
         byline:
           null,
         path: '/rmhmusic',
+        // One chip: the figure, then its label ("2 of 3 stars"), not the label twice.
+        stats:
+          [
+            {
+              value:
+                '2 of 3',
+              label:
+                'stars',
+              lead: true,
+            },
+          ],
       },
     );
     expect(

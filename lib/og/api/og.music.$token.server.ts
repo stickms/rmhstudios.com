@@ -27,7 +27,8 @@ export const route = apiRoute('/api/og/music/$token', {
       lead: lines.lead,
       title: lines.title,
       subtitle: lines.subtitle,
-      stats: [{ value: lines.stars, label: 'stars', lead: true }],
+      // The chip reads "2 of 3 stars": the figure, then its label.
+      stats: [{ value: `${view.payload.stars} of 3`, label: 'stars', lead: true }],
       byline,
       art: '/images/games/rmhmusic.webp',
       path: '/rmhmusic',

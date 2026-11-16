@@ -318,18 +318,21 @@ function SharedResult({
         </p>
       </div>
       <div className="flex items-center gap-3 px-6 py-4">
-        <UserAvatar
-          src={
-            view.image
-          }
-          alt=""
-          size={
-            32
-          }
-          fallbackName={
-            name
-          }
-        />
+        {/* No picture stands in for "A learner": a placeholder face would read as someone's. */}
+        {view.name ? (
+          <UserAvatar
+            src={
+              view.image
+            }
+            alt=""
+            size={
+              32
+            }
+            fallbackName={
+              name
+            }
+          />
+        ) : null}
         <p className="min-w-0 truncate text-base leading-6 text-app-text">
           {
             name
