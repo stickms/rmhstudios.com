@@ -10,11 +10,13 @@
 import {
   lazy,
   Suspense,
-  useEffect,
   useId,
-  useRef,
   useState,
 } from 'react';
+import {
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Flag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -23,15 +25,19 @@ import { Switch } from '@/components/ui/switch';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useArrival } from '@/components/ui/arrive';
 import { api } from '@/lib/contract/client';
-import { utcDate } from '@/lib/rmhmusic/learn/sprint/generate';
 import {
-  dailyBoardApi,
-  musicSocialApi,
+  boardDate,
+  type BoardDay,
+} from '@/lib/rmhmusic/learn/social/board';
+import {
+  DAILY_BOARD_KEY,
+  dailyBoardQuery,
+  musicSocialQuery,
+} from '@/lib/music-social/social.queries';
+import {
   setMusicSocialApi,
   type BoardScope,
-  type DailyBoard as Board,
   type DailyBoardRow,
-  type MusicSocial,
 } from '@/lib/music-social/social.contract';
 import { TEXT_BUTTON } from '../buttons';
 import { Shell } from '../LessonScreen';
@@ -57,14 +63,9 @@ const ReportDialog =
       ),
   );
 
-const DAY_MS = 86_400_000;
 /** One row's height, shared by the skeleton so the list does not move when it arrives. */
 const ROW =
   'flex h-14 items-center gap-3';
-
-export type BoardDay =
-  | 'today'
-  | 'yesterday';
 
 export function DailyBoard({
   day,
@@ -78,6 +79,8 @@ export function DailyBoard({
     useTranslation(
       'c-rmhmusic',
     );
+  const queryClient =
+    useQueryClient();
   const [
     now,
   ] =
@@ -86,12 +89,9 @@ export function DailyBoard({
         Date.now(),
     );
   const date =
-    utcDate(
-      day ===
-        'today'
-        ? now
-        : now -
-            DAY_MS,
+    boardDate(
+      day,
+      now,
     );
   const [
     scope,
@@ -100,33 +100,27 @@ export function DailyBoard({
     useState<BoardScope>(
       'everyone',
     );
-  const [
-    board,
-    setBoard,
-  ] =
-    useState<Board | null>(
-      null,
+  // The route loader seeded this day's Everyone board; the other tab is its own key, read when
+  // it is first chosen (the skeleton shows until then).
+  const boardOptions =
+    dailyBoardQuery(
+      date,
+      scope,
     );
-  const [
-    failed,
-    setFailed,
-  ] =
-    useState(
-      false,
+  const {
+    data: board = null,
+    isError,
+  } =
+    useQuery(
+      boardOptions,
     );
-  const [
-    nonce,
-    setNonce,
-  ] =
-    useState(
-      0,
-    );
-  const [
-    social,
-    setSocial,
-  ] =
-    useState<MusicSocial | null>(
-      null,
+  const socialOptions =
+    musicSocialQuery();
+  const {
+    data: social = null,
+  } =
+    useQuery(
+      socialOptions,
     );
   const [
     saving,
@@ -155,6 +149,10 @@ export function DailyBoard({
     );
   const helpId =
     useId();
+  const failed =
+    board ===
+      null &&
+    isError;
   const loading =
     board ===
       null &&
@@ -163,75 +161,17 @@ export function DailyBoard({
     useArrival(
       !loading,
     );
-  const asked =
-    useRef(
-      0,
-    );
 
-  useEffect(() => {
-    const ask =
-      ++asked.current;
-    setBoard(
-      null,
-    );
-    setFailed(
-      false,
-    );
-    api(
-      dailyBoardApi,
+  /** Refresh and Try again: drop what is shown and read it again, behind the skeleton. */
+  function reload() {
+    void queryClient.resetQueries(
       {
-        query:
-          {
-            date,
-            scope,
-          },
+        queryKey:
+          boardOptions.queryKey,
+        exact: true,
       },
-    )
-      .then(
-        (
-          b,
-        ) => {
-          if (
-            ask ===
-            asked.current
-          )
-            setBoard(
-              b,
-            );
-        },
-      )
-      .catch(
-        () => {
-          if (
-            ask ===
-            asked.current
-          )
-            setFailed(
-              true,
-            );
-        },
-      );
-  }, [
-    date,
-    scope,
-    nonce,
-  ]);
-
-  useEffect(() => {
-    api(
-      musicSocialApi,
-      {},
-    )
-      .then(
-        setSocial,
-      )
-      .catch(
-        () =>
-          setSocial(
-            null,
-          ),
-      );
-  }, []);
+    );
+  }
 
   function setSwitch(body: {
     board?: boolean;
@@ -253,15 +193,9 @@ export function DailyBoard({
         (
           s,
         ) => {
-          setSocial(
+          queryClient.setQueryData(
+            socialOptions.queryKey,
             s,
-          );
-          setNonce(
-            (
-              n,
-            ) =>
-              n +
-              1,
           );
         },
       )
@@ -270,20 +204,22 @@ export function DailyBoard({
           setSwitchFailed(
             true,
           );
-          setNonce(
-            (
-              n,
-            ) =>
-              n +
-              1,
-          );
         },
       )
       .finally(
-        () =>
+        () => {
           setSaving(
             false,
-          ),
+          );
+          // Either way the board may have changed (the viewer's row, the Friends tab): every
+          // Daily board query is stale, and the one on screen is read again.
+          void queryClient.invalidateQueries(
+            {
+              queryKey:
+                DAILY_BOARD_KEY,
+            },
+          );
+        },
       );
   }
 
@@ -611,14 +547,8 @@ export function DailyBoard({
           </p>
           <button
             type="button"
-            onClick={() =>
-              setNonce(
-                (
-                  n,
-                ) =>
-                  n +
-                  1,
-              )
+            onClick={
+              reload
             }
             className={
               TEXT_BUTTON
@@ -728,14 +658,8 @@ export function DailyBoard({
           ) : null}
           <button
             type="button"
-            onClick={() =>
-              setNonce(
-                (
-                  n,
-                ) =>
-                  n +
-                  1,
-              )
+            onClick={
+              reload
             }
             className={
               TEXT_BUTTON

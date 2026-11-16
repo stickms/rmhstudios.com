@@ -429,6 +429,28 @@ export function boardDateOk(
   );
 }
 
+/** Which board a page shows: today's (live) or yesterday's. */
+export type BoardDay =
+  | 'today'
+  | 'yesterday';
+
+/**
+ * The UTC date of `day`'s board at `now`. The route loader and the page both derive the board's
+ * query key from it, so the loader's prefetch is the page's data.
+ */
+export function boardDate(
+  day: BoardDay,
+  now: number,
+): string {
+  return utcDate(
+    day ===
+      'today'
+      ? now
+      : now -
+          DAY_MS,
+  );
+}
+
 /** Whether `date`'s board can no longer change: a past date once the save grace window is over. */
 export function isFinal(
   date: string,
