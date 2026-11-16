@@ -1563,5 +1563,7 @@
   "ai-working-feed": "آپ کے سوال کے لیے عوامی پوسٹس تلاش کی جا رہی ہیں اور ان میں سے 60 تک پڑھی جا رہی ہیں…",
   "ai-read-posts_other": "{{count}} پوسٹس کی بنیاد پر لکھا گیا",
   "leaderboard-find-people": "لوگ تلاش کریں",
-  "ai-read-posts_one": "{{count}} پوسٹس کی بنیاد پر لکھا گیا"
+  "ai-read-posts_one": "{{count}} پوسٹس کی بنیاد پر لکھا گیا",
+  "resume-hide": "یہ حصہ چھپائیں",
+  "resume-hidden": "اس ڈیوائس پر چھپا دیا گیا"
 }

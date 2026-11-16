@@ -1516,5 +1516,7 @@
   "quest-to-go_other": "还差 {{count}} 个",
   "ai-working-feed": "正在搜索与你的问题相关的公开帖子，并阅读其中最多 60 条…",
   "ai-read-posts_other": "基于 {{count}} 条帖子撰写",
-  "leaderboard-find-people": "找人"
+  "leaderboard-find-people": "找人",
+  "resume-hide": "隐藏此部分",
+  "resume-hidden": "已在此设备上隐藏"
 }

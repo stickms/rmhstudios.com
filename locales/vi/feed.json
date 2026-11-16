@@ -1516,5 +1516,7 @@
   "quest-to-go_other": "Còn {{count}}",
   "ai-working-feed": "Đang tìm bài đăng công khai về câu hỏi của bạn và đọc tối đa 60 bài…",
   "ai-read-posts_other": "Viết từ {{count}} bài đăng",
-  "leaderboard-find-people": "Tìm mọi người"
+  "leaderboard-find-people": "Tìm mọi người",
+  "resume-hide": "Ẩn phần này",
+  "resume-hidden": "Đã ẩn trên thiết bị này"
 }

@@ -1751,5 +1751,7 @@
   "ai-read-posts_many": "كُتب استنادًا إلى {{count}} منشورًا",
   "ai-read-posts_one": "كُتب استنادًا إلى {{count}} منشورًا",
   "ai-read-posts_two": "كُتب استنادًا إلى {{count}} منشورًا",
-  "ai-read-posts_zero": "كُتب استنادًا إلى {{count}} منشورًا"
+  "ai-read-posts_zero": "كُتب استنادًا إلى {{count}} منشورًا",
+  "resume-hide": "إخفاء هذا القسم",
+  "resume-hidden": "تم الإخفاء على هذا الجهاز"
 }

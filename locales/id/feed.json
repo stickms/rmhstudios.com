@@ -1516,5 +1516,7 @@
   "quest-to-go_other": "{{count}} lagi",
   "ai-working-feed": "Mencari postingan publik tentang pertanyaanmu dan membaca hingga 60 di antaranya…",
   "ai-read-posts_other": "Ditulis dari {{count}} postingan",
-  "leaderboard-find-people": "Cari orang"
+  "leaderboard-find-people": "Cari orang",
+  "resume-hide": "Sembunyikan bagian ini",
+  "resume-hidden": "Disembunyikan di perangkat ini"
 }

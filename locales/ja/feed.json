@@ -1516,5 +1516,7 @@
   "quest-to-go_other": "あと{{count}}",
   "ai-working-feed": "質問に関する公開投稿を検索し、最大 60 件を読んでいます…",
   "ai-read-posts_other": "{{count}} 件の投稿をもとに作成",
-  "leaderboard-find-people": "人を探す"
+  "leaderboard-find-people": "人を探す",
+  "resume-hide": "このセクションを非表示",
+  "resume-hidden": "このデバイスで非表示にしました"
 }

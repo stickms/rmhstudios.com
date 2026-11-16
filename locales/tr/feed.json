@@ -1563,5 +1563,7 @@
   "ai-working-feed": "Sorunla ilgili herkese açık gönderiler aranıyor ve en fazla 60 tanesi okunuyor…",
   "ai-read-posts_other": "{{count}} gönderiden yazıldı",
   "leaderboard-find-people": "Kişi bul",
-  "ai-read-posts_one": "{{count}} gönderiden yazıldı"
+  "ai-read-posts_one": "{{count}} gönderiden yazıldı",
+  "resume-hide": "Bu bölümü gizle",
+  "resume-hidden": "Bu cihazda gizlendi"
 }
