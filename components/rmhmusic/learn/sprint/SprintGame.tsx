@@ -58,6 +58,10 @@ import {
   TEXT_BUTTON,
 } from '../buttons';
 import type { DailyBoardMe } from '@/lib/music-social/social.contract';
+import {
+  dailyPayload,
+  type SharePayload,
+} from '@/lib/rmhmusic/learn/social/share';
 import { DailyBoardLine } from '../social/DailyBoardLine';
 import { InputSetup } from '../InputSetup';
 import { Shell } from '../LessonScreen';
@@ -171,6 +175,8 @@ export function SprintGame({
     useState<{
       date: string;
       me: DailyBoardMe;
+      /** The saved run's lines, for the Share dialog's preview (the link shows the server's copy). */
+      preview: SharePayload | null;
     } | null>(
       null,
     );
@@ -529,6 +535,9 @@ export function SprintGame({
                 initial={
                   dailyBoard.me
                 }
+                preview={
+                  dailyBoard.preview
+                }
               />
             ) : undefined
           }
@@ -559,6 +568,21 @@ export function SprintGame({
                           {
                             date: playing.date,
                             me,
+                            preview:
+                              dailyPayload(
+                                {
+                                  date: playing.date,
+                                  score:
+                                    summary.score,
+                                  avgMs:
+                                    summary.avgMs,
+                                  played:
+                                    summary.played,
+                                  skipped:
+                                    summary.skipped,
+                                  results,
+                                },
+                              ),
                           },
                         ),
                   },

@@ -10,6 +10,7 @@ import { noindexHead } from '@/lib/seo';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
 import {
   musicFriendsQuery,
+  musicSharesQuery,
   musicSocialQuery,
 } from '@/lib/music-social/music-social.queries';
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
@@ -39,6 +40,10 @@ export const Route =
                 musicFriendsQuery(
                   100,
                 ),
+              ),
+              prefetchRouteQuery(
+                context.queryClient,
+                musicSharesQuery(),
               ),
             ],
           );

@@ -23,17 +23,22 @@ import {
   type DailyBoardMe,
 } from '@/lib/music-social/social.contract';
 import { TEXT_BUTTON } from '../buttons';
+import type { SharePayload } from '@/lib/rmhmusic/learn/social/share';
 import { boardStatusSentence } from './board-text';
+import { ShareButton } from './ShareDialog';
 
 export function DailyBoardLine({
   date,
   today,
   initial,
+  preview,
 }: {
   date: string;
   today: string;
   /** The daily save's `board` field. */
   initial: DailyBoardMe;
+  /** The saved run's lines for the Share dialog; null hides Share. */
+  preview?: SharePayload | null;
 }) {
   const {
     t,
@@ -210,7 +215,7 @@ export function DailyBoardLine({
           ) : null}
         </div>
       ) : null}
-      <div className="flex flex-wrap gap-x-5">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <Link
           to="/rmhmusic/daily"
           search={
@@ -240,6 +245,20 @@ export function DailyBoardLine({
                 },
               )}
         </Link>
+        {/* A run a moderator took off the board is not shared either. */}
+        {preview &&
+        me.state !==
+          'hidden' ? (
+          <ShareButton
+            target={{
+              kind: 'daily',
+              date,
+            }}
+            preview={
+              preview
+            }
+          />
+        ) : null}
       </div>
     </div>
   );

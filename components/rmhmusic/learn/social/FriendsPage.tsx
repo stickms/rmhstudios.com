@@ -12,7 +12,6 @@ import {
   useId,
   useRef,
   useState,
-  type ReactNode,
 } from 'react';
 import {
   useQuery,
@@ -35,6 +34,7 @@ import {
 import { TEXT_BUTTON } from '../buttons';
 import { Shell } from '../LessonScreen';
 import { learnerName } from './board-text';
+import { SharedLinks } from './SharedLinks';
 import {
   friendDailyLine,
   friendSongLine,
@@ -45,11 +45,7 @@ type SwitchKey =
   | 'board'
   | 'friends';
 
-export function FriendsPage({
-  sharedLinks,
-}: {
-  sharedLinks?: ReactNode;
-}) {
+export function FriendsPage() {
   const {
     t,
   } =
@@ -451,9 +447,7 @@ export function FriendsPage({
         )}
       </section>
 
-      {
-        sharedLinks
-      }
+      <SharedLinks />
     </Shell>
   );
 }
