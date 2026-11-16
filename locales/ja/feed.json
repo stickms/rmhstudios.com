@@ -1518,5 +1518,12 @@
   "ai-read-posts_other": "{{count}} 件の投稿をもとに作成",
   "leaderboard-find-people": "人を探す",
   "resume-hide": "このセクションを非表示",
-  "resume-hidden": "このデバイスで非表示にしました"
+  "resume-hidden": "このデバイスで非表示にしました",
+  "music-privacy-board": "Show my Daily challenge scores on the board",
+  "music-privacy-board-hint": "Signed-in learners see your name, picture and score. Off hides every day at once.",
+  "music-privacy-friends": "Share my progress with friends",
+  "music-privacy-subtitle": "Who sees your sight reading scores and your progress. Both are off until you turn them on.",
+  "music-privacy-title": "RMH Music",
+  "music-privacy-friends-hint-now": "People you follow who follow you back see your Daily scores on the board's Friends tab. Later it will also share your Daily streak, finished units and song bests. Friends stop seeing it within a minute of turning it off.",
+  "music-privacy-save-failed": "Couldn't save. Try again."
 }

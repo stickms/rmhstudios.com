@@ -10,16 +10,20 @@ import type {
   NoteEvent,
   NoteListener,
 } from './events';
+import { eventTime } from './event-time';
 
 const DEFAULT_VELOCITY = 0.8;
 
 export function createScreenInput(): InputAdapter & {
+  /** `time`: the pointer or key event's own `timeStamp`, where the caller has one. */
   press(
     midi: number,
     velocity?: number,
+    time?: number,
   ): void;
   release(
     midi: number,
+    time?: number,
   ): void;
 } {
   const listeners =
@@ -42,6 +46,7 @@ export function createScreenInput(): InputAdapter & {
   const release =
     (
       midi: number,
+      time?: number,
     ) => {
       if (
         !held.delete(
@@ -54,7 +59,10 @@ export function createScreenInput(): InputAdapter & {
           type: 'off',
           midi,
           velocity: 0,
-          time: performance.now(),
+          time: eventTime(
+            time,
+            performance.now(),
+          ),
           source:
             'screen',
         },
@@ -92,6 +100,7 @@ export function createScreenInput(): InputAdapter & {
     press(
       midi,
       velocity = DEFAULT_VELOCITY,
+      time,
     ) {
       if (
         held.has(
@@ -114,7 +123,10 @@ export function createScreenInput(): InputAdapter & {
                 velocity,
               ),
             ),
-          time: performance.now(),
+          time: eventTime(
+            time,
+            performance.now(),
+          ),
           source:
             'screen',
         },

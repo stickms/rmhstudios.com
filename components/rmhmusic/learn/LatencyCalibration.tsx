@@ -353,9 +353,11 @@ export function LatencyCalibration({
         ),
       );
 
+  // `at`: the event's own timeStamp, the clock the lessons now time notes on too.
   const pad =
     (
       down: boolean,
+      at?: number,
     ) => {
       const {
         screen,
@@ -366,6 +368,8 @@ export function LatencyCalibration({
       )
         screen?.press(
           PAD_NOTE,
+          undefined,
+          at,
         );
       else
         screen?.release(
@@ -468,6 +472,7 @@ export function LatencyCalibration({
           e.preventDefault();
           pad(
             true,
+            e.timeStamp,
           );
         }}
         onPointerUp={() =>
@@ -501,6 +506,7 @@ export function LatencyCalibration({
           )
             pad(
               true,
+              e.timeStamp,
             );
         }}
         onKeyUp={() =>

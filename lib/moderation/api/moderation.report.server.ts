@@ -2,6 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
+import { musicReportOwner } from '@/lib/rmhmusic/learn/moderation.server';
 // The reason taxonomy and the length cap live in a client-safe module so the
 // report dialog validates against the same declaration this route enforces.
 import { reportSchema } from '@/lib/moderation/report-schema';
@@ -66,6 +67,10 @@ async function resolveTargetUser(entityType: string, entityId: string): Promise<
         });
         return rep?.userId ?? null;
       }
+      case 'music-score':
+      case 'music-share':
+        // RMH Music Phase 6: the learner whose Daily score (or shared result) it is.
+        return await musicReportOwner(entityType, entityId);
       case 'user':
         return entityId;
       default:

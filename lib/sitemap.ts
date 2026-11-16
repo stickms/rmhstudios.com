@@ -721,6 +721,8 @@ export const EXCLUDED_ROUTES: Record<
       'personal', // the learner's own card reviews, behind sign-in
     '/rmhmusic/credits':
       'auth-gated', // the sampled sounds' licence notices, inside the signed-in app
+    '/rmhmusic/daily':
+      'personal', // the Daily challenge board: the learner's own place and other members' scores, behind sign-in
     '/rmhmusic/sprint':
       'personal', // the learner's own sight reading runs and scores, behind sign-in
     '/rmhmusic/tuner':

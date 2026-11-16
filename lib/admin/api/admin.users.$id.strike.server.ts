@@ -1,5 +1,6 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
+import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
 import * as C from '@/lib/admin/admin-ops.contract';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
@@ -88,6 +89,7 @@ export const route = apiRoute('/api/admin/users/$id/strike', {
         });
         if (banned.count > 0) {
           await prisma.session.deleteMany({ where: { userId: params.id } }).catch(() => {});
+          await dropLearnerBoardCaches(params.id, Date.now());
           await logAdminAction(session.user.id, 'user.autoban', {
             targetType: 'user',
             targetId: params.id,

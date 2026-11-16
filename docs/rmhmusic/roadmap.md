@@ -30,7 +30,71 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 
 ## 2. Recent work
 
-### 2.000 More sounds and voice (Phase 5) — built on `claude/hopeful-bohr-99d1vw`, not yet merged
+### 2.0000 The Daily board (Phase 6, PR A and PR B)
+
+- Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase6-social.md` (owner decisions §5). PR C
+  (friends' progress, `/rmhmusic/friends`) and PR D (Share a result) are **not built**.
+- **PR A, the board's evidence (invisible to learners):** `sprint/plausible.ts` (no-start, clock,
+  too-fast, too-even; `needsReview`), recorded by `saveSprintDaily` in the same fill that scores a
+  run (`ranked`, `unrankedReason`, migration `20261116090000_music_sprint_daily_ranked`; rows
+  scored before it stay unranked, no backfill). A failing run is kept for the streak and not
+  ranked. A ranked perfect run with a mean under 450 ms, or the third ranked 100 in seven days,
+  files one `[Auto]` `music-score` report (`sprint/review.server.ts`, deduplicated 30 days per
+  learner). Moderation: `music-score` and `music-share` report types; "Resolve & remove content"
+  sets `hiddenAt` (`lib/rmhmusic/learn/moderation.server.ts`), from the one list
+  `REMOVABLE_REPORT_ENTITY_TYPES`. **Q4:** every RMH Music table is in the account export and the
+  deletion sweep (`learn/account-data.server.ts`); a test reads the model list from the schema.
+- **PR B, consent and the board:** `MusicSocial` (both switches off by default; migration
+  `20261116100000_music_social`), `GET/PUT /api/rmhmusic/social`, `GET /api/rmhmusic/sprint/board`
+  (`social/board.ts` pure, `board.server.ts` cached per date 30 s and dropped on a toggle, a newly
+  ranked run and a hide; blocks through `getBlockedAuthorIds`, fail closed; Friends = mutual
+  follows with either switch on, needing the viewer's own friends switch), the `board` line on the
+  daily save response, the page `/rmhmusic/daily` (today / `?day=yesterday`, Everyone / Friends,
+  around you, report button per row), the Daily result's line with "Show it on the board" and "See
+  today's board", "Today's board" on the Daily intro, and the "RMH Music" group on the site Privacy
+  page (`components/settings/MusicPrivacyControls.tsx`, strings in `feed`).
+- **After review (same branch):** note times are the input event's own `timeStamp` (MIDI, keys,
+  on-screen keys and the tap pads; `input/event-time.ts`, falling back to `performance.now()` for a
+  stamp that is 0 or more than 1 s off), so a main-thread stall no longer merges two notes. A bar is
+  too fast only on its first note's reaction floor or when most of its gaps are under 40 ms, and a
+  run needs three too-fast prompts to be unranked (`plausible.ts`). The board list is cached under a
+  per-date generation in Redis (`social/board-cache.server.ts`): a switch, a newly ranked run, a
+  hide, a ban, an unban, a strike's auto-ban, a lifted ban and an account deletion bump it, so a
+  rebuild already running in another process cannot put the old list back; without Redis the list
+  lives 5 s per process. Board rows carry no user id. The Daily result's line is the save's `board`
+  field (no board request); "Show it on the board" says what it does on every board and links to
+  the Privacy page. The Friends tab's line is the place among friends; yesterday's page names
+  yesterday; a run scored before the board existed says so. Private runs (board switch off) file no
+  `[Auto]` review. The Privacy group disables a switch while it saves, queues saves in tap order and
+  says when one fails; so does the board page's switch.
+- **Residual limits:** the server still cannot know which notes were played: the clock check caps
+  the claimed answer times by wall time only (a scripted run that records its start and waits out
+  the clock passes it), and the timing checks bound how human a fabricated run must look, nothing
+  more; moderation is the backstop. A private run that is later shown on the board was never
+  reviewed. The event-stamp fallback trusts a stamp up to 1 s old, so a longer stall still stamps at
+  handler time. Other viewers' cached friends lists still expire on their own (30 s).
+- **Deviations from the plan:** the row "menu" is a single 44 px Report button (one action);
+  board rows are not routed through `useFreshUser` (its shape needs a handle the board must not
+  send; names are resolved fresh on every request instead); `GET /api/rmhmusic/social` carries no
+  `shares` until PR D; `music-share` is reportable but has no owner lookup or takedown until shares
+  exist; the friends switch's only app-side control before PR C is the board's Friends tab.
+- **Verified:** unit tests (plausibility, the save's verdict and review, the board's order, gaps,
+  slices and would-place, the server's filters with an in-memory database, prefs, moderation, the
+  account coverage, board-text); one Chromium smoke against a throwaway Postgres with six seeded
+  learners (runs posted through the API with the start time moved back, not played with fake MIDI):
+  25/25 — opt-in off hides everything and shows "would place", the page switch puts A on the board,
+  blocks hide both ways with a rank gap, the Friends tab shows only mutuals, a fabricated 30 × 100 ms
+  run is kept and unranked with its sentence state, a quick perfect run files one `[Auto]` report,
+  the admin action hides it from every board, the Privacy page mirrors and writes the same switches,
+  and the board and Privacy pages at 390 and 1280 in Day and Night have CLS 0 and no horizontal
+  scroll. Both migrations applied to that Postgres and `prisma migrate diff` showed no music drift.
+- **Not verified:** a run played in the browser with fake MIDI (the board line on a real Daily
+  result was seen only through the API's `board` field), 320 px, `ar`/RTL, 200 % text, Firefox and
+  WebKit, `pnpm audit:pages`, real translations (the new strings are English in all 16 catalogues),
+  and a whole-repo `pnpm typecheck` (a scoped `tsgo` run over the route tree, the music code, the
+  Privacy and admin pages was clean).
+
+### 2.000 More sounds and voice (Phase 5)
 
 - Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase5-instruments-voice.md`.
 - **Sounds** (six more, mono 44.1 kHz CBR 64 kbps MP3, each under the 0.6 MB budget the assets test
@@ -335,11 +399,21 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   singer and microphone, a range prompt in Sprint and Songs (a singer with no range is still read
   as alto there), choir (several parts) and harmony singing,
   per-range presets in the tuner, a second sound layer, lesson titles in the locales.
-- **Phase 6:** social (friends, shared progress, possibly leaderboards for Sprint).
+- **Phase 6:** social. The Daily board and consent are **built** (§2.0000, PR A and PR B). Left:
+  PR C (friends' progress: `social/friends.ts`, `GET /api/rmhmusic/friends`, `/rmhmusic/friends`,
+  the learn home's Friends link and section) and PR D (Share a result: `MusicShare`, the share
+  endpoints, the OG card `/api/og/music/$token`, the public page `/rmhmusic/r/$token`, the dialog),
+  then PR E's docs and browser pass.
 - Rhythm *reading* beyond four note values; sharps/flats in flashcards (naturals only today);
   descending intervals; minor seconds (the interval table has `second` = major second only).
 
 ## 4. Known gaps, debt and things an audit should check
+
+- **The Daily board's limits (Phase 6):** the checks make a fabricated run slow and human-shaped;
+  they cannot prove a note was played. A patient cheater with human-looking times can still rank;
+  moderation (the `[Auto]` review and "Resolve & remove content") is the backstop. Several accounts
+  per person are not addressed. Inputs differ in difficulty (MIDI must play the written octave) and
+  share one board. Boards begin on the day PR A deploys; earlier Daily runs are never ranked.
 
 - **Translations:** every new string in the 15 non-English shipped locales is the English default
   until `pnpm i18n:translate` is run (only the 16 shipped `locales/*/c-rmhmusic.json` were kept
