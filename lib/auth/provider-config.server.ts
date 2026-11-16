@@ -10,7 +10,7 @@
  * `sign-in-providers.functions.ts`.
  *
  * Each provider's callback URL, to register in its developer console:
- *   https://<host>/api/auth/callback/<id>     (twitch, microsoft, gitlab, twitter, reddit)
+ *   https://<host>/api/auth/callback/<id>     (twitch, microsoft, gitlab, twitter)
  *   https://<host>/api/auth/steam/callback    (steam: nothing to register; OpenID needs no app)
  */
 import { SIGN_IN_PROVIDERS, type SignInProviderId } from '@/lib/auth/providers';
@@ -26,7 +26,6 @@ const credentials = {
   microsoft: both(env.MICROSOFT_CLIENT_ID, env.MICROSOFT_CLIENT_SECRET),
   gitlab: both(env.GITLAB_CLIENT_ID, env.GITLAB_CLIENT_SECRET),
   twitter: both(env.X_CLIENT_ID, env.X_CLIENT_SECRET),
-  reddit: both(env.REDDIT_CLIENT_ID, env.REDDIT_CLIENT_SECRET),
 };
 
 /** The Steam Web API key; Steam sign-in is on exactly when it is set. */
@@ -72,10 +71,6 @@ export function socialProviderConfig() {
     // users" turned on; otherwise the user gets a placeholder address.
     ...(credentials.twitter && {
       twitter: { ...credentials.twitter, overrideUserInfoOnSignIn: true },
-    }),
-    // Reddit never shares an email: always a placeholder address.
-    ...(credentials.reddit && {
-      reddit: { ...credentials.reddit, overrideUserInfoOnSignIn: true },
     }),
   };
 }

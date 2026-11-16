@@ -23,14 +23,13 @@ export const SIGN_IN_PROVIDERS = [
   'microsoft',
   'gitlab',
   'twitter',
-  'reddit',
 ] as const;
 
 export type SignInProviderId = (typeof SIGN_IN_PROVIDERS)[number];
 
 /**
- * Better Auth gives a user from a provider that shares no email (Reddit, X
- * without the email permission, Steam) a stand-in address of the form
+ * Better Auth gives a user from a provider that shares no email (Steam, X
+ * without the email permission) a stand-in address of the form
  * `<provider-user-id>@<provider>.placeholder.invalid`, so the `user.email`
  * column stays unique and non-null. `.invalid` is reserved by RFC 6761 §6.4: it
  * can never resolve, so the address can never belong to a real inbox, and no
