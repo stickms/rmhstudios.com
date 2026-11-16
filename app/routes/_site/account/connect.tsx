@@ -13,7 +13,7 @@
  * Anything else (no merge open, account not empty) continues straight on.
  */
 import { createFileRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserRound } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
@@ -67,23 +67,26 @@ function ConnectAccountPage() {
   const arrival = useArrival(view.kind !== 'loading');
 
   const continueOn = useCallback(() => {
-    window.location.href = next;
+    window.location.replace(next);
   }, [next]);
 
+  // Ask once per signed-in account. Keyed on the id, not the session object,
+  // which is a new object on every session refresh.
+  const userId = session?.user?.id ?? null;
+  const askedFor = useRef<string | null>(null);
+
   useEffect(() => {
-    if (isPending || !session?.user) return;
-    let cancelled = false;
+    if (isPending || !userId || askedFor.current === userId) return;
+    askedFor.current = userId;
     void (async () => {
       const pending = await authClient.$fetch<{ pending: Pending | null }>('/account-merge/pending', {
         method: 'GET',
       });
-      if (cancelled) return;
       if (pending.data?.pending) {
         setView({ kind: 'confirm', pending: pending.data.pending });
         return;
       }
       const eligibility = await authClient.$fetch<Eligibility>('/account-merge/eligibility', { method: 'GET' });
-      if (cancelled) return;
       if (eligibility.data?.eligible) {
         setView({ kind: 'offer', methods: eligibility.data.methods });
         return;
@@ -91,10 +94,7 @@ function ConnectAccountPage() {
       setView({ kind: 'done' });
       continueOn();
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isPending, session?.user, continueOn]);
+  }, [isPending, userId, continueOn]);
 
   const startMerge = async () => {
     setBusy(true);
