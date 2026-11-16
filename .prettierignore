@@ -2972,6 +2972,8 @@ lib/prepaint/generated.ts
 /lib/rmhmusic/api/rmhmusic.songs.best.server.ts
 /lib/rmhmusic/api/rmhmusic.social.server.ts
 /lib/rmhmusic/api/rmhmusic.friends.server.ts
+/lib/rmhmusic/api/rmhmusic.share.server.ts
+/lib/rmhmusic/api/rmhmusic.share.$id.server.ts
 /lib/rmhmusic/api/rmhmusic.sprint.board.server.ts
 /lib/rmhmusic/api/rmhmusic.sprint.daily.server.ts
 /lib/rmhmusic/learn/cards.server.ts
