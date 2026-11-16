@@ -89,6 +89,13 @@ vi.mock(
       h.prisma,
   }),
 );
+vi.mock(
+  '@/lib/cached.server',
+  () => ({
+    invalidateCached:
+      h.invalidate,
+  }),
+);
 
 import {
   hideMusicContent,
@@ -185,6 +192,12 @@ describe('music-score reports', () => {
         ?.userId,
     ).toBe(
       'u1',
+    );
+    // The date's cached board is dropped, so the row leaves every board at once.
+    expect(
+      h.invalidate,
+    ).toHaveBeenCalledWith(
+      'rmhmusic:board:2026-11-16',
     );
   });
 

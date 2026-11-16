@@ -19,7 +19,9 @@
  *   that asks for a look files one `[Auto]` report (`review.server.ts`); it never blocks the save.
  */
 import type { Prisma } from '@prisma/client';
+import { invalidateCached } from '@/lib/cached.server';
 import { prisma } from '@/lib/prisma.server';
+import { boardCacheKey } from '../social/cache-keys';
 import { utcDate } from './generate';
 import {
   isSprintLevelId,
@@ -379,13 +381,20 @@ export async function saveSprintDaily(
   ) {
     if (
       verdict.ranked
-    )
+    ) {
+      // A newly ranked run belongs on the date's board now, not in 30 s.
+      await invalidateCached(
+        boardCacheKey(
+          date,
+        ),
+      );
       await reviewRankedRun(
         userId,
         date,
         run.summary,
         now,
       );
+    }
     return 'saved';
   }
   const stored =

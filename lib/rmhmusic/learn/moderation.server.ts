@@ -12,7 +12,9 @@
  * The report route (`resolveTargetUser`) and the admin action (`takedownReportedContent`) call
  * these, so the music rules live in one place.
  */
+import { invalidateCached } from '@/lib/cached.server';
 import { prisma } from '@/lib/prisma.server';
+import { boardCacheKey } from './social/cache-keys';
 
 /** The learner a music report is about, for triage; null when unknown or not a music type. */
 export async function musicReportOwner(
@@ -61,6 +63,23 @@ export async function hideMusicContent(
     'music-score'
   )
     return;
+  const row =
+    await prisma.musicSprintDaily.findUnique(
+      {
+        where:
+          {
+            id: entityId,
+          },
+        select:
+          {
+            date: true,
+          },
+      },
+    );
+  if (
+    !row
+  )
+    return;
   await prisma.musicSprintDaily.updateMany(
     {
       where:
@@ -74,5 +93,11 @@ export async function hideMusicContent(
           now,
       },
     },
+  );
+  // Off the board at once, not when the cached list expires.
+  await invalidateCached(
+    boardCacheKey(
+      row.date,
+    ),
   );
 }
