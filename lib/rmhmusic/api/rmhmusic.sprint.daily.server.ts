@@ -18,9 +18,10 @@ export const route = apiRoute('/api/rmhmusic/sprint/daily', {
     sprintDailyApi,
     { rateLimit: 'write', body: sprintDailyBody, response: sprintDailyRes },
     async ({ userId, body }) => {
-      const outcome = await saveSprintDaily(userId, body.date, body.results, Date.now());
+      const now = Date.now();
+      const outcome = await saveSprintDaily(userId, body.date, body.results, now);
       if (outcome === 'invalid') return badRequest('Not a possible run for this date');
-      const board = await loadBoardMe(userId, body.date).catch((err: unknown) => {
+      const board = await loadBoardMe(userId, body.date, now).catch((err: unknown) => {
         console.error('[rmhmusic] board line after a save failed:', err);
         return undefined;
       });

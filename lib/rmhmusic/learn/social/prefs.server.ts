@@ -3,22 +3,16 @@
  * file reads and writes the row and drops the caches a toggle changes.
  *
  * A toggle drops the Everyone boards of today and yesterday (the only dates a board shows) and the
- * learner's own friends list at once; other viewers' cached friends lists expire within 30 s,
- * which the switch's help text says ("Friends stop seeing it within a minute").
+ * learner's own friends list at once, in every process (`board-cache.server.ts`: a per-date
+ * generation, so a rebuild already running elsewhere cannot put the old list back); other viewers'
+ * cached friends lists expire within 30 s.
  */
-import { invalidateCached } from '@/lib/cached.server';
 import { prisma } from '@/lib/prisma.server';
-import { utcDate } from '../sprint/generate';
-import {
-  boardCacheKey,
-  friendsCacheKey,
-} from './cache-keys';
+import { dropLearnerBoardCaches } from './board-cache.server';
 import {
   readSocial,
   type MusicSocialPrefs,
 } from './prefs';
-
-const DAY_MS = 86_400_000;
 
 /** The learner's switches; never creates a row. */
 export async function getMusicSocial(
@@ -94,42 +88,11 @@ export async function setMusicSocial(
           },
       },
     );
-  await invalidateSocialCaches(
+  await dropLearnerBoardCaches(
     userId,
     now,
   );
   return readSocial(
     row,
-  );
-}
-
-/** Drop what a change of `userId`'s switches (or their removal) makes stale. */
-export async function invalidateSocialCaches(
-  userId: string,
-  now: number,
-): Promise<void> {
-  await Promise.all(
-    [
-      invalidateCached(
-        boardCacheKey(
-          utcDate(
-            now,
-          ),
-        ),
-      ),
-      invalidateCached(
-        boardCacheKey(
-          utcDate(
-            now -
-              DAY_MS,
-          ),
-        ),
-      ),
-      invalidateCached(
-        friendsCacheKey(
-          userId,
-        ),
-      ),
-    ],
   );
 }

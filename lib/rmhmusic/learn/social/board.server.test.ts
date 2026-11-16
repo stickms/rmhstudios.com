@@ -657,21 +657,21 @@ const mutual =
           a,
       },
     );
+// Rows carry no user id (the client has no use for one): a learner is known by their run's id.
 const names =
   (
     rows: {
-      user: {
-        id: string;
-      };
+      rowId: string;
     }[],
   ) =>
     rows.map(
       (
         r,
       ) =>
-        r
-          .user
-          .id,
+        r.rowId.replace(
+          /^row-/,
+          '',
+        ),
     );
 
 beforeEach(
@@ -952,7 +952,6 @@ describe('the Everyone board', () => {
       ).sort(),
     ).toEqual(
       [
-        'id',
         'image',
         'name',
       ],
@@ -1218,6 +1217,18 @@ describe('the Friends board', () => {
       b.total,
     ).toBe(
       3,
+    );
+    // The viewer's line is their place among friends, not on the Everyone board.
+    expect(
+      b.me,
+    ).toEqual(
+      {
+        state:
+          'ranked',
+        rank: 3,
+        total: 3,
+        score: 80,
+      },
     );
   });
 });

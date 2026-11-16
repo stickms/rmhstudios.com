@@ -28,6 +28,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { musicErasureOps } from '@/lib/rmhmusic/learn/account-data.server';
+import { dropLearnerBoardCaches } from '@/lib/rmhmusic/learn/social/board-cache.server';
 import {
   DELETED_ACCOUNT_BAN_REASON,
   DELETED_ACCOUNT_LOCK_UNTIL,
@@ -286,4 +287,6 @@ export async function anonymizeAccount(userId: string): Promise<void> {
       },
     }),
   ]);
+  // Off the RMH Music Daily boards (and friends lists) now, not when their cached lists expire.
+  await dropLearnerBoardCaches(userId, Date.now());
 }

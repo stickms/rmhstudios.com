@@ -273,10 +273,10 @@ export type BoardMe =
       total: number;
       score: number;
     }
-  /** Kept for the learner's streak, not on the board, and why. */
+  /** Kept for the learner's streak, not on the board, and why (null: scored before the board). */
   | {
       state: 'unranked';
-      reason: UnrankedReason;
+      reason: UnrankedReason | null;
       score: number;
     }
   /** Taken off the board by a moderator. */
@@ -346,7 +346,7 @@ export function boardMe(
           row.unrankedReason,
         )
           ? row.unrankedReason
-          : 'no-start',
+          : null,
       score,
     };
   }

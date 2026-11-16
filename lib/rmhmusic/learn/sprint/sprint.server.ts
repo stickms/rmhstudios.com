@@ -16,12 +16,12 @@
  * - **The board's verdict (Phase 6):** the fill also records whether the run may be ranked
  *   (`plausible.ts` `judgeDailyRun`, from the time between the recorded start and the save). A run
  *   that fails a check is kept (it counts for the streak) and is not ranked. A ranked perfect run
- *   that asks for a look files one `[Auto]` report (`review.server.ts`); it never blocks the save.
+ *   that asks for a look, of a learner whose board switch is on, files one `[Auto]` report
+ *   (`review.server.ts`); it never blocks the save.
  */
 import type { Prisma } from '@prisma/client';
-import { invalidateCached } from '@/lib/cached.server';
 import { prisma } from '@/lib/prisma.server';
-import { boardCacheKey } from '../social/cache-keys';
+import { invalidateBoard } from '../social/board-cache.server';
 import { utcDate } from './generate';
 import {
   isSprintLevelId,
@@ -383,10 +383,8 @@ export async function saveSprintDaily(
       verdict.ranked
     ) {
       // A newly ranked run belongs on the date's board now, not in 30 s.
-      await invalidateCached(
-        boardCacheKey(
-          date,
-        ),
+      await invalidateBoard(
+        date,
       );
       await reviewRankedRun(
         userId,
@@ -422,7 +420,10 @@ export async function saveSprintDaily(
     : 'already-scored';
 }
 
-/** A ranked run that asks for a moderator's look files the `[Auto]` report. Never throws. */
+/**
+ * A ranked run on the board (the learner's board switch on) that asks for a moderator's look files
+ * the `[Auto]` report; a private run files nothing. Never throws.
+ */
 async function reviewRankedRun(
   userId: string,
   date: string,
@@ -440,6 +441,24 @@ async function reviewRankedRun(
   )
     return;
   try {
+    // A private run (the board switch off) is on no one's board: nothing for a moderator to check.
+    const social =
+      await prisma.musicSocial.findUnique(
+        {
+          where:
+            {
+              userId,
+            },
+          select:
+            {
+              board: true,
+            },
+        },
+      );
+    if (
+      !social?.board
+    )
+      return;
     const perfect =
       await prisma.musicSprintDaily.count(
         {

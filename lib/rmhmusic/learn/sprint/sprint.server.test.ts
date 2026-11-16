@@ -58,8 +58,12 @@ const h =
         {
           now: 0,
         };
+      /** Learners whose board switch is off (everyone else's is on). */
+      const boardOff =
+        new Set<string>();
       return {
         rows,
+        boardOff,
         reports,
         clock,
         notify:
@@ -217,6 +221,25 @@ const h =
                               .gte,
                       )
                         .length,
+                  ),
+              },
+            musicSocial:
+              {
+                findUnique:
+                  vi.fn(
+                    async ({
+                      where,
+                    }: {
+                      where: {
+                        userId: string;
+                      };
+                    }) => ({
+                      board:
+                        !boardOff.has(
+                          where.userId,
+                        ),
+                      friends: false,
+                    }),
                   ),
               },
             contentReport:
@@ -461,6 +484,7 @@ beforeEach(
   () => {
     h.rows.clear();
     h.reports.length = 0;
+    h.boardOff.clear();
     h.notify.mockClear();
     h.clock.now =
       NOW;
@@ -805,6 +829,38 @@ describe('saveSprintDaily — the board verdict', () => {
 });
 
 describe('saveSprintDaily — the [Auto] review of a perfect, fast run', () => {
+  it("files nothing for a private run (the learner's board switch is off)", async () => {
+    h.boardOff.add(
+      'u1',
+    );
+    await playedFor(
+      'u1',
+      2,
+      run(
+        320,
+      ),
+      '2026-11-15',
+    );
+    expect(
+      row(
+        'u1',
+      ),
+    ).toMatchObject(
+      {
+        ranked: true,
+        score: 100,
+      },
+    );
+    expect(
+      h.reports,
+    ).toHaveLength(
+      0,
+    );
+    expect(
+      h.notify,
+    ).not.toHaveBeenCalled();
+  });
+
   it('files one [Auto] report for a ranked 100 with a fast mean, and never twice in 30 days', async () => {
     await playedFor(
       'u1',

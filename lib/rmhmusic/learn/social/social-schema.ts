@@ -90,9 +90,9 @@ export const boardRowSchema =
       /** The `MusicSprintDaily` id, what "Report score" names. */
       rowId:
         z.string(),
+      /** Who: a display name and an avatar, nothing that identifies the account. */
       user: z.object(
         {
-          id: z.string(),
           name: z
             .string()
             .nullable(),
@@ -183,10 +183,13 @@ export const boardMeSchema =
             z.literal(
               'unranked',
             ),
+          /** Null: the run was scored before the board started (no verdict was recorded). */
           reason:
-            z.enum(
-              UNRANKED_REASONS,
-            ),
+            z
+              .enum(
+                UNRANKED_REASONS,
+              )
+              .nullable(),
           score:
             z
               .number()

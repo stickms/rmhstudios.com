@@ -2,8 +2,10 @@
  * The Daily board's reads (RMH Music Phase 6, plan 1.2 and 1.7). The rules are `board.ts`; this
  * file reads rows, applies the access rules and resolves names.
  *
- * - **Everyone:** one cached sorted list per date (`boardCacheKey`, 30 s; dropped at once by a
- *   switch change, a moderator's hide and a newly ranked run), built by one query with every
+ * - **Everyone:** one cached sorted list per date (`board-cache.server.ts`: 30 s under a per-date
+ *   generation, 5 s in-process without Redis; dropped everywhere at once by a switch change, a
+ *   newly ranked run, a moderator's hide, a ban or unban and an account deletion), built by one
+ *   query with every
  *   filter of plan 1.2: scored, ranked, not hidden, the learner's board switch on, not banned or
  *   deleted (a tombstone is banned until 9999), not a bot. Per request: drop the viewer's blocked
  *   ids (`getBlockedAuthorIds`, which fails closed: a failed lookup fails the request), slice the
@@ -15,10 +17,7 @@
  * - **What leaves the server** about another learner: a display name and an avatar (no handle, no
  *   link, no instrument), the score, the mean answer time and whether chords were skipped.
  */
-import {
-  cached,
-  invalidateCached,
-} from '@/lib/cached.server';
+import { cached } from '@/lib/cached.server';
 import { scopeFilter } from '@/lib/game/leaderboard-scope.server';
 import { getBlockedAuthorIds } from '@/lib/moderation.server';
 import { prisma } from '@/lib/prisma.server';
@@ -35,11 +34,10 @@ import {
   type BoardEntry,
   type BoardMe,
   type RankedEntry,
+  type ViewerRow,
 } from './board';
-import {
-  boardCacheKey,
-  friendsCacheKey,
-} from './cache-keys';
+import { cachedBoard } from './board-cache.server';
+import { friendsCacheKey } from './cache-keys';
 import type {
   BoardScope,
   DailyBoard,
@@ -47,7 +45,6 @@ import type {
 } from './social.contract';
 import { getMusicSocial } from './prefs.server';
 
-const BOARD_TTL_MS = 30_000;
 const FRIENDS_TTL_MS = 30_000;
 
 /** Not banned (a lapsed ban is fine), which also leaves out deleted accounts, and not a bot. */
@@ -148,17 +145,18 @@ const ORDER =
     },
   ];
 
-/** The date's Everyone board: every opted-in, ranked run, ordered (cached per date). */
+/**
+ * The date's Everyone board: every opted-in, ranked run, ordered (cached per date and generation,
+ * `board-cache.server.ts`). `now` is the request's clock, the same one the Friends board reads.
+ */
 export function loadEveryone(
   date: string,
+  now: number,
 ): Promise<
   BoardEntry[]
 > {
-  return cached(
-    boardCacheKey(
-      date,
-    ),
-    BOARD_TTL_MS,
+  return cachedBoard(
+    date,
     async () => {
       const rows =
         await prisma.musicSprintDaily.findMany(
@@ -175,7 +173,9 @@ export function loadEveryone(
                   null,
                 user: {
                   ...eligibleUser(
-                    new Date(),
+                    new Date(
+                      now,
+                    ),
                   ),
                   musicSocial:
                     {
@@ -202,17 +202,6 @@ export function loadEveryone(
           [],
       );
     },
-  );
-}
-
-/** Drop a date's cached Everyone board (a newly ranked run, a hide). */
-export function invalidateBoard(
-  date: string,
-): Promise<void> {
-  return invalidateCached(
-    boardCacheKey(
-      date,
-    ),
   );
 }
 
@@ -320,11 +309,60 @@ async function loadFriendsEntries(
   );
 }
 
-/** The viewer's own line for `date`, read fresh. `everyone` may be passed when already loaded. */
+/** The viewer's own row of `date`, read fresh (never cached). */
+async function readViewerRow(
+  viewerId: string,
+  date: string,
+): Promise<ViewerRow | null> {
+  const row =
+    await prisma.musicSprintDaily.findUnique(
+      {
+        where:
+          {
+            userId_date:
+              {
+                userId:
+                  viewerId,
+                date,
+              },
+          },
+        select:
+          {
+            score: true,
+            avgMs: true,
+            scoredAt: true,
+            ranked: true,
+            unrankedReason: true,
+            hiddenAt: true,
+          },
+      },
+    );
+  return row
+    ? {
+        score:
+          row.score,
+        avgMs:
+          row.avgMs,
+        scoredAt:
+          row.scoredAt
+            ? row.scoredAt.getTime()
+            : null,
+        ranked:
+          row.ranked,
+        unrankedReason:
+          row.unrankedReason,
+        hidden:
+          row.hiddenAt !==
+          null,
+      }
+    : null;
+}
+
+/** The viewer's own line for `date` on the Everyone board (the daily save's `board` field). */
 export async function loadBoardMe(
   viewerId: string,
   date: string,
-  everyone?: readonly RankedEntry[],
+  now: number,
 ): Promise<BoardMe> {
   const [
     row,
@@ -333,63 +371,24 @@ export async function loadBoardMe(
   ] =
     await Promise.all(
       [
-        prisma.musicSprintDaily.findUnique(
-          {
-            where:
-              {
-                userId_date:
-                  {
-                    userId:
-                      viewerId,
-                    date,
-                  },
-              },
-            select:
-              {
-                score: true,
-                avgMs: true,
-                scoredAt: true,
-                ranked: true,
-                unrankedReason: true,
-                hiddenAt: true,
-              },
-          },
+        readViewerRow(
+          viewerId,
+          date,
         ),
         getMusicSocial(
           viewerId,
         ),
-        everyone
-          ? Promise.resolve(
-              everyone,
-            )
-          : loadEveryone(
-              date,
-            ).then(
-              rankEntries,
-            ),
+        loadEveryone(
+          date,
+          now,
+        ).then(
+          rankEntries,
+        ),
       ],
     );
   return boardMe(
     viewerId,
-    row
-      ? {
-          score:
-            row.score,
-          avgMs:
-            row.avgMs,
-          scoredAt:
-            row.scoredAt
-              ? row.scoredAt.getTime()
-              : null,
-          ranked:
-            row.ranked,
-          unrankedReason:
-            row.unrankedReason,
-          hidden:
-            row.hiddenAt !==
-            null,
-        }
-      : null,
+    row,
     social.board,
     ranked,
   );
@@ -441,7 +440,6 @@ async function displayRows(
           return [
             r.id,
             {
-              id: r.id,
               name: r.name,
               image:
                 r.image,
@@ -460,7 +458,6 @@ async function displayRows(
       user: byId.get(
         e.userId,
       ) ?? {
-        id: e.userId,
         name: null,
         image:
           null,
@@ -479,7 +476,11 @@ async function displayRows(
   );
 }
 
-/** `GET /api/rmhmusic/sprint/board`: the date must already be today or yesterday (`boardDateOk`). */
+/**
+ * `GET /api/rmhmusic/sprint/board`: the date must already be today or yesterday (`boardDateOk`).
+ * The viewer's line is their place on the board asked for: on the Friends tab, among friends
+ * (where they are shown while either switch is on; the tab needs the friends switch).
+ */
 export async function loadBoard(
   viewerId: string,
   date: string,
@@ -496,24 +497,24 @@ export async function loadBoard(
   const [
     everyone,
     social,
+    row,
   ] =
     await Promise.all(
       [
         loadEveryone(
           date,
+          now,
         ).then(
           rankEntries,
         ),
         getMusicSocial(
           viewerId,
         ),
+        readViewerRow(
+          viewerId,
+          date,
+        ),
       ],
-    );
-  const me =
-    await loadBoardMe(
-      viewerId,
-      date,
-      everyone,
     );
   const final =
     isFinal(
@@ -532,7 +533,12 @@ export async function loadBoard(
       rows: [],
       around:
         null,
-      me,
+      me: boardMe(
+        viewerId,
+        row,
+        social.board,
+        everyone,
+      ),
       friendsOff: true,
     };
   }
@@ -547,6 +553,21 @@ export async function loadBoard(
           ),
         )
       : everyone;
+  const me =
+    scope ===
+    'friends'
+      ? boardMe(
+          viewerId,
+          row,
+          true,
+          ranked,
+        )
+      : boardMe(
+          viewerId,
+          row,
+          social.board,
+          everyone,
+        );
   const slice =
     sliceBoard(
       ranked,

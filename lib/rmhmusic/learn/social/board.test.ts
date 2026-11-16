@@ -627,10 +627,14 @@ describe("the viewer's own line (never cached)", () => {
         true,
         ranked,
       ),
-    ).toMatchObject(
+    ).toEqual(
+      // A run scored before the board existed (no verdict was recorded): not "no start".
       {
+        state:
+          'unranked',
         reason:
-          'no-start',
+          null,
+        score: 90,
       },
     );
     expect(
