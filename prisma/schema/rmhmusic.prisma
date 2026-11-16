@@ -139,3 +139,36 @@ model MusicSocial {
 
   @@map("music_social")
 }
+
+/// A shared result (Phase 6, PR D): the capability link `/rmhmusic/r/<token>` and the snapshot its
+/// page and card show. The server builds the snapshot from the stored row it points at (a scored
+/// Daily run or a song best), never from client text. Works for 90 days unless stopped sooner;
+/// a moderator's hide or a banned author makes it read as gone.
+model MusicShare {
+  id        String    @id @default(cuid())
+  /// 128 random bits, base64url (22 characters). Never logged; reports and "Stop sharing" use `id`.
+  token     String    @unique @db.VarChar(32)
+  userId    String
+  /// daily | song
+  kind      String    @db.VarChar(8)
+  /// What was shared, for reuse: `2026-11-15` or `ode-to-joy:play`.
+  subject   String    @db.VarChar(80)
+  /// The stored row the snapshot was taken from (`MusicSprintDaily.id` or `MusicSongBest.id`).
+  rowId     String    @db.VarChar(32)
+  /// The server-built snapshot (`social/share.ts` `SharePayload`, versioned `v: 1`).
+  payload   Json
+  /// Show the learner's name and picture (resolved live, never frozen). Off unless chosen per link.
+  showName  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  /// Set by the learner ("Stop sharing").
+  stoppedAt DateTime?
+  /// Set by a moderator ("Resolve & remove content" on a `music-share` report).
+  hiddenAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("music_share")
+}

@@ -1,7 +1,7 @@
 /**
  * RMH Music in the account's data export and in account deletion (owner decision Q4, Phase 6):
  * every RMH Music table, the learning profile, lesson progress, remembered cards, sight reading
- * bests and Daily runs, song bests and the social consent, goes both ways.
+ * bests and Daily runs, song bests, the social consent and shared result links, goes both ways.
  *
  * Deletion anonymises the user row in place (`lib/account/deletion.server.ts`), so the
  * `onDelete: Cascade` relations from `User` never fire: each table gets its own `deleteMany`
@@ -29,6 +29,7 @@ export async function exportMusicData(
     sprintDaily,
     songBests,
     social,
+    shares,
   ] =
     await Promise.all(
       [
@@ -97,6 +98,20 @@ export async function exportMusicData(
               },
           },
         ),
+        prisma.musicShare.findMany(
+          {
+            where:
+              {
+                userId,
+              },
+            take: CAP,
+            orderBy:
+              {
+                createdAt:
+                  'desc',
+              },
+          },
+        ),
       ],
     );
   return {
@@ -107,6 +122,7 @@ export async function exportMusicData(
     sprintDaily,
     songBests,
     social,
+    shares,
   };
 }
 
@@ -164,6 +180,15 @@ export function musicErasureOps(
       },
     ),
     prisma.musicSocial.deleteMany(
+      {
+        where:
+          {
+            userId,
+          },
+      },
+    ),
+    // Shared links go dark with the account: their pages and cards read as gone.
+    prisma.musicShare.deleteMany(
       {
         where:
           {

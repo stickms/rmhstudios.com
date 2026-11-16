@@ -68,6 +68,7 @@ export const REMOVABLE_REPORT_ENTITY_TYPES: readonly ReportEntityType[] =
     'webring',
     'ladder-interview',
     'music-score',
+    'music-share',
   ];
 
 /**

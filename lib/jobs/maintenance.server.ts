@@ -23,6 +23,7 @@ import { computeCohortRetention } from '@/lib/ops/cohorts.server';
 import { revertExpiredPileOnGuards } from '@/lib/safety/pile-on.server';
 import { runDeepseekBalanceJob } from '@/lib/deepseek/balance.server';
 import { refundExpiredPools } from '@/lib/commerce/pools.server';
+import { sweepExpiredShares } from '@/lib/rmhmusic/learn/social/share.server';
 
 export const OUTBOX_DRAIN_QUEUE = 'outbox.drain';
 export const MAINTENANCE_QUEUE = 'platform.maintenance';
@@ -139,6 +140,12 @@ export async function runMaintenance(): Promise<MaintenanceResult> {
     await refundExpiredPools();
   } catch (err) {
     console.error('[maintenance] pool refund sweep failed:', (err as Error)?.message);
+  }
+  try {
+    // RMH Music shared result links, 30 days after they expired (they read as gone from expiry).
+    await sweepExpiredShares(Date.now());
+  } catch (err) {
+    console.error('[maintenance] music share sweep failed:', (err as Error)?.message);
   }
   return result;
 }

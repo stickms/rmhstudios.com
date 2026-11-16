@@ -273,10 +273,10 @@ export function MusicPrivacyControls() {
             className="t-meta"
           >
             {t(
-              'music-privacy-friends-hint-now',
+              'music-privacy-friends-hint-full',
               {
                 defaultValue:
-                  "People you follow who follow you back see your Daily scores on the board's Friends tab. Later it will also share your Daily streak, finished units and song bests. Friends stop seeing it within a minute of turning it off.",
+                  "People you follow who follow you back see your Daily challenge streak, finished units and song bests, and your Daily scores on the board's Friends tab. Friends stop seeing it within a minute of turning it off.",
               },
             )}
           </p>
