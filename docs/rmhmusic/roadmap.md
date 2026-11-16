@@ -30,10 +30,89 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 
 ## 2. Recent work
 
+### 2.00000 Friends' progress and Share a result (Phase 6, PR C and PR D)
+
+- Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase6-social.md` (tasks 8–13; owner decisions
+  §5: friends see the music-only Daily challenge streak; share links last 90 days and can be
+  stopped any time). Built on the PR A + B branch (§2.0000).
+- **PR C, friends' progress:** `social/friends.ts` (pure: `finishedUnits` — every available lesson
+  starred, on the friend's own path — `friendDaily` over scored dates, the order, song bests from
+  the songbook) and `friends.server.ts` behind `GET /api/rmhmusic/friends?limit=3|100`
+  (`lib/music-social/friends.contract.ts`). Mutual follows only (the board's cached mutuals, 30 s,
+  dropped by the viewer's own switch), whose friends switch is on, not banned, deleted or a bot,
+  minus blocks both ways on every read (fail closed: the cached mutuals can hold a pair for 30 s
+  after a block). Reciprocal: the viewer's own switch is required. Names and avatars only; the
+  response schema drops anything else. UI: `/rmhmusic/friends` ("Friends and sharing": the two
+  switches, the friends list with `<details>` song bests, the shared links), seeded by its route
+  loader (`lib/music-social/music-social.queries.ts`, redesign audit B4); the learn home's fourth
+  footer link and up to three friend rows at the very end of the page (`HomeFriends`, rendered only
+  once the list arrives, then faded in, so nothing moves). The Privacy page's friends hint no
+  longer says "later" (a new key).
+- **PR D, Share a result:** `MusicShare` (migration `20261116110000_music_share`, CREATE TABLE only:
+  a 128-bit token, owner, kind, subject, the stored row it points at, the server-built snapshot,
+  `showName` off by default, `expiresAt` 90 days, `stoppedAt`, `hiddenAt`). `social/share.ts`
+  (pure: snapshots, token shape, the card's English lines) and `share.server.ts`: `POST
+  /api/rmhmusic/share` (`{ kind: 'daily', date } | { kind: 'song', songId, mode }` + `showName`;
+  the snapshot from the learner's own scored, unhidden Daily row or song best; reuse of the live link
+  for the same result and name choice; 409 past 50 live links; 400 nothing to share; 20 an hour),
+  `GET` (live links), `DELETE` (stop all), `DELETE /share/$id` (owner-scoped). One "gone" for every
+  reason a link cannot be seen (malformed or unknown token, stopped, expired, hidden, a Daily run a
+  moderator took off the board, a banned or deleted author, a viewer in a block pair with the
+  sharer, a failed block lookup). The card `GET /api/og/music/$token` (`renderPageCard`, English,
+  404 once gone, `public, max-age=600, s-maxage=600`), `ogCardPath('music', token)`. The public page
+  `app/routes/rmhmusic_.r.$token.tsx` (outside the auth-gated layout; signed-out viewers allowed;
+  notebook paper, no animated backdrop; "A learner" unless the link shows the name; Try RMH Music
+  the one primary; Report and "Play today's challenge" for signed-in viewers), read through `GET
+  /api/rmhmusic/r/$token` as a route-seeded query; `buildMeta` with its own card and copy plus
+  `noindex, nofollow`; a gone link heads with the app's catalogue card. Sitemap `null`, robots.txt
+  unchanged (crawlable for unfurl bots), FOUC fixture; `share-route.test.ts` holds those rules.
+  `ShareDialog` (lines exactly as public, name checkbox off, Copy link creates the link and copies
+  it, "Link copied" in a polite live region, a selected read-only field when the clipboard is
+  refused, "More ways to share" through the share sheet once the link exists) behind a secondary
+  Share button on the Daily result and "Share best" on a song result; the Shared links list with
+  Stop sharing and Stop sharing all. `music-share` is removable: "Resolve & remove content" sets
+  `MusicShare.hiddenAt`; shares are in the export and the deletion sweep; the maintenance job
+  deletes links 30 days after they expire.
+- **Also:** the social contract moved to `lib/music-social/social.contract.ts` (the site's Privacy
+  page imports it, and the site sheet does not scan `lib/rmhmusic`), the same move the PR #1657
+  branch makes; the new contracts sit beside it.
+- **Deviations from the plan:** `GET /api/rmhmusic/social` still carries no `shares` (the list is
+  its own `GET /api/rmhmusic/share`); the learner's stop is `stoppedAt` (the plan's `revokedAt`);
+  the share page reads a contract endpoint as a route-seeded query rather than a `createServerFn`
+  (the loader also hands the result to `head()`); friends rows carry no `useFreshUser` (no id
+  leaves the server); a Daily share also goes dark when a moderator hides the run itself.
+- **Verified:** unit tests (`friends.ts`, `friends.server.ts` with an in-memory database:
+  reciprocity, mutuals only, bans, tombstones, bots, blocks both ways and fail closed, the limit, no
+  identifying field; `share.ts`, `share.server.ts`: snapshots, reuse, the cap, owner-scoped stop,
+  every gone reason, 10,000 unique tokens, the sweep; the card route; `share-route.test.ts`;
+  moderation and account coverage; `friends-text`, `share-text`, which equals the card in English).
+  One Chromium smoke against a throwaway Postgres (the dev server, four seeded learners), 42/42:
+  friends only for mutual follows with both switches on, a block hiding the pair both ways, a
+  one-way follower never shown, the home's Friends link and the friend row last on the page with
+  CLS 0, the friends page's streak, units and song bests; a Daily link made through the API (name
+  off by default, reused on a second press), opened signed out (200, no redirect, "A learner", no
+  Report; `noindex, nofollow`, an absolute `og:image` of its own card, its own title and
+  description), the card a 1200×630 PNG cached ten minutes; signed in, Report and "Play today's
+  challenge"; a blocked viewer gets "gone"; Stop sharing (another learner's id stops nothing) turns
+  the page to the gone sentence with the app's card and the card to 404; the 51st live link is a 409
+  with its sentence, Stop sharing all stops 50; the name shown only on a link that chose it; a
+  report on a share resolves its owner and "Resolve & remove content" takes the page and card down;
+  the friends page, the learn home and the share page (live and gone) at 390 and 1280 in Day and
+  Night with CLS 0, no horizontal scroll and no page errors (screenshots looked at). The migration
+  applied to that Postgres and `prisma migrate diff` showed no music drift. The strict island is
+  clean; a scoped `tsc` over the route tree, every RMH Music file, the card, the admin, report,
+  export, maintenance and Privacy modules was clean except the base branch's `board-text.test.ts`
+  spy, which the PR #1657 branch already fixed.
+- **Not verified:** the Share dialog in a browser (Copy link, "Link copied", the clipboard-refused
+  field, the share sheet) and the Share buttons on a real Daily or song result (no run was played
+  in the browser; links were made through the API), 320 px, `ar`/RTL, 200 % text, Firefox and
+  WebKit, `pnpm audit:pages`, real translations (the new strings are English in all 16
+  catalogues), and a whole-repo `pnpm typecheck`.
+
 ### 2.0000 The Daily board (Phase 6, PR A and PR B)
 
 - Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase6-social.md` (owner decisions §5). PR C
-  (friends' progress, `/rmhmusic/friends`) and PR D (Share a result) are **not built**.
+  (friends' progress) and PR D (Share a result) are in §2.00000.
 - **PR A, the board's evidence (invisible to learners):** `sprint/plausible.ts` (no-start, clock,
   too-fast, too-even; `needsReview`), recorded by `saveSprintDaily` in the same fill that scores a
   run (`ranked`, `unrankedReason`, migration `20261116090000_music_sprint_daily_ranked`; rows
@@ -399,11 +478,9 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   singer and microphone, a range prompt in Sprint and Songs (a singer with no range is still read
   as alto there), choir (several parts) and harmony singing,
   per-range presets in the tuner, a second sound layer, lesson titles in the locales.
-- **Phase 6:** social. The Daily board and consent are **built** (§2.0000, PR A and PR B). Left:
-  PR C (friends' progress: `social/friends.ts`, `GET /api/rmhmusic/friends`, `/rmhmusic/friends`,
-  the learn home's Friends link and section) and PR D (Share a result: `MusicShare`, the share
-  endpoints, the OG card `/api/og/music/$token`, the public page `/rmhmusic/r/$token`, the dialog),
-  then PR E's docs and browser pass.
+- **Phase 6:** social. **Built:** the Daily board and consent (§2.0000, PR A and PR B), friends'
+  progress and Share a result (§2.00000, PR C and PR D). Left: PR E's remaining browser pass
+  (320 px, `ar`, Firefox and WebKit, `pnpm audit:pages`).
 - Rhythm *reading* beyond four note values; sharps/flats in flashcards (naturals only today);
   descending intervals; minor seconds (the interval table has `second` = major second only).
 
@@ -414,6 +491,11 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   moderation (the `[Auto]` review and "Resolve & remove content") is the backstop. Several accounts
   per person are not addressed. Inputs differ in difficulty (MIDI must play the written octave) and
   share one board. Boards begin on the day PR A deploys; earlier Daily runs are never ranked.
+- **Shared results (Phase 6):** the card is English; unfurls other services already fetched
+  outlive "Stop sharing" (our card is cached ten minutes); a link is a capability: anyone holding
+  it sees the result until it stops. Other viewers' cached mutuals lists expire on their own
+  (30 s), so a friend who unfollows can see progress for up to 30 s longer (consent and blocks are
+  read fresh).
 
 - **Translations:** every new string in the 15 non-English shipped locales is the English default
   until `pnpm i18n:translate` is run (only the 16 shipped `locales/*/c-rmhmusic.json` were kept
