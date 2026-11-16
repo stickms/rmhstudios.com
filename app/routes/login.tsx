@@ -11,7 +11,18 @@ import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import { useState, useRef, useEffect } from 'react';
-import { DiscordIcon, GithubIcon } from '@/components/ui/brand-icons';
+import {
+  DiscordIcon,
+  GithubIcon,
+  GitlabIcon,
+  MicrosoftIcon,
+  RedditIcon,
+  SteamIcon,
+  TwitchIcon,
+  XIcon,
+} from '@/components/ui/brand-icons';
+import type { SignInProviderId } from '@/lib/auth/providers';
+import { getSignInProviders } from '@/lib/auth/sign-in-providers.functions';
 import { Mail, Lock, User, Camera, Fingerprint, Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
@@ -36,6 +47,9 @@ export const Route = createFileRoute('/login')({
   head: () => ({
     meta: [{ title: 'Login | RMH' }],
   }),
+  // Which provider buttons to draw depends on which providers this deploy has
+  // credentials for (lib/auth/provider-config.server.ts).
+  loader: () => getSignInProviders(),
   component: LoginPage,
 });
 
@@ -61,12 +75,13 @@ function safeInternalPath(raw?: string): string {
 }
 
 /** Which action is currently in flight (drives per-button spinners + disabling). */
-type Pending = 'passkey' | 'discord' | 'github' | 'email' | null;
+type Pending = 'passkey' | SignInProviderId | 'email' | null;
 
 function LoginPage() {
   const isCard = useMediaQuery('(min-width: 640px)');
   const { t } = useTranslation('pages');
   const { callbackURL: rawCallback } = Route.useSearch();
+  const enabledProviders = Route.useLoaderData();
 
   const [callbackURL, setCallbackURL] = useState(() => safeInternalPath(rawCallback));
 
@@ -193,7 +208,7 @@ function LoginPage() {
     }
   };
 
-  const handleSocial = (provider: 'discord' | 'github') => async () => {
+  const handleSocial = (provider: SignInProviderId) => async () => {
     setPending(provider);
     setError(null);
     const failed = (message?: string | null) => {
@@ -203,6 +218,17 @@ function LoginPage() {
       );
     };
     try {
+      if (provider === 'steam') {
+        // Steam is OpenID 2.0, served by our own Better Auth plugin
+        // (lib/auth/steam.server.ts) rather than `signIn.social`.
+        const res = await authClient.$fetch<{ url: string }>('/sign-in/steam', {
+          method: 'POST',
+          body: { callbackURL },
+        });
+        if (res.error || !res.data?.url) return failed(res.error?.message);
+        window.location.href = res.data.url;
+        return;
+      }
       const res = await authClient.signIn.social({ provider, callbackURL });
       // On success the client is already navigating to the provider; stay
       // pending so the page doesn't unlock in the moment before it unloads.
@@ -293,18 +319,44 @@ function LoginPage() {
     );
   }
 
-  const providers = [
-    {
-      id: 'discord' as const,
+  const providerButtons: Record<SignInProviderId, { label: string; icon: React.ReactNode }> = {
+    discord: {
       label: t('continue-with-discord', { defaultValue: 'Continue with Discord' }),
       icon: <DiscordIcon className="size-5" />,
     },
-    {
-      id: 'github' as const,
+    github: {
       label: t('continue-with-github', { defaultValue: 'Continue with GitHub' }),
       icon: <GithubIcon className="size-5" />,
     },
-  ];
+    steam: {
+      label: t('continue-with-steam', { defaultValue: 'Continue with Steam' }),
+      icon: <SteamIcon className="size-5" />,
+    },
+    twitch: {
+      label: t('continue-with-twitch', { defaultValue: 'Continue with Twitch' }),
+      icon: <TwitchIcon className="size-5" />,
+    },
+    microsoft: {
+      label: t('continue-with-microsoft', { defaultValue: 'Continue with Microsoft' }),
+      icon: <MicrosoftIcon className="size-5" />,
+    },
+    gitlab: {
+      label: t('continue-with-gitlab', { defaultValue: 'Continue with GitLab' }),
+      icon: <GitlabIcon className="size-5" />,
+    },
+    twitter: {
+      label: t('continue-with-x', { defaultValue: 'Continue with X' }),
+      icon: <XIcon className="size-5" />,
+    },
+    reddit: {
+      label: t('continue-with-reddit', { defaultValue: 'Continue with Reddit' }),
+      icon: <RedditIcon className="size-5" />,
+    },
+  };
+  const providers = enabledProviders.map((id) => ({ id, ...providerButtons[id] }));
+  // Two or three in one row; from four up, rows of four.
+  const providerGrid =
+    providers.length <= 2 ? 'grid-cols-2' : providers.length === 3 ? 'grid-cols-3' : 'grid-cols-4';
 
   // Field glyph shared by the email/password/display-name wells.
   const fieldIcon =
@@ -474,7 +526,7 @@ function LoginPage() {
 
           {/* Providers: a compact row of glass chips — brand glyphs keep full
               colour (they are content, not chrome). Labelled for assistive tech. */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className={cn('grid gap-2', providerGrid)}>
             {providers.map((p) => (
               <Button
                 key={p.id}

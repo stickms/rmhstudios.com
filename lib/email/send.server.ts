@@ -15,6 +15,8 @@
  * existing `RESEND_FROM_EMAIL`, then a sensible default).
  */
 
+import { isPlaceholderEmail } from '@/lib/auth/providers';
+
 export interface SendEmailInput {
   /** Recipient email address. */
   to: string;
@@ -39,6 +41,12 @@ function fromAddress(): string {
  * dev), `false` on a delivery failure. Never throws.
  */
 export async function sendEmail(input: SendEmailInput): Promise<boolean> {
+  // Accounts from providers that share no email (Steam, Reddit, sometimes X)
+  // carry a non-routable `*.placeholder.invalid` address. Every sender goes
+  // through here (sign-up verification, session alerts, digests), so this is
+  // the one place that keeps them from mailing a bounce to nowhere.
+  if (isPlaceholderEmail(input.to)) return false;
+
   const apiKey = process.env.RESEND_API_KEY;
 
   // Dev / unconfigured: log instead of sending so local runs and CI don't need
