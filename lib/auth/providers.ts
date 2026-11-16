@@ -27,6 +27,34 @@ export const SIGN_IN_PROVIDERS = [
 
 export type SignInProviderId = (typeof SIGN_IN_PROVIDERS)[number];
 
+/** Brand names, which are not translated. */
+export const PROVIDER_NAMES: Record<SignInProviderId, string> = {
+  discord: 'Discord',
+  github: 'GitHub',
+  steam: 'Steam',
+  twitch: 'Twitch',
+  microsoft: 'Microsoft',
+  gitlab: 'GitLab',
+  twitter: 'X',
+};
+
+/** Better Auth's `account.providerId` for an email-and-password sign-in. */
+export const CREDENTIAL_PROVIDER_ID = 'credential';
+
+export function isSignInProviderId(id: string): id is SignInProviderId {
+  return (SIGN_IN_PROVIDERS as readonly string[]).includes(id);
+}
+
+/**
+ * How recent a session must be to change how an account signs in (connect,
+ * disconnect, change email, join accounts). A session stolen earlier than this
+ * cannot add a way in. Enforced in `lib/auth/consolidation.server.ts`.
+ */
+export const FRESH_SESSION_MS = 10 * 60 * 1000;
+
+/** The error code the server sends when a change needs a more recent sign-in. */
+export const SESSION_NOT_FRESH = 'SESSION_NOT_FRESH';
+
 /**
  * Better Auth gives a user from a provider that shares no email (Steam, X
  * without the email permission) a stand-in address of the form

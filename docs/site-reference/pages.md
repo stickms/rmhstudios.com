@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 374 routes. 201 render inside the standard site shell (sidebar, nav, context rail); 173 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 375 routes. 202 render inside the standard site shell (sidebar, nav, context rail); 173 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -19,6 +19,7 @@ Standard pages, rendered inside the sidebar shell.
 | URL | Title | Access | Source |
 | --- | ----- | ------ | ------ |
 | `/` | RMH Studios | public | `app/routes/_site/index.tsx` |
+| `/account/connect` | — | public | `app/routes/_site/account/connect.tsx` |
 | `/achievements` | Achievements | public | `app/routes/_site/achievements.tsx` |
 | `/admin` | Admin Dashboard | admin | `app/routes/_site/admin/index.tsx` |
 | `/admin/alarms` | Alarms | admin | `app/routes/_site/admin/alarms.tsx` |

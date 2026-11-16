@@ -16,6 +16,9 @@ import { createAuthMiddleware, APIError } from 'better-auth/api';
 import { isPlaceholderEmail } from '@/lib/auth/providers';
 import { socialProviderConfig, steamApiKey } from '@/lib/auth/provider-config.server';
 import { steam } from '@/lib/auth/steam.server';
+import { consolidation } from '@/lib/auth/consolidation.server';
+import { notifySignInChange } from '@/lib/auth/security-notice.server';
+import { CREDENTIAL_PROVIDER_ID } from '@/lib/auth/providers';
 
 // The `!` here used to be load-bearing in the worst way. `new Stripe(undefined)`
 // throws "Neither apiKey nor config.authenticator provided" at CONSTRUCTION, and
@@ -56,6 +59,11 @@ if (process.env.NODE_ENV === 'production') {
 // hardening (#408) was deferred until a transport existed. Gating on the key
 // activates the protection precisely when email can be delivered.
 const emailConfigured = Boolean(process.env.RESEND_API_KEY);
+
+/** The one user-typed value that reaches an email body. */
+function escapeEmailHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+}
 
 /** Minimal branded transactional-email shell (inline styles — email clients strip <style>). */
 function emailShell(heading: string, body: string, cta: { label: string; url: string }): string {
@@ -116,6 +124,11 @@ export const auth = betterAuth({
       '/sign-up/email': { window: 60, max: 10 },
       '/forget-password': { window: 60, max: 6 },
       '/reset-password': { window: 60, max: 10 },
+      // Each one sends an email: keep them from being used to flood an inbox.
+      '/send-verification-email': { window: 300, max: 3 },
+      '/change-email': { window: 300, max: 5 },
+      '/link-social': { window: 60, max: 10 },
+      '/unlink-account': { window: 60, max: 10 },
     },
   },
   // Google sign-in is switched off (repeated problems with it, 2026-10). Nothing was deleted: existing `account` rows with
@@ -149,6 +162,9 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: emailConfigured,
+    // Signing in before confirming sends a fresh link (the old one may have
+    // expired), and the login page says so. Rate-limited with /sign-in/email.
+    sendOnSignIn: emailConfigured,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       await sendEmail({
@@ -164,18 +180,48 @@ export const auth = betterAuth({
     },
   },
   account: {
-    // Account-linking policy hardening (#408). Never auto-link a social identity
-    // across differing email addresses, and deliberately keep the social
-    // providers OUT of `trustedProviders` so linking requires the provider to
-    // have verified the email and cannot silently attach onto a pre-existing,
-    // unverified credential account.
+    // Account-linking policy hardening (#408), extended by account consolidation
+    // (docs/superpowers/specs/2026-11-16-account-consolidation-design.md).
+    //
+    // Automatic linking (signing in with a provider whose email matches an
+    // existing account) happens only when the provider verified that email AND
+    // the local account verified it too (`requireLocalEmailVerified`, Better
+    // Auth's default). The providers stay OUT of `trustedProviders`, which would
+    // skip the first check, so nothing attaches onto an unverified,
+    // pre-registered credential account.
+    //
+    // `allowDifferentEmails` only governs the EXPLICIT connect a signed-in user
+    // starts from Settings (`/link-social`), never the automatic path above. The
+    // OAuth round trip is what proves they own that provider account, so its
+    // email need not match; the recent-sign-in rule (consolidation.server.ts) is
+    // what stops a stolen session from adding a way in, and every connect is
+    // announced to the account (databaseHooks.account below).
     accountLinking: {
       enabled: true,
       trustedProviders: [],
-      allowDifferentEmails: false,
+      allowDifferentEmails: true,
     },
   },
   user: {
+    // Changing the email: the new address only takes effect when the link sent
+    // TO it is clicked (no `updateEmailWithoutVerification`), and an account
+    // whose current address is confirmed must first approve from that address,
+    // so a stolen session cannot move the account to an inbox it controls.
+    changeEmail: {
+      enabled: true,
+      sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+        await sendEmail({
+          to: user.email,
+          subject: 'Approve the new email for your RMH Studios account',
+          html: emailShell(
+            'Approve your new email',
+            `Someone asked to change the email on your RMH Studios account to ${escapeEmailHtml(newEmail)}. If it was you, approve it and we will send a link to the new address. If not, ignore this email and review your security settings.`,
+            { label: 'Approve change', url },
+          ),
+          text: `Approve changing your RMH Studios email to ${newEmail}: ${url}`,
+        });
+      },
+    },
     additionalFields: {
       username: {
         type: 'string',
@@ -217,6 +263,25 @@ export const auth = betterAuth({
     }),
   },
   databaseHooks: {
+    // Every new way into an existing account is announced to it, and so is every
+    // removal: connect from Settings, automatic linking on sign-in, Steam. The
+    // first account a user is created with is not news, nor is a password
+    // (email sign-up creates it with the user).
+    account: {
+      create: {
+        after: async (account) => {
+          if (account.providerId === CREDENTIAL_PROVIDER_ID) return;
+          const total = await prisma.account.count({ where: { userId: account.userId } });
+          if (total <= 1) return;
+          void notifySignInChange(account.userId, { kind: 'connected', providerId: account.providerId });
+        },
+      },
+      delete: {
+        after: async (account) => {
+          void notifySignInChange(account.userId, { kind: 'removed', providerId: account.providerId });
+        },
+      },
+    },
     user: {
       create: {
         after: async (user) => {
@@ -282,6 +347,8 @@ export const auth = betterAuth({
     // entry). Always registered so the plugin tuple keeps its type; its
     // endpoints answer 404 unless STEAM_API_KEY is set.
     steam({ apiKey: steamApiKey }),
+    // Recent-sign-in rule and the empty-account merge (account-merge/*).
+    consolidation(),
     // WebAuthn/passkey sign-in. rpID/origin default from baseURL; override
     // via env when serving from multiple hostnames (e.g. www + apex).
     passkey({
