@@ -233,6 +233,23 @@ export const sharedResultRes =
           mine: z.boolean(),
           payload:
             sharePayloadSchema,
+          /**
+           * The card's English lines, built on the server from the stored payload. The public
+           * page's `head()` reads these instead of calling `cardLines` itself, which would pull
+           * the song catalogue into every page (route heads are on the critical path).
+           */
+          lines:
+            z.object(
+              {
+                lead: z.string(),
+                title:
+                  z.string(),
+                subtitle:
+                  z.string(),
+                stars:
+                  z.string(),
+              },
+            ),
           name: z
             .string()
             .nullable(),

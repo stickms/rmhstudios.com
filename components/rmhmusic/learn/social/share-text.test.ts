@@ -226,6 +226,16 @@ describe('sharedPageState', () => {
           skipped: 0,
           avgMs: 912,
         },
+      lines:
+        {
+          lead: 'Daily sight reading · 15 Nov 2026',
+          title:
+            '92 points',
+          subtitle:
+            '28 of 30 right · 0.9 s a note',
+          stars:
+            '2 of 3 stars',
+        },
       name: null,
       image:
         null,

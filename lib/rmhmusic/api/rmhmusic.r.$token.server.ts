@@ -4,6 +4,7 @@ import { sharedResultApi } from '@/lib/music-social/share.contract';
 import { utcDate } from '@/lib/rmhmusic/learn/sprint/generate';
 import { sharedResultRes } from '@/lib/rmhmusic/learn/social/share-schema';
 import { getSharedResult } from '@/lib/rmhmusic/learn/social/share.server';
+import { cardLines } from '@/lib/rmhmusic/learn/social/share';
 
 /**
  * `GET /api/rmhmusic/r/$token` — a shared result for its public page (`/rmhmusic/r/$token`, Phase
@@ -28,6 +29,7 @@ export const route = apiRoute('/api/rmhmusic/r/$token', {
         ...rest,
         ...(userId ? { id } : {}),
         mine: userId !== null && view.mine,
+        lines: cardLines(view.payload),
         today: view.payload.kind === 'daily' && view.payload.date === utcDate(now),
       });
     },

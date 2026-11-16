@@ -8,6 +8,7 @@
  * 2. `GET /api/rmhmusic/r/$token`: only the names in `sharedResultRes`; the share `id` (what
  *    Report names) goes to a signed-in viewer only, and `mine` says whether that viewer made it.
  */
+import { readFileSync } from 'node:fs';
 import {
   beforeEach,
   describe,
@@ -361,6 +362,17 @@ describe('GET /api/rmhmusic/r/$token', () => {
         mine: false,
         payload:
           daily,
+        // Built on the server from the stored payload (no client text, no learner data).
+        lines:
+          {
+            lead: 'Daily sight reading · 15 Nov 2026',
+            title:
+              '92 points',
+            subtitle:
+              '28 of 30 right · 0.9 s a note',
+            stars:
+              '2 of 3 stars',
+          },
         name: 'Ada',
         image:
           null,
@@ -451,6 +463,52 @@ describe('GET /api/rmhmusic/r/$token', () => {
         state:
           'gone',
       },
+    );
+  });
+});
+
+describe('the shared-result page head stays off the critical path', () => {
+  it('sends the card lines from the server', async () => {
+    h.getSharedResult.mockResolvedValue(
+      {
+        state:
+          'live',
+        id: 'share1',
+        mine: false,
+        payload:
+          daily,
+        name: null,
+        image:
+          null,
+      },
+    );
+    const body =
+      (await getShared(
+        false,
+      )) as {
+        lines?: {
+          title: string;
+        };
+      };
+    expect(
+      body
+        .lines
+        ?.title,
+    ).toMatch(
+      /points$/,
+    );
+  });
+
+  it('the public route module does not import the share module (it pulls the song catalogue)', () => {
+    const src =
+      readFileSync(
+        'app/routes/rmhmusic_.r.$token.tsx',
+        'utf8',
+      );
+    expect(
+      src,
+    ).not.toMatch(
+      /from '@\/lib\/rmhmusic\/learn\/social\/share'/,
     );
   });
 });
