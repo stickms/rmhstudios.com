@@ -45,6 +45,10 @@
 }
 .rmhp-root .pg-command .qt-by { font-family: var(--mono); font-size: 12.5px; color: var(--stage-ink); }
 
+/* The quote and the principles are one dark room: no rounding and no paper at their join. */
+.rmhp-root .pg-command .qt { border-end-start-radius: 0; border-end-end-radius: 0; }
+.rmhp-root .pg-command .pr { border-start-start-radius: 0; border-start-end-radius: 0; border-top: 1px solid var(--rule); }
+
 /* ── §02 operating principles: flow mode is a grid of glass cards ── */
 .rmhp-root .pg-command .pr-pin { padding: clamp(72px, 9vw, 130px) 0; }
 .rmhp-root .pg-command .pr-head { padding-inline: var(--pad); }
@@ -110,6 +114,10 @@
     .rmhp-root .pg-command .cmd-bars > i { animation: pg-cmd-rise 1s var(--ease) both; animation-delay: calc(0.3s + var(--i, 0) * 0.055s); }
 
     @supports (animation-timeline: view()) {
+      /* the join: the quote keeps only its entry from paper, the principles only their exit to paper */
+      .rmhp-root .pg-command .qt { animation: rp-bleed linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+      .rmhp-root .pg-command .pr { border-top: 0; animation: rp-bleed-out linear forwards; animation-timeline: view(); animation-range: exit 0% exit 45%; }
+
       /* the rank slides down and fades as the page scrolls away from it */
       .rmhp-root .pg-command .cmd-rank { animation: pg-cmd-away linear both; animation-timeline: scroll(root block); animation-range: 0 100svh; }
 

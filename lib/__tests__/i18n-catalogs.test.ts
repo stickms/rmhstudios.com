@@ -1658,6 +1658,7 @@ const KNOWN_UNTRANSLATED: Record<
         'manifest-count',
         'manifest-desig',
         'manifest-heading',
+        'staff-nav-label',
       ],
     'c-rmhstudy':
       [

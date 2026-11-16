@@ -4,6 +4,15 @@
    the pinned layout and the redaction bars live in ONE gate at the bottom.
    ════════════════════════════════════════════════════════════════════════ */
 
+/* ── page head: the reticle sits wholly below the text, never behind it ── */
+.rmhp-root .pg-intelligence .pagehead { display: flex; flex-direction: column; padding-bottom: 0; }
+.rmhp-root .pg-intelligence .pagehead > .wrap { order: 1; width: 100%; padding-bottom: clamp(28px, 4vw, 52px); }
+.rmhp-root .pg-intelligence .pagehead-obj {
+  --hs: min(120vw, 760px);
+  order: 2; position: relative; inset: auto; z-index: 0; width: 100%; height: calc(var(--hs) * 0.4); align-items: flex-start; opacity: 1;
+}
+.rmhp-root .pg-intelligence .pagehead-obj .obj-reticle { --size: var(--hs) !important; translate: none !important; flex: none; }
+
 /* ── declassify: flow mode ── */
 .rmhp-root .pg-intelligence .dc-pin { padding: clamp(72px, 9vw, 130px) var(--pad); }
 .rmhp-root .pg-intelligence .dc-obj { position: absolute; overflow: clip; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: 0.55; }
