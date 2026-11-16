@@ -1,427 +1,935 @@
-/* ════════════════════════════════════════════════════════════
-   RMH PMC — "Operations Dossier" design system
-   A classified field-dossier read on a secure terminal.
-   Gunmetal · signal amber · Archivo Expanded + IBM Plex Mono.
-   Scoped under .rmhp-root so it never leaks into RMH Studios.
-   ════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════════
+   RMH PMC — the sight
+   Scoped under .rmhp-root so nothing leaks into RMH Studios.
 
-.rmhp-root{
-  --base:#0B0E11;
-  --base-2:#0D1115;
-  --panel:#12171C;
-  --panel-2:#161C22;
-  --redact:#1A2129;
-  --amber:#E89A3C;
-  --amber-bright:#F6B45A;
-  --amber-deep:#B9762A;
-  --bone:#ECEAE4;
-  --steel:#8B95A0;
-  /* was #4E5862 (~2.7:1 on the ground) while carrying 10-11px text; #7A8591 clears AA */
-  --steel-dim:#7A8591;
-  --alert:#CF6B4E;
-  --line:rgba(233,154,60,0.22);
-  --line-strong:rgba(233,154,60,0.4);
-  --line-soft:rgba(236,234,228,0.09);
-  --hair:rgba(236,234,228,0.06);
-  --display:'Archivo','Arial Narrow',sans-serif;
-  --sans:'Archivo',system-ui,-apple-system,sans-serif;
-  --mono:'IBM Plex Mono',ui-monospace,monospace;
-  --gut:54px;
-  --maxw:1180px;
-  --pad:clamp(20px,4vw,52px);
-  --spatial-radius:12px;
+   An instrument panel read in two rooms. PAPER (the site's own ground and
+   ink, `--site-*`, so Day and Night both work) alternates with the STAGE (a
+   full-bleed dark room, in BOTH editions) where machined chrome instruments are
+   lit and liquid glass floats over them. Headlines are heavy (600), very tight,
+   centred, one idea to a frame. The reticle is the brand.
 
-  font-family:var(--sans);
-  font-weight:420;
-  background:var(--base);
-  color:var(--steel);
-  font-size:16.5px;
-  line-height:1.62;
-  -webkit-font-smoothing:antialiased;
-  text-rendering:optimizeLegibility;
+   Materials: CHROME is hard, opaque, machined (the site's six `--chrome-*`
+   stops). LIQUID GLASS is soft, rounded, translucent, and everything the user
+   touches is glass: the nav capsule, chips, the secondary button, cards over
+   objects, HUD readouts, form panels. Glass only reads as glass with something
+   behind it, so it is always placed over a chrome object, over rules, or over
+   the page as it scrolls underneath. Never a flat grey box.
+
+   ─── CLASS VOCABULARY (the API; page sheets use these, never redefine them) ──
+
+   TOKENS (on .rmhp-root; `.stage` re-points them, so a component written with
+   them works on paper AND on a stage without a second rule)
+     --paper --panel --wash --ink --mute --rule      ground, glass tint, fill, text, quiet text, hairline
+     --c1…--c6                                       chrome stops     --st-1…--st-4  chrome lettering
+     --maxw 1320px  --pad  --gap  --nav-h 56px  --ease
+     --r-glass 26px  --r-ctl 14px  --r-pill 999px  --r-stage  --stage-inset
+     --stage-ink #eef1f4  --stage-mute #b4bcc6       the stage's text (≥4.5:1 on --c4 in both editions)
+     --k   where a reflection sits, set on every chrome/glass surface (scroll --rp-sx, pointer --rp-mx)
+
+   TYPE   .display-xl (hero only) · .display · .h2 · .h3 · .lede · .body · .meta (mono)
+          .desig (section designator, mono, chrome hex bullet) · .steel (chrome lettering: huge
+          numerals and ONE emphasised hero word) · .ink · .mute · .tc (centre) · .measure (a
+          centred narrow column for prose: 62ch)
+   LAYOUT .wrap (max 1320px, side gutters) · .sec / .sec--tight (vertical rhythm) · .rule (1px) ·
+          .sechead (CENTRED designator + h2 + lede; .sechead--left to hang left) ·
+          .split (two columns, the exception) · .offset + .o-head/.o-body (12 columns, rare) ·
+          .stack · .actions (button row; centres inside .tc/.sechead)
+   STAGE  .stage        full-bleed dark room: rounded top/bottom edges that square off into full
+                        bleed as it enters and round again as it leaves (gated), tokens re-pointed
+                        to light-on-dark, glass inside turns dark with a bright rim.
+                        A stage can also be a scene: <section class="scene stage">.
+          .stage-pad    vertical padding for a stage that is not a scene.
+   HUD    A heads-up-display frame laid over a stage (decoration, aria-hidden, no real content):
+          .hud           absolute overlay, put it first inside .scene-pin / .stage
+          .hud-tick      one corner crosshair: add .tl .tr .bl .br
+          .hud-scale     a ranging scale along the bottom; ticks travel and an index follows --p
+          .hud-cross     a small centre crosshair
+          .hud-readout   a glass telemetry capsule: add .tl .tr .bl .br to place it; holds a label
+                         <b> and a value <i class="hud-v …"/>. The value is a CSS counter driven
+                         by --p (a registered integer): `--mul` and `--add` (unitless, inline)
+                         scale it: value = p*mul + add. .hud-v--3 prints three digits (bearing),
+                         .hud-v--step prints the live step of a scene (needs --n/--s from <Scene>).
+          In a pinned scene --p is the scene's; in a plain .stage the .hud drives its own --p
+          from how far the stage has crossed the viewport. Use <Hud> from shared.tsx.
+   MATERIAL
+     .chrome  (+ .chrome-satin | .chrome-ingot)  a chrome surface; sets --k, drifts with scroll
+     .glass   liquid glass.  .glass--pill capsule · .glass--lens thick rim, stronger blur (a panel
+              over a chrome object) · .glass--quiet no shadow (rows, strips)
+     OBJECTS  (instruments; --size sets the size; all are decorative: aria-hidden)
+       .obj-reticle   rings .rt-r1 .rt-r2 .rt-r3 (separately rotatable: --rot1 --rot2 --rot3),
+                      .rt-ticks, .rt-cross, .rt-hub. Use <Reticle/>.
+       .obj-orb       ball bearing                .obj-disc   turned disc, knurled edge
+       .obj-hex       hex nut/plate, bevelled     .obj-ring   one torus ring (--w band %, --rot)
+       .obj-bars      a rank of bars read as a gauge: <i style="--h:62"/> children, --n not needed
+       .obj-rail      a horizontal chrome cylinder (a rail glass pills ride on)
+       .obj-slab      satin face text can sit on (text on it is always --ink)
+     .well   a rounded wash panel (radius 40px, clipped) that hosts instruments on paper
+   CONTROLS
+     .btn           THE one solid pill per view: ink on paper, light-on-dark on a stage
+     .btn-glass     glass capsule, the secondary action
+     .link-arw      text link whose arrow nudges on hover (<Arrow/> inside)
+     .chip          glass pill; .chip[aria-pressed="true"] is ink-filled (filters)
+   INTERIOR-PAGE PRIMITIVES
+     .pagehead      a centred stage that opens an interior page (use <PageHead/>)
+     .metaline      File / Class / Status line (children .field > b + .v)   .logrow  mono data row
+     .rows / .row   a list as rows on hairlines (.row-k key, .row-t title, .row-d text, .row-end)
+     .card          a glass content card (.card--lens over an instrument)
+     .figure        big chrome numeral + label + caption (.figure-n .figure-k .figure-d)
+     .quote         large centred quotation (+ .quote-by)
+     .cta-band      closing call to action: a stage with the reticle locking on (<CtaBand/>)
+     .form-field    label + control wrapper; inputs/selects/textareas are glass-lit fields
+     .form-row (two columns) · .form-note · .form-success[.show] · .stamp
+
+   MOTION  (all CSS; gate = no-preference + scroll-timeline support + not "Globe motion: Still")
+     load   .words (headline words rise from masks, --i stagger) · .ld (fade-up, --i)
+     view   .rv (+ .d1 .d2 .d3) rise · .rv-rule hairline draws · .rv-wipe clip reveal ·
+            .rv-scale panel grows from .86 · .rv-bleed clips out to full bleed ·
+            .rv-px (--px parallax) · .rv-lock (--lock 1→0: rings lock on) · .sx / .sx-track
+            (a row that travels horizontally with scroll; add .sx-rev to run the other way)
+            RULE: never put .rv* on a .chrome element (wrap it), and never put opacity or
+            clip-path on an ANCESTOR of a .glass that must blur an object: an opacity<1 or
+            clip-path ancestor becomes the glass's backdrop root and the object behind it is
+            not blurred. .rv-scale and .rv-lock animate `scale`/`--lock` only for this reason.
+     scene  see below.
+
+   ─── THE SCENE CONTRACT ───────────────────────────────────────────────────
+   A scene pins while scroll drives it. Author FLOW MODE first: an ordinary stacked
+   section with everything visible. The tall height, the absolute stacking and every
+   hidden state live inside the motion gate; with the gate off the scene is a normal
+   readable document.
+
+     <section class="scene stage" style="--len:3; --n:3; --s:33.3; --w2:16.7">   <!-- <Scene len={3} steps={3}> -->
+       <div class="scene-pin">                       <!-- sticky, 100svh, runs --p 0→1 -->
+         <Hud/>                                      <!-- optional frame -->
+         <div class="stage-body">
+           <div class="sc-stack">                    <!-- grid: steps share one cell -->
+             <div class="sc-step is-first" data-step style="--a:0;--b:33.3">…</div>
+             <div class="sc-step"          data-step style="--a:33.3;--b:66.7">…</div>
+             <div class="sc-step is-last"  data-step style="--a:66.7;--b:100">…</div>   <!-- <Step index count> -->
+           </div>
+         </div>
+         <div class="scene-dots"><i class="sc-dot" style="--a:0;--b:33.3"/>…</div>      <!-- <SceneDots count> -->
+         <div class="scene-rail"/>                   <!-- chrome rail filled with --p -->
+       </div>
+     </section>
+
+   --len is the scroll length in viewports (0.5–0.7 per step). --a/--b are percent of
+   the pinned span. Steps are sequential: windows tile the span (width = spacing = 100/n);
+   each fades in over 4–24% of its window, holds, and is gone by 96%, so at most ONE step
+   is visible at any scroll position (a brief empty beat between steps). <Step> computes it.
+   Window utilities (compositor; set --a/--b, class on the element):
+     .sc-in   fades+rises in across a→b          .sc-out   fades+rises out across a→b
+     .sc-step in over the first quarter, holds, out over the last quarter; also animates
+              z-index and pointer-events so only the live step takes clicks.
+              .is-first starts shown · .is-last stays shown
+     .sc-scale scales --s0 → --s1 (default 1 → 1.4)      .sc-wipe  clip-reveal
+     .sc-x    a track travelling its overflow (inside a .sx)    .sc-dot   a progress dot
+     .sc-live a label that is lit while its step is live (an index row)
+   --p math (bespoke choreography): .sc-t defines --t (0→1 across a→b) and --te
+   (smoothstep of --t); use var(--t)/var(--p) in transform, opacity, gradients.
+   PAGE SHEETS write flow-mode rules at the top level and put everything that pins, stacks
+   or hides inside ONE copy of the gate (see pages/home.css, the reference):
+     @media screen and (prefers-reduced-motion: no-preference) {
+       html:where(:not([data-jelly-motion='still'])) {
+         @supports (animation-timeline: view()) { .rmhp-root .pg-x … { … } }
+       }
+     }
+   Scroll-timeline ranges: a view timeline's insets default to the root's scroll-padding,
+   which shifts a pinned range; <Scene> sets view-timeline-inset: 0px for you.
+   Hash targets (ids other pages link to) sit on in-flow elements, never on a step.
+   Keyboard focus inside a step scrolls the scene to that step (Layout.tsx).
+
+   ════════════════════════════════════════════════════════════════════════ */
+
+@property --rp-sx { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --rp-mx { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --lock { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --hv { syntax: '<integer>'; inherits: false; initial-value: 0; }
+@property --hd { syntax: '<integer>'; inherits: false; initial-value: 0; }
+@property --tu { syntax: '<integer>'; inherits: false; initial-value: 0; }
+
+.rmhp-root {
+  --paper: var(--site-bg, #fafafa);
+  --panel: var(--site-surface, #fff);
+  --wash: var(--site-bg-subtle, #f0f2f4);
+  --ink: var(--site-text, #0b0d10);
+  --mute: var(--site-text-muted, #606873);
+  --rule: var(--site-border, #e3e6e9);
+  --c1: var(--chrome-1, #fff);
+  --c2: var(--chrome-2, #dfe5ea);
+  --c3: var(--chrome-3, #8e99a6);
+  --c4: var(--chrome-4, #1a2029);
+  --c5: var(--chrome-5, #59636f);
+  --c6: var(--chrome-6, #bcc5ce);
+  /* Chrome lettering: sky, horizon, ground. Dark steel on the Day page. */
+  --st-1: var(--c5);
+  --st-2: color-mix(in srgb, var(--c3) 62%, var(--c4));
+  --st-3: var(--c4);
+  --st-4: var(--c5);
+
+  --sans: 'Geist Variable', 'Geist', system-ui, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, monospace;
+  --maxw: 1320px;
+  --pad: clamp(20px, 4.2vw, 60px);
+  --gap: clamp(16px, 2vw, 28px);
+  --nav-h: 56px;
+  --navinset: clamp(10px, 2vw, 28px);
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --r-glass: 26px;
+  --r-ctl: 14px;
+  --r-pill: 999px;
+  --r-stage: clamp(28px, 4.4vw, 60px);
+  --stage-inset: clamp(10px, 2.2vw, 30px);
+  --stage-ink: #eef1f4;
+  --stage-mute: #b4bcc6;
+
+  /* Glass */
+  --glass-a: color-mix(in srgb, var(--panel) 74%, transparent);
+  --glass-b: color-mix(in srgb, var(--panel) 46%, transparent);
+  --glass-rim-hi: rgba(255, 255, 255, 0.85);
+  --glass-rim-lo: rgba(11, 13, 16, 0.1);
+  --glass-shadow: 0 24px 60px -24px rgba(11, 13, 16, 0.3);
+  --glass-spec: rgba(255, 255, 255, 0.6);
+  --glass-filter: blur(22px) saturate(170%);
+
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--mute);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Spelled without spaces: lib/__tests__/responsive-layout-contract.test.ts
+     looks for these two declarations literally. Clip, not hidden, so the page
+     never becomes a scroll root (sticky scenes depend on that). */
   overflow-x:clip;
-  /* `svh` (smallest viewport) so the ground fills the page without
-     overshooting it while the mobile toolbars are showing; the `vh`
-     line is the fallback. */
-  min-height:100vh;min-height:100svh;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+/* Night: paper lettering is lit from above; glass rim is dimmer. */
+.style-graphite .rmhp-root {
+  --st-1: var(--c1);
+  --st-2: var(--ink);
+  --st-3: var(--c6);
+  --st-4: var(--c1);
+  --glass-rim-hi: rgba(255, 255, 255, 0.16);
+  --glass-rim-lo: rgba(0, 0, 0, 0.55);
+  --glass-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
+  --glass-spec: rgba(255, 255, 255, 0.14);
 }
 
-.rmhp-root *,.rmhp-root *::before,.rmhp-root *::after{box-sizing:border-box}
-.rmhp-root img{max-width:100%;display:block}
-.rmhp-root a{color:inherit;text-decoration:none}
-.rmhp-root ::selection{background:rgba(233,154,60,0.26);color:var(--bone)}
-.rmhp-root :focus-visible{outline:2px solid var(--amber-bright);outline-offset:2px;border-radius:var(--spatial-radius)}
-.rmhp-root :is(.btn,.nav-cta,.nav-toggle,.frame,.readout,.cell,.entry,.caps li,.chip,.cable-lead,.lead-main,.side-item,.cta-band,input,textarea,select){border-radius:var(--spatial-radius)}
-
-/* drafting grid + vignette behind everything */
-.rmhp-root::before{
-  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:
-    linear-gradient(var(--hair) 1px,transparent 1px),
-    linear-gradient(90deg,var(--hair) 1px,transparent 1px);
-  background-size:54px 54px;background-position:center;
-  mask-image:radial-gradient(130% 100% at 50% 0%,#000 35%,transparent 82%);
-  opacity:.7;
-}
-.rmhp-root::after{
-  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(100% 60% at 84% -5%,rgba(233,154,60,0.07),transparent 60%);
-}
-.rmhp-root>*{position:relative;z-index:1}
-
-/* desktop: clear the fixed left gutter */
-@media(min-width:1120px){ .rmhp-root{padding-left:var(--gut)} }
-
-/* ── type primitives ── */
-.rmhp-root .display{font-family:var(--display);color:var(--bone);font-weight:800;font-stretch:125%;line-height:0.94;letter-spacing:0.01em;text-transform:uppercase}
-.rmhp-root .lede{font-size:clamp(17px,1.8vw,20px);line-height:1.55;color:#C3C9D0;font-weight:420;max-width:60ch}
-.rmhp-root .muted{color:var(--steel)}
-.rmhp-root .amber-text{color:var(--amber-bright)}
-
-/* mono field label — the dossier voice (replaces the old eyebrow) */
-.rmhp-root .desig{
-  font-family:var(--mono);font-size:11.5px;font-weight:500;
-  letter-spacing:0.14em;text-transform:uppercase;color:var(--amber);
-  display:inline-flex;align-items:center;gap:10px;
-}
-.rmhp-root .desig::before{content:"▸";color:var(--amber);font-size:11px;transform:translateY(-0.5px)}
-.rmhp-root .desig.center{justify-content:center}
-
-/* mono FIELD ▸ value line */
-.rmhp-root .field{font-family:var(--mono);font-size:12px;letter-spacing:0.04em;color:var(--steel)}
-.rmhp-root .field b{color:var(--steel-dim);font-weight:500;text-transform:uppercase;letter-spacing:0.1em}
-.rmhp-root .field .v{color:var(--bone);font-weight:500}
-
-.rmhp-root .container{max-width:var(--maxw);margin:0 auto;padding-left:var(--pad);padding-right:var(--pad)}
-.rmhp-root [id]{scroll-margin-top:96px}
-.rmhp-root .rule{height:1px;background:var(--line-soft);border:0;margin:0}
-
-/* ════ DOCUMENT SECTION ════ */
-.rmhp-root .sec{padding:clamp(64px,9vw,128px) 0;position:relative}
-.rmhp-root .sec.tight{padding:clamp(48px,6vw,84px) 0}
-/* section header: outlined § number + ref + title */
-.rmhp-root .sechead{display:grid;grid-template-columns:1fr;gap:clamp(20px,3vw,40px);align-items:start;margin-bottom:clamp(36px,4.5vw,56px)}
-.rmhp-root .secref{display:none}
-.rmhp-root .sechead-body{max-width:720px}
-.rmhp-root .sechead h2{font-family:var(--display);font-weight:800;font-stretch:125%;text-transform:uppercase;color:var(--bone);font-size:clamp(26px,3.6vw,44px);line-height:0.98;letter-spacing:0.008em;margin:14px 0 0}
-.rmhp-root .sechead p{margin-top:18px}
-@media(max-width:680px){
-  .rmhp-root .sechead{grid-template-columns:1fr;gap:10px}
+.rmhp-root *,
+.rmhp-root *::before,
+.rmhp-root *::after { box-sizing: border-box; }
+.rmhp-root :is(h1, h2, h3, h4, p, ul, ol, dl, dd, figure, blockquote) { margin: 0; padding: 0; }
+.rmhp-root :is(ul, ol) { list-style: none; }
+.rmhp-root img { max-width: 100%; display: block; }
+.rmhp-root a { color: inherit; text-decoration: none; }
+.rmhp-root ::selection { background: var(--ink); color: var(--paper); }
+.rmhp-root :focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.rmhp-root [id] { scroll-margin-top: calc(var(--nav-h) + 24px); }
+.rmhp-root .sr {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
 }
 
-/* ════ COMMAND BAR (top) ════ */
-.rmhp-root .cmdbar{position:sticky;top:0;z-index:90;padding-top:env(safe-area-inset-top,0px);background:rgba(11,14,17,0.8);-webkit-backdrop-filter:blur(14px) saturate(120%);backdrop-filter:blur(14px) saturate(120%);border-bottom:1px solid var(--line-soft);transition:border-color .3s,background .3s}
-.rmhp-root .cmdbar.scrolled{border-bottom-color:var(--line);background:rgba(11,14,17,0.94)}
-.rmhp-root .cmdbar-inner{max-width:calc(var(--maxw) + var(--gut));margin:0 auto;padding:0 var(--pad);height:62px;display:flex;align-items:center;justify-content:space-between;gap:22px}
-.rmhp-root .cmdbar-left{display:flex;align-items:center;gap:18px;flex:0 0 auto}
-.rmhp-root .backlink{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--steel);padding-right:18px;border-right:1px solid var(--line-soft);transition:color .2s}
-.rmhp-root .backlink:hover{color:var(--amber)}
-.rmhp-root .brand{display:flex;align-items:center;gap:12px;flex:0 0 auto}
-.rmhp-root .brand svg{width:28px;height:28px}
-.rmhp-root .brand-text{font-family:var(--display);font-size:17px;font-weight:800;font-stretch:125%;letter-spacing:0.1em;text-transform:uppercase;color:var(--bone)}
-.rmhp-root .navlinks{display:flex;align-items:center;gap:30px}
-.rmhp-root .navlinks a{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);transition:color .2s;position:relative;padding:8px 0;background:none;border:0;cursor:pointer}
-.rmhp-root .navlinks a:hover,.rmhp-root .navlinks a[aria-current="page"]{color:var(--bone)}
-.rmhp-root .navlinks a[aria-current="page"]::after{content:"";position:absolute;left:-10px;top:50%;width:5px;height:5px;background:var(--amber);transform:translateY(-50%)}
-.rmhp-root .navlinks a[aria-current="page"]{padding-left:8px}
-.rmhp-root .nav-right{display:flex;align-items:center;gap:18px}
-.rmhp-root .clock{font-family:var(--mono);font-size:11.5px;letter-spacing:0.08em;color:var(--steel-dim);white-space:nowrap}
-.rmhp-root .clock b{color:var(--amber);font-weight:500}
-.rmhp-root .nav-cta{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--base);background:var(--amber);padding:10px 16px;transition:background .2s,transform .2s}
-.rmhp-root .nav-cta:hover{background:var(--amber-bright);transform:translateY(-1px)}
-.rmhp-root .nav-toggle{display:none;background:none;border:0;color:var(--bone);cursor:pointer;width:44px;height:44px;align-items:center;justify-content:center}
-.rmhp-root .nav-toggle svg{width:24px;height:24px}
-.rmhp-root .mobile-menu{display:none;border-top:1px solid var(--line-soft);background:var(--base)}
-.rmhp-root .mobile-menu a{display:block;padding:15px var(--pad);font-family:var(--mono);font-size:13px;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);border-bottom:1px solid var(--hair)}
-.rmhp-root .mobile-menu a:hover,.rmhp-root .mobile-menu a[aria-current="page"]{color:var(--bone)}
-.rmhp-root .mobile-menu.open{display:block}
-@media(max-width:980px){
-  .rmhp-root .navlinks,.rmhp-root .nav-right .clock{display:none}
-  .rmhp-root .nav-toggle{display:flex}
+/* ════ TYPE ════ One family. Headlines are heavy and tight. */
+.rmhp-root :is(.display-xl, .display, .h2, .h3) { color: var(--ink); text-wrap: balance; font-weight: 600; }
+.rmhp-root .display-xl { font-size: clamp(44px, 8.4vw, 132px); line-height: 0.94; letter-spacing: -0.05em; }
+.rmhp-root .display { font-size: clamp(38px, 6vw, 92px); line-height: 0.98; letter-spacing: -0.045em; }
+.rmhp-root .h2 { font-size: clamp(30px, 3.9vw, 58px); line-height: 1.02; letter-spacing: -0.035em; }
+.rmhp-root .h3 { font-size: clamp(20px, 1.9vw, 27px); line-height: 1.18; letter-spacing: -0.02em; }
+.rmhp-root .lede { font-size: clamp(18px, 1.5vw, 22px); line-height: 1.45; color: var(--ink); max-width: 48ch; text-wrap: pretty; }
+.rmhp-root .body { font-size: 16.5px; line-height: 1.6; color: var(--mute); max-width: 62ch; }
+.rmhp-root .body + .body { margin-top: 1.1em; }
+.rmhp-root .meta { font-family: var(--mono); font-size: 12.5px; line-height: 1.4; color: var(--mute); }
+.rmhp-root .ink { color: var(--ink); }
+.rmhp-root .mute { color: var(--mute); }
+.rmhp-root .tc { text-align: center; }
+.rmhp-root .tc :is(.lede, .body) { margin-inline: auto; }
+.rmhp-root .measure { max-width: 62ch; margin-inline: auto; text-align: center; }
+.rmhp-root .measure .body { margin-inline: auto; }
+.rmhp-root .desig {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 12.5px; font-weight: 500; line-height: 1.3; color: var(--ink);
 }
-@media(max-width:560px){
-  .rmhp-root .backlink{min-height:2.75rem;padding-right:14px;font-size:10.5px;letter-spacing:0.1em}
-  .rmhp-root .cmdbar-left{gap:14px}
+.rmhp-root .desig::before {
+  content: ''; flex: none; width: 10px; height: 11px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: linear-gradient(160deg, var(--c1), var(--c3) 48%, var(--c4) 52%, var(--c6));
 }
-
-/* ════ LEFT GUTTER RAIL (document spine) ════ */
-.rmhp-root .gutter{position:fixed;left:0;top:62px;bottom:0;width:var(--gut);z-index:70;display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:22px 0;border-right:1px solid var(--line-soft);background:rgba(11,14,17,0.5)}
-@media(min-width:1120px){ .rmhp-root .gutter{display:flex} }
-.rmhp-root .gutter .g-code{font-family:var(--mono);font-size:10px;letter-spacing:0.12em;color:var(--steel-dim);writing-mode:vertical-rl;transform:rotate(180deg)}
-.rmhp-root .gutter .g-class{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.34em;color:var(--amber);writing-mode:vertical-rl;text-transform:uppercase}
-.rmhp-root .gutter .g-prog{position:relative;flex:1;width:1px;margin:18px 0;background:var(--line-soft)}
-.rmhp-root .gutter .g-prog::after{content:"";position:absolute;left:-2px;top:0;width:5px;height:var(--p,0%);background:var(--amber);transition:height .15s linear}
-.rmhp-root .gutter .g-tick{width:7px;height:1px;background:var(--steel-dim)}
-
-/* Touch targets: footer links and chips reach the 44px floor on coarse pointers. */
-@media(pointer:coarse){
-  .rmhp-root .footer-col a,.rmhp-root .footer-legal a{min-height:44px;display:flex;align-items:center}
-  .rmhp-root .chip,.rmhp-root .nav-cta,.rmhp-root .btn-text,.rmhp-root .navlinks a{min-height:44px}
+.rmhp-root .steel {
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--st-1) 0%, var(--st-2) 50%, var(--st-3) 52%, var(--st-4) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
+.rmhp-root .arw { width: 1em; height: 1em; flex: none; }
+[dir='rtl'] .rmhp-root .arw { scale: -1 1; }
 
-/* ════ BUTTONS ════ */
-.rmhp-root .btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;padding:14px 22px;transition:background-color .22s,border-color .22s,color .22s;cursor:pointer;border:1px solid transparent}
-.rmhp-root .btn .arw{transition:transform .22s}
-.rmhp-root .btn:hover .arw{transform:translateX(4px)}
-.rmhp-root .btn-amber{background:var(--amber);color:var(--base)}
-.rmhp-root .btn-amber:hover{background:var(--amber-bright)}
-.rmhp-root .btn-outline{border-color:var(--line);color:var(--bone);background:transparent}
-.rmhp-root .btn-outline:hover{border-color:var(--amber);background:rgba(233,154,60,0.07)}
-.rmhp-root .btn-text{padding:0;color:var(--amber-bright);font-family:var(--mono);font-weight:600;font-size:12px;letter-spacing:0.05em;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px;background:none;border:0;cursor:pointer}
-.rmhp-root .btn-text .arw{transition:transform .22s}
-.rmhp-root .btn-text:hover .arw{transform:translateX(4px)}
-
-/* ════ PLATE / FRAME (bracketed module) ════ */
-.rmhp-root .frame{position:relative;border:1px solid var(--line-soft);background:linear-gradient(160deg,var(--panel),var(--base-2))}
-.rmhp-root .frame::before,.rmhp-root .frame::after{content:"";position:absolute;width:13px;height:13px;border:1.5px solid var(--amber);pointer-events:none}
-.rmhp-root .frame::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
-.rmhp-root .frame::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
-.rmhp-root .plate-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--steel-dim)}
-.rmhp-root .plate-head b{color:var(--amber);font-weight:500}
-
-/* classification stamp */
-.rmhp-root .stamp{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--amber);border:2px solid var(--amber);padding:7px 13px;opacity:.82;transform:rotate(-3.5deg);box-shadow:inset 0 0 0 1px rgba(233,154,60,0.18)}
-
-/* redaction bar motif */
-.rmhp-root .redact{background:var(--redact);color:transparent;border-radius:1px;user-select:none}
-
-/* ════ HERO — declassified brief ════ */
-.rmhp-root .brief{position:relative;min-height:clamp(600px,90vh,860px);display:flex;align-items:center;overflow:hidden;border-bottom:1px solid var(--line-soft)}
-.rmhp-root .brief-content{position:relative;z-index:2;max-width:880px;padding:48px 0}
-.rmhp-root .brief-meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin-bottom:30px}
-.rmhp-root .brief h1{font-family:var(--display);font-weight:800;font-stretch:125%;text-transform:uppercase;color:var(--bone);font-size:clamp(40px,6.6vw,92px);line-height:0.9;letter-spacing:0.008em;margin:0 0 28px;max-width:16ch}
-.rmhp-root .brief h1 em{font-style:normal;color:var(--amber)}
-.rmhp-root .brief .lede{max-width:56ch;font-size:clamp(17px,1.8vw,20px)}
-.rmhp-root .brief-actions{margin-top:36px;display:flex;flex-wrap:wrap;gap:14px}
-
-/* un-redact reveal — headline lines emerge from amber bars */
-.rmhp-root .redactln{position:relative;display:inline-block}
-.rmhp-root .redactln::after{content:"";position:absolute;inset:-2px -6px;background:var(--amber);transform-origin:right;animation:rmhp-unredact .72s cubic-bezier(.72,0,.18,1) both}
-.rmhp-root .redactln.l2::after{animation-delay:.13s}
-.rmhp-root .redactln.l3::after{animation-delay:.26s}
-@keyframes rmhp-unredact{0%{transform:scaleX(1)}100%{transform:scaleX(0)}}
-
-/* hero schematic (right) */
-.rmhp-root .brief-schematic{position:absolute;top:50%;right:-4%;transform:translate3d(0,calc(-50% + var(--spatial-scroll-y,0px) * .08),0);width:min(72vh,760px);height:min(72vh,760px);opacity:.85;z-index:0;pointer-events:none;will-change:transform}
-@media(max-width:820px){.rmhp-root .brief-schematic{right:-26%;opacity:.42}}
-.rmhp-root .spin-slow{transform-box:fill-box;transform-origin:center;animation:rmhp-spin 140s linear infinite}
-@keyframes rmhp-spin{to{transform:rotate(360deg)}}
-.rmhp-root .ping{transform-box:fill-box;transform-origin:center;animation:rmhp-ping 4.5s ease-out infinite}
-.rmhp-root .ping.p2{animation-delay:1.6s}.rmhp-root .ping.p3{animation-delay:3s}
-@keyframes rmhp-ping{0%,72%{opacity:1}82%{opacity:.2}100%{opacity:1}}
-
-/* ════ TRANSMISSION LOG (ticker replacement) ════ */
-.rmhp-root .transmit{position:relative;z-index:3;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);background:rgba(13,17,21,0.7);overflow:hidden;display:flex;align-items:stretch}
-.rmhp-root .transmit-tag{flex:0 0 auto;position:relative;z-index:2;display:flex;align-items:center;gap:8px;padding:0 18px;background:var(--amber);color:#000;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase}
-.rmhp-root .transmit-track{position:relative;z-index:1;display:flex;gap:40px;white-space:nowrap;padding:11px 22px;font-family:var(--mono);font-size:11.5px;letter-spacing:0.03em;text-transform:uppercase;color:var(--steel);width:max-content;animation:rmhp-marquee 56s linear infinite}
-.rmhp-root .transmit-track span{display:inline-flex;align-items:center;gap:9px}
-.rmhp-root .transmit-track b{color:var(--bone);font-weight:400}
-.rmhp-root .transmit-track i{font-style:normal;color:var(--amber);font-weight:500}
-.rmhp-root .transmit-track i.hold{color:var(--alert)}
-.rmhp-root .transmit-track .led{width:6px;height:6px;background:var(--amber);box-shadow:0 0 7px var(--amber)}
-.rmhp-root .transmit-track .led.hold{background:var(--alert);box-shadow:0 0 7px var(--alert)}
-@keyframes rmhp-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-
-/* ════ READOUT (stats / telemetry) ════ */
-.rmhp-root .readout{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line-soft);background:linear-gradient(160deg,var(--panel),var(--base-2))}
-.rmhp-root .readout .cell{padding:clamp(24px,3vw,38px) clamp(16px,2vw,28px);border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft)}
-.rmhp-root .readout .cell:nth-child(4n){border-right:0}
-.rmhp-root .readout .cell .l{font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--steel-dim)}
-.rmhp-root .readout .cell .v{font-family:var(--display);font-weight:800;font-stretch:125%;font-size:clamp(34px,4.4vw,54px);color:var(--bone);line-height:0.92;margin:12px 0 8px}
-.rmhp-root .readout .cell .k{font-size:13px;color:var(--steel);line-height:1.4}
-@media(max-width:780px){
-  .rmhp-root .readout{grid-template-columns:repeat(2,1fr)}
-  .rmhp-root .readout .cell:nth-child(4n){border-right:1px solid var(--line-soft)}
-  .rmhp-root .readout .cell:nth-child(2n){border-right:0}
+/* ════ LAYOUT ════ */
+.rmhp-root .wrap { max-width: var(--maxw); margin-inline: auto; padding-inline: var(--pad); }
+.rmhp-root .sec { padding-block: clamp(64px, 8vw, 128px); position: relative; }
+.rmhp-root .sec--tight { padding-block: clamp(44px, 6vw, 88px); }
+.rmhp-root .rule { display: block; height: 1px; background: var(--rule); border: 0; margin: 0; transform-origin: left center; }
+[dir='rtl'] .rmhp-root .rule { transform-origin: right center; }
+.rmhp-root .stack > * + * { margin-top: var(--stack, 20px); }
+.rmhp-root .actions { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: center; }
+.rmhp-root :is(.tc, .sechead, .cta-band, .pagehead) .actions { justify-content: center; }
+.rmhp-root .sechead {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: clamp(14px, 1.6vw, 22px); margin-bottom: clamp(36px, 5vw, 72px);
 }
-@media(max-width:440px){.rmhp-root .readout{grid-template-columns:1fr}.rmhp-root .readout .cell{border-right:0!important}}
+.rmhp-root .sechead .h2 { max-width: 20ch; }
+.rmhp-root .sechead .lede { max-width: 52ch; }
+.rmhp-root .sechead--left { align-items: flex-start; text-align: start; }
+.rmhp-root .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(28px, 5vw, 80px); align-items: center; }
+@media (max-width: 860px) { .rmhp-root .split { grid-template-columns: minmax(0, 1fr); } }
+/* The 12-column offset grid is the exception here, not the page. */
+.rmhp-root .offset { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gap); row-gap: clamp(28px, 4vw, 56px); }
+.rmhp-root .o-head { grid-column: 1 / span 7; }
+.rmhp-root .o-body { grid-column: 8 / span 5; }
+@media (max-width: 900px) { .rmhp-root :is(.o-head, .o-body) { grid-column: 1 / -1; } }
 
-/* ════ CAPABILITY ENTRIES (dossier records) ════ */
-.rmhp-root .entry{display:grid;grid-template-columns:200px 1fr;gap:clamp(24px,4vw,56px);padding:clamp(36px,5vw,60px) 0;border-top:1px solid var(--line-soft);align-items:start}
-.rmhp-root .entry:last-child{border-bottom:1px solid var(--line-soft)}
-.rmhp-root .entry-key{position:sticky;top:88px}
-.rmhp-root .entry-desig{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:0.08em;color:var(--amber);text-transform:uppercase}
-.rmhp-root .entry-idx{display:none}
-.rmhp-root .entry h2{font-family:var(--display);font-weight:800;font-stretch:125%;text-transform:uppercase;color:var(--bone);font-size:clamp(24px,3vw,38px);line-height:0.98;margin-bottom:8px}
-.rmhp-root .entry .entry-brand{font-family:var(--mono);font-size:12.5px;letter-spacing:0.03em;color:var(--amber-bright);margin-bottom:18px}
-.rmhp-root .entry p{margin-bottom:18px;max-width:64ch}
-.rmhp-root .caps{list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:18px 0 0}
-.rmhp-root .caps li{font-family:var(--mono);font-size:11.5px;letter-spacing:0.03em;color:var(--steel);border:1px solid var(--line-soft);padding:7px 12px;transition:border-color .2s,color .2s}
-.rmhp-root .caps li:hover{border-color:var(--line);color:var(--bone)}
-@media(max-width:760px){
-  .rmhp-root .entry{grid-template-columns:1fr;gap:16px}
-  .rmhp-root .entry-key{position:static;display:flex;align-items:baseline;gap:16px}
-  .rmhp-root .entry-idx{margin-top:0}
+/* ════ CHROME ════ `--k` is where the reflection sits: scroll moves it most. */
+.rmhp-root :is(.chrome, .glass, .btn-glass, .chip, .obj-reticle, .obj-orb, .obj-disc, .obj-hex, .obj-ring, .obj-bars, .obj-rail, .obj-slab) {
+  --k: calc(var(--rp-sx) * 0.14 + var(--rp-mx) * 0.08);
+}
+.rmhp-root :is(.chrome, .glass, .btn-glass, .chip) { transition: --rp-mx 0.7s var(--ease); }
+/* Satin: the calm face text can sit on. Text on it is always --ink. */
+.rmhp-root .chrome-satin,
+.rmhp-root .obj-slab {
+  background: linear-gradient(112deg,
+    var(--c2) 0%, var(--c6) calc(30% + var(--k) * 100%), var(--c2) calc(54% + var(--k) * 100%), var(--c3) 100%);
+  color: var(--ink);
+}
+.rmhp-root .chrome-ingot {
+  background: linear-gradient(180deg,
+    var(--c1) 0%, var(--c2) calc(30% + var(--k) * 60%), var(--c3) calc(49% + var(--k) * 40%),
+    var(--c4) calc(50.5% + var(--k) * 40%), var(--c5) 76%, var(--c6) 100%);
+}
+.rmhp-root .well {
+  position: relative; overflow: clip; border-radius: calc(var(--r-glass) + 14px);
+  background: var(--wash); border: 1px solid var(--rule);
 }
 
-/* ════ PAGE HEADER (interior) ════ */
-.rmhp-root .pagehead{position:relative;padding:clamp(64px,10vw,128px) 0 clamp(40px,6vw,72px);border-bottom:1px solid var(--line-soft);overflow:hidden}
-.rmhp-root .pagehead::before{content:"";position:absolute;inset:-8%;background:radial-gradient(80% 120% at 88% 0%,rgba(233,154,60,0.08),transparent 55%);pointer-events:none;transform:translate3d(0,calc(var(--spatial-scroll-y,0px) * .045),0);will-change:transform}
-.rmhp-root .pagehead-inner{position:relative;z-index:1;max-width:880px}
-.rmhp-root .pagehead .brief-meta{margin-bottom:24px}
-.rmhp-root .pagehead h1{font-family:var(--display);font-weight:800;font-stretch:125%;text-transform:uppercase;color:var(--bone);font-size:clamp(38px,6vw,80px);line-height:0.9;letter-spacing:0.008em;margin:14px 0 22px}
-.rmhp-root .pagehead .lede{max-width:58ch}
+/* ════ INSTRUMENTS ════ pure CSS: gradients, masks, clip-path. */
+.rmhp-root :is(.obj-orb, .obj-disc, .obj-hex, .obj-ring, .obj-bars, .obj-rail, .obj-slab) { display: block; }
+.rmhp-root .obj-reticle {
+  --size: 520px; position: relative; width: var(--size); max-width: 100%; aspect-ratio: 1; flex: none;
+}
+.rmhp-root .obj-reticle > * { position: absolute; inset: 0; margin: auto; border-radius: 50%; corner-shape: round; pointer-events: none; }
+.rmhp-root .rt-ring {
+  width: var(--d); aspect-ratio: 1; height: auto; rotate: var(--rot, 0deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--w)), #000 calc(100% - var(--w) + 0.4px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--w)), #000 calc(100% - var(--w) + 0.4px));
+  background:
+    repeating-conic-gradient(from 0deg, rgba(0, 0, 0, 0.3) 0 0.45deg, transparent 0.45deg var(--knurl, 2.5deg)),
+    radial-gradient(farthest-side, transparent calc(100% - var(--w)), rgba(0, 0, 0, 0.45) calc(100% - var(--w) + 0.6%), transparent calc(100% - var(--w) + 7%), transparent 94%, rgba(0, 0, 0, 0.4) 100%),
+    conic-gradient(from calc(var(--k) * 360deg - var(--rot, 0deg)),
+      var(--c2), var(--c1) 8%, var(--c3) 20%, var(--c4) 26%, var(--c5) 38%, var(--c1) 50%,
+      var(--c6) 58%, var(--c4) 74%, var(--c3) 84%, var(--c1) 94%, var(--c2));
+}
+.rmhp-root .rt-r1 { --d: 100%; --w: 5.5%; --rot: var(--rot1, 0deg); --knurl: 1.6deg; }
+.rmhp-root .rt-r2 { --d: 81%; --w: 2.6%; --rot: var(--rot2, 0deg); --knurl: 4deg; }
+.rmhp-root .rt-r3 { --d: 60%; --w: 10%; --rot: var(--rot3, 0deg); --knurl: 2.2deg; }
+.rmhp-root .rt-ticks {
+  color: var(--ink); rotate: var(--rot4, 0deg);
+  background: repeating-conic-gradient(from -0.3deg, currentColor 0 0.6deg, transparent 0.6deg 5deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent 85.5%, #000 86%, #000 90.5%, transparent 91%);
+  mask: radial-gradient(farthest-side, transparent 85.5%, #000 86%, #000 90.5%, transparent 91%);
+  opacity: 0.75;
+}
+.rmhp-root .rt-ticks::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; corner-shape: round;
+  background: repeating-conic-gradient(from -0.5deg, currentColor 0 1deg, transparent 1deg 30deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent 82.5%, #000 83%, #000 93%, transparent 93.5%);
+  mask: radial-gradient(farthest-side, transparent 82.5%, #000 83%, #000 93%, transparent 93.5%);
+}
+.rmhp-root .rt-cross {
+  color: var(--ink); opacity: 0.5; border-radius: 0;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 0 / 1px 100% no-repeat,
+    linear-gradient(currentColor, currentColor) 0 50% / 100% 1px no-repeat;
+}
+.rmhp-root .rt-hub {
+  width: var(--hub, 18%); aspect-ratio: 1; height: auto;
+  background:
+    radial-gradient(ellipse 22% 15% at calc(34% + var(--k) * 40%) 24%, #fff 0 40%, transparent 100%),
+    radial-gradient(circle at calc(38% + var(--k) * 40%) 30%, var(--c1) 0, var(--c2) 16%, var(--c3) 40%, var(--c4) 66%, var(--c5) 82%, var(--c6) 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 14px rgba(0, 0, 0, 0.35);
+}
+.rmhp-root .obj-orb {
+  --size: 200px; width: var(--size); max-width: 100%; aspect-ratio: 1; border-radius: 50%; corner-shape: round; flex: none;
+  background:
+    radial-gradient(ellipse 16% 10% at calc(32% + var(--k) * 40%) 24%, #fff 0 45%, transparent 100%),
+    radial-gradient(circle at calc(38% + var(--k) * 40%) 30%, var(--c1) 0, var(--c2) 16%, var(--c3) 40%, var(--c4) 63%, var(--c5) 80%, var(--c6) 100%);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+.rmhp-root .obj-disc {
+  --size: 360px; position: relative; width: var(--size); max-width: 100%; aspect-ratio: 1; border-radius: 50%; corner-shape: round; flex: none;
+  rotate: var(--rot, 0deg);
+  background:
+    radial-gradient(circle, var(--c2) 0 3.2%, var(--c4) 3.6% 4.4%, transparent 4.8%),
+    repeating-radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.1) 0 1px, transparent 1px 28px),
+    conic-gradient(from calc(var(--k) * 360deg - var(--rot, 0deg)),
+      var(--c2), var(--c1) 8%, var(--c3) 20%, var(--c4) 26%, var(--c5) 38%, var(--c1) 50%,
+      var(--c6) 58%, var(--c4) 74%, var(--c3) 84%, var(--c1) 94%, var(--c2));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+/* The knurled rim and the bevel: a lit edge and a shaded one. */
+.rmhp-root .obj-disc::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; corner-shape: round; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(0, 0, 0, 0.34) 0 0.5deg, transparent 0.5deg 3deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent 91%, #000 91.5%);
+  mask: radial-gradient(farthest-side, transparent 91%, #000 91.5%);
+}
+.rmhp-root .obj-disc::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; corner-shape: round; pointer-events: none;
+  background: radial-gradient(circle, transparent 88%, rgba(0, 0, 0, 0.35) 100%);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.16);
+}
+.rmhp-root .obj-hex {
+  --size: 360px; --hex: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  position: relative; width: var(--size); max-width: 100%; aspect-ratio: 0.866 / 1; flex: none;
+  clip-path: var(--hex); rotate: var(--rot, 0deg);
+  background: repeating-conic-gradient(from calc(var(--k) * 60deg - var(--rot, 0deg)),
+    var(--c1) 0deg, var(--c2) 9deg, var(--c3) 24deg, var(--c4) 25deg, var(--c5) 40deg, var(--c6) 60deg);
+}
+.rmhp-root .obj-hex::before {
+  content: ''; position: absolute; inset: 7%; clip-path: var(--hex);
+  background: conic-gradient(from calc(var(--k) * 360deg - var(--rot, 0deg)),
+    var(--c5), var(--c1) 12%, var(--c3) 25%, var(--c4) 32%, var(--c2) 52%, var(--c6) 66%, var(--c4) 80%, var(--c1) 92%, var(--c5));
+}
+.rmhp-root .obj-hex::after {
+  content: ''; position: absolute; inset: 32%; border-radius: 50%; corner-shape: round;
+  background: radial-gradient(circle at 36% 30%, var(--c1) 0, var(--c2) 22%, var(--c3) 48%, var(--c4) 76%, var(--c5) 100%);
+  box-shadow: 0 0 0 5px var(--c4), 0 0 0 7px var(--c6), inset 0 0 12px rgba(0, 0, 0, 0.4);
+}
+.rmhp-root .obj-ring {
+  --size: 340px; --w: 9%; width: var(--size); max-width: 100%; aspect-ratio: 1; border-radius: 50%; corner-shape: round; flex: none;
+  rotate: var(--rot, 0deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--w)), #000 calc(100% - var(--w) + 0.4px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--w)), #000 calc(100% - var(--w) + 0.4px));
+  background:
+    repeating-conic-gradient(from 0deg, rgba(0, 0, 0, 0.26) 0 0.4deg, transparent 0.4deg 2.4deg),
+    conic-gradient(from calc(var(--k) * 360deg - var(--rot, 0deg)),
+      var(--c2), var(--c1) 8%, var(--c3) 20%, var(--c4) 26%, var(--c5) 38%, var(--c1) 50%,
+      var(--c6) 58%, var(--c4) 74%, var(--c3) 84%, var(--c1) 94%, var(--c2));
+}
+/* A rank of bars read as a gauge: each <i style="--h:62"> is a lit cylinder to that height. */
+.rmhp-root .obj-bars {
+  --size: 100%; display: flex; align-items: flex-end; justify-content: center; gap: clamp(6px, 1.2vw, 14px);
+  width: var(--size); height: var(--bh, 220px); position: relative;
+  border-bottom: 1px solid var(--rule);
+}
+.rmhp-root .obj-bars > i {
+  flex: 1 1 0; max-width: 56px; height: calc(var(--h, 50) * 1%); border-radius: 999px 999px 4px 4px; corner-shape: round;
+  background: linear-gradient(90deg,
+    var(--c4) 0%, var(--c5) 10%, var(--c1) calc(26% + var(--k) * 60%), var(--c2) calc(40% + var(--k) * 60%),
+    var(--c3) calc(62% + var(--k) * 40%), var(--c4) 92%, var(--c5) 100%);
+}
+.rmhp-root .obj-rail {
+  --size: 100%; width: var(--size); height: var(--bh, 84px); border-radius: 999px; corner-shape: round;
+  background: linear-gradient(180deg,
+    var(--c1) 0%, var(--c2) calc(26% + var(--k) * 40%), var(--c3) calc(46% + var(--k) * 30%),
+    var(--c4) calc(52% + var(--k) * 30%), var(--c5) 76%, var(--c6) 100%);
+}
+.rmhp-root .obj-slab { border-radius: var(--r-glass); }
 
-/* ════ PROSE / VALUE LISTS ════ */
-.rmhp-root .prose p{margin-bottom:20px;max-width:70ch}
-.rmhp-root .prose p:last-child{margin-bottom:0}
-.rmhp-root .valuegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line-soft)}
-.rmhp-root .value{background:var(--base);padding:clamp(24px,2.6vw,34px)}
-.rmhp-root .value .vk{font-family:var(--mono);font-size:11px;letter-spacing:0.08em;color:var(--amber);text-transform:uppercase;margin-bottom:14px}
-.rmhp-root .value h3{font-family:var(--display);font-weight:700;font-stretch:125%;text-transform:uppercase;font-size:19px;color:var(--bone);margin-bottom:10px;line-height:1.02}
-.rmhp-root .value p{font-size:14.5px;line-height:1.55}
-@media(max-width:820px){.rmhp-root .valuegrid{grid-template-columns:1fr}}
-
-/* pull quote */
-.rmhp-root .pullquote{font-family:var(--display);font-weight:700;font-stretch:125%;text-transform:uppercase;font-size:clamp(26px,4vw,46px);line-height:1.0;color:var(--bone);max-width:17ch;letter-spacing:0.006em}
-.rmhp-root .pullquote .lc{color:var(--amber)}
-.rmhp-root .attrib{margin-top:22px;font-family:var(--mono);font-size:12px;letter-spacing:0.04em;text-transform:uppercase;color:var(--steel)}
-
-/* ════ INTELLIGENCE — CABLE MANIFEST (log) ════ */
-.rmhp-root .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:36px}
-.rmhp-root .chip{font-family:var(--mono);font-size:11px;font-weight:400;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel);background:transparent;border:1px solid var(--line-soft);padding:8px 14px;cursor:pointer;transition:background-color .18s,border-color .18s,color .18s}
-.rmhp-root .chip:hover{color:var(--bone);border-color:var(--line)}
-.rmhp-root .chip[aria-pressed="true"]{color:var(--base);background:var(--amber);border-color:var(--amber);font-weight:600}
-/* lead cable */
-.rmhp-root .cable-lead{display:grid;grid-template-columns:1.5fr 1fr;border:1px solid var(--line-soft);background:linear-gradient(160deg,var(--panel),var(--base-2));margin-bottom:36px}
-.rmhp-root .cable-lead .lead-main{padding:clamp(28px,4vw,52px);border-right:1px solid var(--line-soft);display:flex;flex-direction:column;justify-content:flex-end;min-height:340px}
-.rmhp-root .cable-lead h3{font-family:var(--display);font-weight:800;font-stretch:125%;text-transform:uppercase;font-size:clamp(24px,3.2vw,40px);color:var(--bone);line-height:0.98;margin:16px 0 14px;max-width:20ch}
-.rmhp-root .cable-lead .lead-side{display:flex;flex-direction:column}
-.rmhp-root .cable-lead .side-item{padding:clamp(18px,2.6vw,28px);border-bottom:1px solid var(--line-soft);flex:1;transition:background .2s}
-.rmhp-root .cable-lead .side-item:last-child{border-bottom:0}
-.rmhp-root .cable-lead .side-item:hover{background:var(--panel-2)}
-.rmhp-root .cable-lead .side-item h4{font-family:var(--display);font-weight:700;font-stretch:125%;text-transform:uppercase;font-size:16px;color:var(--bone);margin:8px 0 6px;line-height:1.05}
-.rmhp-root .cable-lead .side-item p{font-size:13px;color:var(--steel)}
-@media(max-width:820px){.rmhp-root .cable-lead{grid-template-columns:1fr}.rmhp-root .cable-lead .lead-main{border-right:0;border-bottom:1px solid var(--line-soft)}}
-.rmhp-root .metaline{font-family:var(--mono);font-size:10.5px;letter-spacing:0.07em;text-transform:uppercase;color:var(--amber);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.rmhp-root .metaline .dot{width:3px;height:3px;background:var(--steel-dim)}
-.rmhp-root .metaline .t{color:var(--steel)}
-/* the log itself */
-.rmhp-root .log{border:1px solid var(--line-soft)}
-.rmhp-root .logrow{display:grid;grid-template-columns:130px 124px 1fr auto;gap:20px;align-items:baseline;padding:18px 22px;border-bottom:1px solid var(--hair);transition:background .18s;cursor:pointer}
-.rmhp-root .logrow:last-child{border-bottom:0}
-.rmhp-root .logrow:hover{background:var(--panel)}
-.rmhp-root .logrow.hide{display:none}
-.rmhp-root .logrow .serial{font-family:var(--mono);font-size:11.5px;color:var(--amber);letter-spacing:0.04em}
-.rmhp-root .logrow .cat{font-family:var(--mono);font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--steel-dim)}
-.rmhp-root .logrow .ttl{font-size:15.5px;color:var(--bone);font-weight:500;line-height:1.35}
-.rmhp-root .logrow .ttl span{display:block;font-family:var(--sans);font-weight:420;font-size:13px;color:var(--steel);margin-top:4px;max-width:70ch}
-.rmhp-root .logrow .rd{font-family:var(--mono);font-size:10.5px;letter-spacing:0.05em;text-transform:uppercase;color:var(--steel-dim);white-space:nowrap}
-@media(max-width:760px){
-  .rmhp-root .logrow{grid-template-columns:1fr auto;gap:6px 16px}
-  .rmhp-root .logrow .serial{order:1}.rmhp-root .logrow .cat{order:2;text-align:right}
-  .rmhp-root .logrow .ttl{order:3;grid-column:1 / -1}.rmhp-root .logrow .rd{order:4;grid-column:1 / -1}
+/* ════ GLASS ════ the thing to look at: rim, specular, refraction. */
+.rmhp-root :is(.glass, .btn-glass, .chip) {
+  position: relative; isolation: isolate;
+  background: linear-gradient(135deg, var(--glass-a), var(--glass-b));
+  -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter);
+  border: 1px solid color-mix(in srgb, var(--c1) 60%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-rim-hi), inset 0 -1px 0 var(--glass-rim-lo), var(--glass-shadow);
+  /* Text on glass is a touch stronger than quiet text elsewhere (4.5:1 over the darkest stop). */
+  --mute: color-mix(in srgb, var(--ink) 86%, var(--panel));
+  color: var(--ink);
+}
+.rmhp-root .glass { border-radius: var(--r-glass); }
+.rmhp-root :is(.glass, .btn-glass, .chip)::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; corner-shape: inherit; pointer-events: none;
+  background: linear-gradient(112deg, transparent calc(22% + var(--k) * 100%), var(--glass-spec) calc(36% + var(--k) * 100%), transparent calc(52% + var(--k) * 100%));
+}
+.rmhp-root .glass--pill { border-radius: var(--r-pill); corner-shape: round; }
+.rmhp-root .glass--lens {
+  --glass-a: color-mix(in srgb, var(--panel) 86%, transparent);
+  --glass-b: color-mix(in srgb, var(--panel) 70%, transparent);
+  --glass-filter: blur(30px) saturate(190%) brightness(1.05);
+  border-width: 1.5px;
+}
+.rmhp-root .glass--quiet { box-shadow: inset 0 1px 0 var(--glass-rim-hi), inset 0 -1px 0 var(--glass-rim-lo); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .rmhp-root { --glass-a: color-mix(in srgb, var(--panel) 94%, transparent); --glass-b: color-mix(in srgb, var(--panel) 88%, transparent); }
 }
 
-/* ════ OPERATORS — PHASE LADDER + roles + lineage ════ */
-.rmhp-root .ladder{border-left:1px solid var(--line-soft);margin-left:8px}
-.rmhp-root .step{position:relative;padding:0 0 clamp(34px,4vw,52px) clamp(28px,3.5vw,48px)}
-.rmhp-root .step:last-child{padding-bottom:0}
-.rmhp-root .step::before{content:"";position:absolute;left:-5px;top:6px;width:9px;height:9px;background:var(--amber);box-shadow:0 0 0 4px var(--base)}
-.rmhp-root .step .ph{font-family:var(--mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--amber);font-weight:500}
-.rmhp-root .step h3{font-family:var(--display);font-weight:700;font-stretch:125%;text-transform:uppercase;font-size:clamp(20px,2.4vw,28px);color:var(--bone);margin:8px 0 10px;line-height:1.0}
-.rmhp-root .step p{font-size:15px;max-width:64ch}
-/* roles */
-.rmhp-root .pathgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line-soft)}
-.rmhp-root .path{background:var(--base);padding:clamp(24px,2.8vw,34px);transition:background .25s}
-.rmhp-root .path:hover{background:var(--panel)}
-.rmhp-root .path .ix{font-family:var(--mono);font-size:11px;letter-spacing:0.06em;color:var(--amber);text-transform:uppercase}
-.rmhp-root .path h3{font-family:var(--display);font-weight:700;font-stretch:125%;text-transform:uppercase;font-size:20px;color:var(--bone);margin:12px 0 10px;line-height:1.0}
-.rmhp-root .path p{font-size:14.5px;line-height:1.55}
-@media(max-width:880px){.rmhp-root .pathgrid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:560px){.rmhp-root .pathgrid{grid-template-columns:1fr}}
-/* lineage pedigree — sliding marquee, like the transmission log */
-.rmhp-root .lineage{position:relative;overflow:hidden;border-block:1px solid var(--line-soft);background:rgba(13,17,21,0.5)}
-.rmhp-root .lineage::before,.rmhp-root .lineage::after{content:"";position:absolute;top:0;bottom:0;width:64px;z-index:1;pointer-events:none}
-.rmhp-root .lineage::before{left:0;background:linear-gradient(90deg,var(--base),transparent)}
-.rmhp-root .lineage::after{right:0;background:linear-gradient(270deg,var(--base),transparent)}
-.rmhp-root .lineage-track{display:flex;gap:8px;width:max-content;padding:14px 0;animation:rmhp-marquee 48s linear infinite}
-.rmhp-root .lineage-track span{font-family:var(--mono);font-size:11.5px;letter-spacing:0.04em;color:var(--steel);border:1px solid var(--line-soft);padding:9px 14px;white-space:nowrap;flex:0 0 auto;transition:border-color .2s,color .2s}
-.rmhp-root .lineage-track span:hover{border-color:var(--amber);color:var(--bone)}
-
-/* ════ TRANSMISSION BLOCK (cta) ════ */
-.rmhp-root .cta-band{position:relative;border:1px solid var(--line);background:linear-gradient(150deg,var(--panel),var(--base-2));padding:clamp(36px,5vw,64px);text-align:center;overflow:hidden}
-.rmhp-root .cta-band::before{content:"";position:absolute;inset:0;background:radial-gradient(70% 120% at 50% 0%,rgba(233,154,60,0.08),transparent 60%);pointer-events:none}
-.rmhp-root .cta-band>*{position:relative}
-.rmhp-root .cta-band h2{font-family:var(--display);font-weight:800;font-stretch:125%;text-transform:uppercase;font-size:clamp(28px,3.8vw,48px);color:var(--bone);margin-bottom:16px;line-height:0.98}
-.rmhp-root .cta-band p{max-width:54ch;margin:0 auto 28px}
-
-/* ════ CONTACT ════ */
-.rmhp-root .contact-grid{display:grid;grid-template-columns:0.85fr 1.15fr;gap:clamp(36px,5vw,72px);align-items:start}
-@media(max-width:860px){.rmhp-root .contact-grid{grid-template-columns:1fr}}
-.rmhp-root .office{border-top:1px solid var(--line-soft);padding:20px 0}
-.rmhp-root .office h3{font-family:var(--display);font-weight:700;font-stretch:125%;text-transform:uppercase;font-size:17px;color:var(--bone);margin-bottom:8px;line-height:1.0}
-.rmhp-root .office p{font-family:var(--mono);font-size:12.5px;line-height:1.6;letter-spacing:0.02em}
-.rmhp-root .form-field{margin-bottom:20px}
-.rmhp-root .form-field label{display:block;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;color:var(--amber);margin-bottom:8px}
-.rmhp-root .form-field input,.rmhp-root .form-field select,.rmhp-root .form-field textarea{
-  width:100%;background:var(--panel);border:1px solid var(--line-soft);color:var(--bone);
-  font-family:var(--sans);font-size:max(15px,var(--site-field-font-floor,0px));padding:13px 15px;transition:border-color .2s;border-radius:var(--spatial-radius);
+/* ════ STAGE ════ A dark room in BOTH editions. The tokens are re-pointed, so
+   every component below works here unchanged: ink is light, the glass tint comes
+   from the stage and its rim is bright, `.btn` inverts to a light pill. */
+.rmhp-root .stage {
+  --paper: var(--c4);
+  --panel: color-mix(in srgb, var(--c4) 80%, #fff);
+  --wash: color-mix(in srgb, var(--c4) 88%, #fff);
+  --ink: var(--stage-ink);
+  --mute: var(--stage-mute);
+  --rule: rgba(255, 255, 255, 0.16);
+  --st-1: var(--stage-ink); --st-2: var(--c6); --st-3: color-mix(in srgb, var(--stage-ink) 42%, var(--c4)); --st-4: var(--stage-ink);
+  --glass-rim-hi: rgba(255, 255, 255, 0.34);
+  --glass-rim-lo: rgba(0, 0, 0, 0.6);
+  --glass-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.85);
+  --glass-spec: rgba(255, 255, 255, 0.2);
+  --glass-a: color-mix(in srgb, var(--panel) 90%, transparent);
+  --glass-b: color-mix(in srgb, var(--panel) 76%, transparent);
+  position: relative; isolation: isolate; overflow: clip;
+  background: var(--c4); color: var(--stage-mute);
+  border-radius: var(--r-stage);
 }
-.rmhp-root .form-field input:focus,.rmhp-root .form-field select:focus,.rmhp-root .form-field textarea:focus{outline:none;border-color:var(--amber)}
-.rmhp-root .form-field textarea{resize:vertical;min-height:128px}
-.rmhp-root .form-field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23E89A3C' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 15px center}
-.rmhp-root .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:560px){.rmhp-root .form-row{grid-template-columns:1fr}}
-.rmhp-root .form-note{font-family:var(--mono);font-size:11px;letter-spacing:0.02em;line-height:1.6;color:var(--steel-dim);margin-top:8px}
-.rmhp-root .form-success{display:none;border:1px solid var(--amber);background:rgba(233,154,60,0.07);padding:16px 18px;font-family:var(--mono);font-size:13px;color:var(--bone);margin-bottom:22px}
-.rmhp-root .form-success.show{display:block}
+/* Night's chrome is dim by design on paper; on a stage the instruments are lit, so they take Day's ramp. */
+.style-graphite .rmhp-root .stage { --c1: #fff; --c2: #dfe5ea; --c3: #8e99a6; --c5: #59636f; --c6: #bcc5ce; }
+.rmhp-root .stage-pad { padding-block: clamp(72px, 10vw, 150px); }
+.rmhp-root .stage ::selection { background: var(--stage-ink); color: var(--c4); }
+.rmhp-root .stage :focus-visible { outline-color: var(--stage-ink); }
 
-/* ════ FOOTER ════ */
-.rmhp-root .footer{border-top:1px solid var(--line);background:var(--base-2);padding:clamp(48px,6vw,76px) 0 36px}
-.rmhp-root .footer-top{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:38px;margin-bottom:48px}
-.rmhp-root .footer-brand .brand{margin-bottom:16px}
-.rmhp-root .footer-brand p{font-size:14px;max-width:36ch;color:var(--steel)}
-.rmhp-root .footer-col h4{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--steel-dim);margin-bottom:16px}
-.rmhp-root .footer-col a{display:block;font-family:var(--mono);font-size:13px;color:var(--steel);padding:5px 0;transition:color .2s}
-.rmhp-root .footer-col a:hover{color:var(--bone)}
-.rmhp-root .footer-bottom{border-top:1px solid var(--line-soft);padding-top:24px;display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap;align-items:center}
-.rmhp-root .footer-legal{display:flex;gap:22px;flex-wrap:wrap}
-.rmhp-root .footer-legal a{font-family:var(--mono);font-size:11px;letter-spacing:0.03em;color:var(--steel-dim);transition:color .2s}
-.rmhp-root .footer-legal a:hover{color:var(--steel)}
-.rmhp-root .footer-social{display:flex;gap:12px}
-.rmhp-root .footer-social a{width:44px;height:44px;border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;color:var(--steel);transition:border-color .22s,color .22s}
-.rmhp-root .footer-social a:hover{border-color:var(--amber);color:var(--amber-bright)}
-.rmhp-root .footer-social svg{width:15px;height:15px}
-.rmhp-root .disclaimer{margin-top:26px;font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--steel-dim);max-width:98ch}
-.rmhp-root .copy{font-family:var(--mono);font-size:11px;letter-spacing:0.02em;color:var(--steel-dim)}
-@media(max-width:860px){.rmhp-root .footer-top{grid-template-columns:1fr 1fr;gap:32px}}
-@media(max-width:480px){.rmhp-root .footer-top{grid-template-columns:1fr}}
+/* ════ HUD ════ The frame of the sight. Decoration only. */
+.rmhp-root .hud {
+  --hud-top: calc(var(--nav-h) + 26px); --hud-side: clamp(14px, 2.4vw, 36px); --hud-bot: clamp(16px, 3vh, 30px);
+  position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: clip;
+  font-family: var(--mono); font-size: 11.5px; line-height: 1; color: var(--stage-ink);
+}
+.rmhp-root .hud-tick { position: absolute; width: 26px; height: 26px; border: 0 solid currentColor; opacity: 0.6; }
+.rmhp-root .hud-tick.tl { inset-block-start: var(--hud-top); inset-inline-start: var(--hud-side); border-block-start-width: 1px; border-inline-start-width: 1px; }
+.rmhp-root .hud-tick.tr { inset-block-start: var(--hud-top); inset-inline-end: var(--hud-side); border-block-start-width: 1px; border-inline-end-width: 1px; }
+.rmhp-root .hud-tick.bl { inset-block-end: var(--hud-bot); inset-inline-start: var(--hud-side); border-block-end-width: 1px; border-inline-start-width: 1px; }
+.rmhp-root .hud-tick.br { inset-block-end: var(--hud-bot); inset-inline-end: var(--hud-side); border-block-end-width: 1px; border-inline-end-width: 1px; }
+.rmhp-root .hud-cross {
+  position: absolute; inset: 0; margin: auto; width: 22px; height: 22px; opacity: 0.5;
+  background:
+    linear-gradient(currentColor, currentColor) 50% 0 / 1px 7px no-repeat,
+    linear-gradient(currentColor, currentColor) 50% 100% / 1px 7px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 50% / 7px 1px no-repeat,
+    linear-gradient(currentColor, currentColor) 100% 50% / 7px 1px no-repeat;
+}
+/* The ranging scale: ticks travel with --p; the index sits at centre. */
+.rmhp-root .hud-scale {
+  position: absolute; inset-inline: 0; margin-inline: auto; inset-block-end: calc(var(--hud-bot) + 4px);
+  width: min(520px, calc(100% - 140px)); height: 20px; opacity: 0.7;
+  background:
+    repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 60px) calc(var(--p, 0) * -240px) 100% / 100% 12px no-repeat,
+    repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 12px) calc(var(--p, 0) * -240px) 100% / 100% 6px no-repeat;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+}
+.rmhp-root .hud-scale::after {
+  content: ''; position: absolute; inset-inline-start: 50%; inset-block-start: 0; width: 1px; height: 100%; background: currentColor;
+}
+.rmhp-root .hud-readout {
+  direction: ltr; unicode-bidi: isolate; position: absolute; display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 14px;
+  border-radius: var(--r-pill); corner-shape: round; white-space: nowrap; color: var(--stage-ink); font-variant-numeric: tabular-nums;
+}
+.rmhp-root .hud-readout b { font-weight: 500; color: var(--stage-ink); opacity: 0.72; }
+.rmhp-root .hud-readout.tl { inset-block-start: calc(var(--hud-top) + 14px); inset-inline-start: calc(var(--hud-side) + 20px); }
+.rmhp-root .hud-readout.tr { inset-block-start: calc(var(--hud-top) + 14px); inset-inline-end: calc(var(--hud-side) + 20px); }
+.rmhp-root .hud-readout.bl { inset-block-end: calc(var(--hud-bot) + 14px); inset-inline-start: calc(var(--hud-side) + 20px); }
+.rmhp-root .hud-readout.br { inset-block-end: calc(var(--hud-bot) + 14px); inset-inline-end: calc(var(--hud-side) + 20px); }
+.rmhp-root .hud-v { --hv: calc(var(--p, 0) * var(--mul, 100) + var(--add, 0)); counter-reset: hv var(--hv); font-style: normal; }
+.rmhp-root .hud-v::before { content: counter(hv); }
+.rmhp-root .hud-v--3 {
+  --hd: calc((var(--hv) - 50) / 100); --tu: calc(var(--hv) - var(--hd) * 100);
+  counter-reset: hd var(--hd) tu var(--tu);
+}
+.rmhp-root .hud-v--3::before { content: counter(hd) counter(tu, decimal-leading-zero); }
+.rmhp-root .hud-v--step { --hv: calc(min(var(--n, 1), max(1, (var(--p, 0) * 100 - var(--w2, 0)) / var(--s, 100) + 1))); }
+.rmhp-root .hud-v--step::before { content: counter(hv, decimal-leading-zero); }
+@media (max-width: 700px) {
+  .rmhp-root .hud-readout:is(.tl, .tr, .br) { display: none; }
+  .rmhp-root .hud-readout { padding: 7px 11px; font-size: 11px; }
+}
 
-/* Spatial consistency pass: visible interactive surfaces share one geometry. */
-.rmhp-root :is(a,button,input,textarea,select,.frame,.readout,.entry,.caps li,.chip,.cable-lead,.side-item){border-radius:var(--spatial-radius)}
+/* ════ CONTROLS ════ */
+.rmhp-root :is(.btn, .btn-glass) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 26px;
+  border-radius: var(--r-pill); corner-shape: round; font: 500 15px/1.2 var(--sans); cursor: pointer; white-space: nowrap;
+  transition: opacity 0.12s, background-color 0.12s;
+}
+.rmhp-root .btn { position: relative; overflow: clip; background: var(--ink); color: var(--paper); border: 0; }
+.rmhp-root .btn::after {
+  content: ''; position: absolute; inset-block: 0; inset-inline-start: 0; width: 38%; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  translate: -140% 0; transform: skewX(-18deg); opacity: 0;
+}
+.rmhp-root .btn:is(:hover, :focus-visible) { opacity: 0.9; }
+.rmhp-root .btn:active { opacity: 0.8; }
+.rmhp-root .btn-glass:is(:hover, :focus-visible) { --rp-mx: 0.8; }
+.rmhp-root .btn-glass:active { opacity: 0.85; }
+.rmhp-root .btn .arw, .rmhp-root .btn-glass .arw { transition: translate 0.14s var(--ease); }
+.rmhp-root :is(.btn, .btn-glass):is(:hover, :focus-visible) .arw { translate: 3px 0; }
+[dir='rtl'] .rmhp-root :is(.btn, .btn-glass):is(:hover, :focus-visible) .arw { translate: -3px 0; }
+.rmhp-root .link-arw {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 15px; font-weight: 500; color: var(--ink);
+  background: linear-gradient(currentColor 0 0) left calc(100% - 9px) / 0 1px no-repeat; transition: background-size 0.14s var(--ease);
+}
+[dir='rtl'] .rmhp-root .link-arw { background-position: right calc(100% - 9px); }
+.rmhp-root .link-arw:is(:hover, :focus-visible) { background-size: 100% 1px; }
+.rmhp-root .link-arw .arw { transition: translate 0.14s var(--ease); }
+.rmhp-root .link-arw:is(:hover, :focus-visible) .arw { translate: 4px 0; }
+[dir='rtl'] .rmhp-root .link-arw:is(:hover, :focus-visible) .arw { translate: -4px 0; }
+.rmhp-root .chip {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: var(--r-pill); corner-shape: round;
+  font: 500 14.5px/1.2 var(--sans); cursor: pointer; white-space: nowrap; box-shadow: inset 0 1px 0 var(--glass-rim-hi), inset 0 -1px 0 var(--glass-rim-lo);
+  transition: background-color 0.12s, color 0.12s;
+}
+.rmhp-root .chip[aria-pressed='true'] { background: var(--ink); color: var(--paper); border-color: var(--ink); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.rmhp-root .chip[aria-pressed='true']::before { display: none; }
+.rmhp-root .chips { display: flex; flex-wrap: wrap; gap: 10px; }
 
-/* ════ REVEAL ════
-   Scroll-driven, and fail-OPEN. See docs/archive/2026/performance-audit-2026-08-12.md §1.4.
+/* ════ NAV ════ A floating glass capsule. Nothing painted is pinned to the edge:
+   the bar is sticky 10px down and carries the safe area inside it. It takes no
+   height of its own (the page runs behind it), and only the capsule catches the pointer. */
+.rmhp-root .cmdbar {
+  position: sticky; top: 10px; z-index: 90; padding-top:env(safe-area-inset-top,0px);
+  height: calc(var(--nav-h) + env(safe-area-inset-top,0px));
+  margin-bottom: calc(-1 * (var(--nav-h) + env(safe-area-inset-top,0px)));
+  pointer-events: none;
+}
+.rmhp-root .cmdbar-inner {
+  pointer-events: auto; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  width: min(calc(100% - 2 * var(--navinset)), 1240px); height: var(--nav-h); margin-inline: auto; padding-inline: 8px 8px;
+}
+.rmhp-root .cmdbar.scrolled .cmdbar-inner { height: 48px; }
+/* Page scroll progress: a chrome hairline inside the capsule's foot. */
+.rmhp-root .cmdbar-inner::after {
+  content: ''; position: absolute; inset-inline: 28px; inset-block-end: 3px; height: 2px; border-radius: 2px; pointer-events: none;
+  background: linear-gradient(90deg, var(--c4), var(--c3) 30%, var(--c1) 50%, var(--c3) 70%, var(--c4));
+  transform: scaleX(0); transform-origin: left center;
+}
+[dir='rtl'] .rmhp-root .cmdbar-inner::after { transform-origin: right center; }
+.rmhp-root .cmdbar-inner { transition: height 0.2s var(--ease); }
+.rmhp-root .cmdbar-left { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.rmhp-root .backlink {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding-inline: 14px; border-radius: var(--r-pill); corner-shape: round;
+  font-size: 13px; color: var(--mute); transition: color 0.12s, background-color 0.12s;
+}
+.rmhp-root .backlink:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+[dir='rtl'] .rmhp-root .backlink > span[aria-hidden] { scale: -1 1; }
+.rmhp-root .brand { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; min-height: 44px; }
+.rmhp-root .brand svg { width: 28px; height: 28px; }
+.rmhp-root .brand-text { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; }
+.rmhp-root .navlinks { display: flex; align-items: center; gap: 2px; }
+.rmhp-root .navlinks a {
+  display: inline-flex; align-items: center; min-height: 40px; padding-inline: 14px; border-radius: var(--r-pill); corner-shape: round;
+  font-size: 14px; font-weight: 500; color: var(--ink); transition: background-color 0.12s;
+}
+.rmhp-root .navlinks a:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.rmhp-root .navlinks a[aria-current='page'] { background: color-mix(in srgb, var(--ink) 14%, transparent); }
+.rmhp-root .nav-right { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+.rmhp-root .clock { font-family: var(--mono); font-size: 12px; color: var(--mute); white-space: nowrap; }
+.rmhp-root .clock b { font-weight: 500; color: var(--ink); }
+.rmhp-root .nav-cta { min-height: 40px; padding: 0 18px; font-size: 14px; }
+.rmhp-root .nav-toggle {
+  display: none; background: none; border: 0; color: var(--ink); cursor: pointer; width: 44px; height: 44px;
+  align-items: center; justify-content: center; border-radius: var(--r-pill); corner-shape: round;
+}
+.rmhp-root .nav-toggle svg { width: 24px; height: 24px; overflow: visible; }
+.rmhp-root .nav-toggle line { transition: transform 0.14s var(--ease), opacity 0.1s; transform-origin: 12px 12px; }
+.rmhp-root .nav-toggle[aria-expanded='true'] line:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.rmhp-root .nav-toggle[aria-expanded='true'] line:nth-child(2) { opacity: 0; }
+.rmhp-root .nav-toggle[aria-expanded='true'] line:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+.rmhp-root .mobile-menu {
+  display: none; pointer-events: auto; position: absolute; inset-inline: var(--navinset);
+  inset-block-start: calc(env(safe-area-inset-top,0px) + var(--nav-h) + 8px); padding: 8px 20px 20px;
+  border-radius: 30px; margin-inline: auto; max-width: 560px;
+}
+.rmhp-root .mobile-menu a {
+  display: flex; align-items: center; min-height: 54px; font-size: 24px; font-weight: 600; letter-spacing: -0.03em;
+  color: var(--ink); border-bottom: 1px solid var(--rule);
+}
+.rmhp-root .mobile-menu a:last-child { border-bottom: 0; }
+.rmhp-root .mobile-menu a[aria-current='page'] { color: var(--mute); }
+.rmhp-root .mobile-menu .mm-cta { margin-top: 14px; justify-content: center; font-size: 15px; font-weight: 500; letter-spacing: 0; border: 0; min-height: 48px; }
+.rmhp-root .mobile-menu.open { display: block; }
+@media (max-width: 980px) {
+  .rmhp-root .navlinks, .rmhp-root .clock { display: none; }
+  .rmhp-root .nav-toggle { display: flex; }
+}
+@media (min-width: 981px) { .rmhp-root .mobile-menu { display: none !important; } }
+@media (max-width: 560px) {
+  .rmhp-root .backlink-label, .rmhp-root .nav-cta { display: none; }
+  .rmhp-root .backlink { padding-inline: 12px; min-width: 44px; justify-content: center; }
+}
 
-   This used to be `opacity:0` unconditionally, undone by a `.in` class that a
-   `useReveal(pathname)` hook in shared.tsx added from an IntersectionObserver.
-   That is the AUD-006 shape: the resting state of the markup was INVISIBLE, so
-   every path where the observer never ran — print, reader mode, full-page
-   capture, pre-hydration, a JS error earlier in the page — rendered ~4,700px of
-   this site blank. The hook also read `getBoundingClientRect()` for each of
-   ~100 nodes on mount (a forced layout) to catch the ones already on screen.
+/* The gutter: the document spine, left edge, ≥1280px. A hairline and a chrome fill. */
+.rmhp-root .gutter {
+  position: fixed; inset-inline-start: 14px; inset-block-start: 50%; translate: 0 -50%; z-index: 70;
+  height: min(56vh, 460px); display: none; flex-direction: column; align-items: center; justify-content: space-between; gap: 14px;
+  color: var(--mute); font-family: var(--mono); font-size: 10.5px; pointer-events: none;
+}
+@media (min-width: 1280px) { .rmhp-root .gutter { display: flex; } }
+.rmhp-root .gutter :is(.g-class, .g-code) { writing-mode: vertical-rl; white-space: nowrap; }
+.rmhp-root .gutter .g-class { color: var(--ink); font-weight: 500; }
+.rmhp-root .gutter .g-tick { width: 7px; height: 1px; background: currentColor; }
+.rmhp-root .gutter .g-prog { position: relative; flex: 1; width: 1px; background: var(--rule); }
+.rmhp-root .gutter .g-prog::after {
+  content: ''; position: absolute; inset-inline-start: -1px; inset-block: 0; width: 3px; border-radius: 2px;
+  background: linear-gradient(180deg, var(--c3), var(--c1), var(--c3)); transform: scaleY(0); transform-origin: top; mix-blend-mode: normal;
+}
 
-   Both problems are the same problem: JavaScript owned the visible state. Here
-   the hidden start state exists ONLY inside `@supports` + `@media not
-   (prefers-reduced-motion)`, so anything that cannot run the animation has
-   never hidden anything, and there is nothing left to undo. No observer, no
-   rAF, no layout read — the compositor drives it off the scroller. */
-@supports (animation-timeline: view()) {
-    html .rmhp-root .reveal {
-      animation: rmhp-reveal-in linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 46%;
+/* ════ FOOTER ════ Rows on rules, mono meta. */
+.rmhp-root .footer { border-top: 1px solid var(--rule); padding: clamp(48px, 6vw, 80px) 0 36px; margin-top: clamp(24px, 4vw, 64px); }
+.rmhp-root .footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 36px var(--gap); margin-bottom: 48px; }
+.rmhp-root .footer-brand .brand { margin-bottom: 14px; }
+.rmhp-root .footer-brand p { font-size: 15px; max-width: 34ch; }
+.rmhp-root .footer-col h4 { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--ink); margin-bottom: 12px; }
+.rmhp-root .footer-col a { display: block; font-size: 14.5px; padding: 5px 0; transition: color 0.12s; }
+.rmhp-root .footer-col a:hover { color: var(--ink); }
+.rmhp-root .footer-bottom {
+  border-top: 1px solid var(--rule); padding-top: 22px; display: flex; justify-content: space-between;
+  gap: 14px 24px; flex-wrap: wrap; align-items: center;
+}
+.rmhp-root .footer-legal { display: flex; gap: 4px 22px; flex-wrap: wrap; }
+.rmhp-root :is(.footer-legal a, .copy) { font-family: var(--mono); font-size: 12px; }
+.rmhp-root .footer-legal a:hover { color: var(--ink); }
+.rmhp-root .footer-social { display: flex; gap: 10px; }
+.rmhp-root .footer-social a { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+.rmhp-root .footer-social svg { width: 16px; height: 16px; }
+.rmhp-root .disclaimer { margin-top: 22px; font-family: var(--mono); font-size: 12px; line-height: 1.65; max-width: 96ch; }
+@media (max-width: 860px) { .rmhp-root .footer-top { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .rmhp-root .footer-top { grid-template-columns: 1fr; } }
+@media (pointer: coarse) {
+  .rmhp-root .footer-col a, .rmhp-root .footer-legal a { min-height: 44px; display: flex; align-items: center; }
+}
+
+/* ════ INTERIOR-PAGE PRIMITIVES ════ */
+.rmhp-root .metaline { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
+.rmhp-root .metaline .field b { font-weight: 500; color: var(--mute); }
+.rmhp-root .metaline .field .v { direction: ltr; unicode-bidi: isolate; display: inline-block; color: var(--ink); font-weight: 500; }
+.rmhp-root .logrow { display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
+.rmhp-root .logrow b { font-weight: 500; color: var(--ink); }
+/* A page opens on a stage: centred headline, a machined object, the sight's frame. */
+.rmhp-root .pagehead {
+  text-align: center; padding: calc(var(--nav-h) + env(safe-area-inset-top,0px) + clamp(48px, 8vw, 110px)) 0 clamp(56px, 8vw, 120px);
+  border-radius: 0 0 var(--r-stage) var(--r-stage);
+}
+.rmhp-root .pagehead > .wrap { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 2vw, 26px); }
+.rmhp-root .pagehead .display { max-width: 16ch; }
+.rmhp-root .pagehead .lede { max-width: 50ch; color: var(--stage-ink); }
+.rmhp-root .pagehead-obj { position: absolute; z-index: 0; inset-inline: 0; inset-block-end: 0; display: flex; justify-content: center; pointer-events: none; opacity: 0.9; overflow: clip; }
+.rmhp-root .rows { border-bottom: 1px solid var(--rule); }
+.rmhp-root .row {
+  position: relative; display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr) auto; column-gap: var(--gap); row-gap: 8px;
+  align-items: baseline; padding: clamp(20px, 2.4vw, 32px) 0; border-top: 1px solid var(--rule);
+}
+.rmhp-root a.row::before {
+  content: ''; position: absolute; inset-inline: 0; top: -1px; height: 1px; background: var(--ink);
+  transform: scaleX(0); transform-origin: left center; transition: transform 0.14s var(--ease);
+}
+[dir='rtl'] .rmhp-root a.row::before { transform-origin: right center; }
+.rmhp-root a.row:is(:hover, :focus-visible)::before { transform: scaleX(1); }
+.rmhp-root .row:has(> .row-k) { grid-template-columns: minmax(0, 2fr) minmax(0, 5fr) minmax(0, 4fr) auto; }
+.rmhp-root .row-k { font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
+.rmhp-root .row-t { font-size: clamp(20px, 1.9vw, 27px); font-weight: 600; line-height: 1.18; letter-spacing: -0.02em; color: var(--ink); }
+.rmhp-root .row-d { font-size: 15.5px; max-width: 58ch; }
+.rmhp-root .row-end { align-self: center; }
+@media (max-width: 760px) {
+  .rmhp-root .row, .rmhp-root .row:has(> .row-k) { grid-template-columns: minmax(0, 1fr) auto; }
+  .rmhp-root .row-k, .rmhp-root .row-d { grid-column: 1 / -1; }
+  .rmhp-root .row-end { grid-row: 2; grid-column: 2; }
+}
+.rmhp-root .card { border-radius: var(--r-glass); padding: clamp(20px, 2.4vw, 32px); }
+.rmhp-root .figure { display: flex; flex-direction: column; gap: 10px; text-align: center; align-items: center; }
+.rmhp-root .figure-n { font-size: clamp(56px, 9vw, 128px); font-weight: 600; line-height: 0.95; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.rmhp-root .figure-k { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+.rmhp-root .figure-d { font-size: 15px; max-width: 28ch; }
+.rmhp-root .quote { font-size: clamp(26px, 3.6vw, 52px); font-weight: 600; line-height: 1.08; letter-spacing: -0.035em; color: var(--ink); max-width: 24ch; margin-inline: auto; text-align: center; text-wrap: balance; }
+.rmhp-root .quote-by { margin-top: 20px; text-align: center; font-family: var(--mono); font-size: 12.5px; }
+.rmhp-root .cta-band { text-align: center; padding-block: clamp(80px, 11vw, 168px); }
+.rmhp-root .cta-band > .wrap { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 2vw, 26px); }
+.rmhp-root .cta-band .h2 { font-size: clamp(34px, 5.4vw, 80px); line-height: 1; letter-spacing: -0.045em; max-width: 14ch; }
+.rmhp-root .cta-band .body { color: var(--stage-ink); max-width: 46ch; text-align: center; }
+.rmhp-root .cta-obj { position: absolute; z-index: 0; inset: 0; margin: auto; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.rmhp-root .form-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+.rmhp-root .form-field label { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.rmhp-root .form-field :is(input, textarea, select) {
+  width: 100%; min-height: 48px; padding: 12px 16px; border-radius: var(--r-ctl); color: var(--ink); font-family: var(--sans);
+  font-size:max(15px,var(--site-field-font-floor,0px));
+  background: linear-gradient(135deg, var(--glass-a), var(--glass-b)); border: 1px solid var(--rule);
+  box-shadow: inset 0 1px 0 var(--glass-rim-hi), inset 0 -1px 0 var(--glass-rim-lo);
+  transition: border-color 0.12s;
+}
+.rmhp-root .form-field textarea { resize: vertical; min-height: 130px; }
+.rmhp-root .form-field :is(input, textarea, select):focus { outline: 2px solid var(--ink); outline-offset: 2px; border-color: var(--ink); }
+.rmhp-root .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--gap); }
+@media (max-width: 560px) { .rmhp-root .form-row { grid-template-columns: 1fr; } }
+.rmhp-root .form-note { font-size: 13px; margin-top: 14px; max-width: 62ch; }
+.rmhp-root .form-success { display: none; border-radius: var(--r-ctl); border: 1px solid var(--ink); padding: 16px 18px; font-size: 16px; color: var(--ink); margin-bottom: 24px; }
+.rmhp-root .form-success.show { display: block; }
+.rmhp-root .stamp { display: inline-flex; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); border: 1px solid var(--ink); border-radius: var(--r-pill); corner-shape: round; padding: 6px 14px; }
+
+/* ════ TRANSMISSION LOG ════ glass readouts riding a chrome rail. */
+.rmhp-root .transmit { padding-block: clamp(32px, 5vw, 64px); }
+.rmhp-root .transmit-stage { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-height: 88px; padding: 18px; }
+.rmhp-root .transmit-rail { position: absolute; inset: 0; width: auto; height: auto; border-radius: 44px; z-index: 0; }
+.rmhp-root :is(.transmit-tag, .transmit-sx) { position: relative; z-index: 1; }
+.rmhp-root .transmit-tag { display: inline-flex; align-items: center; gap: 9px; min-height: 52px; padding: 0 20px; flex: none; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); }
+.rmhp-root .transmit-sx { flex: 1 1 280px; min-width: 0; -webkit-mask: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); mask: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent); }
+.rmhp-root .transmit-track { gap: 10px; }
+.rmhp-root .transmit-item { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 20px; white-space: nowrap; font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+.rmhp-root .transmit-item b { font-weight: 500; }
+.rmhp-root .transmit-item i { font-style: normal; color: var(--mute); }
+.rmhp-root .led { width: 7px; height: 7px; border-radius: 50%; corner-shape: round; background: currentColor; flex: none; font-style: normal; }
+.rmhp-root .led.hold { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
+
+/* The reticle locking on: --lock runs 1 → 0 as the stage arrives. */
+.rmhp-root .rv-lock .obj-reticle {
+  --rot1: calc(var(--lock) * -70deg); --rot2: calc(var(--lock) * 110deg); --rot3: calc(var(--lock) * -160deg); --rot4: calc(var(--lock) * 40deg);
+  scale: calc(1 + var(--lock) * 0.45);
+}
+.rmhp-root .cta-obj .rt-cross { display: none; }
+
+/* ════ SCENE (flow mode) ════ A scene is an ordinary section until the gate says otherwise. */
+.rmhp-root .scene { position: relative; }
+.rmhp-root .scene-pin { position: relative; }
+.rmhp-root .sc-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; corner-shape: round; background: var(--rule); }
+.rmhp-root .scene-dots { display: none; align-items: center; gap: 8px; }
+.rmhp-root .scene-rail { display: none; position: relative; height: 2px; background: var(--rule); overflow: clip; border-radius: 2px; }
+.rmhp-root .scene-rail::after {
+  content: ''; position: absolute; inset: 0; transform-origin: left center; transform: scaleX(var(--p, 0));
+  background: linear-gradient(90deg, var(--c3), var(--c1), var(--c3));
+}
+[dir='rtl'] .rmhp-root .scene-rail::after { transform-origin: right center; }
+.rmhp-root .sx { container-type: inline-size; overflow: clip; }
+.rmhp-root .sx-track { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.rmhp-root .sc-t {
+  --t: clamp(0, calc((var(--p) * 100 - var(--a, 0)) / (var(--b, 100) - var(--a, 0))), 1);
+  --te: calc(var(--t) * var(--t) * (3 - 2 * var(--t)));
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MOTION
+   ════════════════════════════════════════════════════════════════════════ */
+@keyframes rp-word { from { transform: translateY(108%); } to { transform: none; } }
+@keyframes rp-fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes rp-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rp-rise { from { opacity: 0; translate: 0 28px; } to { opacity: 1; translate: 0 0; } }
+@keyframes rp-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes rp-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+@keyframes rp-wipe-rtl { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
+@keyframes rp-scale { from { scale: 0.86; } to { scale: 1; } }
+@keyframes rp-px { from { translate: 0 var(--px, 40px); } to { translate: 0 calc(var(--px, 40px) * -1); } }
+@keyframes rp-bleed { from { clip-path: inset(0 var(--stage-inset) round var(--r-stage)); } to { clip-path: inset(0 0 round 0); } }
+@keyframes rp-bleed-out { from { clip-path: inset(0 0 round 0); } to { clip-path: inset(0 var(--stage-inset) round var(--r-stage)); } }
+@keyframes rp-lock { from { --lock: 1; } to { --lock: 0; } }
+@keyframes rp-drift { from { --rp-sx: -1; } to { --rp-sx: 1; } }
+@keyframes rp-p { from { --p: 0; } to { --p: 1; } }
+@keyframes rp-sx { from { translate: 0 0; } to { translate: min(0px, calc(100cqw - 100%)) 0; } }
+@keyframes rp-sx-rtl { from { translate: 0 0; } to { translate: max(0px, calc(100% - 100cqw)) 0; } }
+@keyframes rp-in { from { opacity: 0; translate: 0 var(--sc-y, 32px); } to { opacity: 1; translate: 0 0; } }
+@keyframes rp-out {
+  0% { opacity: 1; translate: 0 0; pointer-events: auto; }
+  85% { opacity: 0.12; pointer-events: auto; }
+  100% { opacity: 0; translate: 0 calc(var(--sc-y, 32px) * -1); pointer-events: none; }
+}
+@keyframes rp-step {
+  0%, 4% { opacity: 0; translate: 0 var(--sc-y, 28px); pointer-events: none; z-index: 0; }
+  24%, 76% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  96%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 28px) * -1); pointer-events: none; z-index: 0; }
+}
+@keyframes rp-step-first {
+  0%, 76% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+  96%, 100% { opacity: 0; translate: 0 calc(var(--sc-y, 28px) * -1); pointer-events: none; z-index: 0; }
+}
+@keyframes rp-step-last {
+  0%, 4% { opacity: 0; translate: 0 var(--sc-y, 28px); pointer-events: none; z-index: 0; }
+  24%, 100% { opacity: 1; translate: 0 0; pointer-events: auto; z-index: 1; }
+}
+@keyframes rp-scale-up { from { scale: var(--s0, 1); } to { scale: var(--s1, 1.4); } }
+@keyframes rp-dot {
+  0%, 10%, 90%, 100% { background: var(--rule); scale: 1; }
+  24%, 76% { background: var(--ink); scale: 1.5; }
+}
+@keyframes rp-dot-first { 0%, 76% { background: var(--ink); scale: 1.5; } 90%, 100% { background: var(--rule); scale: 1; } }
+@keyframes rp-dot-last { 0%, 10% { background: var(--rule); scale: 1; } 24%, 100% { background: var(--ink); scale: 1.5; } }
+@keyframes rp-live { 0%, 10%, 90%, 100% { opacity: 0.42; } 24%, 76% { opacity: 1; } }
+@keyframes rp-live-first { 0%, 76% { opacity: 1; } 90%, 100% { opacity: 0.42; } }
+@keyframes rp-live-last { 0%, 10% { opacity: 0.42; } 24%, 100% { opacity: 1; } }
+
+/* The words of a headline sit in masks whether or not they move. */
+.rmhp-root .words .w { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: 0.16em; margin-bottom: -0.16em; padding-inline: 0.04em; margin-inline: -0.04em; }
+.rmhp-root .words .w > span { display: inline-block; }
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    /* ── load: once per page ── */
+    .rmhp-root .words .w > span { animation: rp-word 0.95s var(--ease) both; animation-delay: calc(var(--d, 0.2s) + var(--i, 0) * 0.05s); }
+    .rmhp-root .ld { animation: rp-fade-up 0.8s var(--ease) both; animation-delay: calc(0.45s + var(--i, 0) * 0.12s); }
+    .rmhp-root .cmdbar-inner { animation: rp-fade 0.7s ease both; }
+    .rmhp-root .mobile-menu.open a { animation: rp-fade-up 0.4s var(--ease) both; animation-delay: calc(var(--i, 0) * 0.04s); }
+    .rmhp-root .btn:is(:hover, :focus-visible)::after { animation: rp-sheen 0.7s var(--ease) both; }
+
+    @supports (animation-timeline: view()) {
+      /* ── view: scroll-driven. Hidden start states exist only where a scroll
+         timeline can undo them. ── */
+      .rmhp-root .rv { animation: rp-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 42%; }
+      .rmhp-root .rv.d1 { animation-range: entry 8% entry 50%; }
+      .rmhp-root .rv.d2 { animation-range: entry 16% entry 58%; }
+      .rmhp-root .rv.d3 { animation-range: entry 24% entry 66%; }
+      .rmhp-root .rv-rule { animation: rp-draw linear both; animation-timeline: view(); animation-range: entry 0% entry 90%; }
+      .rmhp-root .rv-wipe { animation: rp-wipe linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+      &[dir='rtl'] .rmhp-root .rv-wipe { animation-name: rp-wipe-rtl; }
+      .rmhp-root .rv-scale { animation: rp-scale linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+      .rmhp-root .rv-bleed { animation: rp-bleed linear both; animation-timeline: view(); animation-range: entry 0% entry 80%; }
+      .rmhp-root .rv-px { animation: rp-px linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+      .rmhp-root .rv-lock { animation: rp-lock linear both; animation-timeline: view(); animation-range: entry 10% cover 50%; }
+      .rmhp-root .sx-track { flex-wrap: nowrap; justify-content: flex-start; width: max-content; animation: rp-sx linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+      .rmhp-root .sx-track.sx-rev { animation-direction: reverse; }
+      &[dir='rtl'] .rmhp-root .sx-track { animation-name: rp-sx-rtl; }
+
+      /* ── chrome: reflections travel as a surface crosses the viewport ── */
+      .rmhp-root :where(.chrome, .glass) { animation: rp-drift linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+      .rmhp-root .cmdbar-inner { animation: rp-fade 0.7s ease both, rp-drift linear both; animation-timeline: auto, scroll(root block); }
+      .rmhp-root .cmdbar-inner::after { animation: rp-draw linear both; animation-timeline: scroll(root block); }
+      .rmhp-root .gutter .g-prog::after { animation: rp-fillY linear both; animation-timeline: scroll(root block); }
+      /* A stage enters and leaves as a rounded room that squares into full bleed. */
+      .rmhp-root .stage { border-radius: 0; animation: rp-bleed linear both, rp-bleed-out linear both; animation-fill-mode: both, forwards; animation-timeline: view(), view(); animation-range: entry 0% entry 45%, exit 0% exit 45%; }
+      /* A page head keeps its rounded foot at rest: it is the top of the page. */
+      .rmhp-root .pagehead.stage { border-radius: 0 0 var(--r-stage) var(--r-stage); animation: none; }
+      /* The stage's own HUD reads how far the stage has crossed the viewport. */
+      .rmhp-root .stage:not(.scene) .hud { animation: rp-p linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+
+      /* ── scene: the pinned scroll scene ── */
+      .rmhp-root .scene { height: calc(var(--len, 3) * 100svh); view-timeline: --scene block; view-timeline-inset: 0px; }   /* 0, not auto: the root's scroll-padding would shift the range */
+      .rmhp-root .scene-pin {
+        position: sticky; top: 0; height: 100svh; overflow: clip;
+        animation: rp-p linear both; animation-timeline: --scene; animation-range: contain 0% contain 100%;
+      }
+      .rmhp-root .scene-dots, .rmhp-root .scene-rail { display: flex; }
+      .rmhp-root .scene-rail { display: block; }
+      .rmhp-root .sc-stack { display: grid; }
+      .rmhp-root .sc-stack > * { grid-area: 1 / 1; min-width: 0; }
+      .rmhp-root :is(.sc-in, .sc-out, .sc-step, .sc-scale, .sc-wipe, .sc-x, .sc-dot, .sc-live) {
+        animation-timeline: --scene; animation-fill-mode: both; animation-timing-function: linear;
+        animation-range: contain calc(var(--a, 0) * 1%) contain calc(var(--b, 100) * 1%);
+      }
+      .rmhp-root .sc-in { animation-name: rp-in; }
+      .rmhp-root .sc-out { animation-name: rp-out; }
+      .rmhp-root .sc-step { animation-name: rp-step; }
+      .rmhp-root .sc-step.is-first { animation-name: rp-step-first; }
+      .rmhp-root .sc-step.is-last { animation-name: rp-step-last; }
+      .rmhp-root .sc-scale { animation-name: rp-scale-up; }
+      .rmhp-root .sc-wipe { animation-name: rp-wipe; }
+      &[dir='rtl'] .rmhp-root .sc-wipe { animation-name: rp-wipe-rtl; }
+      .rmhp-root .sc-x { flex-wrap: nowrap; justify-content: flex-start; width: max-content; animation-name: rp-sx; }
+      &[dir='rtl'] .rmhp-root .sc-x { animation-name: rp-sx-rtl; }
+      .rmhp-root .sc-dot { animation-name: rp-dot; }
+      .rmhp-root .sc-dot.is-first { animation-name: rp-dot-first; }
+      .rmhp-root .sc-dot.is-last { animation-name: rp-dot-last; }
+      .rmhp-root .sc-live { animation-name: rp-live; }
+      .rmhp-root .sc-live.is-first { animation-name: rp-live-first; }
+      .rmhp-root .sc-live.is-last { animation-name: rp-live-last; }
     }
-    /* The stagger is a RANGE shift, not a delay: on a scroll timeline there is
-       no clock for `animation-delay` to delay against, so a delay is silently
-       ignored. Shifting where in its own entry each sibling starts is what
-       reproduces the d1..d4 cascade for items sharing a row. */
-    html .rmhp-root .reveal.d1 { animation-range: entry 6% entry 52%; }
-    html .rmhp-root .reveal.d2 { animation-range: entry 12% entry 58%; }
-    html .rmhp-root .reveal.d3 { animation-range: entry 18% entry 64%; }
+  }
 }
-@keyframes rmhp-reveal-in {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: none; }
-}
+@keyframes rp-sheen { 0% { opacity: 0; translate: -140% 0; } 20% { opacity: 1; } 100% { opacity: 0; translate: 420% 0; } }
+@keyframes rp-fillY { from { transform: scaleY(0); } to { transform: scaleY(1); } }

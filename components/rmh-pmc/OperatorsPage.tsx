@@ -1,6 +1,12 @@
+/**
+ * RMH PMC — operators. Paper and stage alternate: the page head and the
+ * selection scene (four phases, a reticle whose rings lock concentric at
+ * Badging) and the closing call to action play on the stage; the pedigree
+ * rails, the roles and the terms are paper. Flow mode is an ordinary document.
+ */
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Decrypt } from './shared';
+import { Arrow, CtaBand, Decrypt, Hud, Reticle, Scene, SceneDots, SecHead, Step, Words, cssVars, stepWindow } from './shared';
 
 export default function OperatorsPage() {
   const { t } = useTranslation('c-rmh-pmc');
@@ -111,40 +117,128 @@ export default function OperatorsPage() {
     'PARA-SF',
   ];
 
+  const rails = [units.slice(0, 6), units.slice(6, 12), units.slice(12)];
+
   return (
-    <>
-      <section className="pagehead">
-        <div className="container pagehead-inner">
-          <div className="brief-meta reveal">
+    <div className="pg-operators">
+      {/* ══ PAGE HEAD — a hex badge plate rising on the stage ══ */}
+      <section className="pagehead stage">
+        <Hud />
+        <div className="pagehead-obj" aria-hidden="true">
+          <div className="oh-obj">
+            <span className="obj-ring chrome oh-ring" />
+            <span className="obj-hex chrome oh-hex" data-chrome-live="" />
+          </div>
+        </div>
+        <div className="wrap">
+          <div className="metaline">
             <span className="field"><b>File</b> ▸ <span className="v"><Decrypt text="RMH-PMC / SELECTION" /></span></span>
             <span className="field"><b>Class</b> ▸ <span className="v"><Decrypt text="RESTRICTED" /></span></span>
             <span className="field"><b>Process</b> ▸ <span className="v"><Decrypt text="OPERATORS" /></span></span>
           </div>
-          <span className="desig reveal">{t('pagehead-desig', { defaultValue: 'Selection // Operators' })}</span>
-          <h1 className="reveal d1">{t('pagehead-h1', { defaultValue: 'The standard does not lower for anyone.' })}</h1>
-          <p className="lede reveal d2">
+          <span className="desig">{t('pagehead-desig', { defaultValue: 'Selection // Operators' })}</span>
+          <h1 className="display">
+            <Words text={t('pagehead-h1', { defaultValue: 'The standard does not lower for anyone.' })} />
+          </h1>
+          <p className="lede ld">
             {t('pagehead-lede', { defaultValue: 'We bring on a small number of proven people each year — operators, analysts, logisticians, medics, and signallers — and we select them again on our own terms. A career somewhere else is the price of admission, not the qualification. If you have already proven it, you prove it once more here.' })}
           </p>
         </div>
       </section>
 
-      {/* §01 PEDIGREE */}
-      <section className="sec tight">
-        <div className="container">
-          <div className="sechead reveal">
-            <div className="secref">§01</div>
-            <div className="sechead-body">
-              <span className="desig">{t('pedigree-desig', { defaultValue: 'Pedigree' })}</span>
-              <h2>{t('pedigree-h2', { defaultValue: 'Hired from the units that set the standard.' })}</h2>
-              <p className="lede">
-                {t('pedigree-lede', { defaultValue: 'Our operators come from the tier-one elements of allied nations — assault, recce, maritime, and aviation. We do not lower the bar to fill a roster. We hold it, and we draw from the people who cleared it the first time.' })}
-              </p>
+      {/* ══ §01 PEDIGREE — paper, three rails of glass pills travelling against each other ══ */}
+      <section className="sec ped">
+        <div className="wrap">
+          <SecHead
+            desig={t('pedigree-desig', { defaultValue: 'Pedigree' })}
+            title={t('pedigree-h2', { defaultValue: 'Hired from the units that set the standard.' })}
+            lede={t('pedigree-lede', { defaultValue: 'Our operators come from the tier-one elements of allied nations — assault, recce, maritime, and aviation. We do not lower the bar to fill a roster. We hold it, and we draw from the people who cleared it the first time.' })}
+          />
+        </div>
+        <ul className="ped-stage">
+          {rails.map((row, r) => (
+            <li key={r} className="sx ped-row chrome chrome-ingot">
+              <div className={r === 1 ? 'sx-track sx-rev' : 'sx-track'}>
+                {row.map((u) => (
+                  <span key={u} className="ped-pill glass glass--pill">{u}</span>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* ══ §02 SELECTION — the pinned scene: four phases, the sight locks on at Badging ══ */}
+      <Scene len={3.4} steps={phases.length} className="stage sel" pinClassName="sel-pin">
+        <div className="sel-head">
+          <SecHead
+            desig={t('pipeline-desig', { defaultValue: 'Selection Pipeline' })}
+            title={t('pipeline-h2', { defaultValue: 'Four phases. No shortcuts through any of them.' })}
+            lede={t('pipeline-lede', { defaultValue: 'Selection is a sequence, run in order, with a hard stop at every gate. Most candidates do not finish it — and the ones who do arrive on a team already known, already cleared, already trusted.' })}
+          />
+        </div>
+        <div className="sel-body">
+          <aside className="sel-index" aria-hidden="true">
+            <i className="scene-rail sel-rail" />
+            <ol>
+              {phases.map((p, i) => {
+                const { a, b } = stepWindow(i, phases.length);
+                const pos = i === 0 ? ' is-first' : i === phases.length - 1 ? ' is-last' : '';
+                return (
+                  <li key={p.title} className={`sc-live${pos}`} style={cssVars({ '--a': a, '--b': b })}>
+                    <span className="sel-ix">{String(i + 1).padStart(2, '0')}</span>
+                    {p.title}
+                  </li>
+                );
+              })}
+            </ol>
+          </aside>
+          <div className="sel-object" aria-hidden="true">
+            <Reticle className="sel-reticle" live />
+          </div>
+          <div className="sel-card glass glass--lens">
+            <div className="sc-stack sel-cards">
+              {phases.map((p, i) => (
+                <Step key={p.title} index={i} count={phases.length} className="sel-step">
+                  <div className="sel-item">
+                    <div className="sel-ph">PHASE {String(i + 1).padStart(2, '0')}</div>
+                    <h3 className="h3 sel-t">{p.title}</h3>
+                    <p className="sel-p">{p.body}</p>
+                  </div>
+                </Step>
+              ))}
             </div>
           </div>
-          <div className="lineage reveal d1">
-            <div className="lineage-track">
-              {[...units, ...units].map((u, i) => (
-                <span key={i}>{u}</span>
+        </div>
+        <div className="sel-foot" aria-hidden="true">
+          <SceneDots count={phases.length} />
+          <i className="scene-rail" />
+        </div>
+        <Hud steps={phases.length} />
+      </Scene>
+
+      {/* ══ §03 ROLES — paper, glass cards over chrome ══ */}
+      <section className="sec roles">
+        <div className="wrap">
+          <SecHead
+            desig={t('roles-desig', { defaultValue: 'Roles We Recruit' })}
+            title={t('roles-h2', { defaultValue: 'A team is more than its shooters.' })}
+            lede={t('roles-lede', { defaultValue: 'We man a whole command, not just an assault element. These are the roles we recruit for — and the kind of person who fits each one.' })}
+          />
+          <div className="well roles-well">
+            <span className="obj-ring chrome roles-ring" aria-hidden="true" />
+            <span className="obj-orb chrome roles-orb roles-orb--a" aria-hidden="true" />
+            <span className="obj-orb chrome roles-orb roles-orb--b" aria-hidden="true" />
+            <span className="obj-orb chrome roles-orb roles-orb--c" aria-hidden="true" />
+            <div className="roles-grid">
+              {roles.map((r) => (
+                <div className="role rv-scale" key={r.title}>
+                  <article className="role-card glass">
+                    <span className="role-tag">{r.tag}</span>
+                    <h3 className="h3">{r.title}</h3>
+                    <p>{r.body}</p>
+                  </article>
+                </div>
               ))}
             </div>
           </div>
@@ -153,105 +247,39 @@ export default function OperatorsPage() {
 
       <hr className="rule" />
 
-      {/* §02 SELECTION PIPELINE */}
-      <section className="sec">
-        <div className="container">
-          <div className="sechead reveal">
-            <div className="secref">§02</div>
-            <div className="sechead-body">
-              <span className="desig">{t('pipeline-desig', { defaultValue: 'Selection Pipeline' })}</span>
-              <h2>{t('pipeline-h2', { defaultValue: 'Four phases. No shortcuts through any of them.' })}</h2>
-              <p className="lede">
-                {t('pipeline-lede', { defaultValue: 'Selection is a sequence, run in order, with a hard stop at every gate. Most candidates do not finish it — and the ones who do arrive on a team already known, already cleared, already trusted.' })}
-              </p>
-            </div>
-          </div>
-          <div className="ladder reveal">
-            {phases.map((p, i) => (
-              <div className="step" key={p.title}>
-                <div className="ph">PHASE {String(i + 1).padStart(2, '0')}</div>
-                <h3>{p.title}</h3>
-                <p>{p.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <hr className="rule" />
-
-      {/* §03 ROLES */}
-      <section className="sec">
-        <div className="container">
-          <div className="sechead reveal">
-            <div className="secref">§03</div>
-            <div className="sechead-body">
-              <span className="desig">{t('roles-desig', { defaultValue: 'Roles We Recruit' })}</span>
-              <h2>{t('roles-h2', { defaultValue: 'A team is more than its shooters.' })}</h2>
-              <p className="lede">
-                {t('roles-lede', { defaultValue: 'We man a whole command, not just an assault element. These are the roles we recruit for — and the kind of person who fits each one.' })}
-              </p>
-            </div>
-          </div>
-          <div className="pathgrid reveal">
-            {roles.map((r) => (
-              <div className="path" key={r.title}>
-                <span className="ix">{r.tag}</span>
-                <h3>{r.title}</h3>
-                <p>{r.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <hr className="rule" />
-
-      {/* §04 TERMS */}
-      <section className="sec">
-        <div className="container">
-          <div className="sechead reveal">
-            <div className="secref">§04</div>
-            <div className="sechead-body">
-              <span className="desig">{t('terms-desig', { defaultValue: 'The Terms' })}</span>
-              <h2>{t('terms-h2', { defaultValue: 'What you carry our flag for.' })}</h2>
-              <p className="lede">
-                {t('terms-lede', { defaultValue: "We ask a lot, and we are direct about what comes back. No equity-in-the-mission talk — terms a serious professional can actually plan a life around." })}
-              </p>
-            </div>
-          </div>
-          <div className="valuegrid reveal">
+      {/* ══ §04 TERMS — paper, rows on hairlines ══ */}
+      <section className="sec terms">
+        <div className="wrap">
+          <SecHead
+            desig={t('terms-desig', { defaultValue: 'The Terms' })}
+            title={t('terms-h2', { defaultValue: 'What you carry our flag for.' })}
+            lede={t('terms-lede', { defaultValue: "We ask a lot, and we are direct about what comes back. No equity-in-the-mission talk — terms a serious professional can actually plan a life around." })}
+          />
+          <div className="rows terms-rows">
             {terms.map((term) => (
-              <div className="value" key={term.title}>
-                <div className="vk">{term.vk}</div>
-                <h3>{term.title}</h3>
-                <p>{term.body}</p>
+              <div className="row rv" key={term.title}>
+                <span className="row-k">{term.vk}</span>
+                <h3 className="row-t">{term.title}</h3>
+                <p className="row-d">{term.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <hr className="rule" />
-
-      {/* SELECTION CTA */}
-      <section className="sec tight">
-        <div className="container">
-          <div className="cta-band reveal">
-            <span className="desig center">{t('cta-desig', { defaultValue: 'Selection' })}</span>
-            <h2 style={{ marginTop: 16 }}>{t('cta-h2', { defaultValue: 'Prove it once more.' })}</h2>
-            <p>
-              {t('cta-body', { defaultValue: 'Selection inquiries are reviewed by the recruiting staff, in confidence. Tell us who you served with and what you did. We will tell you whether there is a place to compete for — and we will not waste your time if there isn\'t.' })}
-            </p>
-            <div className="brief-actions" style={{ justifyContent: 'center', marginTop: 8 }}>
-              <Link className="btn btn-amber" to="/rmh-pmc/contact" search={{ type: 'Recruiting' }}>
-                {t('cta-btn-inquiry', { defaultValue: 'Open a selection inquiry' })} <span className="arw">→</span>
-              </Link>
-              <Link className="btn btn-outline" to="/rmh-pmc/capabilities">{t('cta-btn-capabilities', { defaultValue: "See where you'd deploy" })} <span className="arw">→</span></Link>
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
+      {/* ══ SELECTION CTA — the sight locks on ══ */}
+      <CtaBand
+        desig={t('cta-desig', { defaultValue: 'Selection' })}
+        title={t('cta-h2', { defaultValue: 'Prove it once more.' })}
+        body={t('cta-body', { defaultValue: 'Selection inquiries are reviewed by the recruiting staff, in confidence. Tell us who you served with and what you did. We will tell you whether there is a place to compete for — and we will not waste your time if there isn\'t.' })}
+      >
+        <Link className="btn" to="/rmh-pmc/contact" search={{ type: 'Recruiting' }}>
+          {t('cta-btn-inquiry', { defaultValue: 'Open a selection inquiry' })} <Arrow />
+        </Link>
+        <Link className="btn-glass" to="/rmh-pmc/capabilities">
+          {t('cta-btn-capabilities', { defaultValue: "See where you'd deploy" })} <Arrow />
+        </Link>
+      </CtaBand>
+    </div>
   );
 }

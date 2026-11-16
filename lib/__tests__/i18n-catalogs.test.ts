@@ -1648,6 +1648,17 @@ const KNOWN_UNTRANSLATED: Record<
         's04-desig-command-page',
         's04-heading-command-page',
         's04-lede-command-page',
+        // Chrome and liquid-glass redesign (2026-11-16): English-only until the translate pipeline runs.
+        // PMC-REDESIGN-KEYS
+        'hud-brg',
+        'hud-elev',
+        'hud-grid',
+        'hud-rng',
+        'hud-step',
+        'manifest-count',
+        'manifest-desig',
+        'manifest-heading',
+        'staff-nav-label',
       ],
     'c-rmhstudy':
       [

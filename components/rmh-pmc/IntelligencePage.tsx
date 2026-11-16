@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Decrypt } from './shared';
+import { Arrow, CtaBand, Decrypt, Hud, Reticle, Scene, SecHead, Words, cssVars } from './shared';
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -93,81 +93,123 @@ const DISPATCHES: Dispatch[] = [
 export default function IntelligencePage() {
   const { t } = useTranslation("c-rmh-pmc");
   const [active, setActive] = useState<string>('all');
+  const shown = DISPATCHES.filter((d) => active === 'all' || d.cat === active).length;
+
+  // The lead dispatch's body sits under a rank of redaction bars that slide off line by line.
+  const BARS = 10;
+  const sides = [
+    { c: t("side1-category", { defaultValue: "Maritime" }), h: t("side1-title", { defaultValue: "The next chokepoint, before it closes" }), p: t("side1-blurb", { defaultValue: "Red Sea and Gulf of Aden risk, week by week." }) },
+    { c: t("side2-category", { defaultValue: "Stabilization" }), h: t("side2-title", { defaultValue: "Why some transitions hold and others don't" }), p: t("side2-blurb", { defaultValue: "Patterns from our sovereign engagements." }) },
+    { c: t("side3-category", { defaultValue: "Cyber & Signals" }), h: t("side3-title", { defaultValue: "Principals targeted before they land" }), p: t("side3-blurb", { defaultValue: "Pre-travel digital threat reduction." }) },
+  ];
 
   return (
-    <>
-      <section className="pagehead">
-        <div className="container pagehead-inner">
-          <div className="brief-meta reveal">
+    <div className="pg-intelligence">
+      {/* ══ PAGE HEAD ══ */}
+      <section className="pagehead stage">
+        <Hud />
+        <div className="pagehead-obj" aria-hidden="true">
+          <Reticle size="min(150vw, 1000px)" style={{ translate: '0 62%' }} />
+        </div>
+        <div className="wrap">
+          <div className="metaline">
             <span className="field"><b>{t("field-file", { defaultValue: "File" })}</b> ▸ <span className="v"><Decrypt text="RMH-INT / DISPATCHES" /></span></span>
             <span className="field"><b>{t("field-class", { defaultValue: "Class" })}</b> ▸ <span className="v"><Decrypt text="CLEARED FOR RELEASE" /></span></span>
             <span className="field"><b>{t("field-feed", { defaultValue: "Feed" })}</b> ▸ <span className="v"><Decrypt text="PUBLIC" /></span></span>
           </div>
-          <span className="desig reveal">{t("page-desig", { defaultValue: "Intelligence // Dispatches" })}</span>
-          <h1 className="reveal d1">{t("page-heading", { defaultValue: "The product our clients act on." })}</h1>
-          <p className="lede reveal d2">
+          <span className="desig">{t("page-desig", { defaultValue: "Intelligence // Dispatches" })}</span>
+          <h1 className="display">
+            <Words text={t("page-heading", { defaultValue: "The product our clients act on." })} />
+          </h1>
+          <p className="lede ld">
             {t("page-lede", { defaultValue: "Sanitized assessments from the same intelligence cell that supports our deployed teams. What you read here has been stripped of sources and methods and cleared for release — the judgment is the same one we hand a commander on the ground." })}
           </p>
         </div>
       </section>
 
-      <section className="sec tight">
-        <div className="container">
-          {/* LEAD CABLE */}
-          <div className="cable-lead reveal">
-            <Link className="lead-main" to="/rmh-pmc/intelligence">
-              <span className="metaline">{t("lead-category", { defaultValue: "Threat" })} <span className="dot" /> <span className="t">RMH-INT-0434 · 21 JUN 2026</span></span>
-              <h3>{t("lead-title", { defaultValue: "The 2026 fragility map: where instability becomes a private problem" })}</h3>
-              <p>
-                {t("lead-blurb", { defaultValue: "Our standing read on the corridors, contested coastlines, and governance vacuums most likely to demand a private response this year — scored on probability, proximity to client interests, and how fast a situation can move from headline to evacuation." })}
-              </p>
+      {/* ══ DECLASSIFY — pinned: the redaction bars come off, then the side dispatches arrive ══ */}
+      <Scene len={2.2} className="stage dc" pinClassName="dc-pin">
+        <div className="dc-obj sc-t" style={cssVars({ '--a': 0, '--b': 100 })} aria-hidden="true">
+          <Reticle className="dc-reticle" live />
+        </div>
+        <div className="dc-body">
+          <div className="dc-lead sc-t" style={cssVars({ '--a': 58, '--b': 80 })}>
+            <Link className="dc-card card glass glass--lens" to="/rmh-pmc/intelligence">
+              <span className="logrow">
+                <b>{t("lead-category", { defaultValue: "Threat" })}</b> <span className="led" /> <span>RMH-INT-0434 · 21 JUN 2026</span>
+              </span>
+              <h3 className="h3 dc-h">{t("lead-title", { defaultValue: "The 2026 fragility map: where instability becomes a private problem" })}</h3>
+              <span className="dc-text">
+                <p className="dc-p">
+                  {t("lead-blurb", { defaultValue: "Our standing read on the corridors, contested coastlines, and governance vacuums most likely to demand a private response this year — scored on probability, proximity to client interests, and how fast a situation can move from headline to evacuation." })}
+                </p>
+                <span className="dc-bars" aria-hidden="true">
+                  {Array.from({ length: BARS }, (_, i) => {
+                    const a = 22 + i * 4;
+                    return <i key={i} className="dc-bar chrome chrome-ingot sc-t" style={cssVars({ '--a': a, '--b': a + 12 })} />;
+                  })}
+                </span>
+              </span>
+              <span className="link-arw dc-open">{t("open-record", { defaultValue: "Open record" })} <Arrow /></span>
             </Link>
-            <div className="lead-side">
-              <Link className="side-item" to="/rmh-pmc/intelligence">
-                <span className="metaline">{t("side1-category", { defaultValue: "Maritime" })}</span>
-                <h4>{t("side1-title", { defaultValue: "The next chokepoint, before it closes" })}</h4>
-                <p>{t("side1-blurb", { defaultValue: "Red Sea and Gulf of Aden risk, week by week." })}</p>
-              </Link>
-              <Link className="side-item" to="/rmh-pmc/intelligence">
-                <span className="metaline">{t("side2-category", { defaultValue: "Stabilization" })}</span>
-                <h4>{t("side2-title", { defaultValue: "Why some transitions hold and others don't" })}</h4>
-                <p>{t("side2-blurb", { defaultValue: "Patterns from our sovereign engagements." })}</p>
-              </Link>
-              <Link className="side-item" to="/rmh-pmc/intelligence">
-                <span className="metaline">{t("side3-category", { defaultValue: "Cyber & Signals" })}</span>
-                <h4>{t("side3-title", { defaultValue: "Principals targeted before they land" })}</h4>
-                <p>{t("side3-blurb", { defaultValue: "Pre-travel digital threat reduction." })}</p>
-              </Link>
+          </div>
+          <div className="dc-side">
+            {sides.map((s, i) => {
+              const a = 66 + i * 7;
+              return (
+                <div key={i} className="dc-s sc-in" data-step="" style={cssVars({ '--a': a, '--b': a + 14 })}>
+                  <Link className="dc-sc card glass" to="/rmh-pmc/intelligence">
+                    <span className="logrow"><b>{s.c}</b></span>
+                    <h4 className="dc-sh">{s.h}</h4>
+                    <p className="dc-sp">{s.p}</p>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <Hud />
+      </Scene>
+
+      {/* ══ THE MANIFEST — paper, interactive ══ */}
+      <section className="sec mf">
+        <div className="wrap">
+          <SecHead
+            desig={t("manifest-desig", { defaultValue: "The Manifest" })}
+            title={t("manifest-heading", { defaultValue: "Every cleared dispatch" })}
+          />
+          <div className="mf-filters" role="group" aria-label={t("filters-aria-label", { defaultValue: "Filter dispatches by category" })}>
+            <span className="obj-rail mf-rail" aria-hidden="true" />
+            <div className="chips mf-chips">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c.id}
+                  className="chip"
+                  aria-pressed={active === c.id}
+                  onClick={() => setActive(c.id)}
+                >
+                  {t(`cat-${c.id}`, { defaultValue: c.label })}
+                </button>
+              ))}
             </div>
           </div>
-
-          {/* FILTERS */}
-          <div className="filters reveal" role="group" aria-label={t("filters-aria-label", { defaultValue: "Filter dispatches by category" })}>
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.id}
-                className="chip"
-                aria-pressed={active === c.id}
-                onClick={() => setActive(c.id)}
-              >
-                {t(`cat-${c.id}`, { defaultValue: c.label })}
-              </button>
-            ))}
-          </div>
-
-          {/* CABLE MANIFEST */}
-          <div className="log reveal">
+          <p className="meta mf-count" role="status" aria-live="polite">
+            {t("manifest-count", { defaultValue: "{{shown}} of {{total}} dispatches", shown, total: DISPATCHES.length })}
+          </p>
+          <div className="mf-log">
             {DISPATCHES.map((d, i) => {
               const hidden = active !== 'all' && d.cat !== active;
               return (
-                <Link key={i} className={`logrow${hidden ? ' hide' : ''}`} to="/rmh-pmc/intelligence">
-                  <span className="serial">{d.serial}</span>
-                  <span className="cat">{d.meta}</span>
-                  <span className="ttl">
-                    {d.title}
-                    <span>{d.blurb}</span>
+                <Link key={i} className={`row dx${hidden ? ' hide' : ''}`} to="/rmh-pmc/intelligence">
+                  <span className="dx-k">
+                    <span className="dx-serial">{d.serial}</span>
+                    <span className="dx-cat"><span className="led" /> {d.meta}</span>
                   </span>
-                  <span className="rd">{d.rd}</span>
+                  <span className="dx-t">
+                    <span className="row-t">{d.title}</span>
+                    <span className="row-d">{d.blurb}</span>
+                  </span>
+                  <span className="dx-rd">{d.rd}</span>
                 </Link>
               );
             })}
@@ -175,20 +217,16 @@ export default function IntelligencePage() {
         </div>
       </section>
 
-      <section className="sec tight">
-        <div className="container">
-          <div className="cta-band reveal">
-            <span className="desig center">{t("cta-desig-intelligence-page", { defaultValue: "Cleared Distribution" })}</span>
-            <h2 style={{ marginTop: 16 }}>{t("cta-heading", { defaultValue: "Read the version we don't release." })}</h2>
-            <p>
-              {t("cta-body-intelligence-page", { defaultValue: "Clients on a standing engagement receive named-theater assessments, warning thresholds, and a direct line to the cell that wrote them. The public feed is the part we can show." })}
-            </p>
-            <Link className="btn btn-amber" to="/rmh-pmc/contact">
-              {t("cta-button", { defaultValue: "Request a briefing" })} <span className="arw">→</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-    </>
+      {/* ══ CLOSING ══ */}
+      <CtaBand
+        desig={t("cta-desig-intelligence-page", { defaultValue: "Cleared Distribution" })}
+        title={t("cta-heading", { defaultValue: "Read the version we don't release." })}
+        body={t("cta-body-intelligence-page", { defaultValue: "Clients on a standing engagement receive named-theater assessments, warning thresholds, and a direct line to the cell that wrote them. The public feed is the part we can show." })}
+      >
+        <Link className="btn" to="/rmh-pmc/contact">
+          {t("cta-button", { defaultValue: "Request a briefing" })} <Arrow />
+        </Link>
+      </CtaBand>
+    </div>
   );
 }

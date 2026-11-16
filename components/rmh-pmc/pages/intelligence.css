@@ -1,0 +1,114 @@
+/* ════════════════════════════════════════════════════════════════════════
+   RMH PMC — intelligence. Every selector starts `.rmhp-root .pg-intelligence`.
+   Flow mode first (the declassify scene is a stacked section with no bars);
+   the pinned layout and the redaction bars live in ONE gate at the bottom.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── page head: the reticle sits wholly below the text, never behind it ── */
+.rmhp-root .pg-intelligence .pagehead { display: flex; flex-direction: column; padding-bottom: 0; }
+.rmhp-root .pg-intelligence .pagehead > .wrap { order: 1; width: 100%; padding-bottom: clamp(28px, 4vw, 52px); }
+.rmhp-root .pg-intelligence .pagehead-obj {
+  --hs: min(120vw, 760px);
+  order: 2; position: relative; inset: auto; z-index: 0; width: 100%; height: calc(var(--hs) * 0.4); align-items: flex-start; opacity: 1;
+}
+.rmhp-root .pg-intelligence .pagehead-obj .obj-reticle { --size: var(--hs) !important; translate: none !important; flex: none; }
+
+/* ── declassify: flow mode ── */
+.rmhp-root .pg-intelligence .dc-pin { padding: clamp(72px, 9vw, 130px) var(--pad); }
+.rmhp-root .pg-intelligence .dc-obj { position: absolute; overflow: clip; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: 0.55; }
+.rmhp-root .pg-intelligence .dc-reticle { --size: min(130vw, 900px); }
+.rmhp-root .pg-intelligence .dc-body { position: relative; z-index: 2; max-width: var(--maxw); margin-inline: auto; display: grid; gap: var(--gap); }
+.rmhp-root .pg-intelligence .dc-card { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding: clamp(24px, 3vw, 44px); border-radius: 34px; }
+.rmhp-root .pg-intelligence .dc-h { font-size: clamp(26px, 3vw, 44px); line-height: 1.06; letter-spacing: -0.035em; max-width: 22ch; }
+.rmhp-root .pg-intelligence .dc-text { --dp-fs: 16px; --dp-lh: 1.6; position: relative; display: block; }
+.rmhp-root .pg-intelligence .dc-p { font-size: var(--dp-fs); line-height: var(--dp-lh); color: var(--ink); max-width: 58ch; }
+.rmhp-root .pg-intelligence .dc-bars { display: none; }
+.rmhp-root .pg-intelligence .dc-open { margin-top: 6px; }
+.rmhp-root .pg-intelligence .logrow { align-items: center; }
+.rmhp-root .pg-intelligence .dc-side { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+.rmhp-root .pg-intelligence .dc-sc { display: flex; flex-direction: column; gap: 8px; height: 100%; padding: clamp(20px, 2vw, 26px); border-radius: 28px; }
+.rmhp-root .pg-intelligence .dc-sh { margin: 0; font-size: clamp(18px, 1.6vw, 22px); font-weight: 600; line-height: 1.18; letter-spacing: -0.02em; color: var(--ink); }
+.rmhp-root .pg-intelligence .dc-sp { font-size: 15px; line-height: 1.45; color: var(--ink); }
+@media (max-width: 860px) {
+  .rmhp-root .pg-intelligence .dc-side { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ── the manifest ── */
+.rmhp-root .pg-intelligence .mf-filters { position: relative; margin-top: clamp(28px, 4vw, 48px); padding: 16px; border-radius: 44px; display: flex; justify-content: center; }
+.rmhp-root .pg-intelligence .mf-rail { position: absolute; inset: 0; width: auto; height: auto; border-radius: 44px; z-index: 0; }
+.rmhp-root .pg-intelligence .mf-chips { position: relative; z-index: 1; justify-content: center; }
+.rmhp-root .pg-intelligence .mf-count { margin-top: 22px; text-align: center; }
+.rmhp-root .pg-intelligence .mf-log { margin-top: 18px; border-bottom: 1px solid var(--rule); }
+.rmhp-root .pg-intelligence .dx.hide { display: none; }
+.rmhp-root .pg-intelligence a.dx {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 7fr) minmax(0, 2fr); align-items: start; isolation: isolate;
+}
+.rmhp-root .pg-intelligence a.dx::after {
+  content: ''; position: absolute; z-index: -1; inset: 4px -16px; border-radius: 20px; pointer-events: none;
+  background: color-mix(in srgb, var(--wash) 70%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-rim-hi), inset 0 -1px 0 var(--glass-rim-lo);
+  opacity: 0; transition: opacity 0.14s var(--ease);
+}
+.rmhp-root .pg-intelligence a.dx:is(:hover, :focus-visible)::after { opacity: 1; }
+.rmhp-root .pg-intelligence .dx-k { display: flex; flex-direction: column; gap: 6px; font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
+.rmhp-root .pg-intelligence .dx-serial { color: var(--ink); font-weight: 500; }
+.rmhp-root .pg-intelligence .dx-cat { display: inline-flex; align-items: center; gap: 8px; }
+.rmhp-root .pg-intelligence .dx-t { display: flex; flex-direction: column; gap: 10px; }
+.rmhp-root .pg-intelligence .dx-rd { font-family: var(--mono); font-size: 12.5px; color: var(--mute); text-align: end; }
+@media (max-width: 760px) {
+  .rmhp-root .pg-intelligence a.dx { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+  .rmhp-root .pg-intelligence .dx-k { flex-direction: row; gap: 14px; flex-wrap: wrap; }
+  .rmhp-root .pg-intelligence .dx-rd { text-align: start; }
+  .rmhp-root .pg-intelligence a.dx::after { inset-inline: -8px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   THE GATE
+   ════════════════════════════════════════════════════════════════════════ */
+@media screen and (prefers-reduced-motion: no-preference) {
+  html:where(:not([data-jelly-motion='still'])) {
+    @supports (animation-timeline: view()) {
+      .rmhp-root .pg-intelligence .dc-pin {
+        --shift: 214px; --dir: 1;
+        display: grid; place-items: center; padding: calc(var(--nav-h) + env(safe-area-inset-top,0px) + 34px) var(--pad) 70px;
+      }
+      &[dir='rtl'] .rmhp-root .pg-intelligence .dc-pin { --dir: -1; }
+      .rmhp-root .pg-intelligence .dc-obj { opacity: 0.9; place-items: center; top: 6%; }
+      .rmhp-root .pg-intelligence .dc-reticle {
+        --size: min(124svh, 112vw);
+        --rot1: calc(var(--p) * 120deg); --rot2: calc(var(--p) * -210deg); --rot3: calc(var(--p) * 300deg); --rot4: calc(var(--p) * -60deg);
+      }
+      .rmhp-root .pg-intelligence .dc-body { width: 100%; grid-template-columns: minmax(0, 580px) 400px; justify-content: center; align-items: center; column-gap: 28px; }
+      .rmhp-root .pg-intelligence .dc-lead { translate: calc((1 - var(--te)) * var(--shift) * var(--dir)) 0; }
+      .rmhp-root .pg-intelligence .dc-side { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+      .rmhp-root .pg-intelligence .dc-sc { padding: 18px 22px; border-radius: 26px; gap: 6px; }
+
+      /* the redaction: one chrome bar per line box. The overlay is exactly the paragraph's box and
+         carries the paragraph's type, so 1lh is one real line at any width; spare bars are clipped. */
+      .rmhp-root .pg-intelligence .dc-bars {
+        position: absolute; inset: 0; display: block; overflow: clip; font-size: var(--dp-fs); line-height: var(--dp-lh);
+      }
+      .rmhp-root .pg-intelligence .dc-bar {
+        display: block; width: 100%; height: 1lh; border-block: 1px solid transparent; background-clip: padding-box; border-radius: 4px;
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c4) 55%, transparent);
+        translate: calc(var(--te) * 104% * var(--dir)) 0;
+      }
+
+      @media (max-width: 900px) {
+        .rmhp-root .pg-intelligence .dc-pin { align-items: start; padding-top: calc(var(--nav-h) + env(safe-area-inset-top,0px) + 30px); padding-bottom: 40px; }
+        .rmhp-root .pg-intelligence .dc-body { grid-template-columns: minmax(0, 1fr); row-gap: 12px; }
+        .rmhp-root .pg-intelligence .dc-lead { translate: 0 calc((1 - var(--te)) * 18svh); }
+        .rmhp-root .pg-intelligence .dc-card { padding: 20px 20px 18px; gap: 10px; border-radius: 28px; }
+        .rmhp-root .pg-intelligence .dc-h { font-size: clamp(22px, 6.2vw, 28px); }
+        .rmhp-root .pg-intelligence .dc-text { --dp-fs: 14.5px; --dp-lh: 1.5; }
+        .rmhp-root .pg-intelligence .dc-sp { display: none; }
+        .rmhp-root .pg-intelligence .dc-sc { padding: 12px 18px; gap: 4px; border-radius: 22px; }
+        .rmhp-root .pg-intelligence .dc-sh { font-size: 16px; }
+        .rmhp-root .pg-intelligence .dc-side { gap: 10px; }
+      }
+
+      /* the manifest: rows rise as they enter */
+      .rmhp-root .pg-intelligence .dx { animation: rp-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 42%; }
+    }
+  }
+}

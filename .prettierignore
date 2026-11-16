@@ -46,7 +46,6 @@ lib/prepaint/generated.ts
 /app/fonts/elections.css
 /app/fonts/fraunces.css
 /app/fonts/press-start-2p.css
-/app/fonts/rmh-pmc.css
 /app/fonts/site-display.css
 /app/fonts/spectral.css
 /app/globals/base-interaction.css
@@ -978,6 +977,12 @@ lib/prepaint/generated.ts
 /components/rmh-pmc/IntelligencePage.tsx
 /components/rmh-pmc/OperatorsPage.tsx
 /components/rmh-pmc/rmh-pmc.css
+/components/rmh-pmc/pages/capabilities.css
+/components/rmh-pmc/pages/command.css
+/components/rmh-pmc/pages/contact.css
+/components/rmh-pmc/pages/home.css
+/components/rmh-pmc/pages/intelligence.css
+/components/rmh-pmc/pages/operators.css
 /components/rmh-pmc/shared.tsx
 /components/rmhbox/GameShell.tsx
 /components/rmhbox/GameVoting.tsx
