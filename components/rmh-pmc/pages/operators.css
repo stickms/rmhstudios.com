@@ -61,7 +61,7 @@
 .rmhp-root .pg-operators .role { display: flex; }
 .rmhp-root .pg-operators .role-card { flex: 1; display: flex; flex-direction: column; gap: 12px; padding: clamp(22px, 2.4vw, 32px); }
 .rmhp-root .pg-operators .role-tag { font-family: var(--mono); font-size: 12.5px; font-weight: 500; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; }
-.rmhp-root .pg-operators .role-tag::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.rmhp-root .pg-operators .role-tag::before { content: ''; width: 7px; height: 7px; border-radius: 50%; corner-shape: round; background: currentColor; flex: none; }
 .rmhp-root .pg-operators .role-card .h3 { font-size: clamp(20px, 1.7vw, 24px); }
 .rmhp-root .pg-operators .role-card p { font-size: 15px; line-height: 1.55; color: var(--ink); }
 @media (max-width: 960px) { .rmhp-root .pg-operators .roles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

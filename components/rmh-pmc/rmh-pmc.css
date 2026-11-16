@@ -319,7 +319,7 @@
 .rmhp-root .obj-reticle {
   --size: 520px; position: relative; width: var(--size); max-width: 100%; aspect-ratio: 1; flex: none;
 }
-.rmhp-root .obj-reticle > * { position: absolute; inset: 0; margin: auto; border-radius: 50%; pointer-events: none; }
+.rmhp-root .obj-reticle > * { position: absolute; inset: 0; margin: auto; border-radius: 50%; corner-shape: round; pointer-events: none; }
 .rmhp-root .rt-ring {
   width: var(--d); aspect-ratio: 1; height: auto; rotate: var(--rot, 0deg);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--w)), #000 calc(100% - var(--w) + 0.4px));
@@ -342,7 +342,7 @@
   opacity: 0.75;
 }
 .rmhp-root .rt-ticks::after {
-  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  content: ''; position: absolute; inset: 0; border-radius: 50%; corner-shape: round;
   background: repeating-conic-gradient(from -0.5deg, currentColor 0 1deg, transparent 1deg 30deg);
   -webkit-mask: radial-gradient(farthest-side, transparent 82.5%, #000 83%, #000 93%, transparent 93.5%);
   mask: radial-gradient(farthest-side, transparent 82.5%, #000 83%, #000 93%, transparent 93.5%);
@@ -361,14 +361,14 @@
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 14px rgba(0, 0, 0, 0.35);
 }
 .rmhp-root .obj-orb {
-  --size: 200px; width: var(--size); max-width: 100%; aspect-ratio: 1; border-radius: 50%; flex: none;
+  --size: 200px; width: var(--size); max-width: 100%; aspect-ratio: 1; border-radius: 50%; corner-shape: round; flex: none;
   background:
     radial-gradient(ellipse 16% 10% at calc(32% + var(--k) * 40%) 24%, #fff 0 45%, transparent 100%),
     radial-gradient(circle at calc(38% + var(--k) * 40%) 30%, var(--c1) 0, var(--c2) 16%, var(--c3) 40%, var(--c4) 63%, var(--c5) 80%, var(--c6) 100%);
   box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.3);
 }
 .rmhp-root .obj-disc {
-  --size: 360px; position: relative; width: var(--size); max-width: 100%; aspect-ratio: 1; border-radius: 50%; flex: none;
+  --size: 360px; position: relative; width: var(--size); max-width: 100%; aspect-ratio: 1; border-radius: 50%; corner-shape: round; flex: none;
   rotate: var(--rot, 0deg);
   background:
     radial-gradient(circle, var(--c2) 0 3.2%, var(--c4) 3.6% 4.4%, transparent 4.8%),
@@ -380,13 +380,13 @@
 }
 /* The knurled rim and the bevel: a lit edge and a shaded one. */
 .rmhp-root .obj-disc::before {
-  content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  content: ''; position: absolute; inset: 0; border-radius: 50%; corner-shape: round; pointer-events: none;
   background: repeating-conic-gradient(from 0deg, rgba(0, 0, 0, 0.34) 0 0.5deg, transparent 0.5deg 3deg);
   -webkit-mask: radial-gradient(farthest-side, transparent 91%, #000 91.5%);
   mask: radial-gradient(farthest-side, transparent 91%, #000 91.5%);
 }
 .rmhp-root .obj-disc::after {
-  content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  content: ''; position: absolute; inset: 0; border-radius: 50%; corner-shape: round; pointer-events: none;
   background: radial-gradient(circle, transparent 88%, rgba(0, 0, 0, 0.35) 100%);
   box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.16);
 }
@@ -403,12 +403,12 @@
     var(--c5), var(--c1) 12%, var(--c3) 25%, var(--c4) 32%, var(--c2) 52%, var(--c6) 66%, var(--c4) 80%, var(--c1) 92%, var(--c5));
 }
 .rmhp-root .obj-hex::after {
-  content: ''; position: absolute; inset: 32%; border-radius: 50%;
+  content: ''; position: absolute; inset: 32%; border-radius: 50%; corner-shape: round;
   background: radial-gradient(circle at 36% 30%, var(--c1) 0, var(--c2) 22%, var(--c3) 48%, var(--c4) 76%, var(--c5) 100%);
   box-shadow: 0 0 0 5px var(--c4), 0 0 0 7px var(--c6), inset 0 0 12px rgba(0, 0, 0, 0.4);
 }
 .rmhp-root .obj-ring {
-  --size: 340px; --w: 9%; width: var(--size); max-width: 100%; aspect-ratio: 1; border-radius: 50%; flex: none;
+  --size: 340px; --w: 9%; width: var(--size); max-width: 100%; aspect-ratio: 1; border-radius: 50%; corner-shape: round; flex: none;
   rotate: var(--rot, 0deg);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--w)), #000 calc(100% - var(--w) + 0.4px));
   mask: radial-gradient(farthest-side, transparent calc(100% - var(--w)), #000 calc(100% - var(--w) + 0.4px));
@@ -425,13 +425,13 @@
   border-bottom: 1px solid var(--rule);
 }
 .rmhp-root .obj-bars > i {
-  flex: 1 1 0; max-width: 56px; height: calc(var(--h, 50) * 1%); border-radius: 999px 999px 4px 4px;
+  flex: 1 1 0; max-width: 56px; height: calc(var(--h, 50) * 1%); border-radius: 999px 999px 4px 4px; corner-shape: round;
   background: linear-gradient(90deg,
     var(--c4) 0%, var(--c5) 10%, var(--c1) calc(26% + var(--k) * 60%), var(--c2) calc(40% + var(--k) * 60%),
     var(--c3) calc(62% + var(--k) * 40%), var(--c4) 92%, var(--c5) 100%);
 }
 .rmhp-root .obj-rail {
-  --size: 100%; width: var(--size); height: var(--bh, 84px); border-radius: 999px;
+  --size: 100%; width: var(--size); height: var(--bh, 84px); border-radius: 999px; corner-shape: round;
   background: linear-gradient(180deg,
     var(--c1) 0%, var(--c2) calc(26% + var(--k) * 40%), var(--c3) calc(46% + var(--k) * 30%),
     var(--c4) calc(52% + var(--k) * 30%), var(--c5) 76%, var(--c6) 100%);
@@ -451,10 +451,10 @@
 }
 .rmhp-root .glass { border-radius: var(--r-glass); }
 .rmhp-root :is(.glass, .btn-glass, .chip)::before {
-  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; corner-shape: inherit; pointer-events: none;
   background: linear-gradient(112deg, transparent calc(22% + var(--k) * 100%), var(--glass-spec) calc(36% + var(--k) * 100%), transparent calc(52% + var(--k) * 100%));
 }
-.rmhp-root .glass--pill { border-radius: var(--r-pill); }
+.rmhp-root .glass--pill { border-radius: var(--r-pill); corner-shape: round; }
 .rmhp-root .glass--lens {
   --glass-a: color-mix(in srgb, var(--panel) 86%, transparent);
   --glass-b: color-mix(in srgb, var(--panel) 70%, transparent);
@@ -527,7 +527,7 @@
 }
 .rmhp-root .hud-readout {
   direction: ltr; unicode-bidi: isolate; position: absolute; display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 14px;
-  border-radius: var(--r-pill); white-space: nowrap; color: var(--stage-ink); font-variant-numeric: tabular-nums;
+  border-radius: var(--r-pill); corner-shape: round; white-space: nowrap; color: var(--stage-ink); font-variant-numeric: tabular-nums;
 }
 .rmhp-root .hud-readout b { font-weight: 500; color: var(--stage-ink); opacity: 0.72; }
 .rmhp-root .hud-readout.tl { inset-block-start: calc(var(--hud-top) + 14px); inset-inline-start: calc(var(--hud-side) + 20px); }
@@ -551,7 +551,7 @@
 /* ════ CONTROLS ════ */
 .rmhp-root :is(.btn, .btn-glass) {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 26px;
-  border-radius: var(--r-pill); font: 500 15px/1.2 var(--sans); cursor: pointer; white-space: nowrap;
+  border-radius: var(--r-pill); corner-shape: round; font: 500 15px/1.2 var(--sans); cursor: pointer; white-space: nowrap;
   transition: opacity 0.12s, background-color 0.12s;
 }
 .rmhp-root .btn { position: relative; overflow: clip; background: var(--ink); color: var(--paper); border: 0; }
@@ -577,7 +577,7 @@
 .rmhp-root .link-arw:is(:hover, :focus-visible) .arw { translate: 4px 0; }
 [dir='rtl'] .rmhp-root .link-arw:is(:hover, :focus-visible) .arw { translate: -4px 0; }
 .rmhp-root .chip {
-  display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: var(--r-pill); corner-shape: round;
   font: 500 14.5px/1.2 var(--sans); cursor: pointer; white-space: nowrap; box-shadow: inset 0 1px 0 var(--glass-rim-hi), inset 0 -1px 0 var(--glass-rim-lo);
   transition: background-color 0.12s, color 0.12s;
 }
@@ -609,7 +609,7 @@
 .rmhp-root .cmdbar-inner { transition: height 0.2s var(--ease); }
 .rmhp-root .cmdbar-left { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .rmhp-root .backlink {
-  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding-inline: 14px; border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding-inline: 14px; border-radius: var(--r-pill); corner-shape: round;
   font-size: 13px; color: var(--mute); transition: color 0.12s, background-color 0.12s;
 }
 .rmhp-root .backlink:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
@@ -619,7 +619,7 @@
 .rmhp-root .brand-text { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); white-space: nowrap; }
 .rmhp-root .navlinks { display: flex; align-items: center; gap: 2px; }
 .rmhp-root .navlinks a {
-  display: inline-flex; align-items: center; min-height: 40px; padding-inline: 14px; border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; min-height: 40px; padding-inline: 14px; border-radius: var(--r-pill); corner-shape: round;
   font-size: 14px; font-weight: 500; color: var(--ink); transition: background-color 0.12s;
 }
 .rmhp-root .navlinks a:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
@@ -630,7 +630,7 @@
 .rmhp-root .nav-cta { min-height: 40px; padding: 0 18px; font-size: 14px; }
 .rmhp-root .nav-toggle {
   display: none; background: none; border: 0; color: var(--ink); cursor: pointer; width: 44px; height: 44px;
-  align-items: center; justify-content: center; border-radius: var(--r-pill);
+  align-items: center; justify-content: center; border-radius: var(--r-pill); corner-shape: round;
 }
 .rmhp-root .nav-toggle svg { width: 24px; height: 24px; overflow: visible; }
 .rmhp-root .nav-toggle line { transition: transform 0.14s var(--ease), opacity 0.1s; transform-origin: 12px 12px; }
@@ -765,7 +765,7 @@
 .rmhp-root .form-note { font-size: 13px; margin-top: 14px; max-width: 62ch; }
 .rmhp-root .form-success { display: none; border-radius: var(--r-ctl); border: 1px solid var(--ink); padding: 16px 18px; font-size: 16px; color: var(--ink); margin-bottom: 24px; }
 .rmhp-root .form-success.show { display: block; }
-.rmhp-root .stamp { display: inline-flex; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); border: 1px solid var(--ink); border-radius: var(--r-pill); padding: 6px 14px; }
+.rmhp-root .stamp { display: inline-flex; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--ink); border: 1px solid var(--ink); border-radius: var(--r-pill); corner-shape: round; padding: 6px 14px; }
 
 /* ════ TRANSMISSION LOG ════ glass readouts riding a chrome rail. */
 .rmhp-root .transmit { padding-block: clamp(32px, 5vw, 64px); }
@@ -778,7 +778,7 @@
 .rmhp-root .transmit-item { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 20px; white-space: nowrap; font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
 .rmhp-root .transmit-item b { font-weight: 500; }
 .rmhp-root .transmit-item i { font-style: normal; color: var(--mute); }
-.rmhp-root .led { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; font-style: normal; }
+.rmhp-root .led { width: 7px; height: 7px; border-radius: 50%; corner-shape: round; background: currentColor; flex: none; font-style: normal; }
 .rmhp-root .led.hold { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
 
 /* The reticle locking on: --lock runs 1 → 0 as the stage arrives. */
@@ -791,7 +791,7 @@
 /* ════ SCENE (flow mode) ════ A scene is an ordinary section until the gate says otherwise. */
 .rmhp-root .scene { position: relative; }
 .rmhp-root .scene-pin { position: relative; }
-.rmhp-root .sc-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--rule); }
+.rmhp-root .sc-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; corner-shape: round; background: var(--rule); }
 .rmhp-root .scene-dots { display: none; align-items: center; gap: 8px; }
 .rmhp-root .scene-rail { display: none; position: relative; height: 2px; background: var(--rule); overflow: clip; border-radius: 2px; }
 .rmhp-root .scene-rail::after {

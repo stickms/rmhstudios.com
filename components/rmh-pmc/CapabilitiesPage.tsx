@@ -160,7 +160,7 @@ export default function CapabilitiesPage() {
           <div className="staff-cap" aria-hidden="true">
             <span className="staff-count glass glass--pill">
               <b>{t("lines-label", { defaultValue: "Lines" })}</b>
-              <i className="staff-n" />/07
+              <span className="staff-num"><i className="staff-n" />/07</span>
             </span>
           </div>
           <nav className="staff-nav" aria-label={t("staff-nav-label", { defaultValue: "The seven lines of operation" })}>

@@ -77,7 +77,7 @@
 .rmhp-root .pg-capabilities .c3-side > * { grid-area: 1 / 1; }
 .rmhp-root .pg-capabilities .c3-disc { width: 100%; max-width: 480px; }
 .rmhp-root .pg-capabilities .c3-disc .obj-disc { --size: 100%; width: 100%; }
-.rmhp-root .pg-capabilities .c3-num { display: grid; place-items: center; width: 40%; aspect-ratio: 1; border-radius: 50%; --glass-a: color-mix(in srgb, var(--panel) 62%, transparent); --glass-b: color-mix(in srgb, var(--panel) 40%, transparent); }
+.rmhp-root .pg-capabilities .c3-num { display: grid; place-items: center; width: 40%; aspect-ratio: 1; border-radius: 50%; corner-shape: round; --glass-a: color-mix(in srgb, var(--panel) 62%, transparent); --glass-b: color-mix(in srgb, var(--panel) 40%, transparent); }
 .rmhp-root .pg-capabilities .c3-num .cap-num { --ns: clamp(48px, 7vw, 104px); }
 .rmhp-root .pg-capabilities .c3-main { display: flex; flex-direction: column; gap: clamp(22px, 2.6vw, 34px); }
 .rmhp-root .pg-capabilities .c3-rows { counter-reset: c3; border-bottom: 1px solid var(--rule); margin-top: 6px; }
@@ -172,6 +172,8 @@
       .rmhp-root .pg-capabilities .staff-cap { display: flex; }
       .rmhp-root .pg-capabilities .staff-count { display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 18px; font: 500 12px/1 var(--mono); font-variant-numeric: tabular-nums; }
       .rmhp-root .pg-capabilities .staff-count b { font-weight: 500; opacity: 0.72; }
+      /* A code-like token: its order stays left to right in right-to-left locales. */
+      .rmhp-root .pg-capabilities .staff-num { display: inline-block; direction: ltr; unicode-bidi: isolate; }
       .rmhp-root .pg-capabilities .staff-n { --hv: calc(min(7, var(--p, 0) * 7.6)); counter-reset: hv var(--hv); font-style: normal; }
       .rmhp-root .pg-capabilities .staff-n::before { content: counter(hv, decimal-leading-zero); }
       .rmhp-root .pg-capabilities .staff-nav { --H: min(56svh, 500px); width: 100%; position: relative; padding-top: 24px; }
