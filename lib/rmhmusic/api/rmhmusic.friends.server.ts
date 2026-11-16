@@ -10,11 +10,17 @@ import { loadFriendsProgress } from '@/lib/rmhmusic/learn/social/friends.server'
  * theirs, each with a name, an avatar, the Daily challenge streak, finished units and song bests.
  * Empty unless the viewer's own friends switch is on. Per viewer, so no HTTP cache; the server
  * caches only the mutuals list (`friends.server.ts`).
+ *
+ * The result goes out through `friendsRes.parse`, which drops every key the schema does not name:
+ * that, not `implement()`'s `response` check (dev and test only), is the leak filter.
  */
 export const route = apiRoute('/api/rmhmusic/friends', {
   GET: implement(
     friendsApi,
     { rateLimit: 'read', query: friendsQuery, response: friendsRes },
-    async ({ userId, query }) => loadFriendsProgress(userId, query.limit as FriendsLimit, Date.now()),
+    async ({ userId, query }) =>
+      friendsRes.parse(
+        await loadFriendsProgress(userId, query.limit as FriendsLimit, Date.now()),
+      ),
   ),
 });

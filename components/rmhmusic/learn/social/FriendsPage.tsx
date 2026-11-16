@@ -7,6 +7,11 @@
  * in the notebook look; no chips or badges. The page's data comes from the route loader
  * (`social.queries.ts`); a switch change refetches the friends list, nothing polls. The page
  * has no primary button (R4).
+ *
+ * A friend row has no stable key: the response carries no account id on purpose, and a name is
+ * neither unique nor fixed. Rows are keyed by position within one fetch (`dataUpdatedAt:index`),
+ * so a refetch remounts them and closes any open song bests rather than leaving one friend's list
+ * open under another friend's name.
  */
 import {
   useId,
@@ -442,9 +447,7 @@ export function FriendsPage() {
                 i,
               ) => (
                 <FriendRow
-                  key={
-                    i
-                  }
+                  key={`${friends.dataUpdatedAt}:${i}`}
                   friend={
                     f
                   }

@@ -4,6 +4,8 @@ import { renderPageCard } from '@/lib/og/page-card.server';
 import { cardLines } from '@/lib/rmhmusic/learn/social/share';
 import { getSharedResult } from '@/lib/rmhmusic/learn/social/share.server';
 
+const NOINDEX = { 'X-Robots-Tag': 'noindex' };
+
 /**
  * GET /api/og/music/$token — the card of a shared RMH Music result (Phase 6, plan 1.4).
  *
@@ -12,12 +14,13 @@ import { getSharedResult } from '@/lib/rmhmusic/learn/social/share.server';
  * picture appear only when the link chose to show them, resolved live. Read as a signed-out
  * viewer would: every reason a link cannot be seen (stopped, expired, hidden, a banned author) is
  * a 404. Cached ten minutes, not immutable: stopping a link must take its card down on our side
- * within that (previews other services already fetched keep their copy).
+ * within that (previews other services already fetched keep their copy). Every answer says
+ * `X-Robots-Tag: noindex`: the page is noindex, and its card must not land in image search either.
  */
 export const route = apiRoute('/api/og/music/$token', {
   GET: defineHandler({ auth: 'none', rateLimit: 'read' }, async ({ params }) => {
     const view = await getSharedResult(params.token ?? '', null, Date.now());
-    if (view.state !== 'live') return new Response('Not found', { status: 404 });
+    if (view.state !== 'live') return new Response('Not found', { status: 404, headers: NOINDEX });
 
     const lines = cardLines(view.payload);
     const byline = view.name ? { name: view.name, image: view.image } : null;
@@ -39,6 +42,7 @@ export const route = apiRoute('/api/og/music/$token', {
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=600, s-maxage=600',
+        ...NOINDEX,
       },
     });
   }),

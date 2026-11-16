@@ -71,6 +71,7 @@ const h =
             id: string;
             name: string;
             bannedUntil: Date | null;
+            isBot?: boolean;
           }
         >();
       const blocked =
@@ -459,6 +460,7 @@ const h =
                   }: {
                     where: {
                       id: string;
+                      isBot?: boolean;
                       OR: (
                         | {
                             bannedUntil: null;
@@ -477,6 +479,12 @@ const h =
                       );
                     if (
                       !u
+                    )
+                      return null;
+                    if (
+                      where.isBot ===
+                        false &&
+                      u.isBot
                     )
                       return null;
                     const ok =
@@ -504,7 +512,9 @@ const h =
                           handle: `handle-${u.id}`,
                           isVerified: false,
                           isAdmin: false,
-                          isBot: false,
+                          isBot:
+                            u.isBot ??
+                            false,
                           profile:
                             null,
                           inventory:
@@ -1439,6 +1449,111 @@ describe('getSharedResult', () => {
         .state,
     ).toBe(
       'live',
+    );
+  });
+});
+
+describe('getSharedResult: the author and the viewer', () => {
+  async function share() {
+    scored(
+      'me',
+    );
+    const res =
+      await createShare(
+        'me',
+        {
+          kind: 'daily',
+          date: DATE,
+          showName: true,
+        },
+        NOW,
+      );
+    if (
+      !res.ok
+    )
+      throw new Error(
+        'no share',
+      );
+    return res.share.path
+      .split(
+        '/',
+      )
+      .pop()!;
+  }
+
+  it('is gone when the author is a bot, as on the board and the friends list', async () => {
+    const token =
+      await share();
+    h.users.get(
+      'me',
+    )!.isBot =
+      true;
+    expect(
+      (
+        await getSharedResult(
+          token,
+          null,
+          NOW,
+        )
+      )
+        .state,
+    ).toBe(
+      'gone',
+    );
+    expect(
+      (
+        await getSharedResult(
+          token,
+          'you',
+          NOW,
+        )
+      )
+        .state,
+    ).toBe(
+      'gone',
+    );
+  });
+
+  it('says mine only to the viewer who made the link', async () => {
+    const token =
+      await share();
+    const pick =
+      async (
+        viewer:
+          | string
+          | null,
+      ) => {
+        const v =
+          await getSharedResult(
+            token,
+            viewer,
+            NOW,
+          );
+        return v.state ===
+          'live'
+          ? v.mine
+          : null;
+      };
+    expect(
+      await pick(
+        'me',
+      ),
+    ).toBe(
+      true,
+    );
+    expect(
+      await pick(
+        'you',
+      ),
+    ).toBe(
+      false,
+    );
+    expect(
+      await pick(
+        null,
+      ),
+    ).toBe(
+      false,
     );
   });
 });

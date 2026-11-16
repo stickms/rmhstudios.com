@@ -18,6 +18,7 @@ import {
   songPayload,
 } from '@/lib/rmhmusic/learn/social/share';
 import {
+  sharedPageState,
   shareExpiryLine,
   shareLinkLabel,
   shareText,
@@ -203,6 +204,112 @@ describe('share-text', () => {
       ),
     ).toBe(
       'Works until 14 Feb 2027',
+    );
+  });
+});
+
+describe('sharedPageState', () => {
+  const live =
+    {
+      state:
+        'live' as const,
+      mine: false,
+      payload:
+        {
+          v: 1 as const,
+          kind: 'daily' as const,
+          date: '2026-11-15',
+          score: 92,
+          stars: 2,
+          right: 28,
+          played: 30,
+          skipped: 0,
+          avgMs: 912,
+        },
+      name: null,
+      image:
+        null,
+      today: false,
+    };
+
+  it('is pending while nothing has arrived', () => {
+    expect(
+      sharedPageState(
+        {
+          data: undefined,
+          isError: false,
+        },
+      ),
+    ).toBe(
+      'pending',
+    );
+  });
+
+  it('is an error, not "gone", when the request failed (a 429, a 5xx, offline)', () => {
+    expect(
+      sharedPageState(
+        {
+          data: undefined,
+          isError: true,
+        },
+      ),
+    ).toBe(
+      'error',
+    );
+  });
+
+  it("is gone only on the server's own gone answer", () => {
+    expect(
+      sharedPageState(
+        {
+          data: {
+            state:
+              'gone',
+          },
+          isError: false,
+        },
+      ),
+    ).toBe(
+      'gone',
+    );
+  });
+
+  it('keeps what it showed when a later refetch fails', () => {
+    expect(
+      sharedPageState(
+        {
+          data: live,
+          isError: true,
+        },
+      ),
+    ).toBe(
+      'live',
+    );
+    expect(
+      sharedPageState(
+        {
+          data: {
+            state:
+              'gone',
+          },
+          isError: true,
+        },
+      ),
+    ).toBe(
+      'gone',
+    );
+  });
+
+  it('is live on a live answer', () => {
+    expect(
+      sharedPageState(
+        {
+          data: live,
+          isError: false,
+        },
+      ),
+    ).toBe(
+      'live',
     );
   });
 });

@@ -5,8 +5,10 @@
  * backdrop): the result as a heading and lines built from the stored snapshot (never client text),
  * the name and picture only when the link shows them ("A learner" otherwise), and one primary
  * link, Try RMH Music. A signed-in viewer also gets "Play today's challenge" on today's Daily
- * result and a Report text button. A link that cannot be seen, for any reason, says one generic
- * sentence. The data comes from the route loader (`musicSharedResultQuery`).
+ * result and a Report text button (not on their own link). A link that cannot be seen, for any
+ * reason, says one generic sentence; that is only ever the server's own "gone" answer. A request
+ * that failed (a 429, a 5xx, offline) says so with Try again, and nothing yet is a skeleton
+ * (`sharedPageState`). The data comes from the route loader (`musicSharedResultQuery`).
  */
 import {
   lazy,
@@ -28,7 +30,10 @@ import {
 import { ModeToggle } from '../ModeToggle';
 import { Notehead } from '../Notehead';
 import { learnerName } from './board-text';
-import { shareText } from './share-text';
+import {
+  sharedPageState,
+  shareText,
+} from './share-text';
 
 // Lazy, as everywhere else it mounts: the dialog validates with the report route's zod schema.
 const ReportDialog =
@@ -62,11 +67,20 @@ export function SharedResultPage({
     useSession();
   const {
     data: view,
-  } =
-    useQuery(
-      musicSharedResultQuery(
-        token,
-      ),
+    isError,
+    isFetching,
+    refetch,
+  } = useQuery(
+    musicSharedResultQuery(
+      token,
+    ),
+  );
+  const state =
+    sharedPageState(
+      {
+        data: view,
+        isError,
+      },
     );
   const [
     reporting,
@@ -79,7 +93,9 @@ export function SharedResultPage({
     !!session?.user;
   const live =
     view?.state ===
-    'live'
+      'live' &&
+    state ===
+      'live'
       ? view
       : null;
 
@@ -138,6 +154,52 @@ export function SharedResultPage({
                 i18n.language
               }
             />
+          ) : state ===
+            'pending' ? (
+            <div
+              className="rmm-sheet space-y-3 p-6"
+              aria-hidden="true"
+            >
+              <div className="app-skeleton h-6 w-48" />
+              <div className="app-skeleton h-12 w-40" />
+              <div className="app-skeleton h-6 w-56" />
+            </div>
+          ) : state ===
+            'error' ? (
+            <div className="rmm-sheet space-y-2 p-6">
+              <p
+                role="alert"
+                className="text-base leading-6 text-app-text"
+              >
+                {t(
+                  'share-load-failed',
+                  {
+                    defaultValue:
+                      "Couldn't load this result.",
+                  },
+                )}
+              </p>
+              <button
+                type="button"
+                disabled={
+                  isFetching
+                }
+                onClick={() =>
+                  void refetch()
+                }
+                className={
+                  TEXT_BUTTON
+                }
+              >
+                {t(
+                  'retry',
+                  {
+                    defaultValue:
+                      'Try again',
+                  },
+                )}
+              </button>
+            </div>
           ) : (
             <div className="rmm-sheet space-y-2 p-6">
               <h1 className="rmm-display text-[2rem] leading-10 text-app-text">
@@ -182,8 +244,9 @@ export function SharedResultPage({
                 )}
               </Link>
             ) : null}
-            {live &&
-            signedIn ? (
+            {live?.id &&
+            signedIn &&
+            !live.mine ? (
               <button
                 type="button"
                 onClick={() =>
@@ -207,7 +270,8 @@ export function SharedResultPage({
           </div>
         </main>
       </div>
-      {live &&
+      {live?.id &&
+      !live.mine &&
       reporting ? (
         <Suspense
           fallback={

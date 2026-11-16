@@ -30,7 +30,7 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 
 ## 2. Recent work
 
-### 2.00000 Friends' progress and Share a result (Phase 6, PR C and PR D)
+### 2.00000 Friends' progress and Share a result (Phase 6, PR C and PR D) — done
 
 - Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase6-social.md` (tasks 8–13; owner decisions
   §5: friends see the music-only Daily challenge streak; share links last 90 days and can be
@@ -42,9 +42,10 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   dropped by the viewer's own switch), whose friends switch is on, not banned, deleted or a bot,
   minus blocks both ways on every read (fail closed: the cached mutuals can hold a pair for 30 s
   after a block). Reciprocal: the viewer's own switch is required. Names and avatars only; the
-  response schema drops anything else. UI: `/rmhmusic/friends` ("Friends and sharing": the two
+  handler sends `friendsRes.parse(result)`, which drops anything else. UI: `/rmhmusic/friends` ("Friends and sharing": the two
   switches, the friends list with `<details>` song bests, the shared links), seeded by its route
-  loader (`lib/music-social/music-social.queries.ts`, redesign audit B4); the learn home's fourth
+  loader (`lib/music-social/social.queries.ts`, the one RMH Music social query module, redesign
+  audit B4); the learn home's fourth
   footer link and up to three friend rows at the very end of the page (`HomeFriends`, rendered only
   once the list arrives, then faded in, so nothing moves). The Privacy page's friends hint no
   longer says "later" (a new key).
@@ -57,12 +58,14 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   for the same result and name choice; 409 past 50 live links; 400 nothing to share; 20 an hour),
   `GET` (live links), `DELETE` (stop all), `DELETE /share/$id` (owner-scoped). One "gone" for every
   reason a link cannot be seen (malformed or unknown token, stopped, expired, hidden, a Daily run a
-  moderator took off the board, a banned or deleted author, a viewer in a block pair with the
-  sharer, a failed block lookup). The card `GET /api/og/music/$token` (`renderPageCard`, English,
-  404 once gone, `public, max-age=600, s-maxage=600`), `ogCardPath('music', token)`. The public page
+  moderator took off the board, a banned, deleted or bot author (`eligibleUser`, as on the board
+  and the friends list), a viewer in a block pair with the sharer, a failed block lookup). The card `GET /api/og/music/$token` (`renderPageCard`, English,
+  404 once gone, `public, max-age=600, s-maxage=600`, `X-Robots-Tag: noindex` on every answer), `ogCardPath('music', token)`. The public page
   `app/routes/rmhmusic_.r.$token.tsx` (outside the auth-gated layout; signed-out viewers allowed;
   notebook paper, no animated backdrop; "A learner" unless the link shows the name; Try RMH Music
-  the one primary; Report and "Play today's challenge" for signed-in viewers), read through `GET
+  the one primary; Report and "Play today's challenge" for signed-in viewers, no Report on your
+  own link; a skeleton while loading, and a failed request is an error line with Try again, never
+  the gone sentence), read through `GET
   /api/rmhmusic/r/$token` as a route-seeded query; `buildMeta` with its own card and copy plus
   `noindex, nofollow`; a gone link heads with the app's catalogue card. Sitemap `null`, robots.txt
   unchanged (crawlable for unfurl bots), FOUC fixture; `share-route.test.ts` holds those rules.
@@ -70,9 +73,21 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   it, "Link copied" in a polite live region, a selected read-only field when the clipboard is
   refused, "More ways to share" through the share sheet once the link exists) behind a secondary
   Share button on the Daily result and "Share best" on a song result; the Shared links list with
-  Stop sharing and Stop sharing all. `music-share` is removable: "Resolve & remove content" sets
+  Stop sharing (described by its row's link) and Stop sharing all (asks first, `useConfirm`). `music-share` is removable: "Resolve & remove content" sets
   `MusicShare.hiddenAt`; shares are in the export and the deletion sweep; the maintenance job
   deletes links 30 days after they expire.
+- **Review fixes (after the merge):** `implement()` checks a `response` schema only outside
+  production and sends the handler's own object, so it filtered nothing in production; the friends
+  and the public shared-result handlers now send `friendsRes.parse(…)` / `sharedResultRes.parse(…)`
+  (zod's object parse strips unknown keys), and `social-routes.server.test.ts` holds that an extra
+  id, handle or e-mail never reaches either response. The public read sends the share `id` (what
+  Report names) to a signed-in viewer only, plus `mine`, so the page hides Report on the viewer's
+  own link. The card answers `X-Robots-Tag: noindex`. The share's author check reuses
+  `eligibleUser`, so a bot's links are gone like its board and friends rows. The share page maps
+  its query through the pure `sharedPageState` (pending, error, gone, live; tested): only the
+  server's own gone answer reads "no longer shared". Friend rows carry no stable id (none leaves
+  the server), so they are keyed by fetch time and position and a refetch closes any open song
+  bests.
 - **Also:** the social contract moved to `lib/music-social/social.contract.ts` (the site's Privacy
   page imports it, and the site sheet does not scan `lib/rmhmusic`), the same move the PR #1657
   branch makes; the new contracts sit beside it.
@@ -495,7 +510,10 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   outlive "Stop sharing" (our card is cached ten minutes); a link is a capability: anyone holding
   it sees the result until it stops. Other viewers' cached mutuals lists expire on their own
   (30 s), so a friend who unfollows can see progress for up to 30 s longer (consent and blocks are
-  read fresh).
+  read fresh). Open, the owner's choice: whether an unranked Daily run (one that failed the
+  board's checks) may be shared; today any scored, unhidden run can be. Accepted: a viewer the
+  sharer blocked sees "gone", and can confirm the block by opening the link in a private window
+  (signed out, the link is live); a capability link cannot hide that.
 
 - **Translations:** every new string in the 15 non-English shipped locales is the English default
   until `pnpm i18n:translate` is run (only the 16 shipped `locales/*/c-rmhmusic.json` were kept

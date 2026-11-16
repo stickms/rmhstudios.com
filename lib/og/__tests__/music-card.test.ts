@@ -144,6 +144,44 @@ describe('GET /api/og/music/$token', () => {
     ).not.toHaveBeenCalled();
   });
 
+  it('tells search engines not to index the card, live or gone (a capability link is not an image result)', async () => {
+    h.view =
+      {
+        state:
+          'live',
+        id: 's1',
+        mine: false,
+        payload:
+          daily,
+        name: null,
+        image:
+          null,
+      };
+    expect(
+      (
+        await get()
+      ).headers.get(
+        'x-robots-tag',
+      ),
+    ).toBe(
+      'noindex',
+    );
+    h.view =
+      {
+        state:
+          'gone',
+      };
+    expect(
+      (
+        await get()
+      ).headers.get(
+        'x-robots-tag',
+      ),
+    ).toBe(
+      'noindex',
+    );
+  });
+
   it('reads the link as a signed-out viewer would (no viewer, so no block exceptions)', async () => {
     h.view =
       {

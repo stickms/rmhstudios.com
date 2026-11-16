@@ -9,8 +9,8 @@
  *   nothing. Nothing is deleted; account deletion and the maintenance sweep delete rows.
  * - **Read** (`getSharedResult`, the public page and the card) answers one generic "gone" for every
  *   reason a link cannot be seen: a malformed or unknown token, stopped, expired, hidden by a
- *   moderator, a Daily run a moderator took off the board, a banned or deleted author (a tombstone
- *   is banned until 9999), or a viewer who blocks or is blocked by the sharer. A failed block
+ *   moderator, a Daily run a moderator took off the board, a banned, deleted (a tombstone is
+ *   banned until 9999) or bot author (`eligibleUser`, as on the board), or a viewer who blocks or is blocked by the sharer. A failed block
  *   lookup is "gone" too (closed). The name and picture are resolved live, and only when the link
  *   chose to show them.
  * - The token is never logged.
@@ -24,6 +24,7 @@ import {
 } from '@/lib/user-display';
 import type { ShareSummary } from '@/lib/music-social/share.contract';
 import type { SongMode } from '../songs/scoring';
+import { eligibleUser } from './board.server';
 import {
   SHARE_LIVE_CAP,
   SHARE_SWEEP_AFTER_MS,
@@ -537,6 +538,8 @@ export type SharedResult =
       state: 'live';
       /** The share's internal id: what a report names. */
       id: string;
+      /** The viewer made this link (never true signed out). */
+      mine: boolean;
       payload: SharePayload;
       /** Null unless the link chose to show them ("A learner"). */
       name:
@@ -637,26 +640,18 @@ export async function getSharedResult(
   ] =
     await Promise.all(
       [
-        // Not banned (a lapsed ban is fine), which also leaves out deleted accounts.
+        // The board's and the friends list's rule: not banned (a lapsed ban is fine, a deleted
+        // account is a tombstone banned until 9999) and not a bot.
         prisma.user.findFirst(
           {
             where:
               {
                 id: row.userId,
-                OR: [
-                  {
-                    bannedUntil:
-                      null,
-                  },
-                  {
-                    bannedUntil:
-                      {
-                        lt: new Date(
-                          now,
-                        ),
-                      },
-                  },
-                ],
+                ...eligibleUser(
+                  new Date(
+                    now,
+                  ),
+                ),
               },
             select:
               userDisplaySelect,
@@ -705,6 +700,9 @@ export async function getSharedResult(
     state:
       'live',
     id: row.id,
+    mine:
+      viewerId ===
+      row.userId,
     payload,
     name:
       who?.name ??

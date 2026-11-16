@@ -630,7 +630,21 @@ link
 takes
 its
 card
-down)
+down;
+every
+answer
+is
+`X-Robots-Tag: noindex`,
+so
+a
+capability
+link's
+card
+never
+lands
+in
+image
+search)
 
 Reference
 them

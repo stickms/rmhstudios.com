@@ -198,6 +198,11 @@ export const stopShareRes =
  * A shared result as its public page shows it (`GET /api/rmhmusic/r/$token`). One "gone" for every
  * reason a link cannot be seen; a live one carries the stored snapshot, the name and picture only
  * when the link shows them, and nothing else about the learner.
+ *
+ * What enforces that is the handler, not this declaration alone: `implement()` checks a `response`
+ * schema only outside production and sends the handler's own object, so the handler sends
+ * `sharedResultRes.parse(result)`, and zod's object parse drops every key not named here
+ * (`social-routes.server.test.ts`).
  */
 export const sharedResultRes =
   z.discriminatedUnion(
@@ -217,8 +222,15 @@ export const sharedResultRes =
             z.literal(
               'live',
             ),
-          /** The share's id: what "Report" names (never the token). */
-          id: z.string(),
+          /**
+           * The share's id: what "Report" names (never the token). Sent to a signed-in viewer
+           * only, the one who can report; a signed-out viewer has no use for it.
+           */
+          id: z
+            .string()
+            .optional(),
+          /** The signed-in viewer made this link (no Report on your own result). */
+          mine: z.boolean(),
           payload:
             sharePayloadSchema,
           name: z

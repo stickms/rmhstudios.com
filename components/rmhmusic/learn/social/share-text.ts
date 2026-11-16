@@ -13,6 +13,7 @@ import type {
   SharePayload,
 } from '@/lib/rmhmusic/learn/social/share';
 import { songById } from '@/lib/rmhmusic/learn/songs/catalog';
+import type { SharedResultView } from '@/lib/music-social/share.contract';
 
 type T =
   TFunction<'c-rmhmusic'>;
@@ -328,4 +329,34 @@ export function shareExpiryLine(
         'Works until {{date}}',
     },
   );
+}
+
+/** What the shared result page shows. */
+export type SharedPageState =
+  | 'pending'
+  | 'error'
+  | 'gone'
+  | 'live';
+
+/**
+ * Only the server's own `{ state: 'gone' }` reads as "no longer shared". A request that failed (a
+ * 429, a 5xx, offline) is an error with Try again, and nothing yet is a skeleton. Once an answer
+ * has arrived, a failed refetch keeps showing it.
+ */
+export function sharedPageState({
+  data,
+  isError,
+}: {
+  data:
+    | SharedResultView
+    | undefined;
+  isError: boolean;
+}): SharedPageState {
+  if (
+    data
+  )
+    return data.state;
+  return isError
+    ? 'error'
+    : 'pending';
 }

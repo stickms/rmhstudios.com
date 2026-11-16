@@ -1,7 +1,10 @@
 /**
  * Zod schemas for friends' progress (`GET /api/rmhmusic/friends`, Phase 6 plan 1.5). The response
- * schema is also the server's last filter: an object schema drops any key it does not name, so a
- * friend's id, handle, e-mail, instrument, input or latency can never reach a viewer.
+ * schema is also the server's last filter, because the handler sends `friendsRes.parse(result)`
+ * (`lib/rmhmusic/api/rmhmusic.friends.server.ts`): zod's object parse drops every key it does not
+ * name, so a friend's id, handle, e-mail, instrument, input or latency never reaches a viewer.
+ * Passing it to `implement()` as `response` alone would not: that check runs outside production
+ * only and sends the handler's own object (`social-routes.server.test.ts` holds this).
  */
 import { z } from 'zod';
 import { FRIENDS_LIMITS } from './friends';

@@ -1,16 +1,21 @@
 /**
  * The learner's shared result links (RMH Music Phase 6, plan 1.4), on Friends and sharing: each
  * live link's subject, when it was shared and until when it works, and Stop sharing; then Stop
- * sharing all. Rows on rules, no badges. The list comes from the route loader
- * (`musicSharesQuery`); a stop refetches it. The switches above never stop a link, and the
- * section says so.
+ * sharing all, which asks first (`useConfirm`, the shared ConfirmDialog). Each Stop sharing names
+ * its row's link through `aria-describedby`. Rows on rules, no badges. The list comes from the
+ * route loader (`musicSharesQuery`); a stop refetches it. The switches above never stop a link,
+ * and the section says so.
  */
-import { useState } from 'react';
+import {
+  useId,
+  useState,
+} from 'react';
 import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { api } from '@/lib/contract/client';
 import { musicSharesQuery } from '@/lib/music-social/social.queries';
 import {
@@ -33,6 +38,10 @@ export function SharedLinks() {
     );
   const queryClient =
     useQueryClient();
+  const confirm =
+    useConfirm();
+  const rowId =
+    useId();
   const {
     data,
     isPending,
@@ -111,6 +120,45 @@ export function SharedLinks() {
           setBusy(
             null,
           ),
+      );
+  }
+
+  async function stopAll() {
+    const ok =
+      await confirm(
+        {
+          title:
+            t(
+              'shares-stop-all-confirm-title',
+              {
+                defaultValue:
+                  'Stop sharing all your links?',
+              },
+            ),
+          description:
+            t(
+              'shares-stop-all-confirm-body',
+              {
+                defaultValue:
+                  'Every link above stops working at once. You can share a result again later.',
+              },
+            ),
+          confirmLabel:
+            t(
+              'shares-stop-all',
+              {
+                defaultValue:
+                  'Stop sharing all',
+              },
+            ),
+          danger: true,
+        },
+      );
+    if (
+      ok
+    )
+      stop(
+        'all',
       );
   }
 
@@ -211,6 +259,7 @@ export function SharedLinks() {
                 >
                   <div className="min-w-0">
                     <a
+                      id={`${rowId}-${s.id}`}
                       href={
                         s.path
                       }
@@ -255,6 +304,7 @@ export function SharedLinks() {
                       busy !==
                       null
                     }
+                    aria-describedby={`${rowId}-${s.id}`}
                     onClick={() =>
                       stop(
                         s.id,
@@ -283,9 +333,7 @@ export function SharedLinks() {
               null
             }
             onClick={() =>
-              stop(
-                'all',
-              )
+              void stopAll()
             }
             className={
               TEXT_BUTTON
