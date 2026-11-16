@@ -14,7 +14,7 @@ import { prefetchRouteQuery } from '@/lib/route/route-query';
 import {
   boardDate,
   type BoardDay,
-} from '@/lib/rmhmusic/learn/social/board';
+} from '@/lib/music-social/board-day';
 import { dailyBoardQuery } from '@/lib/music-social/social.queries';
 
 export const Route =

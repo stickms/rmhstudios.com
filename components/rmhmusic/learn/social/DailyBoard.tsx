@@ -28,7 +28,7 @@ import { api } from '@/lib/contract/client';
 import {
   boardDate,
   type BoardDay,
-} from '@/lib/rmhmusic/learn/social/board';
+} from '@/lib/music-social/board-day';
 import {
   DAILY_BOARD_KEY,
   dailyBoardQuery,
