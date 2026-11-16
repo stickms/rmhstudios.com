@@ -48,7 +48,7 @@ import { getMusicSocial } from './prefs.server';
 const FRIENDS_TTL_MS = 30_000;
 
 /** Not banned (a lapsed ban is fine), which also leaves out deleted accounts, and not a bot. */
-function eligibleUser(
+export function eligibleUser(
   now: Date,
 ) {
   return {

@@ -40,6 +40,18 @@ vi.mock(
             updateMany:
               h.updateMany,
           },
+        musicShare:
+          {
+            findUnique:
+              vi.fn(
+                async () => ({
+                  userId:
+                    'u1',
+                }),
+              ),
+            updateMany:
+              h.updateMany,
+          },
       },
   }),
 );
@@ -57,7 +69,7 @@ import { hideMusicContent } from '@/lib/rmhmusic/learn/moderation.server';
 
 /**
  * RMH Music's Daily board (Phase 6) adds two reportable things: a Daily score (`music-score`, the
- * `MusicSprintDaily` id) and, later, a shared result (`music-share`). A report type that the admin
+ * `MusicSprintDaily` id) and a shared result link (`music-share`, the `MusicShare` id). A report type that the admin
  * page offers "Resolve & remove content" for must have a takedown branch, or the button resolves
  * the report and leaves the content up. The admin route is read at source level (it pulls in
  * Prisma and the session); `hideMusicContent` runs against a fake database, once per music type.
@@ -147,7 +159,7 @@ describe('RMH Music in the moderation queue', () => {
     );
   });
 
-  it('hideMusicContent takes down every removable music type (a share is not removable before it can be)', async () => {
+  it('hideMusicContent takes down every removable music type, a shared link as well as a score', async () => {
     const music =
       REMOVABLE_REPORT_ENTITY_TYPES.filter(
         (
@@ -177,7 +189,7 @@ describe('RMH Music in the moderation queue', () => {
     }
     expect(
       REMOVABLE_REPORT_ENTITY_TYPES,
-    ).not.toContain(
+    ).toContain(
       'music-share',
     );
   });

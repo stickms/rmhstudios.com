@@ -258,6 +258,11 @@ export const DYNAMIC_ROUTE_FIXTURES = {
     fidelity: 'shell',
     why: 'The first lesson; the app shell and lesson skeleton paint before the profile loads.',
   },
+  '/rmhmusic/r/$token': {
+    path: '/rmhmusic/r/fouc-audit',
+    fidelity: 'shell',
+    why: 'A token of the wrong shape renders the "no longer shared" page in the same notebook shell, signed out; a live link needs a seeded share.',
+  },
   '/rmhmusic/songs/$songId': {
     path: '/rmhmusic/songs/ode-to-joy',
     fidelity: 'shell',

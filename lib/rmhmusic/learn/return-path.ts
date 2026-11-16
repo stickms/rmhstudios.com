@@ -2,7 +2,7 @@
  * Where the sign-in page sends a learner back to: the RMH Music page they asked for, so a
  * signed-out visitor who opened a lesson link lands on that lesson after signing in.
  *
- * Only the app's own paths pass (the home, Practice, the sight reading game and its Daily board, the tuner, the songbook, a lesson id and a song id of the catalogue's shape); anything
+ * Only the app's own paths pass (the home, Practice, the sight reading game and its Daily board, Friends and sharing, the tuner, the songbook, a lesson id and a song id of the catalogue's shape); anything
  * else — another site, a protocol-relative URL, a path outside the app — becomes the app's home.
  * The login page re-checks the value with `safeInternalPath`; this keeps the redirect itself
  * from ever naming anything but RMH Music.
@@ -22,6 +22,8 @@ const TUNER =
   '/rmhmusic/tuner';
 const DAILY =
   '/rmhmusic/daily';
+const FRIENDS =
+  '/rmhmusic/friends';
 const SONGS =
   '/rmhmusic/songs';
 const SONG =
@@ -59,6 +61,8 @@ export function rmhmusicReturnPath(
       TUNER ||
     path ===
       DAILY ||
+    path ===
+      FRIENDS ||
     path ===
       SONGS ||
     SONG.test(

@@ -550,7 +550,7 @@ site
 | `lib/og/media.server.ts`          | **Pictures.** Resolves a stored object / `public/` path / remote URL to bytes, then re-encodes to the exact box the card draws                                                                                                                                |
 | `lib/og/collage.ts`               | The 1–4 photo grid, as geometry. Client-safe, so the "every tile is inside the box" rule is testable                                                                                                                                                          |
 | `lib/og/post-visibility.ts`       | **The one rule** deciding whether a post's card, description and title may show the post. Client-safe                                                                                                                                                         |
-| `lib/og/chrome.server.tsx`        | The design system: `brandMark` (the favicon), `cardFrame`, `pane`, `inset`, `statChips`, `avatarDisc`, `framedImage`, `mediaTag`, `verifiedBadge`, `kicker`, `fitText`, `frameMetrics`                                                                                      |
+| `lib/og/chrome.server.tsx`        | The design system: `brandMark` (the favicon), `cardFrame`, `pane`, `inset`, `statChips`, `avatarDisc`, `framedImage`, `mediaTag`, `verifiedBadge`, `kicker`, `fitText`, `frameMetrics`                                                                        |
 | `lib/og/page-card.server.tsx`     | **The generic card.** Kicker + title + subtitle + byline + stats + optional `art`, landscape or story. Most cards are this                                                                                                                                    |
 | `lib/og/post-image.server.tsx`    | The post card — author, text, **the attached pictures**, poll, quote, engagement                                                                                                                                                                              |
 | `lib/og/post-story.server.tsx`    | The 1080×1920 post card for stories                                                                                                                                                                                                                           |
@@ -601,6 +601,36 @@ long
 `story`
 ·
 `album`
+·
+`music`
+(a
+shared
+RMH
+Music
+result:
+ten
+minutes,
+not
+immutable,
+and
+a
+404
+once
+the
+link
+is
+stopped,
+expired
+or
+hidden,
+so
+stopping
+a
+link
+takes
+its
+card
+down)
 
 Reference
 them

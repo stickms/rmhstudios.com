@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 372 routes. 201 render inside the standard site shell (sidebar, nav, context rail); 171 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 374 routes. 201 render inside the standard site shell (sidebar, nav, context rail); 173 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -327,8 +327,10 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhmusic` | — | sign-in | `app/routes/rmhmusic/index.tsx` |
 | `/rmhmusic/credits` | — | sign-in | `app/routes/rmhmusic/credits.tsx` |
 | `/rmhmusic/daily` | — | sign-in | `app/routes/rmhmusic/daily.tsx` |
+| `/rmhmusic/friends` | — | sign-in | `app/routes/rmhmusic/friends.tsx` |
 | `/rmhmusic/lesson/:lessonId` | — | sign-in | `app/routes/rmhmusic/lesson.$lessonId.tsx` |
 | `/rmhmusic/practice` | — | sign-in | `app/routes/rmhmusic/practice.tsx` |
+| `/rmhmusic/r/:token` | A shared result \| RMH Music | public | `app/routes/rmhmusic_.r.$token.tsx` |
 | `/rmhmusic/songs` | — | sign-in | `app/routes/rmhmusic/songs.index.tsx` |
 | `/rmhmusic/songs/:songId` | — | sign-in | `app/routes/rmhmusic/songs.$songId.tsx` |
 | `/rmhmusic/sprint` | — | sign-in | `app/routes/rmhmusic/sprint.tsx` |

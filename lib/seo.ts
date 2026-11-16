@@ -45,7 +45,8 @@ export function ogCardPath(
     | 'section'
     | 'build'
     | 'story'
-    | 'album',
+    | 'album'
+    | 'music',
   id: string,
 ): string {
   return `/api/og/${kind}/${encodeURIComponent(id)}?v=${OG_CARD_VERSION}`;

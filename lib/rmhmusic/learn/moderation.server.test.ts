@@ -6,22 +6,86 @@ import {
   vi,
 } from 'vitest';
 
-/** One in-memory `music_sprint_daily`, enough for the owner lookup and the hide. */
+type Hideable =
+  {
+    id: string;
+    userId: string;
+    date?: string;
+    hiddenAt: Date | null;
+  };
+
+/** One in-memory `music_sprint_daily` and `music_share`, enough for the owner lookup and the hide. */
 const h =
   vi.hoisted(
     () => {
       const rows =
         new Map<
           string,
-          {
-            id: string;
-            userId: string;
-            date: string;
-            hiddenAt: Date | null;
-          }
+          Hideable
         >();
+      const shares =
+        new Map<
+          string,
+          Hideable
+        >();
+      const table =
+        (
+          m: Map<
+            string,
+            Hideable
+          >,
+        ) => ({
+          findUnique:
+            vi.fn(
+              async ({
+                where,
+              }: {
+                where: {
+                  id: string;
+                };
+              }) =>
+                m.get(
+                  where.id,
+                ) ??
+                null,
+            ),
+          updateMany:
+            vi.fn(
+              async ({
+                where,
+                data,
+              }: {
+                where: {
+                  id: string;
+                  hiddenAt: null;
+                };
+                data: {
+                  hiddenAt: Date;
+                };
+              }) => {
+                const row =
+                  m.get(
+                    where.id,
+                  );
+                if (
+                  !row ||
+                  row.hiddenAt !==
+                    null
+                )
+                  return {
+                    count: 0,
+                  };
+                row.hiddenAt =
+                  data.hiddenAt;
+                return {
+                  count: 1,
+                };
+              },
+            ),
+        });
       return {
         rows,
+        shares,
         invalidate:
           vi.fn(
             async () => {},
@@ -29,55 +93,13 @@ const h =
         prisma:
           {
             musicSprintDaily:
-              {
-                findUnique:
-                  vi.fn(
-                    async ({
-                      where,
-                    }: {
-                      where: {
-                        id: string;
-                      };
-                    }) =>
-                      rows.get(
-                        where.id,
-                      ) ??
-                      null,
-                  ),
-                updateMany:
-                  vi.fn(
-                    async ({
-                      where,
-                      data,
-                    }: {
-                      where: {
-                        id: string;
-                        hiddenAt: null;
-                      };
-                      data: {
-                        hiddenAt: Date;
-                      };
-                    }) => {
-                      const row =
-                        rows.get(
-                          where.id,
-                        );
-                      if (
-                        !row ||
-                        row.hiddenAt !==
-                          null
-                      )
-                        return {
-                          count: 0,
-                        };
-                      row.hiddenAt =
-                        data.hiddenAt;
-                      return {
-                        count: 1,
-                      };
-                    },
-                  ),
-              },
+              table(
+                rows,
+              ),
+            musicShare:
+              table(
+                shares,
+              ),
           },
       };
     },
@@ -105,6 +127,7 @@ import {
 beforeEach(
   () => {
     h.rows.clear();
+    h.shares.clear();
     h.rows.set(
       'd1',
       {
@@ -112,6 +135,16 @@ beforeEach(
         userId:
           'u1',
         date: '2026-11-16',
+        hiddenAt:
+          null,
+      },
+    );
+    h.shares.set(
+      's1',
+      {
+        id: 's1',
+        userId:
+          'u2',
         hiddenAt:
           null,
       },
@@ -137,13 +170,7 @@ describe('music-score reports', () => {
     ).resolves.toBeNull();
   });
 
-  it('a music-share report has no owner until shares exist, and other types are not ours', async () => {
-    await expect(
-      musicReportOwner(
-        'music-share',
-        'd1',
-      ),
-    ).resolves.toBeNull();
+  it('other types are not ours', async () => {
     await expect(
       musicReportOwner(
         'rmhark',
@@ -205,6 +232,73 @@ describe('music-score reports', () => {
     await expect(
       hideMusicContent(
         'music-score',
+        'gone',
+      ),
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe('music-share reports', () => {
+  it('resolve to the learner who shared the link', async () => {
+    await expect(
+      musicReportOwner(
+        'music-share',
+        's1',
+      ),
+    ).resolves.toBe(
+      'u2',
+    );
+    await expect(
+      musicReportOwner(
+        'music-share',
+        'd1',
+      ),
+    ).resolves.toBeNull();
+  });
+
+  it('"Resolve & remove content" hides the link once (idempotent): its page and card go dark', async () => {
+    const first =
+      new Date(
+        '2026-11-16T10:00:00Z',
+      );
+    await hideMusicContent(
+      'music-share',
+      's1',
+      first,
+    );
+    expect(
+      h.shares.get(
+        's1',
+      )
+        ?.hiddenAt,
+    ).toEqual(
+      first,
+    );
+    await hideMusicContent(
+      'music-share',
+      's1',
+      new Date(
+        '2026-11-16T11:00:00Z',
+      ),
+    );
+    expect(
+      h.shares.get(
+        's1',
+      )
+        ?.hiddenAt,
+    ).toEqual(
+      first,
+    );
+    // A share is not a score: no board is touched.
+    expect(
+      h.rows.get(
+        'd1',
+      )
+        ?.hiddenAt,
+    ).toBeNull();
+    await expect(
+      hideMusicContent(
+        'music-share',
         'gone',
       ),
     ).resolves.toBeUndefined();

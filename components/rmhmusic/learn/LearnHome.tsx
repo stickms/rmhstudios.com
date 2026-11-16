@@ -54,6 +54,7 @@ import { StreakChip } from './StreakChip';
 import { useInputRelease } from './useLearnInput';
 import { useLearnerShape } from './useLearnerShape';
 import { useArrival } from '@/components/ui/arrive';
+import { HomeFriends } from './social/HomeFriends';
 import { cn } from '@/lib/utils';
 
 /**
@@ -692,9 +693,7 @@ export function LearnHome() {
             )}
           </div>
           <div
-            className={
-              INPUT_ROW
-            }
+            className={`${INPUT_ROW} flex-wrap`}
           >
             <Link
               to="/rmhmusic/sprint"
@@ -738,7 +737,23 @@ export function LearnHome() {
                 },
               )}
             </Link>
+            <Link
+              to="/rmhmusic/friends"
+              className={
+                TEXT_BUTTON
+              }
+            >
+              {t(
+                'friends-home-link',
+                {
+                  defaultValue:
+                    'Friends',
+                },
+              )}
+            </Link>
           </div>
+          {/* Last on the page, so its arrival moves nothing (Phase 6, plan 1.5). */}
+          <HomeFriends />
         </div>
       );
   }
