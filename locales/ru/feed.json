@@ -1657,5 +1657,7 @@
   "leaderboard-find-people": "Найти людей",
   "ai-read-posts_few": "Написано по {{count}} постам",
   "ai-read-posts_many": "Написано по {{count}} постам",
-  "ai-read-posts_one": "Написано по {{count}} постам"
+  "ai-read-posts_one": "Написано по {{count}} постам",
+  "resume-hide": "Скрыть этот раздел",
+  "resume-hidden": "Скрыто на этом устройстве"
 }

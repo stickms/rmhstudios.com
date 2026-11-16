@@ -1563,5 +1563,7 @@
   "ai-working-feed": "Durchsuche öffentliche Beiträge zu deiner Frage und lese bis zu 60 davon…",
   "ai-read-posts_other": "Aus {{count}} Beiträgen geschrieben",
   "leaderboard-find-people": "Leute finden",
-  "ai-read-posts_one": "Aus {{count}} Beiträgen geschrieben"
+  "ai-read-posts_one": "Aus {{count}} Beiträgen geschrieben",
+  "resume-hide": "Diesen Bereich ausblenden",
+  "resume-hidden": "Auf diesem Gerät ausgeblendet"
 }

@@ -1610,5 +1610,7 @@
   "ai-read-posts_other": "Rédigé à partir de {{count}} publications",
   "leaderboard-find-people": "Trouver des personnes",
   "ai-read-posts_many": "Rédigé à partir de {{count}} publications",
-  "ai-read-posts_one": "Rédigé à partir de {{count}} publications"
+  "ai-read-posts_one": "Rédigé à partir de {{count}} publications",
+  "resume-hide": "Masquer cette section",
+  "resume-hidden": "Masqué sur cet appareil"
 }
