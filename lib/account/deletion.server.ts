@@ -27,6 +27,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { musicErasureOps } from '@/lib/rmhmusic/learn/account-data.server';
 import {
   DELETED_ACCOUNT_BAN_REASON,
   DELETED_ACCOUNT_LOCK_UNTIL,
@@ -247,6 +248,8 @@ export async function anonymizeAccount(userId: string): Promise<void> {
     // Community Hub discussions: their replies, then their threads (with everyone's replies).
     prisma.gameThreadPost.deleteMany({ where: { authorId: userId } }),
     prisma.gameThread.deleteMany({ where: { authorId: userId } }),
+    // RMH Music: every learning table (owner decision Q4); the cascade never fires here either.
+    ...musicErasureOps(userId),
     // 3. Scrub PII from the profile.
     prisma.userProfile.updateMany({
       where: { userId },

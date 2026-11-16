@@ -181,6 +181,7 @@ import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhmusicCreditsRouteImport } from './routes/rmhmusic/credits'
+import { Route as RmhmusicDailyRouteImport } from './routes/rmhmusic/daily'
 import { Route as RmhmusicPracticeRouteImport } from './routes/rmhmusic/practice'
 import { Route as RmhmusicSprintRouteImport } from './routes/rmhmusic/sprint'
 import { Route as RmhmusicTunerRouteImport } from './routes/rmhmusic/tuner'
@@ -1381,6 +1382,11 @@ const RmhmusicIndexRoute = RmhmusicIndexRouteImport.update({
 const RmhmusicCreditsRoute = RmhmusicCreditsRouteImport.update({
   id: '/credits',
   path: '/credits',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicDailyRoute = RmhmusicDailyRouteImport.update({
+  id: '/daily',
+  path: '/daily',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhmusicPracticeRoute = RmhmusicPracticeRouteImport.update({
@@ -3287,6 +3293,7 @@ export interface FileRoutesByFullPath {
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
+  '/rmhmusic/daily': typeof RmhmusicDailyRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
@@ -3775,6 +3782,7 @@ export interface FileRoutesByTo {
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
+  '/rmhmusic/daily': typeof RmhmusicDailyRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
@@ -4289,6 +4297,7 @@ export interface FileRoutesById {
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
+  '/rmhmusic/daily': typeof RmhmusicDailyRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
@@ -4805,6 +4814,7 @@ export interface FileRouteTypes {
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
+    | '/rmhmusic/daily'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
@@ -5293,6 +5303,7 @@ export interface FileRouteTypes {
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
+    | '/rmhmusic/daily'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
@@ -5806,6 +5817,7 @@ export interface FileRouteTypes {
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
+    | '/rmhmusic/daily'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
@@ -7546,6 +7558,13 @@ declare module '@tanstack/react-router' {
       path: '/credits'
       fullPath: '/rmhmusic/credits'
       preLoaderRoute: typeof RmhmusicCreditsRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/daily': {
+      id: '/rmhmusic/daily'
+      path: '/daily'
+      fullPath: '/rmhmusic/daily'
+      preLoaderRoute: typeof RmhmusicDailyRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhmusic/practice': {
@@ -10640,6 +10659,7 @@ const RmhcodeRouteWithChildren =
 
 interface RmhmusicRouteChildren {
   RmhmusicCreditsRoute: typeof RmhmusicCreditsRoute
+  RmhmusicDailyRoute: typeof RmhmusicDailyRoute
   RmhmusicPracticeRoute: typeof RmhmusicPracticeRoute
   RmhmusicSprintRoute: typeof RmhmusicSprintRoute
   RmhmusicTunerRoute: typeof RmhmusicTunerRoute
@@ -10651,6 +10671,7 @@ interface RmhmusicRouteChildren {
 
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
   RmhmusicCreditsRoute: RmhmusicCreditsRoute,
+  RmhmusicDailyRoute: RmhmusicDailyRoute,
   RmhmusicPracticeRoute: RmhmusicPracticeRoute,
   RmhmusicSprintRoute: RmhmusicSprintRoute,
   RmhmusicTunerRoute: RmhmusicTunerRoute,

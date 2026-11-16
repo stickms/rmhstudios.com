@@ -92,7 +92,13 @@ export function SprintRun({
   save,
   lowCard:
     lowRange = false,
+  saved,
 }: {
+  /**
+   * Shown at the end of the page once the run is saved (the Daily board line). It sits last, so
+   * nothing above it moves when it arrives.
+   */
+  saved?: ReactNode;
   /** A singer whose range reaches below the deck card (an alto's G3): the low card. */
   lowCard?: boolean;
   prompts: SprintPrompt[];
@@ -1062,6 +1068,11 @@ export function SprintRun({
             )
           : ''}
       </p>
+      {state.kind ===
+        'saved' &&
+      saved
+        ? saved
+        : null}
     </div>
   );
 }

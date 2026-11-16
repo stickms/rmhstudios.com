@@ -10,6 +10,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { exportMusicData } from '@/lib/rmhmusic/learn/account-data.server';
 
 // Bound each collection so a power user's export can't blow up memory.
 const CAP = 10_000;
@@ -60,6 +61,7 @@ export const route = apiRoute('/api/account/export', {
         gameProfileShowcase,
         userGems,
         gemEntries,
+        rmhMusic,
       ] = await Promise.all([
         prisma.user.findUnique({
           where: { id: userId },
@@ -243,6 +245,8 @@ export const route = apiRoute('/api/account/export', {
         prisma.gameProfileShowcase.findUnique({ where: { userId } }),
         prisma.userGems.findUnique({ where: { userId } }),
         prisma.gemEntry.findMany({ where: { userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+        // RMH Music: every learning table, Daily runs with their board verdicts included (Q4).
+        exportMusicData(userId),
       ]);
 
       const [
@@ -294,6 +298,7 @@ export const route = apiRoute('/api/account/export', {
         gameProfileShowcase,
         userGems,
         gemEntries,
+        rmhMusic,
         rmhLadder: {
           preferences: ladderPrefs,
           // Salary expectations, work authorization and EEO answers — the

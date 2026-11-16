@@ -55,7 +55,9 @@ import {
 import {
   PRIMARY_BUTTON,
   SECONDARY_BUTTON,
+  TEXT_BUTTON,
 } from '../buttons';
+import { DailyBoardLine } from '../social/DailyBoardLine';
 import { InputSetup } from '../InputSetup';
 import { Shell } from '../LessonScreen';
 import { useInputRelease } from '../useLearnInput';
@@ -499,6 +501,20 @@ export function SprintGame({
                   range,
                 )
           }
+          saved={
+            playing.mode ===
+              'daily' &&
+            playing.scored ? (
+              <DailyBoardLine
+                date={
+                  playing.date
+                }
+                today={utcDate(
+                  Date.now(),
+                )}
+              />
+            ) : undefined
+          }
           save={(
             summary,
             results,
@@ -920,6 +936,20 @@ function DailyIntro({
           },
         )}
       </button>
+      <Link
+        to="/rmhmusic/daily"
+        className={
+          TEXT_BUTTON
+        }
+      >
+        {t(
+          'board-link-today',
+          {
+            defaultValue:
+              "Today's board",
+          },
+        )}
+      </Link>
       <p
         role="status"
         className="min-h-5 text-sm leading-5 text-app-danger"

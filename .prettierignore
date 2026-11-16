@@ -2970,6 +2970,9 @@ lib/prepaint/generated.ts
 # text, and prettier at printWidth 1 splits that call across lines.
 /lib/rmhmusic/api/rmhmusic.songs.server.ts
 /lib/rmhmusic/api/rmhmusic.songs.best.server.ts
+/lib/rmhmusic/api/rmhmusic.social.server.ts
+/lib/rmhmusic/api/rmhmusic.sprint.board.server.ts
+/lib/rmhmusic/api/rmhmusic.sprint.daily.server.ts
 /lib/rmhmusic/learn/cards.server.ts
 /lib/rmhmusic/learn/content/path.ts
 /lib/rmhmusic/learn/mode.ts
