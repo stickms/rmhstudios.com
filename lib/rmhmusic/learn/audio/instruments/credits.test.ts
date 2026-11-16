@@ -15,6 +15,32 @@ import {
   SOUND_CREDITS,
   creditsText,
 } from './credits';
+import SOURCES from '../../../../../scripts/rmhmusic/sources.json';
+
+interface SourceEntry {
+  name: string;
+  credit: string;
+  homepage: string;
+  archive?: {
+    url: string;
+    file: string;
+  };
+  zones: {
+    src?: string;
+    member?: string;
+  }[];
+}
+
+/** Words a work line may use that name nothing (joining words, "version" before a date). */
+const JOINING_WORDS =
+  new Set(
+    [
+      'and',
+      'from',
+      'the',
+      'version',
+    ],
+  );
 
 const ROOT =
   join(
@@ -70,5 +96,110 @@ describe('sound credits', () => {
     ).toContain(
       'THE SOFTWARE IS PROVIDED "AS IS"',
     );
+  });
+
+  // The organ's work line once named the loud stop while the build shipped the quiet one: the
+  // credit has to describe the recording the build actually fetches.
+  it('name only what the build fetches: every word of a work line is in its sources.json entries', () => {
+    const entries =
+      Object.values(
+        (
+          SOURCES as unknown as {
+            instruments: Record<
+              string,
+              SourceEntry
+            >;
+          }
+        )
+          .instruments,
+      );
+    for (const id of CREDIT_ORDER) {
+      const mine =
+        entries.filter(
+          (
+            e,
+          ) =>
+            e.credit ===
+            id,
+        );
+      expect(
+        mine.length,
+        id,
+      ).toBeGreaterThan(
+        0,
+      );
+      // The name, the homepage and the fetched paths; not the zone notes, which also name
+      // what was tried and rejected.
+      const corpus =
+        decodeURIComponent(
+          mine
+            .flatMap(
+              (
+                e,
+              ) => [
+                e.name,
+                e.homepage,
+                e
+                  .archive
+                  ?.url ??
+                  '',
+                e
+                  .archive
+                  ?.file ??
+                  '',
+                ...e.zones.map(
+                  (
+                    z,
+                  ) =>
+                    z.src ??
+                    z.member ??
+                    '',
+                ),
+              ],
+            )
+            .join(
+              ' ',
+            ),
+        ).toLowerCase();
+      const words =
+        SOUND_CREDITS[
+          id
+        ].work
+          .toLowerCase()
+          .match(
+            /[\p{L}\p{N}][\p{L}\p{N}.-]*/gu,
+          ) ??
+        [];
+      const missing =
+        words
+          .map(
+            (
+              w,
+            ) =>
+              w.replace(
+                /\.$/,
+                '',
+              ),
+          )
+          .filter(
+            (
+              w,
+            ) =>
+              w.length >=
+                3 &&
+              !JOINING_WORDS.has(
+                w,
+              ) &&
+              !corpus.includes(
+                w,
+              ),
+          );
+      expect(
+        missing,
+        `${id}: ${SOUND_CREDITS[id].work}`,
+      ).toEqual(
+        [],
+      );
+    }
   });
 });

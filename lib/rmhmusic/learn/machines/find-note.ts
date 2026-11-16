@@ -26,7 +26,14 @@
  */
 import { dealRounds } from '../content/decks';
 import { inKeysRange } from '../input/keyboard-map';
-import type { Instrument } from '../schemas';
+import type {
+  Instrument,
+  VoiceRange,
+} from '../schemas';
+import {
+  resolveVoiceRange,
+  voiceStaff,
+} from '../voice/range';
 import type { Clef } from '../theory/clef';
 import {
   FIRST_FRETS,
@@ -227,15 +234,33 @@ export function findNotePool(
 /**
  * Where a target is drawn: guitar music on the treble staff an octave above the sounding pitch
  * (the open low E, sounding E2, sits on E3 under three ledger lines); piano at pitch, on the treble
- * staff from middle C up and on the bass staff below it.
+ * staff from middle C up and on the bass staff below it; a singer on their range's staff
+ * (`voice/range.ts`: tenor written an octave up with the small 8, bass on the bass staff).
  */
 export function targetStaff(
   midi: number,
   instrument: Instrument,
+  range?: VoiceRange,
 ): {
   clef: Clef;
   midi: number;
 } {
+  if (
+    instrument ===
+    'voice'
+  ) {
+    const staff =
+      voiceStaff(
+        midi,
+        resolveVoiceRange(
+          range,
+        ),
+      );
+    return {
+      clef: staff.clef,
+      midi: staff.midi,
+    };
+  }
   if (
     instrument ===
     'guitar'

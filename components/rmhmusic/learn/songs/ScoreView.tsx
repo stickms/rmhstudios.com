@@ -48,9 +48,11 @@ import {
   type LaidSystem,
   type ScoreLayout,
 } from '@/lib/rmhmusic/learn/songs/layout';
-import type {
-  Song,
-  SongVersion,
+import {
+  versionClef,
+  versionOctaveClef,
+  type Song,
+  type SongVersion,
 } from '@/lib/rmhmusic/learn/songs/score';
 
 export type NoteMark =
@@ -379,7 +381,11 @@ function SystemRuling({
   version: SongVersion;
 }) {
   const glyph =
-    CLEF_GLYPHS.treble;
+    CLEF_GLYPHS[
+      versionClef(
+        version,
+      )
+    ];
   const left = 4;
   const right =
     sys.right;
@@ -573,8 +579,9 @@ function SystemRuling({
             />
           ),
         )}
-        {version ===
-        'guitar' ? (
+        {versionOctaveClef(
+          version,
+        ) ? (
           // The octave-down treble clef's 8, set small under the clef's tail.
           <text
             x="19.5"

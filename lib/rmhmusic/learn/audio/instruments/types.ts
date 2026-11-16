@@ -1,5 +1,6 @@
 /**
- * Shared types for the sampled instruments (piano, steel-string guitar, violin, flute). Pure and
+ * Shared types for the sampled instruments (piano, two guitars, ukulele, organ, bowed strings and
+ * winds). Pure and
  * client-safe; nothing here touches Web Audio. See docs/superpowers/plans/2026-11-09-rmhmusic-instrument-sounds.md.
  */
 import type { LoadState } from './load-machine';
@@ -15,6 +16,12 @@ export const INSTRUMENT_IDS =
     'guitar',
     'violin',
     'flute',
+    'cello',
+    'clarinet',
+    'oboe',
+    'guitar-nylon',
+    'ukulele',
+    'organ',
   ] as const;
 export type InstrumentId =
   (typeof INSTRUMENT_IDS)[number];
@@ -29,7 +36,10 @@ export type Polyphony =
 export type CreditId =
   | 'salamander'
   | 'ella-gitauru'
-  | 'vsco';
+  | 'vsco'
+  | 'freepats-guitar'
+  | 'freepats-ukulele'
+  | 'vcsl-organ';
 
 export interface InstrumentMeta {
   id: InstrumentId;

@@ -17,17 +17,33 @@ import type {
   SongNote,
 } from './notation';
 
+/** The songbook's keys (C, G, F) and the ones a singer's transposition may move into. */
 export type SongKey =
   | 'C'
   | 'G'
-  | 'F';
+  | 'D'
+  | 'A'
+  | 'F'
+  | 'Bb'
+  | 'Eb';
+/**
+ * How a song is read: piano as written; guitar with the octave clef and tab, an octave lower; a
+ * singer on their range's staff (`transpose.ts` moves the song there): treble as written, tenor
+ * with the octave clef an octave lower, baritone and bass on the bass staff.
+ */
 export type SongVersion =
   | 'piano'
-  | 'guitar';
+  | 'guitar'
+  | 'voice-treble'
+  | 'voice-tenor'
+  | 'voice-bass';
 export const SONG_VERSIONS: readonly SongVersion[] =
   [
     'piano',
     'guitar',
+    'voice-treble',
+    'voice-tenor',
+    'voice-bass',
   ];
 
 export interface Song {
@@ -85,12 +101,31 @@ export const KEY_SIGNATURES: Readonly<
   >
 > =
   {
+    // In the order the signs are printed: sharps F C G, flats B E A.
     C: {},
     G: {
       F: 1,
     },
+    D: {
+      F: 1,
+      C: 1,
+    },
+    A: {
+      F: 1,
+      C: 1,
+      G: 1,
+    },
     F: {
       B: -1,
+    },
+    Bb: {
+      B: -1,
+      E: -1,
+    },
+    Eb: {
+      B: -1,
+      E: -1,
+      A: -1,
     },
   };
 
@@ -180,16 +215,42 @@ export function songBeats(
   return beats;
 }
 
-/** What a written note sounds on a version (guitar: an octave down). */
+/** What a written note sounds on a version (guitar and tenor: an octave down). */
 export function soundingPitch(
   written: number,
   version: SongVersion,
 ): number {
   return version ===
-    'guitar'
+    'guitar' ||
+    version ===
+      'voice-tenor'
     ? written -
         12
     : written;
+}
+
+/** The staff a version reads on. */
+export function versionClef(
+  version: SongVersion,
+):
+  | 'treble'
+  | 'bass' {
+  return version ===
+    'voice-bass'
+    ? 'bass'
+    : 'treble';
+}
+
+/** Whether a version reads the treble clef with the small 8 (an octave lower than written). */
+export function versionOctaveClef(
+  version: SongVersion,
+): boolean {
+  return (
+    version ===
+      'guitar' ||
+    version ===
+      'voice-tenor'
+  );
 }
 
 /** The natural a written note sits on (its letter and octave), MIDI. */

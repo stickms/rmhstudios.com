@@ -62,6 +62,11 @@ import { effectiveLatencyMs } from '@/lib/rmhmusic/learn/scoring/timing';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import { songById } from '@/lib/rmhmusic/learn/songs/catalog';
 import {
+  songForRange,
+  versionFor,
+} from '@/lib/rmhmusic/learn/songs/transpose';
+import { resolveVoiceRange } from '@/lib/rmhmusic/learn/voice/range';
+import {
   inputBlockedUntil,
   takesNote,
   type Hearing,
@@ -138,7 +143,7 @@ export function SongScreen({
     useTranslation(
       'c-rmhmusic',
     );
-  const song =
+  const written =
     songById(
       songId,
     );
@@ -163,6 +168,41 @@ export function SongScreen({
       ) =>
         s.profile,
     );
+  // A singer reads the song moved into their range (by octaves, or into a nearby key).
+  const singerRange =
+    profile?.instrument ===
+    'voice'
+      ? resolveVoiceRange(
+          profile.voiceRange,
+        )
+      : null;
+  const song =
+    useMemo(
+      () =>
+        written &&
+        singerRange
+          ? songForRange(
+              written,
+              singerRange,
+            )
+              .song
+          : written,
+      [
+        written,
+        singerRange,
+      ],
+    );
+  // A song moved into another key for a singer says so, in one plain line with the composer.
+  const movedKey =
+    written &&
+    song &&
+    song.key !==
+      written.key
+      ? song.key.replace(
+          'b',
+          '♭',
+        )
+      : null;
   const [
     mode,
     setMode,
@@ -275,10 +315,12 @@ export function SongScreen({
       !loading,
     );
   const version: SongVersion =
-    profile?.instrument ===
-    'guitar'
-      ? 'guitar'
-      : 'piano';
+    versionFor(
+      profile?.instrument ??
+        'piano',
+      singerRange ??
+        undefined,
+    );
   const sound =
     profile
       ? resolveSound(
@@ -470,6 +512,16 @@ export function SongScreen({
               t,
               song.composer,
             )}
+            {movedKey
+              ? ` · ${t(
+                  'song-moved-key',
+                  {
+                    name: movedKey,
+                    defaultValue:
+                      'Moved to {{name}} major for your voice.',
+                  },
+                )}`
+              : null}
           </p>
           <p
             id={

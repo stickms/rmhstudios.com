@@ -6,7 +6,15 @@
  * `t()` itself so the server (which validates lesson ids against it) can import
  * it. Lesson ids are stored in `music_learn_lesson_progress`, so renaming one
  * orphans learners' progress: add a new id instead.
+ *
+ * Two paths: `PATH` for piano and guitar learners (each lesson adapts to the instrument) and
+ * `VOICE_PATH` for singers (`pathFor`), whose lessons are their own ids except the shared rhythm
+ * unit. A singer gets no chord-playing, keyboard or fretboard lesson.
  */
+import type { Instrument } from '../schemas';
+
+/** A `staff-flashcards` lesson whose deck is the learner's voice range (`decks.ts` `voiceDeck`). */
+export const VOICE_RANGE_DECK = 'voice-range';
 
 export type LessonMode =
   | 'staff-flashcards'
@@ -17,7 +25,8 @@ export type LessonMode =
   | 'match-note'
   | 'ear-interval'
   | 'ear-chord'
-  | 'play-chord';
+  | 'play-chord'
+  | 'sing-interval';
 
 export interface Lesson {
   id: string;
@@ -31,7 +40,7 @@ export interface Lesson {
   /** A `staff-flashcards` lesson's deck: a key of `DECKS` in `decks.ts` (path.test.ts checks it). */
   deck?: string;
   /**
-   * An `ear-interval` / `ear-chord` lesson's answer names, narrowest first: its questions are
+   * An `ear-interval` / `ear-chord` / `sing-interval` lesson's answer names, narrowest first: its questions are
    * drawn from them and its buttons offer them. Interval names for `ear-interval`, chord
    * qualities for `ear-chord` (path.test.ts checks both).
    */
@@ -43,6 +52,38 @@ export interface Unit {
   title: string;
   lessons: Lesson[];
 }
+
+/** Rhythm basics: the same unit (and progress) on every path. */
+const RHYTHM_UNIT: Unit = {
+  id: 'rhythm-basics',
+  title: 'Rhythm basics',
+  lessons: [
+    {
+      id: 'rhythm-note-values',
+      unit: 'rhythm-basics',
+      title: 'Note values',
+      summary: 'Whole, half, quarter and eighth notes, and how long each lasts.',
+      mode: 'rhythm-basics',
+      available: true,
+    },
+    {
+      id: 'rhythm-44-vs-34',
+      unit: 'rhythm-basics',
+      title: '4/4 vs 3/4',
+      summary: 'Feel the difference between counting four beats and three.',
+      mode: 'rhythm-basics',
+      available: true,
+    },
+    {
+      id: 'rhythm-tap-the-beat',
+      unit: 'rhythm-basics',
+      title: 'Tap the beat',
+      summary: 'Keep a steady beat by tapping along.',
+      mode: 'rhythm-basics',
+      available: true,
+    },
+  ],
+};
 
 export const PATH: Unit[] = [
   {
@@ -165,39 +206,105 @@ export const PATH: Unit[] = [
       },
     ],
   },
+  RHYTHM_UNIT,
+];
+
+/** The singer's path: read the staff of your range, sing notes back, sing intervals, rhythm. */
+export const VOICE_PATH: Unit[] = [
   {
-    id: 'rhythm-basics',
-    title: 'Rhythm basics',
+    id: 'voice-read',
+    title: 'Read your staff',
     lessons: [
       {
-        id: 'rhythm-note-values',
-        unit: 'rhythm-basics',
-        title: 'Note values',
-        summary: 'Whole, half, quarter and eighth notes, and how long each lasts.',
-        mode: 'rhythm-basics',
+        id: 'voice-staff-notes',
+        unit: 'voice-read',
+        title: 'Notes in your range',
+        summary: 'Read the notes you can sing, on the staff your voice reads.',
+        mode: 'staff-flashcards',
         available: true,
+        deck: VOICE_RANGE_DECK,
       },
       {
-        id: 'rhythm-44-vs-34',
-        unit: 'rhythm-basics',
-        title: '4/4 vs 3/4',
-        summary: 'Feel the difference between counting four beats and three.',
-        mode: 'rhythm-basics',
-        available: true,
-      },
-      {
-        id: 'rhythm-tap-the-beat',
-        unit: 'rhythm-basics',
-        title: 'Tap the beat',
-        summary: 'Keep a steady beat by tapping along.',
-        mode: 'rhythm-basics',
+        id: 'voice-first-note',
+        unit: 'voice-read',
+        title: 'Sing your first note',
+        summary: 'Sing one note near the microphone and see it written.',
+        mode: 'play-note',
         available: true,
       },
     ],
   },
+  {
+    id: 'voice-sing-back',
+    title: 'Sing it back',
+    lessons: [
+      {
+        id: 'voice-match-five',
+        unit: 'voice-sing-back',
+        title: 'Match five notes',
+        summary: 'Sing the note you see: the five lowest notes of your range. Hear it first if you like.',
+        mode: 'match-note',
+        available: true,
+      },
+      {
+        id: 'voice-match-range',
+        unit: 'voice-sing-back',
+        title: 'Match your range',
+        summary: 'Sing the natural notes across your whole range.',
+        mode: 'match-note',
+        available: true,
+      },
+    ],
+  },
+  {
+    id: 'voice-intervals',
+    title: 'Sing intervals',
+    lessons: [
+      {
+        id: 'voice-interval-steps',
+        unit: 'voice-intervals',
+        title: 'Steps and skips',
+        summary: 'Hear two notes, then sing the second: a second or a third above the first.',
+        mode: 'sing-interval',
+        available: true,
+        pool: ['second', 'third'],
+      },
+      {
+        id: 'voice-interval-leaps',
+        unit: 'voice-intervals',
+        title: 'Fifths and octaves',
+        summary: 'Hear two notes, then sing the second: a third, a fifth or an octave above.',
+        mode: 'sing-interval',
+        available: true,
+        pool: ['third', 'fifth', 'octave'],
+      },
+    ],
+  },
+  RHYTHM_UNIT,
 ];
 
-const BY_ID = new Map<string, Lesson>(PATH.flatMap((u) => u.lessons).map((l) => [l.id, l]));
+/** The path a learner sees. */
+export function pathFor(instrument: Instrument): Unit[] {
+  return instrument === 'voice' ? VOICE_PATH : PATH;
+}
+
+const RANGE_LESSONS = new Set(
+  VOICE_PATH.filter((u) => u !== RHYTHM_UNIT)
+    .flatMap((u) => u.lessons)
+    .map((l) => l.id),
+);
+
+/**
+ * Whether a lesson reads or sings in the learner's voice range (every singer lesson but rhythm):
+ * such a lesson asks a singer with no range to choose one first, rather than assume one.
+ */
+export function needsVoiceRange(lesson: Lesson | undefined): boolean {
+  return lesson !== undefined && RANGE_LESSONS.has(lesson.id);
+}
+
+const BY_ID = new Map<string, Lesson>(
+  [...PATH, ...VOICE_PATH].flatMap((u) => u.lessons).map((l) => [l.id, l]),
+);
 
 export function getLesson(id: string): Lesson | undefined {
   return BY_ID.get(id);

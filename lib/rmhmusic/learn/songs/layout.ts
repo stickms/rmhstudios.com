@@ -34,6 +34,7 @@ import {
 import { fingerFor } from './fingering';
 import {
   KEY_SIGNATURES,
+  versionClef,
   naturalOf,
   notesOf,
   soundingPitch,
@@ -53,6 +54,10 @@ export const SYSTEM_H: Readonly<
   {
     piano: 108,
     guitar: 162,
+    // A singer reads a staff alone, like the piano.
+    'voice-treble': 108,
+    'voice-tenor': 108,
+    'voice-bass': 108,
   };
 /** The score window's height (units): three piano systems, two guitar systems. */
 export const WINDOW_H = 324;
@@ -211,12 +216,55 @@ function headerWidth(
   );
 }
 
-/** The y of the key signature's sharp (F) or flat (B) on the treble staff. */
-const KEY_SIG_STEP =
+/**
+ * The staff step of each key-signature sign, per clef (steps above the bottom line): treble sharps
+ * F5 C5 G5, flats B4 E5 A4; bass sharps F3 C3 G3, flats B2 E3 A2 — the usual places.
+ */
+const KEY_SIG_STEP: Readonly<
+  Record<
+    | 'treble'
+    | 'bass',
+    Record<
+      | 'sharp'
+      | 'flat',
+      Partial<
+        Record<
+          string,
+          number
+        >
+      >
+    >
+  >
+> =
   {
-    F: 8,
-    B: 4,
-  } as const;
+    treble:
+      {
+        sharp:
+          {
+            F: 8,
+            C: 5,
+            G: 9,
+          },
+        flat: {
+          B: 4,
+          E: 7,
+          A: 3,
+        },
+      },
+    bass: {
+      sharp:
+        {
+          F: 6,
+          C: 3,
+          G: 7,
+        },
+      flat: {
+        B: 2,
+        E: 5,
+        A: 1,
+      },
+    },
+  };
 
 /**
  * Eighths: two in one beat of one bar share a beam (`pairs` holds the first's index); any other
@@ -426,6 +474,10 @@ export function scoreLayout(
     SYSTEM_H[
       version
     ];
+  const clef =
+    versionClef(
+      version,
+    );
   const systemOf: number[] =
     [];
   const systems =
@@ -448,7 +500,7 @@ export function scoreLayout(
                 .key
             ],
           ) as [
-            keyof typeof KEY_SIG_STEP,
+            string,
             (
               | -1
               | 1
@@ -472,8 +524,16 @@ export function scoreLayout(
                   2,
               y: cardY(
                 KEY_SIG_STEP[
+                  clef
+                ][
+                  alter >
+                  0
+                    ? 'sharp'
+                    : 'flat'
+                ][
                   letter
-                ],
+                ] ??
+                  0,
               ),
               kind:
                 alter >
@@ -575,7 +635,7 @@ export function scoreLayout(
               1;
             const step =
               clefStep(
-                'treble',
+                clef,
                 naturalOf(
                   n,
                 ),

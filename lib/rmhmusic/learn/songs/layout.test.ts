@@ -22,6 +22,11 @@ import {
   notesOf,
   soundingPitch,
 } from './score';
+import {
+  songForRange,
+  transposeSong,
+} from './transpose';
+import { clefStep } from '../theory/clef';
 
 const NARROW = 250; // a 320 px phone
 const PHONE = 300; // a 390 px phone
@@ -805,5 +810,271 @@ describe('scoreLayout', () => {
         ).toBeLessThan(
           146,
         );
+  });
+});
+
+describe('scoreLayout: key signatures and the bass clef (Phase 5 keys)', () => {
+  const ode =
+    song(
+      'ode-to-joy',
+    );
+  const moved =
+    (
+      semitones: number,
+    ) => {
+      const s =
+        transposeSong(
+          ode,
+          semitones,
+        );
+      if (
+        !s
+      )
+        throw new Error(
+          `no key ${semitones}`,
+        );
+      return s;
+    };
+
+  it('draws two and three sharps (D, A) and two and three flats (B♭, E♭) on every system', () => {
+    const cases =
+      [
+        {
+          semitones: 2,
+          key: 'D',
+          kind: 'sharp',
+          n: 2,
+        },
+        {
+          semitones:
+            -3,
+          key: 'A',
+          kind: 'sharp',
+          n: 3,
+        },
+        {
+          semitones:
+            -2,
+          key: 'Bb',
+          kind: 'flat',
+          n: 2,
+        },
+        {
+          semitones: 3,
+          key: 'Eb',
+          kind: 'flat',
+          n: 3,
+        },
+      ] as const;
+    for (const c of cases) {
+      const s =
+        moved(
+          c.semitones,
+        );
+      expect(
+        s.key,
+        c.key,
+      ).toBe(
+        c.key,
+      );
+      const layout =
+        scoreLayout(
+          s,
+          'voice-treble',
+          PHONE,
+        );
+      for (const sys of layout.systems) {
+        expect(
+          sys.keySig,
+          c.key,
+        ).toHaveLength(
+          c.n,
+        );
+        expect(
+          sys.keySig.every(
+            (
+              k,
+            ) =>
+              k.kind ===
+              c.kind,
+          ),
+          c.key,
+        ).toBe(
+          true,
+        );
+        // One sign per line or space, left to right, on the staff (A major's G♯ in the space just
+        // above it), and before the notes.
+        expect(
+          new Set(
+            sys.keySig.map(
+              (
+                k,
+              ) =>
+                k.y,
+            ),
+          )
+            .size,
+          c.key,
+        ).toBe(
+          c.n,
+        );
+        const xs =
+          sys.keySig.map(
+            (
+              k,
+            ) =>
+              k.x,
+          );
+        expect(
+          xs,
+          c.key,
+        ).toEqual(
+          [
+            ...xs,
+          ].sort(
+            (
+              a,
+              b,
+            ) =>
+              a -
+              b,
+          ),
+        );
+        for (const k of sys.keySig) {
+          expect(
+            k.y,
+          ).toBeGreaterThanOrEqual(
+            STAFF_TOP -
+              6,
+          );
+          expect(
+            k.y,
+          ).toBeLessThanOrEqual(
+            STAFF_BOTTOM +
+              1,
+          );
+          expect(
+            k.x,
+          ).toBeLessThan(
+            sys.headerEnd,
+          );
+        }
+      }
+    }
+  });
+
+  it('prints no accidental for a note the key signature already sharpens or flattens', () => {
+    for (const semitones of [
+      2,
+      -3,
+      -2,
+      3,
+    ]) {
+      const s =
+        moved(
+          semitones,
+        );
+      const notes =
+        allNotes(
+          scoreLayout(
+            s,
+            'voice-treble',
+            PHONE,
+          ),
+        );
+      // Ode to Joy is diatonic: in any key, every note is in the key.
+      expect(
+        notes.length,
+      ).toBeGreaterThan(
+        0,
+      );
+      expect(
+        notes.filter(
+          (
+            n,
+          ) =>
+            n.accidental !==
+            null,
+        ),
+        s.key,
+      ).toEqual(
+        [],
+      );
+    }
+  });
+
+  it('lays a bass singer’s song on the bass staff: every note at its bass-clef step, inside the system', () => {
+    const {
+      song: low,
+    } =
+      songForRange(
+        song(
+          'minuet-in-g',
+        ),
+        'bass',
+      );
+    const layout =
+      scoreLayout(
+        low,
+        'voice-bass',
+        PHONE,
+      );
+    const treble =
+      scoreLayout(
+        song(
+          'minuet-in-g',
+        ),
+        'piano',
+        PHONE,
+      );
+    for (const n of allNotes(
+      layout,
+    )) {
+      expect(
+        n.step,
+        `note ${n.index}`,
+      ).toBe(
+        clefStep(
+          'bass',
+          n.written,
+        ),
+      );
+      expect(
+        n.y,
+      ).toBeGreaterThan(
+        0,
+      );
+      expect(
+        n.y,
+      ).toBeLessThan(
+        SYSTEM_H[
+          'voice-bass'
+        ],
+      );
+    }
+    // The signature sits on the bass staff's own lines, not the treble's.
+    const bassSig =
+      layout.systems[0]?.keySig.map(
+        (
+          k,
+        ) =>
+          k.y,
+      );
+    const trebleSig =
+      treble.systems[0]?.keySig.map(
+        (
+          k,
+        ) =>
+          k.y,
+      );
+    if (
+      low.key !==
+      'C'
+    )
+      expect(
+        bassSig,
+      ).not.toEqual(
+        trebleSig,
+      );
   });
 });

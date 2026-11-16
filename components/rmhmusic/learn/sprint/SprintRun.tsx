@@ -90,7 +90,11 @@ export function SprintRun({
   onDone,
   nextPrompts,
   save,
+  lowCard:
+    lowRange = false,
 }: {
+  /** A singer whose range reaches below the deck card (an alto's G3): the low card. */
+  lowCard?: boolean;
   prompts: SprintPrompt[];
   mode: SprintMode;
   scored: boolean;
@@ -130,9 +134,12 @@ export function SprintRun({
           prompts,
           mode,
           scored,
+          // A singer's run skips the chord prompts whatever the input (one voice, one note).
           mic:
             input ===
-            'mic',
+              'mic' ||
+            instrument ===
+              'voice',
           instrument,
         },
       ),
@@ -239,7 +246,9 @@ export function SprintRun({
   // The input: taken by the machine only before a run or after it (fixed while one is under way).
   const mic =
     input ===
-    'mic';
+      'mic' ||
+    instrument ===
+      'voice';
   useEffect(() => {
     carry(
       send(
@@ -499,7 +508,8 @@ export function SprintRun({
       .prompts
       .length;
   const lowCard =
-    guitar;
+    guitar ||
+    lowRange;
   /** The sheet's box, caption line included: the "Ready" and result boxes take the same. */
   const sheetSize =
     lowCard
@@ -645,7 +655,8 @@ export function SprintRun({
                 : 'deck'
             }
             octaveClef={
-              guitar
+              guitar ||
+              !!prompt.octaveClef
             }
           />
         );

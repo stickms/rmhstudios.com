@@ -92,6 +92,9 @@ const FOCUS_FIRST: Record<
       '.rmm-fret__cell[tabindex="0"]',
     piano:
       '.rmm-keys__bed button:not([tabindex="-1"])',
+    // A singer opening a note finder (not on their path) gets the piano's keys.
+    voice:
+      '.rmm-keys__bed button:not([tabindex="-1"])',
   };
 
 export function FindNoteLesson({

@@ -22,12 +22,16 @@ import {
 import {
   ArrowLeft,
   Guitar,
+  MicVocal,
   Piano,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useBackOrFallback } from '@/hooks/useBackOrFallback';
-import { PATH } from '@/lib/rmhmusic/learn/content/path';
+import {
+  pathFor,
+  type Unit,
+} from '@/lib/rmhmusic/learn/content/path';
 import { practiceAvailable } from '@/lib/rmhmusic/learn/content/practice';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
@@ -48,6 +52,7 @@ import { ModeToggle } from './ModeToggle';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
 import { useInputRelease } from './useLearnInput';
+import { useLearnerShape } from './useLearnerShape';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
@@ -71,14 +76,22 @@ const INPUT_BUTTON =
 const INPUT_ROW =
   'flex min-h-11 min-w-0 items-center gap-4';
 
-/** Loading placeholder, built from the static path so it is as tall as the loaded page. */
-function HomeSkeleton() {
+/**
+ * Loading placeholder, built from the learner's path (`pathFor` the instrument the layout route
+ * read with its auth check) so it is as tall as the loaded page for a singer as for a pianist.
+ */
+function HomeSkeleton({
+  path,
+}: {
+  path: readonly Unit[];
+}) {
   return (
     <div
       aria-hidden="true"
       className="space-y-4"
     >
-      <div className="app-skeleton h-12 w-full pointer-coarse:h-13" />
+      {/* The tab strip: a tab (2.5rem, 2.75rem on touch) in its p-1 frame and 1px border. */}
+      <div className="app-skeleton h-[calc(3rem+2px)] w-full pointer-coarse:h-[calc(3.25rem+2px)]" />
       <div>
         <div
           className={
@@ -96,7 +109,7 @@ function HomeSkeleton() {
         </div>
       </div>
       <div className="rmm-sheet">
-        {PATH.map(
+        {path.map(
           (
             unit,
           ) => (
@@ -204,6 +217,8 @@ export function LearnHome() {
       ) =>
         s.profile,
     );
+  const shape =
+    useLearnerShape();
   const progress =
     useLearnStore(
       (
@@ -258,10 +273,14 @@ export function LearnHome() {
           cards,
           progress,
           Date.now(),
+          profile?.instrument,
+          profile?.voiceRange,
         ),
       [
         cards,
         progress,
+        profile?.instrument,
+        profile?.voiceRange,
       ],
     );
 
@@ -301,6 +320,27 @@ export function LearnHome() {
   const instrument =
     profile?.instrument ??
     'piano';
+  const path =
+    pathFor(
+      instrument,
+    );
+  // The tabs activate on arrow keys, so choosing an instrument never opens a dialog: a singer with
+  // no range yet gets a "Choose your voice" link in the input row instead (it opens "Set up input",
+  // which asks the range first; the microphone starts only from a tap on its row).
+  const chooseInstrument =
+    (
+      next: Instrument,
+    ) => {
+      void useLearnStore
+        .getState()
+        .setInstrument(
+          next,
+        );
+    };
+  const needsRange =
+    instrument ===
+      'voice' &&
+    !profile?.voiceRange;
   const tabs =
     [
       {
@@ -326,6 +366,18 @@ export function LearnHome() {
             },
           ),
         icon: Guitar,
+      },
+      {
+        id: 'voice',
+        label:
+          t(
+            'instrument-voice',
+            {
+              defaultValue:
+                'Voice',
+            },
+          ),
+        icon: MicVocal,
       },
     ];
 
@@ -457,7 +509,11 @@ export function LearnHome() {
   ) {
     body =
       (
-        <HomeSkeleton />
+        <HomeSkeleton
+          path={pathFor(
+            shape.instrument,
+          )}
+        />
       );
   } else {
     body =
@@ -478,11 +534,9 @@ export function LearnHome() {
             onChange={(
               id,
             ) =>
-              void useLearnStore
-                .getState()
-                .setInstrument(
-                  id as Instrument,
-                )
+              chooseInstrument(
+                id as Instrument,
+              )
             }
             aria-label={t(
               'instrument-label',
@@ -531,6 +585,27 @@ export function LearnHome() {
                   )}
                 </span>
               </button>
+              {needsRange && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onSetupChange(
+                      true,
+                    )
+                  }
+                  className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
+                >
+                  <span>
+                    {t(
+                      'voice-choose-link',
+                      {
+                        defaultValue:
+                          'Choose your voice',
+                      },
+                    )}
+                  </span>
+                </button>
+              )}
               <button
                 ref={
                   soundButton
@@ -595,7 +670,7 @@ export function LearnHome() {
             </p>
           )}
           <div className="rmm-sheet">
-            {PATH.map(
+            {path.map(
               (
                 unit,
               ) => (
@@ -727,21 +802,30 @@ export function LearnHome() {
           <h1 className="rmm-display text-[2.5rem] leading-[3rem] text-app-text sm:text-5xl sm:leading-[3.5rem]">
             {ready
               ? instrument ===
-                'guitar'
+                'voice'
                 ? t(
-                    'heading-guitar',
+                    'heading-voice',
                     {
                       defaultValue:
-                        'Learn guitar',
+                        'Learn to sing',
                     },
                   )
-                : t(
-                    'heading-piano',
-                    {
-                      defaultValue:
-                        'Learn piano',
-                    },
-                  )
+                : instrument ===
+                    'guitar'
+                  ? t(
+                      'heading-guitar',
+                      {
+                        defaultValue:
+                          'Learn guitar',
+                      },
+                    )
+                  : t(
+                      'heading-piano',
+                      {
+                        defaultValue:
+                          'Learn piano',
+                      },
+                    )
               : t(
                   'heading-default',
                   {

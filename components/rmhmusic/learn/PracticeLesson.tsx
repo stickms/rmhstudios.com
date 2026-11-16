@@ -1,8 +1,9 @@
 /**
  * PracticeLesson — `/rmhmusic/practice`: a flashcard session over the learner's remembered cards.
  * It deals the cards that are due, most overdue first, topped up to ten with cards never asked
- * before from the shipped reading lessons' decks (`buildPracticeSession`), and runs the same
- * screen as a reading lesson (`FlashcardSession`, `flashcardsMachine`, unchanged).
+ * before from the shipped reading lessons' decks of the learner's path (`buildPracticeSession`;
+ * a singer's is their range's deck, drawn as the range reads it, a tenor's with the treble 8), and
+ * runs the same screen as a reading lesson (`FlashcardSession`, `flashcardsMachine`, unchanged).
  *
  * When the session ends it posts one review per card — `good` for a right answer, `again` for a
  * wrong one, no timers — and the server schedules each card with its own clock. Practice
@@ -32,6 +33,11 @@ import {
   stateFromRow,
 } from '@/lib/rmhmusic/learn/content/practice';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
+import {
+  isVoiceRange,
+  staffCardRange,
+  voiceReading,
+} from '@/lib/rmhmusic/learn/voice/range';
 import { beginSoundSession } from '@/lib/rmhmusic/learn/audio/instruments/engine';
 import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 import { useLearnerSound } from './SoundDialog';
@@ -77,9 +83,15 @@ function reviewsOf(
 function Practice({
   cards,
   paused,
+  octaveClef,
+  lowCard,
 }: {
   cards: Card[];
   paused: boolean;
+  /** A tenor's cards: the treble clef with the small 8 (sounding an octave below the page). */
+  octaveClef: boolean;
+  /** An alto's cards: the low card (the range reaches G3). */
+  lowCard: boolean;
 }) {
   const {
     t,
@@ -114,6 +126,12 @@ function Practice({
     <FlashcardSession
       cards={
         cards
+      }
+      octaveClef={
+        octaveClef
+      }
+      lowCard={
+        lowCard
       }
       paused={
         paused
@@ -193,6 +211,20 @@ export function PracticeLesson() {
 
   // Dealt once (see the header). Until then null; an empty deal means nothing is due or new.
   const [
+    octaveClef,
+    setOctaveClef,
+  ] =
+    useState(
+      false,
+    );
+  const [
+    lowCard,
+    setLowCard,
+  ] =
+    useState(
+      false,
+    );
+  const [
     session,
     setSession,
   ] =
@@ -225,10 +257,41 @@ export function PracticeLesson() {
               ),
           }),
         );
+    // A singer practises their range's deck, read the way their range reads (a tenor's 8).
+    const profile =
+      useLearnStore.getState()
+        .profile;
+    const range =
+      profile?.instrument ===
+        'voice' &&
+      isVoiceRange(
+        profile.voiceRange,
+      )
+        ? profile.voiceRange
+        : null;
+    setOctaveClef(
+      range !==
+        null &&
+        voiceReading(
+          range,
+        )
+          .octaveClef,
+    );
+    setLowCard(
+      range !==
+        null &&
+        staffCardRange(
+          range,
+        ) ===
+          'low',
+    );
     setSession(
       buildPracticeSession(
         rows,
-        practiceDecks(),
+        practiceDecks(
+          profile?.instrument,
+          range,
+        ),
         Date.now(),
         Math.random,
       ),
@@ -291,6 +354,12 @@ export function PracticeLesson() {
         <Practice
           cards={
             session
+          }
+          octaveClef={
+            octaveClef
+          }
+          lowCard={
+            lowCard
           }
           paused={
             setupOpen

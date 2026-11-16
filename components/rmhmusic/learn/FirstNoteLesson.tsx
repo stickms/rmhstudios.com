@@ -14,6 +14,7 @@
  * input chooser shows inline, and its click starts them.
  */
 
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { releaseMic } from '@/lib/rmhmusic/learn/input/mic-lifecycle';
@@ -24,6 +25,10 @@ import {
 } from '@/lib/rmhmusic/learn/machines/first-note';
 import { midiToName } from '@/lib/rmhmusic/learn/pitch/notes';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
+import {
+  isVoiceRange,
+  voiceReading,
+} from '@/lib/rmhmusic/learn/voice/range';
 import {
   DeviceRegion,
   LessonResult,
@@ -71,6 +76,27 @@ export function FirstNoteLesson({
           .profile
           ?.input ??
         'screen',
+    );
+  // A singer's staff (read once, like the other lessons): a bass reads the bass clef, a tenor the
+  // treble clef with the small 8 (written an octave above where they sing).
+  const [
+    reading,
+  ] =
+    useState(
+      () => {
+        const profile =
+          useLearnStore.getState()
+            .profile;
+        return profile?.instrument ===
+          'voice' &&
+          isVoiceRange(
+            profile.voiceRange,
+          )
+          ? voiceReading(
+              profile.voiceRange,
+            )
+          : null;
+      },
     );
   const [
     lesson,
@@ -340,6 +366,14 @@ export function FirstNoteLesson({
         </p>
         <LiveStaff
           className="pt-2"
+          clef={
+            reading?.clef ??
+            'treble'
+          }
+          octaveClef={
+            reading?.octaveClef ??
+            false
+          }
           note={
             played ??
             undefined

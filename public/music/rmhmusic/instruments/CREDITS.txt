@@ -28,11 +28,38 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-== VS Chamber Orchestra: Community Edition (solo violin, flute) ==
+== VS Chamber Orchestra: Community Edition (solo violin, cello section, flute, clarinet, oboe) ==
 "VS Chamber Orchestra: Community Edition" (VSCO 2 CE) by Versilian Studios LLC, CC0 1.0. Recorded by Sam Gossner and Simon Dalzell. https://github.com/sgossner/VSCO-2-CE. Trimmed and converted to mono MP3.
 
 Author: Versilian Studios LLC
 Licence: CC0 1.0 Universal (public domain dedication) (https://creativecommons.org/publicdomain/zero/1.0/)
 Source: https://github.com/sgossner/VSCO-2-CE
 Recorded by Sam Gossner and Simon Dalzell.
+Changes: Converted by RMH Studios: one dynamic layer, trimmed, faded, mixed to mono, loudness matched and encoded as 64 kbps MP3. The build script and its pinned sources are in the RMH Studios repository (scripts/rmhmusic/).
+
+== Spanish Classical Guitar (FreePats, version 2019-06-18) ==
+"Spanish Classical Guitar" (FreePats, 2019-06-18) by roberto@zenvoid.org for the FreePats project, CC0 1.0. https://freepats.zenvoid.org/Guitar/acoustic-guitar.html. Selected notes, trimmed and converted to mono MP3.
+
+Author: Roberto (roberto@zenvoid.org), for the FreePats project
+Licence: CC0 1.0 Universal (public domain dedication) (https://creativecommons.org/publicdomain/zero/1.0/)
+Source: https://freepats.zenvoid.org/Guitar/acoustic-guitar.html
+Recorded from a Spanish classical (nylon-string) guitar in 2008.
+Changes: Converted by RMH Studios: one dynamic layer, trimmed, faded, mixed to mono, loudness matched and encoded as 64 kbps MP3. The build script and its pinned sources are in the RMH Studios repository (scripts/rmhmusic/).
+
+== Ukulele (FreePats, version 2026-08-11; a Flight Fireball tenor ukulele) ==
+"Ukulele" (FreePats, 2026-08-11) recorded by Mateusz Dąbrowski, CC0 1.0. https://freepats.zenvoid.org/GuitarFamily/ukulele.html. Trimmed and converted to mono MP3.
+
+Author: Mateusz Dąbrowski, offered to the FreePats project
+Licence: CC0 1.0 Universal (public domain dedication) (https://creativecommons.org/publicdomain/zero/1.0/)
+Source: https://freepats.zenvoid.org/GuitarFamily/ukulele.html
+Fetched from: https://github.com/freepats/ukulele1/releases/tag/2026-08-11
+Changes: Converted by RMH Studios: one dynamic layer, trimmed, faded, mixed to mono, loudness matched and encoded as 64 kbps MP3. The build script and its pinned sources are in the RMH Studios repository (scripts/rmhmusic/).
+
+== Versilian Community Sample Library: Pipe Organ (quiet stop, manual III) ==
+"Pipe Organ" from the Versilian Community Sample Library (VCSL) by Versilian Studios LLC, sampled by Simon Dalzell of Ivy Audio, CC0 1.0. https://github.com/sgossner/VCSL. Trimmed and converted to mono MP3.
+
+Author: Simon Dalzell (Ivy Audio) and Versilian Studios LLC
+Licence: CC0 1.0 Universal (public domain dedication) (https://creativecommons.org/publicdomain/zero/1.0/)
+Source: https://github.com/sgossner/VCSL
+Organ sampled by Simon Dalzell of Ivy Audio, winter 2015-16. Credit to both is encouraged by the library.
 Changes: Converted by RMH Studios: one dynamic layer, trimmed, faded, mixed to mono, loudness matched and encoded as 64 kbps MP3. The build script and its pinned sources are in the RMH Studios repository (scripts/rmhmusic/).

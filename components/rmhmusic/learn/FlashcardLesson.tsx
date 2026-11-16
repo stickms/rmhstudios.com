@@ -39,10 +39,15 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   DECKS,
+  voiceDeck,
   buildSession,
   type Card,
 } from '@/lib/rmhmusic/learn/content/decks';
-import { getLesson } from '@/lib/rmhmusic/learn/content/path';
+import {
+  VOICE_RANGE_DECK,
+  getLesson,
+} from '@/lib/rmhmusic/learn/content/path';
+import { resolveVoiceRange } from '@/lib/rmhmusic/learn/voice/range';
 import {
   createFlashcardsMachine,
   type Answer,
@@ -76,6 +81,7 @@ import {
 } from './QuestionSession';
 import {
   STAFF_BOX,
+  STAFF_LOW_ASPECT,
   StaffCard,
   type StaffCardState,
 } from './StaffCard';
@@ -161,19 +167,37 @@ export function FlashcardLesson({
     useTranslation(
       'c-rmhmusic',
     );
+  // A singer's staff lesson deals from their range's deck (`voice-range`), read once at mount.
+  const [
+    deck,
+  ] =
+    useState(
+      () => {
+        const named =
+          getLesson(
+            lessonId,
+          )
+            ?.deck ??
+          '';
+        return named ===
+          VOICE_RANGE_DECK
+          ? voiceDeck(
+              resolveVoiceRange(
+                useLearnStore.getState()
+                  .profile
+                  ?.voiceRange,
+              ),
+            )
+          : DECKS[
+              named
+            ];
+      },
+    );
   const [
     cards,
   ] =
     useState(
       () => {
-        const deck =
-          DECKS[
-            getLesson(
-              lessonId,
-            )
-              ?.deck ??
-              ''
-          ];
         return deck
           ? buildSession(
               deck,
@@ -187,6 +211,14 @@ export function FlashcardLesson({
     <FlashcardSession
       cards={
         cards
+      }
+      octaveClef={
+        deck?.octaveClef ??
+        false
+      }
+      lowCard={
+        deck?.lowCard ??
+        false
       }
       paused={
         paused
@@ -232,8 +264,14 @@ export function FlashcardSession({
   stars:
     showStars = true,
   sound,
+  octaveClef = false,
+  lowCard = false,
 }: {
   cards: Card[];
+  /** The deck reads with the treble clef's small 8 (a tenor's range). */
+  octaveClef?: boolean;
+  /** The deck is drawn on the low card (an alto's range reaches G3). */
+  lowCard?: boolean;
   /** A dialog is open over the session: nothing answers. */
   paused?: boolean;
   save: (
@@ -780,6 +818,14 @@ export function FlashcardSession({
               card={
                 card
               }
+              octaveClef={
+                octaveClef
+              }
+              range={
+                lowCard
+                  ? 'low'
+                  : 'deck'
+              }
               state={
                 cardState
               }
@@ -791,7 +837,14 @@ export function FlashcardSession({
                 STAFF_BOX
               }
             >
-              <div className="aspect-[200/102] w-full" />
+              <div
+                className={cn(
+                  lowCard
+                    ? STAFF_LOW_ASPECT
+                    : 'aspect-[200/102]',
+                  'w-full',
+                )}
+              />
               <div className="h-9" />
             </div>
           )

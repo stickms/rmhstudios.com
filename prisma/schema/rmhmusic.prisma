@@ -4,12 +4,15 @@
 model MusicLearnProfile {
   id         String   @id @default(cuid())
   userId     String   @unique
+  /// `INSTRUMENTS`: piano, guitar or voice.
   instrument String   @default("piano")
   input      String   @default("screen")
   latencyMs  Int      @default(0)
   dailyGoal  Int      @default(1)
   /// The sampled sound lessons play (`INSTRUMENT_IDS`); null follows `instrument`.
   sound      String?  @db.VarChar(16)
+  /// A voice learner's range (`VOICE_RANGES`: soprano, alto, tenor, bass); null until chosen.
+  voiceRange String?  @db.VarChar(16)
   updatedAt  DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

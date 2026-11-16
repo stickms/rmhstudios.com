@@ -7,9 +7,10 @@
 
 import { rhythmActivity } from '../machines/rhythm';
 import { DECKS } from './decks';
-import type {
-  Lesson,
-  LessonMode,
+import {
+  VOICE_RANGE_DECK,
+  type Lesson,
+  type LessonMode,
 } from './path';
 
 const ROUTED: Record<
@@ -26,6 +27,7 @@ const ROUTED: Record<
     'ear-interval': true,
     'ear-chord': true,
     'play-chord': true,
+    'sing-interval': true,
   };
 
 /** The modes `LessonScreen` has an activity for. */
@@ -65,8 +67,10 @@ export function isPlayable(
   )
     return (
       !!lesson.deck &&
-      lesson.deck in
-        DECKS
+      (lesson.deck in
+        DECKS ||
+        lesson.deck ===
+          VOICE_RANGE_DECK)
     );
   return true;
 }

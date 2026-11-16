@@ -102,7 +102,7 @@ export const SOUND_CREDITS: Readonly<
       },
     vsco: {
       id: 'vsco',
-      work: 'VS Chamber Orchestra: Community Edition (solo violin, flute)',
+      work: 'VS Chamber Orchestra: Community Edition (solo violin, cello section, flute, clarinet, oboe)',
       author:
         'Versilian Studios LLC',
       licence:
@@ -123,6 +123,75 @@ export const SOUND_CREDITS: Readonly<
       licenceText:
         null,
     },
+    'freepats-guitar':
+      {
+        id: 'freepats-guitar',
+        work: 'Spanish Classical Guitar (FreePats, version 2019-06-18)',
+        author:
+          'Roberto (roberto@zenvoid.org), for the FreePats project',
+        licence:
+          'CC0 1.0 Universal (public domain dedication)',
+        licenceUrl:
+          'https://creativecommons.org/publicdomain/zero/1.0/',
+        sourceUrl:
+          'https://freepats.zenvoid.org/Guitar/acoustic-guitar.html',
+        fetchedFrom:
+          null,
+        note: 'Recorded from a Spanish classical (nylon-string) guitar in 2008.',
+        changes:
+          CHANGES,
+        attribution:
+          '"Spanish Classical Guitar" (FreePats, 2019-06-18) by roberto@zenvoid.org for the FreePats project, CC0 1.0. ' +
+          'https://freepats.zenvoid.org/Guitar/acoustic-guitar.html. Selected notes, trimmed and converted to mono MP3.',
+        licenceText:
+          null,
+      },
+    'freepats-ukulele':
+      {
+        id: 'freepats-ukulele',
+        work: 'Ukulele (FreePats, version 2026-08-11; a Flight Fireball tenor ukulele)',
+        author:
+          'Mateusz Dąbrowski, offered to the FreePats project',
+        licence:
+          'CC0 1.0 Universal (public domain dedication)',
+        licenceUrl:
+          'https://creativecommons.org/publicdomain/zero/1.0/',
+        sourceUrl:
+          'https://freepats.zenvoid.org/GuitarFamily/ukulele.html',
+        fetchedFrom:
+          'https://github.com/freepats/ukulele1/releases/tag/2026-08-11',
+        note: null,
+        changes:
+          CHANGES,
+        attribution:
+          '"Ukulele" (FreePats, 2026-08-11) recorded by Mateusz Dąbrowski, CC0 1.0. ' +
+          'https://freepats.zenvoid.org/GuitarFamily/ukulele.html. Trimmed and converted to mono MP3.',
+        licenceText:
+          null,
+      },
+    'vcsl-organ':
+      {
+        id: 'vcsl-organ',
+        work: 'Versilian Community Sample Library: Pipe Organ (quiet stop, manual III)',
+        author:
+          'Simon Dalzell (Ivy Audio) and Versilian Studios LLC',
+        licence:
+          'CC0 1.0 Universal (public domain dedication)',
+        licenceUrl:
+          'https://creativecommons.org/publicdomain/zero/1.0/',
+        sourceUrl:
+          'https://github.com/sgossner/VCSL',
+        fetchedFrom:
+          null,
+        note: 'Organ sampled by Simon Dalzell of Ivy Audio, winter 2015-16. Credit to both is encouraged by the library.',
+        changes:
+          CHANGES,
+        attribution:
+          '"Pipe Organ" from the Versilian Community Sample Library (VCSL) by Versilian Studios LLC, sampled by Simon Dalzell of Ivy Audio, CC0 1.0. ' +
+          'https://github.com/sgossner/VCSL. Trimmed and converted to mono MP3.',
+        licenceText:
+          null,
+      },
   };
 
 /** The order credits are listed in, on the page and in CREDITS.txt. */
@@ -131,6 +200,9 @@ export const CREDIT_ORDER: readonly CreditId[] =
     'salamander',
     'ella-gitauru',
     'vsco',
+    'freepats-guitar',
+    'freepats-ukulele',
+    'vcsl-organ',
   ];
 
 /** Where CREDITS.txt ships, beside the samples (under `public/`). */

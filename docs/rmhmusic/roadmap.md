@@ -1,9 +1,9 @@
 # RMH Music — roadmap, work in progress and audit notes
 
 > **For LLMs and auditors:** this is the single place for RMH Music (`/rmhmusic`, the beginner
-> piano and guitar learning programme) status, unfinished work, future features, known gaps and
+> piano, guitar and singing programme) status, unfinished work, future features, known gaps and
 > hand-off steps. Written 2026-11-09 when work was paused for an audit; last updated 2026-11-15
-> (Phase 4, songs: sheet music and tab play-along). If this file disagrees
+> (Phase 5: more instrument sounds, and voice as a learner instrument). If this file disagrees
 > with the code, the code wins; fix this file. Plans live in `docs/superpowers/plans/`.
 
 ## 1. What shipped (in production on `main`)
@@ -17,6 +17,7 @@
 | #1526 (PR F) | Metronome, rhythm lessons (note values, 4/4 vs 3/4, tap the beat), shared routed-modes module, catalog text and docs, large-text wrapping on the learn home. |
 | #1651 | Realistic instrument sounds (piano, steel-string guitar, violin, flute samples; Sound setting and dialog; `/rmhmusic/credits`) and the sight reading game "Sprint" (`/rmhmusic/sprint`: Freeplay and the Daily challenge, bests and daily rows `MusicSprintBest` / `MusicSprintDaily`). Details in §2.1 and §2.2. |
 | #1653 | Phase 3: the tuner and note reader (`/rmhmusic/tuner`). Details in §2.0. |
+| #1654 | Phase 4: songs — sheet music and tab play-along (`/rmhmusic/songs`, `MusicSongBest`). Details in §2.00. |
 
 Where things live: pure logic `lib/rmhmusic/learn/{theory,scoring,srs,content,machines,input,audio,sprint,tuner,songs}`;
 UI `components/rmhmusic/learn/`; lesson path and units `lib/rmhmusic/learn/content/path.ts`
@@ -29,7 +30,84 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 
 ## 2. Recent work
 
-### 2.00 Songs: sheet music and tab play-along (Phase 4) — built on `claude/hopeful-bohr-99d1vw`, not yet merged
+### 2.000 More sounds and voice (Phase 5) — built on `claude/hopeful-bohr-99d1vw`, not yet merged
+
+- Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase5-instruments-voice.md`.
+- **Sounds** (six more, mono 44.1 kHz CBR 64 kbps MP3, each under the 0.6 MB budget the assets test
+  holds; built by `scripts/rmhmusic/build-instruments.ts` from pinned `sources.json` entries):
+  | Id | Source and licence (read from the downloaded files) | Zones | Bytes |
+  | --- | --- | --- | --- |
+  | `cello` | VSCO 2 CE Cello Section `susvib` v3 — repo `LICENSE` CC0 1.0 | 13, C2–F5 | 369,720 |
+  | `clarinet` | VSCO 2 CE Clarinet `susLong` v2 — CC0 1.0 | 11, D3–F6 | 312,840 |
+  | `oboe` | VSCO 2 CE Oboe `Sus` (v3; F5 from v1) — CC0 1.0 | 9, A♯3–F6 | 255,960 |
+  | `guitar-nylon` | FreePats Spanish Classical Guitar 2019-06-18 — `cc0.txt` + `readme.txt` in the 7z, CC0 1.0 | 21, E2–B5 | 421,899 |
+  | `ukulele` | FreePats Ukulele 2026-08-11 (Flight Fireball tenor, Mateusz Dąbrowski) — `LICENSE.txt` + `README.txt` in the 7z, CC0 1.0 | 13, C4–C6 | 203,162 |
+  | `organ` | VCSL Pipe Organ, quiet stop on manual III (Simon Dalzell / Ivy Audio) — repo `LICENSE` CC0 1.0, README "even make commercial software, no credit", folder `Info.txt` encourages credit (credited) | 13, C3–C6 | 369,720 |
+
+  Total added 1,933,301 bytes (all ten sounds 3,866,336). Traps the build's YIN caught: the VSCO cello
+  names are an octave low (like the winds); the clarinet file named F♯5 sounds F6; the loud oboe F5
+  is dominated by its second harmonic (the soft layer is used); the loud organ stop's pitch is
+  ambiguous between octaves, and the quiet (stopped-flute) stop sounds an octave above its file
+  names and is used from C3 only (below that its third harmonic outweighs the fundamental). Every
+  zone plays within 10 cents after `tuneCents` (build check); rendered in Chromium through the
+  sampler: every tested note within ±2.5 cents, onset 7–74 ms (the clarinet's attack is the slow one),
+  C-major triads on nylon guitar, ukulele and organ peak at 0.52, 0.61 and 0.29 (no clipping);
+  one ear lesson per new sound played its samples (sampler spied, YIN on the master tap heard both
+  pitches). Polyphony: cello, clarinet and oboe mono (chord lessons fall back as for violin and
+  flute); nylon guitar (8 voices, 14 ms strum), ukulele (4, 16 ms) and organ (8, block) play chords.
+  The Sound dialog is one radio group under four plain family headings (keyboards, plucked strings,
+  bowed strings, winds); the arrow keys walk across families; the dialog scrolls on a phone.
+  `CREDITS.txt` and `/rmhmusic/credits` carry the three new credits. Nobody has listened to any of it.
+- **Voice** (`instrument: 'voice'`, `MusicLearnProfile.voiceRange`, migration
+  `20261115200000_music_learn_voice_range`, additive): ranges in `lib/rmhmusic/learn/voice/range.ts`
+  (strict island) — soprano C4–G5 and alto G3–D5 on the treble staff (an alto reads on the low
+  card, `staffCardRange`, since G3 is below the deck card's two ledger lines), tenor C3–G4 on the
+  treble staff with the small 8 (written an octave up), baritone/bass G2–C4 on the bass staff. The
+  Voice tab ("Learn to sing") opens no dialog (the tabs activate on arrow keys); while a singer has
+  no range, the input row has a "Choose your voice" link to Set up input, which for a singer starts
+  with "Your voice" (a radio group with each range's compass) and says singers answer with the
+  microphone, and a lesson in the range asks for one first (`needsVoiceRange`) rather than assume
+  alto. `VOICE_PATH` (`pathFor`): Read your staff (`voice-staff-notes`: the range's deck;
+  `voice-first-note`), Sing it back (`voice-match-five`, `voice-match-range`: match-note in the range,
+  graded in cents at the sounding pitch), Sing intervals (new mode `sing-interval` on the match
+  screen, echo matching: the first note sounds by itself as each target starts, through the guarded
+  hint so the mic ignores it; nothing sung counts until it has sounded; Hear it replays it alone;
+  "Hear the answer" plays both after a miss; the line names the interval and the second is sung; `voice-interval-steps` second/third, `voice-interval-leaps`
+  third/fifth/octave, natural notes only), and the shared rhythm unit. No chord, keyboard or
+  fretboard lesson. Sprint: single-note levels only, prompts moved by octaves onto the range's staff
+  (`forVoice`), chord prompts skipped in the daily run. Songs: `songs/transpose.ts` keeps a song as
+  written if it fits, else moves it by octaves, else into the nearest drawable key (C G D A F B♭ E♭,
+  signatures on both staves), respelled by letter; versions `voice-treble`, `voice-tenor`,
+  `voice-bass`. Tuner unchanged (chromatic for a singer). Hints play through the chosen sound
+  (default piano).
+- **Smoke (2026-11-15, Chromium only, dev server + throwaway Postgres, harness `t36/voice.cjs` and
+  `t36/smoke.cjs` in the session scratchpad):** see the Phase 5 commit report; summary: Sound dialog
+  by keyboard at 390/1280 × Day/Night (one radio group, Tab lands on the chosen row, arrows walk
+  piano → organ → acoustic guitar → nylon guitar, Space picks the organ, it loads and previews C4,
+  saved; CLS 0, no horizontal scroll); an alto learner through onboarding at all four (Voice tab →
+  dialog → arrows + Space pick Alto → Microphone row with a fake oscillator mic → saved
+  `voice mic alto`; heading "Learn to sing", the four voice units); staff lesson: alto treble, tenor
+  treble with the 8, bass on the bass clef; pitch match with the fake mic (alto B3/C4, bass D3/A2 at
+  −6 cents → Spot on, bass clef); interval singing (alto: "Sing a second above A3", Hear it played
+  piano 57 then 59, sung 59 → Spot on; tenor: thirds above C4/B3 → Spot on); Sprint for a bass lists
+  the four single-note levels.
+- **Not done:** a real voice and microphone (the oscillator is a pure tone; vibrato, breath and
+  octave errors of real singers untested), Firefox / WebKit / iOS, 200 % text, RTL with real
+  strings, listening to the new sounds; a tenor
+  answering a staff card on the on-screen keys must press the written pitch (as a guitarist does);
+  lesson titles of the voice path are English catalogue strings like the others; `pnpm typecheck`
+  (OOM here; a scoped `tsc` over every RMH Music file and `typecheck:strict` passed).
+- **Review fixes (2026-11-16):** the organ credit names the quiet stop shipped (a credits test
+  checks every work line against `sources.json`); interval singing as above; Practice deals a
+  singer their range's deck (tenor with the 8, alto on the low card); the `/rmhmusic` layout
+  route's auth check also selects the profile's instrument and range (`getLearnerShape`, route
+  context, `useLearnerShape`), so the home placeholder is built from the learner's own path and
+  the Sprint placeholder lists a singer's levels: skeleton = loaded height in Chromium at 390 and
+  1280 for piano, guitar, an alto and a singer with no range (home, Sprint picker, the alto's
+  flashcard and match lessons); the first-note staff reads bass and treble-8; a song moved into
+  another key says so.
+
+### 2.00 Songs: sheet music and tab play-along (Phase 4) — shipped in #1654
 
 - Plan: `docs/superpowers/plans/2026-11-15-rmhmusic-phase4-play-along.md`. Routes `/rmhmusic/songs`
   (the songbook) and `/rmhmusic/songs/$songId` (play), inside the auth-gated layout, noindex,
@@ -251,7 +329,12 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
 - **Phase 4:** sheet music / tab play-along — **built** (§2.00); left: the browser/device matrix and
   the real-hardware checks listed there, the mic in play-along, more songs (and rests, ties, other
   keys), a version switch on the page.
-- **Phase 5:** more instruments (cello, clarinet, oboe, ukulele, organ, `guitar-nylon`) and choir/voice.
+- **Phase 5:** more instruments and voice — **built** (§2.000): cello, clarinet, oboe, nylon guitar,
+  ukulele and organ sounds; voice as a learner instrument with four ranges. Left: the owner's
+  audition of the sounds, counsel on the CC0 claims (VSCO, VCSL organ `Info.txt`, FreePats), a real
+  singer and microphone, a range prompt in Sprint and Songs (a singer with no range is still read
+  as alto there), choir (several parts) and harmony singing,
+  per-range presets in the tuner, a second sound layer, lesson titles in the locales.
 - **Phase 6:** social (friends, shared progress, possibly leaderboards for Sprint).
 - Rhythm *reading* beyond four note values; sharps/flats in flashcards (naturals only today);
   descending intervals; minor seconds (the interval table has `second` = major second only).
@@ -281,7 +364,10 @@ all sound goes through `audio/voice.ts` / `audio/sequence.ts` (lifecycle callbac
   graceful reload; verify `Permissions-Policy` allows `midi` and the CSP with curl). Not automated
   by deploy.
 - **Licences to confirm with counsel before launching sounds:** the guitar's MIT+sentence terms and
-  the CC0 claims resting on repository LICENSE files for VSCO. Not legal advice.
+  the CC0 claims resting on repository LICENSE files for VSCO and VCSL (the organ folder's `Info.txt`
+  is a separate "bearer may redistribute, credit encouraged" note from Ivy Audio's recordings; VSCO's
+  `Readme.txt` asks that the samples not be sold as such), and the FreePats CC0 files (the ukulele
+  bank's archive has one member, `chuck.wav`, that fails its CRC; it is not used). Not legal advice.
 - **Test hygiene:** `build-site-knowledge.ts` has no `--check`; component tests run in node without a
   DOM (logic is extracted into pure helpers to be testable); `pnpm check:consistency --fast` is what
   the commit hook runs, the full gate was run on the PR E branch only.

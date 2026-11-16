@@ -28,6 +28,16 @@ import {
   type Stars,
 } from '../scoring/stars';
 import type { CompleteOutcome } from './learn-data';
+import { dealRounds } from '../content/decks';
+import type { VoiceRange } from '../schemas';
+import {
+  INTERVALS,
+  type IntervalName,
+} from '../theory/intervals';
+import {
+  VOICE_RANGE,
+  rangeNaturals,
+} from '../voice/range';
 import type { Machine } from './runner';
 
 /** Targets in one lesson. */
@@ -36,10 +46,20 @@ export const MATCH_TARGETS = 10;
 export const MATCH_TRIES = 3;
 /** Notes closer together than this (ms, on the events' `performance.now()` clock) are one try. */
 export const SAME_TICK_MS = 100;
+/** How long a hint note sounds (ms). */
+export const HEAR_MS = 900;
+/** The answer to an interval: the first note sounds this long (ms), then the second for `HEAR_MS`. */
+export const INTERVAL_GAP_MS = 700;
 
-/** One note to match: the pitch it sounds. */
+/**
+ * One note to match: the pitch it sounds. Interval singing (`sing-interval`) also gives the first
+ * note (`from`), which the staff shows and Hear it plays alone (echo matching: the learner hears
+ * the first note and sings the second), and the interval's name.
+ */
 export interface Target {
   midi: number;
+  from?: number;
+  interval?: IntervalName;
 }
 
 /** A note as the hub reports it (cents only from the microphone). */
@@ -72,6 +92,11 @@ export type State =
       points: number[];
       /** This target's tries so far (fewer than three, none spot on). */
       tries: Try[];
+      /**
+       * Interval targets only: whether the first note has sounded for this target. Answers are
+       * ignored until it has (the learner sings against what they heard). Absent on a plain target.
+       */
+      heard?: boolean;
     }
   | {
       kind: 'feedback';
@@ -125,6 +150,10 @@ export type Event =
   | {
       type: 'hear';
     }
+  /** Interval targets, after a miss: sound both notes, the answer. */
+  | {
+      type: 'hear-answer';
+    }
   | {
       type: 'next';
     }
@@ -138,10 +167,14 @@ export type Event =
     };
 
 export type Effect =
-  /** Sound the target (the learner asked to hear it). */
+  /**
+   * Sound a hint: `midi` alone, or `from` and then `midi` (an interval's answer). The screen sends
+   * `hear` only when sound can start now, so the machine counts the first note as heard.
+   */
   | {
       type: 'play';
       midi: number;
+      from?: number;
     }
   /** Save the completion; answer with `answered` carrying `attempt`. */
   | {
@@ -164,6 +197,9 @@ export function initial(
       [],
     tries:
       [],
+    ...unheard(
+      targets[0],
+    ),
   };
 }
 
@@ -216,6 +252,14 @@ export function step(
         ];
       const note =
         e.answer;
+      // Echo matching: nothing counts before the first note was heard.
+      if (
+        s.heard ===
+        false
+      )
+        return same(
+          s,
+        );
       if (
         card ===
           undefined ||
@@ -348,21 +392,77 @@ export function step(
           s
             .index
         ];
-      return card
-        ? {
-            state:
-              s,
-            effects:
-              [
-                {
-                  type: 'play',
-                  midi: card.midi,
-                },
-              ],
-          }
-        : same(
-            s,
-          );
+      if (
+        !card
+      )
+        return same(
+          s,
+        );
+      // An interval's Hear it is its first note alone; hearing it opens the answers.
+      return {
+        state:
+          s.kind ===
+            'asking' &&
+          s.heard ===
+            false
+            ? {
+                ...s,
+                heard: true,
+              }
+            : s,
+        effects:
+          [
+            {
+              type: 'play',
+              midi:
+                card.from ??
+                card.midi,
+            },
+          ],
+      };
+    }
+    case 'hear-answer': {
+      const card =
+        s.kind ===
+          'asking' ||
+        s.kind ===
+          'feedback'
+          ? s
+              .cards[
+              s
+                .index
+            ]
+          : undefined;
+      const missed =
+        (s.kind ===
+          'asking' &&
+          s
+            .tries
+            .length >
+            0) ||
+        (s.kind ===
+          'feedback' &&
+          !s.right);
+      if (
+        card?.from ===
+          undefined ||
+        !missed
+      )
+        return same(
+          s,
+        );
+      return {
+        state:
+          s,
+        effects:
+          [
+            {
+              type: 'play',
+              from: card.from,
+              midi: card.midi,
+            },
+          ],
+      };
     }
     case 'next': {
       if (
@@ -394,6 +494,13 @@ export function step(
                 s.points,
               tries:
                 [],
+              ...unheard(
+                s
+                  .cards[
+                  s.index +
+                    1
+                ],
+              ),
             },
           effects:
             [],
@@ -524,6 +631,69 @@ export function step(
   }
 }
 
+/** An interval target starts unheard; a plain one carries no flag. */
+function unheard(
+  card:
+    | Target
+    | undefined,
+): {
+  heard?: false;
+} {
+  return card?.from ===
+    undefined
+    ? {}
+    : {
+        heard: false,
+      };
+}
+
+/**
+ * What a `play` effect sounds and for how long: the notes with their start (ms after the hint
+ * starts) and the hint's whole length, which is also the microphone's deaf window before its tail.
+ */
+export function hintSchedule(fx: {
+  midi: number;
+  from?: number;
+}): {
+  notes: {
+    midi: number;
+    atMs: number;
+  }[];
+  lengthMs: number;
+} {
+  if (
+    fx.from ===
+    undefined
+  )
+    return {
+      notes:
+        [
+          {
+            midi: fx.midi,
+            atMs: 0,
+          },
+        ],
+      lengthMs:
+        HEAR_MS,
+    };
+  return {
+    notes:
+      [
+        {
+          midi: fx.from,
+          atMs: 0,
+        },
+        {
+          midi: fx.midi,
+          atMs: INTERVAL_GAP_MS,
+        },
+      ],
+    lengthMs:
+      INTERVAL_GAP_MS +
+      HEAR_MS,
+  };
+}
+
 export const matchNoteMachine =
   {
     initial,
@@ -553,7 +723,27 @@ export function createMatchNoteMachine(
  */
 export function matchNotePool(
   lessonId: string,
+  range?: VoiceRange,
 ): number[] {
+  if (
+    lessonId ===
+      'voice-match-five' ||
+    lessonId ===
+      'voice-match-range'
+  ) {
+    const naturals =
+      rangeNaturals(
+        range ??
+          'alto',
+      );
+    return lessonId ===
+      'voice-match-five'
+      ? naturals.slice(
+          0,
+          5,
+        )
+      : naturals;
+  }
   return lessonId ===
     'match-white-keys'
     ? [
@@ -573,6 +763,91 @@ export function matchNotePool(
         65,
         67,
       ];
+}
+
+/**
+ * Interval singing: `count` targets, each a natural first note of the range and a note one of the
+ * pool's intervals above it (the interval's sizes, so a third may be minor or major), both inside
+ * the range. The first notes are dealt like a deck (every usable one before any repeats).
+ */
+export function singIntervalTargets(
+  pool: readonly string[],
+  range: VoiceRange,
+  count: number,
+  rand: () => number,
+): Target[] {
+  const {
+    high,
+  } =
+    VOICE_RANGE[
+      range
+    ];
+  const names =
+    pool.filter(
+      (
+        n,
+      ): n is IntervalName =>
+        n in
+        INTERVALS,
+    );
+  const naturals =
+    rangeNaturals(
+      range,
+    );
+  const pairs: {
+    from: number;
+    midi: number;
+    interval: IntervalName;
+  }[] =
+    [];
+  for (const from of naturals)
+    for (const interval of names)
+      for (const size of INTERVALS[
+        interval
+      ]
+        .semitones) {
+        const midi =
+          from +
+          size;
+        // A natural second note keeps the staff and the sung note in plain letters.
+        if (
+          midi <=
+            high &&
+          naturals.includes(
+            midi,
+          )
+        )
+          pairs.push(
+            {
+              from,
+              midi,
+              interval,
+            },
+          );
+      }
+  if (
+    pairs.length ===
+    0
+  )
+    return [];
+  return dealRounds(
+    pairs.map(
+      (
+        _,
+        i,
+      ) =>
+        i,
+    ),
+    count,
+    rand,
+  ).map(
+    (
+      i,
+    ) =>
+      pairs[
+        i
+      ] as Target,
+  );
 }
 
 function unreachable(

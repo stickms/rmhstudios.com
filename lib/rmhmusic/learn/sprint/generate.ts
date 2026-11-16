@@ -12,7 +12,15 @@
  * a result is saved).
  */
 import { mulberry32 } from '@/lib/core/rng';
-import type { Instrument } from '../schemas';
+import type {
+  Instrument,
+  VoiceRange,
+} from '../schemas';
+import {
+  resolveVoiceRange,
+  voiceReading,
+  writtenRange,
+} from '../voice/range';
 import {
   clefStep,
   type Clef,
@@ -44,6 +52,11 @@ export interface SprintPrompt {
   level: SprintLevelId;
   kind: SprintKind;
   clef: Clef;
+  /**
+   * Written with the treble clef's small 8 (a tenor's range): the notes sound an octave lower than
+   * written. Guitar prompts do not set it (the guitar is known from the instrument).
+   */
+  octaveClef?: boolean;
   /** One note; a chord's notes lowest first; a bar's notes in the order they are played. */
   notes: readonly SprintNote[];
 }
@@ -67,10 +80,11 @@ export function promptMidis(
   instrument: Instrument = 'piano',
 ): number[] {
   const shift =
-    instrument ===
+    (instrument ===
       'guitar' &&
-    p.clef ===
-      'treble'
+      p.clef ===
+        'treble') ||
+    p.octaveClef
       ? -12
       : 0;
   return p.notes.map(
@@ -603,7 +617,18 @@ const samePrompt =
 export function forInstrument(
   p: SprintPrompt,
   instrument: Instrument,
+  range?: VoiceRange,
 ): SprintPrompt {
+  if (
+    instrument ===
+    'voice'
+  )
+    return forVoice(
+      p,
+      resolveVoiceRange(
+        range,
+      ),
+    );
   if (
     instrument !==
       'guitar' ||
@@ -629,6 +654,123 @@ export function forInstrument(
 }
 
 /**
+ * A prompt as a singer reads it: on the range's staff (`voice/range.ts`), moved by whole octaves so
+ * every note is written inside the range (one shift for the whole prompt when it fits, else note by
+ * note). Letters and accidentals stay, so the same seed deals the same notes to every reader.
+ */
+export function forVoice(
+  p: SprintPrompt,
+  range: VoiceRange,
+): SprintPrompt {
+  const {
+    clef,
+    octaveClef,
+  } =
+    voiceReading(
+      range,
+    );
+  const [
+    lo,
+    hi,
+  ] =
+    writtenRange(
+      range,
+    );
+  const fold =
+    (
+      m: number,
+    ) => {
+      let x =
+        m;
+      while (
+        x <
+        lo
+      )
+        x += 12;
+      while (
+        x >
+        hi
+      )
+        x -= 12;
+      return x;
+    };
+  const written =
+    p.notes.map(
+      (
+        n,
+      ) =>
+        n.written,
+    );
+  const min =
+    Math.min(
+      ...written,
+    );
+  const max =
+    Math.max(
+      ...written,
+    );
+  let shift:
+    | number
+    | null =
+    null;
+  for (
+    let k =
+      -4;
+    k <=
+    4;
+    k++
+  )
+    if (
+      min +
+        12 *
+          k >=
+        lo &&
+      max +
+        12 *
+          k <=
+        hi &&
+      (shift ===
+        null ||
+        Math.abs(
+          k,
+        ) <
+          Math.abs(
+            shift /
+              12,
+          ))
+    )
+      shift =
+        12 *
+        k;
+  const notes =
+    p.notes.map(
+      (
+        n,
+      ) => ({
+        ...n,
+        written:
+          shift ===
+          null
+            ? fold(
+                n.written,
+              )
+            : n.written +
+              shift,
+      }),
+    );
+  return {
+    ...p,
+    clef,
+    notes,
+    ...(octaveClef
+      ? {
+          octaveClef: true,
+        }
+      : {}),
+  };
+}
+
+/**
  * `count` prompts of a level, never the same one twice in a row, as `instrument` reads them. The
  * dealing never depends on the instrument, so one seed deals the same prompts to everyone.
  */
@@ -637,6 +779,7 @@ export function makeRun(
   count: number,
   rand: () => number,
   instrument: Instrument = 'piano',
+  range?: VoiceRange,
 ): SprintPrompt[] {
   const out: SprintPrompt[] =
     [];
@@ -673,6 +816,7 @@ export function makeRun(
       forInstrument(
         p,
         instrument,
+        range,
       ),
   );
 }
@@ -774,6 +918,7 @@ export function dailySeed(
 export function dailyRun(
   date: string,
   instrument: Instrument = 'piano',
+  range?: VoiceRange,
 ): SprintPrompt[] {
   const rand =
     mulberry32(
@@ -790,6 +935,7 @@ export function dailyRun(
         DAILY_PROMPTS_PER_LEVEL,
         rand,
         instrument,
+        range,
       ),
   );
 }

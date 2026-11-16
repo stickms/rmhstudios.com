@@ -29,6 +29,10 @@ import { useTranslation } from 'react-i18next';
 import { Tabs } from '@/components/ui/tabs';
 import { useArrival } from '@/components/ui/arrive';
 import { mulberry32 } from '@/lib/core/rng';
+import {
+  resolveVoiceRange,
+  staffCardRange,
+} from '@/lib/rmhmusic/learn/voice/range';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
 import type { Instrument } from '@/lib/rmhmusic/learn/schemas';
 import {
@@ -55,6 +59,7 @@ import {
 import { InputSetup } from '../InputSetup';
 import { Shell } from '../LessonScreen';
 import { useInputRelease } from '../useLearnInput';
+import { useLearnerShape } from '../useLearnerShape';
 import { SprintRun } from './SprintRun';
 import {
   bestSentence,
@@ -271,6 +276,8 @@ export function SprintGame({
     saver,
   ]);
 
+  const shape =
+    useLearnerShape();
   const loading =
     !ready &&
     status !==
@@ -279,9 +286,18 @@ export function SprintGame({
     useArrival(
       !loading,
     );
+  // Before the profile loads, the layout route's read of it: the placeholder lists the same levels
+  // (a singer's single-note ones) as the loaded picker.
   const instrument: Instrument =
     profile?.instrument ??
-    'piano';
+    shape.instrument;
+  const singer =
+    instrument ===
+    'voice';
+  const range =
+    resolveVoiceRange(
+      profile?.voiceRange,
+    );
   const guitar =
     instrument ===
     'guitar';
@@ -300,6 +316,7 @@ export function SprintGame({
           seed(),
         ),
         instrument,
+        range,
       );
   const playDaily =
     async () => {
@@ -332,6 +349,7 @@ export function SprintGame({
             dailyRun(
               date,
               instrument,
+              range,
             ),
           scored:
             !done,
@@ -444,6 +462,13 @@ export function SprintGame({
           instrument={
             instrument
           }
+          lowCard={
+            singer &&
+            staffCardRange(
+              range,
+            ) ===
+              'low'
+          }
           input={
             profile.input
           }
@@ -471,6 +496,7 @@ export function SprintGame({
               : dailyRun(
                   playing.date,
                   instrument,
+                  range,
                 )
           }
           save={(
@@ -562,7 +588,16 @@ export function SprintGame({
                 undefined
               }
             >
-              {SPRINT_LEVELS.map(
+              {SPRINT_LEVELS.filter(
+                // A singer is offered the single-note levels only.
+                (
+                  level,
+                ) =>
+                  !singer ||
+                  micAllowed(
+                    level.kind,
+                  ),
+              ).map(
                 (
                   level,
                   i,
@@ -701,7 +736,8 @@ export function SprintGame({
                 dailyFailed
               }
               mic={
-                mic
+                mic ||
+                singer
               }
               standing={
                 overview

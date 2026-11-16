@@ -8,6 +8,7 @@ import {
   VIEW_W,
   liveStaffLayout,
   ottavaText,
+  yOf,
 } from './live-staff-layout';
 
 const inside =
@@ -203,6 +204,106 @@ describe('live staff layout', () => {
       ),
     ).toBe(
       '15ma',
+    );
+  });
+});
+
+describe('the live staff in the bass clef (a bass singer’s first note)', () => {
+  it('puts G2 on the bottom line and A3 on the top line, with no ledger lines', () => {
+    const g2 =
+      liveStaffLayout(
+        43,
+        'bass',
+      );
+    expect(
+      g2.step,
+    ).toBe(
+      0,
+    );
+    expect(
+      g2.noteY,
+    ).toBe(
+      yOf(
+        0,
+      ),
+    );
+    expect(
+      g2.ledgerYs,
+    ).toEqual(
+      [],
+    );
+    expect(
+      g2.ottava,
+    ).toBe(
+      0,
+    );
+    expect(
+      liveStaffLayout(
+        57,
+        'bass',
+      )
+        .step,
+    ).toBe(
+      8,
+    );
+  });
+
+  it('gives middle C one ledger line above the staff, and a black key its sharp', () => {
+    const c4 =
+      liveStaffLayout(
+        60,
+        'bass',
+      );
+    expect(
+      c4.step,
+    ).toBe(
+      10,
+    );
+    expect(
+      c4.ledgerYs,
+    ).toEqual(
+      [
+        yOf(
+          10,
+        ),
+      ],
+    );
+    expect(
+      liveStaffLayout(
+        54,
+        'bass',
+      )
+        .sharp,
+    ).toBe(
+      true,
+    );
+  });
+
+  it('moves a note far outside by octaves, with its ottava sign, and keeps the treble default', () => {
+    const low =
+      liveStaffLayout(
+        24,
+        'bass',
+      );
+    expect(
+      low.ottava,
+    ).toBeLessThan(
+      0,
+    );
+    expect(
+      low.step,
+    ).toBeGreaterThanOrEqual(
+      -8,
+    );
+    expect(
+      liveStaffLayout(
+        64,
+      ),
+    ).toEqual(
+      liveStaffLayout(
+        64,
+        'treble',
+      ),
     );
   });
 });

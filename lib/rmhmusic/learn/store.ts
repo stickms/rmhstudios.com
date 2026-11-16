@@ -48,7 +48,9 @@ import {
 } from './schemas';
 import { isInstrumentId } from './audio/instruments/catalog';
 import type { InstrumentId } from './audio/instruments/types';
+import { isVoiceRange } from './voice/range';
 import type {
+  VoiceRange,
   Instrument,
   LearnInput,
   LessonCompleteInput,
@@ -121,6 +123,10 @@ export interface LearnState {
   /** The sound lessons play; null follows the instrument. */
   setSound(
     sound: InstrumentId | null,
+  ): Promise<void>;
+  /** A singer's range (soprano, alto, tenor, bass). */
+  setVoiceRange(
+    range: VoiceRange,
   ): Promise<void>;
   /** Resolves with how the save went, so the lesson can say so without reading the shared `error`. */
   completeLesson(
@@ -468,7 +474,9 @@ const sameProfile =
       a.dailyGoal ===
         b.dailyGoal &&
       a.sound ===
-        b.sound);
+        b.sound &&
+      a.voiceRange ===
+        b.voiceRange);
 
 const sameList =
   <
@@ -937,6 +945,23 @@ export const useLearnStore =
           );
         },
 
+        setVoiceRange(
+          range,
+        ) {
+          if (
+            !isVoiceRange(
+              range,
+            )
+          )
+            return Promise.resolve();
+          return change(
+            {
+              key: 'voiceRange',
+              value:
+                range,
+            },
+          );
+        },
         setLatency(
           ms,
         ) {
