@@ -1563,5 +1563,12 @@
   "ai-working-feed": "Durchsuche öffentliche Beiträge zu deiner Frage und lese bis zu 60 davon…",
   "ai-read-posts_other": "Aus {{count}} Beiträgen geschrieben",
   "leaderboard-find-people": "Leute finden",
-  "ai-read-posts_one": "Aus {{count}} Beiträgen geschrieben"
+  "ai-read-posts_one": "Aus {{count}} Beiträgen geschrieben",
+  "music-privacy-board": "Show my Daily challenge scores on the board",
+  "music-privacy-board-hint": "Signed-in learners see your name, picture and score. Off hides every day at once.",
+  "music-privacy-friends": "Share my progress with friends",
+  "music-privacy-friends-hint": "People you follow who follow you back see your Daily streak, finished units and song bests. Friends stop seeing it within a minute of turning it off.",
+  "music-privacy-save-error": "Could not save",
+  "music-privacy-subtitle": "Who sees your sight reading scores and your progress. Both are off until you turn them on.",
+  "music-privacy-title": "RMH Music"
 }

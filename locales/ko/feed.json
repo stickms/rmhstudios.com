@@ -1516,5 +1516,12 @@
   "quest-to-go_other": "{{count}}개 남음",
   "ai-working-feed": "질문과 관련된 공개 게시물을 찾아 최대 60개를 읽고 있어요…",
   "ai-read-posts_other": "게시물 {{count}}개를 바탕으로 작성",
-  "leaderboard-find-people": "사람 찾기"
+  "leaderboard-find-people": "사람 찾기",
+  "music-privacy-board": "Show my Daily challenge scores on the board",
+  "music-privacy-board-hint": "Signed-in learners see your name, picture and score. Off hides every day at once.",
+  "music-privacy-friends": "Share my progress with friends",
+  "music-privacy-friends-hint": "People you follow who follow you back see your Daily streak, finished units and song bests. Friends stop seeing it within a minute of turning it off.",
+  "music-privacy-save-error": "Could not save",
+  "music-privacy-subtitle": "Who sees your sight reading scores and your progress. Both are off until you turn them on.",
+  "music-privacy-title": "RMH Music"
 }
