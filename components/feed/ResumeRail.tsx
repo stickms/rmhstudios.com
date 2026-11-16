@@ -17,9 +17,8 @@
  *    {@link ResumeState} values rather than a sentence precisely so the 16
  *    locales can render "Level 7" and "12 cards due" themselves; a subtitle
  *    formatted on the server would be English everywhere.
- * 3. **Progress is a `scaleX` fill, not an animated `width`.** Animating width
- *    relayouts the bar and its row every frame (see `FirstWeekCard`, and the
- *    `transition-all` rule in `lib/__tests__/design-consistency.test.ts`).
+ * 3. **Progress is a still `scaleX` fill.** It never animates: it answers no
+ *    input, so under R5 it does not move.
  *
  * `components/ui/radial-loader.tsx` is deliberately NOT used for the progress
  * ring: it is the site's loading MARK — orbiting blobs around a pulsing core —
@@ -34,14 +33,15 @@ import { BookOpen, FileText, Gamepad2, History, Layers, PlayCircle } from 'lucid
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
-import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
+import { SpineItem } from '@/components/ui/spine';
 import { useArrival } from '@/components/ui/arrive';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { cn } from '@/lib/utils';
 import type { ResumeCard, ResumeKind, ResumeState } from '@/lib/history/resume.server';
 import { clamp01 } from '@/lib/core/math';
 import { api } from '@/lib/contract/client';
 import { resumeCardsApi } from '@/lib/site-reads.contract';
+
+/** Rows shown at once; the rest stay one visit away on their own pages. */
+const MAX_ROWS = 3;
 
 const KIND_ICONS: Record<ResumeKind, LucideIcon> = {
   game: Gamepad2,
@@ -63,7 +63,6 @@ interface ResumeRailProps {
 export function ResumeRail({ initial }: ResumeRailProps) {
   const { t, i18n } = useTranslation('feed');
   const { data: session } = useSession();
-  const reduced = useReducedMotion();
   const [cards, setCards] = useState<ResumeCard[] | null>(initial ?? null);
 
   useEffect(() => {
@@ -84,76 +83,74 @@ export function ResumeRail({ initial }: ResumeRailProps) {
   // Rule 1 above: nothing to resume, nothing to render — not an empty state.
   if (list.length === 0) return null;
 
+  // Zeigarnik effect (Bluma Zeigarnik, 1927): unfinished tasks stay in mind, so
+  // the most useful thing to show is the one already started. Hick's law argues
+  // against a long shelf of them: a few rows, most recent first.
+  const rows = list.slice(0, MAX_ROWS);
+
   return (
-    <section
-      aria-label={t('resume-title', { defaultValue: 'Pick up where you left off' })}
-      className={cn('surface-card mx-3 mt-3 px-4 py-3', arrival)}
-    >
-      <div className="mb-2 flex items-center gap-2">
-        <History className="size-4 text-site-accent" aria-hidden />
-        <h2 className="text-sm font-bold text-site-text">
+    <SpineItem dot={false}>
+      <section
+        aria-labelledby="resume-title"
+        className={arrival}
+      >
+        <h2
+          id="resume-title"
+          className="t-label pb-1"
+        >
           {t('resume-title', { defaultValue: 'Pick up where you left off' })}
         </h2>
-      </div>
-
-      <HorizontalScroller
-        aria-label={t('resume-rail-label', { defaultValue: 'Unfinished games, books and drafts' })}
-        surface="none"
-      >
-        {list.map((card) => {
-          const Icon = KIND_ICONS[card.kind] ?? History;
-          const detail = card.state
-            .map((state) => describeState(state, t, i18n.language))
-            .filter(Boolean)
-            .join(' · ');
-
-          const link = resumeLink(card.href);
-
-          return (
-            <Link
-              key={`${card.kind}:${card.href}`}
-              to={link.to}
-              search={link.search}
-              hash={link.hash}
-              title={card.title}
-              className="surface-card surface-press flex w-48 shrink-0 flex-col gap-2 px-4 py-3 sm:w-56"
-            >
-              <span className="flex min-w-0 items-center gap-2">
-                <Icon className="size-3.5 shrink-0 text-site-accent" aria-hidden />
-                <span className="truncate text-sm font-semibold text-site-text">{card.title}</span>
-              </span>
-
-              {detail ? (
-                <span className="truncate text-xs text-site-text-muted">{detail}</span>
-              ) : null}
-
-              {typeof card.progress === 'number' ? (
-                <span
-                  className="mt-0.5 block h-1 w-full overflow-hidden rounded-full bg-site-surface"
-                  role="progressbar"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(card.progress * 100)}
-                  aria-label={t('resume-progress', { defaultValue: 'Progress' })}
+        <ul aria-label={t('resume-rail-label', { defaultValue: 'Unfinished games, books and drafts' })}>
+          {rows.map((card) => {
+            const Icon = KIND_ICONS[card.kind] ?? History;
+            const detail = card.state
+              .map((state) => describeState(state, t, i18n.language))
+              .filter(Boolean)
+              .join(' · ');
+            const link = resumeLink(card.href);
+            return (
+              <li
+                key={`${card.kind}:${card.href}`}
+                className="border-b border-site-border last:border-b-0"
+              >
+                <Link
+                  to={link.to}
+                  search={link.search}
+                  hash={link.hash}
+                  className="flex min-w-0 items-center gap-3 py-2.5"
                 >
-                  {/* The track is the sized element, so the fill is always full
-                      width and scales from its left edge — a composited
-                      transform instead of a per-frame relayout. */}
-                  <span
+                  <Icon
+                    className="size-4 shrink-0 text-site-text-muted"
                     aria-hidden
-                    className={cn(
-                      'block h-full w-full origin-left bg-site-accent',
-                      !reduced && 'transition-transform duration-site-slow',
-                    )}
-                    style={{ transform: `scaleX(${clamp01(card.progress)})` }}
                   />
-                </span>
-              ) : null}
-            </Link>
-          );
-        })}
-      </HorizontalScroller>
-    </section>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="t-body truncate font-medium text-site-text">{card.title}</span>
+                    {detail ? <span className="t-meta truncate">{detail}</span> : null}
+                  </span>
+                  {typeof card.progress === 'number' ? (
+                    <span
+                      className="block h-1 w-16 shrink-0 overflow-hidden rounded-site-sm bg-site-bg-subtle"
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(card.progress * 100)}
+                      aria-label={t('resume-progress', { defaultValue: 'Progress' })}
+                    >
+                      {/* A still fill: nothing here responds to input, so nothing moves (R5). */}
+                      <span
+                        aria-hidden
+                        className="block h-full w-full origin-left bg-site-text"
+                        style={{ transform: `scaleX(${clamp01(card.progress)})` }}
+                      />
+                    </span>
+                  ) : null}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    </SpineItem>
   );
 }
 

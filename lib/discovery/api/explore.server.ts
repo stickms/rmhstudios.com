@@ -14,7 +14,10 @@ export const route = apiRoute('/api/explore', {
         // Per-viewer (suggestedUsers excludes self/followed), so cache privately —
         // a shared public cache could serve one user's list (or a logged-out
         // list containing them) back to another, surfacing self in "who to follow".
-        { headers: { 'Cache-Control': 'private, max-age=30' } },
+        // `Vary: Cookie` for the same reason in the browser: it keys a stored response by URL alone, so
+        // without it a body fetched signed out is replayed for 30 s after sign-in (people the viewer
+        // already follows, no "followed by" lines) and a signed-in one after sign-out.
+        { headers: { 'Cache-Control': 'private, max-age=30', Vary: 'Cookie' } },
       );
     } catch (error) {
       console.error('Explore error:', error);

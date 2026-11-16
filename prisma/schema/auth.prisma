@@ -240,6 +240,9 @@ model User {
   musicLearnProfile MusicLearnProfile?
   musicLearnLessons MusicLearnLessonProgress[]
   musicLearnCards   MusicLearnCard[]
+  musicSprintBests  MusicSprintBest[]
+  musicSprintDaily  MusicSprintDaily[]
+  musicSongBests    MusicSongBest[]
 
   // Direct Messages
   conversationsAsOne     Conversation[]          @relation("ConversationParticipantOne")

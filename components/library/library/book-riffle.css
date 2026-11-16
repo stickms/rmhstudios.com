@@ -1,0 +1,35 @@
+/* Riffle: loose pages hinged at the spine, tucked just behind the cover face at rest (so
+   they cannot be seen). On hover each one flicks up off the stack and falls back, one after
+   another, like a thumb running down the edge of the pages: five flicks of 180 ms staggered
+   45 ms, so the whole riffle is done in about 360 ms — a response to the pointer, nothing
+   that keeps moving. It replays on every new hover; leaving the book simply lets the cover
+   settle (the pages are already back on the stack by then). */
+.lib-book__leaf {
+  --fan: calc(-34deg - var(--leaf) * 6deg);
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: calc(100% - 4px);
+  border: 1px solid var(--site-border);
+  border-radius: 0 var(--site-radius-sm) var(--site-radius-sm) 0;
+  background: var(--site-surface);
+  pointer-events: none;
+  transform-origin: left center;
+  transform: translateZ(-1px) rotateY(0deg);
+}
+
+.lib-book:hover .lib-book__leaf,
+.lib-book:focus-visible .lib-book__leaf {
+  animation: lib-riffle 180ms var(--ease-smooth) calc(var(--leaf) * 45ms) both;
+}
+
+@keyframes lib-riffle {
+  0%,
+  100% {
+    transform: translateZ(-1px) rotateY(0deg);
+  }
+  45% {
+    transform: translateZ(-1px) rotateY(var(--fan));
+  }
+}

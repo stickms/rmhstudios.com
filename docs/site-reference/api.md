@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 994 endpoints across 201 groups: 109 route files under `app/routes/api` and 885 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1002 endpoints across 201 groups: 110 route files under `app/routes/api` and 892 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1293,7 +1293,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/og`
 
-16 routes.
+17 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1313,6 +1313,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/og/section/:file` | `GET` | `lib/og/api/og.section.$file.server.ts` |
 | `/api/og/sohumtracker` | `GET` | `lib/og/api/og.sohumtracker.server.ts` |
 | `/api/og/story/:slug` | `GET` | `lib/og/api/og.story.$slug.server.ts` |
+| `/api/og/wiki` | `GET` | `lib/og/api/og.wiki.server.ts` |
 
 ## `/api/onboarding`
 
@@ -1754,13 +1755,19 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/rmhmusic`
 
-3 routes.
+9 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/rmhmusic/learn/cards` | `GET` `POST` | `lib/rmhmusic/api/rmhmusic.learn.cards.server.ts` |
 | `/api/rmhmusic/learn/lesson-complete` | `POST` | `lib/rmhmusic/api/rmhmusic.learn.lesson-complete.server.ts` |
 | `/api/rmhmusic/learn/profile` | `GET` `PUT` | `lib/rmhmusic/api/rmhmusic.learn.profile.server.ts` |
+| `/api/rmhmusic/songs` | `GET` | `lib/rmhmusic/api/rmhmusic.songs.server.ts` |
+| `/api/rmhmusic/songs/best` | `POST` | `lib/rmhmusic/api/rmhmusic.songs.best.server.ts` |
+| `/api/rmhmusic/sprint` | `GET` | `lib/rmhmusic/api/rmhmusic.sprint.server.ts` |
+| `/api/rmhmusic/sprint/daily` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.daily.server.ts` |
+| `/api/rmhmusic/sprint/daily-start` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.daily-start.server.ts` |
+| `/api/rmhmusic/sprint/freeplay` | `POST` | `lib/rmhmusic/api/rmhmusic.sprint.freeplay.server.ts` |
 
 ## `/api/rmhos`
 
@@ -2389,10 +2396,11 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/wiki`
 
-1 route.
+2 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
+| `/api/wiki/assist` | `OPTIONS` `POST` | `app/routes/api/wiki/assist.ts` |
 | `/api/wiki/sso` | `GET` | `lib/wiki/api/wiki.sso.server.ts` |
 
 ## `/api/wishlist`

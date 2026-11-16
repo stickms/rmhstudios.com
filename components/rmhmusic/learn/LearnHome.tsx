@@ -39,6 +39,11 @@ import {
 } from './buttons';
 import { HomeHero } from './HomeHero';
 import { InputSetup } from './InputSetup';
+import {
+  SoundDialog,
+  soundName,
+  useLearnerSound,
+} from './SoundDialog';
 import { ModeToggle } from './ModeToggle';
 import { PathUnit } from './PathUnit';
 import { StreakChip } from './StreakChip';
@@ -110,6 +115,13 @@ function HomeSkeleton() {
           ),
         )}
       </div>
+      <div
+        className={
+          INPUT_ROW
+        }
+      >
+        <span className="app-skeleton h-5 w-28 max-w-full" />
+      </div>
     </div>
   );
 }
@@ -136,6 +148,19 @@ export function LearnHome() {
     useRef<HTMLButtonElement>(
       null,
     );
+  const [
+    soundOpen,
+    setSoundOpen,
+  ] =
+    useState(
+      false,
+    );
+  const soundButton =
+    useRef<HTMLButtonElement>(
+      null,
+    );
+  const soundId =
+    useLearnerSound();
   const onOpenLesson =
     (
       lessonId: string,
@@ -506,6 +531,39 @@ export function LearnHome() {
                   )}
                 </span>
               </button>
+              <button
+                ref={
+                  soundButton
+                }
+                type="button"
+                onClick={() =>
+                  setSoundOpen(
+                    true,
+                  )
+                }
+                aria-label={t(
+                  'sound-button-named',
+                  {
+                    name: soundName(
+                      t,
+                      soundId,
+                    ),
+                    defaultValue:
+                      'Sound: {{name}}',
+                  },
+                )}
+                className={`${TEXT_BUTTON} ${INPUT_BUTTON}`}
+              >
+                <span>
+                  {t(
+                    'sound-button',
+                    {
+                      defaultValue:
+                        'Sound',
+                    },
+                  )}
+                </span>
+              </button>
               {practiceDue && (
                 <Link
                   to="/rmhmusic/practice"
@@ -557,6 +615,54 @@ export function LearnHome() {
                 />
               ),
             )}
+          </div>
+          <div
+            className={
+              INPUT_ROW
+            }
+          >
+            <Link
+              to="/rmhmusic/sprint"
+              className={
+                TEXT_BUTTON
+              }
+            >
+              {t(
+                'sprint-home-link',
+                {
+                  defaultValue:
+                    'Sight reading',
+                },
+              )}
+            </Link>
+            <Link
+              to="/rmhmusic/tuner"
+              className={
+                TEXT_BUTTON
+              }
+            >
+              {t(
+                'tuner-home-link',
+                {
+                  defaultValue:
+                    'Tuner',
+                },
+              )}
+            </Link>
+            <Link
+              to="/rmhmusic/songs"
+              className={
+                TEXT_BUTTON
+              }
+            >
+              {t(
+                'songs-home-link',
+                {
+                  defaultValue:
+                    'Songs',
+                },
+              )}
+            </Link>
           </div>
         </div>
       );
@@ -657,6 +763,17 @@ export function LearnHome() {
           }
           returnFocus={
             setupButton
+          }
+        />
+        <SoundDialog
+          open={
+            soundOpen
+          }
+          onOpenChange={
+            setSoundOpen
+          }
+          returnFocus={
+            soundButton
           }
         />
       </div>

@@ -19,17 +19,17 @@ import { satoriFontFaces } from '@/lib/og/fonts.server';
 /* -------------------------------------------------------------------------- */
 
 /**
- * Geist 400/700 (the weights the cards use), read from disk by `./fonts.server`.
+ * Geist 400/500/600 (Steel's weights, Y1: never 700 or above), read from disk by `./fonts.server`.
  * Kept async so the renderers' `await loadFonts()` call sites do not change, and so
  * a missing file is a rejected render rather than an import-time crash.
  */
 export async function loadFonts(): Promise<void> {
-  satoriFontFaces({ weights: [400, 700] });
+  satoriFontFaces({ weights: [400, 500, 600] });
 }
 
 /** The satori `fonts` array. */
 export function satoriFonts() {
-  return satoriFontFaces({ weights: [400, 700] });
+  return satoriFontFaces({ weights: [400, 500, 600] });
 }
 
 /* -------------------------------------------------------------------------- */
@@ -94,37 +94,35 @@ export function truncate(s: string, n: number): string {
 /* -------------------------------------------------------------------------- */
 
 /**
- * The card palette, hand-mirrored from the DEFAULT theme's `--site-*` block in
- * `app/globals.css`. satori cannot read CSS custom properties, so this is the
- * one place in the codebase allowed to restate them — keep it in sync when the
- * default theme's tokens move.
+ * The card palette: Steel's Day edition (design.md §2, `app/globals/tokens-themes.css`),
+ * restated by hand because satori cannot read CSS custom properties. This is the
+ * one place in the codebase allowed to restate them; keep it in sync with the
+ * `:root` block and `lib/__tests__/steel-tokens.test.ts`.
  *
- * The default theme is strict monochrome glass (design.md §1): white canvas,
- * ink text, ink accent, hairline black borders. Cards are therefore ink on
- * white — not the old dark/amber scheme, which matched no theme the site has
- * shipped since the rewrite.
+ * Steel is flat (R1): every value here is a solid colour. There is no
+ * translucency, so the old glass tints are gone and the names that remain map
+ * onto the Steel roles a card uses.
  */
-export const CANVAS = '#ffffff'; // --site-bg
-export const INK = '#000000'; // --site-text, --site-accent
-export const INK_FG = '#ffffff'; // --site-accent-fg
-export const MUTED = '#565656'; // --site-text-muted
-export const DIM = '#767676'; // --site-text-muted
-export const HAIRLINE = 'rgba(0, 0, 0, 0.16)'; // --site-border
-export const HAIRLINE_SOFT = 'rgba(0, 0, 0, 0.08)'; // the old glass rim
-export const GLASS = 'rgba(255, 255, 255, 0.72)'; // the old glass tint
-export const GLASS_STRONG = 'rgba(255, 255, 255, 0.86)'; // the old strong glass tint
-export const WELL = 'rgba(0, 0, 0, 0.045)'; // --site-bg-subtle
+export const CANVAS = '#fafafa'; // --site-bg: the page
+export const SURFACE = '#ffffff'; // --site-surface: controls (a stat chip)
+export const INK = '#0b0d10'; // --site-text, --site-accent
+export const INK_FG = '#fafafa'; // --site-accent-fg: text on ink
+export const MUTED = '#606873'; // --site-text-muted
+/** Steel has no lighter grey for text (T1): the dimmest text is the muted ink. */
+export const DIM = MUTED;
+export const HAIRLINE = '#e3e6e9'; // --site-border: every rule and control border
+export const WELL = '#f0f2f4'; // --site-bg-subtle: picture placeholder, quoted fragment
 
 /**
  * Everything geometric on a card is a site token times this.
  *
  * A 1200×630 card is displayed at roughly half that in every unfurl that
- * matters (Discord ~500px, Twitter ~600px, iMessage ~340px), so a 22px radius
- * and a 1px hairline drawn at card scale arrive at the viewer as 11px and half
- * a pixel — a rounder, fainter box than the site's. Doubling the tokens means
- * the card lands on the *rendered* value the design specifies.
+ * matters (Discord ~500px, Twitter ~600px, iMessage ~340px), so an 8px radius
+ * and a 1px hairline drawn at card scale would arrive at the viewer as 4px and half
+ * a pixel. Doubling the tokens means the card lands on the *rendered* value the
+ * design specifies.
  */
 export const SCALE = 2;
-export const RADIUS = 22 * SCALE; // --site-radius
-export const RADIUS_SM = 14 * SCALE; // --site-radius-sm
-export const HAIRLINE_W = 1 * SCALE; // --site-border-width
+export const RADIUS = 8 * SCALE; // --site-radius
+export const RADIUS_SM = 4 * SCALE; // --site-radius-sm
+export const HAIRLINE_W = 1 * SCALE; // a 1px rule

@@ -72,6 +72,8 @@ export const NAME_CHANGE_DAYS = 180;
 export const REFRESH_MAX_IMAGES_PER_TICK = 3;
 export const FIRST_UPDATES_PER_TICK = 4;
 export const FIRST_UPDATE_IMAGES_PER_TICK = 6;
+/** Bots given a styled display name per run by the one-time restyle pass (text only, no pictures). */
+export const RESTYLES_PER_TICK = 8;
 /** The refresh run's cron: hourly, off the top of the hour. */
 export const BOT_REFRESH_CRON =
   '23 * * * *';
@@ -127,6 +129,8 @@ export interface BotConfig {
    */
   firstUpdatesPerTick: number;
   firstUpdateImagesPerTick: number;
+  /** The one-time restyle pass: bots minted before name styles given a styled name per run. */
+  restylesPerTick: number;
 }
 
 export function clampInt(
@@ -580,6 +584,7 @@ export function loadBotConfig(
       FIRST_UPDATES_PER_TICK,
     firstUpdateImagesPerTick:
       FIRST_UPDATE_IMAGES_PER_TICK,
+    restylesPerTick: RESTYLES_PER_TICK,
   };
 }
 

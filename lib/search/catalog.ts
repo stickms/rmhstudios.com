@@ -282,6 +282,18 @@ export const SITE_DESTINATIONS: SiteDestination[] =
         'Flashcard decks and spaced revision.',
     },
     {
+      id: 'psychology',
+      title:
+        'Psychology',
+      href: '/psychology',
+      iconName:
+        'BookOpen',
+      keywords:
+        'research psychologists zeigarnik kahneman flow design why how it works',
+      description:
+        'The research behind how the site behaves.',
+    },
+    {
       id: 'roadmap',
       title:
         'Roadmap',

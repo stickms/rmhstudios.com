@@ -1,40 +1,22 @@
 /**
- * The shared look of every Open Graph card: **the liquid globe, in ink on
- * white.**
+ * The shared look of every Open Graph card: **Steel, on a 1200×630 page.**
  *
- * Before this file the five card renderers each hand-built their own layout out
- * of a dark background and an amber dot, which matched no theme the site has
- * shipped since the rewrite — the default theme is strict monochrome glass
- * (design.md §1). Worse, every card looked like a different product, because
- * "branded" was five separate improvisations rather than one system.
+ * A card is the site's Day edition (design.md): a flat `#fafafa` page in Geist,
+ * divided by 1px rules, with no gradient, glass, glow or shadow (R1). From the
+ * top:
  *
- * A card is now the same three things the site is:
+ * 1. **The brand row.** The favicon (`brandMark`), "RMH Studios" at 600, and the
+ *    kind of page as a `t-label` kicker on the right.
+ * 2. **A rule, the body, a rule.** Content sits directly on the page (S1, R3);
+ *    a picture is a picture box (`--site-bg-subtle`, 1px border, 8px radius).
+ * 3. **The footer.** The URL, or a row of stat chips (controls: `--site-surface`,
+ *    1px border, 8px radius; at most one ink-filled, R4).
  *
- * 1. **A place you're looking into.** The canvas carries the ring backdrop and
- *    the aurora blobs the site draws behind everything — faint, ambient, and
- *    radiating from a centre off the right edge, so the card reads as a window
- *    onto the scene rather than a slide.
- * 2. **Glass over that scene.** Content sits on a translucent pane with a
- *    hairline rim and a specular top edge. The pane is genuinely translucent
- *    (satori composites `rgba` over the parent), so the aurora shows through it
- *    exactly as it does on the site.
- * 3. **The globe.** The navigation globe is the mark. It is drawn here from the
- *    same cage `components/radial/LiquidGlobe.tsx` draws — the same six
- *    meridians, the same seven parallels, the same per-ring ink weights — so the
- *    thing on the card is the thing you land on.
- *
- * Everything geometric goes through `SCALE` (see `shared.server.ts`): a card is
- * viewed at about half its rendered size, so the site's 22px radius and 1px
- * hairline are drawn at 44px and 2px to arrive correct.
- *
- * ## Why the globe is thirteen `<div>`s
- *
- * The live globe strokes its cage onto a canvas because a rotated 3D transform
- * re-rasterises thirteen antialiased ellipses per frame (design.md §4). None of
- * that applies here: this is one still frame, in a process with no compositor,
- * and satori's supported subset covers borders and elliptical radii but not
- * `<canvas>`. So the card draws the cage the way the site used to — as elements
- * — which is the cheap option when there is no next frame.
+ * Type is the site's: weights 400/500/600 only (Y1), titles tracked at
+ * -0.025em, no letterspaced capitals (Y2). Everything geometric goes through
+ * `SCALE` (see `shared.server.ts`): a card is viewed at about half its rendered
+ * size, so the 8px radius and 1px rule are drawn at 16px and 2px to arrive
+ * correct.
  *
  * ## Two satori rules that will bite you
  *
@@ -43,9 +25,9 @@
  *    lays its children out side by side. Pass a keyed **array** instead — that is
  *    why every helper here takes `React.ReactNode` and every caller hands it a
  *    literal array.
- * 2. **There is no emoji font.** Anything pictographic renders as tofu, which is
- *    what the old cards' `💬` did. Run user text through `stripEmoji`, and label
- *    figures with words ("replies") rather than glyphs.
+ * 2. **There is no emoji font.** Anything pictographic renders as tofu. Run user
+ *    text through `stripEmoji`, and label figures with words ("replies") rather
+ *    than glyphs.
  */
 
 import React from 'react';
@@ -53,9 +35,7 @@ import { OG_FONT_SANS } from '@/lib/og/fonts.server';
 import {
   CANVAS,
   DIM,
-  GLASS,
   HAIRLINE,
-  HAIRLINE_SOFT,
   HAIRLINE_W,
   INK,
   INK_FG,
@@ -63,12 +43,12 @@ import {
   RADIUS,
   RADIUS_SM,
   SCALE,
+  SURFACE,
   WELL,
 } from '@/lib/og/shared.server';
-
-const DEG =
-  Math.PI /
-  180;
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { Resvg } from '@resvg/resvg-js';
 
 /* -------------------------------------------------------------------------- */
 /* Card sizes                                                                 */
@@ -86,250 +66,132 @@ export const STORY =
   } as const;
 
 /* -------------------------------------------------------------------------- */
-/* The globe mark                                                             */
+/* The mark                                                                   */
 /* -------------------------------------------------------------------------- */
 
-/**
- * The cage, copied from `LiquidGlobe.tsx`. Same six great circles and seven
- * latitude rings; changing one without the other makes the mark stop being the
- * navigator it stands for.
- */
-const MERIDIANS =
+// Same lookup as the fonts (lib/og/fonts.server.ts): dev and tests run from the
+// app root, the production image serves the built tree under .output/public.
+const FAVICON_PATHS =
   [
-    0,
-    30,
-    60,
-    90,
-    120,
-    150,
+    path.join(
+      process.cwd(),
+      'public',
+      'favicon.svg',
+    ),
+    path.join(
+      process.cwd(),
+      '.output',
+      'public',
+      'favicon.svg',
+    ),
+    path.join(
+      process.cwd(),
+      'dist',
+      'public',
+      'favicon.svg',
+    ),
   ];
-const PARALLELS =
-  [
-    -60,
-    -40,
-    -20,
-    0,
-    20,
-    40,
-    60,
-  ];
-/** Per-ring ink, matching the live cage's `--cage-*` defaults. */
-const CAGE_MINOR = 0.2;
-const CAGE_PARALLEL = 0.13;
-const CAGE_MAJOR = 0.34;
 
-/**
- * The mark's fixed attitude. The live globe rests at pitch 0 and drifts in yaw;
- * a still frame at pitch 0 would draw every parallel as a straight line, which
- * reads as a grid rather than a ball. 18° of pitch is the smallest tilt that
- * makes the parallels unmistakably circles seen edge-on, and the yaw offset
- * keeps the prime meridian off the limb where it would be invisible.
- */
-const MARK_PITCH = 18;
-const MARK_YAW = 24;
+/** Rasterised once per process, at the largest size a card draws it. */
+const FAVICON_PX = 256;
+let faviconUri:
+  | string
+  | null
+  | undefined;
 
-interface GlobeMarkOptions {
-  /** Ink to draw the cage in. Defaults to the page ink. */
-  ink?: string;
-  /** Multiplies every ring's alpha — lets a small mark hold its weight. */
-  weight?: number;
+function faviconDataUri():
+  | string
+  | null {
+  if (
+    faviconUri !==
+    undefined
+  )
+    return faviconUri;
+  faviconUri =
+    null;
+  for (const file of FAVICON_PATHS) {
+    try {
+      const svg =
+        readFileSync(
+          file,
+          'utf8',
+        );
+      const png =
+        new Resvg(
+          svg,
+          {
+            fitTo:
+              {
+                mode: 'width',
+                value:
+                  FAVICON_PX,
+              },
+            background:
+              'rgba(0,0,0,0)',
+            font: {
+              loadSystemFonts: false,
+            },
+          },
+        )
+          .render()
+          .asPng();
+      faviconUri = `data:image/png;base64,${Buffer.from(png).toString('base64')}`;
+      break;
+    } catch {
+      /* try the next root */
+    }
+  }
+  return faviconUri;
 }
 
 /**
- * The navigation globe as a still mark, `size` px square.
- *
- * Orthographic, which is what a sphere at this size projects to anyway: a
- * meridian at longitude λ is an ellipse of half-width `R·|cos λ|` and full
- * height, and a parallel at latitude φ is an ellipse of half-width `R·cos φ`
- * squashed by `sin(pitch)`, centred `R·sin φ·cos(pitch)` off the equator.
+ * The site's mark on a card: the favicon (`public/favicon.svg`), the same
+ * picture a browser tab shows, so a shared link and the tab it opens carry one
+ * logo. The favicon is a white disc, which would vanish into Steel's #fafafa
+ * page, so it gets the 1px hairline ring every picture takes (S5).
  */
-export function globeMark(
+export function brandMark(
   size: number,
-  opts: GlobeMarkOptions = {},
 ): React.ReactElement {
-  const {
-    ink = '0, 0, 0',
-    weight = 1,
-  } =
-    opts;
-  const R =
-    size /
-    2;
-  const sinTilt =
-    Math.sin(
-      MARK_PITCH *
-        DEG,
-    );
-  const cosTilt =
-    Math.cos(
-      MARK_PITCH *
-        DEG,
-    );
-  // The cage's hairline, scaled off the mark so a 48px mark and a 220px one
-  // read as the same object rather than the same line weight.
-  const line =
-    Math.max(
-      1,
-      Math.round(
-        size /
-          90,
-      ),
-    );
-  const stroke =
-    (
-      alpha: number,
-    ) =>
-      `${line}px solid rgba(${ink}, ${Math.min(1, alpha * weight)})`;
-
-  const rings: React.ReactElement[] =
-    [];
-
-  for (const lon of MERIDIANS) {
-    const w =
-      Math.abs(
-        Math.cos(
-          (lon +
-            MARK_YAW) *
-            DEG,
-        ),
-      ) *
-      size;
-    rings.push(
-      <div
-        key={`m${lon}`}
-        style={{
-          position:
-            'absolute',
-          left:
-            (size -
-              w) /
-            2,
-          top: 0,
-          width:
-            Math.max(
-              w,
-              line,
-            ),
-          height:
-            size,
-          borderRadius: `${size}px / ${size}px`,
-          border:
-            stroke(
-              lon ===
-                0
-                ? CAGE_MAJOR
-                : CAGE_MINOR,
-            ),
-        }}
-      />,
-    );
-  }
-
-  for (const lat of PARALLELS) {
-    const c =
-      Math.cos(
-        lat *
-          DEG,
-      );
-    const w =
-      c *
-      size;
-    const h =
-      Math.max(
-        c *
-          size *
-          sinTilt,
-        line,
-      );
-    rings.push(
-      <div
-        key={`p${lat}`}
-        style={{
-          position:
-            'absolute',
-          left:
-            (size -
-              w) /
-            2,
-          top:
-            R -
-            R *
-              Math.sin(
-                lat *
-                  DEG,
-              ) *
-              cosTilt -
-            h /
-              2,
-          width:
-            w,
-          height:
-            h,
-          borderRadius: `${w}px / ${h}px`,
-          border:
-            stroke(
-              lat ===
-                0
-                ? CAGE_MAJOR
-                : CAGE_PARALLEL,
-            ),
-        }}
-      />,
-    );
-  }
-
+  const src =
+    faviconDataUri();
   return (
     <div
       style={{
-        position:
-          'relative',
         display:
           'flex',
         width:
           size,
         height:
           size,
+        borderRadius:
+          size,
+        border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
+        backgroundColor:
+          SURFACE,
+        overflow:
+          'hidden',
       }}
     >
-      {/* The ball: glass, lit by the same scene light the site's surfaces answer
-          to (design.md §3) — a highlight up and to the left, shading to the rim. */}
-      <div
-        style={{
-          position:
-            'absolute',
-          left: 0,
-          top: 0,
-          width:
-            size,
-          height:
-            size,
-          borderRadius:
-            size,
-          backgroundImage: `radial-gradient(circle at 34% 26%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.35) 42%, rgba(${ink},0.05) 100%)`,
-        }}
-      />
-      {
-        rings
-      }
-      {/* The limb, drawn last so the cage terminates against it. */}
-      <div
-        style={{
-          position:
-            'absolute',
-          left: 0,
-          top: 0,
-          width:
-            size,
-          height:
-            size,
-          borderRadius:
-            size,
-          border:
-            stroke(
-              CAGE_MAJOR,
-            ),
-        }}
-      />
+      {src ? (
+        // satori is handed this tree, not the DOM: `alt` is inert here.
+        <img
+          src={
+            src
+          }
+          alt=""
+          width={
+            size -
+            HAIRLINE_W *
+              2
+          }
+          height={
+            size -
+            HAIRLINE_W *
+              2
+          }
+        />
+      ) : null}
     </div>
   );
 }
@@ -339,8 +201,9 @@ export function globeMark(
 /* -------------------------------------------------------------------------- */
 
 /**
- * The kicker: what this card *is* ("POST", "GAME HUB", "DEVLOG"). Mirrors the
- * site's `--site-kicker-*` tokens — 11px/0.2em/700, doubled by `SCALE`.
+ * The kicker: what this card *is* ("Post", "Game hub", "Devlog"). Steel's
+ * `t-label` (13px, 600, muted), doubled by `SCALE`: sentence case and no
+ * tracking, because Steel sets no letterspaced capitals (Y2).
  */
 export function kicker(
   text: string,
@@ -351,13 +214,10 @@ export function kicker(
     <span
       style={{
         fontSize:
-          11 *
+          13 *
           SCALE *
           scale,
-        fontWeight: 700,
-        letterSpacing: `${0.2}em`,
-        textTransform:
-          'uppercase',
+        fontWeight: 600,
         color,
       }}
     >
@@ -369,28 +229,14 @@ export function kicker(
 }
 
 /**
- * Display tracking, from `--site-display-*`: the bigger the type, the tighter
- * it is set. Returns the `letterSpacing` for a given rendered size.
+ * Display tracking: `t-title`'s -0.025em at every size. Kept as a function so
+ * the renderers' call sites read the same.
  */
 export function displayTracking(
-  fontSize: number,
+  _fontSize: number,
 ): string {
-  if (
-    fontSize >=
-    110
-  )
-    return '-0.065em';
-  if (
-    fontSize >=
-    80
-  )
-    return '-0.055em';
-  if (
-    fontSize >=
-    56
-  )
-    return '-0.05em';
-  return '-0.042em';
+  // Steel has one display tracking, `t-title`'s (design.md §3).
+  return '-0.025em';
 }
 
 /**
@@ -474,15 +320,20 @@ interface PaneOptions {
 }
 
 /**
- * A glass pane (`.surface-panel`, L2 — the singular-panel tier): translucent fill
- * over whatever the canvas is drawing, a hairline rim, and the specular top
- * edge every tier carries. `flex: 1` is deliberately NOT set — callers decide
- * whether the pane fills the card or hugs its content.
+ * The card's content block. Steel puts content directly on the page (S1, R3:
+ * rules before boxes), so this draws no fill and no visible rim: it is a column
+ * with the vertical padding the renderers measure against. The transparent
+ * border keeps the box model the renderers' arithmetic expects (they subtract
+ * the rim from the width they lay out), and there is no horizontal padding so
+ * the content lines up with the brand row above it.
  */
 export function pane({
   style,
   children,
 }: PaneOptions): React.ReactElement {
+  const row =
+    style?.flexDirection ===
+    'row';
   return (
     <div
       style={{
@@ -490,17 +341,27 @@ export function pane({
           'flex',
         flexDirection:
           'column',
-        backgroundColor:
-          GLASS,
-        border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
-        borderTopColor:
-          'rgba(255, 255, 255, 0.9)',
-        borderRadius:
-          RADIUS,
-        padding:
+        border: `${HAIRLINE_W}px solid transparent`,
+        paddingTop:
+          24 *
+          SCALE,
+        paddingBottom:
           24 *
           SCALE,
         ...style,
+        // After the caller's style, which sets an all-round `padding`: the
+        // content hangs from the same left edge as the brand row and the rules.
+        // The renderers measured their columns for the padded box, so a row
+        // (text beside a picture) spreads to the edges rather than leaving the
+        // padding as an empty strip on the right.
+        paddingLeft: 0,
+        paddingRight: 0,
+        ...(row
+          ? {
+              justifyContent:
+                'space-between' as const,
+            }
+          : {}),
       }}
     >
       {
@@ -511,8 +372,8 @@ export function pane({
 }
 
 /**
- * A recessed well (`.surface-field`) — the tier the site uses for fields and, on
- * a card, for a quoted or embedded fragment of the page's own content.
+ * A quoted or embedded fragment of the page's own content: Steel's picture
+ * treatment (`--site-bg-subtle`, a 1px border, the 8px radius; S5).
  */
 export function inset({
   style,
@@ -527,9 +388,9 @@ export function inset({
           'column',
         backgroundColor:
           WELL,
-        border: `${HAIRLINE_W}px solid ${HAIRLINE_SOFT}`,
+        border: `${HAIRLINE_W}px solid ${HAIRLINE}`,
         borderRadius:
-          RADIUS_SM,
+          RADIUS,
         padding:
           18 *
           SCALE,
@@ -619,11 +480,12 @@ export function statChips(
                 6 *
                 SCALE *
                 scale,
-              borderRadius: 9999,
+              borderRadius:
+                RADIUS,
               backgroundColor:
                 s.lead
                   ? INK
-                  : GLASS,
+                  : SURFACE,
               border: `${HAIRLINE_W}px solid ${s.lead ? INK : HAIRLINE}`,
             }}
           >
@@ -633,7 +495,7 @@ export function statChips(
                   15 *
                   SCALE *
                   scale,
-                fontWeight: 700,
+                fontWeight: 600,
                 letterSpacing:
                   '-0.022em',
                 color:
@@ -655,7 +517,7 @@ export function statChips(
                 fontWeight: 500,
                 color:
                   s.lead
-                    ? 'rgba(255, 255, 255, 0.72)'
+                    ? INK_FG
                     : MUTED,
               }}
             >
@@ -761,7 +623,7 @@ export function avatarDisc(
         fontSize:
           size *
           0.42,
-        fontWeight: 700,
+        fontWeight: 600,
       }}
     >
       {
@@ -885,17 +747,18 @@ export function mediaTag(
         paddingBottom:
           4 *
           SCALE,
-        borderRadius: 9999,
+        borderRadius:
+          RADIUS_SM,
         backgroundColor:
-          'rgba(0, 0, 0, 0.72)',
+          INK,
         color:
           INK_FG,
         fontSize:
           11 *
           SCALE,
-        fontWeight: 700,
+        fontWeight: 600,
         letterSpacing:
-          '0.06em',
+          '0',
       }}
     >
       {
@@ -972,56 +835,6 @@ export function verifiedBadge(
 /* The card frame                                                             */
 /* -------------------------------------------------------------------------- */
 
-/**
- * The ring backdrop + aurora, as a `backgroundImage` stack.
- *
- * The site's scene is a fixed ring field with a drifting blob field over it
- * (design.md §1). Here it is one still layer: three hairline rings radiating
- * from a centre off the right edge — the "everything radiates from a centre"
- * idea, with the centre where the globe sits on most of these cards — under two
- * very soft aurora blobs. Every value is at or under the live scene's
- * `--site-aurora-far-*` weight (2–3% ink), because this has to stay behind text
- * at thumbnail size.
- */
-function scene(
-  width: number,
-  height: number,
-): string {
-  const cx =
-    width *
-    0.86;
-  const cy =
-    height *
-    0.2;
-  const ring =
-    (
-      r: number,
-      alpha: number,
-    ) =>
-      `radial-gradient(circle ${r}px at ${cx}px ${cy}px, rgba(0,0,0,0) ${r - 1.5}px, rgba(0,0,0,${alpha}) ${r - 1.5}px, rgba(0,0,0,${alpha}) ${r}px, rgba(0,0,0,0) ${r}px)`;
-  return [
-    ring(
-      height *
-        0.42,
-      0.05,
-    ),
-    ring(
-      height *
-        0.72,
-      0.04,
-    ),
-    ring(
-      height *
-        1.05,
-      0.03,
-    ),
-    `radial-gradient(${width * 0.8}px ${height * 1.05}px at 88% -14%, rgba(0,0,0,0.05), rgba(0,0,0,0) 62%)`,
-    `radial-gradient(${width * 0.6}px ${height * 0.8}px at 4% 112%, rgba(0,0,0,0.045), rgba(0,0,0,0) 64%)`,
-  ].join(
-    ', ',
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /* Frame metrics                                                              */
 /* -------------------------------------------------------------------------- */
@@ -1090,6 +903,8 @@ export function frameMetrics(
       mark -
       FOOTER -
       GUTTER *
+        2 -
+      HAIRLINE_W *
         2,
     pad,
     gutter:
@@ -1113,7 +928,8 @@ export interface CardFrameOptions {
 }
 
 /**
- * The frame every card shares: scene, brand row, body, footer.
+ * The frame every card shares: brand row, rule, body, rule, footer, on the flat
+ * Steel page.
  *
  * Callers supply only what is specific to the page being linked to. That is the
  * whole point — the parts that say "RMH Studios" are written once here, so a new
@@ -1148,11 +964,6 @@ export function cardFrame({
           'column',
         backgroundColor:
           CANVAS,
-        backgroundImage:
-          scene(
-            width,
-            height,
-          ),
         padding:
           pad,
         fontFamily:
@@ -1186,7 +997,7 @@ export function cardFrame({
               SCALE,
           }}
         >
-          {globeMark(
+          {brandMark(
             markSize,
           )}
           <span
@@ -1196,7 +1007,7 @@ export function cardFrame({
                   ? 20
                   : 15) *
                 SCALE,
-              fontWeight: 700,
+              fontWeight: 600,
               letterSpacing:
                 '-0.022em',
               color:
@@ -1216,6 +1027,20 @@ export function cardFrame({
           : null}
       </div>
 
+      {/* A 1px rule under the brand row: rules before boxes (R3). */}
+      <div
+        style={{
+          display:
+            'flex',
+          height:
+            HAIRLINE_W,
+          backgroundColor:
+            HAIRLINE,
+          marginTop:
+            GUTTER,
+        }}
+      />
+
       {/* Body */}
       <div
         style={{
@@ -1227,10 +1052,6 @@ export function cardFrame({
           justifyContent:
             'center',
           minHeight: 0,
-          marginTop:
-            GUTTER,
-          marginBottom:
-            GUTTER,
         }}
       >
         {centred &&
@@ -1257,6 +1078,20 @@ export function cardFrame({
           children
         }
       </div>
+
+      {/* And one over the footer. */}
+      <div
+        style={{
+          display:
+            'flex',
+          height:
+            HAIRLINE_W,
+          backgroundColor:
+            HAIRLINE,
+          marginBottom:
+            GUTTER,
+        }}
+      />
 
       {/* Footer */}
       <div

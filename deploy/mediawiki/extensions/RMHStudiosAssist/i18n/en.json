@@ -1,0 +1,27 @@
+{
+	"@metadata": {
+		"authors": [ "RMH Studios" ]
+	},
+	"rmhstudiosassist-desc": "Adds \"Edit with AI\" to the editor: describe the page and DeepSeek writes it, through rmhstudios.com.",
+	"rmhstudiosassist-open": "Edit with AI",
+	"rmhstudiosassist-close": "Close",
+	"rmhstudiosassist-label": "What should the page say?",
+	"rmhstudiosassist-placeholder-new": "Describe the page: what it covers, the sections you want, facts to include and the tone. For example: \"A guide to Balatro. Sections: rules, scoring, jokers, tips for beginners.\"",
+	"rmhstudiosassist-placeholder-edit": "Say what to change. For example: \"Add a section on scoring\" or \"Rewrite the introduction in two sentences\".",
+	"rmhstudiosassist-write": "Write page",
+	"rmhstudiosassist-revise": "Revise page",
+	"rmhstudiosassist-stop": "Stop",
+	"rmhstudiosassist-undo": "Undo",
+	"rmhstudiosassist-writing": "Writing into the edit box",
+	"rmhstudiosassist-note": "DeepSeek writes the page into the edit box below. Nothing is saved until you press Save changes, so read it first: the assistant leaves [placeholders] where it lacks a fact.",
+	"rmhstudiosassist-done": "Done. Read the page, fix anything wrong, then save.",
+	"rmhstudiosassist-summary": "Written with the AI assistant",
+	"rmhstudiosassist-error-signin": "Your rmhstudios.com session has ended, so the assistant cannot run.",
+	"rmhstudiosassist-error-signin-link": "Sign in to rmhstudios.com",
+	"rmhstudiosassist-error-budget": "You have used this month's AI allowance on rmhstudios.com.",
+	"rmhstudiosassist-error-forbidden": "The assistant is not available to this account.",
+	"rmhstudiosassist-error-rate": "Too many requests. Wait a minute, then try again.",
+	"rmhstudiosassist-error-offline": "The assistant is offline right now.",
+	"rmhstudiosassist-error-empty": "The assistant wrote nothing. Try again.",
+	"rmhstudiosassist-error-failed": "The assistant stopped before it finished. Try again."
+}

@@ -6,7 +6,7 @@
 
 # Page routes
 
-Every page the site serves — 365 routes. 200 render inside the standard site shell (sidebar, nav, context rail); 165 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
+Every page the site serves — 371 routes. 201 render inside the standard site shell (sidebar, nav, context rail); 170 are full-screen, which is how games, the login page and the legal pages are meant to render. Placement decides chrome: a file under `app/routes/_site/` gets the shell, a top-level file does not.
 
 Params appear as `:name`; `*` is a catch-all splat.
 
@@ -135,6 +135,7 @@ Standard pages, rendered inside the sidebar shell.
 | `/pricing` | redirects to `/store?tab=membership` | public | `app/routes/_site/pricing.tsx` |
 | `/profile/:id` | redirects to `/u/$userid` | public | `app/routes/_site/profile/$id.tsx` |
 | `/progress` | Progress | public | `app/routes/_site/progress.tsx` |
+| `/psychology` | Psychology | public | `app/routes/_site/psychology.tsx` |
 | `/qotd` | Question of the Day | public | `app/routes/_site/qotd.tsx` |
 | `/quotes` | Steve Jobs Quotes | public | `app/routes/_site/quotes.tsx` |
 | `/ranked` | Ranked | public | `app/routes/_site/ranked.tsx` |
@@ -324,8 +325,13 @@ Games, apps and standalone pages that intentionally render without the site shel
 | `/rmhcode` | — | public | `app/routes/rmhcode/index.tsx` |
 | `/rmhcode/auth` | — | public | `app/routes/rmhcode/auth.tsx` |
 | `/rmhmusic` | — | sign-in | `app/routes/rmhmusic/index.tsx` |
+| `/rmhmusic/credits` | — | sign-in | `app/routes/rmhmusic/credits.tsx` |
 | `/rmhmusic/lesson/:lessonId` | — | sign-in | `app/routes/rmhmusic/lesson.$lessonId.tsx` |
 | `/rmhmusic/practice` | — | sign-in | `app/routes/rmhmusic/practice.tsx` |
+| `/rmhmusic/songs` | — | sign-in | `app/routes/rmhmusic/songs.index.tsx` |
+| `/rmhmusic/songs/:songId` | — | sign-in | `app/routes/rmhmusic/songs.$songId.tsx` |
+| `/rmhmusic/sprint` | — | sign-in | `app/routes/rmhmusic/sprint.tsx` |
+| `/rmhmusic/tuner` | — | sign-in | `app/routes/rmhmusic/tuner.tsx` |
 | `/rmhos` | — | sign-in | `app/routes/rmhos.tsx` |
 | `/rmhstudy` | — | sign-in | `app/routes/rmhstudy/index.tsx` |
 | `/rmhstudy/:roomId` | — | sign-in | `app/routes/rmhstudy/$roomId.tsx` |

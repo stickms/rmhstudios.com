@@ -1,0 +1,36 @@
+{
+	"name": "RMHStudiosOpenGraph",
+	"version": "1.0.0",
+	"author": "RMH Studios",
+	"url": "https://rmhstudios.com",
+	"descriptionmsg": "rmhstudiosopengraph-desc",
+	"license-name": "MIT",
+	"type": "other",
+	"requires": {
+		"MediaWiki": ">= 1.43.0"
+	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\RMHStudiosOpenGraph\\": "includes/"
+	},
+	"Hooks": {
+		"OutputPageParserOutput": "main",
+		"BeforePageDisplay": "main"
+	},
+	"HookHandlers": {
+		"main": {
+			"class": "MediaWiki\\Extension\\RMHStudiosOpenGraph\\Hooks"
+		}
+	},
+	"MessagesDirs": {
+		"RMHStudiosOpenGraph": [
+			"i18n"
+		]
+	},
+	"config": {
+		"RMHStudiosOpenGraphSiteUrl": {
+			"value": "https://rmhstudios.com",
+			"description": "Origin of rmhstudios.com, which draws the preview card (GET /api/og/wiki)."
+		}
+	},
+	"manifest_version": 2
+}

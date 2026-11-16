@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { INSTRUMENT_IDS } from './audio/instruments/types';
 
 export const INSTRUMENTS =
   [
@@ -50,6 +51,18 @@ export const profileSchema =
           .max(
             10,
           ),
+      /**
+       * The sound lessons play: one of the sampled instruments, or null to follow `instrument` (piano
+       * learner: piano, guitar learner: steel-string guitar). Optional so an older client's PUT leaves
+       * the stored choice alone.
+       */
+      sound:
+        z
+          .enum(
+            INSTRUMENT_IDS,
+          )
+          .nullable()
+          .optional(),
     },
   );
 

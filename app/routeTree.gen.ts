@@ -104,6 +104,7 @@ import { Route as SitePlaylistsRouteImport } from './routes/_site/playlists'
 import { Route as SitePredictionsRouteImport } from './routes/_site/predictions'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteProgressRouteImport } from './routes/_site/progress'
+import { Route as SitePsychologyRouteImport } from './routes/_site/psychology'
 import { Route as SiteQotdRouteImport } from './routes/_site/qotd'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SiteRankedRouteImport } from './routes/_site/ranked'
@@ -179,7 +180,10 @@ import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
+import { Route as RmhmusicCreditsRouteImport } from './routes/rmhmusic/credits'
 import { Route as RmhmusicPracticeRouteImport } from './routes/rmhmusic/practice'
+import { Route as RmhmusicSprintRouteImport } from './routes/rmhmusic/sprint'
+import { Route as RmhmusicTunerRouteImport } from './routes/rmhmusic/tuner'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
 import { Route as RmhstudyPlannerRouteImport } from './routes/rmhstudy/planner'
@@ -399,6 +403,7 @@ import { Route as ApiV1WebhooksRouteImport } from './routes/api/v1/webhooks'
 import { Route as ApiVersecraftWorldRouteImport } from './routes/api/versecraft/world'
 import { Route as ApiVibeAiRouteImport } from './routes/api/vibe/ai'
 import { Route as ApiVibeStreamRouteImport } from './routes/api/vibe/stream'
+import { Route as ApiWikiAssistRouteImport } from './routes/api/wiki/assist'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as EmbedReplayIdRouteImport } from './routes/embed.replay.$id'
 import { Route as GamesLibraryIndexRouteImport } from './routes/games/_library/index'
@@ -411,6 +416,8 @@ import { Route as GamesTradesIndexRouteImport } from './routes/games/trades.inde
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as RmhmusicLessonLessonIdRouteImport } from './routes/rmhmusic/lesson.$lessonId'
+import { Route as RmhmusicSongsIndexRouteImport } from './routes/rmhmusic/songs.index'
+import { Route as RmhmusicSongsSongIdRouteImport } from './routes/rmhmusic/songs.$songId'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as SliceItArtistKeyRouteImport } from './routes/slice-it/artist.$key'
 import { Route as SliceItEditSongIdRouteImport } from './routes/slice-it/edit.$songId'
@@ -992,6 +999,11 @@ const SiteProgressRoute = SiteProgressRouteImport.update({
   path: '/progress',
   getParentRoute: () => SiteRoute,
 } as any)
+const SitePsychologyRoute = SitePsychologyRouteImport.update({
+  id: '/psychology',
+  path: '/psychology',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteQotdRoute = SiteQotdRouteImport.update({
   id: '/qotd',
   path: '/qotd',
@@ -1366,9 +1378,24 @@ const RmhmusicIndexRoute = RmhmusicIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RmhmusicRoute,
 } as any)
+const RmhmusicCreditsRoute = RmhmusicCreditsRouteImport.update({
+  id: '/credits',
+  path: '/credits',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
 const RmhmusicPracticeRoute = RmhmusicPracticeRouteImport.update({
   id: '/practice',
   path: '/practice',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicSprintRoute = RmhmusicSprintRouteImport.update({
+  id: '/sprint',
+  path: '/sprint',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicTunerRoute = RmhmusicTunerRouteImport.update({
+  id: '/tuner',
+  path: '/tuner',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhstudyIndexRoute = RmhstudyIndexRouteImport.update({
@@ -2479,6 +2506,11 @@ const ApiVibeStreamRoute = ApiVibeStreamRouteImport.update({
   path: '/api/vibe/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWikiAssistRoute = ApiWikiAssistRouteImport.update({
+  id: '/api/wiki/assist',
+  path: '/api/wiki/assist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmbedPostIdRoute = EmbedPostIdRouteImport.update({
   id: '/embed/post/$id',
   path: '/embed/post/$id',
@@ -2537,6 +2569,16 @@ const RmhboxMinigamesIndexRoute = RmhboxMinigamesIndexRouteImport.update({
 const RmhmusicLessonLessonIdRoute = RmhmusicLessonLessonIdRouteImport.update({
   id: '/lesson/$lessonId',
   path: '/lesson/$lessonId',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicSongsIndexRoute = RmhmusicSongsIndexRouteImport.update({
+  id: '/songs/',
+  path: '/songs/',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicSongsSongIdRoute = RmhmusicSongsSongIdRouteImport.update({
+  id: '/songs/$songId',
+  path: '/songs/$songId',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
@@ -3178,6 +3220,7 @@ export interface FileRoutesByFullPath {
   '/predictions': typeof SitePredictionsRoute
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
+  '/psychology': typeof SitePsychologyRoute
   '/qotd': typeof SiteQotdRoute
   '/quotes': typeof SiteQuotesRoute
   '/ranked': typeof SiteRankedRoute
@@ -3243,7 +3286,10 @@ export interface FileRoutesByFullPath {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
+  '/rmhmusic/sprint': typeof RmhmusicSprintRoute
+  '/rmhmusic/tuner': typeof RmhmusicTunerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -3435,6 +3481,7 @@ export interface FileRoutesByFullPath {
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
   '/api/vibe/ai': typeof ApiVibeAiRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
+  '/api/wiki/assist': typeof ApiWikiAssistRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/$gameId': typeof GamesLibraryGameIdRoute
@@ -3443,6 +3490,7 @@ export interface FileRoutesByFullPath {
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
+  '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -3501,6 +3549,7 @@ export interface FileRoutesByFullPath {
   '/games/market/': typeof GamesMarketIndexRoute
   '/games/trades/': typeof GamesTradesIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
+  '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
@@ -3662,6 +3711,7 @@ export interface FileRoutesByTo {
   '/predictions': typeof SitePredictionsRoute
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
+  '/psychology': typeof SitePsychologyRoute
   '/qotd': typeof SiteQotdRoute
   '/quotes': typeof SiteQuotesRoute
   '/ranked': typeof SiteRankedRoute
@@ -3724,7 +3774,10 @@ export interface FileRoutesByTo {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
+  '/rmhmusic/sprint': typeof RmhmusicSprintRoute
+  '/rmhmusic/tuner': typeof RmhmusicTunerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -3916,6 +3969,7 @@ export interface FileRoutesByTo {
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
   '/api/vibe/ai': typeof ApiVibeAiRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
+  '/api/wiki/assist': typeof ApiWikiAssistRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/$gameId': typeof GamesLibraryGameIdRoute
@@ -3924,6 +3978,7 @@ export interface FileRoutesByTo {
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
+  '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -3981,6 +4036,7 @@ export interface FileRoutesByTo {
   '/games/market': typeof GamesMarketIndexRoute
   '/games/trades': typeof GamesTradesIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
+  '/rmhmusic/songs': typeof RmhmusicSongsIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/strategies/profile': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
@@ -4165,6 +4221,7 @@ export interface FileRoutesById {
   '/_site/predictions': typeof SitePredictionsRoute
   '/_site/pricing': typeof SitePricingRoute
   '/_site/progress': typeof SiteProgressRoute
+  '/_site/psychology': typeof SitePsychologyRoute
   '/_site/qotd': typeof SiteQotdRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/ranked': typeof SiteRankedRoute
@@ -4231,7 +4288,10 @@ export interface FileRoutesById {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
+  '/rmhmusic/sprint': typeof RmhmusicSprintRoute
+  '/rmhmusic/tuner': typeof RmhmusicTunerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
   '/rmhstudy/planner': typeof RmhstudyPlannerRoute
   '/rmhtube/$roomId': typeof RmhtubeRoomIdRoute
@@ -4424,6 +4484,7 @@ export interface FileRoutesById {
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
   '/api/vibe/ai': typeof ApiVibeAiRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
+  '/api/wiki/assist': typeof ApiWikiAssistRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/embed/replay/$id': typeof EmbedReplayIdRoute
   '/games/_library/$gameId': typeof GamesLibraryGameIdRoute
@@ -4432,6 +4493,7 @@ export interface FileRoutesById {
   '/games/profile/$id': typeof GamesProfileIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/rmhmusic/lesson/$lessonId': typeof RmhmusicLessonLessonIdRoute
+  '/rmhmusic/songs/$songId': typeof RmhmusicSongsSongIdRoute
   '/slice-it/artist/$key': typeof SliceItArtistKeyRoute
   '/slice-it/edit/$songId': typeof SliceItEditSongIdRoute
   '/slice-it/player/$handle': typeof SliceItPlayerHandleRoute
@@ -4490,6 +4552,7 @@ export interface FileRoutesById {
   '/games/market/': typeof GamesMarketIndexRoute
   '/games/trades/': typeof GamesTradesIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
+  '/rmhmusic/songs/': typeof RmhmusicSongsIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
@@ -4675,6 +4738,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/pricing'
     | '/progress'
+    | '/psychology'
     | '/qotd'
     | '/quotes'
     | '/ranked'
@@ -4740,7 +4804,10 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhmusic/credits'
     | '/rmhmusic/practice'
+    | '/rmhmusic/sprint'
+    | '/rmhmusic/tuner'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -4932,6 +4999,7 @@ export interface FileRouteTypes {
     | '/api/versecraft/world'
     | '/api/vibe/ai'
     | '/api/vibe/stream'
+    | '/api/wiki/assist'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/games/$gameId'
@@ -4940,6 +5008,7 @@ export interface FileRouteTypes {
     | '/games/profile/$id'
     | '/library/albums/$albumId'
     | '/rmhmusic/lesson/$lessonId'
+    | '/rmhmusic/songs/$songId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -4998,6 +5067,7 @@ export interface FileRouteTypes {
     | '/games/market/'
     | '/games/trades/'
     | '/rmhbox/minigames/'
+    | '/rmhmusic/songs/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
@@ -5159,6 +5229,7 @@ export interface FileRouteTypes {
     | '/predictions'
     | '/pricing'
     | '/progress'
+    | '/psychology'
     | '/qotd'
     | '/quotes'
     | '/ranked'
@@ -5221,7 +5292,10 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhmusic/credits'
     | '/rmhmusic/practice'
+    | '/rmhmusic/sprint'
+    | '/rmhmusic/tuner'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -5413,6 +5487,7 @@ export interface FileRouteTypes {
     | '/api/versecraft/world'
     | '/api/vibe/ai'
     | '/api/vibe/stream'
+    | '/api/wiki/assist'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/games/$gameId'
@@ -5421,6 +5496,7 @@ export interface FileRouteTypes {
     | '/games/profile/$id'
     | '/library/albums/$albumId'
     | '/rmhmusic/lesson/$lessonId'
+    | '/rmhmusic/songs/$songId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -5478,6 +5554,7 @@ export interface FileRouteTypes {
     | '/games/market'
     | '/games/trades'
     | '/rmhbox/minigames'
+    | '/rmhmusic/songs'
     | '/secret/cursed-logic'
     | '/strategies/profile'
     | '/strategies/puzzles'
@@ -5661,6 +5738,7 @@ export interface FileRouteTypes {
     | '/_site/predictions'
     | '/_site/pricing'
     | '/_site/progress'
+    | '/_site/psychology'
     | '/_site/qotd'
     | '/_site/quotes'
     | '/_site/ranked'
@@ -5727,7 +5805,10 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhmusic/credits'
     | '/rmhmusic/practice'
+    | '/rmhmusic/sprint'
+    | '/rmhmusic/tuner'
     | '/rmhstudy/$roomId'
     | '/rmhstudy/planner'
     | '/rmhtube/$roomId'
@@ -5920,6 +6001,7 @@ export interface FileRouteTypes {
     | '/api/versecraft/world'
     | '/api/vibe/ai'
     | '/api/vibe/stream'
+    | '/api/wiki/assist'
     | '/embed/post/$id'
     | '/embed/replay/$id'
     | '/games/_library/$gameId'
@@ -5928,6 +6010,7 @@ export interface FileRouteTypes {
     | '/games/profile/$id'
     | '/library/albums/$albumId'
     | '/rmhmusic/lesson/$lessonId'
+    | '/rmhmusic/songs/$songId'
     | '/slice-it/artist/$key'
     | '/slice-it/edit/$songId'
     | '/slice-it/player/$handle'
@@ -5986,6 +6069,7 @@ export interface FileRouteTypes {
     | '/games/market/'
     | '/games/trades/'
     | '/rmhbox/minigames/'
+    | '/rmhmusic/songs/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
@@ -6206,6 +6290,7 @@ export interface RootRouteChildren {
   ApiVersecraftWorldRoute: typeof ApiVersecraftWorldRoute
   ApiVibeAiRoute: typeof ApiVibeAiRoute
   ApiVibeStreamRoute: typeof ApiVibeStreamRoute
+  ApiWikiAssistRoute: typeof ApiWikiAssistRoute
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   EmbedReplayIdRoute: typeof EmbedReplayIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
@@ -6924,6 +7009,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteProgressRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/psychology': {
+      id: '/_site/psychology'
+      path: '/psychology'
+      fullPath: '/psychology'
+      preLoaderRoute: typeof SitePsychologyRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/qotd': {
       id: '/_site/qotd'
       path: '/qotd'
@@ -7449,11 +7541,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhmusicIndexRouteImport
       parentRoute: typeof RmhmusicRoute
     }
+    '/rmhmusic/credits': {
+      id: '/rmhmusic/credits'
+      path: '/credits'
+      fullPath: '/rmhmusic/credits'
+      preLoaderRoute: typeof RmhmusicCreditsRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
     '/rmhmusic/practice': {
       id: '/rmhmusic/practice'
       path: '/practice'
       fullPath: '/rmhmusic/practice'
       preLoaderRoute: typeof RmhmusicPracticeRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/sprint': {
+      id: '/rmhmusic/sprint'
+      path: '/sprint'
+      fullPath: '/rmhmusic/sprint'
+      preLoaderRoute: typeof RmhmusicSprintRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/tuner': {
+      id: '/rmhmusic/tuner'
+      path: '/tuner'
+      fullPath: '/rmhmusic/tuner'
+      preLoaderRoute: typeof RmhmusicTunerRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhstudy/': {
@@ -8989,6 +9102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVibeStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/wiki/assist': {
+      id: '/api/wiki/assist'
+      path: '/api/wiki/assist'
+      fullPath: '/api/wiki/assist'
+      preLoaderRoute: typeof ApiWikiAssistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/embed/post/$id': {
       id: '/embed/post/$id'
       path: '/embed/post/$id'
@@ -9071,6 +9191,20 @@ declare module '@tanstack/react-router' {
       path: '/lesson/$lessonId'
       fullPath: '/rmhmusic/lesson/$lessonId'
       preLoaderRoute: typeof RmhmusicLessonLessonIdRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/songs/': {
+      id: '/rmhmusic/songs/'
+      path: '/songs'
+      fullPath: '/rmhmusic/songs/'
+      preLoaderRoute: typeof RmhmusicSongsIndexRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/songs/$songId': {
+      id: '/rmhmusic/songs/$songId'
+      path: '/songs/$songId'
+      fullPath: '/rmhmusic/songs/$songId'
+      preLoaderRoute: typeof RmhmusicSongsSongIdRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/secret/cursed-logic/': {
@@ -10015,6 +10149,7 @@ interface SiteRouteChildren {
   SitePredictionsRoute: typeof SitePredictionsRoute
   SitePricingRoute: typeof SitePricingRoute
   SiteProgressRoute: typeof SiteProgressRoute
+  SitePsychologyRoute: typeof SitePsychologyRoute
   SiteQotdRoute: typeof SiteQotdRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRankedRoute: typeof SiteRankedRoute
@@ -10164,6 +10299,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SitePredictionsRoute: SitePredictionsRoute,
   SitePricingRoute: SitePricingRoute,
   SiteProgressRoute: SiteProgressRoute,
+  SitePsychologyRoute: SitePsychologyRoute,
   SiteQotdRoute: SiteQotdRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRankedRoute: SiteRankedRoute,
@@ -10503,15 +10639,25 @@ const RmhcodeRouteWithChildren =
   RmhcodeRoute._addFileChildren(RmhcodeRouteChildren)
 
 interface RmhmusicRouteChildren {
+  RmhmusicCreditsRoute: typeof RmhmusicCreditsRoute
   RmhmusicPracticeRoute: typeof RmhmusicPracticeRoute
+  RmhmusicSprintRoute: typeof RmhmusicSprintRoute
+  RmhmusicTunerRoute: typeof RmhmusicTunerRoute
   RmhmusicIndexRoute: typeof RmhmusicIndexRoute
   RmhmusicLessonLessonIdRoute: typeof RmhmusicLessonLessonIdRoute
+  RmhmusicSongsSongIdRoute: typeof RmhmusicSongsSongIdRoute
+  RmhmusicSongsIndexRoute: typeof RmhmusicSongsIndexRoute
 }
 
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
+  RmhmusicCreditsRoute: RmhmusicCreditsRoute,
   RmhmusicPracticeRoute: RmhmusicPracticeRoute,
+  RmhmusicSprintRoute: RmhmusicSprintRoute,
+  RmhmusicTunerRoute: RmhmusicTunerRoute,
   RmhmusicIndexRoute: RmhmusicIndexRoute,
   RmhmusicLessonLessonIdRoute: RmhmusicLessonLessonIdRoute,
+  RmhmusicSongsSongIdRoute: RmhmusicSongsSongIdRoute,
+  RmhmusicSongsIndexRoute: RmhmusicSongsIndexRoute,
 }
 
 const RmhmusicRouteWithChildren = RmhmusicRoute._addFileChildren(
@@ -10965,6 +11111,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVersecraftWorldRoute: ApiVersecraftWorldRoute,
   ApiVibeAiRoute: ApiVibeAiRoute,
   ApiVibeStreamRoute: ApiVibeStreamRoute,
+  ApiWikiAssistRoute: ApiWikiAssistRoute,
   EmbedPostIdRoute: EmbedPostIdRoute,
   EmbedReplayIdRoute: EmbedReplayIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,

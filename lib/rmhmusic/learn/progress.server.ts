@@ -10,6 +10,8 @@ import {
   type LessonCompleteInput,
   type ProfileInput,
 } from './schemas';
+import { isInstrumentId } from './audio/instruments/catalog';
+import type { InstrumentId } from './audio/instruments/types';
 import { mergeLessonResult } from './xp';
 
 export interface Profile {
@@ -17,6 +19,8 @@ export interface Profile {
   input: LearnInput;
   latencyMs: number;
   dailyGoal: number;
+  /** The chosen sound, or null to follow `instrument` (`resolveSound`). */
+  sound: InstrumentId | null;
 }
 
 export interface LessonProgressRow {
@@ -31,6 +35,7 @@ export const DEFAULT_PROFILE: Profile = {
   input: 'screen',
   latencyMs: 0,
   dailyGoal: 1,
+  sound: null,
 };
 
 /** Thrown by `completeLesson` for an id that is not in the catalogue. */
@@ -46,6 +51,7 @@ function toProfile(row: {
   input: string;
   latencyMs: number;
   dailyGoal: number;
+  sound?: string | null;
 }): Profile {
   // Columns are plain strings; narrow them so a stale value never reaches the UI.
   return {
@@ -57,6 +63,7 @@ function toProfile(row: {
       : DEFAULT_PROFILE.input,
     latencyMs: row.latencyMs,
     dailyGoal: row.dailyGoal,
+    sound: isInstrumentId(row.sound) ? row.sound : null,
   };
 }
 
@@ -72,6 +79,8 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
     input: input.input,
     latencyMs: input.latencyMs,
     dailyGoal: input.dailyGoal,
+    // Absent: leave the stored sound alone; null: follow the instrument again.
+    ...(input.sound !== undefined ? { sound: input.sound } : {}),
   };
   const row = await prisma.musicLearnProfile.upsert({
     where: { userId },

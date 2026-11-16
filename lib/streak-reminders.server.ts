@@ -37,15 +37,22 @@ export interface Reminder {
   current: number;
 }
 
+/*
+ * The copy is deliberately calm. Loss aversion (Kahneman & Tversky, 1979) makes
+ * "about to end" land about twice as hard as the same news framed as a gain, so
+ * a reminder written as a threat is the strongest lever the site has — which is
+ * why it is not pulled. The reminder states the fact and the action; no fire
+ * emoji, no exclamation mark (Steel's copy rules say the same).
+ */
 export function reminderPreview(current: number): string {
-  return `Your ${current}-day streak is about to end — check in to keep it alive!`;
+  return `Your ${current}-day streak continues if you check in today.`;
 }
 
 /** The web-push payload; identical to the old /api/internal/streak-push handler. */
 export function reminderPush(current: number) {
   return {
-    title: 'Keep your streak alive 🔥',
-    body: `Your ${current}-day streak ends soon — check in to keep it going.`,
+    title: 'Daily check-in',
+    body: `Your ${current}-day streak continues if you check in today.`,
     url: REMINDER_LINK,
     tag: 'streak-reminder',
   };

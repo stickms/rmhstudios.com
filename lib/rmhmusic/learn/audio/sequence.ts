@@ -3,12 +3,13 @@
  * {@link playNote} and timers: no scheduling on the audio clock, since a lesson only needs the
  * order to be heard, and `cancel` must be able to stop a sequence the learner has left behind.
  *
- * Callers say what to play and nothing about how it sounds (`PlayOptions` may later carry an
- * instrument). Each note is let go `holdMs` after it *starts*.
+ * Callers say what to play and nothing about how it sounds (`PlayOptions.instrument` names the
+ * sound; `voice.ts` decides whether the samples or the synth voice it). Each note is let go `holdMs` after it *starts*.
  *
  * **When a note has started is the voice's word, not ours.** `playNote` reports it through
- * `PlayOptions.onStart`: the synth does it during the call, a sampled instrument after its samples
- * are decoded. Everything here keys off that report, so a load delay is never counted as heard:
+ * `PlayOptions.onStart`: during the call for a note that starts now, and when it starts for a
+ * strummed string a few ms late. Samples still loading never play (a lesson's sound reads
+ * `loading` until its session settles on the samples or the synth). Everything here keys off that report, so a load delay is never counted as heard:
  * - the hold timer of a note starts when that note starts;
  * - the next note of an interval is asked for `gapMs` after the previous one started;
  * - `onNoteStart(i)` fires as each note starts, and `onAllStarted` once the LAST has — the moment
@@ -20,6 +21,9 @@
  * playing" path (`soundStatus`, `wakeSound` in `voice.ts`) and never counts the question as heard.
  * A sequence that did start is stopped with `cancel`, safe to call twice.
  */
+import { mulberry32 } from '@/lib/core/rng';
+import { strumOffsets } from './instruments/chord';
+import { INSTRUMENT_CATALOG } from './instruments/catalog';
 import {
   playNote,
   soundStatus,
@@ -39,8 +43,35 @@ export const CHORD_HOLD_MS = 1400;
  */
 export const INTERVAL_GAP_MS = 750;
 
+/**
+ * The strum's humanise source when the caller passes none: seeded by the chord's notes, so the same
+ * chord always strums the same way (plan §5.3: a deterministic +-3 ms from a seeded `rand`).
+ */
+export function chordRand(
+  midis: readonly number[],
+): () => number {
+  let seed = 0x9e3779b9;
+  for (const m of midis)
+    seed =
+      Math.imul(
+        seed ^
+          Math.round(
+            m,
+          ),
+        0x85ebca6b,
+      ) >>>
+      0;
+  return mulberry32(
+    seed,
+  );
+}
+
 export interface SequenceOptions extends PlayOptions {
   holdMs?: number;
+  /** A melody's own hold for each note (ms); a note without one takes `holdMs`. */
+  holdsMs?: readonly number[];
+  /** 0..1, for a strummed chord's humanise; default {@link chordRand} of the notes. */
+  rand?: () => number;
   /** Note `index` (of the notes that are numbers) has started sounding. */
   onNoteStart?: (
     index: number,
@@ -65,7 +96,13 @@ const NOT_STARTED: PlayingSequence =
 
 export function playSequence(
   midis: readonly number[],
-  gapMs: number,
+  /**
+   * The gap between one note's start and the next (ms): one for every note, 0 for a chord; or a
+   * melody's own gap after each note (`gapMs[i]` from note i to note i + 1), never a chord.
+   */
+  gapMs:
+    | number
+    | readonly number[],
   opts: SequenceOptions = {},
 ): PlayingSequence {
   if (
@@ -75,8 +112,10 @@ export function playSequence(
     return NOT_STARTED;
   const {
     holdMs = DEFAULT_HOLD_MS,
+    holdsMs,
     onNoteStart,
     onAllStarted,
+    rand,
     ...voice
   } = opts;
   const notes =
@@ -88,11 +127,29 @@ export function playSequence(
     0
   )
     return NOT_STARTED;
+  const melody =
+    typeof gapMs !==
+    'number';
+  const gapAfter =
+    (
+      i: number,
+    ): number =>
+      Math.max(
+        0,
+        (melody
+          ? gapMs[
+              i
+            ]
+          : gapMs) ??
+          0,
+      );
+  // A melody is never a chord, whatever its gaps; `gap` only decides chord or one-by-one.
   const gap =
-    Math.max(
-      0,
-      gapMs,
-    );
+    melody
+      ? 1
+      : gapAfter(
+          0,
+        );
   const timers =
     new Set<
       ReturnType<
@@ -105,6 +162,55 @@ export function playSequence(
     >();
   let cancelled = false;
   let begun = 0;
+  // A chord (gap 0): every voice is trimmed by 1/sqrt(n), and a strummed instrument (the guitar)
+  // spreads its strings a few ms apart, low to high. Each voice reports its own start.
+  const chord =
+    gap ===
+      0 &&
+    notes.length >
+      1;
+  const strumMs =
+    voice.instrument
+      ? INSTRUMENT_CATALOG[
+          voice
+            .instrument
+        ]
+          .strumMs
+      : 0;
+  const offsets =
+    chord
+      ? strumOffsets(
+          notes.length,
+          strumMs,
+          rand ??
+            chordRand(
+              notes,
+            ),
+        )
+      : [];
+  const order =
+    chord
+      ? notes
+          .map(
+            (
+              _,
+              i,
+            ) =>
+              i,
+          )
+          .sort(
+            (
+              a,
+              b,
+            ) =>
+              notes[
+                a
+              ] -
+              notes[
+                b
+              ],
+          )
+      : [];
 
   /** Ask for note `i`; everything else happens when the voice says it has started. */
   const request =
@@ -132,6 +238,18 @@ export function playSequence(
           ],
           {
             ...voice,
+            ...(chord
+              ? {
+                  chordOf:
+                    notes.length,
+                  delayS:
+                    offsets[
+                      order.indexOf(
+                        i,
+                      )
+                    ],
+                }
+              : {}),
             onStart:
               () => {
                 if (
@@ -149,7 +267,10 @@ export function playSequence(
                       );
                       letGo();
                     },
-                    holdMs,
+                    holdsMs?.[
+                      i
+                    ] ??
+                      holdMs,
                   );
                 timers.add(
                   hold,
@@ -183,7 +304,9 @@ export function playSequence(
                               1,
                           );
                       },
-                      gap,
+                      gapAfter(
+                        i,
+                      ),
                     );
                   timers.add(
                     next,

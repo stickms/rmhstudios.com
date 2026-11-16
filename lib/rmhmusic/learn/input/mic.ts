@@ -61,10 +61,44 @@ export function fftSizeFor(
   return size;
 }
 
+/**
+ * One analysis frame, for the tuner: what YIN heard (or null) and the frame's level. The object is
+ * reused for every frame; a listener copies what it keeps.
+ */
+export interface MicFrame {
+  /** `performance.now()` of the poll. */
+  time: number;
+  /** Fundamental in Hz, or null for silence and noise. */
+  freq:
+    | number
+    | null;
+  /** YIN's confidence 0..1 (0 when nothing was heard). */
+  clarity: number;
+  rms: number;
+}
+
+/**
+ * Whether the microphone starts a held pitch again when it is struck again (the segmenter's
+ * re-attack, `mic-segmenter.ts`). Off unless a screen turns it on: only the songs screen does,
+ * while it is mounted (a song repeats notes; the other lessons count a try per note-on).
+ */
+let reattackOn = false;
+
+export function setMicReattack(
+  on: boolean,
+): void {
+  reattackOn =
+    on;
+}
+
 export function createMicInput(
   opts: {
     onLevel?: (
       rms: number,
+    ) => void;
+    /** Every poll's frame while the mic runs (about 40 a second): the tuner's input. */
+    onFrame?: (
+      frame: Readonly<MicFrame>,
     ) => void;
   } = {},
 ): InputAdapter {
@@ -214,7 +248,13 @@ export function createMicInput(
           analyser,
         );
         segmenter =
-          createSegmenter();
+          createSegmenter(
+            {
+              reattack:
+                () =>
+                  reattackOn,
+            },
+          );
 
         const node =
           analyser;
@@ -231,6 +271,14 @@ export function createMicInput(
           {
             midi: 0,
             cents: 0,
+            rms: 0,
+          };
+        const heard: MicFrame =
+          {
+            time: 0,
+            freq: null,
+            clarity: 0,
+            rms: 0,
           };
         timer =
           setInterval(
@@ -264,6 +312,13 @@ export function createMicInput(
                 rms,
               );
 
+              heard.time =
+                now;
+              heard.rms =
+                rms;
+              heard.freq =
+                null;
+              heard.clarity = 0;
               // Silence (most frames) skips the detector entirely; a NaN level fails this test too.
               let pitched = false;
               if (
@@ -279,6 +334,10 @@ export function createMicInput(
                 if (
                   pitch
                 ) {
+                  heard.freq =
+                    pitch.freq;
+                  heard.clarity =
+                    pitch.clarity;
                   const exact =
                     freqToMidi(
                       pitch.freq,
@@ -291,6 +350,8 @@ export function createMicInput(
                     (exact -
                       frame.midi) *
                     100;
+                  frame.rms =
+                    rms;
                   pitched = true;
                 }
               }
@@ -312,6 +373,19 @@ export function createMicInput(
                     i
                   ],
                 );
+              // The notes first: a frame listener (the tuner) runs after them, and its own bug
+              // can neither drop a note event nor stop this poll.
+              if (
+                opts.onFrame
+              ) {
+                try {
+                  opts.onFrame(
+                    heard,
+                  );
+                } catch {
+                  // Swallowed on purpose (see above); the store's fan-out also isolates listeners.
+                }
+              }
             },
             POLL_MS,
           );

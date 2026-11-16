@@ -1,24 +1,38 @@
 /**
- * The learner's own notes, made audible: one triangle-wave oscillator per note
- * through a short gain envelope. Deliberately tiny (no samples, no Tone.js) so
- * a beginner tapping on-screen or computer keys hears what they played. MIDI
- * keyboards have their own sound and the mic is the learner's instrument, so
- * callers sound only `screen` / `keys` notes.
+ * The learner's own notes and every question the lessons play, made audible. One entry for every
+ * pitched sound: callers say what to play (and, through `PlayOptions.instrument`, with which sound),
+ * never how it sounds.
  *
- * Client-only: the shared context comes from `getAudioContext()` inside
- * `playNote`, never at module load, so SSR is safe. Without Web Audio (or while
- * the context cannot run) a note is a silent no-op.
+ * A note is voiced by the sampled instrument (`instruments/engine.ts`) when that instrument is
+ * loaded and reaches the note, and inside a lesson's sound session only once the session chose the
+ * samples; otherwise by the synth below: one triangle-wave oscillator per note through a short gain
+ * envelope. While a lesson's session is still deciding (`soundStatus()` is `loading`, at most
+ * `LOAD_WAIT_MS` once sound runs) a note is DROPPED, never played on the synth, and its `onStart`
+ * never fires: whichever the session settles on then voices every note of the lesson. Lessons that
+ * gate on `soundStatus()` (the ear lessons, MatchNote's Hear it) say "Loading sound…"; the others
+ * (key taps, flashcard reveals) are simply silent until then. MIDI keyboards have their own sound
+ * and the mic is the learner's instrument, so callers sound only `screen` / `keys` notes.
+ *
+ * Client-only: the shared context comes from `getAudioContext()` inside `playNote`, never at
+ * module load, so SSR is safe. Without Web Audio (or while the context cannot run) a note is a
+ * silent no-op.
  */
 import { getAudioContext } from '@/lib/shared/platform';
 import { midiToFreq } from '../pitch/notes';
+import { INSTRUMENT_CATALOG } from './instruments/catalog';
+import {
+  currentSession,
+  instrumentFor,
+  onInstrumentChange,
+} from './instruments/engine';
+import type { InstrumentId } from './instruments/types';
 import { resumeAudio } from './resume';
 
 const ATTACK_S = 0.01;
 const RELEASE_S = 0.25;
 /**
- * How long a released note keeps sounding (ms): the lesson's microphone waits this out. This is
- * the SYNTH's value. A sampled instrument has its own release, so code that needs the number for
- * the sound actually in use asks {@link soundReleaseMs} and never reads this directly.
+ * How long a released SYNTH note keeps sounding (ms). A sampled instrument has its own release, so
+ * code that needs the number for the sound actually in use asks {@link soundReleaseMs}.
  */
 export const RELEASE_MS =
   RELEASE_S *
@@ -26,53 +40,78 @@ export const RELEASE_MS =
 /** Peak gain at full velocity; low enough that a six-note chord does not clip. */
 const PEAK = 0.18;
 /**
- * Voices sounding at once; the oldest is released to make room. The SYNTH's cap: an instrument
- * with more (or one, for a monophonic one) replaces it where the voices are counted, and
- * `useNoteSound` keeps its own bookkeeping within the same number.
+ * The most voices any sound keeps at once (the piano's 12); `useNoteSound` keeps its own
+ * bookkeeping within it. The synth caps itself at {@link SYNTH_VOICES}.
  */
-export const MAX_VOICES = 6;
+export const MAX_VOICES = 12;
+/** Synth voices sounding at once; the oldest is released to make room. */
+const SYNTH_VOICES = 6;
 
 /**
- * How long a note of the sound `opts` selects keeps sounding after release (ms). Today every
- * sound is the synth, so this is {@link RELEASE_MS}; `opts.instrument` is where a per-instrument
- * release will plug in without a caller changing.
+ * How long a note of the sound `opts` names can keep sounding after release (ms), for the sound in
+ * use NOW: the synth's once the lesson's session settled on the synth; otherwise the longer of the
+ * instrument's own release and the synth's (the session is still deciding, or the samples play and
+ * a note out of their range takes the synth). The mic echo guard asks this at every note, so it
+ * follows the session rather than the value at mount.
  */
 export function soundReleaseMs(
-  _opts: PlayOptions = {},
+  opts: PlayOptions = {},
 ): number {
-  return RELEASE_MS;
+  if (
+    !opts.instrument
+  )
+    return RELEASE_MS;
+  const s =
+    currentSession();
+  if (
+    s &&
+    s.id ===
+      opts.instrument &&
+    s
+      .choice
+      .kind ===
+      'synth'
+  )
+    return RELEASE_MS;
+  return Math.max(
+    RELEASE_MS,
+    INSTRUMENT_CATALOG[
+      opts
+        .instrument
+    ]
+      .releaseMs,
+  );
 }
 
 interface Voice {
   release(): void;
 }
 
-/**
- * How a note is voiced. This is the one entry for every sound the lessons make (single notes,
- * intervals and chords through `sequence.ts`): callers say what to play, never how it sounds, so
- * the synth below can later be replaced by sampled instruments behind the same calls.
- */
+/** How a note is voiced. */
 export interface PlayOptions {
   /** 0..1. */
   velocity?: number;
-  /** Reserved for the instrument to voice the note with; ignored until instruments exist. */
-  instrument?: string;
+  /** The sampled instrument to voice the note with; the synth when absent or not ready. */
+  instrument?: InstrumentId;
+  /** How many notes start together (a chord): each is trimmed by `1/sqrt(n)`. */
+  chordOf?: number;
+  /** Start this many seconds late (a strummed chord's later strings). */
+  delayS?: number;
   /**
-   * Called once when the note actually begins to sound, never if it is released first. The synth
-   * begins during the call; a sampled instrument begins when its samples are ready, possibly well
-   * after. Sequences take their hold and gap timers, and "this has been heard", from this and
-   * never from the moment of asking.
+   * Called once when the note actually begins to sound, never if it is released first. Sequences
+   * take their hold and gap timers, and "this has been heard", from this and never from the moment
+   * of asking.
    */
   onStart?: () => void;
 }
 
 /**
  * Whether sound can be made now: `ready`; `asleep` (the audio context exists but is suspended
- * until a tap, or is still waking); `none` (no Web Audio, or the context is closed).
+ * until a tap, or is still waking); `none` (no Web Audio, or the context is closed); `loading` (a
+ * lesson's sound session is still waiting for its samples, at most `LOAD_WAIT_MS`).
  *
- * Room for what a sampled instrument adds: `loading` (its samples are on the way: wait, then it
- * plays) and `failed` (they never came). The synth is never either, so `soundStatus()` returns
- * only the first three today; lessons already handle the other two (`ear-playback.ts`).
+ * `failed` is part of the type for the lessons' rows, but the engine never reports it: samples that
+ * fail hand the session to the synth, which is `ready`.
  */
 export type SoundStatus =
   | 'ready'
@@ -90,10 +129,17 @@ export function soundStatus(): SoundStatus {
       'closed'
   )
     return 'none';
-  return ctx.state ===
+  if (
+    ctx.state !==
     'running'
-    ? 'ready'
-    : 'asleep';
+  )
+    return 'asleep';
+  return currentSession()
+    ?.choice
+    .kind ===
+    'pending'
+    ? 'loading'
+    : 'ready';
 }
 
 /**
@@ -112,25 +158,34 @@ export async function wakeSound(): Promise<boolean> {
   );
 }
 
-/** Run `fn` when sound becomes ready or asleep again; returns the unsubscribe. */
+/**
+ * Run `fn` when sound becomes ready or asleep again, or a lesson's samples arrive or are given up
+ * on; returns the unsubscribe.
+ */
 export function onSoundChange(
   fn: () => void,
 ): () => void {
+  const off =
+    onInstrumentChange(
+      fn,
+    );
   const ctx =
     getAudioContext();
   if (
     !ctx
   )
-    return () => {};
+    return off;
   ctx.addEventListener(
     'statechange',
     fn,
   );
-  return () =>
+  return () => {
+    off();
     ctx.removeEventListener(
       'statechange',
       fn,
     );
+  };
 }
 
 const voices: Voice[] =
@@ -148,17 +203,17 @@ export function playNote(
     | number
     | PlayOptions = {},
 ): () => void {
-  const velocity =
-    (typeof opts ===
-    'number'
-      ? opts
-      : opts.velocity) ??
-    0.8;
-  const onStart =
+  const o: PlayOptions =
     typeof opts ===
     'number'
-      ? undefined
-      : opts.onStart;
+      ? {
+          velocity:
+            opts,
+        }
+      : opts;
+  const velocity =
+    o.velocity ??
+    0.8;
   const ctx =
     getAudioContext();
   if (
@@ -183,15 +238,95 @@ export function playNote(
     'closed'
   )
     return noop;
+  const delayS =
+    Math.max(
+      0,
+      o.delayS ??
+        0,
+    );
+
+  const route =
+    instrumentFor(
+      o.instrument,
+      midi,
+    );
+  // The lesson's session has not settled on the samples or the synth yet: the note is dropped, so
+  // the timbre never changes mid-lesson and nothing counts as heard (`onStart` never fires).
+  if (
+    route.kind ===
+    'pending'
+  )
+    return noop;
+  if (
+    route.kind ===
+    'instrument'
+  ) {
+    const handle =
+      route.inst.play(
+        midi,
+        {
+          velocity,
+          chordOf:
+            o.chordOf,
+          when:
+            ctx.currentTime +
+            delayS,
+        },
+      );
+    let released = false;
+    let timer: ReturnType<
+      typeof setTimeout
+    > | null =
+      null;
+    // The sample starts on the audio clock at `when`: report it then, not before.
+    if (
+      o.onStart
+    ) {
+      if (
+        delayS >
+        0
+      )
+        timer =
+          setTimeout(
+            () => {
+              timer =
+                null;
+              if (
+                !released
+              )
+                o.onStart?.();
+            },
+            delayS *
+              1000,
+          );
+      else
+        o.onStart();
+    }
+    return () => {
+      if (
+        released
+      )
+        return;
+      released = true;
+      if (
+        timer
+      )
+        clearTimeout(
+          timer,
+        );
+      handle.stop();
+    };
+  }
 
   while (
     voices.length >=
-    MAX_VOICES
+    SYNTH_VOICES
   )
     voices[0].release();
 
   const now =
-    ctx.currentTime;
+    ctx.currentTime +
+    delayS;
   const osc =
     ctx.createOscillator();
   const gain =
@@ -202,6 +337,16 @@ export function playNote(
     midiToFreq(
       midi,
     );
+  const chord =
+    o.chordOf &&
+    o.chordOf >
+      1
+      ? 1 /
+        Math.sqrt(
+          o.chordOf /
+            3,
+        )
+      : 1;
   const peak =
     PEAK *
     Math.min(
@@ -210,6 +355,10 @@ export function playNote(
         0.05,
         velocity,
       ),
+    ) *
+    Math.min(
+      1,
+      chord,
     );
   gain.gain.setValueAtTime(
     0,
@@ -231,6 +380,10 @@ export function playNote(
   );
 
   let released = false;
+  let timer: ReturnType<
+    typeof setTimeout
+  > | null =
+    null;
   const voice: Voice =
     {
       release() {
@@ -239,6 +392,12 @@ export function playNote(
         )
           return;
         released = true;
+        if (
+          timer
+        )
+          clearTimeout(
+            timer,
+          );
         const i =
           voices.indexOf(
             voice,
@@ -253,14 +412,37 @@ export function playNote(
           );
         const t =
           ctx.currentTime;
-        // Hold the current level, then fall exponentially-ish to silence.
+        osc.onended =
+          () => {
+            osc.disconnect();
+            gain.disconnect();
+          };
+        // Released before it starts (a strum cancelled mid-way): it never sounds.
+        if (
+          t <
+          now
+        ) {
+          osc.stop(
+            t,
+          );
+          return;
+        }
+        // Hold the level the attack has reached (computed: the param's `value` lags its
+        // automation), then fall exponentially-ish to silence.
+        const level =
+          t >=
+          now +
+            ATTACK_S
+            ? peak
+            : (peak *
+                (t -
+                  now)) /
+              ATTACK_S;
         gain.gain.cancelScheduledValues(
           t,
         );
         gain.gain.setValueAtTime(
-          gain
-            .gain
-            .value,
+          level,
           t,
         );
         gain.gain.setTargetAtTime(
@@ -273,17 +455,34 @@ export function playNote(
           t +
             RELEASE_S,
         );
-        osc.onended =
-          () => {
-            osc.disconnect();
-            gain.disconnect();
-          };
       },
     };
   voices.push(
     voice,
   );
-  // The synth sounds as it is asked; a sampled instrument calls this when its samples are ready.
-  onStart?.();
+  if (
+    o.onStart
+  ) {
+    if (
+      delayS >
+      0
+    )
+      timer =
+        setTimeout(
+          () => {
+            timer =
+              null;
+            if (
+              !released
+            )
+              o.onStart?.();
+          },
+          delayS *
+            1000,
+        );
+    // The synth sounds as it is asked.
+    else
+      o.onStart();
+  }
   return voice.release;
 }

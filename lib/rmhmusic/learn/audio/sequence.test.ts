@@ -75,6 +75,7 @@ vi.mock(
 
 import {
   CHORD_HOLD_MS,
+  chordRand,
   INTERVAL_GAP_MS,
   playChord,
   playSequence,
@@ -912,6 +913,295 @@ describe('playSequence: lifecycle', () => {
       started,
     ).toHaveLength(
       1,
+    );
+  });
+});
+
+describe("a strum's humanise", () => {
+  it('comes from a seeded rand: the same chord strums the same way, never Math.random', () => {
+    const a =
+      chordRand(
+        [
+          40,
+          47,
+          52,
+          55,
+          59,
+          64,
+        ],
+      );
+    const b =
+      chordRand(
+        [
+          40,
+          47,
+          52,
+          55,
+          59,
+          64,
+        ],
+      );
+    const c =
+      chordRand(
+        [
+          41,
+          48,
+          53,
+          57,
+          60,
+          65,
+        ],
+      );
+    const first =
+      [
+        a(),
+        a(),
+        a(),
+      ];
+    expect(
+      [
+        b(),
+        b(),
+        b(),
+      ],
+    ).toEqual(
+      first,
+    );
+    expect(
+      [
+        c(),
+        c(),
+        c(),
+      ],
+    ).not.toEqual(
+      first,
+    );
+    for (const x of first) {
+      expect(
+        x,
+      ).toBeGreaterThanOrEqual(
+        0,
+      );
+      expect(
+        x,
+      ).toBeLessThan(
+        1,
+      );
+    }
+  });
+
+  it('takes the rand a caller passes', () => {
+    const rand =
+      vi.fn(
+        () =>
+          0.5,
+      );
+    playChord(
+      [
+        40,
+        47,
+        52,
+      ],
+      {
+        instrument:
+          'guitar',
+        rand,
+      },
+    ).cancel();
+    expect(
+      rand,
+    ).toHaveBeenCalledTimes(
+      2,
+    );
+  });
+});
+
+describe('playSequence: a gap per note (a melody with its rhythm)', () => {
+  it('starts each note its own gap after the one before, and holds each for its own hold', () => {
+    playSequence(
+      [
+        60,
+        62,
+        64,
+      ],
+      [
+        250,
+        500,
+      ],
+      {
+        holdMs: 2000,
+        holdsMs:
+          [
+            200,
+            450,
+            900,
+          ],
+      },
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+      ],
+    );
+    vi.advanceTimersByTime(
+      200,
+    );
+    expect(
+      started[0]
+        ?.released,
+    ).toBe(
+      true,
+    );
+    vi.advanceTimersByTime(
+      49,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+      ],
+    );
+    vi.advanceTimersByTime(
+      1,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+        62,
+      ],
+    );
+    vi.advanceTimersByTime(
+      499,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+        62,
+      ],
+    );
+    expect(
+      started[1]
+        ?.released,
+    ).toBe(
+      true,
+    );
+    vi.advanceTimersByTime(
+      1,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+        62,
+        64,
+      ],
+    );
+    vi.advanceTimersByTime(
+      899,
+    );
+    expect(
+      started[2]
+        ?.released,
+    ).toBe(
+      false,
+    );
+    vi.advanceTimersByTime(
+      1,
+    );
+    expect(
+      started[2]
+        ?.released,
+    ).toBe(
+      true,
+    );
+  });
+
+  it('is never a chord, even when a gap is 0, and a missing hold falls back to holdMs', () => {
+    playSequence(
+      [
+        60,
+        64,
+      ],
+      [
+        0,
+      ],
+      {
+        holdMs: 300,
+      },
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+      ],
+    );
+    vi.advanceTimersByTime(
+      0,
+    );
+    expect(
+      started.map(
+        (
+          n,
+        ) =>
+          n.midi,
+      ),
+    ).toEqual(
+      [
+        60,
+        64,
+      ],
+    );
+    vi.advanceTimersByTime(
+      300,
+    );
+    expect(
+      started.every(
+        (
+          n,
+        ) =>
+          n.released,
+      ),
+    ).toBe(
+      true,
     );
   });
 });

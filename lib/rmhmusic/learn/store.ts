@@ -21,7 +21,11 @@ import {
   type InputHub,
 } from './input/hub';
 import { createKeyboardInput } from './input/keyboard';
-import { createMicInput } from './input/mic';
+import { createFanOut } from './input/fan-out';
+import {
+  createMicInput,
+  type MicFrame,
+} from './input/mic';
 import {
   createMidiInput,
   type MidiInputAdapter,
@@ -42,6 +46,8 @@ import {
   INSTRUMENTS,
   profileSchema,
 } from './schemas';
+import { isInstrumentId } from './audio/instruments/catalog';
+import type { InstrumentId } from './audio/instruments/types';
 import type {
   Instrument,
   LearnInput,
@@ -112,6 +118,10 @@ export interface LearnState {
   setLatency(
     ms: number,
   ): Promise<void>;
+  /** The sound lessons play; null follows the instrument. */
+  setSound(
+    sound: InstrumentId | null,
+  ): Promise<void>;
   /** Resolves with how the save went, so the lesson can say so without reading the shared `error`. */
   completeLesson(
     lessonId: string,
@@ -179,6 +189,27 @@ export function subscribeMicLevel(
   };
 }
 
+/** Listeners for the microphone's analysis frames (the tuner), fed while the mic runs. */
+const micFrames =
+  createFanOut<
+    Readonly<MicFrame>
+  >();
+
+/**
+ * Hear every analysis frame of the microphone (about 40 a second while it is on, nothing while it
+ * is off): the tuner's input. The frame object is reused; copy what you keep. Returns a function
+ * that removes the listener.
+ */
+export function subscribeMicFrames(
+  l: (
+    frame: Readonly<MicFrame>,
+  ) => void,
+): () => void {
+  return micFrames.add(
+    l,
+  );
+}
+
 function ensureInput(): BuiltInput | null {
   // The adapters read browser APIs; on the server there is nothing to build.
   if (
@@ -196,6 +227,8 @@ function ensureInput(): BuiltInput | null {
     const mic =
       createMicInput(
         {
+          onFrame:
+            micFrames.emit,
           onLevel:
             (
               rms,
@@ -433,7 +466,9 @@ const sameProfile =
       a.latencyMs ===
         b.latencyMs &&
       a.dailyGoal ===
-        b.dailyGoal);
+        b.dailyGoal &&
+      a.sound ===
+        b.sound);
 
 const sameList =
   <
@@ -878,6 +913,26 @@ export const useLearnStore =
               key: 'input',
               value:
                 next,
+            },
+          );
+        },
+
+        setSound(
+          sound,
+        ) {
+          if (
+            sound !==
+              null &&
+            !isInstrumentId(
+              sound,
+            )
+          )
+            return Promise.resolve();
+          return change(
+            {
+              key: 'sound',
+              value:
+                sound,
             },
           );
         },

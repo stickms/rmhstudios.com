@@ -1510,5 +1510,11 @@
   "call-more-options": "Mute or block this caller",
   "call-mute-heading": "Mute calls from {{name}}",
   "call-mute-for": "For {{duration}}",
-  "call-block": "Block {{name}}"
+  "call-block": "Block {{name}}",
+  "leaderboard-near-you": "Di sekitar peringkatmu",
+  "leaderboard-near-you-hint": "Pemain tepat di atas dan di bawah peringkatmu.",
+  "quest-to-go_other": "{{count}} lagi",
+  "ai-working-feed": "Mencari postingan publik tentang pertanyaanmu dan membaca hingga 60 di antaranya…",
+  "ai-read-posts_other": "Ditulis dari {{count}} postingan",
+  "leaderboard-find-people": "Cari orang"
 }

@@ -11,7 +11,10 @@
  * Sound:
  * - Every sound goes through `audio/voice.ts` and `audio/sequence.ts`; this file says what to play
  *   (the question's notes, in turn or together), never how it sounds. `sound` (a prop) is the
- *   `PlayOptions` the notes are voiced with; nothing passes one until instruments exist.
+ *   `PlayOptions` the notes are voiced with (LessonScreen passes the lesson's sampled instrument).
+ *   While its samples load the row says "Loading sound…" and nothing plays (at most
+ *   `LOAD_WAIT_MS`, then the simple tone for the rest of the lesson), so a load delay is never
+ *   counted as heard.
  * - A question counts as heard when its LAST note has started (`audio/ear-playback.ts`): an
  *   interval's second note sounds 750 ms after its first, so the answers stay off until then, and
  *   a sound that was cancelled (Next, a dialog, leaving) never opens them. The decisions (what a
@@ -55,6 +58,7 @@ import {
   playChord,
   playSequence,
 } from '@/lib/rmhmusic/learn/audio/sequence';
+import { fitToRange } from '@/lib/rmhmusic/learn/audio/instruments/catalog';
 import {
   onSoundChange,
   soundStatus,
@@ -93,6 +97,10 @@ import {
   EarSoundRow,
   soundProblem,
 } from './EarSoundRow';
+import {
+  fallbackLine,
+  useFallbackNotice,
+} from './useSoundNotice';
 import { LessonResult } from './LessonParts';
 import { qualityName } from './PlayChordLesson';
 import {
@@ -120,7 +128,7 @@ export function EarLesson({
   lessonId: string;
   /** A dialog is open over the lesson: nothing answers, and what is playing stops. */
   paused?: boolean;
-  /** How the notes are voiced (the instrument, once there are instruments); none yet. */
+  /** How the notes are voiced: the lesson's sampled instrument (the synth when absent). */
   sound?: PlayOptions;
 }) {
   const {
@@ -210,13 +218,22 @@ export function EarLesson({
       () =>
         createEarPlayback(
           {
+            // Sounded an octave or two away when that keeps a violin or flute question on its own samples
+            // (an interval or a chord quality is the same in any octave; nothing shows the notes).
             play: (
               playKind,
-              notes,
+              asked,
               hooks,
-            ) =>
-              playKind ===
-              'chord'
+            ) => {
+              const notes =
+                fitToRange(
+                  asked,
+                  voiceRef
+                    .current
+                    ?.instrument,
+                );
+              return playKind ===
+                'chord'
                 ? playChord(
                     notes,
                     {
@@ -231,7 +248,8 @@ export function EarLesson({
                       ...voiceRef.current,
                       ...hooks,
                     },
-                  ),
+                  );
+            },
             onHeard:
               (
                 index,
@@ -511,6 +529,12 @@ export function EarLesson({
       status,
       waking,
     );
+  const fellBack =
+    useFallbackNotice(
+      inSession
+        ? `${lesson.kind}-${lesson.index}`
+        : lesson.kind,
+    );
 
   const title =
     sessionTitle(
@@ -566,6 +590,19 @@ export function EarLesson({
     'hint';
   let wrong = false;
   if (
+    lesson.kind ===
+      'asking' &&
+    fellBack
+  ) {
+    // Said once, on the question where the lesson fell back to the simple tone.
+    lineKey =
+      'fallback';
+    line =
+      fallbackLine(
+        t,
+        fellBack,
+      );
+  } else if (
     lesson.kind ===
     'asking'
   ) {
@@ -672,6 +709,9 @@ export function EarLesson({
               ? title
               : '',
             problem,
+            fellBack
+              ? line
+              : '',
           ]
             .filter(
               Boolean,

@@ -18,9 +18,10 @@ export const MAX_REPLY_CHARS = 500;
  * Bump when the persona schema changes. It is stamped on a freshly rolled
  * `BotPersonaSpec` only: it is not stored in `User.botPersona` and nothing
  * reads it back, so bumping never touches existing bots. v2 added the
- * political lean (legacy bots get theirs from `withPoliticalLean`).
+ * political lean (legacy bots get theirs from `withPoliticalLean`); v3 the
+ * name style (legacy bots get theirs from the refresh run's restyle pass).
  */
-export const PERSONA_VERSION = 2;
+export const PERSONA_VERSION = 3;
 
 /**
  * DiceBear avatar styles that read as *people / characters*, never robots —
@@ -239,6 +240,76 @@ export const VOICE_STYLES =
       rules:
         'Likes structure. Often a short lead-in then a tiny list ("three things:" or "1) … 2) …"). Punchy, scannable, no fluff.',
     },
+    {
+      id: 'texter',
+      label:
+        'texts like it costs money',
+      rules:
+        'Texting shorthand everywhere: u, ur, rn, tbh, idk, bc, w/, smth, ppl, abt. Lowercase, barely any punctuation. Short.',
+    },
+    {
+      id: 'one-liner',
+      label:
+        'says it in five words or fewer',
+      rules:
+        'Most of the time just a few words: "real", "this is so me", "not again", "ok but why". No full sentences unless it really needs one. No emoji.',
+    },
+    {
+      id: 'shitposter',
+      label:
+        'absurdist meme poster',
+      rules:
+        'Meme formats and absurd non sequiturs ("me when", "nobody:", "pov:", "the duality of man"). Lowercase. Deadpan. Never explains the joke.',
+    },
+    {
+      id: 'boomer',
+      label:
+        'older and earnest online',
+      rules:
+        'Earnest and a little formal but clumsy online. Ellipses between thoughts... Random Capitalized Words. Sometimes signs off with their first name or "Cheers". Occasional double space after a period.',
+    },
+    {
+      id: 'stan',
+      label:
+        'fandom stan energy',
+      rules:
+        'Fandom-account energy: ALL CAPS bursts, "IM SCREAMING", "not me ...", "the way i ...", keyboard smashes like "asdfgh", crying emoji. Over the top but self-aware.',
+    },
+    {
+      id: 'kaomoji',
+      label:
+        'soft with kaomoji',
+      rules:
+        'Soft and cute, lowercase, uses kaomoji and text faces like (｡•́︿•̀｡), ^^, :3, >_< instead of emoji. Gentle.',
+    },
+    {
+      id: 'second-language',
+      label:
+        'English is a second language',
+      rules:
+        'Fluent but not native: an occasional missing article or preposition, a slightly unusual word order or phrase, a word from their first language now and then. Friendly, clear, never a caricature.',
+    },
+    {
+      id: 'uk-casual',
+      label:
+        'casual British',
+      rules:
+        'Casual British English and spelling: "proper", "a bit", "cheers", "mate", "reckon", "knackered", understatement. Lowercase-leaning, dry.',
+    },
+    {
+      id: 'argumentative',
+      label:
+        'always half-arguing',
+      rules:
+        'Opinionated and a bit contrarian. Starts with "nah", "counterpoint:", "respectfully no". Short, punchy, confident, sometimes wrong. Never cruel.',
+    },
+    {
+      id: 'plain',
+      label:
+        'ordinary and unremarkable',
+      rules:
+        'Writes like most people: plain words, a normal sentence or a fragment, some capitals, some not. Nothing clever, nothing performed. Fine to be a bit boring.',
+    },
   ] as const;
 
 export type VoiceStyle =
@@ -279,7 +350,7 @@ export const QUIRKS =
     'overuses one specific catchphrase',
     'constantly mentions being tired / needing coffee',
     'rates random things out of 10',
-    'ends some posts with a tiny rhetorical question',
+    'posts at odd hours and mentions it',
     'is weirdly competitive about trivial stuff',
     'keeps a long-running feud with autocorrect',
     'romanticizes mundane daily routines',
@@ -345,6 +416,11 @@ export const POST_SHAPES =
     'a tip or recommendation from their hobby',
     'a self-deprecating joke about a minor failure',
     'reacting to a (made-up but plausible) thing that just happened to them',
+    'a half-finished thought, like they got distracted mid-post',
+    'something mundane with no point at all',
+    'a petty or slightly unreasonable opinion',
+    'a shower thought',
+    'a one-line reaction to something in their day',
   ] as const;
 
 /**
@@ -595,10 +671,161 @@ export interface BotPersonaSpec {
   theme: string;
   voice: VoiceStyle;
   temperament: string;
+  /** The Jungian figure the voice is built around (see {@link ARCHETYPES}). */
+  archetype: Archetype;
   quirk: string;
   habit: PostingHabit;
   politics: PoliticalLean;
   avatarStyle: string;
+  nameStyle: NameStyle;
+  typing: TypingHabit;
+}
+
+/**
+ * How a bot's display name reads. Real accounts are not all "Firstname Lastname": they are gamer
+ * tags, anime and pop-culture nods, hashtags, aesthetic lowercase, a name and a tagline, a joke.
+ * The rolled style is stored in the persona (a NAME STYLE line) so later tweaks keep to it: a gamer
+ * tag stays a gamer tag.
+ */
+export interface NameStyle {
+  id: string;
+  label: string;
+  /** Share of new bots that get this style; the weights sum to 1. */
+  weight: number;
+  rules: string;
+}
+
+export const NAME_STYLES: readonly NameStyle[] =
+  [
+    {
+      id: 'real',
+      label:
+        'real name',
+      weight: 0.2,
+      rules:
+        'a plain first name, or first and last name, sometimes all lowercase, e.g. "Maya Okafor", "jordan", "Luis R."',
+    },
+    {
+      id: 'gamer',
+      label:
+        'gamer tag',
+      weight: 0.16,
+      rules:
+        'a gamer tag: run-together words, numbers, underscores, the odd leetspeak letter or xX_Xx frame, e.g. "xXCrispyNoodleXx", "N1ghtOwl_92", "ttv_kaizen", "LagSwitchLarry"',
+    },
+    {
+      id: 'anime',
+      label:
+        'anime reference',
+      weight: 0.14,
+      rules:
+        'a nod to an anime or manga (a character, a famous line, a series), maybe with a kaomoji or a Japanese word, e.g. "zoro got lost again", "nezuko enjoyer", "kaito 🍥", "plus ultra pat"',
+    },
+    {
+      id: 'popculture',
+      label:
+        'pop-culture reference',
+      weight: 0.14,
+      rules:
+        'a joke on a film, TV show, video game, song or meme, e.g. "ted lasso believer", "not the dwight you know", "certified swiftie", "main character energy", "hollow knight hater (jk)"',
+    },
+    {
+      id: 'hashtag',
+      label:
+        'hashtag',
+      weight: 0.1,
+      rules:
+        'a name or word plus one or two hashtags for a fandom, community or challenge, e.g. "Maya #BookTok", "dev #100DaysOfCode", "jess 🌱 #PlantMom"',
+    },
+    {
+      id: 'aesthetic',
+      label:
+        'aesthetic',
+      weight: 0.1,
+      rules:
+        'aesthetic lowercase framed with simple symbols or one emoji, e.g. "☆ luna ☆", "ellie ♡", "˚₊ moth girl ₊˚" (no fancy unicode letter fonts)',
+    },
+    {
+      id: 'tagline',
+      label:
+        'name and tagline',
+      weight: 0.1,
+      rules:
+        'a name with a short tagline after a separator, e.g. "Sam | coffee & code", "Priya • plant mom", "Dre (in my running era)"',
+    },
+    {
+      id: 'joke',
+      label:
+        'joke name',
+      weight: 0.06,
+      rules:
+        'a self-deprecating or absurd phrase instead of a name, e.g. "professional overthinker", "guy who reads the terms", "lost my keys again"',
+    },
+  ];
+
+/** The style at `r` in [0, 1) across the weights. */
+export function pickNameStyle(
+  r: number,
+): NameStyle {
+  let acc = 0;
+  for (const style of NAME_STYLES) {
+    acc +=
+      style.weight;
+    if (
+      r <
+      acc
+    )
+      return style;
+  }
+  return NAME_STYLES[
+    NAME_STYLES.length -
+      1
+  ]!;
+}
+
+/** The persona line that carries a name style. */
+export function nameStyleLine(
+  style: NameStyle,
+): string {
+  return `NAME STYLE (${style.label}): ${style.rules}. Never a real public figure's name as your own.`;
+}
+
+const NAME_STYLE_LINE =
+  /^NAME STYLE \(/m;
+
+/** Does this persona text already carry a NAME STYLE line? Bots minted before name styles do not. */
+export function hasNameStyle(
+  persona: string,
+): boolean {
+  return NAME_STYLE_LINE.test(
+    persona,
+  );
+}
+
+/** The persona with a NAME STYLE line appended (unchanged if it already has one). */
+export function withNameStyle(
+  persona: string,
+  style: NameStyle,
+): string {
+  if (
+    hasNameStyle(
+      persona,
+    )
+  )
+    return persona;
+  const base =
+    persona.replace(
+      /\s+$/,
+      '',
+    );
+  const line =
+    nameStyleLine(
+      style,
+    );
+  return base ===
+    ''
+    ? line
+    : `${base}\n${line}`;
 }
 
 export function randomItem<
@@ -613,6 +840,66 @@ export function randomItem<
     )
   ];
 }
+
+/**
+ * Jung's archetypes (Carl Jung, "The Archetypes and the Collective
+ * Unconscious", 1959): recurring figures every culture recognises on sight.
+ * Giving each bot one of them is what keeps a voice consistent from post to
+ * post — a Trickster stays playful, a Sage stays measured — where a list of
+ * loose traits drifts. Only figures Jung himself described, and each written as
+ * posting behaviour rather than mythology.
+ */
+export interface Archetype {
+  id: string;
+  label: string;
+  rules: string;
+}
+
+export const ARCHETYPES: readonly Archetype[] =
+  [
+    {
+      id: 'sage',
+      label:
+        'the Sage',
+      rules:
+        'calm and curious; explains things, asks good questions, admits what you do not know.',
+    },
+    {
+      id: 'trickster',
+      label:
+        'the Trickster',
+      rules:
+        'playful and irreverent; jokes, wordplay and gentle mischief, never cruel.',
+    },
+    {
+      id: 'hero',
+      label:
+        'the Hero',
+      rules:
+        'driven and earnest; shares goals, progress and small wins, cheers others on.',
+    },
+    {
+      id: 'caregiver',
+      label:
+        'the Caregiver',
+      rules:
+        'warm and attentive; notices how people are doing, offers help and kind words.',
+    },
+    {
+      id: 'child',
+      label:
+        'the Child',
+      rules:
+        'open and easily delighted; wonder at small things, simple honest reactions.',
+    },
+    {
+      id: 'wanderer',
+      label:
+        'the Wanderer',
+      rules:
+        'restless and independent; new places, new hobbies, a slightly outsider view.',
+    },
+  ];
 
 /** Roll a fresh, randomized persona across every axis. */
 export function rollPersona(): BotPersonaSpec {
@@ -631,6 +918,10 @@ export function rollPersona(): BotPersonaSpec {
       randomItem(
         TEMPERAMENTS,
       ),
+    archetype:
+      randomItem(
+        ARCHETYPES,
+      ),
     quirk:
       randomItem(
         QUIRKS,
@@ -647,6 +938,14 @@ export function rollPersona(): BotPersonaSpec {
       randomItem(
         AVATAR_STYLES,
       ),
+    nameStyle:
+      pickNameStyle(
+        Math.random(),
+      ),
+    typing:
+      pickTypingHabit(
+        Math.random(),
+      ),
   };
 }
 
@@ -660,11 +959,18 @@ export function composePersona(
   return [
     `THEME: ${spec.theme}.`,
     `TEMPERAMENT: ${spec.temperament}.`,
+    `ARCHETYPE (${spec.archetype.label}): ${spec.archetype.rules}`,
     `QUIRK: ${spec.quirk}.`,
     `VOICE (${spec.voice.label}): ${spec.voice.rules}`,
     `ACTIVITY: ${spec.habit.label}.`,
     politicsLine(
       spec.politics,
+    ),
+    nameStyleLine(
+      spec.nameStyle,
+    ),
+    typingLine(
+      spec.typing,
     ),
   ].join(
     '\n',
@@ -781,4 +1087,245 @@ export function cleanGeneratedText(
         )
       : slice
   ).trim();
+}
+
+// ─── typing habits ──────────────────────────────────────────────────────────
+
+/**
+ * Typing mechanics, a second axis on top of the VOICE: how this person actually hits the keys
+ * (capitals, punctuation, "lol" on the end, abbreviations). Two people with the same voice still
+ * type differently, which is a large part of why a feed of model-written posts reads as one
+ * author. Stored as a TYPING line; a bot minted before typing habits gets one from a hash of its
+ * id at prompt time (`botPromptPersona`), nothing stored. `humanizeBotText` enforces the habits a
+ * model is most likely to ignore.
+ */
+export interface TypingHabit {
+  id: string;
+  /** Relative share of bots. */
+  weight: number;
+  rules: string;
+}
+
+export const TYPING_HABITS: readonly TypingHabit[] =
+  [
+    {
+      id: 'normal',
+      weight: 22,
+      rules:
+        'nothing special: normal capitals and punctuation, but no polish',
+    },
+    {
+      id: 'no-caps',
+      weight: 14,
+      rules:
+        'never uses capital letters, not even for "i" or names',
+    },
+    {
+      id: 'no-periods',
+      weight: 12,
+      rules:
+        'never ends a message with a period; uses line breaks or nothing instead',
+    },
+    {
+      id: 'lol-tail',
+      weight: 8,
+      rules:
+        'often tacks "lol", "lmao" or "haha" onto the end, even when nothing is funny',
+    },
+    {
+      id: 'ellipses',
+      weight: 7,
+      rules:
+        'trails off with ".." or "..." between thoughts',
+    },
+    {
+      id: 'double-punct',
+      weight: 6,
+      rules:
+        'doubles up punctuation: "!!", "??", "?!"',
+    },
+    {
+      id: 'abbrev',
+      weight: 7,
+      rules:
+        'abbreviates: u, ur, rn, tbh, idk, bc, w/, prob',
+    },
+    {
+      id: 'caps-word',
+      weight: 5,
+      rules:
+        'puts one word in CAPS for emphasis now and then',
+    },
+    {
+      id: 'typos',
+      weight: 8,
+      rules:
+        'leaves a typo or a missing letter uncorrected now and then ("teh", "becuase", "thnk")',
+    },
+    {
+      id: 'emoticons',
+      weight: 5,
+      rules:
+        'uses old-school emoticons like :) :P xD instead of emoji',
+    },
+    {
+      id: 'line-breaks',
+      weight: 6,
+      rules:
+        'splits a post into a few short lines instead of one paragraph',
+    },
+  ];
+
+const TYPING_TOTAL =
+  TYPING_HABITS.reduce(
+    (
+      n,
+      h,
+    ) =>
+      n +
+      h.weight,
+    0,
+  );
+
+/** The habit at `r` in [0, 1) across the weights. */
+export function pickTypingHabit(
+  r: number,
+): TypingHabit {
+  let acc = 0;
+  for (const habit of TYPING_HABITS) {
+    acc +=
+      habit.weight /
+      TYPING_TOTAL;
+    if (
+      r <
+      acc
+    )
+      return habit;
+  }
+  return TYPING_HABITS[
+    TYPING_HABITS.length -
+      1
+  ]!;
+}
+
+export function typingLine(
+  habit: TypingHabit,
+): string {
+  return `TYPING (${habit.id}): ${habit.rules}.`;
+}
+
+const TYPING_LINE =
+  /^TYPING \(([a-z-]+)\):/m;
+
+/** The typing habit a persona text carries, or null. */
+export function readTypingHabit(
+  persona: string,
+): TypingHabit | null {
+  const id =
+    TYPING_LINE.exec(
+      persona,
+    )?.[1];
+  return (
+    TYPING_HABITS.find(
+      (
+        h,
+      ) =>
+        h.id ===
+        id,
+    ) ??
+    null
+  );
+}
+
+/** The persona with a TYPING line, chosen from a hash of `seed` when it has none. */
+export function withTypingHabit(
+  persona: string,
+  seed: string,
+): string {
+  if (
+    persona ===
+      '' ||
+    readTypingHabit(
+      persona,
+    )
+  )
+    return persona;
+  // A different input than the political lean's hash, so the two axes are independent.
+  const line =
+    typingLine(
+      pickTypingHabit(
+        seedToUnit(
+          `typing:${seed}`,
+        ),
+      ),
+    );
+  return `${persona.replace(/\s+$/, '')}\n${line}`;
+}
+
+/** The persona text as the model is handed it: the stored persona plus any axis a legacy bot lacks. */
+export function botPromptPersona(
+  persona: string,
+  botId: string,
+): string {
+  return persona ===
+    ''
+    ? ''
+    : withTypingHabit(
+        withPoliticalLean(
+          persona,
+          botId,
+        ),
+        botId,
+      );
+}
+
+/**
+ * Post-process a bot's generated text so the most reliable tells of model writing never reach the
+ * feed, whatever the model did: em and en dashes become what people type on a phone, and the
+ * typing habits a model tends to forget (no capitals, no final period) are applied.
+ */
+export function humanizeBotText(
+  text: string,
+  persona: string,
+): string {
+  let out =
+    text
+      // A number range keeps a plain hyphen.
+      .replace(
+        /(\d)\s*[–—]\s*(\d)/g,
+        '$1-$2',
+      )
+      .replace(
+        /\s*[—–]\s*/g,
+        ' - ',
+      )
+      .replace(
+        /\s+-\s*$/,
+        '',
+      )
+      .replace(
+        /[ \t]{2,}/g,
+        ' ',
+      )
+      .trim();
+  const habit =
+    readTypingHabit(
+      persona,
+    )?.id;
+  if (
+    habit ===
+    'no-caps'
+  )
+    out =
+      out.toLowerCase();
+  if (
+    habit ===
+    'no-periods'
+  )
+    out =
+      out.replace(
+        /(?<!\.)\.$/,
+        '',
+      );
+  return out;
 }

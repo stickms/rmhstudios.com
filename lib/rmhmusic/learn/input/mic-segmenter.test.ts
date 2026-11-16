@@ -378,3 +378,183 @@ describe('createSegmenter flush', () => {
     );
   });
 });
+
+describe('createSegmenter: re-attack (opt-in, the songs screen only)', () => {
+  const at =
+    (
+      midi: number,
+      rms: number,
+    ) => ({
+      midi,
+      cents: 0,
+      rms,
+    });
+  /** A note struck, held, let decay, then struck again on the same pitch, 25 ms frames. */
+  const levels =
+    [
+      0.2,
+      0.2,
+      0.2,
+      0.18,
+      0.12,
+      0.08,
+      0.05,
+      0.05,
+      0.15,
+      0.2,
+      0.2,
+    ];
+  function play(
+    opts?: Parameters<
+      typeof createSegmenter
+    >[0],
+  ) {
+    const s =
+      createSegmenter(
+        opts,
+      );
+    const events: {
+      type: string;
+      time: number;
+    }[] =
+      [];
+    levels.forEach(
+      (
+        rms,
+        i,
+      ) => {
+        for (const e of s.push(
+          at(
+            64,
+            rms,
+          ),
+          i *
+            25,
+        ))
+          events.push(
+            {
+              type: e.type,
+              time: e.time,
+            },
+          );
+      },
+    );
+    return events;
+  }
+
+  it('is off by default: a repeated note without silence stays one note (other lessons are unchanged)', () => {
+    expect(
+      play(),
+    ).toEqual(
+      [
+        {
+          type: 'on',
+          time: 50,
+        },
+      ],
+    );
+    expect(
+      play(
+        {
+          reattack:
+            () =>
+              false,
+        },
+      ),
+    ).toEqual(
+      [
+        {
+          type: 'on',
+          time: 50,
+        },
+      ],
+    );
+  });
+
+  it('when on, a 6 dB rise within 80 ms after the level decayed is a new note-on of the same pitch', () => {
+    expect(
+      play(
+        {
+          reattack:
+            () =>
+              true,
+        },
+      ),
+    ).toEqual(
+      [
+        {
+          type: 'on',
+          time: 50,
+        },
+        {
+          type: 'off',
+          time: 200,
+        },
+        {
+          type: 'on',
+          time: 200,
+        },
+      ],
+    );
+  });
+
+  it('never re-attacks a steady or wavering note, nor one that has not decayed', () => {
+    const s =
+      createSegmenter(
+        {
+          reattack:
+            () =>
+              true,
+        },
+      );
+    const events: string[] =
+      [];
+    [
+      0.1,
+      0.1,
+      0.1,
+      0.12,
+      0.09,
+      0.12,
+      0.1,
+      0.13,
+      0.1,
+    ].forEach(
+      (
+        rms,
+        i,
+      ) => {
+        for (const e of s.push(
+          at(
+            60,
+            rms,
+          ),
+          i *
+            25,
+        ))
+          events.push(
+            e.type,
+          );
+      },
+    );
+    expect(
+      events,
+    ).toEqual(
+      [
+        'on',
+      ],
+    );
+    // A frame without a level (older callers) never re-attacks.
+    expect(
+      s.push(
+        {
+          midi: 60,
+          cents: 0,
+        },
+        300,
+      ),
+    ).toEqual(
+      [],
+    );
+  });
+});

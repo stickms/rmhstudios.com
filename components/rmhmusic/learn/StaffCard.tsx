@@ -29,8 +29,14 @@ import {
   HEAD_RX,
   HEAD_RY,
   cardLayout,
+  flatPath,
   ledgerLine,
+  nowMarkPath,
   ruledLine,
+  sharpPath,
+  sheetLayout,
+  sheetLedgerLine,
+  type SheetNote,
 } from '@/lib/rmhmusic/learn/staff-card-layout';
 import { noteLetter } from '@/lib/rmhmusic/learn/theory/clef';
 import { cn } from '@/lib/utils';
@@ -102,11 +108,7 @@ export function StaffCard({
         ? CARD_LOW_MIN_STEP
         : CARD_MIN_STEP,
     );
-  const glyph =
-    CLEF_GLYPHS[
-      card
-        .clef
-    ];
+
   const answered =
     state !==
     'ask';
@@ -163,9 +165,6 @@ export function StaffCard({
         ? 'text-app-danger'
         : 'text-app-text';
 
-  const right =
-    CARD_W -
-    4;
   return (
     <figure
       className={cn(
@@ -190,84 +189,14 @@ export function StaffCard({
             label
           }
         </title>
-        <g
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1"
-          strokeLinecap="round"
-          opacity="0.6"
-        >
-          {[
-            0,
-            1,
-            2,
-            3,
-            4,
-          ].map(
-            (
-              i,
-            ) => (
-              <path
-                key={
-                  i
-                }
-                d={ruledLine(
-                  i,
-                  4,
-                  right,
-                )}
-              />
-            ),
-          )}
-          <path
-            d={`M 4.2 ${CARD_TOP - 0.3} L 3.8 ${CARD_TOP + 4 * CARD_GAP + 0.3}`}
-          />
-          <path
-            d={`M ${right + 0.2} ${CARD_TOP + 0.2} L ${right - 0.2} ${CARD_TOP + 4 * CARD_GAP}`}
-          />
-        </g>
-        <g fill="currentColor">
-          <path
-            d={
-              glyph.path
-            }
-          />
-          {glyph.dots.map(
-            (
-              d,
-            ) => (
-              <circle
-                key={`${d.cx}-${d.cy}`}
-                cx={
-                  d.cx
-                }
-                cy={
-                  d.cy
-                }
-                r={
-                  d.r
-                }
-              />
-            ),
-          )}
-          {octaveClef &&
-          card.clef ===
-            'treble' ? (
-            // The octave-down treble clef's 8, set small under the clef's tail.
-            <text
-              x="19.5"
-              y="101"
-              textAnchor="middle"
-              // Positioned in the card's own coordinates, whatever the page's direction (ar, ur).
-              direction="ltr"
-              fontSize="10"
-              className="rmm-display"
-              stroke="none"
-            >
-              8
-            </text>
-          ) : null}
-        </g>
+        <StaffRuling
+          clef={
+            card.clef
+          }
+          octaveClef={
+            octaveClef
+          }
+        />
         <g
           className={
             ink
@@ -390,6 +319,369 @@ export function StaffCard({
           ) : null}
         </figcaption>
       ) : null}
+    </figure>
+  );
+}
+
+/**
+ * The ruled staff, its bar lines and its clef (with the octave clef's 8): the part every sheet
+ * shares, card or sprint.
+ */
+function StaffRuling({
+  clef,
+  octaveClef = false,
+}: {
+  clef: Card['clef'];
+  octaveClef?: boolean;
+}) {
+  const glyph =
+    CLEF_GLYPHS[
+      clef
+    ];
+  const right =
+    CARD_W -
+    4;
+  return (
+    <>
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        opacity="0.6"
+      >
+        {[
+          0,
+          1,
+          2,
+          3,
+          4,
+        ].map(
+          (
+            i,
+          ) => (
+            <path
+              key={
+                i
+              }
+              d={ruledLine(
+                i,
+                4,
+                right,
+              )}
+            />
+          ),
+        )}
+        <path
+          d={`M 4.2 ${CARD_TOP - 0.3} L 3.8 ${CARD_TOP + 4 * CARD_GAP + 0.3}`}
+        />
+        <path
+          d={`M ${right + 0.2} ${CARD_TOP + 0.2} L ${right - 0.2} ${CARD_TOP + 4 * CARD_GAP}`}
+        />
+      </g>
+      <g fill="currentColor">
+        <path
+          d={
+            glyph.path
+          }
+        />
+        {glyph.dots.map(
+          (
+            d,
+          ) => (
+            <circle
+              key={`${d.cx}-${d.cy}`}
+              cx={
+                d.cx
+              }
+              cy={
+                d.cy
+              }
+              r={
+                d.r
+              }
+            />
+          ),
+        )}
+        {octaveClef &&
+        clef ===
+          'treble' ? (
+          // The octave-down treble clef's 8, set small under the clef's tail.
+          <text
+            x="19.5"
+            y="101"
+            textAnchor="middle"
+            // Positioned in the card's own coordinates, whatever the page's direction (ar, ur).
+            direction="ltr"
+            fontSize="10"
+            className="rmm-display"
+            stroke="none"
+          >
+            8
+          </text>
+        ) : null}
+      </g>
+    </>
+  );
+}
+
+/** A written note's name as the sheet spells it: its letter and the accidental printed before it. */
+export function sheetNoteName(
+  n: SheetNote,
+): string {
+  return `${noteLetter(n.written)}${n.accidental > 0 ? '♯' : n.accidental < 0 ? '♭' : ''}`;
+}
+
+/**
+ * The sight reading game's sheet: the card's box, staff and clef with a prompt's notes on it — one
+ * note, a chord on one stem, or a bar of notes with a pencilled "now" mark under the next one
+ * (`sheetLayout`). Every prompt of every level fits the same box, so a run never moves the page.
+ * Once answered, a pencil tick or a red-pencil cross is drawn in the corner and the right notes are
+ * written under the staff (on the reserved line, as on a card). The caller names the image
+ * (`label`): the notes are said in words, never only drawn. All SVG text is `direction="ltr"`.
+ */
+export function SprintSheet({
+  clef,
+  notes,
+  arrangement,
+  now,
+  state,
+  label,
+  className,
+  range = 'deck',
+  octaveClef = false,
+}: {
+  clef: Card['clef'];
+  notes: readonly SheetNote[];
+  arrangement:
+    | 'chord'
+    | 'bar';
+  /** A bar: the note to play next. */
+  now?: number;
+  state: StaffCardState;
+  /**
+   * The image's name. While asking it must not give the answer away (say only what kind of prompt
+   * is on which staff); the notes are named once answered.
+   */
+  label: string;
+  className?: string;
+  /** `low`: the note finder's taller card, three ledger lines under the treble staff (guitar). */
+  range?:
+    | 'deck'
+    | 'low';
+  /** The treble clef with the small 8 under it (guitar music, read an octave down). */
+  octaveClef?: boolean;
+}) {
+  const titleId =
+    useId();
+  const low =
+    range ===
+    'low';
+  const layout =
+    sheetLayout(
+      clef,
+      notes,
+      arrangement,
+      now,
+      low
+        ? CARD_LOW_MIN_STEP
+        : CARD_MIN_STEP,
+    );
+  const answered =
+    state !==
+    'ask';
+  const ink =
+    state ===
+    'right'
+      ? 'text-app-accent'
+      : state ===
+          'wrong'
+        ? 'text-app-danger'
+        : 'text-app-text';
+  return (
+    <figure
+      className={cn(
+        STAFF_BOX,
+        className,
+      )}
+    >
+      <svg
+        viewBox={`0 0 ${CARD_W} ${low ? CARD_LOW_H : CARD_H}`}
+        role="img"
+        aria-labelledby={
+          titleId
+        }
+        className="block h-auto w-full text-app-text"
+      >
+        <title
+          id={
+            titleId
+          }
+        >
+          {
+            label
+          }
+        </title>
+        <StaffRuling
+          clef={
+            clef
+          }
+          octaveClef={
+            octaveClef
+          }
+        />
+        <g
+          className={
+            ink
+          }
+          stroke="currentColor"
+          fill="currentColor"
+          strokeLinecap="round"
+        >
+          {layout.ledgers.map(
+            (
+              l,
+              i,
+            ) => (
+              <path
+                key={`${l.y}-${l.x0}`}
+                d={sheetLedgerLine(
+                  l,
+                  i,
+                )}
+                strokeWidth="1.4"
+                fill="none"
+              />
+            ),
+          )}
+          {layout.stems.map(
+            (
+              s,
+            ) => (
+              <line
+                key={`${s.x}-${s.y1}`}
+                x1={
+                  s.x
+                }
+                x2={
+                  s.x
+                }
+                y1={
+                  s.y1
+                }
+                y2={
+                  s.y2
+                }
+                strokeWidth="1.3"
+              />
+            ),
+          )}
+          {layout.heads.map(
+            (
+              h,
+              i,
+            ) => (
+              <ellipse
+                key={`${i}-${h.x}-${h.y}`}
+                cx={
+                  h.x
+                }
+                cy={
+                  h.y
+                }
+                rx={
+                  HEAD_RX
+                }
+                ry={
+                  HEAD_RY
+                }
+                transform={`rotate(-20 ${h.x} ${h.y})`}
+                stroke="none"
+              />
+            ),
+          )}
+          {layout.accidentals.map(
+            (
+              a,
+            ) => (
+              <path
+                key={`${a.x}-${a.y}`}
+                d={
+                  a.kind ===
+                  'sharp'
+                    ? sharpPath(
+                        a.x,
+                        a.y,
+                      )
+                    : flatPath(
+                        a.x,
+                        a.y,
+                      )
+                }
+                strokeWidth={
+                  a.kind ===
+                  'sharp'
+                    ? 1.2
+                    : 1.3
+                }
+                fill="none"
+              />
+            ),
+          )}
+        </g>
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.4"
+        >
+          {layout.now &&
+          !answered ? (
+            <path
+              d={nowMarkPath(
+                layout
+                  .now
+                  .x,
+                layout
+                  .now
+                  .y,
+              )}
+            />
+          ) : null}
+          {state ===
+          'right' ? (
+            <path
+              className="text-app-accent"
+              d="M 180 12 L 184.5 17 L 193 5.5"
+            />
+          ) : state ===
+            'wrong' ? (
+            <path
+              className="text-app-danger"
+              d="M 181 6 L 192 17 M 192.5 6.5 L 180.5 16.5"
+            />
+          ) : null}
+        </g>
+      </svg>
+      <figcaption
+        aria-hidden="true"
+        dir="ltr"
+        className={cn(
+          'rmm-display h-9 text-center text-[1.75rem] leading-9',
+          ink,
+        )}
+      >
+        {answered
+          ? notes
+              .map(
+                sheetNoteName,
+              )
+              .join(
+                ' ',
+              )
+          : null}
+      </figcaption>
     </figure>
   );
 }

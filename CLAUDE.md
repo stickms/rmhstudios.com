@@ -1694,6 +1694,62 @@ _why_.
    documented
    in
    [`docs/open-graph.md`](docs/open-graph.md).
+   **Every
+   public
+   page
+   unfurls
+   as
+   itself**
+   (`design.md`
+   §7):
+   its
+   own
+   title
+   and
+   description,
+   and
+   its
+   own
+   card,
+   through
+   `ogCardPath`
+   for
+   a
+   page
+   about
+   one
+   thing
+   or
+   a
+   section
+   card
+   in
+   `lib/og/static-cards.ts`
+   for
+   any
+   other.
+   A
+   new
+   public
+   route
+   adds
+   its
+   card
+   in
+   the
+   same
+   change;
+   `lib/__tests__/og-page-coverage.test.ts`
+   fails
+   a
+   route
+   that
+   falls
+   back
+   to
+   the
+   site-wide
+   default.
 7. **Accessibility:**
    Radix/native
    primitives,
@@ -3106,6 +3162,18 @@ worker,
 or
 decorative
 `ResizeObserver`,
+except
+the
+predictive
+link
+prefetcher
+(`lib/foresight-prefetch.ts`,
+ForesightJS;
+owner
+exception
+of
+2026-11-15,
+B3),
 and
 no
 `requestAnimationFrame`

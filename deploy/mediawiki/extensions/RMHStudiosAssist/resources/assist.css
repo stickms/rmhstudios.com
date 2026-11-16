@@ -1,0 +1,50 @@
+/* "Edit with AI" on the edit page. Codex buttons and text area, laid out here. */
+.rmh-assist {
+	margin: 0 0 0.75em;
+}
+
+.rmh-assist-panel {
+	margin-top: 0.5em;
+	padding: 0.75em;
+	border: 1px solid #a2a9b1;
+	border-radius: 2px;
+	background: #f8f9fa;
+}
+
+.rmh-assist-panel label {
+	display: block;
+	margin-bottom: 0.25em;
+	font-weight: bold;
+}
+
+.rmh-assist-panel .cdx-text-area {
+	width: 100%;
+}
+
+.rmh-assist-panel textarea {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 5em;
+	resize: vertical;
+}
+
+.rmh-assist-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5em;
+	margin-top: 0.5em;
+}
+
+.rmh-assist-status {
+	margin: 0.5em 0 0;
+	color: #54595d;
+	font-size: 0.9em;
+}
+
+.rmh-assist-status.rmh-assist-error {
+	color: #bf3c2c;
+}
+
+#wpTextbox1[readonly] {
+	background: #f8f9fa;
+}

@@ -78,7 +78,7 @@ import {
 } from '@/lib/rmhark-ai/bot-worker.server';
 import {
   readPoliticalLean,
-  withPoliticalLean,
+  botPromptPersona,
 } from '@/lib/rmhark-ai/persona';
 
 const HOUR = 3_600_000;
@@ -188,7 +188,7 @@ function expectLean(
   expect(
     persona,
   ).toBe(
-    withPoliticalLean(
+    botPromptPersona(
       LEGACY,
       botId,
     ),

@@ -266,4 +266,143 @@ describe('mic poll', () => {
       ],
     );
   });
+
+  it('hands every poll to onFrame: no pitch on silence, the tone and its clarity on a tone', async () => {
+    const frames: {
+      freq:
+        | number
+        | null;
+      clarity: number;
+      rms: number;
+    }[] =
+      [];
+    const mic =
+      createMicInput(
+        {
+          onFrame:
+            (
+              f,
+            ) =>
+              frames.push(
+                {
+                  freq: f.freq,
+                  clarity:
+                    f.clarity,
+                  rms: f.rms,
+                },
+              ),
+        },
+      );
+    await mic.start();
+    await vi.advanceTimersByTimeAsync(
+      100,
+    );
+    expect(
+      frames.length,
+    ).toBe(
+      4,
+    );
+    expect(
+      frames.every(
+        (
+          f,
+        ) =>
+          f.freq ===
+            null &&
+          f.rms ===
+            0,
+      ),
+    ).toBe(
+      true,
+    );
+    signal.freq = 440;
+    await vi.advanceTimersByTimeAsync(
+      100,
+    );
+    const last =
+      frames[
+        frames.length -
+          1
+      ];
+    expect(
+      Math.abs(
+        (last?.freq ??
+          0) -
+          440,
+      ),
+    ).toBeLessThan(
+      0.5,
+    );
+    expect(
+      last?.clarity ??
+        0,
+    ).toBeGreaterThan(
+      0.9,
+    );
+    mic.stop();
+    const count =
+      frames.length;
+    await vi.advanceTimersByTimeAsync(
+      100,
+    );
+    expect(
+      frames.length,
+    ).toBe(
+      count,
+    );
+  });
+
+  it('a throwing onFrame listener neither drops note events nor stops the poll', async () => {
+    let calls = 0;
+    const mic =
+      createMicInput(
+        {
+          onFrame:
+            () => {
+              calls++;
+              throw new Error(
+                'listener bug',
+              );
+            },
+        },
+      );
+    const got: NoteEvent[] =
+      [];
+    mic.subscribe(
+      (
+        e,
+      ) =>
+        got.push(
+          e,
+        ),
+    );
+    await mic.start();
+    signal.freq = 440;
+    await vi.advanceTimersByTimeAsync(
+      250,
+    );
+    expect(
+      calls,
+    ).toBe(
+      10,
+    );
+    expect(
+      got.map(
+        (
+          e,
+        ) => [
+          e.type,
+          e.midi,
+        ],
+      ),
+    ).toEqual(
+      [
+        [
+          'on',
+          69,
+        ],
+      ],
+    );
+    mic.stop();
+  });
 });

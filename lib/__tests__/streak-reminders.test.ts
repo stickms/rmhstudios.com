@@ -196,7 +196,7 @@ describe('text and schedule', () => {
         7,
       ),
     ).toBe(
-      'Your 7-day streak is about to end — check in to keep it alive!',
+      'Your 7-day streak continues if you check in today.',
     );
     expect(
       reminderPush(
@@ -205,8 +205,8 @@ describe('text and schedule', () => {
     ).toEqual(
       {
         title:
-          'Keep your streak alive 🔥',
-        body: 'Your 7-day streak ends soon — check in to keep it going.',
+          'Daily check-in',
+        body: 'Your 7-day streak continues if you check in today.',
         url: '/progress',
         tag: 'streak-reminder',
       },

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from'@/components/ui/dialog';
 import { Link } from'@tanstack/react-router';
 import { useSession } from'@/components/Providers';
 import { api } from '@/lib/contract/client';
+import { notifyFollowChanged } from '@/lib/discovery/margin-query';
 import { toggleFollowApi } from '@/lib/profile/follow.contract';
 import { useArrival } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -118,6 +119,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
  try {
  // A non-2xx throws HttpError, so the catch below is the revert path.
  await api(toggleFollowApi, { params: { id: targetUser.id } });
+ notifyFollowChanged();
  } catch {
  setUsers((prev) =>
  prev.map((u) =>

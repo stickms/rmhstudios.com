@@ -161,6 +161,8 @@ export const IMAGE_VARIANTS: Readonly<Record<string, ImageVariant>> = {
   "/images/merch-mug.jpg": { hash: '96167d86', widths: [320, 640, 960] },
   "/images/merch-stickers.jpg": { hash: '2cae6ca9', widths: [320, 640, 960] },
   "/images/merch-tee.jpg": { hash: 'ef0d99f7', widths: [320, 640, 960] },
+  "/images/psychology/hull.webp": { hash: '2e1d317a', widths: [320] },
+  "/images/psychology/ryan.webp": { hash: '42a70a85', widths: [320] },
   "/images/screenshots/feed-wide.png": { hash: '92ee7dcb', widths: [320, 640, 960] },
   "/images/screenshots/games-narrow.png": { hash: 'bc390b5c', widths: [320, 640] },
   "/images/temple-of-joy/figure.webp": { hash: 'a0670138', widths: [320, 640] },

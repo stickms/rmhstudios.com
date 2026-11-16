@@ -18,6 +18,8 @@ import {
   MAX_REPLY_CHARS,
   POST_SHAPES,
   cleanGeneratedText,
+  humanizeBotText,
+  nameStyleLine,
   randomItem,
   type BotPersonaSpec,
 } from './persona';
@@ -103,9 +105,36 @@ const POLITICS_BACKGROUND_RULES = [
   'Most of what you write is NOT about politics, news or institutions at all. Write about your own day, interests and the person you are talking to, and do not bring politics up on your own.',
 ].join(' ');
 
+/**
+ * For every in-character generation: the habits that make model-written text recognisable on a
+ * feed, named so the model avoids them. `humanizeBotText` removes the dashes afterwards whatever
+ * the model did.
+ */
+export const HUMAN_TEXT_RULES = [
+  'Type like a real person on their phone, not like an assistant or a copywriter:',
+  '- No em dashes or en dashes. No semicolons. No colons introducing a punchline.',
+  '- No neat wrap-up line, moral or summary at the end, and do not end on a question to your audience ("anyone else?", "thoughts?") unless that is genuinely the point.',
+  '- No tidy lists of three, no "not X, it\'s Y" setups, no "here\'s the thing", "let\'s be real", "game-changer", "delve", "elevate", "journey", "vibes", "a reminder that", "there\'s something about", "low-key obsessed", "can we talk about".',
+  '- Do not explain the joke. Do not be relentlessly upbeat or wholesome. Being boring, vague, petty, mid-thought or a bit wrong is fine.',
+  '- One concrete, specific detail beats a general feeling. Leave things out the way people do.',
+  '- Follow your VOICE and TYPING lines over correct grammar: their capitals, punctuation and slang win.',
+].join('\n');
+
+/** How long a bot's post is, rotated so the feed is not all tidy one-to-two-sentence posts. */
+const POST_LENGTHS = [
+  'just a few words',
+  'just a few words',
+  'one short line',
+  'one short line',
+  'one short line',
+  'one or two sentences',
+  'one or two sentences',
+  'two or three sentences',
+] as const;
+
 const BASE_POST_RULES = [
   `This is a short social-media post for a feed called ${FEED_NAME} (like a tweet).`,
-  `Hard limit: ${MAX_POST_CHARS} characters. Aim for one or two sentences.`,
+  `Hard limit: ${MAX_POST_CHARS} characters. Keep it short.`,
   'Sound like a real person, not an ad or a corporation. No hashtags spam (one at most, only if natural).',
   'Do NOT use markdown, do NOT wrap the post in quotes, do NOT add a label. Output ONLY the post text.',
 ].join(' ');
@@ -139,9 +168,10 @@ export async function generatePost(
         POLITICS_BACKGROUND_RULES,
         NEWS_HARD_LIMITS,
         BASE_POST_RULES,
+        HUMAN_TEXT_RULES,
       ].join('\n')
     : [
-        'You help a user draft a post for their social feed.',
+        'You help a user draft a post for their social feed. Aim for one or two sentences.',
         draft
           ? 'The user has already started writing. Build on their draft: keep their intent, topic, specifics, and tone, and finish/refine it into a complete post. Do not change the subject.'
           : 'Write something authentic, specific, and a little interesting — the kind of thing that sparks replies.',
@@ -150,7 +180,7 @@ export async function generatePost(
 
   let userMsg: string;
   if (opts.persona) {
-    userMsg = `Write your next post. Make it ${shape}. Keep it natural and in your voice.`;
+    userMsg = `Write your next post. Make it ${shape}. Length: ${randomItem(POST_LENGTHS)}. In your voice.`;
   } else if (draft) {
     userMsg = `Here is what I have so far:\n"""${draft}"""\n\nFinish or improve it into a single post.`;
   } else {
@@ -164,7 +194,8 @@ export async function generatePost(
     ],
     { maxTokens: 200, temperature: 1.05, model: opts.model },
   );
-  return cleanGeneratedText(raw, MAX_POST_CHARS);
+  const text = cleanGeneratedText(raw, MAX_POST_CHARS);
+  return opts.persona ? humanizeBotText(text, opts.persona) : text;
 }
 
 /* ------------------------------------------------------------------ */
@@ -248,6 +279,7 @@ export async function generateReactionPost(opts: {
     opts.persona ? POLITICS_REACTIVE_RULES : '',
     NEWS_HARD_LIMITS,
     BASE_POST_RULES,
+    opts.persona ? HUMAN_TEXT_RULES : '',
   ].join('\n');
 
   const user = [
@@ -268,7 +300,8 @@ export async function generateReactionPost(opts: {
     ],
     { maxTokens: 200, temperature: 1.05, model: opts.model },
   );
-  const cleaned = cleanGeneratedText(raw, MAX_POST_CHARS);
+  const text = cleanGeneratedText(raw, MAX_POST_CHARS);
+  const cleaned = opts.persona ? humanizeBotText(text, opts.persona) : text;
   return cleaned
     .replace(URL_IN_TEXT, '')
     .replace(/[ \t]+/g, ' ')
@@ -572,6 +605,15 @@ export async function generatePersonaAvatarPrompt(persona: {
 /*  Replies                                                            */
 /* ------------------------------------------------------------------ */
 
+/** How long a bot's reply is: replies run shorter than posts. */
+const REPLY_LENGTHS = [
+  'a few words',
+  'a few words',
+  'one short line',
+  'one short line',
+  'one or two sentences',
+] as const;
+
 const BASE_REPLY_RULES = [
   `This is a reply on a social feed called ${FEED_NAME}.`,
   `Hard limit: ${MAX_REPLY_CHARS} characters, but most good replies are one or two sentences.`,
@@ -612,6 +654,8 @@ export async function generateReply(opts: {
         POLITICS_REACTIVE_RULES,
         NEWS_HARD_LIMITS,
         BASE_REPLY_RULES,
+        HUMAN_TEXT_RULES,
+        `This time keep it to ${randomItem(REPLY_LENGTHS)}.`,
       ].join('\n')
     : [
         'You help a user draft a reply on their social feed.',
@@ -643,7 +687,8 @@ export async function generateReply(opts: {
     ],
     { maxTokens: 300, temperature: 1.0, model: opts.model },
   );
-  return cleanGeneratedText(raw, MAX_REPLY_CHARS);
+  const text = cleanGeneratedText(raw, MAX_REPLY_CHARS);
+  return opts.persona ? humanizeBotText(text, opts.persona) : text;
 }
 
 /* ------------------------------------------------------------------ */
@@ -774,8 +819,8 @@ export async function generateBotProfile(
     'You invent realistic social-media account identities. Output STRICT JSON only — no prose, no markdown fences.',
     'The person must NOT look like a bot or brand. No "official", no "AI", no "bot" in any field.',
     'Schema: {"name": string, "handle": string, "bio": string}',
-    '- name: a plausible human display name (1-3 words). May include a tasteful emoji at most once.',
-    '- handle: lowercase, letters/numbers/underscores only, 3-18 chars, no leading @.',
+    '- name: the display name, written in the NAME STYLE given with the persona (that is how this person presents online). 1-40 characters. Never a real public figure\'s name as their own.',
+    '- handle: lowercase, letters/numbers/underscores only, 3-18 chars, no leading @, in the same spirit as the name (a gamer tag gets a gamer handle).',
     `- bio: <= 150 chars, reflects the theme + temperament, written in the persona's voice. This is what makes their "theme" obvious from their profile.`,
   ].join('\n');
 
@@ -820,8 +865,10 @@ function composePersonaForProfile(spec: BotPersonaSpec): string {
   return [
     `THEME: ${spec.theme}.`,
     `TEMPERAMENT: ${spec.temperament}.`,
+    `ARCHETYPE: ${spec.archetype.label} — ${spec.archetype.rules}`,
     `QUIRK: ${spec.quirk}.`,
     `VOICE: ${spec.voice.label} — ${spec.voice.rules}`,
+    nameStyleLine(spec.nameStyle),
   ].join('\n');
 }
 
@@ -908,7 +955,7 @@ export async function generateBotBio(
     ],
     { maxTokens: 120, temperature: 1.0, model: opts.model },
   );
-  const bio = cleanGeneratedText(raw, 150).replace(/\s*\n+\s*/g, ' ');
+  const bio = humanizeBotText(cleanGeneratedText(raw, 150).replace(/\s*\n+\s*/g, ' '), persona);
   if (!bio) throw new RmharkAIError('Empty bio');
   return bio;
 }
@@ -926,7 +973,9 @@ export async function generateBotNameVariant(
   const system = [
     'You are this person, tweaking your social-media display name the way people do now and then.',
     'Make ONE small change that keeps you recognisable: a nickname or short form, full name to first name (or back),',
-    'add or swap one emoji that fits your mood or the season, or a brief status after the name (e.g. "| on hiatus", "(busy week)").',
+    'add or swap one emoji or hashtag that fits your mood, the season or what you are into, a new number on a gamer tag,',
+    'or a brief status after the name (e.g. "| on hiatus", "(busy week)").',
+    'Keep to the NAME STYLE line in your persona if it has one: a gamer tag stays a gamer tag, an anime nod stays an anime nod.',
     'At most 40 characters. Never "bot", "AI" or "official". Never another person\'s name.',
     'Output ONLY the new display name.',
   ].join('\n');
@@ -942,6 +991,36 @@ export async function generateBotNameVariant(
   );
   const name = cleanGeneratedText(raw.split('\n')[0] ?? '', 40);
   if (!name || name === currentName) throw new RmharkAIError('No name change');
+  return name;
+}
+
+/**
+ * A new display name in the NAME STYLE the persona carries, for a bot minted before name styles
+ * existed. It may keep a nod to the current name. At most 40 characters. Throws on failure.
+ */
+export async function generateBotStyledName(
+  persona: string,
+  currentName: string,
+  opts: { model?: string } = {},
+): Promise<string> {
+  const system = [
+    'You are this person, picking the display name you actually use on social media.',
+    'Write it in the NAME STYLE given in your persona. Fit it to your interests and voice; you may keep a nod to your current name.',
+    'At most 40 characters. Never "bot", "AI" or "official". Never a real public figure\'s name as your own (a fictional character or a reference to one is fine).',
+    'Output ONLY the display name.',
+  ].join('\n');
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      {
+        role: 'user',
+        content: `Persona:\n"""${persona.slice(0, 900)}"""\n\nCurrent display name: ${currentName.slice(0, 60)}\n\nWrite the display name.`,
+      },
+    ],
+    { maxTokens: 30, temperature: 1.1, model: opts.model },
+  );
+  const name = cleanGeneratedText(raw.split('\n')[0] ?? '', 40);
+  if (!name) throw new RmharkAIError('Empty name');
   return name;
 }
 
@@ -968,6 +1047,7 @@ function dmPersonaSystem(persona: string): string {
     POLITICS_BACKGROUND_RULES,
     NEWS_HARD_LIMITS,
     BASE_DM_RULES,
+    HUMAN_TEXT_RULES,
   ].join('\n');
 }
 
@@ -999,7 +1079,7 @@ export async function generateDirectMessageReply(opts: {
     ],
     { maxTokens: 300, temperature: 1.0, model: opts.model },
   );
-  return cleanGeneratedText(raw, MAX_REPLY_CHARS);
+  return humanizeBotText(cleanGeneratedText(raw, MAX_REPLY_CHARS), opts.persona);
 }
 
 /** Generate a short, natural opening DM in the bot's voice (no prior context). */
@@ -1021,5 +1101,5 @@ export async function generateDirectMessageOpener(opts: {
     ],
     { maxTokens: 200, temperature: 1.1, model: opts.model },
   );
-  return cleanGeneratedText(raw, MAX_REPLY_CHARS);
+  return humanizeBotText(cleanGeneratedText(raw, MAX_REPLY_CHARS), opts.persona);
 }

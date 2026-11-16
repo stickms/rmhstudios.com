@@ -7,6 +7,8 @@
 
 import {
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -20,6 +22,16 @@ import { useTranslation } from 'react-i18next';
 import { getLesson } from '@/lib/rmhmusic/learn/content/path';
 import { isPlayable } from '@/lib/rmhmusic/learn/content/routing';
 import { useLearnStore } from '@/lib/rmhmusic/learn/store';
+import {
+  chordSoundFor,
+  resolveSound,
+} from '@/lib/rmhmusic/learn/audio/instruments/catalog';
+import {
+  beginSoundSession,
+  prefetchSound,
+} from '@/lib/rmhmusic/learn/audio/instruments/engine';
+import { whenIdle } from '@/lib/shared/platform';
+import type { PlayOptions } from '@/lib/rmhmusic/learn/audio/voice';
 import {
   PRIMARY_BUTTON,
   SECONDARY_BUTTON,
@@ -53,10 +65,16 @@ export function Shell({
   title,
   action,
   busy = false,
+  back,
   children,
 }: {
   title: string;
   action?: ReactNode;
+  /** Where the back link goes instead of the learn home (a song goes back to the songbook). */
+  back?: {
+    to: '/rmhmusic/songs';
+    label: string;
+  };
   /** The lesson is still loading: the main region says so to screen readers. */
   busy?: boolean;
   children: ReactNode;
@@ -74,7 +92,10 @@ export function Shell({
             end), and below each other if they must, rather than widen the page. */}
         <header className="flex flex-wrap items-center justify-between gap-2 pt-[calc(0.5rem+var(--safe-top))]">
           <Link
-            to="/rmhmusic"
+            to={
+              back?.to ??
+              '/rmhmusic'
+            }
             className="-ms-3 flex min-h-11 min-w-0 items-center gap-1.5 rounded-app-sm px-3 py-2 text-sm font-medium text-app-text-muted transition-colors hover:text-app-text"
           >
             <ArrowLeft
@@ -82,13 +103,14 @@ export function Shell({
               aria-hidden="true"
             />
             <span>
-              {t(
-                'back-to-lessons',
-                {
-                  defaultValue:
-                    'Back to lessons',
-                },
-              )}
+              {back?.label ??
+                t(
+                  'back-to-lessons',
+                  {
+                    defaultValue:
+                      'Back to lessons',
+                  },
+                )}
             </span>
           </Link>
           <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
@@ -442,6 +464,113 @@ export function LessonScreen({
     isPlayable(
       lesson,
     );
+  // The sound this lesson's notes are voiced with: the learner's (`resolveSound`), except that a
+  // lesson of chords keeps to a sound that plays them (`chordSoundFor`: violin and flute fall back
+  // to the learner's instrument; the Sound dialog says so). Rhythm lessons make no pitched sound.
+  const instrument =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.instrument ??
+        'piano',
+    );
+  const chosen =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s
+          .profile
+          ?.sound ??
+        null,
+    );
+  const mode =
+    lesson?.mode;
+  const pitched =
+    playable &&
+    mode !==
+      'rhythm-basics';
+  const soundId =
+    mode ===
+      'ear-chord' ||
+    mode ===
+      'play-chord'
+      ? chordSoundFor(
+          {
+            instrument,
+            sound:
+              chosen,
+          },
+        )
+      : resolveSound(
+          {
+            instrument,
+            sound:
+              chosen,
+          },
+        );
+  const sound =
+    useMemo<PlayOptions>(
+      () => ({
+        instrument:
+          soundId,
+      }),
+      [
+        soundId,
+      ],
+    );
+  // One sound session per lesson: the samples load (at most LOAD_WAIT_MS of "Loading sound…"),
+  // else the simple tone plays for the rest of the lesson. Ended when the lesson is left. A layout
+  // effect: it must begin before the lesson's own (passive) effects play the first question.
+  const loaded =
+    status ===
+    'ready';
+  useLayoutEffect(() => {
+    if (
+      !loaded ||
+      !pitched
+    )
+      return;
+    return beginSoundSession(
+      soundId,
+    );
+  }, [
+    loaded,
+    pitched,
+    soundId,
+    lessonId,
+  ]);
+  // Entering a pitched lesson route starts the learner's sound loading in the background (browser
+  // idle, skipped with Data Saver), as soon as the profile says which sound it is: the lesson's own
+  // session then usually finds it ready. Never on the home page (plan §3.5).
+  const known =
+    useLearnStore(
+      (
+        s,
+      ) =>
+        s.profile !=
+        null,
+    );
+  useEffect(() => {
+    if (
+      !pitched ||
+      !known
+    )
+      return;
+    return whenIdle(
+      () =>
+        void prefetchSound(
+          soundId,
+        ),
+    );
+  }, [
+    pitched,
+    known,
+    soundId,
+  ]);
 
   // The store is empty until `load()` runs in the browser (a no-op when the home already loaded it).
   useEffect(() => {
@@ -515,6 +644,9 @@ export function LessonScreen({
           paused={
             setupOpen
           }
+          sound={
+            sound
+          }
         />
       ) : lesson.mode ===
           'keyboard-map' ||
@@ -530,6 +662,9 @@ export function LessonScreen({
           paused={
             setupOpen
           }
+          sound={
+            sound
+          }
         />
       ) : lesson.mode ===
         'match-note' ? (
@@ -542,6 +677,9 @@ export function LessonScreen({
           }
           paused={
             setupOpen
+          }
+          sound={
+            sound
           }
         />
       ) : lesson.mode ===
@@ -558,6 +696,9 @@ export function LessonScreen({
           paused={
             setupOpen
           }
+          sound={
+            sound
+          }
         />
       ) : lesson.mode ===
         'play-chord' ? (
@@ -570,6 +711,9 @@ export function LessonScreen({
           }
           paused={
             setupOpen
+          }
+          sound={
+            sound
           }
           onChangeInput={() =>
             setSetupOpen(
@@ -600,6 +744,9 @@ export function LessonScreen({
           }
           paused={
             setupOpen
+          }
+          sound={
+            sound
           }
         />
       );

@@ -15,9 +15,11 @@ import path from 'node:path';
 export const OG_FONT_SANS = 'Geist';
 export const OG_FONT_MONO = 'Geist Mono';
 
-type Weight = 400 | 700 | 800;
+type Weight = 400 | 500 | 600 | 700 | 800;
 const SANS_FILES: Record<Weight, string> = {
   400: 'Geist-400.ttf',
+  500: 'Geist-500.ttf',
+  600: 'Geist-600.ttf',
   700: 'Geist-700.ttf',
   800: 'Geist-800.ttf',
 };

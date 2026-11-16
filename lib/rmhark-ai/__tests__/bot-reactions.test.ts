@@ -113,7 +113,7 @@ import {
   type LiveAnnouncement,
   type ReactionContext,
 } from '@/lib/rmhark-ai/bot-worker.server';
-import { withPoliticalLean } from '@/lib/rmhark-ai/persona';
+import { botPromptPersona } from '@/lib/rmhark-ai/persona';
 import {
   postKindPmf,
   type Headline,
@@ -547,7 +547,7 @@ describe('postAsBot with a reaction context', () => {
     ).toHaveBeenCalledWith(
       {
         persona:
-          withPoliticalLean(
+          botPromptPersona(
             bot(
               'b1',
             )

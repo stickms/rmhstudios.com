@@ -54,8 +54,11 @@ import {
 import { watchAway } from '@/lib/rmhmusic/learn/input/away-watch';
 import { createPadGuard } from '@/lib/rmhmusic/learn/input/pad-guard';
 import {
+  readTempo,
+  recordTempoRun,
+} from '@/lib/rmhmusic/learn/flow';
+import {
   BEATS,
-  BPM,
   COUNT_IN,
   createTapBeatMachine,
   finishEvent,
@@ -146,6 +149,11 @@ export function TapBeatLesson({
           .profile
           ?.latencyMs ??
         0,
+    );
+  // The run's tempo, read once per mount; it only feeds the metronome.
+  const tempoRef =
+    useRef(
+      readTempo(),
     );
   const [
     machine,
@@ -253,6 +261,13 @@ export function TapBeatLesson({
             stopAudio();
             break;
           case 'complete':
+            // Flow / zone of proximal development: the next run's tempo follows
+            // this score (lib/rmhmusic/learn/flow.ts).
+            tempoRef.current =
+              recordTempoRun(
+                tempoRef.current,
+                fx.score,
+              );
             void useLearnStore
               .getState()
               .completeLesson(
@@ -378,7 +393,7 @@ export function TapBeatLesson({
         createMetronome(
           ctx,
           {
-            bpm: BPM,
+            bpm: tempoRef.current,
             beatsPerBar: 4,
             // Nothing past the last scored beat can ever sound, however late the finish timer is.
             count:
