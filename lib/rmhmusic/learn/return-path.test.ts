@@ -221,4 +221,28 @@ describe('rmhmusicReturnPath', () => {
       '/rmhmusic',
     );
   });
+
+  it('returns to Friends and sharing (Phase 6)', () => {
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/friends',
+      ),
+    ).toBe(
+      '/rmhmusic/friends',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/friends/',
+      ),
+    ).toBe(
+      '/rmhmusic/friends',
+    );
+    expect(
+      rmhmusicReturnPath(
+        '/rmhmusic/friendsx',
+      ),
+    ).toBe(
+      '/rmhmusic',
+    );
+  });
 });

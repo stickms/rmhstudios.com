@@ -182,6 +182,7 @@ import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhmusicCreditsRouteImport } from './routes/rmhmusic/credits'
 import { Route as RmhmusicDailyRouteImport } from './routes/rmhmusic/daily'
+import { Route as RmhmusicFriendsRouteImport } from './routes/rmhmusic/friends'
 import { Route as RmhmusicPracticeRouteImport } from './routes/rmhmusic/practice'
 import { Route as RmhmusicSprintRouteImport } from './routes/rmhmusic/sprint'
 import { Route as RmhmusicTunerRouteImport } from './routes/rmhmusic/tuner'
@@ -1387,6 +1388,11 @@ const RmhmusicCreditsRoute = RmhmusicCreditsRouteImport.update({
 const RmhmusicDailyRoute = RmhmusicDailyRouteImport.update({
   id: '/daily',
   path: '/daily',
+  getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhmusicFriendsRoute = RmhmusicFriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
   getParentRoute: () => RmhmusicRoute,
 } as any)
 const RmhmusicPracticeRoute = RmhmusicPracticeRouteImport.update({
@@ -3294,6 +3300,7 @@ export interface FileRoutesByFullPath {
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/daily': typeof RmhmusicDailyRoute
+  '/rmhmusic/friends': typeof RmhmusicFriendsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
@@ -3783,6 +3790,7 @@ export interface FileRoutesByTo {
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/daily': typeof RmhmusicDailyRoute
+  '/rmhmusic/friends': typeof RmhmusicFriendsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
@@ -4298,6 +4306,7 @@ export interface FileRoutesById {
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/credits': typeof RmhmusicCreditsRoute
   '/rmhmusic/daily': typeof RmhmusicDailyRoute
+  '/rmhmusic/friends': typeof RmhmusicFriendsRoute
   '/rmhmusic/practice': typeof RmhmusicPracticeRoute
   '/rmhmusic/sprint': typeof RmhmusicSprintRoute
   '/rmhmusic/tuner': typeof RmhmusicTunerRoute
@@ -4815,6 +4824,7 @@ export interface FileRouteTypes {
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
     | '/rmhmusic/daily'
+    | '/rmhmusic/friends'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
@@ -5304,6 +5314,7 @@ export interface FileRouteTypes {
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
     | '/rmhmusic/daily'
+    | '/rmhmusic/friends'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
@@ -5818,6 +5829,7 @@ export interface FileRouteTypes {
     | '/rmhcode/auth'
     | '/rmhmusic/credits'
     | '/rmhmusic/daily'
+    | '/rmhmusic/friends'
     | '/rmhmusic/practice'
     | '/rmhmusic/sprint'
     | '/rmhmusic/tuner'
@@ -7565,6 +7577,13 @@ declare module '@tanstack/react-router' {
       path: '/daily'
       fullPath: '/rmhmusic/daily'
       preLoaderRoute: typeof RmhmusicDailyRouteImport
+      parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhmusic/friends': {
+      id: '/rmhmusic/friends'
+      path: '/friends'
+      fullPath: '/rmhmusic/friends'
+      preLoaderRoute: typeof RmhmusicFriendsRouteImport
       parentRoute: typeof RmhmusicRoute
     }
     '/rmhmusic/practice': {
@@ -10660,6 +10679,7 @@ const RmhcodeRouteWithChildren =
 interface RmhmusicRouteChildren {
   RmhmusicCreditsRoute: typeof RmhmusicCreditsRoute
   RmhmusicDailyRoute: typeof RmhmusicDailyRoute
+  RmhmusicFriendsRoute: typeof RmhmusicFriendsRoute
   RmhmusicPracticeRoute: typeof RmhmusicPracticeRoute
   RmhmusicSprintRoute: typeof RmhmusicSprintRoute
   RmhmusicTunerRoute: typeof RmhmusicTunerRoute
@@ -10672,6 +10692,7 @@ interface RmhmusicRouteChildren {
 const RmhmusicRouteChildren: RmhmusicRouteChildren = {
   RmhmusicCreditsRoute: RmhmusicCreditsRoute,
   RmhmusicDailyRoute: RmhmusicDailyRoute,
+  RmhmusicFriendsRoute: RmhmusicFriendsRoute,
   RmhmusicPracticeRoute: RmhmusicPracticeRoute,
   RmhmusicSprintRoute: RmhmusicSprintRoute,
   RmhmusicTunerRoute: RmhmusicTunerRoute,

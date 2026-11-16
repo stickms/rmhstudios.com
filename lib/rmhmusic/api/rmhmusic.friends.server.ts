@@ -2,10 +2,7 @@ import { apiRoute } from '@/lib/api/route.server';
 import { implement } from '@/lib/api/implement.server';
 import { friendsApi } from '@/lib/music-social/friends.contract';
 import type { FriendsLimit } from '@/lib/rmhmusic/learn/social/friends';
-import {
-  friendsQuery,
-  friendsRes,
-} from '@/lib/rmhmusic/learn/social/friends-schema';
+import { friendsQuery, friendsRes } from '@/lib/rmhmusic/learn/social/friends-schema';
 import { loadFriendsProgress } from '@/lib/rmhmusic/learn/social/friends.server';
 
 /**
@@ -14,29 +11,10 @@ import { loadFriendsProgress } from '@/lib/rmhmusic/learn/social/friends.server'
  * Empty unless the viewer's own friends switch is on. Per viewer, so no HTTP cache; the server
  * caches only the mutuals list (`friends.server.ts`).
  */
-export const route =
-  apiRoute(
-    '/api/rmhmusic/friends',
-    {
-      GET: implement(
-        friendsApi,
-        {
-          rateLimit:
-            'read',
-          query:
-            friendsQuery,
-          response:
-            friendsRes,
-        },
-        async ({
-          userId,
-          query,
-        }) =>
-          loadFriendsProgress(
-            userId,
-            query.limit as FriendsLimit,
-            Date.now(),
-          ),
-      ),
-    },
-  );
+export const route = apiRoute('/api/rmhmusic/friends', {
+  GET: implement(
+    friendsApi,
+    { rateLimit: 'read', query: friendsQuery, response: friendsRes },
+    async ({ userId, query }) => loadFriendsProgress(userId, query.limit as FriendsLimit, Date.now()),
+  ),
+});

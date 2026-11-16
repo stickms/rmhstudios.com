@@ -1775,6 +1775,6 @@
   "music-privacy-friends": "Share my progress with friends",
   "music-privacy-subtitle": "Who sees your sight reading scores and your progress. Both are off until you turn them on.",
   "music-privacy-title": "RMH Music",
-  "music-privacy-friends-hint-now": "People you follow who follow you back see your Daily scores on the board's Friends tab. Later it will also share your Daily streak, finished units and song bests. Friends stop seeing it within a minute of turning it off.",
-  "music-privacy-save-failed": "Couldn't save. Try again."
+  "music-privacy-save-failed": "Couldn't save. Try again.",
+  "music-privacy-friends-hint-full": "People you follow who follow you back see your Daily challenge streak, finished units and song bests, and your Daily scores on the board's Friends tab. Friends stop seeing it within a minute of turning it off."
 }
