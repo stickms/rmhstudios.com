@@ -2640,6 +2640,7 @@ lib/prepaint/generated.ts
 /lib/og/api/og.game.$gameId.server.ts
 /lib/og/api/og.job.$jobId.server.ts
 /lib/og/api/og.moment.$id.server.ts
+/lib/og/api/og.music.$token.server.ts
 /lib/og/api/og.pf2ecal.server.ts
 /lib/og/api/og.post.$id.server.ts
 /lib/og/api/og.post.$id.story.server.ts
