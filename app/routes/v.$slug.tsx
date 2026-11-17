@@ -429,6 +429,20 @@ function VibeViewer() {
     }
   }, [panelOpen]);
 
+  // Escape also works from the host: focus is in the page, not the frame, once the user
+  // clicks the toggle. The frame's own Escape handler covers focus inside it.
+  useEffect(() => {
+    if (!picking) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      pickingRef.current = false;
+      setPicking(false);
+      post('pick:stop', null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [picking, post]);
+
   function togglePicking() {
     const next = !picking;
     setPicking(next);
@@ -466,10 +480,14 @@ function VibeViewer() {
     setThinking('');
     setContent('');
 
-    // Not the owner: this builds a remix, a new page. The request is detached
-    // from this view (no abort signal) so the build keeps going after we
-    // navigate to the new page, which polls until it is ready.
+    // Not the owner: this builds a remix, a new page. The live build shows in place,
+    // like a customize, and we navigate to the new page on `done`. The request is
+    // detached from this view (no abort signal) so the build survives a navigation,
+    // and a stream cut after `created` lands on the reserved slug, which polls.
     const remix = !canEdit;
+    let remixSlug = '';
+    // The server said the build failed (as opposed to the connection dropping).
+    let buildFailed = false;
     let finalHtml = '';
     let finalTitle = '';
     let hadError = false;
@@ -481,8 +499,8 @@ function VibeViewer() {
         { slug, prompt: trimmed, fromVersionId, model, ...(target ? { selection: target } : {}) },
         (event) => {
           if (gen !== genRef.current) return;
-          if (event.type === 'created' && remix) {
-            void navigate({ to: '/v/$slug', params: { slug: event.slug } });
+          if (event.type === 'created') {
+            if (remix) remixSlug = event.slug;
           } else if (event.type === 'thinking') {
             setThinking((t) => t + event.text);
           } else if (event.type === 'content') {
@@ -494,6 +512,7 @@ function VibeViewer() {
             finalTitle = event.title;
           } else if (event.type === 'error') {
             hadError = true;
+            buildFailed = true;
             setError(event.message);
           }
         },
@@ -511,10 +530,14 @@ function VibeViewer() {
     if (gen !== genRef.current) return;
 
     if (remix) {
-      // We would already have navigated away on `created`; reaching here means
-      // the remix never started, so there is nothing to apply to this page.
       customizeAbortRef.current = null;
       setBusy(false);
+      // Finished, or cut after the page was reserved: either way the new page is the
+      // place to be (it polls until the build is ready).
+      if (remixSlug && (finalHtml || !buildFailed)) {
+        void navigate({ to: '/v/$slug', params: { slug: remixSlug } });
+        return;
+      }
       setHtml(htmlBefore);
       if (!hadError) {
         setError(

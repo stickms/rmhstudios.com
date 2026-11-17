@@ -28,6 +28,8 @@ export const BRIDGE_RUNTIME_JS = `(function () {
   var tweakFns = [];
   var tweakValues = Object.create(null);
   var picking = false;
+  var visible = true;
+  var visibilityFns = [];
   var errorCount = 0;
   var seenErrors = Object.create(null);
   var resolveReady;
@@ -165,6 +167,13 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     send({ event: 'picked', data: sel });
   }
 
+  // While picking, a press must not reach the page (a button must not fire on mousedown or touch).
+  function onPickPress(e) {
+    if (!pickable(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
   function onPickKey(e) {
     if (e.key !== 'Escape' && e.keyCode !== 27) return;
     e.preventDefault();
@@ -181,6 +190,9 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     (document.body || document.documentElement).appendChild(pickOverlay);
     document.addEventListener('mousemove', onPickMove, true);
     document.addEventListener('click', onPickClick, true);
+    document.addEventListener('mousedown', onPickPress, true);
+    document.addEventListener('pointerdown', onPickPress, true);
+    document.addEventListener('touchstart', onPickPress, true);
     document.addEventListener('keydown', onPickKey, true);
     window.addEventListener('scroll', placeOverlay, true);
     window.addEventListener('resize', placeOverlay);
@@ -191,6 +203,9 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     pickTarget = null;
     document.removeEventListener('mousemove', onPickMove, true);
     document.removeEventListener('click', onPickClick, true);
+    document.removeEventListener('mousedown', onPickPress, true);
+    document.removeEventListener('pointerdown', onPickPress, true);
+    document.removeEventListener('touchstart', onPickPress, true);
     document.removeEventListener('keydown', onPickKey, true);
     window.removeEventListener('scroll', placeOverlay, true);
     window.removeEventListener('resize', placeOverlay);
@@ -208,6 +223,9 @@ export const BRIDGE_RUNTIME_JS = `(function () {
       emit(roomFns, data);
     } else if (name === 'room:members') {
       emit(memberFns, data);
+    } else if (name === 'visibility') {
+      visible = !(data && data.hidden);
+      emit(visibilityFns, visible);
     } else if (name === 'pick:start') {
       startPicking();
     } else if (name === 'pick:stop') {
@@ -250,6 +268,8 @@ export const BRIDGE_RUNTIME_JS = `(function () {
   window.RMHVibe = {
     get host() { return host; },
     get picking() { return picking; },
+    get visible() { return visible; },
+    onVisibility: function (fn) { return subscribe(visibilityFns, fn); },
     ready: ready,
     store: {
       get: function (key, o) {
