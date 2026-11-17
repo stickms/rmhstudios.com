@@ -245,6 +245,9 @@ importers:
       epubjs:
         specifier: ^0.3.93
         version: 0.3.93
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
       framer-motion:
         specifier: ^14.8.0
         version: 14.8.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -477,9 +480,6 @@ importers:
       d3:
         specifier: ^7.9.0
         version: 7.9.0
-      esbuild:
-        specifier: ^0.28.2
-        version: 0.28.2
       eslint:
         specifier: ^10.15.0
         version: 10.15.0(jiti@2.7.0)

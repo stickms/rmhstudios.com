@@ -166,6 +166,8 @@ export interface FeedItem {
   hasNote?: boolean;
   /** F14 — the post carries a runnable code snippet; it loads only on click. */
   hasEmbed?: boolean;
+  /** A vibe page is pinned to the post (RMH Vibes). */
+  hasVibe?: boolean;
   /** N1: community post flair (community feeds only). */
   communityFlair?: {
     id: string;

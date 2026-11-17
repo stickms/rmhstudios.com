@@ -354,6 +354,7 @@ function mapOwn(
     isTake: r.isTake || undefined,
     hasNote: r.hasNote || undefined,
     hasEmbed: r.hasEmbed || undefined,
+    hasVibe: r.hasVibe || undefined,
     seriesId: r.seriesId ?? undefined,
     expiresAt: r.expiresAt?.toISOString(),
     reactions: [], // filled in by loadReactionSummaries after the query
@@ -397,6 +398,7 @@ function mapRepost(
     isTake: r.isTake || undefined,
     hasNote: r.hasNote || undefined,
     hasEmbed: r.hasEmbed || undefined,
+    hasVibe: r.hasVibe || undefined,
     seriesId: r.seriesId ?? undefined,
     expiresAt: r.expiresAt?.toISOString(),
     reactions: [], // filled in by loadReactionSummaries after the query

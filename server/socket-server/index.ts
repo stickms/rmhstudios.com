@@ -58,6 +58,7 @@ import {
   startCommunityMembershipSweep,
 } from './handlers/group-call';
 import { registerControllerHandlers, handleControllerDisconnect } from './handlers/controller';
+import { registerVibeRoomHandlers, handleVibeRoomDisconnect } from './handlers/vibe-room';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
 installProcessGuards({ service: 'socket-server' });
@@ -420,6 +421,8 @@ io.on('connection', (socket) => {
   registerCallHandlers(io, socket);
   registerGroupCallHandlers(io, socket);
   registerControllerHandlers(io, socket);
+  // Vibes Discord Activity room: one room per Activity instance, host picks the vibe.
+  registerVibeRoomHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -438,6 +441,7 @@ io.on('connection', (socket) => {
     void handleCallDisconnect(io, socket);
     void handleGroupCallDisconnect(io, socket);
     handleControllerDisconnect(io, socket);
+    handleVibeRoomDisconnect(io, socket);
     handleFeatureDisconnects(io, socket, 'synapse-storm', shuttingDown);
     handleFeatureDisconnects(io, socket, 'slice-it');
     if (!shuttingDown) handleNeonDriftwayDisconnect(io, socket);

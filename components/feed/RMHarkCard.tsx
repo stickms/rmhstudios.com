@@ -14,6 +14,7 @@ import { PollDisplay } from './PollDisplay';
 import { TakeMeterLazy } from './TakeMeterLazy';
 import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
 import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
+import { VibeEmbedCardLazy } from '@/components/rmhvibe/VibeEmbedCardLazy';
 import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
 import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
@@ -427,6 +428,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               {/* Runnable snippet (F14): click-to-run, never auto-runs in the feed */}
               {item.hasEmbed && !item.locked && !item.pending && (
                 <RunnableEmbed postId={item.actualId ?? item.id} />
+              )}
+
+              {/* Vibe (RMH Vibes): a click-to-run card for the page pinned to the post */}
+              {item.hasVibe && !item.locked && !item.pending && (
+                <VibeEmbedCardLazy key={item.actualId ?? item.id} postId={item.actualId ?? item.id} />
               )}
 
               {/* Context note (X3): loads lazily, only for posts with a visible note */}

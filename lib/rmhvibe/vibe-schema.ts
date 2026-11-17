@@ -26,3 +26,5 @@ export const vibeTweaksBodySchema = z.object({
   // Entries are validated against the page's spec, not here.
   values: z.record(z.string().max(64), z.unknown()),
 });
+
+export const vibePageQuerySchema = z.object({ versionId: z.string().max(40).optional() });

@@ -32,6 +32,7 @@ import {
   MousePointerClick,
   Wrench,
   SlidersHorizontal,
+  Send,
 } from 'lucide-react';
 import {
   getVibePage,
@@ -56,6 +57,8 @@ import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
+import { useSession } from '@/components/Providers';
+import { VibePostComposer } from '@/components/rmhvibe/VibePostComposer';
 
 // Background-build polling cadence + guards (see the generating-status effect).
 const MAX_COLLECTED_ERRORS = 3;
@@ -176,6 +179,9 @@ function VibeViewer() {
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const { data: session } = useSession();
+  // The vibe being attached to a new post (the active version), or null.
+  const [postVibe, setPostVibe] = useState<{ slug: string; versionId: string; title: string } | null>(null);
   // Version history. `versions` is loaded lazily when the panel first opens.
   // `activeVersionId` is the version currently shown in the iframe; null means the
   // page's latest version. Customizing branches off whatever version is active.
@@ -585,6 +591,17 @@ function VibeViewer() {
     }
   }
 
+  /** Post this vibe to the feed, pinned to the version on screen (the latest when none is picked). */
+  async function handlePost() {
+    let versionId = activeVersionId;
+    if (!versionId) {
+      const list = versions ?? (await fetchVibeVersions({ data: slug }).catch(() => null));
+      versionId = list && list.length ? list[list.length - 1].id : null;
+    }
+    if (!versionId) return;
+    setPostVibe({ slug, versionId, title: initialTitle });
+  }
+
   async function handleShare() {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -639,6 +656,16 @@ function VibeViewer() {
           >
             {copied ? <Check size={17} /> : <Share2 size={16} />}
           </button>
+          {session && (
+            <button
+              type="button"
+              onClick={() => void handlePost()}
+              aria-label={t('post-vibe', { defaultValue: 'Post to the feed' })}
+              className="vibe-toolbar__icon"
+            >
+              <Send size={16} />
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleHistory}
@@ -691,6 +718,14 @@ function VibeViewer() {
               : t('remix', { defaultValue: 'Remix' })}
           </button>
         </div>
+
+        {postVibe && (
+          <VibePostComposer
+            vibe={postVibe}
+            onClose={() => setPostVibe(null)}
+            onPosted={() => toast.success(t('vibe-posted', { defaultValue: 'Posted to the feed' }))}
+          />
+        )}
 
         {/* Credit — who made this page, and what it was remixed from */}
         {(owner?.name || parent) && (

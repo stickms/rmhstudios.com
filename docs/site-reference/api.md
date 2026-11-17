@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1022 endpoints across 201 groups: 110 route files under `app/routes/api` and 912 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1024 endpoints across 201 groups: 110 route files under `app/routes/api` and 914 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -1675,7 +1675,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/rmharks`
 
-28 routes.
+29 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -1701,6 +1701,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/rmharks/:id/take` | `GET` `POST` | `lib/feed/api/rmharks.$id.take.server.ts` |
 | `/api/rmharks/:id/translate` | `GET` | `lib/ai/api/rmharks.$id.translate.server.ts` |
 | `/api/rmharks/:id/unlock` | `POST` | `app/routes/api/rmharks/$id/unlock.ts` |
+| `/api/rmharks/:id/vibe` | `GET` | `lib/feed/api/rmharks.$id.vibe.server.ts` |
 | `/api/rmharks/:id/view` | `POST` | `app/routes/api/rmharks/$id/view.ts` |
 | `/api/rmharks/:id/vote` | `POST` | `lib/feed/api/rmharks.$id.vote.server.ts` |
 | `/api/rmharks/ai-generate` | `POST` | `lib/feed/api/rmharks.ai-generate.server.ts` |
@@ -2350,12 +2351,13 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/vibe`
 
-6 routes.
+7 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
 | `/api/vibe/ai` | `OPTIONS` `POST` | `app/routes/api/vibe/ai.ts` |
 | `/api/vibe/kv/:slug` | `GET` `POST` | `lib/rmhvibe/api/vibe.kv.$slug.server.ts` |
+| `/api/vibe/page/:slug` | `GET` | `lib/rmhvibe/api/vibe.page.$slug.server.ts` |
 | `/api/vibe/page/:slug/tweaks` | `POST` | `lib/rmhvibe/api/vibe.page.$slug.tweaks.server.ts` |
 | `/api/vibe/pkg/:file` | `GET` | `app/routes/api/vibe/pkg/$file.ts` |
 | `/api/vibe/stream` | `POST` | `app/routes/api/vibe/stream.ts` |

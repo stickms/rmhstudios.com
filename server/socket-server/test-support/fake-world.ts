@@ -244,6 +244,34 @@ export function makeWorld(
             },
           };
         },
+        /** `socket.to(room).emit(...)`: everyone in the room except this socket. */
+        to(
+          room: string,
+        ) {
+          return {
+            emit: (
+              event: string,
+              payload: unknown,
+            ) => {
+              for (const s of sockets.values()) {
+                if (
+                  s.id !==
+                    id &&
+                  s.rooms.has(
+                    room,
+                  )
+                )
+                  s.received.push(
+                    {
+                      event,
+                      payload,
+                      volatile: false,
+                    },
+                  );
+              }
+            },
+          };
+        },
         join(
           room: string,
         ) {

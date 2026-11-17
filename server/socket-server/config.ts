@@ -280,6 +280,14 @@ export const config = {
     // rules change twenty times a minute is not a table.
     'gh:houseRules': { max: 20, windowMs: 60_000 },
     'gh:ticket': { max: 20, windowMs: 60_000 },
+    // Vibes Discord Activity room (server/socket-server/handlers/vibe-room.ts).
+    // `send` is the relay for multiplayer vibes; the rest are a person at a menu.
+    'vibe:room:join': { max: 20, windowMs: 60_000 },
+    'vibe:room:leave': { max: 30, windowMs: 60_000 },
+    'vibe:room:select': { max: 30, windowMs: 60_000 },
+    'vibe:room:away': { max: 60, windowMs: 60_000 },
+    'vibe:room:active': { max: 60, windowMs: 60_000 },
+    'vibe:room:send': { max: 120, windowMs: 10_000 },
     // RMH TF2 (docs/tf2-game.md). Every match runs in a browser; the hub lists
     // the P2P rooms, answers the browser's pings and keeps a host's door.
     'tf2:rooms:list': { max: 30, windowMs: 60_000 },

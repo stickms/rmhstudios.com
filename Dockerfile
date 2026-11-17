@@ -69,7 +69,8 @@ RUN pnpm exec prisma generate
 # ── Stage 1c: Production-only node_modules ────────────────────────────────
 # Builds on prisma-generate so the Prisma client is already generated —
 # no need for the prisma CLI (a devDep) here. pnpm install --prod then
-# prunes devDependencies (vite, esbuild, typescript, eslint, etc.).
+# prunes devDependencies (vite, typescript, eslint, etc.; esbuild is a prod
+# dependency: the jobs worker bundles vibes at runtime for /vibe).
 # Rebuilds only when lockfile or prisma schema changes.
 FROM prisma-generate AS prod-deps
 
@@ -150,7 +151,7 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
 # invalidates this layer and it rebuilds correctly. Output is COPYd into vite-builder.
 #
 # Runs FROM prisma-generate (full node_modules incl. the devDep bundlers three/
-# pixi/p5/esbuild), not prod-deps (which prunes them). node_modules + package.json
+# pixi/p5), not prod-deps (which prunes them; esbuild is kept there). node_modules + package.json
 # are already present from that base; we add only the three inputs the bundler reads.
 FROM prisma-generate AS vibe-builder
 
@@ -480,7 +481,8 @@ LABEL io.rmh.public-config-hash=${PUBLIC_BUILD_CONFIG_HASH}
 
 # ─── Production-only node_modules ───────────────────────────────────────
 # Sourced from prod-deps (not prisma-generate) — excludes devDependencies
-# (vite, esbuild, typescript, eslint, etc.) for a significantly smaller image.
+# (vite, typescript, eslint, etc.; esbuild stays, the jobs worker bundles vibes
+# at runtime) for a significantly smaller image.
 # Includes @prisma/client from the prod prisma generate run.
 # Rebuilds only when lockfile OR prisma schema changes.
 COPY --link --from=prod-deps --chown=1001:1001 /app/node_modules ./node_modules

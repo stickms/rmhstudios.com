@@ -246,6 +246,27 @@ export const createRMHarkSchema =
         // P23 F14: a runnable HTML/CSS/JS snippet shown click-to-run in a sandboxed iframe.
         codeEmbed:
           codeEmbedSchema.optional(),
+        // RMH Vibes: a vibe page pinned to one of its versions, shown click-to-run on the post.
+        // The server resolves the page by slug; the client never sends a page id.
+        vibe:
+          z
+            .object(
+              {
+                slug:
+                  z
+                    .string()
+                    .max(
+                      64,
+                    ),
+                versionId:
+                  z
+                    .string()
+                    .max(
+                      40,
+                    ),
+              },
+            )
+            .optional(),
         // P06 communities-plus: flair (N1) and challenge entry (N5); community posts only.
         flairId:
           z
@@ -280,6 +301,7 @@ export const createRMHarkSchema =
           0) >
           0 ||
         !!data.codeEmbed ||
+        !!data.vibe ||
         !!data.originalId,
       {
         message:

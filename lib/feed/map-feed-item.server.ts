@@ -206,6 +206,7 @@ export function mapRmharkToFeedItem(
     isTake: r.isTake || undefined,
     hasNote: r.hasNote || undefined,
     hasEmbed: r.hasEmbed || undefined,
+    hasVibe: r.hasVibe || undefined,
     seriesId: r.seriesId ?? undefined,
     expiresAt: r.expiresAt?.toISOString(),
     reactions: reactionsOverride ?? groupReactions(r.reactions ?? [], viewerId),
