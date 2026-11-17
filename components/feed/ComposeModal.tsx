@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from'react';
 import { useTranslation } from'react-i18next';
+import { VibeComposeChip } from '@/components/rmhvibe/VibeComposeChip';
 import { X, Plus, BarChart3, ImagePlus } from'lucide-react';
 import { GifAttachment, GifPopover } from './compose/GifAttachment';
 import { AIGenerateButton } from'./AIGenerateButton';
@@ -49,9 +50,11 @@ interface ComposeModalProps {
  } | null;
  /** Seed the composer with text (e.g. content shared into the PWA via share_target). */
  initialContent?: string;
+ /** A vibe to attach, pinned to a version (the viewer's Post button). */
+ initialVibe?: { slug: string; versionId: string; title: string };
 }
 
-export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: ComposeModalProps) {
+export function ComposeModal({ open, onClose, quoteItem, initialContent ='', initialVibe}: ComposeModalProps) {
  const { t } = useTranslation('feed');
  // Both `.glass-scrim` backdrops here are viewport-covering `backdrop-filter`
  // layers, and nothing may animate above one — Chromium re-blurs the whole
@@ -66,6 +69,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  multiSelect: false,
  });
  const [gifUrl, setGifUrl] = useState('');
+ // The attached vibe; the writer can take it off.
+ const [vibe, setVibe] = useState(initialVibe ?? null);
  // The GIF picker is a popover off the GIF button; the chosen GIF is the attachment.
  const [gifOpen, setGifOpen] = useState(false);
  const gifBtnRef = useRef<HTMLButtonElement>(null);
@@ -125,7 +130,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  const hasImages = imageUrls.length > 0;
  const hasContent = content.trim().length > 0;
  const canSubmit =
- (hasContent || hasPoll || hasGif || hasImages || !!quoteItem) &&
+ (hasContent || hasPoll || hasGif || hasImages || !!vibe || !!quoteItem) &&
  remaining >= 0 &&
  !submitting &&
  uploadingCount === 0;
@@ -172,6 +177,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  body.imageAlts = imageUrls.map((_, i) => imageAlts[i]?.trim() ??'');
  }
  }
+ if (vibe) body.vibe = { slug: vibe.slug, versionId: vibe.versionId };
  if (quoteItem) body.originalId = quoteItem.id;
 
  const item = await api(createRMHarkApi, { body }).catch((e: unknown) => {
@@ -190,6 +196,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  setImageAlts([]);
  setAltEditIndex(null);
  setImageError(null);
+ setVibe(null);
  onClose();
  } catch (error) {
  console.error('Post error:', error);
@@ -542,6 +549,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent =''}: Co
  </div>
  )}
  {imageError && <p className="text-xs text-site-danger mt-1">{imageError}</p>}
+
+ {vibe && <VibeComposeChip title={vibe.title} onRemove={() => setVibe(null)} />}
 
  {/* Hidden file input */}
  <input

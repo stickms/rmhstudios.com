@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ContextNotesLazy } from '@/components/context-notes/ContextNotesLazy';
 import { RunnableEmbed } from '@/components/code-embed/RunnableEmbed';
+import { VibeEmbedCard } from '@/components/rmhvibe/VibeEmbedCard';
 import { PostPlusBadges } from '@/components/posts-plus/PostPlusBadges';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { postMediaVTName } from '@/lib/view-transition';
@@ -134,6 +135,7 @@ export function PostArticle({
       )}
 
       {post.hasEmbed && !post.locked && <RunnableEmbed postId={postId} />}
+      {post.hasVibe && !post.locked && <VibeEmbedCard key={postId} postId={postId} />}
 
       {/* Context notes (X3): a button until opened; open straight away when a note is visible */}
       {!post.locked && (

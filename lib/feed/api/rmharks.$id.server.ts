@@ -124,6 +124,7 @@ export const route = apiRoute('/api/rmharks/$id', {
       isTake: rmhark.isTake || undefined,
       hasNote: rmhark.hasNote || undefined,
       hasEmbed: rmhark.hasEmbed || undefined,
+      hasVibe: rmhark.hasVibe || undefined,
       seriesId: rmhark.seriesId ?? undefined,
       expiresAt: rmhark.expiresAt?.toISOString(),
       locked,

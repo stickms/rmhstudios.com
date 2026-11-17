@@ -150,6 +150,7 @@ export const route = apiRoute('/api/rmharks', {
         communityId,
         isTake,
         codeEmbed,
+        vibe,
         flairId,
         challengeId,
         ttl,
@@ -159,6 +160,26 @@ export const route = apiRoute('/api/rmharks', {
 
       if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
         return Response.json({ error: 'Invalid image reference' }, { status: 400 });
+      }
+
+      // RMH Vibes: the pinned page must be ready and the version must be one of its own.
+      let vibePin: { pageId: string; versionId: string } | null = null;
+      if (vibe) {
+        const page = await prisma.vibePage.findUnique({
+          where: { slug: vibe.slug },
+          select: { id: true, status: true },
+        });
+        const version =
+          page?.status === 'ready'
+            ? await prisma.vibePageVersion.findUnique({
+                where: { id: vibe.versionId },
+                select: { pageId: true },
+              })
+            : null;
+        if (!page || !version || version.pageId !== page.id) {
+          return Response.json({ error: 'Vibe not available' }, { status: 400 });
+        }
+        vibePin = { pageId: page.id, versionId: vibe.versionId };
       }
 
       // Require-alt-text mode (X12): the author's own setting, enforced here
@@ -320,6 +341,8 @@ export const route = apiRoute('/api/rmharks', {
             isTake: isTake ?? false,
             hasEmbed: !!codeEmbed,
             ...(codeEmbed ? { codeEmbed: { create: codeEmbed } } : {}),
+            hasVibe: !!vibePin,
+            ...(vibePin ? { vibeEmbed: { create: vibePin } } : {}),
             // An AutoMod hold is a soft-delete marker: invisible everywhere
             // until a mod approves it (see automod.server.ts resolvePost).
             ...(held ? { deletedAt: new Date(), deletedBy: HELD_BY } : {}),
@@ -481,6 +504,7 @@ export const route = apiRoute('/api/rmharks', {
         replyControl: rmhark.replyControl,
         isTake: rmhark.isTake || undefined,
         hasEmbed: rmhark.hasEmbed || undefined,
+        hasVibe: rmhark.hasVibe || undefined,
         seriesId: rmhark.seriesId ?? undefined,
         expiresAt: rmhark.expiresAt?.toISOString(),
         reactions: [],

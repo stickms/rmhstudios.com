@@ -246,6 +246,25 @@ export const postEmbedApi =
     },
   );
 
+/** The vibe pinned to a post (RMH Vibes), enough to draw the poster. 404 when the post, its page or the version is gone. */
+export const postVibeApi =
+  endpoint<{
+    res: {
+      slug: string;
+      versionId: string;
+      title: string | null;
+      description: string | null;
+      thumbnailUrl: string | null;
+      kind: 'page' | 'widget';
+    };
+  }>()(
+    {
+      method:
+        'GET',
+      path: '/api/rmharks/$id/vibe',
+    },
+  );
+
 /** 400 `Not enough coins`. Idempotent: a free or already-unlocked post answers `alreadyUnlocked`. */
 export const unlockPostApi =
   endpoint<{
