@@ -44,7 +44,13 @@ const LightsOutDiscordActivity = lazy(() =>
   })),
 );
 
-type ActivityGameId = 'rmhbox' | 'slice-it' | 'lights-out';
+const VibeDiscordActivity = lazy(() =>
+  import('@/components/rmhvibe/discord/VibeDiscordActivity').then((m) => ({
+    default: m.VibeDiscordActivity,
+  })),
+);
+
+type ActivityGameId = 'rmhbox' | 'slice-it' | 'lights-out' | 'vibes';
 
 interface ActivityGameOption {
   id: ActivityGameId;
@@ -64,6 +70,7 @@ const ACTIVITY_GAMES: readonly ActivityGameOption[] = [
   { id: 'rmhbox', title: 'RMHBox', players: '2–8', icon: '📦' },
   { id: 'slice-it', title: 'Slice It!', players: '1–8', icon: '🎵' },
   { id: 'lights-out', title: 'Lights Out', players: '1–10', icon: '💡' },
+  { id: 'vibes', title: 'RMH Vibes', players: '1–25', icon: '✨' },
 ];
 
 function GameStage({
@@ -92,6 +99,8 @@ function GameStage({
       return <SliceItDiscordActivity discord={discord} onExit={onExit} />;
     case 'lights-out':
       return <LightsOutDiscordActivity discord={discord} />;
+    case 'vibes':
+      return <VibeDiscordActivity discord={discord} onExit={onExit} />;
     default:
       return null;
   }
