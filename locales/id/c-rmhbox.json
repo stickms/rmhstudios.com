@@ -471,6 +471,8 @@
   "won-by": "Dimenangkan oleh {{name}} seharga {{paid}} koin",
   "won-by-minimalist-masterpiece-history-detail": "Dimenangkan oleh {{name}} seharga {{paid}} koin",
   "word-count_other": "kata",
+  "wr-article-unavailable": "This article is unavailable. Try another link.",
+  "wr-round-unavailable": "Wikipedia could not be reached, so this round was skipped.",
   "write-your-answers": "Tulis Jawaban Anda",
   "wrong": "Salah",
   "ww-audience-writing": "Players are writing their answers",

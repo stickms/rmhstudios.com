@@ -19,7 +19,8 @@ export type ECPhase =
 // ─── Round Data ──────────────────────────────────────────────────
 
 export interface ECRoundData {
-  movie: MovieEntry;
+  /** null until the producer picks (or the selection times out). */
+  movie: MovieEntry | null;
   producerUserId: string;
 }
 
@@ -70,7 +71,8 @@ export interface EmojiCinemaState {
   producerOrder: string[];
   phase: ECPhase;
   currentProducerUserId: string;
-  currentMovie: MovieEntry;
+  /** null until this round's movie is picked — never a placeholder or last round's movie. */
+  currentMovie: MovieEntry | null;
   /** Three movie choices presented to the producer at MOVIE_SELECTION phase */
   movieChoices: MovieEntry[];
   emojiSequence: string[];

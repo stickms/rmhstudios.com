@@ -471,6 +471,8 @@
   "won-by": "{{name}}님이 {{paid}}코인으로 승리",
   "won-by-minimalist-masterpiece-history-detail": "{{name}}님이 {{paid}}코인으로 승리",
   "word-count_other": "단어",
+  "wr-article-unavailable": "This article is unavailable. Try another link.",
+  "wr-round-unavailable": "Wikipedia could not be reached, so this round was skipped.",
   "write-your-answers": "답변을 작성하세요",
   "wrong": "틀림",
   "ww-audience-writing": "Players are writing their answers",

@@ -503,6 +503,8 @@
   "won-by-minimalist-masterpiece-history-detail": "{{name}} ने {{paid}} सिक्कों में जीत हासिल की",
   "word-count_one": "शब्द",
   "word-count_other": "शब्द",
+  "wr-article-unavailable": "This article is unavailable. Try another link.",
+  "wr-round-unavailable": "Wikipedia could not be reached, so this round was skipped.",
   "write-your-answers": "अपने उत्तर लिखें",
   "wrong": "गलत",
   "ww-audience-writing": "Players are writing their answers",

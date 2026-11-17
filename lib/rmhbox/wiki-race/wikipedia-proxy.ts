@@ -4,15 +4,34 @@
  * Fetches, sanitizes, and caches Wikipedia articles for the Wiki-Race game.
  * Strips external links, scripts, and editing UI. Converts internal wiki
  * links to data attributes for WebSocket-based navigation.
+ *
+ * Wikimedia's API etiquette (and its 429s when ignored): a User-Agent that
+ * names the client and how to reach its operator, bounded requests, backing
+ * off on 429/503 as Retry-After says, and not refetching the same page. So:
+ * one module-level cache shared by every game in the process (an article
+ * fetched for one lobby serves the next), each request times out, and a
+ * 429/5xx/network failure is retried at most twice.
  */
 
 import { parse as parseHTML } from 'node-html-parser';
 import sanitizeHtml from 'sanitize-html';
 import { LRUCache } from 'lru-cache';
-import {
-  WR_CACHE_MAX,
-  WR_CACHE_TTL,
-} from '../constants';
+
+/** Policy-compliant User-Agent: client name/version and a contact URL (no personal data). */
+export const WIKIPEDIA_USER_AGENT =
+  'RMHStudios-RMHbox/1.0 (https://rmhstudios.com; party game)';
+/** Per-request timeout. */
+const FETCH_TIMEOUT_MS = 8_000;
+/** Retries after the first attempt (429, 5xx, timeout or network error). */
+const MAX_RETRIES = 2;
+/** Longest we wait between attempts, whatever Retry-After asks. */
+const MAX_RETRY_WAIT_MS = 5_000;
+/** Shared article cache bounds: entries and time to live. */
+const SHARED_CACHE_MAX = 200;
+const SHARED_CACHE_TTL_MS =
+  60 *
+  60 *
+  1000;
 
 export interface CachedArticle {
   title: string;
@@ -25,32 +44,43 @@ export interface CachedArticle {
 let lastFetchTimestamp = 0;
 const MIN_FETCH_INTERVAL_MS = 5; // ~200 req/s
 
-/** Creates an LRU cache for Wikipedia articles. */
-export function createArticleCache(): LRUCache<
-  string,
-  CachedArticle
-> {
-  return new LRUCache<
+/**
+ * The process-wide article cache. In-process on purpose: values hold a Set
+ * (not JSON), each sanitized article is costly to rebuild, and the only
+ * consumer is the single rmhbox hub process.
+ */
+const sharedArticleCache =
+  new LRUCache<
     string,
     CachedArticle
   >(
     {
-      max: WR_CACHE_MAX,
-      ttl: WR_CACHE_TTL,
+      max: SHARED_CACHE_MAX,
+      ttl: SHARED_CACHE_TTL_MS,
     },
   );
+
+/**
+ * The article cache. Returns the shared process-wide cache (it used to be one
+ * cache per game, so every lobby refetched the same pages).
+ */
+export function createArticleCache(): LRUCache<
+  string,
+  CachedArticle
+> {
+  return sharedArticleCache;
 }
 
 /**
  * Fetches a Wikipedia article, sanitizes the HTML, and extracts internal links.
- * Returns null if the article cannot be fetched.
+ * Returns null if the article cannot be fetched (after retries).
  */
 export async function fetchArticle(
   title: string,
-  cache?: LRUCache<
+  cache: LRUCache<
     string,
     CachedArticle
-  >,
+  > = sharedArticleCache,
 ): Promise<CachedArticle | null> {
   // Check cache first
   const normalizedTitle =
@@ -58,28 +88,158 @@ export async function fetchArticle(
       / /g,
       '_',
     );
+  const cached =
+    cache.get(
+      normalizedTitle,
+    );
   if (
-    cache
+    cached
+  )
+    return cached;
+
+  return fetchAndBuild(
+    normalizedTitle,
+    cache,
+  );
+}
+
+/** Milliseconds to wait before retry `attempt` (1-based): Retry-After if given, else 1 s, 2 s; capped. */
+function retryDelayMs(
+  response: Response | null,
+  attempt: number,
+): number {
+  const header =
+    response?.headers.get(
+      'retry-after',
+    );
+  let ms =
+    attempt *
+    1000;
+  if (
+    header
   ) {
-    const cached =
-      cache.get(
-        normalizedTitle,
+    const seconds =
+      Number(
+        header,
       );
     if (
-      cached
+      Number.isFinite(
+        seconds,
+      )
     )
-      return cached;
+      ms =
+        seconds *
+        1000;
+    else {
+      const at =
+        Date.parse(
+          header,
+        );
+      if (
+        Number.isFinite(
+          at,
+        )
+      )
+        ms =
+          at -
+          Date.now();
+    }
   }
+  return Math.max(
+    0,
+    Math.min(
+      MAX_RETRY_WAIT_MS,
+      ms,
+    ),
+  );
+}
 
+/** GET with a timeout, retrying 429 / 5xx / network failures. Returns null on a final failure or a 4xx. */
+async function fetchWithRetry(
+  url: string,
+): Promise<Response | null> {
+  for (
+    let attempt = 0;
+    ;
+    attempt++
+  ) {
+    let response: Response | null =
+      null;
+    try {
+      response =
+        await fetch(
+          url,
+          {
+            headers:
+              {
+                'User-Agent':
+                  WIKIPEDIA_USER_AGENT,
+                'Api-User-Agent':
+                  WIKIPEDIA_USER_AGENT,
+              },
+            signal:
+              AbortSignal.timeout(
+                FETCH_TIMEOUT_MS,
+              ),
+          },
+        );
+      if (
+        response.ok
+      )
+        return response;
+      // Not found / bad title: retrying will not help.
+      if (
+        response.status !==
+          429 &&
+        response.status <
+          500
+      )
+        return null;
+    } catch {
+      // Timeout or network error: retry below.
+      response =
+        null;
+    }
+    if (
+      attempt >=
+      MAX_RETRIES
+    )
+      return null;
+    await new Promise(
+      (
+        r,
+      ) =>
+        globalThis.setTimeout(
+          r,
+          retryDelayMs(
+            response,
+            attempt +
+              1,
+          ),
+        ),
+    );
+  }
+}
+
+async function fetchAndBuild(
+  normalizedTitle: string,
+  cache: LRUCache<
+    string,
+    CachedArticle
+  >,
+): Promise<CachedArticle | null> {
   // Rate limiting
   const now =
     Date.now();
   const elapsed =
     now -
     lastFetchTimestamp;
+  // (A negative gap means the clock went backwards: don't wait on it.)
   if (
+    elapsed >=
+      0 &&
     elapsed <
-    MIN_FETCH_INTERVAL_MS
+      MIN_FETCH_INTERVAL_MS
   ) {
     await new Promise(
       (
@@ -98,19 +258,11 @@ export async function fetchArticle(
   try {
     const url = `https://en.wikipedia.org/api/rest_v1/page/html/${encodeURIComponent(normalizedTitle)}`;
     const response =
-      await fetch(
+      await fetchWithRetry(
         url,
-        {
-          headers:
-            {
-              'User-Agent':
-                'RMHbox-WikiRace/1.0 (game; non-commercial)',
-            },
-        },
       );
-
     if (
-      !response.ok
+      !response
     )
       return null;
 
@@ -135,8 +287,7 @@ export async function fetchArticle(
     // Check cache for the canonical title in case it was already fetched
     if (
       canonicalTitle !==
-        normalizedTitle &&
-      cache
+      normalizedTitle
     ) {
       const cachedCanonical =
         cache.get(
@@ -393,24 +544,20 @@ export async function fetchArticle(
           Date.now(),
       };
 
+    cache.set(
+      canonicalTitle,
+      article,
+    );
+    // Also cache under the original title so future lookups for the
+    // redirect source resolve instantly.
     if (
-      cache
+      canonicalTitle !==
+      normalizedTitle
     ) {
       cache.set(
-        canonicalTitle,
+        normalizedTitle,
         article,
       );
-      // Also cache under the original title so future lookups for the
-      // redirect source resolve instantly.
-      if (
-        canonicalTitle !==
-        normalizedTitle
-      ) {
-        cache.set(
-          normalizedTitle,
-          article,
-        );
-      }
     }
     return article;
   } catch {

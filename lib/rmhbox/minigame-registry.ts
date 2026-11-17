@@ -398,7 +398,8 @@ export const EMOJI_CINEMA_SETTINGS: GameSettingsSchema =
       default:
         EC_MAX_GUESSES_PER_PLAYER,
       min: 1,
-      max: 5,
+      // The default (EC_MAX_GUESSES_PER_PLAYER = 15) must be inside the range.
+      max: 20,
       step: 1,
     },
   ];

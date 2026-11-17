@@ -500,6 +500,8 @@
   "won-by-minimalist-masterpiece-history-detail": "Won by {{name}} for {{paid}} coins",
   "word-count_one": "word",
   "word-count_other": "word",
+  "wr-article-unavailable": "This article is unavailable. Try another link.",
+  "wr-round-unavailable": "Wikipedia could not be reached, so this round was skipped.",
   "write-your-answers": "Write Your Answers",
   "wrong": "Wrong",
   "ww-audience-writing": "Players are writing their answers",

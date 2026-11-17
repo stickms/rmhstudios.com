@@ -503,6 +503,8 @@
   "won-by-minimalist-masterpiece-history-detail": "{{name}} {{paid}} jetonla kazandı",
   "word-count_one": "kelime",
   "word-count_other": "kelime",
+  "wr-article-unavailable": "This article is unavailable. Try another link.",
+  "wr-round-unavailable": "Wikipedia could not be reached, so this round was skipped.",
   "write-your-answers": "Cevaplarınızı Yazın",
   "wrong": "Yanlış",
   "ww-audience-writing": "Players are writing their answers",
