@@ -58,7 +58,11 @@ import {
   startCommunityMembershipSweep,
 } from './handlers/group-call';
 import { registerControllerHandlers, handleControllerDisconnect } from './handlers/controller';
-import { registerVibeRoomHandlers, handleVibeRoomDisconnect } from './handlers/vibe-room';
+import {
+  registerVibeRoomHandlers,
+  handleVibeRoomDisconnect,
+  initVibeRoomInstanceCheck,
+} from './handlers/vibe-room';
 
 // Log + count instead of dying on a stray rejection (lib/perf/process-guards.ts).
 installProcessGuards({ service: 'socket-server' });
@@ -75,7 +79,8 @@ if (!config.CORS_ORIGIN) {
 
 // ─── Auth middleware (soft — authenticates if token present) ─────
 
-import { createAuthCache, createSessionAuth } from '../shared/session-auth';
+import { createSessionAuth } from '../shared/session-auth';
+import { applyDiscordActivityToken as applyDiscordToken } from './discord-activity';
 
 // The Better Auth session check (token -> session JOIN user, expiry, bounded
 // 60 s positive cache, pool) is shared by every hub: server/shared/session-auth.ts.
@@ -91,14 +96,6 @@ function getAuthPool() {
   return sessionAuth.getPool();
 }
 
-// Discord Activity identity cache (positive results only, same TTL/bound as sessions).
-interface CachedAuth {
-  userId: string;
-  userName: string;
-  avatarUrl: string | null;
-}
-const discordAuthCache = createAuthCache<CachedAuth>();
-
 /**
  * Better Auth session token → `socket.data`. Returns true when it authenticated.
  */
@@ -112,169 +109,12 @@ async function applySessionToken(socket: import('socket.io').Socket): Promise<bo
   return true;
 }
 
-// ─── Discord Activity identity (X10) ─────────────────────────────
-//
-// An Activity is served from Discord's proxy origin (https://<app-id>
-// .discordsays.com), so a cookie scoped to rmhstudios.com is never sent with
-// its requests and Better Auth has no session there — for linked accounts as
-// much as for anyone else. Without a second identity path, every `slice:*`
-// handler answers `auth_required` inside a Discord call.
-//
-// The token is verified against Discord, server-side, every time. A
-// client-supplied Discord user id is never read from anywhere: the id used
-// below is the one Discord itself returns for the bearer token.
-
-const DISCORD_API = 'https://discord.com/api/v10';
-const DISCORD_VERIFY_TIMEOUT_MS = 5_000;
-
-/**
- * What a verified Discord Activity token resolves to.
- *
- * `userId` is a real site user id when the Discord account is linked, and
- * `null` for a guest — which is the whole distinction `X10` draws. A guest's
- * name and avatar URL live in this object, in memory, for at most
- * the shared auth-cache TTL (60 s) plus the life of the socket. They are never written
- * to a table, and the avatar is referenced at Discord's CDN rather than copied
- * into our storage.
- */
-interface DiscordIdentity {
-  userId: string | null;
-  name: string;
-  avatarUrl: string | null;
-  /** Absolute epoch-ms at which the Discord token itself stops being valid. */
-  expiresAt: number;
-}
-
-/** Discord's own default-avatar formula, mirrored from `lib/discord-sdk.ts`. */
-function discordAvatarUrl(id: string, avatar: string | null, discriminator: string): string {
-  if (avatar) return `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=128`;
-  const index =
-    discriminator === '0' || !discriminator
-      ? Number(BigInt(id) >> 22n) % 6
-      : Number(discriminator) % 5;
-  return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
-}
-
-/**
- * Verify a Discord Activity access token and resolve who it belongs to.
- *
- * Uses `/oauth2/@me` rather than `/users/@me` (which is what
- * `server/rmhbox/auth.ts` calls) for one reason that matters: its response
- * carries the **application** the token was issued for, so the check below can
- * refuse a perfectly valid Discord token minted for somebody else's app.
- * `/users/@me` cannot tell those apart — any Discord OAuth token in the world
- * passes it — and a hub that seats whoever presents one has no audience
- * binding at all. It also returns the token's own absolute expiry and the user
- * in the same round trip, so this is one outbound call, not two.
- *
- * No client secret is involved: the code→token exchange (the only operation
- * that needs one) stays in `lib/api/routes/discord.token.server.ts` on the web tier.
- * This is the verify half, and verification is Bearer-only.
- */
-async function verifyDiscordActivityToken(token: string): Promise<DiscordIdentity | null> {
-  const appId = config.DISCORD_ACTIVITY_CLIENT_ID;
-  // Fail closed: with no application id there is nothing to bind the token to,
-  // and accepting it would mean trusting any Discord app's token.
-  if (!appId) return null;
-
-  const res = await fetch(`${DISCORD_API}/oauth2/@me`, {
-    headers: { Authorization: `Bearer ${token}` },
-    signal: AbortSignal.timeout(DISCORD_VERIFY_TIMEOUT_MS),
+const applyDiscordActivityToken = (socket: import('socket.io').Socket, token: string) =>
+  applyDiscordToken(socket, token, {
+    appId: config.DISCORD_ACTIVITY_CLIENT_ID,
+    getPool: getAuthPool,
+    logger,
   });
-  if (!res.ok) return null;
-
-  const info = (await res.json()) as {
-    application?: { id?: string };
-    expires?: string;
-    user?: {
-      id?: string;
-      username?: string;
-      global_name?: string | null;
-      avatar?: string | null;
-      discriminator?: string;
-    };
-  };
-
-  if (info?.application?.id !== appId) return null;
-
-  const expiresAt = Date.parse(info?.expires ?? '');
-  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return null;
-
-  const user = info?.user;
-  if (!user?.id || typeof user.id !== 'string') return null;
-
-  const name = user.global_name || user.username || 'Guest';
-  const avatarUrl = discordAvatarUrl(user.id, user.avatar ?? null, user.discriminator ?? '0');
-
-  // Linked account → a real site identity, indistinguishable downstream from a
-  // session login: their scores count and their seat gets the reconnect grace.
-  const pool = getAuthPool();
-  if (pool) {
-    const result = await pool.query(
-      `SELECT a."userId", u."name", u."image"
-       FROM "account" a
-       JOIN "user" u ON u."id" = a."userId"
-       WHERE a."providerId" = 'discord' AND a."accountId" = $1
-       LIMIT 1`,
-      [user.id],
-    );
-    if (result.rows.length > 0) {
-      const row = result.rows[0];
-      return {
-        userId: row.userId,
-        name: row.name || name,
-        avatarUrl: row.image || avatarUrl,
-        expiresAt,
-      };
-    }
-  }
-
-  // No linked account → a guest. Deliberately NOT given a synthetic id: an id
-  // is the thing every persistence path keys on, and minting one here is how a
-  // "we store nothing about guests" rule quietly becomes untrue.
-  return { userId: null, name, avatarUrl, expiresAt };
-}
-
-/** Verified Discord identity → `socket.data`. Returns true when it authenticated. */
-async function applyDiscordActivityToken(
-  socket: import('socket.io').Socket,
-  token: string,
-): Promise<boolean> {
-  const cached = discordAuthCache.get(`d:${token}`);
-  if (cached) {
-    if (cached.userId) {
-      socket.data.userId = cached.userId;
-      socket.data.userName = cached.userName;
-      socket.data.avatarUrl = cached.avatarUrl;
-    } else {
-      socket.data.discordGuest = { name: cached.userName, avatarUrl: cached.avatarUrl };
-    }
-    return true;
-  }
-
-  const identity = await verifyDiscordActivityToken(token);
-  if (!identity) return false;
-
-  if (identity.userId) {
-    socket.data.userId = identity.userId;
-    socket.data.userName = identity.name;
-    socket.data.avatarUrl = identity.avatarUrl;
-  } else {
-    // The ONLY place a guest identity exists. `socket.data.userId` stays unset,
-    // which is what keeps every persistence path (leaderboards, runs, the
-    // `User` table) from having anything to write.
-    socket.data.discordGuest = { name: identity.name, avatarUrl: identity.avatarUrl };
-  }
-
-  // A guest carries a null userId; the cache replays it as a guest rather than
-  // as an account. The cache never outlives the Discord token's own expiry.
-  discordAuthCache.set(
-    `d:${token}`,
-    { userId: identity.userId as string, userName: identity.name, avatarUrl: identity.avatarUrl },
-    identity.expiresAt,
-  );
-  return true;
-}
 
 /**
  * Soft auth: a connection is always allowed; a credential, if present and
@@ -529,6 +369,9 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // ─── Start listening ────────────────────────────────────────────
+
+// Logs once if the Activity bot token (the vibe room's instance check) is not configured.
+initVibeRoomInstanceCheck();
 
 // Taken before `listen`, so the sweep below can tell rooms the previous process
 // left behind from rooms this one opens while the sweep is still running.

@@ -404,6 +404,10 @@ export const config = {
   // disables the Discord auth path entirely rather than accepting tokens the
   // hub cannot check the audience of — see `softAuthMiddleware`.
   DISCORD_ACTIVITY_CLIENT_ID: envString('DISCORD_ACTIVITY_CLIENT_ID', ''),
+  // The Activity application's bot token (also read by the jobs worker's bot). Used only to ask
+  // Discord who is in an Activity instance (`GET /applications/{id}/activity-instances/{id}`), so a
+  // socket can join only an instance it is in. Unset: that check is skipped (dev keeps working).
+  DISCORD_ACTIVITY_BOT_TOKEN: envString('DISCORD_ACTIVITY_BOT_TOKEN', ''),
 
   // ─── Disconnect Grace Period ───
   DISCONNECT_GRACE_PERIOD_MS: envInt('SOCKET_GRACE_MS', 120_000),

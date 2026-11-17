@@ -27,7 +27,10 @@ import {
   type VibeRoomMember,
   type VibeRoomState,
 } from '../../../lib/rmhvibe/room-events';
+import { config } from '../config';
+import { logger } from '../logger';
 import { getPrismaClient } from '../prisma-client';
+import { createInstanceVerifier, type InstanceVerifier } from '../discord-instance';
 import { checkRateLimit } from '../rate-limit';
 import { sanitizeString } from '../utils';
 
@@ -57,6 +60,27 @@ const roomOf =
     string,
     string
   >();
+
+let verifier: InstanceVerifier | null = null;
+/** Created at boot (or on first use), which logs once if the bot token is not configured. */
+function instanceVerifier(): InstanceVerifier {
+  verifier ??= createInstanceVerifier({
+    appId: config.DISCORD_ACTIVITY_CLIENT_ID,
+    botToken: config.DISCORD_ACTIVITY_BOT_TOKEN,
+    logger,
+  });
+  return verifier;
+}
+
+/** Boot hook: builds the verifier now so a missing bot token is logged once at startup. */
+export function initVibeRoomInstanceCheck(): void {
+  instanceVerifier();
+}
+
+/** Test seam: replace (or clear) the instance verifier. */
+export function setInstanceVerifierForTests(v: InstanceVerifier | null): void {
+  verifier = v;
+}
 
 const SLUG_RE =
   /^[A-Za-z0-9_-]{1,100}$/;
@@ -287,129 +311,56 @@ export function registerVibeRoomHandlers(
       return true;
     };
 
-  socket.on(
-    VIBE_ROOM_C2S.JOIN,
-    (
-      payload: unknown,
-    ) => {
-      if (
-        limited(
-          VIBE_ROOM_C2S.JOIN,
-        )
-      )
-        return;
-      const who =
-        identity(
-          socket,
-        );
-      if (
-        !who
-      )
-        return fail(
-          socket,
-          'AUTH',
-        );
-      const instanceId =
-        (
-          payload as {
-            instanceId?: unknown;
-          } | null
-        )
-          ?.instanceId;
-      if (
-        typeof instanceId !==
-          'string' ||
-        !VIBE_ROOM_LIMITS.INSTANCE_ID.test(
-          instanceId,
-        )
-      )
-        return;
+  socket.on(VIBE_ROOM_C2S.JOIN, async (payload: unknown) => {
+    if (limited(VIBE_ROOM_C2S.JOIN)) return;
+    const who = identity(socket);
+    if (!who) return fail(socket, 'AUTH');
+    const instanceId = (payload as { instanceId?: unknown } | null)?.instanceId;
+    if (typeof instanceId !== 'string' || !VIBE_ROOM_LIMITS.INSTANCE_ID.test(instanceId)) {
+      return fail(socket, 'BAD_INSTANCE');
+    }
 
-      const current =
-        roomOf.get(
-          socket.id,
-        );
-      if (
-        current ===
-        instanceId
-      ) {
-        // Idempotent rejoin: just resend the state.
-        const existing =
-          rooms.get(
-            instanceId,
-          );
-        if (
-          existing
-        )
-          broadcast(
-            io,
-            existing,
-          );
-        return;
+    // A Discord-authenticated socket may only join an instance Discord says it is in. The id is the
+    // one Discord returned for the token (`socket.data.discordId`), never anything from the payload.
+    // A web-session socket keeps today's behaviour (the instance id is unguessable). The await is
+    // inside the branch, so a socket with no Discord id runs the rest of the join synchronously.
+    const discordId = typeof socket.data?.discordId === 'string' ? socket.data.discordId : null;
+    if (discordId && roomOf.get(socket.id) !== instanceId) {
+      const verdict = await instanceVerifier().check(discordId, instanceId);
+      if (socket.disconnected) return;
+      if (verdict === 'not_member' || verdict === 'unavailable') {
+        return fail(socket, 'BAD_INSTANCE');
       }
-      if (
-        current
-      )
-        leaveRoom(
-          io,
-          socket,
-        );
+    }
 
-      let room =
-        rooms.get(
-          instanceId,
-        );
-      if (
-        room &&
-        room
-          .members
-          .size >=
-          VIBE_ROOM_LIMITS.MAX_MEMBERS
-      )
-        return fail(
-          socket,
-          'FULL',
-        );
-      if (
-        !room
-      ) {
-        room =
-          {
-            instanceId,
-            slug: null,
-            members:
-              new Map(),
-          };
-        rooms.set(
-          instanceId,
-          room,
-        );
-      }
-      room.members.set(
-        socket.id,
-        {
-          sid: socket.id,
-          ...who,
-          away: false,
-          joinedAt:
-            Date.now(),
-        },
-      );
-      roomOf.set(
-        socket.id,
-        instanceId,
-      );
-      void socket.join(
-        roomName(
-          instanceId,
-        ),
-      );
-      broadcast(
-        io,
-        room,
-      );
-    },
-  );
+    const current = roomOf.get(socket.id);
+    if (current === instanceId) {
+      // Idempotent rejoin: just resend the state.
+      const existing = rooms.get(instanceId);
+      if (existing) broadcast(io, existing);
+      return;
+    }
+
+    // Refuse a full room BEFORE leaving the current one, so a refused join leaves the socket where it was.
+    let room = rooms.get(instanceId);
+    if (room && room.members.size >= VIBE_ROOM_LIMITS.MAX_MEMBERS) {
+      return fail(socket, 'FULL');
+    }
+    if (current) leaveRoom(io, socket);
+    if (!room) {
+      room = { instanceId, slug: null, members: new Map() };
+      rooms.set(instanceId, room);
+    }
+    room.members.set(socket.id, {
+      sid: socket.id,
+      ...who,
+      away: false,
+      joinedAt: Date.now(),
+    });
+    roomOf.set(socket.id, instanceId);
+    void socket.join(roomName(instanceId));
+    broadcast(io, room);
+  });
 
   socket.on(
     VIBE_ROOM_C2S.LEAVE,
@@ -628,7 +579,8 @@ export function registerVibeRoomHandlers(
             ?.length ??
           0;
       } catch {
-        return; // cyclic or otherwise unserialisable: drop
+        // cyclic or otherwise unserialisable
+        return fail(socket, 'BAD_PAYLOAD');
       }
       if (
         size >

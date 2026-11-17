@@ -43,7 +43,11 @@ export type VibeRoomErrorCode =
   | 'NOT_HOST'
   | 'BAD_SLUG'
   | 'TOO_LARGE'
-  | 'RATE';
+  | 'RATE'
+  /** JOIN with a malformed instance id, or one the Discord user is not in. */
+  | 'BAD_INSTANCE'
+  /** SEND with a payload that cannot be serialised (cyclic, BigInt, …). */
+  | 'BAD_PAYLOAD';
 
 export type VibeRoomMember =
   {
