@@ -57,14 +57,463 @@ export function keysToTranslate(args: {
   );
 }
 
+const PLURAL_CATEGORIES =
+  [
+    'zero',
+    'one',
+    'two',
+    'few',
+    'many',
+    'other',
+  ] as const;
+
+/** `count_few` -> { base: 'count', category: 'few' }; anything else -> null. */
+export function splitPlural(
+  key: string,
+): {
+  base: string;
+  category: string;
+} | null {
+  const i =
+    key.lastIndexOf(
+      '_',
+    );
+  if (
+    i <=
+    0
+  )
+    return null;
+  const category =
+    key.slice(
+      i +
+        1,
+    );
+  return (
+    PLURAL_CATEGORIES as readonly string[]
+  ).includes(
+    category,
+  )
+    ? {
+        base: key.slice(
+          0,
+          i,
+        ),
+        category,
+      }
+    : null;
+}
+
+/** Base keys English declares as plural groups (the same rule as the catalog test). */
+function pluralBases(
+  english: Catalog,
+): Set<string> {
+  const bases =
+    new Set<string>();
+  for (const key of Object.keys(
+    english,
+  )) {
+    const p =
+      splitPlural(
+        key,
+      );
+    if (
+      p
+    )
+      bases.add(
+        p.base,
+      );
+  }
+  return bases;
+}
+
+/** The plural categories a language requires, per CLDR. */
+export function pluralCategories(
+  locale: string,
+): string[] {
+  return [
+    ...new Intl.PluralRules(
+      locale,
+    ).resolvedOptions()
+      .pluralCategories,
+  ].sort();
+}
+
+/**
+ * The English catalog re-shaped to one locale's plural categories: what that
+ * locale's catalog must contain. Japanese gets only `x_other`; Russian gets
+ * `x_one`, `x_few`, `x_many` and `x_other`, the forms English lacks taking the
+ * English `_other` text as their source (the model is told which form each
+ * key is). Everything that is not a plural group is unchanged.
+ */
+export function localeSource(
+  english: Catalog,
+  categories: readonly string[],
+): Catalog {
+  const bases =
+    pluralBases(
+      english,
+    );
+  const out: Catalog =
+    {};
+  for (const [
+    key,
+    value,
+  ] of Object.entries(
+    english,
+  )) {
+    const p =
+      splitPlural(
+        key,
+      );
+    if (
+      !p ||
+      !bases.has(
+        p.base,
+      )
+    )
+      out[
+        key
+      ] =
+        value;
+  }
+  for (const base of bases) {
+    const fallback =
+      english[
+        `${base}_other`
+      ] ??
+      Object.entries(
+        english,
+      ).find(
+        ([
+          k,
+        ]) =>
+          splitPlural(
+            k,
+          )
+            ?.base ===
+          base,
+      )?.[1];
+    for (const category of categories) {
+      const value =
+        english[
+          `${base}_${category}`
+        ] ??
+        fallback;
+      if (
+        value !==
+        undefined
+      )
+        out[
+          `${base}_${category}`
+        ] =
+          value;
+    }
+  }
+  return out;
+}
+
+/**
+ * Make a catalog safe to write. Removes plural forms the language does not use
+ * (dead keys i18next can never select), and removes any plural group or new
+ * file that free work (reuse, memory) filled only partly: a half-filled group
+ * makes the count fall back to English mid-sentence, and a locale with no file
+ * has not started that namespace. `paid` keeps a run's model output even when
+ * part of it failed, so it is never thrown away. Returns false when the file
+ * should not be written at all.
+ */
+export function settleCatalog(args: {
+  english: Catalog;
+  source: Catalog;
+  categories: readonly string[];
+  target: Catalog;
+  sources: Catalog;
+  original: Catalog;
+  existed: boolean;
+  paid: boolean;
+}): boolean {
+  const {
+    english,
+    source,
+    categories,
+    target,
+    sources,
+    original,
+  } =
+    args;
+  const bases =
+    pluralBases(
+      english,
+    );
+  for (const key of Object.keys(
+    target,
+  )) {
+    const p =
+      splitPlural(
+        key,
+      );
+    if (
+      p &&
+      bases.has(
+        p.base,
+      ) &&
+      !categories.includes(
+        p.category,
+      )
+    ) {
+      delete target[
+        key
+      ];
+      delete sources[
+        key
+      ];
+    }
+  }
+  if (
+    !args.paid
+  ) {
+    for (const base of bases) {
+      const keys =
+        categories
+          .map(
+            (
+              c,
+            ) =>
+              `${base}_${c}`,
+          )
+          .filter(
+            (
+              k,
+            ) =>
+              k in
+              source,
+          );
+      const present =
+        keys.filter(
+          (
+            k,
+          ) =>
+            k in
+            target,
+        );
+      if (
+        present.length ===
+          0 ||
+        present.length ===
+          keys.length
+      )
+        continue;
+      if (
+        keys.some(
+          (
+            k,
+          ) =>
+            k in
+            original,
+        )
+      )
+        continue;
+      for (const k of present) {
+        delete target[
+          k
+        ];
+        delete sources[
+          k
+        ];
+      }
+    }
+    if (
+      !args.existed &&
+      Object.keys(
+        source,
+      ).some(
+        (
+          k,
+        ) =>
+          !(
+            k in
+            target
+          ),
+      )
+    )
+      return false;
+  }
+  return true;
+}
+
+/** Memory and dedupe identity: the same English in the same plural form. */
+function memoryKey(
+  key: string,
+  english: string,
+): string {
+  return `${splitPlural(key)?.category ?? ''}\u0000${english}`;
+}
+
+/**
+ * Whether `target` already holds a translation of today's English for `key`:
+ * the exact rule {@link keysToTranslate} pays by, so anything this says is
+ * current is never sent again.
+ */
+function isCurrent(
+  key: string,
+  source: Catalog,
+  target: Catalog,
+  sources: Catalog,
+): boolean {
+  if (
+    !(
+      key in
+      target
+    )
+  )
+    return false;
+  return (
+    !(
+      key in
+      sources
+    ) ||
+    sameValue(
+      sources[
+        key
+      ],
+      source[
+        key
+      ],
+    )
+  );
+}
+
+/**
+ * An entry with no recorded source whose value IS the English: a placeholder
+ * an old extract or a manual copy left behind, not a translation. The planner
+ * does not pay to replace these (that would be new spend nobody asked for),
+ * but a translation that was already paid for may take their place.
+ */
+function isEnglishPlaceholder(
+  key: string,
+  source: Catalog,
+  target: Catalog,
+  sources: Catalog,
+): boolean {
+  return (
+    key in
+      target &&
+    !(
+      key in
+      sources
+    ) &&
+    typeof source[
+      key
+    ] ===
+      'string' &&
+    hasWords(
+      source[
+        key
+      ],
+    ) &&
+    sameValue(
+      target[
+        key
+      ],
+      source[
+        key
+      ],
+    )
+  );
+}
+
+/**
+ * Take a translation that was already paid for (the pending translation PR, an
+ * older run's branch) wherever this catalog does not hold a current one.
+ *
+ * A candidate qualifies only when it was made from today's English. A human
+ * correction on main is safe: it is current (its recorded English matches), so
+ * it is never replaced. Returns how many keys were taken.
+ */
+export function adoptPaidTranslations(args: {
+  source: Catalog;
+  target: Catalog;
+  sources: Catalog;
+  paidTarget: Catalog;
+  paidSources: Catalog;
+}): number {
+  const {
+    source,
+    target,
+    sources,
+    paidTarget,
+    paidSources,
+  } =
+    args;
+  let adopted = 0;
+  for (const [
+    key,
+    english,
+  ] of Object.entries(
+    paidSources,
+  )) {
+    const text =
+      paidTarget[
+        key
+      ];
+    if (
+      typeof english !==
+        'string' ||
+      english !==
+        source[
+          key
+        ] ||
+      typeof text !==
+        'string' ||
+      !text.trim()
+    ) {
+      continue;
+    }
+    if (
+      isCurrent(
+        key,
+        source,
+        target,
+        sources,
+      ) &&
+      !isEnglishPlaceholder(
+        key,
+        source,
+        target,
+        sources,
+      )
+    ) {
+      continue;
+    }
+    if (
+      target[
+        key
+      ] ===
+        text &&
+      sources[
+        key
+      ] ===
+        english
+    )
+      continue;
+    target[
+      key
+    ] =
+      text;
+    sources[
+      key
+    ] =
+      english;
+    adopted++;
+  }
+  return adopted;
+}
+
 /** Plan a merge's work, reusing paid translations from the pending PR. */
 export function planCatalogTranslations(args: {
   source: Catalog;
   previousSource?: Catalog;
   target: Catalog;
   sources: Catalog;
-  previousTarget?: Catalog;
-  previousSources?: Catalog;
   pendingTarget?: Catalog;
   pendingSources?: Catalog;
 }): {
@@ -85,61 +534,19 @@ export function planCatalogTranslations(args: {
     {
       ...args.sources,
     };
-  for (const [
-    key,
-    english,
-  ] of Object.entries(
-    args.pendingSources ??
-      {},
-  )) {
-    // A translation is reusable only for the same English and when main has
-    // not edited its target since the PR branched. Preserve human corrections.
-    if (
-      english ===
-        source[
-          key
-        ] &&
-      typeof args
-        .pendingTarget?.[
-        key
-      ] ===
-        'string' &&
-      args.pendingTarget[
-        key
-      ].trim() &&
-      sameValue(
-        args
-          .target[
-          key
-        ],
-        args
-          .previousTarget?.[
-          key
-        ],
-      ) &&
-      sameValue(
-        args
-          .sources[
-          key
-        ],
-        args
-          .previousSources?.[
-          key
-        ],
-      )
-    ) {
-      target[
-        key
-      ] =
-        args.pendingTarget[
-          key
-        ];
-      sources[
-        key
-      ] =
-        english;
-    }
-  }
+  adoptPaidTranslations(
+    {
+      source,
+      target,
+      sources,
+      paidTarget:
+        args.pendingTarget ??
+        {},
+      paidSources:
+        args.pendingSources ??
+        {},
+    },
+  );
   const todo =
     keysToTranslate(
       {
@@ -202,6 +609,245 @@ export function planCatalogTranslations(args: {
     sources,
     todo: paid,
   };
+}
+
+/** One namespace of one locale, planned and waiting for its paid keys. */
+export interface CatalogPlan {
+  source: Catalog;
+  target: Catalog;
+  sources: Catalog;
+  todo: string[];
+}
+
+/**
+ * (plural form, English) -> a current translation of it, gathered from every
+ * namespace of one locale. The plural form is part of the identity: Russian
+ * `_few` and `_many` share their English source but never their translation. Only entries whose recorded English matches today's English count: a
+ * legacy entry with no record may be a translation of older English.
+ */
+export function translationMemory(
+  plans: readonly CatalogPlan[],
+): Map<
+  string,
+  string
+> {
+  const memory =
+    new Map<
+      string,
+      string
+    >();
+  for (const {
+    source,
+    target,
+    sources,
+  } of plans) {
+    for (const [
+      key,
+      english,
+    ] of Object.entries(
+      source,
+    )) {
+      const text =
+        target[
+          key
+        ];
+      if (
+        typeof english ===
+          'string' &&
+        hasWords(
+          english,
+        ) &&
+        sources[
+          key
+        ] ===
+          english &&
+        typeof text ===
+          'string' &&
+        text.trim() &&
+        !memory.has(
+          memoryKey(
+            key,
+            english,
+          ),
+        )
+      ) {
+        memory.set(
+          memoryKey(
+            key,
+            english,
+          ),
+          text,
+        );
+      }
+    }
+  }
+  return memory;
+}
+
+/**
+ * Fill every todo key whose exact English already has a current translation in
+ * this locale ("Cancel" in forty namespaces is paid for once), and replace any
+ * English placeholder the same way. Mutates the plans and returns how many keys
+ * were filled for free.
+ */
+export function applyTranslationMemory(
+  plans: readonly CatalogPlan[],
+  memory: ReadonlyMap<
+    string,
+    string
+  >,
+): number {
+  let filled = 0;
+  for (const plan of plans) {
+    const fill =
+      (
+        key: string,
+      ): boolean => {
+        const english =
+          plan
+            .source[
+            key
+          ];
+        const text =
+          typeof english ===
+          'string'
+            ? memory.get(
+                memoryKey(
+                  key,
+                  english,
+                ),
+              )
+            : undefined;
+        if (
+          text ===
+          undefined
+        )
+          return false;
+        plan.target[
+          key
+        ] =
+          text;
+        plan.sources[
+          key
+        ] =
+          english as string;
+        filled++;
+        return true;
+      };
+    plan.todo =
+      plan.todo.filter(
+        (
+          key,
+        ) =>
+          !fill(
+            key,
+          ),
+      );
+    for (const key of Object.keys(
+      plan.source,
+    )) {
+      if (
+        isEnglishPlaceholder(
+          key,
+          plan.source,
+          plan.target,
+          plan.sources,
+        )
+      )
+        fill(
+          key,
+        );
+    }
+  }
+  return filled;
+}
+
+/** A todo key that waits on another key with the same English. */
+export interface Follower<
+  P extends
+    CatalogPlan,
+> {
+  plan: P;
+  key: string;
+  /** The plan and key that is actually sent. */
+  ownerPlan: P;
+  ownerKey: string;
+}
+
+/**
+ * Send each distinct English string once per locale. The first todo key with a
+ * given English stays in its plan's todo (and keeps its real key, so the model
+ * still sees the context); later keys with the same English are removed from
+ * their todo and returned as followers that copy the owner's answer.
+ */
+export function dedupeTodo<
+  P extends
+    CatalogPlan,
+>(
+  plans: readonly P[],
+): Follower<P>[] {
+  const owners =
+    new Map<
+      string,
+      {
+        plan: P;
+        key: string;
+      }
+    >();
+  const followers: Follower<P>[] =
+    [];
+  for (const plan of plans) {
+    plan.todo =
+      plan.todo.filter(
+        (
+          key,
+        ) => {
+          const english =
+            plan
+              .source[
+              key
+            ];
+          if (
+            typeof english !==
+            'string'
+          )
+            return true;
+          const id =
+            memoryKey(
+              key,
+              english,
+            );
+          const owner =
+            owners.get(
+              id,
+            );
+          if (
+            !owner
+          ) {
+            owners.set(
+              id,
+              {
+                plan,
+                key,
+              },
+            );
+            return true;
+          }
+          followers.push(
+            {
+              plan,
+              key,
+              ownerPlan:
+                owner.plan,
+              ownerKey:
+                owner.key,
+            },
+          );
+          return false;
+        },
+      );
+  }
+  return followers;
 }
 
 function hasWords(

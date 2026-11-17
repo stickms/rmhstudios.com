@@ -12,6 +12,7 @@
   "class-hint": "اختر الخيار الذي يناسب سيارتك بشكل أفضل.",
   "community-rideshare": "مشاركة الركوب المجتمعية",
   "done-label": "تم",
+  "drive-page-title": "قد مع RMH",
   "drive-with-rmh": "قد مع RMH",
   "driver-application": "طلب السائق",
   "driver-cta-body": "أخبرنا عن سيارتك وقم بتحميل رخصتك للمراجعة السريعة. نحذف رخصتك فور الموافقة عليها — مستنداتك لا تُحفظ أبدًا في الملفات.",
@@ -67,6 +68,7 @@
   "request-a-ride": "اطلب رحلة",
   "request-ride-button": "طلب {{rideClass}}",
   "ride-accepted": "تم قبول الرحلة — توجه إلى نقطة الاستلام!",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "رحلة لكل وجهة — من اليومية إلى الاستثنائية.",
   "ride-history-heading": "سجل الرحلات",
   "schedule-for-later": "الجدول لاحقًا",
@@ -92,7 +94,5 @@
   "vehicle-details": "تفاصيل المركبة",
   "where-to-heading": "إلى أين؟",
   "which-class-drive": "أي صف ستقود؟",
-  "your-active-trip": "رحلتك النشطة",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "رحلتك النشطة"
 }

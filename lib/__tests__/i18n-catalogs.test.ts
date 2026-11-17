@@ -169,7 +169,7 @@ function requiredCategories(
 // Not filled in by hand here: picking the right Russian or Arabic plural stem is
 // a translator's job, not a mechanical one, and duplicating the `_other` string
 // into `_few` would replace a visible gap with a silently wrong one. Remove
-// entries as `pnpm i18n:translate && pnpm i18n:resources` regenerates them.
+// entries as the `i18n-translate` workflow regenerates them.
 const KNOWN_PARTIAL_PLURALS: Record<
   string,
   string[]
@@ -182,11 +182,9 @@ const KNOWN_PARTIAL_PLURALS: Record<
   };
 
 // Keys that exist in the English source but are not yet machine-translated into
-// the other locales. Production fills these at build time via the DeepSeek i18n
-// pipeline (Dockerfile `vite-builder` stage), and the runtime falls back to
-// English per-key, so an untranslated key is NOT a shipping blocker — but the
-// repo's committed catalogs lag behind until someone runs
-// `pnpm i18n:translate && pnpm i18n:resources` and commits the result.
+// the other locales. The runtime falls back to English per-key, so an
+// untranslated key is NOT a shipping blocker — but the committed catalogs lag
+// behind until someone runs the `i18n-translate` workflow and merges its PR.
 //
 // List those known-lagging keys here so the exact-key-set check tolerates ONLY
 // these specific gaps. ANY other drift — a different untranslated key, or an
@@ -775,8 +773,7 @@ const KNOWN_UNTRANSLATED: Record<
       ],
     // SortableList reorder controls (commit 443451a, the §15 groundwork
     // primitives) landed in en/c-ui.json but weren't machine-translated. Runtime
-    // falls back to English per key. Remove once `pnpm i18n:translate &&
-    // pnpm i18n:resources` has been run and the catalogs committed.
+    // falls back to English per key. Remove once the `i18n-translate` workflow has been run and the catalogs committed.
     'c-ui':
       [
         // Third-pass audit RT1 (2026-11-12): the confirm dialog loads on first use; this is its failed-to-load toast.
@@ -805,7 +802,7 @@ const KNOWN_UNTRANSLATED: Record<
       ],
     // ── The RMH family of cars (2026-09-06) ────────────────────────────────
     // Copy for the fleet showcase on /services?tab=cars. English-only until
-    // `pnpm i18n:translate && pnpm i18n:resources` runs — the pipeline needs
+    // `i18n-translate` workflow runs — the pipeline needs
     // DEEPSEEK_API_KEY, which is not available in this environment. Runtime falls
     // back to English per key.
     'c-rideshare':
@@ -1061,8 +1058,7 @@ const KNOWN_UNTRANSLATED: Record<
       'tag-post-count_other',
       // ── Explore's Library and Games & Apps discovery (2026-08-08) ────────
       // Section headings for the two Explore tabs that had no discovery content
-      // and fell back to the Top mix. English-only until `pnpm i18n:translate &&
-      // pnpm i18n:resources` runs — the pipeline needs DEEPSEEK_API_KEY, which is
+      // and fell back to the Top mix. English-only until the `i18n-translate` workflow runs — the pipeline needs DEEPSEEK_API_KEY, which is
       // not available in this environment. Runtime falls back to English per key.
       'apps-heading',
       'games-heading',
@@ -1098,7 +1094,7 @@ const KNOWN_UNTRANSLATED: Record<
       // sections are `length > 0` guards, so an empty payload rendered an empty
       // column. Each surface now says what it collects, and a signed-out visitor
       // is told why "Following" is missing from the strip. English-only until
-      // `pnpm i18n:translate && pnpm i18n:resources` runs — that pipeline needs
+      // `i18n-translate` workflow runs — that pipeline needs
       // DEEPSEEK_API_KEY, which is not available here. Runtime falls back to
       // English per key.
       'deck-empty-following',
@@ -1225,7 +1221,7 @@ const KNOWN_UNTRANSLATED: Record<
       'help-title',
       // The accessible name of the Games ⇄ Apps catalog strip (2026-08-08). Same
       // pipeline caveat as the `feed` block above — English-only until
-      // `pnpm i18n:translate && pnpm i18n:resources` runs.
+      // `i18n-translate` workflow runs.
       'catalog-tabs-aria-label',
       // The Services hub's fourth and fifth tabs — the fleet showcase and the
       // fashion studio (2026-09-06). Same pipeline caveat.
@@ -1265,7 +1261,7 @@ const KNOWN_UNTRANSLATED: Record<
     // The accessibility (`A2`/`A3`/`A7`), HUD (`H9`), practice-aid (`P4`),
     // input (`I1`/`A6`), judgement-line (`G11`) and modifier-preset (`M7`)
     // controls, plus the assist and challenge modifiers below. English-only
-    // until `pnpm i18n:translate && pnpm i18n:resources` runs — the pipeline
+    // until the `i18n-translate` workflow runs — the pipeline
     // needs DEEPSEEK_API_KEY, which is not available in this environment.
     // Runtime falls back to English per key.
     //
@@ -1481,7 +1477,7 @@ const KNOWN_UNTRANSLATED: Record<
     // loaded, the other page's copy flipped to it after first paint — and, when
     // the catalog won the race with hydration, failed hydration outright
     // (docs/archive/2026/fouc-audit-2026-10-06.md §21). English-only until
-    // `pnpm i18n:translate && pnpm i18n:resources` runs, as above. (The
+    // `i18n-translate` workflow runs, as above. (The
     // admin keys sit in the `admin` list of the backlog block above — an
     // object literal cannot name a namespace twice.)
     'c-library':

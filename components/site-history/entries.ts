@@ -801,10 +801,10 @@ export function historyEntries(
           },
         ),
       body: t(
-        'e.i18n.body',
+        'e.i18n.body-nine',
         {
           defaultValue:
-            "The core of the site was translated, and posts could be translated into the reader's language. It ships in 16 languages today, including Arabic and Urdu laid out right to left.",
+            "The core of the site was translated, and posts could be translated into the reader's language. It ships in nine languages today, including Arabic laid out right to left.",
         },
       ),
     },

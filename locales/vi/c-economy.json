@@ -18,7 +18,8 @@
   "tip-dialog-description": "Gửi coins{{recipient}} để bày tỏ sự trân trọng.",
   "tip-dialog-title": "Gửi tip",
   "tip-error": "Không thể gửi tip",
+  "tip-invalid": "Số tiền tip đó không được phép.",
+  "tip-max-hint": "Tối đa mỗi lần tip: {{max}}",
   "tip-sign-in": "Vui lòng đăng nhập để tip.",
-  "tip-success": "Đã tip {{amount}} coins{{recipient}}!",
-  "tip-max-hint": "Tối đa mỗi lần tip: {{max}}"
+  "tip-success": "Đã tip {{amount}} coins{{recipient}}!"
 }

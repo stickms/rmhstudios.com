@@ -56,6 +56,8 @@
   "neural-collapse": "뉴럴 콜랩스",
   "neural-lobby": "뉴럴 로비",
   "neural-operatives_other": "뉴럴 오퍼레이터 ({{count}}/{{max}})",
+  "new-best-no": "아니요",
+  "new-best-yes": "예",
   "no-scores-yet": "아직 점수가 없습니다. 첫 번째가 되어보세요!",
   "not-ranked": "아직 순위에 오르지 않았습니다. 한 판 플레이하세요!",
   "numbers-placeholder": "예: 385",
@@ -63,6 +65,7 @@
   "peak-intensity": "최고 강도",
   "play-again": "다시 플레이",
   "preparing-sequence": "시퀀스 준비 중...",
+  "quit": "Quit",
   "rank": "순위",
   "ready": "준비!",
   "ready-status": "준비 완료",
@@ -98,8 +101,5 @@
   "waiting-for-players": "플레이어 대기 중{{notReady}}",
   "waiting-status": "대기 중",
   "you": "당신",
-  "you-badge": "당신",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "당신"
 }

@@ -68,11 +68,11 @@ vi.mock(
   }),
 );
 vi.mock(
-  '@/lib/i18n/resources.de',
+  '@/lib/i18n/resources.es',
   () => ({
     default:
       thunks(
-        'de',
+        'es',
         NS,
       ),
   }),
@@ -238,7 +238,7 @@ describe('client i18n backend (per-namespace loading)', () => {
     } =
       await freshClient();
     ensureClientLocale(
-      'de',
+      'es',
       {
         common:
           {
@@ -285,8 +285,8 @@ describe('client i18n backend (per-namespace loading)', () => {
       calls.log.sort(),
     ).toEqual(
       [
-        'de:c-blog',
         'en:c-blog',
+        'es:c-blog',
       ],
     );
     expect(
@@ -299,13 +299,13 @@ describe('client i18n backend (per-namespace loading)', () => {
         },
       ),
     ).toBe(
-      'de/c-blog/greeting',
+      'es/c-blog/greeting',
     );
     // Never an unrelated namespace, never a whole locale.
     expect(
       calls.log,
     ).not.toContain(
-      'de:f-perf',
+      'es:f-perf',
     );
     expect(
       calls.log,

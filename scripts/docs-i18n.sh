@@ -23,7 +23,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-LOCALES=(zh ar hi es fr pt ru de ja ko it id vi tr ur)
+LOCALES=(zh ar hi es fr pt ru ja)
 
 TRANSLATED=(
   index
@@ -51,7 +51,7 @@ case "${1:-}" in
   update)
     [ -d "$POT_DIR" ] || { echo "Run 'extract' first." >&2; exit 1; }
     # Stage only the pages we maintain translations for, so `sphinx-intl update`
-    # doesn't create a .po for all ~200 documents in every one of 15 locales.
+    # doesn't create a .po for all ~200 documents in every one of 8 locales.
     rm -rf "$POT_SUBSET"
     for doc in "${TRANSLATED[@]}"; do
       mkdir -p "$POT_SUBSET/$(dirname "$doc")"

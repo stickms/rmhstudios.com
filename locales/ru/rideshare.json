@@ -12,6 +12,7 @@
   "class-hint": "Выберите вариант, который лучше всего подходит вашему автомобилю.",
   "community-rideshare": "Поездки сообщества",
   "done-label": "Готово",
+  "drive-page-title": "Водить с RMH",
   "drive-with-rmh": "Водить с RMH",
   "driver-application": "Заявка водителя",
   "driver-cta-body": "Расскажите о своём автомобиле и загрузите права для быстрой проверки. Мы удаляем ваши права сразу после одобрения — ваши документы никогда не хранятся.",
@@ -67,6 +68,7 @@
   "request-a-ride": "Заказать поездку",
   "request-ride-button": "Заказать {{rideClass}}",
   "ride-accepted": "Поездка принята — направляйтесь к месту посадки!",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "Поездка на любой случай — от повседневной до особенной.",
   "ride-history-heading": "История поездок",
   "schedule-for-later": "Запланировать на потом",
@@ -92,7 +94,5 @@
   "vehicle-details": "Сведения об автомобиле",
   "where-to-heading": "Куда едем?",
   "which-class-drive": "В каком классе вы будете водить?",
-  "your-active-trip": "Ваша активная поездка",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "Ваша активная поездка"
 }

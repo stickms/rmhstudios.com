@@ -12,6 +12,7 @@
   "class-hint": "あなたの車両に最も合うオプションを選んでください。",
   "community-rideshare": "コミュニティライドシェア",
   "done-label": "完了",
+  "drive-page-title": "RMH で運転する",
   "drive-with-rmh": "RMH で運転する",
   "driver-application": "ドライバー申請",
   "driver-cta-body": "車両について教えていただき、免許証をアップロードすると、すぐに審査します。承認された瞬間に免許証は削除されます — 書類が保管されることはありません。",
@@ -67,6 +68,7 @@
   "request-a-ride": "配車をリクエスト",
   "request-ride-button": "{{rideClass}} をリクエスト",
   "ride-accepted": "配車が承諾されました — 乗車地へ向かいましょう！",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "日常から特別なときまで、あらゆる移動のための配車。",
   "ride-history-heading": "配車履歴",
   "schedule-for-later": "あとで予約",
@@ -92,7 +94,5 @@
   "vehicle-details": "車両の詳細",
   "where-to-heading": "どちらへ？",
   "which-class-drive": "どのクラスで運転しますか？",
-  "your-active-trip": "進行中の移動",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "進行中の移動"
 }

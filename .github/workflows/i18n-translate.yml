@@ -1,0 +1,132 @@
+# Machine-translate the site's string catalogs (locales/) with DeepSeek.
+#
+# Run it by hand from the Actions tab; it replaces running the translate script
+# locally. It is built so a string is never paid for twice (docs/translations.md):
+#   - only keys that are missing, or whose English changed, are sent
+#     (locales/<lng>/.sources.<ns>.json records what each was translated from);
+#   - every translation already paid for on an `i18n/*` branch (this
+#     workflow's own unmerged PR, and the branches its predecessor left behind)
+#     is reused before any model call;
+#   - identical English is sent once per locale, and strings with no words are
+#     copied.
+#
+# The predecessor of this workflow (removed in #1158) ran on every push and
+# failed every time at `gh pr create`, because GitHub Actions was not allowed to
+# open pull requests here, so its paid output piled up on unmerged branches.
+# This one pushes the branch first and treats a refused PR as a notice: the run
+# stays green and its summary links to the compare view to open the PR by hand.
+name: i18n-translate
+
+on:
+  workflow_dispatch:
+    inputs:
+      locales:
+        description: 'Comma-separated locales, e.g. "ja,fr" (empty = every shipped locale)'
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        description: 'Report what would be sent and stop (no API calls, no commit)'
+        required: false
+        default: false
+        type: boolean
+
+# One run at a time, and never cancel one: a cancelled run loses paid work.
+concurrency:
+  group: i18n-translate
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  BRANCH: i18n/auto-translate
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - name: Check for the DeepSeek key
+        if: ${{ !inputs.dry_run }}
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          if [ -z "${DEEPSEEK_API_KEY:-}" ]; then
+            echo "::error::The DEEPSEEK_API_KEY repository secret is not set."
+            exit 1
+          fi
+
+      - uses: ./.github/actions/setup-deps
+
+      - name: Collect translations already paid for
+        id: reuse
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin '+refs/heads/i18n/*:refs/remotes/origin/i18n/*'
+          dir="$RUNNER_TEMP/i18n-reuse"
+          pnpm exec tsx scripts/i18n-collect-reuse.ts "$dir"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+          # The lease for the push below: the branch exactly as it was read here.
+          echo "lease=$(git rev-parse --verify --quiet "refs/remotes/origin/$BRANCH" || true)" >> "$GITHUB_OUTPUT"
+
+      - name: Translate
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          I18N_LOCALES: ${{ inputs.locales }}
+          I18N_DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+          I18N_REUSE_DIR: ${{ steps.reuse.outputs.dir }}
+        run: pnpm exec tsx scripts/translate-locales.ts
+
+      # Runs even if the translate step failed part-way: every catalog it
+      # finished is already on disk, and dropping it would mean paying again.
+      - name: Regenerate resource modules
+        if: ${{ !cancelled() && !inputs.dry_run }}
+        run: pnpm exec tsx scripts/gen-i18n-resources.ts
+
+      - name: Push to the translation branch and open its pull request
+        if: ${{ !cancelled() && !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LEASE: ${{ steps.reuse.outputs.lease }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMPARE_URL: ${{ github.server_url }}/${{ github.repository }}/compare/main...i18n/auto-translate?expand=1
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- locales lib/i18n && [ -z "$(git ls-files --others --exclude-standard -- locales lib/i18n)" ]; then
+            echo "Nothing new: main already has every translation." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add locales lib/i18n
+          git commit -q -m "chore(i18n): translate missing and changed strings" -m "Run: $RUN_URL"
+          # Rebuilt from main each run. Whatever the old branch held that is
+          # still current was adopted by the translate step, so nothing is lost.
+          git push --force-with-lease="refs/heads/$BRANCH:$LEASE" origin "HEAD:refs/heads/$BRANCH"
+
+          pr=$(gh pr list --base main --head "$BRANCH" --state open --json url --jq '.[0].url // empty')
+          if [ -n "$pr" ]; then
+            echo "Updated $pr" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          body="Machine translations from $RUN_URL. Built from main, reusing every translation already paid for on the i18n/* branches, so merging late never costs a second run. See docs/translations.md."
+          if pr=$(gh pr create --base main --head "$BRANCH" \
+                --title "chore(i18n): translate missing and changed strings" \
+                --body "$body" 2>&1); then
+            echo "Opened $pr" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Could not open the pull request ($pr). The translations are saved on $BRANCH: $COMPARE_URL"
+            {
+              echo "The translations are saved on \`$BRANCH\`, but GitHub Actions may not open pull requests in this repository"
+              echo "(Settings → Actions → General → Allow GitHub Actions to create and approve pull requests)."
+              echo ""
+              echo "**[Open the pull request]($COMPARE_URL)**"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -37,6 +37,7 @@
   "poem-journal": "شاعری کی ڈائری",
   "poem-placeholder": "آپ کی نظم یہاں ظاہر ہوگی...",
   "poems-written": "لکھی گئی نظمیں",
+  "quit": "Quit",
   "relationships": "تعلقات",
   "route-complete": "راستہ مکمل",
   "save": "محفوظ کریں",
@@ -46,7 +47,7 @@
   "select-words-prompt_one": "اپنی نظم ترتیب دینے کے لیے {{count}} لفظ منتخب کریں",
   "select-words-prompt_other": "اپنی نظم ترتیب دینے کے لیے {{count}} الفاظ منتخب کریں",
   "settings": "ترتیبات",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "اپنی کہانیاں کلاؤڈ میں محفوظ کرنے اور کہیں بھی دوبارہ چلانے کے لیے سائن ان کریں۔",
   "sign-in-to-save": "اپنی پیشرفت کو کلاؤڈ پر محفوظ کرنے کے لیے سائن ان کریں",
   "skip": "چھوڑیں",
   "slot-auto": "خودکار",
@@ -77,6 +78,5 @@
   "tutorial-step2-tip": "بونس ہر کردار کے اسکور پر لاگو ہوتے ہیں، لہذا وہ ہمیشہ حاصل کرنے کے قابل ہوتے ہیں۔",
   "tutorial-step2-title": "بونس تکنیکیں",
   "words-selected-count": "{{selected}}/{{total}} منتخب",
-  "your-journey": "آپ کا سفر",
-  "quit": "Quit"
+  "your-journey": "آپ کا سفر"
 }

@@ -8,8 +8,8 @@
   "edit": "Modifica",
   "edit-build": "Modifica build",
   "error-loading-build": "Errore nel caricamento della build",
-  "like-count_one": "{{count}} mi piace",
   "like-count_many": "{{count}} likes",
+  "like-count_one": "{{count}} mi piace",
   "like-count_other": "{{count}} mi piace",
   "manage-subtitle": "Gestisci le tue build pubblicate e in bozza",
   "my-builds": "Le mie build",
@@ -17,7 +17,7 @@
   "no-builds-description": "Crea la tua prima build e condividila con la community.",
   "no-builds-yet": "Ancora nessuna build",
   "prefer-the-cli": "Preferisci la CLI?",
-  "share-project-with-community": "Condividi il tuo progetto con la community. Puoi salvarlo come bozza e pubblicarlo più tardi.",
+  "share-project-with-community": "Condividi il tuo progetto con la community.",
   "sign-in": "Accedi",
   "sign-in-required": "Accesso richiesto",
   "sign-in-to-manage": "Devi accedere per gestire le tue build.",
@@ -25,7 +25,7 @@
   "submit-a-build": "Invia una build",
   "update-build-details": "Aggiorna i dettagli della tua build qui sotto.",
   "view": "Visualizza",
-  "view-count_one": "{{count}} visualizzazioni",
   "view-count_many": "{{count}} views",
+  "view-count_one": "{{count}} visualizzazioni",
   "view-count_other": "{{count}} visualizzazioni"
 }

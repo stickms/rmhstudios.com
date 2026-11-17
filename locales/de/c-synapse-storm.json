@@ -57,6 +57,8 @@
   "neural-lobby": "NEURAL LOBBY",
   "neural-operatives_one": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "new-best-no": "Nein",
+  "new-best-yes": "Ja",
   "no-scores-yet": "Noch keine Punkte. Sei der Erste!",
   "not-ranked": "Du hast noch keinen Platz. Spiele eine Runde!",
   "numbers-placeholder": "z.B. 385",
@@ -64,6 +66,7 @@
   "peak-intensity": "Spitzenintensität",
   "play-again": "NOCHMAL SPIELEN",
   "preparing-sequence": "Sequenz wird vorbereitet...",
+  "quit": "Quit",
   "rank": "Rang",
   "ready": "BEREIT!",
   "ready-status": "BEREIT",
@@ -99,8 +102,5 @@
   "waiting-for-players": "WARTE AUF SPIELER{{notReady}}",
   "waiting-status": "WARTEN",
   "you": "DU",
-  "you-badge": "DU",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "DU"
 }

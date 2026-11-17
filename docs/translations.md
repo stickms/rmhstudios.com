@@ -1,17 +1,16 @@
 # Translations
 
 The
-docs
 site
-ships
+and
+the
+docs
+ship
 in
 the
 same
-16
-languages
-as
-the
-product:
+9
+languages:
 `en`
 plus
 `zh`,
@@ -20,22 +19,15 @@ plus
 `es`,
 `fr`,
 `pt`,
-`ru`,
-`de`,
-`ja`,
-`ko`,
-`it`,
-`id`,
-`vi`,
-`tr`,
-`ur`.
+`ru`
+and
+`ja`.
 That
 list
 mirrors
 `LOCALES`
 in
-`lib/i18n/config.ts`
-—
+`lib/i18n/config.ts`;
 the
 app
 and
@@ -60,11 +52,8 @@ dropped
 into
 English
 documentation.
-
 `ar`
-and
-`ur`
-are
+is
 right-to-left,
 matching
 `RTL_LOCALES`
@@ -87,7 +76,483 @@ translated
 from
 it.
 
-## How it works
+`de`,
+`ko`,
+`it`,
+`id`,
+`tr`,
+`ur`
+and
+`vi`
+shipped
+until
+2026-11-17
+and
+were
+parked
+to
+cut
+translation
+spend.
+They
+sit
+in
+`PENDING_LOCALES`
+with
+the
+other
+unshipped
+catalogs:
+their
+files
+under
+`locales/`
+and
+`docs/locale/`
+are
+kept,
+nothing
+serves
+them,
+and
+nothing
+translates
+them.
+Promoting
+one
+again
+pays
+only
+for
+the
+keys
+added
+since
+it
+was
+parked.
+
+## Site strings (`locales/`)
+
+The
+UI
+catalogs
+are
+translated
+by
+the
+**i18n-translate**
+GitHub
+Actions
+workflow
+(`.github/workflows/i18n-translate.yml`),
+never
+on
+a
+laptop.
+Run
+it
+from
+the
+Actions
+tab
+(**Run
+workflow**).
+It
+has
+two
+inputs:
+`locales`
+(a
+comma-separated
+subset;
+empty
+means
+every
+shipped
+locale)
+and
+`dry_run`
+(report
+what
+would
+be
+paid
+for
+and
+stop).
+It
+uses
+the
+`DEEPSEEK_API_KEY`
+repository
+secret.
+
+A
+run
+translates
+only
+what
+is
+missing
+or
+stale,
+and
+pays
+for
+each
+string
+at
+most
+once:
+
+- **Already
+  current
+  is
+  skipped.**
+  `locales/<lng>/.sources.<ns>.json`
+  records
+  the
+  English
+  each
+  translation
+  was
+  made
+  from.
+  A
+  key
+  whose
+  recorded
+  English
+  matches
+  today's
+  English
+  is
+  never
+  sent
+  again,
+  and
+  a
+  human
+  edit
+  to
+  a
+  translation
+  survives
+  until
+  its
+  English
+  changes.
+- **Unmerged
+  work
+  is
+  reused.**
+  Each
+  run
+  pushes
+  its
+  output
+  to
+  the
+  `i18n/auto-translate`
+  branch
+  and
+  opens
+  (or
+  updates)
+  one
+  pull
+  request
+  from
+  it.
+  Before
+  any
+  model
+  call,
+  `scripts/i18n-collect-reuse.ts`
+  gathers
+  every
+  translation
+  stored
+  on
+  any
+  `i18n/*`
+  branch
+  (that
+  pull
+  request,
+  and
+  the
+  per-run
+  branches
+  the
+  previous
+  workflow
+  left
+  unmerged),
+  and
+  the
+  translator
+  adopts
+  each
+  one
+  whose
+  recorded
+  English
+  is
+  still
+  today's
+  English.
+  A
+  run
+  that
+  happens
+  before
+  the
+  pull
+  request
+  merges
+  does
+  not
+  pay
+  again.
+- **Identical
+  English
+  is
+  translated
+  once.**
+  Within
+  a
+  locale,
+  a
+  string
+  that
+  already
+  has
+  a
+  current
+  translation
+  under
+  any
+  key
+  (`Cancel`,
+  `Save`,
+  `{{count}} players`)
+  is
+  copied
+  rather
+  than
+  sent,
+  and
+  a
+  string
+  that
+  appears
+  under
+  several
+  untranslated
+  keys
+  is
+  sent
+  once.
+- **Strings
+  without
+  words
+  are
+  copied.**
+  Numbers,
+  symbols
+  and
+  bare
+  placeholders
+  (`10`,
+  `—`,
+  `{{done}}/{{total}}`)
+  read
+  the
+  same
+  everywhere
+  and
+  are
+  never
+  sent.
+- **Plural
+  forms
+  follow
+  the
+  language.**
+  English
+  has
+  `_one`
+  and
+  `_other`;
+  Japanese
+  and
+  Chinese
+  use
+  only
+  `_other`,
+  Russian
+  adds
+  `_few`
+  and
+  `_many`,
+  Arabic
+  uses
+  all
+  six
+  CLDR
+  forms.
+  The
+  translator
+  asks
+  for
+  exactly
+  the
+  forms
+  each
+  language
+  uses
+  (`Intl.PluralRules`),
+  never
+  writes
+  the
+  others,
+  and
+  never
+  commits
+  a
+  plural
+  group
+  or
+  a
+  new
+  namespace
+  file
+  half-filled
+  by
+  reuse
+  alone,
+  so
+  its
+  pull
+  request
+  passes
+  `lib/__tests__/i18n-catalogs.test.ts`.
+
+GitHub
+Actions
+may
+not
+be
+allowed
+to
+open
+pull
+requests
+in
+this
+repository
+(Settings
+→
+Actions
+→
+General
+→
+"Allow
+GitHub
+Actions
+to
+create
+and
+approve
+pull
+requests").
+The
+run
+then
+stays
+green,
+pushes
+the
+branch
+anyway,
+and
+prints
+a
+compare
+link
+in
+the
+job
+summary;
+open
+the
+pull
+request
+from
+that
+link.
+The
+paid
+work
+is
+safe
+on
+the
+branch
+either
+way.
+
+`I18N_LOCALES`,
+`I18N_DRY_RUN`
+and
+the
+other
+knobs
+at
+the
+top
+of
+`scripts/translate-locales.ts`
+are
+what
+the
+workflow
+sets;
+the
+script
+can
+still
+be
+run
+by
+hand
+with
+a
+DeepSeek
+key,
+but
+the
+workflow
+is
+the
+supported
+path
+because
+it
+is
+the
+one
+that
+reuses
+the
+pending
+branch.
+
+## Docs pages (`docs/locale/`)
+
+### How it works
 
 Sphinx
 uses
@@ -141,7 +606,7 @@ viable
 at
 all.
 
-## Coverage
+### Coverage
 
 Translations
 are
@@ -263,7 +728,7 @@ run
 then
 `update`.
 
-## Workflow
+### Workflow
 
 ```bash
 pip install -r docs/requirements.txt sphinx-intl
@@ -339,7 +804,7 @@ mode
 that
 matters.
 
-## Rules for translators
+### Rules for translators
 
 - Never
   touch
@@ -414,8 +879,12 @@ matters.
   URLs.
 - For
   `ar`
-  and
-  `ur`,
+  (and
+  any
+  RTL
+  locale
+  promoted
+  later),
   do
   not
   insert
@@ -446,7 +915,7 @@ matters.
   in
   review.
 
-## Read the Docs setup
+### Read the Docs setup
 
 Read
 the
@@ -539,3 +1008,43 @@ committed
 except
 the
 catalogs.
+
+When
+a
+language
+is
+parked
+(taken
+out
+of
+`LOCALES`),
+remove
+its
+project
+from
+the
+English
+project's
+**Translations**
+list
+so
+the
+flyout
+stops
+offering
+it.
+The
+project
+itself
+can
+be
+deactivated
+rather
+than
+deleted;
+its
+catalogs
+stay
+in
+the
+repository.

@@ -37,6 +37,7 @@
   "poem-journal": "詩の日記",
   "poem-placeholder": "あなたの詩がここに表示されます...",
   "poems-written": "作成した詩",
+  "quit": "Quit",
   "relationships": "関係性",
   "route-complete": "ルート完了",
   "save": "セーブ",
@@ -45,7 +46,7 @@
   "select-poem-prompt": "詩を選択して詳細を表示します。",
   "select-words-prompt_other": "詩を作成するために{{count}}語を選択してください",
   "settings": "設定",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "サインインすると、ストーリーをクラウドに保存してどこでも再生できます。",
   "sign-in-to-save": "サインインして進行状況をクラウドに保存",
   "skip": "スキップ",
   "slot-auto": "自動",
@@ -76,6 +77,5 @@
   "tutorial-step2-tip": "ボーナスはすべてのキャラクターのスコアに適用されるため、常に追求する価値があります。",
   "tutorial-step2-title": "ボーナス技法",
   "words-selected-count": "{{selected}}/{{total}} 選択済み",
-  "your-journey": "あなたの旅",
-  "quit": "Quit"
+  "your-journey": "あなたの旅"
 }

@@ -30,13 +30,14 @@
   "packs-tab": "包装",
   "pad-number": "垫子 {{number}}",
   "pan": "平底锅",
-  "pattern": "Pattern",
+  "pattern": "模式",
   "play-pause": "播放/暂停",
   "press-a-key": "按任意键...",
   "record": "记录",
   "record-arm": "记录臂",
   "reset-all": "重置全部",
   "sample-browser": "示例浏览器",
+  "sample-source": "Sample source",
   "samples-count_other": "{{count}} 个样本",
   "samples-heading": "样本",
   "save-project": "保存项目 (Ctrl+S)",
@@ -64,6 +65,5 @@
   "view-arrangement": "安排",
   "view-mixer": "搅拌器",
   "view-pattern": "模式",
-  "view-piano-roll": "钢琴卷帘",
-  "sample-source": "Sample source"
+  "view-piano-roll": "钢琴卷帘"
 }

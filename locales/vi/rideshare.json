@@ -12,6 +12,7 @@
   "class-hint": "Chọn tùy chọn phù hợp nhất với xe của bạn.",
   "community-rideshare": "Đi chung xe cộng đồng",
   "done-label": "Xong",
+  "drive-page-title": "Lái xe cùng RMH",
   "drive-with-rmh": "Lái xe cùng RMH",
   "driver-application": "Đơn đăng ký tài xế",
   "driver-cta-body": "Cho chúng tôi biết về xe của bạn và tải lên bằng lái để xem xét nhanh. Chúng tôi xóa bằng lái của bạn ngay khi được duyệt — tài liệu của bạn không bao giờ được lưu giữ.",
@@ -67,6 +68,7 @@
   "request-a-ride": "Yêu cầu một chuyến đi",
   "request-ride-button": "Yêu cầu {{rideClass}}",
   "ride-accepted": "Đã chấp nhận chuyến đi — hãy đến điểm đón!",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "Một chuyến đi cho mọi hành trình — từ hằng ngày đến đặc biệt.",
   "ride-history-heading": "Lịch sử chuyến đi",
   "schedule-for-later": "Lên lịch cho sau",
@@ -92,7 +94,5 @@
   "vehicle-details": "Chi tiết xe",
   "where-to-heading": "Đi đâu?",
   "which-class-drive": "Bạn sẽ lái hạng xe nào?",
-  "your-active-trip": "Chuyến đi đang hoạt động của bạn",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "Chuyến đi đang hoạt động của bạn"
 }

@@ -6,9 +6,11 @@ import { buildPrepaintConfig } from '../config';
 describe('pre-paint steps', () => {
   it('locale: cookie → lang/dir, unknown falls back to en, RTL for ar', () => {
     expect(runPrepaint({ cookie: 'a=b; rmh-lang=ar' }).attrs.get('dir')).toBe('rtl');
-    const de = runPrepaint({ cookie: 'rmh-lang=de' });
-    expect(de.html.lang).toBe('de');
-    expect(de.attrs.get('dir')).toBe('ltr');
+    const ja = runPrepaint({ cookie: 'rmh-lang=ja' });
+    expect(ja.html.lang).toBe('ja');
+    expect(ja.attrs.get('dir')).toBe('ltr');
+    // A parked locale (no longer in LOCALES) falls back like any unknown one.
+    expect(runPrepaint({ cookie: 'rmh-lang=de' }).html.lang).toBe('en');
     expect(runPrepaint({ cookie: 'rmh-lang=xx' }).html.lang).toBe('en');
     expect(runPrepaint().html.lang).toBe('en');
   });
@@ -91,8 +93,8 @@ describe('pre-paint steps', () => {
 
   it('one failing step never blocks the others', () => {
     // No config block: theme/seed skip themselves, the rest still run.
-    const noCfg = runPrepaint({ noConfigBlock: true, cookie: 'rmh-lang=de' });
-    expect(noCfg.html.lang).toBe('de');
+    const noCfg = runPrepaint({ noConfigBlock: true, cookie: 'rmh-lang=ja' });
+    expect(noCfg.html.lang).toBe('ja');
     expect(noCfg.classes.has('media-reveal')).toBe(true);
     // Blocked storage: everything that needs it skips; platform/locale/media-reveal run.
     const broken = runPrepaint({ brokenStorage: true, cookie: 'rmh-lang=ar' });

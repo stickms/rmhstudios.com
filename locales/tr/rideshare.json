@@ -12,6 +12,7 @@
   "class-hint": "Aracınıza en uygun seçeneği seçin.",
   "community-rideshare": "Topluluk yolculuk paylaşımı",
   "done-label": "Bitti",
+  "drive-page-title": "RMH ile sürüş yap",
   "drive-with-rmh": "RMH ile sürüş yap",
   "driver-application": "Sürücü başvurusu",
   "driver-cta-body": "Aracınız hakkında bilgi verin ve hızlı bir inceleme için ehliyetinizi yükleyin. Onaylandığı an ehliyetinizi sileriz — belgeleriniz asla saklanmaz.",
@@ -67,6 +68,7 @@
   "request-a-ride": "Yolculuk iste",
   "request-ride-button": "{{rideClass}} iste",
   "ride-accepted": "Yolculuk kabul edildi — alış noktasına gidin!",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "Her yolculuk için bir seçenek — günlük olandan çok özel olana kadar.",
   "ride-history-heading": "Yolculuk geçmişi",
   "schedule-for-later": "Sonrası için planla",
@@ -92,7 +94,5 @@
   "vehicle-details": "Araç ayrıntıları",
   "where-to-heading": "Nereye?",
   "which-class-drive": "Hangi sınıfta sürüş yapacaksınız?",
-  "your-active-trip": "Aktif yolculuğunuz",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "Aktif yolculuğunuz"
 }

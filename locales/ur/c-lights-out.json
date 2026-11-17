@@ -31,6 +31,7 @@
   "leaderboard": "لیڈر بورڈ",
   "leaderboard-empty": "آج ابھی تک کسی نے نہیں کھیلا۔",
   "lets-go": "چلیں شروع کریں",
+  "lights-out-title": "Lights Out",
   "loading": "لوڈ ہو رہا ہے...",
   "moves-count_one": "{{count}} چال",
   "moves-count_other": "{{count}} چالیں",
@@ -54,6 +55,7 @@
   "race-results-subtitle": "راؤنڈ {{round}} · {{shape}} · {{mode}}{{optimal}}",
   "racers": "دوڑنے والے",
   "ranking": "درجہ بندی",
+  "rating-tiers": "Rating tiers",
   "ready": "تیار",
   "ready-up": "تیار ہو جائیں",
   "restart-btn": "دوبارہ شروع کریں",
@@ -89,7 +91,5 @@
   "waiting-for-host": "میزبان کے اگلے دور شروع کرنے کا انتظار ہے...",
   "waiting-for-players": "کھلاڑیوں کا انتظار ہے",
   "welcome-user": "خوش آمدید، {{name}}!",
-  "your-moves": "آپ کی چالیں",
-  "lights-out-title": "Lights Out",
-  "rating-tiers": "Rating tiers"
+  "your-moves": "آپ کی چالیں"
 }

@@ -2,11 +2,11 @@
   "alerts-off": "Alerts off",
   "alerts-on": "Alerts on",
   "error": "Couldn't save the search",
-  "operators": "Operators",
-  "remove": "Remove",
-  "save": "Save",
-  "saved": "Search saved",
-  "saved-searches": "Saved searches",
+  "operator-copied": "تم نسخ {{operator}}",
   "operator-copy": "نسخ {{operator}}",
-  "operator-copied": "تم نسخ {{operator}}"
+  "operators": "المشغلون",
+  "remove": "إزالة",
+  "save": "حفظ",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
 }

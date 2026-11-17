@@ -2,11 +2,11 @@
   "alerts-off": "Alerts off",
   "alerts-on": "Alerts on",
   "error": "Couldn't save the search",
-  "operators": "Operators",
-  "remove": "Remove",
-  "save": "Save",
-  "saved": "Search saved",
-  "saved-searches": "Saved searches",
+  "operator-copied": "Copiato {{operator}}",
   "operator-copy": "Copia {{operator}}",
-  "operator-copied": "Copiato {{operator}}"
+  "operators": "Operatori",
+  "remove": "Rimuovi",
+  "save": "Salva",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
 }

@@ -57,6 +57,8 @@
   "neural-lobby": "نیورل لابی",
   "neural-operatives_one": "نیورل آپریٹیوز ({{count}}/{{max}})",
   "neural-operatives_other": "نیورل آپریٹیوز ({{count}}/{{max}})",
+  "new-best-no": "نہیں",
+  "new-best-yes": "ہاں",
   "no-scores-yet": "ابھی تک کوئی سکور نہیں۔ سب سے پہلے بنیں!",
   "not-ranked": "آپ نے ابھی جگہ نہیں بنائی۔ ایک راؤنڈ کھیلیں!",
   "numbers-placeholder": "مثلاً 385",
@@ -64,6 +66,7 @@
   "peak-intensity": "چوٹی کی شدت",
   "play-again": "دوبارہ کھیلیں",
   "preparing-sequence": "ترتیب تیار ہو رہی ہے...",
+  "quit": "Quit",
   "rank": "درجہ",
   "ready": "تیار!",
   "ready-status": "تیار",
@@ -99,8 +102,5 @@
   "waiting-for-players": "کھلاڑیوں کا انتظار ہے{{notReady}}",
   "waiting-status": "انتظار میں",
   "you": "آپ",
-  "you-badge": "آپ",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "آپ"
 }

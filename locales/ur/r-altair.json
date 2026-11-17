@@ -20,9 +20,11 @@
   "join-by-code-hint": "دوست کی لابی میں شامل ہونے کے لیے 6 حروف کا روم کوڈ درج کریں۔",
   "joining-lobby": "لابی {{lobbyId}} میں شامل ہو رہے ہیں...",
   "kicked-from-lobby": "آپ کو لابی سے نکال دیا گیا",
+  "loading": "لوڈ ہو رہا ہے…",
   "loading-game": "گیم لوڈ ہو رہی ہے...",
   "lobby-disbanded": "لابی ختم کر دی گئی",
   "lobby-host": "میزبان: {{hostName}}",
+  "lobby-title": "Lobby {{lobbyId}}",
   "meta-shop": "میٹا شاپ",
   "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "ملٹی پلیئر",
@@ -34,7 +36,5 @@
   "settings": "سیٹنگز",
   "visibility-label": "مرئیت",
   "visibility-private": "نجی",
-  "visibility-public": "عوامی",
-  "loading": "Loading…",
-  "lobby-title": "Lobby {{lobbyId}}"
+  "visibility-public": "عوامی"
 }

@@ -4,7 +4,14 @@ import {
   it,
 } from 'vitest';
 import {
+  adoptPaidTranslations,
+  applyTranslationMemory,
+  dedupeTodo,
+  localeSource,
   planCatalogTranslations,
+  pluralCategories,
+  settleCatalog,
+  translationMemory,
   validateTranslationBatch,
   type Catalog,
 } from './diff';
@@ -117,10 +124,6 @@ describe('merge translation spending', () => {
       target:
         {},
       sources:
-        {},
-      previousTarget:
-        {},
-      previousSources:
         {},
       pendingTarget:
         {
@@ -353,6 +356,683 @@ describe('merge translation spending', () => {
         a: 'Bonjour',
         b: 'Au revoir',
       },
+    );
+  });
+});
+
+describe('paying for a string at most once', () => {
+  it('adopts a paid translation over a stale one, but never over a current one', () => {
+    const source: Catalog =
+      {
+        stale:
+          'Play again',
+        fresh:
+          'Quit',
+        missing:
+          'Save',
+      };
+    const target: Catalog =
+      {
+        stale:
+          'Jouer',
+        fresh:
+          'Quitter (corrigé)',
+      };
+    const sources: Catalog =
+      {
+        stale:
+          'Play',
+        fresh:
+          'Quit',
+      };
+    const adopted =
+      adoptPaidTranslations(
+        {
+          source,
+          target,
+          sources,
+          paidTarget:
+            {
+              stale:
+                'Rejouer',
+              fresh:
+                'Quitter',
+              missing:
+                'Enregistrer',
+            },
+          paidSources:
+            {
+              stale:
+                'Play again',
+              fresh:
+                'Quit',
+              missing:
+                'Save',
+            },
+        },
+      );
+    expect(
+      adopted,
+    ).toBe(
+      2,
+    );
+    expect(
+      target,
+    ).toEqual(
+      {
+        stale:
+          'Rejouer',
+        fresh:
+          'Quitter (corrigé)',
+        missing:
+          'Enregistrer',
+      },
+    );
+    expect(
+      sources,
+    ).toEqual(
+      {
+        stale:
+          'Play again',
+        fresh:
+          'Quit',
+        missing:
+          'Save',
+      },
+    );
+  });
+
+  it('never adopts a translation of English that has since changed', () => {
+    const target: Catalog =
+      {};
+    const sources: Catalog =
+      {};
+    adoptPaidTranslations(
+      {
+        source:
+          {
+            a: 'New wording',
+          },
+        target,
+        sources,
+        paidTarget:
+          {
+            a: 'Ancien texte',
+          },
+        paidSources:
+          {
+            a: 'Old wording',
+          },
+      },
+    );
+    expect(
+      target,
+    ).toEqual(
+      {},
+    );
+  });
+
+  it('replaces an English placeholder with a paid translation, keeps a legacy translation', () => {
+    const source: Catalog =
+      {
+        copy: 'Main menu',
+        legacy:
+          'Quit',
+      };
+    const target: Catalog =
+      {
+        copy: 'Main menu',
+        legacy:
+          'Quitter',
+      };
+    const sources: Catalog =
+      {};
+    adoptPaidTranslations(
+      {
+        source,
+        target,
+        sources,
+        paidTarget:
+          {
+            copy: 'Menu principal',
+            legacy:
+              'Sortir',
+          },
+        paidSources:
+          {
+            copy: 'Main menu',
+            legacy:
+              'Quit',
+          },
+      },
+    );
+    expect(
+      target,
+    ).toEqual(
+      {
+        copy: 'Menu principal',
+        legacy:
+          'Quitter',
+      },
+    );
+  });
+
+  it('copies a string already translated elsewhere in the locale instead of sending it', () => {
+    const done =
+      {
+        source:
+          {
+            cancel:
+              'Cancel',
+          },
+        target:
+          {
+            cancel:
+              'Annuler',
+          },
+        sources:
+          {
+            cancel:
+              'Cancel',
+          },
+        todo: [] as string[],
+      };
+    const stale =
+      {
+        source:
+          {
+            cancel:
+              'Cancel',
+          },
+        target:
+          {
+            cancel:
+              'Abandonner',
+          },
+        sources:
+          {
+            cancel:
+              'Abort',
+          },
+        todo: [] as string[],
+      };
+    const next =
+      {
+        source:
+          {
+            cancel:
+              'Cancel',
+            back: 'Back',
+            menu: 'Main menu',
+          },
+        target:
+          {
+            menu: 'Main menu',
+          } as Catalog,
+        sources:
+          {} as Catalog,
+        todo: [
+          'cancel',
+          'back',
+        ],
+      };
+    const memory =
+      translationMemory(
+        [
+          done,
+          stale,
+          next,
+        ],
+      );
+    expect(
+      [
+        ...memory.values(),
+      ],
+    ).toEqual(
+      [
+        'Annuler',
+      ],
+    );
+    expect(
+      applyTranslationMemory(
+        [
+          done,
+          next,
+        ],
+        memory,
+      ),
+    ).toBe(
+      1,
+    );
+    expect(
+      next.todo,
+    ).toEqual(
+      [
+        'back',
+      ],
+    );
+    expect(
+      next.target,
+    ).toEqual(
+      {
+        cancel:
+          'Annuler',
+        menu: 'Main menu',
+      },
+    );
+    expect(
+      next.sources,
+    ).toEqual(
+      {
+        cancel:
+          'Cancel',
+      },
+    );
+  });
+
+  it('fills an English placeholder from the memory', () => {
+    const done =
+      {
+        source:
+          {
+            m: 'Main menu',
+          },
+        target:
+          {
+            m: 'Menu principal',
+          },
+        sources:
+          {
+            m: 'Main menu',
+          },
+        todo: [] as string[],
+      };
+    const copy =
+      {
+        source:
+          {
+            m: 'Main menu',
+          },
+        target:
+          {
+            m: 'Main menu',
+          } as Catalog,
+        sources:
+          {} as Catalog,
+        todo: [] as string[],
+      };
+    applyTranslationMemory(
+      [
+        done,
+        copy,
+      ],
+      translationMemory(
+        [
+          done,
+          copy,
+        ],
+      ),
+    );
+    expect(
+      copy.target,
+    ).toEqual(
+      {
+        m: 'Menu principal',
+      },
+    );
+  });
+
+  it('sends each distinct English string once per locale', () => {
+    const a =
+      {
+        source:
+          {
+            save: 'Save',
+            quit: 'Quit',
+          },
+        target:
+          {},
+        sources:
+          {},
+        todo: [
+          'save',
+          'quit',
+        ],
+      };
+    const b =
+      {
+        source:
+          {
+            store:
+              'Save',
+            title:
+              'Title',
+          },
+        target:
+          {},
+        sources:
+          {},
+        todo: [
+          'store',
+          'title',
+        ],
+      };
+    const followers =
+      dedupeTodo(
+        [
+          a,
+          b,
+        ],
+      );
+    expect(
+      a.todo,
+    ).toEqual(
+      [
+        'save',
+        'quit',
+      ],
+    );
+    expect(
+      b.todo,
+    ).toEqual(
+      [
+        'title',
+      ],
+    );
+    expect(
+      followers,
+    ).toEqual(
+      [
+        {
+          plan: b,
+          key: 'store',
+          ownerPlan:
+            a,
+          ownerKey:
+            'save',
+        },
+      ],
+    );
+  });
+});
+
+describe('plural forms per language', () => {
+  const english: Catalog =
+    {
+      items_one:
+        '{{count}} item',
+      items_other:
+        '{{count}} items',
+      title:
+        'Title',
+    };
+
+  it('asks for exactly the CLDR categories the language uses', () => {
+    expect(
+      Object.keys(
+        localeSource(
+          english,
+          pluralCategories(
+            'ja',
+          ),
+        ),
+      ).sort(),
+    ).toEqual(
+      [
+        'items_other',
+        'title',
+      ],
+    );
+    expect(
+      localeSource(
+        english,
+        pluralCategories(
+          'ru',
+        ),
+      ),
+    ).toEqual(
+      {
+        title:
+          'Title',
+        items_few:
+          '{{count}} items',
+        items_many:
+          '{{count}} items',
+        items_one:
+          '{{count}} item',
+        items_other:
+          '{{count}} items',
+      },
+    );
+  });
+
+  it('never shares a translation between plural forms with the same English', () => {
+    const ru =
+      {
+        source:
+          localeSource(
+            english,
+            pluralCategories(
+              'ru',
+            ),
+          ),
+        target:
+          {},
+        sources:
+          {},
+        todo: [
+          'items_few',
+          'items_many',
+          'items_other',
+        ],
+      };
+    const again =
+      {
+        source:
+          {
+            more_many:
+              '{{count}} items',
+          },
+        target:
+          {},
+        sources:
+          {},
+        todo: [
+          'more_many',
+        ],
+      };
+    const followers =
+      dedupeTodo(
+        [
+          ru,
+          again,
+        ],
+      );
+    expect(
+      ru.todo,
+    ).toEqual(
+      [
+        'items_few',
+        'items_many',
+        'items_other',
+      ],
+    );
+    expect(
+      followers.map(
+        (
+          f,
+        ) => [
+          f.key,
+          f.ownerKey,
+        ],
+      ),
+    ).toEqual(
+      [
+        [
+          'more_many',
+          'items_many',
+        ],
+      ],
+    );
+  });
+
+  const settle =
+    (
+      over: Partial<
+        Parameters<
+          typeof settleCatalog
+        >[0]
+      >,
+    ) => {
+      const categories =
+        pluralCategories(
+          'ru',
+        );
+      const args =
+        {
+          english,
+          source:
+            localeSource(
+              english,
+              categories,
+            ),
+          categories,
+          target:
+            {} as Catalog,
+          sources:
+            {} as Catalog,
+          original:
+            {} as Catalog,
+          existed: true,
+          paid: false,
+          ...over,
+        };
+      return {
+        write:
+          settleCatalog(
+            args,
+          ),
+        target:
+          args.target,
+      };
+    };
+
+  it('drops a plural group that free work filled only partly', () => {
+    const {
+      write,
+      target,
+    } =
+      settle(
+        {
+          target:
+            {
+              title:
+                'Заголовок',
+              items_one:
+                '{{count}} предмет',
+              items_other:
+                '{{count}} предметов',
+            },
+        },
+      );
+    expect(
+      write,
+    ).toBe(
+      true,
+    );
+    expect(
+      target,
+    ).toEqual(
+      {
+        title:
+          'Заголовок',
+      },
+    );
+  });
+
+  it('keeps a partial group the model answered, so paid work is never thrown away', () => {
+    const {
+      target,
+    } =
+      settle(
+        {
+          paid: true,
+          target:
+            {
+              items_one:
+                'a',
+              items_other:
+                'b',
+            },
+        },
+      );
+    expect(
+      target,
+    ).toEqual(
+      {
+        items_one:
+          'a',
+        items_other:
+          'b',
+      },
+    );
+  });
+
+  it('removes forms the language does not use', () => {
+    const categories =
+      pluralCategories(
+        'ja',
+      );
+    const target: Catalog =
+      {
+        items_one:
+          '{{count}}個',
+        items_other:
+          '{{count}}個',
+      };
+    settleCatalog(
+      {
+        english,
+        source:
+          localeSource(
+            english,
+            categories,
+          ),
+        categories,
+        target,
+        sources:
+          {},
+        original:
+          {},
+        existed: true,
+        paid: false,
+      },
+    );
+    expect(
+      target,
+    ).toEqual(
+      {
+        items_other:
+          '{{count}}個',
+      },
+    );
+  });
+
+  it('does not start a namespace file that free work cannot complete', () => {
+    expect(
+      settle(
+        {
+          existed: false,
+          target:
+            {
+              title:
+                'Заголовок',
+            },
+        },
+      )
+        .write,
+    ).toBe(
+      false,
     );
   });
 });

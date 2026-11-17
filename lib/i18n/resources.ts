@@ -48,14 +48,7 @@ export const LOCALE_NAMESPACE_LOADERS: Record<Locale, () => Promise<NamespaceLoa
   fr: () => import('@/lib/i18n/resources.fr').then((m) => m.default as NamespaceLoaders),
   pt: () => import('@/lib/i18n/resources.pt').then((m) => m.default as NamespaceLoaders),
   ru: () => import('@/lib/i18n/resources.ru').then((m) => m.default as NamespaceLoaders),
-  de: () => import('@/lib/i18n/resources.de').then((m) => m.default as NamespaceLoaders),
   ja: () => import('@/lib/i18n/resources.ja').then((m) => m.default as NamespaceLoaders),
-  ko: () => import('@/lib/i18n/resources.ko').then((m) => m.default as NamespaceLoaders),
-  it: () => import('@/lib/i18n/resources.it').then((m) => m.default as NamespaceLoaders),
-  id: () => import('@/lib/i18n/resources.id').then((m) => m.default as NamespaceLoaders),
-  vi: () => import('@/lib/i18n/resources.vi').then((m) => m.default as NamespaceLoaders),
-  tr: () => import('@/lib/i18n/resources.tr').then((m) => m.default as NamespaceLoaders),
-  ur: () => import('@/lib/i18n/resources.ur').then((m) => m.default as NamespaceLoaders),
 };
 
 /** One in-flight/settled import of each locale's map, so N namespace loads in

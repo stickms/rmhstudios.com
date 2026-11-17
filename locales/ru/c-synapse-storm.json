@@ -55,10 +55,12 @@
   "music": "Музыка",
   "neural-collapse": "NEURAL COLLAPSE",
   "neural-lobby": "NEURAL LOBBY",
-  "neural-operatives_one": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_few": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_many": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "neural-operatives_one": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "new-best-no": "Нет",
+  "new-best-yes": "Да",
   "no-scores-yet": "Пока нет результатов. Будь первым!",
   "not-ranked": "Вы ещё не заняли место. Сыграйте раунд!",
   "numbers-placeholder": "например, 385",
@@ -66,6 +68,7 @@
   "peak-intensity": "Пиковая интенсивность",
   "play-again": "ИГРАТЬ СНОВА",
   "preparing-sequence": "Подготовка последовательности...",
+  "quit": "Quit",
   "rank": "Ранг",
   "ready": "ГОТОВ!",
   "ready-status": "ГОТОВ",
@@ -101,8 +104,5 @@
   "waiting-for-players": "ОЖИДАНИЕ ИГРОКОВ{{notReady}}",
   "waiting-status": "ОЖИДАНИЕ",
   "you": "ВЫ",
-  "you-badge": "ВЫ",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "ВЫ"
 }
