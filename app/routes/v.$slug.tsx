@@ -43,6 +43,7 @@ import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
 import { BridgeError, type BridgeFrameEvent, type VibeSelection } from '@/lib/rmhvibe/bridge';
+import { formatFixPrompt } from '@/lib/rmhvibe/vibe-selection';
 import { useVibeBridge, type VibeBridgeHost } from '@/components/rmhvibe/useVibeBridge';
 import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
@@ -178,6 +179,10 @@ function VibeViewer() {
   const [bridgeFrame, setBridgeFrame] = useState<HTMLIFrameElement | null>(null);
   // Click-to-edit: the element the user picked, and whether picking is armed.
   const [picking, setPicking] = useState(false);
+  // Read by the bridge handler, which must not see a stale value: the page is
+  // untrusted and may send `picked` at any time, so only an armed picker counts.
+  const pickingRef = useRef(false);
+  pickingRef.current = picking;
   const [selection, setSelection] = useState<VibeSelection | null>(null);
   // Runtime errors the page reported (deduped, newest last) that "Fix it" can target.
   const [pageErrors, setPageErrors] = useState<string[]>([]);
@@ -185,10 +190,14 @@ function VibeViewer() {
     ...VIEWER_BRIDGE_HOST,
     onEvent(e: BridgeFrameEvent) {
       if (e.event === 'picked') {
+        if (!pickingRef.current) return;
+        pickingRef.current = false;
         setSelection(e.data as VibeSelection);
         setPicking(false);
         setPanelOpen(true);
       } else if (e.event === 'pick:cancel') {
+        if (!pickingRef.current) return;
+        pickingRef.current = false;
         setPicking(false);
       } else if (e.event === 'error') {
         const message = (e.data as { message: string }).message;
@@ -369,7 +378,7 @@ function VibeViewer() {
     if (!message) return;
     setPanelOpen(true);
     void handleCustomize({
-      prompt: `Fix this runtime error without changing anything else:\n${message}`,
+      prompt: formatFixPrompt(message),
       selection: null,
     });
   }
@@ -495,7 +504,8 @@ function VibeViewer() {
       setLatestHtml(finalHtml);
       if (finalTitle) document.title = `${finalTitle} | RMH Studios`;
       if (!override) setPrompt('');
-      setSelection(null);
+      // A Fix it run ignored the chip, so the chip stays.
+      if (!override) setSelection(null);
       setPageErrors([]);
       setThinking('');
       setContent('');
