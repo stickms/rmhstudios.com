@@ -129,6 +129,84 @@ describe('buildVibePreview', () => {
     );
   });
 
+  it('rejects clearly when the entry itself is still pending', async () => {
+    const files =
+      {
+        'index.tsx':
+          'import App from "./App"; createRoot(',
+      };
+    const err =
+      await buildVibePreview(
+        project(
+          files,
+        ),
+        {
+          pending:
+            [
+              'index.tsx',
+            ],
+        },
+      ).catch(
+        (
+          e,
+        ) =>
+          e,
+      );
+    expect(
+      err,
+    ).toBeInstanceOf(
+      BundleError,
+    );
+    expect(
+      err.message,
+    ).toMatch(
+      /entry/i,
+    );
+    expect(
+      err.message,
+    ).not.toMatch(
+      /unexpected|syntax|parse/i,
+    );
+  });
+
+  it('collects the imported name, not the alias, from a nested importer', () => {
+    const files =
+      {
+        'a/b/C.tsx':
+          "import { B as C } from '../parts/B';",
+        'a/parts/B.tsx':
+          'export const B = 1',
+      };
+    expect(
+      collectImportedNames(
+        files,
+        'a/parts/B.tsx',
+      ),
+    ).toEqual(
+      [
+        'B',
+      ],
+    );
+  });
+
+  it('adds nothing for a namespace import', () => {
+    const files =
+      {
+        'index.tsx':
+          "import * as ns from './B';",
+        'B.tsx':
+          'export const B = 1',
+      };
+    expect(
+      collectImportedNames(
+        files,
+        'B.tsx',
+      ),
+    ).toEqual(
+      [],
+    );
+  });
+
   it('keeps buildVibeHtml strict about missing imports', async () => {
     await expect(
       buildVibeHtml(

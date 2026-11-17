@@ -541,7 +541,12 @@ export async function buildVibePreview(
   project: Pick<VibeProject, 'title' | 'deps' | 'files'>,
   opts: { pending: string[] },
 ): Promise<string> {
-  return bundleProject(project, { stub: { pending: new Set(opts.pending) } });
+  // A pending file is still being written: leave it out of the file set so it can
+  // never be picked as the entry (a truncated entry would surface as an esbuild
+  // parse error) and so imports of it resolve to a placeholder.
+  const pending = new Set(opts.pending);
+  const files = Object.fromEntries(Object.entries(project.files).filter(([p]) => !pending.has(p)));
+  return bundleProject({ ...project, files }, { stub: { pending } });
 }
 
 async function bundleProject(
