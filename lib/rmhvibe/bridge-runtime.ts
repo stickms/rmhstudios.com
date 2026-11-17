@@ -13,40 +13,56 @@
  * arrives with the picking task.
  */
 
-export const BRIDGE_MARKER = 'data-rmhvibe-bridge';
+export const BRIDGE_MARKER =
+  'data-rmhvibe-bridge';
 
 export const BRIDGE_RUNTIME_JS = `(function () {
   if (window.RMHVibe) return;
   var TAG = '__rmhvibe';
   var host = 'none';
-  var pending = {};
+  var pending = Object.create(null);
   var nextId = 1;
   var roomFns = [];
   var memberFns = [];
   var tweakFns = [];
-  var tweakValues = {};
+  var tweakValues = Object.create(null);
   var picking = false;
   var errorCount = 0;
-  var seenErrors = {};
+  var seenErrors = Object.create(null);
   var resolveReady;
   var ready = new Promise(function (r) { resolveReady = r; });
   setTimeout(function () { resolveReady(); }, 1500);
 
   function send(msg) {
     msg[TAG] = 1;
-    try { window.parent.postMessage(msg, '*'); } catch (e) { /* no parent */ }
+    try { window.parent.postMessage(msg, '*'); return true; } catch (e) { return false; }
   }
+
+  function fail(text) { return Promise.reject(new Error('RMHVibe.' + text)); }
+  var KEY_RE = /^[A-Za-z0-9:_.-]{1,64}$/;
+  var KEY_MSG = 'store: key must match [A-Za-z0-9:_.-]{1,64}';
+  function jsonOk(v, max) {
+    try { var s = JSON.stringify(v); return typeof s === 'string' && s.length <= max; } catch (e) { return false; }
+  }
+  // A bare string is accepted as the scope; anything else must be an options object.
+  function optsOf(o) {
+    if (typeof o === 'string') return { scope: o };
+    return o && typeof o === 'object' ? o : {};
+  }
+  function scopeOf(o) { return o.scope === undefined ? 'page' : o.scope; }
+  function badScope(sc) { return sc !== 'page' && sc !== 'user'; }
+  var SCOPE_MSG = "store: scope must be 'page' or 'user'";
 
   function request(op, args) {
     return new Promise(function (resolve, reject) {
       if (host === 'none') { reject(new Error('RMHVibe host unavailable')); return; }
       var id = nextId++;
+      if (!send({ id: id, op: op, args: args })) { reject(new Error('RMHVibe request could not be sent')); return; }
       var timer = setTimeout(function () {
         delete pending[id];
         reject(new Error('RMHVibe request timed out'));
       }, 10000);
       pending[id] = { resolve: resolve, reject: reject, timer: timer };
-      send({ id: id, op: op, args: args });
     });
   }
 
@@ -68,7 +84,7 @@ export const BRIDGE_RUNTIME_JS = `(function () {
 
   function applyTweaks(data) {
     if (!data || typeof data !== 'object') return;
-    tweakValues = {};
+    tweakValues = Object.create(null);
     for (var k in data) {
       if (!Object.prototype.hasOwnProperty.call(data, k)) continue;
       if (!/^[A-Za-z0-9_-]+$/.test(k)) continue;
@@ -134,24 +150,46 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     get picking() { return picking; },
     ready: ready,
     store: {
-      get: function (key, scope) { return request('store.get', { key: key, scope: scope || 'page' }); },
-      set: function (key, value, scope) { return request('store.set', { key: key, scope: scope || 'page', value: value }); },
-      incr: function (key, by, opts) {
-        var a = { key: key, scope: (opts && opts.scope) || 'page', by: by === undefined ? 1 : by };
-        if (opts && opts.oncePerUser) a.oncePerUser = true;
+      get: function (key, o) {
+        o = optsOf(o);
+        if (typeof key !== 'string' || !KEY_RE.test(key)) return fail(KEY_MSG);
+        if (badScope(scopeOf(o))) return fail(SCOPE_MSG);
+        return request('store.get', { key: key, scope: scopeOf(o) });
+      },
+      set: function (key, value, o) {
+        o = optsOf(o);
+        if (typeof key !== 'string' || !KEY_RE.test(key)) return fail(KEY_MSG);
+        if (badScope(scopeOf(o))) return fail(SCOPE_MSG);
+        if (!jsonOk(value, 4096)) return fail('store: value must be JSON of at most 4096 characters');
+        return request('store.set', { key: key, scope: scopeOf(o), value: value });
+      },
+      incr: function (key, by, o) {
+        o = optsOf(o);
+        if (by === undefined) by = 1;
+        if (typeof key !== 'string' || !KEY_RE.test(key)) return fail(KEY_MSG);
+        if (badScope(scopeOf(o))) return fail(SCOPE_MSG);
+        if (typeof by !== 'number' || Math.floor(by) !== by || by < -1000 || by > 1000) return fail('store: by must be an integer from -1000 to 1000');
+        var a = { key: key, scope: scopeOf(o), by: by };
+        if (o.oncePerUser) a.oncePerUser = true;
         return request('store.incr', a);
       },
-      list: function (prefix, opts) {
-        return request('store.list', {
-          prefix: prefix || '',
-          scope: (opts && opts.scope) || 'page',
-          order: (opts && opts.order) || 'key',
-          limit: (opts && opts.limit) || 50
-        });
+      list: function (prefix, o) {
+        o = optsOf(o);
+        if (prefix === undefined) prefix = '';
+        if (typeof prefix !== 'string' || prefix.length > 64) return fail('store: prefix must be a string of at most 64 characters');
+        if (badScope(scopeOf(o))) return fail(SCOPE_MSG);
+        var order = o.order === undefined ? 'key' : o.order;
+        if (order !== 'key' && order !== 'value-desc') return fail("store: order must be 'key' or 'value-desc'");
+        var limit = o.limit === undefined ? 50 : o.limit;
+        if (typeof limit !== 'number' || Math.floor(limit) !== limit || limit < 1 || limit > 100) return fail('store: limit must be an integer from 1 to 100');
+        return request('store.list', { prefix: prefix, scope: scopeOf(o), order: order, limit: limit });
       }
     },
     room: {
-      send: function (data) { return request('room.send', { data: data }); },
+      send: function (data) {
+        if (!jsonOk(data, 2048)) return fail('room: data must be JSON of at most 2048 characters');
+        return request('room.send', { data: data });
+      },
       on: function (fn) { return subscribe(roomFns, fn); },
       members: function () { return request('room.members', {}); },
       onMembers: function (fn) { return subscribe(memberFns, fn); }
@@ -168,18 +206,77 @@ export const BRIDGE_RUNTIME_JS = `(function () {
   };
 })();`;
 
-const MARKUP = `<script ${BRIDGE_MARKER}>${BRIDGE_RUNTIME_JS}</script>`;
-const MODULE_SCRIPT_RE = /<script\b[^>]*\btype\s*=\s*["']?module["']?/i;
+const OPEN_TAG = `<script ${BRIDGE_MARKER}>`;
+const MARKUP = `${OPEN_TAG}${BRIDGE_RUNTIME_JS}</script>`;
+const MODULE_SCRIPT_RE =
+  /<script\b[^>]*\btype\s*=\s*["']?module["']?/i;
 
 /**
  * Insert the runtime once (idempotent on the marker): before the first module
  * script so it is defined first, else before `</head>`, else at the very start.
  */
-export function ensureBridgeRuntime(html: string): string {
-  if (html.includes(BRIDGE_MARKER)) return html;
-  const at = html.search(MODULE_SCRIPT_RE);
-  if (at >= 0) return html.slice(0, at) + MARKUP + html.slice(at);
-  const head = html.search(/<\/head>/i);
-  if (head >= 0) return html.slice(0, head) + MARKUP + html.slice(head);
-  return MARKUP + html;
+export function ensureBridgeRuntime(
+  html: string,
+): string {
+  if (
+    html.includes(
+      OPEN_TAG,
+    )
+  )
+    return html;
+  const at =
+    html.search(
+      MODULE_SCRIPT_RE,
+    );
+  if (
+    at >=
+    0
+  )
+    return (
+      html.slice(
+        0,
+        at,
+      ) +
+      MARKUP +
+      html.slice(
+        at,
+      )
+    );
+  const head =
+    html.search(
+      /<\/head>/i,
+    );
+  if (
+    head >=
+    0
+  )
+    return (
+      html.slice(
+        0,
+        head,
+      ) +
+      MARKUP +
+      html.slice(
+        head,
+      )
+    );
+  const doctype =
+    /^\s*<!doctype[^>]*>/i.exec(
+      html,
+    );
+  const end =
+    doctype
+      ? doctype[0]
+          .length
+      : 0;
+  return (
+    html.slice(
+      0,
+      end,
+    ) +
+    MARKUP +
+    html.slice(
+      end,
+    )
+  );
 }

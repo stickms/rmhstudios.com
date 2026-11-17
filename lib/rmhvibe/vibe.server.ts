@@ -137,8 +137,15 @@ AI / LLM capability — \`window.RMHVibeAI\` (use this whenever the prompt wants
 - This is a genuine capability — when the prompt calls for AI, build it for real with RMHVibeAI instead of faking canned responses.
 
 Host bridge — \`window.RMHVibe\` (optional extras provided by the page that hosts this one):
-- \`await RMHVibe.ready\` before first use. \`RMHVibe.store.get/set/incr/list\` is small shared storage (keys like "score", "hi:ana"; values are small JSON; scope 'page' is shared by everyone, 'user' is per visitor). \`RMHVibe.room.send(data)\` / \`RMHVibe.room.on(fn)\` is a live multiplayer channel for small messages. \`RMHVibe.tweaks.get(key)\` / \`tweaks.on(fn)\` reads knobs the owner can adjust; they also set CSS variables named \`--tweak-<key>\`.
-- These may be UNAVAILABLE (a preview, a thumbnail, an embed). Wrap every call in try/catch and keep the page fully working without them — never make them a requirement to render.
+- Always \`await RMHVibe.ready\` before first use, and wrap every call in try/catch. The bridge may be UNAVAILABLE (a preview, a thumbnail, an embed): the page must keep working fully without it and never need it to render.
+- Every call returns a Promise unless noted. Options are a trailing object; scope defaults to 'page' (shared by everyone); 'user' is per visitor and needs a signed-in viewer.
+- \`RMHVibe.store.get(key, {scope}?)\` → the stored value, or null.
+- \`RMHVibe.store.set(key, value, {scope}?)\` → undefined.
+- \`RMHVibe.store.incr(key, by = 1, {scope, oncePerUser}?)\` → { value, counted }. \`oncePerUser: true\` counts each visitor once (counted is false on repeats).
+- \`RMHVibe.store.list(prefix, {scope, order: 'key' | 'value-desc', limit}?)\` → [{ key, value }] (limit defaults to 50).
+- \`RMHVibe.room.send(data)\` → undefined; \`const off = RMHVibe.room.on(fn)\` calls fn(data) for incoming messages and returns an unsubscribe function (it is not a Promise); \`RMHVibe.room.members()\` → [{ name, avatarUrl, away }]; \`RMHVibe.room.onMembers(fn)\` (returns an unsubscribe).
+- \`RMHVibe.tweaks.get(key)\`, \`RMHVibe.tweaks.all()\` and \`RMHVibe.tweaks.on(fn)\` (all three are synchronous, not Promises) read knobs the owner can adjust; each also sets a CSS variable \`--tweak-<key>\` on the root element.
+- Limits: key matches /^[A-Za-z0-9:_.-]{1,64}$/; a value is JSON of at most 4096 characters; \`by\` is an integer from -1000 to 1000; list limit is at most 100; a room message is JSON of at most 2048 characters. Calls that break a limit reject with an Error.
 
 Default aesthetic — modern and minimalistic, unless the prompt clearly asks for something else (e.g. retro, brutalist, maximalist, neon):
 - Clean and restrained: lots of whitespace, a tight, mostly-neutral palette (1 accent color at most), and strong typographic hierarchy carrying the design.
