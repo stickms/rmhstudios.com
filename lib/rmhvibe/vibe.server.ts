@@ -808,7 +808,22 @@ export async function* generateVibeStream(opts: {
   let newPageId: string | undefined;
   let reservedSlug: string | undefined;
   if (!existingPageId) {
-    reservedSlug = await uniqueSlug(remixSource ? `${remixSource.slug}-remix` : opts.prompt);
+    // slugify caps at 32 chars, so trim the source first or "-remix" would be cut off.
+    reservedSlug = await uniqueSlug(
+      remixSource ? `${remixSource.slug.slice(0, 26)}-remix` : opts.prompt,
+    );
+    // A remix of "the page as it is now" still records which version that was.
+    const parentVersionId = remixSource
+      ? (remixSource.versionId ??
+        (
+          await prisma.vibePageVersion.findFirst({
+            where: { pageId: remixSource.id },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true },
+          })
+        )?.id ??
+        null)
+      : null;
     const created = await prisma.vibePage.create({
       data: {
         slug: reservedSlug,
@@ -821,7 +836,7 @@ export async function* generateVibeStream(opts: {
         ownerId: opts.userId,
         kind: remixSource ? remixSource.kind : (opts.kind ?? 'page'),
         ...(remixSource
-          ? { parentPageId: remixSource.id, parentVersionId: remixSource.versionId }
+          ? { parentPageId: remixSource.id, parentVersionId }
           : {}),
         // Don't screenshot a half-built page; the completion update re-flags it.
         thumbnailStale: false,
