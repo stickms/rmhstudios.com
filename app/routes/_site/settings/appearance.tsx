@@ -1,18 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { prefetchRouteQuery } from '@/lib/route/route-query';
-import { gameAssistsQuery } from '@/lib/settings/prefs.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AppearancePanel } from '@/components/settings/AppearancePanel';
 import { AccessPrefsPanel } from '@/components/access/AccessPrefsPanel';
-import { GameAssistPanel } from '@/components/settings/GameAssistPanel';
 import { SettingsPageBody } from '@/components/settings/SettingsSection';
 
 export const Route = createFileRoute('/_site/settings/appearance')({
   head: () => ({
     meta: [{ title: 'Appearance | RMH Studios' }, { name: 'robots', content: 'noindex' }],
   }),
-  loader: ({ context }) => prefetchRouteQuery(context.queryClient, gameAssistsQuery()),
   component: AppearanceSettingsPage,
 });
 
@@ -30,11 +26,6 @@ function AppearanceSettingsPage() {
     >
       <SettingsPageBody>
         <AppearancePanel />
-        {/* Game assists sit beside the site's own accessibility controls
-            rather than on their own page: somebody looking for "make this
-            usable" looks in one place, and the two halves of that answer —
-            the chrome and the games — belong together. */}
-        <GameAssistPanel />
         <AccessPrefsPanel />
       </SettingsPageBody>
     </PageLayout>

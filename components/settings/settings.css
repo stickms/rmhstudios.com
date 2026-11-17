@@ -9,6 +9,11 @@
   align-items: flex-start;
   gap: 16px;
 }
+/* The heading's station carries 22px of space above its words (spine.css); the section's own control drops by the
+   same amount so it lines up with the heading instead of floating above it. */
+.settings-group__head > .shrink-0 {
+  padding-block-start: 18px;
+}
 /* The station's heading sits inside a flex child, so its dot is positioned against the heading itself. */
 .settings-group__title {
   margin: 0;
@@ -68,24 +73,8 @@ a.settings-row:hover {
   background: var(--site-bg-subtle);
 }
 
-/* A radio list: one row per choice; the chosen one is ink at 600 with a mark at the end, never colour alone (A2). */
-.settings-choice {
-  border-radius: 0;
-  inline-size: 100%;
-  background: none;
-  border-inline: 0;
-  border-block-start: 0;
-  color: inherit;
-  text-align: start;
-  cursor: pointer;
-}
-.settings-choice:hover {
-  background: var(--site-bg-subtle);
-}
-.settings-choice[aria-checked='true'] .settings-row__name {
-  font-weight: 600;
-}
-.settings-choice__mark {
+/* The chevron at the end of a destination row. */
+.settings-row__mark {
   flex: none;
   inline-size: 16px;
   block-size: 16px;

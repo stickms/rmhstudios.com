@@ -15,6 +15,11 @@
 .site-shell {
   min-block-size: 100dvh;
   background: var(--site-bg);
+  /* A bought theme's glow wash (R1 amendment, lib/themes/tokens.ts `themeWash`): faint, on the first screen only, and
+     scrolling with the page, never a fixed layer (the iOS bar contract). Unset without a user theme, so flat. */
+  background-image: var(--site-theme-wash, none);
+  background-size: 100% 100vh;
+  background-repeat: no-repeat;
   color: var(--site-text);
 }
 

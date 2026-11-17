@@ -169,7 +169,6 @@ export function Providers({
   const queryClient = useRouter().options.context.queryClient;
   const session = useLiveSession();
   const style = useThemeStore((s) => s.style);
-  const preview = useThemeStore((s) => s.preview);
   const accent = useThemeStore((s) => s.accent);
   const fontScale = useThemeStore((s) => s.fontScale);
   const density = useThemeStore((s) => s.density);
@@ -357,9 +356,7 @@ export function Providers({
     }
   }, []);
 
-  // Sync style class + accent override to <html> and persist. `preview` (the
-  // gallery's hover "try it on") is rendered in place of the committed style but
-  // never persisted, so hovering a swatch previews instantly without saving.
+  // Sync style class + accent override to <html> and persist.
   useEffect(() => {
     // On the very first render the Zustand store still holds DEFAULT_STYLE
     // because localStorage hasn't hydrated yet. The inline ThemeScript
@@ -373,14 +370,13 @@ export function Providers({
     }
 
     const html = document.documentElement;
-    const activeStyle = preview ?? style;
+    const activeStyle = style;
     // Remove all style classes
     html.classList.remove(...STYLE_CLASSES);
     // Add active style class only on non-app pages (default needs no class — uses :root tokens)
     if (activeStyle !== 'default' && !isAppRoute) {
       html.classList.add(`style-${activeStyle}`);
     }
-    // Persist the COMMITTED style (not a transient preview).
     writeString('rmh-style', style);
 
     // Marketplace user theme (§14): a full v2 retint set inline over the built-in
@@ -486,7 +482,6 @@ export function Providers({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     style,
-    preview,
     accent,
     isAppRoute,
     fontScale,

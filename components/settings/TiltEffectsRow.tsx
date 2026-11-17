@@ -1,13 +1,11 @@
 /**
- * TiltEffectsRow (§5.5x C.3) — the iOS motion-permission gate for tilt-driven glass
- * light. On iOS, `DeviceOrientationEvent.requestPermission()` needs a user gesture,
- * so useLiquidBackground never prompts on load; this row does the gesture-grant.
+ * TiltEffectsRow (§5.5x C.3) — the iOS motion-permission gate for the games that steer or look around by tilting
+ * the device (`lib/device-attitude.ts`, `lib/neon-driftway/gyro.ts`). On iOS,
+ * `DeviceOrientationEvent.requestPermission()` needs a user gesture, so this row does the gesture-grant.
  *
- * Rendered ONLY where that permission gate exists (iOS Safari). Everywhere else the
- * event fires without a prompt and useLiquidBackground auto-enables tilt, so no
- * toggle is needed and this component renders nothing. Consent persists as
- * `rmh-motion-ok`; toggling fires `rmh:tilt-consent` so the (already-mounted) hook
- * starts/stops listening live without a reload.
+ * Rendered ONLY where that permission gate exists (iOS Safari). Everywhere else the event fires without a prompt, so
+ * no toggle is needed and this component renders nothing. Consent persists as `rmh-motion-ok`; toggling fires
+ * `rmh:tilt-consent` so an already-running game starts or stops listening without a reload.
  */
 
 import {
@@ -107,10 +105,10 @@ export function TiltEffectsRow() {
     );
   const desc =
     t(
-      'tilt-effects-desc-jelly',
+      'tilt-effects-desc-games',
       {
         defaultValue:
-          'Let the jelly catch light as you tilt your device.',
+          'Let games react when you tilt your device.',
       },
     );
 

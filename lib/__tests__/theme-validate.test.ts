@@ -62,14 +62,15 @@ describe('validateTheme — the derived stylesheet', () => {
       !r.ok
     )
       return;
-    // Steel T3 and Appendix A cut the derivation from ~30 variables to the section-2 names (13).
+    // Steel T3 and Appendix A cut the derivation from ~30 variables to the section-2 names (13), plus the two R1
+    // amendment gradients a bought theme carries (`--site-theme-wash`, `--site-accent-fill`).
     expect(
       Object.keys(
         r.vars,
       )
         .length,
     ).toBe(
-      13,
+      15,
     );
     expect(
       r
@@ -508,6 +509,61 @@ describe('validateThemeForPublish — the contrast gate', () => {
       r.code,
     ).toBe(
       'PRICE_RANGE',
+    );
+  });
+});
+
+describe('themeCssVars — the R1 amendment gradients', () => {
+  it('keeps every surface opaque and drops the accent sheen rather than fail AA', async () => {
+    const {
+      themeCssVars,
+      DEFAULT_THEME_TOKENS,
+    } =
+      await import('@/lib/themes/tokens');
+    const vars =
+      themeCssVars(
+        DEFAULT_THEME_TOKENS,
+      );
+    for (const name of [
+      '--site-surface',
+      '--site-surface-hover',
+      '--site-surface-active',
+      '--site-bg-subtle',
+    ]) {
+      expect(
+        vars[
+          name
+        ],
+      ).toMatch(
+        /^#[0-9a-f]{6}$/i,
+      );
+    }
+    expect(
+      vars[
+        '--site-theme-wash'
+      ],
+    ).toContain(
+      'radial-gradient(',
+    );
+    // An accent the glow mix would push below AA against its foreground gets no sheen.
+    const tight =
+      themeCssVars(
+        {
+          ...DEFAULT_THEME_TOKENS,
+          accent:
+            '#767676',
+          accentFg:
+            '#ffffff',
+          glow2:
+            '#ffffff',
+        },
+      );
+    expect(
+      tight[
+        '--site-accent-fill'
+      ],
+    ).toBe(
+      'none',
     );
   });
 });

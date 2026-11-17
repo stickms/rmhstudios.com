@@ -465,7 +465,7 @@ export function SessionManager() {
                     key={
                       s.id
                     }
-                    className="flex items-center gap-3 px-3 py-2"
+                    className="flex items-center gap-3 py-2"
                   >
                     <Icon
                       className="h-4 w-4 shrink-0 text-site-text-muted"

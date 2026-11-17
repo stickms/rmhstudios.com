@@ -13,6 +13,7 @@ import {
   type PresenceVisibility,
 } from '@/lib/presence-types';
 import { SettingsSection } from '@/components/settings/SettingsSection';
+import { SettingsSelectRow } from '@/components/settings/SettingsSelectRow';
 import { setPresencePrefsApi } from '@/lib/preferences/preferences.contract';
 import { presencePrefsQuery } from '@/lib/settings/prefs.queries';
 import { api } from '@/lib/contract/client';
@@ -132,63 +133,43 @@ export function PresencePrivacyControls() {
         },
       )}
     >
-      <fieldset
+      <SettingsSelectRow
+        label={t(
+          'presence-who',
+          {
+            defaultValue:
+              'Who can see my presence',
+          },
+        )}
+        value={
+          visibility
+        }
+        options={PRESENCE_VISIBILITIES.map(
+          (
+            v,
+          ) => ({
+            value:
+              v,
+            label:
+              VIS_LABEL[
+                v
+              ],
+          }),
+        )}
+        onChange={(
+          v,
+        ) => {
+          persist(
+            {
+              presenceVisibility:
+                v as PresenceVisibility,
+            },
+          );
+        }}
         disabled={
           !loaded
         }
-      >
-        <legend className="mb-2 text-sm font-medium text-site-text">
-          {t(
-            'presence-who',
-            {
-              defaultValue:
-                'Who can see my presence',
-            },
-          )}
-        </legend>
-        <div className="flex flex-col gap-1">
-          {PRESENCE_VISIBILITIES.map(
-            (
-              v,
-            ) => (
-              <label
-                key={
-                  v
-                }
-                className="flex cursor-pointer items-center gap-3 rounded-site-sm px-3 py-2 hover:bg-site-surface-hover"
-              >
-                <input
-                  type="radio"
-                  name="presence-visibility"
-                  value={
-                    v
-                  }
-                  checked={
-                    visibility ===
-                    v
-                  }
-                  onChange={() => {
-                    persist(
-                      {
-                        presenceVisibility:
-                          v,
-                      },
-                    );
-                  }}
-                  className="accent-site-accent"
-                />
-                <span className="text-sm text-site-text">
-                  {
-                    VIS_LABEL[
-                      v
-                    ]
-                  }
-                </span>
-              </label>
-            ),
-          )}
-        </div>
-      </fieldset>
+      />
 
       <div className="chrome-row flex items-center justify-between gap-3 border-t border-site-border pt-3">
         <div className="min-w-0">

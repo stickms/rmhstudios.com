@@ -6,7 +6,6 @@
  */
 import { getAltTextSettingApi } from '@/lib/feed/alt-text.contract';
 import { getAutoDeleteApi } from '@/lib/posts-plus/auto-delete.contract';
-import { getAssistsApi } from '@/lib/game/assist.contract';
 import {
   getCallAnswerApi,
   getCallPrivacyApi,
@@ -48,22 +47,6 @@ export const autoDeleteSettingQuery =
       ],
       getAutoDeleteApi,
       undefined,
-      {
-        staleTime: 30_000,
-      },
-    );
-
-export const gameAssistsQuery =
-  () =>
-    contractQuery(
-      [
-        'settings',
-        'game-assists',
-      ],
-      getAssistsApi,
-      {
-        retries: 0,
-      },
       {
         staleTime: 30_000,
       },
@@ -191,5 +174,16 @@ export const discoveryMemoriesQuery =
       },
     );
 
-export const emailPrefsQuery = () =>
-  contractQuery(['settings', 'email-prefs'], getEmailPrefsApi, undefined, { staleTime: 30_000 });
+export const emailPrefsQuery =
+  () =>
+    contractQuery(
+      [
+        'settings',
+        'email-prefs',
+      ],
+      getEmailPrefsApi,
+      undefined,
+      {
+        staleTime: 30_000,
+      },
+    );

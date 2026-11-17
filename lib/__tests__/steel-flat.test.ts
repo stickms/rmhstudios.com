@@ -5,6 +5,10 @@
  *    lives in exactly two files, `app/styles/steel-chrome.css` (the chrome gradients, phase 2) and
  *    `components/shell/globe-nav.css` (the globe's static first paint, phase 3). Neither exists yet; they are allowed
  *    by name so those phases need no change here.
+ *    R1 amendment (owner, 2026-11-17): a bought user theme's two gradients reach the page only as the custom
+ *    properties `--site-theme-wash` and `--site-accent-fill`, derived and safety-checked in `lib/themes/tokens.ts` and
+ *    `lib/themes/validate.ts`. Site CSS reads them through `var()` and still writes no gradient of its own, so the
+ *    count below stays at zero.
  *  - T3 and Appendix A: no stylesheet, class string or style object reads a deleted token (`--site-glass-*`,
  *    `--site-jelly-*`, `--site-arc-*`, `--site-shadow*`, `--site-surface-opaque`, `--site-border-bright`,
  *    `--site-text-dim`, `--site-accent-dim`, or their Tailwind utilities).

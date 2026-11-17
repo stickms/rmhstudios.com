@@ -1,16 +1,24 @@
 /**
- * Accent-color picker: recolor the highlight (`--site-accent`) on top of whatever
- * theme is active, or fall back to the theme's own accent. Curated swatches only,
- * so every choice keeps readable contrast (see lib/appearance.ts). Selecting one
- * applies instantly and — for signed-in users — syncs to the account (handled in
- * Providers).
+ * Accent colour (Steel section 10, Settings): one row, a dropdown of the curated presets (lib/appearance.ts), so every
+ * choice keeps readable contrast. "Theme default" clears the override. Applies at once and, signed in, syncs to the
+ * account (Providers).
+ *
+ * The custom hex accent on the Appearance page outranks a preset. It shows here as "Custom" so the row never claims a
+ * preset that is not on screen, and choosing anything here clears it, so the choice is always the one you see.
  */
 
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check } from 'lucide-react';
+import { Select } from '@/components/ui/select';
 import { ACCENT_PRESETS } from '@/lib/appearance';
 import { useThemeStore } from '@/stores/themeStore';
-import { cn } from '@/lib/utils';
+import { api } from '@/lib/contract/client';
+import { setAppearancePrefsApi } from '@/lib/preferences/preferences.contract';
+
+const DEFAULT =
+  '';
+const CUSTOM =
+  '__custom__';
 
 export function AccentPicker() {
   const {
@@ -33,154 +41,164 @@ export function AccentPicker() {
       ) =>
         s.setAccent,
     );
-
-  const defaultLabel =
-    t(
-      'settings-accent-default',
-      {
-        defaultValue:
-          'Theme default',
-      },
-    );
-  const selectedLabel =
-    ACCENT_PRESETS.find(
+  const customAccent =
+    useThemeStore(
       (
-        p,
+        s,
       ) =>
-        p.id ===
-        accent,
-    )
-      ?.label ??
-    (accent ===
-    null
-      ? defaultLabel
-      : null);
+        s.customAccent,
+    );
+  const setCustomAccent =
+    useThemeStore(
+      (
+        s,
+      ) =>
+        s.setCustomAccent,
+    );
+  const labelId =
+    useId();
+  const hintId =
+    useId();
+
+  const value =
+    customAccent
+      ? CUSTOM
+      : (accent ??
+        DEFAULT);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div
-        role="radiogroup"
-        aria-label={t(
-          'settings-accent-aria',
-          {
-            defaultValue:
-              'Accent color',
-          },
-        )}
-        className="flex flex-wrap gap-2.5"
-      >
-        {/* Theme default — clears any accent override. */}
-        <button
-          type="button"
-          role="radio"
-          aria-checked={
-            accent ===
-            null
+    <div
+      id="accent"
+      className="settings-row"
+    >
+      <span className="settings-row__text">
+        <span
+          id={
+            labelId
           }
-          onClick={() =>
-            setAccent(
-              null,
-            )
-          }
-          title={
-            defaultLabel
-          }
-          className={cn(
-            'surface-field flex h-11 w-11 items-center justify-center rounded-full border-2 border-dashed transition-colors',
-            accent ===
-              null
-              ? 'border-site-accent ring-2 ring-site-accent'
-              : 'border-site-border hover:border-site-text/40',
-          )}
+          className="settings-row__name block"
         >
-          {/* A dot in the live theme accent hints "use the theme's own color".
-            The DASHED border is what tells it apart from a preset: on the
-            default theme the theme accent is near-black, so this swatch and
-            the "Ink" preset were the same two circles. */}
-          <span
-            aria-hidden
-            className="h-4 w-4 rounded-full bg-site-accent"
-          />
-          <span className="sr-only">
-            {
-              defaultLabel
-            }
-          </span>
-        </button>
-
-        {ACCENT_PRESETS.map(
-          (
-            preset,
-          ) => {
-            const active =
-              accent ===
-              preset.id;
-            return (
-              <button
-                key={
-                  preset.id
-                }
-                type="button"
-                role="radio"
-                aria-checked={
-                  active
-                }
-                onClick={() =>
-                  setAccent(
-                    preset.id,
-                  )
-                }
-                title={
-                  preset.label
-                }
-                className={cn(
-                  'flex h-11 w-11 items-center justify-center rounded-full border-2 transition-transform',
-                  active
-                    ? 'border-site-text ring-2 ring-site-text/40'
-                    : 'border-site-border',
-                )}
-                style={{
-                  background:
-                    preset.value,
-                }}
-              >
-                {active && (
-                  <Check
-                    className="h-5 w-5"
-                    aria-hidden
-                    style={{
-                      color:
-                        preset.fg,
-                    }}
-                  />
-                )}
-                <span className="sr-only">
-                  {
-                    preset.label
-                  }
-                </span>
-              </button>
-            );
-          },
-        )}
-      </div>
-
-      {/* The swatches' only differentiator was colour — the names existed
-          purely as sr-only text, so a colour-blind reader had nothing to go
-          on. Naming the current choice in words fixes that for the state that
-          matters most. */}
-      {selectedLabel ? (
-        <p className="text-xs text-site-text-muted">
           {t(
-            'settings-accent-selected',
+            'settings-accent-title',
             {
               defaultValue:
-                'Selected: {{name}}',
-              name: selectedLabel,
+                'Accent color',
             },
           )}
-        </p>
-      ) : null}
+        </span>
+        <span
+          id={
+            hintId
+          }
+          className="settings-row__hint block"
+        >
+          {t(
+            'settings-accent-row-hint',
+            {
+              defaultValue:
+                'Recolours buttons and highlights.',
+            },
+          )}
+        </span>
+      </span>
+      <Select
+        value={
+          value
+        }
+        onChange={(
+          e,
+        ) => {
+          const next =
+            e
+              .target
+              .value;
+          if (
+            next ===
+            CUSTOM
+          )
+            return;
+          if (
+            customAccent
+          ) {
+            setCustomAccent(
+              null,
+            );
+            void api(
+              setAppearancePrefsApi,
+              {
+                body: {
+                  customAccent:
+                    null,
+                },
+              },
+            ).catch(
+              () => {},
+            );
+          }
+          setAccent(
+            next ===
+              DEFAULT
+              ? null
+              : next,
+          );
+        }}
+        aria-labelledby={
+          labelId
+        }
+        aria-describedby={
+          hintId
+        }
+        controlSize="sm"
+        containerClassName="w-36 shrink-0 sm:w-40"
+      >
+        <option
+          value={
+            DEFAULT
+          }
+        >
+          {t(
+            'settings-accent-default',
+            {
+              defaultValue:
+                'Theme default',
+            },
+          )}
+        </option>
+        {ACCENT_PRESETS.map(
+          (
+            p,
+          ) => (
+            <option
+              key={
+                p.id
+              }
+              value={
+                p.id
+              }
+            >
+              {
+                p.label
+              }
+            </option>
+          ),
+        )}
+        {customAccent && (
+          <option
+            value={
+              CUSTOM
+            }
+            disabled
+          >
+            {t(
+              'settings-accent-custom',
+              {
+                defaultValue:
+                  'Custom',
+              },
+            )}
+          </option>
+        )}
+      </Select>
     </div>
   );
 }

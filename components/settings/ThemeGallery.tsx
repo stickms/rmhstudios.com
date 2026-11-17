@@ -1,18 +1,11 @@
 /**
- * The theme picker (Steel section 10, Settings): the two editions as a radio list of rows on rules, the way every
- * other choice on the page is set (`.settings-choice`). No swatch cards. Each row names the edition and says in one
- * line what it is; the chosen row is ink at 600 with a check at the end, so state is never colour alone (A2).
- *
- * Hovering or focusing a row previews the edition on the whole page, and leaving the list reverts it to the saved one.
+ * The theme picker (Steel section 10, Settings): one settings row, the name and a line on what it does at the start,
+ * a dropdown of the two editions at the end. Choosing an edition applies it at once; there is no hover preview.
  */
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-} from 'react';
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check } from 'lucide-react';
+import { Select } from '@/components/ui/select';
 import {
   SITE_STYLES,
   useThemeStore,
@@ -40,169 +33,97 @@ export function ThemeGallery() {
       ) =>
         s.setStyle,
     );
-  const setPreview =
-    useThemeStore(
-      (
-        s,
-      ) =>
-        s.setPreview,
-    );
-
-  // §17.3 no-freeze: each preview applies the theme site-wide by swapping the root
-  // `.style-*` class — a full-document style recalc across every backdrop surface
-  // (~20–40ms each, traced). Sweeping the pointer across the grid used to fire one
-  // per swatch crossed, stacking into the reported freeze. Debounce so a fast sweep
-  // collapses to the swatch actually settled on; the previous swatch's hover-out and
-  // a real click both apply immediately (clearing the pending debounce), so the
-  // preview still feels instant.
-  const debounceRef =
-    useRef<ReturnType<
-      typeof setTimeout
-    > | null>(
-      null,
-    );
-  const clearPending =
-    () => {
-      if (
-        debounceRef.current
-      ) {
-        clearTimeout(
-          debounceRef.current,
-        );
-        debounceRef.current =
-          null;
-      }
-    };
-  const previewSoon =
-    useCallback(
-      (
-        id: SiteStyle,
-      ) => {
-        clearPending();
-        debounceRef.current =
-          setTimeout(
-            () =>
-              setPreview(
-                id,
-              ),
-            45,
-          );
-      },
-      [
-        setPreview,
-      ],
-    );
-  const previewNow =
-    useCallback(
-      (
-        id: SiteStyle | null,
-      ) => {
-        clearPending();
-        setPreview(
-          id,
-        );
-      },
-      [
-        setPreview,
-      ],
-    );
-  useEffect(
-    () =>
-      clearPending,
-    [],
-  );
+  const labelId =
+    useId();
+  const hintId =
+    useId();
 
   return (
-    <div
-      role="radiogroup"
-      aria-label={t(
-        'settings-edition-aria',
-        {
-          defaultValue:
-            'Edition',
-        },
-      )}
-      onMouseLeave={() =>
-        previewNow(
-          null,
-        )
-      }
-    >
-      {SITE_STYLES.map(
-        (
-          s,
-        ) => {
-          const active =
-            style ===
-            s.id;
-          return (
-            <button
+    <div className="settings-row">
+      <span className="settings-row__text">
+        <span
+          id={
+            labelId
+          }
+          className="settings-row__name block"
+        >
+          {t(
+            'settings-theme-label',
+            {
+              defaultValue:
+                'Theme',
+            },
+          )}
+        </span>
+        <span
+          id={
+            hintId
+          }
+          className="settings-row__hint block"
+        >
+          {t(
+            'settings-theme-hint',
+            {
+              defaultValue:
+                'Day is a light page; Night is near-black.',
+            },
+          )}
+        </span>
+      </span>
+      <Select
+        value={
+          style
+        }
+        onChange={(
+          e,
+        ) =>
+          setStyle(
+            e
+              .target
+              .value as SiteStyle,
+          )
+        }
+        aria-labelledby={
+          labelId
+        }
+        aria-describedby={
+          hintId
+        }
+        controlSize="sm"
+        containerClassName="w-36 shrink-0 sm:w-40"
+      >
+        {SITE_STYLES.map(
+          (
+            s,
+          ) => (
+            <option
               key={
                 s.id
               }
-              type="button"
-              role="radio"
-              aria-checked={
-                active
+              value={
+                s.id
               }
-              onClick={() => {
-                clearPending();
-                setStyle(
-                  s.id,
-                );
-              }}
-              onMouseEnter={() =>
-                previewSoon(
-                  s.id,
-                )
-              }
-              onFocus={() =>
-                previewNow(
-                  s.id,
-                )
-              }
-              onBlur={() =>
-                previewNow(
-                  null,
-                )
-              }
-              className="settings-row settings-choice"
             >
-              <span className="settings-row__text">
-                <span className="settings-row__name block">
-                  {
-                    s.label
-                  }
-                </span>
-                <span className="settings-row__hint block">
-                  {s.id ===
-                  'graphite'
-                    ? t(
-                        'settings-edition-night-hint',
-                        {
-                          defaultValue:
-                            'A near-black page with white ink.',
-                        },
-                      )
-                    : t(
-                        'settings-edition-day-hint',
-                        {
-                          defaultValue:
-                            'A light page with black ink.',
-                        },
-                      )}
-                </span>
-              </span>
-              {active && (
-                <Check
-                  className="settings-choice__mark"
-                  aria-hidden
-                />
-              )}
-            </button>
-          );
-        },
-      )}
+              {s.id ===
+              'graphite'
+                ? t(
+                    'settings-edition-night',
+                    {
+                      defaultValue:
+                        'Night',
+                    },
+                  )
+                : t(
+                    'settings-edition-day',
+                    {
+                      defaultValue:
+                        'Day',
+                    },
+                  )}
+            </option>
+          ),
+        )}
+      </Select>
     </div>
   );
 }
