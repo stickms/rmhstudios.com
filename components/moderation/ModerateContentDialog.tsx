@@ -7,7 +7,7 @@
  * Callers render it only for an admin; the endpoint enforces that anyway.
  */
 
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog,
@@ -81,23 +81,28 @@ export function ModerateContentDialog({
   const [timeoutDays, setTimeoutDays] = useState<string>('7');
   const [submitting, setSubmitting] = useState(false);
 
-  // Fresh form every time the dialog opens.
-  useEffect(() => {
-    if (!open) return;
-    setAction(defaultAction);
-    setReason('');
-    const initial: Record<string, string> = {};
-    for (const f of EDITABLE_FIELDS[entityType]) initial[f.key] = current?.[f.key] ?? '';
-    setFields(initial);
-    setStrike(false);
-    setStrikeDays('90');
-    setTimeoutOn(false);
-    setFeature(DEFAULT_FEATURE[entityType]);
-    setTimeoutDays('7');
-    setSubmitting(false);
-    // `current` is read once per open on purpose: a live update mid-edit must not clobber the form.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, entityType, defaultAction]);
+  // Fresh form every time the dialog opens: reset during render on the
+  // closed -> open transition (React's "adjust state when a prop changes"
+  // pattern), so no effect runs and the first open frame is already clean.
+  // `current` is read once per open on purpose: a live update mid-edit must
+  // not clobber the form.
+  const [wasOpen, setWasOpen] = useState(false);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setAction(defaultAction);
+      setReason('');
+      const initial: Record<string, string> = {};
+      for (const f of EDITABLE_FIELDS[entityType]) initial[f.key] = current?.[f.key] ?? '';
+      setFields(initial);
+      setStrike(false);
+      setStrikeDays('90');
+      setTimeoutOn(false);
+      setFeature(DEFAULT_FEATURE[entityType]);
+      setTimeoutDays('7');
+      setSubmitting(false);
+    }
+  }
 
   const ACTION_LABELS: Record<ModerationAction, string> = {
     remove: t('moderate-action-remove', { defaultValue: 'Remove' }),

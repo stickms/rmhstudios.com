@@ -5,7 +5,8 @@
  * user's row, as rows on rules.
  */
 
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,8 +49,6 @@ export function UserModerationPanel({
   const featureLabels = useFeatureLabels();
   const timeoutLabel = useTimeoutLabel();
   const ids = useId();
-  const [data, setData] = useState<AdminUserModeration | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [liftingId, setLiftingId] = useState<string | null>(null);
   const [form, setForm] = useState<Form>(null);
@@ -58,27 +57,24 @@ export function UserModerationPanel({
   const [days, setDays] = useState('7');
   const [banDays, setBanDays] = useState('7');
 
-  const load = useCallback(async () => {
-    try {
-      const next = await api(getAdminUserModerationApi, { params: { id: userId } });
-      setData(next);
-      onChanged({
-        activeStrikes: next.activeStrikes,
-        activeRestrictions: next.restrictions.filter((r) => r.active).length,
-        banned: !!next.bannedUntil,
-      });
-    } catch {
-      toast.error(t('mod-load-failed', { defaultValue: 'Could not load this user’s record.' }));
-    } finally {
-      setLoading(false);
-    }
-    // onChanged is a fresh closure per render of the table; reading it at call time is enough.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, t]);
+  // The record is client-owned admin state, loaded when the panel opens.
+  const query = useQuery({
+    queryKey: ['admin', 'user-moderation', userId],
+    queryFn: () => api(getAdminUserModerationApi, { params: { id: userId } }),
+    staleTime: 0,
+  });
+  const data: AdminUserModeration | undefined = query.data;
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  /** Re-read the record after an action and hand the table its new counts. */
+  const load = async () => {
+    const { data: next } = await query.refetch();
+    if (!next) return;
+    onChanged({
+      activeStrikes: next.activeStrikes,
+      activeRestrictions: next.restrictions.filter((r) => r.active).length,
+      banned: !!next.bannedUntil,
+    });
+  };
 
   const openForm = (f: Form) => {
     setForm((cur) => (cur === f ? null : f));
@@ -149,14 +145,20 @@ export function UserModerationPanel({
     }
   };
 
-  if (loading) {
+  if (query.isPending) {
     return (
-      <div className="flex justify-center py-4 text-site-text-muted">
+      <div className="order-last flex basis-full justify-center py-4 text-site-text-muted">
         <Spinner />
       </div>
     );
   }
-  if (!data) return null;
+  if (!data) {
+    return (
+      <p className="t-body order-last basis-full text-site-danger">
+        {t('mod-load-failed', { defaultValue: 'Could not load this user’s record.' })}
+      </p>
+    );
+  }
 
   const activeRestrictions = data.restrictions.filter((r) => r.active).length;
 
