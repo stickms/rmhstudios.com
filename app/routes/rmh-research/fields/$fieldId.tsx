@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import FieldPage from '@/components/rmh-research/FieldPage';
 import { getField, isFieldId } from '@/lib/rmh-research/fields';
+import { researchCardPath } from '@/lib/rmh-research/og';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 
 export const Route = createFileRoute('/rmh-research/fields/$fieldId')({
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/rmh-research/fields/$fieldId')({
         title: `${field.name} — RMH Research`,
         description: `${field.name} at RMH Research: the papers, the people and the field's most resonant work.`,
         path,
+        image: researchCardPath('field', params.fieldId),
       }),
       links: [buildCanonical(path)],
     };

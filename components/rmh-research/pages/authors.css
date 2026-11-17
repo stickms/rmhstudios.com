@@ -54,7 +54,7 @@
 .rmhr-root .aut-plot { position: relative; height: clamp(110px, 30svh, 300px); border-bottom: 1px solid var(--ink); border-inline-start: 1px solid var(--rule); }
 .rmhr-root .aut-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; }
 .rmhr-root .aut-bar { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; padding-inline: 1px; }
-.rmhr-root .aut-bf { position: relative; display: block; width: 100%; background: var(--rule); height: calc(var(--te) * var(--v) * 100%); }
+.rmhr-root .aut-bf { position: relative; display: block; width: 100%; background: var(--mute); height: calc(var(--te) * var(--v) * 100%); }
 .rmhr-root .aut-cf { position: absolute; inset: 0; background: var(--ink); opacity: var(--te); }
 .rmhr-root .aut-sq { position: absolute; inset-inline-start: 0; bottom: 0; width: calc(var(--sw) * 100%); height: calc(var(--sh) * 100%); border: 1px solid var(--ink); opacity: var(--te); }
 .rmhr-root .aut-line { position: absolute; inset-inline: 0; bottom: calc(var(--sh) * 100%); border-top: 1px dashed var(--ink); opacity: var(--te); }

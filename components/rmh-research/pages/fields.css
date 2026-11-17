@@ -53,7 +53,7 @@
 .rmhr-root .fld-bars { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); align-items: end; height: clamp(180px, 34svh, 340px); border-bottom: 1px solid var(--ink); }
 .rmhr-root .fld-bar { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; padding-inline: clamp(1px, 0.4vw, 6px); min-width: 0; }
 .rmhr-root .fld-bv { font-size: 12px; color: var(--mute); line-height: 1.6; }
-.rmhr-root .fld-bf { display: block; width: 100%; background: var(--rule); height: calc(var(--te) * var(--v) * (100% - 24px)); min-height: 0; }
+.rmhr-root .fld-bf { display: block; width: 100%; background: var(--mute); height: calc(var(--te) * var(--v) * (100% - 24px)); min-height: 0; }
 .rmhr-root .fld-bf.is-peak { background: var(--ink); }
 .rmhr-root .fld-bars:not(:has(.fld-bv)) .fld-bf { height: calc(var(--te) * var(--v) * 100%); }
 .rmhr-root .fld-axis { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); margin-top: 8px; font-size: 12px; color: var(--mute); }

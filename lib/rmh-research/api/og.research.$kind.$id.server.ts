@@ -18,7 +18,8 @@ function cardFor(kind: string, id: string): PageCardData | null {
       lead: getField(paper.field).name,
       title: paper.title,
       subtitle: `${authorLine(paper, authorsOf(paper))} · ${paper.venue}, ${paper.year}`,
-      path: `/rmh-research/paper/${paper.id}`,
+      // Paper ids are long enough that the URL runs off the card; the title says which paper it is.
+      path: null,
       stats: [
         { value: String(res.raw), label: 'cited by', lead: true },
         { value: String(res.score), label: 'resonance' },
@@ -39,7 +40,6 @@ function cardFor(kind: string, id: string): PageCardData | null {
       stats: [
         { value: String(m.r), label: 'r-index', lead: true },
         { value: String(m.h), label: 'h-index' },
-        { value: String(m.papers), label: 'papers' },
       ],
     };
   }
