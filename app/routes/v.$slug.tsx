@@ -10,7 +10,7 @@
  * the server reserves its slug. The source page is never changed by a visitor.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute, notFound, Link, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
@@ -49,22 +49,16 @@ import { resolveTweakValues, validateTweakValues, type TweakSpec, type TweakValu
 import { vibeTweaksApi } from '@/lib/rmhvibe/vibe-page.contract';
 import { api } from '@/lib/contract/client';
 import { toast } from '@/lib/toast';
-import { BridgeError, type BridgeFrameEvent, type VibeSelection } from '@/lib/rmhvibe/bridge';
+import { type BridgeFrameEvent, type VibeSelection } from '@/lib/rmhvibe/bridge';
 import { formatFixPrompt } from '@/lib/rmhvibe/vibe-selection';
-import { useVibeBridge, type VibeBridgeHost } from '@/components/rmhvibe/useVibeBridge';
+import { useVibeBridge } from '@/components/rmhvibe/useVibeBridge';
+import { createVibeHostHandlers } from '@/components/rmhvibe/vibe-host-handlers';
 import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 // Background-build polling cadence + guards (see the generating-status effect).
-// Nothing backs the store and room ops yet: they are refused until those handlers
-// land. Frame events (picked / pick:cancel / error) are handled in the viewer.
-const VIEWER_BRIDGE_HOST = {
-  kind: 'viewer',
-  handle: () => Promise.reject(new BridgeError('unavailable')),
-} satisfies VibeBridgeHost;
-
 const MAX_COLLECTED_ERRORS = 3;
 
 const POLL_INTERVAL_MS = 1500;
@@ -210,8 +204,12 @@ function VibeViewer() {
   const [tweakValues, setTweakValues] = useState(() => resolveTweakValues(initialSpec, savedValues));
   const [tweaksOpen, setTweaksOpen] = useState(false);
   const [savingTweaks, setSavingTweaks] = useState(false);
+  // Store ops go to the per-page KV endpoint; room ops are refused in the viewer.
+  // Frame events (picked / pick:cancel / error) are handled below.
+  const bridgeHandlers = useMemo(() => createVibeHostHandlers(slug), [slug]);
   const { post } = useVibeBridge(bridgeFrame, {
-    ...VIEWER_BRIDGE_HOST,
+    kind: 'viewer',
+    ...bridgeHandlers,
     onEvent(e: BridgeFrameEvent) {
       if (e.event === 'picked') {
         if (!pickingRef.current) return;
