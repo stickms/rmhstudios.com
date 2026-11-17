@@ -859,6 +859,8 @@ export const EXCLUDED_ROUTES: Record<
       'admin',
     '/admin/albums':
       'admin',
+    '/admin/email':
+      'admin',
     '/admin/reading':
       'admin',
     '/admin/analytics':

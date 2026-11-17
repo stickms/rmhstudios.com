@@ -95,3 +95,72 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
     return false;
   }
 }
+
+/** Resend accepts at most this many messages in one batch call. */
+export const EMAIL_BATCH_LIMIT = 100;
+
+/**
+ * Send up to {@link EMAIL_BATCH_LIMIT} emails in one Resend batch request, for
+ * bulk mail (admin campaigns), where one request per message would run into
+ * the provider's per-second limit. Resolves to one boolean per input, in
+ * order: placeholder addresses are `false` without being sent, and a refused
+ * batch is `false` for every message in it. Never throws. Logs instead of
+ * sending when `RESEND_API_KEY` is unset, as {@link sendEmail} does.
+ */
+export async function sendEmailBatch(inputs: SendEmailInput[]): Promise<boolean[]> {
+  if (inputs.length > EMAIL_BATCH_LIMIT) {
+    throw new RangeError(`sendEmailBatch takes at most ${EMAIL_BATCH_LIMIT} messages`);
+  }
+  const results = inputs.map(() => false);
+  const routable = inputs
+    .map((input, index) => ({ input, index }))
+    .filter(({ input }) => !isPlaceholderEmail(input.to));
+  if (routable.length === 0) return results;
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    for (const { input, index } of routable) {
+      console.warn(`[email] (dev, not sent) to=${input.to} subject=${JSON.stringify(input.subject)}`);
+      results[index] = true;
+    }
+    return results;
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails/batch', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(
+        routable.map(({ input }) => ({
+          from: fromAddress(),
+          to: [input.to],
+          subject: input.subject,
+          html: input.html,
+          ...(input.text ? { text: input.text } : {}),
+          ...(input.headers ? { headers: input.headers } : {}),
+        })),
+      ),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!response.ok) {
+      const reason = await response
+        .json()
+        .then((body: { name?: string; message?: string }) =>
+          [body.name, body.message].filter(Boolean).join(': ').slice(0, 300),
+        )
+        .catch(() => '');
+      console.error(
+        `[email] Resend batch HTTP ${response.status} for ${routable.length} messages${reason ? ` (${reason})` : ''}`,
+      );
+      return results;
+    }
+    for (const { index } of routable) results[index] = true;
+    return results;
+  } catch (error) {
+    console.error('[email] batch send failed:', error instanceof Error ? error.message : error);
+    return results;
+  }
+}

@@ -79,6 +79,8 @@ vi.mock(
       dispatchMock.dispatch,
   }),
 );
+const prefsMock = vi.hoisted(() => ({ canEmail: vi.fn() }));
+vi.mock('@/lib/email/preferences.server', () => ({ canEmail: prefsMock.canEmail }));
 vi.mock(
   '@/lib/email/send.server',
   () => ({
@@ -441,10 +443,21 @@ beforeEach(
     prismaMock.user.findUnique.mockResolvedValue(
       OLD_ACCOUNT,
     );
+    prefsMock.canEmail.mockResolvedValue(true);
   },
 );
 
 describe('onSessionCreated', () => {
+  it('still notifies in-app but skips the email when security email is turned off', async () => {
+    prismaMock.session.findFirst.mockResolvedValue(null);
+    prefsMock.canEmail.mockResolvedValue(false);
+    const res = await onSessionCreated({ id: 's1', userId: 'u1' }, signInRequest());
+    expect(res.alerted).toBe(true);
+    expect(prefsMock.canEmail).toHaveBeenCalledWith('u1', 'security');
+    expect(dispatchMock.dispatch).toHaveBeenCalledTimes(1);
+    expect(emailMock.sendEmail).not.toHaveBeenCalled();
+  });
+
   it('alerts on an unfamiliar device, bypassing quiet hours', async () => {
     prismaMock.session.findFirst.mockResolvedValue(
       null,

@@ -230,6 +230,7 @@ import { Route as SiteAdminCensusRouteImport } from './routes/_site/admin/census
 import { Route as SiteAdminDeepseekRouteImport } from './routes/_site/admin/deepseek'
 import { Route as SiteAdminDelightRouteImport } from './routes/_site/admin/delight'
 import { Route as SiteAdminEconomyRouteImport } from './routes/_site/admin/economy'
+import { Route as SiteAdminEmailRouteImport } from './routes/_site/admin/email'
 import { Route as SiteAdminEmojiPacksRouteImport } from './routes/_site/admin/emoji-packs'
 import { Route as SiteAdminFlagsRouteImport } from './routes/_site/admin/flags'
 import { Route as SiteAdminInsightsRouteImport } from './routes/_site/admin/insights'
@@ -1630,6 +1631,11 @@ const SiteAdminDelightRoute = SiteAdminDelightRouteImport.update({
 const SiteAdminEconomyRoute = SiteAdminEconomyRouteImport.update({
   id: '/economy',
   path: '/economy',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminEmailRoute = SiteAdminEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminEmojiPacksRoute = SiteAdminEmojiPacksRouteImport.update({
@@ -3368,6 +3374,7 @@ export interface FileRoutesByFullPath {
   '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
+  '/admin/email': typeof SiteAdminEmailRoute
   '/admin/emoji-packs': typeof SiteAdminEmojiPacksRoute
   '/admin/flags': typeof SiteAdminFlagsRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
@@ -3860,6 +3867,7 @@ export interface FileRoutesByTo {
   '/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/admin/delight': typeof SiteAdminDelightRoute
   '/admin/economy': typeof SiteAdminEconomyRoute
+  '/admin/email': typeof SiteAdminEmailRoute
   '/admin/emoji-packs': typeof SiteAdminEmojiPacksRoute
   '/admin/flags': typeof SiteAdminFlagsRoute
   '/admin/insights': typeof SiteAdminInsightsRoute
@@ -4379,6 +4387,7 @@ export interface FileRoutesById {
   '/_site/admin/deepseek': typeof SiteAdminDeepseekRoute
   '/_site/admin/delight': typeof SiteAdminDelightRoute
   '/_site/admin/economy': typeof SiteAdminEconomyRoute
+  '/_site/admin/email': typeof SiteAdminEmailRoute
   '/_site/admin/emoji-packs': typeof SiteAdminEmojiPacksRoute
   '/_site/admin/flags': typeof SiteAdminFlagsRoute
   '/_site/admin/insights': typeof SiteAdminInsightsRoute
@@ -4898,6 +4907,7 @@ export interface FileRouteTypes {
     | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
+    | '/admin/email'
     | '/admin/emoji-packs'
     | '/admin/flags'
     | '/admin/insights'
@@ -5390,6 +5400,7 @@ export interface FileRouteTypes {
     | '/admin/deepseek'
     | '/admin/delight'
     | '/admin/economy'
+    | '/admin/email'
     | '/admin/emoji-packs'
     | '/admin/flags'
     | '/admin/insights'
@@ -5908,6 +5919,7 @@ export interface FileRouteTypes {
     | '/_site/admin/deepseek'
     | '/_site/admin/delight'
     | '/_site/admin/economy'
+    | '/_site/admin/email'
     | '/_site/admin/emoji-packs'
     | '/_site/admin/flags'
     | '/_site/admin/insights'
@@ -7938,6 +7950,13 @@ declare module '@tanstack/react-router' {
       path: '/economy'
       fullPath: '/admin/economy'
       preLoaderRoute: typeof SiteAdminEconomyRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/email': {
+      id: '/_site/admin/email'
+      path: '/email'
+      fullPath: '/admin/email'
+      preLoaderRoute: typeof SiteAdminEmailRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/emoji-packs': {
@@ -10027,6 +10046,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminDeepseekRoute: typeof SiteAdminDeepseekRoute
   SiteAdminDelightRoute: typeof SiteAdminDelightRoute
   SiteAdminEconomyRoute: typeof SiteAdminEconomyRoute
+  SiteAdminEmailRoute: typeof SiteAdminEmailRoute
   SiteAdminEmojiPacksRoute: typeof SiteAdminEmojiPacksRoute
   SiteAdminFlagsRoute: typeof SiteAdminFlagsRoute
   SiteAdminInsightsRoute: typeof SiteAdminInsightsRoute
@@ -10070,6 +10090,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminDeepseekRoute: SiteAdminDeepseekRoute,
   SiteAdminDelightRoute: SiteAdminDelightRoute,
   SiteAdminEconomyRoute: SiteAdminEconomyRoute,
+  SiteAdminEmailRoute: SiteAdminEmailRoute,
   SiteAdminEmojiPacksRoute: SiteAdminEmojiPacksRoute,
   SiteAdminFlagsRoute: SiteAdminFlagsRoute,
   SiteAdminInsightsRoute: SiteAdminInsightsRoute,

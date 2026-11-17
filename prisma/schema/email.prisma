@@ -1,0 +1,47 @@
+// Admin email campaigns (/admin/email). One row per message an admin sends;
+// the recipients are resolved once, when it is sent, and written as rows so the
+// send can be watched, and resumed if the web process restarts mid-batch.
+model EmailCampaign {
+  id          String    @id @default(cuid())
+  authorId    String
+  subject     String    @db.VarChar(200)
+  /// Plain text with blank-line paragraphs and bare URLs (rendered by lib/email/campaign-render.ts).
+  body        String    @db.Text
+  /// 'announcements' | 'product' | 'service' (service ignores opt-outs; see lib/email/preferences.ts).
+  category    String    @db.VarChar(16)
+  /// The audience as it was asked for: { mode, filters?, userIds? } (lib/email/audience.ts).
+  audience    Json
+  /// 'sending' | 'sent' | 'failed'. Recipient rows are 'pending' | 'claimed' (a sender holds them) | 'sent' | 'failed' | 'skipped'.
+  status      String    @default("sending") @db.VarChar(12)
+  total       Int       @default(0)
+  sent        Int       @default(0)
+  failed      Int       @default(0)
+  /// Recipients left out because they opted out of the category or have no routable address.
+  skipped     Int       @default(0)
+  createdAt   DateTime  @default(now())
+  /// When the sender last finished a batch; a send with no progress for a while can be resumed.
+  lastBatchAt DateTime?
+  finishedAt  DateTime?
+
+  author     User                     @relation("EmailCampaignAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  recipients EmailCampaignRecipient[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("email_campaign")
+}
+
+model EmailCampaignRecipient {
+  campaignId String
+  userId     String
+  /// 'pending' | 'claimed' | 'sent' | 'failed' | 'skipped'.
+  status     String    @default("pending") @db.VarChar(8)
+  sentAt     DateTime?
+
+  campaign EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, userId])
+  @@index([campaignId, status])
+  @@index([userId])
+  @@map("email_campaign_recipient")
+}

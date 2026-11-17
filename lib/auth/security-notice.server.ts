@@ -11,6 +11,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { dispatch } from '@/lib/notify/dispatch.server';
 import { sendEmail } from '@/lib/email/send.server';
+import { canEmail } from '@/lib/email/preferences.server';
 import { SITE_URL } from '@/lib/seo';
 import { CREDENTIAL_PROVIDER_ID, PROVIDER_NAMES, isSignInProviderId } from '@/lib/auth/providers';
 
@@ -75,8 +76,10 @@ export async function notifySignInChange(userId: string, change: SignInChange): 
     });
 
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
-    // sendEmail skips placeholder addresses itself.
-    if (user?.email) {
+    // sendEmail skips placeholder addresses itself. The email honours the
+    // "Account security" email preference (on by default); the in-app notice
+    // above is sent either way.
+    if (user?.email && (await canEmail(userId, 'security'))) {
       await sendEmail({
         to: user.email,
         subject,

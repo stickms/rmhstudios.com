@@ -39,6 +39,7 @@ import { hashIp } from '@/lib/hash-ip.server';
 import { getClientIp } from '@/lib/rate-limit';
 import { dispatch } from '@/lib/notify/dispatch.server';
 import { sendEmail } from '@/lib/email/send.server';
+import { canEmail } from '@/lib/email/preferences.server';
 import { SITE_URL } from '@/lib/seo';
 import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n/config';
 import { parseLocaleCookie, resolveLocale } from '@/lib/i18n/resolve';
@@ -255,7 +256,9 @@ export async function onSessionCreated(
       urgency: 'critical',
     });
 
-    if (user.email) {
+    // The email honours the "Account security" email preference (on by
+    // default); the in-app notice above is sent either way.
+    if (user.email && (await canEmail(session.userId, 'security'))) {
       await sendEmail({
         to: user.email,
         subject: strings.subject,

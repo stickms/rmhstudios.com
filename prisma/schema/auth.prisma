@@ -216,7 +216,7 @@ model User {
   redemptionsReviewed RedemptionRequest[] @relation("RedemptionReviewer")
 
   // Admin-authored feed announcements
-  feedAnnouncements FeedAnnouncement[]
+  feedAnnouncements     FeedAnnouncement[]
   blogAnnouncementsSeen BlogAnnouncementSeen[]
   botReactions          BotReaction[]
 
@@ -321,6 +321,8 @@ model User {
 
   // Notification preferences (per-type opt-outs)
   notificationPreference NotificationPreference?
+  emailCampaignsSent     EmailCampaign[]          @relation("EmailCampaignAuthor")
+  emailCampaignReceipts  EmailCampaignRecipient[]
 
   // Appearance preferences (theme + accent), synced across devices
   appearancePreference AppearancePreference?
