@@ -10,6 +10,7 @@ import { createRealtimeClient } from '@/lib/shared/realtime/client';
 import {
   VIBE_ROOM_C2S,
   VIBE_ROOM_S2C,
+  type VibeRoomErrorCode,
   type VibeRoomMessage,
   type VibeRoomState,
 } from './room-events';
@@ -36,6 +37,12 @@ export interface VibeRoomClient {
       m: VibeRoomMessage,
     ) => void,
   ): () => void;
+  /** A refusal from the hub (`FULL`, `AUTH`, …): `vibe:room:error` carries its code. */
+  onError(
+    fn: (
+      code: VibeRoomErrorCode,
+    ) => void,
+  ): () => void;
   selfSid():
     | string
     | null;
@@ -59,6 +66,13 @@ export function connectVibeRoom(opts: {
     new Set<
       (
         m: VibeRoomMessage,
+      ) => void
+    >();
+
+  const errorListeners =
+    new Set<
+      (
+        code: VibeRoomErrorCode,
       ) => void
     >();
 
@@ -98,6 +112,23 @@ export function connectVibeRoom(opts: {
               for (const fn of messageListeners)
                 fn(
                   m,
+                );
+            },
+          );
+          socket.on(
+            VIBE_ROOM_S2C.ERROR,
+            (
+              e: {
+                code?: VibeRoomErrorCode;
+              } | null,
+            ) => {
+              if (
+                !e?.code
+              )
+                return;
+              for (const fn of errorListeners)
+                fn(
+                  e.code,
                 );
             },
           );
@@ -170,6 +201,18 @@ export function connectVibeRoom(opts: {
             fn,
           );
       },
+    onError:
+      (
+        fn,
+      ) => {
+        errorListeners.add(
+          fn,
+        );
+        return () =>
+          errorListeners.delete(
+            fn,
+          );
+      },
     selfSid:
       () =>
         client
@@ -180,6 +223,7 @@ export function connectVibeRoom(opts: {
       () => {
         stateListeners.clear();
         messageListeners.clear();
+        errorListeners.clear();
         client.destroy();
       },
   };

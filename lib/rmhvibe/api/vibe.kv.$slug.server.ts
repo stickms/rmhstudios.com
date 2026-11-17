@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma.server';
 import { AppError } from '@/lib/errors/codes';
 import { vibeKvReadApi, vibeKvWriteApi } from '@/lib/rmhvibe/vibe-kv.contract';
 import { vibeKvReadQuerySchema, vibeKvWriteBodySchema } from '@/lib/rmhvibe/vibe-kv-schema';
+import { bearerToken, verifyDiscordActivityToken } from '@/lib/discord/verify-activity-token.server';
+import { findLinkedUserId } from '@/lib/discord-link.server';
 import { kvGet, kvIncr, kvList, kvSet, type KvScope } from '@/lib/rmhvibe/vibe-kv.server';
 
 /** The page's id, only while it is ready: a building or failed page has no store. */
@@ -29,6 +31,24 @@ function ownerOf(scope: KvScope, userId: string | null): string {
 }
 
 /**
+ * The Discord Activity has no site session (its iframe carries no cookies), so it sends its
+ * Activity access token as a bearer. Verified with the hub's rules; a linked account is that
+ * site user, an unlinked guest has no user id (page scope only). The rate bucket is the
+ * Discord id, because inside Discord every caller shares the proxy's egress IP. An invalid,
+ * expired or foreign-app token is simply anonymous.
+ */
+async function discordAuth(request: Request) {
+  const token = bearerToken(request.headers);
+  if (!token) return null;
+  const identity = await verifyDiscordActivityToken(token);
+  if (!identity) return null;
+  return {
+    userId: await findLinkedUserId(identity.discordId),
+    rateScope: `discord:${identity.discordId}`,
+  };
+}
+
+/**
  * GET/POST /api/vibe/kv/:slug — the per-vibe store, reached only through the viewer's
  * bridge host. Every limit (key shape, value size, key counts, `by` range, list size)
  * is enforced server-side in `vibe-kv.server.ts`; this layer is auth, rate and shape.
@@ -38,7 +58,15 @@ export const route = apiRoute('/api/vibe/kv/$slug', {
     vibeKvReadApi,
     {
       auth: 'optional',
-      rateLimit: 'read',
+      alternateAuth: discordAuth,
+      // Its own bucket (not the site-wide `read` one a poll loop would drain).
+      rateLimit: {
+        policy: 'read',
+        scope: 'user',
+        prefix: 'vibe-kv-read',
+        limit: 120,
+        windowMs: 60_000,
+      },
       query: vibeKvReadQuerySchema,
       microCache: false,
     },
@@ -63,6 +91,7 @@ export const route = apiRoute('/api/vibe/kv/$slug', {
     vibeKvWriteApi,
     {
       auth: 'optional',
+      alternateAuth: discordAuth,
       rateLimit: {
         policy: 'write',
         scope: 'user',

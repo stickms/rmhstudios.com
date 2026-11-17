@@ -35,9 +35,26 @@ function toBridgeError(err: unknown): BridgeError {
   return new BridgeError(byStatus[err.status] ?? 'failed');
 }
 
-export function createVibeHostHandlers(slug: string): Pick<VibeBridgeHost, 'handle'> {
+/**
+ * `authToken`: the Discord Activity's access token, for hosts with no site session. It is
+ * read on every call (a token can be refreshed) and sent as a bearer; the server verifies it.
+ */
+export function createVibeHostHandlers(
+  slug: string,
+  authToken?: () => string | null,
+): Pick<VibeBridgeHost, 'handle'> {
   const params = {
     slug,
+  };
+  const auth = () => {
+    const token = authToken?.();
+    return token
+      ? {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : {};
   };
   async function run(op: BridgeOp, args: unknown): Promise<unknown> {
     switch (op) {
@@ -45,6 +62,7 @@ export function createVibeHostHandlers(slug: string): Pick<VibeBridgeHost, 'hand
         const a = args as BridgeArgs['store.get'];
         const res = await api(vibeKvReadApi, {
           params,
+          ...auth(),
           query: {
             key: a.key,
             scope: a.scope,
@@ -56,6 +74,7 @@ export function createVibeHostHandlers(slug: string): Pick<VibeBridgeHost, 'hand
         const a = args as BridgeArgs['store.set'];
         await api(vibeKvWriteApi, {
           params,
+          ...auth(),
           body: {
             op: 'set',
             key: a.key,
@@ -69,6 +88,7 @@ export function createVibeHostHandlers(slug: string): Pick<VibeBridgeHost, 'hand
         const a = args as BridgeArgs['store.incr'];
         const res = await api(vibeKvWriteApi, {
           params,
+          ...auth(),
           body: {
             op: 'incr',
             key: a.key,
@@ -91,6 +111,7 @@ export function createVibeHostHandlers(slug: string): Pick<VibeBridgeHost, 'hand
         const a = args as BridgeArgs['store.list'];
         const res = await api(vibeKvReadApi, {
           params,
+          ...auth(),
           query: {
             prefix: a.prefix,
             scope: a.scope,

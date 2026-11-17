@@ -1,5 +1,6 @@
 /** Small pure helpers for the Vibes Discord Activity. */
 import { SITE_URL } from '@/lib/seo';
+import { VIBE_ROOM_LIMITS } from '@/lib/rmhvibe/room-events';
 
 /**
  * A thumbnail path for display inside the Activity: same-origin paths resolve against the
@@ -27,4 +28,4 @@ export function presenceThumbUrl(url: string | null | undefined): string | undef
   }
 }
 
-export const VIBES_MAX_PARTY = 25;
+export const VIBES_MAX_PARTY = VIBE_ROOM_LIMITS.MAX_MEMBERS;

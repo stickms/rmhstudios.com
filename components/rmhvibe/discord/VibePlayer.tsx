@@ -9,6 +9,9 @@ import type { VibeRoomClient } from '@/lib/rmhvibe/room-socket';
 import type { VibeRoomMember } from '@/lib/rmhvibe/room-events';
 import { resolveTweakValues, type TweakSpec, type TweakValue } from '@/lib/rmhvibe/tweaks';
 
+/** Per-frame ceiling on `room.send`, matching the hub's relay limit and the documented 10 per second. */
+const MAX_ROOM_SENDS_PER_SECOND = 10;
+
 /** What `RMHVibe.room.members()` and the `room:members` event carry to the frame. */
 function memberPayload(members: VibeRoomMember[], hostSid: string | null, selfSid: string | null) {
   return members.map((m) => ({
@@ -30,6 +33,7 @@ export function VibePlayer({
   members,
   hostSid,
   hidden,
+  accessToken,
   sandbox,
 }: {
   slug: string;
@@ -42,10 +46,15 @@ export function VibePlayer({
   hostSid: string | null;
   /** Discord's picture-in-picture tile: the frame stays mounted but hidden. */
   hidden: boolean;
+  /** The Activity's Discord access token: the KV store's credential (this frame has no site session). */
+  accessToken: string;
   sandbox: string;
 }) {
   const [frame, setFrame] = useState<HTMLIFrameElement | null>(null);
-  const handlers = useMemo(() => createVibeHostHandlers(slug), [slug]);
+  const tokenRef = useRef(accessToken);
+  tokenRef.current = accessToken;
+  const handlers = useMemo(() => createVibeHostHandlers(slug, () => tokenRef.current), [slug]);
+  const sendWindow = useRef({ start: 0, count: 0 });
   const payload = useMemo(
     () => memberPayload(members, hostSid, client.selfSid()),
     [members, hostSid, client],
@@ -58,6 +67,13 @@ export function VibePlayer({
       kind: 'discord',
       handle: (op, args) => {
         if (op === 'room.send') {
+          const w = sendWindow.current;
+          const now = Date.now();
+          if (now - w.start >= 1000) {
+            w.start = now;
+            w.count = 0;
+          }
+          if (++w.count > MAX_ROOM_SENDS_PER_SECOND) return Promise.reject(new BridgeError('rate'));
           client.send((args as BridgeArgs['room.send']).data);
           return Promise.resolve(undefined);
         }

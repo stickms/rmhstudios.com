@@ -82,6 +82,8 @@ export function VibeDiscordActivity({
   const [client, setClient] = useState<VibeRoomClient | null>(null);
   const [room, setRoom] = useState<VibeRoomState | null>(null);
   const [connectFailed, setConnectFailed] = useState(false);
+  // A refusal the hub named (room full, account not verified), shown instead of the generic text.
+  const [connectError, setConnectError] = useState<'FULL' | 'AUTH' | null>(null);
   const [page, setPage] = useState<LoadedPage | null>(null);
   const [pageFailed, setPageFailed] = useState(false);
   const launchChecked = useRef(false);
@@ -91,6 +93,7 @@ export function VibeDiscordActivity({
     let timer: number | undefined;
     let c: VibeRoomClient | null = null;
     setConnectFailed(false);
+    setConnectError(null);
     setRoom(null);
     launchChecked.current = false;
     const fail = () => {
@@ -104,11 +107,18 @@ export function VibeDiscordActivity({
         window.clearTimeout(timer);
         setRoom(s);
       });
+      const offError = c.onError((code) => {
+        if (code !== 'FULL' && code !== 'AUTH') return;
+        window.clearTimeout(timer);
+        setConnectError(code);
+        fail();
+      });
       timer = window.setTimeout(fail, CONNECT_TIMEOUT_MS);
       setClient(c);
       return () => {
         window.clearTimeout(timer);
         off();
+        offError();
         c?.destroy();
         setClient(null);
       };
@@ -236,7 +246,11 @@ export function VibeDiscordActivity({
             {t('connection-failed', { defaultValue: 'Connection Failed' })}
           </h2>
           <p className="text-[#b5bac1] text-sm mb-4">
-            {t('vibes-connect-failed', { defaultValue: "Couldn't reach the vibes room. Check your connection and try again." })}
+            {connectError === 'FULL'
+              ? t('vibes-room-full', { defaultValue: 'This vibe room is full' })
+              : connectError === 'AUTH'
+                ? t('vibes-auth-failed', { defaultValue: 'Could not verify your Discord account' })
+                : t('vibes-connect-failed', { defaultValue: "Couldn't reach the vibes room. Check your connection and try again." })}
           </p>
           <div className="flex justify-center gap-2">
             <button
@@ -377,6 +391,7 @@ export function VibeDiscordActivity({
           members={members}
           hostSid={hostSid}
           hidden={pip}
+          accessToken={accessToken}
           sandbox={VIEWER_SANDBOX}
         />
       )}

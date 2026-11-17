@@ -378,6 +378,14 @@ export interface HandlerOptions<
   auth?: A;
   /** Omit to skip rate limiting (reads that are already cheap and cached). */
   rateLimit?: RateLimitSpec;
+  /**
+   * `auth: 'optional'` only: a second way to identify a caller who has no site session
+   * (e.g. a Discord Activity bearer token, where the iframe has no cookies). A session
+   * always wins. `userId` becomes the context's `userId` (null for a guest);
+   * `rateScope`, when the rate limit is `scope: 'user'`, keys the bucket. A throw or null
+   * means anonymous, never a 500.
+   */
+  alternateAuth?: (request: Request) => Promise<{ userId: string | null; rateScope: string } | null>;
   /** Zod schema for the JSON request body. Invalid/absent body → 400. */
   body?: B;
   /**
@@ -554,7 +562,12 @@ function hashRequestBody(raw: string): string {
  * here now shares one counter when `REDIS_URL` is set, and falls back to the
  * per-process limiter (looser, never absent) when it is not.
  */
-function resolveRateLimit(request: Request, spec: RateLimitSpec, userId: string | null) {
+function resolveRateLimit(
+  request: Request,
+  spec: RateLimitSpec,
+  userId: string | null,
+  rateScope: string | null = null,
+) {
   if (typeof spec === 'string') return withRateLimitAsync(request, spec, {});
   const { policy = 'write', scope, ...rest } = spec;
   return withRateLimitAsync(request, policy, {
@@ -562,7 +575,7 @@ function resolveRateLimit(request: Request, spec: RateLimitSpec, userId: string 
     // Only user-scope when we actually have a user; otherwise fall back to the
     // IP-only bucket rather than sharing one global `null:` bucket between all
     // anonymous callers — which would let one anon flood throttle everyone.
-    ...(scope === 'user' && userId ? { scope: userId } : {}),
+    ...(scope === 'user' && (rateScope ?? userId) ? { scope: (rateScope ?? userId) as string } : {}),
   });
 }
 
@@ -625,7 +638,15 @@ export function defineHandler<
       }
 
       const user = (session?.user ?? null) as ApiUser | null;
-      const userId = user?.id ?? null;
+      let userId = user?.id ?? null;
+      let rateScope: string | null = null;
+      if (!user && mode === 'optional' && options.alternateAuth) {
+        const alt = await options.alternateAuth(request).catch(() => null);
+        if (alt) {
+          userId = alt.userId;
+          rateScope = alt.rateScope;
+        }
+      }
       const isAdmin = Boolean(user?.isAdmin);
 
       if ((mode === 'required' || mode === 'admin') && !userId) return unauthorized();
@@ -653,7 +674,7 @@ export function defineHandler<
       // A loader's in-process read of this route (lib/api/internal-dispatch.server.ts) is
       // part of a page view that was already admitted; it is not charged again.
       if (options.rateLimit && !isInternalRequest(request)) {
-        const limited = await resolveRateLimit(request, options.rateLimit, userId);
+        const limited = await resolveRateLimit(request, options.rateLimit, userId, rateScope);
         if (limited) {
           recordCounter('ratelimit.rejected');
           return limited;
