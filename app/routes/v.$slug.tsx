@@ -45,9 +45,8 @@ import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
 import { TweakPanel } from '@/components/rmhvibe/TweakPanel';
-import { resolveTweakValues, validateTweakValues, type TweakSpec, type TweakValue } from '@/lib/rmhvibe/tweaks';
-import { vibeTweaksApi } from '@/lib/rmhvibe/vibe-page.contract';
-import { api } from '@/lib/contract/client';
+import { resolveTweakValues, type TweakSpec, type TweakValue } from '@/lib/rmhvibe/tweaks';
+import { saveVibeTweaks } from '@/lib/rmhvibe/vibe-page-client';
 import { toast } from '@/lib/toast';
 import { type BridgeFrameEvent, type VibeSelection } from '@/lib/rmhvibe/bridge';
 import { formatFixPrompt } from '@/lib/rmhvibe/vibe-selection';
@@ -402,8 +401,7 @@ function VibeViewer() {
     if (savingTweaks) return;
     setSavingTweaks(true);
     try {
-      const values = validateTweakValues(tweakSpec, tweakValues);
-      await api(vibeTweaksApi, { params: { slug }, body: { values } });
+      const values = await saveVibeTweaks(slug, tweakSpec, tweakValues);
       setSaved((prev) => ({ ...prev, ...values }));
       toast.success(t('tweak-saved', { defaultValue: 'Tweaks saved' }));
     } catch {
