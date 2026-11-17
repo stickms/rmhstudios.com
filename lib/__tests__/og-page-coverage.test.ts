@@ -334,12 +334,8 @@ const BACKLOG: Record<
     // Full-screen standalone pages with their own head.
     'app/routes/black-lives-matter.tsx':
       'hand-rolled meta',
-    'app/routes/optimization.tsx':
-      'hand-rolled meta',
     'app/routes/security.tsx':
       'hand-rolled meta',
-    'app/routes/covid.tsx':
-      'resolves to the site-wide default card',
   };
 
 const results =

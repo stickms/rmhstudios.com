@@ -262,10 +262,21 @@ const BUDGETS = {
   // route in the entry, so a new page costs its route record whatever its component weighs. Measured on a plain
   // `vite build`: entry about 699,190 B on main -> 699,983 B. main was already 210 B under the old line, so this keeps
   // the ~800 B the feature added plus ~800 B of headroom, not the ~2% re-anchor.
+  //
+  // RMH Research (2026-11-17): entry RAISED 700,800 -> 708,900 B, critical path RAISED 926,100 -> 931,100 B raw and
+  // 244,600 -> 245,300 B brotli (OPT-01 line). The feature that bought the bytes is RMH Research, the research
+  // microsite at /rmh-research: fourteen new public routes (home, fields, field, archive, paper, authors, author,
+  // r-index, psychology, two reports, and three redirects from the pages it absorbed), each a route record plus its
+  // title and description in the entry, and the archive's and ranking's search-param parsers. The catalogue itself
+  // stays off the critical path: the paper, author and field titles come from server functions
+  // (lib/rmh-research/meta.server.ts) and the parsers from the catalogue-free lib/rmh-research/params.ts, which took
+  // the first build's +146 KB down to this. Measured on a plain `vite build`: entry about 699,983 B on main ->
+  // 707,866 B; critical path 930,099 B raw and 244,941 B brotli. Each line keeps the feature's bytes plus about
+  // 1 KB of headroom (0.3 KB brotli), as the account-consolidation line did, not the ~2% re-anchor.
   siteCssBrotli: 32_600,
-  entryRaw: 700_800,
-  criticalPathRaw: 926_100,
-  criticalPathBrotli: 244_600,
+  entryRaw: 708_900,
+  criticalPathRaw: 931_100,
+  criticalPathBrotli: 245_300,
 };
 
 /**

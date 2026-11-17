@@ -179,6 +179,7 @@ const NON_SITE_DIRS =
       'nightrail',
       'rmh-capital',
       'rmh-pmc',
+      'rmh-research',
       'sohumbum',
       'sohumtracker',
       'gabriels-horn',

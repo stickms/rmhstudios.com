@@ -241,6 +241,22 @@ export const VERTICALS: readonly Vertical[] =
         ],
     },
     {
+      id: 'rmh-research',
+      hub: 'ventures',
+      base: '/rmh-research',
+      name: 'RMH Research',
+      // The field, paper and author pages are parameterised; the sitemap lists
+      // them from the catalogue (`DYNAMIC_ROUTES` in lib/sitemap.ts).
+      pages: [
+        { segment: '', cadence: 'weekly' },
+        { segment: 'archive', cadence: 'weekly' },
+        { segment: 'authors', cadence: 'monthly' },
+        { segment: 'fields', cadence: 'monthly' },
+        { segment: 'psychology', cadence: 'monthly' },
+        { segment: 'r-index', cadence: 'yearly' },
+      ],
+    },
+    {
       id: 'adaptive-intelligence',
       hub: 'ventures',
       base: '/adaptive-intelligence',

@@ -41,6 +41,7 @@ export const BUSINESSES =
       id: 'rmh-research',
       name: 'RMH Research',
       mark: 'RR',
+      href: '/rmh-research',
     },
     {
       id: 'rmh-designs',

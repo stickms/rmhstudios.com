@@ -29,6 +29,8 @@
     "lib/ranking/**/*.ts",
     "lib/streak-reminders.server.ts",
     "lib/businesses.ts",
+    "lib/rmh-research/*.ts",
+    "lib/rmh-research/data/*.ts",
     "lib/blog-media.ts",
     "lib/sitewide-announcement.ts",
     "lib/sitewide-announcement-schema.ts",

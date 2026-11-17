@@ -454,7 +454,7 @@ const TICKER = [
   'A direct line to the record →',
 ];
 
-const SHARE_URL = 'https://rmhstudios.com/covid';
+const SHARE_URL = 'https://rmhstudios.com/rmh-research/reports/feature-leak';
 const SHARE_TEXT =
   'Feature Leak: The True Origins of X — a finding from the RMH Office of Platform Integrity';
 

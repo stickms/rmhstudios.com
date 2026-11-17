@@ -111,7 +111,7 @@ import { responseHeaders } from './security-headers';
  *                   resolves no per-viewer edit rights, and `fetchPlaylists`
  *                   returns `null` outright for a signed-out visitor. This is
  *                   the entry to re-audit first if this list ever goes wrong.
- *   `/optimization` app/routes/optimization.tsx — static `OptimizationPage`.
+ *   `/rmh-research/reports/optimization` app/routes/rmh-research_.reports.optimization.tsx — static `OptimizationPage`.
  *   `/security`     app/routes/security.tsx — static `SecurityPage`.
  *   `/privacy`      app/routes/privacy.tsx      ┐ all four are `LegalLayout` +
  *   `/terms`        app/routes/terms.tsx        │ literal `t()` strings, no
@@ -141,7 +141,7 @@ export const CACHEABLE_ANON_PATHS =
       '/games',
       '/news',
       '/library',
-      '/optimization',
+      '/rmh-research/reports/optimization',
       '/security',
       '/privacy',
       '/terms',
