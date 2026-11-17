@@ -20,6 +20,15 @@ import type { Plugin } from 'esbuild';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import {
+  FILES_MARKER,
+  headField,
+  normalizePath,
+  parsePartialProject,
+  resolveInVfs,
+  RESOLVE_EXTS,
+  specTarget,
+} from '@/lib/rmhvibe/vibe-project';
+import {
   classifyImport,
   hostedStem,
   VIBE_PACKAGES,
@@ -364,9 +373,6 @@ function vibeRuntimeHarnessScript(): string {
 </script>`;
 }
 
-const FILES_MARKER = '===FILES===';
-const FILE_HEADER_RE = /^---\s*file:\s*(.+?)\s*---\s*$/;
-
 /**
  * Parse the model's "SLUG/TITLE/DESCRIPTION/DEPS … ===FILES=== --- file: … ---"
  * response into a project. Returns `null` when there's no `===FILES===` marker so
@@ -376,78 +382,20 @@ export function parseVibeProject(raw: string): VibeProject | null {
   const idx = raw.indexOf(FILES_MARKER);
   if (idx === -1) return null;
 
+  const partial = parsePartialProject(raw);
+  if (Object.keys(partial.files).length === 0) return null;
+
   const head = raw.slice(0, idx);
-  const body = raw.slice(idx + FILES_MARKER.length);
-
-  const field = (name: string) => {
-    const m = head.match(new RegExp(`^${name}:\\s*(.+)$`, 'im'));
-    return m ? m[1].trim() : '';
-  };
-
-  const files = parseFiles(body);
-  if (Object.keys(files).length === 0) return null;
-
   return {
-    slug: field('SLUG'),
-    title: field('TITLE'),
-    description: field('DESCRIPTION'),
-    deps: parseDeps(field('DEPS')),
-    files,
+    slug: headField(head, 'SLUG') ?? '',
+    title: partial.title ?? '',
+    description: headField(head, 'DESCRIPTION') ?? '',
+    deps: partial.deps,
+    files: partial.files,
   };
-}
-
-/** Parse `DEPS: three@0.183, @react-three/fiber@9` into { name: version }. */
-function parseDeps(raw: string): Record<string, string> {
-  const deps: Record<string, string> = {};
-  for (const token of raw.split(',')) {
-    const t = token.trim();
-    if (!t) continue;
-    // Last '@' separates version, but ignore a leading '@' on scoped names.
-    const at = t.lastIndexOf('@');
-    if (at > 0) deps[t.slice(0, at)] = t.slice(at + 1);
-    else deps[t] = 'latest';
-  }
-  return deps;
-}
-
-/** Split the body into a { path: source } map on `--- file: <path> ---` headers. */
-function parseFiles(body: string): Record<string, string> {
-  const files: Record<string, string> = {};
-  let current: string | null = null;
-  let buf: string[] = [];
-  const flush = () => {
-    if (current) files[normalizePath(current)] = stripFences(buf.join('\n'));
-  };
-  for (const line of body.split('\n')) {
-    const m = line.match(FILE_HEADER_RE);
-    if (m) {
-      flush();
-      current = m[1].trim();
-      buf = [];
-    } else if (current !== null) {
-      buf.push(line);
-    }
-  }
-  flush();
-  return files;
-}
-
-/** Strip a code fence the model may have wrapped an individual file in. */
-function stripFences(s: string): string {
-  return s
-    .trim()
-    .replace(/^```[a-z0-9]*\s*\n?/i, '')
-    .replace(/\n?```\s*$/, '')
-    .trim();
-}
-
-/** Normalise a virtual path: drop leading `./` or `/`. */
-function normalizePath(p: string): string {
-  return p.trim().replace(/^\.?\//, '');
 }
 
 const ENTRY_CANDIDATES = ['index.tsx', 'index.ts', 'index.jsx', 'index.js', 'main.tsx', 'main.ts', 'App.tsx'];
-const RESOLVE_EXTS = ['', '.tsx', '.ts', '.jsx', '.js', '.mjs', '.css', '.json'];
 
 /** A file counts as a usable entry only if it has real (non-whitespace) source. */
 function hasSource(files: Record<string, string>, path: string): boolean {
@@ -465,26 +413,6 @@ function pickEntry(files: Record<string, string>): string {
     throw new BundleError(`No non-empty entry file found (expected index.tsx). Files: ${names}.`);
   }
   return first;
-}
-
-/** Resolve a relative specifier against the virtual file map; null if missing. */
-function resolveInVfs(spec: string, importer: string, files: Record<string, string>): string | null {
-  const base = importer ? importer.replace(/[^/]*$/, '') : '';
-  const target = spec.startsWith('.') ? joinPath(base, spec) : normalizePath(spec);
-  for (const ext of RESOLVE_EXTS) if (files[target + ext]) return target + ext;
-  for (const ext of RESOLVE_EXTS) if (files[`${target}/index${ext}`]) return `${target}/index${ext}`;
-  return null;
-}
-
-/** Posix-style path join that collapses `.`/`..` segments. */
-function joinPath(base: string, rel: string): string {
-  const out: string[] = [];
-  for (const part of (base + rel).split('/')) {
-    if (part === '' || part === '.') continue;
-    if (part === '..') out.pop();
-    else out.push(part);
-  }
-  return out.join('/');
 }
 
 function loaderFor(p: string): 'ts' | 'tsx' | 'jsx' | 'js' | 'css' | 'json' {
@@ -510,10 +438,20 @@ function loaderFor(p: string): 'ts' | 'tsx' | 'jsx' | 'js' | 'css' | 'json' {
  * a VFS file; relative imports inside a bundled node_modules package fall through
  * to esbuild's default file-system resolver.
  */
+type PluginOptions = {
+  /**
+   * Preview mode: a relative import that is missing, or listed in `pending`,
+   * loads a placeholder module instead of failing the build.
+   */
+  stub?: { pending: Set<string> };
+};
+
 function virtualFilesPlugin(
   files: Record<string, string>,
   fallbackExternals: Set<string>,
+  options: PluginOptions = {},
 ): Plugin {
+  const { stub } = options;
   return {
     name: 'vibe-vfs',
     setup(build) {
@@ -547,6 +485,11 @@ function virtualFilesPlugin(
         // VFS; a relative import from a real node_modules file is esbuild's job.
         if (args.namespace !== 'vfs') return undefined;
         const resolved = resolveInVfs(spec, args.importer, files);
+        if (stub) {
+          if (!resolved || stub.pending.has(resolved)) {
+            return { path: resolved ?? specTarget(spec, args.importer), namespace: 'vibe-stub' };
+          }
+        }
         if (!resolved) {
           return { errors: [{ text: `Cannot resolve '${spec}' from '${args.importer || 'entry'}'` }] };
         }
@@ -556,6 +499,16 @@ function virtualFilesPlugin(
       // Stubbed-out imports (CSS-only font packages) compile to nothing.
       build.onLoad({ filter: /.*/, namespace: 'vibe-empty' }, () => {
         return { contents: '', loader: 'js' };
+      });
+
+      // Preview placeholders for files the model has not finished writing yet.
+      build.onLoad({ filter: /.*/, namespace: 'vibe-stub' }, (args) => {
+        if (args.path.endsWith('.css')) return { contents: '', loader: 'css' };
+        return {
+          contents: vibeStubModule(args.path, collectImportedNames(files, args.path)),
+          loader: 'js',
+          resolveDir: process.cwd(),
+        };
       });
 
       build.onLoad({ filter: /.*/, namespace: 'vfs' }, (args) => {
@@ -576,6 +529,25 @@ function virtualFilesPlugin(
  * (with a readable message) if the project can't be compiled.
  */
 export async function buildVibeHtml(project: Pick<VibeProject, 'title' | 'deps' | 'files'>): Promise<string> {
+  return bundleProject(project, {});
+}
+
+/**
+ * Bundle a project that is still being written. Same page shell as
+ * `buildVibeHtml`, but imports of missing or still-`pending` files load a
+ * placeholder, so the page renders whatever is ready and never blanks.
+ */
+export async function buildVibePreview(
+  project: Pick<VibeProject, 'title' | 'deps' | 'files'>,
+  opts: { pending: string[] },
+): Promise<string> {
+  return bundleProject(project, { stub: { pending: new Set(opts.pending) } });
+}
+
+async function bundleProject(
+  project: Pick<VibeProject, 'title' | 'deps' | 'files'>,
+  pluginOptions: PluginOptions,
+): Promise<string> {
   const esbuild = await import('esbuild');
   const entry = pickEntry(project.files);
   // Long-tail packages the page imports that aren't in our curated registry —
@@ -596,7 +568,7 @@ export async function buildVibeHtml(project: Pick<VibeProject, 'title' | 'deps' 
       // Inline packages are resolved from node_modules; mirror their production builds.
       define: { 'process.env.NODE_ENV': '"production"' },
       outdir: 'dist',
-      plugins: [virtualFilesPlugin(project.files, fallbackExternals)],
+      plugins: [virtualFilesPlugin(project.files, fallbackExternals, pluginOptions)],
     });
   } catch (err) {
     throw new BundleError(formatBuildError(err));
@@ -622,6 +594,57 @@ export async function buildVibeHtml(project: Pick<VibeProject, 'title' | 'deps' 
   }
 
   return assembleHtml({ title: project.title, js, css, deps: project.deps, fallbackExternals });
+}
+
+/**
+ * Source of a placeholder module for a file that is not written yet: a default
+ * export and every named export the project imports from it, all the same
+ * component, so the importing code mounts and the rest of the page renders.
+ */
+export function vibeStubModule(path: string, names: string[]): string {
+  const base = (path.split('/').pop() ?? path).replace(/\.[^.]+$/, '');
+  const style =
+    'border:1px dashed currentColor;border-radius:8px;padding:16px;' +
+    'font-family:system-ui,sans-serif;opacity:.7';
+  const exported = [...new Set(names)].filter((n) => n !== 'default' && /^[A-Za-z_$][\w$]*$/.test(n));
+  return [
+    `import { createElement } from 'react';`,
+    `function Pending() {`,
+    `  return createElement('div', { 'data-vibe-pending': ${JSON.stringify(path)}, style: ${JSON.stringify(style)} }, ${JSON.stringify(`Building ${base}\u2026`)});`,
+    `}`,
+    `export default Pending;`,
+    ...(exported.length ? [`export { ${exported.map((n) => `Pending as ${n}`).join(', ')} };`] : []),
+  ].join('\n');
+}
+
+/**
+ * Names other files import from `targetPath`: `import D, { A, B as C }`,
+ * `import { A }` and `export { A } from`. Returns the imported names (A, B), not
+ * local aliases; `import * as ns` adds none. `targetPath` is a VFS path, or for a
+ * file that does not exist yet, the extension-less path the specifier names.
+ */
+export function collectImportedNames(files: Record<string, string>, targetPath: string): string[] {
+  const names = new Set<string>();
+  const re = /\b(?:import|export)\s+([^'";]*?)\s*from\s*['"]([^'"]+)['"]/g;
+  for (const [importer, src] of Object.entries(files)) {
+    for (const m of src.matchAll(re)) {
+      const spec = m[2];
+      if (!spec.startsWith('.') && !spec.startsWith('/')) continue;
+      const resolved = resolveInVfs(spec, importer, files);
+      const target = specTarget(spec, importer);
+      const hit = resolved
+        ? resolved === targetPath
+        : RESOLVE_EXTS.some((ext) => target + ext === targetPath);
+      if (!hit) continue;
+      const braces = m[1].match(/\{([^}]*)\}/);
+      if (!braces) continue;
+      for (const part of braces[1].split(',')) {
+        const name = part.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0].trim();
+        if (name) names.add(name);
+      }
+    }
+  }
+  return [...names];
 }
 
 function formatBuildError(err: unknown): string {
