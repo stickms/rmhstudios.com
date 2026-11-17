@@ -565,8 +565,8 @@ lib/prepaint/generated.ts
 /app/styles/steel-overlay.css
 /app/styles/steel-surfaces.css
 /app/styles/steel-type.css
-/cli/src/index.ts
-/cli/src/lib/api.ts
+/rmhcode/src/index.ts
+/rmhcode/src/lib/api.ts
 /components/CLAUDE.md
 /components/Providers.tsx
 /components/access/AccessMount.tsx

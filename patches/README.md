@@ -366,3 +366,9 @@ escaped-literal output. The `+(*(a)|*(b))` char-class optimisation is unchanged.
 `pnpm.auditConfig.ignoreGhsas: ["GHSA-fc5q-39xc-vjpf"]`. When picomatch publishes a fixed release,
 remove the audit ignore and this patch together, and confirm with `pnpm audit --prod
 --audit-level=high`. `lib/__tests__/picomatch-redos.test.ts` covers the behaviour.
+
+The ignore hides every copy of picomatch, not only the patched one, so two things keep it honest:
+`anymatch>picomatch` is overridden to 4.0.7 in `package.json` (i18next-parser's chain used to pull an
+unpatched picomatch 2.3.2 that the ignore was hiding), and `lib/__tests__/audit-ignores.test.ts`
+fails if an ignored advisory has no patch or if any picomatch version in the lockfile is not the
+patched one.

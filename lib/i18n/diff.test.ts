@@ -1038,8 +1038,6 @@ describe('plural forms per language', () => {
         target,
         sources:
           {},
-        original:
-          {},
         existed: true,
         paid: false,
       },

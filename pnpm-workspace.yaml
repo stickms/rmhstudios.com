@@ -1,6 +1,6 @@
 packages:
   - "."
-  - "cli"
+  - "rmhcode"
   - "docs/*/build"
 
 ignoredBuiltDependencies:
