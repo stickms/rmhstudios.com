@@ -13,6 +13,13 @@ model NotificationPreference {
   // in settings. Kept opt-in for deliverability + consent hygiene.
   emailDigest Boolean @default(false)
 
+  // Email categories (lib/email/preferences.ts). The important mail is on by
+  // default (a missing row reads the same defaults): sign-in and other account
+  // security notices, and site announcements. Product news is opt-in.
+  emailSecurity      Boolean @default(true)
+  emailAnnouncements Boolean @default(true)
+  emailProduct       Boolean @default(false)
+
   // Notification center v2 (§16): per-category × per-channel matrix
   // ({ [category]: { inapp, push, email } }; missing = category default) plus
   // quiet hours. The booleans above stay until every notifier is migrated onto

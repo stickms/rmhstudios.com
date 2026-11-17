@@ -26,6 +26,7 @@ import { getBoss, PROGRESSION_QUEUE } from '@/lib/jobs/boss.server';
 import { runProgression, type ProgressionJob } from '@/lib/social/engagement-effects.server';
 import { registerEventReminderWorker } from '@/lib/events.server';
 import { registerDigestCron } from '@/lib/digest/pipeline.server';
+import { EMAIL_CAMPAIGN_QUEUE, registerEmailCampaignWorker } from '@/lib/email/campaign.server';
 import { registerMaintenanceCrons } from '@/lib/jobs/maintenance.server';
 import { registerArcadeCrons } from '@/lib/arcade/jobs.server';
 import { registerEconomyCrons } from '@/lib/economy/jobs.server';
@@ -118,6 +119,8 @@ const REGISTRATIONS: ReadonlyArray<Registration<PgBoss>> = [
   { queue: 'event.reminder', register: registerEventReminderWorker },
   // Weekly digest email (§10): its own pg-boss cron.
   { queue: 'email.weekly-digest', register: registerDigestCron },
+  // Admin email campaigns (/admin/email): fed by an admin pressing Send; batches of 100 through Resend.
+  { queue: EMAIL_CAMPAIGN_QUEUE, register: registerEmailCampaignWorker },
   // O3 Slice It! beatmap generation. `enqueueAnalysis` runs inline when this worker is not up, so a
   // failure here is slow uploads, never chartless songs.
   { queue: ANALYSIS_QUEUE, register: registerAnalysisWorker },

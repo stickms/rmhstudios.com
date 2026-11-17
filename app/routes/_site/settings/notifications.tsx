@@ -1,10 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { prefetchRouteQuery } from '@/lib/route/route-query';
-import { discoveryAlertsQuery, discoveryMemoriesQuery } from '@/lib/settings/prefs.queries';
+import {
+  discoveryAlertsQuery,
+  discoveryMemoriesQuery,
+  emailPrefsQuery,
+} from '@/lib/settings/prefs.queries';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { DiscoverySettings } from '@/components/discovery/DiscoverySettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { EmailSettings } from '@/components/settings/EmailSettings';
 import { SettingsPageBody } from '@/components/settings/SettingsSection';
 
 export const Route = createFileRoute('/_site/settings/notifications')({
@@ -15,6 +20,7 @@ export const Route = createFileRoute('/_site/settings/notifications')({
     await Promise.all([
       prefetchRouteQuery(context.queryClient, discoveryAlertsQuery()),
       prefetchRouteQuery(context.queryClient, discoveryMemoriesQuery()),
+      prefetchRouteQuery(context.queryClient, emailPrefsQuery()),
     ]);
     return undefined;
   },
@@ -35,6 +41,7 @@ function NotificationSettingsPage() {
     >
       <SettingsPageBody>
         <NotificationSettings />
+        <EmailSettings />
         <DiscoverySettings />
       </SettingsPageBody>
     </PageLayout>
