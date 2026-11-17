@@ -83,8 +83,20 @@ const post = (body: unknown) =>
     }),
   });
 
+// tx.$queryRaw serves two statements: the key-count and the incr upsert. Tell them apart by SQL.
+const incrSql = vi.fn();
+let used = 0;
+let incrRows: unknown[] = [];
+const setUsed = (n: number) => (used = n);
+const setIncr = (rows: unknown[]) => (incrRows = rows);
 beforeEach(() => {
   vi.clearAllMocks();
+  incrSql.mockClear();
+  db.tx.$queryRaw.mockImplementation(async (strings: TemplateStringsArray) => {
+    if (strings.join('').includes('count(*)')) return [{ n: BigInt(used) }];
+    incrSql();
+    return incrRows;
+  });
   getSession.mockResolvedValue({
     user: {
       id: 'u1',
@@ -96,12 +108,8 @@ beforeEach(() => {
     status: 'ready',
   });
   db.vibeKv.findUnique.mockResolvedValue(null);
-  db.vibeKv.count.mockResolvedValue(0);
-  db.tx.$queryRaw.mockResolvedValue([
-    {
-      value: 5,
-    },
-  ]);
+  setUsed(0);
+  setIncr([{ value: 5 }]);
 });
 
 describe('vibe kv', () => {
@@ -122,6 +130,25 @@ describe('vibe kv', () => {
     expect(db.vibeKv.upsert).not.toHaveBeenCalled();
   });
 
+  it('rejects a value holding a NUL, which jsonb cannot store', async () => {
+    const res = await post({ op: 'set', key: 'a', scope: 'page', value: 'a\u0000b' });
+    expect(res.status).toBe(400);
+    expect(db.vibeKv.upsert).not.toHaveBeenCalled();
+  });
+
+  it('refuses a declared body over 16 KB before reading it', async () => {
+    const res = await handlers.POST!({
+      params: { slug: 'neon' },
+      request: new Request('https://x.test/api/vibe/kv/neon', {
+        method: 'POST',
+        headers: { ...headers, 'content-type': 'application/json', 'content-length': '20000' },
+        body: JSON.stringify({ op: 'set', key: 'a', scope: 'page', value: 1 }),
+      }),
+    });
+    expect(res.status).toBe(413);
+    expect(db.vibeKv.upsert).not.toHaveBeenCalled();
+  });
+
   it('rejects writes to the reserved __ namespace', async () => {
     const res = await post({
       op: 'set',
@@ -134,7 +161,7 @@ describe('vibe kv', () => {
   });
 
   it('refuses a new key once the page has 500', async () => {
-    db.vibeKv.count.mockResolvedValue(500);
+    setUsed(500);
     const res = await post({
       op: 'set',
       key: 'new',
@@ -147,7 +174,7 @@ describe('vibe kv', () => {
   });
 
   it('still lets an existing key be overwritten at the cap', async () => {
-    db.vibeKv.count.mockResolvedValue(500);
+    setUsed(500);
     db.vibeKv.findUnique.mockResolvedValue({
       id: 'k',
     });
@@ -187,7 +214,7 @@ describe('vibe kv', () => {
         };
       }) =>
         Promise.resolve(
-          where.pageId_scope_ownerKey_key.key === '__once:votes'
+          where.pageId_scope_ownerKey_key.key === '__once:page:votes'
             ? {
                 id: 'm',
               }
@@ -196,7 +223,7 @@ describe('vibe kv', () => {
               },
         ),
     );
-    db.tx.$queryRaw.mockClear();
+    incrSql.mockClear();
     const second = await post({
       op: 'incr',
       key: 'votes',
@@ -208,7 +235,7 @@ describe('vibe kv', () => {
       value: 5,
       counted: false,
     });
-    expect(db.tx.$queryRaw).not.toHaveBeenCalled();
+    expect(incrSql).not.toHaveBeenCalled();
   });
 
   it('rejects an increment outside [-1000, 1000]', async () => {
@@ -222,11 +249,11 @@ describe('vibe kv', () => {
         })
       ).status,
     ).toBe(400);
-    expect(db.tx.$queryRaw).not.toHaveBeenCalled();
+    expect(incrSql).not.toHaveBeenCalled();
   });
 
   it('answers 409 when incrementing a non-number', async () => {
-    db.tx.$queryRaw.mockResolvedValue([]);
+    setIncr([]);
     expect(
       (
         await post({

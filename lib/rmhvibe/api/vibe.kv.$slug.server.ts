@@ -71,6 +71,8 @@ export const route = apiRoute('/api/vibe/kv/$slug', {
         windowMs: 60_000,
       },
       body: vibeKvWriteBodySchema,
+      // A value is capped at 4096 chars; this refuses an oversized body before it is read.
+      maxBodyBytes: 16 * 1024,
     },
     async ({ userId, params, body }) => {
       const owner = ownerOf(body.scope, userId);

@@ -38,13 +38,15 @@ function assertValue(value: unknown): void {
   const text = JSON.stringify(value);
   if (typeof text !== 'string') throw invalid('value');
   if (text.length > MAX_VALUE_CHARS) throw invalid('too-large');
+  // Postgres jsonb refuses NUL in a string; reject it here rather than 500 on the insert.
+  if (text.includes('\\u0000')) throw invalid('value');
 }
 
 /** The marker row for "this user already counted on `key`"; hashed when it would not fit the column. */
-function onceKey(key: string): string {
-  const plain = `${RESERVED}once:${key}`;
+function onceKey(scope: KvScope, key: string): string {
+  const plain = `${RESERVED}once:${scope}:${key}`;
   if (plain.length <= KEY_MAX) return plain;
-  return `${RESERVED}once:h:${createHash('sha256').update(key).digest('hex').slice(0, 32)}`;
+  return `${RESERVED}once:h:${createHash('sha256').update(`${scope}:${key}`).digest('hex').slice(0, 32)}`;
 }
 
 async function lock(tx: Tx, pageId: string, scope: KvScope, ownerKey: string): Promise<void> {
@@ -74,18 +76,13 @@ async function assertRoom(
     },
   });
   if (existing) return;
-  const used = await tx.vibeKv.count({
-    where: {
-      pageId,
-      scope,
-      ownerKey,
-      NOT: {
-        key: {
-          startsWith: RESERVED,
-        },
-      },
-    },
-  });
+  // Raw `starts_with`: Prisma's `startsWith` leaves `_` as a LIKE wildcard, so `__` would
+  // match nearly every key.
+  const [{ n }] = await tx.$queryRaw<Array<{ n: bigint }>>`
+    SELECT count(*) AS n FROM "vibe_kv"
+    WHERE "pageId" = ${pageId} AND "scope" = ${scope} AND "ownerKey" = ${ownerKey}
+      AND NOT starts_with("key", ${RESERVED})`;
+  const used = Number(n);
   if (used >= maxKeys(scope))
     throw new AppError('CONFLICT', {
       reason: 'VIBE_KV_FULL',
@@ -203,7 +200,7 @@ export async function kvIncr(
     if (once) {
       // The marker lives in this user's own scope. It is written in the same transaction as
       // the increment, so a failed increment (409) leaves no marker behind.
-      const marker = onceKey(key);
+      const marker = onceKey(scope, key);
       if (scope !== 'user' || ownerKey !== once.userId) await lock(tx, pageId, 'user', once.userId);
       const seen = await tx.vibeKv.findUnique({
         where: {
@@ -272,51 +269,18 @@ export async function kvList(
 > {
   const { prefix, order } = opts;
   const limit = Math.min(Math.max(Math.trunc(opts.limit), 1), MAX_LIST);
-  if (order === 'key') {
-    // Prisma `startsWith` escapes LIKE metacharacters: the prefix is literal text.
-    return prisma.vibeKv.findMany({
-      where: {
-        pageId,
-        scope,
-        ownerKey,
-        AND: [
-          {
-            key: {
-              startsWith: prefix,
-            },
-          },
-          {
-            NOT: {
-              key: {
-                startsWith: RESERVED,
-              },
-            },
-          },
-        ],
-      },
-      orderBy: {
-        key: 'asc',
-      },
-      take: limit,
-      select: {
-        key: true,
-        value: true,
-      },
-    });
-  }
-  // value-desc in SQL: numbers first (largest first), everything else after, by key.
-  // `starts_with` is a plain function, so the prefix is never a LIKE pattern.
-  return prisma.$queryRaw<
-    Array<{
-      key: string;
-      value: unknown;
-    }>
-  >`
+  // `starts_with` is a plain function, so the prefix is literal text in both orders (never
+  // a LIKE pattern). value-desc puts numbers first, largest first, then the rest by key.
+  const orderBy =
+    order === 'key'
+      ? Prisma.sql`"key" ASC`
+      : Prisma.sql`(jsonb_typeof("value") = 'number') DESC,
+             CASE WHEN jsonb_typeof("value") = 'number' THEN ("value" #>> '{}')::numeric END DESC,
+             "key" ASC`;
+  return prisma.$queryRaw<Array<{ key: string; value: unknown }>>`
     SELECT "key", "value" FROM "vibe_kv"
     WHERE "pageId" = ${pageId} AND "scope" = ${scope} AND "ownerKey" = ${ownerKey}
       AND starts_with("key", ${prefix}) AND NOT starts_with("key", ${RESERVED})
-    ORDER BY (jsonb_typeof("value") = 'number') DESC,
-             CASE WHEN jsonb_typeof("value") = 'number' THEN ("value" #>> '{}')::numeric END DESC,
-             "key" ASC
+    ORDER BY ${orderBy}
     LIMIT ${limit}`;
 }
