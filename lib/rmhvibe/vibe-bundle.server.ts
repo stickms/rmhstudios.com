@@ -415,6 +415,16 @@ function pickEntry(files: Record<string, string>): string {
   return first;
 }
 
+/** True when `files` has something `pickEntry` would accept as the entry. */
+export function hasVibeEntry(files: Record<string, string>): boolean {
+  try {
+    pickEntry(files);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function loaderFor(p: string): 'ts' | 'tsx' | 'jsx' | 'js' | 'css' | 'json' {
   if (p.endsWith('.tsx')) return 'tsx';
   if (p.endsWith('.ts')) return 'ts';
