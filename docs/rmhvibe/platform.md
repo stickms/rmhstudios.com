@@ -1739,3 +1739,16 @@ the
 Message
 Content
 intent).
+
+## Deleted accounts and data export
+
+When an account is erased (`anonymizeAccount`, `lib/account/deletion.server.ts`), the vibe pages it owned move to one shared
+"Deleted user" account (`DELETED_USER_ID`, `lib/account/deleted-user.ts`) in the same transaction, and its per-user store rows
+(`scope: 'user'`) are deleted. The sentinel row is created by the `deleted_user_owner` migration and is marked like every other
+deletion tombstone (`banReason: account_deleted`, locked until 9999-12-31, no email, password, sessions or accounts), so search,
+profiles and the owner chip treat it as "Deleted user" and nobody can sign in as it. Nobody's session is the sentinel, so
+`canEditVibe` is false for everyone and other people remix the page. The sentinel itself is never anonymised.
+
+"Download my data" (`/api/account/export`) includes a `vibes` section (`lib/rmhvibe/account-data.server.ts`): the pages the user
+owns (slug, title, description, kind, prompt, status, timestamps, remix parent slug, tweak values, and the prompt of each version,
+but not the HTML), their user-scope store rows, and the posts of theirs that embed a vibe. Each collection is capped at 10,000 rows.

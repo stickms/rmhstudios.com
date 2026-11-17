@@ -10,6 +10,7 @@
 import { apiRoute } from '@/lib/api/route.server';
 import { defineHandler } from '@/lib/api/handler.server';
 import { prisma } from '@/lib/prisma.server';
+import { exportVibeData } from '@/lib/rmhvibe/account-data.server';
 import { exportMusicData } from '@/lib/rmhmusic/learn/account-data.server';
 
 // Bound each collection so a power user's export can't blow up memory.
@@ -62,6 +63,7 @@ export const route = apiRoute('/api/account/export', {
         userGems,
         gemEntries,
         rmhMusic,
+        vibes,
       ] = await Promise.all([
         prisma.user.findUnique({
           where: { id: userId },
@@ -247,6 +249,8 @@ export const route = apiRoute('/api/account/export', {
         prisma.gemEntry.findMany({ where: { userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
         // RMH Music: every learning table, Daily runs with their board verdicts included (Q4).
         exportMusicData(userId),
+        // RMH Vibes: owned pages, the prompts on them, per-user vibe state and feed embeds.
+        exportVibeData(userId),
       ]);
 
       const [
@@ -299,6 +303,7 @@ export const route = apiRoute('/api/account/export', {
         userGems,
         gemEntries,
         rmhMusic,
+        vibes,
         rmhLadder: {
           preferences: ladderPrefs,
           // Salary expectations, work authorization and EEO answers — the
