@@ -36,40 +36,11 @@ const T_FUNCTIONS =
   ];
 
 export default {
+  // English only: the other locales live on the i18n/catalogs branch and are
+  // filled by the i18n-translate workflow, never by the extractor.
   locales:
     [
       'en',
-      'zh',
-      'ar',
-      'hi',
-      'es',
-      'fr',
-      'pt',
-      'ru',
-      'de',
-      'ja',
-      'ko',
-      'it',
-      'id',
-      'vi',
-      'tr',
-      'ur',
-      'bn',
-      'pa',
-      'ta',
-      'te',
-      'mr',
-      'fa',
-      'th',
-      'pl',
-      'uk',
-      'nl',
-      'fil',
-      'ms',
-      'ro',
-      'el',
-      'cs',
-      'sv',
     ],
   defaultNamespace:
     'common',

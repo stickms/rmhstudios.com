@@ -247,7 +247,7 @@ describe('i18n code-splitting (only the selected locale reaches the client)', ()
     }
   });
 
-  it('every generated resources.<locale>.ts is a namespace -> dynamic import() map (one chunk per namespace)', () => {
+  it('every resources.<locale>.ts is a lazy glob of its own locale only (one chunk per namespace)', () => {
     for (const locale of LOCALES) {
       const src =
         readFileSync(
@@ -272,58 +272,68 @@ describe('i18n code-splitting (only the selected locale reaches the client)', ()
       ).toEqual(
         [],
       );
-      const entries =
+      // Exactly one glob, of this locale's directory, and lazy: `eager` would
+      // inline every namespace of the locale into the map's chunk.
+      const globs =
         [
           ...src.matchAll(
-            /^\s*"([^"]+)": \(\) => import\("@\/locales\/([a-z]+)\/([^"]+)\.json"\),$/gm,
+            /import\.meta\.glob\(([^)]*)\)/g,
           ),
-        ];
-      expect(
-        entries.length,
-        locale,
-      ).toBeGreaterThan(
-        0,
-      );
-      for (const [
-        ,
-        ns,
-        dir,
-        file,
-      ] of entries) {
-        expect(
-          dir,
-          `${locale}:${ns}`,
-        ).toBe(
-          locale,
+        ].map(
+          (
+            m,
+          ) =>
+            m[1].trim(),
         );
-        expect(
-          file,
-          `${locale}:${ns}`,
-        ).toBe(
-          ns,
-        );
-      }
-      // Every namespace line is such a thunk (nothing else slipped into the map).
-      const lines =
-        src
-          .split(
-            '\n',
-          )
-          .filter(
-            (
-              l,
-            ) =>
-              /^\s*"[^"]+":/.test(
-                l,
-              ),
-          );
       expect(
-        lines.length,
+        globs,
         locale,
-      ).toBe(
-        entries.length,
+      ).toEqual(
+        [
+          `'/locales/${locale}/*.json'`,
+        ],
       );
     }
+  });
+
+  it('the namespace map keeps every loader lazy and names it by its file', async () => {
+    const {
+      namespaceMap,
+    } =
+      await import('@/lib/i18n/namespace-map');
+    let called = 0;
+    const load =
+      async () => {
+        called++;
+        return {
+          default:
+            {},
+        };
+      };
+    const map =
+      namespaceMap(
+        {
+          '/locales/fr/c-blog.json':
+            load,
+          '/locales/fr/common.json':
+            load,
+        },
+      );
+    expect(
+      Object.keys(
+        map,
+      ).sort(),
+    ).toEqual(
+      [
+        'c-blog',
+        'common',
+      ],
+    );
+    expect(
+      called,
+    ).toBe(
+      0,
+    );
   });
 
   it('the client never loads a whole locale: no module outside resources*/server code calls LOCALE_LOADERS', () => {

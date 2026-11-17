@@ -1018,6 +1018,30 @@ describe('plural forms per language', () => {
     );
   });
 
+  it('prunes keys English no longer has', () => {
+    const {
+      target,
+    } =
+      settle(
+        {
+          target:
+            {
+              title:
+                'Заголовок',
+              gone: 'Удалено',
+            },
+        },
+      );
+    expect(
+      target,
+    ).toEqual(
+      {
+        title:
+          'Заголовок',
+      },
+    );
+  });
+
   it('does not start a namespace file that free work cannot complete', () => {
     expect(
       settle(

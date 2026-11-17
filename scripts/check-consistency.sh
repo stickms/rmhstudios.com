@@ -252,10 +252,10 @@ NOTED=$REVIEWED
 # Generated files are CHECKED IN, so their presence in a commit is normal — a
 # route change regenerates routeTree.gen.ts. What is never OK is hand-editing
 # one, which no diff can prove, so this is a question rather than a verdict.
-if list '^(app/routeTree\.gen\.ts|lib/i18n/resources\.[a-z-]+\.ts)$' | grep -q .; then
+if list '^app/routeTree\.gen\.ts$' | grep -q .; then
   warn "A generated file is in this change — confirm it was regenerated, not hand-edited."
-  list '^(app/routeTree\.gen\.ts|lib/i18n/resources\.[a-z-]+\.ts)$' | sed 's/^/  /'
-  printf '%s    → routeTree.gen.ts comes from `pnpm dev`/`pnpm build`; resources.<locale>.ts from `pnpm i18n:resources`.%s\n' "$dim" "$off"
+  list '^app/routeTree\.gen\.ts$' | sed 's/^/  /'
+  printf '%s    → routeTree.gen.ts comes from `pnpm dev`/`pnpm build`.%s\n' "$dim" "$off"
 fi
 
 if list '(^|/)\.env($|\.)|(^|/)(id_rsa|\.pem)$' | grep -qv '\.env\.example'; then

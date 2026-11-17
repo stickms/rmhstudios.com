@@ -10,9 +10,11 @@
 //     the client's first render alike, so hydration matches by construction.
 //     `lib/__tests__/i18n-default-drift.test.ts` holds every default equal to
 //     `locales/en`, so a catalog arriving later changes nothing on screen.
-//   - `resources.<locale>.ts` (generated) is only a MAP: namespace -> a dynamic
-//     `import()` of that namespace's JSON. Vite emits one small chunk per JSON,
-//     and the map itself is a few KB.
+//   - `resources.<locale>.ts` is only a MAP: namespace -> a dynamic `import()`
+//     of that namespace's JSON, built by `import.meta.glob` from whatever
+//     catalogs exist at build time (non-English ones come from the
+//     `i18n/catalogs` branch via `pnpm i18n:pull`). Vite emits one small chunk
+//     per JSON, and the map itself is a few KB.
 //   - The client i18next instance reads through `clientI18nBackend`
 //     (lib/i18n/instances.ts), which calls {@link loadNamespace} for exactly the
 //     (language, namespace) pairs i18next asks for — i.e. the namespaces that
@@ -31,7 +33,7 @@ type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string
 /** A resource bundle for one language: { [namespace]: translations }. */
 export type LocaleBundle = Record<string, JsonValue>;
 
-/** One locale's namespace map, as emitted by scripts/gen-i18n-resources.ts. */
+/** One locale's namespace map (resources.<locale>.ts, via namespace-map.ts). */
 export type NamespaceLoaders = Record<string, () => Promise<{ default: unknown }>>;
 
 /**

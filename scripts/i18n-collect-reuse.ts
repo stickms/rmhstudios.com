@@ -3,9 +3,9 @@
  * Collect every translation already paid for on the `i18n/*` branches into one
  * `locales/`-shaped directory, for `translate-locales.ts` to reuse (I18N_REUSE_DIR).
  *
- * The translate workflow pushes its output to `i18n/auto-translate`, and the
- * workflow that preceded it left one branch per run that never merged. Each
- * holds translations with the English they were made from
+ * The translation workflow before the `i18n/catalogs` branch left one branch
+ * per run (`i18n/auto-translate*`) whose paid output never merged. Each holds
+ * translations with the English they were made from
  * (`.sources.<ns>.json`); the translator adopts any whose English is still
  * today's English, so none of them is paid for again.
  *

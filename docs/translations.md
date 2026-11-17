@@ -105,9 +105,12 @@ unshipped
 catalogs:
 their
 files
-under
-`locales/`
+on
+the
+`i18n/catalogs`
+branch
 and
+under
 `docs/locale/`
 are
 kept,
@@ -134,22 +137,242 @@ parked.
 
 ## Site strings (`locales/`)
 
-The
-UI
+### Where the catalogs live
+
+`main`
+holds
+English
+only
+(`locales/en`),
+because
+English
+is
+the
+source
+and
+is
+written
+in
+the
+same
+pull
+request
+as
+the
+code
+that
+uses
+it.
+Every
+other
+locale,
+shipped
+and
+parked,
+lives
+on
+the
+**`i18n/catalogs`**
+branch:
+`locales/<lng>/<ns>.json`
+plus
+`.sources.<ns>.json`,
+the
+English
+each
+translation
+was
+made
+from.
+That
+branch
+is
+data,
+not
+code.
+It
+is
+never
+merged
+into
+`main`,
+and
+nothing
+on
+it
+goes
+through
+a
+pull
+request.
+
+`pnpm i18n:pull`
+(`scripts/i18n-pull.sh`)
+copies
+the
+branch's
+`locales/`
+into
+a
+checkout
+and
+records
+the
+commit
+in
+`locales/.catalogs-commit`;
+the
+copies
+are
+gitignored.
+It
+runs:
+
+- in
+  `pnpm dev`,
+  where
+  being
+  offline
+  is
+  fine:
+  it
+  keeps
+  what
+  is
+  already
+  on
+  disk;
+- before
+  the
+  image
+  build
+  in
+  `deploy.yml`
+  and
+  `candidate-image.yml`,
+  where
+  it
+  is
+  strict:
+  a
+  failed
+  pull
+  fails
+  the
+  job
+  rather
+  than
+  shipping
+  a
+  site
+  that
+  is
+  English
+  everywhere
+  (the
+  build
+  log
+  prints
+  the
+  catalogs
+  commit);
+- at
+  the
+  start
+  of
+  the
+  translate
+  workflow.
+
+`lib/i18n/resources.<locale>.ts`
+is
+a
+static
+`import.meta.glob('/locales/<lng>/*.json')`,
+so
+Vite
+builds
+each
+locale's
+namespace
+map
+from
+whatever
 catalogs
 are
-translated
-by
-the
-**i18n-translate**
-GitHub
-Actions
-workflow
-(`.github/workflows/i18n-translate.yml`),
-never
 on
+disk.
+A
+checkout
+without
+catalogs
+typechecks,
+tests
+and
+runs;
+every
+non-English
+key
+falls
+back
+to
+English.
+
+A
+pull
+request
+that
+changes
+English
+never
+touches
+another
+locale.
+A
+key
+it
+adds
+is
+English
+in
+every
+other
+language
+until
+the
+next
+translate
+run,
+and
 a
-laptop.
+key
+it
+removes
+is
+pruned
+from
+the
+catalogs
+by
+that
+run.
+`i18n:extract`
+writes
+`locales/en`
+only.
+
+### Translating
+
+The
+**i18n-translate**
+workflow
+(`.github/workflows/i18n-translate.yml`)
+is
+the
+only
+thing
+that
+machine-translates.
 Run
 it
 from
@@ -157,47 +380,135 @@ the
 Actions
 tab
 (**Run
-workflow**).
-It
-has
-two
+workflow**)
+with
+three
 inputs:
-`locales`
-(a
-comma-separated
-subset;
-empty
-means
-every
-shipped
-locale)
-and
-`dry_run`
-(report
-what
-would
-be
-paid
-for
-and
-stop).
+
+- `locales`:
+  a
+  comma-separated
+  subset
+  (empty
+  means
+  every
+  shipped
+  locale);
+- `dry_run`:
+  report
+  what
+  would
+  be
+  paid
+  for,
+  and
+  stop;
+- `deploy`
+  (on
+  by
+  default):
+  redeploy
+  `main`
+  afterwards
+  so
+  the
+  new
+  strings
+  ship.
+
 It
 uses
 the
 `DEEPSEEK_API_KEY`
 repository
 secret.
+It
+pulls
+the
+catalogs,
+translates,
+runs
+the
+catalog
+tests
+(`lib/__tests__/i18n-catalogs.test.ts`,
+the
+gate
+for
+this
+branch
+now
+that
+pull
+requests
+do
+not
+touch
+it),
+and
+commits
+straight
+to
+`i18n/catalogs`.
+That
+commit
+is
+kept
+even
+when
+the
+check
+fails,
+because
+it
+is
+paid
+for.
+A
+failed
+check
+skips
+the
+deploy
+and
+fails
+the
+run
+instead.
+The
+push
+is
+leased
+on
+the
+commit
+the
+run
+started
+from,
+so
+a
+hand
+fix
+made
+meanwhile
+is
+never
+overwritten
+(the
+run
+fails,
+and
+the
+next
+one
+picks
+the
+fix
+up).
 
 A
 run
-translates
-only
-what
-is
-missing
-or
-stale,
-and
 pays
 for
 each
@@ -210,15 +521,6 @@ once:
   current
   is
   skipped.**
-  `locales/<lng>/.sources.<ns>.json`
-  records
-  the
-  English
-  each
-  translation
-  was
-  made
-  from.
   A
   key
   whose
@@ -230,45 +532,25 @@ once:
   is
   never
   sent
-  again,
-  and
-  a
-  human
-  edit
-  to
-  a
-  translation
-  survives
-  until
-  its
-  English
-  changes.
-- **Unmerged
+  again.
+- **Older
+  paid
   work
   is
   reused.**
-  Each
-  run
-  pushes
-  its
-  output
-  to
-  the
-  `i18n/auto-translate`
+  The
+  pipeline
+  before
+  this
   branch
-  and
-  opens
-  (or
-  updates)
-  one
-  pull
-  request
-  from
-  it.
-  Before
-  any
-  model
-  call,
+  left
+  per-run
+  `i18n/auto-translate*`
+  branches
+  whose
+  output
+  never
+  merged.
   `scripts/i18n-collect-reuse.ts`
   gathers
   every
@@ -277,19 +559,7 @@ once:
   on
   any
   `i18n/*`
-  branch
-  (that
-  pull
-  request,
-  and
-  the
-  per-run
-  branches
-  the
-  previous
-  workflow
-  left
-  unmerged),
+  branch,
   and
   the
   translator
@@ -303,19 +573,19 @@ once:
   still
   today's
   English.
-  A
-  run
-  that
-  happens
-  before
-  the
-  pull
-  request
-  merges
-  does
-  not
-  pay
-  again.
+  Once
+  those
+  old
+  branches
+  are
+  deleted
+  this
+  step
+  finds
+  nothing
+  and
+  costs
+  nothing.
 - **Identical
   English
   is
@@ -420,7 +690,7 @@ once:
   others,
   and
   never
-  commits
+  writes
   a
   plural
   group
@@ -429,80 +699,68 @@ once:
   new
   namespace
   file
-  half-filled
-  by
+  that
   reuse
-  alone,
-  so
-  its
-  pull
-  request
-  passes
-  `lib/__tests__/i18n-catalogs.test.ts`.
+  alone
+  filled
+  only
+  partly.
 
-GitHub
-Actions
-may
-not
-be
-allowed
-to
-open
-pull
-requests
-in
-this
-repository
-(Settings
-→
-Actions
-→
-General
-→
-"Allow
-GitHub
-Actions
-to
-create
-and
-approve
-pull
-requests").
-The
-run
-then
-stays
-green,
-pushes
+### Fixing a translation by hand
+
+Edit
 the
-branch
-anyway,
-and
-prints
-a
-compare
-link
-in
-the
-job
-summary;
-open
-the
-pull
-request
-from
-that
-link.
-The
-paid
-work
-is
-safe
+value
 on
 the
+`i18n/catalogs`
 branch
-either
-way.
+and
+commit
+there
+(directly,
+or
+through
+a
+pull
+request
+into
+that
+branch).
+Leave
+its
+`.sources`
+entry
+as
+it
+is:
+a
+translation
+whose
+recorded
+English
+still
+matches
+today's
+English
+is
+current,
+so
+the
+next
+run
+keeps
+it.
+When
+the
+English
+later
+changes,
+the
+key
+is
+translated
+again.
 
 `I18N_LOCALES`,
 `I18N_DRY_RUN`
@@ -519,8 +777,8 @@ are
 what
 the
 workflow
-sets;
-the
+sets.
+The
 script
 can
 still
@@ -531,24 +789,22 @@ hand
 with
 a
 DeepSeek
-key,
+key
+after
+`pnpm i18n:pull`,
 but
-the
-workflow
-is
-the
-supported
-path
-because
-it
-is
-the
-one
-that
-reuses
-the
-pending
-branch.
+its
+output
+then
+has
+to
+be
+committed
+to
+`i18n/catalogs`
+by
+hand
+too.
 
 ## Docs pages (`docs/locale/`)
 

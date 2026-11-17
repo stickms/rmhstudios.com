@@ -1257,9 +1257,13 @@ plugin.
   audit
   B6).
   `lib/i18n/resources.<locale>.ts`
-  (auto-generated
-  by
-  `scripts/gen-i18n-resources.ts`,
+  (a
+  static
+  `import.meta.glob`
+  of
+  `locales/<lng>/*.json`
+  through
+  `lib/i18n/namespace-map.ts`,
   every
   locale
   including
@@ -1531,15 +1535,14 @@ plugin.
   or
   stale
   keys,
-  regenerates
+  commits
+  them
+  to
   the
-  resource
-  modules
+  `i18n/catalogs`
+  branch
   and
-  opens
-  a
-  pull
-  request;
+  redeploys;
   `docs/translations.md`)
   →
   `pnpm i18n:coverage`
