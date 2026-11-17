@@ -32,7 +32,6 @@ import {
   Arrow,
   AuthorNames,
   FieldChip,
-  NS,
   PaperLink,
   PaperRow,
   Scene,
@@ -61,7 +60,7 @@ export default function HomePage() {
 /* ── 1. hero ─────────────────────────────────────────────────────────────── */
 
 function Hero() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const s = ARCHIVE_STATS;
   const years = s.to - s.from + 1;
@@ -122,7 +121,7 @@ function Hero() {
 /* ── 2. the twelve fields ────────────────────────────────────────────────── */
 
 function Fields() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const labels = useFieldLabels();
   const count = DIVISIONS.length;
@@ -204,7 +203,7 @@ function Fields() {
 /* ── 3. the archive ──────────────────────────────────────────────────────── */
 
 function Archive() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const top = topPapers(5);
 
   return (
@@ -271,7 +270,7 @@ function siftCitations(paper: Paper): { id: string; state: CiteState }[] {
 }
 
 function Resonance() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const lead = topPapers(1)[0];
   const res = lead ? resonanceOf(lead.id) : null;
@@ -428,7 +427,7 @@ function Resonance() {
 /* ── 5. leading authors ──────────────────────────────────────────────────── */
 
 function Leaders() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const top = AUTHOR_RANKING.slice(0, 5);
   if (top.length === 0) return null;
@@ -495,7 +494,7 @@ function Leaders() {
 /* ── 6. sections and reports ─────────────────────────────────────────────── */
 
 function Sections() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   return (
     <section className="sec sec--rule home-more">
       <div className="wrap">

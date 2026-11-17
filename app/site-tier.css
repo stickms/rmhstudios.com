@@ -82,6 +82,8 @@
 @source not "../components/rmh-pmc";
 @source not "../components/rmh-research";
 @source not "../lib/rmh-research";
+/* Its one consumer is RMH Research's Psychology section since /psychology moved there. */
+@source not "../lib/psychology";
 @source not "../components/rmhbox";
 @source not "../components/rmhcalculator";
 @source not "../components/rmhcode";

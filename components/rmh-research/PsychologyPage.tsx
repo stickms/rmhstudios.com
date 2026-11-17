@@ -14,7 +14,7 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { CREDIT_CHANGES, initials, PEOPLE, type Person } from '@/lib/psychology/people';
-import { Arrow, NS, PageHead, Scene, SceneDots, Step, useFieldLabels, useNumber } from './shared';
+import { Arrow, PageHead, Scene, SceneDots, Step, useFieldLabels, useNumber } from './shared';
 
 type Dest = '/' | '/progress' | '/rmhmusic' | '/study' | '/arcade';
 
@@ -86,7 +86,7 @@ function Entry({ item }: { item: Principle }) {
 }
 
 export default function PsychologyPage() {
-  const { t } = useTranslation(['psychology', NS]);
+  const { t } = useTranslation(['psychology', 'c-rmh-research']);
   const labels = useFieldLabels();
   const num = useNumber();
 
@@ -399,10 +399,10 @@ export default function PsychologyPage() {
         steps={total}
         className="psy-scene"
         pinClassName="psy-pin"
-        aria-label={t('psy-scene-aria', { ns: NS, defaultValue: 'The four groups of research on this page' })}
+        aria-label={t('psy-scene-aria', { ns: 'c-rmh-research', defaultValue: 'The four groups of research on this page' })}
       >
         <div className="wrap psy-pinwrap">
-          <p className="label">{t('psy-scene-label', { ns: NS, defaultValue: 'In four groups' })}</p>
+          <p className="label">{t('psy-scene-label', { ns: 'c-rmh-research', defaultValue: 'In four groups' })}</p>
           <div className="sc-stack psy-stack">
             {groups.map((g, i) => (
               <Step key={g.id} index={i} count={total} className="psy-step">
@@ -489,11 +489,11 @@ export default function PsychologyPage() {
       <section aria-labelledby="psy-closing" className="sec sec--rule sec--tight">
         <div className="wrap psy-closing">
           <h2 id="psy-closing" className="h3">
-            {t('psy-closing-title', { ns: NS, defaultValue: 'The archive field' })}
+            {t('psy-closing-title', { ns: 'c-rmh-research', defaultValue: 'The archive field' })}
           </h2>
           <p className="body psy-closing-body">
             {t('psy-closing-body', {
-              ns: NS,
+              ns: 'c-rmh-research',
               defaultValue:
                 'This section credits published research by the people named above. The Psychology & Behaviour archive is different: its papers are RMH Research’s own work.',
             })}

@@ -101,15 +101,15 @@
 .rmhr-root .home-cites--few { --ds: 34px; gap: 16px; }
 .rmhr-root .home-cites--dense { --ds: 11px; gap: 7px; }
 .rmhr-root .home-cite { display: inline-flex; gap: calc(var(--k4) * 4px); }
-.rmhr-root .home-cite-dot { position: relative; display: block; width: var(--ds); height: var(--ds); border: 1px solid var(--mute); border-radius: 50%; }
-.rmhr-root .home-cite-dot::after { content: ''; position: absolute; inset: -1px; border-radius: 50%; background: var(--ink); }
+.rmhr-root .home-cite-dot { position: relative; display: block; width: var(--ds); height: var(--ds); border: 1px solid var(--mute); border-radius: 50%; corner-shape: round; }
+.rmhr-root .home-cite-dot::after { content: ''; position: absolute; inset: -1px; border-radius: 50%; corner-shape: round; background: var(--ink); }
 .rmhr-root .home-cite.is-own .home-cite-dot::after { scale: calc(1 - var(--k2)); }
 .rmhr-root .home-cite.is-dead .home-cite-dot::after { scale: calc(1 - var(--k3)); }
 .rmhr-root .home-cite-twin { width: calc(var(--k4) * var(--ds)); border: 0; }
 .rmhr-root .home-cite-twin::after { inset: 0; scale: var(--k4); }
 .rmhr-root .home-rix-key { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-top: clamp(20px, 2.4vw, 28px); padding-top: 14px; border-top: 1px solid var(--rule); }
 .rmhr-root .home-rix-key > span { display: inline-flex; align-items: center; }
-.rmhr-root .home-key { display: inline-block; width: 10px; height: 10px; margin-inline-end: 8px; border: 1px solid var(--mute); border-radius: 50%; }
+.rmhr-root .home-key { display: inline-block; width: 10px; height: 10px; margin-inline-end: 8px; border: 1px solid var(--mute); border-radius: 50%; corner-shape: round; }
 .rmhr-root .home-key--on { background: var(--ink); border-color: var(--ink); }
 .rmhr-root .home-key--on + .home-key--on { margin-inline-start: -5px; }
 .rmhr-root .home-rix-foot { margin-top: clamp(32px, 4vw, 48px); }

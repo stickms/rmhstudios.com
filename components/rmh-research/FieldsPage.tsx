@@ -7,10 +7,10 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { DIVISIONS, FIELDS, fieldsInDivision } from '@/lib/rmh-research/fields';
 import { fieldStats } from '@/lib/rmh-research/catalog';
-import { Arrow, NS, PageHead, Scene, SceneDots, SecHead, Step, useFieldLabels, useNumber } from './shared';
+import { Arrow, PageHead, Scene, SceneDots, SecHead, Step, useFieldLabels, useNumber } from './shared';
 
 export default function FieldsPage() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const labels = useFieldLabels();
   const count = DIVISIONS.length;

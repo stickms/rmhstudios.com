@@ -20,7 +20,7 @@ import {
   type ArchiveSort,
 } from '@/lib/rmh-research/search';
 import type { FieldId, PaperKind } from '@/lib/rmh-research/types';
-import { Crumbs, NS, PaperRow, useFieldLabels, useNumber } from './shared';
+import { Crumbs, PaperRow, useFieldLabels, useNumber } from './shared';
 
 const route = getRouteApi('/rmh-research/archive');
 const PATH = '/rmh-research/archive';
@@ -86,7 +86,7 @@ function Group({ id, title, children }: { id: string; title: string; children: R
 }
 
 export default function ArchivePage() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const labels = useFieldLabels();
   const search = route.useSearch();

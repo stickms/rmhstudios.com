@@ -4,6 +4,7 @@ import { authorsOf, getPaper } from '@/lib/rmh-research/catalog';
 import { authorLine } from '@/lib/rmh-research/cite';
 import { getField } from '@/lib/rmh-research/fields';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
+import { researchCardPath } from '@/lib/rmh-research/og';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 
 export const Route = createFileRoute('/rmh-research/paper/$paperId')({
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/rmh-research/paper/$paperId')({
         title: `${paper.title} — RMH Research`,
         description,
         path,
+        image: researchCardPath('paper', paper.id),
       }),
       links: [buildCanonical(path)],
       // lib/schema has no ScholarlyArticle builder; its Article builder fits a paper.

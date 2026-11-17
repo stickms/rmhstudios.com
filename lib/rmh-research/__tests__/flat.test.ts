@@ -36,7 +36,7 @@ const FORBIDDEN: [string, RegExp][] = [
   ['heavy weight (Y1)', /font-weight\s*:\s*(700|800|900|bold)|fontWeight:\s*['"]?(700|800|900|bold)/],
   ['letterspaced capitals (Y2)', /text-transform\s*:\s*uppercase|textTransform:\s*['"]uppercase/],
   ['translucency (R1)', /color-mix\([^)]*transparent/],
-  ['squircle (S)', /corner-shape/],
+  ['squircle (S4)', /corner-shape\s*:(?!\s*round\b)/],
 ];
 
 describe('RMH Research is flat Steel', () => {

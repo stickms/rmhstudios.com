@@ -17,10 +17,10 @@ import { useVerticalNav } from '@/hooks/useVerticalNav';
 import { authorsOf, resonanceOf } from '@/lib/rmh-research/catalog';
 import { getField } from '@/lib/rmh-research/fields';
 import type { Author, FieldId, Paper } from '@/lib/rmh-research/types';
-import { NS, useFieldLabels } from './labels';
+import { useFieldLabels } from './labels';
 
 export { cssVars, Scene, SceneDots, sceneGeometry, Step, stepWindow } from '@/components/shared/scroll-scene';
-export { NS, useFieldLabels };
+export { useFieldLabels };
 
 export const BASE = '/rmh-research';
 
@@ -46,7 +46,7 @@ export function Arrow() {
 
 /** Locale-aware whole-number formatting. */
 export function useNumber(): (n: number) => string {
-  const { i18n } = useTranslation(NS);
+  const { i18n } = useTranslation('c-rmh-research');
   return (n) => n.toLocaleString(i18n.language);
 }
 
@@ -124,7 +124,7 @@ export function PaperRow({
   field?: boolean;
   as?: 'li' | 'div' | 'article';
 }) {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const res = resonanceOf(paper.id);
   return (
@@ -171,10 +171,12 @@ export interface Crumb {
 }
 
 export function Crumbs({ items }: { items: readonly Crumb[] }) {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   return (
     <nav className="crumbs" aria-label={t('breadcrumb-label', { defaultValue: 'Breadcrumb' })}>
-      <Link to="/rmh-research">RMH Research</Link>
+      <Link to="/rmh-research" activeOptions={{ exact: true }}>
+        RMH Research
+      </Link>
       {items.map((c) => (
         <span key={c.label} style={{ display: 'contents' }}>
           <span aria-hidden="true">/</span>
@@ -226,7 +228,7 @@ export function SecHead({ label, title, lede, action }: { label?: ReactNode; tit
 /* ── the site's chrome ───────────────────────────────────────────────────── */
 
 export function TopBar() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const NAV = [
     { to: '/rmh-research/fields', label: t('nav-fields', { defaultValue: 'Fields' }) },
     { to: '/rmh-research/archive', label: t('nav-archive', { defaultValue: 'Archive' }) },
@@ -243,7 +245,7 @@ export function TopBar() {
             <span aria-hidden="true">←</span>
             <span className="backlink-label">RMH Studios</span>
           </a>
-          <Link className="brand" to="/rmh-research" aria-label={t('home-label', { defaultValue: 'RMH Research home' })}>
+          <Link className="brand" to="/rmh-research" activeOptions={{ exact: true }} aria-label={t('home-label', { defaultValue: 'RMH Research home' })}>
             <BrandMark />
             <span className="brand-text">RMH&nbsp;Research</span>
           </Link>
@@ -286,13 +288,13 @@ export function TopBar() {
 }
 
 export function SiteFooter() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   return (
     <footer className="footer">
       <div className="wrap">
         <div className="footer-top">
           <div className="footer-brand">
-            <Link className="brand" to="/rmh-research" aria-label={t('home-label', { defaultValue: 'RMH Research home' })}>
+            <Link className="brand" to="/rmh-research" activeOptions={{ exact: true }} aria-label={t('home-label', { defaultValue: 'RMH Research home' })}>
               <BrandMark />
               <span className="brand-text">RMH&nbsp;Research</span>
             </Link>

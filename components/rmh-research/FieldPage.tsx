@@ -15,7 +15,7 @@ import {
   topPapers,
 } from '@/lib/rmh-research/catalog';
 import { getField, isFieldId } from '@/lib/rmh-research/fields';
-import { Arrow, cssVars, NS, PageHead, PaperRow, Scene, SecHead, Stat, useFieldLabels, useNumber } from './shared';
+import { Arrow, cssVars, PageHead, PaperRow, Scene, SecHead, Stat, useFieldLabels, useNumber } from './shared';
 
 const route = getRouteApi('/rmh-research/fields/$fieldId');
 
@@ -39,7 +39,7 @@ export default function FieldPage() {
 }
 
 function FieldBody({ id }: { id: Parameters<typeof getField>[0] }) {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const labels = useFieldLabels();
   const name = labels.name(id);

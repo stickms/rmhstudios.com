@@ -21,7 +21,7 @@ import { ANALYSIS, AUTHOR_RANKING, citedBy, papersByAuthor, PAPERS, resonanceOf,
 import { getField } from '@/lib/rmh-research/fields';
 import { CARRIED_WEIGHT, classifyCitation, GRACE_YEARS, indexCut, type CitationKind } from '@/lib/rmh-research/r-index';
 import type { Paper } from '@/lib/rmh-research/types';
-import { Arrow, AuthorNames, cssVars, NS, PageHead, PaperLink, Scene, SceneDots, SecHead, Stat, Step, useFieldLabels, useNumber } from './shared';
+import { Arrow, AuthorNames, cssVars, PageHead, PaperLink, Scene, SceneDots, SecHead, Stat, Step, useFieldLabels, useNumber } from './shared';
 
 /* ── the examples, chosen from the catalogue ─────────────────────────────── */
 
@@ -116,7 +116,7 @@ const WORKED = [9, 7, 3, 3, 1];
 /* ── page ────────────────────────────────────────────────────────────────── */
 
 export default function RIndexPage() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const above = AUTHOR_RANKING.filter((m) => m.r > m.h).length;
   const below = AUTHOR_RANKING.filter((m) => m.r < m.h).length;
@@ -168,7 +168,7 @@ export default function RIndexPage() {
 /* ── 2. the problem ──────────────────────────────────────────────────────── */
 
 function Problem() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   return (
     <section className="sec" aria-labelledby="rix-problem">
       <div className="wrap">
@@ -237,7 +237,7 @@ function Trail({ items, upto }: { items: { v: string; k: string }[]; upto: numbe
 }
 
 function SiftScene({ ex }: { ex: SiftExample }) {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const labels = useFieldLabels();
   const res = resonanceOf(ex.paper.id);
@@ -432,7 +432,7 @@ function CutChart({ values, k, max, kLabel, title, a }: { values: number[]; k: n
 }
 
 function CutScene({ ex }: { ex: CutExample }) {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const labels = useFieldLabels();
   const { m } = ex;
@@ -566,7 +566,7 @@ function CutScene({ ex }: { ex: CutExample }) {
 /* ── 5. the definition ───────────────────────────────────────────────────── */
 
 function Definition() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const r = indexCut(WORKED);
   const sorted = [...WORKED].sort((a, b) => b - a);
@@ -672,7 +672,7 @@ function Definition() {
 /* ── 6. h against r across the archive ───────────────────────────────────── */
 
 function Scatter() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const max = Math.max(1, ...AUTHOR_RANKING.map((m) => Math.max(m.h, m.r)));
   const cells = new Map<string, { h: number; r: number; count: number }>();
@@ -774,7 +774,7 @@ function MoverRows({ rows, empty }: { rows: AuthorMetrics[]; empty: string }) {
 }
 
 function Archive() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   return (
     <section className="sec sec--rule" aria-labelledby="rix-arc">
       <div className="wrap">
@@ -806,7 +806,7 @@ function Archive() {
 /* ── 7. questions ────────────────────────────────────────────────────────── */
 
 function Questions() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const qs = [
     {

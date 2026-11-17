@@ -6,12 +6,14 @@
  * it cannot see never reaches `locales/`. Paper titles, abstracts, author
  * names and venues are catalogue content and are shown as published, the way
  * an archive shows them; only the site's own words go through `t()`.
+ *
+ * The namespace is written as the literal `'c-rmh-research'` at every
+ * `useTranslation` call, never through a constant: the extractor cannot
+ * resolve a variable, and keys behind one land in `common` instead.
  */
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { DivisionId, FieldId } from '@/lib/rmh-research/types';
-
-export const NS = 'c-rmh-research';
 
 export interface FieldLabels {
   /** The field's name, e.g. "Mathematics". */
@@ -22,7 +24,7 @@ export interface FieldLabels {
 }
 
 export function useFieldLabels(): FieldLabels {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   return useMemo(() => {
     const names: Record<FieldId, string> = {
       mathematics: t('field-mathematics-name', { defaultValue: 'Mathematics' }),

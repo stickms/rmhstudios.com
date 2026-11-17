@@ -6,13 +6,13 @@
 import { Link, getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { authorMetrics, coauthorsOf, getAuthor, papersByAuthor, resonanceOf } from '@/lib/rmh-research/catalog';
-import { Arrow, cssVars, FieldChip, NS, PageHead, PaperRow, Scene, SceneDots, SecHead, Stat, Step, useFieldLabels, useNumber } from './shared';
+import { Arrow, cssVars, FieldChip, PageHead, PaperRow, Scene, SceneDots, SecHead, Stat, Step, useFieldLabels, useNumber } from './shared';
 
 const route = getRouteApi('/rmh-research/authors/$authorId');
 const MAX_BARS = 32;
 
 function CoreChart({ title, values, cut, symbol, unit }: { title: string; values: number[]; cut: number; symbol: string; unit: string }) {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const bars = values.slice(0, MAX_BARS);
   const N = Math.max(bars.length, 1);
   const k = Math.min(cut, bars.length);
@@ -70,7 +70,7 @@ export default function AuthorPage() {
 }
 
 function AuthorBody({ authorId }: { authorId: string }) {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const labels = useFieldLabels();
   const author = getAuthor(authorId)!;

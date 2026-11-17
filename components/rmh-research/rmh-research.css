@@ -125,6 +125,11 @@
   min-height: 100svh;
 }
 .rmhr-root *, .rmhr-root *::before, .rmhr-root *::after { box-sizing: border-box; }
+/* Plain arcs, as on the site tier (S4): a full-screen route defaults every corner to the
+   app tier's squircle (app/globals/base-interaction.css), and this microsite is drawn in Steel. */
+@supports (corner-shape: round) {
+  .rmhr-root, .rmhr-root *, .rmhr-root *::before, .rmhr-root *::after { corner-shape: round; }
+}
 .rmhr-root :where(h1, h2, h3, h4, p, ul, ol, dl, dd, figure, blockquote) { margin: 0; padding: 0; }
 .rmhr-root :where(ul, ol) { list-style: none; }
 .rmhr-root a { color: inherit; text-decoration: none; }
@@ -336,7 +341,7 @@
 /* ════ SCENE (flow mode) ════ An ordinary section until the gate says otherwise. */
 .rmhr-root .scene { position: relative; }
 .rmhr-root .scene-pin { position: relative; }
-.rmhr-root .sc-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--rule); }
+.rmhr-root .sc-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; corner-shape: round; background: var(--rule); }
 .rmhr-root .scene-dots { display: none; align-items: center; gap: 8px; }
 .rmhr-root .scene-rail { display: none; position: relative; height: 1px; background: var(--rule); }
 .rmhr-root .scene-rail::after { content: ''; position: absolute; inset-inline: 0; inset-block: -0.5px; height: 2px; background: var(--ink); transform-origin: left center; transform: scaleX(var(--p, 0)); }

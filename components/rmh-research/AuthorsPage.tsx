@@ -7,12 +7,12 @@ import { Link, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { AUTHOR_SORTS, sortAuthors, type AuthorSort } from '@/lib/rmh-research/catalog';
 import { FIELDS } from '@/lib/rmh-research/fields';
-import { FieldChip, NS, PageHead, useFieldLabels, useNumber } from './shared';
+import { FieldChip, PageHead, useFieldLabels, useNumber } from './shared';
 
 const route = getRouteApi('/rmh-research/authors/');
 
 export default function AuthorsPage() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const labels = useFieldLabels();
   const search = route.useSearch();

@@ -16,13 +16,13 @@ import { authorsOf, citedBy, getPaper, referencesOf, resonanceOf } from '@/lib/r
 import { bibtex, formatReference } from '@/lib/rmh-research/cite';
 import { relatedPapers } from '@/lib/rmh-research/search';
 import type { Paper } from '@/lib/rmh-research/types';
-import { Arrow, AuthorNames, Crumbs, cssVars, FieldChip, NS, PaperRow, Scene, SceneDots, stepWindow, useFieldLabels, useNumber } from './shared';
+import { Arrow, AuthorNames, Crumbs, cssVars, FieldChip, PaperRow, Scene, SceneDots, stepWindow, useFieldLabels, useNumber } from './shared';
 
 const route = getRouteApi('/rmh-research/paper/$paperId');
 const SITE = 'https://rmhstudios.com';
 
 function useCopy() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   return (text: string, done: string) => {
     if (typeof navigator === 'undefined' || !navigator.clipboard) {
       toast.error(t('pap-copy-failed', { defaultValue: 'Could not copy. Select the text and copy it instead.' }));
@@ -37,7 +37,7 @@ function useCopy() {
 
 /** The resonance breakdown, pinned: one bar per stage, then the score. */
 function ResonanceScene({ paper }: { paper: Paper }) {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const r = resonanceOf(paper.id);
   const max = Math.max(r.raw, r.score, 1);
@@ -166,7 +166,7 @@ function ListSection({
 }
 
 export default function PaperPage() {
-  const { t } = useTranslation(NS);
+  const { t } = useTranslation('c-rmh-research');
   const n = useNumber();
   const labels = useFieldLabels();
   const copy = useCopy();
