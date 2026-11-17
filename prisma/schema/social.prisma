@@ -107,6 +107,9 @@ model RMHark {
   // P23 F14: true when the post carries a runnable code snippet (feed reads this boolean only)
   hasEmbed     Boolean         @default(false)
   codeEmbed    PostCodeEmbed?
+  // RMH Vibes: true when the post embeds a vibe page (feed reads this boolean only)
+  hasVibe      Boolean         @default(false)
+  vibeEmbed    PostVibeEmbed?
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
