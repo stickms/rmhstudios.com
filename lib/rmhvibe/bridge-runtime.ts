@@ -9,8 +9,9 @@
  *
  * Protocol: see `./bridge.ts`. `tweaks` data is a flat key -> value object that
  * replaces the current values; each is mirrored to `--tweak-<key>` on <html>.
- * `pick:start` / `pick:stop` are accepted and tracked here; the picker itself
- * arrives with the picking task.
+ * `pick:start` outlines the hovered element (a fixed, pointer-events-none
+ * overlay, so the page's layout never moves); a click posts `picked` and stops,
+ * Escape posts `pick:cancel`, `pick:stop` just stops.
  */
 
 export const BRIDGE_MARKER =
@@ -96,6 +97,107 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     emit(tweakFns, tweakValues);
   }
 
+  var pickOverlay = null;
+  var pickTarget = null;
+
+  function pickSegment(el) {
+    var seg = el.tagName.toLowerCase();
+    var id = el.getAttribute && el.getAttribute('id');
+    if (id) seg += '#' + String(id).replace(/\\s+/g, '');
+    var cls = el.getAttribute && el.getAttribute('class');
+    if (cls) {
+      var parts = String(cls).split(/\\s+/);
+      for (var i = 0; i < parts.length && i < 3; i++) if (parts[i]) seg += '.' + parts[i];
+    }
+    return seg.slice(0, 40);
+  }
+
+  function pickPath(el) {
+    var segs = [];
+    var cur = el;
+    for (var n = 0; cur && cur.nodeType === 1 && n < 6; n++) {
+      segs.unshift(pickSegment(cur));
+      cur = cur.parentElement;
+    }
+    while (segs.length > 1 && segs.join(' > ').length > 200) segs.shift();
+    return segs.join(' > ').slice(0, 200);
+  }
+
+  function describeElement(el) {
+    var text = String(el.innerText || el.textContent || '').replace(/\\s+/g, ' ').replace(/^ | $/g, '');
+    return {
+      tag: el.tagName.toLowerCase().slice(0, 32),
+      text: text.slice(0, 120),
+      html: String(el.outerHTML || '').slice(0, 600),
+      path: pickPath(el)
+    };
+  }
+
+  function placeOverlay() {
+    if (!pickOverlay) return;
+    if (!pickTarget || !pickTarget.getBoundingClientRect) { pickOverlay.style.display = 'none'; return; }
+    var r = pickTarget.getBoundingClientRect();
+    var s = pickOverlay.style;
+    s.display = 'block';
+    s.left = r.left + 'px';
+    s.top = r.top + 'px';
+    s.width = r.width + 'px';
+    s.height = r.height + 'px';
+  }
+
+  function pickable(el) {
+    return el && el.nodeType === 1 && el !== pickOverlay && el !== document.documentElement;
+  }
+
+  function onPickMove(e) {
+    var el = e.target;
+    pickTarget = pickable(el) ? el : null;
+    placeOverlay();
+  }
+
+  function onPickClick(e) {
+    var el = e.target;
+    if (!pickable(el)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var sel = describeElement(el);
+    stopPicking();
+    send({ event: 'picked', data: sel });
+  }
+
+  function onPickKey(e) {
+    if (e.key !== 'Escape' && e.keyCode !== 27) return;
+    e.preventDefault();
+    stopPicking();
+    send({ event: 'pick:cancel' });
+  }
+
+  function startPicking() {
+    if (picking) return;
+    picking = true;
+    pickOverlay = document.createElement('div');
+    pickOverlay.setAttribute('aria-hidden', 'true');
+    pickOverlay.style.cssText = 'position:fixed;display:none;pointer-events:none;box-sizing:border-box;border:2px solid #6366f1;background:none;margin:0;padding:0;z-index:2147483647;';
+    (document.body || document.documentElement).appendChild(pickOverlay);
+    document.addEventListener('mousemove', onPickMove, true);
+    document.addEventListener('click', onPickClick, true);
+    document.addEventListener('keydown', onPickKey, true);
+    window.addEventListener('scroll', placeOverlay, true);
+    window.addEventListener('resize', placeOverlay);
+  }
+
+  function stopPicking() {
+    picking = false;
+    pickTarget = null;
+    document.removeEventListener('mousemove', onPickMove, true);
+    document.removeEventListener('click', onPickClick, true);
+    document.removeEventListener('keydown', onPickKey, true);
+    window.removeEventListener('scroll', placeOverlay, true);
+    window.removeEventListener('resize', placeOverlay);
+    if (pickOverlay && pickOverlay.parentNode) pickOverlay.parentNode.removeChild(pickOverlay);
+    pickOverlay = null;
+  }
+
   function onHostEvent(name, data) {
     if (name === 'hello') {
       host = (data && data.host) || 'none';
@@ -107,9 +209,9 @@ export const BRIDGE_RUNTIME_JS = `(function () {
     } else if (name === 'room:members') {
       emit(memberFns, data);
     } else if (name === 'pick:start') {
-      picking = true;
+      startPicking();
     } else if (name === 'pick:stop') {
-      picking = false;
+      stopPicking();
     }
   }
 

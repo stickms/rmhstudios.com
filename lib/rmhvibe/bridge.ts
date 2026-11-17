@@ -19,6 +19,22 @@ const MAX_PREFIX_CHARS = 64;
 const MAX_ERROR_CHARS = 500;
 const MAX_EVENT_DATA_CHARS = 4096;
 
+/** An element the user picked in the running page (what click-to-edit targets). */
+export type VibeSelection =
+  {
+    tag: string;
+    text: string;
+    html: string;
+    path: string;
+  };
+export const SELECTION_MAX =
+  {
+    tag: 32,
+    text: 120,
+    html: 600,
+    path: 200,
+  } as const;
+
 export type BridgeOp =
   | 'store.get'
   | 'store.set'
@@ -475,6 +491,61 @@ export function parseBridgeMessage(
         __rmhvibe: 1,
         event,
         data: clean,
+      };
+    }
+    if (
+      event ===
+      'picked'
+    ) {
+      // Frame-supplied, so each field is clamped here; the host never sees more.
+      if (
+        !isRecord(
+          payload,
+        )
+      )
+        return null;
+      const {
+        tag,
+        text,
+        html,
+        path,
+      } =
+        payload;
+      if (
+        typeof tag !==
+          'string' ||
+        typeof text !==
+          'string' ||
+        typeof html !==
+          'string' ||
+        typeof path !==
+          'string' ||
+        !tag
+      )
+        return null;
+      const selection: VibeSelection =
+        {
+          tag: tag.slice(
+            0,
+            SELECTION_MAX.tag,
+          ),
+          text: text.slice(
+            0,
+            SELECTION_MAX.text,
+          ),
+          html: html.slice(
+            0,
+            SELECTION_MAX.html,
+          ),
+          path: path.slice(
+            0,
+            SELECTION_MAX.path,
+          ),
+        };
+      return {
+        __rmhvibe: 1,
+        event,
+        data: selection,
       };
     }
     if (

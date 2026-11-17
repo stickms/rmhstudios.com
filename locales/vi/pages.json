@@ -249,5 +249,11 @@
   "live-sheet-expand": "Show build details",
   "live-sheet-collapse": "Hide build details",
   "vibe-frame-title": "Vibe page",
-  "live-status-finishing": "Finishing up"
+  "live-status-finishing": "Finishing up",
+  "select-element": "Select an element",
+  "select-cancel": "Stop selecting",
+  "fix-it": "Fix it",
+  "editing-element": "Editing: {{tag}}",
+  "editing-element-text": "Editing: {{tag}} '{{text}}'",
+  "remove-selection": "Remove selection"
 }

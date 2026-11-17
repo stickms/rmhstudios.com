@@ -5,6 +5,7 @@
  * event (thinking deltas, content deltas, and the final done/error). Client-safe.
  */
 
+import type { VibeSelection } from '@/lib/rmhvibe/bridge';
 import type {
   VibeStreamEvent,
   VibeModel,
@@ -93,6 +94,7 @@ export async function streamVibe(
     fromVersionId?: string;
     model?: VibeModel;
     kind?: 'page' | 'widget';
+    selection?: VibeSelection;
   },
   onEvent: (
     event: VibeStreamEvent,

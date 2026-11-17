@@ -29,6 +29,8 @@ import {
   CornerDownLeft,
   History,
   RotateCcw,
+  MousePointerClick,
+  Wrench,
 } from 'lucide-react';
 import {
   getVibePage,
@@ -40,6 +42,7 @@ import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
+import { BridgeError, type BridgeFrameEvent, type VibeSelection } from '@/lib/rmhvibe/bridge';
 import { useVibeBridge, type VibeBridgeHost } from '@/components/rmhvibe/useVibeBridge';
 import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
@@ -47,12 +50,14 @@ import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 // Background-build polling cadence + guards (see the generating-status effect).
-// The bridge is wired but nothing backs it yet: every op is refused until the
-// store and room handlers land.
-const VIEWER_BRIDGE_HOST: VibeBridgeHost = {
+// Nothing backs the store and room ops yet: they are refused until those handlers
+// land. Frame events (picked / pick:cancel / error) are handled in the viewer.
+const VIEWER_BRIDGE_HOST = {
   kind: 'viewer',
-  handle: () => Promise.reject(new Error('unavailable')),
-};
+  handle: () => Promise.reject(new BridgeError('unavailable')),
+} satisfies VibeBridgeHost;
+
+const MAX_COLLECTED_ERRORS = 3;
 
 const POLL_INTERVAL_MS = 1500;
 const POLL_MAX_FAILURES = 12; // ~18s of solid failures → treat the page as gone
@@ -171,7 +176,28 @@ function VibeViewer() {
   // The visible frame, reported by VibeFrame after each swap.
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [bridgeFrame, setBridgeFrame] = useState<HTMLIFrameElement | null>(null);
-  useVibeBridge(bridgeFrame, VIEWER_BRIDGE_HOST);
+  // Click-to-edit: the element the user picked, and whether picking is armed.
+  const [picking, setPicking] = useState(false);
+  const [selection, setSelection] = useState<VibeSelection | null>(null);
+  // Runtime errors the page reported (deduped, newest last) that "Fix it" can target.
+  const [pageErrors, setPageErrors] = useState<string[]>([]);
+  const { post } = useVibeBridge(bridgeFrame, {
+    ...VIEWER_BRIDGE_HOST,
+    onEvent(e: BridgeFrameEvent) {
+      if (e.event === 'picked') {
+        setSelection(e.data as VibeSelection);
+        setPicking(false);
+        setPanelOpen(true);
+      } else if (e.event === 'pick:cancel') {
+        setPicking(false);
+      } else if (e.event === 'error') {
+        const message = (e.data as { message: string }).message;
+        setPageErrors((prev) =>
+          prev.includes(message) ? prev : [...prev, message].slice(-MAX_COLLECTED_ERRORS),
+        );
+      }
+    },
+  });
   // The in-flight customize stream, aborted on slug change and unmount, and a
   // generation counter every async step checks before it writes state — so a
   // result for the previous page never lands on this one.
@@ -195,7 +221,16 @@ function VibeViewer() {
     setThinking('');
     setContent('');
     setError(null);
+    setPicking(false);
+    setSelection(null);
+    setPageErrors([]);
   }, [slug]);
+  // A swapped frame (version preview, new build) starts with picking off and a
+  // fresh error slate: its errors are its own.
+  useEffect(() => {
+    setPicking(false);
+    setPageErrors([]);
+  }, [bridgeFrame]);
   useEffect(() => {
     setHtml(initialHtml);
     setLatestHtml(initialHtml);
@@ -322,8 +357,26 @@ function VibeViewer() {
     }
   }, [panelOpen]);
 
-  async function handleCustomize() {
-    const trimmed = prompt.trim();
+  function togglePicking() {
+    const next = !picking;
+    setPicking(next);
+    post(next ? 'pick:start' : 'pick:stop', null);
+  }
+
+  // "Fix it" is a customize/remix run with a fixed, model-facing prompt.
+  function handleFix() {
+    const message = pageErrors[pageErrors.length - 1];
+    if (!message) return;
+    setPanelOpen(true);
+    void handleCustomize({
+      prompt: `Fix this runtime error without changing anything else:\n${message}`,
+      selection: null,
+    });
+  }
+
+  async function handleCustomize(override?: { prompt: string; selection: VibeSelection | null }) {
+    const trimmed = (override ? override.prompt : prompt).trim();
+    const target = override ? override.selection : selection;
     if (!trimmed || busy || customizeAbortRef.current) return;
     const gen = genRef.current;
     const abort = new AbortController();
@@ -353,7 +406,7 @@ function VibeViewer() {
       // continue from the page's latest version.
       const fromVersionId = viewingOlder ? (activeVersionId ?? undefined) : undefined;
       await streamVibe(
-        { slug, prompt: trimmed, fromVersionId, model },
+        { slug, prompt: trimmed, fromVersionId, model, ...(target ? { selection: target } : {}) },
         (event) => {
           if (gen !== genRef.current) return;
           if (event.type === 'created' && remix) {
@@ -441,7 +494,9 @@ function VibeViewer() {
       setHtml(finalHtml);
       setLatestHtml(finalHtml);
       if (finalTitle) document.title = `${finalTitle} | RMH Studios`;
-      setPrompt('');
+      if (!override) setPrompt('');
+      setSelection(null);
+      setPageErrors([]);
       setThinking('');
       setContent('');
       setPanelOpen(false);
@@ -507,6 +562,31 @@ function VibeViewer() {
           >
             <History size={17} />
           </button>
+          <button
+            type="button"
+            onClick={togglePicking}
+            aria-label={
+              picking
+                ? t('select-cancel', { defaultValue: 'Stop selecting' })
+                : t('select-element', { defaultValue: 'Select an element' })
+            }
+            aria-pressed={picking}
+            className="vibe-toolbar__icon"
+          >
+            <MousePointerClick size={17} />
+          </button>
+          {pageErrors.length > 0 && (
+            <button
+              type="button"
+              onClick={handleFix}
+              disabled={busy}
+              aria-label={t('fix-it', { defaultValue: 'Fix it' })}
+              title={pageErrors[pageErrors.length - 1]}
+              className="vibe-toolbar__icon"
+            >
+              <Wrench size={17} />
+            </button>
+          )}
           <button type="button" onClick={() => setPanelOpen((v) => !v)} className="vibe-toolbar__cta">
             {canEdit ? <Pencil size={15} /> : <GitFork size={15} />}
             {canEdit
@@ -658,6 +738,28 @@ function VibeViewer() {
                 phase={content ? 'writing' : 'thinking'}
                 className="mb-3"
               />
+            )}
+
+            {selection && (
+              <div className="vibe-panel__hint mb-2 flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate">
+                  {selection.text
+                    ? t('editing-element-text', {
+                        defaultValue: "Editing: {{tag}} '{{text}}'",
+                        tag: selection.tag,
+                        text: selection.text.slice(0, 30),
+                      })
+                    : t('editing-element', { defaultValue: 'Editing: {{tag}}', tag: selection.tag })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelection(null)}
+                  aria-label={t('remove-selection', { defaultValue: 'Remove selection' })}
+                  className="vibe-panel__close"
+                >
+                  <X size={14} />
+                </button>
+              </div>
             )}
 
             <div className="flex items-end gap-2">
