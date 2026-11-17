@@ -75,7 +75,34 @@ function warcRecord(type, uri, block, extra = {}) {
 
 const DROP = new Set(['content-encoding', 'transfer-encoding', 'content-length', 'connection', 'set-cookie']);
 
-function record(req, status, statusText, headers, body) {
+const INIT = args.init ? readFileSync(args.init, 'utf8') : '';
+
+/**
+ * What the archive keeps of an HTML page from the recorded build: the page itself, with two changes for playback
+ * (the browser during recording gets the untouched page).
+ *
+ * 1. A module bootstrap written as an inline dynamic import (`<script type="module">import("/assets/main.js")</script>`,
+ *    TanStack Start's first builds) becomes `<script type="module" src="/assets/main.js">`. Playback rewrites a
+ *    script's src into the archive, but not a URL inside inline code, so the import left the archive, 404'd, and the
+ *    page never started.
+ * 2. The returning-visitor script (--init: the first-run keys of that commit) is put first in <head>. Playback gives
+ *    every page its own empty storage, so without it each old page opened under its language chooser, cookie notice
+ *    or what's-new dialog.
+ */
+function archivedBody(req, headers, body) {
+  const type = String(headers['content-type'] ?? '').toLowerCase();
+  if (!type.includes('text/html') || new URL(req.url()).hostname !== HOST) return body;
+  let html = body.toString('utf8');
+  html = html.replace(
+    /<script([^>]*)>\s*import\(\s*(["'])(\/[^"']+)\2\s*\)\s*;?\s*<\/script>/g,
+    (_m, attrs, _q, src) => `<script${attrs} src="${src}"></script>`,
+  );
+  if (INIT && !INIT.includes('</script')) html = html.replace(/<head[^>]*>/i, (m) => `${m}<script>${INIT}</script>`);
+  return Buffer.from(html, 'utf8');
+}
+
+function record(req, status, statusText, headers, rawBody) {
+  const body = archivedBody(req, headers, rawBody);
   const method = req.method();
   const post = req.postDataBuffer();
   const uri = req.url();

@@ -11,7 +11,10 @@
  *   play.html            the player /site-history frames (scripts/site-archive/player/play.html)
  *   index.html, ui.js,   ReplayWeb.page's app shell, UI and service worker. The service worker's scope is
  *   sw.js                site-archive/, so it only ever controls archive pages on the CDN origin.
- *   versions/<id>.warc.gz  one recording per version in components/site-history/archive-versions.json
+ *   versions/v2/<id>.warc.gz  one recording per version in components/site-history/archive-versions.json. The v2
+ *                       is the recording format (record.mjs): a change to what a recording contains gets a new
+ *                       number here and in player/play.html, so the new recordings are new objects, each uploaded
+ *                       once, and nothing already published is overwritten.
  *
  * Uses the same S3_* environment as every other uploader (lib/storage/s3.server.ts).
  *
@@ -32,6 +35,7 @@ import {
 
 const PREFIX =
   'site-archive';
+const RECORDINGS = `${PREFIX}/versions/v2`;
 const here =
   path.dirname(
     new URL(
@@ -132,7 +136,7 @@ async function main() {
       new Set(
         (
           await listObjects(
-            `${PREFIX}/versions/`,
+            `${RECORDINGS}/`,
           )
         ).map(
           (
@@ -177,9 +181,22 @@ async function main() {
     return;
   }
 
-  if (cmd === 'needed' && a) {
+  if (
+    cmd ===
+      'needed' &&
+    a
+  ) {
     // For one record job: is this version still to do? Prints true or false.
-    process.stdout.write(String(forced(a) || !(await objectExists(`${PREFIX}/versions/${a}.warc.gz`))));
+    process.stdout.write(
+      String(
+        forced(
+          a,
+        ) ||
+          !(await objectExists(
+            `${RECORDINGS}/${a}.warc.gz`,
+          )),
+      ),
+    );
     return;
   }
 
@@ -201,7 +218,7 @@ async function main() {
       throw new Error(
         `${a} is not in archive-versions.json`,
       );
-    const key = `${PREFIX}/versions/${a}.warc.gz`;
+    const key = `${RECORDINGS}/${a}.warc.gz`;
     if (
       !forced(
         a,
