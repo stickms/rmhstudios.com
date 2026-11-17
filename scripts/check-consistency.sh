@@ -461,6 +461,7 @@ else
     lib/__tests__/responsive-layout-contract.test.ts
     lib/__tests__/raf-loop-allowlist.test.ts
     lib/__tests__/performance-guardrails.test.ts
+    lib/__tests__/image-manifest-entry-cost.test.ts
     lib/__tests__/api-handler-adoption.test.ts
     lib/api/__tests__/route-match.test.ts
     lib/api/__tests__/route-table.test.ts
