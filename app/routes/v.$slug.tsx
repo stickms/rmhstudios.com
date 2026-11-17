@@ -40,12 +40,20 @@ import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
+import { useVibeBridge, type VibeBridgeHost } from '@/components/rmhvibe/useVibeBridge';
 import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
 
 // Background-build polling cadence + guards (see the generating-status effect).
+// The bridge is wired but nothing backs it yet: every op is refused until the
+// store and room handlers land.
+const VIEWER_BRIDGE_HOST: VibeBridgeHost = {
+  kind: 'viewer',
+  handle: () => Promise.reject(new Error('unavailable')),
+};
+
 const POLL_INTERVAL_MS = 1500;
 const POLL_MAX_FAILURES = 12; // ~18s of solid failures → treat the page as gone
 const BUILD_SLOW_AFTER_MS = 60_000; // reassure the user it's still working
@@ -162,6 +170,8 @@ function VibeViewer() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // The visible frame, reported by VibeFrame after each swap.
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [bridgeFrame, setBridgeFrame] = useState<HTMLIFrameElement | null>(null);
+  useVibeBridge(bridgeFrame, VIEWER_BRIDGE_HOST);
   // The in-flight customize stream, aborted on slug change and unmount, and a
   // generation counter every async step checks before it writes state — so a
   // result for the previous page never lands on this one.
@@ -467,6 +477,7 @@ function VibeViewer() {
           title={t('vibe-frame-title', { defaultValue: 'Vibe page' })}
           onFrame={(frame) => {
             iframeRef.current = frame;
+            setBridgeFrame(frame);
           }}
         />
 

@@ -136,6 +136,10 @@ AI / LLM capability — \`window.RMHVibeAI\` (use this whenever the prompt wants
 - Example: \`const reply = await RMHVibeAI.chat([...history, { role: 'user', content: text }], { system: 'You are a helpful assistant.' });\`
 - This is a genuine capability — when the prompt calls for AI, build it for real with RMHVibeAI instead of faking canned responses.
 
+Host bridge — \`window.RMHVibe\` (optional extras provided by the page that hosts this one):
+- \`await RMHVibe.ready\` before first use. \`RMHVibe.store.get/set/incr/list\` is small shared storage (keys like "score", "hi:ana"; values are small JSON; scope 'page' is shared by everyone, 'user' is per visitor). \`RMHVibe.room.send(data)\` / \`RMHVibe.room.on(fn)\` is a live multiplayer channel for small messages. \`RMHVibe.tweaks.get(key)\` / \`tweaks.on(fn)\` reads knobs the owner can adjust; they also set CSS variables named \`--tweak-<key>\`.
+- These may be UNAVAILABLE (a preview, a thumbnail, an embed). Wrap every call in try/catch and keep the page fully working without them — never make them a requirement to render.
+
 Default aesthetic — modern and minimalistic, unless the prompt clearly asks for something else (e.g. retro, brutalist, maximalist, neon):
 - Clean and restrained: lots of whitespace, a tight, mostly-neutral palette (1 accent color at most), and strong typographic hierarchy carrying the design.
 - Flat and subtle over heavy: hairline borders, soft/low shadows, gentle rounded corners, and small, purposeful motion. Avoid loud gradients, glows, drop-shadow stacks, and busy decoration.

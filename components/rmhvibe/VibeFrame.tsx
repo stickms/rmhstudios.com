@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ensureBridgeRuntime } from '@/lib/rmhvibe/bridge-runtime';
 
 export const VIEWER_SANDBOX =
   'allow-scripts allow-forms allow-modals allow-pointer-lock';
@@ -89,7 +90,7 @@ export function VibeFrame({
             else frames.current.delete(layer.id);
           }}
           title={title}
-          srcDoc={layer.html}
+          srcDoc={ensureBridgeRuntime(layer.html)}
           sandbox={sandbox}
           className={`vibe-frame__layer${layer.visible ? ' is-visible' : ''}`}
           aria-hidden={layer.visible ? undefined : true}
