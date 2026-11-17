@@ -2,6 +2,7 @@
   "approved": "Approved",
   "cost": "Cost",
   "history": "Requests",
+  "note": "Details",
   "pending": "Pending",
   "rejected": "Declined",
   "tier": "Tier"

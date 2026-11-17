@@ -49,7 +49,7 @@
   "err-capacity": "Too many tables open. Try again shortly.",
   "err-full": "That table is full.",
   "err-generic": "Isso não funcionou.",
-  "err-host-only": "Only the host can do that.",
+  "err-host-only": "Apenas o anfitrião pode fazer isso.",
   "err-in-progress": "That game has already been dealt — hands and turn order are set.",
   "err-invalid-code": "That is not a table code.",
   "err-invalid-target": "Pick somebody else at the table.",

@@ -59,6 +59,7 @@
   "effects": "Effects",
   "enter-name": "Enter name",
   "err-generic": "Something went wrong.",
+  "err-not-host": "Only the host can do that.",
   "exit-game": "EXIT GAME",
   "expert": "Expert",
   "final-score": "Final Score",

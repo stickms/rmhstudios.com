@@ -1,3 +1,11 @@
 {
-  "generation-model": "Modèle de génération"
+  "generation-model": "Modèle de génération",
+  "vibe-chip-remove": "Retirer l'ambiance",
+  "vibe-frame-title": "Ambiance",
+  "vibe-loading": "Chargement…",
+  "vibe-open": "Ouvrir",
+  "vibe-run": "Exécutez",
+  "vibe-run-failed": "Impossible de charger l'ambiance.",
+  "vibe-stop": "Arrêter",
+  "vibe-untitled": "Ambiance"
 }

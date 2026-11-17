@@ -50,7 +50,7 @@
   "long-break": "Pause longue",
   "long-break-rmh-study-landing": "Pause longue : {{minutes}} min",
   "manage-decks": "Gérer les jeux",
-  "members-count_many": "Members ({{count}})",
+  "members-count_many": "Membres ({{count}})",
   "members-count_one": "Membres ({{count}})",
   "members-count_other": "Membres ({{count}})",
   "min-focus": "{{minutes}} min de concentration",

@@ -1,12 +1,15 @@
 {
   "backfill-thumbs": "Backfill all page thumbnails",
-  "backfill-thumbs-done_one": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-done_many": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
+  "backfill-thumbs-done_one": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-done_other": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-failed": "Failed to queue thumbnail backfill. Try again.",
   "empty-gallery": "Aucune page pour l'instant — soyez le premier à en créer une.",
   "generate-aria-label": "Générer",
   "hero-headline": "La plateforme universelle.",
+  "kind-aria-label": "Que générer",
+  "kind-page": "Page",
+  "kind-widget": "Widget",
   "loading": "Chargement…",
   "no-results": "Aucune page ne correspond à cette recherche.",
   "open-page": "Open page",
@@ -15,5 +18,6 @@
   "prompt-heading": "Décrivez une page à générer",
   "prompt-placeholder": "Où voulez-vous aller ?",
   "search-aria-label": "Rechercher des pages",
-  "search-placeholder": "Rechercher des pages..."
+  "search-placeholder": "Rechercher des pages...",
+  "widget-label": "Widget"
 }

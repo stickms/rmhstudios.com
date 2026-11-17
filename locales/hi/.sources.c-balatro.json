@@ -3,6 +3,7 @@
   "fullscreen": "Fullscreen",
   "leave": "Leave",
   "mp_hub_connected": "Online",
+  "mp_hub_connecting": "Connecting",
   "mp_hub_offline": "Offline",
   "mp_invite": "Invite",
   "mp_invite_code": "Lobby code",

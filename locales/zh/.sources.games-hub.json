@@ -224,6 +224,8 @@
   "steam-market-range": "{{min}} to {{max}} coins",
   "steam-market-receive": "You receive {{n}} coins",
   "steam-market-sell": "Sell",
+  "steam-marketplace-bought": "Bought {{name}}",
+  "steam-marketplace-yours": "Your listing",
   "steam-member-since": "Member since {{date}}",
   "steam-members": "Members: {{n}}",
   "steam-members-n": "Members: {{n}}",

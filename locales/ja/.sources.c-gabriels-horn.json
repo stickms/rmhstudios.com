@@ -6,6 +6,7 @@
   "chat-send": "Send",
   "dice-total": "Total {{total}}",
   "err-generic": "That did not work.",
+  "err-host-only": "Only the host can do that.",
   "host": "Host",
   "host-label": "Host",
   "house-rules-ask": "Ask",

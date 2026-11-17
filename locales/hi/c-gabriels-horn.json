@@ -47,7 +47,7 @@
   "err-capacity": "Too many tables open. Try again shortly.",
   "err-full": "That table is full.",
   "err-generic": "यह काम नहीं आया।",
-  "err-host-only": "Only the host can do that.",
+  "err-host-only": "केवल होस्ट ही ऐसा कर सकता है।",
   "err-in-progress": "That game has already been dealt — hands and turn order are set.",
   "err-invalid-code": "That is not a table code.",
   "err-invalid-target": "Pick somebody else at the table.",

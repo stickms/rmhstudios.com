@@ -1,3 +1,11 @@
 {
-  "generation-model": "Modelo de geração"
+  "generation-model": "Modelo de geração",
+  "vibe-chip-remove": "Remover vibe",
+  "vibe-frame-title": "Vibe",
+  "vibe-loading": "Carregando…",
+  "vibe-open": "Abrir",
+  "vibe-run": "Execute",
+  "vibe-run-failed": "Não foi possível carregar o vibe.",
+  "vibe-stop": "Parar",
+  "vibe-untitled": "Vibe"
 }

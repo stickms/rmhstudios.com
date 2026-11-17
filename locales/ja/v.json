@@ -5,6 +5,9 @@
   "empty-gallery": "まだページがありません — 最初の1ページを作りましょう。",
   "generate-aria-label": "生成",
   "hero-headline": "すべてのためのプラットフォーム。",
+  "kind-aria-label": "生成する内容",
+  "kind-page": "ページ",
+  "kind-widget": "ウィジェット",
   "loading": "読み込み中…",
   "no-results": "その検索に一致するページはありません。",
   "open-page": "Open page",
@@ -13,5 +16,6 @@
   "prompt-heading": "生成したいページを説明してください",
   "prompt-placeholder": "どこへ行きたいですか？",
   "search-aria-label": "ページを検索",
-  "search-placeholder": "ページを検索…"
+  "search-placeholder": "ページを検索…",
+  "widget-label": "ウィジェット"
 }

@@ -93,7 +93,7 @@
   "err-lobby-limit": "Too many lobbies right now. Try again shortly.",
   "err-lobby-not-found": "No lobby with that code.",
   "err-no-song": "Pick a track first.",
-  "err-not-host": "Only the host can do that.",
+  "err-not-host": "Apenas o anfitrião pode fazer isso.",
   "err-rate-limited": "Slow down a moment.",
   "err-song-gone": "That track is no longer available.",
   "err-too-few": "Not everyone is ready yet.",

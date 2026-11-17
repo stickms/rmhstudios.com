@@ -2,7 +2,7 @@
   "alert-denied": "Your browser refused notifications, so there is nowhere to send it.",
   "alert-enable": "Alert me on voice",
   "alert-enabled": "Alerting on voice",
-  "alert-failed": "That did not save. Try again.",
+  "alert-failed": "यह सहेजा नहीं गया। फिर से कोशिश करें।",
   "alert-off": "Alerts off.",
   "alert-on": "You'll be told when he joins a voice channel.",
   "alert-signin": "Sign in to be alerted",
@@ -166,7 +166,7 @@
   "record-session": "Longest single call",
   "record-voice": "Most time in voice",
   "records-heading": "The record",
-  "records-none": "never",
+  "records-none": "कभी नहीं",
   "records-note_one": "across the tracked {{count}} days",
   "records-note_other": "across the tracked {{count}} days",
   "records-title": "Personal bests",
@@ -257,7 +257,7 @@
   "voice-with_one": "with {{count}} others",
   "voice-with_other": "with {{count}} others",
   "week-empty-body": "Not written up yet. It settles once the week has enough in it.",
-  "week-empty-title": "This week",
+  "week-empty-title": "इस सप्ताह",
   "week-next": "अगले सप्ताह",
   "week-prev": "Previous week"
 }

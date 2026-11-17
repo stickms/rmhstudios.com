@@ -1,9 +1,11 @@
 {
+  "bulk-any": "Any",
   "bulk-cancel-cta": "Stop",
   "error": "Something went wrong",
   "none": "None",
   "remove-tag": "Remove",
   "trash-crumb-settings": "Settings",
+  "trash-days-left_many": "{{count}} days left",
   "trash-days-left_other": "{{count}} days left",
   "trash-filter-all": "All",
   "trash-filter-comments": "Comments",

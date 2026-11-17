@@ -1,12 +1,15 @@
 {
   "backfill-thumbs": "Backfill all page thumbnails",
-  "backfill-thumbs-done_one": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-done_many": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
+  "backfill-thumbs-done_one": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-done_other": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-failed": "Failed to queue thumbnail backfill. Try again.",
   "empty-gallery": "Aún no hay páginas — sé el primero en crear una.",
   "generate-aria-label": "Generar",
   "hero-headline": "La plataforma para todo.",
+  "kind-aria-label": "Qué generar",
+  "kind-page": "Página",
+  "kind-widget": "Widget",
   "loading": "Cargando…",
   "no-results": "Ninguna página coincide con esa búsqueda.",
   "open-page": "Open page",
@@ -15,5 +18,6 @@
   "prompt-heading": "Describe una página para generar",
   "prompt-placeholder": "¿A dónde quieres ir?",
   "search-aria-label": "Buscar páginas",
-  "search-placeholder": "Buscar páginas..."
+  "search-placeholder": "Buscar páginas...",
+  "widget-label": "Widget"
 }

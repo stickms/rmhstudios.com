@@ -61,7 +61,7 @@
   "download-ics": "Download .ics",
   "edit-session": "Edit session",
   "err-end-before-start": "The end time must come after the start time.",
-  "err-generic": "That did not save. Try again.",
+  "err-generic": "Não foi salvo. Tente novamente.",
   "err-network": "Could not reach the server. Your change was not saved.",
   "err-no-end": "Pick an end time.",
   "err-no-start": "Pick a start time.",

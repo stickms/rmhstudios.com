@@ -1,7 +1,7 @@
 {
   "add-tag": "Add a hashtag",
   "bulk-already-running": "One cleanup runs at a time. Wait for the current one to finish.",
-  "bulk-any": "Any",
+  "bulk-any": "任意",
   "bulk-before-label": "Created before",
   "bulk-cancel-cta": "停止",
   "bulk-cancel-failed": "Could not stop it.",

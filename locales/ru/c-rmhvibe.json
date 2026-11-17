@@ -1,3 +1,11 @@
 {
-  "generation-model": "Модель генерации"
+  "generation-model": "Модель генерации",
+  "vibe-chip-remove": "Убрать вайб",
+  "vibe-frame-title": "Вайб",
+  "vibe-loading": "Загрузка…",
+  "vibe-open": "Открыть",
+  "vibe-run": "Запустите",
+  "vibe-run-failed": "Не удалось загрузить вайб.",
+  "vibe-stop": "Стоп",
+  "vibe-untitled": "Вайб"
 }

@@ -1,3 +1,11 @@
 {
-  "generation-model": "जनरेशन मॉडल"
+  "generation-model": "जनरेशन मॉडल",
+  "vibe-chip-remove": "वाइब हटाएं",
+  "vibe-frame-title": "वाइब",
+  "vibe-loading": "लोड हो रहा है…",
+  "vibe-open": "खोलें",
+  "vibe-run": "चलाएँ",
+  "vibe-run-failed": "वाइब लोड नहीं हो सका।",
+  "vibe-stop": "रोकें",
+  "vibe-untitled": "वाइब"
 }

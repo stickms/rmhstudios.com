@@ -1,7 +1,7 @@
 {
   "add-tag": "Add a hashtag",
   "bulk-already-running": "One cleanup runs at a time. Wait for the current one to finish.",
-  "bulk-any": "Any",
+  "bulk-any": "Cualquiera",
   "bulk-before-label": "Created before",
   "bulk-cancel-cta": "Detener",
   "bulk-cancel-failed": "Could not stop it.",
@@ -48,7 +48,7 @@
   "none": "Ninguno",
   "remove-tag": "Eliminar",
   "trash-crumb-settings": "Ajustes",
-  "trash-days-left_many": "{{count}} days left",
+  "trash-days-left_many": "Quedan {{count}} días",
   "trash-days-left_one": "{{count}} days left",
   "trash-days-left_other": "Quedan {{count}} días",
   "trash-deleted-on": "Deleted {{date}}",

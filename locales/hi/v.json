@@ -6,6 +6,9 @@
   "empty-gallery": "अभी तक कोई पेज नहीं — पहला बनाने वाले बनें।",
   "generate-aria-label": "बनाएँ",
   "hero-headline": "सब कुछ करने वाला प्लेटफ़ॉर्म।",
+  "kind-aria-label": "क्या उत्पन्न करना है",
+  "kind-page": "पृष्ठ",
+  "kind-widget": "विजेट",
   "loading": "लोड हो रहा है…",
   "no-results": "उस खोज से कोई पेज मेल नहीं खाता।",
   "open-page": "Open page",
@@ -14,5 +17,6 @@
   "prompt-heading": "बताएँ कि कौन सा पेज जनरेट करना है",
   "prompt-placeholder": "आप कहाँ जाना चाहते हैं?",
   "search-aria-label": "पेज खोजें",
-  "search-placeholder": "पेज खोजें..."
+  "search-placeholder": "पेज खोजें...",
+  "widget-label": "विजेट"
 }

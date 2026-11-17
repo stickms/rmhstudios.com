@@ -8,6 +8,7 @@
   "cancelled": "Cancelled",
   "close": "Close",
   "delete": "Delete",
+  "err-generic": "That did not save. Try again.",
   "field-ends": "Ends",
   "field-notes": "Notes",
   "field-session": "Session",

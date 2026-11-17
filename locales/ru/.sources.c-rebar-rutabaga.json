@@ -1,4 +1,5 @@
 {
+  "book.formDate": "Night",
   "book.formEmail": "Email",
   "book.formName": "Name",
   "course.birch-caviar.allergens": "None",
@@ -7,6 +8,7 @@
   "course.rutabaga-400.allergens": "None",
   "page.back": "Services",
   "policy.floor.title": "The floor",
+  "room.M-03.element": "Tables",
   "room.M-05.element": "Light",
   "room.M-07.element": "Pass"
 }

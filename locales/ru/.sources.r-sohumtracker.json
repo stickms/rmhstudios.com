@@ -1,4 +1,5 @@
 {
+  "alert-failed": "That did not save. Try again.",
   "fact-messages": "Messages",
   "fact-muted": "Muted",
   "fact-online": "Online",
@@ -15,12 +16,19 @@
   "panel-playing": "Playing",
   "panel-streaming": "Streaming",
   "panel-watching": "Watching",
+  "records-none": "never",
   "refresh": "Refresh now",
   "share-copied": "Copied",
   "share-copy": "Copy link",
   "stat-job-never": "Never",
+  "stat-job-value_few": "{{count}} days",
+  "stat-job-value_many": "{{count}} days",
   "stat-job-value_other": "{{count}} days",
+  "stat-messages-note_few": "{{count}} words",
+  "stat-messages-note_many": "{{count}} words",
   "stat-messages-note_other": "{{count}} words",
+  "stat-streak-value_few": "{{count}} days",
+  "stat-streak-value_many": "{{count}} days",
   "stat-streak-value_other": "{{count}} days",
   "status-offline": "Offline",
   "status-online": "Online",
@@ -28,5 +36,6 @@
   "table-gaming": "Games",
   "table-hour": "Hour",
   "table-messages": "Messages",
+  "week-empty-title": "This week",
   "week-next": "Next week"
 }

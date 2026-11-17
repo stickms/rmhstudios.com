@@ -5,6 +5,9 @@
   "empty-gallery": "还没有页面——来做第一个吧。",
   "generate-aria-label": "生成",
   "hero-headline": "万物平台。",
+  "kind-aria-label": "要生成什么",
+  "kind-page": "页",
+  "kind-widget": "小组件",
   "loading": "加载中…",
   "no-results": "没有页面符合该搜索。",
   "open-page": "Open page",
@@ -13,5 +16,6 @@
   "prompt-heading": "描述要生成的页面",
   "prompt-placeholder": "你想去哪里？",
   "search-aria-label": "搜索页面",
-  "search-placeholder": "搜索页面..."
+  "search-placeholder": "搜索页面...",
+  "widget-label": "小组件"
 }

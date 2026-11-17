@@ -1,3 +1,11 @@
 {
-  "generation-model": "生成モデル"
+  "generation-model": "生成モデル",
+  "vibe-chip-remove": "バイブを削除",
+  "vibe-frame-title": "バイブ",
+  "vibe-loading": "読み込み中…",
+  "vibe-open": "開く",
+  "vibe-run": "実行",
+  "vibe-run-failed": "バイブを読み込めませんでした。",
+  "vibe-stop": "停止",
+  "vibe-untitled": "バイブ"
 }

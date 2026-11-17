@@ -1,3 +1,11 @@
 {
-  "generation-model": "生成模型"
+  "generation-model": "生成模型",
+  "vibe-chip-remove": "移除氛围",
+  "vibe-frame-title": "氛围",
+  "vibe-loading": "加载中…",
+  "vibe-open": "打开",
+  "vibe-run": "跑",
+  "vibe-run-failed": "无法加载该氛围。",
+  "vibe-stop": "停止",
+  "vibe-untitled": "氛围"
 }

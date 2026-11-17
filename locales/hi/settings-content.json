@@ -1,7 +1,7 @@
 {
   "add-tag": "Add a hashtag",
   "bulk-already-running": "One cleanup runs at a time. Wait for the current one to finish.",
-  "bulk-any": "Any",
+  "bulk-any": "कोई भी",
   "bulk-before-label": "Created before",
   "bulk-cancel-cta": "रोकें",
   "bulk-cancel-failed": "Could not stop it.",

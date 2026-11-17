@@ -45,7 +45,7 @@
   "err-capacity": "Too many tables open. Try again shortly.",
   "err-full": "That table is full.",
   "err-generic": "うまくいきませんでした。",
-  "err-host-only": "Only the host can do that.",
+  "err-host-only": "それはホストだけができます。",
   "err-in-progress": "That game has already been dealt — hands and turn order are set.",
   "err-invalid-code": "That is not a table code.",
   "err-invalid-target": "Pick somebody else at the table.",

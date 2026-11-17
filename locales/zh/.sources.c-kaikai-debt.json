@@ -16,6 +16,7 @@
   "page.back": "RMH Studios",
   "stats.accrual.balance": "Balance",
   "stats.category.other": "Other",
+  "stats.category.rent": "Rent",
   "stats.category.transit": "Transit",
   "stats.control.zoom": "Zoom",
   "stats.measure.category": "Category",
@@ -23,8 +24,10 @@
   "stats.now": "now",
   "stats.readout.lines": "Lines",
   "stats.readout.share": "Share",
+  "stats.rhythm.more": "More",
   "stats.tab.overview": "Overview",
   "stats.tab.table": "Table",
   "stats.table.category": "Category",
-  "stats.table.total": "Total"
+  "stats.table.total": "Total",
+  "stats.tile.milestoneNever": "never"
 }

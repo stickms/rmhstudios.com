@@ -1,3 +1,11 @@
 {
-  "generation-model": "نموذج التوليد"
+  "generation-model": "نموذج التوليد",
+  "vibe-chip-remove": "إزالة المزاج",
+  "vibe-frame-title": "المزاج",
+  "vibe-loading": "جارٍ التحميل…",
+  "vibe-open": "افتح",
+  "vibe-run": "يجري",
+  "vibe-run-failed": "تعذّر تحميل المزاج.",
+  "vibe-stop": "توقف",
+  "vibe-untitled": "المزاج"
 }
