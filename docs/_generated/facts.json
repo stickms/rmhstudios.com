@@ -1,8 +1,8 @@
 {
   "generatedFrom": "scripts/gen-repo-facts.ts (tracked files, prisma/schema/**, lib/i18n/config.ts); regenerate with `pnpm facts:generate`, gated by `pnpm facts:check`",
-  "prismaModels": 504,
+  "prismaModels": 507,
   "prismaEnums": 82,
-  "prismaSchemaLines": 13174,
+  "prismaSchemaLines": 13249,
   "prismaMigrations": 289,
   "routeFiles": 532,
   "apiRouteFiles": 112,

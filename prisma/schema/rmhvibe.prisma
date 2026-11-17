@@ -16,9 +16,28 @@ model VibePage {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  versions VibePageVersion[]
+  /// Creator of the page; null for anonymous or legacy pages and after the account is deleted.
+  ownerId         String?
+  owner           User?      @relation("VibeOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  /// The page this one was remixed from; null for originals or once the source is deleted.
+  parentPageId    String?
+  parent          VibePage?  @relation("VibeRemixes", fields: [parentPageId], references: [id], onDelete: SetNull)
+  remixes         VibePage[] @relation("VibeRemixes")
+  /// The version of the parent that was remixed (plain column, no relation).
+  parentVersionId String?
+  /// 'page' | 'widget'. A widget is a small embeddable vibe shown inside a feed post.
+  kind            String     @default("page") @db.VarChar(8)
+  /// Current values of the page's tweakable settings (see VibePageVersion.tweakSpec).
+  tweakValues     Json?
+
+  versions   VibePageVersion[]
+  /// Shared page and per-user state written through the vibe bridge.
+  kv         VibeKv[]
+  /// Feed posts that embed this page.
+  postEmbeds PostVibeEmbed[]
 
   @@index([slug])
+  @@index([ownerId, createdAt])
   @@map("vibe_page")
 }
 
@@ -34,10 +53,59 @@ model VibePageVersion {
   description         String? // description at this version
   html                String // full generated HTML for this version
   conversationHistory Json // cumulative { role, content } history up to & including this version
+  /// Stored multi-file project for this version: `{ deps: Record<string,string>; files: Record<string,string> }`; null for single-file HTML builds.
+  project             Json?
+  /// Declared tweakable settings for this version; the values live on VibePage.tweakValues.
+  tweakSpec           Json?
   createdAt           DateTime @default(now())
 
   @@index([pageId, createdAt])
   @@map("vibe_page_version")
+}
+
+/// Key-value state a vibe reads and writes through the bridge: one row per page-wide key, or per user per key.
+model VibeKv {
+  id        String   @id @default(uuid(7))
+  pageId    String
+  /// 'page' (shared by all viewers) | 'user' (private to one viewer).
+  scope     String   @db.VarChar(8)
+  /// '' for page scope, the viewing userId for user scope.
+  ownerKey  String   @default("") @db.VarChar(64)
+  key       String   @db.VarChar(64)
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  page VibePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, scope, ownerKey, key])
+  @@index([pageId, scope, ownerKey])
+  @@map("vibe_kv")
+}
+
+/// Links a feed post (RMHark) to the vibe page version it embeds.
+model PostVibeEmbed {
+  postId    String   @id
+  pageId    String
+  versionId String
+  createdAt DateTime @default(now())
+
+  post RMHark   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  page VibePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@map("post_vibe_embed")
+}
+
+/// One vibe launched into a Discord channel Activity, kept to list recent launches per channel.
+model DiscordVibeLaunch {
+  id        String   @id @default(uuid(7))
+  channelId String   @db.VarChar(32)
+  slug      String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  @@index([channelId, createdAt])
+  @@map("discord_vibe_launch")
 }
 
 // ─── LEDGER (Co-Scientist reproducibility substrate) ─────────────────────────
@@ -45,8 +113,9 @@ model VibePageVersion {
 // ─── RMH Datacenter: compute a member actually bought (W2, 2026-09-19) ────
 // The datacenter microsite draws capacity meters from a static file while the
 // platform genuinely sells compute: `lib/ai/budget.server.ts` meters AI spend
-// per tier, `ImageGenBudget` caps generation, RMHVibe bills builds against
-// Kimi and DeepSeek, and `AiUsage` records all of it. The fiction and the
+// per tier, `ImageGenBudget` caps generation, RMHVibe builds call Kimi and
+// DeepSeek directly and are NOT metered in `AiUsage`, which records the other
+// AI surfaces. The fiction and the
 // infrastructure were describing the same thing and not talking.
 //
 // This is also the coin sink W7's inventory said the economy needs. It is the

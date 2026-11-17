@@ -415,6 +415,9 @@ model User {
   /// Compute bought with coins from RMH Datacenter (W2).
   computeGrants ComputeGrant[]
 
+  /// Vibe pages this member created (RMH Vibes).
+  vibePages VibePage[] @relation("VibeOwner")
+
   /// What this member agreed to give which builds (B1).
   buildGrants         BuildGrant[]
   readPositions       ReadPosition[]
