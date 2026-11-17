@@ -48,6 +48,7 @@ export const NAMESPACES = [
   // Site-wide + section namespaces.
   "common", "nav", "admin", "builds", "errors", "feed", "games-hub", "groups",
   "library", "pages", "psychology", "rideshare", "search", "settings-appearance",
+  "site-history",
   "settings-content", "settings-notifications", "shared", "site",
   "theme-studio", "user-builds", "v",
   // Component namespaces.

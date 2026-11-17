@@ -118,6 +118,7 @@ import { Route as SiteSectionsRouteImport } from './routes/_site/sections'
 import { Route as SiteServicesRouteImport } from './routes/_site/services'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
 import { Route as SiteShopRouteImport } from './routes/_site/shop'
+import { Route as SiteSiteHistoryRouteImport } from './routes/_site/site-history'
 import { Route as SiteSpeedrunsRouteImport } from './routes/_site/speedruns'
 import { Route as SiteTodayRouteImport } from './routes/_site/today'
 import { Route as SiteTranslateRouteImport } from './routes/_site/translate'
@@ -1071,6 +1072,11 @@ const SiteShareRoute = SiteShareRouteImport.update({
 const SiteShopRoute = SiteShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSiteHistoryRoute = SiteSiteHistoryRouteImport.update({
+  id: '/site-history',
+  path: '/site-history',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSpeedrunsRoute = SiteSpeedrunsRouteImport.update({
@@ -3258,6 +3264,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof SiteServicesRouteWithChildren
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
+  '/site-history': typeof SiteSiteHistoryRoute
   '/speedruns': typeof SiteSpeedrunsRoute
   '/today': typeof SiteTodayRoute
   '/translate': typeof SiteTranslateRoute
@@ -3751,6 +3758,7 @@ export interface FileRoutesByTo {
   '/sections': typeof SiteSectionsRoute
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
+  '/site-history': typeof SiteSiteHistoryRoute
   '/speedruns': typeof SiteSpeedrunsRoute
   '/today': typeof SiteTodayRoute
   '/translate': typeof SiteTranslateRoute
@@ -4267,6 +4275,7 @@ export interface FileRoutesById {
   '/_site/services': typeof SiteServicesRouteWithChildren
   '/_site/share': typeof SiteShareRoute
   '/_site/shop': typeof SiteShopRoute
+  '/_site/site-history': typeof SiteSiteHistoryRoute
   '/_site/speedruns': typeof SiteSpeedrunsRoute
   '/_site/today': typeof SiteTodayRoute
   '/_site/translate': typeof SiteTranslateRoute
@@ -4788,6 +4797,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/share'
     | '/shop'
+    | '/site-history'
     | '/speedruns'
     | '/today'
     | '/translate'
@@ -5281,6 +5291,7 @@ export interface FileRouteTypes {
     | '/sections'
     | '/share'
     | '/shop'
+    | '/site-history'
     | '/speedruns'
     | '/today'
     | '/translate'
@@ -5796,6 +5807,7 @@ export interface FileRouteTypes {
     | '/_site/services'
     | '/_site/share'
     | '/_site/shop'
+    | '/_site/site-history'
     | '/_site/speedruns'
     | '/_site/today'
     | '/_site/translate'
@@ -7154,6 +7166,13 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof SiteShopRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/site-history': {
+      id: '/_site/site-history'
+      path: '/site-history'
+      fullPath: '/site-history'
+      preLoaderRoute: typeof SiteSiteHistoryRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/speedruns': {
@@ -10240,6 +10259,7 @@ interface SiteRouteChildren {
   SiteServicesRoute: typeof SiteServicesRouteWithChildren
   SiteShareRoute: typeof SiteShareRoute
   SiteShopRoute: typeof SiteShopRoute
+  SiteSiteHistoryRoute: typeof SiteSiteHistoryRoute
   SiteSpeedrunsRoute: typeof SiteSpeedrunsRoute
   SiteTodayRoute: typeof SiteTodayRoute
   SiteTranslateRoute: typeof SiteTranslateRoute
@@ -10391,6 +10411,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteServicesRoute: SiteServicesRouteWithChildren,
   SiteShareRoute: SiteShareRoute,
   SiteShopRoute: SiteShopRoute,
+  SiteSiteHistoryRoute: SiteSiteHistoryRoute,
   SiteSpeedrunsRoute: SiteSpeedrunsRoute,
   SiteTodayRoute: SiteTodayRoute,
   SiteTranslateRoute: SiteTranslateRoute,

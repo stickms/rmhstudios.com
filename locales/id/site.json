@@ -609,6 +609,7 @@
   "upgrade": "Tingkatkan",
   "ventures-subtitle": "The brands and programmes built around RMH Studios.",
   "your-current-plan": "Paket Anda saat ini",
+  "changelog-site-history": "Sejarah situs",
   "changelog-title": "Changelog",
   "developer-docs": "Docs",
   "developer-intro": "Build on RMH Studios programmatically. The REST API is available to HARD-R subscribers and above. Create a scoped key below, then read the documentation or point your codegen at the OpenAPI spec.",
