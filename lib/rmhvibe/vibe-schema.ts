@@ -21,3 +21,8 @@ export const vibeStreamBodySchema = z.object({
 });
 
 export type VibeStreamBody = z.infer<typeof vibeStreamBodySchema>;
+
+export const vibeTweaksBodySchema = z.object({
+  // Entries are validated against the page's spec, not here.
+  values: z.record(z.string().max(64), z.unknown()),
+});

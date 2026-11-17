@@ -897,24 +897,25 @@ import { route as r888 } from '@/lib/versecraft/api/versecraft.save.server';
 import { route as r889 } from '@/lib/versecraft/api/versecraft.seeds.server';
 import { route as r890 } from '@/lib/versecraft/api/versecraft.seeds.fork.server';
 import { route as r891 } from '@/lib/versecraft/api/versecraft.seeds.rate.server';
-import { route as r892 } from '@/lib/game/api/void-breaker.leaderboard.server';
-import { route as r893 } from '@/lib/game/api/void-breaker.score.server';
-import { route as r894 } from '@/lib/wager/api/wager.server';
-import { route as r895 } from '@/lib/wager/api/wager.$id.server';
-import { route as r896 } from '@/lib/profile/api/webrings.server';
-import { route as r897 } from '@/lib/profile/api/webrings.$slug.server';
-import { route as r898 } from '@/lib/profile/api/webrings.$slug.hop.server';
-import { route as r899 } from '@/lib/profile/api/webrings.$slug.membership.server';
-import { route as r900 } from '@/lib/wheel/api/wheel.server';
-import { route as r901 } from '@/lib/wheel/api/wheel.spin.server';
-import { route as r902 } from '@/lib/calendar/api/when.server';
-import { route as r903 } from '@/lib/calendar/api/when.$id.server';
-import { route as r904 } from '@/lib/calendar/api/when.$id.ics.server';
-import { route as r905 } from '@/lib/calendar/api/when.$id.lock.server';
-import { route as r906 } from '@/lib/calendar/api/when.$id.respond.server';
-import { route as r907 } from '@/lib/wiki/api/wiki.sso.server';
-import { route as r908 } from '@/lib/wishlist/api/wishlist.server';
-import { route as r909 } from '@/lib/wrapped/api/wrapped.server';
+import { route as r892 } from '@/lib/rmhvibe/api/vibe.page.$slug.tweaks.server';
+import { route as r893 } from '@/lib/game/api/void-breaker.leaderboard.server';
+import { route as r894 } from '@/lib/game/api/void-breaker.score.server';
+import { route as r895 } from '@/lib/wager/api/wager.server';
+import { route as r896 } from '@/lib/wager/api/wager.$id.server';
+import { route as r897 } from '@/lib/profile/api/webrings.server';
+import { route as r898 } from '@/lib/profile/api/webrings.$slug.server';
+import { route as r899 } from '@/lib/profile/api/webrings.$slug.hop.server';
+import { route as r900 } from '@/lib/profile/api/webrings.$slug.membership.server';
+import { route as r901 } from '@/lib/wheel/api/wheel.server';
+import { route as r902 } from '@/lib/wheel/api/wheel.spin.server';
+import { route as r903 } from '@/lib/calendar/api/when.server';
+import { route as r904 } from '@/lib/calendar/api/when.$id.server';
+import { route as r905 } from '@/lib/calendar/api/when.$id.ics.server';
+import { route as r906 } from '@/lib/calendar/api/when.$id.lock.server';
+import { route as r907 } from '@/lib/calendar/api/when.$id.respond.server';
+import { route as r908 } from '@/lib/wiki/api/wiki.sso.server';
+import { route as r909 } from '@/lib/wishlist/api/wishlist.server';
+import { route as r910 } from '@/lib/wrapped/api/wrapped.server';
 
 export const API_ROUTES: readonly ApiRoute[] = [
   r0, // /api/account/delete
@@ -1809,22 +1810,23 @@ export const API_ROUTES: readonly ApiRoute[] = [
   r889, // /api/versecraft/seeds
   r890, // /api/versecraft/seeds/fork
   r891, // /api/versecraft/seeds/rate
-  r892, // /api/void-breaker/leaderboard
-  r893, // /api/void-breaker/score
-  r894, // /api/wager
-  r895, // /api/wager/$id
-  r896, // /api/webrings
-  r897, // /api/webrings/$slug
-  r898, // /api/webrings/$slug/hop
-  r899, // /api/webrings/$slug/membership
-  r900, // /api/wheel
-  r901, // /api/wheel/spin
-  r902, // /api/when
-  r903, // /api/when/$id
-  r904, // /api/when/$id/ics
-  r905, // /api/when/$id/lock
-  r906, // /api/when/$id/respond
-  r907, // /api/wiki/sso
-  r908, // /api/wishlist
-  r909, // /api/wrapped
+  r892, // /api/vibe/page/$slug/tweaks
+  r893, // /api/void-breaker/leaderboard
+  r894, // /api/void-breaker/score
+  r895, // /api/wager
+  r896, // /api/wager/$id
+  r897, // /api/webrings
+  r898, // /api/webrings/$slug
+  r899, // /api/webrings/$slug/hop
+  r900, // /api/webrings/$slug/membership
+  r901, // /api/wheel
+  r902, // /api/wheel/spin
+  r903, // /api/when
+  r904, // /api/when/$id
+  r905, // /api/when/$id/ics
+  r906, // /api/when/$id/lock
+  r907, // /api/when/$id/respond
+  r908, // /api/wiki/sso
+  r909, // /api/wishlist
+  r910, // /api/wrapped
 ];

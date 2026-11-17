@@ -255,5 +255,9 @@
   "fix-it": "Fix it",
   "editing-element": "Editing: {{tag}}",
   "editing-element-text": "Editing: {{tag}} '{{text}}'",
-  "remove-selection": "Remove selection"
+  "remove-selection": "Remove selection",
+  "tweak-title": "Tweak",
+  "tweak-save": "Save",
+  "tweak-saved": "Tweaks saved",
+  "tweak-save-error": "Could not save the tweaks"
 }

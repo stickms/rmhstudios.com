@@ -9,6 +9,8 @@
  * Client-safe and pure: no node, esbuild or zod imports.
  */
 
+import { parseTweakSpec, type TweakSpec } from './tweaks';
+
 export type VibeProjectFiles =
   {
     deps: Record<
@@ -146,6 +148,25 @@ export function headField(
   return m
     ? m[1].trim()
     : null;
+}
+
+/** The TWEAKS header line: undefined when absent, null when it is not valid JSON. */
+function readTweaksLine(head: string): TweakSpec[] | null | undefined {
+  const line = headField(head, 'TWEAKS');
+  if (line === null) return undefined;
+  try {
+    return parseTweakSpec(JSON.parse(line));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The optional `TWEAKS: <JSON array>` header line of a generation. A missing or
+ * malformed line is an empty spec — never a build failure.
+ */
+export function parseTweaksLine(head: string): TweakSpec[] {
+  return readTweaksLine(head) ?? [];
 }
 
 /** Parse a (possibly truncated) streamed answer. Never throws. */
@@ -387,7 +408,9 @@ function oneLine(s: string): string {
 }
 
 /** Write a project in the exact generation format (files in sorted path order). */
-export function serializeVibeProject(p: VibeProjectFiles & { title?: string; description?: string }): string {
+export function serializeVibeProject(
+  p: VibeProjectFiles & { title?: string; description?: string; tweakSpec?: TweakSpec[] },
+): string {
   const out: string[] = [];
   if (p.title) out.push(`TITLE: ${oneLine(p.title)}`);
   if (p.description) out.push(`DESCRIPTION: ${oneLine(p.description)}`);
@@ -395,6 +418,7 @@ export function serializeVibeProject(p: VibeProjectFiles & { title?: string; des
     .map(([name, version]) => `${name}@${version}`)
     .join(', ');
   if (deps) out.push(`DEPS: ${deps}`);
+  if (p.tweakSpec?.length) out.push(`TWEAKS: ${JSON.stringify(p.tweakSpec)}`);
   out.push(FILES_MARKER);
   for (const path of Object.keys(p.files).sort()) {
     out.push(`--- file: ${path} ---`, p.files[path]);
@@ -405,6 +429,8 @@ export function serializeVibeProject(p: VibeProjectFiles & { title?: string; des
 export type AppliedVibeEdit = VibeProjectFiles & {
   title: string | null;
   description: string | null;
+  /** The edit's TWEAKS line; null when it has none or it is malformed (keep the base spec). */
+  tweakSpec: TweakSpec[] | null;
   changed: string[];
   deleted: string[];
 };
@@ -460,6 +486,7 @@ export function applyVibeEdit(base: VibeProjectFiles, editRaw: string): AppliedV
     files,
     title: headField(head, 'TITLE'),
     description: headField(head, 'DESCRIPTION'),
+    tweakSpec: readTweaksLine(head) ?? null,
     changed,
     deleted,
   };

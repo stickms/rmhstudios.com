@@ -31,9 +31,11 @@ import {
   RotateCcw,
   MousePointerClick,
   Wrench,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   getVibePage,
+  getVibeTweaks,
   listVibeVersions,
   getVibeVersion,
   type VibeVersionSummary,
@@ -42,6 +44,11 @@ import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
+import { TweakPanel } from '@/components/rmhvibe/TweakPanel';
+import { resolveTweakValues, validateTweakValues, type TweakSpec, type TweakValue } from '@/lib/rmhvibe/tweaks';
+import { vibeTweaksApi } from '@/lib/rmhvibe/vibe-page.contract';
+import { api } from '@/lib/contract/client';
+import { toast } from '@/lib/toast';
 import { BridgeError, type BridgeFrameEvent, type VibeSelection } from '@/lib/rmhvibe/bridge';
 import { formatFixPrompt } from '@/lib/rmhvibe/vibe-selection';
 import { useVibeBridge, type VibeBridgeHost } from '@/components/rmhvibe/useVibeBridge';
@@ -70,6 +77,7 @@ const fetchVibe = createServerFn({ method: 'GET' })
   .handler(async ({ data: slug }) => {
     const page = await getVibePage(slug);
     if (!page) throw notFound();
+    const { tweakSpec, tweakValues } = await getVibeTweaks(slug);
     const session = await auth.api.getSession({ headers: getRequest().headers });
     return {
       canEdit: canEditVibe(page.ownerId, session?.user?.id ?? null),
@@ -82,8 +90,14 @@ const fetchVibe = createServerFn({ method: 'GET' })
       // "generating" | "ready" | "error" — drives the still-building overlay below.
       status: page.status,
       thumbnailUrl: page.thumbnailUrl,
+      tweakSpec,
+      tweakValues,
     };
   });
+
+const fetchVibeTweaks = createServerFn({ method: 'GET' })
+  .validator((slug: string) => slug)
+  .handler(({ data: slug }) => getVibeTweaks(slug));
 
 const fetchVibeVersions = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -144,6 +158,8 @@ function VibeViewer() {
     canEdit,
     owner,
     parent,
+    tweakSpec: initialSpec,
+    tweakValues: savedValues,
   } = Route.useLoaderData();
   const navigate = useNavigate();
 
@@ -186,6 +202,14 @@ function VibeViewer() {
   const [selection, setSelection] = useState<VibeSelection | null>(null);
   // Runtime errors the page reported (deduped, newest last) that "Fix it" can target.
   const [pageErrors, setPageErrors] = useState<string[]>([]);
+  // Tweak knobs: the spec of the version on screen, the page's latest spec (what
+  // "Back to latest" returns to), the owner's saved values, and what the frame shows now.
+  const [tweakSpec, setTweakSpec] = useState<TweakSpec[]>(initialSpec);
+  const [latestSpec, setLatestSpec] = useState<TweakSpec[]>(initialSpec);
+  const [saved, setSaved] = useState<Record<string, TweakValue>>(savedValues);
+  const [tweakValues, setTweakValues] = useState(() => resolveTweakValues(initialSpec, savedValues));
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+  const [savingTweaks, setSavingTweaks] = useState(false);
   const { post } = useVibeBridge(bridgeFrame, {
     ...VIEWER_BRIDGE_HOST,
     onEvent(e: BridgeFrameEvent) {
@@ -240,6 +264,17 @@ function VibeViewer() {
     setPicking(false);
     setPageErrors([]);
   }, [bridgeFrame]);
+  useEffect(() => {
+    setTweakSpec(initialSpec);
+    setLatestSpec(initialSpec);
+    setSaved(savedValues);
+    setTweakValues(resolveTweakValues(initialSpec, savedValues));
+    setTweaksOpen(false);
+  }, [slug, initialSpec, savedValues]);
+  // Values are applied to every new frame (after its hello) and on every change.
+  useEffect(() => {
+    if (bridgeFrame && tweakSpec.length) post('tweaks', tweakValues);
+  }, [bridgeFrame, tweakSpec, tweakValues, post]);
   useEffect(() => {
     setHtml(initialHtml);
     setLatestHtml(initialHtml);
@@ -342,6 +377,8 @@ function VibeViewer() {
         return;
       }
       setHtml(version.html);
+      setTweakSpec(version.tweakSpec);
+      setTweakValues(resolveTweakValues(version.tweakSpec, saved));
       setActiveVersionId(versionId);
       if (version.title) document.title = `${version.title} | RMH Studios`;
     } catch {
@@ -354,7 +391,28 @@ function VibeViewer() {
     if (busy) return;
     previewSeqRef.current += 1;
     setHtml(latestHtml);
+    setTweakSpec(latestSpec);
+    setTweakValues(resolveTweakValues(latestSpec, saved));
     setActiveVersionId(null);
+  }
+
+  function changeTweak(key: string, value: TweakValue) {
+    setTweakValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function saveTweaks() {
+    if (savingTweaks) return;
+    setSavingTweaks(true);
+    try {
+      const values = validateTweakValues(tweakSpec, tweakValues);
+      await api(vibeTweaksApi, { params: { slug }, body: { values } });
+      setSaved((prev) => ({ ...prev, ...values }));
+      toast.success(t('tweak-saved', { defaultValue: 'Tweaks saved' }));
+    } catch {
+      toast.error(t('tweak-save-error', { defaultValue: 'Could not save the tweaks' }));
+    } finally {
+      setSavingTweaks(false);
+    }
   }
 
   useEffect(() => {
@@ -514,6 +572,17 @@ function VibeViewer() {
       // refresh the history list so the new entry shows up.
       setActiveVersionId(null);
       if (historyOpen || versions !== null) void loadVersions();
+      // The new version may declare different knobs.
+      void fetchVibeTweaks({ data: slug }).then(
+        (next) => {
+          if (gen !== genRef.current) return;
+          setTweakSpec(next.tweakSpec);
+          setLatestSpec(next.tweakSpec);
+          setSaved(next.tweakValues);
+          setTweakValues(resolveTweakValues(next.tweakSpec, next.tweakValues));
+        },
+        () => {},
+      );
     }
   }
 
@@ -585,6 +654,17 @@ function VibeViewer() {
           >
             <MousePointerClick size={17} />
           </button>
+          {tweakSpec.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setTweaksOpen((v) => !v)}
+              aria-label={t('tweak-title', { defaultValue: 'Tweak' })}
+              aria-pressed={tweaksOpen}
+              className="vibe-toolbar__icon"
+            >
+              <SlidersHorizontal size={17} />
+            </button>
+          )}
           {pageErrors.length > 0 && (
             <button
               type="button"
@@ -620,6 +700,16 @@ function VibeViewer() {
               </Link>
             )}
           </div>
+        )}
+
+        {tweaksOpen && tweakSpec.length > 0 && (
+          <TweakPanel
+            spec={tweakSpec}
+            values={tweakValues}
+            onChange={changeTweak}
+            onClose={() => setTweaksOpen(false)}
+            {...(canEdit && !viewingOlder ? { onSave: () => void saveTweaks(), saving: savingTweaks } : {})}
+          />
         )}
 
         {/* Banner shown while previewing an earlier variant */}

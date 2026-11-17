@@ -24,10 +24,12 @@ import {
   headField,
   normalizePath,
   parsePartialProject,
+  parseTweaksLine,
   resolveInVfs,
   RESOLVE_EXTS,
   specTarget,
 } from '@/lib/rmhvibe/vibe-project';
+import type { TweakSpec } from '@/lib/rmhvibe/tweaks';
 import {
   classifyImport,
   hostedStem,
@@ -44,6 +46,7 @@ export type VibeProject = {
   description: string;
   deps: Record<string, string>; // bare package name -> pinned version/range
   files: Record<string, string>; // normalized path -> source
+  tweakSpec: TweakSpec[]; // the page's declared knobs ([] when none)
 };
 
 // Public base URL where the vibe AI proxy lives. Baked into generated pages, so
@@ -392,6 +395,7 @@ export function parseVibeProject(raw: string): VibeProject | null {
     description: headField(head, 'DESCRIPTION') ?? '',
     deps: partial.deps,
     files: partial.files,
+    tweakSpec: parseTweaksLine(head),
   };
 }
 
