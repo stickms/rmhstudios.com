@@ -39,8 +39,8 @@ import {
 import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
-import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
-import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
+import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
+import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 import { useArrival, useArrivingKeys, ARRIVE } from '@/components/ui/arrive';
 import { cn } from '@/lib/utils';
@@ -141,10 +141,6 @@ function VibeViewer() {
   // The page's current (latest) HTML — what "Back to latest" returns to. Diverges
   // from `html` while previewing an older version, and advances on each customize.
   const [latestHtml, setLatestHtml] = useState(initialHtml);
-  // Bumped on every html change so the iframe fully remounts — without this,
-  // backdrop-filter overlays (toolbar/panel) leave stale composite "ghosts"
-  // each time the iframe repaints, stacking up as the user customizes.
-  const [renderKey, setRenderKey] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState<VibeModel>(DEFAULT_VIBE_MODEL);
@@ -164,7 +160,8 @@ function VibeViewer() {
   const isNewVersion = useArrivingKeys(versions?.map((v) => v.id) ?? []);
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  // The visible frame, reported by VibeFrame after each swap.
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   // The in-flight customize stream, aborted on slug change and unmount, and a
   // generation counter every async step checks before it writes state — so a
   // result for the previous page never lands on this one.
@@ -193,7 +190,6 @@ function VibeViewer() {
     setHtml(initialHtml);
     setLatestHtml(initialHtml);
     setStatus(initialStatus);
-    setRenderKey((k) => k + 1);
     setVersions(null);
     setActiveVersionId(null);
     setHistoryOpen(false);
@@ -236,7 +232,6 @@ function VibeViewer() {
         if (data.status === 'ready') {
           setHtml(data.html);
           setLatestHtml(data.html);
-          setRenderKey((k) => k + 1);
           if (data.title) document.title = `${data.title} | RMH Studios`;
           setStatus('ready');
         } else if (data.status === 'error') {
@@ -293,7 +288,6 @@ function VibeViewer() {
         return;
       }
       setHtml(version.html);
-      setRenderKey((k) => k + 1);
       setActiveVersionId(versionId);
       if (version.title) document.title = `${version.title} | RMH Studios`;
     } catch {
@@ -306,7 +300,6 @@ function VibeViewer() {
     if (busy) return;
     previewSeqRef.current += 1;
     setHtml(latestHtml);
-    setRenderKey((k) => k + 1);
     setActiveVersionId(null);
   }
 
@@ -330,6 +323,9 @@ function VibeViewer() {
     // The page as it stood when this customize began: the fallback below asks
     // "did the server's copy move past this?".
     const baselineHtml = latestHtml;
+    // What the frame shows now; restored if the build never lands, since live
+    // previews swap the visible frame while it runs.
+    const htmlBefore = html;
     setBusy(true);
     setError(null);
     setThinking('');
@@ -356,6 +352,8 @@ function VibeViewer() {
             setThinking((t) => t + event.text);
           } else if (event.type === 'content') {
             setContent((c) => c + event.text);
+          } else if (event.type === 'preview') {
+            setHtml(event.html);
           } else if (event.type === 'done') {
             finalHtml = event.html;
             finalTitle = event.title;
@@ -382,6 +380,7 @@ function VibeViewer() {
       // the remix never started, so there is nothing to apply to this page.
       customizeAbortRef.current = null;
       setBusy(false);
+      setHtml(htmlBefore);
       if (!hadError) {
         setError(
           t('connection-lost', {
@@ -426,11 +425,11 @@ function VibeViewer() {
     // start while this one is still deciding whether it landed.
     customizeAbortRef.current = null;
     setBusy(false);
+    if (!finalHtml || hadError) setHtml(htmlBefore);
 
     if (finalHtml && !hadError) {
       setHtml(finalHtml);
       setLatestHtml(finalHtml);
-      setRenderKey((k) => k + 1);
       if (finalTitle) document.title = `${finalTitle} | RMH Studios`;
       setPrompt('');
       setThinking('');
@@ -462,21 +461,12 @@ function VibeViewer() {
     <>
       <VibeStyles />
       <div className="fixed inset-0 bg-black">
-        <iframe
-          key={renderKey}
-          ref={iframeRef}
-          title="Vibe page"
-          srcDoc={html}
-          sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock"
-          className="h-full w-full border-0"
-          onLoad={(e) => {
-            // Move focus into the iframe so keyboard-driven pages (spacebar, arrow
-            // keys, WASD, etc.) receive input immediately without a manual click.
-            try {
-              e.currentTarget.contentWindow?.focus();
-            } catch {
-              /* cross-origin focus call — safe to ignore */
-            }
+        <VibeFrame
+          key={slug}
+          html={html}
+          title={t('vibe-frame-title', { defaultValue: 'Vibe page' })}
+          onFrame={(frame) => {
+            iframeRef.current = frame;
           }}
         />
 
@@ -650,12 +640,14 @@ function VibeViewer() {
               </div>
             </div>
 
-            {busy &&
-              (content ? (
-                <VibeProgress content={content} className="vibe-progress--sm mb-3" />
-              ) : (
-                <ThinkingStream text={thinking} className="vibe-think--sm mb-3" />
-              ))}
+            {busy && (
+              <LiveBuildPanel
+                thinking={thinking}
+                content={content}
+                phase={content ? 'writing' : 'thinking'}
+                className="mb-3"
+              />
+            )}
 
             <div className="flex items-end gap-2">
               <textarea

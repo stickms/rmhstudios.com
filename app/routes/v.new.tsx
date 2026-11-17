@@ -9,7 +9,7 @@
  * No auth required — anyone can generate a vibe page.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-router';
 import { noindexHead } from '@/lib/seo';
@@ -17,6 +17,10 @@ import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
+import { VibeFrame } from '@/components/rmhvibe/VibeFrame';
+import { LiveBuildPanel } from '@/components/rmhvibe/LiveBuildPanel';
+import { parsePartialProject } from '@/lib/rmhvibe/vibe-project';
+import { ChevronUp } from 'lucide-react';
 import { VibeStyles } from '@/components/rmhvibe/VibeStyles';
 
 const GENERIC_ERROR = 'Something went wrong while generating. Give it another go.';
@@ -43,6 +47,11 @@ function VibeNew() {
   // built" panel so the long code-writing phase shows real progress, not a spinner.
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Latest live preview (Task 4's `preview` event): the page as built so far.
+  const [preview, setPreview] = useState<{ html: string; done: number; total: number } | null>(
+    null,
+  );
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     // Guard against React StrictMode's double-invoke in dev.
@@ -83,6 +92,12 @@ function VibeNew() {
         setThinking((t) => t + event.text);
       } else if (event.type === 'content') {
         setContent((c) => c + event.text);
+      } else if (event.type === 'preview') {
+        setPreview({
+          html: event.html,
+          done: event.done.length,
+          total: event.done.length + event.pending.length,
+        });
       } else if (event.type === 'done') {
         goTo(event.slug);
       } else if (event.type === 'error') {
@@ -112,7 +127,60 @@ function VibeNew() {
     };
   }, [prompt, model, navigate]);
 
+  const writing = useMemo(() => parsePartialProject(content).writing, [content]);
+
   if (error) return <VibeError message={error} />;
+
+  if (preview) {
+    const status = writing
+      ? t('live-status-writing', {
+          defaultValue: 'Writing {{file}} · {{done}} of {{total}} files',
+          file: writing,
+          done: preview.done,
+          total: preview.total,
+        })
+      : t('thinking-it-through', { defaultValue: 'Thinking it through.' });
+    const phase = content ? 'writing' : 'thinking';
+    return (
+      <>
+        <VibeStyles />
+        <div className="vibe-live">
+          <div className="vibe-live__stage">
+            <VibeFrame
+              html={preview.html}
+              title={t('vibe-frame-title', { defaultValue: 'Vibe page' })}
+            />
+            <div className="vibe-live__sheet">
+              <button
+                type="button"
+                className="vibe-live__sheet-bar"
+                aria-expanded={sheetOpen}
+                aria-label={
+                  sheetOpen
+                    ? t('live-sheet-collapse', { defaultValue: 'Hide build details' })
+                    : t('live-sheet-expand', { defaultValue: 'Show build details' })
+                }
+                onClick={() => setSheetOpen((v) => !v)}
+              >
+                <span className="flex-1 truncate" aria-live="polite">
+                  {status}
+                </span>
+                <ChevronUp size={16} aria-hidden="true" className={sheetOpen ? 'rotate-180' : ''} />
+              </button>
+              {sheetOpen && (
+                <div className="vibe-live__sheet-body">
+                  <LiveBuildPanel thinking={thinking} content={content} phase={phase} />
+                </div>
+              )}
+            </div>
+          </div>
+          <aside className="vibe-live__side">
+            <LiveBuildPanel thinking={thinking} content={content} phase={phase} />
+          </aside>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

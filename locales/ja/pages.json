@@ -240,5 +240,13 @@
   "remix": "Remix",
   "remix-this-page": "Remix this page",
   "by-owner": "by {{name}}",
-  "remixed-from": "Remixed from {{title}}"
+  "remixed-from": "Remixed from {{title}}",
+  "live-tabs-label": "Build details",
+  "live-tab-progress": "Progress",
+  "live-tab-code": "Code",
+  "live-no-files": "No files yet.",
+  "live-status-writing": "Writing {{file}} · {{done}} of {{total}} files",
+  "live-sheet-expand": "Show build details",
+  "live-sheet-collapse": "Hide build details",
+  "vibe-frame-title": "Vibe page"
 }
