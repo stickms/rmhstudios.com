@@ -16,7 +16,17 @@ export const ASSIST_MIN_CHARS = 3;
  * The AI rewrites of the current draft: the labels, which one is running, and the call that replaces the draft with
  * the result. Shared by the chips under the boxed composer and the AI menu of the home composer.
  */
-export function useComposeAssist(value: string, onChange: (v: string) => void) {
+/**
+ * Where a rewrite is sent. Defaults to the feed's `/api/ai/transform` (posts,
+ * up to 1,000 characters); a surface with longer text passes its own, as the
+ * admin email composer does.
+ */
+export type AssistRewrite = (text: string, action: AssistAction) => Promise<string>;
+
+const feedRewrite: AssistRewrite = async (text, action) =>
+ (await api(transformTextApi, { body: { text, action }, timeoutMs: AI_TIMEOUT_MS })).text;
+
+export function useComposeAssist(value: string, onChange: (v: string) => void, rewrite: AssistRewrite = feedRewrite) {
  const { t } = useTranslation('feed');
  const [busy, setBusy] = useState<AssistAction | null>(null);
 
@@ -32,8 +42,8 @@ export function useComposeAssist(value: string, onChange: (v: string) => void) {
  const run = async (action: AssistAction) => {
  setBusy(action);
  try {
- const data = await api(transformTextApi, { body: { text: value, action }, timeoutMs: AI_TIMEOUT_MS });
- if (data.text) onChange(data.text);
+ const text = await rewrite(value, action);
+ if (text) onChange(text);
  else toast.error(t('could-not-rewrite', { defaultValue:'Could not rewrite'}));
  } catch (e) {
  if (e instanceof HttpError && e.status === 503) {
@@ -50,9 +60,18 @@ export function useComposeAssist(value: string, onChange: (v: string) => void) {
 }
 
 /** AI compose-assist chips that rewrite the current draft in place. */
-export function ComposeAssist({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function ComposeAssist({
+ value,
+ onChange,
+ rewrite,
+}: {
+ value: string;
+ onChange: (v: string) => void;
+ /** Defaults to the feed's rewrite endpoint; see {@link AssistRewrite}. */
+ rewrite?: AssistRewrite;
+}) {
  const { t } = useTranslation('feed');
- const { busy, run, labels, available } = useComposeAssist(value, onChange);
+ const { busy, run, labels, available } = useComposeAssist(value, onChange, rewrite);
 
  if (!available) return null;
 

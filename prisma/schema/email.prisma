@@ -7,6 +7,10 @@ model EmailCampaign {
   subject     String    @db.VarChar(200)
   /// Plain text with blank-line paragraphs and bare URLs (rendered by lib/email/campaign-render.ts).
   body        String    @db.Text
+  /// Site images (uploaded or AI-generated feed images) shown under the message, in order.
+  imageUrls   String[]  @default([])
+  /// A designed layout (lib/email/campaign-schema.ts EmailDesign), or null for the plain one.
+  design      Json?
   /// 'announcements' | 'product' | 'service' (service ignores opt-outs; see lib/email/preferences.ts).
   category    String    @db.VarChar(16)
   /// The audience as it was asked for: { mode, filters?, userIds? } (lib/email/audience.ts).

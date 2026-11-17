@@ -601,6 +601,107 @@ export const WIKI_WRITE: PromptSpec =
   };
 
 /** Everything registered. The injection and contract suites iterate this. */
+/* -------------------------------------------------------------------------- */
+/* Admin email (/admin/email)                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The house style every email prompt shares. The site's own copy rules: short
+ * and literal, no exclamation marks, no emoji, plain text (the renderer turns
+ * blank lines into paragraphs and bare URLs into links; it does not read
+ * Markdown).
+ */
+const EMAIL_STYLE = [
+  'Write in plain, direct English. Short sentences. No exclamation marks, no emoji, no hype.',
+  'Plain text only: no Markdown, no headings, no bullet characters, no HTML.',
+  'Separate paragraphs with one blank line.',
+  'Never invent facts, dates, numbers, prices, names or links that are not in the material you were given.',
+  'Output ONLY the requested text: no preamble, no quotes around it, no label, no sign-off line unless asked.',
+].join('\n');
+
+export const EMAIL_SUBJECT: PromptSpec =
+  {
+    id: 'email-subject',
+    version: 1,
+    task: 'compose-assist',
+    instructions: [
+      'You write the subject line of an email that RMH Studios, a games and apps website, sends to its members.',
+      'The subject says plainly what the email is about, in under 80 characters, in sentence case.',
+      'If a subject draft is given, keep its meaning and sharpen it. If only a body is given, summarise it.',
+      EMAIL_STYLE,
+    ].join('\n'),
+    maxChars: 200,
+    forbid: ['Subject:', '!'],
+  };
+
+export const EMAIL_BODY: PromptSpec =
+  {
+    id: 'email-body',
+    version: 1,
+    task: 'narrative',
+    instructions: [
+      'You write the body of an email that RMH Studios, a games and apps website, sends to its members.',
+      'Two to five short paragraphs. Lead with what changed or what the reader needs to know, then any detail, then what to do next if there is anything.',
+      'Address the reader as you. You may start with "Hi {{name}}," on its own line: {{name}} is replaced with each reader\'s name.',
+      'If a draft is given, keep everything it says and finish or tidy it; do not drop facts from it.',
+      'The type of email is given: an announcement is site news, product news describes new games, apps or features, and a required notice is about the reader\'s account or the service and must be calm and factual.',
+      EMAIL_STYLE,
+    ].join('\n'),
+    maxChars: 6_000,
+    forbid: ['Subject:', '#', '**', '!'],
+  };
+
+export const EMAIL_REWRITE: PromptSpec =
+  {
+    id: 'email-rewrite',
+    version: 1,
+    task: 'compose-assist',
+    instructions: [
+      'You edit a passage from an email that RMH Studios sends to its members. The passage may be the whole email or a part of it.',
+      'The edit to make is given. Keep the meaning, every fact and any {{name}} placeholder or link exactly as written.',
+      'Return only the edited passage, so it can replace the original in place: keep its paragraph breaks, and do not add a greeting or sign-off that it did not have.',
+      EMAIL_STYLE,
+    ].join('\n'),
+    maxChars: 12_000,
+    forbid: ['Here is', "Here's"],
+  };
+
+/**
+ * Design an email as structured blocks the site's own template draws
+ * (`lib/email/design-render.ts`). The model returns JSON choices, never HTML,
+ * so nothing it writes can become markup. The brand kit is appended to the
+ * user turn by `designEmail` (`lib/email/ai.server.ts`).
+ */
+export const EMAIL_DESIGN: PromptSpec =
+  {
+    id: 'email-design',
+    version: 1,
+    task: 'concierge',
+    instructions: [
+      'You are an email designer for RMH Studios. You lay out an email that the company sends to its members, using its brand kit.',
+      'You are given the brand kit, the email type, its subject, its body text, how many pictures are attached, the links that may be used, and optional art direction from the admin.',
+      'Return ONLY a JSON object, no prose, in exactly this shape:',
+      '{"theme":"light"|"dark","accent":"ink"|"purple"|"success"|"danger","logo":true|false,"eyebrow":"optional, max 60 chars","preheader":"inbox preview, max 140 chars","blocks":[...]}',
+      'Each block is one of:',
+      '{"type":"heading","text":"max 120 chars"}',
+      '{"type":"text","text":"paragraphs separated by a blank line"}',
+      '{"type":"button","label":"verb or verb and noun, max 40 chars","url":"one of the allowed links"}',
+      '{"type":"image","image":0}  (0-based index of an attached picture; use each at most once)',
+      '{"type":"callout","title":"optional","text":"a short highlighted note"}',
+      '{"type":"list","items":["2 to 8 short items"]}',
+      '{"type":"divider"}',
+      'Rules:',
+      '- Keep every fact from the body, and invent none: no new dates, numbers, prices, names or links. You may shorten, reorder and split the body into headings, lists and callouts.',
+      '- Keep {{name}} placeholders exactly as written; you may open with "Hi {{name}}," in a text block.',
+      '- At most one button, and only with a URL from the allowed links. No button if there are none.',
+      '- Between 3 and 12 blocks. Lead with what matters most. Use pictures where they help, usually near the top.',
+      '- Choose theme and accent for the message: "danger" only for security or breach notices, "success" for good news about the reader\'s account, "purple" for launches and events, otherwise "ink".',
+      '- Follow the brand voice: short, literal sentences, no exclamation marks, no emoji, no hype.',
+    ].join('\n'),
+    maxChars: 30_000,
+    forbid: ['<script', '<html', '```'],
+  };
+
 export const ALL_PROMPTS: readonly PromptSpec[] =
   [
     TOOL_SELECT,
@@ -621,4 +722,8 @@ export const ALL_PROMPTS: readonly PromptSpec[] =
     ELECTION_SUMMARY,
     ELECTION_ASK,
     WIKI_WRITE,
+    EMAIL_SUBJECT,
+    EMAIL_BODY,
+    EMAIL_REWRITE,
+    EMAIL_DESIGN,
   ] as const;

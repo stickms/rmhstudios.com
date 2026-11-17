@@ -14,7 +14,11 @@ export type AIGenerateRequest =
  | { mode:'post'; draft?: string }
  | { mode:'reply'; rmharkId: string; parentId?: string; draft?: string }
  | { mode:'announcement-title'; title?: string; body?: string }
- | { mode:'announcement-body'; title?: string; body?: string };
+ | { mode:'announcement-body'; title?: string; body?: string }
+ | { mode:'email-subject'| 'email-body'; subject?: string; body?: string; category: EmailCategoryForAi };
+
+/** The admin email composer's types (`CampaignCategory`), spelled out to keep this module free of email imports. */
+type EmailCategoryForAi = 'announcements' | 'product' | 'service';
 
 interface AIGenerateButtonProps {
  request: AIGenerateRequest;

@@ -6,7 +6,7 @@
 
 # API routes
 
-Every server route in the app tier — 1016 endpoints across 201 groups: 110 route files under `app/routes/api` and 906 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
+Every server route in the app tier — 1020 endpoints across 201 groups: 110 route files under `app/routes/api` and 910 registered modules that the one dispatcher route `app/routes/api/$.ts` serves (the Source column says which). This is the whole internal surface, not just the public developer API: the public, versioned, key-authenticated subset is `/api/v1/*`, documented in [the developer API reference](../developer-api/endpoints/index.md). Everything else is session-authenticated and internal — treat it as unstable.
 
 Methods are read from each file's `server.handlers` block, or from the handlers a registered module passes to `apiRoute`. A route with no methods listed exports a handler built by a wrapper (for example the developer API `withDeveloperApi`).
 
@@ -46,7 +46,7 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 
 ## `/api/admin`
 
-100 routes.
+104 routes.
 
 | Route | Methods | Source |
 | ----- | ------- | ------ |
@@ -87,9 +87,13 @@ Methods are read from each file's `server.handlers` block, or from the handlers 
 | `/api/admin/delight/translations/:id` | `POST` | `lib/delight/api/admin.delight.translations.$id.server.ts` |
 | `/api/admin/delight/translations/export` | `GET` | `lib/delight/api/admin.delight.translations.export.server.ts` |
 | `/api/admin/economy` | `GET` | `lib/admin/api/admin.economy.server.ts` |
+| `/api/admin/email/ai/design` | `GET` `POST` | `lib/admin/api/admin.email.ai.design.server.ts` |
+| `/api/admin/email/ai/image` | `POST` | `lib/admin/api/admin.email.ai.image.server.ts` |
+| `/api/admin/email/ai/rewrite` | `POST` | `lib/admin/api/admin.email.ai.rewrite.server.ts` |
 | `/api/admin/email/campaigns` | `GET` `POST` | `lib/admin/api/admin.email.campaigns.server.ts` |
 | `/api/admin/email/campaigns/:id/resume` | `POST` | `lib/admin/api/admin.email.campaigns.$id.resume.server.ts` |
 | `/api/admin/email/preview` | `POST` | `lib/admin/api/admin.email.preview.server.ts` |
+| `/api/admin/email/render` | `POST` | `lib/admin/api/admin.email.render.server.ts` |
 | `/api/admin/email/test` | `POST` | `lib/admin/api/admin.email.test.server.ts` |
 | `/api/admin/email/users` | `GET` | `lib/admin/api/admin.email.users.server.ts` |
 | `/api/admin/emoji-packs` | `GET` | `lib/admin/api/admin.emoji-packs.server.ts` |
