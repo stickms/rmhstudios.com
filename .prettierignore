@@ -3746,6 +3746,7 @@ lib/prepaint/generated.ts
 /.github/workflows/dora-metrics.yml
 /.github/workflows/epic-tests.yml
 /.github/workflows/go-microservices.yml
+/.github/workflows/i18n-translate.yml
 /.github/workflows/oncall-watchdog.yml
 /.github/workflows/prisma.yml
 /.github/workflows/release-status.yml

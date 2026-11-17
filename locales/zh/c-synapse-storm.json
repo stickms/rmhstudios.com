@@ -56,6 +56,8 @@
   "neural-collapse": "神经崩溃",
   "neural-lobby": "神经游说团",
   "neural-operatives_other": "神经特工（{{count}}/{{max}}）",
+  "new-best-no": "否",
+  "new-best-yes": "是",
   "no-scores-yet": "暂无评分，快来当第一个评分的人吧！",
   "not-ranked": "你还没下注呢，来一局吧！",
   "numbers-placeholder": "例如 385",
@@ -63,6 +65,7 @@
   "peak-intensity": "峰值强度",
   "play-again": "再玩一次",
   "preparing-sequence": "准备序列中……",
+  "quit": "Quit",
   "rank": "排名",
   "ready": "准备好了！",
   "ready-status": "准备好了",
@@ -98,8 +101,5 @@
   "waiting-for-players": "等待玩家加入{{notReady}}",
   "waiting-status": "等待中",
   "you": "你",
-  "you-badge": "你",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "你"
 }

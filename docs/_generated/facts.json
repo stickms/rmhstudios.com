@@ -9,9 +9,9 @@
   "registeredApiEndpoints": 910,
   "pageRouteFiles": 420,
   "i18nNamespaces": 136,
-  "shippedLocales": 16,
+  "shippedLocales": 9,
   "testFiles": 1224,
-  "workflows": 22,
+  "workflows": 23,
   "componentTsxFiles": 1527,
   "cssFiles": 135,
   "cssLines": 69940

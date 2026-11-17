@@ -38,6 +38,7 @@
   "record-arm": "Aufnahme aktivieren",
   "reset-all": "Alle zurücksetzen",
   "sample-browser": "Sample-Browser",
+  "sample-source": "Sample source",
   "samples-count_one": "{{count}} Sample",
   "samples-count_other": "{{count}} Samples",
   "samples-heading": "Samples",
@@ -66,6 +67,5 @@
   "view-arrangement": "Arrangement",
   "view-mixer": "Mixer",
   "view-pattern": "Pattern",
-  "view-piano-roll": "Klavierrolle",
-  "sample-source": "Sample source"
+  "view-piano-roll": "Klavierrolle"
 }

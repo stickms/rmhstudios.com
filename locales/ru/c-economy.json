@@ -18,7 +18,8 @@
   "tip-dialog-description": "Отправьте монеты{{recipient}}, чтобы выразить признательность.",
   "tip-dialog-title": "Отправить чаевые",
   "tip-error": "Не удалось отправить чаевые",
+  "tip-invalid": "Такая сумма чаевых недопустима.",
+  "tip-max-hint": "Максимум за один донат: {{max}}",
   "tip-sign-in": "Пожалуйста, войдите, чтобы отправить чаевые.",
-  "tip-success": "Отправлено {{amount}} монет{{recipient}}!",
-  "tip-max-hint": "Максимум за один донат: {{max}}"
+  "tip-success": "Отправлено {{amount}} монет{{recipient}}!"
 }

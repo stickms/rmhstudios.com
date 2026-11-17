@@ -56,6 +56,8 @@
   "neural-collapse": "SUY SỤP THẦN KINH",
   "neural-lobby": "PHÒNG THẦN KINH",
   "neural-operatives_other": "ĐIỆP VIÊN THẦN KINH ({{count}}/{{max}})",
+  "new-best-no": "Không",
+  "new-best-yes": "Có",
   "no-scores-yet": "Chưa có điểm nào. Hãy là người đầu tiên!",
   "not-ranked": "Bạn chưa xếp hạng. Hãy chơi một vòng!",
   "numbers-placeholder": "vd: 385",
@@ -63,6 +65,7 @@
   "peak-intensity": "Cường Độ Đỉnh",
   "play-again": "CHƠI LẠI",
   "preparing-sequence": "Đang chuẩn bị chuỗi...",
+  "quit": "Quit",
   "rank": "Xếp hạng",
   "ready": "SẴN SÀNG!",
   "ready-status": "SẴN SÀNG",
@@ -98,8 +101,5 @@
   "waiting-for-players": "ĐANG CHỜ NGƯỜI CHƠI{{notReady}}",
   "waiting-status": "ĐANG CHỜ",
   "you": "BẠN",
-  "you-badge": "BẠN",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "BẠN"
 }

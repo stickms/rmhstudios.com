@@ -72,7 +72,7 @@ export const STATIC_CARDS: StaticCard[] =
           },
           {
             value:
-              '16',
+              '9',
             label:
               'languages',
           },

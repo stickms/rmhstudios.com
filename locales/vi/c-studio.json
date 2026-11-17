@@ -30,13 +30,14 @@
   "packs-tab": "Gói",
   "pad-number": "Pad {{number}}",
   "pan": "Pan",
-  "pattern": "Pattern",
+  "pattern": "Mẫu",
   "play-pause": "Phát/Tạm dừng",
   "press-a-key": "Nhấn một phím...",
   "record": "Ghi âm",
   "record-arm": "Kích hoạt ghi",
   "reset-all": "Đặt lại tất cả",
   "sample-browser": "Trình duyệt mẫu",
+  "sample-source": "Sample source",
   "samples-count_other": "{{count}} mẫu",
   "samples-heading": "Mẫu âm thanh",
   "save-project": "Lưu Dự án (Ctrl+S)",
@@ -64,6 +65,5 @@
   "view-arrangement": "Bố trí",
   "view-mixer": "Bộ trộn",
   "view-pattern": "Mẫu",
-  "view-piano-roll": "Cuộn Piano",
-  "sample-source": "Sample source"
+  "view-piano-roll": "Cuộn Piano"
 }

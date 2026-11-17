@@ -1,14 +1,14 @@
 /**
  * Translation drift sampler (A15).
  *
- * `pnpm i18n:translate` machine-translates English into 15 locales. Nothing
+ * The `i18n-translate` workflow machine-translates English into the 8 shipped non-English locales. Nothing
  * ever checks the result. A mistranslated destructive confirmation can sit in
- * production indefinitely, because no English speaker will ever load `ur` and
- * no `ur` speaker knows what the English said. This script round-trips a sample
+ * production indefinitely, because no English speaker will ever load `ar` and
+ * no `ar` speaker knows what the English said. This script round-trips a sample
  * back to English and reports the worst matches for a human to read.
  *
  *   pnpm exec tsx scripts/check-translation-drift.ts
- *   pnpm exec tsx scripts/check-translation-drift.ts --locales ar,ur --sample 300
+ *   pnpm exec tsx scripts/check-translation-drift.ts --locales ar,hi --sample 300
  *
  * ## It is a sampling tool, not a gate
  *

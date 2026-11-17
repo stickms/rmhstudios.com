@@ -1,0 +1,7 @@
+{
+  "hide": "Hide {{name}}",
+  "open": "Open",
+  "remove-widget": "Remove {{name}}",
+  "sidebar-reorder-hint": "Drag to reorder. Hide a tab with the eye — hidden tabs stay in search.",
+  "unhide": "Show {{name}}"
+}

@@ -2,11 +2,11 @@
   "alerts-off": "Alerts off",
   "alerts-on": "Alerts on",
   "error": "Couldn't save the search",
-  "operators": "Operators",
-  "remove": "Remove",
-  "save": "Save",
-  "saved": "Search saved",
-  "saved-searches": "Saved searches",
+  "operator-copied": "{{operator}} disalin",
   "operator-copy": "Salin {{operator}}",
-  "operator-copied": "{{operator}} disalin"
+  "operators": "Operator",
+  "remove": "Hapus",
+  "save": "Simpan",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
 }

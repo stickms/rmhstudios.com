@@ -18,7 +18,8 @@
   "tip-dialog-description": "コインを送って{{recipient}}に感謝の気持ちを伝えましょう。",
   "tip-dialog-title": "チップを送る",
   "tip-error": "チップを送信できませんでした",
+  "tip-invalid": "そのチップ額は許可されていません。",
+  "tip-max-hint": "1回のチップの上限：{{max}}",
   "tip-sign-in": "チップを送るにはサインインしてください。",
-  "tip-success": "{{amount}}コインをチップしました{{recipient}}！",
-  "tip-max-hint": "1回のチップの上限：{{max}}"
+  "tip-success": "{{amount}}コインをチップしました{{recipient}}！"
 }

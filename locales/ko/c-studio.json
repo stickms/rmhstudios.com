@@ -30,13 +30,14 @@
   "packs-tab": "팩",
   "pad-number": "패드 {{number}}",
   "pan": "팬",
-  "pattern": "Pattern",
+  "pattern": "패턴",
   "play-pause": "재생/일시정지",
   "press-a-key": "키를 누르세요...",
   "record": "녹음",
   "record-arm": "녹음 준비",
   "reset-all": "모두 재설정",
   "sample-browser": "샘플 브라우저",
+  "sample-source": "Sample source",
   "samples-count_other": "{{count}}개의 샘플",
   "samples-heading": "샘플",
   "save-project": "프로젝트 저장 (Ctrl+S)",
@@ -64,6 +65,5 @@
   "view-arrangement": "배열",
   "view-mixer": "믹서",
   "view-pattern": "패턴",
-  "view-piano-roll": "피아노 롤",
-  "sample-source": "Sample source"
+  "view-piano-roll": "피아노 롤"
 }

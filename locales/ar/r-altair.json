@@ -20,9 +20,11 @@
   "join-by-code-hint": "أدخل رمز الغرفة المكون من 6 أحرف للانضمام إلى صالة صديقك.",
   "joining-lobby": "الانضمام إلى اللوبي {{lobbyId}}...",
   "kicked-from-lobby": "تم طردك من اللوبي",
+  "loading": "جارٍ التحميل…",
   "loading-game": "جارٍ تحميل اللعبة...",
   "lobby-disbanded": "تم حل اللوبي.",
   "lobby-host": "المضيف: {{hostName}}",
+  "lobby-title": "Lobby {{lobbyId}}",
   "meta-shop": "متا شوب",
   "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "متعدد اللاعبين",
@@ -34,7 +36,5 @@
   "settings": "الإعدادات",
   "visibility-label": "الرؤية",
   "visibility-private": "خاص",
-  "visibility-public": "عامة",
-  "loading": "Loading…",
-  "lobby-title": "Lobby {{lobbyId}}"
+  "visibility-public": "عامة"
 }

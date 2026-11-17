@@ -31,13 +31,14 @@
   "packs-tab": "Paketler",
   "pad-number": "Pad {{number}}",
   "pan": "Pan",
-  "pattern": "Pattern",
+  "pattern": "Desen",
   "play-pause": "Oynat/Duraklat",
   "press-a-key": "Bir tuşa basın...",
   "record": "Kaydet",
   "record-arm": "Kayıt Kolu",
   "reset-all": "Hepsini Sıfırla",
   "sample-browser": "Örnek Tarayıcı",
+  "sample-source": "Sample source",
   "samples-count_one": "{{count}} örnek",
   "samples-count_other": "{{count}} örnek",
   "samples-heading": "Örnekler",
@@ -66,6 +67,5 @@
   "view-arrangement": "Düzenleme",
   "view-mixer": "Mixer",
   "view-pattern": "Desen",
-  "view-piano-roll": "Piyano Rulosu",
-  "sample-source": "Sample source"
+  "view-piano-roll": "Piyano Rulosu"
 }

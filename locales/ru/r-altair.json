@@ -20,9 +20,11 @@
   "join-by-code-hint": "Введите 6-значный код комнаты, чтобы присоединиться к лобби друга.",
   "joining-lobby": "Присоединение к лобби {{lobbyId}}...",
   "kicked-from-lobby": "Вас выгнали из лобби",
+  "loading": "Загрузка…",
   "loading-game": "ЗАГРУЗКА ИГРЫ...",
   "lobby-disbanded": "Лобби было расформировано",
   "lobby-host": "Хост: {{hostName}}",
+  "lobby-title": "Lobby {{lobbyId}}",
   "meta-shop": "Мета-магазин",
   "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "Мультиплеер",
@@ -34,7 +36,5 @@
   "settings": "Настройки",
   "visibility-label": "Видимость",
   "visibility-private": "Приватное",
-  "visibility-public": "Публичное",
-  "loading": "Loading…",
-  "lobby-title": "Lobby {{lobbyId}}"
+  "visibility-public": "Публичное"
 }

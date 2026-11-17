@@ -55,9 +55,11 @@
   "music": "Musica",
   "neural-collapse": "NEURAL COLLAPSE",
   "neural-lobby": "NEURAL LOBBY",
-  "neural-operatives_one": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_many": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "neural-operatives_one": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "new-best-no": "No",
+  "new-best-yes": "Sì",
   "no-scores-yet": "Ancora nessun punteggio. Sii il primo!",
   "not-ranked": "Non ti sei ancora piazzato. Gioca un round!",
   "numbers-placeholder": "es. 385",
@@ -65,6 +67,7 @@
   "peak-intensity": "Intensità di Picco",
   "play-again": "GIOCA ANCORA",
   "preparing-sequence": "Preparazione sequenza...",
+  "quit": "Quit",
   "rank": "Classifica",
   "ready": "PRONTO!",
   "ready-status": "PRONTO",
@@ -100,8 +103,5 @@
   "waiting-for-players": "IN ATTESA DEI GIOCATORI{{notReady}}",
   "waiting-status": "IN ATTESA",
   "you": "TU",
-  "you-badge": "TU",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "TU"
 }

@@ -20,9 +20,11 @@
   "join-by-code-hint": "Bir arkadaşınızın lobisine katılmak için 6 karakterli bir oda kodu girin.",
   "joining-lobby": "Lobiye katılıyor {{lobbyId}}...",
   "kicked-from-lobby": "Lobiden atıldınız",
+  "loading": "Yükleniyor…",
   "loading-game": "OYUN YÜKLENİYOR...",
   "lobby-disbanded": "Lobi dağıtıldı",
   "lobby-host": "Ev sahibi: {{hostName}}",
+  "lobby-title": "Lobby {{lobbyId}}",
   "meta-shop": "Meta Mağazası",
   "multiplayer-feature": "Playing Altair with someone else",
   "multiplayer-title": "Çok Oyunculu",
@@ -34,7 +36,5 @@
   "settings": "Ayarlar",
   "visibility-label": "Görünürlük",
   "visibility-private": "Özel",
-  "visibility-public": "Herkese Açık",
-  "loading": "Loading…",
-  "lobby-title": "Lobby {{lobbyId}}"
+  "visibility-public": "Herkese Açık"
 }

@@ -1,5 +1,5 @@
 {
-  "all": "All",
+  "all": "تمام",
   "clear-all": "Clear all",
   "clear-desc": "This cannot be undone.",
   "clear-title": "Clear all history?",
@@ -8,9 +8,9 @@
   "empty-title": "No history yet",
   "filter-history": "Filter history",
   "load-error": "Couldn't load your history",
-  "load-more": "Load more",
+  "load-more": "مزید لوڈ کریں",
   "pause": "Pause history",
-  "remove": "Remove",
+  "remove": "ہٹائیں",
   "save-error": "Couldn't update the setting",
-  "title": "History"
+  "title": "تاریخ"
 }

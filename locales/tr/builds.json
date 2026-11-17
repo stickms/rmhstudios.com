@@ -6,17 +6,20 @@
   "empty-user-no-builds": "Henüz kullanıcı yapısı yok — ilk gönderen siz olun.",
   "empty-user-search": "Bu aramayla eşleşen kullanıcı yapısı yok.",
   "loading": "Yükleniyor…",
-  "open": "Open",
+  "open": "Aç",
   "search-builds-label": "Yapılarda ara",
   "search-builds-placeholder": "Yapılarda ara...",
   "search-user-builds-placeholder": "Kullanıcı yapılarında ara...",
+  "sort-best": "En iyi",
   "sort-featured": "Öne çıkan",
   "sort-label": "Sırala",
   "sort-most-liked": "En çok beğenilen",
   "sort-most-viewed": "En çok görüntülenen",
   "sort-name-az": "Ad (A–Z)",
+  "sort-newest": "En yeni",
+  "sort-popular": "Popüler",
   "sort-recent": "En yeni",
   "submit": "Gönder",
-  "views-count_one": "{{count}} views",
-  "views-count_other": "{{count}} views"
+  "views-count_one": "{{count}} görüntülenme",
+  "views-count_other": "{{count}} görüntülenme"
 }

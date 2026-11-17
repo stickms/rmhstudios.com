@@ -12,6 +12,7 @@
   "class-hint": "Pilih opsi yang paling sesuai dengan kendaraan Anda.",
   "community-rideshare": "Berbagi tumpangan komunitas",
   "done-label": "Selesai",
+  "drive-page-title": "Mengemudi dengan RMH",
   "drive-with-rmh": "Mengemudi dengan RMH",
   "driver-application": "Lamaran pengemudi",
   "driver-cta-body": "Beri tahu kami tentang kendaraan Anda dan unggah SIM Anda untuk tinjauan cepat. Kami menghapus SIM Anda begitu disetujui — dokumen Anda tidak pernah disimpan.",
@@ -67,6 +68,7 @@
   "request-a-ride": "Minta perjalanan",
   "request-ride-button": "Minta {{rideClass}}",
   "ride-accepted": "Perjalanan diterima — menuju ke penjemputan!",
+  "ride-class": "Ride class",
   "ride-classes-subtitle": "Perjalanan untuk setiap kebutuhan — dari sehari-hari hingga yang istimewa.",
   "ride-history-heading": "Riwayat perjalanan",
   "schedule-for-later": "Jadwalkan untuk nanti",
@@ -92,7 +94,5 @@
   "vehicle-details": "Detail kendaraan",
   "where-to-heading": "Mau ke mana?",
   "which-class-drive": "Kelas mana yang akan Anda kemudikan?",
-  "your-active-trip": "Perjalanan aktif Anda",
-  "drive-page-title": "Drive with RMH",
-  "ride-class": "Ride class"
+  "your-active-trip": "Perjalanan aktif Anda"
 }

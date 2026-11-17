@@ -57,6 +57,8 @@
   "neural-lobby": "न्यूरल लॉबी",
   "neural-operatives_one": "न्यूरल ऑपरेटिव्स ({{count}}/{{max}})",
   "neural-operatives_other": "न्यूरल ऑपरेटिव्स ({{count}}/{{max}})",
+  "new-best-no": "नहीं",
+  "new-best-yes": "हाँ",
   "no-scores-yet": "अभी तक कोई स्कोर नहीं। पहले बनें!",
   "not-ranked": "आपने अभी तक स्थान नहीं पाया। एक राउंड खेलें!",
   "numbers-placeholder": "जैसे 385",
@@ -64,6 +66,7 @@
   "peak-intensity": "पीक इंटेंसिटी",
   "play-again": "फिर से खेलें",
   "preparing-sequence": "अनुक्रम तैयार हो रहा है...",
+  "quit": "Quit",
   "rank": "रैंक",
   "ready": "तैयार!",
   "ready-status": "तैयार",
@@ -99,8 +102,5 @@
   "waiting-for-players": "खिलाड़ियों की प्रतीक्षा{{notReady}}",
   "waiting-status": "प्रतीक्षा",
   "you": "आप",
-  "you-badge": "आप",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "आप"
 }

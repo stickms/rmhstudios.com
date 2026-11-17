@@ -31,6 +31,7 @@
   "leaderboard": "लीडरबोर्ड",
   "leaderboard-empty": "आज तक किसी ने नहीं खेला है।",
   "lets-go": "चलो चलें",
+  "lights-out-title": "Lights Out",
   "loading": "लोड हो रहा है...",
   "moves-count_one": "{{count}} चाल",
   "moves-count_other": "{{count}} चालें",
@@ -54,6 +55,7 @@
   "race-results-subtitle": "राउंड {{round}} · {{shape}} · {{mode}}{{optimal}}",
   "racers": "रेसर",
   "ranking": "रैंकिंग",
+  "rating-tiers": "Rating tiers",
   "ready": "तैयार",
   "ready-up": "तैयार हो जाएं",
   "restart-btn": "पुनः आरंभ करें",
@@ -89,7 +91,5 @@
   "waiting-for-host": "मेज़बान द्वारा अगला दौर शुरू करने की प्रतीक्षा...",
   "waiting-for-players": "खिलाड़ियों की प्रतीक्षा",
   "welcome-user": "स्वागत है, {{name}}!",
-  "your-moves": "आपकी चालें",
-  "lights-out-title": "Lights Out",
-  "rating-tiers": "Rating tiers"
+  "your-moves": "आपकी चालें"
 }

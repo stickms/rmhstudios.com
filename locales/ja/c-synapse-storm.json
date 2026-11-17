@@ -56,6 +56,8 @@
   "neural-collapse": "ニューラルコラプス",
   "neural-lobby": "ニューラルロビー",
   "neural-operatives_other": "ニューラルオペレーティブ ({{count}}/{{max}})",
+  "new-best-no": "いいえ",
+  "new-best-yes": "はい",
   "no-scores-yet": "まだスコアがありません。最初に挑戦しよう！",
   "not-ranked": "まだランクインしていません。プレイしてみよう！",
   "numbers-placeholder": "例: 385",
@@ -63,6 +65,7 @@
   "peak-intensity": "ピーク強度",
   "play-again": "もう一度プレイ",
   "preparing-sequence": "シーケンスを準備中...",
+  "quit": "Quit",
   "rank": "ランク",
   "ready": "準備完了！",
   "ready-status": "準備完了",
@@ -98,8 +101,5 @@
   "waiting-for-players": "プレイヤーを待機中{{notReady}}",
   "waiting-status": "待機中",
   "you": "あなた",
-  "you-badge": "あなた",
-  "new-best-yes": "Yes",
-  "new-best-no": "No",
-  "quit": "Quit"
+  "you-badge": "あなた"
 }

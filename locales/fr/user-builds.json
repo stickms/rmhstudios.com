@@ -8,8 +8,8 @@
   "edit": "Modifier",
   "edit-build": "Modifier le build",
   "error-loading-build": "Erreur de chargement du build",
-  "like-count_one": "{{count}} j'aime",
   "like-count_many": "{{count}} likes",
+  "like-count_one": "{{count}} j'aime",
   "like-count_other": "{{count}} j'aime",
   "manage-subtitle": "Gérez vos builds publiés et vos brouillons",
   "my-builds": "Mes Builds",
@@ -17,7 +17,7 @@
   "no-builds-description": "Créez votre premier build et partagez-le avec la communauté.",
   "no-builds-yet": "Aucun build pour l'instant",
   "prefer-the-cli": "Vous préférez l'interface en ligne de commande ?",
-  "share-project-with-community": "Partagez votre projet avec la communauté. Vous pouvez l'enregistrer comme brouillon et le publier plus tard.",
+  "share-project-with-community": "Partagez votre projet avec la communauté.",
   "sign-in": "Se connecter",
   "sign-in-required": "Connexion requise",
   "sign-in-to-manage": "Vous devez vous connecter pour gérer vos builds.",
@@ -25,7 +25,7 @@
   "submit-a-build": "Soumettre un build",
   "update-build-details": "Mettez à jour les détails de votre build ci-dessous.",
   "view": "Voir",
-  "view-count_one": "{{count}} vue",
   "view-count_many": "{{count}} views",
+  "view-count_one": "{{count}} vue",
   "view-count_other": "{{count}} vues"
 }

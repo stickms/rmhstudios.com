@@ -18,7 +18,8 @@
   "tip-dialog-description": "أرسل عملات إلى {{recipient}} لإظهار بعض التقدير.",
   "tip-dialog-title": "أرسل إكرامية",
   "tip-error": "تعذر إرسال الإكرامية",
+  "tip-invalid": "مبلغ البقشيش هذا غير مسموح به.",
+  "tip-max-hint": "الحد الأقصى لكل إكرامية: {{max}}",
   "tip-sign-in": "يرجى تسجيل الدخول للإكرامية.",
-  "tip-success": "أرسل {{amount}} عملة كإكرامية{{recipient}}!",
-  "tip-max-hint": "الحد الأقصى لكل إكرامية: {{max}}"
+  "tip-success": "أرسل {{amount}} عملة كإكرامية{{recipient}}!"
 }

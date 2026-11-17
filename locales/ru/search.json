@@ -2,11 +2,11 @@
   "alerts-off": "Alerts off",
   "alerts-on": "Alerts on",
   "error": "Couldn't save the search",
-  "operators": "Operators",
-  "remove": "Remove",
-  "save": "Save",
-  "saved": "Search saved",
-  "saved-searches": "Saved searches",
+  "operator-copied": "Скопировано: {{operator}}",
   "operator-copy": "Скопировать {{operator}}",
-  "operator-copied": "Скопировано: {{operator}}"
+  "operators": "Операторы",
+  "remove": "Удалить",
+  "save": "Сохранить",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
 }

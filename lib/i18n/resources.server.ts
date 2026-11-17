@@ -10,7 +10,7 @@
 // __root.tsx imports this module on every render, that forced the entire
 // translation catalog to be parsed into the heap the first
 // time the SSR root module evaluated — a large, pure cold-boot cost paid even by
-// English visitors who never use the other 15 languages.
+// English visitors who never use the other 8 languages.
 //
 // Now each locale's CORE namespaces are loaded on demand via dynamic imports (one
 // chunk per namespace, reusing the same per-namespace loaders the client uses) and cached. The SSR entry

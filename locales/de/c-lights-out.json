@@ -31,6 +31,7 @@
   "leaderboard": "Bestenliste",
   "leaderboard-empty": "Heute hat noch niemand gespielt.",
   "lets-go": "Los geht's",
+  "lights-out-title": "Lights Out",
   "loading": "Lädt...",
   "moves-count_one": "{{count}} Zug",
   "moves-count_other": "{{count}} Züge",
@@ -54,6 +55,7 @@
   "race-results-subtitle": "Runde {{round}} · {{shape}} · {{mode}}{{optimal}}",
   "racers": "Rennfahrer",
   "ranking": "Rangliste",
+  "rating-tiers": "Rating tiers",
   "ready": "Bereit",
   "ready-up": "Bereit machen",
   "restart-btn": "Neustart",
@@ -89,7 +91,5 @@
   "waiting-for-host": "Warten auf den Host, um die nächste Runde zu starten...",
   "waiting-for-players": "Warten auf Spieler",
   "welcome-user": "Willkommen, {{name}}!",
-  "your-moves": "Deine Züge",
-  "lights-out-title": "Lights Out",
-  "rating-tiers": "Rating tiers"
+  "your-moves": "Deine Züge"
 }

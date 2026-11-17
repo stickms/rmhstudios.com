@@ -2,11 +2,11 @@
   "alerts-off": "Alerts off",
   "alerts-on": "Alerts on",
   "error": "Couldn't save the search",
-  "operators": "Operators",
-  "remove": "Remove",
-  "save": "Save",
-  "saved": "Search saved",
-  "saved-searches": "Saved searches",
+  "operator-copied": "{{operator}} کاپی ہو گیا",
   "operator-copy": "{{operator}} کاپی کریں",
-  "operator-copied": "{{operator}} کاپی ہو گیا"
+  "operators": "آپریٹرز",
+  "remove": "ہٹائیں",
+  "save": "محفوظ کریں",
+  "saved": "Search saved",
+  "saved-searches": "Saved searches"
 }

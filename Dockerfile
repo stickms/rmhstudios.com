@@ -331,7 +331,7 @@ RUN rm -rf .output \
     # translate any missing keys before the build — a ~39s live-network step on
     # the deploy critical path that re-translated the same still-uncommitted keys
     # every deploy and discarded the result. Translation now runs in
-    # .github/workflows/i18n-translate.yml, which COMMITS the output, so the
+    # .github/workflows/i18n-translate.yml, whose output is merged by PR, so the
     # checked-in catalog is the source of truth. We still regenerate the resource
     # modules from that committed locale JSON (fast, deterministic, offline) so a
     # locale edit that skipped `pnpm i18n:resources` can't ship stale strings.

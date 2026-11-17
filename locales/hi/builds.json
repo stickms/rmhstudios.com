@@ -6,17 +6,20 @@
   "empty-user-no-builds": "अभी तक कोई उपयोगकर्ता बिल्ड नहीं — पहला सबमिट करने वाले बनें।",
   "empty-user-search": "उस खोज से कोई उपयोगकर्ता बिल्ड मेल नहीं खाता।",
   "loading": "लोड हो रहा है…",
-  "open": "Open",
+  "open": "खोलें",
   "search-builds-label": "बिल्ड खोजें",
   "search-builds-placeholder": "बिल्ड खोजें...",
   "search-user-builds-placeholder": "उपयोगकर्ता बिल्ड खोजें...",
+  "sort-best": "सर्वश्रेष्ठ",
   "sort-featured": "फ़ीचर्ड",
   "sort-label": "क्रमबद्ध करें",
   "sort-most-liked": "सर्वाधिक पसंद किए गए",
   "sort-most-viewed": "सर्वाधिक देखे गए",
   "sort-name-az": "नाम (A–Z)",
+  "sort-newest": "नवीनतम",
+  "sort-popular": "लोकप्रिय",
   "sort-recent": "हाल का",
   "submit": "सबमिट करें",
-  "views-count_one": "{{count}} views",
-  "views-count_other": "{{count}} views"
+  "views-count_one": "{{count}} बार देखा गया",
+  "views-count_other": "{{count}} बार देखा गया"
 }

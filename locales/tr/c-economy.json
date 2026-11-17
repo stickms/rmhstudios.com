@@ -18,7 +18,8 @@
   "tip-dialog-description": "Takdirinizi göstermek için {{recipient}}'e coin gönderin.",
   "tip-dialog-title": "Bahşiş gönder",
   "tip-error": "Bahşiş gönderilemedi",
+  "tip-invalid": "Bu bahşiş tutarına izin verilmiyor.",
+  "tip-max-hint": "Bahşiş başına en fazla: {{max}}",
   "tip-sign-in": "Bahşiş vermek için lütfen giriş yapın.",
-  "tip-success": "{{recipient}}'e {{amount}} coin bahşiş verildi!",
-  "tip-max-hint": "Bahşiş başına en fazla: {{max}}"
+  "tip-success": "{{recipient}}'e {{amount}} coin bahşiş verildi!"
 }
